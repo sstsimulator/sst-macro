@@ -73,6 +73,7 @@ class stack_alloc
   /// Each stack request is of this size:
   size_t stacksize_;
   /// Do we want stacks separated by an mprot region?
+  /// This will then trigger seg faults for stack overruns
   bool use_mprot_;
 
   /// This is our list of un-allocated chunks:
@@ -80,7 +81,6 @@ class stack_alloc
   available_vec_t available_;
 
  public:
-  /// Build.
   stack_alloc();
 
   size_t stacksize() const {
@@ -95,7 +95,6 @@ class stack_alloc
     return suggested_chunk_;
   }
 
-  /// Goodbye.
   virtual ~stack_alloc();
 
   /// Get a stack memory region.

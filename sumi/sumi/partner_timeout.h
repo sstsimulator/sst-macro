@@ -65,8 +65,7 @@ class collective_timeout :
   {
   }
 
-  void
-  time_out(int partner);
+  void time_out(int partner);
 
  protected:
   /**

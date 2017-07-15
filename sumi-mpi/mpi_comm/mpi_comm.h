@@ -80,7 +80,6 @@ class mpi_comm : public communicator
  public:
   mpi_comm();
 
-  /// Hello.
   mpi_comm(
     MPI_Comm id,
     int rank,
@@ -89,7 +88,6 @@ class mpi_comm : public communicator
     bool del_grp = false,
     topotypes ty = TOPO_NONE);
 
-  /// Goodbye.
   virtual ~mpi_comm();
 
   void set_name(std::string name) {
@@ -154,13 +152,11 @@ class mpi_comm : public communicator
 
   task_id peer_task(int rank) const;
 
-  inline bool
-  operator==(mpi_comm* other) const {
+  inline bool operator==(mpi_comm* other) const {
     return ((rank_ == other->rank_) && (id_ == other->id_));
   }
 
-  inline bool
-  operator!=(mpi_comm* other) const {
+  inline bool operator!=(mpi_comm* other) const {
     return !this->operator==(other);
   }
 

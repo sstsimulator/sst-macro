@@ -120,8 +120,7 @@ class pinger
    * Attach a new listener (timeout function) to this ping
    * @param func
    */
-  void
-  attach_listener(timeout_function* func);
+  void attach_listener(timeout_function* func);
 
  protected:
   void timeout_all_listeners();

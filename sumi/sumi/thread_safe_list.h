@@ -80,14 +80,12 @@ class thread_safe_list :
   // These functions acquire a lock.
   //
 
-  const_iterator
-  start_iteration() const {
+  const_iterator start_iteration() const {
     lock();
     return list_.end();
   }
 
-  iterator
-  start_iteration(){
+  iterator start_iteration(){
     lock();
     return list_.end();
   }
@@ -96,8 +94,7 @@ class thread_safe_list :
   // These functions release a previously-acquired lock.
   //
 
-  void
-  end_iteration() const {
+  void end_iteration() const {
     unlock();
   }
 
@@ -108,32 +105,27 @@ class thread_safe_list :
   // the caller must be the one who acquired it).
   //
 
-  const_iterator
-  begin() const {
+  const_iterator begin() const {
     verify("begin");
     return list_.begin();
   }
 
-  iterator
-  begin(){
+  iterator begin(){
     verify("begin");
     return list_.begin();
   }
 
-  void
-  erase(iterator it){
+  void erase(iterator it){
     verify("erase");
     list_.erase(it);
   }
 
-  iterator
-  insert(iterator it, const T& entry){
+  iterator insert(iterator it, const T& entry){
     verify("insert");
     return list_.insert(it, entry);
   }
 
-  bool
-  empty_locked() const {
+  bool empty_locked() const {
     verify("empty_locked");
     return list_.empty();
   }
@@ -143,8 +135,7 @@ class thread_safe_list :
     return list_.size();
   }
 
-  void
-  clear_locked(){
+  void clear_locked(){
     verify("clear_locked");
     list_.clear();
   }
@@ -154,8 +145,7 @@ class thread_safe_list :
     list_.push_back(t);
   }
 
-  bool
-  pop_front_and_return_locked(T& ret){
+  bool pop_front_and_return_locked(T& ret){
     verify("pop_front_and_return_locked");
     bool empty = list_.empty();
     if (!empty){
@@ -165,8 +155,7 @@ class thread_safe_list :
     return empty;
   }
 
-  bool
-  pop_back_and_return_locked(T& ret){
+  bool pop_back_and_return_locked(T& ret){
     verify("pop_back_and_return_locked");
     bool empty = list_.empty();
     if (!empty){
@@ -180,8 +169,7 @@ class thread_safe_list :
   // These functions lock on entry and unlock before returning.
   //
 
-  bool
-  empty() const {
+  bool empty() const {
     lock();
     bool ret = list_.empty();
     unlock();
@@ -212,32 +200,28 @@ class thread_safe_list :
     unlock();
   }
 
-  bool
-  pop_front_and_return(T& ret){
+  bool pop_front_and_return(T& ret){
     lock();
     bool empty = pop_front_and_return_locked(ret);
     unlock();
     return empty;
   }
 
-  bool
-  pop_back_and_return(T& ret){
+  bool pop_back_and_return(T& ret){
     lock();
     bool empty = pop_back_and_return_locked(ret);
     unlock();
     return empty;
   }
 
-  void
-  clear(){
+  void clear(){
     lock();
     list_.clear();
     unlock();
   }
 
  protected:
-  void
-  verify(const char* fxn) const {
+  void verify(const char* fxn) const {
     if (!locked()){
       spkt_throw_printf(sprockit::value_error,
         "thread safe list is not locked in %s", fxn);

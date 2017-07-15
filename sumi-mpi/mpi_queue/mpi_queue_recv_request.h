@@ -65,16 +65,13 @@ class mpi_queue_recv_request  {
   friend class eager1_singlecpy;
 
  public:
-  /// Hello.
   mpi_queue_recv_request(mpi_request* key, mpi_queue* queue,
                          int count,
                          MPI_Datatype type, int source, int tag,
                          MPI_Comm comm, void* buffer);
 
-  /// Goodbye.
   ~mpi_queue_recv_request();
 
-  /// Do we match the given message?
   bool matches(const mpi_message::ptr& msg);
 
   void set_seqnum(int seqnum) {

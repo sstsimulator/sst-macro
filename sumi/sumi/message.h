@@ -57,8 +57,7 @@ template <>
 class serialize<sumi::public_buffer>
 {
  public:
-  void
-  operator()(sumi::public_buffer& buf, serializer& ser){
+  void operator()(sumi::public_buffer& buf, serializer& ser){
     ser.primitive(buf);
   }
 };
@@ -320,16 +319,14 @@ class message :
     return synced_;
   }
 
-  void
-  set_time_sent(double now){
+  void set_time_sent(double now){
     if (sent_ < 0){
       //if already set, don't overwrite
       sent_ = now;
     }
   }
 
-  void
-  set_time_arrived(double now){
+  void set_time_arrived(double now){
     if (header_arrived_ < 0){
       header_arrived_ = now;
     } else {
@@ -337,8 +334,7 @@ class message :
     }
   }
 
-  void
-  set_time_synced(double now){
+  void set_time_synced(double now){
     synced_ = now;
   }
 

@@ -114,9 +114,6 @@ stack_alloc::chunk::get_next_stack() {
   }
 }
 
-//
-// Goodbye.
-//
 stack_alloc::chunk::~chunk()
 {
   if(addr_) {

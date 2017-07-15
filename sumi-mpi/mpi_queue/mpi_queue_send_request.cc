@@ -64,9 +64,6 @@ mpi_queue_send_request::mpi_queue_send_request(
 {
 }
 
-//
-// Goodbye.
-//
 mpi_queue_send_request::~mpi_queue_send_request() throw ()
 {
 }

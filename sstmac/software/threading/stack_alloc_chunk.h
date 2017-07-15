@@ -51,9 +51,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <unistd.h>
 
-
 namespace sstmac {
 namespace sw {
+
 /**
  * A chunk of allocated memory to be divided into fixed-size stacks.
  */
@@ -74,7 +74,6 @@ class stack_alloc::chunk
   /// Make a new chunk.
   chunk(size_t stacksize, size_t suggested_chunk_size, bool use_mprot);
 
-  /// Goodbye.
   ~chunk();
 
   void*  get_next_stack();

@@ -86,139 +86,113 @@ class event_manager
   friend class native::manager;
 
  public:
-  bool
-  is_complete() {
+  bool is_complete() {
     return complete_;
   }
 
   static event_manager* global;
 
-  /// Goodbye.
   virtual ~event_manager(){}
 
   /// Clear all events and set time back to a zero of your choice.
   /// This call shall not be permitted while the event manager is running.
-  virtual void
-  clear(timestamp zero_time = timestamp(0)) = 0;
+  virtual void clear(timestamp zero_time = timestamp(0)) = 0;
 
   /// Run the eventmanager.
   /// The eventmanager shall return control when no more messages remain.
-  virtual void
-  run() = 0;
+  virtual void run() = 0;
 
-  virtual bool
-  empty() const = 0;
+  virtual bool empty() const = 0;
 
-  timestamp
-  now() const {
+  timestamp now() const {
     return now_;
   }
 
-  void
-  register_stat(
+  void register_stat(
     stat_collector* stat,
     stat_descr_t* descr);
 
-  stat_collector*
-  register_thread_unique_stat(
+  stat_collector* register_thread_unique_stat(
     stat_collector* stat,
     stat_descr_t* descr);
 
-  virtual void
-  cancel_all_messages(device_id canceled_loc) = 0;
+  virtual void cancel_all_messages(device_id canceled_loc) = 0;
 
-  partition*
-  topology_partition() const;
+  partition* topology_partition() const;
 
-  parallel_runtime*
-  runtime() const {
+  parallel_runtime* runtime() const {
     return rt_;
   }
 
-  void
-  finish_stats();
+  void finish_stats();
 
-  void
-  stop() {
+  void stop() {
     stopped_ = true;
   }
 
   /** 
    * @return The MPI rank of this event manager 
    * */
-  int
-  me() const {
+  int me() const {
     return me_;
   }
 
   /**
    * @return The unique worker id amongst all threads on all ranks
    */
-  int
-  worker_id() const {
+  int worker_id() const {
     return me_ * nthread_ + thread_id_;
   }
 
-  int
-  nproc() const {
+  int nproc() const {
     return nproc_;
   }
 
-  int
-  nworker() const {
+  int nworker() const {
     return nproc_ * nthread_;
   }
 
 
   // ---- These are interface functions for PDES, they should
   // ----   only get called when running in parallel mode
-  virtual void
-  ipc_schedule(
+  virtual void ipc_schedule(
     timestamp t,
     device_id dst,
     device_id src,
     uint32_t seqnum,
     event* ev);
 
-  virtual void
-  multithread_schedule(
+  virtual void multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
     event_queue_entry* ev);
 
-  virtual int
-  lpid() const {
+  virtual int lpid() const {
     return -1;
   }
 
-  int
-  thread_id() const {
+  int thread_id() const {
     return thread_id_;
   }
 
-  int
-  nthread() const {
+  int nthread() const {
     return nthread_;
   }
 
-  virtual event_manager*
-  ev_man_for_thread(int thread_id) const;
+  virtual event_manager* ev_man_for_thread(int thread_id) const;
 
-  virtual void
-  set_interconnect(hw::interconnect* interconn){}
+  virtual void set_interconnect(hw::interconnect* interconn){}
 
-  virtual void
-  schedule_stop(timestamp until);
+  virtual void schedule_stop(timestamp until);
 
  protected:
   event_manager(sprockit::sim_parameters* params, parallel_runtime* rt);
 
-  void
-  set_now(const timestamp &ts);
+  void set_now(const timestamp &ts);
 
-  virtual void
-  finish_stats(stat_collector* main, const std::string& name, timestamp end);
+  virtual void finish_stats(stat_collector* main,
+                  const std::string& name, timestamp end);
 
  protected:
   bool complete_;
@@ -247,8 +221,8 @@ class event_manager
   timestamp now_;
 
  private:
-  virtual void
-  schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* event_queue_entry) = 0;
+  virtual void schedule(timestamp start_time, uint32_t seqnum,
+                        event_queue_entry* event_queue_entry) = 0;
 
 };
 

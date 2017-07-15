@@ -78,7 +78,6 @@ namespace sumi {
 mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
   parent_(parent),
   aid_(aid),
-  mpirun_np_(0),
   next_id_(1),
   worldcomm_(nullptr),
   selfcomm_(nullptr)
@@ -98,9 +97,7 @@ mpi_comm_factory::init(int rank, int nproc)
 {
   next_id_ = 2;
 
-  mpirun_np_ = nproc;
-
-  mpi_group* g = new mpi_group(mpirun_np_);
+  mpi_group* g = new mpi_group(nproc);
   g->set_id(MPI_GROUP_WORLD);
   worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, aid_);
 

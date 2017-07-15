@@ -119,7 +119,6 @@ class app : public thread
 
   lib_compute_time* compute_time_lib();
 
-  /// Goodbye.
   virtual ~app();
 
   //called when killing the app, in case you want to check or clean anything up before destructor
