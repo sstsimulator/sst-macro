@@ -84,19 +84,15 @@ class router : public sprockit::printable
    * All routing decisions should be stored on the packet object itself.
    * @param pkt
    */
-  virtual void
-  route(packet* pkt);
+  virtual void route(packet* pkt);
 
-  virtual void
-  route_to_switch(switch_id sid, routable::path& path) = 0;
+  virtual void route_to_switch(switch_id sid, routable::path& path) = 0;
 
   virtual ~router();
 
-  virtual void
-  compatibility_check() const;
+  virtual void compatibility_check() const;
 
-  network_switch*
-  get_switch() const {
+  network_switch* get_switch() const {
     return netsw_;
   }
 
@@ -104,13 +100,11 @@ class router : public sprockit::printable
    * @brief addr
    * @return
    */
-  switch_id
-  addr() const {
+  switch_id addr() const {
     return my_addr_;
   }
 
-  topology*
-  topol() const {
+  topology* topol() const {
     return top_;
   }
 
@@ -119,8 +113,7 @@ class router : public sprockit::printable
    * @return The maximum number of virtual channels the router must maintain
    *         to implement all possible routing algorithms
    */
-  int
-  max_num_vc() const {
+  int max_num_vc() const {
     return max_num_vc_;
   }
 
@@ -128,14 +121,11 @@ class router : public sprockit::printable
   router(sprockit::sim_parameters* params,
          topology* top, network_switch* sw, routing::algorithm_t algo);
 
-  routing::algorithm_t
-  str_to_algo(const std::string& str);
+  routing::algorithm_t str_to_algo(const std::string& str);
 
-  switch_id
-  find_ejection_site(node_id toaddr, routable::path& path) const;
+  switch_id find_ejection_site(node_id toaddr, routable::path& path) const;
 
-  inline static void
-  configure_ejection_path(routable::path& path) {
+  inline static void configure_ejection_path(routable::path& path) {
     path.vc = 0;
   }
 

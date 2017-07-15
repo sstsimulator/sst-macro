@@ -76,20 +76,17 @@ class ftq_epoch
 
   virtual ~ftq_epoch();
 
-  void
-  collect(int key_typeid, long ticks) {
+  void collect(int key_typeid, long ticks) {
     totals_[key_typeid] += ticks;
   }
 
   void init(int num_events, long long* buffer);
 
-  long long
-  event_time(int key_typeid) const {
+  long long event_time(int key_typeid) const {
     return totals_[key_typeid];
   }
 
-  void
-  set_event_time(int key_typeid, long long count) {
+  void set_event_time(int key_typeid, long long count) {
     totals_[key_typeid] = count;
   }
 
@@ -97,7 +94,6 @@ class ftq_epoch
 
 class app_ftq_calendar
 {
-
  public:
   app_ftq_calendar(int aid,
                    const std::string& appname,
@@ -118,11 +114,9 @@ class app_ftq_calendar
   */
   void collect(int event_typeid, int tid, long ticks_begin, long num_ticks);
 
-  void
-  reduce(app_ftq_calendar* cal);
+  void reduce(app_ftq_calendar* cal);
 
-  void
-  global_reduce(parallel_runtime* rt);
+  void global_reduce(parallel_runtime* rt);
 
  private:
   std::vector<ftq_epoch> epochs_;
@@ -186,13 +180,11 @@ class ftq_calendar :
 
   void global_reduce(parallel_runtime *rt) override;
 
-  stat_collector*
-  do_clone(sprockit::sim_parameters* params) const override {
+  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new ftq_calendar(params);
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "FTQCalendar";
   }
 

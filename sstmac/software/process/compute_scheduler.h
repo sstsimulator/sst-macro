@@ -70,29 +70,24 @@ class compute_scheduler
   virtual ~compute_scheduler() {}
 
 
-  int
-  ncores() const {
+  int ncores() const {
     return ncores_;
   }
 
-  int
-  nsocket() const {
+  int nsocket() const {
     return nsocket_;
   }
 
-  virtual void
-  reserve_core(thread* thr) = 0;
+  virtual void reserve_core(thread* thr) = 0;
   
-  virtual void
-  release_core(thread* thr) = 0;
+  virtual void release_core(thread* thr) = 0;
   
   /**
    * @brief configure
    * @param ncore   The number of cores PER socket
    * @param nsocket The number of sockets
    */
-  virtual void
-  configure(int ncore, int nsocket);
+  virtual void configure(int ncore, int nsocket);
 
  protected:
   compute_scheduler();

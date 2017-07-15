@@ -119,8 +119,7 @@ class network_message :
   {
   }
 
-  virtual std::string
-  to_string() const override {
+  virtual std::string to_string() const override {
     return "network message";
   }
 

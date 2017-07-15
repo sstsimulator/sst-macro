@@ -72,48 +72,39 @@ class dist_dummy_switch :
   {
   }
 
-  std::string
-  to_string() const override;
+  std::string to_string() const override;
 
-  bool
-  ipc_handler() const override {
+  bool ipc_handler() const override {
     return true;
   }
 
-  link_handler*
-  credit_handler(int port) const override {
+  link_handler* credit_handler(int port) const override {
     return const_cast<dist_dummy_switch*>(this);
   }
 
   void compatibility_check() const override {}
 
-  link_handler*
-  payload_handler(int port) const override {
+  link_handler* payload_handler(int port) const override {
     return const_cast<dist_dummy_switch*>(this);
   }
 
   void handle(event *ev) override;
 
-  virtual
-  ~dist_dummy_switch() {
-  }
+  virtual ~dist_dummy_switch() {}
 
-  virtual void
-  connect_input(
+  virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     event_handler* handler) override;
 
-  virtual void
-  connect_output(
+  virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     event_handler* handler) override;
 
-  int
-  queue_length(int port) const override {
+  int queue_length(int port) const override {
     return 0;
   }
 

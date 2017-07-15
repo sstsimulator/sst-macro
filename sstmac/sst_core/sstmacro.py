@@ -255,6 +255,8 @@ def setupDeprecated():
     nodeParams["debug"] = " ".join(debugList)
   swParams["topology"] = params["topology"]
 
+  swParams["topology"] = "torus"
+
   #move every param in the global namespace 
   #into the individal namespaces
   for ns in "node", "switch":

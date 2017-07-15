@@ -59,12 +59,9 @@ class service :
 {
 
  public:
-  virtual void
-  start() {
-  }
+  virtual void start() {}
 
-  virtual void
-  incoming_event(event* ev) override = 0;
+  virtual void incoming_event(event* ev) override = 0;
 
  protected:
   service(const std::string& libname, software_id sid, operating_system* os) :
@@ -75,8 +72,7 @@ class service :
     library(prefix, sid, os)
   {}
 
-  virtual
-  ~service(){}
+  virtual ~service(){}
 
 
 };

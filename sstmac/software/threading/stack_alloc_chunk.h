@@ -77,8 +77,7 @@ class stack_alloc::chunk
   /// Goodbye.
   ~chunk();
 
-  void* 
-  get_next_stack();
+  void*  get_next_stack();
 
 };
 

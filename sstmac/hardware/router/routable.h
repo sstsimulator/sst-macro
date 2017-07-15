@@ -77,23 +77,19 @@ class routable
    {
    }
 
-   bool
-   metadata_bit(metadata_slot slot) const {
+   bool metadata_bit(metadata_slot slot) const {
      return metadata.bit(slot);
    }
 
-   void
-   set_metadata_bit(metadata_slot slot) {
+   void set_metadata_bit(metadata_slot slot) {
      metadata.set_bit(slot);
    }
 
-   void
-   unset_metadata_bit(metadata_slot slot) {
+   void unset_metadata_bit(metadata_slot slot) {
      metadata.unset_bit(slot);
    }
 
-   void
-   clear_metadata() {
+   void clear_metadata() {
      metadata.clear();
    }
   };
@@ -122,58 +118,47 @@ class routable
  };
 
  public:
-  node_id
-  toaddr() const {
+  node_id toaddr() const {
     return toaddr_;
   }
 
-  node_id
-  fromaddr() const {
+  node_id fromaddr() const {
     return fromaddr_;
   }
 
-  void
-  set_toaddr(node_id to) {
+  void set_toaddr(node_id to) {
     toaddr_ = to;
   }
 
-  void
-  set_fromaddr(node_id from) {
+  void set_fromaddr(node_id from) {
     fromaddr_ = from;
   }
 
-  path&
-  current_path() {
+  path& current_path() {
     return path_;
   }
 
-  void
-  check_vc() {
+  void check_vc() {
     if (path_.vc == routing::uninitialized)
       path_.vc = 0;
   }
 
-  virtual int
-  vc() const {
+  virtual int vc() const {
     return path_.vc;
   }
 
-  int
-  port() const {
+  int port() const {
     return path_.outport;
   }
 
-  void
-  serialize_order(serializer& ser);
+  void serialize_order(serializer& ser);
 
 
-  void
-  set_dest_switch(switch_id sid) {
+  void set_dest_switch(switch_id sid) {
     dest_switch_ = sid;
   }
 
-  switch_id
-  dest_switch() const {
+  switch_id dest_switch() const {
     return dest_switch_;
   }
 
@@ -201,8 +186,7 @@ template <>
 class serialize<sstmac::hw::routable::path>
 {
  public:
-  void
-  operator()(sstmac::hw::routable::path& info, serializer& ser){
+  void operator()(sstmac::hw::routable::path& info, serializer& ser){
     ser.primitive(info);
   }
 };

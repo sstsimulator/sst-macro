@@ -226,6 +226,15 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     compiler = cc
     ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
 
+  #okay this is sooo dirty - but autoconf is a disaster to trick
+  #if this detects something auto-confish, bail and pass through to regular compiler
+  if "conftest.c" in sysargs:
+    cmd = "%s %s" % (compiler, " ".join(sysargs))
+    sys.stderr.write("passing through on autoconf: %s\n" % cmd) 
+    rc = os.system(cmd)
+    if rc == 0: return 0
+    else: return 1
+
   sstCompilerFlags = []
   sstStdFlag = None
   for flag in sstCompilerFlagsStr.split():

@@ -79,16 +79,13 @@ class threading_pthread : public threading_interface
 
   /// This part of context initialization is common to
   /// init_context and start_context.
-  void
-  init_context_common(threadcontext_t &t);
+  void init_context_common(threadcontext_t &t);
 
   /// Initialize the context to be that for the currently running thread.
-  void
-  init_context();
+  void init_context();
 
   /// This tears down the context. It is only called from the scheduler's thread.
-  void
-  destroy_context();
+  void destroy_context();
 
   class threadargs
   {
@@ -107,25 +104,17 @@ class threading_pthread : public threading_interface
 
   static std::vector<pthread_mutex_t> context_switch_mutexes;
 
-  virtual
-  threading_interface* copy() {
+  virtual threading_interface* copy() {
     return new threading_pthread(thread_id_, nthread_);
   }
 
-  /// Start a new context. It does not start yet -- swap_context will start it. This is only called from the scheduler's thread.
-  void
-  start_context(int physical_thread_id, void *stack, size_t stacksize, void
+  void start_context(int physical_thread_id, void *stack, size_t stacksize, void
                  (*func)(void*), void *args, threading_interface *yield_to,
                 void* globals_storage);
 
-  /// This is called when we have completed running the thread. It is
-  /// called in the from context.
-  void
-  complete_context(threading_interface *to);
+  void complete_context(threading_interface *to);
 
-  /// Swap context. The from context is always the currently running context.
-  void
-  swap_context(threading_interface *to);
+  void swap_context(threading_interface *to);
 };
 
 #endif

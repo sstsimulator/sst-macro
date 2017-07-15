@@ -80,14 +80,12 @@ class simple_network_packet : public pisces_routable_packet
   {
   }
 
-  uint64_t
-  flow_id() const override {
+  uint64_t flow_id() const override {
     spkt_abort_printf("simple network does not use flow IDs");
     return 0;
   }
 
-  SST::Interfaces::SimpleNetwork::Request*
-  request() const {
+  SST::Interfaces::SimpleNetwork::Request* request() const {
     return dynamic_cast<SST::Interfaces::SimpleNetwork::Request*>(orig_);
   }
 

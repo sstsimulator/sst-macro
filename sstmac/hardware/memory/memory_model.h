@@ -67,20 +67,15 @@ class memory_model :
   memory_model(sprockit::sim_parameters* params,
                node* node);
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
   virtual ~memory_model();
 
-  virtual void
-  access(long bytes, double max_bw,
-         callback* cb) = 0;
+  virtual void access(long bytes, double max_bw, callback* cb) = 0;
 
-  virtual std::string
-  to_string() const = 0;
+  virtual std::string to_string() const = 0;
 
-  virtual double
-  max_single_bw() const = 0;
+  virtual double max_single_bw() const = 0;
 
   node_id addr() const;
 
