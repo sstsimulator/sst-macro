@@ -92,9 +92,6 @@ class mpi_comm_factory  {
 
   app_id aid_;
 
-  /// We can restrict our run to use fewer than the nodes allocated.
-  int mpirun_np_;
-
   /// The next available communicator index.
   MPI_Comm next_id_;
 

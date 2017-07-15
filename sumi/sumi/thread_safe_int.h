@@ -96,8 +96,7 @@ class thread_safe_int :
     return tmp;
   }
 
-  Integer
-  operator-=(Integer rhs){
+  Integer operator-=(Integer rhs){
     lock();
     value_ -= rhs;
     Integer tmp = value_;
@@ -105,8 +104,7 @@ class thread_safe_int :
     return tmp;
   }
 
-  Integer
-  operator|=(Integer rhs){
+  Integer operator|=(Integer rhs){
     lock();
     value_ |= rhs;
     Integer tmp = value_;
@@ -114,8 +112,7 @@ class thread_safe_int :
     return tmp;
   }
 
-  Integer
-  operator++(){
+  Integer operator++(){
     lock();
     ++value_;
     Integer tmp = value_;
@@ -123,8 +120,7 @@ class thread_safe_int :
     return tmp;
   }
 
-  Integer
-  operator++(int i){
+  Integer operator++(int i){
     lock();
     Integer tmp(value_);
     value_++;
@@ -132,8 +128,7 @@ class thread_safe_int :
     return tmp;
   }
 
-  Integer
-  operator--(){
+  Integer operator--(){
     lock();
     --value_;
     Integer tmp = value_;
@@ -141,8 +136,7 @@ class thread_safe_int :
     return tmp;
   }
 
-  Integer
-  operator--(int i){
+  Integer operator--(int i){
     Integer tmp(value_);
     lock();
     value_--;
@@ -150,8 +144,7 @@ class thread_safe_int :
     return tmp;
   }
 
-  bool
-  operator==(const thread_safe_int &rhs) const {
+  bool operator==(const thread_safe_int &rhs) const {
     if (&rhs == this) return true;  // avoid deadlock
     lock();
     Integer r = rhs;
@@ -160,8 +153,7 @@ class thread_safe_int :
     return ret;
   }
 
-  bool
-  operator!=(const thread_safe_int &rhs) const {
+  bool operator!=(const thread_safe_int &rhs) const {
     if (&rhs == this) return false;  // avoid deadlock
     lock();
     Integer r = rhs;
@@ -170,8 +162,7 @@ class thread_safe_int :
     return ret;
   }
 
-  bool
-  operator<(const thread_safe_int &rhs) const {
+  bool operator<(const thread_safe_int &rhs) const {
     if (&rhs == this) return false;  // avoid deadlock
     lock();
     Integer r = rhs;
@@ -180,8 +171,7 @@ class thread_safe_int :
     return ret;
   }
 
-  bool
-  operator>(const thread_safe_int &rhs) const {
+  bool operator>(const thread_safe_int &rhs) const {
     if (&rhs == this) return false;  // avoid deadlock
     lock();
     Integer r = rhs;
@@ -190,8 +180,7 @@ class thread_safe_int :
     return ret;
   }
 
-  bool
-  operator<=(const thread_safe_int &rhs) const {
+  bool operator<=(const thread_safe_int &rhs) const {
     if (&rhs == this) return true;  // avoid deadlock
     lock();
     Integer r = rhs;
@@ -200,8 +189,7 @@ class thread_safe_int :
     return ret;
   }
 
-  bool
-  operator>=(const thread_safe_int &rhs) const {
+  bool operator>=(const thread_safe_int &rhs) const {
     if (&rhs == this) return true;  // avoid deadlock
     lock();
     Integer r = rhs;
@@ -210,48 +198,42 @@ class thread_safe_int :
     return ret;
   }
 
-  bool
-  operator==(const Integer &rhs) const {
+  bool operator==(const Integer &rhs) const {
     lock();
     bool ret = (value_ == rhs);
     unlock();
     return ret;
   }
 
-  bool
-  operator!=(const Integer &rhs) const {
+  bool operator!=(const Integer &rhs) const {
     lock();
     bool ret = (value_ != rhs);
     unlock();
     return ret;
   }
 
-  bool
-  operator<(const Integer &rhs) const {
+  bool operator<(const Integer &rhs) const {
     lock();
     bool ret = (value_ < rhs);
     unlock();
     return ret;
   }
 
-  bool
-  operator>(const Integer &rhs) const {
+  bool operator>(const Integer &rhs) const {
     lock();
     bool ret = (value_ > rhs);
     unlock();
     return ret;
   }
 
-  bool
-  operator<=(const Integer &rhs) const {
+  bool operator<=(const Integer &rhs) const {
     lock();
     bool ret = (value_ <= rhs);
     unlock();
     return ret;
   }
 
-  bool
-  operator>=(const Integer &rhs) const {
+  bool operator>=(const Integer &rhs) const {
     lock();
     bool ret = (value_ >= rhs);
     unlock();

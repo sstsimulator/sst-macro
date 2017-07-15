@@ -114,8 +114,7 @@ class graph_viz :
 
   void count_trace(long count, sw::thread* thr);
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
  private:
   void dump_summary(std::ostream& os);

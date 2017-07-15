@@ -79,8 +79,7 @@ class network_switch :
 {
   DeclareFactory(network_switch,uint64_t,event_manager*)
  public:
-  virtual void
-  init(unsigned int phase);
+  virtual void init(unsigned int phase);
 
   virtual ~network_switch();
 

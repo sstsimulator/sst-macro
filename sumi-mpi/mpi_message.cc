@@ -150,16 +150,10 @@ mpi_message::buffer_send()
   }
 }
 
-//
-// Goodbye.
-//
 mpi_message::~mpi_message() throw ()
 {
 }
 
-//
-// Create a status object.
-//
 void
 mpi_message::build_status(MPI_Status* stat) const
 {

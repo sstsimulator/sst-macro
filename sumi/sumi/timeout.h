@@ -57,8 +57,7 @@ namespace sumi {
 class timeout_function
 {
  public:
-  virtual void
-  time_out(int partner) = 0;
+  virtual void time_out(int partner) = 0;
 
   virtual ~timeout_function(){}
 

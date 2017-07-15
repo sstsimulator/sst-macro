@@ -966,6 +966,8 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
 void
 SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 {
+  if (!mainFxn->getDefinition()) return;
+
   SourceManager &SM = rewriter_.getSourceMgr();
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
   std::string suffix2 = sourceFile.substr(sourceFile.size()-2,2);

@@ -57,25 +57,19 @@ class keyval  {
     key_(k), copy_(c), del_(d), extra_(e) {
   }
 
-  virtual
-  ~keyval() {
-  }
+  virtual ~keyval() {}
 
-  int
-  key() const {
+  int key() const {
     return key_;
   }
 
-  keyval*
-  clone(int k) const;
+  keyval* clone(int k) const;
 
-  void
-  set_val(void* val) {
+  void set_val(void* val) {
     val_ = val;
   }
 
-  void*
-  val() const {
+  void* val() const {
     return val_;
   }
 

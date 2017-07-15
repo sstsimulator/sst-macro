@@ -64,11 +64,9 @@ class app_launcher :
   /// Hasta la vista.
   virtual ~app_launcher() throw ();
 
-  virtual void
-  incoming_event(event* ev) override;
+  virtual void incoming_event(event* ev) override;
 
-  virtual void
-  start() override;
+  virtual void start() override;
 
  protected:
   bool is_completed_;

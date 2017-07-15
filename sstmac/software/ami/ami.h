@@ -79,17 +79,13 @@ namespace ami {
     COMP_DISKACCESS
   };
 
-  const char*
-  tostr(COMP_FUNC func);
+  const char* tostr(COMP_FUNC func);
 
-  const char*
-  tostr(SERVICE_FUNC func);
+  const char* tostr(SERVICE_FUNC func);
 
-  const char*
-  tostr(COMM_FUNC func);
+  const char* tostr(COMM_FUNC func);
 
-  const char*
-  tostr(CAT cat);
+  const char* tostr(CAT cat);
 
 }
 } //end of namespace sstmac

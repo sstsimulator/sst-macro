@@ -71,13 +71,11 @@ class thread_safe_ptr_type
   }
 
  protected:
-  void
-  incref() const {
+  void incref() const {
     ++references;
   }
 
-  long
-  decref() const {
+  long decref() const {
     return --references;
   }
 
@@ -89,8 +87,7 @@ class thread_safe_ptr_type
 class printable_thread_safe_ptr_type : public thread_safe_ptr_type
 {
  public:
-  virtual std::string
-  to_string() const override = 0;
+  virtual std::string to_string() const override = 0;
 };
 
 template <class Out, class In>

@@ -75,18 +75,15 @@ class Simulation
 
   ~Simulation();
 
-  double
-  wallTime() const {
+  double wallTime() const {
     return stats_.wallTime;
   }
 
-  double
-  simulatedTime() const {
+  double simulatedTime() const {
     return stats_.simulatedTime;
   }
 
-  sim_stats*
-  stats() {
+  sim_stats* stats() {
     return &stats_;
   }
 
@@ -94,13 +91,11 @@ class Simulation
 
   void waitFork();
 
-  pid_t
-  pid() const {
+  pid_t pid() const {
     return pid_;
   }
 
-  void
-  setResults(double* results, int numResults){
+  void setResults(double* results, int numResults){
     if (allocated_results_)
       delete[] results_;
 
@@ -109,8 +104,7 @@ class Simulation
     allocated_results_ = false;
   }
 
-  void
-  allocateResults(int nresults){
+  void allocateResults(int nresults){
     if (allocated_results_ && stats_.numResults >= nresults){
       //do nothing - good already
     } else {
@@ -120,66 +114,53 @@ class Simulation
     stats_.numResults = nresults;
   }
 
-  void
-  setStats(const sim_stats& stats) {
+  void setStats(const sim_stats& stats) {
     stats_ = stats;
   }
 
-  double*
-  results() const {
+  double* results() const {
     return results_;
   }
 
-
-  bool
-  complete() const {
+  bool complete() const {
     return complete_;
   }
 
-  void
-  setComplete(bool flag){
+  void setComplete(bool flag){
     complete_ = flag;
   }
 
-  int
-  numResults() const {
+  int numResults() const {
     return stats_.numResults;
   }
 
-  void
-  setLabel(int idx){
+  void setLabel(int idx){
     idx_ = idx;
   }
 
-  int
-  label() const {
+  int label() const {
     return idx_;
   }
 
  private:
-  void
-  setPid(pid_t pid){
+  void setPid(pid_t pid){
     pid_ = pid;
   }
 
-  void
-  setPipe(pipe_t p){
+  void setPipe(pipe_t p){
     pfd_[0] = p[0];
     pfd_[1] = p[1];
   }
 
-  int
-  readPipe() const {
+  int readPipe() const {
     return pfd_[0];
   }
 
-  int
-  writePipe() const {
+  int writePipe() const {
     return pfd_[1];
   }
 
-  void
-  setParameters(sprockit::sim_parameters* params);
+  void setParameters(sprockit::sim_parameters* params);
 
   sprockit::sim_parameters params_;
   sim_stats stats_;
@@ -198,18 +179,15 @@ class Simulation
 
 #if SSTMAC_MPI_DRIVER
  public:
-  MPI_Request*
-  initSendRequest() {
+  MPI_Request* initSendRequest() {
     return mpi_requests_;
   }
 
-  MPI_Request*
-  recvResultsRequest() {
+  MPI_Request* recvResultsRequest() {
     return &mpi_requests_[2];
   }
 
-  MPI_Request*
-  recvStatsRequest() {
+  MPI_Request* recvStatsRequest() {
     return &mpi_requests_[1];
   }
 
@@ -227,26 +205,22 @@ class SimulationQueue
 
   ~SimulationQueue();
 
-  Simulation*
-  fork(sprockit::sim_parameters& params, 
+  Simulation* fork(sprockit::sim_parameters& params,
     int nresults = 0, 
     double* resultPtr = nullptr){
     return fork(&params, nresults, resultPtr);
   }
 
-  bool
-  runJobsOnMaster() const {
+  bool runJobsOnMaster() const {
     return nproc_ <= 4;
   }
 
-  int
-  maxParallelWorkers() const {
+  int maxParallelWorkers() const {
     if (runJobsOnMaster()) return nproc_;
     else return nproc_ - 1;
   }
 
-  void
-  setNextWorker(){
+  void setNextWorker(){
     next_worker_ = (next_worker_ + 1) % nproc_;
   }
 
@@ -260,39 +234,30 @@ class SimulationQueue
 
   void finalize();
 
-  Simulation*
-  fork(sprockit::sim_parameters* params,
+  Simulation* fork(sprockit::sim_parameters* params,
     int nresults = 0, 
     double* resultPtr = nullptr);
 
-  Simulation*
-  waitForForked();
+  Simulation* waitForForked();
 
-  void
-  clear(Simulation* sim);
+  void clear(Simulation* sim);
 
-  void
-  run(sprockit::sim_parameters* params, sim_stats& stats);
+  void run(sprockit::sim_parameters* params, sim_stats& stats);
 
-  static double*
-  allocateResults(int nresults);
+  static double* allocateResults(int nresults);
 
-  static void
-  publishResults(){}
+  static void publishResults(){}
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
-  Simulation*
-  sendScanPoint(int bufferSize, char* bufferPtr, int nresults, double* resultPtr = nullptr);
+  Simulation* sendScanPoint(int bufferSize, char* bufferPtr,
+                            int nresults, double* resultPtr = nullptr);
 
-  sprockit::sim_parameters*
-  template_params() {
+  sprockit::sim_parameters* template_params() {
     return &template_params_;
   }
 
-  void
-  rerun(sprockit::sim_parameters* params, sim_stats& stats);
+  void rerun(sprockit::sim_parameters* params, sim_stats& stats);
 
   void busyLoopMPI();
 
@@ -302,20 +267,15 @@ class SimulationQueue
     return me_;
   }
 
-  Simulation**
-  allocateSims(int max_nthread);
+  Simulation** allocateSims(int max_nthread);
 
-  char*
-  allocateTmpBuffer(size_t buf_size);
+  char* allocateTmpBuffer(size_t buf_size);
 
-  double**
-  allocateResults(int njobs, int nresults);
+  double** allocateResults(int njobs, int nresults);
 
-  double**
-  allocateParams(int njobs, int nparams);
+  double** allocateParams(int njobs, int nparams);
 
-  uq_param_t**
-  allocateParamStructs(int njobs, int nparams);
+  uq_param_t** allocateParamStructs(int njobs, int nparams);
 
 
  private:

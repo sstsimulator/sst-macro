@@ -101,24 +101,20 @@ class library
   {
   }
 
-  static std::string
-  standard_lib_name(const char* prefix, software_id sid){
+  static std::string standard_lib_name(const char* prefix, software_id sid){
     return standard_lib_name(prefix, sid.app_, sid.task_);
   }
 
-  static std::string
-  standard_lib_name(const char* prefix, app_id aid, task_id tid){
+  static std::string standard_lib_name(const char* prefix, app_id aid, task_id tid){
     std::string app_prefix = standard_app_prefix(prefix, aid);
     return standard_app_lib_name(app_prefix.c_str(), tid);
   }
 
-  static std::string
-  standard_app_lib_name(const char* prefix, task_id tid){
+  static std::string standard_app_lib_name(const char* prefix, task_id tid){
     return sprockit::printf("%s-%d", prefix, tid);
   }
 
-  static std::string
-  standard_app_prefix(const char* prefix, app_id aid){
+  static std::string standard_app_prefix(const char* prefix, app_id aid){
     return sprockit::printf("%s-%d", prefix, aid);
   }
 
@@ -149,8 +145,7 @@ class blocking_library :
 
   void wait_event(event* ev, key_traits::category cat);
 
-  virtual void
-  incoming_event(event *ev);
+  virtual void incoming_event(event *ev);
 
  private:
   std::map<event*,key*> blocked_events_;

@@ -63,13 +63,11 @@ struct public_buffer_base
     return ptr;
   }
 
-  void
-  offset_ptr(int offset) {
+  void offset_ptr(int offset) {
     ptr = ((char*)ptr) + offset;
   }
 
-  void
-  operator[](int idx){
+  void operator[](int idx){
    //don't ever use this directly
   }
 

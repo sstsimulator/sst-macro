@@ -65,8 +65,7 @@ DeclareDebugSlot(sumi_collective_buffer)
 
 namespace sumi {
 
-void
-debug_print(const char* info, const std::string& rank_str,
+void debug_print(const char* info, const std::string& rank_str,
             int partner, int round, int offset,
             int nelems, int type_size, const void* buffer);
 
@@ -95,20 +94,17 @@ struct action
     }
   }
 
-  std::string
-  to_string() const;
+  std::string to_string() const;
 
   static const uint32_t max_round = 500;
 
-  static uint32_t
-  message_id(type_t ty, int r, int p){
+  static uint32_t message_id(type_t ty, int r, int p){
     //factor of two is for send or receive
     const int num_enums = 6;
     return p*max_round*num_enums + r*num_enums + ty;
   }
 
-  static void
-  details(uint32_t round, type_t& ty, int& r, int& p){
+  static void details(uint32_t round, type_t& ty, int& r, int& p){
     const int num_enums = 6;
     uint32_t remainder = round;
     p = remainder / max_round / num_enums;
@@ -140,8 +136,7 @@ struct recv_action : public action
 
   buf_type_t buf_type;
 
-  static const char*
-  tostr(buf_type_t ty){
+  static const char* tostr(buf_type_t ty){
     switch(ty){
       sumi_case(in_place);
       sumi_case(reduce);
@@ -161,8 +156,7 @@ struct recv_action : public action
     eager_unpack_temp_buf=7
   } recv_type_t;
 
-  static recv_type_t
-  recv_type(bool eager, buf_type_t ty){
+  static recv_type_t recv_type(bool eager, buf_type_t ty){
     int shift = eager ? 4 : 0;
     return recv_type_t(ty + shift);
   }
@@ -184,8 +178,7 @@ struct send_action : public action
 
   buf_type_t buf_type;
 
-  static const char*
-  tostr(buf_type_t ty){
+  static const char* tostr(buf_type_t ty){
     switch(ty){
       sumi_case(in_place);
       sumi_case(prev_recv);
@@ -221,24 +214,21 @@ struct shuffle_action : public action
 class collective_actor
 {
  public:
-  virtual std::string
-  to_string() const = 0;
+  virtual std::string to_string() const = 0;
 
   virtual ~collective_actor();
 
-  void
-  partner_ping_failed(int global_rank);
+  void partner_ping_failed(int global_rank);
 
-  bool
-  complete() const {
+  bool complete() const {
     return complete_;
   }
+
   int tag() const {
     return tag_;
   }
 
-  std::string
-  rank_str() const;
+  std::string rank_str() const;
 
   void init(transport* my_api, communicator* dom, int tag, int context, bool fault_aware);
 
@@ -251,19 +241,16 @@ class collective_actor
    * Start pinging neighbor to make sure they are still alive
    * @param rank
    */
-  bool
-  ping_neighbor(int dense_rank);
+  bool ping_neighbor(int dense_rank);
 
   /**
    * Stop pinging neighbor. I am done with them.
    * They can be dead for all I care.
    * @param rank
    */
-  void
-  cancel_ping(int dense_rank);
+  void cancel_ping(int dense_rank);
 
-  int
-  global_rank(int dense_rank) const;
+  int global_rank(int dense_rank) const;
 
   /**
    * domain <= dense <= virtual
@@ -276,8 +263,7 @@ class collective_actor
    * 3 -> 2
    * @return
    */
-  int
-  comm_rank(int dense_rank) const;
+  int comm_rank(int dense_rank) const;
 
   /**
    * Notification that a partner failed.
@@ -285,27 +271,21 @@ class collective_actor
    * See #dense_rank
    * @param dense_rank
    */
-  virtual void
-  dense_partner_ping_failed(int dense_rank) = 0;
+  virtual void dense_partner_ping_failed(int dense_rank) = 0;
 
-  std::string
-  rank_str(int dense_rank) const;
+  std::string rank_str(int dense_rank) const;
 
  protected:
-  std::string
-  failed_proc_string() const;
+  std::string failed_proc_string() const;
 
   /**
    * Validation function to make sure all pings are cleared
    */
-  void
-  validate_pings_cleared();
+  void validate_pings_cleared();
 
-  virtual void
-  finalize(){}
+  virtual void finalize(){}
 
-  bool
-  ping_rank(int phys_rank, int dense_rank);
+  bool ping_rank(int phys_rank, int dense_rank);
 
   bool is_failed(int dense_rank) const {
     return failed_ranks_.count(dense_rank);
@@ -315,22 +295,17 @@ class collective_actor
     return failed_ranks_.count(dense_rank) == 0;
   }
 
-  virtual bool
-  check_neighbor(int global_phys_rank);
+  virtual bool check_neighbor(int global_phys_rank);
 
-  virtual void
-  stop_check_neighbor(int global_phys_rank);
+  virtual void stop_check_neighbor(int global_phys_rank);
 
-  bool
-  failed() const {
+  bool failed() const {
     return !failed_ranks_.empty();
   }
 
-  bool
-  do_ping_neighbor(int dense_rank);
+  bool do_ping_neighbor(int dense_rank);
 
-  int
-  dense_to_global_dst(int dense_dst);
+  int dense_to_global_dst(int dense_dst);
 
  protected:
   transport* my_api_;
@@ -367,29 +342,23 @@ class slicer {
    * @param nelems
    * @return
    */
-  virtual size_t
-  pack_send_buf(void* packedBuf, void* unpackedObj,
+  virtual size_t pack_send_buf(void* packedBuf, void* unpackedObj,
                 int offset, int nelems) const = 0;
 
-  virtual void
-  unpack_recv_buf(void* packedBuf, void* unpackedObj,
+  virtual void unpack_recv_buf(void* packedBuf, void* unpackedObj,
                   int offset, int nelems) const = 0;
 
-  virtual void
-  memcpy_packed_bufs(void* dst, void* src, int nelems) const = 0;
+  virtual void memcpy_packed_bufs(void* dst, void* src, int nelems) const = 0;
 
-  virtual void
-  unpack_reduce(void* packedBuf, void* unpackedObj,
+  virtual void unpack_reduce(void* packedBuf, void* unpackedObj,
             int offset, int nelems) const {
     spkt_throw(sprockit::unimplemented_error,
           "slicer for collective does not implement a reduce op");
   }
 
-  virtual bool
-  contiguous() const = 0;
+  virtual bool contiguous() const = 0;
 
-  virtual int
-  element_packed_size() const = 0;
+  virtual int element_packed_size() const = 0;
 };
 
 class default_slicer :
@@ -397,39 +366,36 @@ class default_slicer :
 {
 
  public:
-  size_t
-  pack_send_buf(void* packedBuf, void* unpackedObj, int offset, int nelems) const {
+  size_t pack_send_buf(void* packedBuf, void* unpackedObj, 
+            int offset, int nelems) const {
     char* dstptr = (char*) packedBuf;
     char* srcptr = (char*) unpackedObj + offset*type_size;
     ::memcpy(dstptr, srcptr, nelems*type_size);
     return nelems*type_size;
   }
 
-  void
-  unpack_recv_buf(void* packedBuf, void* unpackedObj, int offset, int nelems) const {
+  void unpack_recv_buf(void* packedBuf, void* unpackedObj, 
+            int offset, int nelems) const {
     char* dstptr = (char*) unpackedObj + offset*type_size;
     char* srcptr = (char*) packedBuf;
     ::memcpy(dstptr, srcptr, nelems*type_size);
   }
 
-  virtual void
-  memcpy_packed_bufs(void *dst, void *src, int nelems) const {
+  virtual void memcpy_packed_bufs(void *dst, void *src, int nelems) const {
     ::memcpy(dst, src, nelems*type_size);
   }
 
-  virtual void
-  unpack_reduce(void *packedBuf, void *unpackedObj, int offset, int nelems) const {
+  virtual void unpack_reduce(void *packedBuf, void *unpackedObj, 
+                  int offset, int nelems) const {
     char* dstptr = (char*) unpackedObj + offset*type_size;
     (fxn)(dstptr, packedBuf, nelems);
   }
 
-  int
-  element_packed_size() const {
+  int element_packed_size() const {
     return type_size;
   }
 
-  bool
-  contiguous() const {
+  bool contiguous() const {
     return true;
   }
 
@@ -451,27 +417,22 @@ class dag_collective_actor :
  public communicator::rank_callback
 {
  public:
-  virtual std::string
-  to_string() const = 0;
+  virtual std::string to_string() const = 0;
 
   virtual ~dag_collective_actor();
 
-  virtual void
-  recv(const collective_work_message::ptr& msg);
+  virtual void recv(const collective_work_message::ptr& msg);
 
-  virtual void
-  start();
+  virtual void start();
 
   typedef enum {
     eager_protocol,
     put_protocol,
     get_protocol } protocol_t;
 
-  protocol_t
-  protocol_for_action(action* ac) const;
+  protocol_t protocol_for_action(action* ac) const;
 
-  void
-  deadlock_check() const;
+  void deadlock_check() const;
 
   void init(
     collective::type_t type,
@@ -509,8 +470,7 @@ class dag_collective_actor :
   void add_dependency(action* precursor, action* ac);
   void add_action(action* ac);
 
-  void
-  compute_tree(int& log2nproc, int& midpoint, int& nproc) const;
+  void compute_tree(int& log2nproc, int& midpoint, int& nproc) const;
 
   static bool
   is_shared_role(int role, int num_roles, int* my_roles){
@@ -545,37 +505,27 @@ class dag_collective_actor :
   void send_rdma_put_header(action* ac);
   void send_rdma_get_header(action* ac);
 
-  void
-  next_round_ready_to_put(action* ac,
+  void next_round_ready_to_put(action* ac,
     const collective_work_message::ptr& header);
 
-  void
-  next_round_ready_to_get(action* ac,
+  void next_round_ready_to_get(action* ac,
     const collective_work_message::ptr& header);
 
-  void
-  incoming_recv_message(action* ac, const collective_work_message::ptr& msg);
+  void incoming_recv_message(action* ac, const collective_work_message::ptr& msg);
 
-  void
-  incoming_send_message(action* ac, const collective_work_message::ptr& msg);
+  void incoming_send_message(action* ac, const collective_work_message::ptr& msg);
 
-  void
-  incoming_message(const collective_work_message::ptr& msg);
+  void incoming_message(const collective_work_message::ptr& msg);
 
-  void
-  incoming_nack(action::type_t ty, const collective_work_message::ptr& msg);
+  void incoming_nack(action::type_t ty, const collective_work_message::ptr& msg);
 
-  void
-  data_recved(const collective_work_message::ptr& msg, void* recvd_buffer);
+  void data_recved(const collective_work_message::ptr& msg, void* recvd_buffer);
 
-  void
-  data_recved(action* ac, const collective_work_message::ptr &msg, void *recvd_buffer);
+  void data_recved(action* ac, const collective_work_message::ptr &msg, void *recvd_buffer);
 
-  void
-  data_sent(const collective_work_message::ptr& msg);
+  void data_sent(const collective_work_message::ptr& msg);
 
-  virtual void
-  buffer_action(void* dst_buffer, void* msg_buffer, action* ac) = 0;
+  virtual void buffer_action(void* dst_buffer, void* msg_buffer, action* ac) = 0;
 
   void* message_buffer(void* buffer, int offset);
 
@@ -585,22 +535,17 @@ class dag_collective_actor :
    * @param buf in/out parameter that will hold the correct buffer
    * @return The size of the buffer in bytes
    */
-  size_t
-  set_send_buffer(action* ac, public_buffer& buf);
+  size_t set_send_buffer(action* ac, public_buffer& buf);
 
-  void
-  set_recv_buffer(action* ac, public_buffer& buf);
+  void set_recv_buffer(action* ac, public_buffer& buf);
 
-  collective_work_message::ptr
-  new_message(action* ac, collective_work_message::action_t act);
+  collective_work_message::ptr new_message(action* ac, collective_work_message::action_t act);
 
-  collective_done_message::ptr
-  done_msg() const;
+  collective_done_message::ptr done_msg() const;
 
   void dense_partner_ping_failed(int dense_rank);
 
-  virtual void
-  start_shuffle(action* ac);
+  virtual void start_shuffle(action* ac);
 
   void erase_pending(uint32_t id, pending_msg_map& m);
 
@@ -675,8 +620,7 @@ class dag_collective_actor :
 class bruck_actor : public dag_collective_actor
 {
  protected:
-  void
-  compute_tree(int& log2nproc, int& midpoint,
+  void compute_tree(int& log2nproc, int& midpoint,
                int& num_rounds, int& nprocs_extra_round) const;
 
 };
@@ -692,8 +636,7 @@ class bruck_actor : public dag_collective_actor
 class virtual_rank_map
 {
  public:
-  int
-  virtual_to_real(int rank) const;
+  int virtual_to_real(int rank) const;
 
   /**
    * @brief real_to_virtual
@@ -701,21 +644,17 @@ class virtual_rank_map
    * @param virtual_ranks An array large enough to hold the number of ranks
    * @return The number of virtual ranks
    */
-  int
-  real_to_virtual(int rank, int* virtual_ranks) const;
+  int real_to_virtual(int rank, int* virtual_ranks) const;
 
-  int
-  virtual_nproc() const {
+  int virtual_nproc() const {
     return virtual_nproc_;
   }
 
-  int
-  nproc() const {
+  int nproc() const {
     return nproc_;
   }
 
-  void
-  init(int nproc, int virtual_nproc) {
+  void init(int nproc, int virtual_nproc) {
     nproc_ = nproc;
     virtual_nproc_ = virtual_nproc;
   }

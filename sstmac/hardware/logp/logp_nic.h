@@ -63,7 +63,6 @@ class logp_nic :
  public:
   logp_nic(sprockit::sim_parameters* params, node* parent);
 
-  /// Goodbye.
   virtual ~logp_nic();
 
   void handle(event *ev);
