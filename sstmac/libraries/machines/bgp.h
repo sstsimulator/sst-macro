@@ -60,8 +60,7 @@ struct _BGP_Personality_t
   } Network_Config;
 };
 
-void
-Kernel_GetPersonality(_BGP_Personality_t* p, int size);
+void Kernel_GetPersonality(_BGP_Personality_t* p, int size);
 
 }
 

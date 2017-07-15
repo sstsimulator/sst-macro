@@ -27,6 +27,5 @@ library_includedir=$(includedir)/sstmac/dumpi_util
 
 nobase_library_include_HEADERS = \
 dumpi_meta.h \
-dumpi_type_io.h \
 dumpi_util.h 
 

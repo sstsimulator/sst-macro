@@ -94,18 +94,14 @@ struct sim_stats {
   {}
 };
 
-int
-parse_opts(int argc, char **argv, opts &oo);
+int parse_opts(int argc, char **argv, opts &oo);
 
-void
-print_help(int argc, char **argv);
+void print_help(int argc, char **argv);
 
 
-void
-resize_topology(int max_nproc, sprockit::sim_parameters* params, bool verbose = true);
+void resize_topology(int max_nproc, sprockit::sim_parameters* params, bool verbose = true);
 
-void
-map_env_params(sprockit::sim_parameters* params);
+void map_env_params(sprockit::sim_parameters* params);
 
 namespace sstmac {
 
@@ -115,33 +111,26 @@ void finalize(parallel_runtime* rt);
 
 void init_opts(opts& oo, int argc, char** argv);
 
-void
-init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel);
+void init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel);
 
-void
-remap_deprecated_params(sprockit::sim_parameters* params);
+void remap_deprecated_params(sprockit::sim_parameters* params);
 
-void
-remap_params(sprockit::sim_parameters* params, bool verbose = true);
+void remap_params(sprockit::sim_parameters* params, bool verbose = true);
 
-void
-run(opts& oo,
+void run(opts& oo,
     sstmac::parallel_runtime* rt,
     sprockit::sim_parameters* params,
     sim_stats& stats);
 
-void
-try_main(sprockit::sim_parameters* params,
+void try_main(sprockit::sim_parameters* params,
    int argc, char **argv,
    bool params_only = false);
 
-void
-run_params(parallel_runtime* rt,
+void run_params(parallel_runtime* rt,
   sprockit::sim_parameters* params,
    sim_stats& stats);
 
-void
-init_first_run(parallel_runtime* rt,
+void init_first_run(parallel_runtime* rt,
     sprockit::sim_parameters* params);
 
 }
