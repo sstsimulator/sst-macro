@@ -60,8 +60,7 @@ class arrive_message : public launch_event
    * Stringifier
    * @return String description
    */
-  virtual std::string
-  to_string() const override {
+  virtual std::string to_string() const override {
     return "arrive_message";
   }
 

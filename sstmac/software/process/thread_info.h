@@ -55,11 +55,9 @@ namespace sstmac {
 
 class thread_info {
  public:
-  static void
-  register_user_space_virtual_thread(int phys_thread_id, void* stack, void* globalsMap);
+  static void register_user_space_virtual_thread(int phys_thread_id, void* stack, void* globalsMap);
 
-  static inline int
-  current_physical_thread_id(){
+  static inline int current_physical_thread_id(){
     char x;
     size_t stackptr = (size_t) &x;
     size_t stack_mult = stackptr / sstmac_global_stacksize;

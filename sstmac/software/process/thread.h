@@ -91,8 +91,7 @@ class thread
   static thread* current();
 
   template <class T>
-  T*
-  get_api() {
+  T* get_api() {
     api* a = _get_api(T::factory_string());
     T* casted = dynamic_cast<T*>(a);
     if (!casted) {

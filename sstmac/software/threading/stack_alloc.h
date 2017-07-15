@@ -83,18 +83,15 @@ class stack_alloc
   /// Build.
   stack_alloc();
 
-  size_t
-  stacksize() const {
+  size_t stacksize() const {
     return stacksize_;
   }
 
-  bool
-  use_mprot() const {
+  bool use_mprot() const {
     return use_mprot_;
   }
 
-  size_t
-  chunksize() const {
+  size_t chunksize() const {
     return suggested_chunk_;
   }
 
@@ -109,8 +106,7 @@ class stack_alloc
 
   void init(size_t stacksize, size_t alloc_unit, bool use_mprot);
 
-  bool
-  initialized() const {
+  bool initialized() const {
     return stacksize_;
   }
 

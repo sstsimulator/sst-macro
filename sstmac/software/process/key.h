@@ -125,8 +125,7 @@ class key  {
     timed_out_ = true;
   }
 
-  void
-  clear() {
+  void clear() {
     blocked_thread_.first = 0;
     blocked_thread_.second = 0;
   }

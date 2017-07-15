@@ -59,29 +59,24 @@ class pisces_buffer :
  public:
   virtual ~pisces_buffer();
 
-  virtual void
-  set_output(sprockit::sim_parameters* params,
+  virtual void set_output(sprockit::sim_parameters* params,
     int this_outport, int dst_inport,
     event_handler* output) override;
 
-  virtual void
-  set_input(
+  virtual void set_input(
     sprockit::sim_parameters* params,
     int this_inport, int src_outport,
     event_handler* input) override;
 
-  virtual int
-  queue_length() const {
+  virtual int queue_length() const {
     return 0;
   }
 
-  device_id
-  output_location() const {
+  device_id output_location() const {
     return output_.handler->event_location();
   }
 
-  device_id
-  input_location() const {
+  device_id input_location() const {
     return input_.handler->event_location();
   }
 
@@ -106,22 +101,17 @@ class pisces_network_buffer :
 
   virtual ~pisces_network_buffer();
 
-  int
-  queue_length() const override;
+  int queue_length() const override;
 
-  void
-  handle_credit(event* ev) override;
+  void handle_credit(event* ev) override;
 
-  void
-  handle_payload(event* ev) override;
+  void handle_payload(event* ev) override;
 
-  std::string
-  pisces_name() const override {
+  std::string pisces_name() const override {
     return "network buffer";
   }
 
-  event_handler*
-  payload_handler();
+  event_handler* payload_handler();
 
   void deadlock_check() override;
 
@@ -153,17 +143,13 @@ class pisces_eject_buffer :
   {
   }
 
-  void
-  handle_credit(event* ev) override;
+  void handle_credit(event* ev) override;
 
-  void
-  handle_payload(event* ev) override;
+  void handle_payload(event* ev) override;
 
-  void
-  return_credit(packet* msg);
+  void return_credit(packet* msg);
 
-  std::string
-  pisces_name() const override {
+  std::string pisces_name() const override {
     return "eject buffer";
   }
 
@@ -178,22 +164,17 @@ class pisces_injection_buffer :
 
   ~pisces_injection_buffer();
 
-  int
-  queue_length() const override;
+  int queue_length() const override;
 
-  bool
-  space_to_send(int bytes) const {
+  bool space_to_send(int bytes) const {
     return credits_ >= bytes;
   }
 
-  void
-  handle_credit(event* ev) override;
+  void handle_credit(event* ev) override;
 
-  void
-  handle_payload(event* ev) override;
+  void handle_payload(event* ev) override;
 
-  std::string
-  pisces_name() const override {
+  std::string pisces_name() const override {
     return "inject buffer";
   }
 
