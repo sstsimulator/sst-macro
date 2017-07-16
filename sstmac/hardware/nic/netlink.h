@@ -62,18 +62,19 @@ class netlink :
  public:
   virtual ~netlink(){}
 
-  int
-  node_port(int node_offset) const {
+  int node_port(int node_offset) const {
     return num_tiles_ + node_offset;
   }
 
-  bool
-  is_node_port(int port) const {
+  bool is_node_port(int port) const {
     return port >= num_tiles_;
   }
 
-  int
-  switch_port(int tile_offset) const {
+  int node_offset(int port) const {
+    return port - num_tiles_;
+  }
+
+  int switch_port(int tile_offset) const {
     return tile_offset;
   }
 

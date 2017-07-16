@@ -55,14 +55,12 @@ namespace sumi
 template <class T, class Compare>
 class thread_safe_set;
 
-void
-set_difference(
+void set_difference(
     const thread_safe_set<int, std::less<int> >& base,
     const thread_safe_set<int, std::less<int> >& subtract,
     thread_safe_set<int, std::less<int> >& result);
 
-void
-set_difference(
+void set_difference(
     const thread_safe_set<int, std::less<int> >& base,
     const thread_safe_set<int, std::less<int> >& subtract,
     std::set<int, std::less<int> >& result);
@@ -112,15 +110,12 @@ class thread_safe_set
   //
   // These functions acquire a lock.
   //
-
-  const_iterator
-  start_iteration() const {
+  const_iterator start_iteration() const {
     lock();
     return set_.end();
   }
 
-  iterator
-  start_iteration(){
+  iterator start_iteration(){
     lock();
     return set_.end();
   }
@@ -128,9 +123,7 @@ class thread_safe_set
   //
   // These functions release a previously-acquired lock.
   //
-
-  void
-  end_iteration() const {
+  void end_iteration() const {
     unlock();
   }
 
@@ -141,51 +134,43 @@ class thread_safe_set
   // the caller must be the one who acquired it).
   //
 
-  const_iterator
-  begin() const {
+  const_iterator begin() const {
     verify("begin");
     return set_.begin();
   }
 
-  iterator
-  begin(){
+  iterator begin(){
     verify("begin");
     return set_.begin();
   }
 
-  void
-  erase(iterator it){
+  void erase(iterator it){
     verify("erase");
     set_.erase(it);
   }
 
-  iterator
-  insert(iterator position, const T& entry){
+  iterator insert(iterator position, const T& entry){
     verify("insert(position,entry)");
     return set_.insert(position, entry);
   }    
 
   template <class InputIterator>
-  void
-  insert(InputIterator first, InputIterator last){
+  void insert(InputIterator first, InputIterator last){
     verify("insert(first,last)");
     set_.insert(first, last);
   }
 
-  iterator
-  find(const T& entry){
+  iterator find(const T& entry){
     verify("find");
     return set_.find(entry);
   }
 
-  bool
-  empty_locked() const {
+  bool empty_locked() const {
     verify("empty_locked");
     return set_.empty();
   }
 
-  void
-  clear_locked(){
+  void clear_locked(){
     verify("clear_locked");
     set_.clear();
   }
@@ -194,8 +179,7 @@ class thread_safe_set
   // These functions lock on entry and unlock before returning.
   //
 
-  bool
-  empty() const {
+  bool empty() const {
     lock();
     bool ret = set_.empty();
     unlock();
@@ -209,8 +193,7 @@ class thread_safe_set
     return ret;
   }
 
-  size_type
-  count(const T& entry) const {
+  size_type count(const T& entry) const {
     lock();
     size_type ret = set_.count(entry);
     unlock();
@@ -218,8 +201,7 @@ class thread_safe_set
   }
 
   /** Generate a string describing the set. */
-  std::string
-  to_string() const {
+  std::string to_string() const {
     std::stringstream sstr;
     const_iterator it;
     const_iterator end = start_iteration();
@@ -259,16 +241,14 @@ class thread_safe_set
     return *this;
   }
 
-  size_type
-  erase(const T& entry){
+  size_type erase(const T& entry){
     lock();
     size_type ret = set_.erase(entry);
     unlock();
     return ret;
   }
 
-  std::pair<iterator,bool>
-  insert(const T& entry){
+  std::pair<iterator,bool> insert(const T& entry){
     lock();
     std::pair<iterator,bool> ret = set_.insert(entry);
     unlock();
@@ -276,8 +256,7 @@ class thread_safe_set
   }
 
   /** Copy all elements from another thread_safe_set into this one. */
-  void
-  insert_all(const thread_safe_set &other){
+  void insert_all(const thread_safe_set &other){
     if (&other != this){  // avoid deadlock
       lock();
       const_iterator end = other.start_iteration();
@@ -288,23 +267,20 @@ class thread_safe_set
   }
 
   /** Copy all elements of a std::set into this one. */
-  void
-  insert_all(const std::set<T, Compare> &other){
+  void insert_all(const std::set<T, Compare> &other){
     lock();
     insert(other.begin(), other.end());
     unlock();
   }
 
-  void
-  clear(){
+  void clear(){
     lock();
     set_.clear();
     unlock();
   }
 
  protected:
-  void
-  verify(const char* fxn) const {
+  void verify(const char* fxn) const {
     return;
     if (!locked()){
       spkt_throw_printf(sprockit::value_error,

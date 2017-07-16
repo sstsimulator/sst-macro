@@ -32,6 +32,7 @@ libsstmac_skeletons_la_SOURCES = \
   test/app_hello_world.cc \
   test/mpi_coverage_test.cc \
   test/mpi_ping_all.cc \
+  test/mpi_ping_pong.cc \
   test/mpi_all_collectives.cc \
   test/mpi_delay_stats.cc \
   test/mpi_isend_progress.cc \

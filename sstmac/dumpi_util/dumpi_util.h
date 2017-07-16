@@ -50,11 +50,9 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-std::string
-dumpi_file_name(int rank, std::string fileroot_);
+std::string dumpi_file_name(int rank, std::string fileroot_);
 
-int
-getnumprocs(dumpi_meta* dmeta_);
+int getnumprocs(dumpi_meta* dmeta_);
 
 }
 }

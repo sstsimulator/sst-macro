@@ -88,18 +88,15 @@ class btree_gather :
 
   btree_gather() : root_(-1){}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "btree gather";
   }
 
-  dag_collective_actor*
-  new_actor() const override {
+  dag_collective_actor* new_actor() const override {
     return new btree_gather_actor(root_);
   }
 
-  dag_collective*
-  clone() const override {
+  dag_collective* clone() const override {
     return new btree_gather(root_);
   }
 

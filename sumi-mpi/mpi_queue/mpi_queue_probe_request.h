@@ -57,20 +57,14 @@ namespace sumi {
 class mpi_queue_probe_request  {
 
  public:
-  /// Hi there.
   mpi_queue_probe_request(mpi_request* key, MPI_Comm comm,
                 int source, int tag);
 
-  /// Test whether we match a given message.
-  bool
-  matches(const mpi_message::ptr& message) const;
+  bool matches(const mpi_message::ptr& message) const;
 
-  /// Consider this request complete.
-  void
-  complete(const mpi_message::ptr& message);
+  void complete(const mpi_message::ptr& message);
 
  protected:
-  /// The parameters we will be matching on.
   MPI_Comm myid_;
   int source_;
   int tag_;

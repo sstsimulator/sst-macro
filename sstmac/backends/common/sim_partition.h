@@ -123,24 +123,6 @@ class serial_partition :
 
 };
 
-
-class metis_partition :
-  public partition
-{
-  FactoryRegister("metis", partition, metis_partition)
- public:
-  metis_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
-
-  virtual ~metis_partition();
-
- protected:
-  void read_partition(const std::string &partfilename, int nproc);
-
- protected:
-  hw::interconnect* fake_ic_;
-
-};
-
 class topology_partition :
   public partition
 {

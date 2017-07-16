@@ -275,7 +275,7 @@ resize_topology(int max_nproc, sprockit::sim_parameters *params, bool verbose)
   std::string paramval = sprockit::printf("%d %d %d", x, y, z);
   params->add_param("topology.geometry", paramval);
   if (verbose)
-    cout0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
+    cerr0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
 }
 
 void

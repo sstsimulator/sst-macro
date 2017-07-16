@@ -64,13 +64,20 @@ std::list<SSTPragma*> pendingPragmas;
 void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
-  //activate no pragmas
-  if (visitor_.noSkeletonize())
-    return;
+  switch(fsp->cls){
+    case SSTPragma::Keep: //always obey these
+      pragmas_.push_back(fsp);
+      break;
+    default: //otherwise check if we are skeletonizing
+      if (visitor_.noSkeletonize())
+        return;
+      pragmas_.push_back(fsp);
+      break;
+  }
+
 
   pragmaDepth++;
   maxPragmaDepth++;
-  pragmas_.push_back(fsp);
   fsp->pragmaList = &pragmas_;
   fsp->name = getName();
   fsp->startLoc = PragmaTok.getLocation();
@@ -162,6 +169,18 @@ SSTEmptyPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
   errorAbort(s->getLocStart(), *CI,
        "pragma empty should only apply to declarations, not statmements");
+}
+
+void
+SSTKeepPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  cfg.makeNoChanges = true;
+}
+
+void
+SSTKeepPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  cfg.makeNoChanges = true;
 }
 
 void

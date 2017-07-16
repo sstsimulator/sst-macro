@@ -75,6 +75,7 @@ RegisterKeywords(
 "input_buffer_size",
 );
 
+
 namespace sstmac {
 namespace hw {
 
@@ -134,7 +135,7 @@ pisces_switch::pisces_switch(
   xbar_params->add_param_override("num_vc", router_->max_num_vc());
   xbar_ = new pisces_crossbar(xbar_params, this);
   xbar_->set_stat_collector(xbar_stats_);
-  xbar_->configure_basic_ports(top_->max_num_ports());
+  xbar_->configure_outports(top_->max_num_ports());
 #if SSTMAC_INTEGRATED_SST_CORE
   init_links(params);
 #else

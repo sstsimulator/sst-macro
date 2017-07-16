@@ -66,7 +66,6 @@ class simple_processor :
                    memory_model* mem, node* nd) :
     processor(params, mem, nd) {}
 
-  /// Goodbye.
   virtual ~simple_processor() {}
 
   void compute(event* ev, callback* cb) override;

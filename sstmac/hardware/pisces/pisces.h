@@ -80,21 +80,17 @@ class pisces_payload :
   virtual ~pisces_payload() {}
 
   /**
-    Needed because of routable_message ambiguity.
+    Needed because of routable_message ambiguity
   */
-  int
-  vc() const {
+  int vc() const {
     return vc_;
   }
 
-  virtual int
-  next_vc() const = 0;
+  virtual int next_vc() const = 0;
 
-  virtual int
-  next_port() const = 0;
+  virtual int next_port() const = 0;
 
-  void
-  update_vc() {
+  void update_vc() {
     int new_vc = next_vc();
     if (new_vc == routing::uninitialized){
       vc_ = 0;
@@ -108,28 +104,23 @@ class pisces_payload :
    the total number of bytes in the parent message.
    See #num_bytes_total
    */
-  int
-  num_bytes() const {
+  int num_bytes() const {
     return num_bytes_;
   }
 
-  timestamp
-  arrival() const {
+  timestamp arrival() const {
     return arrival_;
   }
 
-  void
-  set_arrival(timestamp time) {
+  void set_arrival(timestamp time) {
     arrival_ = time;
   }
 
-  void
-  init_bw(double bw) {
+  void init_bw(double bw) {
     bw_ = bw_ == uninitialized_bw ? bw : bw_;
   }
 
-  void
-  set_max_bw(double bw){
+  void set_max_bw(double bw){
     init_bw(bw);
     bw_ = std::min(bw_, bw);
   }
@@ -137,46 +128,38 @@ class pisces_payload :
   /**
    @return The bandwidth in number of bytes per second
    */
-  double
-  bw() const {
+  double bw() const {
     return bw_;
   }
 
   /**
    @param The bandwidth in number of bytes per second
    */
-  void
-  set_bw(double bw) {
+  void set_bw(double bw) {
     bw_ = bw;
   }
 
-  double
-  max_incoming_bw() const {
+  double max_incoming_bw() const {
     return max_in_bw_;
   }
 
-  void
-  set_max_incoming_bw(double bw) {
+  void set_max_incoming_bw(double bw) {
     max_in_bw_ = bw;
   }
 
-  double
-  ser_delay() const {
+  double ser_delay() const {
     return num_bytes_ / bw_;
   }
 
-  void
-  set_inport(int port) {
+  void set_inport(int port) {
     inport_ = port;
   }
 
-  int
-  inport() const {
+  int inport() const {
     return inport_;
   }
 
-  void
-  serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
  protected:
   pisces_payload(){} //for serialization
@@ -211,29 +194,40 @@ class pisces_routable_packet :
   {
   }
 
-  node_id
-  toaddr() const override {
+  node_id toaddr() const override {
    return routable::toaddr();
   }
 
-  node_id
-  fromaddr() const override {
+  node_id fromaddr() const override {
     return routable::fromaddr();
   }
 
-  int
-  next_port() const override {
-    return routable::port();
+  int next_port() const override {
+    return routable::global_outport();
   }
 
-  int
-  next_vc() const override {
+  int next_vc() const override {
     return routable::vc();
   }
 
+  int global_outport() const {
+    return routable::global_outport();
+  }
+
+  int local_outport() const {
+    return routable::local_outport();
+  }
+
+  void set_global_outport(const int port) {
+    routable::set_global_outport(port);
+  }
+
+  void set_local_outport(const int port) {
+    routable::set_local_outport(port);
+  }
+
  protected:
-  void
-  serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
   pisces_routable_packet(){} //serialization
 };
@@ -261,16 +255,13 @@ class pisces_default_packet :
 
   pisces_default_packet(){} //for serialization
 
-  uint64_t
-  flow_id() const override {
+  uint64_t flow_id() const override {
     return flow_id_;
   }
 
-  void
-  serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
-  std::string
-  to_string() const override;
+  std::string to_string() const override;
 
  private:
   uint64_t flow_id_;
@@ -299,16 +290,13 @@ class pisces_delay_stats_packet : public pisces_default_packet
    * @brief congestion_delay
    * @return The congestion delay in seconds
    */
-  double
-  congestion_delay() const {
+  double congestion_delay() const {
     return congestion_delay_;
   }
 
-  void
-  serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
-  void
-  accumulate_delay(double sec){
+  void accumulate_delay(double sec){
    congestion_delay_ += sec;
   }
 
@@ -338,13 +326,11 @@ class pisces_credit :
   {
   }
 
-  int
-  vc() const {
+  int vc() const {
     return vc_;
   }
 
-  int
-  port() const {
+  int port() const {
     return port_;
   }
 
@@ -358,16 +344,13 @@ class pisces_credit :
   }
 #endif
 
-  int
-  num_credits() const {
+  int num_credits() const {
     return num_credits_;
   }
 
-  std::string
-  to_string() const override;
+  std::string to_string() const override;
 
-  void
-  serialize_order(serializer& ser) override;
+  void serialize_order(serializer& ser) override;
 
  protected:
   int num_credits_;

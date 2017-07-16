@@ -1,4 +1,3 @@
-Using auto-generated geometry [2 2 2] for nproc=8
 Running problem size 20^3 per domain until completion
 Num processors: 8
 Total number of elements: 64000

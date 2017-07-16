@@ -15,8 +15,10 @@ bin_PROGRAMS =
 
 dist_bin_SCRIPTS = \
 sst++ \
+libsst++ \
 dsst++ \
 sstcc \
+libsstcc \
 dsstcc \
 sstcclib.py \
 configlib.py

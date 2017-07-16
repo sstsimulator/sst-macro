@@ -66,6 +66,9 @@ tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
 
   first_simple_torus_eject_port_ = max_ports_intra_network_;
 
+  max_ports_injection_ =
+      netlinks_per_switch_ * injection_redundancy_;
+
   max_ports_intra_network_ = ntiles - max_ports_injection_;
 
   int ndims = red_.size();
@@ -84,13 +87,14 @@ tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
 
 void
 tiled_torus::get_redundant_paths(
-  routable::path& current,
-  routable::path_set &paths) const
+    routable::path& current,
+    routable::path_set &paths,
+    switch_id addr) const
 {
-  if (current.outport < first_simple_torus_eject_port_){
+  if (current.outport() < first_simple_torus_eject_port_){
     //intranetwork routing
-    int dim = current.outport / 2; //2 for +/-
-    int dir = current.outport % 2;
+    int dim = current.outport() / 2; //2 for +/-
+    int dir = current.outport() % 2;
     int red = red_[dim];
     paths.resize(red);
     int port_offset = tile_offsets_[dim] + red * dir;
@@ -98,33 +102,18 @@ tiled_torus::get_redundant_paths(
     //outport identifies a unique path
     for (int r=0; r < red; ++r){
       paths[r] = current;
-      paths[r].geometric_id = current.outport;
-      paths[r].outport = port_offset + r;
+      paths[r].geometric_id = current.outport();
+      paths[r].set_outport(port_offset + r);
     }
   } else {
     //ejection routing
-    int offset = current.outport - first_simple_torus_eject_port_;
+    int offset = current.outport() - first_simple_torus_eject_port_;
     int port = max_ports_intra_network_ + offset*injection_redundancy_;
     int num_ports = injection_redundancy_;
     for (int i=0; i < num_ports; ++i, ++port){
-      paths[i].outport = port;
+      paths[i].set_outport(port);
     }
   }
-}
-
-switch_id
-tiled_torus::netlink_to_injection_switch(node_id nodeaddr, int ports[], int &num_ports) const
-{
-  int port;
-  switch_id sid = hdtorus::netlink_to_injection_switch(nodeaddr, port);
-  //ejection routing
-  int offset = port - first_simple_torus_eject_port_;
-  port = max_ports_intra_network_ + offset*injection_redundancy_;
-  num_ports = injection_redundancy_;
-  for (int i=0; i < num_ports; ++i, ++port){
-    ports[i] = port;
-  }
-  return sid;
 }
 
 void
@@ -135,7 +124,7 @@ tiled_torus::configure_individual_port_params(switch_id src,
 }
 
 void
-tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
+tiled_torus::configure_geometric_paths(std::vector<int>& redundancies)
 {
   int ndims = dimensions_.size();
   int ngeom_paths = ndims * 2 + netlinks_per_switch_; //2 for +/-
@@ -156,7 +145,7 @@ tiled_torus::configure_geometric_paths(std::vector<int>& redundancies) const
 void
 tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  conns.resize(max_ports_intra_network_ + max_ports_injection_);
+  conns.resize(max_ports_intra_network_);
   int cidx = 0;
   int ndims = dimensions_.size();
   int dim_stride = 1;
@@ -179,16 +168,22 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
     int nreplica = red_[i];
     int outport, inport;
     for (int r=0; r < nreplica; ++r){
-      outport = inport = port(r, i, hdtorus::pos);
+      outport = port(r, i, hdtorus::pos);
+      inport = port(r, i, hdtorus::neg);
+      top_debug("setting connection %i (pos) src:port %i:%i -> dst:port %i:%i", cidx, src, outport, plus_partner, inport);
       connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = plus_partner;
       conn.src_outport = outport;
       conn.dst_inport = inport;
       ++cidx;
+    }
 
-      outport = inport = port(r, i, hdtorus::neg);
-      conn = conns[cidx];
+    for (int r=0; r < nreplica; ++r){
+      outport = port(r, i, hdtorus::neg);
+      inport = port(r, i, hdtorus::pos);
+      top_debug("setting connection %i (neg) src:port %i:%i -> dst:port %i:%i", cidx, src, outport, minus_partner, inport);
+      connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = minus_partner;
       conn.src_outport = outport;
@@ -197,7 +192,42 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
     }
     dim_stride *= dimensions_[i];
   }
-  conns.resize(cidx);
+}
+
+switch_id
+tiled_torus::netlink_to_injection_switch(
+    node_id netladdr, uint16_t ports[], int &num_ports) const
+{
+  // UGLY: interconnect calls this, it needs to return a real port number
+  num_ports = injection_redundancy_;
+  long sw = netladdr / netlinks_per_switch_;
+  int local_endpoint_id = netladdr % netlinks_per_switch_;
+  int first_port =
+      max_ports_intra_network_ + local_endpoint_id * injection_redundancy_;
+  for (int i=0; i < injection_redundancy_; ++i)
+    ports[i] = first_port + i;
+  return switch_id(sw);
+}
+
+switch_id
+tiled_torus::netlink_to_ejection_switch(
+    node_id nodeaddr, uint16_t ports[], int &num_ports) const
+{
+  return netlink_to_injection_switch(nodeaddr,ports,num_ports);
+}
+
+switch_id
+tiled_torus::netlink_to_injection_switch(netlink_id netladdr, uint16_t& switch_port) const {
+  // UGLY: route calls this, it needs to return a geometric id for port
+  long sw = netladdr / netlinks_per_switch_;
+  int local_endpoint_id = netladdr % netlinks_per_switch_;
+  switch_port = first_simple_torus_eject_port_ + local_endpoint_id;
+  return switch_id(sw);
+}
+
+switch_id
+tiled_torus::netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const {
+  return netlink_to_injection_switch(nodeaddr, switch_port);
 }
 
 }

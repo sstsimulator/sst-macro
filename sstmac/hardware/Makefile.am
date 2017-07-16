@@ -82,8 +82,6 @@ nobase_library_include_HEADERS = \
   topology/topology.h \
   topology/topology_fwd.h \
   topology/structured_topology_fwd.h \
-  topology/index_subset.h \
-  topology/index_subset_fwd.h \
   topology/coordinates.h \
   topology/cartesian_topology.h \
   topology/structured_topology.h \

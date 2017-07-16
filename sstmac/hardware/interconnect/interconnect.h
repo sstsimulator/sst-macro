@@ -87,8 +87,7 @@ class interconnect
    */
   static interconnect* static_interconnect();
 
-  static void
-  clear_static_interconnect(){
+  static void clear_static_interconnect(){
     if (static_interconnect_) delete static_interconnect_;
     static_interconnect_ = nullptr;
   }

@@ -99,11 +99,10 @@ class packetizer :
   virtual link_handler* new_credit_handler() const = 0;
 
  private:
-  virtual void
-  inject(int vn, long bytes, long byte_offset, message* payload) = 0;
+  virtual void inject(int vn, long bytes,
+                      long byte_offset, message* payload) = 0;
 
-  virtual bool
-  spaceToSend(int vn, int num_bits) = 0;
+  virtual bool spaceToSend(int vn, int num_bits) = 0;
 
  private:
   recv_cq completion_queue_;
@@ -121,6 +120,7 @@ class packetizer :
   double inv_bw_;
 
   packetizer_callback* notifier_;
+
   event_handler* acker_;
 
  protected:

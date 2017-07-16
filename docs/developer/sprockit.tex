@@ -152,8 +152,7 @@ This macro should exist in the global namespace.
 All that remains now is defining the \inlinecode{serialize_order} in the source file
 
 \begin{CppCode}
-void
-my_object::serialize_order(sstmac::serializer& ser)
+void my_object::serialize_order(sstmac::serializer& ser)
 {
   ser & my_int_;
   set << my_double_;

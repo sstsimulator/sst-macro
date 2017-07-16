@@ -104,9 +104,6 @@ pisces_nic::setup()
   packetizer_->setup();
 }
 
-//
-// Goodbye.
-//
 pisces_nic::~pisces_nic() throw ()
 {
   if (packetizer_) delete packetizer_;
@@ -180,7 +177,6 @@ pisces_nic::do_send(network_message* payload)
   nic_debug("packet flow: sending %s", payload->to_string().c_str());
   int vn = 0; //we only ever use one virtual network
   packetizer_->start(vn, payload);
-  //schedule_delay(inj_lat_, new_callback(packetizer_, &packetizer::start, vn, payload));
 }
 
 void
@@ -196,8 +192,13 @@ pisces_netlink::connect_output(
   event_handler *mod)
 {
   if (is_node_port(src_outport)){
-    ej_block_->set_output(params, src_outport, dst_inport, mod);
+    // set nic payload handler
+    // ej_block payload handler will offset ports --
+    // -- need to match (use local ports)
+    int offset = node_offset(src_outport);
+    ej_block_->set_output(params, offset, dst_inport, mod);
   } else {
+    // set switch payload handler
     inj_block_->set_output(params, src_outport, dst_inport, mod);
   }
 }
@@ -209,9 +210,10 @@ pisces_netlink::connect_input(
   event_handler* mod)
 {
   if (is_node_port(dst_inport)){
+    // set nic credit handler
     inj_block_->set_input(params, dst_inport, src_outport, mod);
-    ej_block_->set_input(params, dst_inport, src_outport, mod);
   } else {
+    // set switch credit handler
     ej_block_->set_input(params, dst_inport, src_outport, mod);
   }
 }
@@ -224,10 +226,14 @@ pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
 {
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   inj_block_ = new pisces_crossbar(inj_params, parent);
-  inj_block_->configure_basic_ports(num_tiles_ + conc_);
+  // tile ports start at 0, so local and global ports are identical
+  inj_block_->configure_outports(num_tiles_);
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   ej_block_ = new pisces_crossbar(ej_params, parent);
-  ej_block_->configure_offset_ports(num_tiles_, num_tiles_ + conc_);
+  // node ports > tile ports, must be offset
+  ej_block_->configure_outports(conc_,
+                                offset_port_mapper(num_tiles_),
+                                offset_port_mapper(num_tiles_));
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   ack_handler_ = new_handler(this,
@@ -290,7 +296,6 @@ pisces_netlink::handle_payload(event* ev)
   routable* rtbl = payload->interface<routable>();
   debug_printf(sprockit::dbg::pisces,
        "netlink %d:%p handling payload %s",
-        //topology::global()->label(event_location()).c_str(),
         int(id_), this, payload->to_string().c_str());
   node_id toaddr = payload->toaddr();
   netlink_id dst_netid(toaddr / conc_);
@@ -298,21 +303,22 @@ pisces_netlink::handle_payload(event* ev)
   if (dst_netid == id_){
     //stays local - goes to a node
     int node_offset = toaddr % conc_;
-    p.outport = netlink::node_port(node_offset);
+    // ej_block expects global port
+    p.set_outport(netlink::node_port(node_offset));
     p.vc = 0;
     p.geometric_id = 0;
     debug_printf(sprockit::dbg::pisces,
      "netlink %d ejecting %s to node %d at offset %d to port %d",
-        int(id_), sprockit::to_string(ev).c_str(), int(toaddr), node_offset, p.outport);
+        int(id_), sprockit::to_string(ev).c_str(), int(toaddr), node_offset, p.outport());
     ej_block_->handle_payload(payload);
   } else {
-    //goes to switch
-    p.outport = netlink::switch_port(tile_rotater_);
+    //goes to switch, global/local port is identical for switch ports
+    p.set_outport(netlink::switch_port(tile_rotater_));
     p.vc = 0;
     debug_printf(sprockit::dbg::pisces,
-     "netlink %d injecting msg %s to switch %d on redundant path %d of %d to port %d",
+     "netlink %d injecting msg %s to node %d on redundant path %d of %d to port %d",
         int(id_), sprockit::to_string(ev).c_str(),
-        int(toaddr), tile_rotater_, num_tiles_, p.outport);
+        int(toaddr), tile_rotater_, num_tiles_, p.outport());
     tile_rotater_ = (tile_rotater_ + 1) % num_tiles_;
     inj_block_->handle_payload(payload);
   }

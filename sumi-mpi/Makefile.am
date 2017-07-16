@@ -61,7 +61,6 @@ nobase_library_include_HEADERS = \
   mpi_comm/keyval_fwd.h \
   mpi_comm/mpi_comm.h \
   mpi_comm/mpi_comm_fwd.h \
-  mpi_comm/mpi_comm_data.h \
   mpi_comm/mpi_comm_factory.h \
   mpi_comm/mpi_comm_cart.h \
   mpi_comm/mpi_group.h \

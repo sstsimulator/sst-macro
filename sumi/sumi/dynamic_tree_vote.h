@@ -71,24 +71,19 @@ class dynamic_tree_vote_message :
     request
   } type_t;
 
-  type_t
-  type() const {
+  type_t type() const {
     return type_;
   }
 
-  int
-  vote() const {
+  int vote() const {
     return vote_;
   }
 
-  void*
-  recv_buffer() const;
+  void* recv_buffer() const;
 
-  static const char*
-  tostr(type_t);
+  static const char* tostr(type_t);
 
-  virtual void
-  serialize_order(sumi::serializer &ser) override;
+  virtual void serialize_order(sumi::serializer &ser) override;
 
   dynamic_tree_vote_message(int vote, type_t ty, int tag, int virtual_src, int virtual_dst) :
     //0 = buffer
@@ -113,25 +108,20 @@ class dynamic_tree_vote_message :
 class dynamic_tree_vote_actor :
   public collective_actor
 {
-
  public:
-
   typedef enum {
     recv_vote,
     up_vote,
     down_vote
   } stage_t;
 
-  static const char*
-  tostr(stage_t stage);
+  static const char* tostr(stage_t stage);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "vote actor";
   }
 
-  void
-  recv(const dynamic_tree_vote_message::ptr& msg);
+  void recv(const dynamic_tree_vote_message::ptr& msg);
 
   dynamic_tree_vote_actor(int vote,
     vote_fxn fxn, int tag,
@@ -139,18 +129,15 @@ class dynamic_tree_vote_actor :
     communicator* dom,
     int context);
 
-  stage_t
-  stage() const {
+  stage_t stage() const {
     return stage_;
   }
 
-  bool
-  complete() const {
+  bool complete() const {
     return complete_;
   }
 
-  int
-  vote() const {
+  int vote() const {
     return vote_;
   }
 
@@ -163,20 +150,15 @@ class dynamic_tree_vote_actor :
 
   void down_partner_failed(int rank);
 
-  void
-  dense_partner_ping_failed(int virtual_rank) override;
+  void dense_partner_ping_failed(int virtual_rank) override;
 
-  virtual bool
-  check_neighbor(int phys_rank) override;
+  virtual bool check_neighbor(int phys_rank) override;
 
-  virtual void
-  stop_check_neighbor(int phys_rank) override;
+  virtual void stop_check_neighbor(int phys_rank) override;
 
-  void
-  send_down_votes();
+  void send_down_votes();
 
-  void
-  send_up_votes();
+  void send_up_votes();
 
   /**
    * Receive a regular down vote.
@@ -184,16 +166,14 @@ class dynamic_tree_vote_actor :
    * must be ignored for consistency.
    * @param msg
    */
-  void
-  recv_down_vote(const dynamic_tree_vote_message::ptr& msg);
+  void recv_down_vote(const dynamic_tree_vote_message::ptr& msg);
 
   /**
    * Receive an up vote. This vote is mutable - new failures can be added.
    * If all up votes received, forward an up vote to my parent.
    * @param msg
    */
-  void
-  recv_up_vote(const dynamic_tree_vote_message::ptr& msg);
+  void recv_up_vote(const dynamic_tree_vote_message::ptr& msg);
 
   /**
    * Receive a request from a new parent.
@@ -202,15 +182,13 @@ class dynamic_tree_vote_actor :
    * This declares the parent failed and reconnects to the new parent.
    * @param msg
    */
-  void
-  recv_adoption_request(const dynamic_tree_vote_message::ptr& msg);
+  void recv_adoption_request(const dynamic_tree_vote_message::ptr& msg);
 
   /**
    * Receive a vote from a known child. See #recv_unexpected_up_vote
    * @param msg
    */
-  void
-  recv_expected_up_vote(const dynamic_tree_vote_message::ptr& msg);
+  void recv_expected_up_vote(const dynamic_tree_vote_message::ptr& msg);
 
   /**
    * Recv unexpected up vote. This comes from a granchild,great-granchild,etc node
@@ -218,24 +196,21 @@ class dynamic_tree_vote_actor :
    * This indicates that a child node has failed and we must reconnect.
    * @param msg
    */
-  void
-  recv_unexpected_up_vote(const dynamic_tree_vote_message::ptr& msg);
+  void recv_unexpected_up_vote(const dynamic_tree_vote_message::ptr& msg);
 
   /**
    * If processing up votes, merge the incoming up vote with our known results.
    * At this point, the vote is mutable and new information can be added
    * @param msg
    */
-  void
-  merge_result(const dynamic_tree_vote_message::ptr& msg);
+  void merge_result(const dynamic_tree_vote_message::ptr& msg);
 
   /**
    * If processing down votes, receive and overwrite with incoming down vote.
    * At this point, the vote is immutable to guarantee global agreement.
    * @param msg
    */
-  void
-  recv_result(const dynamic_tree_vote_message::ptr& msg);
+  void recv_result(const dynamic_tree_vote_message::ptr& msg);
 
   void append_down_partners(int position);
 
@@ -263,13 +238,11 @@ class dynamic_tree_vote_actor :
 
   void add_new_down_partner(int rank);
 
-  bool
-  received_up_vote(int rank) const {
+  bool received_up_vote(int rank) const {
     return up_votes_recved_.count(rank);
   }
 
-  bool
-  up_vote_ready();
+  bool up_vote_ready();
 
   /**
    * Respond to a failure notification, but first check to see if we already responded to it
@@ -277,8 +250,7 @@ class dynamic_tree_vote_actor :
    * It is safe for any failure notifier to call this
    * @param rank
    */
-  void
-  handle_dense_partner_failure(int dense_rank);
+  void handle_dense_partner_failure(int dense_rank);
 
   /**
    * If this failure is not previously handled,
@@ -289,11 +261,9 @@ class dynamic_tree_vote_actor :
    * #handle_virtual_partner_failure for safety.
    * @param virtual_rank
    */
-  void
-  rebalance_around_dense_partner_failure(int dense_rank);
+  void rebalance_around_dense_partner_failure(int dense_rank);
 
-  bool
-  is_my_child(int dense_rank) const {
+  bool is_my_child(int dense_rank) const {
     return down_partners_.count(dense_rank);
   }
 
@@ -327,19 +297,15 @@ class dynamic_tree_vote_collective :
 {
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "sumi persistent resilient vote collective";
   }
 
-  void
-  recv(int target, const collective_work_message::ptr& msg) override;
+  void recv(int target, const collective_work_message::ptr& msg) override;
 
-  void
-  start() override;
+  void start() override;
 
-  bool
-  persistent() const override {
+  bool persistent() const override {
     return true;
   }
 

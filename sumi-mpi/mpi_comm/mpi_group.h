@@ -62,38 +62,29 @@ class mpi_group  {
 
   mpi_group(size_t size);
 
-  virtual
-  ~mpi_group() {
-  }
+  virtual ~mpi_group() {}
 
-  task_id
-  at(int rank);
+  task_id at(int rank);
 
-  size_t
-  size() const {
+  size_t size() const {
     return size_;
   }
 
-  const std::vector<task_id>&
-  ids() const {
-    return task_list_;
-  }
-
-  MPI_Group
-  id() const {
+  MPI_Group id() const {
     return id_;
   }
 
-  void
-  set_id(MPI_Group grp){
+  void set_id(MPI_Group grp){
     id_ = grp;
   }
 
-  int
-  rank_of_task(task_id t);
+  int rank_of_task(task_id t);
+
+  void translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, mpi_group* other_grp);
 
  protected:
-  std::vector<task_id> task_list_;
+  //map the local gorup rank to the world rank
+  std::vector<task_id> local_to_world_map_;
   MPI_Group id_;
   size_t size_; //used for comm_world
   bool is_comm_world_;  //we don't save all the peers to save space

@@ -63,31 +63,28 @@ namespace sstmac {
 class link_wrapper :
     public event_handler
 {
-  public:
-    std::string
-    to_string() const override {
-      return "link_wrapper";
-    }
+ public:
+  std::string  to_string() const override {
+    return "link_wrapper";
+  }
 
-    link_wrapper(SST::Link* link) :
-        event_handler(device_id()),
-        link_(link)
-    {
-    }
+  link_wrapper(SST::Link* link) :
+      event_handler(device_id()),
+      link_(link)
+  {
+  }
 
-    void
-    handle(event* ev) override {
-      spkt_throw(sprockit::unimplemented_error,
-        "link_wrapper::handle: should never be called");
-    }
+  void handle(event* ev) override {
+    spkt_throw(sprockit::unimplemented_error,
+      "link_wrapper::handle: should never be called");
+  }
 
-    SST::Link*
-    link() const override {
-      return link_;
-    }
+  SST::Link* link() const override {
+    return link_;
+  }
 
-  private:
-    SST::Link* link_;
+ private:
+  SST::Link* link_;
 };
 
 }

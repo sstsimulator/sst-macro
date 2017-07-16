@@ -59,30 +59,20 @@ class threading_interface
  public:
   virtual ~threading_interface() {}
 
-  virtual threading_interface*
-  copy() = 0;
+  virtual threading_interface* copy() = 0;
 
-  virtual void
-  init_context() = 0;
+  virtual void init_context() = 0;
 
-  virtual void
-  destroy_context() = 0;
+  virtual void destroy_context() = 0;
 
-  /// Start a new context.
-  virtual void
-  start_context(int physical_thread_id,
+  virtual void start_context(int physical_thread_id,
                 void *stack, size_t stacksize, void
                 (*func)(void*), void *args, threading_interface *yield_to,
                 void* globals_storage) = 0;
 
-  /// Swap context.
-  virtual void
-  swap_context(threading_interface* to) = 0;
+  virtual void swap_context(threading_interface* to) = 0;
 
-  /// This is called when we have completed running the thread. It is
-  /// called in the from context.
-  virtual void
-  complete_context(threading_interface* to) = 0;
+  virtual void complete_context(threading_interface* to) = 0;
 };
 }
 } // end of namespace sstmac

@@ -53,9 +53,7 @@ using sstmac::sw::app_id;
 
 class mpi_comm_cart : public mpi_comm
 {
-
  public:
-  /// Hello.
   mpi_comm_cart(
     MPI_Comm id,
     int rank, mpi_group* peers,
@@ -64,13 +62,9 @@ class mpi_comm_cart : public mpi_comm
     const int *periods,
     int reorder);
 
-  /// Goodbye.
-  virtual
-  ~mpi_comm_cart() {
-  }
+  virtual ~mpi_comm_cart() {}
 
-  int
-  dim(int i) const {
+  int dim(int i) const {
     if (i > dims_.size()) {
       return -1;
     }
@@ -79,8 +73,7 @@ class mpi_comm_cart : public mpi_comm
 
   void set_coords(int rank, int* coords);
 
-  int
-  period(int i) const {
+  int period(int i) const {
     if (i > periods_.size()) {
       return -1;
     }
@@ -91,8 +84,7 @@ class mpi_comm_cart : public mpi_comm
 
   int shift(int dir, int dis);
 
-  int
-  ndims() const {
+  int ndims() const {
     return ndims_;
   }
 

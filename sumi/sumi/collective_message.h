@@ -63,8 +63,7 @@ class collective_done_message :
   typedef sprockit::refcount_ptr<collective_done_message> ptr;
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "collective done message";
   }
 
@@ -76,90 +75,73 @@ class collective_done_message :
   {
   }
 
-  int
-  tag() const {
+  int tag() const {
     return tag_;
   }
 
-  collective::type_t
-  type() const {
+  collective::type_t type() const {
     return type_;
   }
 
-  communicator*
-  dom() const {
+  communicator* dom() const {
     return dom_;
   }
 
-  void
-  set_type(collective::type_t ty) {
+  void set_type(collective::type_t ty) {
     type_ = ty;
   }
 
-  bool
-  failed() const {
+  bool failed() const {
     return !failed_procs_.empty();
   }
 
-  bool
-  succeeded() const {
+  bool succeeded() const {
     return failed_procs_.empty();
   }
 
-  void
-  append_failed(int proc) {
+  void append_failed(int proc) {
     failed_procs_.insert(proc);
   }
 
-  void
-  append_failed(const std::set<int>& procs){
+  void append_failed(const std::set<int>& procs){
     failed_procs_.insert(procs.begin(), procs.end());
   }
 
-  const thread_safe_set<int>&
-  failed_procs() const {
+  const thread_safe_set<int>& failed_procs() const {
     return failed_procs_;
   }
 
-  bool
-  all_ranks_know_failure() const {
+  bool all_ranks_know_failure() const {
     return all_ranks_know_failure_;
   }
 
-  void
-  set_all_ranks_know_failure(bool flag) {
+  void set_all_ranks_know_failure(bool flag) {
     all_ranks_know_failure_ = true;
   }
 
-  void
-  set_result(void* buf){
+  void set_result(void* buf){
     result_ = buf;
   }
 
-  void*
-  result() {
+  void* result() {
     return result_;
   }
 
-  void
-  set_vote(int v){
+  void set_vote(int v){
     vote_ = v;
   }
 
-  int
-  vote() const {
+  int vote() const {
     return vote_;
   }
 
-  message*
-  clone() const override;
+  message* clone() const override;
 
   int comm_rank() const {
     return comm_rank_;
   }
 
-  void
-  set_comm_rank(int rank){
+  void set_comm_rank(int rank){
     comm_rank_ = rank;
   }
 
@@ -235,81 +217,64 @@ class collective_work_message :
   collective_work_message(){} //for serialization
 
 
-  virtual std::string
-  to_string() const override;
+  virtual std::string to_string() const override;
 
-  static const char*
-  tostr(action_t action);
+  static const char* tostr(action_t action);
 
-  virtual void
-  serialize_order(sumi::serializer& ser) override;
+  virtual void serialize_order(sumi::serializer& ser) override;
 
-  action_t
-  action() const {
+  action_t action() const {
     return action_;
   }
 
-  void
-  set_action(action_t a) {
+  void set_action(action_t a) {
     action_ = a;
   }
 
-  int
-  tag() const {
+  int tag() const {
     return tag_;
   }
 
-  int
-  round() const {
+  int round() const {
     return round_;
   }
 
-  int
-  dense_sender() const {
+  int dense_sender() const {
     return dense_sender_;
   }
 
-  int
-  dense_recver() const {
+  int dense_recver() const {
     return dense_recver_;
   }
 
-  void
-  reverse() override;
+  void reverse() override;
 
-  collective::type_t
-  type() const {
+  collective::type_t type() const {
     return type_;
   }
 
-  bool
-  is_failure_notice() const {
+  bool is_failure_notice() const {
     return !failed_procs_.empty();
   }
 
-  void
-  append_failed(int proc) {
+  void append_failed(int proc) {
     failed_procs_.insert(proc);
   }
 
-  void
-  append_failed(const thread_safe_set<int>& failed);
+  void append_failed(const thread_safe_set<int>& failed);
 
-  const std::set<int>&
-  failed_procs() const {
+  const std::set<int>& failed_procs() const {
     return failed_procs_;
   }
 
-  message*
-  clone() const override {
+  message* clone() const override {
     collective_work_message* cln = new collective_work_message;
     clone_into(cln);
     return cln;
   }
 
  protected:
-  void
-  clone_into(collective_work_message* cln) const;
+  void clone_into(collective_work_message* cln) const;
 
  protected:
   int tag_;

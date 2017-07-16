@@ -196,7 +196,8 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
 }
 
 bool
-default_job_launcher::handle_launch_request(app_launch_request* request, ordered_node_set& allocation)
+default_job_launcher::handle_launch_request(app_launch_request* request,
+                                            ordered_node_set& allocation)
 {
   request->request_allocation(available_, allocation);
 

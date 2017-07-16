@@ -61,7 +61,7 @@ butterfly::minimal_route_to_switch(switch_id src,
     group_size /= kary_;
   }
   long group_relative_row = dst % group_size;
-  path.outport = group_relative_row / group_size / kary_;
+  path.set_outport(group_relative_row / group_size / kary_);
   path.vc = 0;
 }
 
@@ -199,7 +199,7 @@ butterfly::minimal_distance(switch_id src, switch_id dst) const
 }
 
 switch_id
-butterfly::netlink_to_ejection_switch(node_id addr, int& switch_port) const
+butterfly::netlink_to_ejection_switch(node_id addr, uint16_t& switch_port) const
 {
   long node_idx = addr;
   //we inject on the first row - eject on the last row

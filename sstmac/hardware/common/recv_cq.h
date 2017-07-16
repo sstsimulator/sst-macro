@@ -70,14 +70,11 @@ class recv_cq
       @param packet The arriving packet
       @return The completed msg or a null msg indicating not yet complete
   */
-  message*
-  recv(packet* pkt);
+  message* recv(packet* pkt);
 
-  message*
-  recv(uint64_t unique_id, int bytes, message* payload);
+  message* recv(uint64_t unique_id, int bytes, message* payload);
 
-  void
-  print();
+  void print();
 
  protected:
   struct incoming_msg {

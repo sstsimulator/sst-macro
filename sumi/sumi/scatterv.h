@@ -57,8 +57,7 @@ class btree_scatterv_actor :
 {
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "btree scatterv actor";
   }
 
@@ -92,18 +91,15 @@ class btree_scatterv :
 
   btree_scatterv() : root_(-1){}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "btree scatterv";
   }
 
-  dag_collective_actor*
-  new_actor() const override {
+  dag_collective_actor* new_actor() const override {
     return new btree_scatterv_actor(root_, send_counts_);
   }
 
-  dag_collective*
-  clone() const override {
+  dag_collective* clone() const override {
     return new btree_scatterv(root_);
   }
 

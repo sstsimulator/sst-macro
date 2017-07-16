@@ -519,7 +519,7 @@ tapered_fat_tree::minimal_route_to_switch(
   int dst_level = level(dest_sw_addr);
   //question is whether I go up or down
   if (dst_level >= src_level){ //definitely have to go up
-    path.outport = up_port(src_level);
+    path.set_outport(up_port(src_level));
     path.vc = 0;
     top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
             int(dest_sw_addr), dst_level,
@@ -527,19 +527,19 @@ tapered_fat_tree::minimal_route_to_switch(
   } else if (src_level == 2){
     //definitely have to go down
     int dst_sub_tree = dst_level == 0 ? inj_sub_tree(dest_sw_addr) : agg_sub_tree(dest_sw_addr);
-    path.outport = dst_sub_tree;
+    path.set_outport(dst_sub_tree);
     path.vc = 0;
     top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d",
             int(dest_sw_addr), dst_level,
             int(current_sw_addr), src_level,
-            path.outport);
+            path.outport());
   } else if (src_level == 1){
     //going to level 0, but may have to go up or down to get there
     int my_tree = agg_sub_tree(current_sw_addr);
     int dst_tree = inj_sub_tree(dest_sw_addr);
     if (dst_tree == my_tree){
       //okay, great, I should have direct link
-      path.outport = dest_sw_addr % num_inj_switches_per_subtree_;
+      path.set_outport(dest_sw_addr % num_inj_switches_per_subtree_);
       path.vc = 0;
       top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d hopping from tree %d to tree %d",
               int(dest_sw_addr), dst_level,
@@ -547,12 +547,12 @@ tapered_fat_tree::minimal_route_to_switch(
               my_tree, dst_tree);
     } else {
       //nope, have to go to core to hope over to other tree
-      path.outport = up_port(src_level);
+      path.set_outport(up_port(src_level));
       path.vc = 0;
       top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d within tree %d",
               int(dest_sw_addr), dst_level,
               int(current_sw_addr), src_level,
-              path.outport, my_tree);
+              path.outport(), my_tree);
     }
   }
 }

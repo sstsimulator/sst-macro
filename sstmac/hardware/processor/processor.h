@@ -68,11 +68,9 @@ class processor
  public:
   virtual ~processor();
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
-  virtual void
-  compute(event* cev, callback* cb) = 0;
+  virtual void compute(event* cev, callback* cb) = 0;
 
   int ncores() const {
     return ncores_;

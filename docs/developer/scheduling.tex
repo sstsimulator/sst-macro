@@ -19,8 +19,7 @@ There are a variety of classes the cooperate in driving the simulation, which we
 The driver for simulations is an event manager that provides the function
 
 \begin{CppCode}
-virtual void
-schedule(timestamp start_time, event* event) = 0;
+virtual void schedule(timestamp start_time, event* event) = 0;
 \end{CppCode}
 This function must receive events and order them according to timestamp.
 Two main types of data structures can be used, which we briefly describe below.
@@ -28,8 +27,7 @@ Two main types of data structures can be used, which we briefly describe below.
 The event manager also needs to provide
 
 \begin{CppCode}
-virtual void
-run() = 0;
+virtual void run() = 0;
 \end{CppCode}
 
 The termination condition can be:
@@ -47,8 +45,7 @@ namespace sstmac {
 class event_queue_entry
 {
  public:
-  virtual void
-  execute() = 0;
+  virtual void execute() = 0;
 
   ...
 };
@@ -66,8 +63,7 @@ The workhorses for \sstmacro are therefore classes that inherit from \evhandler.
 The only method that must be implemented is
 
 \begin{CppCode}
-void
-handle(event* ev);
+void handle(event* ev);
 \end{CppCode}
 The function is the common interface for numerous different operations from network injection to memory access to MPI operations.
 In general, objects have two ``directions'' for the action - send or receive.
@@ -80,8 +76,7 @@ Some event handlers will always receive and then send, such as network switches 
 In most cases, events are created by calling the function
 
 \begin{CppCode}
-void
-schedule(const timestamp &t,
+void schedule(const timestamp &t,
   event_handler* handler,
   event* ev);
 \end{CppCode}
@@ -89,8 +84,7 @@ schedule(const timestamp &t,
 This then creates a class of type \inlinecode{event_queue_entry}, for which the execute function is
 
 \begin{CppCode}
-void
-handler_event_queue_entry::execute()
+void handler_event_queue_entry::execute()
 {
   if (!canceled_) {
     handler_->handle(ev_to_deliver_);
@@ -119,8 +113,7 @@ When an \inlinecode{event* ev} is scheduled to the event handler, the member fun
 For example, given a class \inlinecode{actor} with the member function \inlinecode{act}
 
 \begin{CppCode}
-void
-actor::actor(event* ev, int ev_id){...}
+void actor::actor(event* ev, int ev_id){...}
 \end{CppCode}
 we can create an event handler
 
@@ -152,8 +145,7 @@ These parameters should match the member function prototype.
 For example, the prototype
 
 \begin{CppCode}
-void
-mpi_queue::start_recv(mpi_queue_recv_request* req)
+void mpi_queue::start_recv(mpi_queue_recv_request* req)
 {
   ...
 }

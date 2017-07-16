@@ -86,73 +86,61 @@ class node :
 
   virtual ~node();
 
-  void
-  connect_output(sprockit::sim_parameters* params,
+  void connect_output(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
                  event_handler* handler) override;
 
-  void
-  connect_input(sprockit::sim_parameters* params,
+  void connect_input(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
                  event_handler* handler) override;
 
 
-  link_handler*
-  payload_handler(int port) const override;
+  link_handler* payload_handler(int port) const override;
 
-  link_handler*
-  credit_handler(int port) const override;
+  link_handler* credit_handler(int port) const override;
 
   /**
    @return  The object encapsulating the memory model
   */
-  memory_model*
-  mem() const {
+  memory_model* mem() const {
     return mem_model_;
   }
 
-  processor*
-  proc() const {
+  processor* proc() const {
     return proc_;
   }
 
   /**
    @return  A handler wrapper for scheduling events to the NIC
   */
-  nic*
-  get_nic() const {
+  nic* get_nic() const {
     return nic_;
   }
 
   /**
    @return  The operating system managing apps on this node
   */
-  sw::operating_system*
-  os() const {
+  sw::operating_system* os() const {
     return os_;
   }
 
   /**
    @return  A unique string description of the node
   */
-  virtual std::string
-  to_string() const override;
+  virtual std::string to_string() const override;
 
   /**
    @return  A unique integer identifier
   */
-  node_id
-  addr() const {
+  node_id addr() const {
     return my_addr_;
   }
 
-  int
-  nsocket() const {
+  int nsocket() const {
     return nsocket_;
   }
 
-  int
-  launch_root() const {
+  int launch_root() const {
     return launch_root_;
   }
 
@@ -166,8 +154,7 @@ class node :
    except for integer overflow.
    @return A unique 64-bit integer
   */
-  unique_event_id
-  allocate_unique_id() {
+  unique_event_id allocate_unique_id() {
     return next_outgoing_id_++;
   }
 
@@ -178,8 +165,7 @@ class node :
    @param data  Event object encapsulating data/metadata for computation
    @param cb    The event to execute when kernel is complete
   */
-  virtual void
-  execute(ami::COMP_FUNC func,
+  virtual void execute(ami::COMP_FUNC func,
            event* data,
            callback* cb) = 0;
 
@@ -190,9 +176,7 @@ class node :
    * @param func
    * @param data
    */
-  virtual void
-  execute(ami::SERVICE_FUNC func,
-                 event* data);
+  virtual void execute(ami::SERVICE_FUNC func, event* data);
 
   void handle(event* ev);
 

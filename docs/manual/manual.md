@@ -5,7 +5,7 @@ category: SSTDocumentation
 ---
 
 
-# SST/macro 7.0 User's Manual
+# SST/macro 7.2 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -40,11 +40,16 @@ category: SSTDocumentation
             - [Build SST core](#subsec:buildSSTCore)
             - [Build SST/macro element library](#subsec:buildElementLib)
          - [2.1.4: Post-Build](#subsec:postbuild)
-         - [2.1.5: Known Issues](#subsec:build:issues)
+         - [2.1.5: GNU pth for user-space threading](#subsubsec:pth)
+         - [2.1.6: Building Boost (no longer required)](#subsubsec:boost)
+         - [2.1.7: Known Issues](#subsec:build:issues)
       - [Section 2.2: Building DUMPI](#sec:building:dumpi)
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
       - [Section 2.3: Building with OTF2 (Beta)](#sec:buildingOtf2)
       - [Section 2.4: Building Clang source-to-source support](#sec:buildingClang)
+         - [2.4.1: Building Clang libTooling](#subsec:buildingClanglibTooling)
+            - [The Easy Way: Mac OS X](#subsubsec:libToolingOSX)
+            - [The Hard Way](#subsubsec:libTooling)
       - [Section 2.5: Running an Application](#sec:building:running)
          - [2.5.1: SST Python Scripts](#subsec:SSTPythonScripts)
          - [2.5.2: Building Skeleton Applications](#sec:tutorial:runapp)
@@ -348,25 +353,33 @@ The following are dependencies for SST-macro.
 
 
 -   (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section [2.1.1](#subsec:build:downloading)).
--   (optional, recommended) Autoconf and related tools are needed unless you are using an unmodified release or snapshot tar archive.
+-   (Mac) You need the GNU pth library. Downloadable from MacPorts (see Section [2.1.5](#subsubsec:pth))
 -   Autoconf: 2.68 or later
 -   Automake: 1.11.1 or later
 -   Libtool: 2.4 or later
 -   A C/C++ compiler is required with C++11 support.  gcc >=4.8 and clang >= 3.7 are known to work.
 -   (optional) OTF2: 2.0 or later for OTF2 trace replay.
 -   (optional) Doxygen and Graphviz are needed to build the documentation.
--   (optional) Graphviz is needed to collect call graphs.
+-   (optional) KCacheGrind or QCacheGrind to display call graphs
+-   (optional) Clang development libraries to enable SST source-to-source compiler
 
 #### 2.1.3: Configuration and Building<a name="subsec:build:configure"></a>
 
 
 
-SST/macro is an SST element library, proving a set of simulation components that run on the main SST core.  The SST core provides the parallel discrete event simulation manager that manages time synchronization and sending events in serial, MPI parallel, multi-threaded, or MPI + threaded mode.  The core does not provide any simulation components like node models, interconnect models, MPI trace readers, etc.  The actual simulation models are contained in the element library.  
+SST/macro is an SST element library, proving a set of simulation components that run on the main SST core.  
+The SST core provides the parallel discrete event simulation manager that manages time synchronization and sending events in serial, MPI parallel, multi-threaded, or MPI + threaded mode.  
+The core does not provide any simulation components like node models, interconnect models, MPI trace readers, etc.  
+The actual simulation models are contained in the element library.  
 
-The SST core is a standalone executable that dynamically loads shared object files containing the element libraries.  For many element libraries, a Python input file is created that builds and connects the various simulation components.  For maximum flexibility, this will become the preferred mode.  However, SST/macro has historically had a text-file input `parameters.ini` that configures the simulation.  To preserve that mode for existing users, a wrapper Python script is provided that processes SST/macro input files.  
+The SST core is a standalone executable that dynamically loads shared object files containing the element libraries.  
+For many element libraries, a Python input file is created that builds and connects the various simulation components.  
+For maximum flexibility, this will become the preferred mode.  
+However, SST/macro has historically had a text-file input `parameters.ini` that configures the simulation.  
+To preserve that mode for existing users, a wrapper Python script is provided that processes SST/macro input files.  
+SST/macro can also be compiled in standalone mode that uses its own simulation core.
 
-The workflow for installing and running is therefore:
-
+The workflow for installing and running on the main SST core is:
 
 -   Build and install SST core
 -   Build and install the SST/macro element library `libmacro.so`
@@ -374,12 +387,94 @@ The workflow for installing and running is therefore:
 -   Run the `pysstmac` wrapper Python script that runs SST/macro-specific parameters OR
 -   Write a custom Python script
 
+The workflow for installing and running on the standalone SST/macro core (for debugging, not for production):
+
+-   Build and install SST/macro standalone to generate `sstmac` executable
+-   Run `sstmac` with `*.ini` parameter files
+
 ##### Build SST core<a name="subsec:buildSSTCore"></a>
 
 
 The recommended mode for maximum flexibility is to run using the SST core downloadable from http://sst-simulator.org/SSTPages/SSTMainDownloads/.
 Building and installing sets up the discrete event simulation core required for all SST elements.
-SST core still has a few Boost dependencies, which should be the only complication in building. For building Boost, we recommend two files: `user-config.jam` to configure the Boost compiler flags and a `runme.sh` that bootstraps, compiles, and installs the prerequisite Boost libraries. For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
+SST core no longer has Boost dependencies! Directions for building Boost (if desired) are still below in [2.1.6](#subsubsec:boost)
+
+##### Build SST/macro element library<a name="subsec:buildElementLib"></a>
+
+
+Once SST-macro is extracted to a directory, we recommend the following as a baseline configuration, including building outside the source tree:
+
+````
+sst-macro> ./bootstrap.sh
+sst-macro> mkdir build
+sst-macro> cd build
+sst-macro/build> ../configure --prefix=$PATH_TO_INSTALL --with-sst-core=$PATH_TO_SST_CORE CC=MPICC CXX=MPICXX
+````
+`PATH_TO_SST_CORE` should be the prefix install directory used when installing the core.  
+The MPI compilers should be the same compilers used for building Boost and SST core.
+
+SST/macro can still be built in standalone mode for a select set of features that have not been fully migrated to the SST core.  
+The installation and running are the same for both modes - simply remove the `--with--sst-core` parameter.  
+A complete list of options for standalone building can be seen by running `../configure --help`.   Some common options include:
+
+
+-   --(dis|en)able-graphviz : Enables the collection of simulated call graphs, which can be viewed with graphviz.
+Enabled by default. Disable if not using Boost or C++11. Ordered maps can be used as a replacement, but with lower performance.
+-   --(dis|en)able-regex : Regular expressions can be used to proofread input files, but this requires either Boost or C++11.
+Enabled by default. Disable if not using Boost or C++11.
+-   --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
+-   --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
+-   --(dis|en)able-otf2: Enable OTF2 trace replay, requires a path to OTF2 installation.
+-   --with-clang[=location]: Enable Clang source-to-source tools by pointing to Clang development libraries
+
+Once configuration has completed, printing a summary of the things it found, simply type `make`.  
+
+#### 2.1.4: Post-Build<a name="subsec:postbuild"></a>
+
+
+
+If the build did not succeed, check [2.1.7](#subsec:build:issues) for known issues, or contact SST-macro support for help (sst-macro-help@sandia.gov).
+
+If the build was successful, it is recommended to run the range of tests to make sure nothing went wrong.  
+To do this, and also install SST-macro  to the install path specified during installation, run the following commands:
+
+````
+sst-macro/build> make check
+sst-macro/build> make install
+sst-macro/build> make installcheck
+````
+Make check runs all the tests we use for development, which checks all functionality of the simulator.  
+Make installcheck compiles some of the skeletons that come with SST-macro, linking against the installation.  
+
+
+Important:  Applications and other code linking to SST-macro use Makefiles that use the sst++/sstcc compiler wrappers
+that are installed there for convenience to figure out where headers and libraries are.  Make sure your path is properly configured.
+
+
+#### 2.1.5: GNU pth for user-space threading<a name="subsubsec:pth"></a>
+
+
+By default, Linux usually ships with `ucontext` which enables user-space threading.
+Mac OS X does not support `ucontext` and requires an extra library be installed (GNU pth).
+GNU pth is easy to download and install from source.
+Even easier is MacPorts. 
+
+````
+shell> sudo port install pth
+````
+
+MacPorts installed all libraries to `/opt/local`. 
+When configuring, simply add `--with-pth=\$PATH_TO_PTH` as an argument.
+For MacPorts installation, this means configuring SST/macro with:
+
+````
+../configure --with-pth=/opt/local
+````
+
+#### 2.1.6: Building Boost (no longer required)<a name="subsubsec:boost"></a>
+
+
+We recommend two files: `user-config.jam` to configure the Boost compiler flags and a `runme.sh` that bootstraps, compiles, and installs the prerequisite Boost libraries. For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
 
 ````
 using gcc : : $PATH_TO_MPIC++  : <compileflags>-std=c++1y ;
@@ -403,66 +498,19 @@ We recommend Boost 1.59.  Other Boost versions should work as well, but this see
 
 The toolset can be changed from gcc to clang, as needed.  For maximum safety, Boost should install both "tagged" versions of libraries and un-tagged versions.  Once Boost is installed with these options, configuration and installation of SST core should be straightforward following documentation in the core library.
 
-##### Build SST/macro element library<a name="subsec:buildElementLib"></a>
-
-
-Once SST-macro is extracted to a directory, we recommend the following as a baseline configuration, including building outside the source tree:
-
-````
-sst-macro> ./bootstrap.sh
-sst-macro> mkdir build
-sst-macro> cd build
-sst-macro/build> ../configure --prefix=$PATH_TO_INSTALL --with-sst-core=$PATH_TO_SST_CORE CC=MPICC CXX=MPICXX
-````
-`PATH_TO_SST_CORE` should be the prefix install directory used when installing the core.  The MPI compilers should be the same compilers used for building Boost and SST core.
-
-SST/macro can still be built in standalone mode for a select set of features that have not been fully migrated to the SST core.  The installation and running are the same for both modes - simply remove the `--with--sst` parameter.  A complete list of options for standalone building can be seen by running `../configure --help`.   Some common options include:
-
-
--   --(dis|en)able-graphviz : Enables the collection of simulated call graphs, which can be viewed with graphviz.
-Enabled by default. Disable if not using Boost or C++11. Ordered maps can be used as a replacement, but with lower performance.
--   --(dis|en)able-regex : Regular expressions can be used to proofread input files, but this requires either Boost or C++11.
-Enabled by default. Disable if not using Boost or C++11.
--   --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
--   --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
--   --(dis|en)able-otf2: Enable OTF2 trace replay, requires a path to OTF2 installation.
-
-Once configuration has completed, printing a summary of the things it found, simply type `make`.  
-
-#### 2.1.4: Post-Build<a name="subsec:postbuild"></a>
-
-
-
-If the build did not succeed, check [2.1.5](#subsec:build:issues) for known issues, or contact SST-macro support for help (sstmacro-support@googlegroups.com).
-
-If the build was successful, it is recommended to run the range of tests to make sure nothing went wrong.  
-To do this, and also install SST-macro  to the install path specified during installation, run the following commands:
-
-````
-sst-macro/build> make -j8 check
-sst-macro/build> make install
-sst-macro/build> make -j8 installcheck
-````
-Make check runs all the tests we use for development, which checks all functionality of the simulator.  
-Make installcheck compiles some of the skeletons that come with SST-macro, linking against the installation.  
-
-
-Important:  Applications and other code linking to SST-macro use Makefiles that use the sst++/sstcc compiler wrappers
-that are installed there for convenience to figure out where headers and libraries are.  Make sure your path is properly configured.
-
-
-#### 2.1.5: Known Issues<a name="subsec:build:issues"></a>
+#### 2.1.7: Known Issues<a name="subsec:build:issues"></a>
 
 
 
 
 
--   Any build or runtime problems should be reported to sstmacro-devel@googlegroups.com.  We try to respond as quickly as possible.
+-   Any build or runtime problems should be reported to sst-macro-help@sandia.gov.  We try to respond as quickly as possible.
 -   make -j: When doing a parallel compile dependency problems can occur.  
 There are a lot of inter-related libraries and files.  
 Sometimes the Makefile dependency tracker gets ahead of itself and you will get errors about missing libraries and header files.
 If this occurs, restart the compilation.  If the error vanishes, it was a parallel dependency problem.
 If the error persists, then it's a real bug.
+-   GNU pth: For Mac, make sure to follow directions in [2.1.5](#subsubsec:pth) to ensure pth is correctly installed.
 -   Ubuntu: The Ubuntu linker performs too much optimization on dynamically linked executables.
 Some call it a feature.  I call it a bug.
 In the process it throws away symbols it actually needs later. The build system should automatically fix Ubuntu flags.
@@ -473,9 +521,7 @@ The executable has no direct dependence on any symbols in libB.
 Even if you add `-lB` to the `LDFLAGS` or `LDADD` variables,
 the linker ignores them and throws the library out.
 It takes a dirty hack to force the linkage.
-If there are issues, contact the developers at sstmacro-devel@googlegroups.com and report the problem.
--   Compilation with clang should work, although the compiler is very sensitive.  
-In particular, template code which is correct and compiles on several other platforms can mysteriously fail.  Tread with caution.
+If there are issues, contact the developers at sst-macro-help@sandia.gov and report the problem.
 
 ### Section 2.2: Building DUMPI<a name="sec:building:dumpi"></a>
 
@@ -495,7 +541,7 @@ Your build process might look like this (if you're building in a separate direct
 
 ````
 sst-dumpi/build> ../configure --prefix=/path-to-install --enable-libdumpi
-sst-dumpi/build> make -j8
+sst-dumpi/build> make
 sst-dumpi/build> sudo make install
 ````
 
@@ -528,19 +574,43 @@ Detailed build and usage instructions can be found on the website.
 
 
 
-\subsection{Building Clang libTooling}
+To enable Clang source-to-source support it is not sufficient to have a Clang compiler.  You have to install a special libTooling library for Clang.
 
-Building Clang support has a few steps (and takes quite a while to build), but is straightforward.
-Having a Clang compiler is not enough. You have to install a special libTooling library for Clang.
-Go to http://releases.llvm.org/download.html. Instead of having an all-in-one tarball, you will have to download 6 different components:
+#### 2.4.1: Building Clang libTooling<a name="subsec:buildingClanglibTooling"></a>
+
+
+
+##### The Easy Way: Mac OS X<a name="subsubsec:libToolingOSX"></a>
+
+
+Using MacPorts on OS X, it is trivial to obtain a Clang installation that includes libTooling:
+
+````
+port install clang-devel
+````
+
+MacPorts will place the Clang compilers in `/opt/local/bin`.  Enable the devel version of Clang with:
+
+````
+port select --set clang mp-clang-devel
+````
+
+The Clang libraries will be placed into `/opt/local/libexec/llvm-devel/lib`, so the appropriate option to the sst-macro configure script is `--with-clang=/opt/local/libexec/llvm-devel`.
+
+##### The Hard Way<a name="subsubsec:libTooling"></a>
+
+
+For operating systems other than OS X, building Clang support has a few steps (and takes quite a while to build), but is straightforward.
+Instead of having an all-in-one tarball, you will have to download 2 different components. You can install more if you want build libc++, but these are not required.
+Obtain the following from http://releases.llvm.org/download.html.
 
 
 -   LLVM source code
 -   Clang source code
--   compiler-rt source code
--   libc++ source code
--   libc++abi source code
--   OpenMP source code
+-   (optional, not recommended unless needed) libc++ source code
+-   (optional, not recommended unless needed) libc++abi source code
+-   (optional, not recommended) compiler-rt source code
+-   (optional, not recommended) OpenMP source code
 
 Setting up the folders can be done automatically using the `setup-clang` script in `bin/tools` folder in sst-macro. Put all of downloaded tarballs in a folder, e.g. `clang-llvm`. Then run `setup-clang` in the directory. 
 It will automatically place files where LLVM needs them.
@@ -554,8 +624,19 @@ The setup script places each tarball in the following subfolders of the main LLV
 -   projects/libc++abi
 -   projects/openmp
 
-Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
+Only Clang is a strict dependency. Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
 You MUST use another Clang compiler to build. If not, then you need to bootstrap (use GCC to build Clang, then use that Clang to build itself).
+
+````
+cmake ../llvm \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_FLAGS="-O3" \
+  -DCMAKE_C_FLAGS="-O3" \
+  -DCMAKE_INSTALL_PREFIX=$install
+````
+
+To build a complete LLVM/Clang (again, not required unless you absolutely need a new libc++), run:
 
 ````
 cmake ../llvm \

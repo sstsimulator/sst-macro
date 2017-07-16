@@ -66,8 +66,7 @@ struct device_id {
   {
   }
 
-  static device_id
-  ctrl_event() {
+  static device_id ctrl_event() {
     return device_id(0,control_event);
   }
 
@@ -76,28 +75,23 @@ struct device_id {
   {
   }
 
-  type_t
-  type() const {
+  type_t type() const {
     return type_;
   }
 
-  uint32_t
-  id() const {
+  uint32_t id() const {
     return location_;
   }
 
-  bool
-  is_node_id() const {
+  bool is_node_id() const {
     return type_ == node;
   }
 
-  bool
-  is_switch_id() const {
+  bool is_switch_id() const {
     return type_ == router;
   }
 
-  bool
-  is_netlink_id() const {
+  bool is_netlink_id() const {
     return type_ == netlink;
   }
 
@@ -125,8 +119,7 @@ template <>
 class serialize<sstmac::device_id>
 {
  public:
-  void
-  operator()(sstmac::device_id& t, serializer& ser){
+  void operator()(sstmac::device_id& t, serializer& ser){
     ser.primitive(t);
   }
 };

@@ -384,7 +384,9 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
   if (skipVisit){
     return true;
   }
-  if (!pragmaConfig_.makeNoChanges){
+  if (pragmaConfig_.makeNoChanges){
+    pragmaConfig_.makeNoChanges = false; //turn off for next guy
+  } else {
     CXXRecordDecl* cls = expr->getRecordDecl();
     std::string clsName = cls->getNameAsString();
     if (clsName == "mpi_api"){
@@ -540,13 +542,74 @@ SkeletonASTVisitor::declareStaticInitializers(const std::string& scope_unique_va
      << "extern int __sizeof_" << scope_unique_var_name << ";";
 }
 
-bool
+SkeletonASTVisitor::ArrayInfo*
+SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
+{
+  const Type* ty  = D->getType().getTypePtr();
+  bool isC99array = ty->isArrayType();
+  bool isConstC99array = ty->isConstantArrayType();
+
+  if (isConstC99array){
+    const ConstantArrayType* aty = static_cast<const ConstantArrayType*>(ty->getAsArrayTypeUnsafe());
+    info->typedefName = "type" + D->getNameAsString();
+    std::stringstream sstr;
+    sstr << "typedef " << QualType::getAsString(aty->getElementType().split())
+         << " " << info->typedefName
+         << "[" << aty->getSize().getZExtValue() << "]";
+    info->typedefString = sstr.str();
+    info->isConstSize = true;
+    info->size = aty->getSize().getZExtValue();
+    info->retType = "type" + D->getNameAsString() + "*";
+    return info;
+  } else if (isC99array){
+    const ArrayType* aty = ty->getAsArrayTypeUnsafe();
+    info->retType = QualType::getAsString(aty->getElementType().split()) + "**";
+    info->isConstSize = false;
+    return info;
+  } else {
+    return nullptr;
+  }
+}
+
+SkeletonASTVisitor::AnonRecord*
+SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
+{
+  bool isAnon = false;
+  auto ty = D->getType().getTypePtr();
+  if (ty->isStructureType()){
+    RecordDecl* recDecl = ty->getAsStructureType()->getDecl();
+    if (recDecl->getNameAsString() == ""){
+      rec->structType = "struct";
+      rec->decl = recDecl;
+      isAnon = true;
+    }
+  } else if (ty->isUnionType()){
+    RecordDecl* recDecl = ty->getAsUnionType()->getDecl();
+    if (recDecl->getNameAsString() == ""){
+      rec->structType = "union";
+      rec->decl = recDecl;
+      isAnon = true;
+    }
+  }
+
+  if (isAnon){
+    rec->typeName = D->getNameAsString() + "_anonymous_type";
+    rec->retType = rec->structType + " "  + rec->typeName + "*";
+    return rec;
+  } else {
+    return nullptr;
+  }
+}
+
+void
 SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                    const std::string& init_prefix,
                                    SourceLocation externVarsInsertLoc,
                                    SourceLocation getRefInsertLoc,
                                    GlobalRedirect_t red_ty,
-                                   VarDecl* D)
+                                   VarDecl* D,
+                                   AnonRecord* anonRecord,
+                                   ArrayInfo* arrayInfo)
 {
   //const global variables can't change... so....
   //no reason to do any work tracking them
@@ -560,26 +623,18 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 
   // roundabout way to get the type of the variable
   std::string retType;
-  const Type* ty  = D->getType().getTypePtr();
-  bool isC99array = ty->isArrayType();
-  //varRepl will hold the replacement text that we will use in the map
-  if (isC99array){
-    const ArrayType* aty = ty->getAsArrayTypeUnsafe();
-    retType = QualType::getAsString(aty->getElementType().split()) + "*";
-    varRepl = "(" + currentNs_->nsPrefix() + "get_" + scopeUniqueVarName + "())";
+  if (arrayInfo){
+    retType = arrayInfo->retType;
   } else {
     retType = QualType::getAsString(D->getType().split()) + "*";
-    varRepl = "(*" + currentNs_->nsPrefix() + "get_" + scopeUniqueVarName + "())";
   }
+  varRepl = "(*" + currentNs_->nsPrefix() + "get_" + scopeUniqueVarName + "())";
 
-  if (ty->isStructureType()){
-    RecordDecl* recDecl = ty->getAsStructureType()->getDecl();
-    if (recDecl->getNameAsString() == ""){
-      //is anon doesn't work, I don't know why
-      std::string typeName = D->getNameAsString() + "_anonymous_type";
-      SourceLocation openBrace = recDecl->getBraceRange().getBegin();
-      rewriter_.InsertText(openBrace, "  " + typeName, false, false);
-      retType = "struct " + typeName + "*";
+  if (anonRecord){
+    retType = anonRecord->retType;
+    if (!anonRecord->isFxnStatic){
+      SourceLocation openBrace = anonRecord->decl->getBraceRange().getBegin();
+      rewriter_.InsertText(openBrace, "  " + anonRecord->typeName, false, false);
     }
   }
 
@@ -609,6 +664,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   std::string varName = D->getNameAsString();
   bool notDeclared = globalsDeclared_.find(varName) == globalsDeclared_.end();
   if (notDeclared){
+    if (arrayInfo && !arrayInfo->isFxnStatic && arrayInfo->isConstSize){
+      os << arrayInfo->typedefString << "; ";
+    }
     os << "static inline " << retType << " get_" << scopeUniqueVarName << "(){ "
        << " int stack; int* stackPtr = &stack; "
        << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize; "
@@ -623,7 +681,6 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     errorAbort(D->getLocStart(), *ci_, "failed replacing global variable declaration");
   }
   rewriter_.InsertText(getRefInsertLoc, os.str());
-  return true;
 }
 
 clang::SourceLocation
@@ -645,18 +702,28 @@ bool
 SkeletonASTVisitor::checkStaticFileVar(VarDecl* D)
 {
   SourceLocation end = getEndLoc(D);
-  return setupGlobalVar(currentNs_->filePrefix(), "", end, end, Extern, D);
+  AnonRecord rec;
+  AnonRecord* recPtr = checkAnonStruct(D, &rec);
+  ArrayInfo info;
+  ArrayInfo* infoPtr = checkArray(D, &info);
+  setupGlobalVar(currentNs_->filePrefix(), "", end, end, Extern, D, recPtr, infoPtr);
+  return true;
 }
 
 bool
 SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
 {
+  AnonRecord rec;
+  AnonRecord* recPtr = checkAnonStruct(D, &rec);
+  ArrayInfo info;
+  ArrayInfo* infoPtr = checkArray(D, &info);
   SourceLocation end = getEndLoc(D);
   if (end.isInvalid()){
     errorAbort(D->getLocStart(), *ci_,
                "Multi-variable declarations for global variables not allowed");
   }
-  return setupGlobalVar("", "", end, end, Extern, D);
+  setupGlobalVar("", "", end, end, Extern, D, recPtr, infoPtr);
+  return true;
 }
 
 void
@@ -676,10 +743,10 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
       prefix_sstr << "_" << fxn->getNameAsString();
     }
 
-    if (D->getType().getTypePtr()->isArrayType()){
-      errorAbort(D->getLocStart(), *ci_,
-                 "cannot currently refactory array static function variables");
-    }
+    AnonRecord anonRec;
+    AnonRecord* anonRecPtr = checkAnonStruct(D, &anonRec);
+    ArrayInfo arrayInfo;
+    ArrayInfo* arrayInfoPtr = checkArray(D, &arrayInfo);
 
     std::string init_prefix = prefix_sstr.str();
     std::string scope_prefix = currentNs_->filePrefix() + init_prefix;
@@ -687,8 +754,27 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
      *  to avoid name conflicts, we have to change the name of the initializer to
      *  something unique */
     PrettyPrinter new_init_pp;
-    new_init_pp.os << "static " << QualType::getAsString(D->getType().split())
-                  << " " << init_prefix << D->getNameAsString();
+    if (anonRecPtr){
+      new_init_pp.os << anonRecPtr->structType
+                     << " " << anonRecPtr->typeName
+                     << "{";
+      auto end = anonRecPtr->decl->field_end();
+      for (auto iter=anonRecPtr->decl->field_begin(); iter != end; ++iter){
+        FieldDecl* fdec = *iter;
+        new_init_pp.print(fdec);
+        new_init_pp.os << "; ";
+      }
+      new_init_pp.os << "}; ";
+      new_init_pp.os << "static " << anonRecPtr->structType
+                     << " " << anonRecPtr->typeName;
+    } else if (arrayInfoPtr) {
+      new_init_pp.os << arrayInfoPtr->typedefString << "; ";
+      new_init_pp.os << "static " << arrayInfoPtr->typedefName;
+      arrayInfoPtr->isFxnStatic = true;
+    } else {
+      new_init_pp.os << "static " << QualType::getAsString(D->getType().split());
+    }
+    new_init_pp.os << " " << init_prefix << D->getNameAsString();
     if (D->hasInit()){
       new_init_pp.os << " = ";
       new_init_pp.print(D->getInit());
@@ -697,8 +783,8 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
     rewriter_.InsertText(insertLoc, new_init_pp.str());
     //now that we have moved the initializer, we can do the replacement
     //but the replacement should point to the new initializer
-    setupGlobalVar(scope_prefix, init_prefix,
-                   outerFxn->getLocStart(), insertLoc, Extern, D);
+    setupGlobalVar(scope_prefix, init_prefix, outerFxn->getLocStart(),
+                   insertLoc, Extern, D, anonRecPtr, arrayInfoPtr);
     SourceLocation endLoc = getEndLoc(D);
     SourceRange rng(D->getLocStart(), endLoc);
     //while we're at it, might as well get rid of the old initializer
@@ -723,7 +809,7 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
     if (!D->hasInit()){
       //no need for special scope prefixes - these are fully scoped within in the class
       setupGlobalVar(scope_prefix, ""/*not used*/, outerCls->getLocStart(),
-                     getEndLoc(D), CxxStatic, D);
+                     getEndLoc(D), CxxStatic, D, nullptr, nullptr);
     } //else this must be a const integer if inited in the header file
       //we don't have to "deglobalize" this
   }
@@ -802,6 +888,18 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 bool
 SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
 {
+  for (SSTPragma* prg : pragmas_.getMatches(D)){
+    pragmaConfig_.pragmaDepth++;
+    //pragma takes precedence - must occur in pre-visit
+    prg->activate(D, rewriter_, pragmaConfig_);
+    pragmaConfig_.pragmaDepth--;
+  }
+
+  if (pragmaConfig_.makeNoChanges){
+    pragmaConfig_.makeNoChanges = false;
+    return true;
+  }
+
   if (D->getMemberSpecializationInfo() && D->getTemplateInstantiationPattern()){
     return true;
   }
@@ -868,6 +966,8 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
 void
 SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 {
+  if (!mainFxn->getDefinition()) return;
+
   SourceManager &SM = rewriter_.getSourceMgr();
   std::string sourceFile = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
   std::string suffix2 = sourceFile.substr(sourceFile.size()-2,2);
@@ -902,6 +1002,11 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     replaceMain(D);
   } else if (D->isTemplateInstantiation()){
     return true; //do not visit implicitly instantiated template stuff
+  }
+
+  if (D->isLocalExternDecl()){
+    //weird extern declaration - skip it
+    return true;
   }
 
   bool skipVisit = false;
@@ -1344,6 +1449,7 @@ SkeletonASTVisitor::replaceGlobalUse(NamedDecl* decl, SourceRange replRng)
 
   auto iter = globals_.find(decl);
   if (iter != globals_.end()){
+    //if (decl->getNameAsString() == "ncptl_cycles_per_usec") abort();
     replace(replRng, rewriter_, iter->second, *ci_);
   }
 }

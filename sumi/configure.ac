@@ -11,7 +11,7 @@ dnl
 
 dnl Version info
 m4_define([SUMI_VERSION_TAG], 7)
-m4_define([SUMI_SUBVERSION_TAG], 0)
+m4_define([SUMI_SUBVERSION_TAG], 2)
 m4_define([SUMI_SUBSUBVERSION_TAG], 0)
 # Enable this for releases
 dnl m4_define([SUMI_SNAPSHOT_TAG])

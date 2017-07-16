@@ -46,7 +46,7 @@ def runCmdArr(cmdArr,verbose):
   else:
     return 0
 
-def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True):
+def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True, runClang=True):
   extraLibsStr = extraLibs
   extraLibs = extraLibs.split()
   import os
@@ -123,6 +123,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   linkerArgs = []
   sourceFiles = []
   objectFiles = []
+  warningArgs = []
   optFlags = []
   objTarget = None
   ldTarget = None
@@ -143,8 +144,19 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         cxxInitFile = addPrefix("sstGlobals.", sarg)
         if os.path.isfile(cxxInitFile):
           objectFiles.append(cxxInitFile)
+        elif ".libs" in cxxInitFile:
+          cxxInitFile = cxxInitFile.replace(".libs/","")
+          if os.path.isfile(cxxInitFile):
+            objectFiles.append(cxxInitFile)
+          else:
+            sys.stderr.write("no file %s\n" % cxxInitFile)
+        else:
+          sys.stderr.write("no file %s\n" % cxxInitFile)
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
+    elif sarg.startswith("-W"):
+      warningArgs.append(sarg)
+      givenFlags.append(sarg)
     elif sarg.startswith("-L"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-l"):
@@ -225,6 +237,15 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     sstCompilerFlagsStr = cleanFlag(sstCFlagsStr)
     compiler = cc
     ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
+
+  #okay this is sooo dirty - but autoconf is a disaster to trick
+  #if this detects something auto-confish, bail and pass through to regular compiler
+  if "conftest.c" in sysargs:
+    cmd = "%s %s" % (compiler, " ".join(sysargs))
+    sys.stderr.write("passing through on autoconf: %s\n" % cmd) 
+    rc = os.system(cmd)
+    if rc == 0: return 0
+    else: return 1
 
   sstCompilerFlags = []
   sstStdFlag = None
@@ -312,7 +333,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   ldCmdArr = []
   arCmdArr = []
   ppOnly = "-E" in controlArgs
-  runClang = haveClangSrcToSrc and src2src 
+  runClang = haveClangSrcToSrc and src2src and runClang
   controlArgStr = " ".join(controlArgs)
   extraCppFlagsStr = " ".join(extraCppFlags)
   givenFlagsStr = " ".join(givenFlags)
@@ -440,6 +461,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           os.system("rm -f %s" % ppTmpFile)  
         return rc
 
+      ppText = open(ppTmpFile).read()
+
       srcRepl = addPrefix("sst.pp.",srcFile)
       cxxInitSrcFile = addPrefix("sstGlobals.pp.",srcFile) + ".cpp"
 
@@ -449,8 +472,14 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         addClangArgs(clangLibtoolingCxxFlagsStr.split(), clangCmdArr)
       else:
         addClangArgs(clangLibtoolingCFlagsStr.split(), clangCmdArr)
+      #oh, hell, I have to fix intrinsics
+      intrinsicsFixerPath = os.path.join(cleanFlag(includeDir), "sstmac", "replacements", "fixIntrinsics.h")
+      intrinsicsFixer = "-include%s" % intrinsicsFixerPath
+      #addClangArg(intrinsicsFixer, clangCmdArr)
+
       clangCmdArr.append(ppTmpFile)
       clangCmdArr.append("--")
+      clangCmdArr.extend(warningArgs)
       clangCmd = " ".join(clangCmdArr)
       if verbose: sys.stderr.write("%s\n" % clangCmd)
       rc = os.system(clangCmd)
@@ -515,8 +544,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
     #some generate multiple .o files at once, I don't know why
     manyObjects = objTarget == None #no specific target specified
-    mergeCmdArr = [compiler]
-    mergeCmdArr.append("-Wl,-r -nostdlib")
     allObjects = []
     for srcFile in sourceFiles:
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
@@ -541,7 +568,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         delete(allObjects)
     return 0
 
-  else:
+  if not runClang:
     rc = runCmdArr(cxxCmdArr,verbose)
     if not rc == 0: return rc
     rc = runCmdArr(ldCmdArr,verbose)

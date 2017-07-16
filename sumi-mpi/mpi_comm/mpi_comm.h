@@ -80,7 +80,6 @@ class mpi_comm : public communicator
  public:
   mpi_comm();
 
-  /// Hello.
   mpi_comm(
     MPI_Comm id,
     int rank,
@@ -89,116 +88,83 @@ class mpi_comm : public communicator
     bool del_grp = false,
     topotypes ty = TOPO_NONE);
 
-  /// Goodbye.
-  virtual
-  ~mpi_comm();
+  virtual ~mpi_comm();
 
-  void
-  set_name(std::string name) {
+  void set_name(std::string name) {
     name_ = name;
   }
 
-  std::string
-  name() const {
+  std::string name() const {
     return name_;
   }
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
-  topotypes
-  topo_type() const {
+  topotypes topo_type() const {
     return topotype_;
   }
 
-  mpi_group*
-  group() {
+  mpi_group* group() {
     return group_;
   }
 
-  void
-  dup_keyvals(mpi_comm* m);
+  bool delete_group() const {
+    return del_grp_;
+  }
 
-  /// This is the null communicator.
+  void dup_keyvals(mpi_comm* m);
+
   static mpi_comm* comm_null;
 
-  std::string
-  to_string() const;
+  std::string to_string() const;
 
-  /// The rank of this peer in the communicator.
-  int
-  rank() const {
+  int rank() const {
     return rank_;
   }
 
-  /// The size of the communicator.
-  int
-  size() const;
+  int size() const;
 
-  /// The identifier for this communicator.
-  /// To be used to tag messages to/from this communicator.
-  MPI_Comm
-  id() const {
+  MPI_Comm id() const {
     return id_;
   }
 
-  void
-  set_keyval(keyval* k, void* val);
+  void set_keyval(keyval* k, void* val);
 
-  void
-  get_keyval(keyval* k, void* val, int* flag);
+  void get_keyval(keyval* k, void* val, int* flag);
 
-  app_id
-  app() const {
+  app_id app() const {
     return aid_;
   }
 
-  int
-  comm_to_global_rank(int comm_rank) const {
+  int comm_to_global_rank(int comm_rank) const {
     return int(peer_task(comm_rank));
   }
 
-  int
-  global_to_comm_rank(int global_rank) const;
+  int global_to_comm_rank(int global_rank) const;
 
-  int
-  nproc() const {
+  int nproc() const {
     return size();
   }
 
-  //
-  // Get a unique tag for a collective operation.
-  //
-  int
-  next_collective_tag();
+  int next_collective_tag();
 
-  /// The task index of the caller.
-  task_id
-  my_task() const;
+  task_id my_task() const;
 
-  /// The task index of the given peer.
-  task_id
-  peer_task(int rank) const;
+  task_id peer_task(int rank) const;
 
-  /// Equality comparison.
-  inline bool
-  operator==(mpi_comm* other) const {
+  inline bool operator==(mpi_comm* other) const {
     return ((rank_ == other->rank_) && (id_ == other->id_));
   }
 
-  /// Inequality comparison.
-  inline bool
-  operator!=(mpi_comm* other) const {
+  inline bool operator!=(mpi_comm* other) const {
     return !this->operator==(other);
   }
 
-  void
-  add_request(int tag, mpi_request* req){
+  void add_request(int tag, mpi_request* req){
     ireqs_[tag] = req;
   }
 
-  mpi_request*
-  get_request(int tag) const {
+  mpi_request* get_request(int tag) const {
     auto it = ireqs_.find(tag);
     if (it == ireqs_.end()){
       spkt_throw_printf(sprockit::value_error,
@@ -207,10 +173,6 @@ class mpi_comm : public communicator
     }
     return it->second;
   }
-
- protected:
-  friend std::ostream&
-  operator<<(std::ostream &os, mpi_comm* comm);
 
  private:
   friend class mpi_comm_factory;
@@ -242,10 +204,6 @@ class mpi_comm : public communicator
   int rank_;
 
 };
-
-/// Fairly self-explanatory.
-std::ostream&
-operator<<(std::ostream &os, mpi_comm* comm);
 
 }
 

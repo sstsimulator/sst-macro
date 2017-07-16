@@ -4,23 +4,26 @@ import os
 import sys
 
 order = [
- ("llvm", "llvm"),
- ("cfe", "llvm/tools/clang"),
- ("compiler-rt", "llvm/projects/compiler-rt"),
- ("openmp", "llvm/projects/openmp"),
- ("libcxx", "llvm/projects/libcxx"),
- ("libcxxabi", "llvm/projects/libcxxabi"),
+ ("llvm", "llvm", True),
+ ("cfe", "llvm/tools/clang", True),
+ ("compiler-rt", "llvm/projects/compiler-rt", False),
+ ("openmp", "llvm/projects/openmp", False),
+ ("libcxx", "llvm/projects/libcxx", False),
+ ("libcxxabi", "llvm/projects/libcxxabi", False),
 ]
 
 import glob
-for pattern, dst in order:
+for pattern, dst, required in order:
   if os.path.isdir(dst):
     print("skipping %s" % dst)
     continue
 
   tarball = glob.glob("%s-*tar*" % pattern)
   if len(tarball) == 0:
-    sys.exit("no matches for %s tarball" % pattern)
+    if required:
+      sys.exit("no matches for %s tarball" % pattern)
+    else:
+      continue
   elif len(tarball) > 1:
     sys.exit("multiple matches for %s tarball: %s" % (pattern, tarball))
 
