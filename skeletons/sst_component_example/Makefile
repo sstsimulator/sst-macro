@@ -1,10 +1,10 @@
-TARGET := libsendrecv.so
-SRC := main.cc
+TARGET := libtest.so
+SRC := component.cc
 
 CXX :=    libsst++
 CC :=     libsstcc
 CXXFLAGS := -fPIC
-CPPFLAGS := -I.
+CPPFLAGS := -I. -I$(HOME)/Programs/install/sst-core/clang/include
 LIBDIR :=  
 PREFIX := 
 LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib

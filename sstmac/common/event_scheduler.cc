@@ -129,7 +129,9 @@ void
 event_scheduler::schedule(SST::SimTime_t delay, event_handler* handler, event* ev)
 {
   event_queue_entry* evq = new handler_event_queue_entry(ev, handler, event_location());
-  if (handler->link()) abort();
+  if (handler->link()){
+    spkt_abort_printf("should never schedule directly to link! use send_to_link");
+  }
   self_link_->send(delay, time_converter_, evq);
 }
 
