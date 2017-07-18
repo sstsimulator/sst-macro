@@ -31,6 +31,8 @@ bin_SCRIPTS = sstmacro-config sstccvars.py
 
 EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest
 
+AM_LDFLAGS += -ldl
+
 AM_CPPFLAGS += \
  -I$(top_builddir)/bin \
  -I$(top_srcdir)/bin \
@@ -56,7 +58,7 @@ if EXTERNAL_BOOST
   exe_LDADD += $(BOOST_LDFLAGS)
 endif
 
-sstmac_LDADD = $(exe_LDADD)
+sstmac_LDADD = $(exe_LDADD) -ldl
 sstmac_top_info_LDADD = $(exe_LDADD)
 endif
 

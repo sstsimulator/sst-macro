@@ -1,11 +1,9 @@
 #include <sstmac/hardware/common/connection.h>
-#include <sst/core/model/element_python.h>
-#include <sst/core/element.h>
+#include <sstmac/common/sstmac_config.h>
+
 
 using namespace sstmac;
 using namespace sstmac::hw;
-using namespace SST;
-
 
 /**
 For creating custom hardware components inside of SST/macro, it follows
@@ -15,6 +13,9 @@ for connecting objects together in the simulated network. This 'connectable'
 interface is presented below.
 */
 
+
+#if SSTMAC_INTEGRATED_SST_CORE
+using namespace SST;
 /**
 No special Python actions are needed so this is null.
 */
@@ -39,15 +40,10 @@ class TestModule : public SSTElementPythonModule {
    "test",
    SST_ELI_ELEMENT_VERSION(1,0,0)
   )
-
 };
-
-template <class T, class Fxn>
-link_handler*
-new_link_handler(const T* t, Fxn fxn){
-  return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
-}
-
+#include <sst/core/model/element_python.h>
+#include <sst/core/element.h>
+#endif
 
 /**
  * @brief The test_component class

@@ -156,8 +156,7 @@ event_scheduler::init_self_link(SST::Component* comp)
     time_converter_ = comp->getTimeConverter(timestamp::tick_interval_string());
   }
   self_link_ = comp->configureSelfLink("self", time_converter_,
-    new SST::Event::Handler<event_scheduler>(this,
-                 &event_scheduler::handle_self_event));
+    new_link_handler(this, &event_scheduler::handle_self_event));
   comp_ = comp;
 }
 

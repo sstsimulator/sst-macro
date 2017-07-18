@@ -90,18 +90,15 @@ pisces_simple_network::init_links(sprockit::sim_parameters* params)
     istr >> src_outport;
     istr >> dst_inport;
     if (port_type == "input"){
-      configureLink(pair.first,
-       new SST::Event::Handler<pisces_simple_network>(this, &pisces_simple_network::packet_head_arrived));
+      configureLink(pair.first, new_link_handler(this, &pisces_simple_network::packet_head_arrived));
       credit_link_ = link;
     } else if (port_type == "output"){
       link_wrapper* wrapper = new link_wrapper(link);
       inj_buffer_->set_output(inj_params, src_outport, dst_inport, wrapper);
-      configureLink(pair.first,
-       new SST::Event::Handler<pisces_injection_buffer>(inj_buffer_, &pisces_injection_buffer::handle_credit));
+      configureLink(pair.first, new_link_handler(inj_buffer_, &pisces_injection_buffer::handle_credit));
     } else if (port_type == "in-out"){
       logp_link_ = link;
-      configureLink(pair.first,
-        new SST::Event::Handler<pisces_simple_network>(this, &pisces_simple_network::ctrl_msg_arrived));
+      configureLink(pair.first, new_link_handler(this, &pisces_simple_network::ctrl_msg_arrived));
     }
   }
 }
