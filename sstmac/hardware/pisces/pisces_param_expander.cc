@@ -95,30 +95,19 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
     netlink_params->add_param("arbitrator",arb);
   }
 
-  int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
-  int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
-  int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", packet_size);
-
-/* DIFF: causes a few extra failures */
-//  int size_multiplier = switch_buffer_multiplier(params);
-//  int buffer_size = buffer_depth_ * packet_size * size_multiplier;
-//  buffer_size = switch_params->get_optional_byte_length_param("buffer_size", buffer_size);
-//  switch_params->add_param_override("buffer_size", buffer_size);
-
-//  mem_params->add_param_override("mtu", mem_packet_size);
-//  switch_params->add_param_override("mtu", net_packet_size);
-//  nic_params->add_param_override("mtu", net_packet_size);
-
   if (!mem_params->has_param("mtu")){
+    int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", 4096000);
     mem_params->add_param_override("mtu", mem_packet_size);
   }
+
+  int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
+  int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
   if (!switch_params->has_param("mtu")){
     switch_params->add_param_override("mtu", net_packet_size);
   }
   if (!nic_params->has_param("mtu")){
     nic_params->add_param_override("mtu", net_packet_size);
   }
-  /* END DIFF */
 
   if (amm_type == "amm1"){
     expand_amm1_memory(params, mem_params);
@@ -322,10 +311,10 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
       "AMM4: need switch geometry vector with 2 params:\n"
       "tiles-per-row, tiles-per-col");
   }
-  int nrows = switch_geom[0];
-  int ncols = switch_geom[1];
-  top_params->add_param_override("tiles_per_row", nrows);
-  top_params->add_param_override("tiles_per_col", ncols);
+  int ncols = switch_geom[0];
+  int nrows = switch_geom[1];
+  top_params->add_param_override("tiles_per_row", ncols);
+  top_params->add_param_override("tiles_per_col", nrows);
   top_params->add_param_override("name", newtop);
 
   switch_params->add_param_override("model", "pisces_tiled");
@@ -427,6 +416,8 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
   ej_params->add_param_override("credit_latency", "0ns");
 
   // setup netlink (required)
+  int nl_conc = netlink_params->get_int_param("concentration");
+  top_params->add_param_override("netlink_concentration", nl_conc);
   netlink_params->add_param_override("model", "pisces");
   inj_params = netlink_params->get_optional_namespace("injection");
   ej_params = netlink_params->get_optional_namespace("ejection");

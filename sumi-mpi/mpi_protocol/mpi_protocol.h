@@ -76,8 +76,7 @@ class mpi_protocol : public sprockit::printable {
    * @param queue
    * @param msg
    */
-  virtual void
-  send_header(mpi_queue* queue, const mpi_message::ptr& msg) = 0;
+  virtual void send_header(mpi_queue* queue, const mpi_message::ptr& msg) = 0;
 
   /**
    * @brief incoming_header  When the header from #send_header
@@ -85,8 +84,7 @@ class mpi_protocol : public sprockit::printable {
    * @param queue The queue the header arrived at
    * @param msg The header
    */
-  virtual void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
+  virtual void incoming_header(mpi_queue* queue, const mpi_message::ptr& msg);
 
   /**
    * @brief incoming_header  When the header from #send_header
@@ -98,8 +96,7 @@ class mpi_protocol : public sprockit::printable {
    * @param req A descriptor for the recv. If non-null,
    *            the recv has already been posted.
    */
-  virtual void
-  incoming_header(mpi_queue* queue, const mpi_message::ptr& msg,
+  virtual void incoming_header(mpi_queue* queue, const mpi_message::ptr& msg,
                   mpi_queue_recv_request* req);
 
   /**
@@ -111,8 +108,7 @@ class mpi_protocol : public sprockit::printable {
    * @param queue The queue the header arrived at
    * @param msg The header
    */
-  virtual void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
+  virtual void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg);
 
 
   /**
@@ -126,8 +122,7 @@ class mpi_protocol : public sprockit::printable {
    * @param req A descriptor for the recv. If non-null,
    *            the recv has already been posted.
    */
-  virtual void
-  incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg,
+  virtual void incoming_payload(mpi_queue* queue, const mpi_message::ptr& msg,
                    mpi_queue_recv_request* req);
 
   /**

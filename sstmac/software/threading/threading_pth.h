@@ -66,27 +66,17 @@ class threading_pth : public threading_interface
     return new threading_pth();
   }
 
-  // Initializing a context.
-  virtual void
-  init_context();
+  virtual void init_context();
 
-  virtual void
-  destroy_context();
+  virtual void destroy_context();
 
-  /// Start a new context.
-  virtual void
-  start_context(int physical_thread_id, void *stack, size_t stacksize, void
+  virtual void start_context(int physical_thread_id, void *stack, size_t stacksize, void
                 (*func)(void*), void *args, threading_interface *yield_to,
                 void* globals_storage);
 
-  /// Swap context.
-  virtual void
-  swap_context(threading_interface *to);
+  virtual void swap_context(threading_interface *to);
 
-  /// This is called when we have completed running the thread. It is
-  /// called in the from context.
-  virtual void
-  complete_context( threading_interface *to) {
+  virtual void complete_context( threading_interface *to) {
     swap_context(to);
   }
 

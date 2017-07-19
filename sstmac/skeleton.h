@@ -53,9 +53,13 @@ typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
 #include <sstmac/common/sstmac_config.h>
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+#include <sstmac/null_buffer.h>
 
 #ifdef __cplusplus
-#include <cstdlib> //must come first
+
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
 #include <sstCoreElement.h>
@@ -97,13 +101,16 @@ extern void* sstmac_new(unsigned long size);
 #include <utility>
 
 extern int& should_skip_operator_new();
+extern int sstmac_global_stacksize;
 
 template <class T, class... Args>
 T*
 placement_new(void* sstmac_placement_ptr, Args&&... args){
-  int flag = should_skip_operator_new();
+  //non-zero global stacksize shows we moved outside cxa init
+  //always allocate during cxa init
+  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
   if (flag == 0){
-    if (sstmac_placement_ptr != nullptr){
+    if (isNonNullBuffer(sstmac_placement_ptr)){
       return new (sstmac_placement_ptr) T(std::forward<Args>(args)...);
     }
     return reinterpret_cast<T*>(sstmac_placement_ptr);
@@ -115,7 +122,9 @@ placement_new(void* sstmac_placement_ptr, Args&&... args){
 template <class T>
 T*
 conditional_array_new(unsigned long size){
-  int flag = should_skip_operator_new();
+  //non-zero global stacksize shows we moved outside cxa init
+  //always allocate during cxa init
+  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
   T* ret = nullptr;
   if (flag == 0){
     ret = new T[size];
@@ -126,7 +135,9 @@ conditional_array_new(unsigned long size){
 template <class T, class... Args>
 T*
 conditional_new(Args&&... args){
-  int flag = should_skip_operator_new();
+  //non-zero global stacksize shows we moved outside cxa init
+  //always allocate during cxa init
+  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
   T* ret = nullptr;
   if (flag == 0){
     ret = new T(std::forward<Args>(args)...);
@@ -139,13 +150,44 @@ conditional_new(Args&&... args){
 template <class T>
 void
 conditional_delete(T* t){
-  if (t != nullptr) delete t;
+  if (isNonNullBuffer(t)) delete t;
 }
 
 template <class T>
 void
 conditional_delete_array(T* t){
-  if (t != nullptr) delete[] t;
+  if (isNonNullBuffer(t)) delete[] t;
+}
+
+namespace sstmac {
+
+class vector {
+ public:
+  void resize(unsigned long sz){
+    size_ = sz;
+  }
+
+  unsigned long size() const {
+    return size_;
+  }
+
+  template <class... Args>
+  void push_back(Args... args){
+    ++size_;
+  }
+
+  template <class... Args>
+  void emplace_back(Args... args){
+    ++size_;
+  }
+
+  bool empty() const {
+    return size_ == 0;
+  }
+
+ private:
+  unsigned long  size_;
+};
 }
 
 
@@ -155,6 +197,10 @@ conditional_delete_array(T* t){
 
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;
+
+
+#define define_var_name_pass_through(x) sstmac_dont_ignore_this##x
+#define define_var_name(x) define_var_name_pass_through(x)
 
 #undef main
 #define main USER_MAIN
@@ -168,39 +214,47 @@ using sprockit::sim_parameters;
   sst_eli_block(sstmac_app_name) \
  static int user_skeleton_main(__VA_ARGS__)
 
-extern sprockit::sim_parameters*
-get_params();
+extern sprockit::sim_parameters* get_params();
 
 /**
  * @brief sstmac_free
  * @param ptr A pointer which may or may not have been skeletonized
  */
-static inline void
-sstmac_free(void* ptr){
-  if (ptr != nullptr) ::free(ptr);
-}
+extern "C" void sstmac_free(void* ptr);
+
+extern "C" void* sstmac_memset(void* ptr, int value, unsigned long  sz);
 
 namespace std {
-static inline void
-sstmac_free(void* ptr){
-  if (ptr != nullptr) std::free(ptr);
-}
+
+void sstmac_free(void* ptr);
+
+void* sstmac_memset(void* ptr, int value, unsigned long  sz);
+
 }
 
+
+
 #else
-#include <stdlib.h>
 /**
  * @brief sstmac_free
  * @param ptr A pointer which may or may not have been skeletonized
  */
-static inline void
-sstmac_free(void* ptr){
-  if (ptr != NULL) free(ptr);
-}
+void sstmac_free(void* ptr);
+void* sstmac_memset(void* ptr, int value, unsigned long size);
+
+static void* nullptr = 0;
 
 #define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
+#ifndef free
 #define free sstmac_free
+#endif
+
+#ifndef memset
+#define memset sstmac_memset
+#endif
 
 #endif
+
+

@@ -19,8 +19,8 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-TIME_DELTA_TOO_BIG = 0.2
-TIME_PERCENT_TOO_BIG = 0.03
+TIME_DELTA_TOO_BIG = 0.002
+TIME_PERCENT_TOO_BIG = 0.01
 timeout = None
 srcdir = None
 outputFile = None
@@ -260,13 +260,14 @@ def checkOutput(srcdir, tmpfile, condition):
 
   if chkSim.integratedCore:
     pass
+  elif condition == "Exact": #we need to check reference time
+    errorMsg = checkTime(refSim.finalTime, chkSim.finalTime)
+    if errorMsg:
+      return errorMsg
   elif not condType == "notime":
     timeChecker = eval("lambda t: %s" % condition)
     if not timeChecker(chkSim.finalTime):
       return "t=%f failed time check %s" % (chkSim.finalTime, condition)
-    errorMsg = checkTime(refSim.finalTime, chkSim.finalTime)
-    if errorMsg:
-      return errorMsg
 
   for line in refSim.lines:
     if not line in chkSim.lines:

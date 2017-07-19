@@ -79,6 +79,7 @@ job_launcher::incoming_event(event *ev)
   job_stop_event* stop_ev = safe_cast(job_stop_event, ev);
   cleanup_app(stop_ev);
   stop_event_received(stop_ev);
+  delete stop_ev;
 }
 
 void
@@ -195,7 +196,8 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
 }
 
 bool
-default_job_launcher::handle_launch_request(app_launch_request* request, ordered_node_set& allocation)
+default_job_launcher::handle_launch_request(app_launch_request* request,
+                                            ordered_node_set& allocation)
 {
   request->request_allocation(available_, allocation);
 

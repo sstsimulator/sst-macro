@@ -9,7 +9,7 @@ EXTERNALCASES= \
 EXTERNALTESTS = $(EXTERNALCASES:%=external_test_%)
 
 external_test_%.$(CHKSUF): $(top_builddir)/tests/external/test_%
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact \
     external/test_$* \
     -a -n 1 \
 		--no-wall-time \

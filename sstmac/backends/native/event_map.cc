@@ -117,9 +117,6 @@ event_map::cancel_all_messages(device_id canceled_loc)
   }
 }
 
-//
-// Hello.
-//
 event_map::event_map(sprockit::sim_parameters* params, parallel_runtime* rt) :
   running_(false),
   event_manager(params, rt)

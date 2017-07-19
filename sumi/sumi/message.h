@@ -57,8 +57,7 @@ template <>
 class serialize<sumi::public_buffer>
 {
  public:
-  void
-  operator()(sumi::public_buffer& buf, serializer& ser){
+  void operator()(sumi::public_buffer& buf, serializer& ser){
     ser.primitive(buf);
   }
 };
@@ -252,9 +251,23 @@ class message :
     return local_buffer_.ptr || remote_buffer_.ptr;
   }
 
-  virtual void move_remote_to_local();
+  /**
+   * @brief inject_remote_to_local
+   * Coming off the NIC, copy data into the waiting buffer to
+   * complete a get operation: remote->local
+   */
+  void inject_remote_to_local();
 
-  virtual void move_local_to_remote();
+  /**
+   * @brief inject_local_to_remote
+   * Comming off the NIC, copy data into the waiting buffer to
+   * complete a put operation: local->remote
+   */
+  void inject_local_to_remote();
+
+  void memmove_remote_to_local();
+
+  void memmove_local_to_remote();
 
   sumi::public_buffer& local_buffer() { return local_buffer_; }
   sumi::public_buffer& remote_buffer() { return remote_buffer_; }
@@ -306,16 +319,14 @@ class message :
     return synced_;
   }
 
-  void
-  set_time_sent(double now){
+  void set_time_sent(double now){
     if (sent_ < 0){
       //if already set, don't overwrite
       sent_ = now;
     }
   }
 
-  void
-  set_time_arrived(double now){
+  void set_time_arrived(double now){
     if (header_arrived_ < 0){
       header_arrived_ = now;
     } else {
@@ -323,8 +334,7 @@ class message :
     }
   }
 
-  void
-  set_time_synced(double now){
+  void set_time_synced(double now){
     synced_ = now;
   }
 

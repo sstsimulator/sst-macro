@@ -9,8 +9,12 @@ SINGLETESTS = \
   test_pthread \
   test_blas \
   test_blas_finegrained \
-  test_node_noise \
-  test_otf2 
+  test_node_noise 
+
+
+if HAVE_OTF2
+SINGLETESTS += test_otf2 
+endif
 
 #  test_scan  TODO
 
@@ -36,7 +40,7 @@ test_blas.$(CHKSUF): test_blas
     ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas.ini 
 
 test_blas_finegrained.$(CHKSUF): test_blas
-	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.004 and t < 0.008' \
+	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
     ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_finegrained.ini 
 
 test_node_noise.$(CHKSUF): test_blas
@@ -57,12 +61,12 @@ traces:
 	chmod u+w *.bin *.meta *.map # required for make distcheck (makes files r/o)
 
 test_dumpi_manager.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_manager.ini \
           -d indexing,allocation --no-wall-time 
 
 test_dumpi_bgp.$(CHKSUF): $(SSTMACEXEC) traces
-	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_bgp.ini \
           -d indexing,allocation --no-wall-time 
 

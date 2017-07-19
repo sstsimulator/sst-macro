@@ -85,9 +85,6 @@ class mpi_api :
   public sstmac::sumi_transport
 {
   RegisterAPI("mpi", mpi_api)
- private:
-  class persistent_send;
-  class persistent_recv;
 
  public:
   static category default_key_category;
@@ -107,17 +104,25 @@ class mpi_api :
     return queue_;
   }
 
+  /**
+   * @brief crossed_comm_world_barrier
+   *        Useful for statistics based on globally synchronous timings.
+   * @return Whether a global collective has been crossed
+   *
+   */
   bool crossed_comm_world_barrier() const {
     return crossed_comm_world_barrier_;
   }
 
   mpi_comm* comm_world() const {
-    return comm_factory_.world();
+    return worldcomm_;
   }
 
   mpi_comm* comm_self() const {
-    return comm_factory_.self();
+    return selfcomm_;
   }
+
+  int comm_get_attr(MPI_Comm, int comm_keyval, void* attribute_val, int* flag);
 
   int comm_rank(MPI_Comm comm, int* rank);
 
@@ -160,9 +165,13 @@ class mpi_api :
     generate_ids_ = flag;
   }
 
-  void abort(MPI_Comm comm, int errcode);
+  int abort(MPI_Comm comm, int errcode);
 
   int errhandler_set(MPI_Comm comm, MPI_Errhandler handler){
+    return MPI_SUCCESS;
+  }
+
+  int errhandler_create(MPI_Handler_function *function, MPI_Errhandler *errhandler){
     return MPI_SUCCESS;
   }
 
@@ -210,7 +219,11 @@ class mpi_api :
              const int* ranks,
              MPI_Group* newgrp);
 
+  int group_range_incl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* newgrp);
+
   int group_free(MPI_Group* grp);
+
+  int group_translate_ranks(MPI_Group grp1, int n, const int* ranks1, MPI_Group grp2, int* ranks2);
 
   int sendrecv(const void* sendbuf, int sendcount,
         MPI_Datatype sendtype, int dest, int sendtag,
@@ -273,8 +286,8 @@ class mpi_api :
   int bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm);
 
   int scatter(int sendcount, MPI_Datatype sendtype,
-           int recvcount, MPI_Datatype recvtype, int root,
-           MPI_Comm comm);
+          int recvcount, MPI_Datatype recvtype, int root,
+          MPI_Comm comm);
 
   int scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
            void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
@@ -418,6 +431,7 @@ class mpi_api :
   int igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
          void *recvbuf, int recvcount, MPI_Datatype recvtype,
          int root, MPI_Comm comm, MPI_Request* req);
+
   int igatherv(int sendcount, MPI_Datatype sendtype,
          const int *recvcounts,
          MPI_Datatype recvtype, int root,
@@ -451,11 +465,15 @@ class mpi_api :
   int ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             void *recvbuf, int recvcount, MPI_Datatype recvtype,
             MPI_Comm comm, MPI_Request* req);
-  int ialltoallv(const int *sendcounts,
-            MPI_Datatype sendtype,
-            const int *recvcounts,
-            MPI_Datatype recvtype,
-            MPI_Comm comm, MPI_Request* req);
+
+  int ialltoallw(const void *sendbuf, const int sendcounts[], const int sdispls[],
+                 const MPI_Datatype sendtypes[], void *recvbuf, const int recvcounts[],
+                 const int rdispls[], const MPI_Datatype recvtypes[], MPI_Comm comm,
+                 MPI_Request *request);
+
+  int ialltoallv(const int *sendcounts, MPI_Datatype sendtype,
+                const int *recvcounts, MPI_Datatype recvtype,
+                MPI_Comm comm, MPI_Request* req);
 
   int ialltoallv(const void *sendbuf, const int *sendcounts,
             const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
@@ -588,8 +606,6 @@ class mpi_api :
   void add_request_ptr(mpi_request* ptr, MPI_Request* req);
 
   void erase_request_ptr(MPI_Request req);
-
-  void add_comm_grp(MPI_Comm comm, MPI_Group grp);
 
   void check_key(int key);
 
@@ -761,7 +777,6 @@ class mpi_api :
  private:
   friend class mpi_comm_factory;
 
-  /// The MPI server.
   mpi_queue* queue_;
 
   MPI_Datatype next_type_id_;
@@ -774,17 +789,15 @@ class mpi_api :
   int iprobe_delay_us_;
   int test_delay_us_;
 
-  /// The state of this object (initialized or not).
   enum {
     is_fresh, is_initialized, is_finalizing, is_finalized
   } status_;
 
   bool crossed_comm_world_barrier_;
 
-  //----------------------------------------------------------------
-  // --- MPI Derived Datatype
-  // --- Presently, payloads won't work with derived datatypes
-  //----------------------------------------------------------------
+  mpi_comm* worldcomm_;
+  mpi_comm* selfcomm_;
+
   typedef std::map<MPI_Datatype, mpi_type*> type_map;
   type_map known_types_;
 
@@ -796,9 +809,6 @@ class mpi_api :
   typedef spkt_unordered_map<MPI_Group, mpi_group*> group_ptr_map;
   group_ptr_map grp_map_;
   MPI_Group group_counter_;
-
-  typedef spkt_unordered_map<MPI_Comm, MPI_Group> comm_grp_map;
-  comm_grp_map comm_grp_map_;
 
   typedef spkt_unordered_map<MPI_Request, mpi_request*> req_ptr_map;
   req_ptr_map req_map_;
@@ -867,13 +877,16 @@ mpi_api* sstmac_mpi();
     set_new_mpi_call(Call_ID_##fxn)
   #define finish_Impi_call(fxn,reqptr) \
     finish_last_mpi_call(Call_ID_##fxn, false); \
-    saved_calls_[*reqptr] = last_call_
-  #define finish_mpi_call(fxn) finish_last_mpi_call(Call_ID_##fxn)
+    saved_calls_[*reqptr] = last_call_; \
+    end_api_call()
+  #define finish_mpi_call(fxn) \
+    finish_last_mpi_call(Call_ID_##fxn); \
+    end_api_call()
 #else
   #define start_mpi_call(fxn,count,type,comm) _start_mpi_call_(fxn)
   #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
-  #define finish_mpi_call(fxn)
-  #define finish_Impi_call(fxn,reqptr)
+  #define finish_mpi_call(fxn) end_api_call()
+  #define finish_Impi_call(fxn,reqptr) end_api_call()
 #endif
 
 #define mpi_api_debug(flags, ...) \

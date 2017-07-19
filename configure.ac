@@ -16,7 +16,7 @@ dnl
 
 # Version info, used both in library versioning and inside sstmacro.
 m4_define([SSTMAC_VERSION_TAG], 7)
-m4_define([SSTMAC_SUBVERSION_TAG], 0)
+m4_define([SSTMAC_SUBVERSION_TAG], 2)
 m4_define([SSTMAC_SUBSUBVERSION_TAG], 0)
 
 dnl Enable this for releases
@@ -31,7 +31,7 @@ m4_define([SSTMAC_ACVERSION_TAG],
           [SSTMAC_VERSION_TAG.SSTMAC_SUBVERSION_TAG.SSTMAC_SUBSUBVERSION_TAG])
 
 dnl AC_PREREQ([2.68]) avoid this if possible
-AC_INIT([sstmacro], [SSTMAC_ACVERSION_TAG], [sstmacro-devel@googlegroups.com])
+AC_INIT([sstmacro], [SSTMAC_ACVERSION_TAG], [sst-macro-help@sandia.gov])
 AC_CONFIG_MACRO_DIR([acinclude])
 AC_CONFIG_AUX_DIR(bin)
 AC_CONFIG_HEADER(sstmac/common/config.h)
@@ -65,7 +65,7 @@ dnl If incompatible changes are made: CURRENT++, REVISION=0, AGE=0
 dnl else if interfaces are added: CURRENT++, REVISION=0, AGE++
 dnl else (no interface changes): REVISION++
 m4_define([SSTMAC_CURRENT_LIBVERS],  7)
-m4_define([SSTMAC_REVISION_LIBVERS], 0)
+m4_define([SSTMAC_REVISION_LIBVERS], 1)
 m4_define([SSTMAC_AGE_LIBVERS],      0)
 m4_define([SSTMAC_LIBVERSION_TAG],
           [SSTMAC_CURRENT_LIBVERS:SSTMAC_REVISION_LIBVERS:SSTMAC_AGE_LIBVERS])
@@ -119,6 +119,9 @@ os=`$srcdir/bin/config_tools/get_os`
 
 if test "X$os" = "Xubuntu"; then
 LDFLAGS="$LDFLAGS -Wl,--no-as-needed"
+AM_CONDITIONAL([HAVE_UBUNTU], [true])
+else
+AM_CONDITIONAL([HAVE_UBUNTU], [false])
 fi
 
 CHECK_CLANG()
@@ -294,6 +297,7 @@ echo
 
 echo "SST Core           $have_integrated_core"
 echo "Clang Autoskeleton $found_clang"
+echo "OTF2 Replay        $build_otf2"
 echo "MPI Timeline Stats $enable_mpi_timeline"
 echo "MPI Sync Stats     $with_comm_sync_stats"
 echo "Graphviz Trace     $enable_graphviz"

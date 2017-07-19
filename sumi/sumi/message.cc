@@ -173,7 +173,7 @@ message::buffer_send(public_buffer& buf, long num_bytes)
 }
 
 void
-message::move_local_to_remote()
+message::inject_local_to_remote()
 {
   if (local_buffer_.ptr){ //might be null
     ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
@@ -183,12 +183,28 @@ message::move_local_to_remote()
 }
 
 void
-message::move_remote_to_local()
+message::memmove_local_to_remote()
+{
+  if (local_buffer_.ptr){ //might be null
+    ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
+  }
+}
+
+void
+message::inject_remote_to_local()
 {
   if (remote_buffer_.ptr){
     ::memcpy(local_buffer_.ptr, remote_buffer_.ptr, num_bytes_);
     delete[] (char*) remote_buffer_.ptr;
     remote_buffer_.ptr = nullptr;
+  }
+}
+
+void
+message::memmove_remote_to_local()
+{
+  if (remote_buffer_.ptr){
+    ::memcpy(local_buffer_.ptr, remote_buffer_.ptr, num_bytes_);
   }
 }
 

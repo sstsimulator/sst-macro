@@ -63,8 +63,7 @@ struct process_context {
     return ctxt;
   }
 
-  bool
-  operator==(long id) const {
+  bool operator==(long id) const {
     return ctxt == id;
   }
 

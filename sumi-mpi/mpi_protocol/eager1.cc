@@ -47,13 +47,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
+#include <sstmac/null_buffer.h>
 
 namespace sumi {
 
 void
 eager1::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void *buffer, mpi_type* typeobj)
 {
-  if (buffer){
+  if (isNonNullBuffer(buffer)){
     void* eager_buf = fill_send_buffer(msg, buffer, typeobj);
     msg->remote_buffer().ptr = eager_buf;
   }
@@ -111,6 +112,11 @@ eager1::incoming_header(mpi_queue* queue,
     msg->local_buffer().ptr = req->recv_buffer_;
   }
   else {
+    auto& rbuf = msg->remote_buffer();
+    if (rbuf.ptr){
+      auto& lbuf = msg->local_buffer();
+      lbuf.ptr = new char[msg->payload_bytes()];
+    }
     msg->set_protocol(mpi_protocol::eager1_doublecpy_protocol);
     //this has to go in now
     //the need recv buffer has to push back messages in the order they are received
@@ -171,9 +177,10 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue,
   msg->set_in_flight(false);
   if (req){
     if (req->recv_buffer_){
-      msg->local_buffer().ptr = req->recv_buffer_;
-      //bypass mpi-message - actually do the move
-      msg->message::move_remote_to_local();
+      char* temp_buf = (char*) msg->local_buffer().ptr;
+      ::memcpy(req->recv_buffer_, temp_buf, msg->payload_bytes());
+      delete[] temp_buf;
+      msg->local_buffer().ptr = temp_buf;
     }
     queue->finalize_recv(msg, req);
   }

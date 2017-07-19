@@ -119,8 +119,7 @@ class network_message :
   {
   }
 
-  virtual std::string
-  to_string() const override {
+  virtual std::string to_string() const override {
     return "network message";
   }
 
@@ -132,8 +131,7 @@ class network_message :
 
   bool is_metadata() const;
 
-  virtual network_message*
-  clone_injection_ack() const {
+  virtual network_message* clone_injection_ack() const {
     network_message* cln = new network_message;
     clone_into(cln);
     return cln;
@@ -151,7 +149,9 @@ class network_message :
     return toaddr_;
   }
 
-  virtual void put_on_wire();
+  virtual void put_on_wire(){}
+  virtual void take_off_wire(){}
+  virtual void intranode_memmove(){}
 
   node_id fromaddr() const override {
     return fromaddr_;

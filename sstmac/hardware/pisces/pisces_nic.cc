@@ -104,9 +104,6 @@ pisces_nic::setup()
   packetizer_->setup();
 }
 
-//
-// Goodbye.
-//
 pisces_nic::~pisces_nic() throw ()
 {
   if (packetizer_) delete packetizer_;

@@ -65,12 +65,10 @@ class mpi_queue_send_request  {
   mpi_queue_send_request(const mpi_message::ptr& mess,
               mpi_request* key, mpi_queue* queue);
 
-  /// Goodbye.
   ~mpi_queue_send_request() throw();
 
   bool matches(const mpi_message::ptr& send_ack) const;
 
-  /// Eventhandler completion.
   void complete(const mpi_message::ptr& msg);
 
   void wait_for_buffer();
@@ -80,7 +78,6 @@ class mpi_queue_send_request  {
   }
 
  protected:
-  /// The queue.
   mpi_queue* queue_;
 
   mpi_request* key_;
@@ -89,7 +86,6 @@ class mpi_queue_send_request  {
   int seqnum_;
   int dest_;
   int src_;
-
 
 };
 

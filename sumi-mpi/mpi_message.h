@@ -125,7 +125,6 @@ class mpi_message final :
     }
   }
 
-  /// Access the type label associted with this mesage.
   MPI_Datatype type() const {
     return type_;
   }
@@ -134,17 +133,14 @@ class mpi_message final :
     return type_packed_size_;
   }
 
-  /// Access the tag associated with this message.
   int tag() const {
     return tag_;
   }
 
-  /// Access the id of the communicator that owns this message.
   MPI_Comm comm() const {
     return commid_;
   }
 
-  /// Access the sequence number for this message.
   int seqnum() const {
     return seqnum_;
   }
@@ -187,10 +183,6 @@ class mpi_message final :
   bool in_flight() const {
     return in_flight_;
   }
-
-  void move_remote_to_local() override;
-
-  void move_local_to_remote() override;
 
   void set_already_buffered(bool flag){
     already_buffered_ = flag;

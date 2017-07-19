@@ -130,92 +130,74 @@ class mpi_request  {
 
   mpi_request(op_type_t ty, const category& cat);
 
-  std::string
-  to_string() const {
+  std::string to_string() const {
     return "mpirequest";
   }
 
-  std::string
-  type_str() const;
+  std::string type_str() const;
 
-  static mpi_request*
-  construct(op_type_t ty, const category& cat){
+  static mpi_request* construct(op_type_t ty, const category& cat){
     return new mpi_request(ty,cat);
   }
 
   ~mpi_request();
 
-  void
-  complete(const mpi_message::ptr& msg);
+  void complete(const mpi_message::ptr& msg);
 
-  bool
-  is_complete() const {
+  bool is_complete() const {
     return complete_;
   }
 
-  void
-  cancel() {
+  void cancel() {
     cancelled_ = true;
     complete();
   }
 
-  void
-  complete() {
+  void complete() {
     complete_ = true;
   }
 
-  void
-  set_complete(bool flag){
+  void set_complete(bool flag){
     complete_ = flag;
   }
 
-  void
-  set_persistent(persistent_op* op) {
+  void set_persistent(persistent_op* op) {
     persistent_op_ = op;
   }
 
-  persistent_op*
-  persistent_data() const {
+  persistent_op* persistent_data() const {
     return persistent_op_;
   }
 
-  void
-  set_collective(collective_op_base* op) {
+  void set_collective(collective_op_base* op) {
     collective_op_ = op;
   }
 
-  collective_op_base*
-  collective_data() const {
+  collective_op_base* collective_data() const {
     return collective_op_;
   }
 
-  const MPI_Status&
-  status() const {
+  const MPI_Status& status() const {
     return stat_;
   }
 
-  key*
-  get_key() const {
+  key* get_key() const {
     return key_;
   }
 
-  bool
-  is_cancelled() const {
+  bool is_cancelled() const {
     return cancelled_;
   }
 
-  bool
-  is_persistent() const {
+  bool is_persistent() const {
     return persistent_op_;
   }
 
-  bool
-  is_collective() const {
+  bool is_collective() const {
     return collective_op_;
   }
 
-  op_type_t
-  optype() const {
+  op_type_t optype() const {
     return optype_;
   }
 

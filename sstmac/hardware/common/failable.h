@@ -55,13 +55,11 @@ class failable
 {
 
  public:
-  bool
-  failed() const {
+  bool failed() const {
     return failed_;
   }
 
-  void
-  fail(){
+  void fail(){
     failed_ = true;
   }
 

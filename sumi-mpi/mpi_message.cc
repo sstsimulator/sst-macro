@@ -150,32 +150,10 @@ mpi_message::buffer_send()
   }
 }
 
-void
-mpi_message::move_remote_to_local()
-{
-  if (protocol_ == mpi_protocol::EAGER1_DOUBLECPY){
-    //do nothing - we do not have the remote buffer yet
-  } else {
-    message::move_remote_to_local();
-  }
-}
-
-void
-mpi_message::move_local_to_remote()
-{
-  message::move_local_to_remote();
-}
-
-//
-// Goodbye.
-//
 mpi_message::~mpi_message() throw ()
 {
 }
 
-//
-// Create a status object.
-//
 void
 mpi_message::build_status(MPI_Status* stat) const
 {

@@ -74,8 +74,7 @@ class dense_rank_map {
 
   ~dense_rank_map();
 
-  void
-  init(const thread_safe_set<int>& failed, communicator* dom = 0);
+  void init(const thread_safe_set<int>& failed, communicator* dom = 0);
 
  protected:
   static const int tree_cutoff = 4;
@@ -85,8 +84,7 @@ class dense_rank_map {
    * @param sparse_rank
    * @return
    */
-  int 
-  linear_find_rank(int sparse_rank) const;
+  int linear_find_rank(int sparse_rank) const;
 
   /**
    * O(log N) search algorithm for new rank,
@@ -94,8 +92,7 @@ class dense_rank_map {
    * @param sparse_rank
    * @return
    */
-  int 
-  tree_find_rank(
+  int tree_find_rank(
     int sparse_rank,
     int offset,
     int num_failed_ranks,

@@ -71,8 +71,6 @@ stack_alloc::init(size_t stacksize, size_t alloc_unit, bool use_mprot)
   }
 }
 
-//
-// Goodbye.
 stack_alloc::~stack_alloc()
 {
   clear();

@@ -78,7 +78,6 @@ namespace sumi {
 mpi_comm_factory::mpi_comm_factory(software_id sid, mpi_api* parent) :
   parent_(parent),
   aid_(sid.app_),
-  mpirun_np_(0),
   next_id_(1),
   worldcomm_(nullptr),
   selfcomm_(nullptr)
@@ -98,18 +97,15 @@ mpi_comm_factory::init(int rank, int nproc)
 {
   next_id_ = 2;
 
-  mpirun_np_ = nproc;
-
-  mpi_group* grp_world = new mpi_group(mpirun_np_);
-
-  worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, grp_world, aid_);
+  mpi_group* g = new mpi_group(nproc);
+  g->set_id(MPI_GROUP_WORLD);
+  worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, aid_);
 
   std::vector<task_id> selfp;
   selfp.push_back(task_id(rank));
-
-  mpi_group* grp_self = new mpi_group(std::move(selfp));
-  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0),
-                           grp_self, aid_, true/*owns group*/);
+  mpi_group* g2 = new mpi_group(selfp);
+  g2->set_id(MPI_GROUP_SELF);
+  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, aid_);
 }
 
 mpi_comm*

@@ -200,8 +200,8 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         //use zero-based input ports corresponding to row number for the muxer
         pisces_debug(
          "Connecting %s:%p local port %d to %s:%p local port %d",
-          xbar->to_string().c_str(), this, rm,
-          muxer->to_string().c_str(), this, rx);
+          xbar->to_string().c_str(), xbar, rm,
+          muxer->to_string().c_str(), muxer, rx);
         xbar->set_output(xbar_params, rm, rx, muxer->payload_handler());
         muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
       }
@@ -348,7 +348,7 @@ link_handler*
 pisces_tiled_switch::credit_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),
+  return new SST::Event::Handler<pisces_tiled_switch>(const_cast<pisces_tiled_switch*>(this),
                           &pisces_tiled_switch::handle_credit);
 #else
   return ack_handler_;
@@ -359,7 +359,7 @@ link_handler*
 pisces_tiled_switch::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<pisces_switch>(const_cast<pisces_switch*>(this),
+  return new SST::Event::Handler<pisces_tiled_switch>(const_cast<pisces_tiled_switch*>(this),
                           &pisces_tiled_switch::handle_payload);
 #else
   return payload_handler_;

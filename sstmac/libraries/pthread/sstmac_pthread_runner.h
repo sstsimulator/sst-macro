@@ -59,11 +59,9 @@ class pthread_runner : public thread
   void * arg_;
 
  public:
-  virtual void
-  run();
+  virtual void run();
 
-  virtual void
-  clear_subthread_from_parent_app();
+  virtual void clear_subthread_from_parent_app();
 
   pthread_runner(software_id id, app* parent,
                  start_fxn start_routine, void* arg,

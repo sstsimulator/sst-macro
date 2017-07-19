@@ -82,53 +82,43 @@ class routable
      outport_.local = routing::uninitialized;
    }
 
-   bool
-   metadata_bit(metadata_slot slot) const {
+   bool metadata_bit(metadata_slot slot) const {
      return metadata.bit(slot);
    }
 
-   void
-   set_metadata_bit(metadata_slot slot) {
+   void set_metadata_bit(metadata_slot slot) {
      metadata.set_bit(slot);
    }
 
-   void
-   unset_metadata_bit(metadata_slot slot) {
+   void unset_metadata_bit(metadata_slot slot) {
      metadata.unset_bit(slot);
    }
 
-   void
-   clear_metadata() {
+   void clear_metadata() {
      metadata.clear();
    }
 
-   uint16_t&
-   outport() {
+   uint16_t& outport() {
      return outport_.global;
    }
 
-   uint16_t&
-   global_outport() {
+   uint16_t& global_outport() {
      return outport_.global;
    }
 
-   uint16_t&
-   local_outport() {
+   uint16_t& local_outport() {
      return outport_.local;
    }
 
-   void
-   set_outport(const uint16_t port) {
+   void set_outport(const uint16_t port) {
      outport_.global = port;
    }
 
-   void
-   set_global_outport(const uint16_t port) {
+   void set_global_outport(const uint16_t port) {
      outport_.global = port;
    }
 
-   void
-   set_local_outport(const uint16_t port) {
+   void set_local_outport(const uint16_t port) {
      outport_.local = port;
    }
 
@@ -158,83 +148,67 @@ class routable
  };
 
  public:
-  node_id
-  toaddr() const {
+  node_id toaddr() const {
     return toaddr_;
   }
 
-  node_id
-  fromaddr() const {
+  node_id fromaddr() const {
     return fromaddr_;
   }
 
-  void
-  set_toaddr(node_id to) {
+  void set_toaddr(node_id to) {
     toaddr_ = to;
   }
 
-  void
-  set_fromaddr(node_id from) {
+  void set_fromaddr(node_id from) {
     fromaddr_ = from;
   }
 
-  path&
-  current_path() {
+  path& current_path() {
     return path_;
   }
 
-  void
-  check_vc() {
+  void check_vc() {
     if (path_.vc == routing::uninitialized)
       path_.vc = 0;
   }
 
-  virtual int
-  vc() const {
+  virtual int vc() const {
     return path_.vc;
   }
 
-  void
-  set_outport(const int port) {
+  void set_outport(const int port) {
     path_.outport_.global = port;
   }
 
-  void
-  set_global_outport(const int port) {
+  void set_global_outport(const int port) {
     path_.outport_.global = port;
   }
 
-  void
-  set_local_outport(const int port) {
+  void set_local_outport(const int port) {
     path_.outport_.local = port;
   }
 
-  int
-  outport() const {
+  int outport() const {
     return path_.outport_.global;
   }
 
-  int
-  global_outport() const {
+  int global_outport() const {
     return path_.outport_.global;
   }
 
-  int
-  local_outport() const {
+  int local_outport() const {
     return path_.outport_.local;
   }
 
-  void
-  serialize_order(serializer& ser);
+  void serialize_order(serializer& ser);
 
 
-  void
-  set_dest_switch(switch_id sid) {
+  void set_dest_switch(switch_id sid) {
     dest_switch_ = sid;
   }
 
-  switch_id
-  dest_switch() const {
+  switch_id dest_switch() const {
     return dest_switch_;
   }
 
@@ -262,8 +236,7 @@ template <>
 class serialize<sstmac::hw::routable::path>
 {
  public:
-  void
-  operator()(sstmac::hw::routable::path& info, serializer& ser){
+  void operator()(sstmac::hw::routable::path& info, serializer& ser){
     ser.primitive(info);
   }
 };

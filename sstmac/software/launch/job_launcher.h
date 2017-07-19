@@ -84,8 +84,7 @@ class task_mapping : public sprockit::ptr_type
     return rank_to_node_indexing_[rank];
   }
 
-  const std::list<int>&
-  node_to_ranks(int node) const {
+  const std::list<int>& node_to_ranks(int node) const {
     return node_to_rank_indexing_[node];
   }
 
@@ -95,8 +94,7 @@ class task_mapping : public sprockit::ptr_type
 
   static task_mapping::ptr serialize_order(app_id aid, serializer& ser);
 
-  int
-  num_ranks() const {
+  int num_ranks() const {
     return rank_to_node_indexing_.size();
   }
 
@@ -104,13 +102,11 @@ class task_mapping : public sprockit::ptr_type
     return rank_to_node_indexing_.size();
   }
 
-  const std::vector<node_id>&
-  rank_to_node() const {
+  const std::vector<node_id>& rank_to_node() const {
     return rank_to_node_indexing_;
   }
 
-  std::vector<node_id>&
-  rank_to_node() {
+  std::vector<node_id>& rank_to_node() {
     return rank_to_node_indexing_;
   }
 
@@ -122,11 +118,9 @@ class task_mapping : public sprockit::ptr_type
     return node_to_rank_indexing_;
   }
 
-  static task_mapping::ptr
-  global_mapping(app_id aid);
+  static task_mapping::ptr global_mapping(app_id aid);
 
-  static task_mapping::ptr
-  global_mapping(const std::string& unique_name);
+  static task_mapping::ptr global_mapping(const std::string& unique_name);
 
   static void
   add_global_mapping(app_id aid, const std::string& unique_name,
@@ -215,8 +209,8 @@ class job_launcher : public service
    * @return Whether the allocation succeeded. True means job can launch immediately.
    *         False means job must be delayed until another job finishes.
    */
-  virtual bool
-  handle_launch_request(app_launch_request* request, ordered_node_set& allocation) = 0;
+  virtual bool handle_launch_request(app_launch_request* request,
+                                     ordered_node_set& allocation) = 0;
 
   /**
    * @brief stop_event_received Perform all necessary operations upon completion
@@ -224,8 +218,7 @@ class job_launcher : public service
    *            for running other jobs that might be queued
    * @param ev  An event describing the job that has finished
    */
-  virtual void
-  stop_event_received(job_stop_event* ev) = 0;
+  virtual void stop_event_received(job_stop_event* ev) = 0;
 
 
 };

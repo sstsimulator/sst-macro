@@ -57,20 +57,16 @@ using sstmac::sw::task_id;
 class mpi_group  {
 
  public:
-  mpi_group(std::vector<task_id>&& tl);
+  mpi_group(const std::vector<task_id>& tl);
 
   mpi_group(size_t size);
 
-  virtual ~mpi_group() { }
+  virtual ~mpi_group() {}
 
   task_id at(int rank);
 
   size_t size() const {
     return size_;
-  }
-
-  const std::vector<task_id>& ids() const {
-    return task_list_;
   }
 
   MPI_Group id() const {
@@ -84,14 +80,17 @@ class mpi_group  {
   /**
    * @brief rank_of_task See if task exists in this group.
    *      If yes, return its rank within the group.
-   *      If not, return -1.
+   *      If not, return MPI_UNDEFINED.
    * @param t The world task_id to find in the group
    * @return The local rank of task within the group.
    */
   int rank_of_task(task_id t) const;
 
+  void translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, mpi_group* other_grp);
+
  protected:
-  std::vector<task_id> task_list_;
+  //map the local gorup rank to the world rank
+  std::vector<task_id> local_to_world_map_;
   MPI_Group id_;
   size_t size_; //used for comm_world
   bool is_comm_world_;  //we don't save all the peers to save space

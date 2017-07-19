@@ -72,6 +72,10 @@ struct PrettyPrinter
     d->print(os, Policy);
   }
 
+  void print(clang::QualType ty){
+    ty.print(os,Policy);
+  }
+
   std::string
   print(const clang::BuiltinType* ty){
     return ty->getName(Policy).str();
@@ -107,5 +111,14 @@ inline bool operator>(const clang::SourceLocation &LHS, const clang::SourceLocat
 inline bool operator>=(const clang::SourceLocation &LHS, const clang::SourceLocation &RHS) {
   return !(LHS < RHS);
 }
+
+void replace(clang::SourceRange rng, clang::Rewriter& r,
+             const std::string& repl, clang::CompilerInstance& CI);
+
+void replace(const clang::Stmt* s, clang::Rewriter& r,
+             const std::string& repl, clang::CompilerInstance& CI);
+
+void replace(const clang::Decl* d, clang::Rewriter& r,
+             const std::string& repl, clang::CompilerInstance& CI);
 
 #endif

@@ -5,8 +5,9 @@ SHELL = /bin/sh
 
 LULESH_EXEC = runlulesh2.0.3
 
+SKEL=1
 
-MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11
+MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11 -O3
 CXX = $(MPICXX)
 
 SOURCES2.0 = \
@@ -18,7 +19,7 @@ SOURCES2.0 = \
 OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 #Default build suggestions with OpenMP for g++
-CXXFLAGS = -I. -Wall -Wno-unknown-pragmas -fPIC
+CXXFLAGS = -I. -Wall -Wno-unknown-pragmas -fPIC -Wno-unused-function -Wno-unused-variable -Wno-uninitialized
 LDFLAGS =  
 
 #Below are reasonable default flags for a serial build
@@ -39,11 +40,15 @@ LDFLAGS =
 #CXXFLAGS = -g -DVIZ_MESH -I${SILO_INCDIR} -Wall -Wno-pragmas
 #LDFLAGS = -g -L${SILO_LIBDIR} -Wl,-rpath -Wl,${SILO_LIBDIR} -lsiloh5 -lhdf5
 
-.cc.o: lulesh.h
-	@echo "Building $<"
-	SSTMAC_SKELETONIZE=1 $(CXX) -c $(CXXFLAGS) -o $@  $<
-
 all: $(LULESH_EXEC)
+
+sstmac_headers:
+	$(shell find `pwd` -name "*.h" > $@)
+
+%.o: %.cc lulesh.h sstmac_headers 
+	@echo "Building $<"
+	SSTMAC_SKELETONIZE=$(SKEL) SSTMAC_HEADERS=`pwd`/sstmac_headers \
+    $(CXX) -c $(CXXFLAGS) -o $@  $<
 
 runlulesh2.0.3: $(OBJECTS2.0)
 	@echo "Linking"
@@ -52,6 +57,7 @@ runlulesh2.0.3: $(OBJECTS2.0)
 clean:
 	/bin/rm -f *.o *~ $(OBJECTS) $(LULESH_EXEC)
 	/bin/rm -rf *.dSYM
+	rm -f sstmac_headers
 
 tar: clean
 	cd .. ; tar cvf lulesh-2.0.tar LULESH-2.0 ; mv lulesh-2.0.tar LULESH-2.0

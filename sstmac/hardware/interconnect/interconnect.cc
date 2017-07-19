@@ -173,10 +173,14 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     }
   }
 
+  interconn_debug("Interconnect building endpoints");
   build_endpoints(node_params, nic_params,netlink_params, mgr);
   if (!logp_model){
+    interconn_debug("Interconnect building switches");
     build_switches(switch_params, mgr);
+    interconn_debug("Interconnect connecting switches");
     connect_switches(switch_params);
+    interconn_debug("Interconnect connecting endpoints");
     if (netlinks_.empty()){
       connect_endpoints(inj_params, ej_params);
     } else {
@@ -264,8 +268,8 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
     for (int i=0; i < num_inj_ports; ++i){
       int injector_port = i;
       int switch_port = inj_ports[i];
-      interconn_debug("connecting switch %d to injector %d on ports %d:%d",
-          int(injaddr), ep_id, switch_port, injector_port);
+      interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
+          int(injaddr), injsw, ep_id, ep, switch_port, injector_port);
       injsw->connect_input(ej_params, injector_port, switch_port,
                            ep->credit_handler(injector_port));
       ep->connect_output(inj_params, injector_port, switch_port,
@@ -277,8 +281,8 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
     for (int i=0; i < num_ej_ports; ++i){
       int ejector_port = i;
       int switch_port = ej_ports[i];
-      interconn_debug("connecting switch %d to ejector %d on ports %d:%d",
-          int(ejaddr), ep_id, switch_port, ejector_port);
+      interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
+          int(ejaddr), ejsw, ep_id, ep, switch_port, ejector_port);
       ejsw->connect_output(ej_params, switch_port, ejector_port,
                            ep->payload_handler(ejector_port));
       ep->connect_input(inj_params, switch_port, ejector_port,
@@ -436,6 +440,7 @@ interconnect::connect_switches(sprockit::sim_parameters* switch_params)
     topology_->connected_outports(src, outports);
     network_switch* src_sw = switches_[src];
     if (!all_switches_same) topology_->configure_individual_port_params(src, switch_params);
+    interconn_debug("interconnect: num intranetwork ports: %i", outports.size());
     for (topology::connection& conn : outports){
       if (!all_ports_same){
         port_params = topology::get_port_params(switch_params, conn.src_outport);

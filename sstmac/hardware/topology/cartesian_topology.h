@@ -59,33 +59,25 @@ class cartesian_topology :
   public structured_topology
 {
  public:
-  node_id
-  node_addr(const coordinates& coords) const;
+  node_id node_addr(const coordinates& coords) const;
 
-  virtual switch_id
-  switch_addr(const coordinates& coords) const = 0;
+  virtual switch_id switch_addr(const coordinates& coords) const = 0;
 
-  coordinates
-  node_coords(node_id nid) const;
+  coordinates node_coords(node_id nid) const;
 
-  virtual coordinates
-  switch_coords(switch_id) const = 0;
+  virtual coordinates switch_coords(switch_id) const = 0;
 
-  int
-  ndimensions() const {
+  int ndimensions() const {
     return dimensions_.size();
   }
 
-  cartesian_topology*
-  cart_topology() const override {
+  cartesian_topology* cart_topology() const override {
     return const_cast<cartesian_topology*>(this);
   }
 
-  std::string
-  node_label(node_id nid) const override;
+  std::string node_label(node_id nid) const override;
 
-  std::string
-  switch_label(switch_id sid) const override;
+  std::string switch_label(switch_id sid) const override;
 
  protected:
   cartesian_topology(sprockit::sim_parameters* params,

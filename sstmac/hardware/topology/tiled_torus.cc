@@ -145,8 +145,7 @@ tiled_torus::configure_geometric_paths(std::vector<int>& redundancies)
 void
 tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  int max_port = max_ports_intra_network_ - 1;
-  conns.resize(max_port);
+  conns.resize(max_ports_intra_network_);
   int cidx = 0;
   int ndims = dimensions_.size();
   int dim_stride = 1;
@@ -166,15 +165,12 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
 
     switch_id minus_partner = src + minus_jump * dim_stride;
 
-     //std::cerr << sprockit::printf("plus jump: %i\nminus jump: %i\n", plus_jump, minus_jump);
-    //std::cerr << sprockit::printf("plus partner: %i\nminus partner: %i\n", plus_partner, minus_partner);
-
     int nreplica = red_[i];
     int outport, inport;
     for (int r=0; r < nreplica; ++r){
       outport = port(r, i, hdtorus::pos);
       inport = port(r, i, hdtorus::neg);
-      //std::cerr << sprockit::printf("setting connection %i (pos) src:port %i:%i -> dst:port %i:%i\n", cidx, src, outport, plus_partner, inport);
+      top_debug("setting connection %i (pos) src:port %i:%i -> dst:port %i:%i", cidx, src, outport, plus_partner, inport);
       connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = plus_partner;
@@ -186,7 +182,7 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
     for (int r=0; r < nreplica; ++r){
       outport = port(r, i, hdtorus::neg);
       inport = port(r, i, hdtorus::pos);
-      //std::cerr << sprockit::printf("setting connection %i (neg) src:port %i:%i -> dst:port %i:%i\n", cidx, src, outport, minus_partner, inport);
+      top_debug("setting connection %i (neg) src:port %i:%i -> dst:port %i:%i", cidx, src, outport, minus_partner, inport);
       connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = minus_partner;
@@ -196,7 +192,6 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
     }
     dim_stride *= dimensions_[i];
   }
-  //conns.resize(cidx);
 }
 
 switch_id

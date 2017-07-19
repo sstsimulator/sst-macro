@@ -75,8 +75,7 @@ class transport
  public:
   class notify_callback {
    public:
-    virtual void
-    notify(const message::ptr& msg) = 0;
+    virtual void notify(const message::ptr& msg) = 0;
   };
 
   template <class Fxn, class T, class MsgType>
@@ -313,8 +312,7 @@ class transport
    * @param tag
    * @return
    */
-  virtual collective_done_message::ptr
-  collective_block(collective::type_t ty, int tag) = 0;
+  virtual collective_done_message::ptr collective_block(collective::type_t ty, int tag) = 0;
   
   /**
    * The total size of the input/result buffer in bytes is nelems*type_size
@@ -326,12 +324,11 @@ class transport
    * @param fxn The function that merges vote, usually AND, OR, MAX, MIN
    * @param context The context (i.e. initial set of failed procs)
    */
-  virtual void
-  dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = nullptr);
+  virtual void dynamic_tree_vote(int vote, int tag, vote_fxn fxn, 
+              int context = options::initial_context, communicator* dom = nullptr);
 
   template <template <class> class VoteOp>
-  void
-  vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
+  void vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
     typedef VoteOp<int> op_class_type;
     dynamic_tree_vote(vote, tag, &op_class_type::op, context, dom);
   }
@@ -353,8 +350,7 @@ class transport
             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void
-  allreduce(void* dst, void* src, int nelems, int tag,
+  void allreduce(void* dst, void* src, int nelems, int tag,
             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
     allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
@@ -372,25 +368,21 @@ class transport
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  virtual void
-  scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+  virtual void scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
        bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void
-  scan(void* dst, void* src, int nelems, int tag, bool fault_aware = false,
+  void scan(void* dst, void* src, int nelems, int tag, bool fault_aware = false,
        int context = options::initial_context, communicator* dom = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
     scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
   }
 
-  virtual void
-  reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+  virtual void reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
     reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void
-  reduce(int root, void* dst, void* src, int nelems, int tag,
+  void reduce(int root, void* dst, void* src, int nelems, int tag,
          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
     reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
@@ -407,36 +399,28 @@ class transport
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  virtual void
-  allgather(void* dst, void* src, int nelems, int type_size, int tag,
+  virtual void allgather(void* dst, void* src, int nelems, int type_size, int tag,
             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
-  virtual void
-  allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
+  virtual void allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
              bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
-  virtual void
-  gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+  virtual void gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
-  virtual void
-  gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
+  virtual void gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
           bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
-  virtual void
-  alltoall(void* dst, void* src, int nelems, int type_size, int tag,
+  virtual void alltoall(void* dst, void* src, int nelems, int type_size, int tag,
              bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
-  virtual void
-  alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
+  virtual void alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
              bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
-  virtual void
-  scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+  virtual void scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
           bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
-  virtual void
-  scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
+  virtual void scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
           bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
 
   /**
@@ -783,6 +767,17 @@ new_notify_callback(T* t, Fxn f){
 class terminate_exception : public std::exception
 {
 };
+
+static void* sumi_null_ptr = ((void*)0x123);
+
+static inline bool isNonNull(void* buf){
+  return buf && buf != sumi_null_ptr;
+}
+
+static inline bool isNull(void* buf){
+  return !(sumi::isNonNull(buf));
+}
+
 
 }
 

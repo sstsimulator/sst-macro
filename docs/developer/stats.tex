@@ -64,14 +64,11 @@ This is important during simulation post-processing when the event manager wants
 The first set of virtual functions that every stats object must provide are
 
 \begin{CppCode}
-virtual void
-simulation_finished(timestamp end) = 0;
+virtual void simulation_finished(timestamp end) = 0;
 
-virtual void
-dump_local_data() = 0;
+virtual void dump_local_data() = 0;
 
-virtual void
-dump_global_data() = 0;
+virtual void dump_global_data() = 0;
 \end{CppCode}
 
 \inlinecode{simulation_finished} tells the stats object what the final time of the simulation is and allows any final post-processing to be done.
@@ -88,11 +85,9 @@ Before the \inlinecode{dump_global_data} function can be called, an aggregation 
 Each stats object is therefore required to provide the functions
 
 \begin{CppCode} 
-virtual void
-reduce(stat_collector* coll) = 0;
+virtual void reduce(stat_collector* coll) = 0;
 
-virtual void
-global_reduce(parallel_runtime* rt) = 0;
+virtual void global_reduce(parallel_runtime* rt) = 0;
 \end{CppCode}
 The first function does a local reduce.
 The object calling the \inlinecode{reduce} function aggregates data into itself from input parameter \inlinecode{coll}
@@ -110,8 +105,7 @@ When developing new stats we recommend running medium-sized jobs as a single thr
 For the histogram, the reduce functions are quite simple
 
 \begin{CppCode}
-void
-stat_histogram::reduce(stat_collector *coll)
+void stat_histogram::reduce(stat_collector *coll)
 {
   stat_histogram* other = safe_cast(stat_histogram, coll);
 
@@ -132,8 +126,7 @@ stat_histogram::reduce(stat_collector *coll)
 and for the global reduce
 
 \begin{CppCode}
-void
-stat_histogram::global_reduce(parallel_runtime* rt)
+void stat_histogram::global_reduce(parallel_runtime* rt)
 {
   int root = 0;
   /** Align everyone to have the same number of bins */

@@ -18,8 +18,7 @@ The ``workhorse'' of SST/macro is the base \inlinecode{event} and \inlinecode{me
 To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 \begin{CppCode}
-void
-handle(event* ev){
+void handle(event* ev){
 ...
 }
 \end{CppCode}

@@ -140,14 +140,11 @@ void sstmac_compute_loop4(uint64_t isize, uint64_t jsize,
                     uint32_t nintops_per_loop,
                     uint32_t bytes_per_loop);
 
-void
-sstmac_memread(uint64_t bytes);
+void sstmac_memread(uint64_t bytes);
 
-void
-sstmac_memwrite(uint64_t bytes);
+void sstmac_memwrite(uint64_t bytes);
 
-void
-sstmac_memcpy(uint64_t bytes);
+void sstmac_memcpy(uint64_t bytes);
 
 #define SSTMAC_sleep(...) sstmac_sleep(__VA_ARGS__)
 #define SSTMAC_usleep(...) sstmac_usleep(__VA_ARGS__)

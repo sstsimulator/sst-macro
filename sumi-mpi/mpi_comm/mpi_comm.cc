@@ -52,9 +52,6 @@ static sprockit::need_delete_statics<sumi::mpi_comm> cleanup_comm;
 
 namespace sumi {
 
-//
-// NULL communicator.
-//
 mpi_comm* mpi_comm::comm_null = nullptr;
 
 mpi_comm::mpi_comm() :
@@ -129,7 +126,6 @@ mpi_comm::to_string() const
   return sprockit::printf("mpicomm(id=%d,size=%d,rank=%d)", id_, size(), rank_);
 }
 
-/// The size of the communicator.
 int
 mpi_comm::size() const
 {
@@ -183,28 +179,16 @@ mpi_comm::next_collective_tag()
   return next_tag;
 }
 
-/// The task index of the caller.
 task_id
 mpi_comm::my_task() const
 {
   return group_->at(rank_);
 }
 
-/// The task index of the given peer.
 task_id
 mpi_comm::peer_task(int rank) const
 {
   return group_->at(rank);
-}
-
-//
-// Fairly self-explanatory.
-//
-std::ostream&
-operator<<(std::ostream &os, mpi_comm* comm)
-{
-  os << "mpicomm(rank=" << comm->rank_ << ", id=" << comm->id_ << ")";
-  return os;
 }
 
 }

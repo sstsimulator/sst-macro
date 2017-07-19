@@ -122,7 +122,8 @@ To illustrate, here is the code for the interconnect that creates the node objec
 The interconnect is itself a factory object, configured from a parameter file.
 
 \begin{CppCode}
-interconnect::interconnect(sprockit::sim_parameters* params, event_manager* mgr, partition* part, parallel_runtime* rt)
+interconnect::interconnect(sprockit::sim_parameters* params, event_manager* mgr, 
+	partition* part, parallel_runtime* rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   topology_ = topology_factory::get_param("name", top_params);
@@ -172,11 +173,9 @@ The \nodecls must provide \inlinecode{execute_kernel} functions that are invoked
 The prototypes for these are:
 
 \begin{CppCode}
-virtual void
-execute(ami::COMP_FUNC func, event* data);
+virtual void execute(ami::COMP_FUNC func, event* data);
 
-virtual void
-execute(ami::SERVICE_FUNC func, event* data);
+virtual void execute(ami::SERVICE_FUNC func, event* data);
 \end{CppCode}	
 
 By default, the abstract \nodecls class throws an \inlinecode{sprockit::unimplemented_error}. These functions are not pure virtual.
@@ -196,8 +195,7 @@ The network interface can implement many services, but the basic public interfac
 For sending messages, the NIC must implement
 
 \begin{CppCode}
-  virtual void
-  do_send(network_message* payload);
+  virtual void do_send(network_message* payload);
 \end{CppCode}
 A non-virtual, top-level \inlinecode{send} function performs operations standard to all NICs.
 Once these operations are complete, the NIC invokes \inlinecode{do_send} to perform model-specific send operations.
@@ -206,8 +204,7 @@ The NIC should only ever send \inlinecode{network_message} types.
 For the bare-bones class \inlinecode{logp_nic}, the function is
 
 \begin{CppCode}
-void
-logp_nic::do_send(network_message* msg)
+void logp_nic::do_send(network_message* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();
@@ -240,8 +237,7 @@ If a NIC supports direct handling of complete messages (MTL) instead of packets 
 it should provide a message handler:
 
 \begin{CppCode}
-event_handler*
-mtl_handler() const {
+event_handler* mtl_handler() const {
   return mtl_handler_;
 }
 \end{CppCode}
@@ -254,8 +250,7 @@ As with the NIC and node, the memory model class can have a complex implementati
 but it must funnel things through the a common function.
 
 \begin{CppCode}
-virtual void
-access(long bytes, double max_bw) = 0;
+virtual void access(long bytes, double max_bw) = 0;
 \end{CppCode}
 
 This function is intended to be called from an application user-space thread.
@@ -272,15 +267,13 @@ The internal details can essentially be arbitrary.
 However, the basic scheme for most switches follows the code below for the \inlinecode{pisces} model.
 
 \begin{CppCode}
-void
-pisces_switch::handle_credit(event *ev)
+void pisces_switch::handle_credit(event *ev)
 {
   pisces_credit* credit = static_cast<pisces_credit*>(ev);
   out_buffers_[credit->port()]->handle_credit(credit);
 }
 
-void
-pisces_switch::handle_payload(event *ev)
+void pisces_switch::handle_payload(event *ev)
 {
   pisces_payload* payload = static_cast<pisces_payload*>(ev);
   router_->route(payload);
@@ -311,14 +304,11 @@ The most important functions in the \topcls class are
 \begin{CppCode}
 class topology
 {
-virtual bool
-uniform_network_ports() const = 0;
+virtual bool uniform_network_ports() const = 0;
 
-virtual bool
-uniform_switches_non_uniform_network_ports() const = 0;
+virtual bool uniform_switches_non_uniform_network_ports() const = 0;
 
-virtual bool
-uniform_switches() const = 0;
+virtual bool uniform_switches() const = 0;
 
 virtual void connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
 
@@ -333,9 +323,9 @@ virtual int num_endpoints() const = 0;
 
 virtual int max_num_ports() const = 0;
 
-virtual switch_id netlink_to_injection_switch(node_id nodeaddr, int& switch_port) const = 0;
+virtual switch_id netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const = 0;
 
-virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, int& switch_port) const = 0;
+virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const = 0;
 
 virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
 
@@ -394,11 +384,9 @@ The router has a simple public interface
 class router
 {
 ...
-  virtual void
-  route(packet* pkt);
+  virtual void route(packet* pkt);
 
-  virtual void
-  route_to_switch(switch_id sid, routable::path& path) = 0;
+  virtual void route_to_switch(switch_id sid, routable::path& path) = 0;
 ...
 };
 \end{CppCode}

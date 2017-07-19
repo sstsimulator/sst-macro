@@ -84,8 +84,7 @@ class collective
     heartbeat
   } type_t;
 
-  virtual std::string
-  to_string() const = 0;
+  virtual std::string to_string() const = 0;
 
   virtual ~collective();
 
@@ -95,66 +94,51 @@ class collective
    * They have to remain active and persistent even after receving a completion ack
    * @return Whether the collective is persistent
    */
-  virtual bool
-  persistent() const {
+  virtual bool persistent() const {
     return false;
   }
 
-  int
-  context() const {
+  int context() const {
     return context_;
   }
 
-  static const char*
-  tostr(type_t ty);
+  static const char* tostr(type_t ty);
 
-  virtual void
-  recv(int target, const collective_work_message_ptr& msg) = 0;
+  virtual void recv(int target, const collective_work_message_ptr& msg) = 0;
 
-  void
-  recv(const collective_work_message_ptr &msg);
+  void recv(const collective_work_message_ptr &msg);
 
-  virtual void
-  start() = 0;
+  virtual void start() = 0;
 
-  communicator*
-  comm() const {
+  communicator* comm() const {
     return comm_;
   }
 
-  bool
-  complete() const {
+  bool complete() const {
     return complete_;
   }
 
-  void
-  set_complete() {
+  void set_complete() {
     complete_ = true;
   }
 
-  int
-  tag() const {
+  int tag() const {
     return tag_;
   }
 
-  type_t
-  type() const {
+  type_t type() const {
     return type_;
   }
 
-  void
-  actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_event);
+  void actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_event);
 
-  virtual void
-  add_actors(collective* coll);
+  virtual void add_actors(collective* coll);
 
   static const int default_nproc = -1;
 
-  virtual void
-  deadlock_check(){}
+  virtual void deadlock_check(){}
 
-  void
-  init(type_t type, transport* api, communicator* comm, int tag, int context);
+  void init(type_t type, transport* api, communicator* comm, int tag, int context);
 
   virtual void init_actors(){}
 
@@ -183,14 +167,11 @@ class dag_collective :
   DeclareFactory(dag_collective)
 
  public:
-  void
-  recv(int target, const collective_work_message_ptr& msg);
+  void recv(int target, const collective_work_message_ptr& msg);
 
-  void
-  start();
+  void start();
 
-  void
-  init(type_t type,
+  void init(type_t type,
     transport *my_api, communicator *comm,
     void *dst, void *src,
     int nelems, int type_size,
@@ -199,14 +180,11 @@ class dag_collective :
 
   void init_actors();
 
-  virtual dag_collective*
-  clone() const = 0;
+  virtual dag_collective* clone() const = 0;
 
-  virtual void
-  init_reduce(reduce_fxn fxn){}
+  virtual void init_reduce(reduce_fxn fxn){}
 
-  virtual void
-  init_root(int root){}
+  virtual void init_root(int root){}
 
   virtual void init_recv_counts(int* nelems){}
 
@@ -216,15 +194,14 @@ class dag_collective :
 
   virtual ~dag_collective();
 
-  static dag_collective*
-  construct(const std::string& name, sprockit::sim_parameters* params, reduce_fxn fxn);
+  static dag_collective* construct(const std::string& name, 
+            sprockit::sim_parameters* params, reduce_fxn fxn);
 
-  static dag_collective*
-  construct(const std::string& name, sprockit::sim_parameters *params);
+  static dag_collective* construct(const std::string& name, 
+            sprockit::sim_parameters *params);
 
  protected:
-  virtual dag_collective_actor*
-  new_actor() const = 0;
+  virtual dag_collective_actor* new_actor() const = 0;
 
   void add_actors(collective *coll);
 

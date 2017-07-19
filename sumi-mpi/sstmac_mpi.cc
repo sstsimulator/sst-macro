@@ -193,6 +193,14 @@ extern "C" int sstmac_ialltoallv(const void *sendbuf, const int *sendcounts,
             const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
             const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
             MPI_Comm comm, MPI_Request* req){ return sumi::sstmac_mpi()->ialltoallv(sendbuf,sendcounts,sdispls,sendtype,recvbuf,recvcounts,rdispls,recvtype,comm,req); }
+extern "C" int sstmac_ialltoallw(const void *sendbuf, const int sendcounts[], const int sdispls[],
+                   const MPI_Datatype sendtypes[], void *recvbuf, const int recvcounts[],
+                   const int rdispls[], const MPI_Datatype recvtypes[], MPI_Comm comm,
+                   MPI_Request *request){
+              return sumi::sstmac_mpi()->ialltoallw(sendbuf,sendcounts,sdispls,sendtypes,
+                                                    recvbuf,recvcounts,rdispls,recvtypes,
+                                                    comm,request);
+            }
 extern "C" int sstmac_ireduce(const void* src, void* dst,
          int count, MPI_Datatype type, MPI_Op op, int root,
          MPI_Comm comm, MPI_Request* req){ return sumi::sstmac_mpi()->ireduce(src,dst,count,type,op,root,comm,req); }
@@ -235,3 +243,18 @@ extern "C" int sstmac_type_free(MPI_Datatype* type){ return sumi::sstmac_mpi()->
 
 extern "C" double sstmac_wtime(){ return sumi::sstmac_mpi()->wtime(); }
 extern "C" double sstmac_wticks(){ return sumi::sstmac_mpi()->wtime(); }
+
+extern "C" int sstmac_abort(MPI_Comm comm, int errcode){ return sumi::sstmac_mpi()->abort(comm,errcode); }
+
+extern "C" int sstmac_group_translate_ranks(MPI_Group group1, int n, const int ranks1[],
+                                            MPI_Group group2, int ranks2[]){
+  return sumi::sstmac_mpi()->group_translate_ranks(group1, n, ranks1, group2, ranks2);
+}
+
+extern "C" int sstmac_errhandler_create(MPI_Handler_function *function, MPI_Errhandler *errhandler){
+  return sumi::sstmac_mpi()->errhandler_create(function,errhandler);
+}
+
+extern "C" int sstmac_comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *flag){
+  return sumi::sstmac_mpi()->comm_get_attr(comm,comm_keyval,attribute_val,flag);
+}

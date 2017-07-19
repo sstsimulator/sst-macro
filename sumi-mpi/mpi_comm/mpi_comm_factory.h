@@ -74,7 +74,7 @@ class mpi_comm_factory  {
     return selfcomm_;
   }
 
-  mpi_comm* comm_dup(mpi_comm*caller);
+  mpi_comm* comm_dup(mpi_comm* caller);
 
   mpi_comm* comm_create(mpi_comm* caller, mpi_group* group);
 
@@ -91,8 +91,7 @@ class mpi_comm_factory  {
 
   app_id aid_;
 
-  int mpirun_np_;
-
+  /// The next available communicator index.
   MPI_Comm next_id_;
 
   mpi_comm* worldcomm_;

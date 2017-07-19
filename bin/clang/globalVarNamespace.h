@@ -53,12 +53,15 @@ Questions? Contact sst-macro-help@sandia.gov
 
 struct GlobalVarNamespace
 {
-  GlobalVarNamespace() : isPrefixSet(false) {}
+  GlobalVarNamespace() : isPrefixSet(false), testPrefix(nullptr) {
+    testPrefix = getenv("SSTMAC_CLANG_TEST_PREFIX");
+  }
 
   std::string ns;
   std::set<std::string> replVars;
   std::map<std::string, GlobalVarNamespace> subspaces;
   char uniqueFilePrefix[256];
+  const char* testPrefix;
   bool isPrefixSet;
 
   bool empty() const {
@@ -91,7 +94,7 @@ struct GlobalVarNamespace
   }
 
   const char* filePrefix() const {
-    return uniqueFilePrefix;
+    return testPrefix ? testPrefix : uniqueFilePrefix;
   }
 
   bool genSSTCode(std::ostream& os, const std::string& indent){

@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-/// Hello.
 mpi_comm_cart::mpi_comm_cart(
   MPI_Comm id,
   int rank, mpi_group* peers,

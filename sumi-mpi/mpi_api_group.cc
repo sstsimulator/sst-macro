@@ -47,12 +47,42 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 int
+mpi_api::group_range_incl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* newgrp)
+{
+  std::vector<int> new_ranks;
+  for (int i=0; i < n; ++i){
+    int start = ranges[i][0];
+    int stop = ranges[i][1];
+    int stride = ranges[i][2];
+    int rank = start;
+    if (stride < 0){ //stride can be negativve
+      if (start < stop){
+        spkt_abort_printf("MPI_group_range_incl: negative stride, but start < stop");
+      }
+      while (rank >= stop){
+        new_ranks.push_back(rank);
+        rank += stride;
+      }
+    } else {
+      if (stop < start){
+        spkt_abort_printf("MPI_group_range_incl: positive stride, but stop < start");
+      }
+      while (rank <= stop){
+        new_ranks.push_back(rank);
+        rank += stride;
+      }
+    }
+  }
+
+  return group_incl(oldgrp, new_ranks.size(), new_ranks.data(), newgrp);
+}
+
+int
 mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group *newgrp)
 {
   mpi_group* oldgrpPtr = get_group(oldgrp);
   if (num_ranks > oldgrpPtr->size()) {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "MPI_Group_incl: invalid group size %d", num_ranks);
+    spkt_abort_printf("MPI_Group_incl: invalid group size %d", num_ranks);
   }
 
   std::vector<task_id> vec_ranks(num_ranks, task_id(0));
@@ -93,16 +123,30 @@ mpi_api::group_create_with_id(MPI_Group group, int num_members, const uint64_t *
 int
 mpi_api::group_free(MPI_Group *grp)
 {
-  auto iter = grp_map_.find(*grp);
-  if (iter == grp_map_.end()){
-    spkt_throw(sprockit::value_error,
-               "Invalid MPI_Group %d passed to group free",
-               *grp);
+  //do not delete it, leave it around
+  //forever and ever and ever
+  if (*grp != MPI_GROUP_WORLD){
+    auto iter = grp_map_.find(*grp);
+    if (iter == grp_map_.end()){
+      spkt_throw(sprockit::value_error,
+                 "Invalid MPI_Group %d passed to group free",
+                 *grp);
+    }
+    delete iter->second;
+    grp_map_.erase(iter);
   }
-  delete iter->second;
-  grp_map_.erase(iter);
   *grp = MPI_GROUP_NULL;
   return MPI_SUCCESS;
 }
 
+int
+mpi_api::group_translate_ranks(MPI_Group grp1, int n, const int *ranks1, MPI_Group grp2, int *ranks2)
+{
+  mpi_group* grp1ptr = get_group(grp1);
+  mpi_group* grp2ptr = get_group(grp2);
+  grp1ptr->translate_ranks(n, ranks1, ranks2, grp2ptr);
+  return MPI_SUCCESS;
 }
+
+}
+
