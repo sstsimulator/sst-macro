@@ -383,7 +383,7 @@ launch\_cmd \paramType{string} & No default & Valid aprun or srun & This uses a 
 \hline
 indexing \paramType{string} & block & block, random, cart, node\_id, coordinate & The indexing scheme for assign proc ID (MPI rank number) to compute nodes \\
 \hline
-node\_id\_mapper\_file (filepath) & No default & & If using Node ID indexing, the file containing the node ID index list \\
+node\_id\_mapper\_file \paramType{filepath} & No default & & If using Node ID indexing, the file containing the node ID index list \\
 \hline 
 random\_indexer\_seed \paramType{long} & System time & & The seed to use for a random allocation. If not specified, system time is used. \\
 \hline

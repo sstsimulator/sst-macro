@@ -102,22 +102,19 @@ how nodes will be allocated, how ranks will be indexed, and finally what applica
 Additionally, you must specify how many processes to launch and how many to spawn per node.  
 We currently recommend using aprun syntax (the launcher for Cray machines), 
 although support is being added for other process management systems.
-\sstmacro can simulate command line parameters by giving a value for \inlinefile{app1.argv}.
+\sstmacro can simulate command line parameters by giving a value for \inlinefile{node.app1.argv}.
 
 A network must also be chosen.  
 In the simplest possible case, the network is modeled via a simple latency/bandwidth formula.  
 For more complicated network models, many more than two parameters will be required. 
 See \ref{sec:tutorial:networkmodel} for a brief explanation of \sstmacro network congestion models. 
 A topology is also needed for constructing the network.  
-In this case we choose a 2-D 4$\times$4 torus (16 switches).  The \inlinefile{topology_geometry} 
+In this case we choose a 2-D 4$\times$4 torus (16 switches).  The \inlinefile{topology.geometry} 
 parameter takes an arbitrarily long list of numbers as the dimensions to the torus.
 
 Finally, we must construct a node model.  
-In this case, again, we use the simplest possible models (null model) for the node, 
+In this case, again, we use the simplest possible models for the node, 
 network interface controller (NIC), and memory.  
-The null model is essentially a no-op, generating the correct control flow but not actually simulating any computation. 
-This is useful for validating program correctness or examining questions only related to the network.  
-More accurate (and complicated) models will require parameters for node frequency, memory bandwidth, injection latency, etc.
 
 Parameter files can be constructed in a more modular way through the \inlinefile{include} statement.  
 An alternative parameter file would be:
@@ -168,5 +165,5 @@ nic_name = null
 sendrecv_message_size = 128
 \end{ViFile}
 
-All of these are special keywords in the global namespace that get expanded into parameters in a specific namespace.
+All of these are special keywords in the global namespace that get expanded into parameters in a specific namespace. We really, really do not recommend using these deprecated parameters anymore.
 

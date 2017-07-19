@@ -279,6 +279,7 @@ software_launch_request::parse_aprun(
         core_aff_str = optarg;
         break;
       default:
+        spkt_abort_printf("got invalid option in launch command");
         break;
     }
   }
