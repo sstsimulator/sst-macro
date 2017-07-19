@@ -52,7 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-
 using sstmac::sw::task_id;
 
 class mpi_group  {
@@ -78,7 +77,14 @@ class mpi_group  {
     id_ = grp;
   }
 
-  int rank_of_task(task_id t);
+  /**
+   * @brief rank_of_task See if task exists in this group.
+   *      If yes, return its rank within the group.
+   *      If not, return MPI_UNDEFINED.
+   * @param t The world task_id to find in the group
+   * @return The local rank of task within the group.
+   */
+  int rank_of_task(task_id t) const;
 
   void translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, mpi_group* other_grp);
 

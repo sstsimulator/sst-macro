@@ -301,6 +301,7 @@ echo
 
 echo "SST Core           $have_integrated_core"
 echo "Clang Autoskeleton $found_clang"
+echo "OTF2 Replay        $build_otf2"
 echo "MPI Timeline Stats $enable_mpi_timeline"
 echo "MPI Sync Stats     $with_comm_sync_stats"
 echo "Graphviz Trace     $enable_graphviz"

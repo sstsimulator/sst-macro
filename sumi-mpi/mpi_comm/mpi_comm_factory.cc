@@ -75,9 +75,9 @@ namespace sumi {
 //
 // Build comm_world using information retrieved from the environment.
 //
-mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
+mpi_comm_factory::mpi_comm_factory(software_id sid, mpi_api* parent) :
   parent_(parent),
-  aid_(aid),
+  aid_(sid.app_),
   next_id_(1),
   worldcomm_(nullptr),
   selfcomm_(nullptr)
@@ -86,8 +86,8 @@ mpi_comm_factory::mpi_comm_factory(app_id aid, mpi_api* parent) :
 
 mpi_comm_factory::~mpi_comm_factory()
 {
-  //do not delete
-  //these will get deleted by mpi_api
+  //these will get deleted by loop over comm map
+  //in ~mpi_api()
   //if (worldcomm_) delete worldcomm_;
   //if (selfcomm_) delete selfcomm_;
 }
@@ -130,9 +130,6 @@ mpi_comm_factory::comm_new_id_agree(MPI_Comm oldComm)
   return outputID;
 }
 
-//
-// Make the given mpiid refer to a newly created communicator.
-//
 mpi_comm*
 mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 {
@@ -287,7 +284,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
         }
       }
     }
-    mpi_group* grp = new mpi_group(task_list);
+    mpi_group* grp = new mpi_group(std::move(task_list));
     ret = new mpi_comm(cid, my_new_rank, grp, aid_, true/*delete this group*/);
   }
 

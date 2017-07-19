@@ -87,7 +87,6 @@ class mpi_queue
  public:
   mpi_queue(sprockit::sim_parameters* params, int task_id, mpi_api* api);
 
-  /// Goodbye.
   ~mpi_queue() throw ();
 
   static void delete_statics();
