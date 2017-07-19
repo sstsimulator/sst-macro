@@ -112,36 +112,36 @@ void OTF2TraceReplayApp::create_communicators() {
 
   // Loop over the communicators declared by OTF2, skip first one, which is MPI_COMM_WORLD
   for (int i = 1; i < comm_map.size(); i++) {
-    auto comm_rank_list = comm_map[i];
+    auto& comm_rank_list = comm_map[i];
 
-    uint64_t this_rank = this->tid();
+    uint32_t this_rank = this->tid();
 
     // skip communicator creation when it doesn't have this rank
-    if (std::find(comm_rank_list.begin(), comm_rank_list.end(), this_rank) == comm_rank_list.end() && comm_rank_list.size() > 0)
+    auto iter = std::find(comm_rank_list.begin(), comm_rank_list.end(), this_rank);
+    if (iter == comm_rank_list.end() && comm_rank_list.empty())
       continue;
 
-    uint64_t* p_rank_list = new uint64_t[comm_rank_list.size()];
-
-    for (int j = 0; j < comm_rank_list.size(); j++)
-      p_rank_list[j] = (int) comm_rank_list[j];
-
-    // An empty rank list implies MPI_COMM_SELF
-    if (comm_rank_list.size() == 0)
+    uint32_t* p_rank_list = nullptr;
+    int group_size = 0;
+    if (comm_rank_list.empty()){
+      // An empty rank list implies MPI_COMM_SELF
       p_rank_list = &this_rank;
+      group_size = 1;
+    } else {
+      p_rank_list = comm_rank_list.data();
+      group_size = comm_rank_list.size();
+    }
 
     // fetch group ID
     int group_id = otf2_comms[i].group;
 
     // create the group
-    mpi->group_create_with_id( group_id,
-                               std::max(comm_rank_list.size(), (size_t)1),
-                               p_rank_list);
+    bool included = mpi->group_create_with_id(group_id, group_size, p_rank_list);
+    if (included){
+      // create the communicator
+      mpi->comm_create_with_id(MPI_COMM_WORLD, group_id, i);
+    }
 
-    // create the communicator
-    mpi->comm_create_with_id(MPI_COMM_WORLD, group_id, i);
-
-    if (p_rank_list != &this_rank)
-      delete[] p_rank_list;
   }
 }
 
@@ -184,6 +184,10 @@ OTF2TraceReplayApp::skeleton_main() {
 
   auto event_reader = initialize_event_reader();
 
+  mpi_ = get_api<sumi::mpi_api>();
+  mpi_->set_generate_ids(false);
+  mpi_->init(nullptr,nullptr); //force init here
+
   build_comm_map();
   create_communicators();
 
@@ -191,15 +195,6 @@ OTF2TraceReplayApp::skeleton_main() {
   verify_replay_success();
 
   OTF2_Reader_Close(event_reader);
-}
-
-sumi::mpi_api*
-OTF2TraceReplayApp::GetMpi() {
-  if (mpi_) return mpi_;
-
-  mpi_ = get_api<sumi::mpi_api>();
-  mpi_->set_generate_ids(false); // We use requests, comms, etc from OTF2 traces
-  return mpi_;
 }
 
 CallQueue& OTF2TraceReplayApp::GetCallQueue() {

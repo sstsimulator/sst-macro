@@ -96,6 +96,8 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 void
 mpi_api::comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
 {
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create_with_id(%s,%d,%d)",
+                comm_str(input).c_str(), group, new_comm);
   mpi_group* groupPtr = get_group(group);
   mpi_comm* inputPtr = get_comm(input);
   int new_rank = groupPtr->rank_of_task(inputPtr->my_task());

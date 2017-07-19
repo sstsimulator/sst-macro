@@ -78,7 +78,10 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
                      sstmac::sw::software_id sid,
                      sstmac::sw::operating_system* os);
 
-  sumi::mpi_api* GetMpi();
+  sumi::mpi_api* GetMpi(){
+    return mpi_;
+  }
+
   CallQueue& GetCallQueue();
   bool PrintTraceEvents();
   bool PrintMpiCalls();

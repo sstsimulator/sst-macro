@@ -424,8 +424,7 @@ mpi_api::src_str(mpi_comm* comm, int id)
 mpi_comm*
 mpi_api::get_comm(MPI_Comm comm)
 {
-  spkt_unordered_map<MPI_Comm, mpi_comm*>::iterator it
-    = comm_map_.find(comm);
+  auto it = comm_map_.find(comm);
   if (it == comm_map_.end()) {
     if (comm == MPI_COMM_WORLD){
       cerrn << "Could not find MPI_COMM_WORLD! "
@@ -441,11 +440,9 @@ mpi_api::get_comm(MPI_Comm comm)
 mpi_group*
 mpi_api::get_group(MPI_Group grp)
 {
-  spkt_unordered_map<MPI_Group, mpi_group*>::iterator it
-    = grp_map_.find(grp);
+  auto it = grp_map_.find(grp);
   if (it == grp_map_.end()) {
-    spkt_throw_printf(sprockit::spkt_error,
-        "could not find mpi group %d for rank %d",
+    spkt_abort_printf("could not find mpi group %d for rank %d",
         grp, int(rank_));
   }
   return it->second;

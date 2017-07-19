@@ -1289,7 +1289,8 @@ OTF2_CallbackCode event_leave(
   CASE_READY(ID_MPI_Info_get_nthkey)
   CASE_READY(ID_MPI_Info_get_valuelen)
   CASE_READY(ID_MPI_Info_set)
-  CASE_READY(ID_MPI_Init, call->on_trigger = [=] () {call->app->GetMpi()->init(nullptr, nullptr);};)
+  CASE_READY(ID_MPI_Init, call->on_trigger = [=] () { }; ) 
+  //call->app->GetMpi()->init(nullptr, nullptr);};) - this gets invoked automatically
   CASE_READY(ID_MPI_Init_thread)
   CASE_IGNORE(ID_MPI_Initialized)
   CASE_READY(ID_MPI_Intercomm_create)

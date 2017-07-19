@@ -192,7 +192,13 @@ class mpi_api :
 
   void comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm);
 
-  void group_create_with_id(MPI_Group group, int num_members, const uint64_t* members);
+  /**
+   * @param group
+   * @param num_members
+   * @param members
+   * @return Whether the current rank is in the group
+   */
+  bool group_create_with_id(MPI_Group group, int num_members, const uint32_t* members);
 
   int cart_create(MPI_Comm comm_old, int ndims, const int dims[],
               const int periods[], int reorder, MPI_Comm *comm_cart);
