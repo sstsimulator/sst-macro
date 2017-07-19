@@ -65,7 +65,7 @@ class node_id_allocation :
 
   virtual ~node_id_allocation() throw() {}
 
-  virtual void allocate(int nnode_requested,
+  bool allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set &allocation) const override;
 

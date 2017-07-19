@@ -165,7 +165,7 @@ software_launch_request::index_allocation(
   indexed_ = true;
 }
 
-void
+bool
 software_launch_request::request_allocation(
   const sw::ordered_node_set& available,
   sw::ordered_node_set& allocation)
@@ -175,7 +175,7 @@ software_launch_request::request_allocation(
   if (remainder) {
     ++num_nodes;
   }
-  allocator_->allocate(num_nodes, available, allocation);
+  return allocator_->allocate(num_nodes, available, allocation);
 }
 
 void

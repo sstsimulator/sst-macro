@@ -80,7 +80,7 @@ class node_allocator :
     @param allocation returns the nodes that have been allocated
     @return Whether the allocation succeeded based on available nodes
   */
-  virtual void allocate(int nnode,
+  virtual bool allocate(int nnode,
    const ordered_node_set& available,
    ordered_node_set& allocation) const = 0;
 

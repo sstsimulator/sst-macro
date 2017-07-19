@@ -100,7 +100,7 @@ node_id_allocation::read_coordinate_file(
   }
 }
 
-void
+bool
 node_id_allocation::allocate(int nnode_requested,
   const ordered_node_set& available,
   ordered_node_set &allocation) const
@@ -109,9 +109,7 @@ node_id_allocation::allocate(int nnode_requested,
   read_coordinate_file(coord_file_, node_list, topology_);
 
   if (node_list.size() < nnode_requested){
-    spkt_throw_printf(sprockit::value_error,
-       "application needs %d node, but only %d listed in file %s",
-       nnode_requested, node_list.size(), coord_file_.c_str());
+    return false;
   }
 
   for (int i=0; i < nnode_requested; ++i){
@@ -121,6 +119,8 @@ node_id_allocation::allocate(int nnode_requested,
         int(nid));
     allocation.insert(nid);
   }
+
+  return true;
 }
 
 }
