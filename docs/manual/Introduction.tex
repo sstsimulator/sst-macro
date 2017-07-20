@@ -109,3 +109,10 @@ The use case above is \emph{emulation}, exactly reproducing MPI functionality.
 In \emph{skeletonization} or \emph{simulation}, SST/macro will mimic as closely as possible the original application,
 but avoids as much computation and as much memory allocation as possible.
 This allows to pack in as many simulated MPI ranks as possible into your single \inlineshell{sstmac} process.
+
+\section{What To Expect In The Manual}
+This user's manual is mainly designed for those who wish to perform experiments with \emph{new} applications using \emph{existing} hardware models.
+This has been the dominant use case and we therefore classify those doing application experiments as ``users'' and those making new hardware models ``developers.''
+Getting applications to run in SST/macro should be very straightforward and requires no knowledge of simulator internal code.
+Making new hardware models is much more in depth and requires learning some basics of core simulator code.
+Those interested in making new hardware models should consult the developer's manual in the top-level source directory.

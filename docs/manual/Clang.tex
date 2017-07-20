@@ -3,5 +3,39 @@
 \chapter{Clang Source-to-Source Auto-Skeletonization via Pragmas}
 \label{clangTutorial}
 
-Coming soon!
+\section{Pragma Overview}
 
+\subsection{Compiler workflow}
+
+\subsection{Compiler Environment Variables}
+
+\subsubsection{SSTMAC\_SRC2SRC: Default 1}
+
+\subsubsection{SSTMAC\_SKELETONIZE: Default 0}
+
+\subsubsection{SSTMAC\_HEADERS: No default}
+
+\subsubsection{SSTMAC\_DELETE\_TEMPS: Default 0}
+
+\section{Basic Replacement Pragmas}
+\subsection{pragma sst delete}
+\subsection{pragma sst replace}
+\subsection{pragma sst init}
+\subsection{pragma sst return}
+\subsection{pragma sst keep}
+\subsection{pragma sst keep\_if}
+\subsection{pragma sst empty}
+
+\section{Memory Allocation Pragmas}
+\subsection{pragma sst malloc}
+\subsection{pragma sst new}
+
+\section{Data-Driven Type Pragmas}
+\subsection{pragma sst null\_variable}
+\subsection{pragma sst null\_type}
+\subsection{pragma sst branch\_predict}
+
+\section{Compute Pragmas}
+\subsection{pragma sst compute and pragma omp parallel}
+\subsection{pragma sst loop\_count}
+\subsection{pragma sst branch\_predict}
