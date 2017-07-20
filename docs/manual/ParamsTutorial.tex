@@ -9,7 +9,7 @@ However, for consistency with previous versions, we also show the deprecated par
 
 \begin{ViFile}
 amm_model = amm1
-congestion_model = simple
+congestion_model = LogP
 node {
  #run a single mpi test
  app1 {
@@ -21,7 +21,6 @@ node {
   sendrecv_message_size = 128
  }
  ncores = 1
- model = simple
  memory {
   model = simple
   bandwidth = 1GB/s
@@ -57,6 +56,26 @@ topology {
 The input file follows a basic syntax of \inlinefile{parameter = value}.  
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
+
+\subsection{Naming Conventions}
+There are some patterns in the naming of SST parameters. The most critical is ``model'' versus ``name''. Consider:
+
+\begin{CppCode}
+
+switch {
+ model = pisces
+ router {
+  name = minimal
+ }
+}
+\end{CppCode}
+
+The distinction here is subtle, but important. When a parameter has the name ``model'' it means there are important approximations being made.
+The model does not necessarily reproduce a real switch or node or NIC.
+It's not a choice of algorithm. It's the choice of an approximate hardware model.
+In contrast, when selecting an algorithm that is trying to reproduce ``exact'' behavior, the parameter is ``name.''
+This indicates the name of an algorithm, not an approximate model.
+
 
 \subsection{Parameter Namespace Rules}
 \label{subsec:parameterNamespace}

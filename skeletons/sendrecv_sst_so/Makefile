@@ -1,8 +1,8 @@
 TARGET := libsendrecv.so
 SRC := main.cc
 
-CXX :=    libsst++
-CC :=     libsstcc
+CXX :=    sst++
+CC :=     sstcc
 CXXFLAGS := -fPIC
 CPPFLAGS := -I.
 LIBDIR :=  
