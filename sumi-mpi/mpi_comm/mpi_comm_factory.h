@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_types/mpi_type.h>
 #include <sumi-mpi/mpi_api_fwd.h>
 #include <sstmac/software/process/task_id.h>
-#include <sstmac/software/process/app_id.h>
 
 namespace sumi {
 
@@ -60,18 +59,18 @@ namespace sumi {
 class mpi_comm_factory  {
 
  public:
-  mpi_comm_factory(app_id aid, mpi_api* parent);
+  mpi_comm_factory(software_id sid, mpi_api* parent);
 
   ~mpi_comm_factory();
 
   void init(int rank, int nproc);
 
  public:
-  mpi_comm* world(){
+  mpi_comm* world() const {
     return worldcomm_;
   }
 
-  mpi_comm*  self(){
+  mpi_comm* self() const {
     return selfcomm_;
   }
 

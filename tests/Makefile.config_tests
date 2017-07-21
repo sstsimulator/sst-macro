@@ -6,7 +6,6 @@
 # These are also run with the same rule
 CONFIGTESTS = \
   test_configs_smp_pflow \
-  test_configs_simple_switch \
   test_configs_edison_amm1 \
   test_configs_edison_amm2 \
   test_configs_edison_amm3 \
@@ -32,7 +31,6 @@ COVERAGETESTS = \
   test_memory_leak \
   test_feature_excl_job_launcher \
   test_coverage_smp_pflow \
-  test_coverage_simple_switch \
   test_coverage_edison_amm1 \
   test_coverage_edison_amm2 \
   test_coverage_edison_amm3 \

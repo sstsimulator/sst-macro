@@ -110,7 +110,9 @@ AC_PROG_CXX
 AC_PROG_FC
 AC_LANG_CPLUSPLUS
 AC_PROG_LIBTOOL
-LT_INIT([disable-shared])
+
+LT_INIT([shared disable-static dlopen])
+
 #LT_INIT()
 LT_PREREQ([2.2.6])
 AC_PROG_LN_S
@@ -123,6 +125,8 @@ AM_CONDITIONAL([HAVE_UBUNTU], [true])
 else
 AM_CONDITIONAL([HAVE_UBUNTU], [false])
 fi
+
+CHECK_DLOPEN()
 
 CHECK_CLANG()
 
@@ -297,6 +301,7 @@ echo
 
 echo "SST Core           $have_integrated_core"
 echo "Clang Autoskeleton $found_clang"
+echo "OTF2 Replay        $build_otf2"
 echo "MPI Timeline Stats $enable_mpi_timeline"
 echo "MPI Sync Stats     $with_comm_sync_stats"
 echo "Graphviz Trace     $enable_graphviz"

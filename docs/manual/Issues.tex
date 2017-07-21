@@ -1,0 +1,28 @@
+%% !TEX root = manual.tex
+
+\chapter{Issues and Limitations}
+\section{Polling in applications}
+
+Use of testing non-blocking functions in a loop, such as:
+
+
+\begin{CppCode}
+while(!flag){
+ MPI_Iprobe( 0, 0, MPI_COMM_WORLD, &flag, &status );
+}
+\end{CppCode}
+
+For some configurations, virtual time never advances in the MPI\_Iprobe call. 
+This causes an infinite loop that never returns to the discrete event manager. 
+Even if configured so that time progresses, the code will work but will take a very long time to run.
+
+\section{Fortran}
+\label{subsec:issues:fortran}
+
+\sstmacro previously provided some experimental support for Fortran90 applications. 
+This has been discontinued for the foreseeable future.
+For profiling existing apps written with Fortran, DUMPI traces can still be generated. 
+
+
+
+

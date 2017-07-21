@@ -10,7 +10,8 @@
 \subsection{Downloading}
 \label{subsec:build:downloading}
 
-\sstmacro is available at \url{https://github.com/sstsimulator/sst-macro}
+\sstmacro is available at \url{https://github.com/sstsimulator/sst-macro}.
+You can download the git repository directly:
 
 \begin{ShellCmd}
 shell> git clone https://github.com/sstsimulator/sst-macro.git 
@@ -20,6 +21,7 @@ or for ssh
 \begin{ShellCmd}
 shell> git clone ssh://git@github.com/sstsimulator/sst-macro.git 
 \end{ShellCmd}
+or you can download a release tarball from \url{https://github.com/sstsimulator/sst-macro/releases}.
 
 \subsection{Dependencies}
 \label{subsec:build:dependencies}
@@ -65,22 +67,25 @@ The workflow for installing and running on the main SST core is:
 \item Write a custom Python script 
 \end{itemize}
 
-The workflow for installing and running on the standalone SST/macro core (for debugging, not for production):
+The workflow for installing and running on the standalone SST/macro core:
 \begin{itemize}
 \item Build and install SST/macro standalone to generate \inlineshell{sstmac} executable
 \item Run \inlineshell{sstmac} with \inlineshell{*.ini} parameter files
 \end{itemize}
 
 \subsubsection{Build SST core}\label{subsec:buildSSTCore}
-The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{http://sst-simulator.org/SSTPages/SSTMainDownloads/}.
+The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{http://sst-simulator.org/SSTPages/SSTMainDownloads}.
 Building and installing sets up the discrete event simulation core required for all SST elements.
 SST core no longer has Boost dependencies! Directions for building Boost (if desired) are still below in \ref{subsubsec:boost}
 
 \subsubsection{Build SST/macro element library}\label{subsec:buildElementLib}
-Once \sstmacro is extracted to a directory, we recommend the following as a baseline configuration, including building outside the source tree:
+If using the repo (not a release tarball), go to the top-level source directory and run:
+\begin{ShellCmd}
+top-level-src> ./bootstrap.sh
+\end{ShellCmd}
+This sets up the configure script. For builds, we recommend building outside the source tree:
 
 \begin{ShellCmd}
-sst-macro> ./bootstrap.sh
 sst-macro> mkdir build
 sst-macro> cd build
 sst-macro/build> ../configure --prefix=$PATH_TO_INSTALL --with-sst-core=$PATH_TO_SST_CORE CC=$MPICC CXX=$MPICXX
@@ -99,7 +104,7 @@ Enabled by default. Disable if not using Boost or C++11. Ordered maps can be use
 Enabled by default. Disable if not using Boost or C++11.
 \item --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
 \item --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
-\item --(dis|en)able-otf2: Enable OTF2 trace replay, requires a path to OTF2 installation.
+\item --(dis|en)able-otf2[=location]: Enable OTF2 trace replay, requires a path to OTF2 installation.
 \item --with-clang[=location]: Enable Clang source-to-source tools by pointing to Clang development libraries
 \end{itemize}
 
@@ -108,7 +113,7 @@ Once configuration has completed, printing a summary of the things it found, sim
 \subsection{Post-Build}
 \label{subsec:postbuild}
 
-If the build did not succeed, check \ref{subsec:build:issues} for known issues, or contact \sstmacro support for help (sst-macro-help@sandia.gov).
+If the build did not succeed open an issue on the github page at \url{https://github.com/sstsimulator/sst-macro/issues} or contact \sstmacro support for help (sst-macro-help@sandia.gov).
 
 If the build was successful, it is recommended to run the range of tests to make sure nothing went wrong.  
 To do this, and also install \sstmacro  to the install path specified during installation, run the following commands:
@@ -123,7 +128,7 @@ Make installcheck compiles some of the skeletons that come with \sstmacro, linki
 
 \aside{
 Important:  Applications and other code linking to \sstmacro use Makefiles that use the sst++/sstcc compiler wrappers
-that are installed there for convenience to figure out where headers and libraries are.  Make sure your path is properly configured.
+that are installed there for convenience to figure out where headers and libraries are.  When making your skeletons and components, make sure your path is properly configured.
 }
 
 \subsection{GNU pth for user-space threading}\label{subsubsec:pth}
@@ -239,7 +244,7 @@ where the OTF2 root is the installation prefix for a valid OTF2 build. OTF2 can 
 Detailed build and usage instructions can be found on the website.
 
 
-\section{Building Clang source-to-source support}
+\section{Building Clang source-to-source support (Beta)}
 \label{sec:buildingClang}
 
 To enable Clang source-to-source support it is not sufficient to have a Clang compiler.  You have to install a special libTooling library for Clang.
@@ -292,7 +297,7 @@ The setup script places each tarball in the following subfolders of the main LLV
 \end{itemize}
 
 Only Clang is a strict dependency. Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
-You MUST use another Clang compiler to build. If not, then you need to bootstrap (use GCC to build Clang, then use that Clang to build itself).
+You should not lunger need to use Clang to build Clang, but for the most stable results you should a pre-existing Clang compiler to build the Clang development libraries.
 
 \begin{ViFile}
 cmake ../llvm \
@@ -329,7 +334,9 @@ You must use the same Clang compiler to build SST that you used to build libTool
 ../configure CXX=clang++ CC=clang --with-clang=$install
 \end{ShellCmd}
 
-Clang source-to-source support will now be built into the \inlineshell{sst++} compiler.
+Clang source-to-source support will now be built into the \inlineshell{sst++} compiler. 
+If Clang development libraries are available in the default system path (as is often the case with LLVM models, e..g \inlineshell{module load llvm}),
+then you can just put \inlineshell{--with-clang}.
 
 \section{Running an Application}\label{sec:building:running}
 \subsection{SST Python Scripts}
@@ -348,17 +355,12 @@ The script configures the necessary paths and then launches with a Python script
 Assuming the path is configured properly, users can run
 
 \begin{ShellCmd}
->pysstmac -f parameters.ini
+shell>pysstmac -f parameters.ini
 \end{ShellCmd}
-with a properly formatted parameter file. If running in standalone mode, the command would be similarly (but different).
-
-\begin{ViFile}
-from sst.macro import *
-setupDeprecated()
-\end{ViFile}
+with a properly formatted parameter file. If running in standalone mode, the command would be similar (but different).
 
 \begin{ShellCmd}
->sstmac -f parameters.ini
+shell>sstmac -f parameters.ini
 \end{ShellCmd}
 since there is no Python setup involved.
 
@@ -383,7 +385,7 @@ This is how simulations generally work in \sstmacro: you build skeleton code and
 Then you run that binary and pass it a parameter file which describes the machine model to use.  For running on the main SST core, a few extra flags are required.  Rather than generating a standalone executable, the compiler wrapper generates a shared library. Users can always write their own Python scripts, which will be required for more advanced usage. However, users can also just use the \inlineshell{pysstmac} script.
 
 \begin{ShellCmd}
->sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
+sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
 \end{ShellCmd}
 Any extra shared libraries can be given as the first few parameters and these will automatically be imported.
 
@@ -475,7 +477,6 @@ Job launchers may in some cases provide duplicate functionality and either metho
 \subsection{Warnings for Parallel Simulation}
 \label{subsec:parallelwarn}
 \begin{itemize}
-\item Watch your \inlineshell{LD_LIBRARY_PATH} if you have multiple different builds. If your paths get scrambled and the wrong libraries are being read, you will get bizarre, inscrutable errors.
 \item If the number of simulated processes specified by e.g. \inlinefile{aprun -n 100} does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine), parallel performance will suffer. \sstmacro partitions nodes, not MPI ranks.
 \end{itemize}
 

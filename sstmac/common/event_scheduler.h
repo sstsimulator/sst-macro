@@ -84,43 +84,33 @@ class event_scheduler :
    * @param handler The handler for the event
    * @param msg The message to deliver to the handler
    */
-  void
-  schedule(timestamp t,
+  void schedule(timestamp t,
            event_handler* handler,
            event* ev);
 
-  void
-  schedule(timestamp t, event_queue_entry* ev);
+  void schedule(timestamp t, event_queue_entry* ev);
 
-  void
-  schedule_now(event_queue_entry* ev);
+  void schedule_now(event_queue_entry* ev);
 
-  void
-  schedule_now(event_handler* handler, event* ev);
+  void schedule_now(event_handler* handler, event* ev);
 
-  void
-  schedule_delay(timestamp delay,
+  void schedule_delay(timestamp delay,
                  event_handler* handler,
                  event* ev);
-  void
-  schedule_delay(timestamp delay, event_queue_entry* ev);
+  void schedule_delay(timestamp delay, event_queue_entry* ev);
 
-  void
-  send_self_event_queue(timestamp arrival, event_queue_entry* ev);
+  void send_self_event_queue(timestamp arrival, event_queue_entry* ev);
 
-  void
-  send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev);
+  void send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev);
 
-  void
-  send_now_self_event_queue(event_queue_entry* ev);
+  void send_now_self_event_queue(event_queue_entry* ev);
 
   /**
    * @brief send_to_link  The message should arrive now
    * @param lnk
    * @param ev
    */
-  void
-  send_to_link(event_handler* lnk, event* ev);
+  void send_to_link(event_handler* lnk, event* ev);
 
   /**
    * @brief send_to_link  The arrival time will be enter + lat
@@ -129,39 +119,31 @@ class event_scheduler :
    * @param lnk
    * @param ev
    */
-  void
-  send_to_link(timestamp enter, timestamp lat,
+  void send_to_link(timestamp enter, timestamp lat,
                event_handler* lnk, event* ev);
 
-  void
-  send_delayed_to_link(timestamp extra_delay, timestamp lat,
+  void send_delayed_to_link(timestamp extra_delay, timestamp lat,
                event_handler* lnk, event* ev);
 
 
-  void
-  send_delayed_to_link(timestamp extra_delay,
+  void send_delayed_to_link(timestamp extra_delay,
                event_handler* lnk, event* ev);
 
-  void
-  register_stat(stat_collector* coll, stat_descr_t* descr);
+  void register_stat(stat_collector* coll, stat_descr_t* descr);
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
-  timestamp
-  now() const;
+  timestamp now() const;
 
-  SST::Link*
-  self_link() const {
+  SST::Link* self_link() const {
     return self_link_;
   }
 
-  SST::Component*
-  comp() const {
+  SST::Component* comp() const {
     return comp_;
   }
 
-  void
-  handle_self_event(SST::Event* ev);
+  void handle_self_event(SST::Event* ev);
 
  protected:
   event_scheduler(device_id loc) :
@@ -181,29 +163,24 @@ class event_scheduler :
   static SST::TimeConverter* time_converter_;
 
  private:
-  SST::SimTime_t
-  extra_delay(timestamp t) const;
+  SST::SimTime_t extra_delay(timestamp t) const;
 
-  void
-  schedule(SST::SimTime_t delay, event_handler* handler, event* ev);
+  void schedule(SST::SimTime_t delay, event_handler* handler, event* ev);
 
   SST::Link* self_link_;
 
   SST::Component* comp_;
 #else
  public:
-  timestamp
-  now() const {
+  timestamp now() const {
     return eventman_->now();
   }
 
-  int
-  nthread() const {
+  int nthread() const {
     return eventman_->nthread();
   }
 
-  event_manager*
-  event_mgr() const {
+  event_manager* event_mgr() const {
     return eventman_;
   }
 
@@ -214,10 +191,7 @@ class event_scheduler :
    * @param handler   The handler to receive the event. This should always be a stub for a real handler on a remote process.
    * @param ev        The event to deliver
    */
-  void
-  ipc_schedule(timestamp t,
-    event_handler* handler,
-    event* ev);
+  void ipc_schedule(timestamp t, event_handler* handler, event* ev);
 
  protected:
   event_scheduler(event_manager* mgr, uint32_t* seqnum, device_id loc, int thread_id) :
@@ -234,8 +208,7 @@ class event_scheduler :
  private:
   void sanity_check(timestamp t);
 
-  void
-  multithread_schedule(int src_thread, int dst_thread,
+  void multithread_schedule(int src_thread, int dst_thread,
     timestamp t, event_queue_entry* ev);
 #endif
 
@@ -252,18 +225,13 @@ class event_component :
 {
   friend class event_subcomponent;
  public:
-  virtual
-  ~event_component() {
-  }
+  virtual ~event_component() {}
 
-  void
-  cancel_all_messages();
+  void cancel_all_messages();
 
-  virtual void
-  deadlock_check() {}
+  virtual void deadlock_check() {}
 
-  virtual void
-  deadlock_check(event* ev) {}
+  virtual void deadlock_check(event* ev) {}
 
   virtual void setup(); //needed for SST core compatibility
 
@@ -286,6 +254,8 @@ class event_component :
   {
   }
 
+  void init_links(sprockit::sim_parameters* params){} //need for SST core compatibility
+
  private:
   uint32_t seqnum_;
 #endif
@@ -300,11 +270,9 @@ class event_subcomponent :
 
   virtual void init(unsigned int phase); //needed for SST core compatibility
 
-  virtual void
-  deadlock_check() {}
+  virtual void deadlock_check() {}
 
-  virtual void
-  deadlock_check(event* ev) {}
+  virtual void deadlock_check(event* ev){}
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
@@ -317,6 +285,18 @@ class event_subcomponent :
   }
 #endif
 };
+
+#if SSTMAC_INTEGRATED_SST_CORE
+template <class T, class Fxn>
+link_handler* new_link_handler(const T* t, Fxn fxn){
+  return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
+}
+#else
+template <class T, class Fxn>
+link_handler* new_link_handler(const T* t, Fxn fxn){
+  return new_handler<T,Fxn>(const_cast<T*>(t), fxn);
+}
+#endif
 
 
 } // end of namespace sstmac

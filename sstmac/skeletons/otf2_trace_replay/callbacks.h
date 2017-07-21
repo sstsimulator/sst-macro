@@ -145,6 +145,11 @@ def_location_property( void*               userData,
                        OTF2_Type           type,
                        OTF2_AttributeValue value );
 
+OTF2_CallbackCode
+def_mapping_table( void*             userData,
+    OTF2_MappingType  mappingType,
+    const OTF2_IdMap* idMap );
+
 /******************************************************************************
  * Event callbacks
  *

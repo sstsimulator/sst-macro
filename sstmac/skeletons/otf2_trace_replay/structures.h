@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include <otf2/otf2.h>
 #include <sstmac/skeletons/otf2_trace_replay/callid.h>
 #include <sprockit/errors.h>
@@ -69,6 +70,12 @@ struct OTF2_Location {
   OTF2_LocationGroupRef locationGroup;
 };
 
+struct OTF2_LocationGroup {
+  OTF2_StringRef name;
+  OTF2_LocationGroupType locationGroupType;
+  OTF2_SystemTreeNodeRef systemTreeParent;
+};
+
 struct OTF2_Region {
   OTF2_StringRef name;
   OTF2_StringRef canonicalName;
@@ -88,6 +95,7 @@ struct OTF2_Group {
   OTF2_GroupType groupType;
   OTF2_Paradigm paradigm;
   OTF2_GroupFlag groupFlags;
+  std::vector<uint64_t> members;
 };
 
 struct OTF2_Comm {

@@ -63,7 +63,7 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
   check_init();
   start_comm_call(MPI_Comm_dup,input);
   mpi_comm* inputPtr = get_comm(input);
-  mpi_comm* outputPtr = comm_factory_->comm_dup(inputPtr);
+  mpi_comm* outputPtr = comm_factory_.comm_dup(inputPtr);
   add_comm_ptr(outputPtr, output);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s) finish",
                 comm_str(input).c_str(), comm_str(*output).c_str());
@@ -86,11 +86,25 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
   start_comm_call(MPI_Comm_create,input);
   mpi_comm* inputPtr = get_comm(input);
   mpi_group* groupPtr = get_group(group);
-  add_comm_ptr(comm_factory_->comm_create(inputPtr, groupPtr), output);
+  add_comm_ptr(comm_factory_.comm_create(inputPtr, groupPtr), output);
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create(%s,%d,*%s)",
                 comm_str(input).c_str(), group, comm_str(*output).c_str());
   end_api_call();
   return MPI_SUCCESS;
+}
+
+void
+mpi_api::comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
+{
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create_with_id(%s,%d,%d)",
+                comm_str(input).c_str(), group, new_comm);
+  mpi_group* groupPtr = get_group(group);
+  mpi_comm* inputPtr = get_comm(input);
+  int new_rank = groupPtr->rank_of_task(inputPtr->my_task());
+  if (new_rank != -1){ //this is actually part of the group
+    mpi_comm* newCommPtr = new mpi_comm(new_comm, new_rank, groupPtr, library::sid_.app_);
+    add_comm_ptr(newCommPtr, &new_comm);
+  }
 }
 
 int
@@ -107,7 +121,7 @@ mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
 {
   start_comm_call(MPI_Cart_create,comm_old);
   mpi_comm* incommPtr = get_comm(comm_old);
-  mpi_comm* outcommPtr = comm_factory_->create_cart(incommPtr, ndims, dims, periods, reorder);
+  mpi_comm* outcommPtr = comm_factory_.create_cart(incommPtr, ndims, dims, periods, reorder);
   add_comm_ptr(outcommPtr, comm_cart);
   end_api_call();
   return MPI_SUCCESS;
@@ -190,11 +204,11 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 {
   start_comm_call(MPI_Comm_split,incomm);
   mpi_comm* incommPtr = get_comm(incomm);
-  mpi_comm* outcommPtr = comm_factory_->comm_split(incommPtr, color, key);
+  mpi_comm* outcommPtr = comm_factory_.comm_split(incommPtr, color, key);
   add_comm_ptr(outcommPtr, outcomm);
   mpi_api_debug(sprockit::dbg::mpi,
       "MPI_Comm_split(%s,%d,%d,*%s) exit",
-                comm_str(incomm).c_str(), color, key, comm_str(*outcomm).c_str());
+      comm_str(incomm).c_str(), color, key, comm_str(*outcomm).c_str());
 
   //but also assign an id to the underlying group
   if (outcommPtr->id() != MPI_COMM_NULL){

@@ -104,57 +104,6 @@ collective_algorithm_selector* transport::scan_selector_ = nullptr;
 collective_algorithm_selector* transport::scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
 
-#if 0
-void
-transport::comm_sync_stats::collect(const message::ptr &msg,
-                                    double now,
-                                    double start)
-{
-  collect(msg->time_sent(), msg->time_arrived(), now, start);
-}
-
-void
-transport::comm_sync_stats::collect(double time_sent,
-                                    double time_arrived,
-                                    double now,
-                                    double start)
-{
-  //the time spent waiting here even before the message is sent
-  double sync_start = std::max(start, last_done);
-  double sync_delay = std::max(0., time_sent - sync_start);
-  total_sync_delay += sync_delay;
-
-  //we have to select what time we consider "comm" to have started
-  double comm_start = std::max(last_done, time_sent);
-  //the time spent I spend waiting with the message in-transit
-  double comm_delay = std::max(0., time_arrived - comm_start);
-  total_comm_delay += comm_delay;
-
-  //the time between the message arriving and me actually processing it
-  double busy_start = std::max(time_arrived, last_done);
-  double busy_delay = now - busy_start;
-  total_busy_delay += busy_delay;
-
-  //printf("Computed: \n"
-  //       "out = (%e,%e,%e)\n"
-  //       "int = (%e,%e,%e,%e,%e)\n",
-  //       sync_delay, comm_delay, busy_delay,
-  //       time_sent, time_arrived, now, start, last_done);
-
-  last_done = now;
-}
-
-void
-transport::comm_sync_stats::print(int rank, std::ostream& os)
-{
-  os << sprockit::printf("Rank %5d sync delays: %12.8e %12.8e %12.8e\n",
-                         rank,
-                         total_sync_delay,
-                         total_comm_delay,
-                         total_busy_delay);
-}
-#endif
-
 transport::transport(sprockit::sim_parameters* params) :
   inited_(false),
   finalized_(false),
@@ -184,15 +133,6 @@ transport::transport(sprockit::sim_parameters* params) :
   use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
 
   lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
-
-#if 0
-  bool track_comm_stats = params->get_optional_bool_param("comm_sync_stats", false);
-  if (track_comm_stats){
-    comm_sync_stats_ = new comm_sync_stats;
-  } else {
-    comm_sync_stats_ = nullptr;
-  }
-#endif
 }
 
 void
@@ -239,12 +179,6 @@ transport::revive()
 {
   is_dead_ = false;
   go_revive();
-}
-
-communicator*
-transport::global_dom() const
-{
-  return global_domain_;
 }
 
 void

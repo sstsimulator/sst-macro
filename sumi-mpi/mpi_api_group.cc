@@ -98,6 +98,31 @@ mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group
   return MPI_SUCCESS;
 }
 
+bool
+mpi_api::group_create_with_id(MPI_Group group, int num_members, const uint32_t *members)
+{
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_create_with_id(id=%d,n=%d)",
+                group, num_members);
+
+  int my_rank = comm_world()->rank();
+  bool in_group = false;
+  for (int i=0; i < num_members; ++i){
+    if (members[i] == my_rank){
+      in_group = true;
+      return false;
+    }
+  }
+
+  std::vector<task_id> vec_ranks(num_members);
+  for (int i=0; i < num_members; ++i){
+    vec_ranks[i] = members[i];
+  }
+  mpi_group* grpPtr = new mpi_group(vec_ranks);
+  add_group_ptr(grpPtr, &group);
+
+  return true;
+}
+
 int
 mpi_api::group_free(MPI_Group *grp)
 {
@@ -127,3 +152,4 @@ mpi_api::group_translate_ranks(MPI_Group grp1, int n, const int *ranks1, MPI_Gro
 }
 
 }
+

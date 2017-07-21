@@ -96,7 +96,7 @@ coordinate_allocation::read_coordinate_file(
   delete instr;
 }
 
-void
+bool
 coordinate_allocation::allocate(
   int nnode_requested,
   const ordered_node_set& available,
@@ -132,6 +132,7 @@ coordinate_allocation::allocate(
     allocation.insert(nid);
   }
 
+  return true;
 }
 
 }

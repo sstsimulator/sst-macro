@@ -1,6 +1,6 @@
 % !TEX root = manual.tex
 
-\chapter{Applications and Skeletonization}
+\chapter{External Applications and Skeletonization}
 \label{chap:appsAndSkeletonization}
 
 \section{Basic Application porting}
@@ -13,14 +13,49 @@ the SST compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc} installed 
 \item Skeletonization: While \sstmacro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 1K or more MPI ranks) you must strip down or ``skeletonize'' the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed. 
 
 \item Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but not its own data segment (global variables).
-Virtual processes share the same address space and the same global variables.  A Beta version of the auto-skeletonizing clang-based SST compiler is available with the 7.0 release. If the Beta is not stable with your application, manual refactoring may be necessary if you have global variables.
+Virtual processes share the same address space and the same global variables.  A Beta version of the auto-skeletonizing clang-based SST compiler is available with the 7.X releases. If the Beta is not stable with your application, manual refactoring may be necessary if you have global variables.
 
 \end{itemize}
 
+\subsection{Loading external skeletons with the standalone core}\label{subsec:externalAppStandalone}
+You should always write your own skeleton applications in an external folder rather then integrating directly into the \inlineshell{sstmac} executable.
+You have two options for running your skeleton app within the simulation:
+\begin{itemize}
+\item Create a new executable with your skeleton app built-in
+\item Create a library \inlineshell{libX.so} and have \inlineshell{sstmac} load it at runtime
+\end{itemize}
+
+\subsubsection{New Executable}
+If you follow the example in the \inlineshell{skeletons/sendrecv} folder,
+the Makefile shows how to generate a new executable.
+If you are using \inlineshell{sst++}, it will automatically link your executable with the right SST libraries.
+When you run your created executable, it will spawn an SST/macro simulation of your app.
+If your application is named \inlineshell{runapp}, you would run it exactly like the \inlineshell{sstmac}:
+
+\begin{ShellCmd}
+./runapp -f parameters.ini
+\end{ShellCmd}
+where your new executable replaces \inlineshell{sstmac}.
+
+\subsubsection{Dynamically Loaded Library}
+If you follow the example in the \inlineshell{skeletons/sendrecv_sst_so} folder,
+the Makefile shows how to generate a skeleton application as an external library.
+Instead of replacing the \inlineshell{sstmac} executable, you tell the \inlineshell{sstmac} to load the library in the parameter file.
+
+\begin{ViFile}
+external_libs = libsendrecv.so
+\end{ViFile}
+The library \inlineshell{libsendrecv.so} can be generated with standard compiler flags for shared libraries by using the \inlineshell{sst++} compiler.
+Once the \inlineshell{external_libs} parameter is set in the file, you can run:
+
+\begin{ShellCmd}
+sstmac -f parameters.ini
+\end{ShellCmd}
+with the standard executable \inlineshell{sstmac}.
+
 \subsection{Loading external skeletons with the integrated core}\label{subsec:linkageCore}
 While the main \inlineshell{libmacro.so} provides the bulk of SST/macro functionality, 
-users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  
-This now gets performed automatically with the \inlineshell{sst++} compiler. 
+users may wish to compile and run external skeletons.  This is basically the same workflow as shown above for dynamically loaded libraries.
 When the executable is generated, \sstmacro will also generate a \inlineshell{libX.so} containing all the element info.
 This can then be used for SST simulations.
 The \inlineshell{default.py} script used by \inlineshell{pysstmac} must also be edited.  The top lines was previously
@@ -38,7 +73,7 @@ If using the SST compiler wrappers, the ELI block and .so file will actually be 
 the generate shared library files can be added as the first parameters to the \inlineshell{pysstmac} script.
 
 \begin{ShellCmd}
->sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
+shell>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
 \end{ShellCmd} 
 
 \section{Auto-skeletonization with Clang (Beta)}
@@ -49,7 +84,8 @@ This enables a source-to-source translation capability in the \inlineshell{sst++
 Some of this can be accomplished automatically (global variables), but most of it (removing computation and memory allocations) must occur through pragmas.
 A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder. Most of the available SST pragmas are used there.
 Pragmas are preferred since they allow switching easily back and forth between skeleton and full applications.
-This allows much easier validation of the simulation.
+This allows much easier validation of the simulation. The section here briefly introduces the SST pragma language.
+A complete tutorial on all available pragmas is given in Chapter \ref{clangTutorial}.
 
 \subsection{Redirecting Main}
 Your application's \inlinecode{main} has to have its symbols changed.
@@ -93,7 +129,7 @@ If not wanting to use OpenMP in the code, \inlinecode{#pragma sst compute} can b
 
 \subsection{Special Pragmas}
 Many special cases can arise that break skeletonization.
-This is often not a limited of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
+This is often not a limit of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
 This most often arises due to nested loops. Consider the example:
 
 \begin{CppCode}
@@ -121,14 +157,11 @@ for (int i=0; i < N; ++i){
 \end{CppCode}
 This hint allows SST to skeletonize the inner loop and ``guess'' at the data dependency.
 
-\section{Manual Skeletonization}
-\label{sec:manSkeletonization}
 
-A program skeleton is a simplified program derived from a parent application. The purpose of a skeleton application is to retain the performance characteristics of interest. At the same time, program logic that is orthogonal to performance properties is removed.  The rest of this chapter will talk about skeletonizing an MPI program, but the concepts mostly apply regardless of what programming/communication model you're using. 
 
-The default method for skeletonizing an application is \textit{manually}. In other words, going through your application and removing all the computation that is not necessary to produce the same communication/parallel characteristics.   Essentially, what you're doing is visually backtracing variables in MPI calls to where they are created, and removing everything else.  
-
-Skeletonization falls into three main categories:
+\subsection{Skeletonization Issues}
+\label{subsec:skeletonIssues}
+Skeletonization challenges fall into three main categories:
 
 \begin{itemize}
 \item \textit{Data structures} - Memory is a precious commodity when running large simulations, so get rid of every memory allocation you can.
@@ -136,94 +169,29 @@ Skeletonization falls into three main categories:
 \item \textit{Communication buffers} - While you can pass in real buffers with data to \sstmacro MPI calls and they will work like normal, it is relatively expensive. If they're not needed, get rid of them.
 \end{itemize}
 
-\subsection{Basic compute modeling}
-\label{subsec:basicCompute}
 
-By default, even if you don't remove any computation, \textit{simulation time doesn't pass between MPI or other calls implemented by \sstmacro} unless you set
 
-\begin{ViFile}
-host_compute_modeling = true
-\end{ViFile}
 
-in your parameter file.  In this case, \sstmacro will use the wall time that the host takes to run code between MPI calls and use that as simulated time.  This only makes sense if you did not do any skeletonization and the original code is all there. 
 
-If you do skeletonize your application and remove computation, you need to replace it with a model of the time or resources necessary to perform that computation so that \sstmacro can advance simulation time properly. 
-These functions are all accessible by using the SST compiler wrappers or by adding \inlinefile{#include <sstmac/compute.h>} to your file.
-
-You can describe the time it takes to do computation by inserting calls to 
-
-\begin{ViFile}
-void sstmac_compute(double seconds)
-\end{ViFile}
-Usually, this would be parameterized by some value coming from the application, like loop size.   You can also describe memory movement with 
-
-\begin{ViFile}
-void sstmac_memread(long bytes);
-void sstmac_memwrite(long bytes);
-void sstmac_memcpy(long bytes);
-\end{ViFile}
-again usually parameterized by something like vector size.  
-Using these two functions is the simplest and least flexible way of compute modeling.
-
-\subsection{Detailed compute modeling}
-\label{subsec:detailedCompute}
-
-The basic compute modeling is not very flexible.  
-In particular, simply computing based on time does not account for congestion delays introduced by things like memory contention.
-The highly recommended route is a more detailed compute model (but still very simple) that uses the operational intensity (essentially bytes/flops ratio) for a given compute kernel.
-This informs \sstmacro how much stress a given code region puts on either the processor or the memory system.
-If a kernel has a very high operational intensity, then the kernel is not memory-bound.
-The means multiple threads can be running the kernel with essentially no memory contention.
-If a kernel has a very low operational intensity, the kernel is memory bound.
-A single thread will have good performance, but multiple threads will compete heavily for memory bandwidth.
-If a kernel has a medium operational intensity, a few concurrent threads may be possible without heavy contention, 
-but as more threads are added the contention will quickly increase.
-
-The function prototype is
-
-\begin{CppCode}
-void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
-\end{CppCode}
-Here \inlinecode{flops} is the number of floating point operations and \inlinecode{bytes} is the number of bytes that hit the memory controller.
-\inlinecode{bytes} is \emph{not} simply the number of writes/reads that a kernel performs.
-This is the number of writes/reads that \emph{miss the cache} and hit the memory system.
-For now, \sstmacro assumes a single-level cache and does not distinguish between L1, L2, or L3 cache misses.
-Future versions may incorporate some estimates of cache hierarchies.
-However, given the coarse-grained nature of the simulation, explicit simulation of cache hierarchies is not likely to provide enough improved accuracy or physical insight to justify the increased computational cost. 
-Additional improvements are likely to involve adding parameters for pipelining and prefetching.
-This is currently the most active area of \sstmacro development.
-
-The characterization of a compute kernel must occur outside \sstmacro using performance analysis tools like Vtune or PAPI.
-For the number of flops, it can be quite easy to just count the number of flops by hand.
-The number of bytes is much harder.
-For simple kernels like a dot product or certain types of stencil computation, 
-it may be possible to pen-and-paper derive estimates of the number of bytes read/written from memory since every read is essentially a cache miss.
-In the same way, certain kernels that use small blocks (dense linear algebra), it may be possible to reason \textit{a priori} about the cache behavior.
-For more complicated kernels, performance metrics might be the only way.
-Further discussion and analysis of operational intensity and roofline models can be found in ``Roofline Model Toolkit: A Practical Tool for Architectural and Program Analysis'' by Yung Ju Lo et al.  The PDF is available at \url{http://www.dcs.warwick.ac.uk/~sdh/pmbs14/PMBS14/Workshop_Schedule.html}.
-
-\subsection{Skeletonization Issues}
-\label{subsec:skeletonIssues}
-
-The main issue that arises during skeletonization is data-dependent communication.  In many cases, it will seem like you can't remove computation or memory allocation because MPI calls depend somehow on that data.  The following are some examples of how we deal with those:
+The main issue that arises during skeletonization is data-dependent communication.  
+In many cases, it will seem like you can't remove computation or memory allocation because MPI calls depend somehow on that data.  
+The following are some examples of how we deal with those:
 
 \begin{itemize}
-\item \textit{Loop convergence} - In some algorithms, the number of times you iterate through the main loop depends on an error converging to near zero, or some other converging mechanism.  This basically means you can't take out anything at all, because the final result of the computation dictates the number of loops.  In this case, we usually set the number of main loop iterations to a fixed (parameterized) number.  Do we really care exactly how many loops we went through?  Most of the time, no, it's enough just to produce the behavior of the application.  
-\item \textit{Particle migration} - Some codes have a particle-in-cell structure, where the spatial domain is decomposed among processes, and particles or elements are distributed among them, and forces between particles are calculated.  When a particle moves to another domain/process (because it's moving through space), this usually requires communication that is different from the force calculation, and thus depends entirely on the data in the application.  We can handle this in two ways: 1) \textit{Ignore it} - If it doesn't happen that often, maybe it's not significant anyway.  So just remove the communication, recognizing that the behavior of the skeleton will not be fully reproduced or 2) \textit{Approximate it} - If all we need to know is that this migration/communication happens sometimes, then we can just make it happen every so many iterations, or even sample from a probability distribution.  
-\item \textit{AMR} - Some applications, like adaptive mesh refinement (AMR), exhibit communication that is entirely dependent on the computation.  In this case, skeletonization is basically impossible, so you're left with a few options
+\item \textit{Loop convergence} - In some algorithms, the number of times you iterate through the main loop depends on an error converging to near zero, or some other converging mechanism.  This basically means you can't take out anything at all, because the final result of the computation dictates the number of loops.  In this case, we usually set the number of main loop iterations to a fixed number.  
+\item \textit{Particle migration} - Some codes have a particle-in-cell structure, where the spatial domain is decomposed among processes, and particles or elements are distributed among them, and forces between particles are calculated.  When a particle moves to another domain/process, how many particles migrate and how far depends on the actual computed forces. However, in the skeleton, we are not actually computing the forces - only estimated how long the force computation took.  If all we need to know is that this migration/communication happens sometimes, then we can just make it happen every so many iterations, or even sample from a probability distribution.  
+\item \textit{AMR} - Some applications, like adaptive mesh refinement (AMR), exhibit communication that is entirely dependent on the computation.  In this case, skeletonization again depends on making approximations or probability estimates of where and when box refinement occurs without actually computing everything.
 \end{itemize}
 
 For applications with heavy dynamic data dependence, we have the following strategies:
 \begin{itemize}
 \item \textit{Traces}  - revert to DUMPI traces, where you will be limited by existing machine size.  Trace extrapolation is also an option here.
-\item \textit{Run it} - get yourself a few servers with a lot of memory, and run the whole code in \sstmacro.
-\item \textit{Synthetic} - It may be possible to replace communication with randomly-generated data and decisions, which emulate how the original application worked. This hasn't been tried yet.
-\item \textit{Hybrid} - It is possible to construct meta-traces that describe the problem from a real run, and read them into \sstmacro to reconstruct the communication that happens.  Future versions of this manual will have more detailed descriptions as we formalize this process.
+\item \textit{Synthetic} - It may be possible to replace communication with randomly-generated data and decisions, which emulate how the original application worked. This occurs in the CoMD skeleton.
+\item \textit{Hybrid} - It is possible to construct meta-traces that describe the problem from a real run, and read them into \sstmacro to reconstruct the communication that happens.  This occurs in the \inlineshell{boxml} aplications.
 \end{itemize}
 
 \section{Process Encapsulation}
 \label{sec:processEncapsulation}
-
 As mentioned above, virtual processes are not real, physical processes inside the OS.
 They are explicitly managed user-space threads with a private stack, but without a private set of global variables.
 When porting an application to SST/macro, global variables used in C programs will not be mapped to separate memory addresses causing incorrect execution or even segmentation faults.

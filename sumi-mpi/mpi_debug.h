@@ -56,7 +56,7 @@ DeclareDebugSlot(mpi_collective)
 
 // VA_ARGS[0] = format_str
 #define mpi_cond_debug(rank, flags, cond, ...) \
-  conditional_debug_printf(flags, cond, "MPI Rank %4d: %s", int(rank), sprockit::printf(__VA_ARGS__).c_str())
+  conditional_debug_printf(flags, cond, "MPI Rank %-4d: %s", int(rank), sprockit::printf(__VA_ARGS__).c_str())
 
 #define mpi_debug(rank, flags, ...) \
   mpi_cond_debug(rank, flags, true, __VA_ARGS__)

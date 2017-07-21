@@ -68,7 +68,7 @@ class first_available_allocation : public node_allocator
 
   virtual ~first_available_allocation() throw ();
 
-  void allocate(
+  bool allocate(
     int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;

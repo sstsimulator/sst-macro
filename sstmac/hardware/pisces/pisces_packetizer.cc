@@ -126,9 +126,7 @@ link_handler*
 pisces_packetizer::new_credit_handler() const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<pisces_packetizer>(
-           const_cast<pisces_packetizer*>(this),
-           &pisces_packetizer::recv_credit);
+  return new_link_handler(this, &pisces_packetizer::recv_credit);
 #else
   return new_handler(const_cast<pisces_packetizer*>(this),
                          &pisces_packetizer::recv_credit);
@@ -139,9 +137,7 @@ link_handler*
 pisces_packetizer::new_payload_handler() const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<pisces_packetizer>(
-        const_cast<pisces_packetizer*>(this),
-        &pisces_packetizer::recv_packet);
+  return new_link_handler(this, &pisces_packetizer::recv_packet);
 #else
   return new_handler(const_cast<pisces_packetizer*>(this),
                            &pisces_packetizer::recv_packet);

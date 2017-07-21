@@ -149,9 +149,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           if os.path.isfile(cxxInitFile):
             objectFiles.append(cxxInitFile)
           else:
-            sys.stderr.write("no file %s\n" % cxxInitFile)
+            pass
+            #sys.stderr.write("no file %s\n" % cxxInitFile)
         else:
-          sys.stderr.write("no file %s\n" % cxxInitFile)
+          pass
+          #sys.stderr.write("no file %s\n" % cxxInitFile)
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-W"):

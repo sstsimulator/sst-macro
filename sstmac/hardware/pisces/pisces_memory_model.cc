@@ -187,8 +187,8 @@ pisces_memory_model::notify(int vn, message* msg)
     channels_available_.push_front(vn);
   } else {
     auto& pair = stalled_requests_.front();
-    stalled_requests_.pop_front();
     start(vn, pair.first, pair.second);
+    stalled_requests_.pop_front();
   }
 }
 
