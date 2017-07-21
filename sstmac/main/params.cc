@@ -133,7 +133,7 @@ param_remap remap_list[] = {
   pr("pisces_switch_input_buffer_size", "node.nic.injection.credits"),
   pr("pisces_arbitrator", "node.nic.arbitrator", false),
   pr("pisces_arbitrator", "switch.arbitrator"),
-  pr("node_cores", "node.ncores"),
+  pr("node_cores", "node.proc.ncores"),
   pr("node_sockets", "node.nsockets"),
   pr("node_model", "node.model"),
   pr("node_pipeline_speedup", "node.proc.parallelism"),

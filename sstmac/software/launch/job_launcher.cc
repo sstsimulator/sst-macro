@@ -199,7 +199,10 @@ bool
 default_job_launcher::handle_launch_request(app_launch_request* request,
                                             ordered_node_set& allocation)
 {
-  request->request_allocation(available_, allocation);
+  bool success = request->request_allocation(available_, allocation);
+  if (!success){
+    spkt_abort_printf("allocation of app %d failed", request->aid());
+  }
 
   for (const node_id& nid : allocation){
     if (available_.find(nid) == available_.end()){

@@ -122,7 +122,7 @@ cart_allocation::allocate_dim(
   }
 }
 
-void
+bool
 cart_allocation::allocate(
   int nnode,
   const ordered_node_set& available,
@@ -156,6 +156,8 @@ cart_allocation::allocate(
     std::vector<int> vec(sizes_.size(), 0);
     allocate_dim(regtop, 0, vec, available, allocation);
   }
+
+  return true;
 }
 
 } // end namespace sw

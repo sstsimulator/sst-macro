@@ -324,6 +324,20 @@ try_main(sprockit::sim_parameters* params,
   //do some cleanup and processing of params
   sstmac::remap_params(params);
 
+  if (params->has_param("external_libs")){
+    const char* libpath_str = getenv("SST_LIB_PATH");
+    std::string pathStr;
+    if (libpath_str){
+      pathStr = libpath_str;
+    }
+
+    std::vector<std::string> libraries;
+    params->get_vector_param("external_libs", libraries);
+    for (auto&& lib : libraries){
+      load_extern_library(lib, pathStr);
+    }
+  }
+
   if (params_only)
     return;
 

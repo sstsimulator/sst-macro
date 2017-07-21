@@ -76,18 +76,15 @@ class software_launch_request
 
   virtual ~software_launch_request();
 
-  int
-  nproc() const {
+  int nproc() const {
     return nproc_;
   }
 
-  timestamp
-  time() const {
+  timestamp time() const {
     return time_;
   }
 
-  std::vector<int>
-  core_affinities() const {
+  std::vector<int> core_affinities() const {
     return core_affinities_;
   }
 
@@ -99,8 +96,7 @@ class software_launch_request
    *                    the function can still return an allocation request that might be satisfied
    *                    at a later time.
    */
-  void
-  request_allocation(const ordered_node_set& available,
+  bool request_allocation(const ordered_node_set& available,
                      ordered_node_set& allocation);
 
   /**
@@ -108,24 +104,20 @@ class software_launch_request
    *                          this means assigning MPI ranks to nodes (and possibly even cores).
    * @param allocation        The set of nodes returned by the allocation request
    */
-  void
-  index_allocation(
+  void index_allocation(
     hw::topology* top,
     const ordered_node_set& allocation,
     std::vector<node_id>& rank_to_node,
     std::vector<std::list<int>>& node_to_rank);
 
-  bool
-  is_indexed() const {
+  bool is_indexed() const {
     return indexed_;
   }
 
-  static void
-  parse_aprun(const std::string& cmd, int& nproc, int& nproc_per_node,
+  static void parse_aprun(const std::string& cmd, int& nproc, int& nproc_per_node,
               std::vector<int>& core_affinities);
 
-  static void
-  parse_launch_cmd(
+  static void parse_launch_cmd(
     sprockit::sim_parameters* params,
     int& nproc,
     int& procs_per_node,

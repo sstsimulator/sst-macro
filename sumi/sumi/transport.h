@@ -451,7 +451,9 @@ class transport
     return failed_ranks_.size();
   }
 
-  communicator* global_dom() const;
+  communicator* global_dom() const {
+    return global_domain_;
+  }
 
   /**
    * The cutoff for message size in bytes

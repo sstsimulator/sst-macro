@@ -57,8 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class connectable
-{
+class connectable {
  public:
   virtual std::string to_string() const = 0;
 
@@ -129,6 +128,7 @@ class connectable_subcomponent :
   }
 
 };
+
 
 }
 }

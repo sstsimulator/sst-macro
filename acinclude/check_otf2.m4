@@ -50,6 +50,12 @@ fi
 
 AM_CONDITIONAL([HAVE_OTF2], [test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "X$no"])
 
+if test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "X$no"; then
+build_otf2=yes
+else
+build_otf2=no
+fi
+
 if test "X$enable_otf2" = "Xno"; then
   echo otf2 disabled by --disable-otf2
 fi

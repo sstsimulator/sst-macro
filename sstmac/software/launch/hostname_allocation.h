@@ -75,7 +75,7 @@ class hostname_allocation : public node_allocator
                 const char* here, const std::string &mapfile,
                 std::map<std::string,std::vector<int> >& hostmap);
 
-  virtual void allocate(int nnode_requested,
+  bool allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set &allocation) const override;
 

@@ -92,7 +92,7 @@ mpi_group::translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, m
 }
 
 int
-mpi_group::rank_of_task(task_id t)
+mpi_group::rank_of_task(task_id t) const
 {
   if (is_comm_world_){
     return int(t);

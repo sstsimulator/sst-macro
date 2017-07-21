@@ -1,0 +1,33 @@
+Using auto-generated geometry [2 5 1] for nproc=10
+first_available_allocation: node[0]=0
+first_available_allocation: node[1]=1
+first_available_allocation: node[2]=2
+first_available_allocation: node[3]=3
+first_available_allocation: node[4]=4
+first_available_allocation: node[5]=5
+first_available_allocation: node[6]=6
+first_available_allocation: node[7]=7
+first_available_allocation: node[8]=8
+first_available_allocation: node[9]=9
+block indexing: considering nodeaddr[0]=0
+block indexing: considering nodeaddr[1]=1
+block indexing: considering nodeaddr[2]=2
+block indexing: considering nodeaddr[3]=3
+block indexing: considering nodeaddr[4]=4
+block indexing: considering nodeaddr[5]=5
+block indexing: considering nodeaddr[6]=6
+block indexing: considering nodeaddr[7]=7
+block indexing: considering nodeaddr[8]=8
+block indexing: considering nodeaddr[9]=9
+Allocated and indexed 10 nodes
+Rank 0 -> nid0 [ 0 0 0 ]
+Rank 1 -> nid1 [ 1 0 0 ]
+Rank 2 -> nid2 [ 0 1 0 ]
+Rank 3 -> nid3 [ 1 1 0 ]
+Rank 4 -> nid4 [ 0 2 0 ]
+Rank 5 -> nid5 [ 1 2 0 ]
+Rank 6 -> nid6 [ 0 3 0 ]
+Rank 7 -> nid7 [ 1 3 0 ]
+Rank 8 -> nid8 [ 0 4 0 ]
+Rank 9 -> nid9 [ 1 4 0 ]
+Estimated total runtime of           0.00010933 seconds

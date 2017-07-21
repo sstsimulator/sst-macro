@@ -1,0 +1,10 @@
+Make sure PATH is set for 'libsst++' compiler wrapper
+and also for SST core 'sst' executable.
+After running make, make sure SST_LIB_PATH is set so
+sst-core can find libmacro.so from your SST/macro installation.
+Once libtest.so is built, you should be able to run:
+
+sst run.py
+
+This will run the example and print debug output
+

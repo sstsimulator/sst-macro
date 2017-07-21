@@ -33,16 +33,13 @@ library_include_HEADERS = \
   hopper_amm1_simple.ini \
   hopper_amm2_simple.ini \
   hopper_amm3_simple.ini \
-  hopper_simple.ini \
   deepthought.ini \
   parsedumpi.ini \
   mpi_test_all.ini \
   mpi_coverage.ini \
   mpi_only_coverage.ini \
   mpi_stats.ini \
-	simple_switch.ini \
   smp_pflow.ini \
-  smp_launch.ini \
   smp_mpi_test.ini \
   hopper_nodemap.txt \
   fullmap.txt \
