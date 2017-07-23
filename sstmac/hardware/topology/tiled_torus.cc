@@ -57,7 +57,7 @@ namespace sstmac {
 namespace hw {
 
 tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
-  hdtorus(params)
+  torus(params)
 {
   ntiles_row_ = params->get_int_param("tiles_per_row");
   ntiles_col_ = params->get_int_param("tiles_per_col");
@@ -130,10 +130,10 @@ tiled_torus::configure_geometric_paths(std::vector<int>& redundancies)
   int ngeom_paths = ndims * 2 + netlinks_per_switch_; //2 for +/-
   redundancies.resize(ngeom_paths);
   for (int d=0; d < ndims; ++d){
-    int pos_path = hdtorus::convert_to_port(d,pos);
+    int pos_path = torus::convert_to_port(d,pos);
     redundancies[pos_path] = red_[d];
 
-    int neg_path = hdtorus::convert_to_port(d,neg);
+    int neg_path = torus::convert_to_port(d,neg);
     redundancies[neg_path] = red_[d];
   }
 
@@ -168,8 +168,8 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
     int nreplica = red_[i];
     int outport, inport;
     for (int r=0; r < nreplica; ++r){
-      outport = port(r, i, hdtorus::pos);
-      inport = port(r, i, hdtorus::neg);
+      outport = port(r, i, torus::pos);
+      inport = port(r, i, torus::neg);
       top_debug("setting connection %i (pos) src:port %i:%i -> dst:port %i:%i", cidx, src, outport, plus_partner, inport);
       connection& conn = conns[cidx];
       conn.src = src;
@@ -180,8 +180,8 @@ tiled_torus::connected_outports(switch_id src, std::vector<connection>& conns) c
     }
 
     for (int r=0; r < nreplica; ++r){
-      outport = port(r, i, hdtorus::neg);
-      inport = port(r, i, hdtorus::pos);
+      outport = port(r, i, torus::neg);
+      inport = port(r, i, torus::pos);
       top_debug("setting connection %i (neg) src:port %i:%i -> dst:port %i:%i", cidx, src, outport, minus_partner, inport);
       connection& conn = conns[cidx];
       conn.src = src;

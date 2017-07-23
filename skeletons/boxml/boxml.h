@@ -57,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_local_double_fwd.h>
 #include <tinyxml2.h>
 #include <containers.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <mpi.h>
 #include <sstmac/software/process/time.h>
 

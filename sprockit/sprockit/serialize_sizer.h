@@ -57,26 +57,21 @@ class ser_sizer
   }
 
   template <class T>
-  void
-  size(T& t){
+  void size(T& t){
     size_ += sizeof(T);
   }
 
-  void
-  size_string(std::string& str);
+  void size_string(std::string& str);
 
-  void
-  add(size_t s) {
+  void add(size_t s) {
     size_ += s;
   }
 
-  size_t
-  size() const {
+  size_t size() const {
     return size_;
   }
 
-  void
-  reset() {
+  void reset() {
     size_ = 0;
   }
 

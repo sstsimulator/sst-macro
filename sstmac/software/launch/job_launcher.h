@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_software_process_JOB_LAUNCHER_H
 
 #include <sprockit/factories/factory.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/topology/topology_fwd.h>

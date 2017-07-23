@@ -56,17 +56,14 @@ class ser_packer :
 {
  public:
   template <class T>
-  void
-  pack(T& t){
+  void pack(T& t){
     T* buf = ser_buffer_accessor::next<T>();
     *buf = t;
   }
 
-  void
-  pack_buffer(void* buf, int size);
+  void pack_buffer(void* buf, int size);
 
-  void
-  pack_string(std::string& str);
+  void pack_string(std::string& str);
 
 };
 

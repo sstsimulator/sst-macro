@@ -398,8 +398,7 @@ sumi_transport::go_die()
 void
 sumi_transport::go_revive()
 {
-  spkt_throw(sprockit::illformed_error,
-    "SST cannot revive a dead process currently");
+  sprockit::abort("SST cannot revive a dead process currently");
 }
 
 void
@@ -566,9 +565,6 @@ void
 sumi_transport::do_send_terminate(int dst)
 {
   //make a no-op
-
-  //spkt_throw(sprockit::unimplemented_error,
-  //  "sumi transport for SST should not send terminates");
 }
 
 void

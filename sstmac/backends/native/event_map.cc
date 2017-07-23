@@ -95,8 +95,7 @@ void
 event_map::clear(timestamp zero_time)
 {
   if (running_) {
-    spkt_throw(sprockit::illformed_error,
-      "event_map::clear: event manager is running");
+    sprockit::abort("event_map::clear: event manager is running");
   }
   queue_.clear();
   set_now(zero_time);
@@ -148,8 +147,7 @@ void
 event_map::run()
 {
   if (running_) {
-    spkt_throw(sprockit::illformed_error,
-              "event_map::run: event manager already running.");
+    sprockit::abort("event_map::run: event manager already running.");
   }
   running_ = true;
   stopped_ = false;

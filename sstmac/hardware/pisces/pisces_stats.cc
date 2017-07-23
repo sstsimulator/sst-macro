@@ -91,15 +91,13 @@ packet_stats_callback::packet_stats_callback(sprockit::sim_parameters *params, e
 void
 packet_stats_callback::collect_final_event(pisces_payload *pkt)
 {
-  spkt_throw(sprockit::value_error,
-             "stats object does not support collecting final events");
+  sprockit::abort("stats object does not support collecting final events");
 }
 
 void
 packet_stats_callback::collect_single_event(const pkt_arbitration_t &st)
 {
-  spkt_throw(sprockit::value_error,
-             "stats object does not support collecting single events");
+  sprockit::abort("stats object does not support collecting single events");
 }
 
 congestion_spyplot::congestion_spyplot(sprockit::sim_parameters* params, event_scheduler* parent)
@@ -256,8 +254,7 @@ stat_bytes_sent::output_switch(int sid, std::fstream& data_str)
 void
 stat_bytes_sent::dump_local_data()
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "stat_bytes_sent::dump_local_data: makes no sense to dump local data");
+  sprockit::abort("stat_bytes_sent::dump_local_data: makes no sense to dump local data");
 }
 
 void

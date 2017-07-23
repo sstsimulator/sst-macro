@@ -5,58 +5,58 @@ Testing butterfly...
 Testing fbfly...
 Testing dragonfly...
 WARNING: requested 4 group connections, but max allowable is 3 for 4 groups - resetting value
-SUCCESS: torus cast topology top_hdtorus.cc:22
-SUCCESS: node id top_hdtorus.cc:30
-SUCCESS: coord transform top_hdtorus.cc:31
-SUCCESS: num tornado partners top_hdtorus.cc:36
-SUCCESS: tornado partner top_hdtorus.cc:38
-SUCCESS: num NN partners top_hdtorus.cc:42
-SUCCESS: NN partner top_hdtorus.cc:44
-SUCCESS: NN partner top_hdtorus.cc:46
-SUCCESS: NN partner top_hdtorus.cc:48
-SUCCESS: NN partner top_hdtorus.cc:50
-SUCCESS: NN partner top_hdtorus.cc:52
-SUCCESS: NN partner top_hdtorus.cc:54
-SUCCESS: num tornado partners top_hdtorus.cc:58
-SUCCESS: tornado partner top_hdtorus.cc:60
-SUCCESS: torus cast topology top_hdtorus.cc:75
-SUCCESS: torus switch id top_hdtorus.cc:85
-SUCCESS: torus coords top_hdtorus.cc:86
-SUCCESS: torus switch id top_hdtorus.cc:85
-SUCCESS: torus coords top_hdtorus.cc:86
-SUCCESS: torus switch id top_hdtorus.cc:85
-SUCCESS: torus coords top_hdtorus.cc:86
-SUCCESS: torus switch id top_hdtorus.cc:85
-SUCCESS: torus coords top_hdtorus.cc:86
-SUCCESS: torus node coords top_hdtorus.cc:94
-SUCCESS: torus node id mapping top_hdtorus.cc:95
-SUCCESS: torus switch coords top_hdtorus.cc:102
-SUCCESS: torus switch id mapping top_hdtorus.cc:103
-SUCCESS: torus switch coords mapping top_hdtorus.cc:110
-SUCCESS: torus switch id top_hdtorus.cc:111
-SUCCESS: torus node coords mapping top_hdtorus.cc:118
-SUCCESS: torus node id top_hdtorus.cc:119
-SUCCESS: torus dir top_hdtorus.cc:133
-SUCCESS: torus dir top_hdtorus.cc:139
-SUCCESS: torus dir top_hdtorus.cc:145
-SUCCESS: torus dir top_hdtorus.cc:151
-SUCCESS: torus dir top_hdtorus.cc:157
-SUCCESS: torus dir top_hdtorus.cc:166
-SUCCESS: torus dir top_hdtorus.cc:172
-SUCCESS: torus dir top_hdtorus.cc:178
-SUCCESS: torus dir top_hdtorus.cc:184
-SUCCESS: torus dir top_hdtorus.cc:190
-SUCCESS: torus cast topology top_hdtorus.cc:213
-SUCCESS: src sw coords top_hdtorus.cc:224
-SUCCESS: valiant middle switch top_hdtorus.cc:241
-SUCCESS: valiant first switch top_hdtorus.cc:243
-SUCCESS: torus outport to dim top_hdtorus.cc:245
-SUCCESS: torus outport to dir top_hdtorus.cc:246
-SUCCESS: next valiant step dim top_hdtorus.cc:281
-SUCCESS: next valiant step dir top_hdtorus.cc:282
-SUCCESS: final dst coords top_hdtorus.cc:302
-SUCCESS: next valiant step dim top_hdtorus.cc:317
-SUCCESS: next valiant step dir top_hdtorus.cc:318
+SUCCESS: torus cast topology top_torus.cc:22
+SUCCESS: node id top_torus.cc:30
+SUCCESS: coord transform top_torus.cc:31
+SUCCESS: num tornado partners top_torus.cc:36
+SUCCESS: tornado partner top_torus.cc:38
+SUCCESS: num NN partners top_torus.cc:42
+SUCCESS: NN partner top_torus.cc:44
+SUCCESS: NN partner top_torus.cc:46
+SUCCESS: NN partner top_torus.cc:48
+SUCCESS: NN partner top_torus.cc:50
+SUCCESS: NN partner top_torus.cc:52
+SUCCESS: NN partner top_torus.cc:54
+SUCCESS: num tornado partners top_torus.cc:58
+SUCCESS: tornado partner top_torus.cc:60
+SUCCESS: torus cast topology top_torus.cc:75
+SUCCESS: torus switch id top_torus.cc:85
+SUCCESS: torus coords top_torus.cc:86
+SUCCESS: torus switch id top_torus.cc:85
+SUCCESS: torus coords top_torus.cc:86
+SUCCESS: torus switch id top_torus.cc:85
+SUCCESS: torus coords top_torus.cc:86
+SUCCESS: torus switch id top_torus.cc:85
+SUCCESS: torus coords top_torus.cc:86
+SUCCESS: torus node coords top_torus.cc:94
+SUCCESS: torus node id mapping top_torus.cc:95
+SUCCESS: torus switch coords top_torus.cc:102
+SUCCESS: torus switch id mapping top_torus.cc:103
+SUCCESS: torus switch coords mapping top_torus.cc:110
+SUCCESS: torus switch id top_torus.cc:111
+SUCCESS: torus node coords mapping top_torus.cc:118
+SUCCESS: torus node id top_torus.cc:119
+SUCCESS: torus dir top_torus.cc:133
+SUCCESS: torus dir top_torus.cc:139
+SUCCESS: torus dir top_torus.cc:145
+SUCCESS: torus dir top_torus.cc:151
+SUCCESS: torus dir top_torus.cc:157
+SUCCESS: torus dir top_torus.cc:166
+SUCCESS: torus dir top_torus.cc:172
+SUCCESS: torus dir top_torus.cc:178
+SUCCESS: torus dir top_torus.cc:184
+SUCCESS: torus dir top_torus.cc:190
+SUCCESS: torus cast topology top_torus.cc:213
+SUCCESS: src sw coords top_torus.cc:224
+SUCCESS: valiant middle switch top_torus.cc:241
+SUCCESS: valiant first switch top_torus.cc:243
+SUCCESS: torus outport to dim top_torus.cc:245
+SUCCESS: torus outport to dir top_torus.cc:246
+SUCCESS: next valiant step dim top_torus.cc:281
+SUCCESS: next valiant step dir top_torus.cc:282
+SUCCESS: final dst coords top_torus.cc:302
+SUCCESS: next valiant step dim top_torus.cc:317
+SUCCESS: next valiant step dir top_torus.cc:318
 SUCCESS: fat tree cast topology top_fattree.cc:74
 SUCCESS: ftree switch id top_fattree.cc:87
 SUCCESS: ftree coords top_fattree.cc:88

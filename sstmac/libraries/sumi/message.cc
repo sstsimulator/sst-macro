@@ -115,16 +115,14 @@ transport_message::clone_injection_ack() const
 {
 #if SSTMAC_SANITY_CHECK
   if (network_message::type_ == network_message::null_netmsg_type){
-    spkt_throw(sprockit::value_error,
-        "message::clone_injection_ack: null network message type");
+    sprockit::abort("message::clone_injection_ack: null network message type");
   }
 #endif
   transport_message* cln = new transport_message;
   clone_into(cln);
 #if SSTMAC_SANITY_CHECK
   if (cln->network_message::type() == network_message::null_netmsg_type){
-    spkt_throw(sprockit::value_error,
-        "message::clone_injection_ack: did not clone correctly");
+    sprockit::abort("message::clone_injection_ack: did not clone correctly");
   }
 #endif
   cln->convert_to_ack();

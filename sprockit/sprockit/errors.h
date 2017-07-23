@@ -71,20 +71,14 @@ namespace sprockit {
 #define spkt_throw_printf(exc, template_str, ...) \
     throw exc(::sprockit::printf(#exc ": " template_str "\n%s %d", ##__VA_ARGS__, __FILE__, __LINE__))
 
+inline void abort(const std::string& str){
+  std::cerr << str << std::endl;
+  ::abort();
+}
+
 #define spkt_abort_printf(template_str, ...) \
-  { \
-    std::cerr << ::sprockit::printf("error: " template_str "\n%s %d", ##__VA_ARGS__, __FILE__, __LINE__) \
-              << std::endl; \
-    ::abort(); \
-  }
-
-
-#define spkt_throw(exc, ...) \
-    { \
-        std::stringstream sstr; \
-        ::sprockit::spkt_to_stream(sstr, __VA_ARGS__, "\n", __FILE__, ":", __LINE__); \
-        throw exc(sstr.str()); \
-    }
+  sprockit::abort(::sprockit::printf("error: " template_str "\n%s %d", \
+    ##__VA_ARGS__, __FILE__, __LINE__));
 
 /**
  * General errors, or base class for more specific errors.
@@ -93,13 +87,12 @@ struct spkt_error : public std::exception {
   spkt_error(const std::string &msg) :
     message(msg) {
   }
-  virtual
-  ~spkt_error() throw () {
-  }
-  virtual const char*
-  what() const throw () {
+  virtual ~spkt_error() throw () {}
+
+  virtual const char* what() const throw () {
     return message.c_str();
   }
+
   const std::string message;
 };
 
@@ -110,9 +103,7 @@ struct null_error : public spkt_error {
   null_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~null_error() throw () {
-  }
+  virtual ~null_error() throw () {}
 };
 
 /**
@@ -122,9 +113,7 @@ struct value_error : public spkt_error {
   value_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~value_error() throw () {
-  }
+  virtual ~value_error() throw () {}
 };
 
 /**
@@ -134,9 +123,7 @@ struct library_error : public spkt_error {
   library_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~library_error() throw () {
-  }
+  virtual ~library_error() throw () {}
 };
 
 /**
@@ -146,9 +133,7 @@ struct time_error : public spkt_error {
   time_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~time_error() throw () {
-  }
+  virtual ~time_error() throw () {}
 };
 
 /**
@@ -158,9 +143,7 @@ struct io_error : public spkt_error {
   io_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~io_error() throw () {
-  }
+  virtual ~io_error() throw () {}
 };
 
 /**
@@ -170,9 +153,7 @@ struct illformed_error : public spkt_error {
   illformed_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~illformed_error() throw () {
-  }
+  virtual ~illformed_error() throw () {}
 };
 
 /**
@@ -182,9 +163,7 @@ struct os_error : public spkt_error {
   os_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~os_error() throw () {
-  }
+  virtual ~os_error() throw () {}
 };
 
 /**
@@ -195,9 +174,8 @@ struct memory_error : public spkt_error {
   memory_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~memory_error() throw () {
-  }
+
+  virtual ~memory_error() throw () {}
 };
 
 /**
@@ -207,9 +185,9 @@ struct iterator_error : public spkt_error {
   iterator_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~iterator_error() throw () {
-  }
+
+  virtual ~iterator_error() throw () {}
+
 };
 
 /**
@@ -220,9 +198,8 @@ struct unimplemented_error : public spkt_error {
   unimplemented_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~unimplemented_error() throw () {
-  }
+
+  virtual ~unimplemented_error() throw () {}
 };
 
 /**
@@ -243,9 +220,7 @@ struct invalid_key_error : public spkt_error {
   invalid_key_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~invalid_key_error() throw () {
-  }
+  virtual ~invalid_key_error() throw () {}
 };
 
 /**
@@ -255,9 +230,7 @@ struct range_error : public spkt_error {
   range_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~range_error() throw () {
-  }
+  virtual ~range_error() throw () {}
 };
 
 /**
@@ -267,9 +240,7 @@ struct input_error : public spkt_error {
   input_error(const std::string &msg) :
     spkt_error(msg) {
   }
-  virtual
-  ~input_error() throw () {
-  }
+  virtual ~input_error() throw () {}
 };
 
 } // end of namespace sprockit

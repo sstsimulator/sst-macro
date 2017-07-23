@@ -84,7 +84,7 @@ stack_alloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size,
   if(addr_ == MAP_FAILED) {
     cerrn << "Failed to mmap a region of size " << size_ << ": "
               << strerror(errno) << "\n";
-    spkt_throw(sprockit::memory_error, "stackalloc::chunk: failed to mmap region.");
+    sprockit::abort("stackalloc::chunk: failed to mmap region.");
   }
   // and set protections on the pages between the stack chunks.
   const size_t stride = stacksize_ + guard;

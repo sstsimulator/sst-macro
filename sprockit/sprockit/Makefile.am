@@ -65,7 +65,6 @@ nobase_library_include_HEADERS = \
   util.h \
   units.h \
   factories/factory.h \
-  unordered.h \
   test/assert.h \
   test/test.h \
   test/equality.h \

@@ -74,8 +74,7 @@ stat_spyplot_png::add(int source, int dest, long num)
 {
   if (max_dest_ > 1024){
    //this is too big
-   spkt_throw(sprockit::value_error,
-     "stat_spyplot_png::add: PNG spyplots should never be run with more than 1024 ranks");
+   sprockit::abort("stat_spyplot_png::add: PNG spyplots should never be run with more than 1024 ranks");
   }
   stat_spyplot::add(source, dest, num);
 }
@@ -156,8 +155,7 @@ stat_spyplot::clear()
 void
 stat_spyplot::dump_local_data()
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "stat_spyplot::dump_local_data");
+  sprockit::abort("stat_spyplot::dump_local_data: not implemented");
 }
 
 void

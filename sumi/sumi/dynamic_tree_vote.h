@@ -55,8 +55,7 @@ namespace sumi {
 
 
 class dynamic_tree_vote_message :
- public collective_work_message,
- public sumi::serializable_type<dynamic_tree_vote_message>
+ public collective_work_message
 {
  ImplementSerializable(dynamic_tree_vote_message)
 

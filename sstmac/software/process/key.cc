@@ -61,8 +61,8 @@ static std::vector<key*>* chunks = new std::vector<key*>;
 } // end of namespace keypool.
 
 key_traits::category key::general("General");
-spkt_unordered_map<std::string,int>* key::category_name_to_id_ = nullptr;
-spkt_unordered_map<int,std::string>* key::category_id_to_name_ = nullptr;
+std::unordered_map<std::string,int>* key::category_name_to_id_ = nullptr;
+std::unordered_map<int,std::string>* key::category_id_to_name_ = nullptr;
 uint64_t key::key_storage_size_ = 0;
 static sprockit::need_delete_statics<key> del_statics;
 static thread_lock lock_;
@@ -87,8 +87,8 @@ int
 key::allocate_category_id(const std::string &name)
 {
   if (!category_name_to_id_) {
-    category_name_to_id_ = new spkt_unordered_map<std::string,int>;
-    category_id_to_name_ = new spkt_unordered_map<int,std::string>;
+    category_name_to_id_ = new std::unordered_map<std::string,int>;
+    category_id_to_name_ = new std::unordered_map<int,std::string>;
   }
   int id = category_name_to_id_->size();
   (*category_name_to_id_)[name] = id;

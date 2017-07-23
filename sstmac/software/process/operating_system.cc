@@ -170,8 +170,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   long chunksize = params->get_optional_byte_length_param("stack_chunk_size", default_chunk_size);
 #if SSTMAC_USE_MULTITHREAD
   if (mprot){
-    spkt_throw(sprockit::value_error,
-        "operating_system:: cannot use stack protect in multithreaded mode");
+    sprockit::abort("operating_system:: cannot use stack protect in multithreaded mode");
   }
 
   if (os_thread_contexts_.size() == 0){
@@ -279,8 +278,8 @@ operating_system::init_threading()
     #elif defined(SSTMAC_HAVE_PTHREAD)
     threading_string = "pthread";
     #else
-    spkt_throw(sprockit::value_error,
-        "operating_system: there are no threading frameworks compatible with multithreaded SST - must have ucontext or pthread");
+    sprockit::abort("operating_system: there are no threading frameworks compatible "
+                    "with multithreaded SST - must have ucontext or pthread");
     #endif
 #else //not multithreaded
     #if defined(SSTMAC_HAVE_GNU_PTH)
@@ -301,16 +300,14 @@ operating_system::init_threading()
   if (threading_string == "pth") {
 #if defined(SSTMAC_HAVE_GNU_PTH)
    #if SSTMAC_USE_MULTITHREAD
-   spkt_throw(sprockit::value_error, 
-    "operating_system: SSTMAC_THREADING=pth exists on system, but is not compatible with multithreading\n" 
+   sprockit::abort("operating_system: SSTMAC_THREADING=pth exists on system, but is not compatible with multithreading\n" 
     "set environment SSTMAC_THREADING=ucontext for production jobs or SSTMAC_THREADING=pthread for debug jobs\n" 
     "currently there is no efficient multithreading on platforms that don't support ucontext, including Mac OS X");
    #else
    des_context_ = new threading_pth();
    #endif
 #else
-   spkt_throw(sprockit::value_error,
-    "operating_system: SSTMAC_THREADING=pth is not supported");
+   sprockit::abort("operating_system: SSTMAC_THREADING=pth is not supported");
 #endif
   }
   else if (threading_string == "pthread") {
@@ -323,8 +320,7 @@ operating_system::init_threading()
     des_context_ = new threading_pthread(thread_id(), nthr);
 
 #else
-    spkt_throw(sprockit::value_error,
-      "operating_system: SSTMAC_THREADING=pthread is not supported");
+    sprockit::abort("operating_system: SSTMAC_THREADING=pthread is not supported");
 #endif
     static bool you_have_been_warned = false;
     if (!you_have_been_warned)
@@ -340,8 +336,7 @@ operating_system::init_threading()
 #if defined(SSTMAC_HAVE_UCONTEXT)
     des_context_ = new threading_ucontext();
 #else
-    spkt_throw(sprockit::value_error,
-      "operating_system: SSTMAC_THREADING=ucontext is not supported");
+    sprockit::abort("operating_system: SSTMAC_THREADING=ucontext is not supported");
 #endif
   }
   else {
@@ -415,8 +410,8 @@ void
 operating_system::execute_kernel(ami::COMP_FUNC func, event *data,
                                  callback* cb)
 {
-  spkt_throw(sprockit::unimplemented_error,
-             "operating_system::execute_kernel(COMP_FUNC)");
+  spkt_abort_printf("operating_system::execute_kernel(%s): not implemented",
+                    ami::tostr(func));
 }
 
 void
@@ -588,13 +583,11 @@ operating_system::block(key* req)
 #if SSTMAC_SANITY_CHECK
   valid_keys_.insert(req);
   if (req == nullptr) {
-    spkt_throw(sprockit::null_error,
-              "operating_system::block:  cannot block a null key pointer");
+    sprockit::abort("operating_system::block:  cannot block a null key pointer");
   }
 
   if (threadstack_.size() == 1) {
-    spkt_throw(sprockit::spkt_error,
-              "OS: trying to block the DES thread (bottom of the stack)");
+    sprockit::abort("OS: trying to block the DES thread (bottom of the stack)");
   }
 #endif
 
@@ -648,14 +641,11 @@ operating_system::unblock(key* req)
       thr->thread_id(), req);
 
 #if SSTMAC_SANITY_CHECK
-  {
-    std::set<key*>::iterator it = valid_keys_.find(req);
-    if (it == valid_keys_.end()) {
-      spkt_throw(sprockit::illformed_error,
-                "operating_system::unblock: unblocking key that I don't have");
-    }
-    valid_keys_.erase(it);
+  auto iter = valid_keys_.find(req);
+  if (iter == valid_keys_.end()) {
+    sprockit::abort("operating_system::unblock: unblocking key that I don't have");
   }
+  valid_keys_.erase(it);
 #endif
 
   req->clear();
@@ -739,8 +729,7 @@ operating_system::complete_thread(bool succ)
   os_debug("completing context for %ld", thr_todelete->thread_id());
   current_tinfo->complete_context(next_tinfo);
   // This thread is not permitted to start again.
-  spkt_throw(sprockit::illformed_error,
-            "operating_system::complete: thread switched in again "
+  sprockit::abort("operating_system::complete: thread switched in again "
             "after calling complete and relinquishing stack.");
 }
 
@@ -749,8 +738,7 @@ operating_system::register_lib(library* lib)
 {
 #if SSTMAC_SANITY_CHECK
   if (lib->lib_name() == "") {
-    spkt_throw(sprockit::os_error,
-              "operating_system: trying to register a lib with no name");
+    sprockit::abort("operating_system: trying to register a lib with no name");
   }
 #endif
   os_debug("registering lib %s:%p", lib->lib_name().c_str(), lib);

@@ -65,8 +65,7 @@ void
 event_component::cancel_all_messages()
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  spkt_throw(sprockit::unimplemented_error,
-    "event_scheduler::cancel_all_messages: cannot cancel messages currently in integrated core");
+  sprockit::abort("event_scheduler::cancel_all_messages: cannot cancel messages currently in integrated core");
 #else
   event_mgr()->cancel_all_messages(event_location());
 #endif

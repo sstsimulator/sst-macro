@@ -79,60 +79,47 @@ class stat_collector : public sprockit::printable
 {
   DeclareFactory(stat_collector)
  public:
-  virtual
-  ~stat_collector();
+  virtual ~stat_collector();
 
   /** This is to notify that the statistics collector is done.
    *  Do any necessary data post-processing, but do NOT dump to file */
-  virtual void
-  simulation_finished(timestamp end) = 0;
+  virtual void simulation_finished(timestamp end) = 0;
 
   /** After post-processing, this notifies the collector to dump data to a file
    *  @param name The root of the filename to dump to */
-  virtual void
-  dump_local_data() = 0;
+  virtual void dump_local_data() = 0;
 
   /** After post-processing, this notifies the collector to dump data to a file
    *  @param name The root of the filename to dump to */
-  virtual void
-  dump_global_data() = 0;
+  virtual void dump_global_data() = 0;
 
-  virtual void
-  global_reduce(parallel_runtime* rt) = 0;
+  virtual void global_reduce(parallel_runtime* rt) = 0;
 
-  virtual void
-  reduce(stat_collector* coll) = 0;
+  virtual void reduce(stat_collector* coll) = 0;
 
-  virtual void
-  clear() = 0;
+  virtual void clear() = 0;
 
-  bool
-  registered() const {
+  bool registered() const {
     return registered_;
   }
 
-  virtual void
-  set_id(int id){
+  virtual void set_id(int id){
     id_ = id;
   }
 
-  int
-  id() const {
+  int id() const {
     return id_;
   }
 
-  void
-  set_registered(bool reg) {
+  void set_registered(bool reg) {
     registered_ = reg;
   }
 
-  std::string
-  fileroot() const {
+  std::string fileroot() const {
     return fileroot_;
   }
 
-  stat_collector*
-  clone() const {
+  stat_collector* clone() const {
     return do_clone(params_);
   }
 
@@ -148,8 +135,7 @@ class stat_collector : public sprockit::printable
    * @return        The corresponding stat_collector object otherwise
    *                a nullptr if no parameters exist in the given namespace
    */
-  static stat_collector*
-  optional_build(sprockit::sim_parameters* params,
+  static stat_collector* optional_build(sprockit::sim_parameters* params,
                 const std::string& ns,
                 const std::string& deflt,
                 const char* suffix);
@@ -165,19 +151,17 @@ class stat_collector : public sprockit::printable
    * @return        The corresponding stat_collector object, otherwise abort
    *                if no parameters exist in the given namespace
    */
-  static stat_collector*
-  required_build(sprockit::sim_parameters* params,
+  static stat_collector* required_build(sprockit::sim_parameters* params,
                 const std::string& ns,
                 const std::string& deflt,
                 const char* suffix);
 
-  static void
-  stats_error(sprockit::sim_parameters* params,
+  static void stats_error(sprockit::sim_parameters* params,
              const std::string& ns,
              const std::string& deflt);
 
-  static void
-  register_optional_stat(event_scheduler* parent, stat_collector* coll, stat_descr_t* descr);
+  static void register_optional_stat(event_scheduler* parent,
+                                     stat_collector* coll, stat_descr_t* descr);
 
  protected:
   stat_collector(sprockit::sim_parameters* params);
@@ -188,12 +172,10 @@ class stat_collector : public sprockit::printable
    * wrong.
    * @return
    */
-  static bool
-  check_open(std::fstream& myfile, const std::string& fname,
+  static bool check_open(std::fstream& myfile, const std::string& fname,
              std::ios::openmode flags = std::ios::out);
 
-  virtual stat_collector*
-  do_clone(sprockit::sim_parameters* params) const = 0;
+  virtual stat_collector* do_clone(sprockit::sim_parameters* params) const = 0;
 
  protected:
   int id_;
@@ -208,8 +190,7 @@ class stat_collector : public sprockit::printable
 class stat_value_base : public stat_collector
 {
  public:
-  void
-  set_label(std::string label) {
+  void set_label(std::string label) {
     label_ = label;
   }
 
@@ -244,8 +225,7 @@ class stat_value : public stat_value_base
  * See documentation for stat_collector::required_build
  */
 template <class T>
-T*
-required_stats(event_scheduler* parent,
+T* required_stats(event_scheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
@@ -275,8 +255,7 @@ required_stats(event_scheduler* parent,
  * See documentation for stat_collector::optional_build
  */
 template <class T>
-T*
-optional_stats(event_scheduler* parent,
+T* optional_stats(event_scheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
@@ -295,8 +274,7 @@ optional_stats(event_scheduler* parent,
 }
 
 template <class T>
-T*
-optional_stats(event_scheduler* parent,
+T* optional_stats(event_scheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,

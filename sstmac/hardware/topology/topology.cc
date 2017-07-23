@@ -232,7 +232,8 @@ topology::configure_individual_port_params(int port_start, int nports,
 cartesian_topology*
 topology::cart_topology() const
 {
-  spkt_throw(sprockit::value_error, "topology is not a cartesian topology");
+  sprockit::abort("topology::cart_topology: cannot cast to cartesian topology");
+  return nullptr;
 }
 
 void
@@ -292,14 +293,17 @@ class merlin_topology : public topology {
 
   bool uniform_network_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return false;
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return false;
   }
 
   bool uniform_switches() const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return false;
   }
 
   void connected_outports(switch_id src, std::vector<topology::connection>& conns) const override {
@@ -314,20 +318,24 @@ class merlin_topology : public topology {
 
   int num_netlinks() const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   int max_num_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   switch_id
   netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   switch_id
   netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
@@ -337,19 +345,23 @@ class merlin_topology : public topology {
   switch_id
   node_to_ejection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   switch_id
   node_to_injection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   int minimal_distance(switch_id src, switch_id dst) const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   int num_hops_to_node(node_id src, node_id dst) const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   void nodes_connected_to_injection_switch(switch_id swid,
@@ -364,27 +376,33 @@ class merlin_topology : public topology {
 
   switch_id max_switch_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   bool switch_id_slot_filled(switch_id sid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   netlink_id max_netlink_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   bool netlink_id_slot_filled(netlink_id sid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
 
   node_id max_node_id() const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
   }
 
   bool node_id_slot_filled(node_id nid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
+    return false;
   }
 
   void minimal_route_to_switch(
@@ -396,6 +414,7 @@ class merlin_topology : public topology {
 
   bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
     spkt_abort_printf("merlin topology functions should never be called");
+    return false;
   }
 
  private:

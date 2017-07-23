@@ -61,18 +61,15 @@ class library_interface
   /**
    * @return Node-unique name of library to deliver event to
    */
-  const std::string&
-  lib_name() const {
+  const std::string& lib_name() const {
     return lib_name_;
   }
 
-  void
-  set_lib_name(const std::string& name) {
+  void set_lib_name(const std::string& name) {
     lib_name_ = name;
   }
 
-  void
-  serialize_order(serializer& ser);
+  void serialize_order(serializer& ser);
 
  protected:
   library_interface(const std::string& libname) :
@@ -81,8 +78,7 @@ class library_interface
 
   library_interface() {}
 
-  void
-  clone_into(library_interface* cln) const {
+  void clone_into(library_interface* cln) const {
     cln->lib_name_ = lib_name_;
   }
 

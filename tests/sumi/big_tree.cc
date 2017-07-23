@@ -182,8 +182,7 @@ test_barrier()
   message::ptr msg = comm_poll();
   collective_done_message::ptr dmsg = ptr_safe_cast(collective_done_message, msg);
   if (dmsg->tag() != 20 || dmsg->type() != collective::barrier){
-    spkt_throw(sprockit::value_error,
-      "barrier got invalid completion message");
+    sprockit::abort("barrier got invalid completion message");
   }
 
   std::cout << "t=" << sstmac_now() << ": finished barrier on rank "
@@ -202,8 +201,7 @@ test_dynamic_tree_vote()
   message::ptr msg = comm_poll();
   collective_done_message_ptr dmsg = ptr_safe_cast(collective_done_message, msg);
   if (dmsg->tag() != tag || dmsg->type() != collective::dynamic_tree_vote){
-    spkt_throw(sprockit::value_error,
-      "vote got invalid completion message");
+    sprockit::abort("vote got invalid completion message");
   }
 
   if (dmsg->vote() != answer){

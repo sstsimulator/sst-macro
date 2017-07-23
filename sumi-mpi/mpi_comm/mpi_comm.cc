@@ -104,17 +104,16 @@ mpi_comm::delete_statics()
 int
 mpi_comm::global_to_comm_rank(int global_rank) const
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "mpi_comm::global_to_comm_rank");
+  sprockit::abort("mpi_comm::global_to_comm_rank");
+  return 0;
 }
 
 void
 mpi_comm::dup_keyvals(mpi_comm* m)
 {
-  spkt_unordered_map<int, keyval*>::iterator it, end = m->keyvals_.end();
+  std::unordered_map<int, keyval*>::iterator it, end = m->keyvals_.end();
   for (it = m->keyvals_.begin(); it != end; it++) {
-    spkt_throw(sprockit::unimplemented_error,
-      "dup_keyvals");
+    sprockit::abort("dup_keyvals: not implemented");
     //keyval* c = (it->second)->clone(keyval::get_new_key());
     //keyvals_[c->key()] = c;
   }
@@ -130,12 +129,10 @@ int
 mpi_comm::size() const
 {
   if (id_ == MPI_COMM_NULL) {
-    spkt_throw(sprockit::value_error,
-              "mpicomm: trying to call size() on a null mpicomm");
+    sprockit::abort("mpicomm: trying to call size() on a null mpicomm");
   }
   if (!group_) {
-    spkt_throw(sprockit::null_error,
-              "mpicomm: peers_ is null for some reason in size()");
+    sprockit::abort("mpicomm: group is null for some reason in size()");
   }
   return group_->size();
 }

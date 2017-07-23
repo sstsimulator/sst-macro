@@ -129,8 +129,7 @@ void
 parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  spkt_throw(sprockit::unimplemented_error,
-    "parallel_runtime::init_partition_params: should not be used with integrated core");
+  sprockit::abort("parallel_runtime::init_partition_params: should not be used with integrated core");
 #else
   //out with the old, in with the new
   if (part_) delete part_;
@@ -267,8 +266,7 @@ parallel_runtime::send_recv_messages(std::vector<void*>& recv_buffers)
     return;
 
   if (recv_buffers.size()){
-    spkt_throw(sprockit::illformed_error,
-        "recv buffers should be empty in send/recv messages");
+    sprockit::abort("recv buffers should be empty in send/recv messages");
   }
   do_send_recv_messages(recv_buffers);
 

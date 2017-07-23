@@ -46,7 +46,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sprockit_keyword_registration_H
 
 #include <sprockit/spkt_config.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <string>
 #include <cstdio>
@@ -58,15 +59,15 @@ class KeywordRegistration
 {
 
  private:
-  static spkt_unordered_set<std::string>* valid_keywords_;
+  static std::unordered_set<std::string>* valid_keywords_;
 
-  static spkt_unordered_set<std::string>* valid_namespaces_;
+  static std::unordered_set<std::string>* valid_namespaces_;
 
 #if !SPKT_DISABLE_REGEX
   static std::list<std::string>* regexps_;
 #endif
 
-  static spkt_unordered_set<std::string>* removed_;
+  static std::unordered_set<std::string>* removed_;
 
   static bool inited_;
 

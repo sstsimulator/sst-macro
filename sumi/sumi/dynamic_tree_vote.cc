@@ -87,8 +87,8 @@ dynamic_tree_vote_actor::tostr(stage_t stage)
 void*
 dynamic_tree_vote_message::recv_buffer() const
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "dynamic_tree_vote_message: does not have recv buffer");
+  sprockit::abort("dynamic_tree_vote_message: does not have recv buffer");
+  return nullptr;
 }
 
 void
@@ -221,8 +221,7 @@ dynamic_tree_vote_actor::up_partner_failed()
 
   position(up_partner_, up_level, up_branch);
   if (up_level == 0){
-    spkt_throw(sprockit::illformed_error,
-        "dynamic_vote_actor::catastrophic_error: coordinator failed");
+    sprockit::abort("dynamic_vote_actor::catastrophic_error: coordinator failed");
   }
   //I take over sending to the up partner
   int old_partner = up_partner_;
@@ -547,8 +546,7 @@ dynamic_tree_vote_actor::recv_down_vote(const dynamic_tree_vote_message::ptr& ms
 
   if (stage_ == down_vote){
     if (vote_ != msg->vote()){
-      spkt_throw(sprockit::value_error,
-        "dynamic_vote_actor::inconsistent_down_vote: %d %d",
+      spkt_abort_printf("dynamic_vote_actor::inconsistent_down_vote: %d %d",
         msg->vote(), vote_);
     }
     return;  //already got this

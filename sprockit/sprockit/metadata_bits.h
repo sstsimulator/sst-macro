@@ -53,33 +53,27 @@ template <class integer>
 class metadata_bits {
 
 public:
-  bool
-  bit(int bitnum) const {
+  bool bit(int bitnum) const {
     return metadata_ & (1<<bitnum);
   }
 
-  void
-  clear() {
+  void clear() {
     metadata_ = 0;
   }
 
-  void
-  set_bit(int bitnum) {
+  void set_bit(int bitnum) {
     metadata_ = metadata_ | (1<<bitnum);
   }
 
-  void
-  unset_bit(int bitnum) {
+  void unset_bit(int bitnum) {
     metadata_ = metadata_ & ~(1<<bitnum);
   }
 
-  integer
-  bit_integer() const {
+  integer bit_integer() const {
     return metadata_;
   }
 
-  void
-  set_bit_integer(integer i) {
+  void set_bit_integer(integer i) {
     metadata_ = i;
   }
 

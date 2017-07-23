@@ -121,21 +121,13 @@ class serialize<sstmac::hw::unique_event_id>
 END_SERIALIZATION_NAMESPACE
 
 
-#if SPKT_HAVE_CPP11
 namespace std {
 template <>
 struct hash<sstmac::hw::unique_event_id>
   : public std::hash<uint64_t>
 { };
 }
-#else
-namespace sstmac { namespace hw {
-inline std::size_t
-hash_value(const unique_event_id& id){
-  return uint64_t(id);
-}
-}}
-#endif
+
 
 
 

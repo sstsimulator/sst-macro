@@ -139,8 +139,7 @@ void
 transport::validate_api()
 {
   if (!inited_ || finalized_){
-    spkt_throw(sprockit::illformed_error,
-    "SUMI transport calling function while not inited or already finalized");
+    sprockit::abort("SUMI transport calling function while not inited or already finalized");
   }
 }
 
@@ -148,8 +147,7 @@ void
 transport::set_use_hardware_ack(bool flag)
 {
   if (flag && !supports_hardware_ack()){
-    spkt_throw(sprockit::value_error,
-      "transport::chosen transport does not support hardware acks");
+    sprockit::abort("transport::chosen transport does not support hardware acks");
   }
   use_hardware_ack_ = flag;
 }
@@ -864,7 +862,7 @@ transport::gatherv(int root, void *dst, void *src,
   coll->init(collective::gatherv, this, dom, dst, src, sendcnt, type_size, tag, fault_aware, context);
   coll->init_root(root);
   coll->init_recv_counts(recv_counts);
-  spkt_throw(sprockit::unimplemented_error, "gatherv");
+  sprockit::abort("gatherv");
   start_collective(coll);
 }
 
@@ -915,7 +913,7 @@ transport::scatterv(int root, void *dst, void *src, int* send_counts, int recvcn
              type_size, tag, fault_aware, context);
   coll->init_root(root);
   coll->init_send_counts(send_counts);
-  spkt_throw(sprockit::unimplemented_error, "scatterv");
+  sprockit::abort("scatterv");
   start_collective(coll);
 }
 
@@ -1168,8 +1166,7 @@ transport::start_transaction(const message::ptr &msg)
   next_transaction_id_ = next_transaction_id_ % max_transaction_id_;
   message::ptr& entry = transactions_[tid];
   if (entry){
-    spkt_throw(sprockit::value_error,
-      "too many transactions started simultaneously");
+    sprockit::abort("too many transactions started simultaneously");
   }
   msg->set_transaction_id(tid);
   entry = msg;

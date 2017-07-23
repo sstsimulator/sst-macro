@@ -54,8 +54,7 @@ class mpi_param_bcaster:
   public param_bcaster
 {
  public:
-   void
-   bcast(void *buf, int size, int me, int root){
+   void bcast(void *buf, int size, int me, int root){
      MPI_Bcast(buf, size, MPI_BYTE, root, MPI_COMM_WORLD);
    }
 };

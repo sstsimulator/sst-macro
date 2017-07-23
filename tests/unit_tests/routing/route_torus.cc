@@ -42,91 +42,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FAKE_TOPOLOGY_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FAKE_TOPOLOGY_H_INCLUDED
+#include <tests/unit_tests/util/util.h>
+#include <sstmac/hardware/topology/torus.h>
+#include <sstmac/hardware/router/router.h>
+#include <sprockit/util.h>
 
-#include <sstmac/hardware/topology/structured_topology.h>
+using namespace sstmac;
+using namespace sstmac::hw;
 
-namespace sstmac {
-namespace hw {
+extern void test_topology(sprockit::sim_parameters& params);
 
-class fake_topology :
-  public structured_topology
+void test_torus(UnitTest& unit)
 {
- public:
-  virtual std::string to_string() const override {
-    return "fake topology";
-  }
-
-  virtual ~fake_topology() {}
-
-  switch_id switch_number(const coordinates& coords) const {
-    return switch_id();
-  }
-
-  virtual void productive_path(
-    int dim,
-    const coordinates& src,
-    const coordinates& dst,
-    routable::path& path) const {
-  }
-
-  int num_hops(node_id src, node_id dst) const {
-    return 1;
-  }
-
-  void connect_objects(internal_connectable_map& objects) {
-    //do nothing
-  }
-
-  void minimal_route_to_coords(
-    const coordinates &current_coords,
-    const coordinates &dest_coords,
-    routable::path& path) const {
-    //do nothing
-  }
-
-  int minimal_distance(
-    const coordinates &current_coords,
-    const coordinates &dest_coords) const {
-    return 0;
-  }
-
-  virtual int diameter() const {
-    spkt_throw(sprockit::unimplemented_error,
-              "switchinterconnect::fake_topology::diameter: don't call this");
-  }
-
-  switch_id switch_number(const std::vector<int>& coords) const {
-    return switch_id();
-  }
-
-  node_id node_addr(const std::vector<int>& coords) const {
-    return node_id();
-  }
-
-  int num_switches() const {
-    return 0;
-  }
-
-  int convert_to_port(int dim, int dir) const {
-    return 0;
-  }
-
-  void convert_to_dimdir(int outport, int &dim, int&dir) const {
-    dim = 0;
-    dir = 0;
-  }
-
-
- protected:
-  void compute_switch_coords(switch_id swid, coordinates &coords) const {
-    //do nothing
-  }
-
-
-};
-}
+  sprockit::sim_parameters params;
+  params["geometry"] = "5 5 5";
+  params["redundant"] = "1 1 1";
+  params["concentration"] = "2";
+  params["name"] = "torus";
+  params["router.name"] = "minimal";
+  test_topology(params);
 }
 
-#endif

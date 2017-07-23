@@ -258,7 +258,7 @@ class Factory
             std::map<std::string, std::list<std::string> >* alias_map)
   {
     // The namestr can be a | separate list of valid names, e.g.
-    // "torus | hdtorus" to allow either name to map to the correct type
+    // "simple | LogP" to allow either name to map to the correct type
     std::string space = "|";
     std::deque<std::string> tok;
     pst::BasicStringTokenizer::tokenize(namestr, tok, space);

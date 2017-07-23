@@ -51,7 +51,7 @@ namespace sstmac {
 namespace hw {
 
 hypercube::hypercube(sprockit::sim_parameters* params) :
-  hdtorus(params)
+  torus(params)
 {
   ndim_ = dimensions_.size();
   dim_to_outport_.resize(ndim_);

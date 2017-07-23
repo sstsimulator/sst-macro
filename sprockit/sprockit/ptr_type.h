@@ -72,13 +72,11 @@ class ptr_type
   }
 
  protected:
-  void
-  incref() {
+  void incref() {
     ref_increment(references);
   }
 
-  int 
-  decref() {
+  int  decref() {
     return ref_decrement_return(references);
   }
 

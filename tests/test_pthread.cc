@@ -83,8 +83,7 @@ void* ptest2(void* args)
   SSTMAC_compute(0.001);
   status = pthread_mutex_lock(&pargs->mutex);
   if (status != 0){
-    spkt_throw(sprockit::illformed_error,
-        "mutex failed lock");
+    sprockit::abort("mutex failed lock");
   }
   std::cout << "Mutex locked" << std::endl;
   SSTMAC_compute(0.001);
@@ -92,15 +91,13 @@ void* ptest2(void* args)
   pthread_mutex_unlock(&pargs->mutex);
   status = pthread_mutex_lock(&pargs->mutex);
   if (status != 0){
-    spkt_throw(sprockit::illformed_error,
-        "mutex failed lock");
+    sprockit::abort("mutex failed lock");
   }
   std::cout << "Condition locked" << std::endl;
   SSTMAC_compute(0.001);
   status = pthread_cond_wait(&pargs->cond, &pargs->mutex);
   if (status != 0){
-    spkt_throw(sprockit::illformed_error,
-        "thread failed wait");
+    sprockit::abort("thread failed wait");
   }
   std::cout << "Done waiting" << std::endl;
   SSTMAC_compute(0.001);

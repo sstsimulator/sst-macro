@@ -108,8 +108,7 @@ int pass(void* uarg,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "%s: null callback pointer", fxn);
+    spkt_abort_printf("%s: null callback pointer", fxn);
   }
   //function means nothing to a trace
   cb->start_mpi(cpu, wall, perf);
@@ -119,7 +118,7 @@ int pass(void* uarg,
 
 int not_implemented(const char* fxn)
 {
-  spkt_throw(sprockit::unimplemented_error, fxn);
+  spkt_abort_printf("DUMPI callback %s not implemented", fxn);
   return 0;
 }
 
@@ -166,7 +165,7 @@ parsedumpi_callbacks::parse_stream(
   int retval = undumpi_read_stream_full(
                   fname.c_str(), profile, cbacks_, this, print_progress, percent_terminate);
   if(retval != 1) {
-    spkt_throw(sprockit::io_error, here + ":  Failed reading dumpi stream.\n");
+    sprockit::abort(here + ":  Failed reading dumpi stream\n");
   }
   undumpi_close(profile);
 }
@@ -232,18 +231,15 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
   if(trace_compute_start_.sec >= 0) {
     // This is not the first MPI call -- simulate a compute
     if(perf != NULL && perf->count > 0) {
-      spkt_throw(sprockit::unimplemented_error,
-        "DUMPI perfctr compute: only compatible with time");
+      sprockit::abort("DUMPI perfctr compute: only compatible with time");
 
       // We get here if we are using the processor model.
       if(size_t(perf->count) != perfctr_compute_start_.size())
-        spkt_throw(sprockit::illformed_error, "parsedumpi_callbacks::start_mpi:  "
-                              "Number of active perfcounters changed between calls");
+        sprockit::abort("parsedumpi_callbacks::start_mpi: number of active perfcounters changed between calls");
       for(int i = 0; i < perf->count; ++i) {
         int64_t evtval = perf->invalue[i] - perfctr_compute_start_[i];
         if(evtval < 0) {
-          spkt_throw(sprockit::illformed_error, "parsedumpi_callbacks::start_mpi:  "
-                                "Performance counter moved backward between calls");
+          sprockit::abort("parsedumpi_callbacks::start_mpi: performance counter moved backward between calls");
         }
       }
     } else {
@@ -365,8 +361,7 @@ parsedumpi_callbacks::get_mpitypes(int count, const dumpi_datatype *dumpitypes)
   static_assert(sizeof(MPI_Datatype) <= sizeof(dumpi_datatype), "sizes");
   MPI_Datatype* mpitypes = (MPI_Datatype*) (const_cast<dumpi_datatype*>(dumpitypes));
   if(count < 0){
-    spkt_throw(sprockit::value_error,
-      "parsedumpi_callbacks::get_requests: negative request count");
+    sprockit::abort("parsedumpi_callbacks::get_requests: negative request count");
   }
   for(int i = 0; i < count; ++i) {
     mpitypes[i] = get_mpitype(dumpitypes[i]);
@@ -799,8 +794,7 @@ on_MPI_Isend(const dumpi_isend *prm, uint16_t thread,
 #if ENABLE_MPI_ISEND
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Isend: null callback pointer");
+    sprockit::abort("MPI_Isend: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Request req = prm->request;
@@ -820,8 +814,7 @@ on_MPI_Irecv(const dumpi_irecv *prm, uint16_t thread,
 #if ENABLE_MPI_IRECV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Irecv: null callback pointer");
+    sprockit::abort("MPI_Irecv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Request req = prm->request;
@@ -841,8 +834,7 @@ on_MPI_Wait(const dumpi_wait *prm, uint16_t thread,
 #if ENABLE_MPI_WAIT
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Irecv: null callback pointer");
+    sprockit::abort("MPI_Irecv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Request req = translate_request(prm->request);
@@ -860,8 +852,7 @@ on_MPI_Test(const dumpi_test *prm, uint16_t thread,
 #if ENABLE_MPI_TEST
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Test: null callback pointer");
+    sprockit::abort("MPI_Test: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   if (prm->flag){
@@ -903,8 +894,7 @@ waitany_pessimistic(const dumpi_waitany *prm, uint16_t thread,
 #if ENABLE_MPI_WAITANY
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Waitany: null callback pointer");
+    sprockit::abort("MPI_Waitany: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   if(prm->index >= 0 && prm->index < prm->count) {
@@ -937,8 +927,7 @@ testany_pessimistic(const dumpi_testany *prm, uint16_t thread,
 #if ENABLE_MPI_TESTANY
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Testany: null callback pointer");
+    sprockit::abort("MPI_Testany: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   if(prm->flag == 1 && prm->index >= 0 && prm->index < prm->count) {
@@ -960,8 +949,7 @@ on_MPI_Waitall(const dumpi_waitall *prm, uint16_t thread,
 #if ENABLE_MPI_WAITALL
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Waitall: null callback pointer");
+    sprockit::abort("MPI_Waitall: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   for (int i=0; i < prm->count; ++i){
@@ -981,8 +969,7 @@ on_MPI_Testall(const dumpi_testall *prm, uint16_t thread,
 #if ENABLE_MPI_TESTALL
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Testall: null callback pointer");
+    sprockit::abort("MPI_Testall: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   // Only go ahead if flag is true (otherwise may have some odd findings).
@@ -1005,8 +992,7 @@ on_MPI_Waitsome(const dumpi_waitsome *prm, uint16_t thread,
 #if ENABLE_MPI_WAITSOME
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Waitsome: null callback pointer");
+    sprockit::abort("MPI_Waitsome: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   for (int i=0; i < prm->outcount; ++i){
@@ -1027,8 +1013,7 @@ on_MPI_Testsome(const dumpi_testsome *prm, uint16_t thread,
 #if ENABLE_MPI_TESTSOME
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Testsome: null callback pointer");
+    sprockit::abort("MPI_Testsome: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   for (int i=0; i < prm->outcount; ++i){
@@ -1048,8 +1033,7 @@ on_MPI_Iprobe(const dumpi_iprobe *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Iprobe: null callback pointer");
+    sprockit::abort("MPI_Iprobe: null callback pointer");
   }
   //this accomplishes nothing - a trace cannot care about the result of Iprobe
   cb->start_mpi(cpu, wall, perf);
@@ -1064,8 +1048,7 @@ on_MPI_Probe(const dumpi_probe *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "MPI_Probe: null callback pointer");
+    sprockit::abort("MPI_Probe: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   //I should stay here and spin until I get a matching probe
@@ -1100,8 +1083,7 @@ on_MPI_Send_init(const dumpi_send_init *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-    "MPI_Send_init: null callback pointer");
+    sprockit::abort("MPI_Send_init: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Request req = prm->request;
@@ -1166,8 +1148,7 @@ on_MPI_Start(const dumpi_start *prm, uint16_t thread,
 #if ENABLE_MPI_START
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-    "MPI_Start: null callback pointer");
+    sprockit::abort("MPI_Start: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Request req = translate_request(prm->request);
@@ -1185,8 +1166,7 @@ on_MPI_Startall(const dumpi_startall *prm, uint16_t thread,
 #if ENABLE_MPI_STARTALL
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-    "MPI_Startall: null callback pointer");
+    sprockit::abort("MPI_Startall: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->startall(prm->count, prm->requests);
@@ -1246,8 +1226,7 @@ on_MPI_Type_contiguous(const dumpi_type_contiguous *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Type_contiguous: null callback pointer");
+    sprockit::abort("on_MPI_Type_contiguous: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype newtype;
@@ -1266,8 +1245,7 @@ on_MPI_Type_vector(const dumpi_type_vector *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Type_vector: null callback pointer");
+    sprockit::abort("on_MPI_Type_vector: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype oldtype = cb->get_mpitype(prm->oldtype);
@@ -1303,8 +1281,7 @@ on_MPI_Type_indexed(const dumpi_type_indexed *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Type_indexed: null callback pointer");
+    sprockit::abort("on_MPI_Type_indexed: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype newtype;
@@ -1332,8 +1309,7 @@ on_MPI_Type_struct(const dumpi_type_struct *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Type_struct: null callback pointer");
+    sprockit::abort("on_MPI_Type_struct: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype* oldtypes = cb->get_mpitypes(prm->count, prm->oldtypes);
@@ -1391,8 +1367,7 @@ on_MPI_Type_commit(const dumpi_type_commit *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Type_commit: null callback pointer");
+    sprockit::abort("on_MPI_Type_commit: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype dtype = cb->get_mpitype(prm->datatype);
@@ -1408,8 +1383,7 @@ on_MPI_Type_free(const dumpi_type_free *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Type_free: null callback pointer");
+    sprockit::abort("on_MPI_Type_free: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype dtype = cb->get_mpitype(prm->datatype);
@@ -1458,8 +1432,7 @@ on_MPI_Barrier(const dumpi_barrier *prm, uint16_t thread,
 #if ENABLE_MPI_BARRIER
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Barrier: null callback pointer");
+    sprockit::abort("on_MPI_Barrier: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->barrier(translate_comm(prm->comm));
@@ -1476,8 +1449,7 @@ on_MPI_Bcast(const dumpi_bcast *prm, uint16_t thread,
 #if ENABLE_MPI_BCAST
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Bcast: null callback pointer");
+    sprockit::abort("on_MPI_Bcast: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->bcast(prm->count, cb->get_mpitype(prm->datatype),
@@ -1495,8 +1467,7 @@ on_MPI_Gather(const dumpi_gather *prm, uint16_t thread,
 #if ENABLE_MPI_GATHER
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Gather: null callback pointer");
+    sprockit::abort("on_MPI_Gather: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->gather(prm->sendcount,
@@ -1518,8 +1489,7 @@ on_MPI_Gatherv(const dumpi_gatherv *prm, uint16_t thread,
 #if ENABLE_MPI_GATHERV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Gatherv: null callback pointer");
+    sprockit::abort("on_MPI_Gatherv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
 
@@ -1553,8 +1523,7 @@ on_MPI_Scatter(const dumpi_scatter *prm, uint16_t thread,
 #if ENABLE_MPI_SCATTER
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Scatter: null callback pointer");
+    sprockit::abort("on_MPI_Scatter: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->scatter(prm->sendcount,
@@ -1576,8 +1545,7 @@ on_MPI_Scatterv(const dumpi_scatterv *prm, uint16_t thread,
 #if ENABLE_MPI_SCATTERV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Scatterv: null callback pointer");
+    sprockit::abort("on_MPI_Scatterv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->scatterv(prm->sendcounts,
@@ -1599,8 +1567,7 @@ on_MPI_Allgather(const dumpi_allgather *prm, uint16_t thread,
 #if ENABLE_MPI_ALLGATHER
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Allgather: null callback pointer");
+    sprockit::abort("on_MPI_Allgather: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->allgather(prm->sendcount,
@@ -1621,8 +1588,7 @@ on_MPI_Allgatherv(const dumpi_allgatherv *prm, uint16_t thread,
 #if ENABLE_MPI_ALLGATHERV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Allgatherv: null callback pointer");
+    sprockit::abort("on_MPI_Allgatherv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->allgatherv(prm->sendcount,
@@ -1643,8 +1609,7 @@ on_MPI_Alltoall(const dumpi_alltoall *prm, uint16_t thread,
 #if ENABLE_MPI_ALLTOALL
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Alltoall: null callback pointer");
+    sprockit::abort("on_MPI_Alltoall: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->alltoall(prm->sendcount,
@@ -1665,8 +1630,7 @@ on_MPI_Alltoallv(const dumpi_alltoallv *prm, uint16_t thread,
 #if ENABLE_MPI_ALLTOALLV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Alltoallv: null callback pointer");
+    sprockit::abort("on_MPI_Alltoallv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->alltoallv(prm->sendcounts, cb->get_mpitype(prm->sendtype),
@@ -1685,8 +1649,7 @@ on_MPI_Reduce(const dumpi_reduce *prm, uint16_t thread,
 #if ENABLE_MPI_REDUCE
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Reduce: null callback pointer");
+    sprockit::abort("on_MPI_Reduce: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->reduce(prm->count, cb->get_mpitype(prm->datatype),
@@ -1706,8 +1669,7 @@ on_MPI_Allreduce(const dumpi_allreduce *prm, uint16_t thread,
 #if ENABLE_MPI_ALLREDUCE
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Allreduce: null callback pointer");
+    sprockit::abort("on_MPI_Allreduce: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->allreduce(prm->count,
@@ -1726,8 +1688,7 @@ on_MPI_Reduce_scatter(const dumpi_reduce_scatter *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Reduce_scatter: null callback pointer");
+    sprockit::abort("on_MPI_Reduce_scatter: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->reduce_scatter(prm->recvcounts,
@@ -1745,8 +1706,7 @@ on_MPI_Scan(const dumpi_scan *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Scan: null callback pointer");
+    sprockit::abort("on_MPI_Scan: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->scan(prm->count, cb->get_mpitype(prm->datatype),
@@ -1844,8 +1804,7 @@ on_MPI_Group_incl(const dumpi_group_incl *prm, uint16_t thread,
 #if ENABLE_MPI_GROUP_INCL
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Group_incl: null callback pointer");
+    sprockit::abort("on_MPI_Group_incl: null callback pointer");
   }
 
   //int retval = cb->handle_unimplemented(me);
@@ -1922,8 +1881,7 @@ on_MPI_Comm_dup(const dumpi_comm_dup *prm, uint16_t thread,
 #if ENABLE_MPI_COMM_DUP
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Group_incl: null callback pointer");
+    sprockit::abort("on_MPI_Group_incl: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Comm newcomm = prm->newcomm;
@@ -1941,8 +1899,7 @@ on_MPI_Comm_create(const dumpi_comm_create *prm, uint16_t thread,
 #if ENABLE_MPI_COMM_CREATE
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Comm_create: null callback pointer");
+    sprockit::abort("on_MPI_Comm_create: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Comm newcomm = prm->newcomm;
@@ -1961,8 +1918,7 @@ on_MPI_Comm_split(const dumpi_comm_split *prm, uint16_t thread,
 #if ENABLE_MPI_COMM_SPLIT
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Comm_split: null callback pointer");
+    sprockit::abort("on_MPI_Comm_split: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Comm newcomm = prm->newcomm;
@@ -1981,8 +1937,7 @@ on_MPI_Comm_free(const dumpi_comm_free *prm, uint16_t thread,
 #if ENABLE_MPI_COMM_FREE
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Comm_free: null callback pointer");
+    sprockit::abort("on_MPI_Comm_free: null callback pointer");
   }
 
   cb->start_mpi(cpu, wall, perf);
@@ -2289,8 +2244,7 @@ on_MPI_Type_dup(const dumpi_type_dup *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Type_dup: null callback pointer");
+    sprockit::abort("on_MPI_Type_dup: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   MPI_Datatype newtype;
@@ -2307,8 +2261,7 @@ on_MPI_Init(const dumpi_init *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Init: null callback pointer");
+    sprockit::abort("on_MPI_Init: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->init(const_cast<int*>(&prm->argc), const_cast<char***>(&prm->argv));
@@ -2324,8 +2277,7 @@ on_MPI_Init_thread(const dumpi_init_thread *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Init_thread: null callback pointer");
+    sprockit::abort("on_MPI_Init_thread: null callback pointer");
   }
   // Only warn if the user is trying to do something more than MPI_THREAD_FUNNELED
   if(prm->required != DUMPI_THREAD_SINGLE and prm->required != DUMPI_THREAD_FUNNELED) {
@@ -2360,8 +2312,7 @@ on_MPI_Finalize(const dumpi_finalize *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw(sprockit::null_error,
-      "on_MPI_Finalize: null callback pointer");
+    sprockit::abort("on_MPI_Finalize: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->finalize();

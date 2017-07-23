@@ -78,8 +78,8 @@ static double average_latency_ms = 0;
 static long num_messages_counted = 0;
 //static long short_msg_length = 8000;
 static double latency_total = 0;
-typedef spkt_unordered_map<sumi::message*,double> time_map;
-typedef spkt_unordered_map<int, time_map> rank_time_map;
+typedef std::unordered_map<sumi::message*,double> time_map;
+typedef std::unordered_map<int, time_map> rank_time_map;
 static rank_time_map start_times;
 
 

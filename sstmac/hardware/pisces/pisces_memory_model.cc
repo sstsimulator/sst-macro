@@ -112,12 +112,14 @@ link_handler*
 pisces_memory_packetizer::new_credit_handler() const
 {
   spkt_abort_printf("pisces_memory_packetizer::new_ack_handler: not used");
+  return nullptr;
 }
 
 link_handler*
 pisces_memory_packetizer::new_payload_handler() const
 {
   spkt_abort_printf("pisces_memory_packetizer::new_payload_handler: not used");
+  return nullptr;
 }
 
 pisces_memory_packetizer::~pisces_memory_packetizer()

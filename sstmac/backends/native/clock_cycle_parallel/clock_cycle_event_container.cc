@@ -136,8 +136,7 @@ clock_cycle_event_map::receive_incoming_events()
 {
 #if SSTMAC_SANITY_CHECK
   if (thread_id() != 0){
-    spkt_throw(sprockit::illformed_error,  
-        "clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
+    sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
   }
 #endif
   rt_->send_recv_messages(all_incoming_);
