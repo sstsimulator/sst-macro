@@ -211,7 +211,7 @@ mpi_api::wait_collective(collective_op_base* op)
     sumi::message::ptr msg = blocking_poll();
     if (msg->class_type() == message::collective_done){
       //this is a collective done message
-      collective_done_message::ptr cmsg = ptr_safe_cast(collective_done_message, msg);
+      auto cmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
       mpi_api_debug(sprockit::dbg::mpi_collective,
                     "found collective done message of type=%s tag=%d: need %s,%d",
                     collective::tostr(cmsg->type()), cmsg->tag(),
@@ -223,7 +223,7 @@ mpi_api::wait_collective(collective_op_base* op)
         pending.push_back(cmsg);
       }
     } else {
-      mpi_message::ptr mpiMsg = ptr_safe_cast(mpi_message, msg);
+      mpi_message::ptr mpiMsg = std::dynamic_pointer_cast<mpi_message>(msg);
       queue_->incoming_progress_loop_message(mpiMsg);
     }
   }

@@ -56,9 +56,9 @@ transport_message::serialize_order(serializer& ser)
 {
   network_message::serialize_order(ser);
   library_interface::serialize_order(ser);
-  sumi::message* msg = payload_.get();
-  ser & msg;
-  payload_ = msg;
+  //sumi::message* msg = payload_.get();
+  ser & payload_;
+  //payload_ = msg;
   ser & src_;
   ser & dest_;
   ser & src_app_;
@@ -133,7 +133,7 @@ void
 transport_message::clone_into(transport_message* cln) const
 {
   //the payload is actually immutable now - so this is safe
-  cln->payload_ = payload_->clone();
+  cln->payload_ = std::shared_ptr<sumi::message>(payload_->clone());
   cln->src_app_ = src_app_;
   cln->dest_app_ = dest_app_;
   cln->src_ = src_;

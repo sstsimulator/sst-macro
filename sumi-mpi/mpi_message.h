@@ -68,8 +68,8 @@ class mpi_message final :
   ImplementSerializable(mpi_message)
 
  public:
-  typedef sprockit::refcount_ptr<mpi_message> ptr;
-  typedef sprockit::refcount_ptr<const mpi_message> const_ptr;
+  typedef std::shared_ptr<mpi_message> ptr;
+  typedef std::shared_ptr<const mpi_message> const_ptr;
   typedef uint64_t id;
 
   typedef enum {

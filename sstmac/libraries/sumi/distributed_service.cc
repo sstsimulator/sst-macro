@@ -85,7 +85,7 @@ distributed_service::poll_for_message(bool blocking)
 {
   sumi::message::ptr msg = poll(blocking);
   if (msg && msg->class_type() == sumi::message::bcast){
-    sumi::system_bcast_message::ptr smsg = ptr_safe_cast(sumi::system_bcast_message, msg);
+    auto smsg = std::dynamic_pointer_cast<sumi::system_bcast_message>(msg);
     if (smsg->action() == sumi::system_bcast_message::shutdown){
       terminated_ = true;
       return sumi::message::ptr();

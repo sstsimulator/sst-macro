@@ -49,10 +49,7 @@ nobase_library_include_HEADERS = \
   driver_util.h \
   metadata_bits.h \
   output.h \
-  ptr_type.h \
   mpi_parameters.h \
-  refcount_ptr.h \
-  preprocessor.h \
   sim_parameters.h \
   sim_parameters_fwd.h \
   statics.h \

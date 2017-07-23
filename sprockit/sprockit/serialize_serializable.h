@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/serializable.h>
 #include <sprockit/serializer.h>
 #include <sprockit/serialize.h>
-#include <sprockit/ptr_type.h>
+#include <memory>
 
 namespace sprockit {
 
@@ -71,19 +71,19 @@ case serializer::UNPACK:
 }
 
 template <class T>
-class serialize<sprockit::refcount_ptr<T> > {
+class serialize<std::shared_ptr<T> > {
  public:
-  void operator()(sprockit::refcount_ptr<T>& o, serializer& ser){
+  void operator()(std::shared_ptr<T>& o, serializer& ser){
     T* tmp = o.get();
     serialize_intrusive_ptr(tmp, ser);
-    o = tmp;
+    o = std::shared_ptr<T>(tmp);
   }
 };
 
 template <class T>
-class serialize<const sprockit::refcount_ptr<T> > {
+class serialize<const std::shared_ptr<T> > {
  public:
-  void operator()(const sprockit::refcount_ptr<T>& o, serializer& ser){
+  void operator()(const std::shared_ptr<T>& o, serializer& ser){
     T* tmp = o.get();
     serialize_intrusive_ptr(tmp, ser);
   }
@@ -91,9 +91,9 @@ class serialize<const sprockit::refcount_ptr<T> > {
 
 
 template <class T>
-class serialize<sprockit::refcount_ptr<const T> > {
+class serialize<std::shared_ptr<const T> > {
  public:
-  void operator()(sprockit::refcount_ptr<const T>& o, serializer& ser){
+  void operator()(std::shared_ptr<const T>& o, serializer& ser){
     T* tmp = const_cast<T*>(o.get());
     serialize_intrusive_ptr(tmp, ser);
     o = tmp;    

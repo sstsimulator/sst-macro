@@ -13,11 +13,7 @@ include $(top_srcdir)/Makefile.common
 
 
 if !INTEGRATED_SST_CORE
-check_PROGRAMS = test_refcount test_serialize
-
-test_refcount_SOURCES = test_refcount.cc 
-test_refcount_LDADD = \
-  ../sprockit/libsprockit.la
+check_PROGRAMS = test_serialize
 
 test_serialize_SOURCES = test_serialize.cc 
 test_serialize_LDADD = \
@@ -31,7 +27,6 @@ endif
 
 check-local: 
 	$(top_srcdir)/bin/runtest 2 test_serialize.out ./test_serialize
-	$(top_srcdir)/bin/runtest 2 test_refcount.out ./test_refcount
 endif
 
 

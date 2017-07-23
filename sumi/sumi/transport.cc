@@ -368,7 +368,7 @@ transport::handle(const message::ptr& msg)
     }
     break;
   case message::collective: {
-    collective_work_message::ptr cmsg = ptr_safe_cast(collective_work_message, msg);
+    collective_work_message::ptr cmsg = std::dynamic_pointer_cast<collective_work_message>(msg);
     int tag = cmsg->tag();
     collective::type_t ty = cmsg->type();
     tag_to_collective_map::iterator it = collectives_[ty].find(tag);
@@ -410,7 +410,7 @@ transport::handle(const message::ptr& msg)
 void
 transport::system_bcast(const message::ptr& msg)
 {
-  auto bmsg = ptr_safe_cast(system_bcast_message, msg);
+  auto bmsg = std::dynamic_pointer_cast<system_bcast_message>(msg);
   int root = bmsg->root();
   int my_effective_rank = (rank_ - root + nproc_) % nproc_;
 
@@ -435,7 +435,7 @@ transport::system_bcast(const message::ptr& msg)
   int effective_target = my_effective_rank + partner_gap;
   while (effective_target < nproc_){
     int target = (effective_target + root) % nproc_;
-    message::ptr next_msg = new system_bcast_message(bmsg->action(), bmsg->root());
+    message::ptr next_msg = std::make_shared<system_bcast_message>(bmsg->action(), bmsg->root());
     send_header(target, next_msg);
     partner_gap *= 2;
     effective_target = my_effective_rank + partner_gap;
@@ -445,7 +445,7 @@ transport::system_bcast(const message::ptr& msg)
 void
 transport::send_self_terminate()
 {
-  message::ptr msg = new message;
+  message::ptr msg = std::make_shared<message>();
   msg->set_class_type(message::terminate);
   send_header(rank_, msg); //send to self
 }
@@ -546,7 +546,7 @@ transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, commu
 {
   if (dom == nullptr) dom = global_domain_;
   if (dom->nproc() == 1){
-    collective_done_message::ptr dmsg = new collective_done_message(tag, collective::dynamic_tree_vote, dom);
+    auto dmsg = std::make_shared<collective_done_message>(tag, collective::dynamic_tree_vote, dom);
     dmsg->set_comm_rank(0);
     dmsg->set_vote(vote);
     votes_done_[tag] = vote_result(vote, thread_safe_set<int>());
@@ -776,7 +776,7 @@ transport::skip_collective(collective::type_t ty,
     if (dst && src && (dst != src)){
       ::memcpy(dst, src, nelems*type_size);
     }
-    collective_done_message::ptr dmsg = new collective_done_message(tag, ty, dom);
+    auto dmsg = std::make_shared<collective_done_message>(tag, ty, dom);
     dmsg->set_comm_rank(0);
     dmsg->set_result(dst);
     handle(dmsg);
@@ -1120,7 +1120,7 @@ transport::smsg_send(int dst, message::payload_type_t ev,
 
     handle(msg);
     if (needs_ack){
-      message::ptr ack = msg->clone();
+      message::ptr ack(msg->clone());
       ack->set_payload_type(message::eager_payload_ack);
       handle(ack);
     }

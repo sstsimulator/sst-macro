@@ -116,7 +116,7 @@ namespace lblxml {
   private:
     int event_index_;
   public:
-    typedef sprockit::refcount_ptr<pt2pt_message> ptr;
+    typedef std::shared_ptr<pt2pt_message> ptr;
 
     pt2pt_message(int index, long num_bytes) : event_index_(index),
       sumi::message(num_bytes)

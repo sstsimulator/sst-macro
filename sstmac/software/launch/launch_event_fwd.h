@@ -45,8 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef LAUNCH_MESSAGE_FWD_H
 #define LAUNCH_MESSAGE_FWD_H
 
-#include <sprockit/ptr_type.h>
-
 namespace sstmac {
 namespace sw {
 

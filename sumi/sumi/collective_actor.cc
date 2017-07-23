@@ -792,7 +792,7 @@ dag_collective_actor::send_failure_message(
   void* no_buffer = nullptr;
   int no_elems = 0;
   //send a failure message to the neighbor letting him know to abandon the collective
-  collective_work_message::ptr msg = new collective_work_message(
+  auto msg = std::make_shared<collective_work_message>(
       type_, ty,
       no_elems, tag_,
       ac->round, dense_me_,
@@ -1008,7 +1008,7 @@ dag_collective_actor::set_send_buffer(action* ac_, public_buffer& send_buf)
 collective_work_message::ptr
 dag_collective_actor::new_message(action* ac, collective_work_message::action_t act)
 {
-  collective_work_message::ptr msg = new collective_work_message(
+  auto msg = std::make_shared<collective_work_message>(
     type_, act,
     tag_,
     ac->round, dense_me_,
@@ -1218,7 +1218,7 @@ dag_collective_actor::incoming_message(const collective_work_message::ptr& msg)
 collective_done_message::ptr
 dag_collective_actor::done_msg() const
 {
-  collective_done_message::ptr msg = new collective_done_message(tag_, type_, comm_);
+  auto msg = std::make_shared<collective_done_message>(tag_, type_, comm_);
   msg->set_comm_rank(comm_->my_comm_rank());
   msg->set_result(result_buffer_.ptr);
   auto end = failed_ranks_.start_iteration();

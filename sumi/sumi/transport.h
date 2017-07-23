@@ -92,8 +92,7 @@ class transport {
        t_(f), fxn_(f){}
 
      void notify(const message::ptr& msg){
-       sprockit::refcount_ptr<MsgType> mmsg = ptr_safe_cast(MsgType, msg);
-       (t_->*fxn_)(mmsg);
+       (t_->*fxn_)(std::dynamic_pointer_cast<MsgType>(msg));
      }
 
     private:
@@ -210,7 +209,7 @@ class transport {
   typename T::ptr
   poll(const char* file, int line, const char* cls) {
     message::ptr msg = blocking_poll();
-    typename T::ptr result = ptr_safe_cast(T, msg);
+    typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
     if (!result){
       poll_cast_error(file, line, cls, msg);
     }
@@ -221,7 +220,7 @@ class transport {
   typename T::ptr
   poll(double timeout, const char* file, int line, const char* cls) {
     message::ptr msg = blocking_poll(timeout);
-    typename T::ptr result = ptr_test_cast(T, msg);
+    typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
     if (msg && !result){
       poll_cast_error(file, line, cls, msg);
     }
