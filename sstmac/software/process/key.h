@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/threading/threading_interface.h>
 #include <sstmac/software/process/thread_data.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <stdint.h>
 #include <sstmac/software/process/key_fwd.h>
 
@@ -140,8 +140,8 @@ class key  {
   key(const key_traits::category& name);
 
  private:
-  static spkt_unordered_map<std::string, int>* category_name_to_id_;
-  static spkt_unordered_map<int, std::string>* category_id_to_name_;
+  static std::unordered_map<std::string, int>* category_name_to_id_;
+  static std::unordered_map<int, std::string>* category_id_to_name_;
   static uint64_t key_storage_size_;
 
   thread_data_t blocked_thread_;

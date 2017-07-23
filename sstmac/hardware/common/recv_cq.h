@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef NIC_RECV_CQ_H
 #define NIC_RECV_CQ_H
 
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sstmac/hardware/common/packet.h>
 
 namespace sstmac {
@@ -93,7 +93,7 @@ class recv_cq
       Keys are unique network ID for all messages.
       Value is the number of bytes receved.
   */
-  typedef spkt_unordered_map<uint64_t, incoming_msg> received_map;
+  typedef std::unordered_map<uint64_t, incoming_msg> received_map;
   received_map bytes_recved_;
 };
 

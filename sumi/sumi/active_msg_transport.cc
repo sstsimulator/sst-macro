@@ -81,8 +81,7 @@ active_msg_transport::block_until_message(double timeout)
 collective_done_message::ptr
 active_msg_transport::collective_block(collective::type_t ty, int tag)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "active_msg_transpot::collective_block");
+  sprockit::abort("active_msg_transpot::collective_block: not implemented");
 }
 
 char*
@@ -128,8 +127,7 @@ char*
 active_msg_transport::allocate_smsg_buffer()
 {
   if (smsg_buffer_pool_.empty()){
-    spkt_throw(sprockit::value_error,
-      "too many smsg buffers allocated");
+    sprockit::abort("too many smsg buffers allocated");
   }
 
   char* ret = smsg_buffer_pool_.back();

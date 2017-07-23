@@ -53,8 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sprockit {
 
 template <class T>
-void
-serialize_intrusive_ptr(T*& t, serializer& ser)
+void serialize_intrusive_ptr(T*& t, serializer& ser)
 {
   serializable* s = t;
   switch (ser.mode()){

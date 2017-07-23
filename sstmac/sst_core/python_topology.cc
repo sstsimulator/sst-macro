@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/sst_core/integrated_core.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 extern "C" {
 

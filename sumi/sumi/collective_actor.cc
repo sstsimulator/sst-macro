@@ -722,8 +722,7 @@ dag_collective_actor::do_recv(action* ac)
     //I need to wait for the sender to contact me
   } else {
     if (failed()){
-      spkt_throw(sprockit::unimplemented_error,
-         "dag_collective_actor: cannot handle failures with put protocol");
+      sprockit::abort("dag_collective_actor: cannot handle failures with put protocol");
     }
     //put protocol, I need to tell the sender where to put it
     send_rdma_put_header(ac);
@@ -974,8 +973,7 @@ dag_collective_actor::set_recv_buffer(action* ac_, public_buffer& recv_buf)
                 ? recv_buffer_ : result_buffer_;
   recv_buf.offset_ptr(ac->offset*type_size_);
   if (result_buffer_.ptr && recv_buf.ptr == 0){
-    spkt_throw(sprockit::value_error,
-      "working with real payload, but somehow getting a null buffer");
+    sprockit::abort("working with real payload, but somehow getting a null buffer");
   }
 }
 
@@ -1031,8 +1029,7 @@ dag_collective_actor::new_message(action* ac, collective_work_message::action_t 
       set_recv_buffer(ac, msg->remote_buffer());
       break;
     default:
-    spkt_throw(sprockit::value_error,
-               "collective_actor::new message: created with invalid type %s",
+    spkt_abort_printf("collective_actor::new message: created with invalid type %s",
                collective_work_message::tostr(act));
   }
   return msg;

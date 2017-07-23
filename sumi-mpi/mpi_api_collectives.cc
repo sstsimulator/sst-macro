@@ -738,8 +738,7 @@ mpi_api::ireduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm com
 void
 mpi_api::start_reduce_scatter(collective_op* op)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::reduce_scatter");
+  sprockit::abort("sumi::reduce_scatter");
 
   reduce_fxn fxn = get_collective_function(op);
 
@@ -753,8 +752,7 @@ collective_op_base*
 mpi_api::start_reduce_scatter(MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
                               MPI_Op mop, const void* src, void* dst)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::reduce_scatter");
+  sprockit::abort("sumi::reduce_scatter");
 
   collective_op* op = nullptr;
   start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);
@@ -805,8 +803,7 @@ collective_op_base*
 mpi_api::start_reduce_scatter_block(MPI_Comm comm, int count, MPI_Datatype type,
                                     MPI_Op mop, const void* src, void* dst)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::reduce_scatter");
+  sprockit::abort("sumi::reduce_scatter: not implemented");
 
   collective_op* op = nullptr;
   start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);

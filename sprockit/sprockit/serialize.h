@@ -74,14 +74,11 @@ class serialize<bool> {
 
 namespace pvt {
 
-void
-size_serializable(serializable* s, serializer& ser);
+void size_serializable(serializable* s, serializer& ser);
 
-void
-pack_serializable(serializable* s, serializer& ser);
+void pack_serializable(serializable* s, serializer& ser);
 
-void
-unpack_serializable(serializable*& s, serializer& ser);
+void unpack_serializable(serializable*& s, serializer& ser);
 
 }
 
@@ -90,8 +87,7 @@ template <>
 class serialize<serializable*> {
 
  public:
-  void
-  operator()(serializable*& s, serializer& ser)
+  void operator()(serializable*& s, serializer& ser)
   {
     switch (ser.mode()){
   case serializer::SIZER:
@@ -112,9 +108,8 @@ template <class T,bool flag>
 class serialize_ptr
 {
  public:
-  void
-  operator()(serializer& ser, T*& t){
-    abort();
+  void operator()(serializer& ser, T*& t){
+    ::abort();
   }
 };
 
@@ -122,8 +117,7 @@ template <class T>
 class serialize_ptr<T,false>
 {
  public:
-  void
-  operator()(serializer& ser, T*& t){
+  void operator()(serializer& ser, T*& t){
     ser.primitive(t);
   }
 };
@@ -132,8 +126,7 @@ template <class T>
 class serialize_ptr<T,true>
 {
  public:
-  void
-  operator()(serializer& ser, T*& t){
+  void operator()(serializer& ser, T*& t){
     serializable* s = t;
     serialize<serializable*>()(s, ser);
     t = static_cast<T*>(s);

@@ -194,7 +194,7 @@ class pisces_NtoM_queue :
   }
 
  protected:
-  typedef spkt_unordered_map<int, pisces_input> input_map;
+  typedef std::unordered_map<int, pisces_input> input_map;
 
   typedef std::vector<pisces_output> output_map;
   typedef std::vector<int> credit_map;

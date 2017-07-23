@@ -81,7 +81,7 @@ class hostname_allocation : public node_allocator
 
   virtual ~hostname_allocation() throw () {}
 
-  typedef spkt_unordered_map<std::string, node_id> nodemap_t;
+  typedef std::unordered_map<std::string, node_id> nodemap_t;
   static nodemap_t hostnamemap_;
 
   static std::map<long, std::string> nodenum_to_host_map_;

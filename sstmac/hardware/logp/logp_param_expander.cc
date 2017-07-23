@@ -167,8 +167,7 @@ logp_param_expander::expand_amm4_nic(
   sprockit::sim_parameters* nic_params,
   sprockit::sim_parameters* switch_params)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "simple is not currently compatible with NIC model in abstract machine model amm4 -"
+  sprockit::abort("simple is not currently compatible with NIC model in abstract machine model amm4 -"
     "only a single injection pathway is used on the NIC, not distinct paths for RDMA and UDP sends");
 }
 

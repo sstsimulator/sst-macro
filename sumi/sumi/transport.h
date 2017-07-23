@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/util.h>
 #include <sumi/collective_message.h>
 #include <sumi/collective.h>
@@ -69,8 +69,15 @@ DeclareDebugSlot(sumi);
 
 namespace sumi {
 
-class transport
-{
+struct enum_hash {
+  template <typename T>
+  inline typename std::enable_if<std::is_enum<T>::value, std::size_t>::type
+  operator()(T const value) const {
+    return static_cast<std::size_t>(value);
+  }
+};
+
+class transport {
   DeclareFactory(transport)
  public:
   class notify_callback {
@@ -641,8 +648,11 @@ class transport
     int tag);
 
  private:
+  template <typename Key, typename Value>
+  using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
+
   int heartbeat_tag_;
-  typedef spkt_unordered_map<int,collective*> tag_to_collective_map;
+  typedef std::unordered_map<int,collective*> tag_to_collective_map;
   typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
   collective_map collectives_;
   
@@ -651,7 +661,7 @@ class transport
   //it passes back a notification stored here
   collective_done_message::ptr collective_notification_;
 
-  typedef spkt_unordered_map<int,std::list<collective_work_message_ptr> > tag_to_pending_map;
+  typedef std::unordered_map<int,std::list<collective_work_message_ptr> > tag_to_pending_map;
   typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
   pending_map pending_collective_msgs_;
 

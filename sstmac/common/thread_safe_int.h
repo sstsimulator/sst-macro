@@ -73,8 +73,7 @@ class thread_safe_int_t :
     return value_;
   }
 
-  Integer
-  operator++(){
+  Integer operator++(){
     lock();
     ++value_;
     Integer tmp = value_;
@@ -82,8 +81,7 @@ class thread_safe_int_t :
     return tmp;
   }
 
-  Integer
-  operator++(int i){
+  Integer operator++(int i){
     Integer tmp(value_);
     lock();
     value_++;

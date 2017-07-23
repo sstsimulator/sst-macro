@@ -68,50 +68,34 @@ class event_map :
  public:
   event_map(sprockit::sim_parameters* params, parallel_runtime* rt);
 
-  /// Run the eventmanager.
-  /// The eventmanager shall return control when no more messages remain.
-  virtual void
-  run();
-
+  virtual void run();
 
   ~event_map() throw ();
 
-  void
-  clear(timestamp zero_time = timestamp(0));
+  void clear(timestamp zero_time = timestamp(0));
 
-  void
-  cancel_all_messages(device_id mod);
+  void cancel_all_messages(device_id mod);
 
-  bool
-  empty() const {
+  bool empty() const {
     return queue_.empty();
   }
 
-  virtual bool
-  vote_to_terminate(){
+  virtual bool vote_to_terminate(){
     return true;
   }
 
  protected:
   friend class multithreaded_event_container;
 
-  event_queue_entry*
-  pop_next_event();
+  event_queue_entry* pop_next_event();
 
-  void
-  add_event(event_queue_entry* ev);
+  void add_event(event_queue_entry* ev);
 
-  /// Set off the given eventhandler at the given time.
-  void
-  schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev);
+  void schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev);
 
-  /// Called at end of run(). Calls finish() on finishers_ and calls
-  /// finish_stats().
-  void
-  finish();
+  void finish();
 
-  virtual void
-  do_next_event();
+  virtual void do_next_event();
 
  protected:
   struct event_compare {
@@ -129,7 +113,6 @@ class event_map :
   };
   typedef std::set<event_queue_entry*, event_compare> queue_t;
   queue_t queue_;
-  /// Sentinel to track whether the event handler is running or not.
   bool running_;
 
 };

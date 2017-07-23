@@ -194,8 +194,7 @@ int
 mpi_api::init(int* argc, char*** argv)
 {
   if (status_ == is_initialized){
-    spkt_throw(sprockit::value_error,
-               "MPI_Init cannot be called twice");
+    sprockit::abort("MPI_Init cannot be called twice");
   }
 
   start_mpi_call(MPI_Init,0,MPI_BYTE,MPI_COMM_WORLD);
@@ -203,8 +202,7 @@ mpi_api::init(int* argc, char*** argv)
   sumi_transport::init();
 
   if (!os_) {
-    spkt_throw(sprockit::null_error,
-               "mpiapi::init: os has not been initialized yet");
+    sprockit::abort("mpiapi::init: os has not been initialized yet");
   }
 
 

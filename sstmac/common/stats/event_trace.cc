@@ -56,31 +56,31 @@ event_trace::simulation_finished(timestamp end)
 void
 event_trace::clear()
 {
-  spkt_throw(sprockit::unimplemented_error, "event_trace::clear");
+  sprockit::abort("event_trace::clear: not implemented");
 }
 
 void
 event_trace::dump_local_data()
 {
-  spkt_throw(sprockit::unimplemented_error, "event_trace::dump_local_data");
+  sprockit::abort("event_trace::dump_local_data: not implemented");
 }
 
 void
 event_trace::dump_global_data()
 {
-  spkt_throw(sprockit::unimplemented_error, "event_trace::dump_global_data");
+  sprockit::abort("event_trace::dump_global_data: not implemented");
 }
 
 void
 event_trace::reduce(stat_collector *coll)
 {
-  spkt_throw(sprockit::unimplemented_error, "event_trace::reduce");
+  sprockit::abort("event_trace::reduce: not implemented");
 }
 
 void
 event_trace::global_reduce(parallel_runtime *rt)
 {
-  spkt_throw(sprockit::unimplemented_error, "event_trace::global_reduce");
+  sprockit::abort("event_trace::global_reduce: not implemented");
 }
 
 event_trace::event_trace(sprockit::sim_parameters *params) :
@@ -99,7 +99,7 @@ event_trace::collect(int event_typeid,
                      long ticks_begin,
                      long num_ticks)
 {
-  spkt_throw(sprockit::unimplemented_error, "event_trace::collect");
+  sprockit::abort("event_trace::collect: not implemented");
 }
 
 }

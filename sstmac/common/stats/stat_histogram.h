@@ -58,43 +58,32 @@ class stat_histogram :
  public:
   stat_histogram(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "stat histogram";
   }
 
-  void
-  collect(double value);
+  void collect(double value);
 
-  void
-  collect(double value, int64_t num);
+  void collect(double value, int64_t num);
 
-  void
-  simulation_finished(timestamp end) override;
+  void simulation_finished(timestamp end) override;
 
-  void
-  dump_local_data() override;
+  void dump_local_data() override;
 
-  void
-  dump_global_data() override;
+  void dump_global_data() override;
 
-  void
-  global_reduce(parallel_runtime *rt) override;
+  void global_reduce(parallel_runtime *rt) override;
 
-  void
-  clear() override;
+  void clear() override;
 
-  void
-  reduce(stat_collector* coll) override;
+  void reduce(stat_collector* coll) override;
 
-  stat_collector*
-  do_clone(sprockit::sim_parameters* params) const override {
+  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new stat_histogram(params);
   }
 
  protected:
-  void
-  dump(const std::string& froot);
+  void dump(const std::string& froot);
 
  protected:
   std::vector<int64_t> counts_;

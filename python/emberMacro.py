@@ -13,7 +13,7 @@ from emberLoadInfo import *
 import random 
 
 topoParams = {
- "name" : "hdtorus",
+ "name" : "torus",
  "geometry" : "2 2 2",
 }
 

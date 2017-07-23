@@ -50,12 +50,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/serializer.h>
 
 namespace sprockit {
-
 namespace pvt {
 
 template <class Container, class T>
-void 
-serialize_container(Container& v, serializer& ser){
+void  serialize_container(Container& v, serializer& ser){
   typedef typename Container::iterator iterator;
   switch(ser.mode())
   {
@@ -98,8 +96,7 @@ template <class T>
 class serialize <std::list<T> > {
  typedef std::list<T> List; 
 public:
- void
- operator()(List& v, serializer& ser) {
+ void operator()(List& v, serializer& ser) {
    pvt::serialize_container<List,T>(v,ser);
  }
 };
@@ -108,8 +105,7 @@ template <class T>
 class serialize <std::deque<T> > {
  typedef std::deque<T> DQ; 
 public:
- void
- operator()(DQ& v, serializer& ser) {
+ void operator()(DQ& v, serializer& ser) {
    pvt::serialize_container<DQ,T>(v,ser);
  }
 };

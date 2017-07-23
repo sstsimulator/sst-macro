@@ -347,8 +347,7 @@ mpi_runtime::do_send_message(int lp, void *buffer, int size)
 {
 #if SST_SANITY_CHECK
   if (size > buf_size_){
-    spkt_throw(sprockit::illformed_error,
-        "mpi_runtime::do_send_message: sending buffer that is too large");
+    sprockit::abort("mpi_runtime::do_send_message: sending buffer that is too large");
   }
 #endif
   int* pairData = &num_sent_[2*lp];

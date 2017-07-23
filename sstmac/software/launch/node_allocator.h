@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/printable.h>
 
 DeclareDebugSlot(allocation);

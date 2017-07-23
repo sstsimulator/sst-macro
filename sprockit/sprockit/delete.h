@@ -48,32 +48,28 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sprockit {
 
 template <class Container>
-void
-delete_all(const Container& ctr){
+void delete_all(const Container& ctr){
   for (auto& item : ctr){
     delete item;
   }
 }
 
 template <class Container>
-void
-delete_arrs(const Container& ctr){
+void delete_arrs(const Container& ctr){
   for (auto& item : ctr){
     delete[] item;
   }
 }
 
 template <class MapType>
-void
-delete_vals_arrs(const MapType& ctr){
+void delete_vals_arrs(const MapType& ctr){
   for (auto& pair : ctr){
     delete[] pair.second;
   }
 }
 
 template <class VectorType>
-void
-delete_vector(const VectorType& v){
+void delete_vector(const VectorType& v){
   for (auto ptr : v){
     if (ptr) delete ptr;
   }
@@ -81,24 +77,21 @@ delete_vector(const VectorType& v){
 
 
 template <class MapType>
-void
-delete_vals(const MapType& ctr){
+void delete_vals(const MapType& ctr){
   for (auto& pair : ctr){
     delete pair.second;
   }
 }
 
 template <class MapType>
-void
-delete_keys(const MapType& ctr){
+void delete_keys(const MapType& ctr){
   for (auto& pair : ctr){
     delete pair.first;
   }
 }
 
 template <class MapType>
-void
-delete_keys_and_vals(const MapType& ctr){
+void delete_keys_and_vals(const MapType& ctr){
   for (auto& pair : ctr){
     delete pair.first;
     delete pair.second;

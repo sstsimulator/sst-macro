@@ -106,30 +106,26 @@ class refcount_ptr {
     decref(ptr);
   }
   
-  T*
-  get() const {
+  T* get() const {
     return ptr;
   }
 
   template <class U>
-  refcount_ptr<T>&
-  operator=(const refcount_ptr<U>& rhs){
+  refcount_ptr<T>& operator=(const refcount_ptr<U>& rhs){
     incref(rhs.ptr);
     decref(ptr);
     ptr = rhs.ptr;
     return *this;
   }
   
-  refcount_ptr<T>&
-  operator=(const refcount_ptr& rhs){
+  refcount_ptr<T>& operator=(const refcount_ptr& rhs){
     incref(rhs.ptr);
     decref(ptr);
     ptr = rhs.ptr;
     return *this;    
   }
 
-  refcount_ptr<T>&
-  operator=(T* rhs){
+  refcount_ptr<T>& operator=(T* rhs){
     incref(rhs);
     decref(ptr);
     ptr = rhs;
@@ -140,13 +136,11 @@ class refcount_ptr {
     return bool(ptr);
   }
 
-  T*
-  operator->() const {
+  T* operator->() const {
     return ptr;
   }
 
-  bool
-  null() const {
+  bool null() const {
     return ptr == 0;
   }
 };

@@ -68,7 +68,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/factories/factory.h>
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
@@ -807,20 +807,20 @@ class mpi_api :
   typedef std::map<MPI_Datatype, mpi_type*> type_map;
   type_map known_types_;
 
-  typedef spkt_unordered_map<MPI_Op, MPI_User_function*> op_map;
+  typedef std::unordered_map<MPI_Op, MPI_User_function*> op_map;
   op_map custom_ops_;
 
-  typedef spkt_unordered_map<MPI_Comm, mpi_comm*> comm_ptr_map;
+  typedef std::unordered_map<MPI_Comm, mpi_comm*> comm_ptr_map;
   comm_ptr_map comm_map_;
-  typedef spkt_unordered_map<MPI_Group, mpi_group*> group_ptr_map;
+  typedef std::unordered_map<MPI_Group, mpi_group*> group_ptr_map;
   group_ptr_map grp_map_;
   MPI_Group group_counter_;
 
-  typedef spkt_unordered_map<MPI_Request, mpi_request*> req_ptr_map;
+  typedef std::unordered_map<MPI_Request, mpi_request*> req_ptr_map;
   req_ptr_map req_map_;
   MPI_Request req_counter_;
 
-  spkt_unordered_map<int, keyval*> keyvals_;
+  std::unordered_map<int, keyval*> keyvals_;
 
   bool generate_ids_;
 

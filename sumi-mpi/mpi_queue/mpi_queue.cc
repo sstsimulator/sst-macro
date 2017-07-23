@@ -524,8 +524,7 @@ mpi_queue::handle_new_message(const mpi_message::ptr& message)
       message->protocol()->incoming_header(this, message);
       break;
     default:
-      spkt_throw(sprockit::value_error,
-        "mpi_queue::handle_new_message: invalid new message type %s",
+      spkt_abort_printf("mpi_queue::handle_new_message: invalid new message type %s",
         mpi_message::str(message->content_type()));
   }
 }

@@ -307,8 +307,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
   std::string newtop = std::string("tiled_") + top;
   std::vector<int> switch_geom; switch_params->get_vector_param("geometry", switch_geom);
   if (switch_geom.size() != 2){
-    spkt_throw(sprockit::input_error,
-      "AMM4: need switch geometry vector with 2 params:\n"
+    sprockit::abort("AMM4: need switch geometry vector with 2 params:\n"
       "tiles-per-row, tiles-per-col");
   }
   int ncols = switch_geom[0];

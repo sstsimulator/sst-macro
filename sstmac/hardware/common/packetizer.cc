@@ -189,10 +189,12 @@ class merlin_packetizer :
 
   link_handler* new_credit_handler() const{
     spkt_abort_printf("merlin_packetizier::new_ack_handler: never used");
+    return nullptr;
   }
 
   link_handler* new_payload_handler() const{
     spkt_abort_printf("merlin_packetizier::new_payload_handler: never used");
+    return nullptr;
   }
 
  private:

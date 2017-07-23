@@ -48,28 +48,28 @@ Questions? Contact sst-macro-help@sandia.gov
 /* Set scheduling parameters for a process.  */
 extern "C" int
 SSTMAC_sched_setparam (pid_t pid, const struct sched_param *param){
-  spkt_throw(sprockit::unimplemented_error, "sched_setparam");
+  sprockit::abort("sched_setparam: not implemented");
   return 0;
 }
 
 /* Retrieve scheduling parameters for a particular process.  */
 extern "C" int
 SSTMAC_sched_getparam (pid_t pid, struct sched_param *param){
-  spkt_throw(sprockit::unimplemented_error, "sched_getparam");
+  sprockit::abort("sched_getparam: not implemented");
   return 0;
 }
 
 /* Set scheduling algorithm and/or parameters for a process.  */
 extern "C" int
 SSTMAC_sched_setscheduler (pid_t pid, int policy,  const struct sched_param *param){
-  spkt_throw(sprockit::unimplemented_error, "sched_setscheduler");
+  sprockit::abort("sched_setscheduler: not implemented");
   return 0;
 }
 
 /* Retrieve scheduling algorithm for a particular purpose.  */
 extern "C" int
 SSTMAC_sched_getscheduler (pid_t pid){
-  spkt_throw(sprockit::unimplemented_error, "sched_getscheduler");
+  sprockit::abort("sched_getscheduler: not implemented");
   return 0;
 }
 
@@ -84,15 +84,14 @@ SSTMAC_sched_yield (void){
 /* Get the SCHED_RR interval for the named process.  */
 extern "C" int
 SSTMAC_sched_rr_get_interval (pid_t pid, struct timespec *t){
-  spkt_throw(sprockit::unimplemented_error, "sched_rr_get_interval");
+  sprockit::abort("sched_rr_get_interval: not implemented");
   return 0;
 }
 
 extern "C" void
 SSTMAC_CPU_SET_S (int cpu, size_t setsize, sstmac_cpu_set_t* cpusetp){
   if (setsize > SSTMAC_CPU_SETSIZE){
-    spkt_throw(sprockit::value_error,
-      "SSTMAC_CPU_SET: invalid cpu setsize %lu", setsize);
+    spkt_abort_printf("SSTMAC_CPU_SET: invalid cpu setsize %lu", setsize);
   }
   cpusetp->cpubits = cpusetp->cpubits | (1<<cpu);
 }
@@ -100,8 +99,7 @@ SSTMAC_CPU_SET_S (int cpu, size_t setsize, sstmac_cpu_set_t* cpusetp){
 extern "C" void
 SSTMAC_CPU_CLR_S (int cpu, size_t setsize, sstmac_cpu_set_t* cpusetp){
   if (setsize > SSTMAC_CPU_SETSIZE){
-    spkt_throw(sprockit::value_error,
-      "SSTMAC_CPU_CLR: invalid cpu setsize %lu", setsize);
+    spkt_abort_printf("SSTMAC_CPU_CLR: invalid cpu setsize %lu", setsize);
   }
   cpusetp->cpubits = cpusetp->cpubits & ~(1<<cpu);
 }
@@ -114,8 +112,7 @@ SSTMAC_CPU_ISSET_S (int cpu, size_t setsize, sstmac_cpu_set_t* cpusetp){
 extern "C" void
 SSTMAC_CPU_ZERO_S (size_t setsize, sstmac_cpu_set_t* cpusetp){
   if (setsize > SSTMAC_CPU_SETSIZE){
-    spkt_throw(sprockit::value_error,
-      "SSTMAC_CPU_CLR: invalid cpu setsize %lu", setsize);
+    spkt_abort_printf("SSTMAC_CPU_CLR: invalid cpu setsize %lu", setsize);
   }
   cpusetp->cpubits = 0;
 }
@@ -172,13 +169,13 @@ void SSTMAC_CPU_FREE(sstmac_cpu_set_t* cpuset){
 /* Set the CPU affinity for a task */
 extern "C" int
 SSTMAC_sched_setaffinity (pid_t pid, size_t cpusetsize, const sstmac_cpu_set_t *cpuset){
-  spkt_throw(sprockit::unimplemented_error,
-    "SSTMAC_sched_setaffinity");
+  sprockit::abort("SSTMAC_sched_setaffinity");
+  return -1;
 }
 
 /* Get the CPU affinity for a task */
 extern "C" int
 SSTMAC_sched_getaffinity (pid_t pid, size_t cpusetsize, sstmac_cpu_set_t *cpuset){
-  spkt_throw(sprockit::unimplemented_error,
-    "SSTMAC_sched_getaffinity");
+  sprockit::abort("SSTMAC_sched_getaffinity");
+  return -1;
 }

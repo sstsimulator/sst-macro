@@ -58,8 +58,7 @@ minimal_router::minimal_router(sprockit::sim_parameters* params, topology* top,
 {
   fat_tree* ft = test_cast(fat_tree, top);
   if (ft){
-    spkt_throw(sprockit::value_error,
-               "minimal_router should not be used with fat tree - set router=fattree in params");
+    sprockit::abort("minimal_router should not be used with fat tree - set router=fattree in params");
   }
 }
 

@@ -52,9 +52,9 @@ namespace sprockit {
 template <>
 class serialize<std::string> {
  public:
- void operator()(std::string& str, serializer& ser){
-   ser.string(str);
- }
+  void operator()(std::string& str, serializer& ser){
+    ser.string(str);
+  }
 };
 
 }

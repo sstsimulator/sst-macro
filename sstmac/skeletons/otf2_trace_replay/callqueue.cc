@@ -78,7 +78,7 @@ const char* MpiCall::ToString() {
 
 void MpiCall::assert_call(MpiCall* cb, string msg) {
   if (cb == NULL) {
-      spkt_throw(sprockit::io_error, "ASSERT FAILED: ", msg.c_str());
+      spkt_abort_printf("ASSERT FAILED: %s", msg.c_str());
   }
 }
 

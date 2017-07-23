@@ -114,8 +114,7 @@ mutex_thread_lock::unlock()
   locked_ = false;
   int signal = pthread_mutex_unlock(&mutex_);
   if (signal != 0) {
-    spkt_throw(sprockit::spkt_error,
-        "pthread_lock::unlock: unlocking mutex that I don't own: %d:%s",
+    spkt_abort_printf("pthread_lock::unlock: unlocking mutex that I don't own: %d:%s",
         signal, ::strerror(signal));
   }
 }
@@ -167,8 +166,7 @@ spin_thread_lock::unlock()
   locked_ = false;
   int signal = pthread_spin_unlock(&lock_);
   if (signal != 0) {
-    spkt_throw(sprockit::spkt_error,
-        "pthread_lock::unlock: unlocking mutex that I don't own: %d:%s",
+    spkt_abort_printf("pthread_lock::unlock: unlocking mutex that I don't own: %d:%s",
         signal, ::strerror(signal));
   }
 }

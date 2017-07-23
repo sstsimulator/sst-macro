@@ -64,7 +64,7 @@ fake_transport::block_until_message()
 collective_done_message::ptr
 fake_transport::collective_block(collective::type_t ty, int tag)
 {
-  spkt_throw(sprockit::unimplemented_error, "fake transport should never block");
+  sprockit::abort("fake transport should never block");
 }
 
 void
@@ -82,13 +82,13 @@ fake_transport::cq_notify()
 void
 fake_transport::schedule_ping_timeout(pinger *pnger, double to)
 {
-  spkt_throw(sprockit::unimplemented_error, "fake transport should never ping or have failed pings");
+  sprockit::abort("fake transport should never ping or have failed pings");
 }
 
 void
 fake_transport::schedule_next_heartbeat()
 {
-  spkt_throw(sprockit::unimplemented_error, "fake transport should never ping or have failed pings");
+  sprockit::abort("fake transport should never ping or have failed pings");
 }
 
 void
@@ -143,28 +143,25 @@ fake_transport::pop_message(std::list<message::ptr> &msglist)
 void
 fake_transport::do_send_terminate(int dst)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "fake transport should not send terminates");
+  sprockit::abort("fake transport should not send terminates");
 }
 
 void
 fake_transport::do_send_ping_request(int dst)
 {
-  spkt_throw(sprockit::unimplemented_error, "fake transport should never ping or have failed pings");
+  sprockit::abort("fake transport should never ping or have failed pings");
 }
 
 void
 fake_transport::go_die()
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "fake transport should never die");
+  sprockit::abort("fake transport should never die");
 }
 
 void
 fake_transport::go_revive()
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "fake transport should go revive");
+  sprockit::abort("fake transport should not revive");
 }
 
 }
