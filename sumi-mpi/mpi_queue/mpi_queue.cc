@@ -164,7 +164,7 @@ mpi_queue::send_message(void* buffer, int count, MPI_Datatype type,
     int(tag), api_->comm_str(comm).c_str(),
     prot->to_string().c_str());
   task_id dst_tid = comm->peer_task(dst_rank);
-  mpi_message::ptr mess = new mpi_message(comm->rank(), dst_rank,
+  auto mess = std::make_shared<mpi_message>(comm->rank(), dst_rank,
                           count, type, typeobj->packed_size(),
                           tag, comm->id(),
                           next_outbound_[dst_tid]++,
@@ -614,7 +614,7 @@ mpi_queue::handle_poll_msg(const sumi::message::ptr& msg)
   if (msg->class_type() == message::collective_done){
     handle_collective_done(msg);
   } else {
-    mpi_message::ptr mpimsg = ptr_safe_cast(mpi_message, msg);
+    mpi_message::ptr mpimsg = std::dynamic_pointer_cast<mpi_message>(msg);
     mpi_queue_debug("continuing progress loop on incoming msg %s",
                     mpimsg->to_string().c_str());
     incoming_progress_loop_message(mpimsg);
@@ -677,7 +677,7 @@ mpi_queue::at_least_one_complete(const std::vector<mpi_request*>& req)
 void
 mpi_queue::handle_collective_done(const sumi::message::ptr& msg)
 {
-  collective_done_message::ptr cmsg = ptr_safe_cast(collective_done_message, msg);
+  auto cmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
   mpi_comm* comm = safe_cast(mpi_comm, cmsg->dom());
   mpi_request* req = comm->get_request(cmsg->tag());
   collective_op_base* op = req->collective_data();

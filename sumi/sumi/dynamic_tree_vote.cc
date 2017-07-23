@@ -432,7 +432,7 @@ dynamic_tree_vote_actor::start()
 void
 dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int virtual_dst)
 {
-  dynamic_tree_vote_message::ptr msg = new dynamic_tree_vote_message(vote_, ty, tag_, dense_me_, virtual_dst);
+  auto msg = std::make_shared<dynamic_tree_vote_message>(vote_, ty, tag_, dense_me_, virtual_dst);
   if (stage_ == up_vote){  //If I am up-voting, go ahead and vote for as many failures as I know
     msg->append_failed(failed_ranks_);
   }
@@ -486,7 +486,7 @@ dynamic_tree_vote_actor::merge_result(const dynamic_tree_vote_message::ptr& msg)
 void
 dynamic_tree_vote_actor::put_done_notification()
 {
-  collective_done_message::ptr msg = new collective_done_message(tag_, collective::dynamic_tree_vote, comm_);
+  auto msg = std::make_shared<collective_done_message>(tag_, collective::dynamic_tree_vote, comm_);
   msg->set_comm_rank(comm_->my_comm_rank());
   //convert the virtual ranks to physical ranks
   thread_safe_set<int>::const_iterator it, end = agreed_upon_failures_.start_iteration();
@@ -715,7 +715,7 @@ dynamic_tree_vote_collective::recv(int target, const collective_work_message::pt
   }
 
   dynamic_tree_vote_actor* schauspieler = it->second;
-  schauspieler->recv(ptr_safe_cast(dynamic_tree_vote_message, msg));
+  schauspieler->recv(std::dynamic_pointer_cast<dynamic_tree_vote_message>(msg));
 }
 
 void

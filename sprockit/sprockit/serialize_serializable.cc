@@ -42,7 +42,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sprockit/ptr_type.h>
 #include <sprockit/spkt_string.h>
 #include <sprockit/serialize_serializable.h>
 

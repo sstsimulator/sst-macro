@@ -62,7 +62,7 @@ class dynamic_tree_vote_message :
  public:
   dynamic_tree_vote_message(){} //for serialization
 
-  typedef sprockit::refcount_ptr<dynamic_tree_vote_message> ptr;
+  typedef std::shared_ptr<dynamic_tree_vote_message> ptr;
 
   typedef enum {
     up_vote,

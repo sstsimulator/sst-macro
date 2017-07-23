@@ -180,7 +180,7 @@ test_barrier()
   comm_barrier(tag);
 
   message::ptr msg = comm_poll();
-  collective_done_message::ptr dmsg = ptr_safe_cast(collective_done_message, msg);
+  auto dmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
   if (dmsg->tag() != 20 || dmsg->type() != collective::barrier){
     sprockit::abort("barrier got invalid completion message");
   }
@@ -199,7 +199,7 @@ test_dynamic_tree_vote()
   comm_vote<Max>(vote, tag);
 
   message::ptr msg = comm_poll();
-  collective_done_message_ptr dmsg = ptr_safe_cast(collective_done_message, msg);
+  auto dmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
   if (dmsg->tag() != tag || dmsg->type() != collective::dynamic_tree_vote){
     sprockit::abort("vote got invalid completion message");
   }
