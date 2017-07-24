@@ -1,10 +1,16 @@
 TARGET := libtest.so
 SRC := component.cc
 
+SST_CORE=$(HOME)/Programs/install/sst-core/clang
+
 CXX :=    libsst++
 CC :=     libsstcc
 CXXFLAGS := -fPIC
-CPPFLAGS := -I. -I$(HOME)/Programs/install/sst-core/clang/include
+CPPFLAGS := -I. 
+
+#uncomment if integrated core
+#CPPFLAGS += -I$(SST_CORE)/include
+
 LIBDIR :=  
 PREFIX := 
 LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib

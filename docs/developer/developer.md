@@ -19,25 +19,18 @@ category: SSTDocumentation
 
 # Table of Contents
    - [Chapter 1: Introduction](#chapter:intro)
-      - [Section 1.1: Use of C++/Boost](#sec:boost)
+      - [Section 1.1: Overview](#sec:intro:overview)
       - [Section 1.2: Polymorphism and Modularity](#sec:polymorphism)
       - [Section 1.3: Most Important Style and Coding Rules](#sec:stylerules)
-      - [Section 1.4: Code Style Reformatting](#sec:styleReformat)
-      - [Section 1.5: Memory Allocation](#sec:memalloc)
    - [Chapter 2: SProCKit](#chapter:sprockit)
       - [Section 2.1: Debug](#sec:debug)
       - [Section 2.2: Serialization](#sec:serialize)
       - [Section 2.3: Keyword Registration](#sec:keywords)
    - [Chapter 3: SST-macro Classes](#chapter:classes)
-      - [Section 3.1: Class Style](#sec:style)
-         - [3.1.1: Basic Class](#subsec:basicClass)
-         - [3.1.2: Inheritance and Parent Classes](#subsec:inheritance)
-         - [3.1.3: Exceptions](#classes:style:basic:exceptions)
-      - [Section 3.2: Factory Types](#sec:factory)
-         - [3.2.1: Usage](#subsec:usage)
-         - [3.2.2: Base Class](#subsec:baseClass)
-         - [3.2.3: Child Class](#subsec:childClass)
-         - [3.2.4: External Linkage](#subsec:linkage)
+      - [Section 3.1: Factory Types](#sec:factory)
+         - [3.1.1: Usage](#subsec:usage)
+         - [3.1.2: Base Class](#subsec:baseClass)
+         - [3.1.3: Child Class](#subsec:childClass)
    - [Chapter 4: Discrete Event Simulation](#chapter:des)
       - [Section 4.1: Event Managers](#sec:eventManagers)
          - [4.1.1: Event Handlers](#subsec:eventHandlers)
@@ -74,20 +67,38 @@ category: SSTDocumentation
 
 
 
-### Section 1.1: Use of C++/Boost<a name="sec:boost"></a>
+### Section 1.1: Overview<a name="sec:intro:overview"></a>
 
-SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event simulator designed for macroscale (system-level) experiments in HPC. SST/macro is an object-oriented C++ code that makes heavy use of dynamic types and polymorphism. While a great deal of template machinery exists under the hood, nearly all users and even most developers will never actually need to interact with any C++ templates. Most template wizardry is hidden in easy-to-use macros. While C++ allows a great deal of flexibility in syntax and code structure, we are striving towards a unified coding style.
+
+
+The SST-macro software package provides a simulator for large-scale parallel computer architectures. SST-macro is a component within the Structural Simulation Toolkit (SST). SST itself provides the abstract discrete event interface. SST-macro implements specifically a coarse-grained simulator for distributed-memory applications.
+
+The simulator is driven from either a trace file or skeleton application. Simulation can be broadly categorized as either off-line or on-line. Off-line simulators typically first run a full parallel application on a real machine, recording certain communication and computation events to a simulation trace. This event trace can then be replayed post-mortem in the simulator.
+
+For large, system-level experiments with thousands of network endpoints, high-accuracy cycle-accurate simulation is not possible, or at least not convenient. Simulation requires coarse-grained approximations to be practical. SST-macro is therefore designed for specific cost/accuracy tradeoffs.
+
+The developer's manual broadly covers the two main aspects of creating new components.
+
+-   Setting up components to match the `connectable` interface linking components together via ports and event handlers
+-   Registering components with the factory system to make them usable in simulation input files
+
+\section{What To Expect In The Developer's Manual} The developer's manual is mainly designed for those who wish to extend the simulator or understand its internals. This user's manual, in contrast, is mainly designed for those who wish to perform experiments with new applications using existing hardware models. The user's manual therefore covers building and running the core set of SST/macro features. The developer's manual covers what you need to know to add new features. The SST design is such that external components are built into shared object `.so` files.
+
+\section{Use of C++} SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event simulator designed for macroscale (system-level) experiments in HPC. SST/macro is an object-oriented C++ code that makes heavy use of dynamic types and polymorphism. While a great deal of template machinery exists under the hood, nearly all users and even most developers will never actually need to interact with any C++ templates. Most template wizardry is hidden in easy-to-use macros. While C++ allows a great deal of flexibility in syntax and code structure, we are striving towards a unified coding style.
+
+Boost is no longer required or even used. Some C++11 features like `unordered_map` and `shared_ptr` are used heavily throughout the code.
 
 ### Section 1.2: Polymorphism and Modularity<a name="sec:polymorphism"></a>
 
-The simulation progresses with different modules (classes) exchanging messages. In general, when module 1 sendings a message to module 2, module 1 only sees an abstract interface for module 2. The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences. The "workhorse" of SST/macro is the base `event` and `message` classes. To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
+The simulation progresses with different modules (classes) exchanging events or messages. In general, when module 1 sends a message to module 2, module 1 only sees an abstract interface for module 2. The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences. The "workhorse" of SST/macro is the base `event` and `message` classes. To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 ````
 void handle(event* ev){
 ...
 }
 ````
-The prototype therefore accepts any event type. The class `message` is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
+The prototype therefore accepts any event type. 
+The class `message` is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
 Misusing types in SST/macro is not a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
@@ -126,13 +137,15 @@ where conflicts require a prefix. Functions for modifying variables are prefixed
 	please do that after the entire class is complete and debugged.
 -   Forward declarations.  There are a lot of interrelated classes, often creating circular dependencies. In addition, you can add up with an explosion of include files, often involving classes that are never used in a given `.cc` file.  For cleanliness of compilation, you will find many `*_fwd.h` files throughout the code. If you need a forward declaration, we encourage including this header file rather than ad hoc forward declarations throughout the code.
 
-### Section 1.4: Code Style Reformatting<a name="sec:styleReformat"></a>
-
 Since we respect the sensitivity of code-style wars, we include scripts that demonstrate basic usage of the C++ code formatting tool astyle. This can be downloaded from {http://astyle.sourceforge.net}. A python script called `fix_style` is included in the top-level bin directory. It recursively reformats all files in a given directory and its subdirectories.
 
-### Section 1.5: Memory Allocation<a name="sec:memalloc"></a>
 
-To improve performance, custom memory allocation strategies can be employed in C++. At present, a global custom `operator new` can be optionally activated which is optimized for large pages and memory pools. At present, no class-specific implementation of `operator new` is used. However, we may soon implement custom allocation techniques to improve things like cache/TLB efficiency. This is the only major change expected to SST/macro that would affect externally developed modules - and even here the expected modifications would be quite small. Because custom allocation schemes may be used, all externally developed code should use `operator new`, rather than not  `malloc` or `mmap`, unless allocating very large arrays.
+
+
+
+
+
+
 
 
 
@@ -220,9 +233,7 @@ ser & niter;
 ser & str;
 ````
 
-Thus the code for serializing is exactly the same as deserializing. The only change is the mode of the serializer is toggled.
-
-The above code assumes a known buffer size (or buffer of sufficient size). To serialize unknown sizes, the serializer can also compute the total size first.
+Thus the code for serializing is exactly the same as deserializing. The only change is the mode of the serializer is toggled. The above code assumes a known buffer size (or buffer of sufficient size). To serialize unknown sizes, the serializer can also compute the total size first.
 
 ````
 sstmac::serializer ser;
@@ -237,39 +248,26 @@ char* buf = new char[size];
 ````
 The known size can now be used safely in serialization.
 
-The above code only applies to plain-old dataypes and strings. The serializer also automatically handles STL and Boost containers through the `<<` syntax. To serialize custom objects, a C++ class must implement the serializable interface.
+The above code only applies to plain-old dataypes and strings. The serializer also automatically handles STL containers through the `&` syntax. To serialize custom objects, a C++ class must implement the serializable interface.
 
 ````
 namespace my_ns {
 class my_object : 
-  public sstmac::serializable,
-  public sstmac::serializable_type<my_object>
+  public sstmac::serializable
 {
  ImplementSerializable(my_object)
  ...
- void
- serialize_order(sstmac::serializer& ser);
+ void serialize_order(sstmac::serializer& ser);
  ...
 };
 }
 ````
-The serialization interface requires two inheritances.
-The first inheritance from `serializable` is the one ``visible" to the serializer.
+The serialization interface requires inheritance from `serializable`.
 This inheritance forces the object to define a `serialize_order` function.
-The second inheritance is used in registering a type descriptor.
 The macro `ImplementSerializable` inside the class creates a set of necessary functions.
 This is essentially a more efficient RTTI, mapping unique integers to a polymorphic type.
-There are cleaner ways of doing this in terms of the interface,
-but the current setup is chosen for safety.
 The forced inheritance allows more safety checks to ensure types are being set up and used correctly.
-
-In the source file, the type descriptor must be registered. This is done through the macro
-
-````
-DeclareSerializable(my_ns::my_object);
-````
-This macro should exist in the global namespace.
-All that remains now is defining the `serialize_order` in the source file
+All that remains now is defining the `serialize_order` in the source file:
 
 ````
 void my_object::serialize_order(sstmac::serializer& ser)
@@ -287,31 +285,28 @@ class parent_object :
   public sstmac::serializable
 {
 ...
-  void
-  serialize_order(sstmac::serializer& set);
+  void serialize_order(sstmac::serializer& set);
 ...
 };
 
 class my_object :
-  public parent_object,
-  public sstmac::serializable_type<my_object>
+  public parent_object
 {
  ImplementSerializable(my_object)
  ...
- void
- serialize_order(sstmac::serializer& ser);
+ void serialize_order(sstmac::serializer& ser);
  ...
 };
 ````
 In the above code, only `my_object` can be serialized.
-The `parent_object` is not a full serializable type because no descriptor is registered for it.
+The `parent_object` is not a full serializable type because no descriptor is registered for it
+using the macro `ImplementSerializable`.
 Only the child can be serialized and deserialized.
 However, the parent class can still contribute variables to the serialization.
 In the source file, we would have
 
 ````
-void
-my_object::serializer_order(sstmac::serializer& ser)
+void my_object::serializer_order(sstmac::serializer& ser)
 {
   parent_object::serialize_order(ser);
   ...
@@ -321,12 +316,13 @@ The child object should always remember to invoke the parent serialization metho
 
 ### Section 2.3: Keyword Registration<a name="sec:keywords"></a>
 
-As stated previously, SProCKit actually implements all the machinery for parameter files. This is not part of the SST-macro core. To avoid annoying bugs, the SProCKit input system requires all allowed values for input parameters to be declared. This can happen in any source file through static initialization macros. Only one invocation is allowed per source file, but keywords can be registered in as many source files as desired. The macro is used in the global namespace:
+As stated previously, SProCKit actually implements all the machinery for parameter files. This is not part of the SST-macro core. To avoid annoying bugs, the SProCKit input system provides mechanisms for having allowed values be declared ahead of time. This can happen in any source file through static initialization macros. Only one invocation is allowed per source file, but keywords can be registered in as many source files as desired. The macro is used in the global namespace:
 
 ````
 RegisterKeywords("nx", "ny", "nz");
 ````
 This registers some basic keywords that might be used in a 3D grid application.
+If strict mode is turned on, any parameters in the input file not matching a known parameter will produce an error.
 
 In many cases a parameter is an enumerated value or fits a pattern. SProCKit allows regular expressions to be declared as valid patterns for a keyword.
 
@@ -345,217 +341,11 @@ Now, any keywords matching the regular expression will be considered valid.
 
 
 
-### Section 3.1: Class Style<a name="sec:style"></a>
-
-
-
-#### 3.1.1: Basic Class<a name="subsec:basicClass"></a>
-
-Most classes are manually managed, being explicitly deleted.  Whenever possible, smart pointers should be avoided since they create thread-safety headaches. For cases where manual deletion is cumbersome, classes in SST-macro can inherit from the top-level class `ptr_type`, which exists in `namespace sprockit`. The examples here can be found in the code repository in `tutorials/programming/basic`.
-
-To begin, you just need to include the appropriate header file, declare the namespace desired, and start the class declaration (see `illustration.h`).
-
-````
-#include <sprockit/ptr_type.h>
-
-namespace sstmac { namespace tutorial {
-
-class illustration :
-  public sprockit::ptr_type
-{
-````
-To simplify reading of the code (i.e. not typing `sprockit::refcount_ptr` everywhere), every class is required to typedef itself.
-
-````
-public:
-  typedef sprockit::refcount_ptr<illustration> ptr;
-  typedef sprockit::refcount_ptr<const illustration> const_ptr;
-````
-The reference-counted pointer type can now be used as `illustration::ptr`.
-
-After declaring public typedefs, the public function interface can be declared. Every `ptr_type` class that is instantiated must implement a `to_string` function, mostly used for debugging purposes.
-
-````
-public:
-  std::string to_string() const override {
-    return "message class";
-   }
-````
-
-Public set/get functions can be added for member variables, if desired. We have generally followed snake\_case, using lower-case letters and underscores.
-
-````
-std::string message() const {
-    return message_;
-   }
-
-void set_message(const std::string& msg){
-    message_ = msg;
-  }
-````
-Unfortunately, amongst the various developers, a uniform style was never agreed.
-Some accessor functions could be called `get_message`, but most avoid the prefix and would be called just `message`.
-After any `private`/`protected` functions, member variables can be declared.
-SST-macro developers have not historically been very strict with use of `protected` vs. `private` for members, typically using `protected` as a default for convenience.
-
-NOTE: We already have our first style violation here.  The entire class is implemented here in a header file. In general, unless a trivial function like set/get, put the function implementation into a .cc file.
-
-#### 3.1.2: Inheritance and Parent Classes<a name="subsec:inheritance"></a>
-
-We can also work through an example with inheritance. If you are going to use smart pointers, inheritance is somewhat tricky. Here we demonstrate in detail how to use smart pointers with virtual inheritance, which is a scenario that often occurs with the `sst_message` class. Many classes will never actually be instantiated in SST-macro - they are virtual classes defining an abstract interface. In the file `gem.h`, we define the `gem` abstract interface. Again, we include the header, declare namespaces, and declare the class.
-
-````
-#include <sprockit/ptr_type.h>
-
-namespace sstmac { namespace tutorial {
-
-class gem :
-  virtual public sprockit::ptr_type
-{
-````
-We note here the use of virtual inheritance, which will become important later.
-In general, you should almost always use virtual inheritance from `ptr_type`.
-Even though this class is not a complete type (pure virtual functions), we still need the public pointer typedefs.
-
-````
-public:
-  typedef sprockit::refcount_ptr<gem> ptr;
-  typedef sprockit::refcount_ptr<const gem> const_ptr;
-````
-We then define the abstract `gem` interface
-
-````
-public:
-  virtual int value() const = 0;
-
-virtual ~gem(){}
-````
-There is no static `construct` function!
-The static construct function
-is a signal that the class is a complete-type, with all virtual methods implemented.
-Because of C++ destructors for abstract classes, you must define a virtual destructor for every parent class - even if it does nothing.
-Without this, the memory management system will not work correctly.
-Many tutorials on the subtleties of virtual destructors can be found online.
-
-We can repeat the same process for a new abstract interface called `mineral`. Declare the class:
-
-````
-#include <sprockit/ptr_type.h>
-
-namespace sstmac { namespace tutorial {
-
-class mineral :
-    virtual public sprockit::ptr_type
-{
-````
-Again, we use virtual inheritance. We declare public typedefs:
-
-````
-public:
-  typedef sprockit::refcount_ptr<mineral> ptr;
-  typedef sprockit::refcount_ptr<const mineral> const_ptr;
-````
-We then define the abstract `mineral` interface:
-
-````
-public:
-  virtual std::string structure() const = 0;
-
-virtual ~mineral(){}
-````
-
-Now we want to create a specific instance of a `gem` and `mineral`.
-
-````
-#include "gem.h"
-#include "mineral.h"
-
-namespace sstmac { namespace tutorial {
-
-class diamond :
-    public gem,
-    public mineral
-{
-````
-The reason for using virtual inheritance is now evident.
-The `diamond` class is going to implement both the `gem` and `mineral` interfaces.
-However, both classes separately inherit from `ptr_type`.
-We thus have the multiple inheritance diamond problem. 
-For this reason, both parent classes must virtually inherit from `ptr_type`.
-Most of this discussion is just a basic C++ tutorial without really being SST-macro specific.
-However, this diamond problem is so ubiquitous with `ptr_type`, it merits a discussion here in the programmer's reference.
-
-We can now fill out the class.  First, we have the public typedefs
-
-````
-public:
-  typedef sprockit::refcount_ptr<diamond> ptr;
-  typedef sprockit::refcount_ptr<const diamond> const_ptr;
-````
-
-The `ptr_type` class requires we add a `to_string` function
-
-````
-std::string to_string() const override {
-  return "diamond";
-}
-````
-
-We now complete the gem interface
-
-````
-int value() const override {
-  return num_carats_ * 100;
-}
-````
-
-and the mineral interface
-````
-std::string structure() const override {
-  return "tetrahedral carbon";
-}
-````
-
-And the constructor
-
-````
-diamond(num_carats)
-   : num_carats_(num_carats)
-{
-}
-````
-
-Finally, we declare member variables
-
-````
-protected:
-  int num_carats_;
-````
-
-#### 3.1.3: Exceptions<a name="classes:style:basic:exceptions"></a>
-
-
-
-The `ptr_type.h` header file automatically includes a common set of exceptions, all in `namespace sprockit`. The most notable are:
-
--   `value_error`: A parameter value is wrong
--   `unimplemented_error`: A place-holder to indicate this function is not valid or not yet done
--   `illformed_error`: A catch-all for anything that fails a sanity check
--   `null_error`: A null object was received
-SProCKit provides a macro for throwing exceptions.
-It should always be used since they provide extra metadata to the exception like file and line number.
-The macro, `spkt_throw_printf`, takes two mandatory arguments: the exception type and an exception message.
-An arbitrary number of arguments can be given, that get passed a `printf` invocation, e.g.
-
-````
-spkt_throw_printf(value_error, "invalid number of carats %d", num_carats_);
-````
-
-### Section 3.2: Factory Types<a name="sec:factory"></a>
+### Section 3.1: Factory Types<a name="sec:factory"></a>
 
 We here introduce factory types, i.e. polymorphic types linked to keywords in the input file. String parameters are linked to a lookup table, finding a factory that produces the desired type. In this way, the user can swap in and out C++ classes using just the input file. There are many distinct factory types relating to the different hardware components. There are factories for topology, NIC, node, memory, switch, routing algorithm - the list goes on. Here show how to declare a new factory type and implement various polymorphic instances. The example files can be found in `tutorials/programming/factories`.
 
-#### 3.2.1: Usage<a name="subsec:usage"></a>
+#### 3.1.1: Usage<a name="subsec:usage"></a>
 
 Before looking at how to implement factory types, let's look at how they are used. Here we consider the example of an abstract interface called `actor`. The code example is found in `main.cc`. The file begins
 
@@ -571,8 +361,8 @@ int main(int argc, char **argv)
 {
 ````
 The details of declaring and using external apps is found in the user's manual.
-From here it should be apparent that we defined a new application with name `rob_reiner`
-which is invoked via the `main` function.
+Briefly, SST-macro (using the `sstmac_app_name` define) reroutes the main function to be callable within a simulation.
+From here it should be apparent that we defined a new application with name `rob_reiner`.
 Inside the main function, we create an object of type `actor`.
 
 ````
@@ -587,10 +377,14 @@ The input file contains several parameters related to constructing a machine mod
 The important parameters are:
 
 ````
-app1.name = rob_reiner
-biggest_fan = jeremy_wilke
-actor_name = patinkin
-sword_hand = right
+node {
+ app1 {
+  name = rob_reiner
+  biggest_fan = jeremy_wilke
+  actor_name = patinkin
+  sword_hand = right
+ }
+}
 ````
 
 Using the Makefile in the directory, if we compile and run the resulting executable we get the output
@@ -604,10 +398,14 @@ SST/macro ran for       0.0025 seconds
 If we change the parameters:
 
 ````
-app1.name = rob_reiner
-biggest_fan = jeremy_wilke
-actor_name = guest
-num_fingers = 6
+node {
+ app1 {
+  name = rob_reiner
+  biggest_fan = jeremy_wilke
+  actor_name = guest
+  num_fingers = 6
+ }
+}
 ````
 
 we now get the output
@@ -621,7 +419,7 @@ SST/macro ran for       0.0025 seconds
 
 Changing the values produces a different class type and different behavior. Thus we can manage polymorphic types by changing the input file.
 
-#### 3.2.2: Base Class<a name="subsec:baseClass"></a>
+#### 3.1.2: Base Class<a name="subsec:baseClass"></a>
 
 To declare a new factory type, you must include the factory header file
 
@@ -630,8 +428,7 @@ To declare a new factory type, you must include the factory header file
 
 namespace sstmac { namespace tutorial {
 
-class actor
-{
+class actor {
 ````
 
 We now define the public interface for the actor class
@@ -680,7 +477,7 @@ ImplementFactory(sstmac::tutorial::actor);
 that defines certain symbols needed for implementing the new factory type.
 For subtle reasons, this must be done in the global namespace.
 
-#### 3.2.3: Child Class<a name="subsec:childClass"></a>
+#### 3.1.3: Child Class<a name="subsec:childClass"></a>
 
 Let's now look at a fully implemented, complete actor type.  We declare it
 
@@ -689,11 +486,10 @@ Let's now look at a fully implemented, complete actor type.  We declare it
 
 namespace sstmac { namespace tutorial {
 
-class mandy_patinkin :
-    public actor
-{
- public:
-  mandy_patinkin(sprockit::sim_parameters* params);
+class mandy_patinkin : public actor { public: mandy_patinkin(sprockit::sim_parameters* params);
+
+FactoryRegister("patinkin", actor, mandy_patinkin,
+    "He's on one of those shows now... NCIS? CSI?");
 ````
 
 We have a single member variable
@@ -715,21 +511,7 @@ And finally, to satisfy the `actor` public interface, we need
 virtual void act() override;
 ````
 
-Moving to the implementation, we must first register the new type using the macro
-
-````
-namespace sstmac {
-    namespace tutorial {
-
-SpktRegister("patinkin", actor, mandy_patinkin,
-    "He's on one of those shows now... NCIS? CSI?");
-````
-The first argument is the string descriptor that will be linked to the type.
-The second argument is the parent, base class. 
-The third argument is the specific child type.
-Finally, a documentation string should be given with a brief description.
-Whatever string value is registered here will be used in the input file to create the type.
-We can now implement the constructor:
+In the class declaration, we need to invoke the macro `FactoryRegister` to register the new child class type with the given string identifier. The first argument is the string descriptor that will be linked to the type. The second argument is the parent base class. The third argument is the specific child type. Finally, a documentation string should be given with a brief description. We can now implement the constructor:
 
 ````
 mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params) :
@@ -738,7 +520,7 @@ mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params) :
   sword_hand_ = params->get_param("sword_hand");
 
 if (sword_hand_ == "left"){
-    spkt_throw(value_error, "I am not left handed!");
+    sprockit::abort("I am not left handed!");
   }
   else if (sword_hand_ != "right"){
       spkt_abort_printf(value_error,
@@ -759,10 +541,6 @@ void mandy_patinkin::act()
 ````
 
 Another example `guest.h` and `guest.cc` in the code folder shows the implementation for the second class.
-
-#### 3.2.4: External Linkage<a name="subsec:linkage"></a>
-
-If you glance at the Makefile, you will see how and why the executable is created. A compiler wrapper `sst++` points the makefile to the SST-macro libraries, including a library `libsstmac_main` that actually implements the `main` routine and the SST-macro driver. By creating another executable, arbitrary code can be linked together with the core SST-macro framework. The same SST-macro driver is invoked in the external executable as would be invoked by the default main executable.
 
 
 
@@ -809,13 +587,13 @@ The execute function is invoked by the `event_manager` to run the underlying eve
 
 #### 4.1.1: Event Handlers<a name="subsec:eventHandlers"></a>
 
-In most cases, the event is represented as a message sent to an object called an `event_handler at a specific simulation time. In handling the message, the event handlers change their internal state and may cause more events by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time. The workhorses for SST-macro are therefore classes that inherit from \inlinecode{event_handler. The only method that must be implemented is
+In most cases, the event is represented as an event sent to an object called an `event_handler at a specific simulation time. In handling the event, the event handlers change their internal state and may cause more events by scheduling new events at other event handlers (or scheduling messages to itself) at a future time. The workhorses for SST-macro are therefore classes that inherit from \inlinecode{event_handler. The only method that must be implemented is
 
 ````
 void handle(event* ev);
 ````
 The function is the common interface for numerous different operations from network injection to memory access to MPI operations.
-In general, objects have two "directions" for the action - send or receive.
+In general, objects have two ``directions" for the action - send or receive.
 A NIC could "handle" a packet by injecting it into the network or "handle" a message by reporting up the network stack the message has arrived.
 In most cases, the handled message must therefore carry with it some notion of directionality or final destination.
 An event handler will therefore either process the message and delete the message, or, if that handler is not the final destination, forward it along.
@@ -841,11 +619,11 @@ void handler_event_queue_entry::execute()
 }
 ````
 
-Objects can inherit from `event_handler` to create new event handlers. Alternatively (and probably the most common usage in the SST/macro core) is on-the-fly creation of event handlers through C++ templates. The interface does not actually require using C++ templates. The function `new_handler` defined in `event_callback.h` has the prototype:
+Objects can inherit from `event_handler` to create new event handlers. Preferred usage, though, is on-the-fly creation of event handlers through C++ templates. The interface does not actually expose C++ templates. The function `new_handler` defined in `event_callback.h` has the prototype:
 
 ````
 template<class Cls, typename Fxn, class... Args>
-event_handler*
+event_handler* 
 new_handler(Cls* cls, Fxn fxn, const Args&... args);
 ````
 
@@ -874,34 +652,6 @@ When the time arrives for the event, the member function will be invoked
 ````
 a->act(ev, 42);
 ````
-
-\subsection{Arbitrary Events} In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an `event_handler type. A generic macro for creating event queue entries from any class member function is provided in the file `event_callback.h` similar to the creation of C++ template event handlers above. For example, the MPI server creates an event
-
-````
-mpi_queue_recv_request* req = next_request();
-event_callback* ev = new_event(this, &mpi_queue::start_recv, req);
-````
-The new event macro takes as first argument an object and second argument a member function pointer to be invoked when the event is run.
-The remaining arguments are an arbitrary-length list of parameters of any type - they don't need to be messages. 
-These parameters should match the member function prototype. 
-For example, the prototype
-
-````
-void mpi_queue::start_recv(mpi_queue_recv_request* req)
-{
-  ...
-`
-````
-takes a single `recv_request` object as input.
-This eases the programming burden in two ways.
-First, it avoids having to always create `event_handler types.
-Without template events, you would have to create a new class the inherits from \inlinecode{event_handler that performs a single, desired action.
-Second, it helps direct messages to the right place.  A single \inlinecode{event_handler might process many different types of events or objects.
-If every event went to a single \inlinecode{handle` method, the handle method would need either a long if-else block or switch to sort messages.
-The event would also need to be dynamic cast to the correct type.
-By creating event functors, the message can be immediately directed to the correct type and correct action.
-
-For generic events, one must ensure the event is scheduled to the same node and does not cross any network boundaries. The event created must be run on the same logical process.
 
 #### 4.1.2: Event Heap/Map<a name="subsec:eventHeap"></a>
 
@@ -956,15 +706,13 @@ With a basic overview of how the simulation proceeds, we can now look at the act
 class connectable
 {
  public:
-  virtual void
-  connect_output(
+  virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod,
     event_handler* handler) = 0;
 
-virtual void connect_input( sprockit::sim_parameters* params, int src_outport, int dst_inport, connectable* mod, event_handler* handler) = 0;
+virtual void connect_input( sprockit::sim_parameters* params, int src_outport, int dst_inport, event_handler* handler) = 0;
 
 };
 ````
@@ -1149,8 +897,8 @@ Not all topologies are "regular" like a torus.  Ad hoc computer networks (like t
 The most important functions in the `topology` class are
 
 ````
-class topology
-{
+class topology {
+...
 virtual bool uniform_network_ports() const = 0;
 
 virtual bool uniform_switches_non_uniform_network_ports() const = 0;
@@ -1210,8 +958,7 @@ The most important information is the outport, telling a switch which port to ro
 The router has a simple public interface
 
 ````
-class router
-{
+class router {
 ...
   virtual void route(packet* pkt);
 

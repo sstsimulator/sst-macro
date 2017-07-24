@@ -2,16 +2,51 @@
 
 \chapter{Introduction}\label{chapter:intro}
 
-\section{Use of C++/Boost}\label{sec:boost}
+\section{Overview}
+\label{sec:intro:overview}
+
+The \sstmacro software package provides a simulator for large-scale parallel computer architectures.
+\sstmacro is a component within the Structural Simulation Toolkit (SST).
+SST itself provides the abstract discrete event interface.
+\sstmacro implements specifically a coarse-grained simulator for distributed-memory applications. 
+
+The simulator is driven from either a trace file or skeleton application. 
+Simulation can be broadly categorized as either off-line or on-line.
+Off-line simulators typically first run a full parallel application on a real machine,
+recording certain communication and computation events to a simulation trace.
+This event trace can then be replayed post-mortem in the simulator.
+
+For large, system-level experiments with thousands of network endpoints, high-accuracy cycle-accurate simulation is not possible,
+or at least not convenient.
+Simulation requires coarse-grained approximations to be practical.
+\sstmacro is therefore designed for specific cost/accuracy tradeoffs.
+
+The developer's manual broadly covers the two main aspects of creating new components.
+\begin{itemize}
+\item Setting up components to match the \inlinecode{connectable} interface linking components together via ports and event handlers
+\item Registering components with the factory system to make them usable in simulation input files
+\end{itemize}
+
+\section{What To Expect In The Developer's Manual}
+The developer's manual is mainly designed for those who wish to extend the simulator or understand its internals.
+This user's manual, in contrast, is mainly designed for those who wish to perform experiments with \emph{new} applications using \emph{existing} hardware models.
+The user's manual therefore covers building and running the core set of SST/macro features.
+The developer's manual covers what you need to know to add new features.
+The SST design is such that external components are built into shared object \inlinecode{.so} files.
+
+\section{Use of C++}
 SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event simulator designed for macroscale (system-level) experiments in HPC. 
 SST/macro is an object-oriented C++ code that makes heavy use of dynamic types and polymorphism.
 While a great deal of template machinery exists under the hood, nearly all users and even most developers will never actually need to interact with any C++ templates.
 Most template wizardry is hidden in easy-to-use macros.
 While C++ allows a great deal of flexibility in syntax and code structure, we are striving towards a unified coding style.
 
+Boost is no longer required or even used.
+Some C++11 features like \inlinecode{unordered_map} and \inlinecode{shared_ptr} are used heavily throughout the code.
+
 \section{Polymorphism and Modularity}\label{sec:polymorphism}
-The simulation progresses with different modules (classes) exchanging messages.
-In general, when module 1 sendings a message to module 2, module 1 only sees an abstract interface for module 2.
+The simulation progresses with different modules (classes) exchanging events or messages.
+In general, when module 1 sends a message to module 2, module 1 only sees an abstract interface for module 2.
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
 Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences.
 The ``workhorse'' of SST/macro is the base \inlinecode{event} and \inlinecode{message} classes.
@@ -22,7 +57,8 @@ void handle(event* ev){
 ...
 }
 \end{CppCode}
-The prototype therefore accepts \emph{any} event type. The class \inlinecode{message} is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
+The prototype therefore accepts \emph{any} event type. 
+The class \inlinecode{message} is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
 Misusing types in SST/macro is \emph{not} a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
@@ -69,17 +105,16 @@ where conflicts require a prefix. Functions for modifying variables are prefixed
 \item Forward declarations.  There are a lot of interrelated classes, often creating circular dependencies. In addition, you can add up with an explosion of include files, often involving classes that are never used in a given \inlineshell{.cc} file.  For cleanliness of compilation, you will find many \inlineshell{*_fwd.h} files throughout the code. If you need a forward declaration, we encourage including this header file rather than ad hoc forward declarations throughout the code.
 \end{itemize}
 
-\section{Code Style Reformatting}\label{sec:styleReformat}
 Since we respect the sensitivity of code-style wars, we include scripts that demonstrate basic usage of the C++ code formatting tool \emph{astyle}.
 This can be downloaded from {http://astyle.sourceforge.net}. 
 A python script called \inlineshell{fix_style} is included in the top-level bin directory.
 It recursively reformats all files in a given directory and its subdirectories.
 
-\section{Memory Allocation}\label{sec:memalloc}
-To improve performance, custom memory allocation strategies can be employed in C++.
-At present, a global custom \inlinecode{operator new} can be optionally activated which is optimized for large pages and memory pools.
-At present, no class-specific implementation of \inlinecode{operator new} is used.
-However, we may soon implement custom allocation techniques to improve things like cache/TLB efficiency.
-This is the only major change expected to SST/macro that would affect externally developed modules - and even here the expected modifications would be quite small.
-Because custom allocation schemes may be used, all externally developed code should use \inlinecode{operator new}, rather than \emph{not}  \inlinecode{malloc} or \inlinecode{mmap}, unless allocating very large arrays.
+%\section{Memory Allocation}\label{sec:memalloc}
+%To improve performance, custom memory allocation strategies can be employed in C++.
+%At present, a global custom \inlinecode{operator new} can be optionally activated which is optimized for large pages and memory pools.
+%At present, no class-specific implementation of \inlinecode{operator new} is used.
+%However, we may soon implement custom allocation techniques to improve things like cache/TLB efficiency.
+%This is the only major change expected to SST/macro that would affect externally developed modules - and even here the expected modifications would be quite small.
+%Because custom allocation schemes may be used, all externally developed code should use \inlinecode{operator new}, rather than \emph{not}  \inlinecode{malloc} or \inlinecode{mmap}, unless allocating very large arrays.
 

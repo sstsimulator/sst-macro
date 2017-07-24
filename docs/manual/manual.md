@@ -253,7 +253,7 @@ In skeletonization or simulation, SST/macro will mimic as closely as possible th
 but avoids as much computation and as much memory allocation as possible.
 This allows to pack in as many simulated MPI ranks as possible into your single `sstmac` process.
 
-\section{What To Expect In The Manual}
+\section{What To Expect In The User's Manual}
 This user's manual is mainly designed for those who wish to perform experiments with new applications using existing hardware models.
 This has been the dominant use case and we therefore classify those doing application experiments as "users" and those making new hardware models "developers."
 Getting applications to run in SST/macro should be very straightforward and requires no knowledge of simulator internal code.

@@ -1,0 +1,168 @@
+% !TEX root = developer.tex
+
+\chapter{\sstmacro Connectable Interface}\label{chapter:connectables}
+
+\section{Required Functions}
+
+Hardware components communicate via ports. Component 1 sends an event out on one port.
+Component 2 receive the event in on another port.
+During simulation setup, components must have their ports ``connected'' together.
+Creating a connection or link from an output port to an input port requires registering event handlers for each end of the link.
+The source component sends events out to a payload handler. 
+Upon arriving at the destination component, the payload handler is invoked for that event.
+After receiving the event, the destination component can optionally send an ack or credit back to the source.
+Thus a link can also have credit handlers registered.
+
+\sstmacro actually provides a thin wrapper around the core SST interface.
+In \sstmacro, ports are integers.
+In SST core, ports are labeled by strings.
+Similarly, payload and credit handlers are not automatically set up in SST core.
+\sstmacro forces links and handlers to be set up automatically.
+
+Every hardware component in \sstmacro should inherit from \inlinecode{connectable_component} in \inlinecode{connection.h}
+There are four critical abstract functions in the virtual interface. First:
+
+\begin{CppCode}
+  virtual void connect_output(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    event_handler* payload_handler) = 0;
+\end{CppCode}
+This is invoked on the source component of a link giving the port numbers on either end of the link.
+It gives the source component the payload handler that will be invoked on the destination component.
+The final complication here is the parameters object.
+The parameters passed in here are any port-specific parameters.
+These include all the default parameters for the port (that may not be port-specific)
+plus all parameters in the namespace \inlinecode{portN} for a given port number.
+Parameter namespaces are covered in the user's manual.
+
+The next connection function is:
+\begin{CppCode}
+  virtual void connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    event_handler* credit_handler) = 0;
+\end{CppCode}
+Similar to \inlinecode{connect_output}, this is invoked on the destination component of a link.
+Instead of giving a payload handler to receive new events,
+it receives a credit handler that the destination should send acks and credits to.
+The parameters work the same way as the output parameters.
+
+But where do the handlers come from? Connectable objects must implement:
+
+\begin{CppCode}
+virtual link_handler* credit_handler(int port) const = 0;
+
+virtual link_handler* payload_handler(int port) const = 0;
+\end{CppCode}
+
+These \inlinecode{link_handler} objects are a special instance of \inlinecode{event_handler}.
+Each class must return the correct payload and credit handlers for each valid port.
+The handler and port will then be passed to the corresponding \inlinecode{connect_output} or \inlinecode{connect_input} function.
+
+\inlinecode{link_handler} objects are created as functors for particular member functions of a class.
+They are created through the helper function:
+
+\begin{CppCode}
+template <class T, class Fxn>
+link_handler* new_link_handler(const T* t, Fxn fxn){
+  return new_handler<T,Fxn>(const_cast<T*>(t), fxn);
+}
+\end{CppCode}
+Given a class \inlinecode{Test} with a member function
+
+\begin{CppCode}
+void Test::handle_payload(event* ev)
+\end{CppCode}
+we could create the appropriate \inlinecode{link_handler} as
+
+\begin{CppCode}
+link_handler* Test::payload_handler(int port) const {
+  return new_link_handler(this, &Test::handle);
+}
+\end{CppCode}
+
+\section{Example External Component}
+An example component source file, corresponding Makefile for generating the external library, and parameter file demonstrating its usage can be found in \inlineshell{skeletons/sst_component_example}.
+Some critical things to note from the file \inlineshell{component.cc} are the component registration macro and the Python module generation.
+The Python module generation is specific to SST core and is not part of \sstmacro.
+
+The component registration macro is:
+
+\begin{CppCode}
+RegisterComponent("dummy", test_component, dummy_switch,
+       "test", COMPONENT_CATEGORY_NETWORK,
+       "A dummy switch for teaching")
+\end{CppCode}
+This is similar to the factory registration macro, but extends it for the special case of independent hardware components.
+If the component registration macro is used, then the factory registration macro is not required.
+The first field is a unique string identifier for the component.
+The second field is the parent factory type.
+The third field is the actual class name.
+The fourth field is the module name matching the Python module name at the top of the \inlinecode{component.cc} file.
+The fifth field is a generic component category.
+The currently allowed categories are defined in SST core as:
+
+\begin{CppCode}
+#define COMPONENT_CATEGORY_UNCATEGORIZED  0x00
+#define COMPONENT_CATEGORY_PROCESSOR      0x01
+#define COMPONENT_CATEGORY_MEMORY         0x02
+#define COMPONENT_CATEGORY_NETWORK        0x04
+#define COMPONENT_CATEGORY_SYSTEM         0x08
+\end{CppCode}
+The final field is a documentation string.
+
+All of the required connection functions are implemented in \inlinecode{component.cc}.
+
+\subsection{Python configuration}
+The Python file \inlineshell{run.py} in the same folder shows the simplest possible setup with two components connected by a single both on port 0.
+First, we import the necessary modules. The file \inlineshell{component.cc} implements a module called \inlinecode{test} that we load by calling \inlinecode{import sst.test}.
+We also load all Python functions provided by the macro library.
+
+\begin{CppCode}
+import sst
+from sst.macro import *
+import sst.test
+\end{CppCode}
+We then make components, e.g.
+
+\begin{CppCode}
+latency="1us"
+comp1 = sst.Component("1", "test.dummy_switch")
+comp1.addParam("id", 1)
+comp1.addParam("latency", latency)
+\end{CppCode}
+and another component
+
+\begin{CppCode}
+comp2 = sst.Component("2", "test.dummy_switch")
+comp2.addParam("id", 2)
+comp2.addParam("latency", latency)
+\end{CppCode}
+And finally connect them with a link using a \sstmacro helper function:
+
+\begin{CppCode}
+port=0
+comp1Id=1
+comp2Id=2
+makeBiNetworkLink(comp1,comp1Id,port,
+                  comp2,comp2Id,port,
+                  latency)
+\end{CppCode}
+The code in the Python script causes \inlinecode{connect_output} and \inlinecode{connect_input} to be invoked on port 0 for each of the components.
+
+\subsection{Makefile}
+The Makefile uses compiler wrappers installed with \sstmacro.
+These differ from the compiler wrappers used for skeleton applications discussed in the user's manual.
+
+\begin{ViFile}
+CXX :=    libsst++
+CC :=     libsstcc
+CXXFLAGS := -fPIC
+\end{ViFile}
+All components should be compiled with \inlineshell{-fPIC} for use in shared library.
+Making generates a \inlinecode{libtest.so} that can be loaded using the Python setup or through the \inlinefile{external_libs} parameter in a \inlinefile{.ini} file.
+
+
