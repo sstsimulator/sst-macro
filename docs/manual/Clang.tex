@@ -50,17 +50,17 @@ The compiler wrapper will only redirect global variables that it knows should de
 All global variables found in source files will be redirected.
 \inlinecode{extern} global variables found in header files are more difficult.
 Certain system global variables like \inlinecode{stderr} should not be modified and so are left as global variable constants.
-By default, global variables in a header file area NOT redirected unless explicitly specified in a header configuration file.
+By default, global variables in a header file are NOT redirected unless explicitly specified in a header configuration file.
 The variable \inlineshell{SSTMAC_HEADERS} should give the full path of a file containing the list of header files.
 Header file paths in the file should be one per line and should be the full path, not a relative path.
 
 \subsubsection{SSTMAC\_DELETE\_TEMPS: Default 1}
 If non-zero, the compiler cleans up all temporary files. 
 If you wish to keep temporary files to view them for debugging, set to zero.
-All temporary, intermediate source files will not be deleted at the end of compilation.
+All temporary, intermediate source files will otherwise be deleted at the end of compilation.
 
 \section{Basic Replacement Pragmas}
-When skeletonization is active (see \inlineshell{SSTMAC_SKELETONIZE}, these pragmas will cause replacements in the original source code.
+When skeletonization is active (see \inlineshell{SSTMAC_SKELETONIZE}), these pragmas will cause replacements in the original source code.
 Pragmas appy to the next statement in the source code.
 For compound statements such as a for-loop with a multi-statement body, the pragma applies to the entire for-loop.
 \subsection{pragma sst delete: no arguments}
@@ -84,10 +84,10 @@ Consider an example from Lulesh.
    deltatime() = (Real_t(.5)*cbrt(volo(0)))/sqrt(Real_t(2.0)*einit);
 \end{CppCode}
 The function call \inlinecode{volo(0)} is not valid in the skeleton since volumes are not actually computed.
-Here we simply estimate that all cells have unit volume replacing \inlinecode{volo(0} with \inlinecode{1}.
+Here we simply estimate that all cells have unit volume replacing \inlinecode{volo(0)} with \inlinecode{1}.
 
 \subsection{pragma sst init [new\_value:string]}
-Can only apply to a binary equal operator assigning a value.
+This pragma can only apply to a binary equals operator assigning a value.
 The pragma changes the right-hand side to use the given new value.
 For example, in Lulesh:
 
@@ -96,16 +96,16 @@ For example, in Lulesh:
   destAddr = &domain.commDataSend[pmsg * maxPlaneComm] ;
 \end{CppCode}
 The send buffer \inlinecode{domain.commDataSend} is not allocated in the skeleton and thus is not valid to use.
-The pragma causes the skeleton to simply assign \inlinecode{destAddr} to \inlinecode{nullptr}.
+The pragma causes the skeleton to simply set \inlinecode{destAddr} to \inlinecode{nullptr}.
 
 \subsection{pragma sst return [new\_value:C++ expression]}
-Equivalent to \inlinecode{pragma sst init}. Replaces the target of a return statement with the given expression.
+Pragma is equivalent to \inlinecode{pragma sst init}. This replaces the target of a return statement with the given expression.
 This produces a compiler error if applied to anything but a return statement.
 
 \subsection{pragma sst keep}
 During the skeletonization process, some transformations occur automatically even without pragmas. 
-For example, all MPI calls have their input buffers converted to null pointers to indicate a simulated MPI call.
-If the MPI call should be emulated and actually deliver a real payload, the MPI call must be explicitly marked with \inlinecode{pragma keep}.
+For example, all MPI calls have input buffers converted to null pointers to indicate a simulated MPI call.
+If the MPI call should be emulated with real payloads, the MPI call must be explicitly marked with \inlinecode{pragma keep}.
 An example can be found in the HPCG skeleton:
 
 \begin{CppCode}
@@ -115,8 +115,8 @@ An example can be found in the HPCG skeleton:
 The actual allreduce operation is carried out, summing the the local number into the total number of nonzeroes.
 
 \subsection{pragma sst keep\_if [condition:C++ bool expression]}
-More control over whether a transformation is skipped can be provided by the \inlinecode{keep_if} program.
-An example can be found in CoMD.
+More control over whether transformations are skipped is provided by \inlinecode{keep_if}.
+An example is found in CoMD.
 
 \begin{CppCode}
 #pragma sst keep_if count < 16
@@ -126,7 +126,7 @@ Any small allreduce operations are kept.
 Any allreduce operations larger than a given cutoff are simulated without emulating the actual buffer operations.
 
 \subsection{pragma sst empty}
-Applied to functions. The function prototype is kept, but an empty body is inserted instead of the actual code.
+This pragma is applied to functions. The function prototype is kept, but an empty body is inserted instead of the actual code.
 This can be useful for deleting large blocks of computation inside a function.
 
 \subsection{pragma sst branch\_predict [condition:C++ expression]}
@@ -169,14 +169,14 @@ An example can be seen in CoMD:
 The array is not allocated and all statements operating on the array are deleted.
 
 This pragma is much more powerful than simply using \inlinecode{pragma sst new}.
-\inlinecode{pragma sst new} simply turns off a given memory allocation setting it a null value.
+\inlinecode{pragma sst new} simply turns off a given memory allocation setting it to a null value.
 If the array is dereferenced later in code, this causes a segmentation fault.
 By marking a declaration as null, the compiler can flag where segmentation faults would occur when running the skeleton.
 
 In most cases, all operations involving the null variable are deleted.
 However, there may be cases where the compiler may decide deleting an operation cannot be done automatically since
 it may affect control flow, e.g., if the variable is used inside an if-statement.
-When this occurs, a compiler error is throw flagging where the ambiguity occurs.
+When this occurs, a compiler error is thrown flagging where the ambiguity occurs.
 Another pragma must then be applied to that statement to tell the compiler how to proceed.
 
 \subsection{pragma sst null\_type [type alias] [list allowed functions]}
