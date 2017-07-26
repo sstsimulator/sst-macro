@@ -247,7 +247,7 @@ OTF2TraceReplayApp::initialize_event_reader() {
 
   if (number_of_locations <= rank) {
     cerr << "ERROR: Rank " << rank << " cannot participate in a trace replay with " << number_of_locations << " ranks" << endl;
-    spkt_throw(sprockit::io_error, "ASSERT FAILED:", " Number of MPI ranks must match the number of trace files.");
+    spkt_abort_printf("ASSERT FAILED: Number of MPI ranks must match the number of trace files");
   }
 
   struct c_vector* locations = (c_vector*) malloc(sizeof(*locations) + number_of_locations * sizeof(*locations->members));

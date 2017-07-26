@@ -69,8 +69,7 @@ void
 serial_runtime::gather(void *send_buffer, int num_bytes, void *recv_buffer, int root)
 {
   if (root != 0){
-    spkt_throw(sprockit::value_error,
-        "serial_runtime::gather: received gather request for non-zero root - there is only one proc");
+    sprockit::abort("serial_runtime::gather: received gather request for non-zero root - there is only one proc");
   }
   ::memcpy(recv_buffer, send_buffer, num_bytes);
 }
@@ -84,15 +83,13 @@ serial_runtime::allgather(void *send_buffer, int num_bytes, void *recv_buffer)
 void
 serial_runtime::send(int dst, void *buffer, int buffer_size)
 {
-  spkt_throw(sprockit::illformed_error,
-    "serial_runtime::send: should never be called - who would I send to?");
+  sprockit::abort("serial_runtime::send: should never be called - who would I send to?");
 }
 
 void
 serial_runtime::recv(int src, void *buffer, int buffer_size)
 {
-  spkt_throw(sprockit::illformed_error,
-    "serial_runtime::recv: should never be called - who would I recv from?");
+  sprockit::abort("serial_runtime::recv: should never be called - who would I recv from?");
 }
 
 void

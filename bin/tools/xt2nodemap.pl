@@ -132,7 +132,7 @@ sub update_node_list {
                 $info->{z_coord},
                 0);
     }
-    elsif ($topology eq "hdtorus"){
+    elsif ($topology eq "torus"){
         $o = sprintf("nid%05d %d %d %d %d",
                 $info->{processor_id},
                 $info->{x_coord},$info->{y_coord},$info->{z_coord},
@@ -158,7 +158,7 @@ sub update_max {
 # the output needs to be different depending on the desired topology
 # the topology of the network is not included in the CrayXT db file
 # and so must be given by the user
-my $topology = "hdtorus"; #default to hdtorus
+my $topology = "torus"; #default to torus
 use Getopt::Long;
 GetOptions('topology|t=s' => \$topology);
 

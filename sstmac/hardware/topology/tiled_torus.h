@@ -45,15 +45,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef TILED_TORUS_H
 #define TILED_TORUS_H
 
-#include <sstmac/hardware/topology/hdtorus.h>
+#include <sstmac/hardware/topology/torus.h>
 #include <sstmac/hardware/topology/multipath_topology.h>
 
 namespace sstmac {
 namespace hw {
 
-class tiled_torus : public hdtorus, public multipath_topology
+class tiled_torus : public torus, public multipath_topology
 {
-  FactoryRegister("tiled_torus | tiled_hdtorus", topology, tiled_torus)
+  FactoryRegister("tiled_torus | tiled_torus", topology, tiled_torus)
  public:
   tiled_torus(sprockit::sim_parameters *params);
 

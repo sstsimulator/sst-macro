@@ -75,14 +75,12 @@ class debug_int
       fields = 0;
     }
 
-    debug_int&
-    operator~(){
+    debug_int& operator~(){
       fields = ~fields;
       return *this;
     }
 
-    void
-    init(int slot){
+    void init(int slot){
       fields = (1ull) << slot;
     }
 
@@ -95,8 +93,7 @@ class debug_int
       return fields;
     }
 
-    std::string
-    to_string() const;
+    std::string to_string() const;
 
     uint64_t fields;
 };
@@ -140,8 +137,7 @@ class debug
   static std::map<std::string, std::string>* docstrings_;
   static debug_prefix_fxn* prefix_fxn;
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
   /** The bitmask corresponding to all slots that were active at the beginning */
   static debug_int start_bitmask_;
@@ -153,29 +149,25 @@ class debug
   /**
    * @brief turn_off Turn off all debug printing for all flags
    */
-  static void
-  turn_off();
+  static void turn_off();
 
   /**
    * @brief turn_on All debug flags that have been registered or
    * previously turned on are reactivated
    */
-  static void
-  turn_on();
+  static void turn_on();
 
   /**
    * @brief turn_off Turn off a specific type of debug output
    * @param di The identifier for the debug printing to deactivate
    */
-  static void
-  turn_off(debug_int& di);
+  static void turn_off(debug_int& di);
 
   /**
    * @brief turn_on Turn on a specific type of debug output
    * @param di The identifier for the debug printing to activate
    */
-  static void
-  turn_on(debug_int& di);
+  static void turn_on(debug_int& di);
 
   /**
    * @brief register_debug_slot Register a new debug slot that can be
@@ -187,8 +179,7 @@ class debug
    * @param docstring An docstring describing the output produced by the debug
    *                  when the debug slot is active
    */
-  static void
-  register_debug_slot(const std::string& str,
+  static void register_debug_slot(const std::string& str,
                       debug_int* dint_ptr,
                       const std::string& docstring);
 
@@ -198,8 +189,7 @@ class debug
    *                 the associated string name
    * @param str      The string name associated with a debug slot
    */
-  static void
-  turn_on(const std::string& str);
+  static void turn_on(const std::string& str);
 
 
   /**
@@ -210,8 +200,7 @@ class debug
    * @param str The string to print after prefix metadata
    * @param os  The stream to print to
    */
-  static void
-  print_debug_string(const std::string& str, std::ostream& os = std::cout);
+  static void print_debug_string(const std::string& str, std::ostream& os = std::cout);
 
   /**
    * @brief slot_active Determine whether a debug slot is active. This is usually
@@ -222,16 +211,14 @@ class debug
    * @return            Whether the slots in the input parameter match
    *                    any of the active debug slots
    */
-  static bool
-  slot_active(const debug_int& allowed);
+  static bool slot_active(const debug_int& allowed);
 
   /**
    * @brief print_all_debug_slots Print all of the possible debug slots
    *  registered with the debug system and any associated doc strings
    * @param os  The stream to print to
    */
-  static void
-  print_all_debug_slots(std::ostream& os = std::cout);
+  static void print_all_debug_slots(std::ostream& os = std::cout);
 
  private:
   /**
@@ -240,8 +227,7 @@ class debug
    *  are active. This method should never be called by external code
    * @param dint  A reference to the integer that must be assigned a value
    */
-  static void
-  assign_slot(debug_int& dint);
+  static void assign_slot(debug_int& dint);
 
 };
 

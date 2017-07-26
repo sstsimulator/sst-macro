@@ -56,9 +56,9 @@ There are generally two basic event types in \sstmacro, which we now introduce.
 
 \subsection{Event Handlers}
 \label{subsec:eventHandlers}
-In most cases, the event is represented as a message sent to an object called an \evhandler at a specific simulation time.
-In handling the message, the event handlers change their internal state and may cause more events
-by scheduling new messages at other event handlers (or scheduling messages to itself) at a future time.
+In most cases, the event is represented as an event sent to an object called an \evhandler at a specific simulation time.
+In handling the event, the event handlers change their internal state and may cause more events
+by scheduling new events at other event handlers (or scheduling messages to itself) at a future time.
 The workhorses for \sstmacro are therefore classes that inherit from \evhandler.
 The only method that must be implemented is
 
@@ -93,13 +93,13 @@ void handler_event_queue_entry::execute()
 \end{CppCode}
 
 Objects can inherit from \inlinecode{event_handler} to create new event handlers.
-Alternatively (and probably the most common usage in the SST/macro core) is on-the-fly creation of event handlers through C++ templates.
-The interface does not actually require using C++ templates.
+Preferred usage, though, is on-the-fly creation of event handlers through C++ templates.
+The interface does not actually expose C++ templates.
 The function \inlinecode{new_handler} defined in \inlineshell{event_callback.h} has the prototype:
 
 \begin{CppCode}
 template<class Cls, typename Fxn, class... Args>
-event_handler*
+event_handler* 
 new_handler(Cls* cls, Fxn fxn, const Args&... args);
 \end{CppCode}
 
@@ -130,37 +130,6 @@ When the time arrives for the event, the member function will be invoked
 a->act(ev, 42);
 \end{CppCode}
 
-\subsection{Arbitrary Events}
-In some cases, it can be inconvenient (and inefficient) to require every event to be funneled through an \evhandler type.
-A generic macro for creating event queue entries from any class member function is provided in the file \inlineshell{event_callback.h} similar to the creation of C++ template event handlers above.
-For example, the MPI server creates an event
-
-\begin{CppCode}
-mpi_queue_recv_request* req = next_request();
-event_callback* ev = new_event(this, &mpi_queue::start_recv, req);
-\end{CppCode}
-The new event macro takes as first argument an object and second argument a member function pointer to be invoked when the event is run.
-The remaining arguments are an arbitrary-length list of parameters of any type - they don't need to be messages. 
-These parameters should match the member function prototype. 
-For example, the prototype
-
-\begin{CppCode}
-void mpi_queue::start_recv(mpi_queue_recv_request* req)
-{
-  ...
-}
-\end{CppCode}
-takes a single \inlinecode{recv_request} object as input.
-This eases the programming burden in two ways.
-First, it avoids having to always create \evhandler types.
-Without template events, you would have to create a new class the inherits from \evhandler that performs a single, desired action.
-Second, it helps direct messages to the right place.  A single \evhandler might process many different types of events or objects.
-If every event went to a single \inlinecode{handle} method, the handle method would need either a long if-else block or switch to sort messages.
-The event would also need to be dynamic cast to the correct type.
-By creating event functors, the message can be immediately directed to the correct type and correct action.
-
-For generic events, one must ensure the event is scheduled to the same node and does not cross any network boundaries.
-The event created must be run on the same logical process.
 
 \subsection{Event Heap/Map}
 \label{subsec:eventHeap}

@@ -57,16 +57,13 @@ class event_trace :
  public:
   event_trace(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "event trace";
   }
 
-  virtual void
-  simulation_finished(timestamp end) override;
+  virtual void simulation_finished(timestamp end) override;
 
-  void
-  collect(int key_typeid,
+  void collect(int key_typeid,
           const std::string& name,
           node_id addr,
           long threadid,
@@ -74,27 +71,19 @@ class event_trace :
           long ticks_begin,
           long num_ticks);
 
-  void
-  reduce(stat_collector *coll) override;
+  void reduce(stat_collector *coll) override;
 
-  void
-  dump_local_data() override;
+  void dump_local_data() override;
 
-  void
-  dump_global_data() override;
+  void dump_global_data() override;
 
-  void
-  global_reduce(parallel_runtime *rt) override;
+  void global_reduce(parallel_runtime *rt) override;
 
-  void
-  clear() override;
+  void clear() override;
 
-  virtual
-  ~event_trace() {
-  }
+  virtual ~event_trace() {}
 
-  stat_collector*
-  do_clone(sprockit::sim_parameters* params) const override {
+  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new event_trace(params);
   }
 

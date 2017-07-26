@@ -722,8 +722,7 @@ dag_collective_actor::do_recv(action* ac)
     //I need to wait for the sender to contact me
   } else {
     if (failed()){
-      spkt_throw(sprockit::unimplemented_error,
-         "dag_collective_actor: cannot handle failures with put protocol");
+      sprockit::abort("dag_collective_actor: cannot handle failures with put protocol");
     }
     //put protocol, I need to tell the sender where to put it
     send_rdma_put_header(ac);
@@ -793,7 +792,7 @@ dag_collective_actor::send_failure_message(
   void* no_buffer = nullptr;
   int no_elems = 0;
   //send a failure message to the neighbor letting him know to abandon the collective
-  collective_work_message::ptr msg = new collective_work_message(
+  auto msg = std::make_shared<collective_work_message>(
       type_, ty,
       no_elems, tag_,
       ac->round, dense_me_,
@@ -974,8 +973,7 @@ dag_collective_actor::set_recv_buffer(action* ac_, public_buffer& recv_buf)
                 ? recv_buffer_ : result_buffer_;
   recv_buf.offset_ptr(ac->offset*type_size_);
   if (result_buffer_.ptr && recv_buf.ptr == 0){
-    spkt_throw(sprockit::value_error,
-      "working with real payload, but somehow getting a null buffer");
+    sprockit::abort("working with real payload, but somehow getting a null buffer");
   }
 }
 
@@ -1010,7 +1008,7 @@ dag_collective_actor::set_send_buffer(action* ac_, public_buffer& send_buf)
 collective_work_message::ptr
 dag_collective_actor::new_message(action* ac, collective_work_message::action_t act)
 {
-  collective_work_message::ptr msg = new collective_work_message(
+  auto msg = std::make_shared<collective_work_message>(
     type_, act,
     tag_,
     ac->round, dense_me_,
@@ -1031,8 +1029,7 @@ dag_collective_actor::new_message(action* ac, collective_work_message::action_t 
       set_recv_buffer(ac, msg->remote_buffer());
       break;
     default:
-    spkt_throw(sprockit::value_error,
-               "collective_actor::new message: created with invalid type %s",
+    spkt_abort_printf("collective_actor::new message: created with invalid type %s",
                collective_work_message::tostr(act));
   }
   return msg;
@@ -1221,7 +1218,7 @@ dag_collective_actor::incoming_message(const collective_work_message::ptr& msg)
 collective_done_message::ptr
 dag_collective_actor::done_msg() const
 {
-  collective_done_message::ptr msg = new collective_done_message(tag_, type_, comm_);
+  auto msg = std::make_shared<collective_done_message>(tag_, type_, comm_);
   msg->set_comm_rank(comm_->my_comm_rank());
   msg->set_result(result_buffer_.ptr);
   auto end = failed_ranks_.start_iteration();

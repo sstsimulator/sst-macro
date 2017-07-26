@@ -51,16 +51,16 @@ Questions? Contact sst-macro-help@sandia.gov
 //#include <regex>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/serializable.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 static std::set<int> empty_set;
 
 namespace lblxml
 {
-  typedef spkt_unordered_map<int,int> box_to_domain_rank_map;
-  typedef spkt_unordered_map<int,std::set<int> > box_to_listener_map;
-  typedef spkt_unordered_set<int> int_container_t;
-  typedef spkt_unordered_set<int>::iterator int_container_iter;
+  typedef std::unordered_map<int,int> box_to_domain_rank_map;
+  typedef std::unordered_map<int,std::set<int> > box_to_listener_map;
+  typedef std::unordered_set<int> int_container_t;
+  typedef std::unordered_set<int>::iterator int_container_iter;
 
   int get_index(std::string& id);
 

@@ -217,7 +217,7 @@ interconnect::node_to_logp_switch(node_id nid) const
 void
 interconnect::handle(event* ev)
 {
-  spkt_throw(sprockit::value_error, "interconnect should never handle messages");
+  sprockit::abort("interconnect should never handle messages");
 }
 
 void

@@ -397,8 +397,7 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt)
 void
 pisces_NtoM_queue::start_message(message* msg)
 {
-  spkt_throw(sprockit::illformed_error,
-    "pisces_NtoM_queue:: should never start a flow");
+  sprockit::abort("pisces_NtoM_queue:: should never start a flow");
 }
 
 #if PRINT_FINISH_DETAILS

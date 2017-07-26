@@ -267,8 +267,7 @@ PendingMPI*
 mpi_transport::allocate_pending()
 {
   if (pending_pool_.empty()){
-    spkt_throw(sprockit::value_error,
-      "too many pending mpi requests allocated");
+    sprockit::abort("too many pending mpi requests allocated");
   }
   PendingMPI* ret = pending_pool_.back();
   pending_pool_.pop_back();
@@ -384,8 +383,7 @@ mpi_transport::send_transaction_ack(int dst, const message::ptr& msg)
     dst, msg->transaction_id());
 
   if (msg->transaction_id() < 0){
-    spkt_throw(sprockit::value_error,
-      "cannot ack message without transaction ID assignment");
+    sprockit::abort("cannot ack message without transaction ID assignment");
   }
 
   lock();
@@ -451,8 +449,7 @@ mpi_transport::do_rdma_put(int dst, const message::ptr &msg)
 void
 mpi_transport::do_nvram_get(int src, const message::ptr &msg)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "mpi_transpot: cannot do nvram get");
+  sprockit::abort("mpi_transpot: cannot do nvram get");
 }
 
 void
@@ -498,8 +495,7 @@ void
 mpi_transport::add_pending(PendingMPI *pending)
 {
   if (pending->type == PendingMPI::Null){
-    spkt_throw(sprockit::value_error,
-      "got pending MPI with null type");
+    sprockit::abort("got pending MPI with null type");
   }
   pending_mpi_.push_back(pending);
 }
@@ -528,8 +524,7 @@ mpi_transport::recv_smsg(int src, int tag, int size)
   char* recv_buffer = allocate_smsg_buffer();
   PendingMPI* pending = allocate_pending();
   if (size > smsg_buffer_size_){
-    spkt_throw(sprockit::value_error,
-      "incoming smsg on tag %d of size %d exceeds max buffer size %d",
+    spkt_abort_printf("incoming smsg on tag %d of size %d exceeds max buffer size %d",
       tag, size, smsg_buffer_size_);
   }
   mpi_debug_out("receiving smsg from %d on tag %s of size %d", src, tostr((tag_t)tag), size);
@@ -651,8 +646,7 @@ mpi_transport::wait_on_pending()
       free_smsg_buffer(pending->send_buf);
       break;
     case PendingMPI::Null:
-      spkt_throw(sprockit::value_error,
-        "cannot receive pending mpi request with value null");
+      sprockit::abort("cannot receive pending mpi request with value null");
       break;
     case PendingMPI::RDMAPutSend:
       if (pending->msg->needs_send_ack()){

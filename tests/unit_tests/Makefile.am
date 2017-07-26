@@ -29,7 +29,7 @@ test_routing_SOURCES = \
     routing/route_dragonfly.cc \
     routing/route_fattree.cc \
     routing/route_fbfly.cc \
-    routing/route_hdtorus.cc
+    routing/route_torus.cc
 
 test_serializable_SOURCES = \
     test_serializable.cc 

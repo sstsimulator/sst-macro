@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdint.h>
 #include <vector>
 
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 #include <string>
 #include <stdlib.h>
@@ -189,7 +189,7 @@ class ftq_calendar :
   }
 
  private:
-  static spkt_unordered_map<int, app_ftq_calendar*> calendars_;
+  static std::unordered_map<int, app_ftq_calendar*> calendars_;
 
   long num_ticks_epoch_;
 

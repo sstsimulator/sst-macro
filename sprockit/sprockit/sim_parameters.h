@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/spkt_config.h>
 #include <sprockit/debug.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 #include <iostream>
 #include <list>
@@ -120,7 +120,7 @@ class sim_parameters  {
 
   void reproduce_params(std::ostream& os) const ;
 
-  typedef spkt_unordered_map<std::string, parameter_entry> key_value_map;
+  typedef std::unordered_map<std::string, parameter_entry> key_value_map;
 
   sim_parameters();
 

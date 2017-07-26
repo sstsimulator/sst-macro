@@ -50,18 +50,18 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-  std::string
-  printf(const char *fmt, ...)
-  {
-    char tmpbuf[512];
+std::string
+printf(const char *fmt, ...)
+{
+  char tmpbuf[512];
 
-    va_list args;
-    va_start(args, fmt);
-    vsprintf(tmpbuf, fmt, args);
-    std::string strobj = tmpbuf;
-    va_end(args);
+  va_list args;
+  va_start(args, fmt);
+  vsprintf(tmpbuf, fmt, args);
+  std::string strobj = tmpbuf;
+  va_end(args);
 
-    return strobj;
-  }
+  return strobj;
+}
 
 }

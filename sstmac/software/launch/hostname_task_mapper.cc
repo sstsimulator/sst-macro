@@ -107,7 +107,7 @@ hostname_task_mapper::map_ranks(
              << "Are you sure the hostname file and node map"
              " are from the same machine?";
       }
-      spkt_throw(sprockit::input_error, sstr.str());
+      sprockit::abort(sstr.str());
     }
 
     node_id nid = nid_it->second;

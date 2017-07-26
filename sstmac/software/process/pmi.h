@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 namespace sstmac {
 namespace sw {
@@ -76,13 +76,13 @@ class process_manager  {
   void kill_process();
 
  private:
-  typedef spkt_unordered_map<int, node_id> proc_to_node_map;
+  typedef std::unordered_map<int, node_id> proc_to_node_map;
 
-  typedef spkt_unordered_map<int, proc_to_node_map> app_to_proc_to_node_map;
+  typedef std::unordered_map<int, proc_to_node_map> app_to_proc_to_node_map;
 
-  typedef spkt_unordered_map<node_id, int> node_to_proc_map;
+  typedef std::unordered_map<node_id, int> node_to_proc_map;
 
-  typedef spkt_unordered_map<int, node_to_proc_map> app_to_node_to_proc_map;
+  typedef std::unordered_map<int, node_to_proc_map> app_to_node_to_proc_map;
 
   static app_to_proc_to_node_map node_map_;
 

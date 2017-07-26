@@ -92,7 +92,7 @@ wait_allreduce(int cm_rank)
       message::tostr(msg->class_type()));
   }
 
-  collective_done_message::ptr dmsg = ptr_safe_cast(collective_done_message, msg);
+  auto dmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
   int* dst_buffer = (int*) dmsg->result();
   int nelems = 2*comm_nproc();
   if (cm_rank == 0){

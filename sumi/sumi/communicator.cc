@@ -82,8 +82,8 @@ global_communicator::global_to_comm_rank(int global_rank) const
 int
 index_communicator::global_to_comm_rank(int global_rank) const
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "index_domain::global_to_comm_rank: this should only be involved in failures");
+  sprockit::abort("index_domain::global_to_comm_rank: this should only be involved in failures");
+  return 0;
 }
 
 }

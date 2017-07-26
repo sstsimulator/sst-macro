@@ -73,9 +73,8 @@ nobase_library_include_HEADERS = \
   topology/butterfly.h \
   topology/crossbar.h \
   topology/dragonfly.h \
-  topology/fake_topology.h \
   topology/fat_tree.h \
-  topology/hdtorus.h \
+  topology/torus.h \
   topology/multipath_topology.h \
   topology/tiled_torus.h \
   topology/hypercube.h \
@@ -138,7 +137,7 @@ libsstmac_hw_la_SOURCES =  \
   topology/crossbar.cc \
   topology/dragonfly.cc \
   topology/fat_tree.cc \
-  topology/hdtorus.cc \
+  topology/torus.cc \
   topology/tiled_torus.cc \
   topology/hypercube.cc \
   topology/coordinates.cc \

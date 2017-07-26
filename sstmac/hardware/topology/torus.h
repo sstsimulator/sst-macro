@@ -42,8 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_HDTORUS_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_HDTORUS_H_INCLUDED
+#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_torus_H_INCLUDED
+#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_torus_H_INCLUDED
 
 #include <sstmac/hardware/topology/cartesian_topology.h>
 
@@ -51,17 +51,17 @@ namespace sstmac {
 namespace hw {
 
 /**
- * @class hdtorus
+ * @class torus
  * Implements a high dimensional torus network.
  */
 
-class hdtorus :
+class torus :
   public cartesian_topology
 {
-  FactoryRegister("torus | hdtorus", topology, hdtorus,
-              "hdtorus implements a high-dimension torus with an arbitrary number of dimensions")
+  FactoryRegister("torus | torus", topology, torus,
+              "torus implements a high-dimension torus with an arbitrary number of dimensions")
  public:
-  hdtorus(sprockit::sim_parameters* params);
+  torus(sprockit::sim_parameters* params);
 
   typedef enum {
     pos = 0,
@@ -69,10 +69,10 @@ class hdtorus :
   } direction_t;
 
   virtual std::string to_string() const override {
-    return "hdtorus";
+    return "torus";
   }
 
-  virtual ~hdtorus() {}
+  virtual ~torus() {}
 
   int diameter() const override {
     return diameter_;

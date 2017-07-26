@@ -69,11 +69,9 @@ class manager {
  public:
   manager(sprockit::sim_parameters* params, parallel_runtime* rt);
 
-  static int
-  compute_max_nproc(sprockit::sim_parameters *params);
+  static int compute_max_nproc(sprockit::sim_parameters *params);
 
-  static int
-  compute_max_nproc_for_app(sprockit::sim_parameters* app_params);
+  static int compute_max_nproc_for_app(sprockit::sim_parameters* app_params);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   ~manager() throw ();

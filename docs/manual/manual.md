@@ -105,11 +105,13 @@ category: SSTDocumentation
       - [Section 5.2: Auto-skeletonization with Clang (Beta)](#sec:autoSkeletonization)
          - [5.2.1: Skeletonization Issues](#subsec:skeletonIssues)
       - [Section 5.3: Process Encapsulation](#sec:processEncapsulation)
-   - [Chapter 6: Detailed Parameter Listings](#chapter:parameters)
-      - [Section 6.1: Global namespace](#sec:globalParams)
-      - [Section 6.2: Namespace "topology"](#sec:topologyParams)
-      - [Section 6.3: Namespace "node"](#sec:nodeParams)
-         - [6.3.1: Namespace "node.nic"](#subsec:node:nic:Params)
+   - [Chapter 6: Clang Source-to-Source Auto-Skeletonization via Pragmas](#clangTutorial)
+      - [Section 6.1: Fortran](#subsec:issues:fortran)
+   - [Chapter 7: Detailed Parameter Listings](#chapter:parameters)
+      - [Section 7.1: Global namespace](#sec:globalParams)
+      - [Section 7.2: Namespace "topology"](#sec:topologyParams)
+      - [Section 7.3: Namespace "node"](#sec:nodeParams)
+         - [7.3.1: Namespace "node.nic"](#subsec:node:nic:Params)
             - [Namespace "node.nic.delay\_histogram"](#subsubsec:node:nic:delayHistogram:Params)
             - [Namespace "node.nic.congestion\_spyplot"](#subsubsec:node:nic:congestionSpyplot:Params)
             - [Namespace "node.nic.traffic\_matrix"](#subsubsec:node:nic:trafficMatrix:Params)
@@ -118,26 +120,26 @@ category: SSTDocumentation
             - [Namespace "node.nic.message\_size\_histogram"](#subsubsec:node:nic:sizeHistogram:Params)
             - [Namespace "node.nic.ejection"](#subsubsec:node:nic:ejection:Params)
             - [Namespace ``node.nic.injection"](#subsubsec:node:nic:injection:Params)
-         - [6.3.2: Namespace ``node.memory"](#subsec:node:memory:Params)
-         - [6.3.3: Namespace "node.os"](#subsec:node:os:Params)
+         - [7.3.2: Namespace ``node.memory"](#subsec:node:memory:Params)
+         - [7.3.3: Namespace "node.os"](#subsec:node:os:Params)
             - [Namespace ``node.os.call\_graph"](#subsubsec:node:os:callGraph:Params)
             - [Namespace ``node.os.ftq"](#subsubsec:node:os:ftq:Params)
-         - [6.3.4: Namespace ``node.proc"](#subsec:node:proc:Params)
-      - [Section 6.4: Namespace "netlink"](#sec:netlink:Params)
-         - [6.4.1: Namespace "netlink.injection"](#subsec:netlink:injection:Params)
-         - [6.4.2: Namespace ``netlink.ejection"](#subsec:netlink:ejection:Params)
-      - [Section 6.5: Namespace ``mpi"](#sec:mpi:Params)
-         - [6.5.1: Namespace ``mpi.queue"](#subsec:mpi:queue:Params)
-      - [Section 6.6: Namespace "switch"](#subsec:switch:Params)
-         - [6.6.1: Namespace "switch.router"](#subsec:switch:router:Params)
-         - [6.6.2: Namespace "switch.output\_buffer"](#subsec:switch:outputBuffer:Params)
+         - [7.3.4: Namespace ``node.proc"](#subsec:node:proc:Params)
+      - [Section 7.4: Namespace "netlink"](#sec:netlink:Params)
+         - [7.4.1: Namespace "netlink.injection"](#subsec:netlink:injection:Params)
+         - [7.4.2: Namespace ``netlink.ejection"](#subsec:netlink:ejection:Params)
+      - [Section 7.5: Namespace ``mpi"](#sec:mpi:Params)
+         - [7.5.1: Namespace ``mpi.queue"](#subsec:mpi:queue:Params)
+      - [Section 7.6: Namespace "switch"](#subsec:switch:Params)
+         - [7.6.1: Namespace "switch.router"](#subsec:switch:router:Params)
+         - [7.6.2: Namespace "switch.output\_buffer"](#subsec:switch:outputBuffer:Params)
             - [Namespace ``switch.output\_buffer.delay\_histogram"](#subsubsec:switch:outputBuffer:delayHistogram:Params)
             - [Namespace "switch.output\_buffer.byte\_hops"](#subsubsec:switch:outputBuffer:delayHistogram:Params)
-         - [6.6.3: Namespace "switch.xbar"](#sec:switch:outputBuffer:delayHistogram:Params)
+         - [7.6.3: Namespace "switch.xbar"](#sec:switch:outputBuffer:delayHistogram:Params)
             - [Namespace ``switch.xbar.bytes\_sent"](#subsubsec:switch:xbar:bytesSent:Params)
-         - [6.6.4: Namespace "switch.link"](#subsec:switch:link:Params)
-         - [6.6.5: Namespace "switch.ejection"](#subsec:switch:ejection:Params)
-      - [Section 6.7: Namespace "appN"](#sec:appN:Params)
+         - [7.6.4: Namespace "switch.link"](#subsec:switch:link:Params)
+         - [7.6.5: Namespace "switch.ejection"](#subsec:switch:ejection:Params)
+      - [Section 7.7: Namespace "appN"](#sec:appN:Params)
 
 
 
@@ -253,7 +255,7 @@ In skeletonization or simulation, SST/macro will mimic as closely as possible th
 but avoids as much computation and as much memory allocation as possible.
 This allows to pack in as many simulated MPI ranks as possible into your single `sstmac` process.
 
-\section{What To Expect In The Manual}
+\section{What To Expect In The User's Manual}
 This user's manual is mainly designed for those who wish to perform experiments with new applications using existing hardware models.
 This has been the dominant use case and we therefore classify those doing application experiments as "users" and those making new hardware models "developers."
 Getting applications to run in SST/macro should be very straightforward and requires no knowledge of simulator internal code.
@@ -823,7 +825,7 @@ More info on declaring new debug flags in your own code can be found in the deve
 
 
 A minimal parameter file setting up a 2D-torus topology is shown below. 
-A detailed listing of parameter namespaces and keywords is given in Section [6](#chapter:parameters).
+A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
 The preferred input files now use namespaces.
 However, for consistency with previous versions, we also show the deprecated parameters.
 
@@ -931,7 +933,7 @@ node {
 Any line containing a single string with an opening \{ starts a new namespace.
 A line containing only a closing \} ends the innermost namespace.
 The syntax is not as flexible as C++ since the opening \{ must appear on the same line as the namespace and the closing \} must be on a line of its own.
-A detailed listing of parameter namespaces and keywords is given in Section [6](#chapter:parameters).
+A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
 
 #### 3.1.2: Initial Example<a name="subsec:initialExample"></a>
 
@@ -3017,7 +3019,7 @@ Some of this can be accomplished automatically (global variables), but most of i
 A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder. Most of the available SST pragmas are used there.
 Pragmas are preferred since they allow switching easily back and forth between skeleton and full applications.
 This allows much easier validation of the simulation. The section here briefly introduces the SST pragma language.
-A complete tutorial on all available pragmas is given in Chapter .
+A complete tutorial on all available pragmas is given in Chapter [6](#clangTutorial).
 
 \subsection{Redirecting Main}
 Your application's `main` has to have its symbols changed.
@@ -3134,7 +3136,322 @@ This feature is current labeled Beta, but is stable for numerous tests and will 
 
 
 
-## Chapter 6: Detailed Parameter Listings<a name="chapter:parameters"></a>
+## Chapter 6: Clang Source-to-Source Auto-Skeletonization via Pragmas<a name="clangTutorial"></a>
+
+
+
+There are three main examples of auto-skeletonization with pragmas in the SST-macro source code in the `skeletons` directory.
+These applications are Lulesh, HPCG, and CoMD.
+The auto-skeletonizing compiler is designed to do three main things:
+
+
+-   Redirect global variable accesses to thread-specific values
+-   Turn off large memory allocations that would prevent scalable simulation
+-   Estimate time of compute-intensive kernels instead of executing them
+
+\section{Pragma Overview}
+
+
+![Figure 33: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/compilerWorkflow) 
+
+*Figure 33: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.*
+
+
+
+\subsection{Compiler workflow}
+The source-to-source compiler operates on a pre-processed source file.
+The source code transformation generates a temporary source file.
+This temporary source file is then compiled into the target object file.
+Global variables require static registration of C++ variables.
+Here another temporary C++ source file (even if the original file is C)
+is generated that has all static global variable registrations.
+The corresponding object file is merged with the original object file,
+creating a complete SST-macro object file with the transformed code and C++ static registrations.
+This workflow is shown in Figure [33](#fig:compilerWorkflow).
+
+\subsection{Compiler Environment Variables}
+
+\subsubsection{SSTMAC\_SRC2SRC: Default 1}
+If set to zero, deactivates the source-to-source transformation. 
+The compiler wrapper will then compile the code into the simulator, but will not redirect any global variable accesses or perform any skeletonization.
+
+\subsubsection{SSTMAC\_SKELETONIZE: Default 0}
+If set to zero, deactivates skeletonization. 
+This does not deactivate global variable redirection.
+Thus, with `SSTMAC_SRC2SRC=1` and `SSTMAC_SKELETONIZE=0`,
+SST-macro will act as an MPI emulator executing a full code but with global variables refactored to maintain correctness.
+
+\subsubsection{SSTMAC\_HEADERS: No default}
+The compiler wrapper will only redirect global variables that it knows should definitely be modified.
+All global variables found in source files will be redirected.
+`extern` global variables found in header files are more difficult.
+Certain system global variables like `stderr` should not be modified and so are left as global variable constants.
+By default, global variables in a header file are NOT redirected unless explicitly specified in a header configuration file.
+The variable `SSTMAC_HEADERS` should give the full path of a file containing the list of header files.
+Header file paths in the file should be one per line and should be the full path, not a relative path.
+
+\subsubsection{SSTMAC\_DELETE\_TEMPS: Default 1}
+If non-zero, the compiler cleans up all temporary files. 
+If you wish to keep temporary files to view them for debugging, set to zero.
+All temporary, intermediate source files will otherwise be deleted at the end of compilation.
+
+\section{Basic Replacement Pragmas}
+When skeletonization is active (see `SSTMAC_SKELETONIZE`), these pragmas will cause replacements in the original source code.
+Pragmas appy to the next statement in the source code.
+For compound statements such as a for-loop with a multi-statement body, the pragma applies to the entire for-loop.
+\subsection{pragma sst delete: no arguments}
+This deletes the next statement from the source code.
+If the statement declares a variable that is used later in the code, this will cause a compile error.
+Consider an example from the Lulesh source code.
+
+````
+#pragma sst delete
+    testnorms_data.values[i] = normr/normr0;
+````
+In the skeleton, the residual is not actually computed and the `testnorms_data` array is not actually allocated.
+Thus this statement should be deleted and not actually executed in the skeleton.
+
+\subsection{pragma sst replace [to\_replace:string] [new\_text:C++ expression]}
+This applies a string replace to a variable or function call in the next statement.
+Consider an example from Lulesh.
+
+````
+#pragma sst replace volo 1
+   deltatime() = (Real_t(.5)*cbrt(volo(0)))/sqrt(Real_t(2.0)*einit);
+````
+The function call `volo(0)` is not valid in the skeleton since volumes are not actually computed.
+Here we simply estimate that all cells have unit volume replacing `volo(0)` with `1`.
+
+\subsection{pragma sst init [new\_value:string]}
+This pragma can only apply to a binary equals operator assigning a value.
+The pragma changes the right-hand side to use the given new value.
+For example, in Lulesh:
+
+````
+#pragma sst init nullptr
+  destAddr = &domain.commDataSend[pmsg * maxPlaneComm] ;
+````
+The send buffer `domain.commDataSend` is not allocated in the skeleton and thus is not valid to use.
+The pragma causes the skeleton to simply set `destAddr` to `nullptr`.
+
+\subsection{pragma sst return [new\_value:C++ expression]}
+Pragma is equivalent to `pragma sst init`. This replaces the target of a return statement with the given expression.
+This produces a compiler error if applied to anything but a return statement.
+
+\subsection{pragma sst keep}
+During the skeletonization process, some transformations occur automatically even without pragmas. 
+For example, all MPI calls have input buffers converted to null pointers to indicate a simulated MPI call.
+If the MPI call should be emulated with real payloads, the MPI call must be explicitly marked with `pragma keep`.
+An example can be found in the HPCG skeleton:
+
+````
+#pragma sst keep
+  MPI_Allreduce(&localNumberOfNonzeros, &totalNumberOfNonzeros, ...)
+````
+The actual allreduce operation is carried out, summing the the local number into the total number of nonzeroes.
+
+\subsection{pragma sst keep\_if [condition:C++ bool expression]}
+More control over whether transformations are skipped is provided by `keep_if`.
+An example is found in CoMD.
+
+````
+#pragma sst keep_if count < 16
+   MPI_Allreduce(sendBuf, recvBuf, count, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+````
+Any small allreduce operations are kept. 
+Any allreduce operations larger than a given cutoff are simulated without emulating the actual buffer operations.
+
+\subsection{pragma sst empty}
+This pragma is applied to functions. The function prototype is kept, but an empty body is inserted instead of the actual code.
+This can be useful for deleting large blocks of computation inside a function.
+
+\subsection{pragma sst branch\_predict [condition:C++ expression]}
+The branch prediction pragma can be applied in two different contexts.
+We will revisit the pragma in the context of compute skeletonization below.
+The branch prediction pragma should only be applied to an if-statement.
+Much like the replace pragmas, it swaps out the given if condition with a new expression.
+
+The branch prediction pragmas become necessary when skeletonizing.
+Certain values may not be computed or certain variables marked null.
+If these values are then used in an if predicate,
+the skeletonizing compiler cannot deduce the correct behavior for the application.
+When an ambiguous predicate is found, the compiler will usually print a warning and just assume the predicate is false.
+Predicates are often almost always true or almost always false. 
+Thus most uses of this pragma will simply supply `true` or `false` as the replacement.
+However, any arbitrary C++ boolean expression can be given as the replacement.
+The new predicate expression (like the original), must not involve any null variables.
+
+\section{Memory Allocation Pragmas}
+\subsection{pragma sst malloc}
+Applied to any statement in which the right-hand side is a malloc. This sets the left-hand side to `NULL`.
+This is critical for turning off large memory allocations on data structures not required for control-flow.
+
+
+\subsection{pragma sst new}
+Applied to any statement in which the right-hand side a C++ operator new. This sets the left-hand side to `nullptr`.
+This is critical for turning off large memory allocations on data structures not required for control-flow.
+
+\section{Data-Driven Type Pragmas}
+\subsection{pragma sst null\_variable}
+This applies to variable declarations. If pragma is not applied to a declaration, a compiler error is given.
+A null variable is one in which all operations involving the variable should be deleted.
+This usually applies to large data arrays that should never be allocated and therefore never dereferenced.
+An example can be seen in CoMD:
+
+````
+#pragma sst null_variable
+   int* nAtoms;         //!< total number of atoms in each box
+````
+The array is not allocated and all statements operating on the array are deleted.
+
+This pragma is much more powerful than simply using `pragma sst new`.
+`pragma sst new` simply turns off a given memory allocation setting it to a null value.
+If the array is dereferenced later in code, this causes a segmentation fault.
+By marking a declaration as null, the compiler can flag where segmentation faults would occur when running the skeleton.
+
+In most cases, all operations involving the null variable are deleted.
+However, there may be cases where the compiler may decide deleting an operation cannot be done automatically since
+it may affect control flow, e.g., if the variable is used inside an if-statement.
+When this occurs, a compiler error is thrown flagging where the ambiguity occurs.
+Another pragma must then be applied to that statement to tell the compiler how to proceed.
+
+\subsection{pragma sst null\_type [type alias] [list allowed functions]}
+This applies to C++ class variable declarations. If pragma is not applied to a declaration, a compiler error is given.
+This essentially works the same way as `null_variable`, but allows certain member functions to be kept instead of deleted.
+Consider an example from Lulesh:
+
+````
+#pragma sst null_type sstmac::vector size resize empty
+   std::vector<Real_t> m_x ;  /* coordinates */
+```` 
+Here we wish to indicate the vector is "null" and should not actually allocate memory or allow array accesses.
+However, we still wish to track the vector size and whether it is empty.
+The first argument to the pragma is a new type name that implements the "alias" functionality.
+For `std::vector`, SST-macro automatically provides the alias.
+For illustration, that code is reproduced here:
+
+````
+namespace sstmac {
+class vector {
+ public:
+  void resize(unsigned long sz){
+    size_ = sz;
+  }
+
+  unsigned long size() const {
+    return size_;
+  }
+
+  template <class... Args>
+  void push_back(Args... args){
+    ++size_;
+  }
+
+  template <class... Args>
+  void emplace_back(Args... args){
+    ++size_;
+  }
+
+  bool empty() const {
+    return size_ == 0;
+  }
+
+ private:
+  unsigned long  size_;
+};
+}
+````
+This empty vector class allows the type to track its size, but not actually hold any data.
+All places in the Lulesh code that an `std::vector` is used are substituted with the new type.
+
+The remaining arguments to the pragma are the list of functions we wish to mark as valid.
+In this case, even though the alias vector class provides more functions, we only allow `size`, `resize`, and `empty` to be called.
+
+
+
+\section{Compute Pragmas}
+\subsection{pragma sst compute and pragma omp parallel}
+Compute-intensive should not be executed natively.
+Instead, a compute model should be used to estimate the elapsed time.
+Compute model replacements are automatically triggered by any OpenMP parallel pragmas.
+The corresponding block or for-loop is not executed, instead calling out to a compute model to estimate time.
+Currently, compute modeling is done via a very basic static analysis.
+The static analysis attempts to count the number of integer and floating point operations.
+It also estimates the number of memory reads and writes.
+These four counters are passed to a coarse-grained processor model for time estimates.
+For more details, see `sstmac_compute_detailed` in the source code.
+Numerous examples can be found in the Lulesh, HPCG, and CoMD skeleton applications.
+
+\subsection{pragma sst loop\_count [integer: C++ expression]}
+If the `sst compute` or `omp parallel` pragma are applied to an outer loop with one or more inner loops,
+the compute model static analysis might fail.
+This occurs when the inner loop control flow depends on the actual execution.
+Any variables declared inside the compute block are not valid to use in the compute estimate since they will be skeletonized and deleted.
+Only variables in scope at the beginning of the outer loop are safe to use in compute modeling.
+
+When the static analysis fails, a corresponding compiler error is thrown.
+This usually requires giving a loop count hint.
+Consider the example from HPCG:
+
+````
+#pragma omp parallel for
+  for (local_int_t i=0; i< localNumberOfRows; i++) {
+    int cur_nnz = nonzerosInRow[i];
+   #pragma sst loop_count 27
+    for (int j=0; j<cur_nnz; j++) mtxIndL[i][j] = mtxIndG[i][j];
+  }
+````
+The static analysis fails on `cur_nnz`.
+However, that value is almost always 27.
+Thus we can safely tell the compiler to just assume the loop count is 27.
+
+\subsection{pragma sst branch\_predict [float: C++ expression]}
+Similar to the way that loop counts can break the static analysis, if statements inside a loop skeletonized with `omp parallel` or `sst compute` can also be problematic.
+If the predicate depends on a variable declared inside the skeletonzied block,
+the static analysis will break since it cannot predict when and how often to assume true or false.
+In contrast to the branch prediction pragma previously used, branch prediction pragmas inside a compute block must give a number between 0 and 1.
+This can either be a literal float or expression that computes a float value.
+Consider an example from CoMD:
+
+````
+#pragma sst branch_predict 0.2
+  if(r2 <= rCut2 && r2 > 0.0){
+````
+Inside the compute block, a compute may or may not occur depending on whether a particle distance is less than a cutoff.
+Based on the way CoMD constructs unit cells and halo regions, running CoMD shows that about 1 in 5 neighbor interactions are actually below the cutoff.
+Thus we given the branch prediction the hint 0.2.
+
+
+\chapter{Issues and Limitations}
+\section{Polling in applications}
+
+Use of probe non-blocking functions in a loop, such as:
+
+
+````
+while(!flag){
+ MPI_Iprobe( 0, 0, MPI_COMM_WORLD, &flag, &status );
+}
+````
+creates problems for the simulation. Virtual time never advances in the MPI\_Iprobe call. 
+This causes an infinite loop that never returns to the discrete event manager. 
+Even if configured so that time progresses, the code will work but will take a very long time to run.
+
+### Section 6.1: Fortran<a name="subsec:issues:fortran"></a>
+
+
+
+SST-macro previously provided some experimental support for Fortran90 applications. 
+This has been discontinued for the foreseeable future.
+For profiling existing apps written with Fortran, DUMPI traces can still be generated. 
+
+
+
+
+
+
+
+## Chapter 7: Detailed Parameter Listings<a name="chapter:parameters"></a>
 
 
 The following chapter is organized by parameter namespaces. Tables in each namespace are organized as
@@ -3164,7 +3481,7 @@ The allowed parameter types are:
 | filepath | A valid filepath to an existing file, either absolute or relative |
 | quantiy | A catch-all for a quantity with units. Any of frequency, bandwidth, byte length, or time can be given |
 
-### Section 6.1: Global namespace<a name="sec:globalParams"></a>
+### Section 7.1: Global namespace<a name="sec:globalParams"></a>
 
 
 
@@ -3176,7 +3493,7 @@ The allowed parameter types are:
 | serialization\_buffer\_size (byte length) | 512B |  | Size to allocate for buffers in a pool of serialization buffers. This should set be large enough to handle serialization of most messages, but not so large that significant space is wasted. |
 | cpu\_affinity (vector of int) | No default | Invalid cpu IDs give undefined behavior | When in multi-threading, specifies the list of core IDs that threads will be pinned to. |
 
-### Section 6.2: Namespace "topology"<a name="sec:topologyParams"></a>
+### Section 7.2: Namespace "topology"<a name="sec:topologyParams"></a>
 
 
 
@@ -3197,7 +3514,7 @@ The allowed parameter types are:
 | group\_connections (int) | No default | Positive int | For dragonfly, the number of intergroup connections on each switch in a Dragonfly group |
 | redundant (vector of int) | vector of 1's | Positive ints | For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. |
 
-### Section 6.3: Namespace "node"<a name="sec:nodeParams"></a>
+### Section 7.3: Namespace "node"<a name="sec:nodeParams"></a>
 
 
 
@@ -3207,7 +3524,7 @@ The allowed parameter types are:
 | model (string) | simple | simple | The type of node model (level of detail) for node-level operations |
 | services (vector of strings) | Empty | Valid service names | For  details, see section on distributed services in developer's manual. Advanced feature. |
 
-#### 6.3.1: Namespace "node.nic"<a name="subsec:node:nic:Params"></a>
+#### 7.3.1: Namespace "node.nic"<a name="subsec:node:nic:Params"></a>
 
 
 
@@ -3322,7 +3639,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-#### 6.3.2: Namespace ``node.memory"<a name="subsec:node:memory:Params"></a>
+#### 7.3.2: Namespace ``node.memory"<a name="subsec:node:memory:Params"></a>
 
 
 
@@ -3335,7 +3652,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | total\_bandwidth | No default |  | The total memory bandwidth possible across all memory controllers. |
 | max\_single\_bandwidth | Computed |  | The maximum memory bandwidth of a single stream of requests. Essentially the bandwidth of a single memory controller. If not given, this defaults the value of total\_bandwidth. |
 
-#### 6.3.3: Namespace "node.os"<a name="subsec:node:os:Params"></a>
+#### 7.3.3: Namespace "node.os"<a name="subsec:node:os:Params"></a>
 
 
 
@@ -3364,7 +3681,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | fileroot (string) | No default |  | The path of a file to be created (or overwritten) where results from the statistics will be placed. |
 | epoch (time) | No default |  | The length of simulation time to treat as a single interval. This is much like a histogram bin, except the bin is partitioned into multiple categories. If too small, not enough data will be collected per interval to give reasonable looking results. If too large, significant changes in system activity over time will not be resolved. |
 
-#### 6.3.4: Namespace ``node.proc"<a name="subsec:node:proc:Params"></a>
+#### 7.3.4: Namespace ``node.proc"<a name="subsec:node:proc:Params"></a>
 
 
 
@@ -3374,7 +3691,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | frequency | No default |  | The baseline frequency of the node |
 | parallelism (double) | 1.0 | Positive number | Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. |
 
-### Section 6.4: Namespace "netlink"<a name="sec:netlink:Params"></a>
+### Section 7.4: Namespace "netlink"<a name="sec:netlink:Params"></a>
 
 
 
@@ -3385,7 +3702,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | concentration (int) | No default | Positive int | The number of nodes connected to a given netlink. The node concentration per switch must be greater than or equal to the node concentration per netlink. |
 | num\_tiles (int) | 1 | Positive int | The number of router tiles the netlink connects to. Only relevant for tiled router models. Advanced usage. |
 
-#### 6.4.1: Namespace "netlink.injection"<a name="subsec:netlink:injection:Params"></a>
+#### 7.4.1: Namespace "netlink.injection"<a name="subsec:netlink:injection:Params"></a>
 
 
 
@@ -3401,7 +3718,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-#### 6.4.2: Namespace ``netlink.ejection"<a name="subsec:netlink:ejection:Params"></a>
+#### 7.4.2: Namespace ``netlink.ejection"<a name="subsec:netlink:ejection:Params"></a>
 
 
 
@@ -3417,7 +3734,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-### Section 6.5: Namespace ``mpi"<a name="sec:mpi:Params"></a>
+### Section 7.5: Namespace ``mpi"<a name="sec:mpi:Params"></a>
 
 
 
@@ -3427,7 +3744,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | test\_delay (time) | 0 |  | The minimum time spent by MPI on each MPI\_Test call |
 | iprobe\_delay (time) | 0 |  | The minimum time spent by MPI on each MPI\_Iprobe call |
 
-#### 6.5.1: Namespace ``mpi.queue"<a name="subsec:mpi:queue:Params"></a>
+#### 7.5.1: Namespace ``mpi.queue"<a name="subsec:mpi:queue:Params"></a>
 
 
 
@@ -3440,7 +3757,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | post\_header\_delay (time) | 0 |  | The mimimum time spent by MPI sending headers into pre-allocated mailboxes |
 | poll\_delay (time) | 0 |  | The minimum time spent by MPI each time it polls for incoming messages |
 
-### Section 6.6: Namespace "switch"<a name="subsec:switch:Params"></a>
+### Section 7.6: Namespace "switch"<a name="subsec:switch:Params"></a>
 
 
 
@@ -3450,7 +3767,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | model (string) | No default | logP, pisces | The type of switch model (level of detail) for modeling network traffic. |
 | buffer\_size (byte length) | No default |  | The size of input and output buffers on each switch. This determines the number of credits available to other components |
 
-#### 6.6.1: Namespace "switch.router"<a name="subsec:switch:router:Params"></a>
+#### 7.6.1: Namespace "switch.router"<a name="subsec:switch:router:Params"></a>
 
 
 
@@ -3460,7 +3777,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | name (string) | No default | minimal, valiant, ugal, fat\_tree | The name of the routing algorithm to use for routing packets. |
 | ugal\_threshold (int) | 0 |  | The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. |
 
-#### 6.6.2: Namespace "switch.output\_buffer"<a name="subsec:switch:outputBuffer:Params"></a>
+#### 7.6.2: Namespace "switch.output\_buffer"<a name="subsec:switch:outputBuffer:Params"></a>
 
 
 
@@ -3490,7 +3807,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | fileroot (string) | No default |  | The path of a file to be created (or overwritten) where results from the statistics will be placed. |
 
 
-#### 6.6.3: Namespace "switch.xbar"<a name="sec:switch:outputBuffer:delayHistogram:Params"></a>
+#### 7.6.3: Namespace "switch.xbar"<a name="sec:switch:outputBuffer:delayHistogram:Params"></a>
 
 
 
@@ -3516,7 +3833,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | fileroot (string) | No default |  | The path of a file to be created (or overwritten) where results from the statistics will be placed. |
 
 
-#### 6.6.4: Namespace "switch.link"<a name="subsec:switch:link:Params"></a>
+#### 7.6.4: Namespace "switch.link"<a name="subsec:switch:link:Params"></a>
 
 
 
@@ -3532,7 +3849,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-#### 6.6.5: Namespace "switch.ejection"<a name="subsec:switch:ejection:Params"></a>
+#### 7.6.5: Namespace "switch.ejection"<a name="subsec:switch:ejection:Params"></a>
 
 
 This namespace is not actually required. 
@@ -3551,7 +3868,7 @@ If unspecified, all of the values here will be filled in from `nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-### Section 6.7: Namespace "appN"<a name="sec:appN:Params"></a>
+### Section 7.7: Namespace "appN"<a name="sec:appN:Params"></a>
 
 
 This is a series of namespaces `app1`, `app2`, and so on for each of the launched applications. These should be contained within the `node` namespace.

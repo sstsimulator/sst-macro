@@ -49,15 +49,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 #include <cstdio>
 
 namespace sprockit {
 
-spkt_unordered_set<std::string>* KeywordRegistration::valid_keywords_ = nullptr;
-spkt_unordered_set<std::string>* KeywordRegistration::valid_namespaces_ = nullptr;
-spkt_unordered_set<std::string>* KeywordRegistration::removed_ = nullptr;
+std::unordered_set<std::string>* KeywordRegistration::valid_keywords_ = nullptr;
+std::unordered_set<std::string>* KeywordRegistration::valid_namespaces_ = nullptr;
+std::unordered_set<std::string>* KeywordRegistration::removed_ = nullptr;
 #if !SPKT_DISABLE_REGEX
 std::list<std::string>* KeywordRegistration::regexps_ = nullptr;
 #endif
@@ -154,8 +154,8 @@ KeywordRegistration::init()
     return;
   }
 
-  valid_keywords_ = new spkt_unordered_set<std::string>;
-  valid_namespaces_ = new spkt_unordered_set<std::string>;
+  valid_keywords_ = new std::unordered_set<std::string>;
+  valid_namespaces_ = new std::unordered_set<std::string>;
   regexps_ = new std::list<std::string>;
 
   inited_ = true;
@@ -168,7 +168,7 @@ KeywordRegistration::init()
   register_regexp("launch_app\\d+_cmd");
   register_regexp("launch_app\\d+_type");
 
-  removed_ = new spkt_unordered_set<std::string>;
+  removed_ = new std::unordered_set<std::string>;
   int num_removed = sizeof(removed_keywords) / sizeof(const char*);
   for (int i=0; i < num_removed; ++i) {
     removed_->insert(removed_keywords[i]);

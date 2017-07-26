@@ -52,13 +52,9 @@ namespace sstmac {
 
 class message_buffer_cache  {
  public:
+  void* pop();
 
- public:
-  void*
-  pop();
-
-  void
-  push(void* buffer);
+  void push(void* buffer);
 
   message_buffer_cache(int buf_size, int num_bufs_window) :
     buf_size_(buf_size),
@@ -68,18 +64,17 @@ class message_buffer_cache  {
 
   message_buffer_cache(){}
 
-  void
-  init(int buf_size, int num_bufs_window){
+  void init(int buf_size, int num_bufs_window){
     buf_size_ = buf_size;
     num_bufs_window_ = num_bufs_window;
   }
 
  protected:
-   std::list<void*> buffers_;
+  std::list<void*> buffers_;
 
-   int buf_size_;
+  int buf_size_;
 
-   int num_bufs_window_;
+  int num_bufs_window_;
 
 };
 

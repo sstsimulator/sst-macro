@@ -150,8 +150,7 @@ collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collec
 void
 collective::add_actors(collective *coll)
 {
-  spkt_throw(sprockit::value_error,
-    "collective:add_actors: collective of type should not dynamically add actors");
+  sprockit::abort("collective:add_actors: collective should not dynamically add actors");
 }
 
 void
