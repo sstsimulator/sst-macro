@@ -91,8 +91,7 @@ blocking_library::incoming_event(event *ev)
 {
   key* k = blocked_events_[ev];
   if (!k){
-    spkt_throw(sprockit::value_error,
-               "blocking_library::incoming_event: got invalid event");
+    sprockit::abort("blocking_library::incoming_event: got invalid event");
   }
   blocked_events_.erase(ev);
   os_->unblock(k);

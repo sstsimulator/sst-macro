@@ -60,26 +60,24 @@ typedef uint32_t rngint_t;
 class UniformInteger
 {
  public:
-  virtual
-  ~UniformInteger();
+  virtual ~UniformInteger();
 
-  virtual rngint_t
-  value() = 0;
+  virtual rngint_t value() = 0;
 
-  rngint_t
-  value_in_range(rngint_t range) {
+  rngint_t value_in_range(rngint_t range) {
     return value() % range;
   }
 
-  virtual void
-  vec_reseed(const std::vector<rngint_t> &seeds) = 0;
+  virtual void vec_reseed(const std::vector<rngint_t> &seeds) = 0;
 
-  virtual int
-  nseed()= 0;
+  virtual int nseed()= 0;
 
-  /// Return a random value in the interval [0,1], (0,1], [0,1), or (0,1)
-  virtual double
-  realvalue(bool include_zero = true, bool include_one = true) {
+ /**
+  * @param include_zero
+  * @param include_one
+  * @return A random value in the interval [0,1], (0,1], [0,1), or (0,1)
+  */
+  virtual double realvalue(bool include_zero = true, bool include_one = true) {
     rngint_t v = this->value();
     // Total precision of 64-bit double is 53 bits --
     // avoid oddball rounding errors.
@@ -99,20 +97,15 @@ class UniformInteger
     return v / scaling;
   }
 
-  void
-  reseed();
+  void reseed();
 
-  void
-  reseed(rngint_t);
+  void reseed(rngint_t);
 
-  void
-  reseed(rngint_t, rngint_t);
+  void reseed(rngint_t, rngint_t);
 
-  void
-  reseed(rngint_t, rngint_t, rngint_t);
+  void reseed(rngint_t, rngint_t, rngint_t);
 
-  void
-  reseed(rngint_t, rngint_t, rngint_t, rngint_t);
+  void reseed(rngint_t, rngint_t, rngint_t, rngint_t);
 };
 
 /** The multiple-with-carry random number generator by
@@ -132,13 +125,11 @@ class MWC : public UniformInteger
   static const rngint_t default_z, default_w;
   rngint_t z, w;
 
-  rngint_t
-  znew() {
+  rngint_t znew() {
     return ((z = 36969 * (z & 65535) + (z >> 16)) << 16);
   }
 
-  rngint_t
-  wnew() {
+  rngint_t wnew() {
     return ((w = 18000 * (w & 65535) + (w >> 16)) & 65535);
   }
 
@@ -146,27 +137,21 @@ class MWC : public UniformInteger
   MWC();
 
  public:
-  static MWC*
-  construct();
+  static MWC* construct();
 
-  static MWC*
-  construct(const std::vector<rngint_t> &);
+  static MWC* construct(const std::vector<rngint_t> &);
 
-  static MWC*
-  construct(rngint_t zarg);
+  static MWC* construct(rngint_t zarg);
 
-  static MWC*
-  construct(rngint_t zarg, rngint_t warg);
+  static MWC* construct(rngint_t zarg, rngint_t warg);
 
   ~MWC();
 
-  rngint_t
-  value() override {
+  rngint_t value() override {
     return (znew() + wnew());
   }
 
-  void
-  vec_reseed(const std::vector<rngint_t> &seeds) override;
+  void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int nseed() override;
 };
@@ -194,21 +179,17 @@ class SHR3 : public UniformInteger
   SHR3();
 
  public:
-  static SHR3*
-  construct();
+  static SHR3* construct();
 
-  static SHR3*
-  construct(const std::vector<rngint_t>&);
+  static SHR3* construct(const std::vector<rngint_t>&);
 
-  static SHR3*
-  construct(rngint_t jsrarg);
+  static SHR3* construct(rngint_t jsrarg);
 
   ~SHR3();
 
   rngint_t value() override;
 
-  void
-  vec_reseed(const std::vector<rngint_t> &seeds) override;
+  void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int nseed() override;
 };
@@ -272,27 +253,21 @@ class CONG : public UniformInteger
   rngint_t jcong;
 
  public:
-  static CONG*
-  construct();
+  static CONG* construct();
 
-  static CONG*
-  construct(const std::vector<rngint_t>&);
+  static CONG* construct(const std::vector<rngint_t>&);
 
-  static CONG*
-  construct(rngint_t jcongarg);
+  static CONG* construct(rngint_t jcongarg);
 
   ~CONG();
 
-  rngint_t
-  value() override {
+  rngint_t value() override {
     return (jcong = 69069 * jcong + 1234567);
   }
 
-  void
-  vec_reseed(const std::vector<rngint_t> &seeds) override;
+  void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
-  int
-  nseed() override;
+  int nseed() override;
 
  protected:
   CONG();
@@ -320,38 +295,30 @@ class SimpleCombo : public UniformInteger
   SHR3* shr3_;
 
  public:
-  static SimpleCombo*
-  construct();
+  static SimpleCombo* construct();
 
-  static SimpleCombo*
-  construct(const std::vector<rngint_t> &);
+  static SimpleCombo* construct(const std::vector<rngint_t> &);
 
-  static SimpleCombo*
-  construct(rngint_t zarg);
+  static SimpleCombo* construct(rngint_t zarg);
 
-  static SimpleCombo*
-  construct(rngint_t zarg, rngint_t warg);
+  static SimpleCombo* construct(rngint_t zarg, rngint_t warg);
 
-  static SimpleCombo*
-  construct(rngint_t zarg, rngint_t warg, rngint_t jsrarg);
+  static SimpleCombo* construct(rngint_t zarg, rngint_t warg, rngint_t jsrarg);
 
-  static SimpleCombo*
-  construct(rngint_t zarg, rngint_t warg, rngint_t jsrarg, rngint_t jcongarg);
+  static SimpleCombo* construct(rngint_t zarg, rngint_t warg,
+                                rngint_t jsrarg, rngint_t jcongarg);
 
   ~SimpleCombo();
 
   // value is written in this way to make it possible to inline
   // the MWC, CONG, and SHR3 value calls.
-  rngint_t
-  value() override {
+  rngint_t value() override {
     return (mwc_->MWC::value() ^ cong_->CONG::value()) + shr3_->SHR3::value();
   }
 
-  void
-  vec_reseed(const std::vector<rngint_t> &seeds) override;
+  void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
-  int
-  nseed() override;
+  int nseed() override;
 
  protected:
   SimpleCombo();
@@ -363,11 +330,9 @@ class Table256 : public UniformInteger
  public:
   ~Table256();
 
-  void
-  vec_reseed(const std::vector<rngint_t> &seeds);
+  void vec_reseed(const std::vector<rngint_t> &seeds);
 
-  int
-  nseed();
+  int nseed();
 
  protected:
   UniformInteger* seeder_;
@@ -408,14 +373,11 @@ class LFIB4 : public Table256
   LFIB4();
 
  public:
-  static LFIB4*
-  construct();
+  static LFIB4* construct();
 
-  static LFIB4*
-  construct(const std::vector<rngint_t> &seeds);
+  static LFIB4* construct(const std::vector<rngint_t> &seeds);
 
-  rngint_t
-  value() override {
+  rngint_t value() override {
     unsigned char i1, i2, i3, i4;
     i1 = c;
     i2 = c + 58;
@@ -426,11 +388,9 @@ class LFIB4 : public Table256
 
   ~LFIB4() ;
 
-  void
-  vec_reseed(const std::vector<rngint_t> &seeds) override;
+  void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
-  int
-  nseed() override;
+  int nseed() override;
 };
 
 /**
@@ -457,22 +417,17 @@ class SWB : public Table256
   SWB();
 
  public:
-  static SWB*
-  construct();
+  static SWB* construct();
 
-  static SWB*
-  construct(const std::vector<rngint_t>&);
+  static SWB* construct(const std::vector<rngint_t>&);
 
-  rngint_t
-  value() override;
+  rngint_t value() override;
 
   ~SWB();
 
-  void
-  vec_reseed(const std::vector<rngint_t> &seeds) override;
+  void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
-  int
-  nseed() override;
+  int nseed() override;
 };
 
 /**
@@ -489,8 +444,7 @@ class SWB : public Table256
 class Combo : public UniformInteger
 {
  public:
-  static Combo*
-  construct();
+  static Combo* construct();
 
   static Combo*
   construct(const std::vector<rngint_t>&);
@@ -529,13 +483,11 @@ class UniformInteger_functor
     p_(p) {
   }
 
-  rngint_t
-  operator()() {
+  rngint_t operator()() {
     return p_->value();
   }
 
-  rngint_t
-  operator()(rngint_t range) {
+  rngint_t operator()(rngint_t range) {
     return p_->value_in_range(range);
   }
 };

@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SPROCKIT_COMMON_MESSAGES_SERIALIZABLE_H_INCLUDED
 
 #include <sprockit/serializable_type.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <typeinfo>
 #include <stdint.h>
 
@@ -54,44 +54,36 @@ namespace sprockit {
 
 #define NotSerializable(obj) \
  public: \
-  static void \
-  throw_exc(){ \
+  static void throw_exc(){ \
      spkt_throw_printf(sprockit::illformed_error, \
       "type %s should not be serialized", \
       #obj); \
   } \
-  virtual void \
-  serialize_order(sprockit::serializer& sst) override { \
+  virtual void serialize_order(sprockit::serializer& sst) override { \
     throw_exc(); \
   } \
-  virtual uint32_t \
-  cls_id() const override { \
+  virtual uint32_t cls_id() const override { \
     throw_exc(); \
     return -1; \
   } \
-  static obj* \
-  construct_deserialize_stub() { \
+  static obj* construct_deserialize_stub() { \
     throw_exc(); \
     return 0; \
   } \
-  virtual const char* \
-  cls_name() const override { \
+  virtual const char* cls_name() const override { \
     throw_exc(); \
     return ""; \
   }
 
 #define ImplementSerializableDefaultConstructor(obj) \
  public: \
-  virtual const char* \
-  cls_name() const override { \
+  virtual const char* cls_name() const override { \
     return #obj; \
   } \
-  virtual uint32_t \
-  cls_id() const override { \
+  virtual uint32_t cls_id() const override { \
     return ::sprockit::serializable_builder_impl< obj >::static_cls_id(); \
   } \
-  static obj* \
-  construct_deserialize_stub() { \
+  static obj* construct_deserialize_stub() { \
     return new obj; \
   }
 
@@ -103,19 +95,15 @@ namespace sprockit {
 class serializable_builder
 {
  public:
-  virtual serializable*
-  build() const = 0;
+  virtual serializable* build() const = 0;
 
   virtual ~serializable_builder(){}
 
-  virtual const char*
-  name() const = 0;
+  virtual const char* name() const = 0;
 
-  virtual uint32_t
-  cls_id() const = 0;
+  virtual uint32_t cls_id() const = 0;
 
-  virtual bool
-  sanity(serializable* ser) = 0;
+  virtual bool sanity(serializable* ser) = 0;
 };
 
 template<class T>
@@ -126,33 +114,27 @@ class serializable_builder_impl : public serializable_builder
   static const uint32_t cls_id_;
 
  public:
-  serializable*
-  build() const {
+  serializable* build() const {
     return T::construct_deserialize_stub();
   }
 
-  const char*
-  name() const {
+  const char* name() const {
     return name_;
   }
 
-  uint32_t
-  cls_id() const {
+  uint32_t cls_id() const {
     return cls_id_;
   }
 
-  static uint32_t
-  static_cls_id() {
+  static uint32_t static_cls_id() {
     return cls_id_;
   }
 
-  static const char*
-  static_cls_name() {
+  static const char* static_cls_name() {
     return name_;
   }
 
-  bool
-  sanity(serializable* ser) {
+  bool sanity(serializable* ser) {
     return (typeid(T) == typeid(*ser));
   }
 };
@@ -161,26 +143,22 @@ class serializable_builder_impl : public serializable_builder
 class serializable_factory
 {
  protected:
-  typedef spkt_unordered_map<long, serializable_builder*> builder_map;
+  typedef std::unordered_map<long, serializable_builder*> builder_map;
   static builder_map* builders_;
 
  public:
-  static serializable*
-  get_serializable(uint32_t cls_id);
+  static serializable* get_serializable(uint32_t cls_id);
 
   /**
       @return The cls id for the given builder
   */
-  static uint32_t
-  add_builder(serializable_builder* builder, const char* name);
+  static uint32_t add_builder(serializable_builder* builder, const char* name);
 
-  static bool
-  sanity(serializable* ser, uint32_t cls_id) {
+  static bool sanity(serializable* ser, uint32_t cls_id) {
     return (*builders_)[cls_id]->sanity(ser);
   }
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
 };
 

@@ -2,231 +2,6 @@
 
 \chapter{\sstmacro Classes}\label{chapter:classes}
 
-\section{Class Style}\label{sec:style}
-
-\subsection{Basic Class}\label{subsec:basicClass}
-Most classes are manually managed, being explicitly deleted.  Whenever possible,
-smart pointers should be avoided since they create thread-safety headaches.
-For cases where manual deletion is cumbersome, classes in \sstmacro can inherit from the top-level class \inlinecode{ptr_type}, 
-which exists in \inlinecode{namespace sprockit}. 
-The examples here can be found in the code repository in \inlineshell{tutorials/programming/basic}.
-
-To begin, you just need to include the appropriate header file, declare the namespace desired, and start the class declaration (see \inlineshell{illustration.h}).
-
-\begin{CppCode}
-#include <sprockit/ptr_type.h>
-
-namespace sstmac {
-namespace tutorial {
-
-class illustration :
-  public sprockit::ptr_type
-{
-\end{CppCode}
-To simplify reading of the code (i.e. not typing \inlinecode{sprockit::refcount_ptr} everywhere), every class is required to typedef itself.
-
-\begin{CppCode}
- public:
-  typedef sprockit::refcount_ptr<illustration> ptr;
-  typedef sprockit::refcount_ptr<const illustration> const_ptr;
-\end{CppCode}
-The reference-counted pointer type can now be used as \inlinecode{illustration::ptr}.
-
-After declaring public typedefs, the public function interface can be declared.
-Every \inlinecode{ptr_type} class that is instantiated must implement a \inlinecode{to_string} function,
-mostly used for debugging purposes.
-
-\begin{CppCode}
- public:
-  std::string to_string() const override {
-    return "message class";
-   }
-\end{CppCode}
-
-Public set/get functions can be added for member variables, if desired.
-We have generally followed snake\_case, using lower-case letters and underscores.
-
-\begin{CppCode}
-  std::string message() const {
-    return message_;
-   }
-
-  void set_message(const std::string& msg){
-    message_ = msg;
-  }
-\end{CppCode}
-Unfortunately, amongst the various developers, a uniform style was never agreed.
-Some accessor functions could be called \inlinecode{get_message}, but most avoid the prefix and would be called just \inlinecode{message}.
-After any \inlinecode{private}/\inlinecode{protected} functions, member variables can be declared.
-\sstmacro developers have not historically been very strict with use of \inlinecode{protected} vs. \inlinecode{private} for members, typically using \inlinecode{protected} as a default for convenience. 
-
-NOTE: We already have our first style violation here.  The entire class is implemented here in a header file.
-In general, unless a trivial function like set/get, put the function implementation into a .cc file.
-
-\subsection{Inheritance and Parent Classes}\label{subsec:inheritance}
-We can also work through an example with inheritance.  
-If you are going to use smart pointers, inheritance is somewhat tricky.  
-Here we demonstrate in detail how to use smart pointers with virtual inheritance, 
-which is a scenario that often occurs with the \inlineshell{sst_message} class.
-Many classes will never actually be instantiated in \sstmacro - they are virtual classes defining an abstract interface.
-In the file \inlineshell{gem.h}, we define the \inlinecode{gem} abstract interface. Again, we include the header,
-declare namespaces, and declare the class.
-
-\begin{CppCode}
-#include <sprockit/ptr_type.h>
-
-namespace sstmac {
-    namespace tutorial {
-    
-class gem :
-  virtual public sprockit::ptr_type
-{
-\end{CppCode}
-We note here the use of virtual inheritance, which will become important later.
-In general, you should almost always use virtual inheritance from \inlinecode{ptr_type}.
-Even though this class is not a complete type (pure virtual functions), we still need the public pointer typedefs.
-
-\begin{CppCode}
- public:
-  typedef sprockit::refcount_ptr<gem> ptr;
-  typedef sprockit::refcount_ptr<const gem> const_ptr;
-\end{CppCode}
-We then define the abstract \inlinecode{gem} interface
-
-\begin{CppCode}
- public:
-  virtual int value() const = 0;
-
-  virtual ~gem(){}
-\end{CppCode}
-There is no static \inlinecode{construct} function!
-The static construct function
-is a signal that the class is a \emph{complete-type}, with all virtual methods implemented.
-Because of C++ destructors for abstract classes, you \emph{must} define a virtual destructor for every parent class - even if it does nothing.
-Without this, the memory management system will not work correctly.
-Many tutorials on the subtleties of virtual destructors can be found online.
-
-We can repeat the same process for a new abstract interface called \inlinecode{mineral}.
-Declare the class:
-
-\begin{CppCode}
-#include <sprockit/ptr_type.h>
-
-namespace sstmac {
-    namespace tutorial {
-
-class mineral :
-    virtual public sprockit::ptr_type
-{
-\end{CppCode}
-Again, we use virtual inheritance. We declare public typedefs:
-
-\begin{CppCode}
- public:
-  typedef sprockit::refcount_ptr<mineral> ptr;
-  typedef sprockit::refcount_ptr<const mineral> const_ptr;
-\end{CppCode}
-We then define the abstract \inlinecode{mineral} interface:
-
-\begin{CppCode}
- public:
-  virtual std::string structure() const = 0;
-
-  virtual ~mineral(){}
-\end{CppCode}
-
-Now we want to create a specific instance of a \inlinecode{gem} and \inlinecode{mineral}.
-
-\begin{CppCode}
-#include "gem.h"
-#include "mineral.h"
-
-namespace sstmac {
-    namespace tutorial {
-
-class diamond :
-    public gem,
-    public mineral
-{
-\end{CppCode}
-The reason for using virtual inheritance is now evident.
-The \inlinecode{diamond} class is going to implement both the \inlinecode{gem} and \inlinecode{mineral} interfaces.
-However, both classes separately inherit from \inlinecode{ptr_type}.
-We thus have the multiple inheritance diamond problem. 
-For this reason, both parent classes must virtually inherit from \inlinecode{ptr_type}.
-Most of this discussion is just a basic C++ tutorial without really being \sstmacro specific.
-However, this diamond problem is so ubiquitous with \inlinecode{ptr_type}, it merits a discussion here in the programmer's reference.
-
-We can now fill out the class.  First, we have the public typedefs
-
-\begin{CppCode}
- public:
-  typedef sprockit::refcount_ptr<diamond> ptr;
-  typedef sprockit::refcount_ptr<const diamond> const_ptr;
-\end{CppCode}
-
-
-The \inlinecode{ptr_type} class requires we add a \inlinecode{to_string} function
-
-\begin{CppCode}
-std::string to_string() const override {
-  return "diamond";
-}
-\end{CppCode}
-
-We now complete the gem interface
-
-\begin{CppCode}
-int value() const override {
-  return num_carats_ * 100;
-}
-\end{CppCode}
-
-and the mineral interface
-\begin{CppCode}
-std::string structure() const override {
-  return "tetrahedral carbon";
-}
-\end{CppCode}
-
-And the constructor
-
-\begin{CppCode}
-  diamond(num_carats)
-   : num_carats_(num_carats)
-{
-}
-\end{CppCode}
-
-Finally, we declare member variables
-
-\begin{CppCode}
- protected:
-  int num_carats_;
-\end{CppCode}
-
-
-\subsection{Exceptions}
-\label{classes:style:basic:exceptions}
-
-The \inlinecode{ptr_type.h} header file automatically includes a common set of exceptions, all in \inlinecode{namespace sprockit}.
-The most notable are:
-\begin{itemize}
-\item \inlinecode{value_error}: A parameter value is wrong
-\item \inlinecode{unimplemented_error}: A place-holder to indicate this function is not valid or not yet done
-\item \inlinecode{illformed_error}: A catch-all for anything that fails a sanity check
-\item \inlinecode{null_error}: A null object was received
-\end{itemize}
-\sprockit provides a macro for throwing exceptions.
-It should always be used since they provide extra metadata to the exception like file and line number.
-The macro, \inlinecode{spkt_throw_printf}, takes two mandatory arguments: the exception type and an exception message.
-An arbitrary number of arguments can be given, that get passed a \inlinecode{printf} invocation, e.g.
-
-\begin{CppCode}
-spkt_throw_printf(value_error, "invalid number of carats %d", num_carats_);
-\end{CppCode}
- 
-
 \section{Factory Types}\label{sec:factory}
 We here introduce factory types, i.e. polymorphic types linked to keywords in the input file.
 String parameters are linked to a lookup table, finding a factory that produces the desired type.
@@ -254,8 +29,8 @@ int main(int argc, char **argv)
 {
 \end{CppCode}
 The details of declaring and using external apps is found in the user's manual.
-From here it should be apparent that we defined a new application with name \inlinecode{rob_reiner}
-which is invoked via the \inlinecode{main} function.
+Briefly, \sstmacro (using the \inlinecode{sstmac_app_name} define) reroutes the main function to be callable within a simulation.
+From here it should be apparent that we defined a new application with name \inlinecode{rob_reiner}.
 Inside the main function, we create an object of type \inlinecode{actor}.
 
 \begin{CppCode}
@@ -270,10 +45,14 @@ The input file contains several parameters related to constructing a machine mod
 The important parameters are:
 
 \begin{ViFile}
-app1.name = rob_reiner
-biggest_fan = jeremy_wilke
-actor_name = patinkin
-sword_hand = right
+node {
+ app1 {
+  name = rob_reiner
+  biggest_fan = jeremy_wilke
+  actor_name = patinkin
+  sword_hand = right
+ }
+}
 \end{ViFile}
 
 Using the Makefile in the directory, if we compile and run the resulting executable we get the output
@@ -287,10 +66,14 @@ SST/macro ran for       0.0025 seconds
 If we change the parameters:
 
 \begin{ViFile}
-app1.name = rob_reiner
-biggest_fan = jeremy_wilke
-actor_name = guest
-num_fingers = 6
+node {
+ app1 {
+  name = rob_reiner
+  biggest_fan = jeremy_wilke
+  actor_name = guest
+  num_fingers = 6
+ }
+}
 \end{ViFile}
 
 we now get the output
@@ -314,8 +97,7 @@ To declare a new factory type, you must include the factory header file
 namespace sstmac {
     namespace tutorial {
 
-class actor
-{
+class actor {
 \end{CppCode}
 
 
@@ -380,6 +162,9 @@ class mandy_patinkin :
 {
  public:
   mandy_patinkin(sprockit::sim_parameters* params);
+  
+  FactoryRegister("patinkin", actor, mandy_patinkin,
+    "He's on one of those shows now... NCIS? CSI?");
 \end{CppCode}
 
 We have a single member variable
@@ -402,20 +187,12 @@ And finally, to satisfy the \inlinecode{actor} public interface, we need
 virtual void act() override;
 \end{CppCode}
 
-Moving to the implementation, we must first register the new type using the macro
-
-\begin{CppCode}
-namespace sstmac {
-    namespace tutorial {
-
-SpktRegister("patinkin", actor, mandy_patinkin,
-    "He's on one of those shows now... NCIS? CSI?");
-\end{CppCode}
+In the class declaration, we need to invoke the macro \inlinecode{FactoryRegister} to register
+the new child class type with the given string identifier.
 The first argument is the string descriptor that will be linked to the type.
-The second argument is the parent, base class. 
+The second argument is the parent base class. 
 The third argument is the specific child type.
 Finally, a documentation string should be given with a brief description.
-Whatever string value is registered here will be used in the input file to create the type.
 We can now implement the constructor:
 
 \begin{CppCode}
@@ -425,7 +202,7 @@ mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params) :
   sword_hand_ = params->get_param("sword_hand");
 
   if (sword_hand_ == "left"){
-    spkt_throw(value_error, "I am not left handed!");
+    sprockit::abort("I am not left handed!");
   }
   else if (sword_hand_ != "right"){
       spkt_abort_printf(value_error,
@@ -446,10 +223,4 @@ void mandy_patinkin::act()
 \end{CppCode}
 
 Another example \inlineshell{guest.h} and \inlineshell{guest.cc} in the code folder shows the implementation for the second class.
-
-\subsection{External Linkage}\label{subsec:linkage}
-If you glance at the Makefile, you will see how and why the executable is created.
-A compiler wrapper \inlineshell{sst++} points the makefile to the \sstmacro libraries, including a library \inlineshell{libsstmac_main} that actually implements the \inlinecode{main} routine and the \sstmacro driver.
-By creating another executable, arbitrary code can be linked together with the core \sstmacro framework.
-The same \sstmacro driver is invoked in the external executable as would be invoked by the default main executable.
 

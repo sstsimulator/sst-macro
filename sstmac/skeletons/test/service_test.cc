@@ -71,7 +71,7 @@ class test_service : public distributed_service
 class service_test_message : public sumi::message
 {
  public:
-  typedef sprockit::refcount_ptr<service_test_message> ptr;
+  typedef std::shared_ptr<service_test_message> ptr;
 
   std::string to_string() const override {
     return "service test message";
@@ -91,7 +91,7 @@ test_service::run()
   while (!terminated()) {
     sumi::message::ptr msg = poll_for_message(true);
     if (msg){
-      service_test_message::ptr smsg = ptr_safe_cast(service_test_message, msg);
+      auto smsg = std::dynamic_pointer_cast<service_test_message>(msg);
       printf("Service node %d sleeping for %8.4es\n", rank(), smsg->workload.sec());
       os_->sleep(smsg->workload);
     }
@@ -123,7 +123,7 @@ int USER_MAIN(int argc, char** argv)
     partner = ((partner + 5) * 7) % num_service_nodes;
     printf("Client %d sending to service node %d at addr %d\n",
            me, partner, srv->rank_to_node(partner));
-    service_test_message* msg = new service_test_message(task_length);
+    auto msg = std::make_shared<service_test_message>(task_length);
     tport->client_server_send(partner, srv->rank_to_node(partner), srv->aid(), msg);
   }
   //send a shutdown request to server 0 - make rank 0 in charge

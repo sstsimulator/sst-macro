@@ -87,8 +87,7 @@ run_test(int me, int todie, int nproc_live, int context, int tag)
 
   dmsg = comm_collective_block(collective::allgather, tag);
   if (!dmsg->succeeded()){
-    spkt_throw(sprockit::illformed_error,
-        "allgather collective failed - should always succeed");
+    sprockit::abort("allgather collective failed - should always succeed");
   }
 
   for (int i=0; i < nproc_live; ++i){

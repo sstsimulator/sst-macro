@@ -581,6 +581,7 @@ sim_parameters::_extra_data() const
     return parent_->_extra_data();
   } else {
     spkt_abort_printf("sim_parameters has no extra data to fetch");
+    return nullptr;
   }
 }
 
@@ -1237,6 +1238,7 @@ sim_parameters::get_variable(const std::string& str)
       std::cerr << pair.first << " = " << pair.second << std::endl;
     }
     spkt_abort_printf("unknown variable name %s", str.c_str());
+    return "";
   } else {
     return it->second;
   }

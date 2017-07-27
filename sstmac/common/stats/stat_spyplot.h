@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <fstream>
 #include <map>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 namespace sstmac {
 
@@ -63,8 +63,7 @@ class stat_spyplot :
 {
   FactoryRegister("ascii", stat_collector, stat_spyplot)
  public:
-  virtual std::string
-  to_string() const override {
+  virtual std::string to_string() const override {
     return "stat_spyplot";
   }
 
@@ -88,8 +87,7 @@ class stat_spyplot :
 
   virtual void add(int source, int dest, long num);
 
-  virtual stat_collector*
-  do_clone(sprockit::sim_parameters* params) const override {
+  virtual stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new stat_spyplot(params);
   }
 
@@ -100,8 +98,8 @@ class stat_spyplot :
   }
 
  protected:
-  typedef spkt_unordered_map<int, long> long_map;
-  typedef spkt_unordered_map<int, long_map> spyplot_map;
+  typedef std::unordered_map<int, long> long_map;
+  typedef std::unordered_map<int, long_map> spyplot_map;
   spyplot_map vals_;
   int max_dest_;
 
@@ -116,28 +114,21 @@ class stat_spyplot_png : public stat_spyplot
  public:
   stat_spyplot_png(sprockit::sim_parameters* params);
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "stat_spyplot_png";
   }
 
-  virtual void
-  add(int source, int dest, long num) override;
+  virtual void add(int source, int dest, long num) override;
 
-  virtual void
-  dump_to_file(const std::string& froot) override;
+  virtual void dump_to_file(const std::string& froot) override;
 
-  void
-  set_normalization(long max) {
+  void set_normalization(long max) {
     normalization_ = max;
   }
 
-  virtual
-  ~stat_spyplot_png() {
-  }
+  virtual ~stat_spyplot_png() {}
 
-  stat_collector*
-  do_clone(sprockit::sim_parameters* params) const override {
+  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new stat_spyplot_png(params);
   }
 

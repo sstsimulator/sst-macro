@@ -48,12 +48,10 @@ The \inlinecode{connectable} class presents a standard virtual interface
 class connectable
 {
  public:
-  virtual void
-  connect_output(
+  virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod,
     event_handler* handler) = 0;
 
   virtual void
@@ -61,7 +59,6 @@ class connectable
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    connectable* mod,
     event_handler* handler) = 0;
 
 
@@ -302,8 +299,8 @@ Irregular or arbitrary topology connections are not fully supported yet.
 The most important functions in the \topcls class are
 
 \begin{CppCode}
-class topology
-{
+class topology {
+...
 virtual bool uniform_network_ports() const = 0;
 
 virtual bool uniform_switches_non_uniform_network_ports() const = 0;
@@ -381,8 +378,7 @@ This division of labor is complicated a bit by adaptive routing, but remains ess
 The router has a simple public interface
 
 \begin{CppCode}
-class router
-{
+class router {
 ...
   virtual void route(packet* pkt);
 

@@ -154,7 +154,7 @@ class mpi_queue
 
   typedef std::list<mpi_queue_send_request*> send_needs_ack_t;
 
-  typedef spkt_unordered_map<int, mpi_message::ptr> reorderlist_t;
+  typedef std::unordered_map<int, mpi_message::ptr> reorderlist_t;
 
   typedef std::map<mpi_message::id, mpi_queue_send_request*> ack_needed_t;
 
@@ -201,13 +201,13 @@ class mpi_queue
 
  private:
   /// The sequence number for our next outbound transmission.
-  spkt_unordered_map<task_id, int> next_outbound_;
+  std::unordered_map<task_id, int> next_outbound_;
 
   /// The sequence number expected for our next inbound transmission.
-  spkt_unordered_map<task_id, int> next_inbound_;
+  std::unordered_map<task_id, int> next_inbound_;
 
   /// Hold messages that arrived out of order.
-  spkt_unordered_map<task_id, hold_list_t> held_;
+  std::unordered_map<task_id, hold_list_t> held_;
 
   /// The (locally unique) id that will be given to the next message.
   mpi_message::id next_id_;

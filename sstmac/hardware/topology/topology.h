@@ -57,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 DeclareDebugSlot(topology)
 
@@ -84,8 +84,8 @@ class topology : public sprockit::printable
   static const int speedy_port = 1000000;
 
  public:
-  typedef spkt_unordered_map<switch_id, connectable*> internal_connectable_map;
-  typedef spkt_unordered_map<node_id, connectable*> end_point_connectable_map;
+  typedef std::unordered_map<switch_id, connectable*> internal_connectable_map;
+  typedef std::unordered_map<node_id, connectable*> end_point_connectable_map;
 
  public:
   virtual ~topology();

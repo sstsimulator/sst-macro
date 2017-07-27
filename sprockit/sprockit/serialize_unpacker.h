@@ -55,17 +55,14 @@ class ser_unpacker :
 {
  public:
   template <class T>
-  void
-  unpack(T& t){
+  void unpack(T& t){
     T* bufptr = ser_buffer_accessor::next<T>();
     t = *bufptr;
   }
 
-  void
-  unpack_buffer(void* buf, int size);
+  void unpack_buffer(void* buf, int size);
 
-  void
-  unpack_string(std::string& str);
+  void unpack_string(std::string& str);
 
 };
 

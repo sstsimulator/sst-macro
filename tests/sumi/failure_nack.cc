@@ -64,7 +64,7 @@ main(int argc, char **argv)
   int partner = (rank + 1) % comm_nproc();
   long bytes = 8192;
   for (int i=0; i < 10; i++){
-    comm_rdma_get(partner, new message(bytes));
+    comm_rdma_get(partner, std::make_shared<message>(bytes));
     sstmac_usleep(1);
   }
 

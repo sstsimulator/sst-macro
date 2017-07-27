@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/hardware/common/connection.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sst/core/link.h>
 #include <Python.h>
 
@@ -75,8 +75,7 @@ class link_wrapper :
   }
 
   void handle(event* ev) override {
-    spkt_throw(sprockit::unimplemented_error,
-      "link_wrapper::handle: should never be called");
+    sprockit::abort("link_wrapper::handle: parent function should never be called");
   }
 
   SST::Link* link() const override {

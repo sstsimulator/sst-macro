@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
 #include <sprockit/spkt_config.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <vector>
 #include <string>
 
@@ -154,7 +154,7 @@ class mpi_type
     return contiguous_;
   }
 
-  spkt_unordered_map<MPI_Op, sumi::reduce_fxn> fxns_;
+  std::unordered_map<MPI_Op, sumi::reduce_fxn> fxns_;
 
   template <typename data_t>
   void init_integer(const char* name){

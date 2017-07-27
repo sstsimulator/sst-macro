@@ -162,7 +162,7 @@ job_launcher::cleanup_app(job_stop_event* ev)
 void
 job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_node_set& allocation)
 {
-  task_mapping::ptr mapping = new task_mapping(request->aid());
+  task_mapping::ptr mapping = std::make_shared<task_mapping>(request->aid());
   request->index_allocation(
      topology_, allocation,
      mapping->rank_to_node(),
@@ -260,7 +260,7 @@ task_mapping::serialize_order(app_id aid, serializer &ser)
     } else {
       int num_nodes;
       ser & num_nodes;
-      mapping = new task_mapping(aid);
+      mapping = std::make_shared<task_mapping>(aid);
       ser & mapping->rank_to_node_indexing_;
       mapping->node_to_rank_indexing_.resize(num_nodes);
       int num_ranks = mapping->rank_to_node_indexing_.size();

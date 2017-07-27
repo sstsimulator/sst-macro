@@ -229,8 +229,7 @@ ping_monitor::message_received(const message::ptr& msg)
 {
 #if SST_SANITY_CHECK
   if (msg->class_type() != message::ping){
-    spkt_throw(sprockit::illformed_error,
-        "ping monitor received non-ping message");
+    sprockit::abort("ping monitor received non-ping message");
   }
 #endif
   //this is a bit weird again

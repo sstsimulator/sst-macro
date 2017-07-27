@@ -149,8 +149,7 @@ gni_transport::block_inner_loop()
 void
 gni_transport::do_nvram_get(int dst, const message::ptr& msg)
 {
-  spkt_throw(sprockit::unimplemented_error,
-	"gni_transport::do_nvram_get");
+  sprockit::abort("gni_transport::do_nvram_get: not implemented");
 }
 
 }

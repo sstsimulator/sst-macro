@@ -81,7 +81,7 @@ serializable_factory::add_builder(serializable_builder* builder, const char* nam
     std::cerr << sprockit::printf(
       "amazingly %s and %s both hash to same serializable id %u",
       current->name(), builder->name(), hash) << std::endl;
-    abort();
+    ::abort();
   }
   current = builder;
   return hash;

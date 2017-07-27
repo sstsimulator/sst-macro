@@ -51,39 +51,26 @@ extern "C"
 #else
 #include <stdbool.h>
 #endif
-//bool get_bool_param(const char* str);
 
-// bool get_optional_bool_param(const char* str, bool val);
+int get_int_param(char* str);
 
-int
-get_int_param(char* str);
+int get_optional_int_param(char* str, int val);
 
-int
-get_optional_int_param(char* str, int val);
+long get_long_param(char* str);
 
-long
-get_long_param(char* str);
+long get_optional_long_param(char* str, long val);
 
-long
-get_optional_long_param(char* str, long val);
+double get_double_param(char* str);
 
-double
-get_double_param(char* str);
+double get_optional_double_param(char* str, double val);
 
-double
-get_optional_double_param(char* str, double val);
+const char* get_param(char* str);
 
-const char*
-get_param(char* str);
+bool get_bool_param(char* str);
 
-bool
-get_bool_param(char* str);
+bool get_optional_bool_param(char* str, bool val);
 
-bool
-get_optional_bool_param(char* str, bool val);
-
-const char*
-get_optional_param(char* str, char* val);
+const char* get_optional_param(char* str, char* val);
 #ifdef __cplusplus
 }
 #endif

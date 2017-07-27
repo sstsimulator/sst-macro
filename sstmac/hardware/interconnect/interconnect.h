@@ -59,7 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 #include <set>
 

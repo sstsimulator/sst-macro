@@ -107,8 +107,7 @@ union funcptr {
   }
   void call(const voidptr &arg) {
     if(fpointer == 0) {
-      spkt_throw(sprockit::null_error,
-        "union functpr::call(const voidptr&): NULL function pointer");
+      sprockit::abort("union functpr::call(const voidptr&): NULL function pointer");
     }
     (*fpointer)(arg.vpointer);
   }

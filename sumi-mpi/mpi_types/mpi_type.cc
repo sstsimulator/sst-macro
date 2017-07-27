@@ -439,8 +439,7 @@ mpi_type::pack_action(void* packed_buf, void* unpacked_buf, bool pack) const
     break;
   }
   case NONE: {
-    spkt_throw(sprockit::illformed_error,
-        "mpi_type::pack_action: cannot pack NONE type");
+    sprockit::abort("mpi_type::pack_action: cannot pack NONE type");
   }
   }
 }

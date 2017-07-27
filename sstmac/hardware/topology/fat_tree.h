@@ -266,6 +266,7 @@ class tapered_fat_tree : public abstract_fat_tree
       return num_inj_switches_per_subtree_;
     } else {
       spkt_abort_printf("invalid level %d - cannot go up on fat tree level %d", level, level);
+      return -1;
     }
   }
 

@@ -55,7 +55,7 @@ cartesian_topology::cartesian_topology(sprockit::sim_parameters *params,
 {
   params->get_vector_param("geometry", dimensions_);
   if (dimensions_.size() == 0) {
-    spkt_throw_printf(sprockit::value_error, "empty topology vector for hdtorus");
+    spkt_throw_printf(sprockit::value_error, "empty topology vector for torus");
   }
 
   if (params->has_param("redundant")) {

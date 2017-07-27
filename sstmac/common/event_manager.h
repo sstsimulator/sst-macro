@@ -94,12 +94,8 @@ class event_manager
 
   virtual ~event_manager(){}
 
-  /// Clear all events and set time back to a zero of your choice.
-  /// This call shall not be permitted while the event manager is running.
   virtual void clear(timestamp zero_time = timestamp(0)) = 0;
 
-  /// Run the eventmanager.
-  /// The eventmanager shall return control when no more messages remain.
   virtual void run() = 0;
 
   virtual bool empty() const = 0;

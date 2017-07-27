@@ -89,7 +89,7 @@ namespace lblxml
               printf("rank %d sending message %d to rank %d\n",
                      rank_, index, dest);
             g_message_begin_[index] = now();
-            pt2pt_message::ptr mess = new pt2pt_message(index,count);
+            pt2pt_message::ptr mess = std::make_shared<pt2pt_message>(index,count);
             comm_rdma_put(dest, mess);
             if (synch_mode_ < phase_asynch) {
               if (debug_ > 0 && rank_ == BOXML_DEBUG_RANK && epoch == BOXML_DEBUG_EPOCH )
@@ -240,7 +240,7 @@ namespace lblxml
       switch (dmess->class_type()){
         case sumi::message::pt2pt:
         {
-          pt2pt_message::ptr pmess = ptr_safe_cast(pt2pt_message, dmess);
+          pt2pt_message::ptr pmess = std::dynamic_pointer_cast<pt2pt_message>(dmess);
           index = pmess->event_index();
           event* ev = g_events[index];
           epoch = ev->epoch();
@@ -259,7 +259,7 @@ namespace lblxml
         }
         case sumi::message::collective_done:
         {
-          sumi::collective_done_message::ptr cmess = ptr_safe_cast(sumi::collective_done_message, dmess);
+          auto cmess = std::dynamic_pointer_cast<sumi::collective_done_message>(dmess);
           box_domain* dom = static_cast<box_domain*>(cmess->dom());
           int my_box_number = dom->my_box_number();
           index = cmess->tag();

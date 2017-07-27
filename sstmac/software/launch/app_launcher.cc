@@ -97,6 +97,7 @@ hw::network_message*
 launch_event::clone_injection_ack() const
 {
   spkt_abort_printf("launch event should never be cloned for injection");
+  return nullptr;
 }
 
 int

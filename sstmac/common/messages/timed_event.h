@@ -60,21 +60,14 @@ class timed_interface
     time_(t) {
   }
 
-  /**
-   * Time getter
-   * @return time field
-   */
-  timestamp
-  time() const {
+  timestamp time() const {
     return time_;
   }
 
-  void
-  serialize_order(serializer& ser);
+  void serialize_order(serializer& ser);
 
  protected:
-  void
-  clone_into(timed_interface* cln) const {
+  void clone_into(timed_interface* cln) const {
     cln->time_ = time_;
   }
 

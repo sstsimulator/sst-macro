@@ -62,8 +62,6 @@ library_include_HEADERS = \
  thread_lock.h \
  thread_safe_int.h \
  thread_safe_list.h \
- thread_safe_ptr_type.h \
- thread_safe_refcount_ptr.h \
  thread_safe_set.h \
  timeout.h \
  transport.h \
