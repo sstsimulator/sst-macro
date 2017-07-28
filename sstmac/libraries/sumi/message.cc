@@ -120,6 +120,7 @@ transport_message::clone_injection_ack() const
 #endif
   transport_message* cln = new transport_message;
   clone_into(cln);
+  cln->payload_ = std::shared_ptr<sumi::message>(payload_->clone_ack());
 #if SSTMAC_SANITY_CHECK
   if (cln->network_message::type() == network_message::null_netmsg_type){
     sprockit::abort("message::clone_injection_ack: did not clone correctly");
@@ -133,7 +134,7 @@ void
 transport_message::clone_into(transport_message* cln) const
 {
   //the payload is actually immutable now - so this is safe
-  cln->payload_ = std::shared_ptr<sumi::message>(payload_->clone());
+  cln->payload_ = payload_;
   cln->src_app_ = src_app_;
   cln->dest_app_ = dest_app_;
   cln->src_ = src_;

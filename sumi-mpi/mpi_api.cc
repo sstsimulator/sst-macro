@@ -95,8 +95,7 @@ category mpi_api::memcpy_key_category("MPI Memcpy");
 
 static sprockit::need_delete_statics<mpi_api> del_statics;
 
-mpi_api*
-sstmac_mpi()
+mpi_api* sstmac_mpi()
 {
   sstmac::sw::thread* t = operating_system::current_thread();
   return t->get_api<mpi_api> ();

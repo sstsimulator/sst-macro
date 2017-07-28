@@ -69,6 +69,9 @@ message::clone_ack() const
 {
   message* ack = clone_msg();
   switch (payload_type()){
+    case message::eager_payload:
+      ack->set_payload_type(message::eager_payload_ack);
+      break;
     case message::rdma_get:
       ack->set_payload_type(message::rdma_get_ack);
       break;

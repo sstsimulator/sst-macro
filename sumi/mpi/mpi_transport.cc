@@ -152,7 +152,7 @@ void
 mpi_transport::rdma_get_ack(const message::ptr& msg)
 {
   msg->set_payload_type(message::rdma_get_ack);
-  completion_queue_.push_back(msg);
+  pt2pt_done_.push_back(msg);
 }
 
 void

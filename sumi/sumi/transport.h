@@ -233,7 +233,13 @@ class transport {
 
   message::ptr blocking_poll(message::payload_type_t);
 
-  virtual message::ptr poll_pending_messages(bool blocking, double timeout) = 0;
+  /**
+   * @brief poll_pending_messages
+   * @param blocking  Whether to block if no messages are available
+   * @param timeout   How long to block if no messages found
+   * @return A transport message carrying a message
+   */
+  virtual transport_message* poll_pending_messages(bool blocking, double timeout) = 0;
 
   bool use_eager_protocol(long byte_length) const {
     return byte_length < eager_cutoff_;
@@ -500,8 +506,6 @@ class transport {
   }
   
   virtual void delayed_transport_handle(const message::ptr& msg) = 0;
-
-  virtual void cq_notify() = 0;
   
   void die();
 
@@ -523,7 +527,14 @@ class transport {
    */
   void next_heartbeat();
 
-  void handle(const message::ptr& msg);
+  /**
+   * @brief handle Receive some version of point-2-point message.
+   *  Return either the original message or a collective done message
+   *  if the message is part of a collective and the collective is done
+   * @param msg A point to point message that might be part of a collective
+   * @return Null, if collective message and collective is not done
+   */
+  message::ptr handle(const message::ptr& msg);
 
   virtual public_buffer allocate_public_buffer(int size) {
     return public_buffer(::malloc(size));
@@ -555,14 +566,6 @@ class transport {
 
   void send_unexpected_rdma(int dst, const message::ptr& msg);
 
-  void set_callback(notify_callback* cb){
-    notify_cb_ = cb;
-  }
-
-  void unset_callback(){
-    notify_cb_ = 0;
-  }
-
  protected:
   void start_transaction(const message::ptr& msg);
 
@@ -591,9 +594,6 @@ class transport {
   virtual void go_die() = 0;
 
   virtual void go_revive() = 0;
-
-  /* Has default behavior */
-  void operation_done(const message::ptr& msg);
 
  private:  
   bool is_heartbeat(const collective_done_message::ptr& dmsg) const {
@@ -638,6 +638,14 @@ class transport {
   void start_function();
 
   void end_function();
+
+  /**
+   * @brief poll_new Return a new message not already in the completion queue
+   * @param blocking
+   * @param timeout
+   * @return A message if found, null message if non-blocking or timed out
+   */
+  message::ptr poll_new(bool blocking, double timeout = -1);
 
  private:  
   bool skip_collective(collective::type_t ty,
@@ -708,7 +716,8 @@ class transport {
 
   double heartbeat_interval_;
 
-  thread_safe_list<message::ptr> completion_queue_;
+  thread_safe_list<message::ptr> pt2pt_done_;
+  thread_safe_list<message::ptr> collectives_done_;
 
   int next_transaction_id_;
   int max_transaction_id_;

@@ -229,17 +229,6 @@ transport::finish()
 }
 
 void
-transport::operation_done(const message::ptr &msg)
-{
-  if (notify_cb_ && msg->class_type() != message::collective_done){
-    notify_cb_->notify(msg);
-  } else {
-    completion_queue_.push_back(msg);
-    cq_notify();
-  }
-}
-
-void
 transport::renew_pings()
 {
   monitor_->renew_pings(wall_time());
@@ -248,22 +237,22 @@ transport::renew_pings()
 message::ptr
 transport::blocking_poll(message::payload_type_t ty)
 {
-  std::list<message::ptr>::iterator it, end = completion_queue_.start_iteration();
-  for (it=completion_queue_.begin(); it != end; ++it){
+  std::list<message::ptr>::iterator it, end = pt2pt_done_.start_iteration();
+  for (it=pt2pt_done_.begin(); it != end; ++it){
     message::ptr msg = *it;
     if (msg->payload_type() == ty){
-      completion_queue_.erase(it);
+      pt2pt_done_.erase(it);
       return msg;
     }
   }
-  completion_queue_.end_iteration();
+  pt2pt_done_.end_iteration();
 
   while (1){
     message::ptr msg = blocking_poll();
     if (msg->payload_type() == ty){
       return msg;
     } else {
-      completion_queue_.push_back(msg);
+      pt2pt_done_.push_back(msg);
     }
   }
 }
@@ -271,14 +260,31 @@ transport::blocking_poll(message::payload_type_t ty)
 message::ptr
 transport::poll(bool blocking, double timeout)
 {
-  message::ptr dmsg;
-  bool empty = completion_queue_.pop_front_and_return(dmsg);
-  if (empty){
-    debug_printf(sprockit::dbg::sumi,
-      "Rank %d blocking_poll: cq empty, blocking", rank_);
-    return poll_pending_messages(blocking, timeout);
-  } else {
-    return dmsg;
+  debug_printf(sprockit::dbg::sumi, "Rank %d polling for message", rank_);
+  message::ptr ret;
+  bool empty = pt2pt_done_.pop_front_and_return(ret);
+  if (!empty) return ret;
+
+  empty = collectives_done_.pop_front_and_return(ret);
+  if (!empty) return ret;
+
+  return poll_new(blocking, timeout);
+}
+
+message::ptr
+transport::poll_new(bool blocking, double timeout)
+{
+  debug_printf(sprockit::dbg::sumi, "Rank %d polling for NEW message", rank_);
+  while (1){
+    transport_message* tmsg = poll_pending_messages(blocking, timeout);
+    if (tmsg){
+      message::ptr cq_notifier = handle(tmsg->payload());
+      if (cq_notifier || !blocking){
+        return cq_notifier;
+      }
+    } else {
+      return message::ptr();
+    }
   }
 }
 
@@ -330,7 +336,7 @@ transport::clean_up()
   todel_.clear();
 }
 
-void
+message::ptr
 transport::handle(const message::ptr& msg)
 {
   debug_printf(sprockit::dbg::sumi,
@@ -349,13 +355,29 @@ transport::handle(const message::ptr& msg)
   case message::bcast:
     //root initiated global broadcast of some metadata
     system_bcast(msg);
-    operation_done(msg);
-    break;
+    return msg;
   case message::terminate:
   case message::collective_done:
   case message::pt2pt: {
-    operation_done(msg);
-    break;
+    switch (msg->payload_type()){
+      case message::rdma_get:
+      case message::rdma_put:
+      case message::eager_payload:
+        if (msg->needs_recv_ack()){
+          return msg;
+        }
+        break;
+      case message::rdma_get_ack:
+      case message::rdma_put_ack:
+      case message::eager_payload_ack:
+        if (msg->needs_send_ack()){
+          return msg;
+        }
+        break;
+      default:
+        break;
+    }
+    return msg;
   }
   case message::unexpected:
     switch (msg->payload_type()){
@@ -363,8 +385,7 @@ transport::handle(const message::ptr& msg)
         handle_unexpected_rdma_header(msg);
         break;
       default:
-        operation_done(msg);
-        break;
+        return msg;
     }
     break;
   case message::collective: {
@@ -382,16 +403,24 @@ transport::handle(const message::ptr& msg)
         tag, collective::tostr(ty));
         //message for collective we haven't started yet
         pending_collective_msgs_[ty][tag].push_back(cmsg);
-    }
-    else {
+        return message::ptr();
+    } else {
       collective* coll = it->second;
+      int old_collective_size = collectives_done_.size();
       coll->recv(cmsg);
+      if (collectives_done_.size() != old_collective_size){
+        //oh, a new collective finished
+        message::ptr dmsg;
+        collectives_done_.pop_back_and_return(dmsg);
+        return dmsg;
+      } else {
+        return message::ptr();
+      }
     }
-    break;
   }
   case message::ping: {  
     monitor_->message_received(msg);
-    break;
+    return message::ptr();
   }
   case message::no_class: {
       spkt_throw_printf(sprockit::value_error,
@@ -405,6 +434,7 @@ transport::handle(const message::ptr& msg)
         msg->class_type());
   }
   }
+  return message::ptr();
 }
 
 void
@@ -550,7 +580,7 @@ transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, commu
     dmsg->set_comm_rank(0);
     dmsg->set_vote(vote);
     votes_done_[tag] = vote_result(vote, thread_safe_set<int>());
-    handle(dmsg);
+    pt2pt_done_.push_back(dmsg);
     return;
   }
 
@@ -651,14 +681,6 @@ transport::vote_done(const collective_done_message::ptr& dmsg)
       schedule_next_heartbeat();
     }
     heartbeat_running_ = false;
-    if (dmsg->failed()){
-      //only put message in the queue if new failures have occurred
-      //we don't need to notify if no new failures
-      operation_done(dmsg);
-    }
-  } else {
-    //always pass on a notification if it's a regular voting collective
-    operation_done(dmsg);
   }
 }
 
@@ -779,7 +801,7 @@ transport::skip_collective(collective::type_t ty,
     auto dmsg = std::make_shared<collective_done_message>(tag, ty, dom);
     dmsg->set_comm_rank(0);
     dmsg->set_result(dst);
-    handle(dmsg);
+    pt2pt_done_.push_back(dmsg);
     return true; //null indicates no work to do
   } else {
     return false;
@@ -1024,10 +1046,9 @@ transport::finish_collective(collective* coll, const collective_done_message::pt
     votes_done_[tag].failed_ranks.insert_all(prev_context.failed_ranks);
     failed_ranks_.insert_all(votes_done_[tag].failed_ranks);
     vote_done(dmsg);
-  } else {
-    //this always generates an operation done
-    operation_done(dmsg);
   }
+  collectives_done_.push_back(dmsg);
+
   pending_collective_msgs_[ty].erase(tag);
   debug_printf(sprockit::dbg::sumi,
     "Rank %d finished collective of type %s tag %d -> known failures are %s",
@@ -1118,11 +1139,11 @@ transport::smsg_send(int dst, message::payload_type_t ev,
     debug_printf(sprockit::dbg::sumi,
       "Rank %d SUMI sending self message", rank_);
 
-    handle(msg);
+    pt2pt_done_.push_back(msg);
     if (needs_ack){
       message::ptr ack(msg->clone());
       ack->set_payload_type(message::eager_payload_ack);
-      handle(ack);
+      pt2pt_done_.push_back(ack);
     }
 
   }

@@ -65,8 +65,6 @@ END_SERIALIZATION_NAMESPACE
 
 namespace sumi {
 
-
-
 class message :
   public sprockit::printable,
   public sumi::serializable
@@ -380,6 +378,25 @@ class system_bcast_message : public message
  private:
   int root_;
   action_t action_;
+};
+
+/**
+* @brief The transport_message class
+* Base class for anything that carries a sumi message as a payload
+*/
+class transport_message {
+ public:
+  sumi::message::ptr payload() const {
+    return payload_;
+  }
+
+ protected:
+  transport_message(sumi::message::ptr pload) :
+    payload_(pload) {}
+
+  transport_message(){} //for serialization
+
+  sumi::message::ptr payload_;
 };
 
 }

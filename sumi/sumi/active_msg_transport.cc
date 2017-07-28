@@ -57,11 +57,11 @@ active_msg_transport::active_msg_transport() :
 message::ptr
 active_msg_transport::block_until_message()
 {
-  while (completion_queue_.empty()){
+  while (pt2pt_done_.empty()){
     block_inner_loop();
   }
   bool empty;
-  message::ptr ret = completion_queue_.pop_front_and_return(empty);
+  message::ptr ret = pt2pt_done_.pop_front_and_return(empty);
   return ret;
 }
 
@@ -70,11 +70,11 @@ active_msg_transport::block_until_message(double timeout)
 {
   double start = wall_time();
   double stop = start + timeout;
-  while (completion_queue_.empty() && wall_time() < stop){
+  while (pt2pt_done_.empty() && wall_time() < stop){
     block_inner_loop();
   }
   bool empty;
-  message::ptr ret = completion_queue_.pop_front_and_return(empty);
+  message::ptr ret = pt2pt_done_.pop_front_and_return(empty);
   return ret;
 }
 

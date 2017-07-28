@@ -84,8 +84,6 @@ class sumi_transport :
 
   virtual ~sumi_transport();
 
-  sumi::message_ptr handle(sstmac::transport_message* msg);
-
   void incoming_event(event *ev) override;
 
   void compute(timestamp t);
@@ -112,11 +110,9 @@ class sumi_transport :
   sumi::collective_done_message::ptr
   collective_block(sumi::collective::type_t ty, int tag) override;
 
-  void cq_notify() override;
-
   double wall_time() const override;
 
-  sumi::message::ptr poll_pending_messages(bool blocking, double timeout = -1) override;
+  sumi::transport_message* poll_pending_messages(bool blocking, double timeout = -1) override;
 
   void ping_timeout(sumi::pinger* pnger);
 
@@ -197,6 +193,8 @@ class sumi_transport :
     const sumi::message::ptr& msg,
     bool needs_ack,
     int ty);
+
+  void process(sstmac::transport_message* msg);
 
   void ctor_common(sstmac::sw::software_id sid);
 
