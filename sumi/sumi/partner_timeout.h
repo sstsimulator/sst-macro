@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi/collective_actor.h>
 
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
 namespace sumi
 {
 
@@ -78,5 +79,6 @@ class collective_timeout :
 };
 
 }
+#endif
 
 #endif // PARTNER_TIMEOUT_H

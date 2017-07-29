@@ -60,6 +60,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/thread_safe_list.h>
 #include <sumi/thread_safe_set.h>
 #include <sumi/thread_lock.h>
+#include <sumi/feature_config.h>
 
 DeclareDebugSlot(sumi);
 
@@ -80,26 +81,6 @@ struct enum_hash {
 class transport {
   DeclareFactory(transport)
  public:
-  class notify_callback {
-   public:
-    virtual void notify(const message::ptr& msg) = 0;
-  };
-
-  template <class Fxn, class T, class MsgType>
-   class notify_callback_impl {
-    public:
-     notify_callback_impl(T* t, Fxn f) :
-       t_(f), fxn_(f){}
-
-     void notify(const message::ptr& msg){
-       (t_->*fxn_)(std::dynamic_pointer_cast<MsgType>(msg));
-     }
-
-    private:
-     Fxn fxn_;
-     T* t_;
-  };
-
   virtual ~transport();
 
   virtual void init();
@@ -266,56 +247,12 @@ class transport {
   virtual bool supports_hardware_ack() const {
     return false;
   }
-  
-  virtual void init_spares(int nspares);
-
-  /**
-   * Cancel a currently active ping
-   * @param dst
-   * @param func
-   */
-  void cancel_ping(int dst, timeout_function* func);
-
-  /**
-    @param dst The neighbor
-    @param func The timeout function to be invoked if no response
-                or NACK received
-    @return True if the dst node is already known to be failed. False if not.
-  */
-  bool ping(int dst, timeout_function* func);
-
-  /**
-   * @brief watch Wait on heartbeat notifcations for failures on this node.
-   * Do NOT actively ping.  Wait instead for failure notifications.
-   * @param dst
-   * @param func
-   * @return True if the dst node is already known to be failed. False if not.
-   */
-  bool start_watching(int dst, timeout_function* func);
-
-  void stop_watching(int dst, timeout_function* func);
 
   void send_self_terminate();
 
-  void send_terminate(int rank);
+  virtual void send_terminate(int dst) = 0;
 
   virtual double wall_time() const = 0;
-
-  void send_ping_request(int dst);
-
-  void renew_pings();
-  
-  /**
-   * Start regular heartbeat (i.e. vote) collectives going
-   * This informs the application at regular intervals of any new process failures
-   * @param interval The time in seconds at which to regularly execute heartbeats
-   */
-  virtual void start_heartbeat(double interval);
-
-  /**
-   * Let the current heartbeat finish and then stop them executing.
-   */
-  virtual void stop_heartbeat();
   
   /**
    * Block on a collective of a particular type and tag
@@ -455,14 +392,6 @@ class transport {
     return nproc_;
   }
 
-  int nproc_alive() const {
-    return nproc_ - failed_ranks_.size();
-  }
-
-  int nproc_failed() const {
-    return failed_ranks_.size();
-  }
-
   communicator* global_dom() const {
     return global_domain_;
   }
@@ -475,57 +404,11 @@ class transport {
   int eager_cutoff() const {
     return eager_cutoff_;
   }
-  
-  /**
-   * Get the set of failed ranks associated with a given context
-   * @param context The context for which you want to know the set of failed procs,
-   *                default parameter is "default_context" which is the beginning, i.e. no failed procs
-   * @throw If the context is unknown - i.e. no vote has executed with that tag number
-   * @return The set of failed procs
-   */
-  const thread_safe_set<int>& failed_ranks(int context) const;
 
-  const thread_safe_set<int>& failed_ranks() const {
-    return failed_ranks_;
-  }
-
-  void clear_failures() {
-    failed_ranks_.clear();
-  }
-
-  void declare_failed(int rank){
-    failed_ranks_.insert(rank);
-  }
-
-  bool is_failed(int rank) const {
-    return failed_ranks_.count(rank);
-  }
-
-  bool is_alive(int rank) const {
-    return failed_ranks_.count(rank) == 0;
-  }
-  
   virtual void delayed_transport_handle(const message::ptr& msg) = 0;
-  
-  void die();
-
-  void revive();
-
-  bool is_dead() const {
-    return is_dead_;
-  }
 
   void notify_collective_done(const collective_done_message::ptr& msg);
-  
-  virtual void schedule_ping_timeout(pinger* pnger, double to) = 0;
-  
-  virtual void schedule_next_heartbeat() = 0;
 
-  /**
-   * Execute the next heartbeat. This figures out the next tag and prev context
-   * and then calls #do_heartbeat
-   */
-  void next_heartbeat();
 
   /**
    * @brief handle Receive some version of point-2-point message.
@@ -587,57 +470,27 @@ class transport {
 
   virtual void do_nvram_get(int src, const message::ptr& msg) = 0;
 
-  virtual void do_send_terminate(int dst) = 0;
-
-  virtual void do_send_ping_request(int dst) = 0;
-
   virtual void go_die() = 0;
 
   virtual void go_revive() = 0;
 
  private:  
-  bool is_heartbeat(const collective_done_message::ptr& dmsg) const {
-    return dmsg->tag() >= heartbeat_tag_start_ && dmsg->tag() <= heartbeat_tag_stop_;
-  }
-
   void finish_collective(collective* coll, const collective_done_message::ptr& dmsg);
 
   void start_collective(collective* coll);
 
-  /**
-   * Helper function for doing operations necessary to close out a heartbeat
-   * @param dmsg
-   */
-  void vote_done(const collective_done_message::ptr& dmsg);
-
   void validate_collective(collective::type_t ty, int tag);
 
   void deliver_pending(collective* coll, int tag, collective::type_t ty);
-
-  /**
-   * Actually do the work of executing a heartbeat
-   * @param prev_context The context number for the last successful heartbeat
-   */
-  void do_heartbeat(int prev_context);
   
  protected:
   transport(sprockit::sim_parameters* params);
   
   void validate_api();
 
-  void fail_watcher(int dst);
-
   void lock();
 
   void unlock();
-
-  void start_recovery();
-
-  void end_recovery();
-
-  void start_function();
-
-  void end_function();
 
   /**
    * @brief poll_new Return a new message not already in the completion queue
@@ -647,7 +500,13 @@ class transport {
    */
   message::ptr poll_new(bool blocking, double timeout = -1);
 
- private:  
+ private:
+  /**
+   * Helper function for doing operations necessary to close out a heartbeat
+   * @param dmsg
+   */
+  void vote_done(int context, const collective_done_message::ptr& dmsg);
+
   bool skip_collective(collective::type_t ty,
     communicator*& dom,
     void* dst, void *src,
@@ -658,7 +517,6 @@ class transport {
   template <typename Key, typename Value>
   using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
 
-  int heartbeat_tag_;
   typedef std::unordered_map<int,collective*> tag_to_collective_map;
   typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
   collective_map collectives_;
@@ -672,30 +530,9 @@ class transport {
   typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
   pending_map pending_collective_msgs_;
 
-  thread_safe_set<int> failed_ranks_;
-
-  int heartbeat_tag_start_;
-
-  int heartbeat_tag_stop_;
-
-  typedef std::map<int, function_set> watcher_map;
-  watcher_map watchers_;
-
   std::list<collective*> todel_;
 
  protected:
-  struct vote_result {
-    int vote;
-    thread_safe_set<int> failed_ranks;
-    vote_result(int v, const thread_safe_set<int>& f) :
-      vote(v), failed_ranks(f)
-    {
-    }
-    vote_result() : vote(0) {}
-  };
-  typedef std::map<int, vote_result> vote_map;
-  vote_map votes_done_;
-
   bool inited_;
   
   bool finalized_;
@@ -706,16 +543,6 @@ class transport {
   
   int eager_cutoff_;
 
-  bool lazy_watch_;
-
-  activity_monitor* monitor_;
-
-  bool heartbeat_active_;
-
-  bool heartbeat_running_;
-
-  double heartbeat_interval_;
-
   thread_safe_list<message::ptr> pt2pt_done_;
   thread_safe_list<message::ptr> collectives_done_;
 
@@ -723,25 +550,17 @@ class transport {
   int max_transaction_id_;
   std::map<int, message::ptr> transactions_;
 
-  bool is_dead_;
-
   bool use_put_protocol_;
 
   bool use_hardware_ack_;
 
   communicator* global_domain_;
 
-  notify_callback* notify_cb_;
-
-  int nspares_;
-
 #if SUMI_USE_SPINLOCK
   spin_thread_lock lock_;
 #else
   mutex_thread_lock lock_;
 #endif
-
-  thread_safe_int<uint32_t> recovery_lock_;
 
  private:
   void poll_cast_error(const char* file, int line, const char* cls, const message::ptr& msg){
@@ -774,13 +593,159 @@ class transport {
 
   virtual void start_collective_sync_delays(){}
 #endif
-};
 
-template <class MsgType, class T, class Fxn>
-transport::notify_callback*
-new_notify_callback(T* t, Fxn f){
-  return new transport::notify_callback_impl<Fxn,T,MsgType>(f,t);
-}
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+ public:
+  int nproc_alive() const {
+    return nproc_ - failed_ranks_.size();
+  }
+
+  int nproc_failed() const {
+    return failed_ranks_.size();
+  }
+
+  virtual void schedule_ping_timeout(pinger* pnger, double to) = 0;
+
+  virtual void send_ping_request(int dst) = 0;
+
+  /**
+   * Get the set of failed ranks associated with a given context
+   * @param context The context for which you want to know the set of failed procs,
+   *                default parameter is "default_context" which is the beginning, i.e. no failed procs
+   * @throw If the context is unknown - i.e. no vote has executed with that tag number
+   * @return The set of failed procs
+   */
+  const thread_safe_set<int>& failed_ranks(int context) const;
+
+  const thread_safe_set<int>& failed_ranks() const {
+    return failed_ranks_;
+  }
+
+  void clear_failures() {
+    failed_ranks_.clear();
+  }
+
+  void declare_failed(int rank) {
+    failed_ranks_.insert(rank);
+  }
+
+  bool is_failed(int rank) const {
+    return failed_ranks_.count(rank);
+  }
+
+  bool is_alive(int rank) const {
+    return failed_ranks_.count(rank) == 0;
+  }
+
+  void die();
+
+  void revive();
+
+  bool is_dead() const {
+    return is_dead_;
+  }
+
+  /**
+   * Cancel a currently active ping
+   * @param dst
+   * @param func
+   */
+  void cancel_ping(int dst, timeout_function* func);
+
+  /**
+    @param dst The neighbor
+    @param func The timeout function to be invoked if no response
+                or NACK received
+    @return True if the dst node is already known to be failed. False if not.
+  */
+  bool ping(int dst, timeout_function* func);
+
+  /**
+   * @brief watch Wait on heartbeat notifcations for failures on this node.
+   * Do NOT actively ping.  Wait instead for failure notifications.
+   * @param dst
+   * @param func
+   * @return True if the dst node is already known to be failed. False if not.
+   */
+  bool start_watching(int dst, timeout_function* func);
+
+  void stop_watching(int dst, timeout_function* func);
+
+  void renew_pings();
+
+  /**
+   * Start regular heartbeat (i.e. vote) collectives going
+   * This informs the application at regular intervals of any new process failures
+   * @param interval The time in seconds at which to regularly execute heartbeats
+   */
+  virtual void start_heartbeat(double interval);
+
+  /**
+   * Let the current heartbeat finish and then stop them executing.
+   */
+  virtual void stop_heartbeat();
+
+ protected:
+  double heartbeat_interval_;
+
+  void next_heartbeat();
+
+ private:
+  bool lazy_watch_;
+
+  activity_monitor* monitor_;
+
+  bool heartbeat_active_;
+
+  bool heartbeat_running_;
+
+  bool is_heartbeat(const collective_done_message::ptr& dmsg) const {
+    return dmsg->tag() >= heartbeat_tag_start_ && dmsg->tag() <= heartbeat_tag_stop_;
+  }
+
+  int nspares_;
+
+  thread_safe_int<uint32_t> recovery_lock_;
+
+  struct vote_result {
+    int vote;
+    thread_safe_set<int> failed_ranks;
+    vote_result(int v, const thread_safe_set<int>& f) :
+      vote(v), failed_ranks(f)
+    {
+    }
+    vote_result() : vote(0) {}
+  };
+  typedef std::map<int, vote_result> vote_map;
+  vote_map votes_done_;
+
+  bool is_dead_;
+
+  int heartbeat_tag_;
+  thread_safe_set<int> failed_ranks_;
+
+  int heartbeat_tag_start_;
+
+  int heartbeat_tag_stop_;
+
+  typedef std::map<int, function_set> watcher_map;
+  watcher_map watchers_;
+
+  void fail_watcher(int dst);
+
+  void start_recovery();
+
+  void end_recovery();
+
+  virtual void schedule_next_heartbeat() = 0;
+
+  /**
+   * Actually do the work of executing a heartbeat
+   * @param prev_context The context number for the last successful heartbeat
+   */
+  void do_heartbeat(int prev_context);
+#endif
+};
 
 class terminate_exception : public std::exception
 {

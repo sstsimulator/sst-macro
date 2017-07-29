@@ -48,6 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/monitor.h>
 #include <sumi/transport_fwd.h>
 #include <sumi/timeout.h>
+#include <sumi/feature_config.h>
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
 
 namespace sumi {
 
@@ -179,5 +182,7 @@ class ping_monitor :
 
 
 }
+
+#endif
 
 #endif // PING_H

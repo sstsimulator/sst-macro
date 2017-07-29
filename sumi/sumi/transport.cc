@@ -70,22 +70,7 @@ RegisterKeywords(
 "comm_sync_stats",
 );
 
-
 RegisterDebugSlot(sumi);
-
-#define START_PT2PT_FUNCTION(dst) \
-  start_function(); \
-  if (is_failed(dst)) \
-    return
-
-#define START_COLLECTIVE_FUNCTION() \
-  start_function()
-
-#define END_PT2PT_FUNCTION() \
-  end_function()
-
-#define END_COLLECTIVE_FUNCTION() \
-  end_function()
 
 namespace sumi {
 
@@ -105,34 +90,35 @@ collective_algorithm_selector* transport::scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
 
 transport::transport(sprockit::sim_parameters* params) :
-  inited_(false),
-  finalized_(false),
-  eager_cutoff_(512),
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
   lazy_watch_(false),
   heartbeat_active_(false),
   heartbeat_running_(false),
+  is_dead_(false),
+  monitor_(nullptr),
+  nspares_(0),
+  recovery_lock_(0),
+#endif
+  inited_(false),
+  finalized_(false),
+  eager_cutoff_(512),
   next_transaction_id_(12),
   max_transaction_id_(0),
-  is_dead_(false),
   use_put_protocol_(false),
   use_hardware_ack_(false),
-  global_domain_(nullptr),
-  monitor_(nullptr),
-  notify_cb_(nullptr),
-  nspares_(0),
-  recovery_lock_(0)
+  global_domain_(nullptr)
 {
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
   heartbeat_tag_start_ = 1e9;
   heartbeat_tag_stop_ = heartbeat_tag_start_ + 10000;
   heartbeat_tag_ = heartbeat_tag_start_;
 
   monitor_ = activity_monitor::factory::get_optional_param("activity_monitor", "ping",
                                         params, this);
-
+  lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
+#endif
   eager_cutoff_ = params->get_optional_int_param("eager_cutoff", 512);
   use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
-
-  lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
 }
 
 void
@@ -165,37 +151,11 @@ transport::unlock()
 }
 
 void
-transport::die()
-{
-  is_dead_ = true;
-  go_die();
-  throw terminate_exception();
-}
-
-void
-transport::revive()
-{
-  is_dead_ = false;
-  go_revive();
-}
-
-void
 transport::init()
 {
   //THIS SHOULD ONLY BE CALLED AFTER RANK and NPROC are known
   inited_ = true;
-  const char* nspare_str = getenv("SUMI_NUM_SPARES");
-  if (nspare_str){
-    int nspares = atoi(nspare_str);
-    init_spares(nspares);
-  }
-
   global_domain_ = new global_communicator(this);
-}
-
-void
-transport::init_spares(int nspares)
-{
 }
 
 void
@@ -214,9 +174,11 @@ transport::finish()
   //this should really loop through and kill off all the pings
   //so none of them execute
   finalized_ = true;
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
   debug_printf(sprockit::dbg::sumi,
       "Rank %d sending finalize terminate to %s",
       rank_, failed_ranks_.to_string().c_str());
+
   thread_safe_set<int>::iterator it, end = failed_ranks_.start_iteration();
   for (it=failed_ranks_.begin(); it != end; ++it){
     int dst = *it;
@@ -226,12 +188,12 @@ transport::finish()
     send_terminate(dst);
   }
   failed_ranks_.end_iteration();
-}
 
-void
-transport::renew_pings()
-{
-  monitor_->renew_pings(wall_time());
+  monitor_->validate_done();
+  stop_heartbeat();
+  delete monitor_;
+  monitor_ = nullptr;
+#endif
 }
 
 message::ptr
@@ -418,10 +380,12 @@ transport::handle(const message::ptr& msg)
       }
     }
   }
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
   case message::ping: {  
     monitor_->message_received(msg);
     return message::ptr();
   }
+#endif
   case message::no_class: {
       spkt_throw_printf(sprockit::value_error,
         "transport::handle: got message %s with no class of type %s",
@@ -480,94 +444,11 @@ transport::send_self_terminate()
   send_header(rank_, msg); //send to self
 }
 
-void
-transport::send_terminate(int dst)
-{
-  start_function();
-  do_send_terminate(dst);
-  end_function();
-}
-
-void
-transport::cancel_ping(int dst, timeout_function* func)
-{
-  monitor_->cancel_ping(dst, func);
-}
-
-bool
-transport::ping(int dst, timeout_function* func)
-{ 
-  CHECK_IF_I_AM_DEAD(return false);
-  validate_api();
-  if (is_failed(dst)){
-    return true;
-  }
-  else {
-    monitor_->ping(dst, func);
-    return false;
-  }
-}
-
-void
-transport::stop_watching(int dst, timeout_function* func)
-{
-  if (!lazy_watch_){
-    cancel_ping(dst, func);
-    return;
-  }
-
-  watcher_map::iterator it = watchers_.find(dst);
-  if (it==watchers_.end()){
-    spkt_throw_printf(sprockit::value_error,
-      "transport not watching %d, cannot erase", dst);
-  }
-  function_set& fset = it->second;
-  int refcount = fset.erase(func);
-  if (refcount == 0){
-    watchers_.erase(it);
-  }
-}
-
-bool
-transport::start_watching(int dst, timeout_function *func)
-{
-  if (!lazy_watch_){
-    return ping(dst, func);
-  }
-
-  validate_api();
-  if (is_failed(dst)){
-    return true;
-  }
-  else {
-    debug_printf(sprockit::dbg::sumi | sprockit::dbg::sumi_ping,
-      "Rank %d start watching %d", rank_, dst);
-    function_set& fset = watchers_[dst];
-    fset.append(func);
-    return false;
-  }
-}
-
-void
-transport::fail_watcher(int dst)
-{
-  if (!lazy_watch_)
-    return;
-
-  std::map<int, function_set>::iterator it = watchers_.find(dst);
-  if (it == watchers_.end())
-    return;
-
-  debug_printf(sprockit::dbg::sumi | sprockit::dbg::sumi_ping,
-    "Rank %d failing watcher for %d", rank_, dst);
-  function_set& fset = it->second;
-  fset.timeout_all_listeners(dst);
-  watchers_.erase(dst);
-}
-
 transport::~transport()
 {
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
   if (monitor_) delete monitor_;
+#endif
   if (global_domain_) delete global_domain_;
 }
 
@@ -575,19 +456,17 @@ void
 transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, communicator* dom)
 {
   if (dom == nullptr) dom = global_domain_;
+
   if (dom->nproc() == 1){
     auto dmsg = std::make_shared<collective_done_message>(tag, collective::dynamic_tree_vote, dom);
     dmsg->set_comm_rank(0);
     dmsg->set_vote(vote);
-    votes_done_[tag] = vote_result(vote, thread_safe_set<int>());
-    pt2pt_done_.push_back(dmsg);
+    vote_done(context, dmsg);
     return;
   }
 
-  START_COLLECTIVE_FUNCTION();
   dynamic_tree_vote_collective* voter = new dynamic_tree_vote_collective(vote, fxn, tag, this, dom, context);
   start_collective(voter);
-  END_COLLECTIVE_FUNCTION();
 }
 
 template <class Map, class Val, class Key>
@@ -646,28 +525,17 @@ transport::deliver_pending(collective* coll, int tag, collective::type_t ty)
 }
 
 void
-transport::start_heartbeat(double interval)
+transport::vote_done(int context, const collective_done_message::ptr& dmsg)
 {
-  if (heartbeat_active_){
-    spkt_throw_printf(sprockit::illformed_error,
-        "sumi_api::start_heartbeat: heartbeat already active");
-    return;
-  }
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+  //this requires some extra processing
+  //and doesn't always generate an operation done
+  votes_done_[dmsg->tag()] = vote_result(dmsg->vote(), dmsg->failed_procs());
+  vote_result& prev_context = votes_done_[context];
+  //merge the previous context
+  votes_done_[dmsg->tag()].failed_ranks.insert_all(prev_context.failed_ranks);
+  failed_ranks_.insert_all(votes_done_[dmsg->tag()].failed_ranks);
 
-  heartbeat_active_ = true;
-  heartbeat_interval_ = interval;
-  do_heartbeat(options::initial_context);
-}
-
-void
-transport::stop_heartbeat()
-{
-  heartbeat_active_ = false;
-}
-
-void
-transport::vote_done(const collective_done_message::ptr& dmsg)
-{
   //if we have some failures, let the watchers know that things have failed
   thread_safe_set<int>::iterator it, end = dmsg->failed_procs().start_iteration();
   for (it=dmsg->failed_procs().begin(); it != end; ++it){
@@ -681,41 +549,9 @@ transport::vote_done(const collective_done_message::ptr& dmsg)
       schedule_next_heartbeat();
     }
     heartbeat_running_ = false;
-  }
-}
-
-void
-transport::next_heartbeat()
-{
-  //because of weirdness in scheduling
-  //we might get a heartbeat request after finalizing
-  if (!finalized_)
-    do_heartbeat(heartbeat_tag_);
-}
-
-void
-transport::do_heartbeat(int prev_context)
-{
-  CHECK_IF_I_AM_DEAD(return);
-
-  heartbeat_running_ = true;
-  if (heartbeat_tag_ == heartbeat_tag_stop_){
-    heartbeat_tag_ = heartbeat_tag_start_;
-  }
-  else {
-    ++heartbeat_tag_;
-  }
-
-  if (nproc() == 1)
-    return;
-
-  int vote = 1;
-  dynamic_tree_vote_collective* voter = new dynamic_tree_vote_collective(
-    vote, &And<int>::op, heartbeat_tag_, this, global_domain_, prev_context);
-  collectives_[collective::dynamic_tree_vote][heartbeat_tag_] = voter;
-  voter->start();
-  deliver_pending(voter, heartbeat_tag_, collective::dynamic_tree_vote);
-
+  } else
+#endif
+    collectives_done_.push_back(dmsg);
 }
 
 void
@@ -748,13 +584,6 @@ transport::start_collective(collective* coll)
   coll->init_actors();
   int tag = coll->tag();
   collective::type_t ty = coll->type();
-  START_COLLECTIVE_FUNCTION();
-  if (tag >= heartbeat_tag_start_ && tag <= heartbeat_tag_stop_){
-    spkt_throw_printf(sprockit::value_error,
-        "sumi::start_collective: %s tag %d is reserved for heartbeats",
-        collective::tostr(ty), tag);
-  }
-
   //validate_collective(ty, tag);
   collective*& existing = collectives_[ty][tag];
   if (existing){
@@ -766,7 +595,6 @@ transport::start_collective(collective* coll)
     coll->start();
     deliver_pending(coll, tag, ty);
   }
-  END_COLLECTIVE_FUNCTION();
 }
 
 void
@@ -1022,9 +850,8 @@ transport::finish_collective(collective* coll, const collective_done_message::pt
   bool deliver_cq_msg; bool delete_collective;
   coll->actor_done(dmsg->comm_rank(), deliver_cq_msg, delete_collective);
   debug_printf(sprockit::dbg::sumi,
-    "Rank %d finishing collective of type %s tag %d and failures %s",
-    rank_, collective::tostr(dmsg->type()), dmsg->tag(),
-    dmsg->failed_procs().to_string().c_str());
+    "Rank %d finishing collective of type %s tag %d",
+    rank_, collective::tostr(dmsg->type()), dmsg->tag());
 
   if (!deliver_cq_msg)
     return;
@@ -1038,94 +865,23 @@ transport::finish_collective(collective* coll, const collective_done_message::pt
   }
 
   if (ty == collective::dynamic_tree_vote){
-    //this requires some extra processing
-    //and doesn't always generate an operation done
-    votes_done_[tag] = vote_result(dmsg->vote(), dmsg->failed_procs());
-    vote_result& prev_context = votes_done_[coll->context()];
-    //merge the previous context
-    votes_done_[tag].failed_ranks.insert_all(prev_context.failed_ranks);
-    failed_ranks_.insert_all(votes_done_[tag].failed_ranks);
-    vote_done(dmsg);
+    vote_done(coll->context(), dmsg);
+  } else {
+    collectives_done_.push_back(dmsg);
   }
-  collectives_done_.push_back(dmsg);
+
 
   pending_collective_msgs_[ty].erase(tag);
   debug_printf(sprockit::dbg::sumi,
-    "Rank %d finished collective of type %s tag %d -> known failures are %s",
-    rank_, collective::tostr(dmsg->type()), dmsg->tag(), 
-    failed_ranks_.to_string().c_str());
+    "Rank %d finished collective of type %s tag %d",
+    rank_, collective::tostr(dmsg->type()), dmsg->tag());
 }
 
-
-
-static const thread_safe_set<int> empty_set;
-
-const thread_safe_set<int>&
-transport::failed_ranks(int context) const
-{
-  if (context == options::initial_context){
-    return empty_set;
-  }
-
-  auto it = votes_done_.find(context);
-  if (it == votes_done_.end()){
-    spkt_throw_printf(sprockit::value_error,
-        "sumi_api::failed_rank: unknown or uncommitted context %d on rank %d",
-        context, rank_);
-  }
-  return it->second.failed_ranks;
-}
-
-void
-transport::send_ping_request(int dst)
-{
-  START_PT2PT_FUNCTION(dst);
-  do_send_ping_request(dst);
-  END_PT2PT_FUNCTION();
-}
-
-static const uint32_t recovery_bitmask = 1<<31;
-
-void
-transport::start_recovery()
-{
-  //set the recovery bit
-  recovery_lock_ |= recovery_bitmask;
-  uint32_t num_ops_pending = recovery_lock_ ^ recovery_bitmask;
-  while (num_ops_pending > 0){
-    //allow all operations to complete
-    //recovery lock ensures no new operations will run
-    uint32_t check_tag = recovery_lock_;
-    num_ops_pending = check_tag ^ recovery_bitmask;
-  }
-}
-
-void
-transport::start_function()
-{
-  const int recovery_bitmask = 1;
-  uint32_t check_tag = recovery_lock_++;
-  uint32_t recovery_bit = check_tag & recovery_bitmask;
-  while (recovery_bit > 0){
-    //if the recovery bit is set, we are recovering from a failure
-    check_tag = (uint32_t) recovery_lock_;
-    recovery_bit = check_tag & recovery_bitmask;
-  }
-}
-
-void
-transport::end_function()
-{
-  recovery_lock_--;
-}
 
 void
 transport::smsg_send(int dst, message::payload_type_t ev,
                      const message::ptr& msg, bool needs_ack)
 {
-  CHECK_IF_I_AM_DEAD(return);
-  START_PT2PT_FUNCTION(dst);
-
   configure_send(dst, ev, msg);
   msg->set_needs_send_ack(needs_ack);
 
@@ -1153,22 +909,16 @@ transport::smsg_send(int dst, message::payload_type_t ev,
 #if SUMI_COMM_SYNC_STATS
   msg->set_time_sent(wall_time());
 #endif
-  END_PT2PT_FUNCTION();
 }
 
 void
 transport::rdma_get(int src, const message::ptr &msg,
                     bool needs_send_ack, bool needs_recv_ack)
 {
-  CHECK_IF_I_AM_DEAD(return);
-  START_PT2PT_FUNCTION(src);
-
   configure_send(src, message::rdma_get, msg);
   msg->set_needs_send_ack(needs_send_ack);
   msg->set_needs_recv_ack(needs_recv_ack);
   do_rdma_get(src, msg);
-
-  END_PT2PT_FUNCTION();
 }
 
 void
@@ -1181,7 +931,6 @@ transport::rdma_get(int src, const message::ptr &msg)
 void
 transport::start_transaction(const message::ptr &msg)
 {
-  CHECK_IF_I_AM_DEAD(return);
   lock();
   int tid = next_transaction_id_++;
   next_transaction_id_ = next_transaction_id_ % max_transaction_id_;
@@ -1212,13 +961,10 @@ transport::finish_transaction(int tid)
 void
 transport::rdma_put(int dst, const message::ptr &msg, bool needs_send_ack, bool needs_recv_ack)
 {
-  CHECK_IF_I_AM_DEAD(return);
-  START_PT2PT_FUNCTION(dst);
   configure_send(dst, message::rdma_put, msg);
   msg->set_needs_send_ack(needs_send_ack);
   msg->set_needs_recv_ack(needs_recv_ack);
   do_rdma_put(dst, msg);
-  END_PT2PT_FUNCTION();
 }
 
 void
@@ -1231,11 +977,8 @@ transport::rdma_put(int dst, const message::ptr &msg)
 void
 transport::nvram_get(int src, const message::ptr &msg)
 {
-  CHECK_IF_I_AM_DEAD(return);
-  START_PT2PT_FUNCTION(src);
   configure_send(src, message::nvram_get, msg);
   do_nvram_get(src, msg);
-  END_PT2PT_FUNCTION();
 }
 
 void
@@ -1293,5 +1036,177 @@ transport::send_rdma_header(int dst, const message::ptr &msg)
   } 
   send_header(dst, msg);
 }
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+void
+transport::start_heartbeat(double interval)
+{
+  if (heartbeat_active_){
+    spkt_throw_printf(sprockit::illformed_error,
+        "sumi_api::start_heartbeat: heartbeat already active");
+    return;
+  }
+
+  heartbeat_active_ = true;
+  heartbeat_interval_ = interval;
+  do_heartbeat(options::initial_context);
+}
+
+void
+transport::stop_heartbeat()
+{
+  heartbeat_active_ = false;
+}
+
+void
+transport::next_heartbeat()
+{
+  //because of weirdness in scheduling
+  //we might get a heartbeat request after finalizing
+  if (!finalized_)
+    do_heartbeat(heartbeat_tag_);
+}
+
+void
+transport::do_heartbeat(int prev_context)
+{
+  CHECK_IF_I_AM_DEAD(return);
+
+  heartbeat_running_ = true;
+  if (heartbeat_tag_ == heartbeat_tag_stop_){
+    heartbeat_tag_ = heartbeat_tag_start_;
+  }
+  else {
+    ++heartbeat_tag_;
+  }
+
+  if (nproc() == 1)
+    return;
+
+  int vote = 1;
+  dynamic_tree_vote_collective* voter = new dynamic_tree_vote_collective(
+    vote, &And<int>::op, heartbeat_tag_, this, global_domain_, prev_context);
+  collectives_[collective::dynamic_tree_vote][heartbeat_tag_] = voter;
+  voter->start();
+  deliver_pending(voter, heartbeat_tag_, collective::dynamic_tree_vote);
+
+}
+
+void
+transport::cancel_ping(int dst, timeout_function* func)
+{
+  monitor_->cancel_ping(dst, func);
+}
+
+bool
+transport::ping(int dst, timeout_function* func)
+{
+  CHECK_IF_I_AM_DEAD(return false);
+  validate_api();
+  if (is_failed(dst)){
+    return true;
+  }
+  else {
+    monitor_->ping(dst, func);
+    return false;
+  }
+}
+
+void
+transport::stop_watching(int dst, timeout_function* func)
+{
+  if (!lazy_watch_){
+    cancel_ping(dst, func);
+    return;
+  }
+
+  watcher_map::iterator it = watchers_.find(dst);
+  if (it==watchers_.end()){
+    spkt_throw_printf(sprockit::value_error,
+      "transport not watching %d, cannot erase", dst);
+  }
+  function_set& fset = it->second;
+  int refcount = fset.erase(func);
+  if (refcount == 0){
+    watchers_.erase(it);
+  }
+}
+
+bool
+transport::start_watching(int dst, timeout_function *func)
+{
+  if (!lazy_watch_){
+    return ping(dst, func);
+  }
+
+  validate_api();
+  if (is_failed(dst)){
+    return true;
+  }
+  else {
+    debug_printf(sprockit::dbg::sumi | sprockit::dbg::sumi_ping,
+      "Rank %d start watching %d", rank_, dst);
+    function_set& fset = watchers_[dst];
+    fset.append(func);
+    return false;
+  }
+}
+
+void
+transport::fail_watcher(int dst)
+{
+  if (!lazy_watch_)
+    return;
+
+  std::map<int, function_set>::iterator it = watchers_.find(dst);
+  if (it == watchers_.end())
+    return;
+
+  debug_printf(sprockit::dbg::sumi | sprockit::dbg::sumi_ping,
+    "Rank %d failing watcher for %d", rank_, dst);
+  function_set& fset = it->second;
+  fset.timeout_all_listeners(dst);
+  watchers_.erase(dst);
+}
+
+void
+transport::die()
+{
+  is_dead_ = true;
+  go_die();
+  throw terminate_exception();
+}
+
+void
+transport::revive()
+{
+  is_dead_ = false;
+  go_revive();
+}
+
+void
+transport::renew_pings()
+{
+  monitor_->renew_pings(wall_time());
+}
+
+static const thread_safe_set<int> empty_set;
+
+const thread_safe_set<int>&
+transport::failed_ranks(int context) const
+{
+  if (context == options::initial_context){
+    return empty_set;
+  }
+
+  auto it = votes_done_.find(context);
+  if (it == votes_done_.end()){
+    spkt_throw_printf(sprockit::value_error,
+        "sumi_api::failed_rank: unknown or uncommitted context %d on rank %d",
+        context, rank_);
+  }
+  return it->second.failed_ranks;
+}
+#endif
 
 }

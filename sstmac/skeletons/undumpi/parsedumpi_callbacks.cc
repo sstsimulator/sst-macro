@@ -2263,6 +2263,7 @@ on_MPI_Init(const dumpi_init *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Init: null callback pointer");
   }
+
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->init(const_cast<int*>(&prm->argc), const_cast<char***>(&prm->argv));
   cb->end_mpi(cpu, wall, perf);

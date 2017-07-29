@@ -165,6 +165,10 @@ class mpi_api :
     generate_ids_ = flag;
   }
 
+  bool generate_ids() const {
+    return generate_ids_;
+  }
+
   int abort(MPI_Comm comm, int errcode);
 
   int errhandler_set(MPI_Comm comm, MPI_Errhandler handler){

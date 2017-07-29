@@ -171,27 +171,6 @@ void comm_vote(int vote, int tag, int context = options::initial_context, commun
   comm_vote(vote, tag, &op_class_type::op, context, dom);
 }
 
-/**
-* Helper function. Kill the node that is currently running.
-* This is invoked by an application.  This allows an
-* application to die at a very, very specific point in application execution.
-*/
-void comm_kill_node();
-
-/**
-* Helper function. Kill the process that is currently running.
-* This only kills the process - it leaves the node alive and well.
-*/
-void comm_kill_process();
-
-const thread_safe_set<int>& comm_failed_ranks();
-
-const thread_safe_set<int>& comm_failed_ranks(int context);
-
-void comm_start_heartbeat(double interval);
-
-void comm_stop_heartbeat();
-
 collective_done_message::ptr comm_collective_block(collective::type_t ty, int tag);
 
 message::ptr comm_poll();
@@ -220,6 +199,29 @@ int comm_partner(long node_id);
 double wall_time();
 
 sstmac::sumi_transport* sumi_api();
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+/**
+* Helper function. Kill the node that is currently running.
+* This is invoked by an application.  This allows an
+* application to die at a very, very specific point in application execution.
+*/
+void comm_kill_node();
+
+/**
+* Helper function. Kill the process that is currently running.
+* This only kills the process - it leaves the node alive and well.
+*/
+void comm_kill_process();
+
+const thread_safe_set<int>& comm_failed_ranks();
+
+const thread_safe_set<int>& comm_failed_ranks(int context);
+
+void comm_start_heartbeat(double interval);
+
+void comm_stop_heartbeat();
+#endif
 
 }
 

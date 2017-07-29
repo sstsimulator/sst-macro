@@ -107,14 +107,11 @@ class sumi_transport :
    * @param tag
    * @return
    */
-  sumi::collective_done_message::ptr
-  collective_block(sumi::collective::type_t ty, int tag) override;
+  sumi::collective_done_message::ptr collective_block(sumi::collective::type_t ty, int tag) override;
 
   double wall_time() const override;
 
   sumi::transport_message* poll_pending_messages(bool blocking, double timeout = -1) override;
-
-  void ping_timeout(sumi::pinger* pnger);
 
   /**
    * @brief send Intra-app. Send within the same process launch (i.e. intra-comm MPI_COMM_WORLD). This contrasts
@@ -152,15 +149,9 @@ class sumi_transport :
 
   void do_nvram_get(int src, const sumi::message::ptr& msg) override;
 
-  void do_send_terminate(int dst) override;
-
-  void do_send_ping_request(int dst) override;
+  void send_terminate(int dst) override;
 
   void delayed_transport_handle(const sumi::message::ptr& msg) override;
-
-  void schedule_ping_timeout(sumi::pinger* pnger, double to) override;
-
-  void schedule_next_heartbeat() override;
 
   void go_die() override;
 
@@ -219,6 +210,17 @@ class sumi_transport :
   sstmac::stat_spyplot* spy_num_messages_;
 
   sstmac::stat_spyplot* spy_bytes_;
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+  void send_ping_request(int dst) override;
+
+  void ping_timeout(sumi::pinger* pnger);
+
+  void schedule_ping_timeout(sumi::pinger* pnger, double to) override;
+
+  void schedule_next_heartbeat() override;
+#endif
+
 };
 
 }

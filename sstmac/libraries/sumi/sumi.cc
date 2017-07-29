@@ -77,18 +77,6 @@ comm_kill_process()
   current_transport()->kill_process();
 }
 
-const thread_safe_set<int>&
-comm_failed_ranks()
-{
-  return current_transport()->failed_ranks();
-}
-
-const thread_safe_set<int>&
-comm_failed_ranks(int context)
-{
-  return current_transport()->failed_ranks(context);
-}
-
 void
 comm_kill_node()
 {
@@ -106,18 +94,6 @@ void
 comm_vote(int vote, int tag, vote_fxn fxn, int context, communicator* dom)
 {
   current_transport()->dynamic_tree_vote(vote, tag, fxn, context, dom);
-}
-
-void
-comm_start_heartbeat(double interval)
-{
-  current_transport()->start_heartbeat(interval);
-}
-
-void
-comm_stop_heartbeat()
-{
-  current_transport()->stop_heartbeat();
 }
 
 void
@@ -191,18 +167,6 @@ collective_done_message::ptr
 comm_collective_block(collective::type_t ty, int tag)
 {
   return current_transport()->collective_block(ty, tag);
-}
-
-void
-comm_cancel_ping(int dst, timeout_function* func)
-{
-  current_transport()->cancel_ping(dst, func);
-}
-
-void
-comm_ping(int dst, timeout_function* func)
-{
-  current_transport()->ping(dst, func);
 }
 
 int comm_rank()
@@ -300,6 +264,43 @@ void compute(double sec)
   my_app->compute(timestamp(sec));
 }
 
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+void
+comm_start_heartbeat(double interval)
+{
+  current_transport()->start_heartbeat(interval);
+}
+
+void
+comm_stop_heartbeat()
+{
+  current_transport()->stop_heartbeat();
+}
+
+const thread_safe_set<int>&
+comm_failed_ranks()
+{
+  return current_transport()->failed_ranks();
+}
+
+const thread_safe_set<int>&
+comm_failed_ranks(int context)
+{
+  return current_transport()->failed_ranks(context);
+}
+
+void
+comm_cancel_ping(int dst, timeout_function* func)
+{
+  current_transport()->cancel_ping(dst, func);
+}
+
+void
+comm_ping(int dst, timeout_function* func)
+{
+  current_transport()->ping(dst, func);
+}
+#endif
 
 
 }

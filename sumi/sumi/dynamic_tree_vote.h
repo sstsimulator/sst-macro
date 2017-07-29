@@ -145,16 +145,6 @@ class dynamic_tree_vote_actor :
  protected:
   void put_done_notification();
 
-  void up_partner_failed();
-
-  void down_partner_failed(int rank);
-
-  void dense_partner_ping_failed(int virtual_rank) override;
-
-  virtual bool check_neighbor(int phys_rank) override;
-
-  virtual void stop_check_neighbor(int phys_rank) override;
-
   void send_down_votes();
 
   void send_up_votes();
@@ -173,15 +163,6 @@ class dynamic_tree_vote_actor :
    * @param msg
    */
   void recv_up_vote(const dynamic_tree_vote_message::ptr& msg);
-
-  /**
-   * Receive a request from a new parent.
-   * If our parent has failed (but we don't know it yet),
-   * we might get an adoption request from a grandparent or great-grandparent.
-   * This declares the parent failed and reconnects to the new parent.
-   * @param msg
-   */
-  void recv_adoption_request(const dynamic_tree_vote_message::ptr& msg);
 
   /**
    * Receive a vote from a known child. See #recv_unexpected_up_vote
@@ -233,34 +214,11 @@ class dynamic_tree_vote_actor :
 
   int level_lower_bound(int level);
 
-  void contact_new_down_partner(int rank);
-
-  void add_new_down_partner(int rank);
-
   bool received_up_vote(int rank) const {
     return up_votes_recved_.count(rank);
   }
 
   bool up_vote_ready();
-
-  /**
-   * Respond to a failure notification, but first check to see if we already responded to it
-   * This a universal response for all notifications where they be pings, messages, NACKS, etc
-   * It is safe for any failure notifier to call this
-   * @param rank
-   */
-  void handle_dense_partner_failure(int dense_rank);
-
-  /**
-   * If this failure is not previously handled,
-   * rebuild the tree to work around the failure.
-   * This should only be called ONCE for each failure.
-   * If this is called multiple times for the same failure,
-   * the behavior is undefined.  In general, only use
-   * #handle_virtual_partner_failure for safety.
-   * @param virtual_rank
-   */
-  void rebalance_around_dense_partner_failure(int dense_rank);
 
   bool is_my_child(int dense_rank) const {
     return down_partners_.count(dense_rank);
@@ -284,9 +242,55 @@ class dynamic_tree_vote_actor :
 
   stage_t stage_;
 
+  thread_safe_set<int> up_votes_recved_;
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+  /**
+   * Receive a request from a new parent.
+   * If our parent has failed (but we don't know it yet),
+   * we might get an adoption request from a grandparent or great-grandparent.
+   * This declares the parent failed and reconnects to the new parent.
+   * @param msg
+   */
+  void recv_adoption_request(const dynamic_tree_vote_message::ptr& msg);
+
+  void contact_new_down_partner(int rank);
+
+  void add_new_down_partner(int rank);
+
+
+  /**
+   * Respond to a failure notification, but first check to see if we already responded to it
+   * This a universal response for all notifications where they be pings, messages, NACKS, etc
+   * It is safe for any failure notifier to call this
+   * @param rank
+   */
+  void handle_dense_partner_failure(int dense_rank);
+
+  /**
+   * If this failure is not previously handled,
+   * rebuild the tree to work around the failure.
+   * This should only be called ONCE for each failure.
+   * If this is called multiple times for the same failure,
+   * the behavior is undefined.  In general, only use
+   * #handle_virtual_partner_failure for safety.
+   * @param virtual_rank
+   */
+  void rebalance_around_dense_partner_failure(int dense_rank);
+
+  void up_partner_failed();
+
+  void down_partner_failed(int rank);
+
+  void dense_partner_ping_failed(int virtual_rank) override;
+
+  virtual bool check_neighbor(int phys_rank) override;
+
+  virtual void stop_check_neighbor(int phys_rank) override;
+
   thread_safe_set<int> agreed_upon_failures_;
   thread_safe_set<int> failures_handled_;
-  thread_safe_set<int> up_votes_recved_;
+#endif
 };
 
 

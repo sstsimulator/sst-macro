@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/message.h>
 #include <sumi/timeout.h>
 #include <sumi/transport_fwd.h>
+#include <sumi/feature_config.h>
 
 DeclareDebugSlot(sumi_ping)
 DeclareDebugSlot(sumi_failure)

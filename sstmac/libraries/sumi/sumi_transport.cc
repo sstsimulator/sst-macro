@@ -297,11 +297,6 @@ sumi_transport::finish()
 {
   debug_printf(sprockit::dbg::sumi, "Rank %d finalizing", rank_);
   transport::finish();
-  monitor_->validate_done();
-  stop_heartbeat();
-  //sstmac_usleep(heartbeat_interval_*1e6);
-  delete monitor_;
-  monitor_ = nullptr;
 }
 
 void
@@ -375,15 +370,6 @@ double
 sumi_transport::wall_time() const
 {
   return now().sec();
-}
-
-void
-sumi_transport::do_send_ping_request(int dst)
-{
-  sumi::message::ptr msg = std::make_shared<sumi::message>();
-  msg->set_class_type(sumi::message::ping);
-  //here, a simple rdma get
-  rdma_get(dst, msg);
 }
 
 void
@@ -495,23 +481,13 @@ sumi_transport::collective_block(sumi::collective::type_t ty, int tag)
       if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
         return cmsg;
       }
+      collectives_done_.push_back(msg);
+    } else {
+      pt2pt_done_.push_back(msg);
     }
-    pt2pt_done_.push_back(msg);
   }
 }
 
-void
-sumi_transport::do_send_terminate(int dst)
-{
-  //make a no-op
-}
-
-void
-sumi_transport::schedule_next_heartbeat()
-{
-  schedule_delay(heartbeat_interval_,
-         new_callback(loc_, this, &sumi_transport::next_heartbeat));
-}
 
 void
 sumi_transport::delayed_transport_handle(const sumi::message::ptr &msg)
@@ -519,21 +495,6 @@ sumi_transport::delayed_transport_handle(const sumi::message::ptr &msg)
   sstmac::callback* done_ev = sstmac::new_callback(
         loc_, this, &transport::handle, msg);
   schedule_delay(sstmac::timestamp(1e-9), done_ev);
-}
-
-void
-sumi_transport::schedule_ping_timeout(sumi::pinger* pnger, double to)
-{
-  sstmac::timestamp next_ping_time = api::now() + to;
-  sstmac::callback* cb_event = sstmac::new_callback(
-        loc_, this, &sumi_transport::ping_timeout, pnger);
-  api::schedule(next_ping_time, cb_event);
-}
-
-void
-sumi_transport::ping_timeout(sumi::pinger* pnger)
-{
-  pnger->execute();
 }
 
 void
@@ -560,5 +521,43 @@ sumi_transport::incoming_message(transport_message *msg)
   }
 }
 
+void
+sumi_transport::send_terminate(int dst)
+{
+  //make a no-op
+}
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+void
+sumi_transport::send_ping_request(int dst)
+{
+  sumi::message::ptr msg = std::make_shared<sumi::message>();
+  msg->set_class_type(sumi::message::ping);
+  //here, a simple rdma get
+  rdma_get(dst, msg);
+}
+
+void
+sumi_transport::schedule_next_heartbeat()
+{
+  schedule_delay(heartbeat_interval_,
+         new_callback(loc_, this, &sumi_transport::next_heartbeat));
+}
+
+void
+sumi_transport::schedule_ping_timeout(sumi::pinger* pnger, double to)
+{
+  sstmac::timestamp next_ping_time = api::now() + to;
+  sstmac::callback* cb_event = sstmac::new_callback(
+        loc_, this, &sumi_transport::ping_timeout, pnger);
+  api::schedule(next_ping_time, cb_event);
+}
+
+void
+sumi_transport::ping_timeout(sumi::pinger* pnger)
+{
+  pnger->execute();
+}
+#endif
 
 }

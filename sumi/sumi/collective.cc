@@ -111,17 +111,20 @@ collective::init(type_t ty, transport *api, communicator *dom, int tag, int cont
   tag_ = tag;
   type_ = ty;
 
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
   const thread_safe_set<int>& failed = api->failed_ranks(context);
   dense_rank_map rank_map(failed, dom);
 
   dense_nproc_ = rank_map.dense_rank(dom->nproc());
   dense_me_ = rank_map.dense_rank(dom->my_comm_rank());
+#else
+  dense_nproc_ = dom->nproc();
+  dense_me_ = dom->my_comm_rank();
+#endif
 
   debug_printf(sumi_collective | sumi_vote,
-    "Rank %d=%d built collective of size %d in role=%d,"
-    "tag=%d, context=%d with num_live=%d, failed=%s ",
-    my_api_->rank(), dom->my_comm_rank(), dom->nproc(), dense_me_,
-    tag, context, dense_nproc_, failed.to_string().c_str());
+    "Rank %d=%d built collective of size %d in role=%d, tag=%d, context=%d",
+    my_api_->rank(), dom->my_comm_rank(), dom->nproc(), dense_me_, tag, context);
 }
 
 collective::collective(type_t ty, transport* api, communicator* dom, int tag, int context)

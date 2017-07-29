@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/serialization.h>
 #include <sumi/config.h>
 #include <sumi/sumi_config.h>
+#include <sumi/feature_config.h>
 
 START_SERIALIZATION_NAMESPACE
 template <>
@@ -90,13 +91,13 @@ class message :
   } payload_type_t;
 
  typedef enum {
+    ping,
     terminate,
     pt2pt,
     bcast,
     unexpected,
     collective,
     collective_done,
-    ping,
     no_class,
     fake
  } class_t;

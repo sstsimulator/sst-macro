@@ -218,8 +218,6 @@ class collective_actor
 
   virtual ~collective_actor();
 
-  void partner_ping_failed(int global_rank);
-
   bool complete() const {
     return complete_;
   }
@@ -237,19 +235,6 @@ class collective_actor
 
   collective_actor(){} //will be initialized later
 
-  /**
-   * Start pinging neighbor to make sure they are still alive
-   * @param rank
-   */
-  bool ping_neighbor(int dense_rank);
-
-  /**
-   * Stop pinging neighbor. I am done with them.
-   * They can be dead for all I care.
-   * @param rank
-   */
-  void cancel_ping(int dense_rank);
-
   int global_rank(int dense_rank) const;
 
   /**
@@ -265,26 +250,38 @@ class collective_actor
    */
   int comm_rank(int dense_rank) const;
 
-  /**
-   * Notification that a partner failed.
-   * Here the partner is identified by dense rank.
-   * See #dense_rank
-   * @param dense_rank
-   */
-  virtual void dense_partner_ping_failed(int dense_rank) = 0;
+  int dense_to_global_dst(int dense_dst);
 
   std::string rank_str(int dense_rank) const;
 
- protected:
-  std::string failed_proc_string() const;
-
-  /**
-   * Validation function to make sure all pings are cleared
-   */
-  void validate_pings_cleared();
-
   virtual void finalize(){}
 
+ protected:
+  transport* my_api_;
+
+  communicator* comm_;
+
+  int dense_me_;
+
+  int dense_nproc_;
+
+  int tag_;
+
+  std::map<int, int> ping_refcounts_;
+
+  dense_rank_map rank_map_;
+
+  timeout_function* timeout_;
+
+  bool fault_aware_;
+
+  bool complete_;
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+ public:
+  void partner_ping_failed(int global_rank);
+
+ protected:
   bool ping_rank(int phys_rank, int dense_rank);
 
   bool is_failed(int dense_rank) const {
@@ -305,30 +302,46 @@ class collective_actor
 
   bool do_ping_neighbor(int dense_rank);
 
-  int dense_to_global_dst(int dense_dst);
-
- protected:
-  transport* my_api_;
-
-  communicator* comm_;
-
-  int dense_me_;
-
-  int dense_nproc_;
-
-  int tag_;
-
-  std::map<int, int> ping_refcounts_;
-
-  dense_rank_map rank_map_;
-
   thread_safe_set<int> failed_ranks_;
 
-  timeout_function* timeout_;
+ std::string failed_proc_string() const;
 
-  bool fault_aware_;
+ /**
+  * Validation function to make sure all pings are cleared
+  */
+ void validate_pings_cleared();
 
-  bool complete_;
+ /**
+  * Start pinging neighbor to make sure they are still alive
+  * @param rank
+  */
+ bool ping_neighbor(int dense_rank);
+
+ /**
+  * Stop pinging neighbor. I am done with them.
+  * They can be dead for all I care.
+  * @param rank
+  */
+ void cancel_ping(int dense_rank);
+
+ /**
+  * Notification that a partner failed.
+  * Here the partner is identified by dense rank.
+  * See #dense_rank
+  * @param dense_rank
+  */
+ virtual void dense_partner_ping_failed(int dense_rank) = 0;
+#else
+  bool ping_neighbor(int rank) const {
+    return false;
+  }
+
+  bool failed() const { return false; }
+
+  bool is_failed(int rank) const {
+    return false;
+  }
+#endif
 
 };
 
@@ -542,8 +555,6 @@ class dag_collective_actor :
 
   collective_done_message::ptr done_msg() const;
 
-  void dense_partner_ping_failed(int dense_rank);
-
   virtual void start_shuffle(action* ac);
 
   void erase_pending(uint32_t id, pending_msg_map& m);
@@ -612,8 +623,9 @@ class dag_collective_actor :
 
   std::set<action*, action_compare> initial_actions_;
 
-
-
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+  void dense_partner_ping_failed(int dense_rank);
+#endif
 };
 
 class bruck_actor : public dag_collective_actor

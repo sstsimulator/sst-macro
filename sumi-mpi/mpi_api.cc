@@ -204,10 +204,7 @@ mpi_api::init(int* argc, char*** argv)
     sprockit::abort("mpiapi::init: os has not been initialized yet");
   }
 
-
   comm_factory_.init(rank_, nproc_);
-
-  //printf("Initialized %p with %p\n", this, comm_factory_);
 
   worldcomm_ = comm_factory_.world();
   selfcomm_ = comm_factory_.self();
@@ -222,7 +219,6 @@ mpi_api::init(int* argc, char*** argv)
   commit_builtin_types();
 
   status_ = is_initialized;
-
 
   collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
   wait_collective(op);
