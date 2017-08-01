@@ -67,8 +67,7 @@ class collective_done_message :
     return "collective done message";
   }
 
-  collective_done_message(int tag, collective::type_t ty,
-                          communicator* dom) :
+  collective_done_message(int tag, collective::type_t ty, communicator* dom) :
     message(collective_done),
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
     all_ranks_know_failure_(false),

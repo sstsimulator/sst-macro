@@ -100,21 +100,24 @@ class transport {
   void smsg_send(int dst,
      message::payload_type_t ev,
      const message::ptr& msg,
-     bool needs_ack = false);
+     bool needs_ack = false,
+     uint8_t cq_id = 0);
 
   /**
    Helper function for #smsg_send. Directly send a message header.
    * @param dst
    * @param msg
    */
-  void send_header(int dst, const message::ptr& msg, bool needs_ack = false);
+  void send_header(int dst, const message::ptr& msg,
+                   bool needs_ack = false, uint8_t cq_id = 0);
 
   /**
    Helper function for #smsg_send. Directly send an actual data payload.
    * @param dst
    * @param msg
    */
-  void send_payload(int dst, const message::ptr& msg, bool needs_ack = false);
+  void send_payload(int dst, const message::ptr& msg,
+                    bool needs_ack = false, uint8_t cq_id = 0);
 
   /**
    Put a message directly to the destination node.
@@ -222,6 +225,21 @@ class transport {
    */
   virtual transport_message* poll_pending_messages(bool blocking, double timeout) = 0;
 
+  virtual void send_terminate(int dst) = 0;
+
+  virtual double wall_time() const = 0;
+
+  /**
+   * Block on a collective of a particular type and tag
+   * until that collective is complete
+   * @param ty
+   * @param tag
+   * @return
+   */
+  virtual collective_done_message::ptr collective_block(collective::type_t ty, int tag) = 0;
+
+  virtual void delayed_transport_handle(const message::ptr& msg) = 0;
+
   bool use_eager_protocol(long byte_length) const {
     return byte_length < eager_cutoff_;
   }
@@ -249,19 +267,6 @@ class transport {
   }
 
   void send_self_terminate();
-
-  virtual void send_terminate(int dst) = 0;
-
-  virtual double wall_time() const = 0;
-  
-  /**
-   * Block on a collective of a particular type and tag
-   * until that collective is complete
-   * @param ty
-   * @param tag
-   * @return
-   */
-  virtual collective_done_message::ptr collective_block(collective::type_t ty, int tag) = 0;
   
   /**
    * The total size of the input/result buffer in bytes is nelems*type_size
@@ -273,13 +278,12 @@ class transport {
    * @param fxn The function that merges vote, usually AND, OR, MAX, MIN
    * @param context The context (i.e. initial set of failed procs)
    */
-  virtual void dynamic_tree_vote(int vote, int tag, vote_fxn fxn, 
-              int context = options::initial_context, communicator* dom = nullptr);
+  void dynamic_tree_vote(int vote, int tag, vote_fxn fxn, collective::config cfg = collective::cfg());
 
   template <template <class> class VoteOp>
-  void vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
+  void vote(int vote, int tag, collective::config cfg = collective::cfg()){
     typedef VoteOp<int> op_class_type;
-    dynamic_tree_vote(vote, tag, &op_class_type::op, context, dom);
+    dynamic_tree_vote(vote, tag, &op_class_type::op, cfg);
   }
 
   /**
@@ -294,15 +298,13 @@ class transport {
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  virtual void
-  allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                         collective::config cfg = collective::cfg());
 
   template <typename data_t, template <typename> class Op>
-  void allreduce(void* dst, void* src, int nelems, int tag,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
+  void allreduce(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
     typedef ReduceOp<Op, data_t> op_class_type;
-    allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+    allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
   }
 
   /**
@@ -317,24 +319,22 @@ class transport {
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  virtual void scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-       bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+        collective::config cfg = collective::cfg());
 
   template <typename data_t, template <typename> class Op>
-  void scan(void* dst, void* src, int nelems, int tag, bool fault_aware = false,
-       int context = options::initial_context, communicator* dom = nullptr){
+  void scan(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
     typedef ReduceOp<Op, data_t> op_class_type;
-    scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+    scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
   }
 
   virtual void reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
-    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+    reduce_fxn fxn, collective::config cfg = collective::cfg());
 
   template <typename data_t, template <typename> class Op>
-  void reduce(int root, void* dst, void* src, int nelems, int tag,
-         bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
+  void reduce(int root, void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
     typedef ReduceOp<Op, data_t> op_class_type;
-    reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+    reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
   }
 
 
@@ -348,39 +348,38 @@ class transport {
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  virtual void allgather(void* dst, void* src, int nelems, int type_size, int tag,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void allgather(void* dst, void* src, int nelems, int type_size, int tag,
+                         collective::config = collective::cfg());
 
-  virtual void allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
+                          collective::config = collective::cfg());
 
-  virtual void gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-         bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                      collective::config = collective::cfg());
 
-  virtual void gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
+                       collective::config = collective::cfg());
 
-  virtual void alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void alltoall(void* dst, void* src, int nelems, int type_size, int tag,
+                        collective::config = collective::cfg());
 
-  virtual void alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
+                         collective::config = collective::cfg());
 
-  virtual void scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                 collective::config = collective::cfg());
 
-  virtual void scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
+  void scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
+                        collective::config = collective::cfg());
 
   /**
    * Essentially just executes a zero-byte allgather.
    * @param tag
    * @param fault_aware
    */
-  void barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
+  void barrier(int tag, collective::config = collective::cfg());
 
-  void bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware,
-        int context=options::initial_context, communicator* dom=nullptr);
+  void bcast(int root, void* buf, int nelems, int type_size, int tag, collective::config cfg = collective::cfg());
   
   void system_bcast(const message::ptr& msg);
 
@@ -405,8 +404,6 @@ class transport {
     return eager_cutoff_;
   }
 
-  virtual void delayed_transport_handle(const message::ptr& msg) = 0;
-
   void notify_collective_done(const collective_done_message::ptr& msg);
 
 
@@ -419,12 +416,12 @@ class transport {
    */
   message::ptr handle(const message::ptr& msg);
 
-  virtual public_buffer allocate_public_buffer(int size) {
-    return public_buffer(::malloc(size));
+  virtual public_buffer allocate_public_buffer(int size, uint8_t cq_id = 0) {
+    return public_buffer(::malloc(size), cq_id);
   }
 
-  virtual public_buffer make_public_buffer(void* buffer, int size) {
-    return public_buffer(buffer);
+  virtual public_buffer make_public_buffer(void* buffer, int size, uint8_t cq_id = 0) {
+    return public_buffer(buffer, cq_id);
   }
 
   virtual void unmake_public_buffer(public_buffer buf, int size) {
@@ -520,11 +517,6 @@ class transport {
   typedef std::unordered_map<int,collective*> tag_to_collective_map;
   typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
   collective_map collectives_;
-  
-  //I don't know a better way to do this and be clean
-  //callback mechanism - if collective completes
-  //it passes back a notification stored here
-  collective_done_message::ptr collective_notification_;
 
   typedef std::unordered_map<int,std::list<collective_work_message_ptr> > tag_to_pending_map;
   typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
@@ -542,6 +534,8 @@ class transport {
   int nproc_;
   
   int eager_cutoff_;
+
+  //std::vector<thread_safe_list<message::ptr>> completion_queues_;
 
   thread_safe_list<message::ptr> pt2pt_done_;
   thread_safe_list<message::ptr> collectives_done_;

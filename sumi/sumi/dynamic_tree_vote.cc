@@ -160,12 +160,9 @@ dynamic_tree_vote_actor::up_partner(int rank)
 }
 
 dynamic_tree_vote_actor::dynamic_tree_vote_actor(int vote,
-    vote_fxn fxn,
-    int tag,
-    transport* my_api,
-    communicator* dom,
-    int context) :
-  collective_actor(my_api, dom, tag, context, true), //true for always fault-aware
+    vote_fxn fxn, int tag, transport* my_api,
+    const collective::config& cfg) :
+  collective_actor(my_api, tag, cfg), //true for always fault-aware
   vote_(vote),
   fxn_(fxn),
   tag_(tag),
@@ -303,7 +300,7 @@ dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int 
 }
 
 void
-dynamic_tree_vote_actor::recv_result(const dynamic_tree_vote_message::ptr&msg)
+dynamic_tree_vote_actor::recv_result(const dynamic_tree_vote_message::ptr& msg)
 {
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   debug_printf(sumi_collective | sumi_vote,
@@ -338,9 +335,9 @@ dynamic_tree_vote_actor::merge_result(const dynamic_tree_vote_message::ptr& msg)
 void
 dynamic_tree_vote_actor::put_done_notification()
 {
-  auto msg = std::make_shared<collective_done_message>(tag_, collective::dynamic_tree_vote, comm_);
+  auto msg = std::make_shared<collective_done_message>(tag_, collective::dynamic_tree_vote, cfg_.dom);
   msg->set_vote(vote_);
-  msg->set_comm_rank(comm_->my_comm_rank());
+  msg->set_comm_rank(cfg_.dom->my_comm_rank());
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   //convert the virtual ranks to physical ranks
   thread_safe_set<int>::const_iterator it, end = agreed_upon_failures_.start_iteration();
@@ -537,14 +534,13 @@ dynamic_tree_vote_actor::recv(const dynamic_tree_vote_message::ptr&msg)
 
 dynamic_tree_vote_collective::dynamic_tree_vote_collective(
   int vote, vote_fxn fxn, int tag,
-  transport* my_api, communicator* dom,
-  int context) :
-  collective(collective::dynamic_tree_vote, my_api, dom, tag, context),
+  transport* my_api, const config& cfg) :
+  collective(collective::dynamic_tree_vote, my_api, tag, cfg),
   vote_(vote),
   fxn_(fxn)
 {
-  actors_[dense_me_] = new dynamic_tree_vote_actor(vote, fxn, tag, my_api, dom, context);
-  refcounts_[comm_->my_comm_rank()] = actors_.size();
+  actors_[dense_me_] = new dynamic_tree_vote_actor(vote, fxn, tag, my_api, cfg);
+  refcounts_[cfg_.dom->my_comm_rank()] = actors_.size();
 }
 
 void

@@ -246,7 +246,7 @@ mpi_api::start_allgather(collective_op *op)
 {
   transport::allgather(op->tmp_recvbuf, op->tmp_sendbuf,
                   op->sendcnt, op->sendtype->packed_size(), op->tag,
-                  false, options::initial_context, op->comm);
+                  collective::cfg().comm(op->comm));
 }
 
 collective_op_base*
@@ -313,7 +313,7 @@ mpi_api::start_alltoall(collective_op* op)
 {
   transport::alltoall(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                       op->sendtype->packed_size(), op->tag,
-                      false, options::initial_context, op->comm);
+                      collective::cfg().comm(op->comm));
 }
 
 collective_op_base*
@@ -378,7 +378,7 @@ mpi_api::start_allreduce(collective_op* op)
   reduce_fxn fxn = get_collective_function(op);
   transport::allreduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                        op->sendtype->packed_size(), op->tag,
-                       fxn, false, options::initial_context, op->comm);
+                       fxn, collective::cfg().comm(op->comm));
 }
 
 collective_op_base*
@@ -439,7 +439,7 @@ mpi_api::start_scan(collective_op* op)
   reduce_fxn fxn = get_collective_function(op);
   transport::scan(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                   op->sendtype->packed_size(), op->tag,
-                  fxn, false, options::initial_context, op->comm);
+                  fxn, collective::cfg().comm(op->comm));
 }
 
 collective_op_base*
@@ -461,7 +461,7 @@ void
 mpi_api::start_barrier(collective_op* op)
 {
   op->ty = collective::barrier;
-  transport::barrier(op->tag, false, op->comm);
+  transport::barrier(op->tag, collective::cfg().comm(op->comm));
 }
 
 collective_op_base*
@@ -502,7 +502,7 @@ mpi_api::start_bcast(collective_op* op)
   transport::bcast(op->root, buf,
                    op->sendcnt,
                    op->sendtype->packed_size(), op->tag,
-                   false, options::initial_context, op->comm);
+                   collective::cfg().comm(op->comm));
 }
 
 collective_op_base*
@@ -568,7 +568,7 @@ mpi_api::start_gather(collective_op* op)
 {
   transport::gather(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                     op->sendtype->packed_size(), op->tag,
-                    false, options::initial_context, op->comm);
+                    collective::cfg().comm(op->comm));
 }
 
 collective_op_base*
@@ -673,7 +673,7 @@ mpi_api::start_reduce(collective_op* op)
   reduce_fxn fxn = get_collective_function(op);
   transport::reduce(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                     op->sendtype->packed_size(), op->tag,
-                    fxn, false, options::initial_context, op->comm);
+                    fxn, collective::cfg().comm(op->comm));
 }
 
 collective_op_base*
@@ -888,7 +888,7 @@ mpi_api::start_scatter(collective_op* op)
 {
   transport::scatter(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                      op->sendtype->packed_size(), op->tag,
-                     false, options::initial_context, op->comm);
+                     collective::cfg().comm(op->comm));
 }
 
 collective_op_base*

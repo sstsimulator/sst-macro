@@ -483,13 +483,15 @@ test_failed_collectives()
   int nelems = 10000;
   void* null = 0;
 
-  comm_allreduce<char,Add>(null,null,nelems,tag,true);
+  comm_allreduce<char,Add>(null,null,nelems,tag,
+                           collective::cfg().resilient(true));
   comm_collective_block(collective::allreduce, tag);
   printf("t=%6.2f: passed failed allreduce on rank %d\n", sstmac_now(), rank);
 
 
   tag = 818;
-  comm_allgather(null,null,nelems,sizeof(int),tag,true);
+  comm_allgather(null,null,nelems,sizeof(int),tag,
+                 collective::cfg().resilient(true));
   comm_collective_block(collective::allgather, tag);
   printf("t=%6.2f: passed failed allgather on rank %d\n", sstmac_now(), rank);
 }

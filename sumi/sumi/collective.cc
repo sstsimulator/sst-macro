@@ -102,11 +102,10 @@ collective::tostr(type_t ty)
 }
 
 void
-collective::init(type_t ty, transport *api, communicator *dom, int tag, int context)
+collective::init(type_t ty, transport *api, int tag, const config& cfg)
 {
   my_api_ = api;
-  comm_ = dom;
-  context_ = context;
+  cfg_ = cfg;
   complete_ = false;
   tag_ = tag;
   type_ = ty;
@@ -118,18 +117,18 @@ collective::init(type_t ty, transport *api, communicator *dom, int tag, int cont
   dense_nproc_ = rank_map.dense_rank(dom->nproc());
   dense_me_ = rank_map.dense_rank(dom->my_comm_rank());
 #else
-  dense_nproc_ = dom->nproc();
-  dense_me_ = dom->my_comm_rank();
+  dense_nproc_ = cfg.dom->nproc();
+  dense_me_ = cfg.dom->my_comm_rank();
 #endif
 
   debug_printf(sumi_collective | sumi_vote,
     "Rank %d=%d built collective of size %d in role=%d, tag=%d, context=%d",
-    my_api_->rank(), dom->my_comm_rank(), dom->nproc(), dense_me_, tag, context);
+    my_api_->rank(), cfg.dom->my_comm_rank(), cfg.dom->nproc(), dense_me_, tag, cfg.context);
 }
 
-collective::collective(type_t ty, transport* api, communicator* dom, int tag, int context)
+collective::collective(type_t ty, transport* api, int tag, const config& cfg)
 {
-  init(ty, api, dom, tag, context);
+  init(ty, api, tag, cfg);
 }
 
 void
@@ -204,25 +203,24 @@ dag_collective::init_actors()
 {
   dag_collective_actor* actor = new_actor();
 
-  actor->init(type_, my_api_, comm_, nelems_, type_size_, tag_, fault_aware_, context_);
+  actor->init(type_, my_api_, nelems_, type_size_, tag_, cfg_);
   actor->init_tree();
   actor->init_buffers(dst_buffer_, src_buffer_);
   actor->init_dag();
 
   my_actors_[dense_me_] = actor;
-  refcounts_[comm_->my_comm_rank()] = my_actors_.size();
+  refcounts_[cfg_.dom->my_comm_rank()] = my_actors_.size();
 }
 
 void
 dag_collective::init(type_t type,
-  transport *my_api, communicator *dom,
+  transport *my_api,
   void *dst, void *src,
   int nelems, int type_size,
-  int tag,
-  bool fault_aware, int context)
+  int tag, const config& cfg)
 {
-  collective::init(type, my_api, dom, tag, context);
-  fault_aware_ = fault_aware;
+  collective::init(type, my_api, tag, cfg);
+  fault_aware_ = cfg.fault_aware;
   nelems_ = nelems;
   type_size_ = type_size;
   src_buffer_ = src;

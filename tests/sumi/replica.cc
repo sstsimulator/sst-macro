@@ -73,9 +73,8 @@ test_allreduce(int cm_rank)
   int* dst_buffer = new int[nelems];
   int tag = 13;
   communicator* dom = new index_communicator(cm_rank, ndomain, indices);
-  bool fault_aware = false;
-  int context = options::initial_context;
-  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, fault_aware, context, dom);
+  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag,
+                          collective::cfg().comm(dom));
 }
 
 

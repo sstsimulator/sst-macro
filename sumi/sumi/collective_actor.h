@@ -228,10 +228,10 @@ class collective_actor
 
   std::string rank_str() const;
 
-  void init(transport* my_api, communicator* dom, int tag, int context, bool fault_aware);
+  void init(transport* my_api, int tag, const collective::config& cfg);
 
  protected:
-  collective_actor(transport* my_api, communicator* dom, int tag, int context, bool fault_aware);
+  collective_actor(transport* my_api, int tag, const collective::config& cfg);
 
   collective_actor(){} //will be initialized later
 
@@ -259,8 +259,6 @@ class collective_actor
  protected:
   transport* my_api_;
 
-  communicator* comm_;
-
   int dense_me_;
 
   int dense_nproc_;
@@ -273,7 +271,7 @@ class collective_actor
 
   timeout_function* timeout_;
 
-  bool fault_aware_;
+  collective::config cfg_;
 
   bool complete_;
 
@@ -446,16 +444,11 @@ class dag_collective_actor :
 
   void deadlock_check() const;
 
-  void init(
-    collective::type_t type,
-    transport* my_api,
-    communicator* dom,
-    int nelems,
-    int type_size,
-    int tag,
-    bool fault_aware,
-    int context){
-    collective_actor::init(my_api, dom, tag, context, fault_aware);
+  void init(collective::type_t type,
+    transport* my_api, int nelems,
+    int type_size, int tag,
+    const collective::config& cfg){
+    collective_actor::init(my_api, tag, cfg);
     type_ = type;
     nelems_ = nelems;
     type_size_ = type_size;

@@ -124,9 +124,7 @@ class dynamic_tree_vote_actor :
 
   dynamic_tree_vote_actor(int vote,
     vote_fxn fxn, int tag,
-    transport* my_api,
-    communicator* dom,
-    int context);
+    transport* my_api, const collective::config& cfg);
 
   stage_t stage() const {
     return stage_;
@@ -317,8 +315,7 @@ class dynamic_tree_vote_collective :
     vote_fxn fxn,
     int tag,
     transport* my_api,
-    communicator* comm,
-    int context);
+    const config& cfg);
 
  protected:
   void put_done_notification();

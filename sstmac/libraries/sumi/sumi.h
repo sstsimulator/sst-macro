@@ -83,29 +83,23 @@ void comm_rdma_get(int dst, const message::ptr& msg);
 
 void comm_nvram_get(int dst, const message::ptr& msg);
 
-void comm_alltoall(void* dst, void* src, int nelems,
-   int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = nullptr);
+void comm_alltoall(void* dst, void* src, int nelems, int type_size, int tag,
+                   collective::config cfg = collective::cfg());
 
-void comm_allgather(void* dst, void* src, int nelems,
-   int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = nullptr);
+void comm_allgather(void* dst, void* src, int nelems, int type_size, int tag,
+                    collective::config cfg = collective::cfg());
 
-void comm_allgatherv(void* dst, void* src, int* recv_counts,
-   int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = nullptr);
+void comm_allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
+                     collective::config cfg = collective::cfg());
 
-void comm_gather(int root, void* dst, void* src, int nelems,
-   int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = nullptr);
+void comm_gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                 collective::config cfg = collective::cfg());
 
-void comm_scatter(int root, void* dst, void* src, int nelems,
-   int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = nullptr);
+void comm_scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                  collective::config cfg = collective::cfg());
 
-void comm_bcast(int root, void* buffer, int nelems,
-   int type_size, int tag, bool fault_aware = false,
-   int context = options::initial_context, communicator* dom = nullptr);
+void comm_bcast(int root, void* buffer, int nelems, int type_size, int tag,
+                collective::config cfg = collective::cfg());
 
 /**
 * The total size of the input/result buffer in bytes is nelems*type_size
@@ -118,40 +112,36 @@ void comm_bcast(int root, void* buffer, int nelems,
 * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
 * @param context The context (i.e. initial set of failed procs)
 */
-void comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag,
-  reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
-  communicator* dom = nullptr);
+void comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                    collective::config cfg = collective::cfg());
 
 template <typename data_t, template <typename> class Op>
-void comm_allreduce(void* dst, void* src, int nelems, int tag,
-    bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
+void comm_allreduce(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+  comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
 }
 
-void comm_scan(void* dst, void* src, int nelems, int type_size, int tag,
-  reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
-  communicator* dom = nullptr);
+void comm_scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+               collective::config cfg = collective::cfg());
 
 template <typename data_t, template <typename> class Op>
 void comm_scan(void* dst, void* src, int nelems, int tag,
-      bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
+               collective::config cfg = collective::cfg()){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+  comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
 }
 
-void comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
-  reduce_fxn fxn, bool fault_aware=false, int context = options::initial_context,
-  communicator* dom = nullptr);
+void comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                 collective::config cfg = collective::cfg());
 
 template <typename data_t, template <typename> class Op>
 void comm_reduce(int root, void* dst, void* src, int nelems, int tag,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
+                 collective::config cfg = collective::cfg()){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
+  comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
 }
 
-void comm_barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
+void comm_barrier(int tag, collective::config cfg = collective::cfg());
 
 /**
 * The total size of the input/result buffer in bytes is nelems*type_size
@@ -163,12 +153,12 @@ void comm_barrier(int tag, bool fault_aware = false, communicator* dom = nullptr
 * @param fxn The function that merges vote, usually AND, OR, MAX, MIN
 * @param context The context (i.e. initial set of failed procs)
 */
-void comm_vote(int vote, int tag, vote_fxn fxn, int context = options::initial_context, communicator* dom = nullptr);
+void comm_vote(int vote, int tag, vote_fxn fxn, collective::config cfg = collective::cfg());
 
 template <template <class> class VoteOp>
-void comm_vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
+void comm_vote(int vote, int tag, collective::config cfg = collective::cfg()){
   typedef VoteOp<int> op_class_type;
-  comm_vote(vote, tag, &op_class_type::op, context, dom);
+  comm_vote(vote, tag, &op_class_type::op, cfg);
 }
 
 collective_done_message::ptr comm_collective_block(collective::type_t ty, int tag);

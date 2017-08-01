@@ -53,7 +53,7 @@ btree_gather_actor::init_tree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
-  int nproc = comm_->nproc();
+  int nproc = cfg_.dom->nproc();
   while (midpoint_ < nproc){
     midpoint_ *= 2;
     log2nproc_++;
@@ -68,8 +68,8 @@ btree_gather_actor::init_buffers(void *dst, void *src)
   if (!src)
     return;
 
-  int me = comm_->my_comm_rank();
-  int nproc = comm_->nproc();
+  int me = cfg_.dom->my_comm_rank();
+  int nproc = cfg_.dom->nproc();
 
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
@@ -92,8 +92,8 @@ btree_gather_actor::finalize_buffers()
   if (!result_buffer_.ptr)
     return;
 
-  int nproc = comm_->nproc();
-  int me = comm_->my_comm_rank();
+  int nproc = cfg_.dom->nproc();
+  int me = cfg_.dom->my_comm_rank();
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
     my_api_->unmake_public_buffer(result_buffer_, buf_size);
@@ -125,8 +125,8 @@ btree_gather_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac
 void
 btree_gather_actor::init_dag()
 {
-  int me = comm_->my_comm_rank();
-  int nproc = comm_->nproc();
+  int me = cfg_.dom->my_comm_rank();
+  int nproc = cfg_.dom->nproc();
   int round = 0;
 
   int maxGap = midpoint_;

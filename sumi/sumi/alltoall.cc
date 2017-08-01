@@ -90,7 +90,7 @@ void
 bruck_alltoall_actor::finalize_buffers()
 {
   if (send_buffer_.ptr){
-    int buffer_size = nelems_ * type_size_ * comm_->nproc();
+    int buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
     int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
     my_api_->unmake_public_buffer(result_buffer_, buffer_size);
     my_api_->free_public_buffer(recv_buffer_, tmp_buffer_size);

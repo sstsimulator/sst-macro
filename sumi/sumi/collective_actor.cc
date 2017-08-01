@@ -101,25 +101,22 @@ debug_print(const char* info, const std::string& rank_str,
 }
 
 void
-collective_actor::init(transport *my_api, communicator *dom, int tag, int context, bool fault_aware)
+collective_actor::init(transport *my_api, int tag, const collective::config& cfg)
 {
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   rank_map_.init(my_api->failed_ranks(context), dom);
 #endif
   tag_ = tag;
-  comm_ = dom;
+  cfg_ = cfg;
   my_api_ = my_api;
   complete_ = false;
-  fault_aware_ = fault_aware;
-  dense_nproc_ = rank_map_.dense_rank(dom->nproc());
-  dense_me_ = rank_map_.dense_rank(dom->my_comm_rank());
+  dense_nproc_ = rank_map_.dense_rank(cfg_.dom->nproc());
+  dense_me_ = rank_map_.dense_rank(cfg_.dom->my_comm_rank());
 }
 
-collective_actor::collective_actor(
-    transport* my_api, communicator* dom,
-    int tag, int context, bool fault_aware)
+collective_actor::collective_actor(transport* my_api, int tag, const collective::config& cfg)
 {
-  init(my_api, dom, tag, context, fault_aware);
+  init(my_api, tag, cfg);
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   timeout_ = new collective_timeout(this);
 #endif
@@ -136,7 +133,7 @@ std::string
 collective_actor::rank_str(int dense_rank) const
 {
   int cm_rank = comm_rank(dense_rank);
-  int global_rank = comm_->comm_to_global_rank(cm_rank);
+  int global_rank =  cfg_.dom->comm_to_global_rank(cm_rank);
   return sprockit::printf("%d=%d:%d",
     global_rank, dense_rank, cm_rank);
 }
@@ -151,7 +148,7 @@ collective_actor::rank_str() const
 int
 collective_actor::global_rank(int dense_rank) const
 {
-  return comm_->comm_to_global_rank(comm_rank(dense_rank));
+  return  cfg_.dom->comm_to_global_rank(comm_rank(dense_rank));
 }
 
 int
@@ -164,7 +161,7 @@ int
 collective_actor::dense_to_global_dst(int dense_dst)
 {
   int domain_dst = comm_rank(dense_dst);
-  int global_physical_dst = comm_->comm_to_global_rank(domain_dst);
+  int global_physical_dst =  cfg_.dom->comm_to_global_rank(domain_dst);
   debug_printf(sumi_collective |  sumi_collective_sendrecv,
     "Rank %s sending message to %s on tag=%d, domain=%d, physical=%d",
     rank_str().c_str(),
@@ -406,12 +403,12 @@ dag_collective_actor::add_dependency_to_map(uint32_t id, action* ac)
 void
 dag_collective_actor::add_comm_dependency(action* precursor, action *ac)
 {
-  int physical_rank = comm_->comm_to_global_rank(comm_rank(ac->partner));
+  int physical_rank =  cfg_.dom->comm_to_global_rank(comm_rank(ac->partner));
 
   if (physical_rank == communicator::unresolved_rank){
     //uh oh - need to wait on this
     uint32_t resolve_id = action::message_id(action::resolve, 0, ac->partner);
-    comm_->register_rank_callback(this);
+     cfg_.dom->register_rank_callback(this);
     add_dependency_to_map(resolve_id, ac);
     if (precursor) add_dependency_to_map(precursor->id, ac);
   } else {
@@ -662,7 +659,7 @@ dag_collective_actor::send_failure_message(
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   msg->append_failed(failed_ranks_);
 #endif
-  int phys_dst = comm_->comm_to_global_rank(phys_dst);
+  int phys_dst =  cfg_.dom->comm_to_global_rank(phys_dst);
   my_api_->smsg_send(phys_dst, message::header, msg);
 }
 
@@ -748,7 +745,7 @@ dag_collective_actor::data_recved(action* ac_, const collective_work_message::pt
   //without actually passing around large payloads or doing memcpy's
   //if we end up here, we have a real buffer
   if (recv_buffer_){
-    int my_comm_rank = comm_->my_comm_rank();
+    int my_comm_rank =  cfg_.dom->my_comm_rank();
     int sender_comm_rank = comm_rank(msg->dense_sender());
     if (my_comm_rank == sender_comm_rank){
       do_sumi_debug_print("ignoring", rank_str().c_str(), msg->dense_sender(),
@@ -1087,8 +1084,8 @@ dag_collective_actor::incoming_message(const collective_work_message::ptr& msg)
 collective_done_message::ptr
 dag_collective_actor::done_msg() const
 {
-  auto msg = std::make_shared<collective_done_message>(tag_, type_, comm_);
-  msg->set_comm_rank(comm_->my_comm_rank());
+  auto msg = std::make_shared<collective_done_message>(tag_, type_, cfg_.dom);
+  msg->set_comm_rank( cfg_.dom->my_comm_rank());
   msg->set_result(result_buffer_.ptr);
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   auto end = failed_ranks_.start_iteration();
@@ -1259,7 +1256,7 @@ void
 collective_actor::partner_ping_failed(int global_rank)
 {
   //map this to virtual rank
-  int comm_rank = comm_->global_to_comm_rank(global_rank);
+  int comm_rank =  cfg_.dom->global_to_comm_rank(global_rank);
   int dense_rank = rank_map_.dense_rank(comm_rank);
   dense_partner_ping_failed(dense_rank);
 }
@@ -1271,7 +1268,7 @@ collective_actor::cancel_ping(int dense_rank)
     return;
 
   int cm_rank = comm_rank(dense_rank);
-  if (cm_rank == comm_->my_comm_rank())  //no need to ping self
+  if (cm_rank ==  cfg_.dom->my_comm_rank())  //no need to ping self
     return;
 
   std::map<int,int>::iterator it = ping_refcounts_.find(cm_rank);
@@ -1282,7 +1279,7 @@ collective_actor::cancel_ping(int dense_rank)
   int& refcount = it->second;
   --refcount;
   if (refcount == 0){
-    int global_phys_rank = comm_->comm_to_global_rank(cm_rank);
+    int global_phys_rank =  cfg_.dom->comm_to_global_rank(cm_rank);
     debug_printf(sumi_collective | sumi_ping,
       "Rank %s collective %s(%p) erase ping for partner %d:%d:%d on tag=%d ",
       rank_str().c_str(), to_string().c_str(), this,
@@ -1313,7 +1310,7 @@ collective_actor::ping_rank(int comm_rank, int dense_rank)
     return false; //all is well, we think - we have a pending ping
   }
   else {
-    int global_phys_rank = comm_->comm_to_global_rank(comm_rank);
+    int global_phys_rank =  cfg_.dom->comm_to_global_rank(comm_rank);
     debug_printf(sumi_collective | sumi_ping,
       "Rank %s collective %s(%p) begin pinging %d:%d on tag=%d ",
       rank_str().c_str(), to_string().c_str(), this,
@@ -1346,7 +1343,7 @@ bool
 collective_actor::do_ping_neighbor(int dense_rank)
 {
   int cm_rank = comm_rank(dense_rank);
-  if (cm_rank == comm_->my_comm_rank()){
+  if (cm_rank ==  cfg_.dom->my_comm_rank()){
     //no reason to ping self
     return false;
   }
