@@ -82,6 +82,6 @@ otf2_traces:
 test_otf2.$(CHKSUF): $(SSTMACEXEC) otf2_traces
 	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_otf2_coverage.ini \
-          -d indexing,allocation --no-wall-time 
+          -d mpi --no-wall-time
 endif
 
