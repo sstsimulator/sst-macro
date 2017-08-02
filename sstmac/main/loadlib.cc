@@ -1,6 +1,7 @@
 #include <dlfcn.h>
 #include <vector>
 #include <string>
+#include <cstring>
 #include <sys/stat.h>
 #include <sprockit/errors.h>
 

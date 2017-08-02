@@ -55,6 +55,7 @@ nobase_library_include_HEADERS = \
   pisces/pisces_param_expander.h \
   pisces/pisces_arbitrator.h \
   pisces/pisces_buffer.h \
+  pisces/pisces_branched_switch.h \
   pisces/pisces_crossbar.h \
   pisces/pisces_nic.h \
   pisces/pisces_packetizer.h \
@@ -122,6 +123,7 @@ libsstmac_hw_la_SOURCES =  \
   pisces/pisces_stats.cc \
   pisces/pisces_arbitrator.cc \
   pisces/pisces_buffer.cc \
+  pisces/pisces_branched_switch.cc \
   pisces/pisces_crossbar.cc \
   pisces/pisces_nic.cc \
   pisces/pisces_packetizer.cc \
