@@ -67,7 +67,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/global.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/debug.h>
 #include <stack>
 #include <queue>
@@ -334,9 +334,9 @@ class operating_system :
 
  private:
   hw::node* node_;
-  spkt_unordered_map<std::string, library*> libs_;
-  spkt_unordered_map<library*, int> lib_refcounts_;
-  spkt_unordered_map<void*, std::list<library*> > libs_by_owner_;
+  std::unordered_map<std::string, library*> libs_;
+  std::unordered_map<library*, int> lib_refcounts_;
+  std::unordered_map<void*, std::list<library*> > libs_by_owner_;
   std::map<std::string, std::list<event*>> pending_library_events_;
 
   node_id my_addr_;
@@ -351,7 +351,7 @@ class operating_system :
 
   int next_msg_id_;
 
-  spkt_unordered_map<task_id, long> task_to_thread_;
+  std::unordered_map<task_id, long> task_to_thread_;
 
   std::queue<thread*> to_awake_; // from thread join
 

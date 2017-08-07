@@ -67,7 +67,7 @@ dumpi_allocation::dumpi_allocation(sprockit::sim_parameters* params)
   metafile_ = params->get_param("dumpi_metaname");
 }
 
-void
+bool
 dumpi_allocation::allocate(
   int nnode_requested,
    const ordered_node_set& available,
@@ -81,15 +81,15 @@ dumpi_allocation::allocate(
     std::string fname = dumpi_file_name(i, meta->dirplusfileprefix_);
     dumpi_profile *profile = undumpi_open(fname.c_str());
     if (profile == NULL) {
-      spkt_throw(sprockit::io_error, "dumpi_allocation::allocate: unable to open ", fname);
+      spkt_abort_printf("dumpi_allocation::allocate: unable to open %s", fname.c_str());
     }
     dumpi_header *header = dumpi_build_header();
     if (header == NULL) {
-      spkt_throw(sprockit::io_error, "dumpi_allocation::allocate: header is null");
+      spkt_abort_printf("dumpi_allocation::allocate: header is null");
     }
     dumpi_read_header(profile, header);
     if (header->hostname == NULL || *header->hostname == 0) {
-      spkt_throw(sprockit::io_error, "dumpi_allocation::allocate: hostname is null or empty");
+      spkt_abort_printf("dumpi_allocation::allocate: hostname is null or empty");
     }
 
     if (header->meshdim == 0) {
@@ -109,6 +109,8 @@ dumpi_allocation::allocate(
     allocation.insert(nid);
     dumpi_free_header(header);
   }
+
+  return true;
 }
 
 }

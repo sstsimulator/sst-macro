@@ -77,16 +77,14 @@ class timestamp
  private:
   /// Picoseconds between clock ticks.
 
-  static timestamp
-  scaled_time(int64_t value, int64_t scaling, const char *caller,
-              const char *units);
+  static timestamp scaled_time(int64_t value, int64_t scaling,
+                               const char *caller, const char *units);
 
   /// The current time value of this container in ticks.
   tick_t ticks_;
 
  public:
-  static void
-  init_stamps(tick_t tick_spacing);
+  static void init_stamps(tick_t tick_spacing);
 
   typedef enum { exact } timestamp_param_type_t;
 
@@ -109,97 +107,67 @@ class timestamp
 
   explicit timestamp() : ticks_(0) {}
 
-  /// Convert a tick type to int64_t.
-  int64_t
-  ticks_int64() const {
+  int64_t ticks_int64() const {
     return ticks_;
   }
 
-  /// Return the current time in seconds.
-  double
-  sec() const;
+  double sec() const;
 
-  /// Return the current time in milliseconds.
-  double
-  msec() const;
+  double msec() const;
 
-  /// Return the current time in microseconds.
-  double
-  usec() const;
+  double usec() const;
 
-  /// Return the current time in nanoseconds.
-  double
-  nsec() const;
+  double nsec() const;
 
-  /// Return the current time in picoseconds.
-  double
-  psec() const;
+  double psec() const;
 
   void correct_round_off(const timestamp& now);
 
  public:
-  /// Get the number of ticks.
-  inline tick_t
-  ticks() const {
+  inline tick_t ticks() const {
     return ticks_;
   }
 
-  /// Get the tick interval in picoseconds.
-  static tick_t
-  tick_interval();
+  static tick_t tick_interval();
 
-  /// Get the tick interval in std::string form (for example, "1ps").
-  static const std::string &
-  tick_interval_string();
+  static const std::string & tick_interval_string();
 
-  /// Get the number of ticks per second (1e12/tick_interval()).
-  static tick_t
-  frequency();
+  static tick_t frequency();
 
-  /// Get the largest time value possible (in seconds).
-  static double
-  max_time();
+  static double max_time();
 
-  /// Get the smallest (most negative) time value possible (in seconds).
-  static double
-  min_time();
+  static double min_time();
 
   /// Get a time value corresponding exactly to the given number of
   /// picoseconds.
   /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp
-  exact_psec(int64_t psec);
+  static timestamp exact_psec(int64_t psec);
 
   /// Get a time value corresponding exactly to the given number of
   /// nanoseconds.
   /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp
-  exact_nsec(int64_t nsec);
+  static timestamp exact_nsec(int64_t nsec);
 
   /// Get a time value corresponding exactly to the given number of
   /// microseconds.
   /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp
-  exact_usec(int64_t usec);
+  static timestamp exact_usec(int64_t usec);
 
   /// Get a time value corresponding exactly to the given number of
   /// milliseconds.
   /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp
-  exact_msec(int64_t msec);
+  static timestamp exact_msec(int64_t msec);
 
   /// Get a time value corresponding exactly to the given number of
   /// seconds.
   /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp
-  exact_sec(int64_t sec);
+  static timestamp exact_sec(int64_t sec);
 
   /// Get a time value with exactly the given number of ticks.
   /// This is a template function to ensure that we do proper range checking
   /// on input values.
   template<typename T>
-  static timestamp
-  exact_ticks(T val) {
+  static timestamp exact_ticks(T val) {
     timestamp ts(0);
     ts.ticks_ = tick_t(val);
     return ts;
@@ -230,32 +198,21 @@ class timestamp
   operator>=(const timestamp &other) const {
     return (ticks_ >= other.ticks_);
   }
-  timestamp&
-  operator+=(const timestamp &other);
-  timestamp&
-  operator-=(const timestamp &other);
-  timestamp&
-  operator*=(double scale);
-  timestamp&
-  operator/=(double scale);
+  timestamp& operator+=(const timestamp &other);
+  timestamp& operator-=(const timestamp &other);
+  timestamp& operator*=(double scale);
+  timestamp& operator/=(double scale);
 };
 
-timestamp
-operator+(const timestamp &a, const timestamp &b);
-timestamp
-operator-(const timestamp &a, const timestamp &b);
-timestamp
-operator*(const timestamp &t, double scaling);
-timestamp
-operator*(double scaling, const timestamp &t);
-timestamp
-operator/(const timestamp &t, double scaling);
+timestamp operator+(const timestamp &a, const timestamp &b);
+timestamp operator-(const timestamp &a, const timestamp &b);
+timestamp operator*(const timestamp &t, double scaling);
+timestamp operator*(double scaling, const timestamp &t);
+timestamp operator/(const timestamp &t, double scaling);
 
-std::ostream&
-operator<<(std::ostream &os, const timestamp &t);
+std::ostream& operator<<(std::ostream &os, const timestamp &t);
 
-std::string
-to_printf_type(timestamp t);
+std::string to_printf_type(timestamp t);
 
 
 } // end of namespace sstmac
@@ -265,8 +222,7 @@ template <>
 class serialize<sstmac::timestamp>
 {
  public:
-  void
-  operator()(sstmac::timestamp& t, serializer& ser){
+  void operator()(sstmac::timestamp& t, serializer& ser){
     ser.primitive(t);
   }
 };

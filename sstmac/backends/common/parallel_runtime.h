@@ -218,11 +218,9 @@ class parallel_runtime :
   parallel_runtime(sprockit::sim_parameters* params,
                    int me, int nproc);
 
-  virtual void
-  do_send_message(int lp, void* buffer, int size) = 0;
+  virtual void do_send_message(int lp, void* buffer, int size) = 0;
 
-  virtual void
-  do_send_recv_messages(std::vector<void*>& buffers) = 0;
+  virtual void do_send_recv_messages(std::vector<void*>& buffers) = 0;
 
  protected:
    int nproc_;

@@ -96,7 +96,7 @@ coordinate_allocation::read_coordinate_file(
   delete instr;
 }
 
-void
+bool
 coordinate_allocation::allocate(
   int nnode_requested,
   const ordered_node_set& available,
@@ -118,8 +118,7 @@ coordinate_allocation::allocate(
   }
 
   if (node_list.size() < nnode_requested){
-    spkt_throw(sprockit::value_error,
-        "coordinate_allocation::allocation: requested %d, but only have %d nodes",
+    spkt_abort_printf("coordinate_allocation::allocation: requested %d, but only have %d nodes",
         int(node_list.size()), nnode_requested);
   }
 
@@ -132,6 +131,7 @@ coordinate_allocation::allocate(
     allocation.insert(nid);
   }
 
+  return true;
 }
 
 }

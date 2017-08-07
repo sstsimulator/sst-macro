@@ -49,20 +49,15 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-double
-get_positive_float(const char *value, bool &errorflag);
+double get_positive_float(const char *value, bool &errorflag);
 
-int
-get_int(const char *value, bool &errorflag);
+int get_int(const char *value, bool &errorflag);
 
-int
-get_positive_int(const char *value, bool &errorflag);
+int get_positive_int(const char *value, bool &errorflag);
 
-void
-get_intvec(const char *value, bool &errorflag, std::vector<int>& retval);
+void get_intvec(const char *value, bool &errorflag, std::vector<int>& retval);
 
-std::vector<int>
-get_intvec(const char *value, bool &errorflag);
+std::vector<int> get_intvec(const char *value, bool &errorflag);
 
 }
 #endif

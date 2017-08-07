@@ -100,8 +100,7 @@ multithreaded_subcontainer::multithread_schedule(
     dstthread, srcthread);
 #if SSTMAC_SANITY_CHECK
   if (ev->time() < next_time_horizon_){
-    spkt_throw(sprockit::illformed_error,
-        "multithread_schedule: scheduling before next time horizon");
+    sprockit::abort("multithread_schedule: scheduling before next time horizon");
   }
 #endif
   parent_->multithread_schedule(srcthread, dstthread, seqnum, ev);

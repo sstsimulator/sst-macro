@@ -47,369 +47,32 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstream>
 #include <sprockit/spkt_config.h>
-#if !SPKT_HAVE_CPP11 && defined(SPKT_HAVE_BOOST)
-#include <boost/algorithm/string.hpp>
-#else
 #include <cctype>
 #include <algorithm>
-#endif
 
 namespace sprockit {
 
-#define spkt_cstr(x) x->to_string().c_str()
-
-template <class A>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a)
-{
-  os << a;
-}
-
-template <class A, class B>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b)
-{
-  os << a << b;
-}
-
-template <class A, class B, class C>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c)
-{
-  os << a << b << c;
-}
-
-template <class A, class B, class C, class D>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d)
-{
-  os << a << b << c
-       << d;
-}
-
-template <class A, class B, class C, class D,
-          class E>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e)
-{
-  os << a << b << c
-       << d << e;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f)
-{
-  os << a << b << c
-       << d << e << f;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g)
-{
-  os << a << b << c
-       << d << e << f
-       << g;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G, class H>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g,
-  const H& h)
-{
-  os << a << b << c
-       << d << e << f
-       << g << h;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G, class H,
-          class I>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g,
-  const H& h,
-  const I& i)
-{
-  os << a << b << c
-     << d << e << f
-     << g << h << i;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G, class H,
-          class I, class J>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const char* file, int line,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g,
-  const H& h,
-  const I& i,
-  const J& j)
-{
-  os << a << b << c
-       << d << e << f
-       << g << h << i
-       << j;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G, class H,
-          class I, class J, class K>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g,
-  const H& h,
-  const I& i,
-  const J& j,
-  const K& k)
-{
-  os << a << b << c
-       << d << e << f
-       << g << h << i
-       << j << k;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G, class H,
-          class I, class J, class K, class L>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g,
-  const H& h,
-  const I& i,
-  const J& j,
-  const K& k,
-  const L& l)
-{
-  os << a << b << c
-       << d << e << f
-       << g << h << i
-       << j << k << l;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G, class H,
-          class I, class J, class K, class L,
-          class M>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g,
-  const H& h,
-  const I& i,
-  const J& j,
-  const K& k,
-  const L& l,
-  const M& m)
-{
-  os << a << b << c
-       << d << e << f
-       << g << h << i
-       << j << k << l
-       << m;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G, class H,
-          class I, class J, class K, class L,
-          class M, class N>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g,
-  const H& h,
-  const I& i,
-  const J& j,
-  const K& k,
-  const L& l,
-  const M& m,
-  const N& n)
-{
-  os << a << b << c
-       << d << e << f
-       << g << h << i
-       << j << k << l
-       << m << n;
-}
-
-template <class A, class B, class C, class D,
-          class E, class F, class G, class H,
-          class I, class J, class K, class L,
-          class M, class N, class O>
-void
-spkt_to_stream(
-  std::ostream& os,
-  const A& a,
-  const B& b,
-  const C& c,
-  const D& d,
-  const E& e,
-  const F& f,
-  const G& g,
-  const H& h,
-  const I& i,
-  const J& j,
-  const K& k,
-  const L& l,
-  const M& m,
-  const N& n,
-  const O& o)
-{
-  os << a << b << c
-       << d << e << f
-       << g << h << i
-       << j << k << l
-       << m << n << o;
-}
-
-#define prim_printf_type(ty) \
-  inline ty to_pod(ty t){ return t; }
-
-prim_printf_type(const char*)
-prim_printf_type(void*)
-prim_printf_type(double)
-prim_printf_type(float)
-prim_printf_type(unsigned long)
-prim_printf_type(long)
-prim_printf_type(unsigned int)
-prim_printf_type(int)
-prim_printf_type(unsigned short)
-prim_printf_type(short)
-prim_printf_type(unsigned long long)
-prim_printf_type(long long)
-
-inline const char*
-to_pod(const std::string& str){
-  return str.c_str();
-}
-
-std::string
-printf(const char* fmt, ...);
-
-#if SPKT_HAVE_CPP11 || defined(SPKT_HAVE_BOOST)
+std::string printf(const char* fmt, ...);
 
 template<typename WritableRangeT>
 void to_upper(WritableRangeT& input)
 {
-#if SPKT_HAVE_CPP11
   for(char& ch : input) {
     ch = (char)std::toupper(ch);
   }
-#elif defined(SPKT_HAVE_BOOST)
-  boost::algorithm::to_upper(input);
-#elif SPKT_DISABLE_REGEXP
-  //do nothing
-#else
-#  error "Either C++11 or Boost is required to build sprockit"
-#endif
 }
 
 template<typename WritableRangeT>
 void to_lower(WritableRangeT& input)
 {
-#if SPKT_HAVE_CPP11
   for(char& ch : input) {
     ch = (char)std::tolower(ch);
   }
-#elif defined(SPKT_HAVE_BOOST)
-  boost::algorithm::to_lower(input);
-#else
-#  error "Either C++11 or Boost is required to build sprockit"
-#endif
 }
 
 template<typename SequenceT>
 void trim(SequenceT& input)
 {
-#if SPKT_HAVE_CPP11
   auto check_isspace = [](decltype(*input.begin())& ch) { return (bool)std::isspace(ch); };
   const auto& first_non_space = std::find_if_not(input.begin(), input.end(), check_isspace);
   if(first_non_space == input.end()) {
@@ -424,14 +87,7 @@ void trim(SequenceT& input)
       input = SequenceT(first_non_space, last_non_space.base() + 1);
     }
   }
-#elif defined(SPKT_HAVE_BOOST)
-  boost::algorithm::trim(input);
-#else
-#  error "Either C++11 or Boost is required to build sprockit"
-#endif
 }
-
-#endif
 
 }
 

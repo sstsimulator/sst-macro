@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <list>
 
 namespace sstmac {
@@ -89,39 +89,31 @@ new_deadlock_check(T* t, Fxn f){
 class runtime
 {
  protected:
-  typedef spkt_unordered_map<sw::task_id, node_id> task_to_nodeid_map;
-  typedef spkt_unordered_map<sw::app_id, task_to_nodeid_map> app_to_task_map;
+  typedef std::unordered_map<sw::task_id, node_id> task_to_nodeid_map;
+  typedef std::unordered_map<sw::app_id, task_to_nodeid_map> app_to_task_map;
 
  public:
-  static node_id
-  node_for_task(sw::app_id aid, sw::task_id tid);
+  static node_id node_for_task(sw::app_id aid, sw::task_id tid);
 
-  static hw::topology*
-  current_topology() {
+  static hw::topology* current_topology() {
     return topology_;
   }
 
-  static void
-  set_topology(hw::topology* top) {
+  static void set_topology(hw::topology* top) {
     topology_ = top;
   }
 
-  static void
-  clear_statics();
+  static void clear_statics();
 
-  static void
-  delete_statics();
+  static void delete_statics();
 
-  static node_id
-  current_node();
+  static node_id current_node();
 
-  static sw::job_launcher*
-  launcher() {
+  static sw::job_launcher* launcher() {
     return launcher_;
   }
 
-  static void
-  finish();
+  static void finish();
 
   static void enter_deadlock_region(){
     do_deadlock_check_ = true;
@@ -137,8 +129,7 @@ class runtime
     deadlock_checks_.push_back(c);
   }
 
-  static void
-  set_job_launcher(sw::job_launcher* launcher){
+  static void set_job_launcher(sw::job_launcher* launcher){
     launcher_ = launcher;
   }
 

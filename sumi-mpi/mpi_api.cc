@@ -108,6 +108,7 @@ sstmac_mpi()
 mpi_api::mpi_api(sprockit::sim_parameters* params,
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os) :
+  sstmac::sumi_transport(params, "mpi", sid, os),
   status_(is_fresh),
 #if SSTMAC_COMM_SYNC_STATS
   last_collection_(0),
@@ -116,14 +117,13 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   next_type_id_(0),
   next_op_id_(first_custom_op_id),
   group_counter_(MPI_GROUP_SELF+1),
-  req_counter_(0),
-  queue_(nullptr),
-  comm_factory_(nullptr),
   worldcomm_(nullptr),
   selfcomm_(nullptr),
+  req_counter_(0),
+  queue_(nullptr),
   generate_ids_(true),
   crossed_comm_world_barrier_(false),
-  sstmac::sumi_transport(params, "mpi", sid, os)
+  comm_factory_(sid, this)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
   queue_ = new mpi_queue(queue_params, sid.task_, this);
@@ -152,7 +152,6 @@ mpi_api::~mpi_api()
   //an unblock finishes finalize... so finalize is called while the DES thread is still inside the queue
   //the queue outlives mpi_api::finalize!
   if (queue_) delete queue_;
-  if (comm_factory_) delete comm_factory_;
 
   //these are often not cleaned up correctly by app
   for (auto& pair : grp_map_){
@@ -195,8 +194,7 @@ int
 mpi_api::init(int* argc, char*** argv)
 {
   if (status_ == is_initialized){
-    spkt_throw(sprockit::value_error,
-               "MPI_Init cannot be called twice");
+    sprockit::abort("MPI_Init cannot be called twice");
   }
 
   start_mpi_call(MPI_Init,0,MPI_BYTE,MPI_COMM_WORLD);
@@ -204,18 +202,16 @@ mpi_api::init(int* argc, char*** argv)
   sumi_transport::init();
 
   if (!os_) {
-    spkt_throw(sprockit::null_error,
-               "mpiapi::init: os has not been initialized yet");
+    sprockit::abort("mpiapi::init: os has not been initialized yet");
   }
 
 
-  comm_factory_ = new mpi_comm_factory(sid().app_, this);
-  comm_factory_->init(rank_, nproc_);
+  comm_factory_.init(rank_, nproc_);
 
   //printf("Initialized %p with %p\n", this, comm_factory_);
 
-  worldcomm_ = comm_factory_->world();
-  selfcomm_ = comm_factory_->self();
+  worldcomm_ = comm_factory_.world();
+  selfcomm_ = comm_factory_.self();
   comm_map_[MPI_COMM_WORLD] = worldcomm_;
   comm_map_[MPI_COMM_SELF] = selfcomm_;
   grp_map_[MPI_GROUP_WORLD] = worldcomm_->group();
@@ -261,7 +257,7 @@ mpi_api::finalize()
 
   status_ = is_finalized;
 
-  int rank = worldcomm_->rank();
+  int rank = comm_world()->rank();
   if (rank == 0) {
     debug_printf(sprockit::dbg::mpi_check,
       "MPI application with ID %s passed barrier in finalize on Rank 0\n"
@@ -270,9 +266,6 @@ mpi_api::finalize()
       sid().to_string().c_str(),
       os_->now().sec());
   }
-
-  delete comm_factory_;
-  comm_factory_ = nullptr;
 
   transport::finish();
 
@@ -362,10 +355,10 @@ mpi_api::type_str(MPI_Datatype mid)
 std::string
 mpi_api::comm_str(MPI_Comm comm)
 {
-  if (comm == worldcomm_->id()){
+  if (comm == comm_world()->id()){
     return "MPI_COMM_WORLD";
   }
-  else if (comm == selfcomm_->id()){
+  else if (comm == comm_self()->id()){
     return "MPI_COMM_SELF";
   }
   else if (comm == mpi_comm::comm_null->id()){
@@ -379,10 +372,10 @@ mpi_api::comm_str(MPI_Comm comm)
 std::string
 mpi_api::comm_str(mpi_comm* comm)
 {
-  if (comm == worldcomm_){
+  if (comm == comm_world()){
     return "MPI_COMM_WORLD";
   }
-  else if (comm == selfcomm_){
+  else if (comm == comm_self()){
     return "MPI_COMM_SELF";
   }
   else if (comm == mpi_comm::comm_null){
@@ -429,8 +422,7 @@ mpi_api::src_str(mpi_comm* comm, int id)
 mpi_comm*
 mpi_api::get_comm(MPI_Comm comm)
 {
-  spkt_unordered_map<MPI_Comm, mpi_comm*>::iterator it
-    = comm_map_.find(comm);
+  auto it = comm_map_.find(comm);
   if (it == comm_map_.end()) {
     if (comm == MPI_COMM_WORLD){
       cerrn << "Could not find MPI_COMM_WORLD! "
@@ -446,11 +438,9 @@ mpi_api::get_comm(MPI_Comm comm)
 mpi_group*
 mpi_api::get_group(MPI_Group grp)
 {
-  spkt_unordered_map<MPI_Group, mpi_group*>::iterator it
-    = grp_map_.find(grp);
+  auto it = grp_map_.find(grp);
   if (it == grp_map_.end()) {
-    spkt_throw_printf(sprockit::spkt_error,
-        "could not find mpi group %d for rank %d",
+    spkt_abort_printf("could not find mpi group %d for rank %d",
         grp, int(rank_));
   }
   return it->second;

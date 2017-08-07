@@ -12,6 +12,7 @@ SKELETONCASES= \
   sst_component_example \
   multiapp \
   sendrecv \
+  sendrecv_sst_so \
   boxml
 
 if !HAVE_UBUNTU
@@ -52,10 +53,15 @@ test_skeleton_CoMD.$(CHKSUF): CoMD pots
 	$(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
     ./skeletons/CoMD/runCoMD -f $(top_srcdir)/skeletons/CoMD/parameters.ini --no-wall-time
 
-test_skeleton_sst_component_example.$(CHKSUF): $(SSTMACEXEC)
+test_skeleton_sst_component_example.$(CHKSUF): sst_component_example $(SSTMACEXEC)
 	SST_LIB_PATH=skeletons/sst_component_example \
 	 $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(top_srcdir)/skeletons/sst_component_example/parameters.ini --no-wall-time
+
+test_skeleton_sendrecv_sst_so.$(CHKSUF): sendrecv_sst_so $(SSTMACEXEC)
+	SST_LIB_PATH=skeletons/sendrecv_sst_so \
+	 $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
+   $(SSTMACEXEC) -f $(top_srcdir)/skeletons/sendrecv_sst_so/parameters.ini --no-wall-time
 
 test_apps_%.$(CHKSUF): %
 	$(PYRUNTEST) 3 $(top_srcdir) $@ True \

@@ -1,4 +1,6 @@
 .PHONY: traces
+.PHONY: otf2_traces
+
 if !INTEGRATED_SST_CORE
 # These are each run by a specific rule
 SINGLETESTS = \
@@ -8,6 +10,11 @@ SINGLETESTS = \
   test_blas \
   test_blas_finegrained \
   test_node_noise 
+
+
+if HAVE_OTF2
+SINGLETESTS += test_otf2 
+endif
 
 #  test_scan  TODO
 
@@ -63,6 +70,18 @@ test_dumpi_bgp.$(CHKSUF): $(SSTMACEXEC) traces
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_bgp.ini \
           -d indexing,allocation --no-wall-time 
 
+#------------------------------------------------------------------------------------------#
+#  OTF2-related tests                                                                  {{{#
+#------------------------------------------------------------------------------------------#
 
+otf2_traces:
+	rm -fr traces *.otf2 *.cubex *.cfg *.def *.backup
+	cp -rf $(top_srcdir)/tests/otf2_test_traces/* ./
+	chmod u+w traces *.otf2 *.cubex *.cfg *.def *.backup # required for make distcheck (makes files r/o)
+
+test_otf2.$(CHKSUF): $(SSTMACEXEC) otf2_traces
+	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_otf2_coverage.ini \
+          -d mpi --no-wall-time
 endif
 

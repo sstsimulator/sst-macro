@@ -230,7 +230,7 @@ sumi_transport::incoming_event(event *ev)
 void
 sumi_transport::shutdown_server(int dest_rank, node_id dest_node, int dest_app)
 {
-  sumi::message::ptr msg = new sumi::system_bcast_message(sumi::system_bcast_message::shutdown, dest_rank);
+  auto msg = std::make_shared<sumi::system_bcast_message>(sumi::system_bcast_message::shutdown, dest_rank);
   client_server_send(dest_rank, dest_node, dest_app, msg);
 }
 
@@ -274,7 +274,7 @@ sumi_transport::handle(sstmac::transport_message* smsg)
     return next;
   }
 
-  sumi::message::ptr my_msg = ptr_safe_cast(sumi::message, smsg->payload());
+  sumi::message::ptr my_msg = smsg->payload();
   debug_printf(sprockit::dbg::sumi,
      "sumi transport rank %d in app %d handling message of type %s: %s",
      rank(), sid().app_, transport_message::tostr(smsg->type()), my_msg->to_string().c_str());
@@ -398,8 +398,7 @@ sumi_transport::go_die()
 void
 sumi_transport::go_revive()
 {
-  spkt_throw(sprockit::illformed_error,
-    "SST cannot revive a dead process currently");
+  sprockit::abort("SST cannot revive a dead process currently");
 }
 
 void
@@ -422,7 +421,7 @@ sumi_transport::wall_time() const
 void
 sumi_transport::do_send_ping_request(int dst)
 {
-  sumi::message::ptr msg = new sumi::message;
+  sumi::message::ptr msg = std::make_shared<sumi::message>();
   msg->set_class_type(sumi::message::ping);
   //here, a simple rdma get
   rdma_get(dst, msg);
@@ -536,8 +535,7 @@ sumi_transport::collective_block(sumi::collective::type_t ty, int tag)
     sumi::message::ptr msg = *it;
     if (msg->class_type() == sumi::message::collective_done){
       //this is a collective done message
-      sumi::collective_done_message::ptr cmsg
-        = ptr_safe_cast(sumi::collective_done_message, msg);
+      auto cmsg = std::dynamic_pointer_cast<sumi::collective_done_message>(msg);
       if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
         completion_queue_.erase(it);
         completion_queue_.end_iteration();
@@ -551,7 +549,7 @@ sumi_transport::collective_block(sumi::collective::type_t ty, int tag)
 
   if (msg->class_type() == sumi::message::collective_done){
     //this is a collective done message
-    sumi::collective_done_message::ptr cmsg = ptr_safe_cast(sumi::collective_done_message, msg);
+    auto cmsg = std::dynamic_pointer_cast<sumi::collective_done_message>(msg);
     if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
       return cmsg;
     }
@@ -566,9 +564,6 @@ void
 sumi_transport::do_send_terminate(int dst)
 {
   //make a no-op
-
-  //spkt_throw(sprockit::unimplemented_error,
-  //  "sumi transport for SST should not send terminates");
 }
 
 void

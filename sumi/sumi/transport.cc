@@ -104,57 +104,6 @@ collective_algorithm_selector* transport::scan_selector_ = nullptr;
 collective_algorithm_selector* transport::scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
 
-#if 0
-void
-transport::comm_sync_stats::collect(const message::ptr &msg,
-                                    double now,
-                                    double start)
-{
-  collect(msg->time_sent(), msg->time_arrived(), now, start);
-}
-
-void
-transport::comm_sync_stats::collect(double time_sent,
-                                    double time_arrived,
-                                    double now,
-                                    double start)
-{
-  //the time spent waiting here even before the message is sent
-  double sync_start = std::max(start, last_done);
-  double sync_delay = std::max(0., time_sent - sync_start);
-  total_sync_delay += sync_delay;
-
-  //we have to select what time we consider "comm" to have started
-  double comm_start = std::max(last_done, time_sent);
-  //the time spent I spend waiting with the message in-transit
-  double comm_delay = std::max(0., time_arrived - comm_start);
-  total_comm_delay += comm_delay;
-
-  //the time between the message arriving and me actually processing it
-  double busy_start = std::max(time_arrived, last_done);
-  double busy_delay = now - busy_start;
-  total_busy_delay += busy_delay;
-
-  //printf("Computed: \n"
-  //       "out = (%e,%e,%e)\n"
-  //       "int = (%e,%e,%e,%e,%e)\n",
-  //       sync_delay, comm_delay, busy_delay,
-  //       time_sent, time_arrived, now, start, last_done);
-
-  last_done = now;
-}
-
-void
-transport::comm_sync_stats::print(int rank, std::ostream& os)
-{
-  os << sprockit::printf("Rank %5d sync delays: %12.8e %12.8e %12.8e\n",
-                         rank,
-                         total_sync_delay,
-                         total_comm_delay,
-                         total_busy_delay);
-}
-#endif
-
 transport::transport(sprockit::sim_parameters* params) :
   inited_(false),
   finalized_(false),
@@ -184,23 +133,13 @@ transport::transport(sprockit::sim_parameters* params) :
   use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
 
   lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
-
-#if 0
-  bool track_comm_stats = params->get_optional_bool_param("comm_sync_stats", false);
-  if (track_comm_stats){
-    comm_sync_stats_ = new comm_sync_stats;
-  } else {
-    comm_sync_stats_ = nullptr;
-  }
-#endif
 }
 
 void
 transport::validate_api()
 {
   if (!inited_ || finalized_){
-    spkt_throw(sprockit::illformed_error,
-    "SUMI transport calling function while not inited or already finalized");
+    sprockit::abort("SUMI transport calling function while not inited or already finalized");
   }
 }
 
@@ -208,8 +147,7 @@ void
 transport::set_use_hardware_ack(bool flag)
 {
   if (flag && !supports_hardware_ack()){
-    spkt_throw(sprockit::value_error,
-      "transport::chosen transport does not support hardware acks");
+    sprockit::abort("transport::chosen transport does not support hardware acks");
   }
   use_hardware_ack_ = flag;
 }
@@ -239,12 +177,6 @@ transport::revive()
 {
   is_dead_ = false;
   go_revive();
-}
-
-communicator*
-transport::global_dom() const
-{
-  return global_domain_;
 }
 
 void
@@ -436,7 +368,7 @@ transport::handle(const message::ptr& msg)
     }
     break;
   case message::collective: {
-    collective_work_message::ptr cmsg = ptr_safe_cast(collective_work_message, msg);
+    collective_work_message::ptr cmsg = std::dynamic_pointer_cast<collective_work_message>(msg);
     int tag = cmsg->tag();
     collective::type_t ty = cmsg->type();
     tag_to_collective_map::iterator it = collectives_[ty].find(tag);
@@ -478,7 +410,7 @@ transport::handle(const message::ptr& msg)
 void
 transport::system_bcast(const message::ptr& msg)
 {
-  auto bmsg = ptr_safe_cast(system_bcast_message, msg);
+  auto bmsg = std::dynamic_pointer_cast<system_bcast_message>(msg);
   int root = bmsg->root();
   int my_effective_rank = (rank_ - root + nproc_) % nproc_;
 
@@ -503,7 +435,7 @@ transport::system_bcast(const message::ptr& msg)
   int effective_target = my_effective_rank + partner_gap;
   while (effective_target < nproc_){
     int target = (effective_target + root) % nproc_;
-    message::ptr next_msg = new system_bcast_message(bmsg->action(), bmsg->root());
+    message::ptr next_msg = std::make_shared<system_bcast_message>(bmsg->action(), bmsg->root());
     send_header(target, next_msg);
     partner_gap *= 2;
     effective_target = my_effective_rank + partner_gap;
@@ -513,7 +445,7 @@ transport::system_bcast(const message::ptr& msg)
 void
 transport::send_self_terminate()
 {
-  message::ptr msg = new message;
+  message::ptr msg = std::make_shared<message>();
   msg->set_class_type(message::terminate);
   send_header(rank_, msg); //send to self
 }
@@ -614,7 +546,7 @@ transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, commu
 {
   if (dom == nullptr) dom = global_domain_;
   if (dom->nproc() == 1){
-    collective_done_message::ptr dmsg = new collective_done_message(tag, collective::dynamic_tree_vote, dom);
+    auto dmsg = std::make_shared<collective_done_message>(tag, collective::dynamic_tree_vote, dom);
     dmsg->set_comm_rank(0);
     dmsg->set_vote(vote);
     votes_done_[tag] = vote_result(vote, thread_safe_set<int>());
@@ -844,7 +776,7 @@ transport::skip_collective(collective::type_t ty,
     if (dst && src && (dst != src)){
       ::memcpy(dst, src, nelems*type_size);
     }
-    collective_done_message::ptr dmsg = new collective_done_message(tag, ty, dom);
+    auto dmsg = std::make_shared<collective_done_message>(tag, ty, dom);
     dmsg->set_comm_rank(0);
     dmsg->set_result(dst);
     handle(dmsg);
@@ -930,7 +862,7 @@ transport::gatherv(int root, void *dst, void *src,
   coll->init(collective::gatherv, this, dom, dst, src, sendcnt, type_size, tag, fault_aware, context);
   coll->init_root(root);
   coll->init_recv_counts(recv_counts);
-  spkt_throw(sprockit::unimplemented_error, "gatherv");
+  sprockit::abort("gatherv");
   start_collective(coll);
 }
 
@@ -981,7 +913,7 @@ transport::scatterv(int root, void *dst, void *src, int* send_counts, int recvcn
              type_size, tag, fault_aware, context);
   coll->init_root(root);
   coll->init_send_counts(send_counts);
-  spkt_throw(sprockit::unimplemented_error, "scatterv");
+  sprockit::abort("scatterv");
   start_collective(coll);
 }
 
@@ -1188,7 +1120,7 @@ transport::smsg_send(int dst, message::payload_type_t ev,
 
     handle(msg);
     if (needs_ack){
-      message::ptr ack = msg->clone();
+      message::ptr ack(msg->clone());
       ack->set_payload_type(message::eager_payload_ack);
       handle(ack);
     }
@@ -1234,8 +1166,7 @@ transport::start_transaction(const message::ptr &msg)
   next_transaction_id_ = next_transaction_id_ % max_transaction_id_;
   message::ptr& entry = transactions_[tid];
   if (entry){
-    spkt_throw(sprockit::value_error,
-      "too many transactions started simultaneously");
+    sprockit::abort("too many transactions started simultaneously");
   }
   msg->set_transaction_id(tid);
   entry = msg;

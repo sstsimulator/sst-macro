@@ -234,15 +234,15 @@ mpi_api::ialltoallw(const void *sendbuf, const int sendcounts[],
                     const int rdispls[], const MPI_Datatype recvtypes[],
                     MPI_Comm comm, MPI_Request *request)
 {
-  spkt_abort_printf("MPI_Ialltoallw: unimplemented"
-                    "but, seriously, why are you using this collective anyway?");
+  sprockit::abort("MPI_Ialltoallw: unimplemented"
+                  "but, seriously, why are you using this collective anyway?");
+  return MPI_SUCCESS;
 }
 
 void
 mpi_api::start_gatherv(collectivev_op* op)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::gatherv");
+  sprockit::abort("sumi::gatherv: not implemented");
   //transport::gatherv(op->tmp_recvbuf, op->tmp_sendbuf,
   //                     op->sendcnt, typeSize, op->tag,
   //                false, options::initial_context, op->comm);
@@ -337,8 +337,7 @@ mpi_api::igatherv(int sendcount, MPI_Datatype sendtype,
 void
 mpi_api::start_scatterv(collectivev_op* op)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::scatterv");
+  sprockit::abort("sumi::scatterv: not implemented");
   //transport::allgatherv(op->tmp_recvbuf, op->tmp_sendbuf,
   //                     op->sendcnt, typeSize, op->tag,
   //                false, options::initial_context, op->comm);

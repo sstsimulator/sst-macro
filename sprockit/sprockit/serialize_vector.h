@@ -54,8 +54,7 @@ template <class T>
 class serialize<std::vector<T> > {
   typedef std::vector<T> Vector; 
  public:
-  void
-  operator()(Vector& v, serializer& ser) {
+  void operator()(Vector& v, serializer& ser) {
     switch(ser.mode())
     {
     case serializer::SIZER: {

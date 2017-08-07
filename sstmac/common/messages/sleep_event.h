@@ -61,8 +61,7 @@ class sleep_event :
     timed_interface(t) {
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "sleep message";
   }
 

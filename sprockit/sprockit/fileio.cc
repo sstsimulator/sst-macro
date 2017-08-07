@@ -84,7 +84,7 @@ SpktFileIO::not_found(const std::string& filename)
     ss << str << "\n";
   }
 
-  spkt_throw(io_error, ss.str());
+  sprockit::abort(ss.str());
 }
 
 }

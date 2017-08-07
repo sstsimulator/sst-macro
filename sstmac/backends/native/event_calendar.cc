@@ -203,8 +203,7 @@ void
 event_calendar::clear(const timestamp &zero_time)
 {
   if (running_) {
-    spkt_throw(sprockit::illformed_error,
-      "event_calendar::clear: event manager is running");
+    sprockit::abort("event_calendar::clear: event manager is running");
   }
 
   for (long idx=0; idx < num_ticks_epoch_; ++idx){
@@ -227,8 +226,7 @@ event_calendar::clear(const timestamp &zero_time)
 void
 event_calendar::cancel_all_messages(device_id canceled_loc)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "event_calendar::cancel_all_messages: not able to simulate failures right now");
+  sprockit::abort("event_calendar::cancel_all_messages: not able to simulate failures right now");
 }
 
 }

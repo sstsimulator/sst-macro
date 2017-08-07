@@ -96,7 +96,6 @@ ser & str;
 \end{CppCode}
 
 Thus the code for serializing is exactly the same as deserializing. The only change is the mode of the serializer is toggled.
-
 The above code assumes a known buffer size (or buffer of sufficient size).
 To serialize unknown sizes, the serializer can also compute the total size first.
 
@@ -114,42 +113,28 @@ char* buf = new char[size];
 The known size can now be used safely in serialization.
 
 The above code only applies to plain-old dataypes and strings.
-The serializer also automatically handles STL and Boost containers
-through the \inlinecode{<<} syntax.
+The serializer also automatically handles STL containers
+through the \inlinecode{&} syntax.
 To serialize custom objects, a C++ class must implement the serializable interface.
 
 \begin{CppCode}
 namespace my_ns {
 class my_object : 
-  public sstmac::serializable,
-  public sstmac::serializable_type<my_object>
+  public sstmac::serializable
 {
  ImplementSerializable(my_object)
  ...
- void
- serialize_order(sstmac::serializer& ser);
+ void serialize_order(sstmac::serializer& ser);
  ...
 };
 }
 \end{CppCode}
-The serialization interface requires two inheritances.
-The first inheritance from \inlinecode{serializable} is the one ``visible'' to the serializer.
+The serialization interface requires inheritance from \inlinecode{serializable}.
 This inheritance forces the object to define a \inlinecode{serialize_order} function.
-The second inheritance is used in registering a type descriptor.
 The macro \inlinecode{ImplementSerializable} inside the class creates a set of necessary functions.
 This is essentially a more efficient RTTI, mapping unique integers to a polymorphic type.
-There are cleaner ways of doing this in terms of the interface,
-but the current setup is chosen for safety.
 The forced inheritance allows more safety checks to ensure types are being set up and used correctly.
-
-In the source file, the type descriptor must be registered.
-This is done through the macro
-
-\begin{CppCode}
-DeclareSerializable(my_ns::my_object);
-\end{CppCode}
-This macro should exist in the global namespace.
-All that remains now is defining the \inlinecode{serialize_order} in the source file
+All that remains now is defining the \inlinecode{serialize_order} in the source file:
 
 \begin{CppCode}
 void my_object::serialize_order(sstmac::serializer& ser)
@@ -167,31 +152,28 @@ class parent_object :
   public sstmac::serializable
 {
 ...
-  void
-  serialize_order(sstmac::serializer& set);
+  void serialize_order(sstmac::serializer& set);
 ...
 };
 
 class my_object :
-  public parent_object,
-  public sstmac::serializable_type<my_object>
+  public parent_object
 {
  ImplementSerializable(my_object)
  ...
- void
- serialize_order(sstmac::serializer& ser);
+ void serialize_order(sstmac::serializer& ser);
  ...
 };
 \end{CppCode}
 In the above code, only \inlinecode{my_object} can be serialized.
-The \inlinecode{parent_object} is not a full serializable type because no descriptor is registered for it.
+The \inlinecode{parent_object} is not a full serializable type because no descriptor is registered for it
+using the macro \inlinecode{ImplementSerializable}.
 Only the child can be serialized and deserialized.
 However, the parent class can still contribute variables to the serialization.
 In the source file, we would have
 
 \begin{CppCode}
-void
-my_object::serializer_order(sstmac::serializer& ser)
+void my_object::serializer_order(sstmac::serializer& ser)
 {
   parent_object::serialize_order(ser);
   ...
@@ -202,7 +184,7 @@ The child object should always remember to invoke the parent serialization metho
 \section{Keyword Registration}\label{sec:keywords}
 As stated previously, \sprockit actually implements all the machinery for parameter files.
 This is not part of the \sstmacro core.
-To avoid annoying bugs, the \sprockit input system requires all allowed values for input parameters to be declared.
+To avoid annoying bugs, the \sprockit input system provides mechanisms for having allowed values be declared ahead of time.
 This can happen in any source file through static initialization macros.
 Only one invocation is allowed per source file,
 but keywords can be registered in as many source files as desired.
@@ -212,6 +194,7 @@ The macro is used in the global namespace:
 RegisterKeywords("nx", "ny", "nz");
 \end{CppCode}
 This registers some basic keywords that might be used in a 3D grid application.
+If strict mode is turned on, any parameters in the input file not matching a known parameter will produce an error.
 
 In many cases a parameter is an enumerated value or fits a pattern.
 \sprockit allows regular expressions to be declared as valid patterns for a keyword.

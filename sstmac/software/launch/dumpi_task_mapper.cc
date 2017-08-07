@@ -85,7 +85,7 @@ dumpi_task_mapper::node_id_from_hostname(const std::string& hostname)
            << "Are you sure the dumpi file and node map"
            " are from the same machine?";
     }
-    spkt_throw(sprockit::input_error, sstr.str());
+    sprockit::abort(sstr.str());
   }
   return aptr_it->second;
 }
@@ -124,15 +124,15 @@ dumpi_task_mapper::map_ranks(
     std::string fname = dumpi_file_name(i, meta->dirplusfileprefix_);
     dumpi_profile *profile = undumpi_open(fname.c_str());
     if (profile == NULL) {
-      spkt_throw(sprockit::io_error, "dumpiindexer::allocate: unable to open ", fname);
+      spkt_abort_printf("dumpiindexer::allocate: unable to open %s", fname.c_str());
     }
     dumpi_header *header = dumpi_build_header();
     if (header == NULL) {
-      spkt_throw(sprockit::io_error, "dumpiindexer::allocate: header is null");
+      sprockit::abort("dumpiindexer::allocate: header is null");
     }
     dumpi_read_header(profile, header);
     if (header->hostname == NULL || *header->hostname == 0) {
-      spkt_throw(sprockit::io_error, "dumpiindexer::allocate: hostname is null or empty");
+      sprockit::abort("dumpiindexer::allocate: hostname is null or empty");
     }
 
     std::string hostname(header->hostname);

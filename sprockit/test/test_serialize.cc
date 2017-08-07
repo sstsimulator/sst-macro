@@ -236,16 +236,14 @@ class Base : public serializable
   int x_;
 };
 
-class A : public Base,
- public serializable_type<A>
+class A : public Base
 {
   ImplementSerializable(A)
  public:
   std::string name() const override { return "A"; }
 };
 
-class B : public Base,
- public serializable_type<B>
+class B : public Base
 {
   ImplementSerializable(B)
  public:

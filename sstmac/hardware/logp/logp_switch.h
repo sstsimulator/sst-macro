@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 namespace sstmac {
 namespace hw {

@@ -271,7 +271,7 @@ def checkOutput(srcdir, tmpfile, condition):
 
   for line in refSim.lines:
     if not line in chkSim.lines:
-      return "Line %s missing from CHK file" % line
+      return "Line missing from CHK file: %s" % line
 
   #all good
   return None

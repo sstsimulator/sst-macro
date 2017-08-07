@@ -55,7 +55,7 @@ RegisterKeywords("epoch");
 namespace sstmac {
 namespace sw {
 
-spkt_unordered_map<int, app_ftq_calendar*> ftq_calendar::calendars_;
+std::unordered_map<int, app_ftq_calendar*> ftq_calendar::calendars_;
 const long app_ftq_calendar::allocation_num_epochs = 10000;
 
 ftq_calendar::ftq_calendar(sprockit::sim_parameters* params) :
@@ -146,7 +146,7 @@ ftq_calendar::global_reduce(parallel_runtime *rt)
   if (rt->nproc() == 1)
     return;
 
-  spkt_unordered_map<int, app_ftq_calendar*>::iterator it, end = calendars_.end();
+  std::unordered_map<int, app_ftq_calendar*>::iterator it, end = calendars_.end();
   for (it=calendars_.begin(); it != end; ++it){
     app_ftq_calendar* cal = it->second;
     cal->global_reduce(rt);
@@ -182,7 +182,7 @@ ftq_calendar::reduce(stat_collector* coll)
   //nothing to do for now... we are using statics
   /**
   ftq_calendar* other = safe_cast(ftq_calendar, coll);
-  spkt_unordered_map<int, app_ftq_calendar*>::iterator it, end = other->calendars_.end();
+  std::unordered_map<int, app_ftq_calendar*>::iterator it, end = other->calendars_.end();
   for (it=other->calendars_.begin(); it!= end; ++it){
     int appnum = it->first;
     calendars_[appnum]->reduce(it->second);
@@ -198,7 +198,7 @@ ftq_calendar::dump_local_data()
 void
 ftq_calendar::dump_global_data()
 {
-  spkt_unordered_map<int, app_ftq_calendar*>::iterator it, end = calendars_.end();
+  std::unordered_map<int, app_ftq_calendar*>::iterator it, end = calendars_.end();
   for (it=calendars_.begin(); it != end; ++it) {
     it->second->dump(fileroot_);
   }

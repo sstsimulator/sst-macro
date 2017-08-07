@@ -20,18 +20,6 @@ category: SSTDocumentation
 # Table of Contents
    - [Chapter 1: Introduction](#sec:intro)
       - [Section 1.1: Overview](#sec:intro:overview)
-      - [Section 1.2: Currently Supported](#sec:intro:supported)
-         - [1.2.1: Programming APIs](#subsec:intro:apis)
-         - [1.2.2: Analysis Tools and Statistics](#subsec:intro:toolsandstats)
-            - [Fully tested](#subsubsec:intro:fulltestedtools)
-      - [Section 1.3: Known Issues and Limitations](#sec:intro:issues)
-         - [1.3.1: MPI](#subsec:issues:mpi)
-            - [Communicators](#subsubsec:issues:mpi:comm)
-            - [Datatypes and Addressing](#subsubsec:issues:mpi:types)
-            - [Info and Attributes](#subsubsec:issues:mpi:info)
-            - [Point-to-Point](#subsubsec:issues:mpi:ptpt)
-            - [Collectives](#subsubsec:issues:mpi:collectives)
-         - [1.3.2: Fortran](#subsec:issues:fortran)
    - [Chapter 2: Building and Running SST/macro](#chapter:building)
       - [Section 2.1: Build and Installation of SST-macro](#sec:buildinstall)
          - [2.1.1: Downloading](#subsec:build:downloading)
@@ -46,7 +34,7 @@ category: SSTDocumentation
       - [Section 2.2: Building DUMPI](#sec:building:dumpi)
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
       - [Section 2.3: Building with OTF2 (Beta)](#sec:buildingOtf2)
-      - [Section 2.4: Building Clang source-to-source support](#sec:buildingClang)
+      - [Section 2.4: Building Clang source-to-source support (Beta)](#sec:buildingClang)
          - [2.4.1: Building Clang libTooling](#subsec:buildingClanglibTooling)
             - [The Easy Way: Mac OS X](#subsubsec:libToolingOSX)
             - [The Hard Way](#subsubsec:libTooling)
@@ -110,20 +98,20 @@ category: SSTDocumentation
       - [Section 4.5: Dragonfly](#sec:tutorial:dragonfly)
          - [4.5.1: Allocation and indexing](#subsec:dragonfly:allocatoin)
          - [4.5.2: Routing](#subsec:dragonfly:routing)
-   - [Chapter 5: Applications and Skeletonization](#chap:appsAndSkeletonization)
+   - [Chapter 5: External Applications and Skeletonization](#chap:appsAndSkeletonization)
       - [Section 5.1: Basic Application porting](#sec:skel:basic)
-         - [5.1.1: Loading external skeletons with the integrated core](#subsec:linkageCore)
+         - [5.1.1: Loading external skeletons with the standalone core](#subsec:externalAppStandalone)
+         - [5.1.2: Loading external skeletons with the integrated core](#subsec:linkageCore)
       - [Section 5.2: Auto-skeletonization with Clang (Beta)](#sec:autoSkeletonization)
-      - [Section 5.3: Manual Skeletonization](#sec:manSkeletonization)
-         - [5.3.1: Basic compute modeling](#subsec:basicCompute)
-         - [5.3.2: Detailed compute modeling](#subsec:detailedCompute)
-         - [5.3.3: Skeletonization Issues](#subsec:skeletonIssues)
-      - [Section 5.4: Process Encapsulation](#sec:processEncapsulation)
-   - [Chapter 6: Detailed Parameter Listings](#chapter:parameters)
-      - [Section 6.1: Global namespace](#sec:globalParams)
-      - [Section 6.2: Namespace "topology"](#sec:topologyParams)
-      - [Section 6.3: Namespace "node"](#sec:nodeParams)
-         - [6.3.1: Namespace "node.nic"](#subsec:node:nic:Params)
+         - [5.2.1: Skeletonization Issues](#subsec:skeletonIssues)
+      - [Section 5.3: Process Encapsulation](#sec:processEncapsulation)
+   - [Chapter 6: Clang Source-to-Source Auto-Skeletonization via Pragmas](#clangTutorial)
+      - [Section 6.1: Fortran](#subsec:issues:fortran)
+   - [Chapter 7: Detailed Parameter Listings](#chapter:parameters)
+      - [Section 7.1: Global namespace](#sec:globalParams)
+      - [Section 7.2: Namespace "topology"](#sec:topologyParams)
+      - [Section 7.3: Namespace "node"](#sec:nodeParams)
+         - [7.3.1: Namespace "node.nic"](#subsec:node:nic:Params)
             - [Namespace "node.nic.delay\_histogram"](#subsubsec:node:nic:delayHistogram:Params)
             - [Namespace "node.nic.congestion\_spyplot"](#subsubsec:node:nic:congestionSpyplot:Params)
             - [Namespace "node.nic.traffic\_matrix"](#subsubsec:node:nic:trafficMatrix:Params)
@@ -132,26 +120,26 @@ category: SSTDocumentation
             - [Namespace "node.nic.message\_size\_histogram"](#subsubsec:node:nic:sizeHistogram:Params)
             - [Namespace "node.nic.ejection"](#subsubsec:node:nic:ejection:Params)
             - [Namespace ``node.nic.injection"](#subsubsec:node:nic:injection:Params)
-         - [6.3.2: Namespace ``node.memory"](#subsec:node:memory:Params)
-         - [6.3.3: Namespace "node.os"](#subsec:node:os:Params)
+         - [7.3.2: Namespace ``node.memory"](#subsec:node:memory:Params)
+         - [7.3.3: Namespace "node.os"](#subsec:node:os:Params)
             - [Namespace ``node.os.call\_graph"](#subsubsec:node:os:callGraph:Params)
             - [Namespace ``node.os.ftq"](#subsubsec:node:os:ftq:Params)
-         - [6.3.4: Namespace ``node.proc"](#subsec:node:proc:Params)
-      - [Section 6.4: Namespace "netlink"](#sec:netlink:Params)
-         - [6.4.1: Namespace "netlink.injection"](#subsec:netlink:injection:Params)
-         - [6.4.2: Namespace ``netlink.ejection"](#subsec:netlink:ejection:Params)
-      - [Section 6.5: Namespace ``mpi"](#sec:mpi:Params)
-         - [6.5.1: Namespace ``mpi.queue"](#subsec:mpi:queue:Params)
-      - [Section 6.6: Namespace "switch"](#subsec:switch:Params)
-         - [6.6.1: Namespace "switch.router"](#subsec:switch:router:Params)
-         - [6.6.2: Namespace "switch.output\_buffer"](#subsec:switch:outputBuffer:Params)
+         - [7.3.4: Namespace ``node.proc"](#subsec:node:proc:Params)
+      - [Section 7.4: Namespace "netlink"](#sec:netlink:Params)
+         - [7.4.1: Namespace "netlink.injection"](#subsec:netlink:injection:Params)
+         - [7.4.2: Namespace ``netlink.ejection"](#subsec:netlink:ejection:Params)
+      - [Section 7.5: Namespace ``mpi"](#sec:mpi:Params)
+         - [7.5.1: Namespace ``mpi.queue"](#subsec:mpi:queue:Params)
+      - [Section 7.6: Namespace "switch"](#subsec:switch:Params)
+         - [7.6.1: Namespace "switch.router"](#subsec:switch:router:Params)
+         - [7.6.2: Namespace "switch.output\_buffer"](#subsec:switch:outputBuffer:Params)
             - [Namespace ``switch.output\_buffer.delay\_histogram"](#subsubsec:switch:outputBuffer:delayHistogram:Params)
             - [Namespace "switch.output\_buffer.byte\_hops"](#subsubsec:switch:outputBuffer:delayHistogram:Params)
-         - [6.6.3: Namespace "switch.xbar"](#sec:switch:outputBuffer:delayHistogram:Params)
+         - [7.6.3: Namespace "switch.xbar"](#sec:switch:outputBuffer:delayHistogram:Params)
             - [Namespace ``switch.xbar.bytes\_sent"](#subsubsec:switch:xbar:bytesSent:Params)
-         - [6.6.4: Namespace "switch.link"](#subsec:switch:link:Params)
-         - [6.6.5: Namespace "switch.ejection"](#subsec:switch:ejection:Params)
-      - [Section 6.7: Namespace "appN"](#sec:appN:Params)
+         - [7.6.4: Namespace "switch.link"](#subsec:switch:link:Params)
+         - [7.6.5: Namespace "switch.ejection"](#subsec:switch:ejection:Params)
+      - [Section 7.7: Namespace "appN"](#sec:appN:Params)
 
 
 
@@ -207,115 +195,72 @@ Skeletonization and UQ are the two main elements in the "canonical" SST-macro wo
 
 
 
-### Section 1.2: Currently Supported<a name="sec:intro:supported"></a>
-
-
-
-#### 1.2.1: Programming APIs<a name="subsec:intro:apis"></a>
-
-
-
 Because of its popularity, MPI is one of our main priorities in providing programming model support.  
-We currently test against the MPICH test suite. All tests compile, so you should never see compilation errors.  
-However, since many of the functions are not typically used in the community, we only test commonly-used functions.   
-See Section [1.3.1](#subsec:issues:mpi) for functions that are not supported.  
-Functions that are not implemented will throw a `unimplemented_error`, reporting the function name. 
+Some MPI-3 functions and MPI one-sided functions are not implemented.
+This will lead to compile errors with an obvious "not implement" compiler message.
 
-#### 1.2.2: Analysis Tools and Statistics<a name="subsec:intro:toolsandstats"></a>
-
-
-The following analysis tools are currently available in SST-macro.
-Some are thoroughly tested. Others have undergone some testing, but are still considered Beta.  Others have been implemented, but are relatively untested.
-
-##### Fully tested<a name="subsubsec:intro:fulltestedtools"></a>
-
-
-
--   Call graph: Generates callgrind.out file that can be visualized in either KCacheGrind or QCacheGrind. More details are given in [3.10](#sec:tutorials:callgraph).
--   Spyplot: Generates .csv data files tabulating the number of messages and number of bytes sent between MPI ranks. SST-macro can also directly generate a PNG file. Otherwise, the .csv files can be visualized in the plotting program Scilab. More details are given in [3.11](#sec:tutorials:spyplot).
--   Fixed-time quanta (FTQ): Generates a .csv data tabulating the amount of time spent doing computation/communication as the application progresses along with a Gnuplot script for visualization as a histogram. More details are given in [3.12](#sec:tutorials:ftq)
-
-### Section 1.3: Known Issues and Limitations<a name="sec:intro:issues"></a>
-
-
-
-#### 1.3.1: MPI<a name="subsec:issues:mpi"></a>
-
-
-
-Everything from MPI 2 is implemented with a few exceptions noted below.  
-The following are not implemented (categorized by MPI concepts):
-
-##### Communicators<a name="subsubsec:issues:mpi:comm"></a>
-
-
-
-
--   Anything using or having to do with Inter-communicators (`MPI_Intercomm_create()`)
--   Topology communicators
-
-##### Datatypes and Addressing<a name="subsubsec:issues:mpi:types"></a>
-
-
-
-
--   Complicated use of `MPI_LB` and `MPI_UB` to define a struct, and collections of structs (MPI test 138).
--   Changing the name of built-in datatypes with `MPI_Type_set_name()` (MPI test 171).
--   `MPI_Create_darray()`, `MPI_Create_subarray()`, and `MPI_Create_resized()`
--   `MPI_Pack_external()`, which is only useful for sending messages across MPI implementations apparently.
--   `MPI_Type_match_size()`  - extended fortran support
--   Use of `MPI_BOTTOM` (relative addressing).  Use normal buffers.
--   Using Fortran types (\eg `MPI_COMPLEX`) from C.
-
-
-##### Info and Attributes<a name="subsubsec:issues:mpi:info"></a>
-
-
-
-No `MPI_Info_*`, `MPI_*_keyval`, or `MPI_Attr_*` functions are supported.
-
-##### Point-to-Point<a name="subsubsec:issues:mpi:ptpt"></a>
-
-
-
-
--   `MPI_Grequest_*` functions (generalized requests).
--   Use of testing non-blocking functions in a loop, such as:
-
+\section{Preview of Things to Come}
+Suppose you have the basic MPI application below that executes a simple send/recv operation.
+One could use `mpicc` or `mpic++` to compile and run as an actual MPI program.
+This requires spawning all the processes and running them in parallel.
+Suppose, however, you wanted to simulate an entire MPI job launch within a single process.
+This might prove very useful for debugging since you could just run GDB or Valgrind on a single process.
+It might take a while, but for small runs (16 ranks or so) you could debug right on your laptop the same you do for a serial program.
 
 ````
-while(!flag)
-{
-  MPI_Iprobe( 0, 0, MPI_COMM_WORLD, &flag, &status );
+int size = atoi(argv[1]);
+if (rank == 0){
+ int partner = 1;
+  MPI_Send(buffer, size, MPI_INT, partner, tag, MPI_COMM_WORLD);
+} else {
+  int partner = 0;
+  MPI_Recv(buffer, size, MPI_INT, partner, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+}
+MPI_Barrier(MPI_COMM_WORLD);
+
+if (rank == 0){
+  printf("Rank 0 finished at t=%8.4f ms\n", MPI_Wtime()*1e3);
 }
 ````
 
-For some configurations, simulation time never advances in the MPI\_Iprobe call. 
-This causes an infinite loop that never returns to the discrete event manager. 
-Even if configured so that time progresses, the code will work but will take a very long time to run.
+This is exactly the functionality that SST/macro provides.
+Instead of using `mpic++`, you compile the code with {sst++}.
+This modifies your code and intercepts MPI calls, running them through the simulator instead of an actual MPI implementation.
+Your code will execute and run exactly the same.
+Your application won't even know the difference.
+The only major hiccup is that you now need a parameter file with information like:
 
+````
+node {
+ app1 {
+  name = send_recv
+  launch_cmd = aprun -n 2
+  argv = 20
+ }
+}
+````
+Rather than launching your code using `mpirun` or similar, you put all your command line parameters into a `parameters.ini` file and run:
 
-##### Collectives<a name="subsubsec:issues:mpi:collectives"></a>
+````
+shell> sstmac -f parameters.ini
+````
+The simulator then executes your application exactly as if you had been a real system and run:
 
+````
+shell> aprun -n 2 ./send_recv 20
+````
+Things get more complicated when you bring skeletonization into play.
+The use case above is emulation, exactly reproducing MPI functionality.
+In skeletonization or simulation, SST/macro will mimic as closely as possible the original application,
+but avoids as much computation and as much memory allocation as possible.
+This allows to pack in as many simulated MPI ranks as possible into your single `sstmac` process.
 
-
-
--   Non-commutative user-defined operators in `MPI_Reduce()` and `MPI_Allreduce()`.
--   `MPI_Alltoallw()` is not implemented
--   `MPI_Exscan()` is not implemented
--   `MPI_Reduce_Scatter_block()` is not implemented.
--   `MPIX_*` functions are not implemented
--   Calling MPI functions from user-defined reduce operations (MPI test 39; including `MPI_Comm_rank`).
-
-
-#### 1.3.2: Fortran<a name="subsec:issues:fortran"></a>
-
-
-
-SST-macro previously provided some experimental support for Fortran90 applications. 
-This has been discontinued for the foreseeable future.
-For profiling existing apps written with Fortran, DUMPI traces can still be generated. 
-
+\section{What To Expect In The User's Manual}
+This user's manual is mainly designed for those who wish to perform experiments with new applications using existing hardware models.
+This has been the dominant use case and we therefore classify those doing application experiments as "users" and those making new hardware models "developers."
+Getting applications to run in SST/macro should be very straightforward and requires no knowledge of simulator internal code.
+Making new hardware models is much more in depth and requires learning some basics of core simulator code.
+Those interested in making new hardware models should consult the developer's manual in the top-level source directory.
 
 
 
@@ -332,7 +277,8 @@ For profiling existing apps written with Fortran, DUMPI traces can still be gene
 
 
 
-SST-macro is available at https://github.com/sstsimulator/sst-macro
+SST-macro is available at https://github.com/sstsimulator/sst-macro.
+You can download the git repository directly:
 
 ````
 shell> git clone https://github.com/sstsimulator/sst-macro.git
@@ -342,6 +288,7 @@ or for ssh
 ````
 shell> git clone ssh://git@github.com/sstsimulator/sst-macro.git
 ````
+or you can download a release tarball from https://github.com/sstsimulator/sst-macro/releases.
 
 #### 2.1.2: Dependencies<a name="subsec:build:dependencies"></a>
 
@@ -387,7 +334,7 @@ The workflow for installing and running on the main SST core is:
 -   Run the `pysstmac` wrapper Python script that runs SST/macro-specific parameters OR
 -   Write a custom Python script
 
-The workflow for installing and running on the standalone SST/macro core (for debugging, not for production):
+The workflow for installing and running on the standalone SST/macro core:
 
 -   Build and install SST/macro standalone to generate `sstmac` executable
 -   Run `sstmac` with `*.ini` parameter files
@@ -395,17 +342,20 @@ The workflow for installing and running on the standalone SST/macro core (for de
 ##### Build SST core<a name="subsec:buildSSTCore"></a>
 
 
-The recommended mode for maximum flexibility is to run using the SST core downloadable from http://sst-simulator.org/SSTPages/SSTMainDownloads/.
+The recommended mode for maximum flexibility is to run using the SST core downloadable from http://sst-simulator.org/SSTPages/SSTMainDownloads.
 Building and installing sets up the discrete event simulation core required for all SST elements.
 SST core no longer has Boost dependencies! Directions for building Boost (if desired) are still below in [2.1.6](#subsubsec:boost)
 
 ##### Build SST/macro element library<a name="subsec:buildElementLib"></a>
 
 
-Once SST-macro is extracted to a directory, we recommend the following as a baseline configuration, including building outside the source tree:
+If using the repo (not a release tarball), go to the top-level source directory and run:
+````
+top-level-src> ./bootstrap.sh
+````
+This sets up the configure script. For builds, we recommend building outside the source tree:
 
 ````
-sst-macro> ./bootstrap.sh
 sst-macro> mkdir build
 sst-macro> cd build
 sst-macro/build> ../configure --prefix=$PATH_TO_INSTALL --with-sst-core=$PATH_TO_SST_CORE CC=MPICC CXX=MPICXX
@@ -424,7 +374,7 @@ Enabled by default. Disable if not using Boost or C++11. Ordered maps can be use
 Enabled by default. Disable if not using Boost or C++11.
 -   --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
 -   --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
--   --(dis|en)able-otf2: Enable OTF2 trace replay, requires a path to OTF2 installation.
+-   --(dis|en)able-otf2[=location]: Enable OTF2 trace replay, requires a path to OTF2 installation.
 -   --with-clang[=location]: Enable Clang source-to-source tools by pointing to Clang development libraries
 
 Once configuration has completed, printing a summary of the things it found, simply type `make`.  
@@ -433,7 +383,7 @@ Once configuration has completed, printing a summary of the things it found, sim
 
 
 
-If the build did not succeed, check [2.1.7](#subsec:build:issues) for known issues, or contact SST-macro support for help (sst-macro-help@sandia.gov).
+If the build did not succeed open an issue on the github page at https://github.com/sstsimulator/sst-macro/issues or contact SST-macro support for help (sst-macro-help@sandia.gov).
 
 If the build was successful, it is recommended to run the range of tests to make sure nothing went wrong.  
 To do this, and also install SST-macro  to the install path specified during installation, run the following commands:
@@ -448,7 +398,7 @@ Make installcheck compiles some of the skeletons that come with SST-macro, linki
 
 
 Important:  Applications and other code linking to SST-macro use Makefiles that use the sst++/sstcc compiler wrappers
-that are installed there for convenience to figure out where headers and libraries are.  Make sure your path is properly configured.
+that are installed there for convenience to figure out where headers and libraries are.  When making your skeletons and components, make sure your path is properly configured.
 
 
 #### 2.1.5: GNU pth for user-space threading<a name="subsubsec:pth"></a>
@@ -570,7 +520,7 @@ where the OTF2 root is the installation prefix for a valid OTF2 build. OTF2 can 
 Detailed build and usage instructions can be found on the website.
 
 
-### Section 2.4: Building Clang source-to-source support<a name="sec:buildingClang"></a>
+### Section 2.4: Building Clang source-to-source support (Beta)<a name="sec:buildingClang"></a>
 
 
 
@@ -625,7 +575,7 @@ The setup script places each tarball in the following subfolders of the main LLV
 -   projects/openmp
 
 Only Clang is a strict dependency. Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
-You MUST use another Clang compiler to build. If not, then you need to bootstrap (use GCC to build Clang, then use that Clang to build itself).
+You should not lunger need to use Clang to build Clang, but for the most stable results you should a pre-existing Clang compiler to build the Clang development libraries.
 
 ````
 cmake ../llvm \
@@ -662,7 +612,9 @@ You must use the same Clang compiler to build SST that you used to build libTool
 ../configure CXX=clang++ CC=clang --with-clang=$install
 ````
 
-Clang source-to-source support will now be built into the `sst++` compiler.
+Clang source-to-source support will now be built into the `sst++` compiler. 
+If Clang development libraries are available in the default system path (as is often the case with LLVM models, e..g `module load llvm`),
+then you can just put `--with-clang`.
 
 ### Section 2.5: Running an Application<a name="sec:building:running"></a>
 
@@ -684,17 +636,12 @@ The script configures the necessary paths and then launches with a Python script
 Assuming the path is configured properly, users can run
 
 ````
->pysstmac -f parameters.ini
+shell>pysstmac -f parameters.ini
 ````
-with a properly formatted parameter file. If running in standalone mode, the command would be similarly (but different).
+with a properly formatted parameter file. If running in standalone mode, the command would be similar (but different).
 
 ````
-from sst.macro import *
-setupDeprecated()
-````
-
-````
->sstmac -f parameters.ini
+shell>sstmac -f parameters.ini
 ````
 since there is no Python setup involved.
 
@@ -720,7 +667,7 @@ This is how simulations generally work in SST-macro: you build skeleton code and
 Then you run that binary and pass it a parameter file which describes the machine model to use.  For running on the main SST core, a few extra flags are required.  Rather than generating a standalone executable, the compiler wrapper generates a shared library. Users can always write their own Python scripts, which will be required for more advanced usage. However, users can also just use the `pysstmac` script.
 
 ````
->sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
+sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
 ````
 Any extra shared libraries can be given as the first few parameters and these will automatically be imported.
 
@@ -816,7 +763,6 @@ Job launchers may in some cases provide duplicate functionality and either metho
 
 
 
--   Watch your `LD_LIBRARY_PATH` if you have multiple different builds. If your paths get scrambled and the wrong libraries are being read, you will get bizarre, inscrutable errors.
 -   If the number of simulated processes specified by e.g. `aprun -n 100` does not match the number of nodes in the topology (i.e. you are not space-filling the whole simulated machine), parallel performance will suffer. SST-macro partitions nodes, not MPI ranks.
 
 
@@ -879,13 +825,13 @@ More info on declaring new debug flags in your own code can be found in the deve
 
 
 A minimal parameter file setting up a 2D-torus topology is shown below. 
-A detailed listing of parameter namespaces and keywords is given in Section [6](#chapter:parameters).
+A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
 The preferred input files now use namespaces.
 However, for consistency with previous versions, we also show the deprecated parameters.
 
 ````
 amm_model = amm1
-congestion_model = simple
+congestion_model = LogP
 node {
  #run a single mpi test
  app1 {
@@ -897,7 +843,6 @@ node {
   sendrecv_message_size = 128
  }
  ncores = 1
- model = simple
  memory {
   model = simple
   bandwidth = 1GB/s
@@ -934,6 +879,25 @@ The input file follows a basic syntax of `parameter = value`.
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
 
+\subsection{Naming Conventions}
+There are some patterns in the naming of SST parameters. The most critical is "model" versus "name". Consider:
+
+````
+switch {
+ model = pisces
+ router {
+  name = minimal
+ }
+}
+````
+
+The distinction here is subtle, but important. When a parameter has the name "model" it means there are important approximations being made.
+The model does not necessarily reproduce a real switch or node or NIC.
+It's not a choice of algorithm. It's the choice of an approximate hardware model.
+In contrast, when selecting an algorithm that is trying to reproduce "exact" behavior, the parameter is "name."
+This indicates the name of an algorithm, not an approximate model.
+
+
 #### 3.1.1: Parameter Namespace Rules<a name="subsec:parameterNamespace"></a>
 
 
@@ -969,7 +933,7 @@ node {
 Any line containing a single string with an opening \{ starts a new namespace.
 A line containing only a closing \} ends the innermost namespace.
 The syntax is not as flexible as C++ since the opening \{ must appear on the same line as the namespace and the closing \} must be on a line of its own.
-A detailed listing of parameter namespaces and keywords is given in Section [6](#chapter:parameters).
+A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
 
 #### 3.1.2: Initial Example<a name="subsec:initialExample"></a>
 
@@ -980,22 +944,19 @@ how nodes will be allocated, how ranks will be indexed, and finally what applica
 Additionally, you must specify how many processes to launch and how many to spawn per node.  
 We currently recommend using aprun syntax (the launcher for Cray machines), 
 although support is being added for other process management systems.
-SST-macro can simulate command line parameters by giving a value for `app1.argv`.
+SST-macro can simulate command line parameters by giving a value for `node.app1.argv`.
 
 A network must also be chosen.  
 In the simplest possible case, the network is modeled via a simple latency/bandwidth formula.  
 For more complicated network models, many more than two parameters will be required. 
 See [3.4](#sec:tutorial:networkmodel) for a brief explanation of SST-macro network congestion models. 
 A topology is also needed for constructing the network.  
-In this case we choose a 2-D 4X4 torus (16 switches).  The `topology_geometry` 
+In this case we choose a 2-D 4X4 torus (16 switches).  The `topology.geometry` 
 parameter takes an arbitrarily long list of numbers as the dimensions to the torus.
 
 Finally, we must construct a node model.  
-In this case, again, we use the simplest possible models (null model) for the node, 
+In this case, again, we use the simplest possible models for the node, 
 network interface controller (NIC), and memory.  
-The null model is essentially a no-op, generating the correct control flow but not actually simulating any computation. 
-This is useful for validating program correctness or examining questions only related to the network.  
-More accurate (and complicated) models will require parameters for node frequency, memory bandwidth, injection latency, etc.
 
 Parameter files can be constructed in a more modular way through the `include` statement.  
 An alternative parameter file would be:
@@ -1045,7 +1006,7 @@ nic_name = null
 sendrecv_message_size = 128
 ````
 
-All of these are special keywords in the global namespace that get expanded into parameters in a specific namespace.
+All of these are special keywords in the global namespace that get expanded into parameters in a specific namespace. We really, really do not recommend using these deprecated parameters anymore.
 
 
 
@@ -1071,7 +1032,7 @@ Here we indicate the congestion model to be used (the packet-flow) and the overa
 Currently valid values for the congestion model are `pisces` (most accurate, slowest) and `simple` (least accurate, fastest),
 but more congestion models should be supported in future versions.
 Currently valid values for the abstract machine model are `amm1`, `amm2`, `amm3`, see details below. 
-Another model, `amm4`, that adds extra detail to the NIC is pending and should be available soon.
+Another model, `amm4`, that adds extra detail to the NIC and switches is pending and should be available soon.
 The details of individual abstract machine models are given in the following sections.
 The optional accuracy parameter is less well-defined and the exact meaning varies considerably between congestion models.
 In general, the accuracy parameter represents how coarse-grained the simulation is in bytes.
@@ -1089,18 +1050,12 @@ They are universal and are valid for all abstract machine models.
 ````
 node {
  model = simple
- frequency = 2.1ghz
- ncores = 24
  nsockets = 4
+ proc {
+  frequency = 2.1ghz
+  ncores = 24
+ }
 }
-````
-or using the deprecated parameters:
-
-````
-node_name = simple
-node_frequency = 2.1ghz
-node_ccores = 24
-node_sockets = 4
 ````
 
 #### 3.2.2: AMM1<a name="subsec:ammOne"></a>
@@ -1120,42 +1075,29 @@ Once packets are injected, they traverse a series of network switches.
 The memory, injection, and network are all defined by a bandwidth/latency parameter pair.
 
 ````
-network_link_bandwidth = 6GB/s
-network_hop_latency = 100ns
-injection_bandwidth = 10GB/s
-injection_latency = 1us
-memory_bandwidth = 10GB/s
-memory_latency = 15ns
-````
-These are special parameters used by the AMM configurations.
-They can be by-passed by directly using fully namespaced parameters:
-
-````
 switch {
  link {
-   bandwidth = 6GB/s
-   latency = 100ns
- }
- ejection {
+  bandwidth = 6GB/s
   latency = 100ns
-  bandwidth = 10GB/s
  }
 }
-nic {
- injection {
-  latency = 1us
-  bandwidth = 10GB/s
+
+node {
+ nic {
+  injection {
+   bandwidth = 10GB/s
+   latency = 1us  
+  }
  }
-}
-memory {
- bandwidth = 10GB/s
- latency = 15ns
+ memory {
+  bandwidth = 10GB/s
+  latency = 15ns
+ }
 }
 ````
 
-NOTE: there is no parameter `network_latency`.
-The parameter is `network_hop_latency`.
-This is the latency required for a single packet to traverse one switch and hop to the next one in the network.
+
+The link latency is the latency required for a single packet to traverse one switch and hop to the next one in the network.
 Thus, even in the most basic of network models, there is a still a notion of topology that affects the number of hops and therefore the latency.
 To compute the total network network latency as one would observe in an MPI ping-ping benchmark, one would compute
 
@@ -1193,11 +1135,15 @@ These are special parameters used by the AMM configurations.
 They can be by-passed by directly using fully namespaced parameters (not shown).
 
 ````
-max_memory_bandwidth = 5GB/s
-memory_bandwidth = 10GB/s
-memory_latency = 15ns
+node {
+ memory {
+  max_single_bandwidth = 5GB/s
+  bandwidth = 10GB/s
+  latency = 15ns
+ }
+}
 ````
-The new parameter `max_memory_bandwidth` now defines the maximum bandwidth any single component is allowed.
+The new parameter `max_single_bandwidth` now defines the maximum bandwidth any single component is allowed.
 Thus, even if the CPU is doing something memory intensive, 5 GB/s is still available to the NIC for network transfers.
 We remark here that the memory parameters might be named something slightly more descriptive.
 However, as a rule, we want the AMM1 parameters to be a proper subset of the AMM2 parameters.
@@ -1224,9 +1170,15 @@ These are special parameters used by the AMM configurations.
 They can be by-passed by directly using fully namespaced parameters (not shown) for more detailed configurations.
 
 ````
-network_switch_bandwidth = 12GB/s
-network_bandwidth = 6GB/s
-network_hop_latency = 100ns
+switch {
+  xbar {
+   bandwidth = 12GB/s  
+  }
+  link {
+   bandwidth = 6GB/s
+   latency = 100ns
+  }
+}
 ````
 
 
@@ -1261,7 +1213,7 @@ Additionally, wrap-around links connect the nodes on each boundary.
 
 
 The figure is actually an oversimplification.  
-The `topology_geometry` parameter actually specifies the topology of the network switches, not the compute nodes. 
+The `topology.geometry` parameter actually specifies the topology of the network switches, not the compute nodes. 
 A torus is an example of a direct network in which each switch has one or more nodes "directly" connected to it.  
 A more accurate picture of the network is given in Figure [6](#fig:torus:withnodes).
 
@@ -1270,8 +1222,8 @@ A more accurate picture of the network is given in Figure [6](#fig:torus:withnod
 *Figure 6: 4 x 4 2D Torus of Network Switches with Compute Nodes*
 
 
-While in many previous architectures there was generally a one-to-one correspondence between compute nodes and switches, more recent architectures have multiple compute nodes per switch (e.g. Cray Gemini with two nodes).  
-Multinode switches can be specified via
+While in many previous architectures there was generally a one-to-one correspondence between compute nodes and switches, more recent architectures have multiple compute nodes per switch (e.g. Cray Gemini with two nodes, Cray Aries with four nodes).  
+Multiple nodes per switch can be specified via a concentration parameter:
 
 ````
 topology {
@@ -1302,7 +1254,7 @@ topology {
  geometry = 4 4
  redundant = 1 1
 }
-network_bandwidth = 2GB/s
+switch.link.bandwidth = 2GB/s
 ````
 ````
 topology {
@@ -1310,7 +1262,7 @@ topology {
  geometry = 4 4
  redundant = 2 2
 }
-network_bandwidth = 1GB/s
+switch.link.bandwidth = 1GB/s
 ````
 For some coarse-grained models, these two networks are exactly equivalent.  
 In more fine-grained models, however, these are actually two different networks.  
@@ -2979,7 +2931,7 @@ router = ugal
 
 
 
-## Chapter 5: Applications and Skeletonization<a name="chap:appsAndSkeletonization"></a>
+## Chapter 5: External Applications and Skeletonization<a name="chap:appsAndSkeletonization"></a>
 
 
 
@@ -2993,14 +2945,50 @@ You get all redirected linkage for free by using
 the SST compiler wrappers `sst++` and `sstcc` installed in the `bin` folder.
 -   Skeletonization: While SST-macro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 1K or more MPI ranks) you must strip down or "skeletonize" the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed.
 -   Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but not its own data segment (global variables).
-Virtual processes share the same address space and the same global variables.  A Beta version of the auto-skeletonizing clang-based SST compiler is available with the 7.0 release. If the Beta is not stable with your application, manual refactoring may be necessary if you have global variables.
+Virtual processes share the same address space and the same global variables.  A Beta version of the auto-skeletonizing clang-based SST compiler is available with the 7.X releases. If the Beta is not stable with your application, manual refactoring may be necessary if you have global variables.
 
-#### 5.1.1: Loading external skeletons with the integrated core<a name="subsec:linkageCore"></a>
+#### 5.1.1: Loading external skeletons with the standalone core<a name="subsec:externalAppStandalone"></a>
+
+
+You should always write your own skeleton applications in an external folder rather then integrating directly into the `sstmac` executable.
+You have two options for running your skeleton app within the simulation:
+
+-   Create a new executable with your skeleton app built-in
+-   Create a library `libX.so` and have `sstmac` load it at runtime
+
+\subsubsection{New Executable}
+If you follow the example in the `skeletons/sendrecv` folder,
+the Makefile shows how to generate a new executable.
+If you are using `sst++`, it will automatically link your executable with the right SST libraries.
+When you run your created executable, it will spawn an SST/macro simulation of your app.
+If your application is named `runapp`, you would run it exactly like the `sstmac`:
+
+````
+./runapp -f parameters.ini
+````
+where your new executable replaces `sstmac`.
+
+\subsubsection{Dynamically Loaded Library}
+If you follow the example in the `skeletons/sendrecv_sst_so` folder,
+the Makefile shows how to generate a skeleton application as an external library.
+Instead of replacing the `sstmac` executable, you tell the `sstmac` to load the library in the parameter file.
+
+````
+external_libs = libsendrecv.so
+````
+The library `libsendrecv.so` can be generated with standard compiler flags for shared libraries by using the `sst++` compiler.
+Once the `external_libs` parameter is set in the file, you can run:
+
+````
+sstmac -f parameters.ini
+````
+with the standard executable `sstmac`.
+
+#### 5.1.2: Loading external skeletons with the integrated core<a name="subsec:linkageCore"></a>
 
 
 While the main `libmacro.so` provides the bulk of SST/macro functionality, 
-users may wish to compile and run external skeletons.  This gets a bit confusing with SST core since you have an external skeleton for an external element.  
-This now gets performed automatically with the `sst++` compiler. 
+users may wish to compile and run external skeletons.  This is basically the same workflow as shown above for dynamically loaded libraries.
 When the executable is generated, SST-macro will also generate a `libX.so` containing all the element info.
 This can then be used for SST simulations.
 The `default.py` script used by `pysstmac` must also be edited.  The top lines was previously
@@ -3018,7 +3006,7 @@ If using the SST compiler wrappers, the ELI block and .so file will actually be 
 the generate shared library files can be added as the first parameters to the `pysstmac` script.
 
 ````
->sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
+shell>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
 ```` 
 
 ### Section 5.2: Auto-skeletonization with Clang (Beta)<a name="sec:autoSkeletonization"></a>
@@ -3030,7 +3018,8 @@ This enables a source-to-source translation capability in the `sst++` compiler t
 Some of this can be accomplished automatically (global variables), but most of it (removing computation and memory allocations) must occur through pragmas.
 A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder. Most of the available SST pragmas are used there.
 Pragmas are preferred since they allow switching easily back and forth between skeleton and full applications.
-This allows much easier validation of the simulation.
+This allows much easier validation of the simulation. The section here briefly introduces the SST pragma language.
+A complete tutorial on all available pragmas is given in Chapter [6](#clangTutorial).
 
 \subsection{Redirecting Main}
 Your application's `main` has to have its symbols changed.
@@ -3074,7 +3063,7 @@ If not wanting to use OpenMP in the code, `#pragma sst compute` can be used inst
 
 \subsection{Special Pragmas}
 Many special cases can arise that break skeletonization.
-This is often not a limited of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
+This is often not a limit of the SST compiler, but rather a fundemental limitation in the static analysis of the code.
 This most often arises due to nested loops. Consider the example:
 
 ````
@@ -3102,109 +3091,38 @@ for (int i=0; i < N; ++i){
 ````
 This hint allows SST to skeletonize the inner loop and "guess" at the data dependency.
 
-### Section 5.3: Manual Skeletonization<a name="sec:manSkeletonization"></a>
 
 
+#### 5.2.1: Skeletonization Issues<a name="subsec:skeletonIssues"></a>
 
-A program skeleton is a simplified program derived from a parent application. The purpose of a skeleton application is to retain the performance characteristics of interest. At the same time, program logic that is orthogonal to performance properties is removed.  The rest of this chapter will talk about skeletonizing an MPI program, but the concepts mostly apply regardless of what programming/communication model you're using. 
 
-The default method for skeletonizing an application is manually. In other words, going through your application and removing all the computation that is not necessary to produce the same communication/parallel characteristics.   Essentially, what you're doing is visually backtracing variables in MPI calls to where they are created, and removing everything else.  
-
-Skeletonization falls into three main categories:
+Skeletonization challenges fall into three main categories:
 
 
 -   Data structures - Memory is a precious commodity when running large simulations, so get rid of every memory allocation you can.
 -   Loops - Usually the main brunt of CPU time, so get rid of any loops that don't contain MPI calls or calculate variables needed in MPI calls.
 -   Communication buffers - While you can pass in real buffers with data to SST-macro MPI calls and they will work like normal, it is relatively expensive. If they're not needed, get rid of them.
 
-#### 5.3.1: Basic compute modeling<a name="subsec:basicCompute"></a>
 
 
 
-By default, even if you don't remove any computation, simulation time doesn't pass between MPI or other calls implemented by SST-macro unless you set
 
-````
-host_compute_modeling = true
-````
-
-in your parameter file.  In this case, SST-macro will use the wall time that the host takes to run code between MPI calls and use that as simulated time.  This only makes sense if you did not do any skeletonization and the original code is all there. 
-
-If you do skeletonize your application and remove computation, you need to replace it with a model of the time or resources necessary to perform that computation so that SST-macro can advance simulation time properly. 
-These functions are all accessible by using the SST compiler wrappers or by adding `#include <sstmac/compute.h>` to your file.
-
-You can describe the time it takes to do computation by inserting calls to 
-
-````
-void sstmac_compute(double seconds)
-````
-Usually, this would be parameterized by some value coming from the application, like loop size.   You can also describe memory movement with 
-
-````
-void sstmac_memread(long bytes);
-void sstmac_memwrite(long bytes);
-void sstmac_memcpy(long bytes);
-````
-again usually parameterized by something like vector size.  
-Using these two functions is the simplest and least flexible way of compute modeling.
-
-#### 5.3.2: Detailed compute modeling<a name="subsec:detailedCompute"></a>
+The main issue that arises during skeletonization is data-dependent communication.  
+In many cases, it will seem like you can't remove computation or memory allocation because MPI calls depend somehow on that data.  
+The following are some examples of how we deal with those:
 
 
-
-The basic compute modeling is not very flexible.  
-In particular, simply computing based on time does not account for congestion delays introduced by things like memory contention.
-The highly recommended route is a more detailed compute model (but still very simple) that uses the operational intensity (essentially bytes/flops ratio) for a given compute kernel.
-This informs SST-macro how much stress a given code region puts on either the processor or the memory system.
-If a kernel has a very high operational intensity, then the kernel is not memory-bound.
-The means multiple threads can be running the kernel with essentially no memory contention.
-If a kernel has a very low operational intensity, the kernel is memory bound.
-A single thread will have good performance, but multiple threads will compete heavily for memory bandwidth.
-If a kernel has a medium operational intensity, a few concurrent threads may be possible without heavy contention, 
-but as more threads are added the contention will quickly increase.
-
-The function prototype is
-
-````
-void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
-````
-Here `flops` is the number of floating point operations and `bytes` is the number of bytes that hit the memory controller.
-`bytes` is not simply the number of writes/reads that a kernel performs.
-This is the number of writes/reads that miss the cache and hit the memory system.
-For now, SST-macro assumes a single-level cache and does not distinguish between L1, L2, or L3 cache misses.
-Future versions may incorporate some estimates of cache hierarchies.
-However, given the coarse-grained nature of the simulation, explicit simulation of cache hierarchies is not likely to provide enough improved accuracy or physical insight to justify the increased computational cost. 
-Additional improvements are likely to involve adding parameters for pipelining and prefetching.
-This is currently the most active area of SST-macro development.
-
-The characterization of a compute kernel must occur outside SST-macro using performance analysis tools like Vtune or PAPI.
-For the number of flops, it can be quite easy to just count the number of flops by hand.
-The number of bytes is much harder.
-For simple kernels like a dot product or certain types of stencil computation, 
-it may be possible to pen-and-paper derive estimates of the number of bytes read/written from memory since every read is essentially a cache miss.
-In the same way, certain kernels that use small blocks (dense linear algebra), it may be possible to reason a priori about the cache behavior.
-For more complicated kernels, performance metrics might be the only way.
-Further discussion and analysis of operational intensity and roofline models can be found in "Roofline Model Toolkit: A Practical Tool for Architectural and Program Analysis" by Yung Ju Lo et al.  The PDF is available at http://www.dcs.warwick.ac.uk/~sdh/pmbs14/PMBS14/Workshop_Schedule.html.
-
-#### 5.3.3: Skeletonization Issues<a name="subsec:skeletonIssues"></a>
-
-
-
-The main issue that arises during skeletonization is data-dependent communication.  In many cases, it will seem like you can't remove computation or memory allocation because MPI calls depend somehow on that data.  The following are some examples of how we deal with those:
-
-
--   Loop convergence - In some algorithms, the number of times you iterate through the main loop depends on an error converging to near zero, or some other converging mechanism.  This basically means you can't take out anything at all, because the final result of the computation dictates the number of loops.  In this case, we usually set the number of main loop iterations to a fixed (parameterized) number.  Do we really care exactly how many loops we went through?  Most of the time, no, it's enough just to produce the behavior of the application.
--   Particle migration - Some codes have a particle-in-cell structure, where the spatial domain is decomposed among processes, and particles or elements are distributed among them, and forces between particles are calculated.  When a particle moves to another domain/process (because it's moving through space), this usually requires communication that is different from the force calculation, and thus depends entirely on the data in the application.  We can handle this in two ways: 1) Ignore it - If it doesn't happen that often, maybe it's not significant anyway.  So just remove the communication, recognizing that the behavior of the skeleton will not be fully reproduced or 2) Approximate it - If all we need to know is that this migration/communication happens sometimes, then we can just make it happen every so many iterations, or even sample from a probability distribution.
--   AMR - Some applications, like adaptive mesh refinement (AMR), exhibit communication that is entirely dependent on the computation.  In this case, skeletonization is basically impossible, so you're left with a few options
+-   Loop convergence - In some algorithms, the number of times you iterate through the main loop depends on an error converging to near zero, or some other converging mechanism.  This basically means you can't take out anything at all, because the final result of the computation dictates the number of loops.  In this case, we usually set the number of main loop iterations to a fixed number.
+-   Particle migration - Some codes have a particle-in-cell structure, where the spatial domain is decomposed among processes, and particles or elements are distributed among them, and forces between particles are calculated.  When a particle moves to another domain/process, how many particles migrate and how far depends on the actual computed forces. However, in the skeleton, we are not actually computing the forces - only estimated how long the force computation took.  If all we need to know is that this migration/communication happens sometimes, then we can just make it happen every so many iterations, or even sample from a probability distribution.
+-   AMR - Some applications, like adaptive mesh refinement (AMR), exhibit communication that is entirely dependent on the computation.  In this case, skeletonization again depends on making approximations or probability estimates of where and when box refinement occurs without actually computing everything.
 
 For applications with heavy dynamic data dependence, we have the following strategies:
 
 -   Traces  - revert to DUMPI traces, where you will be limited by existing machine size.  Trace extrapolation is also an option here.
--   Run it - get yourself a few servers with a lot of memory, and run the whole code in SST-macro.
--   Synthetic - It may be possible to replace communication with randomly-generated data and decisions, which emulate how the original application worked. This hasn't been tried yet.
--   Hybrid - It is possible to construct meta-traces that describe the problem from a real run, and read them into SST-macro to reconstruct the communication that happens.  Future versions of this manual will have more detailed descriptions as we formalize this process.
+-   Synthetic - It may be possible to replace communication with randomly-generated data and decisions, which emulate how the original application worked. This occurs in the CoMD skeleton.
+-   Hybrid - It is possible to construct meta-traces that describe the problem from a real run, and read them into SST-macro to reconstruct the communication that happens.  This occurs in the `boxml` aplications.
 
-### Section 5.4: Process Encapsulation<a name="sec:processEncapsulation"></a>
-
+### Section 5.3: Process Encapsulation<a name="sec:processEncapsulation"></a>
 
 
 As mentioned above, virtual processes are not real, physical processes inside the OS.
@@ -3218,7 +3136,322 @@ This feature is current labeled Beta, but is stable for numerous tests and will 
 
 
 
-## Chapter 6: Detailed Parameter Listings<a name="chapter:parameters"></a>
+## Chapter 6: Clang Source-to-Source Auto-Skeletonization via Pragmas<a name="clangTutorial"></a>
+
+
+
+There are three main examples of auto-skeletonization with pragmas in the SST-macro source code in the `skeletons` directory.
+These applications are Lulesh, HPCG, and CoMD.
+The auto-skeletonizing compiler is designed to do three main things:
+
+
+-   Redirect global variable accesses to thread-specific values
+-   Turn off large memory allocations that would prevent scalable simulation
+-   Estimate time of compute-intensive kernels instead of executing them
+
+\section{Pragma Overview}
+
+
+![Figure 33: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/compilerWorkflow) 
+
+*Figure 33: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.*
+
+
+
+\subsection{Compiler workflow}
+The source-to-source compiler operates on a pre-processed source file.
+The source code transformation generates a temporary source file.
+This temporary source file is then compiled into the target object file.
+Global variables require static registration of C++ variables.
+Here another temporary C++ source file (even if the original file is C)
+is generated that has all static global variable registrations.
+The corresponding object file is merged with the original object file,
+creating a complete SST-macro object file with the transformed code and C++ static registrations.
+This workflow is shown in Figure [33](#fig:compilerWorkflow).
+
+\subsection{Compiler Environment Variables}
+
+\subsubsection{SSTMAC\_SRC2SRC: Default 1}
+If set to zero, deactivates the source-to-source transformation. 
+The compiler wrapper will then compile the code into the simulator, but will not redirect any global variable accesses or perform any skeletonization.
+
+\subsubsection{SSTMAC\_SKELETONIZE: Default 0}
+If set to zero, deactivates skeletonization. 
+This does not deactivate global variable redirection.
+Thus, with `SSTMAC_SRC2SRC=1` and `SSTMAC_SKELETONIZE=0`,
+SST-macro will act as an MPI emulator executing a full code but with global variables refactored to maintain correctness.
+
+\subsubsection{SSTMAC\_HEADERS: No default}
+The compiler wrapper will only redirect global variables that it knows should definitely be modified.
+All global variables found in source files will be redirected.
+`extern` global variables found in header files are more difficult.
+Certain system global variables like `stderr` should not be modified and so are left as global variable constants.
+By default, global variables in a header file are NOT redirected unless explicitly specified in a header configuration file.
+The variable `SSTMAC_HEADERS` should give the full path of a file containing the list of header files.
+Header file paths in the file should be one per line and should be the full path, not a relative path.
+
+\subsubsection{SSTMAC\_DELETE\_TEMPS: Default 1}
+If non-zero, the compiler cleans up all temporary files. 
+If you wish to keep temporary files to view them for debugging, set to zero.
+All temporary, intermediate source files will otherwise be deleted at the end of compilation.
+
+\section{Basic Replacement Pragmas}
+When skeletonization is active (see `SSTMAC_SKELETONIZE`), these pragmas will cause replacements in the original source code.
+Pragmas appy to the next statement in the source code.
+For compound statements such as a for-loop with a multi-statement body, the pragma applies to the entire for-loop.
+\subsection{pragma sst delete: no arguments}
+This deletes the next statement from the source code.
+If the statement declares a variable that is used later in the code, this will cause a compile error.
+Consider an example from the Lulesh source code.
+
+````
+#pragma sst delete
+    testnorms_data.values[i] = normr/normr0;
+````
+In the skeleton, the residual is not actually computed and the `testnorms_data` array is not actually allocated.
+Thus this statement should be deleted and not actually executed in the skeleton.
+
+\subsection{pragma sst replace [to\_replace:string] [new\_text:C++ expression]}
+This applies a string replace to a variable or function call in the next statement.
+Consider an example from Lulesh.
+
+````
+#pragma sst replace volo 1
+   deltatime() = (Real_t(.5)*cbrt(volo(0)))/sqrt(Real_t(2.0)*einit);
+````
+The function call `volo(0)` is not valid in the skeleton since volumes are not actually computed.
+Here we simply estimate that all cells have unit volume replacing `volo(0)` with `1`.
+
+\subsection{pragma sst init [new\_value:string]}
+This pragma can only apply to a binary equals operator assigning a value.
+The pragma changes the right-hand side to use the given new value.
+For example, in Lulesh:
+
+````
+#pragma sst init nullptr
+  destAddr = &domain.commDataSend[pmsg * maxPlaneComm] ;
+````
+The send buffer `domain.commDataSend` is not allocated in the skeleton and thus is not valid to use.
+The pragma causes the skeleton to simply set `destAddr` to `nullptr`.
+
+\subsection{pragma sst return [new\_value:C++ expression]}
+Pragma is equivalent to `pragma sst init`. This replaces the target of a return statement with the given expression.
+This produces a compiler error if applied to anything but a return statement.
+
+\subsection{pragma sst keep}
+During the skeletonization process, some transformations occur automatically even without pragmas. 
+For example, all MPI calls have input buffers converted to null pointers to indicate a simulated MPI call.
+If the MPI call should be emulated with real payloads, the MPI call must be explicitly marked with `pragma keep`.
+An example can be found in the HPCG skeleton:
+
+````
+#pragma sst keep
+  MPI_Allreduce(&localNumberOfNonzeros, &totalNumberOfNonzeros, ...)
+````
+The actual allreduce operation is carried out, summing the the local number into the total number of nonzeroes.
+
+\subsection{pragma sst keep\_if [condition:C++ bool expression]}
+More control over whether transformations are skipped is provided by `keep_if`.
+An example is found in CoMD.
+
+````
+#pragma sst keep_if count < 16
+   MPI_Allreduce(sendBuf, recvBuf, count, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+````
+Any small allreduce operations are kept. 
+Any allreduce operations larger than a given cutoff are simulated without emulating the actual buffer operations.
+
+\subsection{pragma sst empty}
+This pragma is applied to functions. The function prototype is kept, but an empty body is inserted instead of the actual code.
+This can be useful for deleting large blocks of computation inside a function.
+
+\subsection{pragma sst branch\_predict [condition:C++ expression]}
+The branch prediction pragma can be applied in two different contexts.
+We will revisit the pragma in the context of compute skeletonization below.
+The branch prediction pragma should only be applied to an if-statement.
+Much like the replace pragmas, it swaps out the given if condition with a new expression.
+
+The branch prediction pragmas become necessary when skeletonizing.
+Certain values may not be computed or certain variables marked null.
+If these values are then used in an if predicate,
+the skeletonizing compiler cannot deduce the correct behavior for the application.
+When an ambiguous predicate is found, the compiler will usually print a warning and just assume the predicate is false.
+Predicates are often almost always true or almost always false. 
+Thus most uses of this pragma will simply supply `true` or `false` as the replacement.
+However, any arbitrary C++ boolean expression can be given as the replacement.
+The new predicate expression (like the original), must not involve any null variables.
+
+\section{Memory Allocation Pragmas}
+\subsection{pragma sst malloc}
+Applied to any statement in which the right-hand side is a malloc. This sets the left-hand side to `NULL`.
+This is critical for turning off large memory allocations on data structures not required for control-flow.
+
+
+\subsection{pragma sst new}
+Applied to any statement in which the right-hand side a C++ operator new. This sets the left-hand side to `nullptr`.
+This is critical for turning off large memory allocations on data structures not required for control-flow.
+
+\section{Data-Driven Type Pragmas}
+\subsection{pragma sst null\_variable}
+This applies to variable declarations. If pragma is not applied to a declaration, a compiler error is given.
+A null variable is one in which all operations involving the variable should be deleted.
+This usually applies to large data arrays that should never be allocated and therefore never dereferenced.
+An example can be seen in CoMD:
+
+````
+#pragma sst null_variable
+   int* nAtoms;         //!< total number of atoms in each box
+````
+The array is not allocated and all statements operating on the array are deleted.
+
+This pragma is much more powerful than simply using `pragma sst new`.
+`pragma sst new` simply turns off a given memory allocation setting it to a null value.
+If the array is dereferenced later in code, this causes a segmentation fault.
+By marking a declaration as null, the compiler can flag where segmentation faults would occur when running the skeleton.
+
+In most cases, all operations involving the null variable are deleted.
+However, there may be cases where the compiler may decide deleting an operation cannot be done automatically since
+it may affect control flow, e.g., if the variable is used inside an if-statement.
+When this occurs, a compiler error is thrown flagging where the ambiguity occurs.
+Another pragma must then be applied to that statement to tell the compiler how to proceed.
+
+\subsection{pragma sst null\_type [type alias] [list allowed functions]}
+This applies to C++ class variable declarations. If pragma is not applied to a declaration, a compiler error is given.
+This essentially works the same way as `null_variable`, but allows certain member functions to be kept instead of deleted.
+Consider an example from Lulesh:
+
+````
+#pragma sst null_type sstmac::vector size resize empty
+   std::vector<Real_t> m_x ;  /* coordinates */
+```` 
+Here we wish to indicate the vector is "null" and should not actually allocate memory or allow array accesses.
+However, we still wish to track the vector size and whether it is empty.
+The first argument to the pragma is a new type name that implements the "alias" functionality.
+For `std::vector`, SST-macro automatically provides the alias.
+For illustration, that code is reproduced here:
+
+````
+namespace sstmac {
+class vector {
+ public:
+  void resize(unsigned long sz){
+    size_ = sz;
+  }
+
+  unsigned long size() const {
+    return size_;
+  }
+
+  template <class... Args>
+  void push_back(Args... args){
+    ++size_;
+  }
+
+  template <class... Args>
+  void emplace_back(Args... args){
+    ++size_;
+  }
+
+  bool empty() const {
+    return size_ == 0;
+  }
+
+ private:
+  unsigned long  size_;
+};
+}
+````
+This empty vector class allows the type to track its size, but not actually hold any data.
+All places in the Lulesh code that an `std::vector` is used are substituted with the new type.
+
+The remaining arguments to the pragma are the list of functions we wish to mark as valid.
+In this case, even though the alias vector class provides more functions, we only allow `size`, `resize`, and `empty` to be called.
+
+
+
+\section{Compute Pragmas}
+\subsection{pragma sst compute and pragma omp parallel}
+Compute-intensive should not be executed natively.
+Instead, a compute model should be used to estimate the elapsed time.
+Compute model replacements are automatically triggered by any OpenMP parallel pragmas.
+The corresponding block or for-loop is not executed, instead calling out to a compute model to estimate time.
+Currently, compute modeling is done via a very basic static analysis.
+The static analysis attempts to count the number of integer and floating point operations.
+It also estimates the number of memory reads and writes.
+These four counters are passed to a coarse-grained processor model for time estimates.
+For more details, see `sstmac_compute_detailed` in the source code.
+Numerous examples can be found in the Lulesh, HPCG, and CoMD skeleton applications.
+
+\subsection{pragma sst loop\_count [integer: C++ expression]}
+If the `sst compute` or `omp parallel` pragma are applied to an outer loop with one or more inner loops,
+the compute model static analysis might fail.
+This occurs when the inner loop control flow depends on the actual execution.
+Any variables declared inside the compute block are not valid to use in the compute estimate since they will be skeletonized and deleted.
+Only variables in scope at the beginning of the outer loop are safe to use in compute modeling.
+
+When the static analysis fails, a corresponding compiler error is thrown.
+This usually requires giving a loop count hint.
+Consider the example from HPCG:
+
+````
+#pragma omp parallel for
+  for (local_int_t i=0; i< localNumberOfRows; i++) {
+    int cur_nnz = nonzerosInRow[i];
+   #pragma sst loop_count 27
+    for (int j=0; j<cur_nnz; j++) mtxIndL[i][j] = mtxIndG[i][j];
+  }
+````
+The static analysis fails on `cur_nnz`.
+However, that value is almost always 27.
+Thus we can safely tell the compiler to just assume the loop count is 27.
+
+\subsection{pragma sst branch\_predict [float: C++ expression]}
+Similar to the way that loop counts can break the static analysis, if statements inside a loop skeletonized with `omp parallel` or `sst compute` can also be problematic.
+If the predicate depends on a variable declared inside the skeletonzied block,
+the static analysis will break since it cannot predict when and how often to assume true or false.
+In contrast to the branch prediction pragma previously used, branch prediction pragmas inside a compute block must give a number between 0 and 1.
+This can either be a literal float or expression that computes a float value.
+Consider an example from CoMD:
+
+````
+#pragma sst branch_predict 0.2
+  if(r2 <= rCut2 && r2 > 0.0){
+````
+Inside the compute block, a compute may or may not occur depending on whether a particle distance is less than a cutoff.
+Based on the way CoMD constructs unit cells and halo regions, running CoMD shows that about 1 in 5 neighbor interactions are actually below the cutoff.
+Thus we given the branch prediction the hint 0.2.
+
+
+\chapter{Issues and Limitations}
+\section{Polling in applications}
+
+Use of probe non-blocking functions in a loop, such as:
+
+
+````
+while(!flag){
+ MPI_Iprobe( 0, 0, MPI_COMM_WORLD, &flag, &status );
+}
+````
+creates problems for the simulation. Virtual time never advances in the MPI\_Iprobe call. 
+This causes an infinite loop that never returns to the discrete event manager. 
+Even if configured so that time progresses, the code will work but will take a very long time to run.
+
+### Section 6.1: Fortran<a name="subsec:issues:fortran"></a>
+
+
+
+SST-macro previously provided some experimental support for Fortran90 applications. 
+This has been discontinued for the foreseeable future.
+For profiling existing apps written with Fortran, DUMPI traces can still be generated. 
+
+
+
+
+
+
+
+## Chapter 7: Detailed Parameter Listings<a name="chapter:parameters"></a>
 
 
 The following chapter is organized by parameter namespaces. Tables in each namespace are organized as
@@ -3248,7 +3481,7 @@ The allowed parameter types are:
 | filepath | A valid filepath to an existing file, either absolute or relative |
 | quantiy | A catch-all for a quantity with units. Any of frequency, bandwidth, byte length, or time can be given |
 
-### Section 6.1: Global namespace<a name="sec:globalParams"></a>
+### Section 7.1: Global namespace<a name="sec:globalParams"></a>
 
 
 
@@ -3260,7 +3493,7 @@ The allowed parameter types are:
 | serialization\_buffer\_size (byte length) | 512B |  | Size to allocate for buffers in a pool of serialization buffers. This should set be large enough to handle serialization of most messages, but not so large that significant space is wasted. |
 | cpu\_affinity (vector of int) | No default | Invalid cpu IDs give undefined behavior | When in multi-threading, specifies the list of core IDs that threads will be pinned to. |
 
-### Section 6.2: Namespace "topology"<a name="sec:topologyParams"></a>
+### Section 7.2: Namespace "topology"<a name="sec:topologyParams"></a>
 
 
 
@@ -3281,7 +3514,7 @@ The allowed parameter types are:
 | group\_connections (int) | No default | Positive int | For dragonfly, the number of intergroup connections on each switch in a Dragonfly group |
 | redundant (vector of int) | vector of 1's | Positive ints | For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. |
 
-### Section 6.3: Namespace "node"<a name="sec:nodeParams"></a>
+### Section 7.3: Namespace "node"<a name="sec:nodeParams"></a>
 
 
 
@@ -3291,7 +3524,7 @@ The allowed parameter types are:
 | model (string) | simple | simple | The type of node model (level of detail) for node-level operations |
 | services (vector of strings) | Empty | Valid service names | For  details, see section on distributed services in developer's manual. Advanced feature. |
 
-#### 6.3.1: Namespace "node.nic"<a name="subsec:node:nic:Params"></a>
+#### 7.3.1: Namespace "node.nic"<a name="subsec:node:nic:Params"></a>
 
 
 
@@ -3406,7 +3639,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-#### 6.3.2: Namespace ``node.memory"<a name="subsec:node:memory:Params"></a>
+#### 7.3.2: Namespace ``node.memory"<a name="subsec:node:memory:Params"></a>
 
 
 
@@ -3419,7 +3652,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | total\_bandwidth | No default |  | The total memory bandwidth possible across all memory controllers. |
 | max\_single\_bandwidth | Computed |  | The maximum memory bandwidth of a single stream of requests. Essentially the bandwidth of a single memory controller. If not given, this defaults the value of total\_bandwidth. |
 
-#### 6.3.3: Namespace "node.os"<a name="subsec:node:os:Params"></a>
+#### 7.3.3: Namespace "node.os"<a name="subsec:node:os:Params"></a>
 
 
 
@@ -3448,7 +3681,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | fileroot (string) | No default |  | The path of a file to be created (or overwritten) where results from the statistics will be placed. |
 | epoch (time) | No default |  | The length of simulation time to treat as a single interval. This is much like a histogram bin, except the bin is partitioned into multiple categories. If too small, not enough data will be collected per interval to give reasonable looking results. If too large, significant changes in system activity over time will not be resolved. |
 
-#### 6.3.4: Namespace ``node.proc"<a name="subsec:node:proc:Params"></a>
+#### 7.3.4: Namespace ``node.proc"<a name="subsec:node:proc:Params"></a>
 
 
 
@@ -3458,7 +3691,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | frequency | No default |  | The baseline frequency of the node |
 | parallelism (double) | 1.0 | Positive number | Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. |
 
-### Section 6.4: Namespace "netlink"<a name="sec:netlink:Params"></a>
+### Section 7.4: Namespace "netlink"<a name="sec:netlink:Params"></a>
 
 
 
@@ -3469,7 +3702,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | concentration (int) | No default | Positive int | The number of nodes connected to a given netlink. The node concentration per switch must be greater than or equal to the node concentration per netlink. |
 | num\_tiles (int) | 1 | Positive int | The number of router tiles the netlink connects to. Only relevant for tiled router models. Advanced usage. |
 
-#### 6.4.1: Namespace "netlink.injection"<a name="subsec:netlink:injection:Params"></a>
+#### 7.4.1: Namespace "netlink.injection"<a name="subsec:netlink:injection:Params"></a>
 
 
 
@@ -3485,7 +3718,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-#### 6.4.2: Namespace ``netlink.ejection"<a name="subsec:netlink:ejection:Params"></a>
+#### 7.4.2: Namespace ``netlink.ejection"<a name="subsec:netlink:ejection:Params"></a>
 
 
 
@@ -3501,7 +3734,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-### Section 6.5: Namespace ``mpi"<a name="sec:mpi:Params"></a>
+### Section 7.5: Namespace ``mpi"<a name="sec:mpi:Params"></a>
 
 
 
@@ -3511,7 +3744,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | test\_delay (time) | 0 |  | The minimum time spent by MPI on each MPI\_Test call |
 | iprobe\_delay (time) | 0 |  | The minimum time spent by MPI on each MPI\_Iprobe call |
 
-#### 6.5.1: Namespace ``mpi.queue"<a name="subsec:mpi:queue:Params"></a>
+#### 7.5.1: Namespace ``mpi.queue"<a name="subsec:mpi:queue:Params"></a>
 
 
 
@@ -3524,7 +3757,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | post\_header\_delay (time) | 0 |  | The mimimum time spent by MPI sending headers into pre-allocated mailboxes |
 | poll\_delay (time) | 0 |  | The minimum time spent by MPI each time it polls for incoming messages |
 
-### Section 6.6: Namespace "switch"<a name="subsec:switch:Params"></a>
+### Section 7.6: Namespace "switch"<a name="subsec:switch:Params"></a>
 
 
 
@@ -3534,7 +3767,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | model (string) | No default | logP, pisces | The type of switch model (level of detail) for modeling network traffic. |
 | buffer\_size (byte length) | No default |  | The size of input and output buffers on each switch. This determines the number of credits available to other components |
 
-#### 6.6.1: Namespace "switch.router"<a name="subsec:switch:router:Params"></a>
+#### 7.6.1: Namespace "switch.router"<a name="subsec:switch:router:Params"></a>
 
 
 
@@ -3544,7 +3777,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | name (string) | No default | minimal, valiant, ugal, fat\_tree | The name of the routing algorithm to use for routing packets. |
 | ugal\_threshold (int) | 0 |  | The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. |
 
-#### 6.6.2: Namespace "switch.output\_buffer"<a name="subsec:switch:outputBuffer:Params"></a>
+#### 7.6.2: Namespace "switch.output\_buffer"<a name="subsec:switch:outputBuffer:Params"></a>
 
 
 
@@ -3574,7 +3807,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | fileroot (string) | No default |  | The path of a file to be created (or overwritten) where results from the statistics will be placed. |
 
 
-#### 6.6.3: Namespace "switch.xbar"<a name="sec:switch:outputBuffer:delayHistogram:Params"></a>
+#### 7.6.3: Namespace "switch.xbar"<a name="sec:switch:outputBuffer:delayHistogram:Params"></a>
 
 
 
@@ -3600,7 +3833,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | fileroot (string) | No default |  | The path of a file to be created (or overwritten) where results from the statistics will be placed. |
 
 
-#### 6.6.4: Namespace "switch.link"<a name="subsec:switch:link:Params"></a>
+#### 7.6.4: Namespace "switch.link"<a name="subsec:switch:link:Params"></a>
 
 
 
@@ -3616,7 +3849,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-#### 6.6.5: Namespace "switch.ejection"<a name="subsec:switch:ejection:Params"></a>
+#### 7.6.5: Namespace "switch.ejection"<a name="subsec:switch:ejection:Params"></a>
 
 
 This namespace is not actually required. 
@@ -3635,7 +3868,7 @@ If unspecified, all of the values here will be filled in from `nic.injection`.
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-### Section 6.7: Namespace "appN"<a name="sec:appN:Params"></a>
+### Section 7.7: Namespace "appN"<a name="sec:appN:Params"></a>
 
 
 This is a series of namespaces `app1`, `app2`, and so on for each of the launched applications. These should be contained within the `node` namespace.

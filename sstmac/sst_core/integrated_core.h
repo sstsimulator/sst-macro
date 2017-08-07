@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/element.h>
 #include <sst/core/params.h>
 
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/sim_parameters.h>
 
 #include <sstmac/hardware/common/connection.h>

@@ -50,14 +50,11 @@ namespace sstmac {
 class sim_thread_lock
 {
  public:
-  static sim_thread_lock*
-  construct();
+  static sim_thread_lock* construct();
 
-  virtual void
-  lock() = 0;
+  virtual void lock() = 0;
 
-  virtual void
-  unlock() = 0;
+  virtual void unlock() = 0;
 };
 
 }

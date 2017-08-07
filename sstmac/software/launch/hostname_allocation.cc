@@ -145,7 +145,7 @@ hostname_allocation::read_map_file(
   delete instr;
 }
 
-void
+bool
 hostname_allocation::allocate(int nnode_requested,
  const ordered_node_set& available,
  ordered_node_set &allocation) const
@@ -168,6 +168,8 @@ hostname_allocation::allocate(int nnode_requested,
     nodenum_to_host_map_[nid] = it->first;
     allocation.insert(nid);
   }
+
+  return true;
 }
 
 }

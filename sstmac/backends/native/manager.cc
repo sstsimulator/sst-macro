@@ -126,8 +126,7 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
         cout0 << "Using dumpi meta " << buf << std::endl;
         app_params->add_param(dmeta, buf);
       } else {
-        spkt_throw(sprockit::input_error,
-         "no dumpi file found in folder or specified with dumpi_metaname");
+        sprockit::abort("no dumpi file found in folder or specified with dumpi_metaname");
       }
       dumpi_meta_filename = buf;
     } else {

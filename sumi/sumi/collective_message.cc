@@ -114,8 +114,7 @@ collective_work_message::clone_into(collective_work_message* cln) const
 message*
 collective_done_message::clone() const
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "collective_done_message::clone");
+  sprockit::abort("collective_done_message::clone unimplemented");
   return 0;
 }
 

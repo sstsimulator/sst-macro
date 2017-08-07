@@ -49,16 +49,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/errors.h>
 #include <sprockit/printable.h>
 
-#if SPKT_HAVE_CPP11
-#include <functional>
-#include <tuple>
-#endif
-
 namespace sprockit {
 
 template <class Out, class In>
-Out*
-__safe_cast__(const char* objname,
+Out* __safe_cast__(const char* objname,
               const char* file,
               int line,
               In* in,

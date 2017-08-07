@@ -57,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_local_double_fwd.h>
 #include <tinyxml2.h>
 #include <containers.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <mpi.h>
 #include <sstmac/software/process/time.h>
 
@@ -116,7 +116,7 @@ namespace lblxml {
   private:
     int event_index_;
   public:
-    typedef sprockit::refcount_ptr<pt2pt_message> ptr;
+    typedef std::shared_ptr<pt2pt_message> ptr;
 
     pt2pt_message(int index, long num_bytes) : event_index_(index),
       sumi::message(num_bytes)

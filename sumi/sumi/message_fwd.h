@@ -45,13 +45,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_message_FWD_H
 #define sumi_message_FWD_H
 
-#include <sprockit/refcount_ptr.h>
+#include <memory>
 
 namespace sumi {
 
 class message;
 
-typedef sprockit::refcount_ptr<message> message_ptr;
+typedef std::shared_ptr<message> message_ptr;
 
 }
 

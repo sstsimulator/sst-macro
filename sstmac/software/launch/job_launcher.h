@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_software_process_JOB_LAUNCHER_H
 
 #include <sprockit/factories/factory.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/launch_event_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
-
+#include <memory>
 
 namespace sstmac {
 namespace sw {
@@ -73,12 +73,11 @@ struct job_allocation
   int nproc_completed;
 };
 
-class task_mapping : public sprockit::ptr_type
-{
+class task_mapping {
  public:
   task_mapping(app_id aid) : aid_(aid) {}
 
-  typedef sprockit::refcount_ptr<task_mapping> ptr;
+  typedef std::shared_ptr<task_mapping> ptr;
 
   node_id rank_to_node(int rank) const {
     return rank_to_node_indexing_[rank];

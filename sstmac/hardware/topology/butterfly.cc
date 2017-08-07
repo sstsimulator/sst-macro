@@ -195,7 +195,8 @@ butterfly::configure_individual_port_params(switch_id src,
 int
 butterfly::minimal_distance(switch_id src, switch_id dst) const
 {
-  spkt_throw(sprockit::unimplemented_error, "butterfly::minimal_distance");
+  sprockit::abort("butterfly::minimal_distance: not implemented");
+  return -1;
 }
 
 switch_id

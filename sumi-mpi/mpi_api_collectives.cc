@@ -211,7 +211,7 @@ mpi_api::wait_collective(collective_op_base* op)
     sumi::message::ptr msg = blocking_poll();
     if (msg->class_type() == message::collective_done){
       //this is a collective done message
-      collective_done_message::ptr cmsg = ptr_safe_cast(collective_done_message, msg);
+      auto cmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
       mpi_api_debug(sprockit::dbg::mpi_collective,
                     "found collective done message of type=%s tag=%d: need %s,%d",
                     collective::tostr(cmsg->type()), cmsg->tag(),
@@ -223,7 +223,7 @@ mpi_api::wait_collective(collective_op_base* op)
         pending.push_back(cmsg);
       }
     } else {
-      mpi_message::ptr mpiMsg = ptr_safe_cast(mpi_message, msg);
+      mpi_message::ptr mpiMsg = std::dynamic_pointer_cast<mpi_message>(msg);
       queue_->incoming_progress_loop_message(mpiMsg);
     }
   }
@@ -738,8 +738,7 @@ mpi_api::ireduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm com
 void
 mpi_api::start_reduce_scatter(collective_op* op)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::reduce_scatter");
+  sprockit::abort("sumi::reduce_scatter");
 
   reduce_fxn fxn = get_collective_function(op);
 
@@ -753,8 +752,7 @@ collective_op_base*
 mpi_api::start_reduce_scatter(MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
                               MPI_Op mop, const void* src, void* dst)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::reduce_scatter");
+  sprockit::abort("sumi::reduce_scatter");
 
   collective_op* op = nullptr;
   start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);
@@ -805,8 +803,7 @@ collective_op_base*
 mpi_api::start_reduce_scatter_block(MPI_Comm comm, int count, MPI_Datatype type,
                                     MPI_Op mop, const void* src, void* dst)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "sumi::reduce_scatter");
+  sprockit::abort("sumi::reduce_scatter: not implemented");
 
   collective_op* op = nullptr;
   start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);

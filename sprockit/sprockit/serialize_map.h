@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SERIALIZE_MAP_H
 
 #include <map>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/serializer.h>
 
 namespace sprockit {
@@ -54,8 +54,7 @@ namespace sprockit {
 namespace pvt {
 
 template <class Map, class Key, class Value>
-void
-serialize_map(Map& m, serializer& ser)
+void serialize_map(Map& m, serializer& ser)
 {
   typedef typename Map::iterator iterator;
   switch(ser.mode())
@@ -107,16 +106,14 @@ class serialize<std::map<Key,Value> > {
   }
 };
 
-#if !SPKT_ENABLE_ORDERED_MAP
 template <class Key, class Value>
-class serialize<spkt_unordered_map<Key,Value> > {
-  typedef spkt_unordered_map<Key,Value> Map;
+class serialize<std::unordered_map<Key,Value> > {
+  typedef std::unordered_map<Key,Value> Map;
  public:
   void operator()(Map& m, serializer& ser){
     pvt::serialize_map<Map,Key,Value>(m,ser);
   }
 };
-#endif
 
 }
 

@@ -56,9 +56,11 @@ transport_message::serialize_order(serializer& ser)
 {
   network_message::serialize_order(ser);
   library_interface::serialize_order(ser);
-  sumi::message* msg = payload_.get();
-  ser & msg;
-  payload_ = msg;
+  //ser & payload_; not yet supported in SST core
+  auto tmp = payload_.get();
+  serialize_intrusive_ptr(tmp, ser);
+  payload_ = std::shared_ptr<sumi::message>(tmp);
+  //payload_ = msg;
   ser & src_;
   ser & dest_;
   ser & src_app_;
@@ -115,16 +117,14 @@ transport_message::clone_injection_ack() const
 {
 #if SSTMAC_SANITY_CHECK
   if (network_message::type_ == network_message::null_netmsg_type){
-    spkt_throw(sprockit::value_error,
-        "message::clone_injection_ack: null network message type");
+    sprockit::abort("message::clone_injection_ack: null network message type");
   }
 #endif
   transport_message* cln = new transport_message;
   clone_into(cln);
 #if SSTMAC_SANITY_CHECK
   if (cln->network_message::type() == network_message::null_netmsg_type){
-    spkt_throw(sprockit::value_error,
-        "message::clone_injection_ack: did not clone correctly");
+    sprockit::abort("message::clone_injection_ack: did not clone correctly");
   }
 #endif
   cln->convert_to_ack();
@@ -135,7 +135,7 @@ void
 transport_message::clone_into(transport_message* cln) const
 {
   //the payload is actually immutable now - so this is safe
-  cln->payload_ = payload_->clone();
+  cln->payload_ = std::shared_ptr<sumi::message>(payload_->clone());
   cln->src_app_ = src_app_;
   cln->dest_app_ = dest_app_;
   cln->src_ = src_;

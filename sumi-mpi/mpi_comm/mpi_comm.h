@@ -49,11 +49,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/node_address.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>
+#include <sstmac/software/process/software_id.h>
 #include <sumi-mpi/mpi_comm/keyval_fwd.h>
 #include <sumi-mpi/mpi_comm/mpi_group.h>
 #include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_request_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/errors.h>
 #include <string>
 #include <map>
@@ -61,6 +62,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 using sstmac::sw::app_id;
+using sstmac::sw::software_id;
 using sstmac::node_id;
 
 /**
@@ -186,7 +188,7 @@ class mpi_comm : public communicator
 
   uint16_t next_collective_tag_;
 
-  spkt_unordered_map<int, keyval*> keyvals_;
+  std::unordered_map<int, keyval*> keyvals_;
 
   app_id aid_;
 

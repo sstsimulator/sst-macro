@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/libraries/pthread/sstmac_pthread_runner.h>
 #include <sstmac/libraries/pthread/sstmac_pthread_impl.h>
 
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 using namespace sstmac;
 using namespace sstmac::sw;
@@ -123,7 +123,8 @@ SSTMAC_pthread_exit(void *retval)
 extern "C" int
 SSTMAC_pthread_kill(sstmac_pthread_t thread, int sig)
 {
-  spkt_throw(sprockit::unimplemented_error, "pthread_kill");
+  sprockit::abort("pthread_kill: not implemented");
+  return -1;
 }
 
 /**
@@ -472,8 +473,7 @@ SSTMAC_pthread_cond_signal(sstmac_pthread_cond_t * cond)
   for (it=pending->begin(); it != end; ++it){
     mutex_t* mut = it->second;
     if (mut->conditionals.empty()){
-        spkt_throw(sprockit::illformed_error,
-            "pthread::mutex signaled, but there are no waiting threads");
+        sprockit::abort("pthread::mutex signaled, but there are no waiting threads");
     }
     key* k = mut->conditionals.front();
     mut->conditionals.pop_front();

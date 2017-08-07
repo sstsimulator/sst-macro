@@ -68,7 +68,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/factories/factory.h>
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
@@ -118,7 +118,6 @@ class mpi_api :
     return worldcomm_;
   }
 
-  /// Get the self communicator.
   mpi_comm* comm_self() const {
     return selfcomm_;
   }
@@ -129,11 +128,8 @@ class mpi_api :
 
   int comm_size(MPI_Comm comm, int* size);
 
-  /// Get type size.
   int type_size(MPI_Datatype type, int* size);
 
-  /* Set up and tear down */
-  /// Test whether MPI has bee initialized.
   int initialized(int* flag){
     *flag = (status_ == is_initialized);
     return MPI_SUCCESS;
@@ -163,7 +159,6 @@ class mpi_api :
 
   int finalize();
 
-  /// Get current time.
   double wtime();
 
   void set_generate_ids(bool flag){
@@ -187,36 +182,38 @@ class mpi_api :
 
   int error_string(int errorcode, char* str, int* resultlen);
 
-  /* Create and destroy communicators. */
-  /// Split a communicator.  This one is a little weird.
   int comm_split(MPI_Comm incomm, int color, int key, MPI_Comm* outcomm);
 
-  /// Duplicate a communicator.
   int comm_dup(MPI_Comm input, MPI_Comm* output);
 
-  /// Create a communicator containing a subset of an existing comm.
   int comm_create(MPI_Comm input, MPI_Group group, MPI_Comm* output);
 
   int comm_group(MPI_Comm comm, MPI_Group* grp);
 
+  void comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm);
+
+  /**
+   * @param group
+   * @param num_members
+   * @param members
+   * @return Whether the current rank is in the group
+   */
+  bool group_create_with_id(MPI_Group group, int num_members, const uint32_t* members);
+
   int cart_create(MPI_Comm comm_old, int ndims, const int dims[],
               const int periods[], int reorder, MPI_Comm *comm_cart);
 
-  int cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
-               int coords[]);
+  int cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[], int coords[]);
 
   int cartdim_get(MPI_Comm comm, int *ndims);
 
   int cart_rank(MPI_Comm comm, const int coords[], int *rank);
 
-  int cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
-             int *rank_dest);
+  int cart_shift(MPI_Comm comm, int direction, int disp,
+                 int *rank_source, int *rank_dest);
 
   int cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[]);
 
-  /// Destroy a communicator.  This is currently a noop, but should later
-  /// mark the communicator invalid so erroneous program behavior can be
-  /// detected.
   int comm_free(MPI_Comm* input);
 
   int comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler){
@@ -234,7 +231,6 @@ class mpi_api :
 
   int group_translate_ranks(MPI_Group grp1, int n, const int* ranks1, MPI_Group grp2, int* ranks2);
 
-  /* Basic point-to-point operations. */
   int sendrecv(const void* sendbuf, int sendcount,
         MPI_Datatype sendtype, int dest, int sendtag,
         void* recvbuf, int recvcount,
@@ -266,45 +262,34 @@ class mpi_api :
 
   int startall(int count, MPI_Request* req);
 
-  /* Completion of outstanding requests */
   int wait(MPI_Request *request, MPI_Status *status);
 
-  int waitall(int count, MPI_Request array_of_requests[],
-          MPI_Status array_of_statuses[]);
+  int waitall(int count, MPI_Request requests[], MPI_Status statuses[]);
 
-  int waitany(int count, MPI_Request array_of_requests[], int *indx,
-          MPI_Status *status);
+  int waitany(int count, MPI_Request requests[], int *indx, MPI_Status *status);
 
-  int waitsome(int incount, MPI_Request array_of_requests[],
-           int *outcount, int array_of_indices[],
-           MPI_Status array_of_statuses[]);
+  int waitsome(int incount, MPI_Request requests[],
+           int *outcount, int indices[], MPI_Status statuses[]);
 
   int test(MPI_Request *request, int *flag, MPI_Status *status);
 
-  int testall(int count, MPI_Request array_of_requests[], int *flag,
-          MPI_Status array_of_statuses[]);
+  int testall(int count, MPI_Request requests[], int *flag, MPI_Status statuses[]);
 
-  int testany(int count, MPI_Request array_of_requests[], int *indx,
-          int *flag, MPI_Status *status);
+  int testany(int count, MPI_Request requests[], int *indx, int *flag, MPI_Status *status);
 
-  int testsome(int incount, MPI_Request array_of_requests[], int *outcount,
-           int array_of_indices[], MPI_Status array_of_statuses[]);
+  int testsome(int incount, MPI_Request requests[], int *outcount,
+               int indices[], MPI_Status statuses[]);
 
-  int probe(int source, int tag, MPI_Comm comm,
-         MPI_Status *status);
+  int probe(int source, int tag, MPI_Comm comm, MPI_Status *status);
 
-  int iprobe(int source, int tag, MPI_Comm comm, int* flag,
-         MPI_Status *status);
+  int iprobe(int source, int tag, MPI_Comm comm, int* flag, MPI_Status *status);
 
-  /* Collective operations */
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int barrier(MPI_Comm comm);
 
-  int bcast(int count, MPI_Datatype datatype, int root,
-        MPI_Comm comm);
+  int bcast(int count, MPI_Datatype datatype, int root, MPI_Comm comm);
 
-  int bcast(void *buffer, int count, MPI_Datatype datatype, int root,
-        MPI_Comm comm);
+  int bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm);
 
   int scatter(int sendcount, MPI_Datatype sendtype,
           int recvcount, MPI_Datatype recvtype, int root,
@@ -543,10 +528,8 @@ class mpi_api :
 
   int type_extent(MPI_Datatype type, MPI_Aint* extent);
 
-  int pack_size(int incount,
-         MPI_Datatype datatype,
-         MPI_Comm comm,
-         int *size);
+  int pack_size(int incount, MPI_Datatype datatype,
+         MPI_Comm comm, int *size);
 
  public:
   int op_create(MPI_User_function* user_fn, int commute, MPI_Op* op);
@@ -715,8 +698,8 @@ class mpi_api :
   /* Collective operations */
   collective_op_base* start_barrier(const char* name, MPI_Comm comm);
 
-  collective_op_base*
-  start_bcast(MPI_Comm comm, int count, MPI_Datatype datatype, int root, void *buffer);
+  collective_op_base* start_bcast(MPI_Comm comm, int count, MPI_Datatype datatype,
+                                  int root, void *buffer);
 
   collective_op_base*
   start_scatter(MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
@@ -800,7 +783,6 @@ class mpi_api :
  private:
   friend class mpi_comm_factory;
 
-  /// The MPI server.
   mpi_queue* queue_;
 
   MPI_Datatype next_type_id_;
@@ -808,46 +790,37 @@ class mpi_api :
   static const MPI_Op first_custom_op_id = 1000;
   MPI_Op next_op_id_;
 
-  /// The builder for mpi communicators.
-  mpi_comm_factory* comm_factory_;
+  mpi_comm_factory comm_factory_;
 
   int iprobe_delay_us_;
   int test_delay_us_;
 
-  /// The state of this object (initialized or not).
   enum {
     is_fresh, is_initialized, is_finalizing, is_finalized
   } status_;
 
   bool crossed_comm_world_barrier_;
 
-  /// MPI_COMM_WORLD.
   mpi_comm* worldcomm_;
-
-  /// MPI_COMM_SELF.
   mpi_comm* selfcomm_;
 
-  //----------------------------------------------------------------
-  // --- MPI Derived Datatype
-  // --- Presently, payloads won't work with derived datatypes
-  //----------------------------------------------------------------
   typedef std::map<MPI_Datatype, mpi_type*> type_map;
   type_map known_types_;
 
-  typedef spkt_unordered_map<MPI_Op, MPI_User_function*> op_map;
+  typedef std::unordered_map<MPI_Op, MPI_User_function*> op_map;
   op_map custom_ops_;
 
-  typedef spkt_unordered_map<MPI_Comm, mpi_comm*> comm_ptr_map;
+  typedef std::unordered_map<MPI_Comm, mpi_comm*> comm_ptr_map;
   comm_ptr_map comm_map_;
-  typedef spkt_unordered_map<MPI_Group, mpi_group*> group_ptr_map;
+  typedef std::unordered_map<MPI_Group, mpi_group*> group_ptr_map;
   group_ptr_map grp_map_;
   MPI_Group group_counter_;
 
-  typedef spkt_unordered_map<MPI_Request, mpi_request*> req_ptr_map;
+  typedef std::unordered_map<MPI_Request, mpi_request*> req_ptr_map;
   req_ptr_map req_map_;
   MPI_Request req_counter_;
 
-  spkt_unordered_map<int, keyval*> keyvals_;
+  std::unordered_map<int, keyval*> keyvals_;
 
   bool generate_ids_;
 
@@ -923,10 +896,10 @@ mpi_api* sstmac_mpi();
 #endif
 
 #define mpi_api_debug(flags, ...) \
-  mpi_debug(worldcomm_->rank(), flags, __VA_ARGS__)
+  mpi_debug(comm_world()->rank(), flags, __VA_ARGS__)
 
 #define mpi_api_cond_debug(flags, cond, ...) \
-  mpi_cond_debug(worldcomm_->rank(), flags, cond, __VA_ARGS__)
+  mpi_cond_debug(comm_world()->rank(), flags, cond, __VA_ARGS__)
 
 
 #endif

@@ -68,7 +68,6 @@ RegisterDebugSlot(node)
 RegisterNamespaces("os", "memory", "proc", "node");
 RegisterKeywords(
 "libname",
-"ncores",
 "nsockets",
 "node_cores",
 "node_name",
@@ -202,8 +201,7 @@ node::connect_input(sprockit::sim_parameters* params,
 void
 node::execute(ami::SERVICE_FUNC func, event* data)
 {
-  spkt_throw(sprockit::unimplemented_error,
-             "node does not implement asynchronous services - choose new node model");
+  sprockit::abort("node does not implement asynchronous services - choose new node model");
 }
 
 std::string

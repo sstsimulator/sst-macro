@@ -64,7 +64,7 @@ class coordinate_allocation :
     return "coordinate allocation";
   }
 
-  virtual void allocate(int nnode_requested,
+  virtual bool allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;
 

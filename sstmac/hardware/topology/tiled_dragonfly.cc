@@ -83,7 +83,7 @@ tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
   if (params->has_param("injection_ports"))
     params->get_vector_param("injection_ports",injection_ports_);
   else
-    spkt_throw(sprockit::input_error, "tiled_dragonfly needs injection_ports specified");
+    sprockit::abort("tiled_dragonfly needs injection_ports specified");
   top_debug("ntiles in x,y dimensions: %d,%d", tiles_x_, tiles_y_);
   int max_port = *std::max_element(injection_ports_.begin(),injection_ports_.end());
   if (max_port > n_tiles_ - 1)
@@ -358,12 +358,12 @@ tiled_dragonfly::read_intragroup_connections()
 //        -1, -1, -1, -1, -1, -1, -1, -1 };
 //      if (src_x > 7) {
 //        if (port_remap[outport] < 0)
-//          spkt_throw(sprockit::value_error, "bad remap value\n");
+//          sprockit::abort("bad remap value\n");
 //        outport = port_remap[outport];
 //      }
 //      if (dst_x > 7) {
 //        if (port_remap[inport] < 0)
-//          spkt_throw(sprockit::value_error, "bad remap value\n");
+//          sprockit::abort("bad remap value\n");
 //        inport = port_remap[inport];
 //      }
 

@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/topology/hdtorus.h>
+#include <sstmac/hardware/topology/torus.h>
 #include <stdio.h>
 #include <sstream>
 #include <sprockit/stl_string.h>
@@ -62,7 +62,7 @@ equals(const std::vector<int>& coords, int x, int y, int z)
   return coords[0] == x && coords[1] == y && coords[2] == z;
 }
 
-hdtorus::hdtorus(sprockit::sim_parameters* params) :
+torus::torus(sprockit::sim_parameters* params) :
   cartesian_topology(params,
                      InitMaxPortsIntra::I_Remembered,
                      InitGeomEjectID::I_Remembered)
@@ -79,7 +79,7 @@ hdtorus::hdtorus(sprockit::sim_parameters* params) :
 }
 
 void
-hdtorus::minimal_route_to_switch(
+torus::minimal_route_to_switch(
   switch_id src,
   switch_id dst,
   routable::path& path) const
@@ -91,12 +91,12 @@ hdtorus::minimal_route_to_switch(
     int dstX = (dst / div) % dimensions_[i];
     if (srcX != dstX){
       if (shortest_path_positive(i, srcX, dstX)){
-        top_debug("hdtorus routing up on dim %d for switch %d to %d on port %d",
+        top_debug("torus routing up on dim %d for switch %d to %d on port %d",
                   i, src, dst, path.outport());
         up_path(i, srcX, dstX, path);
       } else {
         down_path(i, srcX, dstX, path);
-        top_debug("hdtorus routing down on dim %d for switch %d to %d on port %d",
+        top_debug("torus routing down on dim %d for switch %d to %d on port %d",
                   i, src, dst, path.outport());
       }
       return;
@@ -106,7 +106,7 @@ hdtorus::minimal_route_to_switch(
 }
 
 int
-hdtorus::shortest_distance(int dim, int src, int dst) const
+torus::shortest_distance(int dim, int src, int dst) const
 {
   int up_distance, down_distance;
   if (dst > src) {
@@ -129,7 +129,7 @@ hdtorus::shortest_distance(int dim, int src, int dst) const
 }
 
 int
-hdtorus::minimal_distance(
+torus::minimal_distance(
   switch_id src,
   switch_id dst) const
 {
@@ -147,7 +147,7 @@ hdtorus::minimal_distance(
 }
 
 bool
-hdtorus::shortest_path_positive(
+torus::shortest_path_positive(
   int dim, int src, int dst) const
 {
   int up_distance, down_distance;
@@ -164,7 +164,7 @@ hdtorus::shortest_path_positive(
 }
 
 void
-hdtorus::torus_path(bool reset_dim, bool wrapped, int dim, int dir,
+torus::torus_path(bool reset_dim, bool wrapped, int dim, int dir,
                     routable::path& path) const
 {
   if (wrapped){
@@ -184,7 +184,7 @@ hdtorus::torus_path(bool reset_dim, bool wrapped, int dim, int dir,
 }
 
 void
-hdtorus::up_path(
+torus::up_path(
   int dim, int srcX, int dstX,
   routable::path& path) const
 {
@@ -196,7 +196,7 @@ hdtorus::up_path(
 }
 
 void
-hdtorus::down_path(
+torus::down_path(
   int dim, int src, int dst,
   routable::path& path) const
 {
@@ -207,7 +207,7 @@ hdtorus::down_path(
 }
 
 void
-hdtorus::configure_individual_port_params(switch_id src,
+torus::configure_individual_port_params(switch_id src,
                                           sprockit::sim_parameters *switch_params) const
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
@@ -225,7 +225,7 @@ hdtorus::configure_individual_port_params(switch_id src,
 }
 
 void
-hdtorus::connected_outports(switch_id src, std::vector<connection>& conns) const
+torus::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   int ndims = dimensions_.size();
   int dim_stride = 1;
@@ -267,7 +267,7 @@ hdtorus::connected_outports(switch_id src, std::vector<connection>& conns) const
 }
 
 void
-hdtorus::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
+torus::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
 {
   m[routing::minimal] = 2;
   m[routing::minimal_adaptive] = 2;
@@ -276,7 +276,7 @@ hdtorus::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
 }
 
 coordinates
-hdtorus::switch_coords(switch_id uid) const
+torus::switch_coords(switch_id uid) const
 {
   int div = 1;
   int ndim = dimensions_.size();
@@ -289,7 +289,7 @@ hdtorus::switch_coords(switch_id uid) const
 }
 
 switch_id
-hdtorus::switch_addr(const coordinates& coords) const
+torus::switch_addr(const coordinates& coords) const
 {
   int ret = 0;
   int mult = 1;

@@ -1,8 +1,8 @@
 TARGET := libsendrecv.so
 SRC := main.cc
 
-CXX :=    libsst++
-CC :=     libsstcc
+CXX :=    sst++
+CC :=     sstcc
 CXXFLAGS := -fPIC
 CPPFLAGS := -I.
 LIBDIR :=  
@@ -18,7 +18,7 @@ OBJ := $(OBJ:.c=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ) 
-	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS)  $(CXXFLAGS)
+	$(CXX) -shared -o $@ $+ $(LDFLAGS) $(LIBS)  $(CXXFLAGS)
 
 %.o: %.cc 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@

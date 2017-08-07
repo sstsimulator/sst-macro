@@ -45,8 +45,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_api_MESSAGE_H
 #define sumi_api_MESSAGE_H
 
+#include <memory>
 #include <sprockit/util.h>
-#include <sprockit/ptr_type.h>
 #include <sprockit/printable.h>
 #include <sumi/serialization.h>
 #include <sumi/config.h>
@@ -68,7 +68,6 @@ namespace sumi {
 
 
 class message :
-  public sprockit::ptr_type,
   public sprockit::printable,
   public sumi::serializable
 {
@@ -108,7 +107,7 @@ class message :
   static const int ack_size;
   static const int header_size;
 
-  typedef sprockit::refcount_ptr<message> ptr;
+  typedef std::shared_ptr<message> ptr;
 
   message() :
     message(sizeof(message))
@@ -353,7 +352,7 @@ class system_bcast_message : public message
 {
   ImplementSerializable(system_bcast_message)
  public:
-  typedef sprockit::refcount_ptr<system_bcast_message> ptr;
+  typedef std::shared_ptr<system_bcast_message> ptr;
 
   typedef enum {
     shutdown

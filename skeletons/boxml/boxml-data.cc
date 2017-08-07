@@ -203,8 +203,7 @@ namespace lblxml
       int n_comp = count_xml(&eventdoc, "events", "comp");
       int nevents_test = n_coll + n_comm + n_comp;
       if (nevents_test > nevents_){
-        spkt_throw(sprockit::value_error,
-          "insufficient number of event spots in vector: given %d, have %d",
+        spkt_abort_printf("insufficient number of event spots in vector: given %d, have %d",
           nevents_, nevents_test);
       }
       //g_events.resize( n_coll + n_comm + n_comp );

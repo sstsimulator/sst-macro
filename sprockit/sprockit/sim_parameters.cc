@@ -581,6 +581,7 @@ sim_parameters::_extra_data() const
     return parent_->_extra_data();
   } else {
     spkt_abort_printf("sim_parameters has no extra data to fetch");
+    return nullptr;
   }
 }
 
@@ -1237,6 +1238,7 @@ sim_parameters::get_variable(const std::string& str)
       std::cerr << pair.first << " = " << pair.second << std::endl;
     }
     spkt_abort_printf("unknown variable name %s", str.c_str());
+    return "";
   } else {
     return it->second;
   }
@@ -1319,23 +1321,20 @@ sim_parameters::combine_into(sim_parameters* sp,
                              bool override_existing,
                              bool mark_as_read)
 {
-  {key_value_map::iterator it, end = params_.end();
-  for (it=params_.begin(); it != end; ++it){
-    const std::string& key = it->first;
-    const parameter_entry& value = it->second;
+  for (auto& pair : params_){
+    const std::string& key = pair.first;
+    const parameter_entry& value = pair.second;
     sp->parse_keyval(key, value.value,
                  fail_on_existing, override_existing, mark_as_read);
-  }}
+  }
 
-  {std::map<std::string, sim_parameters*>::iterator it, end = subspaces_.end();
-  for (it=subspaces_.begin(); it != end; ++it){
-    std::string name = it->first;
-    sim_parameters* my_subspace = it->second;
+  for (auto& pair : subspaces_){
+    std::string name = pair.first;
+    sim_parameters* my_subspace = pair.second;
     sim_parameters* his_subspace = sp->get_optional_namespace(name);
     my_subspace->combine_into(his_subspace,
              fail_on_existing, override_existing, mark_as_read);
-  }}
-
+  }
 }
 
 void

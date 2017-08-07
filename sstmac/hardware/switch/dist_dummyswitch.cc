@@ -72,8 +72,7 @@ dist_dummy_switch::connect_output(
 void
 dist_dummy_switch::handle(event* ev)
 {
-  spkt_throw(sprockit::illformed_error,
-    "dist_dummy_switch::handle: should never actually handle a message");
+  sprockit::abort("dist_dummy_switch::handle: should never actually handle a message");
 }
 
 std::string
