@@ -72,7 +72,7 @@ nobase_library_include_HEADERS = \
   switch/network_switch_fwd.h \
   switch/dist_dummyswitch.h \
   topology/butterfly.h \
-  topology/crossbar.h \
+  topology/fully_connected.h \
   topology/dragonfly.h \
   topology/fat_tree.h \
   topology/torus.h \
@@ -136,7 +136,7 @@ libsstmac_hw_la_SOURCES =  \
   switch/network_switch.cc \
   switch/dist_dummyswitch.cc \
   topology/butterfly.cc \
-  topology/crossbar.cc \
+  topology/fully_connected.cc \
   topology/dragonfly.cc \
   topology/fat_tree.cc \
   topology/torus.cc \

@@ -42,78 +42,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CROSSBAR_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CROSSBAR_H_INCLUDED
-
+#include <tests/unit_tests/util/util.h>
 #include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/hardware/router/router.h>
+#include <sprockit/util.h>
+#include <sprockit/sim_parameters.h>
 
-namespace sstmac {
-namespace hw {
+extern void test_topology(sprockit::sim_parameters& params);
 
-/**
- *  @class crossbar
- *  The crossbar network generates a network which connects
-    all nodes with only two hops: those to and from the crossbar.
- */
-class crossbar : public structured_topology
+void test_fully_connected(UnitTest& unit)
 {
-  FactoryRegister("crossbar | xbar", topology, crossbar)
- public:
-  std::string to_string() const override {
-    return "crossbar topology";
-  }
-
-  virtual ~crossbar() {}
-
-  crossbar(sprockit::sim_parameters* params);
-
-  int diameter() const override {
-    return 1;
-  }
-
-  int num_leaf_switches() const override {
-    return size_;
-  }
-
-  int minimal_distance(switch_id src, switch_id dst) const override {
-    return 1;
-  }
-
-  bool uniform_network_ports() const override {
-    return true;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return true;
-  }
-
-  bool uniform_switches() const override {
-    return true;
-  }
-
-  void configure_individual_port_params(switch_id src,
-        sprockit::sim_parameters *switch_params) const override;
-
-  void connected_outports(switch_id src,
-       std::vector<connection>& conns) const override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
-  void minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    routable::path& path) const override;
-
-  virtual int num_switches() const override {
-    return size_;
-  }
-
- private:
-  long size_;
-
-};
-
+  sprockit::sim_parameters params;
+  sstmac::env::params = &params;
+  params["geometry"] = "10";
+  params["concentration"] = "3";
+  params["name"] = "fully_connected";
+  params["router.name"] = "minimal";
+  test_topology(params);
 }
-} //end of namespace sstmac
-
-#endif

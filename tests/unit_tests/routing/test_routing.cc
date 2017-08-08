@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 
 void test_torus(UnitTest& unit);
-void test_crossbar(UnitTest& unit);
+void test_fully_connected(UnitTest& unit);
 void test_fattree2(UnitTest& unit);
 void test_fattree4(UnitTest& unit);
 void test_butterfly(UnitTest& unit);
@@ -80,8 +80,8 @@ int main(int argc, char** argv)
       std::cout << "Testing fat tree...\n";
           //test_fattree2(unit);
           test_fattree4(unit);
-      std::cout << "Testing crossbar...\n";
-          test_crossbar(unit);
+      std::cout << "Testing fully_connected...\n";
+          test_fully_connected(unit);
       std::cout << "Testing butterfly...\n";
           test_butterfly(unit);
       std::cout << "Testing fbfly...\n";

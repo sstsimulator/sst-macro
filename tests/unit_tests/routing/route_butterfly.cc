@@ -55,7 +55,7 @@ void test_butterfly(UnitTest& unit)
   sprockit::sim_parameters params;
   sstmac::env::params = &params;
   params["geometry"] = "4 3";
-  params["name"] = "crossbar";
+  params["name"] = "butterfly";
   params["router.name"] = "minimal";
   test_topology(params);
 }

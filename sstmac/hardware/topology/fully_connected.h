@@ -42,65 +42,78 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstream>
-#include <sstmac/hardware/topology/crossbar.h>
-#include <sprockit/sim_parameters.h>
+#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FULLY_CONNECTED_H_INCLUDED
+#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FULLY_CONNECTED_H_INCLUDED
+
+#include <sstmac/hardware/topology/structured_topology.h>
 
 namespace sstmac {
 namespace hw {
 
-crossbar::crossbar(sprockit::sim_parameters* params) :
-  structured_topology(params,
-                      InitMaxPortsIntra::I_Remembered,
-                      InitGeomEjectID::I_Remembered)
+/**
+ *  @class fully_connected
+ *  The fully_connected network generates a network which connects
+    each node to every other node.
+ */
+class fully_connected : public structured_topology
 {
-  std::vector<int> args;
-  params->get_vector_param("geometry", args);
-  size_ = args[0];
-  max_ports_intra_network_ = num_switches();
-  eject_geometric_id_ = max_ports_intra_network_;
-}
-
-void
-crossbar::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 2;
-  m[routing::ugal] = 3;
-}
-
-void
-crossbar::minimal_route_to_switch(switch_id current_sw_addr,
-                                  switch_id dest_sw_addr,
-                                  routable::path &path) const
-{
-  path.vc = 0;
-  path.set_outport(dest_sw_addr);
-}
-
-void
-crossbar::connected_outports(switch_id src, std::vector<connection>& conns) const
-{
-  int n_switches = num_switches();
-  conns.resize(n_switches - 1);
-  int cidx = 0;
-  for (int i=0; i < n_switches; ++i){
-    if (i == src) continue;
-
-    conns[cidx].src = src;
-    conns[cidx].dst = i;
-    conns[cidx].src_outport = i;
-    conns[cidx].dst_inport = src;
-    ++cidx;
+  FactoryRegister("fully_connected | full", topology, fully_connected)
+ public:
+  std::string to_string() const override {
+    return "fully_connected topology";
   }
-}
 
-void
-crossbar::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
-{
-  topology::configure_individual_port_params(0, num_switches(), switch_params);
-}
+  virtual ~fully_connected() {}
+
+  fully_connected(sprockit::sim_parameters* params);
+
+  int diameter() const override {
+    return 1;
+  }
+
+  int num_leaf_switches() const override {
+    return size_;
+  }
+
+  int minimal_distance(switch_id src, switch_id dst) const override {
+    return 1;
+  }
+
+  bool uniform_network_ports() const override {
+    return true;
+  }
+
+  bool uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  bool uniform_switches() const override {
+    return true;
+  }
+
+  void configure_individual_port_params(switch_id src,
+        sprockit::sim_parameters *switch_params) const override;
+
+  void connected_outports(switch_id src,
+       std::vector<connection>& conns) const override;
+
+  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
+
+  void minimal_route_to_switch(
+    switch_id current_sw_addr,
+    switch_id dest_sw_addr,
+    routable::path& path) const override;
+
+  virtual int num_switches() const override {
+    return size_;
+  }
+
+ private:
+  long size_;
+
+};
 
 }
 } //end of namespace sstmac
+
+#endif
