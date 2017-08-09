@@ -54,14 +54,12 @@ struct public_buffer :
  public public_buffer_base
 {
  public:
-  explicit public_buffer(void* buf, uint8_t id = 0){
+  explicit public_buffer(void* buf){
     ptr = buf;
-    cq_id = id;
   }
 
   public_buffer() {
     ptr = nullptr;
-    cq_id = 0;
   }
 
   void offset_ptr(int offset) {
@@ -69,8 +67,6 @@ struct public_buffer :
       public_buffer_base::offset_ptr(offset);
     }
   }
-
-  uint8_t cq_id;
 
 };
 

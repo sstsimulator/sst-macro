@@ -296,7 +296,7 @@ dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int 
     stl_string(msg->failed_procs()).c_str());
 #endif
   int global_phys_dst = global_rank(virtual_dst);
-  my_api_->send_payload(global_phys_dst, msg);
+  my_api_->send_payload(global_phys_dst, msg, cfg_.cq_id, cfg_.cq_id);
 }
 
 void
@@ -335,7 +335,8 @@ dynamic_tree_vote_actor::merge_result(const dynamic_tree_vote_message::ptr& msg)
 void
 dynamic_tree_vote_actor::put_done_notification()
 {
-  auto msg = std::make_shared<collective_done_message>(tag_, collective::dynamic_tree_vote, cfg_.dom);
+  auto msg = std::make_shared<collective_done_message>(
+        tag_, collective::dynamic_tree_vote, cfg_.dom, cfg_.cq_id);
   msg->set_vote(vote_);
   msg->set_comm_rank(cfg_.dom->my_comm_rank());
 #ifdef FEATURE_TAG_SUMI_RESILIENCE

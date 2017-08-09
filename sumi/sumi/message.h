@@ -75,6 +75,9 @@ class message :
  public:
   virtual std::string to_string() const override;
 
+  static const int no_ack = -1;
+  static const int default_cq = 0;
+
   typedef enum {
     header,
     eager_payload,
@@ -95,7 +98,6 @@ class message :
     terminate,
     pt2pt,
     bcast,
-    unexpected,
     collective,
     collective_done,
     no_class,
@@ -145,9 +147,8 @@ class message :
     class_(cls),
     sender_(sender),
     recver_(recver),
-    transaction_id_(-1),
-    needs_send_ack_(false),
-    needs_recv_ack_(false)
+    send_cq_(-1),
+    recv_cq_(-1)
 #if SUMI_COMM_SYNC_STATS
     ,sent_(-1),
     header_arrived_(-1),
@@ -207,42 +208,57 @@ class message :
     sender_ = src;
   }
 
-  long byte_length() const {
+  int send_cq() const {
+    return send_cq_;
+  }
+
+  int recv_cq() const {
+    return recv_cq_;
+  }
+
+  uint64_t byte_length() const {
     return num_bytes_;
   }
 
-  void set_byte_length(long bytes) {
+  int cq_id() const {
+    switch (payload_type_){
+     case header:
+     case eager_payload:
+     case software_ack:
+     case rdma_get:
+     case rdma_put:
+     case nvram_get:
+     case failure:
+     case rdma_get_nack:
+     case none: //annoying for now - this is collectives
+      return recv_cq_;
+     case eager_payload_ack:
+     case rdma_put_ack:
+     case rdma_get_ack:
+      return send_cq_;
+    }
+  }
+
+  void set_byte_length(uint64_t bytes) {
     num_bytes_ = bytes;
-  }
-
-  int transaction_id() const {
-    return transaction_id_;
-  }
-
-  void set_transaction_id(int tid) {
-    transaction_id_ = tid;
-  }
-
-  bool has_transaction_id() const {
-    return transaction_id_ >= 0;
   }
 
   virtual void reverse();
 
   bool needs_send_ack() const {
-    return needs_send_ack_;
+    return send_cq_ >= 0;
   }
 
-  void set_needs_send_ack(bool need) {
-    needs_send_ack_ = need;
+  void set_send_cq(int cq){
+    send_cq_ = cq;
   }
 
   bool needs_recv_ack() const {
-    return needs_recv_ack_;
+    return recv_cq_ >= 0;
   }
 
-  void set_needs_recv_ack(bool need) {
-    needs_recv_ack_ = need;
+  void set_recv_cq(int cq) {
+    recv_cq_ = cq;
   }
 
   bool has_payload() const {
@@ -280,7 +296,7 @@ class message :
   static void buffer_send(public_buffer& buf, long num_bytes);
 
  protected:
-  long num_bytes_;
+  uint64_t num_bytes_;
   sumi::public_buffer local_buffer_;
   sumi::public_buffer remote_buffer_;
 
@@ -293,11 +309,9 @@ class message :
 
   int recver_;
 
-  int transaction_id_;
+  int send_cq_;
 
-  bool needs_send_ack_;
-
-  bool needs_recv_ack_;
+  int recv_cq_;
 
 #if SUMI_COMM_SYNC_STATS
  public:

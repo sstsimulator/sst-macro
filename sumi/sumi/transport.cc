@@ -99,6 +99,7 @@ transport::transport(sprockit::sim_parameters* params) :
   nspares_(0),
   recovery_lock_(0),
 #endif
+  completion_queues_(1), //guaranteed one to begin with
   inited_(false),
   finalized_(false),
   eager_cutoff_(512),
@@ -119,6 +120,14 @@ transport::transport(sprockit::sim_parameters* params) :
 #endif
   eager_cutoff_ = params->get_optional_int_param("eager_cutoff", 512);
   use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
+}
+
+int
+transport::allocate_cq()
+{
+  uint8_t ret = completion_queues_.size();
+  completion_queues_.emplace_back();
+  return ret;
 }
 
 void
@@ -197,24 +206,26 @@ transport::finish()
 }
 
 message::ptr
-transport::blocking_poll(message::payload_type_t ty)
+transport::blocking_poll(message::payload_type_t ty, int cq_id)
 {
-  std::list<message::ptr>::iterator it, end = pt2pt_done_.start_iteration();
-  for (it=pt2pt_done_.begin(); it != end; ++it){
+  auto& queue = completion_queues_[cq_id];
+
+  std::list<message::ptr>::iterator it, end = queue.start_iteration();
+  for (it=queue.begin(); it != end; ++it){
     message::ptr msg = *it;
     if (msg->payload_type() == ty){
-      pt2pt_done_.erase(it);
+      queue.erase(it);
       return msg;
     }
   }
-  pt2pt_done_.end_iteration();
+  queue.end_iteration();
 
   while (1){
-    message::ptr msg = blocking_poll();
+    message::ptr msg = blocking_poll(cq_id);
     if (msg->payload_type() == ty){
       return msg;
     } else {
-      pt2pt_done_.push_back(msg);
+      queue.push_back(msg);
     }
   }
 }
@@ -222,15 +233,34 @@ transport::blocking_poll(message::payload_type_t ty)
 message::ptr
 transport::poll(bool blocking, double timeout)
 {
-  debug_printf(sprockit::dbg::sumi, "Rank %d polling for message", rank_);
   message::ptr ret;
-  bool empty = pt2pt_done_.pop_front_and_return(ret);
-  if (!empty) return ret;
-
-  empty = collectives_done_.pop_front_and_return(ret);
-  if (!empty) return ret;
-
+  for (auto& queue : completion_queues_){
+    bool empty = queue.pop_front_and_return(ret);
+    if (!empty) return ret;
+  }
   return poll_new(blocking, timeout);
+}
+
+message::ptr
+transport::poll(bool blocking, int cq_id, double timeout)
+{
+  auto& queue = completion_queues_[cq_id];
+  debug_printf(sprockit::dbg::sumi,
+               "Rank %d polling for message on cq %d", rank_, cq_id);
+  message::ptr ret;
+  bool empty = queue.pop_front_and_return(ret);
+  if (!empty) return ret;
+
+  while (1){
+    ret = poll_new(blocking, timeout);
+    debug_printf(sprockit::dbg::sumi,
+                 "Rank %d polling got new message on cq %d", rank_, ret->cq_id());
+    if (ret->cq_id() == cq_id){
+      return ret;
+    } else {
+      completion_queues_[cq_id].push_back(ret);
+    }
+  }
 }
 
 message::ptr
@@ -251,19 +281,9 @@ transport::poll_new(bool blocking, double timeout)
 }
 
 message::ptr
-transport::blocking_poll(double timeout)
+transport::blocking_poll(int cq_id, double timeout)
 {
-  return poll(true, timeout); //blocking
-}
-
-void
-transport::send(int dst, const message::ptr &msg)
-{
-  if (use_eager_protocol(msg->byte_length())){
-    send_payload(dst, msg);
-  } else {
-    send_unexpected_rdma(dst, msg);
-  }
+  return poll(true, cq_id, timeout); //blocking
 }
 
 void
@@ -276,16 +296,6 @@ transport::notify_collective_done(const collective_done_message::ptr &msg)
        collective::tostr(msg->type()), msg->tag());   
   }
   finish_collective(coll, msg);
-}
-
-void
-transport::handle_unexpected_rdma_header(const message::ptr& msg)
-{
-  msg->local_buffer() = allocate_public_buffer(msg->byte_length());
-  debug_printf(sprockit::dbg::sumi,
-    "Rank %d allocated unexpected buffer %p to recv rdma message from sender %d",
-    rank_, msg->local_buffer().ptr, msg->sender());
-  rdma_get(msg->sender(), msg);
 }
 
 void
@@ -302,10 +312,11 @@ message::ptr
 transport::handle(const message::ptr& msg)
 {
   debug_printf(sprockit::dbg::sumi,
-    "Rank %d got message %p of class %s, payload %s for sender %d, recver %d",
+    "Rank %d got message %p of class %s, payload %s for sender %d, recver %d, send cq %d, recv cq %d",
      rank_, msg.get(),
      message::tostr(msg->class_type()), message::tostr(msg->payload_type()),
-     msg->sender(), msg->recver());
+     msg->sender(), msg->recver(),
+     msg->send_cq(), msg->recv_cq());
 
   //we might have collectives to delete and cleanup
   if (!todel_.empty()){
@@ -341,17 +352,9 @@ transport::handle(const message::ptr& msg)
     }
     return msg;
   }
-  case message::unexpected:
-    switch (msg->payload_type()){
-      case message::header:
-        handle_unexpected_rdma_header(msg);
-        break;
-      default:
-        return msg;
-    }
-    break;
   case message::collective: {
     collective_work_message::ptr cmsg = std::dynamic_pointer_cast<collective_work_message>(msg);
+    if (cmsg->send_cq() == -1 && cmsg->recv_cq() == -1) abort();
     int tag = cmsg->tag();
     collective::type_t ty = cmsg->type();
     tag_to_collective_map::iterator it = collectives_[ty].find(tag);
@@ -368,12 +371,13 @@ transport::handle(const message::ptr& msg)
         return message::ptr();
     } else {
       collective* coll = it->second;
-      int old_collective_size = collectives_done_.size();
+      auto& queue = completion_queues_[cmsg->cq_id()];
+      int old_queue_size = queue.size();
       coll->recv(cmsg);
-      if (collectives_done_.size() != old_collective_size){
+      if (queue.size() != old_queue_size){
         //oh, a new collective finished
         message::ptr dmsg;
-        collectives_done_.pop_back_and_return(dmsg);
+        queue.pop_back_and_return(dmsg);
         return dmsg;
       } else {
         return message::ptr();
@@ -430,7 +434,7 @@ transport::system_bcast(const message::ptr& msg)
   while (effective_target < nproc_){
     int target = (effective_target + root) % nproc_;
     message::ptr next_msg = std::make_shared<system_bcast_message>(bmsg->action(), bmsg->root());
-    send_header(target, next_msg);
+    send_header(target, next_msg, message::no_ack, message::default_cq);
     partner_gap *= 2;
     effective_target = my_effective_rank + partner_gap;
   }
@@ -441,7 +445,7 @@ transport::send_self_terminate()
 {
   message::ptr msg = std::make_shared<message>();
   msg->set_class_type(message::terminate);
-  send_header(rank_, msg); //send to self
+  send_header(rank_, msg, message::no_ack, message::default_cq); //send to self
 }
 
 transport::~transport()
@@ -458,7 +462,8 @@ transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, collective::config
   if (cfg.dom == nullptr) cfg.dom = global_domain_;
 
   if (cfg.dom->nproc() == 1){
-    auto dmsg = std::make_shared<collective_done_message>(tag, collective::dynamic_tree_vote, cfg.dom);
+    auto dmsg = std::make_shared<collective_done_message>(
+          tag, collective::dynamic_tree_vote, cfg.dom, cfg.cq_id);
     dmsg->set_comm_rank(0);
     dmsg->set_vote(vote);
     vote_done(cfg.context, dmsg);
@@ -550,7 +555,7 @@ transport::vote_done(int context, const collective_done_message::ptr& dmsg)
     heartbeat_running_ = false;
   } else
 #endif
-    collectives_done_.push_back(dmsg);
+    completion_queues_[dmsg->cq_id()].push_back(dmsg);
 }
 
 void
@@ -614,21 +619,21 @@ transport::deadlock_check()
 
 bool
 transport::skip_collective(collective::type_t ty,
-  communicator*& dom,
+  collective::config& cfg,
   void* dst, void *src,
   int nelems, int type_size,
   int tag)
 {
-  if (dom == nullptr) dom = global_domain_;
+  if (cfg.dom == nullptr) cfg.dom = global_domain_;
 
-  if (dom->nproc() == 1){
+  if (cfg.dom->nproc() == 1){
     if (dst && src && (dst != src)){
       ::memcpy(dst, src, nelems*type_size);
     }
-    auto dmsg = std::make_shared<collective_done_message>(tag, ty, dom);
+    auto dmsg = std::make_shared<collective_done_message>(tag, ty, cfg.dom, cfg.cq_id);
     dmsg->set_comm_rank(0);
     dmsg->set_result(dst);
-    pt2pt_done_.push_back(dmsg);
+    completion_queues_[cfg.cq_id].push_back(dmsg);
     return true; //null indicates no work to do
   } else {
     return false;
@@ -639,7 +644,7 @@ void
 transport::allreduce(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
                      collective::config cfg)
 {
-  if (skip_collective(collective::allreduce, cfg.dom, dst, src, nelems, type_size, tag))
+  if (skip_collective(collective::allreduce, cfg, dst, src, nelems, type_size, tag))
     return;
 
   dag_collective* coll = allreduce_selector_ == nullptr
@@ -654,7 +659,7 @@ void
 transport::scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
                 collective::config cfg)
 {
-  if (skip_collective(collective::scan, cfg.dom, dst, src, nelems, type_size, tag))
+  if (skip_collective(collective::scan, cfg, dst, src, nelems, type_size, tag))
     return;
 
   dag_collective* coll = scan_selector_ == nullptr
@@ -671,7 +676,7 @@ void
 transport::reduce(int root, void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
                   collective::config cfg)
 {
-  if (skip_collective(collective::reduce, cfg.dom, dst, src, nelems, type_size, tag))
+  if (skip_collective(collective::reduce, cfg, dst, src, nelems, type_size, tag))
     return;
 
   dag_collective* coll = reduce_selector_ == nullptr
@@ -686,7 +691,7 @@ transport::reduce(int root, void* dst, void *src, int nelems, int type_size, int
 void
 transport::bcast(int root, void *buf, int nelems, int type_size, int tag, collective::config cfg)
 {
-  if (skip_collective(collective::bcast, cfg.dom, buf, buf, nelems, type_size, tag))
+  if (skip_collective(collective::bcast, cfg, buf, buf, nelems, type_size, tag))
     return;
 
   dag_collective* coll = bcast_selector_ == nullptr
@@ -704,7 +709,7 @@ transport::gatherv(int root, void *dst, void *src,
                    int type_size, int tag,
                    collective::config cfg)
 {
-  if (skip_collective(collective::gatherv, cfg.dom, dst, src, sendcnt, type_size, tag))
+  if (skip_collective(collective::gatherv, cfg, dst, src, sendcnt, type_size, tag))
     return;
 
   dag_collective* coll = gatherv_selector_ == nullptr
@@ -721,7 +726,7 @@ void
 transport::gather(int root, void *dst, void *src, int nelems, int type_size, int tag,
                   collective::config cfg)
 {
-  if (skip_collective(collective::gather, cfg.dom, dst, src, nelems, type_size, tag))
+  if (skip_collective(collective::gather, cfg, dst, src, nelems, type_size, tag))
     return;
 
   dag_collective* coll = gather_selector_ == nullptr
@@ -737,7 +742,7 @@ void
 transport::scatter(int root, void *dst, void *src, int nelems, int type_size, int tag,
                    collective::config cfg)
 {
-  if (skip_collective(collective::scatter, cfg.dom, dst, src, nelems, type_size, tag))
+  if (skip_collective(collective::scatter, cfg, dst, src, nelems, type_size, tag))
     return;
 
   dag_collective* coll = scatter_selector_ == nullptr
@@ -753,7 +758,7 @@ void
 transport::scatterv(int root, void *dst, void *src, int* send_counts, int recvcnt, int type_size, int tag,
                     collective::config cfg)
 {
-  if (skip_collective(collective::scatterv, cfg.dom, dst, src, recvcnt, type_size, tag))
+  if (skip_collective(collective::scatterv, cfg, dst, src, recvcnt, type_size, tag))
     return;
 
   dag_collective* coll = scatterv_selector_ == nullptr
@@ -771,7 +776,7 @@ void
 transport::alltoall(void *dst, void *src, int nelems, int type_size, int tag,
                     collective::config cfg)
 {
-  if (skip_collective(collective::alltoall, cfg.dom, dst, src, nelems, type_size, tag))
+  if (skip_collective(collective::alltoall, cfg, dst, src, nelems, type_size, tag))
     return;
 
   dag_collective* coll = alltoall_selector_ == nullptr
@@ -786,7 +791,7 @@ void
 transport::alltoallv(void *dst, void *src, int* send_counts, int* recv_counts, int type_size, int tag,
                      collective::config cfg)
 {
-  if (skip_collective(collective::alltoallv, cfg.dom, dst, src, send_counts[0], type_size, tag))
+  if (skip_collective(collective::alltoallv, cfg, dst, src, send_counts[0], type_size, tag))
     return;
 
   dag_collective* coll = alltoallv_selector_ == nullptr
@@ -803,7 +808,7 @@ void
 transport::allgather(void *dst, void *src, int nelems, int type_size, int tag,
                      collective::config cfg)
 {
-  if (skip_collective(collective::allgather, cfg.dom, dst, src, nelems, type_size, tag))
+  if (skip_collective(collective::allgather, cfg, dst, src, nelems, type_size, tag))
     return;
 
   dag_collective* coll = allgather_selector_ == nullptr
@@ -820,7 +825,7 @@ transport::allgatherv(void *dst, void *src, int* recv_counts, int type_size, int
 {
   //if the allgatherv is skipped, we have a single recv count
   int nelems = *recv_counts;
-  if (skip_collective(collective::allgatherv, cfg.dom, dst, src, nelems, type_size, tag))
+  if (skip_collective(collective::allgatherv, cfg, dst, src, nelems, type_size, tag))
     return;
 
   dag_collective* coll = allgatherv_selector_ == nullptr
@@ -836,7 +841,7 @@ transport::allgatherv(void *dst, void *src, int* recv_counts, int type_size, int
 void
 transport::barrier(int tag, collective::config cfg)
 {
-  if (skip_collective(collective::barrier, cfg.dom, 0, 0, 0, 0, tag))
+  if (skip_collective(collective::barrier, cfg, 0, 0, 0, 0, tag))
     return;
 
   dag_collective* coll = new bruck_allgather_collective;
@@ -867,7 +872,7 @@ transport::finish_collective(collective* coll, const collective_done_message::pt
   if (ty == collective::dynamic_tree_vote){
     vote_done(coll->context(), dmsg);
   } else {
-    collectives_done_.push_back(dmsg);
+    completion_queues_[dmsg->recv_cq()].push_back(dmsg);
   }
 
 
@@ -879,30 +884,33 @@ transport::finish_collective(collective* coll, const collective_done_message::pt
 
 
 void
-transport::smsg_send(int dst, message::payload_type_t ev,
-                     const message::ptr& msg, bool needs_ack, uint8_t cq_id)
+transport::smsg_send(int dst, message::payload_type_t ev, const message::ptr& msg,
+                     int send_cq, int recv_cq)
 {
   configure_send(dst, ev, msg);
-  msg->set_needs_send_ack(needs_ack);
-  msg->remote_buffer().cq_id = cq_id;
+  msg->set_send_cq(send_cq);
+  msg->set_recv_cq(recv_cq);
+
+  if (send_cq == -1 && recv_cq == -1) abort();
 
   debug_printf(sprockit::dbg::sumi,
-    "Rank %d SUMI sending short message to %d, ack %srequested ",
+    "Rank %d SUMI sending short message to %d, send ack %srequested ",
     rank_, dst,
-    (needs_ack ? "" : "NOT "));
+    (msg->needs_send_ack() ? "" : "NOT "));
 
   if (dst == rank_) {
     //deliver to self
     debug_printf(sprockit::dbg::sumi,
       "Rank %d SUMI sending self message", rank_);
 
-    pt2pt_done_.push_back(msg);
-    if (needs_ack){
+    if (msg->needs_recv_ack()){
+      completion_queues_[msg->recv_cq()].push_back(msg);
+    }
+    if (msg->needs_send_ack()){
       message::ptr ack(msg->clone());
       ack->set_payload_type(message::eager_payload_ack);
-      pt2pt_done_.push_back(ack);
+      completion_queues_[msg->send_cq()].push_back(ack);
     }
-
   }
   else {
     do_smsg_send(dst, msg);
@@ -914,67 +922,25 @@ transport::smsg_send(int dst, message::payload_type_t ev,
 
 void
 transport::rdma_get(int src, const message::ptr &msg,
-                    bool needs_send_ack, bool needs_recv_ack)
+                    int send_cq, int recv_cq)
 {
+  if (send_cq == -1 && recv_cq == -1) abort();
+
   configure_send(src, message::rdma_get, msg);
-  msg->set_needs_send_ack(needs_send_ack);
-  msg->set_needs_recv_ack(needs_recv_ack);
+  msg->set_send_cq(send_cq);
+  msg->set_recv_cq(recv_cq);
   do_rdma_get(src, msg);
 }
 
 void
-transport::rdma_get(int src, const message::ptr &msg)
-{
-  bool needs_send_ack = msg->class_type() != sumi::message::ping;
-  rdma_get(src, msg, needs_send_ack, true /*ack recv*/);
-}
-
-void
-transport::start_transaction(const message::ptr &msg)
-{
-  lock();
-  int tid = next_transaction_id_++;
-  next_transaction_id_ = next_transaction_id_ % max_transaction_id_;
-  message::ptr& entry = transactions_[tid];
-  if (entry){
-    sprockit::abort("too many transactions started simultaneously");
-  }
-  msg->set_transaction_id(tid);
-  entry = msg;
-  unlock();
-}
-
-message::ptr
-transport::finish_transaction(int tid)
-{
-  lock();
-  std::map<int,message::ptr>::iterator it = transactions_.find(tid);
-  if (it == transactions_.end()){
-     spkt_throw_printf(sprockit::value_error,
-      "invalid transaction id %d", tid);
-  }
-  message::ptr msg = it->second;
-  transactions_.erase(it);
-  unlock();
-  return msg;
-}
-
-void
-transport::rdma_put(int dst, const message::ptr &msg, bool needs_send_ack, bool needs_recv_ack)
+transport::rdma_put(int dst, const message::ptr &msg,
+                    int send_cq, int recv_cq)
 {
   configure_send(dst, message::rdma_put, msg);
-  msg->set_needs_send_ack(needs_send_ack);
-  msg->set_needs_recv_ack(needs_recv_ack);
+  msg->set_send_cq(send_cq);
+  msg->set_recv_cq(recv_cq);
   do_rdma_put(dst, msg);
 }
-
-void
-transport::rdma_put(int dst, const message::ptr &msg)
-{
-  bool needs_send_ack = msg->transaction_id() >= 0;
-  rdma_put(dst, msg, needs_send_ack, true /*ack recv*/);
-}
-
 void
 transport::nvram_get(int src, const message::ptr &msg)
 {
@@ -1011,31 +977,15 @@ transport::configure_send(int dst, message::payload_type_t ev, const message::pt
 }
 
 void
-transport::send_header(int dst, const message::ptr& msg, bool needs_ack, uint8_t cq_id)
+transport::send_header(int dst, const message::ptr& msg, int send_cq, int recv_cq)
 {
-  smsg_send(dst, message::header, msg, needs_ack, cq_id);
+  smsg_send(dst, message::header, msg, send_cq, recv_cq);
 }
 
 void
-transport::send_payload(int dst, const message::ptr& msg, bool needs_ack, uint8_t cq_id)
+transport::send_payload(int dst, const message::ptr& msg, int send_cq, int recv_cq)
 {
-  smsg_send(dst, message::eager_payload, msg, needs_ack, cq_id);
-}
-
-void
-transport::send_unexpected_rdma(int dst, const message::ptr& msg)
-{
-  msg->set_class_type(message::unexpected);
-  send_rdma_header(dst, msg);
-}
-
-void
-transport::send_rdma_header(int dst, const message::ptr &msg)
-{
-  if (use_hardware_ack_){
-    start_transaction(msg);
-  } 
-  send_header(dst, msg);
+  smsg_send(dst, message::eager_payload, msg, send_cq, recv_cq);
 }
 
 #ifdef FEATURE_TAG_SUMI_RESILIENCE

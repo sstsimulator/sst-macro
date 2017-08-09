@@ -84,6 +84,14 @@ class sumi_transport :
 
   virtual ~sumi_transport();
 
+  int pt2pt_cq_id() const {
+    return pt2pt_cq_id_;
+  }
+
+  int collective_cq_id() const {
+    return collective_cq_id_;
+  }
+
   void incoming_event(event *ev) override;
 
   void compute(timestamp t);
@@ -107,7 +115,8 @@ class sumi_transport :
    * @param tag
    * @return
    */
-  sumi::collective_done_message::ptr collective_block(sumi::collective::type_t ty, int tag) override;
+  sumi::collective_done_message::ptr collective_block(
+      sumi::collective::type_t ty, int tag, uint8_t cq_id = 0) override;
 
   double wall_time() const override;
 
@@ -125,8 +134,7 @@ class sumi_transport :
   void send(long byte_length,
     const sumi::message_ptr& msg,
     int ty,
-    int dst,
-    bool needs_ack);
+    int dst);
 
   void incoming_message(transport_message* msg);
 
@@ -150,8 +158,6 @@ class sumi_transport :
   void do_nvram_get(int src, const sumi::message::ptr& msg) override;
 
   void send_terminate(int dst) override;
-
-  void delayed_transport_handle(const sumi::message::ptr& msg) override;
 
   void go_die() override;
 
@@ -182,7 +188,6 @@ class sumi_transport :
     node_id dest_node,
     int dest_app,
     const sumi::message::ptr& msg,
-    bool needs_ack,
     int ty);
 
   void process(sstmac::transport_message* msg);
@@ -210,6 +215,10 @@ class sumi_transport :
   sstmac::stat_spyplot* spy_num_messages_;
 
   sstmac::stat_spyplot* spy_bytes_;
+
+  int collective_cq_id_;
+
+  int pt2pt_cq_id_;
 
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   void send_ping_request(int dst) override;

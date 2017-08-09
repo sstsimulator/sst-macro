@@ -158,8 +158,12 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   transport(params),
   user_lib_time_(nullptr),
   spy_num_messages_(nullptr),
-  spy_bytes_(nullptr)
+  spy_bytes_(nullptr),
+  collective_cq_id_(1), //this gets assigned elsewhere
+  pt2pt_cq_id_(0) //put pt2pt sends on the default cq
 {
+  collective_cq_id_ = allocate_cq();
+
   rank_ = sid.task_;
   library* server_lib = os_->lib(server_libname_);
   sumi_server* server;
@@ -238,8 +242,10 @@ sumi_transport::client_server_send(
   int dst_app,
   const sumi::message::ptr& msg)
 {
+  msg->set_send_cq(sumi::message::no_ack);
+  msg->set_recv_cq(sumi::message::default_cq);
   send(msg->byte_length(),
-       dst_task, dst_node, dst_app, msg, false/*no ack*/,
+       dst_task, dst_node, dst_app, msg,
        hw::network_message::payload);
 }
 
@@ -250,9 +256,10 @@ sumi_transport::client_server_rdma_put(
   int dst_app,
   const sumi::message::ptr& msg)
 {
-  msg->set_needs_recv_ack(true);
+  msg->set_send_cq(sumi::message::no_ack);
+  msg->set_recv_cq(sumi::message::default_cq);
   send(msg->byte_length(),
-       dst_task, dst_node, dst_app, msg, false,/*no ack*/
+       dst_task, dst_node, dst_app, msg,
        hw::network_message::rdma_put_payload);
 }
 
@@ -304,11 +311,10 @@ sumi_transport::send(
   long byte_length,
   const sumi::message_ptr &msg,
   int sendType,
-  int dst_rank,
-  bool needs_ack)
+  int dst_rank)
 {
   node_id dst_node = rank_mapper_->rank_to_node(dst_rank);
-  send(byte_length, dst_rank, dst_node, sid().app_, msg, needs_ack, sendType);
+  send(byte_length, dst_rank, dst_node, sid().app_, msg, sendType);
 }
 
 void
@@ -318,18 +324,17 @@ sumi_transport::send(
   node_id dst_node,
   int dst_app,
   const sumi::message::ptr& msg,
-  bool needs_ack,
   int ty)
 {
   sstmac::sw::app_id aid = sid().app_;
   transport_message* tmsg = new transport_message(server_libname_, aid, msg, byte_length);
   tmsg->hw::network_message::set_type((hw::network_message::type_t)ty);
   tmsg->toaddr_ = dst_node;
-  tmsg->set_needs_ack(needs_ack);
   tmsg->set_src_rank(rank_);
   tmsg->set_dest_rank(dst_task);
   //send intra-app
   tmsg->set_apps(sid().app_, dst_app);
+  tmsg->set_needs_ack(msg->needs_send_ack());
 
   if (spy_num_messages_) spy_num_messages_->add_one(rank_, dst_task);
   if (spy_bytes_) spy_bytes_->add(rank_, dst_task, byte_length);
@@ -362,8 +367,7 @@ sumi_transport::do_smsg_send(int dst, const sumi::message::ptr &msg)
     user_lib_time_->compute(post_header_delay_);
   }
   send(msg->byte_length(), msg,
-    sstmac::hw::network_message::payload,
-    dst, msg->needs_send_ack());
+    sstmac::hw::network_message::payload, dst);
 }
 
 double
@@ -380,8 +384,7 @@ sumi_transport::do_rdma_get(int dst, const sumi::message::ptr& msg)
   }
 
   send(msg->byte_length(), msg,
-    sstmac::hw::network_message::rdma_get_request,
-    dst, msg->needs_send_ack());
+    sstmac::hw::network_message::rdma_get_request, dst);
 }
 
 void
@@ -391,16 +394,14 @@ sumi_transport::do_rdma_put(int dst, const sumi::message::ptr& msg)
     user_lib_time_->compute(post_rdma_delay_);
   }
   send(msg->byte_length(), msg,
-    sstmac::hw::network_message::rdma_put_payload,
-    dst, msg->needs_send_ack());
+    sstmac::hw::network_message::rdma_put_payload, dst);
 }
 
 void
 sumi_transport::do_nvram_get(int dst, const sumi::message::ptr& msg)
 {
   send(msg->byte_length(), msg,
-    sstmac::hw::network_message::nvram_get_request,
-    dst, msg->needs_send_ack());
+    sstmac::hw::network_message::nvram_get_request, dst);
 }
 
 sumi::transport_message*
@@ -455,25 +456,26 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
 }
 
 sumi::collective_done_message::ptr
-sumi_transport::collective_block(sumi::collective::type_t ty, int tag)
+sumi_transport::collective_block(sumi::collective::type_t ty, int tag, uint8_t cq_id)
 {
   //first we have to loop through the completion queue to see if it already exists
   while(1){
-    std::list<sumi::message::ptr>::iterator it, end = collectives_done_.start_iteration();
-    for (it=collectives_done_.begin(); it != end; ++it){
+    auto& collective_cq = completion_queues_[collective_cq_id_];
+    std::list<sumi::message::ptr>::iterator it, end = collective_cq.start_iteration();
+    for (it=collective_cq.begin(); it != end; ++it){
       sumi::message::ptr msg = *it;
       if (msg->class_type() == sumi::message::collective_done){
         //this is a collective done message
         auto cmsg = std::dynamic_pointer_cast<sumi::collective_done_message>(msg);
         if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
-          collectives_done_.erase(it);
-          collectives_done_.end_iteration();
+          collective_cq.erase(it);
+          collective_cq.end_iteration();
           return cmsg;
         }
       }
     }
 
-    collectives_done_.end_iteration();
+    collective_cq.end_iteration();
     sumi::message::ptr msg = poll_new(true); //blocking
     if (msg->class_type() == sumi::message::collective_done){
       //this is a collective done message
@@ -481,20 +483,11 @@ sumi_transport::collective_block(sumi::collective::type_t ty, int tag)
       if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
         return cmsg;
       }
-      collectives_done_.push_back(msg);
+      collective_cq.push_back(msg);
     } else {
-      pt2pt_done_.push_back(msg);
+      completion_queues_[pt2pt_cq_id_].push_back(msg);
     }
   }
-}
-
-
-void
-sumi_transport::delayed_transport_handle(const sumi::message::ptr &msg)
-{
-  sstmac::callback* done_ev = sstmac::new_callback(
-        loc_, this, &transport::handle, msg);
-  schedule_delay(sstmac::timestamp(1e-9), done_ev);
 }
 
 void

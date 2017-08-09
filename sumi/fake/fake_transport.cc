@@ -68,12 +68,6 @@ fake_transport::collective_block(collective::type_t ty, int tag)
 }
 
 void
-fake_transport::delayed_transport_handle(const message::ptr &msg)
-{
-  handle(msg);
-}
-
-void
 fake_transport::cq_notify()
 {
   //do nothng

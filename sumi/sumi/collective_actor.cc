@@ -333,7 +333,10 @@ dag_collective_actor::send_eager_message(action* ac)
   do_sumi_debug_print("sending to", rank_str().c_str(), ac->partner,
    ac->round, ac->offset, msg->nelems(), type_size_, msg->eager_buffer());
 
-  my_api_->smsg_send(ac->phys_partner, message::eager_payload, msg);
+  //okay, this is dangerous, but for now have both send/recv acks
+  //delivered on the same completion queues
+  my_api_->smsg_send(ac->phys_partner, message::eager_payload, msg,
+                     message::no_ack, cfg_.cq_id); //do not ack the send
   comm_action_done(ac);
 }
 
@@ -354,7 +357,7 @@ dag_collective_actor::send_rdma_put_header(action* ac)
    ac->round, tag_,
    msg->remote_buffer().ptr, ac->offset, recv_buffer_.ptr);
 
-  my_api_->send_rdma_header(ac->phys_partner, msg);
+  my_api_->send_header(ac->phys_partner, msg, cfg_.cq_id, cfg_.cq_id);
 }
 
 void
@@ -377,7 +380,7 @@ dag_collective_actor::send_rdma_get_header(action* ac)
    ac->offset, send_buffer_.ptr);
 
   int dst = dense_to_global_dst(ac->partner);
-  my_api_->send_rdma_header(dst, msg);
+  my_api_->send_header(dst, msg, message::no_ack, cfg_.cq_id);
 }
 
 
@@ -660,7 +663,8 @@ dag_collective_actor::send_failure_message(
   msg->append_failed(failed_ranks_);
 #endif
   int phys_dst =  cfg_.dom->comm_to_global_rank(phys_dst);
-  my_api_->smsg_send(phys_dst, message::header, msg);
+  my_api_->smsg_send(phys_dst, message::header, msg,
+                     cfg_.cq_id, cfg_.cq_id);
 }
 
 void
@@ -1084,7 +1088,7 @@ dag_collective_actor::incoming_message(const collective_work_message::ptr& msg)
 collective_done_message::ptr
 dag_collective_actor::done_msg() const
 {
-  auto msg = std::make_shared<collective_done_message>(tag_, type_, cfg_.dom);
+  auto msg = std::make_shared<collective_done_message>(tag_, type_, cfg_.dom, cfg_.cq_id);
   msg->set_comm_rank( cfg_.dom->my_comm_rank());
   msg->set_result(result_buffer_.ptr);
 #ifdef FEATURE_TAG_SUMI_RESILIENCE

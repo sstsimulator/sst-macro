@@ -162,25 +162,25 @@ int comm_nproc()
 void comm_send(int dst, message::payload_type_t ty, const message::ptr& msg)
 {
   msg->set_class_type(message::pt2pt);
-  current_transport()->smsg_send(dst, ty, msg);
+  current_transport()->smsg_send(dst, ty, msg, message::default_cq, message::default_cq);
 }
 
 void comm_send_header(int dst, const message::ptr& msg)
 {
   msg->set_class_type(message::pt2pt);
-  current_transport()->send_header(dst, msg);
+  current_transport()->send_header(dst, msg, message::default_cq, message::default_cq);
 }
 
 void comm_send_payload(int dst, const message::ptr& msg)
 {
   msg->set_class_type(message::pt2pt);
-  current_transport()->send_payload(dst, msg);
+  current_transport()->send_payload(dst, msg, message::default_cq, message::default_cq);
 }
 
 void comm_rdma_put(int dst, const message::ptr& msg)
 {
   msg->set_class_type(message::pt2pt);
-  current_transport()->rdma_put(dst, msg);
+  current_transport()->rdma_put(dst, msg, message::default_cq, message::default_cq);
 }
 
 void comm_nvram_get(int dst, const message::ptr& msg)
@@ -192,12 +192,12 @@ void comm_nvram_get(int dst, const message::ptr& msg)
 void comm_rdma_get(int dst, const message::ptr& msg)
 {
   msg->set_class_type(message::pt2pt);
-  current_transport()->rdma_get(dst, msg);
+  current_transport()->rdma_get(dst, msg, message::default_cq, message::default_cq);
 }
 
 message::ptr comm_poll()
 {
-  return current_transport()->blocking_poll();
+  return current_transport()->blocking_poll(message::default_cq);
 }
 
 double wall_time()

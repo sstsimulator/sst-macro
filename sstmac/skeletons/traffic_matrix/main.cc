@@ -339,7 +339,7 @@ int USER_MAIN(int argc, char** argv)
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d sending config message to partner %d",
       tport->rank(), recv_partners[i]);
-    tport->send_header(recv_partners[i], msg);
+    tport->send_header(recv_partners[i], msg, sumi::message::no_ack, sumi::message::default_cq);
   }
 
   int configs_recved = 0;

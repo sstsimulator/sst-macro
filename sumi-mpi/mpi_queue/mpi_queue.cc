@@ -175,17 +175,13 @@ mpi_queue::send_message(void* buffer, int count, MPI_Datatype type,
 }
 
 
-void
-mpi_queue::configure_send_request(const mpi_message::ptr& mess,
-                                  mpi_request* key)
+bool
+mpi_queue::configure_send_request(const mpi_message::ptr& mess, mpi_request* key)
 {
   mpi_queue_send_request* req = new mpi_queue_send_request(mess, key, this);
-
-  /** push this on first. important! */
-  mess->set_needs_send_ack(false);
   if (mess->protocol()->send_needs_nic_ack()) {
-    mess->set_needs_send_ack(true);
     send_needs_nic_ack_.push_back(req);
+    return true;
   }
   else if (mess->protocol()->send_needs_eager_ack()) {
     send_needs_eager_ack_.push_back(req);
@@ -193,6 +189,7 @@ mpi_queue::configure_send_request(const mpi_message::ptr& mess,
   else if (mess->protocol()->send_needs_completion_ack()) {
     send_needs_completion_ack_[mess->unique_int()] = req;
   }
+  return false;
 }
 
 void
@@ -372,7 +369,7 @@ mpi_queue::send_completion_ack(const mpi_message::ptr& message)
   //need to send an ack back to sender
   int dst = message->sender();
   message->payload_to_completion_ack();
-  api_->send_header(dst, message);
+  api_->send_header(dst, message, message::no_ack, api_->pt2pt_cq_id());
 }
 
 void
@@ -645,7 +642,7 @@ mpi_queue::progress_loop(mpi_request* req)
   sumi::message_ptr msg;
   while (!req->is_complete()) {
     mpi_queue_debug("blocking on progress loop");
-    msg = api_->blocking_poll();
+    msg = api_->poll(true); //block until message arrives
     handle_poll_msg(msg);
   }
   sstmac::timestamp stop = api_->now();
@@ -692,7 +689,7 @@ mpi_queue::start_progress_loop(const std::vector<mpi_request*>& reqs)
   mpi_queue_debug("starting progress loop");
   while (!at_least_one_complete(reqs)) {
     mpi_queue_debug("blocking on progress loop");
-    sumi::message::ptr msg = api_->blocking_poll();
+    sumi::message::ptr msg = api_->poll(true); //block until msg arrives
     handle_poll_msg(msg);
   }
   mpi_queue_debug("finishing progress loop");
@@ -733,13 +730,15 @@ mpi_queue::buffer_unexpected(const mpi_message::ptr& msg)
 }
 
 void
-mpi_queue::post_header(const mpi_message::ptr& msg, sumi::message::payload_type_t ty, bool needs_ack)
+mpi_queue::post_header(const mpi_message::ptr& msg, sumi::message::payload_type_t ty, bool needs_send_ack)
 {
   SSTMACBacktrace("MPI Queue Post Header");
   mpi_comm* comm = api_->get_comm(msg->comm());
   int dst_world_rank = comm->peer_task(msg->dst_rank());
   msg->set_src_rank(comm->rank());
-  api_->smsg_send(dst_world_rank, ty, msg, needs_ack);
+  api_->smsg_send(dst_world_rank, ty, msg,
+                  needs_send_ack ? api_->pt2pt_cq_id() : message::no_ack,
+                  api_->pt2pt_cq_id());
 }
 
 void
@@ -751,7 +750,9 @@ mpi_queue::post_rdma(const mpi_message::ptr& msg,
   //JJW cannot assume the comm is available for certain eager protocols
   //mpi_comm* comm = api_->get_comm(msg->comm());
   //int src_world_rank = comm->peer_task(msg->src_rank());
-  api_->rdma_get(msg->sender(), msg, needs_send_ack, needs_recv_ack);
+  api_->rdma_get(msg->sender(), msg,
+                 needs_send_ack ? api_->pt2pt_cq_id() : message::no_ack,
+                 needs_recv_ack ? api_->pt2pt_cq_id() : message::no_ack);
 }
 
 }

@@ -60,10 +60,6 @@ class active_msg_transport :
  public:
   void cq_notify(){} //no op
 
-  void delayed_transport_handle(const message::ptr &msg){
-    handle(msg);
-  }
-
   void schedule_ping_timeout(pinger *pnger, double to){}
 
   double wall_time() const;

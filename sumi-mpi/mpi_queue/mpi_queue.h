@@ -193,7 +193,13 @@ class mpi_queue
   mpi_message::ptr send_message(void* buffer, int count, MPI_Datatype type,
     int dst_rank, int tag, mpi_comm* comm);
 
-  void configure_send_request(const mpi_message::ptr& mess, mpi_request* req);
+  /**
+   * @brief configure_send_request
+   * @param mess
+   * @param req
+   * @return Whether a nic send ack is required for this send
+   */
+  bool configure_send_request(const mpi_message::ptr& mess, mpi_request* req);
 
   void clear_pending();
 

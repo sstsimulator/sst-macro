@@ -89,6 +89,8 @@ class transport {
 
   void deadlock_check();
 
+  int allocate_cq();
+
   /**
    Send a message directly to a destination node.
    This assumes there is buffer space available at the destination to eagerly receive.
@@ -100,33 +102,21 @@ class transport {
   void smsg_send(int dst,
      message::payload_type_t ev,
      const message::ptr& msg,
-     bool needs_ack = false,
-     uint8_t cq_id = 0);
+     int send_cq, int recv_cq);
 
   /**
    Helper function for #smsg_send. Directly send a message header.
    * @param dst
    * @param msg
    */
-  void send_header(int dst, const message::ptr& msg,
-                   bool needs_ack = false, uint8_t cq_id = 0);
+  void send_header(int dst, const message::ptr& msg, int send_cq, int recv_cq);
 
   /**
    Helper function for #smsg_send. Directly send an actual data payload.
    * @param dst
    * @param msg
    */
-  void send_payload(int dst, const message::ptr& msg,
-                    bool needs_ack = false, uint8_t cq_id = 0);
-
-  /**
-   Put a message directly to the destination node.
-   This assumes the application has properly configured local/remote buffers for the transfer.
-   * @param dst      Where the data is being put (destination)
-   * @param msg      The message to send (full message at the MTL layer).
-   *                 Should have local/remote buffers configured for RDMA.
-   */
-  void rdma_put(int dst, const message::ptr& msg);
+  void send_payload(int dst, const message::ptr& msg, int send_cq, int recv_cq);
 
   /**
    Put a message directly to the destination node.
@@ -137,20 +127,7 @@ class transport {
    * @param needs_send_ack  Whether an ack should be generated send-side when the message is fully injected
    * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
    */
-  void rdma_put(
-    int dst,
-    const message::ptr &msg,
-    bool needs_send_ack,
-    bool needs_recv_ack);
-
-  /**
-   Get a message directly from the source node.
-   This assumes the application has properly configured local/remote buffers for the transfer.
-   * @param src      Where the data resides and is being fetched from
-   * @param msg      The message to get (full message at the MTL layer).
-   *                 Should have local/remote buffers configured for RDMA.
-   */
-  void rdma_get(int src, const message::ptr& msg);
+  void rdma_put(int dst, const message::ptr &msg, int send_cq, int recv_cq);
 
   /**
    Get a message directly from the source node.
@@ -158,23 +135,32 @@ class transport {
    * @param src      Where the data is being put (destination)
    * @param msg      The message to send (full message at the MTL layer).
    *                 Should have local/remote buffers configured for RDMA.
-   * @param needs_send_ack  Whether an ack should be generated send-side (source) when the message is fully injected
-   * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
+   * @param send_cq  Where an ack should be generated send-side (source) when the message is fully injected
+   * @param recv_cq  Where an ack should be generated recv-side when the message is fully received
    */
-  void rdma_get(
-    int src,
-    const message::ptr &msg,
-    bool needs_send_ack,
-    bool needs_recv_ack);
+  void rdma_get(int src, const message::ptr &msg, int send_cq, int recv_cq);
 
   virtual void free_eager_buffer(const message::ptr& msg);
 
   void nvram_get(int src, const message::ptr& msg);
   
   /**
-   Check if a message has been received. Return immediately even if empty queue.
+   Check if a message has been received on a specific completion queue.
    Message returned is removed from the internal queue.
    Successive calls to the function do NOT return the same message.
+   @param blocking Whether to block until a message is received
+   @param cq_id The specific completion queue to check
+   @param timeout  An optional timeout - only valid with blocking
+   @return    The next message to be received, null if no messages
+  */
+  message::ptr poll(bool blocking, int cq_id, double timeout = -1);
+
+  /**
+   Check all completion queues if a message has been received.
+   Message returned is removed from the internal queue.
+   Successive calls to the function do NOT return the same message.
+   @param blocking Whether to block until a message is received
+   @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
   message::ptr poll(bool blocking, double timeout = -1);
@@ -184,15 +170,16 @@ class transport {
    Returns immediately if message already waiting.
    Message returned is removed from the internal queue.
    Successive calls to the function do NOT return the same message.
+   @param cq_id The specific completion queue to check
    @param timeout   Timeout in seconds
    @return          The next message to be received. Message is NULL on timeout
   */
-  message::ptr blocking_poll(double timeout = -1);
+  message::ptr blocking_poll(int cq_id, double timeout = -1);
 
   template <class T>
   typename T::ptr
   poll(const char* file, int line, const char* cls) {
-    message::ptr msg = blocking_poll();
+    message::ptr msg = poll(true);
     typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
     if (!result){
       poll_cast_error(file, line, cls, msg);
@@ -203,7 +190,7 @@ class transport {
   template <class T>
   typename T::ptr
   poll(double timeout, const char* file, int line, const char* cls) {
-    message::ptr msg = blocking_poll(timeout);
+    message::ptr msg = poll(true);
     typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
     if (msg && !result){
       poll_cast_error(file, line, cls, msg);
@@ -215,7 +202,7 @@ class transport {
 #define SUMI_POLL_TIME(tport, msgtype, to) tport->poll<msgtype>(to, __FILE__, __LINE__, #msgtype)
 
 
-  message::ptr blocking_poll(message::payload_type_t);
+  message::ptr blocking_poll(message::payload_type_t, int cq_id);
 
   /**
    * @brief poll_pending_messages
@@ -236,9 +223,8 @@ class transport {
    * @param tag
    * @return
    */
-  virtual collective_done_message::ptr collective_block(collective::type_t ty, int tag) = 0;
-
-  virtual void delayed_transport_handle(const message::ptr& msg) = 0;
+  virtual collective_done_message::ptr collective_block(collective::type_t ty, int tag,
+                                                        uint8_t cq_id = 0) = 0;
 
   bool use_eager_protocol(long byte_length) const {
     return byte_length < eager_cutoff_;
@@ -416,12 +402,12 @@ class transport {
    */
   message::ptr handle(const message::ptr& msg);
 
-  virtual public_buffer allocate_public_buffer(int size, uint8_t cq_id = 0) {
-    return public_buffer(::malloc(size), cq_id);
+  virtual public_buffer allocate_public_buffer(int size) {
+    return public_buffer(::malloc(size));
   }
 
-  virtual public_buffer make_public_buffer(void* buffer, int size, uint8_t cq_id = 0) {
-    return public_buffer(buffer, cq_id);
+  virtual public_buffer make_public_buffer(void* buffer, int size) {
+    return public_buffer(buffer);
   }
 
   virtual void unmake_public_buffer(public_buffer buf, int size) {
@@ -432,28 +418,8 @@ class transport {
     ::free(buf.ptr);
   }
 
-  /**
-   * @brief Optimizations can be performed in some transport layers
-   * If the header being sent is explicitly known to be coordinating an RDMA
-   * transaction you can ACK the transaction via hardware.  Otherwise,
-   * the transpor must perform a software-level ACK.
-   * @param dst
-   * @param msg
-   */
-  void send_rdma_header(int dst, const message::ptr& msg);
-
-  void send(int dst, const message::ptr& msg);
-
-  void send_unexpected_rdma(int dst, const message::ptr& msg);
-
  protected:
-  void start_transaction(const message::ptr& msg);
-
   void clean_up();
-
-  void handle_unexpected_rdma_header(const message::ptr& msg);
-
-  message::ptr finish_transaction(int tid);
 
   void configure_send(int dst,
     message::payload_type_t ev,
@@ -505,7 +471,7 @@ class transport {
   void vote_done(int context, const collective_done_message::ptr& dmsg);
 
   bool skip_collective(collective::type_t ty,
-    communicator*& dom,
+    collective::config& cfg,
     void* dst, void *src,
     int nelems, int type_size,
     int tag);
@@ -535,10 +501,10 @@ class transport {
   
   int eager_cutoff_;
 
-  //std::vector<thread_safe_list<message::ptr>> completion_queues_;
+  std::vector<thread_safe_list<message::ptr>> completion_queues_;
 
-  thread_safe_list<message::ptr> pt2pt_done_;
-  thread_safe_list<message::ptr> collectives_done_;
+  //thread_safe_list<message::ptr> pt2pt_done_;
+  //thread_safe_list<message::ptr> collectives_done_;
 
   int next_transaction_id_;
   int max_transaction_id_;

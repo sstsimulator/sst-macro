@@ -60,8 +60,6 @@ class fake_transport : public transport
     return block_until_message();
   }
 
-  void delayed_transport_handle(const message::ptr &msg);
-
   collective_done_message::ptr collective_block(collective::type_t ty, int tag);
 
   void cq_notify();
