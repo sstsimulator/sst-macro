@@ -63,19 +63,9 @@ RegisterKeywords(
 MakeDebugSlot(traffic_matrix)
 MakeDebugSlot(traffic_matrix_results)
 
-#define IS_SST 1
 
-#ifdef GNI
-#define model "gni"
-static bool send_ack = true;
-static bool recv_ack = false;
-#endif
-
-#ifdef IS_SST
-#define model "sst"
-static bool send_ack = false;
-static bool recv_ack = true;
-#endif
+static const int send_cq = sumi::message::no_ack;
+static const int recv_cq = 0;
 
 class sumi_param_bcaster : public sprockit::param_bcaster
 {
@@ -224,7 +214,7 @@ void do_all_sends(
       tport->rank(), send_partners[i], 
       iteration, chunk_size,
       ((void*)send_chunks[i]), ((void*)recv_chunks[i]));
-    tport->rdma_put(send_partners[i], msg, send_ack, recv_ack);
+    tport->rdma_put(send_partners[i], msg, send_cq, recv_cq);
     msg->set_start(tport->wall_time());
     //stagger the sends, try to make progress on pendind messages
     progress_loop(tport, local_timeout, done);

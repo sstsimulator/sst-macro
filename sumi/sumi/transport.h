@@ -190,7 +190,7 @@ class transport {
   template <class T>
   typename T::ptr
   poll(double timeout, const char* file, int line, const char* cls) {
-    message::ptr msg = poll(true);
+    message::ptr msg = poll(true, timeout);
     typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
     if (msg && !result){
       poll_cast_error(file, line, cls, msg);

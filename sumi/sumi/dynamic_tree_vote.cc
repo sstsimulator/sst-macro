@@ -296,7 +296,7 @@ dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int 
     stl_string(msg->failed_procs()).c_str());
 #endif
   int global_phys_dst = global_rank(virtual_dst);
-  my_api_->send_payload(global_phys_dst, msg, cfg_.cq_id, cfg_.cq_id);
+  my_api_->send_payload(global_phys_dst, msg, message::no_ack, cfg_.cq_id);
 }
 
 void
@@ -545,7 +545,7 @@ dynamic_tree_vote_collective::dynamic_tree_vote_collective(
 }
 
 void
-dynamic_tree_vote_collective::recv(int target, const collective_work_message::ptr&msg)
+dynamic_tree_vote_collective::recv(int target, const collective_work_message::ptr& msg)
 {
   actor_map::iterator it = actors_.find(target);
   if (it == actors_.end()){

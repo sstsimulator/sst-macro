@@ -11,7 +11,7 @@ CC  = sstcc
 
 # Optionally add -DBOXML_STD_UNORDERED (requires C++11 compiler)
 # # Optionally add -DBOXML_HAVE_METIS
-CPPFLAGS += -I. -fPIC
+CPPFLAGS += -I. -fPIC 
 # #CPPFLAGS += -I. -DBOXML_HAVE_TEST -Dno_miclib -Dno_affinity -I$(HOME)/src/hpc-task-pareto-frontiers/runtime -I$(HOME)/install/sst-macro-boxml/include/sstmac -I$(HOME)/install/sst-macro-boxml/include -I$(HOME)/install/sst-macro-boxml/include/sumi
 # #LDFLAGS := -Wl,-rpath,$(SSTMAC)/lib -L$(HOME)/install/parmetis-4.0.3/lib -lmetis /Users/jpkenny/src/rank-placer/librankplacer.a
 # #LDFLAGS := -Wl,-rpath,$(SSTMAC)/lib

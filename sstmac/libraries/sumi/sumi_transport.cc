@@ -415,6 +415,8 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
     sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
     if (timeout > 0.){
       os_->schedule_timeout(sstmac::timestamp(timeout), blocker);
+    } else if (timeout == 0.){
+      spkt_abort_printf("invalid timeout of 0 - use -1 as sentinel value to indicate no timeout");
     }
     blocked_keys_.push_back(blocker);
     debug_printf(sprockit::dbg::sumi,

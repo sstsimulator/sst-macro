@@ -357,7 +357,7 @@ dag_collective_actor::send_rdma_put_header(action* ac)
    ac->round, tag_,
    msg->remote_buffer().ptr, ac->offset, recv_buffer_.ptr);
 
-  my_api_->send_header(ac->phys_partner, msg, cfg_.cq_id, cfg_.cq_id);
+  my_api_->send_header(ac->phys_partner, msg, message::no_ack, cfg_.cq_id);
 }
 
 void
@@ -664,7 +664,7 @@ dag_collective_actor::send_failure_message(
 #endif
   int phys_dst =  cfg_.dom->comm_to_global_rank(phys_dst);
   my_api_->smsg_send(phys_dst, message::header, msg,
-                     cfg_.cq_id, cfg_.cq_id);
+                     message::no_ack, cfg_.cq_id);
 }
 
 void
@@ -930,8 +930,8 @@ dag_collective_actor::next_round_ready_to_put(
       ac->round, tag_, header.get());
 
     my_api_->rdma_put(ac->phys_partner, header,
-      true/*need a send ack*/,
-      true/*need a remote recv ack*/);
+      cfg_.cq_id,/*need a send ack*/
+      cfg_.cq_id/*need a remote recv ack*/);
   }
 }
 
@@ -976,8 +976,8 @@ dag_collective_actor::next_round_ready_to_get(
 #endif
 
     my_api_->rdma_get(ac->phys_partner, header,
-      true/*need a send ack*/,
-      true/*need a local recv ack*/);
+      cfg_.cq_id/*need a send ack*/,
+      cfg_.cq_id/*need a local recv ack*/);
   }
 
 }
