@@ -204,37 +204,30 @@ transport::finish()
 }
 
 message*
-transport::blocking_poll(message::payload_type_t ty, int cq_id)
+transport::poll(message::payload_type_t ty, bool blocking, int cq_id, double timeout)
 {
   auto& queue = completion_queues_[cq_id];
-
-  std::list<message*>::iterator it, end = queue.start_iteration();
-  for (it=queue.begin(); it != end; ++it){
-    message* msg = *it;
+  auto end = queue.end();
+  for (auto iter = cq_begin(cq_id); iter != end; ++iter){
+    message* msg = *iter;
     if (msg->payload_type() == ty){
-      queue.erase(it);
+      queue.erase(iter);
       return msg;
     }
   }
-  queue.end_iteration();
 
-  while (1){
-    message* msg = blocking_poll(cq_id);
-    if (msg->payload_type() == ty){
-      return msg;
-    } else {
-      queue.push_back(msg);
-    }
-  }
+  return poll_new(ty,blocking,cq_id,timeout);
 }
 
 message*
 transport::poll(bool blocking, double timeout)
 {
-  message* ret;
   for (auto& queue : completion_queues_){
-    bool empty = queue.pop_front_and_return(ret);
-    if (!empty) return ret;
+    if (!queue.empty()){
+      message* ret = queue.front();
+      queue.pop_front();
+      return ret;
+    }
   }
   return poll_new(blocking, timeout);
 }
@@ -245,19 +238,47 @@ transport::poll(bool blocking, int cq_id, double timeout)
   auto& queue = completion_queues_[cq_id];
   debug_printf(sprockit::dbg::sumi,
                "Rank %d polling for message on cq %d", rank_, cq_id);
-  message* ret;
-  bool empty = queue.pop_front_and_return(ret);
-  if (!empty) return ret;
 
+  if (!queue.empty()){
+    message* ret = queue.front();
+    queue.pop_front();
+    return ret;
+  }
+
+  return poll_new(blocking, cq_id, timeout);
+}
+
+message*
+transport::poll_new(bool blocking, int cq_id, double timeout)
+{
   while (1){
-    ret = poll_new(blocking, timeout);
-    debug_printf(sprockit::dbg::sumi,
-                 "Rank %d polling got new message on cq %d", rank_, ret->cq_id());
-    if (ret->cq_id() == cq_id){
-      return ret;
-    } else {
-      completion_queues_[cq_id].push_back(ret);
+    message* msg = poll_new(blocking, timeout);
+    if (msg){
+      if (msg->cq_id() == cq_id){
+        return msg;
+      } else {
+        completion_queues_[cq_id].push_back(msg);
+      }
     }
+    //if I got here and am non-blocking, return null
+    if (!blocking) return nullptr;
+  }
+}
+
+message*
+transport::poll_new(message::payload_type_t ty, bool blocking, int cq_id, double timeout)
+{
+  while (1){
+    message* msg = poll_new(blocking, timeout);
+    if (msg){
+      if (msg->cq_id() == cq_id && msg->payload_type() == ty){
+        return msg;
+      } else {
+        completion_queues_[cq_id].push_back(msg);
+      }
+    }
+    //if I got here and am non-blocking, return null
+    if (!blocking) return nullptr;
   }
 }
 
@@ -375,8 +396,8 @@ transport::handle(message* msg)
       coll->recv(cmsg);
       if (queue.size() != old_queue_size){
         //oh, a new collective finished
-        message* dmsg;
-        queue.pop_back_and_return(dmsg);
+        message* dmsg = queue.back();
+        queue.pop_back();
         return dmsg;
       } else {
         return nullptr;

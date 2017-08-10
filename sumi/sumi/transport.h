@@ -199,8 +199,27 @@ class transport {
 #define SUMI_POLL(tport, msgtype) tport->poll<msgtype>(__FILE__, __LINE__, #msgtype)
 #define SUMI_POLL_TIME(tport, msgtype, to) tport->poll<msgtype>(to, __FILE__, __LINE__, #msgtype)
 
+  void cq_push_back(int cq_id, message* msg);
 
-  message* blocking_poll(message::payload_type_t, int cq_id);
+  std::list<message*>::iterator cq_begin(int cq_id){
+    return completion_queues_[cq_id].begin();
+  }
+
+  std::list<message*>::iterator cq_end(int cq_id){
+    return completion_queues_[cq_id].end();
+  }
+
+  message* pop(int cq_id, std::list<message*>::iterator it){
+    message* msg = *it;
+    completion_queues_[cq_id].erase(it);
+    return msg;
+  }
+
+  message* poll(message::payload_type_t ty, bool blocking, int cq_id, double timeout = -1);
+
+  message* poll_new(message::payload_type_t ty, bool blocking, int cq_id, double timeout);
+
+  message* poll_new(bool blocking, int cq_id, double timeout);
 
   /**
    * @brief poll_pending_messages
@@ -221,14 +240,14 @@ class transport {
    * @param tag
    * @return
    */
-  virtual collective_done_message* collective_block(collective::type_t ty, int tag,
-                                                        uint8_t cq_id = 0) = 0;
+  virtual collective_done_message* collective_block(
+      collective::type_t ty, int tag, int cq_id = 0) = 0;
 
-  bool use_eager_protocol(long byte_length) const {
+  bool use_eager_protocol(uint64_t byte_length) const {
     return byte_length < eager_cutoff_;
   }
 
-  void set_eager_cutoff(long bytes) {
+  void set_eager_cutoff(uint64_t bytes) {
     eager_cutoff_ = bytes;
   }
 
@@ -499,7 +518,7 @@ class transport {
   
   int eager_cutoff_;
 
-  std::vector<thread_safe_list<message*>> completion_queues_;
+  std::vector<std::list<message*>> completion_queues_;
 
   bool use_put_protocol_;
 

@@ -458,26 +458,24 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
 }
 
 sumi::collective_done_message*
-sumi_transport::collective_block(sumi::collective::type_t ty, int tag, uint8_t cq_id)
+sumi_transport::collective_block(sumi::collective::type_t ty, int tag, int cq_id)
 {
   //first we have to loop through the completion queue to see if it already exists
   while(1){
     auto& collective_cq = completion_queues_[collective_cq_id_];
-    std::list<sumi::message*>::iterator it, end = collective_cq.start_iteration();
-    for (it=collective_cq.begin(); it != end; ++it){
+    auto end = collective_cq.end();
+    for (auto it=collective_cq.begin(); it != end; ++it){
       sumi::message* msg = *it;
       if (msg->class_type() == sumi::message::collective_done){
         //this is a collective done message
         auto cmsg = dynamic_cast<sumi::collective_done_message*>(msg);
         if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
           collective_cq.erase(it);
-          collective_cq.end_iteration();
           return cmsg;
         }
       }
     }
 
-    collective_cq.end_iteration();
     sumi::message* msg = poll_new(true); //blocking
     if (msg->class_type() == sumi::message::collective_done){
       //this is a collective done message

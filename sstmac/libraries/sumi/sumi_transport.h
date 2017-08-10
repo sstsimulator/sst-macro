@@ -116,7 +116,7 @@ class sumi_transport :
    * @return
    */
   sumi::collective_done_message* collective_block(
-      sumi::collective::type_t ty, int tag, uint8_t cq_id = 0) override;
+      sumi::collective::type_t ty, int tag, int cq_id = 0) override;
 
   double wall_time() const override;
 
