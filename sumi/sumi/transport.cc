@@ -103,8 +103,6 @@ transport::transport(sprockit::sim_parameters* params) :
   inited_(false),
   finalized_(false),
   eager_cutoff_(512),
-  next_transaction_id_(12),
-  max_transaction_id_(0),
   use_put_protocol_(false),
   use_hardware_ack_(false),
   global_domain_(nullptr)
@@ -168,7 +166,7 @@ transport::init()
 }
 
 void
-transport::free_eager_buffer(const message::ptr& msg)
+transport::free_eager_buffer(message* msg)
 {
   char* buf = (char*) msg->eager_buffer();
   if (isNonNull(buf)){
@@ -205,14 +203,14 @@ transport::finish()
 #endif
 }
 
-message::ptr
+message*
 transport::blocking_poll(message::payload_type_t ty, int cq_id)
 {
   auto& queue = completion_queues_[cq_id];
 
-  std::list<message::ptr>::iterator it, end = queue.start_iteration();
+  std::list<message*>::iterator it, end = queue.start_iteration();
   for (it=queue.begin(); it != end; ++it){
-    message::ptr msg = *it;
+    message* msg = *it;
     if (msg->payload_type() == ty){
       queue.erase(it);
       return msg;
@@ -221,7 +219,7 @@ transport::blocking_poll(message::payload_type_t ty, int cq_id)
   queue.end_iteration();
 
   while (1){
-    message::ptr msg = blocking_poll(cq_id);
+    message* msg = blocking_poll(cq_id);
     if (msg->payload_type() == ty){
       return msg;
     } else {
@@ -230,10 +228,10 @@ transport::blocking_poll(message::payload_type_t ty, int cq_id)
   }
 }
 
-message::ptr
+message*
 transport::poll(bool blocking, double timeout)
 {
-  message::ptr ret;
+  message* ret;
   for (auto& queue : completion_queues_){
     bool empty = queue.pop_front_and_return(ret);
     if (!empty) return ret;
@@ -241,13 +239,13 @@ transport::poll(bool blocking, double timeout)
   return poll_new(blocking, timeout);
 }
 
-message::ptr
+message*
 transport::poll(bool blocking, int cq_id, double timeout)
 {
   auto& queue = completion_queues_[cq_id];
   debug_printf(sprockit::dbg::sumi,
                "Rank %d polling for message on cq %d", rank_, cq_id);
-  message::ptr ret;
+  message* ret;
   bool empty = queue.pop_front_and_return(ret);
   if (!empty) return ret;
 
@@ -263,31 +261,32 @@ transport::poll(bool blocking, int cq_id, double timeout)
   }
 }
 
-message::ptr
+message*
 transport::poll_new(bool blocking, double timeout)
 {
   debug_printf(sprockit::dbg::sumi, "Rank %d polling for NEW message", rank_);
   while (1){
     transport_message* tmsg = poll_pending_messages(blocking, timeout);
     if (tmsg){
-      message::ptr cq_notifier = handle(tmsg->payload());
+      message* cq_notifier = handle(tmsg->take_payload());
       if (cq_notifier || !blocking){
         return cq_notifier;
       }
+      delete tmsg;
     } else {
-      return message::ptr();
+      return nullptr;
     }
   }
 }
 
-message::ptr
+message*
 transport::blocking_poll(int cq_id, double timeout)
 {
   return poll(true, cq_id, timeout); //blocking
 }
 
 void
-transport::notify_collective_done(const collective_done_message::ptr &msg)
+transport::notify_collective_done(collective_done_message* msg)
 {
   collective* coll = collectives_[msg->type()][msg->tag()];
   if (!coll){
@@ -308,12 +307,12 @@ transport::clean_up()
   todel_.clear();
 }
 
-message::ptr
-transport::handle(const message::ptr& msg)
+message*
+transport::handle(message* msg)
 {
   debug_printf(sprockit::dbg::sumi,
     "Rank %d got message %p of class %s, payload %s for sender %d, recver %d, send cq %d, recv cq %d",
-     rank_, msg.get(),
+     rank_, msg,
      message::tostr(msg->class_type()), message::tostr(msg->payload_type()),
      msg->sender(), msg->recver(),
      msg->send_cq(), msg->recv_cq());
@@ -353,7 +352,7 @@ transport::handle(const message::ptr& msg)
     return msg;
   }
   case message::collective: {
-    collective_work_message::ptr cmsg = std::dynamic_pointer_cast<collective_work_message>(msg);
+    collective_work_message* cmsg = dynamic_cast<collective_work_message*>(msg);
     if (cmsg->send_cq() == -1 && cmsg->recv_cq() == -1) abort();
     int tag = cmsg->tag();
     collective::type_t ty = cmsg->type();
@@ -361,14 +360,14 @@ transport::handle(const message::ptr& msg)
     if (it == collectives_[ty].end()){
       debug_printf(sprockit::dbg::sumi_collective_sendrecv,
         "Rank %d, queuing %p %s %s from %d on tag %d for type %s",
-        rank_, msg.get(),
+        rank_, msg,
         message::tostr(msg->payload_type()),
         message::tostr(msg->class_type()),
         msg->sender(),
         tag, collective::tostr(ty));
         //message for collective we haven't started yet
         pending_collective_msgs_[ty][tag].push_back(cmsg);
-        return message::ptr();
+        return nullptr;
     } else {
       collective* coll = it->second;
       auto& queue = completion_queues_[cmsg->cq_id()];
@@ -376,18 +375,18 @@ transport::handle(const message::ptr& msg)
       coll->recv(cmsg);
       if (queue.size() != old_queue_size){
         //oh, a new collective finished
-        message::ptr dmsg;
+        message* dmsg;
         queue.pop_back_and_return(dmsg);
         return dmsg;
       } else {
-        return message::ptr();
+        return nullptr;
       }
     }
   }
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   case message::ping: {  
     monitor_->message_received(msg);
-    return message::ptr();
+    return nullptr;
   }
 #endif
   case message::no_class: {
@@ -402,13 +401,13 @@ transport::handle(const message::ptr& msg)
         msg->class_type());
   }
   }
-  return message::ptr();
+  return nullptr;
 }
 
 void
-transport::system_bcast(const message::ptr& msg)
+transport::system_bcast(message* msg)
 {
-  auto bmsg = std::dynamic_pointer_cast<system_bcast_message>(msg);
+  auto bmsg = dynamic_cast<system_bcast_message*>(msg);
   int root = bmsg->root();
   int my_effective_rank = (rank_ - root + nproc_) % nproc_;
 
@@ -433,7 +432,7 @@ transport::system_bcast(const message::ptr& msg)
   int effective_target = my_effective_rank + partner_gap;
   while (effective_target < nproc_){
     int target = (effective_target + root) % nproc_;
-    message::ptr next_msg = std::make_shared<system_bcast_message>(bmsg->action(), bmsg->root());
+    message* next_msg = new system_bcast_message(bmsg->action(), bmsg->root());
     send_header(target, next_msg, message::no_ack, message::default_cq);
     partner_gap *= 2;
     effective_target = my_effective_rank + partner_gap;
@@ -443,7 +442,7 @@ transport::system_bcast(const message::ptr& msg)
 void
 transport::send_self_terminate()
 {
-  message::ptr msg = std::make_shared<message>();
+  message* msg = new message();
   msg->set_class_type(message::terminate);
   send_header(rank_, msg, message::no_ack, message::default_cq); //send to self
 }
@@ -462,8 +461,7 @@ transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, collective::config
   if (cfg.dom == nullptr) cfg.dom = global_domain_;
 
   if (cfg.dom->nproc() == 1){
-    auto dmsg = std::make_shared<collective_done_message>(
-          tag, collective::dynamic_tree_vote, cfg.dom, cfg.cq_id);
+    auto dmsg = new collective_done_message(tag, collective::dynamic_tree_vote, cfg.dom, cfg.cq_id);
     dmsg->set_comm_rank(0);
     dmsg->set_vote(vote);
     vote_done(cfg.context, dmsg);
@@ -518,18 +516,18 @@ pull_from_map(Val& val, const Map& m, const Key1& k1, const Key2& k2, const Key3
 void
 transport::deliver_pending(collective* coll, int tag, collective::type_t ty)
 {
-  std::list<collective_work_message::ptr> pending = pending_collective_msgs_[ty][tag];
+  std::list<collective_work_message*> pending = pending_collective_msgs_[ty][tag];
   pending_collective_msgs_[ty].erase(tag);
-  std::list<collective_work_message::ptr>::iterator it, end = pending.end();
+  std::list<collective_work_message*>::iterator it, end = pending.end();
 
   for (it = pending.begin(); it != end; ++it){
-    collective_work_message::ptr msg = *it;
+    collective_work_message* msg = *it;
     coll->recv(msg);
   }
 }
 
 void
-transport::vote_done(int context, const collective_done_message::ptr& dmsg)
+transport::vote_done(int context, collective_done_message* dmsg)
 {
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   //this requires some extra processing
@@ -630,7 +628,7 @@ transport::skip_collective(collective::type_t ty,
     if (dst && src && (dst != src)){
       ::memcpy(dst, src, nelems*type_size);
     }
-    auto dmsg = std::make_shared<collective_done_message>(tag, ty, cfg.dom, cfg.cq_id);
+    auto dmsg = new collective_done_message(tag, ty, cfg.dom, cfg.cq_id);
     dmsg->set_comm_rank(0);
     dmsg->set_result(dst);
     completion_queues_[cfg.cq_id].push_back(dmsg);
@@ -850,7 +848,7 @@ transport::barrier(int tag, collective::config cfg)
 }
 
 void
-transport::finish_collective(collective* coll, const collective_done_message::ptr& dmsg)
+transport::finish_collective(collective* coll, collective_done_message* dmsg)
 {
   bool deliver_cq_msg; bool delete_collective;
   coll->actor_done(dmsg->comm_rank(), deliver_cq_msg, delete_collective);
@@ -884,7 +882,7 @@ transport::finish_collective(collective* coll, const collective_done_message::pt
 
 
 void
-transport::smsg_send(int dst, message::payload_type_t ev, const message::ptr& msg,
+transport::smsg_send(int dst, message::payload_type_t ev, message* msg,
                      int send_cq, int recv_cq)
 {
   configure_send(dst, ev, msg);
@@ -907,7 +905,7 @@ transport::smsg_send(int dst, message::payload_type_t ev, const message::ptr& ms
       completion_queues_[msg->recv_cq()].push_back(msg);
     }
     if (msg->needs_send_ack()){
-      message::ptr ack(msg->clone());
+      message* ack = msg->clone();
       ack->set_payload_type(message::eager_payload_ack);
       completion_queues_[msg->send_cq()].push_back(ack);
     }
@@ -921,7 +919,7 @@ transport::smsg_send(int dst, message::payload_type_t ev, const message::ptr& ms
 }
 
 void
-transport::rdma_get(int src, const message::ptr &msg,
+transport::rdma_get(int src, message* msg,
                     int send_cq, int recv_cq)
 {
   if (send_cq == -1 && recv_cq == -1) abort();
@@ -933,7 +931,7 @@ transport::rdma_get(int src, const message::ptr &msg,
 }
 
 void
-transport::rdma_put(int dst, const message::ptr &msg,
+transport::rdma_put(int dst, message* msg,
                     int send_cq, int recv_cq)
 {
   configure_send(dst, message::rdma_put, msg);
@@ -942,14 +940,14 @@ transport::rdma_put(int dst, const message::ptr &msg,
   do_rdma_put(dst, msg);
 }
 void
-transport::nvram_get(int src, const message::ptr &msg)
+transport::nvram_get(int src, message* msg)
 {
   configure_send(src, message::nvram_get, msg);
   do_nvram_get(src, msg);
 }
 
 void
-transport::configure_send(int dst, message::payload_type_t ev, const message::ptr& msg)
+transport::configure_send(int dst, message::payload_type_t ev, message* msg)
 {
   switch(ev)
   {
@@ -977,13 +975,13 @@ transport::configure_send(int dst, message::payload_type_t ev, const message::pt
 }
 
 void
-transport::send_header(int dst, const message::ptr& msg, int send_cq, int recv_cq)
+transport::send_header(int dst, message* msg, int send_cq, int recv_cq)
 {
   smsg_send(dst, message::header, msg, send_cq, recv_cq);
 }
 
 void
-transport::send_payload(int dst, const message::ptr& msg, int send_cq, int recv_cq)
+transport::send_payload(int dst, message* msg, int send_cq, int recv_cq)
 {
   smsg_send(dst, message::eager_payload, msg, send_cq, recv_cq);
 }

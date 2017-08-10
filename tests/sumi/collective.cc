@@ -66,7 +66,7 @@ test_bcast(int tag, int root)
   int nproc = comm_nproc();
   comm_bcast(root, NULL, nelems, sizeof(int), tag);
 
-  message::ptr msg = comm_poll();
+  message* msg = comm_poll();
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "bcast test: expected collective message, but got %s",
@@ -98,7 +98,7 @@ test_gather(int tag, int root)
 
   comm_gather(root, dst_buffer, src_buffer, nelems, sizeof(int), tag);
 
-  message::ptr msg = comm_poll();
+  message* msg = comm_poll();
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "gather test: expected collective message, but got %s",
@@ -146,7 +146,7 @@ test_scatter(int tag, int root)
 
   comm_scatter(root, dst_buffer, src_buffer, nelems, sizeof(int), tag);
 
-  message::ptr msg = comm_poll();
+  message* msg = comm_poll();
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "scatter test: expected collective message, but got %s",
@@ -180,7 +180,7 @@ test_tiny_allreduce(int tag)
 
   comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag);
 
-  message::ptr msg = comm_poll(); //wait on allreduce
+  message* msg = comm_poll(); //wait on allreduce
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allreduce test: expected collective message, but got %s",
@@ -212,7 +212,7 @@ test_allreduce_payload(int tag)
 
   comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag);
 
-  message::ptr msg = comm_poll(); //wait on allreduce
+  message* msg = comm_poll(); //wait on allreduce
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allreduce test: expected collective message, but got %s",
@@ -243,7 +243,7 @@ test_scan_payload(int tag)
 
   comm_scan<int,Add>(dst_buffer, src_buffer, nelems, tag);
 
-  message::ptr msg = comm_poll(); //wait on allreduce
+  message* msg = comm_poll(); //wait on allreduce
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "scan test: expected collective message, but got %s",
@@ -282,7 +282,7 @@ test_allgatherv_uneven(int tag)
   int* dst_buffer = new int[ntotal];
   comm_allgatherv(dst_buffer, src_buffer, recv_counts, sizeof(int), tag);
 
-  message::ptr msg = comm_poll(); //wait on allgather
+  message* msg = comm_poll(); //wait on allgather
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allgatherv test: expected collective message, but got %s",
@@ -326,7 +326,7 @@ test_allgatherv_even(int tag)
   int* dst_buffer = new int[nproc*nelems];
   comm_allgatherv(dst_buffer, src_buffer, recv_counts, sizeof(int), tag);
 
-  message::ptr msg = comm_poll(); //wait on allgather
+  message* msg = comm_poll(); //wait on allgather
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allgatherv test: expected collective message, but got %s",
@@ -369,7 +369,7 @@ test_reduce(int tag, int root)
 
   comm_reduce<int,Add>(root, dst_buffer, src_buffer, nelems, tag);
 
-  message::ptr msg = comm_poll(); //wait on reduce
+  message* msg = comm_poll(); //wait on reduce
 
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
@@ -401,7 +401,7 @@ test_allgather_payload(int tag)
   int* dst_buffer = new int[nproc*nelems];
   comm_allgather(dst_buffer, src_buffer, nelems, sizeof(int), tag);
 
-  message::ptr msg = comm_poll(); //wait on allgather
+  message* msg = comm_poll(); //wait on allgather
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allgather test: expected collective message, but got %s",
@@ -431,7 +431,7 @@ test_allreduce(int tag)
 {
   comm_allreduce<int,Add>(0, 0, 256, tag);
 
- message::ptr msg = comm_poll();
+ message* msg = comm_poll();
   std::cout << "Allreduce got " << msg->to_string() << std::endl;
 }
 
@@ -444,8 +444,8 @@ test_barrier(int tag)
   //then execute barrier
   comm_barrier(tag);
 
-  message::ptr msg = comm_poll();
-  auto dmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
+  message* msg = comm_poll();
+  auto dmsg = dynamic_cast<collective_done_message*>(msg);
   if (dmsg->tag() != tag || dmsg->type() != collective::barrier){
     sprockit::abort("barrier got invalid completion message");
   }
@@ -461,8 +461,8 @@ test_dynamic_tree_vote(int tag)
   int answer = (comm_nproc()-1) * 2;
   comm_vote<Max>(vote, tag);
 
-  message::ptr msg = comm_poll();
-  auto dmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
+  message* msg = comm_poll();
+  auto dmsg = dynamic_cast<collective_done_message*>(msg);
   if (dmsg->tag() != tag || dmsg->type() != collective::dynamic_tree_vote){
     sprockit::abort("vote got invalid completion message");
   }
@@ -514,7 +514,7 @@ test_alltoall(int tag)
   //the all-to-all should accumulate it
   comm_alltoall(dst_buffer, src_buffer, nelems, sizeof(int), tag);
 
-  message::ptr msg = comm_poll(); //wait on allgather
+  message* msg = comm_poll(); //wait on allgather
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "all-to-all test: expected collective message, but got %s",

@@ -104,7 +104,7 @@ class mpi_queue
 
   bool iprobe(mpi_comm* comm, int source, int tag, MPI_Status* stat);
 
-  void incoming_progress_loop_message(const mpi_message::ptr& message);
+  void incoming_progress_loop_message(mpi_message* message);
 
   mpi_protocol* protocol(long bytes) const;
 
@@ -116,7 +116,7 @@ class mpi_queue
 
   double now() const;
 
-  void finalize_recv(const mpi_message::ptr& msg,
+  void finalize_recv(mpi_message* msg,
                 mpi_queue_recv_request* req);
 
   sstmac::timestamp progress_loop(mpi_request* req);
@@ -132,29 +132,28 @@ class mpi_queue
 
   void forward_progress(double timeout);
 
-  void buffer_unexpected(const mpi_message::ptr& msg);
+  void buffer_unexpected(mpi_message* msg);
 
-  void post_rdma(const mpi_message::ptr& msg,
+  void post_rdma(mpi_message* msg,
     bool needs_send_ack,
     bool needs_recv_ack);
 
-  void post_header(const mpi_message::ptr& msg, sumi::message::payload_type_t ty, bool needs_ack);
+  void post_header(mpi_message* msg, sumi::message::payload_type_t ty, bool needs_ack);
 
  private:
   struct sortbyseqnum {
-    bool operator()(const mpi_message::ptr& a, const mpi_message::ptr&b) const;
+    bool operator()(mpi_message* a, mpi_message*b) const;
   };
 
-  typedef std::set<mpi_message::ptr, sortbyseqnum, std::allocator<mpi_message::ptr> >
-  hold_list_t;
+  typedef std::set<mpi_message*, sortbyseqnum> hold_list_t;
 
   typedef std::list<mpi_queue_recv_request*> pending_message_t;
 
-  typedef std::list<mpi_message::ptr> need_recv_t;
+  typedef std::list<mpi_message*> need_recv_t;
 
   typedef std::list<mpi_queue_send_request*> send_needs_ack_t;
 
-  typedef std::unordered_map<int, mpi_message::ptr> reorderlist_t;
+  typedef std::unordered_map<int, mpi_message*> reorderlist_t;
 
   typedef std::map<mpi_message::id, mpi_queue_send_request*> ack_needed_t;
 
@@ -163,35 +162,35 @@ class mpi_queue
   typedef std::list<mpi_queue_probe_request*> probelist_t;
 
  private:
-  void handle_poll_msg(const sumi::message::ptr& msg);
+  void handle_poll_msg(sumi::message* msg);
 
-  void handle_collective_done(const sumi::message::ptr& msg);
+  void handle_collective_done(sumi::message* msg);
 
-  void incoming_completion_ack(const mpi_message::ptr& message);
+  void incoming_completion_ack(mpi_message* message);
 
-  void incoming_new_message(const mpi_message::ptr& message);
+  void incoming_new_message(mpi_message* message);
 
-  void handle_nic_ack(const mpi_message::ptr& message);
+  void handle_nic_ack(mpi_message* message);
 
-  void handle_new_message(const mpi_message::ptr& message);
+  void handle_new_message(mpi_message* message);
 
-  void notify_probes(const mpi_message::ptr& message);
-
-  mpi_queue_recv_request*
-  pop_matching_request(pending_message_t& pending, const mpi_message::ptr& message);
+  void notify_probes(mpi_message* message);
 
   mpi_queue_recv_request*
-  pop_pending_request(const mpi_message::ptr& message,
+  pop_matching_request(pending_message_t& pending, mpi_message* message);
+
+  mpi_queue_recv_request*
+  pop_pending_request(mpi_message* message,
                        bool set_need_recv = true);
 
-  mpi_queue_recv_request* pop_waiting_request(const mpi_message::ptr& message);
+  mpi_queue_recv_request* pop_waiting_request(mpi_message* message);
 
-  mpi_message::ptr find_matching_recv(mpi_queue_recv_request* req);
+  mpi_message* find_matching_recv(mpi_queue_recv_request* req);
 
-  void send_completion_ack(const mpi_message::ptr& message);
+  void send_completion_ack(mpi_message* message);
 
-  mpi_message::ptr send_message(void* buffer, int count, MPI_Datatype type,
-    int dst_rank, int tag, mpi_comm* comm);
+  mpi_message* send_message(void* buffer, int count, MPI_Datatype type,
+                int dst_rank, int tag, mpi_comm* comm);
 
   /**
    * @brief configure_send_request
@@ -199,7 +198,7 @@ class mpi_queue
    * @param req
    * @return Whether a nic send ack is required for this send
    */
-  bool configure_send_request(const mpi_message::ptr& mess, mpi_request* req);
+  bool configure_send_request(mpi_message* mess, mpi_request* req);
 
   void clear_pending();
 

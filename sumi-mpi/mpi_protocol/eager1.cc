@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-eager1::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, void *buffer, mpi_type* typeobj)
+eager1::configure_send_buffer(mpi_queue* queue, mpi_message* msg, void *buffer, mpi_type* typeobj)
 {
   if (isNonNullBuffer(buffer)){
     void* eager_buf = fill_send_buffer(msg, buffer, typeobj);
@@ -62,7 +62,7 @@ eager1::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg, voi
 
 void
 eager1::send_header(mpi_queue* queue,
-                    const mpi_message::ptr& msg)
+                    mpi_message* msg)
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
   msg->set_content_type(mpi_message::header);
@@ -89,7 +89,7 @@ eager1::send_header(mpi_queue* queue,
 
 void
 eager1::incoming_header(mpi_queue *queue,
-                        const mpi_message::ptr &msg)
+                        mpi_message*msg)
 {
   mpi_queue_recv_request* req =
     queue->pop_pending_request(msg, false);
@@ -98,7 +98,7 @@ eager1::incoming_header(mpi_queue *queue,
 
 void
 eager1::incoming_header(mpi_queue* queue,
-                        const mpi_message::ptr& msg,
+                        mpi_message* msg,
                         mpi_queue_recv_request* req)
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Header");
@@ -136,16 +136,17 @@ eager1::incoming_header(mpi_queue* queue,
 
 void
 eager1_singlecpy::incoming_payload(mpi_queue *queue,
-                         const mpi_message::ptr &msg)
+                         mpi_message*msg)
 {
   mpi_queue_recv_request* req = queue->pop_waiting_request(msg);
   //guaranteed that req is posted before payload arrives
   incoming_payload(queue, msg, req);
+  delete msg;
 }
 
 void
 eager1_singlecpy::incoming_payload(mpi_queue *queue,
-                                   const mpi_message::ptr &msg,
+                                   mpi_message*msg,
                                    mpi_queue_recv_request *req)
 {
   if (!req){
@@ -157,8 +158,7 @@ eager1_singlecpy::incoming_payload(mpi_queue *queue,
 }
 
 void
-eager1_doublecpy::incoming_payload(mpi_queue *queue,
-                         const mpi_message::ptr &msg)
+eager1_doublecpy::incoming_payload(mpi_queue *queue, mpi_message*msg)
 {
   mpi_queue_recv_request* req = queue->pop_matching_request(queue->in_flight_messages_, msg);
   //guaranteed that msg arrived before recv was posted
@@ -166,8 +166,7 @@ eager1_doublecpy::incoming_payload(mpi_queue *queue,
 }
 
 void
-eager1_doublecpy::incoming_payload(mpi_queue* queue,
-                                   const mpi_message::ptr& msg,
+eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg,
                                    mpi_queue_recv_request* req)
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Payload");
@@ -182,6 +181,7 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue,
       msg->local_buffer().ptr = temp_buf;
     }
     queue->finalize_recv(msg, req);
+    delete msg;
   }
 }
 

@@ -100,7 +100,7 @@ throughput_thread::run()
 {
   //int num_recved = 0;
   while (1) {
-    message::ptr msg = comm_poll();
+    message* msg = comm_poll();
     if (msg->payload_type() == message::rdma_put_ack) {
       //ignore
     }
@@ -165,7 +165,7 @@ void run_test(
 
   int me = comm_rank();
   for (int i=0; i < num_partners; ++i) {
-    sumi::message::ptr msg = new sumi::message(inject_length);
+    sumi::message* msg = new sumi::message(inject_length);
     comm_rdma_put(send_partners[i], msg);
 
     // sleep until the message WOULD be done

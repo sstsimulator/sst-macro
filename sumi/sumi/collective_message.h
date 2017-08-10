@@ -59,8 +59,6 @@ namespace sumi {
 class collective_done_message :
   public message
 {
- public:
-  typedef std::shared_ptr<collective_done_message> ptr;
 
  public:
   std::string to_string() const override {
@@ -173,8 +171,6 @@ class collective_work_message :
 {
   ImplementSerializable(collective_work_message)
  public:
-  typedef std::shared_ptr<collective_work_message> ptr;
-
   typedef enum {
     get_data, //recver gets data
     put_data, //sender puts data

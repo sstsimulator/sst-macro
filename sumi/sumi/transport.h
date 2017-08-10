@@ -101,7 +101,7 @@ class transport {
    */
   void smsg_send(int dst,
      message::payload_type_t ev,
-     const message::ptr& msg,
+     message* msg,
      int send_cq, int recv_cq);
 
   /**
@@ -109,14 +109,14 @@ class transport {
    * @param dst
    * @param msg
    */
-  void send_header(int dst, const message::ptr& msg, int send_cq, int recv_cq);
+  void send_header(int dst, message* msg, int send_cq, int recv_cq);
 
   /**
    Helper function for #smsg_send. Directly send an actual data payload.
    * @param dst
    * @param msg
    */
-  void send_payload(int dst, const message::ptr& msg, int send_cq, int recv_cq);
+  void send_payload(int dst, message* msg, int send_cq, int recv_cq);
 
   /**
    Put a message directly to the destination node.
@@ -127,7 +127,7 @@ class transport {
    * @param needs_send_ack  Whether an ack should be generated send-side when the message is fully injected
    * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
    */
-  void rdma_put(int dst, const message::ptr &msg, int send_cq, int recv_cq);
+  void rdma_put(int dst, message* msg, int send_cq, int recv_cq);
 
   /**
    Get a message directly from the source node.
@@ -138,11 +138,11 @@ class transport {
    * @param send_cq  Where an ack should be generated send-side (source) when the message is fully injected
    * @param recv_cq  Where an ack should be generated recv-side when the message is fully received
    */
-  void rdma_get(int src, const message::ptr &msg, int send_cq, int recv_cq);
+  void rdma_get(int src, message* msg, int send_cq, int recv_cq);
 
-  virtual void free_eager_buffer(const message::ptr& msg);
+  virtual void free_eager_buffer(message* msg);
 
-  void nvram_get(int src, const message::ptr& msg);
+  void nvram_get(int src, message* msg);
   
   /**
    Check if a message has been received on a specific completion queue.
@@ -153,7 +153,7 @@ class transport {
    @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  message::ptr poll(bool blocking, int cq_id, double timeout = -1);
+  message* poll(bool blocking, int cq_id, double timeout = -1);
 
   /**
    Check all completion queues if a message has been received.
@@ -163,7 +163,7 @@ class transport {
    @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  message::ptr poll(bool blocking, double timeout = -1);
+  message* poll(bool blocking, double timeout = -1);
 
   /**
    Block until a message is received.
@@ -174,24 +174,22 @@ class transport {
    @param timeout   Timeout in seconds
    @return          The next message to be received. Message is NULL on timeout
   */
-  message::ptr blocking_poll(int cq_id, double timeout = -1);
+  message* blocking_poll(int cq_id, double timeout = -1);
 
-  template <class T>
-  typename T::ptr
+  template <class T> T*
   poll(const char* file, int line, const char* cls) {
-    message::ptr msg = poll(true);
-    typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
+    message* msg = poll(true);
+    T* result = dynamic_cast<T*>(msg);
     if (!result){
       poll_cast_error(file, line, cls, msg);
     }
     return result;
   }
 
-  template <class T>
-  typename T::ptr
+  template <class T> T*
   poll(double timeout, const char* file, int line, const char* cls) {
-    message::ptr msg = poll(true, timeout);
-    typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
+    message* msg = poll(true, timeout);
+    T* result = dynamic_cast<T*>(msg);
     if (msg && !result){
       poll_cast_error(file, line, cls, msg);
     }
@@ -202,7 +200,7 @@ class transport {
 #define SUMI_POLL_TIME(tport, msgtype, to) tport->poll<msgtype>(to, __FILE__, __LINE__, #msgtype)
 
 
-  message::ptr blocking_poll(message::payload_type_t, int cq_id);
+  message* blocking_poll(message::payload_type_t, int cq_id);
 
   /**
    * @brief poll_pending_messages
@@ -223,7 +221,7 @@ class transport {
    * @param tag
    * @return
    */
-  virtual collective_done_message::ptr collective_block(collective::type_t ty, int tag,
+  virtual collective_done_message* collective_block(collective::type_t ty, int tag,
                                                         uint8_t cq_id = 0) = 0;
 
   bool use_eager_protocol(long byte_length) const {
@@ -367,7 +365,7 @@ class transport {
 
   void bcast(int root, void* buf, int nelems, int type_size, int tag, collective::config cfg = collective::cfg());
   
-  void system_bcast(const message::ptr& msg);
+  void system_bcast(message* msg);
 
   int rank() const {
     return rank_;
@@ -390,7 +388,7 @@ class transport {
     return eager_cutoff_;
   }
 
-  void notify_collective_done(const collective_done_message::ptr& msg);
+  void notify_collective_done(collective_done_message* msg);
 
 
   /**
@@ -400,7 +398,7 @@ class transport {
    * @param msg A point to point message that might be part of a collective
    * @return Null, if collective message and collective is not done
    */
-  message::ptr handle(const message::ptr& msg);
+  message* handle(message* msg);
 
   virtual public_buffer allocate_public_buffer(int size) {
     return public_buffer(::malloc(size));
@@ -423,22 +421,22 @@ class transport {
 
   void configure_send(int dst,
     message::payload_type_t ev,
-    const message::ptr& msg);
+    message* msg);
 
-  virtual void do_smsg_send(int dst, const message::ptr& msg) = 0;
+  virtual void do_smsg_send(int dst, message* msg) = 0;
 
-  virtual void do_rdma_put(int dst, const message::ptr& msg) = 0;
+  virtual void do_rdma_put(int dst, message* msg) = 0;
 
-  virtual void do_rdma_get(int src, const message::ptr& msg) = 0;
+  virtual void do_rdma_get(int src, message* msg) = 0;
 
-  virtual void do_nvram_get(int src, const message::ptr& msg) = 0;
+  virtual void do_nvram_get(int src, message* msg) = 0;
 
   virtual void go_die() = 0;
 
   virtual void go_revive() = 0;
 
  private:  
-  void finish_collective(collective* coll, const collective_done_message::ptr& dmsg);
+  void finish_collective(collective* coll, collective_done_message* dmsg);
 
   void start_collective(collective* coll);
 
@@ -461,14 +459,14 @@ class transport {
    * @param timeout
    * @return A message if found, null message if non-blocking or timed out
    */
-  message::ptr poll_new(bool blocking, double timeout = -1);
+  message* poll_new(bool blocking, double timeout = -1);
 
  private:
   /**
    * Helper function for doing operations necessary to close out a heartbeat
    * @param dmsg
    */
-  void vote_done(int context, const collective_done_message::ptr& dmsg);
+  void vote_done(int context, collective_done_message* dmsg);
 
   bool skip_collective(collective::type_t ty,
     collective::config& cfg,
@@ -484,7 +482,7 @@ class transport {
   typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
   collective_map collectives_;
 
-  typedef std::unordered_map<int,std::list<collective_work_message_ptr> > tag_to_pending_map;
+  typedef std::unordered_map<int,std::list<collective_work_message*>> tag_to_pending_map;
   typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
   pending_map pending_collective_msgs_;
 
@@ -501,14 +499,7 @@ class transport {
   
   int eager_cutoff_;
 
-  std::vector<thread_safe_list<message::ptr>> completion_queues_;
-
-  //thread_safe_list<message::ptr> pt2pt_done_;
-  //thread_safe_list<message::ptr> collectives_done_;
-
-  int next_transaction_id_;
-  int max_transaction_id_;
-  std::map<int, message::ptr> transactions_;
+  std::vector<thread_safe_list<message*>> completion_queues_;
 
   bool use_put_protocol_;
 
@@ -523,7 +514,7 @@ class transport {
 #endif
 
  private:
-  void poll_cast_error(const char* file, int line, const char* cls, const message::ptr& msg){
+  void poll_cast_error(const char* file, int line, const char* cls, message* msg){
     spkt_throw_printf(sprockit::value_error,
        "Could not cast incoming message to type %s\n"
        "Got %s\n"
@@ -549,7 +540,7 @@ class transport {
 
 #if SUMI_COMM_SYNC_STATS
  public:
-  virtual void collect_sync_delays(double wait_start, const message::ptr& msg){}
+  virtual void collect_sync_delays(double wait_start, message* msg){}
 
   virtual void start_collective_sync_delays(){}
 #endif
@@ -659,7 +650,7 @@ class transport {
 
   bool heartbeat_running_;
 
-  bool is_heartbeat(const collective_done_message::ptr& dmsg) const {
+  bool is_heartbeat(collective_done_message* dmsg) const {
     return dmsg->tag() >= heartbeat_tag_start_ && dmsg->tag() <= heartbeat_tag_stop_;
   }
 

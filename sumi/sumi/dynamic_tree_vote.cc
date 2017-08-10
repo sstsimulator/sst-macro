@@ -278,7 +278,7 @@ dynamic_tree_vote_actor::start()
 void
 dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int virtual_dst)
 {
-  auto msg = std::make_shared<dynamic_tree_vote_message>(vote_, ty, tag_, dense_me_, virtual_dst);
+  auto msg = new dynamic_tree_vote_message(vote_, ty, tag_, dense_me_, virtual_dst);
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   if (stage_ == up_vote){  //If I am up-voting, go ahead and vote for as many failures as I know
     msg->append_failed(failed_ranks_);
@@ -300,7 +300,7 @@ dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int 
 }
 
 void
-dynamic_tree_vote_actor::recv_result(const dynamic_tree_vote_message::ptr& msg)
+dynamic_tree_vote_actor::recv_result(dynamic_tree_vote_message* msg)
 {
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   debug_printf(sumi_collective | sumi_vote,
@@ -315,7 +315,7 @@ dynamic_tree_vote_actor::recv_result(const dynamic_tree_vote_message::ptr& msg)
 }
 
 void
-dynamic_tree_vote_actor::merge_result(const dynamic_tree_vote_message::ptr& msg)
+dynamic_tree_vote_actor::merge_result(dynamic_tree_vote_message* msg)
 {  
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   const std::set<int> extra_failed = msg->failed_procs();
@@ -335,8 +335,7 @@ dynamic_tree_vote_actor::merge_result(const dynamic_tree_vote_message::ptr& msg)
 void
 dynamic_tree_vote_actor::put_done_notification()
 {
-  auto msg = std::make_shared<collective_done_message>(
-        tag_, collective::dynamic_tree_vote, cfg_.dom, cfg_.cq_id);
+  auto msg = new collective_done_message(tag_, collective::dynamic_tree_vote, cfg_.dom, cfg_.cq_id);
   msg->set_vote(vote_);
   msg->set_comm_rank(cfg_.dom->my_comm_rank());
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
@@ -386,7 +385,7 @@ dynamic_tree_vote_actor::finish()
 
 
 void
-dynamic_tree_vote_actor::recv_down_vote(const dynamic_tree_vote_message::ptr& msg)
+dynamic_tree_vote_actor::recv_down_vote(dynamic_tree_vote_message* msg)
 {
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   debug_printf(sumi_collective | sumi_vote,
@@ -424,7 +423,7 @@ dynamic_tree_vote_actor::send_down_votes()
 }
 
 void
-dynamic_tree_vote_actor::recv_expected_up_vote(const dynamic_tree_vote_message::ptr& msg)
+dynamic_tree_vote_actor::recv_expected_up_vote(dynamic_tree_vote_message* msg)
 {
   debug_printf(sumi_collective | sumi_vote,
     "Rank %s got expected up vote %d on stage %s from rank=%d on tag=%d - need %s, have %s",
@@ -437,7 +436,7 @@ dynamic_tree_vote_actor::recv_expected_up_vote(const dynamic_tree_vote_message::
 }
 
 void
-dynamic_tree_vote_actor::recv_unexpected_up_vote(const dynamic_tree_vote_message::ptr& msg)
+dynamic_tree_vote_actor::recv_unexpected_up_vote(dynamic_tree_vote_message* msg)
 {
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   if (complete()){
@@ -479,7 +478,7 @@ dynamic_tree_vote_actor::recv_unexpected_up_vote(const dynamic_tree_vote_message
 }
 
 void
-dynamic_tree_vote_actor::recv_up_vote(const dynamic_tree_vote_message::ptr& msg)
+dynamic_tree_vote_actor::recv_up_vote(dynamic_tree_vote_message* msg)
 {
   debug_printf(sumi_collective | sumi_vote,
     "Rank %s got up vote %d on stage %s from rank=%d on tag=%d ",
@@ -504,7 +503,7 @@ dynamic_tree_vote_actor::recv_up_vote(const dynamic_tree_vote_message::ptr& msg)
 }
 
 void
-dynamic_tree_vote_actor::recv(const dynamic_tree_vote_message::ptr&msg)
+dynamic_tree_vote_actor::recv(dynamic_tree_vote_message* msg)
 {
   if (is_failed(msg->dense_sender())){
     debug_printf(sumi_collective | sumi_vote | sumi_collective_sendrecv,
@@ -545,7 +544,7 @@ dynamic_tree_vote_collective::dynamic_tree_vote_collective(
 }
 
 void
-dynamic_tree_vote_collective::recv(int target, const collective_work_message::ptr& msg)
+dynamic_tree_vote_collective::recv(int target, collective_work_message* msg)
 {
   actor_map::iterator it = actors_.find(target);
   if (it == actors_.end()){
@@ -555,7 +554,7 @@ dynamic_tree_vote_collective::recv(int target, const collective_work_message::pt
   }
 
   dynamic_tree_vote_actor* schauspieler = it->second;
-  schauspieler->recv(std::dynamic_pointer_cast<dynamic_tree_vote_message>(msg));
+  schauspieler->recv(dynamic_cast<dynamic_tree_vote_message*>(msg));
 }
 
 void
@@ -570,7 +569,7 @@ dynamic_tree_vote_collective::start()
 
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
 void
-dynamic_tree_vote_actor::recv_adoption_request(const dynamic_tree_vote_message::ptr& msg)
+dynamic_tree_vote_actor::recv_adoption_request(dynamic_tree_vote_message* msg)
 {
   //we got this if our up partner failed - this guy is requesting an up vote
   //treat this essentially as a failure notification

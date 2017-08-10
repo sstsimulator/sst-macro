@@ -87,7 +87,7 @@ main(int argc, char **argv)
     start_barrier();
     start_allreduce();
   }
-  message::ptr msg = comm_poll();
+  message* msg = comm_poll();
   msg = comm_poll();
 
   comm_finalize();

@@ -67,7 +67,7 @@ class transport_message :
   transport_message(
      const std::string& libname,
      sw::app_id aid,
-     const sumi::message::ptr& msg,
+     sumi::message* msg,
      long byte_length)
    : library_interface(libname),
       network_message(aid, byte_length),
@@ -77,7 +77,13 @@ class transport_message :
 
   virtual void serialize_order(serializer& ser) override;
 
-  sumi::message::ptr payload() const {
+  sumi::message* take_payload() {
+    auto ret = payload_;
+    payload_ = nullptr;
+    return ret;
+  }
+
+  sumi::message* get_payload() const {
     return payload_;
   }
 

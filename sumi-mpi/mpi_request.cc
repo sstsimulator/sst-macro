@@ -115,7 +115,7 @@ mpi_request::~mpi_request()
 }
 
 void
-mpi_request::complete(const mpi_message::ptr& msg)
+mpi_request::complete(mpi_message* msg)
 {
   if (!cancelled_) {
     msg->build_status(&stat_);

@@ -66,11 +66,11 @@ class active_msg_transport :
 
   void schedule_next_heartbeat();
 
-  virtual collective_done_message::ptr collective_block(collective::type_t ty, int tag);
+  virtual collective_done_message* collective_block(collective::type_t ty, int tag);
 
-  message::ptr block_until_message();
+  message* block_until_message();
 
-  message::ptr block_until_message(double timeout);
+  message* block_until_message(double timeout);
 
   void init();
 
@@ -84,11 +84,11 @@ class active_msg_transport :
 
   active_msg_transport();
 
-  char* allocate_message_buffer(const message::ptr& msg, int& size);
+  char* allocate_message_buffer(message* msg, int& size);
 
-  message::ptr deserialize(char* buf);
+  message* deserialize(char* buf);
 
-  message::ptr free_message_buffer(void* buf);
+  message* free_message_buffer(void* buf);
 
   char* allocate_smsg_buffer();
 

@@ -603,7 +603,7 @@ mpi_api::start_new_mpi_call(MPI_function func, int count, MPI_Datatype type, MPI
 }
 
 void
-mpi_api::collect_sync_delays(double wait_start, const message::ptr &msg)
+mpi_api::collect_sync_delays(double wait_start, message* msg)
 {
   //there are two possible sync delays
   //#1: For sender, synced - header_arrived

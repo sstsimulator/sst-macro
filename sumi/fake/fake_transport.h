@@ -54,13 +54,13 @@ class fake_transport : public transport
  public:
   fake_transport(sprockit::sim_parameters* params);
 
-  message::ptr block_until_message();
+  message* block_until_message();
 
-  message::ptr block_until_message(double timeout){
+  message* block_until_message(double timeout){
     return block_until_message();
   }
 
-  collective_done_message::ptr collective_block(collective::type_t ty, int tag);
+  collective_done_message* collective_block(collective::type_t ty, int tag);
 
   void cq_notify();
 
@@ -72,7 +72,7 @@ class fake_transport : public transport
     return 0;
   }
 
-  message::ptr pop_rdma_get(){
+  message* pop_rdma_get(){
     return pop_message(rdma_gets_);
   }
 
@@ -80,15 +80,15 @@ class fake_transport : public transport
 
   void stop_heartbeat(){} //do nothing
 
-  message::ptr pop_rdma_put(){
+  message* pop_rdma_put(){
     return pop_message(rdma_puts_);
   }
 
-  message::ptr pop_send(){
+  message* pop_send(){
     return pop_message(sends_);
   }
 
-  message::ptr pop_nvram_get(){
+  message* pop_nvram_get(){
     return pop_message(nvram_gets_);
   }
 
@@ -103,15 +103,15 @@ class fake_transport : public transport
   void dynamic_tree_vote(int vote, int tag, vote_fxn fxn, int context, communicator *dom){}
 
  private:
-  message::ptr pop_message(std::list<message::ptr>& msglist);
+  message* pop_message(std::list<message*>& msglist);
 
-  void do_smsg_send(int dst, const message::ptr &msg);
+  void do_smsg_send(int dst, message* msg);
 
-  void do_rdma_get(int src, const message::ptr &msg);
+  void do_rdma_get(int src, message* msg);
 
-  void do_nvram_get(int src, const message::ptr &msg);
+  void do_nvram_get(int src, message* msg);
 
-  void do_rdma_put(int dst, const message::ptr &msg);
+  void do_rdma_put(int dst, message* msg);
 
   void do_send_terminate(int dst);
 
@@ -122,13 +122,13 @@ class fake_transport : public transport
   void go_revive();
 
  private:
-  std::list<message::ptr> sends_;
+  std::list<message*> sends_;
 
-  std::list<message::ptr> rdma_gets_;
+  std::list<message*> rdma_gets_;
 
-  std::list<message::ptr> rdma_puts_;
+  std::list<message*> rdma_puts_;
 
-  std::list<message::ptr> nvram_gets_;
+  std::list<message*> nvram_gets_;
 };
 
 }

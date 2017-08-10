@@ -68,21 +68,21 @@ static const int nreplica = 15;
 static inline void
 run_test_sender_get(transport* t, public_buffer pbuf, int size)
 {
-  rdma_message::ptr msg = new rdma_message(size);
+  rdma_message* msg = new rdma_message(size);
   msg->remote_buffer() = pbuf;
   int dst = 1;
   t->send_rdma_header(dst, msg);
-  message::ptr ack = t->blocking_poll(message::rdma_get_ack);
+  message* ack = t->blocking_poll(message::rdma_get_ack);
 }
 
 static inline void
 run_test_receiver_get(transport* t, public_buffer pbuf, int size)
 {
-  message::ptr rdma_header = t->blocking_poll(message::header);
+  message* rdma_header = t->blocking_poll(message::header);
   rdma_header->local_buffer() = pbuf;
   int dst = 0;
   t->rdma_get(dst, rdma_header, true, true);
-  message::ptr ack = t->blocking_poll(message::rdma_get);
+  message* ack = t->blocking_poll(message::rdma_get);
 }
 
 static int num_calls = 0;
@@ -90,22 +90,22 @@ static int num_calls = 0;
 static inline void
 run_test_receiver_put(transport* t, public_buffer pbuf, int size)
 {
-  rdma_message::ptr msg = new rdma_message(size);
+  rdma_message* msg = new rdma_message(size);
   msg->remote_buffer() = pbuf;
   int dst = 0;
   t->send_rdma_header(dst, msg);
-  message::ptr ack = t->blocking_poll(message::rdma_put);
+  message* ack = t->blocking_poll(message::rdma_put);
   ++num_calls;
 }
 
 static inline void
 run_test_sender_put(transport* t, public_buffer pbuf, int size)
 {
-  message::ptr rdma_header = t->blocking_poll(message::header);
+  message* rdma_header = t->blocking_poll(message::header);
   rdma_header->local_buffer() = pbuf;
   int dst = 1;
   t->rdma_put(dst, rdma_header, true, true);
-  message::ptr ack = t->blocking_poll(message::rdma_put_ack);
+  message* ack = t->blocking_poll(message::rdma_put_ack);
   ++num_calls;
 }
 

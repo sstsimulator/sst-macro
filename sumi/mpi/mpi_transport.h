@@ -88,7 +88,7 @@ class PendingMPI
   PendingMPI* rdma_req;
   int smsg_tag;
   MPI_Request* req;
-  message::ptr msg;
+  message* msg;
   int id;
 
   PendingMPI();
@@ -132,13 +132,13 @@ class mpi_transport :
 
   void do_send_ping_request(int dst);
 
-  void do_smsg_send(int dst, const message::ptr &msg);
+  void do_smsg_send(int dst, message* msg);
 
-  void do_rdma_get(int src, const message::ptr &msg);
+  void do_rdma_get(int src, message* msg);
 
-  void do_rdma_put(int dst, const message::ptr &msg);
+  void do_rdma_put(int dst, message* msg);
 
-  void do_nvram_get(int src, const message::ptr &msg);
+  void do_nvram_get(int src, message* msg);
 
  private:
   int ping_status_;
@@ -173,13 +173,13 @@ class mpi_transport :
 
   void process_smsg(PendingMPI* pending);
 
-  void send_transaction_ack(int dst, const message::ptr& msg);
+  void send_transaction_ack(int dst, message* msg);
 
   void recv_transaction_ack(int src);
 
-  void rdma_get_ack(const message::ptr& msg);
+  void rdma_get_ack(message* msg);
 
-  message::ptr
+  message*
   deserialize_smsg(PendingMPI* pending, void* extra_md = 0, int md_size = 0);
 
   typedef enum {
@@ -221,7 +221,7 @@ class mpi_transport :
   char* allocate_smsg_buffer();
 
   void transport_smsg_send(int dst, int tag, PendingMPI::type_t ty,
-    const message::ptr& msg,
+    message* msg,
     void* extra_md = 0, int md_size = 0);
 
 };

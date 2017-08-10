@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-gni_transport::rdma_get_done(const message::ptr& msg)
+gni_transport::rdma_get_done(message* msg)
 {
   if (msg->needs_send_ack() && !msg->has_transaction_id()){
     gni_debug("Rank %d software acking RDMA get to %d",
@@ -64,7 +64,7 @@ gni_transport::rdma_get_done(const message::ptr& msg)
 }
 
 void
-gni_transport::do_rdma_get(int src, const message::ptr &msg)
+gni_transport::do_rdma_get(int src, message* msg)
 {
   public_buffer& send_buf = msg->remote_buffer();
   public_buffer& recv_buf = msg->local_buffer();

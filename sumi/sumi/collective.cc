@@ -156,7 +156,7 @@ collective::add_actors(collective *coll)
 }
 
 void
-collective::recv(const collective_work_message_ptr &msg)
+collective::recv(collective_work_message* msg)
 {
   switch(msg->payload_type())
   {
@@ -228,14 +228,13 @@ dag_collective::init(type_t type,
 }
 
 void
-dag_collective::recv(int target, const collective_work_message::ptr& msg)
+dag_collective::recv(int target, collective_work_message* msg)
 {
   debug_printf(sumi_collective | sumi_collective_sendrecv,
     "Rank %d=%d %s got %s:%p from %d=%d on tag=%d for target %d",
     my_api_->rank(), dense_me_,
     collective::tostr(type_),
-    message::tostr(msg->payload_type()),
-    msg.get(),
+    message::tostr(msg->payload_type()), msg,
     msg->sender(), msg->dense_sender(),
     tag_, target);
 
@@ -292,9 +291,9 @@ dag_collective::add_actors(collective* coll)
 
   refcounts_[coll->comm()->my_comm_rank()] = ar->my_actors_.size();
 
-  std::list<collective_work_message::ptr> pending = pending_;
+  std::list<collective_work_message*> pending = pending_;
   pending_.clear();
-  { std::list<collective_work_message::ptr>::iterator it, end = pending.end();
+  { std::list<collective_work_message*>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
     collective::recv(*it);
   } }

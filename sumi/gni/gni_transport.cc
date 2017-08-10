@@ -82,7 +82,7 @@ gni_transport::allocate_smsg_id()
 }
 
 int
-gni_transport::allocate_rdma_tag(const message::ptr& msg)
+gni_transport::allocate_rdma_tag(message* msg)
 {
   int tag = current_rdma_tag_;
   current_rdma_tag_ = (current_rdma_tag_ + 1) % max_rdma_tag;
@@ -147,7 +147,7 @@ gni_transport::block_inner_loop()
 }
 
 void
-gni_transport::do_nvram_get(int dst, const message::ptr& msg)
+gni_transport::do_nvram_get(int dst, message* msg)
 {
   sprockit::abort("gni_transport::do_nvram_get: not implemented");
 }

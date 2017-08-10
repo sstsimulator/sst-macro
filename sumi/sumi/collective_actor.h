@@ -431,7 +431,7 @@ class dag_collective_actor :
 
   virtual ~dag_collective_actor();
 
-  virtual void recv(const collective_work_message::ptr& msg);
+  virtual void recv(collective_work_message* msg);
 
   virtual void start();
 
@@ -464,7 +464,7 @@ class dag_collective_actor :
  private:
   typedef std::map<uint32_t, action*> active_map;
   typedef std::multimap<uint32_t, action*> pending_map;
-  typedef std::multimap<uint32_t, collective_work_message::ptr> pending_msg_map;
+  typedef std::multimap<uint32_t, collective_work_message*> pending_msg_map;
 
  protected:
   dag_collective_actor() :
@@ -511,24 +511,24 @@ class dag_collective_actor :
   void send_rdma_get_header(action* ac);
 
   void next_round_ready_to_put(action* ac,
-    const collective_work_message::ptr& header);
+    collective_work_message* header);
 
   void next_round_ready_to_get(action* ac,
-    const collective_work_message::ptr& header);
+    collective_work_message* header);
 
-  void incoming_recv_message(action* ac, const collective_work_message::ptr& msg);
+  void incoming_recv_message(action* ac, collective_work_message* msg);
 
-  void incoming_send_message(action* ac, const collective_work_message::ptr& msg);
+  void incoming_send_message(action* ac, collective_work_message* msg);
 
-  void incoming_message(const collective_work_message::ptr& msg);
+  void incoming_message(collective_work_message* msg);
 
-  void incoming_nack(action::type_t ty, const collective_work_message::ptr& msg);
+  void incoming_nack(action::type_t ty, collective_work_message* msg);
 
-  void data_recved(const collective_work_message::ptr& msg, void* recvd_buffer);
+  void data_recved(collective_work_message* msg, void* recvd_buffer);
 
-  void data_recved(action* ac, const collective_work_message::ptr &msg, void *recvd_buffer);
+  void data_recved(action* ac, collective_work_message* msg, void *recvd_buffer);
 
-  void data_sent(const collective_work_message::ptr& msg);
+  void data_sent(collective_work_message* msg);
 
   virtual void buffer_action(void* dst_buffer, void* msg_buffer, action* ac) = 0;
 
@@ -544,9 +544,9 @@ class dag_collective_actor :
 
   void set_recv_buffer(action* ac, public_buffer& buf);
 
-  collective_work_message::ptr new_message(action* ac, collective_work_message::action_t act);
+  collective_work_message* new_message(action* ac, collective_work_message::action_t act);
 
-  collective_done_message::ptr done_msg() const;
+  collective_done_message* done_msg() const;
 
   virtual void start_shuffle(action* ac);
 

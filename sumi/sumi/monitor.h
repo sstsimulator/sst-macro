@@ -92,7 +92,7 @@ class activity_monitor
 
   virtual void cancel_ping(int dst, timeout_function* func) = 0;
 
-  virtual void message_received(const message::ptr& msg) = 0;
+  virtual void message_received(message* msg) = 0;
 
   virtual void renew_pings(double wtime) = 0;
 

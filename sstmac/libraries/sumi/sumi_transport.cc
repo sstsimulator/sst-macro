@@ -116,7 +116,7 @@ class sumi_server :
     transport_message* smsg = safe_cast(transport_message, ev);
     debug_printf(sprockit::dbg::sumi,
                  "sumi_server %d: incoming message %s",
-                 os_->addr(), smsg->payload()->to_string().c_str());
+                 os_->addr(), smsg->get_payload()->to_string().c_str());
     sumi_transport* tport = procs_[smsg->dest_app()][smsg->dest_rank()];
     if (!tport){
       pending_.push_back(smsg);
@@ -231,7 +231,7 @@ sumi_transport::incoming_event(event *ev)
 void
 sumi_transport::shutdown_server(int dest_rank, node_id dest_node, int dest_app)
 {
-  auto msg = std::make_shared<sumi::system_bcast_message>(sumi::system_bcast_message::shutdown, dest_rank);
+  auto msg = new sumi::system_bcast_message(sumi::system_bcast_message::shutdown, dest_rank);
   client_server_send(dest_rank, dest_node, dest_app, msg);
 }
 
@@ -240,7 +240,7 @@ sumi_transport::client_server_send(
   int dst_task,
   node_id dst_node,
   int dst_app,
-  const sumi::message::ptr& msg)
+  sumi::message* msg)
 {
   msg->set_send_cq(sumi::message::no_ack);
   msg->set_recv_cq(sumi::message::default_cq);
@@ -254,7 +254,7 @@ sumi_transport::client_server_rdma_put(
   int dst_task,
   node_id dst_node,
   int dst_app,
-  const sumi::message::ptr& msg)
+  sumi::message* msg)
 {
   msg->set_send_cq(sumi::message::no_ack);
   msg->set_recv_cq(sumi::message::default_cq);
@@ -266,7 +266,7 @@ sumi_transport::client_server_rdma_put(
 void
 sumi_transport::process(sstmac::transport_message* smsg)
 {
-  sumi::message::ptr my_msg = smsg->payload();
+  sumi::message* my_msg = smsg->get_payload();
   debug_printf(sprockit::dbg::sumi,
      "sumi transport rank %d in app %d processing message of type %s: %s",
      rank(), sid().app_, transport_message::tostr(smsg->type()), my_msg->to_string().c_str());
@@ -309,7 +309,7 @@ sumi_transport::finish()
 void
 sumi_transport::send(
   long byte_length,
-  const sumi::message_ptr &msg,
+  sumi::message* msg,
   int sendType,
   int dst_rank)
 {
@@ -323,7 +323,7 @@ sumi_transport::send(
   int dst_task,
   node_id dst_node,
   int dst_app,
-  const sumi::message::ptr& msg,
+  sumi::message* msg,
   int ty)
 {
   sstmac::sw::app_id aid = sid().app_;
@@ -361,7 +361,7 @@ sumi_transport::go_revive()
 }
 
 void
-sumi_transport::do_smsg_send(int dst, const sumi::message::ptr &msg)
+sumi_transport::do_smsg_send(int dst, sumi::message* msg)
 {
   if (post_header_delay_.ticks_int64()) {
     user_lib_time_->compute(post_header_delay_);
@@ -377,7 +377,7 @@ sumi_transport::wall_time() const
 }
 
 void
-sumi_transport::do_rdma_get(int dst, const sumi::message::ptr& msg)
+sumi_transport::do_rdma_get(int dst, sumi::message* msg)
 {
   if (post_rdma_delay_.ticks_int64()) {
     user_lib_time_->compute(post_rdma_delay_);
@@ -388,7 +388,7 @@ sumi_transport::do_rdma_get(int dst, const sumi::message::ptr& msg)
 }
 
 void
-sumi_transport::do_rdma_put(int dst, const sumi::message::ptr& msg)
+sumi_transport::do_rdma_put(int dst, sumi::message* msg)
 {
   if (post_rdma_delay_.ticks_int64()) {
     user_lib_time_->compute(post_rdma_delay_);
@@ -398,7 +398,7 @@ sumi_transport::do_rdma_put(int dst, const sumi::message::ptr& msg)
 }
 
 void
-sumi_transport::do_nvram_get(int dst, const sumi::message::ptr& msg)
+sumi_transport::do_nvram_get(int dst, sumi::message* msg)
 {
   send(msg->byte_length(), msg,
     sstmac::hw::network_message::nvram_get_request, dst);
@@ -457,18 +457,18 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
   return msg;
 }
 
-sumi::collective_done_message::ptr
+sumi::collective_done_message*
 sumi_transport::collective_block(sumi::collective::type_t ty, int tag, uint8_t cq_id)
 {
   //first we have to loop through the completion queue to see if it already exists
   while(1){
     auto& collective_cq = completion_queues_[collective_cq_id_];
-    std::list<sumi::message::ptr>::iterator it, end = collective_cq.start_iteration();
+    std::list<sumi::message*>::iterator it, end = collective_cq.start_iteration();
     for (it=collective_cq.begin(); it != end; ++it){
-      sumi::message::ptr msg = *it;
+      sumi::message* msg = *it;
       if (msg->class_type() == sumi::message::collective_done){
         //this is a collective done message
-        auto cmsg = std::dynamic_pointer_cast<sumi::collective_done_message>(msg);
+        auto cmsg = dynamic_cast<sumi::collective_done_message*>(msg);
         if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
           collective_cq.erase(it);
           collective_cq.end_iteration();
@@ -478,10 +478,10 @@ sumi_transport::collective_block(sumi::collective::type_t ty, int tag, uint8_t c
     }
 
     collective_cq.end_iteration();
-    sumi::message::ptr msg = poll_new(true); //blocking
+    sumi::message* msg = poll_new(true); //blocking
     if (msg->class_type() == sumi::message::collective_done){
       //this is a collective done message
-      auto cmsg = std::dynamic_pointer_cast<sumi::collective_done_message>(msg);
+      auto cmsg = dynamic_cast<sumi::collective_done_message*>(msg);
       if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
         return cmsg;
       }
@@ -506,13 +506,13 @@ sumi_transport::incoming_message(transport_message *msg)
     sstmac::sw::key* next_key = blocked_keys_.front();
     debug_printf(sprockit::dbg::sumi,
                  "sumi queue %p unblocking poller %p to handle message %s",
-                  this, next_key, msg->payload()->to_string().c_str());
+                  this, next_key, msg->get_payload()->to_string().c_str());
     blocked_keys_.pop_front();
     os_->unblock(next_key);
   } else {
     debug_printf(sprockit::dbg::sumi,
                  "sumi queue %p has no pollers to unblock for message %s",
-                  this, msg->payload()->to_string().c_str());
+                  this, msg->get_payload()->to_string().c_str());
   }
 }
 
@@ -526,7 +526,7 @@ sumi_transport::send_terminate(int dst)
 void
 sumi_transport::send_ping_request(int dst)
 {
-  sumi::message::ptr msg = std::make_shared<sumi::message>();
+  sumi::message* msg = new sumi::message>();
   msg->set_class_type(sumi::message::ping);
   //here, a simple rdma get
   rdma_get(dst, msg);

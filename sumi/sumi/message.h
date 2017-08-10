@@ -108,8 +108,6 @@ class message :
   static const int ack_size;
   static const int header_size;
 
-  typedef std::shared_ptr<message> ptr;
-
   message() :
     message(sizeof(message))
   {
@@ -286,6 +284,9 @@ class message :
   sumi::public_buffer& local_buffer() { return local_buffer_; }
   sumi::public_buffer& remote_buffer() { return remote_buffer_; }
 
+  const sumi::public_buffer& local_buffer() const { return local_buffer_; }
+  const sumi::public_buffer& remote_buffer() const { return remote_buffer_; }
+
   void*& eager_buffer() {
    return local_buffer_.ptr;
   }
@@ -365,8 +366,6 @@ class system_bcast_message : public message
 {
   ImplementSerializable(system_bcast_message)
  public:
-  typedef std::shared_ptr<system_bcast_message> ptr;
-
   typedef enum {
     shutdown
   } action_t;
@@ -401,17 +400,23 @@ class system_bcast_message : public message
 */
 class transport_message {
  public:
-  sumi::message::ptr payload() const {
-    return payload_;
+  sumi::message* take_payload() {
+    auto ret = payload_;
+    payload_ = nullptr;
+    return ret;
+  }
+
+  virtual ~transport_message(){
+    if (payload_) delete payload_;
   }
 
  protected:
-  transport_message(sumi::message::ptr pload) :
+  transport_message(sumi::message* pload) :
     payload_(pload) {}
 
   transport_message(){} //for serialization
 
-  sumi::message::ptr payload_;
+  sumi::message* payload_;
 };
 
 }

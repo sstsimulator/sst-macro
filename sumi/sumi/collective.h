@@ -131,9 +131,9 @@ class collective
 
   static const char* tostr(type_t ty);
 
-  virtual void recv(int target, const collective_work_message_ptr& msg) = 0;
+  virtual void recv(int target, collective_work_message* msg) = 0;
 
-  void recv(const collective_work_message_ptr &msg);
+  void recv(collective_work_message* msg);
 
   virtual void start() = 0;
 
@@ -193,16 +193,16 @@ class dag_collective :
   DeclareFactory(dag_collective)
 
  public:
-  void recv(int target, const collective_work_message_ptr& msg);
+  void recv(int target, collective_work_message* msg) override;
 
-  void start();
+  void start() override;
 
   void init(type_t type, transport *my_api,
     void *dst, void *src,
     int nelems, int type_size,
     int tag, const config& cfg);
 
-  void init_actors();
+  void init_actors() override;
 
   virtual dag_collective* clone() const = 0;
 
@@ -214,7 +214,7 @@ class dag_collective :
 
   virtual void init_send_counts(int* nelems){}
 
-  void deadlock_check();
+  void deadlock_check() override;
 
   virtual ~dag_collective();
 
@@ -225,7 +225,7 @@ class dag_collective :
  protected:
   virtual dag_collective_actor* new_actor() const = 0;
 
-  void add_actors(collective *coll);
+  void add_actors(collective *coll) override;
 
  protected:
   typedef std::map<int, dag_collective_actor*> actor_map;
@@ -241,7 +241,7 @@ class dag_collective :
 
   bool fault_aware_;
 
-  std::list<collective_work_message_ptr> pending_;
+  std::list<collective_work_message*> pending_;
 };
 
 class collective_algorithm_selector

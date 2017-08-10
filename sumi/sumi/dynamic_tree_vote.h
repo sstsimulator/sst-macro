@@ -62,8 +62,6 @@ class dynamic_tree_vote_message :
  public:
   dynamic_tree_vote_message(){} //for serialization
 
-  typedef std::shared_ptr<dynamic_tree_vote_message> ptr;
-
   typedef enum {
     up_vote,
     down_vote,
@@ -120,7 +118,7 @@ class dynamic_tree_vote_actor :
     return "vote actor";
   }
 
-  void recv(const dynamic_tree_vote_message::ptr& msg);
+  void recv(dynamic_tree_vote_message* msg);
 
   dynamic_tree_vote_actor(int vote,
     vote_fxn fxn, int tag,
@@ -153,20 +151,20 @@ class dynamic_tree_vote_actor :
    * must be ignored for consistency.
    * @param msg
    */
-  void recv_down_vote(const dynamic_tree_vote_message::ptr& msg);
+  void recv_down_vote(dynamic_tree_vote_message* msg);
 
   /**
    * Receive an up vote. This vote is mutable - new failures can be added.
    * If all up votes received, forward an up vote to my parent.
    * @param msg
    */
-  void recv_up_vote(const dynamic_tree_vote_message::ptr& msg);
+  void recv_up_vote(dynamic_tree_vote_message* msg);
 
   /**
    * Receive a vote from a known child. See #recv_unexpected_up_vote
    * @param msg
    */
-  void recv_expected_up_vote(const dynamic_tree_vote_message::ptr& msg);
+  void recv_expected_up_vote(dynamic_tree_vote_message* msg);
 
   /**
    * Recv unexpected up vote. This comes from a granchild,great-granchild,etc node
@@ -174,21 +172,21 @@ class dynamic_tree_vote_actor :
    * This indicates that a child node has failed and we must reconnect.
    * @param msg
    */
-  void recv_unexpected_up_vote(const dynamic_tree_vote_message::ptr& msg);
+  void recv_unexpected_up_vote(dynamic_tree_vote_message* msg);
 
   /**
    * If processing up votes, merge the incoming up vote with our known results.
    * At this point, the vote is mutable and new information can be added
    * @param msg
    */
-  void merge_result(const dynamic_tree_vote_message::ptr& msg);
+  void merge_result(dynamic_tree_vote_message* msg);
 
   /**
    * If processing down votes, receive and overwrite with incoming down vote.
    * At this point, the vote is immutable to guarantee global agreement.
    * @param msg
    */
-  void recv_result(const dynamic_tree_vote_message::ptr& msg);
+  void recv_result(dynamic_tree_vote_message* msg);
 
   void append_down_partners(int position);
 
@@ -250,7 +248,7 @@ class dynamic_tree_vote_actor :
    * This declares the parent failed and reconnects to the new parent.
    * @param msg
    */
-  void recv_adoption_request(const dynamic_tree_vote_message::ptr& msg);
+  void recv_adoption_request(dynamic_tree_vote_message* msg);
 
   void contact_new_down_partner(int rank);
 
@@ -302,7 +300,7 @@ class dynamic_tree_vote_collective :
     return "sumi persistent resilient vote collective";
   }
 
-  void recv(int target, const collective_work_message::ptr& msg) override;
+  void recv(int target, collective_work_message* msg) override;
 
   void start() override;
 

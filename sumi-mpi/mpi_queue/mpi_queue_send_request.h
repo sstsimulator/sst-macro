@@ -62,14 +62,14 @@ class mpi_queue_send_request  {
   friend class mpi_queue;
 
  public:
-  mpi_queue_send_request(const mpi_message::ptr& mess,
+  mpi_queue_send_request(mpi_message* mess,
               mpi_request* key, mpi_queue* queue);
 
   ~mpi_queue_send_request() throw();
 
-  bool matches(const mpi_message::ptr& send_ack) const;
+  bool matches(mpi_message* send_ack) const;
 
-  void complete(const mpi_message::ptr& msg);
+  void complete(mpi_message* msg);
 
   void wait_for_buffer();
 

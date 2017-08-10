@@ -69,7 +69,7 @@ std::string
 transport_message::to_string() const
 {
   return sprockit::printf("sumi transport message %lu to node %d from %d:%d to %d:%d carrying %s",
-    flow_id(), toaddr_, src_, src_app_, dest_, dest_app_, sprockit::to_string(payload_.get()).c_str());
+    flow_id(), toaddr_, src_, src_app_, dest_, dest_app_, sprockit::to_string(payload_).c_str());
 }
 
 void
@@ -120,7 +120,7 @@ transport_message::clone_injection_ack() const
 #endif
   transport_message* cln = new transport_message;
   clone_into(cln);
-  cln->payload_ = std::shared_ptr<sumi::message>(payload_->clone_ack());
+  cln->payload_ = payload_->clone_ack();
 #if SSTMAC_SANITY_CHECK
   if (cln->network_message::type() == network_message::null_netmsg_type){
     sprockit::abort("message::clone_injection_ack: did not clone correctly");

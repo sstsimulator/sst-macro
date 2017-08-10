@@ -63,7 +63,7 @@ void
 run_test(transport* tport, int tag)
 {
   tport->barrier(tag);
-  collective_done_message::ptr msg = tport->collective_block(collective::barrier, tag);
+  collective_done_message* msg = tport->collective_block(collective::barrier, tag);
   if (tport->rank() == 0){
     printf("Cleared barrier %d\n", tag);
   }

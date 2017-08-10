@@ -141,7 +141,7 @@ void comm_barrier(int tag, collective::config cfg)
   current_transport()->barrier(tag, cfg);
 }
 
-collective_done_message::ptr comm_collective_block(collective::type_t ty, int tag)
+collective_done_message* comm_collective_block(collective::type_t ty, int tag)
 {
   return current_transport()->collective_block(ty, tag);
 }
@@ -159,43 +159,43 @@ int comm_nproc()
 /**
     @param dst The destination to send to
 */
-void comm_send(int dst, message::payload_type_t ty, const message::ptr& msg)
+void comm_send(int dst, message::payload_type_t ty, message* msg)
 {
   msg->set_class_type(message::pt2pt);
   current_transport()->smsg_send(dst, ty, msg, message::no_ack, message::default_cq);
 }
 
-void comm_send_header(int dst, const message::ptr& msg)
+void comm_send_header(int dst, message* msg)
 {
   msg->set_class_type(message::pt2pt);
   current_transport()->send_header(dst, msg, message::no_ack, message::default_cq);
 }
 
-void comm_send_payload(int dst, const message::ptr& msg)
+void comm_send_payload(int dst, message* msg)
 {
   msg->set_class_type(message::pt2pt);
   current_transport()->send_payload(dst, msg, message::no_ack, message::default_cq);
 }
 
-void comm_rdma_put(int dst, const message::ptr& msg)
+void comm_rdma_put(int dst, message* msg)
 {
   msg->set_class_type(message::pt2pt);
   current_transport()->rdma_put(dst, msg, message::no_ack, message::default_cq);
 }
 
-void comm_nvram_get(int dst, const message::ptr& msg)
+void comm_nvram_get(int dst, message* msg)
 {
   msg->set_class_type(message::pt2pt);
   current_transport()->nvram_get(dst, msg);
 }
 
-void comm_rdma_get(int dst, const message::ptr& msg)
+void comm_rdma_get(int dst, message* msg)
 {
   msg->set_class_type(message::pt2pt);
   current_transport()->rdma_get(dst, msg, message::no_ack, message::default_cq);
 }
 
-message::ptr comm_poll()
+message* comm_poll()
 {
   return current_transport()->blocking_poll(message::default_cq);
 }

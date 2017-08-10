@@ -158,7 +158,7 @@ class ping_monitor :
 
   void cancel_ping(int dst, timeout_function* func);
 
-  void message_received(const message::ptr& msg);
+  void message_received(message* msg);
 
   void validate_done();
 

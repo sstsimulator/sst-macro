@@ -206,12 +206,12 @@ mpi_api::finish_collective(collective_op_base* op)
 void
 mpi_api::wait_collective(collective_op_base* op)
 {
-  std::list<collective_done_message::ptr> pending;
+  std::list<collective_done_message*> pending;
   while (1){
-    sumi::message::ptr msg = blocking_poll(collective_cq_id());
+    sumi::message* msg = blocking_poll(collective_cq_id());
     if (msg->class_type() == message::collective_done){
       //this is a collective done message
-      auto cmsg = std::dynamic_pointer_cast<collective_done_message>(msg);
+      auto cmsg = dynamic_cast<collective_done_message*>(msg);
       mpi_api_debug(sprockit::dbg::mpi_collective,
                     "found collective done message of type=%s tag=%d: need %s,%d",
                     collective::tostr(cmsg->type()), cmsg->tag(),
@@ -223,14 +223,14 @@ mpi_api::wait_collective(collective_op_base* op)
         pending.push_back(cmsg);
       }
     } else {
-      mpi_message::ptr mpiMsg = std::dynamic_pointer_cast<mpi_message>(msg);
+      mpi_message* mpiMsg = dynamic_cast<mpi_message*>(msg);
       queue_->incoming_progress_loop_message(mpiMsg);
     }
   }
 
   finish_collective(op);
   
-  std::list<collective_done_message::ptr>::iterator it, end = pending.end();
+  std::list<collective_done_message*>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
     completion_queues_[collective_cq_id()].push_back(*it);
   }

@@ -67,21 +67,21 @@ int comm_nproc();
 /**
     @param dst The destination to send to
 */
-void comm_send_header(int dst, const message::ptr& msg);
+void comm_send_header(int dst, message* msg);
 
 void comm_cancel_ping(int dst, int tag);
 
 void comm_ping(int dst, int tag, timeout_function* func);
 
-void comm_send_payload(int dst, const message::ptr& msg);
+void comm_send_payload(int dst, message* msg);
 
-void comm_send(int dst, message::payload_type_t ev, const message::ptr& msg);
+void comm_send(int dst, message::payload_type_t ev, message* msg);
 
-void comm_rdma_put(int dst, const message::ptr& msg);
+void comm_rdma_put(int dst, message* msg);
 
-void comm_rdma_get(int dst, const message::ptr& msg);
+void comm_rdma_get(int dst, message* msg);
 
-void comm_nvram_get(int dst, const message::ptr& msg);
+void comm_nvram_get(int dst, message* msg);
 
 void comm_alltoall(void* dst, void* src, int nelems, int type_size, int tag,
                    collective::config cfg = collective::cfg());
@@ -161,9 +161,9 @@ void comm_vote(int vote, int tag, collective::config cfg = collective::cfg()){
   comm_vote(vote, tag, &op_class_type::op, cfg);
 }
 
-collective_done_message::ptr comm_collective_block(collective::type_t ty, int tag);
+collective_done_message* comm_collective_block(collective::type_t ty, int tag);
 
-message::ptr comm_poll();
+message* comm_poll();
 
 void compute(double sec);
 

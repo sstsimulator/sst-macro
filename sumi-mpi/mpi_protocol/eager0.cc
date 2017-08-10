@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-eager0::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
+eager0::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
                               void *buffer, mpi_type* type)
 {
   if (isNonNullBuffer(buffer)){
@@ -62,7 +62,7 @@ eager0::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
 
 void
 eager0::send_header(mpi_queue* queue,
-                    const mpi_message::ptr& msg)
+                    mpi_message* msg)
 {
   SSTMACBacktrace("MPI Eager 0 Protocol: Send Header");
   msg->set_content_type(mpi_message::eager_payload);
@@ -71,7 +71,7 @@ eager0::send_header(mpi_queue* queue,
 
 void
 eager0::incoming_payload(mpi_queue* queue,
-                        const mpi_message::ptr& msg)
+                        mpi_message* msg)
 {
   mpi_queue_recv_request* req = queue->pop_pending_request(msg);
   incoming_payload(queue, msg, req);
@@ -79,7 +79,7 @@ eager0::incoming_payload(mpi_queue* queue,
 
 void
 eager0::incoming_payload(mpi_queue *queue,
-                  const mpi_message::ptr& msg,
+                  mpi_message* msg,
                   mpi_queue_recv_request* req)
 {
   SSTMACBacktrace("MPI Eager 0 Protocol: Handle Header");
@@ -88,17 +88,17 @@ eager0::incoming_payload(mpi_queue *queue,
       msg->remote_buffer().ptr = req->recv_buffer_;
       msg->inject_local_to_remote();
     }
-    queue->finalize_recv(msg, req);
 #if SSTMAC_COMM_SYNC_STATS
     msg->set_time_synced(queue->now());
 #endif
+    queue->notify_probes(msg);
+    queue->finalize_recv(msg, req);
+    delete msg;
   }
   else {
+    queue->notify_probes(msg);
     queue->buffer_unexpected(msg);
   }
-
-  queue->notify_probes(msg);
-
 }
 
 

@@ -64,7 +64,7 @@ rendezvous_get::~rendezvous_get()
 }
 
 void
-rendezvous_get::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& msg,
+rendezvous_get::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
                                       void *buffer, mpi_type* type)
 {
   if (rdma_pin_delay_.ticks_int64()){
@@ -82,7 +82,7 @@ rendezvous_get::configure_send_buffer(mpi_queue* queue, const mpi_message::ptr& 
 
 void
 rendezvous_get::send_header(mpi_queue* queue,
-                            const mpi_message::ptr& msg)
+                            mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Send Header");
   msg->set_content_type(mpi_message::header);
@@ -91,7 +91,7 @@ rendezvous_get::send_header(mpi_queue* queue,
 
 void
 rendezvous_get::incoming_header(mpi_queue* queue,
-                               const mpi_message::ptr& msg)
+                               mpi_message* msg)
 {
   mpi_queue_recv_request* req = queue->pop_pending_request(msg);
   incoming_header(queue, msg, req);
@@ -99,7 +99,7 @@ rendezvous_get::incoming_header(mpi_queue* queue,
 
 void
 rendezvous_get::incoming_header(mpi_queue *queue,
-                                const mpi_message::ptr &msg,
+                                mpi_message*msg,
                                 mpi_queue_recv_request *req)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header");
@@ -130,7 +130,7 @@ rendezvous_get::incoming_header(mpi_queue *queue,
 
 void
 rendezvous_get::incoming_payload(mpi_queue* queue,
-                                const mpi_message::ptr& msg)
+                                mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Payload");
   if (rdma_pin_delay_.ticks_int64()){
@@ -164,6 +164,8 @@ rendezvous_get::incoming_payload(mpi_queue* queue,
   queue->finalize_recv(msg, recver);
   if (software_ack_){
     queue->send_completion_ack(msg);
+  } else {
+    delete msg;
   }
 }
 

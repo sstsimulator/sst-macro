@@ -270,7 +270,7 @@ void example_service::run()
 {
  //some init
  bool block  = true;
- message::ptr msg = poll_for_message(block);
+ message* msg = poll_for_message(block);
  while (msg && !terminated()){
    process(msg);
    msg = poll_for_message(block);
@@ -316,7 +316,7 @@ The default \inlinecode{send} function in \inlinecode{sumi_transport} assumes me
 \begin{CppCode}
 void
 send_payload(int dst, 
-  const message::ptr& msg, 
+  message* msg, 
   bool needs_ack);
 \end{CppCode}
 The only thing that must be specified is a destination \emph{rank}, which is the virtual ID within a given session layer.
@@ -329,7 +329,7 @@ void client_server_send(
   int dest_rank,
   node_id dest_node,
   app_id dest_app,
-  const sumi::message::ptr& msg);
+  sumi::message* msg);
 \end{CppCode}
 While a session rank must be given, a physical node ID and an application ID must be given.
 These can no longer be filled in automatically.
