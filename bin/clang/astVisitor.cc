@@ -132,9 +132,14 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     //we are inside a header
     char fullpathBuffer[1024];
     const char* fullpath = realpath(ploc.getFilename(), fullpathBuffer);
-    //is this in the list of valid headers
-    bool validHeader =  validHeaders_.find(fullpath) != validHeaders_.end();
-    return validHeader;
+    if (fullpath){
+      //is this in the list of valid headers
+      return validHeaders_.find(fullpath) != validHeaders_.end();
+    } else {
+      warn(startLoc, *ci_,
+           "bad header path location, you probably abused and misused #line in your file");
+      return false;
+    }
   }
   //not a header - good to go
   return true;
@@ -300,7 +305,7 @@ SkeletonASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr* expr)
 bool
 SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
-  NamedDecl* decl =  expr->getFoundDecl();
+  Decl* decl =  expr->getFoundDecl()->getCanonicalDecl();
   if (isNullVariable(decl)){
     //we need to delete whatever parent statement this is a part of
     if (stmt_contexts_.empty()){
@@ -604,6 +609,7 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
 void
 SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                    const std::string& init_prefix,
+                                   const std::string& var_repl_prefix,
                                    SourceLocation externVarsInsertLoc,
                                    SourceLocation getRefInsertLoc,
                                    GlobalRedirect_t red_ty,
@@ -628,7 +634,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   } else {
     retType = QualType::getAsString(D->getType().split()) + "*";
   }
-  varRepl = "(*" + currentNs_->nsPrefix() + "get_" + scopeUniqueVarName + "())";
+  varRepl = "(*" + currentNs_->nsPrefix() + var_repl_prefix + "get_" + scopeUniqueVarName + "())";
 
   if (anonRecord){
     retType = anonRecord->retType;
@@ -639,17 +645,26 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   }
 
   //std::string str;
-  {std::string empty;
-  llvm::raw_string_ostream os(empty);
-  /** Add an extern declaration of all sstmac stack config vars */
-  os << "extern int sstmac_global_stacksize; "
-     << "extern int __offset_" << scopeUniqueVarName << "; ";
+  SourceLocation externStackDeclLoc = externVarsInsertLoc;
+
+  std::string extern_empty;
+  llvm::raw_string_ostream extern_var_os(extern_empty);
+
+  NamespaceDecl* outerNsDecl = getOuterNamespace(D);
+  if (outerNsDecl){
+    externStackDeclLoc = outerNsDecl->getLocStart();
+  }
+
+  rewriter_.InsertText(externStackDeclLoc, "extern int sstmac_global_stacksize; ");
+
+  extern_var_os << "extern int __offset_" << scopeUniqueVarName << "; ";
   if (!D->hasExternalStorage()){
     currentNs_->replVars.insert(scopeUniqueVarName);
     if (red_ty == Extern){
-      defineGlobalVarInitializers(scopeUniqueVarName, D->getNameAsString(), init_prefix, os);
+      defineGlobalVarInitializers(scopeUniqueVarName, D->getNameAsString(),
+                                  init_prefix, extern_var_os);
     } else {
-      declareStaticInitializers(scopeUniqueVarName, os);
+      declareStaticInitializers(scopeUniqueVarName, extern_var_os);
     }
   }
   if (externVarsInsertLoc.isInvalid()){
@@ -657,11 +672,11 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                "got bad global variable source location - maybe this is a multi-declaration? "
                "this breaks current source-2-source");
   }
-  rewriter_.InsertText(externVarsInsertLoc, os.str());}
+  rewriter_.InsertText(externVarsInsertLoc, extern_var_os.str());
 
   std::string empty;
   llvm::raw_string_ostream os(empty);
-  std::string varName = D->getNameAsString();
+  std::string varName = currentNs_->nsPrefix() + D->getNameAsString();
   bool notDeclared = globalsDeclared_.find(varName) == globalsDeclared_.end();
   if (notDeclared){
     if (arrayInfo && !arrayInfo->isFxnStatic && arrayInfo->isConstSize){
@@ -706,7 +721,8 @@ SkeletonASTVisitor::checkStaticFileVar(VarDecl* D)
   AnonRecord* recPtr = checkAnonStruct(D, &rec);
   ArrayInfo info;
   ArrayInfo* infoPtr = checkArray(D, &info);
-  setupGlobalVar(currentNs_->filePrefix(), "", end, end, Extern, D, recPtr, infoPtr);
+  setupGlobalVar(currentNs_->filePrefix(), "", "",
+                 end, end, Extern, D, recPtr, infoPtr);
   return true;
 }
 
@@ -722,7 +738,7 @@ SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
     errorAbort(D->getLocStart(), *ci_,
                "Multi-variable declarations for global variables not allowed");
   }
-  setupGlobalVar("", "", end, end, Extern, D, recPtr, infoPtr);
+  setupGlobalVar("", "", "", end, end, Extern, D, recPtr, infoPtr);
   return true;
 }
 
@@ -783,14 +799,33 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
     rewriter_.InsertText(insertLoc, new_init_pp.str());
     //now that we have moved the initializer, we can do the replacement
     //but the replacement should point to the new initializer
-    setupGlobalVar(scope_prefix, init_prefix, outerFxn->getLocStart(),
-                   insertLoc, Extern, D, anonRecPtr, arrayInfoPtr);
+    setupGlobalVar(scope_prefix, init_prefix, "",
+                   outerFxn->getLocStart(), insertLoc,
+                   Extern, D, anonRecPtr, arrayInfoPtr);
     SourceLocation endLoc = getEndLoc(D);
     SourceRange rng(D->getLocStart(), endLoc);
     //while we're at it, might as well get rid of the old initializer
     replace(rng, rewriter_, "", *ci_);
   }
   return true;
+}
+
+NamespaceDecl*
+SkeletonASTVisitor::getOuterNamespace(Decl *D)
+{
+  DeclContext* nsCtx = nullptr;
+  DeclContext* next = D->getDeclContext();;
+  DeclContext* ctx = nullptr;
+  while (next && ctx != next){
+    ctx = next;
+    if (ctx->getDeclKind() == Decl::Namespace){
+      nsCtx = ctx;
+    }
+    next = next->getParent();
+  }
+
+  if (nsCtx) return cast<NamespaceDecl>(nsCtx);
+  else return nullptr;
 }
 
 bool
@@ -802,14 +837,17 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
     }
     CXXRecordDecl* outerCls = class_contexts_.front();
     std::stringstream scope_sstr; scope_sstr << "_";
+    std::stringstream var_repl_sstr;
     for (CXXRecordDecl* decl : class_contexts_){
       scope_sstr << "_" << decl->getNameAsString();
+      var_repl_sstr << decl->getNameAsString() << "::";
     }
     std::string scope_prefix = scope_sstr.str();
     if (!D->hasInit()){
       //no need for special scope prefixes - these are fully scoped within in the class
-      setupGlobalVar(scope_prefix, ""/*not used*/, outerCls->getLocStart(),
-                     getEndLoc(D), CxxStatic, D, nullptr, nullptr);
+      setupGlobalVar(scope_prefix, "", var_repl_sstr.str(),
+                     outerCls->getLocStart(), getEndLoc(D),
+                     CxxStatic, D, nullptr, nullptr);
     } //else this must be a const integer if inited in the header file
       //we don't have to "deglobalize" this
   }
@@ -957,7 +995,7 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     return checkInstanceStaticClassVar(D);
   } else if (D->getStorageClass() == StorageClass::SC_Static){
     return checkStaticFileVar(D);
-  } else if (visitingGlobal_){
+  } else if (!D->isLocalVarDeclOrParm()){
     return checkGlobalVar(D);
   }
   return true;
@@ -1443,7 +1481,7 @@ SkeletonASTVisitor::getUnderlyingExpr(Expr *e)
 }
 
 void
-SkeletonASTVisitor::replaceGlobalUse(NamedDecl* decl, SourceRange replRng)
+SkeletonASTVisitor::replaceGlobalUse(Decl* decl, SourceRange replRng)
 {
   if (keepGlobals_) return;
 

@@ -122,7 +122,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   bool isGlobal(const clang::DeclRefExpr* expr) const {
-    return globals_.find(expr->getFoundDecl()) != globals_.end();
+    return globals_.find(expr->getFoundDecl()->getCanonicalDecl()) != globals_.end();
   }
 
   PragmaConfig& getPragmaConfig() {
@@ -372,6 +372,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
  private:
+  clang::NamespaceDecl* getOuterNamespace(clang::Decl* D);
+
   bool shouldVisitDecl(clang::VarDecl* D);
 
   void initHeaders();
@@ -394,7 +396,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<clang::Stmt*>& deletedStmts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
-  std::map<const clang::NamedDecl*,std::string> globals_;
+  std::map<const clang::Decl*,std::string> globals_;
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
   int insideCxxMethod_;
@@ -433,7 +435,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return nullptr;
   }
 
-  void replaceGlobalUse(clang::NamedDecl* decl, clang::SourceRange rng);
+  void replaceGlobalUse(clang::Decl* decl, clang::SourceRange rng);
 
   clang::Expr* getUnderlyingExpr(clang::Expr *e);
 
@@ -466,6 +468,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param scope_prefix       A unique string needed for file-local or ns-local variables
    * @param init_scope_prefix  A unique string needed when the initializers move out of scope
    *              (as in static function or class vars) to avoid name conflicts on the initializer
+   * @param var_repl_prefix    An optional string to prepend to the variable replacement function name
    * @param externVarsInsertLoc The location in the file to declare extern vars from SST/macro.
    *                            May be invalid to indicate no insertion should be done.
    * @param getRefInsertLoc     The location in the file to insert symbol redirect function get_X()
@@ -476,6 +479,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
    void setupGlobalVar(const std::string& scope_prefix,
                       const std::string& init_scope_prefix,
+                      const std::string& var_repl_prefix,
                       clang::SourceLocation externVarsInsertLoc,
                       clang::SourceLocation getRefInsertLoc,
                       GlobalRedirect_t red_ty,

@@ -85,7 +85,11 @@ struct GlobalVarNamespace
 
   void appendNamespace(const std::string& nestedNS, const std::string& newNS){
     if (ns.size() == 0){
-      ns = nestedNS + "::" + newNS + "::";
+      if (nestedNS.size() == 0){
+        ns = "::" + newNS + "::";
+      } else {
+        ns = nestedNS + newNS + "::";
+      }
     }
   }
 

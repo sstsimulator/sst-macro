@@ -27,6 +27,8 @@ namespace ns {
 
 void fxn()
 {
+  ns::B::x += 1;
+  ns::ns2::C::x -= 3;
   A::x = 10;
 };
 

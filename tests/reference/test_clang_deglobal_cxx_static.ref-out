@@ -2,17 +2,17 @@
 extern int sstmac_global_stacksize; extern int __offset___Ax; extern void* __ptr___Ax;extern int __sizeof___Ax;struct A {
  static int x;static inline int* get___Ax(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset___Ax; return (((int*)((void*)offsetPtr))); }  
  void fxn(){
-  (*get___Ax()) -= 1;
+  (*A::get___Ax()) -= 1;
  }
 };
 
-namespace ns {
-extern int sstmac_global_stacksize; extern int __offset___Bx; extern void* __ptr___Bx;extern int __sizeof___Bx;struct B {
- static int x;  
+extern int sstmac_global_stacksize; extern int sstmac_global_stacksize; namespace ns {
+extern int __offset___Bx; extern void* __ptr___Bx;extern int __sizeof___Bx;struct B {
+ static int x;static inline int* get___Bx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset___Bx; return (((int*)((void*)offsetPtr))); }  
 };
 namespace ns2 {
- extern int sstmac_global_stacksize; extern int __offset___Cx; extern void* __ptr___Cx;extern int __sizeof___Cx;struct C {
-  static int x;  
+ extern int __offset___Cx; extern void* __ptr___Cx;extern int __sizeof___Cx;struct C {
+  static int x;static inline int* get___Cx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset___Cx; return (((int*)((void*)offsetPtr))); }  
  };
 }
 }
@@ -27,7 +27,9 @@ namespace ns {
 
 void fxn()
 {
-  A::x = 10;
+  (*::ns::B::get___Bx()) += 1;
+  (*::ns::ns2::C::get___Cx()) -= 3;
+  (*A::get___Ax()) = 10;
 };
 #include <sstmac/software/process/global.h>
 
