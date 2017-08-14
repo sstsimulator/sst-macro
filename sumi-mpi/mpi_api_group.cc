@@ -109,9 +109,11 @@ mpi_api::group_create_with_id(MPI_Group group, int num_members, const uint32_t *
   for (int i=0; i < num_members; ++i){
     if (members[i] == my_rank){
       in_group = true;
-      return false;
+      break;
     }
   }
+
+  if (!in_group) return false;
 
   std::vector<task_id> vec_ranks(num_members);
   for (int i=0; i < num_members; ++i){
