@@ -116,11 +116,6 @@ void OTF2TraceReplayApp::create_communicators() {
 
     uint32_t this_rank = this->tid();
 
-    // skip communicator creation when it doesn't have this rank
-    auto iter = std::find(comm_rank_list.begin(), comm_rank_list.end(), this_rank);
-    if (iter == comm_rank_list.end() && comm_rank_list.empty())
-      continue;
-
     uint32_t* p_rank_list = nullptr;
     int group_size = 0;
     if (comm_rank_list.empty()){
@@ -364,11 +359,6 @@ void OTF2TraceReplayApp::verify_replay_success() {
       cout << "  ==> " << setw(15) << call->ToString() << (call->isready?"\tREADY":"\tNOT READY")<< endl;
     }
   }
-}
-
-uint32_t OTF2TraceReplayApp::MapRank(uint32_t local_rank) {
-  auto global_rank = local_to_global_comm_map.find(local_rank);
-  return (global_rank == local_to_global_comm_map.end()) ? local_rank:(*global_rank).second;
 }
 
 bool OTF2TraceReplayApp::PrintTraceEvents() {
