@@ -53,11 +53,9 @@ class statics {
  public:
   typedef void (*clear_fxn)(void);
 
-  static void
-  register_finish(clear_fxn fxn);
+  static void register_finish(clear_fxn fxn);
 
-  static void
-  finish();
+  static void finish();
 
  protected:
   static std::list<clear_fxn>* fxns_;

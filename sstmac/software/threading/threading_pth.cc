@@ -72,8 +72,7 @@ void
 threading_pth::start_context(int physical_thread_id, void *stack, size_t stacksize, void
                 (*func)(void*), void *args, threading_interface *yield_to, void* globals_storage) {
   if (stacksize < (16384)) {
-    spkt_throw(sprockit::value_error,
-        "threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
+    sprockit::abort("threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
   }
   thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
   init_context();

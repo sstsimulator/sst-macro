@@ -117,6 +117,8 @@ void remap_deprecated_params(sprockit::sim_parameters* params);
 
 void remap_params(sprockit::sim_parameters* params, bool verbose = true);
 
+void load_extern_library(const std::string& libname, const std::string& searchPath);
+
 void run(opts& oo,
     sstmac::parallel_runtime* rt,
     sprockit::sim_parameters* params,

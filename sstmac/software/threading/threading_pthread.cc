@@ -206,8 +206,7 @@ void
 threading_pthread::complete_context(threading_interface *to)
 {
   if (!pthread_equal(pthread_self(), context_.thread)) {
-    spkt_throw(sprockit::spkt_error, 
-        "threading_pthread::complete_context: done from thread other than \"from\" thread");
+    sprockit::abort("threading_pthread::complete_context: done from thread other than \"from\" thread");
   }
   threading_pthread* casted = (threading_pthread*)to;
   if(casted) {
@@ -226,8 +225,7 @@ void
 threading_pthread::swap_context(threading_interface *to)
 {
   if (!pthread_equal(pthread_self(), context_.thread)) {
-    spkt_throw(sprockit::spkt_error, 
-        "threading_pthread::swap_context: done from thread other than \"from\" thread");
+    sprockit::abort("threading_pthread::swap_context: done from thread other than \"from\" thread");
   }
 
   // incorrect ordering for c1->c2->c1 context switches:
@@ -244,8 +242,7 @@ threading_pthread::swap_context(threading_interface *to)
 #if SSTMAC_SANITY_CHECK
   threading_pthread *casted = dynamic_cast<threading_pthread*>(to);
   if (!casted){
-    spkt_throw(sprockit::null_error,
-        "threading_pthread::swap_context: thread is not a pthread");
+    sprockit::abort("threading_pthread::swap_context: thread is not a pthread");
   }
 #else
   threading_pthread *casted = static_cast<threading_pthread*>(to);

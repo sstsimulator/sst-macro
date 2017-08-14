@@ -57,8 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class connectable
-{
+class connectable {
  public:
   virtual std::string to_string() const = 0;
 
@@ -66,6 +65,8 @@ class connectable
 
   /**
    * @brief connect_output
+   * Invoked by interconnect setup routine to notify device
+   * that all payloads sent out on given port should be sent to given payload handler
    * @param params
    * @param src_outport
    * @param dst_inport
@@ -79,6 +80,8 @@ class connectable
 
   /**
    * @brief connect_input
+   * Invoked by interconnect setup routine to notify device
+   * that all credits sent back to a given port should be sent to given credit handler
    * @param params
    * @param src_outport
    * @param dst_inport
@@ -100,7 +103,7 @@ class connectable
   /**
    * @brief payload_handler
    * @param port
-   * @return
+   * @return A new handler for incoming payloads on the given port
    */
   virtual link_handler* payload_handler(int port) const = 0;
 
@@ -129,6 +132,7 @@ class connectable_subcomponent :
   }
 
 };
+
 
 }
 }

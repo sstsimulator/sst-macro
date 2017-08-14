@@ -31,6 +31,7 @@ endif
 libsstmac_main_la_SOURCES = main.cc
 
 libsstmac_driver_la_SOURCES = \
+    loadlib.cc \
     driver.cc \
     sstmac.cc \
     util.cc \

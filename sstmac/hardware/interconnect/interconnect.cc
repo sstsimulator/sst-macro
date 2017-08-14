@@ -151,7 +151,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   topology* top = topology_;
 
   std::string switch_model = switch_params->get_param("model");
-  bool logp_model = switch_model == "logP";
+  bool logp_model = switch_model == "logP" || switch_model == "LogP" || switch_model == "logp";
 
   switches_.resize(top->max_switch_id());
   nodes_.resize(top->max_node_id());
@@ -217,7 +217,7 @@ interconnect::node_to_logp_switch(node_id nid) const
 void
 interconnect::handle(event* ev)
 {
-  spkt_throw(sprockit::value_error, "interconnect should never handle messages");
+  sprockit::abort("interconnect should never handle messages");
 }
 
 void

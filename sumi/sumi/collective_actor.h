@@ -352,8 +352,7 @@ class slicer {
 
   virtual void unpack_reduce(void* packedBuf, void* unpackedObj,
             int offset, int nelems) const {
-    spkt_throw(sprockit::unimplemented_error,
-          "slicer for collective does not implement a reduce op");
+    sprockit::abort("slicer for collective does not implement a reduce op");
   }
 
   virtual bool contiguous() const = 0;

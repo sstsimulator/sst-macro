@@ -90,11 +90,9 @@ namespace ami {
 }
 } //end of namespace sstmac
 
-#if SPKT_HAVE_CPP11
 namespace std {
 template <>
 struct hash<sstmac::ami::CAT> : public hash<int> { };
 }
-#endif
 
 #endif

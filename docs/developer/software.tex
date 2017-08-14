@@ -29,7 +29,7 @@ Each MPI rank within a process must time-share the process,
 meaning the simulator core will context switch between each MPI stack to gradually make forward progress.
 While the heap and stack are easy to provide for each virtual MPI rank,
 there is no easy way to provide a unique global variable segment to each MPI rank.
-The current solution involves thread-specific storage and the use of special C++ variables (more below).
+This therefore requires the Clang source-to-source compiler to redirect all global variable accesses to user-space thread specific locations.
 
 \section{Applications and User-space Threads}
 \label{sec:appThreads}
@@ -166,12 +166,6 @@ Each library object has access to the operating system, being allowed to call
 event* ev = ...
 os_->execute_kernel(ty, ev);
 \end{CppCode}
-or possibly 
-
-\begin{CppCode}
-event* ev = ...
-os_->execute(ty, ev);
-\end{CppCode}
 where an enum argument \inlinecode{ty} specifies the type of computation or communication and the event object carries all the data needed to model it.
 This allows a library to \emph{call out} to the operating system.
 Calls to \inlinecode{execute} \emph{always} occur on a user-space thread. 
@@ -256,7 +250,7 @@ it must run as a full thread with its own user-space thread stack.
 
 \section{Distributed Service}
 \label{sec:distService}
-In many cases, a service is just local to a node and is part of the operating system or a runtime library, such as a local filesystem or a server receiving incoming network messages.  In cases of something like a distributed file system like LUSTRE or distributed key-value store like Memcached, a service spans multiple nodes.  These services are much like skeleton applications in that they require a parallel launch with node allocation and rank indexing.
+In many cases, a service is just local to a node and is part of the operating system or a runtime library, such as a local filesystem or a server receiving incoming network messages.  In cases of something like a distributed file system like LUSTRE or distributed key-value store like Memcached, a service spans multiple nodes.  These services are like skeleton applications in that they require a parallel launch with node allocation and rank indexing.
 
 To create a new distributed service, you have to inherit from \inlinecode{sstmac::distributed_service} in \\
 \inlineshell{sstmac/libraries/sumi/distributed_service.h}.  
@@ -314,8 +308,7 @@ In many HPC simulations, the only thing being simulated is a single MPI applicat
 The default \inlinecode{send} function in \inlinecode{sumi_transport} assumes messages are being sent \emph{within} a given application.
 
 \begin{CppCode}
-void
-send_payload(int dst, 
+void send_payload(int dst, 
   const message::ptr& msg, 
   bool needs_ack);
 \end{CppCode}

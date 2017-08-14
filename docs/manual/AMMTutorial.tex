@@ -20,7 +20,7 @@ Here we indicate the congestion model to be used (the packet-flow) and the overa
 Currently valid values for the congestion model are \inlinefile{pisces} (most accurate, slowest) and \inlinefile{simple} (least accurate, fastest),
 but more congestion models should be supported in future versions.
 Currently valid values for the abstract machine model are \inlinefile{amm1}, \inlinefile{amm2}, \inlinefile{amm3}, see details below. 
-Another model, \inlinefile{amm4}, that adds extra detail to the NIC is pending and should be available soon.
+Another model, \inlinefile{amm4}, that adds extra detail to the NIC and switches is pending and should be available soon.
 The details of individual abstract machine models are given in the following sections.
 The optional accuracy parameter is less well-defined and the exact meaning varies considerably between congestion models.
 In general, the accuracy parameter represents how coarse-grained the simulation is in bytes.
@@ -37,18 +37,12 @@ They are universal and are valid for all abstract machine models.
 \begin{ViFile}
 node {
  model = simple
- frequency = 2.1ghz
- ncores = 24
  nsockets = 4
+ proc {
+  frequency = 2.1ghz
+  ncores = 24
+ }
 }
-\end{ViFile}
-or using the deprecated parameters:
-
-\begin{ViFile}
-node_name = simple
-node_frequency = 2.1ghz
-node_ccores = 24
-node_sockets = 4
 \end{ViFile}
 
 \subsection{AMM1}
@@ -68,42 +62,31 @@ Once packets are injected, they traverse a series of network switches.
 The memory, injection, and network are all defined by a bandwidth/latency parameter pair.
 
 \begin{ViFile}
-network_link_bandwidth = 6GB/s
-network_hop_latency = 100ns
-injection_bandwidth = 10GB/s
-injection_latency = 1us
-memory_bandwidth = 10GB/s
-memory_latency = 15ns
-\end{ViFile}
-These are special parameters used by the AMM configurations.
-They can be by-passed by directly using fully namespaced parameters:
-
-\begin{ViFile}
 switch {
  link {
-   bandwidth = 6GB/s
-   latency = 100ns
- }
- ejection {
+  bandwidth = 6GB/s
   latency = 100ns
-  bandwidth = 10GB/s
  }
 }
-nic {
- injection {
-  latency = 1us
+
+node {
+ nic {
+  injection {
+   bandwidth = 10GB/s
+   latency = 1us  
+  }
+ }
+ memory {
   bandwidth = 10GB/s
+  latency = 15ns
  }
 }
-memory {
- bandwidth = 10GB/s
- latency = 15ns
-}
+
+
 \end{ViFile}
 
-NOTE: there is no parameter \inlinefile{network_latency}.
-The parameter is \inlinefile{network_hop_latency}.
-This is the latency required for a single packet to traverse one switch and hop to the next one in the network.
+
+The link latency is the latency required for a single packet to traverse one switch and hop to the next one in the network.
 Thus, even in the most basic of network models, there is a still a notion of topology that affects the number of hops and therefore the latency.
 To compute the total network network latency as one would observe in an MPI ping-ping benchmark, one would compute
 \[
@@ -141,11 +124,16 @@ These are special parameters used by the AMM configurations.
 They can be by-passed by directly using fully namespaced parameters (not shown).
 
 \begin{ViFile}
-max_memory_bandwidth = 5GB/s
-memory_bandwidth = 10GB/s
-memory_latency = 15ns
+node {
+ memory {
+  max_single_bandwidth = 5GB/s
+  bandwidth = 10GB/s
+  latency = 15ns
+ }
+}
+
 \end{ViFile}
-The new parameter \inlinefile{max_memory_bandwidth} now defines the maximum bandwidth any single component is allowed.
+The new parameter \inlinefile{max_single_bandwidth} now defines the maximum bandwidth any single component is allowed.
 Thus, even if the CPU is doing something memory intensive, 5 GB/s is still available to the NIC for network transfers.
 We remark here that the memory parameters might be named something slightly more descriptive.
 However, as a rule, we want the AMM1 parameters to be a proper subset of the AMM2 parameters.
@@ -172,7 +160,15 @@ These are special parameters used by the AMM configurations.
 They can be by-passed by directly using fully namespaced parameters (not shown) for more detailed configurations.
 
 \begin{ViFile}
-network_switch_bandwidth = 12GB/s
-network_bandwidth = 6GB/s
-network_hop_latency = 100ns
+switch {
+  xbar {
+   bandwidth = 12GB/s  
+  }
+  link {
+   bandwidth = 6GB/s
+   latency = 100ns
+  }
+}
+
+
 \end{ViFile}

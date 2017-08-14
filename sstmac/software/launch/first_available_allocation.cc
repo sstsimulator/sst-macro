@@ -52,17 +52,13 @@ first_available_allocation::~first_available_allocation() throw ()
 {
 }
 
-void
+bool
 first_available_allocation::allocate(
   int nnode_requested,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
 {
-  if (available.size() < nnode_requested){
-    spkt_throw_printf(sprockit::value_error,
-      "only %d nodes available, but %d requested",
-      available.size(), nnode_requested);
-  }
+  if (available.size() < nnode_requested) return false;
 
   int nid = 0;
   int num_allocated = 0;
@@ -76,6 +72,8 @@ first_available_allocation::allocate(
     }
     ++nid;
   }
+
+  return true;
 }
 
 }

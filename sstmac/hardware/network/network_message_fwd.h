@@ -45,8 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef NETWORK_MESSAGE_FWD_H
 #define NETWORK_MESSAGE_FWD_H
 
-#include <sprockit/ptr_type.h>
-
 namespace sstmac {
 namespace hw {
 

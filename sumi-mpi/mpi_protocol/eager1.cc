@@ -149,8 +149,7 @@ eager1_singlecpy::incoming_payload(mpi_queue *queue,
                                    mpi_queue_recv_request *req)
 {
   if (!req){
-    spkt_throw(sprockit::value_error,
-               "eager1_singlecpy::incoming_payload: null recv request");
+    sprockit::abort("eager1_singlecpy::incoming_payload: null recv request");
   }
   SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Payload");
   //already RDMA'd correctly - just finish

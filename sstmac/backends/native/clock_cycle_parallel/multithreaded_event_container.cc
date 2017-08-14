@@ -181,8 +181,7 @@ multithreaded_event_container::multithreaded_event_container(
   for (int i=1; i < nthread_; ++i){
     int status = pthread_attr_init(&pthread_attrs_[i]);
     if (status != 0){
-      spkt_throw(sprockit::value_error,              
-        "multithreaded_event_container::run: failed creating pthread attributes");
+      sprockit::abort("multithreaded_event_container::run: failed creating pthread attributes");
     }
   }
 
@@ -216,8 +215,7 @@ multithreaded_event_container::run()
  
 #if SSTMAC_USE_CPU_AFFINITY
   if (!cpu_affinity_.size()) {
-    spkt_throw(sprockit::value_error,
-              "cpu_affinity array is required with cpu affinity enabled");
+    sprockit::abort("cpu_affinity array is required with cpu affinity enabled");
   }
   int proc_per_node = cpu_affinity_.size();
   int task_affinity = cpu_affinity_[me_ % proc_per_node];
@@ -250,15 +248,13 @@ multithreaded_event_container::run()
     status = pthread_attr_setaffinity_np(&pthread_attrs_[i],
                                          sizeof(cpu_set_t), &cpuset);
     if (status != 0){
-        spkt_throw(sprockit::value_error,
-        "multithreaded_event_container::run: failed setting pthread affinity");
+        sprockit::abort("multithreaded_event_container::run: failed setting pthread affinity");
     }
 #endif
     status = pthread_create(&pthreads_[i], &pthread_attrs_[i],
         pthread_run_subthread, subthreads_[i]);
     if (status != 0){
-        spkt_throw(sprockit::value_error,
-            "multithreaded_event_container::run: failed creating pthread");
+        sprockit::abort("multithreaded_event_container::run: failed creating pthread");
     }
 
   }
@@ -273,8 +269,7 @@ multithreaded_event_container::run()
     void* ignore;
     int status = pthread_join(pthreads_[i], &ignore);
     if (status != 0){
-        spkt_throw(sprockit::value_error,
-            "multithreaded_event_container::run: failed joining pthread");
+        sprockit::abort("multithreaded_event_container::run: failed joining pthread");
     }
   }
 }

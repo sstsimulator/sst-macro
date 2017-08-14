@@ -174,8 +174,7 @@ gni_transport::get_next_smsg(int src)
       gni_rc_error(rc, "SmsgGetNext");
   }
   else if (src == rank_){ //got a self message - I guess this means message send completed
-    spkt_throw(sprockit::value_error,
-      "cannot get next smsg from self");
+    sprockit::abort("cannot get next smsg from self");
   }
 
   header_type_t type = *((header_type_t*) header_buf);

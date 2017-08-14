@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_comm/mpi_group.h>
 #include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_request_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/errors.h>
 #include <string>
 #include <map>
@@ -188,7 +188,7 @@ class mpi_comm : public communicator
 
   uint16_t next_collective_tag_;
 
-  spkt_unordered_map<int, keyval*> keyvals_;
+  std::unordered_map<int, keyval*> keyvals_;
 
   app_id aid_;
 

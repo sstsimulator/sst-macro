@@ -59,16 +59,14 @@ class flow :
   public sprockit::printable
 {
  public:
-  virtual uint64_t
-  flow_id() const = 0;
+  virtual uint64_t flow_id() const = 0;
 
   /**
    * Virtual function to return size. Child classes should impement this
    * if they want any size tracked / modeled.
    * @return Zero size, meant to be implemented by children.
    */
-  virtual long
-  byte_length() const = 0;
+  virtual long byte_length() const = 0;
 };
 
 /**
@@ -81,24 +79,19 @@ class message :
  public:
   virtual ~message() {}
 
-  virtual node_id
-  toaddr() const = 0;
+  virtual node_id toaddr() const = 0;
 
-  virtual node_id
-  fromaddr() const = 0;
+  virtual node_id fromaddr() const = 0;
 
-  virtual bool
-  needs_ack() const {
+  virtual bool needs_ack() const {
     return false;
   }
 
-  virtual bool
-  is_bcast() const {
+  virtual bool is_bcast() const {
     return false;
   }
 
-  virtual message*
-  clone_ack() const {
+  virtual message* clone_ack() const {
     return nullptr;
   }
 

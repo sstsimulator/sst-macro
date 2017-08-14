@@ -62,7 +62,7 @@ stat_local_int::global_reduce(parallel_runtime *rt)
 {
   if (rt->nproc() == 1)
     return;
-  spkt_throw(sprockit::unimplemented_error, "stat_local_int::global_reduce");
+  sprockit::abort("stat_local_int::global_reduce: not implemented");
 }
 
 void

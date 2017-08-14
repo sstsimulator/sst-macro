@@ -75,7 +75,7 @@ class cart_allocation :
    * @param allocation
    * @return  Whether the allocation succeeded based on the available nodes
    */
-  void allocate(int nnode,
+  bool allocate(int nnode,
    const ordered_node_set& available,
    ordered_node_set& allocation) const override;
 

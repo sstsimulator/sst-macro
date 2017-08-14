@@ -19,182 +19,112 @@ MPI Rank 8   : MPI_Init(MPI_COMM_WORLD) on tag 100
 MPI Rank 9   : MPI_Init()
 MPI Rank 9   : MPI_Init(MPI_COMM_WORLD) on tag 100
 MPI Rank 0   : MPI_Group_create_with_id(id=2,n=2)
-Rank 0 looking for members: 0 
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,2,1)
 MPI Rank 0   : MPI_Group_create_with_id(id=3,n=2)
-Rank 0 looking for members: 1 7 
 MPI Rank 0   : MPI_Group_create_with_id(id=4,n=2)
-Rank 0 looking for members: 2 8 
 MPI Rank 0   : MPI_Group_create_with_id(id=5,n=2)
-Rank 0 looking for members: 3 9 
 MPI Rank 0   : MPI_Group_create_with_id(id=6,n=1)
-Rank 0 looking for members: 0 
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 0   : MPI_Group_create_with_id(id=6,n=1)
-Rank 0 looking for members: 0 
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 0   : MPI_Group_create_with_id(id=6,n=1)
-Rank 0 looking for members: 0 
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 1   : MPI_Group_create_with_id(id=2,n=2)
-Rank 1 looking for members: 0 6 
 MPI Rank 1   : MPI_Group_create_with_id(id=3,n=2)
-Rank 1 looking for members: 1 
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,3,2)
 MPI Rank 1   : MPI_Group_create_with_id(id=4,n=2)
-Rank 1 looking for members: 2 8 
 MPI Rank 1   : MPI_Group_create_with_id(id=5,n=2)
-Rank 1 looking for members: 3 9 
 MPI Rank 1   : MPI_Group_create_with_id(id=6,n=1)
-Rank 1 looking for members: 1 
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 1   : MPI_Group_create_with_id(id=6,n=1)
-Rank 1 looking for members: 1 
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 1   : MPI_Group_create_with_id(id=6,n=1)
-Rank 1 looking for members: 1 
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 2   : MPI_Group_create_with_id(id=2,n=2)
-Rank 2 looking for members: 0 6 
 MPI Rank 2   : MPI_Group_create_with_id(id=3,n=2)
-Rank 2 looking for members: 1 7 
 MPI Rank 2   : MPI_Group_create_with_id(id=4,n=2)
-Rank 2 looking for members: 2 
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,4,3)
 MPI Rank 2   : MPI_Group_create_with_id(id=5,n=2)
-Rank 2 looking for members: 3 9 
 MPI Rank 2   : MPI_Group_create_with_id(id=6,n=1)
-Rank 2 looking for members: 2 
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 2   : MPI_Group_create_with_id(id=6,n=1)
-Rank 2 looking for members: 2 
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 2   : MPI_Group_create_with_id(id=6,n=1)
-Rank 2 looking for members: 2 
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 3   : MPI_Group_create_with_id(id=2,n=2)
-Rank 3 looking for members: 0 6 
 MPI Rank 3   : MPI_Group_create_with_id(id=3,n=2)
-Rank 3 looking for members: 1 7 
 MPI Rank 3   : MPI_Group_create_with_id(id=4,n=2)
-Rank 3 looking for members: 2 8 
 MPI Rank 3   : MPI_Group_create_with_id(id=5,n=2)
-Rank 3 looking for members: 3 
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,5,4)
 MPI Rank 3   : MPI_Group_create_with_id(id=6,n=1)
-Rank 3 looking for members: 3 
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 3   : MPI_Group_create_with_id(id=6,n=1)
-Rank 3 looking for members: 3 
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 3   : MPI_Group_create_with_id(id=6,n=1)
-Rank 3 looking for members: 3 
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 4   : MPI_Group_create_with_id(id=2,n=2)
-Rank 4 looking for members: 0 6 
 MPI Rank 4   : MPI_Group_create_with_id(id=3,n=2)
-Rank 4 looking for members: 1 7 
 MPI Rank 4   : MPI_Group_create_with_id(id=4,n=2)
-Rank 4 looking for members: 2 8 
 MPI Rank 4   : MPI_Group_create_with_id(id=5,n=2)
-Rank 4 looking for members: 3 9 
 MPI Rank 4   : MPI_Group_create_with_id(id=6,n=1)
-Rank 4 looking for members: 4 
 MPI Rank 4   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 4   : MPI_Group_create_with_id(id=6,n=1)
-Rank 4 looking for members: 4 
 MPI Rank 4   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 4   : MPI_Group_create_with_id(id=6,n=1)
-Rank 4 looking for members: 4 
 MPI Rank 4   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 5   : MPI_Group_create_with_id(id=2,n=2)
-Rank 5 looking for members: 0 6 
 MPI Rank 5   : MPI_Group_create_with_id(id=3,n=2)
-Rank 5 looking for members: 1 7 
 MPI Rank 5   : MPI_Group_create_with_id(id=4,n=2)
-Rank 5 looking for members: 2 8 
 MPI Rank 5   : MPI_Group_create_with_id(id=5,n=2)
-Rank 5 looking for members: 3 9 
 MPI Rank 5   : MPI_Group_create_with_id(id=6,n=1)
-Rank 5 looking for members: 5 
 MPI Rank 5   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 5   : MPI_Group_create_with_id(id=6,n=1)
-Rank 5 looking for members: 5 
 MPI Rank 5   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 5   : MPI_Group_create_with_id(id=6,n=1)
-Rank 5 looking for members: 5 
 MPI Rank 5   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 6   : MPI_Group_create_with_id(id=2,n=2)
-Rank 6 looking for members: 0 6 
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,2,1)
 MPI Rank 6   : MPI_Group_create_with_id(id=3,n=2)
-Rank 6 looking for members: 1 7 
 MPI Rank 6   : MPI_Group_create_with_id(id=4,n=2)
-Rank 6 looking for members: 2 8 
 MPI Rank 6   : MPI_Group_create_with_id(id=5,n=2)
-Rank 6 looking for members: 3 9 
 MPI Rank 6   : MPI_Group_create_with_id(id=6,n=1)
-Rank 6 looking for members: 6 
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 6   : MPI_Group_create_with_id(id=6,n=1)
-Rank 6 looking for members: 6 
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 6   : MPI_Group_create_with_id(id=6,n=1)
-Rank 6 looking for members: 6 
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 7   : MPI_Group_create_with_id(id=2,n=2)
-Rank 7 looking for members: 0 6 
 MPI Rank 7   : MPI_Group_create_with_id(id=3,n=2)
-Rank 7 looking for members: 1 7 
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,3,2)
 MPI Rank 7   : MPI_Group_create_with_id(id=4,n=2)
-Rank 7 looking for members: 2 8 
 MPI Rank 7   : MPI_Group_create_with_id(id=5,n=2)
-Rank 7 looking for members: 3 9 
 MPI Rank 7   : MPI_Group_create_with_id(id=6,n=1)
-Rank 7 looking for members: 7 
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 7   : MPI_Group_create_with_id(id=6,n=1)
-Rank 7 looking for members: 7 
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 7   : MPI_Group_create_with_id(id=6,n=1)
-Rank 7 looking for members: 7 
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 8   : MPI_Group_create_with_id(id=2,n=2)
-Rank 8 looking for members: 0 6 
 MPI Rank 8   : MPI_Group_create_with_id(id=3,n=2)
-Rank 8 looking for members: 1 7 
 MPI Rank 8   : MPI_Group_create_with_id(id=4,n=2)
-Rank 8 looking for members: 2 8 
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,4,3)
 MPI Rank 8   : MPI_Group_create_with_id(id=5,n=2)
-Rank 8 looking for members: 3 9 
 MPI Rank 8   : MPI_Group_create_with_id(id=6,n=1)
-Rank 8 looking for members: 8 
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 8   : MPI_Group_create_with_id(id=6,n=1)
-Rank 8 looking for members: 8 
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 8   : MPI_Group_create_with_id(id=6,n=1)
-Rank 8 looking for members: 8 
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 9   : MPI_Group_create_with_id(id=2,n=2)
-Rank 9 looking for members: 0 6 
 MPI Rank 9   : MPI_Group_create_with_id(id=3,n=2)
-Rank 9 looking for members: 1 7 
 MPI Rank 9   : MPI_Group_create_with_id(id=4,n=2)
-Rank 9 looking for members: 2 8 
 MPI Rank 9   : MPI_Group_create_with_id(id=5,n=2)
-Rank 9 looking for members: 3 9 
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,5,4)
 MPI Rank 9   : MPI_Group_create_with_id(id=6,n=1)
-Rank 9 looking for members: 9 
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 9   : MPI_Group_create_with_id(id=6,n=1)
-Rank 9 looking for members: 9 
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 9   : MPI_Group_create_with_id(id=6,n=1)
-Rank 9 looking for members: 9 
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
 MPI Rank 7   : MPI_Isend(4,MPI_BYTE=2,8,0,MPI_COMM_WORLD;REQ=1)
 MPI Rank 7   : MPI_Irecv(4,MPI_BYTE=2,6:6,0,MPI_COMM_WORLD;REQ=2)

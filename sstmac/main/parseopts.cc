@@ -199,7 +199,8 @@ parse_opts(int argc, char **argv, opts &oo)
   if (dodumpi) {
     if (!machine_configured){
       sprockit::sim_parameters params("debug.ini");
-      params.combine_into(oo.params);
+      //do not overwrite existing parameters
+      params.combine_into(oo.params, false, false, true);
       machine_configured = true;
     }
     need_config_file = false;

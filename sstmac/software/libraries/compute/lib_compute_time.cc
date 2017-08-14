@@ -80,8 +80,7 @@ lib_compute_time::compute(timestamp time)
 {
   SSTMACBacktrace("Compute Time");
   if (time.sec() < 0) {
-    spkt_throw(sprockit::value_error,
-              "lib_compute_time can't compute for less than zero time");
+    sprockit::abort("lib_compute_time can't compute for less than zero time");
   }
   os_->compute(time);
 }

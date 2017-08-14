@@ -133,9 +133,7 @@ mpi_api::group_free(MPI_Group *grp)
   if (*grp != MPI_GROUP_WORLD){
     auto iter = grp_map_.find(*grp);
     if (iter == grp_map_.end()){
-      spkt_throw(sprockit::value_error,
-                 "Invalid MPI_Group %d passed to group free",
-                 *grp);
+      spkt_abort_printf("Invalid MPI_Group %d passed to group free", *grp);
     }
     delete iter->second;
     grp_map_.erase(iter);

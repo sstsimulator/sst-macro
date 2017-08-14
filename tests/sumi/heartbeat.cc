@@ -77,8 +77,7 @@ main(int argc, char **argv)
   int nfailed = 0;
   int failure_num = 0;
   while (nfailed < 6){
-    collective_done_message::ptr dmsg =
-        ptr_safe_cast(collective_done_message, comm_poll());
+    auto dmsg = std::dynamic_pointer_cast<collective_done_message>(comm_poll());
     if (dmsg->type() != collective::heartbeat){
       spkt_throw_printf(sprockit::value_error,
         "got non-heartbeat message %s of type %s",

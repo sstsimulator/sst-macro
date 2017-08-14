@@ -210,8 +210,7 @@ thread::run_routine(void* threadptr)
     }
   }
   else {
-    spkt_throw(sprockit::os_error,
-              "thread::run_routine: task has not been initialized");
+    sprockit::abort("thread::run_routine: task has not been initialized");
   }
 }
 

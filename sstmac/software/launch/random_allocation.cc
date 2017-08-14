@@ -70,16 +70,14 @@ random_allocation::random_allocation(sprockit::sim_parameters *params) :
   rng_ = RNG::SimpleCombo::construct(seed);
 }
 
-void
+bool
 random_allocation::allocate(
   int nnode_requested,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
 {
   if (available.size() < nnode_requested){
-    spkt_throw_printf(sprockit::value_error,
-      "random allocation cannot succeed: need %d nodes, but have %d",
-      nnode_requested, available.size());
+    return false;
   }
 
   std::vector<node_id> availvec(available.size());
@@ -90,6 +88,8 @@ random_allocation::allocate(
     node_id node = availvec[i];
     allocation.insert(node);
   }
+
+  return true;
 }
 
 } //end namespace sw

@@ -61,15 +61,6 @@ using namespace sstmac::sw;
 
 char buf[4096];
 
-template<class T>
-  T
-  cycle(const T& msg, UnitTest &unit)
-  {
-    typedef typename T::element_type PTR;
-    message* new_msg = ser_cycle(msg, unit);
-    return ptr_safe_cast(PTR, new_msg);
-  }
-
 template <class A, class B, class C, class D, class E>
 void
 ser_prim_test(UnitTest& unit, sprockit::serializer& ser, A a, B b, C c, D d, E e)

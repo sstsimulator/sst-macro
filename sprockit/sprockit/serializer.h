@@ -76,63 +76,51 @@ class serializer
   {
   }
 
-  pvt::ser_packer&
-  packer() {
+  pvt::ser_packer& packer() {
     return packer_;
   }
 
-  pvt::ser_unpacker&
-  unpacker() {
+  pvt::ser_unpacker& unpacker() {
     return unpacker_;
   }
 
-  pvt::ser_sizer&
-  sizer() {
+  pvt::ser_sizer& sizer() {
     return sizer_;
   }
   
   template <class T>
-  void
-  size(T& t){
+  void size(T& t){
     sizer_.size<T>(t);
   }
   
   template <class T>
-  void
-  pack(T& t){
+  void pack(T& t){
     packer_.pack<T>(t);
   }
   
   template <class T>
-  void
-  unpack(T& t){
+  void unpack(T& t){
     unpacker_.unpack<T>(t);
   }
 
-  virtual
-  ~serializer() {
-  }
+  virtual ~serializer() {}
 
-  SERIALIZE_MODE
-  mode() const {
+  SERIALIZE_MODE mode() const {
     return mode_;
   }
 
-  void
-  set_mode(SERIALIZE_MODE mode) {
+  void set_mode(SERIALIZE_MODE mode) {
     mode_ = mode;
   }
 
-  void
-  reset(){
+  void reset(){
     sizer_.reset();
     packer_.reset();
     unpacker_.reset();
   }
 
   template<typename T>
-  void
-  primitive(T &t) {
+  void primitive(T &t) {
     switch(mode_)
     {
     case SIZER:
@@ -148,8 +136,7 @@ class serializer
   }
   
   template <class T, int N>
-  void
-  array(T arr[N]){
+  void array(T arr[N]){
     switch (mode_)
     {
     case SIZER: {
@@ -170,8 +157,7 @@ class serializer
   }
 
   template <typename T, typename Int>
-  void
-  binary(T*& buffer, Int& size){
+  void binary(T*& buffer, Int& size){
     switch (mode_)
     {
     case SIZER: {
@@ -198,8 +184,7 @@ class serializer
   }
 
   template <typename Int>
-  void
-  binary(void*& buffer, Int& size){
+  void binary(void*& buffer, Int& size){
     switch (mode_)
     {
     case SIZER: {
@@ -226,29 +211,24 @@ class serializer
   }
 
   
-  void
-  string(std::string& str);
+  void string(std::string& str);
 
-  void
-  start_packing(char* buffer, size_t size){
+  void start_packing(char* buffer, size_t size){
     packer_.init(buffer, size);
     mode_ = PACK;
   }
 
-  void
-  start_sizing(){
+  void start_sizing(){
     sizer_.reset();
     mode_ = SIZER;
   }
 
-  void
-  start_unpacking(char* buffer, size_t size){
+  void start_unpacking(char* buffer, size_t size){
     unpacker_.init(buffer, size);
     mode_ = UNPACK;
   }
 
-  size_t
-  size() const {
+  size_t size() const {
     switch (mode_){
       case SIZER: return sizer_.size();
       case PACK: return packer_.size();

@@ -75,13 +75,13 @@ class hostname_allocation : public node_allocator
                 const char* here, const std::string &mapfile,
                 std::map<std::string,std::vector<int> >& hostmap);
 
-  virtual void allocate(int nnode_requested,
+  bool allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set &allocation) const override;
 
   virtual ~hostname_allocation() throw () {}
 
-  typedef spkt_unordered_map<std::string, node_id> nodemap_t;
+  typedef std::unordered_map<std::string, node_id> nodemap_t;
   static nodemap_t hostnamemap_;
 
   static std::map<long, std::string> nodenum_to_host_map_;

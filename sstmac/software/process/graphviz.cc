@@ -116,8 +116,7 @@ void
 graph_viz::global_reduce(parallel_runtime *rt)
 {
   if (rt->nproc() > 1){
-    spkt_throw(sprockit::unimplemented_error,
-      "graph_viz::global_reduce: graphviz not available in parallel");
+    sprockit::abort("graph_viz::global_reduce: graphviz not available in parallel");
   }
 }
 

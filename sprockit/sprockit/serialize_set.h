@@ -46,16 +46,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SERIALIZE_SET_H
 
 #include <set>
-#include <sprockit/unordered.h>
+#include <unordered_set>
 #include <sprockit/serializer.h>
 
 namespace sprockit {
-
 namespace pvt {
 
 template <class Set, class T>
-void
-serialize_set(Set& v, serializer& ser) {
+void serialize_set(Set& v, serializer& ser) {
   typedef typename Set::iterator iterator;
   switch(ser.mode())
   {
@@ -98,19 +96,17 @@ template <class T>
 class serialize<std::set<T> > {
   typedef std::set<T> Set;
  public:
-  void
-  operator()(Set& v, serializer& ser) {
+  void operator()(Set& v, serializer& ser) {
     pvt::serialize_set<Set,T>(v,ser);
   }
 };
 
 #if !SPKT_ENABLE_ORDERED_MAP
 template <class T>
-class serialize<spkt_unordered_set<T> > {
-  typedef spkt_unordered_set<T> Set;
+class serialize<std::unordered_set<T> > {
+  typedef std::unordered_set<T> Set;
  public:
-  void
-  operator()(Set& v, serializer& ser) {
+  void operator()(Set& v, serializer& ser) {
     pvt::serialize_set<Set,T>(v,ser);
   }
 };

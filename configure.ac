@@ -110,7 +110,9 @@ AC_PROG_CXX
 AC_PROG_FC
 AC_LANG_CPLUSPLUS
 AC_PROG_LIBTOOL
-LT_INIT([disable-shared])
+
+LT_INIT([shared disable-static dlopen])
+
 #LT_INIT()
 LT_PREREQ([2.2.6])
 AC_PROG_LN_S
@@ -123,6 +125,8 @@ AM_CONDITIONAL([HAVE_UBUNTU], [true])
 else
 AM_CONDITIONAL([HAVE_UBUNTU], [false])
 fi
+
+CHECK_DLOPEN()
 
 CHECK_CLANG()
 

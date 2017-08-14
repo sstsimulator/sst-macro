@@ -118,8 +118,7 @@ pisces_nic::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   if (port == nic::LogP){
-    return new SST::Event::Handler<pisces_nic>(
-          const_cast<pisces_nic*>(this), &nic::mtl_handle);
+    return new_link_handler(this, &nic::mtl_handle);
   } else {
     return packetizer_->new_payload_handler();
   }
@@ -255,8 +254,7 @@ link_handler*
 pisces_netlink::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<pisces_netlink>(
-       const_cast<pisces_netlink*>(this), &pisces_netlink::handle_payload);
+  return new_link_handler(this, &pisces_netlink::handle_payload);
 #else
   return payload_handler_;
 #endif
@@ -266,8 +264,7 @@ link_handler*
 pisces_netlink::credit_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<pisces_netlink>(
-     const_cast<pisces_netlink*>(this), &pisces_netlink::handle_credit);
+  return new_link_handler(this, &pisces_netlink::handle_credit);
 #else
   return ack_handler_;
 #endif

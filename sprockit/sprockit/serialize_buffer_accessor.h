@@ -64,8 +64,7 @@ namespace pvt {
 class ser_buffer_accessor {
  public:
   template <class T>
-  T*
-  next(){
+  T* next(){
     T* ser_buffer = reinterpret_cast<T*>(bufptr_);
     bufptr_ += sizeof(T);
     size_ += sizeof(T);
@@ -73,8 +72,7 @@ class ser_buffer_accessor {
     return ser_buffer;
   }
 
-  char*
-  next_str(size_t size){
+  char* next_str(size_t size){
     char* ser_buffer = reinterpret_cast<char*>(bufptr_);
     bufptr_ += size;
     size_ += size;
@@ -82,31 +80,26 @@ class ser_buffer_accessor {
     return ser_buffer;
   }
 
-  size_t
-  size() const {
+  size_t size() const {
     return size_;
   }
 
-  size_t
-  max_size() const {
+  size_t max_size() const {
     return max_size_;
   }
 
-  void
-  init(void* buffer, size_t size){
+  void init(void* buffer, size_t size){
     bufstart_ = reinterpret_cast<char*>(buffer);
     max_size_ = size;
     reset();
   }
 
-  void
-  clear(){
+  void clear(){
     bufstart_ = bufptr_ = 0;
     max_size_ = size_ = 0;
   }
 
-  void
-  reset(){
+  void reset(){
     bufptr_ = bufstart_;
     size_ = 0;
   }

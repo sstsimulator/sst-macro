@@ -122,7 +122,7 @@ link_handler*
 logp_nic::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<nic>(const_cast<logp_nic*>(this), &nic::mtl_handle);
+  return new_link_handler(this, &nic::mtl_handle);
 #else
   return mtl_handler();
 #endif

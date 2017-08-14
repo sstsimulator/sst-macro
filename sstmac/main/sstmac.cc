@@ -113,12 +113,11 @@ print_finish(std::ostream& os, double wall_time)
   os << sprockit::printf("SST/macro ran for %12.4f seconds\n", wall_time);
 }
 
-parallel_runtime*
-init()
+parallel_runtime* init()
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  spkt_throw(sprockit::unimplemented_error,
-    "parallel_runtime* init: should not be called in integrated core");
+  sprockit::abort("parallel_runtime* init: should not be called in integrated core");
+  return nullptr;
 #else
   //create a set of parameters from env variables
   //this is best way to piggy-back on process manager to configure things
@@ -164,7 +163,7 @@ init_opts(opts& oo, int argc, char** argv)
   } else if (parse_status == PARSE_OPT_SUCCESS){
     //do nothing
   } else {
-    spkt_throw(sprockit::value_error, "unknown error parsing command line options");
+    sprockit::abort("unknown error parsing command line options");
   }
 }
 
@@ -271,7 +270,7 @@ run_params(parallel_runtime* rt,
   if (strict_params_test){
     bool unread_params = params->print_unread_params();
     if (unread_params)
-      spkt_throw(sprockit::illformed_error, "simulation finished with unread parameters - abort");
+      sprockit::abort("simulation finished with unread parameters - abort");
   }
 
   // now that we finished running, print the parameters that we used
@@ -323,6 +322,20 @@ try_main(sprockit::sim_parameters* params,
 
   //do some cleanup and processing of params
   sstmac::remap_params(params);
+
+  if (params->has_param("external_libs")){
+    const char* libpath_str = getenv("SST_LIB_PATH");
+    std::string pathStr;
+    if (libpath_str){
+      pathStr = libpath_str;
+    }
+
+    std::vector<std::string> libraries;
+    params->get_vector_param("external_libs", libraries);
+    for (auto&& lib : libraries){
+      load_extern_library(lib, pathStr);
+    }
+  }
 
   if (params_only)
     return;

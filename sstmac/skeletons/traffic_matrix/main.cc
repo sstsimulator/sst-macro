@@ -97,12 +97,11 @@ static const int window_bytes = 262144;
 
 
 class config_message :
-  public sumi::message,
-  public sumi::serializable_type<config_message>
+  public sumi::message
 {
   ImplementSerializable(config_message)
  public:
-  typedef sprockit::refcount_ptr<config_message> ptr;
+  typedef std::shared_ptr<config_message> ptr;
 
  public:
   config_message(){} //need for serialization
@@ -110,13 +109,11 @@ class config_message :
   config_message(const sumi::public_buffer& recv_buf) :
     recv_buf_(recv_buf){}
 
-  sumi::public_buffer
-  recv_buf() const {
+  sumi::public_buffer recv_buf() const {
     return recv_buf_;
   }
 
-  virtual void
-  serialize_order(sumi::serializer &ser) override {
+  virtual void serialize_order(sumi::serializer &ser) override {
     ser & recv_buf_;
     sumi::message::serialize_order(ser);
   }
@@ -126,13 +123,12 @@ class config_message :
 };
 
 class rdma_message :
-  public sumi::message,
-  public sumi::serializable_type<rdma_message>
+  public sumi::message
 {
  ImplementSerializable(rdma_message)
 
  public:
-  typedef sprockit::refcount_ptr<rdma_message> ptr;
+  typedef std::shared_ptr<rdma_message> ptr;
 
  public:
   rdma_message(){} //need for serialization
@@ -143,16 +139,14 @@ class rdma_message :
   {
   }
 
-  virtual void
-  serialize_order(sumi::serializer& ser) override {
+  virtual void serialize_order(sumi::serializer& ser) override {
     ser & iter_;
     ser & start_;
     ser & finish_;
     sumi::message::serialize_order(ser);
   }
 
-  sumi::message*
-  clone() const override {
+  sumi::message* clone() const override {
     rdma_message* cln = new rdma_message(iter_, num_bytes_);
     cln->set_start(start_);
     cln->set_finish(finish_);
@@ -222,7 +216,7 @@ void do_all_sends(
   int npartners = send_partners.size();
   double local_timeout = (timeout / npartners) * 0.9; //fudge factor of 0.9 to lower it a bit
   for (int i=0; i < npartners; ++i){
-    rdma_message::ptr msg = new rdma_message(iteration, chunk_size);
+    rdma_message::ptr msg = std::make_shared<rdma_message>(iteration, chunk_size);
     msg->local_buffer() = send_chunks[i];
     msg->remote_buffer() = recv_chunks[i];
     debug_printf(sprockit::dbg::traffic_matrix,
@@ -341,7 +335,7 @@ int USER_MAIN(int argc, char** argv)
 
   //send all my config messages
   for (int i=0; i < npartners; ++i){
-    config_message::ptr msg = new config_message(recv_chunks[i]);
+    config_message::ptr msg = std::make_shared<config_message>(recv_chunks[i]);
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d sending config message to partner %d",
       tport->rank(), recv_partners[i]);

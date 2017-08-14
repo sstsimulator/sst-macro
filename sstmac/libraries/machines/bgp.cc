@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/libraries/machines/bgp.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/topology/hdtorus.h>
+#include <sstmac/hardware/topology/torus.h>
 #include <sstmac/hardware/node/node.h>
 #include <sprockit/util.h>
 
@@ -56,10 +56,9 @@ Kernel_GetPersonality(_BGP_Personality_t *p, int size)
   sstmac::node_id nid = sstmac::runtime::current_node();
   sstmac::hw::topology* top = sstmac::hw::topology::static_topology(nullptr);
 
-  sstmac::hw::hdtorus* torus = test_cast(sstmac::hw::hdtorus, top);
+  sstmac::hw::torus* torus = test_cast(sstmac::hw::torus, top);
   if (!torus || torus->ndimensions() != 3){
-    spkt_throw(sprockit::value_error,
-        "Kernel_GetPersonality for BGP being called, but topology is not a 3D torus");
+    sprockit::abort("Kernel_GetPersonality for BGP being called, but topology is not a 3D torus");
   }
 
   std::vector<int> coords = torus->node_coords(nid);

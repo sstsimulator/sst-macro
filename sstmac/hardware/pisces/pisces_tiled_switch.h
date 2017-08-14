@@ -68,8 +68,7 @@ class pisces_tiled_switch :
  public:
   pisces_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
-  int
-  queue_length(int port) const override;
+  int queue_length(int port) const override;
 
 #if 0
   virtual void
@@ -80,13 +79,11 @@ class pisces_tiled_switch :
     connectable* mod) override;
 #endif
 
-  virtual void
-  connect_output(sprockit::sim_parameters* params,
+  void connect_output(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
                  event_handler* mod) override;
 
-  virtual void
-  connect_input(sprockit::sim_parameters* params,
+  void connect_input(sprockit::sim_parameters* params,
                 int src_outport, int dst_inport,
                 event_handler* mod) override;
 
@@ -99,11 +96,9 @@ class pisces_tiled_switch :
   handle(event* ev) override;
 #endif
 
-  link_handler*
-  credit_handler(int port) const override;
+  link_handler* credit_handler(int port) const override;
 
-  link_handler*
-  payload_handler(int port) const override;
+  link_handler* payload_handler(int port) const override;
 
   void handle_credit(event* ev);
 
@@ -116,14 +111,11 @@ class pisces_tiled_switch :
    @param addr The compute node address of the endpoint to eject to
    @param link The link to the compute node for ejection
    */
-  void
-  add_ejector(node_id addr, event_handler* link);
+  void add_ejector(node_id addr, event_handler* link);
 
-  virtual std::string
-  to_string() const override;
+  virtual std::string to_string() const override;
 
-  virtual
-  ~pisces_tiled_switch();
+  virtual ~pisces_tiled_switch();
 
 #if 0
   event_handler*
@@ -169,26 +161,22 @@ class pisces_tiled_switch :
 #endif
 
  private:
-  int
-  row_col_to_tile(int row, int col);
+  int row_col_to_tile(int row, int col);
 
-  void
-  tile_to_row_col(int tile, int& row, int& col);
+  void tile_to_row_col(int tile, int& row, int& col);
 
   void resize_buffers();
 
   void init_components(sprockit::sim_parameters* params);
 
 #if 0
-  void
-  connect_output(
+  void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
     event_handler* mod);
 
-  void
-  connect_input(
+  void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,

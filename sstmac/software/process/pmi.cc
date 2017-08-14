@@ -79,16 +79,14 @@ process_manager::kill_node()
 #if !SSTMAC_INTEGRATED_SST_CORE
   my_os_->kill_node();
 #else
-  spkt_throw(sprockit::unimplemented_error,
-    "process_manager::kill_node");
+  sprockit::abort("process_manager::kill_node: not implemented");
 #endif
 }
 
 void
 process_manager::kill_process()
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "process_manager::kill_process");
+  sprockit::abort("process_manager::kill_process: not implemented");
 }
 
 int

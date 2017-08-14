@@ -58,43 +58,35 @@ namespace sprockit {
 class output
 {
  public:
-  static std::ostream&
-  out0() {
+  static std::ostream& out0() {
     return (*out0_);
   }
 
-  static std::ostream&
-  outn() {
+  static std::ostream& outn() {
     return (*outn_);
   }
 
-  static std::ostream&
-  err0() {
+  static std::ostream& err0() {
     return (*err0_);
   }
 
-  static std::ostream&
-  errn() {
+  static std::ostream& errn() {
     return (*errn_);
   }
 
-  static void
-  init_out0(std::ostream* out0){
+  static void init_out0(std::ostream* out0){
     out0_ = out0;
   }
 
-  static void
-  init_outn(std::ostream* outn){
+  static void init_outn(std::ostream* outn){
     outn_ = outn;
   }
 
-  static void
-  init_err0(std::ostream* err0){
+  static void init_err0(std::ostream* err0){
     err0_ = err0;
   }
 
-  static void
-  init_errn(std::ostream* errn){
+  static void init_errn(std::ostream* errn){
     errn_ = errn;
   }
 

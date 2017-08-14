@@ -45,13 +45,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_HYPERCUBE_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_HYPERCUBE_H_INCLUDED
 
-#include <sstmac/hardware/topology/hdtorus.h>
+#include <sstmac/hardware/topology/torus.h>
 
 namespace sstmac {
 namespace hw {
 
 class hypercube :
-  public hdtorus
+  public torus
 {
   FactoryRegister("hypercube", topology, hypercube,
               "hypercube implements a high-dimension torus with an arbitrary number of dimensions")
@@ -59,7 +59,7 @@ class hypercube :
   hypercube(sprockit::sim_parameters* params);
 
   std::string to_string() const override {
-    return "hdtorus topology";
+    return "torus topology";
   }
 
   virtual ~hypercube() {}

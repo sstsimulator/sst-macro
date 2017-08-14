@@ -113,8 +113,7 @@ Simulation::finalize()
 {
   int bytes = read(readPipe(), &stats_, sizeof(sim_stats));
   if (bytes <= 0){
-    spkt_throw(sprockit::value_error,
-         "failed reading pipe from simulation");
+    sprockit::abort("failed reading pipe from simulation");
   }
   if (stats_.numResults){
     if (!results_){
@@ -140,8 +139,7 @@ Simulation::waitMPIScan()
   driver_debug("received all results from simulation - now complete");
   complete_ = true;
 #else
-  spkt_throw(sprockit::unimplemented_error,
-    "Simulation::waitMPIScan()");
+  sprockit::abort("Simulation::waitMPIScan: not implemented");
 #endif
 }
 
@@ -462,8 +460,7 @@ SimulationQueue::busyLoopMPI()
     }
   }
 #else
-  spkt_throw(sprockit::unimplemented_error,
-    "Simulation::busyLoopMPI()");
+  sprockit::abort("Simulation::busyLoopMPI: not implemented");
 #endif
 }
 
@@ -513,8 +510,8 @@ SimulationQueue::sendScanPoint(int bufferSize, char *bufferPtr, int nresults, do
   setNextWorker();
   return sim;
 #else
-  spkt_throw(sprockit::unimplemented_error,
-    "Simulation::sendScanPoint()");
+  sprockit::abort("Simulation::sendScanPoint: not implemented");
+  return nullptr;
 #endif
 }
 
@@ -541,8 +538,7 @@ SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
   rerun(&params, stats);
   driver_debug("got stats with %d results", stats.numResults);
 #else
-  spkt_throw(sprockit::unimplemented_error,
-    "Simulation::runScanPoint()");
+  sprockit::abort("Simulation::runScanPoint: not implemented");
 #endif
 }
 

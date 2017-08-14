@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_BACKENDS_NATIVE_LAUNCH_LAUNCHER_H_INCLUDED
 
 #include <sstmac/software/libraries/service.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 
 namespace sstmac {
 namespace sw {
@@ -71,7 +71,7 @@ class app_launcher :
  protected:
   bool is_completed_;
 
-  spkt_unordered_map<app_id, int> num_apps_launched_;
+  std::unordered_map<app_id, int> num_apps_launched_;
 };
 
 }

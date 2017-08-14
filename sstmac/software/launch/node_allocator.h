@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/unordered.h>
+#include <unordered_map>
 #include <sprockit/printable.h>
 
 DeclareDebugSlot(allocation);
@@ -80,7 +80,7 @@ class node_allocator :
     @param allocation returns the nodes that have been allocated
     @return Whether the allocation succeeded based on available nodes
   */
-  virtual void allocate(int nnode,
+  virtual bool allocate(int nnode,
    const ordered_node_set& available,
    ordered_node_set& allocation) const = 0;
 

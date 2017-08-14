@@ -84,8 +84,7 @@ location_trace::reduce(stat_collector *coll)
 void
 location_trace::global_reduce(parallel_runtime *rt)
 {
-  spkt_throw(sprockit::unimplemented_error,
-    "location_trace::global_reduce: location trace should not be run in parallel");
+  sprockit::abort("location_trace::global_reduce: location trace should not be run in parallel");
 }
 
 void
