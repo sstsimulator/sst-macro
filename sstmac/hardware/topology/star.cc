@@ -72,8 +72,9 @@ star::minimal_route_to_switch(switch_id current_sw_addr,
                                   switch_id dest_sw_addr,
                                   routable::path &path) const
 {
-  path.vc = 0;
-  path.set_outport(dest_sw_addr);
+  spkt_throw_printf(sprockit::unimplemented_error,
+      "%s does not implement minimal route to switch (always on eject switch)",
+      to_string().c_str());
 }
 
 void
