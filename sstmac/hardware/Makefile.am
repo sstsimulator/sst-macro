@@ -84,6 +84,7 @@ nobase_library_include_HEADERS = \
   topology/structured_topology_fwd.h \
   topology/coordinates.h \
   topology/cartesian_topology.h \
+  topology/star.h \
   topology/structured_topology.h \
   topology/tiled_dragonfly.h \
   topology/traffic/traffic.h \
@@ -152,6 +153,7 @@ libsstmac_hw_la_SOURCES =  \
   router/multipath_routing.cc \
   router/ugal_routing.cc \
   router/valiant_routing.cc \
+  topology/star.cc \
   topology/structured_topology.cc \
   topology/cartesian_topology.cc \
   topology/topology.cc 
