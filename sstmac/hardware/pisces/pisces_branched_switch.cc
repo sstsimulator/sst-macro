@@ -99,6 +99,8 @@ pisces_branched_switch::~pisces_branched_switch()
 void
 pisces_branched_switch::init_components(sprockit::sim_parameters* params)
 {
+  // [muxer -> xbar -> demuxer -> output_buffer] -> [muxer...]
+
   if (!input_muxers_.empty())
     return;
 
@@ -111,14 +113,19 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
   xbar_params->add_param_override("num_vc", router_->max_num_vc());
 
   sprockit::sim_parameters* output_params =
-      params->get_namespace("link");
+      params->get_namespace("output");
   output_params->add_param_override("num_vc", router_->max_num_vc());
+
+  sprockit::sim_parameters* link_params =
+      params->get_namespace("link");
+  link_params->add_param_override("num_vc", router_->max_num_vc());
 
   // construct the elements
   xbar_ = new pisces_crossbar(xbar_params, this);
+  xbar_->configure_outports(n_local_xbars_,divide_port_mapper(n_local_xbars_));
   input_muxers_.resize(n_local_xbars_);
   output_demuxers_.resize(n_local_xbars_);
-  output_buffers_.resize(n_local_xbars_);
+  output_buffers_.resize(n_local_xbars_ * n_local_ports_);
   for (int i=0; i < n_local_xbars_; ++i) {
     std::string location(std::to_string(i));
 
@@ -128,7 +135,7 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
     mux->set_update_vc(false);
     input_muxers_[i] = mux;
 
-    pisces_demuxer* demux = new pisces_demuxer(input_params, this);
+    pisces_demuxer* demux = new pisces_demuxer(output_params, this);
     demux->configure_outports(n_local_ports_,mod_port_mapper(n_local_ports_));
     demux->set_tile_id(location);
     demux->set_update_vc(false);
@@ -136,12 +143,12 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
 
     for (int j=0; j < n_local_ports_; ++j) {
       pisces_network_buffer* buf =
-          new pisces_network_buffer(output_params, this);
+          new pisces_network_buffer(link_params, this);
       output_buffers_[i*n_local_ports_ + j] = buf;
     }
   }
 
-  // connect input muxers to csntral xbar
+  // connect input muxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
     pisces_muxer* mux = input_muxers_[i];
     mux->set_output(input_params,0,i,xbar_->payload_handler());
@@ -152,11 +159,11 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
   for (int i=0; i < n_local_xbars_; ++i) {
     pisces_demuxer* demux = output_demuxers_[i];
     xbar_->set_output(xbar_params,i,0,demux->payload_handler());
-    demux->set_input(input_params,0,i,xbar_->credit_handler());
+    demux->set_input(output_params,0,i,xbar_->credit_handler());
     for(int j=0; j < n_local_ports_; ++j) {
       pisces_network_buffer* buf = output_buffers_[i*n_local_ports_ + j];
-      demux->set_output(input_params,j,0,buf->payload_handler());
-      buf->set_input(output_params,0,j,demux->credit_handler());
+      demux->set_output(output_params,j,0,buf->payload_handler());
+      buf->set_input(link_params,0,j,demux->credit_handler());
     }
   }
 }
