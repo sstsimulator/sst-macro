@@ -67,7 +67,7 @@ run_test()
   int tag = 444;
   comm_allgather(NULL, NULL, 1, sizeof(int), tag, true);
 
-  collective_done_message::ptr dmsg = comm_collective_block(collective::allgather, tag);
+  collective_done_message* dmsg = comm_collective_block(collective::allgather, tag);
 }
 
 void
@@ -79,7 +79,7 @@ run_test(int me, int todie, int nproc_live, int context, int tag)
     printf("Rank 11 maps to dense rank %d\n", dense_me);
   }
 
-  collective_done_message::ptr dmsg;
+  collective_done_message* dmsg;
 
   int src[] = { dense_me };
   int dst[nproc_live];

@@ -76,7 +76,7 @@ bruck_allgather_actor::init_buffers(void* dst, void* src)
       //put everything into the dst buffer to begin
       std::memcpy(dst, src, block_size);
     }
-    long buffer_size = nelems_ * type_size_ * comm_->nproc();
+    long buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
     result_buffer_ = my_api_->make_public_buffer(dst, buffer_size);
     send_buffer_ = result_buffer_;
     recv_buffer_ = result_buffer_;
@@ -87,7 +87,7 @@ void
 bruck_allgather_actor::finalize_buffers()
 {
   if (result_buffer_.ptr){
-    long buffer_size = nelems_ * type_size_ * comm_->nproc();
+    long buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
     my_api_->unmake_public_buffer(send_buffer_, buffer_size);
   }
 }

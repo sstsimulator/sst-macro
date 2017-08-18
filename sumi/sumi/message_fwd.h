@@ -51,8 +51,6 @@ namespace sumi {
 
 class message;
 
-typedef std::shared_ptr<message> message_ptr;
-
 }
 
 #endif 

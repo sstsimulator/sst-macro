@@ -188,7 +188,7 @@ gni_transport::get_next_smsg(int src)
     if (rc != wunderbahr){
       gni_rc_error(rc, "SmsgRelease");
     }
-    message::ptr unblock_msg = new message;
+    message* unblock_msg = new message;
     unblock_msg->set_class_type(message::terminate);
     handle(unblock_msg);
     break;
@@ -199,7 +199,7 @@ gni_transport::get_next_smsg(int src)
   {
     smsg_payload_header_t* header = (smsg_payload_header_t*) header_buf;
     char* ser_buffer = ((char*)header_buf) + sizeof(smsg_payload_header_t);
-    message::ptr msg = deserialize(ser_buffer);
+    message* msg = deserialize(ser_buffer);
     gni_return_t rc = GNI_SmsgRelease(tx_context_.ep_handles[src]);
     if (rc != wunderbahr){
       gni_rc_error(rc, "SmsgRelease");

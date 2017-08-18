@@ -109,7 +109,8 @@ congestion_spyplot::congestion_spyplot(sprockit::sim_parameters* params, event_s
 
 congestion_spyplot::~congestion_spyplot()
 {
-  if (congestion_spyplot_) delete congestion_spyplot_;
+  //these get delete by stats system
+  //if (congestion_spyplot_) delete congestion_spyplot_;
 }
 
 void
@@ -142,7 +143,8 @@ delay_histogram::delay_histogram(sprockit::sim_parameters *params, event_schedul
 
 delay_histogram::~delay_histogram()
 {
-  if (congestion_hist_) delete congestion_hist_;
+  //these get deleted by stats systems
+  //if (congestion_hist_) delete congestion_hist_;
 }
 
 void
@@ -200,7 +202,7 @@ multi_stats::collect_single_event(const pkt_arbitration_t &st)
 
 bytes_sent_collector::~bytes_sent_collector()
 {
-  if (bytes_sent_) delete bytes_sent_;
+  //if (bytes_sent_) delete bytes_sent_;
 }
 
 bytes_sent_collector::bytes_sent_collector(sprockit::sim_parameters *params,
@@ -219,7 +221,7 @@ bytes_sent_collector::collect_single_event(const pkt_arbitration_t& st)
 
 byte_hop_collector::~byte_hop_collector()
 {
-  delete byte_hops_;
+  //delete byte_hops_;
 }
 
 byte_hop_collector::byte_hop_collector(sprockit::sim_parameters *params, event_scheduler* parent)

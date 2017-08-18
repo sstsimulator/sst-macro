@@ -95,8 +95,7 @@ category mpi_api::memcpy_key_category("MPI Memcpy");
 
 static sprockit::need_delete_statics<mpi_api> del_statics;
 
-mpi_api*
-sstmac_mpi()
+mpi_api* sstmac_mpi()
 {
   sstmac::sw::thread* t = operating_system::current_thread();
   return t->get_api<mpi_api> ();
@@ -205,10 +204,7 @@ mpi_api::init(int* argc, char*** argv)
     sprockit::abort("mpiapi::init: os has not been initialized yet");
   }
 
-
   comm_factory_.init(rank_, nproc_);
-
-  //printf("Initialized %p with %p\n", this, comm_factory_);
 
   worldcomm_ = comm_factory_.world();
   selfcomm_ = comm_factory_.self();
@@ -223,7 +219,6 @@ mpi_api::init(int* argc, char*** argv)
   commit_builtin_types();
 
   status_ = is_initialized;
-
 
   collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
   wait_collective(op);
@@ -608,7 +603,7 @@ mpi_api::start_new_mpi_call(MPI_function func, int count, MPI_Datatype type, MPI
 }
 
 void
-mpi_api::collect_sync_delays(double wait_start, const message::ptr &msg)
+mpi_api::collect_sync_delays(double wait_start, message* msg)
 {
   //there are two possible sync delays
   //#1: For sender, synced - header_arrived

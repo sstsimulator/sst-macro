@@ -119,7 +119,7 @@ app::~app()
   if (compute_lib_) delete compute_lib_;
   if (globals_storage_) delete[] globals_storage_;
   //we own a unique copy
-  //if (params_) delete params_;
+  if (params_) delete params_;
 }
 
 lib_compute_loops*

@@ -171,7 +171,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       optFlags.append(sarg)
     elif "-std=" in sarg:
       givenStdFlag=sarg
-    elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') or sarg.endswith(".cxx"):
+    elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') \
+                               or sarg.endswith(".cxx") or sarg.endswith(".C"):
       sourceFiles.append(sarg)
     elif sarg.endswith('.S'):
       asmFiles = True
@@ -211,7 +212,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     import inspect, os
     pathStr = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     print(pathStr)
-    cmd = "%s %s" % (cxx, sys.argv[1])
+    cmd = "%s --version" % (cxx)
     os.system(cmd)
     sys.exit()
   elif sys.argv[1] == "--flags":
@@ -223,6 +224,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     cmd = "%s --help" % (cxx)
     os.system(cmd)
     sys.stderr.write(helpText)
+    sys.exit()
+  elif sys.argv[1] == "--prefix":
+    sys.stdout.write("%s\n" % prefix)
     sys.exit()
 
   sstCompilerFlagsStr = ""

@@ -102,31 +102,33 @@ collective::tostr(type_t ty)
 }
 
 void
-collective::init(type_t ty, transport *api, communicator *dom, int tag, int context)
+collective::init(type_t ty, transport *api, int tag, const config& cfg)
 {
   my_api_ = api;
-  comm_ = dom;
-  context_ = context;
+  cfg_ = cfg;
   complete_ = false;
   tag_ = tag;
   type_ = ty;
 
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
   const thread_safe_set<int>& failed = api->failed_ranks(context);
   dense_rank_map rank_map(failed, dom);
 
   dense_nproc_ = rank_map.dense_rank(dom->nproc());
   dense_me_ = rank_map.dense_rank(dom->my_comm_rank());
+#else
+  dense_nproc_ = cfg.dom->nproc();
+  dense_me_ = cfg.dom->my_comm_rank();
+#endif
 
   debug_printf(sumi_collective | sumi_vote,
-    "Rank %d=%d built collective of size %d in role=%d,"
-    "tag=%d, context=%d with num_live=%d, failed=%s ",
-    my_api_->rank(), dom->my_comm_rank(), dom->nproc(), dense_me_,
-    tag, context, dense_nproc_, failed.to_string().c_str());
+    "Rank %d=%d built collective of size %d in role=%d, tag=%d, context=%d",
+    my_api_->rank(), cfg.dom->my_comm_rank(), cfg.dom->nproc(), dense_me_, tag, cfg.context);
 }
 
-collective::collective(type_t ty, transport* api, communicator* dom, int tag, int context)
+collective::collective(type_t ty, transport* api, int tag, const config& cfg)
 {
-  init(ty, api, dom, tag, context);
+  init(ty, api, tag, cfg);
 }
 
 void
@@ -154,7 +156,7 @@ collective::add_actors(collective *coll)
 }
 
 void
-collective::recv(const collective_work_message_ptr &msg)
+collective::recv(collective_work_message* msg)
 {
   switch(msg->payload_type())
   {
@@ -201,25 +203,24 @@ dag_collective::init_actors()
 {
   dag_collective_actor* actor = new_actor();
 
-  actor->init(type_, my_api_, comm_, nelems_, type_size_, tag_, fault_aware_, context_);
+  actor->init(type_, my_api_, nelems_, type_size_, tag_, cfg_);
   actor->init_tree();
   actor->init_buffers(dst_buffer_, src_buffer_);
   actor->init_dag();
 
   my_actors_[dense_me_] = actor;
-  refcounts_[comm_->my_comm_rank()] = my_actors_.size();
+  refcounts_[cfg_.dom->my_comm_rank()] = my_actors_.size();
 }
 
 void
 dag_collective::init(type_t type,
-  transport *my_api, communicator *dom,
+  transport *my_api,
   void *dst, void *src,
   int nelems, int type_size,
-  int tag,
-  bool fault_aware, int context)
+  int tag, const config& cfg)
 {
-  collective::init(type, my_api, dom, tag, context);
-  fault_aware_ = fault_aware;
+  collective::init(type, my_api, tag, cfg);
+  fault_aware_ = cfg.fault_aware;
   nelems_ = nelems;
   type_size_ = type_size;
   src_buffer_ = src;
@@ -227,14 +228,13 @@ dag_collective::init(type_t type,
 }
 
 void
-dag_collective::recv(int target, const collective_work_message::ptr& msg)
+dag_collective::recv(int target, collective_work_message* msg)
 {
   debug_printf(sumi_collective | sumi_collective_sendrecv,
     "Rank %d=%d %s got %s:%p from %d=%d on tag=%d for target %d",
     my_api_->rank(), dense_me_,
     collective::tostr(type_),
-    message::tostr(msg->payload_type()),
-    msg.get(),
+    message::tostr(msg->payload_type()), msg,
     msg->sender(), msg->dense_sender(),
     tag_, target);
 
@@ -291,9 +291,9 @@ dag_collective::add_actors(collective* coll)
 
   refcounts_[coll->comm()->my_comm_rank()] = ar->my_actors_.size();
 
-  std::list<collective_work_message::ptr> pending = pending_;
+  std::list<collective_work_message*> pending = pending_;
   pending_.clear();
-  { std::list<collective_work_message::ptr>::iterator it, end = pending.end();
+  { std::list<collective_work_message*>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
     collective::recv(*it);
   } }

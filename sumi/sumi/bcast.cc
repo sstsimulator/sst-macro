@@ -83,7 +83,7 @@ binary_tree_bcast_actor::init_internal(int offsetMe, int windowSize,
         send_action::in_place : send_action::prev_recv;
 
   int stride = windowSize;
-  int nproc = comm_->nproc();
+  int nproc = cfg_.dom->nproc();
   while (stride > 0){
     int partner = offsetMe + stride;
     if (partner < windowStop){ //might not be power of 2
@@ -145,8 +145,8 @@ void
 binary_tree_bcast_actor::init_dag()
 {
   int roundNproc = 1;
-  int nproc = comm_->nproc();
-  int me = comm_->my_comm_rank();
+  int nproc = cfg_.dom->nproc();
+  int me = cfg_.dom->my_comm_rank();
   while (roundNproc < nproc){
     roundNproc *= 2;
   }

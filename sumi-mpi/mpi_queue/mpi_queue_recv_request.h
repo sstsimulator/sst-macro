@@ -72,7 +72,7 @@ class mpi_queue_recv_request  {
 
   ~mpi_queue_recv_request();
 
-  bool matches(const mpi_message::ptr& msg);
+  bool matches(mpi_message* msg);
 
   void set_seqnum(int seqnum) {
     seqnum_ = seqnum;

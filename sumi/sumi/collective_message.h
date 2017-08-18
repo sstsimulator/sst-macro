@@ -59,20 +59,22 @@ namespace sumi {
 class collective_done_message :
   public message
 {
- public:
-  typedef std::shared_ptr<collective_done_message> ptr;
 
  public:
   std::string to_string() const override {
     return "collective done message";
   }
 
-  collective_done_message(int tag, collective::type_t ty,
-                          communicator* dom) :
+  collective_done_message(int tag, collective::type_t ty, communicator* dom, uint8_t cq_id) :
     message(collective_done),
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+    all_ranks_know_failure_(false),
+#endif
     tag_(tag), result_(0), vote_(0), type_(ty),
-    all_ranks_know_failure_(false), dom_(dom)
+    dom_(dom)
   {
+    set_send_cq(cq_id);
+    set_recv_cq(cq_id);
   }
 
   int tag() const {
@@ -89,34 +91,6 @@ class collective_done_message :
 
   void set_type(collective::type_t ty) {
     type_ = ty;
-  }
-
-  bool failed() const {
-    return !failed_procs_.empty();
-  }
-
-  bool succeeded() const {
-    return failed_procs_.empty();
-  }
-
-  void append_failed(int proc) {
-    failed_procs_.insert(proc);
-  }
-
-  void append_failed(const std::set<int>& procs){
-    failed_procs_.insert(procs.begin(), procs.end());
-  }
-
-  const thread_safe_set<int>& failed_procs() const {
-    return failed_procs_;
-  }
-
-  bool all_ranks_know_failure() const {
-    return all_ranks_know_failure_;
-  }
-
-  void set_all_ranks_know_failure(bool flag) {
-    all_ranks_know_failure_ = true;
   }
 
   void set_result(void* buf){
@@ -150,11 +124,42 @@ class collective_done_message :
   void* result_;
   int vote_;
   collective::type_t type_;
-  thread_safe_set<int> failed_procs_;
-  bool all_ranks_know_failure_;
   int comm_rank_;
   communicator* dom_;
 
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+ public:
+  bool failed() const {
+    return !failed_procs_.empty();
+  }
+
+  bool succeeded() const {
+    return failed_procs_.empty();
+  }
+
+  void append_failed(int proc) {
+    failed_procs_.insert(proc);
+  }
+
+  void append_failed(const std::set<int>& procs){
+    failed_procs_.insert(procs.begin(), procs.end());
+  }
+
+  const thread_safe_set<int>& failed_procs() const {
+    return failed_procs_;
+  }
+
+  bool all_ranks_know_failure() const {
+    return all_ranks_know_failure_;
+  }
+
+  void set_all_ranks_know_failure(bool flag) {
+    all_ranks_know_failure_ = true;
+  }
+ private:
+  thread_safe_set<int> failed_procs_;
+  bool all_ranks_know_failure_;
+#endif
 };
 
 /**
@@ -166,8 +171,6 @@ class collective_work_message :
 {
   ImplementSerializable(collective_work_message)
  public:
-  typedef std::shared_ptr<collective_work_message> ptr;
-
   typedef enum {
     get_data, //recver gets data
     put_data, //sender puts data
@@ -216,7 +219,6 @@ class collective_work_message :
 
   collective_work_message(){} //for serialization
 
-
   virtual std::string to_string() const override;
 
   static const char* tostr(action_t action);
@@ -253,20 +255,6 @@ class collective_work_message :
     return type_;
   }
 
-  bool is_failure_notice() const {
-    return !failed_procs_.empty();
-  }
-
-  void append_failed(int proc) {
-    failed_procs_.insert(proc);
-  }
-
-  void append_failed(const thread_safe_set<int>& failed);
-
-  const std::set<int>& failed_procs() const {
-    return failed_procs_;
-  }
-
   message* clone() const override {
     collective_work_message* cln = new collective_work_message;
     clone_into(cln);
@@ -289,7 +277,24 @@ class collective_work_message :
 
   action_t action_;
 
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+ public:
+  bool is_failure_notice() const {
+    return !failed_procs_.empty();
+  }
+
+  void append_failed(int proc) {
+    failed_procs_.insert(proc);
+  }
+
+  void append_failed(const thread_safe_set<int>& failed);
+
+  const std::set<int>& failed_procs() const {
+    return failed_procs_;
+  }
+ private:
   std::set<int> failed_procs_;
+#endif
 
 };
 

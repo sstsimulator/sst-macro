@@ -180,6 +180,7 @@ event_manager::register_stat(
   entry.reduce_all = descr->reduce_all;
   entry.dump_all = descr->dump_all;
   entry.dump_main = descr->dump_main;
+  entry.need_delete = descr->need_delete;
   stat->set_registered(true);
 }
 
@@ -187,9 +188,7 @@ void
 event_manager::finish_stats(stat_collector* main, const std::string& name, timestamp t_end)
 {
   stats_entry& entry = stats_[name];
-  std::list<stat_collector*>::iterator it, end = entry.collectors.end();
-  for (it=entry.collectors.begin(); it != end; ++it){
-    stat_collector* next = *it;
+  for (stat_collector* next : entry.collectors){
     next->simulation_finished(t_end);
     if (entry.dump_all)
       next->dump_local_data();
@@ -237,6 +236,9 @@ event_manager::finish_stats()
     }
 
     if (main_allocated) delete entry.main_collector;
+    for (stat_collector* coll : entry.collectors){
+      delete coll;
+    }
   }
 }
 

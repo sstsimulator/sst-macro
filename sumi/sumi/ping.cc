@@ -55,6 +55,8 @@ RegisterKeywords(
 "activity_monitor",
 );
 
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+
 namespace sumi {
 
 pinger::pinger(transport* api, int dst, double timeout) :
@@ -225,7 +227,7 @@ ping_monitor::validate_all_pings()
 }
 
 void
-ping_monitor::message_received(const message::ptr& msg)
+ping_monitor::message_received(message* msg)
 {
 #if SST_SANITY_CHECK
   if (msg->class_type() != message::ping){
@@ -353,3 +355,5 @@ ping_monitor::cancel_ping(int dst, timeout_function* func)
 }
 
 }
+
+#endif

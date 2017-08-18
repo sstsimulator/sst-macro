@@ -62,7 +62,7 @@ gni_transport::rdma_done(int src, gni_cq_entry_t& event_data, gni_cq_handle_t cq
 
   gni_debug("Got completed RDMA on node %d for tag %d for partner %d", rank_, tag, src);
   if (tag == ping_response_tag){
-    message::ptr ping_msg = new message;
+    message* ping_msg = new message;
     int* status_ptr = (int*) pd->local_addr;
     int status = *status_ptr;
     ping_msg->set_sender(src);
@@ -77,7 +77,7 @@ gni_transport::rdma_done(int src, gni_cq_entry_t& event_data, gni_cq_handle_t cq
     handle(ping_msg);
     free_ping_buffer(status_ptr);
   } else {
-    message::ptr msg = rdma_messages_[tag];
+    message* msg = rdma_messages_[tag];
     rdma_messages_.erase(tag);
     if (type == GNI_POST_RDMA_GET){
       rdma_get_done(msg);
@@ -103,7 +103,7 @@ gni_transport::rdma_poll()
   int id = ID(inst_id);
   gni_debug("Rank %d got transaction ack %d from %d for event %d -> %u",
     rank_, id, src, ev, inst_id);
-  message::ptr header = finish_transaction(id);
+  message* header = finish_transaction(id);
   switch (ev)
   {
   case GET_ACK:

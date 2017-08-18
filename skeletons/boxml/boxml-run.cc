@@ -89,7 +89,7 @@ namespace lblxml
               printf("rank %d sending message %d to rank %d\n",
                      rank_, index, dest);
             g_message_begin_[index] = now();
-            pt2pt_message::ptr mess = std::make_shared<pt2pt_message>(index,count);
+            pt2pt_message* mess = new pt2pt_message(index,count);
             comm_rdma_put(dest, mess);
             if (synch_mode_ < phase_asynch) {
               if (debug_ > 0 && rank_ == BOXML_DEBUG_RANK && epoch == BOXML_DEBUG_EPOCH )
@@ -149,9 +149,7 @@ namespace lblxml
           printf("rank %d starting allreduce %s for box %d\n",
                  rank_, ev->id().c_str(), box_number);
         sumi::comm_allreduce<double,sumi::Add>(NULL, NULL, count, index,
-                                               false,
-                                               sumi::options::initial_context,
-                                               dom);
+                                               sumi::collective::config().comm(dom));
         valid_allreduces_.pop();
         ++n_allreduce;
       }
@@ -228,7 +226,7 @@ namespace lblxml
       sstmac::timestamp start_poll = now();
       if (debug_ > 0)
         printf("rank %d polling for new message\n",rank_);
-      sumi::message::ptr dmess = sumi::comm_poll();
+      sumi::message* dmess = sumi::comm_poll();
       sstmac::timestamp end_poll = now();
       double poll_time = (end_poll - start_poll).sec();
       g_total_idle_time += poll_time;
@@ -240,7 +238,7 @@ namespace lblxml
       switch (dmess->class_type()){
         case sumi::message::pt2pt:
         {
-          pt2pt_message::ptr pmess = std::dynamic_pointer_cast<pt2pt_message>(dmess);
+          pt2pt_message* pmess = dynamic_cast<pt2pt_message*>(dmess);
           index = pmess->event_index();
           event* ev = g_events[index];
           epoch = ev->epoch();
@@ -255,11 +253,12 @@ namespace lblxml
             hist_eff_bw_->collect(bw);
           }
           simple_event_done(index);
+          delete pmess;
           break;
         }
         case sumi::message::collective_done:
         {
-          auto cmess = std::dynamic_pointer_cast<sumi::collective_done_message>(dmess);
+          auto cmess = dynamic_cast<sumi::collective_done_message*>(dmess);
           box_domain* dom = static_cast<box_domain*>(cmess->dom());
           int my_box_number = dom->my_box_number();
           index = cmess->tag();
@@ -271,6 +270,7 @@ namespace lblxml
           collective_done(my_box_number, cmess->tag());
           //for now, we dynamically create domains - delete it
           delete dom;
+          delete cmess;
           break;
         }
         default:

@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sumi_rdma_h
 
 #include <sumi/rdma_mdata.h>
+#include <cstdint>
 
 namespace sumi {
 

@@ -63,19 +63,9 @@ RegisterKeywords(
 MakeDebugSlot(traffic_matrix)
 MakeDebugSlot(traffic_matrix_results)
 
-#define IS_SST 1
 
-#ifdef GNI
-#define model "gni"
-static bool send_ack = true;
-static bool recv_ack = false;
-#endif
-
-#ifdef IS_SST
-#define model "sst"
-static bool send_ack = false;
-static bool recv_ack = true;
-#endif
+static const int send_cq = sumi::message::no_ack;
+static const int recv_cq = 0;
 
 class sumi_param_bcaster : public sprockit::param_bcaster
 {
@@ -83,7 +73,7 @@ class sumi_param_bcaster : public sprockit::param_bcaster
   sumi_param_bcaster(sumi::transport* tp) : tport_(tp), tag_(12345) {}
 
   void bcast(void *buf, int size, int me, int root){
-    tport_->bcast(root, buf, size, sizeof(char), tag_, false);
+    tport_->bcast(root, buf, size, sizeof(char), tag_);
     tport_->collective_block(sumi::collective::bcast, tag_);
     ++tag_;
   }
@@ -100,8 +90,6 @@ class config_message :
   public sumi::message
 {
   ImplementSerializable(config_message)
- public:
-  typedef std::shared_ptr<config_message> ptr;
 
  public:
   config_message(){} //need for serialization
@@ -126,9 +114,6 @@ class rdma_message :
   public sumi::message
 {
  ImplementSerializable(rdma_message)
-
- public:
-  typedef std::shared_ptr<rdma_message> ptr;
 
  public:
   rdma_message(){} //need for serialization
@@ -169,12 +154,12 @@ class rdma_message :
   double finish_;
 };
 
-std::vector<std::map<int, std::map<int, rdma_message::ptr> > > results;
+std::vector<std::map<int, std::map<int, rdma_message*>>> results;
 static int num_done = 0;
 
 void
 progress_loop(sumi::transport* tport, double timeout,
-              std::list<rdma_message::ptr>& done)
+              std::list<rdma_message*>& done)
 {
   double now = tport->wall_time();
   double stop = now + timeout;
@@ -182,7 +167,7 @@ progress_loop(sumi::transport* tport, double timeout,
     "Rank %d entering progress loop at t=%10.6e - stop=%10.6e, timeout=%10.6e",
     tport->rank(), now, stop, timeout);
   while (1){
-    rdma_message::ptr msg = SUMI_POLL_TIME(tport,rdma_message,timeout);
+    rdma_message* msg = SUMI_POLL_TIME(tport,rdma_message,timeout);
     now = tport->wall_time();
     if (msg){ //need if statement, if timed out then no message
       timeout = std::max(0., stop - now); //timeout shrinks
@@ -211,12 +196,12 @@ void do_all_sends(
   const std::vector<sumi::public_buffer>& send_chunks,
   const std::vector<sumi::public_buffer>& recv_chunks,
   double timeout,
-  std::list<rdma_message::ptr>& done)
+  std::list<rdma_message*>& done)
 {
   int npartners = send_partners.size();
   double local_timeout = (timeout / npartners) * 0.9; //fudge factor of 0.9 to lower it a bit
   for (int i=0; i < npartners; ++i){
-    rdma_message::ptr msg = std::make_shared<rdma_message>(iteration, chunk_size);
+    rdma_message* msg = new rdma_message(iteration, chunk_size);
     msg->local_buffer() = send_chunks[i];
     msg->remote_buffer() = recv_chunks[i];
     debug_printf(sprockit::dbg::traffic_matrix,
@@ -224,7 +209,7 @@ void do_all_sends(
       tport->rank(), send_partners[i], 
       iteration, chunk_size,
       ((void*)send_chunks[i]), ((void*)recv_chunks[i]));
-    tport->rdma_put(send_partners[i], msg, send_ack, recv_ack);
+    tport->rdma_put(send_partners[i], msg, send_cq, recv_cq);
     msg->set_start(tport->wall_time());
     //stagger the sends, try to make progress on pendind messages
     progress_loop(tport, local_timeout, done);
@@ -237,14 +222,14 @@ void do_all_sends(
 void
 quiesce(sumi::transport* tport,
   int npartners, int niterations,
-  std::list<rdma_message::ptr>& done)
+  std::list<rdma_message*>& done)
 {
   int ntotal = npartners * niterations;
   debug_printf(sprockit::dbg::traffic_matrix,
     "Rank %d starting quiescence: need %d, have %d p=%d n=%d",
     tport->rank(), ntotal, done.size(), npartners, niterations);
   while (done.size() < ntotal){
-    rdma_message::ptr msg = SUMI_POLL(tport, rdma_message);
+    rdma_message* msg = SUMI_POLL(tport, rdma_message);
     double now = tport->wall_time();
     msg->set_finish(now);
     done.push_back(msg);
@@ -335,11 +320,11 @@ int USER_MAIN(int argc, char** argv)
 
   //send all my config messages
   for (int i=0; i < npartners; ++i){
-    config_message::ptr msg = std::make_shared<config_message>(recv_chunks[i]);
+    config_message* msg = new config_message(recv_chunks[i]);
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d sending config message to partner %d",
       tport->rank(), recv_partners[i]);
-    tport->send_header(recv_partners[i], msg);
+    tport->send_header(recv_partners[i], msg, sumi::message::no_ack, sumi::message::default_cq);
   }
 
   int configs_recved = 0;
@@ -349,7 +334,7 @@ int USER_MAIN(int argc, char** argv)
     "Rank %d waiting on %d config messages from recv partners",
     tport->rank(), npartners);
   while (configs_recved < npartners){
-    config_message::ptr msg = SUMI_POLL(tport, config_message);
+    config_message* msg = SUMI_POLL(tport, config_message);
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d received config message from %d",
         tport->rank(), msg->sender());
@@ -362,7 +347,7 @@ int USER_MAIN(int argc, char** argv)
   tport->barrier(tag);
   tport->collective_block(sumi::collective::barrier, tag);
 
-  std::list<rdma_message::ptr> done;
+  std::list<rdma_message*> done;
 
   static double timeout = 100e-6 / intensity; //100 us per send iteration, modified by intensity
   for (int iter=0; iter < num_iterations; ++iter){
@@ -373,9 +358,9 @@ int USER_MAIN(int argc, char** argv)
   //finished all sends - quiesce the network
   quiesce(tport, npartners, num_iterations, done);
 
-  std::list<rdma_message::ptr>::iterator it, end = done.end();
+  std::list<rdma_message*>::iterator it, end = done.end();
   for (it=done.begin(); it != end; ++it){
-    rdma_message::ptr msg = *it;
+    rdma_message* msg = *it;
     results[me][msg->iter()][msg->sender()] = msg;
   }
   ++num_done;
@@ -386,10 +371,10 @@ int USER_MAIN(int argc, char** argv)
     int result_idx = 0;
     for (int p=0; p < nproc; ++p){
       for (int i=0; i < num_iterations; ++i){
-        std::map<int, rdma_message::ptr>& done = results[p][i];
-        std::map<int, rdma_message::ptr>::iterator it, end = done.end();
+        std::map<int, rdma_message*>& done = results[p][i];
+        std::map<int, rdma_message*>::iterator it, end = done.end();
         for (it = done.begin(); it != end; ++it, ++result_idx){
-          rdma_message::ptr msg = it->second;
+          rdma_message* msg = it->second;
           double delta_t = msg->finish() - msg->start();
           double throughput_gbs = msg->byte_length() / delta_t / 1e9;
           resultsArr[result_idx] = throughput_gbs;

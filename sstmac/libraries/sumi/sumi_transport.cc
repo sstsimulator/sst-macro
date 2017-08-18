@@ -77,8 +77,7 @@ class sumi_server :
   {
   }
 
-  void
-  register_proc(int rank, sumi_transport* proc){
+  void register_proc(int rank, sumi_transport* proc){
     int app_id = proc->sid().app_;
     debug_printf(sprockit::dbg::sumi,
                  "sumi_server registering rank %d for app %d",
@@ -102,8 +101,7 @@ class sumi_server :
     }
   }
 
-  bool
-  unregister_proc(int rank, sumi_transport* proc){
+  bool unregister_proc(int rank, sumi_transport* proc){
     int app_id = proc->sid().app_;
     auto iter = procs_.find(app_id);
     auto& subMap = iter->second;
@@ -114,12 +112,11 @@ class sumi_server :
     return procs_.empty();
   }
 
-  void
-  incoming_event(event *ev){
+  void incoming_event(event *ev){
     transport_message* smsg = safe_cast(transport_message, ev);
     debug_printf(sprockit::dbg::sumi,
                  "sumi_server %d: incoming message %s",
-                 os_->addr(), smsg->payload()->to_string().c_str());
+                 os_->addr(), smsg->get_payload()->to_string().c_str());
     sumi_transport* tport = procs_[smsg->dest_app()][smsg->dest_rank()];
     if (!tport){
       pending_.push_back(smsg);
@@ -161,8 +158,12 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   transport(params),
   user_lib_time_(nullptr),
   spy_num_messages_(nullptr),
-  spy_bytes_(nullptr)
+  spy_bytes_(nullptr),
+  collective_cq_id_(1), //this gets assigned elsewhere
+  pt2pt_cq_id_(0) //put pt2pt sends on the default cq
 {
+  collective_cq_id_ = allocate_cq();
+
   rank_ = sid.task_;
   library* server_lib = os_->lib(server_libname_);
   sumi_server* server;
@@ -207,6 +208,9 @@ sumi_transport::~sumi_transport()
   sumi_server* server = safe_cast(sumi_server, os_->lib(server_libname_));
   bool del = server->unregister_proc(rank_, this);
   if (del) delete server;
+
+  //if (spy_bytes_) delete spy_bytes_;
+  //if (spy_num_messages_) delete spy_num_messages_;
 }
 
 event_scheduler*
@@ -230,7 +234,7 @@ sumi_transport::incoming_event(event *ev)
 void
 sumi_transport::shutdown_server(int dest_rank, node_id dest_node, int dest_app)
 {
-  auto msg = std::make_shared<sumi::system_bcast_message>(sumi::system_bcast_message::shutdown, dest_rank);
+  auto msg = new sumi::system_bcast_message(sumi::system_bcast_message::shutdown, dest_rank);
   client_server_send(dest_rank, dest_node, dest_app, msg);
 }
 
@@ -239,10 +243,12 @@ sumi_transport::client_server_send(
   int dst_task,
   node_id dst_node,
   int dst_app,
-  const sumi::message::ptr& msg)
+  sumi::message* msg)
 {
+  msg->set_send_cq(sumi::message::no_ack);
+  msg->set_recv_cq(sumi::message::default_cq);
   send(msg->byte_length(),
-       dst_task, dst_node, dst_app, msg, false/*no ack*/,
+       dst_task, dst_node, dst_app, msg,
        hw::network_message::payload);
 }
 
@@ -251,80 +257,43 @@ sumi_transport::client_server_rdma_put(
   int dst_task,
   node_id dst_node,
   int dst_app,
-  const sumi::message::ptr& msg)
+  sumi::message* msg)
 {
-  msg->set_needs_recv_ack(true);
+  msg->set_send_cq(sumi::message::no_ack);
+  msg->set_recv_cq(sumi::message::default_cq);
   send(msg->byte_length(),
-       dst_task, dst_node, dst_app, msg, false,/*no ack*/
+       dst_task, dst_node, dst_app, msg,
        hw::network_message::rdma_put_payload);
 }
 
-sumi::message_ptr
-sumi_transport::handle(sstmac::transport_message* smsg)
+void
+sumi_transport::process(sstmac::transport_message* smsg)
 {
-  if (!smsg){
-    //this is sloppy - but oh well
-    //a null message is sent to me to signal that I have stuff waiting in my completion queue
-    debug_printf(sprockit::dbg::sumi, "Rank %d got cq notification", rank_);
-    sumi::message::ptr next;
-    bool empty = completion_queue_.pop_front_and_return(next);
-    if (empty){
-      spkt_abort_printf("sumi transport received null message, but completion queue is empty");
-    }
-    return next;
-  }
-
-  sumi::message::ptr my_msg = smsg->payload();
+  sumi::message* my_msg = smsg->get_payload();
   debug_printf(sprockit::dbg::sumi,
-     "sumi transport rank %d in app %d handling message of type %s: %s",
+     "sumi transport rank %d in app %d processing message of type %s: %s",
      rank(), sid().app_, transport_message::tostr(smsg->type()), my_msg->to_string().c_str());
   switch (smsg->type())
   {
    //depending on the type, we might have to mutate the incoming message
    case sstmac::hw::network_message::failure_notification:
     my_msg->set_payload_type(sumi::message::failure);
-    transport::handle(my_msg);
-    break;
-   case sstmac::hw::network_message::payload:
-   {
-    //no work to do - just receive the buffer
-    transport::handle(my_msg);
-    break;
-   }
-   case sstmac::hw::network_message::rdma_get_payload:
-    //my_msg->inject_remote_to_local();
-    if (my_msg->needs_recv_ack()) //only if I requested to be notified
-      transport::handle(my_msg);
-    break;
-   case sstmac::hw::network_message::rdma_put_payload:
-    //my_msg->inject_local_to_remote();
-    if (my_msg->needs_recv_ack()) //only if I requested to be notified
-      transport::handle(my_msg);
     break;
    case sstmac::hw::network_message::rdma_get_nack:
     my_msg->set_payload_type(sumi::message::rdma_get_nack);
-    transport::handle(my_msg);
     break;
    case sstmac::hw::network_message::payload_sent_ack:
     my_msg->set_payload_type(sumi::message::eager_payload_ack);
-    transport::handle(my_msg);
     break;
    case sstmac::hw::network_message::rdma_get_sent_ack:
     my_msg->set_payload_type(sumi::message::rdma_get_ack);
-    transport::handle(my_msg);
     break;
    case sstmac::hw::network_message::rdma_put_sent_ack:
     my_msg->set_payload_type(sumi::message::rdma_put_ack);
-    transport::handle(my_msg);
     break;
    default:
-    transport::handle(my_msg);
     break; //do nothing
   }
-
-  sumi::message::ptr msg;
-  bool empty = completion_queue_.pop_front_and_return(msg);
-  return msg;  // will return message::ptr() if empty
 }
 
 void
@@ -338,23 +307,17 @@ sumi_transport::finish()
 {
   debug_printf(sprockit::dbg::sumi, "Rank %d finalizing", rank_);
   transport::finish();
-  monitor_->validate_done();
-  stop_heartbeat();
-  //sstmac_usleep(heartbeat_interval_*1e6);
-  delete monitor_;
-  monitor_ = nullptr;
 }
 
 void
 sumi_transport::send(
   long byte_length,
-  const sumi::message_ptr &msg,
+  sumi::message* msg,
   int sendType,
-  int dst_rank,
-  bool needs_ack)
+  int dst_rank)
 {
   node_id dst_node = rank_mapper_->rank_to_node(dst_rank);
-  send(byte_length, dst_rank, dst_node, sid().app_, msg, needs_ack, sendType);
+  send(byte_length, dst_rank, dst_node, sid().app_, msg, sendType);
 }
 
 void
@@ -363,19 +326,18 @@ sumi_transport::send(
   int dst_task,
   node_id dst_node,
   int dst_app,
-  const sumi::message::ptr& msg,
-  bool needs_ack,
+  sumi::message* msg,
   int ty)
 {
   sstmac::sw::app_id aid = sid().app_;
   transport_message* tmsg = new transport_message(server_libname_, aid, msg, byte_length);
   tmsg->hw::network_message::set_type((hw::network_message::type_t)ty);
   tmsg->toaddr_ = dst_node;
-  tmsg->set_needs_ack(needs_ack);
   tmsg->set_src_rank(rank_);
   tmsg->set_dest_rank(dst_task);
   //send intra-app
   tmsg->set_apps(sid().app_, dst_app);
+  tmsg->set_needs_ack(msg->needs_send_ack());
 
   if (spy_num_messages_) spy_num_messages_->add_one(rank_, dst_task);
   if (spy_bytes_) spy_bytes_->add(rank_, dst_task, byte_length);
@@ -402,14 +364,13 @@ sumi_transport::go_revive()
 }
 
 void
-sumi_transport::do_smsg_send(int dst, const sumi::message::ptr &msg)
+sumi_transport::do_smsg_send(int dst, sumi::message* msg)
 {
   if (post_header_delay_.ticks_int64()) {
     user_lib_time_->compute(post_header_delay_);
   }
   send(msg->byte_length(), msg,
-    sstmac::hw::network_message::payload,
-    dst, msg->needs_send_ack());
+    sstmac::hw::network_message::payload, dst);
 }
 
 double
@@ -419,181 +380,117 @@ sumi_transport::wall_time() const
 }
 
 void
-sumi_transport::do_send_ping_request(int dst)
-{
-  sumi::message::ptr msg = std::make_shared<sumi::message>();
-  msg->set_class_type(sumi::message::ping);
-  //here, a simple rdma get
-  rdma_get(dst, msg);
-}
-
-void
-sumi_transport::do_rdma_get(int dst, const sumi::message::ptr& msg)
+sumi_transport::do_rdma_get(int dst, sumi::message* msg)
 {
   if (post_rdma_delay_.ticks_int64()) {
     user_lib_time_->compute(post_rdma_delay_);
   }
 
   send(msg->byte_length(), msg,
-    sstmac::hw::network_message::rdma_get_request,
-    dst, msg->needs_send_ack());
+    sstmac::hw::network_message::rdma_get_request, dst);
 }
 
 void
-sumi_transport::do_rdma_put(int dst, const sumi::message::ptr& msg)
+sumi_transport::do_rdma_put(int dst, sumi::message* msg)
 {
   if (post_rdma_delay_.ticks_int64()) {
     user_lib_time_->compute(post_rdma_delay_);
   }
   send(msg->byte_length(), msg,
-    sstmac::hw::network_message::rdma_put_payload,
-    dst, msg->needs_send_ack());
+    sstmac::hw::network_message::rdma_put_payload, dst);
 }
 
 void
-sumi_transport::do_nvram_get(int dst, const sumi::message::ptr& msg)
+sumi_transport::do_nvram_get(int dst, sumi::message* msg)
 {
   send(msg->byte_length(), msg,
-    sstmac::hw::network_message::nvram_get_request,
-    dst, msg->needs_send_ack());
+    sstmac::hw::network_message::nvram_get_request, dst);
 }
 
-sumi::message::ptr
+sumi::transport_message*
 sumi_transport::poll_pending_messages(bool blocking, double timeout)
 {
-  while (1) {
-    if (poll_delay_.ticks_int64()) {
-      user_lib_time_->compute(poll_delay_);
+  if (poll_delay_.ticks_int64()) {
+    user_lib_time_->compute(poll_delay_);
+  }
+
+  if (pending_messages_.empty() && blocking) {
+    sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
+    if (timeout > 0.){
+      os_->schedule_timeout(sstmac::timestamp(timeout), blocker);
+    } else if (timeout == 0.){
+      spkt_abort_printf("invalid timeout of 0 - use -1 as sentinel value to indicate no timeout");
     }
-
-    if (pending_messages_.empty() && blocking) {
-      sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
-      if (timeout > 0.){
-        os_->schedule_timeout(sstmac::timestamp(timeout), blocker);
-      }
-      blocked_keys_.push_back(blocker);
-      debug_printf(sprockit::dbg::sumi,
-                   "sumi queue %p has no pending messages - blocking poller %p",
-                   this, blocker);
-      os_->block(blocker);
-      if (timeout <= 0){
-        if (pending_messages_.empty()){
-          spkt_abort_printf("SUMI transport rank %d unblocked with no messages and no timeout", 
-            rank_, timeout);
-        } 
-        delete blocker;
-      } else {
-        if (pending_messages_.empty()){
-          //timed out, erase blocker from list
-          auto iter = blocked_keys_.begin();
-          while (*iter != blocker) ++iter;
-          if (iter == blocked_keys_.end()){
-            spkt_abort_printf("Rank %d time out has no key", rank_);
-          }
-          blocked_keys_.erase(iter);
-          return sumi::message::ptr();
-        }
-      } 
-    } else if (pending_messages_.empty()){
-      return sumi::message::ptr();
-    }
-
-    //we have been unblocked because a message has arrived
-    transport_message* msg = pending_messages_.front();
-    pending_messages_.pop_front();
-
+    blocked_keys_.push_back(blocker);
     debug_printf(sprockit::dbg::sumi,
-                 "rank %d polling on %p returned msg %s",
-                 rank(), this, msg->to_string().c_str());
-    sumi::message_ptr notification = handle(msg);
-    delete msg;
-    if (notification){
-      return notification;
+                 "Rank %d sumi queue %p has no pending messages - blocking poller %p",
+                 rank(), this, blocker);
+    os_->block(blocker);
+    if (timeout <= 0){
+      if (pending_messages_.empty()){
+        spkt_abort_printf("SUMI transport rank %d unblocked with no messages and no timeout",
+          rank_, timeout);
+      }
+      delete blocker;
+    } else {
+      if (pending_messages_.empty()){
+        //timed out, erase blocker from list
+        auto iter = blocked_keys_.begin();
+        while (*iter != blocker) ++iter;
+        if (iter == blocked_keys_.end()){
+          spkt_abort_printf("Rank %d time out has no key", rank_);
+        }
+        blocked_keys_.erase(iter);
+        return nullptr;
+      }
     }
+  } else if (pending_messages_.empty()){
+    return nullptr;
   }
+
+  //we have been unblocked because a message has arrived
+  transport_message* msg = pending_messages_.front();
+  pending_messages_.pop_front();
+  process(msg);
+
+  debug_printf(sprockit::dbg::sumi,
+               "rank %d polling on %p returned msg %s",
+               rank(), this, msg->to_string().c_str());
+
+  return msg;
 }
 
-void
-sumi_transport::cq_notify()
-{
-  debug_printf(sprockit::dbg::sumi, "Rank %d starting cq notification", rank_);
-  //a null message indicates a cq notification
-  if (!blocked_keys_.empty()){
-    debug_printf(sprockit::dbg::sumi, "Rank %d generating cq notification", rank_);
-    incoming_message(nullptr);
-  }
-}
-
-sumi::collective_done_message::ptr
-sumi_transport::collective_block(sumi::collective::type_t ty, int tag)
+sumi::collective_done_message*
+sumi_transport::collective_block(sumi::collective::type_t ty, int tag, int cq_id)
 {
   //first we have to loop through the completion queue to see if it already exists
-  while(1)
-  {
-  std::list<sumi::message::ptr>::iterator it, end = completion_queue_.start_iteration();
-  for (it=completion_queue_.begin(); it != end; ++it){
-    sumi::message::ptr msg = *it;
-    if (msg->class_type() == sumi::message::collective_done){
-      //this is a collective done message
-      auto cmsg = std::dynamic_pointer_cast<sumi::collective_done_message>(msg);
-      if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
-        completion_queue_.erase(it);
-        completion_queue_.end_iteration();
-        return cmsg;
+  while(1){
+    auto& collective_cq = completion_queues_[collective_cq_id_];
+    auto end = collective_cq.end();
+    for (auto it=collective_cq.begin(); it != end; ++it){
+      sumi::message* msg = *it;
+      if (msg->class_type() == sumi::message::collective_done){
+        //this is a collective done message
+        auto cmsg = dynamic_cast<sumi::collective_done_message*>(msg);
+        if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
+          collective_cq.erase(it);
+          return cmsg;
+        }
       }
     }
-  }
 
-  completion_queue_.end_iteration();
-  sumi::message::ptr msg = poll_pending_messages(true); //block
-
-  if (msg->class_type() == sumi::message::collective_done){
-    //this is a collective done message
-    auto cmsg = std::dynamic_pointer_cast<sumi::collective_done_message>(msg);
-    if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
-      return cmsg;
+    sumi::message* msg = poll_new(true); //blocking
+    if (msg->class_type() == sumi::message::collective_done){
+      //this is a collective done message
+      auto cmsg = dynamic_cast<sumi::collective_done_message*>(msg);
+      if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
+        return cmsg;
+      }
+      collective_cq.push_back(msg);
+    } else {
+      completion_queues_[pt2pt_cq_id_].push_back(msg);
     }
   }
-  completion_queue_.push_back(msg);
-
-  }
-
-}
-
-void
-sumi_transport::do_send_terminate(int dst)
-{
-  //make a no-op
-}
-
-void
-sumi_transport::schedule_next_heartbeat()
-{
-  schedule_delay(heartbeat_interval_,
-         new_callback(loc_, this, &sumi_transport::next_heartbeat));
-}
-
-void
-sumi_transport::delayed_transport_handle(const sumi::message::ptr &msg)
-{
-  sstmac::callback* done_ev = sstmac::new_callback(
-        loc_, this, &transport::handle, msg);
-  schedule_delay(sstmac::timestamp(1e-9), done_ev);
-}
-
-void
-sumi_transport::schedule_ping_timeout(sumi::pinger* pnger, double to)
-{
-  sstmac::timestamp next_ping_time = api::now() + to;
-  sstmac::callback* cb_event = sstmac::new_callback(
-        loc_, this, &sumi_transport::ping_timeout, pnger);
-  api::schedule(next_ping_time, cb_event);
-}
-
-void
-sumi_transport::ping_timeout(sumi::pinger* pnger)
-{
-  pnger->execute();
 }
 
 void
@@ -610,15 +507,53 @@ sumi_transport::incoming_message(transport_message *msg)
     sstmac::sw::key* next_key = blocked_keys_.front();
     debug_printf(sprockit::dbg::sumi,
                  "sumi queue %p unblocking poller %p to handle message %s",
-                  this, next_key, msg->payload()->to_string().c_str());
+                  this, next_key, msg->get_payload()->to_string().c_str());
     blocked_keys_.pop_front();
     os_->unblock(next_key);
   } else {
     debug_printf(sprockit::dbg::sumi,
                  "sumi queue %p has no pollers to unblock for message %s",
-                  this, msg->payload()->to_string().c_str());
+                  this, msg->get_payload()->to_string().c_str());
   }
 }
 
+void
+sumi_transport::send_terminate(int dst)
+{
+  //make a no-op
+}
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+void
+sumi_transport::send_ping_request(int dst)
+{
+  sumi::message* msg = new sumi::message>();
+  msg->set_class_type(sumi::message::ping);
+  //here, a simple rdma get
+  rdma_get(dst, msg);
+}
+
+void
+sumi_transport::schedule_next_heartbeat()
+{
+  schedule_delay(heartbeat_interval_,
+         new_callback(loc_, this, &sumi_transport::next_heartbeat));
+}
+
+void
+sumi_transport::schedule_ping_timeout(sumi::pinger* pnger, double to)
+{
+  sstmac::timestamp next_ping_time = api::now() + to;
+  sstmac::callback* cb_event = sstmac::new_callback(
+        loc_, this, &sumi_transport::ping_timeout, pnger);
+  api::schedule(next_ping_time, cb_event);
+}
+
+void
+sumi_transport::ping_timeout(sumi::pinger* pnger)
+{
+  pnger->execute();
+}
+#endif
 
 }

@@ -66,7 +66,7 @@ mpi_queue_probe_request::mpi_queue_probe_request(mpi_request* key,
 // Test whether we match a given message.
 //
 bool
-mpi_queue_probe_request::matches(const mpi_message::ptr& message) const
+mpi_queue_probe_request::matches(mpi_message* message) const
 {
   MPI_Comm inid = message->comm();
   bool sameid = (myid_ == inid);
@@ -79,7 +79,7 @@ mpi_queue_probe_request::matches(const mpi_message::ptr& message) const
 // Consider this request complete.
 //
 void
-mpi_queue_probe_request::complete(const mpi_message::ptr& message)
+mpi_queue_probe_request::complete(mpi_message* message)
 {
   key_->complete(message);
 }

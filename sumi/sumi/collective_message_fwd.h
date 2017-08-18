@@ -50,10 +50,9 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 class collective_work_message;
-typedef std::shared_ptr<collective_work_message> collective_work_message_ptr;
 
 class collective_done_message;
-typedef std::shared_ptr<collective_done_message> collective_done_message_ptr;
+
 }
 
 #endif // COLLECTIVE_MESSAGE_FWD_H

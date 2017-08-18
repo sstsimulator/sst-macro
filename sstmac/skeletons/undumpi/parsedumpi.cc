@@ -105,20 +105,18 @@ void parsedumpi::skeleton_main()
 {
   int rank = this->tid();
   mpi_ = get_api<mpi_api>();
+
   sstmac::sw::dumpi_meta* meta = new   sstmac::sw::dumpi_meta(fileroot_);
   parsedumpi_callbacks cbacks(this);
   std::string fname = sstmac::sw::dumpi_file_name(rank, meta->dirplusfileprefix_);
   // Ready to go.
-
   //only rank 0 should print progress
   bool print_my_progress = rank == 0 && print_progress_;
   //only rank 0 should cause termination
   double my_percent_terminate = rank == 0 ? percent_terminate_ : -1;
-
   sstmac::runtime::add_deadlock_check(
     sstmac::new_deadlock_check(mpi(), &sumi::transport::deadlock_check));
   sstmac::runtime::enter_deadlock_region();
-
   cbacks.parse_stream(fname.c_str(), print_my_progress, my_percent_terminate);
 
   if (rank == 0) {

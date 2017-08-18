@@ -91,7 +91,7 @@ gni_transport::send_pending_smsg()
 }
 
 void
-gni_transport::smsg_send(int dst, const message::ptr &msg, header_type_t type)
+gni_transport::smsg_send(int dst, message* msg, header_type_t type)
 {
   gni_debug("sending header of type %d to %d", rank_, type, dst);
   if (dst == rank_){
@@ -109,7 +109,7 @@ gni_transport::smsg_send(int dst, const message::ptr &msg, header_type_t type)
 }
 
 void
-gni_transport::do_smsg_send(int dst, const message::ptr &msg)
+gni_transport::do_smsg_send(int dst, message* msg)
 {
   smsg_send(dst, msg, PAYLOAD);
 }

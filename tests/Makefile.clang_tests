@@ -7,6 +7,7 @@ SSTMAC_DEGLOBAL=$(top_builddir)/bin/sstmac_clang_deglobal
 
 CLANGTESTS = \
   deglobal_regular \
+  deglobal_namespace \
   deglobal_array \
   deglobal_template \
   deglobal_fxn_static \

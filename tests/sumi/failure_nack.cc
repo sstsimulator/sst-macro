@@ -69,7 +69,7 @@ main(int argc, char **argv)
   }
 
   for (int i=0; i < 10; i++){
-    message::ptr next = comm_poll();
+    message* next = comm_poll();
     double now = sstmac_now() * 1e3;
     coutn << sprockit::printf("Rank(%d): At t=%12.8f ms got message of type %s\n",
         rank, now, sumi::message::tostr(next->payload_type()));

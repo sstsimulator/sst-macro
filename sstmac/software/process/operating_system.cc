@@ -228,7 +228,7 @@ operating_system::~operating_system()
   if (call_graph_) delete call_graph_;
 #endif
 
-  if (ftq_trace_) delete ftq_trace_;
+  //if (ftq_trace_) delete ftq_trace_;
 }
 
 operating_system::os_thread_context operating_system::cxa_finalize_context_;

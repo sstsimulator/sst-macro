@@ -88,8 +88,12 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData
   stackOffset += offsetIncrement;
 }
 
-namespace sw {
-
+GlobalVariable::~GlobalVariable()
+{
+  if (globalInits){
+    delete[] globalInits;
+    globalInits = nullptr;
+  }
 }
 
 }

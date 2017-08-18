@@ -60,9 +60,9 @@ class mpi_queue_probe_request  {
   mpi_queue_probe_request(mpi_request* key, MPI_Comm comm,
                 int source, int tag);
 
-  bool matches(const mpi_message::ptr& message) const;
+  bool matches(mpi_message* message) const;
 
-  void complete(const mpi_message::ptr& message);
+  void complete(mpi_message* message);
 
  protected:
   MPI_Comm myid_;

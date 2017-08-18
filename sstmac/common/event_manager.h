@@ -208,9 +208,11 @@ class event_manager
     bool reduce_all;
     bool dump_all;
     bool dump_main;
+    bool need_delete;
     stat_collector* main_collector;
     std::list<stat_collector*> collectors;
-    stats_entry() : main_collector(nullptr) {}
+    stats_entry() : main_collector(nullptr), need_delete(false)
+    {}
   };
   std::map<std::string, stats_entry> stats_;
 

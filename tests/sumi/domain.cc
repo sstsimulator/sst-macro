@@ -69,7 +69,7 @@ run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
       dense_me, known_failures.to_string().c_str());
   }
 
-  collective_done_message::ptr dmsg;
+  collective_done_message* dmsg;
 
   int src[] = { dense_me };
   int dst[nproc_live];
@@ -140,7 +140,7 @@ test_allreduce(communicator* dom, int tag)
   int* dst_buffer = new int[nelems];
   comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, false, options::initial_context, dom);
 
-  message::ptr msg = comm_poll(); //wait on allreduce
+  message* msg = comm_poll(); //wait on allreduce
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allreduce test: expected collective message, but got %s",
@@ -174,7 +174,7 @@ test_allgather(communicator* dom, int tag)
 
   comm_allgather(dst_buffer, src_buffer, nelems, sizeof(int), tag, false, options::initial_context, dom);
 
-  message::ptr msg = comm_poll(); //wait on allgather
+  message* msg = comm_poll(); //wait on allgather
   if (msg->class_type() != message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allreduce test: expected collective message, but got %s",
