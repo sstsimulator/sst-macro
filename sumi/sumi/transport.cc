@@ -290,10 +290,10 @@ transport::poll_new(bool blocking, double timeout)
     transport_message* tmsg = poll_pending_messages(blocking, timeout);
     if (tmsg){
       message* cq_notifier = handle(tmsg->take_payload());
+      delete tmsg;
       if (cq_notifier || !blocking){
         return cq_notifier;
       }
-      delete tmsg;
     } else {
       return nullptr;
     }

@@ -56,6 +56,8 @@ class GlobalVariable {
  public:
   GlobalVariable(int& offset, const int size, const void* initData);
 
+  ~GlobalVariable();
+
   static int globalsSize() {
     return stackOffset;
   }

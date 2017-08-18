@@ -193,6 +193,7 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
   }
   //job launcher needs to add this - might need it later
   task_mapping::add_global_mapping(request->aid(), request->app_namespace(), mapping);
+  delete request;
 }
 
 bool
@@ -236,7 +237,6 @@ exclusive_job_launcher::handle_launch_request(app_launch_request *request, order
 void
 exclusive_job_launcher::stop_event_received(job_stop_event *ev)
 {
-  delete active_job_;
   active_job_ = nullptr;
   if (!pending_requests_.empty()){
     app_launch_request* next = pending_requests_.front();

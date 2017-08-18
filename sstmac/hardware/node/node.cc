@@ -172,6 +172,7 @@ node::init(unsigned int phase)
 
 node::~node()
 {
+  if (job_launcher_) delete job_launcher_;
   if (app_launcher_) delete app_launcher_;
   if (mem_model_) delete mem_model_;
   if (proc_) delete proc_;

@@ -78,8 +78,13 @@ class parallel_runtime :
 
     comm_buffer() : storage(nullptr), ptr(nullptr) {}
 
+    ~comm_buffer(){
+      if (storage) delete[] storage;
+    }
+
     void erase(){
       if (storage) delete[] storage;
+      storage = nullptr;
     }
 
     void init(size_t size){

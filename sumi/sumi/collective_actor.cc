@@ -804,7 +804,6 @@ dag_collective_actor::data_recved(action* ac_, collective_work_message* msg, voi
       */
     }
   }
-
   comm_action_done(ac);
 }
 
@@ -993,6 +992,7 @@ dag_collective_actor::incoming_recv_message(action* ac, collective_work_message*
     //data recved will clear the actions
     data_recved(ac, msg, msg->eager_buffer());
     my_api_->free_eager_buffer(msg);
+    delete msg;
     break;
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   case collective_work_message::nack_get_header:
@@ -1025,6 +1025,7 @@ dag_collective_actor::incoming_send_message(action* ac, collective_work_message*
     spkt_throw_printf(sprockit::value_error,
      "invalid send action %s", collective_work_message::tostr(msg->action()));
   }
+
 }
 
 void
@@ -1136,15 +1137,18 @@ dag_collective_actor::recv(collective_work_message* msg)
       //the recv buffer was the "local" buffer in the RDMA get
       //I got it from someone locally
       data_recved(msg, msg->local_buffer());
+      delete msg;
       break;
     case message::rdma_put:
       //the recv buffer the "remote" buffer in the RDMA put
       //some put into me remotely
       data_recved(msg, msg->remote_buffer());
+      delete msg;
       break;
     case message::rdma_get_ack:
     case message::rdma_put_ack:
       data_sent(msg);
+      delete msg;
       break;
     case message::rdma_get_nack:
       //partner is the sender - I tried and RDMA get but they were dead

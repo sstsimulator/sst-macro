@@ -217,6 +217,7 @@ mpi_api::wait_collective(collective_op_base* op)
                     collective::tostr(cmsg->type()), cmsg->tag(),
                     collective::tostr(op->ty), op->tag);
       if (op->tag == cmsg->tag() && op->ty == cmsg->type()){  //done!
+        delete cmsg;
         break;
       } else {
         //a different collective completed

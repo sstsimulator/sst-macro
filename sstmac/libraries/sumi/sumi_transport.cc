@@ -208,6 +208,9 @@ sumi_transport::~sumi_transport()
   sumi_server* server = safe_cast(sumi_server, os_->lib(server_libname_));
   bool del = server->unregister_proc(rank_, this);
   if (del) delete server;
+
+  //if (spy_bytes_) delete spy_bytes_;
+  //if (spy_num_messages_) delete spy_num_messages_;
 }
 
 event_scheduler*
