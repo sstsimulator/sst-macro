@@ -438,6 +438,18 @@ ComputeVisitor::visitBodyIfStmt(IfStmt *stmt, Loop::Body &body)
 }
 
 void
+ComputeVisitor::visitBodySwitchStmt(SwitchStmt *stmt, Loop::Body &body)
+{
+  body.intops += 1; //for jump table
+  body.readBytes += 8; //for jump table
+  SwitchCase* sc = stmt->getSwitchCaseList();
+  while (sc){
+    addOperations(sc->getSubStmt(), body);
+    sc = sc->getNextSwitchCase();
+  }
+}
+
+void
 ComputeVisitor::visitBodyDeclStmt(DeclStmt* stmt, Loop::Body& body)
 {
   if (!stmt->isSingleDecl()){
@@ -482,6 +494,7 @@ ComputeVisitor::addOperations(Stmt* stmt, Loop::Body& body, bool isLHS)
     body_case(ArraySubscriptExpr,stmt,body,isLHS);
     body_case(DeclStmt,stmt,body);
     body_case(IfStmt,stmt,body);
+    body_case(SwitchStmt,stmt,body);
     default:
       break;
   }
