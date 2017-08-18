@@ -262,7 +262,7 @@ void traverse_IdMap( uint64_t localId,
                      uint64_t globalId,
                      void* userData) {
   auto app = (OTF2TraceReplayApp*)userData;
-  app->local_to_global_comm_map[localId] = globalId;
+  //app->local_to_global_comm_map[localId] = globalId;
 }
 
 OTF2_CallbackCode
@@ -344,7 +344,9 @@ OTF2_CallbackCode event_mpi_send(
     MpiCall* call = app->GetCallQueue().find_latest(ID_MPI_Send);
     MpiCall::assert_call(call, "Lookup for MPI_Send in 'event_mpi_send' returned NULL");
 
-    call->on_trigger = [=]() { call->app->GetMpi()->send(nullptr, msgLength, MPI_BYTE, app->MapRank(receiver), msgTag, communicator); };
+    call->on_trigger = [=]() {
+      call->app->GetMpi()->send(nullptr, msgLength, MPI_BYTE, receiver, msgTag, communicator);
+    };
 
     if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("MPI SEND");
     return OTF2_CALLBACK_SUCCESS;
@@ -372,7 +374,7 @@ OTF2_CallbackCode event_mpi_isend(
     app->GetCallQueue().AddRequest(requestID, call);
     call->on_trigger = [=]() {
       MPI_Request req = requestID;
-      call->app->GetMpi()->isend(nullptr, msgLength, MPI_BYTE, app->MapRank(receiver), msgTag,
+      call->app->GetMpi()->isend(nullptr, msgLength, MPI_BYTE, receiver, msgTag,
                                  communicator, &req);
     };
 
@@ -439,7 +441,7 @@ OTF2_CallbackCode event_mpi_irecv(
 
   call->on_trigger = [=]() {
     MPI_Request req = requestID;
-    app->GetMpi()->irecv(nullptr, msgLength, MPI_BYTE, app->MapRank(sender), msgTag, communicator, &req);
+    app->GetMpi()->irecv(nullptr, msgLength, MPI_BYTE, sender, msgTag, communicator, &req);
   };
 
   add_wait(app, app->GetCallQueue(), (MPI_Request)requestID);
@@ -466,7 +468,10 @@ OTF2_CallbackCode event_mpi_recv(
     MpiCall* call = app->GetCallQueue().find_latest(ID_MPI_Recv);
     MpiCall::assert_call(call, "Lookup for MpiIrecvCall in 'event_mpi_irecv_request' returned NULL");
 
-    call->on_trigger = [=]() {app->GetMpi()->recv(nullptr, msgLength, MPI_BYTE, app->MapRank(sender), msgTag, communicator, MPI_STATUS_IGNORE);};
+    call->on_trigger = [=]() {
+      app->GetMpi()->recv(nullptr, msgLength, MPI_BYTE,
+                          sender, msgTag, communicator, MPI_STATUS_IGNORE);
+    };
 
     if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) EVENT_PRINT("RECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
     return OTF2_CALLBACK_SUCCESS;
@@ -551,18 +556,18 @@ OTF2_CallbackCode event_mpi_collective_end(
 
     switch (collectiveOp) {
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER,   call->on_trigger = [=]() {call->app->GetMpi()->barrier(comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST,     call->on_trigger = [=]() {call->app->GetMpi()->bcast(sizeSent, MPI_BYTE, app->MapRank(root), comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER,    call->on_trigger = [=]() {call->app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, app->MapRank(root), comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV,   call->on_trigger = [=]() {call->app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, app->MapRank(root), comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER,   call->on_trigger = [=]() {call->app->GetMpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, app->MapRank(root), comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV,  call->on_trigger = [=]() {call->app->GetMpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, app->MapRank(root), comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST,     call->on_trigger = [=]() {call->app->GetMpi()->bcast(sizeSent, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER,    call->on_trigger = [=]() {call->app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV,   call->on_trigger = [=]() {call->app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER,   call->on_trigger = [=]() {call->app->GetMpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV,  call->on_trigger = [=]() {call->app->GetMpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call->on_trigger = [=]() {call->app->GetMpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHERV,call->on_trigger = [=]() {call->app->GetMpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL,  call->on_trigger = [=]() {call->app->GetMpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLV, call->on_trigger = [=]() {call->app->GetMpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLW, call->on_trigger = [=]() {call->app->GetMpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call->on_trigger = [=]() {call->app->GetMpi()->allreduce(sizeSent, MPI_BYTE, OTF2_OP, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE,    call->on_trigger = [=]() {call->app->GetMpi()->reduce(sizeSent, MPI_BYTE, OTF2_OP, app->MapRank(root), comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE,    call->on_trigger = [=]() {call->app->GetMpi()->reduce(sizeSent, MPI_BYTE, OTF2_OP, root, comm);})
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE_SCATTER, call->on_trigger = [=]() {call->app->GetMpi()->reduce_scatter_block(sizeReceived, MPI_BYTE, OTF2_OP, comm);})
 		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN,      call->on_trigger = [=]() {call->app->GetMpi()->scan(sizeSent, MPI_BYTE, OTF2_OP, comm);})
 

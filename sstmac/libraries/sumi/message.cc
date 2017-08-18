@@ -56,8 +56,10 @@ transport_message::serialize_order(serializer& ser)
 {
   network_message::serialize_order(ser);
   library_interface::serialize_order(ser);
-  //sumi::message* msg = payload_.get();
-  ser & payload_;
+  //ser & payload_; not yet supported in SST core
+  auto tmp = payload_.get();
+  serialize_intrusive_ptr(tmp, ser);
+  payload_ = std::shared_ptr<sumi::message>(tmp);
   //payload_ = msg;
   ser & src_;
   ser & dest_;
