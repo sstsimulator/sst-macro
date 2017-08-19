@@ -12,6 +12,7 @@ SKELETONCASES= \
   sst_component_example \
   multiapp \
   sendrecv \
+  traffic \
   sendrecv_sst_so \
   boxml
 
