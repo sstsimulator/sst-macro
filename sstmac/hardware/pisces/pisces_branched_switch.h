@@ -42,8 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef pisces_TILED_SWITCH_H
-#define pisces_TILED_SWITCH_H
+#ifndef pisces_BRANCHED_SWITCH_H
+#define pisces_BRANCHED_SWITCH_H
 
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/pisces/pisces_buffer.h>
@@ -55,50 +55,37 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class pisces_switch
- A switch in the network that arbitrates/routes packet_trains
- to the next link in the network
+ @class pisces_branched_switch
+ A branched/hierarchical switch in the network that arbitrates/routes
+ packet_trains to the next link in the network
  */
-class pisces_tiled_switch :
+class pisces_branched_switch :
   public pisces_abstract_switch
 {
-  RegisterComponent("pisces_tiled", network_switch, pisces_tiled_switch,
+  RegisterComponent("pisces_branched", network_switch, pisces_branched_switch,
          "macro", COMPONENT_CATEGORY_NETWORK,
-         "A tiled network switch implementing the packet flow congestion model")
+         "A branched/hierarchical network switch implementing the packet flow congestion model")
  public:
-  pisces_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  pisces_branched_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
-  int queue_length(int port) const override;
+  int
+  queue_length(int port) const override;
 
-#if 0
   virtual void
-  connect(sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod) override;
-#endif
-
-  void connect_output(sprockit::sim_parameters* params,
+  connect_output(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
                  event_handler* mod) override;
 
-  void connect_input(sprockit::sim_parameters* params,
+  virtual void
+  connect_input(sprockit::sim_parameters* params,
                 int src_outport, int dst_inport,
                 event_handler* mod) override;
 
-#if 0
-  /**
-   Cast message and pass to #send
-   @param msg Incoming message (should cast to packet_train)
-   */
-  void
-  handle(event* ev) override;
-#endif
+  link_handler*
+  credit_handler(int port) const override;
 
-  link_handler* credit_handler(int port) const override;
-
-  link_handler* payload_handler(int port) const override;
+  link_handler*
+  payload_handler(int port) const override;
 
   void handle_credit(event* ev);
 
@@ -111,49 +98,26 @@ class pisces_tiled_switch :
    @param addr The compute node address of the endpoint to eject to
    @param link The link to the compute node for ejection
    */
-  void add_ejector(node_id addr, event_handler* link);
+  void
+  add_ejector(node_id addr, event_handler* link);
 
-  virtual std::string to_string() const override;
+  virtual std::string
+  to_string() const override;
 
-  virtual ~pisces_tiled_switch();
-
-#if 0
-  event_handler*
-  demuxer(int port) const {
-    return row_input_demuxers_[port];
-  }
-#endif
+  virtual
+  ~pisces_branched_switch();
 
   void deadlock_check() override;
 
   void deadlock_check(event* ev) override;
 
  protected:
+  int n_local_xbars_;
+  int n_local_ports_;
 
-#if 0
-  virtual void
-  connect_injector(sprockit::sim_parameters* params,
-                   int src_outport, int dst_inport,
-                   event_handler* nic) override;
-
-  virtual void
-  connect_ejector(sprockit::sim_parameters* params,
-                  int src_outport, int dst_inport,
-                  event_handler* nic) override;
-#endif
-
- protected:
-  std::vector<pisces_demuxer*> row_input_demuxers_;
-
-  std::vector<pisces_crossbar*> xbar_tiles_;
-
-  std::vector<pisces_muxer*> col_output_muxers_;
-
-  int nrows_;
-
-  int ncols_;
-
-  int row_buffer_num_bytes_;
+  pisces_crossbar* xbar_;
+  std::vector<pisces_muxer*> input_muxers_;
+  std::vector<pisces_demuxer*> output_demuxers_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* ack_handler_;
@@ -161,29 +125,13 @@ class pisces_tiled_switch :
 #endif
 
  private:
-  int row_col_to_tile(int row, int col);
 
-  void tile_to_row_col(int tile, int& row, int& col);
+  void resize_buffers();
 
   void init_components(sprockit::sim_parameters* params);
-
-#if 0
-  void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_handler* mod);
-
-  void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_handler* mod);
-#endif
-
 };
 
 }
 }
 
-#endif // pisces_TILED_SWITCH_H
+#endif // pisces_BRANCHED_SWITCH_H
