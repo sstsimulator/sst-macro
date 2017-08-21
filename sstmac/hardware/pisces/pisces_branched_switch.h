@@ -118,7 +118,6 @@ class pisces_branched_switch :
   pisces_crossbar* xbar_;
   std::vector<pisces_muxer*> input_muxers_;
   std::vector<pisces_demuxer*> output_demuxers_;
-  std::vector<pisces_network_buffer*> output_buffers_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* ack_handler_;

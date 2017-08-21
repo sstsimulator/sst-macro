@@ -94,8 +94,6 @@ pisces_branched_switch::~pisces_branched_switch()
     if (mux) delete mux;
   for (pisces_demuxer* demux : output_demuxers_)
     if (demux) delete demux;
-  for (pisces_network_buffer* buf : output_buffers_)
-    if (buf) delete buf;
 }
 
 void
@@ -127,7 +125,6 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
   xbar_->configure_outports(n_local_xbars_,divide_port_mapper(n_local_xbars_));
   input_muxers_.resize(n_local_xbars_);
   output_demuxers_.resize(n_local_xbars_);
-  output_buffers_.resize(n_local_xbars_ * n_local_ports_);
   for (int i=0; i < n_local_xbars_; ++i) {
     std::string location(std::to_string(i));
 
@@ -142,12 +139,6 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
     demux->set_tile_id(location);
     demux->set_update_vc(false);
     output_demuxers_[i] = demux;
-
-    for (int j=0; j < n_local_ports_; ++j) {
-      pisces_network_buffer* buf =
-          new pisces_network_buffer(link_params, this);
-      output_buffers_[i*n_local_ports_ + j] = buf;
-    }
   }
 
   // connect input muxers to central xbar
@@ -157,16 +148,11 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
     xbar_->set_input(xbar_params,i,0,mux->credit_handler());
   }
 
-  // connect output demuxers to central xbar and output buffers
+  // connect output demuxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
     pisces_demuxer* demux = output_demuxers_[i];
     xbar_->set_output(xbar_params,i,0,demux->payload_handler());
     demux->set_input(output_params,0,i,xbar_->credit_handler());
-    for(int j=0; j < n_local_ports_; ++j) {
-      pisces_network_buffer* buf = output_buffers_[i*n_local_ports_ + j];
-      demux->set_output(output_params,j,0,buf->payload_handler());
-      buf->set_input(link_params,0,j,demux->credit_handler());
-    }
   }
 }
 
@@ -178,8 +164,8 @@ pisces_branched_switch::connect_output(
   event_handler *mod)
 {
   params->add_param_override("num_vc", router_->max_num_vc());
-  pisces_network_buffer* buf = output_buffers_[src_outport];
-  buf->set_output(params, 0, dst_inport, mod);
+  pisces_demuxer* demux = output_demuxers_[src_outport/n_local_ports_];
+  demux->set_output(params, src_outport % n_local_ports_, dst_inport, mod);
 }
 
 void
@@ -189,8 +175,8 @@ pisces_branched_switch::connect_input(
   int dst_inport,
   event_handler *mod)
 {
-  pisces_muxer* demuxer = input_muxers_[dst_inport/n_local_ports_];
-  demuxer->set_input(params, dst_inport % n_local_ports_, src_outport, mod);
+  pisces_muxer* muxer = input_muxers_[dst_inport/n_local_ports_];
+  muxer->set_input(params, dst_inport % n_local_ports_, src_outport, mod);
 }
 
 int
@@ -204,8 +190,8 @@ void
 pisces_branched_switch::handle_credit(event *ev)
 {
   pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  pisces_network_buffer* buf = output_buffers_[credit->port()];
-  buf->handle_credit(credit);
+  pisces_demuxer* demux = output_demuxers_[credit->port()/n_local_ports_];
+  demux->handle_credit(credit);
 }
 
 void
@@ -258,9 +244,6 @@ pisces_branched_switch::deadlock_check()
     input_muxers_[i]->deadlock_check();
     output_demuxers_[i]->deadlock_check();
   }
-  for (int i=0; i < n_local_xbars_ * n_local_ports_; ++i) {
-    output_buffers_[i]->deadlock_check();
-  }
 }
 
 void
@@ -269,9 +252,6 @@ pisces_branched_switch::deadlock_check(event *ev)
   for (int i=0; i < n_local_xbars_; ++i){
     input_muxers_[i]->deadlock_check(ev);
     output_demuxers_[i]->deadlock_check(ev);
-  }
-  for (int i=0; i < n_local_xbars_ * n_local_ports_; ++i) {
-    output_buffers_[i]->deadlock_check(ev);
   }
 }
 
