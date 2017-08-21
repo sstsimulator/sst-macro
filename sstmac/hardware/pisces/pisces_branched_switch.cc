@@ -74,8 +74,10 @@ pisces_branched_switch::pisces_branched_switch(
     uint64_t id, event_manager* mgr)
   : pisces_abstract_switch(params, id, mgr)
 {
-  n_local_xbars_ = params->get_int_param("n_local_xbars");
-  n_local_ports_ = params->get_int_param("n_local_ports");
+  std::vector<int> args;
+  params->get_vector_param("geometry", args);
+  n_local_ports_ = args[0];
+  n_local_xbars_ = args[1];
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   payload_handler_ = new_handler(this, &pisces_branched_switch::handle_payload);
