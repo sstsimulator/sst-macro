@@ -274,20 +274,17 @@ mpi_queue::recv(mpi_request* key, int count,
 
   mpi_queue_recv_request* req = new mpi_queue_recv_request(key, this,
                             count, type, source, tag, comm->id(), buffer);
-
   mpi_message* mess = find_matching_recv(req);
   if (mess) {
     if (mess->in_flight()){
       //this is awkward - I match this pending message
       //but I can't do anything to complete it
       //the message has already been processed
-      in_flight_messages_.push_back(req);
-    }
-    else if (mess->is_payload()) {
+      in_flight_messages_[mess] = req;
+    } else if (mess->is_payload()) {
       //user_lib_mem_->copy(mess->payload_bytes());
       mess->protocol()->incoming_payload(this, mess, req);
-    }
-    else {
+    } else {
       mess->protocol()->incoming_header(this, mess, req);
     }
   }
@@ -378,14 +375,6 @@ mpi_queue::incoming_progress_loop_message(mpi_message* message)
     handle_nic_ack(message);
     return;
   }
-
-  /// These are the types of messages we may expect:
-  /// (1)  Response to handshake request (we have the requestor).
-  /// (2)  Data delivery following a handshake ack (we have the receiver)
-  /// (3)  Acks from the NIC that a message has left
-  /// (4)  New messages (either eager-send or a handshake request).
-  /// Only category (4) is subject to order requirements.  The other
-  /// categories get handled immediately
 
   switch (message->content_type()) {
     case mpi_message::eager_payload:
@@ -530,8 +519,7 @@ mpi_queue::handle_new_message(mpi_message* message)
 // Complete an inbound message.
 //
 mpi_queue_recv_request*
-mpi_queue::pop_matching_request(pending_message_t &pending,
-                        mpi_message* message)
+mpi_queue::pop_matching_request(pending_message_t &pending, mpi_message* message)
 {
   mpi_queue_recv_request* req;
   pending_message_t::iterator it, end, tmp;
@@ -541,8 +529,7 @@ mpi_queue::pop_matching_request(pending_message_t &pending,
     tmp = it++;
     if (req->is_cancelled()) {
       pending.erase(tmp);
-    }
-    else if (req->matches(message)) {
+    } else if (req->matches(message)) {
       pending.erase(tmp);
       return req;
     }
@@ -551,8 +538,7 @@ mpi_queue::pop_matching_request(pending_message_t &pending,
 }
 
 mpi_queue_recv_request*
-mpi_queue::pop_pending_request(mpi_message* message,
-                                bool set_need_recv)
+mpi_queue::pop_pending_request(mpi_message* message, bool set_need_recv)
 {
   mpi_queue_recv_request* req = pop_matching_request(pending_message_, message);
   if (!req) {
