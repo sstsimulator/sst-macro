@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+
 #include <mpi.h>
 #include <random>
 #include <stddef.h>
@@ -101,6 +102,14 @@ int main(int argc, char** argv)
     crash("must have even number of ranks");
   }
 
+/**
+  This randomly generates a list of senders and recvers.
+  The skeleton is set up assuming one recver and one sender process per node.
+  Thus a node might be a sender AND recver, sender OR recver, or neither.
+  Sender ranks are even and recver ranks are odd to simplify slurm/aprun.
+  The lists of senders and recvers are randomly shuffled to create the pairings.
+*/
+
   int num_senders = std::atoi(argv[1]);
   check_argument(num_senders, "number of senders");
   if (num_senders == 0){
@@ -126,16 +135,15 @@ int main(int argc, char** argv)
   }
   int senders_per_recver = num_senders / num_recvers;
 
-  std::vector<int> recvers(num_recvers);
-  for (int i=0; i < num_recvers; ++i){
-    recvers[i] = i + nproc/2; //recvers are all in the last half
+  int num_half = nproc/2;
+  std::vector<int> recvers(num_half);
+  for (int i=0; i < num_half; ++i){
+    recvers[i] = 2*i + 1; //recvers are odd
   }
-  int recver_start = nproc/2;
-  int recver_stop = recver_start + num_recvers;
 
-  std::vector<int> senders(num_senders);
-  for (int i=0; i < num_senders; ++i){
-    senders[i] = i;
+  std::vector<int> senders(num_half);
+  for (int i=0; i < num_half; ++i){
+    senders[i] = 2*i; //senders are even
   }
 
   std::mt19937 mt(seed);
@@ -168,7 +176,9 @@ int main(int argc, char** argv)
     std::vector<double> allTputs(buffer_sizes.size()*num_senders);
     MPI_Allgather(tputs.data(), buffer_sizes.size(), MPI_DOUBLE,
                   allTputs.data(), buffer_sizes.size(), MPI_DOUBLE, roleComm);
-    if (rank == 0){
+    int roleRank = 0;
+    MPI_Comm_rank(roleComm, &roleRank);
+    if (roleRank == 0){
       int num_times = buffer_sizes.size();
       for (int i=0; i < num_senders; ++i){
         double* tputs = &allTputs[num_times*i];
