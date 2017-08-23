@@ -105,6 +105,7 @@ parse_opts(int argc, char **argv, opts &oo)
     { "configfile", required_argument, NULL, 'f' },
     { "auto", no_argument, NULL, 'a' },
     { "app", required_argument, NULL, 'A' },
+    { "app-argv", required_argument, NULL, 'V' },
     { "nproc", required_argument, NULL, 'n' },
     { "param", required_argument, NULL, 'p' },
     { "srun", required_argument, NULL, 's' },
@@ -144,6 +145,9 @@ parse_opts(int argc, char **argv, opts &oo)
         break;
       case 'A' :
         oo.params->add_param_override("node.app1.name", optarg);
+        break;
+      case 'V' :
+        oo.params->add_param_override("node.app1.argv", optarg);
         break;
       case 'f':
         oo.configfile = optarg;

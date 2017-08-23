@@ -124,7 +124,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   sourceFiles = []
   objectFiles = []
   warningArgs = []
-  optFlags = []
+  givenOptFlags = []
   objTarget = None
   ldTarget = None
   getObjTarget = False
@@ -165,10 +165,13 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       linkerArgs.append(sarg)
     elif sarg.startswith("-O"):
       givenFlags.append(sarg)
-      optFlags.append(sarg)
+      givenOptFlags.append(sarg)
+    elif sarg == "-fPIC":
+      givenFlags.append(sarg)
+      givenOptFlags.append(sarg)
     elif sarg == "-g":
       givenFlags.append(sarg)
-      optFlags.append(sarg)
+      givenOptFlags.append(sarg)
     elif "-std=" in sarg:
       givenStdFlag=sarg
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') \
@@ -539,6 +542,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         "-c",
         cxxInitSrcFile
       ]
+      cxxInitCmdArr.extend(givenOptFlags)
       cxxInitCompileCmd = " ".join(cxxInitCmdArr)
       if verbose: sys.stderr.write("%s\n" % cxxInitCompileCmd)
       rc = os.system(cxxInitCompileCmd)
