@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define EVENT_LOCATION_H
 
 #include <sstmac/common/node_address.h>
-#include <sprockit/errors.h>
 #include <sstmac/common/serializable.h>
 
 namespace sstmac {

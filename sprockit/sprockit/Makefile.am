@@ -54,6 +54,7 @@ nobase_library_include_HEADERS = \
   sim_parameters_fwd.h \
   statics.h \
   spkt_string.h \
+  spkt_printf.h \
   printable.h \
   stl_string.h \
   spkt_new.h \

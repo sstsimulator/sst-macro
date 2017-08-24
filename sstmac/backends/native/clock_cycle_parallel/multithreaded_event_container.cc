@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <dlfcn.h>
 #include <signal.h>
 #include <iostream>
+#include <sstream>
 #include <sprockit/keyword_registration.h>
 
 RegisterDebugSlot(multithread_event_manager);

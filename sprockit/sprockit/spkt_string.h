@@ -47,12 +47,11 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstream>
 #include <sprockit/spkt_config.h>
+#include <sprockit/spkt_printf.h>
 #include <cctype>
 #include <algorithm>
 
 namespace sprockit {
-
-std::string printf(const char* fmt, ...);
 
 template<typename WritableRangeT>
 void to_upper(WritableRangeT& input)

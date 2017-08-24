@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
+#include <sstream>
 
 RegisterKeywords("epoch");
 

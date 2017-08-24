@@ -3,6 +3,7 @@ helpText = """The following environmental variables can be defined for the SST c
 SSTMAC_VERBOSE=0 or 1:        produce verbose output from the SST compiler (default 0)
 SSTMAC_DELETE_TEMPS=0 or 1:   remove all temp source-to-source files (default 1)
 SSTMAC_SRC2SRC=0 or 1: run a source-to-source pass converting globals to TLS (default 1)
+SSTMAC_CONFIG=0: running automake, cmake - skip certain steps to fool build system
 """
 
 def argify(x):
@@ -84,12 +85,16 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   verbose = False
   delTempFiles = True
+  libifyExe = sstCore
   if "SSTMAC_VERBOSE" in os.environ:
     flag = int(os.environ["SSTMAC_VERBOSE"])
     verbose = verbose or flag
   if "SSTMAC_DELETE_TEMPS" in os.environ:
     flag = int(os.environ["SSTMAC_DELETE_TEMPS"])
     delTempFiles = delTempFiles and flag
+  if "SSTMAC_CONFIG" in os.environ:
+    flag = int(os.environ["SSTMAC_CONFIG"])
+    libifyExe = libifyExe and not flag
 
   haveClangSrcToSrc = bool(clangCppFlagsStr)
   clangDeglobal = None
@@ -313,6 +318,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
       return 1
+  else:
+    if givenStdFlag:
+      givenFlags.append(givenStdFlag)
     
 
   directIncludesStr = " ".join(directIncludes)
@@ -431,12 +439,19 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       ldCmdArr.extend(linkerArgs)
       if sourceFiles and not runClang: 
         ldCmdArr.extend(sourceFileCompileFlags)
-    else:
+    elif libifyExe:
       libTarget = ldTarget
-      if not libTarget.endswith(".so"):
-        libTarget += ".so"
-      if not libTarget.startswith("lib"):
-        libTarget = "lib" + libTarget
+      libTargetName = os.path.split(ldTarget)[-1]
+      if not libTargetName.endswith(".so"):
+        splitter = libTargetName.split(".")
+        if not "so" in splitter[1:]:
+          libTarget += ".so"
+      if not libTargetName.startswith("lib"):
+        splitter = os.path.split(ldTarget)
+        newNameArr = []
+        newNameArr.extend(splitter)
+        newNameArr[-1] = "lib" + libTargetName
+        libTarget = os.path.join(*newNameArr)
 
       arCmdArr = [
         ld,
@@ -484,7 +499,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       #oh, hell, I have to fix intrinsics
       intrinsicsFixerPath = os.path.join(cleanFlag(includeDir), "sstmac", "replacements", "fixIntrinsics.h")
       intrinsicsFixer = "-include%s" % intrinsicsFixerPath
-      #addClangArg(intrinsicsFixer, clangCmdArr)
+      addClangArg(intrinsicsFixer, clangCmdArr)
 
       clangCmdArr.append(ppTmpFile)
       clangCmdArr.append("--")

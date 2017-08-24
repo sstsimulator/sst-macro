@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/tiled_dragonfly.h>
 #include <math.h>
 #include <sstream>
+#include <algorithm>
 #include <sprockit/stl_string.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
