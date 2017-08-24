@@ -141,6 +141,7 @@ class SSTReturnPragma : public SSTPragma {
 
  private:
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
 
   std::string repl_;
 };

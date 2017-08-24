@@ -417,6 +417,21 @@ SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   replace(s, r, "return " + repl_, *CI);
 }
 
+void
+SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
+{
+  if (d->getKind() != Decl::Function){
+    errorAbort(d->getLocStart(), *CI,
+      "pragma return not applied to function definition");
+  }
+  FunctionDecl* fd = cast<FunctionDecl>(d);
+  if (!fd->hasBody()){
+    errorAbort(d->getLocStart(), *CI,
+      "pragma return applied to function declaration - must be definition");
+  }
+  std::string repl = "{ return " + repl_ + "; }";
+  replace(fd->getBody(), r, repl, *CI);
+}
 
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
@@ -630,6 +645,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
         break;
       case tok::kw_sizeof:
         os << "sizeof";
+        break;
+      case tok::minus:
+        os << "-";
         break;
       case tok::percent:
         os << "%";
