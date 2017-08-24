@@ -70,7 +70,7 @@ class event_calendar :
 
   ~event_calendar() throw ();
 
-  void clear(timestamp zero_time = timestamp(0));
+  void clear(timestamp zero_time = timestamp());
 
   void cancel_all_messages(device_id mod);
 

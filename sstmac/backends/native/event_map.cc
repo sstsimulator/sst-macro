@@ -120,7 +120,7 @@ event_map::event_map(sprockit::sim_parameters* params, parallel_runtime* rt) :
   running_(false),
   event_manager(params, rt)
 {
-  set_now(timestamp(0));
+  set_now(timestamp());
 }
 
 

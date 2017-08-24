@@ -342,6 +342,26 @@ SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
+SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  std::string replacement;
+  if (units_ == "sec"){
+    replacement = "sstmac_compute(" + amount_ + ");";
+  } else if (units_ == "msec"){
+    replacement = "sstmac_msleep(" + amount_ + ");";
+  } else if (units_ == "usec"){
+    replacement = "sstmac_usleep(" + amount_ + ");";
+  } else if (units_ == "nsec"){
+    replacement = "sstmac_nanosleep(" + amount_ + ");";
+  } else {
+    std::string error = "invalid time units: " + units_ +
+        ": must be sec, msec, usec, or nsec";
+    errorAbort(s->getLocStart(), *CI, error);
+  }
+  r.InsertText(s->getLocEnd(), replacement);
+}
+
+void
 SSTMallocPragma::visitBinaryOperator(BinaryOperator *op, Rewriter &r)
 {
   PrettyPrinter pp;
@@ -686,4 +706,20 @@ SSTBranchPredictPragmaHandler::allocatePragma(SourceLocation loc, const std::lis
   std::stringstream sstr;
   SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTBranchPredictPragma(sstr.str());
+}
+
+SSTPragma*
+SSTAdvanceTimePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  if (tokens.size() < 2){
+    errorAbort(loc, ci_,
+               "advance_time pragma needs at least two arguments: <units> <number>");
+  }
+  auto iter = tokens.begin();
+  Token unitTok = *iter;
+  std::string units = unitTok.getLiteralData();
+  std::stringstream sstr;
+  ++iter;
+  SSTPragma::tokenStreamToString(loc, iter, tokens.end(), sstr, ci_);
+  return new SSTAdvanceTimePragma(units, sstr.str());
 }

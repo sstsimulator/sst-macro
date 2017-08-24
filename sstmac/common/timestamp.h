@@ -64,7 +64,7 @@ class timestamp
 {
  public:
   /// The type that holds a timestamp.
-  typedef int64_t tick_t;
+  typedef uint64_t tick_t;
 
   static tick_t PSEC_PER_TICK;
   static const timestamp::tick_t zero = 0;
@@ -75,35 +75,32 @@ class timestamp
   static timestamp::tick_t minutes;
 
  private:
-  /// Picoseconds between clock ticks.
-
-  static timestamp scaled_time(int64_t value, int64_t scaling,
-                               const char *caller, const char *units);
-
-  /// The current time value of this container in ticks.
   tick_t ticks_;
+  static double max_time_;
+  static double min_time_;
+  static double ticks_per_second_;
+  static double seconds_per_tick_;
+  static double msec_per_tick_;
+  static double usec_per_tick_;
+  static double nsec_per_tick_;
+  static double psec_per_tick_;
 
  public:
   static void init_stamps(tick_t tick_spacing);
 
   typedef enum { exact } timestamp_param_type_t;
 
-  /// Round the given time value (in seconds) to the nearest
-  /// representable internal time.
-  /// \throw sprockit::time_error if this time is outside the range that can
-  /// can be represented with this time container
-  timestamp(double t){
-    ticks_ = int64_t((t) * ( 1e12 / (PSEC_PER_TICK)));
-    if (t > max_time() || (t < min_time())) {
+  timestamp(double t_seconds){
+    ticks_ = uint64_t(t_seconds * ticks_per_second_); // * ( 1e12 / (PSEC_PER_TICK)));
+    if (t_seconds > max_time() || (t_seconds < min_time())) {
       spkt_abort_printf("timestamp(): Time value %e out of bounds %e...%e",
-                        t, min_time(), max_time());
+                        t_seconds, min_time(), max_time());
     }
   }
 
   explicit timestamp(tick_t ticks, timestamp_param_type_t ty) : ticks_(ticks) {}
 
-  explicit timestamp(uint32_t sec, uint32_t nsec) :
-      ticks_(sec*seconds + nsec*nanoseconds) {}
+  explicit timestamp(uint64_t num_units, tick_t ticks_per_unit) : ticks_(num_units*ticks_per_unit) {}
 
   explicit timestamp() : ticks_(0) {}
 
@@ -134,70 +131,48 @@ class timestamp
 
   static tick_t frequency();
 
-  static double max_time();
+  static double max_time(){
+    return max_time_;
+  }
 
-  static double min_time();
-
-  /// Get a time value corresponding exactly to the given number of
-  /// picoseconds.
-  /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp exact_psec(int64_t psec);
-
-  /// Get a time value corresponding exactly to the given number of
-  /// nanoseconds.
-  /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp exact_nsec(int64_t nsec);
-
-  /// Get a time value corresponding exactly to the given number of
-  /// microseconds.
-  /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp exact_usec(int64_t usec);
-
-  /// Get a time value corresponding exactly to the given number of
-  /// milliseconds.
-  /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp exact_msec(int64_t msec);
-
-  /// Get a time value corresponding exactly to the given number of
-  /// seconds.
-  /// \throw sprockit::time_error if this time cannot be exactly represented.
-  static timestamp exact_sec(int64_t sec);
+  static double min_time(){
+    return min_time_;
+  }
 
   /// Get a time value with exactly the given number of ticks.
   /// This is a template function to ensure that we do proper range checking
   /// on input values.
   template<typename T>
   static timestamp exact_ticks(T val) {
-    timestamp ts(0);
+    timestamp ts;
     ts.ticks_ = tick_t(val);
     return ts;
   }
 
-  /// Fast and exact comparison operations.
-  inline bool
-  operator==(const timestamp &other) const {
+  inline bool operator==(const timestamp &other) const {
     return (ticks_ == other.ticks_);
   }
-  inline bool
-  operator!=(const timestamp &other) const {
+
+  inline bool operator!=(const timestamp &other) const {
     return (ticks_ != other.ticks_);
   }
-  inline bool
-  operator<(const timestamp &other) const {
+
+  inline bool operator<(const timestamp &other) const {
     return (ticks_ < other.ticks_);
   }
-  inline bool
-  operator<=(const timestamp &other) const {
+
+  inline bool operator<=(const timestamp &other) const {
     return (ticks_ <= other.ticks_);
   }
-  inline bool
-  operator>(const timestamp &other) const {
+
+  inline bool operator>(const timestamp &other) const {
     return (ticks_ > other.ticks_);
   }
-  inline bool
-  operator>=(const timestamp &other) const {
+
+  inline bool operator>=(const timestamp &other) const {
     return (ticks_ >= other.ticks_);
   }
+
   timestamp& operator+=(const timestamp &other);
   timestamp& operator-=(const timestamp &other);
   timestamp& operator*=(double scale);
@@ -218,8 +193,7 @@ std::string to_printf_type(timestamp t);
 } // end of namespace sstmac
 
 START_SERIALIZATION_NAMESPACE
-template <>
-class serialize<sstmac::timestamp>
+template <> class serialize<sstmac::timestamp>
 {
  public:
   void operator()(sstmac::timestamp& t, serializer& ser){

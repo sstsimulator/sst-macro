@@ -94,7 +94,7 @@ class event_manager
 
   virtual ~event_manager(){}
 
-  virtual void clear(timestamp zero_time = timestamp(0)) = 0;
+  virtual void clear(timestamp zero_time = timestamp()) = 0;
 
   virtual void run() = 0;
 

@@ -72,7 +72,7 @@ class event_map :
 
   ~event_map() throw ();
 
-  void clear(timestamp zero_time = timestamp(0));
+  void clear(timestamp zero_time = timestamp());
 
   void cancel_all_messages(device_id mod);
 

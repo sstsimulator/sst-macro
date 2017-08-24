@@ -57,16 +57,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-// Utility func. to avoid endless ifndef SSTMAC_USE_GMPXX calls.
-#ifndef SSTMAC_USE_GMPXX
-#define TOD(D) double(D)
-#else
-inline double TOD(const timestamp::tick_t &t)
-{
-  return t.get_d();
-}
-#endif
-
 //
 // Static variables.
 //
@@ -76,27 +66,38 @@ timestamp::tick_t timestamp::microseconds = 1000 * nanoseconds;
 timestamp::tick_t timestamp::milliseconds = 1000 * microseconds;
 timestamp::tick_t timestamp::seconds = 1000 * milliseconds; //default is 1 tick per ps
 timestamp::tick_t timestamp::minutes = seconds * 60;
+double timestamp::ticks_per_second_;
+double timestamp::seconds_per_tick_;
+double timestamp::msec_per_tick_;
+double timestamp::usec_per_tick_;
+double timestamp::nsec_per_tick_;
+double timestamp::psec_per_tick_;
+double timestamp::max_time_;
+double timestamp::min_time_;
 
-
-static double _double_to_tick_prefactor_ = 1e12;
-static double _tick_to_double_prefactor_ = 1e-12;
 static std::string _tick_spacing_string_("1 ps");
 
 void timestamp::init_stamps(tick_t tick_spacing)
 {
   //psec_tick_spacing_ = new tick_t(tick_spacing);
   PSEC_PER_TICK = tick_spacing;
-  _double_to_tick_prefactor_ = 1e12 / TOD(tick_spacing);
-  _tick_to_double_prefactor_ = 1e-12 * TOD(tick_spacing);
+  seconds_per_tick_ = 1e-12 * tick_spacing;
+  msec_per_tick_ = 1e-9 * tick_spacing;
+  usec_per_tick_ = 1e-6 * tick_spacing;
+  nsec_per_tick_ = 1e-3 * tick_spacing;
+  psec_per_tick_ = tick_spacing;
+  ticks_per_second_ = 1e12 / double(tick_spacing);
   std::stringstream ss;
   ss << tick_spacing << " ps";
-  //tick_spacing_string_ = new std::string(ss.str());
   _tick_spacing_string_ = ss.str();
   nanoseconds = 1000 / PSEC_PER_TICK;
   microseconds = (1000 * 1000) / PSEC_PER_TICK;
   milliseconds = (1000 * 1000 * 1000) / PSEC_PER_TICK;
   seconds = (tick_t(1000) * 1000 * 1000 * 1000) / PSEC_PER_TICK;
   minutes = 60 * seconds;
+
+  max_time_ = std::numeric_limits<tick_t>::max() / seconds;
+  min_time_ = std::numeric_limits<tick_t>::min() / seconds;
 }
 
 //
@@ -104,8 +105,7 @@ void timestamp::init_stamps(tick_t tick_spacing)
 //
 double timestamp::sec() const
 {
-  return TOD(ticks_) * _tick_to_double_prefactor_;
-  //return (TOD(ticks_) * 1e-12) * TOD(*psec_tick_spacing_);
+  return ticks_ * seconds_per_tick_;
 }
 
 //
@@ -113,7 +113,7 @@ double timestamp::sec() const
 //
 double timestamp::msec() const
 {
-  return (TOD(ticks_) * 1e-9) * TOD(PSEC_PER_TICK);
+  return ticks_ * msec_per_tick_;
 }
 
 //
@@ -121,7 +121,7 @@ double timestamp::msec() const
 //
 double timestamp::usec() const
 {
-  return (TOD(ticks_) * 1e-6) * TOD(PSEC_PER_TICK);
+  return ticks_ * usec_per_tick_;
 }
 
 //
@@ -129,7 +129,7 @@ double timestamp::usec() const
 //
 double timestamp::nsec() const
 {
-  return (TOD(ticks_) * 1e-3) * TOD(PSEC_PER_TICK);
+  return ticks_ * nsec_per_tick_;
 }
 
 //
@@ -137,7 +137,7 @@ double timestamp::nsec() const
 //
 double timestamp::psec() const
 {
-  return TOD(ticks_) * TOD(PSEC_PER_TICK);
+  return ticks_ * psec_per_tick_;
 }
 
 void
@@ -172,78 +172,6 @@ const std::string& timestamp::tick_interval_string()
 timestamp::tick_t timestamp::frequency()
 {
   return (tick_t(1e12) / PSEC_PER_TICK);
-}
-
-//
-// static:  Get the largest time value possible (in seconds).
-//
-double timestamp::max_time()
-{
-  return ((std::numeric_limits<int64_t>::max()) * 1e-12) * PSEC_PER_TICK;
-}
-
-//
-// static:  Get the smallest (most negative) time value possible (in seconds).
-//
-double timestamp::min_time()
-{
-  return (std::numeric_limits<int64_t>::min() * 1e-12) * PSEC_PER_TICK;
-}
-
-//
-// static:  Get a time value corresponding exactly to the given number of
-// picoseconds.
-//
-timestamp timestamp::exact_psec(int64_t psec)
-{
-  return scaled_time(psec, 1, "timestamp::exact_psec", "picoseconds");
-}
-
-//
-// static:  Get a time value corresponding exactly to the given number of
-// nanoseconds.
-//
-timestamp timestamp::exact_nsec(int64_t nsec)
-{
-  return scaled_time(nsec, 1e3, "timestamp::exact_nsec", "nanoseconds");
-}
-
-//
-// static:  Get a time value corresponding exactly to the given number of
-// microseconds.
-//
-timestamp timestamp::exact_usec(int64_t usec)
-{
-  return scaled_time(usec, 1e6, "timestamp::exact_usec", "microseconds");
-}
-
-//
-// static:  Get a time value corresponding exactly to the given number of
-// milliseconds.
-//
-timestamp timestamp::exact_msec(int64_t msec)
-{
-  return scaled_time(msec, 1e9, "timestamp::exact_msec", "milliseconds");
-}
-
-//
-// static:: Get a time value corresponding exactly to the given number of
-// seconds.
-//
-timestamp timestamp::exact_sec(int64_t sec)
-{
-  return scaled_time(sec, 1e12, "timestamp::exact_sec", "seconds");
-}
-
-//
-// Static:  Get scaled time.
-//
-timestamp timestamp::scaled_time(int64_t value, int64_t scaling,
-                                 const char *caller, const char *units)
-{
-  timestamp retval(0);
-  retval.ticks_ = value * scaling / PSEC_PER_TICK;
-  return retval;
 }
 
 //

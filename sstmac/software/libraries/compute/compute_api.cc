@@ -47,26 +47,35 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/libraries/compute/compute_api.h>
 
-extern "C" int
-sstmac_sleep(unsigned int secs){
+using sstmac::timestamp;
+using os = sstmac::sw::operating_system;
+
+extern "C" int sstmac_sleep(unsigned int secs){
+  os::current_thread()->parent_app()->sleep(timestamp(secs, timestamp::seconds));
+  return 0;
+}
+
+extern "C" int sstmac_usleep(unsigned int usecs){
+  os::current_thread()->parent_app()->sleep(timestamp(usecs, timestamp::microseconds));
+  return 0;
+}
+
+extern "C" int sstmac_nanosleep(unsigned int usecs){
+  os::current_thread()->parent_app()->sleep(timestamp(usecs, timestamp::nanoseconds));
+  return 0;
+}
+
+extern "C" int sstmac_msleep(unsigned int usecs){
+  os::current_thread()->parent_app()->sleep(timestamp(usecs, timestamp::milliseconds));
+  return 0;
+}
+
+extern "C" int sstmac_fsleep(double secs){
   sstmac::sw::operating_system::current_thread()->parent_app()->sleep(sstmac::timestamp(secs));
   return 0;
 }
 
-extern "C" int
-sstmac_usleep(unsigned int usecs){
-  sstmac::sw::operating_system::current_thread()->parent_app()->sleep(sstmac::timestamp(usecs*1e-6));
-  return 0;
-}
-
-extern "C" int
-sstmac_fsleep(double secs){
-  sstmac::sw::operating_system::current_thread()->parent_app()->sleep(sstmac::timestamp(secs));
-  return 0;
-}
-
-extern "C" void
-sstmac_compute(double secs){
+extern "C" void sstmac_compute(double secs){
   sstmac::sw::operating_system::current_thread()->parent_app()->compute(sstmac::timestamp(secs));
 }
 

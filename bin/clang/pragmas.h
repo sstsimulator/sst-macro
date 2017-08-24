@@ -81,7 +81,8 @@ struct SSTPragma {
     KeepIf=10,
     Memory=11,
     Instead=12,
-    BranchPredict=12
+    BranchPredict=13,
+    AdvanceTime=14
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -271,6 +272,18 @@ class SSTBranchPredictPragma : public SSTPragma {
  private:
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
   std::string prediction_;
+};
+
+class SSTAdvanceTimePragma : public SSTPragma {
+ public:
+  SSTAdvanceTimePragma(const std::string& units, const std::string& amount) :
+    units_(units), amount_(amount), SSTPragma(AdvanceTime)
+  {}
+
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
+  std::string units_;
+  std::string amount_;
 };
 
 class SSTNewPragma : public SSTPragma {
@@ -581,6 +594,21 @@ class SSTBranchPredictPragmaHandler : public SSTTokenStreamPragmaHandler
                         SkeletonASTVisitor& visitor,
                         std::set<clang::Stmt*>& deld) :
      SSTTokenStreamPragmaHandler("branch_predict", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+
+};
+
+class SSTAdvanceTimePragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTAdvanceTimePragmaHandler(SSTPragmaList& plist,
+                       clang::CompilerInstance& CI,
+                       SkeletonASTVisitor& visitor,
+                       std::set<clang::Stmt*>& deld) :
+    SSTTokenStreamPragmaHandler("advance_time", plist, CI, visitor, deld){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,
