@@ -375,6 +375,7 @@ void
 mpi_queue::incoming_progress_loop_message(mpi_message* message)
 {
   if (message->is_nic_ack()) {
+    mpi_queue_debug("handle nic ack %s", message->to_string().c_str());
     handle_nic_ack(message);
     return;
   }
@@ -390,12 +391,15 @@ mpi_queue::incoming_progress_loop_message(mpi_message* message)
   switch (message->content_type()) {
     case mpi_message::eager_payload:
     case mpi_message::header:
+      mpi_queue_debug("handle header %s", message->to_string().c_str());
       this->incoming_new_message(message);
       break;
     case mpi_message::completion_ack:
+      mpi_queue_debug("handle completion ack %s", message->to_string().c_str());
       this->incoming_completion_ack(message);
       break;
     case mpi_message::data:
+      mpi_queue_debug("handle data %s", message->to_string().c_str());
       message->protocol()->incoming_payload(this, message);
       break;
     default:
@@ -469,12 +473,10 @@ mpi_queue::incoming_new_message(mpi_message* message)
       // Now erase all the completed messages from the held queue.
       held_[tid].erase(held_[tid].begin(), it);
     }
-  }
-  else if (message->in_flight()) {
+  } else if (message->in_flight()) {
     mpi_queue_debug("got RDMA message and ignoring seqnum");
     handle_new_message(message);
-  }
-  else {
+  } else {
     if (message->seqnum() < next_inbound_[tid]){
       //how did we go backwards!?!??!
       spkt_throw_printf(sprockit::value_error,

@@ -193,7 +193,7 @@ mpi_message::to_string() const
      << ", commid" << commid_;
 
   if (in_flight_) {
-    ss << ", seq=(ignored)" << seqnum_;
+    ss << ", seq=" << seqnum_ << "(ignored)";
   }
   else {
     ss << ", seq=" << seqnum_;

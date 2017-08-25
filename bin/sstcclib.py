@@ -442,12 +442,12 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif libifyExe:
       libTarget = ldTarget
       libTargetName = os.path.split(ldTarget)[-1]
-      if not libTargetName.endswith(".so"):
-        splitter = libTargetName.split(".")
-        if not "so" in splitter[1:]:
-          libTarget += ".so"
+      splitter = libTargetName.split(".")
+      if not "so" in splitter[1:]:
+        libTarget += ".so"
+        libTargetName += ".so"
       if not libTargetName.startswith("lib"):
-        splitter = os.path.split(ldTarget)
+        splitter = os.path.split(libTarget)
         newNameArr = []
         newNameArr.extend(splitter)
         newNameArr[-1] = "lib" + libTargetName

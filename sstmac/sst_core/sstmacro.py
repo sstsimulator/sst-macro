@@ -220,10 +220,7 @@ def readCmdLineParams():
   import sys
   return sst.macro.readParams(sys.argv)
 
-def setupDeprecated():
-  import sys
-  params = readCmdLineParams()
-
+def setupDeprecatedParams(params, debugList=[]):
   nodeParams = params["node"]
   swParams = params["switch"]
 
@@ -253,22 +250,12 @@ def setupDeprecated():
         exec(cmd)
       del params[ns]
 
-
-  debugList = []
-  if params.has_key("debug"):
-    debugList = params["debug"].strip().split()
-  for i in range(len(sys.argv)):
-    if sys.argv[i] == "-d" or sys.argv[i] == "--debug":
-      debugList.extend(sys.argv[i+1].split(","))
-
   icParams = {}
   icParams["topology"] = params["topology"]
   nodeParams["interconnect"] = icParams
   if debugList:
     nodeParams["debug"] = " ".join(debugList)
   swParams["topology"] = params["topology"]
-
-  swParams["topology"] = "torus"
 
   #move every param in the global namespace 
   #into the individal namespaces
@@ -283,3 +270,13 @@ def setupDeprecated():
   ic = Interconnect(params)
   ic.build()
 
+def setupDeprecated():
+  import sys
+  params = readCmdLineParams()
+  debugList = []
+  if params.has_key("debug"):
+    debugList = params["debug"].strip().split()
+  for i in range(len(sys.argv)):
+    if sys.argv[i] == "-d" or sys.argv[i] == "--debug":
+      debugList.extend(sys.argv[i+1].split(","))
+  setupDeprecatedParams(params, debugList)

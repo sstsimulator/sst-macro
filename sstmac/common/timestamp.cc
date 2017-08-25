@@ -77,8 +77,12 @@ double timestamp::min_time_;
 
 static std::string _tick_spacing_string_("1 ps");
 
+
 void timestamp::init_stamps(tick_t tick_spacing)
 {
+  static bool inited_ = false;
+  if (inited_) return;
+
   //psec_tick_spacing_ = new tick_t(tick_spacing);
   PSEC_PER_TICK = tick_spacing;
   seconds_per_tick_ = 1e-12 * tick_spacing;
