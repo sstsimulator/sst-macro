@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_send_request.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/null_buffer.h>
@@ -158,10 +159,14 @@ eager1_singlecpy::incoming_payload(mpi_queue *queue,
 }
 
 void
-eager1_doublecpy::incoming_payload(mpi_queue *queue, mpi_message*msg)
+eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg)
 {
-  mpi_queue_recv_request* req = queue->pop_matching_request(queue->in_flight_messages_, msg);
-  //guaranteed that msg arrived before recv was posted
+  auto iter = queue->in_flight_messages_.find(msg);
+  mpi_queue_recv_request* req = nullptr;
+  if (iter != queue->in_flight_messages_.end()){
+    req = iter->second;
+    queue->in_flight_messages_.erase(iter);
+  }
   incoming_payload(queue, msg, req);
 }
 
@@ -181,6 +186,7 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg,
       msg->local_buffer().ptr = temp_buf;
     }
     queue->finalize_recv(msg, req);
+    fflush(stdout);
     delete msg;
   }
 }

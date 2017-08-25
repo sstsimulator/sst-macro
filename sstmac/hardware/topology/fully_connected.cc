@@ -42,59 +42,65 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <tests/unit_tests/util/util.h>
-#include <sprockit/output.h>
+#include <sstream>
+#include <sstmac/hardware/topology/fully_connected.h>
+#include <sprockit/sim_parameters.h>
 
-void test_torus(UnitTest& unit);
-void test_fully_connected(UnitTest& unit);
-void test_fattree2(UnitTest& unit);
-void test_fattree4(UnitTest& unit);
-void test_butterfly(UnitTest& unit);
-void test_fbfly(UnitTest& unit);
-void test_dragonfly_v1(UnitTest& unit);
-void test_dragonfly_v2(UnitTest& unit);
+namespace sstmac {
+namespace hw {
 
-using namespace sstmac;
-using namespace sstmac::hw;
+fully_connected::fully_connected(sprockit::sim_parameters* params) :
+  structured_topology(params,
+                      InitMaxPortsIntra::I_Remembered,
+                      InitGeomEjectID::I_Remembered)
+{
+  std::vector<int> args;
+  params->get_vector_param("geometry", args);
+  size_ = args[0];
+  max_ports_intra_network_ = num_switches();
+  eject_geometric_id_ = max_ports_intra_network_;
+}
 
 void
-test_topology(sprockit::sim_parameters& params)
+fully_connected::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
 {
-  topology* top = topology::factory::get_param("name", &params);
-  topology::set_static_topology(top);
-  interconnect::switch_map switches;
-  init_switches(switches, params, top);
-  sstmac::env::params = &params;
+  m[routing::minimal] = 1;
+  m[routing::minimal_adaptive] = 1;
+  m[routing::valiant] = 2;
+  m[routing::ugal] = 3;
 }
 
-int main(int argc, char** argv)
+void
+fully_connected::minimal_route_to_switch(switch_id current_sw_addr,
+                                  switch_id dest_sw_addr,
+                                  routable::path &path) const
 {
-  sstmac::timestamp::init_stamps(1);
-  sprockit::output::init_out0(&std::cout);
-  sprockit::output::init_err0(&std::cerr);
-  sprockit::output::init_outn(&std::cout);
-  sprockit::output::init_errn(&std::cerr);
-  UnitTest unit;
-  try{
-      std::cout << "Testing torus...\n";
-          test_torus(unit);
-      std::cout << "Testing fat tree...\n";
-          //test_fattree2(unit);
-          test_fattree4(unit);
-      std::cout << "Testing fully_connected...\n";
-          test_fully_connected(unit);
-      std::cout << "Testing butterfly...\n";
-          test_butterfly(unit);
-      std::cout << "Testing fbfly...\n";
-          test_fbfly(unit);
-      std::cout << "Testing dragonfly...\n";
-          test_dragonfly_v1(unit);
-          test_dragonfly_v2(unit);
-      unit.validate();
-  } catch (std::exception& e) {
-      cerrn << e.what() << std::endl;
-      return 1;
+  path.vc = 0;
+  path.set_outport(dest_sw_addr);
+}
+
+void
+fully_connected::connected_outports(switch_id src, std::vector<connection>& conns) const
+{
+  int n_switches = num_switches();
+  conns.resize(n_switches - 1);
+  int cidx = 0;
+  for (int i=0; i < n_switches; ++i){
+    if (i == src) continue;
+
+    conns[cidx].src = src;
+    conns[cidx].dst = i;
+    conns[cidx].src_outport = i;
+    conns[cidx].dst_inport = src;
+    ++cidx;
   }
-
-  return 0;
 }
+
+void
+fully_connected::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
+{
+  topology::configure_individual_port_params(0, num_switches(), switch_params);
+}
+
+}
+} //end of namespace sstmac
