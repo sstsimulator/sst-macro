@@ -1,57 +1,70 @@
-Rank 12  -> Rank 13 
-Rank 4   -> Rank 13 
-Rank 8   -> Rank 9  
-Rank 10  -> Rank 9  
+--------------------------------------------------------------------------
+[[25670,1],0]: A high-performance Open MPI point-to-point messaging module
+was unable to find any relevant network interfaces:
+
+Module: OpenFabrics (openib)
+  Host: warpcore
+
+Another transport will be used instead, although this may result in
+lower performance.
+
+NOTE: You can disable this warning by setting the MCA parameter
+btl_base_warn_component_unused to 0.
+--------------------------------------------------------------------------
+Rank 12  -> Rank 9  
+Rank 6   -> Rank 9  
 Rank 0   -> Rank 1  
-Rank 6   -> Rank 1  
-Rank 14  -> Rank 11 
-Rank 2   -> Rank 11 
-Rank 12  -> 13      1024:   0.485722 GB/s
-Rank 12  -> 13      4096:   1.695902 GB/s
-Rank 12  -> 13     16384:   3.536811 GB/s
-Rank 12  -> 13     65536:   4.909064 GB/s
-Rank 12  -> 13    262144:   7.224085 GB/s
-Rank 12  -> 13   1048576:   5.472735 GB/s
-Rank 4   -> 13      1024:   0.485632 GB/s
-Rank 4   -> 13      4096:   1.695627 GB/s
-Rank 4   -> 13     16384:   3.498752 GB/s
-Rank 4   -> 13     65536:   4.836605 GB/s
-Rank 4   -> 13    262144:   7.184488 GB/s
-Rank 4   -> 13   1048576:   5.450687 GB/s
-Rank 8   -> 9       1024:   0.485632 GB/s
-Rank 8   -> 9       4096:   1.695627 GB/s
-Rank 8   -> 9      16384:   3.498752 GB/s
-Rank 8   -> 9      65536:   4.836605 GB/s
-Rank 8   -> 9     262144:   7.184488 GB/s
-Rank 8   -> 9    1048576:   5.450687 GB/s
-Rank 10  -> 9       1024:   0.485722 GB/s
-Rank 10  -> 9       4096:   1.695902 GB/s
-Rank 10  -> 9      16384:   3.536811 GB/s
-Rank 10  -> 9      65536:   4.909064 GB/s
-Rank 10  -> 9     262144:   7.224085 GB/s
-Rank 10  -> 9    1048576:   5.473449 GB/s
-Rank 0   -> 1       1024:   0.485812 GB/s
-Rank 0   -> 1       4096:   1.695902 GB/s
-Rank 0   -> 1      16384:   3.575097 GB/s
-Rank 0   -> 1      65536:   4.983726 GB/s
-Rank 0   -> 1     262144:   7.264122 GB/s
-Rank 0   -> 1    1048576:   5.495681 GB/s
-Rank 6   -> 1       1024:   0.485812 GB/s
-Rank 6   -> 1       4096:   1.695902 GB/s
-Rank 6   -> 1      16384:   3.575097 GB/s
-Rank 6   -> 1      65536:   4.983726 GB/s
-Rank 6   -> 1     262144:   7.264122 GB/s
-Rank 6   -> 1    1048576:   5.495681 GB/s
-Rank 14  -> 11      1024:   0.485722 GB/s
-Rank 14  -> 11      4096:   1.695353 GB/s
-Rank 14  -> 11     16384:   3.499044 GB/s
-Rank 14  -> 11     65536:   4.836605 GB/s
-Rank 14  -> 11    262144:   7.184488 GB/s
-Rank 14  -> 11   1048576:   5.449979 GB/s
-Rank 2   -> 11      1024:   0.485632 GB/s
-Rank 2   -> 11      4096:   1.695353 GB/s
-Rank 2   -> 11     16384:   3.499044 GB/s
-Rank 2   -> 11     65536:   4.836605 GB/s
-Rank 2   -> 11    262144:   7.184488 GB/s
-Rank 2   -> 11   1048576:   5.450687 GB/s
-Estimated total runtime of           0.05741651 seconds
+Rank 14  -> Rank 1  
+Rank 4   -> Rank 5  
+Rank 8   -> Rank 5  
+Rank 10  -> Rank 7  
+Rank 2   -> Rank 7  
+Rank 12  -> 9       1024:   0.485722 GB/s
+Rank 12  -> 9       4096:   1.695627 GB/s
+Rank 12  -> 9      16384:   3.536513 GB/s
+Rank 12  -> 9      65536:   4.909064 GB/s
+Rank 12  -> 9     262144:   7.224085 GB/s
+Rank 12  -> 9    1048576:   5.473449 GB/s
+Rank 6   -> 9       1024:   0.485722 GB/s
+Rank 6   -> 9       4096:   1.695627 GB/s
+Rank 6   -> 9      16384:   3.536811 GB/s
+Rank 6   -> 9      65536:   4.909064 GB/s
+Rank 6   -> 9     262144:   7.224085 GB/s
+Rank 6   -> 9    1048576:   5.473449 GB/s
+Rank 0   -> 1       1024:   0.485722 GB/s
+Rank 0   -> 1       4096:   1.695627 GB/s
+Rank 0   -> 1      16384:   3.536513 GB/s
+Rank 0   -> 1      65536:   4.909064 GB/s
+Rank 0   -> 1     262144:   7.224085 GB/s
+Rank 0   -> 1    1048576:   5.473449 GB/s
+Rank 14  -> 1       1024:   0.485722 GB/s
+Rank 14  -> 1       4096:   1.695627 GB/s
+Rank 14  -> 1      16384:   3.536811 GB/s
+Rank 14  -> 1      65536:   4.909064 GB/s
+Rank 14  -> 1     262144:   7.224085 GB/s
+Rank 14  -> 1    1048576:   5.472735 GB/s
+Rank 4   -> 5       1024:   0.485722 GB/s
+Rank 4   -> 5       4096:   1.695627 GB/s
+Rank 4   -> 5      16384:   3.536513 GB/s
+Rank 4   -> 5      65536:   4.909064 GB/s
+Rank 4   -> 5     262144:   7.224085 GB/s
+Rank 4   -> 5    1048576:   5.473449 GB/s
+Rank 8   -> 5       1024:   0.485722 GB/s
+Rank 8   -> 5       4096:   1.695627 GB/s
+Rank 8   -> 5      16384:   3.536811 GB/s
+Rank 8   -> 5      65536:   4.909064 GB/s
+Rank 8   -> 5     262144:   7.224085 GB/s
+Rank 8   -> 5    1048576:   5.473449 GB/s
+Rank 10  -> 7       1024:   0.485722 GB/s
+Rank 10  -> 7       4096:   1.695627 GB/s
+Rank 10  -> 7      16384:   3.536811 GB/s
+Rank 10  -> 7      65536:   4.909064 GB/s
+Rank 10  -> 7     262144:   7.224085 GB/s
+Rank 10  -> 7    1048576:   5.472735 GB/s
+Rank 2   -> 7       1024:   0.485722 GB/s
+Rank 2   -> 7       4096:   1.695902 GB/s
+Rank 2   -> 7      16384:   3.536811 GB/s
+Rank 2   -> 7      65536:   4.909064 GB/s
+Rank 2   -> 7     262144:   7.224085 GB/s
+Rank 2   -> 7    1048576:   5.472735 GB/s
+Estimated total runtime of           0.05702013 seconds

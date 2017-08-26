@@ -96,14 +96,6 @@ mpi_message::recompute_bytes()
   }
 }
 
-sumi::message*
-mpi_message::clone() const
-{
-  mpi_message* cln = new mpi_message;
-  clone_into(cln);
-  return cln;
-}
-
 void
 mpi_message::serialize_order(serializer& ser)
 {
@@ -190,6 +182,7 @@ mpi_message::to_string() const
      << ", src=" << src_rank_
      << ", dst=" << dst_rank_
      << ", tag=" << tag_
+     << ", msgid=" << msgid_ 
      << ", commid" << commid_;
 
   if (in_flight_) {

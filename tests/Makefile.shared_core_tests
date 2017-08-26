@@ -23,12 +23,13 @@ CORETESTS+= \
   test_core_apps_ping_all_dragonfly \
   test_core_apps_ping_all_dragonfly_valiant  \
   test_core_apps_ping_all_fattree2 \
-  test_core_apps_ping_all_fattree4 \
-  test_core_apps_ping_all_fully_connected \
-  test_core_apps_ping_all_fully_connected_valiant \
-  test_core_apps_ping_all_star \
-  test_core_apps_ping_all_branched_star \
-  test_core_apps_ping_all_branched_torus
+  test_core_apps_ping_all_fattree4 
+
+#test_core_apps_ping_all_fully_connected \
+#test_core_apps_ping_all_fully_connected_valiant \
+#test_core_apps_ping_all_star \
+#test_core_apps_ping_all_branched_star \
+#test_core_apps_ping_all_branched_torus
 
 test_core_apps_mpi_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 1 and t< 1.2' \

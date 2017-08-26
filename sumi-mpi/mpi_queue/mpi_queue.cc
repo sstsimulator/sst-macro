@@ -235,17 +235,24 @@ mpi_queue::find_matching_recv(mpi_queue_recv_request* req)
   for (it = need_recv_.begin(); it != end; ++it) {
     mpi_message* mess = *it;
     if (req->matches(mess)) {
-      mpi_queue_debug("matched recv tag=%s,src=%s to send tag=%d,src=%d on comm=%s",
-        api_->tag_str(req->tag_).c_str(), api_->src_str(req->source_).c_str(),
-        mess->tag(), mess->src_rank(), api_->comm_str(req->comm_).c_str());
+      mpi_queue_debug("matched recv tag=%s,src=%s on comm=%s to send %s",
+        api_->tag_str(req->tag_).c_str(), 
+        api_->src_str(req->source_).c_str(),
+        api_->comm_str(req->comm_).c_str(),
+        mess->to_string().c_str());
 
       need_recv_.erase(it);
       return mess;
-
+    } else {
+      mpi_queue_debug("did not match recv tag=%s,src=%s to send tag=%d,src=%d on comm=%s",
+        api_->tag_str(req->tag_).c_str(), api_->src_str(req->source_).c_str(),
+        mess->tag(), mess->src_rank(), api_->comm_str(req->comm_).c_str());
     }
   }
-  mpi_queue_debug("could not match recv tag=%s, src=%s to any sends on comm=%s",
-    api_->tag_str(req->tag_).c_str(), api_->src_str(req->source_).c_str(),
+  mpi_queue_debug("could not match recv tag=%s, src=%s to any of %d sends on comm=%s",
+    api_->tag_str(req->tag_).c_str(), 
+    api_->src_str(req->source_).c_str(),
+    need_recv_.size(),
     api_->comm_str(req->comm_).c_str());
 
   pending_message_.push_back(req);
@@ -280,7 +287,17 @@ mpi_queue::recv(mpi_request* key, int count,
       //this is awkward - I match this pending message
       //but I can't do anything to complete it
       //the message has already been processed
-      in_flight_messages_[mess] = req;
+      mpi_queue_debug("recv matches in flight message %s", mess->to_string().c_str());
+      auto iter = in_flight_messages_.find(mess->unique_int());
+      if (iter != in_flight_messages_.end()){
+        //oh, cool, the payload is already here
+        in_flight_messages_.erase(iter);
+        mess->protocol()->incoming_payload(this, mess, req);
+      } else {
+        //the message will be coming
+        in_flight_messages_.emplace_hint(iter, mess->unique_int(), req);
+        delete mess;
+      }
     } else if (mess->is_payload()) {
       //user_lib_mem_->copy(mess->payload_bytes());
       mess->protocol()->incoming_payload(this, mess, req);

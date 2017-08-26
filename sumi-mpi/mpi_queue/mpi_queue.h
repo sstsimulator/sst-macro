@@ -221,7 +221,7 @@ class mpi_queue
 
   pending_message_t waiting_message_;
 
-  std::map<mpi_message*,mpi_queue_recv_request*> in_flight_messages_;
+  std::map<mpi_message::id,mpi_queue_recv_request*> in_flight_messages_;
 
   /// Inbound messages waiting for a matching receive request.
   need_recv_t need_recv_;
