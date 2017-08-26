@@ -72,49 +72,34 @@ class clock_cycle_event_map :
 
   virtual ~clock_cycle_event_map() throw() {}
 
-  virtual void
-  run();
+  virtual void run() override;
 
-  bool
-  vote_to_terminate();
+  bool vote_to_terminate() override;
 
-  virtual void
-  set_interconnect(hw::interconnect* interconn);
+  virtual void set_interconnect(hw::interconnect* interconn) override;
 
-  virtual void
-  ipc_schedule(timestamp t,
-    device_id dst,
-    device_id src,
-    uint32_t seqnum,
-    event* ev);
+  void ipc_schedule(ipc_event_t* iev) override;
 
  protected:
   friend class multithreaded_event_container;
 
-  virtual void
-  schedule_incoming(const std::vector<void*>& mpi_buffers);
+  void schedule_incoming(ipc_event_t* iev);
 
-  void
-  do_next_event();
+  void do_next_event() override;
 
-  timestamp
-  next_event_time() const;
+  timestamp next_event_time() const;
 
-  virtual timestamp
-  vote_next_round(timestamp my_time, vote_type_t ty);
+  virtual timestamp vote_next_round(timestamp my_time, vote_type_t ty);
 
-  int64_t
-  do_vote(int64_t time, vote_type_t ty = vote_type_t::min);
+  int64_t do_vote(int64_t time, vote_type_t ty = vote_type_t::min);
 
-  virtual void
-  receive_incoming_events();
+  virtual void receive_incoming_events();
 
  protected:
   timestamp next_time_horizon_;
   timestamp lookahead_;
   timestamp no_events_left_time_;
-  std::vector<void*> all_incoming_;
-  std::vector<std::vector<void*> > thread_incoming_;
+  std::vector<std::vector<ipc_event_t>> thread_incoming_;
   hw::interconnect* interconn_;
   int epoch_;
 

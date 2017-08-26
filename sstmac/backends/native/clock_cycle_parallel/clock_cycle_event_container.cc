@@ -57,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cinttypes>
 
 #define event_debug(...) \
-  debug_printf(sprockit::dbg::parallel, "Rank %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
 
 RegisterDebugSlot(event_manager_time_vote);
 
@@ -80,55 +80,35 @@ clock_cycle_event_map::clock_cycle_event_map(
 }
 
 void
-clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
+clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
 {
-  sprockit::serializer ser;
-  int num_bufs = buffers.size();
-  int buf_size = rt_->ser_buf_size();
-  for (int i=0; i < num_bufs; ++i){
-    device_id dst;
-    device_id src;
-    uint32_t seqnum;
-    timestamp time;
-    event* ev;
-    char* customBuffer = nullptr;
-    void* buffer = buffers[i];
-    ser.start_unpacking((char*)buffer, 100e9); //we don't worry about overruns anymore
-    ser & dst;
-    ser & src;
-    ser & seqnum;
-    ser & time;
-    ser & ev;
-    event_handler* dst_handler = nullptr;
-
-
-
-    event_debug("epoch %d: scheduling incoming event of type %d at %12.8e to device %d, payload? %d:\n   %s",
-      epoch_, dst.type(), time.sec(), dst.id(), ev->is_payload(), sprockit::to_string(ev).c_str());
-    switch (dst.type()){
-      case device_id::node:
-        dst_handler = interconn_->node_at(dst.id())->get_nic()->payload_handler(hw::nic::LogP);
-        break;
-      case device_id::logp_overlay:
-        dst_handler = interconn_->logp_switch_at(dst.id())->payload_handler(0);
-        break;
-      case device_id::router:
-        if (ev->is_payload()){
-          dst_handler = interconn_->switch_at(dst.id())->payload_handler(0); //port 0 for now - hack - all the same
-        } else {
-          dst_handler = interconn_->switch_at(dst.id())->credit_handler(0);
-        }
-        break;
-      default:
-        spkt_abort_printf("Invalid device type %d in parallel run", dst.type());
-        break;
-    }
-    if (dst_handler->ipc_handler()){
-      spkt_abort_printf("On rank %d, event going from %d:%d to %d:%d got scheduled to IPC handler",
-                        me(), src.id(), src.type(), dst.id(), dst.type());
-    }
-    schedule(time, seqnum, new handler_event_queue_entry(ev, dst_handler, src));
+  event_handler* dst_handler = nullptr;
+  switch (iev->dst.type()){
+    case device_id::node:
+      dst_handler = interconn_->node_at(iev->dst.id())->get_nic()->payload_handler(hw::nic::LogP);
+      break;
+    case device_id::logp_overlay:
+      dst_handler = interconn_->logp_switch_at(iev->dst.id())->payload_handler(0);
+      break;
+    case device_id::router:
+      if (iev->ev->is_payload()){
+        dst_handler = interconn_->switch_at(iev->dst.id())->payload_handler(0); //port 0 for now - hack - all the same
+      } else {
+        dst_handler = interconn_->switch_at(iev->dst.id())->credit_handler(0);
+      }
+      break;
+    default:
+      spkt_abort_printf("Invalid device type %d in parallel run", iev->dst.type());
+      break;
   }
+  if (dst_handler->ipc_handler()){
+    spkt_abort_printf("On rank %d, event going from %d:%d to %d:%d got scheduled to IPC handler",
+                      me(), iev->src.id(), iev->src.type(), iev->dst.id(), iev->dst.type());
+  }
+  event_debug("epoch %d: scheduling incoming event of type %d at %12.8e to device %d:%s, payload? %d:   %s",
+    epoch_, iev->dst.type(), iev->t.sec(), iev->dst.id(), dst_handler->to_string().c_str(),
+    iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
+  schedule(iev->t, iev->seqnum, new handler_event_queue_entry(iev->ev, dst_handler, iev->src));
 }
 
 void
@@ -139,21 +119,28 @@ clock_cycle_event_map::receive_incoming_events()
     sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
   }
 #endif
-  rt_->send_recv_messages(all_incoming_);
+  rt_->send_recv_messages();
 
-  if (nthread() == 1){
-    schedule_incoming(all_incoming_);
-  }
-  else {
-    int num_incoming = all_incoming_.size();
-    for (int i=0; i < num_incoming; ++i){
-      void* buffer = all_incoming_[i];
-      int sid = *(reinterpret_cast<int*>(buffer));
-      int thr = interconn_->thread_for_switch(switch_id(sid));
-      thread_incoming_[thr].push_back(buffer);
+  auto& bufs = rt_->recv_buffers();
+  int nthr = nthread();
+  for (auto& buf : bufs){
+    serializer ser;
+    ser.start_unpacking(buf.buffer(), buf.bytesUsed());
+    while (ser.size() < buf.bytesUsed()){
+      event_debug("unpacking event starting at offset %lu of %lu",
+                  ser.size(), buf.bytesUsed());
+      ipc_event_t iev;
+      parallel_runtime::run_serialize(ser, &iev);
+      if (nthr == 1){
+        event_debug("unpacked event %s", sprockit::to_string(iev.ev).c_str());
+        schedule_incoming(&iev);
+      } else {
+        spkt_abort_printf("multithread not compatible with MPI currently");
+      }
     }
   }
-  all_incoming_.clear();
+
+  rt_->reset_send_recv();
 }
 
 
@@ -303,21 +290,13 @@ clock_cycle_event_map::set_interconnect(hw::interconnect* interconn)
 }
 
 void
-clock_cycle_event_map::ipc_schedule(timestamp t,
-  device_id dst,
-  device_id src,
-  uint32_t seqnum,
-  event* ev)
+clock_cycle_event_map::ipc_schedule(ipc_event_t* iev)
 {
   event_debug("epoch %d: scheduling outgoing event with cls id %" PRIu32 " at t=%12.8e to location %d of type %d\n  %s",
-    epoch_, ev->cls_id(), t.sec(), dst.id(), dst.type(),
-    sprockit::to_string(ev).c_str());
+    epoch_, iev->ev->cls_id(), iev->t.sec(), iev->dst.id(), iev->dst.type(),
+    sprockit::to_string(iev->ev).c_str());
 
-  rt_->send_event(thread_id_, t,
-    dst,
-    src,
-    seqnum,
-    ev);
+  rt_->send_event(thread_id_, iev);
 }
 
 }

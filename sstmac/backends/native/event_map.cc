@@ -80,6 +80,13 @@ event_map::add_event(event_queue_entry* ev)
   }
   size_t old_size = queue_.size();
 #endif
+  auto iter = queue_.find(ev);
+  if (iter != queue_.end()){
+    event_queue_entry* old = *iter;
+    spkt_abort_printf("got erroneously matching events %u:%u:%u and %u:%u:%u",
+                      ev->src_location().id(), ev->event_location().id(), ev->seqnum(),
+                      old->src_location().id(), old->event_location().id(), old->seqnum());
+  }
   queue_.insert(ev);
 #if SSTMAC_SANITY_CHECK
   if (queue_.size() == old_size){

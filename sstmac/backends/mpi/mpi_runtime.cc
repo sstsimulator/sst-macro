@@ -52,7 +52,7 @@ RegisterKeywords(
 );
 
 #define mpi_debug(...) \
-  debug_printf(sprockit::dbg::parallel, "Rank %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::parallel, "LP %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace mpi {
@@ -145,13 +145,10 @@ mpi_runtime::global_sum(long *data, int nelems, int root)
 void
 mpi_runtime::init_runtime_params(sprockit::sim_parameters* params)
 {
-  max_num_requests_ = params->get_optional_int_param("mpi_max_num_requests", 1000*1000);
-  requests_ = new MPI_Request[max_num_requests_];
-  total_num_sent_ = 0;
+  requests_.resize(2*nproc_);
+  bytes_sent_.resize(nproc_);
+  bytes_recvd_.resize(nproc_);
   parallel_runtime::init_runtime_params(params);
-
-  int rc = MPI_Op_create(pair_reduce_function, 1, &reduce_op_);
-  if (rc != MPI_SUCCESS) spkt_abort_printf("failed creating pair reduce function");
 }
 
 mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
@@ -160,9 +157,6 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
   init_size(params))
 {
   epoch_ = 0;
-
-  num_sent_ = new int[2*nproc_];
-  ::memset(num_sent_, 0, 2*nproc_ * sizeof(int));
 }
 
 int
@@ -212,154 +206,36 @@ mpi_runtime::bcast(void *buffer, int bytes, int root)
 }
 
 void
-mpi_runtime::wait_merge_array(int tag)
+mpi_runtime::send_recv_messages()
 {
-  merge_request& req = merge_requests_[tag];
-  if (req.merged){
-    return;  //done
-  }
-
-  int* fake_num_sent = new int[nproc_];
-
-  //go to the reduce scatter - but make sure that num sent gets negative
+  int reqIdx = 0;
   for (int i=0; i < nproc_; ++i){
-    fake_num_sent[i] = -100000;
+    comm_buffer& comm = send_buffers_[i];
+    int size = comm.bytesUsed();
+    if (size){
+      debug_printf(sprockit::dbg::parallel, "lp %d sending %d bytes to lp %d on epoch %d",
+                   me_, size, i, epoch_);
+      MPI_Isend(comm.buffer(), size, MPI_BYTE, i, epoch_, MPI_COMM_WORLD, &requests_[reqIdx++]);
+    }
+    bytes_sent_[i] = size;
   }
 
-  int num_sent_to_me;
-  MPI_Reduce_scatter_block(fake_num_sent, &num_sent_to_me, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  do_collective_merges(tag);
-  delete[] fake_num_sent;
-}
+  MPI_Alltoall(bytes_sent_.data(), 1, MPI_INT, bytes_recvd_.data(), 1, MPI_INT, MPI_COMM_WORLD);
 
-void
-mpi_runtime::declare_merge_array(void* buffer, int size, int tag)
-{
-  merge_request& req = merge_requests_[tag];
-  req.buffer = buffer;
-  req.size = size;
-  req.merged = false;
-  req.refcount += 1;
-}
-
-bool
-mpi_runtime::release_merge_array(int tag)
-{
-  merge_request& req = merge_requests_[tag];
-  --req.refcount;
-  if (req.refcount == 0){
-    merge_requests_.erase(tag);
-    return true;
-  }
-  return false;
-}
-
-void
-mpi_runtime::do_merge_array(int tag)
-{
-  merge_map::iterator it = merge_requests_.find(tag);
-  if (it == merge_requests_.end()){
-    spkt_throw_printf(sprockit::value_error,
-        "mpi_runtime::do_merge_array: invalid merge tag %d",
-        tag);
-  }http://www.espn.com/
-  merge_request& req = it->second;
-  MPI_Allreduce(MPI_IN_PLACE, req.buffer, req.size, MPI_BYTE, MPI_BOR, MPI_COMM_WORLD);
-  req.merged = true;
-}
-
-void
-mpi_runtime::do_collective_merges(int my_tag)
-{
-  int* collectives_to_do = new  int[nproc_];
-  int* my_tag_array = new int[1];
-  my_tag_array[0] = my_tag;
-  MPI_Allgather(my_tag_array, 1, MPI_INT, collectives_to_do, 1, MPI_INT, MPI_COMM_WORLD);
-  std::set<int> collective_tags;
   for (int i=0; i < nproc_; ++i){
-    int next_tag = collectives_to_do[i];
-    if (next_tag >= 0){
-      collective_tags.insert(next_tag);
+    int size = bytes_recvd_[i];
+    if (size){
+      comm_buffer& comm = recv_buffers_[i];
+      comm.ensureSpace(size);
+      debug_printf(sprockit::dbg::parallel, "lp %d receiving %d bytes from lp %d on epoch %d",
+                   me_, size, i, epoch_);
+      MPI_Irecv(comm.buffer(), size, MPI_BYTE, i, epoch_, MPI_COMM_WORLD, &requests_[reqIdx++]);
+      comm.shift(size);
     }
   }
 
-  std::set<int>::iterator it, end = collective_tags.end();
-  for (it=collective_tags.begin(); it != end; ++it){
-    do_merge_array(*it);
-  }
-
-  delete[] collectives_to_do;
-}
-
-void
-mpi_runtime::do_send_recv_messages(std::vector<void*>& buffers)
-{
-  int num_sent_to_me = 0;
-  int outdata[2];
-  //reduce scatter the number of messages sent
-  //everybode gets one
-  MPI_Reduce_scatter_block(num_sent_, outdata, 1, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
-  num_sent_to_me = outdata[0];
-  while (num_sent_to_me < 0){
-    //ooooh, hey - people want to do collectives
-    do_collective_merges(-1); //I don't have anything to do
-    MPI_Reduce_scatter_block(num_sent_, outdata, 1, MPI_2INT, reduce_op_, MPI_COMM_WORLD);
-    num_sent_to_me = outdata[0];
-  }
-
-  buffers.resize(num_sent_to_me);
-
-  int bytes_sent_to_me = outdata[1];
-  recv_buffer_.resize(bytes_sent_to_me);
-  mpi_debug("receiving %d messages of size %d on epoch %d", num_sent_to_me, bytes_sent_to_me, epoch_);
-  for (int i=0; i < num_sent_to_me; ++i){
-    MPI_Status stat;
-    void* buffer = recv_buffer_.ptr;
-    MPI_Recv(buffer, recv_buffer_.remaining, MPI_BYTE, MPI_ANY_SOURCE, epoch_, MPI_COMM_WORLD, &stat);
-    int count; MPI_Get_count(&stat, MPI_BYTE, &count);
-    recv_buffer_.shift(count);
-    buffers[i] = buffer;
-  }
-
-  mpi_debug("waiting on %d sends", total_num_sent_);
-  MPI_Waitall(total_num_sent_, requests_, MPI_STATUSES_IGNORE);
-
-  ::memset(num_sent_, 0, nproc_ * 2 * sizeof(int));
-  total_num_sent_ = 0;
+  MPI_Waitall(reqIdx, requests_.data(), MPI_STATUSES_IGNORE);
   ++epoch_;
-}
-
-void
-mpi_runtime::reallocate_requests()
-{
-  int max_requests = max_num_requests_ * 2;
-  MPI_Request* new_requests = new MPI_Request[max_requests];
-  ::memcpy(new_requests, requests_, max_num_requests_ * sizeof(MPI_Request));
-  max_num_requests_ = max_requests;
-  delete[] requests_;
-  requests_ = new_requests;
-
-  mpi_debug("reallocated to have %d requests", max_num_requests_);
-}
-
-void
-mpi_runtime::do_send_message(int lp, void *buffer, int size)
-{
-#if SST_SANITY_CHECK
-  if (size > buf_size_){
-    sprockit::abort("mpi_runtime::do_send_message: sending buffer that is too large");
-  }
-#endif
-  int* pairData = &num_sent_[2*lp];
-  pairData[0]++;
-  pairData[1] += size;
-  if (total_num_sent_ == max_num_requests_){
-    reallocate_requests();
-  }
-  MPI_Request* next_req = &requests_[total_num_sent_];
-  total_num_sent_++;
-  int tag = epoch_;
-  MPI_Isend(buffer, size, MPI_BYTE, lp, tag, MPI_COMM_WORLD, next_req);
 }
 
 void

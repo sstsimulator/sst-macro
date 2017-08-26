@@ -77,6 +77,14 @@ namespace sstmac {
  * in the right order.
  */
 
+struct ipc_event_t {
+  timestamp t;
+  device_id dst;
+  device_id src;
+  uint32_t seqnum;
+  event* ev;
+};
+
 class event_manager
 {
   DeclareFactory(event_manager, parallel_runtime*)
@@ -151,12 +159,7 @@ class event_manager
 
   // ---- These are interface functions for PDES, they should
   // ----   only get called when running in parallel mode
-  virtual void ipc_schedule(
-    timestamp t,
-    device_id dst,
-    device_id src,
-    uint32_t seqnum,
-    event* ev);
+  virtual void ipc_schedule(ipc_event_t* iev);
 
   virtual void multithread_schedule(
     int srcthread,

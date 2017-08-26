@@ -80,26 +80,12 @@ class mpi_runtime :
 
   void allgather(void *send_buffer, int num_bytes, void *recv_buffer) override;
 
-  void wait_merge_array(int tag) override;
-
-  void declare_merge_array(void* buffer, int size, int tag) override;
-
-  bool release_merge_array(int tag) override;
-
   void init_runtime_params(sprockit::sim_parameters* params) override;
 
+  void send_recv_messages() override;
+
  protected:
-  void do_send_recv_messages(std::vector<void*>& buffers) override;
-
-  void do_send_message(int lp, void *buffer, int size) override;
-
   void do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
-
-  void do_merge_array(int tag);
-
-  void do_collective_merges(int my_tag);
-
-  void reallocate_requests();
 
   void finalize() override;
 
@@ -108,22 +94,10 @@ class mpi_runtime :
   int init_size(sprockit::sim_parameters* params);
 
  private:
-   MPI_Request* requests_;
+   std::vector<MPI_Request> requests_;
+   std::vector<int> bytes_sent_;
+   std::vector<int> bytes_recvd_;
 
-   MPI_Op reduce_op_;
-
-   struct merge_request {
-     void* buffer;
-     int size;
-     int refcount;
-     bool merged;
-   };
-   typedef std::map<int, merge_request> merge_map;
-   merge_map merge_requests_;
-
-   int max_num_requests_;
-   int* num_sent_;
-   int total_num_sent_;
    int epoch_;
 
 };

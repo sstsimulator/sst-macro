@@ -98,12 +98,6 @@ class dummy_runtime : public parallel_runtime
    */
   void send_event(timestamp t, switch_id sid, event* ev) {}
 
-  void wait_merge_array(int tag) override {}
-
-  void declare_merge_array(void* buffer, int size, int tag) override {}
-
-  bool release_merge_array(int tag) override { return false; }
-
  protected:
   void do_send_message(int lp, void* buffer, int size) override {}
 
