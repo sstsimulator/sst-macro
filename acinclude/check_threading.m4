@@ -194,19 +194,6 @@ elif test "$default_threading" = pthread -a "$enable_pthread" = no; then
   AC_MSG_ERROR([Default threading method pthreads is unavailable])
 fi
 
-#unless explicitly given, do not choose a default threading
-#let that be chosen by logic within operating_system.cc
-AH_TEMPLATE([USE_PTH], [Use Pth for threading by default.])
-AH_TEMPLATE([USE_UCONTEXT], [Use ucontext for threading by default.])
-AH_TEMPLATE([USE_PTHREAD], [Use pthread for threading by default.])
-if test "$default_threading" = pth -a "$enable_pth" != no; then
-  AC_DEFINE(USE_PTH)
-elif test "$default_threading" = ucontext -a "$enable_ucontext" != no; then
-  AC_DEFINE(USE_UCONTEXT)
-elif test "$default_threading" = pthread -a "$enable_pthread" != no; then
-  AC_DEFINE(USE_PTHREAD)
-fi
-
 #make sure we have an acceptable threading capabilites
 #pthreads only counts if it has been explicitly given as the default
 at_least_one_threading=no

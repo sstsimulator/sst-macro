@@ -196,11 +196,10 @@ class thread
 
   void collect_backtrace(int nfxn);
 
-  void init_thread(int phyiscal_thread_id,
+  void init_thread(sprockit::sim_parameters* params, int phyiscal_thread_id,
     threading_interface* tocopy, void *stack, int stacksize,
     threading_interface *yield_to, void* globals_storage);
 
-  /// Derived types need to override this method.
   virtual void run() = 0;
 
   /// A convenience request to start a new thread.

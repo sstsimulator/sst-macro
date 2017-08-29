@@ -57,19 +57,19 @@ MakeDebugSlot(pth);
 
 namespace sstmac {
 namespace sw {
+
+pthread_mutex_t threading_pthread::context_switch_mutex_;
+
 #ifdef SSTMAC_HAVE_PTHREAD
-
-std::vector<pthread_mutex_t> threading_pthread::context_switch_mutexes;
-
 void
-send_signal(threadcontext_t* context)
+threading_pthread::send_signal(threadcontext_t* context)
 {
   context->waiting = false;
   pthread_cond_signal(&context->ready);
 }
 
 void
-wait_signal(threadcontext_t* context)
+threading_pthread::wait_signal(threadcontext_t* context)
 {
   //pthread_cond_wait can just randomly drop out on certain OSes
   //you have to actually implement this by looping on a variable
@@ -82,27 +82,18 @@ wait_signal(threadcontext_t* context)
   context->waiting = true;
 }
 
-threading_pthread::threading_pthread(int thread_id, int nthread) :
-  thread_id_(thread_id),
-  nthread_(nthread)
+threading_pthread::threading_pthread(sprockit::sim_parameters* params) :
+  threading_interface(params)
 {
-  static thread_lock lock;
-  lock.lock();
-  if (context_switch_mutexes.size() == 0){
-    //not yet done
-    context_switch_mutexes.resize(nthread);
-    pthread_debug("initializing pthread app stack for %d real threads", nthread);
-    for (int i=0; i < nthread; ++i){
-      pthread_debug("init context switch mutex %d", i);
-      pthread_mutex_init(&context_switch_mutexes[i], NULL);
-    }
+  static bool inited = false;
+  if (!inited){
+    inited = true;
+    pthread_mutex_init(&context_switch_mutex_, NULL);
   }
-  context_.context_switch_lock = 0;
-  lock.unlock();
 }
 
-static void*
-pthreadfunc(void*args)
+void*
+threading_pthread::pthread_run_func(void*args)
 {
   threading_pthread::threadargs *thread_info = (threading_pthread::threadargs*) (
         args);
@@ -152,7 +143,7 @@ pthreadfunc(void*args)
 void
 threading_pthread::init_context_common(threadcontext_t &context)
 {
-  context_.context_switch_lock = &context_switch_mutexes[thread_id_];
+  context_.context_switch_lock = &context_switch_mutex_;
   pthread_cond_init(&context.ready, NULL);
   context.started = false;
   context.waiting = true;
@@ -198,7 +189,7 @@ threading_pthread::start_context(int physical_thread_id,
        &context_, &context_.thread, stack, stacksize, physical_thread_id);
 
   threadargs *targs = new threadargs(func, args, &context_);
-  pthread_create(&context_.thread, &thread_attr, &pthreadfunc, (void*) targs);
+  pthread_create(&context_.thread, &thread_attr, &pthread_run_func, (void*) targs);
   pthread_attr_destroy(&thread_attr);
 }
 

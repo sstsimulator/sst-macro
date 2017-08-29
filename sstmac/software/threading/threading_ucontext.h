@@ -58,32 +58,32 @@ namespace sstmac {
 namespace sw {
 
 #ifdef SSTMAC_HAVE_UCONTEXT
-
 class threading_ucontext : public threading_interface
 {
- private:
-  ucontext_t context_;
-
  public:
-  virtual void init_context();
+  FactoryRegister("ucontext", threading_interface, threading_ucontext)
 
-  virtual threading_interface* copy() {
+  void init_context() override;
+
+  threading_interface* copy() override {
     return new threading_ucontext();
   }
 
 
-  virtual void destroy_context() {}
+  void destroy_context() override {}
 
-  virtual void start_context(int physical_thread_id, void *stack, size_t stacksize, void
+  void start_context(int physical_thread_id, void *stack, size_t stacksize, void
                 (*func)(void*), void *args, threading_interface *yield_to,
-                void* globals_storage);
+                void* globals_storage) override;
 
-  virtual void swap_context(threading_interface *to);
+  void swap_context(threading_interface *to) override;
 
-  inline void complete_context(threading_interface *to) {
+  void complete_context(threading_interface *to) override {
     swap_context(to);
   }
 
+ private:
+  ucontext_t context_;
 };
 
 #endif

@@ -53,33 +53,39 @@ namespace sw {
 
 class threading_pth : public threading_interface
 {
+ public:
+  FactoryRegister("pth", threading_interface, threading_pth)
+
+  /** nothing */
+  threading_pth(sprockit::sim_parameters* params) :
+    threading_interface(params)
+  {
+  }
+
+  virtual ~threading_pth() {}
+
+  threading_interface* copy(sprockit::sim_parameters* params) override {
+    return new threading_pth(params);
+  }
+
+  void init_context() override;
+
+  void destroy_context() override;
+
+  void start_context(int physical_thread_id, void *stack, size_t stacksize, void
+                (*func)(void*), void *args, threading_interface *yield_to,
+                void* globals_storage) override;
+
+  void swap_context(threading_interface *to) override;
+
+  void complete_context( threading_interface *to) override {
+    swap_context(to);
+  }
+
   typedef pth_uctx_t threadcontext_t;
 
  private:
   threadcontext_t context_;
-
- public:
-  virtual ~threading_pth() {}
-
-  virtual
-  threading_interface* copy() {
-    return new threading_pth();
-  }
-
-  virtual void init_context();
-
-  virtual void destroy_context();
-
-  virtual void start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to,
-                void* globals_storage);
-
-  virtual void swap_context(threading_interface *to);
-
-  virtual void complete_context( threading_interface *to) {
-    swap_context(to);
-  }
-
 };
 
 }

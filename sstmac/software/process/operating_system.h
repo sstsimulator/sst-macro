@@ -311,7 +311,7 @@ class operating_system :
 
   void switch_to_thread(thread_data_t tothread);
 
-  void init_threading();
+  void init_threading(sprockit::sim_parameters* params);
 
   os_thread_context& current_os_thread_context() const {
   #if SSTMAC_USE_MULTITHREAD

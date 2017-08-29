@@ -233,118 +233,60 @@ operating_system::~operating_system()
 
 operating_system::os_thread_context operating_system::cxa_finalize_context_;
 
-
-#if SSTMAC_HAVE_GNU_PTH
-#define pth_available "pth,"
-#else
-#define pth_available ""
+static void fill_valid_threading_contexts(std::vector<std::pair<std::string,bool>>& contexts)
+{
+#ifdef SSTMAC_HAVE_UCONTEXT
+  contexts.emplace_back("ucontext", true);
+#endif
+#ifdef SSTMAC_HAVE_GNU_PTH
+  contexts.emplace_back("pth", false);
+#endif
+#ifdef SSTMAC_HAVE_PTHREAD
+  contexts.emplace_back("pthread", false);
 #endif
 
-#if SSTMAC_HAVE_PTHREAD
-#define pthread_available "pthread,"
-#else
-#define pthread_available ""
-#endif
-
-#if SSTMAC_HAVE_UCONTEXT
-#define ucontext_available "ucontext,"
-#else
-#define ucontext_available ""
-#endif
+  if (contexts.empty()){
+    sprockit::abort("No valid threading contexts found");
+  }
+}
 
 void
-operating_system::init_threading()
+operating_system::init_threading(sprockit::sim_parameters* params)
 {
   if (des_context_)
     return; //already done
 
-  std::string threading_string;
+  //string is name, bool is whether valid with multithreading
+  static std::vector<std::pair<std::string,bool>> valid_threading_contexts;
+  if (valid_threading_contexts.empty()){
+    fill_valid_threading_contexts(valid_threading_contexts);
+  }
+
+  std::string default_threading;
+#if SSTMAC_USE_MULTITHREAD
+  for (auto& pair : default_threading){
+    if (pair.second){ //supports multithreading
+      default_threading = pair.first;
+      break;
+    }
+  }
+  if (pair.first.size() == 0){
+    //this did not get updated - so we don't have any multithreading-compatible thread interfaces
+    sprockit::abort("operating_system: there are no threading frameworks compatible "
+                    "with multithreaded SST - must have ucontext or Boost::context");
+  }
+#else
+  default_threading = valid_threading_contexts[0].first;
+#endif
   const char *threading_pchar = getenv("SSTMAC_THREADING");
   if (threading_pchar){
-    threading_string = threading_pchar;
-  } else { 
-#if defined(SSTMAC_USE_UCONTEXT) //explicitly specified default via configure, different from HAVE_UCONTEXT
-    threading_string = "ucontext";
-#elif defined(SSTMAC_USE_PTHREAD)
-    threading_string = "pthread";
-#elif defined(SSTMAC_USE_PTH)
-    threading_string = "pth";
-    
-    //if none of the above set, we have no explicitly specified default
-    //go ahead and pick a sensible one
-#elif SSTMAC_USE_MULTITHREAD //set priorities differently depending on whether we are in multithreading mode
-    #if defined(SSTMAC_HAVE_UCONTEXT)
-    threading_string = "ucontext";
-    #elif defined(SSTMAC_HAVE_PTHREAD)
-    threading_string = "pthread";
-    #else
-    sprockit::abort("operating_system: there are no threading frameworks compatible "
-                    "with multithreaded SST - must have ucontext or pthread");
-    #endif
-#else //not multithreaded
-    #if defined(SSTMAC_HAVE_GNU_PTH)
-    threading_string = "pth";
-    #elif defined(SSTMAC_HAVE_UCONTEXT)
-    threading_string = "ucontext";
-    #elif defined(SSTMAC_HAVE_PTHREAD)
-    threading_string = "pthread";
-    #else
-    #error no valid thread interfaces available (pth, pthread, ucontext supported)
-    #error ucontext is not available on MAC
-    #error pthread is not compatible with integrated SST core
-    #error pth must be downloaded and installed from GNU site
-    #endif
-#endif
+    default_threading = threading_pchar;
   }
 
-  if (threading_string == "pth") {
-#if defined(SSTMAC_HAVE_GNU_PTH)
-   #if SSTMAC_USE_MULTITHREAD
-   sprockit::abort("operating_system: SSTMAC_THREADING=pth exists on system, but is not compatible with multithreading\n" 
-    "set environment SSTMAC_THREADING=ucontext for production jobs or SSTMAC_THREADING=pthread for debug jobs\n" 
-    "currently there is no efficient multithreading on platforms that don't support ucontext, including Mac OS X");
-   #else
-   des_context_ = new threading_pth();
-   #endif
-#else
-   sprockit::abort("operating_system: SSTMAC_THREADING=pth is not supported");
-#endif
-  }
-  else if (threading_string == "pthread") {
-#if defined(SSTMAC_HAVE_PTHREAD)
-#if SSTMAC_INTEGRATED_SST_CORE
-    int nthr = 1;
-#else
-    int nthr = event_mgr()->nthread();
-#endif
-    des_context_ = new threading_pthread(thread_id(), nthr);
-
-#else
-    sprockit::abort("operating_system: SSTMAC_THREADING=pthread is not supported");
-#endif
-    static bool you_have_been_warned = false;
-    if (!you_have_been_warned)
-      cerr0 << "Using pthread framework for virtual application stacks - good for debugging, but bad for performance\n"
-#if SSTMAC_USE_MULTITHREAD
-      << "Consider SSTMAC_THREADING=ucontext if supported" << std::endl;
-#else
-      << "Consider SSTMAC_THREADING=ucontext or pth if supported" << std::endl;
-#endif
-    you_have_been_warned = true;
-  }
-  else if (threading_string == "ucontext") {
-#if defined(SSTMAC_HAVE_UCONTEXT)
-    des_context_ = new threading_ucontext();
-#else
-    sprockit::abort("operating_system: SSTMAC_THREADING=ucontext is not supported");
-#endif
-  }
-  else {
-    spkt_throw_printf(sprockit::value_error,
-       "operating_system: invalid value %s for SSTMAC_THREADING environmental variable\n"
-       "choose one of " pth_available pthread_available ucontext_available,
-       threading_string.c_str());
-  }
+  int nthr = event_mgr()->nthread();
+  int my_thr = thread_id();
+  des_context_ = threading_interface::factory::get_optional_param(
+        "context", default_threading, params);
 
   des_context_->init_context();
 
@@ -837,6 +779,7 @@ operating_system::add_thread(thread* t)
 
   app* parent = t->parent_app();
   t->init_thread(
+    parent->params(),
     thread_id(),
     des_context_,
     stackalloc_.alloc(),
@@ -864,13 +807,16 @@ operating_system::start_app(app* theapp, const std::string& unique_name)
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), thread_id());
   //this should be called from the actual thread running it
-  init_threading();
 #if SSTMAC_HAVE_GRAPHVIZ
   {
     void** stack = call_graph_->allocate_trace();
     theapp->set_backtrace(stack);
   }
 #endif
+  init_threading(params_);
+  if (params_->has_param("context")){
+    theapp->params()->add_param("context", params_->get_param("context"));
+  }
   add_application(theapp);
   switch_to_thread(thread_data_t(theapp->context_, theapp));
 }

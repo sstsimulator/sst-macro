@@ -74,8 +74,9 @@ const task_id thread::main_thread_tid(-1);
 // Private method that gets called by the scheduler.
 //
 void
-thread::init_thread(int physical_thread_id, threading_interface* threadcopy, void *stack,
-                    int stacksize, threading_interface *yield_to, void* globals_storage)
+thread::init_thread(sprockit::sim_parameters* params,
+  int physical_thread_id, threading_interface* threadcopy, void *stack,
+  int stacksize, threading_interface *yield_to, void* globals_storage)
 {
   stack_ = stack;
   stacksize_ = stacksize;
@@ -84,7 +85,7 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
 
   state_ = INITIALIZED;
 
-  context_ = threadcopy->copy();
+  context_ = threadcopy->copy(params);
 
   threadinfo* info = new threadinfo();
   info->thethread = this;
