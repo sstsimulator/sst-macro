@@ -63,10 +63,15 @@ class threading_ucontext : public threading_interface
  public:
   FactoryRegister("ucontext", threading_interface, threading_ucontext)
 
+  threading_ucontext(sprockit::sim_parameters* params) :
+    threading_interface(params)
+  {
+  }
+
   void init_context() override;
 
-  threading_interface* copy() override {
-    return new threading_ucontext();
+  threading_interface* copy(sprockit::sim_parameters* params) override {
+    return new threading_ucontext(params);
   }
 
 
