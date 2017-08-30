@@ -290,17 +290,12 @@ class SSTAdvanceTimePragma : public SSTPragma {
 class SSTNewPragma : public SSTPragma {
  public:
   SSTNewPragma() : SSTPragma(New) {}
-  static void defaultAct(clang::Stmt* stmt, clang::Rewriter& r, clang::CompilerInstance& CI,
-                         bool insertStartAfter, bool insertStopAfter, bool trailingSemiColon=false);
+
  private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
   void visitDeclStmt(clang::DeclStmt *stmt, clang::Rewriter &r);
-  void visitCompoundStmt(clang::CompoundStmt *stmt, clang::Rewriter& r);
   void visitBinaryOperator(clang::BinaryOperator *op, clang::Rewriter& r);
-  void visitCXXMethodDecl(clang::CXXMethodDecl* decl, clang::Rewriter& r);
-  void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r);
-  void visitForStmt(clang::ForStmt* stmt, clang::Rewriter& r);
 };
 
 struct SSTPragmaList {

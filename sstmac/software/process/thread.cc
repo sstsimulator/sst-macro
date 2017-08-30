@@ -121,9 +121,6 @@ thread::clear_subthread_from_parent_app()
   }
 }
 
-/**
- * This can get called by anyone to have a thread exit, including during normal app termination
- */
 void
 thread::kill()
 {
@@ -133,7 +130,7 @@ thread::kill()
   clear_subthread_from_parent_app();
 
   // This is a little bit weird - kill is happening on a non-DES thread stack
-  os_->complete_thread(true);
+  os_->complete_active_thread();
 
   //we will never actually arrive here, instead the os context switches out
 }
@@ -142,26 +139,6 @@ void
 thread::cleanup()
 {
 }
-
-class delete_thread_event :
-  public event_queue_entry
-{
- public:
-  delete_thread_event(thread* thr) :
-    thr_(thr),
-    event_queue_entry(thr->os()->event_location(), thr->os()->event_location())
-  {
-  }
-
-  void
-  execute(){
-    thr_->cleanup();
-    delete thr_;
-  }
-
- protected:
-  thread* thr_;
-};
 
 //
 // Run routine that defines the initial context for this task.
@@ -180,14 +157,8 @@ thread::run_routine(void* threadptr)
     try {
       self->run();
       success = true;
-      //JJW 11/6/2014 This here is weird
-      //The thread has run out of work and is terminating
-      //However, because of weird thread swapping the DES thread
-      //might still operate on the thread... we need to delay the delete
-      //until the DES thread has completely finished processing its current event
-      self->os()->schedule_now(new delete_thread_event(self));
       //this doesn't so much kill the thread as context switch it out
-      //it is up to the above delete thread event to actually to deletion/cleanup
+      //it is up to the above delete thread event to actually to do deletion/cleanup
       //all of this is happening ON THE THREAD - it kills itself
       //this is not the DES thread killing it
       self->kill();

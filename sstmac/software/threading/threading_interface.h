@@ -73,8 +73,16 @@ class threading_interface
                 (*func)(void*), void *args, threading_interface *yield_to,
                 void* globals_storage) = 0;
 
+  /**
+   * @brief swap_context
+   * @param to
+   */
   virtual void swap_context(threading_interface* to) = 0;
 
+  /**
+   * @brief complete_context Perform all cleanup operations to end this context
+   * @param to
+   */
   virtual void complete_context(threading_interface* to) = 0;
 
  protected:

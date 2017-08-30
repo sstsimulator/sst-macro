@@ -52,11 +52,12 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
+/**
 // We need to know the thread associated with each threading_interface
 // so current thread pointer can be maintained
 // (used for threadstack_ in operatingsystem and block_ in key )
 typedef std::pair<threading_interface*, thread*> thread_data_t;
-
+*/
 /**
  * Base class for tasks that can be cooperative scheduled using threadcontext.
  */
@@ -64,6 +65,7 @@ typedef std::pair<threading_interface*, thread*> thread_data_t;
 struct threadinfo {
   thread* thethread;
 };
+
 
 }
 }

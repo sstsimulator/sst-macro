@@ -69,7 +69,7 @@ class key  {
       into every key when selecting type.
   */
  public:
-  typedef std::set<thread_data_t> blocking_t;
+  typedef std::set<thread*> blocking_t;
 
  public:
   static key_traits::category general;
@@ -109,12 +109,12 @@ class key  {
 
   void operator delete(void* ptr);
 
-  void block_thread(thread_data_t t){
+  void block_thread(thread* t){
     blocked_thread_ = t;
   }
 
   bool still_blocked() {
-    return blocked_thread_.second;
+    return blocked_thread_;
   }
 
   bool timed_out() const {
@@ -126,8 +126,7 @@ class key  {
   }
 
   void clear() {
-    blocked_thread_.first = 0;
-    blocked_thread_.second = 0;
+    blocked_thread_ = nullptr;
   }
 
   static void delete_statics();
@@ -144,7 +143,7 @@ class key  {
   static std::unordered_map<int, std::string>* category_id_to_name_;
   static uint64_t key_storage_size_;
 
-  thread_data_t blocked_thread_;
+  thread* blocked_thread_;
   bool timed_out_;
   int keyname_id_;
 

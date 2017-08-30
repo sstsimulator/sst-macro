@@ -184,26 +184,12 @@ SSTKeepPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTNewPragma::visitCXXMethodDecl(CXXMethodDecl* decl, Rewriter& r)
-{
-  defaultAct(decl->getBody(), r, *CI, true, false);
-}
-
-void
-SSTNewPragma::visitFunctionDecl(FunctionDecl* decl, Rewriter& r)
-{
-  defaultAct(decl->getBody(), r, *CI, true, false);
-}
-
-void
 SSTNewPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
 #define dcase(type,d,rw) \
   case(clang::Decl::type): \
     visit##type##Decl(clang::cast<type##Decl>(d),rw); break
   switch(d->getKind()){
-    dcase(Function,d,r);
-    dcase(CXXMethod,d,r);
     default:
       break;
   }
@@ -229,10 +215,7 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
         sstr << type << " " << name << " = nullptr;"; //don't know why - but okay, semicolon needed
         replace(stmt, r, sstr.str(), *CI);
         deleted->insert(init);
-      } else {
-        //nope, need extra hacking
-        defaultAct(stmt,r,*CI,false,true);
-      }
+      } //boy, I really hope this doesn't allocate any memory
     }
   } else {
     errorAbort(stmt->getLocStart(), *CI, "sst malloc pragma applied to non-variable declaration");
@@ -249,58 +232,7 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
     pp.os << " = nullptr"; //don't know why - but okay, semicolon not needed
     replace(op, r, pp.os.str(),*CI);
     deleted->insert(op->getRHS());
-  } else {
-    defaultAct(op,r,*CI,false,true);
-  }
-}
-
-void
-SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, clang::CompilerInstance& CI,
-                         bool insertStartAfter, bool insertStopAfter,
-                         bool trailingSemiColon)
-{
-  return; //don't do this anymore
-
-  SourceLocation insertLoc = stmt->getLocStart();
-  if (insertStartAfter){
-    insertLoc = Lexer::getLocForEndOfToken(insertLoc, 0,
-                        CI.getSourceManager(), CI.getLangOpts());
-  }
-  r.InsertText(insertLoc, "should_skip_operator_new()++;", false);
-
-  insertLoc = stmt->getLocEnd();
-  if (insertStopAfter){
-    insertLoc = Lexer::getLocForEndOfToken(insertLoc, 0,
-                        CI.getSourceManager(), CI.getLangOpts());
-    if (insertLoc.isInvalid()){
-      errorAbort(stmt->getLocStart(), CI, "trouble turning off operator new");
-    }
-  }
-
-  if (trailingSemiColon){
-    insertLoc = Lexer::findLocationAfterToken(insertLoc, tok::semi,
-                                  CI.getSourceManager(), CI.getLangOpts(), false);
-    if (insertLoc.isInvalid()){
-      errorAbort(stmt->getLocStart(), CI, "trouble turning off operator new");
-    }
-  }
-
-  //locations are weird with functions - insert after is always false
-  r.InsertText(insertLoc, "should_skip_operator_new()--;", false);
-}
-
-void
-SSTNewPragma::visitCompoundStmt(clang::CompoundStmt* stmt, Rewriter& r)
-{
-  defaultAct(stmt,r,*CI,false,true);
-}
-
-void
-SSTNewPragma::visitForStmt(ForStmt *stmt, Rewriter &r)
-{
-  return; //don't do this anymore
-  r.InsertText(stmt->getLocStart(), "should_skip_operator_new()++;", false);
-  r.InsertText(stmt->getLocEnd(), "should_skip_operator_new()--;", false);
+  } //boy, I really hope this doesn't allocate any memory
 }
 
 void
@@ -312,10 +244,8 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
   switch(stmt->getStmtClass()){
     scase(DeclStmt,stmt,r);
     scase(BinaryOperator,stmt,r);
-    scase(CompoundStmt,stmt,r);
-    scase(ForStmt,stmt,r);
-    default: //just delete what follows
-      defaultAct(stmt,r,*CI,false,false,true);
+    default: //well - that was stupid of you
+      warn(stmt->getLocStart(), *CI, "pragma new not applied to operator new or binary operator");
       break;
   }
 #undef scase

@@ -88,53 +88,40 @@ class operating_system :
  public:
   operating_system(sprockit::sim_parameters* params, hw::node* parent);
 
-  struct os_thread_context {
-    thread* current_thread;
-    std::list<thread*> to_delete;
-    operating_system* current_os;
-    stack_alloc stackalloc;
-    app_id current_aid;
-    task_id current_tid;
-    int skip_next_op_new;
-    os_thread_context() :
-      current_thread(nullptr),
-      current_os(nullptr),
-      skip_next_op_new(0)
-    {}
-  };
-
-  static void skip_next_op_new(){
-    static_os_thread_context().skip_next_op_new = true;
-  }
-
   virtual ~operating_system();
 
   std::string to_string() const {
     return "operating system";
   }
 
-  static inline os_thread_context& static_os_thread_context(){
+  static inline operating_system*& static_os_thread_context(){
   #if SSTMAC_USE_MULTITHREAD
     int thr = thread_info::current_physical_thread_id();
-    return os_thread_contexts_[thr];
+    return active_os_[thr];
   #else
-    return os_thread_context_;
+    return active_os_;
   #endif
   }
 
+  inline operating_system*& active_os() {
+#if SSTMAC_USE_MULTITHREAD
+  return active_os_[thread_id_];
+#else
+  return active_os_;
+#endif
+  }
+
   thread* active_thread() const {
-    return current_os_thread_context().current_thread;
+    return active_thread_;
   }
 
   static void delete_statics();
 
   static void switch_to_context(int aid, int tid);
 
-  static operating_system* current_os();
-
-  static app_id current_aid();
-
-  static task_id current_tid();
+  static operating_system* current_os(){
+    return static_os_thread_context();
+  }
 
   static library* current_library(const std::string& name);
 
@@ -212,7 +199,7 @@ class operating_system :
 
   void join_thread(thread* t);
 
-  void complete_thread(bool succ);
+  void complete_active_thread();
 
   library* lib(const std::string& name) const;
 
@@ -221,14 +208,6 @@ class operating_system :
   void start_app(app* a, const std::string& unique_name);
 
   void handle_event(event* ev);
-
-  std::list<app*> app_ptrs(app_id aid);
-
-  app* app_ptr(software_id sid);
-
-  thread_data_t current_context() const {
-    return threadstack_.top();
-  }
 
   static void shutdown() {
     current_os()->local_shutdown();
@@ -257,7 +236,7 @@ class operating_system :
   }
 
   static thread* current_thread(){
-    return static_os_thread_context().current_thread;
+    return static_os_thread_context()->active_thread();
   }
 
   graph_viz* call_graph() const {
@@ -309,18 +288,9 @@ class operating_system :
  private:
   void add_thread(thread* t);
 
-  void switch_to_thread(thread_data_t tothread);
+  void switch_to_thread(thread* tothread);
 
   void init_threading(sprockit::sim_parameters* params);
-
-  os_thread_context& current_os_thread_context() const {
-  #if SSTMAC_USE_MULTITHREAD
-    int thr = thread_id();
-    return os_thread_contexts_[thr];
-  #else
-    return os_thread_context_;
-  #endif
-  }
 
   friend class library;
 
@@ -336,22 +306,12 @@ class operating_system :
   hw::node* node_;
   std::unordered_map<std::string, library*> libs_;
   std::unordered_map<library*, int> lib_refcounts_;
-  std::unordered_map<void*, std::list<library*> > libs_by_owner_;
+  std::unordered_map<void*, std::list<library*>> libs_by_owner_;
   std::map<std::string, std::list<event*>> pending_library_events_;
+  thread* active_thread_;
+  threading_interface* active_context_;
 
   node_id my_addr_;
-
-  std::list<thread*> threads_;
-
-  std::list<api*> services_;
-
-  std::stack<thread_data_t> threadstack_;
-
-  int current_thread_id_;
-
-  int next_msg_id_;
-
-  std::unordered_map<task_id, long> task_to_thread_;
 
   std::queue<thread*> to_awake_; // from thread join
 
@@ -370,17 +330,15 @@ class operating_system :
   bool call_graph_active_;
 
 #if SSTMAC_USE_MULTITHREAD
-  static std::vector<operating_system::os_thread_context> os_thread_contexts_;
+  static std::vector<operating_system*> active_os_;
 #else
-  static operating_system::os_thread_context os_thread_context_;
+  static operating_system* active_os_;
 #endif
+  static stack_alloc stack_alloc_;
 
 #if SSTMAC_SANITY_CHECK
   std::set<key*> valid_keys_;
 #endif
-
- private:
-  static os_thread_context cxa_finalize_context_;
 
 };
 
