@@ -75,13 +75,9 @@ threading_ucontext::start_context(int physical_thread_id,
   context_.uc_stack.ss_size = stacksize;
   init_context();
 
-  threading_ucontext* casted = (threading_ucontext*)yield_to;
-  if(yield_to) {
-    context_.uc_link = &casted->context_;
-  }
-  else {
-    context_.uc_link = NULL;
-  }
+  threading_ucontext* fromctx = static_cast<threading_ucontext*>(from);
+  context_.uc_link = NULL;
+  
   makecontext(&context_, (void
         (*)()) (context_springboard), 4, funcp.fpair.a, funcp.fpair.b,
         voidp.vpair.a, voidp.vpair.b);
