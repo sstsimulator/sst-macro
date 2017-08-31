@@ -13,6 +13,7 @@ include $(top_srcdir)/Makefile.common
 
 AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 
+
 noinst_LTLIBRARIES = libsstmac_sw.la
 libsstmac_sw_la_LDFLAGS = 
 
@@ -163,6 +164,11 @@ if HAVE_PTH
      threading/threading_pth.cc 
   nobase_library_include_HEADERS += \
     threading/threading_pth.h 
+endif
+
+if HAVE_FCONTEXT
+  libsstmac_sw_la_SOURCES += \
+     threading/threading_fcontext.cc 
 endif
 
 

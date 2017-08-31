@@ -58,7 +58,8 @@ if EXTERNAL_BOOST
   exe_LDADD += $(BOOST_LDFLAGS)
 endif
 
-sstmac_LDADD = $(exe_LDADD) -ldl
+
+sstmac_LDADD = $(exe_LDADD) -ldl -lboost_context
 sstmac_top_info_LDADD = $(exe_LDADD)
 endif
 

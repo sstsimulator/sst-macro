@@ -24,8 +24,9 @@ class threading_fcontext : public threading_interface
     ctx::stack_context sctx;
     sctx.sp = stackptr + sz;
     sctx.size = sz;
+
     fctx->resumer_ = ctx::callcc(std::allocator_arg,
-      ctx::preallocated(stack,sz,sctx),
+      ctx::preallocated(sctx.sp,sz,sctx),
       do_nothing_stack_alloc(),
       [func,args,fctx](ctx::continuation&& sink){
            fctx->pauser_ = std::move(sink);
