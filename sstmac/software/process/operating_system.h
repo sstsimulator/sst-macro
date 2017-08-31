@@ -58,7 +58,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/software/process/thread_data.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
@@ -125,9 +124,9 @@ class operating_system :
 
   static library* current_library(const std::string& name);
 
-  static node_id current_node_id();
-
-  static node_id remote_node(int tid);
+  static node_id current_node_id() {
+    return static_os_thread_context()->addr();
+  }
 
   /**
    * @brief execute Execute a compute function.
@@ -174,9 +173,7 @@ class operating_system :
    * @param data  Event carrying all the data describing the compute
    * @param cb    The callback to invoke when the kernel is complete
    */
-  void execute_kernel(ami::COMP_FUNC func,
-                 event* data,
-                 callback* cb);
+  void execute_kernel(ami::COMP_FUNC func, event* data, callback* cb);
   /**
    * @brief execute Enqueue an operation to perform
    * This function takes place in "kernel" land
@@ -188,46 +185,54 @@ class operating_system :
    * @param data  Event carrying all the data describing the compute
    */
   void async_kernel(ami::SERVICE_FUNC func, event* data);
-
-  static void stack_check();
   
+  /**
+   * @brief block Block the currently running thread context.
+   * This must be called from an application thread, NOT the DES thread
+   * @param req [in-out] A key that will store blocking data that will be needed
+   *                     for later unblocking
+   * @return
+   */
   timestamp block(key* req);
 
+  /**
+   * @brief unblock Unblock the thread context associated with the key
+   *        This must be called from the DES thread, NOT an application thread
+   * @param req [in] The key storing blocking data that was previously passed into
+   *                  a block(req) call
+   * @return
+   */
   timestamp unblock(key* req);
 
+  /**
+   * @brief start_thread Start a thread object and schedule the context switch to it
+   * @param t The thread to start
+   */
   void start_thread(thread* t);
 
-  void join_thread(thread* t);
+  /**
+   * @brief join_thread If this thread created a subthread, join with the given subthread.
+   *                    This should be called from the application thread that spawned the subthread,
+   *                    NOT the DES thread
+   * @param subthread The spawned subthread to join
+   */
+  void join_thread(thread* subthread);
 
+  /**
+   * @brief complete_active_thread Must be called from a currently running application thread, not the DES thread.
+   *                               This returns from the currently running context, closes it out,
+   *                               and schedules resources associated with it (stack, etc) to be cleaned up.
+   */
   void complete_active_thread();
 
-  library* lib(const std::string& name) const;
-
-  void add_application(app* a);
-
+  /**
+   * @brief start_app
+   * Similar to start_thread, but performs special operations associated
+   *  with a full application rather than just a subthread.
+   * @param a The application to start
+   * @param unique_name A known name for identifying the process across multiple nodes
+   */
   void start_app(app* a, const std::string& unique_name);
-
-  void handle_event(event* ev);
-
-  static void shutdown() {
-    current_os()->local_shutdown();
-  }
-
-  void print_libs(std::ostream& os = std::cout) const;
-
-  void set_node(sstmac::hw::node* n){
-    node_ = n;
-  }
-
-  hw::node* node() const {
-    return node_;
-  }
-
-  node_id addr() const {
-    return my_addr_;
-  }
-
-  void schedule_timeout(timestamp delay, key* k);
 
   void free_thread_stack(void* stack);
 
@@ -238,6 +243,26 @@ class operating_system :
   static thread* current_thread(){
     return static_os_thread_context()->active_thread();
   }
+
+  void handle_event(event* ev);
+
+  static void shutdown() {
+    current_os()->local_shutdown();
+  }
+
+  library* lib(const std::string& name) const;
+
+  void print_libs(std::ostream& os = std::cout) const;
+
+  hw::node* node() const {
+    return node_;
+  }
+
+  node_id addr() const {
+    return my_addr_;
+  }
+
+  void schedule_timeout(timestamp delay, key* k);
 
   graph_viz* call_graph() const {
     return call_graph_;
@@ -285,8 +310,12 @@ class operating_system :
     return call_graph_active_;
   }
 
- private:
+  static void stack_check();
+
+private:
   void add_thread(thread* t);
+
+  void add_application(app* a);
 
   void switch_to_thread(thread* tothread);
 
@@ -312,8 +341,6 @@ class operating_system :
   threading_interface* active_context_;
 
   node_id my_addr_;
-
-  std::queue<thread*> to_awake_; // from thread join
 
   /// The caller context (main DES thread).  We go back
   /// to this context on every context switch.

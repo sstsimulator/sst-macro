@@ -440,12 +440,6 @@ operating_system::current_library(const std::string &name)
   return current_os()->lib(name);
 }
 
-node_id
-operating_system::current_node_id()
-{
-  return static_os_thread_context()->active_os_->addr();
-}
-
 void
 operating_system::switch_to_thread(thread* tothread)
 {

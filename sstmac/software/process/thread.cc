@@ -87,10 +87,7 @@ thread::init_thread(sprockit::sim_parameters* params,
 
   context_ = threadcopy->copy(params);
 
-  threadinfo* info = new threadinfo();
-  info->thethread = this;
-
-  context_->start_context(physical_thread_id, stack, stacksize, run_routine, info,
+  context_->start_context(physical_thread_id, stack, stacksize, run_routine, this,
                           yield_to, globals_storage);
 }
 
@@ -146,9 +143,7 @@ thread::cleanup()
 void
 thread::run_routine(void* threadptr)
 {
-  threadinfo* info = (threadinfo*) threadptr;
-  thread* self = info->thethread;
-  delete info;
+  thread* self = (thread*) threadptr;
 
   // Go.
   if (self->is_initialized()) {

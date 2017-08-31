@@ -45,13 +45,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_PROCESS_KEY_H_INCLUDED
 #define SSTMAC_SOFTWARE_PROCESS_KEY_H_INCLUDED
 
-#include <sstmac/software/threading/threading_interface.h>
-#include <sstmac/software/process/thread_data.h>
 #include <unordered_map>
 #include <stdint.h>
 #include <sstmac/software/process/key_fwd.h>
+#include <sstmac/software/process/thread_fwd.h>
 
 #include <cstring>
+#include <string>
 #include <set>
 
 namespace sstmac {

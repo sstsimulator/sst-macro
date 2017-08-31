@@ -67,7 +67,6 @@ threading_pth::destroy_context() {
   }
 }
 
-  /// Start a new context.
 void
 threading_pth::start_context(int physical_thread_id, void *stack, size_t stacksize, void
                 (*func)(void*), void *args, threading_interface *yield_to, void* globals_storage) {
@@ -86,7 +85,6 @@ threading_pth::start_context(int physical_thread_id, void *stack, size_t stacksi
   }
 }
 
-  /// Swap context.
 void
 threading_pth::swap_context(threading_interface *to) {
   threading_pth* topth = (threading_pth*)to;
