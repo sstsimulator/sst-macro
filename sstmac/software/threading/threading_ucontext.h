@@ -77,17 +77,25 @@ class threading_ucontext : public threading_interface
 
   void destroy_context() override {}
 
-  void start_context(int physical_thread_id, void *stack, size_t stacksize, void
+  void start_context(int physical_thread_id, void* stack, size_t stacksize, void
                 (*func)(void*), void *args, threading_interface *yield_to,
                 void* globals_storage) override;
 
-  void swap_context(threading_interface *to) override;
+  void pause_context(threading_interface* to) override {
+    swap_context(this, to);
+  }
+
+  void resume_context(thread_interface* from) override {
+    swap_context(from, this);
+  }
 
   void complete_context(threading_interface *to) override {
     swap_context(to);
   }
 
  private:
+  static void swap_context(threading_interface* from, threading_interface* to) override;
+
   ucontext_t context_;
 };
 

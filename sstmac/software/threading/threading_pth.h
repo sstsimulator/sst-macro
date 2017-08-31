@@ -73,13 +73,15 @@ class threading_pth : public threading_interface
   void destroy_context() override;
 
   void start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to,
-                void* globals_storage) override;
+                (*func)(void*), void *args, void* globals_storage,
+                threading_interface* from) override;
 
-  void swap_context(threading_interface *to) override;
+  void resume_context(threading_interface* from) override;
 
-  void complete_context( threading_interface *to) override {
-    swap_context(to);
+  void pause_context(threading_interface *to) override;
+
+  void complete_context(threading_interface *to) override {
+    pause_context(to);
   }
 
   typedef pth_uctx_t threadcontext_t;

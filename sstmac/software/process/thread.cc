@@ -75,8 +75,8 @@ const task_id thread::main_thread_tid(-1);
 //
 void
 thread::init_thread(sprockit::sim_parameters* params,
-  int physical_thread_id, threading_interface* threadcopy, void *stack,
-  int stacksize, threading_interface *yield_to, void* globals_storage)
+  int physical_thread_id, threading_interface* des_thread, void *stack,
+  int stacksize, void* globals_storage)
 {
   stack_ = stack;
   stacksize_ = stacksize;
@@ -85,10 +85,10 @@ thread::init_thread(sprockit::sim_parameters* params,
 
   state_ = INITIALIZED;
 
-  context_ = threadcopy->copy(params);
+  context_ = des_thread->copy(params);
 
-  context_->start_context(physical_thread_id, stack, stacksize, run_routine, this,
-                          yield_to, globals_storage);
+  context_->start_context(physical_thread_id, stack, stacksize,
+                          run_routine, this, globals_storage, des_thread);
 }
 
 device_id
@@ -119,22 +119,15 @@ thread::clear_subthread_from_parent_app()
 }
 
 void
-thread::kill()
+thread::cleanup()
 {
+  if (state_ != CANCELED){
+    clear_subthread_from_parent_app();
+  }
   // We are done, ask the scheduler to remove this task from the
   state_ = DONE;
 
-  clear_subthread_from_parent_app();
-
-  // This is a little bit weird - kill is happening on a non-DES thread stack
   os_->complete_active_thread();
-
-  //we will never actually arrive here, instead the os context switches out
-}
-
-void
-thread::cleanup()
-{
 }
 
 //
@@ -156,7 +149,10 @@ thread::run_routine(void* threadptr)
       //it is up to the above delete thread event to actually to do deletion/cleanup
       //all of this is happening ON THE THREAD - it kills itself
       //this is not the DES thread killing it
-      self->kill();
+      self->cleanup();
+    }
+    catch (const kill_exception& ex) {
+      //great, we are done
     }
     catch (const std::exception &ex) {
       cerrn << "thread terminated with exception: " << ex.what()

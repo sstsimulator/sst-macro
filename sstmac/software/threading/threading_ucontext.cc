@@ -64,8 +64,8 @@ threading_ucontext::init_context()
 void
 threading_ucontext::start_context(int physical_thread_id,
    void *stack, size_t stacksize, void
-   (*func)(void*), void *args, threading_interface *yield_to,
-   void* globals_storage)
+   (*func)(void*), void *args,
+   void* globals_storage, threading_interface* from)
 {
   thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
 
@@ -85,14 +85,17 @@ threading_ucontext::start_context(int physical_thread_id,
   makecontext(&context_, (void
         (*)()) (context_springboard), 4, funcp.fpair.a, funcp.fpair.b,
         voidp.vpair.a, voidp.vpair.b);
+
+  swap_context(from, this);
 }
 
 /// Swap context.
 void
-threading_ucontext::swap_context(threading_interface *to)
+threading_ucontext::swap_context(threading_interface* from, threading_interface *to)
 {
-  threading_ucontext* casted = (threading_ucontext*)to;
-  if (swapcontext(&context_, &casted->context_) == -1) {
+  threading_ucontext* fromctx = static_cast<threading_ucontext*>(from);
+  threading_ucontext* toctx = static_cast<threading_ucontext*>(to);
+  if (swapcontext(&fromctx->context_, &toctx->context_) == -1) {
     spkt_throw_printf(sprockit::os_error,
        "threading_ucontext::swap_context: %s",
        strerror(errno));

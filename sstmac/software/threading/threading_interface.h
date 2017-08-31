@@ -70,14 +70,12 @@ class threading_interface
 
   virtual void start_context(int physical_thread_id,
                 void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to,
-                void* globals_storage) = 0;
+                (*func)(void*), void *args,
+                void* globals_storage, threading_interface* from) = 0;
 
-  /**
-   * @brief swap_context
-   * @param to
-   */
-  virtual void swap_context(threading_interface* to) = 0;
+  virtual void resume_context(threading_interface* from) = 0;
+
+  virtual void pause_context(threading_interface* to) = 0;
 
   /**
    * @brief complete_context Perform all cleanup operations to end this context

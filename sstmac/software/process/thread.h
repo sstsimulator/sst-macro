@@ -73,6 +73,8 @@ namespace sw {
 class thread
 {
  public:
+  class kill_exception : public std::exception {};
+
   friend class operating_system;
   friend class app;
   friend class delete_thread_event;
@@ -166,7 +168,9 @@ class thread
    * This can get called by anyone to have a thread exit, including during normal app termination
    * This must be called while running on this thread's context, NOT the DES thread or any other thread
    */
-  virtual void kill();
+  void kill() {
+    throw kill_exception();
+  }
 
   operating_system* os() const {
     return os_;
@@ -206,7 +210,7 @@ class thread
 
   void init_thread(sprockit::sim_parameters* params, int phyiscal_thread_id,
     threading_interface* tocopy, void *stack, int stacksize,
-    threading_interface *yield_to, void* globals_storage);
+    void* globals_storage);
 
   virtual void run() = 0;
 
@@ -289,7 +293,7 @@ class thread
    * This ensures that the thread is completely done being operated on
    * It is now safe to free all resources (thread-local vars, etc)
    */
-  void cleanup();
+  virtual void cleanup();
 
  protected:
   state state_;

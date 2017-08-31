@@ -121,10 +121,7 @@ class app : public thread
 
   virtual ~app();
 
-  /**
-   * @brief kill Kill all subthreads and kill self
-   */
-  void kill() override;
+  void cleanup() override;
 
   virtual void skeleton_main() = 0;
 

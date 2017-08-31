@@ -75,14 +75,22 @@ class threading_pthread : public threading_interface
   }
 
   void start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                 (*func)(void*), void *args, threading_interface *yield_to,
-                void* globals_storage) override;
+             (*func)(void*), void *args, void* globals_storage,
+             threading_interface* from) override;
 
   void complete_context(threading_interface *to) override;
 
-  void swap_context(threading_interface *to) override;
+  void resume_context(threading_interface* from) override {
+    swap_context(static_cast<threading_pthread*>(from), this);
+  }
+
+  void pause_context(threading_interface* to) override {
+    swap_context(this, static_cast<threading_pthread*>(to));
+  }
 
  private:
+  static void swap_context(threading_pthread* from, threading_pthread* to);
+
   struct threadcontext_t
   {
     pthread_t thread;

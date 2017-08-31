@@ -312,11 +312,7 @@ class operating_system :
 
   static void stack_check();
 
-private:
-  void add_thread(thread* t);
-
-  void add_application(app* a);
-
+ private:
   void switch_to_thread(thread* tothread);
 
   void init_threading(sprockit::sim_parameters* params);
@@ -338,7 +334,6 @@ private:
   std::unordered_map<void*, std::list<library*>> libs_by_owner_;
   std::map<std::string, std::list<event*>> pending_library_events_;
   thread* active_thread_;
-  threading_interface* active_context_;
 
   node_id my_addr_;
 

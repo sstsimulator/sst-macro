@@ -130,7 +130,6 @@ class delete_thread_event :
   }
 
   void execute(){
-    thr_->cleanup();
     delete thr_;
   }
 
@@ -305,7 +304,6 @@ operating_system::init_threading(sprockit::sim_parameters* params)
   des_context_->init_context();
 
   active_thread_ = nullptr;
-  active_context_ = des_context_;
 }
 
 void
@@ -443,28 +441,19 @@ operating_system::current_library(const std::string &name)
 void
 operating_system::switch_to_thread(thread* tothread)
 {
-  if (active_context_ != des_context_){ //not an error
+  if (active_thread_ != nullptr){ //not an error
     //but this must be thrown over to the DES context to actually execute
     //we cannot context switch directly from subthread to subthread
     send_now_self_event_queue(new_callback(this, &operating_system::switch_to_thread, tothread));
     return;
   }
 
-  thread* old_thread = active_thread_;
-  threading_interface* old_context = active_context_;
-
   active_thread_ = tothread;
-  active_context_ = tothread->context();
-
   active_os() = this;
-  old_context->swap_context(tothread->context());
+  tothread->context()->resume_context(des_context_);
 
   /** back to main thread */
-  active_thread_ = old_thread;
-  active_context_ = old_context;
-  if (old_context != des_context_){
-    spkt_abort_printf("how is the DES thread not the old context on node %d", my_addr_);
-  }
+  active_thread_ = nullptr;
 }
 
 void
@@ -493,20 +482,18 @@ operating_system::block(key* req)
 
   int64_t before_ticks = now().ticks_int64();
   //back to main DES thread
-  threading_interface* old_context = active_context_;
+  threading_interface* old_context = active_thread_->context();
   if (old_context == des_context_){
     spkt_abort_printf("blocking main DES thread on node %d", my_addr_);
   }
   thread* old_thread = active_thread_;
-  active_context_ = des_context_;
   active_thread_ = nullptr;
-  old_context->swap_context(des_context_);
+  old_context->pause_context(des_context_);
   active_os() = this;
 
 
   //I am reactivated !!!!
   active_thread_ = old_thread;
-  active_context_ = old_context;
   int64_t after_ticks = now().ticks_int64();
   int64_t delta_ticks = after_ticks - before_ticks;
 
@@ -558,25 +545,6 @@ operating_system::unblock(key* req)
 }
 
 void
-operating_system::start_thread(thread* t)
-{
-#if SSTMAC_HAVE_GRAPHVIZ
-  {
-    void** stack = call_graph_->allocate_trace();
-    t->set_backtrace(stack);
-  }
-#endif
-  add_thread(t);
-#if SSTMAC_ENABLE_DEBUG_SWAP
-  int aid = t->aid().id;
-  int tid = t->tid().id;
-  context_map_[aid][tid] = t->context_;
-#endif
-  switch_to_thread(t);
-
-}
-
-void
 operating_system::join_thread(thread* t)
 {
   if (t->get_state() != thread::DONE) {
@@ -595,8 +563,6 @@ void
 operating_system::complete_active_thread()
 {
   thread* thr_todelete = active_thread_;
-  threading_interface* current_tinfo = active_context_;
-
 
   //if any threads waiting on the join, unblock them
   os_debug("completing thread %ld", thr_todelete->thread_id());
@@ -608,9 +574,7 @@ operating_system::complete_active_thread()
     //to_awake_.push(thr_todelete->joiners_.front());
     thr_todelete->joiners_.pop();
   }
-
   active_thread_ = nullptr;
-  active_context_ = des_context_;
 
   //JJW 11/6/2014 This here is weird
   //The thread has run out of work and is terminating
@@ -620,10 +584,7 @@ operating_system::complete_active_thread()
   schedule_now(new delete_thread_event(thr_todelete));
 
   os_debug("completing context for %ld", thr_todelete->thread_id());
-  current_tinfo->complete_context(des_context_);
-  // This thread is not permitted to start again.
-  sprockit::abort("operating_system::complete: thread switched in again "
-            "after calling complete and relinquishing stack.");
+  thr_todelete->context()->complete_context(des_context_);
 }
 
 void
@@ -721,26 +682,29 @@ operating_system::free_thread_stack(void *stack)
 }
 
 void
-operating_system::add_thread(thread* t)
+operating_system::start_thread(thread* t)
 {
-  app* parent = t->parent_app();
-  t->init_thread(
-    parent->params(),
-    thread_id(),
-    des_context_,
-    stack_alloc_.alloc(),
-    stack_alloc_.stacksize(),
-    NULL, parent->globals_storage());
-}
-
-void
-operating_system::add_application(app* a)
-{
-  if (ftq_trace_){
-    ftq_trace_->register_app(a->aid(), sprockit::printf("app%d", int(a->aid())));
+#if SSTMAC_HAVE_GRAPHVIZ
+  {
+    void** stack = call_graph_->allocate_trace();
+    t->set_backtrace(stack);
   }
-
-  add_thread(a);
+#endif
+  if (active_thread_){
+    //crap - can't do this on this thread - need to do on DES thread
+    send_now_self_event_queue(new_callback(this, &operating_system::start_thread, t));
+  } else {
+    active_thread_ = t;
+    active_os() = this;
+    app* parent = t->parent_app();
+    t->init_thread(
+      parent->params(),
+      thread_id(),
+      des_context_,
+      stack_alloc_.alloc(),
+      stack_alloc_.stacksize(),
+      parent->globals_storage());
+  }
 }
 
 void
@@ -759,8 +723,11 @@ operating_system::start_app(app* theapp, const std::string& unique_name)
   if (params_->has_param("context")){
     theapp->params()->add_param("context", params_->get_param("context"));
   }
-  add_application(theapp);
-  switch_to_thread(theapp);
+  if (ftq_trace_){
+    ftq_trace_->register_app(theapp->aid(), sprockit::printf("app%d", int(theapp->aid())));
+  }
+
+  start_thread(theapp);
 }
 
 bool
