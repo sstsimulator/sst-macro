@@ -76,6 +76,7 @@ clock_cycle_event_map::clock_cycle_event_map(
 {
   int64_t max_ticks = std::numeric_limits<int64_t>::max() - 100;
   no_events_left_time_ = timestamp(max_ticks, timestamp::exact);
+  min_ipc_time_ = no_events_left_time_;
   thread_incoming_.resize(nthread());
 }
 
@@ -119,6 +120,11 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
     sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
   }
 #endif
+  //vote for the minimum time of all my events
+  //and all the events I sent out to others
+  if (vote > min_ipc_time_){
+    vote = min_ipc_time_;
+  }
   timestamp min_time = rt_->send_recv_messages(vote);
 
   auto& bufs = rt_->recv_buffers();
@@ -140,6 +146,8 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
     }
   }
   rt_->reset_send_recv();
+  //reset this guy
+  min_ipc_time_ = no_events_left_time_;
   return min_time;
 }
 
@@ -265,6 +273,9 @@ clock_cycle_event_map::ipc_schedule(ipc_event_t* iev)
     epoch_, iev->ev->cls_id(), iev->t.sec(), iev->dst.id(), iev->dst.type(),
     sprockit::to_string(iev->ev).c_str());
 
+  if (iev->t < min_ipc_time_){
+    min_ipc_time_ = iev->t;
+  }
   rt_->send_event(thread_id_, iev);
 }
 
