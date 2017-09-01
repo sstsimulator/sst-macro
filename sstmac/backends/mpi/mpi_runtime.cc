@@ -272,7 +272,7 @@ mpi_runtime::send_recv_messages(timestamp vote)
       ++reqs;
     } else {
       int recv_index_done = index_done - num_pending_sends;
-      int recv_index = buffer_index_[recv_index];
+      int recv_index = buffer_index_[recv_index_done];
       debug_printf(sprockit::dbg::parallel, "LP %d got recv index %d:%d on tag %d from source %d",
                    me_, recv_index, recv_index_done, stat.MPI_TAG, stat.MPI_SOURCE);
       int sizeToRecv = bytes_recvd_[recv_index];
