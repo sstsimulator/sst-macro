@@ -62,8 +62,7 @@ RegisterDebugSlot(pthread)
 
 #define pthread_debug(...) debug_printf(sprockit::dbg::pthread, __VA_ARGS__)
 
-thread*
-current_thread()
+thread* current_thread()
 {
   //this can be null in certain situations
   thread* t = operating_system::current_thread();

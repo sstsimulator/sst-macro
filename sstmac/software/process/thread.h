@@ -73,6 +73,8 @@ namespace sw {
 class thread
 {
  public:
+  class kill_exception : public std::exception {};
+
   friend class operating_system;
   friend class app;
   friend class delete_thread_event;
@@ -136,6 +138,10 @@ class thread
     return sid_;
   }
 
+  threading_interface* context() const {
+    return context_;
+  }
+
   void spawn(thread* thr);
 
   long init_id();
@@ -158,7 +164,13 @@ class thread
     return state_ == CANCELED;
   }
 
-  virtual void kill();
+  /**
+   * This can get called by anyone to have a thread exit, including during normal app termination
+   * This must be called while running on this thread's context, NOT the DES thread or any other thread
+   */
+  void kill() {
+    throw kill_exception();
+  }
 
   operating_system* os() const {
     return os_;
@@ -196,15 +208,15 @@ class thread
 
   void collect_backtrace(int nfxn);
 
-  void init_thread(int phyiscal_thread_id,
+  void init_thread(sprockit::sim_parameters* params, int phyiscal_thread_id,
     threading_interface* tocopy, void *stack, int stacksize,
-    threading_interface *yield_to, void* globals_storage);
+    void* globals_storage);
 
-  /// Derived types need to override this method.
   virtual void run() = 0;
 
-  /// A convenience request to start a new thread.
-  /// The current thread has to be initialized for this to work.
+  /** A convenience request to start a new thread.
+  *  The current thread has to be initialized for this to work.
+  */
   void start_thread(thread* thr);
 
   void join();
@@ -221,8 +233,6 @@ class thread
     return schedule_key_;
   }
 
-  /// Test whether the current task has been initialized (activated)
-  /// by a scheduler.
   bool is_initialized() const {
     return state_ >= INITIALIZED;
   }
@@ -283,13 +293,11 @@ class thread
    * This ensures that the thread is completely done being operated on
    * It is now safe to free all resources (thread-local vars, etc)
    */
-  void cleanup();
+  virtual void cleanup();
 
  protected:
-  /// Monitor state for deadlock detection.
   state state_;
 
-  /// Each thread can only run under one OS/scheduler.
   operating_system* os_;
 
   std::queue<key*> joiners_;
@@ -313,17 +321,14 @@ class thread
 
   int last_bt_collect_nfxn_;
 
-  /// The stack given to this thread.
   void* stack_;
-  /// The stacksize.
+
   size_t stacksize_;
   
   long thread_id_;
 
   threading_interface* context_;
 
-  /// This key gets used by the compute scheduler to delay this thread
-  /// 
   key* schedule_key_;
   
   uint64_t cpumask_;

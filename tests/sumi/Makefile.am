@@ -24,6 +24,10 @@ AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/repl
 AM_CPPFLAGS += -Dmain=USER_MAIN -DSSTMAC=1
 
 exe_LDADD = ../../sstmac/install/libsstmac.la ../../sprockit/sprockit/libsprockit.la ../../sstmac/main/libsstmac_main.la
+exe_FLAGS = 
+if HAVE_FCONTEXT
+exe_FLAGS += -Wl,-rpath,$(FCONTEXT_LIBDIR)
+endif
 
 sst_deadlock_SOURCES = deadlock.cc
 sst_big_tree_SOURCES = big_tree.cc
@@ -40,12 +44,14 @@ sst_barrier_SOURCES = barrier.cc
 #sst_saturation_SOURCES = saturation.cc
 
 
-sst_barrier_LDADD = $(exe_LDADD)
+sst_barrier_LDADD = $(exe_LDADD) 
 sst_deadlock_LDADD = $(exe_LDADD)
 sst_big_tree_LDADD = $(exe_LDADD)
-sst_replica_LDADD = $(exe_LDADD)
-sst_collective_LDADD = $(exe_LDADD)
-sst_box_domain_LDADD = $(exe_LDADD)
+sst_replica_LDADD = $(exe_LDADD) 
+sst_collective_LDADD = $(exe_LDADD) 
+sst_box_domain_LDADD = $(exe_LDADD) 
+
+sst_collective_LDFLAGS = $(exe_FLAGS) 
 
 #sst_domain_LDADD = $(exe_LDADD)
 #sst_heartbeat_LDADD = $(exe_LDADD)

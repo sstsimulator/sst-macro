@@ -92,11 +92,6 @@ void sstmac_free(void* ptr){
   if (isNonNullBuffer(ptr)) free(ptr);
 }
 
-int&
-should_skip_operator_new(){
-  return sstmac::sw::operating_system::static_os_thread_context().skip_next_op_new;
-}
-
 double omp_get_wtime(){
   return sstmac_now();
 }

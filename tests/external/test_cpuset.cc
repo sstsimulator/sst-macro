@@ -69,7 +69,7 @@ int main(int argc, char** argv)
   int thread_id = 0;
   int core = 0;
 
-  //assign 4->0, 3-1, 2->2, 1->3 for a total of ten threads
+  //assign 4->0, 3->1, 2->2, 1->3 for a total of ten threads
   while (thread_id < nthread){
     for (int i=0; i < num_on_core; ++i, ++thread_id){
       cpu_set_t set;
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
   void* args = 0;
   int* thread_ids = new int[nthread];
   for (int i=0; i < nthread; ++i){
-    thread_ids[i] = i;
+    thread_ids[i] = i+1; //thread 0 is main thread
     pthread_create(&threads[i], &attrs[i], pthread_run, &thread_ids[i]);
   }
   for (int i=0; i < nthread; ++i){

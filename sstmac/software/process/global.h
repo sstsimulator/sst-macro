@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_PROCESS_GLOBAL_H_INCLUDED
 
 #include <sstream>
+#include <iostream>
 #include <sstmac/software/process/tls.h>
 
 extern int sstmac_global_stacksize;

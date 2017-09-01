@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/threading/threading_interface.h>
 #include <vector>
+#include <sprockit/factories/factory.h>
 
 #ifdef SSTMAC_HAVE_PTHREAD
 #include <pthread.h>
@@ -57,41 +58,52 @@ namespace sw {
 
 #ifdef SSTMAC_HAVE_PTHREAD
 
-
-struct threadcontext_t
-{
-  pthread_t thread;
-  pthread_cond_t ready;
-  pthread_mutex_t* context_switch_lock;
-  bool started;
-  bool waiting;
-};
-
 class threading_pthread : public threading_interface
 {
- private:
-  threadcontext_t context_;
-  int thread_id_;
-  int nthread_;
 
  public:
-  threading_pthread(int thread_id, int nthread);
+  FactoryRegister("pthread", threading_interface, threading_pthread)
 
-  /// This part of context initialization is common to
-  /// init_context and start_context.
-  void init_context_common(threadcontext_t &t);
+  threading_pthread(sprockit::sim_parameters* params);
 
-  /// Initialize the context to be that for the currently running thread.
-  void init_context();
+  void init_context() override;
 
-  /// This tears down the context. It is only called from the scheduler's thread.
-  void destroy_context();
+  void destroy_context() override;
+
+  threading_interface* copy(sprockit::sim_parameters* params) override {
+    return new threading_pthread(params);
+  }
+
+  void start_context(int physical_thread_id, void *stack, size_t stacksize, void
+             (*func)(void*), void *args, void* globals_storage,
+             threading_interface* from) override;
+
+  void complete_context(threading_interface *to) override;
+
+  void resume_context(threading_interface* from) override {
+    swap_context(static_cast<threading_pthread*>(from), this);
+  }
+
+  void pause_context(threading_interface* to) override {
+    swap_context(this, static_cast<threading_pthread*>(to));
+  }
+
+ private:
+  static void swap_context(threading_pthread* from, threading_pthread* to);
+
+  struct threadcontext_t
+  {
+    pthread_t thread;
+    pthread_cond_t ready;
+    pthread_mutex_t* context_switch_lock;
+    bool started;
+    bool waiting;
+  };
 
   class threadargs
   {
    public:
-    void
-    (*func)(void*);
+    void (*func)(void*);
     void *args;
     threadcontext_t *context;
     threadargs(void
@@ -101,20 +113,17 @@ class threading_pthread : public threading_interface
       context = c;
     }
   };
+  /// This part of context initialization is common to
+  /// init_context and start_context.
+  void init_context_common(threadcontext_t &t);
 
-  static std::vector<pthread_mutex_t> context_switch_mutexes;
+  static void wait_signal(threadcontext_t* context);
+  static void send_signal(threadcontext_t* context);
+  static void* pthread_run_func(void*args);
 
-  virtual threading_interface* copy() {
-    return new threading_pthread(thread_id_, nthread_);
-  }
+  threadcontext_t context_;
+  static pthread_mutex_t context_switch_mutex_;
 
-  void start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                 (*func)(void*), void *args, threading_interface *yield_to,
-                void* globals_storage);
-
-  void complete_context(threading_interface *to);
-
-  void swap_context(threading_interface *to);
 };
 
 #endif

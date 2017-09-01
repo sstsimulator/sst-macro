@@ -121,8 +121,7 @@ class app : public thread
 
   virtual ~app();
 
-  //called when killing the app, in case you want to check or clean anything up before destructor
-  virtual void kill() override;
+  void cleanup() override;
 
   virtual void skeleton_main() = 0;
 

@@ -74,8 +74,9 @@ const task_id thread::main_thread_tid(-1);
 // Private method that gets called by the scheduler.
 //
 void
-thread::init_thread(int physical_thread_id, threading_interface* threadcopy, void *stack,
-                    int stacksize, threading_interface *yield_to, void* globals_storage)
+thread::init_thread(sprockit::sim_parameters* params,
+  int physical_thread_id, threading_interface* des_thread, void *stack,
+  int stacksize, void* globals_storage)
 {
   stack_ = stack;
   stacksize_ = stacksize;
@@ -84,13 +85,10 @@ thread::init_thread(int physical_thread_id, threading_interface* threadcopy, voi
 
   state_ = INITIALIZED;
 
-  context_ = threadcopy->copy();
+  context_ = des_thread->copy(params);
 
-  threadinfo* info = new threadinfo();
-  info->thethread = this;
-
-  context_->start_context(physical_thread_id, stack, stacksize, run_routine, info,
-                          yield_to, globals_storage);
+  context_->start_context(physical_thread_id, stack, stacksize,
+                          run_routine, this, globals_storage, des_thread);
 }
 
 device_id
@@ -120,47 +118,17 @@ thread::clear_subthread_from_parent_app()
   }
 }
 
-/**
- * This can get called by anyone to have a thread exit, including during normal app termination
- */
-void
-thread::kill()
-{
-  // We are done, ask the scheduler to remove this task from the
-  state_ = DONE;
-
-  clear_subthread_from_parent_app();
-
-  // This is a little bit weird - kill is happening on a non-DES thread stack
-  os_->complete_thread(true);
-
-  //we will never actually arrive here, instead the os context switches out
-}
-
 void
 thread::cleanup()
 {
+  if (state_ != CANCELED){
+    clear_subthread_from_parent_app();
+  }
+  // We are done, ask the scheduler to remove this task from the
+  state_ = DONE;
+
+  os_->complete_active_thread();
 }
-
-class delete_thread_event :
-  public event_queue_entry
-{
- public:
-  delete_thread_event(thread* thr) :
-    thr_(thr),
-    event_queue_entry(thr->os()->event_location(), thr->os()->event_location())
-  {
-  }
-
-  void
-  execute(){
-    thr_->cleanup();
-    delete thr_;
-  }
-
- protected:
-  thread* thr_;
-};
 
 //
 // Run routine that defines the initial context for this task.
@@ -168,9 +136,7 @@ class delete_thread_event :
 void
 thread::run_routine(void* threadptr)
 {
-  threadinfo* info = (threadinfo*) threadptr;
-  thread* self = info->thethread;
-  delete info;
+  thread* self = (thread*) threadptr;
 
   // Go.
   if (self->is_initialized()) {
@@ -179,17 +145,14 @@ thread::run_routine(void* threadptr)
     try {
       self->run();
       success = true;
-      //JJW 11/6/2014 This here is weird
-      //The thread has run out of work and is terminating
-      //However, because of weird thread swapping the DES thread
-      //might still operate on the thread... we need to delay the delete
-      //until the DES thread has completely finished processing its current event
-      self->os()->schedule_now(new delete_thread_event(self));
       //this doesn't so much kill the thread as context switch it out
-      //it is up to the above delete thread event to actually to deletion/cleanup
+      //it is up to the above delete thread event to actually to do deletion/cleanup
       //all of this is happening ON THE THREAD - it kills itself
       //this is not the DES thread killing it
-      self->kill();
+      self->cleanup();
+    }
+    catch (const kill_exception& ex) {
+      //great, we are done
     }
     catch (const std::exception &ex) {
       cerrn << "thread terminated with exception: " << ex.what()

@@ -69,7 +69,7 @@ class cpuset_compute_scheduler : public compute_scheduler
   void release_core(thread *thr);
   
  private:
-  static int available_core(int ncore, uint64_t cpumask);
+  void allocate_core_to_thread(uint64_t valid_mask, thread* thr);
   
   void allocate_core(int core){
     available_cores_ = available_cores_ & ~(1<<core);
@@ -77,6 +77,10 @@ class cpuset_compute_scheduler : public compute_scheduler
   
   void deallocate_core(int core){
     available_cores_ = available_cores_ | (1<<core);
+  }
+
+  inline uint64_t allocated_cores() const {
+    return ~available_cores_;
   }
   
  private:

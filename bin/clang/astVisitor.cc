@@ -456,11 +456,7 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
       if (deleteStmt){
         deleteNullVariableStmt(expr, vd);
       } else {
-        if (prg->isNullifiedNew(vd)){
-          //make damn sure we allocate no memory
-          //even though we keep the statement
-          SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,false,true);
-        }
+        //boy - i really hope this doesn't allocate memory
       }
       return true;
     }
@@ -1230,7 +1226,7 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
       SSTNullVariablePragma* prg = getNullVariable(D);
       if (prg){
         if (prg->keepCtor()){
-          SSTNewPragma::defaultAct(stmt_contexts_.front(),rewriter_,*ci_,false,true,false);
+          //boy, I really hope this doesn't allocate memory
         } else {
           deleteStmt(stmt);
         }

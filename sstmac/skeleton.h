@@ -92,11 +92,6 @@ typedef int (*empty_main_fxn)();
 #define sst_eli_block(app)
 #endif
 
-//redirect all operator news to the nothrow version
-//sst will decide whether memory is actually going to be allocated
-extern void* sstmac_new(unsigned long size);
-
-#define __builtin_operator_new(size) sstmac_new(size)
 #include <new>
 #include <utility>
 

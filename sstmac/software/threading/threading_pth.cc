@@ -67,34 +67,38 @@ threading_pth::destroy_context() {
   }
 }
 
-  /// Start a new context.
 void
 threading_pth::start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to, void* globals_storage) {
+                (*func)(void*), void *args, void* globals_storage, threading_interface* from)
+{
   if (stacksize < (16384)) {
     sprockit::abort("threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
   }
   thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
   init_context();
-  threading_pth* yield_pth = (threading_pth*)yield_to;
-  int retval = pth_uctx_make(context_, (char*) stack, stacksize, NULL, func,
-                             args, (yield_to ? yield_pth->context_ : NULL));
+  int retval = pth_uctx_make(context_, (char*) stack, stacksize, NULL, func, args, NULL);
   if (retval != TRUE) {
     spkt_throw_printf(sprockit::os_error,
         "threading_pth::start_context: %s",
         ::strerror(errno));
   }
+  resume_context(from);
 }
 
-  /// Swap context.
 void
-threading_pth::swap_context(threading_interface *to) {
-  threading_pth* topth = (threading_pth*)to;
-#ifdef SSTMAC_HAVE_PTH_UCTX_SWITCH_IGNORE_SIGMASK
-  if (pth_uctx_switch_ignore_sigmask(context_, topth->context_) != TRUE) {
-#else
+threading_pth::resume_context(threading_interface* from) {
+  threading_pth* frompth = static_cast<threading_pth*>(from);
+  if (pth_uctx_switch(frompth->context_, context_) != TRUE) {
+    spkt_throw_printf(sprockit::os_error,
+      "threading_pth::swap_context: %s",
+      strerror(errno));
+  }
+}
+
+void
+threading_pth::pause_context(threading_interface *to) {
+  threading_pth* topth = static_cast<threading_pth*>(to);
   if (pth_uctx_switch(context_, topth->context_) != TRUE) {
-#endif
     spkt_throw_printf(sprockit::os_error,
       "threading_pth::swap_context: %s",
       strerror(errno));

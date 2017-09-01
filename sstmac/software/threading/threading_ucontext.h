@@ -58,32 +58,45 @@ namespace sstmac {
 namespace sw {
 
 #ifdef SSTMAC_HAVE_UCONTEXT
-
 class threading_ucontext : public threading_interface
 {
- private:
-  ucontext_t context_;
-
  public:
-  virtual void init_context();
+  FactoryRegister("ucontext", threading_interface, threading_ucontext)
 
-  virtual threading_interface* copy() {
-    return new threading_ucontext();
+  threading_ucontext(sprockit::sim_parameters* params) :
+    threading_interface(params)
+  {
+  }
+
+  void init_context() override;
+
+  threading_interface* copy(sprockit::sim_parameters* params) override {
+    return new threading_ucontext(params);
   }
 
 
-  virtual void destroy_context() {}
+  void destroy_context() override {}
 
-  virtual void start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to,
-                void* globals_storage);
+  void start_context(int physical_thread_id, void* stack, size_t stacksize, void
+                (*func)(void*), void *args, 
+                void* globals_storage, threading_interface* from) override;
 
-  virtual void swap_context(threading_interface *to);
-
-  inline void complete_context(threading_interface *to) {
-    swap_context(to);
+  void pause_context(threading_interface* to) override {
+    swap_context(this, to);
   }
 
+  void resume_context(threading_interface* from) override {
+    swap_context(from, this);
+  }
+
+  void complete_context(threading_interface *to) override {
+    swap_context(this, to);
+  }
+
+ private:
+  static void swap_context(threading_interface* from, threading_interface* to);
+
+  ucontext_t context_;
 };
 
 #endif
