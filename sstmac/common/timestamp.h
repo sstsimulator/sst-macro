@@ -104,7 +104,7 @@ class timestamp
 
   explicit timestamp() : ticks_(0) {}
 
-  int64_t ticks_int64() const {
+  uint64_t ticks_int64() const {
     return ticks_;
   }
 

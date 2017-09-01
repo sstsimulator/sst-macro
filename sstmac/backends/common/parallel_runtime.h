@@ -176,7 +176,9 @@ class parallel_runtime :
 
   virtual void init_partition_params(sprockit::sim_parameters* params);
 
-  virtual void send_recv_messages();
+  virtual timestamp send_recv_messages(timestamp vote){
+    return vote;
+  }
 
   void send_event(int thread_id, ipc_event_t* iev);
 

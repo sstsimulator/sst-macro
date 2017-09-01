@@ -253,9 +253,5 @@ parallel_runtime::reset_send_recv()
   }
 }
 
-void
-parallel_runtime::send_recv_messages()
-{
-}
 
 }

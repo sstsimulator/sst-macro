@@ -56,6 +56,58 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace native {
 
+#if 0
+template <class Derived>
+class event_map : public event_manager, public Derived {
+ public:
+  void run(){
+    if (running_) {
+      sprockit::abort("event_map::run: event manager already running.");
+    }
+    running_ = true;
+    stopped_ = false;
+
+  #if SSTMAC_SANITY_CHECK
+    int n_events = 0;
+    clock_t t1 = clock();
+    clock_t t2;
+  #endif
+
+  #if SSTMAC_DEBUG_THREAD_EVENTS
+    open_debug_file();
+  #endif
+
+    while (1){
+      while (!empty() && !stopped_) {
+        do_next_event();
+      }
+      bool terminate = vote_to_terminate();
+      if (terminate)
+        break;
+    }
+
+  #if SSTMAC_DEBUG_THREAD_EVENTS
+    close_debug_file();
+  #endif
+
+    running_ = false;
+
+    if (empty() || finish_on_stop_) {
+      complete_ = true;
+      finish();
+    }
+
+  #if DEBUG_DETERMINISM
+    std::map<device_id,std::ofstream*>::iterator it, end = outs.end();
+    for (it=outs.begin(); it != end; ++it){
+      it->second->close();
+    }
+  #endif
+    timestamp final = Derived::computeFinalTime();
+  }
+}
+#endif
+
 /**
  * An event manager that relies on the eventcontainer template base class
  * to manage events with a multimap template parameter.
@@ -70,9 +122,12 @@ class event_map :
 
   virtual void run();
 
-  ~event_map() throw ();
+  ~event_map() throw () {}
 
-  void clear(timestamp zero_time = timestamp());
+  void clear(timestamp zero_time = timestamp()){
+    queue_.clear();
+    set_now(zero_time);
+  }
 
   void cancel_all_messages(device_id mod);
 
@@ -87,13 +142,18 @@ class event_map :
  protected:
   friend class multithreaded_event_container;
 
-  event_queue_entry* pop_next_event();
+  event_queue_entry* pop_next_event(){
+    queue_t::iterator it = queue_.begin();
+    event_queue_entry* ev = *it;
+    queue_.erase(it);
+    return ev;
+  }
 
-  void add_event(event_queue_entry* ev);
+  void add_event(event_queue_entry* ev){
+    queue_.insert(ev);
+  }
 
   void schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev);
-
-  void finish();
 
   virtual void do_next_event();
 

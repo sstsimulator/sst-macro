@@ -60,18 +60,13 @@ class multithreaded_subcontainer :
  public:
   ~multithreaded_subcontainer() throw () {}
 
-  void
-  multithread_schedule(
+  void multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
     event_queue_entry* ev) override;
 
-  void
-  receive_incoming_events() override;
-
-  timestamp
-  vote_next_round(timestamp my_time, vote_type_t ty) override;
+  timestamp receive_incoming_events(timestamp);
 
   void run() override;
 

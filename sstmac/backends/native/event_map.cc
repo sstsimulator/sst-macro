@@ -54,19 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace native {
 
-event_map::~event_map() throw ()
-{
-}
-
-event_queue_entry*
-event_map::pop_next_event()
-{
-  queue_t::iterator it = queue_.begin();
-  event_queue_entry* ev = *it;
-  queue_.erase(it);
-  return ev;
-}
-
+#if 0
 void
 event_map::add_event(event_queue_entry* ev)
 {
@@ -80,13 +68,6 @@ event_map::add_event(event_queue_entry* ev)
   }
   size_t old_size = queue_.size();
 #endif
-  auto iter = queue_.find(ev);
-  if (iter != queue_.end()){
-    event_queue_entry* old = *iter;
-    spkt_abort_printf("got erroneously matching events %u:%u:%u and %u:%u:%u",
-                      ev->src_location().id(), ev->event_location().id(), ev->seqnum(),
-                      old->src_location().id(), old->event_location().id(), old->seqnum());
-  }
   queue_.insert(ev);
 #if SSTMAC_SANITY_CHECK
   if (queue_.size() == old_size){
@@ -94,19 +75,7 @@ event_map::add_event(event_queue_entry* ev)
   }
 #endif
 }
-
-//
-// Clear all events and set time back to a zero of your choice.
-//
-void
-event_map::clear(timestamp zero_time)
-{
-  if (running_) {
-    sprockit::abort("event_map::clear: event manager is running");
-  }
-  queue_.clear();
-  set_now(zero_time);
-}
+#endif
 
 void
 event_map::cancel_all_messages(device_id canceled_loc)
@@ -186,7 +155,6 @@ event_map::run()
 
   if (empty() || finish_on_stop_) {
     complete_ = true;
-    finish();
   }
 
 #if DEBUG_DETERMINISM
@@ -202,8 +170,7 @@ void
 event_map::schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev)
 {
   if (start_time < now()) {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "event_map::schedule: scheduling event in the past: now=%ld units, ev=%ld units",
+    spkt_abort_printf("event_map::schedule: scheduling event in the past: now=%ld units, ev=%ld units",
                      now().ticks(), start_time.ticks());
   }
 
@@ -215,11 +182,6 @@ event_map::schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev
   //  "adding event to run at %10.5e: %s",
   //  start_time.sec(), sprockit::to_string(ev).c_str());
   add_event(ev);
-}
-
-void
-event_map::finish()
-{
 }
 
 }

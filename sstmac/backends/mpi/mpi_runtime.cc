@@ -57,16 +57,15 @@ RegisterKeywords(
 namespace sstmac {
 namespace mpi {
 
-void pair_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
+void
+mpi_runtime::vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
 {
-  int* in = (int*) invec;
-  int* out = (int*) inoutvec;
+  send_recv_vote* in = (send_recv_vote*) invec;
+  send_recv_vote* out = (send_recv_vote*) inoutvec;
   int length = *len;
   for (int i=0; i < length; ++i){
-    int* inpair = &in[2*i];
-    int* outpair = &out[2*i];
-    outpair[0] += inpair[0];
-    outpair[1] += inpair[1];
+    out[i].time_vote = std::min(out[i].time_vote, in[i].time_vote);
+    out[i].num_sent += in[i].num_sent;
   }
 }
 
@@ -148,6 +147,8 @@ mpi_runtime::init_runtime_params(sprockit::sim_parameters* params)
   requests_.resize(2*nproc_);
   bytes_sent_.resize(nproc_);
   bytes_recvd_.resize(nproc_);
+  buffer_index_.resize(nproc_);
+  votes_.resize(nproc_);
   parallel_runtime::init_runtime_params(params);
 }
 
@@ -157,6 +158,17 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
   init_size(params))
 {
   epoch_ = 0;
+  int rc = MPI_Op_create(&vote_reduce_function, 1, &vote_op_);
+  if (rc != MPI_SUCCESS){
+    sprockit::abort("failed making vote MPI op");
+  }
+
+  rc = MPI_Type_contiguous(2, MPI_LONG_LONG_INT, &vote_type_);
+  if (rc != MPI_SUCCESS){
+    sprockit::abort("failed making vote MPI datatype");
+  }
+
+  MPI_Type_commit(&vote_type_);
 }
 
 int
@@ -205,37 +217,89 @@ mpi_runtime::bcast(void *buffer, int bytes, int root)
   MPI_Bcast(buffer, bytes, MPI_BYTE, root, MPI_COMM_WORLD);
 }
 
-void
-mpi_runtime::send_recv_messages()
+timestamp
+mpi_runtime::send_recv_messages(timestamp vote)
 {
   int reqIdx = 0;
+  static const int num_bytes_tag = 42;
+  static const int payload_tag = 43;
   for (int i=0; i < nproc_; ++i){
     comm_buffer& comm = send_buffers_[i];
     int size = comm.bytesUsed();
-    if (size){
-      debug_printf(sprockit::dbg::parallel, "lp %d sending %d bytes to lp %d on epoch %d",
-                   me_, size, i, epoch_);
-      MPI_Isend(comm.buffer(), size, MPI_BYTE, i, epoch_, MPI_COMM_WORLD, &requests_[reqIdx++]);
-    }
+    votes_[i].time_vote = vote.ticks_int64();
     bytes_sent_[i] = size;
-  }
-
-  MPI_Alltoall(bytes_sent_.data(), 1, MPI_INT, bytes_recvd_.data(), 1, MPI_INT, MPI_COMM_WORLD);
-
-  for (int i=0; i < nproc_; ++i){
-    int size = bytes_recvd_[i];
     if (size){
-      comm_buffer& comm = recv_buffers_[i];
-      comm.ensureSpace(size);
-      debug_printf(sprockit::dbg::parallel, "lp %d receiving %d bytes from lp %d on epoch %d",
+      votes_[i].num_sent = 1;
+      debug_printf(sprockit::dbg::parallel, "LP %d sending %d bytes to lp %d on epoch %d",
                    me_, size, i, epoch_);
-      MPI_Irecv(comm.buffer(), size, MPI_BYTE, i, epoch_, MPI_COMM_WORLD, &requests_[reqIdx++]);
-      comm.shift(size);
+      MPI_Isend(&bytes_sent_[i], 1, MPI_INT, i,
+                num_bytes_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
+      MPI_Isend(comm.buffer(), size, MPI_BYTE, i,
+                payload_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
+    } else {
+      votes_[i].num_sent = 0;
     }
   }
 
-  MPI_Waitall(reqIdx, requests_.data(), MPI_STATUSES_IGNORE);
+  int num_pending_sends = reqIdx;
+
+  send_recv_vote incoming;
+  MPI_Reduce_scatter_block(votes_.data(), &incoming, 1, vote_type_, vote_op_, MPI_COMM_WORLD);
+  debug_printf(sprockit::dbg::parallel, "LP %d receiving %d messages from partners",
+               me_, incoming.num_sent);
+  for (int i=0; i < incoming.num_sent; ++i){
+    MPI_Irecv(&bytes_recvd_[i], 1, MPI_INT, MPI_ANY_SOURCE,
+              num_bytes_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
+    buffer_index_[i] = i;
+  }
+
+
+  int num_pending_requests = reqIdx;
+  int num_pending_recvs = num_pending_requests - num_pending_sends;
+  MPI_Request* reqs = requests_.data();
+  MPI_Status stat;
+  while (num_pending_requests > 0){
+    int index_done = 0;
+    debug_printf(sprockit::dbg::parallel, "LP %d waiting on %d requests, of which %d are sends",
+                 me_, num_pending_requests, num_pending_sends);
+    MPI_Waitany(num_pending_requests, reqs, &index_done, &stat);
+    debug_printf(sprockit::dbg::parallel, "LP %d got index done %d", me_, index_done);
+    if (index_done < num_pending_sends){ //send finished
+      //shrink the request list, send done
+      --num_pending_requests;
+      --num_pending_sends;
+      reqs[index_done] = reqs[0];
+      ++reqs;
+    } else {
+      int recv_index_done = index_done - num_pending_sends;
+      int recv_index = buffer_index_[recv_index];
+      debug_printf(sprockit::dbg::parallel, "LP %d got recv index %d:%d on tag %d from source %d",
+                   me_, recv_index, recv_index_done, stat.MPI_TAG, stat.MPI_SOURCE);
+      int sizeToRecv = bytes_recvd_[recv_index];
+      if (stat.MPI_TAG == num_bytes_tag){ //post the recv
+        int src = stat.MPI_SOURCE;
+        comm_buffer& comm = recv_buffers_[src];
+        comm.ensureSpace(sizeToRecv);
+        debug_printf(sprockit::dbg::parallel, "LP %d recving %d bytes from lp %d on epoch %d",
+                     me_, sizeToRecv, src, epoch_);
+        MPI_Irecv(comm.buffer(), sizeToRecv, MPI_BYTE,
+                  src, payload_tag, MPI_COMM_WORLD, &reqs[index_done]);
+        comm.shift(sizeToRecv);
+        bytes_recvd_[recv_index] = -1; //put sentinal value to show recv is posted
+      } else { //this is the data being received
+        //shrink the request list - recv done
+        --num_pending_requests;
+        --num_pending_recvs;
+        reqs[index_done] = reqs[num_pending_requests];
+        buffer_index_[recv_index_done] = buffer_index_[num_pending_recvs];
+      }
+    }
+  }
   ++epoch_;
+
+  debug_printf(sprockit::dbg::parallel, "LP %d got back time vote of %lu", me_, incoming.time_vote);
+
+  return timestamp(incoming.time_vote, timestamp::exact);
 }
 
 void

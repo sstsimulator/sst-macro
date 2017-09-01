@@ -87,13 +87,16 @@ class clock_cycle_event_map :
 
   void do_next_event() override;
 
-  timestamp next_event_time() const;
+  timestamp next_event_time() const {
+    return (queue_.empty() || stopped_) ? no_events_left_time_ : (*queue_.begin())->time();
+  }
 
-  virtual timestamp vote_next_round(timestamp my_time, vote_type_t ty);
-
-  int64_t do_vote(int64_t time, vote_type_t ty = vote_type_t::min);
-
-  virtual void receive_incoming_events();
+  /**
+   * @brief receive_incoming_events
+   * @param vote The minimum event time I have
+   * @return The minimum event time across all LPs
+   */
+  timestamp receive_incoming_events(timestamp vote);
 
  protected:
   timestamp next_time_horizon_;

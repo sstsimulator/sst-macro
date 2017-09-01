@@ -111,15 +111,15 @@ clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
   schedule(iev->t, iev->seqnum, new handler_event_queue_entry(iev->ev, dst_handler, iev->src));
 }
 
-void
-clock_cycle_event_map::receive_incoming_events()
+timestamp
+clock_cycle_event_map::receive_incoming_events(timestamp vote)
 {
 #if SSTMAC_SANITY_CHECK
   if (thread_id() != 0){
     sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
   }
 #endif
-  rt_->send_recv_messages();
+  timestamp min_time = rt_->send_recv_messages(vote);
 
   auto& bufs = rt_->recv_buffers();
   int nthr = nthread();
@@ -139,32 +139,8 @@ clock_cycle_event_map::receive_incoming_events()
       }
     }
   }
-
   rt_->reset_send_recv();
-}
-
-
-int64_t
-clock_cycle_event_map::do_vote(int64_t my_time, vote_type_t ty)
-{
-  switch (ty){
-    case vote_type_t::max:
-      return rt_->allreduce_max(my_time);
-      break;
-    case vote_type_t::min:
-      return rt_->allreduce_min(my_time);
-      break;
-  }
-}
-
-timestamp
-clock_cycle_event_map::vote_next_round(timestamp time, vote_type_t ty)
-{
-  int64_t vote_result = do_vote(time.ticks_int64(), ty);
-  timestamp final_time(vote_result, timestamp::exact);
-  event_debug("epoch %d: got time %12.8e on thread %d",
-    epoch_, final_time.sec(), thread_id_);
-  return final_time;
+  return min_time;
 }
 
 bool
@@ -173,23 +149,20 @@ clock_cycle_event_map::vote_to_terminate()
   event_debug("epoch %d: voting to terminate on thread %d", 
     epoch_, thread_id());
 
-  receive_incoming_events();
-  timestamp my_vote = (empty() || stopped_) ? no_events_left_time_ : next_event_time();
-  timestamp min_time = vote_next_round(my_vote, vote_type_t::min);
+  timestamp min_time = receive_incoming_events(no_events_left_time_);
+
   ++epoch_;
   if (min_time == no_events_left_time_){
     return true; //done
   } else {
     next_time_horizon_ = min_time + lookahead_;
+    event_debug("epoch %d: next time horizon now %12.8e for lookahead %12.8e",
+        epoch_, next_time_horizon_.sec(), lookahead_.sec());
     return false;
   }
 }
 
-timestamp
-clock_cycle_event_map::next_event_time() const
-{
-  return queue_.empty() ? no_events_left_time_ : (*queue_.begin())->time();
-}
+
 
 #if DEBUG_DETERMINISM
 std::map<device_id,std::ofstream*> outs;
@@ -200,16 +173,11 @@ clock_cycle_event_map::do_next_event()
 {
   timestamp ev_time = next_event_time();
   while (ev_time >= next_time_horizon_){
-    receive_incoming_events();
-
-    ev_time = next_event_time();
-
     event_debug("epoch %d: voting NOT to terminate at time %12.8e on thread %d",
                 epoch_, ev_time.sec(), thread_id_);
-
-    timestamp min_time = vote_next_round(ev_time, vote_type_t::min);
+    ev_time = next_event_time();
+    timestamp min_time = receive_incoming_events(ev_time);
     next_time_horizon_ = min_time + lookahead_;
-
     event_debug("epoch %d: next time horizon is %12.8e for lookahead %12.8e: next event at %12.8e %sready to proceed on thread %d",
         epoch_, next_time_horizon_.sec(), lookahead_.sec(), ev_time.sec(),
         ((ev_time > next_time_horizon_) ? "not " : ""),
@@ -250,8 +218,9 @@ void
 clock_cycle_event_map::run()
 {
   event_map::run();
-  timestamp global_max = vote_next_round(now(), vote_type_t::max);
-  set_now(global_max);
+  uint64_t now_ticks = now().ticks_int64();
+  uint64_t final = rt_->allreduce_max(now_ticks);
+  set_now(timestamp(final, timestamp::exact));
 }
 
 #if SSTMAC_DEBUG_THREAD_EVENTS
