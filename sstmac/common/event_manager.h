@@ -106,7 +106,7 @@ class event_manager
 
   virtual void run() = 0;
 
-  virtual bool empty() const = 0;
+  virtual void cancel_all_messages(device_id canceled_loc) = 0;
 
   timestamp now() const {
     return now_;
@@ -119,8 +119,6 @@ class event_manager
   stat_collector* register_thread_unique_stat(
     stat_collector* stat,
     stat_descr_t* descr);
-
-  virtual void cancel_all_messages(device_id canceled_loc) = 0;
 
   partition* topology_partition() const;
 
@@ -167,10 +165,6 @@ class event_manager
     uint32_t seqnum,
     event_queue_entry* ev);
 
-  virtual int lpid() const {
-    return -1;
-  }
-
   int thread_id() const {
     return thread_id_;
   }
@@ -188,7 +182,9 @@ class event_manager
  protected:
   event_manager(sprockit::sim_parameters* params, parallel_runtime* rt);
 
-  void set_now(const timestamp &ts);
+  void set_now(timestamp ts) {
+    now_ = ts;
+  }
 
   virtual void finish_stats(stat_collector* main,
                   const std::string& name, timestamp end);

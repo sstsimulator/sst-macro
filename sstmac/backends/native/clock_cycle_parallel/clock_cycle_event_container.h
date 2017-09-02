@@ -109,14 +109,6 @@ class clock_cycle_event_map :
   hw::interconnect* interconn_;
   int epoch_;
 
-#if SSTMAC_DEBUG_THREAD_EVENTS
-  void open_debug_file();
-
-  void close_debug_file();
-
-  std::ofstream event_file_;
-#endif
-
 };
 
 }

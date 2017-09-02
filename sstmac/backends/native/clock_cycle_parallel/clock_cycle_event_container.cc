@@ -87,16 +87,6 @@ clock_cycle_event_map::clock_cycle_event_map(
 void
 clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
 {
-#if 0
-  if (iev->t < now()){
-    spkt_abort_printf("scheduling incoming event in the past on epoch %d:\n"
-      "lookahead=%lu now=%lu horizon=%lu ev=%lu vote=%lu last=%lu seq=%d src=%d:%d dst=%d:%d", epoch_,
-      lookahead_.ticks_int64(), now().ticks_int64(), 
-      next_time_horizon_.ticks_int64(), iev->t.ticks_int64(),
-      current_vote_result_.ticks_int64(), last_vote_result_.ticks_int64(),
-      iev->seqnum, iev->src.id(), iev->src.type(), iev->dst.id(), iev->src.type());
-  }
-#endif
   event_handler* dst_handler = nullptr;
   switch (iev->dst.type()){
     case device_id::node:
@@ -188,12 +178,6 @@ clock_cycle_event_map::vote_to_terminate()
     return false;
   }
 }
-
-
-
-#if DEBUG_DETERMINISM
-std::map<device_id,std::ofstream*> outs;
-#endif
 
 void
 clock_cycle_event_map::do_next_event()

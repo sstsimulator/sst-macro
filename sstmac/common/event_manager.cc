@@ -129,19 +129,6 @@ event_manager::topology_partition() const
   return rt_->topology_partition();
 }
 
-void
-event_manager::set_now(const timestamp &ts)
-{
-#if SSTMAC_SANITY_CHECK
-  if (ts < now_) {
-    spkt_throw_printf(sprockit::spkt_error,
-                     "eventmanager::set_now - major error, setting time to %lld which is before now %lld",
-                     (long long)ts.ticks_int64(), (long long)now_.ticks_int64());
-  }
-#endif
-  now_ = ts;
-}
-
 stat_collector*
 event_manager::register_thread_unique_stat(
   stat_collector *stat,
