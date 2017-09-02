@@ -221,6 +221,7 @@ mpi_runtime::send_recv_messages(timestamp vote)
 {
   int reqIdx = 0;
   static int payload_tag = 42;
+  static int next_payload_tag = 43;
   for (int i=0; i < nproc_; ++i){
     comm_buffer& comm = send_buffers_[i];
     int size = comm.bytesUsed();
@@ -265,7 +266,7 @@ mpi_runtime::send_recv_messages(timestamp vote)
     comm.shift(sizeRecvd);
   }
 
-
+  std::swap(payload_tag, next_payload_tag);
   ++epoch_;
   return timestamp(incoming.time_vote, timestamp::exact);
 }
