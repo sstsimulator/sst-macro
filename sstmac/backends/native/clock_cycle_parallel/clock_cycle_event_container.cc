@@ -144,10 +144,10 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
 
   current_vote_result_ = min_time;
 
-  auto& bufs = rt_->recv_buffers();
   int nthr = nthread();
-  int src = 0;
-  for (auto& buf : bufs){
+  int num_recvs = rt_->num_recvs_done();
+  for (int i=0; i < num_recvs; ++i){
+    auto& buf = rt_->recv_buffer(i);
     serializer ser;
     ser.start_unpacking(buf.buffer(), buf.bytesUsed());
     while (ser.size() < buf.bytesUsed()){
@@ -162,7 +162,6 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
         spkt_abort_printf("multithread not compatible with MPI currently");
       }
     }
-    ++src;
   }
   rt_->reset_send_recv();
   //reset this guy

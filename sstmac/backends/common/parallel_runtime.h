@@ -204,8 +204,12 @@ class parallel_runtime :
     return part_;
   }
 
-  const std::vector<comm_buffer>& recv_buffers() const {
-    return recv_buffers_;
+  int num_recvs_done() const {
+    return num_recvs_done_;
+  }
+
+  const comm_buffer& recv_buffer(int idx) const {
+    return recv_buffers_[idx];
   }
 
   static parallel_runtime* static_runtime(sprockit::sim_parameters* params);
@@ -225,6 +229,9 @@ class parallel_runtime :
    int me_;
    std::vector<comm_buffer> send_buffers_;
    std::vector<comm_buffer> recv_buffers_;
+   std::vector<int> sends_done_;
+   int num_sends_done_;
+   int num_recvs_done_;
    int buf_size_;
    partition* part_;
    static parallel_runtime* static_runtime_;

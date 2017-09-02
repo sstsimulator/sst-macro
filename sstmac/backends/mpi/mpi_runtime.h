@@ -97,13 +97,12 @@ class mpi_runtime :
   struct send_recv_vote {
     uint64_t time_vote;
     uint64_t num_sent;
+    uint64_t max_bytes;
   };
 
   std::vector<MPI_Request> requests_;
+  std::vector<MPI_Status> statuses_;
   std::vector<send_recv_vote> votes_;
-  std::vector<int> bytes_sent_;
-  std::vector<int> bytes_recvd_;
-  std::vector<int> buffer_index_;
 
   MPI_Datatype vote_type_;
   MPI_Op vote_op_;

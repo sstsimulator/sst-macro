@@ -158,6 +158,10 @@ parallel_runtime::static_runtime(sprockit::sim_parameters* params)
 void
 parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 {
+  num_recvs_done_ = 0;
+  num_sends_done_ = 0;
+  sends_done_.resize(nproc_);
+
   //turn the number of procs and my rank into keywords
   nthread_ = params->get_optional_int_param("sst_nthread", 1);
 
@@ -246,11 +250,14 @@ void parallel_runtime::send_event(int thread_id, ipc_event_t* iev)
 void
 parallel_runtime::reset_send_recv()
 {
-  //and all the send buffers are now done
-  for (int t=0; t < nproc_; ++t){
-    send_buffers_[t].reset();
-    recv_buffers_[t].reset();
+  for (int i=0; i < num_sends_done_; ++i){
+    send_buffers_[sends_done_[i]].reset();
   }
+  for (int i=0; i < num_recvs_done_; ++i){
+    recv_buffers_[i].reset();
+  }
+  num_sends_done_ = 0;
+  num_recvs_done_ = 0;
 }
 
 
