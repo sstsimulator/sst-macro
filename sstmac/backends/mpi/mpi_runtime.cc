@@ -221,8 +221,10 @@ timestamp
 mpi_runtime::send_recv_messages(timestamp vote)
 {
   int reqIdx = 0;
-  static const int num_bytes_tag = 42;
-  static const int payload_tag = 43;
+  static int num_bytes_tag = 42;
+  static int next_num_bytes_tag = 43;
+  static int payload_tag = 44;
+  static int next_payload_tag = 45;
   for (int i=0; i < nproc_; ++i){
     comm_buffer& comm = send_buffers_[i];
     int size = comm.bytesUsed();
@@ -296,6 +298,8 @@ mpi_runtime::send_recv_messages(timestamp vote)
     }
   }
   ++epoch_;
+  std::swap(num_bytes_tag, next_num_bytes_tag);
+  std::swap(payload_tag, next_payload_tag);
 
   debug_printf(sprockit::dbg::parallel, "LP %d got back time vote of %lu", me_, incoming.time_vote);
 

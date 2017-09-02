@@ -102,6 +102,8 @@ class clock_cycle_event_map :
   timestamp next_time_horizon_;
   timestamp lookahead_;
   timestamp no_events_left_time_;
+  timestamp last_vote_result_;
+  timestamp current_vote_result_;
   timestamp min_ipc_time_;
   std::vector<std::vector<ipc_event_t>> thread_incoming_;
   hw::interconnect* interconn_;
