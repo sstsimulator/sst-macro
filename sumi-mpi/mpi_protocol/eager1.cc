@@ -59,6 +59,7 @@ eager1::configure_send_buffer(mpi_queue* queue, mpi_message* msg, void *buffer, 
     void* eager_buf = fill_send_buffer(msg, buffer, typeobj);
     msg->remote_buffer().ptr = eager_buf;
   }
+  queue->memcopy(msg->payload_bytes());
 }
 
 void
@@ -67,7 +68,6 @@ eager1::send_header(mpi_queue* queue,
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
   msg->set_content_type(mpi_message::header);
-  queue->memcopy(msg->byte_length());
 
   queue->post_header(msg, sumi::message::header, false/*the send is "done" - no need to ack*/);
 

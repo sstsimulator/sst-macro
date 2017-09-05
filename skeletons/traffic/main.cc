@@ -185,8 +185,8 @@ int main(int argc, char** argv)
         int recver = recvers[i/senders_per_recver];
         int sender = senders[i];
         for (int t=0; t < num_times; ++t){
-          printf("Rank %-3d -> %-3d %8d: %10.6f GB/s\n", 
-                 sender, recver, buffer_sizes[t], tputs[t]/1e9);
+          printf("Rank %-3d -> %-3d %8d: %10.6f GB/s  %10.6fus\n", 
+                 sender, recver, buffer_sizes[t], tputs[t]/1e9, buffer_sizes[t]*1e6/tputs[t]);
         }
       }
     }

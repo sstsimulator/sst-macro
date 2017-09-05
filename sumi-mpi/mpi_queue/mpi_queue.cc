@@ -282,7 +282,6 @@ mpi_queue::recv(mpi_request* key, int count,
       //the message has already been processed
       in_flight_messages_[mess] = req;
     } else if (mess->is_payload()) {
-      //user_lib_mem_->copy(mess->payload_bytes());
       mess->protocol()->incoming_payload(this, mess, req);
     } else {
       mess->protocol()->incoming_header(this, mess, req);

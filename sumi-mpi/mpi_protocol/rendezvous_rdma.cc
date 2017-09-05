@@ -103,6 +103,9 @@ rendezvous_get::incoming_header(mpi_queue *queue,
                                 mpi_queue_recv_request *req)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header");
+  if (rdma_pin_delay_.ticks_int64()){
+    queue->api()->compute(rdma_pin_delay_);
+  }
   if (req) {
 #if SSTMAC_COMM_SYNC_STATS
     //this is a bit of a hack
