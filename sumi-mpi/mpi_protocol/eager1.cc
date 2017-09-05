@@ -192,6 +192,7 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg,
       delete[] temp_buf;
       msg->local_buffer().ptr = temp_buf;
     }
+    queue->memcopy(msg->payload_bytes());
     queue->finalize_recv(msg, req);
     fflush(stdout);
   } else {

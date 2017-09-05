@@ -1,12 +1,12 @@
 ping-pong between 0 and 8
 4:   0.0443 ms
 8:   0.0443 ms
-16:   0.0446 ms
-32:   0.0452 ms
-64:   0.0464 ms
-128:   0.0492 ms
-512:   0.0651 ms
-1024:   0.1763 ms
+16:   0.0447 ms
+32:   0.0453 ms
+64:   0.0466 ms
+128:   0.0501 ms
+512:   0.0687 ms
+1024:   0.1761 ms
 2048:   0.2186 ms
 4096:   0.3015 ms
 8192:   0.4666 ms
@@ -20,11 +20,11 @@ ping-pong between 0 and 8
 ping-pong between 0 and 20
 4:   0.0443 ms
 8:   0.0443 ms
-16:   0.0446 ms
-32:   0.0452 ms
-64:   0.0465 ms
-128:   0.0492 ms
-512:   0.0654 ms
+16:   0.0448 ms
+32:   0.0453 ms
+64:   0.0466 ms
+128:   0.0501 ms
+512:   0.0691 ms
 1024:   0.1763 ms
 2048:   0.2179 ms
 4096:   0.3011 ms
@@ -36,4 +36,4 @@ ping-pong between 0 and 20
 326144:  11.0081 ms
 652288:  21.8795 ms
 1304576:  43.6223 ms
-Estimated total runtime of           0.01814575 seconds
+Estimated total runtime of           0.01814645 seconds

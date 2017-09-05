@@ -93,6 +93,7 @@ eager0::incoming_payload(mpi_queue *queue,
     msg->set_time_synced(queue->now());
 #endif
     queue->notify_probes(msg);
+    queue->memcopy(msg->payload_bytes());
     queue->finalize_recv(msg, req);
     delete msg;
   }
