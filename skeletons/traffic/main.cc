@@ -61,11 +61,12 @@ static const int nrepeat = 40;
 static const int warmup = 10;
 static const int max_buffer_size = 1024*1024;
 
-const std::vector<int> buffer_sizes =       { 1024, 4096, 16384, 65536, 262144, 1048576};
-const std::vector<int> total_num_sends =    { 64, 64,  64,    16,    4,      1};
-const std::vector<int> window_num_sends =   { 16,   16,   16,    4,     4,      1};
-//const std::vector<int> total_num_sends =    { 4, 4,  4,    4,    4,      1};
-//const std::vector<int> window_num_sends =   { 4,   4,   4,    4,     4,      1};
+const std::vector<int> buffer_sizes =
+  { 1024, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 32768, 49152, 65536, 98304, 131072, 262144, 524288, 1048576};
+const std::vector<int> total_num_sends =
+  { 64,   64,   64,   64,   16,   16,   16,    16,    8,     8,     8,     8,     4,      4,      2,      1};
+const std::vector<int> window_num_sends =
+  { 16,   16,   16,   16,   4,    4,    4,     4,     4,     4,     4,     4,     4,      4,      2 ,     1};
 
 void usage(std::ostream& os){
   os << "usage: ./run <num_senders> <num_recvers> <seed>" << std::endl;
@@ -94,6 +95,7 @@ int main(int argc, char** argv)
   }
 
   MPI_Request reqs[100];
+ #pragma sst new
   char* buffer = new char[max_buffer_size];
   ::memset(buffer, 0, max_buffer_size);
 
@@ -177,6 +179,7 @@ int main(int argc, char** argv)
     std::vector<double> tputs(buffer_sizes.size());
     blast(recver_from_me, reqs, buffer, tputs);
     std::vector<double> allTputs(buffer_sizes.size()*num_senders);
+  #pragma sst keep
     MPI_Allgather(tputs.data(), buffer_sizes.size(), MPI_DOUBLE,
                   allTputs.data(), buffer_sizes.size(), MPI_DOUBLE, roleComm);
     int roleRank = 0;
