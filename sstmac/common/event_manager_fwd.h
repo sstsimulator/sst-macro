@@ -54,6 +54,7 @@ class event_scheduler;
 typedef event_scheduler event_manager;
 #else
 class event_manager;
+struct ipc_event_t;
 #endif
 
 }

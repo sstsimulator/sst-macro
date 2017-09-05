@@ -57,6 +57,11 @@ transport_message::serialize_order(serializer& ser)
   network_message::serialize_order(ser);
   library_interface::serialize_order(ser);
   ser & payload_;
+  if (ser.mode() == serializer::PACK){
+    //std::cout << "Packed " << payload_->to_string() << std::endl;
+  } else if (ser.mode() == serializer::UNPACK){
+    //std::cout << "Unpacked " << payload_->to_string() << std::endl;
+  }
   ser & src_;
   ser & dest_;
   ser & src_app_;

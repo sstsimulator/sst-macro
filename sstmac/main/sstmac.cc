@@ -238,7 +238,7 @@ run_params(parallel_runtime* rt,
   native::manager* mgr = new native::manager(params, rt);
 
   double start = sstmac_wall_time();
-  timestamp stop_time = params->get_optional_time_param("stop_time", -1.);
+  timestamp stop_time = params->get_optional_time_param("stop_time", 0);
   timestamp runtime;
   try {
     runtime = mgr->run(stop_time);

@@ -46,23 +46,21 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/time.h>
 
 using sstmac::sw::operating_system;
+using sstmac::timestamp;
 
-extern "C"
-int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
+extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
 {
   operating_system* os = operating_system::current_os();
-  double total = os->now().sec();
-  int secs = int(total);
-  int usecs = int((total-secs)*1e6);
-  tv->tv_sec = secs;
-  tv->tv_usec = usecs;
+  timestamp t = os->now();
+  uint64_t ticks = t.ticks_int64();
+  tv->tv_sec = ticks / timestamp::seconds;
+  tv->tv_usec = (ticks%timestamp::seconds) / timestamp::microseconds;
   return 0;
 }
 
 //make sure this doesn't get overwritten
 #undef gettimeofday
-extern "C"
-double sstmac_wall_time()
+extern "C" double sstmac_wall_time()
 {
   timeval t_st;
   gettimeofday(&t_st, 0);

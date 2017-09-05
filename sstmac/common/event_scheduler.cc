@@ -364,7 +364,13 @@ event_scheduler::register_stat(stat_collector *coll, stat_descr_t* descr)
 void
 event_scheduler::ipc_schedule(timestamp t, event_handler* handler, event* ev)
 {
-  eventman_->ipc_schedule(t, handler->event_location(), event_location(), (*seqnum_)++, ev);
+  ipc_event_t iev;
+  iev.dst = handler->event_location();
+  iev.src = event_location();
+  iev.seqnum = (*seqnum_)++;
+  iev.ev = ev;
+  iev.t = t;
+  eventman_->ipc_schedule(&iev);
 }
 
 void

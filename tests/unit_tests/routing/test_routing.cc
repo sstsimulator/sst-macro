@@ -69,6 +69,7 @@ test_topology(sprockit::sim_parameters& params)
 
 int main(int argc, char** argv)
 {
+  sstmac::timestamp::init_stamps(1);
   sprockit::output::init_out0(&std::cout);
   sprockit::output::init_err0(&std::cerr);
   sprockit::output::init_outn(&std::cout);

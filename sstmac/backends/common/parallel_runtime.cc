@@ -47,9 +47,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/serializable.h>
 #include <sstmac/common/sst_event.h>
+#include <sstmac/common/event_manager.h>
 #include <sprockit/output.h>
 #include <sprockit/fileio.h>
 #include <fstream>
+#include <sstream>
 #include <sprockit/keyword_registration.h>
 
 RegisterDebugSlot(parallel);
@@ -156,6 +158,9 @@ parallel_runtime::static_runtime(sprockit::sim_parameters* params)
 void
 parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 {
+  num_recvs_done_ = 0;
+  num_sends_done_ = 0;
+  sends_done_.resize(nproc_);
 
   //turn the number of procs and my rank into keywords
   nthread_ = params->get_optional_int_param("sst_nthread", 1);
@@ -165,10 +170,12 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 
   size_t allocSize = buf_size_ * num_bufs_window;
 
-  send_buffers_.resize(nthread_);
-  for (int i=0; i < nthread_; ++i) send_buffers_[i].init(allocSize);
-
-  recv_buffer_.init(allocSize);
+  send_buffers_.resize(nproc_);
+  recv_buffers_.resize(nproc_);
+  for (int i=0; i < nproc_; ++i){
+    send_buffers_[i].init(allocSize);
+    recv_buffers_[i].init(allocSize);
+  }
 }
 
 parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
@@ -192,89 +199,66 @@ parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
 parallel_runtime::~parallel_runtime()
 {
   if (part_) delete part_;
-  for (auto&& buf : send_buffers_){
-    buf.erase();
-  }
-}
-
-static inline void
-run_serialize(serializer& ser, timestamp t, device_id dst, device_id src, uint32_t seqnum, event* ev)
-{
-  ser & dst;
-  ser & src;
-  ser & seqnum;
-  ser & t;
-  ser & ev;
 }
 
 void
-parallel_runtime::send_event(int thread_id,
-  timestamp t,
-  device_id dst,
-  device_id src,
-  uint32_t seqnum,
-  event* ev)
+parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
+{
+  ser & iev->dst;
+  ser & iev->src;
+  ser & iev->seqnum;
+  ser & iev->t;
+  ser & iev->ev;
+}
+
+void parallel_runtime::send_event(int thread_id, ipc_event_t* iev)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   spkt_throw_printf(sprockit::unimplemented_error,
       "parallel_runtime::send_event: should not be called on integrated core");
 #else
-
-  sprockit::serializer ser;
-  comm_buffer& buff = send_buffers_[thread_id];
-  //optimistically try packing into ready buffer
-  bool failed = true;
-  void* sendPtr = buff.ptr;
-  while (failed){
-    ser.start_packing((char*)sendPtr, buff.remaining);
-    try {
-      run_serialize(ser,t,dst,src,seqnum,ev);
-      failed = false;
-    } catch (sprockit::ser_buffer_overrun& e) {
-      //huh, oops
-      buff.grow();
-      sendPtr = buff.ptr;
-    }
-  }
-  buff.shift(ser.packer().size());
-
   int lp;
-  switch (dst.type()){
+  switch (iev->dst.type()){
     case device_id::router:
-      lp = part_->lpid_for_switch(dst.id());
+      lp = part_->lpid_for_switch(iev->dst.id());
       break;
     case device_id::logp_overlay:
-      lp = dst.id();
+      lp = iev->dst.id();
       break;
     default:
-      spkt_abort_printf("Invalid IPC handler of type %d", dst.type());
+      spkt_abort_printf("Invalid IPC handler of type %d", iev->dst.type());
   }
 
-  //event_debug("On rank %d, sending event from %d:%d to %d:%d of size %d",
-  //            me(), src.id(), src.type(), dst.id(), dst.type(), ser.packer().size());
+  size_t overhead = sizeof(iev->t) + sizeof(iev->dst) + sizeof(iev->src) + sizeof(iev->seqnum);
 
-  lock();
-  do_send_message(lp, sendPtr, ser.packer().size());
-  unlock();
+  sprockit::serializer ser;
+  ser.start_sizing();
+  ser & iev->ev;
+
+  size_t buffer_space_needed = overhead + ser.size();
+  debug_printf(sprockit::dbg::parallel, "sending event of size %lu + %lu = %lu to lp %d at t=%10.6e: %s",
+               overhead, ser.size(), buffer_space_needed, lp, iev->t.sec(),
+               sprockit::to_string(iev->ev).c_str());
+  comm_buffer& buff = send_buffers_[lp];
+  char* ptr = buff.ensureSpace(buffer_space_needed);
+  ser.start_packing(ptr, buffer_space_needed);
+  run_serialize(ser, iev);
+  buff.shift(buffer_space_needed);
 #endif
 }
 
 void
-parallel_runtime::send_recv_messages(std::vector<void*>& recv_buffers)
+parallel_runtime::reset_send_recv()
 {
-  if (nproc_ == 1)
-    return;
-
-  if (recv_buffers.size()){
-    sprockit::abort("recv buffers should be empty in send/recv messages");
+  for (int i=0; i < num_sends_done_; ++i){
+    send_buffers_[sends_done_[i]].reset();
   }
-  do_send_recv_messages(recv_buffers);
-
-  //and all the send buffers are now done
-  for (int t=0; t < nthread(); ++t){
-    send_buffers_[t].reset();
+  for (int i=0; i < num_recvs_done_; ++i){
+    recv_buffers_[i].reset();
   }
-  recv_buffer_.reset();
+  num_sends_done_ = 0;
+  num_recvs_done_ = 0;
 }
+
 
 }

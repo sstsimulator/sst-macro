@@ -53,6 +53,22 @@ AC_ARG_WITH(pth,
   ]
 )
 
+AH_TEMPLATE([HAVE_FCONTEXT], [Define to make pth available for threading])
+AC_ARG_WITH(fcontext,
+  [AS_HELP_STRING(
+    [--with-pth@<:@=DIR@:>@],
+    [Control whether or not Boost fcontext is available. Optionally specify installation location
+    DIR. Default is yes.]
+    )],
+  [
+    user_with_fcontext=yes
+    enable_fcontext=$withval
+  ], [
+    user_with_fcontext=no
+    enable_fcontext=no
+  ]
+)
+
 if test "X$have_integrated_core" = "Xyes"; then
   AC_MSG_RESULT([pthread virtual thread interface not compatible with unified core -- disabling])
   enable_pthread=no
@@ -127,6 +143,8 @@ if test "$enable_ucontext" != no; then
       enable_ucontext="yes"
       AC_DEFINE(HAVE_UCONTEXT)
       AM_CONDITIONAL(HAVE_UCONTEXT, true)
+      AC_SUBST(UCONTEXT_CPPFLAGS)
+      AC_SUBST(UCONTEXT_LDFLAGS)
     ], [
       AC_MSG_CHECKING([whether ucontext.h is present and usable])
       AC_MSG_RESULT([no])
@@ -140,6 +158,7 @@ if test "$enable_ucontext" != no; then
 else
   AM_CONDITIONAL(HAVE_UCONTEXT, false)
 fi
+
 
 if test "$enable_pth" != "no"; then
   SAVE_LDFLAGS=$LDFLAGS
@@ -173,46 +192,91 @@ if test "$enable_pth" != "no"; then
   )
   LDFLAGS=$SAVE_LDFLAGS
   CPPFLAGS=$SAVE_CPPFLAGS
+else
+AM_CONDITIONAL(HAVE_PTH, false)
 fi
 
-AC_ARG_WITH(default-threading,
-  [AS_HELP_STRING(
-    [--with-default-threading=(pth|ucontext|pthread)],
-    [Select the default threading method.]
-    )],
-  [
-    default_threading=$with_default_threading
-  ],
-)
-
-#fail if default threading isn't available
-if test "$default_threading" = pth -a "$enable_pth" = no; then
-  AC_MSG_ERROR([Default threading method GNU pth is unavailable])
-elif test "$default_threading" = ucontext -a "$enable_ucontext" = no; then
-  AC_MSG_ERROR([Default threading method uncontext is unavailable])
-elif test "$default_threading" = pthread -a "$enable_pthread" = no; then
-  AC_MSG_ERROR([Default threading method pthreads is unavailable])
+if test "$enable_fcontext" != "no"; then
+  SAVE_LDFLAGS=$LDFLAGS
+  SAVE_CPPFLAGS=$CPPFLAGS
+  FCONTEXT_LDFLAGS=
+  FCONTEXT_CPPFLAGS=
+  FCONTEXT_LIBDIR=
+  if test "$enable_fcontext" != "yes"; then
+    FCONTEXT_LDFLAGS=-L$enable_fcontext/lib
+    FCONTEXT_CPPFLAGS=-I$enable_fcontext/include
+    AM_CONDITIONAL(HAVE_FCONTEXT_LIBDIR, true)
+    LDFLAGS="$LDFLAGS $FCONTEXT_LDFLAGS"
+    CPPFLAGS="$CPPFLAGS $FCONTEXT_CPPFLAGS"
+    FCONTEXT_LIBDIR=$enable_fcontext/lib
+  else
+    AM_CONDITIONAL(HAVE_FCONTEXT_LIBDIR, false)
+  fi
+  AC_SUBST(FCONTEXT_LIBDIR)
+  AC_CHECK_LIB(
+    [boost_context],
+    [jump_fcontext],
+    [
+      AC_DEFINE(HAVE_FCONTEXT)
+      AM_CONDITIONAL(HAVE_FCONTEXT, true)
+      FCONTEXT_LDFLAGS="$FCONTEXT_LDFLAGS -lboost_context"
+      LDFLAGS="$LDFLAGS -lboost_context"
+      AC_SUBST(FCONTEXT_CPPFLAGS)
+      AC_SUBST(FCONTEXT_LDFLAGS)
+      enable_fcontext="yes"
+    ],
+    [
+      AM_CONDITIONAL(HAVE_FCONTEXT, false)
+      enable_fcontext="yes"
+      if test "$user_with_pth" = yes; then
+        AC_MSG_ERROR([fcontext tests failed])
+      fi
+    ]
+  )
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM(
+      [
+      #include <boost/context/all.hpp>
+      namespace ctx=boost::context;
+      ], [
+      int a;
+      ctx::continuation source=ctx::callcc(
+        [[&a]](ctx::continuation && sink){
+          a=0;
+          int b=1;
+          for(;;){
+            sink=sink.resume();
+            int next=a+b;
+            a=b;
+            b=next;
+          }
+          return std::move(sink);
+        });
+        for (int j=0;j<10;++j) {
+          source=source.resume();
+        }
+      ])],
+    [
+      AC_MSG_CHECKING([whether fcontext headers are present and usable])
+      AC_MSG_RESULT([yes])
+    ], [
+      AC_MSG_CHECKING([whether fcontext headers are present and usable])
+      AC_MSG_RESULT([no])
+      enable_fcontext="no"
+      if test "$user_with_fcontext" = yes; then
+        AC_MSG_ERROR([fcontext tests failed. Ensure Boost >= 1.65 and C++14 support])
+      fi
+    ]
+  )
+  LDFLAGS=$SAVE_LDFLAGS
+  CPPFLAGS=$SAVE_CPPFLAGS
+else
+AM_CONDITIONAL(HAVE_FCONTEXT, false)
+AM_CONDITIONAL(HAVE_FCONTEXT_LIBDIR, false)
 fi
 
-#unless explicitly given, do not choose a default threading
-#let that be chosen by logic within operating_system.cc
-AH_TEMPLATE([USE_PTH], [Use Pth for threading by default.])
-AH_TEMPLATE([USE_UCONTEXT], [Use ucontext for threading by default.])
-AH_TEMPLATE([USE_PTHREAD], [Use pthread for threading by default.])
-if test "$default_threading" = pth -a "$enable_pth" != no; then
-  AC_DEFINE(USE_PTH)
-elif test "$default_threading" = ucontext -a "$enable_ucontext" != no; then
-  AC_DEFINE(USE_UCONTEXT)
-elif test "$default_threading" = pthread -a "$enable_pthread" != no; then
-  AC_DEFINE(USE_PTHREAD)
-fi
 
-#make sure we have an acceptable threading capabilites
-#pthreads only counts if it has been explicitly given as the default
-at_least_one_threading=no
-if test "$default_threading" = pthread -a "$enable_pthread" != no; then
-  at_least_one_threading=yes
-elif test "$enable_ucontext" != no -o "$enable_pth" != no; then 
+if test "$enable_ucontext" != no -o "$enable_pth" != no -o "$enable_fcontext" != no; then 
   at_least_one_threading=yes
 fi
 

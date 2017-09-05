@@ -70,51 +70,33 @@ namespace hw {
 
 instruction_processor::~instruction_processor()
 {
-  if (noise_model_) delete noise_model_;
 }
 
 instruction_processor::
 instruction_processor(sprockit::sim_parameters* params,
                       memory_model* mem, node* nd) :
-  simple_processor(params, mem, nd),
-  noise_model_(nullptr)
+  simple_processor(params, mem, nd)
 {
   negligible_bytes_ = params->get_optional_byte_length_param(
         "negligible_compute_bytes", 64);
 
-  parallelism_ = params->get_optional_double_param("parallelism", 1.0);
+  double parallelism = params->get_optional_double_param("parallelism", 1.0);
 
-  if (params->has_namespace("noise")){
-    sprockit::sim_parameters* noise_params = params->get_namespace("noise");
-    noise_model_ = noise_model::factory::get_param("model", noise_params);
-  }
-
-  tflop_ = tintop_ = 1.0 / freq_;
-  tmemseq_ = tmemrnd_ = 1.0 / mem_freq_;
-  max_single_mem_bw_ = mem_->max_single_bw();
+  tflop_ = timestamp(1.0 / freq_ / parallelism);
+  tintop_ = tflop_;
+  tmemseq_ = timestamp(1.0 / mem_freq_);
+  tmemrnd_ = tmemseq_;
+  max_single_mem_inv_bw_ = timestamp(1.0 / mem_->max_single_bw());
 }
 
 
-double
+timestamp
 instruction_processor::instruction_time(sw::basic_compute_event* cmsg)
 {
   sw::basic_instructions_st& st = cmsg->data();
-  double tsec = 0;
-  long nop = 0;
-  double tintop, tflop;
-  if (noise_model_){
-    tflop = tintop = 1.0/noise_model_->value();
-  } else {
-    tintop = tintop_;
-    tflop = tflop_;
-  }
-  tsec += st.flops*tflop/parallelism_;
-  tsec += st.intops*tintop/parallelism_;
-  if (tsec < 0){
-    spkt_throw_printf(sprockit::value_error,
-        "instruction_processor: computed negative instruction time of %8.4e sec",
-        tsec);
-  }
+  timestamp tsec = 0;
+  tsec += st.flops*tflop_;
+  tsec += st.intops*tintop_;
   return tsec;
 }
 
@@ -124,17 +106,17 @@ instruction_processor::compute(event* ev, callback* cb)
   sw::basic_compute_event* bev = test_cast(sw::basic_compute_event, ev);
   sw::basic_instructions_st& st = bev->data();
   // compute execution time in seconds
-  double instr_time = instruction_time(bev);
+  timestamp instr_time = instruction_time(bev);
   // now count the number of bytes
-  long bytes = st.mem_sequential;
+  uint64_t bytes = st.mem_sequential;
   // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
-  double best_possible_time = instr_time + bytes / max_single_mem_bw_;
+  timestamp best_possible_time = instr_time + bytes * max_single_mem_inv_bw_;
   if (bytes <= negligible_bytes_) {
     node_->schedule_delay(timestamp(instr_time), cb);
   }
   else {
     //do the full memory modeling
-    double best_possible_bw = bytes / best_possible_time;
+    double best_possible_bw = bytes / best_possible_time.sec();
     mem_->access(bytes, best_possible_bw, cb);
   }
 

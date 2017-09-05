@@ -50,6 +50,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+#include <algorithm>
+#include <sys/time.h>
+#include <cstring>
 
 #define sstmac_app_name traffic_pattern
 

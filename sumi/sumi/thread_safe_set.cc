@@ -43,12 +43,12 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi/thread_safe_set.h>
+#include <sprockit/spkt_printf.h>
+#include <algorithm>
 
-namespace sumi
-{
+namespace sumi {
 
-void
-set_difference(
+void set_difference(
     const thread_safe_set<int>& base,
     const thread_safe_set<int>& subtract,
     thread_safe_set<int>& result)
@@ -68,8 +68,7 @@ set_difference(
   base.end_iteration();
 }
 
-void
-set_difference(
+void set_difference(
     const thread_safe_set<int>& base,
     const thread_safe_set<int>& subtract,
     std::set<int>& result)

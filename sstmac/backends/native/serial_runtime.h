@@ -81,26 +81,6 @@ class serial_runtime :
 
   void finalize() override {}
 
-  /**
-   * @param The topology id to send a remote message to
-   * @param buffer The buffer containing a serialized message
-   * @param size The size of the buffer being sent
-   */
-  void send_event(timestamp t, switch_id sid, event* ev);
-
-  void wait_merge_array(int tag) override;
-
-  void declare_merge_array(void* buffer, int size, int tag) override;
-
-  bool release_merge_array(int tag) override;
-
- protected:
-  void do_send_message(int lp, void* buffer, int size) override;
-
-  void do_send_recv_messages(std::vector<void*>& buffers) override;
-
-  std::map<int, int> merge_refcounts_;
-
 };
 
 

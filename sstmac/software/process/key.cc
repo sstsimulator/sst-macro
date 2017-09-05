@@ -110,18 +110,16 @@ key::event_typeid(const std::string& name)
 
 key::key() :
   keyname_id_(general.id()),
-  timed_out_(false)
+  timed_out_(false),
+  blocked_thread_(nullptr)
 {
-  blocked_thread_.first = nullptr;
-  blocked_thread_.second = nullptr;
 }
 
 key::key(const key_traits::category& cat) :
   keyname_id_(cat.id()),
-  timed_out_(false)
+  timed_out_(false),
+  blocked_thread_(nullptr)
 {
-  blocked_thread_.first = nullptr;
-  blocked_thread_.second = nullptr;
 }
 
 

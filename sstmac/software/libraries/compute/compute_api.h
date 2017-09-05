@@ -67,6 +67,10 @@ int sstmac_sleep(unsigned int secs);
  */
 int sstmac_usleep(unsigned int usecs);
 
+int sstmac_nanosleep(unsigned int nsecs);
+
+int sstmac_msleep(unsigned int msecs);
+
 int sstmac_fsleep(double secs);
 
 /**

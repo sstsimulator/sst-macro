@@ -83,7 +83,7 @@ timestamp
 multithreaded_subcontainer::vote_next_round(timestamp my_time, vote_type_t ty)
 {
   debug_printf(sprockit::dbg::event_manager | sprockit::dbg::event_manager_time_vote,
-    "Rank %d thread barrier to start vote on thread %d, epoch %d\n",
+    "LP %d thread barrier to start vote on thread %d, epoch %d\n",
     rt_->me(), thread_id(), epoch_);
   return parent_->time_vote_barrier(thread_id_, my_time, ty);
 }

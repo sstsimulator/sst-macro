@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_location.h>
 #include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sprockit/factories/factory.h>
@@ -74,7 +75,6 @@ class parallel_runtime :
     size_t remaining;
     size_t allocSize;
     char* storage;
-    std::list<char*> expiredArrays;
 
     comm_buffer() : storage(nullptr), ptr(nullptr) {}
 
@@ -82,9 +82,12 @@ class parallel_runtime :
       if (storage) delete[] storage;
     }
 
-    void erase(){
-      if (storage) delete[] storage;
-      storage = nullptr;
+    char* buffer() const {
+      return storage;
+    }
+
+    size_t bytesUsed() const {
+      return allocSize - remaining;
     }
 
     void init(size_t size){
@@ -94,25 +97,28 @@ class parallel_runtime :
       remaining = allocSize;
     }
 
-    void resize(size_t size){
-      if (size <= allocSize) return;
-      expiredArrays.push_back(storage);
-      init(size);
+    char* ensureSpace(size_t size){
+      if (remaining < size){
+        size_t oldSize = allocSize - remaining;
+        size_t totalSizeNeeded = oldSize + size;
+        size_t newAllocSize = allocSize*2;
+        while (newAllocSize < totalSizeNeeded){
+          newAllocSize *= 2;
+        }
+        char* newData = new char[newAllocSize];
+        ::memcpy(newData, storage, oldSize);
+        delete[] storage;
+        storage = newData;
+        ptr = storage + oldSize;
+        allocSize = newAllocSize;
+        remaining = allocSize - oldSize;
+      }
+      return ptr;
     }
 
     void reset(){
-      for (char* old : expiredArrays){
-        delete[] old;
-      }
-      expiredArrays.clear();
       ptr = storage;
       remaining = allocSize;
-    }
-
-    void grow(){
-      if (!ptr) spkt_abort_printf("comm_buffer cannot grow - no previous storage allocated");
-      expiredArrays.push_back(storage);
-      init(allocSize*2);
     }
 
     void shift(size_t size){
@@ -123,6 +129,8 @@ class parallel_runtime :
   };
 
   static const int global_root;
+
+  static void run_serialize(serializer& ser, ipc_event_t* iev);
 
   virtual int64_t allreduce_min(int64_t mintime) = 0;
 
@@ -168,23 +176,13 @@ class parallel_runtime :
 
   virtual void init_partition_params(sprockit::sim_parameters* params);
 
-  /**
-   @param pool A buffer cache corresponding to a pool of free buffers
-   @param incoming A buffer cache holding buffers that correspond to incoming messages
-  */
-  virtual void send_recv_messages(std::vector<void*>& incoming);
+  virtual timestamp send_recv_messages(timestamp vote){
+    return vote;
+  }
 
-  /**
-   * @param The topology id to send a remote message to
-   * @param buffer The buffer containing a serialized message
-   * @param size The size of the buffer being sent
-   */
-  virtual void send_event(int thread_id,
-    timestamp t,
-    device_id tid,
-    device_id src,
-    uint32_t seqnum,
-    event* ev);
+  void send_event(int thread_id, ipc_event_t* iev);
+
+  void reset_send_recv();
 
   int me() const {
     return me_;
@@ -206,11 +204,13 @@ class parallel_runtime :
     return part_;
   }
 
-  virtual void wait_merge_array(int tag) = 0;
+  int num_recvs_done() const {
+    return num_recvs_done_;
+  }
 
-  virtual void declare_merge_array(void* buffer, int size, int tag) = 0;
-
-  virtual bool release_merge_array(int tag) = 0;
+  const comm_buffer& recv_buffer(int idx) const {
+    return recv_buffers_[idx];
+  }
 
   static parallel_runtime* static_runtime(sprockit::sim_parameters* params);
 
@@ -223,16 +223,15 @@ class parallel_runtime :
   parallel_runtime(sprockit::sim_parameters* params,
                    int me, int nproc);
 
-  virtual void do_send_message(int lp, void* buffer, int size) = 0;
-
-  virtual void do_send_recv_messages(std::vector<void*>& buffers) = 0;
-
  protected:
    int nproc_;
    int nthread_;
    int me_;
    std::vector<comm_buffer> send_buffers_;
-   comm_buffer recv_buffer_;
+   std::vector<comm_buffer> recv_buffers_;
+   std::vector<int> sends_done_;
+   int num_sends_done_;
+   int num_recvs_done_;
    int buf_size_;
    partition* part_;
    static parallel_runtime* static_runtime_;

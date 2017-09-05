@@ -1,0 +1,31 @@
+#! /usr/bin/python
+
+import commands
+import re
+
+out = commands.getoutput("make")
+already_done = {}
+
+matches = re.compile("use of undeclared id.*?(__built.*?)'",re.DOTALL).findall(out)
+str_arr = []
+for m in matches:
+  m = m.strip()
+  if not m in already_done:
+    print m
+    str_arr.append("#define %s(x,...) x" % m)
+    already_done[m] = 1
+
+if not matches:
+  print "None"
+else:
+  path = "/home/jjwilke/Programs/sst-macro/conceptual/sstmac/replacements/fixIntrinsics.h"
+  old_text = open(path).read()
+
+  new_file = open(path,"w")
+  new_file.write(old_text[:-7])
+  new_file.write("\n")
+  new_file.write("\n".join(str_arr))
+  new_file.write("\n#endif")
+  new_file.close()
+
+

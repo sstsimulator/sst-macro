@@ -59,49 +59,51 @@ cpuset_compute_scheduler::configure(int ncore, int nsocket)
   }
 }
 
-int 
-cpuset_compute_scheduler::available_core(int ncore, uint64_t cpumask)
-{
-  for (int i=0; i < ncore; ++i){
-    uint64_t mask = cpumask & (1<<i);
-    if (mask != 0){
-      return i;
-    }
-  }
-  return -1;
-}
-
 void
 cpuset_compute_scheduler::reserve_core(thread *thr)
 {
-  uint64_t valid_cores = available_cores_ & thr->cpumask();
+  uint64_t valid_cores = available_cores_ & thr->cpumask();  
   if (valid_cores == 0){
     debug_printf(sprockit::dbg::compute_scheduler,
-        "No available cores from set %lu intersect cpumask %lu for thread %ld",
+        "No available cores from set %X intersect cpumask %X for thread %ld",
         available_cores_, thr->cpumask(), thr->thread_id());
     //no available cores, hold up
     pending_threads_.push_back(thr);
     os_->block(thr->schedule_key());
-    //if I got here, I unblocked because of available cores
-    //figure out which core that is exactly
-    valid_cores = available_cores_ & thr->cpumask();
+    //this is guaranteed not to unblock until valid core received
+  } else {
+    allocate_core_to_thread(valid_cores, thr);
   }
-  int core_to_use = available_core(ncores_, valid_cores);
-  debug_printf(sprockit::dbg::compute_scheduler,
-      "Core %d matches from set %lu intersecting cpumask %lu for thread %ld",
-      core_to_use, available_cores_, thr->cpumask(), thr->thread_id());
-  allocate_core(core_to_use);
-  thr->set_active_core(core_to_use);
+
+}
+
+void
+cpuset_compute_scheduler::allocate_core_to_thread(uint64_t valid_cores, thread* thr)
+{
+  for (int i=0; i < ncores_; ++i){
+    uint64_t mask = valid_cores & (1<<i);
+    if (mask != 0){
+      allocate_core(i);
+      thr->set_active_core(i);
+      debug_printf(sprockit::dbg::compute_scheduler,
+          "Core %d matches from set %X intersecting cpumask %X for thread %ld",
+          i, valid_cores, thr->cpumask(), thr->thread_id());
+      return;
+    }
+  }
+
+  spkt_abort_printf("No cores matches between %X and %X but still trying to allocate",
+                    thr->cpumask(), valid_cores);
+
 }
 
 void
 cpuset_compute_scheduler::release_core(thread *thr)
-{
-  debug_printf(sprockit::dbg::compute_scheduler,
-      "Releasing core %d for thread %ld",
-      thr->active_core(), thr->thread_id()); 
-  
+{  
   deallocate_core(thr->active_core());
+  debug_printf(sprockit::dbg::compute_scheduler,
+      "Releasing core %d for thread %ld yields cpuset %X",
+      thr->active_core(), thr->thread_id(), available_cores_);
   if (pending_threads_.empty())
     return;
   
@@ -112,6 +114,7 @@ cpuset_compute_scheduler::release_core(thread *thr)
     thread* thr = *tmp;
     uint64_t valid_cores = available_cores_ & thr->cpumask();    
     if (valid_cores != 0){
+      allocate_core_to_thread(valid_cores, thr);
       //the newly freed core allows another thread to continue
       pending_threads_.erase(tmp);
       os_->unblock(thr->schedule_key());

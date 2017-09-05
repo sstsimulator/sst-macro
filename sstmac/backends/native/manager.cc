@@ -220,7 +220,7 @@ manager::run(timestamp until)
 
   running_ = true;
 
-  if (until.sec() > 0) {
+  if (until.ticks_int64() > 0) {
     event_manager_->schedule_stop(until);
   }
 

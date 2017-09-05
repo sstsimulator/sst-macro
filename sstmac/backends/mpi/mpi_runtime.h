@@ -80,26 +80,12 @@ class mpi_runtime :
 
   void allgather(void *send_buffer, int num_bytes, void *recv_buffer) override;
 
-  void wait_merge_array(int tag) override;
-
-  void declare_merge_array(void* buffer, int size, int tag) override;
-
-  bool release_merge_array(int tag) override;
-
   void init_runtime_params(sprockit::sim_parameters* params) override;
 
+  timestamp send_recv_messages(timestamp vote) override;
+
  protected:
-  void do_send_recv_messages(std::vector<void*>& buffers) override;
-
-  void do_send_message(int lp, void *buffer, int size) override;
-
   void do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
-
-  void do_merge_array(int tag);
-
-  void do_collective_merges(int my_tag);
-
-  void reallocate_requests();
 
   void finalize() override;
 
@@ -108,24 +94,22 @@ class mpi_runtime :
   int init_size(sprockit::sim_parameters* params);
 
  private:
-   MPI_Request* requests_;
+  struct send_recv_vote {
+    uint64_t time_vote;
+    uint64_t num_sent;
+    uint64_t max_bytes;
+  };
 
-   MPI_Op reduce_op_;
+  std::vector<MPI_Request> requests_;
+  std::vector<MPI_Status> statuses_;
+  std::vector<send_recv_vote> votes_;
 
-   struct merge_request {
-     void* buffer;
-     int size;
-     int refcount;
-     bool merged;
-   };
-   typedef std::map<int, merge_request> merge_map;
-   merge_map merge_requests_;
+  MPI_Datatype vote_type_;
+  MPI_Op vote_op_;
 
-   int max_num_requests_;
-   int* num_sent_;
-   int total_num_sent_;
-   int epoch_;
+  int epoch_;
 
+  static void vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 };
 
 }

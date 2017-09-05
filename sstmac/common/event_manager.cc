@@ -99,11 +99,7 @@ event_manager::ev_man_for_thread(int thread_id) const
 }
 
 void
-event_manager::ipc_schedule(timestamp t,
-  device_id dst,
-  device_id src,
-  uint32_t seqnum,
-  event* ev)
+event_manager::ipc_schedule(ipc_event_t* iev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "%s::ipc_schedule: not valid for chosen event manager");
@@ -131,19 +127,6 @@ partition*
 event_manager::topology_partition() const
 {
   return rt_->topology_partition();
-}
-
-void
-event_manager::set_now(const timestamp &ts)
-{
-#if SSTMAC_SANITY_CHECK
-  if (ts < now_) {
-    spkt_throw_printf(sprockit::spkt_error,
-                     "eventmanager::set_now - major error, setting time to %lld which is before now %lld",
-                     (long long)ts.ticks_int64(), (long long)now_.ticks_int64());
-  }
-#endif
-  now_ = ts;
 }
 
 stat_collector*

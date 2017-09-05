@@ -173,6 +173,16 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     }
   }
 
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  if (link_params->has_param("send_latency")){
+    hop_latency_ = link_params->get_time_param("send_latency");
+  } else {
+    hop_latency_ = link_params->get_time_param("latency");
+  }
+  hop_bw_ = link_params->get_bandwidth_param("bandwidth");
+  lookahead_ = hop_latency_;
+  injection_latency_ = inj_params->get_time_param("latency");
+
   interconn_debug("Interconnect building endpoints");
   build_endpoints(node_params, nic_params,netlink_params, mgr);
   if (!logp_model){
@@ -186,17 +196,14 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     } else {
       connect_endpoints(nlink_inj_params, ej_params);
     }
+  } else {
+    //lookahead is actually higher
+    timestamp double_inj_lat = 2*injection_latency_;
+    if (double_inj_lat > lookahead_){
+      lookahead_ = double_inj_lat;
+    }
   }
 
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  if (link_params->has_param("send_latency")){
-    hop_latency_ = link_params->get_time_param("send_latency");
-  } else {
-    hop_latency_ = link_params->get_time_param("latency");
-  }
-  hop_bw_ = link_params->get_bandwidth_param("bandwidth");
-  lookahead_ = hop_latency_;
-  injection_latency_ = inj_params->get_time_param("latency");
 #endif
 }
 
