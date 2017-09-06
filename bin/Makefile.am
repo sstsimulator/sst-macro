@@ -29,7 +29,7 @@ endif
 
 bin_SCRIPTS = sstmacro-config sstccvars.py
 
-EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest
+EXTRA_DIST = sstmacro-config.in sstccvars.py.in tools config_tools manifest uq
 
 AM_LDFLAGS += -ldl
 
