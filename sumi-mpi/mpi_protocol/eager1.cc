@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_send_request.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/null_buffer.h>
@@ -58,6 +59,7 @@ eager1::configure_send_buffer(mpi_queue* queue, mpi_message* msg, void *buffer, 
     void* eager_buf = fill_send_buffer(msg, buffer, typeobj);
     msg->remote_buffer().ptr = eager_buf;
   }
+  queue->memcopy(msg->payload_bytes());
 }
 
 void
@@ -66,7 +68,6 @@ eager1::send_header(mpi_queue* queue,
 {
   SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
   msg->set_content_type(mpi_message::header);
-  queue->memcopy(msg->byte_length());
 
   queue->post_header(msg, sumi::message::header, false/*the send is "done" - no need to ack*/);
 
@@ -121,14 +122,17 @@ eager1::incoming_header(mpi_queue* queue,
     //this has to go in now
     //the need recv buffer has to push back messages in the order they are received
     //in order to preserve message order semantics
-    queue->need_recv_.push_back(msg);
+    auto cln = msg->clone_me();
+    cln->local_buffer().ptr = msg->local_buffer().ptr;
+    cln->set_in_flight(true);
+    queue->need_recv_.push_back(cln);
   }
+  msg->set_in_flight(true);
   queue->notify_probes(msg);
 
   // this has already been received by mpi in sequence
   // make sure mpi still handles this since it won't match
   // the current sequence number
-  msg->set_in_flight(true);
   msg->set_content_type(mpi_message::data);
   // generate an ack ONLY on the recv end
   queue->post_rdma(msg, false, true);
@@ -158,10 +162,18 @@ eager1_singlecpy::incoming_payload(mpi_queue *queue,
 }
 
 void
-eager1_doublecpy::incoming_payload(mpi_queue *queue, mpi_message*msg)
+eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg)
 {
-  mpi_queue_recv_request* req = queue->pop_matching_request(queue->in_flight_messages_, msg);
-  //guaranteed that msg arrived before recv was posted
+  auto iter = queue->in_flight_messages_.find(msg->unique_int());
+  mpi_queue_recv_request* req = nullptr;
+  int taskid_ = queue->api()->rank();
+  if (iter != queue->in_flight_messages_.end()){
+    mpi_queue_debug("matched request to message %s", msg->to_string().c_str());
+    req = iter->second;
+    queue->in_flight_messages_.erase(iter);
+  } else {
+    mpi_queue_debug("did not match request to message %s", msg->to_string().c_str());
+  }
   incoming_payload(queue, msg, req);
 }
 
@@ -180,9 +192,14 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg,
       delete[] temp_buf;
       msg->local_buffer().ptr = temp_buf;
     }
+    queue->memcopy(msg->payload_bytes());
     queue->finalize_recv(msg, req);
-    delete msg;
+    fflush(stdout);
+  } else {
+    //drop a sentinel value to indicate the payload is here
+    queue->in_flight_messages_[msg->unique_int()] = nullptr;
   }
+  delete msg;
 }
 
 

@@ -55,6 +55,7 @@ nobase_library_include_HEADERS = \
   pisces/pisces_param_expander.h \
   pisces/pisces_arbitrator.h \
   pisces/pisces_buffer.h \
+  pisces/pisces_branched_switch.h \
   pisces/pisces_crossbar.h \
   pisces/pisces_nic.h \
   pisces/pisces_packetizer.h \
@@ -71,7 +72,7 @@ nobase_library_include_HEADERS = \
   switch/network_switch_fwd.h \
   switch/dist_dummyswitch.h \
   topology/butterfly.h \
-  topology/crossbar.h \
+  topology/fully_connected.h \
   topology/dragonfly.h \
   topology/fat_tree.h \
   topology/torus.h \
@@ -83,6 +84,7 @@ nobase_library_include_HEADERS = \
   topology/structured_topology_fwd.h \
   topology/coordinates.h \
   topology/cartesian_topology.h \
+  topology/star.h \
   topology/structured_topology.h \
   topology/tiled_dragonfly.h \
   topology/traffic/traffic.h \
@@ -121,6 +123,7 @@ libsstmac_hw_la_SOURCES =  \
   pisces/pisces_stats.cc \
   pisces/pisces_arbitrator.cc \
   pisces/pisces_buffer.cc \
+  pisces/pisces_branched_switch.cc \
   pisces/pisces_crossbar.cc \
   pisces/pisces_nic.cc \
   pisces/pisces_packetizer.cc \
@@ -134,7 +137,7 @@ libsstmac_hw_la_SOURCES =  \
   switch/network_switch.cc \
   switch/dist_dummyswitch.cc \
   topology/butterfly.cc \
-  topology/crossbar.cc \
+  topology/fully_connected.cc \
   topology/dragonfly.cc \
   topology/fat_tree.cc \
   topology/torus.cc \
@@ -150,6 +153,7 @@ libsstmac_hw_la_SOURCES =  \
   router/multipath_routing.cc \
   router/ugal_routing.cc \
   router/valiant_routing.cc \
+  topology/star.cc \
   topology/structured_topology.cc \
   topology/cartesian_topology.cc \
   topology/topology.cc 

@@ -58,6 +58,7 @@ eager0::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
     void* eager_buf = fill_send_buffer(msg, buffer, type);
     msg->eager_buffer() = eager_buf;
   }
+  queue->memcopy(msg->payload_bytes());
 }
 
 void
@@ -92,6 +93,7 @@ eager0::incoming_payload(mpi_queue *queue,
     msg->set_time_synced(queue->now());
 #endif
     queue->notify_probes(msg);
+    queue->memcopy(msg->payload_bytes());
     queue->finalize_recv(msg, req);
     delete msg;
   }

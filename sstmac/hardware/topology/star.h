@@ -42,30 +42,79 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef THREAD_DATA_H
-#define THREAD_DATA_H
+#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_STAR_H_INCLUDED
+#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_STAR_H_INCLUDED
 
-#include <sstmac/software/process/thread_fwd.h>
-#include <sstmac/software/threading/threading_interface_fwd.h>
-#include <utility>
+#include <sstmac/hardware/topology/structured_topology.h>
 
 namespace sstmac {
-namespace sw {
-
-// We need to know the thread associated with each threading_interface
-// so current thread pointer can be maintained
-// (used for threadstack_ in operatingsystem and block_ in key )
-typedef std::pair<threading_interface*, thread*> thread_data_t;
+namespace hw {
 
 /**
- * Base class for tasks that can be cooperative scheduled using threadcontext.
+ *  @class star
+ *  The star topology generates a network which connects
+    each node a central hub.
  */
+class star : public structured_topology
+{
+  FactoryRegister("star | crossbar", topology, star)
+ public:
+  std::string to_string() const override {
+    return "star topology";
+  }
 
-struct threadinfo {
-  thread* thethread;
+  virtual ~star() {}
+
+  star(sprockit::sim_parameters* params);
+
+  int diameter() const override {
+    return 1;
+  }
+
+  int num_leaf_switches() const override {
+    return 0;
+  }
+
+  int minimal_distance(switch_id src, switch_id dst) const override {
+    return 1;
+  }
+
+  bool uniform_network_ports() const override {
+    return true;
+  }
+
+  bool uniform_switches_non_uniform_network_ports() const override {
+    return false;
+  }
+
+  bool uniform_switches() const override {
+    return true;
+  }
+
+  void configure_individual_port_params(switch_id src,
+        sprockit::sim_parameters *switch_params) const override;
+
+  void connected_outports(switch_id src,
+       std::vector<connection>& conns) const override;
+
+  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
+
+  void minimal_route_to_switch(
+    switch_id current_sw_addr,
+    switch_id dest_sw_addr,
+    routable::path& path) const override;
+
+  virtual int num_switches() const override {
+    return 1;
+  }
+
+  int num_nodes() const override {
+    return concentration_;
+  }
+
 };
 
 }
-}
+} //end of namespace sstmac
 
-#endif // THREAD_DATA_H
+#endif

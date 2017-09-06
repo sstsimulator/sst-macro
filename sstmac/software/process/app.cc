@@ -137,19 +137,17 @@ app::delete_statics()
 }
 
 void
-app::kill()
+app::cleanup()
 {
   //okay, the app is dying
   //it may be that we have subthreads that are still active
   //all of these subthreads must be cancelled and never start again
-  std::map<long,thread*>::iterator it, end = subthreads_.end();
-  for (it=subthreads_.begin(); it != subthreads_.end(); ++it){
-    thread* thr = it->second;
-    thr->cancel();
+  for (auto& pair : subthreads_){
+    pair.second->cancel();
   }
   subthreads_.clear();
 
-  thread::kill();
+  thread::cleanup();
 }
 
 lib_compute_time*

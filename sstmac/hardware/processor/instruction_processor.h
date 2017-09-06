@@ -72,21 +72,16 @@ class instruction_processor :
 
   void set_flop_distribution(double stdev);
 
-  double instruction_time(sw::basic_compute_event* msg);
+  timestamp instruction_time(sw::basic_compute_event* msg);
 
  protected:
-  double tflop_;
-  double tintop_;
-  double tmemseq_;
-  double tmemrnd_;
+  timestamp tflop_;
+  timestamp tintop_;
+  timestamp tmemseq_;
+  timestamp tmemrnd_;
+  timestamp max_single_mem_inv_bw_; //in sec/byte
 
-  double max_single_mem_bw_;
-
-  double negligible_bytes_;
-
-  double parallelism_;
-
-  noise_model* noise_model_;
+  uint64_t negligible_bytes_;
 
 };
 

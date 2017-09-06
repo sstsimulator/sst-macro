@@ -235,17 +235,24 @@ mpi_queue::find_matching_recv(mpi_queue_recv_request* req)
   for (it = need_recv_.begin(); it != end; ++it) {
     mpi_message* mess = *it;
     if (req->matches(mess)) {
-      mpi_queue_debug("matched recv tag=%s,src=%s to send tag=%d,src=%d on comm=%s",
-        api_->tag_str(req->tag_).c_str(), api_->src_str(req->source_).c_str(),
-        mess->tag(), mess->src_rank(), api_->comm_str(req->comm_).c_str());
+      mpi_queue_debug("matched recv tag=%s,src=%s on comm=%s to send %s",
+        api_->tag_str(req->tag_).c_str(), 
+        api_->src_str(req->source_).c_str(),
+        api_->comm_str(req->comm_).c_str(),
+        mess->to_string().c_str());
 
       need_recv_.erase(it);
       return mess;
-
+    } else {
+      mpi_queue_debug("did not match recv tag=%s,src=%s to send tag=%d,src=%d on comm=%s",
+        api_->tag_str(req->tag_).c_str(), api_->src_str(req->source_).c_str(),
+        mess->tag(), mess->src_rank(), api_->comm_str(req->comm_).c_str());
     }
   }
-  mpi_queue_debug("could not match recv tag=%s, src=%s to any sends on comm=%s",
-    api_->tag_str(req->tag_).c_str(), api_->src_str(req->source_).c_str(),
+  mpi_queue_debug("could not match recv tag=%s, src=%s to any of %d sends on comm=%s",
+    api_->tag_str(req->tag_).c_str(), 
+    api_->src_str(req->source_).c_str(),
+    need_recv_.size(),
     api_->comm_str(req->comm_).c_str());
 
   pending_message_.push_back(req);
@@ -274,20 +281,26 @@ mpi_queue::recv(mpi_request* key, int count,
 
   mpi_queue_recv_request* req = new mpi_queue_recv_request(key, this,
                             count, type, source, tag, comm->id(), buffer);
-
   mpi_message* mess = find_matching_recv(req);
   if (mess) {
     if (mess->in_flight()){
       //this is awkward - I match this pending message
       //but I can't do anything to complete it
       //the message has already been processed
-      in_flight_messages_.push_back(req);
-    }
-    else if (mess->is_payload()) {
-      //user_lib_mem_->copy(mess->payload_bytes());
+      mpi_queue_debug("recv matches in flight message %s", mess->to_string().c_str());
+      auto iter = in_flight_messages_.find(mess->unique_int());
+      if (iter != in_flight_messages_.end()){
+        //oh, cool, the payload is already here
+        in_flight_messages_.erase(iter);
+        mess->protocol()->incoming_payload(this, mess, req);
+      } else {
+        //the message will be coming
+        in_flight_messages_.emplace_hint(iter, mess->unique_int(), req);
+        delete mess;
+      }
+    } else if (mess->is_payload()) {
       mess->protocol()->incoming_payload(this, mess, req);
-    }
-    else {
+    } else {
       mess->protocol()->incoming_header(this, mess, req);
     }
   }
@@ -375,27 +388,23 @@ void
 mpi_queue::incoming_progress_loop_message(mpi_message* message)
 {
   if (message->is_nic_ack()) {
+    mpi_queue_debug("handle nic ack %s", message->to_string().c_str());
     handle_nic_ack(message);
     return;
   }
 
-  /// These are the types of messages we may expect:
-  /// (1)  Response to handshake request (we have the requestor).
-  /// (2)  Data delivery following a handshake ack (we have the receiver)
-  /// (3)  Acks from the NIC that a message has left
-  /// (4)  New messages (either eager-send or a handshake request).
-  /// Only category (4) is subject to order requirements.  The other
-  /// categories get handled immediately
-
   switch (message->content_type()) {
     case mpi_message::eager_payload:
     case mpi_message::header:
+      mpi_queue_debug("handle header %s", message->to_string().c_str());
       this->incoming_new_message(message);
       break;
     case mpi_message::completion_ack:
+      mpi_queue_debug("handle completion ack %s", message->to_string().c_str());
       this->incoming_completion_ack(message);
       break;
     case mpi_message::data:
+      mpi_queue_debug("handle data %s", message->to_string().c_str());
       message->protocol()->incoming_payload(this, message);
       break;
     default:
@@ -469,12 +478,10 @@ mpi_queue::incoming_new_message(mpi_message* message)
       // Now erase all the completed messages from the held queue.
       held_[tid].erase(held_[tid].begin(), it);
     }
-  }
-  else if (message->in_flight()) {
+  } else if (message->in_flight()) {
     mpi_queue_debug("got RDMA message and ignoring seqnum");
     handle_new_message(message);
-  }
-  else {
+  } else {
     if (message->seqnum() < next_inbound_[tid]){
       //how did we go backwards!?!??!
       spkt_throw_printf(sprockit::value_error,
@@ -530,8 +537,7 @@ mpi_queue::handle_new_message(mpi_message* message)
 // Complete an inbound message.
 //
 mpi_queue_recv_request*
-mpi_queue::pop_matching_request(pending_message_t &pending,
-                        mpi_message* message)
+mpi_queue::pop_matching_request(pending_message_t &pending, mpi_message* message)
 {
   mpi_queue_recv_request* req;
   pending_message_t::iterator it, end, tmp;
@@ -541,8 +547,7 @@ mpi_queue::pop_matching_request(pending_message_t &pending,
     tmp = it++;
     if (req->is_cancelled()) {
       pending.erase(tmp);
-    }
-    else if (req->matches(message)) {
+    } else if (req->matches(message)) {
       pending.erase(tmp);
       return req;
     }
@@ -551,8 +556,7 @@ mpi_queue::pop_matching_request(pending_message_t &pending,
 }
 
 mpi_queue_recv_request*
-mpi_queue::pop_pending_request(mpi_message* message,
-                                bool set_need_recv)
+mpi_queue::pop_pending_request(mpi_message* message, bool set_need_recv)
 {
   mpi_queue_recv_request* req = pop_matching_request(pending_message_, message);
   if (!req) {

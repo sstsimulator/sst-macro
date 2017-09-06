@@ -218,13 +218,16 @@ topology::create_partition(
 }
 
 void
-topology::configure_individual_port_params(int port_start, int nports,
-                                           sprockit::sim_parameters *switch_params) const
+topology::configure_individual_port_params(
+    int port_start, int nports,
+    sprockit::sim_parameters *switch_params) const
 {
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  sprockit::sim_parameters* link_params =
+      switch_params->get_namespace("link");
   for (int i=0; i < nports; ++i){
     int port = port_start + i;
-    sprockit::sim_parameters* port_params = get_port_params(switch_params, port);
+    sprockit::sim_parameters* port_params =
+        get_port_params(switch_params, port);
     link_params->combine_into(port_params);
   }
 }

@@ -92,7 +92,15 @@ class mpi_message final :
 
   ~mpi_message() throw ();
 
-  sumi::message* clone() const override;
+  sumi::mpi_message* clone_me() const {
+    mpi_message* cln = new mpi_message;
+    clone_into(cln);
+    return cln;
+  }
+
+  sumi::message* clone() const override {
+    return clone_me();
+  }
 
   void serialize_order(serializer& ser) override;
 

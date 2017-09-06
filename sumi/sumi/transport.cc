@@ -943,7 +943,9 @@ void
 transport::rdma_get(int src, message* msg,
                     int send_cq, int recv_cq)
 {
-  if (send_cq == -1 && recv_cq == -1) abort();
+  if (send_cq == -1 && recv_cq == -1){
+    spkt_abort_printf("no completion queues specified for message %s", msg->to_string().c_str());
+  }
 
   configure_send(src, message::rdma_get, msg);
   msg->set_send_cq(send_cq);

@@ -16,6 +16,7 @@ library_include_HEADERS = \
   infinite.ini \
   pisces.ini \
   macrels.ini \
+  kahuna.ini \
   hopper_pflow.ini \
   small_torus.ini \
   small_torus_simple.ini \

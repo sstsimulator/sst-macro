@@ -72,59 +72,42 @@ class clock_cycle_event_map :
 
   virtual ~clock_cycle_event_map() throw() {}
 
-  virtual void
-  run();
+  virtual void run() override;
 
-  bool
-  vote_to_terminate();
+  bool vote_to_terminate() override;
 
-  virtual void
-  set_interconnect(hw::interconnect* interconn);
+  virtual void set_interconnect(hw::interconnect* interconn) override;
 
-  virtual void
-  ipc_schedule(timestamp t,
-    device_id dst,
-    device_id src,
-    uint32_t seqnum,
-    event* ev);
+  void ipc_schedule(ipc_event_t* iev) override;
 
  protected:
   friend class multithreaded_event_container;
 
-  virtual void
-  schedule_incoming(const std::vector<void*>& mpi_buffers);
+  void schedule_incoming(ipc_event_t* iev);
 
-  void
-  do_next_event();
+  void do_next_event() override;
 
-  timestamp
-  next_event_time() const;
+  timestamp next_event_time() const {
+    return (queue_.empty() || stopped_) ? no_events_left_time_ : (*queue_.begin())->time();
+  }
 
-  virtual timestamp
-  vote_next_round(timestamp my_time, vote_type_t ty);
-
-  int64_t
-  do_vote(int64_t time, vote_type_t ty = vote_type_t::min);
-
-  virtual void
-  receive_incoming_events();
+  /**
+   * @brief receive_incoming_events
+   * @param vote The minimum event time I have
+   * @return The minimum event time across all LPs
+   */
+  timestamp receive_incoming_events(timestamp vote);
 
  protected:
   timestamp next_time_horizon_;
   timestamp lookahead_;
   timestamp no_events_left_time_;
-  std::vector<void*> all_incoming_;
-  std::vector<std::vector<void*> > thread_incoming_;
+  timestamp last_vote_result_;
+  timestamp current_vote_result_;
+  timestamp min_ipc_time_;
+  std::vector<std::vector<ipc_event_t>> thread_incoming_;
   hw::interconnect* interconn_;
   int epoch_;
-
-#if SSTMAC_DEBUG_THREAD_EVENTS
-  void open_debug_file();
-
-  void close_debug_file();
-
-  std::ofstream event_file_;
-#endif
 
 };
 

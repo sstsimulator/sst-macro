@@ -44,6 +44,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/errors.h>
 #include <sstmac/libraries/pthread/sstmac_sched.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 
 /* Set scheduling parameters for a process.  */
 extern "C" int
@@ -169,13 +171,15 @@ void SSTMAC_CPU_FREE(sstmac_cpu_set_t* cpuset){
 /* Set the CPU affinity for a task */
 extern "C" int
 SSTMAC_sched_setaffinity (pid_t pid, size_t cpusetsize, const sstmac_cpu_set_t *cpuset){
-  sprockit::abort("SSTMAC_sched_setaffinity");
-  return -1;
+  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
+  t->set_cpumask(cpuset->cpubits);
+  return 0;
 }
 
 /* Get the CPU affinity for a task */
 extern "C" int
 SSTMAC_sched_getaffinity (pid_t pid, size_t cpusetsize, sstmac_cpu_set_t *cpuset){
-  sprockit::abort("SSTMAC_sched_getaffinity");
-  return -1;
+  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
+  cpuset->cpubits = t->cpumask();
+  return 0;
 }

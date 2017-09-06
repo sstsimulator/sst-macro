@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/fileio.h>
 #include <sprockit/sim_parameters.h>
+#include <sstream>
 
 RegisterKeywords(
 "dumpi_mapname",

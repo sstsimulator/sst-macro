@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
+#include <sstream>
 
 RegisterKeywords("epoch");
 
@@ -410,7 +411,7 @@ app_ftq_calendar::dump(const std::string& fileroot)
 
 
 
-  timestamp stamp_sec = timestamp(1);
+  timestamp stamp_sec(1, timestamp::seconds);
   int64_t ticks_s = stamp_sec.ticks_int64();
   std::cout << sprockit::printf("Average time stats for application %s: \n",
                                      appname_.c_str());

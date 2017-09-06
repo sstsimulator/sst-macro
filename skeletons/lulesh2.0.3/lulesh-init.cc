@@ -86,6 +86,10 @@ Domain::Domain(Int_t numRanks, Index_t colLoc,
    Index_t edgeNodes = edgeElems+1 ;
    this->cost() = cost;
 
+   for (int i=0; i < TimerEnd; ++i){
+    timers[i] = 0;
+   }
+
    m_tp       = tp ;
    m_numRanks = numRanks ;
 

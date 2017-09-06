@@ -35,6 +35,7 @@ COVERAGETESTS = \
   test_coverage_edison_amm2 \
   test_coverage_edison_amm3 \
   test_mpi_only_coverage_edison_amm3 \
+  test_coverage_kahuna \
   test_coverage_hopper_amm1 \
   test_coverage_hopper_amm2 \
   test_coverage_hopper_amm3 \

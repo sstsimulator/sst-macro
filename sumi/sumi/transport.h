@@ -403,7 +403,7 @@ class transport {
    * for switching between an eager protocol and a rendezvous RDMA protocol
    * @return
    */
-  int eager_cutoff() const {
+  uint32_t eager_cutoff() const {
     return eager_cutoff_;
   }
 
@@ -516,7 +516,7 @@ class transport {
 
   int nproc_;
   
-  int eager_cutoff_;
+  uint32_t eager_cutoff_;
 
   std::vector<std::list<message*>> completion_queues_;
 

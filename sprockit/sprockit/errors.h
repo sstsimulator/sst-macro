@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <exception>
 #include <cstdlib>
-#include <sprockit/spkt_string.h>
+#include <sprockit/spkt_printf.h>
 #include <iostream>
 
 namespace sprockit {

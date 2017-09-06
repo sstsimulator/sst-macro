@@ -9,6 +9,8 @@
 #   SST/macroscale directory.
 #
 
+include $(top_srcdir)/Makefile.common
+
 if INTEGRATED_SST_CORE
 noinst_LTLIBRARIES = libsstmac.la
 else
@@ -42,7 +44,6 @@ endif
 if USE_MPIPARALLEL
 libsstmac_la_LIBADD += ../backends/mpi/libsstmac_mpi_runtime.la 
 endif
-
 
 SUBDIRS = $(STD_SUBDIRS) 
 DIST_SUBDIRS = $(STD_SUBDIRS) 

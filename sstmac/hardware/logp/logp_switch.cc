@@ -177,8 +177,8 @@ logp_switch::outgoing_message(message* msg, node_id src, node_id dst)
   timestamp delay = num_hops * hop_latency_; //factor of 2 for in-out
 
   int dst_switch = interconn_->node_to_logp_switch(dst);
-  switch_debug("outgoing message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
-               num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
+  switch_debug("outgoing message to rank %d over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
+               dst_switch, num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
   send_delayed_to_link(delay, dbl_inj_lat_, neighbors_[dst_switch], msg);
 }
 

@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/sst_core/integrated_core.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
 #include <sstmac/common/sst_event.h>
+#include <sstmac/common/timestamp.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/output.h>
@@ -64,6 +65,7 @@ SSTIntegratedComponent::SSTIntegratedComponent(
   sprockit::output::init_errn(&std::cerr);
 
   link_map_ = SST::Simulation::getSimulation()->getComponentLinkMap(id);
+  timestamp::init_stamps(1);
 }
 
 void

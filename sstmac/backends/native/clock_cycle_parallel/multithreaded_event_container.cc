@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <dlfcn.h>
 #include <signal.h>
 #include <iostream>
+#include <sstream>
 #include <sprockit/keyword_registration.h>
 
 RegisterDebugSlot(multithread_event_manager);
@@ -310,21 +311,22 @@ multithreaded_event_container::schedule_incoming(int thread_id, clock_cycle_even
     thread_id, epoch_);
   thread_barrier();
 
-  std::vector<void*>& mpi_buffers = thread_incoming_[thread_id];
-  mgr->schedule_incoming(mpi_buffers);
-  mpi_buffers.clear();
+  auto& ipc_events = thread_incoming_[thread_id];
+  for (auto& iev : ipc_events){
+    mgr->schedule_incoming(&iev);
+  }
+  ipc_events.clear();
 
   int nthread_ = nthread();
   for (int i=0; i < nthread_; ++i){
-    std::list<event_queue_entry*>& events = pending_events(i, thread_id);
-    std::list<event_queue_entry*>::iterator it, end = events.end();
+    auto& event_list = pending_events(i, thread_id);
     debug_printf(sprockit::dbg::event_manager,
       "scheduling %d events on thread %d from thread %d on epoch %d",
-      events.size(), thread_id_, i, epoch_);
-    for (it=events.begin(); it != end; ++it){
-      mgr->add_event(*it);
+      event_list.size(), thread_id_, i, epoch_);
+    for (event_queue_entry* ev : event_list){
+      mgr->add_event(ev);
     }
-    events.clear();
+    event_list.clear();
   }
 }
 
@@ -332,7 +334,7 @@ timestamp
 multithreaded_event_container::vote_next_round(timestamp my_time, vote_type_t ty)
 {
   debug_printf(sprockit::dbg::event_manager | sprockit::dbg::event_manager_time_vote | sprockit::dbg::parallel,
-    "Rank %d thread barrier to start vote on thread %d, epoch %d",
+    "LP %d thread barrier to start vote on thread %d, epoch %d",
     rt_->me(), thread_id(), epoch_);
 
   return time_vote_barrier(thread_id_, my_time, ty);
@@ -340,10 +342,10 @@ multithreaded_event_container::vote_next_round(timestamp my_time, vote_type_t ty
 
 void
 multithreaded_event_container::multithread_schedule(
-    int srcthread,
-    int dstthread,
-    uint32_t seqnum,
-    event_queue_entry* ev)
+  int srcthread,
+  int dstthread,
+  uint32_t seqnum,
+  event_queue_entry* ev)
 {
   ev->set_seqnum(seqnum);
   std::list<event_queue_entry*>& pending = pending_events(srcthread, dstthread);

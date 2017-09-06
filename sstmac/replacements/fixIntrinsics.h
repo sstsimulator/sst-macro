@@ -24,14 +24,6 @@
 
 #define __builtin_ia32_movntps(...)
 
-#define __builtin_ia32_storeupd(...)
-
-#define __builtin_ia32_movntpd(...)
-
-#define __builtin_ia32_movntdq(...)
-
-#define __builtin_ia32_storedqu(...)
-
 #define __builtin_ia32_storeupd256(...)
 
 #define __builtin_ia32_storeups256(...)
@@ -92,11 +84,7 @@
 
 #define __builtin_ia32_pandd512_mask(...) get512i()
 
-#define __builtin_ia32_pandd512_mask(...) get512i()
-
 #define __builtin_ia32_pandq512_mask(...) get512i()
-
-#define __builtin_ia32_pandnd512_mask(...) get512i()
 
 #define __builtin_ia32_pandnd512_mask(...) get512i()
 
@@ -362,8 +350,6 @@
 
 #define __builtin_ia32_packsswb512_mask(x,...) x
 
-#define __builtin_ia32_packusdw512_mask(x,...) x
-
 #define __builtin_ia32_blendmw_512_mask(x,...) x
 
 #define __builtin_ia32_packuswb512_mask(x,...) x
@@ -385,8 +371,6 @@
 #define __builtin_ia32_pmulhw512_mask(x,...) x
 
 #define __builtin_ia32_xorpd512_mask(x,...) x
-
-#define __builtin_ia32_xorps512_mask(x,...) x
 
 #define __builtin_ia32_sqrtps512_mask(x,...) x
 
@@ -414,8 +398,6 @@
 
 #define __builtin_ia32_paddb128_mask(x,...) x
 
-#define __builtin_ia32_paddb128_mask(x,...) x
-
 #define __builtin_ia32_paddw128_mask(x,...) x
 
 #define __builtin_ia32_blendmb_256_mask(x,...) x
@@ -431,8 +413,6 @@
 #define __builtin_ia32_psubsw512_mask(x,...) x
 
 #define __builtin_ia32_psubw128_mask(x,...) x
-
-#define __builtin_ia32_psubb128_mask(x,...) x
 
 #define __builtin_ia32_pmullw128_mask(x,...) x
 
@@ -466,8 +446,6 @@
 
 #define __builtin_ia32_packusdw128_mask(x,...) x
 
-#define __builtin_ia32_paddsb128_mask(x,...) x
-
 #define __builtin_ia32_paddsb512_mask(x,...) x
 
 #define __builtin_ia32_paddsb128_mask(x,...) x
@@ -485,8 +463,6 @@
 #define __builtin_ia32_paddusb512_mask(x,...) x
 
 #define __builtin_ia32_paddusb128_mask(x,...) x
-
-#define __builtin_ia32_paddusb256_mask(x,...) x
 
 #define __builtin_ia32_paddusb256_mask(x,...) x
 
@@ -540,19 +516,13 @@
 
 #define __builtin_ia32_pminsw128_mask(x,...) x
 
-#define __builtin_ia32_pminsw128_mask(x,...) x
-
 #define __builtin_ia32_pminsq128_mask(x,...) x
 
 #define __builtin_ia32_pminub128_mask(x,...) x
 
-#define __builtin_ia32_pminub256_mask(x,...) x
-
 #define __builtin_ia32_pminuq256_mask(x,...) x
 
 #define __builtin_ia32_pminub256_mask(x,...) x
-
-#define __builtin_ia32_pminsw256_mask(x,...) x
 
 #define __builtin_ia32_pminuw128_mask(x,...) x
 
@@ -571,8 +541,6 @@
 #define __builtin_ia32_pshufb128_mask(x,...) x
 
 #define __builtin_ia32_pshufb256_mask(x,...) x
-
-#define __builtin_ia32_psubusb128_mask(x,...) x
 
 #define __builtin_ia32_psubusb128_mask(x,...) x
 
@@ -603,8 +571,6 @@
 #define __builtin_ia32_pmaddwd256_mask(x,...) x
 
 #define __builtin_ia32_pmulhw128_mask(x,...) x
-
-#define __builtin_ia32_pmulhw512_mask(x,...) x
 
 #define __builtin_ia32_pmulhuw256_mask(x,...) x
 
@@ -666,16 +632,330 @@
 
 #define __builtin_ia32_vpcmov(x,...) x
 
+
+typedef float my64 __attribute__((__vector_size__(8)));
+typedef long long my64i __attribute__((__vector_size__(8)));
+typedef double my64d __attribute__((__vector_size__(8)));
+typedef float my128 __attribute__((__vector_size__(16)));
+typedef long long my128i __attribute__((__vector_size__(16)));
+typedef double my128d __attribute__((__vector_size__(16)));
 typedef float my256 __attribute__((__vector_size__(32)));
 typedef double my256d __attribute__((__vector_size__(32)));
-typedef double my512d __attribute__((__vector_size__(64)));
 typedef long long my256i __attribute__((__vector_size__(32)));
+typedef double my512d __attribute__((__vector_size__(64)));
 typedef long long my512i __attribute__((__vector_size__(64)));
 
+extern unsigned short getunsigned_short();
+extern long long getlong_long();
+extern int getint();
+extern my64 get64();
+extern my64i get64i();
+extern my64d get64d();
+extern my128 get128();
+extern my128i get128i();
+extern my128d get128d();
 extern my256 get256();
 extern my256d get256d();
 extern my256i get256i();
 extern my512i get512i();
 extern my512d get512d();
 
+#define __builtin_ia32_andss(x,...) x
+#define __builtin_ia32_addss(x,...) x
+#define __builtin_ia32_subss(x,...) x
+#define __builtin_ia32_mulss(x,...) x
+#define __builtin_ia32_divss(x,...) x
+#define __builtin_ia32_xorss(x,...) x
+#define __builtin_ia32_andps(x,...) x
+#define __builtin_ia32_addps(x,...) x
+#define __builtin_ia32_subps(x,...) x
+#define __builtin_ia32_mulps(x,...) x
+#define __builtin_ia32_divps(x,...) x
+#define __builtin_ia32_xorps(x,...) x
+
+#define __builtin_ia32_bsrsi(x,...) x
+#define __builtin_ia32_rolqi(x,...) x
+#define __builtin_ia32_rolhi(x,...) x
+#define __builtin_ia32_rorqi(x,...) x
+#define __builtin_ia32_rorhi(x,...) x
+#define __builtin_ia32_bsrdi(x,...) x
+#define __builtin_ia32_andnps(x,...) x
+#define __builtin_ia32_orps(x,...) x
+#define __builtin_ia32_movss(x,...) x
+#define __builtin_ia32_cmpgtps(x,...) x
+#define __builtin_ia32_cmpltps(x,...) x
+#define __builtin_ia32_cmpgeps(x,...) x
+#define __builtin_ia32_cmpleps(x,...) x
+#define __builtin_ia32_cmpngeps(x,...) x
+#define __builtin_ia32_cvtsi2ss(x,...) x
+#define __builtin_ia32_cvtsi642ss(x,...) x
+
+
+
+#define __builtin_ia32_movlhps(x,...) x
+#define __builtin_ia32_movhlps(x,...) x
+#define __builtin_ia32_shufps(x,...) x
+#define __builtin_ia32_unpckhps(x,...) x
+#define __builtin_ia32_unpcklps(x,...) x
+#define __builtin_ia32_loadhps(x,...) x
+#define __builtin_ia32_loadlps(x,...) x
+
+#define __builtin_ia32_cmpngtps(x,...) x
+#define __builtin_ia32_movsd(x,...) x
+#define __builtin_ia32_shufpd(x,...) x
+#define __builtin_ia32_vec_ext_v2di(...) getlong_long()
+#define __builtin_ia32_addpd(x,...) x
+#define __builtin_ia32_addsd(x,...) x
+
+#define __builtin_ia32_subpd(...) get128d()
+#define __builtin_ia32_subsd(...) get128d()
+#define __builtin_ia32_mulpd(...) get128d()
+#define __builtin_ia32_mulsd(...) get128d()
+#define __builtin_ia32_divpd(...) get128d()
+#define __builtin_ia32_divsd(...) get128d()
+#define __builtin_ia32_sqrtpd(...) get128d()
+#define __builtin_ia32_sqrtsd(...) get128d()
+#define __builtin_ia32_minpd(...) get128d()
+#define __builtin_ia32_minsd(...) get128d()
+#define __builtin_ia32_maxpd(...) get128d()
+#define __builtin_ia32_maxsd(...) get128d()
+#define __builtin_ia32_andpd(...) get128d()
+#define __builtin_ia32_andnpd(...) get128d()
+#define __builtin_ia32_orpd(...) get128d()
+#define __builtin_ia32_xorpd(...) get128d()
+#define __builtin_ia32_cmpeqpd(...) get128d()
+#define __builtin_ia32_cmpltpd(...) get128d()
+#define __builtin_ia32_cmplepd(...) get128d()
+#define __builtin_ia32_cmpgtpd(...) get128d()
+#define __builtin_ia32_cmpgepd(...) get128d()
+#define __builtin_ia32_cmpneqpd(...) get128d()
+#define __builtin_ia32_cmpnltpd(...) get128d()
+#define __builtin_ia32_cmpnlepd(...) get128d()
+#define __builtin_ia32_cmpngtpd(...) get128d()
+#define __builtin_ia32_cmpngepd(...) get128d()
+#define __builtin_ia32_cmpordpd(...) get128d()
+#define __builtin_ia32_cmpunordpd(...) get128d()
+#define __builtin_ia32_cmpeqsd(...) get128d()
+#define __builtin_ia32_cmpltsd(...) get128d()
+#define __builtin_ia32_cmplesd(...) get128d()
+#define __builtin_ia32_cmpneqsd(...) get128d()
+#define __builtin_ia32_cmpnltsd(...) get128d()
+#define __builtin_ia32_cmpnlesd(...) get128d()
+#define __builtin_ia32_cmpordsd(...) get128d()
+#define __builtin_ia32_cmpunordsd(...) get128d()
+#define __builtin_ia32_loaddqu(...) get128i()
+#define __builtin_ia32_movq128(...) get128i()
+#define __builtin_ia32_cvtdq2ps(...) get128()
+#define __builtin_ia32_cvtpd2dq(...) get128i()
+#define __builtin_ia32_cvtpd2pi(...) get64()
+#define __builtin_ia32_cvtpd2ps(...) get128()
+#define __builtin_ia32_cvttpd2dq(...) get128i()
+#define __builtin_ia32_cvttpd2pi(...) get64()
+#define __builtin_ia32_cvtpi2pd(...) get128d()
+#define __builtin_ia32_cvtps2dq(...) get128i()
+#define __builtin_ia32_cvttps2dq(...) get128i()
+#define __builtin_ia32_cvtsd2ss(...) get128()
+#define __builtin_ia32_cvtsi2sd(...) get128d()
+#define __builtin_ia32_cvtsi642sd(...) get128d()
+#define __builtin_ia32_cvtss2sd(...) get128d()
+#define __builtin_ia32_unpckhpd(...) get128d()
+#define __builtin_ia32_unpcklpd(...) get128d()
+#define __builtin_ia32_loadhpd(...) get128d()
+#define __builtin_ia32_loadlpd(...) get128d()
+#define __builtin_ia32_packsswb128(...) get128i()
+#define __builtin_ia32_packssdw128(...) get128i()
+#define __builtin_ia32_packuswb128(...) get128i()
+#define __builtin_ia32_punpckhbw128(...) get128i()
+#define __builtin_ia32_punpckhwd128(...) get128i()
+#define __builtin_ia32_punpckhdq128(...) get128i()
+#define __builtin_ia32_punpckhqdq128(...) get128i()
+#define __builtin_ia32_punpcklbw128(...) get128i()
+#define __builtin_ia32_punpcklwd128(...) get128i()
+#define __builtin_ia32_punpckldq128(...) get128i()
+#define __builtin_ia32_punpcklqdq128(...) get128i()
+#define __builtin_ia32_paddb128(...) get128i()
+#define __builtin_ia32_paddw128(...) get128i()
+#define __builtin_ia32_paddd128(...) get128i()
+#define __builtin_ia32_paddq128(...) get128i()
+#define __builtin_ia32_paddsb128(...) get128i()
+#define __builtin_ia32_paddsw128(...) get128i()
+#define __builtin_ia32_paddusb128(...) get128i()
+#define __builtin_ia32_paddusw128(...) get128i()
+#define __builtin_ia32_psubb128(...) get128i()
+#define __builtin_ia32_psubw128(...) get128i()
+#define __builtin_ia32_psubd128(...) get128i()
+#define __builtin_ia32_psubq128(...) get128i()
+#define __builtin_ia32_psubsb128(...) get128i()
+#define __builtin_ia32_psubsw128(...) get128i()
+#define __builtin_ia32_psubusb128(...) get128i()
+#define __builtin_ia32_psubusw128(...) get128i()
+#define __builtin_ia32_pmaddwd128(...) get128i()
+#define __builtin_ia32_pmulhw128(...) get128i()
+#define __builtin_ia32_pmullw128(...) get128i()
+#define __builtin_ia32_pmuludq(...) get64()
+#define __builtin_ia32_pmuludq128(...) get128i()
+#define __builtin_ia32_psllwi128(...) get128i()
+#define __builtin_ia32_pslldi128(...) get128i()
+#define __builtin_ia32_psllqi128(...) get128i()
+#define __builtin_ia32_psrawi128(...) get128i()
+#define __builtin_ia32_psradi128(...) get128i()
+#define __builtin_ia32_psrldqi128(...) get128i()
+#define __builtin_ia32_pslldqi128(...) get128i()
+#define __builtin_ia32_psrlwi128(...) get128i()
+#define __builtin_ia32_psrlqi128(...) get128i()
+#define __builtin_ia32_psllw128(...) get128i()
+#define __builtin_ia32_pslld128(...) get128i()
+#define __builtin_ia32_psllq128(...) get128i()
+#define __builtin_ia32_psraw128(...) get128i()
+#define __builtin_ia32_psrad128(...) get128i()
+#define __builtin_ia32_psrlw128(...) get128i()
+#define __builtin_ia32_psrld128(...) get128i()
+#define __builtin_ia32_psrlq128(...) get128i()
+#define __builtin_ia32_pand128(...) get128i()
+#define __builtin_ia32_pandn128(...) get128i()
+#define __builtin_ia32_por128(...) get128i()
+#define __builtin_ia32_pxor128(...) get128i()
+#define __builtin_ia32_pcmpeqb128(...) get128i()
+#define __builtin_ia32_pcmpeqw128(...) get128i()
+#define __builtin_ia32_pcmpeqd128(...) get128i()
+#define __builtin_ia32_pcmpgtb128(...) get128i()
+#define __builtin_ia32_pcmpgtw128(...) get128i()
+#define __builtin_ia32_pcmpgtd128(...) get128i()
+#define __builtin_ia32_vec_ext_v8hi(...) getunsigned_short()
+#define __builtin_ia32_vec_set_v8hi(...) get128i()
+#define __builtin_ia32_pmaxsw128(...) get128i()
+#define __builtin_ia32_pmaxub128(...) get128i()
+#define __builtin_ia32_pminsw128(...) get128i()
+#define __builtin_ia32_pminub128(...) get128i()
+#define __builtin_ia32_pmulhuw128(...) get128i()
+#define __builtin_ia32_pshufhw(...) get128i()
+#define __builtin_ia32_pshuflw(...) get128i()
+#define __builtin_ia32_pshufd(...) get128i()
+#define __builtin_ia32_pavgb128(...) get128i()
+#define __builtin_ia32_pavgw128(...) get128i()
+#define __builtin_ia32_psadbw128(...) get128i()
+#define __builtin_ia32_storeupd(...)
+#define __builtin_ia32_storedqu(...)
+#define __builtin_ia32_maskmovdqu(...)
+#define __builtin_ia32_movnti(...)
+#define __builtin_ia32_movnti64(...)
+#define __builtin_ia32_movntdq(...)
+#define __builtin_ia32_movntpd(...)
+#define __builtin_ia32_clflush(...)
+#define __builtin_ia32_lfence(...)
+#define __builtin_ia32_mfence(...)
+
+#define __builtin_ia32_sqrtss(...) get128()
+#define __builtin_ia32_rcpss(...) get128()
+#define __builtin_ia32_rsqrtss(...) get128()
+#define __builtin_ia32_minss(...) get128()
+#define __builtin_ia32_maxss(...) get128()
+#define __builtin_ia32_sqrtps(...) get128()
+#define __builtin_ia32_rcpps(...) get128()
+#define __builtin_ia32_rsqrtps(...) get128()
+#define __builtin_ia32_minps(...) get128()
+#define __builtin_ia32_maxps(...) get128()
+#define __builtin_ia32_cmpeqss(...) get128()
+#define __builtin_ia32_cmpltss(...) get128()
+#define __builtin_ia32_cmpless(...) get128()
+#define __builtin_ia32_cmpneqss(...) get128()
+#define __builtin_ia32_cmpnltss(...) get128()
+#define __builtin_ia32_cmpnless(...) get128()
+#define __builtin_ia32_cmpordss(...) get128()
+#define __builtin_ia32_cmpunordss(...) get128()
+#define __builtin_ia32_cmpeqps(...) get128()
+#define __builtin_ia32_cmpneqps(...) get128()
+#define __builtin_ia32_cmpnltps(...) get128()
+#define __builtin_ia32_cmpnleps(...) get128()
+#define __builtin_ia32_cmpordps(...) get128()
+#define __builtin_ia32_cmpunordps(...) get128()
+#define __builtin_ia32_cvtps2pi(...) get64()
+#define __builtin_ia32_cvttps2pi(...) get64()
+#define __builtin_ia32_cvtpi2ps(...) get128()
+#define __builtin_ia32_packssdw(...) get64()
+#define __builtin_ia32_packsswb(...) get64()
+#define __builtin_ia32_vec_set_v4hi(...) get64()
+#define __builtin_ia32_pmaxsw(...) get64()
+#define __builtin_ia32_pmaxub(...) get64()
+#define __builtin_ia32_pminsw(...) get64()
+#define __builtin_ia32_pminub(...) get64()
+#define __builtin_ia32_pmulhuw(...) get64()
+#define __builtin_ia32_pshufw(...) get64()
+#define __builtin_ia32_pavgb(...) get64()
+#define __builtin_ia32_pavgw(...) get64()
+#define __builtin_ia32_psadbw(...) get64()
+#define __builtin_ia32_storehps(...)
+#define __builtin_ia32_storelps(...)
+#define __builtin_ia32_ldmxcsr(...)
+#define __builtin_ia32_maskmovq(...)
+#define __builtin_prefetch(...)
+#define __builtin_ia32_movntq(...)
+#define __builtin_ia32_sfence(...)
+#define __builtin_ia32_pause(...)
+
+
+#define __builtin_ia32_vec_ext_v4hi(...) 0
+#define __builtin_ia32_vec_ext_v4sf(...) 0
+#define __builtin_ia32_vec_ext_v4si(...) 0
+
+#define __builtin_ia32_loadups(...) get128()
+#define __builtin_ia32_loadupd(...) get128d()
+
+#define __builtin_ia32_vec_ext_v2df(...) 0
+
+#define __builtin_ia32_psrldi128(...) get128i()
+
+#define __builtin_ia32_vec_init_v2si(...) get64()
+#define __builtin_ia32_packuswb(...) get64()
+#define __builtin_ia32_punpckhbw(...) get64()
+#define __builtin_ia32_punpckhwd(...) get64()
+#define __builtin_ia32_punpckhdq(...) get64()
+#define __builtin_ia32_punpcklbw(...) get64()
+#define __builtin_ia32_punpcklwd(...) get64()
+#define __builtin_ia32_punpckldq(...) get64()
+#define __builtin_ia32_paddb(...) get64()
+#define __builtin_ia32_paddw(...) get64()
+#define __builtin_ia32_paddd(...) get64()
+#define __builtin_ia32_paddq(...) get64()
+#define __builtin_ia32_paddsb(...) get64()
+#define __builtin_ia32_paddsw(...) get64()
+#define __builtin_ia32_paddusb(...) get64()
+#define __builtin_ia32_paddusw(...) get64()
+#define __builtin_ia32_psubb(...) get64()
+#define __builtin_ia32_psubw(...) get64()
+#define __builtin_ia32_psubd(...) get64()
+#define __builtin_ia32_psubq(...) get64()
+#define __builtin_ia32_psubsb(...) get64()
+#define __builtin_ia32_psubsw(...) get64()
+#define __builtin_ia32_psubusb(...) get64()
+#define __builtin_ia32_psubusw(...) get64()
+#define __builtin_ia32_pmaddwd(...) get64()
+#define __builtin_ia32_pmulhw(...) get64()
+#define __builtin_ia32_pmullw(...) get64()
+#define __builtin_ia32_psllw(...) get64()
+#define __builtin_ia32_psllwi(...) get64()
+#define __builtin_ia32_pslld(...) get64()
+#define __builtin_ia32_pslldi(...) get64()
+#define __builtin_ia32_psllq(...) get64()
+#define __builtin_ia32_psllqi(...) get64()
+#define __builtin_ia32_psraw(...) get64()
+#define __builtin_ia32_psrawi(...) get64()
+#define __builtin_ia32_psrad(...) get64()
+#define __builtin_ia32_psradi(...) get64()
+#define __builtin_ia32_psrlw(...) get64()
+#define __builtin_ia32_psrlwi(...) get64()
+#define __builtin_ia32_psrld(...) get64()
+#define __builtin_ia32_psrldi(...) get64()
+#define __builtin_ia32_psrlq(...) get64()
+#define __builtin_ia32_psrlqi(...) get64()
+#define __builtin_ia32_pcmpeqb(...) get64()
+#define __builtin_ia32_pcmpgtb(...) get64()
+#define __builtin_ia32_pcmpeqw(...) get64()
+#define __builtin_ia32_pcmpgtw(...) get64()
+#define __builtin_ia32_pcmpeqd(...) get64()
+#define __builtin_ia32_pcmpgtd(...) get64()
+#define __builtin_ia32_vec_init_v2si(...) get64()
+#define __builtin_ia32_vec_init_v4hi(...) get64()
+#define __builtin_ia32_vec_init_v8qi(...) get64()
+#define __builtin_ia32_emms(...)
 #endif

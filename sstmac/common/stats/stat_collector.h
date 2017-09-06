@@ -63,9 +63,11 @@ struct stat_descr_t {
   const char* suffix;
 
   stat_descr_t() :
-    dump_all(false), reduce_all(true),
-    dump_main(true), suffix(nullptr),
-    need_delete(false)
+    dump_all(false),
+    reduce_all(true),
+    dump_main(true),
+    need_delete(false),
+    suffix(nullptr)
   {
   }
 };

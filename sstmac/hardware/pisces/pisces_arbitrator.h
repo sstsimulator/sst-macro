@@ -154,7 +154,7 @@ class pisces_simple_arbitrator :
 
   timestamp head_tail_delay(pisces_payload *pkt) override {
     //no delay
-    return timestamp(0,timestamp::exact);
+    return timestamp();
   }
 
   int bytes_sending(timestamp now) const override;

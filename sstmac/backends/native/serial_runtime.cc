@@ -122,51 +122,6 @@ serial_runtime::bcast(void* buffer, int bytes, int root)
  //do nothning
 }
 
-void
-serial_runtime::send_event(timestamp t, switch_id tid, event* ev)
-{
-  spkt_throw_printf(sprockit::illformed_error,
-     "serial_runtime::send_message: should not be sending any messages");
-}
-
-void
-serial_runtime::wait_merge_array(int tag)
-{
-}
-
-void
-serial_runtime::declare_merge_array(void* buffer, int size, int tag)
-{
-  merge_refcounts_[tag]++;
-}
-
-bool
-serial_runtime::release_merge_array(int tag)
-{
- int& refcount = merge_refcounts_[tag];
- --refcount;
- if (refcount == 0){
-   merge_refcounts_.erase(tag);
-   return false;
- }
- else {
-   return true;
- }
-}
-
-void
-serial_runtime::do_send_message(int lp, void* buffer, int size)
-{
-  spkt_throw_printf(sprockit::illformed_error,
-     "serial_runtime::do_send_message: should not be sending any messages");
-}
-
-void
-serial_runtime::do_send_recv_messages(std::vector<void*>& buffers)
-{
-  spkt_throw_printf(sprockit::illformed_error,
-     "serial_runtime::do_send_recv_messages: should not be sending any messages");
-}
 
 }
 }
