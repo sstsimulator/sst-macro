@@ -132,7 +132,7 @@ int main(int argc, char** argv)
 
   int seed = std::atoi(argv[3]);
   if (seed == 0){
-    crash("bad seed value - must be non-zero integer");
+    crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
   }
 
   if (num_senders % num_recvers){
@@ -151,9 +151,11 @@ int main(int argc, char** argv)
     senders[i] = 2*i; //senders are even
   }
 
-  std::mt19937 mt(seed);
-  std::shuffle(recvers.begin(), recvers.end(), mt);
-  std::shuffle(senders.begin(), senders.end(), mt);
+  if (seed > 0){ //don't shuffle if negative
+    std::mt19937 mt(seed);
+    std::shuffle(recvers.begin(), recvers.end(), mt);
+    std::shuffle(senders.begin(), senders.end(), mt);
+  }
 
   std::vector<int> senders_to_me;
   int recver_from_me = -1;
