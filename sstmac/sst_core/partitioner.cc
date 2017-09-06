@@ -98,11 +98,6 @@ class dummy_runtime : public parallel_runtime
    */
   void send_event(timestamp t, switch_id sid, event* ev) {}
 
- protected:
-  void do_send_message(int lp, void* buffer, int size) override {}
-
-  void do_send_recv_messages(std::vector<void*>& buffers) override {}
-
 
 };
 

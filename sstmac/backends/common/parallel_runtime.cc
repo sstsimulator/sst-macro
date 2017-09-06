@@ -201,6 +201,7 @@ parallel_runtime::~parallel_runtime()
   if (part_) delete part_;
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
 void
 parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
 {
@@ -213,10 +214,6 @@ parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
 
 void parallel_runtime::send_event(int thread_id, ipc_event_t* iev)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_throw_printf(sprockit::unimplemented_error,
-      "parallel_runtime::send_event: should not be called on integrated core");
-#else
   int lp;
   switch (iev->dst.type()){
     case device_id::router:
@@ -244,8 +241,8 @@ void parallel_runtime::send_event(int thread_id, ipc_event_t* iev)
   ser.start_packing(ptr, buffer_space_needed);
   run_serialize(ser, iev);
   buff.shift(buffer_space_needed);
-#endif
 }
+#endif
 
 void
 parallel_runtime::reset_send_recv()

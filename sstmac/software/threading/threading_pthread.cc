@@ -53,9 +53,9 @@ MakeDebugSlot(pth);
 namespace sstmac {
 namespace sw {
 
+#ifdef SSTMAC_HAVE_PTHREAD
 pthread_mutex_t threading_pthread::context_switch_mutex_;
 
-#ifdef SSTMAC_HAVE_PTHREAD
 void
 threading_pthread::send_signal(threadcontext_t* context)
 {
