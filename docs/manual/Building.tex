@@ -32,7 +32,7 @@ The following are dependencies for \sstmacro.
 
 \begin{itemize}
 \item (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section \ref{subsec:build:downloading}).
-\item (Mac) You need the GNU pth library. Downloadable from MacPorts (see Section \ref{subsubsec:pth})
+\item (Mac) You need either the GNU pth library or Boost fcontext. GNU pth is downloadable from MacPorts (see Section \ref{subsubsec:pth})
 \item Autoconf: 2.68 or later 
 \item Automake: 1.11.1 or later 
 \item Libtool: 2.4 or later 
@@ -41,6 +41,7 @@ The following are dependencies for \sstmacro.
 \item (optional) Doxygen and Graphviz are needed to build the documentation.
 \item (optional) KCacheGrind or QCacheGrind to display call graphs
 \item (optional) Clang development libraries to enable SST source-to-source compiler
+\item (optional) Boost 1.65 and above for fcontext user-space threading.
 \end{itemize}
 
 \subsection{Configuration and Building}
@@ -76,7 +77,8 @@ The workflow for installing and running on the standalone SST/macro core:
 \subsubsection{Build SST core}\label{subsec:buildSSTCore}
 The recommended mode for maximum flexibility is to run using the SST core downloadable from \url{http://sst-simulator.org/SSTPages/SSTMainDownloads}.
 Building and installing sets up the discrete event simulation core required for all SST elements.
-SST core no longer has Boost dependencies! Directions for building Boost (if desired) are still below in \ref{subsubsec:boost}
+SST core no longer has Boost dependencies! Directions for building Boost (if desired) are still below in \ref{subsubsec:boost}.
+Boost is still useful for optimal performance through the fcontext library. 
 
 \subsubsection{Build SST/macro element library}\label{subsec:buildElementLib}
 If using the repo (not a release tarball), go to the top-level source directory and run:
@@ -149,30 +151,57 @@ For MacPorts installation, this means configuring SST/macro with:
 ../configure --with-pth=/opt/local
 \end{ShellCmd}
 
-\subsection{Building Boost (no longer required)}\label{subsubsec:boost}
-We recommend two files: \inlineshell{user-config.jam} to configure the Boost compiler flags and a \inlineshell{runme.sh} that bootstraps, compiles, and installs the prerequisite Boost libraries. For GCC, the \inlineshell{user-config.jam} should go in the top-level home directory and the file should contain the line:
+\subsection{Boost 1.65 and fcontext}\label{subsubsec:boost}
+Boost is no longer required for SST core.
+However, Boost 1.65 and above support the fcontext library for user-space threading.
+This is provides much greater performance than GNU pth or standard Linux ucontext.
+Users may see as much as a 20\% improvement in simulator performance.
+
+You will need a \inlineshell{user-config.jam} to configure the Boost compiler flags.
+You then need to bootstrap, compile, and install the prerequisite Boost libraries. 
+For GCC, the \inlineshell{user-config.jam} should go in the top-level home directory and the file should contain the line:
 
 \begin{ViFile}
-using gcc : : $PATH_TO_MPIC++  : <compileflags>-std=c++1y ;
+using gcc : : $PATH_TO_C++  : <compileflags>-std=c++1y ;
 \end{ViFile}
-For Clang on Mac, use:
+For clang, use e.g.
 
 \begin{ViFile}
-using clang : : $PATH_TO_CLANG_MPIC++  : <compileflags>-std=c++1y <linkflags>-stdlib=libc++ 
+using clang : : $PATH_TO_CLANG++  : <compileflags>-std=c++1y <linkflags>-stdlib=libc++ 
 \end{ViFile}
-
-We recommend Boost 1.59.  Other Boost versions should work as well, but this seems the most stable.  In the top-level Boost directory, make a script \inlineshell{runme.sh} that contains:
+In the top-level Boost directory, run:
 
 \begin{ViFile}
 ./bootstrap.sh \
-  --with-libraries=program_options,serialization,filesystem \
-  --with-toolset=gcc
+  --with-libraries=context \
+  --with-toolset=clang
 
 ./b2 ---prefix=$INSTALL
-./b2 --layout=tagged --prefix=$INSTALL
 \end{ViFile}
+The toolset can be changed to use gcc by replacing clang with gcc in each of the \inlineshell{user-config.jam} and run commands.
+The installation prefix should be set to the desired folder.
 
-The toolset can be changed from gcc to clang, as needed.  For maximum safety, Boost should install both ``tagged" versions of libraries and un-tagged versions.  Once Boost is installed with these options, configuration and installation of SST core should be straightforward following documentation in the core library.
+Once installed, fcontext can be used in SST/macro by configuring with:
+\begin{ShellCmd}
+../configure --with-fcontext=$INSTALL
+\end{ShellCmd}
+using the same installation folder used for Boost. 
+fcontext is not the default context-switching library for SST due to rpath problems on certain platforms.
+GNU pth and ucontext are used by default instead.
+To activate fcontext, you can either set the environment variable:
+
+\begin{ShellCmd}
+SSTMAC_THREADING=fcontext
+\end{ShellCmd}
+or in the parameter file specify (more details in Section \ref{sec:parameters}):
+
+\begin{ViFile}
+node {
+ os {
+  context = fcontext
+ }
+}
+\end{ViFile}
 
 \subsection{Known Issues}
 \label{subsec:build:issues}
@@ -297,7 +326,8 @@ The setup script places each tarball in the following subfolders of the main LLV
 \end{itemize}
 
 Only Clang is a strict dependency. Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
-You should not lunger need to use Clang to build Clang, but for the most stable results you should a pre-existing Clang compiler to build the Clang development libraries.
+You no longer need to use Clang to build Clang. 
+For the most stable results, though, you should a pre-existing Clang compiler to build the Clang development libraries.
 
 \begin{ViFile}
 cmake ../llvm \
