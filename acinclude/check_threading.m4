@@ -65,7 +65,7 @@ AC_ARG_WITH(fcontext,
     enable_fcontext=$withval
   ], [
     user_with_fcontext=no
-    enable_fcontext=yes
+    enable_fcontext=no
   ]
 )
 
@@ -272,6 +272,7 @@ if test "$enable_fcontext" != "no"; then
   CPPFLAGS=$SAVE_CPPFLAGS
 else
 AM_CONDITIONAL(HAVE_FCONTEXT, false)
+AM_CONDITIONAL(HAVE_FCONTEXT_LIBDIR, false)
 fi
 
 

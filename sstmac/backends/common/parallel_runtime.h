@@ -128,9 +128,13 @@ class parallel_runtime :
 
   };
 
-  static const int global_root;
+#if !SSTMAC_INTEGRATED_SST_CORE
+  void send_event(int thread_id, ipc_event_t* iev);
 
   static void run_serialize(serializer& ser, ipc_event_t* iev);
+#endif
+
+  static const int global_root;
 
   virtual int64_t allreduce_min(int64_t mintime) = 0;
 
@@ -176,9 +180,9 @@ class parallel_runtime :
 
   virtual void init_partition_params(sprockit::sim_parameters* params);
 
-  virtual void send_recv_messages();
-
-  void send_event(int thread_id, ipc_event_t* iev);
+  virtual timestamp send_recv_messages(timestamp vote){
+    return vote;
+  }
 
   void reset_send_recv();
 
@@ -202,8 +206,12 @@ class parallel_runtime :
     return part_;
   }
 
-  const std::vector<comm_buffer>& recv_buffers() const {
-    return recv_buffers_;
+  int num_recvs_done() const {
+    return num_recvs_done_;
+  }
+
+  const comm_buffer& recv_buffer(int idx) const {
+    return recv_buffers_[idx];
   }
 
   static parallel_runtime* static_runtime(sprockit::sim_parameters* params);
@@ -223,6 +231,9 @@ class parallel_runtime :
    int me_;
    std::vector<comm_buffer> send_buffers_;
    std::vector<comm_buffer> recv_buffers_;
+   std::vector<int> sends_done_;
+   int num_sends_done_;
+   int num_recvs_done_;
    int buf_size_;
    partition* part_;
    static parallel_runtime* static_runtime_;

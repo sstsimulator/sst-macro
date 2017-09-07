@@ -57,16 +57,16 @@ RegisterKeywords(
 namespace sstmac {
 namespace mpi {
 
-void pair_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
+void
+mpi_runtime::vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
 {
-  int* in = (int*) invec;
-  int* out = (int*) inoutvec;
+  send_recv_vote* in = (send_recv_vote*) invec;
+  send_recv_vote* out = (send_recv_vote*) inoutvec;
   int length = *len;
   for (int i=0; i < length; ++i){
-    int* inpair = &in[2*i];
-    int* outpair = &out[2*i];
-    outpair[0] += inpair[0];
-    outpair[1] += inpair[1];
+    out[i].time_vote = std::min(out[i].time_vote, in[i].time_vote);
+    out[i].max_bytes = std::max(out[i].max_bytes, in[i].max_bytes);
+    out[i].num_sent += in[i].num_sent;
   }
 }
 
@@ -146,8 +146,8 @@ void
 mpi_runtime::init_runtime_params(sprockit::sim_parameters* params)
 {
   requests_.resize(2*nproc_);
-  bytes_sent_.resize(nproc_);
-  bytes_recvd_.resize(nproc_);
+  statuses_.resize(2*nproc_);
+  votes_.resize(nproc_);
   parallel_runtime::init_runtime_params(params);
 }
 
@@ -157,6 +157,17 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
   init_size(params))
 {
   epoch_ = 0;
+  int rc = MPI_Op_create(&vote_reduce_function, 1, &vote_op_);
+  if (rc != MPI_SUCCESS){
+    sprockit::abort("failed making vote MPI op");
+  }
+
+  rc = MPI_Type_contiguous(3, MPI_LONG_LONG_INT, &vote_type_);
+  if (rc != MPI_SUCCESS){
+    sprockit::abort("failed making vote MPI datatype");
+  }
+
+  MPI_Type_commit(&vote_type_);
 }
 
 int
@@ -205,37 +216,59 @@ mpi_runtime::bcast(void *buffer, int bytes, int root)
   MPI_Bcast(buffer, bytes, MPI_BYTE, root, MPI_COMM_WORLD);
 }
 
-void
-mpi_runtime::send_recv_messages()
+timestamp
+mpi_runtime::send_recv_messages(timestamp vote)
 {
   int reqIdx = 0;
+  static int payload_tag = 42;
+  static int next_payload_tag = 43;
   for (int i=0; i < nproc_; ++i){
     comm_buffer& comm = send_buffers_[i];
     int size = comm.bytesUsed();
+    votes_[i].time_vote = vote.ticks_int64();
+    votes_[i].max_bytes = size;
     if (size){
-      debug_printf(sprockit::dbg::parallel, "lp %d sending %d bytes to lp %d on epoch %d",
+      votes_[i].num_sent = 1;
+      debug_printf(sprockit::dbg::parallel, "LP %d sending %d bytes to lp %d on epoch %d",
                    me_, size, i, epoch_);
-      MPI_Isend(comm.buffer(), size, MPI_BYTE, i, epoch_, MPI_COMM_WORLD, &requests_[reqIdx++]);
-    }
-    bytes_sent_[i] = size;
-  }
-
-  MPI_Alltoall(bytes_sent_.data(), 1, MPI_INT, bytes_recvd_.data(), 1, MPI_INT, MPI_COMM_WORLD);
-
-  for (int i=0; i < nproc_; ++i){
-    int size = bytes_recvd_[i];
-    if (size){
-      comm_buffer& comm = recv_buffers_[i];
-      comm.ensureSpace(size);
-      debug_printf(sprockit::dbg::parallel, "lp %d receiving %d bytes from lp %d on epoch %d",
-                   me_, size, i, epoch_);
-      MPI_Irecv(comm.buffer(), size, MPI_BYTE, i, epoch_, MPI_COMM_WORLD, &requests_[reqIdx++]);
-      comm.shift(size);
+      MPI_Isend(comm.buffer(), size, MPI_BYTE, i,
+                payload_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
+      sends_done_[num_sends_done_++] = i;
+    } else {
+      votes_[i].num_sent = 0;
     }
   }
 
-  MPI_Waitall(reqIdx, requests_.data(), MPI_STATUSES_IGNORE);
+  int num_pending_sends = reqIdx;
+
+  send_recv_vote incoming;
+  MPI_Reduce_scatter_block(votes_.data(), &incoming, 1, vote_type_, vote_op_, MPI_COMM_WORLD);
+  debug_printf(sprockit::dbg::parallel, "LP %d receiving %d messages from partners",
+               me_, incoming.num_sent);
+  for (int i=0; i < incoming.num_sent; ++i){
+    comm_buffer& comm = recv_buffers_[i];
+    comm.ensureSpace(incoming.max_bytes);
+    debug_printf(sprockit::dbg::parallel, "LP %d receiving maximum %lu bytes from sender %d",
+                 me_, incoming.max_bytes, i);
+    MPI_Irecv(comm.buffer(), incoming.max_bytes, MPI_INT, MPI_ANY_SOURCE,
+              payload_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
+    ++num_recvs_done_;
+  }
+
+  int num_pending_requests = reqIdx;
+
+  MPI_Waitall(num_pending_requests, requests_.data(), statuses_.data());
+
+  for (int i=0; i < incoming.num_sent; ++i){
+    int sizeRecvd;
+    auto& comm = recv_buffers_[i];
+    MPI_Get_count(&statuses_[i+num_pending_sends], MPI_BYTE, &sizeRecvd);
+    comm.shift(sizeRecvd);
+  }
+
+  std::swap(payload_tag, next_payload_tag);
   ++epoch_;
+  return timestamp(incoming.time_vote, timestamp::exact);
 }
 
 void

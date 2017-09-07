@@ -82,7 +82,7 @@ class mpi_runtime :
 
   void init_runtime_params(sprockit::sim_parameters* params) override;
 
-  void send_recv_messages() override;
+  timestamp send_recv_messages(timestamp vote) override;
 
  protected:
   void do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root);
@@ -94,12 +94,22 @@ class mpi_runtime :
   int init_size(sprockit::sim_parameters* params);
 
  private:
-   std::vector<MPI_Request> requests_;
-   std::vector<int> bytes_sent_;
-   std::vector<int> bytes_recvd_;
+  struct send_recv_vote {
+    uint64_t time_vote;
+    uint64_t num_sent;
+    uint64_t max_bytes;
+  };
 
-   int epoch_;
+  std::vector<MPI_Request> requests_;
+  std::vector<MPI_Status> statuses_;
+  std::vector<send_recv_vote> votes_;
 
+  MPI_Datatype vote_type_;
+  MPI_Op vote_op_;
+
+  int epoch_;
+
+  static void vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype);
 };
 
 }

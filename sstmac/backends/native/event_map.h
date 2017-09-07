@@ -68,17 +68,16 @@ class event_map :
  public:
   event_map(sprockit::sim_parameters* params, parallel_runtime* rt);
 
-  virtual void run();
+  virtual void run() override;
 
-  ~event_map() throw ();
+  ~event_map() throw () {}
 
-  void clear(timestamp zero_time = timestamp());
-
-  void cancel_all_messages(device_id mod);
-
-  bool empty() const {
-    return queue_.empty();
+  void clear(timestamp zero_time) override {
+    queue_.clear();
+    set_now(zero_time);
   }
+
+  void cancel_all_messages(device_id mod) override ;
 
   virtual bool vote_to_terminate(){
     return true;
@@ -87,13 +86,22 @@ class event_map :
  protected:
   friend class multithreaded_event_container;
 
-  event_queue_entry* pop_next_event();
+  event_queue_entry* pop_next_event(){
+    queue_t::iterator it = queue_.begin();
+    event_queue_entry* ev = *it;
+    queue_.erase(it);
+    return ev;
+  }
 
-  void add_event(event_queue_entry* ev);
-
-  void schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev);
-
-  void finish();
+  void schedule(timestamp start_time, uint32_t seqnum, event_queue_entry* ev) override {
+    if (start_time < now()) {
+      spkt_abort_printf("event_map::schedule: scheduling event in the past: now=%ld units, ev=%ld units",
+                       now().ticks(), start_time.ticks());
+    }
+    ev->set_time(start_time);
+    ev->set_seqnum(seqnum);
+    queue_.insert(ev);
+  }
 
   virtual void do_next_event();
 
