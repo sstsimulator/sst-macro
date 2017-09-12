@@ -206,12 +206,6 @@ ftq_calendar::dump_global_data()
 }
 
 void
-ftq_calendar::simulation_finished(timestamp t_end)
-{
-
-}
-
-void
 ftq_calendar::collect(int event_typeid, int aid, int tid, long ticks_begin,
                       long num_ticks)
 {

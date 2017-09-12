@@ -186,11 +186,6 @@ graph_viz::dump_global_data()
 }
 
 void
-graph_viz::simulation_finished(timestamp t)
-{
-}
-
-void
 graph_viz::add_call(
   int ncalls,
   long count,

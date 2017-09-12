@@ -66,7 +66,7 @@ typedef SST::Event::HandlerBase link_handler;
 namespace sstmac {
 typedef event_handler link_handler;
 }
-#include <sstmac/common/event_manager.h>
+#include <sstmac/common/event_manager_fwd.h>
 #endif
 
 namespace sstmac {
@@ -77,6 +77,7 @@ class event_scheduler :
   public sprockit::printable
 {
   friend class event_subcomponent;
+  friend class clock_cycle_event_map;
   friend class event_component;
   friend class local_link;
   friend class ipc_link;
@@ -166,16 +167,25 @@ class event_scheduler :
 #else
  public:
   timestamp now() const {
-    return eventman_->now();
-  }
-
-  int nthread() const {
-    return eventman_->nthread();
+    return now_;
   }
 
   event_manager* event_mgr() const {
     return eventman_;
   }
+
+  /**
+   * @brief run_events
+   * @param event_horizon
+   * @return Whether no more events or just hit event horizon
+   */
+  timestamp run_events(timestamp event_horizon);
+
+  void clear_events() {
+    event_queue_.clear();
+  }
+
+  void schedule(timestamp t, event_queue_entry* ev);
 
  private:
   /**
@@ -185,8 +195,6 @@ class event_scheduler :
   * @param msg The message to deliver to the handler
   */
   void schedule(timestamp t, event_handler* handler, event* ev);
-
-  void schedule(timestamp t, event_queue_entry* ev);
 
   void schedule_now(event_queue_entry* ev);
 
@@ -210,11 +218,25 @@ class event_scheduler :
   event_manager* eventman_;
   uint32_t seqnum_;
   uint32_t id_;
+  bool registered_event_;
+  timestamp event_horizion_;
+  timestamp now_;
 
-  std::set<event_queue_entry*> event_queue_;
+  struct event_compare {
+    bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
+      bool neq = lhs->time() != rhs->time();
+      if (neq) return lhs->time() < rhs->time();
 
- private:
-  void sanity_check(timestamp t);
+      if (lhs->src_component_id() == rhs->src_component_id()){
+        return lhs->seqnum() < rhs->seqnum();
+      } else {
+        return lhs->src_component_id() < rhs->src_component_id();
+      }
+    }
+
+  };
+  typedef std::set<event_queue_entry*, event_compare> queue_t;
+  queue_t event_queue_;
 #endif
 
 };
@@ -388,37 +410,6 @@ class local_link : public event_link {
 
 };
 
-class centralized_link : public event_link {
- public:
-  centralized_link(event_manager* mgr, event_scheduler* sched, event_handler* hand) :
-    mgr_(mgr), handler_(hand),
-    event_link(sched)
-  {
-  }
-
-  void handle(event *ev) override {
-    handler_->handle(ev);
-  }
-
-  void send(timestamp arrival, event *ev) override {
-    uint32_t seqnum = scheduler_->next_seqnum();
-    auto qe = new handler_event_queue_entry(ev, handler_, scheduler_->component_id());
-    mgr_->schedule(arrival, seqnum, qe);
-  }
-
-  void deadlock_check() override {
-    handler_->deadlock_check();
-  }
-
-  void deadlock_check(event* ev) override {
-    handler_->deadlock_check(ev);
-  }
-
- private:
-  event_manager* mgr_;
-  event_handler* handler_;
-};
-
 class ipc_link : public event_link {
  public:
   ipc_link(event_manager* mgr, int rank,
@@ -443,18 +434,7 @@ class ipc_link : public event_link {
 
   void deadlock_check(event* ev) override {}
 
-  void send(timestamp arrival, event* ev) override {
-    ipc_event_t iev;
-    iev.src = src_;
-    iev.dst = dst_;
-    iev.seqnum = scheduler_->next_seqnum();
-    iev.ev = ev;
-    iev.t = arrival;
-    iev.rank = rank_;
-    iev.credit = is_credit_;
-    iev.port = port_;
-    mgr_->ipc_schedule(&iev);
-  }
+  void send(timestamp arrival, event* ev) override;
 
  private:
   bool is_credit_;

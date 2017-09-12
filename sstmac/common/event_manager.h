@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/event_handler_fwd.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/stats/stat_collector.h>
 #include <sprockit/sim_parameters_fwd.h>
@@ -91,6 +92,10 @@ struct ipc_event_t {
 class event_manager
 {
   DeclareFactory(event_manager, parallel_runtime*)
+
+  FactoryRegister("map", event_manager, event_manager,
+      "Implements a basic event manager running in serial")
+
   friend class event_component;
   friend class event_subcomponent;
   friend class event_scheduler;
@@ -98,6 +103,8 @@ class event_manager
   friend class native::manager;
 
  public:
+  event_manager(sprockit::sim_parameters* params, parallel_runtime* rt);
+
   bool is_complete() {
     return complete_;
   }
@@ -106,15 +113,9 @@ class event_manager
 
   virtual ~event_manager(){}
 
-  virtual void clear(timestamp zero_time = timestamp()) = 0;
+  virtual void run();
 
-  virtual void run() = 0;
-
-  virtual void cancel_all_messages(uint32_t component_id) = 0;
-
-  timestamp now() const {
-    return now_;
-  }
+  void cancel_all_messages(uint32_t component_id);
 
   void register_stat(
     stat_collector* stat,
@@ -130,10 +131,14 @@ class event_manager
     return rt_;
   }
 
+  event_scheduler* active_scheduler() const {
+    return active_scheduler_;
+  }
+
   void finish_stats();
 
-  void stop() {
-    stopped_ = true;
+  timestamp final_time() const {
+    return final_time_;
   }
 
   /** 
@@ -141,13 +146,6 @@ class event_manager
    * */
   int me() const {
     return me_;
-  }
-
-  /**
-   * @return The unique worker id amongst all threads on all ranks
-   */
-  int worker_id() const {
-    return me_ * nthread_ + thread_id_;
   }
 
   int nproc() const {
@@ -158,53 +156,48 @@ class event_manager
     return nproc_ * nthread_;
   }
 
-
-  // ---- These are interface functions for PDES, they should
-  // ----   only get called when running in parallel mode
-  virtual void ipc_schedule(ipc_event_t* iev);
-
-  virtual void multithread_schedule(
-    int srcthread,
-    int dstthread,
-    uint32_t seqnum,
-    event_queue_entry* ev);
-
-  int thread_id() const {
-    return thread_id_;
-  }
-
   int nthread() const {
     return nthread_;
   }
 
-  virtual event_manager* ev_man_for_thread(int thread_id) const;
-
-  virtual void set_interconnect(hw::interconnect* interconn){}
-
-  virtual void schedule_stop(timestamp until);
-
- protected:
-  event_manager(sprockit::sim_parameters* params, parallel_runtime* rt);
-
-  void set_now(timestamp ts) {
-    now_ = ts;
+  virtual timestamp vote_to_terminate() {
+    return no_events_left_time_;
   }
 
-  virtual void finish_stats(stat_collector* main,
-                  const std::string& name, timestamp end);
+  void ipc_schedule(ipc_event_t* iev);
+
+  void register_component(timestamp t, event_scheduler* comp){
+    registry_.insert(std::make_pair(t,comp));
+  }
+
+  void set_interconnect(hw::interconnect* ic);
+
+  void schedule_stop(timestamp until);
+
+ protected:
+  virtual void finish_stats(stat_collector* main, const std::string& name);
+
+  virtual timestamp receive_incoming_events(timestamp vote) {
+    return vote;
+  }
 
  protected:
   bool complete_;
-  bool stopped_;
-  bool finish_on_stop_;
+  timestamp min_ipc_time_;
+  timestamp final_time_;
   parallel_runtime* rt_;
-  int thread_id_;
+  hw::interconnect* interconn_;
+  event_scheduler* active_scheduler_;
 
   int me_;
 
   int nproc_;
 
   int nthread_;
+
+  timestamp lookahead_;
+
+  timestamp no_events_left_time_;
 
  private:
   struct stats_entry {
@@ -217,13 +210,22 @@ class event_manager
     stats_entry() : main_collector(nullptr), need_delete(false)
     {}
   };
+
+
+  struct event_compare {
+    bool operator()(const std::pair<timestamp,event_scheduler*>& lhs,
+                    const std::pair<timestamp,event_scheduler*>& rhs) {
+      if (lhs.first == rhs.first){
+        return lhs.second->component_id() < rhs.second->component_id();
+      } else {
+        return lhs.first < rhs.first;
+      }
+    }
+  };
+  typedef std::set<std::pair<timestamp,event_scheduler*>, event_compare> registry_t;
+  registry_t registry_;
+
   std::map<std::string, stats_entry> stats_;
-
-  timestamp now_;
-
- private:
-  virtual void schedule(timestamp start_time, uint32_t seqnum,
-                        event_queue_entry* event_queue_entry) = 0;
 
 };
 
@@ -235,13 +237,7 @@ class null_event_manager : public event_manager
   {
   }
 
-  void schedule(timestamp start_time, uint32_t seqnum, event_queue_entry *event_queue_entry){}
-  void cancel_all_messages(uint32_t canceled_comp_id){}
-  void clear(timestamp time){}
-  void run(){}
-  bool empty() const {
-    return true;
-  }
+  void run() override {}
 
 };
 #endif

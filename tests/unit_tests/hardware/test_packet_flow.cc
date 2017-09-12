@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/backends/native/event_map.h>
+#include <sstmac/common/event_manager.h>
 #include <sstmac/backends/native/serial_runtime.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
@@ -60,14 +60,14 @@ using namespace sstmac::sw;
 class test_message :
     public network_message
 {
-    protected:
-        int num_bytes_;
+ protected:
+  int num_bytes_;
 
-    public:
-        test_message(int num_bytes) :
-            network_message(app_id(0), naddr(0), naddr(1), num_bytes)
-        {
-        }
+ public:
+  test_message(int num_bytes) :
+      network_message(app_id(0), naddr(0), naddr(1), num_bytes)
+  {
+  }
 
 };
 
@@ -84,7 +84,7 @@ test_arbitrator(UnitTest& unit)
   params["bandwidth"] = 1e9;
   parallel_runtime* rt = new native::serial_runtime(&params);
 
-  native::event_map* ev_mgr = new native::event_map(&params, rt);
+  event_manager ev_mgr(&params, rt);
 
   pisces_bandwidth_arbitrator* arb
       = new pisces_cut_through_arbitrator(&params);

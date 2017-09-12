@@ -102,12 +102,5 @@ stat_global_int::clear()
 {
 }
 
-void
-stat_global_int::simulation_finished(timestamp end)
-{
-}
-
-
-
 
 }

@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 
-#include <sstmac/backends/native/event_map.h>
+#include <sstmac/common/event_manager.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 
@@ -63,7 +63,7 @@ enum class vote_type_t {
 };
 
 class clock_cycle_event_map :
-  public event_map
+  public event_manager
 {
   FactoryRegister("clock_cycle_parallel", event_manager, clock_cycle_event_map,
       "Implements a parallel event queue with synchronization on regular clock cycles")
@@ -72,41 +72,21 @@ class clock_cycle_event_map :
 
   virtual ~clock_cycle_event_map() throw() {}
 
-  virtual void run() override;
+  timestamp vote_to_terminate() override;
 
-  bool vote_to_terminate() override;
-
-  virtual void set_interconnect(hw::interconnect* interconn) override;
-
-  void ipc_schedule(ipc_event_t* iev) override;
-
- protected:
-  friend class multithreaded_event_container;
-
+ private:
   void schedule_incoming(ipc_event_t* iev);
 
-  void do_next_event() override;
-
-  timestamp next_event_time() const {
-    return (queue_.empty() || stopped_) ? no_events_left_time_ : (*queue_.begin())->time();
-  }
+  void run() override;
 
   /**
    * @brief receive_incoming_events
    * @param vote The minimum event time I have
    * @return The minimum event time across all LPs
    */
-  timestamp receive_incoming_events(timestamp vote);
+  timestamp receive_incoming_events(timestamp vote) override;
 
- protected:
-  timestamp next_time_horizon_;
-  timestamp lookahead_;
-  timestamp no_events_left_time_;
-  timestamp last_vote_result_;
-  timestamp current_vote_result_;
-  timestamp min_ipc_time_;
-  std::vector<std::vector<ipc_event_t>> thread_incoming_;
-  hw::interconnect* interconn_;
+ private:
   int epoch_;
 
 };

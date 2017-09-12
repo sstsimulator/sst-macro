@@ -51,7 +51,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/common/sim_partition.h>
@@ -78,18 +77,6 @@ interconnect* interconnect::static_interconnect_ = nullptr;
 sprockit::StaticKeywordRegisterRegexp node_failure_ids_keyword("node_failure_\\d+_id");
 sprockit::StaticKeywordRegisterRegexp node_failure_time_keyword("node_failure_\\d+_time");
 #endif
-
-connectable_component*
-interconnect::component(uint32_t id) const
-{
-  if (id >= logp_id_cutoff_){
-    return logp_overlay_switches_[id-logp_id_cutoff_];
-  } else if (id >= switch_id_cutoff_){
-    return switches_[id-switch_id_cutoff_];
-  } else {
-    return nodes_[id];
-  }
-}
 
 
 interconnect*
@@ -141,6 +128,8 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   num_switches_ = topology_->num_switches();
   runtime::set_topology(topology_);
 
+  components_.resize(topology_->num_nodes() + topology_->num_switches() + rt->nproc());
+
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   partition_ = part;
@@ -172,7 +161,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   netlinks_.resize(top->max_netlink_id());
 
   local_logp_switch_ = my_rank;
-  logp_switch* local_logp_switch;
+  int id_offset = topology_->num_nodes() + topology_->num_switches();
   for (int i=0; i < nproc; ++i){
     int offset = i*nthread;
     for (int t=0; t < nthread; ++t){
@@ -180,10 +169,11 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
       switch_params->add_param_override("id", int(sid));
       uint32_t comp_id = sid + topology_->num_nodes() + topology_->num_switches();
       if (i == my_rank){
-        logp_overlay_switches_[sid] = new logp_switch(switch_params, comp_id, mgr->ev_man_for_thread(t));
+        logp_overlay_switches_[sid] = new logp_switch(switch_params, comp_id, mgr);
       } else {
         logp_overlay_switches_[sid] = nullptr;
       }
+      components_[sid + id_offset] = logp_overlay_switches_[sid];
     }
   }
 
@@ -330,7 +320,6 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
   for (int i=0; i < num_switches_; ++i){
     switch_id sid(i);
     int thread = partition_->thread_for_switch(i);
-    event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
     int target_rank = partition_->lpid_for_switch(sid);
     std::vector<topology::injection_port> nodes;
     topology_->nodes_connected_to_injection_switch(sid, nodes);
@@ -347,9 +336,10 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         node_params->add_param_override("id", int(nid));
         uint32_t comp_id = nid;
         node* nd = node::factory::get_optional_param("model", "simple", node_params,
-                                                     comp_id, thread_mgr);
+                                                     comp_id, mgr);
         nic* the_nic = nd->get_nic();
         nodes_[nid] = nd;
+        components_[nid] = nd;
 
         event_link* out_link = new local_link(nd, local_logp_switch->payload_handler(port));
         the_nic->connect_output( inj_params, nic::LogP, 0/*doesnt matter*/, out_link);
@@ -422,6 +412,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
   int my_rank = rt_->me();
   bool all_switches_same = topology_->uniform_switches();
   switch_id num_switch_ids = topology_->max_switch_id();
+  int id_offset = topology_->num_nodes();
   for (switch_id i=0; i < num_switch_ids; ++i){
     if (!topology_->switch_id_slot_filled(i))
       continue; //don't build
@@ -431,13 +422,13 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
       if (!all_switches_same)
         topology_->configure_nonuniform_switch_params(i, switch_params);
       int thread = partition_->thread_for_switch(i);
-      event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
       uint32_t comp_id = i + topology_->num_nodes();
       switches_[i] = network_switch::factory::get_param("model",
-                      switch_params, comp_id, thread_mgr);
+                      switch_params, comp_id, mgr);
     } else {
       switches_[i] = nullptr;
     }
+    components_[i+id_offset] = switches_[i];
   }
 
   for (network_switch* netsw : switches_){

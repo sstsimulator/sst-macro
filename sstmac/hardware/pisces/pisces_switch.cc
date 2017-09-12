@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_global_int.h>

@@ -49,11 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 void
-event_trace::simulation_finished(timestamp end)
-{
-}
-
-void
 event_trace::clear()
 {
   sprockit::abort("event_trace::clear: not implemented");

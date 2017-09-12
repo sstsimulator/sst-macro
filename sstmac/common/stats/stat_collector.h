@@ -85,10 +85,6 @@ class stat_collector : public sprockit::printable
  public:
   virtual ~stat_collector();
 
-  /** This is to notify that the statistics collector is done.
-   *  Do any necessary data post-processing, but do NOT dump to file */
-  virtual void simulation_finished(timestamp end) = 0;
-
   /** After post-processing, this notifies the collector to dump data to a file
    *  @param name The root of the filename to dump to */
   virtual void dump_local_data() = 0;

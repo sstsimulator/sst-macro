@@ -170,11 +170,6 @@ stat_histogram::collect(double value, int64_t count)
 }
 
 void
-stat_histogram::simulation_finished(timestamp end)
-{
-}
-
-void
 stat_time_histogram::record(timestamp t, int64_t num)
 {
   stat_histogram::collect(t.sec(), num);

@@ -265,6 +265,26 @@ event_subcomponent::event_subcomponent(event_scheduler* parent) :
   event_scheduler::init_self_link(parent->comp(), parent->self_link());
 }
 #else
+timestamp
+event_scheduler::run_events(timestamp event_horizon)
+{
+  while (!event_queue_.empty()){
+    auto iter = event_queue_.begin();
+    event_queue_entry* ev = *iter;
+    if (ev->time() >= event_horizon){
+      return ev->time();
+    } else {
+      now_ = ev->time();
+      ev->execute();
+      delete ev;
+      event_queue_.erase(iter);
+    }
+  }
+  //there are no more events to run
+  registered_event_ = false;
+  return timestamp();
+}
+
 void
 event_scheduler::send_to_link(timestamp enter, timestamp lat,
                               event_handler* handler, event *ev)
@@ -326,32 +346,32 @@ event_scheduler::schedule_delay(
   event_handler* handler,
   event* ev)
 {
-  schedule(now() + delay, handler, ev);
+  schedule(now_ + delay, handler, ev);
 }
 
 void
 event_scheduler::schedule_now(event_queue_entry* ev)
 {
-  schedule(now(), ev);
+  schedule(now_, ev);
 }
 
 void
 event_scheduler::schedule_delay(timestamp delay, event_queue_entry* ev)
 {
-  schedule(now() + delay, ev);
+  schedule(now_ + delay, ev);
 }
 
 void
 event_scheduler::schedule(timestamp t, event_queue_entry* ev)
 {
-#if SSTMAC_SANITY_CHECK
-  double delta_t = (t - now()).sec();
-  if (delta_t < -1e-9) {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "time has gone backwards %8.4e seconds", delta_t);
+  if (!registered_event_){
+    //printf("Registering %d at %8.4e\n", t.sec(), component_id());
+    eventman_->register_component(t,this);
+    registered_event_ = true;
   }
-#endif
-  eventman_->schedule(t, seqnum_++, ev);
+  ev->set_time(t);
+  ev->set_seqnum(seqnum_++);
+  event_queue_.insert(ev);
 }
 
 void
@@ -361,24 +381,10 @@ event_scheduler::register_stat(stat_collector *coll, stat_descr_t* descr)
 }
 
 void
-event_scheduler::sanity_check(timestamp t)
-{
-  double delta_t = (t - now()).sec();
-  if (delta_t < -1e-9) {
-    spkt_throw_printf(sprockit::illformed_error,
-      "time has gone backwards %8.4e seconds",
-      delta_t);
-  }
-}
-
-void
 event_scheduler::schedule(timestamp t, event_handler* handler, event* ev)
 {
-#if SSTMAC_SANITY_CHECK
-  sanity_check(t);
-#endif
   event_queue_entry* qev = new handler_event_queue_entry(ev, handler, component_id());
-  eventman_->schedule(t, seqnum_++, qev);
+  schedule(t,qev);
 }
 #endif
 
@@ -410,6 +416,21 @@ void
 event_subcomponent::setup()
 {
   //do nothing
+}
+
+void
+ipc_link::send(timestamp arrival, event *ev)
+{
+  ipc_event_t iev;
+  iev.src = src_;
+  iev.dst = dst_;
+  iev.seqnum = scheduler_->next_seqnum();
+  iev.ev = ev;
+  iev.t = arrival;
+  iev.rank = rank_;
+  iev.credit = is_credit_;
+  iev.port = port_;
+  mgr_->ipc_schedule(&iev);
 }
 
 

@@ -75,13 +75,12 @@ namespace native {
 
 clock_cycle_event_map::clock_cycle_event_map(
   sprockit::sim_parameters* params, parallel_runtime* rt) :
-  event_map(params, rt),
+  event_manager(params, rt),
   epoch_(0)
 {
   int64_t max_ticks = std::numeric_limits<int64_t>::max() - 100;
   no_events_left_time_ = timestamp(max_ticks, timestamp::exact);
   min_ipc_time_ = no_events_left_time_;
-  thread_incoming_.resize(nthread());
 }
 
 void
@@ -92,7 +91,9 @@ clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
   event_debug("epoch %d: scheduling incoming event at %12.8e to device %d:%s, payload? %d:   %s",
     epoch_, iev->t.sec(), iev->dst, dst_handler->to_string().c_str(),
     iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
-  schedule(iev->t, iev->seqnum, new handler_event_queue_entry(iev->ev, dst_handler, iev->src));
+  auto qev = new handler_event_queue_entry(iev->ev, dst_handler, iev->src);
+  qev->set_seqnum(iev->seqnum);
+  comp->schedule(iev->t, qev);
 }
 
 timestamp
@@ -110,8 +111,6 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
     vote = min_ipc_time_;
   }
   timestamp min_time = rt_->send_recv_messages(vote);
-
-  current_vote_result_ = min_time;
 
   int nthr = nthread();
   int num_recvs = rt_->num_recvs_done();
@@ -135,130 +134,26 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
   rt_->reset_send_recv();
   //reset this guy
   min_ipc_time_ = no_events_left_time_;
-  last_vote_result_ = min_time;
+  ++epoch_;
   return min_time;
 }
 
-bool
+timestamp
 clock_cycle_event_map::vote_to_terminate()
 {
-  event_debug("epoch %d: voting to terminate on thread %d", 
-    epoch_, thread_id());
+  event_debug("epoch %d: voting to terminate", epoch_);
 
   timestamp min_time = receive_incoming_events(no_events_left_time_);
-
-  ++epoch_;
-  if (min_time == no_events_left_time_){
-    return true; //done
-  } else {
-    next_time_horizon_ = min_time + lookahead_;
-    epoch_debug("epoch %d: next time horizon now %12.8e for lookahead %12.8e",
-        epoch_, next_time_horizon_.sec(), lookahead_.sec());
-    return false;
-  }
-}
-
-void
-clock_cycle_event_map::do_next_event()
-{
-  timestamp ev_time = next_event_time();
-  while (ev_time >= next_time_horizon_){
-    event_debug("epoch %d: voting NOT to terminate at time %12.8e on thread %d",
-                epoch_, ev_time.sec(), thread_id_);
-    ev_time = next_event_time();
-    timestamp min_time = receive_incoming_events(ev_time);
-    next_time_horizon_ = min_time + lookahead_;
-    epoch_debug("epoch %d: next time horizon is %12.8e for lookahead %12.8e: next event at %12.8e %sready to proceed on thread %d",
-        epoch_, next_time_horizon_.sec(), lookahead_.sec(), ev_time.sec(),
-        ((ev_time > next_time_horizon_) ? "not " : ""),
-        thread_id());
-
-
-    ++epoch_;
-  }
-
-  event_queue_entry* ev = pop_next_event();
-
-#if DEBUG_DETERMINISM
-  std::ofstream*& f = outs[ev->event_location()];
-  if (f == nullptr){
-    char fname[64];
-    sprintf(fname, "events.%d.out", int(ev->event_location().location));
-    f = new std::ofstream(fname);
-  }
-
-  *f << sprockit::printf("%ld: %d: %d<-%d", 
-    ev->time().ticks_int64(), ev->seqnum(),
-    int(ev->event_location().location), int(ev->src_location().location));
-  *f << " " << ev->to_string() << std::endl;
-#endif
-
-  set_now(ev->time());
-#if SSTMAC_DEBUG_THREAD_EVENTS
-  if (sprockit::debug::slot_active(sprockit::dbg::thread_events)){
-    event_file_ << sprockit::printf("T=%10.5fms: %s\n",
-                    ev->time().msec(), ev->to_string().c_str());
-  }
-#endif
-  ev->execute();
-  delete ev;
+  return min_time;
 }
 
 void
 clock_cycle_event_map::run()
 {
-  event_map::run();
-  uint64_t now_ticks = now().ticks_int64();
-  uint64_t final = rt_->allreduce_max(now_ticks);
-  set_now(timestamp(final, timestamp::exact));
-}
-
-#if SSTMAC_DEBUG_THREAD_EVENTS
-void
-clock_cycle_event_map::open_debug_file()
-{
-  if (sprockit::debug::slot_active(sprockit::dbg::thread_events)){
-    std::string fname = sprockit::printf("events.thread%d", thread_id());
-    event_file_.open(fname.c_str());
-  }
-}
-
-void
-clock_cycle_event_map::close_debug_file()
-{
-  if (sprockit::debug::slot_active(sprockit::dbg::thread_events)){
-    event_file_.close();
-  }
-}
-#endif
-
-void
-clock_cycle_event_map::set_interconnect(hw::interconnect* interconn)
-{
-  event_map::set_interconnect(interconn);
-  interconn_ = interconn;
-  int nworkers = rt_->nproc() * rt_->nthread();
-  if (nworkers == 1){
-    //dont need the interconnect
-    lookahead_ = timestamp(1e5);
-  }
-  else {
-    lookahead_ = interconn_->lookahead();
-  }
-  next_time_horizon_ = lookahead_;
-}
-
-void
-clock_cycle_event_map::ipc_schedule(ipc_event_t* iev)
-{
-  event_debug("epoch %d: scheduling outgoing event with cls id %" PRIu32 " at t=%12.8e to location %u\n  %s",
-    epoch_, iev->ev->cls_id(), iev->t.sec(), iev->dst,
-    sprockit::to_string(iev->ev).c_str());
-
-  if (iev->t < min_ipc_time_){
-    min_ipc_time_ = iev->t;
-  }
-  rt_->send_event(iev);
+  event_manager::run();
+  timestamp max_time;
+  uint64_t final_ticks = final_time_.ticks();
+  final_time_ = timestamp(rt_->allreduce_max(final_ticks), timestamp::exact);
 }
 
 }

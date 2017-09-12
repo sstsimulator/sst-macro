@@ -54,6 +54,7 @@ RegisterDebugSlot(event_manager);
 
 namespace sstmac {
 
+#if 0
 class stop_event : public event_queue_entry
 {
  public:
@@ -74,53 +75,81 @@ class stop_event : public event_queue_entry
   event_manager* man_;
 
 };
+#endif
 
 
 event_manager* event_manager::global = nullptr;
 
 event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime *rt) :
   rt_(rt),
-  finish_on_stop_(true),
-  stopped_(true),
-  thread_id_(0),
   nthread_(rt->nthread()),
   me_(rt->me()),
   nproc_(rt->nproc()),
-  complete_(false)
+  complete_(false),
+  active_scheduler_(nullptr)
 {
+  int64_t max_ticks = std::numeric_limits<int64_t>::max() - 100;
+  no_events_left_time_ = timestamp(max_ticks, timestamp::exact);
+  min_ipc_time_ = no_events_left_time_;
 }
 
-event_manager*
-event_manager::ev_man_for_thread(int thread_id) const
+void
+event_manager::cancel_all_messages(uint32_t component_id)
 {
-  //kind of annoying I have to const cast this
-  //this is a truly const function, though
-  return const_cast<event_manager*>(this);
+  auto comp = interconn_->component(component_id);
+  comp->clear_events();
+}
+
+void
+event_manager::set_interconnect(hw::interconnect* interconn)
+{
+  lookahead_ = interconn->lookahead();
+  interconn_ = interconn;
+}
+
+void
+event_manager::run()
+{
+  timestamp lower_bound;
+  while (lower_bound != no_events_left_time_){
+    timestamp horizon = lower_bound + lookahead_;
+    timestamp min_time = registry_.empty() ? no_events_left_time_ : registry_.begin()->first;
+    while (min_time < horizon){
+      auto iter = registry_.begin();
+      active_scheduler_ = iter->second;
+      registry_.erase(iter);
+      //printf("Running events on %d until %8.4e\n", active_scheduler_->component_id(), horizon.sec());
+      timestamp next_min_time = active_scheduler_->run_events(horizon);
+      if (next_min_time != 0){
+        //printf("... reinserting at %8.4e\n", next_min_time.sec());
+        registry_.insert(std::make_pair(next_min_time, active_scheduler_));
+      }
+      min_time = registry_.empty() ? no_events_left_time_ : registry_.begin()->first;
+    }
+    lower_bound = receive_incoming_events(min_time);
+  }
+
+  for (event_scheduler* es : interconn_->components()){
+    if (es){
+      final_time_ = es->now() > final_time_ ? es->now() : final_time_;
+    }
+  }
+
 }
 
 void
 event_manager::ipc_schedule(ipc_event_t* iev)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "%s::ipc_schedule: not valid for chosen event manager");
+  if (iev->t < min_ipc_time_){
+    min_ipc_time_ = iev->t;
+  }
+  rt_->send_event(iev);
 }
 
 void
 event_manager::schedule_stop(timestamp until)
 {
-  event_queue_entry* stopper = new stop_event(this);
-  schedule(until, 0, stopper);
-}
-
-void
-event_manager::multithread_schedule(
-    int srcthread,
-    int dstthread,
-    uint32_t seqnum,
-    event_queue_entry* ev)
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "%s::multithread_schedule: not valid for chosen event manager");
+  sprockit::abort("cannot schedule stop times currently");
 }
 
 partition*
@@ -168,11 +197,10 @@ event_manager::register_stat(
 }
 
 void
-event_manager::finish_stats(stat_collector* main, const std::string& name, timestamp t_end)
+event_manager::finish_stats(stat_collector* main, const std::string& name)
 {
   stats_entry& entry = stats_[name];
   for (stat_collector* next : entry.collectors){
-    next->simulation_finished(t_end);
     if (entry.dump_all)
       next->dump_local_data();
 
@@ -209,7 +237,7 @@ event_manager::finish_stats()
       }
     }
 
-    finish_stats(entry.main_collector, name, now());
+    finish_stats(entry.main_collector, name);
 
     if (entry.reduce_all){
       entry.main_collector->global_reduce(rt_);

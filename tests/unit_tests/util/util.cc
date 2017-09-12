@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/backends/native/serial_runtime.h>
+#include <sstmac/common/event_manager.h>
 
 using namespace sstmac;
 using namespace sstmac::hw;

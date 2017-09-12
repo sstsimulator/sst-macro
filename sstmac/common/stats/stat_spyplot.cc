@@ -198,10 +198,6 @@ stat_spyplot::dump_to_file(const std::string& froot)
   }
 }
 
-void
-stat_spyplot::simulation_finished(timestamp end)
-{
-}
 
 /**
  *

@@ -19,10 +19,6 @@ CORETESTS+= \
   test_core_apps_ping_pong_amm4 \
   test_core_apps_ping_pong_amm4_slow 
 
-if HAVE_EVENT_CALENDAR
-CORETESTS +=  test_core_apps_mpi_event_calendar 
-endif
-
 test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 6 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) --no-wall-time -f $(srcdir)/test_configs/test_compute_api.ini 

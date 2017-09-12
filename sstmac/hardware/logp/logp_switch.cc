@@ -59,7 +59,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/common/event_manager.h>

@@ -62,8 +62,6 @@ class stat_local_double :
     return "stat local double";
   }
 
-  void simulation_finished(timestamp end) override;
-
   void dump_local_data() override;
 
   void dump_global_data() override;

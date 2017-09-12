@@ -126,10 +126,6 @@ class event_queue_entry : public event
     return src_loc_;
   }
 
-#if SSTMAC_HAVE_EVENT_CALENDAR
-  event* next;
-#endif
-
  protected:
   timestamp time_;
   uint32_t dst_loc_;

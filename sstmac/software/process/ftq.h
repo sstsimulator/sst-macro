@@ -168,8 +168,6 @@ class ftq_calendar :
 
   void register_app(int aid, const std::string& appname);
 
-  void simulation_finished(timestamp end) override;
-
   void dump_local_data() override;
 
   void dump_global_data() override;

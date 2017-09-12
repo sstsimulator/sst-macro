@@ -47,9 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/backends/common/sim_partition.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
-#include <sstmac/backends/native/event_map.h>
-#endif
 #include <sstmac/backends/native/manager.h>
 #include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
 
@@ -93,9 +90,8 @@ class timestamp_prefix_fxn :
  public:
   timestamp_prefix_fxn(event_manager* mgr) : mgr_(mgr){}
 
-  std::string
-  str() {
-    double t_ms = mgr_->now().msec();
+  std::string str() {
+    double t_ms = mgr_->active_scheduler()->now().msec();
     return sprockit::printf("T=%12.8e ms:", t_ms);
   }
 
@@ -231,7 +227,7 @@ manager::run(timestamp until)
   stop();
 
 
-  return event_manager_->now();
+  return event_manager_->final_time();
 }
 
 void

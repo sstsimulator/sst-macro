@@ -392,11 +392,5 @@ stat_bytes_sent::reduce(stat_collector *coll)
   local_aggregation_->append(input->id(), input->port_map_);
 }
 
-void
-stat_bytes_sent::simulation_finished(timestamp end)
-{
-  //no op
-}
-
 }
 }

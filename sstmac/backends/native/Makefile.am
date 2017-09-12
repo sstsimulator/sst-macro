@@ -26,28 +26,17 @@ libsstmac_native_la_SOURCES = \
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \
-  event_map.h  \
-  event_calendar.h \
   serial_runtime.h \
   clock_cycle_parallel/thread_barrier.h \
   clock_cycle_parallel/clock_cycle_event_container.h 
 
 libsstmac_native_la_SOURCES += \
-  event_map.cc \
   clock_cycle_parallel/thread_barrier.cc \
   clock_cycle_parallel/clock_cycle_event_container.cc \
   serial_runtime.cc 
 endif
 
-#  clock_cycle_parallel/multithreaded_event_container.cc \
-#  clock_cycle_parallel/multithreaded_subcontainer.cc \
-#  clock_cycle_parallel/multithreaded_event_container.h \
-#  clock_cycle_parallel/multithreaded_event_container_fwd.h \
-#  clock_cycle_parallel/multithreaded_subcontainer.h 
 
-if HAVE_EVENT_CALENDAR
-libsstmac_native_la_SOURCES += event_calendar.cc
-endif
   
 
 

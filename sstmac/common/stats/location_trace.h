@@ -81,8 +81,6 @@ class location_trace :
 
   void global_reduce(parallel_runtime *rt) override;
 
-  void simulation_finished(timestamp end) override {}
-
   stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new location_trace(params);
   }

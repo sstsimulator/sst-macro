@@ -61,8 +61,6 @@ class event_trace :
     return "event trace";
   }
 
-  virtual void simulation_finished(timestamp end) override;
-
   void collect(int key_typeid,
           const std::string& name,
           node_id addr,

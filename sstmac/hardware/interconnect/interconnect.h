@@ -99,6 +99,10 @@ class interconnect
     return num_nodes_;
   }
 
+  const std::vector<connectable_component*>& components() const {
+    return components_;
+  }
+
   switch_id node_to_logp_switch(node_id nid) const;
 
  protected:
@@ -180,7 +184,9 @@ class interconnect
     return lookahead_;
   }
 
-  connectable_component* component(uint32_t id) const;
+  connectable_component* component(uint32_t id) const {
+    return components_[id];
+  }
 
  private:
   uint32_t switch_component_id(switch_id sid) const;
@@ -206,6 +212,8 @@ class interconnect
   //a set of switches that transfer messages quickly
   switch_map logp_overlay_switches_;
   node_map nodes_;
+
+  std::vector<connectable_component*> components_;
 
   switch_id local_logp_switch_;
 
