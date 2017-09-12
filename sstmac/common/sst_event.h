@@ -87,15 +87,15 @@ class event_queue_entry : public event
 #if SSTMAC_INTEGRATED_SST_CORE
   virtual void execute() override = 0;
 
-  event_queue_entry(device_id dst, device_id src)
+  event_queue_entry(uint32_t dst, uint32_t src)
   {
     //simply ignore parameters - not needed
   }
 #else
-  event_queue_entry(device_id dst,
-    device_id src) :
-    dst_loc_(dst),
-    src_loc_(src),
+  event_queue_entry(uint32_t dst_id,
+    uint32_t src_id) :
+    dst_loc_(dst_id),
+    src_loc_(src_id),
     seqnum_(0)
   {
   }
@@ -118,11 +118,11 @@ class event_queue_entry : public event
     return seqnum_;
   }
 
-  device_id event_location() const {
+  uint32_t component_id() const {
     return dst_loc_;
   }
 
-  device_id src_location() const {
+  uint32_t src_component_id() const {
     return src_loc_;
   }
 
@@ -132,8 +132,8 @@ class event_queue_entry : public event
 
  protected:
   timestamp time_;
-  device_id dst_loc_;
-  device_id src_loc_;
+  uint32_t dst_loc_;
+  uint32_t src_loc_;
   /** A unique sequence number from the source */
   uint32_t seqnum_;
 #endif
@@ -149,7 +149,7 @@ class handler_event_queue_entry :
 
   handler_event_queue_entry(event* ev,
     event_handler* hand,
-    device_id src_loc);
+    uint32_t src_comp_id);
 
   void execute() override;
 
@@ -164,7 +164,7 @@ class callback :
   public event_queue_entry
 {
  protected:
-  callback(device_id local) :
+  callback(uint32_t local) :
     event_queue_entry(local, local)
   {
   }

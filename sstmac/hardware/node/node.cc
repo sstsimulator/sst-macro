@@ -85,10 +85,8 @@ namespace hw {
 using namespace sstmac::sw;
 
 node::node(sprockit::sim_parameters* params,
-  uint64_t id, event_manager* mgr)
-  : connectable_component(params, id,
-    device_id(params->get_int_param("id"), device_id::node),
-    mgr),
+  uint32_t id, event_manager* mgr)
+  : connectable_component(params, id, mgr),
   params_(params),
   app_refcount_(0),
   job_launcher_(nullptr)
@@ -104,7 +102,7 @@ node::node(sprockit::sim_parameters* params,
     init_debug = true;
   }
 #endif
-  my_addr_ = event_location().id();
+  my_addr_ = params->get_int_param("id");
   next_outgoing_id_.set_src_node(my_addr_);
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
@@ -184,19 +182,19 @@ node::~node()
 void
 node::connect_output(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   //forward connection to nic
-  nic_->connect_output(params, src_outport, dst_inport, mod);
+  nic_->connect_output(params, src_outport, dst_inport, link);
 }
 
 void
 node::connect_input(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   //forward connection to nic
-  nic_->connect_input(params, src_outport, dst_inport, mod);
+  nic_->connect_input(params, src_outport, dst_inport, link);
 }
 
 void

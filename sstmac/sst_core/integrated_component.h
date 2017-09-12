@@ -152,7 +152,7 @@ class SSTIntegratedComponent
   void init_links(sprockit::sim_parameters* params);
 
  protected:
-  SSTIntegratedComponent(sprockit::sim_parameters* params, uint64_t id);
+  SSTIntegratedComponent(sprockit::sim_parameters* params, uint32_t id);
 
   SST::LinkMap* link_map_;
 

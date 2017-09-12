@@ -262,12 +262,12 @@ topology::switch_label(switch_id sid) const
 }
 
 std::string
-topology::label(device_id id) const
+topology::label(uint32_t comp_id) const
 {
-  if (id.is_node_id()){
-    return node_label(id.id());
+  if (comp_id < num_nodes()){
+    return node_label(comp_id);
   } else {
-    return switch_label(id.id());
+    return switch_label(comp_id);
   }
 
 }

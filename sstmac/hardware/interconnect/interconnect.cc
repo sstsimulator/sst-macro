@@ -79,6 +79,17 @@ sprockit::StaticKeywordRegisterRegexp node_failure_ids_keyword("node_failure_\\d
 sprockit::StaticKeywordRegisterRegexp node_failure_time_keyword("node_failure_\\d+_time");
 #endif
 
+connectable_component*
+interconnect::component(uint32_t id) const
+{
+  if (id >= logp_id_cutoff_){
+    return logp_overlay_switches_[id-logp_id_cutoff_];
+  } else if (id >= switch_id_cutoff_){
+    return switches_[id-switch_id_cutoff_];
+  } else {
+    return nodes_[id];
+  }
+}
 
 
 interconnect*
@@ -130,6 +141,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   num_switches_ = topology_->num_switches();
   runtime::set_topology(topology_);
 
+
 #if !SSTMAC_INTEGRATED_SST_CORE
   partition_ = part;
   rt_ = rt;
@@ -139,6 +151,8 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
   logp_overlay_switches_.resize(nproc*nthread);
+  switch_id_cutoff_ = topology_->num_nodes();
+  logp_id_cutoff_ = switch_id_cutoff_ + topology_->num_switches();
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
@@ -164,11 +178,11 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     for (int t=0; t < nthread; ++t){
       switch_id sid(t+offset);
       switch_params->add_param_override("id", int(sid));
+      uint32_t comp_id = sid + topology_->num_nodes() + topology_->num_switches();
       if (i == my_rank){
-        logp_overlay_switches_[sid] = new logp_switch(switch_params, sid, mgr->ev_man_for_thread(t));
+        logp_overlay_switches_[sid] = new logp_switch(switch_params, comp_id, mgr->ev_man_for_thread(t));
       } else {
-        logp_overlay_switches_[sid] = new dist_dummy_switch(switch_params, sid, mgr, 
-                                                            device_id::logp_overlay);
+        logp_overlay_switches_[sid] = nullptr;
       }
     }
   }
@@ -189,7 +203,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     interconn_debug("Interconnect building switches");
     build_switches(switch_params, mgr);
     interconn_debug("Interconnect connecting switches");
-    connect_switches(switch_params);
+    connect_switches(mgr, switch_params);
     interconn_debug("Interconnect connecting endpoints");
     if (netlinks_.empty()){
       connect_endpoints(inj_params, ej_params);
@@ -264,6 +278,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
     int target_rank = partition_->lpid_for_switch(injaddr);
     if (target_rank != me) continue;
 
+    event_scheduler* parent_node = nodes_[nodeaddr];
     if (has_netlink){
       ep = netlinks_[netlink_id];
     }	else {
@@ -277,10 +292,10 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       int switch_port = inj_ports[i];
       interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
           int(injaddr), injsw, ep_id, ep, switch_port, injector_port);
-      injsw->connect_input(ej_params, injector_port, switch_port,
-                           ep->credit_handler(injector_port));
-      ep->connect_output(inj_params, injector_port, switch_port,
-                         injsw->payload_handler(switch_port));
+      auto credit_link = new local_link(parent_node, ep->credit_handler(injector_port));
+      injsw->connect_input(ej_params, injector_port, switch_port, credit_link);
+      auto payload_link = new local_link(injsw, injsw->payload_handler(switch_port));
+      ep->connect_output(inj_params, injector_port, switch_port, payload_link);
     }
 
     // connect switches to endpoints
@@ -290,10 +305,10 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       int switch_port = ej_ports[i];
       interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
           int(ejaddr), ejsw, ep_id, ep, switch_port, ejector_port);
-      ejsw->connect_output(ej_params, switch_port, ejector_port,
-                           ep->payload_handler(ejector_port));
-      ep->connect_input(inj_params, switch_port, ejector_port,
-                        ejsw->credit_handler(switch_port));
+      auto payload_link = new local_link(parent_node, ep->payload_handler(ejector_port));
+      ejsw->connect_output(ej_params, switch_port, ejector_port, payload_link);
+      auto credit_link = new local_link(ejsw, ejsw->credit_handler(switch_port));
+      ep->connect_input(inj_params, switch_port, ejector_port, credit_link);
     }
   }
 }
@@ -330,20 +345,20 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
       if (my_rank == target_rank){
         //local node - actually build it
         node_params->add_param_override("id", int(nid));
+        uint32_t comp_id = nid;
         node* nd = node::factory::get_optional_param("model", "simple", node_params,
-                                                    nid, thread_mgr);
+                                                     comp_id, thread_mgr);
         nic* the_nic = nd->get_nic();
         nodes_[nid] = nd;
 
-        the_nic->connect_output(
-              inj_params,
-              nic::LogP,
-              0, //does not matter
-              local_logp_switch->payload_handler(port));
+        event_link* out_link = new local_link(local_logp_switch, local_logp_switch->payload_handler(port));
+        the_nic->connect_output( inj_params, nic::LogP, 0/*doesnt matter*/, out_link);
+
+        event_link* in_link = new local_link(nd, the_nic->mtl_handler());
         local_logp_switch->connect_output(inj_params,
                                     nid, //the outport is he node
                                     logp_switch::Node, //signal node connection
-                                    the_nic->mtl_handler());
+                                    in_link);
 
         nd->init(0); //emulate SST core
         nd->setup();
@@ -363,27 +378,35 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
             int(net_id), i, nid, inj_port, my_rank);
 
           // connect nic to netlink
+
+          auto link = new local_link(nd, the_nic->credit_handler(nic::Injection));
           nlink->connect_input(nlink_ej_params,
                                nic::Injection, inj_port,
-                               the_nic->credit_handler(nic::Injection));
+                               link);
+          link = new local_link(nd, nlink->payload_handler(inj_port));
           the_nic->connect_output(inj_params,
                            nic::Injection, inj_port,
-                           nlink->payload_handler(inj_port));
+                           link);
 
           // connect netlink to nic
+          link = new local_link(nd, the_nic->payload_handler(nic::Injection));
           nlink->connect_output(nlink_ej_params,
                         inj_port, nic::Injection,
-                        the_nic->payload_handler(nic::Injection));
+                        link);
+          link = new local_link(nd, nlink->credit_handler(inj_port));
           the_nic->connect_input(inj_params,
                            inj_port, nic::Injection,
-                           nlink->credit_handler(inj_port));
+                           link);
         }
       } else {
+        event_link* link = new ipc_link(mgr, target_rank, local_logp_switch,
+                                        logp_component_id(target_rank), port, false);
         local_logp_switch->connect_output(
           inj_params,
           target_rank,
           logp_switch::Switch,
-          logp_overlay_switches_[target_rank]->payload_handler(port));
+          link);
+          //logp_overlay_switches_[target_rank]->payload_handler(port));
       }
     }
   }
@@ -409,10 +432,11 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
         topology_->configure_nonuniform_switch_params(i, switch_params);
       int thread = partition_->thread_for_switch(i);
       event_manager* thread_mgr = mgr->ev_man_for_thread(thread);
+      uint32_t comp_id = i + topology_->num_nodes();
       switches_[i] = network_switch::factory::get_param("model",
-                      switch_params, i, thread_mgr);
+                      switch_params, comp_id, thread_mgr);
     } else {
-      switches_[i] = new dist_dummy_switch(switch_params, i, mgr, device_id::router);
+      switches_[i] = nullptr;
     }
   }
 
@@ -421,8 +445,14 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
   }
 }
 
+uint32_t
+interconnect::switch_component_id(switch_id sid) const
+{
+  return topology_->num_nodes() + sid;
+}
+
 void
-interconnect::connect_switches(sprockit::sim_parameters* switch_params)
+interconnect::connect_switches(event_manager* mgr, sprockit::sim_parameters* switch_params)
 {
   bool simple_model = switch_params->get_param("model") == "simple";
   if (simple_model) return; //nothing to do
@@ -460,17 +490,38 @@ interconnect::connect_switches(sprockit::sim_parameters* switch_params)
                 topology_->switch_label(conn.dst).c_str(),
                 conn.src_outport, conn.dst_inport);
 
-      src_sw->connect_output(port_params,
-                             conn.src_outport,
-                             conn.dst_inport,
-                             dst_sw->payload_handler(conn.dst_inport));
-      dst_sw->connect_input(port_params,
-                            conn.src_outport,
-                            conn.dst_inport,
-                            src_sw->credit_handler(conn.src_outport));
+      if (src_sw){
+        event_link* payload_link = nullptr;
+        if (dst_sw){
+          payload_link = new local_link(dst_sw, dst_sw->payload_handler(conn.dst_inport));
+        } else {
+          int dst_rank = partition_->lpid_for_switch(conn.dst);
+          uint32_t dst = switch_component_id(conn.dst);
+          payload_link = new ipc_link(mgr, dst_rank, src_sw,
+                                      dst, conn.dst_inport, false);
+        }
+        src_sw->connect_output(port_params,
+                               conn.src_outport,
+                               conn.dst_inport,
+                               payload_link);
+      }
+
+      if (dst_sw){
+        event_link* credit_link = nullptr;
+        if (src_sw){
+          credit_link = new local_link(src_sw, src_sw->credit_handler(conn.src_outport));
+        } else {
+          int src_rank = partition_->lpid_for_switch(conn.src);
+          uint32_t src = switch_component_id(conn.src);
+          credit_link = new ipc_link(mgr, src_rank, dst_sw, src, conn.src_outport, true);
+        }
+        dst_sw->connect_input(port_params,
+                              conn.src_outport,
+                              conn.dst_inport,
+                              credit_link);
+      }
     }
   }
-
 }
 
 void
@@ -486,13 +537,6 @@ interconnect::deadlock_check()
   for (node* nd: nodes_){
     if (nd) nd->deadlock_check();
   }
-}
-
-int
-interconnect::thread_for_switch(switch_id sid) const
-{
-  network_switch* sw = this->switch_at(sid);
-  return sw->thread_id();
 }
 #endif
 

@@ -69,7 +69,7 @@ class pisces_abstract_switch :
  protected:
   pisces_abstract_switch(
     sprockit::sim_parameters* params,
-    uint64_t id,
+    uint32_t id,
     event_manager* mgr);
 
   virtual ~pisces_abstract_switch();
@@ -91,7 +91,7 @@ class pisces_switch :
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A network switch implementing the packet flow congestion model")
  public:
-  pisces_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  pisces_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
 
   virtual ~pisces_switch();
 
@@ -101,13 +101,13 @@ class pisces_switch :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
   virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
   link_handler* credit_handler(int port) const override;
 

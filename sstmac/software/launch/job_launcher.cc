@@ -97,8 +97,8 @@ job_launcher::schedule_launch_requests()
 {
   for (app_launch_request* req : initial_requests_){
     os_->increment_app_refcount();
-    os_->schedule(req->time(),
-        new_callback(os_->event_location(), this, &job_launcher::incoming_launch_request, req));
+    auto ev = new_callback(os_->component_id(), this, &job_launcher::incoming_launch_request, req);
+    os_->send_self_event_queue(req->time(), ev);
   }
 }
 
@@ -139,10 +139,10 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
   }
 }
 
-device_id
-job_launcher::event_location() const
+uint32_t
+job_launcher::component_id() const
 {
-  return os_->event_location();
+  return os_->component_id();
 }
 
 void

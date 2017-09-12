@@ -172,8 +172,6 @@ class interconnect
     return switches_;
   }
 
-  int thread_for_switch(switch_id sid) const;
-
   timestamp hop_latency() const {
     return hop_latency_;
   }
@@ -182,8 +180,16 @@ class interconnect
     return lookahead_;
   }
 
+  connectable_component* component(uint32_t id) const;
+
  private:
-  void connect_switches(sprockit::sim_parameters* switch_params);
+  uint32_t switch_component_id(switch_id sid) const;
+
+  uint32_t node_component_id(node_id nid) const;
+
+  uint32_t logp_component_id(switch_id sid) const;
+
+  void connect_switches(event_manager* mgr, sprockit::sim_parameters* switch_params);
 
   void build_endpoints(sprockit::sim_parameters* node_params,
                     sprockit::sim_parameters* nic_params,
@@ -210,6 +216,10 @@ class interconnect
   timestamp injection_latency_;
 
   timestamp lookahead_;
+
+  int logp_id_cutoff_;
+
+  int switch_id_cutoff_;
 
   int num_speedy_switches_with_extra_node_;
   int num_nodes_per_speedy_switch_;

@@ -64,7 +64,7 @@ simple_node::~simple_node()
 }
 
 simple_node::simple_node(sprockit::sim_parameters *params,
-                         uint64_t id,
+                         uint32_t id,
                          event_manager *mgr)
   : node(params, id, mgr)
 {
@@ -72,9 +72,7 @@ simple_node::simple_node(sprockit::sim_parameters *params,
 }
 
 void
-simple_node::execute(ami::COMP_FUNC func,
-                            event* data,
-                            callback* cb)
+simple_node::execute(ami::COMP_FUNC func, event* data, callback* cb)
 {
   node_debug("executing kernel %s on node %d",
              ami::tostr(func), my_addr_);
@@ -84,7 +82,7 @@ simple_node::execute(ami::COMP_FUNC func,
       break;
     case sstmac::ami::COMP_TIME: {
       sw::timed_compute_event* ev = safe_cast(sw::timed_compute_event, data);
-      schedule_delay(ev->data(), cb);
+      send_delayed_self_event_queue(ev->data(), cb);
       break;
     }
     default:

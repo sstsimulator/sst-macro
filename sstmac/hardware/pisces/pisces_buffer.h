@@ -61,23 +61,15 @@ class pisces_buffer :
 
   virtual void set_output(sprockit::sim_parameters* params,
     int this_outport, int dst_inport,
-    event_handler* output) override;
+    event_link* link) override;
 
   virtual void set_input(
     sprockit::sim_parameters* params,
     int this_inport, int src_outport,
-    event_handler* input) override;
+    event_link* link) override;
 
   virtual int queue_length() const {
     return 0;
-  }
-
-  device_id output_location() const {
-    return output_.handler->event_location();
-  }
-
-  device_id input_location() const {
-    return input_.handler->event_location();
   }
 
  protected:

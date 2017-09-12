@@ -165,7 +165,7 @@ class job_launcher : public service
 
   void schedule_launch_requests();
 
-  device_id event_location() const;
+  uint32_t component_id() const;
 
   virtual ~job_launcher(){}
 

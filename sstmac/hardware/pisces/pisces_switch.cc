@@ -80,7 +80,7 @@ namespace sstmac {
 namespace hw {
 
 pisces_abstract_switch::pisces_abstract_switch(
-  sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
+  sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
   buf_stats_(nullptr),
   xbar_stats_(nullptr),
   router_(nullptr),
@@ -126,7 +126,7 @@ pisces_abstract_switch::~pisces_abstract_switch()
 
 pisces_switch::pisces_switch(
   sprockit::sim_parameters* params,
-  uint64_t id,
+  uint32_t id,
   event_manager* mgr)
 : pisces_abstract_switch(params, id, mgr),
   xbar_(nullptr)
@@ -172,10 +172,10 @@ pisces_switch::output_buffer(sprockit::sim_parameters* params,
     out_buffers_[src_outport] = out_buffer;
 
     int buffer_inport = 0;
-    xbar_->set_output(params, src_outport, buffer_inport,
-                      out_buffer->payload_handler());
-    out_buffer->set_input(params, buffer_inport,
-                          src_outport, xbar_->credit_handler());
+    auto out_link = new local_link(this, out_buffer->payload_handler());
+    xbar_->set_output(params, src_outport, buffer_inport, out_link);
+    auto in_link = new local_link(this, xbar_->credit_handler());
+    out_buffer->set_input(params, buffer_inport, src_outport, in_link);
   }
   return out_buffers_[src_outport];
 }
@@ -185,11 +185,11 @@ pisces_switch::connect_output(
   sprockit::sim_parameters* port_params,
   int src_outport,
   int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   //create an output buffer for the port
   pisces_sender* out_buffer = output_buffer(port_params, src_outport);
-  out_buffer->set_output(port_params, src_outport, dst_inport, mod);
+  out_buffer->set_output(port_params, src_outport, dst_inport, link);
 }
 
 void
@@ -197,9 +197,9 @@ pisces_switch::connect_input(
   sprockit::sim_parameters* port_params,
   int src_outport,
   int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
-  xbar_->set_input(port_params, dst_inport, src_outport, mod);
+  xbar_->set_input(port_params, dst_inport, src_outport, link);
 }
 
 void

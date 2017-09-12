@@ -406,7 +406,7 @@ class topology : public sprockit::printable
   {
   }
 
-  std::string label(device_id id) const;
+  std::string label(uint32_t comp_id) const;
 
   virtual std::string switch_label(switch_id sid) const;
 

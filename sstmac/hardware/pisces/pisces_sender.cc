@@ -136,15 +136,13 @@ pisces_sender::send_credit(
   pisces_debug(
       "On %s:%p on inport %d, crediting %s:%p port:%d vc:%d {%s} at [%9.5e] after latency %9.5e with %p",
       to_string().c_str(), this, payload->inport(),
-      src.handler->to_string().c_str(), src.handler,
+      src.link->to_string().c_str(), src.link,
       src.src_outport, src_vc,
       payload->to_string().c_str(),
       credit_departure.sec(), credit_lat_.sec(),
       credit);
   //
-  send_to_link(credit_departure,
-               credit_lat_,
-               src.handler, credit);
+  src.link->send(credit_departure+credit_lat_, credit);
 }
 
 /**
@@ -192,7 +190,7 @@ pisces_sender::send(
   }
 #endif
 
-  if (src.handler) {
+  if (src.link) {
     send_credit(src, pkt, st.credit_leaves);
   }
 
@@ -202,7 +200,7 @@ pisces_sender::send(
     to_string().c_str(), this,
     rpkt->local_outport(), pkt->next_vc(),
     pkt->to_string().c_str(),
-    dest.handler->to_string().c_str(), dest.handler,
+    dest.link->to_string().c_str(), dest.link,
     dest.dst_inport,
     st.head_leaves.sec(),
     st.tail_leaves.sec());
@@ -212,14 +210,13 @@ pisces_sender::send(
   //weird hack to update vc from routing
   if (update_vc_) pkt->update_vc();
 
-  send_to_link(st.head_leaves, send_lat_, dest.handler, pkt);
-
+  dest.link->send(st.head_leaves + send_lat_, pkt);
 }
 
 std::string
 pisces_sender::to_string() const
 {
-  return pisces_name() + topology::global()->label(event_location());
+  return pisces_name() + topology::global()->label(component_id());
 }
 
 }

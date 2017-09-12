@@ -75,7 +75,7 @@ class logp_switch :
     Switch
   } Port;
 
-  logp_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  logp_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
 
   void handle(event* ev);
 
@@ -91,11 +91,11 @@ class logp_switch :
 
   void connect_output(sprockit::sim_parameters *params,
                       int src_outport, int dst_inport,
-                      event_handler* handler) override;
+                      event_link* link) override;
 
   void connect_input(sprockit::sim_parameters *params,
                      int src_outport, int dst_inport,
-                     event_handler* handler) override;
+                     event_link* link) override;
 
   link_handler* payload_handler(int port) const override;
 
@@ -124,8 +124,8 @@ class logp_switch :
 
   interconnect* interconn_;
 
-  std::vector<event_handler*> neighbors_;
-  std::vector<event_handler*> nics_;
+  std::vector<event_link*> neighbor_links_;
+  std::vector<event_link*> nic_links_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* mtl_handler_;

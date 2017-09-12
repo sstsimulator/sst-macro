@@ -120,7 +120,7 @@ packetizer::sendWhatYouCan(int vn)
     if (next.msg->needs_ack()){
       timestamp time_to_send(bytes_sent * inv_bw_);
       message* ack = next.msg->clone_ack();
-      schedule_delay(time_to_send, acker_, ack);
+      acker_->send_delay(time_to_send, ack);
     }
     //the entire packet sent
     pending.pop_front();

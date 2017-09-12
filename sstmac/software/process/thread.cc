@@ -91,10 +91,10 @@ thread::init_thread(sprockit::sim_parameters* params,
                           run_routine, this, globals_storage, des_thread);
 }
 
-device_id
-thread::event_location() const
+uint32_t
+thread::component_id() const
 {
-  return os_->event_location();
+  return os_->component_id();
 }
 
 thread*

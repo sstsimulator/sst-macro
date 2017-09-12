@@ -45,8 +45,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef PRINTABLE_H
 #define PRINTABLE_H
 
-namespace sprockit
-{
+#include <string>
+
+namespace sprockit {
 
 class printable {
  public:

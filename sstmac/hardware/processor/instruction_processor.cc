@@ -112,7 +112,7 @@ instruction_processor::compute(event* ev, callback* cb)
   // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
   timestamp best_possible_time = instr_time + bytes * max_single_mem_inv_bw_;
   if (bytes <= negligible_bytes_) {
-    node_->schedule_delay(timestamp(instr_time), cb);
+    node_->send_delayed_self_event_queue(instr_time, cb);
   }
   else {
     //do the full memory modeling

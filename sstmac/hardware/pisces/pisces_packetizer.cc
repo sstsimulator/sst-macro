@@ -70,7 +70,7 @@ pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
  inj_stats_(nullptr),
  ej_stats_(nullptr),
  pkt_allocator_(nullptr),
- payload_handler_(nullptr),
+ payload_link_(nullptr),
  packetizer(params, parent)
 {
   init(params, parent);
@@ -98,8 +98,8 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
       ::get_optional_param("packet_allocator", "pisces", params);
 
 
-
-  payload_handler_ = new_handler(this, &pisces_packetizer::recv_packet);
+  event_handler* handler = new_handler(this, &pisces_packetizer::recv_packet);
+  payload_link_ = new local_link(parent, handler);
 }
 
 pisces_packetizer::~pisces_packetizer()
@@ -109,7 +109,7 @@ pisces_packetizer::~pisces_packetizer()
   if (inj_stats_) delete inj_stats_;
   if (ej_stats_) delete ej_stats_;
   if (pkt_allocator_) delete pkt_allocator_;
-  if (payload_handler_) delete payload_handler_;
+  if (payload_link_) delete payload_link_;
 }
 
 void
@@ -186,18 +186,18 @@ pisces_packetizer::recv_packet_common(pisces_payload* pkt)
 
 void
 pisces_packetizer::set_output(sprockit::sim_parameters* params,
-                              int inj_port, event_handler* handler)
+                              int inj_port, event_link* link)
 {
-  inj_buffer_->set_output(params, 0, inj_port, handler);
+  inj_buffer_->set_output(params, 0, inj_port, link);
 }
 
 void
 pisces_packetizer::set_input(sprockit::sim_parameters* params,
-                             int ej_port, event_handler* handler)
+                             int ej_port, event_link* link)
 {
   int only_port = 0;
-  ej_buffer_->set_output(params, only_port, only_port, payload_handler_);
-  ej_buffer_->set_input(params, only_port, ej_port, handler);
+  ej_buffer_->set_output(params, only_port, only_port, payload_link_);
+  ej_buffer_->set_input(params, only_port, ej_port, link);
 }
 
 void

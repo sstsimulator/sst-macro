@@ -62,9 +62,8 @@ class test_component : public connectable_component {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  test_component(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr) :
-    connectable_component(params,id,
-      device_id(params->get_int_param("id"),device_id::router),mgr)
+  test_component(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr) :
+    connectable_component(params,id,mgr)
  {
  }
 };
@@ -92,7 +91,7 @@ class dummy_switch : public test_component {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  dummy_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr) :
+  dummy_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr) :
    test_component(params,id,mgr), id_(id)
   {
     //make sure this function gets called
@@ -178,7 +177,7 @@ class dummy_switch : public test_component {
   event_handler* partner_;
   timestamp latency_;
   int num_ping_pongs_;
-  uint64_t id_;
+  uint32_t id_;
 
 };
 

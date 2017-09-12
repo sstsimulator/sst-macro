@@ -56,7 +56,7 @@ namespace sstmac {
 
 SSTIntegratedComponent::SSTIntegratedComponent(
   sprockit::sim_parameters* params,
-  uint64_t id) :
+  uint32_t id) :
   SST::Component(SST::ComponentId_t(id))
 {
   sprockit::output::init_out0(&std::cout);

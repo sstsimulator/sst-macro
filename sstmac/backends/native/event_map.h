@@ -77,7 +77,7 @@ class event_map :
     set_now(zero_time);
   }
 
-  void cancel_all_messages(device_id mod) override ;
+  void cancel_all_messages(uint32_t mod) override ;
 
   virtual bool vote_to_terminate(){
     return true;
@@ -111,10 +111,10 @@ class event_map :
       bool neq = lhs->time() != rhs->time();
       if (neq) return lhs->time() < rhs->time();
 
-      if (lhs->src_location() == rhs->src_location()){
+      if (lhs->src_component_id() == rhs->src_component_id()){
         return lhs->seqnum() < rhs->seqnum();
       } else {
-        return lhs->src_location() < rhs->src_location();
+        return lhs->src_component_id() < rhs->src_component_id();
       }
     }
 

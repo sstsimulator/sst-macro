@@ -71,13 +71,13 @@ class logp_nic :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) override;
+    event_link* link) override;
 
   virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) override;
+    event_link* link) override;
 
   virtual std::string to_string() const override {
     return "simple nic";

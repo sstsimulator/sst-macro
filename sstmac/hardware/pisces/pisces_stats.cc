@@ -267,7 +267,7 @@ stat_bytes_sent::dump_global_data()
   std::fstream data_str;
   check_open(data_str, data_file);
   for (int i=0; i < num_switches; ++i){
-    data_str << sprockit::printf("Switch %s\n", top_->label(device_id(i, device_id::router)).c_str());
+    data_str << sprockit::printf("Switch %d\n", i);
     output_switch(i, data_str);
   }
   data_str.close();

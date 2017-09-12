@@ -67,26 +67,18 @@ void
 pisces_buffer::set_input(
   sprockit::sim_parameters* params,
   int this_inport, int src_outport,
-  event_handler* input)
+  event_link* input)
 {
-//  debug_printf(sprockit::dbg::pisces_config,
-//    "On %s:%d setting input %s:%d",
-//    to_string().c_str(), this_inport,
-//    input->to_string().c_str(), src_outport);
   input_.src_outport = src_outport;
-  input_.handler = input;
+  input_.link = input;
 }
 
 void
 pisces_buffer::set_output(sprockit::sim_parameters* params,
-                               int this_outport, int dst_inport,
-                               event_handler* output)
+                         int this_outport, int dst_inport,
+                         event_link* output)
 {
-//  debug_printf(sprockit::dbg::pisces_config,
-//  "On %s:%d setting output %s:%d",
-//  to_string().c_str(), this_outport,
-//  output->to_string().c_str(), dst_inport);
-  output_.handler = output;
+  output_.link = output;
   output_.dst_inport = dst_inport;
 }
 
@@ -211,12 +203,12 @@ pisces_network_buffer::deadlock_check()
       pkt->set_inport(output_.dst_inport);
       vc = update_vc_ ? pkt->next_vc() : pkt->vc();
       std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i
-        << " going to " << output_.handler->to_string()
+        << " going to " << output_.link->to_string()
         << " outport=" << pkt->next_port()
         << " inport=" << pkt->inport()
         << " vc=" << vc
         << std::endl;
-      output_.handler->deadlock_check(pkt);
+      output_.link->deadlock_check(pkt);
     }
   }
 }
@@ -264,13 +256,13 @@ pisces_network_buffer::deadlock_check(event* ev)
     pisces_payload* next = blocked.front();
     next->set_inport(output_.dst_inport);
     std::cerr << to_string() << " going to "
-      << output_.handler->to_string()
+      << output_.link->to_string()
       << " outport=" << next->next_port()
       << " inport=" << next->inport()
       << " vc=" << next->next_vc()
       << " : " << next->to_string()
       << std::endl;
-    output_.handler->deadlock_check(next);
+    output_.link->deadlock_check(next);
   }
 }
 
@@ -349,7 +341,7 @@ pisces_eject_buffer::handle_payload(event* ev)
     to_string().c_str(),
     pkt->to_string().c_str());
   return_credit(pkt);
-  output_.handler->handle(pkt);
+  output_.link->handle(pkt);
 }
 
 void

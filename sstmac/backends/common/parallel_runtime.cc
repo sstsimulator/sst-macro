@@ -211,24 +211,12 @@ parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
   ser & iev->ev;
 }
 
-void parallel_runtime::send_event(int thread_id, ipc_event_t* iev)
+void parallel_runtime::send_event(ipc_event_t* iev)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   spkt_throw_printf(sprockit::unimplemented_error,
       "parallel_runtime::send_event: should not be called on integrated core");
 #else
-  int lp;
-  switch (iev->dst.type()){
-    case device_id::router:
-      lp = part_->lpid_for_switch(iev->dst.id());
-      break;
-    case device_id::logp_overlay:
-      lp = iev->dst.id();
-      break;
-    default:
-      spkt_abort_printf("Invalid IPC handler of type %d", iev->dst.type());
-  }
-
   size_t overhead = sizeof(iev->t) + sizeof(iev->dst) + sizeof(iev->src) + sizeof(iev->seqnum);
 
   sprockit::serializer ser;
@@ -237,9 +225,9 @@ void parallel_runtime::send_event(int thread_id, ipc_event_t* iev)
 
   size_t buffer_space_needed = overhead + ser.size();
   debug_printf(sprockit::dbg::parallel, "sending event of size %lu + %lu = %lu to lp %d at t=%10.6e: %s",
-               overhead, ser.size(), buffer_space_needed, lp, iev->t.sec(),
+               overhead, ser.size(), buffer_space_needed, iev->rank, iev->t.sec(),
                sprockit::to_string(iev->ev).c_str());
-  comm_buffer& buff = send_buffers_[lp];
+  comm_buffer& buff = send_buffers_[iev->rank];
   char* ptr = buff.ensureSpace(buffer_space_needed);
   ser.start_packing(ptr, buffer_space_needed);
   run_serialize(ser, iev);

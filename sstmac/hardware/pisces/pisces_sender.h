@@ -78,20 +78,20 @@ struct payload_queue {
 
 struct pisces_input {
   int src_outport;
-  event_handler* handler;
+  event_link* link;
   pisces_input() :
     src_outport(-1),
-    handler(0)
+    link(nullptr)
   {
   }
 };
 
 struct pisces_output {
   int dst_inport;
-  event_handler* handler;
+  event_link* link;
   pisces_output() :
     dst_inport(-1),
-    handler(0)
+    link(nullptr)
   {
   }
 };
@@ -105,11 +105,11 @@ class pisces_sender :
 
   virtual void set_input(sprockit::sim_parameters* params,
      int my_inport, int dst_outport,
-     event_handler* input) = 0;
+     event_link* link) = 0;
 
   virtual void set_output(sprockit::sim_parameters* params,
     int my_outport, int dst_inport,
-    event_handler* output) = 0;
+    event_link* link) = 0;
 
   virtual void handle_credit(event* ev) = 0;
 
@@ -133,7 +133,7 @@ class pisces_sender :
 
  protected:
   pisces_sender(sprockit::sim_parameters* params,
-                     event_scheduler* parent);
+                event_scheduler* parent);
 
   virtual void send_credit(const pisces_input& src,
     pisces_payload* payload,

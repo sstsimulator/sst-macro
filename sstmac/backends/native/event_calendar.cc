@@ -224,7 +224,7 @@ event_calendar::clear(const timestamp &zero_time)
 }
 
 void
-event_calendar::cancel_all_messages(device_id canceled_loc)
+event_calendar::cancel_all_messages(uint32_t canceled_loc)
 {
   sprockit::abort("event_calendar::cancel_all_messages: not able to simulate failures right now");
 }

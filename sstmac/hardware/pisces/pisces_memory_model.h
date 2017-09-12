@@ -135,7 +135,6 @@ class pisces_memory_packetizer : public packetizer
   noise_model* interval_noise_;
   int num_noisy_intervals_;
   packet_allocator* pkt_allocator_;
-  event_handler* self_credit_handler_;
   bool channelFree_[PISCES_MEM_DEFAULT_NUM_CHANNELS];
 
 };
@@ -153,10 +152,6 @@ class pisces_memory_model :
 
   std::string to_string() const override {
     return "packet flow memory model";
-  }
-
-  void schedule(timestamp t, event_handler *handler, message*msg){
-    memory_model::schedule(t, handler, msg);
   }
 
   void notify(int vn, message* msg) override;

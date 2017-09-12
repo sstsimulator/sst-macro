@@ -128,7 +128,7 @@ pisces_NtoM_queue::deadlock_check()
     while (pkt){
       deadlocked_channels_[pkt->next_port()].insert(pkt->next_vc());
       pisces_output& poutput = outputs_[local_outport(pkt->next_port())];
-      event_handler* output = output_handler(pkt);
+      event_link* output = output_link(pkt);
       if (output){
         pkt->set_inport(poutput.dst_inport);
         int vc = update_vc_ ? pkt->next_vc() : pkt->vc();
@@ -188,7 +188,7 @@ pisces_NtoM_queue::deadlock_check(event* ev)
   } else {
     pisces_payload* next = blocked.front();
     pisces_output& poutput = outputs_[local_outport(outport)];
-    event_handler* output = output_handler(next);
+    event_link* output = output_link(next);
     next->set_inport(poutput.dst_inport);
     output->deadlock_check(next);
   }
@@ -197,24 +197,24 @@ pisces_NtoM_queue::deadlock_check(event* ev)
 std::string
 pisces_NtoM_queue::input_name(pisces_payload* pkt)
 {
-  event_handler* handler = inputs_[pkt->inport()].handler;
-  return handler->to_string();
+  event_link* link = inputs_[pkt->inport()].link;
+  return link->to_string();
 }
 
-event_handler*
-pisces_NtoM_queue::output_handler(pisces_payload* pkt)
+event_link*
+pisces_NtoM_queue::output_link(pisces_payload* pkt)
 {
   int loc_port = local_outport(pkt->next_port());
-  event_handler* handler = outputs_[loc_port].handler;
-  if (!handler)
+  event_link* link = outputs_[loc_port].link;
+  if (!link)
     return nullptr;
-  return handler;
+  return link;
 }
 
 std::string
 pisces_NtoM_queue::output_name(pisces_payload* pkt)
 {
-  return output_handler(pkt)->to_string();
+  return output_link(pkt)->to_string();
 }
 
 void
@@ -227,7 +227,7 @@ pisces_NtoM_queue::send_payload(pisces_payload* pkt)
         rpkt->local_outport(), pkt->next_vc(),
         pkt->to_string().c_str(),
         output_name(pkt).c_str(),
-        output_handler(pkt));
+        output_link(pkt));
   send(arb_, pkt, inputs_[pkt->inport()], outputs_[rpkt->local_outport()]);
 }
 
@@ -318,7 +318,7 @@ void
 pisces_NtoM_queue::set_input(
   sprockit::sim_parameters* port_params,
   int my_inport, int src_outport,
-  event_handler* input)
+  event_link* input)
 {
   // ports are local for local links and global otherwise
 
@@ -328,7 +328,7 @@ pisces_NtoM_queue::set_input(
     input->to_string().c_str(), src_outport);
   pisces_input inp;
   inp.src_outport = src_outport;
-  inp.handler = input;
+  inp.link = input;
   inputs_[my_inport] = inp;
 }
 
@@ -336,7 +336,7 @@ void
 pisces_NtoM_queue::set_output(
   sprockit::sim_parameters* port_params,
   int my_outport, int dst_inport,
-  event_handler* output)
+  event_link* output)
 {
   // must be called with local my_outport (if there's a difference)
   // global port numbers aren't unique for individual elements of
@@ -353,7 +353,7 @@ pisces_NtoM_queue::set_output(
 
   pisces_output out;
   out.dst_inport = dst_inport;
-  out.handler = output;
+  out.link = output;
 
   if (my_outport > outputs_.size()) {
     spkt_throw_printf(sprockit::value_error,

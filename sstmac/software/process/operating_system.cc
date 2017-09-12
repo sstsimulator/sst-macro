@@ -125,7 +125,7 @@ class delete_thread_event :
  public:
   delete_thread_event(thread* thr) :
     thr_(thr),
-    event_queue_entry(thr->os()->event_location(), thr->os()->event_location())
+    event_queue_entry(thr->os()->component_id(), thr->os()->component_id())
   {
   }
 
@@ -325,7 +325,7 @@ operating_system::sleep(timestamp t)
 {
   sw::key* k = sw::key::construct();
   sw::unblock_event* ev = new sw::unblock_event(this, k);
-  schedule_delay(t, ev);
+  send_delayed_self_event_queue(t, ev);
   block(k);
   delete k;
 }
@@ -337,7 +337,7 @@ operating_system::sleep_until(timestamp t)
   if (t > now_){
     sw::key* k = sw::key::construct();
     sw::unblock_event* ev = new sw::unblock_event(this, k);
-    schedule(t, ev);
+    send_self_event_queue(t, ev);
     block(k);
     delete k;
   }
@@ -585,7 +585,7 @@ operating_system::complete_active_thread()
   //However, because of weird thread swapping the DES thread
   //might still operate on the thread... we need to delay the delete
   //until the DES thread has completely finished processing its current event
-  schedule_now(new delete_thread_event(thr_todelete));
+  send_now_self_event_queue(new delete_thread_event(thr_todelete));
 
   os_debug("completing context for %ld", thr_todelete->thread_id());
   thr_todelete->context()->complete_context(des_context_);
@@ -611,7 +611,7 @@ operating_system::register_lib(library* lib)
   if (iter != pending_library_events_.end()){
     const std::list<event*> events = iter->second;
     for (event* ev : events){
-      schedule_now(new_callback(event_location(), lib, &library::incoming_event, ev));
+      send_now_self_event_queue(new_callback(component_id(), lib, &library::incoming_event, ev));
     }
     pending_library_events_.erase(iter);
   }

@@ -52,9 +52,9 @@ namespace sstmac {
 void
 location_trace::collect(
   timestamp created,
-  device_id creator,
+  uint32_t creator,
   timestamp scheduled,
-  device_id runner)
+  uint32_t runner)
 {
   event ev;
   ev.created = created;
@@ -121,9 +121,9 @@ bool
 location_trace::read(
   std::istream& myfile,
   timestamp &created,
-  device_id &creator,
+  uint32_t &creator,
   timestamp &scheduled,
-  device_id &runner)
+  uint32_t &runner)
 {
   if (myfile.eof()) {
     return false;

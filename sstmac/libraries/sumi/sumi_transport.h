@@ -199,7 +199,7 @@ class sumi_transport :
 
   std::list<sstmac::sw::key*> blocked_keys_;
 
-  device_id loc_;
+  uint32_t component_id_;
 
   timestamp post_rdma_delay_;
 

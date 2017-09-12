@@ -49,7 +49,7 @@ namespace sstmac {
 namespace sw {
 
 unblock_event::unblock_event(operating_system *os, key *k)
-  : event_queue_entry(os->event_location(), os->event_location()),
+  : event_queue_entry(os->component_id(), os->component_id()),
   os_(os), key_(k)
 {
 }
@@ -62,7 +62,7 @@ unblock_event::execute()
 }
 
 timeout_event::timeout_event(operating_system* os, key* k) :
-  event_queue_entry(os->event_location(), os->event_location()),
+  event_queue_entry(os->component_id(), os->component_id()),
   os_(os), key_(k)
 {
 }

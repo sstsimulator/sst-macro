@@ -67,7 +67,7 @@ event_component::cancel_all_messages()
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("event_scheduler::cancel_all_messages: cannot cancel messages currently in integrated core");
 #else
-  event_mgr()->cancel_all_messages(event_location());
+  event_mgr()->cancel_all_messages(component_id());
 #endif
 }
 
@@ -251,7 +251,6 @@ event_scheduler::schedule_delay(timestamp delay, event_queue_entry *ev)
 
 event_component::event_component(sprockit::sim_parameters* params,
                uint64_t cid,
-               device_id id,
                event_manager* mgr) :
  SSTIntegratedComponent(params, cid),
  event_scheduler(id)
@@ -352,25 +351,13 @@ event_scheduler::schedule(timestamp t, event_queue_entry* ev)
                      "time has gone backwards %8.4e seconds", delta_t);
   }
 #endif
-  eventman_->schedule(t, (*seqnum_)++, ev);
+  eventman_->schedule(t, seqnum_++, ev);
 }
 
 void
 event_scheduler::register_stat(stat_collector *coll, stat_descr_t* descr)
 {
   eventman_->register_stat(coll, descr);
-}
-
-void
-event_scheduler::ipc_schedule(timestamp t, event_handler* handler, event* ev)
-{
-  ipc_event_t iev;
-  iev.dst = handler->event_location();
-  iev.src = event_location();
-  iev.seqnum = (*seqnum_)++;
-  iev.ev = ev;
-  iev.t = t;
-  eventman_->ipc_schedule(&iev);
 }
 
 void
@@ -385,42 +372,13 @@ event_scheduler::sanity_check(timestamp t)
 }
 
 void
-event_scheduler::multithread_schedule(int src_thread, int dst_thread,
-  timestamp t, event_queue_entry* ev)
-{
-  debug_printf(sprockit::dbg::event_manager,
-      "At location %d:%s, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
-      event_location().id(), to_string().c_str(), t.sec(), src_thread, dst_thread);
-  if (dst_thread != event_handler::null_threadid
-     && dst_thread != src_thread){
-    ev->set_time(t);
-    eventman_->multithread_schedule(
-      src_thread, dst_thread,
-      (*seqnum_)++, ev);
-  } else {
-    eventman_->schedule(t, (*seqnum_)++, ev);
-  }
-}
-
-void
-event_scheduler::schedule(timestamp t,
-                          event_handler* handler,
-                          event* ev)
+event_scheduler::schedule(timestamp t, event_handler* handler, event* ev)
 {
 #if SSTMAC_SANITY_CHECK
   sanity_check(t);
 #endif
-  if (handler->ipc_handler()){
-    ipc_schedule(t, handler, ev);
-  }
-  else {
-    event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
-#if SSTMAC_USE_MULTITHREAD
-    multithread_schedule(thread_id(), handler->thread_id(), t, qev);
-#else
-    eventman_->schedule(t, (*seqnum_)++, qev);
-#endif
-  }
+  event_queue_entry* qev = new handler_event_queue_entry(ev, handler, component_id());
+  eventman_->schedule(t, seqnum_++, qev);
 }
 #endif
 

@@ -318,12 +318,11 @@ class unblock_event : public event_queue_entry
   unblock_event(mutex_t* mut, operating_system* os)
     : mutex_(mut),
     os_(os),
-    event_queue_entry(os->event_location(), os->event_location())
+    event_queue_entry(os->component_id(), os->component_id())
   {
   }
 
-  void
-  execute(){
+  void execute(){
     key* blocker = mutex_->waiters.front();
     mutex_->waiters.pop_front();
     os_->unblock(blocker);

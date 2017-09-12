@@ -180,7 +180,7 @@ class parallel_runtime :
     return vote;
   }
 
-  void send_event(int thread_id, ipc_event_t* iev);
+  void send_event(ipc_event_t* iev);
 
   void reset_send_recv();
 

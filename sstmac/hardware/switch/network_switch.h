@@ -106,9 +106,8 @@ class network_switch :
  protected:
   network_switch(
     sprockit::sim_parameters* params,
-    uint64_t id,
-    event_manager* mgr,
-    device_id::type_t ty = device_id::router);
+    uint32_t id,
+    event_manager* mgr);
 
   switch_id my_addr_;
   topology* top_;

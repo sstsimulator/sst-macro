@@ -79,10 +79,13 @@ namespace sstmac {
 
 struct ipc_event_t {
   timestamp t;
-  device_id dst;
-  device_id src;
+  uint32_t dst;
+  uint32_t src;
   uint32_t seqnum;
   event* ev;
+  int port;
+  int rank;
+  bool credit;
 };
 
 class event_manager
@@ -91,6 +94,7 @@ class event_manager
   friend class event_component;
   friend class event_subcomponent;
   friend class event_scheduler;
+  friend class centralized_link;
   friend class native::manager;
 
  public:
@@ -106,7 +110,7 @@ class event_manager
 
   virtual void run() = 0;
 
-  virtual void cancel_all_messages(device_id canceled_loc) = 0;
+  virtual void cancel_all_messages(uint32_t component_id) = 0;
 
   timestamp now() const {
     return now_;
@@ -232,7 +236,7 @@ class null_event_manager : public event_manager
   }
 
   void schedule(timestamp start_time, uint32_t seqnum, event_queue_entry *event_queue_entry){}
-  void cancel_all_messages(device_id canceled_loc){}
+  void cancel_all_messages(uint32_t canceled_comp_id){}
   void clear(timestamp time){}
   void run(){}
   bool empty() const {

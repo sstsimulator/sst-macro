@@ -68,10 +68,9 @@ class timestamp_prefix_fxn :
 };
 
 connectable_component::connectable_component(sprockit::sim_parameters* params,
-                      uint64_t cid,
-                      device_id id,
+                      uint32_t cid,
                       event_manager* mgr)
-  : event_component(params, cid, id, mgr)
+  : event_component(params, cid, mgr)
 {
   if (!checked_prefix_fxn){
     if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){

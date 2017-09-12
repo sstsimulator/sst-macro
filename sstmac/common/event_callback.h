@@ -68,17 +68,10 @@ class member_fxn_handler :
   virtual ~member_fxn_handler(){}
 
  protected:
-#if SSTMAC_INTEGRATED_SST_CORE
-    member_fxn_handler(device_id id) :
-    event_handler(id)
+    member_fxn_handler(uint32_t comp_id) :
+      event_handler(comp_id)
   {
   }
-#else
-    member_fxn_handler(device_id id, int thread_id) :
-    event_handler(id, thread_id)
-  {
-  }
-#endif
 };
 
 template <class Cls, typename Fxn, class ...Args>
@@ -89,32 +82,25 @@ class member_fxn_handler_impl :
  public:
   virtual ~member_fxn_handler_impl(){}
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return sprockit::to_string(obj_);
   }
 
-  void
-  handle(event* ev) override {
+  void handle(event* ev) override {
     dispatch(ev, typename gens<sizeof...(Args)>::type());
   }
 
-  member_fxn_handler_impl(device_id id, Cls* obj, Fxn fxn, const Args&... args) :
+  member_fxn_handler_impl(uint32_t comp_id, Cls* obj, Fxn fxn, const Args&... args) :
     params_(args...),
     obj_(obj),
     fxn_(fxn),
-#if SSTMAC_INTEGRATED_SST_CORE
-    member_fxn_handler(id)
-#else
-    member_fxn_handler(id,obj->thread_id())
-#endif
+    member_fxn_handler(comp_id)
   {
   }
 
  private:
   template <int ...S>
-  void
-  dispatch(event* ev, seq<S...>){
+  void dispatch(event* ev, seq<S...>){
     (obj_->*fxn_)(ev, std::get<S>(params_)...);
   }
 
@@ -129,7 +115,7 @@ event_handler*
 new_handler(Cls* cls, Fxn fxn, const Args&... args)
 {
   return new member_fxn_handler_impl<Cls, Fxn, Args...>(
-        cls->event_location(), cls, fxn, args...);
+        cls->component_id(), cls, fxn, args...);
 }
 
 
@@ -141,13 +127,12 @@ class member_fxn_callback :
  public:
   virtual ~member_fxn_callback(){}
 
-  void
-  execute() {
+  void execute() {
     dispatch(typename gens<sizeof...(Args)>::type());
   }
 
-  member_fxn_callback(device_id id, Cls* obj, Fxn fxn, const Args&... args) :
-    callback(id),
+  member_fxn_callback(uint32_t comp_id, Cls* obj, Fxn fxn, const Args&... args) :
+    callback(comp_id),
     params_(args...),
     obj_(obj),
     fxn_(fxn)
@@ -156,8 +141,7 @@ class member_fxn_callback :
 
  private:
   template <int ...S>
-  void
-  dispatch(seq<S...>){
+  void dispatch(seq<S...>){
     (obj_->*fxn_)(std::get<S>(params_)...);
   }
 
@@ -172,15 +156,15 @@ callback*
 new_callback(Cls* cls, Fxn fxn, const Args&... args)
 {
   return new member_fxn_callback<Cls, Fxn, Args...>(
-        cls->event_location(), cls, fxn, args...);
+        cls->component_id(), cls, fxn, args...);
 }
 
 template<class Cls, typename Fxn, class ...Args>
 callback*
-new_callback(device_id id, Cls* cls, Fxn fxn, const Args&... args)
+new_callback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
 {
   return new member_fxn_callback<Cls, Fxn, Args...>(
-        id, cls, fxn, args...);
+        comp_id, cls, fxn, args...);
 }
 
 } // end of namespace sstmac

@@ -87,31 +87,10 @@ clock_cycle_event_map::clock_cycle_event_map(
 void
 clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
 {
-  event_handler* dst_handler = nullptr;
-  switch (iev->dst.type()){
-    case device_id::node:
-      dst_handler = interconn_->node_at(iev->dst.id())->get_nic()->payload_handler(hw::nic::LogP);
-      break;
-    case device_id::logp_overlay:
-      dst_handler = interconn_->logp_switch_at(iev->dst.id())->payload_handler(0);
-      break;
-    case device_id::router:
-      if (iev->ev->is_payload()){
-        dst_handler = interconn_->switch_at(iev->dst.id())->payload_handler(0); //port 0 for now - hack - all the same
-      } else {
-        dst_handler = interconn_->switch_at(iev->dst.id())->credit_handler(0);
-      }
-      break;
-    default:
-      spkt_abort_printf("Invalid device type %d in parallel run", iev->dst.type());
-      break;
-  }
-  if (dst_handler->ipc_handler()){
-    spkt_abort_printf("On rank %d, event going from %d:%d to %d:%d got scheduled to IPC handler",
-                      me(), iev->src.id(), iev->src.type(), iev->dst.id(), iev->dst.type());
-  }
-  event_debug("epoch %d: scheduling incoming event of type %d at %12.8e to device %d:%s, payload? %d:   %s",
-    epoch_, iev->dst.type(), iev->t.sec(), iev->dst.id(), dst_handler->to_string().c_str(),
+  auto comp = interconn_->component(iev->dst);
+  event_handler* dst_handler = iev->credit ? comp->credit_handler(iev->port) : comp->payload_handler(iev->port);
+  event_debug("epoch %d: scheduling incoming event at %12.8e to device %d:%s, payload? %d:   %s",
+    epoch_, iev->t.sec(), iev->dst, dst_handler->to_string().c_str(),
     iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
   schedule(iev->t, iev->seqnum, new handler_event_queue_entry(iev->ev, dst_handler, iev->src));
 }
@@ -272,14 +251,14 @@ clock_cycle_event_map::set_interconnect(hw::interconnect* interconn)
 void
 clock_cycle_event_map::ipc_schedule(ipc_event_t* iev)
 {
-  event_debug("epoch %d: scheduling outgoing event with cls id %" PRIu32 " at t=%12.8e to location %d of type %d\n  %s",
-    epoch_, iev->ev->cls_id(), iev->t.sec(), iev->dst.id(), iev->dst.type(),
+  event_debug("epoch %d: scheduling outgoing event with cls id %" PRIu32 " at t=%12.8e to location %u\n  %s",
+    epoch_, iev->ev->cls_id(), iev->t.sec(), iev->dst,
     sprockit::to_string(iev->ev).c_str());
 
   if (iev->t < min_ipc_time_){
     min_ipc_time_ = iev->t;
   }
-  rt_->send_event(thread_id_, iev);
+  rt_->send_event(iev);
 }
 
 }

@@ -190,9 +190,8 @@ class nic :
 
   node* parent_;
 
-  event_handler* logp_switch_;
+  event_link* logp_switch_link_;
   event_handler* event_mtl_handler_;
-  event_handler* node_handler_;
 
 
 #if !SSTMAC_INTEGRATED_SST_CORE

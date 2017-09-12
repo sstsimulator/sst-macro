@@ -87,8 +87,8 @@ class packetizer :
 
   void deadlock_check();
 
-  void setInjectionAcker(event_handler* handler){
-    acker_ = handler;
+  void setInjectionAcker(event_link* link){
+    acker_ = link;
   }
 
   int packetSize() const {
@@ -121,7 +121,7 @@ class packetizer :
 
   packetizer_callback* notifier_;
 
-  event_handler* acker_;
+  event_link* acker_;
 
  protected:
   packetizer(sprockit::sim_parameters* params,

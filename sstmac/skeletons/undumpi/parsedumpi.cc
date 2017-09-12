@@ -129,8 +129,7 @@ void parsedumpi::skeleton_main()
 #if !SSTMAC_INTEGRATED_SST_CORE
   // TODO make this work with @integrated_core
   if (percent_terminate_ >= 0){
-    //we must stop the event manager now
-    mpi()->os()->event_mgr()->stop();
+    sprockit::abort("early termination of dumpi traces not yet supported");
   }
 #endif
 

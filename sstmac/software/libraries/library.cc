@@ -58,10 +58,10 @@ library::library(const std::string& libname, software_id sid, operating_system* 
   os_->register_lib(this);
 }
 
-device_id
-library::event_location() const
+uint32_t
+library::component_id() const
 {
-  return os_->event_location();
+  return os_->component_id();
 }
 
 library::~library()

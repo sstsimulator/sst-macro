@@ -55,14 +55,14 @@ namespace sstmac {
 namespace native {
 
 void
-event_map::cancel_all_messages(device_id canceled_loc)
+event_map::cancel_all_messages(uint32_t canceled_loc)
 {
   queue_t::iterator it = queue_.begin(), end = queue_.end();
   while (it != end){
     queue_t::iterator tmp = it++;
     event_queue_entry* ev = *tmp;
 
-    if (ev->event_location() == canceled_loc){
+    if (ev->component_id() == canceled_loc){
       delete ev;
       queue_.erase(tmp);
     }

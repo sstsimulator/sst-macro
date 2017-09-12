@@ -70,7 +70,7 @@ namespace sstmac {
 namespace hw {
 
 pisces_tiled_switch::pisces_tiled_switch(sprockit::sim_parameters* params,
-                                                   uint64_t id, event_manager* mgr)
+                                         uint32_t id, event_manager* mgr)
   : pisces_abstract_switch(params, id, mgr)
 {
   nrows_ = params->get_int_param("nrows");
@@ -175,10 +175,10 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         int tile_xbar = row_col_to_tile(row_dm, col_out);
         pisces_crossbar* xbar = xbar_tiles_[tile_xbar];
         //label unique input ports on the xbar by column
-        demuxer->set_output(
-              demuxer_params,col_out,col_dm,xbar->payload_handler());
-        xbar->set_input(
-              xbar_params, col_dm, col_out, demuxer->credit_handler());
+        auto out_link = new local_link(this, xbar->payload_handler());
+        demuxer->set_output(demuxer_params,col_out,col_dm,out_link);
+        auto in_link = new local_link(this, demuxer->credit_handler());
+        xbar->set_input(xbar_params, col_dm, col_out, in_link);
       }
     }
   }
@@ -198,8 +198,10 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
          "Connecting %s:%p local port %d to %s:%p local port %d",
           xbar->to_string().c_str(), xbar, rm,
           muxer->to_string().c_str(), muxer, rx);
-        xbar->set_output(xbar_params, rm, rx, muxer->payload_handler());
-        muxer->set_input(muxer_params, rx, rm, xbar->credit_handler());
+        auto out_link = new local_link(this, muxer->payload_handler());
+        xbar->set_output(xbar_params, rm, rx, out_link);
+        auto in_link = new local_link(this, xbar->credit_handler());
+        muxer->set_input(muxer_params, rx, rm, in_link);
       }
     }
   }
@@ -210,11 +212,11 @@ pisces_tiled_switch::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler *mod)
+  event_link* link)
 {
   params->add_param_override("num_vc", router_->max_num_vc());
   pisces_sender* muxer = col_output_muxers_[src_outport];
-  muxer->set_output(params, 0, dst_inport, mod);
+  muxer->set_output(params, 0, dst_inport, link);
 }
 
 void
@@ -222,10 +224,10 @@ pisces_tiled_switch::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler *mod)
+  event_link* link)
 {
   pisces_sender* demuxer = row_input_demuxers_[dst_inport];
-  demuxer->set_input(params, dst_inport, src_outport, mod);
+  demuxer->set_input(params, dst_inport, src_outport, link);
 }
 
 #if 0

@@ -89,7 +89,7 @@ class library
     return addr_;
   }
 
-  device_id event_location() const;
+  uint32_t component_id() const;
 
   virtual ~library();
 

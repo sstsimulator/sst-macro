@@ -80,14 +80,15 @@ logp_nic::do_send(network_message* msg)
 
   timestamp extra_delay = start_send - now_;
   //leave the injection latency term to the interconnect
-  send_delayed_to_link(extra_delay, logp_switch_, msg);
+  logp_switch_link_->send_delay(extra_delay, msg);
 
   timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
   next_free_ = start_send + time_to_inject;
   if (msg->needs_ack()){
     //do whatever you need to do so that this msg decouples all pointers
     network_message* acker = msg->clone_injection_ack();
-    schedule(next_free_, ack_handler_, acker); //send to node
+    auto ack_ev = new_callback(parent_, &node::handle, acker);
+    parent_->send_self_event_queue(next_free_, ack_ev);
   }
 }
 
@@ -96,13 +97,13 @@ logp_nic::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   if (src_outport == Injection){
     //ignore
   } else if (src_outport == LogP){
     nic_debug("connecting to LogP switch");
-    logp_switch_ = mod;
+    logp_switch_link_ = link;
   } else {
     spkt_abort_printf("Invalid switch port %d in logp_nic::connect_output", src_outport);
   }
@@ -113,7 +114,7 @@ logp_nic::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   //nothing needed
 }

@@ -120,13 +120,13 @@ api::now() const
 void
 api::schedule(timestamp t, event_queue_entry* ev)
 {
-  os()->schedule(t, ev);
+  os()->send_self_event_queue(t, ev);
 }
 
 void
 api::schedule_delay(timestamp t, event_queue_entry* ev)
 {
-  os()->schedule_delay(t, ev);
+  os()->send_delayed_self_event_queue(t, ev);
 }
 
 }

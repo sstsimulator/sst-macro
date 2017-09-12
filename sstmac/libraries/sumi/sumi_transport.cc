@@ -183,7 +183,7 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
 
   rank_mapper_ = sstmac::sw::task_mapping::global_mapping(sid.app_);
   nproc_ = rank_mapper_->nproc();
-  loc_ = os_->event_location();
+  component_id_ = os_->component_id();
 
   server->register_proc(rank_, this);
 

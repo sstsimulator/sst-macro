@@ -86,13 +86,13 @@ class pisces_nic :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
   virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
   link_handler* credit_handler(int port) const override;
 
@@ -140,13 +140,13 @@ class pisces_netlink :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
   virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
  private:
   static const int really_big_buffer;

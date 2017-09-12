@@ -66,7 +66,7 @@ class stop_event : public event_queue_entry
 
   stop_event(event_manager* man) :
     man_(man),
-    event_queue_entry(device_id::ctrl_event(), device_id::ctrl_event())
+    event_queue_entry(-1, -1)
   {
   }
 

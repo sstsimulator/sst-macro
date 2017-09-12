@@ -86,7 +86,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
   parent_(parent),
-  logp_switch_(nullptr),
+  logp_switch_link_(nullptr),
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
   nic_pipeline_multiplier_(0.),
@@ -96,7 +96,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   connectable_subcomponent(parent) //no self events with NIC
 {
   event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
-  node_handler_ = new_handler(parent, &node::handle);
+  //node_handler_ = new_handler(parent, &node::handle);
 
   if (params->has_param("post_latency")){
     post_latency_ = params->get_time_param("post_latency");
@@ -130,7 +130,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
 
 nic::~nic()
 {
-  if (node_handler_) delete node_handler_;
+  //if (node_handler_) delete node_handler_;
   if (event_mtl_handler_) delete event_mtl_handler_;
   //if (spy_bytes_) delete spy_bytes_;
   //if (spy_num_messages_) delete spy_num_messages_;
@@ -321,8 +321,8 @@ nic::internode_send(network_message* netmsg)
   nic_debug("internode send payload %s",
     netmsg->to_string().c_str());
   //we might not have a logp overlay network
-  if (logp_switch_ && negligible_size(netmsg->byte_length())){
-    send_to_link(logp_switch_, netmsg);
+  if (logp_switch_link_ && negligible_size(netmsg->byte_length())){
+    logp_switch_link_->send_now(netmsg);
     ack_send(netmsg);
   } else {
     do_send(netmsg);
@@ -335,14 +335,15 @@ nic::send_to_logp_switch(network_message* netmsg)
   nic_debug("send to logP switch %s",
     netmsg->to_string().c_str());
   //we might not have a logp overlay network
-  if (logp_switch_) send_to_link(logp_switch_, netmsg);
+  if (logp_switch_link_) logp_switch_link_->send_now(netmsg);
   else do_send(netmsg);
 }
 
 void
 nic::send_to_node(network_message* payload)
 {
-  schedule_now(node_handler_, payload);
+  auto forward_ev = new_callback(parent_, &node::handle, payload);
+  parent_->send_now_self_event_queue(forward_ev);
 }
 
 }

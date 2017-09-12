@@ -204,7 +204,7 @@ class thread
     backtrace_ = bt;
   }
 
-  device_id event_location() const;
+  uint32_t component_id() const;
 
   void collect_backtrace(int nfxn);
 

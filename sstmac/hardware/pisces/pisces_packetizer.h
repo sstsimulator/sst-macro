@@ -77,15 +77,11 @@ class pisces_packetizer :
 
   void inject(int vn, long bytes, long byte_offset, message *payload) override;
 
-  /**
-   Set up the injection/ejection links to the switch the NIC is connected to
-   @param sw The switch that injects/ejects
-   */
   void set_output(sprockit::sim_parameters* params,
-             int port, event_handler* output);
+             int port, event_link* output);
 
   void set_input(sprockit::sim_parameters* params,
-            int port, event_handler* input);
+            int port, event_link* input);
 
   void recv_credit(event* credit);
 
@@ -112,7 +108,7 @@ class pisces_packetizer :
   pisces_injection_buffer* inj_buffer_;
   pisces_eject_buffer* ej_buffer_;
 
-  event_handler* payload_handler_;
+  event_link* payload_link_;
 
   recv_cq completion_queue_;
 

@@ -58,7 +58,7 @@ pisces_simple_network::pisces_simple_network(sprockit::sim_parameters *params, S
   send_functor_(nullptr),
   credit_link_(nullptr),
   logp_link_(nullptr),
-  event_scheduler(init_loc(params)),
+  event_scheduler(params->get_int_param("id")),
   inj_buffer_(nullptr)
 {
   //we need a self link
@@ -114,13 +114,6 @@ pisces_simple_network::recvInitData()
 {
   spkt_abort_printf("pisces simple network cannot recv init data");
   return nullptr;
-}
-
-device_id
-pisces_simple_network::init_loc(sprockit::sim_parameters* params)
-{
-  nid_ = params->get_int_param("id");
-  return device_id(nid_, device_id::node);
 }
 
 bool

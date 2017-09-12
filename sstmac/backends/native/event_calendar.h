@@ -72,7 +72,7 @@ class event_calendar :
 
   void clear(timestamp zero_time = timestamp());
 
-  void cancel_all_messages(device_id mod);
+  void cancel_all_messages(uint32_t mod);
 
   bool empty() const {
     return num_events_left_ == 0;

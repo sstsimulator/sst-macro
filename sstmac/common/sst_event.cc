@@ -57,10 +57,10 @@ handler_event_queue_entry::execute()
 
 handler_event_queue_entry::handler_event_queue_entry(event* ev,
                            event_handler* hand,
-                           device_id src_loc) :
+                           uint32_t src_loc) :
   ev_to_deliver_(ev),
   handler_(hand),
-  event_queue_entry(hand->event_location(), src_loc)
+  event_queue_entry(hand->component_id(), src_loc)
 {
 }
 

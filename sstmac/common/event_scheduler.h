@@ -71,33 +71,25 @@ typedef event_handler link_handler;
 
 namespace sstmac {
 
+class event_link;
+
 class event_scheduler :
-  public locatable,
   public sprockit::printable
 {
   friend class event_subcomponent;
   friend class event_component;
+  friend class local_link;
+  friend class ipc_link;
+  friend class multithread_link;
+
  public:
-  /**
-   * Add an event to the event queue, where msg will get delivered to handler at time t.
-   * @param t Time at which the event should happen
-   * @param handler The handler for the event
-   * @param msg The message to deliver to the handler
-   */
-  void schedule(timestamp t,
-           event_handler* handler,
-           event* ev);
+  uint32_t next_seqnum() {
+    return seqnum_++;
+  }
 
-  void schedule(timestamp t, event_queue_entry* ev);
-
-  void schedule_now(event_queue_entry* ev);
-
-  void schedule_now(event_handler* handler, event* ev);
-
-  void schedule_delay(timestamp delay,
-                 event_handler* handler,
-                 event* ev);
-  void schedule_delay(timestamp delay, event_queue_entry* ev);
+  uint32_t component_id() const {
+    return id_;
+  }
 
   void send_self_event_queue(timestamp arrival, event_queue_entry* ev);
 
@@ -146,10 +138,11 @@ class event_scheduler :
   void handle_self_event(SST::Event* ev);
 
  protected:
-  event_scheduler(device_id loc) :
+  event_scheduler(uint32_t loc) :
    self_link_(nullptr),
    comp_(nullptr),
-   locatable(loc, locatable::null_threadid)
+   id_(loc),
+   seqnum_(0)
   {
   }
 
@@ -184,32 +177,44 @@ class event_scheduler :
     return eventman_;
   }
 
-
+ private:
   /**
-   * @brief ipc_schedule Should only be called on stub handlers for which handler->ipc_handler() returns true
-   * @param t         The time the event will run at
-   * @param handler   The handler to receive the event. This should always be a stub for a real handler on a remote process.
-   * @param ev        The event to deliver
-   */
-  void ipc_schedule(timestamp t, event_handler* handler, event* ev);
+  * Add an event to the event queue, where msg will get delivered to handler at time t.
+  * @param t Time at which the event should happen
+  * @param handler The handler for the event
+  * @param msg The message to deliver to the handler
+  */
+  void schedule(timestamp t, event_handler* handler, event* ev);
+
+  void schedule(timestamp t, event_queue_entry* ev);
+
+  void schedule_now(event_queue_entry* ev);
+
+  void schedule_now(event_handler* handler, event* ev);
+
+  void schedule_delay(timestamp delay, event_handler* handler, event* ev);
+
+  void schedule_delay(timestamp delay, event_queue_entry* ev);
+
+  void multithread_append(timestamp t, event_handler* handler, event* ev){}
 
  protected:
-  event_scheduler(event_manager* mgr, uint32_t* seqnum, device_id loc, int thread_id) :
-   locatable(loc, thread_id),
+  event_scheduler(event_manager* mgr, uint32_t comp_id) :
     eventman_(mgr),
-   seqnum_(seqnum)
+    seqnum_(0),
+    id_(comp_id)
   {
   }
 
  private:
   event_manager* eventman_;
-  uint32_t* seqnum_;
+  uint32_t seqnum_;
+  uint32_t id_;
+
+  std::set<event_queue_entry*> event_queue_;
 
  private:
   void sanity_check(timestamp t);
-
-  void multithread_schedule(int src_thread, int dst_thread,
-    timestamp t, event_queue_entry* ev);
 #endif
 
 };
@@ -240,29 +245,22 @@ class event_component :
 #if SSTMAC_INTEGRATED_SST_CORE
  protected:
   event_component(sprockit::sim_parameters* params,
-                 uint64_t cid,
-                 device_id id,
+                 uint32_t cid,
                  event_manager* mgr);
 #else
  protected:
   event_component(sprockit::sim_parameters* params,
-                uint64_t cid,
-                device_id id,
+                uint32_t cid,
                 event_manager* mgr) :
-   event_scheduler(mgr, &seqnum_, id, mgr ? mgr->thread_id() : locatable::null_threadid),
-   seqnum_(0)
+   event_scheduler(mgr, cid)
   {
   }
 
   void init_links(sprockit::sim_parameters* params){} //need for SST core compatibility
-
- private:
-  uint32_t seqnum_;
 #endif
 };
 
-class event_subcomponent :
-  public event_scheduler
+class event_subcomponent
 {
 
  public:
@@ -274,15 +272,40 @@ class event_subcomponent :
 
   virtual void deadlock_check(event* ev){}
 
+  virtual std::string to_string() const = 0;
+
+  timestamp now() const {
+    return parent_->now();
+  }
+
+  uint32_t component_id() const {
+    return parent_->component_id();
+  }
+
+  void send_self_event_queue(timestamp t, event_queue_entry* ev){
+    parent_->send_self_event_queue(t, ev);
+  }
+
+  void send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev){
+    parent_->send_delayed_self_event_queue(delay, ev);
+  }
+
+  void send_now_self_event_queue(event_queue_entry* ev){
+    parent_->send_now_self_event_queue(ev);
+  }
+
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
   event_subcomponent(event_scheduler* parent);
 #else
  protected:
   event_subcomponent(event_scheduler* parent) :
-   event_scheduler(parent->event_mgr(), parent->seqnum_, parent->event_location(), parent->thread_id())
+    parent_(parent)
   {
   }
+
+ private:
+  event_scheduler* parent_;
 #endif
 };
 
@@ -298,6 +321,150 @@ link_handler* new_link_handler(const T* t, Fxn fxn){
 }
 #endif
 
+class event_link {
+ public:
+  virtual void send(timestamp arrival, event* ev) = 0;
+
+  virtual ~event_link(){}
+
+  virtual std::string to_string() const = 0;
+
+  virtual void deadlock_check() = 0;
+
+  virtual void deadlock_check(event* ev) = 0;
+
+  virtual void handle(event* ev) = 0;
+
+  void send_delay(timestamp delay, event* ev){
+    send(scheduler_->now() + delay, ev);
+  }
+
+  void send_now(event* ev){
+    send(scheduler_->now(), ev);
+  }
+
+  void send_extra_delay(timestamp extra_delay, timestamp delay, event* ev){
+    timestamp arr = extra_delay + delay + scheduler_->now();
+    send(arr, ev);
+  }
+
+ protected:
+  event_link(event_scheduler* sched) : scheduler_(sched) {}
+
+  event_scheduler* scheduler_;
+
+};
+
+class local_link : public event_link {
+ public:
+  local_link(event_scheduler* es, event_handler* hand) :
+    handler_(hand),
+    event_link(es)
+  {
+  }
+
+  std::string to_string() const override {
+    return handler_->to_string();
+  }
+
+  void handle(event* ev) override {
+    handler_->handle(ev);
+  }
+
+  void deadlock_check() override {
+    handler_->deadlock_check();
+  }
+
+  void deadlock_check(event* ev) override {
+    handler_->deadlock_check(ev);
+  }
+
+  void send(timestamp arrival, event* ev) override {
+    scheduler_->schedule(arrival, handler_, ev);
+  }
+
+ private:
+  event_handler* handler_;
+
+};
+
+class centralized_link : public event_link {
+ public:
+  centralized_link(event_manager* mgr, event_scheduler* sched, event_handler* hand) :
+    mgr_(mgr), handler_(hand),
+    event_link(sched)
+  {
+  }
+
+  void handle(event *ev) override {
+    handler_->handle(ev);
+  }
+
+  void send(timestamp arrival, event *ev) override {
+    uint32_t seqnum = scheduler_->next_seqnum();
+    auto qe = new handler_event_queue_entry(ev, handler_, scheduler_->component_id());
+    mgr_->schedule(arrival, seqnum, qe);
+  }
+
+  void deadlock_check() override {
+    handler_->deadlock_check();
+  }
+
+  void deadlock_check(event* ev) override {
+    handler_->deadlock_check(ev);
+  }
+
+ private:
+  event_manager* mgr_;
+  event_handler* handler_;
+};
+
+class ipc_link : public event_link {
+ public:
+  ipc_link(event_manager* mgr, int rank,
+           event_scheduler* src, uint32_t dst,
+           int port, bool is_credit) :
+    rank_(rank), src_(src->component_id()), dst_(dst),
+    is_credit_(is_credit), mgr_(mgr),
+    port_(port),
+    event_link(src)
+  {
+  }
+
+  std::string to_string() const override {
+    return "ipc link";
+  }
+
+  void handle(event *ev) override {
+    sprockit::abort("ipc_link should not directly handle events");
+  }
+
+  void deadlock_check() override {}
+
+  void deadlock_check(event* ev) override {}
+
+  void send(timestamp arrival, event* ev) override {
+    ipc_event_t iev;
+    iev.src = src_;
+    iev.dst = dst_;
+    iev.seqnum = scheduler_->next_seqnum();
+    iev.ev = ev;
+    iev.t = arrival;
+    iev.rank = rank_;
+    iev.credit = is_credit_;
+    iev.port = port_;
+    mgr_->ipc_schedule(&iev);
+  }
+
+ private:
+  bool is_credit_;
+  int rank_;
+  int port_;
+  uint32_t dst_;
+  uint32_t src_;
+  event_manager* mgr_;
+
+};
 
 } // end of namespace sstmac
 #endif

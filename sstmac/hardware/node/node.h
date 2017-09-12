@@ -88,11 +88,11 @@ class node :
 
   void connect_output(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 event_handler* handler) override;
+                 event_link* link) override;
 
   void connect_input(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 event_handler* handler) override;
+                 event_link* link) override;
 
 
   link_handler* payload_handler(int port) const override;
@@ -194,7 +194,7 @@ class node :
 
  protected:
   node(sprockit::sim_parameters* params,
-    uint64_t id,
+    uint32_t id,
     event_manager* mgr);
 
  protected:
