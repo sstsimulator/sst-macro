@@ -351,7 +351,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         nic* the_nic = nd->get_nic();
         nodes_[nid] = nd;
 
-        event_link* out_link = new local_link(local_logp_switch, local_logp_switch->payload_handler(port));
+        event_link* out_link = new local_link(nd, local_logp_switch->payload_handler(port));
         the_nic->connect_output( inj_params, nic::LogP, 0/*doesnt matter*/, out_link);
 
         event_link* in_link = new local_link(nd, the_nic->mtl_handler());

@@ -193,12 +193,12 @@ mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
 {
   using namespace sprockit;
   start_Ipt2pt_call(MPI_Isend,count,datatype,dest,tag,comm,request);
+  mpi_request* req = do_isend(buf, count, datatype, dest, tag, comm);
+  add_request_ptr(req, request);
   mpi_api_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt,
     "MPI_Isend(%d,%s,%d,%s,%s;REQ=%d)",
     count, type_str(datatype).c_str(), int(dest),
     tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
-  mpi_request* req = do_isend(buf, count, datatype, dest, tag, comm);
-  add_request_ptr(req, request);
   queue_->nonblocking_progress();
   finish_Impi_call(MPI_Isend,request);
   return MPI_SUCCESS;

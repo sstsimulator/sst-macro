@@ -125,9 +125,9 @@ class dummy_switch : public test_component {
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) override {
+    event_link* link) override {
     //register handler on port
-    partner_ = handler;
+    partner_ = link;
     std::cout << "Connecting output "
               << src_outport << "-> " << dst_inport
               << " on component " << id_ << std::endl;
@@ -137,7 +137,7 @@ class dummy_switch : public test_component {
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) override {
+    event_link* link) override {
     //we won't do anything with credits, but print for tutorial
     std::cout << "Connecting input "
               << src_outport << "-> " << dst_inport
@@ -169,12 +169,12 @@ class dummy_switch : public test_component {
 
  private:
   void send_ping_message(){
-    send_to_link(partner_, new test_event);
+    partner_->send_delay(latency_, new test_event);
     --num_ping_pongs_;
   }
 
  private:
-  event_handler* partner_;
+  event_link* partner_;
   timestamp latency_;
   int num_ping_pongs_;
   uint32_t id_;

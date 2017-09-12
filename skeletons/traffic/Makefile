@@ -3,7 +3,7 @@ SRC := main.cc
 
 CXX :=    sst++
 CC :=     sstcc
-CXXFLAGS := -fPIC -O2 -g
+CXXFLAGS := -fPIC -O3
 CPPFLAGS := -I.
 LIBDIR :=  
 PREFIX := 
@@ -21,7 +21,7 @@ $(TARGET): $(OBJ)
 	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS)  $(CXXFLAGS)
 
 %.o: %.cc 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	SSTMAC_SKELETONIZE=1 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@

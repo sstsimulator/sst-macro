@@ -108,6 +108,9 @@ rendezvous_get::incoming_header(mpi_queue *queue,
     //this is a bit of a hack
     msg->set_time_synced(queue->now());
 #endif
+    if (rdma_pin_delay_.ticks_int64()){
+      queue->api()->compute(rdma_pin_delay_);
+    }
     mpi_queue_action_debug(
       queue->api()->comm_world()->rank(),
       "found matching request for %s",
@@ -133,13 +136,8 @@ rendezvous_get::incoming_payload(mpi_queue* queue,
                                 mpi_message* msg)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Payload");
-  if (rdma_pin_delay_.ticks_int64()){
-    queue->api()->compute(rdma_pin_delay_);
-  }
-
-  mpi_queue::pending_req_map::iterator it = queue->recv_needs_payload_.find(
-        msg->unique_int());
-  if (it == queue->recv_needs_payload_.end()) {
+  auto iter = queue->recv_needs_payload_.find(msg->unique_int());
+  if (iter == queue->recv_needs_payload_.end()) {
     if (queue->recv_needs_payload_.empty()){
       std::cerr << "No recv requests waiting" << std::endl;
     }
@@ -159,8 +157,8 @@ rendezvous_get::incoming_payload(mpi_queue* queue,
      "queue %p data message %lu without a matching ack on %s",
       rank, queue, msg->unique_int(), msg->to_string().c_str());
   }
-  mpi_queue_recv_request* recver = it->second;
-  queue->recv_needs_payload_.erase(it);
+  mpi_queue_recv_request* recver = iter->second;
+  queue->recv_needs_payload_.erase(iter);
   queue->finalize_recv(msg, recver);
   if (software_ack_){
     queue->send_completion_ack(msg);

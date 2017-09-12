@@ -128,9 +128,13 @@ class parallel_runtime :
 
   };
 
-  static const int global_root;
+#if !SSTMAC_INTEGRATED_SST_CORE
+  void send_event(ipc_event_t* iev);
 
   static void run_serialize(serializer& ser, ipc_event_t* iev);
+#endif
+
+  static const int global_root;
 
   virtual int64_t allreduce_min(int64_t mintime) = 0;
 
@@ -179,8 +183,6 @@ class parallel_runtime :
   virtual timestamp send_recv_messages(timestamp vote){
     return vote;
   }
-
-  void send_event(ipc_event_t* iev);
 
   void reset_send_recv();
 

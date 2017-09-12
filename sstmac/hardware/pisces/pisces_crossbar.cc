@@ -325,7 +325,7 @@ pisces_NtoM_queue::set_input(
   debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s:%d setting input %s:%d",
     to_string().c_str(), my_inport,
-    input->to_string().c_str(), src_outport);
+    input? input->to_string().c_str() : "null", src_outport);
   pisces_input inp;
   inp.src_outport = src_outport;
   inp.link = input;
