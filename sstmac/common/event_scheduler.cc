@@ -365,7 +365,6 @@ void
 event_scheduler::schedule(timestamp t, event_queue_entry* ev)
 {
   if (!registered_event_){
-    //printf("Registering %d at %8.4e\n", t.sec(), component_id());
     eventman_->register_component(t,this);
     registered_event_ = true;
   }

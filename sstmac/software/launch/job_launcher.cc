@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/job_launch_event.h>
 #include <sstmac/software/launch/launch_request.h>
 #include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/util.h>
@@ -171,25 +172,17 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
 #if SSTMAC_INTEGRATED_SST_CORE
   hw::topology* logp_mapper = topology_;
 #else
-  hw::interconnect* logp_mapper = hw::interconnect::static_interconnect();
+  //hw::interconnect* logp_mapper = hw::interconnect::static_interconnect();
 #endif
-
-  std::set<int> ranksSent;
 
   int num_ranks = mapping->num_ranks();
   for (int rank=0; rank < num_ranks; ++rank){
     int dst_nid = mapping->rank_to_node(rank);
-    int logp_switch = logp_mapper->node_to_logp_switch(dst_nid);
-    if (ranksSent.find(logp_switch) != ranksSent.end()){
-      continue; //redundant, no need
-    }
-    ranksSent.insert(logp_switch);
     sw::start_app_event* lev = new start_app_event(request->aid(), request->app_namespace(),
                                      mapping, rank, mapping->rank_to_node(rank),
                                      os_->addr(),//the job launch root
                                      request->app_params());
-    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
-    //os_->execute_kernel(ami::COMM_PMI_BCAST, lev);
+    hw::interconnect::local_logp_switch()->send(os_->now(), lev, os_->addr(), dst_nid);
   }
   //job launcher needs to add this - might need it later
   task_mapping::add_global_mapping(request->aid(), request->app_namespace(), mapping);

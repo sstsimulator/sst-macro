@@ -139,10 +139,6 @@ class start_app_event : public launch_event {
 
   int core_affinity(int intranode_rank) const;
 
-  bool is_bcast() const override {
-    return true;
-  }
-
   std::string to_string() const override;
 
   start_app_event(){} //for serialization

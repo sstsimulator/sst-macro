@@ -210,7 +210,8 @@ class event_scheduler :
   event_scheduler(event_manager* mgr, uint32_t comp_id) :
     eventman_(mgr),
     seqnum_(0),
-    id_(comp_id)
+    id_(comp_id),
+    registered_event_(false)
   {
   }
 
@@ -218,9 +219,8 @@ class event_scheduler :
   event_manager* eventman_;
   uint32_t seqnum_;
   uint32_t id_;
-  bool registered_event_;
-  timestamp event_horizion_;
   timestamp now_;
+  bool registered_event_;
 
   struct event_compare {
     bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
@@ -379,9 +379,10 @@ class event_link {
 
 class local_link : public event_link {
  public:
-  local_link(event_scheduler* es, event_handler* hand) :
+  local_link(event_scheduler* src, event_scheduler* dst, event_handler* hand) :
     handler_(hand),
-    event_link(es)
+    dst_(dst),
+    event_link(src)
   {
   }
 
@@ -402,11 +403,12 @@ class local_link : public event_link {
   }
 
   void send(timestamp arrival, event* ev) override {
-    scheduler_->schedule(arrival, handler_, ev);
+    dst_->schedule(arrival, handler_, ev);
   }
 
  private:
   event_handler* handler_;
+  event_scheduler* dst_;
 
 };
 

@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/logp/logp_nic.h>
+#include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/common/event_handler.h>
@@ -78,9 +79,8 @@ logp_nic::do_send(network_message* msg)
   nic_debug("logp injection queued at %8.4e, sending at %8.4e for message %s",
             now_.sec(), start_send.sec(), msg->to_string().c_str());
 
-  timestamp extra_delay = start_send - now_;
   //leave the injection latency term to the interconnect
-  logp_switch_link_->send_delay(extra_delay, msg);
+  interconnect::local_logp_switch()->send(start_send, msg, my_addr_, msg->toaddr());
 
   timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
   next_free_ = start_send + time_to_inject;
@@ -99,14 +99,7 @@ logp_nic::connect_output(
   int dst_inport,
   event_link* link)
 {
-  if (src_outport == Injection){
-    //ignore
-  } else if (src_outport == LogP){
-    nic_debug("connecting to LogP switch");
-    logp_switch_link_ = link;
-  } else {
-    spkt_abort_printf("Invalid switch port %d in logp_nic::connect_output", src_outport);
-  }
+  //pass - nothing to do here
 }
 
 void

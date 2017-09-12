@@ -12,12 +12,13 @@ CORETESTS+= \
   test_core_apps_stop_time \
   test_core_apps_distributed_service \
   test_sumi_collective \
-  test_core_apps_ping_all_tiled_dfly \
   test_core_apps_ping_all_tiled_torus \
   test_core_apps_ping_pong \
   test_core_apps_ping_pong_slow \
   test_core_apps_ping_pong_amm4 \
   test_core_apps_ping_pong_amm4_slow 
+
+#  test_core_apps_ping_all_tiled_dfly 
 
 test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 6 $(top_srcdir) $@ Exact \

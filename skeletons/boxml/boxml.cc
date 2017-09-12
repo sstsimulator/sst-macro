@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sim_thread_lock.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_double.h>
+#include <sstmac/common/event_manager.h>
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(

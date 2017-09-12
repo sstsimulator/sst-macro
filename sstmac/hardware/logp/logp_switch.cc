@@ -66,11 +66,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/launch/launch_event.h>
 
+MakeDebugSlot(logp)
+
 namespace sstmac {
 namespace hw {
 
-logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
-  network_switch(params, id, mgr)
+logp_switch::logp_switch(sprockit::sim_parameters *params, interconnect* ic) :
+  top_(ic->topol())
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   sprockit::sim_parameters* ej_params = params->get_namespace("ejection");
@@ -94,153 +96,30 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t id, event_ma
 
   inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
 
-  interconn_ = interconnect::static_interconnect(params, mgr);
-
-  nic_links_.resize(top_->num_nodes());
-  neighbor_links_.reserve(1000); //nproc - just reserve a large block for now
-
-  init_links(params);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  mtl_handler_ = new_handler(this, &logp_switch::handle);
-#endif
+  nic_links_.resize(ic->topol()->num_nodes());
 }
 
 logp_switch::~logp_switch()
 {
-#if !SSTMAC_INTEGRATED_SST_CORE
-  delete mtl_handler_;
-#endif
-}
-
-link_handler*
-logp_switch::payload_handler(int port) const
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<logp_switch>(
-        const_cast<logp_switch*>(this), &logp_switch::handle);
-#else
-  return mtl_handler_;
-#endif
 }
 
 void
-logp_switch::connect_output(sprockit::sim_parameters *params,
-                            int src_outport, int dst_inport,
-                            event_link* link)
+logp_switch::connect_output(node_id nid, event_link* link)
 {
-  if (dst_inport == Node){
-    node_id nid = src_outport;
-    switch_debug("Connecting LogP to NIC %d", nid);
-    nic_links_[nid] = link;
-  } else if (dst_inport == Switch){
-    switch_id sid = src_outport;
-    switch_debug("Connecting to LogP switch %d", sid);
-    if (sid >= neighbor_links_.size()){
-      neighbor_links_.resize(sid+1);
-    }
-    neighbor_links_[sid] = link;
-  } else {
-    spkt_abort_printf("Invalid inport %d in logp_switch::connect_output", dst_inport);
-  }
+  nic_links_[nid] = link;
 }
 
 void
-logp_switch::connect_input(sprockit::sim_parameters *params,
-                           int src_outport, int dst_inport,
-                           event_link* link)
+logp_switch::send(timestamp now, message* msg, node_id src, node_id dst)
 {
-  //no-op
-}
-
-void
-logp_switch::incoming_message(message* msg, node_id src, node_id dst)
-{
-  bool local_src = nic_links_[src];
   timestamp delay(inv_min_bw_ * msg->byte_length()); //bw term
-  int num_hops = 0;
-  if (local_src){ //need to accumulate all the delay here
-    //local staying local
-    num_hops = top_->num_hops_to_node(src, dst);
-    delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
-  }
-  switch_debug("incoming message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
+  int num_hops = top_->num_hops_to_node(src, dst);;
+  delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
+  debug_printf(sprockit::dbg::logp, "sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
                num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
-  nic_links_[dst]->send_delay(delay, msg);
+  nic_links_[dst]->send(delay + now, msg);
 }
 
-void
-logp_switch::outgoing_message(message* msg, node_id src, node_id dst)
-{
-  //local going remote - just accumulate latency delay
-  int num_hops = top_->num_hops_to_node(src, dst);
-  timestamp delay = num_hops * hop_latency_; //factor of 2 for in-out
-
-  int dst_switch = interconn_->node_to_logp_switch(dst);
-  switch_debug("outgoing message to rank %d over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
-               dst_switch, num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
-  neighbor_links_[dst_switch]->send_extra_delay(delay, dbl_inj_lat_, msg);
-}
-
-void
-logp_switch::bcast_local_message(message* msg, node_id src)
-{
-  sw::start_app_event* lev = safe_cast(sw::start_app_event, msg);
-  sw::task_mapping::ptr mapping = lev->mapping();
-  int num_ranks = mapping->num_ranks();
-  for (int i=0; i < num_ranks; ++i){
-    node_id dst_node = mapping->rank_to_node(i);
-    event_link* dst_nic_link = nic_links_[dst_node];
-    bool local_dst = dst_nic_link;
-    bool local_src = nic_links_[src];
-
-    if (local_dst){
-      sw::start_app_event* new_lev = lev->clone(i, src, dst_node);
-      int num_hops = top_->num_hops_to_node(src, dst_node);
-      timestamp delay = num_hops * hop_latency_;
-      if (local_src){ //have to accumulate inj latency here
-        delay += dbl_inj_lat_; //factor of 2 for in-out
-      }
-      dst_nic_link->send_delay(delay, new_lev);
-    }
-  }
-  //this one not needed anymore
-  delete lev;
-}
-
-void
-logp_switch::forward_bcast_message(message* msg, node_id dst)
-{
-  int dst_switch = interconn_->node_to_logp_switch(dst);
-  //only accumulate inj lat - exact hop latency gets added on the other side
-  auto link = neighbor_links_[dst_switch];
-  link->send_delay(dbl_inj_lat_, msg);
-}
-
-void
-logp_switch::handle(event* ev)
-{
-  //this should only handle messages
-  message* msg = safe_cast(message, ev);
-  node_id dst = msg->toaddr();
-  node_id src = msg->fromaddr();
-  bool local_dst = nic_links_[dst];
-
-  switch_debug("handling message %d->%d of size %ld: %s",
-               src, dst, msg->byte_length(),
-               msg->to_string().c_str());
-
-  if (msg->is_bcast()){
-    if (local_dst){
-      bcast_local_message(msg, src);
-    } else {
-      forward_bcast_message(msg, dst);
-    }
-  } else if (local_dst){
-    incoming_message(msg, src, dst);
-  } else { //locall going remote
-    outgoing_message(msg, src, dst);
-  }
-}
 
 
 

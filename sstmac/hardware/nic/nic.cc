@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_histogram.h>
@@ -86,7 +87,6 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
   parent_(parent),
-  logp_switch_link_(nullptr),
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
   nic_pipeline_multiplier_(0.),
@@ -321,8 +321,9 @@ nic::internode_send(network_message* netmsg)
   nic_debug("internode send payload %s",
     netmsg->to_string().c_str());
   //we might not have a logp overlay network
-  if (logp_switch_link_ && negligible_size(netmsg->byte_length())){
-    logp_switch_link_->send_now(netmsg);
+  if (negligible_size(netmsg->byte_length())){
+    send_to_logp_switch(netmsg);
+
     ack_send(netmsg);
   } else {
     do_send(netmsg);
@@ -334,9 +335,7 @@ nic::send_to_logp_switch(network_message* netmsg)
 {
   nic_debug("send to logP switch %s",
     netmsg->to_string().c_str());
-  //we might not have a logp overlay network
-  if (logp_switch_link_) logp_switch_link_->send_now(netmsg);
-  else do_send(netmsg);
+  interconnect::local_logp_switch()->send(now(), netmsg, my_addr_, netmsg->toaddr());
 }
 
 void

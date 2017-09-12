@@ -171,9 +171,9 @@ pisces_switch::output_buffer(sprockit::sim_parameters* params,
     out_buffers_[src_outport] = out_buffer;
 
     int buffer_inport = 0;
-    auto out_link = new local_link(this, out_buffer->payload_handler());
+    auto out_link = new local_link(this, this, out_buffer->payload_handler());
     xbar_->set_output(params, src_outport, buffer_inport, out_link);
-    auto in_link = new local_link(this, xbar_->credit_handler());
+    auto in_link = new local_link(this, this, xbar_->credit_handler());
     out_buffer->set_input(params, buffer_inport, src_outport, in_link);
   }
   return out_buffers_[src_outport];

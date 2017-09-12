@@ -87,10 +87,6 @@ class message :
     return false;
   }
 
-  virtual bool is_bcast() const {
-    return false;
-  }
-
   virtual message* clone_ack() const {
     return nullptr;
   }

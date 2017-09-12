@@ -87,6 +87,10 @@ class interconnect
    */
   static interconnect* static_interconnect();
 
+  static logp_switch* local_logp_switch() {
+    return local_logp_switch_;
+  }
+
   static void clear_static_interconnect(){
     if (static_interconnect_) delete static_interconnect_;
     static_interconnect_ = nullptr;
@@ -112,6 +116,7 @@ class interconnect
 
  private:
   static interconnect* static_interconnect_;
+  static logp_switch* local_logp_switch_;
 
   interconnect(){}
 
@@ -150,10 +155,6 @@ class interconnect
    */
   node* node_at(node_id nid) const {
     return nodes_[nid];
-  }
-
-  network_switch* logp_switch_at(switch_id sid) const {
-    return logp_overlay_switches_[sid];
   }
 
   network_switch* switch_at(switch_id id) const {
@@ -209,13 +210,10 @@ class interconnect
                   sprockit::sim_parameters* ej_params);
 
   switch_map switches_;
-  //a set of switches that transfer messages quickly
-  switch_map logp_overlay_switches_;
+
   node_map nodes_;
 
   std::vector<connectable_component*> components_;
-
-  switch_id local_logp_switch_;
 
   double hop_bw_;
 

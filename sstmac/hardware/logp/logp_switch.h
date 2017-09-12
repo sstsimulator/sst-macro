@@ -61,53 +61,21 @@ namespace hw {
  *        using the LogGP model.  See "LogGP in Theory and Practice"
  *        by Hoefler and Schneider.
  */
-class logp_switch :
-  public network_switch
+class logp_switch
 {
  public:
-  RegisterComponent("logP | simple | LogP | logp", network_switch, logp_switch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A switch that implements a basic delay model with no congestion modeling")
+  //RegisterComponent("logP | simple | LogP | logp", network_switch, logp_switch,
+  //       "macro", COMPONENT_CATEGORY_NETWORK,
+  //       "A switch that implements a basic delay model with no congestion modeling")
 
  public:
-  typedef enum {
-    Node,
-    Switch
-  } Port;
-
-  logp_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
-
-  void handle(event* ev);
-
-  std::string to_string() const override {
-    return "LogP switch";
-  }
-
-  int queue_length(int port) const override {
-    return 0;
-  }
+  logp_switch(sprockit::sim_parameters* params, interconnect* ic);
 
   virtual ~logp_switch();
 
-  void connect_output(sprockit::sim_parameters *params,
-                      int src_outport, int dst_inport,
-                      event_link* link) override;
+  void connect_output(node_id nid, event_link* link);
 
-  void connect_input(sprockit::sim_parameters *params,
-                     int src_outport, int dst_inport,
-                     event_link* link) override;
-
-  link_handler* payload_handler(int port) const override;
-
-  link_handler* credit_handler(int port) const override {
-    return nullptr;
-  }
-
- private:
-  void incoming_message(message* msg, node_id src, node_id dst);
-  void outgoing_message(message* msg, node_id src, node_id dst);
-  void bcast_local_message(message* msg, node_id src);
-  void forward_bcast_message(message* msg, node_id dst);
+  void send(timestamp now, message *msg, node_id src, node_id dst);
 
  private:
   double inj_bw_inverse_;
@@ -122,14 +90,9 @@ class logp_switch :
 
   timestamp hop_latency_;
 
-  interconnect* interconn_;
+  topology* top_;
 
-  std::vector<event_link*> neighbor_links_;
   std::vector<event_link*> nic_links_;
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* mtl_handler_;
-#endif
 
 };
 

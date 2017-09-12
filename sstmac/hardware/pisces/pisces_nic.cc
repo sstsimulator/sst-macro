@@ -80,7 +80,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
                                               inj_params, parent);
   packetizer_->setArrivalNotify(this);
-  auto inj_link = new local_link(parent_, mtl_handler());
+  auto inj_link = new local_link(parent_, parent_, mtl_handler());
   packetizer_->setInjectionAcker(inj_link);
 
   //make port 0 a copy of the injection params
@@ -152,8 +152,6 @@ pisces_nic::connect_output(
   if (src_outport == Injection){
     pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
     packer->set_output(params, dst_inport, link);
-  } else if (src_outport == LogP){
-    logp_switch_link_ = link;
   } else {
     spkt_abort_printf("Invalid switch port %d in pisces_nic::connect_output", src_outport);
   }
