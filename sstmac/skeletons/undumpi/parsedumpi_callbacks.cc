@@ -209,8 +209,8 @@ void parsedumpi_callbacks::init_maps()
 inline sstmac::timestamp deltat(const dumpi_clock &left, const dumpi_clock &right)
 {
   static const int64_t billion(1e9);
-  return sstmac::timestamp::exact_nsec(billion*(left.sec-right.sec) +
-                               (left.nsec - right.nsec));
+  uint64_t nsec = billion*(left.sec-right.sec) + (left.nsec - right.nsec);
+  return sstmac::timestamp(nsec, sstmac::timestamp::nanoseconds);
 }
 
 /// Indicate that we are starting an MPI call.
@@ -244,15 +244,8 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
       }
     } else {
       // We get here if we are not using processor modeling.
-      sstmac::timestamp thetime = (parent_->timescaling_ * deltat(wall->start, trace_compute_start_));
-      if(thetime.ticks() < 0) {
-        // It turns out that RSQ can actually screw up on times
-        // (both wall time and cpu time are wrong for final MPI barrier
-        // in 016-4x2x2_run01/dumpi0014.bin collected on 08/07/09
-        //do nothing
-      } else {
-        parent_->compute(thetime);
-      }
+      sstmac::timestamp dt = parent_->timescaling_ * deltat(wall->start, trace_compute_start_);
+      parent_->compute(dt);
     }
   }
 }
@@ -2263,6 +2256,7 @@ on_MPI_Init(const dumpi_init *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Init: null callback pointer");
   }
+
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->init(const_cast<int*>(&prm->argc), const_cast<char***>(&prm->argv));
   cb->end_mpi(cpu, wall, perf);

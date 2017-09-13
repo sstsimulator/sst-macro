@@ -149,10 +149,10 @@ mpi_transport::~mpi_transport()
 
 
 void
-mpi_transport::rdma_get_ack(const message::ptr& msg)
+mpi_transport::rdma_get_ack(message* msg)
 {
   msg->set_payload_type(message::rdma_get_ack);
-  completion_queue_.push_back(msg);
+  pt2pt_done_.push_back(msg);
 }
 
 void
@@ -184,7 +184,7 @@ mpi_transport::recv_terminate(int src)
   MPI_Recv(&status, 1, MPI_INT, src, terminate_tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   unlock();
 
-  message::ptr unblock_msg = new message;
+  message* unblock_msg = new message;
   unblock_msg->set_class_type(message::terminate);
   handle(unblock_msg);
 }
@@ -199,7 +199,7 @@ mpi_transport::recv_ping_response(int src)
 
   mpi_debug_out("recv ping response %s from %d", tostr((ping_status_t)status), src);
 
-  message::ptr ping_msg = new message;
+  message* ping_msg = new message;
   ping_msg->set_sender(src);
   ping_msg->set_recver(rank_);
   ping_msg->set_class_type(message::ping);
@@ -276,7 +276,7 @@ mpi_transport::allocate_pending()
 
 void
 mpi_transport::transport_smsg_send(int dst, int tag, PendingMPI::type_t ty,
-  const message::ptr& msg, void* extra_md, int md_size)
+  message* msg, void* extra_md, int md_size)
 {
   CHECK_IF_I_AM_DEAD(return);
 
@@ -330,7 +330,7 @@ mpi_transport::go_revive()
 }
 
 void
-mpi_transport::do_smsg_send(int dst, const message::ptr &msg)
+mpi_transport::do_smsg_send(int dst, message* msg)
 {
   mpi_debug_out("smsg send %s to %d", msg->to_string().c_str(), dst);
   lock();
@@ -339,7 +339,7 @@ mpi_transport::do_smsg_send(int dst, const message::ptr &msg)
 }
 
 void
-mpi_transport::do_rdma_get(int src, const message::ptr &msg)
+mpi_transport::do_rdma_get(int src, message* msg)
 {
   long bytes = msg->byte_length();
   void* sender_buf = msg->remote_buffer();
@@ -375,7 +375,7 @@ mpi_transport::do_rdma_get(int src, const message::ptr &msg)
 }
 
 void
-mpi_transport::send_transaction_ack(int dst, const message::ptr& msg)
+mpi_transport::send_transaction_ack(int dst, message* msg)
 {
   CHECK_IF_I_AM_DEAD(return);
 
@@ -407,7 +407,7 @@ mpi_transport::recv_transaction_ack(int src)
 }
 
 void
-mpi_transport::do_rdma_put(int dst, const message::ptr &msg)
+mpi_transport::do_rdma_put(int dst, message* msg)
 {
   CHECK_IF_I_AM_DEAD(return);
 
@@ -447,7 +447,7 @@ mpi_transport::do_rdma_put(int dst, const message::ptr &msg)
 }
 
 void
-mpi_transport::do_nvram_get(int src, const message::ptr &msg)
+mpi_transport::do_nvram_get(int src, message* msg)
 {
   sprockit::abort("mpi_transpot: cannot do nvram get");
 }
@@ -539,7 +539,7 @@ mpi_transport::recv_smsg(int src, int tag, int size)
   unlock();
 }
 
-message::ptr
+message*
 mpi_transport::deserialize_smsg(PendingMPI* pending, void* extra_md, int md_size)
 {
   sprockit::serializer ser;
@@ -549,7 +549,7 @@ mpi_transport::deserialize_smsg(PendingMPI* pending, void* extra_md, int md_size
     ser_buffer += md_size;
   }
   ser.start_unpacking(ser_buffer, pending->size);
-  message::ptr msg;
+  message* msg;
   ser & msg;
   lock();
   free_smsg_buffer(pending->recv_buf);
@@ -650,7 +650,7 @@ mpi_transport::wait_on_pending()
       break;
     case PendingMPI::RDMAPutSend:
       if (pending->msg->needs_send_ack()){
-        message::ptr cln = pending->msg->clone_msg();
+        message* cln = pending->msg->clone_msg();
         cln->set_payload_type(message::rdma_put_ack);
         handle(cln);
       }
@@ -702,7 +702,7 @@ void
 mpi_transport::process_rdma_put_req(PendingMPI* pending)
 {
   int rdma_tag;
-  message::ptr msg = deserialize_smsg(pending, &rdma_tag, sizeof(int));
+  message* msg = deserialize_smsg(pending, &rdma_tag, sizeof(int));
 
   mpi_debug_out("process rdma put on tag %d from %d",
     rdma_tag, pending->sender);
@@ -750,7 +750,7 @@ mpi_transport::process_rdma_get_req(PendingMPI* pending)
   CHECK_IF_I_AM_DEAD(return);
 
   int rdma_tag;
-  message::ptr msg = deserialize_smsg(pending, &rdma_tag, sizeof(int));
+  message* msg = deserialize_smsg(pending, &rdma_tag, sizeof(int));
 
   mpi_debug_out("process rdma get req tag %d from %d",
     rdma_tag, pending->sender);

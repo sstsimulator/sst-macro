@@ -8,8 +8,7 @@ SINGLETESTS = \
   test_utilities \
   test_pthread \
   test_blas \
-  test_blas_finegrained \
-  test_node_noise 
+  test_blas_finegrained 
 
 
 if HAVE_OTF2
@@ -42,10 +41,6 @@ test_blas.$(CHKSUF): test_blas
 test_blas_finegrained.$(CHKSUF): test_blas
 	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
     ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_finegrained.ini 
-
-test_node_noise.$(CHKSUF): test_blas
-	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.1 and t < 0.11' \
-    ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_node_noise.ini 
 
 test_pthread.$(CHKSUF): test_pthread
 	$(PYRUNTEST) 6 $(top_srcdir) $@ True \

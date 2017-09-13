@@ -19,7 +19,7 @@ AM_LDFLAGS += $(OTF2_LDFLAGS)
 endif
 
 AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_builddir)/sumi -I$(top_srcdir)/sumi
-AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
+AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements -DSSTMAC=1
 AM_LDFLAGS += -lotf2
 
 libsstmac_skeletons_la_LDFLAGS = 

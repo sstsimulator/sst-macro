@@ -50,13 +50,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 extern void test_topology(sprockit::sim_parameters& params);
 
-void test_crossbar(UnitTest& unit)
+void test_fully_connected(UnitTest& unit)
 {
   sprockit::sim_parameters params;
   sstmac::env::params = &params;
   params["geometry"] = "10";
   params["concentration"] = "3";
-  params["name"] = "crossbar";
+  params["name"] = "fully_connected";
   params["router.name"] = "minimal";
   test_topology(params);
 }

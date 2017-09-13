@@ -31,6 +31,7 @@ library_include_HEADERS = \
  allgather.h \
  allgatherv.h \
  allreduce.h \
+ feature_config.h \
  gather.h \
  gatherv.h \
  bcast.h \

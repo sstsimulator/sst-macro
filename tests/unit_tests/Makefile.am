@@ -24,7 +24,7 @@ check_PROGRAMS = \
 
 test_routing_SOURCES = \
     routing/test_routing.cc \
-    routing/route_crossbar.cc \
+    routing/route_fully_connected.cc \
     routing/route_butterfly.cc \
     routing/route_dragonfly.cc \
     routing/route_fattree.cc \

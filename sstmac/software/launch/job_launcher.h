@@ -193,7 +193,8 @@ class job_launcher : public service
    *                This sends out launch messages to all the nodes involved, which will
    *                cause an MPI or other application to launc with the correct rank ID
    * @param request An object representing a user request to launch a job as if it were
-   *                submitted via qsub or salloc
+   *                submitted via qsub or salloc. This transfers ownership of the request
+   *                to the job launcher. The request should not be used again after this.
    */
   void satisfy_launch_request(app_launch_request* request, const ordered_node_set& allocation);
 

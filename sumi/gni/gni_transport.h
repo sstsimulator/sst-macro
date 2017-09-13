@@ -125,21 +125,21 @@ class gni_transport :
  protected:
   void block_inner_loop();
 
-  void do_smsg_send(int dst, const message::ptr &msg);
+  void do_smsg_send(int dst, message* msg);
 
-  void do_rdma_get(int src, const message::ptr &msg);
+  void do_rdma_get(int src, message* msg);
 
   void do_send_terminate(int dst);
 
   void do_send_ping_request(int dst);
 
-  void rdma_get_done(const message::ptr& msg);
+  void rdma_get_done(message* msg);
 
-  void do_rdma_put(int dst, const message::ptr &msg);
+  void do_rdma_put(int dst, message* msg);
 
-  void rdma_put_done(const message::ptr& msg);
+  void rdma_put_done(message* msg);
 
-  void do_nvram_get(int src, const message::ptr &msg);
+  void do_nvram_get(int src, message* msg);
 
   void go_die();
 
@@ -155,7 +155,7 @@ class gni_transport :
     TERMINATE
   } header_type_t;
 
-  void smsg_send(int dst, const message::ptr& msg, header_type_t type);
+  void smsg_send(int dst, message* msg, header_type_t type);
 
   void rdma_done(int src, gni_cq_entry_t& event_data, gni_cq_handle_t cqh);
 
@@ -317,7 +317,7 @@ class gni_transport :
 
   void rdma_poll();
 
-  int allocate_rdma_tag(const message::ptr& msg);
+  int allocate_rdma_tag(message* msg);
 
   int* allocate_ping_buffer();
 
@@ -331,7 +331,7 @@ class gni_transport :
   static const int max_rdma_tag = 1000000;
   static const int ping_response_tag = 1000001;
   int current_rdma_tag_;
-  std::map<int, message::ptr> rdma_messages_;
+  std::map<int, message*> rdma_messages_;
   std::map<int, void*> smsg_headers_;
 
   int* ping_buffer_;

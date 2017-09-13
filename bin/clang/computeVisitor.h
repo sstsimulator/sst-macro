@@ -116,6 +116,8 @@ class ComputeVisitor  {
 
   void visitBodyIfStmt(clang::IfStmt* stmt, Loop::Body& body);
 
+  void visitBodySwitchStmt(clang::SwitchStmt* stmt, Loop::Body& body);
+
   void visitBodyCompoundAssignOperator(clang::CompoundAssignOperator* op, Loop::Body& body);
 
   void visitBodyBinaryOperator(clang::BinaryOperator* op, Loop::Body& body);

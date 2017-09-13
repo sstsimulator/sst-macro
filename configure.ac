@@ -151,9 +151,6 @@ CHECK_PYTHON()
 
 AM_CONDITIONAL(HAVE_REGEXP, false)
 
-# Check thread local storage
-#CHECK_TLS()
-
 # Check what's available and what's requested for
 # thread context switching of applications
 CHECK_THREADING()
@@ -290,6 +287,7 @@ echo "User Space Threading:"
 echo "  GNU Pth          $enable_pth"
 echo "  Pthread          $enable_pthread"
 echo "  Ucontext         $enable_ucontext"
+echo "  Fcontext         $enable_fcontext"
 echo
 
 echo "Parallel Discrete Event Simulation:"

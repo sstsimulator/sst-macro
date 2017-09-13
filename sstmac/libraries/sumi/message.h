@@ -50,12 +50,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/key_fwd.h>
 #include <sstmac/common/messages/library_message.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
-#include <sumi/message_fwd.h>
+#include <sumi/message.h>
 
 namespace sstmac {
 
 class transport_message :
   public ::sstmac::hw::network_message,
+  public ::sumi::transport_message,
   public ::sstmac::library_interface
 {
    ImplementSerializable(transport_message)
@@ -66,17 +67,23 @@ class transport_message :
   transport_message(
      const std::string& libname,
      sw::app_id aid,
-     const sumi::message_ptr& msg,
+     sumi::message* msg,
      long byte_length)
    : library_interface(libname),
       network_message(aid, byte_length),
-      payload_(msg)
+      sumi::transport_message(msg)
   {
   }
 
   virtual void serialize_order(serializer& ser) override;
 
-  sumi::message_ptr payload() const {
+  sumi::message* take_payload() {
+    auto ret = payload_;
+    payload_ = nullptr;
+    return ret;
+  }
+
+  sumi::message* get_payload() const {
     return payload_;
   }
 
@@ -123,7 +130,6 @@ class transport_message :
   void reverse() override;
 
  private:
-  sumi::message_ptr payload_;
   int src_;
   int dest_;
   int src_app_;

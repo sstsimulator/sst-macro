@@ -73,7 +73,7 @@ class distributed_service :
   virtual void run() = 0;
 
  protected:
-  sumi::message_ptr poll_for_message(bool blocking);
+  sumi::message* poll_for_message(bool blocking);
 
   bool terminated() const {
     return terminated_;

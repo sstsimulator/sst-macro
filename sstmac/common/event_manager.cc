@@ -99,11 +99,7 @@ event_manager::ev_man_for_thread(int thread_id) const
 }
 
 void
-event_manager::ipc_schedule(timestamp t,
-  device_id dst,
-  device_id src,
-  uint32_t seqnum,
-  event* ev)
+event_manager::ipc_schedule(ipc_event_t* iev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "%s::ipc_schedule: not valid for chosen event manager");
@@ -131,19 +127,6 @@ partition*
 event_manager::topology_partition() const
 {
   return rt_->topology_partition();
-}
-
-void
-event_manager::set_now(const timestamp &ts)
-{
-#if SSTMAC_SANITY_CHECK
-  if (ts < now_) {
-    spkt_throw_printf(sprockit::spkt_error,
-                     "eventmanager::set_now - major error, setting time to %lld which is before now %lld",
-                     (long long)ts.ticks_int64(), (long long)now_.ticks_int64());
-  }
-#endif
-  now_ = ts;
 }
 
 stat_collector*
@@ -180,6 +163,7 @@ event_manager::register_stat(
   entry.reduce_all = descr->reduce_all;
   entry.dump_all = descr->dump_all;
   entry.dump_main = descr->dump_main;
+  entry.need_delete = descr->need_delete;
   stat->set_registered(true);
 }
 
@@ -187,9 +171,7 @@ void
 event_manager::finish_stats(stat_collector* main, const std::string& name, timestamp t_end)
 {
   stats_entry& entry = stats_[name];
-  std::list<stat_collector*>::iterator it, end = entry.collectors.end();
-  for (it=entry.collectors.begin(); it != end; ++it){
-    stat_collector* next = *it;
+  for (stat_collector* next : entry.collectors){
     next->simulation_finished(t_end);
     if (entry.dump_all)
       next->dump_local_data();
@@ -237,6 +219,9 @@ event_manager::finish_stats()
     }
 
     if (main_allocated) delete entry.main_collector;
+    for (stat_collector* coll : entry.collectors){
+      delete coll;
+    }
   }
 }
 

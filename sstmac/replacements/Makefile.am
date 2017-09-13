@@ -20,6 +20,7 @@ nobase_library_include_HEADERS =
 nobase_library_include_HEADERS += \
   mpi.h \
   omp.h \
+	fixIntrinsics.h \
   sstCoreElement.h 
 
 if USE_REPLACEMENT_HEADERS

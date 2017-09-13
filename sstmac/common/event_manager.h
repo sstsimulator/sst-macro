@@ -77,6 +77,14 @@ namespace sstmac {
  * in the right order.
  */
 
+struct ipc_event_t {
+  timestamp t;
+  device_id dst;
+  device_id src;
+  uint32_t seqnum;
+  event* ev;
+};
+
 class event_manager
 {
   DeclareFactory(event_manager, parallel_runtime*)
@@ -94,11 +102,11 @@ class event_manager
 
   virtual ~event_manager(){}
 
-  virtual void clear(timestamp zero_time = timestamp(0)) = 0;
+  virtual void clear(timestamp zero_time = timestamp()) = 0;
 
   virtual void run() = 0;
 
-  virtual bool empty() const = 0;
+  virtual void cancel_all_messages(device_id canceled_loc) = 0;
 
   timestamp now() const {
     return now_;
@@ -111,8 +119,6 @@ class event_manager
   stat_collector* register_thread_unique_stat(
     stat_collector* stat,
     stat_descr_t* descr);
-
-  virtual void cancel_all_messages(device_id canceled_loc) = 0;
 
   partition* topology_partition() const;
 
@@ -151,22 +157,13 @@ class event_manager
 
   // ---- These are interface functions for PDES, they should
   // ----   only get called when running in parallel mode
-  virtual void ipc_schedule(
-    timestamp t,
-    device_id dst,
-    device_id src,
-    uint32_t seqnum,
-    event* ev);
+  virtual void ipc_schedule(ipc_event_t* iev);
 
   virtual void multithread_schedule(
     int srcthread,
     int dstthread,
     uint32_t seqnum,
     event_queue_entry* ev);
-
-  virtual int lpid() const {
-    return -1;
-  }
 
   int thread_id() const {
     return thread_id_;
@@ -185,7 +182,9 @@ class event_manager
  protected:
   event_manager(sprockit::sim_parameters* params, parallel_runtime* rt);
 
-  void set_now(const timestamp &ts);
+  void set_now(timestamp ts) {
+    now_ = ts;
+  }
 
   virtual void finish_stats(stat_collector* main,
                   const std::string& name, timestamp end);
@@ -208,9 +207,11 @@ class event_manager
     bool reduce_all;
     bool dump_all;
     bool dump_main;
+    bool need_delete;
     stat_collector* main_collector;
     std::list<stat_collector*> collectors;
-    stats_entry() : main_collector(nullptr) {}
+    stats_entry() : main_collector(nullptr), need_delete(false)
+    {}
   };
   std::map<std::string, stats_entry> stats_;
 

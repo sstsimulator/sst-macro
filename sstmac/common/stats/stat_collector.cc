@@ -57,7 +57,7 @@ namespace sstmac {
 
 stat_collector::~stat_collector()
 {
-  // TODO Auto-generated destructor stub
+  if (params_) delete params_;
 }
 
 bool
@@ -77,7 +77,7 @@ stat_collector::check_open(std::fstream& myfile, const std::string& fname, std::
 stat_collector::stat_collector(sprockit::sim_parameters* params) :
   registered_(false),
   id_(-1),
-  params_(params)
+  params_(new sprockit::sim_parameters(params))
 {
   fileroot_ = params->get_param("fileroot");
   if (params->has_param("suffix")){
@@ -133,8 +133,10 @@ stat_collector::optional_build(sprockit::sim_parameters* params,
   }
 
   if (suffix){
-    params = params->get_optional_namespace(suffix);
+    sprockit::sim_parameters* old_params = params;
+    params = old_params->get_optional_namespace(suffix);
     params->add_param_override("suffix", suffix);
+    old_params->combine_into(params);
   }
 
   stat_collector* stats = stat_collector::factory::get_optional_param(

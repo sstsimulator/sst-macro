@@ -165,6 +165,10 @@ class mpi_api :
     generate_ids_ = flag;
   }
 
+  bool generate_ids() const {
+    return generate_ids_;
+  }
+
   int abort(MPI_Comm comm, int errcode);
 
   int errhandler_set(MPI_Comm comm, MPI_Errhandler handler){
@@ -284,7 +288,6 @@ class mpi_api :
 
   int iprobe(int source, int tag, MPI_Comm comm, int* flag, MPI_Status *status);
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int barrier(MPI_Comm comm);
 
   int bcast(int count, MPI_Datatype datatype, int root, MPI_Comm comm);
@@ -313,7 +316,6 @@ class mpi_api :
          int recvcount, MPI_Datatype recvtype,
          int root, MPI_Comm comm);
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
          void *recvbuf, int recvcount, MPI_Datatype recvtype,
          int root, MPI_Comm comm);
@@ -363,29 +365,22 @@ class mpi_api :
             const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
             MPI_Comm comm);
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-  int reduce(int count, MPI_Datatype type, MPI_Op op, int root,
-            MPI_Comm comm);
+  int reduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm comm);
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int reduce(const void* src, void* dst,
          int count, MPI_Datatype type, MPI_Op op, int root,
          MPI_Comm comm);
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int allreduce(int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int allreduce(const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int scan(int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);
 
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
   int scan(const void* src, void* dst,
             int count, MPI_Datatype type, MPI_Op op,
             MPI_Comm comm);

@@ -69,6 +69,9 @@ message::clone_ack() const
 {
   message* ack = clone_msg();
   switch (payload_type()){
+    case message::eager_payload:
+      ack->set_payload_type(message::eager_payload_ack);
+      break;
     case message::rdma_get:
       ack->set_payload_type(message::rdma_get_ack);
       break;
@@ -135,7 +138,6 @@ message::tostr(class_t ty)
   switch(ty)
   {
     enumcase(pt2pt);
-    enumcase(unexpected);
     enumcase(collective);
     enumcase(collective_done);
     enumcase(ping);
@@ -155,6 +157,8 @@ message::clone_into(message* cln) const
   cln->class_ = class_;
   cln->sender_ = sender_;
   cln->recver_ = recver_;
+  cln->send_cq_ = send_cq_;
+  cln->recv_cq_ = recv_cq_;
 #if SUMI_COMM_SYNC_STATS
   cln->sent_ = sent_;
   cln->header_arrived_ = header_arrived_;
@@ -245,9 +249,8 @@ message::serialize_order(sumi::serializer &ser)
   ser & class_;
   ser & payload_type_;
   ser & num_bytes_;
-  ser & transaction_id_;
-  ser & needs_send_ack_;
-  ser & needs_recv_ack_;
+  ser & send_cq_;
+  ser & recv_cq_;
   ser & local_buffer_;
   ser & remote_buffer_;
   switch (payload_type_)

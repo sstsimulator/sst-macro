@@ -53,7 +53,7 @@ btree_gatherv_actor::init_tree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
-  int nproc = comm_->nproc();
+  int nproc = cfg_.dom->nproc();
   while (midpoint_ < nproc){
     midpoint_ *= 2;
     log2nproc_++;
@@ -87,8 +87,8 @@ btree_gatherv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *a
 void
 btree_gatherv_actor::init_dag()
 {
-  int me = comm_->my_comm_rank();
-  int nproc = comm_->nproc();
+  int me = cfg_.dom->my_comm_rank();
+  int nproc = cfg_.dom->nproc();
   int round = 0;
 
   int maxGap = midpoint_;

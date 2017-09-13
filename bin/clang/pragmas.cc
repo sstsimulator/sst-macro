@@ -184,26 +184,12 @@ SSTKeepPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTNewPragma::visitCXXMethodDecl(CXXMethodDecl* decl, Rewriter& r)
-{
-  defaultAct(decl->getBody(), r, *CI, true, false);
-}
-
-void
-SSTNewPragma::visitFunctionDecl(FunctionDecl* decl, Rewriter& r)
-{
-  defaultAct(decl->getBody(), r, *CI, true, false);
-}
-
-void
 SSTNewPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
 #define dcase(type,d,rw) \
   case(clang::Decl::type): \
     visit##type##Decl(clang::cast<type##Decl>(d),rw); break
   switch(d->getKind()){
-    dcase(Function,d,r);
-    dcase(CXXMethod,d,r);
     default:
       break;
   }
@@ -229,10 +215,7 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
         sstr << type << " " << name << " = nullptr;"; //don't know why - but okay, semicolon needed
         replace(stmt, r, sstr.str(), *CI);
         deleted->insert(init);
-      } else {
-        //nope, need extra hacking
-        defaultAct(stmt,r,*CI,false,true);
-      }
+      } //boy, I really hope this doesn't allocate any memory
     }
   } else {
     errorAbort(stmt->getLocStart(), *CI, "sst malloc pragma applied to non-variable declaration");
@@ -249,58 +232,7 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
     pp.os << " = nullptr"; //don't know why - but okay, semicolon not needed
     replace(op, r, pp.os.str(),*CI);
     deleted->insert(op->getRHS());
-  } else {
-    defaultAct(op,r,*CI,false,true);
-  }
-}
-
-void
-SSTNewPragma::defaultAct(Stmt* stmt, Rewriter& r, clang::CompilerInstance& CI,
-                         bool insertStartAfter, bool insertStopAfter,
-                         bool trailingSemiColon)
-{
-  return; //don't do this anymore
-
-  SourceLocation insertLoc = stmt->getLocStart();
-  if (insertStartAfter){
-    insertLoc = Lexer::getLocForEndOfToken(insertLoc, 0,
-                        CI.getSourceManager(), CI.getLangOpts());
-  }
-  r.InsertText(insertLoc, "should_skip_operator_new()++;", false);
-
-  insertLoc = stmt->getLocEnd();
-  if (insertStopAfter){
-    insertLoc = Lexer::getLocForEndOfToken(insertLoc, 0,
-                        CI.getSourceManager(), CI.getLangOpts());
-    if (insertLoc.isInvalid()){
-      errorAbort(stmt->getLocStart(), CI, "trouble turning off operator new");
-    }
-  }
-
-  if (trailingSemiColon){
-    insertLoc = Lexer::findLocationAfterToken(insertLoc, tok::semi,
-                                  CI.getSourceManager(), CI.getLangOpts(), false);
-    if (insertLoc.isInvalid()){
-      errorAbort(stmt->getLocStart(), CI, "trouble turning off operator new");
-    }
-  }
-
-  //locations are weird with functions - insert after is always false
-  r.InsertText(insertLoc, "should_skip_operator_new()--;", false);
-}
-
-void
-SSTNewPragma::visitCompoundStmt(clang::CompoundStmt* stmt, Rewriter& r)
-{
-  defaultAct(stmt,r,*CI,false,true);
-}
-
-void
-SSTNewPragma::visitForStmt(ForStmt *stmt, Rewriter &r)
-{
-  return; //don't do this anymore
-  r.InsertText(stmt->getLocStart(), "should_skip_operator_new()++;", false);
-  r.InsertText(stmt->getLocEnd(), "should_skip_operator_new()--;", false);
+  } //boy, I really hope this doesn't allocate any memory
 }
 
 void
@@ -312,10 +244,8 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
   switch(stmt->getStmtClass()){
     scase(DeclStmt,stmt,r);
     scase(BinaryOperator,stmt,r);
-    scase(CompoundStmt,stmt,r);
-    scase(ForStmt,stmt,r);
-    default: //just delete what follows
-      defaultAct(stmt,r,*CI,false,false,true);
+    default: //well - that was stupid of you
+      warn(stmt->getLocStart(), *CI, "pragma new not applied to operator new or binary operator");
       break;
   }
 #undef scase
@@ -339,6 +269,26 @@ SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   }
   IfStmt* ifs = cast<IfStmt>(s);
   replace(ifs->getCond(), r, prediction_, *CI);
+}
+
+void
+SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  std::string replacement;
+  if (units_ == "sec"){
+    replacement = "sstmac_compute(" + amount_ + ");";
+  } else if (units_ == "msec"){
+    replacement = "sstmac_msleep(" + amount_ + ");";
+  } else if (units_ == "usec"){
+    replacement = "sstmac_usleep(" + amount_ + ");";
+  } else if (units_ == "nsec"){
+    replacement = "sstmac_nanosleep(" + amount_ + ");";
+  } else {
+    std::string error = "invalid time units: " + units_ +
+        ": must be sec, msec, usec, or nsec";
+    errorAbort(s->getLocStart(), *CI, error);
+  }
+  r.InsertText(s->getLocEnd(), replacement);
 }
 
 void
@@ -397,6 +347,21 @@ SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   replace(s, r, "return " + repl_, *CI);
 }
 
+void
+SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
+{
+  if (d->getKind() != Decl::Function){
+    errorAbort(d->getLocStart(), *CI,
+      "pragma return not applied to function definition");
+  }
+  FunctionDecl* fd = cast<FunctionDecl>(d);
+  if (!fd->hasBody()){
+    errorAbort(d->getLocStart(), *CI,
+      "pragma return applied to function declaration - must be definition");
+  }
+  std::string repl = "{ return " + repl_ + "; }";
+  replace(fd->getBody(), r, repl, *CI);
+}
 
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
@@ -611,6 +576,9 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::kw_sizeof:
         os << "sizeof";
         break;
+      case tok::minus:
+        os << "-";
+        break;
       case tok::percent:
         os << "%";
         break;
@@ -686,4 +654,20 @@ SSTBranchPredictPragmaHandler::allocatePragma(SourceLocation loc, const std::lis
   std::stringstream sstr;
   SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTBranchPredictPragma(sstr.str());
+}
+
+SSTPragma*
+SSTAdvanceTimePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  if (tokens.size() < 2){
+    errorAbort(loc, ci_,
+               "advance_time pragma needs at least two arguments: <units> <number>");
+  }
+  auto iter = tokens.begin();
+  Token unitTok = *iter;
+  std::string units = unitTok.getLiteralData();
+  std::stringstream sstr;
+  ++iter;
+  SSTPragma::tokenStreamToString(loc, iter, tokens.end(), sstr, ci_);
+  return new SSTAdvanceTimePragma(units, sstr.str());
 }

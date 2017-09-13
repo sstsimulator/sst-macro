@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <errno.h>
 #include <cstring>
 #include <iostream>
+#include <sprockit/factories/factory.h>
 
 namespace sstmac {
 namespace sw {
@@ -57,9 +58,11 @@ namespace sw {
 class threading_interface
 {
  public:
+  DeclareFactory(threading_interface)
+
   virtual ~threading_interface() {}
 
-  virtual threading_interface* copy() = 0;
+  virtual threading_interface* copy(sprockit::sim_parameters* params) = 0;
 
   virtual void init_context() = 0;
 
@@ -67,12 +70,21 @@ class threading_interface
 
   virtual void start_context(int physical_thread_id,
                 void *stack, size_t stacksize, void
-                (*func)(void*), void *args, threading_interface *yield_to,
-                void* globals_storage) = 0;
+                (*func)(void*), void *args,
+                void* globals_storage, threading_interface* from) = 0;
 
-  virtual void swap_context(threading_interface* to) = 0;
+  virtual void resume_context(threading_interface* from) = 0;
 
+  virtual void pause_context(threading_interface* to) = 0;
+
+  /**
+   * @brief complete_context Perform all cleanup operations to end this context
+   * @param to
+   */
   virtual void complete_context(threading_interface* to) = 0;
+
+ protected:
+  threading_interface(sprockit::sim_parameters* params){}
 };
 }
 } // end of namespace sstmac

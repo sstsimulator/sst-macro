@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/message.h>
 #include <sumi/timeout.h>
 #include <sumi/transport_fwd.h>
+#include <sumi/feature_config.h>
 
 DeclareDebugSlot(sumi_ping)
 DeclareDebugSlot(sumi_failure)
@@ -91,7 +92,7 @@ class activity_monitor
 
   virtual void cancel_ping(int dst, timeout_function* func) = 0;
 
-  virtual void message_received(const message::ptr& msg) = 0;
+  virtual void message_received(message* msg) = 0;
 
   virtual void renew_pings(double wtime) = 0;
 

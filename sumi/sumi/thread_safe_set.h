@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <set>
 #include <sumi/lockable.h>
 #include <sprockit/errors.h>
+#include <sstream>
 
 namespace sumi
 {

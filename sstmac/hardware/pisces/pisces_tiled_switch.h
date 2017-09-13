@@ -165,8 +165,6 @@ class pisces_tiled_switch :
 
   void tile_to_row_col(int tile, int& row, int& col);
 
-  void resize_buffers();
-
   void init_components(sprockit::sim_parameters* params);
 
 #if 0

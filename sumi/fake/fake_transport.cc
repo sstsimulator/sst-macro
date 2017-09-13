@@ -48,9 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-static message::ptr fake_msg;
+static message* fake_msg;
 
-message::ptr
+message*
 fake_transport::block_until_message()
 {
   sleep(1);
@@ -61,16 +61,10 @@ fake_transport::block_until_message()
   return fake_msg;
 }
 
-collective_done_message::ptr
+collective_done_message*
 fake_transport::collective_block(collective::type_t ty, int tag)
 {
   sprockit::abort("fake transport should never block");
-}
-
-void
-fake_transport::delayed_transport_handle(const message::ptr &msg)
-{
-  handle(msg);
 }
 
 void
@@ -92,7 +86,7 @@ fake_transport::schedule_next_heartbeat()
 }
 
 void
-fake_transport::do_smsg_send(int dst, const message::ptr &msg)
+fake_transport::do_smsg_send(int dst, message* msg)
 {
   sends_.push_back(msg);
 }
@@ -105,19 +99,19 @@ fake_transport::fake_transport(sprockit::sim_parameters *params) :
 }
 
 void
-fake_transport::do_rdma_get(int src, const message::ptr &msg)
+fake_transport::do_rdma_get(int src, message* msg)
 {
   rdma_gets_.push_back(msg);
 }
 
 void
-fake_transport::do_rdma_put(int dst, const message::ptr &msg)
+fake_transport::do_rdma_put(int dst, message* msg)
 {
   rdma_puts_.push_back(msg);
 }
 
 void
-fake_transport::do_nvram_get(int src, const message::ptr &msg)
+fake_transport::do_nvram_get(int src, message* msg)
 {
   nvram_gets_.push_back(msg);
 }
@@ -128,13 +122,13 @@ fake_transport::simulate_vote(int context, const thread_safe_set<int> &failures)
   votes_done_[context] = vote_result(1, failures);
 }
 
-message::ptr
-fake_transport::pop_message(std::list<message::ptr> &msglist)
+message*
+fake_transport::pop_message(std::list<message*> &msglist)
 {
   if (msglist.empty()){
-    return message::ptr();
+    return nullptr;
   } else {
-    message::ptr ret = msglist.front();
+    message* ret = msglist.front();
     msglist.pop_front();
     return ret;
   }

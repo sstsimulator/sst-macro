@@ -142,7 +142,7 @@ class mpi_request  {
 
   ~mpi_request();
 
-  void complete(const mpi_message::ptr& msg);
+  void complete(mpi_message* msg);
 
   bool is_complete() const {
     return complete_;

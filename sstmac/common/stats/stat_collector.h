@@ -59,11 +59,15 @@ struct stat_descr_t {
   bool dump_all;
   bool reduce_all;
   bool dump_main;
+  bool need_delete;
   const char* suffix;
 
   stat_descr_t() :
-    dump_all(false), reduce_all(true),
-    dump_main(true), suffix(nullptr)
+    dump_all(false),
+    reduce_all(true),
+    dump_main(true),
+    need_delete(false),
+    suffix(nullptr)
   {
   }
 };
@@ -240,8 +244,7 @@ T* required_stats(event_scheduler* parent,
 }
 
 template <class T>
-T*
-required_stats(event_scheduler* parent,
+T* required_stats(event_scheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,

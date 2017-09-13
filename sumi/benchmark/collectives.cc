@@ -90,7 +90,7 @@ run_test(const std::string& test, transport* t, communicator* dom, int nelems, i
     t_start = t->wall_time();
     t->allreduce<int,Add>(reduce_buf, reduce_buf, nelems, tag, true, context, dom);
   }
-  message::ptr msg = t->blocking_poll();
+  message* msg = t->blocking_poll();
   double t_stop = t->wall_time();
   double t_total = t_stop - t_start;
   if (src_buf) ::free(src_buf);
@@ -152,7 +152,7 @@ run_vote_test(const char* name, transport* t, communicator* dom, int num_failure
 
   double t_start = t->wall_time();
   t->vote<AndOp>(1, tag, options::initial_context, dom);
-  collective_done_message::ptr dmsg = ptr_safe_cast(collective_done_message, t->blocking_poll());
+  collective_done_message* dmsg = ptr_safe_cast(collective_done_message, t->blocking_poll());
   double t_stop = t->wall_time();
   double t_total = t_stop - t_start;
   if (t->rank() == 0){

@@ -50,8 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-std::string
-printf(const char *fmt, ...)
+std::string printf(const char *fmt, ...)
 {
   char tmpbuf[512];
 

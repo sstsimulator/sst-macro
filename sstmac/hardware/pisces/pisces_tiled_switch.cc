@@ -69,10 +69,6 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-//#if !SSTMAC_INTEGRATED_SST_CORE
-//SpktRegister("pisces_tiled | pisces_tiled", network_switch, pisces_tiled_switch);
-//#endif
-
 pisces_tiled_switch::pisces_tiled_switch(sprockit::sim_parameters* params,
                                                    uint64_t id, event_manager* mgr)
   : pisces_abstract_switch(params, id, mgr)

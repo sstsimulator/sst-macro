@@ -88,12 +88,6 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   bool PrintTimeDeltas();
   bool PrintUnknownCallback();
 
-  /* This trace replay class reads the OTF2's global definitions to initialize
-   * MPI constructs, but uses local event files to scalably replay events.
-   * This results in a mis-match between locally generated and global rank IDs.
-   */
-  uint32_t MapRank(uint32_t local_rank);
-
   virtual void skeleton_main();
 
   void StartMpi(const sstmac::timestamp);
@@ -114,7 +108,6 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   std::vector<OTF2_LocationGroup> otf2_location_groups;
   std::unordered_map<OTF2_StringRef, MPI_CALL_ID> otf2_mpi_call_map;
   std::vector<std::vector<uint32_t>> comm_map;
-  std::map<uint32_t, uint32_t> local_to_global_comm_map;
 
   ~OTF2TraceReplayApp() throw()	{ }
 

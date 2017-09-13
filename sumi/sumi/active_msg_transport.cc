@@ -54,38 +54,38 @@ active_msg_transport::active_msg_transport() :
 {
 }
 
-message::ptr
+message*
 active_msg_transport::block_until_message()
 {
-  while (completion_queue_.empty()){
+  while (pt2pt_done_.empty()){
     block_inner_loop();
   }
   bool empty;
-  message::ptr ret = completion_queue_.pop_front_and_return(empty);
+  message* ret = pt2pt_done_.pop_front_and_return(empty);
   return ret;
 }
 
-message::ptr
+message*
 active_msg_transport::block_until_message(double timeout)
 {
   double start = wall_time();
   double stop = start + timeout;
-  while (completion_queue_.empty() && wall_time() < stop){
+  while (pt2pt_done_.empty() && wall_time() < stop){
     block_inner_loop();
   }
   bool empty;
-  message::ptr ret = completion_queue_.pop_front_and_return(empty);
+  message* ret = pt2pt_done_.pop_front_and_return(empty);
   return ret;
 }
 
-collective_done_message::ptr
+collective_done_message*
 active_msg_transport::collective_block(collective::type_t ty, int tag)
 {
   sprockit::abort("active_msg_transpot::collective_block: not implemented");
 }
 
 char*
-active_msg_transport::allocate_message_buffer(const message::ptr &msg, int& size)
+active_msg_transport::allocate_message_buffer(message* msg, int& size)
 {
   lock();
   char* ser_buffer = allocate_smsg_buffer(); fflush(stdout);
@@ -97,20 +97,20 @@ active_msg_transport::allocate_message_buffer(const message::ptr &msg, int& size
   return ser_buffer;
 }
 
-message::ptr
+message*
 active_msg_transport::deserialize(char* ser_buffer)
 {
   sumi::serializer ser;
   ser.start_unpacking(ser_buffer, smsg_buffer_size_);
-  message::ptr msg;
+  message* msg;
   ser & msg;
   return msg;
 }
 
-message::ptr
+message*
 active_msg_transport::free_message_buffer(void* buf)
 {
-  message::ptr msg = deserialize((char*)buf);
+  message* msg = deserialize((char*)buf);
   lock();
   free_smsg_buffer(buf);
   unlock();

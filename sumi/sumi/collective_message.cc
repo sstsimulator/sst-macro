@@ -93,14 +93,6 @@ collective_work_message::to_string() const
 }
 
 void
-collective_work_message::append_failed(const thread_safe_set<int>& failed)
-{
-  thread_safe_set<int>::iterator end = failed.start_iteration();
-  failed_procs_.insert(failed.begin(), end);
-  failed.end_iteration();
-}
-
-void
 collective_work_message::clone_into(collective_work_message* cln) const
 {
   message::clone_into(cln);
@@ -126,5 +118,15 @@ collective_work_message::reverse()
   dense_recver_ = dense_sender_;
   dense_sender_ = tmp;
 }
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+void
+collective_work_message::append_failed(const thread_safe_set<int>& failed)
+{
+  thread_safe_set<int>::iterator end = failed.start_iteration();
+  failed_procs_.insert(failed.begin(), end);
+  failed.end_iteration();
+}
+#endif
 
 }

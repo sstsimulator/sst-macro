@@ -60,6 +60,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/thread_safe_list.h>
 #include <sumi/thread_safe_set.h>
 #include <sumi/thread_lock.h>
+#include <sumi/feature_config.h>
 
 DeclareDebugSlot(sumi);
 
@@ -80,26 +81,6 @@ struct enum_hash {
 class transport {
   DeclareFactory(transport)
  public:
-  class notify_callback {
-   public:
-    virtual void notify(const message::ptr& msg) = 0;
-  };
-
-  template <class Fxn, class T, class MsgType>
-   class notify_callback_impl {
-    public:
-     notify_callback_impl(T* t, Fxn f) :
-       t_(f), fxn_(f){}
-
-     void notify(const message::ptr& msg){
-       (t_->*fxn_)(std::dynamic_pointer_cast<MsgType>(msg));
-     }
-
-    private:
-     Fxn fxn_;
-     T* t_;
-  };
-
   virtual ~transport();
 
   virtual void init();
@@ -107,6 +88,8 @@ class transport {
   virtual void finish();
 
   void deadlock_check();
+
+  int allocate_cq();
 
   /**
    Send a message directly to a destination node.
@@ -118,31 +101,22 @@ class transport {
    */
   void smsg_send(int dst,
      message::payload_type_t ev,
-     const message::ptr& msg,
-     bool needs_ack = false);
+     message* msg,
+     int send_cq, int recv_cq);
 
   /**
    Helper function for #smsg_send. Directly send a message header.
    * @param dst
    * @param msg
    */
-  void send_header(int dst, const message::ptr& msg, bool needs_ack = false);
+  void send_header(int dst, message* msg, int send_cq, int recv_cq);
 
   /**
    Helper function for #smsg_send. Directly send an actual data payload.
    * @param dst
    * @param msg
    */
-  void send_payload(int dst, const message::ptr& msg, bool needs_ack = false);
-
-  /**
-   Put a message directly to the destination node.
-   This assumes the application has properly configured local/remote buffers for the transfer.
-   * @param dst      Where the data is being put (destination)
-   * @param msg      The message to send (full message at the MTL layer).
-   *                 Should have local/remote buffers configured for RDMA.
-   */
-  void rdma_put(int dst, const message::ptr& msg);
+  void send_payload(int dst, message* msg, int send_cq, int recv_cq);
 
   /**
    Put a message directly to the destination node.
@@ -153,20 +127,7 @@ class transport {
    * @param needs_send_ack  Whether an ack should be generated send-side when the message is fully injected
    * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
    */
-  void rdma_put(
-    int dst,
-    const message::ptr &msg,
-    bool needs_send_ack,
-    bool needs_recv_ack);
-
-  /**
-   Get a message directly from the source node.
-   This assumes the application has properly configured local/remote buffers for the transfer.
-   * @param src      Where the data resides and is being fetched from
-   * @param msg      The message to get (full message at the MTL layer).
-   *                 Should have local/remote buffers configured for RDMA.
-   */
-  void rdma_get(int src, const message::ptr& msg);
+  void rdma_put(int dst, message* msg, int send_cq, int recv_cq);
 
   /**
    Get a message directly from the source node.
@@ -174,53 +135,61 @@ class transport {
    * @param src      Where the data is being put (destination)
    * @param msg      The message to send (full message at the MTL layer).
    *                 Should have local/remote buffers configured for RDMA.
-   * @param needs_send_ack  Whether an ack should be generated send-side (source) when the message is fully injected
-   * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
+   * @param send_cq  Where an ack should be generated send-side (source) when the message is fully injected
+   * @param recv_cq  Where an ack should be generated recv-side when the message is fully received
    */
-  void rdma_get(
-    int src,
-    const message::ptr &msg,
-    bool needs_send_ack,
-    bool needs_recv_ack);
+  void rdma_get(int src, message* msg, int send_cq, int recv_cq);
 
-  virtual void free_eager_buffer(const message::ptr& msg);
+  virtual void free_eager_buffer(message* msg);
 
-  void nvram_get(int src, const message::ptr& msg);
+  void nvram_get(int src, message* msg);
   
   /**
-   Check if a message has been received. Return immediately even if empty queue.
+   Check if a message has been received on a specific completion queue.
    Message returned is removed from the internal queue.
    Successive calls to the function do NOT return the same message.
+   @param blocking Whether to block until a message is received
+   @param cq_id The specific completion queue to check
+   @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  message::ptr poll(bool blocking, double timeout = -1);
+  message* poll(bool blocking, int cq_id, double timeout = -1);
+
+  /**
+   Check all completion queues if a message has been received.
+   Message returned is removed from the internal queue.
+   Successive calls to the function do NOT return the same message.
+   @param blocking Whether to block until a message is received
+   @param timeout  An optional timeout - only valid with blocking
+   @return    The next message to be received, null if no messages
+  */
+  message* poll(bool blocking, double timeout = -1);
 
   /**
    Block until a message is received.
    Returns immediately if message already waiting.
    Message returned is removed from the internal queue.
    Successive calls to the function do NOT return the same message.
+   @param cq_id The specific completion queue to check
    @param timeout   Timeout in seconds
    @return          The next message to be received. Message is NULL on timeout
   */
-  message::ptr blocking_poll(double timeout = -1);
+  message* blocking_poll(int cq_id, double timeout = -1);
 
-  template <class T>
-  typename T::ptr
+  template <class T> T*
   poll(const char* file, int line, const char* cls) {
-    message::ptr msg = blocking_poll();
-    typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
+    message* msg = poll(true);
+    T* result = dynamic_cast<T*>(msg);
     if (!result){
       poll_cast_error(file, line, cls, msg);
     }
     return result;
   }
 
-  template <class T>
-  typename T::ptr
+  template <class T> T*
   poll(double timeout, const char* file, int line, const char* cls) {
-    message::ptr msg = blocking_poll(timeout);
-    typename T::ptr result = std::dynamic_pointer_cast<T>(msg);
+    message* msg = poll(true, timeout);
+    T* result = dynamic_cast<T*>(msg);
     if (msg && !result){
       poll_cast_error(file, line, cls, msg);
     }
@@ -230,16 +199,55 @@ class transport {
 #define SUMI_POLL(tport, msgtype) tport->poll<msgtype>(__FILE__, __LINE__, #msgtype)
 #define SUMI_POLL_TIME(tport, msgtype, to) tport->poll<msgtype>(to, __FILE__, __LINE__, #msgtype)
 
+  void cq_push_back(int cq_id, message* msg);
 
-  message::ptr blocking_poll(message::payload_type_t);
+  std::list<message*>::iterator cq_begin(int cq_id){
+    return completion_queues_[cq_id].begin();
+  }
 
-  virtual message::ptr poll_pending_messages(bool blocking, double timeout) = 0;
+  std::list<message*>::iterator cq_end(int cq_id){
+    return completion_queues_[cq_id].end();
+  }
 
-  bool use_eager_protocol(long byte_length) const {
+  message* pop(int cq_id, std::list<message*>::iterator it){
+    message* msg = *it;
+    completion_queues_[cq_id].erase(it);
+    return msg;
+  }
+
+  message* poll(message::payload_type_t ty, bool blocking, int cq_id, double timeout = -1);
+
+  message* poll_new(message::payload_type_t ty, bool blocking, int cq_id, double timeout);
+
+  message* poll_new(bool blocking, int cq_id, double timeout);
+
+  /**
+   * @brief poll_pending_messages
+   * @param blocking  Whether to block if no messages are available
+   * @param timeout   How long to block if no messages found
+   * @return A transport message carrying a message
+   */
+  virtual transport_message* poll_pending_messages(bool blocking, double timeout) = 0;
+
+  virtual void send_terminate(int dst) = 0;
+
+  virtual double wall_time() const = 0;
+
+  /**
+   * Block on a collective of a particular type and tag
+   * until that collective is complete
+   * @param ty
+   * @param tag
+   * @return
+   */
+  virtual collective_done_message* collective_block(
+      collective::type_t ty, int tag, int cq_id = 0) = 0;
+
+  bool use_eager_protocol(uint64_t byte_length) const {
     return byte_length < eager_cutoff_;
   }
 
-  void set_eager_cutoff(long bytes) {
+  void set_eager_cutoff(uint64_t bytes) {
     eager_cutoff_ = bytes;
   }
 
@@ -260,8 +268,352 @@ class transport {
   virtual bool supports_hardware_ack() const {
     return false;
   }
+
+  void send_self_terminate();
   
-  virtual void init_spares(int nspares);
+  /**
+   * The total size of the input/result buffer in bytes is nelems*type_size
+   * This always run in a fault-tolerant fashion
+   * This uses a dynamic tree structure that reconnects partners when failures are detected
+   * @param vote The vote (currently restricted to integer) from this process
+   * @param nelems The number of elements in the input and result buffer.
+   * @param tag A unique tag identifier for the collective
+   * @param fxn The function that merges vote, usually AND, OR, MAX, MIN
+   * @param context The context (i.e. initial set of failed procs)
+   */
+  void dynamic_tree_vote(int vote, int tag, vote_fxn fxn, collective::config cfg = collective::cfg());
+
+  template <template <class> class VoteOp>
+  void vote(int vote, int tag, collective::config cfg = collective::cfg()){
+    typedef VoteOp<int> op_class_type;
+    dynamic_tree_vote(vote, tag, &op_class_type::op, cfg);
+  }
+
+  /**
+   * The total size of the input/result buffer in bytes is nelems*type_size
+   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
+   * @param src  Buffer for the input. Can be NULL to ignore payloads.
+   *             Automatically memcpy from src to dst.
+   * @param nelems The number of elements in the input and result buffer.
+   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
+   * @param tag A unique tag identifier for the collective
+   * @param fxn The function that will actually perform the reduction
+   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
+   * @param context The context (i.e. initial set of failed procs)
+   */
+  void allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                         collective::config cfg = collective::cfg());
+
+  template <typename data_t, template <typename> class Op>
+  void allreduce(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+    typedef ReduceOp<Op, data_t> op_class_type;
+    allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+  }
+
+  /**
+   * The total size of the input/result buffer in bytes is nelems*type_size
+   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
+   * @param src  Buffer for the input. Can be NULL to ignore payloads.
+   *             Automatically memcpy from src to dst.
+   * @param nelems The number of elements in the input and result buffer.
+   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
+   * @param tag A unique tag identifier for the collective
+   * @param fxn The function that will actually perform the reduction
+   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
+   * @param context The context (i.e. initial set of failed procs)
+   */
+  void scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+        collective::config cfg = collective::cfg());
+
+  template <typename data_t, template <typename> class Op>
+  void scan(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+    typedef ReduceOp<Op, data_t> op_class_type;
+    scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+  }
+
+  virtual void reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+    reduce_fxn fxn, collective::config cfg = collective::cfg());
+
+  template <typename data_t, template <typename> class Op>
+  void reduce(int root, void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+    typedef ReduceOp<Op, data_t> op_class_type;
+    reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+  }
+
+
+  /**
+   * The total size of the input/result buffer in bytes is nelems*type_size
+   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
+   * @param src  Buffer for the input. Can be NULL to ignore payloads. This need not be public! Automatically memcpy from src to public facing dst.
+   * @param nelems The number of elements in the input and result buffer.
+   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
+   * @param tag A unique tag identifier for the collective
+   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
+   * @param context The context (i.e. initial set of failed procs)
+   */
+  void allgather(void* dst, void* src, int nelems, int type_size, int tag,
+                         collective::config = collective::cfg());
+
+  void allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
+                          collective::config = collective::cfg());
+
+  void gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                      collective::config = collective::cfg());
+
+  void gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
+                       collective::config = collective::cfg());
+
+  void alltoall(void* dst, void* src, int nelems, int type_size, int tag,
+                        collective::config = collective::cfg());
+
+  void alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
+                         collective::config = collective::cfg());
+
+  void scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                 collective::config = collective::cfg());
+
+  void scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
+                        collective::config = collective::cfg());
+
+  /**
+   * Essentially just executes a zero-byte allgather.
+   * @param tag
+   * @param fault_aware
+   */
+  void barrier(int tag, collective::config = collective::cfg());
+
+  void bcast(int root, void* buf, int nelems, int type_size, int tag, collective::config cfg = collective::cfg());
+  
+  void system_bcast(message* msg);
+
+  int rank() const {
+    return rank_;
+  }
+
+  int nproc() const {
+    return nproc_;
+  }
+
+  communicator* global_dom() const {
+    return global_domain_;
+  }
+
+  /**
+   * The cutoff for message size in bytes
+   * for switching between an eager protocol and a rendezvous RDMA protocol
+   * @return
+   */
+  uint32_t eager_cutoff() const {
+    return eager_cutoff_;
+  }
+
+  void notify_collective_done(collective_done_message* msg);
+
+
+  /**
+   * @brief handle Receive some version of point-2-point message.
+   *  Return either the original message or a collective done message
+   *  if the message is part of a collective and the collective is done
+   * @param msg A point to point message that might be part of a collective
+   * @return Null, if collective message and collective is not done
+   */
+  message* handle(message* msg);
+
+  virtual public_buffer allocate_public_buffer(int size) {
+    return public_buffer(::malloc(size));
+  }
+
+  virtual public_buffer make_public_buffer(void* buffer, int size) {
+    return public_buffer(buffer);
+  }
+
+  virtual void unmake_public_buffer(public_buffer buf, int size) {
+    //nothing to do
+  }
+
+  virtual void free_public_buffer(public_buffer buf, int size) {
+    ::free(buf.ptr);
+  }
+
+ protected:
+  void clean_up();
+
+  void configure_send(int dst,
+    message::payload_type_t ev,
+    message* msg);
+
+  virtual void do_smsg_send(int dst, message* msg) = 0;
+
+  virtual void do_rdma_put(int dst, message* msg) = 0;
+
+  virtual void do_rdma_get(int src, message* msg) = 0;
+
+  virtual void do_nvram_get(int src, message* msg) = 0;
+
+  virtual void go_die() = 0;
+
+  virtual void go_revive() = 0;
+
+ private:  
+  void finish_collective(collective* coll, collective_done_message* dmsg);
+
+  void start_collective(collective* coll);
+
+  void validate_collective(collective::type_t ty, int tag);
+
+  void deliver_pending(collective* coll, int tag, collective::type_t ty);
+  
+ protected:
+  transport(sprockit::sim_parameters* params);
+  
+  void validate_api();
+
+  void lock();
+
+  void unlock();
+
+  /**
+   * @brief poll_new Return a new message not already in the completion queue
+   * @param blocking
+   * @param timeout
+   * @return A message if found, null message if non-blocking or timed out
+   */
+  message* poll_new(bool blocking, double timeout = -1);
+
+ private:
+  /**
+   * Helper function for doing operations necessary to close out a heartbeat
+   * @param dmsg
+   */
+  void vote_done(int context, collective_done_message* dmsg);
+
+  bool skip_collective(collective::type_t ty,
+    collective::config& cfg,
+    void* dst, void *src,
+    int nelems, int type_size,
+    int tag);
+
+ private:
+  template <typename Key, typename Value>
+  using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
+
+  typedef std::unordered_map<int,collective*> tag_to_collective_map;
+  typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
+  collective_map collectives_;
+
+  typedef std::unordered_map<int,std::list<collective_work_message*>> tag_to_pending_map;
+  typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
+  pending_map pending_collective_msgs_;
+
+  std::list<collective*> todel_;
+
+ protected:
+  bool inited_;
+  
+  bool finalized_;
+  
+  int rank_;
+
+  int nproc_;
+  
+  uint32_t eager_cutoff_;
+
+  std::vector<std::list<message*>> completion_queues_;
+
+  bool use_put_protocol_;
+
+  bool use_hardware_ack_;
+
+  communicator* global_domain_;
+
+#if SUMI_USE_SPINLOCK
+  spin_thread_lock lock_;
+#else
+  mutex_thread_lock lock_;
+#endif
+
+ private:
+  void poll_cast_error(const char* file, int line, const char* cls, message* msg){
+    spkt_throw_printf(sprockit::value_error,
+       "Could not cast incoming message to type %s\n"
+       "Got %s\n"
+       "%s:%d",
+       cls, msg->to_string().c_str(),
+       file, line);
+  }
+
+ private:
+  static collective_algorithm_selector* allgather_selector_;
+  static collective_algorithm_selector* alltoall_selector_;
+  static collective_algorithm_selector* alltoallv_selector_;
+  static collective_algorithm_selector* allreduce_selector_;
+  static collective_algorithm_selector* scan_selector_;
+  static collective_algorithm_selector* allgatherv_selector_;
+  static collective_algorithm_selector* bcast_selector_;
+  static collective_algorithm_selector* gather_selector_;
+  static collective_algorithm_selector* gatherv_selector_;
+  static collective_algorithm_selector* reduce_selector_;
+  static collective_algorithm_selector* scatter_selector_;
+  static collective_algorithm_selector* scatterv_selector_;
+
+
+#if SUMI_COMM_SYNC_STATS
+ public:
+  virtual void collect_sync_delays(double wait_start, message* msg){}
+
+  virtual void start_collective_sync_delays(){}
+#endif
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+ public:
+  int nproc_alive() const {
+    return nproc_ - failed_ranks_.size();
+  }
+
+  int nproc_failed() const {
+    return failed_ranks_.size();
+  }
+
+  virtual void schedule_ping_timeout(pinger* pnger, double to) = 0;
+
+  virtual void send_ping_request(int dst) = 0;
+
+  /**
+   * Get the set of failed ranks associated with a given context
+   * @param context The context for which you want to know the set of failed procs,
+   *                default parameter is "default_context" which is the beginning, i.e. no failed procs
+   * @throw If the context is unknown - i.e. no vote has executed with that tag number
+   * @return The set of failed procs
+   */
+  const thread_safe_set<int>& failed_ranks(int context) const;
+
+  const thread_safe_set<int>& failed_ranks() const {
+    return failed_ranks_;
+  }
+
+  void clear_failures() {
+    failed_ranks_.clear();
+  }
+
+  void declare_failed(int rank) {
+    failed_ranks_.insert(rank);
+  }
+
+  bool is_failed(int rank) const {
+    return failed_ranks_.count(rank);
+  }
+
+  bool is_alive(int rank) const {
+    return failed_ranks_.count(rank) == 0;
+  }
+
+  void die();
+
+  void revive();
+
+  bool is_dead() const {
+    return is_dead_;
+  }
 
   /**
    * Cancel a currently active ping
@@ -289,16 +641,8 @@ class transport {
 
   void stop_watching(int dst, timeout_function* func);
 
-  void send_self_terminate();
-
-  void send_terminate(int rank);
-
-  virtual double wall_time() const = 0;
-
-  void send_ping_request(int dst);
-
   void renew_pings();
-  
+
   /**
    * Start regular heartbeat (i.e. vote) collectives going
    * This informs the application at regular intervals of any new process failures
@@ -310,372 +654,29 @@ class transport {
    * Let the current heartbeat finish and then stop them executing.
    */
   virtual void stop_heartbeat();
-  
-  /**
-   * Block on a collective of a particular type and tag
-   * until that collective is complete
-   * @param ty
-   * @param tag
-   * @return
-   */
-  virtual collective_done_message::ptr collective_block(collective::type_t ty, int tag) = 0;
-  
-  /**
-   * The total size of the input/result buffer in bytes is nelems*type_size
-   * This always run in a fault-tolerant fashion
-   * This uses a dynamic tree structure that reconnects partners when failures are detected
-   * @param vote The vote (currently restricted to integer) from this process
-   * @param nelems The number of elements in the input and result buffer.
-   * @param tag A unique tag identifier for the collective
-   * @param fxn The function that merges vote, usually AND, OR, MAX, MIN
-   * @param context The context (i.e. initial set of failed procs)
-   */
-  virtual void dynamic_tree_vote(int vote, int tag, vote_fxn fxn, 
-              int context = options::initial_context, communicator* dom = nullptr);
-
-  template <template <class> class VoteOp>
-  void vote(int vote, int tag, int context = options::initial_context, communicator* dom = nullptr){
-    typedef VoteOp<int> op_class_type;
-    dynamic_tree_vote(vote, tag, &op_class_type::op, context, dom);
-  }
-
-  /**
-   * The total size of the input/result buffer in bytes is nelems*type_size
-   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
-   * @param src  Buffer for the input. Can be NULL to ignore payloads.
-   *             Automatically memcpy from src to dst.
-   * @param nelems The number of elements in the input and result buffer.
-   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
-   * @param tag A unique tag identifier for the collective
-   * @param fxn The function that will actually perform the reduction
-   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
-   * @param context The context (i.e. initial set of failed procs)
-   */
-  virtual void
-  allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  template <typename data_t, template <typename> class Op>
-  void allreduce(void* dst, void* src, int nelems, int tag,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
-    typedef ReduceOp<Op, data_t> op_class_type;
-    allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
-  }
-
-  /**
-   * The total size of the input/result buffer in bytes is nelems*type_size
-   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
-   * @param src  Buffer for the input. Can be NULL to ignore payloads.
-   *             Automatically memcpy from src to dst.
-   * @param nelems The number of elements in the input and result buffer.
-   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
-   * @param tag A unique tag identifier for the collective
-   * @param fxn The function that will actually perform the reduction
-   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
-   * @param context The context (i.e. initial set of failed procs)
-   */
-  virtual void scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-       bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  template <typename data_t, template <typename> class Op>
-  void scan(void* dst, void* src, int nelems, int tag, bool fault_aware = false,
-       int context = options::initial_context, communicator* dom = nullptr){
-    typedef ReduceOp<Op, data_t> op_class_type;
-    scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
-  }
-
-  virtual void reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
-    reduce_fxn fxn, bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  template <typename data_t, template <typename> class Op>
-  void reduce(int root, void* dst, void* src, int nelems, int tag,
-         bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr){
-    typedef ReduceOp<Op, data_t> op_class_type;
-    reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, fault_aware, context, dom);
-  }
-
-
-  /**
-   * The total size of the input/result buffer in bytes is nelems*type_size
-   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
-   * @param src  Buffer for the input. Can be NULL to ignore payloads. This need not be public! Automatically memcpy from src to public facing dst.
-   * @param nelems The number of elements in the input and result buffer.
-   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
-   * @param tag A unique tag identifier for the collective
-   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
-   * @param context The context (i.e. initial set of failed procs)
-   */
-  virtual void allgather(void* dst, void* src, int nelems, int type_size, int tag,
-            bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  virtual void allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  virtual void gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-         bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  virtual void gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  virtual void alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  virtual void alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
-             bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  virtual void scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  virtual void scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
-          bool fault_aware = false, int context = options::initial_context, communicator* dom = nullptr);
-
-  /**
-   * Essentially just executes a zero-byte allgather.
-   * @param tag
-   * @param fault_aware
-   */
-  void barrier(int tag, bool fault_aware = false, communicator* dom = nullptr);
-
-  void bcast(int root, void* buf, int nelems, int type_size, int tag, bool fault_aware,
-        int context=options::initial_context, communicator* dom=nullptr);
-  
-  void system_bcast(const message::ptr& msg);
-
-  int rank() const {
-    return rank_;
-  }
-
-  int nproc() const {
-    return nproc_;
-  }
-
-  int nproc_alive() const {
-    return nproc_ - failed_ranks_.size();
-  }
-
-  int nproc_failed() const {
-    return failed_ranks_.size();
-  }
-
-  communicator* global_dom() const {
-    return global_domain_;
-  }
-
-  /**
-   * The cutoff for message size in bytes
-   * for switching between an eager protocol and a rendezvous RDMA protocol
-   * @return
-   */
-  int eager_cutoff() const {
-    return eager_cutoff_;
-  }
-  
-  /**
-   * Get the set of failed ranks associated with a given context
-   * @param context The context for which you want to know the set of failed procs,
-   *                default parameter is "default_context" which is the beginning, i.e. no failed procs
-   * @throw If the context is unknown - i.e. no vote has executed with that tag number
-   * @return The set of failed procs
-   */
-  const thread_safe_set<int>& failed_ranks(int context) const;
-
-  const thread_safe_set<int>& failed_ranks() const {
-    return failed_ranks_;
-  }
-
-  void clear_failures() {
-    failed_ranks_.clear();
-  }
-
-  void declare_failed(int rank){
-    failed_ranks_.insert(rank);
-  }
-
-  bool is_failed(int rank) const {
-    return failed_ranks_.count(rank);
-  }
-
-  bool is_alive(int rank) const {
-    return failed_ranks_.count(rank) == 0;
-  }
-  
-  virtual void delayed_transport_handle(const message::ptr& msg) = 0;
-
-  virtual void cq_notify() = 0;
-  
-  void die();
-
-  void revive();
-
-  bool is_dead() const {
-    return is_dead_;
-  }
-
-  void notify_collective_done(const collective_done_message::ptr& msg);
-  
-  virtual void schedule_ping_timeout(pinger* pnger, double to) = 0;
-  
-  virtual void schedule_next_heartbeat() = 0;
-
-  /**
-   * Execute the next heartbeat. This figures out the next tag and prev context
-   * and then calls #do_heartbeat
-   */
-  void next_heartbeat();
-
-  void handle(const message::ptr& msg);
-
-  virtual public_buffer allocate_public_buffer(int size) {
-    return public_buffer(::malloc(size));
-  }
-
-  virtual public_buffer make_public_buffer(void* buffer, int size) {
-    return public_buffer(buffer);
-  }
-
-  virtual void unmake_public_buffer(public_buffer buf, int size) {
-    //nothing to do
-  }
-
-  virtual void free_public_buffer(public_buffer buf, int size) {
-    ::free(buf.ptr);
-  }
-
-  /**
-   * @brief Optimizations can be performed in some transport layers
-   * If the header being sent is explicitly known to be coordinating an RDMA
-   * transaction you can ACK the transaction via hardware.  Otherwise,
-   * the transpor must perform a software-level ACK.
-   * @param dst
-   * @param msg
-   */
-  void send_rdma_header(int dst, const message::ptr& msg);
-
-  void send(int dst, const message::ptr& msg);
-
-  void send_unexpected_rdma(int dst, const message::ptr& msg);
-
-  void set_callback(notify_callback* cb){
-    notify_cb_ = cb;
-  }
-
-  void unset_callback(){
-    notify_cb_ = 0;
-  }
 
  protected:
-  void start_transaction(const message::ptr& msg);
+  double heartbeat_interval_;
 
-  void clean_up();
+  void next_heartbeat();
 
-  void handle_unexpected_rdma_header(const message::ptr& msg);
+ private:
+  bool lazy_watch_;
 
-  message::ptr finish_transaction(int tid);
+  activity_monitor* monitor_;
 
-  void configure_send(int dst,
-    message::payload_type_t ev,
-    const message::ptr& msg);
+  bool heartbeat_active_;
 
-  virtual void do_smsg_send(int dst, const message::ptr& msg) = 0;
+  bool heartbeat_running_;
 
-  virtual void do_rdma_put(int dst, const message::ptr& msg) = 0;
-
-  virtual void do_rdma_get(int src, const message::ptr& msg) = 0;
-
-  virtual void do_nvram_get(int src, const message::ptr& msg) = 0;
-
-  virtual void do_send_terminate(int dst) = 0;
-
-  virtual void do_send_ping_request(int dst) = 0;
-
-  virtual void go_die() = 0;
-
-  virtual void go_revive() = 0;
-
-  /* Has default behavior */
-  void operation_done(const message::ptr& msg);
-
- private:  
-  bool is_heartbeat(const collective_done_message::ptr& dmsg) const {
+  bool is_heartbeat(collective_done_message* dmsg) const {
     return dmsg->tag() >= heartbeat_tag_start_ && dmsg->tag() <= heartbeat_tag_stop_;
   }
 
-  void finish_collective(collective* coll, const collective_done_message::ptr& dmsg);
+  int nspares_;
 
-  void start_collective(collective* coll);
+  thread_safe_int<uint32_t> recovery_lock_;
 
-  /**
-   * Helper function for doing operations necessary to close out a heartbeat
-   * @param dmsg
-   */
-  void vote_done(const collective_done_message::ptr& dmsg);
-
-  void validate_collective(collective::type_t ty, int tag);
-
-  void deliver_pending(collective* coll, int tag, collective::type_t ty);
-
-  /**
-   * Actually do the work of executing a heartbeat
-   * @param prev_context The context number for the last successful heartbeat
-   */
-  void do_heartbeat(int prev_context);
-  
- protected:
-  transport(sprockit::sim_parameters* params);
-  
-  void validate_api();
-
-  void fail_watcher(int dst);
-
-  void lock();
-
-  void unlock();
-
-  void start_recovery();
-
-  void end_recovery();
-
-  void start_function();
-
-  void end_function();
-
- private:  
-  bool skip_collective(collective::type_t ty,
-    communicator*& dom,
-    void* dst, void *src,
-    int nelems, int type_size,
-    int tag);
-
- private:
-  template <typename Key, typename Value>
-  using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
-
-  int heartbeat_tag_;
-  typedef std::unordered_map<int,collective*> tag_to_collective_map;
-  typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
-  collective_map collectives_;
-  
-  //I don't know a better way to do this and be clean
-  //callback mechanism - if collective completes
-  //it passes back a notification stored here
-  collective_done_message::ptr collective_notification_;
-
-  typedef std::unordered_map<int,std::list<collective_work_message_ptr> > tag_to_pending_map;
-  typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
-  pending_map pending_collective_msgs_;
-
-  thread_safe_set<int> failed_ranks_;
-
-  int heartbeat_tag_start_;
-
-  int heartbeat_tag_stop_;
-
-  typedef std::map<int, function_set> watcher_map;
-  watcher_map watchers_;
-
-  std::list<collective*> todel_;
-
- protected:
   struct vote_result {
     int vote;
     thread_safe_set<int> failed_ranks;
@@ -688,90 +689,33 @@ class transport {
   typedef std::map<int, vote_result> vote_map;
   vote_map votes_done_;
 
-  bool inited_;
-  
-  bool finalized_;
-  
-  int rank_;
-
-  int nproc_;
-  
-  int eager_cutoff_;
-
-  bool lazy_watch_;
-
-  activity_monitor* monitor_;
-
-  bool heartbeat_active_;
-
-  bool heartbeat_running_;
-
-  double heartbeat_interval_;
-
-  thread_safe_list<message::ptr> completion_queue_;
-
-  int next_transaction_id_;
-  int max_transaction_id_;
-  std::map<int, message::ptr> transactions_;
-
   bool is_dead_;
 
-  bool use_put_protocol_;
+  int heartbeat_tag_;
+  thread_safe_set<int> failed_ranks_;
 
-  bool use_hardware_ack_;
+  int heartbeat_tag_start_;
 
-  communicator* global_domain_;
+  int heartbeat_tag_stop_;
 
-  notify_callback* notify_cb_;
+  typedef std::map<int, function_set> watcher_map;
+  watcher_map watchers_;
 
-  int nspares_;
+  void fail_watcher(int dst);
 
-#if SUMI_USE_SPINLOCK
-  spin_thread_lock lock_;
-#else
-  mutex_thread_lock lock_;
-#endif
+  void start_recovery();
 
-  thread_safe_int<uint32_t> recovery_lock_;
+  void end_recovery();
 
- private:
-  void poll_cast_error(const char* file, int line, const char* cls, const message::ptr& msg){
-    spkt_throw_printf(sprockit::value_error,
-       "Could not cast incoming message to type %s\n"
-       "Got %s\n"
-       "%s:%d",
-       cls, msg->to_string().c_str(),
-       file, line);
-  }
+  virtual void schedule_next_heartbeat() = 0;
 
- private:
-  static collective_algorithm_selector* allgather_selector_;
-  static collective_algorithm_selector* alltoall_selector_;
-  static collective_algorithm_selector* alltoallv_selector_;
-  static collective_algorithm_selector* allreduce_selector_;
-  static collective_algorithm_selector* scan_selector_;
-  static collective_algorithm_selector* allgatherv_selector_;
-  static collective_algorithm_selector* bcast_selector_;
-  static collective_algorithm_selector* gather_selector_;
-  static collective_algorithm_selector* gatherv_selector_;
-  static collective_algorithm_selector* reduce_selector_;
-  static collective_algorithm_selector* scatter_selector_;
-  static collective_algorithm_selector* scatterv_selector_;
-
-
-#if SUMI_COMM_SYNC_STATS
- public:
-  virtual void collect_sync_delays(double wait_start, const message::ptr& msg){}
-
-  virtual void start_collective_sync_delays(){}
+  /**
+   * Actually do the work of executing a heartbeat
+   * @param prev_context The context number for the last successful heartbeat
+   */
+  void do_heartbeat(int prev_context);
 #endif
 };
-
-template <class MsgType, class T, class Fxn>
-transport::notify_callback*
-new_notify_callback(T* t, Fxn f){
-  return new transport::notify_callback_impl<Fxn,T,MsgType>(f,t);
-}
 
 class terminate_exception : public std::exception
 {

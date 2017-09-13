@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/communicator_fwd.h>
 #include <sumi/collective_actor_fwd.h>
 #include <sumi/comm_functions.h>
+#include <sumi/options.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 
@@ -84,6 +85,32 @@ class collective
     heartbeat
   } type_t;
 
+  struct config {
+    bool fault_aware = false;
+    int context = options::initial_context;
+    communicator* dom = nullptr;
+    uint8_t cq_id = 0;
+
+    config& cqId(uint8_t id){
+      cq_id = id;
+      return *this;
+    }
+
+    config& comm(communicator* d){
+      dom = d;
+      return *this;
+    }
+
+    config& resilient(bool flag){
+      fault_aware = flag;
+      return *this;
+    }
+  };
+
+  static config cfg(){
+    return config();
+  }
+
   virtual std::string to_string() const = 0;
 
   virtual ~collective();
@@ -99,19 +126,19 @@ class collective
   }
 
   int context() const {
-    return context_;
+    return cfg_.context;
   }
 
   static const char* tostr(type_t ty);
 
-  virtual void recv(int target, const collective_work_message_ptr& msg) = 0;
+  virtual void recv(int target, collective_work_message* msg) = 0;
 
-  void recv(const collective_work_message_ptr &msg);
+  void recv(collective_work_message* msg);
 
   virtual void start() = 0;
 
   communicator* comm() const {
-    return comm_;
+    return cfg_.dom;
   }
 
   bool complete() const {
@@ -138,21 +165,20 @@ class collective
 
   virtual void deadlock_check(){}
 
-  void init(type_t type, transport* api, communicator* comm, int tag, int context);
+  void init(type_t type, transport* api, int tag, const config& cfg);
 
   virtual void init_actors(){}
 
  protected:
-  collective(type_t type, transport* api, communicator* comm, int tag, int context);
+  collective(type_t type, transport* api, int tag, const config& cfg);
 
   collective(){} //to be initialized later
 
  protected:
   transport* my_api_;
-  communicator* comm_;
+  config cfg_;
   int dense_me_;
   int dense_nproc_;
-  int context_;
   bool complete_;
   int tag_;
 
@@ -167,18 +193,16 @@ class dag_collective :
   DeclareFactory(dag_collective)
 
  public:
-  void recv(int target, const collective_work_message_ptr& msg);
+  void recv(int target, collective_work_message* msg) override;
 
-  void start();
+  void start() override;
 
-  void init(type_t type,
-    transport *my_api, communicator *comm,
+  void init(type_t type, transport *my_api,
     void *dst, void *src,
     int nelems, int type_size,
-    int tag,
-    bool fault_aware, int context);
+    int tag, const config& cfg);
 
-  void init_actors();
+  void init_actors() override;
 
   virtual dag_collective* clone() const = 0;
 
@@ -190,20 +214,18 @@ class dag_collective :
 
   virtual void init_send_counts(int* nelems){}
 
-  void deadlock_check();
+  void deadlock_check() override;
 
   virtual ~dag_collective();
 
-  static dag_collective* construct(const std::string& name, 
-            sprockit::sim_parameters* params, reduce_fxn fxn);
+  static dag_collective* construct(const std::string& name,  sprockit::sim_parameters* params, reduce_fxn fxn);
 
-  static dag_collective* construct(const std::string& name, 
-            sprockit::sim_parameters *params);
+  static dag_collective* construct(const std::string& name,  sprockit::sim_parameters *params);
 
  protected:
   virtual dag_collective_actor* new_actor() const = 0;
 
-  void add_actors(collective *coll);
+  void add_actors(collective *coll) override;
 
  protected:
   typedef std::map<int, dag_collective_actor*> actor_map;
@@ -217,13 +239,9 @@ class dag_collective :
 
   int type_size_;
 
-  // The bruck algorithm can actually apply to multiple collectives
-  // Mainly barrier and allgather
-
-
   bool fault_aware_;
 
-  std::list<collective_work_message_ptr> pending_;
+  std::list<collective_work_message*> pending_;
 };
 
 class collective_algorithm_selector

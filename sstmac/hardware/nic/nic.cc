@@ -132,11 +132,11 @@ nic::~nic()
 {
   if (node_handler_) delete node_handler_;
   if (event_mtl_handler_) delete event_mtl_handler_;
-  if (spy_bytes_) delete spy_bytes_;
-  if (spy_num_messages_) delete spy_num_messages_;
-  if (local_bytes_sent_) delete local_bytes_sent_;
-  if (global_bytes_sent_) delete global_bytes_sent_;
-  if (hist_msg_size_) delete hist_msg_size_;
+  //if (spy_bytes_) delete spy_bytes_;
+  //if (spy_num_messages_) delete spy_num_messages_;
+  //if (local_bytes_sent_) delete local_bytes_sent_;
+  //if (global_bytes_sent_) delete global_bytes_sent_;
+  //if (hist_msg_size_) delete hist_msg_size_;
 #if !SSTMAC_INTEGRATED_SST_CORE
   delete link_mtl_handler_;
 #endif

@@ -68,8 +68,6 @@ class mpi_message final :
   ImplementSerializable(mpi_message)
 
  public:
-  typedef std::shared_ptr<mpi_message> ptr;
-  typedef std::shared_ptr<const mpi_message> const_ptr;
   typedef uint64_t id;
 
   typedef enum {
@@ -94,7 +92,15 @@ class mpi_message final :
 
   ~mpi_message() throw ();
 
-  sumi::message* clone() const override;
+  sumi::mpi_message* clone_me() const {
+    mpi_message* cln = new mpi_message;
+    clone_into(cln);
+    return cln;
+  }
+
+  sumi::message* clone() const override {
+    return clone_me();
+  }
 
   void serialize_order(serializer& ser) override;
 

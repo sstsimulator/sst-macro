@@ -81,7 +81,7 @@ mpi_queue_recv_request::is_cancelled() const {
 }
 
 bool
-mpi_queue_recv_request::matches(const mpi_message::ptr& msg)
+mpi_queue_recv_request::matches(mpi_message* msg)
 {
   bool count_equals = true; //count_ == msg->count();
   bool comm_equals = comm_ == msg->comm();

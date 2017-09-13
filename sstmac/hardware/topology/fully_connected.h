@@ -42,8 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CROSSBAR_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CROSSBAR_H_INCLUDED
+#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FULLY_CONNECTED_H_INCLUDED
+#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FULLY_CONNECTED_H_INCLUDED
 
 #include <sstmac/hardware/topology/structured_topology.h>
 
@@ -51,21 +51,21 @@ namespace sstmac {
 namespace hw {
 
 /**
- *  @class crossbar
- *  The crossbar network generates a network which connects
-    all nodes with only two hops: those to and from the crossbar.
+ *  @class fully_connected
+ *  The fully_connected network generates a network which connects
+    each node to every other node.
  */
-class crossbar : public structured_topology
+class fully_connected : public structured_topology
 {
-  FactoryRegister("crossbar | xbar", topology, crossbar)
+  FactoryRegister("fully_connected | full", topology, fully_connected)
  public:
   std::string to_string() const override {
-    return "crossbar topology";
+    return "fully_connected topology";
   }
 
-  virtual ~crossbar() {}
+  virtual ~fully_connected() {}
 
-  crossbar(sprockit::sim_parameters* params);
+  fully_connected(sprockit::sim_parameters* params);
 
   int diameter() const override {
     return 1;

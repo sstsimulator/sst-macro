@@ -57,9 +57,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cinttypes>
 
 #define event_debug(...) \
-  debug_printf(sprockit::dbg::parallel, "Rank %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
+  debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
 
 RegisterDebugSlot(event_manager_time_vote);
+
+#define epoch_debug(...) \
+  debug_printf(sprockit::dbg::event_manager_time_vote, \
+    "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str()); fflush(stdout)
 
 #if SSTMAC_DEBUG_THREAD_EVENTS
 DeclareDebugSlot(thread_events)
@@ -76,108 +80,84 @@ clock_cycle_event_map::clock_cycle_event_map(
 {
   int64_t max_ticks = std::numeric_limits<int64_t>::max() - 100;
   no_events_left_time_ = timestamp(max_ticks, timestamp::exact);
+  min_ipc_time_ = no_events_left_time_;
   thread_incoming_.resize(nthread());
 }
 
 void
-clock_cycle_event_map::schedule_incoming(const std::vector<void*>& buffers)
+clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
 {
-  sprockit::serializer ser;
-  int num_bufs = buffers.size();
-  int buf_size = rt_->ser_buf_size();
-  for (int i=0; i < num_bufs; ++i){
-    device_id dst;
-    device_id src;
-    uint32_t seqnum;
-    timestamp time;
-    event* ev;
-    char* customBuffer = nullptr;
-    void* buffer = buffers[i];
-    ser.start_unpacking((char*)buffer, 100e9); //we don't worry about overruns anymore
-    ser & dst;
-    ser & src;
-    ser & seqnum;
-    ser & time;
-    ser & ev;
-    event_handler* dst_handler = nullptr;
-
-
-
-    event_debug("epoch %d: scheduling incoming event of type %d at %12.8e to device %d, payload? %d:\n   %s",
-      epoch_, dst.type(), time.sec(), dst.id(), ev->is_payload(), sprockit::to_string(ev).c_str());
-    switch (dst.type()){
-      case device_id::node:
-        dst_handler = interconn_->node_at(dst.id())->get_nic()->payload_handler(hw::nic::LogP);
-        break;
-      case device_id::logp_overlay:
-        dst_handler = interconn_->logp_switch_at(dst.id())->payload_handler(0);
-        break;
-      case device_id::router:
-        if (ev->is_payload()){
-          dst_handler = interconn_->switch_at(dst.id())->payload_handler(0); //port 0 for now - hack - all the same
-        } else {
-          dst_handler = interconn_->switch_at(dst.id())->credit_handler(0);
-        }
-        break;
-      default:
-        spkt_abort_printf("Invalid device type %d in parallel run", dst.type());
-        break;
-    }
-    if (dst_handler->ipc_handler()){
-      spkt_abort_printf("On rank %d, event going from %d:%d to %d:%d got scheduled to IPC handler",
-                        me(), src.id(), src.type(), dst.id(), dst.type());
-    }
-    schedule(time, seqnum, new handler_event_queue_entry(ev, dst_handler, src));
+  event_handler* dst_handler = nullptr;
+  switch (iev->dst.type()){
+    case device_id::node:
+      dst_handler = interconn_->node_at(iev->dst.id())->get_nic()->payload_handler(hw::nic::LogP);
+      break;
+    case device_id::logp_overlay:
+      dst_handler = interconn_->logp_switch_at(iev->dst.id())->payload_handler(0);
+      break;
+    case device_id::router:
+      if (iev->ev->is_payload()){
+        dst_handler = interconn_->switch_at(iev->dst.id())->payload_handler(0); //port 0 for now - hack - all the same
+      } else {
+        dst_handler = interconn_->switch_at(iev->dst.id())->credit_handler(0);
+      }
+      break;
+    default:
+      spkt_abort_printf("Invalid device type %d in parallel run", iev->dst.type());
+      break;
   }
+  if (dst_handler->ipc_handler()){
+    spkt_abort_printf("On rank %d, event going from %d:%d to %d:%d got scheduled to IPC handler",
+                      me(), iev->src.id(), iev->src.type(), iev->dst.id(), iev->dst.type());
+  }
+  event_debug("epoch %d: scheduling incoming event of type %d at %12.8e to device %d:%s, payload? %d:   %s",
+    epoch_, iev->dst.type(), iev->t.sec(), iev->dst.id(), dst_handler->to_string().c_str(),
+    iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
+  schedule(iev->t, iev->seqnum, new handler_event_queue_entry(iev->ev, dst_handler, iev->src));
 }
 
-void
-clock_cycle_event_map::receive_incoming_events()
+timestamp
+clock_cycle_event_map::receive_incoming_events(timestamp vote)
 {
 #if SSTMAC_SANITY_CHECK
   if (thread_id() != 0){
     sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
   }
 #endif
-  rt_->send_recv_messages(all_incoming_);
-
-  if (nthread() == 1){
-    schedule_incoming(all_incoming_);
+  //vote for the minimum time of all my events
+  //and all the events I sent out to others
+  timestamp my_vote = vote;
+  if (vote > min_ipc_time_){
+    vote = min_ipc_time_;
   }
-  else {
-    int num_incoming = all_incoming_.size();
-    for (int i=0; i < num_incoming; ++i){
-      void* buffer = all_incoming_[i];
-      int sid = *(reinterpret_cast<int*>(buffer));
-      int thr = interconn_->thread_for_switch(switch_id(sid));
-      thread_incoming_[thr].push_back(buffer);
+  timestamp min_time = rt_->send_recv_messages(vote);
+
+  current_vote_result_ = min_time;
+
+  int nthr = nthread();
+  int num_recvs = rt_->num_recvs_done();
+  for (int i=0; i < num_recvs; ++i){
+    auto& buf = rt_->recv_buffer(i);
+    serializer ser;
+    ser.start_unpacking(buf.buffer(), buf.bytesUsed());
+    while (ser.size() < buf.bytesUsed()){
+      event_debug("unpacking event starting at offset %lu of %lu",
+                  ser.size(), buf.bytesUsed());
+      ipc_event_t iev;
+      parallel_runtime::run_serialize(ser, &iev);
+      if (nthr == 1){
+        event_debug("unpacked event %s", sprockit::to_string(iev.ev).c_str());
+        schedule_incoming(&iev);
+      } else {
+        spkt_abort_printf("multithread not compatible with MPI currently");
+      }
     }
   }
-  all_incoming_.clear();
-}
-
-
-int64_t
-clock_cycle_event_map::do_vote(int64_t my_time, vote_type_t ty)
-{
-  switch (ty){
-    case vote_type_t::max:
-      return rt_->allreduce_max(my_time);
-      break;
-    case vote_type_t::min:
-      return rt_->allreduce_min(my_time);
-      break;
-  }
-}
-
-timestamp
-clock_cycle_event_map::vote_next_round(timestamp time, vote_type_t ty)
-{
-  int64_t vote_result = do_vote(time.ticks_int64(), ty);
-  timestamp final_time(vote_result, timestamp::exact);
-  event_debug("epoch %d: got time %12.8e on thread %d",
-    epoch_, final_time.sec(), thread_id_);
-  return final_time;
+  rt_->reset_send_recv();
+  //reset this guy
+  min_ipc_time_ = no_events_left_time_;
+  last_vote_result_ = min_time;
+  return min_time;
 }
 
 bool
@@ -186,44 +166,30 @@ clock_cycle_event_map::vote_to_terminate()
   event_debug("epoch %d: voting to terminate on thread %d", 
     epoch_, thread_id());
 
-  receive_incoming_events();
-  timestamp my_vote = (empty() || stopped_) ? no_events_left_time_ : next_event_time();
-  timestamp min_time = vote_next_round(my_vote, vote_type_t::min);
+  timestamp min_time = receive_incoming_events(no_events_left_time_);
+
   ++epoch_;
   if (min_time == no_events_left_time_){
     return true; //done
   } else {
     next_time_horizon_ = min_time + lookahead_;
+    epoch_debug("epoch %d: next time horizon now %12.8e for lookahead %12.8e",
+        epoch_, next_time_horizon_.sec(), lookahead_.sec());
     return false;
   }
 }
-
-timestamp
-clock_cycle_event_map::next_event_time() const
-{
-  return queue_.empty() ? no_events_left_time_ : (*queue_.begin())->time();
-}
-
-#if DEBUG_DETERMINISM
-std::map<device_id,std::ofstream*> outs;
-#endif
 
 void
 clock_cycle_event_map::do_next_event()
 {
   timestamp ev_time = next_event_time();
   while (ev_time >= next_time_horizon_){
-    receive_incoming_events();
-
-    ev_time = next_event_time();
-
     event_debug("epoch %d: voting NOT to terminate at time %12.8e on thread %d",
                 epoch_, ev_time.sec(), thread_id_);
-
-    timestamp min_time = vote_next_round(ev_time, vote_type_t::min);
+    ev_time = next_event_time();
+    timestamp min_time = receive_incoming_events(ev_time);
     next_time_horizon_ = min_time + lookahead_;
-
-    event_debug("epoch %d: next time horizon is %12.8e for lookahead %12.8e: next event at %12.8e %sready to proceed on thread %d",
+    epoch_debug("epoch %d: next time horizon is %12.8e for lookahead %12.8e: next event at %12.8e %sready to proceed on thread %d",
         epoch_, next_time_horizon_.sec(), lookahead_.sec(), ev_time.sec(),
         ((ev_time > next_time_horizon_) ? "not " : ""),
         thread_id());
@@ -263,8 +229,9 @@ void
 clock_cycle_event_map::run()
 {
   event_map::run();
-  timestamp global_max = vote_next_round(now(), vote_type_t::max);
-  set_now(global_max);
+  uint64_t now_ticks = now().ticks_int64();
+  uint64_t final = rt_->allreduce_max(now_ticks);
+  set_now(timestamp(final, timestamp::exact));
 }
 
 #if SSTMAC_DEBUG_THREAD_EVENTS
@@ -303,21 +270,16 @@ clock_cycle_event_map::set_interconnect(hw::interconnect* interconn)
 }
 
 void
-clock_cycle_event_map::ipc_schedule(timestamp t,
-  device_id dst,
-  device_id src,
-  uint32_t seqnum,
-  event* ev)
+clock_cycle_event_map::ipc_schedule(ipc_event_t* iev)
 {
   event_debug("epoch %d: scheduling outgoing event with cls id %" PRIu32 " at t=%12.8e to location %d of type %d\n  %s",
-    epoch_, ev->cls_id(), t.sec(), dst.id(), dst.type(),
-    sprockit::to_string(ev).c_str());
+    epoch_, iev->ev->cls_id(), iev->t.sec(), iev->dst.id(), iev->dst.type(),
+    sprockit::to_string(iev->ev).c_str());
 
-  rt_->send_event(thread_id_, t,
-    dst,
-    src,
-    seqnum,
-    ev);
+  if (iev->t < min_ipc_time_){
+    min_ipc_time_ = iev->t;
+  }
+  rt_->send_event(thread_id_, iev);
 }
 
 }
