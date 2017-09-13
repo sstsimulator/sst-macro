@@ -49,6 +49,7 @@ nobase_library_include_HEADERS = \
   event_manager_fwd.h \
   cartgrid.h \
   c_params.h \
+  ipc_event.h \
   event_callback.h \
   event_handler.h \
   event_handler_fwd.h \

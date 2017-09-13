@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <inttypes.h>
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
-#include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
+#include <sstmac/backends/native/clock_cycle_event_container.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
@@ -117,10 +117,13 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
   for (int i=0; i < num_recvs; ++i){
     auto& buf = rt_->recv_buffer(i);
     serializer ser;
-    ser.start_unpacking(buf.buffer(), buf.bytesUsed());
-    while (ser.size() < buf.bytesUsed()){
+    size_t bytesRemaining = buf.bytesUsed();
+    size_t bytesUnpacked = 0;
+    char* serBuf = buf.buffer();
+    ser.start_unpacking(serBuf, bytesRemaining);
+    while (bytesRemaining > 0){
       event_debug("unpacking event starting at offset %lu of %lu",
-                  ser.size(), buf.bytesUsed());
+                  bytesUnpacked, buf.bytesUsed());
       ipc_event_t iev;
       parallel_runtime::run_serialize(ser, &iev);
       if (nthr == 1){
@@ -129,6 +132,12 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
       } else {
         spkt_abort_printf("multithread not compatible with MPI currently");
       }
+      size_t size = ser.unpacker().size();
+      align64(size);
+      bytesRemaining -= size;
+      serBuf += size;
+      ser.start_unpacking(serBuf, bytesRemaining);
+      bytesUnpacked += size;
     }
   }
   rt_->reset_send_recv();

@@ -139,12 +139,6 @@ class interconnect
     return topology_;
   }
 
-  inline timestamp send_delay(int num_hops, int num_bytes) const {
-    double bw_term = num_bytes / hop_bw_;
-    timestamp delay = hop_latency_ * num_hops + timestamp(bw_term) + 2*injection_latency_;
-    return delay;
-  }
-
   /**
    * @brief Return the node corresponding to given ID.
    *        No bounds checking is done for validity of ID.

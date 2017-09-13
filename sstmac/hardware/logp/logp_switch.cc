@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/logp/logp_switch.h>
-#include <sstmac/hardware/nic/nic.h>
+#include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/common/event_manager.h>
@@ -104,20 +104,21 @@ logp_switch::~logp_switch()
 }
 
 void
-logp_switch::connect_output(node_id nid, event_link* link)
+logp_switch::send(message* msg, node* src)
 {
-  nic_links_[nid] = link;
+  send(src->now(), msg, src);
 }
 
 void
-logp_switch::send(timestamp now, message* msg, node_id src, node_id dst)
+logp_switch::send(timestamp start, message* msg, node* src)
 {
+  node_id dst = msg->toaddr();
   timestamp delay(inv_min_bw_ * msg->byte_length()); //bw term
-  int num_hops = top_->num_hops_to_node(src, dst);;
+  int num_hops = top_->num_hops_to_node(src->addr(), dst);
   delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
   debug_printf(sprockit::dbg::logp, "sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
                num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
-  nic_links_[dst]->send(delay + now, msg);
+  nic_links_[dst]->multi_send(delay+start, msg, src);
 }
 
 

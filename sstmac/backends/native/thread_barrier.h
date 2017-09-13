@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <vector>
 #include <stdint.h>
 #include <sstmac/common/sstmac_config.h>
-#include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
+#include <sstmac/backends/native/clock_cycle_event_container.h>
 
 namespace sstmac {
 namespace native {

@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
-#include <sstmac/hardware/nic/nic_fwd.h>
+#include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <unordered_map>
@@ -73,9 +73,13 @@ class logp_switch
 
   virtual ~logp_switch();
 
-  void connect_output(node_id nid, event_link* link);
+  void connect_output(node_id nid, event_link* link){
+    nic_links_[nid] = link;
+  }
 
-  void send(timestamp now, message *msg, node_id src, node_id dst);
+  void send(message *msg, node* src);
+
+  void send(timestamp start, message* msg, node* src);
 
  private:
   double inj_bw_inverse_;

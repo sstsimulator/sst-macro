@@ -80,7 +80,7 @@ logp_nic::do_send(network_message* msg)
             now_.sec(), start_send.sec(), msg->to_string().c_str());
 
   //leave the injection latency term to the interconnect
-  interconnect::local_logp_switch()->send(start_send, msg, my_addr_, msg->toaddr());
+  interconnect::local_logp_switch()->send(start_send, msg, parent_);
 
   timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
   next_free_ = start_send + time_to_inject;

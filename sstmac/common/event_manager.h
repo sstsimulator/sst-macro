@@ -78,17 +78,6 @@ namespace sstmac {
  * in the right order.
  */
 
-struct ipc_event_t {
-  timestamp t;
-  uint32_t dst;
-  uint32_t src;
-  uint32_t seqnum;
-  event* ev;
-  int port;
-  int rank;
-  bool credit;
-};
-
 class event_manager
 {
   DeclareFactory(event_manager, parallel_runtime*)

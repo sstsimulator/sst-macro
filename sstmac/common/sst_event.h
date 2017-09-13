@@ -96,7 +96,7 @@ class event_queue_entry : public event
     uint32_t src_id) :
     dst_loc_(dst_id),
     src_loc_(src_id),
-    seqnum_(0)
+    seqnum_(-1)
   {
   }
 

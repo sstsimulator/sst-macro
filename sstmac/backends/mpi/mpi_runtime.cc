@@ -219,6 +219,9 @@ mpi_runtime::bcast(void *buffer, int bytes, int root)
 timestamp
 mpi_runtime::send_recv_messages(timestamp vote)
 {
+  //okay - it's possible that we have pending events
+  //that aren't serialized yet because we overran the buffers
+
   int reqIdx = 0;
   static int payload_tag = 42;
   static int next_payload_tag = 43;
@@ -228,6 +231,31 @@ mpi_runtime::send_recv_messages(timestamp vote)
     votes_[i].time_vote = vote.ticks_int64();
     votes_[i].max_bytes = size;
     if (size){
+      if (!comm.pending().empty()){
+        //ugh... okay
+        comm.growToFitPending();
+        debug_printf(sprockit::dbg::parallel,
+                     "LP %d sending %d pending bytes to LP %d on epoch %d",
+                     me_, comm.pendingBytes, i, epoch_);
+        char* buf = comm.nextBuffer();
+        size_t remainingBytes = comm.pendingBytes;
+        serializer ser;
+        ser.start_packing(buf, remainingBytes);
+        for (const ipc_event_t& iev : comm.pending()){
+          //const cast is fine... we're not going to modify
+          ipc_event_t* ptr = const_cast<ipc_event_t*>(&iev);
+          run_serialize(ser, ptr);
+          size_t size = ser.packer().size();
+          align64(size);
+          debug_printf(sprockit::dbg::parallel,
+                       "LP %d first pending message is %d aligned bytes to LP %d",
+                       me_, size, i);
+          buf += size; //move the buffer on 64-byte aligned increments
+          remainingBytes -= size;
+          ser.start_packing(buf, remainingBytes);
+        }
+      }
+
       votes_[i].num_sent = 1;
       debug_printf(sprockit::dbg::parallel, "LP %d sending %d bytes to lp %d on epoch %d",
                    me_, size, i, epoch_);

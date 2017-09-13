@@ -173,8 +173,8 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
   send_buffers_.resize(nproc_);
   recv_buffers_.resize(nproc_);
   for (int i=0; i < nproc_; ++i){
-    send_buffers_[i].init(allocSize);
-    recv_buffers_[i].init(allocSize);
+    send_buffers_[i].realloc(allocSize);
+    recv_buffers_[i].realloc(allocSize);
   }
 }
 
@@ -205,16 +205,19 @@ parallel_runtime::~parallel_runtime()
 void
 parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
 {
+  ser & iev->t;
   ser & iev->dst;
   ser & iev->src;
   ser & iev->seqnum;
-  ser & iev->t;
+  ser & iev->port;
+  ser & iev->rank;
+  ser & iev->credit;
   ser & iev->ev;
 }
 
 void parallel_runtime::send_event(ipc_event_t* iev)
 {
-  size_t overhead = sizeof(iev->t) + sizeof(iev->dst) + sizeof(iev->src) + sizeof(iev->seqnum);
+  size_t overhead = sizeof(ipc_event_base);
 
   sprockit::serializer ser;
   ser.start_sizing();
@@ -225,10 +228,11 @@ void parallel_runtime::send_event(ipc_event_t* iev)
                overhead, ser.size(), buffer_space_needed, iev->rank, iev->t.sec(),
                sprockit::to_string(iev->ev).c_str());
   comm_buffer& buff = send_buffers_[iev->rank];
-  char* ptr = buff.ensureSpace(buffer_space_needed);
-  ser.start_packing(ptr, buffer_space_needed);
-  run_serialize(ser, iev);
-  buff.shift(buffer_space_needed);
+  char* ptr = buff.allocateSpace(buffer_space_needed, iev);
+  if (ptr){
+    ser.start_packing(ptr, buffer_space_needed);
+    run_serialize(ser, iev);
+  }
 }
 #endif
 

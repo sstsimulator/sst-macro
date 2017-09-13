@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/backends/native/clock_cycle_parallel/thread_barrier.h>
+#include <sstmac/backends/native/thread_barrier.h>
 #include <iostream>
 #include <sprockit/spkt_string.h>
 

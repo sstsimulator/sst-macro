@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/native/manager.h>
-#include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
+#include <sstmac/backends/native/clock_cycle_event_container.h>
 
 #include <sstmac/common/runtime.h>
 

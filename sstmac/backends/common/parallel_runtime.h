@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_location.h>
 #include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/ipc_event.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
@@ -59,7 +60,27 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <list>
 
+#ifdef __APPLE__
+#include <libkern/OSAtomic.h>
+#else
+#endif
+
 DeclareDebugSlot(parallel);
+
+template <class T>
+void align64(T& t){
+  if (t % 64){
+    t += t + 64 - t%64;
+  }
+}
+
+template <class T>
+void align64(T*& t){
+  intptr_t ptr = (intptr_t) t;
+  if (ptr % 64){
+    t = (T*)(ptr + 64 - ptr%64);
+  }
+}
 
 namespace sstmac {
 
@@ -70,13 +91,18 @@ class parallel_runtime :
  public:
   virtual ~parallel_runtime();
 
-  struct comm_buffer {
-    char* ptr;
-    size_t remaining;
-    size_t allocSize;
+  struct comm_buffer : public lockable {
+    int64_t bytesAllocated;
+    int64_t allocSize;
+    int64_t totalValidSize;
+    int64_t pendingBytes;
+    char* allocation;
     char* storage;
 
-    comm_buffer() : storage(nullptr), ptr(nullptr) {}
+    std::vector<ipc_event_t> pending_;
+
+    comm_buffer() : storage(nullptr), allocation(nullptr),
+      pendingBytes(0), totalValidSize(0) {}
 
     ~comm_buffer(){
       if (storage) delete[] storage;
@@ -86,44 +112,77 @@ class parallel_runtime :
       return storage;
     }
 
+    char* nextBuffer() const {
+      return storage + bytesAllocated;
+    }
+
     size_t bytesUsed() const {
-      return allocSize - remaining;
-    }
-
-    void init(size_t size){
-      allocSize = size;
-      storage = new char[allocSize];
-      ptr = storage;
-      remaining = allocSize;
-    }
-
-    char* ensureSpace(size_t size){
-      if (remaining < size){
-        size_t oldSize = allocSize - remaining;
-        size_t totalSizeNeeded = oldSize + size;
-        size_t newAllocSize = allocSize*2;
-        while (newAllocSize < totalSizeNeeded){
-          newAllocSize *= 2;
-        }
-        char* newData = new char[newAllocSize];
-        ::memcpy(newData, storage, oldSize);
-        delete[] storage;
-        storage = newData;
-        ptr = storage + oldSize;
-        allocSize = newAllocSize;
-        remaining = allocSize - oldSize;
-      }
-      return ptr;
+      //total valid size only gets set if we overrun the buffer
+      return totalValidSize == 0 ? bytesAllocated : totalValidSize;
     }
 
     void reset(){
-      ptr = storage;
-      remaining = allocSize;
+      totalValidSize = 0;
+      bytesAllocated = 0;
+      pending_.clear();
+      pendingBytes = 0;
+    }
+
+    void realloc(size_t size, bool copyOld = false){
+      char* old = storage;
+      allocSize = size;
+      allocation = new char[allocSize+64];
+      storage = allocation;
+      align64(storage);
+      bytesAllocated = 0;
+      if (copyOld){
+        ::memcpy(storage, old, bytesUsed());
+        bytesAllocated = bytesUsed();
+      }
+      delete[] old;
+    }
+
+    void ensureSpace(size_t size)
+    {
+      if (allocSize < size){
+        realloc(size);
+      }
+    }
+
+    void growToFitPending()
+    {
+      size_t newSize = totalValidSize + pendingBytes;
+      realloc(newSize, true);
     }
 
     void shift(size_t size){
-      ptr += size;
-      remaining -= size;
+      bytesAllocated += size;
+      totalValidSize += size;
+    }
+
+    char* allocateSpace(size_t size, ipc_event_t* ev){
+      align64(size);
+      uint64_t newOffset = OSAtomicAdd64(size, &bytesAllocated);
+      if (newOffset > allocSize){
+        size_t prevSize = newOffset - size;
+        if (prevSize < allocSize){ //this was the size before we overran
+          totalValidSize = prevSize;
+        }
+
+        //oops, we blew out memory
+        lock();
+        pending_.push_back(*ev);
+        pendingBytes += size;
+        unlock();
+        return nullptr;
+      } else {
+        //write to this location
+        return storage + newOffset - size;
+      }
+    }
+
+    const std::vector<ipc_event_t>& pending() const {
+      return pending_;
     }
 
   };

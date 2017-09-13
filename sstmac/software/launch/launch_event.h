@@ -130,10 +130,12 @@ class start_app_event : public launch_event {
      task_id tid,
      node_id to,
      node_id from,
-     const sprockit::sim_parameters* app_params) :
+     const sprockit::sim_parameters* app_params,
+     bool serialize_map) :
     launch_event(Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
-    app_params_(app_params)
+    app_params_(app_params),
+    serialize_map_(serialize_map)
   {
   }
 
@@ -141,16 +143,12 @@ class start_app_event : public launch_event {
 
   std::string to_string() const override;
 
-  start_app_event(){} //for serialization
+  start_app_event(): serialize_map_(true) {} //for serialization
 
   void serialize_order(serializer& ser) override;
 
   sprockit::sim_parameters& app_params() {
     return app_params_;
-  }
-
-  start_app_event* clone(int rank, node_id src, node_id dst) const {
-    return new start_app_event(aid_, unique_name_, mapping_, rank, dst, src, &app_params_);
   }
 
   task_mapping::ptr mapping() const {
@@ -161,6 +159,7 @@ class start_app_event : public launch_event {
   std::string unique_name_;
   task_mapping::ptr mapping_;
   sprockit::sim_parameters app_params_;
+  bool serialize_map_;
 
 };
 

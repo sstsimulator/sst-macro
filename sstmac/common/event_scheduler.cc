@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sst_event.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/common/ipc_event.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
@@ -286,90 +287,37 @@ event_scheduler::run_events(timestamp event_horizon)
 }
 
 void
-event_scheduler::send_to_link(timestamp enter, timestamp lat,
-                              event_handler* handler, event *ev)
-{
-  timestamp arrival = enter + lat;
-  schedule(arrival, handler, ev);
-}
-
-void
-event_scheduler::send_to_link(event_handler *lnk, event *ev)
-{
-  schedule_now(lnk, ev);
-}
-
-void
-event_scheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
-                              event_handler* handler, event *ev)
-{
-  timestamp arrival = now() + extra_delay + lat;
-  schedule(arrival, handler, ev);
-}
-
-void
-event_scheduler::send_delayed_to_link(timestamp extra_delay,
-                              event_handler* handler, event *ev)
-{
-  timestamp arrival = now() + extra_delay;
-  schedule(arrival, handler, ev);
-}
-
-void
-event_scheduler::schedule_now(event_handler *handler, event* ev)
-{
-  //event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
-  schedule(now(), handler, ev);
-}
-
-void
 event_scheduler::send_self_event_queue(timestamp arrival, event_queue_entry *ev)
 {
+  ev->set_seqnum(seqnum_++);
   schedule(arrival, ev);
 }
 
 void
 event_scheduler::send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev)
 {
-  schedule_delay(delay, ev);
+  ev->set_seqnum(seqnum_++);
+  schedule(delay + now_, ev);
 }
 
 void
 event_scheduler::send_now_self_event_queue(event_queue_entry* ev)
 {
-  schedule_now(ev);
-}
-
-void
-event_scheduler::schedule_delay(
-  timestamp delay,
-  event_handler* handler,
-  event* ev)
-{
-  schedule(now_ + delay, handler, ev);
-}
-
-void
-event_scheduler::schedule_now(event_queue_entry* ev)
-{
+  ev->set_seqnum(seqnum_++);
   schedule(now_, ev);
-}
-
-void
-event_scheduler::schedule_delay(timestamp delay, event_queue_entry* ev)
-{
-  schedule(now_ + delay, ev);
 }
 
 void
 event_scheduler::schedule(timestamp t, event_queue_entry* ev)
 {
+  if (ev->seqnum() == -1){
+    spkt_abort_printf("seqnum unitialized for event");
+  }
+  ev->set_time(t);
   if (!registered_event_){
     eventman_->register_component(t,this);
     registered_event_ = true;
   }
-  ev->set_time(t);
-  ev->set_seqnum(seqnum_++);
   event_queue_.insert(ev);
 }
 
@@ -377,13 +325,6 @@ void
 event_scheduler::register_stat(stat_collector *coll, stat_descr_t* descr)
 {
   eventman_->register_stat(coll, descr);
-}
-
-void
-event_scheduler::schedule(timestamp t, event_handler* handler, event* ev)
-{
-  event_queue_entry* qev = new handler_event_queue_entry(ev, handler, component_id());
-  schedule(t,qev);
 }
 #endif
 
@@ -418,12 +359,28 @@ event_subcomponent::setup()
 }
 
 void
-ipc_link::send(timestamp arrival, event *ev)
+local_link::send(timestamp arrival, event *ev)
+{
+  event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, scheduler_->component_id());
+  qev->set_seqnum(scheduler_->next_seqnum());
+  dst_->schedule(arrival, qev);
+}
+
+void
+local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
+{
+  event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
+  qev->set_seqnum(src->next_seqnum());
+  dst_->schedule(arrival, qev);
+}
+
+void
+ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
   ipc_event_t iev;
-  iev.src = src_;
+  iev.src = src->component_id();
   iev.dst = dst_;
-  iev.seqnum = scheduler_->next_seqnum();
+  iev.seqnum = src->next_seqnum();
   iev.ev = ev;
   iev.t = arrival;
   iev.rank = rank_;

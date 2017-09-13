@@ -98,30 +98,6 @@ class event_scheduler :
 
   void send_now_self_event_queue(event_queue_entry* ev);
 
-  /**
-   * @brief send_to_link  The message should arrive now
-   * @param lnk
-   * @param ev
-   */
-  void send_to_link(event_handler* lnk, event* ev);
-
-  /**
-   * @brief send_to_link  The arrival time will be enter + lat
-   * @param enter        The time the enters the link
-   * @param lat
-   * @param lnk
-   * @param ev
-   */
-  void send_to_link(timestamp enter, timestamp lat,
-               event_handler* lnk, event* ev);
-
-  void send_delayed_to_link(timestamp extra_delay, timestamp lat,
-               event_handler* lnk, event* ev);
-
-
-  void send_delayed_to_link(timestamp extra_delay,
-               event_handler* lnk, event* ev);
-
   void register_stat(stat_collector* coll, stat_descr_t* descr);
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -186,25 +162,6 @@ class event_scheduler :
   }
 
   void schedule(timestamp t, event_queue_entry* ev);
-
- private:
-  /**
-  * Add an event to the event queue, where msg will get delivered to handler at time t.
-  * @param t Time at which the event should happen
-  * @param handler The handler for the event
-  * @param msg The message to deliver to the handler
-  */
-  void schedule(timestamp t, event_handler* handler, event* ev);
-
-  void schedule_now(event_queue_entry* ev);
-
-  void schedule_now(event_handler* handler, event* ev);
-
-  void schedule_delay(timestamp delay, event_handler* handler, event* ev);
-
-  void schedule_delay(timestamp delay, event_queue_entry* ev);
-
-  void multithread_append(timestamp t, event_handler* handler, event* ev){}
 
  protected:
   event_scheduler(event_manager* mgr, uint32_t comp_id) :
@@ -345,8 +302,6 @@ link_handler* new_link_handler(const T* t, Fxn fxn){
 
 class event_link {
  public:
-  virtual void send(timestamp arrival, event* ev) = 0;
-
   virtual ~event_link(){}
 
   virtual std::string to_string() const = 0;
@@ -356,6 +311,10 @@ class event_link {
   virtual void deadlock_check(event* ev) = 0;
 
   virtual void handle(event* ev) = 0;
+
+  virtual void multi_send(timestamp arrival, event* ev, event_scheduler* src) = 0;
+
+  virtual void send(timestamp arrival, event *ev) = 0;
 
   void send_delay(timestamp delay, event* ev){
     send(scheduler_->now() + delay, ev);
@@ -402,9 +361,9 @@ class local_link : public event_link {
     handler_->deadlock_check(ev);
   }
 
-  void send(timestamp arrival, event* ev) override {
-    dst_->schedule(arrival, handler_, ev);
-  }
+  void send(timestamp arrival, event* ev) override;
+
+  void multi_send(timestamp arrival, event *ev, event_scheduler *src) override;
 
  private:
   event_handler* handler_;
@@ -417,7 +376,7 @@ class ipc_link : public event_link {
   ipc_link(event_manager* mgr, int rank,
            event_scheduler* src, uint32_t dst,
            int port, bool is_credit) :
-    rank_(rank), src_(src->component_id()), dst_(dst),
+    rank_(rank), dst_(dst),
     is_credit_(is_credit), mgr_(mgr),
     port_(port),
     event_link(src)
@@ -436,14 +395,17 @@ class ipc_link : public event_link {
 
   void deadlock_check(event* ev) override {}
 
-  void send(timestamp arrival, event* ev) override;
+  void send(timestamp arrival, event* ev) override {
+    multi_send(arrival, ev, scheduler_);
+  }
+
+  void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
 
  private:
   bool is_credit_;
   int rank_;
   int port_;
   uint32_t dst_;
-  uint32_t src_;
   event_manager* mgr_;
 
 };

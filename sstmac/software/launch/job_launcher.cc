@@ -172,20 +172,25 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
 #if SSTMAC_INTEGRATED_SST_CORE
   hw::topology* logp_mapper = topology_;
 #else
-  //hw::interconnect* logp_mapper = hw::interconnect::static_interconnect();
+  hw::interconnect* logp_mapper = hw::interconnect::static_interconnect();
 #endif
 
+  std::set<int> ranksSent;
+
   int num_ranks = mapping->num_ranks();
-  for (int rank=0; rank < num_ranks; ++rank){
-    int dst_nid = mapping->rank_to_node(rank);
-    sw::start_app_event* lev = new start_app_event(request->aid(), request->app_namespace(),
-                                     mapping, rank, mapping->rank_to_node(rank),
-                                     os_->addr(),//the job launch root
-                                     request->app_params());
-    hw::interconnect::local_logp_switch()->send(os_->now(), lev, os_->addr(), dst_nid);
-  }
   //job launcher needs to add this - might need it later
   task_mapping::add_global_mapping(request->aid(), request->app_namespace(), mapping);
+  for (int rank=0; rank < num_ranks; ++rank){
+    int dst_nid = mapping->rank_to_node(rank);
+    int logp_switch = logp_mapper->node_to_logp_switch(dst_nid);
+    bool need_mapping_serialize = ranksSent.find(logp_switch) == ranksSent.end();
+    ranksSent.insert(logp_switch);
+    sw::start_app_event* lev = new start_app_event(request->aid(), request->app_namespace(),
+                                     mapping, rank, dst_nid,
+                                     os_->addr(),//the job launch root
+                                     request->app_params(), need_mapping_serialize);
+    hw::interconnect::local_logp_switch()->send(lev, os_->node());
+  }
   delete request;
 }
 
@@ -262,7 +267,7 @@ task_mapping::serialize_order(app_id aid, serializer &ser)
         mapping->node_to_rank_indexing_[nid].push_back(i);
       }
     }
-  } else {
+  } else { //packing
     if (!mapping) spkt_abort_printf("no task mapping exists for application %d", aid);
     int num_nodes = mapping->node_to_rank_indexing_.size();
     ser & num_nodes;
