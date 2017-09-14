@@ -88,9 +88,6 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   complete_(false),
   active_scheduler_(nullptr)
 {
-  int64_t max_ticks = std::numeric_limits<int64_t>::max() - 100;
-  no_events_left_time_ = timestamp(max_ticks, timestamp::exact);
-  min_ipc_time_ = no_events_left_time_;
 }
 
 void
@@ -108,25 +105,64 @@ event_manager::set_interconnect(hw::interconnect* interconn)
 }
 
 void
+event_manager::multithread_schedule(int thread, event_queue_entry *ev, event_scheduler *dst)
+{
+  sprockit::abort("non-multithreaded event manager cannot schedule threaded execution");
+}
+
+void
 event_manager::run()
 {
+  for (event_scheduler* es : pending_registration_){
+    registry_.emplace(es->min_event_time(), es);
+    es->set_pending(false);
+    es->set_registered();
+  }
+  pending_registration_.clear();
+
   timestamp lower_bound;
-  while (lower_bound != no_events_left_time_){
+  while (lower_bound != event_scheduler::no_events_left_time){
     timestamp horizon = lower_bound + lookahead_;
-    timestamp min_time = registry_.empty() ? no_events_left_time_ : registry_.begin()->first;
+    timestamp min_time = min_registry_time();
+    timestamp next_lower_bound = event_scheduler::no_events_left_time;
+    //std::cout << "Running events from " << min_time << " < t < " << horizon << std::endl;
     while (min_time < horizon){
       auto iter = registry_.begin();
       active_scheduler_ = iter->second;
-      registry_.erase(iter);
-      //printf("Running events on %d until %8.4e\n", active_scheduler_->component_id(), horizon.sec());
-      timestamp next_min_time = active_scheduler_->run_events(horizon);
-      if (next_min_time != 0){
-        //printf("... reinserting at %8.4e\n", next_min_time.sec());
-        registry_.insert(std::make_pair(next_min_time, active_scheduler_));
+      if (min_time < lower_bound){
+        spkt_abort_printf("woah - timed moved backwards on %p, no bueno: %lu < %lu",
+                          active_scheduler_, min_time.ticks(), lower_bound.ticks());
       }
-      min_time = registry_.empty() ? no_events_left_time_ : registry_.begin()->first;
+      registry_.erase(iter);
+      if (!active_scheduler_->pending()){
+        //these can get added twice - only run if this isn't already pending again
+        timestamp next_min_time = active_scheduler_->run_events(horizon);
+        active_scheduler_->clear_registered();
+        if (next_min_time != timestamp()){
+          //std::cout << "Re-pending component " << active_scheduler_ << std::endl;
+          pending_registration_.push_back(active_scheduler_);
+          active_scheduler_->set_pending(true);
+          next_lower_bound = std::min(next_lower_bound, next_min_time);
+        } else {
+          //std::cout << "Clearing component " << active_scheduler_ << std::endl;
+          active_scheduler_->set_pending(false);
+        }
+        next_lower_bound = std::min(next_lower_bound, active_scheduler_->pull_min_ipc_time());
+      }
+      min_time = min_registry_time();
     }
-    lower_bound = receive_incoming_events(min_time);
+    next_lower_bound = std::min(min_time, next_lower_bound);
+    lower_bound = receive_incoming_events(next_lower_bound);
+    for (event_scheduler* es : pending_registration_){
+      if (!es->pending()){
+        spkt_abort_printf("registering scheduler %p that isn't pending", es);
+      }
+      //std::cout << "Registering component " << es << " at time " << es->min_event_time() << std::endl;
+      registry_.emplace(es->min_event_time(), es);
+      es->set_registered();
+      es->set_pending(false);
+    }
+    pending_registration_.clear();
   }
 
   for (event_scheduler* es : interconn_->components()){

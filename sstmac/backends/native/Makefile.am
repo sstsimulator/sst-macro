@@ -28,10 +28,12 @@ if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \
   serial_runtime.h \
   thread_barrier.h \
+  multithreaded_event_container.h \
   clock_cycle_event_container.h 
 
 libsstmac_native_la_SOURCES += \
   thread_barrier.cc \
+  multithreaded_event_container.cc \
   clock_cycle_event_container.cc \
   serial_runtime.cc 
 endif

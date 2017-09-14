@@ -48,9 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 
-#include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
-#include <sstmac/backends/native/clock_cycle_parallel/multithreaded_subcontainer.h>
-#include <sstmac/backends/native/clock_cycle_parallel/thread_barrier.h>
+#include <sstmac/backends/native/clock_cycle_event_container.h>
 #include <pthread.h>
 
 
@@ -60,21 +58,47 @@ DeclareDebugSlot(cpu_affinity);
 namespace sstmac {
 namespace native {
 
-class thread_event_schedule_map
+class multithreaded_event_container;
+
+struct thread_queue
 {
- public:
-  std::list<event_queue_entry*>&
-  pending_events(int srcthread, int dstthread);
+  thread_queue() :
+    numTasks(0),
+    mgr(nullptr),
+    threadId(0),
+    //for these two, 1 means active, 0 means done
+    signalFromParentAllDone(1),
+    signalToParentWaveDone(1)
+  {
+  }
 
-  void init(int nthread);
+  std::vector<event_scheduler*> to_run;
+  int32_t numTasks;
+  int32_t signalToParentWaveDone;
+  int32_t signalFromParentAllDone;
+  timestamp minTime;
+  timestamp timeHorizon;
+  multithreaded_event_container* mgr;
+  int threadId;
 
- protected:
-  int array_index(int srcthread, int dstthread);
+  void append(event_scheduler* es){
+    to_run.push_back(es);
+  }
 
- protected:
-  int nthread_;
+  void clear(){
+    numTasks = 0;
+    to_run.clear();
+  }
 
-  std::vector<std::list<event_queue_entry*> > events_;
+  event_scheduler* get(int i){
+    return to_run[i];
+  }
+
+  int32_t query() {
+    uint32_t zero = 0;
+    int32_t taskQueury = OSAtomicXor32(zero, (uint32_t*)&numTasks);
+    return taskQueury;
+  }
 
 };
 
@@ -91,63 +115,16 @@ class multithreaded_event_container :
 
   virtual void run() override;
 
-  virtual void schedule_stop(timestamp until) override;
+  void multithread_schedule(int thread, event_queue_entry* ev, event_scheduler* dst) override;
 
-  void multithread_schedule(
-    int srcthread,
-    int dstthread,
-    uint32_t seqnum,
-    event_queue_entry* ev) override;
+ private:
+  void run_loop();
 
-  std::list<event_queue_entry*>&
-  pending_events(int srcthread, int dstthread) {
-    return pending_event_map_.pending_events(srcthread, dstthread);
-  }
-
-  virtual void set_interconnect(hw::interconnect* interconn) override;
-
-  virtual void receive_incoming_events() override;
-
-  void schedule_incoming(int thread_id, clock_cycle_event_map* mgr);
-
-  void send_recv_barrier(int thread_id);
-
-  timestamp time_vote_barrier(int thread_id, timestamp min_time, vote_type_t ty);
-
-  timestamp vote_next_round(timestamp my_time, vote_type_t ty) override;
-
-  event_manager* ev_man_for_thread(int thread_id) const override;
-
-  virtual void finish_stats(stat_collector *main, const std::string &name, timestamp end) override;
-
- protected:
-  struct vote_thread_functor : public thread_barrier_functor {
-    virtual int64_t
-    execute(int64_t min_time){
-      return parent->do_vote(min_time);
-    }
-    multithreaded_event_container* parent;
-  };
-  vote_thread_functor vote_functor_;
-
-  struct send_recv_thread_functor : public thread_barrier_functor {
-    virtual int64_t
-    execute(int64_t){
-      parent->clock_cycle_event_map::receive_incoming_events();
-      return 0;
-    }
-    multithreaded_event_container* parent;
-  };
-  send_recv_thread_functor send_recv_functor_;
-
-  std::vector<multithreaded_subcontainer*> subthreads_;
-
-  thread_barrier send_recv_barrier_;
-  thread_barrier vote_barrier_;
-  thread_barrier final_time_barrier_;
-
-  thread_event_schedule_map pending_event_map_;
-
+  // Dim-1: Num threads
+  // Dim-2: List of events
+  // Pair: event to schedule, scheduler to deliver to
+  std::vector<std::vector<std::pair<event_queue_entry*,event_scheduler*>>> pending_events_;
+  std::vector<thread_queue> queues_;
   std::vector<int> cpu_affinity_;
   int me_;
   int nproc_;

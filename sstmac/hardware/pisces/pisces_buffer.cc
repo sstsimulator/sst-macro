@@ -331,6 +331,11 @@ pisces_eject_buffer::return_credit(packet* pkt)
   send_credit(input_, safe_cast(pisces_payload, pkt), now());
 }
 
+pisces_eject_buffer::pisces_eject_buffer(sprockit::sim_parameters *params, event_scheduler *parent) :
+  pisces_buffer(params, parent)
+{
+}
+
 void
 pisces_eject_buffer::handle_payload(event* ev)
 {

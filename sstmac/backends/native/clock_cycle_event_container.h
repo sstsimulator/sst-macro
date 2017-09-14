@@ -72,19 +72,20 @@ class clock_cycle_event_map :
 
   virtual ~clock_cycle_event_map() throw() {}
 
-  timestamp vote_to_terminate() override;
+  void renew_scheduler(int thread, timestamp t, event_scheduler* es);
 
- private:
-  void schedule_incoming(ipc_event_t* iev);
-
-  void run() override;
-
+ protected:
   /**
    * @brief receive_incoming_events
    * @param vote The minimum event time I have
    * @return The minimum event time across all LPs
    */
   timestamp receive_incoming_events(timestamp vote) override;
+
+ private:
+  void schedule_incoming(ipc_event_t* iev);
+
+  void run() override;
 
  private:
   int epoch_;

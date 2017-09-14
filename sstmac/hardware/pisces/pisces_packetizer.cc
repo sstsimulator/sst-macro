@@ -88,7 +88,7 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   //do not put any latency on eject buffer
   ej_params->add_param_override("send_latency", "0ns");
-  ej_params->add_param_override("credit_latency", "0ns");
+  ej_params->add_param_override("credit_latency", params->get_param("send_latency"));
   ej_params->add_param_override("credits", 1<<30);
   ej_buffer_ = new pisces_eject_buffer(ej_params, parent);
   ej_stats_ = packet_stats_callback::factory::

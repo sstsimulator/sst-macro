@@ -141,8 +141,9 @@ pisces_sender::send_credit(
       payload->to_string().c_str(),
       credit_departure.sec(), credit_lat_.sec(),
       credit);
-  //
-  src.link->send(credit_departure+credit_lat_, credit);
+  timestamp arrival = std::max(credit_departure, now_ + credit_lat_);
+  //simulate more realistic pipelining of credits
+  src.link->send(arrival, credit);
 }
 
 /**

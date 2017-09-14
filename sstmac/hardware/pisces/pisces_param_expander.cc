@@ -182,7 +182,7 @@ pisces_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
     link_params->add_param_override("send_latency", link_lat);
   }
   if (!link_params->has_param("credit_latency")){
-    link_params->add_param_override("credit_latency", "0ns");
+    link_params->add_param_override("credit_latency", link_params->get_param("send_latency"));
   }
 
   if (!xbar_params->has_param("send_latency")){
@@ -367,8 +367,9 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     }
     link_params->add_param_override("send_latency", link_lat);
   }
-  if (!link_params->has_param("credit_latency"))
-    link_params->add_param_override("credit_latency", "0ns");
+  if (!link_params->has_param("credit_latency")){
+    link_params->add_param_override("credit_latency", link_params->get_param("send_latency"));
+  }
 
   if (!xbar_params->has_param("send_latency"))
     xbar_params->add_param_override("send_latency", "0ns");
@@ -429,8 +430,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     send_lat = inj_params->get_param("send_latency");
   if (send_lat.size() == 0){
     inj_params->add_param_override("send_latency", link_params->get_param("send_latency"));
-  }
-  else {
+  } else {
     inj_params->add_param_override("send_latency", send_lat);
   }
 
@@ -438,8 +438,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     credit_lat = inj_params->get_param("credit_latency");
   if (credit_lat.size() == 0){
     inj_params->add_param_override("credit_latency", link_params->get_param("credit_latency"));
-  }
-  else {
+  } else {
     inj_params->add_param_override("credit_latency", credit_lat);
   }
 

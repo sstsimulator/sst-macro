@@ -92,6 +92,48 @@ class event_scheduler :
     return id_;
   }
 
+  void set_registered(){
+    last_registration_ = min_event_time();
+  }
+
+  void clear_registered(){
+    last_registration_ = no_events_left_time;
+  }
+
+  bool pending() const {
+    return pending_;
+  }
+
+  void set_pending(bool flag){
+    pending_ = flag;
+  }
+
+  void set_thread(int thr){
+    thread_id_ = thr;
+  }
+
+  int thread() const {
+    return thread_id_;
+  }
+
+  static const timestamp no_events_left_time;
+
+  void set_min_ipc_time(timestamp t){
+    min_ipc_time_ = std::min(t,min_ipc_time_);
+  }
+
+  timestamp pull_min_ipc_time(){
+    timestamp ret = min_ipc_time_;
+    min_ipc_time_ = no_events_left_time;
+    return ret;
+  }
+
+  timestamp min_event_time() const {
+    return event_queue_.empty()
+          ? no_events_left_time
+          : (*event_queue_.begin())->time();
+  }
+
   void send_self_event_queue(timestamp arrival, event_queue_entry* ev);
 
   void send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev);
@@ -168,7 +210,11 @@ class event_scheduler :
     eventman_(mgr),
     seqnum_(0),
     id_(comp_id),
-    registered_event_(false)
+    active_(false),
+    pending_(false),
+    thread_id_(0),
+    last_registration_(no_events_left_time),
+    min_ipc_time_(no_events_left_time)
   {
   }
 
@@ -177,7 +223,11 @@ class event_scheduler :
   uint32_t seqnum_;
   uint32_t id_;
   timestamp now_;
-  bool registered_event_;
+  bool pending_;
+  bool active_;
+  timestamp last_registration_;
+  timestamp min_ipc_time_;
+  int thread_id_;
 
   struct event_compare {
     bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
@@ -363,12 +413,29 @@ class local_link : public event_link {
 
   void send(timestamp arrival, event* ev) override;
 
-  void multi_send(timestamp arrival, event *ev, event_scheduler *src) override;
+  void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
 
  private:
   event_handler* handler_;
   event_scheduler* dst_;
 
+};
+
+class multithread_link : public event_link {
+ public:
+  multithread_link(event_manager* mgr, event_handler* handler, event_scheduler* src, event_scheduler* dst) :
+    event_link(src),
+    handler_(handler), mgr_(mgr), dst_(dst)
+  {}
+
+  void send(timestamp arrival, event *ev) override;
+
+  void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
+
+ private:
+  event_scheduler* dst_;
+  event_manager* mgr_;
+  event_handler* handler_;
 };
 
 class ipc_link : public event_link {

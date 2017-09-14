@@ -78,9 +78,6 @@ clock_cycle_event_map::clock_cycle_event_map(
   event_manager(params, rt),
   epoch_(0)
 {
-  int64_t max_ticks = std::numeric_limits<int64_t>::max() - 100;
-  no_events_left_time_ = timestamp(max_ticks, timestamp::exact);
-  min_ipc_time_ = no_events_left_time_;
 }
 
 void
@@ -142,19 +139,11 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
   }
   rt_->reset_send_recv();
   //reset this guy
-  min_ipc_time_ = no_events_left_time_;
+  min_ipc_time_ = event_scheduler::no_events_left_time;
   ++epoch_;
   return min_time;
 }
 
-timestamp
-clock_cycle_event_map::vote_to_terminate()
-{
-  event_debug("epoch %d: voting to terminate", epoch_);
-
-  timestamp min_time = receive_incoming_events(no_events_left_time_);
-  return min_time;
-}
 
 void
 clock_cycle_event_map::run()

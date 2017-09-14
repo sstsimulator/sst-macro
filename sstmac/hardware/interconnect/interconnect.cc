@@ -80,6 +80,17 @@ sprockit::StaticKeywordRegisterRegexp node_failure_time_keyword("node_failure_\\
 #endif
 
 
+event_link*
+interconnect::allocate_local_link(event_scheduler* src, event_scheduler* dst, event_handler* handler)
+{
+  if (rt_->nthread() == 1){
+    return new local_link(src,dst,handler);
+  } else {
+    return nullptr;
+    //return new multithread_link(src,dst,handler);
+  }
+}
+
 interconnect*
 interconnect::static_interconnect(sprockit::sim_parameters* params, event_manager* mgr)
 {
@@ -170,8 +181,8 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     hop_latency_ = link_params->get_time_param("latency");
   }
   hop_bw_ = link_params->get_bandwidth_param("bandwidth");
-  lookahead_ = hop_latency_;
   injection_latency_ = inj_params->get_time_param("latency");
+  lookahead_ = std::min(injection_latency_, hop_latency_);
 
   interconn_debug("Interconnect building endpoints");
   build_endpoints(node_params, nic_params,netlink_params, mgr);
@@ -193,7 +204,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
       lookahead_ = double_inj_lat;
     }
   }
-
 #endif
 }
 
@@ -268,9 +278,9 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       int switch_port = inj_ports[i];
       interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
           int(injaddr), injsw, ep_id, ep, switch_port, injector_port);
-      auto credit_link = new local_link(injsw, parent_node, ep->credit_handler(injector_port));
+      auto credit_link = allocate_local_link(injsw, parent_node, ep->credit_handler(injector_port));
       injsw->connect_input(ej_params, injector_port, switch_port, credit_link);
-      auto payload_link = new local_link(parent_node, injsw, injsw->payload_handler(switch_port));
+      auto payload_link = allocate_local_link(parent_node, injsw, injsw->payload_handler(switch_port));
       ep->connect_output(inj_params, injector_port, switch_port, payload_link);
     }
 
@@ -281,9 +291,9 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
       int switch_port = ej_ports[i];
       interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
           int(ejaddr), ejsw, ep_id, ep, switch_port, ejector_port);
-      auto payload_link = new local_link(ejsw, parent_node, ep->payload_handler(ejector_port));
+      auto payload_link = allocate_local_link(ejsw, parent_node, ep->payload_handler(ejector_port));
       ejsw->connect_output(ej_params, switch_port, ejector_port, payload_link);
-      auto credit_link = new local_link(parent_node, ejsw, ejsw->credit_handler(switch_port));
+      auto credit_link = allocate_local_link(parent_node, ejsw, ejsw->credit_handler(switch_port));
       ep->connect_input(inj_params, switch_port, ejector_port, credit_link);
     }
   }
@@ -325,7 +335,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         nodes_[nid] = nd;
         components_[nid] = nd;
 
-        event_link* out_link = new local_link(nullptr, nd, nd->payload_handler(nic::LogP));
+        event_link* out_link = allocate_local_link(nullptr, nd, nd->payload_handler(nic::LogP));
         local_logp_switch_->connect_output(nid, out_link);
 
         nd->init(0); //emulate SST core
@@ -347,21 +357,21 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
 
           // connect nic to netlink
 
-          auto link = new local_link(nd, nd, the_nic->credit_handler(nic::Injection));
+          auto link = allocate_local_link(nd, nd, the_nic->credit_handler(nic::Injection));
           nlink->connect_input(nlink_ej_params,
                                nic::Injection, inj_port,
                                link);
-          link = new local_link(nd, nd, nlink->payload_handler(inj_port));
+          link = allocate_local_link(nd, nd, nlink->payload_handler(inj_port));
           the_nic->connect_output(inj_params,
                            nic::Injection, inj_port,
                            link);
 
           // connect netlink to nic
-          link = new local_link(nd, nd,the_nic->payload_handler(nic::Injection));
+          link = allocate_local_link(nd, nd,the_nic->payload_handler(nic::Injection));
           nlink->connect_output(nlink_ej_params,
                         inj_port, nic::Injection,
                         link);
-          link = new local_link(nd, nd, nlink->credit_handler(inj_port));
+          link = allocate_local_link(nd, nd, nlink->credit_handler(inj_port));
           the_nic->connect_input(inj_params,
                            inj_port, nic::Injection,
                            link);

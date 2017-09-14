@@ -30,10 +30,10 @@ ping-pong between 0 and 20
 4096:   0.1693 ms
 8192:   0.2064 ms
 20384:   0.1729 ms
-40768:   0.2186 ms
-81536:   0.3002 ms
-163072:   0.4632 ms
-326144:   0.7894 ms
-652288:   1.4417 ms
-1304576:   2.7462 ms
-Estimated total runtime of           0.00181527 seconds
+40768:   0.2137 ms
+81536:   0.2953 ms
+163072:   0.4583 ms
+326144:   0.7845 ms
+652288:   1.4368 ms
+1304576:   2.7413 ms
+Estimated total runtime of           0.00181240 seconds

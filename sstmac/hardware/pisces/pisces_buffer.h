@@ -130,10 +130,7 @@ class pisces_eject_buffer :
 {
  public:
   pisces_eject_buffer(sprockit::sim_parameters* params,
-                           event_scheduler* parent) :
-    pisces_buffer(params, parent)
-  {
-  }
+                           event_scheduler* parent);
 
   void handle_credit(event* ev) override;
 

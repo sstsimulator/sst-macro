@@ -45,13 +45,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 
-#include <sstmac/backends/native/clock_cycle_parallel/multithreaded_event_container.h>
+#include <sstmac/backends/native/multithreaded_event_container.h>
 #include <unistd.h>
 #include <execinfo.h>
 #include <dlfcn.h>
 #include <signal.h>
 #include <iostream>
 #include <sstream>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/keyword_registration.h>
 
 RegisterDebugSlot(multithread_event_manager);
@@ -64,61 +65,35 @@ RegisterKeywords(
 namespace sstmac {
 namespace native {
 
-void*
-pthread_run_subthread(void* args)
+static void*
+pthread_run_worker_thread(void* args)
 {
-  multithreaded_subcontainer* thr = (multithreaded_subcontainer*) args;
-
-  try {
-    thr->run();
-  } catch (std::exception& e) {
-    std::cerr << e.what() << std::endl;
-    abort();
+  thread_queue* q = (thread_queue*) args;
+  bool waitingOnNextWave = true;
+  bool done = false;
+  while(!done){
+    auto numToRun = q->query();
+    if (numToRun){
+      for (int i=0; i < numToRun; ++i){
+        event_scheduler* next = q->get(i);
+        timestamp next_min_time = next->run_events(q->timeHorizon);
+        if (next_min_time != 0){
+          q->mgr->renew_scheduler(q->threadId, next_min_time, next);
+        }
+        waitingOnNextWave = false;
+      }
+    } else if (waitingOnNextWave){
+      //if parent has swapped this value to 0, we are all done
+      done = OSAtomicCompareAndSwap32(0, 1, &q->signalFromParentAllDone);
+    } else {
+      waitingOnNextWave = true;
+      int32_t marker = 1;
+      int32_t newValue = 0;
+      q->clear();
+      OSAtomicCompareAndSwap32(marker, newValue, &q->signalToParentWaveDone);
+    }
   }
-
   return 0;
-}
-
-void
-thread_event_schedule_map::init(int nthread)
-{
-  nthread_ = nthread;
-  int total_slots = array_index(nthread, nthread);
-  events_.resize(total_slots);
-}
-
-std::list<event_queue_entry*>&
-thread_event_schedule_map::pending_events(int srcthread, int dstthread)
-{
-  int idx = array_index(srcthread, dstthread);
-  return events_[idx];
-}
-
-int
-thread_event_schedule_map::array_index(int srcthread, int dstthread)
-{
-  return srcthread*nthread_ + dstthread;
-}
-
-event_manager*
-multithreaded_event_container::ev_man_for_thread(int thread_id) const
-{
-  if (thread_id == 0){
-    return event_manager::ev_man_for_thread(thread_id);
-  }
-  else {
-    return subthreads_[thread_id];
-  }
-}
-
-void
-multithreaded_event_container::set_interconnect(hw::interconnect* interconn)
-{
-  int nthread_ = nthread();
-  for (int i=1; i < nthread_; ++i){
-    subthreads_[i]->set_interconnect(interconn);
-  }
-  clock_cycle_event_map::set_interconnect(interconn);
 }
 
 static void
@@ -152,10 +127,6 @@ multithreaded_event_container::multithreaded_event_container(
   signal(SIGFPE, print_backtrace);
   signal(SIGILL, print_backtrace);
 
-
-  send_recv_functor_.parent = this;
-  vote_functor_.parent = this;
-
   int nthread_ = nthread();
   me_ = rt_->me();
   nproc_ = rt_->nproc();
@@ -164,18 +135,8 @@ multithreaded_event_container::multithreaded_event_container(
     //it would be nice to check that size of cpu_offsets matches task per node
   }
 
-  send_recv_barrier_.init(nthread_);
-  vote_barrier_.init(nthread_);
-  final_time_barrier_.init(nthread_);
-
-  subthreads_.resize(nthread_);
-  for (int i=1; i < nthread_; ++i){
-    multithreaded_subcontainer* ev_man = new multithreaded_subcontainer(params, rt_, i, this);
-    subthreads_[i] = ev_man;
-  }
-
-  pending_event_map_.init(nthread_);
-
+  pending_events_.resize(nthread_);
+  queues_.resize(nthread_);
   pthreads_.resize(nthread_);
   pthread_attrs_.resize(nthread_);
 
@@ -189,20 +150,50 @@ multithreaded_event_container::multithreaded_event_container(
 }
 
 void
-multithreaded_event_container::schedule_stop(timestamp until)
+multithreaded_event_container::run_loop()
 {
-  for (int i=1; i < nthread_; ++i){
-    subthreads_[i]->schedule_stop(until);
-  }
-  event_manager::schedule_stop(until);
-}
+  timestamp lower_bound;
+  int nthr = nthread();
+  while (lower_bound != event_scheduler::no_events_left_time){
+    for (auto& eventVec : pending_events_){
+      for (auto& evPair : eventVec){
+        event_scheduler* es = evPair.second;
+        event_queue_entry* ev = evPair.first;
+        es->schedule(ev->time(), ev);
+      }
+      eventVec.clear();
+    }
 
-void
-multithreaded_event_container::finish_stats(stat_collector *main, const std::string &name, timestamp end)
-{
-  event_manager::finish_stats(main, name, end); //finish my stats
-  for (int i=1; i < nthread_; ++i){
-    subthreads_[i]->finish_stats(main, name, end);
+    timestamp horizon = lower_bound + lookahead_;
+    timestamp min_time = min_registry_time();
+    int queue_rotater = 0;
+    while (min_time < horizon){
+      auto iter = registry_.begin();
+      thread_queue& q = queues_[queue_rotater];
+      int32_t marker = 0;
+      int32_t newValue = 1;
+      q.append(iter->second);
+      q.timeHorizon = horizon;
+      registry_.erase(iter);
+      min_time = min_registry_time();
+    }
+
+    //loop all the queues until they are done
+    for (thread_queue& q : queues_){
+      int32_t marker = 0;
+      int32_t newValue = 1;
+      bool done = false;
+      while (!done){
+        //child will set signal to zero - check and set to 1 for completion
+        done = OSAtomicCompareAndSwap32(marker, newValue, &q.signalToParentWaveDone);
+      }
+    }
+
+    for (int i=0; i < nthr; ++i){
+      //loop all the new pending schedulers and add them back to the registry
+    }
+
+    lower_bound = receive_incoming_events(min_time);
   }
 }
 
@@ -253,18 +244,13 @@ multithreaded_event_container::run()
     }
 #endif
     status = pthread_create(&pthreads_[i], &pthread_attrs_[i],
-        pthread_run_subthread, subthreads_[i]);
+        pthread_run_worker_thread, this);
     if (status != 0){
         sprockit::abort("multithreaded_event_container::run: failed creating pthread");
     }
-
   }
 
-  clock_cycle_event_map::run();
-
-  debug_printf(sprockit::dbg::event_manager,
-    "joining %d event manager threads",
-    nthread_);
+  run_loop();
 
   for (int i=1; i < nthread_; ++i){
     void* ignore;
@@ -273,83 +259,19 @@ multithreaded_event_container::run()
         sprockit::abort("multithreaded_event_container::run: failed joining pthread");
     }
   }
-}
 
-timestamp
-multithreaded_event_container::time_vote_barrier(int thread_id, timestamp time, vote_type_t ty)
-{
-  int64_t ticks = time.ticks_int64();
-  int64_t final_vote;
-  if (ty == vote_type_t::max){
-    final_vote = final_time_barrier_.vote(thread_id, ticks, ty, nullptr);
-  } else {
-    final_vote = vote_barrier_.vote(thread_id, ticks, ty, &vote_functor_);
-  }
-  timestamp newtime = timestamp(final_vote, timestamp::exact);
-  return newtime;
-}
-
-void
-multithreaded_event_container::send_recv_barrier(int thread_id)
-{
-  send_recv_barrier_.start(thread_id, &send_recv_functor_);
-}
-
-void
-multithreaded_event_container::receive_incoming_events()
-{
-  send_recv_barrier(thread_id_); //this will invoke clock_cycle_event_map::receive_incoming_events()
-  schedule_incoming(thread_id(), this);
-}
-
-void
-multithreaded_event_container::schedule_incoming(int thread_id, clock_cycle_event_map* mgr)
-{
-  //receive all the mpi messages
-  debug_printf(sprockit::dbg::event_manager, 
-    "thread barrier to scheduling incoming on thread %d, epoch %d",
-    thread_id, epoch_);
-  thread_barrier();
-
-  auto& ipc_events = thread_incoming_[thread_id];
-  for (auto& iev : ipc_events){
-    mgr->schedule_incoming(&iev);
-  }
-  ipc_events.clear();
-
-  int nthread_ = nthread();
-  for (int i=0; i < nthread_; ++i){
-    auto& event_list = pending_events(i, thread_id);
-    debug_printf(sprockit::dbg::event_manager,
-      "scheduling %d events on thread %d from thread %d on epoch %d",
-      event_list.size(), thread_id_, i, epoch_);
-    for (event_queue_entry* ev : event_list){
-      mgr->add_event(ev);
+  for (event_scheduler* es : interconn_->components()){
+    if (es){
+      final_time_ = es->now() > final_time_ ? es->now() : final_time_;
     }
-    event_list.clear();
   }
 }
 
-timestamp
-multithreaded_event_container::vote_next_round(timestamp my_time, vote_type_t ty)
-{
-  debug_printf(sprockit::dbg::event_manager | sprockit::dbg::event_manager_time_vote | sprockit::dbg::parallel,
-    "LP %d thread barrier to start vote on thread %d, epoch %d",
-    rt_->me(), thread_id(), epoch_);
-
-  return time_vote_barrier(thread_id_, my_time, ty);
-}
 
 void
-multithreaded_event_container::multithread_schedule(
-  int srcthread,
-  int dstthread,
-  uint32_t seqnum,
-  event_queue_entry* ev)
+multithreaded_event_container::multithread_schedule(int thread, event_queue_entry *ev, event_scheduler *dst)
 {
-  ev->set_seqnum(seqnum);
-  std::list<event_queue_entry*>& pending = pending_events(srcthread, dstthread);
-  pending.push_back(ev);
+  pending_events_[thread].emplace_back(ev,dst);
 }
 
 }

@@ -203,6 +203,9 @@ class interconnect
   void connect_endpoints(sprockit::sim_parameters* inj_params,
                   sprockit::sim_parameters* ej_params);
 
+  event_link* allocate_local_link(event_scheduler* src,
+                                  event_scheduler* dst, event_handler* handler);
+
   switch_map switches_;
 
   node_map nodes_;

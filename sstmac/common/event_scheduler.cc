@@ -62,6 +62,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
+const timestamp event_scheduler::no_events_left_time(std::numeric_limits<int64_t>::max() - 100, timestamp::exact);
+
 void
 event_component::cancel_all_messages()
 {
@@ -269,10 +271,12 @@ event_subcomponent::event_subcomponent(event_scheduler* parent) :
 timestamp
 event_scheduler::run_events(timestamp event_horizon)
 {
+  active_ = true;
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     event_queue_entry* ev = *iter;
     if (ev->time() >= event_horizon){
+      active_ = false;
       return ev->time();
     } else {
       now_ = ev->time();
@@ -281,8 +285,7 @@ event_scheduler::run_events(timestamp event_horizon)
       event_queue_.erase(iter);
     }
   }
-  //there are no more events to run
-  registered_event_ = false;
+  active_ = false;
   return timestamp();
 }
 
@@ -313,12 +316,19 @@ event_scheduler::schedule(timestamp t, event_queue_entry* ev)
   if (ev->seqnum() == -1){
     spkt_abort_printf("seqnum unitialized for event");
   }
-  ev->set_time(t);
-  if (!registered_event_){
-    eventman_->register_component(t,this);
-    registered_event_ = true;
+  if (t < now_){
+    spkt_abort_printf("scheduling event in the past on %p: %lu < %lu",
+                      this, t.ticks(), now_.ticks());
   }
+  ev->set_time(t);
   event_queue_.insert(ev);
+  if (!pending_ && !active_ && t < last_registration_){
+    //std::cout << "Pending component " << this << std::endl;
+    eventman_->register_component(this);
+    pending_ = true;
+  } else if (!pending_ && !active_){
+    //std::cout << "Skipping pending of " << this << std::endl;
+  }
 }
 
 void
@@ -361,14 +371,13 @@ event_subcomponent::setup()
 void
 local_link::send(timestamp arrival, event *ev)
 {
-  event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, scheduler_->component_id());
-  qev->set_seqnum(scheduler_->next_seqnum());
-  dst_->schedule(arrival, qev);
+  multi_send(arrival, ev, scheduler_);
 }
 
 void
 local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
+  src->set_min_ipc_time(arrival);
   event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
   qev->set_seqnum(src->next_seqnum());
   dst_->schedule(arrival, qev);
@@ -377,6 +386,7 @@ local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 void
 ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
+  src->set_min_ipc_time(arrival);
   ipc_event_t iev;
   iev.src = src->component_id();
   iev.dst = dst_;
@@ -387,6 +397,21 @@ ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
   iev.credit = is_credit_;
   iev.port = port_;
   mgr_->ipc_schedule(&iev);
+}
+
+void
+multithread_link::send(timestamp arrival, event *ev)
+{
+  multi_send(arrival, ev, scheduler_);
+}
+
+void
+multithread_link::multi_send(timestamp arrival, event* ev, event_scheduler* src)
+{
+  event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, scheduler_->component_id());
+  qev->set_time(arrival);
+  qev->set_seqnum(scheduler_->next_seqnum());
+  mgr_->multithread_schedule(src->thread(), qev, dst_);
 }
 
 

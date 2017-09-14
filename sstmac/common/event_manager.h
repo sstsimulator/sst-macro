@@ -149,14 +149,14 @@ class event_manager
     return nthread_;
   }
 
-  virtual timestamp vote_to_terminate() {
-    return no_events_left_time_;
-  }
-
   void ipc_schedule(ipc_event_t* iev);
 
-  void register_component(timestamp t, event_scheduler* comp){
-    registry_.insert(std::make_pair(t,comp));
+  virtual void multithread_schedule(int thread, event_queue_entry* ev,
+                                     event_scheduler* dst);
+
+  void register_component(event_scheduler* comp){
+    pending_registration_.push_back(comp);
+    comp->set_pending(true);
   }
 
   void set_interconnect(hw::interconnect* ic);
@@ -168,6 +168,12 @@ class event_manager
 
   virtual timestamp receive_incoming_events(timestamp vote) {
     return vote;
+  }
+
+  inline timestamp min_registry_time() const {
+    return registry_.empty()
+          ? event_scheduler::no_events_left_time
+          : registry_.begin()->first;
   }
 
  protected:
@@ -186,8 +192,6 @@ class event_manager
 
   timestamp lookahead_;
 
-  timestamp no_events_left_time_;
-
  private:
   struct stats_entry {
     bool reduce_all;
@@ -200,18 +204,21 @@ class event_manager
     {}
   };
 
+  std::vector<event_scheduler*> pending_registration_;
 
+ protected:
   struct event_compare {
     bool operator()(const std::pair<timestamp,event_scheduler*>& lhs,
                     const std::pair<timestamp,event_scheduler*>& rhs) {
       if (lhs.first == rhs.first){
+        //equal times, break tie
         return lhs.second->component_id() < rhs.second->component_id();
       } else {
         return lhs.first < rhs.first;
       }
     }
   };
-  typedef std::set<std::pair<timestamp,event_scheduler*>, event_compare> registry_t;
+  typedef std::set<std::pair<timestamp, event_scheduler*>, event_compare> registry_t;
   registry_t registry_;
 
   std::map<std::string, stats_entry> stats_;
