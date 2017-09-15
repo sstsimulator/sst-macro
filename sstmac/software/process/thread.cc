@@ -81,6 +81,8 @@ thread::init_thread(sprockit::sim_parameters* params,
   stack_ = stack;
   stacksize_ = stacksize;
 
+  set_thread_id(physical_thread_id);
+
   init_id();
 
   state_ = INITIALIZED;

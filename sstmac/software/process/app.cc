@@ -59,6 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
+#include <sstmac/common/thread_lock.h>
 #include <dlfcn.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
@@ -435,10 +436,13 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
 void
 user_app_cxx_full_main::skeleton_main()
 {
+  static thread_lock argv_lock;
+  argv_lock.lock();
   argv_entry& entry = argv_map_[sid_.app_];
   if (entry.argv == 0){
     init_argv(entry);
   }
+  argv_lock.unlock();
   (*fxn_)(entry.argc, entry.argv);
 }
 

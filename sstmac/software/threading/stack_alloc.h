@@ -72,9 +72,6 @@ class stack_alloc
   size_t suggested_chunk_;
   /// Each stack request is of this size:
   size_t stacksize_;
-  /// Do we want stacks separated by an mprot region?
-  /// This will then trigger seg faults for stack overruns
-  bool use_mprot_;
 
   /// This is our list of un-allocated chunks:
   typedef std::vector<void*> available_vec_t;
@@ -87,9 +84,6 @@ class stack_alloc
     return stacksize_;
   }
 
-  bool use_mprot() const {
-    return use_mprot_;
-  }
 
   size_t chunksize() const {
     return suggested_chunk_;
@@ -103,7 +97,7 @@ class stack_alloc
   /// Return the given memory region.
   void free(void*);
 
-  void init(size_t stacksize, size_t alloc_unit, bool use_mprot);
+  void init(size_t stacksize, size_t alloc_unit);
 
   bool initialized() const {
     return stacksize_;

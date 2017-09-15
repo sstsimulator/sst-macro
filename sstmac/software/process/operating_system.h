@@ -104,7 +104,7 @@ class operating_system :
 
   inline operating_system*& active_os() {
 #if SSTMAC_USE_MULTITHREAD
-  return active_os_[thread_id_];
+  return active_os_[threadId()];
 #else
   return active_os_;
 #endif

@@ -275,6 +275,10 @@ event_scheduler::run_events(timestamp event_horizon)
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     event_queue_entry* ev = *iter;
+    if (ev->time() < now_){
+      spkt_abort_printf("Time went backwards on %u: %lu < %lu",
+                        component_id(), ev->time().ticks(), now_.ticks());
+    }
     if (ev->time() >= event_horizon){
       active_ = false;
       return ev->time();
@@ -324,7 +328,7 @@ event_scheduler::schedule(timestamp t, event_queue_entry* ev)
   event_queue_.insert(ev);
   if (!pending_ && !active_ && t < last_registration_){
     //std::cout << "Pending component " << this << std::endl;
-    eventman_->register_component(this);
+    eventman_->register_component(thread_id_, this);
     pending_ = true;
   } else if (!pending_ && !active_){
     //std::cout << "Skipping pending of " << this << std::endl;
@@ -408,9 +412,14 @@ multithread_link::send(timestamp arrival, event *ev)
 void
 multithread_link::multi_send(timestamp arrival, event* ev, event_scheduler* src)
 {
-  event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, scheduler_->component_id());
+  event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
+  if (arrival < src->now()){
+    spkt_abort_printf("link scheduling event in the past: %lu < %lu",
+                      arrival.ticks(), src->now().ticks())
+  }
+  src->set_min_ipc_time(arrival);
   qev->set_time(arrival);
-  qev->set_seqnum(scheduler_->next_seqnum());
+  qev->set_seqnum(src->next_seqnum());
   mgr_->multithread_schedule(src->thread(), qev, dst_);
 }
 

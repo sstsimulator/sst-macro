@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/threading/stack_alloc.h>
 #include <sstmac/software/threading/stack_alloc_chunk.h>
+#include <sstmac/common/thread_lock.h>
 #include <sprockit/errors.h>
 #include <unistd.h>
 
@@ -54,17 +55,16 @@ namespace sw {
 // Build.
 //
 stack_alloc::stack_alloc() :
-  suggested_chunk_(0), stacksize_(0), use_mprot_(false)
+  suggested_chunk_(0), stacksize_(0)
 {
 
 }
 
 void
-stack_alloc::init(size_t stacksize, size_t alloc_unit, bool use_mprot)
+stack_alloc::init(size_t stacksize, size_t alloc_unit)
 {
   suggested_chunk_ = alloc_unit;
   stacksize_ = stacksize;
-  use_mprot_ = use_mprot;
   size_t rem = stacksize_ % sysconf(_SC_PAGESIZE);
   if(rem) {
     stacksize_ += (sysconf(_SC_PAGESIZE) - rem);
@@ -94,13 +94,15 @@ stack_alloc::clear()
 void*
 stack_alloc::alloc()
 {
+  static thread_lock lock;
+  lock.lock();
   if (stacksize_ == 0) {
     spkt_throw_printf(sprockit::value_error, "stackalloc::stacksize was not initialized");
   }
 
   if(available_.empty()){
     // grab a new chunk.
-    chunk* new_chunk = new chunk(stacksize_, suggested_chunk_, use_mprot_);
+    chunk* new_chunk = new chunk(stacksize_, suggested_chunk_);
     void* buf = new_chunk->get_next_stack();
     while (buf){
       available_.push_back(buf);
@@ -109,6 +111,7 @@ stack_alloc::alloc()
   }
   void *buf = available_.back();
   available_.pop_back();
+  lock.unlock();
   return buf;
 }
 

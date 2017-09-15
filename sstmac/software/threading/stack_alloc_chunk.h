@@ -65,14 +65,12 @@ class stack_alloc::chunk
   size_t size_;
   /// The target size of each open (unprotected) stack region.
   size_t stacksize_;
-  /// Are we putting mprot pages between allocations or not?
-  bool use_mprot_;
   /// Next stack (for get_next_stack).
   size_t next_stack_;
 
  public:
   /// Make a new chunk.
-  chunk(size_t stacksize, size_t suggested_chunk_size, bool use_mprot);
+  chunk(size_t stacksize, size_t suggested_chunk_size);
 
   ~chunk();
 

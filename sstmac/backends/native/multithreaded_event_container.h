@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/backends/native/clock_cycle_event_container.h>
 #include <pthread.h>
-
+#include <stdlib.h>
 
 DeclareDebugSlot(multithread_event_manager);
 DeclareDebugSlot(cpu_affinity);
@@ -63,30 +63,42 @@ class multithreaded_event_container;
 struct thread_queue
 {
   thread_queue() :
-    numTasks(0),
     mgr(nullptr),
-    threadId(0),
-    //for these two, 1 means active, 0 means done
-    signalFromParentAllDone(1),
-    signalToParentWaveDone(1)
+    active(false),
+    threadId(0)
   {
+    void* ptr = &numTasks;
+    int rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
+    if (rc != 0){
+      spkt_abort_printf("Failed to allocated aligned memory: %d\n%s",
+                        rc, ::strerror(rc));
+    }
+    ptr = &signalToParentWaveDone;
+    rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
+    ptr = &signalFromParentAllDone;
+    rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
+    *signalFromParentAllDone = 1;
+    *signalToParentWaveDone = 1;
+    *numTasks = 0;
   }
 
   std::vector<event_scheduler*> to_run;
-  int32_t numTasks;
-  int32_t signalToParentWaveDone;
-  int32_t signalFromParentAllDone;
+  volatile int32_t* numTasks;
+  volatile int32_t* signalToParentWaveDone;
+  volatile int32_t* signalFromParentAllDone;
   timestamp minTime;
   timestamp timeHorizon;
   multithreaded_event_container* mgr;
   int threadId;
+
+  bool active;
 
   void append(event_scheduler* es){
     to_run.push_back(es);
   }
 
   void clear(){
-    numTasks = 0;
+    *numTasks = 0;
     to_run.clear();
   }
 
@@ -94,10 +106,9 @@ struct thread_queue
     return to_run[i];
   }
 
-  int32_t query() {
-    uint32_t zero = 0;
-    int32_t taskQueury = OSAtomicXor32(zero, (uint32_t*)&numTasks);
-    return taskQueury;
+  bool query() {
+    bool stillZero = OSAtomicCompareAndSwap32(0, 0, numTasks);
+    return !stillZero;
   }
 
 };
@@ -115,15 +126,11 @@ class multithreaded_event_container :
 
   virtual void run() override;
 
-  void multithread_schedule(int thread, event_queue_entry* ev, event_scheduler* dst) override;
-
  private:
   void run_loop();
 
-  // Dim-1: Num threads
-  // Dim-2: List of events
-  // Pair: event to schedule, scheduler to deliver to
-  std::vector<std::vector<std::pair<event_queue_entry*,event_scheduler*>>> pending_events_;
+  void register_pending();
+
   std::vector<thread_queue> queues_;
   std::vector<int> cpu_affinity_;
   int me_;

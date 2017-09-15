@@ -219,6 +219,11 @@ class thread
   */
   void start_thread(thread* thr);
 
+  void set_thread_id(int thr){
+    int* id = (int*)stack_;
+    *id = thr;
+  }
+
   void join();
 
   process_context get_process_context() const {

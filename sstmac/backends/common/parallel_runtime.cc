@@ -68,6 +68,45 @@ namespace sstmac {
 const int parallel_runtime::global_root = -1;
 parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
 
+char*
+parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
+{
+  align64(size);
+  uint64_t newOffset = OSAtomicAdd64(size, &bytesAllocated);
+  if (newOffset > allocSize){
+    size_t prevSize = newOffset - size;
+    if (prevSize < allocSize){ //this was the size before we overran
+      totalValidSize = prevSize;
+    }
+    //oops, we blew out memory
+    lock();
+    pending_.push_back(*ev);
+    pendingBytes += size;
+    unlock();
+    return nullptr;
+  } else {
+    //write to this location
+    return storage + newOffset - size;
+  }
+}
+
+void
+parallel_runtime::comm_buffer::realloc(size_t size, bool copyOld)
+{
+  char* old = storage;
+  allocSize = size;
+  allocation = new char[allocSize+64];
+  storage = allocation;
+  align64(storage);
+  bytesAllocated = 0;
+  if (copyOld){
+    ::memcpy(storage, old, bytesUsed());
+    bytesAllocated = bytesUsed();
+    align64(bytesAllocated);
+  }
+  delete[] old;
+}
+
 void
 parallel_runtime::bcast_string(std::string& str, int root)
 {
@@ -166,7 +205,7 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
   nthread_ = params->get_optional_int_param("sst_nthread", 1);
 
   buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 512);
-  int num_bufs_window = params->get_optional_int_param("serialization_num_bufs_allocation", 100);
+  int num_bufs_window = params->get_optional_int_param("serialization_num_bufs_allocation", 100000);
 
   size_t allocSize = buf_size_ * num_bufs_window;
 

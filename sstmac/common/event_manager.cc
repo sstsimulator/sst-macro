@@ -88,6 +88,7 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   complete_(false),
   active_scheduler_(nullptr)
 {
+  pending_events_.resize(nthread_);
 }
 
 void
@@ -105,27 +106,55 @@ event_manager::set_interconnect(hw::interconnect* interconn)
 }
 
 void
-event_manager::multithread_schedule(int thread, event_queue_entry *ev, event_scheduler *dst)
+event_manager::register_pending()
 {
-  sprockit::abort("non-multithreaded event manager cannot schedule threaded execution");
+  for (int i=0; i < nthread_; ++i){
+    for (event_scheduler* es : pending_registration_[i]){
+      if (!es->pending()) continue; //already got added
+      registry_.emplace(es->min_event_time(), es);
+      es->set_registered();
+      es->set_pending(false);
+    }
+    pending_registration_[i].clear();
+  }
+}
+
+void
+event_manager::compute_final_time()
+{
+  for (event_scheduler* es : interconn_->components()){
+    if (es){
+      final_time_ = es->now() > final_time_ ? es->now() : final_time_;
+    }
+  }
+}
+
+void
+event_manager::run_scheduler(int thr, event_scheduler* es, timestamp horizon, timestamp& lower_bound)
+{
+  timestamp next_min_time = es->run_events(horizon);
+  es->clear_registered();
+  if (next_min_time != timestamp()){
+    pending_registration_[thr].push_back(es);
+    es->set_pending(true);
+    lower_bound = std::min(lower_bound, next_min_time);
+  } else {
+    es->set_pending(false);
+  }
+  timestamp ipc_time = es->pull_min_ipc_time();
+  lower_bound = std::min(lower_bound, ipc_time);
 }
 
 void
 event_manager::run()
 {
-  for (event_scheduler* es : pending_registration_){
-    registry_.emplace(es->min_event_time(), es);
-    es->set_pending(false);
-    es->set_registered();
-  }
-  pending_registration_.clear();
+  register_pending();
 
   timestamp lower_bound;
   while (lower_bound != event_scheduler::no_events_left_time){
     timestamp horizon = lower_bound + lookahead_;
     timestamp min_time = min_registry_time();
     timestamp next_lower_bound = event_scheduler::no_events_left_time;
-    //std::cout << "Running events from " << min_time << " < t < " << horizon << std::endl;
     while (min_time < horizon){
       auto iter = registry_.begin();
       active_scheduler_ = iter->second;
@@ -136,49 +165,21 @@ event_manager::run()
       registry_.erase(iter);
       if (!active_scheduler_->pending()){
         //these can get added twice - only run if this isn't already pending again
-        timestamp next_min_time = active_scheduler_->run_events(horizon);
-        active_scheduler_->clear_registered();
-        if (next_min_time != timestamp()){
-          //std::cout << "Re-pending component " << active_scheduler_ << std::endl;
-          pending_registration_.push_back(active_scheduler_);
-          active_scheduler_->set_pending(true);
-          next_lower_bound = std::min(next_lower_bound, next_min_time);
-        } else {
-          //std::cout << "Clearing component " << active_scheduler_ << std::endl;
-          active_scheduler_->set_pending(false);
-        }
-        next_lower_bound = std::min(next_lower_bound, active_scheduler_->pull_min_ipc_time());
+        run_scheduler(0, active_scheduler_, horizon, next_lower_bound);
       }
       min_time = min_registry_time();
     }
     next_lower_bound = std::min(min_time, next_lower_bound);
     lower_bound = receive_incoming_events(next_lower_bound);
-    for (event_scheduler* es : pending_registration_){
-      if (!es->pending()){
-        spkt_abort_printf("registering scheduler %p that isn't pending", es);
-      }
-      //std::cout << "Registering component " << es << " at time " << es->min_event_time() << std::endl;
-      registry_.emplace(es->min_event_time(), es);
-      es->set_registered();
-      es->set_pending(false);
-    }
-    pending_registration_.clear();
+    register_pending();
   }
 
-  for (event_scheduler* es : interconn_->components()){
-    if (es){
-      final_time_ = es->now() > final_time_ ? es->now() : final_time_;
-    }
-  }
-
+  compute_final_time();
 }
 
 void
 event_manager::ipc_schedule(ipc_event_t* iev)
 {
-  if (iev->t < min_ipc_time_){
-    min_ipc_time_ = iev->t;
-  }
   rt_->send_event(iev);
 }
 

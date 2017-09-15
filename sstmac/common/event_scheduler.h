@@ -116,6 +116,14 @@ class event_scheduler :
     return thread_id_;
   }
 
+  bool scheduled() const {
+    return scheduled_;
+  }
+
+  void set_scheduled(bool flag) {
+    scheduled_ = flag;
+  }
+
   static const timestamp no_events_left_time;
 
   void set_min_ipc_time(timestamp t){
@@ -212,6 +220,7 @@ class event_scheduler :
     id_(comp_id),
     active_(false),
     pending_(false),
+    scheduled_(false),
     thread_id_(0),
     last_registration_(no_events_left_time),
     min_ipc_time_(no_events_left_time)
@@ -219,6 +228,7 @@ class event_scheduler :
   }
 
  private:
+  bool scheduled_;
   event_manager* eventman_;
   uint32_t seqnum_;
   uint32_t id_;
@@ -305,6 +315,10 @@ class event_subcomponent
 
   timestamp now() const {
     return parent_->now();
+  }
+
+  int threadId() const {
+    return parent_->thread();
   }
 
   uint32_t component_id() const {
@@ -415,17 +429,17 @@ class local_link : public event_link {
 
   void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
 
- private:
+ protected:
   event_handler* handler_;
   event_scheduler* dst_;
 
 };
 
-class multithread_link : public event_link {
+class multithread_link : public local_link {
  public:
   multithread_link(event_manager* mgr, event_handler* handler, event_scheduler* src, event_scheduler* dst) :
-    event_link(src),
-    handler_(handler), mgr_(mgr), dst_(dst)
+    local_link(src, dst, handler),
+    mgr_(mgr)
   {}
 
   void send(timestamp arrival, event *ev) override;
@@ -433,9 +447,7 @@ class multithread_link : public event_link {
   void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
 
  private:
-  event_scheduler* dst_;
   event_manager* mgr_;
-  event_handler* handler_;
 };
 
 class ipc_link : public event_link {

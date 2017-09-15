@@ -151,11 +151,13 @@ class event_manager
 
   void ipc_schedule(ipc_event_t* iev);
 
-  virtual void multithread_schedule(int thread, event_queue_entry* ev,
-                                     event_scheduler* dst);
+  void multithread_schedule(int thread, event_queue_entry* ev,
+                            event_scheduler* dst){
+    pending_events_[thread].emplace_back(ev,dst);
+  }
 
-  void register_component(event_scheduler* comp){
-    pending_registration_.push_back(comp);
+  void register_component(int thread_id, event_scheduler* comp){
+    pending_registration_[thread_id].push_back(comp);
     comp->set_pending(true);
   }
 
@@ -163,7 +165,13 @@ class event_manager
 
   void schedule_stop(timestamp until);
 
+  void run_scheduler(int thr, event_scheduler* es, timestamp horizon, timestamp& lower_bound);
+
  protected:
+  void register_pending();
+
+  void compute_final_time();
+
   virtual void finish_stats(stat_collector* main, const std::string& name);
 
   virtual timestamp receive_incoming_events(timestamp vote) {
@@ -178,11 +186,15 @@ class event_manager
 
  protected:
   bool complete_;
-  timestamp min_ipc_time_;
   timestamp final_time_;
   parallel_runtime* rt_;
   hw::interconnect* interconn_;
   event_scheduler* active_scheduler_;
+
+  // Dim-1: Num threads
+  // Dim-2: List of events
+  // Pair: event to schedule, scheduler to deliver to
+  std::vector<std::vector<std::pair<event_queue_entry*,event_scheduler*>>> pending_events_;
 
   int me_;
 
@@ -204,7 +216,8 @@ class event_manager
     {}
   };
 
-  std::vector<event_scheduler*> pending_registration_;
+#define MAX_EVENT_MGR_THREADS 128
+  std::vector<event_scheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
 
  protected:
   struct event_compare {

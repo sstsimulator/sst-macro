@@ -96,17 +96,13 @@ clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
 timestamp
 clock_cycle_event_map::receive_incoming_events(timestamp vote)
 {
+  if (nproc_ == 1) return vote;
+
 #if SSTMAC_SANITY_CHECK
   if (thread_id() != 0){
     sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
   }
 #endif
-  //vote for the minimum time of all my events
-  //and all the events I sent out to others
-  timestamp my_vote = vote;
-  if (vote > min_ipc_time_){
-    vote = min_ipc_time_;
-  }
   timestamp min_time = rt_->send_recv_messages(vote);
 
   int nthr = nthread();
@@ -138,8 +134,6 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
     }
   }
   rt_->reset_send_recv();
-  //reset this guy
-  min_ipc_time_ = event_scheduler::no_events_left_time;
   ++epoch_;
   return min_time;
 }

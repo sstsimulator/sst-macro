@@ -128,19 +128,7 @@ class parallel_runtime :
       pendingBytes = 0;
     }
 
-    void realloc(size_t size, bool copyOld = false){
-      char* old = storage;
-      allocSize = size;
-      allocation = new char[allocSize+64];
-      storage = allocation;
-      align64(storage);
-      bytesAllocated = 0;
-      if (copyOld){
-        ::memcpy(storage, old, bytesUsed());
-        bytesAllocated = bytesUsed();
-      }
-      delete[] old;
-    }
+    void realloc(size_t size, bool copyOld = false);
 
     void ensureSpace(size_t size)
     {
@@ -160,26 +148,7 @@ class parallel_runtime :
       totalValidSize += size;
     }
 
-    char* allocateSpace(size_t size, ipc_event_t* ev){
-      align64(size);
-      uint64_t newOffset = OSAtomicAdd64(size, &bytesAllocated);
-      if (newOffset > allocSize){
-        size_t prevSize = newOffset - size;
-        if (prevSize < allocSize){ //this was the size before we overran
-          totalValidSize = prevSize;
-        }
-
-        //oops, we blew out memory
-        lock();
-        pending_.push_back(*ev);
-        pendingBytes += size;
-        unlock();
-        return nullptr;
-      } else {
-        //write to this location
-        return storage + newOffset - size;
-      }
-    }
+    char* allocateSpace(size_t size, ipc_event_t* ev);
 
     const std::vector<ipc_event_t>& pending() const {
       return pending_;

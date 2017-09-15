@@ -71,6 +71,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/hardware/nic/nic.h>
+#include <sstmac/common/thread_lock.h>
 
 #if SSTMAC_HAVE_UCONTEXT
 #include <sstmac/software/threading/threading_ucontext.h>
@@ -180,38 +181,19 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   if (stack_rem){
     sstmac_global_stacksize += (4096 - stack_rem);
   }
-  bool mprot = params->get_optional_bool_param("stack_protect", false);
+
   long suggested_chunk_size = 1<22;
   long min_chunk_size = 8*sstmac_global_stacksize;
   long default_chunk_size = std::max(suggested_chunk_size, min_chunk_size);
   long chunksize = params->get_optional_byte_length_param("stack_chunk_size", default_chunk_size);
-#if SSTMAC_USE_MULTITHREAD
-  if (mprot){
-    sprockit::abort("operating_system:: cannot use stack protect in multithreaded mode");
-  }
 
-  if (active_os_.size() == 0){
-    os_thread_contexts_.resize(1);
-    stack_alloc& salloc = os_thread_contexts_[0].stackalloc;
-    salloc.init(sstmac_global_stacksize, chunksize, mprot);
-  }
-#else
-  stack_alloc_.init(sstmac_global_stacksize, chunksize, mprot);
-#endif
+  stack_alloc_.init(sstmac_global_stacksize, chunksize);
 
   //we automatically initialize the first context
 #if SSTMAC_USE_MULTITHREAD
   event_manager* man = parent->event_mgr();
-  if (os_thread_contexts_.size() == 1){
-    os_thread_contexts_.resize(man->nthread());
-    os_thread_context& main_ctxt = os_thread_contexts_[0];
-    for (int i=1; i < man->nthread(); ++i){
-      os_thread_context& ctxt = os_thread_contexts_[i];
-      ctxt.stackalloc.init(
-        main_ctxt.stackalloc.stacksize(),
-        main_ctxt.stackalloc.chunksize(),
-        main_ctxt.stackalloc.use_mprot());
-    }
+  if (active_os_.size() == 0){
+    active_os_.resize(man->nthread());
   }
 #endif
 
@@ -277,19 +259,22 @@ operating_system::init_threading(sprockit::sim_parameters* params)
 
   //string is name, bool is whether valid with multithreading
   static std::vector<std::pair<std::string,bool>> valid_threading_contexts;
+  static thread_lock fill_lock;
+  fill_lock.lock();
   if (valid_threading_contexts.empty()){
     fill_valid_threading_contexts(valid_threading_contexts);
   }
+  fill_lock.unlock();
 
   std::string default_threading;
 #if SSTMAC_USE_MULTITHREAD
-  for (auto& pair : default_threading){
+  for (auto& pair : valid_threading_contexts){
     if (pair.second){ //supports multithreading
       default_threading = pair.first;
       break;
     }
   }
-  if (pair.first.size() == 0){
+  if (default_threading.size() == 0){
     //this did not get updated - so we don't have any multithreading-compatible thread interfaces
     sprockit::abort("operating_system: there are no threading frameworks compatible "
                     "with multithreaded SST - must have ucontext or Boost::context");
@@ -454,6 +439,7 @@ operating_system::switch_to_thread(thread* tothread)
 
   active_thread_ = tothread;
   active_os() = this;
+  tothread->set_thread_id(threadId());
   tothread->context()->resume_context(des_context_);
 
   /** back to main thread */
@@ -703,7 +689,7 @@ operating_system::start_thread(thread* t)
     app* parent = t->parent_app();
     t->init_thread(
       parent->params(),
-      thread_id(),
+      threadId(),
       des_context_,
       stack_alloc_.alloc(),
       stack_alloc_.stacksize(),
