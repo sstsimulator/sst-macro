@@ -64,52 +64,20 @@ struct thread_queue
 {
   thread_queue() :
     mgr(nullptr),
-    active(false),
     threadId(0)
   {
-    void* ptr = &numTasks;
+    void* ptr = &delta_t;
     int rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
     if (rc != 0){
       spkt_abort_printf("Failed to allocated aligned memory: %d\n%s",
                         rc, ::strerror(rc));
     }
-    ptr = &signalToParentWaveDone;
-    rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
-    ptr = &signalFromParentAllDone;
-    rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
-    *signalFromParentAllDone = 1;
-    *signalToParentWaveDone = 1;
-    *numTasks = 0;
   }
 
-  std::vector<event_scheduler*> to_run;
-  volatile int32_t* numTasks;
-  volatile int32_t* signalToParentWaveDone;
-  volatile int32_t* signalFromParentAllDone;
-  timestamp minTime;
-  timestamp timeHorizon;
+  volatile int32_t* delta_t;
+  timestamp min_time;
   multithreaded_event_container* mgr;
   int threadId;
-
-  bool active;
-
-  void append(event_scheduler* es){
-    to_run.push_back(es);
-  }
-
-  void clear(){
-    *numTasks = 0;
-    to_run.clear();
-  }
-
-  event_scheduler* get(int i){
-    return to_run[i];
-  }
-
-  bool query() {
-    bool stillZero = OSAtomicCompareAndSwap32(0, 0, numTasks);
-    return !stillZero;
-  }
 
 };
 
@@ -127,16 +95,36 @@ class multithreaded_event_container :
   virtual void run() override;
 
  private:
-  void run_loop();
+  timestamp min_registry_time() const {
+    if (registry_.empty()){
+      return no_events_left_time;
+    } else {
+      return registry_.begin()->first;
+    }
+  }
 
-  void register_pending();
+  void run_work();
 
   std::vector<thread_queue> queues_;
   std::vector<int> cpu_affinity_;
-  int me_;
-  int nproc_;
   std::vector<pthread_t> pthreads_;
   std::vector<pthread_attr_t> pthread_attrs_;
+
+  std::vector<thread_queue*> active_queues_;
+
+  struct event_compare {
+    bool operator()(const std::pair<timestamp,event_scheduler*>& lhs,
+                    const std::pair<timestamp,event_scheduler*>& rhs) {
+      if (lhs.first == rhs.first){
+        //equal times, break tie
+        return lhs.second->component_id() < rhs.second->component_id();
+      } else {
+        return lhs.first < rhs.first;
+      }
+    }
+  };
+  typedef std::set<std::pair<timestamp, event_manager*>, event_compare> registry_t;
+  registry_t registry_;
 
 };
 

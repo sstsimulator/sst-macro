@@ -92,22 +92,6 @@ class event_scheduler :
     return id_;
   }
 
-  void set_registered(){
-    last_registration_ = min_event_time();
-  }
-
-  void clear_registered(){
-    last_registration_ = no_events_left_time;
-  }
-
-  bool pending() const {
-    return pending_;
-  }
-
-  void set_pending(bool flag){
-    pending_ = flag;
-  }
-
   void set_thread(int thr){
     thread_id_ = thr;
   }
@@ -116,30 +100,12 @@ class event_scheduler :
     return thread_id_;
   }
 
-  bool scheduled() const {
-    return scheduled_;
+  timestamp now() const {
+    return *now_;
   }
 
-  void set_scheduled(bool flag) {
-    scheduled_ = flag;
-  }
-
-  static const timestamp no_events_left_time;
-
-  void set_min_ipc_time(timestamp t){
-    min_ipc_time_ = std::min(t,min_ipc_time_);
-  }
-
-  timestamp pull_min_ipc_time(){
-    timestamp ret = min_ipc_time_;
-    min_ipc_time_ = no_events_left_time;
-    return ret;
-  }
-
-  timestamp min_event_time() const {
-    return event_queue_.empty()
-          ? no_events_left_time
-          : (*event_queue_.begin())->time();
+  const timestamp* now_ptr() const {
+    return now_;
   }
 
   void send_self_event_queue(timestamp arrival, event_queue_entry* ev);
@@ -192,68 +158,20 @@ class event_scheduler :
   SST::Component* comp_;
 #else
  public:
-  timestamp now() const {
-    return now_;
-  }
-
   event_manager* event_mgr() const {
     return eventman_;
   }
 
-  /**
-   * @brief run_events
-   * @param event_horizon
-   * @return Whether no more events or just hit event horizon
-   */
-  timestamp run_events(timestamp event_horizon);
-
-  void clear_events() {
-    event_queue_.clear();
-  }
-
-  void schedule(timestamp t, event_queue_entry* ev);
-
  protected:
-  event_scheduler(event_manager* mgr, uint32_t comp_id) :
-    eventman_(mgr),
-    seqnum_(0),
-    id_(comp_id),
-    active_(false),
-    pending_(false),
-    scheduled_(false),
-    thread_id_(0),
-    last_registration_(no_events_left_time),
-    min_ipc_time_(no_events_left_time)
-  {
-  }
+  event_scheduler(event_manager* mgr, uint32_t comp_id);
 
  private:
-  bool scheduled_;
   event_manager* eventman_;
   uint32_t seqnum_;
   uint32_t id_;
-  timestamp now_;
-  bool pending_;
-  bool active_;
-  timestamp last_registration_;
-  timestamp min_ipc_time_;
   int thread_id_;
+  const timestamp* now_;
 
-  struct event_compare {
-    bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
-      bool neq = lhs->time() != rhs->time();
-      if (neq) return lhs->time() < rhs->time();
-
-      if (lhs->src_component_id() == rhs->src_component_id()){
-        return lhs->seqnum() < rhs->seqnum();
-      } else {
-        return lhs->src_component_id() < rhs->src_component_id();
-      }
-    }
-
-  };
-  typedef std::set<event_queue_entry*, event_compare> queue_t;
-  queue_t event_queue_;
 #endif
 
 };
@@ -314,7 +232,7 @@ class event_subcomponent
   virtual std::string to_string() const = 0;
 
   timestamp now() const {
-    return parent_->now();
+    return *now_;
   }
 
   int threadId() const {
@@ -343,12 +261,14 @@ class event_subcomponent
 #else
  protected:
   event_subcomponent(event_scheduler* parent) :
-    parent_(parent)
+    parent_(parent),
+    now_(parent->now_ptr())
   {
   }
 
  private:
   event_scheduler* parent_;
+  const timestamp* now_;
 #endif
 };
 
@@ -394,18 +314,20 @@ class event_link {
   }
 
  protected:
-  event_link(event_scheduler* sched) : scheduler_(sched) {}
+  event_link(event_manager* mgr, event_scheduler* sched) : mgr_(mgr), scheduler_(sched) {}
 
   event_scheduler* scheduler_;
+
+  event_manager* mgr_;
 
 };
 
 class local_link : public event_link {
  public:
-  local_link(event_scheduler* src, event_scheduler* dst, event_handler* hand) :
+  local_link(event_manager* mgr, event_scheduler* src, event_scheduler* dst, event_handler* hand) :
     handler_(hand),
     dst_(dst),
-    event_link(src)
+    event_link(mgr, src)
   {
   }
 
@@ -438,16 +360,13 @@ class local_link : public event_link {
 class multithread_link : public local_link {
  public:
   multithread_link(event_manager* mgr, event_handler* handler, event_scheduler* src, event_scheduler* dst) :
-    local_link(src, dst, handler),
-    mgr_(mgr)
+    local_link(mgr, src, dst, handler)
   {}
 
   void send(timestamp arrival, event *ev) override;
 
   void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
 
- private:
-  event_manager* mgr_;
 };
 
 class ipc_link : public event_link {
@@ -456,9 +375,9 @@ class ipc_link : public event_link {
            event_scheduler* src, uint32_t dst,
            int port, bool is_credit) :
     rank_(rank), dst_(dst),
-    is_credit_(is_credit), mgr_(mgr),
+    is_credit_(is_credit),
     port_(port),
-    event_link(src)
+    event_link(mgr,src)
   {
   }
 
@@ -485,7 +404,6 @@ class ipc_link : public event_link {
   int rank_;
   int port_;
   uint32_t dst_;
-  event_manager* mgr_;
 
 };
 

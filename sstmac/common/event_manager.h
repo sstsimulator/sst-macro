@@ -98,6 +98,8 @@ class event_manager
     return complete_;
   }
 
+  static const timestamp no_events_left_time;
+
   static event_manager* global;
 
   virtual ~event_manager(){}
@@ -120,14 +122,18 @@ class event_manager
     return rt_;
   }
 
-  event_scheduler* active_scheduler() const {
-    return active_scheduler_;
-  }
-
   void finish_stats();
 
   timestamp final_time() const {
     return final_time_;
+  }
+
+  bool scheduled() const {
+    return scheduled_;
+  }
+
+  void set_scheduled(bool flag) {
+    scheduled_ = flag;
   }
 
   /** 
@@ -135,6 +141,14 @@ class event_manager
    * */
   int me() const {
     return me_;
+  }
+
+  int thread() const {
+    return thread_;
+  }
+
+  void set_thread(int thr) {
+    thread_ = thr;
   }
 
   int nproc() const {
@@ -149,28 +163,57 @@ class event_manager
     return nthread_;
   }
 
-  void ipc_schedule(ipc_event_t* iev);
-
-  void multithread_schedule(int thread, event_queue_entry* ev,
-                            event_scheduler* dst){
-    pending_events_[thread].emplace_back(ev,dst);
+  virtual event_manager* thread_manager(int thr) const {
+    return const_cast<event_manager*>(this);
   }
 
-  void register_component(int thread_id, event_scheduler* comp){
-    pending_registration_[thread_id].push_back(comp);
-    comp->set_pending(true);
+  void ipc_schedule(ipc_event_t* iev);
+
+  void multithread_schedule(int srcThread, event_queue_entry* ev){
+    (*outgoing_events_)[srcThread].push_back(ev);
+  }
+
+  void schedule(event_queue_entry* ev){
+    event_queue_.insert(ev);
   }
 
   void set_interconnect(hw::interconnect* ic);
 
   void schedule_stop(timestamp until);
 
-  void run_scheduler(int thr, event_scheduler* es, timestamp horizon, timestamp& lower_bound);
+  /**
+   * @brief run_events
+   * @param event_horizon
+   * @return Whether no more events or just hit event horizon
+   */
+  timestamp run_events(timestamp event_horizon);
+
+  timestamp now() const {
+    return now_;
+  }
+
+  const timestamp* now_ptr() const {
+    return &now_;
+  }
+
+  void set_min_ipc_time(timestamp t){
+    min_ipc_time_ = std::min(t,min_ipc_time_);
+  }
+
+  timestamp pull_min_ipc_time(){
+    timestamp ret = min_ipc_time_;
+    min_ipc_time_ = no_events_left_time;
+    return ret;
+  }
+
+  timestamp min_event_time() const {
+    return event_queue_.empty()
+          ? no_events_left_time
+          : (*event_queue_.begin())->time();
+  }
 
  protected:
   void register_pending();
-
-  void compute_final_time();
 
   virtual void finish_stats(stat_collector* main, const std::string& name);
 
@@ -178,10 +221,14 @@ class event_manager
     return vote;
   }
 
-  inline timestamp min_registry_time() const {
-    return registry_.empty()
-          ? event_scheduler::no_events_left_time
-          : registry_.begin()->first;
+  std::vector<std::vector<event_queue_entry*>>* incoming_events_;
+  std::vector<std::vector<event_queue_entry*>>* outgoing_events_;
+
+  std::vector<std::vector<event_queue_entry*>> pending_events1_;
+  std::vector<std::vector<event_queue_entry*>> pending_events2_;
+
+  void swap_pending_event_queues(){
+    std::swap(incoming_events_, outgoing_events_);
   }
 
  protected:
@@ -189,7 +236,7 @@ class event_manager
   timestamp final_time_;
   parallel_runtime* rt_;
   hw::interconnect* interconn_;
-  event_scheduler* active_scheduler_;
+  bool scheduled_;
 
   // Dim-1: Num threads
   // Dim-2: List of events
@@ -203,6 +250,9 @@ class event_manager
   int nthread_;
 
   timestamp lookahead_;
+  timestamp now_;
+
+  int thread_;
 
  private:
   struct stats_entry {
@@ -220,19 +270,24 @@ class event_manager
   std::vector<event_scheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
 
  protected:
+  timestamp min_ipc_time_;
+  int thread_id_;
+
   struct event_compare {
-    bool operator()(const std::pair<timestamp,event_scheduler*>& lhs,
-                    const std::pair<timestamp,event_scheduler*>& rhs) {
-      if (lhs.first == rhs.first){
-        //equal times, break tie
-        return lhs.second->component_id() < rhs.second->component_id();
+    bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
+      bool neq = lhs->time() != rhs->time();
+      if (neq) return lhs->time() < rhs->time();
+
+      if (lhs->src_component_id() == rhs->src_component_id()){
+        return lhs->seqnum() < rhs->seqnum();
       } else {
-        return lhs.first < rhs.first;
+        return lhs->src_component_id() < rhs->src_component_id();
       }
     }
   };
-  typedef std::set<std::pair<timestamp, event_scheduler*>, event_compare> registry_t;
-  registry_t registry_;
+  typedef std::set<event_queue_entry*, event_compare> queue_t;
+  queue_t event_queue_;
+
 
   std::map<std::string, stats_entry> stats_;
 

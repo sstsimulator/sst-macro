@@ -85,8 +85,9 @@ interconnect::allocate_local_link(event_manager* mgr,
                                   event_scheduler* src, event_scheduler* dst,
                                   event_handler* handler)
 {
-  if (rt_->nthread() == 1){
-    return new local_link(src,dst,handler);
+  bool threads_equal = src && dst ? src->thread() == dst->thread() : false;
+  if (mgr->nthread() == 1 || threads_equal){
+    return new local_link(mgr,src,dst,handler);
   } else {
     return new multithread_link(mgr,handler,src,dst);
   }
@@ -332,7 +333,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         node_params->add_param_override("id", int(nid));
         uint32_t comp_id = nid;
         node* nd = node::factory::get_optional_param("model", "simple", node_params,
-                                                     comp_id, mgr);
+                                                     comp_id, mgr->thread_manager(thread));
         nd->set_thread(thread);
         nic* the_nic = nd->get_nic();
         nodes_[nid] = nd;
@@ -410,7 +411,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
       int thread = partition_->thread_for_switch(i);
       uint32_t comp_id = i + topology_->num_nodes();
       switches_[i] = network_switch::factory::get_param("model",
-                      switch_params, comp_id, mgr);
+                      switch_params, comp_id, mgr->thread_manager(thread));
       switches_[i]->set_thread(thread);
     } else {
       switches_[i] = nullptr;
@@ -471,7 +472,7 @@ interconnect::connect_switches(event_manager* mgr, sprockit::sim_parameters* swi
       if (src_sw){
         event_link* payload_link = nullptr;
         if (dst_sw){
-          payload_link = new local_link(src_sw, dst_sw, dst_sw->payload_handler(conn.dst_inport));
+          payload_link = allocate_local_link(mgr, src_sw, dst_sw, dst_sw->payload_handler(conn.dst_inport));
         } else {
           int dst_rank = partition_->lpid_for_switch(conn.dst);
           uint32_t dst = switch_component_id(conn.dst);
@@ -487,7 +488,7 @@ interconnect::connect_switches(event_manager* mgr, sprockit::sim_parameters* swi
       if (dst_sw){
         event_link* credit_link = nullptr;
         if (src_sw){
-          credit_link = new local_link(dst_sw, src_sw, src_sw->credit_handler(conn.src_outport));
+          credit_link = allocate_local_link(mgr, dst_sw, src_sw, src_sw->credit_handler(conn.src_outport));
         } else {
           int src_rank = partition_->lpid_for_switch(conn.src);
           uint32_t src = switch_component_id(conn.src);

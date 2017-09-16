@@ -65,33 +65,24 @@ RegisterKeywords(
 namespace sstmac {
 namespace native {
 
-static void run_thread_iteration(thread_queue* q, int32_t numToRun)
-{
-  q->minTime = event_scheduler::no_events_left_time;
-  for (int i=0; i < numToRun; ++i){
-    event_scheduler* next = q->get(i);
-    next->set_thread(q->threadId);
-    q->mgr->run_scheduler(q->threadId, next, q->timeHorizon, q->minTime);
-    next->set_scheduled(false);
-  }
-  q->clear();
-}
-
 static void*
 pthread_run_worker_thread(void* args)
 {
   thread_queue* q = (thread_queue*) args;
-  bool done = false;
-  while(!done){
-    bool hasTask = q->query();
-    if (hasTask){
-      run_thread_iteration(q,*q->numTasks);
-      int32_t marker = 1;
-      int32_t newValue = 0;
-      //swap to zero to signal to parent we are done
-      OSAtomicCompareAndSwap32(marker, newValue, q->signalToParentWaveDone);
+  timestamp horizon;
+  while(1){
+    bool stillZero = OSAtomicCompareAndSwap32(0, 0, q->delta_t);
+    if (!stillZero){
+      int32_t delta_t = *q->delta_t;
+      if (delta_t == std::numeric_limits<int32_t>::max()){
+        return 0;
+      } else if (delta_t != 0) {
+        horizon += timestamp(delta_t, timestamp::exact);
+        timestamp new_min_time = q->mgr->run_events(horizon);
+        q->min_time = new_min_time;
+        OSAtomicCompareAndSwap32(delta_t, 0, q->delta_t);
+      }
     }
-    done = OSAtomicCompareAndSwap32(0, 1, q->signalFromParentAllDone);
   }
   return 0;
 }
@@ -152,104 +143,55 @@ multithreaded_event_container::multithreaded_event_container(
     }
   }
 }
-void
-multithreaded_event_container::register_pending()
-{
-  for (auto& eventVec : pending_events_){
-    for (auto& evPair : eventVec){
-      event_scheduler* es = evPair.second;
-      event_queue_entry* ev = evPair.first;
-      es->schedule(ev->time(), ev);
-    }
-    eventVec.clear();
-  }
-  event_manager::register_pending();
-}
 
 void
-multithreaded_event_container::run_loop()
+multithreaded_event_container::run_work()
 {
   register_pending();
 
+  timestamp last_horizon;
   timestamp lower_bound;
-
-  std::vector<thread_queue*> active_queues;
-  active_queues.reserve(nthread_);
-  //always active
-  queues_[0].active = true;
-
-  while (lower_bound != event_scheduler::no_events_left_time){
+  while (lower_bound != no_events_left_time){
     timestamp horizon = lower_bound + lookahead_;
+    int32_t delta_t = horizon.ticks() - last_horizon.ticks();
     timestamp min_time = min_registry_time();
-    int queue_rotater = 0;
     while (min_time < horizon){
       auto iter = registry_.begin();
-      event_scheduler* es = iter->second;
-      if (min_time < lower_bound){
-        spkt_abort_printf("time went backwards on component %p: %lu < %lu",
-                          es, min_time.ticks(), lower_bound.ticks());
-      }
+      event_manager* mgr = iter->second;
       registry_.erase(iter);
-      if (!es->scheduled()){
-        //int thr = nthread_-1-queue_rotater%nthread_;
-        //es->set_thread(thr);
-        int thr = es->thread();
-        es->set_scheduled(true);
-        thread_queue& q = queues_[thr];
-        q.append(es);
-        q.timeHorizon = horizon;
-        if (!q.active){
-          q.active = true;
-          active_queues.push_back(&q);
-        }
-        //loop backwards through the queues in round robin
-        //minimize the work on thread 0 (main thread)
-        //queue_rotater++;
+      if (!mgr->scheduled()){
+        thread_queue& q = queues_[mgr->thread()];
+        OSAtomicAdd32(delta_t, q.delta_t);
+        active_queues_.push_back(&q);
+        mgr->set_scheduled(true);
       }
       min_time = min_registry_time();
     }
-    /**
-    int numActiveThreads = std::min(nthread_, queue_rotater);
-    int iterStop = numActiveThreads;
-    if (numActiveThreads == nthread_) iterStop--;
 
-    for (int i=1; i <= iterStop; ++i){
-      thread_queue& q = queues_[nthread_-i];
-      int32_t numTasks = q.to_run.size();
-      //increment - this will set worker running
-      OSAtomicAdd32(numTasks, q.numTasks);
-    }
-    */
-    for (thread_queue* q : active_queues){
-      int32_t numTasks = q->to_run.size();
-      //increment - this will set worker running
-      OSAtomicAdd32(numTasks, q->numTasks);
-    }
-
-    thread_queue& qZero = queues_[0];
-    run_thread_iteration(&qZero, qZero.to_run.size());
-    //critical here to take min with min_time
-    //it could be that the minimum time is something waiting in registry_
-    //these times are not considered when finding min in the next wave
-    lower_bound = std::min(min_time, qZero.minTime);
-    /**
-    for (int i=1; i <= iterStop; ++i){
-      //thread_queue& q = queues_[nthread_-i];
-    */
-    for (thread_queue* q : active_queues){
-      int32_t marker = 0;
-      int32_t newValue = 1;
-      bool done = false;
-      while (!done){
-        //child will set signal to zero - check and set to 1 for completion
-        done = OSAtomicCompareAndSwap32(marker, newValue, q->signalToParentWaveDone);
+    int num_to_wait = 0;
+    min_time = run_events(horizon);
+    while (num_to_wait > 0){
+      for (int i=0; i < num_to_wait; ++i){
+        thread_queue* q = active_queues_[i];
+        bool done = OSAtomicCompareAndSwap32(0, 0, q->delta_t);
+        if (done){ //worker is done
+          //backfill the queue
+          --num_to_wait;
+          active_queues_[i] = active_queues_[num_to_wait];
+          min_time = std::min(min_time, q->min_time);
+          q->mgr->swap_pending_event_queues();
+          q->mgr->set_scheduled(false);
+        }
       }
-      q->active = false;
-      lower_bound = std::min(q->minTime, lower_bound);
     }
-    active_queues.clear();
-    lower_bound = receive_incoming_events(lower_bound);
+
+    lower_bound = receive_incoming_events(min_time);
     register_pending();
+  }
+
+  for (int i=1; i < nthread_; ++i){
+    //CAS the sentinel value to terminate child
+    OSAtomicAdd32(std::numeric_limits<int32_t>::max(), queues_[i].delta_t);
   }
 }
 
@@ -308,14 +250,7 @@ multithreaded_event_container::run()
     }
   }
 
-  run_loop();
-
-  for (int i=1; i < nthread_; ++i){
-    int32_t marker = 1;
-    int32_t newValue = 0;
-    //CAS the sentinel value to terminate child
-    OSAtomicCompareAndSwap32(marker, newValue, queues_[i].signalFromParentAllDone);
-  }
+  run_work();
 
   for (int i=1; i < nthread_; ++i){
     void* ignore;
@@ -325,7 +260,7 @@ multithreaded_event_container::run()
     }
   }
 
-  compute_final_time();
+
 }
 
 

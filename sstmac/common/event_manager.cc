@@ -54,6 +54,8 @@ RegisterDebugSlot(event_manager);
 
 namespace sstmac {
 
+const timestamp event_manager::no_events_left_time(std::numeric_limits<int64_t>::max() - 100, timestamp::exact);
+
 #if 0
 class stop_event : public event_queue_entry
 {
@@ -86,16 +88,37 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   me_(rt->me()),
   nproc_(rt->nproc()),
   complete_(false),
-  active_scheduler_(nullptr)
+  thread_(0),
+  scheduled_(false)
 {
+  incoming_events_ = &pending_events1_;
+  outgoing_events_ = &pending_events2_;
   pending_events_.resize(nthread_);
+}
+
+timestamp
+event_manager::run_events(timestamp event_horizon)
+{
+  register_pending();
+  while (!event_queue_.empty()){
+    auto iter = event_queue_.begin();
+    event_queue_entry* ev = *iter;
+    if (ev->time() >= event_horizon){
+      return ev->time();
+    } else {
+      now_ = ev->time();
+      ev->execute();
+      delete ev;
+      event_queue_.erase(iter);
+    }
+  }
+  return no_events_left_time;
 }
 
 void
 event_manager::cancel_all_messages(uint32_t component_id)
 {
-  auto comp = interconn_->component(component_id);
-  comp->clear_events();
+  sprockit::abort("canceling messages not currently supported");
 }
 
 void
@@ -108,41 +131,11 @@ event_manager::set_interconnect(hw::interconnect* interconn)
 void
 event_manager::register_pending()
 {
-  for (int i=0; i < nthread_; ++i){
-    for (event_scheduler* es : pending_registration_[i]){
-      if (!es->pending()) continue; //already got added
-      registry_.emplace(es->min_event_time(), es);
-      es->set_registered();
-      es->set_pending(false);
-    }
-    pending_registration_[i].clear();
-  }
-}
-
-void
-event_manager::compute_final_time()
-{
-  for (event_scheduler* es : interconn_->components()){
-    if (es){
-      final_time_ = es->now() > final_time_ ? es->now() : final_time_;
+  for (auto& pendingVec : *incoming_events_){
+    for (event_queue_entry* ev : pendingVec){
+      schedule(ev);
     }
   }
-}
-
-void
-event_manager::run_scheduler(int thr, event_scheduler* es, timestamp horizon, timestamp& lower_bound)
-{
-  timestamp next_min_time = es->run_events(horizon);
-  es->clear_registered();
-  if (next_min_time != timestamp()){
-    pending_registration_[thr].push_back(es);
-    es->set_pending(true);
-    lower_bound = std::min(lower_bound, next_min_time);
-  } else {
-    es->set_pending(false);
-  }
-  timestamp ipc_time = es->pull_min_ipc_time();
-  lower_bound = std::min(lower_bound, ipc_time);
 }
 
 void
@@ -150,31 +143,9 @@ event_manager::run()
 {
   register_pending();
 
-  timestamp lower_bound;
-  while (lower_bound != event_scheduler::no_events_left_time){
-    timestamp horizon = lower_bound + lookahead_;
-    timestamp min_time = min_registry_time();
-    timestamp next_lower_bound = event_scheduler::no_events_left_time;
-    while (min_time < horizon){
-      auto iter = registry_.begin();
-      active_scheduler_ = iter->second;
-      if (min_time < lower_bound){
-        spkt_abort_printf("woah - timed moved backwards on %p, no bueno: %lu < %lu",
-                          active_scheduler_, min_time.ticks(), lower_bound.ticks());
-      }
-      registry_.erase(iter);
-      if (!active_scheduler_->pending()){
-        //these can get added twice - only run if this isn't already pending again
-        run_scheduler(0, active_scheduler_, horizon, next_lower_bound);
-      }
-      min_time = min_registry_time();
-    }
-    next_lower_bound = std::min(min_time, next_lower_bound);
-    lower_bound = receive_incoming_events(next_lower_bound);
-    register_pending();
-  }
+  run_events(no_events_left_time);
 
-  compute_final_time();
+  final_time_ = now_;
 }
 
 void

@@ -62,8 +62,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-const timestamp event_scheduler::no_events_left_time(std::numeric_limits<int64_t>::max() - 100, timestamp::exact);
-
 void
 event_component::cancel_all_messages()
 {
@@ -268,71 +266,34 @@ event_subcomponent::event_subcomponent(event_scheduler* parent) :
   event_scheduler::init_self_link(parent->comp(), parent->self_link());
 }
 #else
-timestamp
-event_scheduler::run_events(timestamp event_horizon)
+event_scheduler::event_scheduler(event_manager* mgr, uint32_t comp_id) :
+  eventman_(mgr),
+  seqnum_(0),
+  id_(comp_id),
+  thread_id_(0),
+  now_(mgr->now_ptr())
 {
-  active_ = true;
-  while (!event_queue_.empty()){
-    auto iter = event_queue_.begin();
-    event_queue_entry* ev = *iter;
-    if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards on %u: %lu < %lu",
-                        component_id(), ev->time().ticks(), now_.ticks());
-    }
-    if (ev->time() >= event_horizon){
-      active_ = false;
-      return ev->time();
-    } else {
-      now_ = ev->time();
-      ev->execute();
-      delete ev;
-      event_queue_.erase(iter);
-    }
-  }
-  active_ = false;
-  return timestamp();
 }
 
 void
 event_scheduler::send_self_event_queue(timestamp arrival, event_queue_entry *ev)
 {
+  ev->set_time(arrival);
   ev->set_seqnum(seqnum_++);
-  schedule(arrival, ev);
+  eventman_->schedule(ev);
 }
 
 void
 event_scheduler::send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev)
 {
   ev->set_seqnum(seqnum_++);
-  schedule(delay + now_, ev);
+  send_self_event_queue(delay+eventman_->now(), ev);
 }
 
 void
 event_scheduler::send_now_self_event_queue(event_queue_entry* ev)
 {
-  ev->set_seqnum(seqnum_++);
-  schedule(now_, ev);
-}
-
-void
-event_scheduler::schedule(timestamp t, event_queue_entry* ev)
-{
-  if (ev->seqnum() == -1){
-    spkt_abort_printf("seqnum unitialized for event");
-  }
-  if (t < now_){
-    spkt_abort_printf("scheduling event in the past on %p: %lu < %lu",
-                      this, t.ticks(), now_.ticks());
-  }
-  ev->set_time(t);
-  event_queue_.insert(ev);
-  if (!pending_ && !active_ && t < last_registration_){
-    //std::cout << "Pending component " << this << std::endl;
-    eventman_->register_component(thread_id_, this);
-    pending_ = true;
-  } else if (!pending_ && !active_){
-    //std::cout << "Skipping pending of " << this << std::endl;
-  }
+  send_self_event_queue(eventman_->now(), ev);
 }
 
 void
@@ -381,16 +342,17 @@ local_link::send(timestamp arrival, event *ev)
 void
 local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
-  src->set_min_ipc_time(arrival);
+  mgr_->set_min_ipc_time(arrival);
   event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
   qev->set_seqnum(src->next_seqnum());
-  dst_->schedule(arrival, qev);
+  qev->set_time(arrival);
+  mgr_->schedule(qev);
 }
 
 void
 ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
-  src->set_min_ipc_time(arrival);
+  mgr_->set_min_ipc_time(arrival);
   ipc_event_t iev;
   iev.src = src->component_id();
   iev.dst = dst_;
@@ -417,10 +379,10 @@ multithread_link::multi_send(timestamp arrival, event* ev, event_scheduler* src)
     spkt_abort_printf("link scheduling event in the past: %lu < %lu",
                       arrival.ticks(), src->now().ticks())
   }
-  src->set_min_ipc_time(arrival);
+  mgr_->set_min_ipc_time(arrival);
   qev->set_time(arrival);
   qev->set_seqnum(src->next_seqnum());
-  mgr_->multithread_schedule(src->thread(), qev, dst_);
+  dst_->event_mgr()->multithread_schedule(src->thread(), qev);
 }
 
 

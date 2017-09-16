@@ -90,7 +90,8 @@ clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
     iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
   auto qev = new handler_event_queue_entry(iev->ev, dst_handler, iev->src);
   qev->set_seqnum(iev->seqnum);
-  comp->schedule(iev->t, qev);
+  qev->set_time(iev->t);
+  schedule(qev);
 }
 
 timestamp
@@ -142,9 +143,15 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
 void
 clock_cycle_event_map::run()
 {
-  event_manager::run();
+  timestamp lower_bound;
+  while (lower_bound != no_events_left_time){
+    timestamp horizon = lower_bound + lookahead_;
+    timestamp min_time = run_events(horizon);
+    lower_bound = receive_incoming_events(min_time);
+  }
+
   timestamp max_time;
-  uint64_t final_ticks = final_time_.ticks();
+  uint64_t final_ticks = now_.ticks();
   final_time_ = timestamp(rt_->allreduce_max(final_ticks), timestamp::exact);
 }
 

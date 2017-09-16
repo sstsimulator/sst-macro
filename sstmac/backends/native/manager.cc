@@ -91,7 +91,7 @@ class timestamp_prefix_fxn :
   timestamp_prefix_fxn(event_manager* mgr) : mgr_(mgr){}
 
   std::string str() {
-    double t_ms = mgr_->active_scheduler()->now().msec();
+    double t_ms = mgr_->now().msec();
     return sprockit::printf("T=%12.8e ms:", t_ms);
   }
 
