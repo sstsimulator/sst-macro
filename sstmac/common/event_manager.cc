@@ -84,27 +84,29 @@ event_manager* event_manager::global = nullptr;
 
 event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime *rt) :
   rt_(rt),
-  nthread_(rt->nthread()),
+  nthread_(rt->nworker_thread()),
   me_(rt->me()),
   nproc_(rt->nproc()),
   complete_(false),
-  thread_(0),
+  thread_id_(0),
   scheduled_(false)
 {
   incoming_events_ = &pending_events1_;
   outgoing_events_ = &pending_events2_;
-  pending_events_.resize(nthread_);
+  pending_events1_.resize(nthread_);
+  pending_events2_.resize(nthread_);
 }
 
 timestamp
 event_manager::run_events(timestamp event_horizon)
 {
   register_pending();
+  min_ipc_time_ = no_events_left_time;
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     event_queue_entry* ev = *iter;
     if (ev->time() >= event_horizon){
-      return ev->time();
+      return std::min(min_ipc_time_, ev->time());
     } else {
       now_ = ev->time();
       ev->execute();
@@ -112,7 +114,7 @@ event_manager::run_events(timestamp event_horizon)
       event_queue_.erase(iter);
     }
   }
-  return no_events_left_time;
+  return min_ipc_time_;
 }
 
 void
@@ -135,6 +137,7 @@ event_manager::register_pending()
     for (event_queue_entry* ev : pendingVec){
       schedule(ev);
     }
+    pendingVec.clear();
   }
 }
 

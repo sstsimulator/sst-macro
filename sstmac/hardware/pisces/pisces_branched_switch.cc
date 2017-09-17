@@ -143,18 +143,18 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
   // connect input muxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
     pisces_muxer* mux = input_muxers_[i];
-    auto out_lnk = new local_link(event_mgr(), this, this, xbar_->payload_handler());
+    auto out_lnk = new local_link(this, this, xbar_->payload_handler());
     mux->set_output(input_params,0,i,out_lnk);
-    auto in_lnk = new local_link(event_mgr(), this, this, mux->credit_handler());
+    auto in_lnk = new local_link(this, this, mux->credit_handler());
     xbar_->set_input(xbar_params,i,0,in_lnk);
   }
 
   // connect output demuxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
     pisces_demuxer* demux = output_demuxers_[i];
-    auto out_link = new local_link(event_mgr(), this, this, demux->payload_handler());
+    auto out_link = new local_link(this, this, demux->payload_handler());
     xbar_->set_output(xbar_params,i,0,out_link);
-    auto in_link = new local_link(event_mgr(), this, this, xbar_->credit_handler());
+    auto in_link = new local_link(this, this, xbar_->credit_handler());
     demux->set_input(output_params,0,i,in_link);
   }
 }

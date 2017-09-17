@@ -149,10 +149,18 @@ clock_cycle_event_map::run()
     timestamp min_time = run_events(horizon);
     lower_bound = receive_incoming_events(min_time);
   }
+  compute_final_time(now_);
+}
 
-  timestamp max_time;
-  uint64_t final_ticks = now_.ticks();
-  final_time_ = timestamp(rt_->allreduce_max(final_ticks), timestamp::exact);
+void
+clock_cycle_event_map::compute_final_time(timestamp vote)
+{
+  if (nproc_ == 1){
+    final_time_ = vote;
+  } else {
+    uint64_t final_ticks = vote.ticks();
+    final_time_ = timestamp(rt_->allreduce_max(final_ticks), timestamp::exact);
+  }
 }
 
 }

@@ -204,8 +204,7 @@ class interconnect
                   sprockit::sim_parameters* inj_params,
                   sprockit::sim_parameters* ej_params);
 
-  event_link* allocate_local_link(event_manager* mgr,
-                                  event_scheduler* src, event_scheduler* dst,
+  event_link* allocate_local_link(event_scheduler* src, event_scheduler* dst,
                                   event_handler* handler);
 
   switch_map switches_;

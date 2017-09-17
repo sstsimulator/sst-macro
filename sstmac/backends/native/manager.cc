@@ -74,7 +74,6 @@ RegisterKeywords(
 "event_manager",
 "sst_rank",
 "sst_nproc",
-"nworkers",
 );
 
 

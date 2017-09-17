@@ -342,17 +342,17 @@ local_link::send(timestamp arrival, event *ev)
 void
 local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
-  mgr_->set_min_ipc_time(arrival);
+  src->event_mgr()->set_min_ipc_time(arrival);
   event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
   qev->set_seqnum(src->next_seqnum());
   qev->set_time(arrival);
-  mgr_->schedule(qev);
+  dst_->event_mgr()->schedule(qev);
 }
 
 void
 ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
-  mgr_->set_min_ipc_time(arrival);
+  src->event_mgr()->set_min_ipc_time(arrival);
   ipc_event_t iev;
   iev.src = src->component_id();
   iev.dst = dst_;
@@ -362,7 +362,7 @@ ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
   iev.rank = rank_;
   iev.credit = is_credit_;
   iev.port = port_;
-  mgr_->ipc_schedule(&iev);
+  src->event_mgr()->ipc_schedule(&iev);
 }
 
 void
@@ -379,10 +379,15 @@ multithread_link::multi_send(timestamp arrival, event* ev, event_scheduler* src)
     spkt_abort_printf("link scheduling event in the past: %lu < %lu",
                       arrival.ticks(), src->now().ticks())
   }
-  mgr_->set_min_ipc_time(arrival);
+
+  src->event_mgr()->set_min_ipc_time(arrival);
   qev->set_time(arrival);
   qev->set_seqnum(src->next_seqnum());
-  dst_->event_mgr()->multithread_schedule(src->thread(), qev);
+  if (dst_->thread() == src->thread()){
+    dst_->event_mgr()->schedule(qev);
+  } else {
+    dst_->event_mgr()->multithread_schedule(src->thread(), qev);
+  }
 }
 
 

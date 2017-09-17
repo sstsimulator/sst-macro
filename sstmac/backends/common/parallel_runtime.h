@@ -226,6 +226,14 @@ class parallel_runtime :
     return nthread_;
   }
 
+  int nworker_thread() const {
+    return nworker_thread_;
+  }
+
+  bool has_master_thread() const {
+    return has_master_thread_;
+  }
+
   int ser_buf_size() const {
     return buf_size_;
   }
@@ -256,7 +264,9 @@ class parallel_runtime :
  protected:
    int nproc_;
    int nthread_;
+   int nworker_thread_;
    int me_;
+   bool has_master_thread_;
    std::vector<comm_buffer> send_buffers_;
    std::vector<comm_buffer> recv_buffers_;
    std::vector<int> sends_done_;

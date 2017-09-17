@@ -63,8 +63,7 @@ class multithreaded_event_container;
 struct thread_queue
 {
   thread_queue() :
-    mgr(nullptr),
-    threadId(0)
+    mgr(nullptr)
   {
     void* ptr = &delta_t;
     int rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
@@ -76,8 +75,7 @@ struct thread_queue
 
   volatile int32_t* delta_t;
   timestamp min_time;
-  multithreaded_event_container* mgr;
-  int threadId;
+  event_manager* mgr;
 
 };
 
@@ -94,7 +92,20 @@ class multithreaded_event_container :
 
   virtual void run() override;
 
+  event_manager* thread_manager(int thr) const override {
+    if (master_thread_){
+      return thread_managers_[thr];
+    } else if (thr == num_subthreads_) {
+      return const_cast<multithreaded_event_container*>(this);
+    } else {
+      return thread_managers_[thr];
+    }
+  }
+
  private:
+  int num_subthreads_;
+  bool master_thread_;
+
   timestamp min_registry_time() const {
     if (registry_.empty()){
       return no_events_left_time;
@@ -111,6 +122,7 @@ class multithreaded_event_container :
   std::vector<pthread_attr_t> pthread_attrs_;
 
   std::vector<thread_queue*> active_queues_;
+  std::vector<event_manager*> thread_managers_;
 
   struct event_compare {
     bool operator()(const std::pair<timestamp,event_scheduler*>& lhs,

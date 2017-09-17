@@ -314,20 +314,19 @@ class event_link {
   }
 
  protected:
-  event_link(event_manager* mgr, event_scheduler* sched) : mgr_(mgr), scheduler_(sched) {}
+  event_link(event_scheduler* sched) :
+    scheduler_(sched) {}
 
   event_scheduler* scheduler_;
-
-  event_manager* mgr_;
 
 };
 
 class local_link : public event_link {
  public:
-  local_link(event_manager* mgr, event_scheduler* src, event_scheduler* dst, event_handler* hand) :
+  local_link(event_scheduler* src, event_scheduler* dst, event_handler* hand) :
     handler_(hand),
     dst_(dst),
-    event_link(mgr, src)
+    event_link(src)
   {
   }
 
@@ -359,8 +358,8 @@ class local_link : public event_link {
 
 class multithread_link : public local_link {
  public:
-  multithread_link(event_manager* mgr, event_handler* handler, event_scheduler* src, event_scheduler* dst) :
-    local_link(mgr, src, dst, handler)
+  multithread_link(event_handler* handler, event_scheduler* src, event_scheduler* dst) :
+    local_link(src, dst, handler)
   {}
 
   void send(timestamp arrival, event *ev) override;
@@ -371,13 +370,13 @@ class multithread_link : public local_link {
 
 class ipc_link : public event_link {
  public:
-  ipc_link(event_manager* mgr, int rank,
+  ipc_link(int rank,
            event_scheduler* src, uint32_t dst,
            int port, bool is_credit) :
     rank_(rank), dst_(dst),
     is_credit_(is_credit),
     port_(port),
-    event_link(mgr,src)
+    event_link(src)
   {
   }
 

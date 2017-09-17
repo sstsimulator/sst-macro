@@ -82,6 +82,8 @@ class clock_cycle_event_map :
    */
   timestamp receive_incoming_events(timestamp vote) override;
 
+  void compute_final_time(timestamp vote);
+
  private:
   void schedule_incoming(ipc_event_t* iev);
 

@@ -230,9 +230,6 @@ run_params(parallel_runtime* rt,
   //we didn't have all the runtime params available when we first built this
   rt->init_runtime_params(params);
 
-  std::string nworkers = sprockit::printf("%d", rt->nproc()*rt->nthread());
-  //don't fail on existing, but ovewrite whatever is there
-  params->parse_keyval("topology.nworkers", nworkers, false, true, true);
   rt->init_partition_params(params);
 
   native::manager* mgr = new native::manager(params, rt);

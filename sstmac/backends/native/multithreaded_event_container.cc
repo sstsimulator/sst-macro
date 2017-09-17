@@ -78,6 +78,7 @@ pthread_run_worker_thread(void* args)
         return 0;
       } else if (delta_t != 0) {
         horizon += timestamp(delta_t, timestamp::exact);
+        q->mgr->swap_pending_event_queues();
         timestamp new_min_time = q->mgr->run_events(horizon);
         q->min_time = new_min_time;
         OSAtomicCompareAndSwap32(delta_t, 0, q->delta_t);
@@ -118,7 +119,6 @@ multithreaded_event_container::multithreaded_event_container(
   signal(SIGFPE, print_backtrace);
   signal(SIGILL, print_backtrace);
 
-  int nthread_ = nthread();
   me_ = rt_->me();
   nproc_ = rt_->nproc();
   if (params->has_param("cpu_affinity")) {
@@ -126,17 +126,29 @@ multithreaded_event_container::multithreaded_event_container(
     //it would be nice to check that size of cpu_offsets matches task per node
   }
 
-  pending_events_.resize(nthread_);
-  queues_.resize(nthread_);
-  pthreads_.resize(nthread_);
-  pthread_attrs_.resize(nthread_);
-
-  for (int i=0; i < queues_.size(); ++i){
-    queues_[i].threadId = i;
-    queues_[i].mgr = this;
+  num_subthreads_ = rt->nworker_thread();
+  master_thread_ = rt->has_master_thread();
+  if (!master_thread_){
+    --num_subthreads_;
   }
 
-  for (int i=1; i < nthread_; ++i){
+  queues_.resize(num_subthreads_);
+  pthreads_.resize(num_subthreads_);
+  pthread_attrs_.resize(num_subthreads_);
+  thread_managers_.resize(num_subthreads_);
+
+
+  for (int i=0; i < num_subthreads_; ++i){
+    thread_managers_[i] = new event_manager(params, rt);
+    thread_managers_[i]->set_thread(i);
+  }
+  set_thread(num_subthreads_);
+
+  for (int i=0; i < queues_.size(); ++i){
+    queues_[i].mgr = thread_managers_[i];
+  }
+
+  for (int i=0; i < num_subthreads_; ++i){
     int status = pthread_attr_init(&pthread_attrs_[i]);
     if (status != 0){
       sprockit::abort("multithreaded_event_container::run: failed creating pthread attributes");
@@ -147,49 +159,46 @@ multithreaded_event_container::multithreaded_event_container(
 void
 multithreaded_event_container::run_work()
 {
-  register_pending();
-
   timestamp last_horizon;
   timestamp lower_bound;
   while (lower_bound != no_events_left_time){
     timestamp horizon = lower_bound + lookahead_;
-    int32_t delta_t = horizon.ticks() - last_horizon.ticks();
-    timestamp min_time = min_registry_time();
-    while (min_time < horizon){
-      auto iter = registry_.begin();
-      event_manager* mgr = iter->second;
-      registry_.erase(iter);
-      if (!mgr->scheduled()){
-        thread_queue& q = queues_[mgr->thread()];
-        OSAtomicAdd32(delta_t, q.delta_t);
-        active_queues_.push_back(&q);
-        mgr->set_scheduled(true);
-      }
-      min_time = min_registry_time();
+    uint64_t delta_t = horizon.ticks() - last_horizon.ticks();
+    if (delta_t > std::numeric_limits<int32_t>::max()){
+      spkt_abort_printf("delta_t too large: lower timestamp resolution");
+    }
+    for (thread_queue& q : queues_){
+      OSAtomicAdd32(delta_t, q.delta_t);
+      active_queues_.push_back(&q);
     }
 
-    int num_to_wait = 0;
-    min_time = run_events(horizon);
+    timestamp min_time = no_events_left_time;
+    if (!master_thread_){
+      swap_pending_event_queues();
+      min_time = run_events(horizon);
+    }
+
+    int num_to_wait = num_subthreads_;
     while (num_to_wait > 0){
-      for (int i=0; i < num_to_wait; ++i){
+      for (int i=0; i < num_to_wait; ){
         thread_queue* q = active_queues_[i];
         bool done = OSAtomicCompareAndSwap32(0, 0, q->delta_t);
         if (done){ //worker is done
-          //backfill the queue
           --num_to_wait;
+          //backfill the queue
           active_queues_[i] = active_queues_[num_to_wait];
           min_time = std::min(min_time, q->min_time);
-          q->mgr->swap_pending_event_queues();
-          q->mgr->set_scheduled(false);
+        } else {
+          ++i;
         }
       }
     }
-
     lower_bound = receive_incoming_events(min_time);
-    register_pending();
+    last_horizon = horizon;
+    active_queues_.clear();
   }
 
-  for (int i=1; i < nthread_; ++i){
+  for (int i=0; i < num_subthreads_; ++i){
     //CAS the sentinel value to terminate child
     OSAtomicAdd32(std::numeric_limits<int32_t>::max(), queues_[i].delta_t);
   }
@@ -224,10 +233,12 @@ multithreaded_event_container::run()
   //main thread will do zero's work
   int status;
   int thread_affinity;
-  for (int i=1; i < nthread_; ++i){
+  debug_printf(sprockit::dbg::parallel, "spawning %d subthreads",
+               num_subthreads_);
+  for (int i=0; i < num_subthreads_; ++i){
 #if SSTMAC_USE_CPU_AFFINITY
     //pin the pthread to core base+i
-    thread_affinity = task_affinity + i;
+    thread_affinity = task_affinity + i + 1;
 
     debug_printf(sprockit::dbg::parallel | sprockit::dbg::cpu_affinity,
                  "PDES rank %i: setting thread %i affinity %i",
@@ -252,15 +263,18 @@ multithreaded_event_container::run()
 
   run_work();
 
-  for (int i=1; i < nthread_; ++i){
+  timestamp final_time = master_thread_ ? timestamp() : now_;
+
+  for (int i=0; i < num_subthreads_; ++i){
     void* ignore;
     int status = pthread_join(pthreads_[i], &ignore);
     if (status != 0){
         sprockit::abort("multithreaded_event_container::run: failed joining pthread");
     }
+    final_time = std::max(final_time, thread_managers_[i]->now());
   }
 
-
+  compute_final_time(final_time);
 }
 
 

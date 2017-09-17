@@ -144,11 +144,11 @@ class event_manager
   }
 
   int thread() const {
-    return thread_;
+    return thread_id_;
   }
 
   void set_thread(int thr) {
-    thread_ = thr;
+    thread_id_ = thr;
   }
 
   int nproc() const {
@@ -174,6 +174,9 @@ class event_manager
   }
 
   void schedule(event_queue_entry* ev){
+    if (ev->time() < now_){
+      spkt_abort_printf("Time went backwards: %llu < %llu", ev->time().ticks(), now_.ticks());
+    }
     event_queue_.insert(ev);
   }
 
@@ -200,16 +203,16 @@ class event_manager
     min_ipc_time_ = std::min(t,min_ipc_time_);
   }
 
-  timestamp pull_min_ipc_time(){
-    timestamp ret = min_ipc_time_;
-    min_ipc_time_ = no_events_left_time;
-    return ret;
-  }
-
   timestamp min_event_time() const {
     return event_queue_.empty()
           ? no_events_left_time
           : (*event_queue_.begin())->time();
+  }
+
+  void swap_pending_event_queues(){
+    auto tmp = incoming_events_;
+    incoming_events_ = outgoing_events_;
+    outgoing_events_ = tmp;
   }
 
  protected:
@@ -227,21 +230,12 @@ class event_manager
   std::vector<std::vector<event_queue_entry*>> pending_events1_;
   std::vector<std::vector<event_queue_entry*>> pending_events2_;
 
-  void swap_pending_event_queues(){
-    std::swap(incoming_events_, outgoing_events_);
-  }
-
  protected:
   bool complete_;
   timestamp final_time_;
   parallel_runtime* rt_;
   hw::interconnect* interconn_;
   bool scheduled_;
-
-  // Dim-1: Num threads
-  // Dim-2: List of events
-  // Pair: event to schedule, scheduler to deliver to
-  std::vector<std::vector<std::pair<event_queue_entry*,event_scheduler*>>> pending_events_;
 
   int me_;
 
@@ -251,8 +245,6 @@ class event_manager
 
   timestamp lookahead_;
   timestamp now_;
-
-  int thread_;
 
  private:
   struct stats_entry {

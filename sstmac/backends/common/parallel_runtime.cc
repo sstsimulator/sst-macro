@@ -174,7 +174,11 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
 #else
   //out with the old, in with the new
   if (part_) delete part_;
-  part_ = partition::factory::get_optional_param("partition", SSTMAC_DEFAULT_PARTITION_STRING, params, this);
+  std::string deflt = "block";
+  if (nthread_ == 1 && nproc_ == 1){
+    deflt = "serial";
+  }
+  part_ = partition::factory::get_optional_param("partition", deflt, params, this);
 #endif
 }
 
@@ -203,6 +207,10 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 
   //turn the number of procs and my rank into keywords
   nthread_ = params->get_optional_int_param("sst_nthread", 1);
+
+  has_master_thread_ = params->get_optional_bool_param("master_thread", false);
+
+  nworker_thread_ = has_master_thread_ ? nthread_ - 1 : nthread_;
 
   buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 512);
   int num_bufs_window = params->get_optional_int_param("serialization_num_bufs_allocation", 100000);
