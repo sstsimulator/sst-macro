@@ -71,7 +71,7 @@ pthread_run_worker_thread(void* args)
   thread_queue* q = (thread_queue*) args;
   timestamp horizon;
   while(1){
-    bool stillZero = OSAtomicCompareAndSwap32(0, 0, q->delta_t);
+    bool stillZero = cas_int32(0, 0, q->delta_t);
     if (!stillZero){
       int32_t delta_t = *q->delta_t;
       if (delta_t == std::numeric_limits<int32_t>::max()){
@@ -81,7 +81,7 @@ pthread_run_worker_thread(void* args)
         q->mgr->swap_pending_event_queues();
         timestamp new_min_time = q->mgr->run_events(horizon);
         q->min_time = new_min_time;
-        OSAtomicCompareAndSwap32(delta_t, 0, q->delta_t);
+        cas_int32(delta_t, 0, q->delta_t);
       }
     }
   }
@@ -168,7 +168,7 @@ multithreaded_event_container::run_work()
       spkt_abort_printf("delta_t too large: lower timestamp resolution");
     }
     for (thread_queue& q : queues_){
-      OSAtomicAdd32(delta_t, q.delta_t);
+      add_int32_atomic(delta_t, q.delta_t);
       active_queues_.push_back(&q);
     }
 
@@ -182,7 +182,7 @@ multithreaded_event_container::run_work()
     while (num_to_wait > 0){
       for (int i=0; i < num_to_wait; ){
         thread_queue* q = active_queues_[i];
-        bool done = OSAtomicCompareAndSwap32(0, 0, q->delta_t);
+        bool done = cas_int32(0, 0, q->delta_t);
         if (done){ //worker is done
           --num_to_wait;
           //backfill the queue
@@ -200,7 +200,7 @@ multithreaded_event_container::run_work()
 
   for (int i=0; i < num_subthreads_; ++i){
     //CAS the sentinel value to terminate child
-    OSAtomicAdd32(std::numeric_limits<int32_t>::max(), queues_[i].delta_t);
+    add_int32_atomic(std::numeric_limits<int32_t>::max(), queues_[i].delta_t);
   }
 }
 

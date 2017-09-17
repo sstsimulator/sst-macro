@@ -72,7 +72,7 @@ char*
 parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
 {
   align64(size);
-  uint64_t newOffset = OSAtomicAdd64(size, &bytesAllocated);
+  uint64_t newOffset = add_int64_atomic(size, &bytesAllocated);
   if (newOffset > allocSize){
     size_t prevSize = newOffset - size;
     if (prevSize < allocSize){ //this was the size before we overran
