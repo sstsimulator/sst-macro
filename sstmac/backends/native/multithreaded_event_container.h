@@ -71,6 +71,7 @@ struct thread_queue
       spkt_abort_printf("Failed to allocated aligned memory: %d\n%s",
                         rc, ::strerror(rc));
     }
+    *delta_t = 0;
   }
 
   volatile int32_t* delta_t;

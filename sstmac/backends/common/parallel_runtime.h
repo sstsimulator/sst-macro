@@ -66,8 +66,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define add_int64_atomic(inc,ptr) OSAtomicAdd64(inc,ptr)
 #define cas_int32(old,newVal,ptr) OSAtomicCompareAndSwap32(old,newVal,ptr)
 #else
-#define add_int32_atomic(int,ptr) __sync_add_and_fetch(ptr,inc)
-#define add_int64_atomic(int,ptr) __sync_add_and_fetch(ptr,inc)
+#define add_int32_atomic(inc,ptr) __sync_add_and_fetch(ptr,inc)
+#define add_int64_atomic(inc,ptr) __sync_add_and_fetch(ptr,inc)
 #define cas_int32(old,newVal,ptr) __sync_bool_compare_and_swap(ptr,old,newVal)
 #endif
 
@@ -111,7 +111,7 @@ class parallel_runtime :
       pendingBytes(0), totalValidSize(0) {}
 
     ~comm_buffer(){
-      if (storage) delete[] storage;
+      if (allocation) delete[] allocation;
     }
 
     char* buffer() const {

@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <signal.h>
 #include <iostream>
 #include <sstream>
+#include <limits>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/keyword_registration.h>
 
@@ -78,7 +79,6 @@ pthread_run_worker_thread(void* args)
         return 0;
       } else if (delta_t != 0) {
         horizon += timestamp(delta_t, timestamp::exact);
-        q->mgr->swap_pending_event_queues();
         timestamp new_min_time = q->mgr->run_events(horizon);
         q->min_time = new_min_time;
         cas_int32(delta_t, 0, q->delta_t);
@@ -162,19 +162,23 @@ multithreaded_event_container::run_work()
   timestamp last_horizon;
   timestamp lower_bound;
   while (lower_bound != no_events_left_time){
+    swap_pending_event_queues();
+    for (thread_queue& q : queues_){
+      q.mgr->swap_pending_event_queues();
+    }
     timestamp horizon = lower_bound + lookahead_;
     uint64_t delta_t = horizon.ticks() - last_horizon.ticks();
     if (delta_t > std::numeric_limits<int32_t>::max()){
       spkt_abort_printf("delta_t too large: lower timestamp resolution");
     }
+    int32_t delta_t_32 = delta_t;
     for (thread_queue& q : queues_){
-      add_int32_atomic(delta_t, q.delta_t);
+      add_int32_atomic(delta_t_32, q.delta_t);
       active_queues_.push_back(&q);
     }
 
     timestamp min_time = no_events_left_time;
     if (!master_thread_){
-      swap_pending_event_queues();
       min_time = run_events(horizon);
     }
 

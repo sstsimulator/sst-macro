@@ -120,7 +120,10 @@ stack_alloc::alloc()
 //
 void stack_alloc::free(void* buf)
 {
+  static thread_lock lock; 
+  lock.lock();
   available_.push_back(buf);
+  lock.unlock();
 }
 
 

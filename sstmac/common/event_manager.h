@@ -175,7 +175,8 @@ class event_manager
 
   void schedule(event_queue_entry* ev){
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards: %llu < %llu", ev->time().ticks(), now_.ticks());
+      spkt_abort_printf("Time went backwards on thread %d with incoming %p: %llu < %llu", 
+                        thread_id_, incoming_events_, ev->time().ticks(), now_.ticks());
     }
     event_queue_.insert(ev);
   }

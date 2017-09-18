@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sprockit/util.h>
 #include <sprockit/output.h>
+#include <limits>
 
 RegisterDebugSlot(event_manager);
 
@@ -106,7 +107,8 @@ event_manager::run_events(timestamp event_horizon)
     auto iter = event_queue_.begin();
     event_queue_entry* ev = *iter;
     if (ev->time() >= event_horizon){
-      return std::min(min_ipc_time_, ev->time());
+      timestamp ret = std::min(min_ipc_time_, ev->time());
+      return ret;
     } else {
       now_ = ev->time();
       ev->execute();
