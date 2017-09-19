@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/tls.h>
 #include <cstring>
+#include <cstdio>
 
 extern int sstmac_global_stacksize;
 

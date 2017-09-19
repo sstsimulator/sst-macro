@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/ipc_event.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <unistd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>
@@ -386,7 +387,7 @@ multithread_link::multi_send(timestamp arrival, event* ev, event_scheduler* src)
   if (dst_->thread() == src->thread()){
     dst_->event_mgr()->schedule(qev);
   } else {
-    dst_->event_mgr()->multithread_schedule(src->thread(), qev);
+    dst_->event_mgr()->multithread_schedule(src->event_mgr()->pending_slot(), src->thread(), qev);
   }
 }
 

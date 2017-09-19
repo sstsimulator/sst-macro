@@ -63,7 +63,9 @@ class multithreaded_event_container;
 struct thread_queue
 {
   thread_queue() :
-    mgr(nullptr)
+    mgr(nullptr),
+    child1(nullptr),
+    child2(nullptr)
   {
     void* ptr = &delta_t;
     int rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
@@ -71,11 +73,14 @@ struct thread_queue
       spkt_abort_printf("Failed to allocated aligned memory: %d\n%s",
                         rc, ::strerror(rc));
     }
+    *delta_t = 0;
   }
 
   volatile int32_t* delta_t;
   timestamp min_time;
   event_manager* mgr;
+  thread_queue* child1;
+  thread_queue* child2;
 
 };
 
@@ -121,7 +126,6 @@ class multithreaded_event_container :
   std::vector<pthread_t> pthreads_;
   std::vector<pthread_attr_t> pthread_attrs_;
 
-  std::vector<thread_queue*> active_queues_;
   std::vector<event_manager*> thread_managers_;
 
   struct event_compare {

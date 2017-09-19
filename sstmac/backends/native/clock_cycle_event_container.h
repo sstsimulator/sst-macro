@@ -84,6 +84,8 @@ class clock_cycle_event_map :
 
   void compute_final_time(timestamp vote);
 
+  int num_profile_loops_;
+
  private:
   void schedule_incoming(ipc_event_t* iev);
 
@@ -91,6 +93,7 @@ class clock_cycle_event_map :
 
  private:
   int epoch_;
+  
 
 };
 

@@ -169,13 +169,18 @@ class event_manager
 
   void ipc_schedule(ipc_event_t* iev);
 
-  void multithread_schedule(int srcThread, event_queue_entry* ev){
-    (*outgoing_events_)[srcThread].push_back(ev);
+  void multithread_schedule(int slot, int srcThread, event_queue_entry* ev){
+    pending_events_[slot][srcThread].push_back(ev);
+  }
+
+  int pending_slot() const {
+    return pending_slot_;
   }
 
   void schedule(event_queue_entry* ev){
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards: %llu < %llu", ev->time().ticks(), now_.ticks());
+      spkt_abort_printf("Time went backwards on thread %d: %llu < %llu", 
+                        thread_id_, ev->time().ticks(), now_.ticks());
     }
     event_queue_.insert(ev);
   }
@@ -209,12 +214,6 @@ class event_manager
           : (*event_queue_.begin())->time();
   }
 
-  void swap_pending_event_queues(){
-    auto tmp = incoming_events_;
-    incoming_events_ = outgoing_events_;
-    outgoing_events_ = tmp;
-  }
-
  protected:
   void register_pending();
 
@@ -224,11 +223,9 @@ class event_manager
     return vote;
   }
 
-  std::vector<std::vector<event_queue_entry*>>* incoming_events_;
-  std::vector<std::vector<event_queue_entry*>>* outgoing_events_;
-
-  std::vector<std::vector<event_queue_entry*>> pending_events1_;
-  std::vector<std::vector<event_queue_entry*>> pending_events2_;
+#define num_pending_slots 4
+  int pending_slot_;
+  std::vector<std::vector<event_queue_entry*>> pending_events_[num_pending_slots];
 
  protected:
   bool complete_;

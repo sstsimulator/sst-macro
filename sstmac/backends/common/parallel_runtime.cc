@@ -93,18 +93,19 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
 void
 parallel_runtime::comm_buffer::realloc(size_t size, bool copyOld)
 {
-  char* old = storage;
+  char* oldAlloc = allocation;
+  char* oldStorage = storage;
   allocSize = size;
   allocation = new char[allocSize+64];
   storage = allocation;
   align64(storage);
   bytesAllocated = 0;
   if (copyOld){
-    ::memcpy(storage, old, bytesUsed());
+    ::memcpy(storage, oldStorage, bytesUsed());
     bytesAllocated = bytesUsed();
     align64(bytesAllocated);
   }
-  delete[] old;
+  if (oldAlloc) delete[] oldAlloc;
 }
 
 void
@@ -223,6 +224,12 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
     send_buffers_[i].realloc(allocSize);
     recv_buffers_[i].realloc(allocSize);
   }
+
+#if !SSTMAC_USE_MULTITHREAD
+  if (nthread_ > 1){
+    spkt_abort_printf("must compile with --enable-multithread to run with >1 thread");
+  }
+#endif
 }
 
 parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,

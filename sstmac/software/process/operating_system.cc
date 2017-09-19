@@ -662,11 +662,12 @@ operating_system::start_thread(thread* t)
     active_thread_ = t;
     active_os() = this;
     app* parent = t->parent_app();
+    void* stack = stack_alloc_.alloc();
     t->init_thread(
       parent->params(),
       threadId(),
       des_context_,
-      stack_alloc_.alloc(),
+      stack,
       stack_alloc_.stacksize(),
       parent->globals_storage());
   }
