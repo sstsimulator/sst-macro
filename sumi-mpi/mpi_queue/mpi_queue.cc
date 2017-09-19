@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/software/process/key.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -164,11 +165,12 @@ mpi_queue::send_message(void* buffer, int count, MPI_Datatype type,
     int(tag), api_->comm_str(comm).c_str(),
     prot->to_string().c_str());
   task_id dst_tid = comm->peer_task(dst_rank);
-  auto mess = new mpi_message(comm->rank(), dst_rank,
-                          count, type, typeobj->packed_size(),
-                          tag, comm->id(),
-                          next_outbound_[dst_tid]++,
-                          next_id_++, prot);
+  auto mess = new mpi_message(
+        comm->rank(), dst_rank,
+        count, type, typeobj->packed_size(),
+        tag, comm->id(),
+        next_outbound_[dst_tid]++,
+        next_id_++, prot);
   mess->protocol()->configure_send_buffer(this, mess, buffer, typeobj);
   return mess;
 }

@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/common/event_callback.h>
 #include <sprockit/util.h>
 
 namespace sstmac {
@@ -98,7 +99,8 @@ job_launcher::schedule_launch_requests()
 {
   for (app_launch_request* req : initial_requests_){
     os_->increment_app_refcount();
-    auto ev = new_callback(os_->component_id(), this, &job_launcher::incoming_launch_request, req);
+    auto ev = new_callback(os_->component_id(), this,
+                           &job_launcher::incoming_launch_request, req);
     os_->send_self_event_queue(req->time(), ev);
   }
 }

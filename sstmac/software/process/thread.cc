@@ -78,16 +78,15 @@ thread::init_thread(sprockit::sim_parameters* params,
   int physical_thread_id, threading_interface* des_thread, void *stack,
   int stacksize, void* globals_storage)
 {
-  stack_ = stack;
-  stacksize_ = stacksize;
+  thread_info::set_thread_id(stack, physical_thread_id);
 
-  set_thread_id(physical_thread_id);
+  stack_ = stack;
 
   init_id();
 
   state_ = INITIALIZED;
 
-  context_ = des_thread->copy(params);
+  context_ = des_thread->copy();
 
   context_->start_context(physical_thread_id, stack, stacksize,
                           run_routine, this, globals_storage, des_thread);
@@ -190,7 +189,6 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   last_bt_collect_nfxn_(0),
   thread_id_(thread::main_thread),
   p_txt_(process_context::none),
-  stack_(nullptr),
   context_(nullptr),
   cpumask_(0),
   host_timer_(nullptr),
@@ -288,7 +286,7 @@ thread::now()
 thread::~thread()
 {
   if (backtrace_) graph_viz::delete_trace(backtrace_);
-  if (stack_) os_->free_thread_stack(stack_);
+  if (stack_) stack_alloc::free(stack_);
   if (context_) {
     context_->destroy_context();
     delete context_;

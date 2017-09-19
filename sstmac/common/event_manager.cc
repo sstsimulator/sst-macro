@@ -47,8 +47,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/software/threading/threading_interface.h>
+#include <sstmac/software/threading/stack_alloc.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sprockit/util.h>
 #include <sprockit/output.h>
+#include <sprockit/thread_safe_new.h>
 #include <limits>
 
 RegisterDebugSlot(event_manager);
@@ -83,6 +87,19 @@ class stop_event : public event_queue_entry
 
 event_manager* event_manager::global = nullptr;
 
+struct spin_up_config {
+  event_manager* mgr;
+  void* args;
+  void(*fxn)(void*);
+};
+
+void run_event_manager_thread(void* argPtr)
+{
+  auto cfg = (spin_up_config*) argPtr;
+  (*cfg->fxn)(cfg->args);
+  cfg->mgr->spin_down();
+}
+
 event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime *rt) :
   rt_(rt),
   nthread_(rt->nworker_thread()),
@@ -96,6 +113,16 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   for (int i=0; i < num_pending_slots; ++i){
     pending_events_[i].resize(nthread_);
   }
+  if (nthread_ == 0){
+    sprockit::abort("Have zero worker threads! Cannot do any work");
+  }
+  sprockit::sim_parameters* os_params = params->get_namespace("node")->get_optional_namespace("os");
+  sw::stack_alloc::init(os_params);
+
+  des_context_ = sw::threading_interface::factory::get_optional_param(
+                  "context", sw::threading_interface::default_threading(), os_params);
+
+  sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
 }
 
 timestamp
@@ -121,6 +148,12 @@ event_manager::run_events(timestamp event_horizon)
     }
   }
   return min_ipc_time_;
+}
+
+sw::threading_interface*
+event_manager::clone_thread() const
+{
+  return des_context_->copy();
 }
 
 void
@@ -155,8 +188,31 @@ event_manager::register_pending()
 }
 
 void
+event_manager::spin_up(void(*fxn)(void*), void* args)
+{
+  void* stack = sw::stack_alloc::alloc();
+  sstmac::thread_info::set_thread_id(stack, thread_id_);
+  main_thread_ = des_context_->copy();
+  main_thread_->init_context();
+  spin_up_config cfg;
+  cfg.mgr = this;
+  cfg.fxn = fxn;
+  cfg.args = args;
+  des_context_->start_context(thread_id_, stack, sw::stack_alloc::stacksize(),
+                              &run_event_manager_thread, &cfg, nullptr, main_thread_);
+  delete main_thread_;
+}
+
+void
+event_manager::spin_down()
+{
+  des_context_->complete_context(main_thread_);
+}
+
+void
 event_manager::run()
 {
+  interconn_->setup();
   register_pending();
 
   run_events(no_events_left_time);

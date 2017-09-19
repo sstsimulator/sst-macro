@@ -136,26 +136,6 @@ class event_queue_entry : public event
 
 };
 
-class handler_event_queue_entry :
-  public event_queue_entry
-{
-
- public:
-  virtual ~handler_event_queue_entry() {}
-
-  handler_event_queue_entry(event* ev,
-    event_handler* hand,
-    uint32_t src_comp_id);
-
-  void execute() override;
-
- protected:
-  event* ev_to_deliver_;
-
-  event_handler* handler_;
-
-};
-
 class callback :
   public event_queue_entry
 {

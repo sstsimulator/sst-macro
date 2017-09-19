@@ -62,6 +62,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/backends/native/manager_fwd.h>
+#include <sstmac/common/sst_event.h>
+#include <sstmac/software/threading/threading_interface_fwd.h>
 
 #include <vector>
 
@@ -103,6 +105,20 @@ class event_manager
   static event_manager* global;
 
   virtual ~event_manager(){}
+
+  /**
+   * @brief spin_up
+   * Create a user-space thread context for the event manager and start it running
+   */
+  void spin_up(void(*fxn)(void*), void* args);
+
+  /**
+   * @brief spin_down
+   * Bring down the user-space thread context and go back to original event manager
+   */
+  void spin_down();
+
+  sw::threading_interface* clone_thread() const;
 
   virtual void run();
 
@@ -232,6 +248,8 @@ class event_manager
   timestamp final_time_;
   parallel_runtime* rt_;
   hw::interconnect* interconn_;
+  sw::threading_interface* des_context_;
+  sw::threading_interface* main_thread_;
   bool scheduled_;
 
   int me_;
@@ -262,6 +280,66 @@ class event_manager
   timestamp min_ipc_time_;
   int thread_id_;
 
+  template <class T>
+  class my_allocator
+  {
+  public:
+    typedef size_t    size_type;
+    typedef ptrdiff_t difference_type;
+    typedef T*        pointer;
+    typedef const T*  const_pointer;
+    typedef T&        reference;
+    typedef const T&  const_reference;
+    typedef T         value_type;
+    size_t  unit_size;
+    std::vector<T*> storage;
+
+    my_allocator() {
+      init();
+    }
+
+    my_allocator(const my_allocator&) {
+      init();
+    }
+
+    void init(){
+      size_t rem = sizeof(T) % 32;
+      if (rem){
+        unit_size = sizeof(T) + 32 - rem;
+      } else {
+        unit_size = sizeof(T);
+      }
+    }
+
+    pointer allocate(size_type n, const void * = 0) {
+      //ignore hints
+      static int constexpr increment = 1024;
+      if (n > 1){
+        return (T*) new char[unit_size*n];
+      } else {
+        if (storage.empty()){
+          char* ptr = new char[unit_size*increment];
+          storage.resize(increment);
+          for (int i=0; i < increment; ++i, ptr += unit_size)
+            storage[i] = (T*) ptr;
+        }
+        T* ret = storage.back();
+        storage.pop_back();
+        return ret;
+      }
+    }
+
+    void deallocate(void* p, size_type n) {
+      if (n > 1){
+        char* arr = (char*) p;
+        delete[] arr;
+      } else {
+        storage.push_back((T*)p);
+      }
+    }
+
+  };
+
   struct event_compare {
     bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
       bool neq = lhs->time() != rhs->time();
@@ -274,7 +352,7 @@ class event_manager
       }
     }
   };
-  typedef std::set<event_queue_entry*, event_compare> queue_t;
+  typedef std::set<event_queue_entry*, event_compare, my_allocator<event_queue_entry*>> queue_t;
   queue_t event_queue_;
 
 

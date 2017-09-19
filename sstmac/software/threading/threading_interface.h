@@ -62,7 +62,7 @@ class threading_interface
 
   virtual ~threading_interface() {}
 
-  virtual threading_interface* copy(sprockit::sim_parameters* params) = 0;
+  virtual threading_interface* copy() const = 0;
 
   virtual void init_context() = 0;
 
@@ -83,8 +83,11 @@ class threading_interface
    */
   virtual void complete_context(threading_interface* to) = 0;
 
+  static std::string default_threading();
+
  protected:
-  threading_interface(sprockit::sim_parameters* params){}
+  threading_interface() {}
+
 };
 }
 } // end of namespace sstmac

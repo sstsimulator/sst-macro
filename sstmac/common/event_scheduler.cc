@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/common/ipc_event.h>
+#include <sstmac/common/handler_event_queue_entry.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <unistd.h>
@@ -62,6 +63,7 @@ Questions? Contact sst-macro-help@sandia.gov
   if (dynamic_cast<link_wrapper*>(x)) abort()
 
 namespace sstmac {
+
 
 void
 event_component::cancel_all_messages()
@@ -271,7 +273,8 @@ event_scheduler::event_scheduler(event_manager* mgr, uint32_t comp_id) :
   eventman_(mgr),
   seqnum_(0),
   id_(comp_id),
-  thread_id_(0),
+  thread_id_(mgr->thread()),
+  nthread_(mgr->nthread()),
   now_(mgr->now_ptr())
 {
 }

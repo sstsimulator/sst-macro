@@ -95,6 +95,74 @@ class event_handler :
   uint32_t comp_id_;
 };
 
+class member_fxn_handler :
+  public event_handler
+{
+ public:
+  virtual ~member_fxn_handler(){}
+
+ protected:
+    member_fxn_handler(uint32_t comp_id) :
+      event_handler(comp_id)
+  {
+  }
+};
+
+template<int ...>
+struct seq { };
+
+template<int N, int ...S>
+struct gens : gens<N-1, N-1, S...> { };
+
+template<int ...S>
+struct gens<0, S...> {
+  typedef seq<S...> type;
+};
+
+template <class Cls, typename Fxn, class ...Args>
+class member_fxn_handler_impl :
+  public member_fxn_handler
+{
+
+ public:
+  virtual ~member_fxn_handler_impl(){}
+
+  std::string to_string() const override {
+    return sprockit::to_string(obj_);
+  }
+
+  void handle(event* ev) override {
+    dispatch(ev, typename gens<sizeof...(Args)>::type());
+  }
+
+  member_fxn_handler_impl(uint32_t comp_id, Cls* obj, Fxn fxn, const Args&... args) :
+    params_(args...),
+    obj_(obj),
+    fxn_(fxn),
+    member_fxn_handler(comp_id)
+  {
+  }
+
+ private:
+  template <int ...S>
+  void dispatch(event* ev, seq<S...>){
+    (obj_->*fxn_)(ev, std::get<S>(params_)...);
+  }
+
+  std::tuple<Args...> params_;
+  Fxn fxn_;
+  Cls* obj_;
+
+};
+
+template<class Cls, typename Fxn, class ...Args>
+event_handler*
+new_handler(Cls* cls, Fxn fxn, const Args&... args)
+{
+  return new member_fxn_handler_impl<Cls, Fxn, Args...>(
+        cls->component_id(), cls, fxn, args...);
+}
+
 
 } // end of namespace sstmac
 #endif

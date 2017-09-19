@@ -51,13 +51,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/messages/library_message.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sumi/message.h>
+#include <sprockit/thread_safe_new.h>
 
 namespace sstmac {
 
 class transport_message :
   public ::sstmac::hw::network_message,
   public ::sumi::transport_message,
-  public ::sstmac::library_interface
+  public ::sstmac::library_interface,
+  public sprockit::thread_safe_new<transport_message>
 {
    ImplementSerializable(transport_message)
 

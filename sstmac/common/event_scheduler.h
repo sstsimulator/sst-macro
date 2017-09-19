@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/stats/location_trace.h>
 #include <sstmac/common/event_handler.h>
-#include <sstmac/common/event_callback.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_manager_fwd.h>
@@ -92,12 +91,12 @@ class event_scheduler :
     return id_;
   }
 
-  void set_thread(int thr){
-    thread_id_ = thr;
-  }
-
   int thread() const {
     return thread_id_;
+  }
+
+  int nthread() const {
+    return nthread_;
   }
 
   timestamp now() const {
@@ -170,6 +169,7 @@ class event_scheduler :
   uint32_t seqnum_;
   uint32_t id_;
   int thread_id_;
+  int nthread_;
   const timestamp* now_;
 
 #endif
@@ -237,6 +237,10 @@ class event_subcomponent
 
   int threadId() const {
     return parent_->thread();
+  }
+
+  int nthread() const {
+    return parent_->nthread();
   }
 
   uint32_t component_id() const {

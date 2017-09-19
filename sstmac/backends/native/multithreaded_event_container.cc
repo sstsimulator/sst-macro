@@ -55,6 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <limits>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/keyword_registration.h>
+#include <sprockit/thread_safe.h>
 
 RegisterDebugSlot(multithread_event_manager);
 RegisterDebugSlot(cpu_affinity);
@@ -93,7 +94,7 @@ static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time
   min_time = std::min(min_time, q->min_time);
 }
 
-static void*
+static void
 pthread_run_worker_thread(void* args)
 {
   thread_queue* q = (thread_queue*) args;
@@ -106,7 +107,7 @@ pthread_run_worker_thread(void* args)
       if (q->child1) add_int32_atomic(delta_t, q->child1->delta_t);
       if (q->child2) add_int32_atomic(delta_t, q->child2->delta_t);
       if (delta_t == terminate_sentinel){
-        return 0;
+        return;
       } else if (delta_t != 0) {
         horizon += timestamp(delta_t, timestamp::exact);
         timestamp new_min_time = q->mgr->run_events(horizon);
@@ -120,6 +121,13 @@ pthread_run_worker_thread(void* args)
       busy_loop(); //don't slam the variable too hard
     }
   }
+  return;
+}
+
+static void*
+spin_up_pthread_work(void* args){
+  thread_queue* q = (thread_queue*) args;
+  q->mgr->spin_up(pthread_run_worker_thread, q);
   return 0;
 }
 
@@ -200,7 +208,7 @@ multithreaded_event_container::run_work()
     child1 = &queues_[0]; 
   }
   if (num_subthreads_ >= 2){
-    child2 = &queues_[1]; 
+    child2 = &queues_[1];
   }
 
   int last_level_offset = 0;
@@ -233,10 +241,13 @@ multithreaded_event_container::run_work()
     printf("Running %d profile loops\n", num_loops_left); 
     fflush(stdout);
   }
+  if (lookahead_.ticks() == 0){
+    sprockit::abort("Zero-latency link - no lookahaed, cannot run in parallel");
+  }
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
     uint64_t delta_t = horizon.ticks() - last_horizon.ticks();
-    if (num_loops_left ==0 && delta_t > std::numeric_limits<int32_t>::max()){
+    if (num_loops_left == 0 && delta_t > std::numeric_limits<int32_t>::max()){
       spkt_abort_printf("delta_t %lu too large: lower timestamp resolution", delta_t);
     }
     int32_t delta_t_32 = delta_t;
@@ -265,6 +276,8 @@ multithreaded_event_container::run_work()
 void
 multithreaded_event_container::run()
 {
+  interconn_->setup();
+
   int nthread_ = nthread();
   debug_printf(sprockit::dbg::event_manager,
     "starting %d event manager threads",
@@ -312,7 +325,7 @@ multithreaded_event_container::run()
     }
 #endif
     status = pthread_create(&pthreads_[i], &pthread_attrs_[i],
-        pthread_run_worker_thread, &queues_[i]);
+        spin_up_pthread_work, &queues_[i]);
     if (status != 0){
         spkt_abort_printf("multithreaded_event_container::run: failed creating pthread=%d:\n%s",
                         errno, ::strerror(errno));

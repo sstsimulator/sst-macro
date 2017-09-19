@@ -70,8 +70,8 @@ class threading_pthread : public threading_interface
 
   void destroy_context() override;
 
-  threading_interface* copy(sprockit::sim_parameters* params) override {
-    return new threading_pthread(params);
+  threading_interface* copy() const override {
+    return new threading_pthread(nullptr);
   }
 
   void start_context(int physical_thread_id, void *stack, size_t stacksize, void

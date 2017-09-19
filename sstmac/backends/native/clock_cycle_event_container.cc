@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/handler_event_queue_entry.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/backends/native/clock_cycle_event_container.h>
 #include <sstmac/hardware/switch/network_switch.h>
@@ -144,11 +145,16 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
 void
 clock_cycle_event_map::run()
 {
+  interconn_->setup();
+
   timestamp lower_bound;
   int num_loops_left = num_profile_loops_;
   if (num_loops_left){
     printf("Running %d profile loops\n", num_loops_left);
     fflush(stdout);
+  }
+  if (lookahead_.ticks() == 0){
+    sprockit::abort("Zero-latency link - no lookahaed, cannot run in parallel");
   }
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;

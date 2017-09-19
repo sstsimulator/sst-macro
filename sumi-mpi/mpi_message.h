@@ -55,6 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol_fwd.h>
 #include <sumi/message.h>
+#include <sprockit/thread_safe_new.h>
 
 namespace sumi {
 
@@ -63,7 +64,8 @@ namespace sumi {
  * relevant to MPI messaging.
  */
 class mpi_message final :
-  public sumi::message
+  public sumi::message,
+  public sprockit::thread_safe_new<mpi_message>
 {
   ImplementSerializable(mpi_message)
 

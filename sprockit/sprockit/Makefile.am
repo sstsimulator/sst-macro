@@ -56,6 +56,8 @@ nobase_library_include_HEADERS = \
   spkt_string.h \
   spkt_printf.h \
   printable.h \
+  thread_safe_new.h \
+  thread_safe.h \
   stl_string.h \
   spkt_new.h \
   malloc.h \

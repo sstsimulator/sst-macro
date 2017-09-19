@@ -43,9 +43,73 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/software/threading/context_util.h>
+#include <sstmac/software/threading/threading_interface.h>
+#include <vector>
+#include <sstmac/common/thread_lock.h>
+#include <sstmac/common/sstmac_config.h>
+#include <sprockit/errors.h>
 
 namespace sstmac {
 namespace sw {
+
+//string is name, bool is whether valid with multithreading
+static std::vector<std::pair<std::string,bool>> valid_threading_contexts;
+
+static void fill_valid_threading_contexts(std::vector<std::pair<std::string,bool>>& contexts)
+{
+
+#ifdef SSTMAC_HAVE_UCONTEXT
+  contexts.emplace_back("ucontext", true);
+#endif
+#ifdef SSTMAC_HAVE_GNU_PTH
+  contexts.emplace_back("pth", false);
+#endif
+#ifdef SSTMAC_HAVE_FCONTEXT
+  contexts.emplace_back("fcontext", true);
+#endif
+#ifdef SSTMAC_HAVE_PTHREAD
+  contexts.emplace_back("pthread", false);
+#endif
+
+  if (contexts.empty()){
+    sprockit::abort("No valid threading contexts found");
+  }
+}
+
+std::string
+threading_interface::default_threading()
+{
+  static thread_lock fill_lock;
+  fill_lock.lock();
+  if (valid_threading_contexts.empty()){
+    fill_valid_threading_contexts(valid_threading_contexts);
+  }
+  fill_lock.unlock();
+
+  std::string default_threading;
+#if SSTMAC_USE_MULTITHREAD
+  for (auto& pair : valid_threading_contexts){
+    if (pair.second){ //supports multithreading
+      default_threading = pair.first;
+      break;
+    }
+  }
+  if (default_threading.size() == 0){
+    //this did not get updated - so we don't have any multithreading-compatible thread interfaces
+    sprockit::abort("operating_system: there are no threading frameworks compatible "
+                    "with multithreaded SST - must have ucontext or Boost::context");
+  }
+#else
+  default_threading = valid_threading_contexts[0].first;
+#endif
+  const char *threading_pchar = getenv("SSTMAC_THREADING");
+  if (threading_pchar){
+    default_threading = threading_pchar;
+  }
+
+  return default_threading;
+}
+
 
 // Intermediary to get around the brain-damaged prototype for makecontext.
 void context_springboard(int func_ptr_a, int func_ptr_b,

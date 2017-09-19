@@ -71,8 +71,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stack>
 #include <queue>
 
-
-
 DeclareDebugSlot(os);
 
 namespace sstmac {
@@ -104,7 +102,7 @@ class operating_system :
 
   inline operating_system*& active_os() {
 #if SSTMAC_USE_MULTITHREAD
-  return active_os_[threadId()];
+  return active_os_[thread_id_];
 #else
   return active_os_;
 #endif
@@ -114,9 +112,15 @@ class operating_system :
     return active_thread_;
   }
 
-  static void delete_statics();
+  int thread_id() const {
+    return thread_id_;
+  }
 
-  static void switch_to_context(int aid, int tid);
+  int nthread() const {
+    return nthread_;
+  }
+
+  static void delete_statics();
 
   static operating_system* current_os(){
     return static_os_thread_context();
@@ -234,8 +238,6 @@ class operating_system :
    */
   void start_app(app* a, const std::string& unique_name);
 
-  void free_thread_stack(void* stack);
-
   static size_t stacksize(){
     return sstmac_global_stacksize;
   }
@@ -296,6 +298,8 @@ class operating_system :
    */
   void compute(timestamp t);
 
+  static void init_threads(int nthread);
+
   void kill_node();
 
   void decrement_app_refcount();
@@ -309,8 +313,6 @@ class operating_system :
   bool call_graph_active() const {
     return call_graph_active_;
   }
-
-  static void stack_check();
 
  private:
   void switch_to_thread(thread* tothread);
@@ -328,6 +330,8 @@ class operating_system :
   bool handle_library_event(const std::string& name, event* ev);
 
  private:
+  int thread_id_;
+  int nthread_;
   hw::node* node_;
   std::unordered_map<std::string, library*> libs_;
   std::unordered_map<library*, int> lib_refcounts_;
@@ -355,11 +359,6 @@ class operating_system :
   static std::vector<operating_system*> active_os_;
 #else
   static operating_system* active_os_;
-#endif
-  static stack_alloc stack_alloc_;
-
-#if SSTMAC_SANITY_CHECK
-  std::set<key*> valid_keys_;
 #endif
 
 };
