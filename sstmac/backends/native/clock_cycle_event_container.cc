@@ -78,6 +78,7 @@ clock_cycle_event_map::clock_cycle_event_map(
   event_manager(params, rt),
   epoch_(0)
 {
+  num_profile_loops_ = params->get_optional_int_param("num_profile_loops", 0);
 }
 
 void
@@ -144,10 +145,16 @@ void
 clock_cycle_event_map::run()
 {
   timestamp lower_bound;
-  while (lower_bound != no_events_left_time){
+  int num_loops_left = num_profile_loops_;
+  if (num_loops_left){
+    printf("Running %d profile loops\n", num_loops_left);
+    fflush(stdout);
+  }
+  while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
     timestamp min_time = run_events(horizon);
     lower_bound = receive_incoming_events(min_time);
+    if (num_loops_left) --num_loops_left;
   }
   compute_final_time(now_);
 }

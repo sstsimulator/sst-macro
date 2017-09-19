@@ -63,26 +63,43 @@ RegisterKeywords(
   "cpu_affinity",
 );
 
+static int32_t terminate_sentinel = std::numeric_limits<int32_t>::max();
+
 namespace sstmac {
 namespace native {
+
+static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time)
+{
+  bool done = cas_int32(0, 0, q->delta_t);
+  while (!done){
+    done = cas_int32(0, 0, q->delta_t);
+  }
+  min_time = std::min(min_time, q->min_time);
+}
 
 static void*
 pthread_run_worker_thread(void* args)
 {
   thread_queue* q = (thread_queue*) args;
   timestamp horizon;
+  uint64_t epoch = 0;
   while(1){
     bool stillZero = cas_int32(0, 0, q->delta_t);
     if (!stillZero){
       int32_t delta_t = *q->delta_t;
-      if (delta_t == std::numeric_limits<int32_t>::max()){
+      if (q->child1) add_int32_atomic(delta_t, q->child1->delta_t);
+      if (q->child2) add_int32_atomic(delta_t, q->child2->delta_t);
+      if (delta_t == terminate_sentinel){
         return 0;
       } else if (delta_t != 0) {
         horizon += timestamp(delta_t, timestamp::exact);
         timestamp new_min_time = q->mgr->run_events(horizon);
         q->min_time = new_min_time;
-        cas_int32(delta_t, 0, q->delta_t);
+        ++epoch;
       }
+      if (q->child1) wait_on_child_completion(q->child1, q->min_time);
+      if (q->child2) wait_on_child_completion(q->child2, q->min_time);
+      cas_int32(delta_t, 0, q->delta_t);
     }
   }
   return 0;
@@ -137,7 +154,6 @@ multithreaded_event_container::multithreaded_event_container(
   pthread_attrs_.resize(num_subthreads_);
   thread_managers_.resize(num_subthreads_);
 
-
   for (int i=0; i < num_subthreads_; ++i){
     thread_managers_[i] = new event_manager(params, rt);
     thread_managers_[i]->set_thread(i);
@@ -159,53 +175,73 @@ multithreaded_event_container::multithreaded_event_container(
 void
 multithreaded_event_container::run_work()
 {
+  //make the binary spanning tree for the thread barrier
+  thread_queue* child1 = nullptr;
+  thread_queue* child2 = nullptr;
+  if (num_subthreads_ >= 1){
+    child1 = &queues_[0]; 
+  }
+  if (num_subthreads_ >= 2){
+    child2 = &queues_[1]; 
+  }
+
+  int last_level_offset = 0;
+  int level_offset = 2;
+  int level_size = 4;
+  while (level_offset < num_subthreads_){
+    int maxChild = std::min(level_offset+level_size,num_subthreads_);
+    for (int c=level_offset; c < maxChild; ++c){
+      int child_offset = c - level_offset;
+      int parent_offset = child_offset / 2;
+      int child_number = child_offset % 2;
+      int parent = last_level_offset + parent_offset;
+      thread_queue& parentQ = queues_[parent];
+      if (child_number == 0){
+        parentQ.child1 = &queues_[c];
+      } else {
+        parentQ.child2 = &queues_[c];
+      }
+    }
+    last_level_offset = level_offset;
+    level_offset += level_size;
+    level_size *= 2;
+  }
+  
   timestamp last_horizon;
   timestamp lower_bound;
-  while (lower_bound != no_events_left_time){
-    swap_pending_event_queues();
-    for (thread_queue& q : queues_){
-      q.mgr->swap_pending_event_queues();
-    }
+  uint64_t epoch = 0;
+  int num_loops_left = num_profile_loops_;
+  if (num_loops_left){
+    printf("Running %d profile loops\n", num_loops_left); 
+    fflush(stdout);
+  }
+  while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
     uint64_t delta_t = horizon.ticks() - last_horizon.ticks();
-    if (delta_t > std::numeric_limits<int32_t>::max()){
-      spkt_abort_printf("delta_t too large: lower timestamp resolution");
+    if (num_loops_left ==0 && delta_t > std::numeric_limits<int32_t>::max()){
+      spkt_abort_printf("delta_t %lu too large: lower timestamp resolution", delta_t);
     }
     int32_t delta_t_32 = delta_t;
-    for (thread_queue& q : queues_){
-      add_int32_atomic(delta_t_32, q.delta_t);
-      active_queues_.push_back(&q);
-    }
+    if (child1) add_int32_atomic(delta_t_32, child1->delta_t);
+    if (child2) add_int32_atomic(delta_t_32, child2->delta_t);
 
     timestamp min_time = no_events_left_time;
     if (!master_thread_){
       min_time = run_events(horizon);
     }
 
-    int num_to_wait = num_subthreads_;
-    while (num_to_wait > 0){
-      for (int i=0; i < num_to_wait; ){
-        thread_queue* q = active_queues_[i];
-        bool done = cas_int32(0, 0, q->delta_t);
-        if (done){ //worker is done
-          --num_to_wait;
-          //backfill the queue
-          active_queues_[i] = active_queues_[num_to_wait];
-          min_time = std::min(min_time, q->min_time);
-        } else {
-          ++i;
-        }
-      }
-    }
+    if (child1) wait_on_child_completion(child1, min_time);
+    if (child2) wait_on_child_completion(child2, min_time);
+    ++epoch;
+
     lower_bound = receive_incoming_events(min_time);
     last_horizon = horizon;
-    active_queues_.clear();
+    if (num_loops_left) --num_loops_left;
   }
 
-  for (int i=0; i < num_subthreads_; ++i){
-    //CAS the sentinel value to terminate child
-    add_int32_atomic(std::numeric_limits<int32_t>::max(), queues_[i].delta_t);
-  }
+  if (child1) add_int32_atomic(terminate_sentinel, child1->delta_t);
+  if (child2) add_int32_atomic(terminate_sentinel, child2->delta_t);
+
 }
 
 void

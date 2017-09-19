@@ -88,14 +88,14 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   nthread_(rt->nworker_thread()),
   me_(rt->me()),
   nproc_(rt->nproc()),
+  pending_slot_(0),
   complete_(false),
   thread_id_(0),
   scheduled_(false)
 {
-  incoming_events_ = &pending_events1_;
-  outgoing_events_ = &pending_events2_;
-  pending_events1_.resize(nthread_);
-  pending_events2_.resize(nthread_);
+  for (int i=0; i < num_pending_slots; ++i){
+    pending_events_[i].resize(nthread_);
+  }
 }
 
 timestamp
@@ -106,6 +106,10 @@ event_manager::run_events(timestamp event_horizon)
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     event_queue_entry* ev = *iter;
+    if (ev->time() < now_){
+      spkt_abort_printf("Time went backwards on thread %d: %lu < %lu",
+                        thread_id_, ev->time().ticks(), now_.ticks());
+    }
     if (ev->time() >= event_horizon){
       timestamp ret = std::min(min_ipc_time_, ev->time());
       return ret;
@@ -135,12 +139,19 @@ event_manager::set_interconnect(hw::interconnect* interconn)
 void
 event_manager::register_pending()
 {
-  for (auto& pendingVec : *incoming_events_){
+  int idx = 0;
+  for (auto& pendingVec : pending_events_[pending_slot_]){
     for (event_queue_entry* ev : pendingVec){
+      if (ev->time() < now_){
+        spkt_abort_printf("Thread %d scheduling event on thread %d in the past: %lu < %lu",
+                          idx, thread_id_, ev->time().ticks(), now_.ticks());
+      }
       schedule(ev);
     }
     pendingVec.clear();
+    ++idx;
   }
+  pending_slot_ = (pending_slot_+1) % num_pending_slots;
 }
 
 void
