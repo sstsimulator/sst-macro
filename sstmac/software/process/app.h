@@ -60,8 +60,8 @@ namespace sw {
 class mutex_t  {
  public:
   /** Blocking keys for those threads waiting on the mutex */
-  std::list<key*> waiters;
-  std::list<key*> conditionals;
+  std::list<thread*> waiters;
+  std::list<thread*> conditionals;
   bool locked;
 
   mutex_t() : locked(false)

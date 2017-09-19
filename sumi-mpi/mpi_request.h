@@ -181,10 +181,6 @@ class mpi_request  {
     return stat_;
   }
 
-  key* get_key() const {
-    return key_;
-  }
-
   bool is_cancelled() const {
     return cancelled_;
   }
@@ -203,7 +199,6 @@ class mpi_request  {
 
  private:
   MPI_Status stat_;
-  key* key_;
   bool complete_;
   bool cancelled_;
   op_type_t optype_;

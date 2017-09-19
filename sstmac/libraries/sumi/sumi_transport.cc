@@ -414,33 +414,34 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
     user_lib_time_->compute(poll_delay_);
   }
 
+  sstmac::sw::thread* thr = os_->active_thread();
   if (pending_messages_.empty() && blocking) {
-    sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
+    //sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
     if (timeout > 0.){
-      os_->schedule_timeout(sstmac::timestamp(timeout), blocker);
+      os_->schedule_timeout(sstmac::timestamp(timeout), thr);
     } else if (timeout == 0.){
       spkt_abort_printf("invalid timeout of 0 - use -1 as sentinel value to indicate no timeout");
     }
-    blocked_keys_.push_back(blocker);
+    blocked_threads_.push_back(thr);
     debug_printf(sprockit::dbg::sumi,
                  "Rank %d sumi queue %p has no pending messages - blocking poller %p",
-                 rank(), this, blocker);
-    os_->block(blocker);
+                 rank(), this, thr);
+    os_->block();
     if (timeout <= 0){
       if (pending_messages_.empty()){
         spkt_abort_printf("SUMI transport rank %d unblocked with no messages and no timeout",
           rank_, timeout);
       }
-      delete blocker;
+      //delete blocker;
     } else {
       if (pending_messages_.empty()){
         //timed out, erase blocker from list
-        auto iter = blocked_keys_.begin();
-        while (*iter != blocker) ++iter;
-        if (iter == blocked_keys_.end()){
+        auto iter = blocked_threads_.begin();
+        while (*iter != thr) ++iter;
+        if (iter == blocked_threads_.end()){
           spkt_abort_printf("Rank %d time out has no key", rank_);
         }
-        blocked_keys_.erase(iter);
+        blocked_threads_.erase(iter);
         return nullptr;
       }
     }
@@ -503,13 +504,13 @@ sumi_transport::incoming_message(transport_message *msg)
 #endif
   pending_messages_.push_back(msg);
 
-  if (!blocked_keys_.empty()) {
-    sstmac::sw::key* next_key = blocked_keys_.front();
+  if (!blocked_threads_.empty()) {
+    sstmac::sw::thread* next_thr = blocked_threads_.front();
     debug_printf(sprockit::dbg::sumi,
                  "sumi queue %p unblocking poller %p to handle message %s",
-                  this, next_key, msg->get_payload()->to_string().c_str());
-    blocked_keys_.pop_front();
-    os_->unblock(next_key);
+                  this, next_thr, msg->get_payload()->to_string().c_str());
+    blocked_threads_.pop_front();
+    os_->unblock(next_thr);
   } else {
     debug_printf(sprockit::dbg::sumi,
                  "sumi queue %p has no pollers to unblock for message %s",

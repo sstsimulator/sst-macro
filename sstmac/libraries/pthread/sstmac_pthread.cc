@@ -247,9 +247,8 @@ SSTMAC_pthread_mutex_lock(sstmac_pthread_mutex_t* mutex)
   if (mut == 0){
     return EINVAL;
   } else if (mut->locked) {
-    key* blocker = key::construct();
-    mut->waiters.push_back(blocker);
-    thr->os()->block(blocker);
+    mut->waiters.push_back(thr);
+    thr->os()->block();
   } else {
     mut->locked = true;
   }
@@ -303,7 +302,7 @@ SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex)
   if (mut == 0 || !mut->locked){
     return EINVAL;
   } else if (!mut->waiters.empty()){
-    key* blocker = mut->waiters.front();
+    thread* blocker = mut->waiters.front();
     mut->waiters.pop_front();
     thr->os()->unblock(blocker);
   } else {
@@ -323,7 +322,7 @@ class unblock_event : public event_queue_entry
   }
 
   void execute(){
-    key* blocker = mutex_->waiters.front();
+    thread* blocker = mutex_->waiters.front();
     mutex_->waiters.pop_front();
     os_->unblock(blocker);
   }
@@ -394,6 +393,8 @@ extern "C" int
 SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
                               sstmac_pthread_mutex_t * mutex, const timespec * abstime)
 {
+  sprockit::abort("pthread_cond_timedwait not implemented");
+#if 0
   pthread_debug("pthread_cond_timedwait");  
   int rc;
   if ((rc=check_cond(cond)) != 0){
@@ -420,8 +421,8 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
     //unlock - nobody waiting on this
     mut->locked = false;
   }
-  key* k = key::construct();
-  mut->conditionals.push_back(k);
+  //key* k = key::construct();
+  mut->conditionals.push_back(thr);
 
   if (abstime){
     //schedule a timed wait unblock
@@ -429,10 +430,10 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
     timestamp delay(secs);
     //this key may be used to unblock twice
     //if it does, make sure it doesn't get deleted
-    myos->schedule_timeout(delay, k);
+    myos->schedule_timeout(delay, thr);
   }
 
-  myos->block(k);
+  myos->block(thr);
 
   if (abstime && k->timed_out()){
     //the cond signal never fired, remove myself from the list
@@ -447,9 +448,8 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
     }
     delete k;
   }
-
+#endif
   return 0;
-
 }
 
 extern "C" int
@@ -473,10 +473,10 @@ SSTMAC_pthread_cond_signal(sstmac_pthread_cond_t * cond)
     if (mut->conditionals.empty()){
         sprockit::abort("pthread::mutex signaled, but there are no waiting threads");
     }
-    key* k = mut->conditionals.front();
+    thread* thr = mut->conditionals.front();
     mut->conditionals.pop_front();
     mut->locked = true;
-    myos->unblock(k);
+    myos->unblock(thr);
   }
   return 0;
 }

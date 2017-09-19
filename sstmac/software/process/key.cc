@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
 Copyright (c) 2009-2017, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -63,9 +63,6 @@ static std::vector<key*>* chunks = new std::vector<key*>;
 key_traits::category key::general("General");
 std::unordered_map<std::string,int>* key::category_name_to_id_ = nullptr;
 std::unordered_map<int,std::string>* key::category_id_to_name_ = nullptr;
-uint64_t key::key_storage_size_ = 0;
-static sprockit::need_delete_statics<key> del_statics;
-static thread_lock lock_;
 
 namespace key_traits {
 
@@ -106,75 +103,6 @@ key::event_typeid(const std::string& name)
       name.c_str());
   }
   return it->second;
-}
-
-key::key() :
-  keyname_id_(general.id()),
-  timed_out_(false),
-  blocked_thread_(nullptr)
-{
-}
-
-key::key(const key_traits::category& cat) :
-  keyname_id_(cat.id()),
-  timed_out_(false),
-  blocked_thread_(nullptr)
-{
-}
-
-
-void*
-key::operator new(size_t size)
-{
-  lock_.lock();
-
-  if(keypool::chunks->empty()) {
-    const int cacheline = 64;
-    const int pagesize = 4*4096;
-    int window = pagesize / cacheline;
-    key_storage_size_ += window;
-    keypool::chunks->reserve(key_storage_size_);
-    int keysize = std::max(sizeof(key), size_t(cacheline));
-    char* keyptr = (char*) ::malloc(keysize*window);
-    //ensure cache alignment
-    int mem_offset = ((uint64_t)keyptr) % cacheline;
-    if (mem_offset != 0){
-      int stride = cacheline - mem_offset;
-      keyptr += stride;
-      window -= 1;
-    }
-    for (int i=0; i < window; ++i, keyptr += keysize){
-      keypool::chunks->push_back(reinterpret_cast<key*>(keyptr));
-    }
-  }
-  void* memptr = keypool::chunks->back();
-  keypool::chunks->pop_back();
-  lock_.unlock();
-  return memptr;
-}
-
-void
-key::operator delete(void* ptr)
-{
-  lock_.lock();
-  keypool::chunks->push_back(static_cast<key*>(ptr));
-  lock_.unlock();
-}
-
-void
-key::delete_statics()
-{
-  if (keypool::chunks) {
-    for (int i=0; i < keypool::chunks->size(); ++i) {
-      //just leak it for now - annoying cache alignment issues
-      //::free(keypool::chunks->at(i));
-    }
-    keypool::chunks->clear();
-    delete keypool::chunks;
-    keypool::chunks = nullptr;
-  }
-  delete category_name_to_id_;
-  delete category_id_to_name_;
 }
 
 }

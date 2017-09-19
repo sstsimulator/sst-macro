@@ -98,11 +98,11 @@ ftq_calendar::clear()
 void
 app_ftq_calendar::global_reduce(parallel_runtime* rt)
 {
-
+  sprockit::abort("app_ftq_calendar::global_reduce: not implemented");
   //make a big buffer
   long my_num_epochs = max_epoch_;
   long max_num_epochs = rt->global_max(my_num_epochs);
-  int num_keys = key::num_categories();
+  int num_keys = 0;//key::num_categories();
   long buffer_length = max_num_epochs * long(num_keys);
 
   long long* reduce_buffer = new long long[buffer_length];
@@ -236,7 +236,7 @@ app_ftq_calendar::app_ftq_calendar(int aid,
     num_ticks_epoch_(nticks_epoch),
     appname_(appname)
 {
-  int num_categories = key::num_categories();
+  int num_categories = 0;//key::num_categories();
   aggregate_.totals_ = new long long[num_categories];
   for (int i=0; i < num_categories; ++i) {
     aggregate_.totals_[i] = 0;

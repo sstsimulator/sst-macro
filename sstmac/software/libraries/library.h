@@ -129,29 +129,6 @@ class library
 
 };
 
-class blocking_library :
-  public library
-{
- protected:
-  blocking_library(const char* prefix, software_id sid, operating_system* os) :
-    library(prefix, sid, os)
-  {
-  }
-
-  blocking_library(const std::string& libname, software_id sid, operating_system* os) :
-    library(libname, sid, os)
-  {
-  }
-
-  void wait_event(event* ev, key_traits::category cat);
-
-  virtual void incoming_event(event *ev);
-
- private:
-  std::map<event*,key*> blocked_events_;
-
-};
-
 }
 } //end of namespace sstmac
 

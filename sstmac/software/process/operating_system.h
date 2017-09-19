@@ -193,7 +193,7 @@ class operating_system :
    *                     for later unblocking
    * @return
    */
-  timestamp block(key* req);
+  timestamp block();
 
   /**
    * @brief unblock Unblock the thread context associated with the key
@@ -202,7 +202,7 @@ class operating_system :
    *                  a block(req) call
    * @return
    */
-  timestamp unblock(key* req);
+  timestamp unblock(thread* thr);
 
   /**
    * @brief start_thread Start a thread object and schedule the context switch to it
@@ -262,7 +262,7 @@ class operating_system :
     return my_addr_;
   }
 
-  void schedule_timeout(timestamp delay, key* k);
+  void schedule_timeout(timestamp delay, thread* thr);
 
   graph_viz* call_graph() const {
     return call_graph_;

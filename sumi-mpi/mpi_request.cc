@@ -97,7 +97,6 @@ collective_op::collective_op(int count, mpi_comm* cm) :
 }
 
 mpi_request::mpi_request(op_type_t ty, const category& cat) :
- key_(key::construct(cat)),
  optype_(ty),
  complete_(false),
  cancelled_(false),
@@ -108,7 +107,6 @@ mpi_request::mpi_request(op_type_t ty, const category& cat) :
 
 mpi_request::~mpi_request()
 {
-  delete key_;
   if (persistent_op_) delete persistent_op_;
   //do not delete - deleted elsewhere
   //if (collective_op_) delete collective_op_;

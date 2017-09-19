@@ -197,7 +197,7 @@ class sumi_transport :
 
   std::list<transport_message*> pending_messages_;
 
-  std::list<sstmac::sw::key*> blocked_keys_;
+  std::list<sstmac::sw::thread*> blocked_threads_;
 
   uint32_t component_id_;
 

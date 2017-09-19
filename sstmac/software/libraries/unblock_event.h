@@ -69,13 +69,13 @@ class unblock_event : public event_queue_entry
 {
 
  public:
-  unblock_event(operating_system* os, key* k);
+  unblock_event(operating_system* os, thread* thr);
 
   virtual void execute();
 
  protected:
   operating_system* os_;
-  key* key_;
+  thread* thr_;
 
 };
 
@@ -83,13 +83,13 @@ class timeout_event : public event_queue_entry
 {
 
  public:
-  timeout_event(operating_system* os, key* k);
+  timeout_event(operating_system* os, thread* thr);
 
   virtual void execute();
 
  protected:
   operating_system* os_;
-  key* key_;
+  thread* thr_;
 
 };
 

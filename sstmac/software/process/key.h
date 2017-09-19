@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
 Copyright (c) 2009-2017, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -63,26 +63,10 @@ namespace sw {
  */
 class key  {
 
-  /**
-      Global identifier for all keys of a given type.
-      This should be a STATIC object that gets passed
-      into every key when selecting type.
-  */
- public:
-  typedef std::set<thread*> blocking_t;
-
  public:
   static key_traits::category general;
 
  public:
-  static key* construct(){
-    return new key;
-  }
-
-  static key* construct(const key_traits::category& name){
-    return new key(name);
-  }
-
   static std::string name(int keyname_id) {
     return (*category_id_to_name_)[keyname_id];
   }
@@ -95,57 +79,9 @@ class key  {
     return category_name_to_id_->size();
   }
 
-  std::string name() const {
-    return name(keyname_id_);
-  }
-
-  int  event_typeid() const {
-    return keyname_id_;
-  }
-
-  virtual ~key(){}
-
-  void* operator new(size_t size);
-
-  void operator delete(void* ptr);
-
-  void block_thread(thread* t){
-    blocked_thread_ = t;
-  }
-
-  bool still_blocked() {
-    return blocked_thread_;
-  }
-
-  bool timed_out() const {
-    return timed_out_;
-  }
-
-  void set_timed_out() {
-    timed_out_ = true;
-  }
-
-  void clear() {
-    blocked_thread_ = nullptr;
-  }
-
-  static void delete_statics();
-
- private:
-  friend class operating_system;
-
-  key();
-
-  key(const key_traits::category& name);
-
  private:
   static std::unordered_map<std::string, int>* category_name_to_id_;
   static std::unordered_map<int, std::string>* category_id_to_name_;
-  static uint64_t key_storage_size_;
-
-  thread* blocked_thread_;
-  bool timed_out_;
-  int keyname_id_;
 
 };
 

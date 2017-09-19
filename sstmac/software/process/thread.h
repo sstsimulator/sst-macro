@@ -196,6 +196,22 @@ class thread
     return bt_nfxn_;
   }
 
+  void set_timed_out(bool flag){
+    timed_out_ = flag;
+  }
+
+  bool blocked() const {
+    return blocked_;
+  }
+
+  void set_blocked(bool flag) {
+    blocked_ = flag;
+  }
+
+  bool timed_out() const {
+    return timed_out_;
+  }
+
   void append_backtrace(void* fxn);
 
   void pop_backtrace();
@@ -228,14 +244,6 @@ class thread
 
   process_context get_process_context() const {
     return p_txt_;
-  }
-
-  /**
-   * @brief key used 
-   * @return 
-   */
-  key* schedule_key() {
-    return schedule_key_;
   }
 
   bool is_initialized() const {
@@ -305,7 +313,7 @@ class thread
 
   operating_system* os_;
 
-  std::queue<key*> joiners_;
+  std::queue<thread*> joiners_;
 
   app* parent_app_; // who created this one. null if launch/os.
 
@@ -322,6 +330,8 @@ class thread
 
   int bt_nfxn_;
 
+  bool timed_out_;
+
   std::map<long, void*> tls_values_;
 
   int last_bt_collect_nfxn_;
@@ -333,12 +343,12 @@ class thread
   long thread_id_;
 
   threading_interface* context_;
-
-  key* schedule_key_;
   
   uint64_t cpumask_;
   
   int active_core_;
+
+  bool blocked_;
 
 };
 

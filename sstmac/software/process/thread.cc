@@ -189,7 +189,6 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   bt_nfxn_(0),
   last_bt_collect_nfxn_(0),
   thread_id_(thread::main_thread),
-  schedule_key_(key::construct(schedule_delay)),
   p_txt_(process_context::none),
   stack_(nullptr),
   context_(nullptr),
@@ -294,7 +293,6 @@ thread::~thread()
     context_->destroy_context();
     delete context_;
   }
-  if (schedule_key_) delete schedule_key_;
   if (host_timer_) delete host_timer_;
 }
 

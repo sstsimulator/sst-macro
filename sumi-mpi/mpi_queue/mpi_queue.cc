@@ -667,8 +667,6 @@ mpi_queue::at_least_one_complete(const std::vector<mpi_request*>& req)
   for (int i=0; i < (int) req.size(); ++i) {
     if (req[i] && req[i]->is_complete()) {
       mpi_queue_debug("request is done");
-      //clear the key in case we have any timeout watchers
-      req[i]->get_key()->clear();
       return true;
     }
   }

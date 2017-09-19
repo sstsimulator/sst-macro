@@ -308,11 +308,11 @@ operating_system::delete_statics()
 void
 operating_system::sleep(timestamp t)
 {
-  sw::key* k = sw::key::construct();
-  sw::unblock_event* ev = new sw::unblock_event(this, k);
+  //sw::key* k = sw::key::construct();
+  sw::unblock_event* ev = new sw::unblock_event(this, active_thread_);
   send_delayed_self_event_queue(t, ev);
-  block(k);
-  delete k;
+  block();
+  //delete k;
 }
 
 void
@@ -320,11 +320,11 @@ operating_system::sleep_until(timestamp t)
 {
   timestamp now_ = now();
   if (t > now_){
-    sw::key* k = sw::key::construct();
-    sw::unblock_event* ev = new sw::unblock_event(this, k);
+    //sw::key* k = sw::key::construct();
+    sw::unblock_event* ev = new sw::unblock_event(this, active_thread_);
     send_self_event_queue(t, ev);
-    block(k);
-    delete k;
+    block();
+    //delete k;
   }
 }
 
@@ -361,12 +361,12 @@ operating_system::execute(ami::COMP_FUNC func, event* data,
   //this will block if the thread has no core to run on
   compute_sched_->reserve_core(active_thread_);
   //initiate the hardware events
-  key* k = new key(cat);
-  callback* cb = new_callback(this, &operating_system::unblock, k);
+  //key* k = new key(cat);
+  callback* cb = new_callback(this, &operating_system::unblock, active_thread_);
   node_->execute(func, data, cb);
-  block(k);
+  block();
   compute_sched_->release_core(active_thread_);
-  delete k;
+  //delete k;
   //callbacks deleted by core
 }
 
@@ -456,20 +456,8 @@ operating_system::print_libs(std::ostream &os) const
 }
 
 timestamp
-operating_system::block(key* req)
+operating_system::block()
 {
-#if SSTMAC_SANITY_CHECK
-  valid_keys_.insert(req);
-  if (req == nullptr) {
-    sprockit::abort("operating_system::block:  cannot block a null key pointer");
-  }
-
-  if (threadstack_.size() == 1) {
-    sprockit::abort("OS: trying to block the DES thread (bottom of the stack)");
-  }
-#endif
-  req->block_thread(active_thread_);
-
   int64_t before_ticks = now().ticks_int64();
   //back to main DES thread
   threading_interface* old_context = active_thread_->context();
@@ -492,37 +480,24 @@ operating_system::block(key* req)
   }
 
   if (ftq_trace_) {
-    ftq_trace_->collect(req->event_typeid(),
-      active_thread_->aid(), active_thread_->tid(),
-      before_ticks, delta_ticks);
+    sprockit::abort("FTQ not yet supported");
+    //ftq_trace_->collect(req->event_typeid(),
+    //  active_thread_->aid(), active_thread_->tid(),
+    //  before_ticks, delta_ticks);
   }
 
   return now();
 }
 
 void
-operating_system::schedule_timeout(timestamp delay, key* k)
+operating_system::schedule_timeout(timestamp delay, thread* thr)
 {
-  send_delayed_self_event_queue(delay, new timeout_event(this, k));
+  send_delayed_self_event_queue(delay, new timeout_event(this, thr));
 }
 
 timestamp
-operating_system::unblock(key* req)
+operating_system::unblock(thread* thr)
 {
-  thread* thr = req->blocked_thread_;
-
-  os_debug("unblocking thread %ld on key %p", thr->thread_id(), req);
-
-#if SSTMAC_SANITY_CHECK
-  auto iter = valid_keys_.find(req);
-  if (iter == valid_keys_.end()) {
-    sprockit::abort("operating_system::unblock: unblocking key that I don't have");
-  }
-  valid_keys_.erase(it);
-#endif
-
-  req->clear();
-
   if (thr->is_canceled()){
     //just straight up delete the thread
     //it shall be neither seen nor heard
@@ -538,11 +513,11 @@ void
 operating_system::join_thread(thread* t)
 {
   if (t->get_state() != thread::DONE) {
-    key* k = key::construct();
-    os_debug("joining thread %ld - thread not done so blocking on key %p",
-        t->thread_id(), k);
-    t->joiners_.push(k);
-    block(k);
+    //key* k = key::construct();
+    os_debug("joining thread %ld - thread not done so blocking on thread %p",
+        t->thread_id(), active_thread_);
+    t->joiners_.push(active_thread_);
+    block();
   }
   else {
     os_debug("joining completed thread %ld", t->thread_id());
@@ -557,7 +532,7 @@ operating_system::complete_active_thread()
   //if any threads waiting on the join, unblock them
   os_debug("completing thread %ld", thr_todelete->thread_id());
   while (!thr_todelete->joiners_.empty()) {
-    key* blocker = thr_todelete->joiners_.front();
+    thread* blocker = thr_todelete->joiners_.front();
     os_debug("thread %ld is unblocking joiner %p",
         thr_todelete->thread_id(), blocker);
     unblock(blocker);
