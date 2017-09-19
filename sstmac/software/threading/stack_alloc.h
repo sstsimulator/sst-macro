@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <cstring>
 #include <vector>
+#include <sprockit/sim_parameters_fwd.h>
 
 namespace sstmac {
 namespace sw {
@@ -67,43 +68,33 @@ class stack_alloc
   class chunk;
   /// This is where we store the memory regions.
   typedef std::vector<chunk*> chunk_vec_t;
-  chunk_vec_t chunks_;
+  static chunk_vec_t chunks_;
   /// Each chunk is of this suggested size.
-  size_t suggested_chunk_;
+  static size_t suggested_chunk_;
   /// Each stack request is of this size:
-  size_t stacksize_;
+  static size_t stacksize_;
 
   /// This is our list of un-allocated chunks:
   typedef std::vector<void*> available_vec_t;
-  available_vec_t available_;
+  static available_vec_t available_;
 
  public:
-  stack_alloc();
-
-  size_t stacksize() const {
+  static size_t stacksize() {
     return stacksize_;
   }
 
 
-  size_t chunksize() const {
+  static size_t chunksize() {
     return suggested_chunk_;
   }
 
-  virtual ~stack_alloc();
+  static void init(sprockit::sim_parameters* params);
 
-  /// Get a stack memory region.
-  void* alloc();
+  static void* alloc();
 
-  /// Return the given memory region.
-  void free(void*);
+  static void free(void*);
 
-  void init(size_t stacksize, size_t alloc_unit);
-
-  bool initialized() const {
-    return stacksize_;
-  }
-
-  void clear();
+  static void clear();
 
 };
 

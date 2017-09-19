@@ -145,7 +145,6 @@ std::vector<operating_system*> operating_system::active_os_;
 #else
 operating_system* operating_system::active_os_ = nullptr;
 #endif
-stack_alloc operating_system::stack_alloc_;
 
 operating_system::operating_system(sprockit::sim_parameters* params, hw::node* parent) :
   my_addr_(parent->addr()),
@@ -156,7 +155,9 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
   event_subcomponent(parent),
-  params_(params)
+  params_(params),
+  nthread_(parent->nthread()),
+  thread_id_(parent->thread())
 {
   compute_sched_ = compute_scheduler::factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
@@ -172,32 +173,21 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   }
 #endif
 
-  ftq_trace_ = optional_stats<ftq_calendar>(parent,
-        params, "ftq", "ftq");
+  ftq_trace_ = optional_stats<ftq_calendar>(parent, params, "ftq", "ftq");
 
-  sstmac_global_stacksize = params->get_optional_byte_length_param("stack_size", 1 << 17);
-  //must be a multiple of 4096
-  int stack_rem = sstmac_global_stacksize % 4096;
-  if (stack_rem){
-    sstmac_global_stacksize += (4096 - stack_rem);
-  }
-
-  long suggested_chunk_size = 1<22;
-  long min_chunk_size = 8*sstmac_global_stacksize;
-  long default_chunk_size = std::max(suggested_chunk_size, min_chunk_size);
-  long chunksize = params->get_optional_byte_length_param("stack_chunk_size", default_chunk_size);
-
-  stack_alloc_.init(sstmac_global_stacksize, chunksize);
-
-  //we automatically initialize the first context
-#if SSTMAC_USE_MULTITHREAD
-  event_manager* man = parent->event_mgr();
-  if (active_os_.size() == 0){
-    active_os_.resize(man->nthread());
-  }
-#endif
+  stack_alloc::init(params);
 
   compute_sched_->configure(node_->proc()->ncores(), node_->nsocket());
+}
+
+void
+operating_system::init_threads(int nthread)
+{
+#if SSTMAC_USE_MULTITHREAD
+  if (active_os_.size() == 0){
+    active_os_.resize(nthread);
+  }
+#endif
 }
 
 operating_system::~operating_system()
@@ -221,8 +211,6 @@ operating_system::~operating_system()
   }
   if (compute_sched_) delete compute_sched_;
 
-  stack_alloc_.clear();
-
 #if SSTMAC_HAVE_GRAPHVIZ
   if (call_graph_) delete call_graph_;
 #endif
@@ -230,65 +218,27 @@ operating_system::~operating_system()
   //if (ftq_trace_) delete ftq_trace_;
 }
 
-static void fill_valid_threading_contexts(std::vector<std::pair<std::string,bool>>& contexts)
-{
-
-#ifdef SSTMAC_HAVE_UCONTEXT
-  contexts.emplace_back("ucontext", true);
-#endif
-#ifdef SSTMAC_HAVE_GNU_PTH
-  contexts.emplace_back("pth", false);
-#endif
-#ifdef SSTMAC_HAVE_FCONTEXT
-  contexts.emplace_back("fcontext", true);
-#endif
-#ifdef SSTMAC_HAVE_PTHREAD
-  contexts.emplace_back("pthread", false);
-#endif
-
-  if (contexts.empty()){
-    sprockit::abort("No valid threading contexts found");
-  }
-}
-
 void
 operating_system::init_threading(sprockit::sim_parameters* params)
 {
-  if (des_context_)
+  if (des_context_){
     return; //already done
+  }
 
-  //string is name, bool is whether valid with multithreading
-  static std::vector<std::pair<std::string,bool>> valid_threading_contexts;
-  static thread_lock fill_lock;
-  fill_lock.lock();
-  if (valid_threading_contexts.empty()){
-    fill_valid_threading_contexts(valid_threading_contexts);
+  static thread_lock lock;
+  sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
+  lock.lock();
+  if (active_os_.size() == 0){
+    active_os_.resize(nthread());
   }
-  fill_lock.unlock();
+  lock.unlock();
 
-  std::string default_threading;
-#if SSTMAC_USE_MULTITHREAD
-  for (auto& pair : valid_threading_contexts){
-    if (pair.second){ //supports multithreading
-      default_threading = pair.first;
-      break;
-    }
-  }
-  if (default_threading.size() == 0){
-    //this did not get updated - so we don't have any multithreading-compatible thread interfaces
-    sprockit::abort("operating_system: there are no threading frameworks compatible "
-                    "with multithreaded SST - must have ucontext or Boost::context");
-  }
-#else
-  default_threading = valid_threading_contexts[0].first;
-#endif
-  const char *threading_pchar = getenv("SSTMAC_THREADING");
-  if (threading_pchar){
-    default_threading = threading_pchar;
-  }
+  //make sure to stash the thread ID in some thread-local storage
+  void* stack = thread_info::get_current_stack();
+  thread_info::set_thread_id(stack, threadId());
 
   des_context_ = threading_interface::factory::get_optional_param(
-        "context", default_threading, params);
+        "context", threading_interface::default_threading(), params);
 
   des_context_->init_context();
 
@@ -407,20 +357,6 @@ operating_system::simulation_done()
 {
 }
 
-void
-operating_system::switch_to_context(int aid, int tid)
-{
-#if SSTMAC_ENABLE_DEBUG_SWAP
-  thread_data_t from = current_os_->threadstack_.top();
-  threading_interface* thr = context_map_[aid][tid];
-  current_os_->threadstack_.push(thread_data_t(thr, NULL));
-  from.first->swap_context(thr);
-#else
-  spkt_throw_printf(sprockit::illformed_error,
-                   "operating system is not configured to track code positions");
-#endif
-}
-
 library*
 operating_system::current_library(const std::string &name)
 {
@@ -439,7 +375,6 @@ operating_system::switch_to_thread(thread* tothread)
 
   active_thread_ = tothread;
   active_os() = this;
-  tothread->set_thread_id(threadId());
   tothread->context()->resume_context(des_context_);
 
   /** back to main thread */
@@ -614,39 +549,6 @@ operating_system::lib(const std::string& name) const
 }
 
 void
-operating_system::stack_check()
-{
-  thread* thr = operating_system::current_thread();
-  if (!thr) {
-    return;  //main thread
-  }
-
-  if (thr->thread_id() == thread::main_thread) {
-    return;
-  }
-
-  void* stack = thr->stack();
-
-  int x;
-  void* testptr = &x;
-
-  //stack is usually allocated backwards - we haven't overrun yet
-  if (testptr > stack) {
-    return;
-  }
-
-  spkt_throw_printf(sprockit::illformed_error,
-                   "stack pointer on thread %d has gone past end of stack",
-                   thr->thread_id());
-}
-
-void
-operating_system::free_thread_stack(void *stack)
-{
-  stack_alloc_.free(stack);
-}
-
-void
 operating_system::start_thread(thread* t)
 {
 #if SSTMAC_HAVE_GRAPHVIZ
@@ -662,13 +564,13 @@ operating_system::start_thread(thread* t)
     active_thread_ = t;
     active_os() = this;
     app* parent = t->parent_app();
-    void* stack = stack_alloc_.alloc();
+    void* stack = stack_alloc::alloc();
     t->init_thread(
       parent->params(),
       threadId(),
       des_context_,
       stack,
-      stack_alloc_.stacksize(),
+      stack_alloc::stacksize(),
       parent->globals_storage());
   }
 }

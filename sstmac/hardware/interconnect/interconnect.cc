@@ -222,12 +222,6 @@ interconnect::node_to_logp_switch(node_id nid) const
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-interconnect::handle(event* ev)
-{
-  sprockit::abort("interconnect should never handle messages");
-}
-
-void
 interconnect::connect_endpoints(event_manager* mgr,
                                 sprockit::sim_parameters* inj_params,
                                 sprockit::sim_parameters* ej_params)
@@ -301,6 +295,17 @@ interconnect::connect_endpoints(event_manager* mgr,
 }
 
 void
+interconnect::setup()
+{
+  for (node* nd : nodes_){
+    if (nd){
+      nd->init(0); //emulate SST core
+      nd->setup();
+    }
+  }
+}
+
+void
 interconnect::build_endpoints(sprockit::sim_parameters* node_params,
                   sprockit::sim_parameters* nic_params,
                   sprockit::sim_parameters* netlink_params,
@@ -333,16 +338,12 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         event_manager* node_mgr = mgr->thread_manager(thread);
         node* nd = node::factory::get_optional_param("model", "simple", node_params,
                                                      comp_id, node_mgr->thread_manager(thread));
-        nd->set_thread(thread);
         nic* the_nic = nd->get_nic();
         nodes_[nid] = nd;
         components_[nid] = nd;
 
         event_link* out_link = allocate_local_link(nullptr, nd, nd->payload_handler(nic::LogP));
         local_logp_switch_->connect_output(nid, out_link);
-
-        nd->init(0); //emulate SST core
-        nd->setup();
 
         netlink_id net_id;
         int netlink_offset;
@@ -411,7 +412,6 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
       uint32_t comp_id = i + topology_->num_nodes();
       switches_[i] = network_switch::factory::get_param("model",
                       switch_params, comp_id, mgr->thread_manager(thread));
-      switches_[i]->set_thread(thread);
     } else {
       switches_[i] = nullptr;
     }

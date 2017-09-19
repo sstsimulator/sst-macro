@@ -122,7 +122,7 @@ eager1::incoming_header(mpi_queue* queue,
     //this has to go in now
     //the need recv buffer has to push back messages in the order they are received
     //in order to preserve message order semantics
-    auto cln = msg->clone_me();
+    mpi_message* cln = msg->clone_me();
     cln->local_buffer().ptr = msg->local_buffer().ptr;
     cln->set_in_flight(true);
     queue->need_recv_.push_back(cln);

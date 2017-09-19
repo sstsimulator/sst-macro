@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <fstream>
 #include <sstream>
 #include <sprockit/keyword_registration.h>
+#include <sprockit/thread_safe.h>
 
 RegisterDebugSlot(parallel);
 

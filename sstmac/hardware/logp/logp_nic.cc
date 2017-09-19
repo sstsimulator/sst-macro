@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/common/event_handler.h>
+#include <sstmac/common/event_callback.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/hardware/interconnect/interconnect.h>

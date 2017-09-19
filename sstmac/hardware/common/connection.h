@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define CONNECTION_H
 
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/common/event_callback.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #define connectable_type_invalid(ty) \

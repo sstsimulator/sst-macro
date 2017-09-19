@@ -44,48 +44,48 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/threading/stack_alloc.h>
 #include <sstmac/software/threading/stack_alloc_chunk.h>
+#include <sstmac/software/process/thread_info.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/errors.h>
+#include <sprockit/sim_parameters.h>
 #include <unistd.h>
-
 
 namespace sstmac {
 namespace sw {
-//
-// Build.
-//
-stack_alloc::stack_alloc() :
-  suggested_chunk_(0), stacksize_(0)
-{
 
-}
+stack_alloc::chunk_vec_t stack_alloc::chunks_;
+size_t stack_alloc::suggested_chunk_ = 0;
+size_t stack_alloc::stacksize_ = 0;
+stack_alloc::available_vec_t stack_alloc::available_;
 
 void
-stack_alloc::init(size_t stacksize, size_t alloc_unit)
+stack_alloc::init(sprockit::sim_parameters *params)
 {
-  suggested_chunk_ = alloc_unit;
-  stacksize_ = stacksize;
-  size_t rem = stacksize_ % sysconf(_SC_PAGESIZE);
-  if(rem) {
-    stacksize_ += (sysconf(_SC_PAGESIZE) - rem);
+  if (stacksize_ != 0){
+    return; //we are good
   }
-}
 
-stack_alloc::~stack_alloc()
-{
-  clear();
+  sstmac_global_stacksize = params->get_optional_byte_length_param("stack_size", 1 << 17);
+  //must be a multiple of 4096
+  int stack_rem = sstmac_global_stacksize % 4096;
+  if (stack_rem){
+    sstmac_global_stacksize += (4096 - stack_rem);
+  }
+
+  long suggested_chunk_size = 1<22;
+  long min_chunk_size = 8*sstmac_global_stacksize;
+  long default_chunk_size = std::max(suggested_chunk_size, min_chunk_size);
+  suggested_chunk_ = params->get_optional_byte_length_param("stack_chunk_size", default_chunk_size);
+  stacksize_ = sstmac_global_stacksize;
 }
 
 void
 stack_alloc::clear()
 {
-  chunk_vec_t::iterator it = chunks_.begin(), end = chunks_.end();
-  for ( ; it != end; ++it) {
-    chunk* ch = *it;
+  for (chunk* ch : chunks_){
     delete ch;
   }
   chunks_.clear();
-  chunks_.resize(0);
 }
 
 //

@@ -208,6 +208,11 @@ manager::start()
 {
 }
 
+static void run_manager(void* args){
+  event_manager* mgr = (event_manager*) args;
+  mgr->run();
+}
+
 timestamp
 manager::run(timestamp until)
 {
@@ -219,7 +224,9 @@ manager::run(timestamp until)
     event_manager_->schedule_stop(until);
   }
 
-  event_manager_->run();
+  //this is a little convoluted here, but necessary
+  //to make multithreading easier
+  event_manager_->spin_up(run_manager, event_manager_);
 
   running_ = false;
   // Now call done routine to end simulation and print Stats.

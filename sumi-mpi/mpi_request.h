@@ -92,12 +92,16 @@ struct collective_op_base
   int recvcnt;
   int root;
 
+  virtual ~collective_op_base(){}
+
  protected:
   collective_op_base(mpi_comm* cm);
 
 };
 
-struct collective_op : public collective_op_base
+struct collective_op :
+  public collective_op_base,
+  public sprockit::thread_safe_new<collective_op>
 {
   collective_op(int count, mpi_comm* comm);
   collective_op(int sendcnt, int recvcnt, mpi_comm* comm);
@@ -105,7 +109,9 @@ struct collective_op : public collective_op_base
 
 };
 
-struct collectivev_op : public collective_op_base
+struct collectivev_op :
+  public collective_op_base,
+  public sprockit::thread_safe_new<collectivev_op>
 {
   collectivev_op(int scnt, int* recvcnts, int* disps, mpi_comm* comm);
   collectivev_op(int* sendcnts, int* disps, int rcnt, mpi_comm* comm);
@@ -119,7 +125,9 @@ struct collectivev_op : public collective_op_base
   int size;
 };
 
-class mpi_request  {
+class mpi_request :
+  public sprockit::thread_safe_new<mpi_request>
+{
  public:
   typedef enum {
     Send,

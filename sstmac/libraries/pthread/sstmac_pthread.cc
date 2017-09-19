@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/common/sst_event.h>
 #include <errno.h>
 
 #include <sstmac/libraries/pthread/sstmac_pthread_runner.h>

@@ -176,14 +176,6 @@ class thread
     return os_;
   }
 
-  void* stack() const {
-    return stack_;
-  }
-
-  size_t stacksize() const {
-    return stacksize_;
-  }
-
   void** backtrace() const {
     return backtrace_;
   }
@@ -235,10 +227,7 @@ class thread
   */
   void start_thread(thread* thr);
 
-  void set_thread_id(int thr){
-    int* id = (int*)stack_;
-    *id = thr;
-  }
+  void set_thread_id(int thr);
 
   void join();
 
@@ -337,8 +326,6 @@ class thread
   int last_bt_collect_nfxn_;
 
   void* stack_;
-
-  size_t stacksize_;
   
   long thread_id_;
 

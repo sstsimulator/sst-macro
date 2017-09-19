@@ -60,17 +60,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <list>
 
-#ifdef __APPLE__
-#include <libkern/OSAtomic.h>
-#define add_int32_atomic(inc,ptr) OSAtomicAdd32(inc,ptr)
-#define add_int64_atomic(inc,ptr) OSAtomicAdd64(inc,ptr)
-#define cas_int32(old,newVal,ptr) OSAtomicCompareAndSwap32(old,newVal,ptr)
-#else
-#define add_int32_atomic(inc,ptr) __sync_add_and_fetch(ptr,inc)
-#define add_int64_atomic(inc,ptr) __sync_add_and_fetch(ptr,inc)
-#define cas_int32(old,newVal,ptr) __sync_bool_compare_and_swap(ptr,old,newVal)
-#endif
-
 DeclareDebugSlot(parallel);
 
 template <class T>

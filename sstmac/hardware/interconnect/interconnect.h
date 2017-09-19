@@ -165,7 +165,7 @@ class interconnect
 
   void deadlock_check();
 
-  void handle(event* ev);
+  void setup();
 
   const switch_map& switches() const {
     return switches_;

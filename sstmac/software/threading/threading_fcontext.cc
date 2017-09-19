@@ -40,12 +40,11 @@ class threading_fcontext : public threading_interface
 
   virtual ~threading_fcontext() {}
 
-  threading_fcontext(sprockit::sim_parameters* params) :
-    threading_interface(params)
-  {}
+  threading_fcontext(sprockit::sim_parameters* params) {}
 
-  threading_interface* copy(sprockit::sim_parameters* params) override {
-    return new threading_fcontext(params);
+  threading_interface* copy() const override {
+    //parameters never actually used
+    return new threading_fcontext(nullptr);
   }
 
   void init_context() override {}
@@ -57,9 +56,7 @@ class threading_fcontext : public threading_interface
       void (*func)(void*), void *args,
       void* globals_storage,
       threading_interface* from) override {
-
     thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
-
     start_context(this, func, args, stack, sz);
   }
 

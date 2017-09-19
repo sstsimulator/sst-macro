@@ -57,15 +57,14 @@ class threading_pth : public threading_interface
   FactoryRegister("pth", threading_interface, threading_pth)
 
   /** nothing */
-  threading_pth(sprockit::sim_parameters* params) :
-    threading_interface(params)
+  threading_pth(sprockit::sim_parameters* params)
   {
   }
 
   virtual ~threading_pth() {}
 
-  threading_interface* copy(sprockit::sim_parameters* params) override {
-    return new threading_pth(params);
+  threading_interface* copy() const override {
+    return new threading_pth(nullptr);
   }
 
   void init_context() override;

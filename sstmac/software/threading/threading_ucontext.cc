@@ -82,6 +82,7 @@ threading_ucontext::start_context(int physical_thread_id,
         (*)()) (context_springboard), 4, funcp.fpair.a, funcp.fpair.b,
         voidp.vpair.a, voidp.vpair.b);
 
+  stack_ = stack;
   swap_context(from, this);
 }
 

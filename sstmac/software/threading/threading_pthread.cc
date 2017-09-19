@@ -77,8 +77,7 @@ threading_pthread::wait_signal(threadcontext_t* context)
   context->waiting = true;
 }
 
-threading_pthread::threading_pthread(sprockit::sim_parameters* params) :
-  threading_interface(params)
+threading_pthread::threading_pthread(sprockit::sim_parameters* params)
 {
   static bool inited = false;
   if (!inited){
