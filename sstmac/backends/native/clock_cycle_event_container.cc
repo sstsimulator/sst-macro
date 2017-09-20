@@ -149,20 +149,23 @@ clock_cycle_event_map::run()
 
   timestamp lower_bound;
   int num_loops_left = num_profile_loops_;
-  if (num_loops_left){
+  if (num_loops_left && rt_->me() == 0){
     printf("Running %d profile loops\n", num_loops_left);
     fflush(stdout);
   }
   if (lookahead_.ticks() == 0){
     sprockit::abort("Zero-latency link - no lookahaed, cannot run in parallel");
   }
+  uint64_t epoch = 0;
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
     timestamp min_time = run_events(horizon);
     lower_bound = receive_incoming_events(min_time);
     if (num_loops_left) --num_loops_left;
+    ++epoch;
   }
   compute_final_time(now_);
+  if (rt_->me() == 0) printf("Ran %lu epochs on MPI parallel\n", epoch);
 }
 
 void

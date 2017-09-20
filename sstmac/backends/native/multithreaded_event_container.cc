@@ -240,7 +240,7 @@ multithreaded_event_container::run_work()
   timestamp lower_bound;
   uint64_t epoch = 0;
   int num_loops_left = num_profile_loops_;
-  if (num_loops_left){
+  if (num_loops_left && rt_->me() == 0){
     printf("Running %d profile loops\n", num_loops_left); 
     fflush(stdout);
   }
@@ -273,6 +273,8 @@ multithreaded_event_container::run_work()
 
   if (child1) add_int32_atomic(terminate_sentinel, child1->delta_t);
   if (child2) add_int32_atomic(terminate_sentinel, child2->delta_t);
+
+  if (rt_->me() == 0) printf("Ran %lu epochs in multithreading run\n", epoch);
 
 }
 
