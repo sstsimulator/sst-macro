@@ -64,10 +64,12 @@ RegisterKeywords(
   "cpu_affinity",
 );
 
+static int busy_loop_count = 100000;
+
 static inline void busy_loop(){
   //500 seems to be just about right
   //checking back often enough - but without thrashing the variable
-  for (int i=0; i < 400; ++i){
+  for (int i=0; i < busy_loop_count; ++i){
     __asm__ __volatile__("");
   }
 }
@@ -85,7 +87,6 @@ namespace native {
 
 static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time)
 {
-
   bool done = atomic_is_zero(q->delta_t);
   while (!done){
     busy_loop(); //don't slam the variable too hard
@@ -168,6 +169,8 @@ multithreaded_event_container::multithreaded_event_container(
     params->get_vector_param("cpu_affinity", cpu_affinity_);
     //it would be nice to check that size of cpu_offsets matches task per node
   }
+
+  busy_loop_count = params->get_optional_int_param("busy_loop_count", busy_loop_count);
 
   num_subthreads_ = rt->nworker_thread();
   master_thread_ = rt->has_master_thread();

@@ -21,10 +21,6 @@ class handler_event_queue_entry :
     handler_(hand),
     event_queue_entry(hand->component_id(), src_comp_id)
   {
-    int thread = sprockit::current_thread_id();
-    if (thread < 0 || thread > 3){
-      ::abort();
-    }
   }
 
   void execute() override {

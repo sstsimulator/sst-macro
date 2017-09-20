@@ -52,6 +52,7 @@ nobase_library_include_HEADERS = \
   ipc_event.h \
   event_callback.h \
   event_handler.h \
+	handler_event_queue_entry.h \
   event_handler_fwd.h \
   event_location.h \
   event_scheduler.h \

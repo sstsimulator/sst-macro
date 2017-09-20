@@ -50,11 +50,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
 #include <sstmac/hardware/pisces/pisces_sender.h>
 #include <sstmac/hardware/pisces/pisces_packetizer.h>
+#include <sprockit/thread_safe_new.h>
 
 namespace sstmac {
 namespace hw {
 
-class memory_message : public message
+class memory_message : 
+  public message,
+  public sprockit::thread_safe_new<memory_message>
 {
   NotSerializable(memory_message)
 

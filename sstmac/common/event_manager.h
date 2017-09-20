@@ -56,6 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
+#include <sprockit/allocator.h>
 
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
@@ -66,6 +67,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/threading/threading_interface_fwd.h>
 
 #include <vector>
+#include <cstdint>
+#include <cstddef>
 
 
 DeclareDebugSlot(event_manager);
@@ -280,65 +283,6 @@ class event_manager
   timestamp min_ipc_time_;
   int thread_id_;
 
-  template <class T>
-  class my_allocator
-  {
-  public:
-    typedef size_t    size_type;
-    typedef ptrdiff_t difference_type;
-    typedef T*        pointer;
-    typedef const T*  const_pointer;
-    typedef T&        reference;
-    typedef const T&  const_reference;
-    typedef T         value_type;
-    size_t  unit_size;
-    std::vector<T*> storage;
-
-    my_allocator() {
-      init();
-    }
-
-    my_allocator(const my_allocator&) {
-      init();
-    }
-
-    void init(){
-      size_t rem = sizeof(T) % 32;
-      if (rem){
-        unit_size = sizeof(T) + 32 - rem;
-      } else {
-        unit_size = sizeof(T);
-      }
-    }
-
-    pointer allocate(size_type n, const void * = 0) {
-      //ignore hints
-      static int constexpr increment = 1024;
-      if (n > 1){
-        return (T*) new char[unit_size*n];
-      } else {
-        if (storage.empty()){
-          char* ptr = new char[unit_size*increment];
-          storage.resize(increment);
-          for (int i=0; i < increment; ++i, ptr += unit_size)
-            storage[i] = (T*) ptr;
-        }
-        T* ret = storage.back();
-        storage.pop_back();
-        return ret;
-      }
-    }
-
-    void deallocate(void* p, size_type n) {
-      if (n > 1){
-        char* arr = (char*) p;
-        delete[] arr;
-      } else {
-        storage.push_back((T*)p);
-      }
-    }
-
-  };
 
   struct event_compare {
     bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
@@ -352,7 +296,8 @@ class event_manager
       }
     }
   };
-  typedef std::set<event_queue_entry*, event_compare, my_allocator<event_queue_entry*>> queue_t;
+  typedef std::set<event_queue_entry*, event_compare, 
+                   sprockit::allocator<event_queue_entry*>> queue_t;
   queue_t event_queue_;
 
 
