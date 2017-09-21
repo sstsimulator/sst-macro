@@ -297,6 +297,11 @@ run(opts& oo,
 }
 
 void
+run_benchmark(sprockit::sim_parameters* params, const std::string& benchmark){
+
+}
+
+void
 try_main(sprockit::sim_parameters* params,
          int argc, char **argv, bool params_only)
 {
@@ -314,8 +319,15 @@ try_main(sprockit::sim_parameters* params,
   opts oo;
   sim_stats stats;
   sstmac::init_opts(oo, argc, argv);
+
   bool parallel = rt && rt->nproc() > 1;
   sstmac::init_params(rt, oo, params, parallel);
+
+  if (!oo.benchmark.empty()){
+    benchmark* bm = benchmark::factory::get_value(oo.benchmark, params);
+    bm->run();
+    return;
+  }
 
   //do some cleanup and processing of params
   sstmac::remap_params(params);
