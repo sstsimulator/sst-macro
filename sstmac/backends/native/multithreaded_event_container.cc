@@ -64,16 +64,33 @@ RegisterKeywords(
   "cpu_affinity",
 );
 
+static int busy_loop_count = 1000000;
+
+static inline void busy_loop(){
+  //500 seems to be just about right
+  //checking back often enough - but without thrashing the variable
+  for (int i=0; i < busy_loop_count; ++i){
+    __asm__ __volatile__("");
+  }
+}
+
+int num_busy_spins = 0;
+
 static int32_t terminate_sentinel = std::numeric_limits<int32_t>::max();
 
 namespace sstmac {
 namespace native {
 
+#define atomic_is_zero(x) \
+  (add_int32_atomic(int32_t(0), x) == 0)
+  //bool done = cas_int32(0, 0, x);
+
 static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time)
 {
-  bool done = cas_int32(0, 0, q->delta_t);
+  bool done = atomic_is_zero(q->delta_t);
   while (!done){
-    done = cas_int32(0, 0, q->delta_t);
+    busy_loop(); //don't slam the variable too hard
+    done = atomic_is_zero(q->delta_t);
   }
   min_time = std::min(min_time, q->min_time);
 }
@@ -85,7 +102,7 @@ pthread_run_worker_thread(void* args)
   timestamp horizon;
   uint64_t epoch = 0;
   while(1){
-    bool stillZero = cas_int32(0, 0, q->delta_t);
+    bool stillZero = atomic_is_zero(q->delta_t);
     if (!stillZero){
       int32_t delta_t = *q->delta_t;
       if (q->child1) add_int32_atomic(delta_t, q->child1->delta_t);
@@ -100,7 +117,9 @@ pthread_run_worker_thread(void* args)
       }
       if (q->child1) wait_on_child_completion(q->child1, q->min_time);
       if (q->child2) wait_on_child_completion(q->child2, q->min_time);
-      cas_int32(delta_t, 0, q->delta_t);
+      add_int32_atomic(-delta_t, q->delta_t);
+    } else {
+      busy_loop(); //don't slam the variable too hard
     }
   }
   return;
@@ -150,6 +169,8 @@ multithreaded_event_container::multithreaded_event_container(
     params->get_vector_param("cpu_affinity", cpu_affinity_);
     //it would be nice to check that size of cpu_offsets matches task per node
   }
+
+  busy_loop_count = params->get_optional_int_param("busy_loop_count", busy_loop_count);
 
   num_subthreads_ = rt->nworker_thread();
   master_thread_ = rt->has_master_thread();
@@ -227,7 +248,7 @@ multithreaded_event_container::run_work()
   timestamp lower_bound;
   uint64_t epoch = 0;
   int num_loops_left = num_profile_loops_;
-  if (num_loops_left){
+  if (num_loops_left && rt_->me() == 0){
     printf("Running %d profile loops\n", num_loops_left); 
     fflush(stdout);
   }
@@ -265,6 +286,8 @@ multithreaded_event_container::run_work()
 
   if (child1) add_int32_atomic(terminate_sentinel, child1->delta_t);
   if (child2) add_int32_atomic(terminate_sentinel, child2->delta_t);
+
+  if (rt_->me() == 0) printf("Ran %lu epochs in multithreading run\n", epoch);
 
 }
 

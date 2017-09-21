@@ -42,6 +42,7 @@ nodist_library_include_HEADERS = spkt_config.h
 
 nobase_library_include_HEADERS = \
   basic_string_tokenizer.h \
+	allocator.h \
   debug.h \
   delete.h \
   errors.h \

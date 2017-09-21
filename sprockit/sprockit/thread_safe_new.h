@@ -60,7 +60,7 @@ class thread_safe_new {
   }
 
  private:
-#define MAX_NUM_NEW_SAFE_THREADS 64
+#define MAX_NUM_NEW_SAFE_THREADS 128
   static std::vector<void*> to_allocate_[MAX_NUM_NEW_SAFE_THREADS];
   static int constexpr increment = 512;
 

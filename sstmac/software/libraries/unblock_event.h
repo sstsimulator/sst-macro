@@ -60,12 +60,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/key.h>
+#include <sprockit/thread_safe_new.h>
 
 
 namespace sstmac {
 namespace sw {
 
-class unblock_event : public event_queue_entry
+class unblock_event : 
+  public event_queue_entry,
+  public sprockit::thread_safe_new<unblock_event>
 {
 
  public:

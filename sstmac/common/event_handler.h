@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/event_handler_fwd.h>
 #include <sprockit/printable.h>
+#include <tuple>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
