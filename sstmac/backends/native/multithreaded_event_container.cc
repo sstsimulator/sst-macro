@@ -180,6 +180,14 @@ multithreaded_event_container::multithreaded_event_container(
   }
 }
 
+static inline uint64_t rdstc(void)
+{
+  uint32_t hi, lo;
+  __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+  return uint64_t( (uint64_t)lo | (uint64_t)hi<<32);
+}
+
+
 void
 multithreaded_event_container::run_work()
 {
@@ -241,9 +249,14 @@ multithreaded_event_container::run_work()
       min_time = run_events(horizon);
     }
 
+    auto t_start = rdstc();
+
     if (child1) wait_on_child_completion(child1, min_time);
     if (child2) wait_on_child_completion(child2, min_time);
     ++epoch;
+
+    auto t_stop = rdstc();
+    printf("Barrier took %llu\n", t_stop - t_start);
 
     lower_bound = receive_incoming_events(min_time);
     last_horizon = horizon;

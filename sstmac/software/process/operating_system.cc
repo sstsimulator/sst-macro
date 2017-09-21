@@ -258,11 +258,9 @@ operating_system::delete_statics()
 void
 operating_system::sleep(timestamp t)
 {
-  //sw::key* k = sw::key::construct();
   sw::unblock_event* ev = new sw::unblock_event(this, active_thread_);
   send_delayed_self_event_queue(t, ev);
   block();
-  //delete k;
 }
 
 void
