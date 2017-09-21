@@ -73,6 +73,8 @@ HPCG_Init(int * argc_p, char ** *argv_p, HPCG_Params & params) {
   time_t rawtime;
   tm * ptm;
 
+  int x; int* stackPtr = &x;
+
   // Initialize iparams
   for (i = 0; i < 4; ++i) iparams[i] = 0;
 

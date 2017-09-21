@@ -76,6 +76,9 @@ class allocator
 
 };
 
+#if 0
+template <class T> using thread_safe_allocator = std::allocator<T>;
+#else
 template <class T>
 class thread_safe_allocator
 {
@@ -112,6 +115,7 @@ class thread_safe_allocator
   }
 
 };
+#endif
 
 }
 

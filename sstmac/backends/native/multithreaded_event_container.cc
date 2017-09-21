@@ -277,7 +277,7 @@ multithreaded_event_container::run_work()
     ++epoch;
 
     auto t_stop = rdstc();
-    printf("Barrier took %llu\n", t_stop - t_start);
+    //printf("Barrier took %llu\n", t_stop - t_start);
 
     lower_bound = receive_incoming_events(min_time);
     last_horizon = horizon;

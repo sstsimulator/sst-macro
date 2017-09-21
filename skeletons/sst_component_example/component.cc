@@ -1,5 +1,6 @@
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/sst_event.h>
 
 
 using namespace sstmac;

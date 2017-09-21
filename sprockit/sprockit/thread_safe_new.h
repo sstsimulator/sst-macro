@@ -24,6 +24,7 @@ static int inline current_thread_id() {
 template <class T>
 class thread_safe_new {
  public:
+#if 1
   static void* operator new(size_t sz){
     if (sz != sizeof(T)){
       spkt_abort_printf("allocating mismatched sizes: %d != %d",
@@ -44,7 +45,7 @@ class thread_safe_new {
     auto& vec = to_allocate_[thread];
     vec.push_back(ptr);
   }
-
+#endif
   static void grow(std::vector<void*>& vec){
     size_t unitSize = sizeof(T);
     if (unitSize % 32 != 0){
