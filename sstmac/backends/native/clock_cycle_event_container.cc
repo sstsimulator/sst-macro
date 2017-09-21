@@ -159,9 +159,18 @@ clock_cycle_event_map::run()
   uint64_t epoch = 0;
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
+    auto t_start = rdstc();
     timestamp min_time = run_events(horizon);
+    auto t_run = rdstc();
     lower_bound = receive_incoming_events(min_time);
-    if (num_loops_left) --num_loops_left;
+    auto t_stop = rdstc();
+    if (num_loops_left > 0){
+      if (rt_->me() == 0){
+        printf("Barrier took %llu, run took %llu - lower bound = %llu\n", 
+             t_stop - t_run, t_run - t_start, lower_bound.ticks());
+      }
+      --num_loops_left;
+    }
     ++epoch;
   }
   compute_final_time(now_);

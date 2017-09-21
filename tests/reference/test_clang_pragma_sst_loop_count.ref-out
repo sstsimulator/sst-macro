@@ -3,7 +3,7 @@ struct loop {
  int end;
 };
 
-extern loop bounds[];extern int sstmac_global_stacksize; extern int __offset_bounds; static inline struct loop** get_bounds(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset_bounds; return (((struct loop**)((void*)offsetPtr))); }  
+extern loop bounds[];extern int sstmac_global_stacksize; extern int __offset_bounds; static inline struct loop** get_bounds(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_bounds;return (((struct loop**)((void*)offsetPtr))); }  
 
 int fxn()
 {
@@ -11,7 +11,7 @@ int fxn()
   double* x = new double[10];
   int* idx = new int[5];
   int loopMax = 5;
- { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=(((loopMax)-(0)));  intops += tripCount0*1;{  uint64_t tripCount1=tripCount0*(loopMax/2);  flops += tripCount1*1; readBytes += tripCount1*36; writeBytes += tripCount1*12; intops += tripCount1*16;}}sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/ }
+  { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=(((loopMax)-(0)));  intops += tripCount0*1;{  uint64_t tripCount1=tripCount0*(loopMax/2);  flops += tripCount1*1; readBytes += tripCount1*36; writeBytes += tripCount1*12; intops += tripCount1*16;}}sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/ }
 
 
 

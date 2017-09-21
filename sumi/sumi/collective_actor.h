@@ -469,7 +469,7 @@ class dag_collective_actor :
   typedef std::multimap<uint32_t, action*, std::less<uint32_t>,
                    alloc<uint32_t,action*>> pending_map;
   typedef std::multimap<uint32_t, collective_work_message*, std::less<uint32_t>,
-                   alloc<uint32_t,collective_work_message**>> pending_msg_map;
+                   alloc<uint32_t,collective_work_message*>> pending_msg_map;
 
  protected:
   dag_collective_actor() :

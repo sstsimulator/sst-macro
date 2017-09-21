@@ -170,11 +170,11 @@ class pisces_memory_model :
   void start(int channel, memory_message* msg, callback* cb);
 
  private:
-  //template <class T, class U> using pair_alc = sprockit::thread_safe_allocator<std::pair<T,U>>;
-  template <class T, class U> using pair_alc = std::allocator<std::pair<T,U>>;
+  template <class T, class U> using pair_alc = sprockit::thread_safe_allocator<std::pair<T,U>>;
+  //template <class T, class U> using pair_alc = std::allocator<std::pair<T,U>>;
 
   std::map<message*, callback*, std::less<message*>,
-           pair_alc<message*,callback*>> pending_requests_;
+           pair_alc<message* const,callback*>> pending_requests_;
   std::list<std::pair<memory_message*,callback*>,
            pair_alc<memory_message*,callback*>> stalled_requests_;
   pisces_memory_packetizer* mem_packetizer_;

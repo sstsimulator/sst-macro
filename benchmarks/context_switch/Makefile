@@ -3,7 +3,7 @@ SRC := main.cc
 
 CXX :=   libsst++
 CC :=    libsstcc
-CXXFLAGS := -fPIC
+CXXFLAGS := -fPIC -O3
 CPPFLAGS := -I. 
 
 LIBDIR :=  

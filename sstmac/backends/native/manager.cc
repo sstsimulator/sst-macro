@@ -172,8 +172,16 @@ manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
   interconnect_(nullptr),
   rt_(rt)
 {
-  event_manager_ = event_manager::factory::get_optional_param(
-                       "event_manager", SSTMAC_DEFAULT_EVENT_MANAGER_STRING, params, rt_);
+  std::string event_man = "map";
+  if (rt_->nthread() > 1){
+#if !SSTMAC_USE_MULTITHREAD
+    spkt_abort_printf("did not compile with multithread support: cannot use nthread > 1");
+    event_man = "multithread";
+#endif
+  } else if (rt_->nproc() > 1){
+    event_man = "clock_cycle_parallel";
+  }
+  event_manager_ = event_manager::factory::get_optional_param("event_manager", event_man, params, rt_);
   event_manager::global = event_manager_;
 
   if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){

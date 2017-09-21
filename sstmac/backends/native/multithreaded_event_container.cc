@@ -64,7 +64,7 @@ RegisterKeywords(
   "cpu_affinity",
 );
 
-static int busy_loop_count = 1000000;
+static int busy_loop_count = 10000;
 
 static inline void busy_loop(){
   //500 seems to be just about right
@@ -82,7 +82,8 @@ namespace sstmac {
 namespace native {
 
 #define atomic_is_zero(x) \
-  (add_int32_atomic(int32_t(0), x) == 0)
+  *x == 0
+  //(add_int32_atomic(int32_t(0), x) == 0)
   //bool done = cas_int32(0, 0, x);
 
 static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time)
@@ -201,14 +202,6 @@ multithreaded_event_container::multithreaded_event_container(
   }
 }
 
-static inline uint64_t rdstc(void)
-{
-  uint32_t hi, lo;
-  __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-  return uint64_t( (uint64_t)lo | (uint64_t)hi<<32);
-}
-
-
 void
 multithreaded_event_container::run_work()
 {
@@ -248,9 +241,11 @@ multithreaded_event_container::run_work()
   timestamp lower_bound;
   uint64_t epoch = 0;
   int num_loops_left = num_profile_loops_;
-  if (num_loops_left && rt_->me() == 0){
-    printf("Running %d profile loops\n", num_loops_left); 
-    fflush(stdout);
+  if (num_loops_left){
+    if (rt_->me() == 0){
+      printf("Running %d profile loops\n", num_loops_left); 
+      fflush(stdout);
+    }
   }
   if (lookahead_.ticks() == 0){
     sprockit::abort("Zero-latency link - no lookahaed, cannot run in parallel");
@@ -258,30 +253,41 @@ multithreaded_event_container::run_work()
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
     uint64_t delta_t = horizon.ticks() - last_horizon.ticks();
-    if (num_loops_left == 0 && delta_t > std::numeric_limits<int32_t>::max()){
-      spkt_abort_printf("delta_t %lu too large: lower timestamp resolution", delta_t);
-    }
     int32_t delta_t_32 = delta_t;
+    if (num_loops_left != 0){
+      if (delta_t_32 == 0){
+        delta_t_32 = 1;
+      }
+    } else if (delta_t > std::numeric_limits<int32_t>::max()){
+        spkt_abort_printf("delta_t %lu too large: lower timestamp resolution", delta_t);
+    }
+
     if (child1) add_int32_atomic(delta_t_32, child1->delta_t);
     if (child2) add_int32_atomic(delta_t_32, child2->delta_t);
 
     timestamp min_time = no_events_left_time;
+    auto t_start = rdstc();
     if (!master_thread_){
       min_time = run_events(horizon);
     }
 
-    auto t_start = rdstc();
+    auto t_run = rdstc();
 
     if (child1) wait_on_child_completion(child1, min_time);
     if (child2) wait_on_child_completion(child2, min_time);
     ++epoch;
 
     auto t_stop = rdstc();
-    //printf("Barrier took %llu\n", t_stop - t_start);
 
     lower_bound = receive_incoming_events(min_time);
+    if (num_loops_left > 0){
+      if (rt_->me() == 0){
+        printf("Barrier took %llu, run took %llu - lower bound = %llu\n", 
+             t_stop - t_run, t_run - t_start, lower_bound.ticks());
+      }
+      --num_loops_left;
+    }
     last_horizon = horizon;
-    if (num_loops_left) --num_loops_left;
   }
 
   if (child1) add_int32_atomic(terminate_sentinel, child1->delta_t);
