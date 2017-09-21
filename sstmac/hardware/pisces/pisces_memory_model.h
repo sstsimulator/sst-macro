@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_sender.h>
 #include <sstmac/hardware/pisces/pisces_packetizer.h>
 #include <sprockit/thread_safe_new.h>
+#include <sprockit/allocator.h>
 
 namespace sstmac {
 namespace hw {
@@ -169,10 +170,12 @@ class pisces_memory_model :
   void start(int channel, memory_message* msg, callback* cb);
 
  private:
-  std::map<message*, callback*> pending_requests_;
-  std::list<std::pair<memory_message*,callback*>> stalled_requests_;
+  std::map<message*, callback*, std::less<message*>,
+           sprockit::thread_safe_allocator<std::pair<message*,callback*>>> pending_requests_;
+  std::list<std::pair<memory_message*,callback*>,
+           sprockit::thread_safe_allocator<std::pair<message*,callback*>>> stalled_requests_;
   pisces_memory_packetizer* mem_packetizer_;
-  std::list<int> channels_available_;
+  std::list<int, sprockit::thread_safe_allocator<int>> channels_available_;
   int nchannels_;
 
 };

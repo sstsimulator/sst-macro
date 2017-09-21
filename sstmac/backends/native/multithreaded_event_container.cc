@@ -64,7 +64,7 @@ RegisterKeywords(
   "cpu_affinity",
 );
 
-static int busy_loop_count = 100000;
+static int busy_loop_count = 1000000;
 
 static inline void busy_loop(){
   //500 seems to be just about right

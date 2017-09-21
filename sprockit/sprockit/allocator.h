@@ -48,7 +48,7 @@ class allocator
 
   pointer allocate(size_type n, const void * = 0) {
     //ignore hints
-    static int constexpr increment = 16;
+    static int constexpr increment = 1024;
     if (n > 1){
       ::abort();
       return (T*) new char[unit_size*n];
@@ -92,6 +92,7 @@ class thread_safe_allocator
   struct rebind { typedef thread_safe_allocator<U> other; };
 
   void destroy(pointer p) { p->~T(); }
+  void construct(pointer p, const T& val){ new ((T*) p) T(val); }
 
   pointer allocate(size_type n, const void * = 0) {
     //ignore hints

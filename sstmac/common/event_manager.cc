@@ -128,7 +128,7 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
 timestamp
 event_manager::run_events(timestamp event_horizon)
 {
-  register_pending();
+  //register_pending();
   min_ipc_time_ = no_events_left_time;
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
