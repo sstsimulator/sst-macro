@@ -27,7 +27,8 @@ testexec_SOURCES = exec.cc
 testexec_LDADD = \
   $(top_builddir)/sprockit/sprockit/libsprockit.la \
   $(top_builddir)/sstmac/install/libsstmac.la \
-  $(top_builddir)/sstmac/main/libsstmac_main.la 
+  $(top_builddir)/sstmac/main/libsstmac_main.la \
+  $(FCONTEXT_LIBS)
 
 
 if EXTERNAL_BOOST

@@ -44,7 +44,8 @@ test_unit_test_SOURCES = \
 TEST_LDFLAGS = \
   $(top_builddir)/sstmac/install/libsstmac.la \
   $(top_builddir)/sprockit/sprockit/libsprockit.la \
-  util/libsstmac_unit_test_util.la
+  util/libsstmac_unit_test_util.la \
+  $(FCONTEXT_LIBS)
 
 if EXTERNAL_BOOST
   TEST_LDFLAGS += $(BOOST_LDFLAGS)

@@ -198,7 +198,9 @@ fi
 
 if test "$enable_fcontext" != "no"; then
   SAVE_LDFLAGS=$LDFLAGS
+  SAVE_LIBS=$LIBS
   SAVE_CPPFLAGS=$CPPFLAGS
+  FCONTEXT_LIBS=
   FCONTEXT_LDFLAGS=
   FCONTEXT_CPPFLAGS=
   FCONTEXT_LIBDIR=
@@ -219,10 +221,11 @@ if test "$enable_fcontext" != "no"; then
     [
       AC_DEFINE(HAVE_FCONTEXT)
       AM_CONDITIONAL(HAVE_FCONTEXT, true)
-      FCONTEXT_LDFLAGS="$FCONTEXT_LDFLAGS -lboost_context"
-      LDFLAGS="$LDFLAGS -lboost_context"
+      FCONTEXT_LIBS=-lboost_context
+      LIBS="$LIBS -lboost_context"
       AC_SUBST(FCONTEXT_CPPFLAGS)
       AC_SUBST(FCONTEXT_LDFLAGS)
+      AC_SUBST(FCONTEXT_LIBS)
       enable_fcontext="yes"
     ],
     [
@@ -268,6 +271,7 @@ if test "$enable_fcontext" != "no"; then
       fi
     ]
   )
+  LIBS=$SAVE_LIBS
   LDFLAGS=$SAVE_LDFLAGS
   CPPFLAGS=$SAVE_CPPFLAGS
 else

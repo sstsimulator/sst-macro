@@ -52,14 +52,15 @@ sstmac_top_info_SOURCES = src/top_info.cc
 exe_LDADD = \
     ../sprockit/sprockit/libsprockit.la \
     ../sstmac/main/libsstmac_main.la \
-    ../sstmac/install/libsstmac.la
+    ../sstmac/install/libsstmac.la \
+    $(FCONTEXT_LIBS)
 
 if EXTERNAL_BOOST
   exe_LDADD += $(BOOST_LDFLAGS)
 endif
 
 
-sstmac_LDADD = $(exe_LDADD) -ldl
+sstmac_LDADD = $(exe_LDADD) -ldl 
 sstmac_top_info_LDADD = $(exe_LDADD)
 endif
 

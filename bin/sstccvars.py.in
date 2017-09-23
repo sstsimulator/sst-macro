@@ -3,6 +3,9 @@ sstLdFlags = [
 '-L@libdir@',
 ]
 
+fcontextLibDir=@FCONTEXT_LIBDIR@
+fcontextLib='-lboost_context'
+
 clangCppFlagsStr="@CLANG_CPPFLAGS@"
 clangLdFlagsStr="@CLANG_LDFLAGS@"
 clangLibtoolingCxxFlagsStr="@CLANG_LIBTOOLING_CXX_FLAGS@"
