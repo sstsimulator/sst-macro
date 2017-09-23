@@ -93,7 +93,7 @@ clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
   auto qev = new handler_event_queue_entry(iev->ev, dst_handler, iev->src);
   qev->set_seqnum(iev->seqnum);
   qev->set_time(iev->t);
-  schedule(qev);
+  comp->event_mgr()->schedule(qev);
 }
 
 timestamp
@@ -113,21 +113,16 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
   for (int i=0; i < num_recvs; ++i){
     auto& buf = rt_->recv_buffer(i);
     serializer ser;
-    size_t bytesRemaining = buf.bytesUsed();
+    size_t bytesRemaining = buf.bytesFilled();
     size_t bytesUnpacked = 0;
     char* serBuf = buf.buffer();
     ser.start_unpacking(serBuf, bytesRemaining);
     while (bytesRemaining > 0){
       event_debug("unpacking event starting at offset %lu of %lu",
-                  bytesUnpacked, buf.bytesUsed());
+                  bytesUnpacked, buf.bytesFilled());
       ipc_event_t iev;
       parallel_runtime::run_serialize(ser, &iev);
-      if (nthr == 1){
-        event_debug("unpacked event %s", sprockit::to_string(iev.ev).c_str());
-        schedule_incoming(&iev);
-      } else {
-        spkt_abort_printf("multithread not compatible with MPI currently");
-      }
+      schedule_incoming(&iev);
       size_t size = ser.unpacker().size();
       align64(size);
       bytesRemaining -= size;
@@ -174,7 +169,7 @@ clock_cycle_event_map::run()
     ++epoch;
   }
   compute_final_time(now_);
-  if (rt_->me() == 0) printf("Ran %lu epochs on MPI parallel\n", epoch);
+  if (rt_->me() == 0) printf("Ran %" PRIu64 "epochs on MPI parallel\n", epoch);
 }
 
 void

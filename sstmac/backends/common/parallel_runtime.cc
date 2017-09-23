@@ -54,6 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstream>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/thread_safe.h>
+#include <sprockit/printable.h>
 
 RegisterDebugSlot(parallel);
 
@@ -74,10 +75,10 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
 {
   align64(size);
   uint64_t newOffset = add_int64_atomic(size, &bytesAllocated);
-  if (newOffset > allocSize){
+  if (newOffset >= allocSize){
     size_t prevSize = newOffset - size;
     if (prevSize < allocSize){ //this was the size before we overran
-      totalValidSize = prevSize;
+      totalFilledSize = prevSize;
     }
     //oops, we blew out memory
     lock();
@@ -102,8 +103,8 @@ parallel_runtime::comm_buffer::realloc(size_t size, bool copyOld)
   align64(storage);
   bytesAllocated = 0;
   if (copyOld){
-    ::memcpy(storage, oldStorage, bytesUsed());
-    bytesAllocated = bytesUsed();
+    ::memcpy(storage, oldStorage, bytesFilled());
+    bytesAllocated = bytesFilled();
     align64(bytesAllocated);
   }
   if (oldAlloc) delete[] oldAlloc;
@@ -279,12 +280,13 @@ void parallel_runtime::send_event(ipc_event_t* iev)
   ser & iev->ev;
 
   size_t buffer_space_needed = overhead + ser.size();
-  debug_printf(sprockit::dbg::parallel, "sending event of size %lu + %lu = %lu to lp %d at t=%10.6e: %s",
-               overhead, ser.size(), buffer_space_needed, iev->rank, iev->t.sec(),
-               sprockit::to_string(iev->ev).c_str());
   comm_buffer& buff = send_buffers_[iev->rank];
   char* ptr = buff.allocateSpace(buffer_space_needed, iev);
   if (ptr){
+    size_t offset = buff.bytesFilled();
+    debug_printf(sprockit::dbg::parallel, "sending event of size %lu + %lu = %lu at offset %lu to LP %d at t=%10.6e: %s",
+                 overhead, ser.size(), buffer_space_needed, offset, iev->rank, iev->t.sec(),
+                 sprockit::to_string(iev->ev).c_str());
     ser.start_packing(ptr, buffer_space_needed);
     run_serialize(ser, iev);
   }

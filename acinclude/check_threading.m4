@@ -222,7 +222,6 @@ if test "$enable_fcontext" != "no"; then
       AC_DEFINE(HAVE_FCONTEXT)
       AM_CONDITIONAL(HAVE_FCONTEXT, true)
       FCONTEXT_LIBS=-lboost_context
-      LIBS="$LIBS -lboost_context"
       AC_SUBST(FCONTEXT_CPPFLAGS)
       AC_SUBST(FCONTEXT_LDFLAGS)
       AC_SUBST(FCONTEXT_LIBS)
@@ -233,9 +232,17 @@ if test "$enable_fcontext" != "no"; then
       enable_fcontext="yes"
       if test "$user_with_pth" = yes; then
         AC_MSG_ERROR([fcontext tests failed])
+      else 
+        FCONTEXT_CPPFLAGS=""
+        FCONTEXT_LDFLAGS=""
+        FCONTEXT_LIBS=""
+        AC_SUBST(FCONTEXT_CPPFLAGS)
+        AC_SUBST(FCONTEXT_LDFLAGS)
+        AC_SUBST(FCONTEXT_LIBS)
       fi
     ]
   )
+  LIBS="$LIBS $FCONTEXT_LIBS"
   AC_LINK_IFELSE(
     [AC_LANG_PROGRAM(
       [
@@ -277,6 +284,12 @@ if test "$enable_fcontext" != "no"; then
 else
 AM_CONDITIONAL(HAVE_FCONTEXT, false)
 AM_CONDITIONAL(HAVE_FCONTEXT_LIBDIR, false)
+FCONTEXT_CPPFLAGS=""
+FCONTEXT_LDFLAGS=""
+FCONTEXT_LIBS=""
+AC_SUBST(FCONTEXT_CPPFLAGS)
+AC_SUBST(FCONTEXT_LDFLAGS)
+AC_SUBST(FCONTEXT_LIBS)
 fi
 
 

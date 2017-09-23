@@ -43,9 +43,11 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/backends/mpi/mpi_runtime.h>
-#include <cstring>
+#include <sstmac/common/sst_event.h>
 #include <sprockit/keyword_registration.h>
+#include <sprockit/printable.h>
 #include <iostream>
+#include <cstring>
 
 RegisterKeywords(
 "mpi_max_num_requests",
@@ -227,10 +229,8 @@ mpi_runtime::send_recv_messages(timestamp vote)
   static int next_payload_tag = 43;
   for (int i=0; i < nproc_; ++i){
     comm_buffer& comm = send_buffers_[i];
-    int size = comm.bytesUsed();
-    votes_[i].time_vote = vote.ticks_int64();
-    votes_[i].max_bytes = size;
-    if (size){
+    int commSize = comm.totalBytes();
+    if (commSize){
       if (!comm.pending().empty()){
         //ugh... okay
         comm.growToFitPending();
@@ -240,31 +240,33 @@ mpi_runtime::send_recv_messages(timestamp vote)
         char* buf = comm.nextBuffer();
         size_t remainingBytes = comm.pendingBytes;
         serializer ser;
-        ser.start_packing(buf, remainingBytes);
         for (const ipc_event_t& iev : comm.pending()){
+          ser.start_packing(buf, remainingBytes);
           //const cast is fine... we're not going to modify
           ipc_event_t* ptr = const_cast<ipc_event_t*>(&iev);
           run_serialize(ser, ptr);
-          size_t size = ser.packer().size();
-          align64(size);
-          debug_printf(sprockit::dbg::parallel,
-                       "LP %d first pending message is %d aligned bytes to LP %d",
-                       me_, size, i);
-          buf += size; //move the buffer on 64-byte aligned increments
-          remainingBytes -= size;
-          ser.start_packing(buf, remainingBytes);
+          size_t bufSize = ser.packer().size();
+          align64(bufSize);
+          debug_printf(sprockit::dbg::parallel, "pennding event of size %lu to LP %d at t=%10.6e: %s",
+                       bufSize, iev.rank, iev.t.sec(),
+                       sprockit::to_string(iev.ev).c_str());
+          buf += bufSize; //move the buffer on 64-byte aligned increments
+          remainingBytes -= bufSize;
         }
       }
 
       votes_[i].num_sent = 1;
-      debug_printf(sprockit::dbg::parallel, "LP %d sending %d bytes to lp %d on epoch %d",
-                   me_, size, i, epoch_);
-      MPI_Isend(comm.buffer(), size, MPI_BYTE, i,
+      debug_printf(sprockit::dbg::parallel, "LP %d sending %d bytes to LP %d on epoch %d",
+                   me_, commSize, i, epoch_);
+      MPI_Isend(comm.buffer(), commSize, MPI_BYTE, i,
                 payload_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
       sends_done_[num_sends_done_++] = i;
     } else {
       votes_[i].num_sent = 0;
     }
+    votes_[i].time_vote = vote.ticks_int64();
+    //wait to fill this in until we know the size of all pending messages
+    votes_[i].max_bytes = commSize;
   }
 
   int num_pending_sends = reqIdx;
@@ -292,6 +294,8 @@ mpi_runtime::send_recv_messages(timestamp vote)
     auto& comm = recv_buffers_[i];
     MPI_Get_count(&statuses_[i+num_pending_sends], MPI_BYTE, &sizeRecvd);
     comm.shift(sizeRecvd);
+    debug_printf(sprockit::dbg::parallel, "LP %d actually received %lu bytes from sender %d",
+                 me_, sizeRecvd, i);
   }
 
   std::swap(payload_tag, next_payload_tag);

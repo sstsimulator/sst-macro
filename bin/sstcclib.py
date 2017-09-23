@@ -54,6 +54,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   import sys
   from configlib import getstatusoutput
   from sstccvars import sstLdFlags, sstCppFlags
+  from sstccvars import fcontextLibDir, fcontextLib
   from sstccvars import prefix, execPrefix, includeDir, cc, cxx
   from sstccvars import sstCxxFlagsStr, sstCFlagsStr
   from sstccvars import includeDir
@@ -61,6 +62,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   from sstccvars import soFlagsStr
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
+  if fcontextLibDir:
+    sstLdFlags.append("-L%s" % fcontextLibDir)
+    sstLdFlags.append("-Wl,-rpath,%s" % fcontextLibDir)
+  if fcontextLib:
+    sstLdFlags.append(fcontextLib)
 
   def cleanFlag(flag):
     return flag.replace("${includedir}", includeDir).replace("${exec_prefix}", execPrefix).replace("${prefix}",prefix)

@@ -65,7 +65,7 @@ DeclareDebugSlot(parallel);
 template <class T>
 void align64(T& t){
   if (t % 64){
-    t += t + 64 - t%64;
+    t = t + 64 - t%64;
   }
 }
 
@@ -89,7 +89,7 @@ class parallel_runtime :
   struct comm_buffer : public lockable {
     int64_t bytesAllocated;
     int64_t allocSize;
-    int64_t totalValidSize;
+    int64_t totalFilledSize;
     int64_t pendingBytes;
     char* allocation;
     char* storage;
@@ -97,7 +97,7 @@ class parallel_runtime :
     std::vector<ipc_event_t> pending_;
 
     comm_buffer() : storage(nullptr), allocation(nullptr),
-      pendingBytes(0), totalValidSize(0) {}
+      pendingBytes(0), totalFilledSize(-1) {}
 
     ~comm_buffer(){
       if (allocation) delete[] allocation;
@@ -111,13 +111,22 @@ class parallel_runtime :
       return storage + bytesAllocated;
     }
 
-    size_t bytesUsed() const {
+    /**
+     * @brief bytesFilled
+     * @return The number of bytes actually packed into the storage not buffer (not counting pending)
+     */
+    size_t bytesFilled() const {
+      //we have to manage this through bytesAllocated because it is the atomically updated variable
       //total valid size only gets set if we overrun the buffer
-      return totalValidSize == 0 ? bytesAllocated : totalValidSize;
+      return totalFilledSize == -1 ? bytesAllocated : totalFilledSize;
+    }
+
+    size_t totalBytes() const {
+      return bytesAllocated;
     }
 
     void reset(){
-      totalValidSize = 0;
+      totalFilledSize = -1;
       bytesAllocated = 0;
       pending_.clear();
       pendingBytes = 0;
@@ -134,13 +143,12 @@ class parallel_runtime :
 
     void growToFitPending()
     {
-      size_t newSize = totalValidSize + pendingBytes;
+      size_t newSize = totalFilledSize + pendingBytes;
       realloc(newSize, true);
     }
 
     void shift(size_t size){
       bytesAllocated += size;
-      totalValidSize += size;
     }
 
     char* allocateSpace(size_t size, ipc_event_t* ev);
