@@ -134,8 +134,8 @@ class task_mapping {
   std::vector<std::list<int> > node_to_rank_indexing_;
   std::vector<int> core_affinities_;
 
-  static std::map<app_id,int>  local_refcounts_;
-  static std::map<app_id, task_mapping::ptr> app_ids_launched_;
+  static std::vector<int>  local_refcounts_;
+  static std::vector<task_mapping::ptr> app_ids_launched_;
   static std::map<std::string, task_mapping::ptr> app_names_launched_;
 
   static void delete_statics();

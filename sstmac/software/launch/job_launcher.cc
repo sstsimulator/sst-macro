@@ -59,9 +59,9 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-std::map<app_id, task_mapping::ptr> task_mapping::app_ids_launched_;
+std::vector<task_mapping::ptr> task_mapping::app_ids_launched_(1024);
 std::map<std::string, task_mapping::ptr> task_mapping::app_names_launched_;
-std::map<int,app_id> task_mapping::local_refcounts_;
+std::vector<int> task_mapping::local_refcounts_(1024);
 
 job_launcher::job_launcher(sprockit::sim_parameters* params,
                            operating_system* os) :
@@ -72,6 +72,7 @@ job_launcher::job_launcher(sprockit::sim_parameters* params,
   for (int i=0; i < num_nodes; ++i){
     available_.insert(i);
   }
+
   add_launch_requests(params);
 }
 
@@ -298,15 +299,11 @@ task_mapping::serialize_order(bool carrier, app_id aid, serializer &ser)
 task_mapping::ptr
 task_mapping::global_mapping(app_id aid)
 {
-  lock.lock();
-  auto iter = app_ids_launched_.find(aid);
-  if (iter == app_ids_launched_.end()){
-    lock.unlock();
+  auto map = app_ids_launched_[aid];
+  if (!map){
     spkt_abort_printf("cannot find global task mapping for %d", aid);
   }
-  auto ret = iter->second;
-  lock.unlock();
-  return ret;
+  return map;
 }
 
 task_mapping::ptr
@@ -336,12 +333,9 @@ void
 task_mapping::remove_global_mapping(app_id aid, const std::string& name)
 {
   lock.lock();
-  auto iter = local_refcounts_.find(aid);
-  int& refcount = iter->second;
-  refcount--;
-  if (refcount == 0){
-    local_refcounts_.erase(iter);
-    app_ids_launched_.erase(aid);
+  local_refcounts_[aid]--;
+  if (local_refcounts_[aid] == 0){
+    app_ids_launched_[aid] = 0;
     app_names_launched_.erase(name);
   }
   lock.unlock();

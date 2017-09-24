@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/app_id.h>
 #include <sprockit/sim_parameters_fwd.h>
+#include <sprockit/thread_safe_new.h>
 
 namespace sstmac {
 namespace sw {
@@ -121,7 +122,10 @@ class launch_event :
 
 };
 
-class start_app_event : public launch_event {
+class start_app_event :
+  public launch_event,
+  public sprockit::thread_safe_new<start_app_event>
+{
   ImplementSerializable(start_app_event)
  public:
   start_app_event(app_id aid,
