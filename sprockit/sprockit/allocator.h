@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include <iostream>
 #include <sprockit/thread_safe_new.h>
 
 namespace sprockit {
@@ -100,6 +101,7 @@ class thread_safe_allocator
   pointer allocate(size_type n, const void * = 0) {
     //ignore hints
     if (n > 1){
+      std::cerr << "thread safe allocator cannot allocate more than 1 item at a time" << std::endl;
       ::abort();
     } else {
       return (pointer) thread_safe_new<T>::operator new(sizeof(T));
@@ -108,6 +110,7 @@ class thread_safe_allocator
 
   void deallocate(void* p, size_type n) {
     if (n > 1){
+      std::cerr << "thread safe allocator cannot allocate more than 1 item at a time" << std::endl;
       ::abort();
     } else {
       thread_safe_new<T>::operator delete(p);

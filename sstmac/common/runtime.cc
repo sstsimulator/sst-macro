@@ -74,7 +74,7 @@ runtime::check_deadlock()
 void
 runtime::clear_statics()
 {
-  hw::interconnect::clear_static_interconnect();
+  //hw::interconnect::clear_static_interconnect();
   //parallel_runtime::clear_static_runtime();
   hw::topology::clear_static_topology();
 }

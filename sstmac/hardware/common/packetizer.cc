@@ -100,7 +100,7 @@ packetizer::deadlock_check()
 void
 packetizer::sendWhatYouCan(int vn)
 {
-  std::list<pending_send>& pending = pending_[vn];
+  auto& pending = pending_[vn];
   while (!pending.empty()){
     pending_send& next = pending.front();
     long initial_offset = next.offset;

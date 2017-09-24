@@ -55,18 +55,17 @@ namespace hw {
 void
 recv_cq::print()
 {
-  std::unordered_map<uint64_t,incoming_msg>::iterator it, end = bytes_recved_.end();
   coutn << "Completion Queue" << std::endl;
-  for (it=bytes_recved_.begin(); it != end; ++it){
-    incoming_msg& incoming = it->second;
-    coutn << "Message " << it->first << " has "
+  for (auto& pair : bytes_recved_){
+    incoming_msg& incoming = pair.second;
+    coutn << "Message " << pair.first << " has "
         << incoming.bytes_arrived << " bytes arrived "
         << " out of " << incoming.bytes_total << "\n";
   }
 }
 
 message*
-recv_cq::recv(uint64_t unique_id, int bytes, message* orig)
+recv_cq::recv(uint64_t unique_id, uint32_t bytes, message* orig)
 {
   incoming_msg& incoming  = bytes_recved_[unique_id];
 #if SSTMAC_SANITY_CHECK

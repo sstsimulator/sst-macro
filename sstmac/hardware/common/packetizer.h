@@ -50,6 +50,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/common/recv_cq.h>
+#include <sprockit/allocator.h>
+
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/integrated_component.h>
 #include <sst/core/interfaces/simpleNetwork.h>
@@ -113,7 +115,10 @@ class packetizer :
     long offset;
   };
 
-  std::map<int, std::list<pending_send> > pending_;
+  using pending_list = std::list<pending_send, sprockit::thread_safe_allocator<pending_send>>;
+  using pending_alloc = sprockit::thread_safe_allocator<std::pair<const int, pending_list>>;
+
+  std::map<int, pending_list, std::less<int>, pending_alloc> pending_;
 
   int packet_size_;
 
