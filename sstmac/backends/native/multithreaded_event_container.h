@@ -98,9 +98,7 @@ class multithreaded_event_container :
   virtual void run() override;
 
   event_manager* thread_manager(int thr) const override {
-    if (master_thread_){
-      return thread_managers_[thr];
-    } else if (thr == num_subthreads_) {
+    if (thr == num_subthreads_) {
       return const_cast<multithreaded_event_container*>(this);
     } else {
       return thread_managers_[thr];
@@ -109,7 +107,8 @@ class multithreaded_event_container :
 
  private:
   int num_subthreads_;
-  bool master_thread_;
+
+  std::vector<event_manager*> thread_managers_;
 
   timestamp min_registry_time() const {
     if (registry_.empty()){
@@ -125,8 +124,6 @@ class multithreaded_event_container :
   std::vector<int> cpu_affinity_;
   std::vector<pthread_t> pthreads_;
   std::vector<pthread_attr_t> pthread_attrs_;
-
-  std::vector<event_manager*> thread_managers_;
 
   struct event_compare {
     bool operator()(const std::pair<timestamp,event_scheduler*>& lhs,

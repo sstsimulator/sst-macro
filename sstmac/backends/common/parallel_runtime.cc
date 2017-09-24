@@ -60,7 +60,6 @@ RegisterDebugSlot(parallel);
 
 RegisterKeywords(
 "serialization_buffer_size",
-"serialization_num_bufs_allocation",
 "partition",
 "runtime",
 );
@@ -73,40 +72,44 @@ parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
 char*
 parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
 {
-  align64(size);
   uint64_t newOffset = add_int64_atomic(size, &bytesAllocated);
-  if (newOffset >= allocSize){
-    size_t prevSize = newOffset - size;
-    if (prevSize < allocSize){ //this was the size before we overran
-      totalFilledSize = prevSize;
-    }
-    //oops, we blew out memory
+  uint64_t myStartPos = newOffset - size;
+  if (newOffset > allocSize){
     lock();
-    pending_.push_back(*ev);
-    pendingBytes += size;
+
+    if (myStartPos <= allocSize){
+      filledSize = myStartPos;
+    }
+    static const int backupSize = 10e6;
+    if (!backupBuffer){
+      backupBuffer = new char[backupSize];
+    } else if (newOffset > backupSize){
+      spkt_abort_printf("overran backup buffer of size %d - aborting", backupSize);
+    }
+    char* backupPtr = backupBuffer + myStartPos;
     unlock();
-    return nullptr;
+    return backupPtr;
   } else {
     //write to this location
-    return storage + newOffset - size;
+    return storage + myStartPos;
   }
 }
 
 void
-parallel_runtime::comm_buffer::realloc(size_t size, bool copyOld)
+parallel_runtime::comm_buffer::copyToBackup()
+{
+  ::memcpy(backupBuffer, storage, filledSize);
+}
+
+void
+parallel_runtime::comm_buffer::realloc(size_t size)
 {
   char* oldAlloc = allocation;
-  char* oldStorage = storage;
   allocSize = size;
   allocation = new char[allocSize+64];
   storage = allocation;
   align64(storage);
   bytesAllocated = 0;
-  if (copyOld){
-    ::memcpy(storage, oldStorage, bytesFilled());
-    bytesAllocated = bytesFilled();
-    align64(bytesAllocated);
-  }
   if (oldAlloc) delete[] oldAlloc;
 }
 
@@ -211,20 +214,13 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
   //turn the number of procs and my rank into keywords
   nthread_ = params->get_optional_int_param("sst_nthread", 1);
 
-  has_master_thread_ = params->get_optional_bool_param("master_thread", false);
-
-  nworker_thread_ = has_master_thread_ ? nthread_ - 1 : nthread_;
-
-  buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 512);
-  int num_bufs_window = params->get_optional_int_param("serialization_num_bufs_allocation", 100000);
-
-  size_t allocSize = buf_size_ * num_bufs_window;
+  buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 16384);
 
   send_buffers_.resize(nproc_);
   recv_buffers_.resize(nproc_);
   for (int i=0; i < nproc_; ++i){
-    send_buffers_[i].realloc(allocSize);
-    recv_buffers_[i].realloc(allocSize);
+    send_buffers_[i].realloc(buf_size_);
+    recv_buffers_[i].realloc(buf_size_);
   }
 
 #if !SSTMAC_USE_MULTITHREAD
@@ -261,8 +257,9 @@ parallel_runtime::~parallel_runtime()
 void
 parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
 {
+  ser & iev->ser_size; //this must be first!!!
+  ser & iev->dst;  //this must be first!!!
   ser & iev->t;
-  ser & iev->dst;
   ser & iev->src;
   ser & iev->seqnum;
   ser & iev->port;
@@ -273,22 +270,25 @@ parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
 
 void parallel_runtime::send_event(ipc_event_t* iev)
 {
-  size_t overhead = sizeof(ipc_event_base);
+  uint32_t overhead = sizeof(ipc_event_base);
 
   sprockit::serializer ser;
   ser.start_sizing();
   ser & iev->ev;
-
-  size_t buffer_space_needed = overhead + ser.size();
+  iev->ser_size = overhead + ser.size();
+  align64(iev->ser_size);
   comm_buffer& buff = send_buffers_[iev->rank];
-  char* ptr = buff.allocateSpace(buffer_space_needed, iev);
+  char* ptr = buff.allocateSpace(iev->ser_size, iev);
   if (ptr){
-    size_t offset = buff.bytesFilled();
-    debug_printf(sprockit::dbg::parallel, "sending event of size %lu + %lu = %lu at offset %lu to LP %d at t=%10.6e: %s",
-                 overhead, ser.size(), buffer_space_needed, offset, iev->rank, iev->t.sec(),
+    ser.start_packing(ptr, iev->ser_size);
+    debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",
+                 iev->ser_size, iev->rank, iev->t.sec(),
                  sprockit::to_string(iev->ev).c_str());
-    ser.start_packing(ptr, buffer_space_needed);
     run_serialize(ser, iev);
+  } else {
+    debug_printf(sprockit::dbg::parallel, "pending event of size %lu to LP %d at t=%10.6e: %s",
+                 iev->ser_size, iev->rank, iev->t.sec(),
+                 sprockit::to_string(iev->ev).c_str());
   }
 }
 #endif

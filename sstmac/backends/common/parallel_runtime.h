@@ -89,15 +89,13 @@ class parallel_runtime :
   struct comm_buffer : public lockable {
     int64_t bytesAllocated;
     int64_t allocSize;
-    int64_t totalFilledSize;
-    int64_t pendingBytes;
+    int64_t filledSize;
+    char* backupBuffer;
     char* allocation;
     char* storage;
 
-    std::vector<ipc_event_t> pending_;
-
     comm_buffer() : storage(nullptr), allocation(nullptr),
-      pendingBytes(0), totalFilledSize(-1) {}
+      filledSize(0), bytesAllocated(0), backupBuffer(nullptr) {}
 
     ~comm_buffer(){
       if (allocation) delete[] allocation;
@@ -113,26 +111,41 @@ class parallel_runtime :
 
     /**
      * @brief bytesFilled
-     * @return The number of bytes actually packed into the storage not buffer (not counting pending)
+     * @return The number of bytes actually packed into the storage. Only non-zero
+     *         if backup buffer is in use
      */
     size_t bytesFilled() const {
-      //we have to manage this through bytesAllocated because it is the atomically updated variable
-      //total valid size only gets set if we overrun the buffer
-      return totalFilledSize == -1 ? bytesAllocated : totalFilledSize;
+      return filledSize;
     }
 
     size_t totalBytes() const {
       return bytesAllocated;
     }
 
-    void reset(){
-      totalFilledSize = -1;
-      bytesAllocated = 0;
-      pending_.clear();
-      pendingBytes = 0;
+    bool hasBackup() const {
+      return backupBuffer;
     }
 
-    void realloc(size_t size, bool copyOld = false);
+    char* backup() const {
+      return backupBuffer;
+    }
+
+    void copyToBackup();
+
+    void reset(){
+      if (backupBuffer){
+        int growRatio = bytesAllocated / allocSize;
+        growRatio = std::max(2,growRatio);
+        growRatio = std::min(growRatio, 8);
+        realloc(allocSize*growRatio);
+        delete[] backupBuffer;
+        backupBuffer = nullptr;
+      }
+      filledSize = 0;
+      bytesAllocated = 0;
+    }
+
+    void realloc(size_t size);
 
     void ensureSpace(size_t size)
     {
@@ -141,21 +154,11 @@ class parallel_runtime :
       }
     }
 
-    void growToFitPending()
-    {
-      size_t newSize = totalFilledSize + pendingBytes;
-      realloc(newSize, true);
-    }
-
     void shift(size_t size){
       bytesAllocated += size;
     }
 
     char* allocateSpace(size_t size, ipc_event_t* ev);
-
-    const std::vector<ipc_event_t>& pending() const {
-      return pending_;
-    }
 
   };
 
@@ -229,14 +232,6 @@ class parallel_runtime :
     return nthread_;
   }
 
-  int nworker_thread() const {
-    return nworker_thread_;
-  }
-
-  bool has_master_thread() const {
-    return has_master_thread_;
-  }
-
   int ser_buf_size() const {
     return buf_size_;
   }
@@ -267,9 +262,7 @@ class parallel_runtime :
  protected:
    int nproc_;
    int nthread_;
-   int nworker_thread_;
    int me_;
-   bool has_master_thread_;
    std::vector<comm_buffer> send_buffers_;
    std::vector<comm_buffer> recv_buffers_;
    std::vector<int> sends_done_;

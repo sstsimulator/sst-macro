@@ -44,7 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 #if !SSTMAC_INTEGRATED_SST_CORE
-
+#define __STDC_FORMAT_MACROS
 #include <sstmac/backends/native/multithreaded_event_container.h>
 #include <unistd.h>
 #include <execinfo.h>
@@ -56,6 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/thread_safe.h>
+#include <cinttypes>
 
 RegisterDebugSlot(multithread_event_manager);
 RegisterDebugSlot(cpu_affinity);
@@ -64,7 +65,7 @@ RegisterKeywords(
   "cpu_affinity",
 );
 
-static int busy_loop_count = 10000;
+static int busy_loop_count = 200;
 
 static inline void busy_loop(){
   //500 seems to be just about right
@@ -173,11 +174,7 @@ multithreaded_event_container::multithreaded_event_container(
 
   busy_loop_count = params->get_optional_int_param("busy_loop_count", busy_loop_count);
 
-  num_subthreads_ = rt->nworker_thread();
-  master_thread_ = rt->has_master_thread();
-  if (!master_thread_){
-    --num_subthreads_;
-  }
+  num_subthreads_ = rt->nthread() - 1;
 
   queues_.resize(num_subthreads_);
   pthreads_.resize(num_subthreads_);
@@ -265,12 +262,8 @@ multithreaded_event_container::run_work()
     if (child1) add_int32_atomic(delta_t_32, child1->delta_t);
     if (child2) add_int32_atomic(delta_t_32, child2->delta_t);
 
-    timestamp min_time = no_events_left_time;
     auto t_start = rdstc();
-    if (!master_thread_){
-      min_time = run_events(horizon);
-    }
-
+    timestamp min_time = run_events(horizon);
     auto t_run = rdstc();
 
     if (child1) wait_on_child_completion(child1, min_time);
@@ -293,7 +286,7 @@ multithreaded_event_container::run_work()
   if (child1) add_int32_atomic(terminate_sentinel, child1->delta_t);
   if (child2) add_int32_atomic(terminate_sentinel, child2->delta_t);
 
-  if (rt_->me() == 0) printf("Ran %lu epochs in multithreading run\n", epoch);
+  if (rt_->me() == 0) printf("Ran %" PRIu64 " epochs in multithreading run\n", epoch);
 
 }
 
@@ -301,6 +294,10 @@ void
 multithreaded_event_container::run()
 {
   interconn_->setup();
+
+  for (auto mgr : thread_managers_){
+    mgr->set_interconnect(interconn_);
+  }
 
   int nthread_ = nthread();
   debug_printf(sprockit::dbg::event_manager,
@@ -358,7 +355,7 @@ multithreaded_event_container::run()
 
   run_work();
 
-  timestamp final_time = master_thread_ ? timestamp() : now_;
+  timestamp final_time = now_;
 
   for (int i=0; i < num_subthreads_; ++i){
     void* ignore;

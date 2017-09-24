@@ -94,12 +94,13 @@ class clock_cycle_event_map :
   int num_profile_loops_;
 
  private:
-  void schedule_incoming(ipc_event_t* iev);
-
   void run() override;
+
+  int handle_incoming(char* buf);
 
  private:
   int epoch_;
+
   
 
 };

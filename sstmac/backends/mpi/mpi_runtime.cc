@@ -231,34 +231,15 @@ mpi_runtime::send_recv_messages(timestamp vote)
     comm_buffer& comm = send_buffers_[i];
     int commSize = comm.totalBytes();
     if (commSize){
-      if (!comm.pending().empty()){
-        //ugh... okay
-        comm.growToFitPending();
-        debug_printf(sprockit::dbg::parallel,
-                     "LP %d sending %d pending bytes to LP %d on epoch %d",
-                     me_, comm.pendingBytes, i, epoch_);
-        char* buf = comm.nextBuffer();
-        size_t remainingBytes = comm.pendingBytes;
-        serializer ser;
-        for (const ipc_event_t& iev : comm.pending()){
-          ser.start_packing(buf, remainingBytes);
-          //const cast is fine... we're not going to modify
-          ipc_event_t* ptr = const_cast<ipc_event_t*>(&iev);
-          run_serialize(ser, ptr);
-          size_t bufSize = ser.packer().size();
-          align64(bufSize);
-          debug_printf(sprockit::dbg::parallel, "pennding event of size %lu to LP %d at t=%10.6e: %s",
-                       bufSize, iev.rank, iev.t.sec(),
-                       sprockit::to_string(iev.ev).c_str());
-          buf += bufSize; //move the buffer on 64-byte aligned increments
-          remainingBytes -= bufSize;
-        }
+      char* buffer = comm.buffer();
+      if (comm.hasBackup()){
+        buffer = comm.backup();
+        comm.copyToBackup();
       }
-
       votes_[i].num_sent = 1;
       debug_printf(sprockit::dbg::parallel, "LP %d sending %d bytes to LP %d on epoch %d",
                    me_, commSize, i, epoch_);
-      MPI_Isend(comm.buffer(), commSize, MPI_BYTE, i,
+      MPI_Isend(buffer, commSize, MPI_BYTE, i,
                 payload_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
       sends_done_[num_sends_done_++] = i;
     } else {

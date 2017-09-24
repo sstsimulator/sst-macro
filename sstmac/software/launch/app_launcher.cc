@@ -124,7 +124,7 @@ start_app_event::serialize_order(serializer &ser)
     std::string paramStr = sstr.str();
     ser & paramStr;
   }
-  if (serialize_map_) mapping_ = task_mapping::serialize_order(aid_, ser);
+  mapping_ = task_mapping::serialize_order(serialize_map_, aid_, ser);
 }
 
 std::string

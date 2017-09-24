@@ -91,7 +91,7 @@ class task_mapping {
     return aid_;
   }
 
-  static task_mapping::ptr serialize_order(app_id aid, serializer& ser);
+  static task_mapping::ptr serialize_order(bool carrier, app_id aid, serializer& ser);
 
   int num_ranks() const {
     return rank_to_node_indexing_.size();

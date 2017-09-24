@@ -82,18 +82,25 @@ clock_cycle_event_map::clock_cycle_event_map(
   num_profile_loops_ = params->get_optional_int_param("num_profile_loops", 0);
 }
 
-void
-clock_cycle_event_map::schedule_incoming(ipc_event_t* iev)
+int
+clock_cycle_event_map::handle_incoming(char* buf)
 {
-  auto comp = interconn_->component(iev->dst);
-  event_handler* dst_handler = iev->credit ? comp->credit_handler(iev->port) : comp->payload_handler(iev->port);
-  event_debug("epoch %d: scheduling incoming event at %12.8e to device %d:%s, payload? %d:   %s",
-    epoch_, iev->t.sec(), iev->dst, dst_handler->to_string().c_str(),
-    iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
-  auto qev = new handler_event_queue_entry(iev->ev, dst_handler, iev->src);
-  qev->set_seqnum(iev->seqnum);
-  qev->set_time(iev->t);
-  comp->event_mgr()->schedule(qev);
+#if SSTMAC_USE_MULTITHREAD
+  serializer ser;
+  ser.start_unpacking(buf, 1<<31); //just pass in a huge number
+  uint32_t sz; //these are guaranteed to be first
+  uint32_t dst;
+  ser & sz;
+  ser & dst;
+  event_debug("sending back buffer for comp %d of size %u",
+              dst, sz);
+  if (sz == 0) abort();
+  event_manager* mgr = interconn_->component(dst)->event_mgr();
+  mgr->schedule_pending_serialization(buf);
+  return sz;
+#else
+  return serialize_schedule(buf);
+#endif
 }
 
 timestamp
@@ -106,29 +113,20 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
     sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
   }
 #endif
+  event_debug("voting for minimum time %lu", rt_->me(), vote.ticks());
   timestamp min_time = rt_->send_recv_messages(vote);
 
-  int nthr = nthread();
+  event_debug("got back minimum time %lu", rt_->me(), min_time.ticks());
+
   int num_recvs = rt_->num_recvs_done();
   for (int i=0; i < num_recvs; ++i){
     auto& buf = rt_->recv_buffer(i);
-    serializer ser;
-    size_t bytesRemaining = buf.bytesFilled();
-    size_t bytesUnpacked = 0;
+    size_t bytesRemaining = buf.totalBytes();
     char* serBuf = buf.buffer();
-    ser.start_unpacking(serBuf, bytesRemaining);
     while (bytesRemaining > 0){
-      event_debug("unpacking event starting at offset %lu of %lu",
-                  bytesUnpacked, buf.bytesFilled());
-      ipc_event_t iev;
-      parallel_runtime::run_serialize(ser, &iev);
-      schedule_incoming(&iev);
-      size_t size = ser.unpacker().size();
-      align64(size);
+      int size = handle_incoming(serBuf);
       bytesRemaining -= size;
       serBuf += size;
-      ser.start_unpacking(serBuf, bytesRemaining);
-      bytesUnpacked += size;
     }
   }
   rt_->reset_send_recv();
@@ -169,7 +167,7 @@ clock_cycle_event_map::run()
     ++epoch;
   }
   compute_final_time(now_);
-  if (rt_->me() == 0) printf("Ran %" PRIu64 "epochs on MPI parallel\n", epoch);
+  if (rt_->me() == 0) printf("Ran %" PRIu64 " epochs on MPI parallel\n", epoch);
 }
 
 void

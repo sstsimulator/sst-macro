@@ -249,15 +249,13 @@ exclusive_job_launcher::stop_event_received(job_stop_event *ev)
 static thread_lock lock;
 
 task_mapping::ptr
-task_mapping::serialize_order(app_id aid, serializer &ser)
+task_mapping::serialize_order(bool carrier, app_id aid, serializer &ser)
 {
+  ser & carrier;
   lock.lock();
-  task_mapping::ptr& mapping = app_ids_launched_[aid];
-  if (ser.mode() == ser.UNPACK){
-    if (mapping){
-      lock.unlock();
-      return mapping;
-    } else {
+  task_mapping::ptr mapping;
+  if (carrier){
+    if (ser.mode() == ser.UNPACK){
       int num_nodes;
       ser & num_nodes;
       mapping = std::make_shared<task_mapping>(aid);
@@ -268,12 +266,30 @@ task_mapping::serialize_order(app_id aid, serializer &ser)
         node_id nid = mapping->rank_to_node_indexing_[i];
         mapping->node_to_rank_indexing_[nid].push_back(i);
       }
+      app_ids_launched_[aid] = mapping;
+    } else {
+      //packing or sizing
+      mapping = app_ids_launched_[aid];
+      if (!mapping) spkt_abort_printf("no task mapping exists for application %d", aid);
+      int num_nodes = mapping->node_to_rank_indexing_.size();
+      ser & num_nodes;
+      ser & mapping->rank_to_node_indexing_;
     }
-  } else { //packing
-    if (!mapping) spkt_abort_printf("no task mapping exists for application %d", aid);
-    int num_nodes = mapping->node_to_rank_indexing_.size();
-    ser & num_nodes;
-    ser & mapping->rank_to_node_indexing_;
+  } else {
+    mapping = app_ids_launched_[aid];
+    if (ser.mode() == ser.UNPACK){
+      while (!mapping){
+        lock.unlock();
+        for (int i=0; i < 1000; ++i){
+          //busy loop until mapping is builting
+          __asm__ __volatile__("");
+        }
+        lock.lock();
+        mapping = app_ids_launched_[aid];
+      }
+    } else {
+      //literally nothing to do
+    }
   }
   lock.unlock();
   return mapping;
@@ -282,21 +298,28 @@ task_mapping::serialize_order(app_id aid, serializer &ser)
 task_mapping::ptr
 task_mapping::global_mapping(app_id aid)
 {
+  lock.lock();
   auto iter = app_ids_launched_.find(aid);
   if (iter == app_ids_launched_.end()){
+    lock.unlock();
     spkt_abort_printf("cannot find global task mapping for %d", aid);
   }
-  return iter->second;
+  auto ret = iter->second;
+  lock.unlock();
+  return ret;
 }
 
 task_mapping::ptr
 task_mapping::global_mapping(const std::string& name)
 {
+  lock.lock();
   auto iter = app_names_launched_.find(name);
   if (iter == app_names_launched_.end()){
     spkt_abort_printf("cannot find global task mapping for %s", name.c_str());
   }
-  return iter->second;
+  auto ret = iter->second;
+  lock.unlock();
+  return ret;
 }
 
 void

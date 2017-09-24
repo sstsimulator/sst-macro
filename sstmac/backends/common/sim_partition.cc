@@ -68,7 +68,7 @@ partition::partition(sprockit::sim_parameters* params, parallel_runtime* rt) :
 {
   nproc_ = rt_->nproc();
   me_ = rt_->me();
-  nthread_ = rt_->nworker_thread();
+  nthread_ = rt_->nthread();
 }
 
 partition::~partition()

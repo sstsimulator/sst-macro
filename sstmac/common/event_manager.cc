@@ -50,12 +50,16 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/threading/threading_interface.h>
 #include <sstmac/software/threading/stack_alloc.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/common/handler_event_queue_entry.h>
 #include <sprockit/util.h>
 #include <sprockit/output.h>
 #include <sprockit/thread_safe_new.h>
 #include <limits>
 
 RegisterDebugSlot(event_manager);
+
+#define prll_debug(...) \
+  debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 
@@ -102,13 +106,14 @@ void run_event_manager_thread(void* argPtr)
 
 event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime *rt) :
   rt_(rt),
-  nthread_(rt->nworker_thread()),
+  nthread_(rt->nthread()),
   me_(rt->me()),
   nproc_(rt->nproc()),
   pending_slot_(0),
   complete_(false),
   thread_id_(0),
-  scheduled_(false)
+  scheduled_(false),
+  interconn_(nullptr)
 {
   for (int i=0; i < num_pending_slots; ++i){
     pending_events_[i].resize(nthread_);
@@ -123,6 +128,9 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
                   "context", sw::threading_interface::default_threading(), os_params);
 
   sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
+
+  //make sure there's a good bit of space
+  pending_serialization_.reserve(1024);
 }
 
 timestamp
@@ -169,9 +177,42 @@ event_manager::set_interconnect(hw::interconnect* interconn)
   interconn_ = interconn;
 }
 
+int
+event_manager::serialize_schedule(char* buf)
+{
+  serializer ser;
+  uint32_t bigSize = 1 << 30;
+  ser.start_unpacking(buf, bigSize); //just pass in a huge number
+  ipc_event_t iev;
+  parallel_runtime::run_serialize(ser, &iev);
+  schedule_incoming(&iev);
+  size_t size = ser.unpacker().size();
+  align64(size);
+  return size;
+}
+
+void
+event_manager::schedule_incoming(ipc_event_t* iev)
+{
+  auto comp = interconn_->component(iev->dst);
+  event_handler* dst_handler = iev->credit ? comp->credit_handler(iev->port) : comp->payload_handler(iev->port);
+  prll_debug("thread %d scheduling incoming event at %12.8e to device %d:%s, payload? %d:   %s",
+    thread_id_, iev->t.sec(), iev->dst, dst_handler->to_string().c_str(),
+    iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
+  auto qev = new handler_event_queue_entry(iev->ev, dst_handler, iev->src);
+  qev->set_seqnum(iev->seqnum);
+  qev->set_time(iev->t);
+  schedule(qev);
+}
+
 void
 event_manager::register_pending()
 {
+  for (char* buf : pending_serialization_){
+    serialize_schedule(buf);
+  }
+  pending_serialization_.clear();
+
   int idx = 0;
   for (auto& pendingVec : pending_events_[pending_slot_]){
     for (event_queue_entry* ev : pendingVec){

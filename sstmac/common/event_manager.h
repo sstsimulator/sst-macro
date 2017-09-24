@@ -192,6 +192,10 @@ class event_manager
     pending_events_[slot][srcThread].push_back(ev);
   }
 
+  void schedule_pending_serialization(char* buf){
+    pending_serialization_.push_back(buf);
+  }
+
   int pending_slot() const {
     return pending_slot_;
   }
@@ -245,6 +249,7 @@ class event_manager
 #define num_pending_slots 4
   int pending_slot_;
   std::vector<std::vector<event_queue_entry*>> pending_events_[num_pending_slots];
+  std::vector<char*> pending_serialization_;
 
  protected:
   bool complete_;
@@ -256,10 +261,10 @@ class event_manager
   bool scheduled_;
 
   int me_;
-
   int nproc_;
 
-  int nthread_;
+  uint16_t nthread_;
+  uint16_t thread_id_;
 
   timestamp lookahead_;
   timestamp now_;
@@ -281,8 +286,10 @@ class event_manager
 
  protected:
   timestamp min_ipc_time_;
-  int thread_id_;
 
+  void schedule_incoming(ipc_event_t* iev);
+
+  int serialize_schedule(char* buf);
 
   struct event_compare {
     bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
@@ -299,7 +306,6 @@ class event_manager
   typedef std::set<event_queue_entry*, event_compare, 
                    sprockit::allocator<event_queue_entry*>> queue_t;
   queue_t event_queue_;
-
 
   std::map<std::string, stats_entry> stats_;
 
