@@ -178,7 +178,7 @@ class pisces_memory_model :
   std::list<std::pair<memory_message*,callback*>,
            pair_alc<memory_message*,callback*>> stalled_requests_;
   pisces_memory_packetizer* mem_packetizer_;
-  std::list<int> channels_available_;
+  std::vector<int> channels_available_;
   int nchannels_;
 
 };

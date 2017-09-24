@@ -132,8 +132,9 @@ pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node 
   memory_model(params, nd)
 {
   nchannels_ = PISCES_MEM_DEFAULT_NUM_CHANNELS;
+  channels_available_.resize(nchannels_);
   for (int i=0; i < nchannels_; ++i){
-    channels_available_.push_back(i);
+    channels_available_[i] = i;
   }
 
   mem_packetizer_ = new pisces_memory_packetizer(params, nd);
@@ -156,8 +157,8 @@ pisces_memory_model::access(
   if (channels_available_.empty()){
     stalled_requests_.push_back(std::make_pair(msg,cb));
   } else {
-    int channel = channels_available_.front();
-    channels_available_.pop_front();
+    int channel = channels_available_.back();
+    channels_available_.pop_back();
     start(channel, msg, cb);
   }
 }
@@ -183,7 +184,7 @@ pisces_memory_model::notify(int vn, message* msg)
   delete msg;
   send_now_self_event_queue(cb);
   if (stalled_requests_.empty()){
-    channels_available_.push_front(vn);
+    channels_available_.push_back(vn);
   } else {
     auto& pair = stalled_requests_.front();
     start(vn, pair.first, pair.second);
