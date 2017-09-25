@@ -68,7 +68,7 @@ struct thread_queue
     child2(nullptr)
   {
     void* ptr = &delta_t;
-    int rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int32_t));
+    int rc = posix_memalign((void**)ptr, sizeof(void*), sizeof(int64_t));
     if (rc != 0){
       spkt_abort_printf("Failed to allocated aligned memory: %d\n%s",
                         rc, ::strerror(rc));
@@ -76,7 +76,7 @@ struct thread_queue
     *delta_t = 0;
   }
 
-  volatile int32_t* delta_t;
+  volatile int64_t* delta_t;
   timestamp min_time;
   event_manager* mgr;
   thread_queue* child1;

@@ -77,15 +77,14 @@ static inline void busy_loop(){
 
 int num_busy_spins = 0;
 
-static int32_t terminate_sentinel = std::numeric_limits<int32_t>::max();
+static int64_t terminate_sentinel = std::numeric_limits<int64_t>::max();
 
 namespace sstmac {
 namespace native {
 
 #define atomic_is_zero(x) \
   *x == 0
-  //(add_int32_atomic(int32_t(0), x) == 0)
-  //bool done = cas_int32(0, 0, x);
+  //(add_int64_atomic(int32_t(0), x) == 0)
 
 static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time)
 {
@@ -106,9 +105,9 @@ pthread_run_worker_thread(void* args)
   while(1){
     bool stillZero = atomic_is_zero(q->delta_t);
     if (!stillZero){
-      int32_t delta_t = *q->delta_t;
-      if (q->child1) add_int32_atomic(delta_t, q->child1->delta_t);
-      if (q->child2) add_int32_atomic(delta_t, q->child2->delta_t);
+      int64_t delta_t = *q->delta_t;
+      if (q->child1) add_int64_atomic(delta_t, q->child1->delta_t);
+      if (q->child2) add_int64_atomic(delta_t, q->child2->delta_t);
       if (delta_t == terminate_sentinel){
         return;
       } else if (delta_t != 0) {
@@ -119,7 +118,7 @@ pthread_run_worker_thread(void* args)
       }
       if (q->child1) wait_on_child_completion(q->child1, q->min_time);
       if (q->child2) wait_on_child_completion(q->child2, q->min_time);
-      add_int32_atomic(-delta_t, q->delta_t);
+      add_int64_atomic(-delta_t, q->delta_t);
     } else {
       busy_loop(); //don't slam the variable too hard
     }
@@ -249,18 +248,15 @@ multithreaded_event_container::run_work()
   }
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
-    uint64_t delta_t = horizon.ticks() - last_horizon.ticks();
-    int32_t delta_t_32 = delta_t;
+    int64_t delta_t = horizon.ticks() - last_horizon.ticks();
     if (num_loops_left != 0){
-      if (delta_t_32 == 0){
-        delta_t_32 = 1;
+      if (delta_t == 0){
+        delta_t = 1;
       }
-    } else if (delta_t > std::numeric_limits<int32_t>::max()){
-        spkt_abort_printf("delta_t %lu too large: lower timestamp resolution", delta_t);
     }
 
-    if (child1) add_int32_atomic(delta_t_32, child1->delta_t);
-    if (child2) add_int32_atomic(delta_t_32, child2->delta_t);
+    if (child1) add_int64_atomic(delta_t, child1->delta_t);
+    if (child2) add_int64_atomic(delta_t, child2->delta_t);
 
     auto t_start = rdstc();
     timestamp min_time = run_events(horizon);
@@ -283,8 +279,8 @@ multithreaded_event_container::run_work()
     last_horizon = horizon;
   }
 
-  if (child1) add_int32_atomic(terminate_sentinel, child1->delta_t);
-  if (child2) add_int32_atomic(terminate_sentinel, child2->delta_t);
+  if (child1) add_int64_atomic(terminate_sentinel, child1->delta_t);
+  if (child2) add_int64_atomic(terminate_sentinel, child2->delta_t);
 
   if (rt_->me() == 0) printf("Ran %" PRIu64 " epochs in multithreading run\n", epoch);
 
