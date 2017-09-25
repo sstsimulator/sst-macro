@@ -51,7 +51,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/messages/library_message.h>
-
+#include <sstmac/software/launch/launch_request.h>
+#include <sstmac/software/launch/launch_event.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/logp/logp_switch.h>
 #if SSTMAC_HAVE_GNU_PTH
 #include <sstmac/software/threading/threading_pth.h>
 #endif
@@ -543,6 +546,34 @@ operating_system::lib(const std::string& name) const
   }
   else {
     return it->second;
+  }
+}
+
+void
+operating_system::bcast_app_start(int my_rank, int aid, const std::string& app_ns,
+                                  task_mapping::ptr mapping,  sprockit::sim_parameters* app_params,
+                                  bool include_root)
+{
+  int num_ranks = mapping->num_ranks();
+  //job launcher needs to add this - might need it later
+  bcast_iterator iter(my_rank, num_ranks);
+  int ranks[64];
+  int num_to_send = 0;
+  if (include_root){
+    //only send to root
+    num_to_send = 1;
+    ranks[0] = my_rank;
+  } else {
+    num_to_send = iter.forward_to(ranks);
+  }
+
+  for (int r=0; r < num_to_send; ++r){
+    int dst_rank = ranks[r];
+    int dst_nid = mapping->rank_to_node(dst_rank);
+    sw::start_app_event* lev = new start_app_event(aid, app_ns,
+                                     mapping, dst_rank, dst_nid,
+                                     addr(), app_params);
+    hw::interconnect::local_logp_switch()->send(lev, node());
   }
 }
 

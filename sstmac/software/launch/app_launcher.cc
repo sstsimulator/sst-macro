@@ -71,6 +71,11 @@ app_launcher::incoming_event(event* ev)
   start_app_event* lev = safe_cast(start_app_event, ev);
   if (lev->type() == launch_event::Start){
     task_mapping::add_global_mapping(lev->aid(), lev->unique_name(), lev->mapping());
+
+    //if necessary, bcast this to whomever else needs it
+    os_->bcast_app_start(lev->tid(), lev->aid(), lev->unique_name(),
+                         lev->mapping(), &lev->app_params());
+
     software_id sid(lev->aid(), lev->tid());
     sprockit::sim_parameters* app_params = new sprockit::sim_parameters(&lev->app_params());
     app* theapp = app::factory::get_param("name", app_params, sid, os_);
@@ -124,7 +129,7 @@ start_app_event::serialize_order(serializer &ser)
     std::string paramStr = sstr.str();
     ser & paramStr;
   }
-  mapping_ = task_mapping::serialize_order(serialize_map_, aid_, ser);
+  mapping_ = task_mapping::serialize_order(aid_, ser);
 }
 
 std::string

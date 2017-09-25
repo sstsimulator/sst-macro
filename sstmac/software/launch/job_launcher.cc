@@ -171,29 +171,9 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
      topology_, allocation,
      mapping->rank_to_node(),
      mapping->node_to_rank());
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  hw::topology* logp_mapper = topology_;
-#else
-  hw::interconnect* logp_mapper = hw::interconnect::static_interconnect();
-#endif
-
-  std::set<int> ranksSent;
-
-  int num_ranks = mapping->num_ranks();
-  //job launcher needs to add this - might need it later
   task_mapping::add_global_mapping(request->aid(), request->app_namespace(), mapping);
-  for (int rank=0; rank < num_ranks; ++rank){
-    int dst_nid = mapping->rank_to_node(rank);
-    int logp_switch = logp_mapper->node_to_logp_switch(dst_nid);
-    bool need_mapping_serialize = ranksSent.find(logp_switch) == ranksSent.end();
-    ranksSent.insert(logp_switch);
-    sw::start_app_event* lev = new start_app_event(request->aid(), request->app_namespace(),
-                                     mapping, rank, dst_nid,
-                                     os_->addr(),//the job launch root
-                                     request->app_params(), need_mapping_serialize);
-    hw::interconnect::local_logp_switch()->send(lev, os_->node());
-  }
+  os_->bcast_app_start(0, request->aid(), request->app_namespace(), mapping, request->app_params(),
+                       true/*must include myself (the root) in bcast*/);
   delete request;
 }
 
@@ -250,49 +230,35 @@ exclusive_job_launcher::stop_event_received(job_stop_event *ev)
 static thread_lock lock;
 
 task_mapping::ptr
-task_mapping::serialize_order(bool carrier, app_id aid, serializer &ser)
+task_mapping::serialize_order(app_id aid, serializer &ser)
 {
-  ser & carrier;
-  lock.lock();
   task_mapping::ptr mapping;
-  if (carrier){
-    if (ser.mode() == ser.UNPACK){
-      int num_nodes;
-      ser & num_nodes;
-      mapping = std::make_shared<task_mapping>(aid);
-      ser & mapping->rank_to_node_indexing_;
-      mapping->node_to_rank_indexing_.resize(num_nodes);
-      int num_ranks = mapping->rank_to_node_indexing_.size();
-      for (int i=0; i < num_ranks; ++i){
-        node_id nid = mapping->rank_to_node_indexing_[i];
-        mapping->node_to_rank_indexing_[nid].push_back(i);
-      }
-      app_ids_launched_[aid] = mapping;
-    } else {
-      //packing or sizing
-      mapping = app_ids_launched_[aid];
-      if (!mapping) spkt_abort_printf("no task mapping exists for application %d", aid);
-      int num_nodes = mapping->node_to_rank_indexing_.size();
-      ser & num_nodes;
-      ser & mapping->rank_to_node_indexing_;
+  if (ser.mode() == ser.UNPACK){
+    int num_nodes;
+    ser & num_nodes;
+    mapping = std::make_shared<task_mapping>(aid);
+    ser & mapping->rank_to_node_indexing_;
+    mapping->node_to_rank_indexing_.resize(num_nodes);
+    int num_ranks = mapping->rank_to_node_indexing_.size();
+    for (int i=0; i < num_ranks; ++i){
+      node_id nid = mapping->rank_to_node_indexing_[i];
+      mapping->node_to_rank_indexing_[nid].push_back(i);
     }
+    lock.lock();
+    auto& existing = app_ids_launched_[aid];
+    if (!existing){
+      //we might receive this twice by accident
+      existing = mapping;
+    }
+    lock.unlock();
   } else {
+    //packing or sizing
     mapping = app_ids_launched_[aid];
-    if (ser.mode() == ser.UNPACK){
-      while (!mapping){
-        lock.unlock();
-        for (int i=0; i < 1000; ++i){
-          //busy loop until mapping is builting
-          __asm__ __volatile__("");
-        }
-        lock.lock();
-        mapping = app_ids_launched_[aid];
-      }
-    } else {
-      //literally nothing to do
-    }
+    if (!mapping) spkt_abort_printf("no task mapping exists for application %d", aid);
+    int num_nodes = mapping->node_to_rank_indexing_.size();
+    ser & num_nodes;
+    ser & mapping->rank_to_node_indexing_;
   }
-  lock.unlock();
   return mapping;
 }
 

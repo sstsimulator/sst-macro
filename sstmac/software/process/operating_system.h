@@ -54,6 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
+#include <sstmac/software/launch/job_launcher_fwd.h>
 
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/stats/event_trace.h>
@@ -207,6 +208,10 @@ class operating_system :
    * @return
    */
   timestamp unblock(thread* thr);
+
+  void bcast_app_start(int my_rank, int aid, const std::string& app_ns,
+                      task_mapping_ptr mapping, sprockit::sim_parameters* app_params,
+                      bool include_root = false);
 
   /**
    * @brief start_thread Start a thread object and schedule the context switch to it

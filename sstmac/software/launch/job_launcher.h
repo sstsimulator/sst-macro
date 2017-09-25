@@ -91,7 +91,7 @@ class task_mapping {
     return aid_;
   }
 
-  static task_mapping::ptr serialize_order(bool carrier, app_id aid, serializer& ser);
+  static task_mapping::ptr serialize_order(app_id aid, serializer& ser);
 
   int num_ranks() const {
     return rank_to_node_indexing_.size();
@@ -268,6 +268,43 @@ class exclusive_job_launcher : public default_job_launcher
 
   std::list<app_launch_request*> pending_requests_;
   app_launch_request* active_job_;
+
+};
+
+struct bcast_iterator {
+
+  bcast_iterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
+
+  int forward_to(int ranks[]){
+    int power2_size = 1;
+    while (power2_size < nranks_){
+      power2_size *= 2;
+    }
+    int ret = 0;
+    pvt_forward_to(ret, ranks, 0, power2_size);
+    return ret;
+  }
+
+  int nranks_;
+  int my_rank_;
+
+ private:
+  void pvt_forward_to(int& num_ranks, int ranks[], int offset, int blocksize){
+    if (blocksize == 1) return;
+
+    int half_size = blocksize / 2;
+    int role = my_rank_ % blocksize;
+    int midpoint = offset + half_size;
+    if (role == 0){
+      int dst = midpoint;
+      if (dst < nranks_) ranks[num_ranks++] = dst;
+    }
+    if (my_rank_ >= midpoint){
+      pvt_forward_to(num_ranks, ranks, midpoint, half_size);
+    } else {
+      pvt_forward_to(num_ranks, ranks, offset, half_size);
+    }
+  }
 
 };
 

@@ -40,6 +40,10 @@ class thread_safe_new {
     return ret;
   }
 
+  static void* operator new(size_t sz, void* ptr){
+    return ptr;
+  }
+
   static void operator delete(void* ptr){
     int thread = current_thread_id();
     auto& vec = to_allocate_[thread];
