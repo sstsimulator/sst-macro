@@ -48,6 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/api/api.h>
 
+#include <sumi/message_fwd.h>
+
 #include <sumi-mpi/mpi_types.h>
 #include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
@@ -821,7 +823,7 @@ class mpi_api :
 
 #if SSTMAC_COMM_SYNC_STATS
  public:
-  void collect_sync_delays(double wait_start, const sumi::message_ptr& msg) override;
+  void collect_sync_delays(double wait_start, message* msg) override;
 
   void start_collective_sync_delays() override;
 

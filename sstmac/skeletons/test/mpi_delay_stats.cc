@@ -63,13 +63,14 @@ int USER_MAIN(int argc, char** argv)
   sstmac_compute(5e-5 - now);
 
   MPI_Init(&argc, &argv);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   int me, nproc;
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  if (nproc < 8){
-    spkt_abort_printf("Test must run with at least 8 ranks");
+  if (nproc < 2 || nproc%2){
+    spkt_abort_printf("Test must run with at least 2 ranks, total even");
   }
 
   double send_delay = get_params()->get_time_param("send_delay");

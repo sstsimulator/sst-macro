@@ -499,7 +499,7 @@ sumi_transport::incoming_message(transport_message *msg)
 {
 #if SSTMAC_COMM_SYNC_STATS
   if (msg){
-    msg->payload()->set_time_arrived(wall_time());
+    msg->get_payload()->set_time_arrived(wall_time());
   }
 #endif
   pending_messages_.push_back(msg);

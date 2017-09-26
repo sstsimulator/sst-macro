@@ -79,9 +79,6 @@ RegisterKeywords(
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 
-static bool lookahead_progress_ = false;
-
-
 namespace sumi {
 
 static sprockit::need_delete_statics<mpi_queue> del_statics;
@@ -104,8 +101,6 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
 
   //user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
-
-  lookahead_progress_ = params->get_optional_bool_param("lookahead_progress", false);
 
   next_id_ = uint64_t(taskid_) << 32;
 
