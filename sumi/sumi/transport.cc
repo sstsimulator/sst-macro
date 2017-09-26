@@ -166,15 +166,6 @@ transport::init()
 }
 
 void
-transport::free_eager_buffer(message* msg)
-{
-  char* buf = (char*) msg->eager_buffer();
-  if (isNonNull(buf)){
-    delete[] buf;
-  }
-}
-
-void
 transport::finish()
 {
   clean_up();

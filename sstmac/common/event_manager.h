@@ -107,7 +107,7 @@ class event_manager
 
   static event_manager* global;
 
-  virtual ~event_manager(){}
+  virtual ~event_manager();
 
   /**
    * @brief spin_up

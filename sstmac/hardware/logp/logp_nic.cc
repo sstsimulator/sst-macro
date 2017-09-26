@@ -79,17 +79,16 @@ logp_nic::do_send(network_message* msg)
   nic_debug("logp injection queued at %8.4e, sending at %8.4e for message %s",
             now_.sec(), start_send.sec(), msg->to_string().c_str());
 
-  //leave the injection latency term to the interconnect
-  interconnect::local_logp_switch()->send(start_send, msg, parent_);
-
   timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
   next_free_ = start_send + time_to_inject;
+
   if (msg->needs_ack()){
-    //do whatever you need to do so that this msg decouples all pointers
     network_message* acker = msg->clone_injection_ack();
     auto ack_ev = new_callback(parent_, &node::handle, acker);
     parent_->send_self_event_queue(next_free_, ack_ev);
   }
+
+  interconnect::local_logp_switch()->send(start_send, msg, parent_);
 }
 
 void

@@ -189,8 +189,18 @@ def checkValgrind(tmpFile):
   text = "\n".join(text_arr)
 
   ignore = [
+    "interconnect::static_interconnect",
+    "ompi_op_create_user",
+    "opal_libevent",
+    "ompi_datatype_create",
+    "ompi_mpi_",
+    "sprockit::allocator",
+    "thread_safe_new",
+    "allocate_category_id",
+    "ompi_mpi_init",
     "still reachable",
     "key::operator new",
+    "jump_fcontext",
     "mpi_comm::add_request",
     "sprockit::printf",
     "stack_alloc::alloc",

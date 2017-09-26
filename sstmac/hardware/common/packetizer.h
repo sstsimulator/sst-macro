@@ -111,8 +111,10 @@ class packetizer :
 
   struct pending_send{
     message* msg;
+    message* ack;
     long bytes_left;
     long offset;
+    pending_send() : ack(nullptr) {}
   };
 
   using pending_list = std::list<pending_send, sprockit::thread_safe_allocator<pending_send>>;

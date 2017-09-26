@@ -68,6 +68,7 @@ namespace sstmac {
 
 const int parallel_runtime::global_root = -1;
 parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
+static int backupSize = 10e6;
 
 char*
 parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
@@ -80,7 +81,7 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
     if (myStartPos <= allocSize){
       filledSize = myStartPos;
     }
-    static const int backupSize = 10e6;
+
     if (!backupBuffer){
       backupBuffer = new char[backupSize];
     } else if (newOffset > backupSize){
@@ -216,6 +217,8 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 
   buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 16384);
 
+  backupSize = params->get_optional_byte_length_param("backup_buffer_size", 10e6);
+
   send_buffers_.resize(nproc_);
   recv_buffers_.resize(nproc_);
   for (int i=0; i < nproc_; ++i){
@@ -279,17 +282,11 @@ void parallel_runtime::send_event(ipc_event_t* iev)
   align64(iev->ser_size);
   comm_buffer& buff = send_buffers_[iev->rank];
   char* ptr = buff.allocateSpace(iev->ser_size, iev);
-  if (ptr){
-    ser.start_packing(ptr, iev->ser_size);
-    debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",
-                 iev->ser_size, iev->rank, iev->t.sec(),
-                 sprockit::to_string(iev->ev).c_str());
-    run_serialize(ser, iev);
-  } else {
-    debug_printf(sprockit::dbg::parallel, "pending event of size %lu to LP %d at t=%10.6e: %s",
-                 iev->ser_size, iev->rank, iev->t.sec(),
-                 sprockit::to_string(iev->ev).c_str());
-  }
+  ser.start_packing(ptr, iev->ser_size);
+  debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",
+               iev->ser_size, iev->rank, iev->t.sec(),
+               sprockit::to_string(iev->ev).c_str());
+  run_serialize(ser, iev);
 }
 #endif
 

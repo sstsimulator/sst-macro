@@ -342,6 +342,7 @@ class operating_system :
   std::unordered_map<library*, int> lib_refcounts_;
   std::unordered_map<void*, std::list<library*>> libs_by_owner_;
   std::map<std::string, std::list<event*>> pending_library_events_;
+
   thread* active_thread_;
 
   node_id my_addr_;

@@ -140,8 +140,6 @@ class transport {
    */
   void rdma_get(int src, message* msg, int send_cq, int recv_cq);
 
-  virtual void free_eager_buffer(message* msg);
-
   void nvram_get(int src, message* msg);
   
   /**

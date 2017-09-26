@@ -209,6 +209,8 @@ pisces_cut_through_arbitrator::~pisces_cut_through_arbitrator()
   while (next){
     bandwidth_epoch* e = next;
     next = next->next;
+    //do not delete this for now, treat as permanent
+    //this guy gets deleted and created before anything is running
     delete e;
   }
 }

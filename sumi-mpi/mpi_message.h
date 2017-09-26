@@ -112,8 +112,6 @@ class mpi_message final :
 
   mpi_protocol* protocol() const;
 
-  void put_on_wire();
-
   void set_protocol(mpi_protocol* protocol);
 
   void payload_to_completion_ack();
@@ -192,14 +190,8 @@ class mpi_message final :
     return in_flight_;
   }
 
-  void set_already_buffered(bool flag){
-    already_buffered_ = flag;
-  }
-
  protected:
   void clone_into(mpi_message* cln) const;
-
-  void buffer_send() override;
 
  protected:
   int src_rank_;
@@ -214,7 +206,6 @@ class mpi_message final :
   content_type_t content_type_;
   int protocol_;
   bool in_flight_;
-  bool already_buffered_;
 
 };
 

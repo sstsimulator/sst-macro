@@ -367,6 +367,8 @@ ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
   iev.credit = is_credit_;
   iev.port = port_;
   src->event_mgr()->ipc_schedule(&iev);
+  //this guy is gone
+  delete ev;
 }
 
 void

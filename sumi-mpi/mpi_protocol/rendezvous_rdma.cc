@@ -76,6 +76,7 @@ rendezvous_get::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
     } else {
       void* eager_buf = fill_send_buffer(msg, buffer, type);
       msg->remote_buffer().ptr = eager_buf;
+      msg->set_owns_remote_buffer(true);
     }
   }
 }

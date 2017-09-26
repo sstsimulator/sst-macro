@@ -57,6 +57,7 @@ eager0::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
   if (isNonNullBuffer(buffer)){
     void* eager_buf = fill_send_buffer(msg, buffer, type);
     msg->eager_buffer() = eager_buf;
+    msg->set_owns_local_buffer(true);
   }
   queue->memcopy(msg->payload_bytes());
 }

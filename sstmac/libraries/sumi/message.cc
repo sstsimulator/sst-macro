@@ -50,18 +50,27 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 
 namespace sstmac {
-  
+
+
 void
 transport_message::serialize_order(serializer& ser)
 {
   network_message::serialize_order(ser);
   library_interface::serialize_order(ser);
   ser & payload_;
-  if (ser.mode() == serializer::PACK){
-    //std::cout << "Packed " << payload_->to_string() << std::endl;
-  } else if (ser.mode() == serializer::UNPACK){
-    //std::cout << "Unpacked " << payload_->to_string() << std::endl;
+  //only the transport message can know
+  //if the buffers themselves need to be serialized
+  switch(network_message::type_){
+    case payload:
+    case rdma_get_payload:
+    case rdma_put_payload:
+      payload_->serialize_buffers(ser);
+      break;
+    default:
+      break;
+      //do nothing
   }
+
   ser & src_;
   ser & dest_;
   ser & src_app_;
@@ -78,8 +87,17 @@ transport_message::to_string() const
 void
 transport_message::put_on_wire()
 {
-  if (!is_metadata()){
-    payload_->buffer_send();
+  switch(type_){
+    case rdma_get_payload:
+    case nvram_get_payload:
+      payload_->buffer_remote();
+      break;
+    case rdma_put_payload:
+    case payload:
+      payload_->buffer_local();
+      break;
+    default:
+      break; //nothing to do
   }
 }
 

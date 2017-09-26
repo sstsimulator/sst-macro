@@ -991,7 +991,6 @@ dag_collective_actor::incoming_recv_message(action* ac, collective_work_message*
   case collective_work_message::eager_payload:
     //data recved will clear the actions
     data_recved(ac, msg, msg->eager_buffer());
-    my_api_->free_eager_buffer(msg);
     delete msg;
     break;
 #ifdef FEATURE_TAG_SUMI_RESILIENCE

@@ -133,6 +133,11 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   pending_serialization_.reserve(1024);
 }
 
+event_manager::~event_manager()
+{
+  if (des_context_) delete des_context_;
+}
+
 timestamp
 event_manager::run_events(timestamp event_horizon)
 {

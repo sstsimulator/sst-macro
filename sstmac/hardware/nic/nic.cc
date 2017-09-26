@@ -322,9 +322,8 @@ nic::internode_send(network_message* netmsg)
     netmsg->to_string().c_str());
   //we might not have a logp overlay network
   if (negligible_size(netmsg->byte_length())){
-    send_to_logp_switch(netmsg);
-
     ack_send(netmsg);
+    send_to_logp_switch(netmsg);
   } else {
     do_send(netmsg);
   }
