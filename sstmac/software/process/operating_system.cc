@@ -228,6 +228,7 @@ operating_system::init_threading(sprockit::sim_parameters* params)
     return; //already done
   }
 
+#if SSTMAC_USE_MULTITHREAD
   static thread_lock lock;
   sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
   lock.lock();
@@ -235,6 +236,7 @@ operating_system::init_threading(sprockit::sim_parameters* params)
     active_os_.resize(nthread());
   }
   lock.unlock();
+#endif
 
   //make sure to stash the thread ID in some thread-local storage
   void* stack = thread_info::get_current_stack();
