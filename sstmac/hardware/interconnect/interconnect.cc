@@ -145,7 +145,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
   components_.resize(topology_->num_nodes() + topology_->num_switches());
 
-
 #if !SSTMAC_INTEGRATED_SST_CORE
   partition_ = part;
   rt_ = rt;
@@ -382,7 +381,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         }
       } else {
         event_link* link = new ipc_link(target_rank, nullptr,
-                                        nid, port, false);
+                                        nid, nic::LogP, false);
         local_logp_switch_->connect_output(nid, link);
       }
     }
@@ -419,7 +418,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
   }
 
   for (network_switch* netsw : switches_){
-    netsw->compatibility_check();
+    if (netsw) netsw->compatibility_check();
   }
 }
 

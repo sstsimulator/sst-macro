@@ -294,6 +294,8 @@ class event_link {
 
   virtual std::string to_string() const = 0;
 
+  virtual bool is_external() const = 0;
+
   virtual void deadlock_check() = 0;
 
   virtual void deadlock_check(event* ev) = 0;
@@ -334,6 +336,10 @@ class local_link : public event_link {
   {
   }
 
+  bool is_external() const override {
+    return false;
+  }
+
   std::string to_string() const override {
     return handler_->to_string();
   }
@@ -366,6 +372,10 @@ class multithread_link : public local_link {
     local_link(src, dst, handler)
   {}
 
+  bool is_external() const override {
+    return true;
+  }
+
   void send(timestamp arrival, event *ev) override;
 
   void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
@@ -382,6 +392,10 @@ class ipc_link : public event_link {
     port_(port),
     event_link(src)
   {
+  }
+
+  bool is_external() const override {
+    return true;
   }
 
   std::string to_string() const override {

@@ -346,7 +346,7 @@ local_link::send(timestamp arrival, event *ev)
 void
 local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
-  src->event_mgr()->set_min_ipc_time(arrival);
+  //src->event_mgr()->set_min_ipc_time(arrival);
   event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
   qev->set_seqnum(src->next_seqnum());
   qev->set_time(arrival);

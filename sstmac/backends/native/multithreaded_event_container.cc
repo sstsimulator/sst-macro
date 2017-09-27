@@ -66,16 +66,14 @@ RegisterKeywords(
 );
 
 static int busy_loop_count = 200;
+static int epoch_print_interval = 1000;
 
 static inline void busy_loop(){
-  //500 seems to be just about right
   //checking back often enough - but without thrashing the variable
   for (int i=0; i < busy_loop_count; ++i){
     __asm__ __volatile__("");
   }
 }
-
-int num_busy_spins = 0;
 
 static int64_t terminate_sentinel = std::numeric_limits<int64_t>::max();
 
@@ -83,8 +81,8 @@ namespace sstmac {
 namespace native {
 
 #define atomic_is_zero(x) \
-  *x == 0
-  //(add_int64_atomic(int32_t(0), x) == 0)
+  (add_int64_atomic(int32_t(0), x) == 0)
+  //*x == 0
 
 static inline void wait_on_child_completion(thread_queue* q, timestamp& min_time)
 {
@@ -102,23 +100,32 @@ pthread_run_worker_thread(void* args)
   thread_queue* q = (thread_queue*) args;
   timestamp horizon;
   uint64_t epoch = 0;
+  uint64_t waitStart = rdstc();
   while(1){
     bool stillZero = atomic_is_zero(q->delta_t);
     if (!stillZero){
       int64_t delta_t = *q->delta_t;
       if (q->child1) add_int64_atomic(delta_t, q->child1->delta_t);
       if (q->child2) add_int64_atomic(delta_t, q->child2->delta_t);
+      uint64_t t_start = rdstc();
       if (delta_t == terminate_sentinel){
         return;
       } else if (delta_t != 0) {
         horizon += timestamp(delta_t, timestamp::exact);
         timestamp new_min_time = q->mgr->run_events(horizon);
         q->min_time = new_min_time;
-        ++epoch;
       }
+      uint64_t t_run = rdstc();
       if (q->child1) wait_on_child_completion(q->child1, q->min_time);
       if (q->child2) wait_on_child_completion(q->child2, q->min_time);
       add_int64_atomic(-delta_t, q->delta_t);
+      uint64_t t_stop = rdstc();
+      //if (epoch%epoch_print_interval == 0 && rt_->me() == 0){
+      //  printf("Epoch %13lu ran events for %13lu, barrier %13lu, idled %13lu on thread %d\n",
+      //         epoch, t_run-t_start, t_stop-t_run, t_start-waitStart, q->mgr->thread());
+      //}
+      ++epoch;
+      waitStart = t_stop;
     } else {
       busy_loop(); //don't slam the variable too hard
     }
@@ -158,11 +165,11 @@ multithreaded_event_container::multithreaded_event_container(
   clock_cycle_event_map(params, rt)
 {
   //set the signal handler
-  signal(SIGSEGV, print_backtrace);
-  signal(SIGABRT, print_backtrace);
-  signal(SIGBUS, print_backtrace);
-  signal(SIGFPE, print_backtrace);
-  signal(SIGILL, print_backtrace);
+  //signal(SIGSEGV, print_backtrace);
+  //signal(SIGABRT, print_backtrace);
+  //signal(SIGBUS, print_backtrace);
+  //signal(SIGFPE, print_backtrace);
+  //signal(SIGILL, print_backtrace);
 
   me_ = rt_->me();
   nproc_ = rt_->nproc();
@@ -244,10 +251,16 @@ multithreaded_event_container::run_work()
     }
   }
   if (lookahead_.ticks() == 0){
-    sprockit::abort("Zero-latency link - no lookahaed, cannot run in parallel");
+    sprockit::abort("Zero-latency link - no lookahead, cannot run in parallel");
+  }
+  if (rt_->me() == 0){
+    printf("Running parallel simulation with lookahead %10.6fus\n", lookahead_.usec());
   }
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
+    if (horizon == last_horizon){
+      spkt_abort_printf("Time did not advance - caught in infinite time loop");
+    }
     int64_t delta_t = horizon.ticks() - last_horizon.ticks();
     if (num_loops_left != 0){
       if (delta_t == 0){
@@ -264,18 +277,17 @@ multithreaded_event_container::run_work()
 
     if (child1) wait_on_child_completion(child1, min_time);
     if (child2) wait_on_child_completion(child2, min_time);
-    ++epoch;
 
     auto t_stop = rdstc();
+    if (epoch % epoch_print_interval == 0){
+      printf("Epoch %13lu ran events for %13lu, barrier %13lu until horizon %13lu\n",
+             epoch, t_run-t_start, t_stop-t_run, horizon.ticks());
+      fflush(stdout);
+    }
+    ++epoch;
 
     lower_bound = receive_incoming_events(min_time);
-    if (num_loops_left > 0){
-      if (rt_->me() == 0){
-        printf("Barrier took %llu, run took %llu - lower bound = %llu\n", 
-             t_stop - t_run, t_run - t_start, lower_bound.ticks());
-      }
-      --num_loops_left;
-    }
+    if (num_loops_left > 0) --num_loops_left;
     last_horizon = horizon;
   }
 
@@ -338,7 +350,7 @@ multithreaded_event_container::run()
     status = pthread_attr_setaffinity_np(&pthread_attrs_[i],
                                          sizeof(cpu_set_t), &cpuset);
     if (status != 0){
-        sprockit::abort("multithreaded_event_container::run: failed setting pthread affinity");
+      sprockit::abort("multithreaded_event_container::run: failed setting pthread affinity");
     }
 #endif
     status = pthread_create(&pthreads_[i], &pthread_attrs_[i],
