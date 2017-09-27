@@ -5,8 +5,8 @@
 #include <sstmac/software/threading/stack_alloc.h>
 
 struct subthread_args {
-  sstmac::sw::threading_interface* subthread;
-  sstmac::sw::threading_interface* main_thread;
+  sstmac::sw::thread_context* subthread;
+  sstmac::sw::thread_context* main_thread;
 };
 
 class context_switch_benchmark : public sstmac::benchmark
@@ -15,7 +15,7 @@ class context_switch_benchmark : public sstmac::benchmark
   FactoryRegister("context_switch", sstmac::benchmark, context_switch_benchmark);
 
   context_switch_benchmark(sprockit::sim_parameters* params){
-    main_thread_ = sstmac::sw::threading_interface::factory
+    main_thread_ = sstmac::sw::thread_context::factory
                     ::get_param("context", params);
     nthread_ = params->get_int_param("nthread");
     niter_ = params->get_int_param("niter");
@@ -26,7 +26,7 @@ class context_switch_benchmark : public sstmac::benchmark
 
  private:
   std::vector<subthread_args> subthreads_;
-  sstmac::sw::threading_interface* main_thread_;
+  sstmac::sw::thread_context* main_thread_;
   int nthread_;
   int niter_;
 };
@@ -57,7 +57,7 @@ void context_switch_benchmark::run()
   double start = now();
   for (int i=0; i < niter_; ++i){
     for (int j=0; j < nthread_; ++j){
-      sstmac::sw::threading_interface* subthread = subthreads_[j].subthread;
+      sstmac::sw::thread_context* subthread = subthreads_[j].subthread;
       subthread->resume_context(main_thread_);
     }
   }

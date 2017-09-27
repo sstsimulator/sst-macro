@@ -56,32 +56,17 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-namespace keypool {
-static std::vector<key*>* chunks = new std::vector<key*>;
-} // end of namespace keypool.
+std::unordered_map<std::string,int>* ftq_tag::category_name_to_id_ = nullptr;
+std::unordered_map<int,std::string>* ftq_tag::category_id_to_name_ = nullptr;
+ftq_tag ftq_tag::null("Null");
 
-key_traits::category key::general("General");
-std::unordered_map<std::string,int>* key::category_name_to_id_ = nullptr;
-std::unordered_map<int,std::string>* key::category_id_to_name_ = nullptr;
-
-namespace key_traits {
-
-category::category(const char* name) :
-  id_(-1)
+ftq_tag::ftq_tag(const char *name)
 {
-  id_ = key::allocate_category_id(name);
-
-}
-
-category::category() :
-  id_(-1)
-{
-}
-
+  id_ = allocate_category_id(name);
 }
 
 int
-key::allocate_category_id(const std::string &name)
+ftq_tag::allocate_category_id(const std::string &name)
 {
   if (!category_name_to_id_) {
     category_name_to_id_ = new std::unordered_map<std::string,int>;
@@ -94,7 +79,7 @@ key::allocate_category_id(const std::string &name)
 }
 
 int
-key::event_typeid(const std::string& name)
+ftq_tag::event_typeid(const std::string& name)
 {
   auto it = category_name_to_id_->find(name);
   if (it == category_name_to_id_->end()){

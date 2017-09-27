@@ -257,7 +257,7 @@ app_ftq_calendar::allocate_epochs(long max_epoch)
     max_epoch_allocated_ += allocation_num_epochs;
     epochs_.resize(max_epoch_allocated_);
 
-    int num_categories = key::num_categories();
+    int num_categories = ftq_tag::num_categories();
     long long* buffer = new long long[num_categories * allocation_num_epochs];
     long long* buffer_ptr = buffer;
     for (long epoch=epoch_start; epoch < max_epoch_allocated_;
@@ -352,7 +352,7 @@ app_ftq_calendar::dumpi_gnuplot_histogram(const std::string& fileroot, int num_c
 void
 app_ftq_calendar::dump(const std::string& fileroot)
 {
-  int num_categories = key::num_categories();
+  int num_categories = ftq_tag::num_categories();
   std::string fname = sprockit::printf("%s_app%d.dat", fileroot.c_str(), aid_);
   std::ofstream out(fname.c_str());
   //print the first line header
@@ -361,7 +361,7 @@ app_ftq_calendar::dump(const std::string& fileroot)
   //sort the categories
   std::map<std::string, int> sorted_keys;
   for (int i=0; i < num_categories; ++i){
-    sorted_keys[key::name(i)] = i;  
+    sorted_keys[ftq_tag::name(i)] = i;
   }
 
   int nonzero_categories[num_categories];

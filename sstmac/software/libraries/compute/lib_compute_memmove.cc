@@ -53,13 +53,10 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-key_traits::category lib_compute_memmove::key_category("Memory");
-
 lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
                                          software_id id, operating_system* os) :
   lib_compute_memmove(params, "libmemmove", id, os)
 {
-  key_cat_ = key_category;
 }
 
 lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
@@ -67,8 +64,6 @@ lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
                                          operating_system* os) :
   lib_compute_inst(params, prefix, sid, os)
 {
-  key_cat_ = key_category;
-
   access_width_bytes_ = params->get_optional_int_param("lib_compute_access_width", 64) / 8;
 }
 

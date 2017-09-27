@@ -62,7 +62,7 @@ enum class vote_type_t {
   min
 };
 
-static inline uint64_t rdstc(void)
+static inline uint64_t rdtsc(void)
 {
   uint32_t hi, lo;
   __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));

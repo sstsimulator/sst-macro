@@ -61,8 +61,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 using namespace sprockit::dbg;
 
-static sstmac::sw::key_traits::category message_thread("Server");
-
 namespace sstmac {
 
 class sumi_server :

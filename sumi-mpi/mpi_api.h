@@ -63,7 +63,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
 
 #include <sstmac/software/process/software_id.h>
-#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -78,8 +77,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-using sstmac::sw::key;
-using sstmac::sw::key_traits::category;
 using sstmac::sw::software_id;
 using sstmac::sw::operating_system;
 
@@ -89,10 +86,6 @@ class mpi_api :
   RegisterAPI("mpi", mpi_api)
 
  public:
-  static category default_key_category;
-  static category poll_key_category;
-  static category memcpy_key_category;
-
   mpi_api(sprockit::sim_parameters* params,
           sstmac::sw::software_id sid,
           sstmac::sw::operating_system* os);

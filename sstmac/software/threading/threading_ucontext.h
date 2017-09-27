@@ -61,7 +61,7 @@ namespace sw {
 class threading_ucontext : public threading_interface
 {
  public:
-  FactoryRegister("ucontext", threading_interface, threading_ucontext)
+  FactoryRegister("ucontext", thread_context, threading_ucontext)
 
   threading_ucontext(sprockit::sim_parameters* params)
   {
@@ -69,7 +69,7 @@ class threading_ucontext : public threading_interface
 
   void init_context() override;
 
-  threading_interface* copy() const override {
+  thread_context* copy() const override {
     return new threading_ucontext(nullptr);
   }
 
@@ -78,13 +78,13 @@ class threading_ucontext : public threading_interface
 
   void start_context(int physical_thread_id, void* stack, size_t stacksize, void
                 (*func)(void*), void *args, 
-                void* globals_storage, threading_interface* from) override;
+                void* globals_storage, thread_context* from) override;
 
-  void pause_context(threading_interface* to) override {
+  void pause_context(thread_context* to) override {
     swap_context(this, to);
   }
 
-  void resume_context(threading_interface* from) override {
+  void resume_context(thread_context* from) override {
     swap_context(from, this);
   }
 
@@ -93,7 +93,7 @@ class threading_ucontext : public threading_interface
   }
 
  private:
-  static void swap_context(threading_interface* from, threading_interface* to);
+  static void swap_context(thread_context* from, thread_context* to);
 
   ucontext_t context_;
 };

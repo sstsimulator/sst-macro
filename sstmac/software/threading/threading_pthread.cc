@@ -159,7 +159,7 @@ void
 threading_pthread::start_context(int physical_thread_id,
    void *stack, size_t stacksize, void
    (*func)(void*), void *args, void* globals_storage,
-   threading_interface* from)
+   thread_context* from)
 {
   if (globals_storage){
     spkt_abort_printf("cannot use global variables with pthread");
@@ -178,7 +178,7 @@ threading_pthread::start_context(int physical_thread_id,
 }
 
 void
-threading_pthread::complete_context(threading_interface *to)
+threading_pthread::complete_context(thread_context* to)
 {
   if (!pthread_equal(pthread_self(), context_.thread)) {
     sprockit::abort("threading_pthread::complete_context: done from thread other than \"from\" thread");

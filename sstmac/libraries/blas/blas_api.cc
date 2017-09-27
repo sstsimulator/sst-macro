@@ -80,7 +80,7 @@ blas_kernel* blas_api::ddot_kernel_;
 blas_api::blas_api(sprockit::sim_parameters* params,
                    software_id sid,
                    operating_system* os)
-  : api(params, "blas", sid, os, key::general)
+  : api(params, "blas", sid, os)
 {
   std::string libname = sprockit::printf("blas-compute%d", sid.to_string().c_str());
   lib_compute_ = new lib_compute_inst(params, libname, sid, os);

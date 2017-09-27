@@ -58,11 +58,11 @@ namespace sw {
 
 #ifdef SSTMAC_HAVE_PTHREAD
 
-class threading_pthread : public threading_interface
+class threading_pthread : public thread_context
 {
 
  public:
-  FactoryRegister("pthread", threading_interface, threading_pthread)
+  FactoryRegister("pthread", thread_context, threading_pthread)
 
   threading_pthread(sprockit::sim_parameters* params);
 
@@ -70,21 +70,21 @@ class threading_pthread : public threading_interface
 
   void destroy_context() override;
 
-  threading_interface* copy() const override {
+  thread_context* copy() const override {
     return new threading_pthread(nullptr);
   }
 
   void start_context(int physical_thread_id, void *stack, size_t stacksize, void
              (*func)(void*), void *args, void* globals_storage,
-             threading_interface* from) override;
+             thread_context* from) override;
 
-  void complete_context(threading_interface *to) override;
+  void complete_context(thread_context* to) override;
 
-  void resume_context(threading_interface* from) override {
+  void resume_context(thread_context* from) override {
     swap_context(static_cast<threading_pthread*>(from), this);
   }
 
-  void pause_context(threading_interface* to) override {
+  void pause_context(thread_context* to) override {
     swap_context(this, static_cast<threading_pthread*>(to));
   }
 

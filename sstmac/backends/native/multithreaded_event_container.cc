@@ -258,15 +258,15 @@ multithreaded_event_container::run_work()
     if (child1) add_int64_atomic(delta_t, child1->delta_t);
     if (child2) add_int64_atomic(delta_t, child2->delta_t);
 
-    auto t_start = rdstc();
+    auto t_start = rdtsc();
     timestamp min_time = run_events(horizon);
-    auto t_run = rdstc();
+    auto t_run = rdtsc();
 
     if (child1) wait_on_child_completion(child1, min_time);
     if (child2) wait_on_child_completion(child2, min_time);
     ++epoch;
 
-    auto t_stop = rdstc();
+    auto t_stop = rdtsc();
 
     lower_bound = receive_incoming_events(min_time);
     if (num_loops_left > 0){

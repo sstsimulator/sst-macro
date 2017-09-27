@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <unordered_map>
 #include <stdint.h>
-#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
 
 #include <cstring>
@@ -58,13 +57,26 @@ namespace sstmac {
 namespace sw {
 
 /**
- * A base type and default (empty) implementation of a handle
- * to block and unblock processes.
+ * @brief The ftq_tag class
+ * A descriptor for labeling the type of computation currently being done.
+ * Needed by FTQ for knowing how to label (tag) elapsed time.
  */
-class key  {
+class ftq_tag {
+
+ private:
+  friend class library;
+  friend class thread;
+
+  ftq_tag() : id_(0) {} //default initialization for thread
+
+  int id_;
 
  public:
-  static key_traits::category general;
+  ftq_tag(const char* name);
+
+  int id() const {
+   return id_;
+  }
 
  public:
   static std::string name(int keyname_id) {
@@ -78,6 +90,8 @@ class key  {
   static int num_categories() {
     return category_name_to_id_->size();
   }
+
+  static ftq_tag null;
 
  private:
   static std::unordered_map<std::string, int>* category_name_to_id_;

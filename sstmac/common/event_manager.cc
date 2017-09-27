@@ -124,8 +124,8 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   sprockit::sim_parameters* os_params = params->get_namespace("node")->get_optional_namespace("os");
   sw::stack_alloc::init(os_params);
 
-  des_context_ = sw::threading_interface::factory::get_optional_param(
-                  "context", sw::threading_interface::default_threading(), os_params);
+  des_context_ = sw::thread_context::factory::get_optional_param(
+                  "context", sw::thread_context::default_threading(), os_params);
 
   sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
 
@@ -163,7 +163,7 @@ event_manager::run_events(timestamp event_horizon)
   return min_ipc_time_;
 }
 
-sw::threading_interface*
+sw::thread_context*
 event_manager::clone_thread() const
 {
   return des_context_->copy();

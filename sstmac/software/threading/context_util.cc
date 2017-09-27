@@ -77,7 +77,7 @@ static void fill_valid_threading_contexts(std::vector<std::pair<std::string,bool
 }
 
 std::string
-threading_interface::default_threading()
+thread_context::default_threading()
 {
   static thread_lock fill_lock;
   fill_lock.lock();
