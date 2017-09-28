@@ -21,10 +21,11 @@ if not os.path.isfile(exe):
 
 files = glob.glob("*.ini")
 numFiles = len(files)
-for i in range(numFiles):
+for i in range(1,numFiles+1):
   if i % num_workers == mod_index:
     cmd = "%s -f params_%d.ini > test%d.out" % (exe, i, i)
     print cmd
+    os.system(cmd)
     
 
 
