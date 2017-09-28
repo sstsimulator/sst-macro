@@ -58,7 +58,7 @@ namespace sstmac {
 namespace sw {
 
 #ifdef SSTMAC_HAVE_UCONTEXT
-class threading_ucontext : public threading_interface
+class threading_ucontext : public thread_context
 {
  public:
   FactoryRegister("ucontext", thread_context, threading_ucontext)
@@ -88,7 +88,7 @@ class threading_ucontext : public threading_interface
     swap_context(from, this);
   }
 
-  void complete_context(threading_interface *to) override {
+  void complete_context(thread_context* to) override {
     swap_context(this, to);
   }
 

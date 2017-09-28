@@ -780,6 +780,8 @@ class mpi_api :
   static const MPI_Op first_custom_op_id = 1000;
   MPI_Op next_op_id_;
 
+  static sstmac::sw::ftq_tag mpi_tag;
+
   mpi_comm_factory comm_factory_;
 
   int iprobe_delay_us_;
@@ -862,6 +864,7 @@ mpi_api* sstmac_mpi();
 
 #define _start_mpi_call_(fxn) \
   SSTMACBacktrace(#fxn); \
+  os_->active_thread()->set_tag(mpi_tag); \
   start_api_call()
 
 #if SSTMAC_COMM_SYNC_STATS

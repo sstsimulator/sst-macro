@@ -89,6 +89,7 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 namespace sumi {
 
 static sprockit::need_delete_statics<mpi_api> del_statics;
+sstmac::sw::ftq_tag mpi_api::mpi_tag("MPI");
 
 mpi_api* sstmac_mpi()
 {

@@ -71,6 +71,10 @@ DeclareDebugSlot(thread_events)
 RegisterDebugSlot(thread_events)
 #endif
 
+static int epoch_print_interval = 10000;
+static uint64_t event_cycles = 0;
+static uint64_t barrier_cycles = 0;
+
 namespace sstmac {
 namespace native {
 
@@ -80,6 +84,12 @@ clock_cycle_event_map::clock_cycle_event_map(
   epoch_(0)
 {
   num_profile_loops_ = params->get_optional_int_param("num_profile_loops", 0);
+#if 0
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(rt->me(), &cpuset);
+  sched_setaffinity(0,sizeof(cpu_set_t), &cpuset);
+#endif
 }
 
 int
@@ -149,6 +159,9 @@ clock_cycle_event_map::run()
   if (lookahead_.ticks() == 0){
     sprockit::abort("Zero-latency link - no lookahaed, cannot run in parallel");
   }
+  if (rt_->me() == 0){
+    printf("Running parallel simulation with lookahead %10.6fus\n", lookahead_.usec());
+  }
   uint64_t epoch = 0;
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
@@ -157,11 +170,15 @@ clock_cycle_event_map::run()
     auto t_run = rdtsc();
     lower_bound = receive_incoming_events(min_time);
     auto t_stop = rdtsc();
+    uint64_t event = t_run - t_start;
+    uint64_t barrier = t_stop - t_run;
+    event_cycles += event;
+    barrier_cycles += barrier;
+    if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
+      printf("Epoch %13lu ran %13lu, %13lu cumulative %13lu, %13lu until horizon %13lu\n",
+             epoch, event, barrier, event_cycles, barrier_cycles, horizon.ticks());
+    }
     if (num_loops_left > 0){
-      if (rt_->me() == 0){
-        printf("Barrier took %llu, run took %llu - lower bound = %llu\n", 
-             t_stop - t_run, t_run - t_start, lower_bound.ticks());
-      }
       --num_loops_left;
     }
     ++epoch;
