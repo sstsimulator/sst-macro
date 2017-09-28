@@ -92,9 +92,9 @@ clock_cycle_event_map::handle_incoming(char* buf)
   uint32_t dst;
   ser & sz;
   ser & dst;
-  event_debug("sending back buffer for comp %d of size %u",
-              dst, sz);
-  if (sz == 0) abort();
+  if (sz == 0){
+    sprockit::abort("got zero size for incoming buffer");
+  }
   event_manager* mgr = interconn_->component(dst)->event_mgr();
   mgr->schedule_pending_serialization(buf);
   return sz;

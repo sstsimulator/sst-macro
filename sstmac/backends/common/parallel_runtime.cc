@@ -77,21 +77,38 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
   uint64_t myStartPos = newOffset - size;
   if (newOffset > allocSize){
     lock();
-
+    //see if I am the first to overrun - if so, set the filled size
     if (myStartPos <= allocSize){
       filledSize = myStartPos;
     }
 
-    if (!backupBuffer){
-      backupBuffer = new char[backupSize];
-    } else if (newOffset > backupSize){
-      spkt_abort_printf("overran backup buffer of size %d - aborting", backupSize);
+    //find me a backup buffer meeting my requirements
+    for (backup_buffer& b : backups){
+      if (newOffset < b.maxSize){
+        //great - this is my backup buffer
+        b.filledSize = std::max(newOffset, b.filledSize);
+        unlock();
+        return b.buffer + myStartPos;
+      }
     }
-    char* backupPtr = backupBuffer + myStartPos;
+
+    uint64_t nextBackupSize = backups.empty() ? backupSize : backups.back().maxSize * 8;
+    while (nextBackupSize < newOffset){
+      nextBackupSize *= 8;
+    }
+
+    //create a new larger backup buffer big enough to hold
+    char* buf = new char[nextBackupSize];
+    backup_buffer b;
+    b.buffer = buf;
+    b.maxSize = nextBackupSize;
+    b.filledSize = newOffset;
+    backups.push_back(b);
     unlock();
-    return backupPtr;
+
+    return buf + myStartPos;
   } else {
-    //write to this location
+    //great - good to go, write to this location
     return storage + myStartPos;
   }
 }
@@ -99,7 +116,36 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
 void
 parallel_runtime::comm_buffer::copyToBackup()
 {
-  ::memcpy(backupBuffer, storage, filledSize);
+  if (backups.empty()) return;
+
+  size_t lastFill = 0;
+  size_t fillMark = filledSize;
+  char* finalBuf = backups.back().buffer;
+  char* nextBuf = storage;
+  for (backup_buffer& buf : backups){
+    size_t bytesToFill = fillMark - lastFill;
+    ::memcpy(finalBuf + lastFill, nextBuf + lastFill, bytesToFill);
+    lastFill += bytesToFill;
+    fillMark = buf.filledSize;
+    nextBuf = buf.buffer;
+  }
+}
+
+void
+parallel_runtime::comm_buffer::reset()
+{
+  if (!backups.empty()){
+    int growRatio = bytesAllocated / allocSize;
+    growRatio = std::max(2,growRatio);
+    growRatio = std::min(growRatio, 8);
+    realloc(allocSize*growRatio);
+    for (auto& buf : backups){
+      delete[] buf.buffer;
+    }
+    backups.clear();
+  }
+  filledSize = 0;
+  bytesAllocated = 0;
 }
 
 void

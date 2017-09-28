@@ -90,12 +90,17 @@ class parallel_runtime :
     int64_t bytesAllocated;
     int64_t allocSize;
     int64_t filledSize;
-    char* backupBuffer;
     char* allocation;
     char* storage;
 
+    struct backup_buffer {
+      uint64_t maxSize;
+      uint64_t filledSize;
+      char* buffer;
+    };
+
     comm_buffer() : storage(nullptr), allocation(nullptr),
-      filledSize(0), bytesAllocated(0), backupBuffer(nullptr) {}
+      filledSize(0), bytesAllocated(0) {}
 
     ~comm_buffer(){
       if (allocation) delete[] allocation;
@@ -123,27 +128,16 @@ class parallel_runtime :
     }
 
     bool hasBackup() const {
-      return backupBuffer;
+      return !backups.empty();
     }
 
     char* backup() const {
-      return backupBuffer;
+      return backups.back().buffer;
     }
 
     void copyToBackup();
 
-    void reset(){
-      if (backupBuffer){
-        int growRatio = bytesAllocated / allocSize;
-        growRatio = std::max(2,growRatio);
-        growRatio = std::min(growRatio, 8);
-        realloc(allocSize*growRatio);
-        delete[] backupBuffer;
-        backupBuffer = nullptr;
-      }
-      filledSize = 0;
-      bytesAllocated = 0;
-    }
+    void reset();
 
     void realloc(size_t size);
 
@@ -159,6 +153,8 @@ class parallel_runtime :
     }
 
     char* allocateSpace(size_t size, ipc_event_t* ev);
+
+    std::vector<backup_buffer> backups;
 
   };
 

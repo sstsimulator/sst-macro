@@ -134,9 +134,9 @@ class mpi_request :
   } op_type_t;
 
   mpi_request(op_type_t ty) :
-   optype_(ty),
    complete_(false),
    cancelled_(false),
+   optype_(ty),
    persistent_op_(nullptr),
    collective_op_(nullptr)
   {

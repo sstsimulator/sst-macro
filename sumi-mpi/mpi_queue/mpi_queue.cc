@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
