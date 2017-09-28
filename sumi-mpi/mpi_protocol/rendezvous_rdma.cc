@@ -55,7 +55,12 @@ namespace sumi {
 
 rendezvous_protocol::rendezvous_protocol(sprockit::sim_parameters* params)
 {
-  rdma_pin_delay_ = params->get_optional_time_param("rdma_pin_delay", 0);
+  rdma_pin_latency_ = params->get_optional_time_param("rdma_pin_latency", 0);
+  pin_delay_ = rdma_pin_latency_.ticks() || params->has_param("rdma_pin_bandwidth");
+  if (pin_delay_){
+    double pin_bw = params->get_optional_bandwidth_param("rdma_pin_bandwidth", 1e15); //infinity
+    rdma_inv_bw_ = 1. / pin_bw;
+  }
   software_ack_ = params->get_optional_bool_param("software_ack", true);
 }
 
@@ -67,8 +72,9 @@ void
 rendezvous_get::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
                                       void *buffer, mpi_type* type)
 {
-  if (rdma_pin_delay_.ticks_int64()){
-    queue->api()->compute(rdma_pin_delay_); 
+  if (pin_delay_){
+    sstmac::timestamp pin_delay = rdma_pin_latency_ + sstmac::timestamp(rdma_inv_bw_*msg->payload_bytes());
+    queue->api()->compute(pin_delay);
   }
   if (isNonNullBuffer(buffer)){
     if (type->contiguous()){
@@ -98,9 +104,9 @@ rendezvous_get::incoming_header(mpi_queue* queue,
 }
 
 void
-rendezvous_get::incoming_header(mpi_queue *queue,
-                                mpi_message*msg,
-                                mpi_queue_recv_request *req)
+rendezvous_get::incoming_header(mpi_queue* queue,
+                                mpi_message* msg,
+                                mpi_queue_recv_request* req)
 {
   SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header");
   if (req) {
@@ -108,8 +114,9 @@ rendezvous_get::incoming_header(mpi_queue *queue,
     //this is a bit of a hack
     msg->set_time_synced(queue->now());
 #endif
-    if (rdma_pin_delay_.ticks_int64()){
-      queue->api()->compute(rdma_pin_delay_);
+    if (pin_delay_){
+      sstmac::timestamp pin_delay = rdma_pin_latency_ + sstmac::timestamp(msg->payload_bytes()*rdma_inv_bw_);
+      queue->api()->compute(pin_delay);
     }
     mpi_queue_action_debug(
       queue->api()->comm_world()->rank(),

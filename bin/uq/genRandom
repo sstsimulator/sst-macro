@@ -1,5 +1,10 @@
 #! /usr/bin/env python
 
+"""
+Generate a set of random grid points to use in validating
+construction of the surrogate
+"""
+
 import sys
 
 def usage(os):

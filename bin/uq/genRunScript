@@ -3,6 +3,12 @@
 import os
 import sys
 
+"""
+Create the script that will run all the jobs in the sweep.
+This produces a single script that can be run that 
+will spawn all the jobs in parallel.
+"""
+
 def usage(of):
   of.write("usage: ./genScripts <num_workers> <exe_path>\n")
 

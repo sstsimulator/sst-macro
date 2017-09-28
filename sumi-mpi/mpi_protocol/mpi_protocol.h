@@ -319,7 +319,9 @@ class rendezvous_protocol : public mpi_protocol
   virtual ~rendezvous_protocol(){}
 
  protected:
-  sstmac::timestamp rdma_pin_delay_;
+  sstmac::timestamp rdma_pin_latency_;
+  double rdma_inv_bw_;
+  bool pin_delay_;
   bool software_ack_;
 
 };

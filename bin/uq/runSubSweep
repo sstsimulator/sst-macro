@@ -4,6 +4,12 @@ import sys
 import os
 import glob
 
+"""
+Run a given subset of the points in the parameter sweep.
+Done based on an input index and running all job numbers
+that match my index modulo total number of workers
+"""
+
 def usage(of):
   of.write("usage: ./runSweep <mod_index> <num_workers> <exe_path>\n")
 
