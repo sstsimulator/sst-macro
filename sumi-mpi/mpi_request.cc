@@ -96,15 +96,6 @@ collective_op::collective_op(int count, mpi_comm* cm) :
   recvcnt = count;
 }
 
-mpi_request::mpi_request(op_type_t ty, const category& cat) :
- optype_(ty),
- complete_(false),
- cancelled_(false),
- persistent_op_(nullptr),
- collective_op_(nullptr)
-{
-}
-
 mpi_request::~mpi_request()
 {
   if (persistent_op_) delete persistent_op_;

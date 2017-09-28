@@ -74,7 +74,6 @@ lib_compute_loops::lib_compute_loops(sprockit::sim_parameters* params, software_
                                      operating_system* os) :
   lib_compute_memmove(params, "lib_compute_loops", id, os)
 {
-  key_cat_ = lib_compute::key_category;
   mem_line_ratio_ = params->get_optional_double_param(
                         "lib_compute_loops_mem_ratio", 0.8);
   flop_line_ratio_ = params->get_optional_double_param(

@@ -120,7 +120,7 @@ void
 lib_compute_inst::compute_inst(compute_event* cmsg)
 {
   SSTMACBacktrace("Compute Instructions");
-  os_->execute(ami::COMP_INSTR, cmsg, key_category);
+  os_->execute(ami::COMP_INSTR, cmsg);
 }
 
 }

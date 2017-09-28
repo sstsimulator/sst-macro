@@ -65,7 +65,7 @@ void
 threading_ucontext::start_context(int physical_thread_id,
    void *stack, size_t stacksize, void
    (*func)(void*), void *args,
-   void* globals_storage, threading_interface* from)
+   void* globals_storage, thread_context* from)
 {
   thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
 
@@ -87,7 +87,7 @@ threading_ucontext::start_context(int physical_thread_id,
 
 /// Swap context.
 void
-threading_ucontext::swap_context(threading_interface* from, threading_interface *to)
+threading_ucontext::swap_context(thread_context* from, thread_context *to)
 {
   threading_ucontext* fromctx = static_cast<threading_ucontext*>(from);
   threading_ucontext* toctx = static_cast<threading_ucontext*>(to);

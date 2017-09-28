@@ -75,7 +75,7 @@ const task_id thread::main_thread_tid(-1);
 //
 void
 thread::init_thread(sprockit::sim_parameters* params,
-  int physical_thread_id, threading_interface* des_thread, void *stack,
+  int physical_thread_id, thread_context* des_thread, void *stack,
   int stacksize, void* globals_storage)
 {
   thread_info::set_thread_id(stack, physical_thread_id);
@@ -177,8 +177,6 @@ thread::run_routine(void* threadptr)
     sprockit::abort("thread::run_routine: task has not been initialized");
   }
 }
-
-key_traits::category schedule_delay("CPU_Sched Delay");
 
 thread::thread(sprockit::sim_parameters* params, software_id sid, operating_system* os) :
   os_(os),

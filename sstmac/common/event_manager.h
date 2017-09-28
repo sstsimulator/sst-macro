@@ -121,7 +121,7 @@ class event_manager
    */
   void spin_down();
 
-  sw::threading_interface* clone_thread() const;
+  sw::thread_context* clone_thread() const;
 
   virtual void run();
 
@@ -256,8 +256,8 @@ class event_manager
   timestamp final_time_;
   parallel_runtime* rt_;
   hw::interconnect* interconn_;
-  sw::threading_interface* des_context_;
-  sw::threading_interface* main_thread_;
+  sw::thread_context* des_context_;
+  sw::thread_context* main_thread_;
   bool scheduled_;
 
   int me_;

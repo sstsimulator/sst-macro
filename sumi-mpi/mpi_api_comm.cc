@@ -45,6 +45,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_cart.h>
 #include <sprockit/stl_string.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 
 #define start_comm_call(fxn,comm) \
   start_mpi_call(fxn,0,0,comm); \

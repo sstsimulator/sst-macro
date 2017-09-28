@@ -71,6 +71,10 @@ DeclareDebugSlot(thread_events)
 RegisterDebugSlot(thread_events)
 #endif
 
+static int epoch_print_interval = 10000;
+static uint64_t event_cycles = 0;
+static uint64_t barrier_cycles = 0;
+
 namespace sstmac {
 namespace native {
 
@@ -161,11 +165,19 @@ clock_cycle_event_map::run()
   uint64_t epoch = 0;
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
-    auto t_start = rdstc();
+    auto t_start = rdtsc();
     timestamp min_time = run_events(horizon);
-    auto t_run = rdstc();
+    auto t_run = rdtsc();
     lower_bound = receive_incoming_events(min_time);
-    auto t_stop = rdstc();
+    auto t_stop = rdtsc();
+    uint64_t event = t_run - t_start;
+    uint64_t barrier = t_stop - t_run;
+    event_cycles += event;
+    barrier_cycles += barrier;
+    if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
+      printf("Epoch %13lu ran %13lu, %13lu cumulative %13lu, %13lu until horizon %13lu\n",
+             epoch, event, barrier, event_cycles, barrier_cycles, horizon.ticks());
+    }
     if (num_loops_left > 0){
       --num_loops_left;
     }

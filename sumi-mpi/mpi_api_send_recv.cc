@@ -44,6 +44,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 
 #define start_pt2pt_call(fxn, count, type, partner, tag, comm) \
   start_mpi_call(fxn,count,type,comm); \
@@ -63,7 +65,7 @@ mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 {
   start_pt2pt_call(MPI_Send,count,datatype,dest,tag,comm);
   mpi_comm* commPtr = get_comm(comm);
-  mpi_request* req = mpi_request::construct(mpi_request::Send, default_key_category);
+  mpi_request* req = mpi_request::construct(mpi_request::Send);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   queue_->progress_loop(req);
   delete req;
@@ -154,7 +156,7 @@ mpi_api::send_init(const void *buf, int count,
 {
   _start_mpi_call_(MPI_Send_init);
 
-  mpi_request* req = mpi_request::construct(mpi_request::Send,default_key_category);
+  mpi_request* req = mpi_request::construct(mpi_request::Send);
   add_request_ptr(req, request);
 
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
@@ -182,7 +184,7 @@ mpi_api::do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm)
 {
   mpi_comm* commPtr = get_comm(comm);
-  mpi_request* req = mpi_request::construct(mpi_request::Send,default_key_category);
+  mpi_request* req = mpi_request::construct(mpi_request::Send);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   return req;
 }
@@ -218,7 +220,7 @@ int
 mpi_api::do_recv(void *buf, int count, MPI_Datatype datatype, int source,
               int tag, MPI_Comm comm, MPI_Status *status)
 {
-  mpi_request* req = mpi_request::construct(mpi_request::Recv,default_key_category);
+  mpi_request* req = mpi_request::construct(mpi_request::Recv);
   mpi_comm* commPtr = get_comm(comm);
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   queue_->progress_loop(req);
@@ -235,7 +237,7 @@ mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
 {
   _start_mpi_call_(MPI_Recv_init);
 
-  mpi_request* req = mpi_request::construct(mpi_request::Recv,default_key_category);
+  mpi_request* req = mpi_request::construct(mpi_request::Recv);
   add_request_ptr(req, request);
 
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
@@ -266,7 +268,7 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
   using namespace sprockit;
   mpi_comm* commPtr = get_comm(comm);
 
-  mpi_request* req = mpi_request::construct(mpi_request::Recv,default_key_category);
+  mpi_request* req = mpi_request::construct(mpi_request::Recv);
   add_request_ptr(req, request);
 
   mpi_api_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt,

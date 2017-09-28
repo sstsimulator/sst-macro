@@ -44,6 +44,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 
 #undef start
 #define start(coll, fxn, comm, count, type, ...) \
@@ -68,7 +70,7 @@ namespace sumi {
 void
 mpi_api::add_immediate_collective(collective_op_base* op, MPI_Request* req)
 {
-  mpi_request* reqPtr = mpi_request::construct(mpi_request::Collective, default_key_category);
+  mpi_request* reqPtr = mpi_request::construct(mpi_request::Collective);
   reqPtr->set_collective(op);
   op->comm->add_request(op->tag, reqPtr);
   add_request_ptr(reqPtr, req);

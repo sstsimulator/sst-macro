@@ -52,8 +52,7 @@ namespace sw {
 
 library::library(const std::string& libname, software_id sid, operating_system* os) :
   sid_(sid), libname_(libname), os_(os),
-  addr_(os->addr()),
-  key_cat_(key::general)
+  addr_(os->addr())
 {
   os_->register_lib(this);
 }

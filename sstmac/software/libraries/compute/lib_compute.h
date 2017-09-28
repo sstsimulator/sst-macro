@@ -57,15 +57,12 @@ namespace sw {
 class lib_compute :
   public library
 {  
- public:
-  static key_traits::category key_category;
   
  protected:
   lib_compute(sprockit::sim_parameters* params,
               const std::string& libname, software_id sid,
               operating_system* os)
     : library(libname, sid, os) {
-    key_cat_ = lib_compute::key_category;
   }
 
   lib_compute(sprockit::sim_parameters* params,
@@ -73,7 +70,6 @@ class lib_compute :
               operating_system* os)
     : library(name, sid, os)
   {
-     key_cat_ = lib_compute::key_category;
   }
 
 };

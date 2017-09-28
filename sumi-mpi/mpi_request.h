@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 
-#include <sstmac/software/process/key_fwd.h>
+#include <sstmac/software/process/key.h>
 #include <sumi/collective.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
@@ -54,9 +54,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 namespace sumi {
-
-using sstmac::sw::key;
-using sstmac::sw::key_traits::category;
 
 /**
  * Persistent send operations (send, bsend, rsend, ssend)
@@ -136,7 +133,14 @@ class mpi_request :
     Probe
   } op_type_t;
 
-  mpi_request(op_type_t ty, const category& cat);
+  mpi_request(op_type_t ty) :
+   optype_(ty),
+   complete_(false),
+   cancelled_(false),
+   persistent_op_(nullptr),
+   collective_op_(nullptr)
+  {
+  }
 
   std::string to_string() const {
     return "mpirequest";
@@ -144,8 +148,8 @@ class mpi_request :
 
   std::string type_str() const;
 
-  static mpi_request* construct(op_type_t ty, const category& cat){
-    return new mpi_request(ty,cat);
+  static mpi_request* construct(op_type_t ty){
+    return new mpi_request(ty);
   }
 
   ~mpi_request();

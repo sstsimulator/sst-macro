@@ -63,7 +63,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
 
 #include <sstmac/software/process/software_id.h>
-#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -78,8 +77,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-using sstmac::sw::key;
-using sstmac::sw::key_traits::category;
 using sstmac::sw::software_id;
 using sstmac::sw::operating_system;
 
@@ -89,10 +86,6 @@ class mpi_api :
   RegisterAPI("mpi", mpi_api)
 
  public:
-  static category default_key_category;
-  static category poll_key_category;
-  static category memcpy_key_category;
-
   mpi_api(sprockit::sim_parameters* params,
           sstmac::sw::software_id sid,
           sstmac::sw::operating_system* os);
@@ -787,6 +780,8 @@ class mpi_api :
   static const MPI_Op first_custom_op_id = 1000;
   MPI_Op next_op_id_;
 
+  static sstmac::sw::ftq_tag mpi_tag;
+
   mpi_comm_factory comm_factory_;
 
   int iprobe_delay_us_;
@@ -869,6 +864,7 @@ mpi_api* sstmac_mpi();
 
 #define _start_mpi_call_(fxn) \
   SSTMACBacktrace(#fxn); \
+  os_->active_thread()->set_tag(mpi_tag); \
   start_api_call()
 
 #if SSTMAC_COMM_SYNC_STATS

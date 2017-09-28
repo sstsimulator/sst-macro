@@ -228,6 +228,7 @@ operating_system::init_threading(sprockit::sim_parameters* params)
     return; //already done
   }
 
+#if SSTMAC_USE_MULTITHREAD
   static thread_lock lock;
   sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
   lock.lock();
@@ -235,13 +236,14 @@ operating_system::init_threading(sprockit::sim_parameters* params)
     active_os_.resize(nthread());
   }
   lock.unlock();
+#endif
 
   //make sure to stash the thread ID in some thread-local storage
   void* stack = thread_info::get_current_stack();
   thread_info::set_thread_id(stack, threadId());
 
-  des_context_ = threading_interface::factory::get_optional_param(
-        "context", threading_interface::default_threading(), params);
+  des_context_ = thread_context::factory::get_optional_param(
+        "context", thread_context::default_threading(), params);
 
   des_context_->init_context();
 
@@ -306,8 +308,7 @@ operating_system::execute_kernel(ami::COMP_FUNC func, event *data,
 }
 
 void
-operating_system::execute(ami::COMP_FUNC func, event* data,
-                          key_traits::category cat)
+operating_system::execute(ami::COMP_FUNC func, event* data)
 {
   //this will block if the thread has no core to run on
   compute_sched_->reserve_core(active_thread_);
@@ -394,32 +395,34 @@ operating_system::print_libs(std::ostream &os) const
 timestamp
 operating_system::block()
 {
-  int64_t before_ticks = now().ticks_int64();
+  timestamp before = now();
   //back to main DES thread
-  threading_interface* old_context = active_thread_->context();
+  thread_context* old_context = active_thread_->context();
   if (old_context == des_context_){
     spkt_abort_printf("blocking main DES thread on node %d", my_addr_);
   }
   thread* old_thread = active_thread_;
   active_thread_ = nullptr;
   old_context->pause_context(des_context_);
+
+  //restore state to indicate this thread and this OS are active again
   active_os() = this;
-
-
-  //I am reactivated !!!!
   active_thread_ = old_thread;
-  int64_t after_ticks = now().ticks_int64();
-  int64_t delta_ticks = after_ticks - before_ticks;
+
+   //collect any statistics associated with the elapsed time
+  timestamp after = now();
+  timestamp elapsed = after - before;
 
   if (call_graph_ && call_graph_active_) {
-    call_graph_->count_trace(delta_ticks, active_thread_);
+    call_graph_->count_trace(elapsed.ticks(), active_thread_);
   }
 
-  if (ftq_trace_) {
-    sprockit::abort("FTQ not yet supported");
-    //ftq_trace_->collect(req->event_typeid(),
-    //  active_thread_->aid(), active_thread_->tid(),
-    //  before_ticks, delta_ticks);
+  if (ftq_trace_){
+    ftq_tag tag = active_thread_->tag();
+    ftq_trace_->collect(tag.id(),
+      active_thread_->aid(), active_thread_->tid(),
+      before.ticks(), elapsed.ticks());
+    active_thread_->set_tag(ftq_tag::null);
   }
 
   return now();

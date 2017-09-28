@@ -55,10 +55,7 @@ class lib_compute_memmove :
 {
 
  public:
-  static key_traits::category key_category;
-
-  virtual
-  ~lib_compute_memmove() {}
+  virtual ~lib_compute_memmove() {}
 
   lib_compute_memmove(sprockit::sim_parameters* params, software_id id,
                       operating_system* os);
@@ -66,28 +63,22 @@ class lib_compute_memmove :
   lib_compute_memmove(sprockit::sim_parameters* params, const char* prefix, software_id id,
                       operating_system* os);
 
-  void
-  incoming_event(event *ev){
+  void incoming_event(event *ev){
     //forward to parent, which throws
     library::incoming_event(ev);
   }
 
-  void
-  read(long bytes);
+  void read(long bytes);
 
-  void
-  write(long bytes);
+  void write(long bytes);
 
-  void
-  copy(long bytes);
+  void copy(long bytes);
 
  protected:
   static const long unlimited_page_size = -1;
   static const long default_page_size = unlimited_page_size;
 
-  void
-  do_access(long bytes);
-
+  void do_access(long bytes);
 
  protected:
   int access_width_bytes_;

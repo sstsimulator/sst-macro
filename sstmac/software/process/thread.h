@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
-#include <sstmac/software/process/key_fwd.h>
+#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
@@ -70,6 +70,12 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
+/**
+ * @brief The thread class
+ * Encapsulates all the state associated with a simulated thread within SST/macro
+ * Not to be confused with thread_context, which just manages the details
+ * of context-switching between user space threads.
+ */
 class thread
 {
  public:
@@ -138,7 +144,7 @@ class thread
     return sid_;
   }
 
-  threading_interface* context() const {
+  thread_context* context() const {
     return context_;
   }
 
@@ -217,7 +223,7 @@ class thread
   void collect_backtrace(int nfxn);
 
   void init_thread(sprockit::sim_parameters* params, int phyiscal_thread_id,
-    threading_interface* tocopy, void *stack, int stacksize,
+    thread_context* tocopy, void *stack, int stacksize,
     void* globals_storage);
 
   virtual void run() = 0;
@@ -278,6 +284,14 @@ class thread
 
   void end_api_call();
 
+  void set_tag(ftq_tag t){
+    ftag_ = t;
+  }
+
+  ftq_tag tag() const {
+    return ftag_;
+  }
+
  protected:
   thread(sprockit::sim_parameters* params, software_id sid, operating_system* os);
 
@@ -308,6 +322,8 @@ class thread
 
   process_context p_txt_;
 
+  ftq_tag ftag_;
+
   software_id sid_;
 
   HostTimer* host_timer_;
@@ -329,7 +345,7 @@ class thread
   
   long thread_id_;
 
-  threading_interface* context_;
+  thread_context* context_;
   
   uint64_t cpumask_;
   

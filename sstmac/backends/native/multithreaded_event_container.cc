@@ -66,7 +66,10 @@ RegisterKeywords(
 );
 
 static int busy_loop_count = 200;
-static int epoch_print_interval = 1000;
+static int epoch_print_interval = 10000;
+
+static uint64_t event_cycles = 0;
+static uint64_t barrier_cycles = 0;
 
 static inline void busy_loop(){
   //checking back often enough - but without thrashing the variable
@@ -100,14 +103,12 @@ pthread_run_worker_thread(void* args)
   thread_queue* q = (thread_queue*) args;
   timestamp horizon;
   uint64_t epoch = 0;
-  uint64_t waitStart = rdstc();
   while(1){
     bool stillZero = atomic_is_zero(q->delta_t);
     if (!stillZero){
       int64_t delta_t = *q->delta_t;
       if (q->child1) add_int64_atomic(delta_t, q->child1->delta_t);
       if (q->child2) add_int64_atomic(delta_t, q->child2->delta_t);
-      uint64_t t_start = rdstc();
       if (delta_t == terminate_sentinel){
         return;
       } else if (delta_t != 0) {
@@ -115,17 +116,10 @@ pthread_run_worker_thread(void* args)
         timestamp new_min_time = q->mgr->run_events(horizon);
         q->min_time = new_min_time;
       }
-      uint64_t t_run = rdstc();
       if (q->child1) wait_on_child_completion(q->child1, q->min_time);
       if (q->child2) wait_on_child_completion(q->child2, q->min_time);
       add_int64_atomic(-delta_t, q->delta_t);
-      uint64_t t_stop = rdstc();
-      //if (epoch%epoch_print_interval == 0 && rt_->me() == 0){
-      //  printf("Epoch %13lu ran events for %13lu, barrier %13lu, idled %13lu on thread %d\n",
-      //         epoch, t_run-t_start, t_stop-t_run, t_start-waitStart, q->mgr->thread());
-      //}
       ++epoch;
-      waitStart = t_stop;
     } else {
       busy_loop(); //don't slam the variable too hard
     }
@@ -271,24 +265,28 @@ multithreaded_event_container::run_work()
     if (child1) add_int64_atomic(delta_t, child1->delta_t);
     if (child2) add_int64_atomic(delta_t, child2->delta_t);
 
-    auto t_start = rdstc();
+    auto t_start = rdtsc();
     timestamp min_time = run_events(horizon);
-    auto t_run = rdstc();
+    auto t_run = rdtsc();
 
     if (child1) wait_on_child_completion(child1, min_time);
     if (child2) wait_on_child_completion(child2, min_time);
 
-    auto t_stop = rdstc();
-    if (epoch % epoch_print_interval == 0){
-      printf("Epoch %13lu ran events for %13lu, barrier %13lu until horizon %13lu\n",
-             epoch, t_run-t_start, t_stop-t_run, horizon.ticks());
-      fflush(stdout);
-    }
-    ++epoch;
 
     lower_bound = receive_incoming_events(min_time);
     if (num_loops_left > 0) --num_loops_left;
     last_horizon = horizon;
+    auto t_stop = rdtsc();
+    uint64_t event = t_run - t_start;
+    uint64_t barrier = t_stop - t_run;
+    event_cycles += event;
+    barrier_cycles += barrier;
+    if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
+      printf("Epoch %13lu ran %13lu, %13lu cumulative %13lu, %13lu until horizon %13lu\n",
+             epoch, event, barrier, event_cycles, barrier_cycles, horizon.ticks());
+      fflush(stdout);
+    }
+    ++epoch;
   }
 
   if (child1) add_int64_atomic(terminate_sentinel, child1->delta_t);

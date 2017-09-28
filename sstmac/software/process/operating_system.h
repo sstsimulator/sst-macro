@@ -144,7 +144,7 @@ class operating_system :
    * @param cat   An optional category labeling the type of
    *              operation
    */
-  void execute(ami::COMP_FUNC, event* data, key_traits::category cat);
+  void execute(ami::COMP_FUNC, event* data);
 
   /**
    * @brief execute Execute a communication function.
@@ -349,7 +349,7 @@ class operating_system :
 
   /// The caller context (main DES thread).  We go back
   /// to this context on every context switch.
-  threading_interface *des_context_;
+  thread_context *des_context_;
 
   sprockit::sim_parameters* params_;
 

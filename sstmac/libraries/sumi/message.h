@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/software/process/operating_system_fwd.h>
-#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/common/messages/library_message.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sumi/message.h>
