@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
 #include <sstream>
+#include <regex>
 
 RegisterKeywords("epoch");
 
@@ -300,52 +301,54 @@ app_ftq_calendar::collect(int event_typeid, int tid, long ticks_begin,
 
 }
 
-
-static const char* gnuplot_histogram_header =
-  "set terminal postscript enhanced\n"
-  "set border 3 front linetype -1 linewidth 1.000\n"
-  "set boxwidth 0.75 absolute\n"
-  "set style fill solid 1.00 border lt -1\n"
-  "set grid nopolar\n"
-  "set grid noxtics nomxtics ytics nomytics noztics nomztics nox2tics nomx2tics noy2tics nomy2tics nocbtics nomcbtics\n"
-  "set grid layerdefault   linetype 0 linewidth 1.000,  linetype 0 linewidth 1.000\n"
-  "set key outside right top vertical Left reverse noenhanced autotitles columnhead nobox\n"
-  "set key invert samplen 4 spacing 1.5 width 0 height 0 font \"Arial,28\" \n"
-  "set size 0.95,0.95\n"
-  "set style histogram rowstacked title  offset character 0, 0, 0\n"
-  "set style data histograms\n"
-  "set style fill solid noborder\n"
-  "set xtics border in scale 0,0 nomirror rotate by -45  offset character 0, 0, 0 autojustify\n"
-  "set xtics norangelimit font \",8\"\n"
-  "set xtics ()\n"
-  "set xtics font \"Arial,24\" \n"
-  "set noytics\n"
-  "set title \"Application Activity Over Time\" font \"Arial,28\" \n"
-  "set ylabel \"% of total\" font \"Arial,28\" \n"
-  "set xlabel \"Time(ms)\" font \"Arial,28\" offset 0,-1\n"
-  "set yrange [0.00000 : 100.000] noreverse nowriteback\n"
-  "set boxwidth 1\n";
+static const char* matplotlib_histogram_text =
+    "#!/usr/bin/env python\n"
+    "\n"
+    "import numpy as np\n"
+    "import matplotlib.pyplot as plt\n"
+    "import argparse\n"
+    "\n"
+    "# Getting CLI args\n"
+    "parser = argparse.ArgumentParser()\n"
+    "parser.add_argument('--show', action='store_true', help='display the plot on screen')\n"
+    "parser.add_argument('--title', default='Histogram plot', help='set the title')\n"
+    "parser.add_argument('--eps', action='store_true', help='output .eps file')\n"
+    "parser.add_argument('--pdf', action='store_true', help='output .pdf file')\n"
+    "parser.add_argument('--png', action='store_true', help='output .png file')\n"
+    "parser.add_argument('--svg', action='store_true', help='output .svg file')\n"
+    "args = parser.parse_args()\n"
+    "\n"
+    "# Parsing the data file\n"
+    "file_name='output_app1'\n"
+    "with open(file_name + '.dat') as f:\n"
+    "    names = f.readline().split()\n"
+    "    data = np.loadtxt(f, dtype=float).transpose()\n"
+    "    time, normalized = data[0], np.divide(data[1:-1],data[-1])\n"
+    "\n"
+    "# Plot fomatting\n"
+    "plt.xlabel('Time (us)')\n"
+    "plt.xlim(time[0], time[-1])\n"
+    "plt.ylim(0,1)\n"
+    "plt.yticks([])\n"
+    "plt.title(args.title)\n"
+    "plt.legend(plt.stackplot(time, normalized), names[1:])\n"
+    "\n"
+    "# Saving\n"
+    "if args.eps: plt.savefig(file_name + '.eps')\n"
+    "if args.pdf: plt.savefig(file_name + '.pdf')\n"
+    "if args.png: plt.savefig(file_name + '.png')\n"
+    "if args.svg: plt.savefig(file_name + '.svg')\n"
+    "\n"
+    "if args.show:\n"
+    "    plt.show()\n";
 
 void
-app_ftq_calendar::dumpi_gnuplot_histogram(const std::string& fileroot, int num_categories)
+app_ftq_calendar::dumpi_matplotlib_histogram(const std::string& fileroot)
 {
-  int last_data_column = num_categories + 1;
-  int totals_column = num_categories + 2;
-  std::string fname = sprockit::printf("%s_app%d.p", fileroot.c_str(), aid_);
+  std::string fname = sprockit::printf("%s_app%d.py", fileroot.c_str(), aid_);
   std::ofstream out(fname.c_str());
-  out << gnuplot_histogram_header;
-  out << sprockit::printf("set xrange[0.0:%d.0]\n", max_epoch_);
-  out << "plot 'ftq_app1.dat' using (100.*$2/$" << totals_column <<
-      ") title column(2) lc 2 lw -1 lt -1";
-  if (num_categories == 1) {
-    return;
-  }
-
-  out << ", \\";
-  out << "\n";
-
-  out << sprockit::printf("   for [i=3:%d] '' using (100.*column(i)/column(%d)) title column(i) lc i lw -1 lt -1",
-                   last_data_column, totals_column);
+  auto text = std::regex_replace(matplotlib_histogram_text, std::regex("__file_name__"), fileroot);
+  out << text;
   out.close();
 }
 
@@ -400,10 +403,7 @@ app_ftq_calendar::dump(const std::string& fileroot)
   out << sstr.str();
   out.close();
 
-  dumpi_gnuplot_histogram(fileroot, num_nonzero_cats);
-
-
-
+  dumpi_matplotlib_histogram(fileroot);
 
   timestamp stamp_sec(1, timestamp::seconds);
   int64_t ticks_s = stamp_sec.ticks_int64();
