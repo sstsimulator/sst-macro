@@ -222,6 +222,11 @@ int main(int argc, char** argv)
 
   if (recv_seed > 0){
     recvers = shuffled_recvers(num_senders, senders, recv_seed, num_half, num_recvers);
+  } else {
+    recvers.resize(num_recvers);
+    for (int i=0; i < num_recvers; ++i){
+      recvers[i] = 2*i + 1;
+    }
   }
 
   std::vector<int> senders_to_me;
@@ -231,7 +236,7 @@ int main(int argc, char** argv)
   for (int s=0; s < num_senders; ++s){
     int recver = recvers[s/senders_per_recver];
     int sender = senders[s];
-    if ( (sender+1) == recver ){
+    if ( (sender+1) == recver && recv_seed > 0 && send_seed > 0 ){
       //don't let sender and recver be on same node
       std::cerr << "sender and recver are same node! invalid" << std::endl;
       MPI_Finalize();

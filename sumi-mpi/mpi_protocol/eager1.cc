@@ -111,8 +111,7 @@ eager1::incoming_header(mpi_queue* queue,
     queue->waiting_message_.push_front(req);
     req->set_seqnum(msg->seqnum()); //associate the messages
     msg->local_buffer().ptr = req->recv_buffer_;
-  }
-  else {
+  } else {
     auto& rbuf = msg->remote_buffer();
     if (rbuf.ptr){
       auto& lbuf = msg->local_buffer();
@@ -158,6 +157,7 @@ eager1_singlecpy::incoming_payload(mpi_queue *queue,
   }
   SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Payload");
   //already RDMA'd correctly - just finish
+  queue->memcopy(msg->payload_bytes()); //simulate
   queue->finalize_recv(msg, req);
 }
 

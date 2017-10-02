@@ -14,7 +14,7 @@ the plot
 """
 
 def usage(of):
-  of.write("usage: ./validatePoints <simulation_data_file> <experiment_data_file>")
+  of.write("usage: ./validatePoints <simulation_data_file> <experiment_data_file>\n")
 
 if len(sys.argv) != 3:
   usage(sys.stderr)
