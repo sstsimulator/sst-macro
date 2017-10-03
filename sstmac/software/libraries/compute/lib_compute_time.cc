@@ -78,7 +78,7 @@ lib_compute_time::~lib_compute_time()
 void
 lib_compute_time::compute(timestamp time)
 {
-  SSTMACBacktrace("Compute Time");
+  SSTMACBacktrace(ComputeTime);
   if (time.sec() < 0) {
     sprockit::abort("lib_compute_time can't compute for less than zero time");
   }
@@ -88,7 +88,7 @@ lib_compute_time::compute(timestamp time)
 void
 lib_compute_time::sleep(timestamp time)
 {
-  SSTMACBacktrace("Sleep");
+  SSTMACBacktrace(Sleep);
   os_->sleep(time);
 }
 

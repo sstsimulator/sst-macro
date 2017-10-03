@@ -209,7 +209,7 @@ class operating_system :
    */
   timestamp unblock(thread* thr);
 
-  void bcast_app_start(int my_rank, int aid, const std::string& app_ns,
+  void outcast_app_start(int my_rank, int aid, const std::string& app_ns,
                       task_mapping_ptr mapping, sprockit::sim_parameters* app_params,
                       bool include_root = false);
 

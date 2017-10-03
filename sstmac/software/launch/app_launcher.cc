@@ -73,7 +73,7 @@ app_launcher::incoming_event(event* ev)
     task_mapping::add_global_mapping(lev->aid(), lev->unique_name(), lev->mapping());
 
     //if necessary, bcast this to whomever else needs it
-    os_->bcast_app_start(lev->tid(), lev->aid(), lev->unique_name(),
+    os_->outcast_app_start(lev->tid(), lev->aid(), lev->unique_name(),
                          lev->mapping(), &lev->app_params());
 
     software_id sid(lev->aid(), lev->tid());

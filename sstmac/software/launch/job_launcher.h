@@ -271,9 +271,9 @@ class exclusive_job_launcher : public default_job_launcher
 
 };
 
-struct bcast_iterator {
+struct outcast_iterator {
 
-  bcast_iterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
+  outcast_iterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
 
   int forward_to(int ranks[]){
     int power2_size = 1;
@@ -307,6 +307,54 @@ struct bcast_iterator {
   }
 
 };
+
+struct incast_iterator {
+
+  incast_iterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
+
+  /**
+   * @brief config
+   * @param to_send
+   * @param to_recv
+   * @return
+   */
+  void config(int& num_to_send, int& num_to_recv, int to_send[], int to_recv[]){
+    int power2_size = 1;
+    while (power2_size < nranks_){
+      power2_size *= 2;
+    }
+    int ret = 0;
+    num_to_send = 0;
+    num_to_recv = 0;
+    pvt_config(num_to_send, num_to_recv, to_send, to_recv, 0, power2_size);
+  }
+
+  int nranks_;
+  int my_rank_;
+
+ private:
+  void pvt_config(int& num_send, int& num_recv, int to_send[], int to_recv[], int offset, int blocksize){
+    if (blocksize == 1) return;
+
+    int half_size = blocksize / 2;
+    int role = my_rank_ % blocksize;
+    int midpoint = offset + half_size;
+    if (role == 0){
+      int dst = midpoint;
+      if (dst < nranks_) to_recv[num_send++] = dst;
+    } else if (role == half_size) {
+      to_send[num_send++] = offset;
+    }
+    if (my_rank_ >= midpoint){
+      pvt_config(num_send, num_recv, to_send, to_recv, midpoint, half_size);
+    } else {
+      pvt_config(num_send, num_recv, to_send, to_recv, offset, half_size);
+    }
+  }
+
+};
+
+
 
 }
 }

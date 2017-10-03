@@ -85,7 +85,7 @@ lib_compute_loops::lib_compute_loops(sprockit::sim_parameters* params, software_
 void
 lib_compute_loops::compute_loop_work(long long loop, double numlines)
 {
-  SSTMACBacktrace("Compute Loops");
+  SSTMACBacktrace(ComputeLoops);
   if (loop < 0) {
     loop = 0;
   }

@@ -142,6 +142,7 @@ class delete_thread_event :
 };
 
 static sprockit::need_delete_statics<operating_system> del_statics;
+static stats_unique_tag cg_tag;
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<operating_system*> operating_system::active_os_;
@@ -168,6 +169,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 #if SSTMAC_HAVE_GRAPHVIZ
   stat_descr_t stat_descr;
   stat_descr.dump_all = false;
+  stat_descr.unique_tag = &cg_tag;
   call_graph_ = optional_stats<graph_viz>(parent,
           params, "call_graph", "call_graph", &stat_descr);
 #else
@@ -553,13 +555,13 @@ operating_system::lib(const std::string& name) const
 }
 
 void
-operating_system::bcast_app_start(int my_rank, int aid, const std::string& app_ns,
+operating_system::outcast_app_start(int my_rank, int aid, const std::string& app_ns,
                                   task_mapping::ptr mapping,  sprockit::sim_parameters* app_params,
                                   bool include_root)
 {
   int num_ranks = mapping->num_ranks();
   //job launcher needs to add this - might need it later
-  bcast_iterator iter(my_rank, num_ranks);
+  outcast_iterator iter(my_rank, num_ranks);
   int ranks[64];
   int num_to_send = 0;
   if (include_root){
@@ -583,12 +585,6 @@ operating_system::bcast_app_start(int my_rank, int aid, const std::string& app_n
 void
 operating_system::start_thread(thread* t)
 {
-#if SSTMAC_HAVE_GRAPHVIZ
-  {
-    void** stack = call_graph_->allocate_trace();
-    t->set_backtrace(stack);
-  }
-#endif
   if (active_thread_){
     //crap - can't do this on this thread - need to do on DES thread
     send_now_self_event_queue(new_callback(this, &operating_system::start_thread, t));
@@ -613,12 +609,6 @@ operating_system::start_app(app* theapp, const std::string& unique_name)
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), thread_id());
   //this should be called from the actual thread running it
-#if SSTMAC_HAVE_GRAPHVIZ
-  {
-    void** stack = call_graph_->allocate_trace();
-    theapp->set_backtrace(stack);
-  }
-#endif
   init_threading(params_);
   if (params_->has_param("context")){
     theapp->params()->add_param("context", params_->get_param("context"));

@@ -59,7 +59,7 @@ RegisterKeywords("print_times",
 
 int USER_MAIN(int argc, char** argv)
 {
-  SSTMACBacktrace("main");
+  SSTMACBacktrace(main);
   MPI_Init(&argc, &argv);
 
   int me, nproc;

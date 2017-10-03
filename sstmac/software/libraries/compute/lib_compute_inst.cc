@@ -119,7 +119,7 @@ lib_compute_inst::init(sprockit::sim_parameters* params)
 void
 lib_compute_inst::compute_inst(compute_event* cmsg)
 {
-  SSTMACBacktrace("Compute Instructions");
+  SSTMACBacktrace(ComputeInstructions);
   os_->execute(ami::COMP_INSTR, cmsg);
 }
 

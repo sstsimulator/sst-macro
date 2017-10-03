@@ -121,7 +121,7 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   if (nthread_ == 0){
     sprockit::abort("Have zero worker threads! Cannot do any work");
   }
-  sprockit::sim_parameters* os_params = params->get_namespace("node")->get_optional_namespace("os");
+  sprockit::sim_parameters* os_params = params->get_optional_namespace("node")->get_optional_namespace("os");
   sw::stack_alloc::init(os_params);
 
   des_context_ = sw::thread_context::factory::get_optional_param(
@@ -284,23 +284,6 @@ event_manager::topology_partition() const
   return rt_->topology_partition();
 }
 
-stat_collector*
-event_manager::register_thread_unique_stat(
-  stat_collector *stat,
-  stat_descr_t* descr)
-{
-  std::map<std::string, stats_entry>::iterator it = stats_.find(stat->fileroot());
-  if (it != stats_.end()){
-    stats_entry& entry = it->second;
-    return entry.collectors.front();
-  }
-
-  //clone a stat collector for this thread
-  stat_collector* cln = stat->clone();
-  register_stat(cln, descr);
-  return cln;
-}
-
 static stat_descr_t default_descr;
 
 void
@@ -335,6 +318,30 @@ event_manager::finish_stats(stat_collector* main, const std::string& name)
 
     next->clear();
   }
+}
+
+void
+event_manager::register_unique_stat(stat_collector* stat, stat_descr_t* descr)
+{
+  stats_entry& entry = unique_stats_[descr->unique_tag->id];
+  if (descr->dump_all){
+    sprockit::abort("unique stat should not specify dump all");
+  }
+  if (!descr->reduce_all){
+    sprockit::abort("unique stat should always specify reduce all");
+  }
+  entry.dump_all = false;
+  entry.dump_main = descr->dump_main;
+  entry.reduce_all = true;
+  entry.main_collector = stat;
+}
+
+void
+event_manager::finish_unique_stat(int unique_tag, stats_entry& entry)
+{
+  entry.main_collector->global_reduce(rt_);
+  if (rt_->me() == 0) entry.main_collector->dump_global_data();
+  delete entry.main_collector;
 }
 
 
@@ -376,6 +383,10 @@ event_manager::finish_stats()
     for (stat_collector* coll : entry.collectors){
       delete coll;
     }
+  }
+
+  for (auto& pair : unique_stats_){
+    finish_unique_stat(pair.first, pair.second);
   }
 }
 

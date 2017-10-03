@@ -85,7 +85,7 @@ void
 rendezvous_get::send_header(mpi_queue* queue,
                             mpi_message* msg)
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Send Header");
+  SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Send_Header);
   msg->set_content_type(mpi_message::header);
   queue->post_header(msg, sumi::message::header, false); //don't need the nic ack
 }
@@ -103,7 +103,7 @@ rendezvous_get::incoming_header(mpi_queue *queue,
                                 mpi_message*msg,
                                 mpi_queue_recv_request *req)
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Header");
+  SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Handle_Header);
   if (req) {
 #if SSTMAC_COMM_SYNC_STATS
     //this is a bit of a hack
@@ -136,7 +136,7 @@ void
 rendezvous_get::incoming_payload(mpi_queue* queue,
                                 mpi_message* msg)
 {
-  SSTMACBacktrace("MPI Rendezvous Protocol: RDMA Handle Payload");
+  SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Handle_Payload);
   auto iter = queue->recv_needs_payload_.find(msg->unique_int());
   if (iter == queue->recv_needs_payload_.end()) {
     if (queue->recv_needs_payload_.empty()){

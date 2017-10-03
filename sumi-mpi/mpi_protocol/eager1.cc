@@ -67,7 +67,7 @@ void
 eager1::send_header(mpi_queue* queue,
                     mpi_message* msg)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Send RDMA Header");
+  SSTMACBacktrace(MPIEager1Protocol_Send_RDMA_Header);
   msg->set_content_type(mpi_message::header);
 
   queue->post_header(msg, sumi::message::header, false/*the send is "done" - no need to ack*/);
@@ -103,7 +103,7 @@ eager1::incoming_header(mpi_queue* queue,
                         mpi_message* msg,
                         mpi_queue_recv_request* req)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Header");
+  SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Header);
   if (req) {
     //we can post an RDMA get request direct to the buffer
     //make sure to put the request back in, but alert it
@@ -157,7 +157,7 @@ eager1_singlecpy::incoming_payload(mpi_queue *queue,
   if (!req){
     sprockit::abort("eager1_singlecpy::incoming_payload: null recv request");
   }
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Payload");
+  SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Payload);
   //already RDMA'd correctly - just finish
   queue->finalize_recv(msg, req);
 }
@@ -182,7 +182,7 @@ void
 eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg,
                                    mpi_queue_recv_request* req)
 {
-  SSTMACBacktrace("MPI Eager 1 Protocol: Handle RDMA Payload");
+  SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Payload);
   //We did not RDMA get directly into the buffer
   //finish the transfer
   msg->set_in_flight(false);
