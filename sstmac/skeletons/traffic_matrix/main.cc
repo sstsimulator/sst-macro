@@ -166,11 +166,11 @@ progress_loop(sumi::transport* tport, double timeout,
   debug_printf(sprockit::dbg::traffic_matrix,
     "Rank %d entering progress loop at t=%10.6e - stop=%10.6e, timeout=%10.6e",
     tport->rank(), now, stop, timeout);
-  while (1){
+  while (1 && timeout > 0){
     rdma_message* msg = SUMI_POLL_TIME(tport,rdma_message,timeout);
     now = tport->wall_time();
     if (msg){ //need if statement, if timed out then no message
-      timeout = std::max(0., stop - now); //timeout shrinks
+      timeout = stop - now; //timeout shrinks
       msg->set_finish(now);
       done.push_back(msg);
       debug_printf(sprockit::dbg::traffic_matrix,

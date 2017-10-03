@@ -75,6 +75,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/malloc.h>
 #include <sprockit/keyword_registration.h>
 
+MakeDebugSlot(mpi_sync)
 DeclareDebugSlot(mpi_check)
 RegisterDebugSlot(mpi_check,
     "validation flag that performs various sanity checks to ensure MPI application"
@@ -273,6 +274,7 @@ mpi_api::finalize()
       if (call.inside != call.ID) ofs << sprockit::printf("->%-16s", call.ID_str(call.inside));
       ofs << "\n";
       for (auto& tpair : pair.second){
+        /** First time is non-sync (comm) time, second time is sync time */
         ofs << sprockit::printf("  %6.3e:%6.3e\n",
                    tpair.first.msec(),tpair.second.msec());
       }
@@ -617,14 +619,11 @@ mpi_api::collect_sync_delays(double wait_start, message* msg)
     sync_delay += msg->time_synced() - header_arrived;
   }
 
-  /**
-  std::cout << msg->to_string() << std::endl;
-  std::cout << sprockit::printf(
-    "%d wait=%5.2e,last=%5.2e,sent=%5.2e,header=%5.2e,payload=%10.7e,sync=%10.7e,total=%10.7e\n",
-     rank(), wait_start, last_collection_, msg->time_sent(),
+  mpi_api_debug(sprockit::dbg::mpi_sync,
+     "wait=%5.2e,last=%5.2e,sent=%5.2e,header=%5.2e,payload=%10.7e,sync=%10.7e,total=%10.7e",
+     wait_start, last_collection_, msg->time_sent(),
      msg->time_header_arrived(), msg->time_payload_arrived(),
      msg->time_synced(), sync_delay);
-  */
 
   last_call_.sync += sstmac::timestamp(sync_delay);
   last_collection_ = now().sec();

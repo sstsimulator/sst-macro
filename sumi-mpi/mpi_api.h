@@ -851,6 +851,7 @@ class mpi_api :
 
   std::unordered_map<MPI_Call,
     std::list<
+      /** First time is non-sync (comm) time, second time is sync time */
       std::pair<sstmac::timestamp,sstmac::timestamp>
     >
   > call_groups_;

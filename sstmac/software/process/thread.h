@@ -183,9 +183,12 @@ class thread
     return os_;
   }
 
+#if SSTMAC_HAVE_GRAPHVIZ
   const int* backtrace() const {
     return backtrace_;
   }
+#endif
+
 
   int last_backtrace_nfxn() const {
     return last_bt_collect_nfxn_;

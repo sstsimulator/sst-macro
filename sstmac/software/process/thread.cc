@@ -246,8 +246,12 @@ thread::set_tls_value(long thekey, void *ptr)
 void
 thread::append_backtrace(int id)
 {
+#if SSTMAC_HAVE_GRAPHVIZ
   backtrace_[bt_nfxn_] = id;
   bt_nfxn_++;
+#else
+  sprockit::abort("did not compile with call graph support");
+#endif
 }
 
 void

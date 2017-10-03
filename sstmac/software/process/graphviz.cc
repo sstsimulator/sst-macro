@@ -283,9 +283,7 @@ graph_viz::count_trace(uint64_t count, thread* thr)
 {
 #if !SSTMAC_HAVE_GRAPHVIZ
   return; //nothing to do here
-#endif
-
-
+#else
   /** see how much of the backtrace is new.  we don't
       want to double count the number of calls */
 
@@ -320,6 +318,7 @@ graph_viz::count_trace(uint64_t count, thread* thr)
   add_self(fxn, count);
 
   thr->collect_backtrace(nfxn_total);
+#endif
 }
 
 }
