@@ -65,7 +65,6 @@ namespace sstmac {
 
 const timestamp event_manager::no_events_left_time(std::numeric_limits<int64_t>::max() - 100, timestamp::exact);
 
-#if 0
 class stop_event : public event_queue_entry
 {
  public:
@@ -86,7 +85,6 @@ class stop_event : public event_queue_entry
   event_manager* man_;
 
 };
-#endif
 
 
 event_manager* event_manager::global = nullptr;
@@ -112,7 +110,7 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   pending_slot_(0),
   complete_(false),
   thread_id_(0),
-  scheduled_(false),
+  stopped_(false),
   interconn_(nullptr)
 {
   for (int i=0; i < num_pending_slots; ++i){
@@ -138,6 +136,17 @@ event_manager::~event_manager()
   if (des_context_) delete des_context_;
 }
 
+void
+event_manager::stop()
+{
+  for (event_queue_entry* ev : event_queue_){
+    delete ev;
+  }
+  event_queue_.clear();
+  min_ipc_time_ = no_events_left_time;
+  stopped_ = true;
+}
+
 timestamp
 event_manager::run_events(timestamp event_horizon)
 {
@@ -155,9 +164,9 @@ event_manager::run_events(timestamp event_horizon)
       return ret;
     } else {
       now_ = ev->time();
+      event_queue_.erase(iter);
       ev->execute();
       delete ev;
-      event_queue_.erase(iter);
     }
   }
   return min_ipc_time_;
@@ -275,7 +284,10 @@ event_manager::ipc_schedule(ipc_event_t* iev)
 void
 event_manager::schedule_stop(timestamp until)
 {
-  sprockit::abort("cannot schedule stop times currently");
+  stop_event* ev = new stop_event(this);
+  ev->set_time(until);
+  ev->set_seqnum(0);
+  event_queue_.insert(ev);
 }
 
 partition*

@@ -125,6 +125,8 @@ class event_manager
 
   virtual void run();
 
+  void stop();
+
   void cancel_all_messages(uint32_t component_id);
 
   void register_stat(
@@ -152,14 +154,6 @@ class event_manager
 
   timestamp final_time() const {
     return final_time_;
-  }
-
-  bool scheduled() const {
-    return scheduled_;
-  }
-
-  void set_scheduled(bool flag) {
-    scheduled_ = flag;
   }
 
   /** 
@@ -217,7 +211,7 @@ class event_manager
 
   void set_interconnect(hw::interconnect* ic);
 
-  void schedule_stop(timestamp until);
+  virtual void schedule_stop(timestamp until);
 
   /**
    * @brief run_events
@@ -266,6 +260,7 @@ class event_manager
   sw::thread_context* des_context_;
   sw::thread_context* main_thread_;
   bool scheduled_;
+  bool stopped_;
 
   int me_;
   int nproc_;

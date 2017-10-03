@@ -123,20 +123,24 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
     sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
   }
 #endif
-  event_debug("voting for minimum time %lu", rt_->me(), vote.ticks());
-  timestamp min_time = rt_->send_recv_messages(vote);
 
-  event_debug("got back minimum time %lu", rt_->me(), min_time.ticks());
+  timestamp min_time = no_events_left_time;
+  if (!stopped_){
+    event_debug("voting for minimum time %lu", rt_->me(), vote.ticks());
+    min_time = rt_->send_recv_messages(vote);
 
-  int num_recvs = rt_->num_recvs_done();
-  for (int i=0; i < num_recvs; ++i){
-    auto& buf = rt_->recv_buffer(i);
-    size_t bytesRemaining = buf.totalBytes();
-    char* serBuf = buf.buffer();
-    while (bytesRemaining > 0){
-      int size = handle_incoming(serBuf);
-      bytesRemaining -= size;
-      serBuf += size;
+    event_debug("got back minimum time %lu", rt_->me(), min_time.ticks());
+
+    int num_recvs = rt_->num_recvs_done();
+    for (int i=0; i < num_recvs; ++i){
+      auto& buf = rt_->recv_buffer(i);
+      size_t bytesRemaining = buf.totalBytes();
+      char* serBuf = buf.buffer();
+      while (bytesRemaining > 0){
+        int size = handle_incoming(serBuf);
+        bytesRemaining -= size;
+        serBuf += size;
+      }
     }
   }
   rt_->reset_send_recv();
