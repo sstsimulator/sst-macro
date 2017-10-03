@@ -1,0 +1,31 @@
+#! /usr/bin/env python
+
+import os
+import sys
+
+"""
+Create the script that will run all the jobs in the sweep.
+This produces a single script that can be run that 
+will spawn all the jobs in parallel.
+"""
+
+def usage(of):
+  of.write("usage: ./genScripts <num_workers> <exe_path>\n")
+
+if len(sys.argv) != 3:
+  usage(sys.stderr)
+  sys.exit("Need 2 arguments")
+
+nworkers = int(sys.argv[1])
+exe = sys.argv[2]
+
+if not os.path.isfile(exe):
+  sys.exit("Second argument must be a valid sstmac exe")
+  
+line_arr = ["#!/usr/bin/env bash"]
+for i in range(nworkers):
+  line_arr.append("./runSweep %d %d %s &" % (i, nworkers, exe))
+
+open("runAll", "w").write("\n".join(line_arr))
+os.system("chmod +x runAll")
+

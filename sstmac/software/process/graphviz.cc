@@ -302,9 +302,6 @@ graph_viz::count_trace(uint64_t count, thread* thr)
      thr->thread_id());
   }
 
-  static thread_lock lock;
-  lock.lock();
-
   int stack_end = nfxn_total - 1;
   int recollect_stop = std::min(stack_end,last_collect_nfxn);
   for (int i=0; i < recollect_stop; ++i) {
@@ -321,7 +318,6 @@ graph_viz::count_trace(uint64_t count, thread* thr)
 
   int fxn = stack[stack_end];
   add_self(fxn, count);
-  lock.unlock();
 
   thr->collect_backtrace(nfxn_total);
 }
