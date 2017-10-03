@@ -252,14 +252,13 @@ multithreaded_event_container::run_work()
   }
   while (lower_bound != no_events_left_time || num_loops_left > 0){
     timestamp horizon = lower_bound + lookahead_;
-    if (horizon == last_horizon){
-      spkt_abort_printf("Time did not advance - caught in infinite time loop");
-    }
     int64_t delta_t = horizon.ticks() - last_horizon.ticks();
     if (num_loops_left != 0){
       if (delta_t == 0){
         delta_t = 1;
       }
+    } else if (horizon == last_horizon){
+      spkt_abort_printf("Time did not advance - caught in infinite time loop");
     }
 
     if (child1) add_int64_atomic(delta_t, child1->delta_t);

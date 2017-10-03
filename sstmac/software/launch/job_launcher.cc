@@ -183,7 +183,8 @@ default_job_launcher::handle_launch_request(app_launch_request* request,
 {
   bool success = request->request_allocation(available_, allocation);
   if (!success){
-    spkt_abort_printf("allocation of app %d failed", request->aid());
+    spkt_abort_printf("allocation of app %d failed - insufficient number of nodes available to meet allocation request", 
+                      request->aid());
   }
 
   for (const node_id& nid : allocation){
@@ -245,11 +246,12 @@ task_mapping::serialize_order(app_id aid, serializer &ser)
       mapping->node_to_rank_indexing_[nid].push_back(i);
     }
     lock.lock();
-    auto& existing = app_ids_launched_[aid];
+    auto existing = app_ids_launched_[aid];
     if (!existing){
-      //we might receive this twice by accident
-      existing = mapping;
-    }
+      app_ids_launched_[aid] = mapping;
+    } else {
+      mapping = existing;
+    } 
     lock.unlock();
   } else {
     //packing or sizing
@@ -263,16 +265,6 @@ task_mapping::serialize_order(app_id aid, serializer &ser)
 }
 
 task_mapping::ptr
-task_mapping::global_mapping(app_id aid)
-{
-  auto map = app_ids_launched_[aid];
-  if (!map){
-    spkt_abort_printf("cannot find global task mapping for %d", aid);
-  }
-  return map;
-}
-
-task_mapping::ptr
 task_mapping::global_mapping(const std::string& name)
 {
   lock.lock();
@@ -283,6 +275,16 @@ task_mapping::global_mapping(const std::string& name)
   auto ret = iter->second;
   lock.unlock();
   return ret;
+}
+
+const task_mapping::ptr&
+task_mapping::global_mapping(app_id aid)
+{
+  auto& mapping = app_ids_launched_[aid];
+  if (!mapping){
+    spkt_abort_printf("No task mapping exists for app %d\n", aid);
+  }
+  return mapping;
 }
 
 void

@@ -217,6 +217,8 @@ class sumi_transport :
 
   int pt2pt_cq_id_;
 
+  void force_segfault(sumi::message* msg, int rank);
+
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   void send_ping_request(int dst) override;
 

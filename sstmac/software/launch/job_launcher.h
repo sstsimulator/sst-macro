@@ -117,7 +117,7 @@ class task_mapping {
     return node_to_rank_indexing_;
   }
 
-  static task_mapping::ptr global_mapping(app_id aid);
+  static const task_mapping::ptr& global_mapping(app_id aid);
 
   static task_mapping::ptr global_mapping(const std::string& unique_name);
 
