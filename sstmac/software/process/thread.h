@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
+#include <sstmac/software/process/graphviz.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -182,9 +183,12 @@ class thread
     return os_;
   }
 
-  void** backtrace() const {
+#if SSTMAC_HAVE_GRAPHVIZ
+  const int* backtrace() const {
     return backtrace_;
   }
+#endif
+
 
   int last_backtrace_nfxn() const {
     return last_bt_collect_nfxn_;
@@ -210,13 +214,9 @@ class thread
     return timed_out_;
   }
 
-  void append_backtrace(void* fxn);
+  void append_backtrace(int fxnId);
 
   void pop_backtrace();
-
-  void set_backtrace(void** bt) {
-    backtrace_ = bt;
-  }
 
   uint32_t component_id() const;
 
@@ -331,7 +331,9 @@ class thread
  private:
   bool isInit;
 
-  void** backtrace_;
+#if SSTMAC_HAVE_GRAPHVIZ
+  graphviz_trace backtrace_; //each function is labeled by unique integer
+#endif
 
   int bt_nfxn_;
 

@@ -182,7 +182,6 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   os_(os),
   state_(PENDING),
   isInit(false),
-  backtrace_(nullptr),
   bt_nfxn_(0),
   last_bt_collect_nfxn_(0),
   thread_id_(thread::main_thread),
@@ -245,10 +244,14 @@ thread::set_tls_value(long thekey, void *ptr)
 }
 
 void
-thread::append_backtrace(void* fxn)
+thread::append_backtrace(int id)
 {
-  backtrace_[bt_nfxn_] = fxn;
+#if SSTMAC_HAVE_GRAPHVIZ
+  backtrace_[bt_nfxn_] = id;
   bt_nfxn_++;
+#else
+  sprockit::abort("did not compile with call graph support");
+#endif
 }
 
 void
@@ -283,7 +286,6 @@ thread::now()
 
 thread::~thread()
 {
-  if (backtrace_) graph_viz::delete_trace(backtrace_);
   if (stack_) stack_alloc::free(stack_);
   if (context_) {
     context_->destroy_context();

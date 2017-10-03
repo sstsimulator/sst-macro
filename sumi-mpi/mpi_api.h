@@ -851,6 +851,7 @@ class mpi_api :
 
   std::unordered_map<MPI_Call,
     std::list<
+      /** First time is non-sync (comm) time, second time is sync time */
       std::pair<sstmac::timestamp,sstmac::timestamp>
     >
   > call_groups_;
@@ -863,7 +864,7 @@ mpi_api* sstmac_mpi();
 }
 
 #define _start_mpi_call_(fxn) \
-  SSTMACBacktrace(#fxn); \
+  SSTMACBacktrace(fxn); \
   os_->active_thread()->set_tag(mpi_tag); \
   start_api_call()
 

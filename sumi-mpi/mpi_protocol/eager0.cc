@@ -66,7 +66,7 @@ void
 eager0::send_header(mpi_queue* queue,
                     mpi_message* msg)
 {
-  SSTMACBacktrace("MPI Eager 0 Protocol: Send Header");
+  SSTMACBacktrace(MPIEager0Protocol_Send_Header);
   msg->set_content_type(mpi_message::eager_payload);
   queue->post_header(msg, sumi::message::eager_payload, true/*do need an ack*/);
 }
@@ -84,7 +84,7 @@ eager0::incoming_payload(mpi_queue *queue,
                   mpi_message* msg,
                   mpi_queue_recv_request* req)
 {
-  SSTMACBacktrace("MPI Eager 0 Protocol: Handle Header");
+  SSTMACBacktrace(MPIEager0Protocol_Handle_Header);
   if (req) {
     if (msg->local_buffer().ptr && req->recv_buffer_){
       msg->remote_buffer().ptr = req->recv_buffer_;

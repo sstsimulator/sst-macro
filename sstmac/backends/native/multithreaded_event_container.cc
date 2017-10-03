@@ -200,6 +200,16 @@ multithreaded_event_container::multithreaded_event_container(
 }
 
 void
+multithreaded_event_container::schedule_stop(timestamp until)
+{
+  for (int i=0; i < num_subthreads_; ++i){
+    event_manager* mgr = thread_managers_[i];
+    mgr->schedule_stop(until);
+  }
+  event_manager::schedule_stop(until);
+}
+
+void
 multithreaded_event_container::run_work()
 {
   //make the binary spanning tree for the thread barrier

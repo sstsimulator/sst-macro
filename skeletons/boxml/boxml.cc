@@ -412,7 +412,7 @@ namespace lblxml {
   void
   boxml::init()
   {
-    SSTMACBacktrace("Init");
+    SSTMACBacktrace(Init);
 
     std::srand(std::time(0));
 

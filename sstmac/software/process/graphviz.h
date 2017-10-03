@@ -45,7 +45,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_PROCESS_GRAPHVIZ_H
 #define SSTMAC_SOFTWARE_PROCESS_GRAPHVIZ_H
 
-#define GraphVizAppendBacktrace(...) ::sstmac::sw::graph_viz_increment_stack __graphviz_tmp_variable__(__VA_ARGS__)
+#define GraphVizAppendBacktrace(name) \
+  struct graph_viz_##name : public sstmac::sw::graph_viz_ID<graph_viz_##name> {}; \
+  static sstmac::sw::graph_viz_registration graph_viz_reg(#name, graph_viz_##name::id); \
+  ::sstmac::sw::graph_viz_increment_stack __graphviz_tmp_variable__(graph_viz_##name::id)
 #define GraphVizDoNothing(...) int __graphviz_tmp_variable__
 
 #include <sstmac/common/stats/stat_collector.h>
@@ -54,6 +57,31 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
+struct graph_viz_registration {
+  graph_viz_registration(const char* name, int id);
+
+  static int numIds() {
+    return id_count;
+  }
+
+  static const char* name(int id){
+    auto iter = names->find(id);
+    return iter->second;
+  }
+
+  static int id_count;
+
+ private:
+  static std::map<int,const char*>* names;
+};
+
+
+template <class T>
+struct graph_viz_ID {
+ public:
+  static int id;
+};
+template <class T> int graph_viz_ID<T>::id = graph_viz_registration::id_count++;
 
 class graph_viz_increment_stack
 {
@@ -67,7 +95,7 @@ class graph_viz_increment_stack
    *        the DES thread, which is an error. This allows
    *        the backtrace to be turned off on the DES thread
    */
-  graph_viz_increment_stack(const char* fxn);
+  graph_viz_increment_stack(int id);
 
   ~graph_viz_increment_stack();
 
@@ -78,10 +106,7 @@ class graph_viz :
 {
   FactoryRegister("graph_viz | call_graph", stat_collector, graph_viz)
  public:
-  graph_viz(sprockit::sim_parameters* params) :
-    stat_collector(params)
-  {
-  }
+  graph_viz(sprockit::sim_parameters* params);
 
   std::string to_string() const override {
     return "grahpviz";
@@ -103,69 +128,63 @@ class graph_viz :
     return new graph_viz(params);
   }
 
-  static void** allocate_trace();
-
-  static void delete_trace(void** tr);
-
-  void count_trace(long count, sw::thread* thr);
+  void count_trace(uint64_t count, sw::thread* thr);
 
   static void delete_statics();
 
  private:
   void dump_summary(std::ostream& os);
 
-  typedef std::pair<long, long long> graphviz_call;
+  struct graphviz_call {
+    uint64_t ncalls;
+    uint64_t counts;
+  };
+
   class trace  {
    friend class graph_viz;
    private:
-    std::map<void*, graphviz_call> calls_;
+    graphviz_call calls_[0];
 
-    long long self_;
-
-    void* fxn_;
-
-    graph_viz* parent_;
+    uint64_t self_;
 
    public:
-    trace(graph_viz* parent, void* fxn) :
-      self_(0), fxn_(fxn), parent_(parent)
-    {
+    trace() : self_(0) {}
+
+    std::string summary(const char* fxn) const;
+
+    bool include() const;
+
+    void add_call(int fxnId, int ncalls, uint64_t count) {
+      graphviz_call& call = calls_[fxnId];
+      call.ncalls += ncalls;
+      call.counts += count;
     }
 
-    std::string summary() const;
-
-    void* fxn() const {
-      return fxn_;
-    }
-
-    void add_call(void* fxn, int ncalls, long count);
-
-    void add_self(long count) {
+    void add_self(uint64_t count) {
       self_ += count;
     }
 
-    void substract_self(long count) {
+    void substract_self(uint64_t count) {
       self_ -= count;
     }
 
   };
 
-  void add_call(int ncalls, long count, void* fxn, void* callfxn);
+  void add_call(int ncalls, uint64_t count, int fxnId, int callFxnId);
 
-  void add_self(void* fxn, long count);
+  void add_self(int fxnId, uint64_t count);
 
-  std::map<void*, trace*> traces_;
+  trace** traces_;
 
-  std::map<void*, std::string> ptr_to_fxn_;
-
-  std::map<std::string, void*> fxn_to_ptr_;
+  uint64_t* data_block_;
 
   friend class trace;
 
-  trace* get_trace(void* fxn);
-
 
 };
+
+#define BACKTRACE_NFXN 50
+typedef int graphviz_trace[BACKTRACE_NFXN];
 
 }
 }

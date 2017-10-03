@@ -82,21 +82,21 @@ lib_compute_memmove::do_access(long bytes)
 void
 lib_compute_memmove::read(long bytes)
 {
-  SSTMACBacktrace("memread");
+  SSTMACBacktrace(memread);
   do_access(bytes);
 }
 
 void
 lib_compute_memmove::write(long bytes)
 {
-  SSTMACBacktrace("memwrite");
+  SSTMACBacktrace(memwrite);
   do_access(bytes);
 }
 
 void
 lib_compute_memmove::copy(long bytes)
 {
-  SSTMACBacktrace("memcopy");
+  SSTMACBacktrace(memcopy);
   do_access(bytes);
 }
 

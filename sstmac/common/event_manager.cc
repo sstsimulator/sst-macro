@@ -65,7 +65,6 @@ namespace sstmac {
 
 const timestamp event_manager::no_events_left_time(std::numeric_limits<int64_t>::max() - 100, timestamp::exact);
 
-#if 0
 class stop_event : public event_queue_entry
 {
  public:
@@ -86,7 +85,6 @@ class stop_event : public event_queue_entry
   event_manager* man_;
 
 };
-#endif
 
 
 event_manager* event_manager::global = nullptr;
@@ -112,7 +110,7 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   pending_slot_(0),
   complete_(false),
   thread_id_(0),
-  scheduled_(false),
+  stopped_(false),
   interconn_(nullptr)
 {
   for (int i=0; i < num_pending_slots; ++i){
@@ -121,7 +119,7 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
   if (nthread_ == 0){
     sprockit::abort("Have zero worker threads! Cannot do any work");
   }
-  sprockit::sim_parameters* os_params = params->get_namespace("node")->get_optional_namespace("os");
+  sprockit::sim_parameters* os_params = params->get_optional_namespace("node")->get_optional_namespace("os");
   sw::stack_alloc::init(os_params);
 
   des_context_ = sw::thread_context::factory::get_optional_param(
@@ -136,6 +134,17 @@ event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime 
 event_manager::~event_manager()
 {
   if (des_context_) delete des_context_;
+}
+
+void
+event_manager::stop()
+{
+  for (event_queue_entry* ev : event_queue_){
+    delete ev;
+  }
+  event_queue_.clear();
+  min_ipc_time_ = no_events_left_time;
+  stopped_ = true;
 }
 
 timestamp
@@ -155,9 +164,9 @@ event_manager::run_events(timestamp event_horizon)
       return ret;
     } else {
       now_ = ev->time();
+      event_queue_.erase(iter);
       ev->execute();
       delete ev;
-      event_queue_.erase(iter);
     }
   }
   return min_ipc_time_;
@@ -275,30 +284,16 @@ event_manager::ipc_schedule(ipc_event_t* iev)
 void
 event_manager::schedule_stop(timestamp until)
 {
-  sprockit::abort("cannot schedule stop times currently");
+  stop_event* ev = new stop_event(this);
+  ev->set_time(until);
+  ev->set_seqnum(0);
+  event_queue_.insert(ev);
 }
 
 partition*
 event_manager::topology_partition() const
 {
   return rt_->topology_partition();
-}
-
-stat_collector*
-event_manager::register_thread_unique_stat(
-  stat_collector *stat,
-  stat_descr_t* descr)
-{
-  std::map<std::string, stats_entry>::iterator it = stats_.find(stat->fileroot());
-  if (it != stats_.end()){
-    stats_entry& entry = it->second;
-    return entry.collectors.front();
-  }
-
-  //clone a stat collector for this thread
-  stat_collector* cln = stat->clone();
-  register_stat(cln, descr);
-  return cln;
 }
 
 static stat_descr_t default_descr;
@@ -335,6 +330,30 @@ event_manager::finish_stats(stat_collector* main, const std::string& name)
 
     next->clear();
   }
+}
+
+void
+event_manager::register_unique_stat(stat_collector* stat, stat_descr_t* descr)
+{
+  stats_entry& entry = unique_stats_[descr->unique_tag->id];
+  if (descr->dump_all){
+    sprockit::abort("unique stat should not specify dump all");
+  }
+  if (!descr->reduce_all){
+    sprockit::abort("unique stat should always specify reduce all");
+  }
+  entry.dump_all = false;
+  entry.dump_main = descr->dump_main;
+  entry.reduce_all = true;
+  entry.main_collector = stat;
+}
+
+void
+event_manager::finish_unique_stat(int unique_tag, stats_entry& entry)
+{
+  entry.main_collector->global_reduce(rt_);
+  if (rt_->me() == 0) entry.main_collector->dump_global_data();
+  delete entry.main_collector;
 }
 
 
@@ -376,6 +395,10 @@ event_manager::finish_stats()
     for (stat_collector* coll : entry.collectors){
       delete coll;
     }
+  }
+
+  for (auto& pair : unique_stats_){
+    finish_unique_stat(pair.first, pair.second);
   }
 }
 

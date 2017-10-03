@@ -106,8 +106,8 @@ class mpi_message final :
 
   void serialize_order(serializer& ser) override;
 
-  long payload_bytes() const {
-    return count_ * type_packed_size_;
+  uint64_t payload_bytes() const {
+    return uint64_t(count_) * uint64_t(type_packed_size_);
   }
 
   mpi_protocol* protocol() const;

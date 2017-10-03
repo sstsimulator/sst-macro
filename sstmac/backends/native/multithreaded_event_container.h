@@ -97,6 +97,8 @@ class multithreaded_event_container :
 
   virtual void run() override;
 
+  void schedule_stop(timestamp until) override;
+
   event_manager* thread_manager(int thr) const override {
     if (thr == num_subthreads_) {
       return const_cast<multithreaded_event_container*>(this);

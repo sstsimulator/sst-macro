@@ -86,9 +86,9 @@ std::string
 collective_work_message::to_string() const
 {
   return sprockit::printf(
-    "message %p for collective %s event %s "
+    "message for collective %s event %s "
     "recver=%d(%d) sender=%d(%d) nbytes=%d round=%d tag=%d",
-        this, collective::tostr(type_), message::tostr(message::payload_type()),
+        collective::tostr(type_), message::tostr(message::payload_type()),
         dense_recver_, recver(), dense_sender_, sender(), byte_length(), round_, tag_);
 }
 

@@ -49,12 +49,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 
 RegisterDebugSlot(lib_compute_inst);
 
 namespace sstmac {
 namespace sw {
 
+//sstmac::sw::ftq_tag lib_compute_inst::compute_tag("Compute");
 static const char* deprecated[] = { "lib_compute_unroll_loops" };
 static sprockit::StaticKeywordRegister deprecated_keys(1, deprecated);
 
@@ -85,6 +88,8 @@ lib_compute_inst::compute_detailed(
   st.flops = flops;
   st.intops = nintops;
   st.mem_sequential = bytes;
+
+  //os_->active_thread()->set_tag(compute_tag);
   compute_inst(cmsg);
   delete cmsg;
 }
@@ -119,7 +124,7 @@ lib_compute_inst::init(sprockit::sim_parameters* params)
 void
 lib_compute_inst::compute_inst(compute_event* cmsg)
 {
-  SSTMACBacktrace("Compute Instructions");
+  SSTMACBacktrace(ComputeInstructions);
   os_->execute(ami::COMP_INSTR, cmsg);
 }
 

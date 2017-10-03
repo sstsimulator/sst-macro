@@ -1,0 +1,7 @@
+inj_bw  6 12
+mem_bw  6 15
+link_bw 5 10
+post_header_delay 0.3 2.0
+post_rdma_delay   0.3 2.0
+rdma_pin_delay    0.3 2.0
+inj_lat           0.4 2.0

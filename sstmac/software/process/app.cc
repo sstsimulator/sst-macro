@@ -241,7 +241,7 @@ app::_get_api(const char* name)
 void
 app::run()
 {
-  SSTMACBacktrace("main");
+  SSTMACBacktrace(main);
   os_->increment_app_refcount();
   end_api_call(); //this initializes things, "fake" api call at beginning
   skeleton_main();
