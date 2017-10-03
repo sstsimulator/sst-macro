@@ -53,7 +53,7 @@ namespace sumi {
 int
 mpi_api::wait(MPI_Request *request, MPI_Status *status)
 {
-  start_wait_call(MPI_Wait);
+  start_mpi_call(MPI_Wait, 1, 0, 0);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Wait(...)");
   int rc = do_wait(request, status);
   finish_mpi_call(MPI_Wait);
@@ -84,20 +84,6 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
 void
 mpi_api::finalize_wait_request(mpi_request* reqPtr, MPI_Request* req, MPI_Status* status)
 {
-#if SSTMAC_COMM_SYNC_STATS
-  auto iter = saved_calls_.find(*req);
-  if (iter == saved_calls_.end()){
-    spkt_abort_printf("rank %d cannot find pending request %ld for MPI_Wait stats",
-                      comm_world()->rank(), *req);
-  }
-  MPI_Call& Ipt2pt = iter->second;
-  last_call_.comm = Ipt2pt.comm;
-  last_call_.count = Ipt2pt.count;
-  last_call_.type = Ipt2pt.type;
-  last_call_.start = Ipt2pt.start;
-  last_call_.ID = Ipt2pt.ID;
-  saved_calls_.erase(iter);
-#endif
   if (status != MPI_STATUS_IGNORE){
     *status = reqPtr->status();
   }
@@ -112,7 +98,7 @@ int
 mpi_api::waitall(int count, MPI_Request array_of_requests[],
                  MPI_Status array_of_statuses[])
 {
-  start_wait_call(MPI_Waitall);
+  start_mpi_call(MPI_Waitall, count, 0, 0);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
     "MPI_Waitall(%d,...)", count);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
@@ -132,7 +118,7 @@ int
 mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
                  MPI_Status *status)
 {
-  start_wait_call(MPI_Waitany, count, array_of_requests, indx);
+  start_mpi_call(MPI_Waitany, count, 0, 0);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitany(...)");
   *indx = MPI_UNDEFINED;
   std::vector<mpi_request*> reqPtrs(count);
@@ -186,7 +172,7 @@ int
 mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
                   int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
-  start_wait_call(MPI_Waitsome, incount, array_of_requests, outcount, array_of_indices);
+  start_mpi_call(MPI_Waitsome, incount, 0, 0);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
     "MPI_Waitsome(...)");

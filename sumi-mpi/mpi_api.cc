@@ -620,7 +620,7 @@ mpi_api::collect_sync_delays(double wait_start, message* msg)
   }
 
   mpi_api_debug(sprockit::dbg::mpi_sync,
-     "wait=%5.2e,last=%5.2e,sent=%5.2e,header=%5.2e,payload=%10.7e,sync=%10.7e,total=%10.7e",
+     "wait=%8.6e,last=%8.6e,sent=%8.6e,header=%8.6e,payload=%10.7e,sync=%10.7e,total=%10.7e",
      wait_start, last_collection_, msg->time_sent(),
      msg->time_header_arrived(), msg->time_payload_arrived(),
      msg->time_synced(), sync_delay);
@@ -632,20 +632,13 @@ mpi_api::collect_sync_delays(double wait_start, message* msg)
 void
 mpi_api::finish_last_mpi_call(MPI_function func, bool dumpThis)
 {
-  sstmac::timestamp total = now() - last_call_.start;
-  if (next_call_total_length_.ticks()){
-    sstmac::timestamp extra_time = next_call_total_length_ - total;
-    if (extra_time.ticks() > 0){
-      os_->sleep(extra_time);
-    }
-    total = next_call_total_length_;
-    next_call_total_length_ = sstmac::timestamp(); //zero out
-  }
-  //last_call_.ID = func;
-
   if (dumpThis && dump_comm_times_ && crossed_comm_world_barrier()){
+    sstmac::timestamp total = now() - last_call_.start;
     auto& times = call_groups_[last_call_];
     sstmac::timestamp nonSync = total - last_call_.sync;
+    mpi_api_debug(sprockit::dbg::mpi_sync,
+       "finishing call with total %10.6e, sync %10.6e, comm %10.6e, start %10.6e, now %10.6e",
+       total.sec(), last_call_.sync.sec(), nonSync.sec(), last_call_.start.sec(), now().sec());
     times.emplace_back(nonSync,last_call_.sync);
   }
   last_call_.sync = sstmac::timestamp(); //zero for next guy

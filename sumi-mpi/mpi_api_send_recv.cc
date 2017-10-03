@@ -202,7 +202,7 @@ mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
     count, type_str(datatype).c_str(), int(dest),
     tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
   queue_->nonblocking_progress();
-  finish_Impi_call(MPI_Isend,request);
+  finish_mpi_call(MPI_Isend);
   return MPI_SUCCESS;
 }
 
@@ -279,7 +279,7 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
 
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   queue_->nonblocking_progress();
-  finish_Impi_call(MPI_Irecv,request);
+  finish_mpi_call(MPI_Irecv);
   return MPI_SUCCESS;
 }
 

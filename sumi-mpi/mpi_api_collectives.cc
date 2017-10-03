@@ -299,7 +299,7 @@ mpi_api::iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                  recvcount, recvtype,
                                  sendbuf, recvbuf);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Iallgather,req);
+  finish_mpi_call(MPI_Iallgather);
   return MPI_SUCCESS;
 }
 
@@ -362,7 +362,7 @@ mpi_api::ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                  recvcount, recvtype,
                                  sendbuf, recvbuf);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Ialltoall,req);
+  finish_mpi_call(MPI_Ialltoall);
   return MPI_SUCCESS;
 }
 
@@ -425,7 +425,7 @@ mpi_api::iallreduce(const void *src, void *dst, int count,
   collective_op_base* op = start_all(allreduce,MPI_Iallreduce, comm,
                                       count, type, mop, src, dst);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Iallreduce,req);
+  finish_mpi_call(MPI_Iallreduce);
   return MPI_SUCCESS;
 }
 
@@ -494,7 +494,7 @@ mpi_api::ibarrier(MPI_Comm comm, MPI_Request *req)
   start_mpi_call(MPI_Ibarrier,0,0,comm);
   collective_op_base* op = start_barrier("MPI_Ibarrier", comm);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Ibarrier,req);
+  finish_mpi_call(MPI_Ibarrier);
   return MPI_SUCCESS;
 }
 
@@ -555,7 +555,7 @@ mpi_api::ibcast(void* buffer, int count, MPI_Datatype type, int root,
 {
   collective_op_base* op = start_root(bcast, MPI_Ibcast, comm, count, type, root, buffer);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Ibcast,req);
+  finish_mpi_call(MPI_Ibcast);
   return MPI_SUCCESS;
 }
 
@@ -631,7 +631,7 @@ mpi_api::igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   collective_op_base* op = start_root(gather, MPI_Igather, comm, sendcount, sendtype, root,
                                       recvcount, recvtype, sendbuf, recvbuf);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Igather,req);
+  finish_mpi_call(MPI_Igather);
   return MPI_SUCCESS;
 }
 
@@ -728,7 +728,7 @@ mpi_api::ireduce(const void* sendbuf, void* recvbuf, int count,
   collective_op_base* op = start_root(reduce, MPI_Ireduce, comm, count,
                                  type, root, mop, sendbuf, recvbuf);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Ireduce,req);
+  finish_mpi_call(MPI_Ireduce);
   return MPI_SUCCESS;
 }
 
@@ -791,7 +791,7 @@ mpi_api::ireduce_scatter(const void *src, void *dst, const int *recvcnts,
   collective_op_base* op = start_all(reduce_scatter,
                 MPI_Ireduce_scatter, comm, recvcnts, type, mop, src, dst);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Ireduce_scatter,req);
+  finish_mpi_call(MPI_Ireduce_scatter);
   return MPI_SUCCESS;
 }
 
@@ -842,7 +842,7 @@ mpi_api::ireduce_scatter_block(const void *src, void *dst, int recvcnt,
   collective_op_base* op = start_all(reduce_scatter_block,
         MPI_Ireduce_scatter_block, comm, recvcnt, type, mop, src, dst);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Ireduce_scatter_block,req);
+  finish_mpi_call(MPI_Ireduce_scatter_block);
   return MPI_SUCCESS;
 }
 
@@ -875,7 +875,7 @@ mpi_api::iscan(const void *src, void *dst, int count, MPI_Datatype type,
 {
   collective_op_base* op = start_all(scan, MPI_Iscan, comm, count, type, mop, src, dst);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Iscan,req);
+  finish_mpi_call(MPI_Iscan);
   return MPI_SUCCESS;
 }
 
@@ -942,7 +942,7 @@ mpi_api::iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   collective_op_base* op = start_root(scatter, MPI_Iscatter, comm, sendcount, sendtype, root,
                              recvcount, recvtype, sendbuf, recvbuf);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Iscatter,req);
+  finish_mpi_call(MPI_Iscatter);
   return MPI_SUCCESS;
 }
 

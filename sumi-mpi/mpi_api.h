@@ -822,10 +822,6 @@ class mpi_api :
 
   void start_collective_sync_delays() override;
 
-  void set_next_call_length(sstmac::timestamp t){
-    next_call_total_length_ = t;
-  }
-
  private:
   void set_new_mpi_call(MPI_function func);
 
@@ -841,13 +837,6 @@ class mpi_api :
   bool dump_comm_times_;
 
   MPI_Call last_call_;
-
-  /** If trying to match MPI start times to a trace, sleep until
-   * the current MPI call lasts exactly as long as call did in trace */
-  sstmac::timestamp next_call_total_length_;
-
-  std::map<MPI_Request,MPI_Call> saved_calls_;
-
 
   std::unordered_map<MPI_Call,
     std::list<
@@ -872,13 +861,6 @@ mpi_api* sstmac_mpi();
   #define start_mpi_call(fxn,count,type,comm) \
     _start_mpi_call_(fxn); \
     start_new_mpi_call(Call_ID_##fxn,count,type,comm)
-  #define start_wait_call(fxn,...) \
-    _start_mpi_call_(fxn); \
-    set_new_mpi_call(Call_ID_##fxn)
-  #define finish_Impi_call(fxn,reqptr) \
-    finish_last_mpi_call(Call_ID_##fxn, false); \
-    saved_calls_[*reqptr] = last_call_; \
-    end_api_call()
   #define finish_mpi_call(fxn) \
     finish_last_mpi_call(Call_ID_##fxn); \
     end_api_call()

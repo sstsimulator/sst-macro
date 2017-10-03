@@ -225,7 +225,7 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
     auto deltaSec = wall->stop.sec - wall->start.sec;
     auto deltaNsec = wall->stop.nsec - wall->start.nsec;
     sstmac::timestamp traceMPItime(deltaSec, deltaNsec);
-    parent_->mpi()->set_next_call_length(traceMPItime);
+    //parent_->mpi()->set_next_call_length(traceMPItime);
   }
 #endif
   if(trace_compute_start_.sec >= 0) {
