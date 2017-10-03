@@ -50,6 +50,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/common/sstmac_config.h>
 #include <stdint.h>
+#include <sstmac/software/process/key.h>
+
 //these are the default instruction labels
 
 DeclareDebugSlot(lib_compute_inst);
@@ -92,6 +94,7 @@ class lib_compute_inst :
   double loop_overhead_;
 
  private:
+  static sstmac::sw::ftq_tag compute_tag;
   void init(sprockit::sim_parameters* params);
 
 };
