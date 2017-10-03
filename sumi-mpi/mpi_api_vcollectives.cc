@@ -124,7 +124,7 @@ mpi_api::iallgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   collective_op_base* op = start_vcoll(allgatherv, MPI_Iallgatherv, comm, sendcount, sendtype,
                                        recvcounts, displs, recvtype, sendbuf, recvbuf);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Iallgatherv,req);
+  finish_mpi_call(MPI_Iallgatherv);
   return MPI_SUCCESS;
 }
 
@@ -215,7 +215,7 @@ mpi_api::ialltoallv(const void *sendbuf, const int *sendcounts,
                                        recvcounts, recvtype, rdispls, sendbuf, recvbuf);
 
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Ialltoallv,req);
+  finish_mpi_call(MPI_Ialltoallv);
   return MPI_SUCCESS;
 }
 
@@ -323,7 +323,7 @@ mpi_api::igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   collective_op_base* op = start_vcoll(gatherv, MPI_Igatherv, comm, sendcount, sendtype, root,
                                        recvcounts, displs, recvtype, sendbuf, recvbuf);
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Igatherv,req);
+  finish_mpi_call(MPI_Igatherv);
   return MPI_SUCCESS;
 }
 
@@ -418,7 +418,7 @@ mpi_api::iscatterv(const void* sendbuf, const int* sendcounts, const int *displs
                                        recvcount, recvtype, sendbuf, recvbuf);
 
   add_immediate_collective(op, req);
-  finish_Impi_call(MPI_Iscatterv,req);
+  finish_mpi_call(MPI_Iscatterv);
   return MPI_SUCCESS;
 }
 
