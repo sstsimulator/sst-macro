@@ -53,7 +53,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/common/thread_lock.h>
-#include <mpi.h>
 
 #if SSTMAC_HAVE_MPI_H
 #include <mpi.h>
