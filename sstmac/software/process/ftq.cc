@@ -50,7 +50,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
 #include <sstream>
-#include <regex>
 
 RegisterKeywords("epoch");
 
@@ -301,7 +300,7 @@ app_ftq_calendar::collect(int event_typeid, int tid, long ticks_begin,
 
 }
 
-static const char* matplotlib_histogram_text =
+static const char* matplotlib_histogram_text_header =
     "#!/usr/bin/env python\n"
     "\n"
     "import numpy as np\n"
@@ -319,7 +318,10 @@ static const char* matplotlib_histogram_text =
     "args = parser.parse_args()\n"
     "\n"
     "# Parsing the data file\n"
-    "file_name='output_app1'\n"
+    "file_name='";
+
+static const char* matplotlib_histogram_text_footer =
+    "'\n"
     "with open(file_name + '.dat') as f:\n"
     "    names = f.readline().split()\n"
     "    data = np.loadtxt(f, dtype=float).transpose()\n"
@@ -347,8 +349,7 @@ app_ftq_calendar::dumpi_matplotlib_histogram(const std::string& fileroot)
 {
   std::string fname = sprockit::printf("%s_app%d.py", fileroot.c_str(), aid_);
   std::ofstream out(fname.c_str());
-  auto text = std::regex_replace(matplotlib_histogram_text, std::regex("__file_name__"), fileroot);
-  out << text;
+  out << matplotlib_histogram_text_header << fileroot << matplotlib_histogram_text_footer;
   out.close();
 }
 
