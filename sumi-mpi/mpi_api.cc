@@ -562,6 +562,8 @@ mpi_api::start_collective_sync_delays()
   last_collection_ = now().sec();
 }
 
+GraphVizCreateTag(sync);
+
 void
 mpi_api::collect_sync_delays(double wait_start, message* msg)
 {
@@ -586,8 +588,13 @@ mpi_api::collect_sync_delays(double wait_start, message* msg)
      msg->time_header_arrived(), msg->time_payload_arrived(),
      msg->time_synced(), sync_delay);
 
-  current_call_.sync += sstmac::timestamp(sync_delay);
+  sstmac::timestamp sync = sstmac::timestamp(sync_delay);
+  current_call_.sync += sync;
   last_collection_ = now().sec();
+
+  if (os_->call_graph()){
+    os_->call_graph()->reassign(GraphVizTag(sync), sync.ticks(), os_->active_thread());
+  }
 }
 
 void

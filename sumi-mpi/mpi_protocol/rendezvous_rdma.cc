@@ -79,9 +79,11 @@ void
 rendezvous_get::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
                                       void *buffer, mpi_type* type)
 {
+  SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Configure_Buffer);
   if (pin_delay_){
-
+    pin_rdma(queue->api(), msg->payload_bytes());
   }
+
   if (isNonNullBuffer(buffer)){
     if (type->contiguous()){
       msg->remote_buffer().ptr = buffer;

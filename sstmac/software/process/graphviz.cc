@@ -42,6 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
+#define __STDC_FORMAT_MACROS
+
 #include <sstream>
 
 #include <sstmac/software/process/graphviz.h>
@@ -54,6 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/common/thread_lock.h>
 #include <mpi.h>
+#include <cinttypes>
 
 #if SSTMAC_HAVE_MPI_H
 #include <mpi.h>
@@ -169,6 +172,7 @@ graph_viz::global_reduce(parallel_runtime *rt)
 void
 graph_viz::dump_summary(std::ostream& os)
 {
+  os << "Call Graph Summary\n";
   int nfxns = graph_viz_registration::numIds();
   for (int i=0; i < nfxns; ++i){
     trace* tr = traces_[i];
@@ -183,7 +187,7 @@ graph_viz::dump_summary(std::ostream& os)
       for (int i=0; i < nfxns; ++i){
         total += tr->calls_[i].counts;
       }
-      os << sprockit::printf("%12lu %12lld\n", total, tr->self_);
+      os << sprockit::printf("%16" PRIu64 " %16" PRIu64 "\n", total, tr->self_);
       for (int i=0; i < nfxns; ++i){
         graphviz_call& call = tr->calls_[i];
         if (call.counts){
@@ -318,6 +322,18 @@ graph_viz::count_trace(uint64_t count, thread* thr)
   add_self(fxn, count);
 
   thr->collect_backtrace(nfxn_total);
+#endif
+}
+
+void
+graph_viz::reassign(int fxnId, uint64_t count, thread* thr)
+{
+#if SSTMAC_HAVE_GRAPHVIZ
+  int nfxn_total = thr->backtrace_nfxn();
+  int stack_end = nfxn_total - 1;
+  int fxn = thr->backtrace()[stack_end];
+  traces_[fxn]->reassign_self(fxnId, count);
+  traces_[fxnId]->add_self(count);
 #endif
 }
 

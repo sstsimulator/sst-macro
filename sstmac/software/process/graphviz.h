@@ -51,6 +51,12 @@ Questions? Contact sst-macro-help@sandia.gov
   ::sstmac::sw::graph_viz_increment_stack __graphviz_tmp_variable__(graph_viz_##name::id)
 #define GraphVizDoNothing(...) int __graphviz_tmp_variable__
 
+#define GraphVizCreateTag(name) \
+  struct graph_viz_##name : public sstmac::sw::graph_viz_ID<graph_viz_##name> {}; \
+  static sstmac::sw::graph_viz_registration graph_viz_reg(#name, graph_viz_##name::id)
+
+#define GraphVizTag(name) graph_viz_##name::id
+
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/software/process/thread_fwd.h>
 
@@ -130,6 +136,8 @@ class graph_viz :
 
   void count_trace(uint64_t count, sw::thread* thr);
 
+  void reassign(int fxnId, uint64_t count, thread* thr);
+
   static void delete_statics();
 
  private:
@@ -162,6 +170,13 @@ class graph_viz :
 
     void add_self(uint64_t count) {
       self_ += count;
+    }
+
+    void reassign_self(int fxnId, uint64_t count) {
+      self_ -= count;
+      graphviz_call& call = calls_[fxnId];
+      call.ncalls += 1;
+      call.counts += count;
     }
 
     void substract_self(uint64_t count) {
