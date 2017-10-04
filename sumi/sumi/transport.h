@@ -421,17 +421,13 @@ class transport {
     return public_buffer(::malloc(size));
   }
 
-  virtual public_buffer make_public_buffer(void* buffer, int size) {
-    return public_buffer(buffer);
-  }
+  virtual public_buffer make_public_buffer(void* buffer, int size) = 0;
 
-  virtual void unmake_public_buffer(public_buffer buf, int size) {
-    //nothing to do
-  }
+  virtual void unmake_public_buffer(public_buffer buf, int size) = 0;
 
-  virtual void free_public_buffer(public_buffer buf, int size) {
-    ::free(buf.ptr);
-  }
+  virtual void free_public_buffer(public_buffer buf, int size) = 0;
+
+  virtual void memcopy(uint64_t bytes) = 0;
 
  protected:
   void clean_up();

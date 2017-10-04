@@ -68,7 +68,7 @@ lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
 }
 
 void
-lib_compute_memmove::do_access(long bytes)
+lib_compute_memmove::do_access(uint64_t bytes)
 {
   //if (bytes == 0){
   //  return;
@@ -80,21 +80,21 @@ lib_compute_memmove::do_access(long bytes)
 }
 
 void
-lib_compute_memmove::read(long bytes)
+lib_compute_memmove::read(uint64_t bytes)
 {
   SSTMACBacktrace(memread);
   do_access(bytes);
 }
 
 void
-lib_compute_memmove::write(long bytes)
+lib_compute_memmove::write(uint64_t bytes)
 {
   SSTMACBacktrace(memwrite);
   do_access(bytes);
 }
 
 void
-lib_compute_memmove::copy(long bytes)
+lib_compute_memmove::copy(uint64_t bytes)
 {
   SSTMACBacktrace(memcopy);
   do_access(bytes);

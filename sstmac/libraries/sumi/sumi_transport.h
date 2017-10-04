@@ -143,7 +143,9 @@ class sumi_transport :
 
   event_scheduler* des_scheduler() const;
 
-  void memcopy(long bytes);
+  void memcopy(uint64_t bytes) override;
+
+  void pin_rdma(uint64_t bytes);
 
  private:
   void do_smsg_send(int dst, sumi::message* msg) override;
@@ -178,6 +180,17 @@ class sumi_transport :
                  const std::string& libname,
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os);
+
+  sumi::public_buffer make_public_buffer(void* buffer, int size) override {
+    pin_rdma(size);
+    return sumi::public_buffer(buffer);
+  }
+
+  void unmake_public_buffer(sumi::public_buffer buf, int size) override {}
+
+  void free_public_buffer(sumi::public_buffer buf, int size) override {
+    ::free(buf.ptr);
+  }
 
  private:
   void send(long byte_length,
@@ -216,6 +229,11 @@ class sumi_transport :
   int collective_cq_id_;
 
   int pt2pt_cq_id_;
+
+  sstmac::timestamp rdma_pin_latency_;
+  sstmac::timestamp rdma_page_delay_;
+  int page_size_;
+  bool pin_delay_;
 
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   void send_ping_request(int dst) override;

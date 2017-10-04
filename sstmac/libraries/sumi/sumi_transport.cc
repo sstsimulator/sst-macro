@@ -179,6 +179,11 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   poll_delay_ = params->get_optional_time_param("poll_delay", 0);
   user_lib_time_ = new sstmac::sw::lib_compute_time(params, "sumi-user-lib-time", sid, os);
 
+  rdma_pin_latency_ = params->get_optional_time_param("rdma_pin_latency", 0);
+  rdma_page_delay_ = params->get_optional_time_param("rdma_page_delay", 0);
+  pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
+  page_size_ = params->get_optional_byte_length_param("rdma_page_size", 4096);
+
   rank_mapper_ = sstmac::sw::task_mapping::global_mapping(sid.app_);
   nproc_ = rank_mapper_->nproc();
   component_id_ = os_->component_id();
@@ -189,6 +194,15 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
         params, "traffic_matrix", "ascii", "num_messages");
   spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(des_scheduler(),
         params, "traffic_matrix", "ascii", "bytes");
+}
+
+void
+sumi_transport::pin_rdma(uint64_t bytes)
+{
+  int num_pages = bytes / page_size_;
+  if (bytes % page_size_) ++num_pages;
+  sstmac::timestamp pin_delay = rdma_pin_latency_ + num_pages*rdma_page_delay_;
+  compute(pin_delay);
 }
 
 void
@@ -218,7 +232,7 @@ sumi_transport::des_scheduler() const
 }
 
 void
-sumi_transport::memcopy(long bytes)
+sumi_transport::memcopy(uint64_t bytes)
 {
   os_->current_thread()->parent_app()->compute_block_memcpy(bytes);
 }

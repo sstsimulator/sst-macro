@@ -53,21 +53,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-void
-rendezvous_protocol::pin_rdma(mpi_api* api, uint64_t nbytes)
-{
-  int num_pages = nbytes / page_size_;
-  if (nbytes % page_size_) ++num_pages;
-  sstmac::timestamp pin_delay = rdma_pin_latency_ + num_pages*rdma_page_delay_;
-  api->compute(pin_delay);
-}
-
 rendezvous_protocol::rendezvous_protocol(sprockit::sim_parameters* params)
 {
-  rdma_pin_latency_ = params->get_optional_time_param("rdma_pin_latency", 0);
-  rdma_page_delay_ = params->get_optional_time_param("rdma_page_delay", 0);
-  pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
-  page_size_ = params->get_optional_byte_length_param("rdma_page_size", 4096);
   software_ack_ = params->get_optional_bool_param("software_ack", true);
 }
 
@@ -80,9 +67,7 @@ rendezvous_get::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
                                       void *buffer, mpi_type* type)
 {
   SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Configure_Buffer);
-  if (pin_delay_){
-    pin_rdma(queue->api(), msg->payload_bytes());
-  }
+  queue->api()->pin_rdma(msg->payload_bytes());
 
   if (isNonNullBuffer(buffer)){
     if (type->contiguous()){
@@ -123,7 +108,7 @@ rendezvous_get::incoming_header(mpi_queue* queue,
     //this is a bit of a hack
     msg->set_time_synced(queue->now());
 #endif
-    if (pin_delay_) pin_rdma(queue->api(), msg->payload_bytes());
+    queue->api()->pin_rdma(msg->payload_bytes());
     mpi_queue_action_debug(
       queue->api()->comm_world()->rank(),
       "found matching request for %s",

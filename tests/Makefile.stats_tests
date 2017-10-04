@@ -33,11 +33,10 @@ STATSTESTS = \
 #  spyplot.num_messages.png 
 
 if COMM_SYNC_STATS
-endif
-
 if DO_GRAPHVIZ_TEST
 #don't do this test unless also including comm sync stats
 SINGLETESTS += test_stat_graphviz 
+endif
 endif
 
 test_stat_graphviz.$(CHKSUF): $(SSTMACEXEC)

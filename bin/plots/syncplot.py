@@ -90,7 +90,7 @@ def parse(fname):
       count = int(count)
       if inMain:
         if name == "Compute":
-          rank.comp = count
+          rank.comp += count
         else:
           if "Finalize" in name:
             continue

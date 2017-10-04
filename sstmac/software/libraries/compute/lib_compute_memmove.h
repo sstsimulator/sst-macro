@@ -68,17 +68,17 @@ class lib_compute_memmove :
     library::incoming_event(ev);
   }
 
-  void read(long bytes);
+  void read(uint64_t bytes);
 
-  void write(long bytes);
+  void write(uint64_t bytes);
 
-  void copy(long bytes);
+  void copy(uint64_t bytes);
 
  protected:
   static const long unlimited_page_size = -1;
   static const long default_page_size = unlimited_page_size;
 
-  void do_access(long bytes);
+  void do_access(uint64_t bytes);
 
  protected:
   int access_width_bytes_;
