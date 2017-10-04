@@ -263,22 +263,16 @@ mpi_api::finalize()
 
 #if SSTMAC_COMM_SYNC_STATS
   if (dump_comm_times_){
-    std::string fname = sprockit::printf("commGroups.%d.out", rank);
+    std::string fname = sprockit::printf("commStats.%d.out", rank);
     std::ofstream ofs(fname.c_str());
-    auto callEnd = call_groups_.end();
-    for (auto& pair : call_groups_){
-      const MPI_Call& call = pair.first;
-      ofs << sprockit::printf("%-16s %-8d %-12s %-16s",
-              call.ID_str(), call.count,
-              type_str(call.type).c_str(), comm_str(call.comm).c_str());
-      if (call.inside != call.ID) ofs << sprockit::printf("->%-16s", call.ID_str(call.inside));
-      ofs << "\n";
-      for (auto& tpair : pair.second){
-        /** First time is non-sync (comm) time, second time is sync time */
-        ofs << sprockit::printf("  %6.3e:%6.3e\n",
-                   tpair.first.msec(),tpair.second.msec());
-      }
+    ofs << sprockit::printf("%-16s %-16s %-16s\n", "Function", "Comm Delay", "Synchronization");
+    for (auto& pair : mpi_calls_){
+      MPI_function fxn = pair.first;
+      mpi_sync_timing_stats& stats = pair.second;
+      ofs << sprockit::printf("%-16s %-16.8f %-16.8f\n",
+              MPI_Call::ID_str(fxn), stats.nonSync.sec(), stats.sync.sec());
     }
+    ofs.close();
   }
 #endif
   end_api_call();
@@ -569,44 +563,11 @@ mpi_api::start_collective_sync_delays()
 }
 
 void
-mpi_api::start_new_mpi_call(MPI_function func, const int *counts, MPI_Datatype type, MPI_Comm comm)
-{
-  mpi_comm* commPtr = get_comm(comm);
-  int total = 0;
-  int size = commPtr->size();
-  for (int i=0; i < size; ++i){
-    total += counts[i];
-  }
-  int avg = total / size;
-  start_new_mpi_call(func, avg, type, comm);
-}
-
-void
-mpi_api::set_new_mpi_call(MPI_function func)
-{
-  last_call_.prev = last_call_.inside;
-  last_call_.ID = func;
-  last_call_.inside = func;
-  last_call_.start = now();
-  last_call_.sync = sstmac::timestamp();
-}
-
-void
-mpi_api::start_new_mpi_call(MPI_function func, int count, MPI_Datatype type, MPI_Comm comm)
-{
-  set_new_mpi_call(func);
-  last_call_.count = count;
-  last_call_.type = type;
-  last_call_.comm = comm;
-}
-
-void
 mpi_api::collect_sync_delays(double wait_start, message* msg)
 {
   //there are two possible sync delays
   //#1: For sender, synced - header_arrived
   //#2: For recver, time_sent - wait_start
-
 
   double sync_delay = 0;
   double start = std::max(last_collection_, wait_start);
@@ -625,7 +586,7 @@ mpi_api::collect_sync_delays(double wait_start, message* msg)
      msg->time_header_arrived(), msg->time_payload_arrived(),
      msg->time_synced(), sync_delay);
 
-  last_call_.sync += sstmac::timestamp(sync_delay);
+  current_call_.sync += sstmac::timestamp(sync_delay);
   last_collection_ = now().sec();
 }
 
@@ -633,15 +594,17 @@ void
 mpi_api::finish_last_mpi_call(MPI_function func, bool dumpThis)
 {
   if (dumpThis && dump_comm_times_ && crossed_comm_world_barrier()){
-    sstmac::timestamp total = now() - last_call_.start;
-    auto& times = call_groups_[last_call_];
-    sstmac::timestamp nonSync = total - last_call_.sync;
+    sstmac::timestamp total = now() - current_call_.start;
+    mpi_sync_timing_stats& stats = mpi_calls_[func];
+    sstmac::timestamp nonSync = total - current_call_.sync;
+    stats.nonSync += nonSync;
+    stats.sync += current_call_.sync;
     mpi_api_debug(sprockit::dbg::mpi_sync,
-       "finishing call with total %10.6e, sync %10.6e, comm %10.6e, start %10.6e, now %10.6e",
-       total.sec(), last_call_.sync.sec(), nonSync.sec(), last_call_.start.sec(), now().sec());
-    times.emplace_back(nonSync,last_call_.sync);
+       "finishing call %s with total %10.6e, sync %10.6e, comm %10.6e, start %10.6e, now %10.6e",
+       MPI_Call::ID_str(func), total.sec(), current_call_.sync.sec(),
+                  nonSync.sec(), current_call_.start.sec(), now().sec());
   }
-  last_call_.sync = sstmac::timestamp(); //zero for next guy
+  current_call_.sync = sstmac::timestamp(); //zero for next guy
 }
 
 #endif
