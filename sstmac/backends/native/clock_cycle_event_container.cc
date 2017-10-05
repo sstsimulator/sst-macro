@@ -179,7 +179,8 @@ clock_cycle_event_map::run()
     event_cycles += event;
     barrier_cycles += barrier;
     if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
-      printf("Epoch %13lu ran %13lu, %13lu cumulative %13lu, %13lu until horizon %13lu\n",
+      printf("Epoch %13" PRIu64 " ran %13" PRIu64 ", %13" PRIu64 " cumulative %13" PRIu64
+             ", %13" PRIu64 " until horizon %13" PRIu64 "\n",
              epoch, event, barrier, event_cycles, barrier_cycles, horizon.ticks());
     }
     if (num_loops_left > 0){

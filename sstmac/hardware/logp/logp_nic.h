@@ -79,6 +79,8 @@ class logp_nic :
     int dst_inport,
     event_link* link) override;
 
+  void mtl_handle(event* ev) override;
+
   virtual std::string to_string() const override {
     return "simple nic";
   }
@@ -101,7 +103,9 @@ class logp_nic :
 
   timestamp inj_lat_;
 
-  timestamp next_free_;
+  timestamp next_out_free_;
+
+  timestamp next_in_free_;
 
   event_handler* ack_handler_;
 

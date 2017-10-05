@@ -106,6 +106,7 @@ shuffled_recvers(int numSenders, const std::vector<int>& senderRanks, int seed, 
       recverNode = mt() % numPossibleRecvers;
       matchedSender = currentSenderNodes.find(recverNode) != currentSenderNodes.end();
       if (numTries == 1000){
+        std::cerr << "Too many tries to generate valid config - quitting" << std::endl;
         abort();
       }
       ++numTries;

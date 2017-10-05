@@ -98,14 +98,6 @@ class nic :
   }
 
   /**
-   * Set an event handler wrapper encapsulation the parent computational unit.
-   * @param nd The compute node attached to the NIC
-   */
-  virtual void set_node(node* nd){
-    parent_ = nd;
-  }
-
-  /**
    * @brief inject_send Perform an operation on the NIC.
    *  This assumes an exlcusive model of NIC use. If NIC is busy,
    *  operation may complete far in the future. If wishing to query for how busy the NIC is,
@@ -129,7 +121,7 @@ class nic :
     return event_mtl_handler_;
   }
 
-  void mtl_handle(event* ev);
+  virtual void mtl_handle(event* ev);
 
   /**
    * Delete all static variables associated with this class.
@@ -155,6 +147,14 @@ class nic :
 
   void send_to_logp_switch(network_message* netmsg);
 
+  /**
+   The NIC can either receive an entire message (bypass the byte-transfer layer)
+   or it can receive packets.  If an incoming message is a full message (not a packet),
+   it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.
+   @param chunk
+   */
+  void recv_message(message* msg);
+
  protected:
   nic(sprockit::sim_parameters* params, node* parent);
 
@@ -174,14 +174,6 @@ class nic :
   bool negligible_size(int bytes) const {
     return bytes <= negligible_size_;
   }
-
-  /**
-   The NIC can either receive an entire message (bypass the byte-transfer layer)
-   or it can receive packets.  If an incoming message is a full message (not a packet),
-   it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.
-   @param chunk
-   */
-  void recv_message(message* msg);
 
  protected:
   node_id my_addr_;

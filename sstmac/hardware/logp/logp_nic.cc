@@ -55,7 +55,7 @@ namespace sstmac {
 namespace hw {
 
 logp_nic::logp_nic(sprockit::sim_parameters* params, node* parent) :
-  next_free_(0),
+  next_out_free_(0),
   nic(params, parent)
 {
   ack_handler_ = new_handler(parent, &node::handle);
@@ -71,21 +71,38 @@ logp_nic::~logp_nic()
 }
 
 void
+logp_nic::mtl_handle(event *ev)
+{
+  timestamp now_ = now();
+  message* msg = static_cast<message*>(ev);
+  timestamp time_to_recv = inj_bw_inverse_*msg->byte_length();
+  timestamp recv_start = now_ - time_to_recv;
+
+  if (recv_start > next_in_free_){
+    next_in_free_ = now_;
+    recv_message(msg);
+  } else {
+    next_in_free_ += time_to_recv;
+    send_self_event_queue(next_in_free_, new_callback(this, &nic::recv_message, msg));
+  }
+}
+
+void
 logp_nic::do_send(network_message* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();
-  timestamp start_send = now_ > next_free_ ? now_ : next_free_;
+  timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
   nic_debug("logp injection queued at %8.4e, sending at %8.4e for message %s",
             now_.sec(), start_send.sec(), msg->to_string().c_str());
 
   timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
-  next_free_ = start_send + time_to_inject;
+  next_out_free_ = start_send + time_to_inject;
 
   if (msg->needs_ack()){
     network_message* acker = msg->clone_injection_ack();
     auto ack_ev = new_callback(parent_, &node::handle, acker);
-    parent_->send_self_event_queue(next_free_, ack_ev);
+    parent_->send_self_event_queue(next_out_free_, ack_ev);
   }
 
   interconnect::local_logp_switch()->send(start_send, msg, parent_);
