@@ -394,8 +394,6 @@ extern "C" int
 SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
                               sstmac_pthread_mutex_t * mutex, const timespec * abstime)
 {
-  sprockit::abort("pthread_cond_timedwait not implemented");
-#if 0
   pthread_debug("pthread_cond_timedwait");  
   int rc;
   if ((rc=check_cond(cond)) != 0){
@@ -417,12 +415,10 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
   (*pending)[*mutex] = mut;
   if (!mut->waiters.empty()){
     myos->send_now_self_event_queue(new unblock_event(mut, myos));
-  }
-  else {
+  } else {
     //unlock - nobody waiting on this
     mut->locked = false;
   }
-  //key* k = key::construct();
   mut->conditionals.push_back(thr);
 
   if (abstime){
@@ -431,25 +427,23 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
     timestamp delay(secs);
     //this key may be used to unblock twice
     //if it does, make sure it doesn't get deleted
-    myos->schedule_timeout(delay, thr);
+    myos->block_timeout(delay);
+  } else {
+    myos->block();
   }
 
-  myos->block(thr);
-
-  if (abstime && k->timed_out()){
+  if (abstime && thr->timed_out()){
     //the cond signal never fired, remove myself from the list
     //delete the key and move on
-    std::list<key*>::iterator it, end = mut->conditionals.end();
-    for (it=mut->conditionals.begin(); it != end; ++it){
-      key* next = *it;
-      if (next == k){
+    auto end = mut->conditionals.end();
+    for (auto it=mut->conditionals.begin(); it != end; ++it){
+      thread* next = *it;
+      if (next == thr){
         mut->conditionals.erase(it);
         break;
       }
     }
-    delete k;
   }
-#endif
   return 0;
 }
 

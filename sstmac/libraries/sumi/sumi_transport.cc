@@ -428,31 +428,25 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
 
   sstmac::sw::thread* thr = os_->active_thread();
   if (pending_messages_.empty() && blocking) {
-    //sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
-    if (timeout > 0.){
-      os_->schedule_timeout(sstmac::timestamp(timeout), thr);
-    } else if (timeout == 0.){
-      spkt_abort_printf("invalid timeout of 0 - use -1 as sentinel value to indicate no timeout");
-    }
     blocked_threads_.push_back(thr);
     debug_printf(sprockit::dbg::sumi,
                  "Rank %d sumi queue %p has no pending messages - blocking poller %p",
                  rank(), this, thr);
-    os_->block();
+    if (timeout >= 0.){
+      os_->block_timeout(timeout);
+    } else {
+      os_->block();
+    }
     if (timeout <= 0){
       if (pending_messages_.empty()){
         spkt_abort_printf("SUMI transport rank %d unblocked with no messages and no timeout",
           rank_, timeout);
       }
-      //delete blocker;
     } else {
       if (pending_messages_.empty()){
         //timed out, erase blocker from list
         auto iter = blocked_threads_.begin();
         while (*iter != thr) ++iter;
-        if (iter == blocked_threads_.end()){
-          spkt_abort_printf("Rank %d time out has no key", rank_);
-        }
         blocked_threads_.erase(iter);
         return nullptr;
       }

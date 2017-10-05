@@ -394,7 +394,7 @@ operating_system::print_libs(std::ostream &os) const
   }
 }
 
-timestamp
+void
 operating_system::block()
 {
   timestamp before = now();
@@ -404,12 +404,15 @@ operating_system::block()
     spkt_abort_printf("blocking main DES thread on node %d", my_addr_);
   }
   thread* old_thread = active_thread_;
+  //reset the time flag
+  active_thread_->set_timed_out(false);
   active_thread_ = nullptr;
   old_context->pause_context(des_context_);
 
   //restore state to indicate this thread and this OS are active again
   active_os() = this;
   active_thread_ = old_thread;
+  active_thread_->increment_block_counter();
 
    //collect any statistics associated with the elapsed time
   timestamp after = now();
@@ -426,14 +429,13 @@ operating_system::block()
       before.ticks(), elapsed.ticks());
     active_thread_->set_tag(ftq_tag::null);
   }
-
-  return now();
 }
 
 void
-operating_system::schedule_timeout(timestamp delay, thread* thr)
+operating_system::block_timeout(timestamp delay)
 {
-  send_delayed_self_event_queue(delay, new timeout_event(this, thr));
+  send_delayed_self_event_queue(delay, new timeout_event(this, active_thread_));
+  block();
 }
 
 timestamp

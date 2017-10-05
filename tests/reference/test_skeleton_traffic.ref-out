@@ -1,19 +1,19 @@
-Rank  0 is on s1003672ca.local
-Rank  1 is on s1003672ca.local
-Rank  2 is on s1003672ca.local
-Rank  3 is on s1003672ca.local
-Rank  4 is on s1003672ca.local
-Rank  5 is on s1003672ca.local
-Rank  6 is on s1003672ca.local
-Rank  7 is on s1003672ca.local
-Rank  8 is on s1003672ca.local
-Rank  9 is on s1003672ca.local
-Rank 10 is on s1003672ca.local
-Rank 11 is on s1003672ca.local
-Rank 12 is on s1003672ca.local
-Rank 13 is on s1003672ca.local
-Rank 14 is on s1003672ca.local
-Rank 15 is on s1003672ca.local
+Rank  0 is on mag-client90.ca.sandia.gov
+Rank  1 is on mag-client90.ca.sandia.gov
+Rank  2 is on mag-client90.ca.sandia.gov
+Rank  3 is on mag-client90.ca.sandia.gov
+Rank  4 is on mag-client90.ca.sandia.gov
+Rank  5 is on mag-client90.ca.sandia.gov
+Rank  6 is on mag-client90.ca.sandia.gov
+Rank  7 is on mag-client90.ca.sandia.gov
+Rank  8 is on mag-client90.ca.sandia.gov
+Rank  9 is on mag-client90.ca.sandia.gov
+Rank 10 is on mag-client90.ca.sandia.gov
+Rank 11 is on mag-client90.ca.sandia.gov
+Rank 12 is on mag-client90.ca.sandia.gov
+Rank 13 is on mag-client90.ca.sandia.gov
+Rank 14 is on mag-client90.ca.sandia.gov
+Rank 15 is on mag-client90.ca.sandia.gov
 Rank 0   -> Rank 1  
 Rank 2   -> Rank 1  
 Rank 4   -> Rank 3  
@@ -24,75 +24,75 @@ Rank 12  -> Rank 7
 Rank 14  -> Rank 7  
 Rank 0   -> 1        256:   0.890435 GB/s    0.287500us
 Rank 0   -> 1        512:   0.248242 GB/s    2.062500us
-Rank 0   -> 1       1024:   0.485722 GB/s    2.108203us
-Rank 0   -> 1       2048:   0.926304 GB/s    2.210938us
+Rank 0   -> 1       1024:   0.485632 GB/s    2.108594us
+Rank 0   -> 1       2048:   0.926140 GB/s    2.211328us
 Rank 0   -> 1       3072:   1.327760 GB/s    2.313672us
 Rank 0   -> 1       4096:   1.695079 GB/s    2.416406us
 Rank 0   -> 1       6144:   1.780063 GB/s    3.451563us
 Rank 0   -> 1       8192:   1.783293 GB/s    4.593750us
 Rank 0   -> 1      12288:   1.771243 GB/s    6.937500us
-Rank 0   -> 1      16384:   2.209389 GB/s    7.415625us
-Rank 0   -> 1      32768:   3.512817 GB/s    9.328125us
+Rank 0   -> 1      16384:   2.209855 GB/s    7.414063us
+Rank 0   -> 1      32768:   3.513406 GB/s    9.326562us
 Rank 0   -> 1      49152:   4.373927 GB/s   11.237500us
 Rank 0   -> 1      65536:   4.983726 GB/s   13.150000us
 Rank 0   -> 1      98304:   5.791638 GB/s   16.973437us
 Rank 0   -> 1     131072:   6.302959 GB/s   20.795313us
 Rank 0   -> 1     262144:   7.264122 GB/s   36.087500us
 Rank 0   -> 1     524288:   7.863706 GB/s   66.671875us
-Rank 0   -> 1    1048576:   8.202313 GB/s  127.839062us
+Rank 0   -> 1    1048576:   8.202413 GB/s  127.837500us
 Rank 2   -> 1        256:   0.890435 GB/s    0.287500us
 Rank 2   -> 1        512:   0.248242 GB/s    2.062500us
-Rank 2   -> 1       1024:   0.485722 GB/s    2.108203us
-Rank 2   -> 1       2048:   0.926304 GB/s    2.210938us
+Rank 2   -> 1       1024:   0.485632 GB/s    2.108594us
+Rank 2   -> 1       2048:   0.926140 GB/s    2.211328us
 Rank 2   -> 1       3072:   1.327760 GB/s    2.313672us
 Rank 2   -> 1       4096:   1.695079 GB/s    2.416406us
 Rank 2   -> 1       6144:   1.780063 GB/s    3.451563us
 Rank 2   -> 1       8192:   1.783293 GB/s    4.593750us
 Rank 2   -> 1      12288:   1.771243 GB/s    6.937500us
-Rank 2   -> 1      16384:   2.209389 GB/s    7.415625us
-Rank 2   -> 1      32768:   3.512817 GB/s    9.328125us
+Rank 2   -> 1      16384:   2.209855 GB/s    7.414063us
+Rank 2   -> 1      32768:   3.513406 GB/s    9.326562us
 Rank 2   -> 1      49152:   4.373927 GB/s   11.237500us
 Rank 2   -> 1      65536:   4.983726 GB/s   13.150000us
 Rank 2   -> 1      98304:   5.791638 GB/s   16.973437us
 Rank 2   -> 1     131072:   6.302959 GB/s   20.795313us
 Rank 2   -> 1     262144:   7.264122 GB/s   36.087500us
 Rank 2   -> 1     524288:   7.863706 GB/s   66.671875us
-Rank 2   -> 1    1048576:   8.202313 GB/s  127.839062us
+Rank 2   -> 1    1048576:   8.202413 GB/s  127.837500us
 Rank 4   -> 3        256:   0.890435 GB/s    0.287500us
-Rank 4   -> 3        512:   0.248242 GB/s    2.062500us
+Rank 4   -> 3        512:   0.248195 GB/s    2.062891us
 Rank 4   -> 3       1024:   0.485632 GB/s    2.108594us
 Rank 4   -> 3       2048:   0.926140 GB/s    2.211328us
 Rank 4   -> 3       3072:   1.327535 GB/s    2.314062us
-Rank 4   -> 3       4096:   1.694531 GB/s    2.417187us
+Rank 4   -> 3       4096:   1.694805 GB/s    2.416797us
 Rank 4   -> 3       6144:   1.779258 GB/s    3.453125us
 Rank 4   -> 3       8192:   1.783293 GB/s    4.593750us
 Rank 4   -> 3      12288:   1.721611 GB/s    7.137500us
 Rank 4   -> 3      16384:   2.151366 GB/s    7.615625us
-Rank 4   -> 3      32768:   3.439646 GB/s    9.526563us
-Rank 4   -> 3      49152:   4.296856 GB/s   11.439062us
+Rank 4   -> 3      32768:   3.439082 GB/s    9.528125us
+Rank 4   -> 3      49152:   4.297443 GB/s   11.437500us
 Rank 4   -> 3      65536:   4.909064 GB/s   13.350000us
 Rank 4   -> 3      98304:   5.724189 GB/s   17.173437us
 Rank 4   -> 3     131072:   6.242917 GB/s   20.995312us
 Rank 4   -> 3     262144:   7.224085 GB/s   36.287500us
-Rank 4   -> 3     524288:   7.840370 GB/s   66.870312us
+Rank 4   -> 3     524288:   7.840187 GB/s   66.871875us
 Rank 4   -> 3    1048576:   8.189501 GB/s  128.039062us
 Rank 6   -> 3        256:   0.890435 GB/s    0.287500us
-Rank 6   -> 3        512:   0.248242 GB/s    2.062500us
+Rank 6   -> 3        512:   0.248195 GB/s    2.062891us
 Rank 6   -> 3       1024:   0.485632 GB/s    2.108594us
 Rank 6   -> 3       2048:   0.926140 GB/s    2.211328us
 Rank 6   -> 3       3072:   1.327535 GB/s    2.314062us
-Rank 6   -> 3       4096:   1.694531 GB/s    2.417187us
+Rank 6   -> 3       4096:   1.694805 GB/s    2.416797us
 Rank 6   -> 3       6144:   1.779258 GB/s    3.453125us
 Rank 6   -> 3       8192:   1.783293 GB/s    4.593750us
 Rank 6   -> 3      12288:   1.721611 GB/s    7.137500us
 Rank 6   -> 3      16384:   2.151366 GB/s    7.615625us
-Rank 6   -> 3      32768:   3.439646 GB/s    9.526563us
-Rank 6   -> 3      49152:   4.296856 GB/s   11.439062us
+Rank 6   -> 3      32768:   3.439082 GB/s    9.528125us
+Rank 6   -> 3      49152:   4.297443 GB/s   11.437500us
 Rank 6   -> 3      65536:   4.909064 GB/s   13.350000us
 Rank 6   -> 3      98304:   5.724189 GB/s   17.173437us
 Rank 6   -> 3     131072:   6.242917 GB/s   20.995312us
 Rank 6   -> 3     262144:   7.224085 GB/s   36.287500us
-Rank 6   -> 3     524288:   7.840370 GB/s   66.870312us
+Rank 6   -> 3     524288:   7.840187 GB/s   66.871875us
 Rank 6   -> 3    1048576:   8.189501 GB/s  128.039062us
 Rank 8   -> 5        256:   0.890435 GB/s    0.287500us
 Rank 8   -> 5        512:   0.248242 GB/s    2.062500us
@@ -106,7 +106,7 @@ Rank 8   -> 5      12288:   1.721611 GB/s    7.137500us
 Rank 8   -> 5      16384:   2.151366 GB/s    7.615625us
 Rank 8   -> 5      32768:   3.439646 GB/s    9.526563us
 Rank 8   -> 5      49152:   4.296856 GB/s   11.439062us
-Rank 8   -> 5      65536:   4.909638 GB/s   13.348437us
+Rank 8   -> 5      65536:   4.909064 GB/s   13.350000us
 Rank 8   -> 5      98304:   5.724189 GB/s   17.173437us
 Rank 8   -> 5     131072:   6.242917 GB/s   20.995312us
 Rank 8   -> 5     262144:   7.224085 GB/s   36.287500us
@@ -124,7 +124,7 @@ Rank 10  -> 5      12288:   1.721611 GB/s    7.137500us
 Rank 10  -> 5      16384:   2.151366 GB/s    7.615625us
 Rank 10  -> 5      32768:   3.439646 GB/s    9.526563us
 Rank 10  -> 5      49152:   4.296856 GB/s   11.439062us
-Rank 10  -> 5      65536:   4.909638 GB/s   13.348437us
+Rank 10  -> 5      65536:   4.909064 GB/s   13.350000us
 Rank 10  -> 5      98304:   5.724189 GB/s   17.173437us
 Rank 10  -> 5     131072:   6.242917 GB/s   20.995312us
 Rank 10  -> 5     262144:   7.224085 GB/s   36.287500us
@@ -137,16 +137,16 @@ Rank 12  -> 7       2048:   0.925977 GB/s    2.211719us
 Rank 12  -> 7       3072:   1.327311 GB/s    2.314453us
 Rank 12  -> 7       4096:   1.694531 GB/s    2.417187us
 Rank 12  -> 7       6144:   1.779258 GB/s    3.453125us
-Rank 12  -> 7       8192:   1.782686 GB/s    4.595313us
+Rank 12  -> 7       8192:   1.782080 GB/s    4.596875us
 Rank 12  -> 7      12288:   1.674685 GB/s    7.337500us
 Rank 12  -> 7      16384:   2.096313 GB/s    7.815625us
 Rank 12  -> 7      32768:   3.368919 GB/s    9.726562us
-Rank 12  -> 7      49152:   4.223588 GB/s   11.637500us
+Rank 12  -> 7      49152:   4.223021 GB/s   11.639062us
 Rank 12  -> 7      65536:   4.836605 GB/s   13.550000us
 Rank 12  -> 7      98304:   5.658802 GB/s   17.371875us
-Rank 12  -> 7     131072:   6.184009 GB/s   21.195312us
+Rank 12  -> 7     131072:   6.183553 GB/s   21.196875us
 Rank 12  -> 7     262144:   7.184488 GB/s   36.487500us
-Rank 12  -> 7     524288:   7.816808 GB/s   67.071875us
+Rank 12  -> 7     524288:   7.816991 GB/s   67.070312us
 Rank 12  -> 7    1048576:   8.176828 GB/s  128.237500us
 Rank 14  -> 7        256:   0.890435 GB/s    0.287500us
 Rank 14  -> 7        512:   0.248195 GB/s    2.062891us
@@ -155,15 +155,15 @@ Rank 14  -> 7       2048:   0.925977 GB/s    2.211719us
 Rank 14  -> 7       3072:   1.327311 GB/s    2.314453us
 Rank 14  -> 7       4096:   1.694531 GB/s    2.417187us
 Rank 14  -> 7       6144:   1.779258 GB/s    3.453125us
-Rank 14  -> 7       8192:   1.782686 GB/s    4.595313us
+Rank 14  -> 7       8192:   1.782080 GB/s    4.596875us
 Rank 14  -> 7      12288:   1.674685 GB/s    7.337500us
 Rank 14  -> 7      16384:   2.096313 GB/s    7.815625us
 Rank 14  -> 7      32768:   3.368919 GB/s    9.726562us
-Rank 14  -> 7      49152:   4.223588 GB/s   11.637500us
+Rank 14  -> 7      49152:   4.223021 GB/s   11.639062us
 Rank 14  -> 7      65536:   4.836605 GB/s   13.550000us
 Rank 14  -> 7      98304:   5.658802 GB/s   17.371875us
-Rank 14  -> 7     131072:   6.184009 GB/s   21.195312us
+Rank 14  -> 7     131072:   6.183553 GB/s   21.196875us
 Rank 14  -> 7     262144:   7.184488 GB/s   36.487500us
-Rank 14  -> 7     524288:   7.816808 GB/s   67.071875us
+Rank 14  -> 7     524288:   7.816991 GB/s   67.070312us
 Rank 14  -> 7    1048576:   8.176828 GB/s  128.237500us
-Estimated total runtime of           0.29973667 seconds
+Estimated total runtime of           0.29973687 seconds

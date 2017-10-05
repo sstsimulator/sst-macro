@@ -155,10 +155,12 @@ event_manager::run_events(timestamp event_horizon)
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
     event_queue_entry* ev = *iter;
+
     if (ev->time() < now_){
       spkt_abort_printf("Time went backwards on thread %d: %lu < %lu",
                         thread_id_, ev->time().ticks(), now_.ticks());
     }
+
     if (ev->time() >= event_horizon){
       timestamp ret = std::min(min_ipc_time_, ev->time());
       return ret;

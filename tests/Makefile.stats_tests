@@ -19,15 +19,16 @@ STATSTESTS = \
   test_stats_bytes_sent_fattree \
   histogram.p \
   histogram.dat \
-  test_stats_ftq \
-  ftq_app1.p \
-  ftq_app1.dat \
   spyplot.bytes.csv \
   spyplot.num_messages.csv \
   spyplot_collectives.bytes.csv \
   spyplot_collectives.num_messages.csv \
   bytes_sent_torus.dat \
   bytes_sent_fattree.dat 
+
+#  test_stats_ftq 
+#  ftq_app1.p 
+#  ftq_app1.dat 
 
 #  spyplot.bytes.png 
 #  spyplot.num_messages.png 
