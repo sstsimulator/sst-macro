@@ -1,6 +1,11 @@
 import re
 import os
 
+import matplotlib.pyplot as plt
+import numpy as np
+import re
+import sys
+
 remap = {
 "MPI_Waitsome" : "MPI_Wait",
 "ComputeTime" : "Compute", 
@@ -134,10 +139,112 @@ def parse(fname):
   if folder:
     os.chdir(cwd)
 
-  print rank.compMPI
-  print rank.totalMPI
-
   return rank
 
+def plotBars(data, title=None, output=None):
+  main = data
 
+  fig = plt.figure()
+  ax = fig.add_subplot(111)
+
+  colors = [
+   "#afeeee", #pale turquoise
+   '#f5deb3', #pale wheat
+   "#cc99ff", #purple
+   "green",
+   'red',
+   "#ffcc99", #orange
+   'cyan',
+   'yellow',
+   'magenta',
+  ]
+
+  barWidth=0.25
+  thk = 2
+
+  fxns = main.bars.keys()
+  fxns.sort()
+  totalMPI = float(main.totalMPI)
+
+  idx = 1
+  colorIdx = 0
+
+  mainTotal = float(main.totalMPI + main.comp)
+  mainMPI = float(main.totalMPI)
+
+  totalSync = main.totalSync / mainTotal
+  totalComm = main.totalComm / mainTotal
+  totalMPIComp = main.compMPI / mainTotal
+  totalMPI = main.totalMPI / mainTotal
+  totalComp = main.comp / mainTotal
+
+  comms = [totalComm]
+  syncs = [totalSync]
+  comps = [totalMPIComp]
+
+  xlabels = ["Total"]
+
+  #just take the 5 top functions
+  maxFxns = min(5,len(fxns))
+
+  sorter = []
+  for f in fxns:
+    b = main.bars[f]
+    sorter.append((b.total,f))
+
+  sorter.sort()
+  sorter.reverse()
+
+  for ignore, f in sorter[:maxFxns]:
+    b = main.bars[f]
+    comm = (b.total - b.sync) / mainMPI
+    sync = b.sync / mainMPI
+    comp = b.comp / mainMPI
+
+    comms.append(comm)
+    syncs.append(sync)
+    comps.append(comp)
+
+    xlabels.append(f.replace("MPI_",""))
+
+  xs = range(2,maxFxns+2)
+  xs.insert(0, 0.6)
+
+  comms = np.array(comms)
+  syncs = np.array(syncs)
+  comps = np.array(comps)
+
+  commBar = ax.bar(xs, comms, barWidth, color=colors[0], ecolor='block')
+  syncBar = ax.bar(xs, syncs, barWidth, color=colors[1], ecolor='block', hatch='///', bottom=comms)
+  mpiStackBar = ax.bar(xs, comps, barWidth,color=colors[2], ecolor='block', bottom=comms+syncs)
+  ax.set_ylabel("Fraction Total Time")
+
+  #now add the bars for actual computation, not MPI stack
+  ax2 = ax.twinx()
+  myx=[0.6]
+  myy=[totalComp]
+  bottoms=[totalMPI]
+  compBar = ax2.bar(myx,myy,barWidth,color=colors[3], ecolor='block', bottom=bottoms)
+  ax2.set_ylabel("Fraction MPI Time")
+  ax2.tick_params('y', length=0, labelright='off')
+  ax2.set_ylim([0,1])
+
+
+  plt.xticks(xs, xlabels)
+  plt.axvline(1.5, color='black', lw=5, ls='dashed')
+  ax.legend([commBar, syncBar, mpiStackBar, compBar], ["Network", "Sync", "MPI Stack", "Compute"])
+
+  #locs, labels = plt.xticks()
+  #plt.setp(labels, rotation=45)
+
+  ax.set_ylim([0,1])
+  plt.xlim([0,maxFxns+2])
+
+  if title:
+    ax.set_title(title)
+
+  if output:
+    plt.savefig(output)
+  else:
+    plt.show()
 

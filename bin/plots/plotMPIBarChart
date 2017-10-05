@@ -1,120 +1,18 @@
 #! /usr/bin/env python
 
-import matplotlib.pyplot as plt
-import numpy as np
-import re
-import sys
 
 from syncplot import *
 
 fname = sys.argv[1]
 
-fileLabel = None
+output = None
 if (len(sys.argv) > 2):
-  fileLabel = sys.argv[2]
+  output = sys.argv[2]
 
 title = None
 if (len(sys.argv) > 3):
   title = sys.argv[3]
 
 main = parse(fname)
+plotBars(main, title, output)
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
-
-colors = [
- "#afeeee", #pale turquoise
- '#f5deb3', #pale wheat
- "#cc99ff", #purple
- "green",
- 'red',
- "#ffcc99", #orange
- 'cyan',
- 'yellow',
- 'magenta',
-]
-
-barWidth=0.25
-thk = 2
-
-fxns = main.bars.keys()
-fxns.sort()
-totalMPI = float(main.totalMPI)
-
-idx = 1
-colorIdx = 0
-
-mainTotal = float(main.totalMPI + main.comp)
-totalSync = main.totalSync / mainTotal
-totalComm = main.totalComm / mainTotal
-totalMPIComp = main.compMPI / mainTotal
-totalMPI = main.totalMPI / mainTotal
-totalComp = main.comp / mainTotal
-
-comms = [totalComm]
-syncs = [totalSync]
-comps = [totalMPIComp]
-
-xlabels = ["Total"]
-
-#just take the 5 top functions
-maxFxns = min(5,len(fxns))
-
-sorter = []
-for f in fxns:
-  b = main.bars[f]
-  sorter.append((b.total,f))
-
-sorter.sort()
-sorter.reverse()
-
-for ignore, f in sorter[:maxFxns]:
-  b = main.bars[f]
-  comm = (b.total - b.sync) / mainTotal
-  sync = b.sync / mainTotal
-  comp = b.comp / mainTotal
-
-  comms.append(comm)
-  syncs.append(sync)
-  comps.append(comp)
-
-  xlabels.append(f.replace("MPI_",""))
-
-xs = np.arange(1,maxFxns+2)
-
-comms = np.array(comms)
-syncs = np.array(syncs)
-comps = np.array(comps)
-
-commBar = ax.bar(xs, comms, barWidth, color=colors[0], ecolor='block')
-syncBar = ax.bar(xs, syncs, barWidth, color=colors[1], ecolor='block', hatch='///', bottom=comms)
-mpiStackBar = ax.bar(xs, comps, barWidth,color=colors[2], ecolor='block', bottom=comms+syncs)
-
-#now add the bars for actual computation, not MPI stack
-xs=[1]
-ys=[totalComp]
-bottoms=[totalMPI]
-xlabels.append("Compute")
-compBar = ax.bar(xs,ys,barWidth,color=colors[3], ecolor='block', bottom=bottoms)
-
-plt.xticks(np.arange(1,len(xlabels)+1), xlabels)
-
-ax.legend([commBar, syncBar, mpiStackBar, compBar], ["Network", "Sync", "MPI Stack", "Compute"])
-
-locs, labels = plt.xticks()
-#plt.setp(labels, rotation=45)
-
-plt.ylim([0,1])
-plt.xlim([0,maxFxns+2])
-plt.ylabel("Fraction Time Spent")
-
-if title:
-  ax.set_title(title)
-
-if fileLabel:
-  plt.savefig("%s.pdf" % fileLabel)
-else:
-  plt.show()
-
-
-    
