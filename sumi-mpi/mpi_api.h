@@ -611,12 +611,6 @@ class mpi_api :
 
   void finish_collective(collective_op_base* op);
 
-#if SSTMAC_COMM_SYNC_STATS
-  const MPI_Call& get_last_call() const {
-    return last_call_;
-  }
-#endif
-
  private:
   int do_wait(MPI_Request *request, MPI_Status *status);
 
@@ -823,11 +817,11 @@ class mpi_api :
   void start_collective_sync_delays() override;
 
  private:
-  void set_new_mpi_call(MPI_function func);
-
-  void start_new_mpi_call(MPI_function func, int count, MPI_Datatype type, MPI_Comm comm);
-
-  void start_new_mpi_call(MPI_function func, const int* counts, MPI_Datatype type, MPI_Comm comm);
+  void set_new_mpi_call(MPI_function func){
+    current_call_.ID = func;
+    current_call_.sync = sstmac::timestamp();
+    current_call_.start = now();
+  }
 
   void finish_last_mpi_call(MPI_function func, bool dumpThis = true);
 
@@ -836,14 +830,14 @@ class mpi_api :
 
   bool dump_comm_times_;
 
-  MPI_Call last_call_;
+  MPI_Call current_call_;
 
-  std::unordered_map<MPI_Call,
-    std::list<
-      /** First time is non-sync (comm) time, second time is sync time */
-      std::pair<sstmac::timestamp,sstmac::timestamp>
-    >
-  > call_groups_;
+  struct mpi_sync_timing_stats {
+    sstmac::timestamp nonSync;
+    sstmac::timestamp sync;
+  };
+
+  std::map<MPI_function, mpi_sync_timing_stats> mpi_calls_;
 #endif
 
 };
@@ -860,7 +854,7 @@ mpi_api* sstmac_mpi();
 #if SSTMAC_COMM_SYNC_STATS
   #define start_mpi_call(fxn,count,type,comm) \
     _start_mpi_call_(fxn); \
-    start_new_mpi_call(Call_ID_##fxn,count,type,comm)
+    set_new_mpi_call(Call_ID_##fxn)
   #define finish_mpi_call(fxn) \
     finish_last_mpi_call(Call_ID_##fxn); \
     end_api_call()

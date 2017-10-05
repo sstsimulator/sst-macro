@@ -139,7 +139,9 @@ class app_ftq_calendar
 
   std::string appname_;
 
-  void dumpi_matplotlib_histogram(const std::string& fileroot);
+  void dump_matplotlib_histogram(const std::string& fileroot);
+
+  void dump_gnuplot_histogram(const std::string& fileroot);
 
   void allocate_epochs(long max_epoch);
 

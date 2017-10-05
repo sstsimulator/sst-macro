@@ -179,6 +179,11 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   poll_delay_ = params->get_optional_time_param("poll_delay", 0);
   user_lib_time_ = new sstmac::sw::lib_compute_time(params, "sumi-user-lib-time", sid, os);
 
+  rdma_pin_latency_ = params->get_optional_time_param("rdma_pin_latency", 0);
+  rdma_page_delay_ = params->get_optional_time_param("rdma_page_delay", 0);
+  pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
+  page_size_ = params->get_optional_byte_length_param("rdma_page_size", 4096);
+
   rank_mapper_ = sstmac::sw::task_mapping::global_mapping(sid.app_);
   nproc_ = rank_mapper_->nproc();
   component_id_ = os_->component_id();
@@ -189,6 +194,15 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
         params, "traffic_matrix", "ascii", "num_messages");
   spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(des_scheduler(),
         params, "traffic_matrix", "ascii", "bytes");
+}
+
+void
+sumi_transport::pin_rdma(uint64_t bytes)
+{
+  int num_pages = bytes / page_size_;
+  if (bytes % page_size_) ++num_pages;
+  sstmac::timestamp pin_delay = rdma_pin_latency_ + num_pages*rdma_page_delay_;
+  compute(pin_delay);
 }
 
 void
@@ -218,7 +232,7 @@ sumi_transport::des_scheduler() const
 }
 
 void
-sumi_transport::memcopy(long bytes)
+sumi_transport::memcopy(uint64_t bytes)
 {
   os_->current_thread()->parent_app()->compute_block_memcpy(bytes);
 }
@@ -414,31 +428,25 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
 
   sstmac::sw::thread* thr = os_->active_thread();
   if (pending_messages_.empty() && blocking) {
-    //sstmac::sw::key* blocker = sstmac::sw::key::construct(message_thread);
-    if (timeout > 0.){
-      os_->schedule_timeout(sstmac::timestamp(timeout), thr);
-    } else if (timeout == 0.){
-      spkt_abort_printf("invalid timeout of 0 - use -1 as sentinel value to indicate no timeout");
-    }
     blocked_threads_.push_back(thr);
     debug_printf(sprockit::dbg::sumi,
                  "Rank %d sumi queue %p has no pending messages - blocking poller %p",
                  rank(), this, thr);
-    os_->block();
+    if (timeout >= 0.){
+      os_->block_timeout(timeout);
+    } else {
+      os_->block();
+    }
     if (timeout <= 0){
       if (pending_messages_.empty()){
         spkt_abort_printf("SUMI transport rank %d unblocked with no messages and no timeout",
           rank_, timeout);
       }
-      //delete blocker;
     } else {
       if (pending_messages_.empty()){
         //timed out, erase blocker from list
         auto iter = blocked_threads_.begin();
         while (*iter != thr) ++iter;
-        if (iter == blocked_threads_.end()){
-          spkt_abort_printf("Rank %d time out has no key", rank_);
-        }
         blocked_threads_.erase(iter);
         return nullptr;
       }

@@ -198,20 +198,20 @@ class thread
     return bt_nfxn_;
   }
 
+  bool timed_out() const {
+    return timed_out_;
+  }
+
   void set_timed_out(bool flag){
     timed_out_ = flag;
   }
 
-  bool blocked() const {
-    return blocked_;
+  uint64_t block_counter() const {
+    return block_counter_;
   }
 
-  void set_blocked(bool flag) {
-    blocked_ = flag;
-  }
-
-  bool timed_out() const {
-    return timed_out_;
+  void increment_block_counter() {
+    ++block_counter_;
   }
 
   void append_backtrace(int fxnId);
@@ -353,7 +353,7 @@ class thread
   
   int active_core_;
 
-  bool blocked_;
+  uint64_t block_counter_;
 
 };
 

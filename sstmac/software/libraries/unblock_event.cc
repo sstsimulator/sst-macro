@@ -64,7 +64,7 @@ unblock_event::execute()
 
 timeout_event::timeout_event(operating_system* os, thread* thr) :
   event_queue_entry(os->component_id(), os->component_id()),
-  os_(os), thr_(thr)
+  os_(os), thr_(thr), counter_(thr->block_counter())
 {
 }
 
@@ -72,12 +72,11 @@ timeout_event::timeout_event(operating_system* os, thread* thr) :
 void
 timeout_event::execute()
 {
-  if (thr_->blocked()){
+  if (thr_->block_counter() == counter_){
     thr_->set_timed_out(true);
     os_->unblock(thr_);
   } else {
     //already fired, no timeout
-    //I have to delete the key - no one else knows anything about it
   }
 }
 

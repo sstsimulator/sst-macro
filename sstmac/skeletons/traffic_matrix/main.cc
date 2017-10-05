@@ -166,7 +166,7 @@ progress_loop(sumi::transport* tport, double timeout,
   debug_printf(sprockit::dbg::traffic_matrix,
     "Rank %d entering progress loop at t=%10.6e - stop=%10.6e, timeout=%10.6e",
     tport->rank(), now, stop, timeout);
-  while (1 && timeout > 0){
+  while (timeout > 0){
     rdma_message* msg = SUMI_POLL_TIME(tport,rdma_message,timeout);
     now = tport->wall_time();
     if (msg){ //need if statement, if timed out then no message
@@ -349,7 +349,7 @@ int USER_MAIN(int argc, char** argv)
 
   std::list<rdma_message*> done;
 
-  static double timeout = 100e-6 / intensity; //100 us per send iteration, modified by intensity
+  double timeout = 100e-6 / intensity; //100 us per send iteration, modified by intensity
   for (int iter=0; iter < num_iterations; ++iter){
     do_all_sends(iter, tport, chunk_size, send_partners, send_chunks, recv_chunks, timeout, done);
     progress_loop(tport, timeout, done);

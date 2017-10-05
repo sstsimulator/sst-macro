@@ -198,7 +198,9 @@ class operating_system :
    *                     for later unblocking
    * @return
    */
-  timestamp block();
+  void block();
+
+  void block_timeout(timestamp delay);
 
   /**
    * @brief unblock Unblock the thread context associated with the key
@@ -268,8 +270,6 @@ class operating_system :
   node_id addr() const {
     return my_addr_;
   }
-
-  void schedule_timeout(timestamp delay, thread* thr);
 
   graph_viz* call_graph() const {
     return call_graph_;

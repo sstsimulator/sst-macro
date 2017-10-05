@@ -779,15 +779,18 @@ dag_collective_actor::data_recved(action* ac_, collective_work_message* msg, voi
        //eager and rdvz reduce are the same
        case recv_action::eager_reduce:
        case recv_action::rdvz_reduce:
+        my_api_->memcopy(ac->nelems*type_size_);
         slicer_->unpack_reduce(recvd_buffer, result_buffer_, ac->offset, ac->nelems);
         break;
        case recv_action::eager_in_place:
        case recv_action::eager_unpack_temp_buf:
        case recv_action::rdvz_unpack_temp_buf:
+        my_api_->memcopy(ac->nelems*type_size_);
         slicer_->unpack_recv_buf(recvd_buffer, result_buffer_, ac->offset, ac->nelems);
         break;
        case recv_action::eager_packed_temp_buf:
         //I am copying from packed to packed
+        my_api_->memcopy(ac->nelems*type_size_);
         slicer_->memcpy_packed_bufs(recv_buffer_, recvd_buffer, ac->nelems);
         break;
        case recv_action::rdvz_packed_temp_buf:

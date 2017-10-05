@@ -713,7 +713,7 @@ mpi_queue::start_progress_loop(
 }
 
 void
-mpi_queue::memcopy(long bytes)
+mpi_queue::memcopy(uint64_t bytes)
 {
   api_->memcopy(bytes);
 }

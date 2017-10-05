@@ -93,6 +93,7 @@ class timeout_event : public event_queue_entry
  protected:
   operating_system* os_;
   thread* thr_;
+  uint64_t counter_;
 
 };
 

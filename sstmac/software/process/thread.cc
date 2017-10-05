@@ -190,6 +190,8 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   cpumask_(0),
   host_timer_(nullptr),
   parent_app_(nullptr),
+  timed_out_(false),
+  block_counter_(0),
   sid_(sid)
 {
   //make all cores possible active

@@ -112,7 +112,7 @@ class mpi_queue
     return api_;
   }
 
-  void memcopy(long bytes);
+  void memcopy(uint64_t bytes);
 
   double now() const;
 
