@@ -10,11 +10,16 @@ remap = {
 "MPI_Waitsome" : "MPI_Wait",
 "ComputeTime" : "Compute", 
 "ComputeInstructions" : "Compute", 
+"MPIEager1Protocol_Handle_RDMA_Header" : "MPI Compute",
+"MPIEager1Protocol_Handle_RDMA_Payload" : "MPI Compute",
+"MPIEager0Protocol_Handle_Header" : "MPI Compute",
 "MPIRendezvousProtocol_RDMA_Configure_Buffer" : "MPI Compute",
 "MPIEager1Protocol_Handle_RDMA_Header" : "MPI Compute",
 "MPIEager1Protocol_Handle_RDMA_Payload" : "MPI Compute",
 "MPIEager1Protocol_Handle_RDMA_Payload" : "MPI Compute",
 "MPIEager0Protocol_Handle_Header" : "MPI Compute",
+"MPIRendezvousProtocol_RDMA_Configure_Buffer" : "MPI Compute",
+"MPIRendezvousProtocol_RDMA_Send_Header" : "MPI Compute",
 "MPIRendezvousProtocol_RDMA_Handle_Header" : "MPI Compute",
 "MPIRendezvousProtocol_RDMA_Handle_Payload" : "MPI Compute",
 "MPIEager1Protocol_Send_RDMA_Header" : "MPI Compute",
@@ -55,7 +60,8 @@ class Rank:
     return bool(self.bars)
 
 class Bar:
-  def __init__(self, total):
+  def __init__(self, name, total):
+    self.name = name
     self.total = total
     self.comp = 0
     self.comm = 0
@@ -100,11 +106,13 @@ def parse(fname):
           if "Finalize" in name:
             continue
           if "MPI_" in name:
-            currentBar = Bar(count)
+            currentBar = Bar(name,count)
             rank.bars[name] = currentBar
             rank.totalMPI += count
       elif currentBar: #not in main, but I guess another MPI call
         if name == "MPI Compute":
+          currentBar.comp += count
+        elif name == "Compute":
           currentBar.comp += count
         elif name == "memcopy":
           currentBar.comp += count
@@ -197,7 +205,7 @@ def plotBars(data, title=None, output=None):
 
   for ignore, f in sorter[:maxFxns]:
     b = main.bars[f]
-    comm = (b.total - b.sync) / mainMPI
+    comm = (b.total - b.sync - b.comp) / mainMPI
     sync = b.sync / mainMPI
     comp = b.comp / mainMPI
 
