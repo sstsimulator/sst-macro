@@ -45,6 +45,8 @@ class Parameter:
     self.b = (self.upper + self.lower) * 0.5
 
 
+  def value(self,v):
+    return self.m*v + self.b
 
   def replace(self, text, pos):
     #pos is a position normalized from -1 to 1

@@ -219,6 +219,8 @@ class interconnect
 
   timestamp injection_latency_;
 
+  timestamp ejection_latency_;
+
   timestamp lookahead_;
 
   int logp_id_cutoff_;

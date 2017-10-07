@@ -181,7 +181,22 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   }
   hop_bw_ = link_params->get_bandwidth_param("bandwidth");
   injection_latency_ = inj_params->get_time_param("latency");
+  ejection_latency_ = injection_latency_;
+
+  if (ej_params->has_param("latency")){
+    ejection_latency_ = ej_params->get_time_param("latency");
+  } else if (ej_params->has_param("send_latency")){
+    ejection_latency_ = ej_params->get_time_param("send_latency");
+  }
+
+  if (ejection_latency_ < injection_latency_){
+    std::cerr << "WARNING: ejection latency does not match injection latency!\n"
+              << "WARNING: this could lead to limited lookahead and poor parallel performance"
+              << std::endl;
+  }
+
   lookahead_ = std::min(injection_latency_, hop_latency_);
+  lookahead_ = std::min(lookahead_, ejection_latency_);
 
   interconn_debug("Interconnect building endpoints");
   build_endpoints(node_params, nic_params,netlink_params, mgr);
@@ -198,10 +213,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     }
   } else {
     //lookahead is actually higher
-    timestamp double_inj_lat = 2*injection_latency_;
-    if (double_inj_lat > lookahead_){
-      lookahead_ = double_inj_lat;
-    }
+    lookahead_ = 2*std::min(injection_latency_, ejection_latency_);
   }
 #endif
 }
