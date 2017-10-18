@@ -47,7 +47,7 @@ test_skeleton_boxml.$(CHKSUF): boxml
     -p node.app1.boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
 
 test_skeleton_%.$(CHKSUF): % 
-	$(PYRUNTEST) 8 $(top_srcdir) $@ Exact \
+	$(PYRUNTEST) 60 $(top_srcdir) $@ Exact \
     ./skeletons/$*/run$* -f $(top_srcdir)/skeletons/$*/parameters.ini --no-wall-time
 
 test_skeleton_CoMD.$(CHKSUF): CoMD pots
