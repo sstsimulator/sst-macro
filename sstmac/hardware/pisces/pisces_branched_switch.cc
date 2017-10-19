@@ -56,13 +56,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"switch_geometry",
-"row_buffer_size",
-"nrows",
-"ncols",
-"ninject",
-"neject",
-"netlink_radix",
+{ "switch_geometry", "DEPRECATED: array specifying geometry of the switch" },
+{ "geometry", "array specifying geometry of the switch" },
+{ "row_buffer_size", "the size of the input buffer in each row" },
+{ "nrows", "the number of row tiles in a switch" },
+{ "ncols", "the number of col tiles in a switch" },
 );
 
 namespace sstmac {

@@ -53,10 +53,12 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterDebugSlot(router);
 RegisterDebugSlot(routing);
+
 RegisterNamespaces("router");
+
 RegisterKeywords(
-"router",
-"ugal_threshold",
+{ "router", "the type of routing to perform in the network" },
+{ "ugal_threshold", "in UGAL, the min number of hops before allowing MIN-UGAL change"},
 );
 
 namespace sstmac {

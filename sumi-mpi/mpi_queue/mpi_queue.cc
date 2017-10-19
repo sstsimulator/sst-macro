@@ -63,18 +63,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterNamespaces("traffic_matrix", "num_messages");
 RegisterKeywords(
-"mpi_delay",
-"envelope",
-"smp_single_copy_size",
-"max_eager_msg_size",
-"max_vshort_msg_size",
-"mpi_spyplot",
-"mpi_queue_post_rdma_delay",
-"mpi_queue_post_header_delay",
-"mpi_queue_poll_delay",
-"post_rdma_delay",
-"post_header_delay",
-"poll_delay",
+{ "smp_single_copy_size", "the minimum size of message for single-copy protocol" },
+{ "max_eager_msg_size", "the maximum size for using eager pt2pt protocol" },
+{ "max_vshort_msg_size", "the maximum size for mailbox protocol" },
 );
 
 DeclareDebugSlot(mpi_all_sends);

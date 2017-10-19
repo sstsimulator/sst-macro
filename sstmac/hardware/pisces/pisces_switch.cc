@@ -58,20 +58,12 @@ RegisterNamespaces("switch", "router", "congestion_stats", "xbar", "link",
                    "output_buffer");
 
 RegisterKeywords(
-"stats",
-"send_latency",
-"credit_latency",
-"credits",
-"num_vc",
-"pisces_arbitrator",
-"pisces_network_hop_latency",
-"pisces_network_link_bandwidth",
-"pisces_switch_crossbar_bandwidth",
-"network_switch_type",
-"network_link_bandwidth",
-"eject_buffer_size",
-"output_buffer_size",
-"input_buffer_size",
+{ "stats", "specify the statistics collection to be performed on this switch" },
+{ "latency", "latency to traverse a portion of the switch - sets both credit/send" },
+{ "send_latency", "latency to send data to the next stage" },
+{ "credit_latency", "latency to send credit to the previous stage" },
+{ "credits", "the number of initial credits available to switch component" },
+{ "num_vc", "the number of virtual channels a switch must allow" },
 );
 
 

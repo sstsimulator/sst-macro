@@ -47,26 +47,20 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"amm_model",
-"accuracy_parameter",
-"network_bandwidth",
-"network_accuracy_parameter",
-"network_hop_latency",
-"injection_bandwidth",
-"injection_latency",
-"max_memory_bandwidth",
-"memory_accuracy_parameter",
-"memory_latency",
-"memory_bandwidth",
-"network_hop_latency",
-"network_bandwidth",
-"injection_bandwidth",
-"injection_redundant",
-"max_memory_bandwidth",
-"network_switch_bandwidth",
-"network_negligible_size",
-"nic_negligible_size",
-"congestion_model",
+{ "amm_model", "the model (amm1,amm2,etc) for configuring the simulation" },
+{ "accuracy_parameter", "granularity parameter for the simulation" },
+{ "network_bandwidth", "" },
+{ "network_accuracy_parameter", "" },
+{ "network_hop_latency", "latency of a single hop through a router in the network" },
+{ "network_switch_bandwidth", "the total bandwidth through a switch xbar" },
+{ "injection_bandwidth", "" },
+{ "injection_latency", "" },
+{ "injection_redundant", "the number of different injection paths on a NIC" },
+{ "max_memory_bandwidth", "the max bandwidth of a single request to memory" },
+{ "memory_accuracy_parameter", "" },
+{ "memory_latency", "" },
+{ "memory_bandwidth", "the max aggregate bandwidth of all request" },
+{ "congestion_model", "the type of congestion modeling to perform" }
 );
 
 

@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"buffer_size",
+ { "buffer_size", "size of input/output buffers on network switches" },
 );
 
 namespace sstmac {
@@ -75,10 +75,9 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
 
 
   nic_params->add_param_override("model", "pisces");
-  params->add_param_override("interconnect", "switch");
   switch_params->add_param_override("model", "pisces");
   if (!mem_params->has_scoped_param("model")){
-      mem_params->add_param_override("model", "pisces");
+    mem_params->add_param_override("model", "pisces");
   }
 
   buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
@@ -113,26 +112,22 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
     expand_amm1_memory(params, mem_params);
     expand_amm1_network(params, switch_params, true/*set xbar*/);
     expand_amm1_nic(params, nic_params);
-    netlink_params->add_param_override("radix", "1");
-  }
-  else if (amm_type == "amm2"){
+    netlink_params->add_param_override("concentration", "1");
+  } else if (amm_type == "amm2"){
     expand_amm2_memory(params, mem_params);
     expand_amm1_network(params, switch_params, true/*set xbar*/);
     expand_amm1_nic(params, nic_params);
-    netlink_params->add_param_override("radix", "1");
-  }
-  else if (amm_type == "amm3"){
+    netlink_params->add_param_override("concentration", "1");
+  } else if (amm_type == "amm3"){
     expand_amm2_memory(params, mem_params);
     expand_amm3_network(params, switch_params);
     expand_amm1_nic(params, nic_params);
-    netlink_params->add_param_override("radix", "1");
-  }
-  else if (amm_type == "amm4"){
+    netlink_params->add_param_override("concentration", "1");
+  } else if (amm_type == "amm4"){
     expand_amm2_memory(params, mem_params);
     expand_amm4_network(params, top_params, switch_params);
     expand_amm4_nic(params, top_params, nic_params);
-  }
-  else {
+  } else {
     spkt_throw_printf(sprockit::input_error, "invalid hardware model %s given",
         amm_type.c_str());
   }
@@ -323,8 +318,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     std::string router = rtr_params->get_param("name");
     std::string new_router = router + "_multipath";
     rtr_params->add_param_override("name", new_router);
-  }
-  else {
+  } else {
     spkt_throw_printf(sprockit::value_error,
                       "if using amm4, must specify switch.router.name = X\n"
                       "valid options are minimal, ugal, valiant, min_ad)");
@@ -486,8 +480,9 @@ pisces_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
   int conc = netlink_params->get_int_param("concentration");
   int red = top_params->get_optional_int_param("injection_redundant", 1);
   //the netlink block combines all the paths together
-  netlink_params->add_param_override("ninject", red);
-  netlink_params->add_param_override("neject", conc);
+
+  //netlink_params->add_param_override("ninject", red);
+  //netlink_params->add_param_override("neject", conc);
   netlink_params->add_param_override("model", "pisces");
 }
 

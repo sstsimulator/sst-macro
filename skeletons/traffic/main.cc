@@ -160,9 +160,15 @@ int main(int argc, char** argv)
   MPI_Gather(hostname, 64, MPI_BYTE, allHostnames, 64, MPI_BYTE, 0, MPI_COMM_WORLD);
 
   if (rank == 0){
+    std::set<std::string> existingHosts;
+    int currentHost = -1;
     for (int i=0; i < nproc; ++i){
       const char* name = &allHostnames[i*64];
-      printf("Rank %2d is on %s\n", i, name);
+      if (existingHosts.find(name) == existingHosts.end()){
+        ++currentHost;
+        existingHosts.insert(name);
+      }
+      printf("Rank %2d is on host %d\n", i, currentHost);
     }
   }
 

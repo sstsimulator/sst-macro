@@ -55,13 +55,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 MakeDebugSlot(pisces_memory)
 RegisterKeywords(
-"total_bandwidth",
-"max_single_bandwidth",
-"pisces_memory_mtu",
-"pisces_memory_latency",
-"pisces_memory_bandwidth",
-"pisces_memory_single_bandwidth",
-"pisces_memory_arbitrator",
+{ "total_bandwidth", "the total, aggregate bandwidth of the memory" },
+{ "max_single_bandwidth", "the max bandwidth of a single memory stream" },
+{ "latency", "the latency of a single memory operations" },
 );
 
 #define debug(...) debug_printf(sprockit::dbg::pisces_memory, __VA_ARGS__)

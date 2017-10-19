@@ -55,17 +55,25 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
+struct SpktKeyword {
+  const char* name;
+  const char* descr;
+  bool isNumeric = false;
+
+  SpktKeyword(const char* nm, const char* dscr, bool isNum = false) :
+    name(nm), descr(dscr), isNumeric(isNum)
+  {
+  }
+};
+
+
 class KeywordRegistration
 {
 
- private:
-  static std::unordered_set<std::string>* valid_keywords_;
+ private:  
+  static std::unordered_map<std::string, bool>* valid_keywords_;
 
   static std::unordered_set<std::string>* valid_namespaces_;
-
-#if !SPKT_DISABLE_REGEX
-  static std::list<std::string>* regexps_;
-#endif
 
   static std::unordered_set<std::string>* removed_;
 
@@ -73,12 +81,14 @@ class KeywordRegistration
 
   static void init();
 
- public:
-  static void register_regexp(const std::string& regexp);
+  static bool is_digit(char c){
+    return c >= 48 && c <= 57;
+  }
 
+ public:
   static void register_namespace(const std::string& ns);
 
-  static void register_keyword(const std::string& name);
+  static void register_keyword(const std::string& name, bool is_numeric);
 
   static bool is_valid_keyword(const std::string& name);
 
@@ -105,23 +115,14 @@ class StaticNamespaceRegister
 class StaticKeywordRegister
 {
  public:
-  StaticKeywordRegister(int num_keywords, const char* keywords[]);
+  StaticKeywordRegister(int num_keywords, SpktKeyword keywords[]);
 };
-
-
-#if !SPKT_DISABLE_REGEX
-class StaticKeywordRegisterRegexp
-{
- public:
-  StaticKeywordRegisterRegexp(const char* regexp);
-};
-#endif
 
 }
 
 #define RegisterKeywords(...) \
-  static const char* _keywords_[] = { __VA_ARGS__ }; \
-  static ::sprockit::StaticKeywordRegister _keyword_register_(sizeof(_keywords_) / sizeof(const char*), _keywords_)
+  static sprockit::SpktKeyword _keywords_[] = { __VA_ARGS__ }; \
+  static ::sprockit::StaticKeywordRegister _keyword_register_(sizeof(_keywords_) / sizeof(sprockit::SpktKeyword), _keywords_)
 
 #define RegisterNamespaces(...) \
   static const char* _namespaces_[] = { __VA_ARGS__ }; \

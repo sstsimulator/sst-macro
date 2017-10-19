@@ -58,19 +58,16 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterNamespaces("topology");
 
 RegisterKeywords(
-"topology_name",
-"topology_geometry",
-"topology_group_connections",
-"topology_true_random_intermediate",
-"topology_redundant",
-"topology_seed",
-"topology_output_graph",
-"geometry",
-"redundant",
-"seed",
-"group_connections",
-"concentration",
-"network_nodes_per_switch",
+{ "topology_name", "DEPRECATED: name of the topology" },
+{ "topology_geometry", "DEPRECATED: an array specifying the geometry of the topology" },
+{ "topology_redundant", "DEPRECATED: for group-based topologies (dragonfly), number of group connections per router" },
+{ "topology_seed", "DEPRECATED: a seed for random number generators used by topology" },
+{ "name", "the name of the topology" },
+{ "geometry", "an array specifying the geometry of the topology" },
+{ "redundant", "an array specifying how many redundants links in certain dimensions of topology" },
+{ "seed", "a seed for random number generators used by topology" },
+{ "concentration", "the number of nodes per switch" },
+{ "network_nodes_per_switch", "DEPRECATED: the number of nodes per switch" },
 );
 
 RegisterDebugSlot(topology,

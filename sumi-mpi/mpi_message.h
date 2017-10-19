@@ -59,10 +59,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-/**
- * A specialization of networkdata that contains envelope information
- * relevant to MPI messaging.
- */
 class mpi_message final :
   public sumi::message,
   public sprockit::thread_safe_new<mpi_message>

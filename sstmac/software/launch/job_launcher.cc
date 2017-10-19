@@ -55,6 +55,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/event_callback.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+ { "services", "a list of services to launch on a subset or all of the nodes" },
+ { "launch_app", "DEPRECATED: list of applications to launch", true },
+ { "launch_start_app", "DEPRECATED: time to start application", true },
+ { "launch_cmd_app", "DEPRECATED: cmd to launch application", true },
+);
 
 namespace sstmac {
 namespace sw {

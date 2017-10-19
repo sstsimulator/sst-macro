@@ -51,9 +51,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #endif
 #include <inttypes.h>
 
-RegisterKeywords("print_times",
-                 "message_size",
-                 "sleep_time");
+RegisterKeywords(
+ { "print_times", "whether to print the output times" },
+ { "message_size", "the size of the message to send" },
+ { "sleep_time", "the length of time to sleep" },
+);
 
 #define sstmac_app_name test_host_compute
 

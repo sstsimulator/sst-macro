@@ -63,11 +63,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"lazy_watch",
-"eager_cutoff",
-"use_put_protocol",
-"algorithm",
-"comm_sync_stats",
+ { "lazy_watch", "whether failure notifications can be receive without active pinging" },
+ { "eager_cutoff", "what message size in bytes to switch from eager to rendezvous" },
+ { "use_put_protocol", "whether to use a put or get protocol for pt2pt sends" },
+ { "algorithm", "the specific algorithm to use for a given collecitve" },
+ { "comm_sync_stats", "whether to track synchronization stats for communication" }
 );
 
 RegisterDebugSlot(sumi);

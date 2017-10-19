@@ -60,7 +60,6 @@ logp_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
 
   nic_params->add_param_override("model", "logP");
-  params->add_param_override("interconnect", "simple");
   switch_params->add_param_override("model", "logP");
   mem_params->add_param_override("model", "pisces");
 
@@ -75,21 +74,17 @@ logp_param_expander::expand(sprockit::sim_parameters* params)
     expand_amm1_memory(params, mem_params);
     expand_amm1_network(params, switch_params);
     expand_amm1_nic(params, nic_params, switch_params);
-  }
-  else if (amm_type == "amm2"){
+  } else if (amm_type == "amm2"){
     expand_amm2_memory(params, mem_params);
     expand_amm1_network(params, switch_params);
     expand_amm1_nic(params, nic_params, switch_params);
-  }
-  else if (amm_type == "amm3"){
+  } else if (amm_type == "amm3"){
     expand_amm2_memory(params, mem_params);
     expand_amm3_network(params, switch_params);
     expand_amm1_nic(params, nic_params, switch_params);
-  }
-  else if (amm_type == "amm4"){
+  } else if (amm_type == "amm4"){
     expand_amm4_nic(params, nic_params, switch_params);
-  }
-  else {
+  } else {
     spkt_throw_printf(sprockit::input_error, "invalid hardware model %s given",
         amm_type.c_str());
   }

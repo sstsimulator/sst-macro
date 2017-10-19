@@ -55,12 +55,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstream>
 
 RegisterKeywords(
-"dumpi_mapname",
-"launch_dumpi_mapname",
-"launch_hostname_map",
-"hostname_map",
-"launch_hostname_list",
-"hostname_list",
+{ "launch_dumpi_mapname", "DEPRECATED: a file containing a line-by-line list of hostnames for each node in system" },
+{ "launch_hostname_map", "DEPRECATED: a file containing a line-by-line list of hostnames for each node in system" },
+{ "hostname_map", "a file containing a line-by-line list of hostnames for each node in system" },
+{ "dumpi_mapname", "a file containing a line-by-line list of hostnames for each node in system" },
 );
 
 namespace sstmac {
@@ -75,8 +73,7 @@ hostname_allocation::hostname_allocation(sprockit::sim_parameters* params) :
 {
   if (params->has_param("dumpi_mapname")) {
     mapfile_ = params->deprecated_param("dumpi_mapname");
-  }
-  else {
+  } else {
     mapfile_ = params->get_param("hostname_map");
   }
 }

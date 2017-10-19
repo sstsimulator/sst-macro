@@ -67,16 +67,11 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterDebugSlot(node)
 RegisterNamespaces("os", "memory", "proc", "node");
 RegisterKeywords(
-"libname",
-"nsockets",
-"node_cores",
-"node_name",
-"node_memory_model",
-"node_model",
-"node_sockets",
-"node_pipeline_speedup",
-"node_frequency",
-"job_launcher",
+{ "nsockets", "the number of sockets/processors in a node" },
+{ "node_name", "DEPRECATED: the type of node on each endpoint" },
+{ "node_memory_model", "DEPRECATED: the type of memory model on each node" },
+{ "node_sockets", "DEPRECATED: the number of sockets/processors in a node" },
+{ "job_launcher", "the type of launcher for scheduling jobs on the system - equivalent to MOAB or SLURM" },
 );
 
 namespace sstmac {

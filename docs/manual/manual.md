@@ -987,11 +987,10 @@ Using the deprecated (non-namespace) parameters the file would be:
 # Launch parameters
 launch_indexing = block
 launch_allocation = first_available
-launch_app1_cmd = aprun -n2 -N1
+launch_cmd_app1 = aprun -n2 -N1
 launch_app1 = user_mpiapp_cxx
 launch_app1_argv = 
 # Network parameters
-network_name = simple
 network_bandwidth = 1.0GB/s
 network_hop_latency = 100ns
 # Topology - Ring of 4 nodes

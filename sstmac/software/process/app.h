@@ -115,9 +115,7 @@ class app : public thread
 
   void compute_block_memcpy(long bytes);
 
-  lib_compute_loops* compute_loops_lib();
-
-  lib_compute_time* compute_time_lib();
+  lib_compute_memmove* compute_lib();
 
   virtual ~app();
 
@@ -217,7 +215,7 @@ class app : public thread
   sprockit::sim_parameters* params_;
 
  private:
-  lib_compute_loops* compute_lib_;
+  lib_compute_memmove* compute_lib_;
   std::string unique_name_;
 
   int next_tls_key_;

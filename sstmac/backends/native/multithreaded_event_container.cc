@@ -62,7 +62,7 @@ RegisterDebugSlot(multithread_event_manager);
 RegisterDebugSlot(cpu_affinity);
 
 RegisterKeywords(
-  "cpu_affinity",
+ { "cpu_affinity", "the CPU offset for binding threads to core" },
 );
 
 static int busy_loop_count = 200;

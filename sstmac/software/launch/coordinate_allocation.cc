@@ -56,8 +56,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"launch_coordinate_file",
-"coordinate_file",
+{ "launch_coordinate_file", "DEPRECATED: the file contining line-by-line coordinates for each node in an allocation" },
+{ "coordinate_file", "the file contining line-by-line coordinates for each node in an allocation" },
 );
 
 namespace sstmac {

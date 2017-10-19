@@ -61,13 +61,14 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 RegisterKeywords(
-"launch_cmd",
-"allocation",
-"indexing",
-"start",
-"size",
-"launch_allocation",
-"launch_indexing",
+{ "launch_cmd", "a command specified via aprun or srun or mpirun to launch" },
+{ "argv", "the list of command-line arguments" },
+{ "allocation", "the strategy for allocating nodes to a job" },
+{ "indexing", "the strategy for indexing ranks to nodes within a job" },
+{ "start", "the time to issue a job start request" },
+{ "size", "the number of tasks (ranks) within a job" },
+{ "launch_allocation", "DEPRECATED: the strategy for allocating nodes to a job" },
+{ "launch_indexing", "DEPRECATED: the strategy for indexing ranks to nodes within a job" },
 );
 
 namespace sstmac {

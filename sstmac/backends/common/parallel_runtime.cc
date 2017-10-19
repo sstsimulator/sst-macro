@@ -59,9 +59,9 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterDebugSlot(parallel);
 
 RegisterKeywords(
-"serialization_buffer_size",
-"partition",
-"runtime",
+{ "serialization_buffer_size", "the size of the default serialization buffer for pairwise sends" },
+{ "partition", "the partitioning algorithm for assigning work to logical processes" },
+{ "runtime", "the underlying runtime (usually MPI or serial) managing logical processes" },
 );
 
 namespace sstmac {

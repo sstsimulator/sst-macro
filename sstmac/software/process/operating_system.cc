@@ -104,17 +104,12 @@ MakeDebugSlot(dropped_events)
 
 RegisterNamespaces("call_graph", "ftq");
 RegisterKeywords(
-"stack_size",
-"stack_chunk_size",
-"ftq",
-"ftq_trace",
-"ftq_epoch",
-"call_graph",
-"event_trace",
-"stack_protect",
-"event_trace_start",
-"event_trace_stop",
-"compute_scheduler",
+{ "stack_size", "the size of stack to allocate to each user-space thread" },
+{ "stack_chunk_size", "the block size to allocate in the memory pool when more stacks are needed" },
+{ "ftq", "DEPRECATED: sets the fileroot of the FTQ statistic" },
+{ "ftq_epoch", "DEPRECATED: sets the time epoch size for the FTQ statistic" },
+{ "call_graph", "DEPRECATED: sets the fileroot of the call graph statistic" },
+{ "compute_scheduler", "the type of compute scheduler or assigning cores to computation" },
 );
 
 //we have to have a globally visible (to C code) stack-size variable

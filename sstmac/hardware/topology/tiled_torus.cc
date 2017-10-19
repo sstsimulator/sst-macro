@@ -47,10 +47,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"tiles_per_row",
-"tiles_per_col",
-"tiles_per_inj",
-"injection_ports",
+{ "tiles_per_row", "number of switch tiles in a row" },
+{ "tiles_per_col", "number of switch tiles in a col" },
+{ "injection_ports", "number of ports dedicated to injection" },
 );
 
 namespace sstmac {

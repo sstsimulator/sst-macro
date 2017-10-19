@@ -51,7 +51,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 #include <sstream>
 
-RegisterKeywords("epoch");
+RegisterKeywords(
+ { "epoch", "the size of a time epoch" },
+);
 
 namespace sstmac {
 namespace sw {

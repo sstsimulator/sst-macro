@@ -49,8 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <algorithm>
 
 RegisterKeywords(
-"random_allocation_seed",
-"random_indexer_seed",
+{ "random_allocation_seed", "seed for random number generator" },
+{ "random_indexer_seed", "seed for random number generator" },
 );
 
 namespace sstmac {

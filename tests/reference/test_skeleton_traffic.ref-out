@@ -1,19 +1,19 @@
-Rank  0 is on mag-client90.ca.sandia.gov
-Rank  1 is on mag-client90.ca.sandia.gov
-Rank  2 is on mag-client90.ca.sandia.gov
-Rank  3 is on mag-client90.ca.sandia.gov
-Rank  4 is on mag-client90.ca.sandia.gov
-Rank  5 is on mag-client90.ca.sandia.gov
-Rank  6 is on mag-client90.ca.sandia.gov
-Rank  7 is on mag-client90.ca.sandia.gov
-Rank  8 is on mag-client90.ca.sandia.gov
-Rank  9 is on mag-client90.ca.sandia.gov
-Rank 10 is on mag-client90.ca.sandia.gov
-Rank 11 is on mag-client90.ca.sandia.gov
-Rank 12 is on mag-client90.ca.sandia.gov
-Rank 13 is on mag-client90.ca.sandia.gov
-Rank 14 is on mag-client90.ca.sandia.gov
-Rank 15 is on mag-client90.ca.sandia.gov
+Rank  0 is on host 0
+Rank  1 is on host 1
+Rank  2 is on host 2
+Rank  3 is on host 3
+Rank  4 is on host 4
+Rank  5 is on host 5
+Rank  6 is on host 6
+Rank  7 is on host 7
+Rank  8 is on host 8
+Rank  9 is on host 9
+Rank 10 is on host 10
+Rank 11 is on host 11
+Rank 12 is on host 12
+Rank 13 is on host 13
+Rank 14 is on host 14
+Rank 15 is on host 15
 Rank 0   -> Rank 1  
 Rank 2   -> Rank 1  
 Rank 4   -> Rank 3  

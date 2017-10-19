@@ -54,10 +54,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"intensity",
-"mixing",
-"niterations",
-"scatter",
+{ "intensity", "parameter tuning the injection rate" },
+{ "mixing", "the number of partners each rank has (mixing rate)" },
+{ "niterations", "the number of iterations to run" },
+{ "scatter", "the rank-distance between partners" },
 );
 
 MakeDebugSlot(traffic_matrix)

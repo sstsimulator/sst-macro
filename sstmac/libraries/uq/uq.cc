@@ -84,8 +84,8 @@ sstmac_uq_sim_nproc(void* queue)
   sprockit::sim_parameters* src_app_params = src_params->get_optional_namespace("app1");
   sprockit::sim_parameters params;
   src_app_params->combine_into(&params);
-  if (src_params->has_param("launch_app1_cmd")){
-    params["launch_cmd"] = src_params->get_param("launch_app1_cmd");
+  if (src_params->has_param("launch_cmd_app1")){
+    params["launch_cmd"] = src_params->get_param("launch_cmd_app1");
   } 
   if (src_params->has_param("launch_app1_size")){
     params["size"] = src_params->get_param("launch_app1_size");

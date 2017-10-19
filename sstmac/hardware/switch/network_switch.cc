@@ -58,7 +58,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterDebugSlot(network_switch)
 
-RegisterKeywords("switch_name");
+RegisterKeywords(
+ { "switch_name", "DEPRECATED: the name of the switch model to use" },
+);
+
 RegisterNamespaces("switch");
 
 namespace sstmac {

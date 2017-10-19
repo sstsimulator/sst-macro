@@ -66,11 +66,11 @@ RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
                    "message_size_histogram", "injection", "bytes");
 
 RegisterKeywords(
-"nic_name",
-"network_spyplot",
-"post_bandwidth",
-"post_latency",
-"pipeline_fraction",
+{ "nic_name", "DEPRECATED: the type of NIC to use on the node" },
+{ "network_spyplot", "DEPRECATED: the file root of all stats showing traffic matrix" },
+{ "post_bandwidth", "the throughput of the NIC posting messages" },
+{ "post_latency", "the latency of the NIC posting messages" },
+{ "pipeline_fraction", "the fraction of NIC post work that can be pipelined" },
 );
 
 #define DEFAULT_NEGLIGIBLE_SIZE 256

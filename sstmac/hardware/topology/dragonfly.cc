@@ -49,7 +49,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/stl_string.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
+
+RegisterKeywords(
+{ "topology_group_connections", "DEPRECATED: for group-based topologies, number of group connections per router" },
+{ "group_connections", "for group-based topologies (dragonfly), number of group connections per router" },
+{ "true_random_intermediate", "" },
+);
 
 namespace sstmac {
 namespace hw {

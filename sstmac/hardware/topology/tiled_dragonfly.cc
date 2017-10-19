@@ -55,8 +55,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"intragroup_connection_file",
-"intergroup_connection_file",
+{ "intragroup_connection_file", "a file specifying port connections within a group" },
+{ "intergroup_connection_file", "a file specifying port connections between groups" },
 );
 
 using namespace sprockit;

@@ -54,7 +54,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define sstmac_app_name mpi_delay_stats
 
-RegisterKeywords("sync_delay");
+RegisterKeywords(
+{ "send_delay", "the delay in the sender before starting" },
+{ "recv_delay", "the delay in the receiver before starting" },
+{ "send_compute", "the time sender will compute between Isend/wait" },
+{ "recv_compute", "the time recver will compute beteween Irecv/wait" },
+{ "message_size", "the size of each message sent" },
+);
 
 int USER_MAIN(int argc, char** argv)
 {

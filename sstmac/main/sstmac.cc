@@ -70,6 +70,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
+#include <sprockit/keyword_registration.h>
 #include <sprockit/sprockit/spkt_config.h>
 #include <sumi/sumi/sumi_config.h>
 
@@ -84,6 +85,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #if SUMI_REPO_BUILD
 #include <sumi/sumi_repo.h>
 #endif
+
+RegisterKeywords(
+ { "external_libs", "a list of external .so files to load" },
+);
 
 namespace sstmac {
 

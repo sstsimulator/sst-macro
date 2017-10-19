@@ -63,22 +63,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
-
 RegisterDebugSlot(interconnect);
-RegisterNamespaces("interconnect");
-RegisterKeywords("network_name", "interconnect");
 
 namespace sstmac {
 namespace hw {
 
 interconnect* interconnect::static_interconnect_ = nullptr;
 logp_switch* interconnect::local_logp_switch_ = nullptr;
-
-#if !SPKT_DISABLE_REGEX
-sprockit::StaticKeywordRegisterRegexp node_failure_ids_keyword("node_failure_\\d+_id");
-sprockit::StaticKeywordRegisterRegexp node_failure_time_keyword("node_failure_\\d+_time");
-#endif
-
 
 event_link*
 interconnect::allocate_local_link(event_scheduler* src, event_scheduler* dst,
@@ -97,14 +88,9 @@ interconnect*
 interconnect::static_interconnect(sprockit::sim_parameters* params, event_manager* mgr)
 {
   if (!static_interconnect_){
-    sprockit::sim_parameters* ic_params = params;
-    if (params->has_namespace("interconnect")){
-      ic_params = params->get_namespace("interconnect");
-    }
-    const char* ic_param = ic_params->has_param("network_name") ? "network_name" : "interconnect";
     parallel_runtime* rt = parallel_runtime::static_runtime(params);
     partition* part = rt ? rt->topology_partition() : nullptr;
-    static_interconnect_ = interconnect::factory::get_optional_param(ic_param, "switch", ic_params,
+    static_interconnect_ = interconnect::factory::get_value("switch", params,
       mgr, part, rt);
   }
   return static_interconnect_;

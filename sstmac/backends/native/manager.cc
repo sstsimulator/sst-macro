@@ -71,9 +71,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstdlib>
 
 RegisterKeywords(
-"event_manager",
-"sst_rank",
-"sst_nproc",
+{ "event_manager", "the type of event manager for scheduling/managing events" },
+{ "sst_rank", "my logical process within a parallel SST run" },
+{ "sst_nproc", "the total number of logical processes within an SST run" },
 );
 
 

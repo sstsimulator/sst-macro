@@ -219,6 +219,8 @@ extern "C" void sstmac_free(void* ptr);
 
 extern "C" void* sstmac_memset(void* ptr, int value, unsigned long  sz);
 
+extern "C" int sstmac_gethostname(char* name, size_t len);
+
 namespace std {
 
 void sstmac_free(void* ptr);
@@ -248,6 +250,10 @@ static void* nullptr = 0;
 
 #ifndef memset
 #define memset sstmac_memset
+#endif
+
+#ifndef gethostname
+#define gethostname sstmac_gethostname
 #endif
 
 #endif

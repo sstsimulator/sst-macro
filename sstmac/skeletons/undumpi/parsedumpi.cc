@@ -60,11 +60,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <algorithm>
 
 RegisterKeywords(
-"parsedumpi_timescale",
-"parsedumpi_terminate_percent",
-"parsedumpi_print_progress",
-"launch_dumpi_metaname",
-"dumpi_metaname",
+{ "parsedumpi_timescale", "the scale factor for time between MPI calls, < 1 means speedup" },
+{ "parsedumpi_terminate_percent", "an optional percentage of the trace after which to terminate" },
+{ "parsedumpi_print_progress", "whether to print the progress of the trace" },
+{ "launch_dumpi_metaname", "DEPRECATED: the meta file for the DUMPI trace" },
+{ "dumpi_metaname", "the meta file for the DUMPI trace" },
 );
 
 namespace sumi{

@@ -61,6 +61,14 @@ Questions? Contact sst-macro-help@sandia.gov
 
 using namespace sprockit::dbg;
 
+RegisterKeywords(
+{ "post_rdma_delay", "the time it takes to post an RDMA operation" },
+{ "post_header_delay", "the time it takes to send an eager message" },
+{ "poll_delay", "the time it takes to poll for an incoming message" },
+{ "rdma_pin_latency", "the latency for each RDMA pin information" },
+{ "rdma_page_delay", "the per-page delay for RDMA pinning" },
+);
+
 namespace sstmac {
 
 class sumi_server :

@@ -57,7 +57,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/job_launcher_fwd.h>
 
 #include <sstmac/common/messages/sst_message_fwd.h>
-#include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
