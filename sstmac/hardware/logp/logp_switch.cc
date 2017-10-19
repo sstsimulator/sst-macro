@@ -64,9 +64,16 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
 #include <sstmac/software/launch/launch_event.h>
 
 MakeDebugSlot(logp)
+
+RegisterKeywords(
+ { "bandwidth", "" },
+ { "hop_latency", "" },
+ { "out_in_latency", "" },
+);
 
 namespace sstmac {
 namespace hw {
@@ -74,27 +81,17 @@ namespace hw {
 logp_switch::logp_switch(sprockit::sim_parameters *params, interconnect* ic) :
   top_(ic->topol())
 {
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
-  sprockit::sim_parameters* ej_params = params->get_namespace("ejection");
-
-  double net_bw = link_params->get_bandwidth_param("bandwidth");
+  double net_bw = params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
-  if (link_params->has_param("send_latency")){
-    hop_latency_ = link_params->get_time_param("send_latency");
-  } else {
-    hop_latency_ = link_params->get_time_param("latency");
-  }
 
-  double inj_bw = ej_params->get_optional_bandwidth_param("bandwidth", net_bw);
+  double inj_bw = params->get_optional_namespace("ejection")->get_optional_bandwidth_param("bandwidth", net_bw);
   inj_bw_inverse_ = 1.0/inj_bw;
-  if (ej_params->has_param("send_latency")){
-    inj_lat_ = ej_params->get_time_param("send_latency");
-  } else {
-    inj_lat_ = ej_params->get_time_param("latency");
-  }
-  dbl_inj_lat_ = 2*inj_lat_;
 
   inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
+
+  hop_latency_ = params->get_time_param("hop_latency");
+
+  out_in_lat_ = params->get_time_param("out_in_latency");
 
   nic_links_.resize(ic->topol()->num_nodes());
 }
@@ -115,9 +112,9 @@ logp_switch::send(timestamp start, message* msg, node* src)
   node_id dst = msg->toaddr();
   timestamp delay(inv_min_bw_ * msg->byte_length()); //bw term
   int num_hops = top_->num_hops_to_node(src->addr(), dst);
-  delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
+  delay += num_hops * hop_latency_ + out_in_lat_; //factor of 2 for in-out
   debug_printf(sprockit::dbg::logp, "sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
-               num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
+               num_hops, delay.sec(), out_in_lat_.sec(), msg->to_string().c_str());
   nic_links_[dst]->multi_send(delay+start, msg, src);
 }
 

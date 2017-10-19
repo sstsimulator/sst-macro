@@ -65,6 +65,18 @@ logp_nic::logp_nic(sprockit::sim_parameters* params, node* parent) :
   inj_lat_ = inj_params->get_time_param("latency");
 }
 
+timestamp
+logp_nic::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_time_param("latency");
+}
+
+timestamp
+logp_nic::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_time_param("latency");
+}
+
 logp_nic::~logp_nic()
 {
   if (ack_handler_) delete ack_handler_;

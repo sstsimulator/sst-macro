@@ -319,11 +319,44 @@ class event_link {
     send(arr, ev);
   }
 
+  static timestamp min_thread_latency() {
+    return min_thread_latency_;
+  }
+
+  static timestamp min_remote_latency() {
+    return min_remote_latency_;
+  }
+
  protected:
   event_link(event_scheduler* sched) :
     scheduler_(sched) {}
 
+  static void set_min_thread_latency(timestamp t){
+    if (t.ticks() == 0){
+      spkt_abort_printf("setting link latency to zero across threads!");
+    }
+    if (min_thread_latency_.ticks() == 0){
+      min_thread_latency_ = t;
+    } else {
+      min_thread_latency_ = std::min(min_thread_latency_, t);
+    }
+  }
+
+  static void set_min_remote_latency(timestamp t){
+    if (t.ticks() == 0){
+      spkt_abort_printf("setting link latency to zero across threads!");
+    }
+    if (min_remote_latency_.ticks() == 0){
+      min_remote_latency_ = t;
+    } else {
+      min_remote_latency_ = std::min(min_remote_latency_, t);
+    }
+  }
+
   event_scheduler* scheduler_;
+
+  static timestamp min_thread_latency_;
+  static timestamp min_remote_latency_;
 
 };
 
@@ -368,9 +401,12 @@ class local_link : public event_link {
 
 class multithread_link : public local_link {
  public:
-  multithread_link(event_handler* handler, event_scheduler* src, event_scheduler* dst) :
+  multithread_link(event_handler* handler, timestamp latency,
+                   event_scheduler* src, event_scheduler* dst) :
     local_link(src, dst, handler)
-  {}
+  {
+    set_min_thread_latency(latency);
+  }
 
   bool is_external() const override {
     return true;
@@ -384,7 +420,7 @@ class multithread_link : public local_link {
 
 class ipc_link : public event_link {
  public:
-  ipc_link(int rank,
+  ipc_link(timestamp latency, int rank,
            event_scheduler* src, uint32_t dst,
            int port, bool is_credit) :
     rank_(rank), dst_(dst),
@@ -392,6 +428,7 @@ class ipc_link : public event_link {
     port_(port),
     event_link(src)
   {
+    set_min_remote_latency(latency);
   }
 
   bool is_external() const override {

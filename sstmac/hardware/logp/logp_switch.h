@@ -81,12 +81,16 @@ class logp_switch
 
   void send(timestamp start, message* msg, node* src);
 
+  timestamp send_latency() const {
+    return out_in_lat_;
+  }
+
  private:
   double inj_bw_inverse_;
 
   timestamp inj_lat_;
 
-  timestamp dbl_inj_lat_;
+  timestamp out_in_lat_;
 
   double inverse_bw_;
 

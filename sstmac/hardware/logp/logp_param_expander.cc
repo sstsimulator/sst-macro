@@ -106,11 +106,52 @@ logp_param_expander::expand_amm1_network(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
 {
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  double link_bw = link_params->get_bandwidth_param("bandwidth");
-  double gbs = link_bw *param_expander::network_bandwidth_multiplier(params) / 1e9;
-  std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
-  link_params->add_param_override("bandwidth", net_bw_str);
+  expand_into(switch_params, params, switch_params);
+}
+
+void
+logp_param_expander::expand_into(
+  sprockit::sim_parameters* dst_params,
+  sprockit::sim_parameters* params,
+  sprockit::sim_parameters* switch_params)
+{
+  if (!dst_params->has_param("bandwidth")){
+    sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+    double link_bw = link_params->get_bandwidth_param("bandwidth");
+    double gbs = link_bw *param_expander::network_bandwidth_multiplier(params) / 1e9;
+    std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
+
+    dst_params->add_param_override("bandwidth", net_bw_str);
+  }
+
+  if (!dst_params->has_param("hop_latency")){
+    sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+    if (link_params->has_param("send_latency")){
+      dst_params->add_param_override("hop_latency", link_params->get_time_param("send_latency"));
+    } else {
+      dst_params->add_param_override("hop_latency", link_params->get_time_param("latency"));
+    }
+  }
+
+  if (!dst_params->has_param("out_in_latency")){
+    sprockit::sim_parameters* inj_params = params->get_namespace("node")->get_namespace("nic")
+                                                 ->get_namespace("injection");
+
+    sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
+
+    timestamp inj_lat = inj_params->get_time_param("latency");
+    timestamp ej_lat = inj_lat;
+
+    if (ej_params->has_param("send_latency")){
+      ej_lat = ej_params->get_time_param("send_latency");
+    } else if (ej_params->has_param("latency")){
+      ej_lat = ej_params->get_time_param("latency");
+    }
+
+    timestamp total_lat = inj_lat + ej_lat;
+    dst_params->add_param_override("out_in_latency", sprockit::printf("%12.8fus", total_lat.usec()));
+  }
+
 }
 
 void

@@ -99,6 +99,10 @@ class connectable {
    */
   virtual link_handler* credit_handler(int port) const = 0;
 
+  virtual timestamp send_latency(sprockit::sim_parameters* params) const = 0;
+
+  virtual timestamp credit_latency(sprockit::sim_parameters* params) const = 0;
+
   /**
    * @brief payload_handler
    * @param port

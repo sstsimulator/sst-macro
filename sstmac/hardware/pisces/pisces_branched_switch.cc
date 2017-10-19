@@ -84,6 +84,18 @@ pisces_branched_switch::pisces_branched_switch(
   init_components(params);
 }
 
+timestamp
+pisces_branched_switch::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("output")->get_time_param("send_latency");
+}
+
+timestamp
+pisces_branched_switch::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("input")->get_time_param("credit_latency");
+}
+
 pisces_branched_switch::~pisces_branched_switch()
 {
   delete xbar_;

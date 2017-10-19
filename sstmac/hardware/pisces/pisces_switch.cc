@@ -193,6 +193,18 @@ pisces_switch::connect_input(
   xbar_->set_input(port_params, dst_inport, src_outport, link);
 }
 
+timestamp
+pisces_switch::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("link")->get_time_param("send_latency");
+}
+
+timestamp
+pisces_switch::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("xbar")->get_time_param("credit_latency");
+}
+
 void
 pisces_switch::compatibility_check() const
 {

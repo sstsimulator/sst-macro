@@ -227,46 +227,17 @@ pisces_tiled_switch::connect_input(
   demuxer->set_input(params, dst_inport, src_outport, link);
 }
 
-#if 0
-void
-pisces_tiled_switch::connect(
-  sprockit::sim_parameters* params,
-  int src_outport,
-  int dst_inport,
-  connection_type_t ty,
-  connectable* mod)
+timestamp
+pisces_tiled_switch::send_latency(sprockit::sim_parameters *params) const
 {
-  event_handler* ev = safe_cast(event_handler, mod);
-  switch(ty) {
-    case output:
-      connect_output(params, src_outport, dst_inport, ev);
-      break;
-    case input:
-      connect_input(params, src_outport, dst_inport, ev);
-      break;
-  }
+  return params->get_namespace("link")->get_time_param("send_latency");
 }
 
-void
-pisces_tiled_switch::connect_injector(sprockit::sim_parameters* params,
-                      int src_outport, int dst_inport, event_handler* handler)
+timestamp
+pisces_tiled_switch::credit_latency(sprockit::sim_parameters *params) const
 {
-  pisces_sender* demuxer = row_input_demuxers_[dst_inport];
-  demuxer->set_input(params, dst_inport, src_outport, handler);
+  return params->get_namespace("input")->get_time_param("credit_latency");
 }
-
-void
-pisces_tiled_switch::connect_ejector(sprockit::sim_parameters* params,
-                                          int src_outport, int dst_inport,
-                                          event_handler* handler)
-{
-  debug_printf(sprockit::dbg::pisces_config,
-    "Switch %d: connecting to endpoint on outport %d, inport %d",
-    int(my_addr_), src_outport, dst_inport);
-  pisces_sender* muxer = col_output_muxers_[src_outport];
-  muxer->set_output(params, src_outport, dst_inport, handler);
-}
-#endif
 
 int
 pisces_tiled_switch::queue_length(int port) const
@@ -274,39 +245,6 @@ pisces_tiled_switch::queue_length(int port) const
   spkt_throw_printf(sprockit::unimplemented_error,
     "pisces_tiled_switch::queue_length");
 }
-
-#if 0
-void
-pisces_tiled_switch::handle(event* ev)
-{
-  //this should only happen in parallel mode...
-  //this means we are getting a message that has crossed the parallel boundary
-  pisces_interface* fmsg = interface_cast(pisces_interface, ev);
-  switch (fmsg->type()) {
-    case pisces_interface::credit: {
-      pisces_credit* credit = static_cast<pisces_credit*>(ev);
-      pisces_muxer* recver = col_output_muxers_[credit->port()];
-      recver->handle_credit(credit);
-      break;
-    }
-    case pisces_interface::payload: {
-      pisces_payload* payload = static_cast<pisces_payload*>(ev);
-      debug_printf(sprockit::dbg::pisces,
-         "tiled switch %d: incoming payload %s",
-          int(my_addr_), payload->to_string().c_str());
-      pisces_demuxer* demuxer = row_input_demuxers_[payload->inport()];
-      //now figure out the new port I am routing to
-      router_->route(payload);
-      debug_printf(sprockit::dbg::pisces,
-         "tiled switch %d: routed payload %s to outport %d",
-          int(my_addr_), payload->to_string().c_str(),
-          payload->next_port());
-      demuxer->handle_payload(payload);
-      break;
-    }
-  }
-}
-#endif
 
 void
 pisces_tiled_switch::handle_credit(event *ev)

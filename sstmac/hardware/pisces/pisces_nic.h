@@ -98,6 +98,10 @@ class pisces_nic :
 
   link_handler* payload_handler(int port) const override;
 
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+
   void deadlock_check() override;
 
  protected:
@@ -147,6 +151,10 @@ class pisces_netlink :
     int src_outport,
     int dst_inport,
     event_link* link) override;
+
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
  private:
   static const int really_big_buffer;

@@ -88,6 +88,18 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
 #endif
 }
 
+timestamp
+pisces_nic::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("injection")->get_time_param("latency");
+}
+
+timestamp
+pisces_nic::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("injection")->get_time_param("latency");
+}
+
 void
 pisces_nic::init(unsigned int phase)
 {
@@ -311,6 +323,18 @@ pisces_netlink::handle_payload(event* ev)
     tile_rotater_ = (tile_rotater_ + 1) % num_tiles_;
     inj_block_->handle_payload(payload);
   }
+}
+
+timestamp
+pisces_netlink::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_time_param("send_latency");
+}
+
+timestamp
+pisces_netlink::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_time_param("credit_latency");
 }
 
 pisces_netlink::~pisces_netlink()

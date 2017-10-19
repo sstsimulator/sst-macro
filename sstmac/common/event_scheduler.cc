@@ -64,6 +64,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
+timestamp event_link::min_remote_latency_;
+timestamp event_link::min_thread_latency_;
 
 void
 event_component::cancel_all_messages()

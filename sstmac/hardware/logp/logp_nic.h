@@ -89,6 +89,10 @@ class logp_nic :
     return nullptr; //should never handle acks
   }
 
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+
   link_handler* payload_handler(int port) const override;
 
  protected:

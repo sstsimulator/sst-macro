@@ -189,7 +189,19 @@ node::connect_input(sprockit::sim_parameters* params,
   event_link* link)
 {
   //forward connection to nic
-  nic_->connect_input(params, src_outport, dst_inport, link);
+  nic_->connect_input(params/*->get_namespace("nic")*/, src_outport, dst_inport, link);
+}
+
+timestamp
+node::send_latency(sprockit::sim_parameters *params) const
+{
+  return nic_->send_latency(params->get_namespace("nic"));
+}
+
+timestamp
+node::credit_latency(sprockit::sim_parameters *params) const
+{
+  return nic_->credit_latency(params->get_namespace("nic"));
 }
 
 void

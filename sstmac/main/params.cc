@@ -189,6 +189,10 @@ remap_latency_params(sprockit::sim_parameters* params)
 void
 remap_params(sprockit::sim_parameters* params, bool verbose)
 {
+  double timescale = params->get_optional_time_param("timestamp_resolution", 1e-12);
+  int ps_per_tick = round(timescale/1e-12) + 0.02;
+  timestamp::init_stamps(ps_per_tick);
+
   remap_deprecated_params(params);
   remap_latency_params(params);
 
@@ -233,10 +237,6 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
       params->add_param_override("event_manager", "multithread");
     }
   }
-
-  double timescale = params->get_optional_time_param("timestamp_resolution", 1e-12);
-  int ps_per_tick = round(timescale/1e-12) + 0.02;
-  timestamp::init_stamps(ps_per_tick);
 }
 
 }

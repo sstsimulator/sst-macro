@@ -113,6 +113,10 @@ class pisces_switch :
 
   link_handler* payload_handler(int port) const override;
 
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+
   void handle_credit(event* ev);
 
   void handle_payload(event* ev);

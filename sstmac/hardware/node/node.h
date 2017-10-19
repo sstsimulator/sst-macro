@@ -94,6 +94,9 @@ class node :
                  int src_outport, int dst_inport,
                  event_link* link) override;
 
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
   link_handler* payload_handler(int port) const override;
 
