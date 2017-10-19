@@ -112,10 +112,13 @@ def parse(fname):
       elif currentBar: #not in main, but I guess another MPI call
         if name == "MPI Compute":
           currentBar.comp += count
+          rank.compMPI += count
         elif name == "Compute":
           currentBar.comp += count
+          rank.compMPI += count
         elif name == "memcopy":
           currentBar.comp += count
+          rank.compMPI += count
         elif name == "sync":
           currentBar.sync += count
     else:
@@ -130,8 +133,8 @@ def parse(fname):
       if "MPI_" in fxn:
         if rank.bars.has_key(fxn):
           currentBar = rank.bars[fxn]
-      elif fxn == "MPI Compute":
-        rank.compMPI += total
+      #elif fxn == "MPI Compute":
+      #  rank.compMPI += total
       elif fxn == "sync":
         rank.totalSync += total
       elif fxn == "main":
