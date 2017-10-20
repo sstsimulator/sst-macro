@@ -56,6 +56,17 @@ using std::endl;
 using std::min;
 using std::setw;
 
+RegisterKeywords(
+  { "otf2_timescale", "Compute time multiplier" },
+  { "otf2_terminate_percent", "(Not implemented) Stop trace replay early" },
+  { "otf2_print_progress", "(Not implemented) Prints percentage of trace completion" },
+  { "otf2_metafile", "Path to ank OTF2 trace metafile" },
+  { "otf2_print_mpi_calls", "Print MPI calls as they are parsed" },
+  { "otf2_print_trace_events", "Print trace callbacks as they are called" },
+  { "otf2_print_time_deltas", "Print compute times between MPI events" },
+  { "otf2_print_unknown_callback", "Print when an unknown callback is discovered" }
+);
+
 
 OTF2_GlobalDefReaderCallbacks* create_global_def_callbacks() {
   OTF2_GlobalDefReaderCallbacks* callbacks = OTF2_GlobalDefReaderCallbacks_New();

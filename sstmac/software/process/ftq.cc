@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
 Copyright (c) 2009-2017, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -211,6 +211,11 @@ void
 ftq_calendar::collect(int event_typeid, int aid, int tid, long ticks_begin,
                       long num_ticks)
 {
+  if (event_typeid == 0)
+    //sprockit::abort("GOT ONE");
+    int i = 0;
+
+  //std::cout << "typeid: " << event_typeid << ", tid: " << tid << std::endl;
   static thread_lock lock;
   lock.lock();
   calendars_[aid]->collect(event_typeid, tid, ticks_begin, num_ticks);
@@ -303,7 +308,16 @@ app_ftq_calendar::collect(int event_typeid, int tid, long ticks_begin,
 }
 
 static const char* matplotlib_histogram_text_header =
-    "#!/usr/bin/env python\n"
+    "#!/usr/bin/env python3\n"
+    "\n"
+    "try:\n"
+    "    import sys\n"
+    "    import numpy as np\n"
+    "    import matplotlib.pyplot as plt\n"
+    "    import argparse\n"
+    "except ImportError:\n"
+    "    print('ImportError caught. Please install matplotlib')\n"
+    "    exit()\n"
     "\n"
     "import numpy as np\n"
     "import matplotlib.pyplot as plt\n"
@@ -349,58 +363,10 @@ static const char* matplotlib_histogram_text_footer =
 void
 app_ftq_calendar::dump_matplotlib_histogram(const std::string& fileroot)
 {
-  std::string fname = sprockit::printf("%s_app%d.py", fileroot.c_str(), aid_);
+  std::string fname_prefix = sprockit::printf("%s_app%d", fileroot.c_str(), aid_);
+  std::string fname = sprockit::printf("%s.py", fname_prefix.c_str());
   std::ofstream out(fname.c_str());
-  out << matplotlib_histogram_text_header << fileroot << matplotlib_histogram_text_footer;
-  out.close();
-}
-
-static const char* gnuplot_histogram_header =
-  "set terminal postscript enhanced\n"
-  "set border 3 front linetype -1 linewidth 1.000\n"
-  "set boxwidth 0.75 absolute\n"
-  "set style fill solid 1.00 border lt -1\n"
-  "set grid nopolar\n"
-  "set grid noxtics nomxtics ytics nomytics noztics nomztics nox2tics nomx2tics noy2tics nomy2tics nocbtics nomcbtics\n"
-  "set grid layerdefault   linetype 0 linewidth 1.000,  linetype 0 linewidth 1.000\n"
-  "set key outside right top vertical Left reverse noenhanced autotitles columnhead nobox\n"
-  "set key invert samplen 4 spacing 1.5 width 0 height 0 font \"Arial,28\" \n"
-  "set size 0.95,0.95\n"
-  "set style histogram rowstacked title  offset character 0, 0, 0\n"
-  "set style data histograms\n"
-  "set style fill solid noborder\n"
-  "set xtics border in scale 0,0 nomirror rotate by -45  offset character 0, 0, 0 autojustify\n"
-  "set xtics norangelimit font \",8\"\n"
-  "set xtics ()\n"
-  "set xtics font \"Arial,24\" \n"
-  "set noytics\n"
-  "set title \"Application Activity Over Time\" font \"Arial,28\" \n"
-  "set ylabel \"% of total\" font \"Arial,28\" \n"
-  "set xlabel \"Time(ms)\" font \"Arial,28\" offset 0,-1\n"
-  "set yrange [0.00000 : 100.000] noreverse nowriteback\n"
-  "set boxwidth 1\n";
-
-void
-app_ftq_calendar::dump_gnuplot_histogram(const std::string& fileroot)
-{
-  int num_categories = ftq_tag::num_categories();
-  int last_data_column = num_categories + 1;
-  int totals_column = num_categories + 2;
-  std::string fname = sprockit::printf("%s_app%d.p", fileroot.c_str(), aid_);
-  std::ofstream out(fname.c_str());
-  out << gnuplot_histogram_header;
-  out << sprockit::printf("set xrange[0.0:%d.0]\n", max_epoch_);
-  out << "plot 'ftq_app1.dat' using (100.*$2/$" << totals_column <<
-      ") title column(2) lc 2 lw -1 lt -1";
-  if (num_categories == 1) {
-    return;
-  }
-
-  out << ", \\";
-  out << "\n";
-
-  out << sprockit::printf("   for [i=3:%d] '' using (100.*column(i)/column(%d)) title column(i) lc i lw -1 lt -1",
-                   last_data_column, totals_column);
+  out << matplotlib_histogram_text_header << fname_prefix << matplotlib_histogram_text_footer;
   out.close();
 }
 
@@ -456,7 +422,6 @@ app_ftq_calendar::dump(const std::string& fileroot)
   out.close();
 
   dump_matplotlib_histogram(fileroot);
-  dump_gnuplot_histogram(fileroot);
 
   timestamp stamp_sec(1, timestamp::seconds);
   int64_t ticks_s = stamp_sec.ticks_int64();

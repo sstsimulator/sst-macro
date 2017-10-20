@@ -57,18 +57,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/skeletons/otf2_trace_replay/callqueue.h>
 #include <sstmac/skeletons/otf2_trace_replay/structures.h>
 
-RegisterKeywords(
-  "otf2_timescale",
-  "otf2_terminate_percent",
-  "otf2_print_progress",
-  "otf2_metafile",
-  "otf2_print_mpi_calls",
-  "otf2_print_trace_events",
-  "otf2_print_time_deltas"
-  "otf2_print_unknown_callback"
-);
-
-
 class OTF2TraceReplayApp : public sstmac::sw::app {
   FactoryRegister("otf2_trace_replay_app | parseotf2 | otf2",
                sstmac::sw::app, OTF2TraceReplayApp,

@@ -58,6 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/collective.h>
 #include <sumi/comm_functions.h>
 #include <sumi/transport.h>
+#include <sstmac/software/process/key.h>
 
 /**
  * SUMI = Simulator unified messagine interface
@@ -203,6 +204,8 @@ class sumi_transport :
   void process(sstmac::transport_message* msg);
 
   void ctor_common(sstmac::sw::software_id sid);
+
+  static sstmac::sw::ftq_tag sumi_transport_tag;
 
   std::string server_libname_;
 
