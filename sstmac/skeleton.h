@@ -219,8 +219,6 @@ extern "C" void sstmac_free(void* ptr);
 
 extern "C" void* sstmac_memset(void* ptr, int value, unsigned long  sz);
 
-extern "C" int sstmac_gethostname(char* name, size_t len);
-
 namespace std {
 
 void sstmac_free(void* ptr);

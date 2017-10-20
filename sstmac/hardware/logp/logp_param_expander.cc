@@ -160,14 +160,6 @@ logp_param_expander::expand_amm1_nic(
  sprockit::sim_parameters* nic_params,
  sprockit::sim_parameters* switch_params)
 {
-  sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
-  sprockit::sim_parameters* inj_params = nic_params->get_optional_namespace("injection");
-  if (!ej_params->has_param("bandwidth")){
-    ej_params->add_param_override("bandwidth", inj_params->get_param("bandwidth"));
-  }
-  if (!ej_params->has_param("latency")){
-    ej_params->add_param_override("latency", inj_params->get_param("latency"));
-  }
 }
 
 void

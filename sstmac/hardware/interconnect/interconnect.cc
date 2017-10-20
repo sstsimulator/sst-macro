@@ -172,7 +172,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   }
   hop_bw_ = link_params->get_bandwidth_param("bandwidth");
   injection_latency_ = inj_params->get_time_param("latency");
-  ejection_latency_ = injection_latency_;
 
   if (ej_params->has_param("latency")){
     ejection_latency_ = ej_params->get_time_param("latency");
@@ -180,7 +179,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     ejection_latency_ = ej_params->get_time_param("send_latency");
   }
 
-  if (ejection_latency_ < injection_latency_){
+  if (ejection_latency_ < injection_latency_ && rt_->me() == 0){
     std::cerr << "WARNING: ejection latency does not match injection latency!\n"
               << "WARNING: this could lead to limited lookahead and poor parallel performance"
               << std::endl;
@@ -217,8 +216,9 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     }
   } else {
     //lookahead is actually higher
-    lookahead_ = 2*std::min(injection_latency_, ejection_latency_);
+    lookahead_ = injection_latency_ + ejection_latency_;
   }
+
 #endif
 }
 

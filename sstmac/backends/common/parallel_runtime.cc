@@ -284,7 +284,8 @@ parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
                                    int me, int nproc)
   : part_(nullptr),
     me_(me),
-    nproc_(nproc)
+    nproc_(nproc),
+    nthread_(1)
 {
   if (me_ == 0){
     sprockit::output::init_out0(&std::cout);
