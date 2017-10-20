@@ -79,7 +79,7 @@ interconnect::allocate_local_link(event_scheduler* src, event_scheduler* dst,
   bool threads_equal = src && dst ? src->thread() == dst->thread() : false;
   event_manager* mgr = src ? src->event_mgr() : dst->event_mgr();
   if (mgr->nthread() == 1 || threads_equal){
-    return new local_link(src,dst,handler);
+    return new local_link(latency,src,dst,handler);
   } else {
     return new multithread_link(handler,latency,src,dst);
   }
@@ -188,6 +188,19 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
   lookahead_ = std::min(injection_latency_, hop_latency_);
   lookahead_ = std::min(lookahead_, ejection_latency_);
+
+  timestamp lookahead_check = lookahead_;
+  if (event_link::min_remote_latency().ticks() > 0){
+    lookahead_check = event_link::min_remote_latency();
+  }
+  if (event_link::min_thread_latency().ticks() > 0){
+    lookahead_check = std::min(lookahead_check, event_link::min_thread_latency());
+  }
+
+  if (lookahead_check < lookahead_){
+    spkt_abort_printf("invalid lookahead compute: computed lookahead to be %8.4e, "
+                      "but have link with lookahead %8.4e", lookahead_.sec(), lookahead_check.sec());
+  }
 
   interconn_debug("Interconnect building endpoints");
   build_endpoints(node_params, nic_params,netlink_params, mgr);

@@ -186,7 +186,7 @@ graph_viz::dump_summary(std::ostream& os)
       for (int i=0; i < nfxns; ++i){
         total += tr->calls_[i].counts;
       }
-      os << sprockit::printf("%16" PRIu64 " %16" PRIu64 "\n", total, tr->self_);
+      os << sprockit::printf("%-16" PRIu64 " %-16" PRIu64 "\n", total, tr->self_);
       for (int i=0; i < nfxns; ++i){
         graphviz_call& call = tr->calls_[i];
         if (call.counts){

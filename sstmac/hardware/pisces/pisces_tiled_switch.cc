@@ -172,9 +172,9 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
         int tile_xbar = row_col_to_tile(row_dm, col_out);
         pisces_crossbar* xbar = xbar_tiles_[tile_xbar];
         //label unique input ports on the xbar by column
-        auto out_link = new local_link(this, this, xbar->payload_handler());
+        auto out_link = new local_link(this, xbar->payload_handler());
         demuxer->set_output(demuxer_params,col_out,col_dm,out_link);
-        auto in_link = new local_link(this, this, demuxer->credit_handler());
+        auto in_link = new local_link(this, demuxer->credit_handler());
         xbar->set_input(xbar_params, col_dm, col_out, in_link);
       }
     }
@@ -195,9 +195,9 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
          "Connecting %s:%p local port %d to %s:%p local port %d",
           xbar->to_string().c_str(), xbar, rm,
           muxer->to_string().c_str(), muxer, rx);
-        auto out_link = new local_link(this, this, muxer->payload_handler());
+        auto out_link = new local_link(this, muxer->payload_handler());
         xbar->set_output(xbar_params, rm, rx, out_link);
-        auto in_link = new local_link(this, this, xbar->credit_handler());
+        auto in_link = new local_link(this, xbar->credit_handler());
         muxer->set_input(muxer_params, rx, rm, in_link);
       }
     }

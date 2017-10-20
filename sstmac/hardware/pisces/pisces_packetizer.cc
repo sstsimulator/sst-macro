@@ -99,7 +99,7 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
 
 
   event_handler* handler = new_handler(this, &pisces_packetizer::recv_packet);
-  payload_link_ = new local_link(parent, parent, handler);
+  payload_link_ = new local_link(parent, handler);
 }
 
 pisces_packetizer::~pisces_packetizer()

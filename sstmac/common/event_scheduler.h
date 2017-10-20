@@ -328,8 +328,10 @@ class event_link {
   }
 
  protected:
-  event_link(event_scheduler* sched) :
-    scheduler_(sched) {}
+  event_link(timestamp latency, event_scheduler* sched) :
+    scheduler_(sched),
+    latency_(latency)
+  {}
 
   static void set_min_thread_latency(timestamp t){
     if (t.ticks() == 0){
@@ -353,7 +355,16 @@ class event_link {
     }
   }
 
+  void validate(timestamp arrival, event_scheduler* src){
+    timestamp delta = arrival - src->now();
+    if (delta < latency_){
+      spkt_abort_printf("too low delta_t %8.4e on link with latency %8.4e",
+                        delta.sec(), latency_.sec());
+    }
+  }
+
   event_scheduler* scheduler_;
+  timestamp latency_;
 
   static timestamp min_thread_latency_;
   static timestamp min_remote_latency_;
@@ -362,10 +373,23 @@ class event_link {
 
 class local_link : public event_link {
  public:
-  local_link(event_scheduler* src, event_scheduler* dst, event_handler* hand) :
+  local_link(timestamp latency, event_scheduler* src, event_scheduler* dst, event_handler* hand) :
     handler_(hand),
     dst_(dst),
-    event_link(src)
+    event_link(latency, src)
+  {
+  }
+
+  /**
+   * For internal links
+   * @brief local_link
+   * @param es
+   * @param hand
+   */
+  local_link(event_scheduler* es, event_handler* hand) :
+    handler_(hand),
+    dst_(es),
+    event_link(timestamp(0), es)
   {
   }
 
@@ -403,7 +427,7 @@ class multithread_link : public local_link {
  public:
   multithread_link(event_handler* handler, timestamp latency,
                    event_scheduler* src, event_scheduler* dst) :
-    local_link(src, dst, handler)
+    local_link(latency, src, dst, handler)
   {
     set_min_thread_latency(latency);
   }
@@ -426,7 +450,7 @@ class ipc_link : public event_link {
     rank_(rank), dst_(dst),
     is_credit_(is_credit),
     port_(port),
-    event_link(src)
+    event_link(latency, src)
   {
     set_min_remote_latency(latency);
   }

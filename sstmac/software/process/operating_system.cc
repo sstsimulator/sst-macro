@@ -110,6 +110,7 @@ RegisterKeywords(
 { "ftq_epoch", "DEPRECATED: sets the time epoch size for the FTQ statistic" },
 { "call_graph", "DEPRECATED: sets the fileroot of the call graph statistic" },
 { "compute_scheduler", "the type of compute scheduler or assigning cores to computation" },
+{ "context", "the user-space thread context library" },
 );
 
 //we have to have a globally visible (to C code) stack-size variable

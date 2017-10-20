@@ -358,6 +358,8 @@ local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 void
 ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 {
+  validate(arrival, src);
+
   src->event_mgr()->set_min_ipc_time(arrival);
   ipc_event_t iev;
   iev.src = src->component_id();
@@ -382,6 +384,8 @@ multithread_link::send(timestamp arrival, event *ev)
 void
 multithread_link::multi_send(timestamp arrival, event* ev, event_scheduler* src)
 {
+  validate(arrival, src);
+
   event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
   if (arrival < src->now()){
     spkt_abort_printf("link scheduling event in the past: %lu < %lu",
