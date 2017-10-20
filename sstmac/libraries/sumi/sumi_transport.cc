@@ -71,6 +71,8 @@ RegisterKeywords(
 
 namespace sstmac {
 
+sstmac::sw::ftq_tag sumi_transport::sumi_transport_tag("Sumi_Block");
+
 class sumi_server :
   public sstmac::sw::service
 {
@@ -436,6 +438,7 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
 
   sstmac::sw::thread* thr = os_->active_thread();
   if (pending_messages_.empty() && blocking) {
+    os_->active_thread()->set_tag(sumi_transport_tag);
     blocked_threads_.push_back(thr);
     debug_printf(sprockit::dbg::sumi,
                  "Rank %d sumi queue %p has no pending messages - blocking poller %p",
