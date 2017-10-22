@@ -78,7 +78,7 @@ class node :
   public failable,
   public connectable_component
 {
-  DeclareFactory(node,uint64_t,event_manager*)
+  DeclareFactory(node,uint32_t,event_manager*)
  public:
   void setup() override;
 

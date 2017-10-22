@@ -117,7 +117,7 @@ logp_nic::do_send(network_message* msg)
     parent_->send_self_event_queue(next_out_free_, ack_ev);
   }
 
-  interconnect::local_logp_switch()->send(start_send, msg, parent_);
+  logp_switch_->send(start_send, msg);
 }
 
 void

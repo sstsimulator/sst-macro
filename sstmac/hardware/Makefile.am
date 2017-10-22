@@ -20,6 +20,7 @@ library_includedir=$(includedir)/sstmac/hardware
 nobase_library_include_HEADERS = \
   logp/logp_nic.h \
   logp/logp_switch.h \
+  logp/logp_switch_fwd.h \
   logp/logp_param_expander.h \
   logp/logp_memory_model.h \
   processor/processor.h \

@@ -135,6 +135,9 @@ topology*
 topology::static_topology(sprockit::sim_parameters* params)
 {
   if (!static_topology_){
+    if (!params){
+      spkt_abort_printf("topology should have already been initialized");
+    }
     sprockit::sim_parameters* top_params = params->get_namespace("topology");
     static_topology_ = topology::factory::get_param("name", top_params);
   }

@@ -49,8 +49,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
-#include <sstmac/hardware/switch/network_switch.h>
+#include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
+#include <sstmac/hardware/topology/topology_fwd.h>
 #include <unordered_map>
 
 namespace sstmac {
@@ -61,27 +62,61 @@ namespace hw {
  *        using the LogGP model.  See "LogGP in Theory and Practice"
  *        by Hoefler and Schneider.
  */
-class logp_switch
+class logp_switch : public connectable_component
 {
- public:
-  //RegisterComponent("logP | simple | LogP | logp", network_switch, logp_switch,
-  //       "macro", COMPONENT_CATEGORY_NETWORK,
-  //       "A switch that implements a basic delay model with no congestion modeling")
+  DeclareFactory(logp_switch,uint32_t,event_manager*)
 
  public:
-  logp_switch(sprockit::sim_parameters* params, interconnect* ic);
+  RegisterComponent("logP | simple | LogP | logp", logp_switch, logp_switch,
+         "macro", COMPONENT_CATEGORY_NETWORK,
+         "A switch that implements a basic delay model with no congestion modeling")
+
+ public:
+  logp_switch(sprockit::sim_parameters* params, uint32_t cid, event_manager* mgr);
 
   virtual ~logp_switch();
+
+  std::string to_string() const override {
+    return "LogP switch";
+  }
+
+  void connect_output(sprockit::sim_parameters *params,
+                      int src_outport, int dst_inport,
+                      event_link *payload_link) override {
+    nic_links_[src_outport] = payload_link;
+  }
+
+  void connect_input(sprockit::sim_parameters *params,
+                     int src_outport, int dst_inport,
+                     event_link *credit_link) override {
+    //do nothing
+  }
+
+  link_handler* payload_handler(int port) const override {
+    return new_link_handler(this, &logp_switch::send_event);
+  }
+
+  link_handler* credit_handler(int port) const override {
+    return nullptr;
+  }
 
   void connect_output(node_id nid, event_link* link){
     nic_links_[nid] = link;
   }
 
-  void send(message *msg, node* src);
+  void send_event(event* ev);
 
-  void send(timestamp start, message* msg, node* src);
+  void send(message *msg){
+    send(now(), msg);
+  }
 
-  timestamp send_latency() const {
+  void send(timestamp start, message* msg);
+
+  timestamp send_latency(sprockit::sim_parameters* params) const override {
+    return out_in_lat_;
+  }
+
+  timestamp credit_latency(sprockit::sim_parameters* params) const override {
     return out_in_lat_;
   }
 
@@ -103,6 +138,8 @@ class logp_switch
   std::vector<event_link*> nic_links_;
 
 };
+
+
 
 }
 }

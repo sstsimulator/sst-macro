@@ -78,9 +78,11 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-logp_switch::logp_switch(sprockit::sim_parameters *params, interconnect* ic) :
-  top_(ic->topol())
+logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_manager* mgr) :
+  connectable_component(params, cid, mgr)
 {
+  top_ = topology::static_topology(nullptr);
+
   double net_bw = params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
 
@@ -93,7 +95,7 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, interconnect* ic) :
 
   out_in_lat_ = params->get_time_param("out_in_latency");
 
-  nic_links_.resize(ic->topol()->num_nodes());
+  nic_links_.resize(top_->num_nodes());
 }
 
 logp_switch::~logp_switch()
@@ -101,21 +103,21 @@ logp_switch::~logp_switch()
 }
 
 void
-logp_switch::send(message* msg, node* src)
+logp_switch::send_event(event *ev)
 {
-  send(src->now(), msg, src);
+  send(now(), dynamic_cast<message*>(ev));
 }
 
 void
-logp_switch::send(timestamp start, message* msg, node* src)
+logp_switch::send(timestamp start, message* msg)
 {
   node_id dst = msg->toaddr();
   timestamp delay(inv_min_bw_ * msg->byte_length()); //bw term
-  int num_hops = top_->num_hops_to_node(src->addr(), dst);
+  int num_hops = top_->num_hops_to_node(msg->fromaddr(), dst);
   delay += num_hops * hop_latency_ + out_in_lat_; //factor of 2 for in-out
   debug_printf(sprockit::dbg::logp, "sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
                num_hops, delay.sec(), out_in_lat_.sec(), msg->to_string().c_str());
-  nic_links_[dst]->multi_send(delay+start, msg, src);
+  nic_links_[dst]->multi_send(delay+start, msg, this);
 }
 
 

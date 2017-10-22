@@ -70,7 +70,6 @@ namespace sstmac {
 namespace hw {
 
 interconnect* interconnect::static_interconnect_ = nullptr;
-logp_switch* interconnect::local_logp_switch_ = nullptr;
 
 event_link*
 interconnect::allocate_local_link(event_scheduler* src, event_scheduler* dst,
@@ -111,13 +110,8 @@ interconnect::~interconnect()
 {
   sprockit::delete_vector(netlinks_);
   sprockit::delete_vector(nodes_);
-  if (local_logp_switch_){
-    delete local_logp_switch_;
-    local_logp_switch_ = nullptr;
-  }
-  for (network_switch* sw : switches_){
-    delete sw;
-  }
+  sprockit::delete_vector(logp_switches_);
+  sprockit::delete_vector(switches_);
 }
 #endif
 
@@ -138,8 +132,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   int nproc = rt_->nproc();
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
-  switch_id_cutoff_ = topology_->num_nodes();
-  logp_id_cutoff_ = switch_id_cutoff_ + topology_->num_switches();
 
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
@@ -162,7 +154,12 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   logp_param_expander expander;
   expander.expand_into(&logp_params, params, switch_params);
 
-  local_logp_switch_ = new logp_switch(&logp_params, this);
+  logp_switches_.resize(rt_->nthread());
+  uint32_t my_offset = rt_->me() * rt_->nthread() + top->num_nodes() + top->num_switches();
+  for (int i=0; i < rt_->nthread(); ++i){
+    uint32_t id = my_offset + i;
+    logp_switches_[i] = new logp_switch(&logp_params, id, mgr->thread_manager(i));
+  }
 
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   if (link_params->has_param("send_latency")){
@@ -350,6 +347,8 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
       if (!topology_->node_id_slot_filled(nid))
         continue;
 
+      auto local_logp_switch = logp_switches_[thread];
+
       int port = nodes[n].port;
       if (my_rank == target_rank){
         //local node - actually build it
@@ -357,14 +356,17 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         uint32_t comp_id = nid;
         event_manager* node_mgr = mgr->thread_manager(thread);
         node* nd = node::factory::get_optional_param("model", "simple", node_params,
-                                                     comp_id, node_mgr->thread_manager(thread));
+                                                     comp_id, node_mgr);
         nic* the_nic = nd->get_nic();
+
+        the_nic->set_logp_switch(local_logp_switch);
+
         nodes_[nid] = nd;
         components_[nid] = nd;
 
         event_link* out_link = allocate_local_link(nullptr, nd, nd->payload_handler(nic::LogP),
-                                                   local_logp_switch_->send_latency());
-        local_logp_switch_->connect_output(nid, out_link);
+                                                   local_logp_switch->send_latency(nullptr));
+        local_logp_switch->connect_output(nid, out_link);
 
         netlink_id net_id;
         int netlink_offset;
@@ -406,10 +408,10 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
                            link);
         }
       } else {
-        event_link* link = new ipc_link(local_logp_switch_->send_latency(),
+        event_link* link = new ipc_link(local_logp_switch->send_latency(nullptr),
                                         target_rank, nullptr,
                                         nid, nic::LogP, false);
-        local_logp_switch_->connect_output(nid, link);
+        local_logp_switch->connect_output(nid, link);
       }
     }
   }

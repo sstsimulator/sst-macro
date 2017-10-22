@@ -332,9 +332,8 @@ nic::internode_send(network_message* netmsg)
 void
 nic::send_to_logp_switch(network_message* netmsg)
 {
-  nic_debug("send to logP switch %s",
-    netmsg->to_string().c_str());
-  interconnect::local_logp_switch()->send(netmsg, parent_);
+  nic_debug("send to logP switch %s", netmsg->to_string().c_str());
+  logp_switch_->send(netmsg);
 }
 
 void

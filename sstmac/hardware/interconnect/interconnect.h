@@ -87,10 +87,6 @@ class interconnect
    */
   static interconnect* static_interconnect();
 
-  static logp_switch* local_logp_switch() {
-    return local_logp_switch_;
-  }
-
   static void clear_static_interconnect(){
     if (static_interconnect_) delete static_interconnect_;
     static_interconnect_ = nullptr;
@@ -116,7 +112,6 @@ class interconnect
 
  private:
   static interconnect* static_interconnect_;
-  static logp_switch* local_logp_switch_;
 
   interconnect(){}
 
@@ -223,12 +218,10 @@ class interconnect
 
   timestamp lookahead_;
 
-  int logp_id_cutoff_;
-
-  int switch_id_cutoff_;
-
   int num_speedy_switches_with_extra_node_;
   int num_nodes_per_speedy_switch_;
+
+  std::vector<logp_switch*> logp_switches_;
 
   partition* partition_;
   parallel_runtime* rt_;

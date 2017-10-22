@@ -576,7 +576,7 @@ operating_system::outcast_app_start(int my_rank, int aid, const std::string& app
     sw::start_app_event* lev = new start_app_event(aid, app_ns,
                                      mapping, dst_rank, dst_nid,
                                      addr(), app_params);
-    hw::interconnect::local_logp_switch()->send(lev, node());
+    node_->get_nic()->send_to_logp_switch(lev);
   }
 }
 
