@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/pisces/pisces_simple_network.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
+#include <sstmac/common/event_callback.h>
 
 MakeDebugSlot(simple_network)
 
@@ -69,7 +70,9 @@ pisces_simple_network::pisces_simple_network(sprockit::sim_parameters *params, S
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   pisces_sender::configure_payload_port_latency(inj_params);
   inj_buffer_ = new pisces_injection_buffer(inj_params, this);
-  inj_buffer_->set_input(inj_params, 0, 0, new_handler(this, &pisces_simple_network::credit_arrived));
+
+  event_handler* handler = new_handler(this, &pisces_simple_network::credit_arrived);
+  inj_buffer_->set_input(inj_params, 0, 0, new event_link(self_link(), comp));
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   arb_ = pisces_bandwidth_arbitrator::factory::get_param("arbitrator", params);
@@ -93,8 +96,7 @@ pisces_simple_network::init_links(sprockit::sim_parameters* params)
       configureLink(pair.first, new_link_handler(this, &pisces_simple_network::packet_head_arrived));
       credit_link_ = link;
     } else if (port_type == "output"){
-      link_wrapper* wrapper = new link_wrapper(link);
-      inj_buffer_->set_output(inj_params, src_outport, dst_inport, wrapper);
+      inj_buffer_->set_output(inj_params, src_outport, dst_inport, new event_link(link, comp()));
       configureLink(pair.first, new_link_handler(inj_buffer_, &pisces_injection_buffer::handle_credit));
     } else if (port_type == "in-out"){
       logp_link_ = link;
@@ -170,7 +172,7 @@ pisces_simple_network::packet_head_arrived(event* ev)
 {
   simple_network_packet* pkt = safe_cast(simple_network_packet, ev);
   timestamp delay = arb_->head_tail_delay(pkt);
-  schedule_delay(delay, new_callback(this, &pisces_simple_network::packet_tail_arrived, pkt));
+  send_delayed_self_event_queue(delay, new_callback(this, &pisces_simple_network::packet_tail_arrived, pkt));
 }
 
 void

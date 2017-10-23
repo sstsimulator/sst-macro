@@ -70,13 +70,22 @@ stat_collector::~stat_collector()
 stat_collector*
 stat_collector::find_unique_stat(event_scheduler* es, int unique_tag)
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  spkt_abort_printf("stats registration not compatible with SST core");
+  return nullptr;
+#else
   return es->event_mgr()->find_unique_stat(unique_tag);
+#endif
 }
 
 void
 stat_collector::register_unique_stat(event_scheduler* es, stat_collector* sc, stat_descr_t* descr)
 {
-  return es->event_mgr()->register_unique_stat(sc, descr);
+#if SSTMAC_INTEGRATED_SST_CORE
+  spkt_abort_printf("stats registration not compatible with SST core");
+#else
+  es->event_mgr()->register_unique_stat(sc, descr);
+#endif
 }
 
 bool

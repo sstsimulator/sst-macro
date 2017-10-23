@@ -71,19 +71,6 @@ namespace hw {
 
 interconnect* interconnect::static_interconnect_ = nullptr;
 
-event_link*
-interconnect::allocate_local_link(event_scheduler* src, event_scheduler* dst,
-                                  event_handler* handler, timestamp latency)
-{
-  bool threads_equal = src && dst ? src->thread() == dst->thread() : false;
-  event_manager* mgr = src ? src->event_mgr() : dst->event_mgr();
-  if (mgr->nthread() == 1 || threads_equal){
-    return new local_link(latency,src,dst,handler);
-  } else {
-    return new multithread_link(handler,latency,src,dst);
-  }
-}
-
 interconnect*
 interconnect::static_interconnect(sprockit::sim_parameters* params, event_manager* mgr)
 {
@@ -124,9 +111,9 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   num_switches_ = topology_->num_switches();
   runtime::set_topology(topology_);
 
+#if !SSTMAC_INTEGRATED_SST_CORE
   components_.resize(topology_->num_nodes() + topology_->num_switches());
 
-#if !SSTMAC_INTEGRATED_SST_CORE
   partition_ = part;
   rt_ = rt;
   int nproc = rt_->nproc();
@@ -235,6 +222,19 @@ interconnect::node_to_logp_switch(node_id nid) const
 
 
 #if !SSTMAC_INTEGRATED_SST_CORE
+event_link*
+interconnect::allocate_local_link(event_scheduler* src, event_scheduler* dst,
+                                  event_handler* handler, timestamp latency)
+{
+  bool threads_equal = src && dst ? src->thread() == dst->thread() : false;
+  event_manager* mgr = src ? src->event_mgr() : dst->event_mgr();
+  if (mgr->nthread() == 1 || threads_equal){
+    return new local_link(latency,src,dst,handler);
+  } else {
+    return new multithread_link(handler,latency,src,dst);
+  }
+}
+
 void
 interconnect::connect_endpoints(event_manager* mgr,
                                 sprockit::sim_parameters* ep_inj_params,

@@ -64,20 +64,19 @@ namespace sstmac {
 namespace hw {
 
 pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
-                                     event_scheduler* parent) :
+                                     event_component* parent) :
  inj_buffer_(nullptr),
  ej_buffer_(nullptr),
  inj_stats_(nullptr),
  ej_stats_(nullptr),
  pkt_allocator_(nullptr),
- payload_link_(nullptr),
  packetizer(params, parent)
 {
   init(params, parent);
 }
 
 void
-pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* parent)
+pisces_packetizer::init(sprockit::sim_parameters* params, event_component* parent)
 {
   pisces_sender::configure_payload_port_latency(params);
   inj_buffer_ = new pisces_injection_buffer(params, parent);
@@ -97,9 +96,8 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
   pkt_allocator_ = packet_allocator::factory
       ::get_optional_param("packet_allocator", "pisces", params);
 
-
   event_handler* handler = new_handler(this, &pisces_packetizer::recv_packet);
-  payload_link_ = new local_link(timestamp(), parent, handler);
+  ej_buffer_->set_output_handler(handler);
 }
 
 pisces_packetizer::~pisces_packetizer()
@@ -109,7 +107,6 @@ pisces_packetizer::~pisces_packetizer()
   if (inj_stats_) delete inj_stats_;
   if (ej_stats_) delete ej_stats_;
   if (pkt_allocator_) delete pkt_allocator_;
-  if (payload_link_) delete payload_link_;
 }
 
 void
@@ -196,7 +193,6 @@ pisces_packetizer::set_input(sprockit::sim_parameters* params,
                              int ej_port, event_link* link)
 {
   int only_port = 0;
-  ej_buffer_->set_output(params, only_port, only_port, payload_link_);
   ej_buffer_->set_input(params, only_port, ej_port, link);
 }
 

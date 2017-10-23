@@ -65,7 +65,7 @@ class pisces_packetizer :
 {
  public:
   pisces_packetizer(sprockit::sim_parameters* params,
-                    event_scheduler* parent);
+                    event_component* parent);
 
   virtual ~pisces_packetizer();
 
@@ -102,13 +102,11 @@ class pisces_packetizer :
   void recv_packet_common(pisces_payload* pkt);
 
  private:
-  void init(sprockit::sim_parameters* params, event_scheduler* parent);
+  void init(sprockit::sim_parameters* params, event_component* parent);
 
  protected:
   pisces_injection_buffer* inj_buffer_;
   pisces_eject_buffer* ej_buffer_;
-
-  event_link* payload_link_;
 
   recv_cq completion_queue_;
 
@@ -129,7 +127,7 @@ class pisces_cut_through_packetizer : public pisces_packetizer
   FactoryRegister("cut_through | null", packetizer, pisces_cut_through_packetizer)
  public:
   pisces_cut_through_packetizer(sprockit::sim_parameters* params,
-                                event_scheduler* parent) :
+                                event_component* parent) :
     pisces_packetizer(params, parent)
   {
   }
@@ -155,7 +153,7 @@ class pisces_simple_packetizer : public pisces_packetizer
   FactoryRegister("simple", packetizer, pisces_simple_packetizer)
  public:
   pisces_simple_packetizer(sprockit::sim_parameters* params,
-                           event_scheduler* parent) :
+                           event_component* parent) :
     pisces_packetizer(params, parent)
   {
   }

@@ -64,9 +64,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-timestamp event_link::min_remote_latency_;
-timestamp event_link::min_thread_latency_;
-
 void
 event_component::cancel_all_messages()
 {
@@ -96,19 +93,6 @@ event_scheduler::now() const
 }
 
 void
-event_scheduler::schedule_now(event_handler* handler, event* ev)
-{
-  //this better be a zero latency link
-  schedule(SST::SimTime_t(0), handler, ev);
-}
-
-void
-event_scheduler::schedule_now(event_queue_entry* ev)
-{
-  self_link_->send(ev);
-}
-
-void
 event_scheduler::send_self_event_queue(timestamp arrival, event_queue_entry* ev)
 {
   SST::SimTime_t delay = extra_delay(arrival);
@@ -131,25 +115,11 @@ event_scheduler::send_now_self_event_queue(event_queue_entry* ev)
 void
 event_scheduler::schedule(SST::SimTime_t delay, event_handler* handler, event* ev)
 {
-  event_queue_entry* evq = new handler_event_queue_entry(ev, handler, event_location());
+  event_queue_entry* evq = new handler_event_queue_entry(ev, handler, component_id());
   if (handler->link()){
     spkt_abort_printf("should never schedule directly to link! use send_to_link");
   }
   self_link_->send(delay, time_converter_, evq);
-}
-
-void
-event_scheduler::send_to_link(event_handler* handler, event *ev)
-{
-  SST::Link* link = handler->link();
-  if (link){
-    //we ignore the latency here
-    sending(ev);
-    link->send(0, time_converter_, ev);
-  } else {
-    //oh - there is no link, you lied to me
-    self_link_->send(ev);
-  }
 }
 
 void
@@ -180,95 +150,30 @@ event_scheduler::handle_self_event(SST::Event* ev)
 }
 
 void
-event_scheduler::send_to_link(timestamp enter, timestamp lat,
-                              event_handler* handler, event *ev)
+event_link::send(event *ev)
 {
-  SST::Link* link = handler->link();
-  if (link){
-    //we ignore the latency here
-    sending(ev);
-    link->send(extra_delay(enter), time_converter_, ev);
-  } else {
-    //oh - there is no link, you lied to me
-    schedule(enter + lat, handler, ev);
-  }
+  link_->send(ev);
 }
 
 void
-event_scheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
-                              event_handler* handler, event *ev)
+event_link::send_extra_delay(timestamp delay, event *ev)
 {
-  SST::Link* link = handler->link();
-  if (link){
-    //we ignore the latency here
-    sending(ev);
-    link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
-  } else {
-    //oh - there is no link, you lied to me
-    schedule_delay(extra_delay + lat, handler, ev);
-  }
-}
-
-void
-event_scheduler::send_delayed_to_link(timestamp extra_delay,
-                              event_handler* handler, event *ev)
-{
-  SST::Link* link = handler->link();
-  if (link){
-    //we ignore the latency here
-    sending(ev);
-    link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
-  } else {
-    //oh - there is no link, you lied to me
-    schedule_delay(extra_delay, handler, ev);
-  }
-}
-
-void
-event_scheduler::schedule(timestamp t,
-                          event_handler* handler,
-                          event* ev)
-{
-  schedule(extra_delay(t), handler, ev);
-}
-
-void
-event_scheduler::schedule(timestamp t, event_queue_entry *ev)
-{
-  send_self_event_queue(t, ev);
-}
-
-void
-event_scheduler::schedule_delay(
-  timestamp delay,
-  event_handler* handler,
-  event* ev)
-{
-  schedule(SST::SimTime_t(delay.ticks_int64()), handler, ev);
-}
-
-void
-event_scheduler::schedule_delay(timestamp delay, event_queue_entry *ev)
-{
-  self_link_->send(SST::SimTime_t(delay.ticks_int64()), time_converter_, ev);
+  link_->send(delay.ticks(), event_scheduler::time_converter(), ev);
 }
 
 event_component::event_component(sprockit::sim_parameters* params,
-               uint64_t cid,
+               uint32_t cid,
                event_manager* mgr) :
  SSTIntegratedComponent(params, cid),
- event_scheduler(id)
+ event_scheduler(cid)
 {
   event_scheduler::init_self_link(this);
 }
 
-
-event_subcomponent::event_subcomponent(event_scheduler* parent) :
- event_scheduler(parent->event_location())
-{
-  event_scheduler::init_self_link(parent->comp(), parent->self_link());
-}
 #else
+timestamp event_link::min_remote_latency_;
+timestamp event_link::min_thread_latency_;
+
 event_scheduler::event_scheduler(event_manager* mgr, uint32_t comp_id) :
   eventman_(mgr),
   seqnum_(0),
@@ -326,9 +231,6 @@ event_component::setup()
 void
 event_subcomponent::init(unsigned int phase)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  event_scheduler* parent = safe_cast(event_component, comp());
-#endif
 }
 
 void
@@ -338,20 +240,6 @@ event_subcomponent::setup()
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-void
-event_link::send(timestamp arrival, event *ev)
-{
-}
-
-void
-event_link::send_delay(timestamp delay, event *ev)
-{
-}
-
-void
-event_link::send_now(event *ev)
-{
-}
 #else
 void
 local_link::multi_send_extra_delay(timestamp delay, event *ev, event_scheduler *src)

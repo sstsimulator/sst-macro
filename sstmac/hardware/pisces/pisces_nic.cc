@@ -75,7 +75,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
                                               inj_params, parent);
   packetizer_->setArrivalNotify(this);
-  auto inj_link = new local_link(timestamp(), parent_, mtl_handler());
+  auto inj_link = allocate_local_link(timestamp(), parent_, mtl_handler());
   packetizer_->setInjectionAcker(inj_link);
 
   //make port 0 a copy of the injection params

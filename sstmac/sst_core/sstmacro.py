@@ -109,12 +109,30 @@ class Interconnect:
       self.nodes[i] = epFxn(i)
 
   def latency(self, params):
+    lat = ""
     if params.has_key("latency"):
-      return params["latency"]
+      lat = params["latency"]
     elif params.has_key("send_latency"):
-      return params["send_latency"]
+      lat = params["send_latency"]
     else:
       sys.exit("need link latency in parameters")
+
+    match = re.compile("(\d+[.]?\d*)(.*)").search(lat)
+    if not match:
+      sys.exit("improperly formatted latency %s" % lat)
+    num, units = match.groups()
+    num = float(num)
+    units = units.strip().lower()
+    if units == "ms":
+      num *= 1e-3
+    elif units == "us":
+      num *= 1e-6
+    elif units == "ns":
+      num *= 1e-9
+    elif units == "ps":
+      num *= 1e-12
+
+    return num
 
 
   def connectSwitches(self):
@@ -157,14 +175,11 @@ class Interconnect:
     switchParams = self.params["switch"]
     linkParams = switchParams["link"]
     ejParams = switchParams["ejection"]
-    lat = self.latency(ejParams)
-    #gotta multiply the lat by 2
-    match = re.compile("(\d+[.]?\d*)(.*)").search(lat)
-    if not match:
-      sys.exit("improperly formatted latency %s" % lat)
-    num, units = match.groups()
-    num = eval(num) * 2
-    lat = "%8.4f%s" % (num,units.strip())
+    injParams = self.params["node"]["nic"]["injection"]
+    ejLat = self.latency(ejParams)
+    injLat = self.latency(injParams)
+    totlat = ejLat + injLat
+    lat = "%8.4fus" % (totLat/1e6)
     switches = []
     for i in range(nproc):
       switch = sst.Component("LogP %d" % i, "macro.logp_switch")
@@ -172,29 +187,22 @@ class Interconnect:
       switch.addParam("id", i)
       switches.append(switch)
 
-    for i in range(nproc):
-      sw_i = switches[i]
-      for j in range(nproc):
-        sw_j = switches[j]
-        if i==j: continue
-
-        linkName = "logPnetwork%d->%d" % (i,j)
-        link = sst.Link(linkName)
-        portName = "in-out %d %d" % (j, sst.macro.SwitchLogPNetworkPort)
-        sw_i.addLink(link, portName, lat)
-        portName = "in-out %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
-        sw_j.addLink(link, portName, lat)
-
     for i in range(self.num_nodes):
       injSW = self.system.nodeToLogPSwitch(i)
       ep = self.nodes[i]
       sw = switches[injSW]
       linkName = "logPinjection%d->%d" % (i, injSW)
       link = sst.Link(linkName)
-      portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+      portName = "out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
       ep.addLink(link, portName, smallLatency) #put no latency here
-      portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
-      sw.addLink(link, portName, smallLatency)
+
+    for i in range(self.num_nodes):
+      ep = self.nodes[i]
+      for p in range(nproc):
+        sw = switches[p]
+        portName = "out %d %d" % (i, sst.macro.NICLogPInjectionPort)
+        sw.addLink(link, portName, lat)
+      
 
 
   def buildFull(self, epFxn):

@@ -83,30 +83,6 @@ class event_scheduler :
   friend class multithread_link;
 
  public:
-  uint32_t next_seqnum() {
-    return seqnum_++;
-  }
-
-  uint32_t component_id() const {
-    return id_;
-  }
-
-  int thread() const {
-    return thread_id_;
-  }
-
-  int nthread() const {
-    return nthread_;
-  }
-
-  timestamp now() const {
-    return *now_;
-  }
-
-  const timestamp* now_ptr() const {
-    return now_;
-  }
-
   void send_self_event_queue(timestamp arrival, event_queue_entry* ev);
 
   void send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev);
@@ -114,6 +90,10 @@ class event_scheduler :
   void send_now_self_event_queue(event_queue_entry* ev);
 
   void register_stat(stat_collector* coll, stat_descr_t* descr);
+
+  uint32_t component_id() const {
+    return id_;
+  }
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
@@ -127,7 +107,7 @@ class event_scheduler :
     return comp_;
   }
 
-  static SST::TimeConvert* time_converter() {
+  static SST::TimeConverter* time_converter() {
     return time_converter_;
   }
 
@@ -137,8 +117,7 @@ class event_scheduler :
   event_scheduler(uint32_t loc) :
    self_link_(nullptr),
    comp_(nullptr),
-   id_(loc),
-   seqnum_(0)
+   id_(loc)
   {
   }
 
@@ -161,6 +140,26 @@ class event_scheduler :
   SST::Component* comp_;
 #else
  public:
+  uint32_t next_seqnum() {
+    return seqnum_++;
+  }
+
+  int thread() const {
+    return thread_id_;
+  }
+
+  int nthread() const {
+    return nthread_;
+  }
+
+  timestamp now() const {
+    return *now_;
+  }
+
+  const timestamp* now_ptr() const {
+    return now_;
+  }
+
   event_manager* event_mgr() const {
     return eventman_;
   }
@@ -171,13 +170,12 @@ class event_scheduler :
  private:
   event_manager* eventman_;
   uint32_t seqnum_;
-  uint32_t id_;
   int thread_id_;
   int nthread_;
   const timestamp* now_;
-
 #endif
-
+ private:
+  uint32_t id_;
 };
 
 /**
@@ -235,6 +233,23 @@ class event_subcomponent
 
   virtual std::string to_string() const = 0;
 
+  uint32_t component_id() const {
+    return parent_->component_id();
+  }
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  timestamp now() const {
+    return parent_->now();
+  }
+
+  int threadId() const {
+    return 0;
+  }
+
+  int nthread() const {
+    return 1;
+  }
+#else
   timestamp now() const {
     return *now_;
   }
@@ -246,11 +261,7 @@ class event_subcomponent
   int nthread() const {
     return parent_->nthread();
   }
-
-  uint32_t component_id() const {
-    return parent_->component_id();
-  }
-
+#endif
   void send_self_event_queue(timestamp t, event_queue_entry* ev){
     parent_->send_self_event_queue(t, ev);
   }
@@ -265,7 +276,11 @@ class event_subcomponent
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
-  event_subcomponent(event_scheduler* parent);
+  event_subcomponent(event_scheduler* parent) :
+    parent_(parent)
+  {
+  }
+
 #else
  protected:
   event_subcomponent(event_scheduler* parent) :
@@ -275,9 +290,10 @@ class event_subcomponent
   }
 
  private:
-  event_scheduler* parent_;
   const timestamp* now_;
 #endif
+ private:
+  event_scheduler* parent_;
 };
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -285,12 +301,45 @@ template <class T, class Fxn>
 link_handler* new_link_handler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
 }
+
+class event_link {
+ public:
+  virtual ~event_link(){}
+
+  event_link(SST::Link* link, SST::Component* comp) :
+    link_(link), comp_(comp)
+  {
+  }
+
+  std::string to_string() const {
+    return "SST core link";
+  }
+
+  void validate_latency(timestamp test_latency){}
+
+  void send(event *ev);
+
+  void send_extra_delay(timestamp delay, event* ev);
+
+  void multi_send_extra_delay(timestamp delay, event* ev, event_scheduler* src){
+    send_extra_delay(delay, ev);
+  }
+
+ private:
+  SST::Link* link_;
+
+  SST::Component* comp_;
+};
+
+static inline event_link* allocate_local_link(timestamp lat, event_component* comp, event_handler* handler)
+{
+  return new event_link(comp->self_link(), comp);
+}
 #else
 template <class T, class Fxn>
 link_handler* new_link_handler(const T* t, Fxn fxn){
   return new_handler<T,Fxn>(const_cast<T*>(t), fxn);
 }
-#endif
 
 class event_link {
  public:
@@ -305,16 +354,6 @@ class event_link {
 #endif
   }
 
-#if SSTMAC_INTEGRATED_SST_CORE
-  event_link(timestamp latency, SST::Component* comp) :
-
-  void send(timestamp arrival, event *ev);
-
-  void send_delay(timestamp arrival, event* ev);
-
-  void send_now(event *ev);
- private:
-#else
   virtual std::string to_string() const = 0;
 
   virtual bool is_external() const = 0;
@@ -370,11 +409,10 @@ class event_link {
   }
 
   event_scheduler* scheduler_;
+  timestamp latency_;
   static timestamp min_thread_latency_;
   static timestamp min_remote_latency_;
-#endif
- protected:
-  timestamp latency_;
+
 };
 
 class local_link : public event_link {
@@ -492,6 +530,12 @@ class ipc_link : public event_link {
   uint32_t dst_;
 
 };
+
+static inline event_link* allocate_local_link(timestamp lat, event_component* comp, event_handler* handler)
+{
+  return new local_link(lat, comp, handler);
+}
+#endif
 
 } // end of namespace sstmac
 #endif

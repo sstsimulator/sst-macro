@@ -121,7 +121,6 @@ logp_switch::send(timestamp start, message* msg)
   timestamp extra_delay = start - now() + delay;
 
   event_link* lnk = nic_links_[dst];
-  lnk->validate_latency(out_in_lat_);
   lnk->multi_send_extra_delay(extra_delay, msg, this);
 }
 

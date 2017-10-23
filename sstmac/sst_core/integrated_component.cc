@@ -82,21 +82,21 @@ SSTIntegratedComponent::init_links(sprockit::sim_parameters *params)
     istr >> src_outport;
     istr >> dst_inport;
     sprockit::sim_parameters* port_params = hw::topology::get_port_params(params, src_outport);
-    //event_link* ev_link = new event_link()
+    event_link* ev_link = new event_link(link, this);
 
     if (port_type == "input"){
       //I will receive incoming payloads on this link
       configureLink(pair.first, payload_handler(dst_inport));
       //setup up the link for sending credits back to source
-      connect_input(port_params, src_outport, dst_inport, wrapper);
+      connect_input(port_params, src_outport, dst_inport, ev_link);
     } else if (port_type == "output"){
       //I will receive credits back after sending out payloads
       configureLink(pair.first, credit_handler(src_outport));
       //setup the link for sending output payloads to destination
-      connect_output(port_params, src_outport, dst_inport, wrapper);
+      connect_output(port_params, src_outport, dst_inport, ev_link);
     } else if (port_type == "in-out"){
       //no credits involved here - just setting up output handlers
-      connect_output(port_params, src_outport, dst_inport, wrapper);
+      connect_output(port_params, src_outport, dst_inport, ev_link);
       configureLink(pair.first, payload_handler(src_outport));
     } else {
       //other special type of link I don't need to process

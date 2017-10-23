@@ -99,10 +99,6 @@ class interconnect
     return num_nodes_;
   }
 
-  const std::vector<connectable_component*>& components() const {
-    return components_;
-  }
-
   switch_id node_to_logp_switch(node_id nid) const;
 
  protected:
@@ -116,12 +112,12 @@ class interconnect
   interconnect(){}
 
 #if SSTMAC_INTEGRATED_SST_CORE
- public:
-  bool local_logp_node(node_id nid) const {
-    return true;
-  }
 #else
  public:
+  const std::vector<connectable_component*>& components() const {
+    return components_;
+  }
+
   typedef std::vector<network_switch*> switch_map;
   typedef std::vector<connectable*> internal_map;
   typedef std::vector<connectable*> endpoint_map;

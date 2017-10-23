@@ -122,6 +122,7 @@ pisces_NtoM_queue::~pisces_NtoM_queue()
 void
 pisces_NtoM_queue::deadlock_check()
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
     pisces_payload* pkt = queue.front();
@@ -146,6 +147,7 @@ pisces_NtoM_queue::deadlock_check()
       pkt = queue.front();
     }
   }
+#endif
 }
 
 void
@@ -164,6 +166,7 @@ pisces_NtoM_queue::build_blocked_messages()
 void
 pisces_NtoM_queue::deadlock_check(event* ev)
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (blocked_messages_.empty()){
     build_blocked_messages();
   }
@@ -192,6 +195,7 @@ pisces_NtoM_queue::deadlock_check(event* ev)
     next->set_inport(poutput.dst_inport);
     output->deadlock_check(next);
   }
+#endif
 }
 
 std::string
@@ -222,12 +226,10 @@ pisces_NtoM_queue::send_payload(pisces_payload* pkt)
 {
   auto rpkt = static_cast<pisces_routable_packet*>(pkt);
   pisces_debug(
-        "On %s:%p local_port:%d vc:%d sending {%s} going to %s:%p",
+        "On %s:%p local_port:%d vc:%d sending {%s}",
         to_string().c_str(), this,
         rpkt->local_outport(), pkt->next_vc(),
-        pkt->to_string().c_str(),
-        output_name(pkt).c_str(),
-        output_link(pkt));
+        pkt->to_string().c_str());
   send(arb_, pkt, inputs_[pkt->inport()], outputs_[rpkt->local_outport()]);
 }
 

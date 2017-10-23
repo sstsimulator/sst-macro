@@ -136,11 +136,18 @@ class pisces_eject_buffer :
 
   void handle_payload(event* ev) override;
 
+  void set_output_handler(event_handler* handler){
+    output_handler_ = handler;
+  }
+
   void return_credit(packet* msg);
 
   std::string pisces_name() const override {
     return "eject buffer";
   }
+
+ private:
+  event_handler* output_handler_;
 
 };
 

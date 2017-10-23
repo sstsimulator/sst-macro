@@ -147,6 +147,13 @@ operating_system* operating_system::active_os_ = nullptr;
 #endif
 
 operating_system::operating_system(sprockit::sim_parameters* params, hw::node* parent) :
+#if SSTMAC_INTEGRATED_SST_CORE
+  nthread_(1),
+  thread_id_(0),
+#else
+  nthread_(parent->nthread()),
+  thread_id_(parent->thread()),
+#endif
   my_addr_(parent->addr()),
   node_(parent),
   call_graph_(nullptr),
@@ -155,9 +162,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
   event_subcomponent(parent),
-  params_(params),
-  nthread_(parent->nthread()),
-  thread_id_(parent->thread())
+  params_(params)
 {
   compute_sched_ = compute_scheduler::factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);

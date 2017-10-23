@@ -196,6 +196,7 @@ pisces_network_buffer::handle_payload(event* ev)
 void
 pisces_network_buffer::deadlock_check()
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
     pisces_payload* pkt = queue.front();
@@ -213,6 +214,7 @@ pisces_network_buffer::deadlock_check()
       output_.link->deadlock_check(pkt);
     }
   }
+#endif
 }
 
 void
@@ -234,6 +236,7 @@ pisces_network_buffer::build_blocked_messages()
 void
 pisces_network_buffer::deadlock_check(event* ev)
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   if (blocked_messages_.empty()){
     build_blocked_messages();
   }
@@ -266,6 +269,7 @@ pisces_network_buffer::deadlock_check(event* ev)
       << std::endl;
     output_.link->deadlock_check(next);
   }
+#endif
 }
 
 #if PRINT_FINISH_DETAILS
@@ -348,7 +352,7 @@ pisces_eject_buffer::handle_payload(event* ev)
     to_string().c_str(),
     pkt->to_string().c_str());
   return_credit(pkt);
-  output_.link->handle(pkt);
+  output_handler_->handle(pkt);
 }
 
 void
