@@ -82,7 +82,7 @@ SSTIntegratedComponent::init_links(sprockit::sim_parameters *params)
     istr >> src_outport;
     istr >> dst_inport;
     sprockit::sim_parameters* port_params = hw::topology::get_port_params(params, src_outport);
-    link_wrapper* wrapper = new link_wrapper(link);
+    //event_link* ev_link = new event_link()
 
     if (port_type == "input"){
       //I will receive incoming payloads on this link

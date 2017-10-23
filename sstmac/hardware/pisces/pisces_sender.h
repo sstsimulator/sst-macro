@@ -131,6 +131,14 @@ class pisces_sender :
     update_vc_ = flag;
   }
 
+  timestamp send_latency() const {
+    return send_lat_;
+  }
+
+  timestamp credit_latency() const {
+    return credit_lat_;
+  }
+
  protected:
   pisces_sender(sprockit::sim_parameters* params,
                 event_scheduler* parent);

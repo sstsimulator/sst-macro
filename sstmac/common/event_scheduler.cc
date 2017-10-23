@@ -77,8 +77,6 @@ event_component::cancel_all_messages()
 #endif
 }
 
-#define sending(x) //printf("Sending %u:%s at %s:%d\n", x->cls_id(), sprockit::to_string(ev).c_str(), __FILE__, __LINE__)
-
 #if SSTMAC_INTEGRATED_SST_CORE
 SST::TimeConverter* event_scheduler::time_converter_ = nullptr;
 
@@ -339,16 +337,26 @@ event_subcomponent::setup()
   //do nothing
 }
 
+#if SSTMAC_INTEGRATED_SST_CORE
 void
-local_link::send(timestamp arrival, event *ev)
+event_link::send(timestamp arrival, event *ev)
 {
-  multi_send(arrival, ev, scheduler_);
 }
 
 void
-local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
+event_link::send_delay(timestamp delay, event *ev)
 {
-  //src->event_mgr()->set_min_ipc_time(arrival);
+}
+
+void
+event_link::send_now(event *ev)
+{
+}
+#else
+void
+local_link::multi_send_extra_delay(timestamp delay, event *ev, event_scheduler *src)
+{
+  timestamp arrival = src->now() + delay + latency_;
   event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
   qev->set_seqnum(src->next_seqnum());
   qev->set_time(arrival);
@@ -356,10 +364,9 @@ local_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 }
 
 void
-ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
+ipc_link::multi_send_extra_delay(timestamp delay, event *ev, event_scheduler *src)
 {
-  validate(arrival, src);
-
+  timestamp arrival = src->now() + delay + latency_;
   src->event_mgr()->set_min_ipc_time(arrival);
   ipc_event_t iev;
   iev.src = src->component_id();
@@ -376,22 +383,16 @@ ipc_link::multi_send(timestamp arrival, event *ev, event_scheduler *src)
 }
 
 void
-multithread_link::send(timestamp arrival, event *ev)
+multithread_link::send_extra_delay(timestamp delay, event *ev)
 {
-  multi_send(arrival, ev, scheduler_);
+  multi_send_extra_delay(delay, ev, scheduler_);
 }
 
 void
-multithread_link::multi_send(timestamp arrival, event* ev, event_scheduler* src)
+multithread_link::multi_send_extra_delay(timestamp delay, event* ev, event_scheduler* src)
 {
-  validate(arrival, src);
-
   event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
-  if (arrival < src->now()){
-    spkt_abort_printf("link scheduling event in the past: %lu < %lu",
-                      arrival.ticks(), src->now().ticks())
-  }
-
+  timestamp arrival = src->now() + delay + latency_;
   src->event_mgr()->set_min_ipc_time(arrival);
   qev->set_time(arrival);
   qev->set_seqnum(src->next_seqnum());
@@ -401,6 +402,6 @@ multithread_link::multi_send(timestamp arrival, event* ev, event_scheduler* src)
     dst_->event_mgr()->multithread_schedule(src->event_mgr()->pending_slot(), src->thread(), qev);
   }
 }
-
+#endif
 
 } // end of namespace sstmac

@@ -139,8 +139,9 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
   sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  sprockit::sim_parameters* nlink_inj_params =
-      netlink_params->get_optional_namespace("injection");
+  sprockit::sim_parameters* nlink_inj_params = netlink_params->get_optional_namespace("injection");
+  sprockit::sim_parameters* nlink_ej_params = netlink_params->get_optional_namespace("ejection");
+
   topology* top = topology_;
 
   std::string switch_model = switch_params->get_param("model");
@@ -207,9 +208,9 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     connect_switches(mgr, switch_params);
     interconn_debug("Interconnect connecting endpoints");
     if (netlinks_.empty()){
-      connect_endpoints(mgr, inj_params, ej_params);
+      connect_endpoints(mgr, inj_params, inj_params, ej_params);
     } else {
-      connect_endpoints(mgr, nlink_inj_params, ej_params);
+      connect_endpoints(mgr, nlink_inj_params, nlink_ej_params, ej_params);
     }
   } else {
     //lookahead is actually higher
@@ -236,8 +237,9 @@ interconnect::node_to_logp_switch(node_id nid) const
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
 interconnect::connect_endpoints(event_manager* mgr,
-                                sprockit::sim_parameters* inj_params,
-                                sprockit::sim_parameters* ej_params)
+                                sprockit::sim_parameters* ep_inj_params,
+                                sprockit::sim_parameters* ep_ej_params,
+                                sprockit::sim_parameters* sw_ej_params)
 {
   int num_nodes = topology_->num_nodes();
   int me = rt_->me();
@@ -287,11 +289,11 @@ interconnect::connect_endpoints(event_manager* mgr,
       interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
           int(injaddr), injsw, ep_id, ep, switch_port, injector_port);
       auto credit_link = allocate_local_link(injsw, parent_node, ep->credit_handler(injector_port),
-                                             injsw->credit_latency(ej_params));
-      injsw->connect_input(ej_params, injector_port, switch_port, credit_link);
+                                             injsw->credit_latency(sw_ej_params));
+      injsw->connect_input(sw_ej_params, injector_port, switch_port, credit_link);
       auto payload_link = allocate_local_link(parent_node, injsw, injsw->payload_handler(switch_port),
-                                              ep->send_latency(inj_params));
-      ep->connect_output(inj_params, injector_port, switch_port, payload_link);
+                                              ep->send_latency(ep_inj_params));
+      ep->connect_output(ep_inj_params, injector_port, switch_port, payload_link);
     }
 
     // connect switches to endpoints
@@ -302,11 +304,11 @@ interconnect::connect_endpoints(event_manager* mgr,
       interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
           int(ejaddr), ejsw, ep_id, ep, switch_port, ejector_port);
       auto payload_link = allocate_local_link(ejsw, parent_node, ep->payload_handler(ejector_port),
-                                              ejsw->send_latency(ej_params));
-      ejsw->connect_output(ej_params, switch_port, ejector_port, payload_link);
+                                              ejsw->send_latency(sw_ej_params));
+      ejsw->connect_output(sw_ej_params, switch_port, ejector_port, payload_link);
       auto credit_link = allocate_local_link(parent_node, ejsw, ejsw->credit_handler(switch_port),
-                                             ep->credit_latency(inj_params));
-      ep->connect_input(inj_params, switch_port, ejector_port, credit_link);
+                                             ep->credit_latency(ep_ej_params));
+      ep->connect_input(ep_ej_params, switch_port, ejector_port, credit_link);
     }
   }
 }
@@ -330,6 +332,8 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
 {
   sprockit::sim_parameters* nlink_ej_params =
       netlink_params->get_optional_namespace("ejection");
+  sprockit::sim_parameters* nlink_inj_params =
+      netlink_params->get_optional_namespace("injection");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
 
   int my_rank = rt_->me();
@@ -385,7 +389,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           // connect nic to netlink
 
           auto link = allocate_local_link(nd, nd, the_nic->credit_handler(nic::Injection),
-                                          nlink->credit_latency(nlink_ej_params));
+                                          nlink->credit_latency(nlink_inj_params));
           nlink->connect_input(nlink_ej_params,
                                nic::Injection, inj_port,
                                link);

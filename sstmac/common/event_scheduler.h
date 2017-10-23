@@ -127,6 +127,10 @@ class event_scheduler :
     return comp_;
   }
 
+  static SST::TimeConvert* time_converter() {
+    return time_converter_;
+  }
+
   void handle_self_event(SST::Event* ev);
 
  protected:
@@ -292,6 +296,25 @@ class event_link {
  public:
   virtual ~event_link(){}
 
+  void validate_latency(timestamp test_latency){
+#if SSTMAC_SANITY_CHECK
+    if (test_latency != latency_){
+      spkt_abort_printf("link configured with incorrect latency: %8.4e != %8.4e",
+                        test_latency.sec(), latency_.sec());
+    }
+#endif
+  }
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  event_link(timestamp latency, SST::Component* comp) :
+
+  void send(timestamp arrival, event *ev);
+
+  void send_delay(timestamp arrival, event* ev);
+
+  void send_now(event *ev);
+ private:
+#else
   virtual std::string to_string() const = 0;
 
   virtual bool is_external() const = 0;
@@ -302,21 +325,12 @@ class event_link {
 
   virtual void handle(event* ev) = 0;
 
-  virtual void multi_send(timestamp arrival, event* ev, event_scheduler* src) = 0;
+  virtual void multi_send_extra_delay(timestamp delay, event* ev, event_scheduler* src) = 0;
 
-  virtual void send(timestamp arrival, event *ev) = 0;
+  virtual void send_extra_delay(timestamp delay, event *ev) = 0;
 
-  void send_delay(timestamp delay, event* ev){
-    send(scheduler_->now() + delay, ev);
-  }
-
-  void send_now(event* ev){
-    send(scheduler_->now(), ev);
-  }
-
-  void send_extra_delay(timestamp extra_delay, timestamp delay, event* ev){
-    timestamp arr = extra_delay + delay + scheduler_->now();
-    send(arr, ev);
+  void send(event* ev){
+    send_extra_delay(timestamp(), ev);
   }
 
   static timestamp min_thread_latency() {
@@ -355,20 +369,12 @@ class event_link {
     }
   }
 
-  void validate(timestamp arrival, event_scheduler* src){
-    timestamp delta = arrival - src->now();
-    if (delta < latency_){
-      spkt_abort_printf("too low delta_t %8.4e on link with latency %8.4e",
-                        delta.sec(), latency_.sec());
-    }
-  }
-
   event_scheduler* scheduler_;
-  timestamp latency_;
-
   static timestamp min_thread_latency_;
   static timestamp min_remote_latency_;
-
+#endif
+ protected:
+  timestamp latency_;
 };
 
 class local_link : public event_link {
@@ -386,10 +392,10 @@ class local_link : public event_link {
    * @param es
    * @param hand
    */
-  local_link(event_scheduler* es, event_handler* hand) :
+  local_link(timestamp latency, event_scheduler* es, event_handler* hand) :
     handler_(hand),
     dst_(es),
-    event_link(timestamp(0), es)
+    event_link(latency, es)
   {
   }
 
@@ -413,9 +419,11 @@ class local_link : public event_link {
     handler_->deadlock_check(ev);
   }
 
-  void send(timestamp arrival, event* ev) override;
+  void send_extra_delay(timestamp delay, event* ev) override {
+    multi_send_extra_delay(delay, ev, scheduler_);
+  }
 
-  void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
+  void multi_send_extra_delay(timestamp delay, event* ev, event_scheduler* src) override;
 
  protected:
   event_handler* handler_;
@@ -436,9 +444,9 @@ class multithread_link : public local_link {
     return true;
   }
 
-  void send(timestamp arrival, event *ev) override;
+  void send_extra_delay(timestamp delay, event *ev) override;
 
-  void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
+  void multi_send_extra_delay(timestamp arrival, event* ev, event_scheduler* src) override;
 
 };
 
@@ -471,11 +479,11 @@ class ipc_link : public event_link {
 
   void deadlock_check(event* ev) override {}
 
-  void send(timestamp arrival, event* ev) override {
-    multi_send(arrival, ev, scheduler_);
+  void send_extra_delay(timestamp delay, event* ev) override {
+    multi_send_extra_delay(delay, ev, scheduler_);
   }
 
-  void multi_send(timestamp arrival, event* ev, event_scheduler* src) override;
+  void multi_send_extra_delay(timestamp delay, event* ev, event_scheduler* src) override;
 
  private:
   bool is_credit_;

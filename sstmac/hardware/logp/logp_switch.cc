@@ -114,10 +114,15 @@ logp_switch::send(timestamp start, message* msg)
   node_id dst = msg->toaddr();
   timestamp delay(inv_min_bw_ * msg->byte_length()); //bw term
   int num_hops = top_->num_hops_to_node(msg->fromaddr(), dst);
-  delay += num_hops * hop_latency_ + out_in_lat_; //factor of 2 for in-out
+  delay += num_hops * hop_latency_;
   debug_printf(sprockit::dbg::logp, "sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
                num_hops, delay.sec(), out_in_lat_.sec(), msg->to_string().c_str());
-  nic_links_[dst]->multi_send(delay+start, msg, this);
+
+  timestamp extra_delay = start - now() + delay;
+
+  event_link* lnk = nic_links_[dst];
+  lnk->validate_latency(out_in_lat_);
+  lnk->multi_send_extra_delay(extra_delay, msg, this);
 }
 
 

@@ -196,8 +196,9 @@ class interconnect
                       event_manager* mgr);
 
   void connect_endpoints(event_manager* mgr,
-                  sprockit::sim_parameters* inj_params,
-                  sprockit::sim_parameters* ej_params);
+                  sprockit::sim_parameters* ep_inj_params,
+                  sprockit::sim_parameters* ep_ej_params,
+                  sprockit::sim_parameters* sw_ej_params);
 
   event_link* allocate_local_link(event_scheduler* src, event_scheduler* dst,
                                   event_handler* handler, timestamp latency);

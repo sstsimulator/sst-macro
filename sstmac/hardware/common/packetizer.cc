@@ -125,7 +125,7 @@ packetizer::sendWhatYouCan(int vn)
     long bytes_sent = next.offset - initial_offset;
     if (next.ack){
       timestamp time_to_send(bytes_sent * inv_bw_);
-      acker_->send_delay(time_to_send, next.ack);
+      acker_->send_extra_delay(time_to_send, next.ack);
     }
     //the entire packet sent
     pending.pop_front();

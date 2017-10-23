@@ -118,12 +118,6 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
 {
   if (nproc_ == 1) return vote;
 
-#if SSTMAC_SANITY_CHECK
-  if (thread_id() != 0){
-    sprockit::abort("clock_cycle_event_map::schedule_incoming: only thread 0 should handle incoming MPI messages");
-  }
-#endif
-
   timestamp min_time = no_events_left_time;
   if (!stopped_){
     event_debug("voting for minimum time %lu", rt_->me(), vote.ticks());

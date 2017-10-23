@@ -178,7 +178,7 @@ class dummy_switch : public test_component {
 
  private:
   void send_ping_message(){
-    partner_->send_delay(latency_, new test_event);
+    partner_->send(new test_event);
     --num_ping_pongs_;
   }
 

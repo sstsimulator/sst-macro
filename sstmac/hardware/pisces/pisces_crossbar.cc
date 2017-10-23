@@ -278,6 +278,11 @@ pisces_NtoM_queue::handle_payload(event* ev)
     pkt->to_string().c_str(),
     glob_port, dst_vc, loc_port);
 
+  if (dst_vc < 0 || loc_port < 0){
+    spkt_abort_printf("On %s handling {%s}, got negative vc,local_port %d,%d",
+        to_string().c_str(), pkt->to_string().c_str(), loc_port, dst_vc);
+  }
+
   int& num_credits = credit(loc_port, dst_vc);
    pisces_debug(
     "On %s:%p with %d credits, handling {%s} for local port:%d vc:%d",
@@ -285,12 +290,6 @@ pisces_NtoM_queue::handle_payload(event* ev)
      num_credits,
      pkt->to_string().c_str(),
      loc_port, dst_vc);
-
-  if (dst_vc < 0 || loc_port < 0){
-    spkt_throw_printf(sprockit::value_error,
-       "On %s handling {%s}, got negative vc,local_port %d,%d",
-        to_string().c_str(), pkt->to_string().c_str(), loc_port, dst_vc);
-  }
 
   if (num_credits >= pkt->num_bytes()) {
     num_credits -= pkt->num_bytes();
@@ -330,6 +329,8 @@ pisces_NtoM_queue::set_input(
   inp.src_outport = src_outport;
   inp.link = input;
   inputs_[my_inport] = inp;
+
+  input->validate_latency(credit_lat_);
 }
 
 void
@@ -360,6 +361,7 @@ pisces_NtoM_queue::set_output(
                       "pisces_crossbar: my_outport %i > outputs_.size() %i",
                       my_outport, outputs_.size());
   }
+  output->validate_latency(send_lat_);
   outputs_[my_outport] = out;
 
   int num_credits = port_params->get_byte_length_param("credits");
