@@ -371,14 +371,18 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
                                                      comp_id, node_mgr);
         nic* the_nic = nd->get_nic();
 
+        //nic sends to only its specific logp switch
         the_nic->set_logp_switch(local_logp_switch);
 
         nodes_[nid] = nd;
         components_[nid] = nd;
 
-        event_link* out_link = allocate_local_link(nullptr, nd, nd->payload_handler(nic::LogP),
-                                                   local_logp_switch->send_latency(nullptr));
-        local_logp_switch->connect_output(nid, out_link);
+        for (int i=0; i < rt_->nthread(); ++i){
+          event_link* out_link = allocate_local_link(nullptr, nd, nd->payload_handler(nic::LogP),
+                                                     local_logp_switch->send_latency(nullptr));
+          logp_switches_[i]->connect_output(nid, out_link);
+        }
+
 
         netlink_id net_id;
         int netlink_offset;
@@ -420,10 +424,12 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
                            link);
         }
       } else {
-        event_link* link = new ipc_link(local_logp_switch->send_latency(nullptr),
-                                        target_rank, nullptr,
-                                        nid, nic::LogP, false);
-        local_logp_switch->connect_output(nid, link);
+        for (int i=0; i < rt_->nthread(); ++i){
+          event_link* link = new ipc_link(local_logp_switch->send_latency(nullptr),
+                                          target_rank, nullptr,
+                                          nid, nic::LogP, false);
+          logp_switches_[i]->connect_output(nid, link);
+        }
       }
     }
   }

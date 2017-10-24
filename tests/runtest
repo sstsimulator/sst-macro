@@ -60,7 +60,7 @@ if __name__ == "__main__":
   try: timeoutOverride = int(os.environ["SSTMAC_TIMEOUT"])
   except: pass
 
-  try: threads = int(os.environ["SST_NTHREADS"])
+  try: threads = int(os.environ["SSTMAC_NTHREADS"])
   except: pass
 
   timeout = int(sys.argv[1])
@@ -294,7 +294,10 @@ def runexe(exe, args, tmpFile):
   global memcheck
   global threads
   errorFile = "%s.ERROR" % tmpFile
-  cmd = "%s %s 1>> %s 2>> %s" % (exe, args, tmpFile, errorFile)
+  if threads:
+    args += " -p sst_nthread=%d -c 0" % (threads)
+    sys.argv.extend(("-p", "sst_nthread=%d" % threads, "-c", "0"))
+
   if memcheck:
     folder, exe = os.path.split(exe)
     exe = os.path.join(".libs", exe)
@@ -307,11 +310,9 @@ def runexe(exe, args, tmpFile):
       sys.argv.insert(EXE_START, "--dsymutil=yes")
     sys.argv.insert(EXE_START, "--leak-check=full")
     sys.argv.insert(EXE_START, memcheck)
-    cmd = "%s --dsymutil=yes --leak-check=full %s" % (memcheck, cmd)
-  if threads:
-    cmd = "%s -p sst_nthread=%d -c 0" % (cmd, threads)
   out=open(tmpFile,"w")
   err=open(errorFile,"w")
+  cmd = " ".join(sys.argv[EXE_START:])
   if verbose:
     print (cmd)
   try:

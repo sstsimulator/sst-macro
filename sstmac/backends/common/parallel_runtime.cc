@@ -63,6 +63,8 @@ RegisterKeywords(
 { "backup_buffer_size", "the size of the backup buffer in case main buffer overflows" },
 { "partition", "the partitioning algorithm for assigning work to logical processes" },
 { "runtime", "the underlying runtime (usually MPI or serial) managing logical processes" },
+{ "sst_nthread", "the number of threads to use" },
+{ "sst_nproc", "the number of parallel procs (ranks) to use" }
 );
 
 namespace sstmac {

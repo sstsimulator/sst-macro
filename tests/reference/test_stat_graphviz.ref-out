@@ -3,110 +3,110 @@ Rank 2 = 5000.0679ms
 Rank 3 = 5000.0963ms
 Rank 14 = 5000.1003ms
 Rank 1 = 5000.1034ms
-Rank 6 = 5000.1044ms
-Rank 4 = 5000.1084ms
-Rank 12 = 5000.1142ms
-Rank 5 = 5000.1219ms
-Rank 15 = 5000.1245ms
-Rank 7 = 5000.1258ms
+Rank 4 = 5000.1034ms
+Rank 6 = 5000.1051ms
+Rank 12 = 5000.1132ms
+Rank 5 = 5000.1204ms
+Rank 15 = 5000.1255ms
+Rank 7 = 5000.1267ms
 Rank 10 = 5000.1282ms
-Rank 13 = 5000.1339ms
+Rank 13 = 5000.1349ms
 Rank 8 = 5000.1352ms
 Rank 16 = 5000.1368ms
 Rank 11 = 5000.1390ms
-Rank 20 = 5000.1464ms
+Rank 20 = 5000.1460ms
 Rank 9 = 5000.1469ms
-Rank 18 = 5000.1474ms
-Rank 22 = 5000.1505ms
+Rank 18 = 5000.1472ms
+Rank 22 = 5000.1506ms
 Rank 17 = 5000.1565ms
-Rank 19 = 5000.1605ms
-Rank 21 = 5000.1628ms
-Rank 23 = 5000.1678ms
-Rank 24 = 5000.1706ms
-Rank 26 = 5000.1761ms
-Rank 28 = 5000.1761ms
-Rank 32 = 5000.1775ms
-Rank 25 = 5000.1778ms
-Rank 34 = 5000.1801ms
-Rank 30 = 5000.1823ms
-Rank 36 = 5000.1839ms
-Rank 38 = 5000.1868ms
-Rank 29 = 5000.1884ms
-Rank 33 = 5000.1889ms
-Rank 37 = 5000.1912ms
-Rank 31 = 5000.1925ms
-Rank 39 = 5000.1968ms
-Rank 35 = 5000.1994ms
-Rank 27 = 5000.2055ms
-Rank 44 = 5000.2484ms
-Rank 45 = 5000.2524ms
-Rank 40 = 5000.2585ms
-Rank 46 = 5000.2612ms
-Rank 47 = 5000.2633ms
+Rank 19 = 5000.1603ms
+Rank 21 = 5000.1632ms
+Rank 23 = 5000.1677ms
+Rank 24 = 5000.1707ms
+Rank 25 = 5000.1757ms
+Rank 26 = 5000.1759ms
+Rank 32 = 5000.1772ms
+Rank 28 = 5000.1781ms
+Rank 36 = 5000.1802ms
+Rank 34 = 5000.1803ms
+Rank 30 = 5000.1820ms
+Rank 38 = 5000.1860ms
+Rank 29 = 5000.1871ms
+Rank 33 = 5000.1887ms
+Rank 37 = 5000.1893ms
+Rank 31 = 5000.1922ms
+Rank 39 = 5000.1950ms
+Rank 35 = 5000.1986ms
+Rank 27 = 5000.2042ms
+Rank 44 = 5000.2516ms
+Rank 45 = 5000.2526ms
+Rank 40 = 5000.2556ms
+Rank 46 = 5000.2593ms
+Rank 47 = 5000.2602ms
+Rank 41 = 5000.2643ms
 Rank 48 = 5000.2671ms
-Rank 41 = 5000.2685ms
 Rank 42 = 5000.2694ms
 Rank 49 = 5000.2701ms
 Rank 50 = 5000.2762ms
 Rank 51 = 5000.2782ms
+Rank 43 = 5000.2807ms
 Rank 52 = 5000.2862ms
-Rank 43 = 5000.2868ms
 Rank 53 = 5000.2872ms
 Rank 54 = 5000.2883ms
 Rank 55 = 5000.2892ms
 Rank 64 = 5000.3017ms
-Rank 60 = 5000.3031ms
+Rank 60 = 5000.3022ms
 Rank 65 = 5000.3037ms
-Rank 61 = 5000.3041ms
+Rank 61 = 5000.3042ms
 Rank 66 = 5000.3048ms
 Rank 67 = 5000.3057ms
-Rank 62 = 5000.3071ms
-Rank 63 = 5000.3080ms
-Rank 68 = 5000.3086ms
-Rank 69 = 5000.3116ms
-Rank 70 = 5000.3166ms
-Rank 56 = 5000.3182ms
-Rank 71 = 5000.3185ms
-Rank 57 = 5000.3212ms
-Rank 58 = 5000.3283ms
-Rank 72 = 5000.3283ms
-Rank 76 = 5000.3311ms
-Rank 77 = 5000.3341ms
-Rank 78 = 5000.3361ms
-Rank 59 = 5000.3362ms
-Rank 73 = 5000.3365ms
-Rank 79 = 5000.3380ms
-Rank 74 = 5000.3444ms
-Rank 75 = 5000.3513ms
+Rank 62 = 5000.3065ms
+Rank 63 = 5000.3074ms
+Rank 68 = 5000.3117ms
+Rank 69 = 5000.3137ms
+Rank 70 = 5000.3157ms
+Rank 71 = 5000.3176ms
+Rank 56 = 5000.3195ms
+Rank 57 = 5000.3245ms
+Rank 58 = 5000.3296ms
+Rank 72 = 5000.3306ms
+Rank 76 = 5000.3322ms
+Rank 77 = 5000.3342ms
+Rank 59 = 5000.3355ms
+Rank 73 = 5000.3358ms
+Rank 78 = 5000.3362ms
+Rank 79 = 5000.3381ms
+Rank 74 = 5000.3419ms
+Rank 75 = 5000.3498ms
 Call Graph Summary
-main                                              400028219720000  0               
+main                                              400028106720000  0               
      Sleep                                        400000000000000
      MPI_Init                                     81056000
-     MPI_Finalize                                 10077921523
-     MPI_Isend                                    1872297516
+     MPI_Finalize                                 9991167110
+     MPI_Isend                                    1872010016
      MPI_Irecv                                    3450000
-     MPI_Waitall                                  16184994961
-ComputeInstructions                               3636684443       3636684443      
-memcopy                                           3636684443       0               
-     ComputeInstructions                          3636684443
+     MPI_Waitall                                  16159036874
+ComputeInstructions                               3636683960       3636683960      
+memcopy                                           3636683960       0               
+     ComputeInstructions                          3636683960
 Sleep                                             400000000000000  400000000000000 
-MPIEager1Protocol_Handle_RDMA_Payload             922875266        0               
-     memcopy                                      922875266
-MPIEager1Protocol_Handle_RDMA_Payload             894121672        0               
-     memcopy                                      894121672
+MPIEager1Protocol_Handle_RDMA_Payload             922875178        0               
+     memcopy                                      922875178
+MPIEager1Protocol_Handle_RDMA_Payload             894121277        0               
+     memcopy                                      894121277
 MPI_Init                                          81056000         49316135        
      sync                                         31739865
-MPI_Finalize                                      10077921523      47040195        
-     sync                                         10030881328
-sync                                              10145271021      10145271021     
-MPI_Isend                                         1872297516       0               
+MPI_Finalize                                      9991167110       47256194        
+     sync                                         9943910916
+sync                                              10058124948      10058124948     
+MPI_Isend                                         1872010016       0               
      memcopy                                      1819687505
-     MPIEager1Protocol_Handle_RDMA_Payload        29613269
-     MPIEager1Protocol_Handle_RDMA_Payload        22996742
+     MPIEager1Protocol_Handle_RDMA_Payload        29038269
+     MPIEager1Protocol_Handle_RDMA_Payload        23284242
 MPI_Irecv                                         3450000          0               
      MPIEager1Protocol_Handle_RDMA_Payload        3450000
-MPI_Waitall                                       16184994961      14341408206     
-     MPIEager1Protocol_Handle_RDMA_Payload        893261997
-     MPIEager1Protocol_Handle_RDMA_Payload        867674930
-     sync                                         82649828
-Estimated total runtime of           5.00035349 seconds
+MPI_Waitall                                       16159036874      14315338763     
+     MPIEager1Protocol_Handle_RDMA_Payload        893836909
+     MPIEager1Protocol_Handle_RDMA_Payload        867387035
+     sync                                         82474167
+Estimated total runtime of           5.00035208 seconds
