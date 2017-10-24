@@ -159,6 +159,10 @@ pisces_nic::connect_output(
   if (src_outport == Injection){
     pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
     packer->set_output(params, dst_inport, link);
+#if SSTMAC_INTEGRATED_SST_CORE
+  } else if (src_outport == LogP) {
+    logp_switch_ = link;
+#endif
   } else {
     spkt_abort_printf("Invalid switch port %d in pisces_nic::connect_output", src_outport);
   }

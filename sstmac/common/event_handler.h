@@ -67,12 +67,6 @@ class event_handler :
  public:
   static const int null_lpid = -1;
 
-#if SSTMAC_INTEGRATED_SST_CORE
- public:
-  virtual SST::Link* link() const {
-    return nullptr;
-  }
-#endif
  protected:
   event_handler(uint32_t comp_id) :
     comp_id_(comp_id)

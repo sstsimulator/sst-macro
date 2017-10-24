@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/pisces/pisces_param_expander.h>
+#include <sstmac/hardware/logp/logp_param_expander.h>
 #include <sstmac/common/timestamp.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -131,7 +132,6 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
     spkt_throw_printf(sprockit::input_error, "invalid hardware model %s given",
         amm_type.c_str());
   }
-
 }
 
 void

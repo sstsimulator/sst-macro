@@ -96,6 +96,8 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_m
   out_in_lat_ = params->get_time_param("out_in_latency");
 
   nic_links_.resize(top_->num_nodes());
+
+  init_links(params);
 }
 
 logp_switch::~logp_switch()

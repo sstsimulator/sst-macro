@@ -124,7 +124,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
-  sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection");
+  sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
   sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
   sprockit::sim_parameters* nlink_inj_params = netlink_params->get_optional_namespace("injection");
   sprockit::sim_parameters* nlink_ej_params = netlink_params->get_optional_namespace("ejection");
@@ -149,42 +149,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     logp_switches_[i] = new logp_switch(&logp_params, id, mgr->thread_manager(i));
   }
 
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  if (link_params->has_param("send_latency")){
-    hop_latency_ = link_params->get_time_param("send_latency");
-  } else {
-    hop_latency_ = link_params->get_time_param("latency");
-  }
-  hop_bw_ = link_params->get_bandwidth_param("bandwidth");
-  injection_latency_ = inj_params->get_time_param("latency");
 
-  if (ej_params->has_param("latency")){
-    ejection_latency_ = ej_params->get_time_param("latency");
-  } else if (ej_params->has_param("send_latency")){
-    ejection_latency_ = ej_params->get_time_param("send_latency");
-  }
-
-  if (ejection_latency_ < injection_latency_ && rt_->me() == 0){
-    std::cerr << "WARNING: ejection latency does not match injection latency!\n"
-              << "WARNING: this could lead to limited lookahead and poor parallel performance"
-              << std::endl;
-  }
-
-  lookahead_ = std::min(injection_latency_, hop_latency_);
-  lookahead_ = std::min(lookahead_, ejection_latency_);
-
-  timestamp lookahead_check = lookahead_;
-  if (event_link::min_remote_latency().ticks() > 0){
-    lookahead_check = event_link::min_remote_latency();
-  }
-  if (event_link::min_thread_latency().ticks() > 0){
-    lookahead_check = std::min(lookahead_check, event_link::min_thread_latency());
-  }
-
-  if (lookahead_check < lookahead_){
-    spkt_abort_printf("invalid lookahead compute: computed lookahead to be %8.4e, "
-                      "but have link with lookahead %8.4e", lookahead_.sec(), lookahead_check.sec());
-  }
 
   interconn_debug("Interconnect building endpoints");
   build_endpoints(node_params, nic_params,netlink_params, mgr);
@@ -199,12 +164,55 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
     } else {
       connect_endpoints(mgr, nlink_inj_params, nlink_ej_params, ej_params);
     }
+    configure_interconnect_lookahead(params);
   } else {
     //lookahead is actually higher
-    lookahead_ = injection_latency_ + ejection_latency_;
+    logp_switch* lsw = logp_switches_[0];
+    lookahead_ = lsw->send_latency(nullptr);
+  }
+
+  timestamp lookahead_check = lookahead_;
+  if (event_link::min_remote_latency().ticks() > 0){
+    lookahead_check = event_link::min_remote_latency();
+  }
+  if (event_link::min_thread_latency().ticks() > 0){
+    lookahead_check = std::min(lookahead_check, event_link::min_thread_latency());
+  }
+
+  if (lookahead_check < lookahead_){
+    spkt_abort_printf("invalid lookahead compute: computed lookahead to be %8.4e, "
+                      "but have link with lookahead %8.4e", lookahead_.sec(), lookahead_check.sec());
   }
 
 #endif
+}
+
+void
+interconnect::configure_interconnect_lookahead(sprockit::sim_parameters* params)
+{
+  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
+  sprockit::sim_parameters* inj_params = params->get_namespace("node")
+      ->get_namespace("nic")->get_namespace("injection");
+  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  timestamp hop_latency;
+  if (link_params->has_param("send_latency")){
+    hop_latency = link_params->get_time_param("send_latency");
+  } else {
+    hop_latency = link_params->get_time_param("latency");
+  }
+  timestamp injection_latency = inj_params->get_time_param("latency");
+
+  timestamp ejection_latency = injection_latency;
+  if (ej_params->has_param("latency")){
+    ejection_latency = ej_params->get_time_param("latency");
+  } else if (ej_params->has_param("send_latency")){
+    ejection_latency = ej_params->get_time_param("send_latency");
+  }
+
+  lookahead_ = std::min(injection_latency, hop_latency);
+  lookahead_ = std::min(lookahead_, ejection_latency);
 }
 
 switch_id

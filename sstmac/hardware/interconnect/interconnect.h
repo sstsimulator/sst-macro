@@ -162,10 +162,6 @@ class interconnect
     return switches_;
   }
 
-  timestamp hop_latency() const {
-    return hop_latency_;
-  }
-
   timestamp lookahead() const {
     return lookahead_;
   }
@@ -182,6 +178,8 @@ class interconnect
   uint32_t logp_component_id(switch_id sid) const;
 
   void connect_switches(event_manager* mgr, sprockit::sim_parameters* switch_params);
+
+  void configure_interconnect_lookahead(sprockit::sim_parameters* params);
 
   void build_endpoints(sprockit::sim_parameters* node_params,
                     sprockit::sim_parameters* nic_params,
@@ -204,14 +202,6 @@ class interconnect
   node_map nodes_;
 
   std::vector<connectable_component*> components_;
-
-  double hop_bw_;
-
-  timestamp hop_latency_;
-
-  timestamp injection_latency_;
-
-  timestamp ejection_latency_;
 
   timestamp lookahead_;
 

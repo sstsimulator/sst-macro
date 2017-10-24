@@ -97,7 +97,7 @@ class logp_switch : public connectable_component
   }
 
   link_handler* credit_handler(int port) const override {
-    return nullptr;
+    return new_link_handler(this, &logp_switch::drop_event);
   }
 
   void connect_output(node_id nid, event_link* link){
@@ -105,6 +105,8 @@ class logp_switch : public connectable_component
   }
 
   void send_event(event* ev);
+
+  void drop_event(event* ev){}
 
   void send(message *msg){
     send(now(), msg);

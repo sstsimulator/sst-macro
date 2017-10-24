@@ -115,25 +115,29 @@ logp_param_expander::expand_into(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
 {
-  if (!dst_params->has_param("bandwidth")){
+  if (!switch_params->has_param("bandwidth")){
     sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
     double link_bw = link_params->get_bandwidth_param("bandwidth");
     double gbs = link_bw *param_expander::network_bandwidth_multiplier(params) / 1e9;
     std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
 
     dst_params->add_param_override("bandwidth", net_bw_str);
+  } else {
+    dst_params->add_param_override("bandwidth", switch_params->get_param("bandwidth"));
   }
 
-  if (!dst_params->has_param("hop_latency")){
-    sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  if (!switch_params->has_param("hop_latency")){
+    sprockit::sim_parameters* link_params = switch_params->get_optional_namespace("link");
     if (link_params->has_param("send_latency")){
       dst_params->add_param_override("hop_latency", link_params->get_time_param("send_latency"));
     } else {
       dst_params->add_param_override("hop_latency", link_params->get_time_param("latency"));
     }
+  } else {
+    dst_params->add_param_override("hop_latency", switch_params->get_param("hop_latency"));
   }
 
-  if (!dst_params->has_param("out_in_latency")){
+  if (!switch_params->has_param("out_in_latency")){
     sprockit::sim_parameters* inj_params = params->get_namespace("node")->get_namespace("nic")
                                                  ->get_namespace("injection");
 
@@ -150,6 +154,8 @@ logp_param_expander::expand_into(
 
     timestamp total_lat = inj_lat + ej_lat;
     dst_params->add_param_override("out_in_latency", sprockit::printf("%12.8fus", total_lat.usec()));
+  } else {
+    dst_params->add_param_override("out_in_latency", switch_params->get_param("out_in_latency"));
   }
 
 }

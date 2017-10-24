@@ -148,10 +148,6 @@ class nic :
 
   void send_to_logp_switch(network_message* netmsg);
 
-  void set_logp_switch(logp_switch* sw){
-    logp_switch_ = sw;
-  }
-
   /**
    The NIC can either receive an entire message (bypass the byte-transfer layer)
    or it can receive packets.  If an incoming message is a full message (not a packet),
@@ -189,9 +185,17 @@ class nic :
 
   event_handler* event_mtl_handler_;
 
+#if SSTMAC_INTEGRATED_SST_CORE
+ protected:
+  event_link* logp_switch_;
+#else
+ public:
+  void set_logp_switch(logp_switch* sw){
+    logp_switch_ = sw;
+  }
+ protected:
   logp_switch* logp_switch_;
 
-#if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* link_mtl_handler_;
 #endif
 

@@ -116,9 +116,6 @@ void
 event_scheduler::schedule(SST::SimTime_t delay, event_handler* handler, event* ev)
 {
   event_queue_entry* evq = new handler_event_queue_entry(ev, handler, component_id());
-  if (handler->link()){
-    spkt_abort_printf("should never schedule directly to link! use send_to_link");
-  }
   self_link_->send(delay, time_converter_, evq);
 }
 
@@ -150,15 +147,10 @@ event_scheduler::handle_self_event(SST::Event* ev)
 }
 
 void
-event_link::send(event *ev)
-{
-  link_->send(ev);
-}
-
-void
 event_link::send_extra_delay(timestamp delay, event *ev)
 {
-  link_->send(delay.ticks(), event_scheduler::time_converter(), ev);
+  event* to_send = handler_ ? new handler_event_queue_entry(ev, handler_, 0) : ev;
+  link_->send(delay.ticks(), event_scheduler::time_converter(), to_send);
 }
 
 event_component::event_component(sprockit::sim_parameters* params,

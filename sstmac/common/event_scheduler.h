@@ -306,8 +306,8 @@ class event_link {
  public:
   virtual ~event_link(){}
 
-  event_link(SST::Link* link, SST::Component* comp) :
-    link_(link), comp_(comp)
+  event_link(SST::Link* link, SST::Component* comp, event_handler* handler = nullptr) :
+    link_(link), comp_(comp), handler_(handler)
   {
   }
 
@@ -317,7 +317,9 @@ class event_link {
 
   void validate_latency(timestamp test_latency){}
 
-  void send(event *ev);
+  void send(event *ev){
+    send_extra_delay(timestamp(0), ev);
+  }
 
   void send_extra_delay(timestamp delay, event* ev);
 
@@ -329,11 +331,13 @@ class event_link {
   SST::Link* link_;
 
   SST::Component* comp_;
+
+  event_handler* handler_;
 };
 
 static inline event_link* allocate_local_link(timestamp lat, event_component* comp, event_handler* handler)
 {
-  return new event_link(comp->self_link(), comp);
+  return new event_link(comp->self_link(), comp, handler);
 }
 #else
 template <class T, class Fxn>

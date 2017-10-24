@@ -117,7 +117,12 @@ logp_nic::do_send(network_message* msg)
     parent_->send_self_event_queue(next_out_free_, ack_ev);
   }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+  timestamp extra_delay = start_send - now_;
+  logp_switch_->send_extra_delay(extra_delay, msg);
+#else
   logp_switch_->send(start_send, msg);
+#endif
 }
 
 void
@@ -127,7 +132,9 @@ logp_nic::connect_output(
   int dst_inport,
   event_link* link)
 {
-  //pass - nothing to do here
+#if SSTMAC_INTEGRATED_SST_CORE
+  logp_switch_ = link;
+#endif
 }
 
 void

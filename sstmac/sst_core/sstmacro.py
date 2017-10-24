@@ -109,14 +109,17 @@ class Interconnect:
       self.nodes[i] = epFxn(i)
 
   def latency(self, params):
-    lat = ""
     if params.has_key("latency"):
-      lat = params["latency"]
+      return params["latency"]
     elif params.has_key("send_latency"):
-      lat = params["send_latency"]
+      return params["send_latency"]
     else:
+      import sys
       sys.exit("need link latency in parameters")
 
+  def latencyAsFloat(self, params):
+    import re
+    lat = self.latency(params)
     match = re.compile("(\d+[.]?\d*)(.*)").search(lat)
     if not match:
       sys.exit("improperly formatted latency %s" % lat)
@@ -131,9 +134,7 @@ class Interconnect:
       num *= 1e-9
     elif units == "ps":
       num *= 1e-12
-
     return num
-
 
   def connectSwitches(self):
     switchParams = self.params["switch"]
@@ -169,17 +170,38 @@ class Interconnect:
         makeUniLink("ejection",ejSwitchComp,ejSwitchId,ejPort,ep,epId,epPort,
                     outLat=lat,inLat=smallLatency)
 
+  def fillInParamsLogP(self):
+    switchParams = self.params["switch"]
+    if not switchParams.has_key("out_in_latency"):
+      try:
+        ejParams = switchParams["ejection"]
+        injParams = self.params["node"]["nic"]["injection"]
+        ejLat = self.latencyAsFloat(ejParams)
+        injLat = self.latencyAsFloat(injParams)
+        totLat = ejLat + injLat
+        lat = "%8.4fus" % (totLat/1e6)
+        switchParams["out_in_latency"] = lat
+      except KeyError:
+        sys.exit("Do not have enough parameters to deduce out_in_latency for LogP switch")
+    if not switchParams.has_key("hop_latency"):
+      try:
+        linkParams = switchParams["link"]
+        switchParams["hop_latency"] = self.latency(linkParams)
+      except KeyError:
+        sys.exit("Do not have enough parameters to deduce hop_latency for LogP switch")
+    if not switchParams.has_key("bandwidth"):
+      try:
+        linkParams = switchParams["link"]
+        switchParams["bandwidth"] = linkParams["bandwidth"]
+      except KeyError:
+        sys.exit("Do not have enough parameters to deduce bandwidth for LogP switch")
+
   def buildLogPNetwork(self):
     import re
     nproc = sst.getMPIRankCount() * sst.getThreadCount()
     switchParams = self.params["switch"]
-    linkParams = switchParams["link"]
-    ejParams = switchParams["ejection"]
-    injParams = self.params["node"]["nic"]["injection"]
-    ejLat = self.latency(ejParams)
-    injLat = self.latency(injParams)
-    totlat = ejLat + injLat
-    lat = "%8.4fus" % (totLat/1e6)
+    self.fillInParamsLogP()
+    lat = switchParams["out_in_latency"]
     switches = []
     for i in range(nproc):
       switch = sst.Component("LogP %d" % i, "macro.logp_switch")
@@ -193,17 +215,21 @@ class Interconnect:
       sw = switches[injSW]
       linkName = "logPinjection%d->%d" % (i, injSW)
       link = sst.Link(linkName)
-      portName = "out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+      portName = "output %d %d" % (sst.macro.NICLogPInjectionPort, i)
       ep.addLink(link, portName, smallLatency) #put no latency here
+      portName = "input %d %d" % (sst.macro.NICLogPInjectionPort, i)
+      sw.addLink(link, portName, smallLatency)
 
     for i in range(self.num_nodes):
       ep = self.nodes[i]
       for p in range(nproc):
+        linkName = "logPejection%d->%d" % (i, injSW)
+        link = sst.Link(linkName)
         sw = switches[p]
-        portName = "out %d %d" % (i, sst.macro.NICLogPInjectionPort)
+        portName = "output %d %d" % (i, sst.macro.NICLogPInjectionPort)
         sw.addLink(link, portName, lat)
-      
-
+        portName = "input %d %d" % (i, sst.macro.NICLogPInjectionPort)
+        ep.addLink(link, portName, lat)
 
   def buildFull(self, epFxn):
     self.buildSwitches()

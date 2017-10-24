@@ -253,6 +253,9 @@ static void* gen_sst_macro_integrated_pymodule(void)
   PyObject* tmpModule = PyModule_Create(&py3sstDef);
 #endif
   PyObject *code = Py_CompileString(py_sstmacro, "sstmacro", Py_file_input);
+  if (code == nullptr){
+    spkt_abort_printf("Failed to compile sstmacro.py file into Python module");
+  }
 #pragma GCC diagnostic ignored "-Wwrite-strings"
   PyObject* module = PyImport_ExecCodeModule("sst.macro", code);
 

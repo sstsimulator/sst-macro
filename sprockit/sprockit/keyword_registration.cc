@@ -100,7 +100,6 @@ KeywordRegistration::is_valid_keyword(const std::string& name)
     char c = name.data()[i];
     if (is_digit(c)){
       substr = name.substr(0, i);
-      std::cout << "got substring " << substr << " on index " << i << std::endl;
       break;
     }
   }

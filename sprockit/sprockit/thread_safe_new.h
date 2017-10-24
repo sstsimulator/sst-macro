@@ -7,18 +7,22 @@ namespace sprockit {
 
 template <class T>
 T& thread_stack_size(){
-  static T stacksize;
+  static T stacksize = 0;
   return stacksize;
 }
 
 static int inline current_thread_id() {
   int stacksize = thread_stack_size<int>();
-  char x;
-  intptr_t stackptr = (intptr_t) &x;
-  intptr_t stack_mult = stackptr / stacksize;
-  char* aligned_stack_ptr = (char*) (stack_mult * stacksize);
-  int* thrPtr = (int*) aligned_stack_ptr;
-  return *thrPtr;
+  if (stacksize == 0){
+    return 0;
+  } else {
+    char x;
+    intptr_t stackptr = (intptr_t) &x;
+    intptr_t stack_mult = stackptr / stacksize;
+    char* aligned_stack_ptr = (char*) (stack_mult * stacksize);
+    int* thrPtr = (int*) aligned_stack_ptr;
+    return *thrPtr;
+  }
 }
 
 template <class T>

@@ -90,6 +90,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
   nic_pipeline_multiplier_(0.),
+  logp_switch_(nullptr),
   post_inv_bw_(0),
   post_latency_(0),
   next_free_(0),
