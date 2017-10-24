@@ -110,6 +110,7 @@ tiled_torus::get_redundant_paths(
     int port = max_ports_intra_network_ + offset*injection_redundancy_;
     int num_ports = injection_redundancy_;
     for (int i=0; i < num_ports; ++i, ++port){
+      paths[i] = current;
       paths[i].set_outport(port);
     }
   }

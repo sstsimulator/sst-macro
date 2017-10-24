@@ -265,9 +265,9 @@ pisces_tiled_switch::handle_payload(event *ev)
   //now figure out the new port I am routing to
   router_->route(payload);
   debug_printf(sprockit::dbg::pisces,
-               "tiled switch %d: routed payload %s to port %d",
+               "tiled switch %d: routed payload %s to port %d, vc %d",
                int(my_addr_), payload->to_string().c_str(),
-               payload->next_port());
+               payload->next_port(), payload->next_vc());
   demuxer->handle_payload(payload);
 }
 
