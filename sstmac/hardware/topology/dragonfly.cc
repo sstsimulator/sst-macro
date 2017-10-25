@@ -188,27 +188,30 @@ dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) con
   int cidx = 0;
 
   for (int a = 0; a < a_; a++){
-    switch_id dst = get_uid(a, myG);
-    connection& conn = conns[cidx++];
-    conn.src = src;
-    conn.dst = dst;
-    conn.src_outport = a;
-    conn.dst_inport = myA;
+    if (a != myA){
+      switch_id dst = get_uid(a, myG);
+      connection& conn = conns[cidx++];
+      conn.src = src;
+      conn.dst = dst;
+      conn.src_outport = a;
+      conn.dst_inport = myA;
+    }
   }
 
   int groupConnections[64];
   int numConns = group_wiring_->connected_routers(myA, myG, groupConnections);
   for (int h = 0; h < numConns; ++h){
     switch_id dst = groupConnections[h];
-    connection& conn = conns[cidx++];
-    conn.src = src;
-    conn.dst = dst;
-    conn.src_outport = h + a_;
-    int dstA = computeA(dst);
     int dstG = computeG(dst);
-    conn.dst_inport = group_wiring_->group_port(dstA, dstG, myG) + a_;
+    if (dstG != myG){
+      connection& conn = conns[cidx++];
+      conn.src = src;
+      conn.dst = dst;
+      conn.src_outport = h + a_;
+      int dstA = computeA(dst);
+      conn.dst_inport = group_wiring_->group_port(dstA, dstG, myG) + a_;
+    }
   }
-
   conns.resize(cidx);
 }
 
@@ -266,6 +269,7 @@ class consecutive_group_wiring : public inter_group_wiring
    * @return The number of routers in connected array
    */
   int connected_routers(int a, int g, int connected[]) const override {
+    int conn = 0;
     for (int h=0; h < h_; ++h){
       int dstG = a*h_ + h;
       int dstA = 0;
@@ -274,9 +278,12 @@ class consecutive_group_wiring : public inter_group_wiring
       } else {
         dstA = g / h_;
       }
-      connected[h] = dstG*a_ + dstA;
+      if (dstG != g){
+        switch_id dst = dstG*a_ + dstA;
+        connected[conn++] = dst; //full switch ID
+      }
     }
-    return h_;
+    return conn;
   }
 
   /**

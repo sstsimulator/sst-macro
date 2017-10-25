@@ -88,8 +88,11 @@ class inter_group_wiring {
   inter_group_wiring(sprockit::sim_parameters* params, dragonfly* top);
 
  protected:
+  /** Number of routers per group */
   int a_;
+  /** Number of groups */
   int g_;
+  /** Number of group connections per router */
   int h_;
 };
 
