@@ -55,7 +55,7 @@ cartesian_topology::cartesian_topology(sprockit::sim_parameters *params,
 {
   params->get_vector_param("geometry", dimensions_);
   if (dimensions_.size() == 0) {
-    spkt_throw_printf(sprockit::value_error, "empty topology vector for torus");
+    spkt_throw_printf(sprockit::value_error, "empty topology vector for cartesian topology");
   }
 
   if (params->has_param("redundant")) {
@@ -67,8 +67,7 @@ cartesian_topology::cartesian_topology(sprockit::sim_parameters *params,
                        dimensions_.size(),
                        red_.size());
     }
-  }
-  else {
+  } else {
     int ndim = dimensions_.size();
     red_.resize(ndim);
     for (int i = 0; i < ndim; i++) {
