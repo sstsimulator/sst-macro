@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/topology/dragonfly.h>
+#include <sstmac/hardware/topology/cascade.h>
 #include <sstmac/hardware/router/router.h>
 #include <math.h>
 #include <sstream>
@@ -63,7 +63,7 @@ namespace hw {
 
 static const double PI = 3.141592653589793238462;
 
-dragonfly::dragonfly(sprockit::sim_parameters* params) :
+cascade::cascade(sprockit::sim_parameters* params) :
   cartesian_topology(params,
                      InitMaxPortsIntra::I_Remembered,
                      InitGeomEjectID::I_Remembered)
@@ -90,7 +90,7 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
 }
 
 void
-dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
+cascade::configure_geometric_paths(std::vector<int> &redundancies)
 {
   int npaths = x_ + y_ + group_con_ + netlinks_per_switch_;
   redundancies.resize(npaths);
@@ -109,7 +109,7 @@ dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 }
 
 switch_id
-dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
+cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
 {
   long nid = current_sw;
   uint32_t attempt = 0;
@@ -141,7 +141,7 @@ dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
 }
 
 bool
-dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
+cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 {
   int gstride = std::max(1, g_ / group_con_);
   int gconns = 0;
@@ -157,7 +157,7 @@ dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 }
 
 bool
-dragonfly::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
+cascade::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
                                 routable::path& path) const
 {
   int ystart = random_number(y_,0);
@@ -172,7 +172,7 @@ dragonfly::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
 }
 
 bool
-dragonfly::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
+cascade::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
                                 routable::path& path) const
 {
   int xstart = random_number(x_,0);
@@ -187,7 +187,7 @@ dragonfly::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
 }
 
 void
-dragonfly::find_path_to_group(int myX, int myY, int myG,
+cascade::find_path_to_group(int myX, int myY, int myG,
                               int dstG, int& dstX, int& dstY,
                               routable::path& path) const
 {
@@ -220,13 +220,13 @@ dragonfly::find_path_to_group(int myX, int myY, int myG,
   }
 
   spkt_throw_printf(sprockit::value_error,
-    "dragonfly::route: unable to find path from group %d to group %d",
+    "cascade::route: unable to find path from group %d to group %d",
     myG, dstG);
 }
 
 
 void
-dragonfly::minimal_route_to_switch(
+cascade::minimal_route_to_switch(
     switch_id src,
     switch_id dst,
     routable::path &path) const
@@ -237,24 +237,24 @@ dragonfly::minimal_route_to_switch(
   int interX, interY;
   if (srcG != dstG){
     find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
-    top_debug("dragonfly routing from (%d,%d,%d) to (%d,%d,%d) through "
+    top_debug("cascade routing from (%d,%d,%d) to (%d,%d,%d) through "
               "gateway (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG,
               interX, interY, srcG, path.outport());
   }
   else if (srcX != dstX){
     path.set_outport( x_port(dstX) );
-    top_debug("dragonfly routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
+    top_debug("cascade routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
   } else if (srcY != dstY){
     path.set_outport( y_port(dstY) );
-    top_debug("dragonfly routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
+    top_debug("cascade routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
   }
 }
 
 int
-dragonfly::minimal_distance(switch_id src, switch_id dst) const
+cascade::minimal_distance(switch_id src, switch_id dst) const
 {
   int dist = 0;
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
@@ -281,7 +281,7 @@ dragonfly::minimal_distance(switch_id src, switch_id dst) const
 
 
 void
-dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsize) const
+cascade::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsize) const
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
@@ -299,7 +299,7 @@ dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dims
 }
 
 void
-dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) const
+cascade::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   int max_num_conns = (x_ - 1) + (y_ - 1) + group_con_;
   conns.resize(max_num_conns);
@@ -352,7 +352,7 @@ dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) con
 }
 
 void
-dragonfly::configure_individual_port_params(switch_id src,
+cascade::configure_individual_port_params(switch_id src,
                                             sprockit::sim_parameters *switch_params) const
 {
   setup_port_params(switch_params, x_dimension, x_);
@@ -361,7 +361,7 @@ dragonfly::configure_individual_port_params(switch_id src,
 }
 
 void
-dragonfly::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
+cascade::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
 {
   m[routing::minimal] = 2;
   m[routing::minimal_adaptive] = 2;
@@ -371,13 +371,13 @@ dragonfly::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
 
 
 void
-dragonfly::new_routing_stage(routable* rtbl)
+cascade::new_routing_stage(routable* rtbl)
 {
   rtbl->current_path().unset_metadata_bit(routable::crossed_timeline);
 }
 
 int
-dragonfly::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
+cascade::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
 {
   int gspace = std::max(1, g_ / group_con_);
   int myid = myX + myY * x_;
@@ -386,7 +386,7 @@ dragonfly::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
 }
 
 coordinates
-dragonfly::switch_coords(switch_id uid) const
+cascade::switch_coords(switch_id uid) const
 {
   coordinates coords(3);
   get_coords(uid, coords[0], coords[1], coords[2]);
@@ -394,7 +394,7 @@ dragonfly::switch_coords(switch_id uid) const
 }
 
 switch_id
-dragonfly::switch_addr(const coordinates &coords) const
+cascade::switch_addr(const coordinates &coords) const
 {
   return get_uid(coords[0], coords[1], coords[2]);
 }

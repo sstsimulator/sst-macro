@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/topology/tiled_dragonfly.h>
+#include <sstmac/hardware/topology/tiled_cascade.h>
 #include <math.h>
 #include <sstream>
 #include <algorithm>
@@ -64,10 +64,8 @@ using namespace sprockit;
 namespace sstmac {
 namespace hw {
 
-//SpktRegister("tiled_dragonfly | tiled_dfly", topology, tiled_dragonfly);
-
-tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
-  dragonfly(params)
+tiled_cascade::tiled_cascade(sprockit::sim_parameters* params) :
+  cascade(params)
 {
   // get connection filenames
   intragroup_file_ = params->get_optional_param("intragroup_connection_file",
@@ -84,7 +82,7 @@ tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
   if (params->has_param("injection_ports"))
     params->get_vector_param("injection_ports",injection_ports_);
   else
-    sprockit::abort("tiled_dragonfly needs injection_ports specified");
+    sprockit::abort("tiled_cascade needs injection_ports specified");
   top_debug("ntiles in x,y dimensions: %d,%d", tiles_x_, tiles_y_);
   int max_port = *std::max_element(injection_ports_.begin(),injection_ports_.end());
   if (max_port > n_tiles_ - 1)
@@ -116,7 +114,7 @@ tiled_dragonfly::tiled_dragonfly(sprockit::sim_parameters* params) :
 }
 
 switch_id
-tiled_dragonfly::netlink_to_injection_switch(
+tiled_cascade::netlink_to_injection_switch(
     node_id nodeaddr, uint16_t ports[], int &num_ports) const
 {
   num_ports = injection_redundancy_;
@@ -130,28 +128,14 @@ tiled_dragonfly::netlink_to_injection_switch(
 }
 
 switch_id
-tiled_dragonfly::netlink_to_ejection_switch(
+tiled_cascade::netlink_to_ejection_switch(
     node_id nodeaddr, uint16_t ports[], int &num_ports) const
 {
   return netlink_to_injection_switch(nodeaddr,ports,num_ports);
 }
 
-//void
-//tiled_dragonfly::eject_paths_on_switch(
-//   node_id dest_addr, switch_id sw_addr, routable::path_set &paths) const
-//{
-//  paths.resize(injection_redundancy_);
-//  int node_offset = dest_addr % netlinks_per_switch_;
-//  int index = node_offset * injection_redundancy_;
-//  for (int i=0; i < injection_redundancy_; ++i, ++index){
-//    paths[i].set_outport(injection_ports_[index]);
-//    paths[i].vc = 0;
-//    paths[i].geometric_id = eject_geometric_id_ + node_offset;
-//  }
-//}
-
 bool
-tiled_dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
+tiled_cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 {
   coordinates me(3);
   me[0] = myX;
@@ -165,7 +149,7 @@ tiled_dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) cons
 }
 
 void
-tiled_dragonfly::connected_outports(switch_id src, std::vector<sstmac::hw::topology::connection>& conns) const
+tiled_cascade::connected_outports(switch_id src, std::vector<sstmac::hw::topology::connection>& conns) const
 {
   int max_num_conns = red_[0] * (x_ - 1) + red_[1] * (y_ - 1) + group_con_;
   conns.resize(max_num_conns);
@@ -214,7 +198,7 @@ tiled_dragonfly::connected_outports(switch_id src, std::vector<sstmac::hw::topol
 //---------------------------------------------------------------------
 
 void
-tiled_dragonfly::get_redundant_paths(routable::path& current,
+tiled_cascade::get_redundant_paths(routable::path& current,
                                      routable::path_set& paths,
                                      switch_id addr) const
 {
@@ -254,7 +238,7 @@ tiled_dragonfly::get_redundant_paths(routable::path& current,
 }
 
 void
-tiled_dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
+tiled_cascade::configure_geometric_paths(std::vector<int> &redundancies)
 {
   redundancies.resize(n_geom_paths_);
   for (int i=0; i < n_geom_paths_; ++i)
@@ -278,7 +262,7 @@ tiled_dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 //-----------------------------------------------------------------------
 
 void
-tiled_dragonfly::read_intragroup_connections()
+tiled_cascade::read_intragroup_connections()
 {
   // read the file and make list of connections
   std::ifstream in;
@@ -380,7 +364,7 @@ tiled_dragonfly::read_intragroup_connections()
 }
 
 void
-tiled_dragonfly::read_intergroup_connections()
+tiled_cascade::read_intergroup_connections()
 {
   // read the file and make list of connections
   std::ifstream in;
@@ -469,7 +453,7 @@ tiled_dragonfly::read_intergroup_connections()
 }
 
 void
-tiled_dragonfly::configure_outports()
+tiled_cascade::configure_outports()
 {
   int geomid, srcid, dstid;
   for (int srcx=0; srcx < x_; ++srcx) {

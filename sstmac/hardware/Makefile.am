@@ -73,7 +73,7 @@ nobase_library_include_HEADERS = \
   switch/network_switch_fwd.h \
   topology/butterfly.h \
   topology/fully_connected.h \
-  topology/dragonfly.h \
+  topology/cascade.h \
   topology/fat_tree.h \
   topology/torus.h \
   topology/multipath_topology.h \
@@ -86,7 +86,7 @@ nobase_library_include_HEADERS = \
   topology/cartesian_topology.h \
   topology/star.h \
   topology/structured_topology.h \
-  topology/tiled_dragonfly.h \
+  topology/tiled_cascade.h \
   topology/traffic/traffic.h \
   router/router.h \
   router/router_fwd.h \
@@ -137,13 +137,13 @@ libsstmac_hw_la_SOURCES =  \
   switch/network_switch.cc \
   topology/butterfly.cc \
   topology/fully_connected.cc \
-  topology/dragonfly.cc \
+  topology/cascade.cc \
   topology/fat_tree.cc \
   topology/torus.cc \
   topology/tiled_torus.cc \
   topology/hypercube.cc \
   topology/coordinates.cc \
-  topology/tiled_dragonfly.cc \
+  topology/tiled_cascade.cc \
   topology/traffic/traffic.cc \
   router/router.cc \
   router/routable.cc \

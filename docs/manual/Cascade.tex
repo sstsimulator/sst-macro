@@ -1,24 +1,24 @@
 %% !TEX root = manual.tex
 
-\section{Dragonfly}
-\label{sec:tutorial:dragonfly}
+\section{cascade}
+\label{sec:tutorial:cascade}
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/tikz/dragonfly/dragonfly.png}
-\caption{Schematic of dragonfly with three groups showing hypercube intragroup links and high bandwidth intergroup global links}
-\label{fig:topologies:dragonfly}
+\includegraphics[width=0.7\textwidth]{figures/tikz/cascade/cascade.png}
+\caption{Schematic of cascade with three groups showing hypercube intragroup links and high bandwidth intergroup global links}
+\label{fig:topologies:cascade}
 \end{figure}
 
 As bandwidth per pin increases, arguments can be made that optimal topologies should be higher radix.
 A 3D torus is on the low-radix extreme while a hypercube is a high-radix extreme.
-Unfortunately a hypercube topology is not scalable and the radix quickly becomes too high to efficiently implement.
-A dragonfly is sometimes viewed as a generalization of flattened butterfly and hypercube topologies with ``virtual'' switches of very high radix,
+A variation on the dragonfly is the cascade topology implemented by Cray on their Aries interconnects.
+A cascade is sometimes viewed as a generalization of flattened butterfly and hypercube topologies with ``virtual'' switches of very high radix,
 not dissimilar from the fat-tree implementation with many physical commodity switches composing a single virtual switch.
-The dragonfly topology (Figure \ref{fig:topologies:dragonfly}) is actually quite simple. 
+The cascade topology (Figure \ref{fig:topologies:cascade}) is actually quite simple.
 Small groups are connected as a generalized hypercube with full connectivity within a row or column.
 Intergroup connections (global links) provide pathways for hopping between groups.
-A dragonfly is usually understood through three parameters:
+A cascade is usually understood through three parameters:
 \begin{itemize}
 \item $p$: number of nodes connected to each router
 \item $a$: number of routers in a group
@@ -29,18 +29,18 @@ For simplicity, only three example global links are show for clarity in the pict
 For the Cray X630, $a = 96$, $h=10$, and $p=4$ so that each router is connected to many other ($h=10$) groups.
 The caveat is that in many implementations global links are grouped together for $h=2$ or $3$ fat global links.
 These demonstrate well-balanced ratios.
-In general, scaling out a dragonfly should not increase the size of a group, only the number of groups.
+In general, scaling out a cascade should not increase the size of a group, only the number of groups.
 
 \subsection{Allocation and indexing}
-\label{subsec:dragonfly:allocatoin}
+\label{subsec:cascade:allocatoin}
 
-The dragonfly coordinate system is essentially the same as a 3D torus.  
+The cascade coordinate system is essentially the same as a 3D torus.
 The group 2D hypercube layout defines $X$ and $Y$ coordinates.
 The group number defines a $Z$ or $G$ coordinate.
-Thus the topology in Figure \ref{fig:topologies:dragonfly} would be specified as
+Thus the topology in Figure \ref{fig:topologies:cascade} would be specified as
 
 \begin{ViFile}
-topology.name = dragonfly
+topology.name = cascade
 topology.geometry = 3 3 3
 \end{ViFile}
 for groups of size $3 \times 3$ with a total of 3 groups.
@@ -51,7 +51,7 @@ topology.group_connections = 10
 \end{ViFile}
 
 \subsection{Routing}
-\label{subsec:dragonfly:routing}
+\label{subsec:cascade:routing}
 
 It is important to understand the distinction between link bandwidth, channel bandwidth, and pin bandwidth.
 All topologies have the same pin bandwidth and channel bandwidth (assuming they use the same technology).
@@ -59,16 +59,16 @@ Each router in a topology is constrained to have the same number of channels (ca
 The number of channels per link changes dramatically from topology to topology.
 Low radix topologies like 3D torus can allocate more channels per link, 
 giving higher bandwidth between adjacent routers.
-Dragonfly is higher radix, having many more connections but having lower bandwidth between adjacent routers.
+cascade is higher radix, having many more connections but having lower bandwidth between adjacent routers.
 While minimal routing is often sufficient on torus topologies because of the high link bandwidth,
-dragonfly will exhibit very poor performance with minimal routing.
+cascade will exhibit very poor performance with minimal routing.
 To effectively utilize all the available bandwidth, packets should have a high amount of path diversity.
 Packets sent between two routers should take as many different paths as possible to maximize the effective bandwidth point-to-point.
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/tikz/dragonfly/dflyminroute.png}
-\caption{Schematic of dragonfly showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.}
+\includegraphics[width=0.7\textwidth]{figures/tikz/cascade/dflyminroute.png}
+\caption{Schematic of cascade showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.}
 \label{fig:topologies:dflyminroute}
 \end{figure}
 
@@ -83,8 +83,8 @@ Finally, the minimal route completes by hopping within Group 2 to the final dest
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/tikz/dragonfly/dflyvaliant.png}
-\caption{Schematic of dragonfly showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.}
+\includegraphics[width=0.7\textwidth]{figures/tikz/cascade/dflyvaliant.png}
+\caption{Schematic of cascade showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.}
 \label{fig:topologies:dflyvaliantroute}
 \end{figure}
 

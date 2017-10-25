@@ -42,19 +42,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_TILED_DRAGONFLY_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_TILED_DRAGONFLY_H_INCLUDED
+#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_TILED_CASCADE_H_INCLUDED
+#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_TILED_CASCADE_H_INCLUDED
 
-#include <sstmac/hardware/topology/dragonfly.h>
+#include <sstmac/hardware/topology/cascade.h>
 #include <sstmac/hardware/topology/multipath_topology.h>
 #include <set>
 
 namespace sstmac {
 namespace hw {
 
-class tiled_dragonfly : public dragonfly, public multipath_topology
+class tiled_cascade : public cascade, public multipath_topology
 {
-  FactoryRegister("tiled_dragonfly | tiled_dfly", topology, tiled_dragonfly)
+  FactoryRegister("tiled_cascade", topology, tiled_cascade)
   private:
 
     typedef std::pair<int,int> xy_t;
@@ -94,12 +94,12 @@ class tiled_dragonfly : public dragonfly, public multipath_topology
 
  public:
   virtual std::string to_string() const override {
-    return "tiled_dragonfly";
+    return "tiled_cascade";
   }
 
-  tiled_dragonfly(sprockit::sim_parameters* params);
+  tiled_cascade(sprockit::sim_parameters* params);
 
-  virtual ~tiled_dragonfly() {}
+  virtual ~tiled_cascade() {}
 
   bool uniform_network_ports() const override {
     return true;

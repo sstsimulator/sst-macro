@@ -64,7 +64,7 @@ cpu\_affinity \paramType{vector of int} & No default & Invalid cpu IDs give unde
 \hline
 geometry \paramType{vector of int} & No default & See Topology section & Geometry configuration of the topology. For details of the keyword, users should refer to Section \ref{chapter:topologies} \\
 \hline
-name \paramType{string} & No default & torus, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
+name \paramType{string} & No default & torus, cascade, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
 \hline 
 seed \paramType{long} & System time & & If no value given, random numbers for topology will be generated from system time \\
 \hline
@@ -85,9 +85,9 @@ num\_agg\_subtrees & No default & Positive int & For a tapered fat tree with 3 l
 \hline
 num\_core\_switches & No default & Positive int & The total number of core switches in a tapered tree linking the individual aggregation trees. \\
 \hline
-group\_connections \paramType{int} & No default & Positive int & For dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
+group\_connections \paramType{int} & No default & Positive int & For cascase ir dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
 \hline
-redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
+redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartesian topologies (hypercube, cascadem, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
 \hline
 \end{tabular}
 

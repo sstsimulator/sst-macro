@@ -2837,7 +2837,7 @@ The group number defines a Z or G coordinate.
 Thus the topology in Figure [30](#fig:topologies:dragonfly) would be specified as
 
 ````
-topology.name = dragonfly
+topology.name = cascade
 topology.geometry = 3 3 3
 ````
 for groups of size 3 X 3 with a total of 3 groups.

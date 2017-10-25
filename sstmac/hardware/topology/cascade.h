@@ -42,19 +42,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_DRAGONFLY_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_DRAGONFLY_H_INCLUDED
+#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CASCADE_H_INCLUDED
+#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_CASCADE_H_INCLUDED
 
 #include <sstmac/hardware/topology/cartesian_topology.h>
 
 namespace sstmac {
 namespace hw {
 
-class dragonfly : public cartesian_topology
+class cascade : public cartesian_topology
 {
-  FactoryRegister("dragonfly | dfly", topology, dragonfly)
+  FactoryRegister("cascade", topology, cascade)
  public:
-  dragonfly(sprockit::sim_parameters* params);
+  cascade(sprockit::sim_parameters* params);
 
   typedef enum {
     x_dimension = 0,
@@ -74,7 +74,7 @@ class dragonfly : public cartesian_topology
 
  public:
   std::string to_string() const override {
-    return "dragonfly";
+    return "cascade";
   }
 
   dimension_t dim_for_port(int port){
@@ -104,7 +104,7 @@ class dragonfly : public cartesian_topology
   void configure_individual_port_params(switch_id src,
         sprockit::sim_parameters *switch_params) const override;
 
-  virtual ~dragonfly() {}
+  virtual ~cascade() {}
 
   int ndimensions() const {
     return 3;
