@@ -206,6 +206,7 @@ class sumi_transport :
   void ctor_common(sstmac::sw::software_id sid);
 
   static sstmac::sw::ftq_tag sumi_transport_tag;
+  static sstmac::sw::ftq_tag poll_delay_tag;
 
   std::string server_libname_;
 

@@ -139,6 +139,7 @@ class delete_thread_event :
 
 static sprockit::need_delete_statics<operating_system> del_statics;
 static stats_unique_tag cg_tag;
+sstmac::sw::ftq_tag operating_system::compute_tag("Compute");
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<operating_system*> operating_system::active_os_;
@@ -287,8 +288,13 @@ operating_system::sleep_until(timestamp t)
 void
 operating_system::compute(timestamp t)
 {
-  //first thing's first - make sure I have a core to execute on
+  if (ftq_trace_){
+    active_thread_->set_tag(compute_tag);
+  }
+  //Make sure I have a core to execute on
   //this will block if the thread has no core to run on
+
+
   compute_sched_->reserve_core(active_thread_);
   sleep(t);
   compute_sched_->release_core(active_thread_);

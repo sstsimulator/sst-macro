@@ -211,11 +211,6 @@ void
 ftq_calendar::collect(int event_typeid, int aid, int tid, long ticks_begin,
                       long num_ticks)
 {
-  if (event_typeid == 0)
-    //sprockit::abort("GOT ONE");
-    int i = 0;
-
-  //std::cout << "typeid: " << event_typeid << ", tid: " << tid << std::endl;
   static thread_lock lock;
   lock.lock();
   calendars_[aid]->collect(event_typeid, tid, ticks_begin, num_ticks);
@@ -243,7 +238,8 @@ app_ftq_calendar::app_ftq_calendar(int aid,
     num_ticks_epoch_(nticks_epoch),
     appname_(appname)
 {
-  int num_categories = 0;//key::num_categories();
+  // arbitrary number... better than setting it to 0 and faulting
+  int num_categories = 20; //key::num_categories();
   aggregate_.totals_ = new long long[num_categories];
   for (int i=0; i < num_categories; ++i) {
     aggregate_.totals_[i] = 0;
@@ -253,7 +249,7 @@ app_ftq_calendar::app_ftq_calendar(int aid,
 app_ftq_calendar::~app_ftq_calendar()
 {
   sprockit::delete_all(buffers_);
-  delete[] aggregate_.totals_;
+  delete aggregate_.totals_;
 }
 
 void
