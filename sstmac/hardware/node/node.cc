@@ -145,6 +145,12 @@ node::deadlock_check()
 }
 
 void
+node::deadlock_check(event* ev)
+{
+  //do nothing
+}
+
+void
 node::setup()
 {
 #if SSTMAC_INTEGRATED_SST_CORE

@@ -259,6 +259,11 @@ pisces_netlink::deadlock_check()
   inj_block_->deadlock_check();
 }
 
+void
+pisces_netlink::deadlock_check(event* ev)
+{
+}
+
 link_handler*
 pisces_netlink::payload_handler(int port) const
 {

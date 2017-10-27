@@ -156,6 +156,11 @@ pisces_packetizer::deadlock_check()
   packetizer::deadlock_check();
 }
 
+void
+pisces_packetizer::deadlock_check(event* ev)
+{
+}
+
 bool
 pisces_packetizer::spaceToSend(int vn, int num_bits)
 {

@@ -18,7 +18,7 @@ CORETESTS+= \
   test_core_apps_ping_pong_amm4 \
   test_core_apps_ping_pong_amm4_slow 
 
-#  test_core_apps_ping_all_tiled_dfly 
+#  test_core_apps_ping_all_tiled_cascade
 
 test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 6 $(top_srcdir) $@ Exact \
@@ -27,9 +27,9 @@ test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 test_sumi_%.$(CHKSUF): sumi/sst_%
 	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time 
 
-test_core_apps_ping_all_tiled_dfly.$(CHKSUF): $(SSTMACEXEC)
+test_core_apps_ping_all_tiled_cascade.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
-   $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_dfly.ini --no-wall-time 
+   $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tiled_cascade.ini --no-wall-time
 
 test_core_apps_host_compute.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 20 $(top_srcdir) $@ 't>0.1' \

@@ -136,6 +136,8 @@ class pisces_netlink :
 
   void deadlock_check() override;
 
+  void deadlock_check(event* ev) override;
+
   link_handler* payload_handler(int port) const override;
 
   link_handler* credit_handler(int port) const override;

@@ -63,7 +63,7 @@ class inter_group_wiring {
    * @param dstG
    * @return The port on which router (srcA, srcG) connects to group dstG
    */
-  virtual int group_port(int srcA, int srcG, int dstG) const = 0;
+  virtual int input_group_port(int srcA, int srcG, int srcH, int dstA, int dstG) const = 0;
 
   /**
    * @brief connected_routers
@@ -211,7 +211,7 @@ class dragonfly : public cartesian_topology
   virtual void configure_geometric_paths(std::vector<int> &redundancies);
 
   coordinates switch_coords(switch_id sid) const override {
-    coordinates c;
+    coordinates c(2);
     c[0] = computeA(sid);
     c[1] = computeG(sid);
     return c;

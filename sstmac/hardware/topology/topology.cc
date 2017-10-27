@@ -267,7 +267,7 @@ topology::label(uint32_t comp_id) const
   if (comp_id < num_nodes()){
     return node_label(comp_id);
   } else {
-    return switch_label(comp_id);
+    return switch_label(comp_id - num_nodes());
   }
 
 }

@@ -241,8 +241,7 @@ cascade::minimal_route_to_switch(
               "gateway (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG,
               interX, interY, srcG, path.outport());
-  }
-  else if (srcX != dstX){
+  } else if (srcX != dstX){
     path.set_outport( x_port(dstX) );
     top_debug("cascade routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG, path.outport());

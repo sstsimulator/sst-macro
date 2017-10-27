@@ -82,9 +82,9 @@ class event_handler :
 
   virtual void handle(event* ev) = 0;
 
-  virtual void deadlock_check(event* ev){}
+  virtual void deadlock_check(event* ev) = 0;
   
-  virtual void deadlock_check(){}
+  virtual void deadlock_check() = 0;
 
  private:
   uint32_t comp_id_;
@@ -114,6 +114,26 @@ struct gens<0, S...> {
   typedef seq<S...> type;
 };
 
+template<typename C>
+struct has_deadlock_check {
+private:
+    template<typename T>
+    static constexpr auto check(T*)
+    -> typename
+        std::is_same<
+            decltype( std::declval<T>().deadlock_check() ),
+            void
+        >::type;  // attempt to call it and see if the return type is correct
+
+    template<typename>
+    static constexpr std::false_type check(...);
+
+    typedef decltype(check<C>(0)) type;
+
+public:
+    static constexpr bool value = type::value;
+};
+
 template <class Cls, typename Fxn, class ...Args>
 class member_fxn_handler_impl :
   public member_fxn_handler
@@ -138,11 +158,39 @@ class member_fxn_handler_impl :
   {
   }
 
+  void deadlock_check() override {
+    local_deadlock_check();
+  }
+
+  void deadlock_check(event* ev) override {
+    local_deadlock_check(ev);
+  }
+
  private:
   template <int ...S>
   void dispatch(event* ev, seq<S...>){
     (obj_->*fxn_)(ev, std::get<S>(params_)...);
   }
+
+  template <class T = Cls>
+  typename std::enable_if<has_deadlock_check<T>::value>::type
+  local_deadlock_check() {
+    obj_->deadlock_check();
+  }
+
+  template <class T = Cls>
+  typename std::enable_if<has_deadlock_check<T>::value>::type
+  local_deadlock_check(event* ev) {
+    obj_->deadlock_check(ev);
+  }
+
+  template <class T = Cls>
+  typename std::enable_if<!has_deadlock_check<T>::value>::type
+  local_deadlock_check() {}
+
+  template <class T = Cls>
+  typename std::enable_if<!has_deadlock_check<T>::value>::type
+  local_deadlock_check(event* ev) {}
 
   std::tuple<Args...> params_;
   Fxn fxn_;

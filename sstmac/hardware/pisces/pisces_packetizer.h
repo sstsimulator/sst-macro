@@ -98,6 +98,8 @@ class pisces_packetizer :
 
   void deadlock_check() override;
 
+  void deadlock_check(event* ev) override;
+
  protected:
   void recv_packet_common(pisces_payload* pkt);
 

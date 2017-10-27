@@ -67,12 +67,12 @@ Packets sent between two routers should take as many different paths as possible
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/tikz/cascade/dflyminroute.png}
+\includegraphics[width=0.7\textwidth]{figures/tikz/cascade/cascademinroute.png}
 \caption{Schematic of cascade showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.}
-\label{fig:topologies:dflyminroute}
+\label{fig:topologies:cascademinroute}
 \end{figure}
 
-Minimal routing itself has a few complications (Figure \ref{fig:topologies:dflyminroute}).  
+Minimal routing itself has a few complications (Figure \ref{fig:topologies:cascademinroute}).
 Each router only has a few global links.  
 Thus, traveling from e.g. the blue router at X=3,Y=2,G=0 to the red router at X=1,Y=2,G=2, there is no direct link between the routers.
 Furthermore, there is no direct link between Groups 0 and 2.
@@ -83,9 +83,9 @@ Finally, the minimal route completes by hopping within Group 2 to the final dest
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/tikz/cascade/dflyvaliant.png}
+\includegraphics[width=0.7\textwidth]{figures/tikz/cascade/cascadevaliant.png}
 \caption{Schematic of cascade showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.}
-\label{fig:topologies:dflyvaliantroute}
+\label{fig:topologies:cascadevaliantroute}
 \end{figure}
 
 To improve on minimal routing, global routing strategies are required (global routing is distinguished here from adaptive routing).  

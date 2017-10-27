@@ -72,6 +72,9 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
     spkt_abort_printf("dragonfly topology geometry should have 2 entries: routers per group, num groups");
   }
 
+  a_ = dimensions_[0];
+  g_ = dimensions_[1];
+
   if (params->has_param("group_connections")){
     h_ = params->get_int_param("group_connections");
   } else {
@@ -90,7 +93,7 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
   max_ports_intra_network_ = a_ + g_;
   eject_geometric_id_ = max_ports_intra_network_;
 
-  group_wiring_ = inter_group_wiring::factory::get_optional_param("inter_group", "consecutive", params, this);
+  group_wiring_ = inter_group_wiring::factory::get_optional_param("inter_group", "circulant", params, this);
 }
 
 void
@@ -114,21 +117,33 @@ dragonfly::minimal_route_to_switch(
 {
   path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
 
+  //see if intra-group
   int srcG = computeG(src);
   int dstG = computeG(dst);
-  int dstA = computeA(dst);
   if (srcG == dstG){
+    int dstA = computeA(dst);
     path.set_outport(dstA);
     return;
   }
 
-  int connected[32];
-  int numConns = group_wiring_->connected_to_group(srcG, dstG, connected);
-
   int srcA = computeA(src);
-  int srcRotater = srcA % h_;
+  //see if inter-group, but direct connection to that group
+  int connected[32];
+  int numConns = group_wiring_->connected_routers(srcA, srcG, connected);
+  for (int c=0; c < numConns; ++c){
+    int testG = computeG(connected[c]);
+    if (testG == dstG){
+      path.set_outport(c + a_);
+      return;
+    }
+  }
+
+  //inter-group and we need local hop to get there
+  numConns = group_wiring_->connected_to_group(srcG, dstG, connected);
+  int srcRotater = srcA % numConns;
 
   path.set_outport(connected[srcRotater]);
+  path.set_metadata_bit(routable::crossed_timeline);
 }
 
 int
@@ -209,7 +224,7 @@ dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) con
       conn.dst = dst;
       conn.src_outport = h + a_;
       int dstA = computeA(dst);
-      conn.dst_inport = group_wiring_->group_port(dstA, dstG, myG) + a_;
+      conn.dst_inport = group_wiring_->input_group_port(myA, myG, h, dstA, dstG) + a_;
     }
   }
   conns.resize(cidx);
@@ -242,22 +257,28 @@ inter_group_wiring::inter_group_wiring(sprockit::sim_parameters *params, dragonf
 {
 }
 
-class consecutive_group_wiring : public inter_group_wiring
+static inline int mod(int a, int b){
+  int rem = a % b;
+  return rem < 0 ? rem + b : rem;
+}
+
+class circulant_group_wiring : public inter_group_wiring
 {
-  FactoryRegister("consecutive", inter_group_wiring, consecutive_group_wiring)
+  FactoryRegister("circulant", inter_group_wiring, circulant_group_wiring)
  public:
-  consecutive_group_wiring(sprockit::sim_parameters* params, dragonfly* top) :
+  circulant_group_wiring(sprockit::sim_parameters* params, dragonfly* top) :
     inter_group_wiring(params, top)
   {
+    if (h_ % 2){
+      spkt_abort_printf("group connections must be even for circulant inter-group pattern");
+    }
   }
 
-  int group_port(int srcA, int srcG, int dstG) const override {
-    int dstH = dstG - srcA*h_;
-    if (dstG < srcG){
-      return dstH;
+  int input_group_port(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
+    if (srcH % 2 == 0){
+      return srcH + 1;
     } else {
-      dstH--;
-      return dstH;
+      return srcH - 1;
     }
   }
 
@@ -268,22 +289,23 @@ class consecutive_group_wiring : public inter_group_wiring
    * @param connected [in-out] The routers (switch id) for each inter-group interconnection
    * @return The number of routers in connected array
    */
-  int connected_routers(int a, int g, int connected[]) const override {
-    int conn = 0;
-    for (int h=0; h < h_; ++h){
-      int dstG = a*h_ + h;
-      int dstA = 0;
-      if (dstG < g){
-        dstA = (g - 1) / h_;
-      } else {
-        dstA = g / h_;
+  int connected_routers(int srcA, int srcG, int connected[]) const override {
+    int idx = 0;
+    int dstA = srcA;
+    int half = h_  /2;
+    for (int h=1; h <= half; ++h){
+      int plusG = mod(srcG + srcA*half + h, g_);
+      if (plusG != srcG){
+        switch_id dst = plusG*a_ + dstA;
+        connected[idx++] = dst; //full switch ID
       }
-      if (dstG != g){
-        switch_id dst = dstG*a_ + dstA;
-        connected[conn++] = dst; //full switch ID
+      int minusG = mod(srcG - srcA*half - h, g_);
+      if (minusG != srcG){
+        switch_id dst = minusG*a_ + dstA;
+        connected[idx++] = dst; //full switch ID
       }
     }
-    return conn;
+    return idx;
   }
 
   /**
@@ -295,15 +317,21 @@ class consecutive_group_wiring : public inter_group_wiring
    * @return The number of routers in group srcG with connections to dstG
    */
   int connected_to_group(int srcG, int dstG, int connected[]) const override {
-    if (dstG >= srcG){
-      dstG--; //mapping formula changes depending on relationship between src/dst
+    int tmp[32];
+    int idx = 0;
+    for (int a=0; a < a_; ++a){
+      int nc = connected_routers(a, srcG, tmp);
+      for (int c=0; c < nc; ++c){
+        int g = tmp[c] / a_;
+        if (dstG == g){
+          connected[idx++] = a;
+          break;
+        }
+      }
     }
-    for (int h=0; h < h_; ++h){
-      int srcA = (dstG - h) / h_;
-      connected[h] = srcA;
-    }
-    return h_;
+    return idx;
   }
+
 };
 
 

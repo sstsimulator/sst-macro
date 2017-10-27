@@ -446,7 +446,7 @@ class local_link : public event_link {
   }
 
   std::string to_string() const override {
-    return handler_->to_string();
+    return dst_->to_string();
   }
 
   void handle(event* ev) override {

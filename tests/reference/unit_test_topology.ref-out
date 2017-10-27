@@ -170,14 +170,14 @@ SUCCESS: NN partner top_cascade.cc:71
 SUCCESS: NN partner top_cascade.cc:75
 SUCCESS: NN partner top_cascade.cc:79
 SUCCESS: cascade cast topology top_cascade.cc:96
-SUCCESS: dfly switch id top_cascade.cc:109
-SUCCESS: dfly coords top_cascade.cc:110
-SUCCESS: dfly switch id top_cascade.cc:109
-SUCCESS: dfly coords top_cascade.cc:110
-SUCCESS: dfly switch id top_cascade.cc:109
-SUCCESS: dfly coords top_cascade.cc:110
-SUCCESS: dfly switch id top_cascade.cc:109
-SUCCESS: dfly coords top_cascade.cc:110
+SUCCESS: cascade switch id top_cascade.cc:109
+SUCCESS: cascade coords top_cascade.cc:110
+SUCCESS: cascade switch id top_cascade.cc:109
+SUCCESS: cascade coords top_cascade.cc:110
+SUCCESS: cascade switch id top_cascade.cc:109
+SUCCESS: cascade coords top_cascade.cc:110
+SUCCESS: cascade switch id top_cascade.cc:109
+SUCCESS: cascade coords top_cascade.cc:110
 SUCCESS: route cascade dim top_cascade.cc:120
 SUCCESS: route cascade dir top_cascade.cc:121
 SUCCESS: cascade dim/dir top_cascade.cc:123
@@ -188,14 +188,14 @@ SUCCESS: route cascade dim top_cascade.cc:144
 SUCCESS: route cascade dir top_cascade.cc:145
 SUCCESS: cascade dim/dir top_cascade.cc:147
 SUCCESS: cascade cast topology top_cascade.cc:167
-SUCCESS: dfly switch id top_cascade.cc:180
-SUCCESS: dfly coords top_cascade.cc:181
-SUCCESS: dfly switch id top_cascade.cc:180
-SUCCESS: dfly coords top_cascade.cc:181
-SUCCESS: dfly switch id top_cascade.cc:180
-SUCCESS: dfly coords top_cascade.cc:181
-SUCCESS: dfly switch id top_cascade.cc:180
-SUCCESS: dfly coords top_cascade.cc:181
+SUCCESS: cascade switch id top_cascade.cc:180
+SUCCESS: cascade coords top_cascade.cc:181
+SUCCESS: cascade switch id top_cascade.cc:180
+SUCCESS: cascade coords top_cascade.cc:181
+SUCCESS: cascade switch id top_cascade.cc:180
+SUCCESS: cascade coords top_cascade.cc:181
+SUCCESS: cascade switch id top_cascade.cc:180
+SUCCESS: cascade coords top_cascade.cc:181
 SUCCESS: route cascade dim top_cascade.cc:190
 SUCCESS: route cascade dir top_cascade.cc:191
 SUCCESS: cascade dim/dir top_cascade.cc:193
