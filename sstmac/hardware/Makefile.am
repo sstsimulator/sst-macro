@@ -149,6 +149,7 @@ libsstmac_hw_la_SOURCES =  \
   topology/traffic/traffic.cc \
   router/router.cc \
   router/routable.cc \
+  router/dragonfly_minimal.cc \
   router/fat_tree_router.cc \
   router/minimal_routing.cc \
   router/multipath_routing.cc \

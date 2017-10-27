@@ -23,6 +23,7 @@ CORETESTS+= \
   test_core_apps_ping_all_cascade \
   test_core_apps_ping_all_cascade_valiant  \
   test_core_apps_ping_all_dragonfly \
+  test_core_apps_ping_all_dragonfly_minimal \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 
 

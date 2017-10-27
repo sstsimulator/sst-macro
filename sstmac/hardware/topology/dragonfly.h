@@ -221,6 +221,10 @@ class dragonfly : public cartesian_topology
     return get_uid(coords[0], coords[1]);
   }
 
+  inter_group_wiring* group_wiring() const {
+    return group_wiring_;
+  }
+
  private:
   int a_;
   int h_;

@@ -261,8 +261,7 @@ cascade::minimal_distance(switch_id src, switch_id dst) const
   if (srcG == dstG){
     if (srcX != dstX) ++dist;
     if (srcY != dstY) ++dist;
-  }
-  else {
+  } else {
     routable::path path;
     int interX;
     int interY;
