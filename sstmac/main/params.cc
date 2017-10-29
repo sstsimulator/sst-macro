@@ -196,12 +196,16 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
   remap_deprecated_params(params);
   remap_latency_params(params);
 
-  int max_nproc = native::manager::compute_max_nproc(params);
-  if (max_nproc == 0){
-    params->print_scoped_params(std::cerr);
-    spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
+  sprockit::sim_parameters* top_params = params->get_namespace("topology");
+  bool auto_top = top_params->get_optional_bool_param("auto", false);
+  if (auto_top){
+    int max_nproc = native::manager::compute_max_nproc(params);
+    if (max_nproc == 0){
+      params->print_scoped_params(std::cerr);
+      spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
+    }
+    resize_topology(max_nproc, params, verbose);
   }
-  resize_topology(max_nproc, params, verbose);
 
   //here is where we might need to build supplemental params
   bool has_cong_model = params->has_param("congestion_model");
@@ -245,9 +249,10 @@ void
 resize_topology(int max_nproc, sprockit::sim_parameters *params, bool verbose)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  if (top_params->has_param("geometry") || top_params->get_param("name") != "torus"){
-    return; //don't need this
+  if (top_params->has_param("name")){
+    spkt_abort_printf("cannot specify topology name with auto topology");
   }
+  top_params->add_param_override("name", "torus");
 
   //create a topology matching nproc
   int x, y, z;

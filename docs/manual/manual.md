@@ -29,7 +29,7 @@ category: SSTDocumentation
             - [Build SST/macro element library](#subsec:buildElementLib)
          - [2.1.4: Post-Build](#subsec:postbuild)
          - [2.1.5: GNU pth for user-space threading](#subsubsec:pth)
-         - [2.1.6: Building Boost (no longer required)](#subsubsec:boost)
+         - [2.1.6: Boost 1.65 and fcontext](#subsubsec:boost)
          - [2.1.7: Known Issues](#subsec:build:issues)
       - [Section 2.2: Building DUMPI](#sec:building:dumpi)
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
@@ -95,9 +95,9 @@ category: SSTDocumentation
       - [Section 4.4: Fat Tree](#sec:tutorial:fattree)
          - [4.4.1: Allocation and indexing](#subsec:fattree:allocation)
          - [4.4.2: Routing](#subsec:fattree:routing)
-      - [Section 4.5: Dragonfly](#sec:tutorial:dragonfly)
-         - [4.5.1: Allocation and indexing](#subsec:dragonfly:allocatoin)
-         - [4.5.2: Routing](#subsec:dragonfly:routing)
+      - [Section 4.5: Cascade](#sec:tutorial:cascade)
+         - [4.5.1: Allocation and indexing](#subsec:cascade:allocatoin)
+         - [4.5.2: Routing](#subsec:cascade:routing)
    - [Chapter 5: External Applications and Skeletonization](#chap:appsAndSkeletonization)
       - [Section 5.1: Basic Application porting](#sec:skel:basic)
          - [5.1.1: Loading external skeletons with the standalone core](#subsec:externalAppStandalone)
@@ -300,7 +300,7 @@ The following are dependencies for SST-macro.
 
 
 -   (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section [2.1.1](#subsec:build:downloading)).
--   (Mac) You need the GNU pth library. Downloadable from MacPorts (see Section [2.1.5](#subsubsec:pth))
+-   (Mac) You need either the GNU pth library or Boost fcontext. GNU pth is downloadable from MacPorts (see Section [2.1.5](#subsubsec:pth))
 -   Autoconf: 2.68 or later
 -   Automake: 1.11.1 or later
 -   Libtool: 2.4 or later
@@ -309,6 +309,7 @@ The following are dependencies for SST-macro.
 -   (optional) Doxygen and Graphviz are needed to build the documentation.
 -   (optional) KCacheGrind or QCacheGrind to display call graphs
 -   (optional) Clang development libraries to enable SST source-to-source compiler
+-   (optional) Boost 1.65 and above for fcontext user-space threading.
 
 #### 2.1.3: Configuration and Building<a name="subsec:build:configure"></a>
 
@@ -344,7 +345,8 @@ The workflow for installing and running on the standalone SST/macro core:
 
 The recommended mode for maximum flexibility is to run using the SST core downloadable from http://sst-simulator.org/SSTPages/SSTMainDownloads.
 Building and installing sets up the discrete event simulation core required for all SST elements.
-SST core no longer has Boost dependencies! Directions for building Boost (if desired) are still below in [2.1.6](#subsubsec:boost)
+SST core no longer has Boost dependencies! Directions for building Boost (if desired) are still below in [2.1.6](#subsubsec:boost).
+Boost is still useful for optimal performance through the fcontext library. 
 
 ##### Build SST/macro element library<a name="subsec:buildElementLib"></a>
 
@@ -421,32 +423,59 @@ For MacPorts installation, this means configuring SST/macro with:
 ../configure --with-pth=/opt/local
 ````
 
-#### 2.1.6: Building Boost (no longer required)<a name="subsubsec:boost"></a>
+#### 2.1.6: Boost 1.65 and fcontext<a name="subsubsec:boost"></a>
 
 
-We recommend two files: `user-config.jam` to configure the Boost compiler flags and a `runme.sh` that bootstraps, compiles, and installs the prerequisite Boost libraries. For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
+Boost is no longer required for SST core.
+However, Boost 1.65 and above support the fcontext library for user-space threading.
+This is provides much greater performance than GNU pth or standard Linux ucontext.
+Users may see as much as a 20\
+
+You will need a `user-config.jam` to configure the Boost compiler flags.
+You then need to bootstrap, compile, and install the prerequisite Boost libraries. 
+For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
 
 ````
-using gcc : : $PATH_TO_MPIC++  : <compileflags>-std=c++1y ;
+using gcc : : $PATH_TO_C++  : <compileflags>-std=c++1y ;
 ````
-For Clang on Mac, use:
+For clang, use e.g.
 
 ````
-using clang : : $PATH_TO_CLANG_MPIC++  : <compileflags>-std=c++1y <linkflags>-stdlib=libc++
+using clang : : $PATH_TO_CLANG++  : <compileflags>-std=c++1y <linkflags>-stdlib=libc++
 ````
-
-We recommend Boost 1.59.  Other Boost versions should work as well, but this seems the most stable.  In the top-level Boost directory, make a script `runme.sh` that contains:
+In the top-level Boost directory, run:
 
 ````
 ./bootstrap.sh \
-  --with-libraries=program_options,serialization,filesystem \
-  --with-toolset=gcc
+  --with-libraries=context \
+  --with-toolset=clang
 
 ./b2 ---prefix=$INSTALL
-./b2 --layout=tagged --prefix=$INSTALL
 ````
+The toolset can be changed to use gcc by replacing clang with gcc in each of the `user-config.jam` and run commands.
+The installation prefix should be set to the desired folder.
 
-The toolset can be changed from gcc to clang, as needed.  For maximum safety, Boost should install both "tagged" versions of libraries and un-tagged versions.  Once Boost is installed with these options, configuration and installation of SST core should be straightforward following documentation in the core library.
+Once installed, fcontext can be used in SST/macro by configuring with:
+````
+../configure --with-fcontext=$INSTALL
+````
+using the same installation folder used for Boost. 
+fcontext is not the default context-switching library for SST due to rpath problems on certain platforms.
+GNU pth and ucontext are used by default instead.
+To activate fcontext, you can either set the environment variable:
+
+````
+SSTMAC_THREADING=fcontext
+````
+or in the parameter file specify (more details in Section [3.1](#sec:parameters)):
+
+````
+node {
+ os {
+  context = fcontext
+ }
+}
+````
 
 #### 2.1.7: Known Issues<a name="subsec:build:issues"></a>
 
@@ -564,7 +593,7 @@ Obtain the following from http://releases.llvm.org/download.html.
 
 Setting up the folders can be done automatically using the `setup-clang` script in `bin/tools` folder in sst-macro. Put all of downloaded tarballs in a folder, e.g. `clang-llvm`. Then run `setup-clang` in the directory. 
 It will automatically place files where LLVM needs them.
-LLVM is the ``driver" for the entire build. Everything else is a subcomponent. 
+LLVM is the "driver" for the entire build. Everything else is a subcomponent. 
 The setup script places each tarball in the following subfolders of the main LLVM folder
 
 
@@ -575,7 +604,8 @@ The setup script places each tarball in the following subfolders of the main LLV
 -   projects/openmp
 
 Only Clang is a strict dependency. Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
-You should not lunger need to use Clang to build Clang, but for the most stable results you should a pre-existing Clang compiler to build the Clang development libraries.
+You no longer need to use Clang to build Clang. 
+For the most stable results, though, you should a pre-existing Clang compiler to build the Clang development libraries.
 
 ````
 cmake ../llvm \
@@ -2481,7 +2511,7 @@ The torus is the simplest topology and fairly easy to understand.
 We have already discussed basic indexing and allocation as well as routing.
 More complicated allocation schemes with greater fine-grained control can be used such as the
 coordinate allocation scheme (see hypercube below for examples) and the node ID allocation scheme (see fat tree below for examples).
-More complicated Valiant and UGAL routing schemes are shown below for hypercube and dragonfly,
+More complicated Valiant and UGAL routing schemes are shown below for hypercube and Cascade,
 but apply equally well to torus.
 
 For torus we illustrate here the Cartesian allocation for generating regular Cartesian subsets.
@@ -2542,7 +2572,7 @@ The last entry in `cart_sizes` indicates that both nodes on each switch should b
 
 
 
-Although never used at scale in a production system, the generalized hypercube is an important topology to understand, particularly for flattened butterfly and dragonfly.
+Although never used at scale in a production system, the generalized hypercube is an important topology to understand, particularly for flattened butterfly and Cascade.
 The (k,n) generalized hypercube is geometrically an N-dimensional torus with each dimension having size k (although dimension sizes need not be equal).
 Here we show a (4,2) generalized hypercube (Figure [24](#fig:topologies:hypercubeConnected)).  This would be specified in SST as:
 
@@ -2796,26 +2826,26 @@ In a more complicated scheme, Switch 1 could adaptively route selecting either S
 
 
 
-### Section 4.5: Dragonfly<a name="sec:tutorial:dragonfly"></a>
+### Section 4.5: Cascade<a name="sec:tutorial:cascade"></a>
 
 
 
 
-![Figure 30: Schematic of dragonfly with three groups showing hypercube intragroup links and high bandwidth intergroup global links](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dragonfly.png) 
+![Figure 30: Schematic of cascade with three groups showing hypercube intragroup links and high bandwidth intergroup global links](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascade.png) 
 
-*Figure 30: Schematic of dragonfly with three groups showing hypercube intragroup links and high bandwidth intergroup global links*
+*Figure 30: Schematic of cascade with three groups showing hypercube intragroup links and high bandwidth intergroup global links*
 
 
 
 As bandwidth per pin increases, arguments can be made that optimal topologies should be higher radix.
 A 3D torus is on the low-radix extreme while a hypercube is a high-radix extreme.
-Unfortunately a hypercube topology is not scalable and the radix quickly becomes too high to efficiently implement.
-A dragonfly is sometimes viewed as a generalization of flattened butterfly and hypercube topologies with "virtual" switches of very high radix,
+A variation on the dragonfly is the cascade topology implemented by Cray on their Aries interconnects.
+A cascade is sometimes viewed as a generalization of flattened butterfly and hypercube topologies with "virtual" switches of very high radix,
 not dissimilar from the fat-tree implementation with many physical commodity switches composing a single virtual switch.
-The dragonfly topology (Figure [30](#fig:topologies:dragonfly)) is actually quite simple. 
+The cascade topology (Figure [30](#fig:topologies:cascade)) is actually quite simple.
 Small groups are connected as a generalized hypercube with full connectivity within a row or column.
 Intergroup connections (global links) provide pathways for hopping between groups.
-A dragonfly is usually understood through three parameters:
+A cascade is usually understood through three parameters:
 
 -   p: number of nodes connected to each router
 -   a: number of routers in a group
@@ -2825,16 +2855,16 @@ For simplicity, only three example global links are show for clarity in the pict
 For the Cray X630, a = 96, h=10, and p=4 so that each router is connected to many other (h=10) groups.
 The caveat is that in many implementations global links are grouped together for h=2 or 3 fat global links.
 These demonstrate well-balanced ratios.
-In general, scaling out a dragonfly should not increase the size of a group, only the number of groups.
+In general, scaling out a cascade should not increase the size of a group, only the number of groups.
 
-#### 4.5.1: Allocation and indexing<a name="subsec:dragonfly:allocatoin"></a>
+#### 4.5.1: Allocation and indexing<a name="subsec:cascade:allocatoin"></a>
 
 
 
-The dragonfly coordinate system is essentially the same as a 3D torus.  
+The cascade coordinate system is essentially the same as a 3D torus.
 The group 2D hypercube layout defines X and Y coordinates.
 The group number defines a Z or G coordinate.
-Thus the topology in Figure [30](#fig:topologies:dragonfly) would be specified as
+Thus the topology in Figure [30](#fig:topologies:cascade) would be specified as
 
 ````
 topology.name = cascade
@@ -2847,7 +2877,7 @@ To complete the specification, the number of global links (h) for each router mu
 topology.group_connections = 10
 ````
 
-#### 4.5.2: Routing<a name="subsec:dragonfly:routing"></a>
+#### 4.5.2: Routing<a name="subsec:cascade:routing"></a>
 
 
 
@@ -2857,20 +2887,20 @@ Each router in a topology is constrained to have the same number of channels (ca
 The number of channels per link changes dramatically from topology to topology.
 Low radix topologies like 3D torus can allocate more channels per link, 
 giving higher bandwidth between adjacent routers.
-Dragonfly is higher radix, having many more connections but having lower bandwidth between adjacent routers.
+cascade is higher radix, having many more connections but having lower bandwidth between adjacent routers.
 While minimal routing is often sufficient on torus topologies because of the high link bandwidth,
-dragonfly will exhibit very poor performance with minimal routing.
+cascade will exhibit very poor performance with minimal routing.
 To effectively utilize all the available bandwidth, packets should have a high amount of path diversity.
 Packets sent between two routers should take as many different paths as possible to maximize the effective bandwidth point-to-point.
 
 
-![Figure 31: Schematic of dragonfly showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dflyminroute.png) 
+![Figure 31: Schematic of cascade showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascademinroute.png) 
 
-*Figure 31: Schematic of dragonfly showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.*
+*Figure 31: Schematic of cascade showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.*
 
 
 
-Minimal routing itself has a few complications (Figure [31](#fig:topologies:dflyminroute)).  
+Minimal routing itself has a few complications (Figure [31](#fig:topologies:cascademinroute)).
 Each router only has a few global links.  
 Thus, traveling from e.g. the blue router at X=3,Y=2,G=0 to the red router at X=1,Y=2,G=2, there is no direct link between the routers.
 Furthermore, there is no direct link between Groups 0 and 2.
@@ -2880,15 +2910,15 @@ This router has a global link to Group 2, allowing the packet to hop to the next
 Finally, the minimal route completes by hopping within Group 2 to the final destination.
 
 
-![Figure 32: Schematic of dragonfly showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/dragonfly/dflyvaliant.png) 
+![Figure 32: Schematic of cascade showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascadevaliant.png) 
 
-*Figure 32: Schematic of dragonfly showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.*
+*Figure 32: Schematic of cascade showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.*
 
 
 
 To improve on minimal routing, global routing strategies are required (global routing is distinguished here from adaptive routing).  
 Global essentially means "not minimal" and spreads packets along many different paths.
-The simplest global routing strategy is Valiant routing, which falls in the global, oblivious category (Figure [32](#fig:topologies:dflyvaliantroute)).
+The simplest global routing strategy is Valiant routing, which falls in the global, oblivious category (Figure ).
 Oblivious simply means packets are scattered randomly without measuring congestion.
 In Valiant routing, each packet does the following:
 
@@ -2896,7 +2926,7 @@ In Valiant routing, each packet does the following:
 -   Route minimally to random node
 -   Route minimally from random node to destination node
 This is somewhat counterintuitive at first.
-Rather than go directly to the destination node, packets go out of their way to a random node, shown in Figure [32](#fig:topologies:dflyvaliantroute) as the yellow router.
+Rather than go directly to the destination node, packets go out of their way to a random node, shown in Figure  as the yellow router.
 Thus, routing from the blue router in Group 0 to the red router in Group 2 first follows the minimal path (green routers) to the randomly selected yellow router in Group 1. 
 From there, a second minimal path is taken through the orange routers to the final destination.
 In cases with high congestion or even for large messages on a quiet network, this actually improves performance.
@@ -3489,7 +3519,8 @@ The allowed parameter types are:
 |-------------|---------|---------|-------------|
 | sst\_nthread (int) | 1 | Positive int | Only relevant for multi-threading. Specifying more threads than cores can lead to deadlock. |
 | timestamp\_resolution (time) | 1ps |  | Specifies the length of time occupied by 1 timestamp tick - the smallest resolvable time difference. Numerical stability depends on this parameter matching the time scales of the simulation. |
-| serialization\_buffer\_size (byte length) | 512B |  | Size to allocate for buffers in a pool of serialization buffers. This should set be large enough to handle serialization of most messages, but not so large that significant space is wasted. |
+| serialization\_buffer\_size (byte length) | 16 KB |  | Size to allocate for buffering point-to-point sends in parallel. This should set be large enough to handle serialization of all messages in a given time window, but not so large that significant space is wasted. |
+| backup\_buffer\_size (byte length) | 1 MB |  | Size to allocate for special overflow buffers when the standard buffer is overrun. This is the base size and continues to grow if buffers overflow again in a time window. This should be large enough so that buffers do not continuously overflow, but not so large that memory gets filled up. |
 | cpu\_affinity (vector of int) | No default | Invalid cpu IDs give undefined behavior | When in multi-threading, specifies the list of core IDs that threads will be pinned to. |
 
 ### Section 7.2: Namespace "topology"<a name="sec:topologyParams"></a>
@@ -3500,7 +3531,8 @@ The allowed parameter types are:
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
 | geometry (vector of int) | No default | See Topology section | Geometry configuration of the topology. For details of the keyword, users should refer to Section [4](#chapter:topologies) |
-| name (string) | No default | torus, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree | The name of the topology to build. For details, see Section [4](#chapter:topologies) |
+| auto (bool) | false | Whether to auto-generate the topology based on the application size. |
+| name (string) | No default | torus, cascade, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree | The name of the topology to build. For details, see Section [4](#chapter:topologies) |
 | seed (long) | System time |  | If no value given, random numbers for topology will be generated from system time |
 | concentration (int) | 1 | Positive int | The number of nodes per network switch. For indirect networks, this is the number of nodes per leaf switch. |
 | num\_leaf\_switches (int) | No default | Positive int | Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. Depending on how the fat tree is specified, this number may not be required. |
@@ -3510,8 +3542,8 @@ The allowed parameter types are:
 | num\_agg\_switches\_per\_subtree | No default | Positive int | For a tapered tree, the number of aggregations witches per aggregation tree linking injection switches to the core. |
 | num\_agg\_subtrees | No default | Positive int | For a tapered fat tree with 3 levels (injection, aggregation, core), this gives the number, N(agg), of aggregation subtrees. To find the total number, N(tot) of injection (leaf) switches, we have N(tot) = N(agg) X N(inj). |
 | num\_core\_switches | No default | Positive int | The total number of core switches in a tapered tree linking the individual aggregation trees. |
-| group\_connections (int) | No default | Positive int | For dragonfly, the number of intergroup connections on each switch in a Dragonfly group |
-| redundant (vector of int) | vector of 1's | Positive ints | For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. |
+| group\_connections (int) | No default | Positive int | For cascase ir dragonfly, the number of intergroup connections on each switch in a Dragonfly group |
+| redundant (vector of int) | vector of 1's | Positive ints | For Cartesian topologies (hypercube, cascadem, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. |
 
 ### Section 7.3: Namespace "node"<a name="sec:nodeParams"></a>
 
@@ -3659,9 +3691,8 @@ All other parameters can be filled in from `node.nic.injection`.
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
 | compute\_scheduler (string) | simple | simple, cpuset | The level of detail for scheduling compute tasks to cores. Simple looks for any empty core. cpuset allows bitmasks to be set for defining core affinities. |
-| stack\_size (byte length) | 32KB |  | The size of user-space thread stack to allocate for each virtual application |
-| stack\_protect (bool) | false |  | Whether to put special mprotect regions around the thread stacks to turn stack overflow errors into seg faults |
-| stack\_chunk\_size (byte length) | 1MB |  | The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed. |
+| stack\_size (byte length) | 64 KB |  | The size of user-space thread stack to allocate for each virtual application |
+| stack\_chunk\_size (byte length) | 1 MB |  | The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed. |
 
 ##### Namespace ``node.os.call\_graph"<a name="subsubsec:node:os:callGraph:Params"></a>
 
@@ -3773,7 +3804,7 @@ All other parameters can be filled in from `node.nic.injection`.
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| name (string) | No default | minimal, valiant, ugal, fat\_tree | The name of the routing algorithm to use for routing packets. |
+| name (string) | No default | minimal, valiant, ugal, dragonfly\_minimal, fat\_tree | The name of the routing algorithm to use for routing packets. |
 | ugal\_threshold (int) | 0 |  | The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. |
 
 #### 7.6.2: Namespace "switch.output\_buffer"<a name="subsec:switch:outputBuffer:Params"></a>

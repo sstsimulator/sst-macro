@@ -67,11 +67,12 @@ struct opts {
   bool low_res_timer;
   std::string cpu_affinity;
   std::string benchmark;
+  std::string output_graphviz;
 
   opts() :
     help(0),
     debug(""),
-    params(0),
+    params(nullptr),
     configfile(""),
     got_config_file(false),
     low_res_timer(false),
@@ -143,7 +144,8 @@ void try_main(sprockit::sim_parameters* params,
    int argc, char **argv,
    bool params_only = false);
 
-void run_params(parallel_runtime* rt,
+void run_params(opts& oo,
+  parallel_runtime* rt,
   sprockit::sim_parameters* params,
    sim_stats& stats);
 

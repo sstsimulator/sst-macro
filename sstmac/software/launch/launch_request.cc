@@ -90,6 +90,7 @@ software_launch_request::software_launch_request(sprockit::sim_parameters *param
     std::string metafile = params->get_param("dumpi_metaname");
     sw::dumpi_meta dm(metafile);
     nproc_ = dm.num_procs();
+    procs_per_node_ = 1;
   } else {
     nproc_ = params->get_int_param("size");
     procs_per_node_ = params->get_optional_int_param("tasks_per_node", 1);

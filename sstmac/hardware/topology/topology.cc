@@ -68,6 +68,7 @@ RegisterKeywords(
 { "seed", "a seed for random number generators used by topology" },
 { "concentration", "the number of nodes per switch" },
 { "network_nodes_per_switch", "DEPRECATED: the number of nodes per switch" },
+{ "auto", "whether to auto-generate topology based on app size"},
 );
 
 RegisterDebugSlot(topology,
@@ -204,6 +205,41 @@ topology::get_port_params(sprockit::sim_parameters *params, int port)
 }
 
 void
+topology::output_graphviz(const std::string& file)
+{
+  std::ofstream out(file.c_str());
+  out << "graph {\n";
+
+  int nsw = num_switches();
+  for (int s=0; s < nsw; ++s){
+    std::string lbl = switch_label(s);
+    out << "sw" << s << " [style=filled,fillcolor=\"lightblue\",shape=rect,label=\""
+                << lbl << "\"];\n";
+  }
+
+  std::vector<connection> conns;
+  std::map<int, int> weighted_conns;
+  out << "\nedge[];\n";
+  for (int s=0; s < nsw; ++s){
+    connected_outports(s, conns);
+    weighted_conns.clear();
+    for (connection& c : conns){
+      weighted_conns[c.dst] += 1;
+    }
+    for (auto& pair : weighted_conns){
+      int dst = pair.first;
+      int wght = pair.second;
+      if (s < dst){
+        out << "sw" << s << "--sw" << dst << ";\n";
+      }
+    }
+  }
+
+  out << "\n}";
+  out.close();
+}
+
+void
 topology::create_partition(
   int *switch_to_lp,
   int *switch_to_thread,
@@ -269,7 +305,6 @@ topology::label(uint32_t comp_id) const
   } else {
     return switch_label(comp_id - num_nodes());
   }
-
 }
 
 class merlin_topology : public topology {

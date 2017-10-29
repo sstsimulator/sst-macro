@@ -63,6 +63,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/time.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/topology/topology.h>
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
@@ -98,8 +99,7 @@ class runtime_param_bcaster :
  public:
   runtime_param_bcaster(parallel_runtime* rt) : rt_(rt) {}
 
-  void
-  bcast(void *buf, int size, int me, int root){
+  void bcast(void *buf, int size, int me, int root){
     rt_->bcast(buf, size, root);
   }
 
@@ -131,8 +131,7 @@ parallel_runtime* init()
   const char* env_str = getenv("SSTMAC_RUNTIME");
   if (env_str){
     cmdline_params["runtime"] = env_str;
-  }
-  else {
+  } else {
     cmdline_params["runtime"] = SSTMAC_DEFAULT_RUNTIME_STRING;
   }
 
@@ -228,7 +227,8 @@ init_first_run(parallel_runtime* rt, sprockit::sim_parameters* params)
 }
 
 void
-run_params(parallel_runtime* rt,
+run_params(opts& oo,
+           parallel_runtime* rt,
            sprockit::sim_parameters* params,
            sim_stats& stats)
 {
@@ -238,6 +238,10 @@ run_params(parallel_runtime* rt,
   rt->init_partition_params(params);
 
   native::manager* mgr = new native::manager(params, rt);
+  if (oo.output_graphviz.size() != 0){
+    mgr->interconn()->topol()->output_graphviz(oo.output_graphviz);
+  }
+
 
   double start = sstmac_wall_time();
   timestamp stop_time = params->get_optional_time_param("stop_time", 0);
@@ -258,8 +262,7 @@ run_params(parallel_runtime* rt,
     sstmac::env::params = nullptr;
 
     delete mgr;
-  } // try
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     if (mgr) {
       mgr->stop();
     }
@@ -297,7 +300,7 @@ run(opts& oo,
   sstmac::env::rt = rt;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  run_params(rt, params, stats);
+  run_params(oo, rt, params, stats);
 #endif
 }
 

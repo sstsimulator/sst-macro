@@ -253,7 +253,8 @@ def checkOutput(srcdir, tmpfile, condition):
     else:
       return "Could not find reference string %s in file" % condition
 
-  refFile = os.path.join(srcdir, "tests", "reference", tmpfile.replace("tmp","ref"))
+  refFile = os.path.join(srcdir, "tests", "reference", tmpfile.replace("tmp-out","ref-out"))
+  print refFile
   if not os.path.isfile(refFile):
     return "No REF file for %s" % tmpFile
   refSim = parseFile(refFile)

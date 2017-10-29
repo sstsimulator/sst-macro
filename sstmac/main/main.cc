@@ -129,15 +129,13 @@ main(int argc, char **argv)
     params.set_public_scope(false); //do not expose top-level params to subspaces
     bool params_only = false;
     sstmac::try_main(&params, argc, argv, params_only);
-  }
-  catch (const std::exception &e) {
+  } catch (const std::exception &e) {
     std::cout.flush();
     std::cerr.flush();
     std::cerr << argv[0] << ": caught exception while setting up simulation:\n"
               << e.what() << "\n";
     return 1;
-  }
-  catch (...) {
+  } catch (...) {
     std::cerr << argv[0]
               << ": caught unknown exception while setting up simulation\n";
     return 1;

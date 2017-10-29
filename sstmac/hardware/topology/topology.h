@@ -247,6 +247,8 @@ class topology : public sprockit::printable
   */
   virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
 
+  void output_graphviz(const std::string& file);
+
   struct injection_port {
     node_id nid;
     int port;

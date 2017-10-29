@@ -12,6 +12,8 @@ if !INTEGRATED_SST_CORE
 #------------------------------------------------------------------------------------------#
 
 STATSTESTS = \
+  output_graph_torus \
+  output_graph_dragonfly \
   test_stats_msg_size_histogram \
   test_stats_spyplot \
   test_stats_spyplot_collectives \
@@ -39,6 +41,14 @@ if DO_GRAPHVIZ_TEST
 SINGLETESTS += test_stat_graphviz 
 endif
 endif
+
+test_output_graph_%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 5 $(top_srcdir) tmp_$@ notime \
+	$(SSTMACEXEC) -f $(srcdir)/test_configs/$*_graph.ini \
+     --graph=output_graph_$*
+
+output_graph_%.$(CHKSUF): $(SSTMACEXEC) test_output_graph_%.$(CHKSUF)
+	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
 
 test_stat_graphviz.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ notime \
