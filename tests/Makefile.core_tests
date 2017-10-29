@@ -4,6 +4,8 @@
 
 
 CORETESTS+= \
+  test_core_apps_ping_all_dragonfly \
+  test_core_apps_ping_all_dragonfly_minimal \
   test_core_apps_ping_all_ns \
   test_core_apps_compute \
   test_core_apps_host_compute \

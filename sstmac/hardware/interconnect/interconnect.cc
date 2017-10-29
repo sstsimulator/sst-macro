@@ -187,6 +187,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 #endif
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
 void
 interconnect::configure_interconnect_lookahead(sprockit::sim_parameters* params)
 {
@@ -214,6 +215,7 @@ interconnect::configure_interconnect_lookahead(sprockit::sim_parameters* params)
   lookahead_ = std::min(injection_latency, hop_latency);
   lookahead_ = std::min(lookahead_, ejection_latency);
 }
+#endif
 
 switch_id
 interconnect::node_to_logp_switch(node_id nid) const
