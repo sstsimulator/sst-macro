@@ -61,23 +61,15 @@ class pisces_buffer :
 
   virtual void set_output(sprockit::sim_parameters* params,
     int this_outport, int dst_inport,
-    event_handler* output) override;
+    event_link* link) override;
 
   virtual void set_input(
     sprockit::sim_parameters* params,
     int this_inport, int src_outport,
-    event_handler* input) override;
+    event_link* link) override;
 
   virtual int queue_length() const {
     return 0;
-  }
-
-  device_id output_location() const {
-    return output_.handler->event_location();
-  }
-
-  device_id input_location() const {
-    return input_.handler->event_location();
   }
 
  protected:
@@ -138,20 +130,24 @@ class pisces_eject_buffer :
 {
  public:
   pisces_eject_buffer(sprockit::sim_parameters* params,
-                           event_scheduler* parent) :
-    pisces_buffer(params, parent)
-  {
-  }
+                           event_scheduler* parent);
 
   void handle_credit(event* ev) override;
 
   void handle_payload(event* ev) override;
+
+  void set_output_handler(event_handler* handler){
+    output_handler_ = handler;
+  }
 
   void return_credit(packet* msg);
 
   std::string pisces_name() const override {
     return "eject buffer";
   }
+
+ private:
+  event_handler* output_handler_;
 
 };
 

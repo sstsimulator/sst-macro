@@ -49,20 +49,5 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-void
-handler_event_queue_entry::execute()
-{
-  handler_->handle(ev_to_deliver_);
-}
-
-handler_event_queue_entry::handler_event_queue_entry(event* ev,
-                           event_handler* hand,
-                           device_id src_loc) :
-  ev_to_deliver_(ev),
-  handler_(hand),
-  event_queue_entry(hand->event_location(), src_loc)
-{
-}
-
 
 } // end of namespace sstmac

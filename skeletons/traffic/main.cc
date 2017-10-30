@@ -44,7 +44,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 #include <mpi.h>
+#include <unistd.h>
 #include <random>
+#include <set>
 #include <stddef.h>
 #include <stdio.h>
 #include <iostream>
@@ -57,25 +59,65 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_app_name traffic_pattern
 
 
+
 static const int nrepeat = 40;
 static const int warmup = 10;
 static const int max_buffer_size = 1024*1024;
-
 const std::vector<int> buffer_sizes =
   { 256,512,1024,2048,3072,4096,6144,8192,12288,16384,32768,49152,65536,98304,131072,262144,524288,1048576};
 const std::vector<int> total_num_sends =
-  { 64, 64, 64,  64,  64,  64,  16,  16,  16,   16,   8,    8,    8,    8,    4,     4,     2,     1};
+  { 64, 64, 64,  64,  64,  64,  16,  16,  16,   16,   16,   16,   16,   16,   16,    16,    16,    16};
 const std::vector<int> window_num_sends =
-  { 16, 16, 16,  16,  16,  16,  4,   4,   4,    4,    4,    4,    4,    4,    4,     4,     2,     1};
+  { 16, 16, 16,  16,  16,  16,  4,   4,   4,    4,    4,    4,    4,    4,    4,     4,     4,     4};
 
 void usage(std::ostream& os){
-  os << "usage: ./run <num_senders> <num_recvers> <seed>" << std::endl;
+  os << "usage: ./run <num_senders> <num_recvers> <send_seed> <recv_seed>" << std::endl;
 }
 
 void crash(const std::string& err){
   std::cerr << err << std::endl;
   usage(std::cerr);
   ::abort();
+}
+
+std::vector<int>
+shuffled_recvers(int numSenders, const std::vector<int>& senderRanks, int seed, int numPossibleRecvers, int numRecvers)
+{
+  std::mt19937 mt(seed);
+
+  int sendersPerRecver = numSenders / numRecvers;
+
+  std::vector<int> vec(numRecvers);
+  std::set<int> alreadyUsed;
+
+  int idx = 0;
+  while(idx < numRecvers){
+    std::set<int> currentSenderNodes;
+    int start = idx*sendersPerRecver;
+    int stop = start + sendersPerRecver;
+    for (int i=start; i < stop; ++i){
+      int node = senderRanks[i]/2;
+      currentSenderNodes.insert(node);
+    }
+    bool matchedSender = true;
+    int recverNode = 0;
+    int numTries = 0;
+    while (matchedSender || alreadyUsed.find(recverNode) != alreadyUsed.end()){
+      recverNode = mt() % numPossibleRecvers;
+      matchedSender = currentSenderNodes.find(recverNode) != currentSenderNodes.end();
+      if (numTries == 1000){
+        std::cerr << "Too many tries to generate valid config - quitting" << std::endl;
+        abort();
+      }
+      ++numTries;
+    }
+
+    //recver ranks are 2*n+1
+    vec[idx] = 2*recverNode + 1;
+    alreadyUsed.insert(recverNode);
+    ++idx;
+  }
+  return vec;
 }
 
 void check_argument(int arg, const char* descr){
@@ -90,7 +132,7 @@ void be_useless();
 
 int main(int argc, char** argv)
 {
-  if (argc != 4){
+  if (argc != 5){
     crash("wrong number of arguments");
   }
 
@@ -106,6 +148,30 @@ int main(int argc, char** argv)
   if (nproc % 2 != 0){
     crash("must have even number of ranks");
   }
+  if (nproc < 4){
+    crash("must have at least 4 MPI ranks");
+  }
+
+  char hostname[64];
+  gethostname(hostname, 64);
+
+  char* allHostnames = rank == 0 ? new char[64*nproc] : nullptr;
+
+  MPI_Gather(hostname, 64, MPI_BYTE, allHostnames, 64, MPI_BYTE, 0, MPI_COMM_WORLD);
+
+  if (rank == 0){
+    std::set<std::string> existingHosts;
+    int currentHost = -1;
+    for (int i=0; i < nproc; ++i){
+      const char* name = &allHostnames[i*64];
+      if (existingHosts.find(name) == existingHosts.end()){
+        ++currentHost;
+        existingHosts.insert(name);
+      }
+      printf("Rank %2d is on host %d\n", i, currentHost);
+    }
+  }
+
 
 /**
   This randomly generates a list of senders and recvers.
@@ -130,8 +196,13 @@ int main(int argc, char** argv)
     crash("num_recvers cannot be more than half the total number of ranks");
   } 
 
-  int seed = std::atoi(argv[3]);
-  if (seed == 0){
+  int send_seed = std::atoi(argv[3]);
+  if (send_seed == 0){
+    crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
+  }
+
+  int recv_seed = std::atoi(argv[4]);
+  if (recv_seed == 0){
     crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
   }
 
@@ -151,18 +222,33 @@ int main(int argc, char** argv)
     senders[i] = 2*i; //senders are even
   }
 
-  if (seed > 0){ //don't shuffle if negative
-    std::mt19937 mt(seed);
-    std::shuffle(recvers.begin(), recvers.end(), mt);
+  if (send_seed > 0){ //don't shuffle if negative
+    std::mt19937 mt(send_seed);
     std::shuffle(senders.begin(), senders.end(), mt);
+  }
+
+  if (recv_seed > 0){
+    recvers = shuffled_recvers(num_senders, senders, recv_seed, num_half, num_recvers);
+  } else {
+    recvers.resize(num_recvers);
+    for (int i=0; i < num_recvers; ++i){
+      recvers[i] = 2*i + 1;
+    }
   }
 
   std::vector<int> senders_to_me;
   int recver_from_me = -1;
   int sender = 0;
+  int my_send_idx = -1;
   for (int s=0; s < num_senders; ++s){
     int recver = recvers[s/senders_per_recver];
     int sender = senders[s];
+    if ( (sender+1) == recver && recv_seed > 0 && send_seed > 0 ){
+      //don't let sender and recver be on same node
+      std::cerr << "sender and recver are same node! invalid" << std::endl;
+      MPI_Finalize();
+      return 0;
+    }
     if (rank == 0){
       printf("Rank %-3d -> Rank %-3d\n", sender, recver);
     }
@@ -170,14 +256,17 @@ int main(int argc, char** argv)
       senders_to_me.push_back(sender);
     } else if (sender == rank){
       recver_from_me = recver;
+      my_send_idx = s;
     }
   }
+
+
 
   MPI_Comm roleComm;
 
   MPI_Barrier(MPI_COMM_WORLD);
   if (recver_from_me != -1){
-    MPI_Comm_split(MPI_COMM_WORLD, 0, 0, &roleComm);
+    MPI_Comm_split(MPI_COMM_WORLD, 0, my_send_idx, &roleComm);
     std::vector<double> tputs(buffer_sizes.size());
     blast(recver_from_me, reqs, buffer, tputs);
     std::vector<double> allTputs(buffer_sizes.size()*num_senders);
@@ -243,7 +332,7 @@ void blast(int recver, MPI_Request* reqs, void* buffer, std::vector<double>& tpu
     struct timeval t_stop;
     gettimeofday(&t_stop, NULL);
     double time = (t_stop.tv_sec-t_start.tv_sec) + 1e-6*(t_stop.tv_usec-t_start.tv_usec);
-    auto total_bytes_sent = buffer_sizes[i] * total_num_sends[i] * nrepeat;
+    auto total_bytes_sent = uint64_t(buffer_sizes[i]) * uint64_t(total_num_sends[i]) * uint64_t(nrepeat);
     double tput = total_bytes_sent / time;
     tputs[i] = tput;
     MPI_Barrier(MPI_COMM_WORLD);

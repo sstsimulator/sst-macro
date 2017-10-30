@@ -45,14 +45,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/software/libraries/compute/lib_compute_memmove.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
-
-RegisterKeywords("host_compute_modeling");
 
 namespace sstmac {
 namespace sw {
@@ -89,7 +88,7 @@ api::init(sprockit::sim_parameters* params)
   bool host_compute_local = params->get_optional_bool_param("host_api_timer", false);
   if (host_compute_local) {
     host_timer_ = new HostTimer();
-    compute_ = operating_system::current_thread()->parent_app()->compute_time_lib();
+    compute_ = operating_system::current_thread()->parent_app()->compute_lib();
   }
 }
 
@@ -120,13 +119,13 @@ api::now() const
 void
 api::schedule(timestamp t, event_queue_entry* ev)
 {
-  os()->schedule(t, ev);
+  os()->send_self_event_queue(t, ev);
 }
 
 void
 api::schedule_delay(timestamp t, event_queue_entry* ev)
 {
-  os()->schedule_delay(t, ev);
+  os()->send_delayed_self_event_queue(t, ev);
 }
 
 }

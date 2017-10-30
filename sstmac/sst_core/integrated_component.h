@@ -119,7 +119,7 @@ class SSTIntegratedComponent
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) = 0;
+    event_link* link) = 0;
 
   /**
    * @brief connect_output  All of these classes should implement
@@ -133,7 +133,7 @@ class SSTIntegratedComponent
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) = 0;
+    event_link* link) = 0;
 
   /**
    * @brief payload_handler
@@ -152,7 +152,7 @@ class SSTIntegratedComponent
   void init_links(sprockit::sim_parameters* params);
 
  protected:
-  SSTIntegratedComponent(sprockit::sim_parameters* params, uint64_t id);
+  SSTIntegratedComponent(sprockit::sim_parameters* params, uint32_t id);
 
   SST::LinkMap* link_map_;
 

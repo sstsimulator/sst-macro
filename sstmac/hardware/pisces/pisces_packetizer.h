@@ -65,7 +65,7 @@ class pisces_packetizer :
 {
  public:
   pisces_packetizer(sprockit::sim_parameters* params,
-                    event_scheduler* parent);
+                    event_component* parent);
 
   virtual ~pisces_packetizer();
 
@@ -77,15 +77,11 @@ class pisces_packetizer :
 
   void inject(int vn, long bytes, long byte_offset, message *payload) override;
 
-  /**
-   Set up the injection/ejection links to the switch the NIC is connected to
-   @param sw The switch that injects/ejects
-   */
   void set_output(sprockit::sim_parameters* params,
-             int port, event_handler* output);
+             int port, event_link* output);
 
   void set_input(sprockit::sim_parameters* params,
-            int port, event_handler* input);
+            int port, event_link* input);
 
   void recv_credit(event* credit);
 
@@ -102,17 +98,17 @@ class pisces_packetizer :
 
   void deadlock_check() override;
 
+  void deadlock_check(event* ev) override;
+
  protected:
   void recv_packet_common(pisces_payload* pkt);
 
  private:
-  void init(sprockit::sim_parameters* params, event_scheduler* parent);
+  void init(sprockit::sim_parameters* params, event_component* parent);
 
  protected:
   pisces_injection_buffer* inj_buffer_;
   pisces_eject_buffer* ej_buffer_;
-
-  event_handler* payload_handler_;
 
   recv_cq completion_queue_;
 
@@ -133,7 +129,7 @@ class pisces_cut_through_packetizer : public pisces_packetizer
   FactoryRegister("cut_through | null", packetizer, pisces_cut_through_packetizer)
  public:
   pisces_cut_through_packetizer(sprockit::sim_parameters* params,
-                                event_scheduler* parent) :
+                                event_component* parent) :
     pisces_packetizer(params, parent)
   {
   }
@@ -159,7 +155,7 @@ class pisces_simple_packetizer : public pisces_packetizer
   FactoryRegister("simple", packetizer, pisces_simple_packetizer)
  public:
   pisces_simple_packetizer(sprockit::sim_parameters* params,
-                           event_scheduler* parent) :
+                           event_component* parent) :
     pisces_packetizer(params, parent)
   {
   }

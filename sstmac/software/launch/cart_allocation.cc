@@ -56,10 +56,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"cart_launch_sizes",
-"cart_launch_offsets",
-"cart_sizes",
-"cart_offsets");
+{ "cart_launch_sizes", "DEPRECATED: array of sizes for each Cartesian dimension for single launch" },
+{ "cart_launch_offsets", "DEPRECATED: array of offsets for each Cartesian dimension for single launch" },
+{ "cart_sizes", "array of sizes for each Cartesian dimension for single launch" },
+{ "cart_offsets", "DEPRECATED: array of offsets for each Cartesian dimension for single launch" },
+);
 
 namespace sstmac {
 namespace sw {

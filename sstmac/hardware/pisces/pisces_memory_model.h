@@ -50,11 +50,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
 #include <sstmac/hardware/pisces/pisces_sender.h>
 #include <sstmac/hardware/pisces/pisces_packetizer.h>
+#include <sprockit/thread_safe_new.h>
+#include <sprockit/allocator.h>
 
 namespace sstmac {
 namespace hw {
 
-class memory_message : public message
+class memory_message : 
+  public message,
+  public sprockit::thread_safe_new<memory_message>
 {
   NotSerializable(memory_message)
 
@@ -135,7 +139,6 @@ class pisces_memory_packetizer : public packetizer
   noise_model* interval_noise_;
   int num_noisy_intervals_;
   packet_allocator* pkt_allocator_;
-  event_handler* self_credit_handler_;
   bool channelFree_[PISCES_MEM_DEFAULT_NUM_CHANNELS];
 
 };
@@ -155,10 +158,6 @@ class pisces_memory_model :
     return "packet flow memory model";
   }
 
-  void schedule(timestamp t, event_handler *handler, message*msg){
-    memory_model::schedule(t, handler, msg);
-  }
-
   void notify(int vn, message* msg) override;
 
   void access(long bytes, double max_bw, callback* cb) override;
@@ -171,10 +170,15 @@ class pisces_memory_model :
   void start(int channel, memory_message* msg, callback* cb);
 
  private:
-  std::map<message*, callback*> pending_requests_;
-  std::list<std::pair<memory_message*,callback*>> stalled_requests_;
+  template <class T, class U> using pair_alc = sprockit::thread_safe_allocator<std::pair<T,U>>;
+  //template <class T, class U> using pair_alc = std::allocator<std::pair<T,U>>;
+
+  std::map<message*, callback*, std::less<message*>,
+           pair_alc<message* const,callback*>> pending_requests_;
+  std::list<std::pair<memory_message*,callback*>,
+           pair_alc<memory_message*,callback*>> stalled_requests_;
   pisces_memory_packetizer* mem_packetizer_;
-  std::list<int> channels_available_;
+  std::vector<int> channels_available_;
   int nchannels_;
 
 };

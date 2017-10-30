@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2017 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
 Copyright (c) 2009-2017, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <unordered_map>
 #include <stdint.h>
-#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
 
 #include <cstring>
@@ -58,31 +57,28 @@ namespace sstmac {
 namespace sw {
 
 /**
- * A base type and default (empty) implementation of a handle
- * to block and unblock processes.
+ * @brief The ftq_tag class
+ * A descriptor for labeling the type of computation currently being done.
+ * Needed by FTQ for knowing how to label (tag) elapsed time.
  */
-class key  {
+class ftq_tag {
 
-  /**
-      Global identifier for all keys of a given type.
-      This should be a STATIC object that gets passed
-      into every key when selecting type.
-  */
- public:
-  typedef std::set<thread*> blocking_t;
+ private:
+  friend class library;
+  friend class thread;
 
- public:
-  static key_traits::category general;
+  ftq_tag() : id_(0) {} //default initialization for thread
+
+  int id_;
 
  public:
-  static key* construct(){
-    return new key;
+  ftq_tag(const char* name);
+
+  int id() const {
+   return id_;
   }
 
-  static key* construct(const key_traits::category& name){
-    return new key(name);
-  }
-
+ public:
   static std::string name(int keyname_id) {
     return (*category_id_to_name_)[keyname_id];
   }
@@ -95,57 +91,11 @@ class key  {
     return category_name_to_id_->size();
   }
 
-  std::string name() const {
-    return name(keyname_id_);
-  }
-
-  int  event_typeid() const {
-    return keyname_id_;
-  }
-
-  virtual ~key(){}
-
-  void* operator new(size_t size);
-
-  void operator delete(void* ptr);
-
-  void block_thread(thread* t){
-    blocked_thread_ = t;
-  }
-
-  bool still_blocked() {
-    return blocked_thread_;
-  }
-
-  bool timed_out() const {
-    return timed_out_;
-  }
-
-  void set_timed_out() {
-    timed_out_ = true;
-  }
-
-  void clear() {
-    blocked_thread_ = nullptr;
-  }
-
-  static void delete_statics();
-
- private:
-  friend class operating_system;
-
-  key();
-
-  key(const key_traits::category& name);
+  static ftq_tag null;
 
  private:
   static std::unordered_map<std::string, int>* category_name_to_id_;
   static std::unordered_map<int, std::string>* category_id_to_name_;
-  static uint64_t key_storage_size_;
-
-  thread* blocked_thread_;
-  bool timed_out_;
-  int keyname_id_;
 
 };
 

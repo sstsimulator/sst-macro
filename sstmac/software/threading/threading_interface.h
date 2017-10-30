@@ -55,36 +55,48 @@ namespace sstmac {
 namespace sw {
 
 
-class threading_interface
+class thread_context
 {
  public:
-  DeclareFactory(threading_interface)
+  DeclareFactory(thread_context)
 
-  virtual ~threading_interface() {}
+  virtual ~thread_context() {}
 
-  virtual threading_interface* copy(sprockit::sim_parameters* params) = 0;
+  virtual thread_context* copy() const = 0;
 
   virtual void init_context() = 0;
 
   virtual void destroy_context() = 0;
 
+  /**
+   * @brief start_context
+   * @param physical_thread_id  An optional ID for
+   * @param stack
+   * @param stacksize
+   * @param args
+   * @param globals_storage
+   * @param from
+   */
   virtual void start_context(int physical_thread_id,
-                void *stack, size_t stacksize, void
-                (*func)(void*), void *args,
-                void* globals_storage, threading_interface* from) = 0;
+                void *stack, size_t stacksize,
+                void (*func)(void*), void *args,
+                void* globals_storage, thread_context* from) = 0;
 
-  virtual void resume_context(threading_interface* from) = 0;
+  virtual void resume_context(thread_context* from) = 0;
 
-  virtual void pause_context(threading_interface* to) = 0;
+  virtual void pause_context(thread_context* to) = 0;
 
   /**
    * @brief complete_context Perform all cleanup operations to end this context
    * @param to
    */
-  virtual void complete_context(threading_interface* to) = 0;
+  virtual void complete_context(thread_context* to) = 0;
+
+  static std::string default_threading();
 
  protected:
-  threading_interface(sprockit::sim_parameters* params){}
+  thread_context() {}
+
 };
 }
 } // end of namespace sstmac

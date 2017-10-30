@@ -48,6 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/api/api.h>
 
+#include <sumi/message_fwd.h>
+
 #include <sumi-mpi/mpi_types.h>
 #include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
@@ -61,7 +63,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
 
 #include <sstmac/software/process/software_id.h>
-#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/pmi.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -76,8 +77,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-using sstmac::sw::key;
-using sstmac::sw::key_traits::category;
 using sstmac::sw::software_id;
 using sstmac::sw::operating_system;
 
@@ -87,10 +86,6 @@ class mpi_api :
   RegisterAPI("mpi", mpi_api)
 
  public:
-  static category default_key_category;
-  static category poll_key_category;
-  static category memcpy_key_category;
-
   mpi_api(sprockit::sim_parameters* params,
           sstmac::sw::software_id sid,
           sstmac::sw::operating_system* os);
@@ -616,12 +611,6 @@ class mpi_api :
 
   void finish_collective(collective_op_base* op);
 
-#if SSTMAC_COMM_SYNC_STATS
-  const MPI_Call& get_last_call() const {
-    return last_call_;
-  }
-#endif
-
  private:
   int do_wait(MPI_Request *request, MPI_Status *status);
 
@@ -785,6 +774,8 @@ class mpi_api :
   static const MPI_Op first_custom_op_id = 1000;
   MPI_Op next_op_id_;
 
+  static sstmac::sw::ftq_tag mpi_tag;
+
   mpi_comm_factory comm_factory_;
 
   int iprobe_delay_us_;
@@ -821,20 +812,16 @@ class mpi_api :
 
 #if SSTMAC_COMM_SYNC_STATS
  public:
-  void collect_sync_delays(double wait_start, const sumi::message_ptr& msg) override;
+  void collect_sync_delays(double wait_start, message* msg) override;
 
   void start_collective_sync_delays() override;
 
-  void set_next_call_length(sstmac::timestamp t){
-    next_call_total_length_ = t;
-  }
-
  private:
-  void set_new_mpi_call(MPI_function func);
-
-  void start_new_mpi_call(MPI_function func, int count, MPI_Datatype type, MPI_Comm comm);
-
-  void start_new_mpi_call(MPI_function func, const int* counts, MPI_Datatype type, MPI_Comm comm);
+  void set_new_mpi_call(MPI_function func){
+    current_call_.ID = func;
+    current_call_.sync = sstmac::timestamp();
+    current_call_.start = now();
+  }
 
   void finish_last_mpi_call(MPI_function func, bool dumpThis = true);
 
@@ -843,20 +830,14 @@ class mpi_api :
 
   bool dump_comm_times_;
 
-  MPI_Call last_call_;
+  MPI_Call current_call_;
 
-  /** If trying to match MPI start times to a trace, sleep until
-   * the current MPI call lasts exactly as long as call did in trace */
-  sstmac::timestamp next_call_total_length_;
+  struct mpi_sync_timing_stats {
+    sstmac::timestamp nonSync;
+    sstmac::timestamp sync;
+  };
 
-  std::map<MPI_Request,MPI_Call> saved_calls_;
-
-
-  std::unordered_map<MPI_Call,
-    std::list<
-      std::pair<sstmac::timestamp,sstmac::timestamp>
-    >
-  > call_groups_;
+  std::map<MPI_function, mpi_sync_timing_stats> mpi_calls_;
 #endif
 
 };
@@ -866,20 +847,14 @@ mpi_api* sstmac_mpi();
 }
 
 #define _start_mpi_call_(fxn) \
-  SSTMACBacktrace(#fxn); \
+  SSTMACBacktrace(fxn); \
+  os_->active_thread()->set_tag(mpi_tag); \
   start_api_call()
 
 #if SSTMAC_COMM_SYNC_STATS
   #define start_mpi_call(fxn,count,type,comm) \
     _start_mpi_call_(fxn); \
-    start_new_mpi_call(Call_ID_##fxn,count,type,comm)
-  #define start_wait_call(fxn,...) \
-    _start_mpi_call_(fxn); \
     set_new_mpi_call(Call_ID_##fxn)
-  #define finish_Impi_call(fxn,reqptr) \
-    finish_last_mpi_call(Call_ID_##fxn, false); \
-    saved_calls_[*reqptr] = last_call_; \
-    end_api_call()
   #define finish_mpi_call(fxn) \
     finish_last_mpi_call(Call_ID_##fxn); \
     end_api_call()

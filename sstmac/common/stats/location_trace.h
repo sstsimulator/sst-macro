@@ -65,23 +65,21 @@ class location_trace :
   }
 
   void collect(timestamp created,
-          device_id creator,
+          uint32_t creator,
           timestamp scheduled,
-          device_id runner);
+          uint32_t runner);
 
   bool read(std::istream& myfile,
        timestamp& created,
-       device_id& creator,
+       uint32_t& creator,
        timestamp& scheduled,
-       device_id& runner);
+       uint32_t& runner);
 
   void dump_local_data() override;
 
   void dump_global_data() override;
 
   void global_reduce(parallel_runtime *rt) override;
-
-  void simulation_finished(timestamp end) override {}
 
   stat_collector* do_clone(sprockit::sim_parameters* params) const override {
     return new location_trace(params);
@@ -96,9 +94,9 @@ class location_trace :
  private:
   struct event {
     timestamp created;
-    device_id creator;
+    uint32_t creator;
     timestamp scheduled;
-    device_id runner;
+    uint32_t runner;
   };
 
   std::list<event> local_events_;

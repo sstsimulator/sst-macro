@@ -2002,7 +2002,7 @@ with application launch parameters
 # Launch parameters
 launch_indexing = block
 launch_allocation = first_available
-launch_app1_cmd = aprun -n10 -N1
+launch_cmd_app1 = aprun -n10 -N1
 launch_app1 = mpi_test_all
 ````
 The file also includes a basic machine model.

@@ -22,6 +22,7 @@
 #define HPCG_HPP
 
 #include <fstream>
+#include <iostream>
 
 extern std::ofstream HPCG_fout;
 

@@ -23,7 +23,12 @@ AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements 
 AM_CPPFLAGS += -Dmain=USER_MAIN -DSSTMAC=1
 
-exe_LDADD = ../../sstmac/install/libsstmac.la ../../sprockit/sprockit/libsprockit.la ../../sstmac/main/libsstmac_main.la
+exe_LDADD = \
+  ../../sstmac/install/libsstmac.la \
+  ../../sprockit/sprockit/libsprockit.la \
+  ../../sstmac/main/libsstmac_main.la \
+  $(FCONTEXT_LIBS)
+
 exe_FLAGS = 
 if HAVE_FCONTEXT
 exe_FLAGS += -Wl,-rpath,$(FCONTEXT_LIBDIR)

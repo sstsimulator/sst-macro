@@ -121,8 +121,7 @@ void dumpi_meta::parse_fileprefix(const std::deque<std::string> &token)
 
   if(found == 0) {
     dirplusfileprefix_ = fileprefix_;
-  }
-  else {
+  } else {
     found = metafile_.find_last_of("/");
     dirplusfileprefix_ = metafile_.substr(0, found+1) + fileprefix_;
   }

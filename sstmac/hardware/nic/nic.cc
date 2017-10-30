@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_histogram.h>
@@ -65,11 +66,11 @@ RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
                    "message_size_histogram", "injection", "bytes");
 
 RegisterKeywords(
-"nic_name",
-"network_spyplot",
-"post_bandwidth",
-"post_latency",
-"pipeline_fraction",
+{ "nic_name", "DEPRECATED: the type of NIC to use on the node" },
+{ "network_spyplot", "DEPRECATED: the file root of all stats showing traffic matrix" },
+{ "post_bandwidth", "the throughput of the NIC posting messages" },
+{ "post_latency", "the latency of the NIC posting messages" },
+{ "pipeline_fraction", "the fraction of NIC post work that can be pipelined" },
 );
 
 #define DEFAULT_NEGLIGIBLE_SIZE 256
@@ -86,17 +87,17 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
   parent_(parent),
-  logp_switch_(nullptr),
   event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
   nic_pipeline_multiplier_(0.),
+  logp_switch_(nullptr),
   post_inv_bw_(0),
   post_latency_(0),
   next_free_(0),
   connectable_subcomponent(parent) //no self events with NIC
 {
   event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
-  node_handler_ = new_handler(parent, &node::handle);
+  //node_handler_ = new_handler(parent, &node::handle);
 
   if (params->has_param("post_latency")){
     post_latency_ = params->get_time_param("post_latency");
@@ -130,7 +131,7 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
 
 nic::~nic()
 {
-  if (node_handler_) delete node_handler_;
+  //if (node_handler_) delete node_handler_;
   if (event_mtl_handler_) delete event_mtl_handler_;
   //if (spy_bytes_) delete spy_bytes_;
   //if (spy_num_messages_) delete spy_num_messages_;
@@ -321,9 +322,9 @@ nic::internode_send(network_message* netmsg)
   nic_debug("internode send payload %s",
     netmsg->to_string().c_str());
   //we might not have a logp overlay network
-  if (logp_switch_ && negligible_size(netmsg->byte_length())){
-    send_to_link(logp_switch_, netmsg);
+  if (negligible_size(netmsg->byte_length())){
     ack_send(netmsg);
+    send_to_logp_switch(netmsg);
   } else {
     do_send(netmsg);
   }
@@ -332,17 +333,15 @@ nic::internode_send(network_message* netmsg)
 void
 nic::send_to_logp_switch(network_message* netmsg)
 {
-  nic_debug("send to logP switch %s",
-    netmsg->to_string().c_str());
-  //we might not have a logp overlay network
-  if (logp_switch_) send_to_link(logp_switch_, netmsg);
-  else do_send(netmsg);
+  nic_debug("send to logP switch %s", netmsg->to_string().c_str());
+  logp_switch_->send(netmsg);
 }
 
 void
 nic::send_to_node(network_message* payload)
 {
-  schedule_now(node_handler_, payload);
+  auto forward_ev = new_callback(parent_, &node::handle, payload);
+  parent_->send_now_self_event_queue(forward_ev);
 }
 
 }

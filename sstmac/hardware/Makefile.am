@@ -20,6 +20,7 @@ library_includedir=$(includedir)/sstmac/hardware
 nobase_library_include_HEADERS = \
   logp/logp_nic.h \
   logp/logp_switch.h \
+  logp/logp_switch_fwd.h \
   logp/logp_param_expander.h \
   logp/logp_memory_model.h \
   processor/processor.h \
@@ -70,9 +71,9 @@ nobase_library_include_HEADERS = \
   interconnect/interconnect_fwd.h \
   switch/network_switch.h \
   switch/network_switch_fwd.h \
-  switch/dist_dummyswitch.h \
   topology/butterfly.h \
   topology/fully_connected.h \
+  topology/cascade.h \
   topology/dragonfly.h \
   topology/fat_tree.h \
   topology/torus.h \
@@ -86,7 +87,7 @@ nobase_library_include_HEADERS = \
   topology/cartesian_topology.h \
   topology/star.h \
   topology/structured_topology.h \
-  topology/tiled_dragonfly.h \
+  topology/tiled_cascade.h \
   topology/traffic/traffic.h \
   router/router.h \
   router/router_fwd.h \
@@ -135,19 +136,20 @@ libsstmac_hw_la_SOURCES =  \
   network/network_message.cc \
   interconnect/interconnect.cc \
   switch/network_switch.cc \
-  switch/dist_dummyswitch.cc \
   topology/butterfly.cc \
   topology/fully_connected.cc \
+  topology/cascade.cc \
   topology/dragonfly.cc \
   topology/fat_tree.cc \
   topology/torus.cc \
   topology/tiled_torus.cc \
   topology/hypercube.cc \
   topology/coordinates.cc \
-  topology/tiled_dragonfly.cc \
+  topology/tiled_cascade.cc \
   topology/traffic/traffic.cc \
   router/router.cc \
   router/routable.cc \
+  router/dragonfly_minimal.cc \
   router/fat_tree_router.cc \
   router/minimal_routing.cc \
   router/multipath_routing.cc \

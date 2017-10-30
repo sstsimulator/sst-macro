@@ -71,10 +71,6 @@ class pisces_NtoM_queue :
   pisces_NtoM_queue(sprockit::sim_parameters* params,
                          event_scheduler* parent);
 
-  int thread_id() const {
-    return event_subcomponent::thread_id();
-  }
-
   void handle_payload(event* ev) override;
 
   void handle_credit(event* ev) override;
@@ -84,10 +80,10 @@ class pisces_NtoM_queue :
   event_handler* payload_handler();
 
   void set_input(sprockit::sim_parameters* params,
-            int my_inport, int src_outport, event_handler* input) override;
+            int my_inport, int src_outport, event_link* link) override;
 
   void set_output(sprockit::sim_parameters* params,
-             int my_outport, int dst_inport, event_handler* output) override;
+             int my_outport, int dst_inport, event_link* link) override;
 
   virtual void start_message(message* msg);
 
@@ -246,7 +242,7 @@ class pisces_NtoM_queue :
 
   std::string output_name(pisces_payload* pkt);
 
-  event_handler* output_handler(pisces_payload* pkt);
+  event_link* output_link(pisces_payload* pkt);
 
 };
 

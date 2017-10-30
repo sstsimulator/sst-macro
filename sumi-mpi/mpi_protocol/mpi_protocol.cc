@@ -123,9 +123,8 @@ mpi_protocol::incoming_payload(mpi_queue* queue, mpi_message* msg)
 }
 
 void*
-mpi_protocol::fill_send_buffer(mpi_message*msg, void *buffer, mpi_type *typeobj)
+mpi_protocol::fill_send_buffer(mpi_message* msg, void* buffer, mpi_type* typeobj)
 {
-  msg->set_already_buffered(true);
   long length = msg->payload_bytes();
   void* eager_buf = new char[length];
   if (typeobj->contiguous()){

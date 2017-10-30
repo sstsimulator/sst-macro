@@ -48,9 +48,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
-#include <sstmac/hardware/nic/nic_fwd.h>
-#include <sstmac/hardware/switch/network_switch.h>
+#include <sstmac/hardware/node/node_fwd.h>
+#include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
+#include <sstmac/hardware/topology/topology_fwd.h>
 #include <unordered_map>
 
 namespace sstmac {
@@ -61,60 +62,72 @@ namespace hw {
  *        using the LogGP model.  See "LogGP in Theory and Practice"
  *        by Hoefler and Schneider.
  */
-class logp_switch :
-  public network_switch
+class logp_switch : public connectable_component
 {
+  DeclareFactory(logp_switch,uint32_t,event_manager*)
+
  public:
-  RegisterComponent("logP | simple | LogP | logp", network_switch, logp_switch,
+  RegisterComponent("logP | simple | LogP | logp", logp_switch, logp_switch,
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A switch that implements a basic delay model with no congestion modeling")
 
  public:
-  typedef enum {
-    Node,
-    Switch
-  } Port;
+  logp_switch(sprockit::sim_parameters* params, uint32_t cid, event_manager* mgr);
 
-  logp_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
-
-  void handle(event* ev);
+  virtual ~logp_switch();
 
   std::string to_string() const override {
     return "LogP switch";
   }
 
-  int queue_length(int port) const override {
-    return 0;
-  }
-
-  virtual ~logp_switch();
-
   void connect_output(sprockit::sim_parameters *params,
                       int src_outport, int dst_inport,
-                      event_handler* handler) override;
+                      event_link *payload_link) override {
+    nic_links_[src_outport] = payload_link;
+  }
 
   void connect_input(sprockit::sim_parameters *params,
                      int src_outport, int dst_inport,
-                     event_handler* handler) override;
-
-  link_handler* payload_handler(int port) const override;
-
-  link_handler* credit_handler(int port) const override {
-    return nullptr;
+                     event_link *credit_link) override {
+    //do nothing
   }
 
- private:
-  void incoming_message(message* msg, node_id src, node_id dst);
-  void outgoing_message(message* msg, node_id src, node_id dst);
-  void bcast_local_message(message* msg, node_id src);
-  void forward_bcast_message(message* msg, node_id dst);
+  link_handler* payload_handler(int port) const override {
+    return new_link_handler(this, &logp_switch::send_event);
+  }
+
+  link_handler* credit_handler(int port) const override {
+    return new_link_handler(this, &logp_switch::drop_event);
+  }
+
+  void connect_output(node_id nid, event_link* link){
+    nic_links_[nid] = link;
+  }
+
+  void send_event(event* ev);
+
+  void drop_event(event* ev){}
+
+  void send(message *msg){
+    send(now(), msg);
+  }
+
+  void send(timestamp start, message* msg);
+
+  timestamp send_latency(sprockit::sim_parameters* params) const override {
+    return out_in_lat_;
+  }
+
+  timestamp credit_latency(sprockit::sim_parameters* params) const override {
+    return out_in_lat_;
+  }
 
  private:
   double inj_bw_inverse_;
 
   timestamp inj_lat_;
 
-  timestamp dbl_inj_lat_;
+  timestamp out_in_lat_;
 
   double inverse_bw_;
 
@@ -122,16 +135,13 @@ class logp_switch :
 
   timestamp hop_latency_;
 
-  interconnect* interconn_;
+  topology* top_;
 
-  std::vector<event_handler*> neighbors_;
-  std::vector<event_handler*> nics_;
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* mtl_handler_;
-#endif
+  std::vector<event_link*> nic_links_;
 
 };
+
+
 
 }
 }

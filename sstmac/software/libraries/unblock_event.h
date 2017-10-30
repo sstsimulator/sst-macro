@@ -60,22 +60,25 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/key.h>
+#include <sprockit/thread_safe_new.h>
 
 
 namespace sstmac {
 namespace sw {
 
-class unblock_event : public event_queue_entry
+class unblock_event : 
+  public event_queue_entry,
+  public sprockit::thread_safe_new<unblock_event>
 {
 
  public:
-  unblock_event(operating_system* os, key* k);
+  unblock_event(operating_system* os, thread* thr);
 
   virtual void execute();
 
  protected:
   operating_system* os_;
-  key* key_;
+  thread* thr_;
 
 };
 
@@ -83,13 +86,14 @@ class timeout_event : public event_queue_entry
 {
 
  public:
-  timeout_event(operating_system* os, key* k);
+  timeout_event(operating_system* os, thread* thr);
 
   virtual void execute();
 
  protected:
   operating_system* os_;
-  key* key_;
+  thread* thr_;
+  uint64_t counter_;
 
 };
 

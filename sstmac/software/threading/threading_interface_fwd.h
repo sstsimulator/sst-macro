@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class threading_interface;
+class thread_context;
 
 }
 }

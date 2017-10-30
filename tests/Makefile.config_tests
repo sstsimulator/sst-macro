@@ -42,6 +42,7 @@ COVERAGETESTS = \
   test_coverage_hopper_amm1_simple \
   test_coverage_hopper_amm2_simple \
   test_coverage_hopper_amm3_simple \
+  test_coverage_dragonfly \
   test_coverage_deepthought \
   test_coverage_sequoia \
   test_coverage_exa1_pflow \

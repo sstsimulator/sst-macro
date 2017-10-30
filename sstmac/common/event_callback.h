@@ -47,107 +47,25 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/sst_event.h>
+#include <sprockit/thread_safe_new.h>
 
 namespace sstmac {
 
-template<int ...>
-struct seq { };
-
-template<int N, int ...S>
-struct gens : gens<N-1, N-1, S...> { };
-
-template<int ...S>
-struct gens<0, S...> {
-  typedef seq<S...> type;
-};
-
-class member_fxn_handler :
-  public event_handler
-{
- public:
-  virtual ~member_fxn_handler(){}
-
- protected:
-#if SSTMAC_INTEGRATED_SST_CORE
-    member_fxn_handler(device_id id) :
-    event_handler(id)
-  {
-  }
-#else
-    member_fxn_handler(device_id id, int thread_id) :
-    event_handler(id, thread_id)
-  {
-  }
-#endif
-};
-
-template <class Cls, typename Fxn, class ...Args>
-class member_fxn_handler_impl :
-  public member_fxn_handler
-{
-
- public:
-  virtual ~member_fxn_handler_impl(){}
-
-  std::string
-  to_string() const override {
-    return sprockit::to_string(obj_);
-  }
-
-  void
-  handle(event* ev) override {
-    dispatch(ev, typename gens<sizeof...(Args)>::type());
-  }
-
-  member_fxn_handler_impl(device_id id, Cls* obj, Fxn fxn, const Args&... args) :
-    params_(args...),
-    obj_(obj),
-    fxn_(fxn),
-#if SSTMAC_INTEGRATED_SST_CORE
-    member_fxn_handler(id)
-#else
-    member_fxn_handler(id,obj->thread_id())
-#endif
-  {
-  }
-
- private:
-  template <int ...S>
-  void
-  dispatch(event* ev, seq<S...>){
-    (obj_->*fxn_)(ev, std::get<S>(params_)...);
-  }
-
-  std::tuple<Args...> params_;
-  Fxn fxn_;
-  Cls* obj_;
-
-};
-
-template<class Cls, typename Fxn, class ...Args>
-event_handler*
-new_handler(Cls* cls, Fxn fxn, const Args&... args)
-{
-  return new member_fxn_handler_impl<Cls, Fxn, Args...>(
-        cls->event_location(), cls, fxn, args...);
-}
-
-
 template <class Cls, typename Fxn, class ...Args>
 class member_fxn_callback :
-  public callback
+  public callback,
+  public sprockit::thread_safe_new<member_fxn_callback<Cls,Fxn,Args...>>
 {
 
  public:
   virtual ~member_fxn_callback(){}
 
-  void
-  execute() {
+  void execute() {
     dispatch(typename gens<sizeof...(Args)>::type());
   }
 
-  member_fxn_callback(device_id id, Cls* obj, Fxn fxn, const Args&... args) :
-    callback(id),
+  member_fxn_callback(uint32_t comp_id, Cls* obj, Fxn fxn, const Args&... args) :
+    callback(comp_id),
     params_(args...),
     obj_(obj),
     fxn_(fxn)
@@ -156,8 +74,7 @@ class member_fxn_callback :
 
  private:
   template <int ...S>
-  void
-  dispatch(seq<S...>){
+  void dispatch(seq<S...>){
     (obj_->*fxn_)(std::get<S>(params_)...);
   }
 
@@ -172,15 +89,28 @@ callback*
 new_callback(Cls* cls, Fxn fxn, const Args&... args)
 {
   return new member_fxn_callback<Cls, Fxn, Args...>(
-        cls->event_location(), cls, fxn, args...);
+        cls->component_id(), cls, fxn, args...);
 }
 
 template<class Cls, typename Fxn, class ...Args>
 callback*
-new_callback(device_id id, Cls* cls, Fxn fxn, const Args&... args)
+new_callback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
 {
   return new member_fxn_callback<Cls, Fxn, Args...>(
-        id, cls, fxn, args...);
+        comp_id, cls, fxn, args...);
+}
+
+/**
+ * This bypasses any custom operators
+ */
+template<class Cls, typename Fxn, class ...Args>
+callback*
+placement_new_callback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
+{
+  size_t sz = sizeof(member_fxn_callback<Cls, Fxn, Args...>);
+  char* space = new char[sz];
+  return new (space) member_fxn_callback<Cls, Fxn, Args...>(
+        comp_id, cls, fxn, args...);
 }
 
 } // end of namespace sstmac

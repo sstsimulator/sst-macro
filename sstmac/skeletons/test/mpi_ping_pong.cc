@@ -6,6 +6,11 @@
 
 #define sstmac_app_name mpi_ping_pong
 
+RegisterKeywords(
+ { "sources", "ranks of senders" },
+ { "destinations", "ranks of recvers" },
+);
+
 void ping(int rank, int src, int dst, int msize) {
   if (rank == src)
     MPI_Send(NULL, msize, MPI_INT, dst, 0, MPI_COMM_WORLD);

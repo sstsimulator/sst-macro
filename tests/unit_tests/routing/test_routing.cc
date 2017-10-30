@@ -51,8 +51,8 @@ void test_fattree2(UnitTest& unit);
 void test_fattree4(UnitTest& unit);
 void test_butterfly(UnitTest& unit);
 void test_fbfly(UnitTest& unit);
-void test_dragonfly_v1(UnitTest& unit);
-void test_dragonfly_v2(UnitTest& unit);
+void test_cascade_v1(UnitTest& unit);
+void test_cascade_v2(UnitTest& unit);
 
 using namespace sstmac;
 using namespace sstmac::hw;
@@ -87,9 +87,9 @@ int main(int argc, char** argv)
           test_butterfly(unit);
       std::cout << "Testing fbfly...\n";
           test_fbfly(unit);
-      std::cout << "Testing dragonfly...\n";
-          test_dragonfly_v1(unit);
-          test_dragonfly_v2(unit);
+      std::cout << "Testing cascade...\n";
+          test_cascade_v1(unit);
+          test_cascade_v2(unit);
       unit.validate();
   } catch (std::exception& e) {
       cerrn << e.what() << std::endl;

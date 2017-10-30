@@ -99,6 +99,7 @@ parse_opts(int argc, char **argv, opts &oo)
   bool machine_configured = false;
   option gopt[] = {
     { "help", no_argument, NULL, 'h' },
+    { "benchmark", required_argument, NULL, 'b'},
     { "include", required_argument, NULL, 'i' },
     { "debug", required_argument, NULL, 'd' },
     { "inf", no_argument, &infinite_network, 1},
@@ -121,6 +122,7 @@ parse_opts(int argc, char **argv, opts &oo)
     { "print-params", no_argument, &print_params, 1 },
     { "no-wall-time", no_argument, &no_wall_time, 1 },
     { "cpu-affinity", required_argument, NULL, 'c' },
+    { "graph", required_argument, NULL, 'g' },
     { NULL, 0, NULL, '\0' }
   };
   int ch;
@@ -128,7 +130,7 @@ parse_opts(int argc, char **argv, opts &oo)
   std::list<std::pair<std::string, std::string> > paramlist;
   oo.params = new sprockit::sim_parameters;
   optind = 1;
-  while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:", gopt, NULL))
+  while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:b:V:g:", gopt, NULL))
          != -1) {
     switch (ch) {
       case 0:
@@ -136,6 +138,13 @@ parse_opts(int argc, char **argv, opts &oo)
         break;
       case 'h':
         oo.help = 1;
+        break;
+      case 'b':
+        oo.benchmark = optarg;
+        need_config_file = false;
+        break;
+      case 'g':
+        oo.output_graphviz = optarg;
         break;
       case 'd':
         activate_debugs(optarg);

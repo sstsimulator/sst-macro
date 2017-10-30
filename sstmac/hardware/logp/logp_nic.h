@@ -71,23 +71,31 @@ class logp_nic :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) override;
+    event_link* link) override;
 
   virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) override;
+    event_link* link) override;
+
+  void mtl_handle(event* ev) override;
+
+  void drop_event(event* ev){}
 
   virtual std::string to_string() const override {
     return "simple nic";
   }
 
   link_handler* credit_handler(int port) const override {
-    return nullptr; //should never handle acks
+    return new_link_handler(this, &logp_nic::drop_event);
   }
 
   link_handler* payload_handler(int port) const override;
+
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
  protected:
   /**
@@ -101,7 +109,9 @@ class logp_nic :
 
   timestamp inj_lat_;
 
-  timestamp next_free_;
+  timestamp next_out_free_;
+
+  timestamp next_in_free_;
 
   event_handler* ack_handler_;
 

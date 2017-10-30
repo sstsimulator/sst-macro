@@ -49,14 +49,21 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 
 RegisterDebugSlot(lib_compute_inst);
 
 namespace sstmac {
 namespace sw {
 
-static const char* deprecated[] = { "lib_compute_unroll_loops" };
-static sprockit::StaticKeywordRegister deprecated_keys(1, deprecated);
+RegisterKeywords(
+ { "lib_compute_unroll_loops", "DEPRECATED: tunes the loop control overhead for compute loop functions" },
+ { "lib_compute_loop_overhead", "the number of instructions in control overhead per compute loop" },
+ { "lib_compute_access_width", "the size of each memory access access in bits" }
+);
+
+sstmac::sw::ftq_tag lib_compute_inst::compute_tag("Compute");
 
 lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
                                    const std::string& libname, software_id id,
@@ -85,6 +92,8 @@ lib_compute_inst::compute_detailed(
   st.flops = flops;
   st.intops = nintops;
   st.mem_sequential = bytes;
+
+  os_->active_thread()->set_tag(compute_tag);
   compute_inst(cmsg);
   delete cmsg;
 }
@@ -110,8 +119,7 @@ lib_compute_inst::init(sprockit::sim_parameters* params)
   if (params->has_param("lib_compute_unroll_loops")){
     double loop_unroll = params->deprecated_double_param("lib_compute_unroll_loops");
     loop_overhead_ = 1.0 / loop_unroll;
-  }
-  else {
+  } else {
     loop_overhead_ = params->get_optional_double_param("lib_compute_loop_overhead", 1.0);
   }
 }
@@ -119,8 +127,8 @@ lib_compute_inst::init(sprockit::sim_parameters* params)
 void
 lib_compute_inst::compute_inst(compute_event* cmsg)
 {
-  SSTMACBacktrace("Compute Instructions");
-  os_->execute(ami::COMP_INSTR, cmsg, key_category);
+  SSTMACBacktrace(ComputeInstructions);
+  os_->execute(ami::COMP_INSTR, cmsg);
 }
 
 }

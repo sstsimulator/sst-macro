@@ -55,8 +55,10 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterDebugSlot(processor);
 
 RegisterKeywords(
-"frequency",
-"ncores",
+{ "frequency", "the frequency of the CPU" },
+{ "ncores", "the number of core in a processor" },
+{ "node_cores", "DEPRECATED: the number of cores per processor" },
+{ "node_frequency", "DEPRECATED: the frequency of the CPU" },
 );
 
 namespace sstmac {

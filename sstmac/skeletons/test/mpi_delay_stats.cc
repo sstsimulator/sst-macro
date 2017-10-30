@@ -54,7 +54,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define sstmac_app_name mpi_delay_stats
 
-RegisterKeywords("sync_delay");
+RegisterKeywords(
+{ "send_delay", "the delay in the sender before starting" },
+{ "recv_delay", "the delay in the receiver before starting" },
+{ "send_compute", "the time sender will compute between Isend/wait" },
+{ "recv_compute", "the time recver will compute beteween Irecv/wait" },
+{ "message_size", "the size of each message sent" },
+);
 
 int USER_MAIN(int argc, char** argv)
 {
@@ -63,13 +69,14 @@ int USER_MAIN(int argc, char** argv)
   sstmac_compute(5e-5 - now);
 
   MPI_Init(&argc, &argv);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   int me, nproc;
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  if (nproc < 8){
-    spkt_abort_printf("Test must run with at least 8 ranks");
+  if (nproc < 2 || nproc%2){
+    spkt_abort_printf("Test must run with at least 2 ranks, total even");
   }
 
   double send_delay = get_params()->get_time_param("send_delay");

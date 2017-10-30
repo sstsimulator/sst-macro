@@ -674,6 +674,8 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   llvm::raw_string_ostream os(empty);
   std::string varName = currentNs_->nsPrefix() + D->getNameAsString();
   bool notDeclared = globalsDeclared_.find(varName) == globalsDeclared_.end();
+
+  static const char* globalOffsetString = "sizeof(int)";
   if (notDeclared){
     if (arrayInfo && !arrayInfo->isFxnStatic && arrayInfo->isConstSize){
       os << arrayInfo->typedefString << "; ";
@@ -681,7 +683,8 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     os << "static inline " << retType << " get_" << scopeUniqueVarName << "(){ "
        << " int stack; int* stackPtr = &stack; "
        << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize; "
-       << " char* offsetPtr = *((char**)localStorage) + __offset_" << scopeUniqueVarName << "; "
+       << " char** globalMapPtr = (char**)(localStorage+" << globalOffsetString << "); "
+       << " char* offsetPtr = *globalMapPtr + __offset_" << scopeUniqueVarName << ";"
        << "return (((" << retType << ")((void*)offsetPtr))); "
        << "}";
     globalsDeclared_.insert(varName);

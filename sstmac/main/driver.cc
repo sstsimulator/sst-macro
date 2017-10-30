@@ -551,7 +551,8 @@ SimulationQueue::rerun(sprockit::sim_parameters* params, sim_stats& stats)
     ::sstmac::init_first_run(rt_, params);
     first_run_ = false;
   }
-  ::sstmac::run_params(rt_, params, stats);
+  opts oo; //just pass in empty, default options
+  ::sstmac::run_params(oo, rt_, params, stats);
   stats.numResults = num_results_;
 }
 

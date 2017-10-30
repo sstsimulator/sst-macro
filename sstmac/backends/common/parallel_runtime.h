@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_location.h>
 #include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/ipc_event.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
@@ -60,6 +61,21 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <list>
 
 DeclareDebugSlot(parallel);
+
+template <class T>
+void align64(T& t){
+  if (t % 64){
+    t = t + 64 - t%64;
+  }
+}
+
+template <class T>
+void align64(T*& t){
+  intptr_t ptr = (intptr_t) t;
+  if (ptr % 64){
+    t = (T*)(ptr + 64 - ptr%64);
+  }
+}
 
 namespace sstmac {
 
@@ -70,66 +86,80 @@ class parallel_runtime :
  public:
   virtual ~parallel_runtime();
 
-  struct comm_buffer {
-    char* ptr;
-    size_t remaining;
-    size_t allocSize;
+  struct comm_buffer : public lockable {
+    int64_t bytesAllocated;
+    int64_t allocSize;
+    int64_t filledSize;
+    char* allocation;
     char* storage;
 
-    comm_buffer() : storage(nullptr), ptr(nullptr) {}
+    struct backup_buffer {
+      uint64_t maxSize;
+      uint64_t filledSize;
+      char* buffer;
+    };
+
+    comm_buffer() : storage(nullptr), allocation(nullptr),
+      filledSize(0), bytesAllocated(0) {}
 
     ~comm_buffer(){
-      if (storage) delete[] storage;
+      if (allocation) delete[] allocation;
     }
 
     char* buffer() const {
       return storage;
     }
 
-    size_t bytesUsed() const {
-      return allocSize - remaining;
+    char* nextBuffer() const {
+      return storage + bytesAllocated;
     }
 
-    void init(size_t size){
-      allocSize = size;
-      storage = new char[allocSize];
-      ptr = storage;
-      remaining = allocSize;
+    /**
+     * @brief bytesFilled
+     * @return The number of bytes actually packed into the storage. Only non-zero
+     *         if backup buffer is in use
+     */
+    size_t bytesFilled() const {
+      return filledSize;
     }
 
-    char* ensureSpace(size_t size){
-      if (remaining < size){
-        size_t oldSize = allocSize - remaining;
-        size_t totalSizeNeeded = oldSize + size;
-        size_t newAllocSize = allocSize*2;
-        while (newAllocSize < totalSizeNeeded){
-          newAllocSize *= 2;
-        }
-        char* newData = new char[newAllocSize];
-        ::memcpy(newData, storage, oldSize);
-        delete[] storage;
-        storage = newData;
-        ptr = storage + oldSize;
-        allocSize = newAllocSize;
-        remaining = allocSize - oldSize;
+    size_t totalBytes() const {
+      return bytesAllocated;
+    }
+
+    bool hasBackup() const {
+      return !backups.empty();
+    }
+
+    char* backup() const {
+      return backups.back().buffer;
+    }
+
+    void copyToBackup();
+
+    void reset();
+
+    void realloc(size_t size);
+
+    void ensureSpace(size_t size)
+    {
+      if (allocSize < size){
+        realloc(size);
       }
-      return ptr;
-    }
-
-    void reset(){
-      ptr = storage;
-      remaining = allocSize;
     }
 
     void shift(size_t size){
-      ptr += size;
-      remaining -= size;
+      bytesAllocated += size;
     }
+
+    char* allocateSpace(size_t size, ipc_event_t* ev);
+
+    std::vector<backup_buffer> backups;
 
   };
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  void send_event(int thread_id, ipc_event_t* iev);
+  void send_event(ipc_event_t* iev);
 
   static void run_serialize(serializer& ser, ipc_event_t* iev);
 #endif

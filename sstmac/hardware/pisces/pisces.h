@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/router/routable.h>
+#include <sprockit/thread_safe_new.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 
@@ -237,7 +238,8 @@ class pisces_routable_packet :
  * The default packet flow class using the default routable constructs
  */
 class pisces_default_packet :
- public pisces_routable_packet
+ public pisces_routable_packet,
+ public sprockit::thread_safe_new<pisces_default_packet>
 {
   ImplementSerializable(pisces_default_packet)
  public:
@@ -307,7 +309,8 @@ class pisces_delay_stats_packet : public pisces_default_packet
 
 class pisces_credit :
   public event,
-  public sprockit::printable
+  public sprockit::printable,
+  public sprockit::thread_safe_new<pisces_credit>
 {
 
  public:

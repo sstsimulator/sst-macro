@@ -958,4 +958,9 @@ extern my512d get512d();
 #define __builtin_ia32_vec_init_v4hi(...) get64()
 #define __builtin_ia32_vec_init_v8qi(...) get64()
 #define __builtin_ia32_emms(...)
+
+#define __builtin_ia32_movshdup(x) x
+#define __builtin_ia32_movsldup(x) x
+#define __builtin_ia32_monitor(...)
+
 #endif

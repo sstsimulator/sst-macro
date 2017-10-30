@@ -57,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 int USER_MAIN(int argc, char** argv)
 {
-  SSTMACBacktrace("main");
+  SSTMACBacktrace(main);
   MPI_Init(&argc, &argv);
 
   int me, nproc;

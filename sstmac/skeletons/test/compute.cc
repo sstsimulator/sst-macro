@@ -46,15 +46,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
 
-RegisterKeywords("print_times",
-                 "message_size",
-                 "sleep_time");
+RegisterKeywords(
+ { "nloop" , "the number of loops to perform" },
+);
 
 #define sstmac_app_name test_compute_api
 
 int USER_MAIN(int argc, char** argv)
 {
-  SSTMACBacktrace("main");
+  SSTMACBacktrace(main);
   MPI_Init(&argc, &argv);
 
   int me, nproc;

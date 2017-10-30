@@ -58,6 +58,10 @@ class logp_param_expander :
  public:
   virtual void expand(sprockit::sim_parameters* params);
 
+  void expand_into(sprockit::sim_parameters* dst_params,
+    sprockit::sim_parameters* params,
+    sprockit::sim_parameters* switch_params);
+
  protected:
   void expand_amm1_nic(sprockit::sim_parameters* params,
     sprockit::sim_parameters* nic_params,

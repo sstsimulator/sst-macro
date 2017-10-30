@@ -63,7 +63,7 @@ namespace lblxml
   }
 
   bool boxml::send_boxes(int& n_events) {
-      SSTMACBacktrace("send boxes");
+      SSTMACBacktrace(SendBoxes);
       // any sends ready?
       da_list_t& v_sends(g_rank_to_valid_sends[rank_]);
       set_t& my_sends(g_rank_to_sends[rank_]);
@@ -128,7 +128,7 @@ namespace lblxml
    */
   bool boxml::reduce(int& n_events)
   {
-    SSTMACBacktrace("reduce");
+    SSTMACBacktrace(Reduce);
     allreduce_queue_t temp_queue;
     int n_allreduce = 0;
     while (!valid_allreduces_.empty()) {
@@ -168,7 +168,7 @@ namespace lblxml
 
   bool boxml::compute_boxes(int& n_events) {
 
-    SSTMACBacktrace("compute boxes");
+    SSTMACBacktrace(ComputeBoxes);
     da_list_t& v_comps(g_rank_to_valid_comps[rank_]);
     set_t& my_comps(g_rank_to_comps[rank_]);
     int n_comp = 0;
@@ -222,7 +222,7 @@ namespace lblxml
 
   void boxml::recv_boxes(int& n_events)
   {
-      SSTMACBacktrace("recv boxes");
+      SSTMACBacktrace(RecvBoxes);
       sstmac::timestamp start_poll = now();
       if (debug_ > 0)
         printf("rank %d polling for new message\n",rank_);
@@ -290,7 +290,7 @@ namespace lblxml
   }
 
   void boxml::run_loop() {
-    SSTMACBacktrace("run loop"); 
+    SSTMACBacktrace(RunLoop);
 
     if (debug_ > 0)
       printf("rank %d entering run loop with %d recvs\n",

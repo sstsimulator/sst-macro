@@ -69,7 +69,7 @@ threading_pth::destroy_context() {
 
 void
 threading_pth::start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, void* globals_storage, threading_interface* from)
+                (*func)(void*), void *args, void* globals_storage, thread_context* from)
 {
   if (stacksize < (16384)) {
     sprockit::abort("threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
@@ -86,7 +86,7 @@ threading_pth::start_context(int physical_thread_id, void *stack, size_t stacksi
 }
 
 void
-threading_pth::resume_context(threading_interface* from) {
+threading_pth::resume_context(thread_context* from) {
   threading_pth* frompth = static_cast<threading_pth*>(from);
   if (pth_uctx_switch(frompth->context_, context_) != TRUE) {
     spkt_throw_printf(sprockit::os_error,
@@ -96,7 +96,7 @@ threading_pth::resume_context(threading_interface* from) {
 }
 
 void
-threading_pth::pause_context(threading_interface *to) {
+threading_pth::pause_context(thread_context *to) {
   threading_pth* topth = static_cast<threading_pth*>(to);
   if (pth_uctx_switch(context_, topth->context_) != TRUE) {
     spkt_throw_printf(sprockit::os_error,

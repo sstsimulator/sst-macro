@@ -61,8 +61,6 @@ class stat_local_int :
     return "stat local int";
   }
 
-  void simulation_finished(timestamp end) override;
-
   void dump_local_data() override;
 
   void dump_global_data() override;

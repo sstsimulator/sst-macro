@@ -47,11 +47,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/backends/common/sim_partition.h>
-#if !SSTMAC_INTEGRATED_SST_CORE
-#include <sstmac/backends/native/event_map.h>
-#endif
 #include <sstmac/backends/native/manager.h>
-#include <sstmac/backends/native/clock_cycle_parallel/clock_cycle_event_container.h>
+#include <sstmac/backends/native/clock_cycle_event_container.h>
 
 #include <sstmac/common/runtime.h>
 
@@ -74,10 +71,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstdlib>
 
 RegisterKeywords(
-"event_manager",
-"sst_rank",
-"sst_nproc",
-"nworkers",
+{ "event_manager", "the type of event manager for scheduling/managing events" },
+{ "sst_rank", "my logical process within a parallel SST run" },
+{ "sst_nproc", "the total number of logical processes within an SST run" },
 );
 
 
@@ -93,8 +89,7 @@ class timestamp_prefix_fxn :
  public:
   timestamp_prefix_fxn(event_manager* mgr) : mgr_(mgr){}
 
-  std::string
-  str() {
+  std::string str() {
     double t_ms = mgr_->now().msec();
     return sprockit::printf("T=%12.8e ms:", t_ms);
   }
@@ -177,8 +172,16 @@ manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
   interconnect_(nullptr),
   rt_(rt)
 {
-  event_manager_ = event_manager::factory::get_optional_param(
-                       "event_manager", SSTMAC_DEFAULT_EVENT_MANAGER_STRING, params, rt_);
+  std::string event_man = "map";
+  if (rt_->nthread() > 1){
+#if !SSTMAC_USE_MULTITHREAD
+    spkt_abort_printf("did not compile with multithread support: cannot use nthread > 1");
+    event_man = "multithread";
+#endif
+  } else if (rt_->nproc() > 1){
+    event_man = "clock_cycle_parallel";
+  }
+  event_manager_ = event_manager::factory::get_optional_param("event_manager", event_man, params, rt_);
   event_manager::global = event_manager_;
 
   if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
@@ -213,6 +216,11 @@ manager::start()
 {
 }
 
+static void run_manager(void* args){
+  event_manager* mgr = (event_manager*) args;
+  mgr->run();
+}
+
 timestamp
 manager::run(timestamp until)
 {
@@ -224,14 +232,16 @@ manager::run(timestamp until)
     event_manager_->schedule_stop(until);
   }
 
-  event_manager_->run();
+  //this is a little convoluted here, but necessary
+  //to make multithreading easier
+  event_manager_->spin_up(run_manager, event_manager_);
 
   running_ = false;
   // Now call done routine to end simulation and print Stats.
   stop();
 
 
-  return event_manager_->now();
+  return event_manager_->final_time();
 }
 
 void

@@ -53,13 +53,10 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-key_traits::category lib_compute_memmove::key_category("Memory");
-
 lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
                                          software_id id, operating_system* os) :
   lib_compute_memmove(params, "libmemmove", id, os)
 {
-  key_cat_ = key_category;
 }
 
 lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
@@ -67,13 +64,11 @@ lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
                                          operating_system* os) :
   lib_compute_inst(params, prefix, sid, os)
 {
-  key_cat_ = key_category;
-
   access_width_bytes_ = params->get_optional_int_param("lib_compute_access_width", 64) / 8;
 }
 
 void
-lib_compute_memmove::do_access(long bytes)
+lib_compute_memmove::do_access(uint64_t bytes)
 {
   //if (bytes == 0){
   //  return;
@@ -85,23 +80,23 @@ lib_compute_memmove::do_access(long bytes)
 }
 
 void
-lib_compute_memmove::read(long bytes)
+lib_compute_memmove::read(uint64_t bytes)
 {
-  SSTMACBacktrace("memread");
+  SSTMACBacktrace(memread);
   do_access(bytes);
 }
 
 void
-lib_compute_memmove::write(long bytes)
+lib_compute_memmove::write(uint64_t bytes)
 {
-  SSTMACBacktrace("memwrite");
+  SSTMACBacktrace(memwrite);
   do_access(bytes);
 }
 
 void
-lib_compute_memmove::copy(long bytes)
+lib_compute_memmove::copy(uint64_t bytes)
 {
-  SSTMACBacktrace("memcopy");
+  SSTMACBacktrace(memcopy);
   do_access(bytes);
 }
 

@@ -49,8 +49,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sst_event.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/common/ipc_event.h>
+#include <sstmac/common/handler_event_queue_entry.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
+#include <unistd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/connectable_wrapper.h>
@@ -67,11 +70,9 @@ event_component::cancel_all_messages()
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("event_scheduler::cancel_all_messages: cannot cancel messages currently in integrated core");
 #else
-  event_mgr()->cancel_all_messages(event_location());
+  event_mgr()->cancel_all_messages(component_id());
 #endif
 }
-
-#define sending(x) //printf("Sending %u:%s at %s:%d\n", x->cls_id(), sprockit::to_string(ev).c_str(), __FILE__, __LINE__)
 
 #if SSTMAC_INTEGRATED_SST_CORE
 SST::TimeConverter* event_scheduler::time_converter_ = nullptr;
@@ -89,19 +90,6 @@ event_scheduler::now() const
 {
   SST::SimTime_t nowTicks = comp_->getCurrentSimTime(time_converter_);
   return timestamp(nowTicks, timestamp::exact);
-}
-
-void
-event_scheduler::schedule_now(event_handler* handler, event* ev)
-{
-  //this better be a zero latency link
-  schedule(SST::SimTime_t(0), handler, ev);
-}
-
-void
-event_scheduler::schedule_now(event_queue_entry* ev)
-{
-  self_link_->send(ev);
 }
 
 void
@@ -127,25 +115,8 @@ event_scheduler::send_now_self_event_queue(event_queue_entry* ev)
 void
 event_scheduler::schedule(SST::SimTime_t delay, event_handler* handler, event* ev)
 {
-  event_queue_entry* evq = new handler_event_queue_entry(ev, handler, event_location());
-  if (handler->link()){
-    spkt_abort_printf("should never schedule directly to link! use send_to_link");
-  }
+  event_queue_entry* evq = new handler_event_queue_entry(ev, handler, component_id());
   self_link_->send(delay, time_converter_, evq);
-}
-
-void
-event_scheduler::send_to_link(event_handler* handler, event *ev)
-{
-  SST::Link* link = handler->link();
-  if (link){
-    //we ignore the latency here
-    sending(ev);
-    link->send(0, time_converter_, ev);
-  } else {
-    //oh - there is no link, you lied to me
-    self_link_->send(ev);
-  }
 }
 
 void
@@ -176,251 +147,60 @@ event_scheduler::handle_self_event(SST::Event* ev)
 }
 
 void
-event_scheduler::send_to_link(timestamp enter, timestamp lat,
-                              event_handler* handler, event *ev)
+event_link::send_extra_delay(timestamp delay, event *ev)
 {
-  SST::Link* link = handler->link();
-  if (link){
-    //we ignore the latency here
-    sending(ev);
-    link->send(extra_delay(enter), time_converter_, ev);
-  } else {
-    //oh - there is no link, you lied to me
-    schedule(enter + lat, handler, ev);
-  }
-}
-
-void
-event_scheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
-                              event_handler* handler, event *ev)
-{
-  SST::Link* link = handler->link();
-  if (link){
-    //we ignore the latency here
-    sending(ev);
-    link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
-  } else {
-    //oh - there is no link, you lied to me
-    schedule_delay(extra_delay + lat, handler, ev);
-  }
-}
-
-void
-event_scheduler::send_delayed_to_link(timestamp extra_delay,
-                              event_handler* handler, event *ev)
-{
-  SST::Link* link = handler->link();
-  if (link){
-    //we ignore the latency here
-    sending(ev);
-    link->send(SST::SimTime_t(extra_delay.ticks_int64()), time_converter_, ev);
-  } else {
-    //oh - there is no link, you lied to me
-    schedule_delay(extra_delay, handler, ev);
-  }
-}
-
-void
-event_scheduler::schedule(timestamp t,
-                          event_handler* handler,
-                          event* ev)
-{
-  schedule(extra_delay(t), handler, ev);
-}
-
-void
-event_scheduler::schedule(timestamp t, event_queue_entry *ev)
-{
-  send_self_event_queue(t, ev);
-}
-
-void
-event_scheduler::schedule_delay(
-  timestamp delay,
-  event_handler* handler,
-  event* ev)
-{
-  schedule(SST::SimTime_t(delay.ticks_int64()), handler, ev);
-}
-
-void
-event_scheduler::schedule_delay(timestamp delay, event_queue_entry *ev)
-{
-  self_link_->send(SST::SimTime_t(delay.ticks_int64()), time_converter_, ev);
+  event* to_send = handler_ ? new handler_event_queue_entry(ev, handler_, 0) : ev;
+  link_->send(delay.ticks(), event_scheduler::time_converter(), to_send);
 }
 
 event_component::event_component(sprockit::sim_parameters* params,
-               uint64_t cid,
-               device_id id,
+               uint32_t cid,
                event_manager* mgr) :
  SSTIntegratedComponent(params, cid),
- event_scheduler(id)
+ event_scheduler(cid)
 {
   event_scheduler::init_self_link(this);
 }
 
-
-event_subcomponent::event_subcomponent(event_scheduler* parent) :
- event_scheduler(parent->event_location())
-{
-  event_scheduler::init_self_link(parent->comp(), parent->self_link());
-}
 #else
-void
-event_scheduler::send_to_link(timestamp enter, timestamp lat,
-                              event_handler* handler, event *ev)
-{
-  timestamp arrival = enter + lat;
-  schedule(arrival, handler, ev);
-}
+timestamp event_link::min_remote_latency_;
+timestamp event_link::min_thread_latency_;
 
-void
-event_scheduler::send_to_link(event_handler *lnk, event *ev)
+event_scheduler::event_scheduler(event_manager* mgr, uint32_t comp_id) :
+  eventman_(mgr),
+  seqnum_(0),
+  id_(comp_id),
+  thread_id_(mgr->thread()),
+  nthread_(mgr->nthread()),
+  now_(mgr->now_ptr())
 {
-  schedule_now(lnk, ev);
-}
-
-void
-event_scheduler::send_delayed_to_link(timestamp extra_delay, timestamp lat,
-                              event_handler* handler, event *ev)
-{
-  timestamp arrival = now() + extra_delay + lat;
-  schedule(arrival, handler, ev);
-}
-
-void
-event_scheduler::send_delayed_to_link(timestamp extra_delay,
-                              event_handler* handler, event *ev)
-{
-  timestamp arrival = now() + extra_delay;
-  schedule(arrival, handler, ev);
-}
-
-void
-event_scheduler::schedule_now(event_handler *handler, event* ev)
-{
-  //event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
-  schedule(now(), handler, ev);
 }
 
 void
 event_scheduler::send_self_event_queue(timestamp arrival, event_queue_entry *ev)
 {
-  schedule(arrival, ev);
+  ev->set_time(arrival);
+  ev->set_seqnum(seqnum_++);
+  eventman_->schedule(ev);
 }
 
 void
 event_scheduler::send_delayed_self_event_queue(timestamp delay, event_queue_entry* ev)
 {
-  schedule_delay(delay, ev);
+  ev->set_seqnum(seqnum_++);
+  send_self_event_queue(delay+eventman_->now(), ev);
 }
 
 void
 event_scheduler::send_now_self_event_queue(event_queue_entry* ev)
 {
-  schedule_now(ev);
-}
-
-void
-event_scheduler::schedule_delay(
-  timestamp delay,
-  event_handler* handler,
-  event* ev)
-{
-  schedule(now() + delay, handler, ev);
-}
-
-void
-event_scheduler::schedule_now(event_queue_entry* ev)
-{
-  schedule(now(), ev);
-}
-
-void
-event_scheduler::schedule_delay(timestamp delay, event_queue_entry* ev)
-{
-  schedule(now() + delay, ev);
-}
-
-void
-event_scheduler::schedule(timestamp t, event_queue_entry* ev)
-{
-#if SSTMAC_SANITY_CHECK
-  double delta_t = (t - now()).sec();
-  if (delta_t < -1e-9) {
-    spkt_throw_printf(sprockit::illformed_error,
-                     "time has gone backwards %8.4e seconds", delta_t);
-  }
-#endif
-  eventman_->schedule(t, (*seqnum_)++, ev);
+  send_self_event_queue(eventman_->now(), ev);
 }
 
 void
 event_scheduler::register_stat(stat_collector *coll, stat_descr_t* descr)
 {
   eventman_->register_stat(coll, descr);
-}
-
-void
-event_scheduler::ipc_schedule(timestamp t, event_handler* handler, event* ev)
-{
-  ipc_event_t iev;
-  iev.dst = handler->event_location();
-  iev.src = event_location();
-  iev.seqnum = (*seqnum_)++;
-  iev.ev = ev;
-  iev.t = t;
-  eventman_->ipc_schedule(&iev);
-}
-
-void
-event_scheduler::sanity_check(timestamp t)
-{
-  double delta_t = (t - now()).sec();
-  if (delta_t < -1e-9) {
-    spkt_throw_printf(sprockit::illformed_error,
-      "time has gone backwards %8.4e seconds",
-      delta_t);
-  }
-}
-
-void
-event_scheduler::multithread_schedule(int src_thread, int dst_thread,
-  timestamp t, event_queue_entry* ev)
-{
-  debug_printf(sprockit::dbg::event_manager,
-      "At location %d:%s, scheduling event at t=%12.8e srcthread=%d dstthread=%d",
-      event_location().id(), to_string().c_str(), t.sec(), src_thread, dst_thread);
-  if (dst_thread != event_handler::null_threadid
-     && dst_thread != src_thread){
-    ev->set_time(t);
-    eventman_->multithread_schedule(
-      src_thread, dst_thread,
-      (*seqnum_)++, ev);
-  } else {
-    eventman_->schedule(t, (*seqnum_)++, ev);
-  }
-}
-
-void
-event_scheduler::schedule(timestamp t,
-                          event_handler* handler,
-                          event* ev)
-{
-#if SSTMAC_SANITY_CHECK
-  sanity_check(t);
-#endif
-  if (handler->ipc_handler()){
-    ipc_schedule(t, handler, ev);
-  }
-  else {
-    event_queue_entry* qev = new handler_event_queue_entry(ev, handler, event_location());
-#if SSTMAC_USE_MULTITHREAD
-    multithread_schedule(thread_id(), handler->thread_id(), t, qev);
-#else
-    eventman_->schedule(t, (*seqnum_)++, qev);
-#endif
-  }
 }
 #endif
 
@@ -443,9 +223,6 @@ event_component::setup()
 void
 event_subcomponent::init(unsigned int phase)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  event_scheduler* parent = safe_cast(event_component, comp());
-#endif
 }
 
 void
@@ -454,5 +231,57 @@ event_subcomponent::setup()
   //do nothing
 }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+#else
+void
+local_link::multi_send_extra_delay(timestamp delay, event *ev, event_scheduler *src)
+{
+  timestamp arrival = src->now() + delay + latency_;
+  event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
+  qev->set_seqnum(src->next_seqnum());
+  qev->set_time(arrival);
+  dst_->event_mgr()->schedule(qev);
+}
+
+void
+ipc_link::multi_send_extra_delay(timestamp delay, event *ev, event_scheduler *src)
+{
+  timestamp arrival = src->now() + delay + latency_;
+  src->event_mgr()->set_min_ipc_time(arrival);
+  ipc_event_t iev;
+  iev.src = src->component_id();
+  iev.dst = dst_;
+  iev.seqnum = src->next_seqnum();
+  iev.ev = ev;
+  iev.t = arrival;
+  iev.rank = rank_;
+  iev.credit = is_credit_;
+  iev.port = port_;
+  src->event_mgr()->ipc_schedule(&iev);
+  //this guy is gone
+  delete ev;
+}
+
+void
+multithread_link::send_extra_delay(timestamp delay, event *ev)
+{
+  multi_send_extra_delay(delay, ev, scheduler_);
+}
+
+void
+multithread_link::multi_send_extra_delay(timestamp delay, event* ev, event_scheduler* src)
+{
+  event_queue_entry* qev = new handler_event_queue_entry(ev, handler_, src->component_id());
+  timestamp arrival = src->now() + delay + latency_;
+  src->event_mgr()->set_min_ipc_time(arrival);
+  qev->set_time(arrival);
+  qev->set_seqnum(src->next_seqnum());
+  if (dst_->thread() == src->thread()){
+    dst_->event_mgr()->schedule(qev);
+  } else {
+    dst_->event_mgr()->multithread_schedule(src->event_mgr()->pending_slot(), src->thread(), qev);
+  }
+}
+#endif
 
 } // end of namespace sstmac

@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <type_traits>
 #include <sprockit/debug.h>
 #include <sprockit/typedefs.h>
+#include <sprockit/thread_safe_new.h>
 #include <stdint.h>
 
 DeclareDebugSlot(compute_intensity);
@@ -68,36 +69,29 @@ class compute_event :
  public event
 {
  public:
-  virtual bool
-  is_timed_compute() const = 0;
+  virtual bool is_timed_compute() const = 0;
 
-  void
-  set_core(int core){
+  void set_core(int core){
     core_ = core;
   }
 
-  std::string
-  to_string() const {
+  std::string to_string() const {
     return "compute event";
   }
 
-  int
-  core() const {
+  int core() const {
     return core_;
   }
 
-  hw::memory_access_id
-  access_id() const {
+  hw::memory_access_id access_id() const {
     return unique_id_;
   }
 
-  void
-  set_access_id(hw::memory_access_id id) {
+  void set_access_id(hw::memory_access_id id) {
     unique_id_ = id;
   }
 
-  uint64_t
-  unique_id() const {
+  uint64_t unique_id() const {
     return uint64_t(unique_id_);
   }
 
@@ -110,13 +104,13 @@ class compute_event :
 
 template <class T>
 class compute_event_impl :
- public compute_event
+ public compute_event,
+ public sprockit::thread_safe_new<compute_event_impl<T>>
 {
   NotSerializable(compute_event_impl)
 
  public:
-  bool
-  is_timed_compute() const override {
+  bool is_timed_compute() const override {
     return std::is_same<T,timestamp>::value;
   }
 

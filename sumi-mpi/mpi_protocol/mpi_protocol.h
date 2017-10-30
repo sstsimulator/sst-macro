@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_software_libraries_mpi_MPIPROTOCOL_H
 
 #include <sumi-mpi/mpi_queue/mpi_queue_fwd.h>
+#include <sumi-mpi/mpi_api_fwd.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_send_request_fwd.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request_fwd.h>
 #include <sumi-mpi/mpi_message.h>
@@ -319,8 +320,8 @@ class rendezvous_protocol : public mpi_protocol
   virtual ~rendezvous_protocol(){}
 
  protected:
-  sstmac::timestamp rdma_pin_delay_;
   bool software_ack_;
+  bool pin_delay_;
 
 };
 

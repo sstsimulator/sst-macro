@@ -14,7 +14,7 @@ struct do_nothing_stack_alloc
   void deallocate(ctx::stack_context){}
 };
 
-class threading_fcontext : public threading_interface
+class threading_fcontext : public thread_context
 {
  private:
   static void start_context(threading_fcontext* fctx, void (*func)(void*), void* args,
@@ -36,16 +36,15 @@ class threading_fcontext : public threading_interface
   }
 
  public:
-  FactoryRegister("fcontext", threading_interface, threading_fcontext)
+  FactoryRegister("fcontext", thread_context, threading_fcontext)
 
   virtual ~threading_fcontext() {}
 
-  threading_fcontext(sprockit::sim_parameters* params) :
-    threading_interface(params)
-  {}
+  threading_fcontext(sprockit::sim_parameters* params) {}
 
-  threading_interface* copy(sprockit::sim_parameters* params) override {
-    return new threading_fcontext(params);
+  thread_context* copy() const override {
+    //parameters never actually used
+    return new threading_fcontext(nullptr);
   }
 
   void init_context() override {}
@@ -56,22 +55,20 @@ class threading_fcontext : public threading_interface
       void *stack, size_t sz,
       void (*func)(void*), void *args,
       void* globals_storage,
-      threading_interface* from) override {
-
+      thread_context* from) override {
     thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
-
     start_context(this, func, args, stack, sz);
   }
 
-  void pause_context(threading_interface* to) override {
+  void pause_context(thread_context* to) override {
     pauser_ = pauser_.resume();
   }
 
-  void resume_context(threading_interface* from) override {
+  void resume_context(thread_context* from) override {
     resumer_ = resumer_.resume();
   }
 
-  void complete_context(threading_interface *to) override {
+  void complete_context(thread_context *to) override {
     //no-op, just let the thread run out
   }
 

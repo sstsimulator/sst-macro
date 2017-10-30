@@ -50,6 +50,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/software/process/key.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -61,25 +63,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterNamespaces("traffic_matrix", "num_messages");
 RegisterKeywords(
-"mpi_delay",
-"envelope",
-"smp_single_copy_size",
-"max_eager_msg_size",
-"max_vshort_msg_size",
-"mpi_spyplot",
-"mpi_queue_post_rdma_delay",
-"mpi_queue_post_header_delay",
-"mpi_queue_poll_delay",
-"post_rdma_delay",
-"post_header_delay",
-"poll_delay",
+{ "smp_single_copy_size", "the minimum size of message for single-copy protocol" },
+{ "max_eager_msg_size", "the maximum size for using eager pt2pt protocol" },
+{ "max_vshort_msg_size", "the maximum size for mailbox protocol" },
 );
 
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
-
-static bool lookahead_progress_ = false;
-
 
 namespace sumi {
 
@@ -103,8 +93,6 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
 
   //user_lib_mem_ = new sstmac::sw::lib_compute_memmove(params, "mpi_queue-user-lib-mem", sid, os_);
-
-  lookahead_progress_ = params->get_optional_bool_param("lookahead_progress", false);
 
   next_id_ = uint64_t(taskid_) << 32;
 
@@ -164,11 +152,12 @@ mpi_queue::send_message(void* buffer, int count, MPI_Datatype type,
     int(tag), api_->comm_str(comm).c_str(),
     prot->to_string().c_str());
   task_id dst_tid = comm->peer_task(dst_rank);
-  auto mess = new mpi_message(comm->rank(), dst_rank,
-                          count, type, typeobj->packed_size(),
-                          tag, comm->id(),
-                          next_outbound_[dst_tid]++,
-                          next_id_++, prot);
+  auto mess = new mpi_message(
+        comm->rank(), dst_rank,
+        count, type, typeobj->packed_size(),
+        tag, comm->id(),
+        next_outbound_[dst_tid]++,
+        next_id_++, prot);
   mess->protocol()->configure_send_buffer(this, mess, buffer, typeobj);
   return mess;
 }
@@ -642,7 +631,7 @@ mpi_queue::progress_loop(mpi_request* req)
 
   mpi_queue_debug("entering progress loop");
 
-  //SSTMACBacktrace("MPI Queue Poll");
+  //SSTMACBacktrace(MPIQueuePoll);
   sstmac::timestamp wait_start = api_->now();
   while (!req->is_complete()) {
     mpi_queue_debug("blocking on progress loop");
@@ -667,8 +656,6 @@ mpi_queue::at_least_one_complete(const std::vector<mpi_request*>& req)
   for (int i=0; i < (int) req.size(); ++i) {
     if (req[i] && req[i]->is_complete()) {
       mpi_queue_debug("request is done");
-      //clear the key in case we have any timeout watchers
-      req[i]->get_key()->clear();
       return true;
     }
   }
@@ -717,7 +704,7 @@ mpi_queue::start_progress_loop(
 }
 
 void
-mpi_queue::memcopy(long bytes)
+mpi_queue::memcopy(uint64_t bytes)
 {
   api_->memcopy(bytes);
 }
@@ -730,14 +717,14 @@ mpi_queue::finish_progress_loop(const std::vector<mpi_request*>& req)
 void
 mpi_queue::buffer_unexpected(mpi_message* msg)
 {
-  SSTMACBacktrace("MPI Queue Buffer Unexpected Message");
+  SSTMACBacktrace(MPIQueueBufferUnexpectedMessage);
   api_->memcopy(msg->payload_bytes());
 }
 
 void
 mpi_queue::post_header(mpi_message* msg, sumi::message::payload_type_t ty, bool needs_send_ack)
 {
-  SSTMACBacktrace("MPI Queue Post Header");
+  SSTMACBacktrace(MPIQueuePostHeader);
   mpi_comm* comm = api_->get_comm(msg->comm());
   int dst_world_rank = comm->peer_task(msg->dst_rank());
   msg->set_src_rank(comm->rank());
@@ -751,7 +738,7 @@ mpi_queue::post_rdma(mpi_message* msg,
   bool needs_send_ack,
   bool needs_recv_ack)
 {
-  SSTMACBacktrace("MPI Queue Post RDMA Request");
+  SSTMACBacktrace(MPIQueuePostRDMARequest);
   //JJW cannot assume the comm is available for certain eager protocols
   //mpi_comm* comm = api_->get_comm(msg->comm());
   //int src_world_rank = comm->peer_task(msg->src_rank());

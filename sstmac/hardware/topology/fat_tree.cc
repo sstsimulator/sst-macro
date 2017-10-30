@@ -53,12 +53,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <math.h>
 
 RegisterKeywords(
-"branching",
-"num_levels",
-"num_inj_switches_per_subtree",
-"num_core_switches",
-"num_agg_subtrees",
-"num_agg_switches_per_subtree"
+{ "branching", "the branching degree of each level in the tree" },
+{ "baseline_bandwidth", "" },
+{ "num_levels", "the number of levels in the fat tree" },
+{ "num_inj_switches_per_subtree", "in a 3-level fat-tree, number of injection switches per pod" },
+{ "num_core_switches", "in a 3-level fat-tree, number of core switches at top-level" },
+{ "num_agg_subtrees", "in a 3-level fat-tree, number of pods or subtree" },
+{ "num_agg_switches_per_subtree", "in a 3-level fat-tree, number of aggregation (2nd-level switches) per subtree (pod)"},
 );
 
 namespace sstmac {
@@ -380,7 +381,7 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
                                   sprockit::sim_parameters *switch_params) const
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  int buffer_size = link_params->get_int_param("buffer_size");
+  int buffer_size = link_params->get_byte_length_param("buffer_size");
   double bw = link_params->get_bandwidth_param("bandwidth");
   double taper = link_params->get_optional_double_param("core_taper",1.0);
   int taperedBufSize = buffer_size * agg_bw_multiplier_ * taper;

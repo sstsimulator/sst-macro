@@ -60,7 +60,6 @@ logp_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
 
   nic_params->add_param_override("model", "logP");
-  params->add_param_override("interconnect", "simple");
   switch_params->add_param_override("model", "logP");
   mem_params->add_param_override("model", "pisces");
 
@@ -75,21 +74,17 @@ logp_param_expander::expand(sprockit::sim_parameters* params)
     expand_amm1_memory(params, mem_params);
     expand_amm1_network(params, switch_params);
     expand_amm1_nic(params, nic_params, switch_params);
-  }
-  else if (amm_type == "amm2"){
+  } else if (amm_type == "amm2"){
     expand_amm2_memory(params, mem_params);
     expand_amm1_network(params, switch_params);
     expand_amm1_nic(params, nic_params, switch_params);
-  }
-  else if (amm_type == "amm3"){
+  } else if (amm_type == "amm3"){
     expand_amm2_memory(params, mem_params);
     expand_amm3_network(params, switch_params);
     expand_amm1_nic(params, nic_params, switch_params);
-  }
-  else if (amm_type == "amm4"){
+  } else if (amm_type == "amm4"){
     expand_amm4_nic(params, nic_params, switch_params);
-  }
-  else {
+  } else {
     spkt_throw_printf(sprockit::input_error, "invalid hardware model %s given",
         amm_type.c_str());
   }
@@ -111,11 +106,58 @@ logp_param_expander::expand_amm1_network(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
 {
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  double link_bw = link_params->get_bandwidth_param("bandwidth");
-  double gbs = link_bw *param_expander::network_bandwidth_multiplier(params) / 1e9;
-  std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
-  link_params->add_param_override("bandwidth", net_bw_str);
+  expand_into(switch_params, params, switch_params);
+}
+
+void
+logp_param_expander::expand_into(
+  sprockit::sim_parameters* dst_params,
+  sprockit::sim_parameters* params,
+  sprockit::sim_parameters* switch_params)
+{
+  if (!switch_params->has_param("bandwidth")){
+    sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+    double link_bw = link_params->get_bandwidth_param("bandwidth");
+    double gbs = link_bw *param_expander::network_bandwidth_multiplier(params) / 1e9;
+    std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
+
+    dst_params->add_param_override("bandwidth", net_bw_str);
+  } else {
+    dst_params->add_param_override("bandwidth", switch_params->get_param("bandwidth"));
+  }
+
+  if (!switch_params->has_param("hop_latency")){
+    sprockit::sim_parameters* link_params = switch_params->get_optional_namespace("link");
+    if (link_params->has_param("send_latency")){
+      dst_params->add_param_override("hop_latency", link_params->get_time_param("send_latency"));
+    } else {
+      dst_params->add_param_override("hop_latency", link_params->get_time_param("latency"));
+    }
+  } else {
+    dst_params->add_param_override("hop_latency", switch_params->get_param("hop_latency"));
+  }
+
+  if (!switch_params->has_param("out_in_latency")){
+    sprockit::sim_parameters* inj_params = params->get_namespace("node")->get_namespace("nic")
+                                                 ->get_namespace("injection");
+
+    sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
+
+    timestamp inj_lat = inj_params->get_time_param("latency");
+    timestamp ej_lat = inj_lat;
+
+    if (ej_params->has_param("send_latency")){
+      ej_lat = ej_params->get_time_param("send_latency");
+    } else if (ej_params->has_param("latency")){
+      ej_lat = ej_params->get_time_param("latency");
+    }
+
+    timestamp total_lat = inj_lat + ej_lat;
+    dst_params->add_param_override("out_in_latency", sprockit::printf("%12.8fus", total_lat.usec()));
+  } else {
+    dst_params->add_param_override("out_in_latency", switch_params->get_param("out_in_latency"));
+  }
+
 }
 
 void
@@ -124,14 +166,6 @@ logp_param_expander::expand_amm1_nic(
  sprockit::sim_parameters* nic_params,
  sprockit::sim_parameters* switch_params)
 {
-  sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
-  sprockit::sim_parameters* inj_params = nic_params->get_optional_namespace("injection");
-  if (!ej_params->has_param("bandwidth")){
-    ej_params->add_param_override("bandwidth", inj_params->get_param("bandwidth"));
-  }
-  if (!ej_params->has_param("latency")){
-    ej_params->add_param_override("latency", inj_params->get_param("latency"));
-  }
 }
 
 void

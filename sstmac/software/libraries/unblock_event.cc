@@ -44,13 +44,14 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/libraries/unblock_event.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/thread.h>
 
 namespace sstmac {
 namespace sw {
 
-unblock_event::unblock_event(operating_system *os, key *k)
-  : event_queue_entry(os->event_location(), os->event_location()),
-  os_(os), key_(k)
+unblock_event::unblock_event(operating_system *os, thread *thr)
+  : event_queue_entry(os->component_id(), os->component_id()),
+  os_(os), thr_(thr)
 {
 }
 
@@ -58,12 +59,12 @@ unblock_event::unblock_event(operating_system *os, key *k)
 void
 unblock_event::execute()
 {
-  os_->unblock(key_);
+  os_->unblock(thr_);
 }
 
-timeout_event::timeout_event(operating_system* os, key* k) :
-  event_queue_entry(os->event_location(), os->event_location()),
-  os_(os), key_(k)
+timeout_event::timeout_event(operating_system* os, thread* thr) :
+  event_queue_entry(os->component_id(), os->component_id()),
+  os_(os), thr_(thr), counter_(thr->block_counter())
 {
 }
 
@@ -71,14 +72,11 @@ timeout_event::timeout_event(operating_system* os, key* k) :
 void
 timeout_event::execute()
 {
-  if (key_->still_blocked()){
-    key_->set_timed_out();
-    os_->unblock(key_);
-    delete key_;
+  if (thr_->block_counter() == counter_){
+    thr_->set_timed_out(true);
+    os_->unblock(thr_);
   } else {
     //already fired, no timeout
-    //I have to delete the key - no one else knows anything about it
-    delete key_;
   }
 }
 

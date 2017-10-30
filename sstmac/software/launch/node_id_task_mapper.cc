@@ -54,12 +54,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"launch_node_id_file",
-"launch_node_id_mapper_file",
-"launch_node_id_indexing_file",
-"node_id_indexing_file",
-"node_id_file",
-"node_id_mapper_file",
+{ "launch_node_id_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
+{ "launch_node_id_mapper_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
+{ "launch_node_id_indexing_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
+{ "node_id_indexing_file", "a file containing line-by-line list of nodes for each rank" },
+{ "node_id_file", "a file containing line-by-line list of nodes for each rank" },
+{ "node_id_mapper_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
 );
 
 namespace sstmac {

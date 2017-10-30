@@ -50,19 +50,19 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/key.h>
 
 RegisterKeywords(
-  "dgemm",
-  "dgemv",
-  "daxpy",
-  "ddot",
-  "daxpy_loop_unroll",
-  "daxpy_pipeline_efficiency",
-  "ddot_loop_unroll",
-  "ddot_pipeline_efficiency",
-  "dgemm_loop_unroll",
-  "dgemm_pipeline_efficiency",
-  "dgemm_cache_size",
-  "dgemv_loop_unroll",
-  "dgemv_pipeline_efficiency",
+  { "dgemm", "" },
+  { "dgemv", "" },
+  { "daxpy", "" },
+  { "ddot", "" },
+  { "daxpy_loop_unroll", "" },
+  { "daxpy_pipeline_efficiency", "" },
+  { "ddot_loop_unroll", "" },
+  { "ddot_pipeline_efficiency", "" },
+  { "dgemm_loop_unroll", "" },
+  { "dgemm_pipeline_efficiency", "" },
+  { "dgemm_cache_size", "" },
+  { "dgemv_loop_unroll", "" },
+  { "dgemv_pipeline_efficiency", "" },
 );
 
 #define enumcase(x) case x: return #x;
@@ -80,7 +80,7 @@ blas_kernel* blas_api::ddot_kernel_;
 blas_api::blas_api(sprockit::sim_parameters* params,
                    software_id sid,
                    operating_system* os)
-  : api(params, "blas", sid, os, key::general)
+  : api(params, "blas", sid, os)
 {
   std::string libname = sprockit::printf("blas-compute%d", sid.to_string().c_str());
   lib_compute_ = new lib_compute_inst(params, libname, sid, os);

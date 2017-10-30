@@ -77,7 +77,7 @@ namespace hw {
 class network_switch :
   public connectable_component
 {
-  DeclareFactory(network_switch,uint64_t,event_manager*)
+  DeclareFactory(network_switch,uint32_t,event_manager*)
  public:
   virtual void init(unsigned int phase);
 
@@ -106,9 +106,8 @@ class network_switch :
  protected:
   network_switch(
     sprockit::sim_parameters* params,
-    uint64_t id,
-    event_manager* mgr,
-    device_id::type_t ty = device_id::router);
+    uint32_t id,
+    event_manager* mgr);
 
   switch_id my_addr_;
   topology* top_;

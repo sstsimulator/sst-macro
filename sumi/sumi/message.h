@@ -146,8 +146,10 @@ class message :
     sender_(sender),
     recver_(recver),
     send_cq_(-1),
-    recv_cq_(-1)
-#if SUMI_COMM_SYNC_STATS
+    recv_cq_(-1),
+    owns_local_buffer_(false),
+    owns_remote_buffer_(false)
+  #if SUMI_COMM_SYNC_STATS
     ,sent_(-1),
     header_arrived_(-1),
     payload_arrived_(-1),
@@ -155,6 +157,8 @@ class message :
 #endif
   {
   }
+
+  virtual ~message();
 
   static const char* tostr(payload_type_t ty);
 
@@ -168,19 +172,31 @@ class message :
 
   virtual void serialize_order(sumi::serializer &ser) override;
 
+  void serialize_buffers(sumi::serializer& ser);
+
   void set_payload_type(payload_type_t ty) {
     payload_type_ = ty;
   }
 
   virtual message* clone() const;
 
-  virtual void buffer_send();
-
   message* clone_ack() const;
 
   message* clone_msg() const {
     return clone();
   }
+
+  void set_owns_local_buffer(bool flag){
+    owns_local_buffer_ = flag;
+  }
+
+  void set_owns_remote_buffer(bool flag){
+    owns_remote_buffer_ = flag;
+  }
+
+  void buffer_remote();
+
+  void buffer_local();
 
   class_t class_type() const {
     return class_;
@@ -313,6 +329,9 @@ class message :
   int send_cq_;
 
   int recv_cq_;
+
+  bool owns_local_buffer_;
+  bool owns_remote_buffer_;
 
 #if SUMI_COMM_SYNC_STATS
  public:

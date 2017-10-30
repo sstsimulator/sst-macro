@@ -47,10 +47,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"mean",
-"seed",
-"stdev",
-"maxz",
+{ "mean", "" },
+{ "seed", "" },
+{ "stdev", "" },
+{ "maxz", "" },
 );
 
 namespace sstmac {

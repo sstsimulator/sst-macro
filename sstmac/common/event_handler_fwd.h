@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 class event_handler;
+class event_link;
 
 }
 

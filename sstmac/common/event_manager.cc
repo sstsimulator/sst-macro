@@ -47,12 +47,23 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/software/threading/threading_interface.h>
+#include <sstmac/software/threading/stack_alloc.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/common/handler_event_queue_entry.h>
 #include <sprockit/util.h>
 #include <sprockit/output.h>
+#include <sprockit/thread_safe_new.h>
+#include <limits>
 
 RegisterDebugSlot(event_manager);
 
+#define prll_debug(...) \
+  debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
+
 namespace sstmac {
+
+const timestamp event_manager::no_events_left_time(std::numeric_limits<int64_t>::max() - 100, timestamp::exact);
 
 class stop_event : public event_queue_entry
 {
@@ -66,7 +77,7 @@ class stop_event : public event_queue_entry
 
   stop_event(event_manager* man) :
     man_(man),
-    event_queue_entry(device_id::ctrl_event(), device_id::ctrl_event())
+    event_queue_entry(-1, -1)
   {
   }
 
@@ -78,72 +89,213 @@ class stop_event : public event_queue_entry
 
 event_manager* event_manager::global = nullptr;
 
+struct spin_up_config {
+  event_manager* mgr;
+  void* args;
+  void(*fxn)(void*);
+};
+
+void run_event_manager_thread(void* argPtr)
+{
+  auto cfg = (spin_up_config*) argPtr;
+  (*cfg->fxn)(cfg->args);
+  cfg->mgr->spin_down();
+}
+
 event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime *rt) :
   rt_(rt),
-  finish_on_stop_(true),
-  stopped_(true),
-  thread_id_(0),
   nthread_(rt->nthread()),
   me_(rt->me()),
   nproc_(rt->nproc()),
-  complete_(false)
+  pending_slot_(0),
+  complete_(false),
+  thread_id_(0),
+  stopped_(false),
+  interconn_(nullptr)
 {
+  for (int i=0; i < num_pending_slots; ++i){
+    pending_events_[i].resize(nthread_);
+  }
+  if (nthread_ == 0){
+    sprockit::abort("Have zero worker threads! Cannot do any work");
+  }
+  sprockit::sim_parameters* os_params = params->get_optional_namespace("node")->get_optional_namespace("os");
+  sw::stack_alloc::init(os_params);
+
+  des_context_ = sw::thread_context::factory::get_optional_param(
+                  "context", sw::thread_context::default_threading(), os_params);
+
+  sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
+
+  //make sure there's a good bit of space
+  pending_serialization_.reserve(1024);
 }
 
-event_manager*
-event_manager::ev_man_for_thread(int thread_id) const
+event_manager::~event_manager()
 {
-  //kind of annoying I have to const cast this
-  //this is a truly const function, though
-  return const_cast<event_manager*>(this);
+  if (des_context_) delete des_context_;
+}
+
+void
+event_manager::stop()
+{
+  for (event_queue_entry* ev : event_queue_){
+    delete ev;
+  }
+  event_queue_.clear();
+  min_ipc_time_ = no_events_left_time;
+  stopped_ = true;
+}
+
+timestamp
+event_manager::run_events(timestamp event_horizon)
+{
+  register_pending();
+  min_ipc_time_ = no_events_left_time;
+  while (!event_queue_.empty()){
+    auto iter = event_queue_.begin();
+    event_queue_entry* ev = *iter;
+
+    if (ev->time() < now_){
+      spkt_abort_printf("Time went backwards on thread %d: %lu < %lu",
+                        thread_id_, ev->time().ticks(), now_.ticks());
+    }
+
+    if (ev->time() >= event_horizon){
+      timestamp ret = std::min(min_ipc_time_, ev->time());
+      return ret;
+    } else {
+      now_ = ev->time();
+      event_queue_.erase(iter);
+      ev->execute();
+      delete ev;
+    }
+  }
+  return min_ipc_time_;
+}
+
+sw::thread_context*
+event_manager::clone_thread() const
+{
+  return des_context_->copy();
+}
+
+void
+event_manager::cancel_all_messages(uint32_t component_id)
+{
+  sprockit::abort("canceling messages not currently supported");
+}
+
+void
+event_manager::set_interconnect(hw::interconnect* interconn)
+{
+  lookahead_ = interconn->lookahead();
+  interconn_ = interconn;
+}
+
+int
+event_manager::serialize_schedule(char* buf)
+{
+  serializer ser;
+  uint32_t bigSize = 1 << 30;
+  ser.start_unpacking(buf, bigSize); //just pass in a huge number
+  ipc_event_t iev;
+  parallel_runtime::run_serialize(ser, &iev);
+  schedule_incoming(&iev);
+  size_t size = ser.unpacker().size();
+  align64(size);
+  return size;
+}
+
+void
+event_manager::schedule_incoming(ipc_event_t* iev)
+{
+  auto comp = interconn_->component(iev->dst);
+  event_handler* dst_handler = iev->credit ? comp->credit_handler(iev->port) : comp->payload_handler(iev->port);
+  prll_debug("thread %d scheduling incoming event at %12.8e to device %d:%s, payload? %d:   %s",
+    thread_id_, iev->t.sec(), iev->dst, dst_handler->to_string().c_str(),
+    iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
+  auto qev = new handler_event_queue_entry(iev->ev, dst_handler, iev->src);
+  qev->set_seqnum(iev->seqnum);
+  qev->set_time(iev->t);
+  schedule(qev);
+}
+
+void
+event_manager::register_pending()
+{
+  for (char* buf : pending_serialization_){
+    serialize_schedule(buf);
+  }
+  pending_serialization_.clear();
+
+  int idx = 0;
+  for (auto& pendingVec : pending_events_[pending_slot_]){
+    for (event_queue_entry* ev : pendingVec){
+      if (ev->time() < now_){
+        spkt_abort_printf("Thread %d scheduling event on thread %d in the past: %lu < %lu",
+                          idx, thread_id_, ev->time().ticks(), now_.ticks());
+      }
+      schedule(ev);
+    }
+    pendingVec.clear();
+    ++idx;
+  }
+  pending_slot_ = (pending_slot_+1) % num_pending_slots;
+}
+
+void
+event_manager::spin_up(void(*fxn)(void*), void* args)
+{
+  void* stack = sw::stack_alloc::alloc();
+  sstmac::thread_info::set_thread_id(stack, thread_id_);
+  main_thread_ = des_context_->copy();
+  main_thread_->init_context();
+  spin_up_config cfg;
+  cfg.mgr = this;
+  cfg.fxn = fxn;
+  cfg.args = args;
+  des_context_->start_context(thread_id_, stack, sw::stack_alloc::stacksize(),
+                              &run_event_manager_thread, &cfg, nullptr, main_thread_);
+  delete main_thread_;
+}
+
+void
+event_manager::spin_down()
+{
+  des_context_->complete_context(main_thread_);
+}
+
+void
+event_manager::run()
+{
+  interconn_->setup();
+  register_pending();
+
+  run_events(no_events_left_time);
+
+  final_time_ = now_;
 }
 
 void
 event_manager::ipc_schedule(ipc_event_t* iev)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "%s::ipc_schedule: not valid for chosen event manager");
+  rt_->send_event(iev);
 }
 
 void
 event_manager::schedule_stop(timestamp until)
 {
-  event_queue_entry* stopper = new stop_event(this);
-  schedule(until, 0, stopper);
-}
-
-void
-event_manager::multithread_schedule(
-    int srcthread,
-    int dstthread,
-    uint32_t seqnum,
-    event_queue_entry* ev)
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "%s::multithread_schedule: not valid for chosen event manager");
+  stop_event* ev = new stop_event(this);
+  ev->set_time(until);
+  ev->set_seqnum(0);
+  event_queue_.insert(ev);
 }
 
 partition*
 event_manager::topology_partition() const
 {
   return rt_->topology_partition();
-}
-
-stat_collector*
-event_manager::register_thread_unique_stat(
-  stat_collector *stat,
-  stat_descr_t* descr)
-{
-  std::map<std::string, stats_entry>::iterator it = stats_.find(stat->fileroot());
-  if (it != stats_.end()){
-    stats_entry& entry = it->second;
-    return entry.collectors.front();
-  }
-
-  //clone a stat collector for this thread
-  stat_collector* cln = stat->clone();
-  register_stat(cln, descr);
-  return cln;
 }
 
 static stat_descr_t default_descr;
@@ -168,11 +320,10 @@ event_manager::register_stat(
 }
 
 void
-event_manager::finish_stats(stat_collector* main, const std::string& name, timestamp t_end)
+event_manager::finish_stats(stat_collector* main, const std::string& name)
 {
   stats_entry& entry = stats_[name];
   for (stat_collector* next : entry.collectors){
-    next->simulation_finished(t_end);
     if (entry.dump_all)
       next->dump_local_data();
 
@@ -181,6 +332,30 @@ event_manager::finish_stats(stat_collector* main, const std::string& name, times
 
     next->clear();
   }
+}
+
+void
+event_manager::register_unique_stat(stat_collector* stat, stat_descr_t* descr)
+{
+  stats_entry& entry = unique_stats_[descr->unique_tag->id];
+  if (descr->dump_all){
+    sprockit::abort("unique stat should not specify dump all");
+  }
+  if (!descr->reduce_all){
+    sprockit::abort("unique stat should always specify reduce all");
+  }
+  entry.dump_all = false;
+  entry.dump_main = descr->dump_main;
+  entry.reduce_all = true;
+  entry.main_collector = stat;
+}
+
+void
+event_manager::finish_unique_stat(int unique_tag, stats_entry& entry)
+{
+  entry.main_collector->global_reduce(rt_);
+  if (rt_->me() == 0) entry.main_collector->dump_global_data();
+  delete entry.main_collector;
 }
 
 
@@ -209,7 +384,7 @@ event_manager::finish_stats()
       }
     }
 
-    finish_stats(entry.main_collector, name, now());
+    finish_stats(entry.main_collector, name);
 
     if (entry.reduce_all){
       entry.main_collector->global_reduce(rt_);
@@ -222,6 +397,10 @@ event_manager::finish_stats()
     for (stat_collector* coll : entry.collectors){
       delete coll;
     }
+  }
+
+  for (auto& pair : unique_stats_){
+    finish_unique_stat(pair.first, pair.second);
   }
 }
 

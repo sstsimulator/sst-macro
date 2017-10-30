@@ -64,20 +64,19 @@ namespace sstmac {
 namespace hw {
 
 pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
-                                     event_scheduler* parent) :
+                                     event_component* parent) :
  inj_buffer_(nullptr),
  ej_buffer_(nullptr),
  inj_stats_(nullptr),
  ej_stats_(nullptr),
  pkt_allocator_(nullptr),
- payload_handler_(nullptr),
  packetizer(params, parent)
 {
   init(params, parent);
 }
 
 void
-pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* parent)
+pisces_packetizer::init(sprockit::sim_parameters* params, event_component* parent)
 {
   pisces_sender::configure_payload_port_latency(params);
   inj_buffer_ = new pisces_injection_buffer(params, parent);
@@ -88,7 +87,7 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   //do not put any latency on eject buffer
   ej_params->add_param_override("send_latency", "0ns");
-  ej_params->add_param_override("credit_latency", "0ns");
+  ej_params->add_param_override("credit_latency", params->get_param("send_latency"));
   ej_params->add_param_override("credits", 1<<30);
   ej_buffer_ = new pisces_eject_buffer(ej_params, parent);
   ej_stats_ = packet_stats_callback::factory::
@@ -97,9 +96,8 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_scheduler* paren
   pkt_allocator_ = packet_allocator::factory
       ::get_optional_param("packet_allocator", "pisces", params);
 
-
-
-  payload_handler_ = new_handler(this, &pisces_packetizer::recv_packet);
+  event_handler* handler = new_handler(this, &pisces_packetizer::recv_packet);
+  ej_buffer_->set_output_handler(handler);
 }
 
 pisces_packetizer::~pisces_packetizer()
@@ -109,7 +107,6 @@ pisces_packetizer::~pisces_packetizer()
   if (inj_stats_) delete inj_stats_;
   if (ej_stats_) delete ej_stats_;
   if (pkt_allocator_) delete pkt_allocator_;
-  if (payload_handler_) delete payload_handler_;
 }
 
 void
@@ -159,6 +156,11 @@ pisces_packetizer::deadlock_check()
   packetizer::deadlock_check();
 }
 
+void
+pisces_packetizer::deadlock_check(event* ev)
+{
+}
+
 bool
 pisces_packetizer::spaceToSend(int vn, int num_bits)
 {
@@ -186,18 +188,17 @@ pisces_packetizer::recv_packet_common(pisces_payload* pkt)
 
 void
 pisces_packetizer::set_output(sprockit::sim_parameters* params,
-                              int inj_port, event_handler* handler)
+                              int inj_port, event_link* link)
 {
-  inj_buffer_->set_output(params, 0, inj_port, handler);
+  inj_buffer_->set_output(params, 0, inj_port, link);
 }
 
 void
 pisces_packetizer::set_input(sprockit::sim_parameters* params,
-                             int ej_port, event_handler* handler)
+                             int ej_port, event_link* link)
 {
   int only_port = 0;
-  ej_buffer_->set_output(params, only_port, only_port, payload_handler_);
-  ej_buffer_->set_input(params, only_port, ej_port, handler);
+  ej_buffer_->set_input(params, only_port, ej_port, link);
 }
 
 void

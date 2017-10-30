@@ -52,16 +52,15 @@ namespace sw {
 
 library::library(const std::string& libname, software_id sid, operating_system* os) :
   sid_(sid), libname_(libname), os_(os),
-  addr_(os->addr()),
-  key_cat_(key::general)
+  addr_(os->addr())
 {
   os_->register_lib(this);
 }
 
-device_id
-library::event_location() const
+uint32_t
+library::component_id() const
 {
-  return os_->event_location();
+  return os_->component_id();
 }
 
 library::~library()
@@ -76,27 +75,6 @@ library::incoming_event(event* ev)
     "%s::incoming_event: this library should only block, never receive incoming",
      to_string().c_str());
 }
-
-void
-blocking_library::wait_event(event *ev, key_traits::category cat)
-{
-  key* k = key::construct(cat);
-  blocked_events_[ev] = k;
-  os_->block(k);
-  delete k;
-}
-
-void
-blocking_library::incoming_event(event *ev)
-{
-  key* k = blocked_events_[ev];
-  if (!k){
-    sprockit::abort("blocking_library::incoming_event: got invalid event");
-  }
-  blocked_events_.erase(ev);
-  os_->unblock(k);
-}
-
 
 }
 } //end namespace

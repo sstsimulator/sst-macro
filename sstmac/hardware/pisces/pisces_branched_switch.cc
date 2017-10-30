@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sprockit/util.h>
@@ -57,13 +56,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"switch_geometry",
-"row_buffer_size",
-"nrows",
-"ncols",
-"ninject",
-"neject",
-"netlink_radix",
+{ "switch_geometry", "DEPRECATED: array specifying geometry of the switch" },
+{ "geometry", "array specifying geometry of the switch" },
+{ "row_buffer_size", "the size of the input buffer in each row" },
+{ "nrows", "the number of row tiles in a switch" },
+{ "ncols", "the number of col tiles in a switch" },
 );
 
 namespace sstmac {
@@ -85,6 +82,18 @@ pisces_branched_switch::pisces_branched_switch(
 #endif
 
   init_components(params);
+}
+
+timestamp
+pisces_branched_switch::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("output")->get_time_param("send_latency");
+}
+
+timestamp
+pisces_branched_switch::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("input")->get_time_param("credit_latency");
 }
 
 pisces_branched_switch::~pisces_branched_switch()
@@ -144,15 +153,19 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
   // connect input muxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
     pisces_muxer* mux = input_muxers_[i];
-    mux->set_output(input_params,0,i,xbar_->payload_handler());
-    xbar_->set_input(xbar_params,i,0,mux->credit_handler());
+    auto out_lnk = allocate_local_link(mux->send_latency(), this, xbar_->payload_handler());
+    mux->set_output(input_params,0,i,out_lnk);
+    auto in_lnk = allocate_local_link(xbar_->credit_latency(), this, mux->credit_handler());
+    xbar_->set_input(xbar_params,i,0,in_lnk);
   }
 
   // connect output demuxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
     pisces_demuxer* demux = output_demuxers_[i];
-    xbar_->set_output(xbar_params,i,0,demux->payload_handler());
-    demux->set_input(output_params,0,i,xbar_->credit_handler());
+    auto out_link = allocate_local_link(xbar_->send_latency(), this, demux->payload_handler());
+    xbar_->set_output(xbar_params,i,0,out_link);
+    auto in_link = allocate_local_link(demux->credit_latency(), this, xbar_->credit_handler());
+    demux->set_input(output_params,0,i,in_link);
   }
 }
 
@@ -161,11 +174,11 @@ pisces_branched_switch::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler *mod)
+  event_link* link)
 {
   params->add_param_override("num_vc", router_->max_num_vc());
   pisces_demuxer* demux = output_demuxers_[src_outport/n_local_ports_];
-  demux->set_output(params, src_outport % n_local_ports_, dst_inport, mod);
+  demux->set_output(params, src_outport % n_local_ports_, dst_inport, link);
 }
 
 void
@@ -173,10 +186,10 @@ pisces_branched_switch::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler *mod)
+  event_link* link)
 {
   pisces_muxer* muxer = input_muxers_[dst_inport/n_local_ports_];
-  muxer->set_input(params, dst_inport % n_local_ports_, src_outport, mod);
+  muxer->set_input(params, dst_inport % n_local_ports_, src_outport, link);
 }
 
 int

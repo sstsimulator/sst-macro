@@ -112,12 +112,12 @@ class interconnect
   interconnect(){}
 
 #if SSTMAC_INTEGRATED_SST_CORE
- public:
-  bool local_logp_node(node_id nid) const {
-    return true;
-  }
 #else
  public:
+  const std::vector<connectable_component*>& components() const {
+    return components_;
+  }
+
   typedef std::vector<network_switch*> switch_map;
   typedef std::vector<connectable*> internal_map;
   typedef std::vector<connectable*> endpoint_map;
@@ -130,12 +130,6 @@ class interconnect
     return topology_;
   }
 
-  inline timestamp send_delay(int num_hops, int num_bytes) const {
-    double bw_term = num_bytes / hop_bw_;
-    timestamp delay = hop_latency_ * num_hops + timestamp(bw_term) + 2*injection_latency_;
-    return delay;
-  }
-
   /**
    * @brief Return the node corresponding to given ID.
    *        No bounds checking is done for validity of ID.
@@ -146,10 +140,6 @@ class interconnect
    */
   node* node_at(node_id nid) const {
     return nodes_[nid];
-  }
-
-  network_switch* logp_switch_at(switch_id sid) const {
-    return logp_overlay_switches_[sid];
   }
 
   network_switch* switch_at(switch_id id) const {
@@ -166,24 +156,30 @@ class interconnect
 
   void deadlock_check();
 
-  void handle(event* ev);
+  void setup();
 
   const switch_map& switches() const {
     return switches_;
-  }
-
-  int thread_for_switch(switch_id sid) const;
-
-  timestamp hop_latency() const {
-    return hop_latency_;
   }
 
   timestamp lookahead() const {
     return lookahead_;
   }
 
+  connectable_component* component(uint32_t id) const {
+    return components_[id];
+  }
+
  private:
-  void connect_switches(sprockit::sim_parameters* switch_params);
+  uint32_t switch_component_id(switch_id sid) const;
+
+  uint32_t node_component_id(node_id nid) const;
+
+  uint32_t logp_component_id(switch_id sid) const;
+
+  void connect_switches(event_manager* mgr, sprockit::sim_parameters* switch_params);
+
+  void configure_interconnect_lookahead(sprockit::sim_parameters* params);
 
   void build_endpoints(sprockit::sim_parameters* node_params,
                     sprockit::sim_parameters* nic_params,
@@ -193,26 +189,26 @@ class interconnect
   void build_switches(sprockit::sim_parameters* switch_params,
                       event_manager* mgr);
 
-  void connect_endpoints(sprockit::sim_parameters* inj_params,
-                  sprockit::sim_parameters* ej_params);
+  void connect_endpoints(event_manager* mgr,
+                  sprockit::sim_parameters* ep_inj_params,
+                  sprockit::sim_parameters* ep_ej_params,
+                  sprockit::sim_parameters* sw_ej_params);
+
+  event_link* allocate_local_link(event_scheduler* src, event_scheduler* dst,
+                                  event_handler* handler, timestamp latency);
 
   switch_map switches_;
-  //a set of switches that transfer messages quickly
-  switch_map logp_overlay_switches_;
+
   node_map nodes_;
 
-  switch_id local_logp_switch_;
-
-  double hop_bw_;
-
-  timestamp hop_latency_;
-
-  timestamp injection_latency_;
+  std::vector<connectable_component*> components_;
 
   timestamp lookahead_;
 
   int num_speedy_switches_with_extra_node_;
   int num_nodes_per_speedy_switch_;
+
+  std::vector<logp_switch*> logp_switches_;
 
   partition* partition_;
   parallel_runtime* rt_;

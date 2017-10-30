@@ -67,16 +67,11 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterDebugSlot(node)
 RegisterNamespaces("os", "memory", "proc", "node");
 RegisterKeywords(
-"libname",
-"nsockets",
-"node_cores",
-"node_name",
-"node_memory_model",
-"node_model",
-"node_sockets",
-"node_pipeline_speedup",
-"node_frequency",
-"job_launcher",
+{ "nsockets", "the number of sockets/processors in a node" },
+{ "node_name", "DEPRECATED: the type of node on each endpoint" },
+{ "node_memory_model", "DEPRECATED: the type of memory model on each node" },
+{ "node_sockets", "DEPRECATED: the number of sockets/processors in a node" },
+{ "job_launcher", "the type of launcher for scheduling jobs on the system - equivalent to MOAB or SLURM" },
 );
 
 namespace sstmac {
@@ -85,10 +80,8 @@ namespace hw {
 using namespace sstmac::sw;
 
 node::node(sprockit::sim_parameters* params,
-  uint64_t id, event_manager* mgr)
-  : connectable_component(params, id,
-    device_id(params->get_int_param("id"), device_id::node),
-    mgr),
+  uint32_t id, event_manager* mgr)
+  : connectable_component(params, id, mgr),
   params_(params),
   app_refcount_(0),
   job_launcher_(nullptr)
@@ -104,7 +97,7 @@ node::node(sprockit::sim_parameters* params,
     init_debug = true;
   }
 #endif
-  my_addr_ = event_location().id();
+  my_addr_ = params->get_int_param("id");
   next_outgoing_id_.set_src_node(my_addr_);
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
@@ -152,6 +145,12 @@ node::deadlock_check()
 }
 
 void
+node::deadlock_check(event* ev)
+{
+  //do nothing
+}
+
+void
 node::setup()
 {
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -184,19 +183,31 @@ node::~node()
 void
 node::connect_output(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   //forward connection to nic
-  nic_->connect_output(params, src_outport, dst_inport, mod);
+  nic_->connect_output(params, src_outport, dst_inport, link);
 }
 
 void
 node::connect_input(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   //forward connection to nic
-  nic_->connect_input(params, src_outport, dst_inport, mod);
+  nic_->connect_input(params/*->get_namespace("nic")*/, src_outport, dst_inport, link);
+}
+
+timestamp
+node::send_latency(sprockit::sim_parameters *params) const
+{
+  return nic_->send_latency(params->get_namespace("nic"));
+}
+
+timestamp
+node::credit_latency(sprockit::sim_parameters *params) const
+{
+  return nic_->credit_latency(params->get_namespace("nic"));
 }
 
 void

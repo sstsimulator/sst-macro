@@ -1,6 +1,6 @@
 
 extern int sstmac_global_stacksize; extern int __offset___Ax; extern void* __ptr___Ax;extern int __sizeof___Ax;struct A {
- static int x;static inline int* get___Ax(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset___Ax; return (((int*)((void*)offsetPtr))); }  
+ static int x;static inline int* get___Ax(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset___Ax;return (((int*)((void*)offsetPtr))); }  
  void fxn(){
   (*A::get___Ax()) -= 1;
  }
@@ -8,11 +8,11 @@ extern int sstmac_global_stacksize; extern int __offset___Ax; extern void* __ptr
 
 extern int sstmac_global_stacksize; extern int sstmac_global_stacksize; namespace ns {
 extern int __offset___Bx; extern void* __ptr___Bx;extern int __sizeof___Bx;struct B {
- static int x;static inline int* get___Bx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset___Bx; return (((int*)((void*)offsetPtr))); }  
+ static int x;static inline int* get___Bx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset___Bx;return (((int*)((void*)offsetPtr))); }  
 };
 namespace ns2 {
  extern int __offset___Cx; extern void* __ptr___Cx;extern int __sizeof___Cx;struct C {
-  static int x;static inline int* get___Cx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char* offsetPtr = *((char**)localStorage) + __offset___Cx; return (((int*)((void*)offsetPtr))); }  
+  static int x;static inline int* get___Cx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset___Cx;return (((int*)((void*)offsetPtr))); }  
  };
 }
 }

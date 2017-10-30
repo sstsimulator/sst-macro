@@ -26,7 +26,7 @@ test_routing_SOURCES = \
     routing/test_routing.cc \
     routing/route_fully_connected.cc \
     routing/route_butterfly.cc \
-    routing/route_dragonfly.cc \
+    routing/route_cascade.cc \
     routing/route_fattree.cc \
     routing/route_fbfly.cc \
     routing/route_torus.cc
@@ -44,7 +44,8 @@ test_unit_test_SOURCES = \
 TEST_LDFLAGS = \
   $(top_builddir)/sstmac/install/libsstmac.la \
   $(top_builddir)/sprockit/sprockit/libsprockit.la \
-  util/libsstmac_unit_test_util.la
+  util/libsstmac_unit_test_util.la \
+  $(FCONTEXT_LIBS)
 
 if EXTERNAL_BOOST
   TEST_LDFLAGS += $(BOOST_LDFLAGS)

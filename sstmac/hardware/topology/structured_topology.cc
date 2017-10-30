@@ -45,13 +45,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sprockit/sim_parameters.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/common/sim_partition.h>
+#include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+ { "netlink_concentration", "the number of nodes per netlink" },
+);
 
 namespace sstmac {
 namespace hw {
-
 
 structured_topology::structured_topology(sprockit::sim_parameters* params,
                                          InitMaxPortsIntra i1,

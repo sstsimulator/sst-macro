@@ -56,7 +56,7 @@ test_skeleton_CoMD.$(CHKSUF): CoMD pots
 
 test_skeleton_sst_component_example.$(CHKSUF): sst_component_example $(SSTMACEXEC)
 	SST_LIB_PATH=skeletons/sst_component_example \
-	 $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
+	 $(PYRUNTEST) 10 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(top_srcdir)/skeletons/sst_component_example/parameters.ini --no-wall-time
 
 test_skeleton_sendrecv_sst_so.$(CHKSUF): sendrecv_sst_so $(SSTMACEXEC)

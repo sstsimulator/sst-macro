@@ -79,9 +79,7 @@ network_message::convert_to_ack()
       type_ = payload_sent_ack;
       break;
     default:
-      spkt_throw_printf(sprockit::value_error,
-        "network_message::clone_injection_ack: cannot ack msg type %s",
-        tostr(type_));
+      spkt_abort_printf("network_message::clone_injection_ack: cannot ack msg type %s", tostr(type_));
       break;
   }
 }
@@ -143,6 +141,9 @@ network_message::serialize_order(serializer& ser)
   ser & bytes_;
   ser & type_;
   ser & aid_;
+  if (type_ == null_netmsg_type){
+    spkt_abort_printf("failed serializing network message - got null type");
+  }
 }
 
 bool

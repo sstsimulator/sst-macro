@@ -35,7 +35,8 @@ endif
 test_LDADD += \
   $(top_builddir)/sstmac/install/libsstmac.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
-  $(top_builddir)/sprockit/sprockit/libsprockit.la
+  $(top_builddir)/sprockit/sprockit/libsprockit.la \
+  $(FCONTEXT_LIBS)
 
 if USE_MPIPARALLEL
 test_LDADD += $(top_builddir)/sstmac/backends/mpi/libsstmac_mpi_runtime.la

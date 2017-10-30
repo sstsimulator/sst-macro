@@ -66,21 +66,19 @@ logp_memory_model::logp_memory_model(sprockit::sim_parameters* params, node* nd)
 }
 
 void
-logp_memory_model::access(long bytes,
-                            double max_bw,
-                            callback* cb)
+logp_memory_model::access(long bytes, double max_bw, callback* cb)
 {
   mem_debug("simple model: doing access of %ld bytes", bytes);
 
   timestamp delta_t = link_->new_access(now(), bytes, max_bw);
-  parent_node_->schedule_delay(delta_t, cb);
+  parent_node_->send_delayed_self_event_queue(delta_t, cb);
 }
 
 timestamp
 logp_memory_model::link::new_access(timestamp now, long size, double max_bw)
 {
   max_bw = std::min(max_bw, bw_);
-  timestamp n(std::max(now.sec(), last_access_.sec()));
+  timestamp n(std::max(now.ticks(), last_access_.ticks()), timestamp::exact);
   timestamp access = lat_ + timestamp((double) size / max_bw);
   last_access_ = n + access;
   timestamp delta = last_access_ - now;

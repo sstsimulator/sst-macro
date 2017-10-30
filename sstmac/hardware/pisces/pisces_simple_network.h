@@ -224,8 +224,6 @@ class pisces_simple_network :
   virtual Request* recvInitData() override;
 
  private:
-  device_id init_loc(sprockit::sim_parameters* params);
-
   bool send_pisces_network(Request* req, int vn);
 
   bool send_logp_network(Request* req, int vn);

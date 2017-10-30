@@ -1,9 +1,9 @@
-Rank 0 = 5000.0042ms
-Rank 1 = 5000.0042ms
-Rank 2 = 5000.0043ms
-Rank 3 = 5000.0043ms
-Rank 4 = 5000.0047ms
-Rank 5 = 5000.0043ms
-Rank 6 = 5000.0043ms
-Rank 7 = 5000.0044ms
-Estimated total runtime of           5.00003717 seconds
+Rank 0 = 5000.0005ms
+Rank 1 = 5000.0081ms
+Rank 2 = 5000.0083ms
+Rank 3 = 5000.0123ms
+Rank 4 = 5000.0088ms
+Rank 5 = 5000.0124ms
+Rank 6 = 5000.0085ms
+Rank 7 = 5000.0085ms
+Estimated total runtime of           5.00004931 seconds

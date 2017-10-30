@@ -51,21 +51,20 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class threading_pth : public threading_interface
+class threading_pth : public thread_context
 {
  public:
-  FactoryRegister("pth", threading_interface, threading_pth)
+  FactoryRegister("pth", thread_context, threading_pth)
 
   /** nothing */
-  threading_pth(sprockit::sim_parameters* params) :
-    threading_interface(params)
+  threading_pth(sprockit::sim_parameters* params)
   {
   }
 
   virtual ~threading_pth() {}
 
-  threading_interface* copy(sprockit::sim_parameters* params) override {
-    return new threading_pth(params);
+  thread_context* copy() const override {
+    return new threading_pth(nullptr);
   }
 
   void init_context() override;
@@ -74,13 +73,13 @@ class threading_pth : public threading_interface
 
   void start_context(int physical_thread_id, void *stack, size_t stacksize, void
                 (*func)(void*), void *args, void* globals_storage,
-                threading_interface* from) override;
+                thread_context* from) override;
 
-  void resume_context(threading_interface* from) override;
+  void resume_context(thread_context* from) override;
 
-  void pause_context(threading_interface *to) override;
+  void pause_context(thread_context *to) override;
 
-  void complete_context(threading_interface *to) override {
+  void complete_context(thread_context *to) override {
     pause_context(to);
   }
 

@@ -86,17 +86,21 @@ class pisces_nic :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
   virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
   link_handler* credit_handler(int port) const override;
 
   link_handler* payload_handler(int port) const override;
+
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
   void deadlock_check() override;
 
@@ -132,6 +136,8 @@ class pisces_netlink :
 
   void deadlock_check() override;
 
+  void deadlock_check(event* ev) override;
+
   link_handler* payload_handler(int port) const override;
 
   link_handler* credit_handler(int port) const override;
@@ -140,13 +146,17 @@ class pisces_netlink :
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
 
   virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* mod) override;
+    event_link* link) override;
+
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
  private:
   static const int really_big_buffer;

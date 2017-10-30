@@ -50,16 +50,26 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/job_launch_event.h>
 #include <sstmac/software/launch/launch_request.h>
 #include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/common/event_callback.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+ { "services", "a list of services to launch on a subset or all of the nodes" },
+ { "launch_app", "DEPRECATED: list of applications to launch", true },
+ { "launch_start_app", "DEPRECATED: time to start application", true },
+ { "launch_cmd_app", "DEPRECATED: cmd to launch application", true },
+);
 
 namespace sstmac {
 namespace sw {
 
-std::map<app_id, task_mapping::ptr> task_mapping::app_ids_launched_;
+std::vector<task_mapping::ptr> task_mapping::app_ids_launched_(1024);
 std::map<std::string, task_mapping::ptr> task_mapping::app_names_launched_;
-std::map<int,app_id> task_mapping::local_refcounts_;
+std::vector<int> task_mapping::local_refcounts_(1024);
 
 job_launcher::job_launcher(sprockit::sim_parameters* params,
                            operating_system* os) :
@@ -70,6 +80,7 @@ job_launcher::job_launcher(sprockit::sim_parameters* params,
   for (int i=0; i < num_nodes; ++i){
     available_.insert(i);
   }
+
   add_launch_requests(params);
 }
 
@@ -97,8 +108,9 @@ job_launcher::schedule_launch_requests()
 {
   for (app_launch_request* req : initial_requests_){
     os_->increment_app_refcount();
-    os_->schedule(req->time(),
-        new_callback(os_->event_location(), this, &job_launcher::incoming_launch_request, req));
+    auto ev = new_callback(os_->component_id(), this,
+                           &job_launcher::incoming_launch_request, req);
+    os_->send_self_event_queue(req->time(), ev);
   }
 }
 
@@ -139,10 +151,10 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
   }
 }
 
-device_id
-job_launcher::event_location() const
+uint32_t
+job_launcher::component_id() const
 {
-  return os_->event_location();
+  return os_->component_id();
 }
 
 void
@@ -167,32 +179,9 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
      topology_, allocation,
      mapping->rank_to_node(),
      mapping->node_to_rank());
-
-#if SSTMAC_INTEGRATED_SST_CORE
-  hw::topology* logp_mapper = topology_;
-#else
-  hw::interconnect* logp_mapper = hw::interconnect::static_interconnect();
-#endif
-
-  std::set<int> ranksSent;
-
-  int num_ranks = mapping->num_ranks();
-  for (int rank=0; rank < num_ranks; ++rank){
-    int dst_nid = mapping->rank_to_node(rank);
-    int logp_switch = logp_mapper->node_to_logp_switch(dst_nid);
-    if (ranksSent.find(logp_switch) != ranksSent.end()){
-      continue; //redundant, no need
-    }
-    ranksSent.insert(logp_switch);
-    sw::start_app_event* lev = new start_app_event(request->aid(), request->app_namespace(),
-                                     mapping, rank, mapping->rank_to_node(rank),
-                                     os_->addr(),//the job launch root
-                                     request->app_params());
-    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
-    //os_->execute_kernel(ami::COMM_PMI_BCAST, lev);
-  }
-  //job launcher needs to add this - might need it later
   task_mapping::add_global_mapping(request->aid(), request->app_namespace(), mapping);
+  os_->outcast_app_start(0, request->aid(), request->app_namespace(), mapping, request->app_params(),
+                       true/*must include myself (the root) in bcast*/);
   delete request;
 }
 
@@ -202,7 +191,8 @@ default_job_launcher::handle_launch_request(app_launch_request* request,
 {
   bool success = request->request_allocation(available_, allocation);
   if (!success){
-    spkt_abort_printf("allocation of app %d failed", request->aid());
+    spkt_abort_printf("allocation of app %d failed - insufficient number of nodes available to meet allocation request", 
+                      request->aid());
   }
 
   for (const node_id& nid : allocation){
@@ -251,52 +241,58 @@ static thread_lock lock;
 task_mapping::ptr
 task_mapping::serialize_order(app_id aid, serializer &ser)
 {
-  lock.lock();
-  task_mapping::ptr& mapping = app_ids_launched_[aid];
+  task_mapping::ptr mapping;
   if (ser.mode() == ser.UNPACK){
-    if (mapping){
-      lock.unlock();
-      return mapping;
-    } else {
-      int num_nodes;
-      ser & num_nodes;
-      mapping = std::make_shared<task_mapping>(aid);
-      ser & mapping->rank_to_node_indexing_;
-      mapping->node_to_rank_indexing_.resize(num_nodes);
-      int num_ranks = mapping->rank_to_node_indexing_.size();
-      for (int i=0; i < num_ranks; ++i){
-        node_id nid = mapping->rank_to_node_indexing_[i];
-        mapping->node_to_rank_indexing_[nid].push_back(i);
-      }
+    int num_nodes;
+    ser & num_nodes;
+    mapping = std::make_shared<task_mapping>(aid);
+    ser & mapping->rank_to_node_indexing_;
+    mapping->node_to_rank_indexing_.resize(num_nodes);
+    int num_ranks = mapping->rank_to_node_indexing_.size();
+    for (int i=0; i < num_ranks; ++i){
+      node_id nid = mapping->rank_to_node_indexing_[i];
+      mapping->node_to_rank_indexing_[nid].push_back(i);
     }
+    lock.lock();
+    auto existing = app_ids_launched_[aid];
+    if (!existing){
+      app_ids_launched_[aid] = mapping;
+    } else {
+      mapping = existing;
+    } 
+    lock.unlock();
   } else {
+    //packing or sizing
+    mapping = app_ids_launched_[aid];
     if (!mapping) spkt_abort_printf("no task mapping exists for application %d", aid);
     int num_nodes = mapping->node_to_rank_indexing_.size();
     ser & num_nodes;
     ser & mapping->rank_to_node_indexing_;
   }
-  lock.unlock();
   return mapping;
-}
-
-task_mapping::ptr
-task_mapping::global_mapping(app_id aid)
-{
-  auto iter = app_ids_launched_.find(aid);
-  if (iter == app_ids_launched_.end()){
-    spkt_abort_printf("cannot find global task mapping for %d", aid);
-  }
-  return iter->second;
 }
 
 task_mapping::ptr
 task_mapping::global_mapping(const std::string& name)
 {
+  lock.lock();
   auto iter = app_names_launched_.find(name);
   if (iter == app_names_launched_.end()){
     spkt_abort_printf("cannot find global task mapping for %s", name.c_str());
   }
-  return iter->second;
+  auto ret = iter->second;
+  lock.unlock();
+  return ret;
+}
+
+const task_mapping::ptr&
+task_mapping::global_mapping(app_id aid)
+{
+  auto& mapping = app_ids_launched_[aid];
+  if (!mapping){
+    spkt_abort_printf("No task mapping exists for app %d\n", aid);
+  }
+  return mapping;
 }
 
 void
@@ -313,12 +309,9 @@ void
 task_mapping::remove_global_mapping(app_id aid, const std::string& name)
 {
   lock.lock();
-  auto iter = local_refcounts_.find(aid);
-  int& refcount = iter->second;
-  refcount--;
-  if (refcount == 0){
-    local_refcounts_.erase(iter);
-    app_ids_launched_.erase(aid);
+  local_refcounts_[aid]--;
+  if (local_refcounts_[aid] == 0){
+    app_ids_launched_[aid] = 0;
     app_names_launched_.erase(name);
   }
   lock.unlock();

@@ -54,9 +54,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
+#include <sstmac/software/launch/job_launcher_fwd.h>
 
 #include <sstmac/common/messages/sst_message_fwd.h>
-#include <sstmac/common/stats/event_trace.h>
 #include <sstmac/common/event_scheduler.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
@@ -70,8 +70,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/debug.h>
 #include <stack>
 #include <queue>
-
-
 
 DeclareDebugSlot(os);
 
@@ -114,9 +112,15 @@ class operating_system :
     return active_thread_;
   }
 
-  static void delete_statics();
+  int thread_id() const {
+    return thread_id_;
+  }
 
-  static void switch_to_context(int aid, int tid);
+  int nthread() const {
+    return nthread_;
+  }
+
+  static void delete_statics();
 
   static operating_system* current_os(){
     return static_os_thread_context();
@@ -139,7 +143,7 @@ class operating_system :
    * @param cat   An optional category labeling the type of
    *              operation
    */
-  void execute(ami::COMP_FUNC, event* data, key_traits::category cat);
+  void execute(ami::COMP_FUNC, event* data);
 
   /**
    * @brief execute Execute a communication function.
@@ -193,7 +197,9 @@ class operating_system :
    *                     for later unblocking
    * @return
    */
-  timestamp block(key* req);
+  void block();
+
+  void block_timeout(timestamp delay);
 
   /**
    * @brief unblock Unblock the thread context associated with the key
@@ -202,7 +208,11 @@ class operating_system :
    *                  a block(req) call
    * @return
    */
-  timestamp unblock(key* req);
+  timestamp unblock(thread* thr);
+
+  void outcast_app_start(int my_rank, int aid, const std::string& app_ns,
+                      task_mapping_ptr mapping, sprockit::sim_parameters* app_params,
+                      bool include_root = false);
 
   /**
    * @brief start_thread Start a thread object and schedule the context switch to it
@@ -234,8 +244,6 @@ class operating_system :
    */
   void start_app(app* a, const std::string& unique_name);
 
-  void free_thread_stack(void* stack);
-
   static size_t stacksize(){
     return sstmac_global_stacksize;
   }
@@ -261,8 +269,6 @@ class operating_system :
   node_id addr() const {
     return my_addr_;
   }
-
-  void schedule_timeout(timestamp delay, key* k);
 
   graph_viz* call_graph() const {
     return call_graph_;
@@ -296,6 +302,8 @@ class operating_system :
    */
   void compute(timestamp t);
 
+  static void init_threads(int nthread);
+
   void kill_node();
 
   void decrement_app_refcount();
@@ -309,8 +317,6 @@ class operating_system :
   bool call_graph_active() const {
     return call_graph_active_;
   }
-
-  static void stack_check();
 
  private:
   void switch_to_thread(thread* tothread);
@@ -328,18 +334,21 @@ class operating_system :
   bool handle_library_event(const std::string& name, event* ev);
 
  private:
+  int thread_id_;
+  int nthread_;
   hw::node* node_;
   std::unordered_map<std::string, library*> libs_;
   std::unordered_map<library*, int> lib_refcounts_;
   std::unordered_map<void*, std::list<library*>> libs_by_owner_;
   std::map<std::string, std::list<event*>> pending_library_events_;
+
   thread* active_thread_;
 
   node_id my_addr_;
 
   /// The caller context (main DES thread).  We go back
   /// to this context on every context switch.
-  threading_interface *des_context_;
+  thread_context *des_context_;
 
   sprockit::sim_parameters* params_;
 
@@ -355,11 +364,6 @@ class operating_system :
   static std::vector<operating_system*> active_os_;
 #else
   static operating_system* active_os_;
-#endif
-  static stack_alloc stack_alloc_;
-
-#if SSTMAC_SANITY_CHECK
-  std::set<key*> valid_keys_;
 #endif
 
 };
