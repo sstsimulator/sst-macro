@@ -90,7 +90,7 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
                         h_, g_-1, g_);
   }
 
-  max_ports_intra_network_ = a_ + g_;
+  max_ports_intra_network_ = a_ + h_;
   eject_geometric_id_ = max_ports_intra_network_;
 
   group_wiring_ = inter_group_wiring::factory::get_optional_param("inter_group", "circulant", params, this);
@@ -128,9 +128,9 @@ dragonfly::minimal_route_to_switch(
 
   int srcA = computeA(src);
   //see if inter-group, but direct connection to that group
-  int connected[32];
-  int numConns = group_wiring_->connected_routers(srcA, srcG, connected);
-  for (int c=0; c < numConns; ++c){
+  std::vector<int> connected;
+  group_wiring_->connected_routers(srcA, srcG, connected);
+  for (int c=0; c < connected.size(); ++c){
     int testG = computeG(connected[c]);
     if (testG == dstG){
       path.set_outport(c + a_);
@@ -139,8 +139,8 @@ dragonfly::minimal_route_to_switch(
   }
 
   //inter-group and we need local hop to get there
-  numConns = group_wiring_->connected_to_group(srcG, dstG, connected);
-  int srcRotater = srcA % numConns;
+  group_wiring_->connected_to_group(srcG, dstG, connected);
+  int srcRotater = srcA % connected.size();
 
   path.set_outport(connected[srcRotater]);
   path.set_metadata_bit(routable::crossed_timeline);
@@ -154,10 +154,10 @@ dragonfly::minimal_distance(switch_id src, switch_id dst) const
 
   if (srcG == dstG) return 1;
 
-  int connected[32];
+  std::vector<int> connected;
   int directConn = -1;
-  int numConns = group_wiring_->connected_routers(srcA, srcG, connected);
-  for (int i=0; i < numConns; ++i){
+  group_wiring_->connected_routers(srcA, srcG, connected);
+  for (int i=0; i < connected.size(); ++i){
     if (connected[i] == dst){
       return 1;
     } else if (computeG(connected[i]) == dstG){
@@ -213,9 +213,9 @@ dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) con
     }
   }
 
-  int groupConnections[64];
-  int numConns = group_wiring_->connected_routers(myA, myG, groupConnections);
-  for (int h = 0; h < numConns; ++h){
+  std::vector<int> groupConnections;
+  group_wiring_->connected_routers(myA, myG, groupConnections);
+  for (int h = 0; h < groupConnections.size(); ++h){
     switch_id dst = groupConnections[h];
     int dstG = computeG(dst);
     if (dstG != myG){
@@ -289,23 +289,22 @@ class circulant_group_wiring : public inter_group_wiring
    * @param connected [in-out] The routers (switch id) for each inter-group interconnection
    * @return The number of routers in connected array
    */
-  int connected_routers(int srcA, int srcG, int connected[]) const override {
-    int idx = 0;
+  void connected_routers(int srcA, int srcG, std::vector<int>& connected) const override {
+    connected.clear();
     int dstA = srcA;
     int half = h_  /2;
     for (int h=1; h <= half; ++h){
       int plusG = mod(srcG + srcA*half + h, g_);
       if (plusG != srcG){
         switch_id dst = plusG*a_ + dstA;
-        connected[idx++] = dst; //full switch ID
+        connected.push_back(dst); //full switch ID
       }
       int minusG = mod(srcG - srcA*half - h, g_);
       if (minusG != srcG){
         switch_id dst = minusG*a_ + dstA;
-        connected[idx++] = dst; //full switch ID
+        connected.push_back(dst); //full switch ID
       }
     }
-    return idx;
   }
 
   /**
@@ -316,20 +315,19 @@ class circulant_group_wiring : public inter_group_wiring
    *                  that have connections to a router in group dstG
    * @return The number of routers in group srcG with connections to dstG
    */
-  int connected_to_group(int srcG, int dstG, int connected[]) const override {
-    int tmp[32];
-    int idx = 0;
+  void connected_to_group(int srcG, int dstG, std::vector<int>& connected) const override {
+    connected.clear();
+    std::vector<int> tmp;
     for (int a=0; a < a_; ++a){
-      int nc = connected_routers(a, srcG, tmp);
-      for (int c=0; c < nc; ++c){
+      connected_routers(a, srcG, tmp);
+      for (int c=0; c < tmp.size(); ++c){
         int g = tmp[c] / a_;
         if (dstG == g){
-          connected[idx++] = a;
+          connected.push_back(a);
           break;
         }
       }
     }
-    return idx;
   }
 
 };

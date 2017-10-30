@@ -72,7 +72,7 @@ class inter_group_wiring {
    * @param connected [in-out] The routers (switch id) for each inter-group interconnection
    * @return The number of routers in connected array
    */
-  virtual int connected_routers(int a, int g, int connected[]) const = 0;
+  virtual void connected_routers(int a, int g, std::vector<int>& connected) const = 0;
 
   /**
    * @brief connected_to_group
@@ -82,7 +82,7 @@ class inter_group_wiring {
    *                  that have connections to a router in group dstG
    * @return The number of routers in group srcG with connections to dstG
    */
-  virtual int connected_to_group(int srcG, int dstG, int connected[]) const = 0;
+  virtual void connected_to_group(int srcG, int dstG, std::vector<int>& connected) const = 0;
 
  protected:
   inter_group_wiring(sprockit::sim_parameters* params, dragonfly* top);
