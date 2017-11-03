@@ -45,7 +45,7 @@ endif
 test_output_graph_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) tmp_$@ notime \
 	$(SSTMACEXEC) -f $(srcdir)/test_configs/$*_graph.ini \
-     --graph=output_graph_$*
+     --graph=output_graph_$* --no-wall-time
 
 output_graph_%.$(CHKSUF): $(SSTMACEXEC) test_output_graph_%.$(CHKSUF)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
