@@ -153,7 +153,13 @@ int main(int argc, char** argv)
   }
 
   char hostname[64];
-  gethostname(hostname, 64);
+  int rc = gethostname(hostname, 64);
+  if (rc != 0){
+    std::cerr << "unable to get hostname" << std::endl;
+    return 1;
+  }
+
+  std::cout << (const char*) hostname << std::endl;
 
   char* allHostnames = rank == 0 ? new char[64*nproc] : nullptr;
 

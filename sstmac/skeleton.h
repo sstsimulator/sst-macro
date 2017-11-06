@@ -250,10 +250,6 @@ static void* nullptr = 0;
 #define memset sstmac_memset
 #endif
 
-#ifndef gethostname
-#define gethostname sstmac_gethostname
-#endif
-
 #endif
 
 
