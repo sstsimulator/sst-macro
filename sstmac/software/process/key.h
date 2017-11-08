@@ -92,6 +92,7 @@ class ftq_tag {
   }
 
   static ftq_tag null;
+  static ftq_tag compute;
 
  private:
   static std::unordered_map<std::string, int>* category_name_to_id_;

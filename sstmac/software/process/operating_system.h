@@ -358,8 +358,6 @@ class operating_system :
 
   ftq_calendar* ftq_trace_;
 
-  static sstmac::sw::ftq_tag compute_tag;
-
   bool call_graph_active_;
 
 #if SSTMAC_USE_MULTITHREAD

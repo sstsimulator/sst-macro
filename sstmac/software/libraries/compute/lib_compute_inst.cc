@@ -63,8 +63,6 @@ RegisterKeywords(
  { "lib_compute_access_width", "the size of each memory access access in bits" }
 );
 
-sstmac::sw::ftq_tag lib_compute_inst::compute_tag("Compute");
-
 lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
                                    const std::string& libname, software_id id,
                                    operating_system* os)
@@ -93,7 +91,11 @@ lib_compute_inst::compute_detailed(
   st.intops = nintops;
   st.mem_sequential = bytes;
 
-  os_->active_thread()->set_tag(compute_tag);
+  // Do not overwrite an existing tag
+  if (os_->active_thread()->tag().id() == ftq_tag::null.id()) {
+      os_->active_thread()->set_tag(ftq_tag::compute);
+  }
+
   compute_inst(cmsg);
   delete cmsg;
 }

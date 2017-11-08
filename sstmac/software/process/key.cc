@@ -59,6 +59,7 @@ namespace sw {
 std::unordered_map<std::string,int>* ftq_tag::category_name_to_id_ = nullptr;
 std::unordered_map<int,std::string>* ftq_tag::category_id_to_name_ = nullptr;
 ftq_tag ftq_tag::null("Null");
+ftq_tag ftq_tag::compute("Compute");
 
 ftq_tag::ftq_tag(const char *name)
 {
