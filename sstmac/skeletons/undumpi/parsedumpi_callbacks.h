@@ -100,11 +100,21 @@ class parsedumpi_callbacks
 
   bool initialized_;
 
+  uint64_t num_global_collectives_;
+  uint64_t early_terminate_count_;
+
  public:
   /// Populate callbacks.
   parsedumpi_callbacks(parsedumpi *parent);
 
   ~parsedumpi_callbacks();
+
+  void increment_collective(dumpi_comm comm){
+    if (num_global_collectives_ == early_terminate_count_){
+      throw parsedumpi::early_termination();
+    }
+    if (comm == DUMPI_COMM_WORLD) ++num_global_collectives_;
+  }
 
   void set_initialized(bool flag) {
     initialized_ = flag;
