@@ -172,6 +172,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pthread_getspecific SSTMAC_pthread_getspecific
 #define pthread_setspecific SSTMAC_pthread_setspecific
 
+#define pthread_rwlock_rdlock SSTMAC_pthread_rwlock_rdlock
+#define pthread_rwlock_tryrdlock SSTMAC_pthread_rwlock_tryrdlock
+#define pthread_rwlock_wrlock SSTMAC_pthread_rwlock_wrlock
+#define pthread_rwlock_trywrlock SSTMAC_pthread_rwlock_trywrlock
+#define pthread_rwlockattr_init SSTMAC_pthread_rwlockattr_init
+#define pthread_rwlockattr_destroy SSTMAC_pthread_rwlockattr_destroy
+
 #define pthread_t sstmac_pthread_t
 #define pthread_attr_t sstmac_pthread_attr_t
 #define pthread_key_t sstmac_pthread_key_t
@@ -180,18 +187,25 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pthread_spinlock_t sstmac_pthread_spinlock_t
 #define pthread_once_t sstmac_pthread_once_t
 #define pthread_mutexattr_t sstmac_pthread_mutexattr_t
+#define pthread_rwlock_t sstmac_pthread_rwlock_t
+#define pthread_rwlock_attr_t sstmac_pthread_rwlock_attr_t
+
+#define pthread_setconcurrency SSTMAC_pthread_setconcurrency
+#define pthread_getconcurrency SSTMAC_pthread_getconcurrency
 
 #define PTHREAD_ONCE_INIT SSTMAC_PTHREAD_ONCE_INIT
 #define PTHREAD_COND_INITIALIZER SSTMAC_PTHREAD_COND_INITIALIZER
 #define PTHREAD_MUTEX_INITIALIZER SSTMAC_PTHREAD_MUTEX_INITIALIZER
 
+#define PTHREAD_RWLOCK_INITIALIZER SSTMAC_PTHREAD_RWLOCK_INITIALIZER
+
 #define PTHREAD_SCOPE_PROCESS SSTMAC_PTHREAD_SCOPE_PROCESS
 #define PTHREAD_SCOPE_SYSTEM SSTMAC_PTHREAD_SCOPE_SYSTEM
 
-#undef __thread
-#define __thread thread_local_not_yet_allowed
-#undef thread_local
-#define thread_local thread_local_not_yet_allowed
+//#undef __thread
+//#define __thread thread_local_not_yet_allowed
+//#undef thread_local
+//#define thread_local thread_local_not_yet_allowed
 
 
 #endif

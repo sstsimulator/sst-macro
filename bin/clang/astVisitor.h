@@ -162,6 +162,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool VisitDecl(clang::Decl* D);
 
+  bool VisitTypedefDecl(clang::TypedefDecl* D);
+
   /**
    * @brief VisitDeclRefExpr Examine the usage of a variable to determine
    * if it is either a global variable or a pragma null_variable and therefore
@@ -390,6 +392,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   clang::Decl* currentTopLevelScope_;
   clang::Rewriter& rewriter_;
   clang::CompilerInstance* ci_;
+  std::map<clang::RecordDecl*,clang::TypedefDecl*> typedef_structs_;
   SSTPragmaList pragmas_;
   bool visitingGlobal_;
   std::set<clang::FunctionDecl*> templateDefinitions_;
@@ -496,6 +499,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     *         If D is not an anonymous struct, return nullptrs
     */
    AnonRecord* checkAnonStruct(clang::VarDecl* D, AnonRecord* rec);
+
+   clang::RecordDecl* checkCombinedStructVarDecl(clang::VarDecl* D);
 
    /**
     * @brief checkArray See if the type of the variable is an array

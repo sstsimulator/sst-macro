@@ -572,28 +572,41 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
   }
 }
 
-SkeletonASTVisitor::AnonRecord*
-SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
+RecordDecl*
+SkeletonASTVisitor::checkCombinedStructVarDecl(VarDecl* D)
 {
-  bool isAnon = false;
   auto ty = D->getType().getTypePtr();
   if (ty->isStructureType()){
     RecordDecl* recDecl = ty->getAsStructureType()->getDecl();
-    if (recDecl->getNameAsString() == ""){
-      rec->structType = "struct";
-      rec->decl = recDecl;
-      isAnon = true;
-    }
-  } else if (ty->isUnionType()){
-    RecordDecl* recDecl = ty->getAsUnionType()->getDecl();
-    if (recDecl->getNameAsString() == ""){
-      rec->structType = "union";
-      rec->decl = recDecl;
-      isAnon = true;
+    if (recDecl->getLocStart() == D->getLocStart()){
+      //oh, well, they are both from the same spot
+      //so, yeah, combined c-style var and struct decl
+      return recDecl;
     }
   }
+  return nullptr;
+}
 
-  if (isAnon){
+SkeletonASTVisitor::AnonRecord*
+SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
+{
+  auto ty = D->getType().getTypePtr();
+  const char* prefix;
+  RecordDecl* recDecl;
+  if (ty->isStructureType()){
+    recDecl = ty->getAsStructureType()->getDecl();
+    prefix = "struct";
+  } else if (ty->isUnionType()){
+    recDecl = ty->getAsUnionType()->getDecl();
+    prefix = "union";
+  } else {
+    return nullptr;
+  }
+
+  bool typedefd = typedef_structs_.find(recDecl) != typedef_structs_.end();
+  if (!typedefd && recDecl->getNameAsString() == ""){
+    rec->decl = recDecl;
+    rec->structType = prefix;
     rec->typeName = D->getNameAsString() + "_anonymous_type";
     rec->retType = rec->structType + " "  + rec->typeName + "*";
     return rec;
@@ -612,7 +625,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                    VarDecl* D,
                                    AnonRecord* anonRecord,
                                    ArrayInfo* arrayInfo)
-{
+{  
   //const global variables can't change... so....
   //no reason to do any work tracking them
   if (D->getType().isConstQualified()){
@@ -651,6 +664,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     externStackDeclLoc = outerNsDecl->getLocStart();
   }
 
+  if (externStackDeclLoc.isInvalid()){
+    errorAbort(D->getLocStart(), *ci_, "computed incorrect replacement location for global variable");
+  }
   rewriter_.InsertText(externStackDeclLoc, "extern int sstmac_global_stacksize; ");
 
   extern_var_os << "extern int __offset_" << scopeUniqueVarName << "; ";
@@ -673,7 +689,8 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   std::string empty;
   llvm::raw_string_ostream os(empty);
   std::string varName = currentNs_->nsPrefix() + D->getNameAsString();
-  bool notDeclared = globalsDeclared_.find(varName) == globalsDeclared_.end();
+  std::string checkName = currentNs_->nsPrefix() + scopeUniqueVarName;
+  bool notDeclared = globalsDeclared_.find(checkName) == globalsDeclared_.end();
 
   static const char* globalOffsetString = "sizeof(int)";
   if (notDeclared){
@@ -687,7 +704,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
        << " char* offsetPtr = *globalMapPtr + __offset_" << scopeUniqueVarName << ";"
        << "return (((" << retType << ")((void*)offsetPtr))); "
        << "}";
-    globalsDeclared_.insert(varName);
+    globalsDeclared_.insert(checkName);
   }
   os << "  ";
 
@@ -750,61 +767,68 @@ SkeletonASTVisitor::deleteStmt(Stmt *s)
 bool
 SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
 {
-  if (D->isStaticLocal()){
-    FunctionDecl* outerFxn = fxn_contexts_.front();
-    SourceLocation insertLoc = outerFxn->getLocStart();
-    std::stringstream prefix_sstr; prefix_sstr << "_";
-    for (FunctionDecl* fxn : fxn_contexts_){
-      prefix_sstr << "_" << fxn->getNameAsString();
-    }
+  FunctionDecl* outerFxn = fxn_contexts_.front();
+  SourceLocation insertLoc = outerFxn->getLocStart();
+  std::stringstream prefix_sstr; prefix_sstr << "_";
+  for (FunctionDecl* fxn : fxn_contexts_){
+    prefix_sstr << "_" << fxn->getNameAsString();
+  }
 
-    AnonRecord anonRec;
-    AnonRecord* anonRecPtr = checkAnonStruct(D, &anonRec);
-    ArrayInfo arrayInfo;
-    ArrayInfo* arrayInfoPtr = checkArray(D, &arrayInfo);
+  AnonRecord anonRec;
+  AnonRecord* anonRecPtr = checkAnonStruct(D, &anonRec);
+  ArrayInfo arrayInfo;
+  ArrayInfo* arrayInfoPtr = checkArray(D, &arrayInfo);
 
-    std::string init_prefix = prefix_sstr.str();
-    std::string scope_prefix = currentNs_->filePrefix() + init_prefix;
-    /** we have to move the initializer outside the function, which is annoying
-     *  to avoid name conflicts, we have to change the name of the initializer to
-     *  something unique */
-    PrettyPrinter new_init_pp;
-    if (anonRecPtr){
-      new_init_pp.os << anonRecPtr->structType
-                     << " " << anonRecPtr->typeName
-                     << "{";
-      auto end = anonRecPtr->decl->field_end();
-      for (auto iter=anonRecPtr->decl->field_begin(); iter != end; ++iter){
-        FieldDecl* fdec = *iter;
-        new_init_pp.print(fdec);
-        new_init_pp.os << "; ";
-      }
-      new_init_pp.os << "}; ";
-      new_init_pp.os << "static " << anonRecPtr->structType
-                     << " " << anonRecPtr->typeName;
-    } else if (arrayInfoPtr) {
-      new_init_pp.os << arrayInfoPtr->typedefString << "; ";
-      new_init_pp.os << "static " << arrayInfoPtr->typedefName;
-      arrayInfoPtr->isFxnStatic = true;
-    } else {
-      new_init_pp.os << "static " << QualType::getAsString(D->getType().split());
+  std::string init_prefix = prefix_sstr.str();
+  std::string scope_prefix = currentNs_->filePrefix() + init_prefix;
+  /** we have to move the initializer outside the function, which is annoying
+   *  to avoid name conflicts, we have to change the name of the initializer to
+   *  something unique */
+  PrettyPrinter new_init_pp;
+  if (anonRecPtr){
+    if (anonRecPtr->structType.size() == 0){
+      errorAbort(D->getLocStart(), *ci_, "failed to compute type of anonymous struct");
     }
-    new_init_pp.os << " " << init_prefix << D->getNameAsString();
-    if (D->hasInit()){
-      new_init_pp.os << " = ";
-      new_init_pp.print(D->getInit());
+    new_init_pp.os << anonRecPtr->structType
+                   << " " << anonRecPtr->typeName
+                   << "{";
+    auto end = anonRecPtr->decl->field_end();
+    for (auto iter=anonRecPtr->decl->field_begin(); iter != end; ++iter){
+      FieldDecl* fdec = *iter;
+      new_init_pp.print(fdec);
+      new_init_pp.os << "; ";
     }
-    new_init_pp.os << ";";
-    rewriter_.InsertText(insertLoc, new_init_pp.str());
-    //now that we have moved the initializer, we can do the replacement
-    //but the replacement should point to the new initializer
-    setupGlobalVar(scope_prefix, init_prefix, "",
-                   outerFxn->getLocStart(), insertLoc,
-                   Extern, D, anonRecPtr, arrayInfoPtr);
-    SourceLocation endLoc = getEndLoc(D);
-    SourceRange rng(D->getLocStart(), endLoc);
-    //while we're at it, might as well get rid of the old initializer
-    replace(rng, rewriter_, "", *ci_);
+    new_init_pp.os << "}; ";
+    if (anonRecPtr->structType.size() == 0){
+      errorAbort(D->getLocStart(), *ci_, "failed to compute type of anonymous struct");
+    }
+    new_init_pp.os << "static " << anonRecPtr->structType
+                   << " " << anonRecPtr->typeName;
+  } else if (arrayInfoPtr) {
+    new_init_pp.os << arrayInfoPtr->typedefString << "; ";
+    new_init_pp.os << "static " << arrayInfoPtr->typedefName;
+    arrayInfoPtr->isFxnStatic = true;
+  } else {
+    new_init_pp.os << "static " << QualType::getAsString(D->getType().split());
+  }
+  new_init_pp.os << " " << init_prefix << D->getNameAsString();
+  if (D->hasInit()){
+    new_init_pp.os << " = ";
+    new_init_pp.print(D->getInit());
+  }
+  new_init_pp.os << ";";
+  rewriter_.InsertText(insertLoc, new_init_pp.str());
+  //now that we have moved the initializer, we can do the replacement
+  //but the replacement should point to the new initializer
+  setupGlobalVar(scope_prefix, init_prefix, "",
+                 outerFxn->getLocStart(), insertLoc,
+                 Extern, D, anonRecPtr, arrayInfoPtr);
+  SourceLocation endLoc = getEndLoc(D);
+  SourceRange rng(D->getLocStart(), endLoc);
+  //while we're at it, might as well get rid of the old initializer
+  RecordDecl* combinedDecl = checkCombinedStructVarDecl(D);
+  if (!combinedDecl){
+    //replace(rng, rewriter_, "", *ci_);
   }
   return true;
 }
@@ -960,6 +984,8 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   //we need do nothing with this
   if (D->isConstexpr()){
     return true;
+  } else if (D->getTSCSpec() != TSCS_unspecified){
+    return true;
   }
 
   if (reservedNames_.find(D->getNameAsString()) != reservedNames_.end()){
@@ -986,17 +1012,27 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     return true;
   }
 
+  bool isGlobal = true;
+  bool rc = true;
   if (insideClass()){
-    return checkDeclStaticClassVar(D);
-  } else if (insideFxn()){
-    return checkStaticFxnVar(D);
+    rc = checkDeclStaticClassVar(D);
+  } else if (insideFxn() && D->isStaticLocal()){
+    rc = checkStaticFxnVar(D);
   } else if (D->isCXXClassMember()){
-    return checkInstanceStaticClassVar(D);
+    rc = checkInstanceStaticClassVar(D);
   } else if (D->getStorageClass() == StorageClass::SC_Static){
-    return checkStaticFileVar(D);
+    rc = checkStaticFileVar(D);
   } else if (!D->isLocalVarDeclOrParm()){
-    return checkGlobalVar(D);
+    rc = checkGlobalVar(D);
+  } else {
+    isGlobal = false;
   }
+
+  if (isGlobal && D->getType().getTypePtr()->isFunctionPointerType()){
+      errorAbort(D->getLocStart(), *ci_,
+                 "global variable function pointers not compatible with auto-skeletonizer - use #pragma sst keep if possible");
+  }
+
   return true;
 }
 
@@ -1288,6 +1324,20 @@ SkeletonASTVisitor::VisitStmt(Stmt *S)
 
   activatePragmasForStmt(S);
 
+  return true;
+}
+
+bool
+SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
+{
+  auto ty = D->getUnderlyingType().getTypePtr();
+  if (ty->isStructureType()){
+    auto str_ty = ty->getAsStructureType();
+    if (!str_ty){
+      errorAbort(D->getLocStart(), *ci_, "structure type did not return a record declaration");
+    }
+    typedef_structs_[str_ty->getDecl()] = D;
+  }
   return true;
 }
 

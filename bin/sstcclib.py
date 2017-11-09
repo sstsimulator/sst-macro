@@ -336,9 +336,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     extraCppFlags = [
       "-I%s/include/sumi" % prefix,
       "-DSSTMAC=1",
-      "-D__thread=thread_local_not_yet_allowed",
-      "-Dthread_local=thread_local_not_yet_allowed",
     ]
+    # "-D__thread=thread_local_not_yet_allowed",
+    # "-Dthread_local=thread_local_not_yet_allowed",
 
   if asmFiles:
     extraCppFlags = [] #add nothing
