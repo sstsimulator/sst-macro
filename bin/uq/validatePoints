@@ -1,0 +1,63 @@
+#! /usr/bin/env python
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+import sys
+import os
+
+"""
+Given a parameter sweep over numerous different grid points,
+plot all the simulation values against the experimental values to get a sense of the
+agreement between the two. Final product of this script is a validation.pdf containing 
+the plot
+"""
+
+def usage(of):
+  of.write("usage: ./validatePoints <simulation_data_file> <experiment_data_file>\n")
+
+if len(sys.argv) != 3:
+  usage(sys.stderr)
+  sys.exit("Need 3 arguments")
+
+sims = sys.argv[1]
+exps = sys.argv[2]
+
+if not os.path.isfile(sims):
+  usage(sys.stderr)
+  sys.exit("First argument must be a valid simulation data file")
+
+if not os.path.isfile(exps):
+  usage(sys.stderr)
+  sys.exit("Second argument must be a valid experiment data file")
+
+fig, ax = plt.subplots()
+
+text = open(sims).read()
+data = text.splitlines()
+numPoints = len(data[0].strip().split())
+
+xPoints = [0]*numPoints
+for i in range(numPoints):
+  xPoints[i] = i+1
+
+label="Simulations"
+for line in text.splitlines():
+  yPoints = map(float, line.strip().split())
+  s = ax.plot(xPoints, yPoints, marker='o', ms=1, color='r', zorder=1, mfc='r', mec='r', label=label)
+  label=None
+
+text = open(exps).read()
+label="Experiments"
+for line in text.splitlines():
+  yPoints = map(float, line.strip().split())
+  s = ax.scatter(xPoints, yPoints, color='b', marker='o', s=10, zorder=2, label=label)
+  label=None
+
+ax.legend(bbox_to_anchor=(0.5,0.95))
+ax.set_xlabel("Output Number")
+ax.set_ylabel("Output Values")
+
+plt.savefig("validation.pdf")
+#plt.show()
+

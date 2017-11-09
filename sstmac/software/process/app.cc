@@ -50,7 +50,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/lib_compute_time.h>
 #include <sstmac/software/libraries/compute/lib_compute_memmove.h>
-#include <sstmac/software/libraries/compute/lib_compute_loops.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/process/operating_system.h>
@@ -59,6 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/launch/launch_event.h>
+#include <sstmac/common/thread_lock.h>
 #include <dlfcn.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/dumpi_util/dumpi_meta.h>
@@ -70,6 +70,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 
 static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
+
+RegisterKeywords(
+ { "host_compute_timer", "whether to use the time elapsed on the host machine in compute modeling" },
+ { "min_op_cutoff", "the minimum number of operations in a compute before detailed modeling is perfromed" },
+);
 
 namespace sstmac {
 namespace sw {
@@ -122,11 +127,11 @@ app::~app()
   if (params_) delete params_;
 }
 
-lib_compute_loops*
-app::compute_loops_lib()
+lib_compute_memmove*
+app::compute_lib()
 {
   if(!compute_lib_) {
-    compute_lib_ = new lib_compute_loops(params_, sid_, os_);
+    compute_lib_ = new lib_compute_memmove(params_, sid_, os_);
   }
   return compute_lib_;
 }
@@ -150,28 +155,22 @@ app::cleanup()
   thread::cleanup();
 }
 
-lib_compute_time*
-app::compute_time_lib()
-{
-  return compute_loops_lib();
-}
-
 void
 app::sleep(timestamp time)
 {
-  compute_loops_lib()->sleep(time);
+  compute_lib()->sleep(time);
 }
 
 void
 app::compute(timestamp time)
 {
-  compute_loops_lib()->compute(time);
+  compute_lib()->compute(time);
 }
 
 void
 app::compute_inst(compute_event* cmsg)
 {
-  compute_loops_lib()->compute_inst(cmsg);
+  compute_lib()->compute_inst(cmsg);
 }
 
 void
@@ -180,7 +179,7 @@ app::compute_loop(uint64_t num_loops,
   int nintops_per_loop,
   int bytes_per_loop)
 {
-  compute_loops_lib()->lib_compute_inst::compute_loop(
+  compute_lib()->lib_compute_inst::compute_loop(
           num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
 
@@ -194,19 +193,19 @@ app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
   if ((flops+nintops) < min_op_cutoff_){
     return;
   }
-  compute_loops_lib()->compute_detailed(flops, nintops, bytes);
+  compute_lib()->compute_detailed(flops, nintops, bytes);
 }
 
 void
 app::compute_block_read(long bytes)
 {
-  compute_loops_lib()->read(bytes);
+  compute_lib()->read(bytes);
 }
 
 void
 app::compute_block_write(long bytes)
 {
-  compute_loops_lib()->write(bytes);
+  compute_lib()->write(bytes);
 }
 
 sprockit::sim_parameters*
@@ -218,7 +217,7 @@ app::get_params()
 void
 app::compute_block_memcpy(long bytes)
 {
-  compute_loops_lib()->copy(bytes);
+  compute_lib()->copy(bytes);
 }
 
 api*
@@ -240,7 +239,7 @@ app::_get_api(const char* name)
 void
 app::run()
 {
-  SSTMACBacktrace("main");
+  SSTMACBacktrace(main);
   os_->increment_app_refcount();
   end_api_call(); //this initializes things, "fake" api call at beginning
   skeleton_main();
@@ -435,10 +434,13 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
 void
 user_app_cxx_full_main::skeleton_main()
 {
+  static thread_lock argv_lock;
+  argv_lock.lock();
   argv_entry& entry = argv_map_[sid_.app_];
   if (entry.argv == 0){
     init_argv(entry);
   }
+  argv_lock.unlock();
   (*fxn_)(entry.argc, entry.argv);
 }
 

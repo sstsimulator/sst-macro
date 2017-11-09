@@ -100,36 +100,27 @@ class parsedumpi_callbacks
 
   bool initialized_;
 
-#if SSTMAC_COMM_SYNC_STATS
-  // Whether to start MPI calls on the exact times they started in the trace
-  bool exact_mpi_times_;
-#endif
  public:
   /// Populate callbacks.
   parsedumpi_callbacks(parsedumpi *parent);
 
   ~parsedumpi_callbacks();
 
-  void
-  set_initialized(bool flag) {
+  void set_initialized(bool flag) {
     initialized_ = flag;
   }
 
-  bool
-  initialized() const {
+  bool initialized() const {
     return initialized_;
   }
 
-  /// Start parsing.
   /**
    * @brief parse_stream
    * @param filename
    * @param print_progress Whether to print progress - usually only true for rank 0
    * @param percent_terminate -1 indicates run to end, otherwise terminate at some percent - only rank 0 shoudl cause termination
    */
-  void parse_stream(const std::string &filename,
-    bool print_progress,
-    double percent_terminate);
+  void parse_stream(const std::string &filename, bool print_progress);
 
  private:
   /// Initialize maps (datatypes etc.).  Called at constrution.

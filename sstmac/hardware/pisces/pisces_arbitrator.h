@@ -205,7 +205,7 @@ class pisces_cut_through_arbitrator :
 
   void do_arbitrate(pkt_arbitration_t& st);
 
-  struct bandwidth_epoch {
+  struct bandwidth_epoch : public sprockit::thread_safe_new<bandwidth_epoch> {
     bw_t bw_available; //bandwidth is bytes per timestamp tick
     ticks_t start;
     ticks_t length;

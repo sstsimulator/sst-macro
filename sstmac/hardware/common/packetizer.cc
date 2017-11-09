@@ -82,6 +82,12 @@ packetizer::start(int vn, message *msg)
   }
   next.offset = 0;
   next.msg = msg;
+  if (msg->needs_ack()){
+    //we have to clone the ack here
+    //the main msg might get deleted at any point in time
+    //during the injection process
+    next.ack = msg->clone_ack();
+  }
   pending_[vn].push_back(next);
 
   sendWhatYouCan(vn);
@@ -100,7 +106,7 @@ packetizer::deadlock_check()
 void
 packetizer::sendWhatYouCan(int vn)
 {
-  std::list<pending_send>& pending = pending_[vn];
+  auto& pending = pending_[vn];
   while (!pending.empty()){
     pending_send& next = pending.front();
     long initial_offset = next.offset;
@@ -117,10 +123,9 @@ packetizer::sendWhatYouCan(int vn)
       next.bytes_left -= num_bytes;
     }
     long bytes_sent = next.offset - initial_offset;
-    if (next.msg->needs_ack()){
+    if (next.ack){
       timestamp time_to_send(bytes_sent * inv_bw_);
-      message* ack = next.msg->clone_ack();
-      schedule_delay(time_to_send, acker_, ack);
+      acker_->send_extra_delay(time_to_send, next.ack);
     }
     //the entire packet sent
     pending.pop_front();

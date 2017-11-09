@@ -69,7 +69,7 @@ cpuset_compute_scheduler::reserve_core(thread *thr)
         available_cores_, thr->cpumask(), thr->thread_id());
     //no available cores, hold up
     pending_threads_.push_back(thr);
-    os_->block(thr->schedule_key());
+    os_->block();
     //this is guaranteed not to unblock until valid core received
   } else {
     allocate_core_to_thread(valid_cores, thr);
@@ -117,7 +117,7 @@ cpuset_compute_scheduler::release_core(thread *thr)
       allocate_core_to_thread(valid_cores, thr);
       //the newly freed core allows another thread to continue
       pending_threads_.erase(tmp);
-      os_->unblock(thr->schedule_key());
+      os_->unblock(thr);
       break;
     }
   }

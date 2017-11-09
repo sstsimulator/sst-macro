@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <unordered_map>
 #include <sstmac/hardware/common/packet.h>
+#include <sprockit/allocator.h>
 
 namespace sstmac {
 namespace hw {
@@ -72,15 +73,15 @@ class recv_cq
   */
   message* recv(packet* pkt);
 
-  message* recv(uint64_t unique_id, int bytes, message* payload);
+  message* recv(uint64_t unique_id, uint32_t bytes, message* payload);
 
   void print();
 
  protected:
   struct incoming_msg {
     message* msg;
-    long bytes_arrived;
-    long bytes_total;
+    uint64_t bytes_arrived;
+    uint64_t bytes_total;
     incoming_msg() :
         bytes_arrived(0),
         bytes_total(0),
@@ -93,7 +94,9 @@ class recv_cq
       Keys are unique network ID for all messages.
       Value is the number of bytes receved.
   */
-  typedef std::unordered_map<uint64_t, incoming_msg> received_map;
+  using pair_type = std::pair<const uint64_t, incoming_msg>;
+  using alloc = sprockit::thread_safe_allocator<pair_type>;
+  using received_map = std::map<uint64_t, incoming_msg, std::less<uint64_t>, alloc>;
   received_map bytes_recved_;
 };
 

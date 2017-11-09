@@ -63,6 +63,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/time.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/topology/topology.h>
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
@@ -70,6 +71,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
+#include <sprockit/keyword_registration.h>
 #include <sprockit/sprockit/spkt_config.h>
 #include <sumi/sumi/sumi_config.h>
 
@@ -85,6 +87,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/sumi_repo.h>
 #endif
 
+RegisterKeywords(
+ { "external_libs", "a list of external .so files to load" },
+);
+
 namespace sstmac {
 
 class runtime_param_bcaster :
@@ -93,8 +99,7 @@ class runtime_param_bcaster :
  public:
   runtime_param_bcaster(parallel_runtime* rt) : rt_(rt) {}
 
-  void
-  bcast(void *buf, int size, int me, int root){
+  void bcast(void *buf, int size, int me, int root){
     rt_->bcast(buf, size, root);
   }
 
@@ -126,8 +131,7 @@ parallel_runtime* init()
   const char* env_str = getenv("SSTMAC_RUNTIME");
   if (env_str){
     cmdline_params["runtime"] = env_str;
-  }
-  else {
+  } else {
     cmdline_params["runtime"] = SSTMAC_DEFAULT_RUNTIME_STRING;
   }
 
@@ -223,19 +227,21 @@ init_first_run(parallel_runtime* rt, sprockit::sim_parameters* params)
 }
 
 void
-run_params(parallel_runtime* rt,
+run_params(opts& oo,
+           parallel_runtime* rt,
            sprockit::sim_parameters* params,
            sim_stats& stats)
 {
   //we didn't have all the runtime params available when we first built this
   rt->init_runtime_params(params);
 
-  std::string nworkers = sprockit::printf("%d", rt->nproc()*rt->nthread());
-  //don't fail on existing, but ovewrite whatever is there
-  params->parse_keyval("topology.nworkers", nworkers, false, true, true);
   rt->init_partition_params(params);
 
   native::manager* mgr = new native::manager(params, rt);
+  if (oo.output_graphviz.size() != 0){
+    mgr->interconn()->topol()->output_graphviz(oo.output_graphviz);
+  }
+
 
   double start = sstmac_wall_time();
   timestamp stop_time = params->get_optional_time_param("stop_time", 0);
@@ -256,8 +262,7 @@ run_params(parallel_runtime* rt,
     sstmac::env::params = nullptr;
 
     delete mgr;
-  } // try
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     if (mgr) {
       mgr->stop();
     }
@@ -295,8 +300,13 @@ run(opts& oo,
   sstmac::env::rt = rt;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  run_params(rt, params, stats);
+  run_params(oo, rt, params, stats);
 #endif
+}
+
+void
+run_benchmark(sprockit::sim_parameters* params, const std::string& benchmark){
+
 }
 
 void
@@ -317,8 +327,15 @@ try_main(sprockit::sim_parameters* params,
   opts oo;
   sim_stats stats;
   sstmac::init_opts(oo, argc, argv);
+
   bool parallel = rt && rt->nproc() > 1;
   sstmac::init_params(rt, oo, params, parallel);
+
+  if (!oo.benchmark.empty()){
+    benchmark* bm = benchmark::factory::get_value(oo.benchmark, params);
+    bm->run();
+    return;
+  }
 
   //do some cleanup and processing of params
   sstmac::remap_params(params);

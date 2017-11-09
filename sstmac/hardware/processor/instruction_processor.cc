@@ -56,13 +56,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterNamespaces("noise");
 RegisterKeywords(
-"processor",
-"noise_model_seed",
-"noise_model_mean",
-"noise_model_stdev",
-"noise_model_maxz",
-"parallelism",
-"pipeline_speedup",
+{ "processor", "the model for the processor in the computation" },
+{ "parallelism", "the degree of ILP in the processor" },
+{ "pipeline_speedup", "the degree of ILP in the processor" },
+{ "node_pipeline_speedup", "DEPRECATED: a speedup factor for computation "},
 );
 
 namespace sstmac {
@@ -112,9 +109,8 @@ instruction_processor::compute(event* ev, callback* cb)
   // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
   timestamp best_possible_time = instr_time + bytes * max_single_mem_inv_bw_;
   if (bytes <= negligible_bytes_) {
-    node_->schedule_delay(timestamp(instr_time), cb);
-  }
-  else {
+    node_->send_delayed_self_event_queue(instr_time, cb);
+  } else {
     //do the full memory modeling
     double best_possible_bw = bytes / best_possible_time.sec();
     mem_->access(bytes, best_possible_bw, cb);

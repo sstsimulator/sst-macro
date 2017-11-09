@@ -63,7 +63,7 @@ simple_compute_scheduler::reserve_core(thread* thr)
 #endif
   if (ncore_active_ >= ncores_){
     pending_threads_.push_back(thr);
-    os_->block(thr->schedule_key());
+    os_->block();
   }
   //If I got here, there are either open cores or I unblocked
   ++ncore_active_;
@@ -76,7 +76,7 @@ simple_compute_scheduler::release_core(thread* thr)
   if (!pending_threads_.empty()){
     thread* next = pending_threads_.front();
     pending_threads_.pop_front();
-    os_->unblock(next->schedule_key());
+    os_->unblock(next);
   }
 }
 

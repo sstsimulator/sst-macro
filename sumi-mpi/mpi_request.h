@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 #define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPIREQUEST_H_INCLUDED
 
-#include <sstmac/software/process/key_fwd.h>
+#include <sstmac/software/process/key.h>
 #include <sumi/collective.h>
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_message.h>
@@ -54,9 +54,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 namespace sumi {
-
-using sstmac::sw::key;
-using sstmac::sw::key_traits::category;
 
 /**
  * Persistent send operations (send, bsend, rsend, ssend)
@@ -92,12 +89,16 @@ struct collective_op_base
   int recvcnt;
   int root;
 
+  virtual ~collective_op_base(){}
+
  protected:
   collective_op_base(mpi_comm* cm);
 
 };
 
-struct collective_op : public collective_op_base
+struct collective_op :
+  public collective_op_base,
+  public sprockit::thread_safe_new<collective_op>
 {
   collective_op(int count, mpi_comm* comm);
   collective_op(int sendcnt, int recvcnt, mpi_comm* comm);
@@ -105,7 +106,9 @@ struct collective_op : public collective_op_base
 
 };
 
-struct collectivev_op : public collective_op_base
+struct collectivev_op :
+  public collective_op_base,
+  public sprockit::thread_safe_new<collectivev_op>
 {
   collectivev_op(int scnt, int* recvcnts, int* disps, mpi_comm* comm);
   collectivev_op(int* sendcnts, int* disps, int rcnt, mpi_comm* comm);
@@ -119,7 +122,9 @@ struct collectivev_op : public collective_op_base
   int size;
 };
 
-class mpi_request  {
+class mpi_request :
+  public sprockit::thread_safe_new<mpi_request>
+{
  public:
   typedef enum {
     Send,
@@ -128,7 +133,14 @@ class mpi_request  {
     Probe
   } op_type_t;
 
-  mpi_request(op_type_t ty, const category& cat);
+  mpi_request(op_type_t ty) :
+   complete_(false),
+   cancelled_(false),
+   optype_(ty),
+   persistent_op_(nullptr),
+   collective_op_(nullptr)
+  {
+  }
 
   std::string to_string() const {
     return "mpirequest";
@@ -136,8 +148,8 @@ class mpi_request  {
 
   std::string type_str() const;
 
-  static mpi_request* construct(op_type_t ty, const category& cat){
-    return new mpi_request(ty,cat);
+  static mpi_request* construct(op_type_t ty){
+    return new mpi_request(ty);
   }
 
   ~mpi_request();
@@ -181,10 +193,6 @@ class mpi_request  {
     return stat_;
   }
 
-  key* get_key() const {
-    return key_;
-  }
-
   bool is_cancelled() const {
     return cancelled_;
   }
@@ -203,7 +211,6 @@ class mpi_request  {
 
  private:
   MPI_Status stat_;
-  key* key_;
   bool complete_;
   bool cancelled_;
   op_type_t optype_;

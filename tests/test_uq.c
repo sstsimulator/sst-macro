@@ -93,7 +93,7 @@ int main(int argc, char** argv)
     for (i=0; i < nresults; ++i){
       double bw = results[job][i];
       debug_print("   %12.8fGB/s\n", bw);
-      if (bw < 0.1 || bw > 1.0){
+      if (bw < 0.1 || bw > 10.0){
         printf("UQ test failed: got invalid bandwidths\n");
         return 1;
       }

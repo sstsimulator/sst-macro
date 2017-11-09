@@ -78,7 +78,7 @@ class node :
   public failable,
   public connectable_component
 {
-  DeclareFactory(node,uint64_t,event_manager*)
+  DeclareFactory(node,uint32_t,event_manager*)
  public:
   void setup() override;
 
@@ -88,12 +88,15 @@ class node :
 
   void connect_output(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 event_handler* handler) override;
+                 event_link* link) override;
 
   void connect_input(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 event_handler* handler) override;
+                 event_link* link) override;
 
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
   link_handler* payload_handler(int port) const override;
 
@@ -188,13 +191,15 @@ class node :
 
   void deadlock_check() override;
 
+  void deadlock_check(event* ev) override;
+
   void increment_app_refcount();
 
   void decrement_app_refcount();
 
  protected:
   node(sprockit::sim_parameters* params,
-    uint64_t id,
+    uint32_t id,
     event_manager* mgr);
 
  protected:

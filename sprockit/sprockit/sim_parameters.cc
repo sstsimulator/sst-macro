@@ -914,6 +914,8 @@ sim_parameters::try_to_parse(
   bool fail_on_existing,
   bool override_existing)
 {
+  parse_file(fname, fail_on_existing, override_existing);
+#if 0
   std::string inc_file = fname;
   std::string dir = "";
   std::string f_firstchar = inc_file.substr(0, 1);
@@ -929,10 +931,10 @@ sim_parameters::try_to_parse(
   inc_file = trim_str(inc_file);
   try {
     parse_file(dir + inc_file, fail_on_existing, override_existing);
-  }
-  catch (io_error& e) {
+  } catch (io_error& e) {
     parse_file(inc_file, fail_on_existing, override_existing);
   }
+#endif
 }
 
 sim_parameters*

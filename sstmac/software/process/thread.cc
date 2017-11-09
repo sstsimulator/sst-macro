@@ -75,26 +75,27 @@ const task_id thread::main_thread_tid(-1);
 //
 void
 thread::init_thread(sprockit::sim_parameters* params,
-  int physical_thread_id, threading_interface* des_thread, void *stack,
+  int physical_thread_id, thread_context* des_thread, void *stack,
   int stacksize, void* globals_storage)
 {
+  thread_info::set_thread_id(stack, physical_thread_id);
+
   stack_ = stack;
-  stacksize_ = stacksize;
 
   init_id();
 
   state_ = INITIALIZED;
 
-  context_ = des_thread->copy(params);
+  context_ = des_thread->copy();
 
   context_->start_context(physical_thread_id, stack, stacksize,
                           run_routine, this, globals_storage, des_thread);
 }
 
-device_id
-thread::event_location() const
+uint32_t
+thread::component_id() const
 {
-  return os_->event_location();
+  return os_->component_id();
 }
 
 thread*
@@ -177,23 +178,20 @@ thread::run_routine(void* threadptr)
   }
 }
 
-key_traits::category schedule_delay("CPU_Sched Delay");
-
 thread::thread(sprockit::sim_parameters* params, software_id sid, operating_system* os) :
   os_(os),
   state_(PENDING),
   isInit(false),
-  backtrace_(nullptr),
   bt_nfxn_(0),
   last_bt_collect_nfxn_(0),
   thread_id_(thread::main_thread),
-  schedule_key_(key::construct(schedule_delay)),
   p_txt_(process_context::none),
-  stack_(nullptr),
   context_(nullptr),
   cpumask_(0),
   host_timer_(nullptr),
   parent_app_(nullptr),
+  timed_out_(false),
+  block_counter_(0),
   sid_(sid)
 {
   //make all cores possible active
@@ -248,10 +246,14 @@ thread::set_tls_value(long thekey, void *ptr)
 }
 
 void
-thread::append_backtrace(void* fxn)
+thread::append_backtrace(int id)
 {
-  backtrace_[bt_nfxn_] = fxn;
+#if SSTMAC_HAVE_GRAPHVIZ
+  backtrace_[bt_nfxn_] = id;
   bt_nfxn_++;
+#else
+  sprockit::abort("did not compile with call graph support");
+#endif
 }
 
 void
@@ -286,13 +288,11 @@ thread::now()
 
 thread::~thread()
 {
-  if (backtrace_) graph_viz::delete_trace(backtrace_);
-  if (stack_) os_->free_thread_stack(stack_);
+  if (stack_) stack_alloc::free(stack_);
   if (context_) {
     context_->destroy_context();
     delete context_;
   }
-  if (schedule_key_) delete schedule_key_;
   if (host_timer_) delete host_timer_;
 }
 

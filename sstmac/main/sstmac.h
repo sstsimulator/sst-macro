@@ -49,6 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <string>
+#include <sprockit/factories/factory.h>
+#include <sys/time.h>
 
 #define PARSE_OPT_SUCCESS 0
 #define PARSE_OPT_EXIT_SUCCESS 1
@@ -64,11 +66,13 @@ struct opts {
   bool print_params;
   bool low_res_timer;
   std::string cpu_affinity;
+  std::string benchmark;
+  std::string output_graphviz;
 
   opts() :
     help(0),
     debug(""),
-    params(0),
+    params(nullptr),
     configfile(""),
     got_config_file(false),
     low_res_timer(false),
@@ -105,6 +109,18 @@ void map_env_params(sprockit::sim_parameters* params);
 
 namespace sstmac {
 
+class benchmark {
+  DeclareFactory(benchmark);
+  virtual void run() = 0;
+
+  static double now() {
+    timeval t_st;
+    gettimeofday(&t_st, 0);
+    double t = t_st.tv_sec + 1e-6 * t_st.tv_usec;
+    return t;
+  }
+};
+
 parallel_runtime* init();
 
 void finalize(parallel_runtime* rt);
@@ -128,7 +144,8 @@ void try_main(sprockit::sim_parameters* params,
    int argc, char **argv,
    bool params_only = false);
 
-void run_params(parallel_runtime* rt,
+void run_params(opts& oo,
+  parallel_runtime* rt,
   sprockit::sim_parameters* params,
    sim_stats& stats);
 

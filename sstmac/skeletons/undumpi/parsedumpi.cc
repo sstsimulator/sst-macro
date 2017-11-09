@@ -60,11 +60,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <algorithm>
 
 RegisterKeywords(
-"parsedumpi_timescale",
-"parsedumpi_terminate_percent",
-"parsedumpi_print_progress",
-"launch_dumpi_metaname",
-"dumpi_metaname",
+{ "parsedumpi_timescale", "the scale factor for time between MPI calls, < 1 means speedup" },
+{ "parsedumpi_terminate_percent", "an optional percentage of the trace after which to terminate" },
+{ "parsedumpi_print_progress", "whether to print the progress of the trace" },
+{ "launch_dumpi_metaname", "DEPRECATED: the meta file for the DUMPI trace" },
+{ "dumpi_metaname", "the meta file for the DUMPI trace" },
 );
 
 namespace sumi{
@@ -82,25 +82,12 @@ parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
   timescaling_ = params->get_optional_double_param("parsedumpi_timescale", 1);
 
   print_progress_ = params->get_optional_bool_param("parsedumpi_print_progress", true);
-
-  percent_terminate_ = params->get_optional_double_param("parsedumpi_terminate_percent", -1);
-
-  exact_mpi_times_ = params->get_optional_bool_param("parsedumpi_exact_times", false);
 }
 
-
-//
-// Wait!  That's not good news at all!
-//
 parsedumpi::~parsedumpi() throw()
 {
 }
 
-//
-// Parse the file please (this needs an update, there is no reason
-// for it to return a TRACEREC (which should not be uppercase).
-// Need to figure out how to give the caller access to header/footer recs.
-//
 void parsedumpi::skeleton_main()
 {
   int rank = this->tid();
@@ -112,12 +99,10 @@ void parsedumpi::skeleton_main()
   // Ready to go.
   //only rank 0 should print progress
   bool print_my_progress = rank == 0 && print_progress_;
-  //only rank 0 should cause termination
-  double my_percent_terminate = rank == 0 ? percent_terminate_ : -1;
   sstmac::runtime::add_deadlock_check(
     sstmac::new_deadlock_check(mpi(), &sumi::transport::deadlock_check));
   sstmac::runtime::enter_deadlock_region();
-  cbacks.parse_stream(fname.c_str(), print_my_progress, my_percent_terminate);
+  cbacks.parse_stream(fname.c_str(), print_my_progress);
 
   if (rank == 0) {
     std::cout << "Parsedumpi finalized on rank 0 - trace "
@@ -125,14 +110,6 @@ void parsedumpi::skeleton_main()
   }
 
   sstmac::runtime::exit_deadlock_region();
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  // TODO make this work with @integrated_core
-  if (percent_terminate_ >= 0){
-    //we must stop the event manager now
-    mpi()->os()->event_mgr()->stop();
-  }
-#endif
 
 }
 

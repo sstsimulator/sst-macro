@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/message.h>
 #include <sumi/collective.h>
 #include <sumi/thread_safe_set.h>
+#include <sprockit/thread_safe_new.h>
 
 namespace sumi {
 
@@ -57,7 +58,8 @@ namespace sumi {
  * This encapsulates all the information about a collective that has completed in the background
  */
 class collective_done_message :
-  public message
+  public message,
+  public sprockit::thread_safe_new<collective_done_message>
 {
 
  public:

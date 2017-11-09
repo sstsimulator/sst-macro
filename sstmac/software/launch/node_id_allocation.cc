@@ -50,9 +50,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-RegisterKeywords("launch_node_id_allocation_file",
-"node_id_allocation_file",
-"node_id_file");
+RegisterKeywords(
+{ "launch_node_id_allocation_file", "DEPRECATED: the file containing the list of node IDs specifying the launch" },
+{ "node_id_allocation_file", "the file containing the list of node IDs specifying the launch" },
+{ "node_id_file", "the file containing the list of node IDs specifying the launch" },
+);
 
 namespace sstmac {
 namespace sw {

@@ -231,8 +231,6 @@ class stat_bytes_sent :
     port_map_[port] += bytes;
   }
 
-  void simulation_finished(timestamp end) override;
-
   void dump_local_data() override;
 
   void dump_global_data() override;

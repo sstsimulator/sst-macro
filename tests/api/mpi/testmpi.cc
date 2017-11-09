@@ -687,11 +687,9 @@ enum TEST_MODE
 
 int testmode_ = -1;
 
-const char* valid_keywords[] = {
-"testsuite_testmode",
-"testsuite_numtests" };
-
-sprockit::StaticKeywordRegister reg(sizeof(valid_keywords) / sizeof(const char*), valid_keywords);
+RegisterKeywords(
+ { "testsuite_testmode", "which test to run" },
+);
 
 #define sstmac_app_name apitest
 

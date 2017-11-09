@@ -55,19 +55,27 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
+struct stats_unique_tag {
+ stats_unique_tag();
+ int id;
+};
+
 struct stat_descr_t {
   bool dump_all;
   bool reduce_all;
   bool dump_main;
   bool need_delete;
   const char* suffix;
+  stats_unique_tag* unique_tag;
+
 
   stat_descr_t() :
     dump_all(false),
     reduce_all(true),
     dump_main(true),
     need_delete(false),
-    suffix(nullptr)
+    suffix(nullptr),
+    unique_tag(nullptr)
   {
   }
 };
@@ -84,10 +92,6 @@ class stat_collector : public sprockit::printable
   DeclareFactory(stat_collector)
  public:
   virtual ~stat_collector();
-
-  /** This is to notify that the statistics collector is done.
-   *  Do any necessary data post-processing, but do NOT dump to file */
-  virtual void simulation_finished(timestamp end) = 0;
 
   /** After post-processing, this notifies the collector to dump data to a file
    *  @param name The root of the filename to dump to */
@@ -127,6 +131,14 @@ class stat_collector : public sprockit::printable
     return do_clone(params_);
   }
 
+  static int allocate_unique_tag(){
+    return unique_tag_counter_++;
+  }
+
+  static stat_collector* find_unique_stat(event_scheduler* es, int unique_tag);
+
+  static void register_unique_stat(event_scheduler* es, stat_collector* sc, stat_descr_t* descr);
+
   /**
    * @brief optional_build Build a stats object with all paramters
    *                configured in a particular namespace with the exact type
@@ -142,7 +154,7 @@ class stat_collector : public sprockit::printable
   static stat_collector* optional_build(sprockit::sim_parameters* params,
                 const std::string& ns,
                 const std::string& deflt,
-                const char* suffix);
+                stat_descr_t* descr);
   /**
    * @brief optional_build Build a stats object with all paramters
    *                configured in a particular namespace with the exact type
@@ -158,7 +170,7 @@ class stat_collector : public sprockit::printable
   static stat_collector* required_build(sprockit::sim_parameters* params,
                 const std::string& ns,
                 const std::string& deflt,
-                const char* suffix);
+                stat_descr_t* descr);
 
   static void stats_error(sprockit::sim_parameters* params,
              const std::string& ns,
@@ -188,6 +200,7 @@ class stat_collector : public sprockit::printable
  private:
   sprockit::sim_parameters* params_;
   bool registered_;
+  static int unique_tag_counter_;
 
 };
 
@@ -234,7 +247,7 @@ T* required_stats(event_scheduler* parent,
               const std::string& ns,
               const std::string& deflt,
               stat_descr_t* descr = nullptr){
-  stat_collector* coll = stat_collector::required_build(params,ns,deflt,descr ? descr->suffix : nullptr);
+  stat_collector* coll = stat_collector::required_build(params,ns,deflt,descr);
   T* t = dynamic_cast<T*>(coll);
   if (!t){
     stat_collector::stats_error(params, ns, deflt);
@@ -264,13 +277,22 @@ T* optional_stats(event_scheduler* parent,
               const std::string& deflt,
               stat_descr_t* descr = nullptr){
 
-  stat_collector* coll = stat_collector::optional_build(params, ns, deflt, descr ? descr->suffix : nullptr);
+  if (descr && descr->unique_tag){
+    stat_collector* coll = stat_collector::find_unique_stat(parent, descr->unique_tag->id);
+    if (coll) return dynamic_cast<T*>(coll);
+  }
+
+  stat_collector* coll = stat_collector::optional_build(params, ns, deflt, descr);
   if (coll){
     T* t = dynamic_cast<T*>(coll);
     if (!t){
       stat_collector::stats_error(params, ns, deflt);
     }
-    stat_collector::register_optional_stat(parent, t, descr);
+    if (descr && descr->unique_tag){
+      stat_collector::register_unique_stat(parent, t, descr);
+    } else {
+      stat_collector::register_optional_stat(parent, t, descr);
+    }
     return t;
   }
   else return nullptr;

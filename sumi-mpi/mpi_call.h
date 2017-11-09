@@ -181,11 +181,6 @@ typedef enum {
 
 struct MPI_Call {
   MPI_function ID;
-  MPI_function prev;
-  MPI_function inside;
-  int count;
-  MPI_Datatype type;
-  MPI_Comm comm;
   sstmac::timestamp start;
   sstmac::timestamp sync;
   sstmac::timestamp wait;
@@ -195,62 +190,6 @@ struct MPI_Call {
   }
 
   static const char* ID_str(MPI_function func);
-};
-
-
-}
-
-namespace std {
-
-template <>
-struct hash<sumi::MPI_Call> {
-  uint32_t
-  jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) const {
-    size_t i = 0;
-    uint32_t hash = 0;
-    while (i != length) {
-      hash += key[i++];
-      hash += hash << 10;
-      hash ^= hash >> 6;
-    }
-    hash += hash << 3;
-    hash ^= hash >> 11;
-    hash += hash << 15;
-    return hash;
-  }
-
-  void append(uint32_t next, uint8_t* scratch, size_t& length) const {
-    uint32_t* tmp = (uint32_t*)&scratch[length];
-    *tmp = next;
-    length += 4;
-  }
-
-  std::size_t operator()(const sumi::MPI_Call& call) const {
-    uint8_t scratch[128];
-    size_t length = 0;
-    append(call.ID,scratch,length);
-    append(call.count,scratch,length);
-    append(call.type,scratch,length);
-    append(call.comm,scratch,length);
-    append(call.prev,scratch,length);
-    append(call.inside,scratch,length);
-    return jenkins_one_at_a_time_hash(scratch, length);
-  }
-
-
-
-};
-
-template <>
-struct equal_to<sumi::MPI_Call> {
-  bool operator()(const sumi::MPI_Call& lhs, const sumi::MPI_Call& rhs) const {
-    return lhs.ID == rhs.ID &&
-           lhs.count == rhs.count &&
-           lhs.type == rhs.type &&
-           lhs.comm == rhs.comm &&
-           lhs.prev == rhs.prev &&
-           lhs.inside == rhs.inside;
-  }
 };
 
 }

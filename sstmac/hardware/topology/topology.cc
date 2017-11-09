@@ -58,19 +58,17 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterNamespaces("topology");
 
 RegisterKeywords(
-"topology_name",
-"topology_geometry",
-"topology_group_connections",
-"topology_true_random_intermediate",
-"topology_redundant",
-"topology_seed",
-"topology_output_graph",
-"geometry",
-"redundant",
-"seed",
-"group_connections",
-"concentration",
-"network_nodes_per_switch",
+{ "topology_name", "DEPRECATED: name of the topology" },
+{ "topology_geometry", "DEPRECATED: an array specifying the geometry of the topology" },
+{ "topology_redundant", "DEPRECATED: for group-based topologies (dragonfly), number of group connections per router" },
+{ "topology_seed", "DEPRECATED: a seed for random number generators used by topology" },
+{ "name", "the name of the topology" },
+{ "geometry", "an array specifying the geometry of the topology" },
+{ "redundant", "an array specifying how many redundants links in certain dimensions of topology" },
+{ "seed", "a seed for random number generators used by topology" },
+{ "concentration", "the number of nodes per switch" },
+{ "network_nodes_per_switch", "DEPRECATED: the number of nodes per switch" },
+{ "auto", "whether to auto-generate topology based on app size"},
 );
 
 RegisterDebugSlot(topology,
@@ -138,6 +136,9 @@ topology*
 topology::static_topology(sprockit::sim_parameters* params)
 {
   if (!static_topology_){
+    if (!params){
+      spkt_abort_printf("topology should have already been initialized");
+    }
     sprockit::sim_parameters* top_params = params->get_namespace("topology");
     static_topology_ = topology::factory::get_param("name", top_params);
   }
@@ -204,6 +205,41 @@ topology::get_port_params(sprockit::sim_parameters *params, int port)
 }
 
 void
+topology::output_graphviz(const std::string& file)
+{
+  std::ofstream out(file.c_str());
+  out << "graph {\n";
+
+  int nsw = num_switches();
+  for (int s=0; s < nsw; ++s){
+    std::string lbl = switch_label(s);
+    out << "sw" << s << " [style=filled,fillcolor=\"lightblue\",shape=rect,label=\""
+                << lbl << "\"];\n";
+  }
+
+  std::vector<connection> conns;
+  std::map<int, int> weighted_conns;
+  out << "\nedge[];\n";
+  for (int s=0; s < nsw; ++s){
+    connected_outports(s, conns);
+    weighted_conns.clear();
+    for (connection& c : conns){
+      weighted_conns[c.dst] += 1;
+    }
+    for (auto& pair : weighted_conns){
+      int dst = pair.first;
+      int wght = pair.second;
+      if (s < dst){
+        out << "sw" << s << "--sw" << dst << ";\n";
+      }
+    }
+  }
+
+  out << "\n}";
+  out.close();
+}
+
+void
 topology::create_partition(
   int *switch_to_lp,
   int *switch_to_thread,
@@ -262,14 +298,13 @@ topology::switch_label(switch_id sid) const
 }
 
 std::string
-topology::label(device_id id) const
+topology::label(uint32_t comp_id) const
 {
-  if (id.is_node_id()){
-    return node_label(id.id());
+  if (comp_id < num_nodes()){
+    return node_label(comp_id);
   } else {
-    return switch_label(id.id());
+    return switch_label(comp_id - num_nodes());
   }
-
 }
 
 class merlin_topology : public topology {

@@ -77,8 +77,7 @@ threading_pthread::wait_signal(threadcontext_t* context)
   context->waiting = true;
 }
 
-threading_pthread::threading_pthread(sprockit::sim_parameters* params) :
-  threading_interface(params)
+threading_pthread::threading_pthread(sprockit::sim_parameters* params)
 {
   static bool inited = false;
   if (!inited){
@@ -160,7 +159,7 @@ void
 threading_pthread::start_context(int physical_thread_id,
    void *stack, size_t stacksize, void
    (*func)(void*), void *args, void* globals_storage,
-   threading_interface* from)
+   thread_context* from)
 {
   if (globals_storage){
     spkt_abort_printf("cannot use global variables with pthread");
@@ -179,7 +178,7 @@ threading_pthread::start_context(int physical_thread_id,
 }
 
 void
-threading_pthread::complete_context(threading_interface *to)
+threading_pthread::complete_context(thread_context* to)
 {
   if (!pthread_equal(pthread_self(), context_.thread)) {
     sprockit::abort("threading_pthread::complete_context: done from thread other than \"from\" thread");

@@ -129,36 +129,26 @@ pisces_sender::send_credit(
   pisces_credit* credit = new pisces_credit(src.src_outport,
                                    src_vc, payload->num_bytes());
   //there is a certain minimum latency on credits
-  timestamp min_credit_departure = credits_ready - send_lat_;
-  //assume for now the packet flow sender is smart enough to pipeline credits efficiently
   timestamp now_ = now();
-  timestamp credit_departure = min_credit_departure > now_ ? min_credit_departure : now_;
+  timestamp credit_departure_delay = credits_ready - now_;
+  if (credit_departure_delay < credit_lat_){
+    credit_departure_delay = timestamp();
+  } else {
+    //assume credits pipeline to arrive exactly when ready
+    credit_departure_delay -= credit_lat_;
+  }
   pisces_debug(
-      "On %s:%p on inport %d, crediting %s:%p port:%d vc:%d {%s} at [%9.5e] after latency %9.5e with %p",
+      "On %s:%p on inport %d, crediting %s:%p port:%d vc:%d {%s} after delay %9.5e after latency %9.5e with %p",
       to_string().c_str(), this, payload->inport(),
-      src.handler->to_string().c_str(), src.handler,
+      src.link->to_string().c_str(), src.link,
       src.src_outport, src_vc,
       payload->to_string().c_str(),
-      credit_departure.sec(), credit_lat_.sec(),
+      credit_departure_delay.sec(), credit_lat_.sec(),
       credit);
-  //
-  send_to_link(credit_departure,
-               credit_lat_,
-               src.handler, credit);
+  //simulate more realistic pipelining of credits
+  src.link->validate_latency(credit_lat_);
+  src.link->send_extra_delay(credit_departure_delay, credit);
 }
-
-/**
-void
-pisces_sender::handle(event* ev)
-{
-  pisces_credit* credit = test_cast(pisces_credit, ev);
-  if (credit){
-    handle_credit(credit);
-  } else {
-    handle_payload(static_cast<pisces_payload*>(ev));
-  }
-}
-*/
 
 void
 pisces_sender::send(
@@ -167,10 +157,11 @@ pisces_sender::send(
   const pisces_input& src,
   const pisces_output& dest)
 {
+  timestamp now_ = now();
   auto rpkt = static_cast<pisces_routable_packet*>(pkt);
   pkt_arbitration_t st;
   st.incoming_bw = pkt->bw();
-  st.now = now();
+  st.now = now_;
   st.pkt = pkt;
   st.src_outport = src.src_outport;
   st.dst_inport = dest.dst_inport;
@@ -178,7 +169,7 @@ pisces_sender::send(
   if (arb) {
     arb->arbitrate(st);
   } else {
-    st.head_leaves = st.tail_leaves = st.credit_leaves = now();
+    st.head_leaves = st.tail_leaves = st.credit_leaves = now_;
   }
 
   if (stat_collector_) stat_collector_->collect_single_event(st);
@@ -192,7 +183,7 @@ pisces_sender::send(
   }
 #endif
 
-  if (src.handler) {
+  if (src.link) {
     send_credit(src, pkt, st.credit_leaves);
   }
 
@@ -202,24 +193,30 @@ pisces_sender::send(
     to_string().c_str(), this,
     rpkt->local_outport(), pkt->next_vc(),
     pkt->to_string().c_str(),
-    dest.handler->to_string().c_str(), dest.handler,
+    dest.link->to_string().c_str(), dest.link,
     dest.dst_inport,
     st.head_leaves.sec(),
     st.tail_leaves.sec());
+
+  if (pkt->next_vc() < 0){
+    spkt_abort_printf("packet VC did not get set before sending: %s",
+                      pkt->to_string().c_str());
+  }
 
   // leaving me, on arrival at dest message will occupy a specific inport at dest
   pkt->set_inport(dest.dst_inport);
   //weird hack to update vc from routing
   if (update_vc_) pkt->update_vc();
 
-  send_to_link(st.head_leaves, send_lat_, dest.handler, pkt);
-
+  timestamp departure_delay = st.head_leaves - now_;
+  dest.link->validate_latency(send_lat_);
+  dest.link->send_extra_delay(departure_delay, pkt);
 }
 
 std::string
 pisces_sender::to_string() const
 {
-  return pisces_name() + topology::global()->label(event_location());
+  return pisces_name() + topology::global()->label(component_id());
 }
 
 }

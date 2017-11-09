@@ -1,0 +1,17 @@
+#! /usr/bin/env python
+
+import re
+
+regexp = re.compile("(\d+[.]\d+\s*)GB")
+
+import glob
+outputs = glob.glob("test*.out")
+
+line_arr = []
+for i in range(1,len(outputs)+1):
+  text = open("test%d.out" % i).read()
+  matches = regexp.findall(text)
+  line_arr.append("  ".join(matches))
+
+open("results.out","w").write("\n".join(line_arr))
+

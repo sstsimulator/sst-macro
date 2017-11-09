@@ -63,11 +63,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"lazy_watch",
-"eager_cutoff",
-"use_put_protocol",
-"algorithm",
-"comm_sync_stats",
+ { "lazy_watch", "whether failure notifications can be receive without active pinging" },
+ { "eager_cutoff", "what message size in bytes to switch from eager to rendezvous" },
+ { "use_put_protocol", "whether to use a put or get protocol for pt2pt sends" },
+ { "algorithm", "the specific algorithm to use for a given collecitve" },
+ { "comm_sync_stats", "whether to track synchronization stats for communication" }
 );
 
 RegisterDebugSlot(sumi);
@@ -163,15 +163,6 @@ transport::init()
   //THIS SHOULD ONLY BE CALLED AFTER RANK and NPROC are known
   inited_ = true;
   global_domain_ = new global_communicator(this);
-}
-
-void
-transport::free_eager_buffer(message* msg)
-{
-  char* buf = (char*) msg->eager_buffer();
-  if (isNonNull(buf)){
-    delete[] buf;
-  }
 }
 
 void

@@ -69,9 +69,10 @@ coordinates::to_string() const
   std::stringstream sstr;
   sstr << "[";
   for (int i=0; i < size(); ++i) {
-    sstr << " " << at(i);
+    if (i>0) sstr << ",";
+    sstr << at(i);
   }
-  sstr << " ]";
+  sstr << "]";
   return sstr.str();
 }
 

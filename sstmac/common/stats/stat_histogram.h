@@ -66,8 +66,6 @@ class stat_histogram :
 
   void collect(double value, int64_t num);
 
-  void simulation_finished(timestamp end) override;
-
   void dump_local_data() override;
 
   void dump_global_data() override;

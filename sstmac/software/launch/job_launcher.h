@@ -117,7 +117,7 @@ class task_mapping {
     return node_to_rank_indexing_;
   }
 
-  static task_mapping::ptr global_mapping(app_id aid);
+  static const task_mapping::ptr& global_mapping(app_id aid);
 
   static task_mapping::ptr global_mapping(const std::string& unique_name);
 
@@ -134,8 +134,8 @@ class task_mapping {
   std::vector<std::list<int> > node_to_rank_indexing_;
   std::vector<int> core_affinities_;
 
-  static std::map<app_id,int>  local_refcounts_;
-  static std::map<app_id, task_mapping::ptr> app_ids_launched_;
+  static std::vector<int>  local_refcounts_;
+  static std::vector<task_mapping::ptr> app_ids_launched_;
   static std::map<std::string, task_mapping::ptr> app_names_launched_;
 
   static void delete_statics();
@@ -165,7 +165,7 @@ class job_launcher : public service
 
   void schedule_launch_requests();
 
-  device_id event_location() const;
+  uint32_t component_id() const;
 
   virtual ~job_launcher(){}
 
@@ -270,6 +270,91 @@ class exclusive_job_launcher : public default_job_launcher
   app_launch_request* active_job_;
 
 };
+
+struct outcast_iterator {
+
+  outcast_iterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
+
+  int forward_to(int ranks[]){
+    int power2_size = 1;
+    while (power2_size < nranks_){
+      power2_size *= 2;
+    }
+    int ret = 0;
+    pvt_forward_to(ret, ranks, 0, power2_size);
+    return ret;
+  }
+
+  int nranks_;
+  int my_rank_;
+
+ private:
+  void pvt_forward_to(int& num_ranks, int ranks[], int offset, int blocksize){
+    if (blocksize == 1) return;
+
+    int half_size = blocksize / 2;
+    int role = my_rank_ % blocksize;
+    int midpoint = offset + half_size;
+    if (role == 0){
+      int dst = midpoint;
+      if (dst < nranks_) ranks[num_ranks++] = dst;
+    }
+    if (my_rank_ >= midpoint){
+      pvt_forward_to(num_ranks, ranks, midpoint, half_size);
+    } else {
+      pvt_forward_to(num_ranks, ranks, offset, half_size);
+    }
+  }
+
+};
+
+struct incast_iterator {
+
+  incast_iterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
+
+  /**
+   * @brief config
+   * @param to_send
+   * @param to_recv
+   * @return
+   */
+  void config(int& num_to_send, int& num_to_recv, int to_send[], int to_recv[]){
+    int power2_size = 1;
+    while (power2_size < nranks_){
+      power2_size *= 2;
+    }
+    int ret = 0;
+    num_to_send = 0;
+    num_to_recv = 0;
+    pvt_config(num_to_send, num_to_recv, to_send, to_recv, 0, power2_size);
+  }
+
+  int nranks_;
+  int my_rank_;
+
+ private:
+  void pvt_config(int& num_send, int& num_recv, int to_send[], int to_recv[], int offset, int blocksize){
+    if (blocksize == 1) return;
+
+    int half_size = blocksize / 2;
+    int role = my_rank_ % blocksize;
+    int midpoint = offset + half_size;
+    if (role == 0){
+      int dst = midpoint;
+      if (dst < nranks_) to_recv[num_send++] = dst;
+    } else if (role == half_size) {
+      to_send[num_send++] = offset;
+    }
+    if (my_rank_ >= midpoint){
+      pvt_config(num_send, num_recv, to_send, to_recv, midpoint, half_size);
+    } else {
+      pvt_config(num_send, num_recv, to_send, to_recv, offset, half_size);
+    }
+  }
+
+};
+
+
 
 }
 }

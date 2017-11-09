@@ -58,7 +58,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterDebugSlot(network_switch)
 
-RegisterKeywords("switch_name");
+RegisterKeywords(
+ { "switch_name", "DEPRECATED: the name of the switch model to use" },
+);
+
 RegisterNamespaces("switch");
 
 namespace sstmac {
@@ -69,13 +72,10 @@ network_switch::~network_switch()
 }
 
 
-network_switch::network_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr,
-                               device_id::type_t ty)
- : connectable_component(params, id,
-                         device_id(params->get_int_param("id"), ty),
-                         mgr) //no self messages for a switch
+network_switch::network_switch(sprockit::sim_parameters *params, uint32_t id, event_manager *mgr)
+ : connectable_component(params, id, mgr) //no self messages for a switch
 {
-  my_addr_ = event_location().id();
+  my_addr_ = params->get_int_param("id");
   top_ = topology::static_topology(params);
 }
 

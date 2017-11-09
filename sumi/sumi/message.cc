@@ -50,6 +50,18 @@ namespace sumi {
 const int message::ack_size = 16;
 const int message::header_size = 64;
 
+message::~message()
+{
+  if (owns_remote_buffer_){
+    char* buf = (char*) remote_buffer_.ptr;
+    delete[] buf;
+  }
+  if (owns_local_buffer_){
+    char* buf = (char*) local_buffer_.ptr;
+    delete[] buf;
+  }
+}
+
 bool
 message::is_nic_ack() const
 {
@@ -79,9 +91,8 @@ message::clone_ack() const
       ack->set_payload_type(message::rdma_put_ack);
       break;
     default:
-      spkt_throw_printf(sprockit::value_error,
-        "message::clone_ack: invalid payload type %s",
-        message::tostr(payload_type()));
+      spkt_abort_printf("message::clone_ack: invalid payload type %s for message %s",
+        message::tostr(payload_type()), to_string().c_str());
   }
   return ack;
 }
@@ -154,6 +165,8 @@ void
 message::clone_into(message* cln) const
 {
   cln->payload_type_ = payload_type_;
+  cln->owns_remote_buffer_ = owns_remote_buffer_;
+  cln->owns_local_buffer_ = owns_local_buffer_;
   cln->class_ = class_;
   cln->sender_ = sender_;
   cln->recver_ = recver_;
@@ -183,6 +196,7 @@ message::inject_local_to_remote()
     ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
     delete[] (char*) local_buffer_.ptr;
     local_buffer_.ptr = nullptr;
+    owns_local_buffer_ = false;
   }
 }
 
@@ -201,6 +215,7 @@ message::inject_remote_to_local()
     ::memcpy(local_buffer_.ptr, remote_buffer_.ptr, num_bytes_);
     delete[] (char*) remote_buffer_.ptr;
     remote_buffer_.ptr = nullptr;
+    owns_remote_buffer_ = false;
   }
 }
 
@@ -213,24 +228,39 @@ message::memmove_remote_to_local()
 }
 
 void
-message::buffer_send()
+message::buffer_local()
 {
-  //nothing to do
-  if (local_buffer_.ptr == nullptr)
-    return;
+  if (!owns_local_buffer_ && local_buffer_.ptr){
+    buffer_send(local_buffer_, num_bytes_);
+    owns_local_buffer_ = true;
+  }
+}
 
-  switch(payload_type_){
+void
+message::buffer_remote()
+{
+  if (!owns_remote_buffer_ && remote_buffer_.ptr){
+    buffer_send(remote_buffer_, num_bytes_);
+    owns_remote_buffer_ = true;
+  }
+}
+void
+message::serialize_buffers(sumi::serializer& ser)
+{
+  switch (payload_type_)
+  {
     case rdma_get:
-      buffer_send(remote_buffer_, num_bytes_);
+      if (remote_buffer_.ptr){
+        ser & sumi::array(remote_buffer_.ptr, num_bytes_);
+      }
       break;
     case rdma_put:
-      buffer_send(local_buffer_, num_bytes_);
-      break;
     case eager_payload:
-      buffer_send(local_buffer_, num_bytes_);
+      if (local_buffer_.ptr){
+        ser & sumi::array(local_buffer_.ptr, num_bytes_);
+      }
       break;
     default:
-      //do nothing
       break;
   }
 }
@@ -253,22 +283,8 @@ message::serialize_order(sumi::serializer &ser)
   ser & recv_cq_;
   ser & local_buffer_;
   ser & remote_buffer_;
-  switch (payload_type_)
-  {
-    case rdma_get:
-      if (remote_buffer_.ptr){
-        ser & sumi::array(remote_buffer_.ptr, num_bytes_);
-      }
-      break;
-    case rdma_put:
-    case eager_payload:
-      if (local_buffer_.ptr){
-        ser & sumi::array(local_buffer_.ptr, num_bytes_);
-      }
-      break;
-    default:
-      break;
-  }
+  ser & owns_remote_buffer_;
+  ser & owns_local_buffer_;
 }
 
 void

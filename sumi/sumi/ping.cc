@@ -51,8 +51,8 @@ Questions? Contact sst-macro-help@sandia.gov
 using namespace sprockit::dbg;
 
 RegisterKeywords(
-"ping_timeout",
-"activity_monitor",
+{ "ping_timeout", "the amount of time elapsed that signals an endpoint has failed" },
+//{ "activity_monitor", "" },
 );
 
 #ifdef FEATURE_TAG_SUMI_RESILIENCE

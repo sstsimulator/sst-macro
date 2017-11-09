@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/backends/native/serial_runtime.h>
+#include <sstmac/common/event_manager.h>
 
 using namespace sstmac;
 using namespace sstmac::hw;
@@ -149,28 +150,23 @@ class routable_pisces :
   {
   }
 
-  uint64_t
-  flow_id() const override {
+  uint64_t flow_id() const override {
     return 0;
   }
 
-  node_id
-  toaddr() const override {
+  node_id toaddr() const override {
    return routable::toaddr();
   }
 
-  node_id
-  fromaddr() const override {
+  node_id fromaddr() const override {
     return routable::fromaddr();
   }
 
-  int
-  next_port() const override {
+  int next_port() const override {
     return routable::global_outport();
   }
 
-  int
-  next_vc() const override {
+  int next_vc() const override {
     return routable::vc();
   }
 

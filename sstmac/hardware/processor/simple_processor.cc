@@ -58,7 +58,7 @@ void
 simple_processor::compute(event* ev, callback* cb)
 {
   sw::timed_compute_event* tev = safe_cast(sw::timed_compute_event, ev);
-  node_->schedule_delay(tev->data(), cb);
+  node_->send_delayed_self_event_queue(tev->data(), cb);
 }
 
 

@@ -66,39 +66,25 @@ class pisces_tiled_switch :
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A tiled network switch implementing the packet flow congestion model")
  public:
-  pisces_tiled_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  pisces_tiled_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
 
   int queue_length(int port) const override;
 
-#if 0
-  virtual void
-  connect(sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    connection_type_t ty,
-    connectable* mod) override;
-#endif
-
   void connect_output(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 event_handler* mod) override;
+                 event_link* link) override;
 
   void connect_input(sprockit::sim_parameters* params,
                 int src_outport, int dst_inport,
-                event_handler* mod) override;
-
-#if 0
-  /**
-   Cast message and pass to #send
-   @param msg Incoming message (should cast to packet_train)
-   */
-  void
-  handle(event* ev) override;
-#endif
+                event_link* link) override;
 
   link_handler* credit_handler(int port) const override;
 
   link_handler* payload_handler(int port) const override;
+
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
   void handle_credit(event* ev);
 
@@ -117,30 +103,9 @@ class pisces_tiled_switch :
 
   virtual ~pisces_tiled_switch();
 
-#if 0
-  event_handler*
-  demuxer(int port) const {
-    return row_input_demuxers_[port];
-  }
-#endif
-
   void deadlock_check() override;
 
   void deadlock_check(event* ev) override;
-
- protected:
-
-#if 0
-  virtual void
-  connect_injector(sprockit::sim_parameters* params,
-                   int src_outport, int dst_inport,
-                   event_handler* nic) override;
-
-  virtual void
-  connect_ejector(sprockit::sim_parameters* params,
-                  int src_outport, int dst_inport,
-                  event_handler* nic) override;
-#endif
 
  protected:
   std::vector<pisces_demuxer*> row_input_demuxers_;
@@ -167,19 +132,6 @@ class pisces_tiled_switch :
 
   void init_components(sprockit::sim_parameters* params);
 
-#if 0
-  void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_handler* mod);
-
-  void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_handler* mod);
-#endif
 
 };
 

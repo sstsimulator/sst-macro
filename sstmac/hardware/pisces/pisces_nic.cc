@@ -60,11 +60,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterNamespaces("congestion_delays", "congestion_matrix");
 
-RegisterKeywords(
-"pisces_injection_latency",
-"pisces_injection_bandwidth",
-);
-
 namespace sstmac {
 namespace hw {
 
@@ -80,7 +75,8 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
                                               inj_params, parent);
   packetizer_->setArrivalNotify(this);
-  packetizer_->setInjectionAcker(mtl_handler());
+  auto inj_link = allocate_local_link(timestamp(), parent_, mtl_handler());
+  packetizer_->setInjectionAcker(inj_link);
 
   //make port 0 a copy of the injection params
   sprockit::sim_parameters* port0_params = params->get_optional_namespace("port0");
@@ -90,6 +86,18 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   ack_handler_ = packetizer_->new_credit_handler();
   payload_handler_ = packetizer_->new_payload_handler();
 #endif
+}
+
+timestamp
+pisces_nic::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("injection")->get_time_param("latency");
+}
+
+timestamp
+pisces_nic::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("injection")->get_time_param("latency");
 }
 
 void
@@ -146,13 +154,15 @@ pisces_nic::connect_output(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   if (src_outport == Injection){
     pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
-    packer->set_output(params, dst_inport, mod);
-  } else if (src_outport == LogP){
-    logp_switch_ = mod;
+    packer->set_output(params, dst_inport, link);
+#if SSTMAC_INTEGRATED_SST_CORE
+  } else if (src_outport == LogP) {
+    logp_switch_ = link;
+#endif
   } else {
     spkt_abort_printf("Invalid switch port %d in pisces_nic::connect_output", src_outport);
   }
@@ -163,11 +173,10 @@ pisces_nic::connect_input(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
-  if (!mod) abort();
   pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
-  packer->set_input(params, src_outport, mod);
+  packer->set_input(params, src_outport, link);
 }
 
 void
@@ -188,17 +197,17 @@ void
 pisces_netlink::connect_output(
   sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  event_handler *mod)
+  event_link* link)
 {
   if (is_node_port(src_outport)){
     // set nic payload handler
     // ej_block payload handler will offset ports --
     // -- need to match (use local ports)
     int offset = node_offset(src_outport);
-    ej_block_->set_output(params, offset, dst_inport, mod);
+    ej_block_->set_output(params, offset, dst_inport, link);
   } else {
     // set switch payload handler
-    inj_block_->set_output(params, src_outport, dst_inport, mod);
+    inj_block_->set_output(params, src_outport, dst_inport, link);
   }
 }
 
@@ -206,14 +215,14 @@ void
 pisces_netlink::connect_input(
   sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   if (is_node_port(dst_inport)){
     // set nic credit handler
-    inj_block_->set_input(params, dst_inport, src_outport, mod);
+    inj_block_->set_input(params, dst_inport, src_outport, link);
   } else {
     // set switch credit handler
-    ej_block_->set_input(params, dst_inport, src_outport, mod);
+    ej_block_->set_input(params, dst_inport, src_outport, link);
   }
 }
 
@@ -250,6 +259,11 @@ pisces_netlink::deadlock_check()
   inj_block_->deadlock_check();
 }
 
+void
+pisces_netlink::deadlock_check(event* ev)
+{
+}
+
 link_handler*
 pisces_netlink::payload_handler(int port) const
 {
@@ -275,9 +289,8 @@ pisces_netlink::handle_credit(event* ev)
 {
   pisces_credit* credit = static_cast<pisces_credit*>(ev);
   debug_printf(sprockit::dbg::pisces,
-     "netlink %s:%p handling credit %s",
-     topology::global()->label(event_location()).c_str(),
-     this,
+     "netlink %d:%p handling credit %s",
+     component_id(), this,
      credit->to_string().c_str());
   if (is_node_port(credit->port())){
     ej_block_->handle_credit(credit);
@@ -319,6 +332,18 @@ pisces_netlink::handle_payload(event* ev)
     tile_rotater_ = (tile_rotater_ + 1) % num_tiles_;
     inj_block_->handle_payload(payload);
   }
+}
+
+timestamp
+pisces_netlink::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_time_param("send_latency");
+}
+
+timestamp
+pisces_netlink::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_time_param("credit_latency");
 }
 
 pisces_netlink::~pisces_netlink()

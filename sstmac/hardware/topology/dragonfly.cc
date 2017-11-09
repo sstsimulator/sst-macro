@@ -49,7 +49,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/stl_string.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
 #include <sprockit/sim_parameters.h>
+
+RegisterKeywords(
+{ "h", "the number inter-group connections per router" },
+{ "group_connections", "the number of inter-group connections per router"},
+{ "inter_group", "the inter-group wiring scheme"},
+);
 
 namespace sstmac {
 namespace hw {
@@ -61,162 +68,46 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
                      InitMaxPortsIntra::I_Remembered,
                      InitGeomEjectID::I_Remembered)
 {
-  x_ = dimensions_[0];
-  y_ = dimensions_[1];
-  g_ = dimensions_[2];
+  if (dimensions_.size() != 2){
+    spkt_abort_printf("dragonfly topology geometry should have 2 entries: routers per group, num groups");
+  }
 
-  group_con_ = params->get_int_param("group_connections");
-  true_random_intermediate_ =
-      params->get_optional_bool_param("true_random_intermediate",
+  a_ = dimensions_[0];
+  g_ = dimensions_[1];
+
+  if (params->has_param("group_connections")){
+    h_ = params->get_int_param("group_connections");
+  } else {
+    h_ = params->get_int_param("h");
+  }
+  true_random_intermediate_ = params->get_optional_bool_param("true_random_intermediate",
                                       false);
 
   //can never have more group connections than groups
-  if (group_con_ >= g_){
+  if (h_ >= g_){
     cerr0 << sprockit::printf("WARNING: requested %d group connections, "
-                        "but max allowable is %d for %d groups - resetting value\n",
-                        group_con_, g_-1, g_);
-    group_con_ = g_ - 1;
+                        "but max should be %d for %d groups\n",
+                        h_, g_-1, g_);
   }
 
-  max_ports_intra_network_ = x_ + y_ + g_;
+  max_ports_intra_network_ = a_ + h_;
   eject_geometric_id_ = max_ports_intra_network_;
+
+  group_wiring_ = inter_group_wiring::factory::get_optional_param("inter_group", "circulant", params, this);
 }
 
 void
 dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 {
-  int npaths = x_ + y_ + group_con_ + netlinks_per_switch_;
-  redundancies.resize(npaths);
-  //do x paths, then y paths, then g paths
-  int path = 0;
-  for (int x=0; x < x_; ++x, ++path){
-    redundancies[path] = red_[x_dimension];
-  }
-  for (int y=0; y < y_; ++y, ++path){
-    redundancies[path] = red_[y_dimension];
-  }
-  for (int g=0; g < group_con_; ++g, ++path){
-    redundancies[path] = red_[g_dimension];
-  }
-  configure_injection_geometry(redundancies);
+  spkt_abort_printf("not implemented: dragonfly::configure geometric paths");
 }
 
 switch_id
 dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
 {
-  long nid = current_sw;
-  uint32_t attempt = 0;
-  while (current_sw == nid) {
-
-    int srcX, srcY, srcG, dstX, dstY, dstG, hisX, hisY, hisG;
-    get_coords(current_sw, srcX, srcY, srcG);
-    get_coords(dest_sw, dstX, dstY, dstG);
-
-    hisX = random_number(x_, attempt);
-    hisY = random_number(y_, attempt);
-    if(!true_random_intermediate_ && dstG == srcG) {
-      // already on the correct group
-      hisG = srcG;
-
-    }
-    else {
-      //randomly select a group
-      hisG = random_number(g_, attempt);
-      //now figure out which x,y,g fills the path
-      //find_path_to_group(srcX, srcY, srcG, hisX, hisY, hisG);
-    }
-
-    nid = get_uid(hisX, hisY, hisG);
-    ++attempt;
-  }
-
-  return switch_id(nid);
+  spkt_abort_printf("random selection not implemented");
+  return 0;
 }
-
-bool
-dragonfly::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
-{
-  int gstride = std::max(1, g_ / group_con_);
-  int gconns = 0;
-  int my_group_id = myX + myY * x_;
-  int goffset = my_group_id % g_;
-  int theg = myG + goffset;
-  for (int g=0; g < group_con_; ++g, theg += gstride){
-    theg = theg % g_;
-    if (theg == dstg)
-        return true;
-  }
-  return false;
-}
-
-bool
-dragonfly::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
-                                routable::path& path) const
-{
-  int ystart = random_number(y_,0);
-  for (int yy = 0; yy < y_; ++yy) {
-    dstY = (ystart + yy) % y_;
-    if (xy_connected_to_group(myX, dstY, myG, dstG)) {
-      path.set_outport(y_port(dstY));
-      return true;
-    }
-  }
-  return false;
-}
-
-bool
-dragonfly::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
-                                routable::path& path) const
-{
-  int xstart = random_number(x_,0);
-  for (int xx = 0; xx < x_; ++xx) {
-    dstX = (xstart + xx) % x_;
-    if (xy_connected_to_group(dstX, myY, myG, dstG)) {
-      path.set_outport( x_port(dstX) );
-      return true;
-    }
-  }
-  return false;
-}
-
-void
-dragonfly::find_path_to_group(int myX, int myY, int myG,
-                              int dstG, int& dstX, int& dstY,
-                              routable::path& path) const
-{
-  //see if we can go directly to the group
-  if (xy_connected_to_group(myX, myY, myG, dstG)){
-    path.set_outport(g_port(dstG));
-    dstX = myX;
-    dstY = myY;
-    path.set_metadata_bit(routable::crossed_timeline);
-    return;
-  }
-
-  if (find_x_path_to_group(myY, myG, dstG, dstX, path)){
-    dstY = myY;
-    return;
-  }
-
-  if (find_y_path_to_group(myX, myG, dstG, dstY, path)){
-    dstX = myX;
-    return;
-  }
-
-  //both x and y need to change
-  int xstart = 0; 
-  for (int xx = 0; xx < x_; ++xx) {
-    dstX = (xstart + xx) % x_;
-    if (find_y_path_to_group(dstX, myG, dstG, dstY, path)){
-      return;
-    }
-  }
-
-  spkt_throw_printf(sprockit::value_error,
-    "dragonfly::route: unable to find path from group %d to group %d",
-    myG, dstG);
-}
-
 
 void
 dragonfly::minimal_route_to_switch(
@@ -225,67 +116,75 @@ dragonfly::minimal_route_to_switch(
     routable::path &path) const
 {
   path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
-  int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
-  int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
-  int interX, interY;
-  if (srcG != dstG){
-    find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
-    top_debug("dragonfly routing from (%d,%d,%d) to (%d,%d,%d) through "
-              "gateway (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG,
-              interX, interY, srcG, path.outport());
+
+  //see if intra-group
+  int srcG = computeG(src);
+  int dstG = computeG(dst);
+  if (srcG == dstG){
+    int dstA = computeA(dst);
+    path.set_outport(dstA);
+    return;
   }
-  else if (srcX != dstX){
-    path.set_outport( x_port(dstX) );
-    top_debug("dragonfly routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
-  } else if (srcY != dstY){
-    path.set_outport( y_port(dstY) );
-    top_debug("dragonfly routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
+
+  int srcA = computeA(src);
+  //see if inter-group, but direct connection to that group
+  std::vector<int> connected;
+  group_wiring_->connected_routers(srcA, srcG, connected);
+  for (int c=0; c < connected.size(); ++c){
+    int testG = computeG(connected[c]);
+    if (testG == dstG){
+      path.set_outport(c + a_);
+      return;
+    }
   }
+
+  //inter-group and we need local hop to get there
+  group_wiring_->connected_to_group(srcG, dstG, connected);
+  int srcRotater = srcA % connected.size();
+
+  path.set_outport(connected[srcRotater]);
+  path.set_metadata_bit(routable::crossed_timeline);
 }
 
 int
 dragonfly::minimal_distance(switch_id src, switch_id dst) const
 {
-  int dist = 0;
-  int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
-  int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
-  if (srcG == dstG){
-    if (srcX != dstX) ++dist;
-    if (srcY != dstY) ++dist;
+  int srcA, srcG; get_coords(src, srcA, srcG);
+  int dstA, dstG; get_coords(dst, dstA, dstG);
+
+  if (srcG == dstG) return 1;
+
+  std::vector<int> connected;
+  int directConn = -1;
+  group_wiring_->connected_routers(srcA, srcG, connected);
+  for (int i=0; i < connected.size(); ++i){
+    if (connected[i] == dst){
+      return 1;
+    } else if (computeG(connected[i]) == dstG){
+      directConn = connected[i];
+    }
   }
-  else {
-    routable::path path;
-    int interX;
-    int interY;
-    find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
-    dist = 1; //group hop
-    if (srcX != interX) ++dist;
-    if (srcY != interY) ++dist;
-    if (dstX != interX) ++dist;
-    if (dstY != interY) ++dist;
+
+  if (directConn > 0){
+    return 2;
+  } else {
+    return 3;
   }
-  return dist;
 }
 
 
-
-
 void
-dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsize) const
+dragonfly::setup_port_params(sprockit::sim_parameters* params, int red, int port_offset, int num_ports) const
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
   int bufsize = params->get_byte_length_param("buffer_size");
 
-  double port_bw = bw * red_[dim];
-  int credits = bufsize * red_[dim];
+  double port_bw = bw * red;
+  int credits = bufsize * red;
 
-  for (int i=0; i < dimsize; ++i){
-    int port = convert_to_port(dim, i);
-  //std::cout << "setting port " << port << " to " << port_bw << " " << credits << std::endl;
+  for (int i=0; i < num_ports; ++i){
+    int port = port_offset + i;
     sprockit::sim_parameters* port_params = topology
         ::setup_port_params(port, credits, port_bw, link_params, params);
   }
@@ -294,63 +193,48 @@ dragonfly::setup_port_params(sprockit::sim_parameters* params, int dim, int dims
 void
 dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  int max_num_conns = (x_ - 1) + (y_ - 1) + group_con_;
+  int max_num_conns = (a_ - 1) + h_;
   conns.resize(max_num_conns);
 
-  int myx;
-  int myy;
-  int myg;
-  get_coords(src, myx, myy, myg);
+  int myA;
+  int myG;
+  get_coords(src, myA, myG);
 
   int cidx = 0;
 
-  for (int x = 0; x < x_; x++) {
-    if (x != myx) {
-      switch_id dst(get_uid(x, myy, myg));
-      connection& conn = conns[cidx];
+  for (int a = 0; a < a_; a++){
+    if (a != myA){
+      switch_id dst = get_uid(a, myG);
+      connection& conn = conns[cidx++];
       conn.src = src;
       conn.dst = dst;
-      conn.src_outport = x_port(x);
-      conn.dst_inport = x_port(myx);
-      ++cidx;
+      conn.src_outport = a;
+      conn.dst_inport = myA;
     }
   }
 
-  for (int y = 0; y < y_; y++) {
-    if (y != myy) {
-      switch_id dst(get_uid(myx, y, myg));
-      connection& conn = conns[cidx];
+  std::vector<int> groupConnections;
+  group_wiring_->connected_routers(myA, myG, groupConnections);
+  for (int h = 0; h < groupConnections.size(); ++h){
+    switch_id dst = groupConnections[h];
+    int dstG = computeG(dst);
+    if (dstG != myG){
+      connection& conn = conns[cidx++];
       conn.src = src;
       conn.dst = dst;
-      conn.src_outport = y_port(y);
-      conn.dst_inport = y_port(myy);
-      ++cidx;
+      conn.src_outport = h + a_;
+      int dstA = computeA(dst);
+      conn.dst_inport = group_wiring_->input_group_port(myA, myG, h, dstA, dstG) + a_;
     }
   }
-
-  for (int g=0; g < group_con_; ++g){
-    int dstg = xyg_dir_to_group(myx,myy,myg,g);
-    if (dstg == myg) continue;
-
-    switch_id dst(get_uid(myx, myy, dstg));
-    connection& conn = conns[cidx];
-    conn.src = src;
-    conn.dst = dst;
-    conn.src_outport = g_port(dstg);
-    conn.dst_inport = g_port(myg);
-    ++cidx;
-  }
-
   conns.resize(cidx);
 }
 
 void
-dragonfly::configure_individual_port_params(switch_id src,
-                                            sprockit::sim_parameters *switch_params) const
+dragonfly::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
 {
-  setup_port_params(switch_params, x_dimension, x_);
-  setup_port_params(switch_params, y_dimension, y_);
-  setup_port_params(switch_params, g_dimension, g_);
+  setup_port_params(switch_params, red_[0], 0, a_);
+  setup_port_params(switch_params, red_[1], a_, h_);
 }
 
 void
@@ -358,10 +242,9 @@ dragonfly::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
 {
   m[routing::minimal] = 2;
   m[routing::minimal_adaptive] = 2;
-  m[routing::valiant] = 4;
-  m[routing::ugal] = 6;
+  m[routing::valiant] = 3;
+  m[routing::ugal] = 3;
 }
-
 
 void
 dragonfly::new_routing_stage(routable* rtbl)
@@ -369,28 +252,85 @@ dragonfly::new_routing_stage(routable* rtbl)
   rtbl->current_path().unset_metadata_bit(routable::crossed_timeline);
 }
 
-int
-dragonfly::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
+inter_group_wiring::inter_group_wiring(sprockit::sim_parameters *params, dragonfly* top) :
+  a_(top->a()), g_(top->g()), h_(top->h())
 {
-  int gspace = std::max(1, g_ / group_con_);
-  int myid = myX + myY * x_;
-  int gset = myid % g_;
-  return (myG + gset + gspace * dir) % g_;
 }
 
-coordinates
-dragonfly::switch_coords(switch_id uid) const
-{
-  coordinates coords(3);
-  get_coords(uid, coords[0], coords[1], coords[2]);
-  return coords;
+static inline int mod(int a, int b){
+  int rem = a % b;
+  return rem < 0 ? rem + b : rem;
 }
 
-switch_id
-dragonfly::switch_addr(const coordinates &coords) const
+class circulant_group_wiring : public inter_group_wiring
 {
-  return get_uid(coords[0], coords[1], coords[2]);
-}
+  FactoryRegister("circulant", inter_group_wiring, circulant_group_wiring)
+ public:
+  circulant_group_wiring(sprockit::sim_parameters* params, dragonfly* top) :
+    inter_group_wiring(params, top)
+  {
+    if (h_ % 2){
+      spkt_abort_printf("group connections must be even for circulant inter-group pattern");
+    }
+  }
+
+  int input_group_port(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
+    if (srcH % 2 == 0){
+      return srcH + 1;
+    } else {
+      return srcH - 1;
+    }
+  }
+
+  /**
+   * @brief connected_routers
+   * @param a The src router index within the group
+   * @param g The src router group
+   * @param connected [in-out] The routers (switch id) for each inter-group interconnection
+   * @return The number of routers in connected array
+   */
+  void connected_routers(int srcA, int srcG, std::vector<int>& connected) const override {
+    connected.clear();
+    int dstA = srcA;
+    int half = h_  /2;
+    for (int h=1; h <= half; ++h){
+      int plusG = mod(srcG + srcA*half + h, g_);
+      if (plusG != srcG){
+        switch_id dst = plusG*a_ + dstA;
+        connected.push_back(dst); //full switch ID
+      }
+      int minusG = mod(srcG - srcA*half - h, g_);
+      if (minusG != srcG){
+        switch_id dst = minusG*a_ + dstA;
+        connected.push_back(dst); //full switch ID
+      }
+    }
+  }
+
+  /**
+   * @brief connected_to_group
+   * @param srcG
+   * @param dstG
+   * @param connected [in-out] The list of all intra-group routers in range (0 ... a-1)
+   *                  that have connections to a router in group dstG
+   * @return The number of routers in group srcG with connections to dstG
+   */
+  void connected_to_group(int srcG, int dstG, std::vector<int>& connected) const override {
+    connected.clear();
+    std::vector<int> tmp;
+    for (int a=0; a < a_; ++a){
+      connected_routers(a, srcG, tmp);
+      for (int c=0; c < tmp.size(); ++c){
+        int g = tmp[c] / a_;
+        if (dstG == g){
+          connected.push_back(a);
+          break;
+        }
+      }
+    }
+  }
+
+};
 
 
 }

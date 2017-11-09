@@ -51,7 +51,9 @@ sst\_nthread \paramType{int} & 1 & Positive int & Only relevant for multi-thread
 \hline
 timestamp\_resolution \paramType{time} & 1ps & & Specifies the length of time occupied by 1 timestamp tick - the smallest resolvable time difference. Numerical stability depends on this parameter matching the time scales of the simulation. \\
 \hline
-serialization\_buffer\_size \paramType{byte length} & 512B & & Size to allocate for buffers in a pool of serialization buffers. This should set be large enough to handle serialization of most messages, but not so large that significant space is wasted. \\
+serialization\_buffer\_size \paramType{byte length} & 16 KB & & Size to allocate for buffering point-to-point sends in parallel. This should set be large enough to handle serialization of all messages in a given time window, but not so large that significant space is wasted. \\
+\hline
+backup\_buffer\_size \paramType{byte length} & 1 MB & & Size to allocate for special overflow buffers when the standard buffer is overrun. This is the base size and continues to grow if buffers overflow again in a time window. This should be large enough so that buffers do not continuously overflow, but not so large that memory gets filled up. \\
 \hline
 cpu\_affinity \paramType{vector of int} & No default & Invalid cpu IDs give undefined behavior & When in multi-threading, specifies the list of core IDs that threads will be pinned to. \\
 \hline
@@ -63,8 +65,10 @@ cpu\_affinity \paramType{vector of int} & No default & Invalid cpu IDs give unde
 \openTable
 \hline
 geometry \paramType{vector of int} & No default & See Topology section & Geometry configuration of the topology. For details of the keyword, users should refer to Section \ref{chapter:topologies} \\
+\hline 
+auto \paramType{bool} & false & Whether to auto-generate the topology based on the application size. \\
 \hline
-name \paramType{string} & No default & torus, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
+name \paramType{string} & No default & torus, cascade, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
 \hline 
 seed \paramType{long} & System time & & If no value given, random numbers for topology will be generated from system time \\
 \hline
@@ -85,9 +89,9 @@ num\_agg\_subtrees & No default & Positive int & For a tapered fat tree with 3 l
 \hline
 num\_core\_switches & No default & Positive int & The total number of core switches in a tapered tree linking the individual aggregation trees. \\
 \hline
-group\_connections \paramType{int} & No default & Positive int & For dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
+group\_connections \paramType{int} & No default & Positive int & For cascase ir dragonfly, the number of intergroup connections on each switch in a Dragonfly group \\
 \hline
-redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartesian topologies (hypercube, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
+redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartesian topologies (hypercube, cascadem, dragonfly, torus) this specifies a bandwidth (redundancy) multiplier for network links in each dimension. \\
 \hline
 \end{tabular}
 
@@ -202,11 +206,9 @@ max\_single\_bandwidth & Computed & & The maximum memory bandwidth of a single s
 \hline
 compute\_scheduler \paramType{string} & simple & simple, cpuset & The level of detail for scheduling compute tasks to cores. Simple looks for any empty core. cpuset allows bitmasks to be set for defining core affinities. \\
 \hline
-stack\_size \paramType{byte length} & 32KB & & The size of user-space thread stack to allocate for each virtual application \\
+stack\_size \paramType{byte length} & 64 KB & & The size of user-space thread stack to allocate for each virtual application \\
 \hline
-stack\_protect \paramType{bool} & false & & Whether to put special mprotect regions around the thread stacks to turn stack overflow errors into seg faults \\
-\hline
-stack\_chunk\_size \paramType{byte length} & 1MB & & The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed.  \\
+stack\_chunk\_size \paramType{byte length} & 1 MB & & The size of memory to allocate at a time when allocating new thread stacks. Rather than allocating one thread stack at a time, multiple stacks are allocated and added to a pool as needed.  \\
 \hline
 \end{tabular}
 
@@ -305,7 +307,7 @@ buffer\_size \paramType{byte length} & No default & & The size of input and outp
 
 \openTable
 \hline
-name \paramType{string} & No default & minimal, valiant, ugal, fat\_tree & The name of the routing algorithm to use for routing packets. \\
+name \paramType{string} & No default & minimal, valiant, ugal, dragonfly\_minimal, fat\_tree & The name of the routing algorithm to use for routing packets. \\
 \hline
 ugal\_threshold \paramType{int} & 0 & & The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. \\
 \hline

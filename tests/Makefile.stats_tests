@@ -5,13 +5,15 @@
   parallel_histogram parallel_spyplot \
   bytes_sent_torus \
   bytes_sent_fattree \
-  bytes_sent_dfly
+  bytes_sent_cascade
 if !INTEGRATED_SST_CORE
 #------------------------------------------------------------------------------------------#
 #  Stats tests                                                                          {{{#
 #------------------------------------------------------------------------------------------#
 
 STATSTESTS = \
+  output_graph_torus \
+  output_graph_dragonfly \
   test_stats_msg_size_histogram \
   test_stats_spyplot \
   test_stats_spyplot_collectives \
@@ -19,9 +21,6 @@ STATSTESTS = \
   test_stats_bytes_sent_fattree \
   histogram.p \
   histogram.dat \
-  test_stats_ftq \
-  ftq_app1.p \
-  ftq_app1.dat \
   spyplot.bytes.csv \
   spyplot.num_messages.csv \
   spyplot_collectives.bytes.csv \
@@ -29,16 +28,27 @@ STATSTESTS = \
   bytes_sent_torus.dat \
   bytes_sent_fattree.dat 
 
+#  test_stats_ftq 
+#  ftq_app1.p 
+#  ftq_app1.dat 
+
 #  spyplot.bytes.png 
 #  spyplot.num_messages.png 
 
 if COMM_SYNC_STATS
-endif
-
 if DO_GRAPHVIZ_TEST
 #don't do this test unless also including comm sync stats
 SINGLETESTS += test_stat_graphviz 
 endif
+endif
+
+test_output_graph_%.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 5 $(top_srcdir) tmp_$@ notime \
+	$(SSTMACEXEC) -f $(srcdir)/test_configs/$*_graph.ini \
+     --graph=output_graph_$* --no-wall-time
+
+output_graph_%.$(CHKSUF): $(SSTMACEXEC) test_output_graph_%.$(CHKSUF)
+	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
 
 test_stat_graphviz.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ notime \

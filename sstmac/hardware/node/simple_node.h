@@ -66,7 +66,7 @@ class simple_node :
 
  public:
   simple_node(sprockit::sim_parameters* params,
-    uint64_t id, event_manager* mgr);
+    uint32_t id, event_manager* mgr);
 
   virtual ~simple_node();
 

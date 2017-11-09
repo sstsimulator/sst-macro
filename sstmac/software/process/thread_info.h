@@ -48,6 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/tls.h>
 #include <cstring>
+#include <cstdio>
+#include <cstdint>
 
 extern int sstmac_global_stacksize;
 
@@ -57,12 +59,27 @@ class thread_info {
  public:
   static void register_user_space_virtual_thread(int phys_thread_id, void* stack, void* globalsMap);
 
-  static inline int current_physical_thread_id(){
+  static void set_thread_id(void* stack, int thr){
+    int* thrPtr = (int*) stack;
+    *thrPtr = thr;
+  }
+
+  static int get_thread_id(void* stack){
+    int* thrPtr = (int*) stack;
+    return *thrPtr;
+  }
+
+  static inline char* get_current_stack(){
     char x;
-    size_t stackptr = (size_t) &x;
-    size_t stack_mult = stackptr / sstmac_global_stacksize;
+    intptr_t stackptr = (intptr_t) &x;
+    intptr_t stack_mult = stackptr / sstmac_global_stacksize;
     char* aligned_stack_ptr = (char*) (stack_mult * sstmac_global_stacksize);
-    int* tls = (int*) &aligned_stack_ptr[TLS_THREAD_ID];
+    return aligned_stack_ptr;
+  }
+
+  static inline int current_physical_thread_id(){
+    char* stack_ptr = get_current_stack();
+    int* tls = (int*) &stack_ptr[TLS_THREAD_ID];
     return *tls;
   }
 };

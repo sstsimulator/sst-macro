@@ -372,7 +372,7 @@ namespace lblxml
   }
 
   void boxml::distribute_boxes() {
-    SSTMACBacktrace("distribute boxes");
+    SSTMACBacktrace(DistributeBoxes);
     rank_to_set_t rank_to_boxes;
     rank_to_boxes.resize(commsize_);
     for (int i=0; i < g_boxes.size(); ++i) {
@@ -459,7 +459,7 @@ namespace lblxml
   }
 
   void boxml::distribute_events() {
-    SSTMACBacktrace("distribute events");
+    SSTMACBacktrace(DistributeEvents);
 
     // "i" is the same as the index
     for (int i=0; i < g_events.size(); ++i) {

@@ -107,11 +107,6 @@ stat_local_double::clear()
 {
 }
 
-void
-stat_local_double::simulation_finished(timestamp end)
-{
-}
-
 
 
 

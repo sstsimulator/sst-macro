@@ -105,11 +105,6 @@ stat_local_int::clear()
 {
 }
 
-void
-stat_local_int::simulation_finished(timestamp end)
-{
-}
-
 
 
 

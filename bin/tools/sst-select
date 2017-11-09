@@ -18,8 +18,6 @@ tmpls = [
   "rm -f $path_dir/dsst++",
   "rm -f $path_dir/libsst++",
   "rm -f $path_dir/libsstcc",
-  "rm -f $path_dir/CC ",
-  "rm -f $path_dir/cc",
   "rm -f $path_dir/sst++",
   "rm -f $path_dir/sstcc",
   "rm -f $path_dir/sstmac",
@@ -30,8 +28,6 @@ tmpls = [
   "ln -s $install_folder/bin/libsstcc $path_dir/libsstcc",
   "ln -s $install_folder/bin/sst++ $path_dir/sst++",
   "ln -s $install_folder/bin/sstcc $path_dir/sstcc",
-  "ln -s $install_folder/bin/sst++ $path_dir/CC", #to fake Cray
-  "ln -s $install_folder/bin/sstcc $path_dir/cc", #to fake Cray
   "ln -s $install_folder/bin/sstmac $path_dir/sstmac",
   "ln -s $install_folder/bin/dumpi2ascii $path_dir/dumpi2ascii",
   "ln -s $install_folder/lib/libmacro.so $lib_dir/libmacro.so",

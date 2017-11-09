@@ -58,7 +58,7 @@ class cart_allocation :
   FactoryRegister("cart | cartesian", node_allocator, cart_allocation,
               "Allocate a regular, cartesian volume of nodes."
               "This is meant mostly for torus topologies, "
-              "but is also meaningful for dragonfly and hypercube")
+              "but is also meaningful for dragonfly, cascade, and hypercube")
  public:
   cart_allocation(sprockit::sim_parameters* params);
 

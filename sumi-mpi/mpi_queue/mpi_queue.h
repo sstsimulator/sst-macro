@@ -112,7 +112,7 @@ class mpi_queue
     return api_;
   }
 
-  void memcopy(long bytes);
+  void memcopy(uint64_t bytes);
 
   double now() const;
 
@@ -235,7 +235,7 @@ class mpi_queue
   /// Requests that sent an ack and are waiting for the rest of their data.
   pending_req_map recv_needs_payload_;
 
-  /// Probe requests watching for a given envelope.
+  /// Probe requests watching
   probelist_t probelist_;
 
   task_id taskid_;

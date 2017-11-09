@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_global_int.h>
@@ -59,20 +58,12 @@ RegisterNamespaces("switch", "router", "congestion_stats", "xbar", "link",
                    "output_buffer");
 
 RegisterKeywords(
-"stats",
-"send_latency",
-"credit_latency",
-"credits",
-"num_vc",
-"pisces_arbitrator",
-"pisces_network_hop_latency",
-"pisces_network_link_bandwidth",
-"pisces_switch_crossbar_bandwidth",
-"network_switch_type",
-"network_link_bandwidth",
-"eject_buffer_size",
-"output_buffer_size",
-"input_buffer_size",
+{ "stats", "specify the statistics collection to be performed on this switch" },
+{ "latency", "latency to traverse a portion of the switch - sets both credit/send" },
+{ "send_latency", "latency to send data to the next stage" },
+{ "credit_latency", "latency to send credit to the previous stage" },
+{ "credits", "the number of initial credits available to switch component" },
+{ "num_vc", "the number of virtual channels a switch must allow" },
 );
 
 
@@ -80,7 +71,7 @@ namespace sstmac {
 namespace hw {
 
 pisces_abstract_switch::pisces_abstract_switch(
-  sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
+  sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
   buf_stats_(nullptr),
   xbar_stats_(nullptr),
   router_(nullptr),
@@ -126,7 +117,7 @@ pisces_abstract_switch::~pisces_abstract_switch()
 
 pisces_switch::pisces_switch(
   sprockit::sim_parameters* params,
-  uint64_t id,
+  uint32_t id,
   event_manager* mgr)
 : pisces_abstract_switch(params, id, mgr),
   xbar_(nullptr)
@@ -172,10 +163,10 @@ pisces_switch::output_buffer(sprockit::sim_parameters* params,
     out_buffers_[src_outport] = out_buffer;
 
     int buffer_inport = 0;
-    xbar_->set_output(params, src_outport, buffer_inport,
-                      out_buffer->payload_handler());
-    out_buffer->set_input(params, buffer_inport,
-                          src_outport, xbar_->credit_handler());
+    auto out_link = allocate_local_link(xbar_->send_latency(), this, out_buffer->payload_handler());
+    xbar_->set_output(params, src_outport, buffer_inport, out_link);
+    auto in_link = allocate_local_link(out_buffer->credit_latency(), this, xbar_->credit_handler());
+    out_buffer->set_input(params, buffer_inport, src_outport, in_link);
   }
   return out_buffers_[src_outport];
 }
@@ -185,11 +176,11 @@ pisces_switch::connect_output(
   sprockit::sim_parameters* port_params,
   int src_outport,
   int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
   //create an output buffer for the port
   pisces_sender* out_buffer = output_buffer(port_params, src_outport);
-  out_buffer->set_output(port_params, src_outport, dst_inport, mod);
+  out_buffer->set_output(port_params, src_outport, dst_inport, link);
 }
 
 void
@@ -197,9 +188,21 @@ pisces_switch::connect_input(
   sprockit::sim_parameters* port_params,
   int src_outport,
   int dst_inport,
-  event_handler* mod)
+  event_link* link)
 {
-  xbar_->set_input(port_params, dst_inport, src_outport, mod);
+  xbar_->set_input(port_params, dst_inport, src_outport, link);
+}
+
+timestamp
+pisces_switch::send_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_time_param("send_latency");
+}
+
+timestamp
+pisces_switch::credit_latency(sprockit::sim_parameters *params) const
+{
+  return params->get_namespace("xbar")->get_time_param("credit_latency");
 }
 
 void

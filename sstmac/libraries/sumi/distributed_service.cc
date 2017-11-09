@@ -48,7 +48,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 MakeDebugSlot(distributed_service)
-RegisterKeywords("services");
+
+RegisterKeywords(
+ { "services", "" },
+ { "libname", "the library name for a given service running on a node" },
+);
 
 #define debug(...) debug_printf(sprockit::dbg::distributed_service, __VA_ARGS__)
 

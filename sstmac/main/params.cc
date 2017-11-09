@@ -83,11 +83,9 @@ struct param_remap {
 typedef param_remap pr;
 
 param_remap remap_list[] = {
-  pr("network_name", "interconnect"),
   pr("topology_name", "topology.name"),
   pr("topology_geometry", "topology.geometry"),
   pr("network_nodes_per_switch", "topology.concentration"),
-  pr("topology_true_random_intermediate", "topology.true_random_intermediate"),
   pr("topology_redundant", "topology.redundant"),
   pr("topology_output_graph", "topology.output_graph"),
   pr("topology_seed", "topology.seed"),
@@ -107,35 +105,18 @@ param_remap remap_list[] = {
   pr("node_frequency", "node.proc.frequency"),
   pr("router", "switch.router.name"),
   pr("router_seed", "switch.router.seed"),
-  pr("network_bandwidth_link", "switch.link.bandwidth"),
-  pr("network_link_bandwidth", "switch.link.bandwidth"),
   pr("network_bandwidth", "switch.link.bandwidth", false),
   pr("network_bandwidth", "switch.xbar.bandwidth"),
   pr("network_switch_bandwidth", "switch.xbar.bandwidth"),
   pr("network_latency", "switch.link.latency"),
   pr("network_hop_latency", "switch.link.latency"),
   pr("network_switch_type", "switch.model"),
-  pr("pisces_memory_bandwidth", "node.memory.total_bandwidth"),
-  pr("pisces_memory_single_bandwidth", "node.memory.max_single_bandwidth"),
-  pr("pisces_memory_latency", "node.memory.latency"),
-  pr("pisces_memory_arbitrator", "node.memory.arbitrator"),
-  pr("pisces_memory_mtu", "node.memory.mtu"),
   pr("pisces_injection_bandwidth", "switch.ejection_bandwidth", false),
   pr("pisces_injection_bandwidth", "node.nic.injection.bandwidth"),
   pr("pisces_injection_latency", "node.nic.injection.latency"),
-  pr("pisces_eject_buffer_size", "node.nic.eject_buffer_size"),
-  pr("pisces_network_link_bandwidth", "switch.link.bandwidth"),
-  pr("pisces_network_hop_latency", "switch.link.latency"),
-  pr("pisces_switch_output_buffer_size", "switch.output_buffer_size"),
-  pr("pisces_switch_crossbar_bandwidth", "switch.xbar.bandwidth"),
   pr("pisces_switch_crossbar_latency", "switch.xbar.latency"),
-  pr("pisces_switch_input_buffer_size", "switch.input_buffer_size", false),
-  pr("pisces_switch_input_buffer_size", "node.nic.injection.credits"),
-  pr("pisces_arbitrator", "node.nic.arbitrator", false),
-  pr("pisces_arbitrator", "switch.arbitrator"),
   pr("node_cores", "node.proc.ncores"),
   pr("node_sockets", "node.nsockets"),
-  pr("node_model", "node.model"),
   pr("node_pipeline_speedup", "node.proc.parallelism"),
   pr("smp_single_copy_size", "node.app1.mpi.smp_single_copy_size"),
   pr("max_eager_msg_size", "node.app1.mpi.max_eager_msg_size"),
@@ -150,7 +131,6 @@ param_remap remap_list[] = {
   pr("call_graph", "node.os.call_graph.fileroot"),
   pr("stack_size", "node.os.stack_size"),
   pr("stack_chunk_size", "node.os.stack_chunk_size"),
-  pr("stack_protect", "node.os.stack_protect"),
   pr("injection_redundant", "node.nic.injection.redundant", false),
   pr("injection_redundant", "switch.ejection.redundant", false),
   pr("injection_latency", "node.nic.injection.latency", false),
@@ -160,10 +140,10 @@ param_remap remap_list[] = {
   pr("intragroup_connection_file", "topology.intragroup_connection_file", false),
   pr("intergroup_connection_file", "topology.intergroup_connection_file"),
   pr("launch_app1", "node.app1.name"),
-  pr("launch_app1_start", "node.app1.start"),
+  pr("launch_start_app1", "node.app1.start"),
   pr("launch_allocation", "node.app1.allocation"),
   pr("launch_indexing", "node.app1.indexing"),
-  pr("launch_app1_cmd", "node.app1.launch_cmd"),
+  pr("launch_cmd_app1", "node.app1.launch_cmd"),
   pr("launch_app1_type", "node.app1.launch_type"),
   pr("launch_app1_argv", "node.app1.argv"),
   pr("launch_app1_size", "node.app1.size"),
@@ -209,15 +189,23 @@ remap_latency_params(sprockit::sim_parameters* params)
 void
 remap_params(sprockit::sim_parameters* params, bool verbose)
 {
+  double timescale = params->get_optional_time_param("timestamp_resolution", 1e-12);
+  int ps_per_tick = round(timescale/1e-12) + 0.02;
+  timestamp::init_stamps(ps_per_tick);
+
   remap_deprecated_params(params);
   remap_latency_params(params);
 
-  int max_nproc = native::manager::compute_max_nproc(params);
-  if (max_nproc == 0){
-    params->print_scoped_params(std::cerr);
-    spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
+  sprockit::sim_parameters* top_params = params->get_namespace("topology");
+  bool auto_top = top_params->get_optional_bool_param("auto", false);
+  if (auto_top){
+    int max_nproc = native::manager::compute_max_nproc(params);
+    if (max_nproc == 0){
+      params->print_scoped_params(std::cerr);
+      spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
+    }
+    resize_topology(max_nproc, params, verbose);
   }
-  resize_topology(max_nproc, params, verbose);
 
   //here is where we might need to build supplemental params
   bool has_cong_model = params->has_param("congestion_model");
@@ -253,10 +241,6 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
       params->add_param_override("event_manager", "multithread");
     }
   }
-
-  double timescale = params->get_optional_time_param("timestamp_resolution", 1e-12);
-  int ps_per_tick = round(timescale/1e-12) + 0.02;
-  timestamp::init_stamps(ps_per_tick);
 }
 
 }
@@ -265,9 +249,10 @@ void
 resize_topology(int max_nproc, sprockit::sim_parameters *params, bool verbose)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  if (top_params->has_param("geometry") || top_params->get_param("name") != "torus"){
-    return; //don't need this
+  if (top_params->has_param("name")){
+    spkt_abort_printf("cannot specify topology name with auto topology");
   }
+  top_params->add_param_override("name", "torus");
 
   //create a topology matching nproc
   int x, y, z;

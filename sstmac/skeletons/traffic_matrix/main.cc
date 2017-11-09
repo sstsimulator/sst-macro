@@ -54,10 +54,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"intensity",
-"mixing",
-"niterations",
-"scatter",
+{ "intensity", "parameter tuning the injection rate" },
+{ "mixing", "the number of partners each rank has (mixing rate)" },
+{ "niterations", "the number of iterations to run" },
+{ "scatter", "the rank-distance between partners" },
 );
 
 MakeDebugSlot(traffic_matrix)
@@ -166,11 +166,11 @@ progress_loop(sumi::transport* tport, double timeout,
   debug_printf(sprockit::dbg::traffic_matrix,
     "Rank %d entering progress loop at t=%10.6e - stop=%10.6e, timeout=%10.6e",
     tport->rank(), now, stop, timeout);
-  while (1){
+  while (timeout > 0){
     rdma_message* msg = SUMI_POLL_TIME(tport,rdma_message,timeout);
     now = tport->wall_time();
     if (msg){ //need if statement, if timed out then no message
-      timeout = std::max(0., stop - now); //timeout shrinks
+      timeout = stop - now; //timeout shrinks
       msg->set_finish(now);
       done.push_back(msg);
       debug_printf(sprockit::dbg::traffic_matrix,
@@ -349,7 +349,7 @@ int USER_MAIN(int argc, char** argv)
 
   std::list<rdma_message*> done;
 
-  static double timeout = 100e-6 / intensity; //100 us per send iteration, modified by intensity
+  double timeout = 100e-6 / intensity; //100 us per send iteration, modified by intensity
   for (int iter=0; iter < num_iterations; ++iter){
     do_all_sends(iter, tport, chunk_size, send_partners, send_chunks, recv_chunks, timeout, done);
     progress_loop(tport, timeout, done);

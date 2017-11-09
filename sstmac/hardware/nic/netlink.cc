@@ -49,6 +49,12 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterNamespaces("netlink", "injection", "ejection");
 
+RegisterKeywords(
+{ "concentration", "the number of nodes connected to a single netlink" },
+{ "num_tiles", "" },
+{ "id" , "" },
+);
+
 namespace sstmac {
 namespace hw {
 

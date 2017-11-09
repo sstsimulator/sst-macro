@@ -35,7 +35,6 @@ libsstmac_common_la_SOURCES = \
   stats/stat_collector.cc \
   stats/stat_spyplot.cc \
   stats/stat_histogram.cc \
-  stats/event_trace.cc \
   stats/location_trace.cc \
   stats/stat_local_int.cc \
   stats/stat_local_double.cc \
@@ -49,8 +48,10 @@ nobase_library_include_HEADERS = \
   event_manager_fwd.h \
   cartgrid.h \
   c_params.h \
+  ipc_event.h \
   event_callback.h \
   event_handler.h \
+	handler_event_queue_entry.h \
   event_handler_fwd.h \
   event_location.h \
   event_scheduler.h \
@@ -82,7 +83,6 @@ nobase_library_include_HEADERS = \
   stats/stat_collector_fwd.h \
   stats/stat_histogram.h \
   stats/stat_histogram_fwd.h \
-  stats/event_trace.h \
   stats/location_trace.h \
   stats/stat_local_int.h \
   stats/stat_local_int_fwd.h \

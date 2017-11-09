@@ -52,9 +52,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
 
-RegisterKeywords("print_times",
-                 "message_size",
-                 "sleep_time");
+RegisterKeywords(
+ { "print_times", "whether to print the measured times" },
+ { "message_size", "the size of each message sent" },
+ { "sleep_time", "the time to sleep between phases" },
+);
 
 #define sstmac_app_name mpi_ping_all
 

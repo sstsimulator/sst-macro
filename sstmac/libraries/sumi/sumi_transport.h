@@ -58,6 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/collective.h>
 #include <sumi/comm_functions.h>
 #include <sumi/transport.h>
+#include <sstmac/software/process/key.h>
 
 /**
  * SUMI = Simulator unified messagine interface
@@ -143,7 +144,9 @@ class sumi_transport :
 
   event_scheduler* des_scheduler() const;
 
-  void memcopy(long bytes);
+  void memcopy(uint64_t bytes) override;
+
+  void pin_rdma(uint64_t bytes);
 
  private:
   void do_smsg_send(int dst, sumi::message* msg) override;
@@ -179,6 +182,17 @@ class sumi_transport :
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os);
 
+  sumi::public_buffer make_public_buffer(void* buffer, int size) override {
+    pin_rdma(size);
+    return sumi::public_buffer(buffer);
+  }
+
+  void unmake_public_buffer(sumi::public_buffer buf, int size) override {}
+
+  void free_public_buffer(sumi::public_buffer buf, int size) override {
+    ::free(buf.ptr);
+  }
+
  private:
   void send(long byte_length,
     int dest_rank,
@@ -191,15 +205,17 @@ class sumi_transport :
 
   void ctor_common(sstmac::sw::software_id sid);
 
+  static sstmac::sw::ftq_tag sumi_transport_tag;
+
   std::string server_libname_;
 
   sstmac::sw::task_mapping_ptr rank_mapper_;
 
   std::list<transport_message*> pending_messages_;
 
-  std::list<sstmac::sw::key*> blocked_keys_;
+  std::list<sstmac::sw::thread*> blocked_threads_;
 
-  device_id loc_;
+  uint32_t component_id_;
 
   timestamp post_rdma_delay_;
 
@@ -216,6 +232,11 @@ class sumi_transport :
   int collective_cq_id_;
 
   int pt2pt_cq_id_;
+
+  sstmac::timestamp rdma_pin_latency_;
+  sstmac::timestamp rdma_page_delay_;
+  int page_size_;
+  bool pin_delay_;
 
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   void send_ping_request(int dst) override;

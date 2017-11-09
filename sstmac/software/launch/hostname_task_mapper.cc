@@ -52,6 +52,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/fileio.h>
 #include <sprockit/errors.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+ { "launch_hostname_list", "DEPRECATED: a line-by-line list of hostnames to allocate for a job" },
+ { "hostname_list", "a line-by-line list of hostnames to allocate for a job" },
+);
 
 namespace sstmac {
 namespace sw {

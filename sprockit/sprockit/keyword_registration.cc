@@ -55,18 +55,12 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-std::unordered_set<std::string>* KeywordRegistration::valid_keywords_ = nullptr;
+std::unordered_map<std::string,bool>* KeywordRegistration::valid_keywords_ = nullptr;
 std::unordered_set<std::string>* KeywordRegistration::valid_namespaces_ = nullptr;
 std::unordered_set<std::string>* KeywordRegistration::removed_ = nullptr;
-#if !SPKT_DISABLE_REGEX
-std::list<std::string>* KeywordRegistration::regexps_ = nullptr;
-#endif
 bool KeywordRegistration::inited_ = false;
-#if !SPKT_DISABLE_REGEX
 bool KeywordRegistration::do_validation_ = true;
-#else
-bool KeywordRegistration::do_validation_ = false;
-#endif
+
 static need_delete_statics<KeywordRegistration> del_statics;
 
 static const char* removed_keywords[] = {
@@ -78,52 +72,49 @@ KeywordRegistration::delete_statics()
 {
   if (valid_keywords_) delete valid_keywords_;
   if (removed_) delete removed_;
-  if (regexps_) delete regexps_;
   if (valid_namespaces_) delete valid_namespaces_;
 }
 
 bool
 KeywordRegistration::is_valid_namespace(const std::string& ns)
 {
-  init();
-  auto it = valid_namespaces_->find(ns);
-  if (it != valid_namespaces_->end()) {
-    return true;
-  }
-
-#if !SPKT_DISABLE_REGEXP
-  //otherwise, check to see if integer
-  if (has_regexp_match("\\d+", ns)){
-    return true;
-  }
-  return false;
-#else
-  //hmm, no choice, treat it as valid
   return true;
-#endif
 }
 
 bool
-KeywordRegistration::is_valid_keyword(const std::string &name)
+KeywordRegistration::is_valid_keyword(const std::string& name)
 {
   init();
+
   auto it = valid_keywords_->find(name);
   if (it != valid_keywords_->end()) {
+    bool isNum = it->second;
+    if (isNum){
+      spkt_abort_printf("got parameter %s without numeric suffix", name.c_str());
+    }
     return true;
   }
 
-#if !SPKT_DISABLE_REGEXP
-  for (auto& re : *regexps_){
-    if (has_regexp_match(re, name)){
+  std::string substr;
+  for (int i=0; i < name.size(); ++i){
+    char c = name.data()[i];
+    if (is_digit(c)){
+      substr = name.substr(0, i);
+      break;
+    }
+  }
+
+
+
+  it = valid_keywords_->find(substr);
+  if (it != valid_keywords_->end()){
+    bool isNum = it->second;
+    if (isNum){
       return true;
     }
   }
-  return false;
-#else
-  //if here, well, it might be a regexp but we just don't know!
-  return true;
-#endif
 
+  return false;
 }
 
 void
@@ -134,17 +125,10 @@ KeywordRegistration::register_namespace(const std::string &name)
 }
 
 void
-KeywordRegistration::register_keyword(const std::string &name)
+KeywordRegistration::register_keyword(const std::string &name, bool is_numeric)
 {
   init();
-  valid_keywords_->insert(name);
-}
-
-void
-KeywordRegistration::register_regexp(const std::string &regexp)
-{
-  init();
-  regexps_->push_back(regexp);
+  valid_keywords_->insert(std::make_pair(name,is_numeric));
 }
 
 void
@@ -154,19 +138,10 @@ KeywordRegistration::init()
     return;
   }
 
-  valid_keywords_ = new std::unordered_set<std::string>;
+  valid_keywords_ = new std::unordered_map<std::string,bool>;
   valid_namespaces_ = new std::unordered_set<std::string>;
-  regexps_ = new std::list<std::string>;
 
   inited_ = true;
-
-  register_regexp("launch_app\\d+");
-  register_regexp("launch_app\\d+_size");
-  register_regexp("launch_app\\d+_start");
-  register_regexp("launch_app\\d+_ntask_per_node");
-  register_regexp("launch_app\\d+_argv");
-  register_regexp("launch_app\\d+_cmd");
-  register_regexp("launch_app\\d+_type");
 
   removed_ = new std::unordered_set<std::string>;
   int num_removed = sizeof(removed_keywords) / sizeof(const char*);
@@ -193,7 +168,7 @@ void
 KeywordRegistration::validate_keyword(const std::string &name,
                                       const std::string &val)
 {
-  if(do_validation_) {
+  if (do_validation_) {
     bool valid = is_valid_keyword(name);
     if (!valid) {
       bool removed = removed_->find(name) != removed_->end();
@@ -201,8 +176,7 @@ KeywordRegistration::validate_keyword(const std::string &name,
         cerr0 << "WARNING: deprecated keyword " << name <<
                   " is no longer used and is being ignored.\n"
                   << "You should remove it from parameter files as it may become an error in future versions.\n";
-      }
-      else {
+      } else {
         spkt_abort_printf("unknown keyword name %s with value %s - if this is not a type-o ensure that "
                           "keyword was properly registered with RegisterKeywords(...) macro",
                          name.c_str(), val.c_str());
@@ -224,17 +198,11 @@ StaticNamespaceRegister::StaticNamespaceRegister(int num_ns, const char *namespa
   }
 }
 
-StaticKeywordRegisterRegexp::StaticKeywordRegisterRegexp(const char *regexp)
-{
-  KeywordRegistration::register_regexp(regexp);
-}
-
-StaticKeywordRegister::StaticKeywordRegister(int num_keywords,
-    const char *keywords[])
+StaticKeywordRegister::StaticKeywordRegister(int num_keywords, SpktKeyword keywords[])
 {
   for (int i=0; i < num_keywords; ++i) {
-    const char* keyword = keywords[i];
-    KeywordRegistration::register_keyword(keyword);
+    SpktKeyword& kw = keywords[i];
+    KeywordRegistration::register_keyword(kw.name, kw.isNumeric);
   }
 }
 

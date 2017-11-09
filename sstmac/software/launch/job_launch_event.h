@@ -62,8 +62,7 @@ class job_launch_event :
   {
   }
 
-  app_launch_request*
-  appman() const {
+  app_launch_request* appman() const {
     return appman_;
   }
 

@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/event_location.h>
-#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
@@ -89,7 +88,7 @@ class library
     return addr_;
   }
 
-  device_id event_location() const;
+  uint32_t component_id() const;
 
   virtual ~library();
 
@@ -120,35 +119,11 @@ class library
 
  protected:
   operating_system* os_;
-  key_traits::category key_cat_;
   software_id sid_;
   node_id addr_;
 
  private:
   std::string libname_;
-
-};
-
-class blocking_library :
-  public library
-{
- protected:
-  blocking_library(const char* prefix, software_id sid, operating_system* os) :
-    library(prefix, sid, os)
-  {
-  }
-
-  blocking_library(const std::string& libname, software_id sid, operating_system* os) :
-    library(libname, sid, os)
-  {
-  }
-
-  void wait_event(event* ev, key_traits::category cat);
-
-  virtual void incoming_event(event *ev);
-
- private:
-  std::map<event*,key*> blocked_events_;
 
 };
 

@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/event_handler_fwd.h>
 #include <sprockit/printable.h>
+#include <tuple>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
@@ -57,88 +58,153 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class locatable
-{
- public:
-  static const int null_threadid = -1;
-
-  int thread_id() const {
-    return thread_id_;
-  }
-
-  device_id event_location() const {
-    return loc_id_;
-  }
-
- protected:
-#if SSTMAC_INTEGRATED_SST_CORE
-  locatable(device_id id) :
-    loc_id_(id),
-    thread_id_(null_threadid)
-  {
-  }
-#endif
-
-  locatable(device_id id, int thread_id) :
-    loc_id_(id),
-    thread_id_(thread_id)
-  {
-  }
-
- private:
-  device_id loc_id_;
-  int thread_id_;
-};
-
 /**
  * The main interface for something that can respond to an event (sst_message).
  */
 class event_handler :
-  public locatable,
   public sprockit::printable
 {
  public:
   static const int null_lpid = -1;
 
-#if SSTMAC_INTEGRATED_SST_CORE
- public:
-  virtual SST::Link* link() const {
-    return nullptr;
-  }
-
  protected:
-  event_handler(device_id id) :
-   locatable(id)
+  event_handler(uint32_t comp_id) :
+    comp_id_(comp_id)
   {
   }
-#else
- protected:
-  event_handler(device_id id, int thread_id) :
-    locatable(id, thread_id)
-  {
-  }
-#endif
 
  public:
+  uint32_t component_id() const {
+    return comp_id_;
+  }
+
   virtual ~event_handler() {}
 
   virtual void handle(event* ev) = 0;
 
+  virtual void deadlock_check(event* ev) = 0;
+  
+  virtual void deadlock_check() = 0;
 
-  /**
-   * Whether an event handler is a "fake" handler that represents
-   * logical process boundary.  Messages scheduled here are sent to another process.
-   * @return If this is an IPC stub handler
-   */
-  virtual bool ipc_handler() const {
-    return false;
+ private:
+  uint32_t comp_id_;
+};
+
+class member_fxn_handler :
+  public event_handler
+{
+ public:
+  virtual ~member_fxn_handler(){}
+
+ protected:
+    member_fxn_handler(uint32_t comp_id) :
+      event_handler(comp_id)
+  {
+  }
+};
+
+template<int ...>
+struct seq { };
+
+template<int N, int ...S>
+struct gens : gens<N-1, N-1, S...> { };
+
+template<int ...S>
+struct gens<0, S...> {
+  typedef seq<S...> type;
+};
+
+template<typename C>
+struct has_deadlock_check {
+private:
+    template<typename T>
+    static constexpr auto check(T*)
+    -> typename
+        std::is_same<
+            decltype( std::declval<T>().deadlock_check() ),
+            void
+        >::type;  // attempt to call it and see if the return type is correct
+
+    template<typename>
+    static constexpr std::false_type check(...);
+
+    typedef decltype(check<C>(0)) type;
+
+public:
+    static constexpr bool value = type::value;
+};
+
+template <class Cls, typename Fxn, class ...Args>
+class member_fxn_handler_impl :
+  public member_fxn_handler
+{
+
+ public:
+  virtual ~member_fxn_handler_impl(){}
+
+  std::string to_string() const override {
+    return sprockit::to_string(obj_);
   }
 
-  virtual void deadlock_check(event* ev){}
-  
-  virtual void deadlock_check(){}
+  void handle(event* ev) override {
+    dispatch(ev, typename gens<sizeof...(Args)>::type());
+  }
+
+  member_fxn_handler_impl(uint32_t comp_id, Cls* obj, Fxn fxn, const Args&... args) :
+    params_(args...),
+    obj_(obj),
+    fxn_(fxn),
+    member_fxn_handler(comp_id)
+  {
+  }
+
+  void deadlock_check() override {
+    local_deadlock_check();
+  }
+
+  void deadlock_check(event* ev) override {
+    local_deadlock_check(ev);
+  }
+
+ private:
+  template <int ...S>
+  void dispatch(event* ev, seq<S...>){
+    (obj_->*fxn_)(ev, std::get<S>(params_)...);
+  }
+
+  template <class T = Cls>
+  typename std::enable_if<has_deadlock_check<T>::value>::type
+  local_deadlock_check() {
+    obj_->deadlock_check();
+  }
+
+  template <class T = Cls>
+  typename std::enable_if<has_deadlock_check<T>::value>::type
+  local_deadlock_check(event* ev) {
+    obj_->deadlock_check(ev);
+  }
+
+  template <class T = Cls>
+  typename std::enable_if<!has_deadlock_check<T>::value>::type
+  local_deadlock_check() {}
+
+  template <class T = Cls>
+  typename std::enable_if<!has_deadlock_check<T>::value>::type
+  local_deadlock_check(event* ev) {}
+
+  std::tuple<Args...> params_;
+  Fxn fxn_;
+  Cls* obj_;
 
 };
+
+template<class Cls, typename Fxn, class ...Args>
+event_handler*
+new_handler(Cls* cls, Fxn fxn, const Args&... args)
+{
+  return new member_fxn_handler_impl<Cls, Fxn, Args...>(
+        cls->component_id(), cls, fxn, args...);
+}
 
 
 } // end of namespace sstmac

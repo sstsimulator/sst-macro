@@ -43,13 +43,11 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/backends/mpi/mpi_runtime.h>
-#include <cstring>
+#include <sstmac/common/sst_event.h>
 #include <sprockit/keyword_registration.h>
+#include <sprockit/printable.h>
 #include <iostream>
-
-RegisterKeywords(
-"mpi_max_num_requests",
-);
+#include <cstring>
 
 #define mpi_debug(...) \
   debug_printf(sprockit::dbg::parallel, "LP %d: %s", me_, sprockit::printf(__VA_ARGS__).c_str())
@@ -219,24 +217,33 @@ mpi_runtime::bcast(void *buffer, int bytes, int root)
 timestamp
 mpi_runtime::send_recv_messages(timestamp vote)
 {
+  //okay - it's possible that we have pending events
+  //that aren't serialized yet because we overran the buffers
+
   int reqIdx = 0;
   static int payload_tag = 42;
   static int next_payload_tag = 43;
   for (int i=0; i < nproc_; ++i){
     comm_buffer& comm = send_buffers_[i];
-    int size = comm.bytesUsed();
-    votes_[i].time_vote = vote.ticks_int64();
-    votes_[i].max_bytes = size;
-    if (size){
+    int commSize = comm.totalBytes();
+    if (commSize){
+      char* buffer = comm.buffer();
+      if (comm.hasBackup()){
+        buffer = comm.backup();
+        comm.copyToBackup();
+      }
       votes_[i].num_sent = 1;
-      debug_printf(sprockit::dbg::parallel, "LP %d sending %d bytes to lp %d on epoch %d",
-                   me_, size, i, epoch_);
-      MPI_Isend(comm.buffer(), size, MPI_BYTE, i,
+      debug_printf(sprockit::dbg::parallel, "LP %d sending %d bytes to LP %d on epoch %d",
+                   me_, commSize, i, epoch_);
+      MPI_Isend(buffer, commSize, MPI_BYTE, i,
                 payload_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
       sends_done_[num_sends_done_++] = i;
     } else {
       votes_[i].num_sent = 0;
     }
+    votes_[i].time_vote = vote.ticks_int64();
+    //wait to fill this in until we know the size of all pending messages
+    votes_[i].max_bytes = commSize;
   }
 
   int num_pending_sends = reqIdx;
@@ -264,6 +271,8 @@ mpi_runtime::send_recv_messages(timestamp vote)
     auto& comm = recv_buffers_[i];
     MPI_Get_count(&statuses_[i+num_pending_sends], MPI_BYTE, &sizeRecvd);
     comm.shift(sizeRecvd);
+    debug_printf(sprockit::dbg::parallel, "LP %d actually received %lu bytes from sender %d",
+                 me_, sizeRecvd, i);
   }
 
   std::swap(payload_tag, next_payload_tag);

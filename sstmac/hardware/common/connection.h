@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define CONNECTION_H
 
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/common/event_callback.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #define connectable_type_invalid(ty) \
@@ -76,7 +75,7 @@ class connectable {
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* payload_handler) = 0;
+    event_link* payload_link) = 0;
 
   /**
    * @brief connect_input
@@ -91,7 +90,7 @@ class connectable {
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* credit_handler) = 0;
+    event_link* credit_link) = 0;
 
   /**
    * @brief credit_handler
@@ -99,6 +98,10 @@ class connectable {
    * @return Can be null, if no credits are ever to be received
    */
   virtual link_handler* credit_handler(int port) const = 0;
+
+  virtual timestamp send_latency(sprockit::sim_parameters* params) const = 0;
+
+  virtual timestamp credit_latency(sprockit::sim_parameters* params) const = 0;
 
   /**
    * @brief payload_handler
@@ -115,8 +118,7 @@ class connectable_component :
 {
  protected:
   connectable_component(sprockit::sim_parameters* params,
-                        uint64_t cid,
-                        device_id id,
+                        uint32_t cid,
                         event_manager* mgr);
 
 };

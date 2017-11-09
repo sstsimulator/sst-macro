@@ -125,9 +125,6 @@ int not_implemented(const char* fxn)
 /// Populate callbacks.
 parsedumpi_callbacks::
 parsedumpi_callbacks(parsedumpi *parent) :
-#if SSTMAC_COMM_SYNC_STATS
-  exact_mpi_times_(parent->exact_mpi_times()),
-#endif
   parent_(parent),
   initialized_(false)
 {
@@ -150,8 +147,7 @@ parsedumpi_callbacks::~parsedumpi_callbacks()
 void
 parsedumpi_callbacks::parse_stream(
   const std::string &fname,
-  bool print_progress,
-  double percent_terminate)
+  bool print_progress)
 {
   static const std::string here("parsedumpi_callbacks::parse_stream");
   if(parent_ == NULL) {
@@ -162,8 +158,7 @@ parsedumpi_callbacks::parse_stream(
     throw sprockit::io_error(here + ":  Unable to open \"" + fname + "\" for reading.");
   }
   datatype_sizes_ = undumpi_read_datatype_sizes(profile);
-  int retval = undumpi_read_stream_full(
-                  fname.c_str(), profile, cbacks_, this, print_progress, percent_terminate);
+  int retval = undumpi_read_stream_full(fname.c_str(), profile, cbacks_, this, print_progress);
   if(retval != 1) {
     sprockit::abort(here + ":  Failed reading dumpi stream\n");
   }
@@ -220,14 +215,6 @@ start_mpi(const dumpi_time *cpu, const dumpi_time *wall,
 {
   if (!initialized_) return;
 
-#if SSTMAC_COMM_SYNC_STATS
-  if (exact_mpi_times_){
-    auto deltaSec = wall->stop.sec - wall->start.sec;
-    auto deltaNsec = wall->stop.nsec - wall->start.nsec;
-    sstmac::timestamp traceMPItime(deltaSec, deltaNsec);
-    parent_->mpi()->set_next_call_length(traceMPItime);
-  }
-#endif
   if(trace_compute_start_.sec >= 0) {
     // This is not the first MPI call -- simulate a compute
     if(perf != NULL && perf->count > 0) {

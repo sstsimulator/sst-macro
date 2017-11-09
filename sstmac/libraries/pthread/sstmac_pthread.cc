@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/common/sst_event.h>
 #include <errno.h>
 
 #include <sstmac/libraries/pthread/sstmac_pthread_runner.h>
@@ -247,9 +248,8 @@ SSTMAC_pthread_mutex_lock(sstmac_pthread_mutex_t* mutex)
   if (mut == 0){
     return EINVAL;
   } else if (mut->locked) {
-    key* blocker = key::construct();
-    mut->waiters.push_back(blocker);
-    thr->os()->block(blocker);
+    mut->waiters.push_back(thr);
+    thr->os()->block();
   } else {
     mut->locked = true;
   }
@@ -303,7 +303,7 @@ SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex)
   if (mut == 0 || !mut->locked){
     return EINVAL;
   } else if (!mut->waiters.empty()){
-    key* blocker = mut->waiters.front();
+    thread* blocker = mut->waiters.front();
     mut->waiters.pop_front();
     thr->os()->unblock(blocker);
   } else {
@@ -318,13 +318,12 @@ class unblock_event : public event_queue_entry
   unblock_event(mutex_t* mut, operating_system* os)
     : mutex_(mut),
     os_(os),
-    event_queue_entry(os->event_location(), os->event_location())
+    event_queue_entry(os->component_id(), os->component_id())
   {
   }
 
-  void
-  execute(){
-    key* blocker = mutex_->waiters.front();
+  void execute(){
+    thread* blocker = mutex_->waiters.front();
     mutex_->waiters.pop_front();
     os_->unblock(blocker);
   }
@@ -416,13 +415,11 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
   (*pending)[*mutex] = mut;
   if (!mut->waiters.empty()){
     myos->send_now_self_event_queue(new unblock_event(mut, myos));
-  }
-  else {
+  } else {
     //unlock - nobody waiting on this
     mut->locked = false;
   }
-  key* k = key::construct();
-  mut->conditionals.push_back(k);
+  mut->conditionals.push_back(thr);
 
   if (abstime){
     //schedule a timed wait unblock
@@ -430,27 +427,24 @@ SSTMAC_pthread_cond_timedwait(sstmac_pthread_cond_t * cond,
     timestamp delay(secs);
     //this key may be used to unblock twice
     //if it does, make sure it doesn't get deleted
-    myos->schedule_timeout(delay, k);
+    myos->block_timeout(delay);
+  } else {
+    myos->block();
   }
 
-  myos->block(k);
-
-  if (abstime && k->timed_out()){
+  if (abstime && thr->timed_out()){
     //the cond signal never fired, remove myself from the list
     //delete the key and move on
-    std::list<key*>::iterator it, end = mut->conditionals.end();
-    for (it=mut->conditionals.begin(); it != end; ++it){
-      key* next = *it;
-      if (next == k){
+    auto end = mut->conditionals.end();
+    for (auto it=mut->conditionals.begin(); it != end; ++it){
+      thread* next = *it;
+      if (next == thr){
         mut->conditionals.erase(it);
         break;
       }
     }
-    delete k;
   }
-
   return 0;
-
 }
 
 extern "C" int
@@ -474,10 +468,10 @@ SSTMAC_pthread_cond_signal(sstmac_pthread_cond_t * cond)
     if (mut->conditionals.empty()){
         sprockit::abort("pthread::mutex signaled, but there are no waiting threads");
     }
-    key* k = mut->conditionals.front();
+    thread* thr = mut->conditionals.front();
     mut->conditionals.pop_front();
     mut->locked = true;
-    myos->unblock(k);
+    myos->unblock(thr);
   }
   return 0;
 }

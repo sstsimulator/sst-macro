@@ -52,7 +52,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/api/api.h>
 #include <sprockit/errors.h>
 
-#include <sstmac/software/process/key_fwd.h>
+#include <sstmac/software/process/graphviz.h>
+#include <sstmac/software/process/key.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
@@ -70,6 +71,12 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
+/**
+ * @brief The thread class
+ * Encapsulates all the state associated with a simulated thread within SST/macro
+ * Not to be confused with thread_context, which just manages the details
+ * of context-switching between user space threads.
+ */
 class thread
 {
  public:
@@ -138,7 +145,7 @@ class thread
     return sid_;
   }
 
-  threading_interface* context() const {
+  thread_context* context() const {
     return context_;
   }
 
@@ -176,17 +183,12 @@ class thread
     return os_;
   }
 
-  void* stack() const {
-    return stack_;
-  }
-
-  size_t stacksize() const {
-    return stacksize_;
-  }
-
-  void** backtrace() const {
+#if SSTMAC_HAVE_GRAPHVIZ
+  const int* backtrace() const {
     return backtrace_;
   }
+#endif
+
 
   int last_backtrace_nfxn() const {
     return last_bt_collect_nfxn_;
@@ -196,20 +198,32 @@ class thread
     return bt_nfxn_;
   }
 
-  void append_backtrace(void* fxn);
+  bool timed_out() const {
+    return timed_out_;
+  }
+
+  void set_timed_out(bool flag){
+    timed_out_ = flag;
+  }
+
+  uint64_t block_counter() const {
+    return block_counter_;
+  }
+
+  void increment_block_counter() {
+    ++block_counter_;
+  }
+
+  void append_backtrace(int fxnId);
 
   void pop_backtrace();
 
-  void set_backtrace(void** bt) {
-    backtrace_ = bt;
-  }
-
-  device_id event_location() const;
+  uint32_t component_id() const;
 
   void collect_backtrace(int nfxn);
 
   void init_thread(sprockit::sim_parameters* params, int phyiscal_thread_id,
-    threading_interface* tocopy, void *stack, int stacksize,
+    thread_context* tocopy, void *stack, int stacksize,
     void* globals_storage);
 
   virtual void run() = 0;
@@ -219,18 +233,12 @@ class thread
   */
   void start_thread(thread* thr);
 
+  void set_thread_id(int thr);
+
   void join();
 
   process_context get_process_context() const {
     return p_txt_;
-  }
-
-  /**
-   * @brief key used 
-   * @return 
-   */
-  key* schedule_key() {
-    return schedule_key_;
   }
 
   bool is_initialized() const {
@@ -276,6 +284,14 @@ class thread
 
   void end_api_call();
 
+  void set_tag(ftq_tag t){
+    ftag_ = t;
+  }
+
+  ftq_tag tag() const {
+    return ftag_;
+  }
+
  protected:
   thread(sprockit::sim_parameters* params, software_id sid, operating_system* os);
 
@@ -300,11 +316,13 @@ class thread
 
   operating_system* os_;
 
-  std::queue<key*> joiners_;
+  std::queue<thread*> joiners_;
 
   app* parent_app_; // who created this one. null if launch/os.
 
   process_context p_txt_;
+
+  ftq_tag ftag_;
 
   software_id sid_;
 
@@ -313,27 +331,29 @@ class thread
  private:
   bool isInit;
 
-  void** backtrace_;
+#if SSTMAC_HAVE_GRAPHVIZ
+  graphviz_trace backtrace_; //each function is labeled by unique integer
+#endif
 
   int bt_nfxn_;
+
+  bool timed_out_;
 
   std::map<long, void*> tls_values_;
 
   int last_bt_collect_nfxn_;
 
   void* stack_;
-
-  size_t stacksize_;
   
   long thread_id_;
 
-  threading_interface* context_;
-
-  key* schedule_key_;
+  thread_context* context_;
   
   uint64_t cpumask_;
   
   int active_core_;
+
+  uint64_t block_counter_;
 
 };
 

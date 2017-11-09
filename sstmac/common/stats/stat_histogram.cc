@@ -52,9 +52,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-"bin_size",
-"num_bins",
-"logarithmic",
+{ "bin_size", "the size of each bin in the histogram" },
+{ "num_bins", "the number of bins to include in the histogram" },
+{ "logarithmic", "whether to track bins logarithmically" },
 );
 
 namespace sstmac {
@@ -167,11 +167,6 @@ stat_histogram::collect(double value, int64_t count)
     counts_.resize(max_bin_+1);
   }
   counts_[bin] += count;
-}
-
-void
-stat_histogram::simulation_finished(timestamp end)
-{
 }
 
 void

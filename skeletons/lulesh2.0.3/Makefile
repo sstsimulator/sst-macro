@@ -20,7 +20,7 @@ OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 #Default build suggestions with OpenMP for g++
 CXXFLAGS = -I. -Wall -Wno-unknown-pragmas -fPIC -Wno-unused-function -Wno-unused-variable -Wno-uninitialized
-LDFLAGS =  
+LDFLAGS = 
 
 #Below are reasonable default flags for a serial build
 #CXXFLAGS = -g -O3 -I. -Wall

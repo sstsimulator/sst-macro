@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/factories/factory.h>
 #include <sstmac/software/libraries/library.h>
-#include <sstmac/software/process/key_fwd.h>
 #include <sstmac/software/process/host_timer.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sprockit/keyword_registration.h>
@@ -62,16 +61,6 @@ class api :
 {
   DeclareFactory(api,software_id,operating_system*)
  public:
-  api(sprockit::sim_parameters* params,
-      const char* prefix,
-      software_id sid,
-      operating_system* os,
-      const key_traits::category& ty) :
-    api(params, prefix, sid, os)
-  {
-    key_cat_ = ty;
-  }
-
   api(sprockit::sim_parameters *params,
       const std::string& libname,
       software_id sid,

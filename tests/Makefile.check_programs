@@ -2,27 +2,27 @@
 if !INTEGRATED_SST_CORE
 check_PROGRAMS = test_utilities test_pthread test_blas test_scan test_uq
 test_utilities_SOURCES = test_utilities.cc
-test_utilities_LDADD = $(CORE_LIBS) 
+test_utilities_LDADD = $(CORE_LIBS) $(FCONTEXT_LIBS)
 
 test_scan_SOURCES = test_scan.cc
-test_scan_LDADD = $(CORE_LIBS)
+test_scan_LDADD = $(CORE_LIBS) $(FCONTEXT_LIBS)
 
 test_uq_SOURCES = test_uq.c
-test_uq_LDADD = $(CORE_LIBS) 
+test_uq_LDADD = $(CORE_LIBS) $(FCONTEXT_LIBS)
 nodist_EXTRA_test_uq_SOURCES = dummy.cxx
 #test_uq_LDFLAGS = $(CXXFLAGS) $(SST_CXXFLAGS) -std=c++1y
 
 lib_LTLIBRARIES = libsstmac_test_pthread.la
 test_pthread_SOURCES = dummy_pthread.cc
 libsstmac_test_pthread_la_SOURCES = test_pthread.cc
-test_pthread_LDADD = $(CORE_LIBS)  \
+test_pthread_LDADD = $(CORE_LIBS) $(FCONTEXT_LIBS) \
   libsstmac_test_pthread.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la
 
 lib_LTLIBRARIES += libsstmac_test_blas.la
 test_blas_SOURCES = dummy_blas.cc
 libsstmac_test_blas_la_SOURCES = test_blas.cc
-test_blas_LDADD = $(CORE_LIBS) \
+test_blas_LDADD = $(CORE_LIBS) $(FCONTEXT_LIBS) \
   $(top_builddir)/sstmac/libraries/blas/libsstmac_blas.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
   libsstmac_test_blas.la

@@ -43,6 +43,7 @@ nobase_library_include_HEADERS += \
   thread \
 	sched.h \
   pthread.h \
+  unistd.h \
   cstring \
   cstdlib \
   stdlib.h \

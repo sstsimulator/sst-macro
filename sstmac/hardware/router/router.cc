@@ -53,10 +53,12 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterDebugSlot(router);
 RegisterDebugSlot(routing);
+
 RegisterNamespaces("router");
+
 RegisterKeywords(
-"router",
-"ugal_threshold",
+{ "router", "the type of routing to perform in the network" },
+{ "ugal_threshold", "in UGAL, the min number of hops before allowing MIN-UGAL change"},
 );
 
 namespace sstmac {
@@ -107,15 +109,13 @@ void
 router::route(packet *pkt)
 {
   routable* rtbl = pkt->interface<routable>();
-  if (!rtbl) abort();
   routable::path& path = rtbl->current_path();
   switch_id sid = find_ejection_site(pkt->toaddr(), path);
   if (sid == my_addr_){
     configure_ejection_path(path);
     rter_debug("Ejecting %s from switch %d on port %d",
                pkt->to_string().c_str(), sid, path.outport());
-  }
-  else {
+  } else {
     route_to_switch(sid, path);
     rter_debug("Routing %s to switch %d on port %d",
                pkt->to_string().c_str(), sid, path.outport());
@@ -127,17 +127,13 @@ router::str_to_algo(const std::string &str)
 {
   if (str == "minimal") {
     return routing::minimal;
-  }
-  else if (str == "valiant") {
+  } else if (str == "valiant") {
     return routing::valiant;
-  }
-  else if (str == "min_ad") {
+  } else if (str == "min_ad") {
     return routing::minimal_adaptive;
-  }
-  else if (str == "ugal") {
+  } else if (str == "ugal") {
     return routing::ugal;
-  }
-  else {
+  } else {
     spkt_throw_printf(sprockit::input_error,
                      "invalid routing algorithm %s",
                      str.c_str());

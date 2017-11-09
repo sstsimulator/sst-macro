@@ -61,13 +61,14 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 RegisterKeywords(
-"launch_cmd",
-"allocation",
-"indexing",
-"start",
-"size",
-"launch_allocation",
-"launch_indexing",
+{ "launch_cmd", "a command specified via aprun or srun or mpirun to launch" },
+{ "argv", "the list of command-line arguments" },
+{ "allocation", "the strategy for allocating nodes to a job" },
+{ "indexing", "the strategy for indexing ranks to nodes within a job" },
+{ "start", "the time to issue a job start request" },
+{ "size", "the number of tasks (ranks) within a job" },
+{ "launch_allocation", "DEPRECATED: the strategy for allocating nodes to a job" },
+{ "launch_indexing", "DEPRECATED: the strategy for indexing ranks to nodes within a job" },
 );
 
 namespace sstmac {
@@ -89,6 +90,7 @@ software_launch_request::software_launch_request(sprockit::sim_parameters *param
     std::string metafile = params->get_param("dumpi_metaname");
     sw::dumpi_meta dm(metafile);
     nproc_ = dm.num_procs();
+    procs_per_node_ = 1;
   } else {
     nproc_ = params->get_int_param("size");
     procs_per_node_ = params->get_optional_int_param("tasks_per_node", 1);

@@ -67,8 +67,6 @@ class stat_spyplot :
     return "stat_spyplot";
   }
 
-  virtual void simulation_finished(timestamp end) override;
-
   virtual void dump_to_file(const std::string& froot);
 
   virtual void dump_local_data() override;

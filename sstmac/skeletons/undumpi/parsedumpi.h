@@ -80,10 +80,6 @@ class parsedumpi : public sstmac::sw::app
     return mpi_;
   }
 
-  bool exact_mpi_times() const {
-    return exact_mpi_times_;
-  }
-
   virtual void skeleton_main();
 
  private:
@@ -97,12 +93,7 @@ class parsedumpi : public sstmac::sw::app
 
   bool print_progress_;
 
-  bool exact_mpi_times_;
-
-  double percent_terminate_;
-
   std::string metafilename_;
-
 
 };
 

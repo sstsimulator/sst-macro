@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/app_id.h>
 #include <sprockit/sim_parameters_fwd.h>
+#include <sprockit/thread_safe_new.h>
 
 namespace sstmac {
 namespace sw {
@@ -121,7 +122,10 @@ class launch_event :
 
 };
 
-class start_app_event : public launch_event {
+class start_app_event :
+  public launch_event,
+  public sprockit::thread_safe_new<start_app_event>
+{
   ImplementSerializable(start_app_event)
  public:
   start_app_event(app_id aid,
@@ -139,22 +143,14 @@ class start_app_event : public launch_event {
 
   int core_affinity(int intranode_rank) const;
 
-  bool is_bcast() const override {
-    return true;
-  }
-
   std::string to_string() const override;
 
-  start_app_event(){} //for serialization
+  start_app_event() {} //for serialization
 
   void serialize_order(serializer& ser) override;
 
   sprockit::sim_parameters& app_params() {
     return app_params_;
-  }
-
-  start_app_event* clone(int rank, node_id src, node_id dst) const {
-    return new start_app_event(aid_, unique_name_, mapping_, rank, dst, src, &app_params_);
   }
 
   task_mapping::ptr mapping() const {

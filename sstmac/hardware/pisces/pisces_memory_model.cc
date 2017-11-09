@@ -55,13 +55,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 MakeDebugSlot(pisces_memory)
 RegisterKeywords(
-"total_bandwidth",
-"max_single_bandwidth",
-"pisces_memory_mtu",
-"pisces_memory_latency",
-"pisces_memory_bandwidth",
-"pisces_memory_single_bandwidth",
-"pisces_memory_arbitrator",
+{ "total_bandwidth", "the total, aggregate bandwidth of the memory" },
+{ "max_single_bandwidth", "the max bandwidth of a single memory stream" },
+{ "latency", "the latency of a single memory operations" },
 );
 
 #define debug(...) debug_printf(sprockit::dbg::pisces_memory, __VA_ARGS__)
@@ -103,8 +99,6 @@ pisces_memory_packetizer::pisces_memory_packetizer(
 
   init_noise_model();
 
-  self_credit_handler_ = new_handler(this, &pisces_memory_packetizer::recv_credit);
-
   debug("initializing pisces memory packetizer with mtu %d", packetSize());
 }
 
@@ -128,15 +122,15 @@ pisces_memory_packetizer::~pisces_memory_packetizer()
   if (pkt_allocator_) delete pkt_allocator_;
   if (bw_noise_) delete bw_noise_;
   if (interval_noise_) delete interval_noise_;
-  if (self_credit_handler_) delete self_credit_handler_;
 }
 
 pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node *nd) :
   memory_model(params, nd)
 {
   nchannels_ = PISCES_MEM_DEFAULT_NUM_CHANNELS;
+  channels_available_.resize(nchannels_);
   for (int i=0; i < nchannels_; ++i){
-    channels_available_.push_back(i);
+    channels_available_[i] = i;
   }
 
   mem_packetizer_ = new pisces_memory_packetizer(params, nd);
@@ -159,8 +153,8 @@ pisces_memory_model::access(
   if (channels_available_.empty()){
     stalled_requests_.push_back(std::make_pair(msg,cb));
   } else {
-    int channel = channels_available_.front();
-    channels_available_.pop_front();
+    int channel = channels_available_.back();
+    channels_available_.pop_back();
     start(channel, msg, cb);
   }
 }
@@ -184,9 +178,9 @@ pisces_memory_model::notify(int vn, message* msg)
   pending_requests_.erase(msg);
   //happening now
   delete msg;
-  schedule_now(cb);
+  send_now_self_event_queue(cb);
   if (stalled_requests_.empty()){
-    channels_available_.push_front(vn);
+    channels_available_.push_back(vn);
   } else {
     auto& pair = stalled_requests_.front();
     start(vn, pair.first, pair.second);
@@ -263,8 +257,8 @@ pisces_memory_packetizer::handle_payload(int vn, pisces_payload* pkt)
   int ignore_vc = -1;
   pisces_credit* credit = new pisces_credit(vn, ignore_vc, pkt->num_bytes());
   //here we do not optimistically send credits = only when the packet leaves
-  schedule(st.tail_leaves, self_credit_handler_, credit);
-
+  send_self_event_queue(st.tail_leaves,
+    new_callback(this, &pisces_memory_packetizer::recv_credit, credit));
 }
 
 void
