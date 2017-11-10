@@ -48,14 +48,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_pt2pt_call(fxn, count, type, partner, tag, comm) \
-  start_mpi_call(fxn,count,type,comm); \
+  start_mpi_call(fxn); \
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt, \
    "%s(%d,%s,%s,%s,%s)", #fxn, \
    count, type_str(type).c_str(), src_str(partner).c_str(), \
    tag_str(tag).c_str(), comm_str(comm).c_str());
 
 #define start_Ipt2pt_call(fxn,count,type,partner,tag,comm,reqPtr) \
-  start_mpi_call(fxn,count,type,comm)
+  start_mpi_call(fxn)
 
 
 namespace sumi {

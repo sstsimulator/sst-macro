@@ -84,9 +84,6 @@ RegisterDebugSlot(mpi_check,
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
 sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
-#define start_setup_call(fxn) \
-  start_mpi_call(fxn,0,0,MPI_COMM_WORLD)
-
 namespace sumi {
 
 static sprockit::need_delete_statics<mpi_api> del_statics;
@@ -193,7 +190,7 @@ mpi_api::init(int* argc, char*** argv)
     sprockit::abort("MPI_Init cannot be called twice");
   }
 
-  start_mpi_call(MPI_Init,0,MPI_BYTE,MPI_COMM_WORLD);
+  start_mpi_call(MPI_Init);
 
   sumi_transport::init();
 
@@ -239,7 +236,7 @@ mpi_api::check_init()
 int
 mpi_api::finalize()
 {  
-  start_setup_call(MPI_Finalize);
+  start_mpi_call(MPI_Finalize);
 
   collective_op_base* op = start_barrier("MPI_Finalize", MPI_COMM_WORLD);
   wait_collective(op);
@@ -285,7 +282,7 @@ mpi_api::finalize()
 double
 mpi_api::wtime()
 {
-  start_setup_call(MPI_Wtime);
+  start_mpi_call(MPI_Wtime);
   return os_->now().sec();
 }
 

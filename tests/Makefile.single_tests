@@ -20,6 +20,7 @@ endif
 if ENABLE_DEBUG
 SINGLETESTS += \
   test_dumpi_manager \
+  test_dumpi_terminate \
   test_dumpi_bgp
 endif
 
@@ -59,6 +60,11 @@ test_dumpi_manager.$(CHKSUF): $(SSTMACEXEC) traces
 	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_manager.ini \
           -d indexing,allocation --no-wall-time 
+
+test_dumpi_terminate.$(CHKSUF): $(SSTMACEXEC) traces
+	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_dumpi_manager.ini \
+          -d indexing,allocation --no-wall-time -p node.app1.parsedumpi_terminate_count=1
 
 test_dumpi_bgp.$(CHKSUF): $(SSTMACEXEC) traces
 	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact \

@@ -69,15 +69,25 @@ class parsedumpi : public sstmac::sw::app
 
   FactoryRegister("parsedumpi | dumpi", sstmac::sw::app, parsedumpi,
               "application for parsing and simulating dumpi traces")
+
  public:
   parsedumpi(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
              sstmac::sw::operating_system* os);
+
+  struct early_termination : public std::runtime_error {
+   public:
+    early_termination() : std::runtime_error("DUMPI early termination") {}
+  };
 
   /// Wait!  That's not good news at all!
   virtual ~parsedumpi() throw ();
 
   mpi_api* mpi() {
     return mpi_;
+  }
+
+  uint64_t early_terminate_count() const {
+    return early_terminate_count_;
   }
 
   virtual void skeleton_main();
@@ -88,6 +98,8 @@ class parsedumpi : public sstmac::sw::app
 
   /// The time scaling factor.
   double timescaling_;
+
+  uint64_t early_terminate_count_;
 
   mpi_api* mpi_;
 

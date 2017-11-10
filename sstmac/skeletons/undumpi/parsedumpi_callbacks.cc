@@ -126,7 +126,9 @@ int not_implemented(const char* fxn)
 parsedumpi_callbacks::
 parsedumpi_callbacks(parsedumpi *parent) :
   parent_(parent),
-  initialized_(false)
+  initialized_(false),
+  num_global_collectives_(0),
+  early_terminate_count_(parent->early_terminate_count())
 {
   sstmac::sw::api_lock();
   if(cbacks_ == NULL) {
@@ -1414,6 +1416,7 @@ on_MPI_Barrier(const dumpi_barrier *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Barrier: null callback pointer");
   }
+  if (prm->comm == DUMPI_COMM_WORLD) cb->num_global_collectives_++;
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->barrier(translate_comm(prm->comm));
   cb->end_mpi(cpu, wall, perf);
@@ -1431,6 +1434,7 @@ on_MPI_Bcast(const dumpi_bcast *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Bcast: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->bcast(prm->count, cb->get_mpitype(prm->datatype),
                       cb->get_mpiid(prm->root), translate_comm(prm->comm));
@@ -1449,6 +1453,7 @@ on_MPI_Gather(const dumpi_gather *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Gather: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->gather(prm->sendcount,
                        cb->get_mpitype(prm->sendtype),
@@ -1471,8 +1476,8 @@ on_MPI_Gatherv(const dumpi_gatherv *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Gatherv: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
-
   MPI_Datatype sendtype = cb->get_mpitype(prm->sendtype);
   MPI_Datatype recvtype;
   if (prm->commrank == prm->root){
@@ -1505,6 +1510,7 @@ on_MPI_Scatter(const dumpi_scatter *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Scatter: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->scatter(prm->sendcount,
                         cb->get_mpitype(prm->sendtype),
@@ -1527,6 +1533,7 @@ on_MPI_Scatterv(const dumpi_scatterv *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Scatterv: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->scatterv(prm->sendcounts,
                          cb->get_mpitype(prm->sendtype),
@@ -1549,6 +1556,7 @@ on_MPI_Allgather(const dumpi_allgather *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Allgather: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->allgather(prm->sendcount,
                           cb->get_mpitype(prm->sendtype),
@@ -1570,6 +1578,7 @@ on_MPI_Allgatherv(const dumpi_allgatherv *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Allgatherv: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->allgatherv(prm->sendcount,
                            cb->get_mpitype(prm->sendtype),
@@ -1591,6 +1600,7 @@ on_MPI_Alltoall(const dumpi_alltoall *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Alltoall: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->alltoall(prm->sendcount,
                          cb->get_mpitype(prm->sendtype),
@@ -1612,6 +1622,7 @@ on_MPI_Alltoallv(const dumpi_alltoallv *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Alltoallv: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->alltoallv(prm->sendcounts, cb->get_mpitype(prm->sendtype),
                           prm->recvcounts, cb->get_mpitype(prm->recvtype),
@@ -1631,6 +1642,7 @@ on_MPI_Reduce(const dumpi_reduce *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Reduce: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->reduce(prm->count, cb->get_mpitype(prm->datatype),
                        DUMPI_OP, //this doesn't matter
@@ -1651,6 +1663,7 @@ on_MPI_Allreduce(const dumpi_allreduce *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Allreduce: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->allreduce(prm->count,
                           cb->get_mpitype(prm->datatype),
@@ -1670,6 +1683,7 @@ on_MPI_Reduce_scatter(const dumpi_reduce_scatter *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Reduce_scatter: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->reduce_scatter(prm->recvcounts,
                                cb->get_mpitype(prm->datatype),
@@ -1688,6 +1702,7 @@ on_MPI_Scan(const dumpi_scan *prm, uint16_t thread,
   if(cb == NULL) {
     sprockit::abort("on_MPI_Scan: null callback pointer");
   }
+  cb->increment_collective(prm->comm);
   cb->start_mpi(cpu, wall, perf);
   cb->getmpi()->scan(prm->count, cb->get_mpitype(prm->datatype),
                      DUMPI_OP, translate_comm(prm->comm));
