@@ -76,7 +76,7 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   bool PrintTimeDeltas();
   bool PrintUnknownCallback();
 
-  virtual void skeleton_main();
+  int skeleton_main() override;
 
   void StartMpi(const sstmac::timestamp);
   void EndMpi(const sstmac::timestamp);

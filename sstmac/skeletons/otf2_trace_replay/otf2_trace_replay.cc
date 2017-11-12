@@ -184,7 +184,7 @@ void OTF2TraceReplayApp::build_comm_map() {
   }
 }
 
-void
+int
 OTF2TraceReplayApp::skeleton_main() {
   rank = this->tid();
 

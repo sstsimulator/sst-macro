@@ -10,7 +10,7 @@
 #
 include $(top_srcdir)/Makefile.common
 
-lib_LTLIBRARIES = libsstmac_unit_test_util.la
+noinst_LTLIBRARIES = libsstmac_unit_test_util.la
 
 AM_CPPFLAGS += -I$(top_srcdir)/tests
 

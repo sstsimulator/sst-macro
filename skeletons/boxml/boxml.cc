@@ -279,7 +279,7 @@ namespace lblxml {
   int g_max_epoch_ = 0;
 
 #ifdef BOXML_HAVE_TEST
-  void
+  int
   boxml::skeleton_main() {
     my_skeleton_main();
   }
@@ -288,7 +288,7 @@ namespace lblxml {
   boxml::my_skeleton_main()
   {
 #else
-  void
+  int
   boxml::skeleton_main()
   {
 #endif
@@ -357,7 +357,7 @@ namespace lblxml {
 #ifdef BOXML_HAVE_TEST
       return NULL;
 #else
-      return;
+      return 0;
 #endif
     }
 
@@ -406,7 +406,7 @@ namespace lblxml {
 #ifdef BOXML_HAVE_TEST
       return NULL;
 #endif
-
+      return 0;
   }
 
   void

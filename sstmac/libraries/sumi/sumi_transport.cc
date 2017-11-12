@@ -171,7 +171,6 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   pt2pt_cq_id_(0) //put pt2pt sends on the default cq
 {
   collective_cq_id_ = allocate_cq();
-
   rank_ = sid.task_;
   library* server_lib = os_->lib(server_libname_);
   sumi_server* server;
@@ -179,8 +178,7 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   if (server_lib == nullptr) {
     server = new sumi_server(this);
     server->start();
-  }
-  else {
+  } else {
     server = safe_cast(sumi_server, server_lib);
   }
 

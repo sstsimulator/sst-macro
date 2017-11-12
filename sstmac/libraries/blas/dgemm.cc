@@ -62,13 +62,11 @@ class default_dgemm :
     pipeline_ = params->get_optional_double_param("dgemm_pipeline_efficiency", 2);
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "default dgemm";
   }
 
-  compute_event*
-  op_3d(int m, int k, int n) override;
+  compute_event* op_3d(int m, int k, int n) override;
 
  protected:
   double loop_unroll_;

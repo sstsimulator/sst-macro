@@ -2,6 +2,7 @@
 
 from sstcclib import run
 import sys
+import os
 extra_libs = "-lsstmac" #for multipass issues
 rc = run("c", extra_libs)
 if not rc == 0:

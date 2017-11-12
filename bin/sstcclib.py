@@ -107,7 +107,25 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if haveClangSrcToSrc:
     clangDeglobal = os.path.join(prefix, "bin", "sstmac_clang_deglobal")
 
+  libDir = os.path.join(prefix, "lib")
 
+  #if not makeLibrary:
+  #  import glob
+  #  globber = os.path.join(libDir, "lib*")
+  #  globbedLibs = glob.glob(globber)
+
+  #  extraLibSkip = [
+  #    "libsstmac_main",
+  #    "libsstmac",
+  #    "libundumpi",
+  #    "libsprockit",
+  #  ]
+  #  for path in globbedLibs:
+  #    lib = os.path.split(path)[-1].split(".")[0]
+  #    if not lib in extraLibSkip:
+  #      libFlag = "-l%s" % lib[3:]
+  #      sstLibs.append(libFlag)
+     
   newCppFlags = []
   for entry in sstCppFlags:
     newCppFlags.append(cleanFlag(entry))
@@ -212,7 +230,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   directIncludes = []
   
-  if type == "c++":
+  if typ == "c++":
     directIncludes.append("-include cstdint")
   else:
     directIncludes.append("-include stdint.h")
@@ -260,12 +278,12 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   #okay this is sooo dirty - but autoconf is a disaster to trick
   #if this detects something auto-confish, bail and pass through to regular compiler
-  if "conftest.c" in sysargs:
-    cmd = "%s %s" % (compiler, " ".join(sysargs))
-    sys.stderr.write("passing through on autoconf: %s\n" % cmd) 
-    rc = os.system(cmd)
-    if rc == 0: return 0
-    else: return 1
+  #if "conftest.c" in sysargs:
+  #  cmd = "%s %s" % (compiler, " ".join(sysargs))
+  #  sys.stderr.write("passing through on autoconf: %s\n" % cmd) 
+  #  rc = os.system(cmd)
+  #  if rc == 0: return 0
+  #  else: return 1
 
   sstCompilerFlags = []
   sstStdFlag = None
@@ -424,7 +442,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       extraLibsStr, 
       ldpathMaker
     ]
-  else:
+  else: #there is no object target specified, but are source files
     if not ldTarget: ldTarget = "a.out"
     #linking executable/lib from object files (or source files)
     runClang = runClang and sourceFiles

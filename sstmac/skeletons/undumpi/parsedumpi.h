@@ -80,7 +80,7 @@ class parsedumpi : public sstmac::sw::app
     return mpi_;
   }
 
-  virtual void skeleton_main();
+  int skeleton_main() override;
 
  private:
   /// The fileroot we plan to parse.
