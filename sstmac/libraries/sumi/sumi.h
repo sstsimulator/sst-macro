@@ -172,13 +172,6 @@ void sleep(double sec);
 void sleep_until(double sec);
 
 /**
- * Map a physical node location to its virtual assignment in the communicator
- * @param node_id
- * @return
- */
-int comm_partner(long node_id);
-
-/**
  * Every node has exactly the same notion of time - universal, global clock.
  * Thus, if rank 0 starts and 10 minuts later rank 1 starts,
  * even though rank 1 has only been running for 30 seconds, the time will still return

@@ -208,6 +208,8 @@ int SSTMAC_pthread_rwlock_wrlock(sstmac_pthread_rwlock_t *rwlock);
 
 int SSTMAC_pthread_rwlock_trywrlock(sstmac_pthread_rwlock_t *rwlock);
 
+int SSTMAC_pthread_rwlock_unlock(sstmac_pthread_rwlock_t* rwlock);
+
 int SSTMAC_pthread_rwlockattr_init(sstmac_pthread_rwlockattr_t *attr);
 
 int SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr);

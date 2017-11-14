@@ -7,7 +7,7 @@ LULESH_EXEC = runlulesh2.0.3
 
 SKEL=1
 
-MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11 -O0 -g
+MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11 -O3
 CXX = $(MPICXX)
 
 SOURCES2.0 = \
@@ -52,7 +52,7 @@ sstmac_headers:
 
 runlulesh2.0.3: $(OBJECTS2.0)
 	@echo "Linking"
-	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@
+	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@ 
 
 clean:
 	/bin/rm -f *.o *~ $(OBJECTS) $(LULESH_EXEC)

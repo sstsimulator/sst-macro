@@ -162,7 +162,6 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   api(params, libname, sid, os),
   //the server is what takes on the specified libname
   server_libname_("sumi_server"),
-  process_manager(sid, os),
   transport(params),
   user_lib_time_(nullptr),
   spy_num_messages_(nullptr),
@@ -374,7 +373,7 @@ sumi_transport::compute(timestamp t)
 void
 sumi_transport::go_die()
 {
-  kill_node();
+  os_->kill_node();
 }
 
 void

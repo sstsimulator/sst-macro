@@ -683,6 +683,11 @@ int SSTMAC_pthread_rwlock_init(sstmac_pthread_rwlock_t *rwlock,
   return 0;
 }
 
+int SSTMAC_pthread_rwlock_unlock(sstmac_pthread_rwlock_t* rwlock)
+{
+  return 0;
+}
+
 int
 SSTMAC_pthread_rwlockattr_init(sstmac_pthread_rwlockattr_t *attr)
 {

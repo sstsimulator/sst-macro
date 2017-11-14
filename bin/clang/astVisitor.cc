@@ -665,7 +665,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   }
 
   if (externStackDeclLoc.isInvalid()){
-    errorAbort(D->getLocStart(), *ci_, "computed incorrect replacement location for global variable");
+    errorAbort(D->getLocStart(), *ci_,
+               "computed incorrect replacement location for global variable - "
+               "probably this a multi-declaration that confused the source-to-source");
   }
   rewriter_.InsertText(externStackDeclLoc, "extern int sstmac_global_stacksize; ");
 

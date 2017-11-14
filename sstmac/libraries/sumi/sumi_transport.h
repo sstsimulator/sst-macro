@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
 #include <sstmac/libraries/sumi/message_fwd.h>
-#include <sstmac/software/process/pmi.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
@@ -69,7 +68,6 @@ namespace sstmac {
 
 class sumi_transport :
   public sstmac::sw::api,
-  public sstmac::sw::process_manager,
   public sumi::transport
 {
   RegisterAPI("sumi_transport", sumi_transport)
