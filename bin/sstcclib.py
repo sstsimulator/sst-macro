@@ -105,7 +105,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   haveClangSrcToSrc = bool(clangCppFlagsStr)
   clangDeglobal = None
   if haveClangSrcToSrc:
-    clangDeglobal = os.path.join(prefix, "bin", "sstmac_clang_deglobal")
+    clangDeglobal = os.path.join(prefix, "bin", "sstmac_clang")
 
   libDir = os.path.join(prefix, "lib")
 
