@@ -191,6 +191,8 @@ class sumi_transport :
     ::free(buf.ptr);
   }
 
+  int* nidlist() const override;
+
  private:
   void send(long byte_length,
     int dest_rank,

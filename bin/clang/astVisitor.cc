@@ -522,25 +522,50 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
 
 void
 SkeletonASTVisitor::defineGlobalVarInitializers(const std::string& scope_unique_var_name,
-   const std::string& var_name, const std::string& init_prefix, llvm::raw_string_ostream& os)
+   const std::string& var_name, const std::string& init_prefix, llvm::raw_string_ostream& os,
+   bool isVolatile)
 {
   //this has an initial value we need to transfer over
   //log the variable so we can drop replacement info in the static cxx file
   //if static and no init given, then we will drop this initialization code at the instantiation point
+  if (isVolatile) os << "volatile ";
   os << "void* __ptr_" << scope_unique_var_name << " = &" << init_prefix << var_name << "; "
      << "int __sizeof_" << scope_unique_var_name << " = sizeof(" << init_prefix << var_name << ");";
 }
 
 void
 SkeletonASTVisitor::declareStaticInitializers(const std::string& scope_unique_var_name,
-                                                llvm::raw_string_ostream& os)
+                                              llvm::raw_string_ostream& os,
+                                              bool isVolatile)
 {
   //this has an initial value we need to transfer over
   //log the variable so we can drop replacement info in the static cxx file
   //if static and no init given, then we will drop this initialization code at the instantiation point
   currentNs_->replVars.insert(scope_unique_var_name);
-  os << "extern void* __ptr_" << scope_unique_var_name << ";"
+  os << "extern ";
+  if (isVolatile) os << "volatile ";
+  os << "void* __ptr_" << scope_unique_var_name << ";"
      << "extern int __sizeof_" << scope_unique_var_name << ";";
+}
+
+struct cArrayConfig {
+  std::string fundamentalType;
+  std::stringstream arrayIndices;
+};
+
+static void
+getArrayType(const Type* ty, cArrayConfig& cfg)
+{
+  const ConstantArrayType* aty = static_cast<const ConstantArrayType*>(ty->getAsArrayTypeUnsafe());
+  QualType qt = aty->getElementType();
+  bool isConstC99array = qt.getTypePtr()->isConstantArrayType();
+  cfg.arrayIndices << "[" << aty->getSize().getZExtValue() << "]";
+  if (isConstC99array){
+    const ConstantArrayType* next = static_cast<const ConstantArrayType*>(qt.getTypePtr()->getAsArrayTypeUnsafe());
+    getArrayType(next, cfg);
+  } else {
+    cfg.fundamentalType = QualType::getAsString(qt.split());
+  }
 }
 
 SkeletonASTVisitor::ArrayInfo*
@@ -551,21 +576,32 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
   bool isConstC99array = ty->isConstantArrayType();
 
   if (isConstC99array){
-    const ConstantArrayType* aty = static_cast<const ConstantArrayType*>(ty->getAsArrayTypeUnsafe());
+    cArrayConfig cfg;
+    getArrayType(ty, cfg);
     info->typedefName = "type" + D->getNameAsString();
     std::stringstream sstr;
-    sstr << "typedef " << QualType::getAsString(aty->getElementType().split())
+    sstr << "typedef " << cfg.fundamentalType
          << " " << info->typedefName
-         << "[" << aty->getSize().getZExtValue() << "]";
+         << cfg.arrayIndices.str();
     info->typedefString = sstr.str();
-    info->isConstSize = true;
-    info->size = aty->getSize().getZExtValue();
     info->retType = "type" + D->getNameAsString() + "*";
     return info;
   } else if (isC99array){
     const ArrayType* aty = ty->getAsArrayTypeUnsafe();
-    info->retType = QualType::getAsString(aty->getElementType().split()) + "**";
-    info->isConstSize = false;
+    const Type* ety = aty->getElementType().getTypePtr();
+    if (ety->isConstantArrayType()){
+      cArrayConfig cfg;
+      getArrayType(ety, cfg);
+      info->typedefName = "type" + D->getNameAsString();
+      std::stringstream sstr;
+      sstr << "typedef " << cfg.fundamentalType
+           << " " << info->typedefName
+           << "[]" << cfg.arrayIndices.str();
+      info->typedefString = sstr.str();
+      info->retType = "type" + D->getNameAsString() + "*";
+    } else {
+      info->retType = QualType::getAsString(aty->getElementType().split()) + "**";
+    }
     return info;
   } else {
     return nullptr;
@@ -604,15 +640,18 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
   }
 
   bool typedefd = typedef_structs_.find(recDecl) != typedef_structs_.end();
-  if (!typedefd && recDecl->getNameAsString() == ""){
-    rec->decl = recDecl;
-    rec->structType = prefix;
-    rec->typeName = D->getNameAsString() + "_anonymous_type";
-    rec->retType = rec->structType + " "  + rec->typeName + "*";
-    return rec;
-  } else {
-    return nullptr;
+  if (!typedefd){
+    //if this is a combined struct and variable declaration
+    if (recDecl->getNameAsString() == "" || recDecl->getLocStart() == D->getLocStart()){
+      //actually anonymous - no name given to it
+      rec->decl = recDecl;
+      rec->structType = prefix;
+      rec->typeName = D->getNameAsString() + "_anonymous_type";
+      rec->retType = rec->structType + " "  + rec->typeName + "*";
+      return rec;
+    }
   }
+  return nullptr;
 }
 
 void
@@ -676,9 +715,11 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     currentNs_->replVars.insert(scopeUniqueVarName);
     if (red_ty == Extern){
       defineGlobalVarInitializers(scopeUniqueVarName, D->getNameAsString(),
-                                  init_prefix, extern_var_os);
+                                  init_prefix, extern_var_os,
+                                  D->getType().isVolatileQualified());
     } else {
-      declareStaticInitializers(scopeUniqueVarName, extern_var_os);
+      declareStaticInitializers(scopeUniqueVarName, extern_var_os,
+                                D->getType().isVolatileQualified());
     }
   }
   if (externVarsInsertLoc.isInvalid()){
@@ -696,7 +737,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 
   static const char* globalOffsetString = "sizeof(int)";
   if (notDeclared){
-    if (arrayInfo && !arrayInfo->isFxnStatic && arrayInfo->isConstSize){
+    if (arrayInfo && !arrayInfo->isFxnStatic && arrayInfo->needsTypedef()){
       os << arrayInfo->typedefString << "; ";
     }
     os << "static inline " << retType << " get_" << scopeUniqueVarName << "(){ "
@@ -766,6 +807,20 @@ SkeletonASTVisitor::deleteStmt(Stmt *s)
   replace(s, rewriter_, "", *ci_);
 }
 
+static const Type*
+getBaseType(VarDecl* D){
+  auto ty = D->getType().getTypePtr();
+  while (ty->isPointerType()){
+    ty = ty->getPointeeType().getTypePtr();
+  }
+  return ty;
+}
+
+static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
+{
+  return vD->getLocStart() <= rD->getLocStart() && rD->getLocEnd() <= vD->getLocEnd();
+}
+
 bool
 SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
 {
@@ -780,6 +835,26 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
   AnonRecord* anonRecPtr = checkAnonStruct(D, &anonRec);
   ArrayInfo arrayInfo;
   ArrayInfo* arrayInfoPtr = checkArray(D, &arrayInfo);
+
+
+  const Type* baseTy = getBaseType(D);
+  if (D->getType()->isPointerType() && baseTy->isStructureType()){
+    RecordDecl* baseDecl = baseTy->getAsStructureType()->getDecl();
+    if (isCombinedDecl(D, baseDecl)){
+      //we are a pointer to a struct type declarared internally to the function
+      //we need to forward declare the type!
+      std::stringstream sstr;
+      if (baseDecl->isStruct()){
+        sstr << "struct ";
+      } else if (baseDecl->isUnion()){
+        sstr << "union" ;
+      } else {
+        errorAbort(D->getLocStart(), *ci_, "bad static variable - unable to deglobalize");
+      }
+      sstr << baseDecl->getName().str() << ";";
+      rewriter_.InsertTextBefore(outerFxn->getLocStart(), sstr.str());
+    }
+  }
 
   std::string init_prefix = prefix_sstr.str();
   std::string scope_prefix = currentNs_->filePrefix() + init_prefix;
@@ -828,10 +903,6 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
   SourceLocation endLoc = getEndLoc(D);
   SourceRange rng(D->getLocStart(), endLoc);
   //while we're at it, might as well get rid of the old initializer
-  RecordDecl* combinedDecl = checkCombinedStructVarDecl(D);
-  if (!combinedDecl){
-    //replace(rng, rewriter_, "", *ci_);
-  }
   return true;
 }
 
@@ -939,7 +1010,8 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
     }
 
     std::string init_prefix = parentCls->getNameAsString() + "::";
-    defineGlobalVarInitializers(scope_unique_var_name, D->getNameAsString(), init_prefix, os);
+    defineGlobalVarInitializers(scope_unique_var_name, D->getNameAsString(), init_prefix, os,
+                                D->getType().isVolatileQualified());
     for (auto iter = semBegin; iter != sem.end(); ++iter){
       os << "}"; //close namespaces
     }

@@ -94,13 +94,16 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   };
 
   struct ArrayInfo {
+    bool needsTypedef() const {
+      return !typedefString.empty();
+    }
+
     std::string typedefString;
     std::string typedefName;
     std::string retType;
-    uint64_t size;
     bool isFxnStatic;
-    bool isConstSize;
-    ArrayInfo() : size(-1), isConstSize(false), isFxnStatic(false) {}
+
+    ArrayInfo() : isFxnStatic(false) {}
   };
 
  public:
@@ -525,7 +528,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
      const std::string& scope_unique_var_name,
      const std::string& var_name,
      const std::string& init_scope_prefix,
-     llvm::raw_string_ostream& os);
+     llvm::raw_string_ostream& os,
+     bool isVolatile);
 
   /**
    * @brief declareStaticInitializers
@@ -537,7 +541,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   void declareStaticInitializers(
      const std::string& scope_unique_var_name,
-     llvm::raw_string_ostream& os);
+     llvm::raw_string_ostream& os,
+     bool isVolatile);
 
   /**
    * @brief deleteStmt Delete a statement completely in the source-to-source

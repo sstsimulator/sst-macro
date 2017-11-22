@@ -1,0 +1,29 @@
+
+int x[][2] = { {1,2}, {2,3} };extern int sstmac_global_stacksize; extern int __offset_x; void* __ptr_x = &x; int __sizeof_x = sizeof(x);typedef int typex[2][2]; static inline typex* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_x;return (((typex*)((void*)offsetPtr))); }  
+int y[3][4];extern int sstmac_global_stacksize; extern int __offset_y; void* __ptr_y = &y; int __sizeof_y = sizeof(y);typedef int typey[3][4]; static inline typey* get_y(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_y;return (((typey*)((void*)offsetPtr))); }  
+extern int z[][2];extern int sstmac_global_stacksize; extern int __offset_z; typedef int typez[][2]; static inline typez* get_z(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_z;return (((typez*)((void*)offsetPtr))); }  
+
+typedef int typea[3][5]; static typea __fxna;extern int sstmac_global_stacksize; extern int __offset_xyz__fxna; void* __ptr_xyz__fxna = &__fxna; int __sizeof_xyz__fxna = sizeof(__fxna);static inline typea* get_xyz__fxna(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_xyz__fxna;return (((typea*)((void*)offsetPtr))); }  void fxn()
+{
+  static int a[3][5];
+}
+
+static int b[2][2];extern int sstmac_global_stacksize; extern int __offset_xyzb; void* __ptr_xyzb = &b; int __sizeof_xyzb = sizeof(b);typedef int typeb[2][2]; static inline typeb* get_xyzb(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_xyzb;return (((typeb*)((void*)offsetPtr))); }  
+#include <sstmac/software/process/global.h>
+
+int __offset_x = 0;
+extern int __sizeof_x;
+extern void* __ptr_x;
+sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,__ptr_x);
+int __offset_xyz__fxna = 0;
+extern int __sizeof_xyz__fxna;
+extern void* __ptr_xyz__fxna;
+sstmac::GlobalVariable __gv_xyz__fxna(__offset_xyz__fxna,__sizeof_xyz__fxna,__ptr_xyz__fxna);
+int __offset_xyzb = 0;
+extern int __sizeof_xyzb;
+extern void* __ptr_xyzb;
+sstmac::GlobalVariable __gv_xyzb(__offset_xyzb,__sizeof_xyzb,__ptr_xyzb);
+int __offset_y = 0;
+extern int __sizeof_y;
+extern void* __ptr_y;
+sstmac::GlobalVariable __gv_y(__offset_y,__sizeof_y,__ptr_y);

@@ -109,22 +109,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   libDir = os.path.join(prefix, "lib")
 
-  #if not makeLibrary:
-  #  import glob
-  #  globber = os.path.join(libDir, "lib*")
-  #  globbedLibs = glob.glob(globber)
-
-  #  extraLibSkip = [
-  #    "libsstmac_main",
-  #    "libsstmac",
-  #    "libundumpi",
-  #    "libsprockit",
-  #  ]
-  #  for path in globbedLibs:
-  #    lib = os.path.split(path)[-1].split(".")[0]
-  #    if not lib in extraLibSkip:
-  #      libFlag = "-l%s" % lib[3:]
-  #      sstLibs.append(libFlag)
      
   newCppFlags = []
   for entry in sstCppFlags:
@@ -240,6 +224,13 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if "SSTMAC_SRC2SRC" in os.environ:
     src2src = int(os.environ["SSTMAC_SRC2SRC"])
 
+  runClang = haveClangSrcToSrc and src2src and runClang
+  for arg in sysargs:
+    if "conftest.c" in arg or "conftest_cfunc" in arg: 
+      runClang = False
+      break
+
+
   if sys.argv[1] == "--version" or sys.argv[1] == "-V":
     import inspect, os
     pathStr = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -274,16 +265,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   elif typ.lower() == "c":
     sstCompilerFlagsStr = cleanFlag(sstCFlagsStr)
     compiler = cc
-    ld = cxx #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
-
-  #okay this is sooo dirty - but autoconf is a disaster to trick
-  #if this detects something auto-confish, bail and pass through to regular compiler
-  #if "conftest.c" in sysargs:
-  #  cmd = "%s %s" % (compiler, " ".join(sysargs))
-  #  sys.stderr.write("passing through on autoconf: %s\n" % cmd) 
-  #  rc = os.system(cmd)
-  #  if rc == 0: return 0
-  #  else: return 1
+    if runClang:
+      ld = cxx
+    else:
+      ld = cc #always use c++ for linking since we are bringing a bunch of sstmac C++ into the game
 
   sstCompilerFlags = []
   sstStdFlag = None
@@ -374,7 +359,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   ldCmdArr = []
   arCmdArr = []
   ppOnly = "-E" in controlArgs
-  runClang = haveClangSrcToSrc and src2src and runClang
   controlArgStr = " ".join(controlArgs)
   extraCppFlagsStr = " ".join(extraCppFlags)
   givenFlagsStr = " ".join(givenFlags)

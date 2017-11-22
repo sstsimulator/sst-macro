@@ -328,6 +328,15 @@ sumi_transport::finish()
   transport::finish();
 }
 
+int*
+sumi_transport::nidlist() const
+{
+  //just cast an int* - it's fine
+  //the types are the same size and the bits can be
+  //interpreted correctly
+  return (int*) rank_mapper_->rank_to_node().data();
+}
+
 void
 sumi_transport::send(
   long byte_length,
