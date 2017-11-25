@@ -700,6 +700,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 
   NamespaceDecl* outerNsDecl = getOuterNamespace(D);
   if (outerNsDecl){
+    //this is just the position that we extern declare sstmac_global_stacksize
     externStackDeclLoc = outerNsDecl->getLocStart();
   }
 
@@ -725,7 +726,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   if (externVarsInsertLoc.isInvalid()){
     errorAbort(D->getLocStart(), *ci_,
                "got bad global variable source location - maybe this is a multi-declaration? "
-               "this breaks current source-2-source");
+               "this breaks current source-to-source");
   }
   rewriter_.InsertText(externVarsInsertLoc, extern_var_os.str());
 
@@ -769,24 +770,18 @@ SkeletonASTVisitor::getEndLoc(const VarDecl *D)
                              ci_->getSourceManager(), ci_->getLangOpts(), false);
     ++numTries;
   }
+
+  if (endLoc.isInvalid() && !multiDeclStmts_.empty()){
+    DeclStmt* stmt = multiDeclStmts_.front();
+    endLoc = stmt->getLocEnd();
+  }
+
   return endLoc;
 }
 
 bool
-SkeletonASTVisitor::checkStaticFileVar(VarDecl* D)
-{
-  SourceLocation end = getEndLoc(D);
-  AnonRecord rec;
-  AnonRecord* recPtr = checkAnonStruct(D, &rec);
-  ArrayInfo info;
-  ArrayInfo* infoPtr = checkArray(D, &info);
-  setupGlobalVar(currentNs_->filePrefix(), "", "",
-                 end, end, Extern, D, recPtr, infoPtr);
-  return true;
-}
-
-bool
-SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
+SkeletonASTVisitor::checkFileVar(const std::string& filePrefix,
+                                 VarDecl* D)
 {
   AnonRecord rec;
   AnonRecord* recPtr = checkAnonStruct(D, &rec);
@@ -794,11 +789,32 @@ SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
   ArrayInfo* infoPtr = checkArray(D, &info);
   SourceLocation end = getEndLoc(D);
   if (end.isInvalid()){
-    errorAbort(D->getLocStart(), *ci_,
-               "Multi-variable declarations for global variables not allowed");
+    //need to wait until we reach the end of the declaration
+    pendingGlobalVars_.emplace_back(D, infoPtr, recPtr);
+    return true;
   }
-  setupGlobalVar("", "", "", end, end, Extern, D, recPtr, infoPtr);
+
+  if (!pendingGlobalVars_.empty()){
+    for (auto& var : pendingGlobalVars_){
+      setupGlobalVar(filePrefix, "", "", end, end, Extern, var.D, var.recPtr, var.infoPtr);
+    }
+    pendingGlobalVars_.clear();
+  }
+
+  setupGlobalVar(filePrefix, "", "", end, end, Extern, D, recPtr, infoPtr);
   return true;
+}
+
+bool
+SkeletonASTVisitor::checkStaticFileVar(VarDecl* D)
+{
+  return checkFileVar(currentNs_->filePrefix(), D);
+}
+
+bool
+SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
+{
+  return checkFileVar("", D);
 }
 
 void
@@ -826,10 +842,17 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
 {
   FunctionDecl* outerFxn = fxn_contexts_.front();
   SourceLocation insertLoc = outerFxn->getLocStart();
-  std::stringstream prefix_sstr; prefix_sstr << "_";
-  for (FunctionDecl* fxn : fxn_contexts_){
-    prefix_sstr << "_" << fxn->getNameAsString();
+  std::stringstream prefix_sstr;
+  prefix_sstr << "_" << outerFxn->getNameAsString();
+
+  auto& staticVars = static_fxn_var_counts_[outerFxn];
+  int& cnt = staticVars[D->getNameAsString()];
+  //due to scoping, we might have several static fxn vars
+  //all with the same name
+  if (cnt != 0){
+    prefix_sstr << "_" << cnt;
   }
+  ++cnt;
 
   AnonRecord anonRec;
   AnonRecord* anonRecPtr = checkAnonStruct(D, &anonRec);
@@ -1338,18 +1361,18 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
       Decl* D = stmt->getSingleDecl();
       SSTNullVariablePragma* prg = getNullVariable(D);
       if (prg){
-        if (prg->keepCtor()){
-          //boy, I really hope this doesn't allocate memory
-        } else {
+        if (!prg->keepCtor()){
           deleteStmt(stmt);
         }
       } else {
         TraverseDecl(D);
       }
     } else {
+      multiDeclStmts_.push_back(stmt);
       for (auto* D : stmt->decls()){
         TraverseDecl(D);
       }
+      multiDeclStmts_.pop_back();
     }
     stmt_contexts_.pop_back();
   }

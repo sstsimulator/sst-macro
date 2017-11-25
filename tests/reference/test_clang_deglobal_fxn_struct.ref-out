@@ -1,5 +1,5 @@
 
-struct ugh;static struct ugh * __fxnannoying;extern int sstmac_global_stacksize; extern int __offset_xyz__fxnannoying; void* __ptr_xyz__fxnannoying = &__fxnannoying; int __sizeof_xyz__fxnannoying = sizeof(__fxnannoying);static inline struct ugh ** get_xyz__fxnannoying(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_xyz__fxnannoying;return (((struct ugh **)((void*)offsetPtr))); }  void fxn()
+struct ugh;static struct ugh * _fxnannoying;extern int sstmac_global_stacksize; extern int __offset_xyz_fxnannoying; void* __ptr_xyz_fxnannoying = &_fxnannoying; int __sizeof_xyz_fxnannoying = sizeof(_fxnannoying);static inline struct ugh ** get_xyz_fxnannoying(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_xyz_fxnannoying;return (((struct ugh **)((void*)offsetPtr))); }  void fxn()
 {
   static struct ugh {
     int a;
@@ -7,7 +7,7 @@ struct ugh;static struct ugh * __fxnannoying;extern int sstmac_global_stacksize;
 }
 #include <sstmac/software/process/global.h>
 
-int __offset_xyz__fxnannoying = 0;
-extern int __sizeof_xyz__fxnannoying;
-extern void* __ptr_xyz__fxnannoying;
-sstmac::GlobalVariable __gv_xyz__fxnannoying(__offset_xyz__fxnannoying,__sizeof_xyz__fxnannoying,__ptr_xyz__fxnannoying);
+int __offset_xyz_fxnannoying = 0;
+extern int __sizeof_xyz_fxnannoying;
+extern void* __ptr_xyz_fxnannoying;
+sstmac::GlobalVariable __gv_xyz_fxnannoying(__offset_xyz_fxnannoying,__sizeof_xyz_fxnannoying,__ptr_xyz_fxnannoying);

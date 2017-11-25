@@ -47,6 +47,23 @@ def runCmdArr(cmdArr,verbose):
   else:
     return 0
 
+class TempFiles:
+  def __init__(self, doDelete, verbose):
+    self.doDelete = doDelete
+    self.verbose = verbose
+    self.files = []
+
+  def append(self, f):
+    self.files.append(f)
+
+  def cleanUp(self):
+    import os
+    import sys
+    cmd = "rm -f %s" % " ".join(self.files)
+    if self.verbose:
+      sys.stderr.write("%s\n" % cmd)
+    os.system(cmd)
+
 def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True, runClang=True):
   extraLibsStr = extraLibs
   extraLibs = extraLibs.split()
@@ -153,20 +170,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if getObjTarget:
         objTarget = sarg
         getObjTarget=False
-      else:
-        cxxInitFile = addPrefix("sstGlobals.", sarg)
-        if os.path.isfile(cxxInitFile):
-          objectFiles.append(cxxInitFile)
-        elif ".libs" in cxxInitFile:
-          cxxInitFile = cxxInitFile.replace(".libs/","")
-          if os.path.isfile(cxxInitFile):
-            objectFiles.append(cxxInitFile)
-          else:
-            pass
-            #sys.stderr.write("no file %s\n" % cxxInitFile)
-        else:
-          pass
-          #sys.stderr.write("no file %s\n" % cxxInitFile)
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-W"):
@@ -481,16 +484,17 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     #this is more complicated - we have to use clang to do a source to source transformation
     #then we need to run the compiler on that modified source
     for srcFile in sourceFiles:
+      allTemps = TempFiles(delTempFiles, verbose)
       ppTmpFile = addPrefix("pp.",srcFile)
       cmdArr = ppCmdArr[:]
       cmdArr.append(srcFile)
       cmdArr.append("> %s" % ppTmpFile)
       ppCmd = " ".join(cmdArr) 
+      allTemps.append(ppTmpFile)
       if verbose: sys.stderr.write("%s\n" % ppCmd)
       rc = os.system(ppCmd)
       if not rc == 0:
-        if delTempFiles:
-          os.system("rm -f %s" % ppTmpFile)  
+        allTemps.cleanUp()
         return rc
 
       ppText = open(ppTmpFile).read()
@@ -515,11 +519,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       clangCmd = " ".join(clangCmdArr)
       if verbose: sys.stderr.write("%s\n" % clangCmd)
       rc = os.system(clangCmd)
+      allTemps.append(srcRepl)
+      allTemps.append(cxxInitSrcFile)
       if not rc == 0:
-        if delTempFiles:
-          os.system("rm -f %s" % ppTmpFile)
-          os.system("rm -f %s" % srcRepl)
-          os.system("rm -f %s" % cxxInitSrcFile)
+        allTemps.cleanUp()
         return rc
 
       #the source to source generates temp .cc files
@@ -536,8 +539,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if not objTarget:
         srcName = os.path.split(srcFile)[-1]
         target = swapSuffix("o", srcName)
+      tmpTarget = addPrefix("tmp.", target)
+      allTemps.append(tmpTarget)
       cmdArr.append("-o")
-      cmdArr.append(target)
+      cmdArr.append(tmpTarget)
       cmdArr.append("-c")
       cmdArr.append(srcRepl)
       cmdArr.append("--no-integrated-cpp")
@@ -545,16 +550,13 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if verbose: sys.stderr.write("%s\n" % cxxCmd)
       rc = os.system(cxxCmd)
       if not rc == 0:
-        if delTempFiles:
-          os.system("rm -f %s" % ppTmpFile)
-          os.system("rm -f %s" % srcRepl)
-          os.system("rm -f %s" % target)
-          os.system("rm -f %s" % cxxInitSrcFile)
+        allTemps.cleanUp()
         return rc
 
       #now we generate the .o file containing the CXX linkage 
       #for global variable CXX init - because C is stupid
       cxxInitObjFile = addPrefix("sstGlobals.",target)
+      allTemps.append(cxxInitObjFile)
       cxxInitCmdArr = [
         cxx,
         sstCxxFlagsStr,
@@ -569,8 +571,22 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       cxxInitCompileCmd = " ".join(cxxInitCmdArr)
       if verbose: sys.stderr.write("%s\n" % cxxInitCompileCmd)
       rc = os.system(cxxInitCompileCmd)
-      if delTempFiles:
-        os.system("rm -f %s %s %s" % (ppTmpFile, cxxInitSrcFile, srcRepl))
+      allTemps.append(cxxInitObjFile)
+      if not rc == 0:
+        allTemps.cleanUp()
+        return rc
+
+      mergeCmdArr = [
+        cxx,
+        "-Wl,-r",
+        "-o", target,
+        tmpTarget, cxxInitObjFile,
+        "-nostdlib"
+      ]
+      mergeCmd = " ".join(mergeCmdArr)
+      if verbose: sys.stderr.write("%s\n" % mergeCmd)
+      rc = os.system(mergeCmd)
+      allTemps.cleanUp()
       if not rc == 0:
         return rc
 
@@ -586,7 +602,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
           allObjects.append(objTarget)
         else:
           allObjects.append(swapSuffix("o", srcFile))
-        allObjects.append(cxxInitObjFile)
+        #allObjects.append(cxxInitObjFile)
 
     if exeFromSrc:
       if ldCmdArr:

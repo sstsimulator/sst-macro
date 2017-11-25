@@ -406,6 +406,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
   int insideCxxMethod_;
+
+  std::map<clang::FunctionDecl*, std::map<std::string, int>> static_fxn_var_counts_;
   std::list<clang::FunctionDecl*> fxn_contexts_;
   std::list<clang::CXXRecordDecl*> class_contexts_;
   std::list<clang::ForStmt*> loop_contexts_;
@@ -424,6 +426,16 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
   std::set<clang::FunctionDecl*> keepWithNullArgs_;
   std::set<clang::FunctionDecl*> deleteWithNullArgs_;
+  std::list<clang::DeclStmt*> multiDeclStmts_;
+
+  struct PendingGlobalVar {
+    clang::VarDecl* D;
+    ArrayInfo* infoPtr;
+    AnonRecord* recPtr;
+    PendingGlobalVar(clang::VarDecl* _D, ArrayInfo* _i, AnonRecord* _r) :
+      D(_D), infoPtr(_i), recPtr(_r){}
+  };
+  std::list<PendingGlobalVar> pendingGlobalVars_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;
@@ -456,6 +468,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool checkStaticFxnVar(clang::VarDecl* D);
   bool checkGlobalVar(clang::VarDecl* D);
   bool checkStaticFileVar(clang::VarDecl* D);
+  bool checkFileVar(const std::string& filePrefix, clang::VarDecl* D);
   clang::SourceLocation getEndLoc(const clang::VarDecl* D);
   bool insideClass() const {
     return !class_contexts_.empty();

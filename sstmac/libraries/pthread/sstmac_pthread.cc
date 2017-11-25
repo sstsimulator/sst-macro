@@ -701,7 +701,7 @@ SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr)
 }
 
 int
-SSTMAC_pthread_set_concurrency(int level)
+SSTMAC_pthread_setconcurrency(int level)
 {
   thread* thr = current_thread();
   thr->set_pthread_concurrency(level);
@@ -709,7 +709,7 @@ SSTMAC_pthread_set_concurrency(int level)
 }
 
 int
-SSTMAC_pthread_get_concurrency()
+SSTMAC_pthread_getconcurrency()
 {
   thread* thr = current_thread();
   return thr->pthread_concurrency();

@@ -3,10 +3,11 @@ if HAVE_CLANG
 #  Allocation tests                                                                     {{{#
 #------------------------------------------------------------------------------------------#
 
-SSTMAC_DEGLOBAL=$(top_builddir)/bin/sstmac_clang_deglobal
+SSTMAC_DEGLOBAL=$(top_builddir)/bin/sstmac_clang
 
 CLANGTESTS = \
   deglobal_regular \
+  deglobal_multi \
   deglobal_namespace \
   deglobal_array \
   deglobal_multi_array \
