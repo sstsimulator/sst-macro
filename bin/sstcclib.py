@@ -577,11 +577,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         return rc
 
       mergeCmdArr = [
-        cxx,
-        "-Wl,-r",
-        "-o", target,
-        tmpTarget, cxxInitObjFile,
-        "-nostdlib"
+        "ld -r -o",
+        target,
+        tmpTarget, cxxInitObjFile
       ]
       mergeCmd = " ".join(mergeCmdArr)
       if verbose: sys.stderr.write("%s\n" % mergeCmd)
