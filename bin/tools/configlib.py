@@ -14,7 +14,7 @@ def getoutput3(cmd,stdin=None,pipe=None):
     import io
     result = check_output(cmd.split(),stdin=stdin,stderr=STDOUT).decode("utf-8").rstrip("\n")
     if pipe:
-      pipe.wait
+      pipe.wait()
     #Oh, and I love decoding byte strings manually
     return result
 

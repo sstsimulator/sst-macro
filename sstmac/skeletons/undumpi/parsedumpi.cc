@@ -63,6 +63,7 @@ RegisterKeywords(
 { "parsedumpi_timescale", "the scale factor for time between MPI calls, < 1 means speedup" },
 { "parsedumpi_terminate_percent", "an optional percentage of the trace after which to terminate" },
 { "parsedumpi_print_progress", "whether to print the progress of the trace" },
+{ "parsedumpi_terminate_count", "the number of global collectives to run, then terminate" },
 { "launch_dumpi_metaname", "DEPRECATED: the meta file for the DUMPI trace" },
 { "dumpi_metaname", "the meta file for the DUMPI trace" },
 );
@@ -82,6 +83,8 @@ parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
   timescaling_ = params->get_optional_double_param("parsedumpi_timescale", 1);
 
   print_progress_ = params->get_optional_bool_param("parsedumpi_print_progress", true);
+
+  early_terminate_count_ = params->get_optional_int_param("parsedumpi_terminate_count", -1);
 }
 
 parsedumpi::~parsedumpi() throw()
@@ -102,7 +105,12 @@ int parsedumpi::skeleton_main()
   sstmac::runtime::add_deadlock_check(
     sstmac::new_deadlock_check(mpi(), &sumi::transport::deadlock_check));
   sstmac::runtime::enter_deadlock_region();
-  cbacks.parse_stream(fname.c_str(), print_my_progress);
+  try {
+    cbacks.parse_stream(fname.c_str(), print_my_progress);
+  } catch (parsedumpi::early_termination& e) {
+    //do nothing - happily move on and finalize
+    mpi_->finalize();
+  }
 
   if (rank == 0) {
     std::cout << "Parsedumpi finalized on rank 0 - trace "

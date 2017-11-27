@@ -54,13 +54,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 /**
- * A refactored dumpi parser to read the newer binary-format dumpi
- * trace files.  Discards support for older-style ascii-based
- * files since nobody was using those except us anyway.
+ * A dumpi parser to read the binary-format dumpi trace files.  
  *
- * TODO:  Fix this to read the metafile rather than the trace files directly
- * (would avoid hack needed where MPI world size is smaller than the total
- * cores allocated to the job).
  */
 class parsedumpi : public sstmac::sw::app
 {
@@ -69,11 +64,16 @@ class parsedumpi : public sstmac::sw::app
 
   FactoryRegister("parsedumpi | dumpi", sstmac::sw::app, parsedumpi,
               "application for parsing and simulating dumpi traces")
+
  public:
   parsedumpi(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
              sstmac::sw::operating_system* os);
 
-  /// Wait!  That's not good news at all!
+  struct early_termination : public std::runtime_error {
+   public:
+    early_termination() : std::runtime_error("DUMPI early termination") {}
+  };
+
   virtual ~parsedumpi() throw ();
 
   mpi_api* mpi() {
@@ -82,12 +82,18 @@ class parsedumpi : public sstmac::sw::app
 
   int skeleton_main() override;
 
+  uint64_t early_terminate_count() const {
+    return early_terminate_count_;
+  }
+
  private:
   /// The fileroot we plan to parse.
   std::string fileroot_;
 
   /// The time scaling factor.
   double timescaling_;
+
+  uint64_t early_terminate_count_;
 
   mpi_api* mpi_;
 

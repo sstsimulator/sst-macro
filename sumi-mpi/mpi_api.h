@@ -851,17 +851,17 @@ mpi_api* sstmac_mpi();
   start_api_call()
 
 #if SSTMAC_COMM_SYNC_STATS
-  #define start_mpi_call(fxn,count,type,comm) \
+  #define start_mpi_call(fxn) \
     _start_mpi_call_(fxn); \
     set_new_mpi_call(Call_ID_##fxn)
   #define finish_mpi_call(fxn) \
     finish_last_mpi_call(Call_ID_##fxn); \
     end_api_call()
 #else
-  #define start_mpi_call(fxn,count,type,comm) _start_mpi_call_(fxn)
+  #define start_mpi_call(fxn) _start_mpi_call_(fxn)
   #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
   #define finish_mpi_call(fxn) end_api_call()
-  #define finish_Impi_call(fxn,reqptr) end_api_call()
+  #define finish_Impi_call(fxn) end_api_call()
 #endif
 
 #define mpi_api_debug(flags, ...) \

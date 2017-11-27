@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_comm_call(fxn,comm) \
-  start_mpi_call(fxn,0,0,comm); \
+  start_mpi_call(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, comm_str(comm).c_str())
 
 #define finish_comm_call(fxn,input,output) \
