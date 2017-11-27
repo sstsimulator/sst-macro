@@ -1,0 +1,18 @@
+
+char *y, *z = 0;extern int sstmac_global_stacksize; extern int __offset_y; void* __ptr_y = &y; int __sizeof_y = sizeof(y);static inline char ** get_y(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_y;return (((char **)((void*)offsetPtr))); }  extern int sstmac_global_stacksize; extern int __offset_z; void* __ptr_z = &z; int __sizeof_z = sizeof(z);static inline char ** get_z(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_z;return (((char **)((void*)offsetPtr))); }  
+
+void fxn()
+{
+  *(*get_y()) = 'a';
+  *(*get_z()) = 'b';
+}
+#include <sstmac/software/process/global.h>
+
+int __offset_y = 0;
+extern int __sizeof_y;
+extern void* __ptr_y;
+sstmac::GlobalVariable __gv_y(__offset_y,__sizeof_y,__ptr_y);
+int __offset_z = 0;
+extern int __sizeof_z;
+extern void* __ptr_z;
+sstmac::GlobalVariable __gv_z(__offset_z,__sizeof_z,__ptr_z);

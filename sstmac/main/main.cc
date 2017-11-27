@@ -64,6 +64,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/sumi/sumi_config.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
+#include <sstmac/software/api/api.h>
 #include <string>
 
 #include <iostream>
@@ -123,7 +124,6 @@ main(int argc, char **argv)
 #endif
 
   int rc;
-
   try {
     sprockit::sim_parameters params;
     params.set_public_scope(false); //do not expose top-level params to subspaces

@@ -646,3 +646,71 @@ SSTMAC_pthread_detach(sstmac_pthread_t thr)
   //will be released back automatically anyway
   return 0;
 }
+
+int
+SSTMAC_pthread_rwlock_rdlock(sstmac_pthread_rwlock_t *rwlock)
+{
+  return 0;
+}
+
+int
+SSTMAC_pthread_rwlock_tryrdlock(sstmac_pthread_rwlock_t *rwlock)
+{
+  return 0;
+}
+
+int
+SSTMAC_pthread_rwlock_wrlock(sstmac_pthread_rwlock_t *rwlock)
+{
+  return 0;
+}
+
+int
+SSTMAC_pthread_rwlock_trywrlock(sstmac_pthread_rwlock_t *rwlock)
+{
+  return 0;
+}
+
+int
+SSTMAC_pthread_rwlock_destroy(sstmac_pthread_rwlock_t *rwlock)
+{
+  return 0;
+}
+
+int SSTMAC_pthread_rwlock_init(sstmac_pthread_rwlock_t *rwlock,
+       const sstmac_pthread_rwlockattr_t *attr)
+{
+  return 0;
+}
+
+int SSTMAC_pthread_rwlock_unlock(sstmac_pthread_rwlock_t* rwlock)
+{
+  return 0;
+}
+
+int
+SSTMAC_pthread_rwlockattr_init(sstmac_pthread_rwlockattr_t *attr)
+{
+  return 0;
+}
+
+int
+SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr)
+{
+  return 0;
+}
+
+int
+SSTMAC_pthread_setconcurrency(int level)
+{
+  thread* thr = current_thread();
+  thr->set_pthread_concurrency(level);
+  return 0;
+}
+
+int
+SSTMAC_pthread_getconcurrency()
+{
+  thread* thr = current_thread();
+  return thr->pthread_concurrency();
+}

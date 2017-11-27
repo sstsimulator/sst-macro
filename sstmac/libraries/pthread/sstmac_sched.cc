@@ -49,21 +49,21 @@ Questions? Contact sst-macro-help@sandia.gov
 
 /* Set scheduling parameters for a process.  */
 extern "C" int
-SSTMAC_sched_setparam (pid_t pid, const struct sched_param *param){
+SSTMAC_sched_setparam (pid_t pid, const struct sstmac_sched_param *param){
   sprockit::abort("sched_setparam: not implemented");
   return 0;
 }
 
 /* Retrieve scheduling parameters for a particular process.  */
 extern "C" int
-SSTMAC_sched_getparam (pid_t pid, struct sched_param *param){
+SSTMAC_sched_getparam (pid_t pid, struct sstmac_sched_param *param){
   sprockit::abort("sched_getparam: not implemented");
   return 0;
 }
 
 /* Set scheduling algorithm and/or parameters for a process.  */
 extern "C" int
-SSTMAC_sched_setscheduler (pid_t pid, int policy,  const struct sched_param *param){
+SSTMAC_sched_setscheduler (pid_t pid, int policy,  const struct sstmac_sched_param *param){
   sprockit::abort("sched_setscheduler: not implemented");
   return 0;
 }

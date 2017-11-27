@@ -45,12 +45,15 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <errno.h>
 #include <getopt.h>
 #include <sstmac/main/sstmac.h>
+#include <sstmac/software/process/app.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <cstdlib>
+
+using app = sstmac::sw::app;
 
 void
 activate_debugs(const std::string& debug_list)
@@ -221,7 +224,31 @@ parse_opts(int argc, char **argv, opts &oo)
   }
 
   if (oo.configfile == "" && need_config_file){
-    std::cerr << "need to specify input file with -f flag" << std::endl;
+    //okay, this is really, really dirty - but okay, sacrifices must be made
+    std::string exe_name = argv[0];
+    auto pos = exe_name.rfind("/");
+    if (pos!= std::string::npos){
+      exe_name = exe_name.substr(pos+1);
+    }
+    bool is_stand_alone = app::factory::is_valid_name("sstmac_app_name");
+    if (exe_name == "conftest" && is_stand_alone){
+      //oh, hmm, we are running inside configure
+      //this means we actually just want to run a compiled program
+      //and get the hell out of dodge
+      sprockit::sim_parameters null_params;
+      null_params.add_param_override("name", "sstmac_app_name");
+      sstmac::sw::software_id id(0,0);
+      sstmac::sw::operating_system* os = nullptr;
+      app* a = sstmac::sw::app::factory::get_value("sstmac_app_name", &null_params, id, os);
+      int rc = a->skeleton_main();
+      if (rc == 0){
+        return PARSE_OPT_EXIT_SUCCESS;
+      } else {
+        return PARSE_OPT_EXIT_FAIL;
+      }
+    } else {
+      std::cerr << "need to specify input file with -f flag" << std::endl;
+    }
     return PARSE_OPT_EXIT_SUCCESS;
   }
 

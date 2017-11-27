@@ -70,12 +70,12 @@ void comm_init()
 
 void comm_kill_process()
 {
-  current_transport()->kill_process();
+  sprockit::abort("unimplemented: comm kill process");
 }
 
 void comm_kill_node()
 {
-  current_transport()->kill_node();
+  sstmac::sw::operating_system::current_os()->kill_node();
   throw terminate_exception();
 }
 
@@ -203,11 +203,6 @@ message* comm_poll()
 double wall_time()
 {
   return operating_system::current_os()->now().sec();
-}
-
-int comm_partner(long nid)
-{
-  return current_transport()->get_partner(node_id(nid));
 }
 
 void sleep_until(double sec)

@@ -66,7 +66,7 @@ distributed_service_app::distributed_service_app(sprockit::sim_parameters* param
   libname_ = params->get_param("libname");
 }
 
-void
+int
 distributed_service_app::skeleton_main()
 {
   //need to pass libname twice - once for the factory, once for OS registration
@@ -82,6 +82,7 @@ distributed_service_app::skeleton_main()
   debug("finalizing distributed service %s on rank %d", libname_.c_str(), srv->rank());
   srv->finish();
   delete srv;
+  return 0;
 }
 
 sumi::message*

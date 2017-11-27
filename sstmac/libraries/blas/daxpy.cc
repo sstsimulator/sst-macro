@@ -60,13 +60,11 @@ class default_daxpy :
     pipeline_ = params->get_optional_double_param("daxpy_pipeline_efficiency", 2);
   }
 
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "default daxpy";
   }
 
-  compute_event*
-  op_1d(int n) override;
+  compute_event* op_1d(int n) override;
 
  protected:
   double loop_unroll_;

@@ -91,7 +91,7 @@ parsedumpi::~parsedumpi() throw()
 {
 }
 
-void parsedumpi::skeleton_main()
+int parsedumpi::skeleton_main()
 {
   int rank = this->tid();
   mpi_ = get_api<mpi_api>();
@@ -118,6 +118,8 @@ void parsedumpi::skeleton_main()
   }
 
   sstmac::runtime::exit_deadlock_region();
+
+  return 0;
 
 }
 
