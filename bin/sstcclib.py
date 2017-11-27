@@ -60,9 +60,10 @@ class TempFiles:
     import os
     import sys
     cmd = "rm -f %s" % " ".join(self.files)
-    if self.verbose:
-      sys.stderr.write("%s\n" % cmd)
-    os.system(cmd)
+    if self.doDelete:
+        if self.verbose:
+          sys.stderr.write("%s\n" % cmd)
+        os.system(cmd)
 
 def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True, runClang=True):
   extraLibsStr = extraLibs
