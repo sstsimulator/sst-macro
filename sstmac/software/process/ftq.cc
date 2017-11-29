@@ -239,8 +239,7 @@ app_ftq_calendar::app_ftq_calendar(int aid,
     num_ticks_epoch_(nticks_epoch),
     appname_(appname)
 {
-  // arbitrary number... better than setting it to 0 and faulting
-  int num_categories = 20; //key::num_categories();
+  int num_categories = ftq_tag::num_categories();
   aggregate_.totals_ = new long long[num_categories];
   for (int i=0; i < num_categories; ++i) {
     aggregate_.totals_[i] = 0;
@@ -346,7 +345,11 @@ static const char* matplotlib_histogram_text_footer =
     "plt.ylim(0,1)\n"
     "plt.yticks([])\n"
     "plt.title(args.title)\n"
-    "plt.legend(plt.stackplot(time, normalized), names[1:])\n"
+    "polys = plt.stackplot(time, normalized)\n"
+    "legendProxies = []\n"
+    "for poly in polys:\n"
+    "   legendProxies.append(plt.Rectangle((0, 0), 1, 1, fc=poly.get_facecolor()[0]))\n"
+    "plt.legend(legendProxies, names[1:])\n"
     "\n"
     "# Saving\n"
     "if args.eps: plt.savefig(file_name + '.eps')\n"
