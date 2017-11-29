@@ -126,6 +126,7 @@ parse_opts(int argc, char **argv, opts &oo)
     { "no-wall-time", no_argument, &no_wall_time, 1 },
     { "cpu-affinity", required_argument, NULL, 'c' },
     { "graph", required_argument, NULL, 'g' },
+    { "dump-params", required_argument, NULL, 'D'},
     { NULL, 0, NULL, '\0' }
   };
   int ch;
@@ -133,7 +134,7 @@ parse_opts(int argc, char **argv, opts &oo)
   std::list<std::pair<std::string, std::string> > paramlist;
   oo.params = new sprockit::sim_parameters;
   optind = 1;
-  while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:b:V:g:", gopt, NULL))
+  while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:b:V:g:D:", gopt, NULL))
          != -1) {
     switch (ch) {
       case 0:
@@ -160,6 +161,9 @@ parse_opts(int argc, char **argv, opts &oo)
         break;
       case 'V' :
         oo.params->add_param_override("node.app1.argv", optarg);
+        break;
+      case 'D':
+        oo.params_dump_file = optarg;
         break;
       case 'f':
         oo.configfile = optarg;

@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/key.h>
+#include <sstmac/software/process/thread_fwd.h>
 #include <stdint.h>
 #include <vector>
 
@@ -191,8 +192,24 @@ class ftq_calendar :
 
   long num_ticks_epoch_;
 
+};
 
+// Ensures an ftq_tag is used for the life of this object
+class ftq_scope {
+public:
+    ftq_scope(thread*, ftq_tag);
+    ftq_scope(thread*);
+    ~ftq_scope();
 
+private:
+    // We don't want dynamic allocations.
+    // This class is intended to use scoping for construction/deconstruction
+    void* operator new(size_t size) throw();
+
+    // private members
+    bool _tag_previously_protected;
+    ftq_tag _previous_tag;
+    thread* _thread;
 };
 
 }
