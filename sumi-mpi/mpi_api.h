@@ -67,6 +67,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
+#include <sstmac/software/process/ftq.h>
 
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
@@ -848,7 +849,7 @@ mpi_api* sstmac_mpi();
 
 #define _start_mpi_call_(fxn) \
   SSTMACBacktrace(fxn); \
-  os_->active_thread()->set_tag(mpi_tag); \
+  sstmac::sw::ftq_scope scope(os_->active_thread(), mpi_tag); \
   start_api_call()
 
 #if SSTMAC_COMM_SYNC_STATS

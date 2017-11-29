@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/ftq.h>
 
 RegisterDebugSlot(lib_compute_inst);
 
@@ -92,9 +93,9 @@ lib_compute_inst::compute_detailed(
   st.mem_sequential = bytes;
 
   // Do not overwrite an existing tag
-  if (os_->active_thread()->tag().id() == ftq_tag::null.id()) {
-      os_->active_thread()->set_tag(ftq_tag::compute);
-  }
+  const auto& cur_tag = os_->active_thread()->tag();
+  ftq_scope scope(os_->active_thread(),
+      cur_tag.id() == ftq_tag::null.id() ? ftq_tag::compute : cur_tag);
 
   compute_inst(cmsg);
   delete cmsg;

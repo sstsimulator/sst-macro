@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/process/ftq.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/software/process/thread.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sprockit/delete.h>
 #include <sprockit/sim_parameters.h>
@@ -452,6 +453,30 @@ ftq_epoch::init(int num_events, long long *buffer)
   for (int i=0; i < num_events; ++i) {
     totals_[i] = 0;
   }
+}
+
+// ftq_scope member functions
+ftq_scope::ftq_scope(thread* _thread, ftq_tag _tag): _previous_tag(_thread->tag()) {
+    this->_thread = _thread;
+    _tag_previously_protected = _thread->protect_tag;
+
+    // Ignoring nested tags is now an expected behavior
+    //if (_thread->protect_tag == true) std::cerr << "WARNING: An 'ftq_scope' is already active. Nested guards are ignored.";
+
+    _thread->set_tag(_tag);
+    _thread->protect_tag = true;
+}
+
+ftq_scope::ftq_scope(thread* _thread): ftq_scope(_thread, _thread->tag()) {}
+
+
+ftq_scope::~ftq_scope() {
+    _thread->protect_tag = _tag_previously_protected;
+    _thread->set_tag(_previous_tag);
+}
+
+void* ftq_scope::operator new(size_t size) throw() {
+    return nullptr;
 }
 
 

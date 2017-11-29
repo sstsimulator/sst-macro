@@ -50,6 +50,7 @@ namespace sw {
 
 class ftq_calendar;
 class ftq_tag;
+class ftq_scope;
 
 }
 }
