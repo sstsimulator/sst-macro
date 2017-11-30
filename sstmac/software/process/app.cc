@@ -68,6 +68,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/software/api/api.h>
 
 static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
 
@@ -230,9 +231,8 @@ app::_get_api(const char* name)
     api* new_api = api::factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
-  }
-  else {
-   return my_api;
+  } else {
+    return my_api;
   }
 }
 
@@ -242,7 +242,7 @@ app::run()
   SSTMACBacktrace(main);
   os_->increment_app_refcount();
   end_api_call(); //this initializes things, "fake" api call at beginning
-  skeleton_main();
+  int rc = skeleton_main();
   //we are ending but perform the equivalent
   //to a start api call to flush any compute
   start_api_call();
@@ -431,7 +431,7 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
   entry.argv = argv;
 }
 
-void
+int
 user_app_cxx_full_main::skeleton_main()
 {
   static thread_lock argv_lock;
@@ -441,7 +441,7 @@ user_app_cxx_full_main::skeleton_main()
     init_argv(entry);
   }
   argv_lock.unlock();
-  (*fxn_)(entry.argc, entry.argv);
+  return (*fxn_)(entry.argc, entry.argv);
 }
 
 user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *params, software_id sid,
@@ -471,10 +471,10 @@ user_app_cxx_empty_main::register_main_fxn(const char *name, app::empty_main_fxn
   app::factory::register_alias("user_app_cxx_empty_main", name);
 }
 
-void
+int
 user_app_cxx_empty_main::skeleton_main()
 {
-  (*fxn_)();
+  return (*fxn_)();
 }
 
 void compute_time(double tsec)

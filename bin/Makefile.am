@@ -66,17 +66,9 @@ endif
 
 EXTRA_DIST += clang
 
-# clang/util.h 
-# clang/pragmas.h 
-# clang/astConsumers.h 
-# clang/clangheaders.h 
-# clang/frontendActions.h 
-# clang/globalVarNamespace.h 
-# clang/replAstVisitor.h
-
 if HAVE_CLANG
-bin_PROGRAMS += sstmac_clang_deglobal
-sstmac_clang_deglobal_SOURCES = \
+bin_PROGRAMS += sstmac_clang
+sstmac_clang_SOURCES = \
   clang/util.cc \
   clang/main.cc \
   clang/pragmas.cc \
@@ -87,14 +79,11 @@ sstmac_clang_deglobal_SOURCES = \
   clang/frontendActions.cc \
   clang/astVisitor.cc 
 
-sstmac_clang_deglobal_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
-sstmac_clang_deglobal_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
-sstmac_clang_deglobal_LDFLAGS = $(CLANG_LDFLAGS) \
+sstmac_clang_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
+sstmac_clang_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
+sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
- -lclang \
- -lz \
- -lm \
- -lcurses \
+ @CLANG_LIBTOOLING_LIBS@ \
  -lclangFrontend \
  -lclangFrontendTool \
  -lLLVMSupport \

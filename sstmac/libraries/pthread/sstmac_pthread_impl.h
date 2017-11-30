@@ -56,6 +56,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_pthread_once_t int
 #define sstmac_pthread_cond_attr int
 #define sstmac_pthread_mutexattr_t int
+#define sstmac_pthread_rwlock_t int
+#define sstmac_pthread_rwlockattr_t int
 
 typedef int sstmac_pthread_key_t;
 typedef void (*sstmac_pthread_key_destructor_fxn)(void*);
@@ -63,6 +65,7 @@ typedef void (*sstmac_pthread_key_destructor_fxn)(void*);
 #define SSTMAC_PTHREAD_ONCE_INIT 0
 #define SSTMAC_PTHREAD_MUTEX_INITIALIZER -1
 #define SSTMAC_PTHREAD_COND_INITIALIZER -1
+#define SSTMAC_PTHREAD_RWLOCK_INITIALIZER -1
 
 #define SSTMAC_PTHREAD_THREADS_MAX 1000
 #define SSTMAC_PTHREAD_KEYS_MAX 10000
@@ -191,6 +194,29 @@ int SSTMAC_pthread_attr_setscope(sstmac_pthread_attr_t*, int scope);
 int SSTMAC_pthread_attr_getscope(sstmac_pthread_attr_t*, int* scope);
 
 int SSTMAC_pthread_detach(sstmac_pthread_t);
+
+int SSTMAC_pthread_rwlock_destroy(sstmac_pthread_rwlock_t *rwlock);
+
+int SSTMAC_pthread_rwlock_init(sstmac_pthread_rwlock_t *rwlock,
+       const sstmac_pthread_rwlockattr_t *attr);
+
+int SSTMAC_pthread_rwlock_rdlock(sstmac_pthread_rwlock_t *rwlock);
+
+int SSTMAC_pthread_rwlock_tryrdlock(sstmac_pthread_rwlock_t *rwlock);
+
+int SSTMAC_pthread_rwlock_wrlock(sstmac_pthread_rwlock_t *rwlock);
+
+int SSTMAC_pthread_rwlock_trywrlock(sstmac_pthread_rwlock_t *rwlock);
+
+int SSTMAC_pthread_rwlock_unlock(sstmac_pthread_rwlock_t* rwlock);
+
+int SSTMAC_pthread_rwlockattr_init(sstmac_pthread_rwlockattr_t *attr);
+
+int SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr);
+
+int SSTMAC_pthread_setconcurrency(int lvl);
+
+int SSTMAC_pthread_getconcurrency();
 
 #ifdef __cplusplus
 }

@@ -162,7 +162,6 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   api(params, libname, sid, os),
   //the server is what takes on the specified libname
   server_libname_("sumi_server"),
-  process_manager(sid, os),
   transport(params),
   user_lib_time_(nullptr),
   spy_num_messages_(nullptr),
@@ -171,7 +170,6 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   pt2pt_cq_id_(0) //put pt2pt sends on the default cq
 {
   collective_cq_id_ = allocate_cq();
-
   rank_ = sid.task_;
   library* server_lib = os_->lib(server_libname_);
   sumi_server* server;
@@ -179,8 +177,7 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   if (server_lib == nullptr) {
     server = new sumi_server(this);
     server->start();
-  }
-  else {
+  } else {
     server = safe_cast(sumi_server, server_lib);
   }
 
@@ -331,6 +328,15 @@ sumi_transport::finish()
   transport::finish();
 }
 
+int*
+sumi_transport::nidlist() const
+{
+  //just cast an int* - it's fine
+  //the types are the same size and the bits can be
+  //interpreted correctly
+  return (int*) rank_mapper_->rank_to_node().data();
+}
+
 void
 sumi_transport::send(
   long byte_length,
@@ -376,7 +382,7 @@ sumi_transport::compute(timestamp t)
 void
 sumi_transport::go_die()
 {
-  kill_node();
+  os_->kill_node();
 }
 
 void

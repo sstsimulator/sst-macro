@@ -55,6 +55,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sched_get_priority_min SSTMAC_sched_get_priority_min
 #define sched_rr_get_interval SSTMAC_sched_rr_get_interval
 
+#define sched_param sstmac_sched_param
+
 #define SCHED_FIFO SSTMAC_SCHED_FIFO
 #define SCHED_RR SSTMAC_SCHED_RR
 #define SCHED_DEADLINE SSTMAC_SCHED_DEADLINE

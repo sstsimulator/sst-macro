@@ -231,6 +231,8 @@ class transport {
 
   virtual double wall_time() const = 0;
 
+  virtual int* nidlist() const = 0;
+
   /**
    * Block on a collective of a particular type and tag
    * until that collective is complete

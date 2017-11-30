@@ -356,8 +356,7 @@ namespace lblxml {
     {}
 
     /// Go.
-    void
-    skeleton_main();
+    int skeleton_main() override;
 
   };
 

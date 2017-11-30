@@ -50,19 +50,21 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/libraries/pthread/sstmac_sched_clear_macros.h>
 #include <sstmac/libraries/pthread/sstmac_sched_macro.h>
 
+struct sstmac_sched_param {};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
 /* Set scheduling parameters for a process.  */
-extern int SSTMAC_sched_setparam (pid_t pid, const struct sched_param *param);
+extern int SSTMAC_sched_setparam (pid_t pid, const struct sstmac_sched_param *param);
 
 /* Retrieve scheduling parameters for a particular process.  */
-extern int SSTMAC_sched_getparam (pid_t pid, struct sched_param *param);
+extern int SSTMAC_sched_getparam (pid_t pid, struct sstmac_sched_param *param);
 
 /* Set scheduling algorithm and/or parameters for a process.  */
-extern int SSTMAC_sched_setscheduler (pid_t pid, int policy,  const struct sched_param *param);
+extern int SSTMAC_sched_setscheduler (pid_t pid, int policy,  const struct sstmac_sched_param *param);
 
 /* Retrieve scheduling algorithm for a particular purpose.  */
 extern int SSTMAC_sched_getscheduler (pid_t pid);

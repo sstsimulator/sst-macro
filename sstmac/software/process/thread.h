@@ -171,6 +171,14 @@ class thread
     return state_ == CANCELED;
   }
 
+  void set_pthread_concurrency(int lvl){
+    pthread_concurrency_ = lvl;
+  }
+
+  int pthread_concurrency() const {
+    return pthread_concurrency_;
+  }
+
   /**
    * This can get called by anyone to have a thread exit, including during normal app termination
    * This must be called while running on this thread's context, NOT the DES thread or any other thread
@@ -354,6 +362,8 @@ class thread
   int active_core_;
 
   uint64_t block_counter_;
+
+  int pthread_concurrency_;
 
 };
 

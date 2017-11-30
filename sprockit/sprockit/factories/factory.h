@@ -233,8 +233,6 @@ class Factory
    *                the correct child type
    */
   static void register_name(const std::string& name, builder_t* builder) {
-    //clang complains about valid variable - turn it off
-    {
     if (!builder_map_) {
       builder_map_ = new builder_map;
     }
@@ -242,7 +240,6 @@ class Factory
       alias_map_ = new alias_map;
     }
     add_to_map(name, builder, builder_map_, alias_map_);
-    }
   }
 
  private:
@@ -262,24 +259,16 @@ class Factory
     std::string space = "|";
     std::deque<std::string> tok;
     pst::BasicStringTokenizer::tokenize(namestr, tok, space);
-
-    std::deque<std::string>::iterator it, end = tok.end();
-
-    for (it = tok.begin(); it != end; it++) {
-      std::string temp = *it;
-
-      temp = trim_str(temp);
-
-      std::map<std::string, std::list<std::string> >::iterator it = alias_map->find(temp);
+    for (auto& name : tok) {
+      name = trim_str(name);
+      auto it = alias_map->find(name);
       if (it != alias_map->end()){
         std::list<std::string>& alias_list = it->second;
-        std::list<std::string>::iterator ait, end = alias_list.end();
-        for (ait=alias_list.begin(); ait != end; ++ait){
-          (*builder_map_)[*ait] = desc;
+        for (auto& alias : alias_list){
+          (*builder_map_)[alias] = desc;
         }
       }
-
-      (*builder_map_)[temp] = desc;
+      (*builder_map_)[name] = desc;
     }
   }
 
@@ -303,12 +292,9 @@ class Factory
     }
 
     auto it = builder_map_->find(valname), end = builder_map_->end();
-
     if (it == end) {
       std::cerr << "Valid factories are:" << std::endl;
-      for (it = builder_map_->begin(); it != end; ++it) {
-        std::cerr << it->first << std::endl;
-      }
+      print_valid_names(std::cerr);
       params->print_scoped_params(std::cerr);
       spkt_abort_printf("could not find name %s for factory %s",
                        valname.c_str(), name_);
@@ -319,7 +305,6 @@ class Factory
       spkt_abort_printf("initialized name %s with null builder for factory %s",
                        valname.c_str(), name_);
     }
-
     T* p = builder->build(params, args...);
     call_finalize_init<T>()(p);
     return p;
@@ -350,6 +335,16 @@ class Factory
             sim_parameters* params,
             const Args&... args) {
     return _get_value(valname, params, args...);
+  }
+
+  static void print_valid_names(std::ostream& os){
+    for (auto& pair : *builder_map_){
+      os << pair.first << "->" << pair.second << "\n";
+    }
+  }
+
+  static bool is_valid_name(const std::string& name){
+    return builder_map_->find(name) != builder_map_->end();
   }
 
   /**

@@ -92,7 +92,7 @@ class distributed_service_app :
                       sw::software_id sid,
                       sw::operating_system* os);
 
-  void skeleton_main() override;
+  int skeleton_main() override;
 
  private:
   std::string libname_;

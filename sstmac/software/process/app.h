@@ -121,7 +121,11 @@ class app : public thread
 
   void cleanup() override;
 
-  virtual void skeleton_main() = 0;
+  /**
+   * @brief skeleton_main
+   * @return The return code that would be returned by a main
+   */
+  virtual int skeleton_main() = 0;
 
   void run() override;
 
@@ -242,7 +246,7 @@ class user_app_cxx_full_main : public app
 
   static void register_main_fxn(const char* name, app::main_fxn fxn);
 
-  void skeleton_main() override;
+  int skeleton_main() override;
 
   static void delete_statics();
 
@@ -270,7 +274,7 @@ class user_app_cxx_empty_main : public app
 
   static void register_main_fxn(const char* name, app::empty_main_fxn fxn);
 
-  void skeleton_main() override;
+  int skeleton_main() override;
 
  private:
   static std::map<std::string, app::empty_main_fxn>* empty_main_fxns_;
