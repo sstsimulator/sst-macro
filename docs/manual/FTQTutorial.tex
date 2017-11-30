@@ -1,54 +1,48 @@
 
 %% !TEX root = manual.tex
 
+\section{Fixed-Time Quanta Charts}
+
+\label{sec:tutorials:ftq}
+
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/gnuplot/ftq/ftq.png}
-\caption{Application Activity (Fixed-Time Quanta; FTQ) for Simple MPI Test Suite}
+\includegraphics[width=0.6\textwidth]{figures/matplotlib/ftq/pic1024.png}
+\caption{Application Activity (Fixed-Time Quanta; FTQ) histogram}
 \label{fig:ftq}
 \end{figure}
-\section{Fixed-Time Quanta Charts}
-\label{sec:tutorials:ftq}
+
 Another way of visualizing application activity is a fixed-time quanta (FTQ) chart.
-While the call graph gives a very detailed profile of what code regions are most important for the application, they lack temporal information.
-The FTQ histogram gives a time-dependent profile of what the application is doing (Figure \ref{fig:ftq}).
-This can be useful for observing the ratio of communication to computation.
-It can also give a sense of how ``steady'' the application is, 
-i.e. if the application oscillates between heavy computation and heavy communication or if it keeps a constant ratio.
-In the simple example, Figure \ref{fig:ftq}, we show the FTQ profile of a simple MPI test suite with random computation mixed in.
-In general, communication (MPI) dominates.  However, there are a few compute-intensive and memory-intensive regions.
-
-The FTQ visualization is activated by another input parameter
-
-\begin{ViFile}
-ftq = <fileroot>
-\end{ViFile}
-
-where the \inlinefile{fileroot} parameter gives a unique prefix for the output files. 
-
-After running, two new files appear in the folder: \inlineshell{<fileroot>_app1.p} and \inlineshell{<fileroot>_app1.dat}.
-\inlineshell{plot_app1.p} is a Gnuplot script that generates the histogram as a postscript file.
+While the call graph gives a very detailed profile of what critical code regions, they lack temporal information. 
+Figure \ref{fig:ftq} displays the proportion of time spent by ranks in MPI communication and computation in a PIC trace replay with respect to simulation time.
+After running, two new files appear in the folder: \inlineshell{<fileroot>_app1.py} and \inlineshell{<fileroot>_app1.dat} that can use Python's matplotlib to generate plots.
+Previously, plots were generated using Gnuplot, but this has been deprecated in favor of much more aesthetically pleasing maplotlib output.
 
 \begin{ShellCmd}
-your_project$ gnuplot plot_app1.p > output.ps
+your_project # python output_app1.py --help
+usage: output_app1.py [-h] [--show] [--title TITLE] [--eps] [--pdf] [--png]
+                      [--svg]
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --show         display the plot on screen
+  --title TITLE  set the title
+  --eps          output .eps file
+  --pdf          output .pdf file
+  --png          output .png file
+  --svg          output .svg file
 \end{ShellCmd}
-Gnuplot can be downloaded from \url{http://www.gnuplot.info} or installed via MacPorts.
-We recommend version 4.4, but at least 4.2 should be compatible.
 
-The granularity of the chart is controlled by the \inlinefile{ftq_epoch} parameter in the input file. 
-The above figure was collected with
+Generating the histogram requires matplotlib, and visualizing the histogram interactively with \inlineshell{--show} requires a screen or X11 forwarding.
+FTQ aggregates tags into tunable time "epocs".
+An epoc states the ratio of each tag represented at a point in time.
+Larger epocs will smooth the graph and decrease the quantity of data required to render a plot; while a smaller epoc will add more detail, at the risk of making the plot excessively volatile.
 
-\begin{ViFile}
-ftq_epoch=5us
-\end{ViFile}
-Events are accumulated into a single data point per ``epoch.''
-If the timestamp is too small, too little data will be collected and the time interval won't be large enough to give a meaningful picture.
-If the timestamp is too large, too many events will be grouped togther into a single data point, losing temporal structure.
 
-Using fully namespace parameters, this would be specified as:
-
+SST/macro activates FTQ when the following two parameters are found in the ".ini" file:
 
 \begin{ViFile}
 node.os.ftq.fileroot=<fileroot>
 node.os.ftq.epoch=5us
 \end{ViFile}
+where the \inlinefile{fileroot} a path and a file name prefix.

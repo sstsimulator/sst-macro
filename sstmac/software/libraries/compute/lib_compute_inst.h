@@ -94,7 +94,6 @@ class lib_compute_inst :
   double loop_overhead_;
 
  private:
-  static sstmac::sw::ftq_tag compute_tag;
   void init(sprockit::sim_parameters* params);
 
 };

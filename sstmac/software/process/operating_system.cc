@@ -287,7 +287,12 @@ operating_system::sleep_until(timestamp t)
 void
 operating_system::compute(timestamp t)
 {
-  //first thing's first - make sure I have a core to execute on
+  // guard the ftq tag in this function
+  const auto& cur_tag = active_thread_->tag();
+  ftq_scope scope(active_thread_,
+      cur_tag.id() == ftq_tag::null.id()?ftq_tag::compute:cur_tag);
+
+  //Make sure I have a core to execute on
   //this will block if the thread has no core to run on
   compute_sched_->reserve_core(active_thread_);
   sleep(t);
