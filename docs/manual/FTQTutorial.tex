@@ -15,8 +15,8 @@
 Another way of visualizing application activity is a fixed-time quanta (FTQ) chart.
 While the call graph gives a very detailed profile of what critical code regions, they lack temporal information. 
 Figure \ref{fig:ftq} displays the proportion of time spent by ranks in MPI communication and computation in a PIC trace replay with respect to simulation time.
-After running, two new files appear in the folder: \inlineshell{<fileroot>_app1.py} and \inlineshell{<fileroot>_app1.dat}.
-The \inlineshell{.dat} file contains a tabulation of FTQ tags by measurement epoc and the python file is a helper script for rendering the data file.
+After running, two new files appear in the folder: \inlineshell{<fileroot>_app1.py} and \inlineshell{<fileroot>_app1.dat} that can use Python's matplotlib to generate plots.
+Previously, plots were generated using Gnuplot, but this has been deprecated in favor of much more aesthetically pleasing maplotlib output.
 
 \begin{ShellCmd}
 your_project # python output_app1.py --help
