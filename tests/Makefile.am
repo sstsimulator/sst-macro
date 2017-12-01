@@ -45,6 +45,7 @@ OUTSUF=ref-out
 
 EXTRA_DIST = \
   reference \
+  clang_src2src \
   test_configs \
   test_traces \
   test_blas.cc \
