@@ -371,6 +371,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         event_manager* node_mgr = mgr->thread_manager(thread);
         node* nd = node::factory::get_optional_param("model", "simple", node_params,
                                                      comp_id, node_mgr);
+        node_params->remove_param("id"); //you don't have to let it linger
         nic* the_nic = nd->get_nic();
 
         //nic sends to only its specific logp switch
@@ -396,6 +397,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
             nlink = netlink::factory::get_param("model", netlink_params, nd);
             netlinks_[net_id] = nlink;
           }
+          netlink_params->remove_param("id");
           int inj_port = nlink->node_port(netlink_offset);
           interconn_debug("Adding netlink %d connected to switch %d, node %d on port %d for rank %d",
             int(net_id), i, nid, inj_port, my_rank);
@@ -463,6 +465,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
     } else {
       switches_[i] = nullptr;
     }
+    switch_params->remove_param("id");
     components_[i+id_offset] = switches_[i];
   }
 

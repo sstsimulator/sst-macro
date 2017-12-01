@@ -1342,7 +1342,6 @@ sim_parameters::combine_into(sim_parameters* sp,
 void
 sim_parameters::print_local_params(std::ostream& os, const std::string& prefix) const
 {
-  os << prefix << "Parameters in namespace " << namespace_ << " :\n";
   for (auto& pair : params_) {
     os << prefix << pair.first;
     for (int i=pair.first.size(); i < 25; ++i){
@@ -1380,10 +1379,20 @@ sim_parameters::print_params(
   std::ostream &os,
   const std::string& prefix) const
 {
-  print_local_params(os, prefix);
-  std::string new_prefix = prefix + "  ";
+  std::string new_prefix = parent_ ? (prefix + " ") : prefix;
+  if (!namespace_.empty()){
+    os << prefix << namespace_ << " {\n";
+    print_local_params(os, new_prefix);
+  } else {
+    print_local_params(os, prefix);
+  }
+
   for (auto& pair : subspaces_){
     pair.second->print_params(os, new_prefix);
+  }
+
+  if (!namespace_.empty()){
+    os << prefix << "}\n";
   }
 }
 

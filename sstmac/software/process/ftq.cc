@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/process/ftq.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/software/process/thread.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sprockit/delete.h>
 #include <sprockit/sim_parameters.h>
@@ -211,11 +212,6 @@ void
 ftq_calendar::collect(int event_typeid, int aid, int tid, long ticks_begin,
                       long num_ticks)
 {
-  if (event_typeid == 0)
-    //sprockit::abort("GOT ONE");
-    int i = 0;
-
-  //std::cout << "typeid: " << event_typeid << ", tid: " << tid << std::endl;
   static thread_lock lock;
   lock.lock();
   calendars_[aid]->collect(event_typeid, tid, ticks_begin, num_ticks);
@@ -243,7 +239,7 @@ app_ftq_calendar::app_ftq_calendar(int aid,
     num_ticks_epoch_(nticks_epoch),
     appname_(appname)
 {
-  int num_categories = 0;//key::num_categories();
+  int num_categories = ftq_tag::num_categories();
   aggregate_.totals_ = new long long[num_categories];
   for (int i=0; i < num_categories; ++i) {
     aggregate_.totals_[i] = 0;
@@ -253,7 +249,7 @@ app_ftq_calendar::app_ftq_calendar(int aid,
 app_ftq_calendar::~app_ftq_calendar()
 {
   sprockit::delete_all(buffers_);
-  delete[] aggregate_.totals_;
+  delete aggregate_.totals_;
 }
 
 void
@@ -349,7 +345,11 @@ static const char* matplotlib_histogram_text_footer =
     "plt.ylim(0,1)\n"
     "plt.yticks([])\n"
     "plt.title(args.title)\n"
-    "plt.legend(plt.stackplot(time, normalized), names[1:])\n"
+    "polys = plt.stackplot(time, normalized)\n"
+    "legendProxies = []\n"
+    "for poly in polys:\n"
+    "   legendProxies.append(plt.Rectangle((0, 0), 1, 1, fc=poly.get_facecolor()[0]))\n"
+    "plt.legend(legendProxies, names[1:])\n"
     "\n"
     "# Saving\n"
     "if args.eps: plt.savefig(file_name + '.eps')\n"
@@ -456,6 +456,30 @@ ftq_epoch::init(int num_events, long long *buffer)
   for (int i=0; i < num_events; ++i) {
     totals_[i] = 0;
   }
+}
+
+// ftq_scope member functions
+ftq_scope::ftq_scope(thread* _thread, ftq_tag _tag): _previous_tag(_thread->tag()) {
+    this->_thread = _thread;
+    _tag_previously_protected = _thread->protect_tag;
+
+    // Ignoring nested tags is now an expected behavior
+    //if (_thread->protect_tag == true) std::cerr << "WARNING: An 'ftq_scope' is already active. Nested guards are ignored.";
+
+    _thread->set_tag(_tag);
+    _thread->protect_tag = true;
+}
+
+ftq_scope::ftq_scope(thread* _thread): ftq_scope(_thread, _thread->tag()) {}
+
+
+ftq_scope::~ftq_scope() {
+    _thread->protect_tag = _tag_previously_protected;
+    _thread->set_tag(_previous_tag);
+}
+
+void* ftq_scope::operator new(size_t size) throw() {
+    return nullptr;
 }
 
 

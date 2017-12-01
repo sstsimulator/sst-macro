@@ -193,7 +193,9 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   timed_out_(false),
   block_counter_(0),
   pthread_concurrency_(0),
-  sid_(sid)
+  sid_(sid),
+  ftag_(ftq_tag::null),
+  protect_tag(false)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);

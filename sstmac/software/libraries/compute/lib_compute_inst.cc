@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/ftq.h>
 
 RegisterDebugSlot(lib_compute_inst);
 
@@ -62,8 +63,6 @@ RegisterKeywords(
  { "lib_compute_loop_overhead", "the number of instructions in control overhead per compute loop" },
  { "lib_compute_access_width", "the size of each memory access access in bits" }
 );
-
-sstmac::sw::ftq_tag lib_compute_inst::compute_tag("Compute");
 
 lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
                                    const std::string& libname, software_id id,
@@ -93,7 +92,11 @@ lib_compute_inst::compute_detailed(
   st.intops = nintops;
   st.mem_sequential = bytes;
 
-  os_->active_thread()->set_tag(compute_tag);
+  // Do not overwrite an existing tag
+  const auto& cur_tag = os_->active_thread()->tag();
+  ftq_scope scope(os_->active_thread(),
+      cur_tag.id() == ftq_tag::null.id() ? ftq_tag::compute : cur_tag);
+
   compute_inst(cmsg);
   delete cmsg;
 }

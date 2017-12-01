@@ -380,6 +380,12 @@ try_main(sprockit::sim_parameters* params,
     sstmac::print_finish(cout0, stats.wallTime);
   }
 
+  if (!oo.params_dump_file.empty()) {
+    std::ofstream ofs(oo.params_dump_file.c_str());
+    params->print_params(ofs);
+    ofs.close();
+  }
+
   sstmac::finalize(rt);
 }
 

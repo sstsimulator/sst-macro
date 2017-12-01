@@ -1236,7 +1236,7 @@ void example_service::run()
 {
  //some init
  bool block  = true;
- message::ptr msg = poll_for_message(block);
+ message* msg = poll_for_message(block);
  while (msg && !terminated()){
    process(msg);
    msg = poll_for_message(block);
@@ -1281,9 +1281,7 @@ In many HPC simulations, the only thing being simulated is a single MPI applicat
 The default `send` function in `sumi_transport` assumes messages are being sent within a given application.
 
 ````
-void send_payload(int dst, 
-  const message::ptr& msg, 
-  bool needs_ack);
+void send_payload(int dst, message* msg, bool needs_ack);
 ````
 The only thing that must be specified is a destination rank, which is the virtual ID within a given session layer.
 The transport layer itself will map that to the correct physical node address and deliver the message.
@@ -1295,7 +1293,7 @@ void client_server_send(
   int dest_rank,
   node_id dest_node,
   app_id dest_app,
-  const sumi::message::ptr& msg);
+  sumi::message* msg);
 ````
 While a session rank must be given, a physical node ID and an application ID must be given.
 These can no longer be filled in automatically.

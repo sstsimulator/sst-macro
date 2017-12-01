@@ -205,6 +205,8 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
       spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
     }
     resize_topology(max_nproc, params, verbose);
+    //clear the auto keyword to keep params self-consistent
+    top_params->remove_param("auto");
   }
 
   //here is where we might need to build supplemental params

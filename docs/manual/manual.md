@@ -29,7 +29,7 @@ category: SSTDocumentation
             - [Build SST/macro element library](#subsec:buildElementLib)
          - [2.1.4: Post-Build](#subsec:postbuild)
          - [2.1.5: GNU pth for user-space threading](#subsubsec:pth)
-         - [2.1.6: Boost 1.65 and fcontext](#subsubsec:boost)
+         - [2.1.6: Boost 1.65 and fcontext (Beta)](#subsubsec:boost)
          - [2.1.7: Known Issues](#subsec:build:issues)
       - [Section 2.2: Building DUMPI](#sec:building:dumpi)
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
@@ -423,7 +423,7 @@ For MacPorts installation, this means configuring SST/macro with:
 ../configure --with-pth=/opt/local
 ````
 
-#### 2.1.6: Boost 1.65 and fcontext<a name="subsubsec:boost"></a>
+#### 2.1.6: Boost 1.65 and fcontext (Beta)<a name="subsubsec:boost"></a>
 
 
 Boost is no longer required for SST core.
@@ -2237,58 +2237,51 @@ This gives a better sense of spatial locality when many MPI ranks are on the sam
 
 
 
-
-![Figure 20: Application Activity (Fixed-Time Quanta; FTQ) for Simple MPI Test Suite](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/gnuplot/ftq/ftq.png) 
-
-*Figure 20: Application Activity (Fixed-Time Quanta; FTQ) for Simple MPI Test Suite*
-
-
 ### Section 3.12: Fixed-Time Quanta Charts<a name="sec:tutorials:ftq"></a>
 
 
+
+
+![Figure 20: Application Activity (Fixed-Time Quanta; FTQ) histogram](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/matplotlib/ftq/pic1024.png) 
+
+*Figure 20: Application Activity (Fixed-Time Quanta; FTQ) histogram*
+
+
+
 Another way of visualizing application activity is a fixed-time quanta (FTQ) chart.
-While the call graph gives a very detailed profile of what code regions are most important for the application, they lack temporal information.
-The FTQ histogram gives a time-dependent profile of what the application is doing (Figure [20](#fig:ftq)).
-This can be useful for observing the ratio of communication to computation.
-It can also give a sense of how "steady" the application is, 
-i.e. if the application oscillates between heavy computation and heavy communication or if it keeps a constant ratio.
-In the simple example, Figure [20](#fig:ftq), we show the FTQ profile of a simple MPI test suite with random computation mixed in.
-In general, communication (MPI) dominates.  However, there are a few compute-intensive and memory-intensive regions.
-
-The FTQ visualization is activated by another input parameter
+While the call graph gives a very detailed profile of what critical code regions, they lack temporal information. 
+Figure [20](#fig:ftq) displays the proportion of time spent by ranks in MPI communication and computation in a PIC trace replay with respect to simulation time.
+After running, two new files appear in the folder: `<fileroot>_app1.py` and `<fileroot>_app1.dat` that can use Python's matplotlib to generate plots.
+Previously, plots were generated using Gnuplot, but this has been deprecated in favor of much more aesthetically pleasing maplotlib output.
 
 ````
-ftq = <fileroot>
+your_project # python output_app1.py --help
+usage: output_app1.py [-h] [--show] [--title TITLE] [--eps] [--pdf] [--png]
+                      [--svg]
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --show         display the plot on screen
+  --title TITLE  set the title
+  --eps          output .eps file
+  --pdf          output .pdf file
+  --png          output .png file
+  --svg          output .svg file
 ````
 
-where the `fileroot` parameter gives a unique prefix for the output files. 
+Generating the histogram requires matplotlib, and visualizing the histogram interactively with `--show` requires a screen or X11 forwarding.
+FTQ aggregates tags into tunable time "epocs".
+An epoc states the ratio of each tag represented at a point in time.
+Larger epocs will smooth the graph and decrease the quantity of data required to render a plot; while a smaller epoc will add more detail, at the risk of making the plot excessively volatile.
 
-After running, two new files appear in the folder: `<fileroot>_app1.p` and `<fileroot>_app1.dat`.
-`plot_app1.p` is a Gnuplot script that generates the histogram as a postscript file.
 
-````
-your_project$ gnuplot plot_app1.p > output.ps
-````
-Gnuplot can be downloaded from http://www.gnuplot.info or installed via MacPorts.
-We recommend version 4.4, but at least 4.2 should be compatible.
-
-The granularity of the chart is controlled by the `ftq_epoch` parameter in the input file. 
-The above figure was collected with
-
-````
-ftq_epoch=5us
-````
-Events are accumulated into a single data point per "epoch."
-If the timestamp is too small, too little data will be collected and the time interval won't be large enough to give a meaningful picture.
-If the timestamp is too large, too many events will be grouped togther into a single data point, losing temporal structure.
-
-Using fully namespace parameters, this would be specified as:
-
+SST/macro activates FTQ when the following two parameters are found in the ".ini" file:
 
 ````
 node.os.ftq.fileroot=<fileroot>
 node.os.ftq.epoch=5us
 ````
+where the `fileroot` a path and a file name prefix.
 
 
 

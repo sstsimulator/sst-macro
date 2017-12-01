@@ -85,6 +85,7 @@ class thread
   friend class operating_system;
   friend class app;
   friend class delete_thread_event;
+  friend class ftq_scope;
 
   /// Help resolve deadlock situations.
   enum state {
@@ -293,7 +294,8 @@ class thread
   void end_api_call();
 
   void set_tag(ftq_tag t){
-    ftag_ = t;
+    if (!protect_tag)
+        ftag_ = t;
   }
 
   ftq_tag tag() const {
@@ -331,6 +333,8 @@ class thread
   process_context p_txt_;
 
   ftq_tag ftag_;
+
+  bool protect_tag;
 
   software_id sid_;
 

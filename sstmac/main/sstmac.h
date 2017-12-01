@@ -68,6 +68,7 @@ struct opts {
   std::string cpu_affinity;
   std::string benchmark;
   std::string output_graphviz;
+  std::string params_dump_file;
 
   opts() :
     help(0),
