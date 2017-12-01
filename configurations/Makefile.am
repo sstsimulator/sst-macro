@@ -20,6 +20,7 @@ library_include_HEADERS = \
   hopper_pflow.ini \
   small_torus.ini \
   small_torus_simple.ini \
+  dragonfly.ini \
   edison_amm.ini \
   edison_amm1.ini \
   edison_amm2.ini \
@@ -31,6 +32,7 @@ library_include_HEADERS = \
   hopper_amm1.ini \
   hopper_amm2.ini \
   hopper_amm3.ini \
+  hopper_amm4.ini \
   hopper_amm1_simple.ini \
   hopper_amm2_simple.ini \
   hopper_amm3_simple.ini \
