@@ -42,10 +42,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/software/threading/threading_ucontext.h>
-#include <sstmac/software/process/thread_info.h>
 
 #ifdef SSTMAC_HAVE_UCONTEXT
+
+#include <ucontext.h>
+#include <sstmac/software/process/thread_info.h>
+#include <sstmac/software/threading/context_util.h>
+
 namespace sstmac {
 namespace sw {
 
