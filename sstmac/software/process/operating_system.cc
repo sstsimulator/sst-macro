@@ -55,12 +55,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/logp/logp_switch.h>
-#if SSTMAC_HAVE_GNU_PTH
-#include <sstmac/software/threading/threading_pth.h>
-#endif
-#if SSTMAC_HAVE_PTHREAD
-#include <sstmac/software/threading/threading_pthread.h>
-#endif
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/launch/app_launcher.h>
 #include <sstmac/software/process/graphviz.h>
@@ -75,10 +69,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/common/thread_lock.h>
-
-#if SSTMAC_HAVE_UCONTEXT
-#include <sstmac/software/threading/threading_ucontext.h>
-#endif
 
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/processor/processor.h>

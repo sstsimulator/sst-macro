@@ -104,7 +104,6 @@ nobase_library_include_HEADERS = \
   threading/stack_alloc.h \
   threading/threading_interface.h \
   threading/threading_interface_fwd.h \
-  threading/threading_pthread.h \
   libraries/compute/compute_api.h \
   libraries/compute/compute_event.h \
   libraries/compute/compute_event_fwd.h \
@@ -148,21 +147,42 @@ nobase_library_include_HEADERS = \
 if HAVE_UCONTEXT
   libsstmac_sw_la_SOURCES += \
      threading/threading_ucontext.cc 
-  nobase_library_include_HEADERS += \
-    threading/threading_ucontext.h 
 endif
 
 if HAVE_PTH
   libsstmac_sw_la_SOURCES += \
      threading/threading_pth.cc 
-  nobase_library_include_HEADERS += \
-    threading/threading_pth.h 
 endif
 
-if HAVE_FCONTEXT
-  libsstmac_sw_la_SOURCES += \
-     threading/threading_fcontext.cc 
+libsstmac_sw_la_SOURCES += \
+     threading/threading_fcontext.cc
+
+if FCONTEXT_X86
+if FCONTEXT_MAC
+   libsstmac_sw_la_SOURCES += \
+    threading/asm/make_x86_64_sysv_macho_gas.S \
+    threading/asm/jump_x86_64_sysv_macho_gas.S \
+    threading/asm/ontop_x86_64_sysv_macho_gas.S 
+else
+   libsstmac_sw_la_SOURCES += \
+    threading/asm/make_x86_64_sysv_elf_gas.S \
+    threading/asm/jump_x86_64_sysv_elf_gas.S \
+    threading/asm/ontop_x86_64_sysv_elf_gas.S 
 endif
+else #just assume i386 for now
+if FCONTEXT_MAC
+   libsstmac_sw_la_SOURCES += \
+    threading/asm/make_i386_sysv_macho_gas.S \
+    threading/asm/jump_i386_sysv_macho_gas.S \
+    threading/asm/ontop_i386_sysv_macho_gas.S 
+else
+   libsstmac_sw_la_SOURCES += \
+    threading/asm/make_i386_sysv_elf_gas.S \
+    threading/asm/jump_i386_sysv_elf_gas.S \
+    threading/asm/ontop_i386_sysv_elf_gas.S 
+endif
+endif
+
 
 
 

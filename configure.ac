@@ -81,6 +81,7 @@ AC_SUBST(SSTMAC_LIBVERSION, [SSTMAC_LIBVERSION_TAG])
 
 # Init automake
 AM_INIT_AUTOMAKE([tar-pax -Wall -Werror foreign -Wno-portability subdir-objects])
+AM_PROG_AS
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
@@ -287,7 +288,7 @@ echo "User Space Threading:"
 echo "  GNU Pth          $enable_pth"
 echo "  Pthread          $enable_pthread"
 echo "  Ucontext         $enable_ucontext"
-echo "  Fcontext         $enable_fcontext"
+echo "  Fcontext         Auto-included"
 echo
 
 echo "Parallel Discrete Event Simulation:"
