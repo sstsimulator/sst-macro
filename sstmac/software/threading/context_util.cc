@@ -57,15 +57,12 @@ static std::vector<std::pair<std::string,bool>> valid_threading_contexts;
 
 static void fill_valid_threading_contexts(std::vector<std::pair<std::string,bool>>& contexts)
 {
-
+  contexts.emplace_back("fcontext", true);
 #ifdef SSTMAC_HAVE_UCONTEXT
   contexts.emplace_back("ucontext", true);
 #endif
 #ifdef SSTMAC_HAVE_GNU_PTH
   contexts.emplace_back("pth", false);
-#endif
-#ifdef SSTMAC_HAVE_FCONTEXT
-  contexts.emplace_back("fcontext", true);
 #endif
 #ifdef SSTMAC_HAVE_PTHREAD
   contexts.emplace_back("pthread", false);

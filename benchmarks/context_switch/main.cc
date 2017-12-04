@@ -3,6 +3,13 @@
 #include <sstmac/software/threading/threading_interface.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/threading/stack_alloc.h>
+#include <sprockit/keyword_registration.h>
+
+RegisterKeywords(
+{ "context", "the name of the context switch library to profile" },
+{ "nthread", "the number of distinct threads to context switch amongst" },
+{ "niter", "the number of context switch iterations to run" },
+);
 
 struct subthread_args {
   sstmac::sw::thread_context* subthread;

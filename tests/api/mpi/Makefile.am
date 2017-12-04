@@ -28,15 +28,14 @@ EXTRA_DIST = testmpi.h include config.py
 if INTEGRATED_SST_CORE
 lib_LTLIBRARIES = libsstmac_api_mpi_test.la
 libsstmac_api_mpi_test_la_SOURCES = testmpi.cc testmpi_eli.cc util/mtest.cc
-libsstmac_api_mpi_test_la_LDFLAGS = -module -shared $(PTH_LDFLAGS) $(FCONTEXT_LDFLAGS)
+libsstmac_api_mpi_test_la_LDFLAGS = -module -shared $(PTH_LDFLAGS)
 else
 check_PROGRAMS = testexec
 testexec_SOURCES = exec.cc
 testexec_LDADD = \
   $(top_builddir)/sstmac/install/libsstmac.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
-  $(top_builddir)/sprockit/sprockit/libsprockit.la \
-  $(FCONTEXT_LIBS)
+  $(top_builddir)/sprockit/sprockit/libsprockit.la
 
 if EXTERNAL_BOOST
   testexec_LDADD += $(BOOST_LDFLAGS)

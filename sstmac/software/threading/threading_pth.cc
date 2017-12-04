@@ -42,67 +42,91 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/software/threading/threading_pth.h>
 #include <sstmac/software/process/thread_info.h>
 #include <sprockit/errors.h>
+#include <sstmac/software/threading/threading_interface.h>
+#include <pth.h>
 
 namespace sstmac {
 namespace sw {
 
-void
-threading_pth::init_context() {
-  if (pth_uctx_create(&context_) != TRUE) {
-    spkt_throw_printf(sprockit::os_error,
-        "threading_pth::init_context: %s",
-        ::strerror(errno));
-  }
-}
-
-void
-threading_pth::destroy_context() {
-  if (pth_uctx_destroy(context_) != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
-        "threading_pth::destroy_context: %s",
-        ::strerror(errno));
-  }
-}
-
-void
-threading_pth::start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, void* globals_storage, thread_context* from)
+class threading_pth : public thread_context
 {
-  if (stacksize < (16384)) {
-    sprockit::abort("threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
-  }
-  thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
-  init_context();
-  int retval = pth_uctx_make(context_, (char*) stack, stacksize, NULL, func, args, NULL);
-  if (retval != TRUE) {
-    spkt_throw_printf(sprockit::os_error,
-        "threading_pth::start_context: %s",
-        ::strerror(errno));
-  }
-  resume_context(from);
-}
+ public:
+  FactoryRegister("pth", thread_context, threading_pth)
 
-void
-threading_pth::resume_context(thread_context* from) {
-  threading_pth* frompth = static_cast<threading_pth*>(from);
-  if (pth_uctx_switch(frompth->context_, context_) != TRUE) {
-    spkt_throw_printf(sprockit::os_error,
-      "threading_pth::swap_context: %s",
-      strerror(errno));
+  /** nothing */
+  threading_pth(sprockit::sim_parameters* params)
+  {
   }
-}
 
-void
-threading_pth::pause_context(thread_context *to) {
-  threading_pth* topth = static_cast<threading_pth*>(to);
-  if (pth_uctx_switch(context_, topth->context_) != TRUE) {
-    spkt_throw_printf(sprockit::os_error,
-      "threading_pth::swap_context: %s",
-      strerror(errno));
+  virtual ~threading_pth() {}
+
+  thread_context* copy() const override {
+    return new threading_pth(nullptr);
   }
-}
 
-} }
+  void init_context() override {
+    if (pth_uctx_create(&context_) != TRUE) {
+      spkt_throw_printf(sprockit::os_error,
+          "threading_pth::init_context: %s",
+          ::strerror(errno));
+    }
+  }
+
+  void destroy_context() override {
+    if (pth_uctx_destroy(context_) != TRUE) {
+        spkt_throw_printf(sprockit::os_error,
+          "threading_pth::destroy_context: %s",
+          ::strerror(errno));
+    }
+  }
+
+  void start_context(int physical_thread_id, void *stack, size_t stacksize, void
+                (*func)(void*), void *args, void* globals_storage,
+                thread_context* from) override {
+    if (stacksize < (16384)) {
+      sprockit::abort("threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
+    }
+    thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
+    init_context();
+    int retval = pth_uctx_make(context_, (char*) stack, stacksize, NULL, func, args, NULL);
+    if (retval != TRUE) {
+      spkt_throw_printf(sprockit::os_error,
+          "threading_pth::start_context: %s",
+          ::strerror(errno));
+    }
+    resume_context(from);
+  }
+
+  void resume_context(thread_context* from) override {
+    threading_pth* frompth = static_cast<threading_pth*>(from);
+    if (pth_uctx_switch(frompth->context_, context_) != TRUE) {
+      spkt_throw_printf(sprockit::os_error,
+        "threading_pth::swap_context: %s",
+        strerror(errno));
+    }
+  }
+
+  void pause_context(thread_context *to) override {
+    threading_pth* topth = static_cast<threading_pth*>(to);
+    if (pth_uctx_switch(context_, topth->context_) != TRUE) {
+      spkt_throw_printf(sprockit::os_error,
+        "threading_pth::swap_context: %s",
+        strerror(errno));
+    }
+  }
+
+  void complete_context(thread_context *to) override {
+    pause_context(to);
+  }
+
+  typedef pth_uctx_t threadcontext_t;
+
+ private:
+  threadcontext_t context_;
+};
+
+}
+} // end of namespace sstmac
+

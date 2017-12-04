@@ -1,38 +1,46 @@
-#include <boost/context/all.hpp>
 #include <sstmac/software/threading/threading_interface.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/thread_info.h>
 #include <iostream>
 
+#include <stdint.h>
+#include <stddef.h>
+
+extern "C" {
+
+typedef void* fcontext_t;
+
+struct fcontext_transfer_t
+{
+    fcontext_t ctx;
+    void* data;
+};
+
+struct fcontext_stack_t
+{
+    void* sptr;
+    size_t ssize;
+};
+
+typedef void (*pfn_fcontext)(fcontext_transfer_t);
+
+fcontext_transfer_t jump_fcontext(fcontext_t const to, void * vp);
+
+fcontext_t make_fcontext(void * sp, size_t size, pfn_fcontext corofn);
+
+} //end extern C
+
 namespace sstmac {
 namespace sw {
-
-namespace ctx=boost::context;
-
-struct do_nothing_stack_alloc
-{
-  void deallocate(ctx::stack_context){}
-};
 
 class threading_fcontext : public thread_context
 {
  private:
-  static void start_context(threading_fcontext* fctx, void (*func)(void*), void* args,
-                            void* stack, size_t sz){
-    char* stackptr = (char*) stack;
-
-    ctx::stack_context sctx;
-    sctx.sp = stackptr + sz;
-    sctx.size = sz;
-
-    fctx->resumer_ = ctx::callcc(std::allocator_arg,
-      ctx::preallocated(sctx.sp,sz,sctx),
-      do_nothing_stack_alloc(),
-      [func,args,fctx](ctx::continuation&& sink){
-           fctx->pauser_ = std::move(sink);
-           func(args);
-           return std::move(fctx->pauser_);
-         });
+  static void start_fcontext_thread(fcontext_transfer_t t)
+  {
+    threading_fcontext* fctx = (threading_fcontext*) t.data; 
+    fctx->transfer_ = t.ctx;
+    (*fctx->fxn_)(fctx->args_);
   }
 
  public:
@@ -57,24 +65,31 @@ class threading_fcontext : public thread_context
       void* globals_storage,
       thread_context* from) override {
     thread_info::register_user_space_virtual_thread(physical_thread_id, stack, globals_storage);
-    start_context(this, func, args, stack, sz);
+    fxn_ = func;
+    void* stacktop = (char*) stack + sz;
+    ctx_ = make_fcontext(stacktop, sz, start_fcontext_thread);
+    args_ = args;
+    ctx_ = jump_fcontext(ctx_, this).ctx;
   }
 
   void pause_context(thread_context* to) override {
-    pauser_ = pauser_.resume();
+    threading_fcontext* fctx = static_cast<threading_fcontext*>(to);
+    transfer_ = jump_fcontext(transfer_, nullptr).ctx;
   }
 
   void resume_context(thread_context* from) override {
-    resumer_ = resumer_.resume();
+    ctx_ = jump_fcontext(ctx_, nullptr).ctx;
   }
 
-  void complete_context(thread_context *to) override {
-    //no-op, just let the thread run out
+  void complete_context(thread_context* to) override {
+    jump_fcontext(transfer_, nullptr);
   }
 
  private:
-  ctx::continuation resumer_;
-  ctx::continuation pauser_;
+  fcontext_t ctx_;
+  void* args_;
+  void (*fxn_)(void*);
+  fcontext_t transfer_;
 
 };
 
