@@ -144,7 +144,6 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   nthread_(parent->nthread()),
   thread_id_(parent->thread()),
 #endif
-  my_addr_(parent->addr()),
   node_(parent),
   call_graph_(nullptr),
   call_graph_active_(true), //on by default
@@ -154,6 +153,8 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   event_subcomponent(parent),
   params_(params)
 {
+  my_addr_ = node_ ? node_->addr() : 0;
+
   compute_sched_ = compute_scheduler::factory::get_optional_param(
                      "compute_scheduler", "simple", params, this);
 
@@ -173,7 +174,11 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 
   stack_alloc::init(params);
 
-  compute_sched_->configure(node_->proc()->ncores(), node_->nsocket());
+  if (node_) {
+    compute_sched_->configure(node_->proc()->ncores(), node_->nsocket());
+  } else {
+    compute_sched_->configure(1, 1);
+  }
 }
 
 void

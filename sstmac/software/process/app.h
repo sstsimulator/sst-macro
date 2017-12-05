@@ -129,6 +129,10 @@ class app : public thread
 
   void run() override;
 
+  int rc() const {
+    return rc_;
+  }
+
   sprockit::sim_parameters* params() const {
     return params_;
   }
@@ -234,6 +238,10 @@ class app : public thread
   std::map<std::string, api*> apis_;
 
   char* globals_storage_;
+
+  bool notify_;
+
+  int rc_;
 
 };
 

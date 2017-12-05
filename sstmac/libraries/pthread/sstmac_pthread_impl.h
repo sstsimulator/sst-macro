@@ -73,10 +73,11 @@ typedef void (*sstmac_pthread_key_destructor_fxn)(void*);
 #define SSTAMC_PTHREAD_CREATE_DETACHED 0
 #define SSTMAC_PTHREAD_CREATE_JOINABLE 1
 
-#define PTHREAD_MUTEX_NORMAL     0
-#define PTHREAD_MUTEX_ERRORCHECK 1
-#define PTHREAD_MUTEX_RECURSIVE  2
-
+#define SSTMAC_PTHREAD_MUTEX_NORMAL     0
+#define SSTMAC_PTHREAD_MUTEX_ERRORCHECK 1
+#define SSTMAC_PTHREAD_MUTEX_RECURSIVE  2
+#define SSTMAC_PTHREAD_MUTEX_DEFAULT 3
+#define SSTMAC_PTHREAD_MUTEX_ERRORCHECK_NP 4
 
 enum {
  SSTMAC_PTHREAD_SCOPE_PROCESS,
@@ -132,6 +133,10 @@ int SSTMAC_pthread_mutex_lock(sstmac_pthread_mutex_t * mutex);
 int SSTMAC_pthread_mutex_trylock(sstmac_pthread_mutex_t * mutex);
 
 int SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex);
+
+int SSTMAC_pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type);
+
+int SSTMAC_pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
 
 int SSTMAC_pthread_spin_init(sstmac_pthread_spinlock_t* lock, int pshared);
 
@@ -217,6 +222,13 @@ int SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr);
 int SSTMAC_pthread_setconcurrency(int lvl);
 
 int SSTMAC_pthread_getconcurrency();
+
+int SSTMAC_pthread_atfork(void (*prepare)(void), void (*parent)(void),
+                          void (*child)(void));
+
+void SSTMAC_pthread_cleanup_pop(int execute);
+
+void SSTMAC_pthread_cleanup_push(void (*routine)(void*), void* arg);
 
 #ifdef __cplusplus
 }

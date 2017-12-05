@@ -45,12 +45,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <errno.h>
 #include <getopt.h>
 #include <sstmac/main/sstmac.h>
+#include <sstmac/common/event_manager.h>
+#include <sstmac/backends/native/serial_runtime.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/hardware/node/simple_node.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
+#include <sstmac/common/timestamp.h>
 #include <cstdlib>
 
 using app = sstmac::sw::app;
@@ -82,6 +87,20 @@ machine_already_configured(){
   spkt_abort_printf("conflicting machine declarations: cannot combine"
     "--inf, --auto/-a, --debug/-d, --pisces, or --macrels flags");
 }
+
+class null_event_scheduler : public sstmac::event_scheduler
+{
+ public:
+  null_event_scheduler(sstmac::event_manager* mgr) :
+    sstmac::event_scheduler(mgr, 0)
+  {
+  }
+
+  std::string to_string() const {
+    return "null event scheduler";
+  }
+
+};
 
 int
 parse_opts(int argc, char **argv, opts &oo)
@@ -239,13 +258,31 @@ parse_opts(int argc, char **argv, opts &oo)
       //oh, hmm, we are running inside configure
       //this means we actually just want to run a compiled program
       //and get the hell out of dodge
+      sstmac::timestamp::init_stamps(1);
       sprockit::sim_parameters null_params;
+
+      sprockit::sim_parameters* nic_params = null_params.get_optional_namespace("nic");
+      nic_params->add_param_override("model", "null");
+
+      sprockit::sim_parameters* mem_params = null_params.get_optional_namespace("memory");
+      mem_params->add_param_override("model", "null");
+
+      sprockit::sim_parameters* proc_params = null_params.get_optional_namespace("proc");
+      proc_params->add_param_override("frequency", "1ghz");
+      proc_params->add_param_override("ncores", 1);
+
+      null_params.add_param_override("id", 1);
       null_params.add_param_override("name", "sstmac_app_name");
       sstmac::sw::software_id id(0,0);
-      sstmac::sw::operating_system* os = nullptr;
-      app* a = sstmac::sw::app::factory::get_value("sstmac_app_name", &null_params, id, os);
-      int rc = a->skeleton_main();
-      if (rc == 0){
+      sstmac::native::serial_runtime rt(&null_params);
+      sstmac::event_manager mgr(&null_params, &rt);
+      sstmac::hw::simple_node node(&null_params, 1, &mgr);
+      sstmac::sw::operating_system os(&null_params, &node);
+
+      null_params.add_param_override("notify", "false");
+      app* a = sstmac::sw::app::factory::get_value("sstmac_app_name", &null_params, id, &os);
+      os.start_app(a, "");
+      if (a->rc() == 0){
         return PARSE_OPT_EXIT_SUCCESS;
       } else {
         return PARSE_OPT_EXIT_FAIL;

@@ -157,6 +157,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #undef pthread_setspecific
 #undef pthread_self
 #undef pthread_kill
+#undef pthread_cleanup_pop
+#undef pthread_cleanup_push
 
 #undef PTHREAD_THREADS_MAX
 #undef PTHREAD_KEYS_MAX
@@ -190,4 +192,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #undef thread_local
 
 #undef PTHREAD_SCOPE_PROCESS 
-#undef PTHREAD_SCOPE_SYSTEM 
+#undef PTHREAD_SCOPE_SYSTEM
+
+#undef PTHREAD_MUTEX_NORMAL
+#undef PTHREAD_MUTEX_ERRORCHECK
+#undef PTHREAD_MUTEX_RECURSIVE
+#undef PTHREAD_MUTEX_DEFAULT
+#undef PTHREAD_MUTEX_ERRORCHECK_NP
