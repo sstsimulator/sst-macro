@@ -57,8 +57,12 @@ struct GlobalVarNamespace
     testPrefix = getenv("SSTMAC_CLANG_TEST_PREFIX");
   }
 
+  struct Variable {
+    bool isFxnStatic;
+  };
+
   std::string ns;
-  std::set<std::string> replVars;
+  std::map<std::string, Variable> replVars;
   std::map<std::string, GlobalVarNamespace> subspaces;
   char uniqueFilePrefix[256];
   const char* testPrefix;
@@ -103,15 +107,19 @@ struct GlobalVarNamespace
 
   bool genSSTCode(std::ostream& os, const std::string& indent){
     bool nonEmpty = !replVars.empty();
-    for (const std::string& var : replVars){
-      os << indent << "int __offset_" << var << " = 0;\n";
-      os << indent << "extern int __sizeof_" << var << ";\n";
-      os << indent << "extern void* __ptr_" << var << ";\n";
-      os << indent << "sstmac::GlobalVariable __gv_" << var
-              << "(__offset_" << var
-              << ",__sizeof_" << var
-              << ",__ptr_" << var
-              << ");\n";
+    for (auto& pair : replVars){
+      auto& name = pair.first;
+      auto& var = pair.second;
+      os << indent << "int __offset_" << name << " = 0;\n";
+      os << indent << "extern int __sizeof_" << name << ";\n";
+      if (!var.isFxnStatic)
+        os << indent << "extern void* __ptr_" << name << ";\n";
+      os << indent << "sstmac::GlobalVariable __gv_" << name
+              << "(__offset_" << name
+              << ",__sizeof_" << name;
+      if (var.isFxnStatic) os << ",nullptr";
+      else                 os  << ",__ptr_" << name;
+      os << ");\n";
     }
     for (auto& pair : subspaces){
       std::stringstream sstr;

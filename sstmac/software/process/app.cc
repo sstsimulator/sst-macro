@@ -264,6 +264,7 @@ app::run()
     os_->execute_kernel(ami::COMM_PMI_SEND, lev);
   }
   task_mapping::remove_global_mapping(sid_.app_, unique_name_);
+  thread_info::deregister_user_space_virtual_thread(stack_);
 }
 
 void

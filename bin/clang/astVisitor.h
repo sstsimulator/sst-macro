@@ -478,9 +478,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   typedef enum {
-    Extern, //regular global variable (C-style)
+    Global, //regular global variable (C-style)
+    FileStatic,
     CxxStatic, //c++ static class variable
-  } GlobalRedirect_t;
+    FxnStatic
+  } GlobalVariable_t;
 
   /**
    * @brief replaceGlobalVar
@@ -497,14 +499,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @return  Standard clang continue return
    */
    void setupGlobalVar(const std::string& scope_prefix,
-                      const std::string& init_scope_prefix,
-                      const std::string& var_repl_prefix,
+                      const std::string& var_ns_prefix,
                       clang::SourceLocation externVarsInsertLoc,
                       clang::SourceLocation getRefInsertLoc,
-                      GlobalRedirect_t red_ty,
-                      clang::VarDecl* D,
-                      AnonRecord* anonRecord,
-                      ArrayInfo* arrayInfo);
+                      GlobalVariable_t global_var_ty,
+                      clang::VarDecl* D);
 
    /**
     * @brief checkAnonStruct See if the type of the variable is an
@@ -527,35 +526,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     *         If D does not have array type, return nullptr
     */
    ArrayInfo* checkArray(clang::VarDecl* D, ArrayInfo* info);
-
-  /**
-   * @brief defineGlobalVarInitializers
-   *        Dump the text needed to define new global variables for
-   *        initializing thread-local variables
-   * @param scope_unique_var_name A modified variable name unique to its scope
-   * @param var_name    The name of the variable in original source code
-   * @param init_prefix A prefix required
-   * @param os  A stream to dump output to
-   */
-  void defineGlobalVarInitializers(
-     const std::string& scope_unique_var_name,
-     const std::string& var_name,
-     const std::string& init_scope_prefix,
-     llvm::raw_string_ostream& os,
-     bool isVolatile);
-
-  /**
-   * @brief declareStaticInitializers
-   *        Similar to #defineGlobalVarInitializers, but we are in class declaration
-   *        and unable to define the symbols. Just declare static variables to be
-   *        defined later.
-   * @param scope_unique_var_name
-   * @param os
-   */
-  void declareStaticInitializers(
-     const std::string& scope_unique_var_name,
-     llvm::raw_string_ostream& os,
-     bool isVolatile);
 
   /**
    * @brief deleteStmt Delete a statement completely in the source-to-source
