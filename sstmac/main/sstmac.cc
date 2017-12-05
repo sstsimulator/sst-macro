@@ -305,11 +305,6 @@ run(opts& oo,
 }
 
 void
-run_benchmark(sprockit::sim_parameters* params, const std::string& benchmark){
-
-}
-
-void
 try_main(sprockit::sim_parameters* params,
          int argc, char **argv, bool params_only)
 {

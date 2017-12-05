@@ -28,8 +28,8 @@ category: SSTDocumentation
             - [Build SST core](#subsec:buildSSTCore)
             - [Build SST/macro element library](#subsec:buildElementLib)
          - [2.1.4: Post-Build](#subsec:postbuild)
-         - [2.1.5: GNU pth for user-space threading](#subsubsec:pth)
-         - [2.1.6: Boost 1.65 and fcontext (Beta)](#subsubsec:boost)
+         - [2.1.5: GNU pth for user-space threading: DEPRECATED](#subsubsec:pth)
+         - [2.1.6: fcontext (and a note on Boost)](#subsubsec:boost)
          - [2.1.7: Known Issues](#subsec:build:issues)
       - [Section 2.2: Building DUMPI](#sec:building:dumpi)
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
@@ -371,9 +371,7 @@ A complete list of options for standalone building can be seen by running `../co
 
 
 -   --(dis|en)able-graphviz : Enables the collection of simulated call graphs, which can be viewed with graphviz.
-Enabled by default. Disable if not using Boost or C++11. Ordered maps can be used as a replacement, but with lower performance.
--   --(dis|en)able-regex : Regular expressions can be used to proofread input files, but this requires either Boost or C++11.
-Enabled by default. Disable if not using Boost or C++11.
+Disabled by default.
 -   --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
 -   --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
 -   --(dis|en)able-otf2[=location]: Enable OTF2 trace replay, requires a path to OTF2 installation.
@@ -403,12 +401,15 @@ Important:  Applications and other code linking to SST-macro use Makefiles that 
 that are installed there for convenience to figure out where headers and libraries are.  When making your skeletons and components, make sure your path is properly configured.
 
 
-#### 2.1.5: GNU pth for user-space threading<a name="subsubsec:pth"></a>
+#### 2.1.5: GNU pth for user-space threading: DEPRECATED<a name="subsubsec:pth"></a>
 
 
 By default, Linux usually ships with `ucontext` which enables user-space threading.
-Mac OS X does not support `ucontext` and requires an extra library be installed (GNU pth).
-GNU pth is easy to download and install from source.
+Mac OS X previously required an extra library be installed (GNU pth).
+These are no longer required and are deprecated in favor of fcontext,
+which is now integrated with the SST/macro distribution (see below).
+
+For those still wishing to use pth, GNU pth is easy to download and install from source.
 Even easier is MacPorts. 
 
 ````
@@ -423,46 +424,17 @@ For MacPorts installation, this means configuring SST/macro with:
 ../configure --with-pth=/opt/local
 ````
 
-#### 2.1.6: Boost 1.65 and fcontext (Beta)<a name="subsubsec:boost"></a>
+#### 2.1.6: fcontext (and a note on Boost)<a name="subsubsec:boost"></a>
 
 
 Boost is no longer required for SST core.
-However, Boost 1.65 and above support the fcontext library for user-space threading.
-This is provides much greater performance than GNU pth or standard Linux ucontext.
+However, Boost 1.65 and above support the fcontext library for user-space threading,
+but this is now integrated directly with the SST/macro distribution.
+This provides much greater performance than GNU pth or standard Linux ucontext.
 Users may see as much as a 20\
+Your best bet is to just avoid doing anything with Boost.
 
-You will need a `user-config.jam` to configure the Boost compiler flags.
-You then need to bootstrap, compile, and install the prerequisite Boost libraries. 
-For GCC, the `user-config.jam` should go in the top-level home directory and the file should contain the line:
-
-````
-using gcc : : $PATH_TO_C++  : <compileflags>-std=c++1y ;
-````
-For clang, use e.g.
-
-````
-using clang : : $PATH_TO_CLANG++  : <compileflags>-std=c++1y <linkflags>-stdlib=libc++
-````
-In the top-level Boost directory, run:
-
-````
-./bootstrap.sh \
-  --with-libraries=context \
-  --with-toolset=clang
-
-./b2 ---prefix=$INSTALL
-````
-The toolset can be changed to use gcc by replacing clang with gcc in each of the `user-config.jam` and run commands.
-The installation prefix should be set to the desired folder.
-
-Once installed, fcontext can be used in SST/macro by configuring with:
-````
-../configure --with-fcontext=$INSTALL
-````
-using the same installation folder used for Boost. 
-fcontext is not the default context-switching library for SST due to rpath problems on certain platforms.
-GNU pth and ucontext are used by default instead.
-To activate fcontext, you can either set the environment variable:
+fcontext should be activated by default. To force activation fcontext, you can either set the environment variable:
 
 ````
 SSTMAC_THREADING=fcontext
