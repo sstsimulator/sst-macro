@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstream>
 #include <iostream>
 #include <sstmac/software/process/tls.h>
+#include <list>
 
 extern int sstmac_global_stacksize;
 
@@ -55,7 +56,7 @@ namespace sstmac {
 
 class GlobalVariable {
  public:
-  GlobalVariable(int& offset, const int size, const void* initData);
+  GlobalVariable(int& offset, const int size, const void* initData, int relocationPtr = -1);
 
   ~GlobalVariable();
 
@@ -71,6 +72,7 @@ class GlobalVariable {
   static int stackOffset;
   static char* globalInits;
   static int allocSize;
+  static std::list<std::pair<int,int>> relocationPointers;
 
 };
 

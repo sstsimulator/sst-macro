@@ -490,7 +490,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     #this is more complicated - we have to use clang to do a source to source transformation
     #then we need to run the compiler on that modified source
     for srcFile in sourceFiles:
-      text = open(srcFile).read()
       allTemps = TempFiles(delTempFiles, verbose)
       ppTmpFile = addPrefix("pp.",srcFile)
       cmdArr = ppCmdArr[:]

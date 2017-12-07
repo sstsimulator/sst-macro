@@ -59,6 +59,7 @@ struct GlobalVarNamespace
 
   struct Variable {
     bool isFxnStatic;
+    std::string pointedTo;
   };
 
   std::string ns;
@@ -109,7 +110,7 @@ struct GlobalVarNamespace
     bool nonEmpty = !replVars.empty();
     for (auto& pair : replVars){
       auto& name = pair.first;
-      auto& var = pair.second;
+      Variable& var = pair.second;
       os << indent << "int __offset_" << name << " = 0;\n";
       os << indent << "extern int __sizeof_" << name << ";\n";
       if (!var.isFxnStatic)
@@ -117,8 +118,15 @@ struct GlobalVarNamespace
       os << indent << "sstmac::GlobalVariable __gv_" << name
               << "(__offset_" << name
               << ",__sizeof_" << name;
-      if (var.isFxnStatic) os << ",nullptr";
-      else                 os  << ",__ptr_" << name;
+
+      if (var.isFxnStatic){
+        os << ",nullptr";
+      } else if (!var.pointedTo.empty()){
+        os << ",nullptr,__offset_" << var.pointedTo;
+      } else {
+        os  << ",__ptr_" << name;
+      }
+
       os << ");\n";
     }
     for (auto& pair : subspaces){

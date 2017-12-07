@@ -87,7 +87,7 @@ class network_message :
    sw::app_id aid,
    node_id to,
    node_id from,
-   long payload_bytes) :
+   uint64_t payload_bytes) :
     aid_(aid),
     needs_ack_(true),
     toaddr_(to),
@@ -104,7 +104,7 @@ class network_message :
   {
   }
 
-  network_message(sw::app_id aid, long payload_bytes) :
+  network_message(sw::app_id aid, uint64_t payload_bytes) :
    bytes_(payload_bytes),
    needs_ack_(true),
    type_(null_netmsg_type),
@@ -200,7 +200,7 @@ class network_message :
 
   virtual void reverse();
 
-  long byte_length() const override;
+  uint64_t byte_length() const override;
 
   node_id toaddr_;
 
@@ -216,7 +216,7 @@ class network_message :
 
   bool needs_ack_;
 
-  long bytes_;
+  uint64_t bytes_;
 
   type_t type_;
 

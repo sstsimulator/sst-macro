@@ -68,7 +68,7 @@ class memory_message :
   {
   }
 
-  long byte_length() const override {
+  uint64_t byte_length() const override {
     return bytes_;
   }
 
@@ -92,7 +92,7 @@ class memory_message :
 
  private:
   uint64_t id_;
-  long bytes_;
+  uint64_t bytes_;
   double max_bw_;
 };
 

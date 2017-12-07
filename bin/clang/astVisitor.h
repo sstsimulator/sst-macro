@@ -223,7 +223,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @brief VisitVarDecl We only need to visit variables once down the AST.
    *        No pre or post operations.
    * @param D
-   * @return
+   * @return Whether to skip visiting this variable's initialization
    */
   bool visitVarDecl(clang::VarDecl* D);
 
@@ -392,6 +392,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void replaceMain(clang::FunctionDecl* mainFxn);
 
  private:
+  //whether we are allowed to use global variables in statements
+  //or if they are disallowed because they would break deglobalizer
   clang::Decl* currentTopLevelScope_;
   clang::Rewriter& rewriter_;
   clang::CompilerInstance* ci_;
@@ -403,6 +405,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
   std::map<const clang::Decl*,std::string> globals_;
+  std::map<const clang::Decl*,std::string> scopedNames_;
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
   int insideCxxMethod_;
@@ -496,14 +499,15 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param D             The variable declaration being deglobalized
    * @param staticFxnInfo For static function variables, we will want any info on anonymous records
    *                      returned to us via this variable
-   * @return  Standard clang continue return
+   * @return  Whether to skip visiting this variable's initialization
    */
-   void setupGlobalVar(const std::string& scope_prefix,
+   bool setupGlobalVar(const std::string& scope_prefix,
                       const std::string& var_ns_prefix,
                       clang::SourceLocation externVarsInsertLoc,
                       clang::SourceLocation getRefInsertLoc,
                       GlobalVariable_t global_var_ty,
-                      clang::VarDecl* D);
+                      clang::VarDecl* D,
+                      clang::SourceLocation declEnd = clang::SourceLocation());
 
    /**
     * @brief checkAnonStruct See if the type of the variable is an

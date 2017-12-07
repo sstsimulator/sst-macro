@@ -53,8 +53,9 @@ namespace sstmac {
 int GlobalVariable::stackOffset = 0;
 int GlobalVariable::allocSize = 4096;
 char* GlobalVariable::globalInits = nullptr;
+std::list<std::pair<int,int>> GlobalVariable::relocationPointers;
 
-GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData)
+GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData, int relocationPtr)
 {
 
   const_cast<int&>(offset) = stackOffset;
@@ -83,6 +84,8 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData
     void* initStart = (char*)globalInits + stackOffset;
     fflush(stdout);
     ::memcpy(initStart, initData, size);
+  } else if (relocationPtr > 0){
+    relocationPointers.emplace_back(offset, relocationPtr);
   }
 
   stackOffset += offsetIncrement;

@@ -66,7 +66,7 @@ class flow :
    * if they want any size tracked / modeled.
    * @return Zero size, meant to be implemented by children.
    */
-  virtual long byte_length() const = 0;
+  virtual uint64_t byte_length() const = 0;
 };
 
 /**
