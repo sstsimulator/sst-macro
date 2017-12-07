@@ -146,13 +146,6 @@ class app : public thread
   void add_subthread(thread* thr);
 
   /**
-   * Indicate to parent application that subthread is done running.
-   * This puts a null marker for the thread rather than deleting it completely
-   * @param thr
-   */
-  void set_subthread_done(thread* thr);
-
-  /**
    * Let a parent application know a subthread has finished.
    * This completely erases the thread. There will be no record of this thread after calling this function.
    * @param thr A thread with initialized ID
@@ -201,8 +194,6 @@ class app : public thread
   void* globals_storage() const {
     return globals_storage_;
   }
-
-  virtual void clear_subthread_from_parent_app() override;
 
   const std::string& unique_name() const {
     return unique_name_;

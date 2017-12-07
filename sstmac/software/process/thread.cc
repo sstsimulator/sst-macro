@@ -111,19 +111,10 @@ thread::_get_api(const char* name)
 }
 
 void
-thread::clear_subthread_from_parent_app()
-{
-  //if this is canceled, the parent app might already be dead
-  if (parent_app_){
-    parent_app_->remove_subthread(this);
-  }
-}
-
-void
 thread::cleanup()
 {
-  if (state_ != CANCELED){
-    clear_subthread_from_parent_app();
+  if (state_ != CANCELED && parent_app_ && detach_state_ == DETACHED){
+    parent_app_->remove_subthread(this);
   }
   // We are done, ask the scheduler to remove this task from the
   state_ = DONE;
@@ -195,7 +186,8 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   pthread_concurrency_(0),
   sid_(sid),
   ftag_(ftq_tag::null),
-  protect_tag(false)
+  protect_tag(false),
+  detach_state_(DETACHED)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);

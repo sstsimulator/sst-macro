@@ -70,7 +70,7 @@ typedef void (*sstmac_pthread_key_destructor_fxn)(void*);
 #define SSTMAC_PTHREAD_THREADS_MAX 1000
 #define SSTMAC_PTHREAD_KEYS_MAX 10000
 #define SSTMAC_PTHREAD_STACK_MIN 16384
-#define SSTAMC_PTHREAD_CREATE_DETACHED 0
+#define SSTMAC_PTHREAD_CREATE_DETACHED 0
 #define SSTMAC_PTHREAD_CREATE_JOINABLE 1
 
 #define SSTMAC_PTHREAD_MUTEX_NORMAL     0
@@ -95,6 +95,7 @@ extern "C"
 
 typedef struct {
   uint64_t cpumask;
+  int detach_state;
 } sstmac_pthread_attr_t;
 
 int SSTMAC_pthread_create(sstmac_pthread_t * thread,

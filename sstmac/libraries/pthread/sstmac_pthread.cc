@@ -88,7 +88,8 @@ SSTMAC_pthread_create(sstmac_pthread_t* pthread,
   software_id newid(parent_app->aid(), parent_app->tid(), unknown_thrid);
   pthread_runner* tr = new pthread_runner(newid,
                            parent_app,
-                           start_routine, arg, os);
+                           start_routine, arg, os,
+                           attr ? attr->detach_state : SSTMAC_PTHREAD_CREATE_JOINABLE);
 
   parent_app->add_subthread(tr);
   *pthread = tr->thread_id();
@@ -137,7 +138,7 @@ SSTMAC_pthread_join(sstmac_pthread_t pthread, void ** status)
   pthread_debug("pthread_join");
   thread* current_thr = current_thread();
   operating_system* os = current_thr->os();
-  app* parent_app = os->current_thread()->parent_app();
+  app* parent_app = current_thr->parent_app();
   thread* joiner = parent_app->get_subthread(pthread);
 
   pthread_debug("joining pthread %ld on thread %ld in app %d",
@@ -575,6 +576,7 @@ SSTMAC_pthread_attr_init(sstmac_pthread_attr_t *attr)
   //set all cpus to possibly active
   attr->cpumask = 0;
   attr->cpumask = ~(attr->cpumask);
+  attr->detach_state = SSTMAC_PTHREAD_CREATE_JOINABLE;
   return 0;
 }
 
@@ -626,15 +628,15 @@ extern "C" int
 SSTMAC_pthread_attr_getdetachstate(const sstmac_pthread_attr_t *attr,
                                    int *state)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-                   "pthread::pthread_getdetachstate not implemented");
+  *state = attr->detach_state;
+  return 0;
 }
 
 extern "C" int
 SSTMAC_pthread_attr_setdetachstate(sstmac_pthread_attr_t *attr, int state)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-                   "pthread::pthread_setdetachstate not implemented");
+  attr->detach_state = state;
+  return 0;
 }
 
 extern "C" int
@@ -657,9 +659,9 @@ SSTMAC_pthread_attr_getscope(sstmac_pthread_attr_t*, int* scope)
 extern "C" int
 SSTMAC_pthread_detach(sstmac_pthread_t thr)
 {
-  //there is no reason to do anything -
-  //all resources associated with this thread
-  //will be released back automatically anyway
+  app* parent_app = current_thread()->parent_app();
+  thread* joiner = parent_app->get_subthread(thr);
+  joiner->set_detach_state(thread::DETACHED);
   return 0;
 }
 

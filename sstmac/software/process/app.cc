@@ -276,27 +276,16 @@ app::add_subthread(thread *thr)
   subthreads_[thr->thread_id()] = thr;
 }
 
-void
-app::set_subthread_done(thread* thr)
-{
-  subthreads_[thr->thread_id()] = nullptr;
-}
-
 thread*
 app::get_subthread(long id)
 {
-  std::map<long,thread*>::iterator it = subthreads_.find(id);
+  auto it = subthreads_.find(id);
   if (it==subthreads_.end()){
     spkt_throw_printf(sprockit::value_error,
       "unknown thread id %ld",
       id);
   }
   return it->second;
-}
-
-void
-app::clear_subthread_from_parent_app()
-{
 }
 
 void
