@@ -19,6 +19,7 @@ nobase_library_include_HEADERS =
 
 nobase_library_include_HEADERS += \
   mpi.h \
+  change_mpi_symbols.h \
   omp.h \
 	fixIntrinsics.h \
   sstCoreElement.h 

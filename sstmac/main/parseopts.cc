@@ -254,7 +254,10 @@ parse_opts(int argc, char **argv, opts &oo)
       exe_name = exe_name.substr(pos+1);
     }
     bool is_stand_alone = app::factory::is_valid_name("sstmac_app_name");
-    if (exe_name == "conftest" && is_stand_alone){
+    if (is_stand_alone){
+      std::cerr << "WARNING: running standalone executable as-is. This usually happens\n"
+                << "WARNING: when running configure scripts. I hope this is what you want"
+                << std::endl;
       //oh, hmm, we are running inside configure
       //this means we actually just want to run a compiled program
       //and get the hell out of dodge
@@ -278,6 +281,12 @@ parse_opts(int argc, char **argv, opts &oo)
       sstmac::event_manager mgr(&null_params, &rt);
       sstmac::hw::simple_node node(&null_params, 1, &mgr);
       sstmac::sw::operating_system os(&null_params, &node);
+
+      std::stringstream argv_sstr;
+      for (int i=1; i < argc; ++i){
+        argv_sstr << " " << argv[i];
+      }
+      null_params.add_param("argv", argv_sstr.str());
 
       null_params.add_param_override("notify", "false");
       app* a = sstmac::sw::app::factory::get_value("sstmac_app_name", &null_params, id, &os);
