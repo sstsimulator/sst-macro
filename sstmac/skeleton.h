@@ -60,6 +60,8 @@ typedef int (*empty_main_fxn)();
 
 #ifdef __cplusplus
 
+#include <sstmac/software/process/cppglobal.h>
+
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>
 #include <sstCoreElement.h>

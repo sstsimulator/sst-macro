@@ -879,6 +879,28 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     }
   }
 
+  if (!D->hasExternalStorage()){
+    RecordDecl* rd = D->getType().getTypePtr()->getAsCXXRecordDecl();
+    if (rd){
+      Expr* e = D->getInit();
+      //well, crap, we have to register a constructor to call
+      PrettyPrinter pp;
+      pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"
+           << " = sstmac::new_cpp_global<"
+           << QualType::getAsString(D->getType().split())
+           << ">(" << "__offset_" << scopeUniqueVarName;
+      if (D->getInit()){
+        CXXConstructExpr* e = cast<CXXConstructExpr>(D->getInit());
+        if (e->getNumArgs() > 0){
+          pp.os << ",";
+          pp.print(e);
+        }
+      }
+      pp.os << "); ";
+      rewriter_.InsertText(declEnd, pp.os.str());
+    }
+  }
+
 
   std::string empty;
   llvm::raw_string_ostream os(empty);

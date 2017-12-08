@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <sstmac/software/process/tls.h>
 #include <list>
+#include <sstmac/software/process/cppglobal.h>
 
 extern int sstmac_global_stacksize;
 
@@ -68,11 +69,18 @@ class GlobalVariable {
     return globalInits;
   }
 
+  static void callCtors(void* globals);
+
+  static void registerCtor(CppGlobal* g){
+    cppCtors.push_back(g);
+  }
+
  private:
   static int stackOffset;
   static char* globalInits;
   static int allocSize;
   static std::list<std::pair<int,int>> relocationPointers;
+  static std::list<CppGlobal*> cppCtors;
 
 };
 

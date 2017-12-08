@@ -54,6 +54,7 @@ int GlobalVariable::stackOffset = 0;
 int GlobalVariable::allocSize = 4096;
 char* GlobalVariable::globalInits = nullptr;
 std::list<std::pair<int,int>> GlobalVariable::relocationPointers;
+std::list<CppGlobal*> GlobalVariable::cppCtors;
 
 GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData, int relocationPtr)
 {
@@ -89,6 +90,18 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData
   }
 
   stackOffset += offsetIncrement;
+}
+
+void registerCppGlobal(CppGlobal* g){
+  GlobalVariable::registerCtor(g);
+}
+
+void
+GlobalVariable::callCtors(void *globals)
+{
+  for (CppGlobal* g : cppCtors){
+    g->allocate(globals);
+  }
 }
 
 GlobalVariable::~GlobalVariable()

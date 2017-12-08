@@ -81,7 +81,10 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
   void** globalPtr = (void**) &tls[TLS_GLOBAL_MAP];
   *globalPtr = globalsMap;
 
-  if (globalsMap) active_global_maps_.insert(globalsMap);
+  if (globalsMap){
+    active_global_maps_.insert(globalsMap);
+    GlobalVariable::callCtors(globalsMap);
+  }
 }
 
 void

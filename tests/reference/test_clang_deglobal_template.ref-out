@@ -1,6 +1,6 @@
 
 template <class T> class A {};
-A<int> a;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_a; void* __ptr_a = &a; int __sizeof_a = sizeof(a);static inline void* get_a(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_a;return (void*)offsetPtr; }  
+A<int> a;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_a; void* __ptr_a = &a; int __sizeof_a = sizeof(a);sstmac::CppGlobal* a_sstmac_ctor = sstmac::new_cpp_global<A<int>>(__offset_a); static inline void* get_a(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_a;return (void*)offsetPtr; }  
 
 void fxn()
 {
