@@ -51,7 +51,7 @@ class CppGlobalImpl : public CppGlobal {
 };
 
 template <class T, class... Args>
-CppGlobal* new_cpp_global(int offset, Args&... args){
+CppGlobal* new_cpp_global(int& offset, Args&... args){
   return new CppGlobalImpl<T,Args...>(offset, args...);
 }
 

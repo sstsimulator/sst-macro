@@ -59,7 +59,7 @@ std::list<CppGlobal*> GlobalVariable::cppCtors;
 GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData, int relocationPtr)
 {
 
-  const_cast<int&>(offset) = stackOffset;
+  offset = stackOffset;
 
   int rem = size % 4;
   int offsetIncrement = rem ? (size + (4-rem)) : size; //align on 32-bits

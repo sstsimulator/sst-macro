@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/libraries/pthread/sstmac_pthread_runner.h>
+#include <sstmac/libraries/pthread/sstmac_pthread_impl.h>
 #include <sstmac/software/process/app.h>
 
 namespace sstmac {
@@ -57,7 +58,7 @@ pthread_runner::pthread_runner(software_id id, app* parent,
     arg_(arg)
 {
   parent_app_ = parent;
-  if (detach_state == PTHREAD_CREATE_DETACHED){
+  if (detach_state == SSTMAC_PTHREAD_CREATE_DETACHED){
     set_detach_state(DETACHED);
   } else {
     set_detach_state(JOINABLE);

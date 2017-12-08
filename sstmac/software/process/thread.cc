@@ -142,11 +142,9 @@ thread::run_routine(void* threadptr)
       //all of this is happening ON THE THREAD - it kills itself
       //this is not the DES thread killing it
       self->cleanup();
-    }
-    catch (const kill_exception& ex) {
+    } catch (const kill_exception& ex) {
       //great, we are done
-    }
-    catch (const std::exception &ex) {
+    } catch (const std::exception &ex) {
       cerrn << "thread terminated with exception: " << ex.what()
                 << "\n";
       // should forward the exception to the main thread,
@@ -155,16 +153,14 @@ thread::run_routine(void* threadptr)
       std::cout.flush();
       std::cerr.flush();
       abort();
-    }
-    catch (const std::string& str) {
+    } catch (const std::string& str) {
       cerrn << "thread terminated with string exception: " << str << "\n";
       cerrn << "aborting" << std::endl;
       std::cout.flush();
       std::cerr.flush();
       abort();
     }
-  }
-  else {
+  } else {
     sprockit::abort("thread::run_routine: task has not been initialized");
   }
 }
