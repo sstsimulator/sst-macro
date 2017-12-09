@@ -6,6 +6,7 @@
   bytes_sent_torus \
   bytes_sent_fattree \
   bytes_sent_cascade
+
 if !INTEGRATED_SST_CORE
 #------------------------------------------------------------------------------------------#
 #  Stats tests                                                                          {{{#
@@ -13,7 +14,10 @@ if !INTEGRATED_SST_CORE
 
 STATSTESTS = \
   output_graph_torus \
-  output_graph_dragonfly \
+  output_graph_dragonfly 
+
+if BUILD_SUMI_MPI
+STATSTESTS += \
   test_stats_msg_size_histogram \
   test_stats_spyplot \
   test_stats_spyplot_collectives \
@@ -41,6 +45,9 @@ if DO_GRAPHVIZ_TEST
 SINGLETESTS += test_stat_graphviz 
 endif
 endif
+
+endif
+### SUMI MPI
 
 test_output_graph_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) tmp_$@ notime \
@@ -127,7 +134,7 @@ bytes_sent_fattree:
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_$@.ini --low-res-timer --no-wall-time  
 
 
-
-#------------------------------------------------------------------------------------------#
 endif
+#### not integrated core
+
 

@@ -4,6 +4,7 @@
 #------------------------------------------------------------------------------------------#
 
 # These are also run with the same rule
+if BUILD_SUMI_MPI
 CONFIGTESTS = \
   test_configs_smp_pflow \
   test_configs_edison_amm1 \
@@ -102,6 +103,9 @@ test_mpi_stats_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ 't > 1 and t < 1.2' \
     $(SSTMACEXEC) -f mpi_stats.ini -i default.ini -i $*.ini \
     --no-wall-time
-
+else
+CONFIGTESTS = 
+COVERAGETESTS = 
+endif
 
 #------------------------------------------------------------------------------------------#

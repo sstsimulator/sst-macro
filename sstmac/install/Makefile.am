@@ -34,8 +34,12 @@ libsstmac_la_LIBADD = \
   ../libraries/sumi/libsstmac_sumi.la \
   ../main/libsstmac_driver.la \
   ../skeletons/libsstmac_skeletons.la \
-  ../software/libsstmac_sw.la \
+  ../software/libsstmac_sw.la 
+
+if BUILD_SUMI_MPI
+libsstmac_la_LIBADD += \
   ../../sumi-mpi/libsstmac_mpi.la
+endif
 
 if HAVE_OTF2
 libsstmac_la_LIBADD += $(OTF2_LDFLAGS)

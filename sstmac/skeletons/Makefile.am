@@ -26,10 +26,14 @@ libsstmac_skeletons_la_LDFLAGS =
 
 libsstmac_skeletons_la_SOURCES = \
   traffic_matrix/main.cc \
-  test/compute.cc \
   test/host_compute.cc \
   test/service_test.cc \
-  test/app_hello_world.cc \
+  test/app_hello_world.cc 
+
+if BUILD_SUMI_MPI
+libsstmac_skeletons_la_SOURCES += \
+  test/compute.cc \
+  test/global_test.cc \
   test/mpi_coverage_test.cc \
   test/mpi_ping_all.cc \
   test/mpi_ping_pong.cc \
@@ -38,7 +42,6 @@ libsstmac_skeletons_la_SOURCES = \
   test/mpi_isend_progress.cc \
   undumpi/parsedumpi.cc \
   undumpi/parsedumpi_callbacks.cc \
-  test/global_test.cc \
   test/memory_leak_test.cc \
   test/sstmac_mpi_test_all.cc 
 
@@ -63,6 +66,10 @@ nobase_library_include_HEADERS += \
  otf2_trace_replay/otf2_trace_replay.h \
  otf2_trace_replay/structures.h
 endif
+
+endif
+
+
 
 
 

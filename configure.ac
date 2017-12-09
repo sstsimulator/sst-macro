@@ -175,6 +175,8 @@ AH_TEMPLATE([DEFAULT_PARTITION_STRING], [Define to indicate default partitioning
 
 CHECK_REPO_BUILD([sstmac])
 
+CHECK_SUMI_MPI()
+
 CHECK_MPI_IMPLEMENTATION()
 
 CHECK_OTF2()
@@ -298,6 +300,7 @@ echo "  Spinlock         $with_spinlock"
 echo "  Thread Affinity  $with_cpu_affinity"
 echo
 
+echo "SUMI MPI           $install_sumi_mpi"
 echo "SST Core           $have_integrated_core"
 echo "Clang Autoskeleton $found_clang"
 echo "OTF2 Replay        $build_otf2"

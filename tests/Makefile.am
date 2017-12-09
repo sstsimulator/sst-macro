@@ -22,7 +22,11 @@ AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi \
 
 SUBDIRS = unit_tests sumi
 
-SUBDIRS += api/mpi api/globals
+if BUILD_SUMI_MPI
+SUBDIRS += api/mpi 
+endif
+
+SUBDIRS += api/globals
 
 if USE_REPLACEMENT_HEADERS
 SUBDIRS += external

@@ -8,6 +8,7 @@ CORE_TEST_DEPS += ../sstmac/install/libmacro.la
 endif
 
 
+if BUILD_SUMI_MPI
 CORETESTS+= \
   test_core_apps_ping_all_torus_simple \
   test_core_apps_ping_all_simple_fattree \
@@ -39,4 +40,5 @@ test_core_apps_ping_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 5 and t < 5.2' \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_$*.ini --no-wall-time $(THREAD_ARGS)
 	
+endif
 

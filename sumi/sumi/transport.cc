@@ -67,7 +67,10 @@ RegisterKeywords(
  { "eager_cutoff", "what message size in bytes to switch from eager to rendezvous" },
  { "use_put_protocol", "whether to use a put or get protocol for pt2pt sends" },
  { "algorithm", "the specific algorithm to use for a given collecitve" },
- { "comm_sync_stats", "whether to track synchronization stats for communication" }
+ { "comm_sync_stats", "whether to track synchronization stats for communication" },
+ { "smp_single_copy_size", "the minimum size of message for single-copy protocol" },
+ { "max_eager_msg_size", "the maximum size for using eager pt2pt protocol" },
+ { "max_vshort_msg_size", "the maximum size for mailbox protocol" },
 );
 
 RegisterDebugSlot(sumi);
