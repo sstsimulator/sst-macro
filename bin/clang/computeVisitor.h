@@ -122,6 +122,8 @@ class ComputeVisitor  {
 
   void visitBodyBinaryOperator(clang::BinaryOperator* op, Loop::Body& body);
 
+  void visitBodyUnaryOperator(clang::UnaryOperator* op, Loop::Body& body);
+
   void visitBodyParenExpr(clang::ParenExpr* expr, Loop::Body& body);
 
   void visitBodyArraySubscriptExpr(clang::ArraySubscriptExpr* expr, Loop::Body& body, bool isLHS);

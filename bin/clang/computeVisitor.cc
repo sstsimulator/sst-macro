@@ -223,6 +223,38 @@ ComputeVisitor::visitBodyCompoundAssignOperator(CompoundAssignOperator* op, Loop
 }
 
 void
+ComputeVisitor::visitBodyUnaryOperator(UnaryOperator* op, Loop::Body& body)
+{
+  auto ty = op->getSubExpr()->getType();
+  switch(op->getOpcode()){
+  case UO_Deref:
+    {
+
+      if (ty.isVolatileQualified()){
+        //treat this as a new memory access each time
+        TypeInfo ti = CI.getASTContext().getTypeInfo(ty);
+        body.readBytes += ti.Width;
+      }
+    }
+    break;
+  case UO_PostInc:
+  case UO_PostDec:
+  case UO_PreInc:
+  case UO_PreDec:
+    if (ty->isIntegerType()) {
+      body.intops += 1;
+    } else if (ty->isFloatingType()) {
+      body.flops += 1;
+    } else if (ty->isPointerType()){
+      body.intops += 1;
+    }
+    break;
+  default:
+    break;
+  }
+}
+
+void
 ComputeVisitor::visitBodyBinaryOperator(BinaryOperator* op, Loop::Body& body)
 {
   bool updateLHS = false;
@@ -486,6 +518,7 @@ ComputeVisitor::addOperations(Stmt* stmt, Loop::Body& body, bool isLHS)
     body_case(CompoundStmt,stmt,body);
     body_case(CompoundAssignOperator,stmt,body);
     body_case(BinaryOperator,stmt,body);
+    body_case(UnaryOperator,stmt,body);
     body_case(ParenExpr,stmt,body);
     body_case(CallExpr,stmt,body);
     body_case(DeclRefExpr,stmt,body,isLHS);
