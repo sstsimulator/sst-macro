@@ -767,6 +767,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                "probably this a multi-declaration that confused the source-to-source");
   }
 
+
   std::string scopeUniqueVarName = scope_prefix + D->getNameAsString();
 
   std::stringstream extern_os;
@@ -937,22 +938,19 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 clang::SourceLocation
 SkeletonASTVisitor::getEndLoc(const VarDecl *D)
 {
-  SourceLocation endLoc = Lexer::findLocationAfterToken(D->getLocEnd(), tok::semi,
-                                 ci_->getSourceManager(), ci_->getLangOpts(), false);
-  int numTries = 1;
-  while (endLoc.isInvalid() && numTries < 10){
+  int numTries = 0;
+  while (numTries < 1000){
     SourceLocation newLoc = D->getLocEnd().getLocWithOffset(numTries);
-    endLoc = Lexer::findLocationAfterToken(newLoc, tok::semi,
-                             ci_->getSourceManager(), ci_->getLangOpts(), false);
+    Token res;
+    Lexer::getRawToken(newLoc, res, ci_->getSourceManager(), ci_->getLangOpts());
+    if (res.getKind() == tok::semi){
+      return newLoc.getLocWithOffset(1);
+    }
     ++numTries;
   }
-
-  if (endLoc.isInvalid() && !multiDeclStmts_.empty()){
-    DeclStmt* stmt = multiDeclStmts_.front();
-    endLoc = stmt->getLocEnd();
-  }
-
-  return endLoc;
+  errorAbort(D->getLocStart(), *ci_,
+    "unable to locate end of variable declaration");
+  return SourceLocation();
 }
 
 bool

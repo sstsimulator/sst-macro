@@ -66,6 +66,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pthread_join SSTMAC_pthread_join
 #define pthread_tryjoin_np SSTMAC_pthread_tryjoin_np
 #define pthread_timedjoin_np SSTMAC_pthread_timedjoin_np
+#define pthread_testcancel SSTMAC_pthread_testcancel
 #define pthread_detach SSTMAC_pthread_detach
 #define pthread_equal SSTMAC_pthread_equal
 #define pthread_attr_init SSTMAC_pthread_attr_init

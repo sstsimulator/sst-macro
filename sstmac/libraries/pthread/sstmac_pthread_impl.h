@@ -127,6 +127,8 @@ int SSTMAC_pthread_kill(sstmac_pthread_t thr, int signal);
 
 int SSTMAC_pthread_yield();
 
+int SSTMAC_pthread_testcancel();
+
 int SSTMAC_pthread_mutex_destroy(sstmac_pthread_mutex_t * mutex);
 
 int SSTMAC_pthread_mutex_lock(sstmac_pthread_mutex_t * mutex);

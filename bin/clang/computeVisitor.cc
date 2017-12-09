@@ -229,11 +229,13 @@ ComputeVisitor::visitBodyUnaryOperator(UnaryOperator* op, Loop::Body& body)
   switch(op->getOpcode()){
   case UO_Deref:
     {
-
-      if (ty.isVolatileQualified()){
-        //treat this as a new memory access each time
-        TypeInfo ti = CI.getASTContext().getTypeInfo(ty);
-        body.readBytes += ti.Width;
+      if (ty->isPointerType()){
+        auto pty = ty->getPointeeType();
+        if (pty.isVolatileQualified() || ty.isVolatileQualified()){
+          //treat this as a new memory access each time
+          TypeInfo ti = CI.getASTContext().getTypeInfo(pty);
+          body.readBytes += ti.Width / 8;
+        }
       }
     }
     break;
@@ -252,6 +254,8 @@ ComputeVisitor::visitBodyUnaryOperator(UnaryOperator* op, Loop::Body& body)
   default:
     break;
   }
+  Expr* e = op->getSubExpr();
+  addOperations(e, body);
 }
 
 void

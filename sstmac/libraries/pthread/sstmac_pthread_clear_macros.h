@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #undef pthread_timedjoin_np
 #undef pthread_detach
 #undef pthread_equal
+#undef pthread_testcancel
 #undef pthread_attr_init
 #undef pthread_attr_destroy
 #undef pthread_attr_getdetachstate

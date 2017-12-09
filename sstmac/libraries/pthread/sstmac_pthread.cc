@@ -154,6 +154,13 @@ SSTMAC_pthread_join(sstmac_pthread_t pthread, void ** status)
   return 0;
 }
 
+extern "C" int
+SSTMAC_pthread_testcancel()
+{
+  sprockit::abort("unimplemented: pthread_testcancel");
+  return 0;
+}
+
 extern "C" sstmac_pthread_t
 SSTMAC_pthread_self()
 {
