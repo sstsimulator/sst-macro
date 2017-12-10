@@ -1190,7 +1190,25 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   //do not replace const global variables
   if (D->getType().isConstQualified()){
     return true; //also skip visiting init portion
+  } else if (D->getType()->isPointerType()){
+    if (D->getType()->getPointeeType().isConstQualified()){
+      return true;
+    }
   }
+  /** This doesn't actually make the array itself const
+  else if (D->getType()->isConstantArrayType()){
+    const ConstantArrayType* aty = cast<const ConstantArrayType>(D->getType());
+    QualType qty = aty->getElementType();
+    if (qty.isConstQualified()){
+      return true;
+    } else if (qty->isPointerType()){
+      QualType subty = qty->getPointeeType();
+      if (subty.isConstQualified()){
+        return true;
+      }
+    }
+  }
+  */
 
   bool skipInit = false;
   if (insideClass()){

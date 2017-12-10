@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_pthread_mutex_t int
 #define sstmac_pthread_spinlock_t int
 #define sstmac_pthread_once_t int
-#define sstmac_pthread_cond_attr int
+#define sstmac_pthread_condattr_t int
 #define sstmac_pthread_mutexattr_t int
 #define sstmac_pthread_rwlock_t int
 #define sstmac_pthread_rwlockattr_t int
@@ -78,6 +78,9 @@ typedef void (*sstmac_pthread_key_destructor_fxn)(void*);
 #define SSTMAC_PTHREAD_MUTEX_RECURSIVE  2
 #define SSTMAC_PTHREAD_MUTEX_DEFAULT 3
 #define SSTMAC_PTHREAD_MUTEX_ERRORCHECK_NP 4
+
+#define SSTMAC_PTHREAD_PROCESS_SHARED 0
+#define SSTMAC_PTHREAD_PROCESS_PRIVATE 1
 
 enum {
  SSTMAC_PTHREAD_SCOPE_PROCESS,
@@ -141,6 +144,10 @@ int SSTMAC_pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type)
 
 int SSTMAC_pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
 
+int SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t* attr, int* pshared);
+
+int SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t* attr, int pshared);
+
 int SSTMAC_pthread_spin_init(sstmac_pthread_spinlock_t* lock, int pshared);
 
 int SSTMAC_pthread_spin_destroy(sstmac_pthread_spinlock_t* lock);
@@ -152,7 +159,11 @@ int SSTMAC_pthread_spin_lock(sstmac_pthread_spinlock_t* lock);
 int SSTMAC_pthread_spin_unlock(sstmac_pthread_spinlock_t* lock);
 
 int SSTMAC_pthread_cond_init(sstmac_pthread_cond_t * cond,
-                         const sstmac_pthread_cond_attr *attr);
+                         const sstmac_pthread_condattr_t *attr);
+
+int SSTMAC_pthread_condattr_init(sstmac_pthread_condattr_t *attr);
+
+int SSTMAC_pthread_condattr_destroy(sstmac_pthread_condattr_t *attr);
 
 int SSTMAC_pthread_cond_destroy(sstmac_pthread_cond_t * cond);
 

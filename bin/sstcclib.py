@@ -421,7 +421,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         cxxCmdArr.append(objTarget)
     allCompilerFlags = sstCxxFlagsStr + sstCppFlagsStr + givenFlagsStr
     if not "fPIC" in allCompilerFlags:
-      sys.stderr.write("Linker/dlopen will eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
+      sys.stderr.write("Linker/dlopen may eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
   elif objTarget and sourceFiles:
     cxxCmdArr = [
       compiler, 

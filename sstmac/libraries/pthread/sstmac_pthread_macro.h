@@ -179,13 +179,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pthread_kill SSTMAC_pthread_kill
 #define pthread_getspecific SSTMAC_pthread_getspecific
 #define pthread_setspecific SSTMAC_pthread_setspecific
+#define pthread_mutexattr_setpshared SSTMAC_pthread_mutexattr_setpshared
+#define pthread_mutexattr_getpshared SSTMAC_pthread_mutexattr_getpshared
 
-
+#define PTHREAD_PROCESS_SHARED SSTMAC_PTHREAD_PROCESS_SHARED
+#define PTHREAD_PROCESS_PRIVATE SSTMAC_PTHREAD_PROCESS_PRIVATE
 
 #define pthread_t sstmac_pthread_t
 #define pthread_attr_t sstmac_pthread_attr_t
 #define pthread_key_t sstmac_pthread_key_t
 #define pthread_cond_t sstmac_pthread_cond_t
+#define pthread_condattr_t sstmac_pthread_condattr_t
 #define pthread_mutex_t sstmac_pthread_mutex_t
 #define pthread_spinlock_t sstmac_pthread_spinlock_t
 #define pthread_once_t sstmac_pthread_once_t

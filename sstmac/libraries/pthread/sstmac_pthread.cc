@@ -377,7 +377,7 @@ SSTMAC_pthread_mutexattr_destroy(sstmac_pthread_mutexattr_t *attr)
 
 extern "C" int
 SSTMAC_pthread_cond_init(sstmac_pthread_cond_t * cond,
-                         const sstmac_pthread_cond_attr *attr)
+                         const sstmac_pthread_condattr_t *attr)
 {
   pthread_debug("pthread_cond_init");  
   //just intialize it
@@ -747,5 +747,21 @@ SSTMAC_pthread_atfork(void (*prepare)(void), void (*parent)(void),
        void (*child)(void))
 {
   sprockit::abort("not implemented: pthread_atfork");
+  return 0;
+}
+
+extern "C" int
+SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t* attr, int* pshared)
+{
+  *pshared = SSTMAC_PTHREAD_PROCESS_PRIVATE;
+  return 0;
+}
+
+extern "C" int
+SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t* attr, int pshared)
+{
+  if (pshared != SSTMAC_PTHREAD_PROCESS_PRIVATE){
+    sprockit::abort("SST does not yet support PTHREAD_PROCESS_SHARED mutex");
+  }
   return 0;
 }
