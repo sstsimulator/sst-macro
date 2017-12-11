@@ -326,7 +326,7 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
       deleteNullVariableStmt(expr, decl);
     }
   } else {
-    replaceGlobalUse(decl, expr->getSourceRange());
+    replaceGlobalUse(expr, expr->getSourceRange());
   }
   return true;
 }
@@ -702,19 +702,8 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   if (declEnd.isInvalid()) declEnd = getEndLoc(D);
 
   if (declEnd.isInvalid()){
-    //need to wait until we reach the end of the declaration
-    //this occurs with multi-declarations
-    pendingGlobalVars_.emplace_back(D, arrayInfo, anonRecord);
-    return false;
-  }
-
-  if (!pendingGlobalVars_.empty()){
-    auto copy = pendingGlobalVars_;
-    pendingGlobalVars_.clear(); //have to clear here or we recurse indefinitely
-    for (auto& var : copy){
-      setupGlobalVar(scope_prefix, "", SourceLocation(), SourceLocation(),
-                     FileStatic, var.D, declEnd);
-    }
+    errorAbort(D->getLocStart(), *ci_,
+               "unable to locate end of variable declaration");
   }
 
   if (sstmacExternVarsLoc.isInvalid()) sstmacExternVarsLoc = declEnd;
@@ -1267,6 +1256,25 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     return true; //do not visit implicitly instantiated template stuff
   }
 
+  if (D->hasAttrs()){
+    for (Attr* attr : D->getAttrs()){
+      if (attr->getKind() == attr::AlwaysInline){
+        if (!D->isInlined()){
+          SourceLocation start = D->getReturnTypeSourceRange().getBegin();
+          if (start.isValid()){
+            rewriter_.InsertText(start, " inline ", false);
+            //errorAbort(D->getLocStart(), *ci_,
+            //           "how on earth do you have an invalid source location"
+            //           " for your return type?");
+          }
+          //errorAbort(start, *ci_,
+          //           "function tagged always inline, but is not inlined");
+        }
+      }
+    }
+  }
+
+
   if (D->isLocalExternDecl()){
     //weird extern declaration - skip it
     return true;
@@ -1461,11 +1469,9 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
         TraverseDecl(D);
       }
     } else {
-      multiDeclStmts_.push_back(stmt);
       for (auto* D : stmt->decls()){
         TraverseDecl(D);
       }
-      multiDeclStmts_.pop_back();
     }
     stmt_contexts_.pop_back();
   }
@@ -1720,13 +1726,20 @@ SkeletonASTVisitor::getUnderlyingExpr(Expr *e)
 }
 
 void
-SkeletonASTVisitor::replaceGlobalUse(Decl* decl, SourceRange replRng)
+SkeletonASTVisitor::replaceGlobalUse(DeclRefExpr* expr, SourceRange replRng)
 {
   if (keepGlobals_) return;
 
-  auto iter = globals_.find(decl);
+  auto iter = globals_.find(expr->getDecl());
   if (iter != globals_.end()){
-    replace(replRng, rewriter_, iter->second, *ci_);
+    //there is a bug in Clang I can't quite track down
+    //it is erroneously causing DeclRefExpr to get visited twice
+    //when they occur inside a struct decl
+    auto done = alreadyReplaced_.find(expr);
+    if (done == alreadyReplaced_.end()){
+      replace(replRng, rewriter_, iter->second, *ci_);
+      alreadyReplaced_.insert(expr);
+    }
   }
 }
 

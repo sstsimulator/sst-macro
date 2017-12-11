@@ -429,16 +429,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
   std::set<clang::FunctionDecl*> keepWithNullArgs_;
   std::set<clang::FunctionDecl*> deleteWithNullArgs_;
-  std::list<clang::DeclStmt*> multiDeclStmts_;
-
-  struct PendingGlobalVar {
-    clang::VarDecl* D;
-    ArrayInfo* infoPtr;
-    AnonRecord* recPtr;
-    PendingGlobalVar(clang::VarDecl* _D, ArrayInfo* _i, AnonRecord* _r) :
-      D(_D), infoPtr(_i), recPtr(_r){}
-  };
-  std::list<PendingGlobalVar> pendingGlobalVars_;
+  std::set<clang::DeclRefExpr*> alreadyReplaced_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;
@@ -456,7 +447,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return nullptr;
   }
 
-  void replaceGlobalUse(clang::Decl* decl, clang::SourceRange rng);
+  void replaceGlobalUse(clang::DeclRefExpr* expr, clang::SourceRange rng);
 
   clang::Expr* getUnderlyingExpr(clang::Expr *e);
 
