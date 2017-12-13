@@ -166,90 +166,6 @@ SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
   }
 
   return true; //don't do this anymore - but keep code around
-
-  std::string allocatedTypeStr = expr->getAllocatedType().getAsString();
-  if (expr->getNumPlacementArgs() == 0){
-    PrettyPrinter pp;
-    if (expr->isArray()){
-      pp.os << "conditional_array_new<" << allocatedTypeStr << ">(";
-      pp.print(expr->getArraySize());
-      pp.os << ")";
-    } else {
-      pp.os << "conditional_new<" << allocatedTypeStr << ">(";
-      if (expr->hasInitializer()){
-        Expr* init = expr->getInitializer();
-        if (isa<ParenListExpr>(init)){
-          ParenListExpr* pinit = cast<ParenListExpr>(init);
-          for (int i=0; i < pinit->getNumExprs(); ++i){
-            if (i >= 1) pp.os << ",";
-            pp.print(pinit->getExpr(i));
-          }
-        } else {
-          pp.print(init);
-        }
-      } else {
-        const Expr* ctor = expr->getConstructExpr();
-        if (ctor){
-          pp.print(ctor);
-        }
-      }
-      pp.os << ")";
-    }
-    replace(expr, rewriter_, pp.os.str(), *ci_);
-  } else {
-    //might be a placement new or no-throw new
-    Expr* placer = expr->getPlacementArg(0);
-    switch(placer->getStmtClass())
-    {
-      case Stmt::DeclRefExprClass:
-      {
-        DeclRefExpr* dre = cast<DeclRefExpr>(placer);
-        if (dre->getFoundDecl()->getNameAsString() == "sstmac_placement_ptr"){
-          break;
-        }
-      }
-      case Stmt::ImplicitCastExprClass:
-      case Stmt::CStyleCastExprClass:
-      case Stmt::CallExprClass:
-      case Stmt::CXXStaticCastExprClass:
-      case Stmt::UnaryOperatorClass:
-      {
-        QualType type = placer->getType();
-        if (QualType::getAsString(type.split()) == "void *"){
-          PrettyPrinter pp;
-          //placement
-          pp.os << "placement_new<" << allocatedTypeStr << ">(";
-          pp.print(placer);
-          if (expr->isArray()){
-            pp.print(expr->getArraySize());
-          } else if (expr->hasInitializer()){
-            Expr* init = expr->getInitializer();
-            if (isa<ParenListExpr>(init)){
-              ParenListExpr* pinit = cast<ParenListExpr>(init);
-              for (int i=0; i < pinit->getNumExprs(); ++i){
-                pp.os << ",";
-                pp.print(pinit->getExpr(i));
-              }
-            } else {
-              pp.os << ",";
-              pp.print(init);
-            }
-          } else {
-            const Expr* ctor = expr->getConstructExpr();
-            if (ctor){
-              pp.os << ",";
-              pp.print(ctor);
-            }
-          }
-          pp.os << ")";
-          replace(expr, rewriter_, pp.os.str(), *ci_);
-        }
-      }
-      default:
-        break;
-    }
-  }
-  return true;
 }
 
 
@@ -261,23 +177,36 @@ SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueu
   stmt_contexts_.push_back(expr);
   TraverseStmt(expr->getArgument());
   stmt_contexts_.pop_back();
-  return true; //don't do this anymore
-
-  std::string allocatedTypeStr = expr->getDestroyedType().getAsString();
-  PrettyPrinter pp;
-  if (expr->isArrayForm()){
-    pp.os << "conditional_delete_array";
-  } else {
-    pp.os << "conditional_delete";
-  }
-  pp.os << "<" << allocatedTypeStr << ">"
-        << "(";
-  pp.print(expr->getArgument());
-  pp.os << ")";
-  replace(expr, rewriter_, pp.os.str(), *ci_);
   return true;
 }
 
+bool
+SkeletonASTVisitor::TraverseInitListExpr(InitListExpr* expr, DataRecursionQueue* queue)
+{
+  if (visitingGlobal_){
+    QualType qty = expr->getType();
+    if (qty->isStructureType()){
+      const RecordType* ty = qty->getAsStructureType();
+      RecordDecl* rd = ty->getDecl();
+      auto iter = rd->field_begin();
+      for (int i=0; i < expr->getNumInits(); ++i, ++iter){
+        Expr* ie = const_cast<Expr*>(expr->getInit(i));
+        FieldDecl* fd = *iter;
+        activeFieldDecls_.push_back(fd);
+        activeInits_.push_back(getUnderlyingExpr(ie));
+        TraverseStmt(ie);
+        activeFieldDecls_.pop_back();
+        activeInits_.pop_back();
+      }
+    } else {
+      for (int i=0; i < expr->getNumInits(); ++i){
+        Expr* ie = const_cast<Expr*>(expr->getInit(i));
+        TraverseStmt(ie);
+      }
+    }
+  }
+  return true;
+}
 
 bool
 SkeletonASTVisitor::VisitUnaryOperator(UnaryOperator* op)
@@ -758,6 +687,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 
 
   std::string scopeUniqueVarName = scope_prefix + D->getNameAsString();
+  setActiveGlobalScopedName(scopeUniqueVarName);
 
   std::stringstream extern_os;
   extern_os << "extern int sstmac_global_stacksize; ";
@@ -810,6 +740,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     scopedNames_[D] = scopeUniqueVarName;
   }
 
+  /**
   if (D->hasInit()){
     clang::Stmt* s = D->getInit();
     if (s->getStmtClass() == Stmt::UnaryOperatorClass){
@@ -822,7 +753,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
             Decl* pointedTo = dref->getFoundDecl()->getCanonicalDecl();
             //okay - this is fun
             //this is a pointer to another global variable
-            GlobalVarNamespace::Variable& var = currentNs_->replVars[scopeUniqueVarName];
+            GlobalVarNamespace::Variable& var =
             var.pointedTo = scopedNames_[pointedTo];
             skipInit = true;
           }
@@ -830,6 +761,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
       }
     }
   }
+  */
 
   if (arrayInfo && arrayInfo->needsTypedef()){
     rewriter_.InsertText(declEnd, arrayInfo->typedefString + ";");
@@ -880,10 +812,12 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
            << QualType::getAsString(D->getType().split())
            << ">(" << "__offset_" << scopeUniqueVarName;
       if (D->getInit()){
-        CXXConstructExpr* e = cast<CXXConstructExpr>(D->getInit());
-        if (e->getNumArgs() > 0){
-          pp.os << ",";
-          pp.print(e);
+        if (D->getInit()->getStmtClass() == Stmt::CXXConstructExprClass){
+          CXXConstructExpr* e = cast<CXXConstructExpr>(D->getInit());
+          if (e->getNumArgs() > 0){
+            pp.os << ",";
+            pp.print(e);
+          }
         }
       }
       pp.os << "); ";
@@ -1137,8 +1071,18 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
   bool skipInit = visitVarDecl(D);
 
   if (D->hasInit() && !skipInit){
+    if (visitingGlobal_){
+      activeDecls_.push_back(D);
+      activeInits_.push_back(D->getInit());
+    }
     TraverseStmt(D->getInit());
+    if (visitingGlobal_){
+      activeDecls_.pop_back();
+      activeInits_.pop_back();
+    }
   }
+
+  clearActiveGlobal();
 
   return true;
 }
@@ -1332,20 +1276,8 @@ SkeletonASTVisitor::TraverseNamespaceDecl(NamespaceDecl* D)
 bool
 SkeletonASTVisitor::TraverseFunctionTemplateDecl(FunctionTemplateDecl *D)
 {
-  static const std::set<std::string> skip_set = {
-    "placement_new",
-    "conditional_new",
-    "conditional_array_new",
-    "conditional_delete",
-    "conditional_delete_array",
-  };
-
-  if (skip_set.find(D->getNameAsString()) != skip_set.end()){
-    return true;
-  } else {
-    TraverseDecl(D->getTemplatedDecl());
-    return true;
-  }
+  TraverseDecl(D->getTemplatedDecl());
+  return true;
 }
 
 bool
@@ -1399,9 +1331,73 @@ SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue*
 }
 
 bool
+SkeletonASTVisitor::TraverseFieldDecl(clang::FieldDecl* fd, DataRecursionQueue* queue)
+{
+  activeFieldDecls_.push_back(fd);
+  TraverseStmt(fd->getBody());
+  activeFieldDecls_.pop_back();
+  return true;
+}
+
+bool
 SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue* queue)
 {
-  VisitStmt(op);
+  //VisitStmt(op);
+  if (activeGlobal() && op->getOpcode() == UO_AddrOf){
+    Expr* e = getUnderlyingExpr(op->getSubExpr());
+    if (e->getStmtClass() == Stmt::DeclRefExprClass){
+      DeclRefExpr* dr = cast<DeclRefExpr>(e);
+      if (isGlobal(dr)){
+
+        if (activeInits_.empty()){
+          errorAbort(op->getLocStart(), *ci_,
+                     "unable to parse global variable initialization");
+        }
+
+        Expr* init = activeInits_.back();
+        if (op != init){
+          errorAbort(op->getLocStart(), *ci_,
+                     "pointer to global variable used in initialization of global variable "
+                     " - deglobalization can create relocation pointer");
+        }
+
+
+        std::string fieldOffsetName;
+        std::stringstream sstr;
+        if (!activeFieldDecls_.empty()){
+          FieldDecl* fd = activeFieldDecls_.back();
+          VarDecl* vd = activeDecls_.back();
+          const RecordDecl* rd = fd->getParent();
+
+          std::stringstream name_sstr;
+          name_sstr << "__field_offset_" << vd->getNameAsString() << "_" << fd->getNameAsString();
+          fieldOffsetName = name_sstr.str();
+
+          std::stringstream ostr;
+          ostr << "int " << fieldOffsetName
+               << " = offsetof(" << rd->getNameAsString() << "," << fd->getNameAsString() << ");";
+
+          SourceLocation end = getEndLoc(vd);
+          rewriter_.InsertText(end, ostr.str());
+
+          sstr << "extern int " << fieldOffsetName << "; ";
+        }
+
+
+        sstr << "sstmac::RelocationPointer r" << numRelocations_++
+             << "(__offset_" << scopedNames_[dr->getDecl()->getCanonicalDecl()]
+             << ", __offset_" << activeGlobalScopedName();
+
+        if (!activeFieldDecls_.empty()){
+          sstr << " + " << fieldOffsetName;
+        }
+        sstr << ");";
+        currentNs_->relocations.push_back(sstr.str());
+        return true; //don't refactor global variable
+      }
+    }
+  }
+
   stmt_contexts_.push_back(op);
   TraverseStmt(op->getSubExpr());
   stmt_contexts_.pop_back();

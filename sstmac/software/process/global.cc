@@ -53,10 +53,10 @@ namespace sstmac {
 int GlobalVariable::stackOffset = 0;
 int GlobalVariable::allocSize = 4096;
 char* GlobalVariable::globalInits = nullptr;
-std::list<std::pair<int,int>> GlobalVariable::relocationPointers;
+std::list<GlobalVariable::relocation> GlobalVariable::relocationPointers;
 std::list<CppGlobal*> GlobalVariable::cppCtors;
 
-GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData, int relocationPtr)
+GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData)
 {
 
   offset = stackOffset;
@@ -85,8 +85,6 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData
     void* initStart = (char*)globalInits + stackOffset;
     fflush(stdout);
     ::memcpy(initStart, initData, size);
-  } else if (relocationPtr > 0){
-    relocationPointers.emplace_back(offset, relocationPtr);
   }
 
   stackOffset += offsetIncrement;
@@ -94,6 +92,23 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData
 
 void registerCppGlobal(CppGlobal* g){
   GlobalVariable::registerCtor(g);
+}
+
+void
+GlobalVariable::registerRelocation(int src, int dst)
+{
+  relocationPointers.emplace_back(src,dst);
+}
+
+void
+GlobalVariable::relocatePointers(void* globals)
+{
+  char* segment = (char*) globals;
+  for (relocation& r : relocationPointers){
+    void* src = &segment[r.srcOffset];
+    void** dst = (void**) &segment[r.dstOffset];
+    *dst = src;
+  }
 }
 
 void

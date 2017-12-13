@@ -115,7 +115,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
-    pragmaConfig_(cfg)
+    pragmaConfig_(cfg),
+    numRelocations_(0)
   {
     initHeaders();
     initReservedNames();
@@ -285,6 +286,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool TraverseDeclStmt(clang::DeclStmt* op, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseFieldDecl(clang::FieldDecl* fd, DataRecursionQueue* queue = nullptr);
+
+  bool TraverseInitListExpr(clang::InitListExpr* expr, DataRecursionQueue* queue = nullptr);
+
 #define OPERATOR(NAME) \
   bool TraverseBin##NAME(clang::BinaryOperator* op, DataRecursionQueue* queue = nullptr){ \
     return TraverseBinaryOperator(op,queue); \
@@ -406,6 +411,25 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   GlobalVarNamespace* currentNs_;
   std::map<const clang::Decl*,std::string> globals_;
   std::map<const clang::Decl*,std::string> scopedNames_;
+
+  std::string activeGlobalScopedName_;
+
+  bool activeGlobal() const {
+    return !activeGlobalScopedName_.empty();
+  }
+
+  void clearActiveGlobal() {
+    activeGlobalScopedName_.clear();
+  }
+
+  void setActiveGlobalScopedName(const std::string& str) {
+    activeGlobalScopedName_ = str;
+  }
+
+  const std::string& activeGlobalScopedName() const {
+    return activeGlobalScopedName_;
+  }
+
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
   int insideCxxMethod_;
@@ -415,6 +439,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::CXXRecordDecl*> class_contexts_;
   std::list<clang::ForStmt*> loop_contexts_;
   std::list<clang::Stmt*> stmt_contexts_;
+
+  std::list<clang::VarDecl*> activeDecls_;
+  std::list<clang::Expr*> activeInits_;
+
+  int numRelocations_;
 
   typedef enum { LHS, RHS } BinOpSide;
   std::list<BinOpSide> sides_;
@@ -430,6 +459,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<clang::FunctionDecl*> keepWithNullArgs_;
   std::set<clang::FunctionDecl*> deleteWithNullArgs_;
   std::set<clang::DeclRefExpr*> alreadyReplaced_;
+
+  std::list<clang::FieldDecl*> activeFieldDecls_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;

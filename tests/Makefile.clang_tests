@@ -9,6 +9,7 @@ CLANGTESTS = \
   deglobal_regular \
   deglobal_multi \
   deglobal_namespace \
+  deglobal_relocation \
   deglobal_array \
   deglobal_multi_array \
   deglobal_template \

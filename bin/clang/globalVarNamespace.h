@@ -59,11 +59,11 @@ struct GlobalVarNamespace
 
   struct Variable {
     bool isFxnStatic;
-    std::string pointedTo;
   };
 
   std::string ns;
   std::map<std::string, Variable> replVars;
+  std::list<std::string> relocations;
   std::map<std::string, GlobalVarNamespace> subspaces;
   char uniqueFilePrefix[256];
   const char* testPrefix;
@@ -121,14 +121,17 @@ struct GlobalVarNamespace
 
       if (var.isFxnStatic){
         os << ",nullptr";
-      } else if (!var.pointedTo.empty()){
-        os << ",nullptr,__offset_" << var.pointedTo;
       } else {
         os  << ",__ptr_" << name;
       }
 
       os << ");\n";
     }
+
+    for (auto& str : relocations){
+      os << "\n" << str << "\n";
+    }
+
     for (auto& pair : subspaces){
       std::stringstream sstr;
       bool subNotEmpty = false;

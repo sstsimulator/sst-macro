@@ -56,7 +56,6 @@ typedef int (*empty_main_fxn)();
 #ifndef __cplusplus
 #include <stdbool.h>
 #endif
-#include <sstmac/null_buffer.h>
 
 #ifdef __cplusplus
 
@@ -97,64 +96,7 @@ typedef int (*empty_main_fxn)();
 #include <new>
 #include <utility>
 
-extern int& should_skip_operator_new();
 extern int sstmac_global_stacksize;
-
-template <class T, class... Args>
-T*
-placement_new(void* sstmac_placement_ptr, Args&&... args){
-  //non-zero global stacksize shows we moved outside cxa init
-  //always allocate during cxa init
-  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
-  if (flag == 0){
-    if (isNonNullBuffer(sstmac_placement_ptr)){
-      return new (sstmac_placement_ptr) T(std::forward<Args>(args)...);
-    }
-    return reinterpret_cast<T*>(sstmac_placement_ptr);
-  } else {
-    return nullptr;
-  }
-}
-
-template <class T>
-T*
-conditional_array_new(unsigned long size){
-  //non-zero global stacksize shows we moved outside cxa init
-  //always allocate during cxa init
-  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
-  T* ret = nullptr;
-  if (flag == 0){
-    ret = new T[size];
-  }
-  return ret;
-}
-
-template <class T, class... Args>
-T*
-conditional_new(Args&&... args){
-  //non-zero global stacksize shows we moved outside cxa init
-  //always allocate during cxa init
-  int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
-  T* ret = nullptr;
-  if (flag == 0){
-    ret = new T(std::forward<Args>(args)...);
-  }
-  return ret;
-}
-
-
-
-template <class T>
-void
-conditional_delete(T* t){
-  if (isNonNullBuffer(t)) delete t;
-}
-
-template <class T>
-void
-conditional_delete_array(T* t){
-  if (isNonNullBuffer(t)) delete[] t;
-}
 
 namespace sstmac {
 

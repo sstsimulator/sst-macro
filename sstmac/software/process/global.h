@@ -57,7 +57,7 @@ namespace sstmac {
 
 class GlobalVariable {
  public:
-  GlobalVariable(int& offset, const int size, const void* initData, int relocationPtr = -1);
+  GlobalVariable(int& offset, const int size, const void* initData);
 
   ~GlobalVariable();
 
@@ -71,6 +71,10 @@ class GlobalVariable {
 
   static void callCtors(void* globals);
 
+  static void relocatePointers(void* globals);
+
+  static void registerRelocation(int src, int dst);
+
   static void registerCtor(CppGlobal* g){
     cppCtors.push_back(g);
   }
@@ -79,9 +83,22 @@ class GlobalVariable {
   static int stackOffset;
   static char* globalInits;
   static int allocSize;
-  static std::list<std::pair<int,int>> relocationPointers;
   static std::list<CppGlobal*> cppCtors;
 
+  struct relocation {
+    int srcOffset;
+    int dstOffset;
+    relocation(int src, int dst) :
+      srcOffset(src), dstOffset(dst) {}
+  };
+  static std::list<relocation> relocationPointers;
+
+};
+
+class RelocationPointer {
+  RelocationPointer(int src, int dst){
+    GlobalVariable::registerRelocation(src, dst);
+  }
 };
 
 static inline void* get_global_at_offset(int offset){
