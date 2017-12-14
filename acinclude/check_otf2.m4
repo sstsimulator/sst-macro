@@ -29,10 +29,8 @@ fi
 
 #check header 
 AC_CHECK_HEADER([otf2/otf2.h],
-  [HAVE_OTF2=yes
-  AC_MSG_RESULT([otf2/otf2.h found.])],
-  [HAVE_OTF2=no
-  AC_MSG_RESULT([No otf2/otf2.h found.])]
+  [HAVE_OTF2=yes],
+  [HAVE_OTF2=no]
 )
 
 if test "X$SHOULD_HAVE_OTF2" = "Xyes" -a "X$HAVE_OTF2" != "Xyes"; then

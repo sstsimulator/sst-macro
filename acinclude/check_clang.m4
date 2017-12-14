@@ -70,6 +70,10 @@ if test "X$found_clang" = "Xno"; then
 AM_CONDITIONAL(HAVE_CLANG, false)
 else
 AM_CONDITIONAL(HAVE_CLANG, true)
+offset=`$srcdir/bin/config_tools/get_offsetof_macro $CXX`
+AC_MSG_CHECKING([Checking for offsetof macro definition])
+AC_MSG_RESULT([$offset])
+AC_DEFINE_UNQUOTED([OFFSET_OF_MACRO], [$offset], "the definition of the offsetof macro")
 #need to figure out clang absolute include paths
 #because clang libtooling is an abominiation hard-wired to relative paths
 CLANG_LIBTOOLING_LIBS=`$clang/bin/llvm-config --system-libs`

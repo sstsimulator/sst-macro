@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "replacePragma.h"
 #include <iostream>
 #include <fstream>
+#include <sstmac/common/sstmac_config.h>
 
 using namespace clang;
 using namespace clang::driver;
@@ -1374,8 +1375,9 @@ SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue*
           fieldOffsetName = name_sstr.str();
 
           std::stringstream ostr;
-          ostr << "int " << fieldOffsetName
-               << " = offsetof(" << rd->getNameAsString() << "," << fd->getNameAsString() << ");";
+          ostr << "int " << fieldOffsetName<< " = "
+               << SSTMAC_OFFSET_OF_MACRO
+               << "(" << rd->getNameAsString() << "," << fd->getNameAsString() << ");";
 
           SourceLocation end = getEndLoc(vd);
           rewriter_.InsertText(end, ostr.str());

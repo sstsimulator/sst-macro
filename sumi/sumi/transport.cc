@@ -123,6 +123,14 @@ transport::transport(sprockit::sim_parameters* params) :
   use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
 }
 
+void
+transport::wait_barrier(int tag)
+{
+  if (nproc_ == 1) return;
+  barrier(tag);
+  collective_block(collective::barrier, tag);
+}
+
 int
 transport::allocate_cq()
 {

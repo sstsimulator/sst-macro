@@ -9,7 +9,8 @@ if !INTEGRATED_SST_CORE
 
 # These are run with the same rule
 SKELETONCASES= \
-  boxml
+  boxml \
+  relocation_ptr_test
 
 if BUILD_SUMI_MPI
 SKELETONCASES += \

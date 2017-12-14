@@ -42,68 +42,40 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/software/process/thread_info.h>
-#include <sstmac/software/process/tls.h>
-#include <sstmac/software/process/global.h>
-#include <sstmac/common/thread_lock.h>
-#include <sstmac/common/sstmac_config.h>
-#include <sprockit/errors.h>
-#include <iostream>
-#include <string.h>
-#include <stdint.h>
-#include <list>
+#include <stddef.h>
+#include <stdio.h>
+#include <sumi.h>
 
-namespace sstmac {
+#define sstmac_app_name relocation_ptr
 
-static const int tls_sanity_check = 42042042;
+int x;
 
-std::set<void*> thread_info::active_global_maps_;
+struct xPtr {
+  int* x;
+};
 
-void
-thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack, void* globalsMap)
+xPtr xGlobal = { &x };
+
+xPtr xGlobalArr[] = { { &x }, 0 };
+
+int main(int argc, char** argv)
 {
-  size_t stack_mod = ((size_t)stack) % sstmac_global_stacksize;
-  if (stack_mod != 0){
-    spkt_throw_printf(sprockit::value_error,
-        "user space thread stack is not aligned on %llu bytes",
-        sstmac_global_stacksize);
-  }
+  auto tport = sumi::sumi_api();
+  tport->init();
+  int rank = tport->rank();
+  *xGlobal.x = rank;
+  tport->wait_barrier(0);
+  printf("Rank %d is %d\n", rank, x);
 
-  //essentially treat this as thread-local storage
-  char* tls = (char*) stack;
-  int* thr_id_ptr = (int*) &tls[TLS_THREAD_ID];
-  *thr_id_ptr = phys_thread_id;
+  *xGlobalArr[0].x *= 10;
+  tport->wait_barrier(1);
+  printf("Rank %d is %d\n", rank, *xGlobal.x);
 
-  int* sanity_ptr = (int*) &tls[TLS_SANITY_CHECK];
-  *sanity_ptr = tls_sanity_check;
+  x *= 10;
+  tport->wait_barrier(2);
+  printf("Rank %d is %d\n", rank, *xGlobalArr[0].x);
 
-  //this is dirty - so dirty, but it works
-  void** globalPtr = (void**) &tls[TLS_GLOBAL_MAP];
-  *globalPtr = globalsMap;
-
-  if (globalsMap){
-    active_global_maps_.insert(globalsMap);
-    GlobalVariable::callCtors(globalsMap);
-    GlobalVariable::relocatePointers(globalsMap);
-  }
+  tport->finish();
+  return 0;
 }
 
-void
-thread_info::init_global_space(void* ptr, int size, int offset)
-{
-  for (void* globals : active_global_maps_){
-    char* dst = ((char*)globals) + offset;
-    ::memcpy(dst, ptr, size);
-  }
-
-  //also do the global init for any new threads spawned
-  char* dst = ((char*)GlobalVariable::globalInit()) + offset;
-  ::memcpy(dst, ptr, size);
-}
-
-}
-
-extern "C" void sstmac_init_global_space(void* ptr, int size, int offset)
-{
-  sstmac::thread_info::init_global_space(ptr, size, offset);
-}

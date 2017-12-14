@@ -96,6 +96,7 @@ class GlobalVariable {
 };
 
 class RelocationPointer {
+ public:
   RelocationPointer(int src, int dst){
     GlobalVariable::registerRelocation(src, dst);
   }
