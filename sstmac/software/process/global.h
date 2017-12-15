@@ -73,7 +73,8 @@ class GlobalVariable {
 
   static void relocatePointers(void* globals);
 
-  static void registerRelocation(int src, int dst);
+  static void registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
+                                 void* dstPtr, void* dstBasePtr, int& dstOffset);
 
   static void registerCtor(CppGlobal* g){
     cppCtors.push_back(g);
@@ -91,14 +92,33 @@ class GlobalVariable {
     relocation(int src, int dst) :
       srcOffset(src), dstOffset(dst) {}
   };
-  static std::list<relocation> relocationPointers;
+  static std::list<relocation> relocations;
+
+
+  struct relocationCfg {
+    void* srcPtr;
+    void* srcBasePtr;
+    int& srcOffset;
+    void* dstPtr;
+    void* dstBasePtr;
+    int& dstOffset;
+    relocationCfg(void* s, void* bs, int& os,
+                 void* d, void* bd, int& od) :
+      srcPtr(s), srcBasePtr(bs), srcOffset(os),
+      dstPtr(d), dstBasePtr(bd), dstOffset(od)
+    {
+    }
+  };
+  static std::list<relocationCfg> relocationCfgs;
 
 };
 
 class RelocationPointer {
  public:
-  RelocationPointer(int src, int dst){
-    GlobalVariable::registerRelocation(src, dst);
+  RelocationPointer(void* srcPtr, void* srcBasePtr, int& srcOffset,
+                    void* dstPtr, void* dstBasePtr, int& dstOffset){
+    GlobalVariable::registerRelocation(srcPtr, srcBasePtr, srcOffset,
+                                       dstPtr, dstBasePtr, dstOffset);
   }
 };
 

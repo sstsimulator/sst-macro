@@ -192,6 +192,14 @@ SkeletonASTVisitor::TraverseInitListExpr(InitListExpr* expr, DataRecursionQueue*
       auto iter = rd->field_begin();
       for (int i=0; i < expr->getNumInits(); ++i, ++iter){
         Expr* ie = const_cast<Expr*>(expr->getInit(i));
+        Expr* base_ie = getUnderlyingExpr(ie);
+        if (base_ie->getStmtClass() == Stmt::DeclRefExprClass){
+          DeclRefExpr* dr = cast<DeclRefExpr>(base_ie);
+          if (isGlobal(dr)){
+            //init expr must be compile-time constants - which means not refactoring this global
+            continue;
+          }
+        }
         FieldDecl* fd = *iter;
         activeFieldDecls_.push_back(fd);
         activeInits_.push_back(getUnderlyingExpr(ie));
@@ -200,28 +208,20 @@ SkeletonASTVisitor::TraverseInitListExpr(InitListExpr* expr, DataRecursionQueue*
         activeInits_.pop_back();
       }
     } else {
+      bool isArray = expr->getType()->isConstantArrayType();
       for (int i=0; i < expr->getNumInits(); ++i){
+        if (isArray) initIndices_.push_back(i);
         Expr* ie = const_cast<Expr*>(expr->getInit(i));
+        activeInits_.push_back(getUnderlyingExpr(ie));
         TraverseStmt(ie);
+        activeInits_.pop_back();
+        if (isArray) initIndices_.pop_back();
       }
     }
-  }
-  return true;
-}
-
-bool
-SkeletonASTVisitor::VisitUnaryOperator(UnaryOperator* op)
-{
-  if (keepGlobals_) return true;
-
-  if (visitingGlobal_){
-    Expr* exp = op->getSubExpr();
-    if (isa<DeclRefExpr>(exp)){
-      DeclRefExpr* dref = cast<DeclRefExpr>(exp);
-      if (isGlobal(dref)){
-        errorAbort(dref->getLocStart(), *ci_,
-                   "cannot yet create global variable pointers to other global variables");
-      }
+  } else {
+    for (int i=0; i < expr->getNumInits(); ++i){
+      Expr* ie = const_cast<Expr*>(expr->getInit(i));
+      TraverseStmt(ie);
     }
   }
   return true;
@@ -701,6 +701,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
             << " extern int __offset_" << scopeUniqueVarName << "; ";
 
   rewriter_.InsertText(sstmacExternVarsLoc, extern_os.str());
+  scopedNames_[mainDecl(D)] = scopeUniqueVarName;
 
   if (!D->hasExternalStorage()){
     std::stringstream os;
@@ -738,31 +739,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     //all of this text goes immediately after the variable
     rewriter_.InsertText(declEnd, os.str());
     currentNs_->replVars[scopeUniqueVarName] = var;
-    scopedNames_[D] = scopeUniqueVarName;
   }
-
-  /**
-  if (D->hasInit()){
-    clang::Stmt* s = D->getInit();
-    if (s->getStmtClass() == Stmt::UnaryOperatorClass){
-      UnaryOperator* op = cast<UnaryOperator>(s);
-      if (op->getOpcode() == UO_AddrOf){
-        Expr* e = getUnderlyingExpr(op->getSubExpr());
-        if (e->getStmtClass() == Stmt::DeclRefExprClass){
-          DeclRefExpr* dref = cast<DeclRefExpr>(e);
-          if (isGlobal(dref)){
-            Decl* pointedTo = dref->getFoundDecl()->getCanonicalDecl();
-            //okay - this is fun
-            //this is a pointer to another global variable
-            GlobalVarNamespace::Variable& var =
-            var.pointedTo = scopedNames_[pointedTo];
-            skipInit = true;
-          }
-        }
-      }
-    }
-  }
-  */
 
   if (arrayInfo && arrayInfo->needsTypedef()){
     rewriter_.InsertText(declEnd, arrayInfo->typedefString + ";");
@@ -854,7 +831,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   std::stringstream varReplSstr;
   varReplSstr << "(*((" << retType << ")" << currentNs_->nsPrefix()
               << var_ns_prefix << "get_" << scopeUniqueVarName << "()))";
-  globals_[D] = varReplSstr.str();
+  globals_[mainDecl(D)] = varReplSstr.str();
 
   return skipInit;
 }
@@ -886,7 +863,7 @@ SkeletonASTVisitor::checkFileVar(const std::string& filePrefix, VarDecl* D)
 bool
 SkeletonASTVisitor::checkStaticFileVar(VarDecl* D)
 {
-  return checkFileVar(currentNs_->filePrefix(), D);
+  return checkFileVar(currentNs_->filePrefix(ci_, D->getLocStart()), D);
 }
 
 bool
@@ -922,7 +899,7 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
   }
   ++cnt;
 
-  std::string scope_prefix = currentNs_->filePrefix() + prefix_sstr.str();
+  std::string scope_prefix = currentNs_->filePrefix(ci_, D->getLocStart()) + prefix_sstr.str();
 
   return setupGlobalVar(scope_prefix, "",
                  outerFxn->getLocStart(),
@@ -1074,7 +1051,7 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
   if (D->hasInit() && !skipInit){
     if (visitingGlobal_){
       activeDecls_.push_back(D);
-      activeInits_.push_back(D->getInit());
+      activeInits_.push_back(getUnderlyingExpr(D->getInit()));
     }
     TraverseStmt(D->getInit());
     if (visitingGlobal_){
@@ -1104,13 +1081,6 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
 
   if (reservedNames_.find(D->getNameAsString()) != reservedNames_.end()){
     return false;
-  }
-
-  SourceLocation startLoc = D->getLocStart();
-  std::string filename = ci_->getSourceManager().getFilename(startLoc).str();
-
-  if (!currentNs_->isPrefixSet){
-    currentNs_->setFilePrefix(filename.c_str());
   }
 
   if (D->getNameAsString() == "sstmac_appname_str"){
@@ -1340,6 +1310,111 @@ SkeletonASTVisitor::TraverseFieldDecl(clang::FieldDecl* fd, DataRecursionQueue* 
   return true;
 }
 
+void
+SkeletonASTVisitor::addRelocation(UnaryOperator* op, DeclRefExpr* dr, ValueDecl* member)
+{
+  if (activeInits_.empty()){
+    errorAbort(op->getLocStart(), *ci_,
+               "unable to parse global variable initialization");
+  }
+
+  Expr* init = activeInits_.back();
+  if (op != init){
+    errorAbort(op->getLocStart(), *ci_,
+               "pointer to global variable used in initialization of global variable "
+               " - deglobalization cannot create relocation pointer");
+  }
+
+
+  std::string dstFieldOffsetPtrName;
+  std::string srcFieldOffsetPtrName;
+  std::stringstream ptr_str;
+  std::stringstream cpp_str;
+  VarDecl* vd = activeDecls_.back();
+  if (!activeFieldDecls_.empty()){
+    std::stringstream sstr;
+    sstr << "__field_offset_ptr_" << vd->getNameAsString();
+    for (FieldDecl* fd : activeFieldDecls_){
+      sstr << "_" << fd->getNameAsString();
+    }
+    dstFieldOffsetPtrName = sstr.str();
+    if (!currentNs_->relocationOffsetDeclared(dstFieldOffsetPtrName)){
+      ptr_str << "void* " << dstFieldOffsetPtrName << " = "
+           << "&" << vd->getNameAsString();
+      if (!initIndices_.empty()){
+        for (auto& idx : initIndices_){
+          ptr_str << "[" << idx << "]";
+        }
+      }
+      for (FieldDecl* fd : activeFieldDecls_){
+        ptr_str << "." << fd->getNameAsString();
+      }
+      currentNs_->setRelocationOffsetDeclared(dstFieldOffsetPtrName);
+    }
+    ptr_str << "; ";
+    cpp_str << "extern void* " << dstFieldOffsetPtrName << "; ";
+  }
+
+  if (member){
+    std::stringstream sstr;
+    sstr << "__field_offset_ptr_" << dr->getDecl()->getNameAsString() << "_" << member->getNameAsString();
+    srcFieldOffsetPtrName = sstr.str();
+    if (!currentNs_->relocationOffsetDeclared(srcFieldOffsetPtrName)){
+      ptr_str << "void* " << srcFieldOffsetPtrName << " = "
+           << "&" << dr->getDecl()->getNameAsString()
+           << "." << member->getNameAsString() << "; ";
+      currentNs_->setRelocationOffsetDeclared(srcFieldOffsetPtrName);
+    }
+    cpp_str << "extern void* " << srcFieldOffsetPtrName << "; ";
+  }
+
+  std::string ptr_decls = ptr_str.str();
+  if (!ptr_decls.empty()){
+    SourceLocation end = getEndLoc(vd);
+    rewriter_.InsertText(end, ptr_decls);
+  }
+
+
+
+  std::string srcScopedName = scopedNames_[mainDecl(dr)];
+  if (srcScopedName.empty()){
+    errorAbort(dr->getLocStart(), *ci_,
+               "failed configuring global variable relocation");
+  }
+
+  if (!currentNs_->variableDefined(srcScopedName)){
+    cpp_str << "extern void* __ptr_" << srcScopedName << ";\n"
+            << "extern int __offset_" << srcScopedName << ";\n";
+  }
+
+  cpp_str << "sstmac::RelocationPointer r" << currentNs_->filePrefix(ci_, op->getLocStart())
+      << numRelocations_++ << "(";
+
+  if (member){
+    if (srcFieldOffsetPtrName.empty()){
+      errorAbort(dr->getLocStart(), *ci_,
+                 "failed configuring global variable relocation");
+    }
+    cpp_str << srcFieldOffsetPtrName;
+  } else {
+    cpp_str << "__ptr_" << srcScopedName;
+  }
+  cpp_str << ",__ptr_" << srcScopedName
+       << ",__offset_" << srcScopedName
+       << ",";
+  if (activeFieldDecls_.empty()){
+    cpp_str << "__ptr_" << activeGlobalScopedName();
+  } else {
+    cpp_str << dstFieldOffsetPtrName;
+  }
+
+  cpp_str << ",__ptr_" << activeGlobalScopedName()
+       << ",__offset_" << activeGlobalScopedName()
+       << ");";
+
+  currentNs_->relocations.push_back(cpp_str.str());
+}
+
 bool
 SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue* queue)
 {
@@ -1349,53 +1424,20 @@ SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue*
     if (e->getStmtClass() == Stmt::DeclRefExprClass){
       DeclRefExpr* dr = cast<DeclRefExpr>(e);
       if (isGlobal(dr)){
-
-        if (activeInits_.empty()){
-          errorAbort(op->getLocStart(), *ci_,
-                     "unable to parse global variable initialization");
-        }
-
-        Expr* init = activeInits_.back();
-        if (op != init){
-          errorAbort(op->getLocStart(), *ci_,
-                     "pointer to global variable used in initialization of global variable "
-                     " - deglobalization can create relocation pointer");
-        }
-
-
-        std::string fieldOffsetName;
-        std::stringstream sstr;
-        if (!activeFieldDecls_.empty()){
-          FieldDecl* fd = activeFieldDecls_.back();
-          VarDecl* vd = activeDecls_.back();
-          const RecordDecl* rd = fd->getParent();
-
-          std::stringstream name_sstr;
-          name_sstr << "__field_offset_" << vd->getNameAsString() << "_" << fd->getNameAsString();
-          fieldOffsetName = name_sstr.str();
-
-          std::stringstream ostr;
-          ostr << "int " << fieldOffsetName<< " = "
-               << SSTMAC_OFFSET_OF_MACRO
-               << "(" << rd->getNameAsString() << "," << fd->getNameAsString() << ");";
-
-          SourceLocation end = getEndLoc(vd);
-          rewriter_.InsertText(end, ostr.str());
-
-          sstr << "extern int " << fieldOffsetName << "; ";
-        }
-
-
-        sstr << "sstmac::RelocationPointer r" << numRelocations_++
-             << "(__offset_" << scopedNames_[dr->getDecl()->getCanonicalDecl()]
-             << ", __offset_" << activeGlobalScopedName();
-
-        if (!activeFieldDecls_.empty()){
-          sstr << " + " << fieldOffsetName;
-        }
-        sstr << ");";
-        currentNs_->relocations.push_back(sstr.str());
+        addRelocation(op, dr);
         return true; //don't refactor global variable
+      }
+    } else if (e->getStmtClass() == Stmt::MemberExprClass){
+      MemberExpr* m = cast<MemberExpr>(e);
+      Expr* base = getUnderlyingExpr(m->getBase());
+      if (base->getStmtClass() == Stmt::DeclRefExprClass){
+        DeclRefExpr* dr = cast<DeclRefExpr>(base);
+        if (isGlobal(dr)){
+          //oh my science - why - pointer to a field of a global struct
+          ValueDecl* member = m->getMemberDecl();
+          addRelocation(op, dr, member);
+          return true;
+        }
       }
     }
   }
@@ -1728,7 +1770,7 @@ SkeletonASTVisitor::replaceGlobalUse(DeclRefExpr* expr, SourceRange replRng)
 {
   if (keepGlobals_) return;
 
-  auto iter = globals_.find(expr->getDecl());
+  auto iter = globals_.find(mainDecl(expr->getDecl()));
   if (iter != globals_.end()){
     //there is a bug in Clang I can't quite track down
     //it is erroneously causing DeclRefExpr to get visited twice

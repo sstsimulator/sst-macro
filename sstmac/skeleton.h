@@ -52,8 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
 typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
-#include <stddef.h> //sorry, this has to be there
-
 #include <sstmac/common/sstmac_config.h>
 #ifndef __cplusplus
 #include <stdbool.h>

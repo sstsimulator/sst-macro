@@ -53,7 +53,8 @@ namespace sstmac {
 int GlobalVariable::stackOffset = 0;
 int GlobalVariable::allocSize = 4096;
 char* GlobalVariable::globalInits = nullptr;
-std::list<GlobalVariable::relocation> GlobalVariable::relocationPointers;
+std::list<GlobalVariable::relocation> GlobalVariable::relocations;
+std::list<GlobalVariable::relocationCfg> GlobalVariable::relocationCfgs;
 std::list<CppGlobal*> GlobalVariable::cppCtors;
 
 GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData)
@@ -95,16 +96,29 @@ void registerCppGlobal(CppGlobal* g){
 }
 
 void
-GlobalVariable::registerRelocation(int src, int dst)
+GlobalVariable::registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
+                                   void* dstPtr, void* dstBasePtr, int& dstOffset)
 {
-  relocationPointers.emplace_back(src,dst);
+  relocationCfgs.emplace_back(srcPtr, srcBasePtr, srcOffset,
+                              dstPtr, dstBasePtr, dstOffset);
 }
 
 void
 GlobalVariable::relocatePointers(void* globals)
 {
+  if (!relocationCfgs.empty()){
+    for (auto& cfg : relocationCfgs){
+      int dstFieldDelta = (intptr_t)cfg.dstPtr - (intptr_t)cfg.dstBasePtr;
+      int srcFieldDelta = (intptr_t)cfg.srcPtr - (intptr_t)cfg.srcBasePtr;
+      int src = cfg.srcOffset + srcFieldDelta;
+      int dst = cfg.dstOffset + dstFieldDelta;
+      relocations.emplace_back(src,dst);
+    }
+    relocationCfgs.clear();
+  }
+
   char* segment = (char*) globals;
-  for (relocation& r : relocationPointers){
+  for (relocation& r : relocations){
     void* src = &segment[r.srcOffset];
     void** dst = (void**) &segment[r.dstOffset];
     *dst = src;

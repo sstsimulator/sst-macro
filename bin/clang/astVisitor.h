@@ -126,7 +126,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   bool isGlobal(const clang::DeclRefExpr* expr) const {
-    return globals_.find(expr->getFoundDecl()->getCanonicalDecl()) != globals_.end();
+    return globals_.find(mainDecl(expr)) != globals_.end();
   }
 
   PragmaConfig& getPragmaConfig() {
@@ -134,7 +134,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   std::string getGlobalReplacement(clang::NamedDecl* decl) const {
-    auto iter = globals_.find(decl);
+    auto iter = globals_.find(mainDecl(decl));
     if (iter == globals_.end()){
       errorAbort(decl->getLocStart(), *ci_,
                  "getting global replacement for non-global variable");
@@ -210,15 +210,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @return
    */
   bool TraverseCXXMemberCallExpr(clang::CXXMemberCallExpr* expr, DataRecursionQueue* queue = nullptr);
-
-  /**
-   * @brief VisitUnaryOperator Currently no rewrite operations are performed.
-   * Unary operators are not valid in certain global variables usages.
-   * Validate that this unary operator is not a violation.
-   * @param op
-   * @return
-   */
-  bool VisitUnaryOperator(clang::UnaryOperator* op);
 
   /**
    * @brief VisitVarDecl We only need to visit variables once down the AST.
@@ -409,8 +400,18 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<clang::Stmt*>& deletedStmts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
+
+  /** These should always index by the canonical decl */
   std::map<const clang::Decl*,std::string> globals_;
   std::map<const clang::Decl*,std::string> scopedNames_;
+
+  static inline const clang::Decl* mainDecl(const clang::Decl* d){
+    return d->getCanonicalDecl();
+  }
+
+  static inline const clang::Decl* mainDecl(const clang::DeclRefExpr* dr){
+    return dr->getDecl()->getCanonicalDecl();
+  }
 
   std::string activeGlobalScopedName_;
 
@@ -429,6 +430,15 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   const std::string& activeGlobalScopedName() const {
     return activeGlobalScopedName_;
   }
+
+  /**
+   * @brief addRelocation
+   * @param op  The unary operator creating the pointer
+   * @param dr  The global variable being pointed to
+   * @param member  Optionally a specific field of the global variable being pointed to
+   */
+  void addRelocation(clang::UnaryOperator* op, clang::DeclRefExpr* dr,
+                     clang::ValueDecl* member = nullptr);
 
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
@@ -459,7 +469,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<clang::FunctionDecl*> keepWithNullArgs_;
   std::set<clang::FunctionDecl*> deleteWithNullArgs_;
   std::set<clang::DeclRefExpr*> alreadyReplaced_;
-
+  std::list<int> initIndices_;
   std::list<clang::FieldDecl*> activeFieldDecls_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
