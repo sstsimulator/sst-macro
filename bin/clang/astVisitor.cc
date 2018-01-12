@@ -47,6 +47,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <fstream>
 
+#if CLANG_VERSION_MAJOR >= 6
+clang::LangOptions Printing::langOpts;
+clang::PrintingPolicy Printing::policy(Printing::langOpts);
+#endif
+
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
@@ -127,6 +132,15 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
   PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
   SourceLocation headerLoc = ploc.getIncludeLoc();
 
+  //ignore eli variables
+  std::string varName = D->getNameAsString();
+  if (varName.size() >= 5){
+    std::string last4 = varName.substr(varName.size() - 4);
+    if (last4 == "_eli"){
+      return false;
+    }
+  }
+
   bool useAllHeaders = false;
   if (headerLoc.isValid() && !useAllHeaders){
     //we are inside a header
@@ -206,7 +220,7 @@ SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
       case Stmt::UnaryOperatorClass:
       {
         QualType type = placer->getType();
-        if (QualType::getAsString(type.split()) == "void *"){
+        if (GetTypeString(type.split()) == "void *"){
           PrettyPrinter pp;
           //placement
           pp.os << "placement_new<" << allocatedTypeStr << ">(";
@@ -564,7 +578,7 @@ getArrayType(const Type* ty, cArrayConfig& cfg)
     const ConstantArrayType* next = static_cast<const ConstantArrayType*>(qt.getTypePtr()->getAsArrayTypeUnsafe());
     getArrayType(next, cfg);
   } else {
-    cfg.fundamentalType = QualType::getAsString(qt.split());
+    cfg.fundamentalType = GetTypeString(qt.split());
   }
 }
 
@@ -600,7 +614,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
       info->typedefString = sstr.str();
       info->retType = "type" + D->getNameAsString() + "*";
     } else {
-      info->retType = QualType::getAsString(aty->getElementType().split()) + "**";
+      info->retType = GetTypeString(aty->getElementType().split()) + "**";
     }
     return info;
   } else {
@@ -680,7 +694,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   if (arrayInfo){
     retType = arrayInfo->retType;
   } else {
-    retType = QualType::getAsString(D->getType().split()) + "*";
+    retType = GetTypeString(D->getType().split()) + "*";
   }
   varRepl = "(*" + currentNs_->nsPrefix() + var_repl_prefix + "get_" + scopeUniqueVarName + "())";
 
@@ -909,7 +923,7 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
     new_init_pp.os << "static " << arrayInfoPtr->typedefName;
     arrayInfoPtr->isFxnStatic = true;
   } else {
-    new_init_pp.os << "static " << QualType::getAsString(D->getType().split());
+    new_init_pp.os << "static " << GetTypeString(D->getType().split());
   }
   new_init_pp.os << " " << init_prefix << D->getNameAsString();
   if (D->hasInit()){

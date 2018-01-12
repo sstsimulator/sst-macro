@@ -54,7 +54,11 @@ class ReplaceAction : public clang::ASTFrontendAction {
  public:
   ReplaceAction();
 
+#if CLANG_VERSION_MAJOR <= 5
   bool BeginSourceFileAction(clang::CompilerInstance &CI, llvm::StringRef Filename) override;
+#else
+  bool BeginSourceFileAction(clang::CompilerInstance &CI) override;
+#endif
 
   void ExecuteAction() override;
 

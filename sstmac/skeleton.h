@@ -99,8 +99,7 @@ extern int& should_skip_operator_new();
 extern int sstmac_global_stacksize;
 
 template <class T, class... Args>
-T*
-placement_new(void* sstmac_placement_ptr, Args&&... args){
+T* placement_new(void* sstmac_placement_ptr, Args&&... args){
   //non-zero global stacksize shows we moved outside cxa init
   //always allocate during cxa init
   int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();
@@ -115,8 +114,7 @@ placement_new(void* sstmac_placement_ptr, Args&&... args){
 }
 
 template <class T>
-T*
-conditional_array_new(unsigned long size){
+T* conditional_array_new(unsigned long size){
   //non-zero global stacksize shows we moved outside cxa init
   //always allocate during cxa init
   int flag = sstmac_global_stacksize == 0 ? 0 : should_skip_operator_new();

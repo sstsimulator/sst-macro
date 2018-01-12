@@ -83,9 +83,9 @@ sstmac_clang_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
 sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
  @CLANG_LIBTOOLING_LIBS@ \
+ @CLANG_LIBTOOLING_SYSTEM_LIBS@ \
  -lclangFrontend \
  -lclangFrontendTool \
- -lLLVMSupport \
  -lclangTooling \
  -lclangBasic \
  -lclangASTMatchers \
@@ -93,23 +93,15 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -lclangFrontend \
  -lclangDriver \
  -lclangParse \
- -lLLVMMCParser \
  -lclangSerialization \
  -lclangSema \
  -lclangEdit \
  -lclangAnalysis \
- -lLLVMBitReader \
- -lLLVMProfileData \
  -lclangToolingCore \
  -lclangAST \
  -lclangRewrite \
  -lclangLex \
- -lclangBasic \
- -lLLVMCore \
- -lLLVMMC \
- -lLLVMOption \
- -lLLVMSupport \
- -lLLVMDemangle
+ -lclangBasic 
 endif
 
 
