@@ -55,9 +55,6 @@ using namespace clang::tooling;
   if (x.getKind() == tok::identifier) std::cout << " " << x.getIdentifierInfo()->getNameStart(); \
   std::cout << std::endl;
 
-//static LangOptions globalLangOpts;
-//static PrintingPolicy globalPP;
-
 static int pragmaDepth = 0;
 static int maxPragmaDepth = 0;
 std::list<SSTPragma*> pendingPragmas;

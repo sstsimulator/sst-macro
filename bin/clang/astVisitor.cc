@@ -163,98 +163,13 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
 bool
 SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 {
-  if (noSkeletonize_) return true;
+  return true; //don't do this anymore - but keep code around
 
+  if (noSkeletonize_) return true;
   if (deletedStmts_.find(expr) != deletedStmts_.end()){
     //already deleted - do nothing here
     return true;
   }
-
-  return true; //don't do this anymore - but keep code around
-
-  std::string allocatedTypeStr = expr->getAllocatedType().getAsString();
-  if (expr->getNumPlacementArgs() == 0){
-    PrettyPrinter pp;
-    if (expr->isArray()){
-      pp.os << "conditional_array_new<" << allocatedTypeStr << ">(";
-      pp.print(expr->getArraySize());
-      pp.os << ")";
-    } else {
-      pp.os << "conditional_new<" << allocatedTypeStr << ">(";
-      if (expr->hasInitializer()){
-        Expr* init = expr->getInitializer();
-        if (isa<ParenListExpr>(init)){
-          ParenListExpr* pinit = cast<ParenListExpr>(init);
-          for (int i=0; i < pinit->getNumExprs(); ++i){
-            if (i >= 1) pp.os << ",";
-            pp.print(pinit->getExpr(i));
-          }
-        } else {
-          pp.print(init);
-        }
-      } else {
-        const Expr* ctor = expr->getConstructExpr();
-        if (ctor){
-          pp.print(ctor);
-        }
-      }
-      pp.os << ")";
-    }
-    replace(expr, rewriter_, pp.os.str(), *ci_);
-  } else {
-    //might be a placement new or no-throw new
-    Expr* placer = expr->getPlacementArg(0);
-    switch(placer->getStmtClass())
-    {
-      case Stmt::DeclRefExprClass:
-      {
-        DeclRefExpr* dre = cast<DeclRefExpr>(placer);
-        if (dre->getFoundDecl()->getNameAsString() == "sstmac_placement_ptr"){
-          break;
-        }
-      }
-      case Stmt::ImplicitCastExprClass:
-      case Stmt::CStyleCastExprClass:
-      case Stmt::CallExprClass:
-      case Stmt::CXXStaticCastExprClass:
-      case Stmt::UnaryOperatorClass:
-      {
-        QualType type = placer->getType();
-        if (GetTypeString(type.split()) == "void *"){
-          PrettyPrinter pp;
-          //placement
-          pp.os << "placement_new<" << allocatedTypeStr << ">(";
-          pp.print(placer);
-          if (expr->isArray()){
-            pp.print(expr->getArraySize());
-          } else if (expr->hasInitializer()){
-            Expr* init = expr->getInitializer();
-            if (isa<ParenListExpr>(init)){
-              ParenListExpr* pinit = cast<ParenListExpr>(init);
-              for (int i=0; i < pinit->getNumExprs(); ++i){
-                pp.os << ",";
-                pp.print(pinit->getExpr(i));
-              }
-            } else {
-              pp.os << ",";
-              pp.print(init);
-            }
-          } else {
-            const Expr* ctor = expr->getConstructExpr();
-            if (ctor){
-              pp.os << ",";
-              pp.print(ctor);
-            }
-          }
-          pp.os << ")";
-          replace(expr, rewriter_, pp.os.str(), *ci_);
-        }
-      }
-      default:
-        break;
-    }
-  }
-  return true;
 }
 
 
@@ -267,20 +182,6 @@ SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueu
   TraverseStmt(expr->getArgument());
   stmt_contexts_.pop_back();
   return true; //don't do this anymore
-
-  std::string allocatedTypeStr = expr->getDestroyedType().getAsString();
-  PrettyPrinter pp;
-  if (expr->isArrayForm()){
-    pp.os << "conditional_delete_array";
-  } else {
-    pp.os << "conditional_delete";
-  }
-  pp.os << "<" << allocatedTypeStr << ">"
-        << "(";
-  pp.print(expr->getArgument());
-  pp.os << ")";
-  replace(expr, rewriter_, pp.os.str(), *ci_);
-  return true;
 }
 
 
