@@ -82,8 +82,6 @@ sstmac_clang_CXXFLAGS = -fno-rtti $(AM_CXXFLAGS)
 sstmac_clang_CPPFLAGS = $(CLANG_CPPFLAGS) $(AM_CPPFLAGS)
 sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib \
- @CLANG_LIBTOOLING_LIBS@ \
- @CLANG_LIBTOOLING_SYSTEM_LIBS@ \
  -lclangFrontend \
  -lclangFrontendTool \
  -lclangTooling \
@@ -101,7 +99,9 @@ sstmac_clang_LDFLAGS = $(CLANG_LDFLAGS) \
  -lclangAST \
  -lclangRewrite \
  -lclangLex \
- -lclangBasic 
+ -lclangBasic \
+ @CLANG_LIBTOOLING_LIBS@ \
+ @CLANG_LIBTOOLING_SYSTEM_LIBS@ 
 endif
 
 
