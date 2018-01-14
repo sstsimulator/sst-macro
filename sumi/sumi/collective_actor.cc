@@ -521,7 +521,7 @@ dag_collective_actor::do_send(action* ac)
 dag_collective_actor::protocol_t
 dag_collective_actor::protocol_for_action(action* ac) const
 {
-  long byte_length = ac->nelems*type_size_;
+  uint64_t byte_length = ac->nelems*type_size_;
   if (my_api_->use_eager_protocol(byte_length)){
     return eager_protocol;
   } else if (my_api_->use_get_protocol()){
@@ -578,7 +578,7 @@ void
 dag_collective_actor::do_recv(action* ac)
 {
   active_comms_[ac->id] = ac;
-  long byte_length = ac->nelems*type_size_;
+  uint64_t byte_length = ac->nelems*type_size_;
   if (my_api_->use_eager_protocol(byte_length) || my_api_->use_get_protocol()){
     //I need to wait for the sender to contact me
   } else {

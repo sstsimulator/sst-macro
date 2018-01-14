@@ -157,7 +157,7 @@ nic::delete_statics()
 void
 nic::inject_send(network_message* netmsg, sw::operating_system* os)
 {
-  long bytes = netmsg->byte_length();
+  uint64_t bytes = netmsg->byte_length();
   timestamp delay = post_latency_ + timestamp(post_inv_bw_ * bytes);
   timestamp nic_ready = next_free_ + delay;
   next_free_ = next_free_ + delay * nic_pipeline_multiplier_;
@@ -258,7 +258,7 @@ nic::intranode_send(network_message* payload)
 
   memory_model* mem = parent_->mem();
   //use 64 as a negligible number of compute bytes
-  long byte_length = payload->byte_length();
+  uint64_t byte_length = payload->byte_length();
   if (byte_length > 64){
     mem->access(payload->byte_length(),
                 mem->max_single_bw(),

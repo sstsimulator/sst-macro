@@ -42,41 +42,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef pisces_BRANCHED_SWITCH_H
-#define pisces_BRANCHED_SWITCH_H
+#ifndef sculpin_switch_h
+#define sculpin_switch_h
 
-#include <sstmac/hardware/pisces/pisces_switch.h>
-#include <sstmac/hardware/pisces/pisces_buffer.h>
-#include <sstmac/hardware/pisces/pisces_crossbar.h>
-#include <sstmac/hardware/pisces/pisces_arbitrator.h>
-#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
+#include <sstmac/hardware/switch/network_switch.h>
+#include <sstmac/hardware/sculpin/sculpin.h>
 
 namespace sstmac {
 namespace hw {
 
 /**
- @class pisces_branched_switch
- A branched/hierarchical switch in the network that arbitrates/routes
- packets to the next link in the network
+ @class sculpin_switch
+ A switch in the network that arbitrates/routes
+ to the next link in the network
  */
-class pisces_branched_switch :
-  public pisces_abstract_switch
+class sculpin_switch :
+  public network_switch
 {
-  RegisterComponent("pisces_branched", network_switch, pisces_branched_switch,
+  RegisterComponent("sculpin", network_switch, sculpin_switch,
          "macro", COMPONENT_CATEGORY_NETWORK,
-         "A branched/hierarchical network switch implementing the packet flow congestion model")
+         "A network switch implementing the sculpin model")
  public:
-  pisces_branched_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  sculpin_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
+
+  virtual ~sculpin_switch();
 
   int queue_length(int port) const override;
 
-  virtual void connect_output(sprockit::sim_parameters* params,
-                 int src_outport, int dst_inport,
-                 event_link* link) override;
+  void connect_output(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    event_link* link) override;
 
-  virtual void connect_input(sprockit::sim_parameters* params,
-                int src_outport, int dst_inport,
-                event_link* link) override;
+  void connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    event_link* link) override;
 
   link_handler* credit_handler(int port) const override;
 
@@ -90,34 +93,62 @@ class pisces_branched_switch :
 
   void handle_payload(event* ev);
 
-  virtual std::string to_string() const override;
-
-  virtual ~pisces_branched_switch();
-
   void deadlock_check() override;
 
   void deadlock_check(event* ev) override;
 
- protected:
-  int n_local_xbars_;
-  int n_local_ports_;
+  /**
+   * @brief compatibility_check
+   * Perform a self-consistency check (before sim starts) on all components.
+   * This usually involves checking dynamic types that cannot be verified at compile-time
+   * and are difficult to detect directly from the parameters (hence would otherwise fail in ctor).
+   */
+  void compatibility_check() const override;
 
-  pisces_crossbar* xbar_;
-  std::vector<pisces_muxer*> input_muxers_;
-  std::vector<pisces_demuxer*> output_demuxers_;
+  std::string to_string() const override;
+
+ private:
+  struct priority_compare {
+    bool operator()(sculpin_packet* l, sculpin_packet* r) const {
+      if (l->priority() == r->priority()){
+        if (l->arrival() == r->arrival()){
+          return l->seqnum() < r->seqnum();
+        } else {
+          return l->arrival() < r->arrival();
+        }
+      } else {
+        //zero is highest priority
+        return l->priority() < r->priority();
+      }
+    }
+  };
+
+  struct port {
+    int id;
+    timestamp next_free;
+    double inv_bw;
+    uint32_t seqnum;
+    std::set<sculpin_packet*, priority_compare> priority_queue;
+    event_link* link;
+  };
+
+  std::vector<port> ports_;
+
+  router* router_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* ack_handler_;
   link_handler* payload_handler_;
+  link_handler* credit_handler_;
 #endif
 
  private:
-  void resize_buffers();
+  void send(port& p, sculpin_packet* pkt, timestamp now);
 
-  void init_components(sprockit::sim_parameters* params);
+  void pull_next(int portnum);
+
 };
 
 }
 }
 
-#endif // pisces_BRANCHED_SWITCH_H
+#endif // PACKETFLOW_SWITCH_H

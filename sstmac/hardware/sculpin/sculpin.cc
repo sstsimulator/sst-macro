@@ -42,54 +42,53 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/pisces/packet_allocator.h>
-#include <sstmac/hardware/pisces/pisces.h>
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+
+#include <inttypes.h>
+
+#include <sstmac/hardware/sculpin/sculpin.h>
 #include <sstmac/hardware/router/routable.h>
-#include <sprockit/sim_parameters.h>
-#include <sstmac/hardware/network/network_message.h>
+
+RegisterDebugSlot(sculpin, "print all the details of the sculpin model")
 
 namespace sstmac {
 namespace hw {
 
-class pisces_default_packet_allocator :
- public packet_allocator
+sculpin_packet::sculpin_packet(
+  serializable* msg,
+  uint32_t num_bytes,
+  bool is_tail,
+  node_id toaddr,
+  node_id fromaddr) :
+  priority_(0),
+  packet(msg, num_bytes, is_tail),
+  routable(toaddr, fromaddr)
 {
-  FactoryRegister("pisces | default", packet_allocator, pisces_default_packet_allocator)
- public:
-  pisces_default_packet_allocator(sprockit::sim_parameters* params)
-    : packet_allocator(params)
-  {
-  }
+}
 
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-             node_id toaddr, node_id fromaddr,
-             serializable *msg) override {
-    return new pisces_default_packet(msg, flow_id, bytes, is_tail,
-                             toaddr, fromaddr);
-  }
-};
-
-
-class pisces_delay_stats_packet_allocator :
- public packet_allocator
+std::string
+sculpin_packet::to_string() const
 {
-  FactoryRegister("delay_stats", packet_allocator, pisces_delay_stats_packet_allocator)
- public:
-  pisces_delay_stats_packet_allocator(sprockit::sim_parameters* params)
-   : packet_allocator(params)
-  {
-  }
+  return sprockit::printf("pkt bytes=%" PRIu32 " flow %" PRIu64 ": %s",
+                          num_bytes_, flow_id_, orig_
+                          ? sprockit::to_string(orig_).c_str()
+                          : "no payload");
 
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-            node_id toaddr, node_id fromaddr,
-            serializable *msg) override {
-    return new pisces_delay_stats_packet(msg, flow_id, bytes, is_tail,
-                            toaddr, fromaddr);
-  }
-};
+}
 
+void
+sculpin_packet::serialize_order(serializer& ser)
+{
+  //routable::serialize_order(ser);
+  packet::serialize_order(ser);
+  routable::serialize_order(ser);
+  ser & arrival_;
+  ser & departure_;
+  ser & flow_id_;
+  ser & priority_;
+}
 
 }
 }

@@ -133,7 +133,7 @@ packetizer::sendWhatYouCan(int vn)
 }
 
 void
-packetizer::bytesArrived(int vn, uint64_t unique_id, int bytes, message *parent)
+packetizer::bytesArrived(int vn, uint64_t unique_id, uint32_t bytes, message *parent)
 {
   message* done = completion_queue_.recv(unique_id, bytes, parent);
   if (done){

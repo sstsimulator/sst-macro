@@ -42,54 +42,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/pisces/packet_allocator.h>
-#include <sstmac/hardware/pisces/pisces.h>
-#include <sstmac/hardware/router/routable.h>
-#include <sprockit/sim_parameters.h>
-#include <sstmac/hardware/network/network_message.h>
+#ifndef sculpin_param_expander_h
+#define sculpin_param_expander_h
+
+#include <sstmac/hardware/common/param_expander.h>
 
 namespace sstmac {
 namespace hw {
 
-class pisces_default_packet_allocator :
- public packet_allocator
+class sculpin_param_expander :
+  public param_expander
 {
-  FactoryRegister("pisces | default", packet_allocator, pisces_default_packet_allocator)
+ FactoryRegister("sculpin", sstmac::param_expander, sculpin_param_expander)
  public:
-  pisces_default_packet_allocator(sprockit::sim_parameters* params)
-    : packet_allocator(params)
-  {
-  }
+  void expand(sprockit::sim_parameters* params) override;
 
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-             node_id toaddr, node_id fromaddr,
-             serializable *msg) override {
-    return new pisces_default_packet(msg, flow_id, bytes, is_tail,
-                             toaddr, fromaddr);
-  }
+ private:
+  void expand_amm1_nic(sprockit::sim_parameters* params,
+                       sprockit::sim_parameters* top_params,
+                       sprockit::sim_parameters* nic_params);
+
+  void expand_amm1_network(sprockit::sim_parameters* params,
+                           sprockit::sim_parameters* switch_params);
+
+  void expand_amm1_memory(sprockit::sim_parameters* params,
+                          sprockit::sim_parameters* mem_params);
+
+  void expand_amm4_nic(sprockit::sim_parameters* params,
+                       sprockit::sim_parameters* top_params,
+                       sprockit::sim_parameters* nic_params);
+
+  void expand_amm4_network(sprockit::sim_parameters* params,
+                           sprockit::sim_parameters* top_params,
+                           sprockit::sim_parameters* nic_params);
+
+ private:
+  void check_latency(sprockit::sim_parameters* params);
+
 };
-
-
-class pisces_delay_stats_packet_allocator :
- public packet_allocator
-{
-  FactoryRegister("delay_stats", packet_allocator, pisces_delay_stats_packet_allocator)
- public:
-  pisces_delay_stats_packet_allocator(sprockit::sim_parameters* params)
-   : packet_allocator(params)
-  {
-  }
-
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-            node_id toaddr, node_id fromaddr,
-            serializable *msg) override {
-    return new pisces_delay_stats_packet(msg, flow_id, bytes, is_tail,
-                            toaddr, fromaddr);
-  }
-};
-
 
 }
 }
+
+#endif // pisces_PARAM_EXPANDER_H

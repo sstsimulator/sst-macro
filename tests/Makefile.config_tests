@@ -5,7 +5,7 @@
 
 # These are also run with the same rule
 CONFIGTESTS = \
-  test_configs_smp_pflow \
+  test_configs_smp_pisces \
   test_configs_edison_amm1 \
   test_configs_edison_amm2 \
   test_configs_edison_amm3 \
@@ -16,9 +16,9 @@ CONFIGTESTS = \
   test_configs_hopper_amm2_simple \
   test_configs_hopper_amm3_simple \
   test_configs_deepthought \
-  test_configs_exa1_pflow \
+  test_configs_exa1_pisces \
   test_configs_exa1_simple \
-  test_configs_exa2_pflow \
+  test_configs_exa2_pisces \
   test_configs_exa2_simple 
 
 
@@ -30,7 +30,7 @@ COVERAGETESTS = \
   test_feature_nic_contention \
   test_memory_leak \
   test_feature_excl_job_launcher \
-  test_coverage_smp_pflow \
+  test_coverage_smp_pisces \
   test_coverage_edison_amm1 \
   test_coverage_edison_amm2 \
   test_coverage_edison_amm3 \
@@ -45,9 +45,9 @@ COVERAGETESTS = \
   test_coverage_dragonfly \
   test_coverage_deepthought \
   test_coverage_sequoia \
-  test_coverage_exa1_pflow \
+  test_coverage_exa1_pisces \
   test_coverage_exa1_simple \
-  test_coverage_exa2_pflow \
+  test_coverage_exa2_pisces \
   test_mpi_only_coverage_exa2_simple \
   test_coverage_exa2_simple 
 else

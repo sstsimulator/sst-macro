@@ -42,54 +42,125 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/pisces/packet_allocator.h>
-#include <sstmac/hardware/pisces/pisces.h>
+#ifndef sculpin_packet_h
+#define sculpin_packet_h
+
+#include <sstmac/hardware/common/packet.h>
+#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/router/routable.h>
-#include <sprockit/sim_parameters.h>
-#include <sstmac/hardware/network/network_message.h>
+#include <sprockit/thread_safe_new.h>
+#include <sprockit/factories/factory.h>
+#include <sprockit/debug.h>
+
+
+DeclareDebugSlot(sculpin)
 
 namespace sstmac {
 namespace hw {
 
-class pisces_default_packet_allocator :
- public packet_allocator
+/**
+ @class pisces
+ Encapsulates a group of machine packets traveling together on the
+ same path between endpoints.  This is usually one fraction of
+ a larger message.
+ */
+class sculpin_packet :
+  public packet,
+  public routable,
+  public sprockit::thread_safe_new<sculpin_packet>
 {
-  FactoryRegister("pisces | default", packet_allocator, pisces_default_packet_allocator)
+  ImplementSerializable(sculpin_packet)
+
  public:
-  pisces_default_packet_allocator(sprockit::sim_parameters* params)
-    : packet_allocator(params)
-  {
+  sculpin_packet(
+    serializable* msg,
+    uint32_t num_bytes,
+    bool is_tail,
+    node_id toaddr,
+    node_id fromaddr);
+
+  sculpin_packet(){} //for serialization
+
+  std::string to_string() const override;
+
+  virtual ~sculpin_packet() {}
+
+  node_id toaddr() const override {
+   return routable::toaddr();
   }
 
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-             node_id toaddr, node_id fromaddr,
-             serializable *msg) override {
-    return new pisces_default_packet(msg, flow_id, bytes, is_tail,
-                             toaddr, fromaddr);
+  node_id fromaddr() const override {
+    return routable::fromaddr();
   }
+
+  uint64_t flow_id() const override {
+    return flow_id_;
+  }
+
+  /**
+   @return The number of bytes in this pisces, NOT
+   the total number of bytes in the parent message.
+   See #num_bytes_total
+   */
+  uint32_t num_bytes() const {
+    return num_bytes_;
+  }
+
+  int next_port() const {
+    return routable::global_outport();
+  }
+
+  timestamp arrival() const {
+    return arrival_;
+  }
+
+  void set_arrival(timestamp time) {
+    arrival_ = time;
+  }
+
+  timestamp departure() const {
+    return departure_;
+  }
+
+  void set_departure(timestamp time) {
+    departure_ = time;
+  }
+
+  int priority() const {
+    return priority_;
+  }
+
+  void set_priority(int p) {
+    priority_ = p;
+  }
+
+  uint32_t seqnum() const {
+    return seqnum_;
+  }
+
+  void set_seqnum(uint32_t s){
+    seqnum_ = s;
+  }
+
+  void serialize_order(serializer& ser) override;
+
+ private:
+  uint64_t flow_id_;
+
+  uint32_t seqnum_;
+
+  timestamp arrival_;
+
+  timestamp departure_;
+
+  int priority_;
+
+
 };
-
-
-class pisces_delay_stats_packet_allocator :
- public packet_allocator
-{
-  FactoryRegister("delay_stats", packet_allocator, pisces_delay_stats_packet_allocator)
- public:
-  pisces_delay_stats_packet_allocator(sprockit::sim_parameters* params)
-   : packet_allocator(params)
-  {
-  }
-
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-            node_id toaddr, node_id fromaddr,
-            serializable *msg) override {
-    return new pisces_delay_stats_packet(msg, flow_id, bytes, is_tail,
-                            toaddr, fromaddr);
-  }
-};
-
 
 }
 }
+
+
+#endif // PACKETFLOW_H

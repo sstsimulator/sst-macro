@@ -212,7 +212,8 @@ torus::configure_individual_port_params(switch_id src,
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
-  int bufsize = link_params->get_byte_length_param("buffer_size");
+  //if there is a buffer size given, grab it
+  int bufsize = link_params->get_optional_byte_length_param("buffer_size", 0);
   int ndims = dimensions_.size();
   for (int i=0; i < ndims; ++i){
     double port_bw = bw * red_[i];

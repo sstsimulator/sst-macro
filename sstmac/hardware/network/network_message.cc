@@ -176,7 +176,7 @@ network_message::nic_reverse(type_t newtype)
   type_ = newtype;
 }
 
-long
+uint64_t
 network_message::byte_length() const
 {
   switch (type_)
@@ -190,7 +190,7 @@ network_message::byte_length() const
       return 32; //hack for now CHANGE
     default:
       //never return less than 8 bytes - every message has to carry somethng
-      return std::max(8L, bytes_);
+      return std::max(uint64_t(8), bytes_);
   }
 }
 

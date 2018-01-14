@@ -42,54 +42,91 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/pisces/packet_allocator.h>
-#include <sstmac/hardware/pisces/pisces.h>
-#include <sstmac/hardware/router/routable.h>
-#include <sprockit/sim_parameters.h>
-#include <sstmac/hardware/network/network_message.h>
+#ifndef sculpin_nic_h
+#define sculpin_nic_h
+
+#include <sstmac/hardware/nic/nic.h>
+#include <sstmac/hardware/interconnect/interconnect_fwd.h>
+#include <sstmac/hardware/sculpin/sculpin_switch.h>
+#include <sstmac/hardware/pisces/pisces_packetizer.h>
 
 namespace sstmac {
 namespace hw {
 
-class pisces_default_packet_allocator :
- public packet_allocator
+/**
+ @class sculpin_nic
+ Network interface compatible with sculpin network model
+ */
+class sculpin_nic :
+  public nic
 {
-  FactoryRegister("pisces | default", packet_allocator, pisces_default_packet_allocator)
+  FactoryRegister("sculpin", nic, sculpin_nic,
+              "implements a nic that models messages as a packet flow")
  public:
-  pisces_default_packet_allocator(sprockit::sim_parameters* params)
-    : packet_allocator(params)
-  {
+  sculpin_nic(sprockit::sim_parameters* params, node* parent);
+
+  std::string to_string() const override {
+    return sprockit::printf("sculpin nic(%d)", int(addr()));
   }
 
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-             node_id toaddr, node_id fromaddr,
-             serializable *msg) override {
-    return new pisces_default_packet(msg, flow_id, bytes, is_tail,
-                             toaddr, fromaddr);
-  }
+  void init(unsigned int phase) override;
+
+  void setup() override;
+
+  virtual ~sculpin_nic() throw ();
+
+  void handle_payload(event* ev);
+
+  void handle_credit(event* ev);
+
+  void connect_output(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    event_link* link) override;
+
+  void connect_input(
+    sprockit::sim_parameters* params,
+    int src_outport,
+    int dst_inport,
+    event_link* link) override;
+
+  link_handler* credit_handler(int port) const override;
+
+  link_handler* payload_handler(int port) const override;
+
+  timestamp send_latency(sprockit::sim_parameters *params) const override;
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+
+  void deadlock_check() override;
+
+  void deadlock_check(event* ev) override;
+
+ private:
+  void do_send(network_message* payload) override;
+
+  void cq_handle(sculpin_packet* pkt);
+
+ private:
+  timestamp inj_next_free_;
+  event_link* inj_link_;
+
+  double inj_inv_bw_;
+
+  uint32_t packet_size_;
+
+  timestamp ej_next_free_;
+  recv_cq cq_;
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+  link_handler* payload_handler_;
+  link_handler* ack_handler_;
+#endif
 };
 
-
-class pisces_delay_stats_packet_allocator :
- public packet_allocator
-{
-  FactoryRegister("delay_stats", packet_allocator, pisces_delay_stats_packet_allocator)
- public:
-  pisces_delay_stats_packet_allocator(sprockit::sim_parameters* params)
-   : packet_allocator(params)
-  {
-  }
-
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-            node_id toaddr, node_id fromaddr,
-            serializable *msg) override {
-    return new pisces_delay_stats_packet(msg, flow_id, bytes, is_tail,
-                            toaddr, fromaddr);
-  }
-};
-
-
 }
-}
+} // end of namespace sstmac
+
+
+#endif // pisces_nic_H

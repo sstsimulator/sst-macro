@@ -194,7 +194,9 @@ topology::setup_port_params(int port, int credits, double bw,
   (*port_params)["credits"].setByteLength(credits, "B");
   port_params->add_param_override("send_latency", link_params->get_param("send_latency"));
   port_params->add_param_override("credit_latency", link_params->get_param("credit_latency"));
-  port_params->add_param_override("arbitrator", link_params->get_param("arbitrator"));
+  if (link_params->has_param("arbitrator")){
+    port_params->add_param_override("arbitrator", link_params->get_param("arbitrator"));
+  }
   return port_params;
 }
 

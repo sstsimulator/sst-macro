@@ -200,7 +200,7 @@ class network_message :
 
   virtual void reverse();
 
-  long byte_length() const override;
+  uint64_t byte_length() const override;
 
   node_id toaddr_;
 
@@ -216,7 +216,7 @@ class network_message :
 
   bool needs_ack_;
 
-  long bytes_;
+  uint64_t bytes_;
 
   type_t type_;
 

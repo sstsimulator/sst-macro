@@ -17,7 +17,7 @@ library_include_HEADERS = \
   pisces.ini \
   macrels.ini \
   kahuna.ini \
-  hopper_pflow.ini \
+  hopper_pisces.ini \
   small_torus.ini \
   small_torus_simple.ini \
   dragonfly.ini \
@@ -42,15 +42,15 @@ library_include_HEADERS = \
   mpi_coverage.ini \
   mpi_only_coverage.ini \
   mpi_stats.ini \
-  smp_pflow.ini \
+  smp_pisces.ini \
   smp_mpi_test.ini \
   hopper_nodemap.txt \
   fullmap.txt \
   default.ini \
   sequoia.ini \
-  exa1_pflow.ini \
+  exa1_pisces.ini \
   exa1_simple.ini \
-  exa2_pflow.ini \
+  exa2_pisces.ini \
   exa2_simple.ini \
   exa_mini_top.ini
 
