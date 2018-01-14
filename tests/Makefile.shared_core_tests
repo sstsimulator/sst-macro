@@ -10,9 +10,9 @@ endif
 
 CORETESTS+= \
   test_core_apps_mpi_fattree \
-  test_core_apps_ping_all_torus_simple \
+  test_core_apps_ping_all_torus_macrels \
   test_core_apps_ping_all_simple_fattree \
-  test_core_apps_ping_all_cascade_simple \
+  test_core_apps_ping_all_cascade_macrels \
   test_core_apps_ping_all_null_arb \
   test_core_apps_ping_all_torus_sculpin \
   test_core_apps_ping_all_torus_pisces \

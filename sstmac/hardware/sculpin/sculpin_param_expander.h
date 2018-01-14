@@ -77,7 +77,8 @@ class sculpin_param_expander :
                            sprockit::sim_parameters* nic_params);
 
  private:
-  void check_latency(sprockit::sim_parameters* params);
+  void check_latency(sprockit::sim_parameters* params,
+                     sprockit::sim_parameters* deflt_params = nullptr);
 
 };
 

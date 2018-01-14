@@ -57,6 +57,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <stddef.h>
 
+#define pkt_debug(...) \
+  debug_printf(sprockit::dbg::sculpin, "sculpin NIC %d: %s", \
+    int(addr()), sprockit::printf(__VA_ARGS__).c_str())
+
 namespace sstmac {
 namespace hw {
 
@@ -176,15 +180,19 @@ sculpin_nic::do_send(network_message* payload)
 
   node_id to = payload->toaddr();
   node_id from = payload->fromaddr();
+  uint64_t fid = payload->flow_id();
   while (bytes_left > 0){
     uint32_t pkt_size = std::min(uint32_t(bytes_left), packet_size_);
     bytes_left -= pkt_size;
     bool is_tail = bytes_left == 0;
     byte_offset += pkt_size;
-    sculpin_packet* pkt = new sculpin_packet(is_tail ? payload : nullptr, pkt_size, is_tail, to, from);
+    sculpin_packet* pkt = new sculpin_packet(is_tail ? payload : nullptr, pkt_size, is_tail,
+                                             fid, to, from);
     timestamp extra_delay = inj_next_free_ - now_;
     timestamp time_to_send = pkt_size * inj_inv_bw_;
     inj_next_free_ += time_to_send;
+    pkt_debug("packet injecting at t=%8.4e: %s",
+              inj_next_free_.sec(), pkt->to_string().c_str());
     pkt->set_departure(inj_next_free_);
     inj_link_->send_extra_delay(extra_delay, pkt);
   }
@@ -209,10 +217,13 @@ void
 sculpin_nic::handle_payload(event *ev)
 {
   sculpin_packet* pkt = static_cast<sculpin_packet*>(ev);
-  timestamp now_ = ej_next_free_;
+  timestamp now_ = now();
   if (now_ > ej_next_free_){
     ej_next_free_ = now_;
   }
+
+  pkt_debug("incoming packet - ejection next free at t=%8.4e: %s",
+            ej_next_free_.sec(), pkt->to_string().c_str());
 
   timestamp first_possible_send = std::max(pkt->departure(), ej_next_free_);
   timestamp time_to_send = pkt->byte_length() * inj_inv_bw_;

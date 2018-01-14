@@ -112,16 +112,31 @@ sculpin_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
 }
 
 void
-sculpin_param_expander::check_latency(sprockit::sim_parameters* params)
+sculpin_param_expander::check_latency(sprockit::sim_parameters* params,
+                                      sprockit::sim_parameters* deflt_params)
 {
-  std::string lat = params->get_either_or_param("send_latency","latency");
   if (!params->has_param("send_latency")){
-    params->add_param_override("send_latency", lat);
+    if (params->has_param("latency")){
+      params->add_param_override("send_latency", params->get_param("latency"));
+    } else if (deflt_params){
+      params->add_param_override("send_latency",
+                                 deflt_params->get_either_or_param("latency", "send_latency"));
+    } else {
+      params->print_scoped_params(std::cerr);
+      spkt_abort_printf("do not have send_latency parameter");
+    }
   }
 
-  lat = params->get_either_or_param("credit_latency","latency");
   if (!params->has_param("credit_latency")){
-    params->add_param_override("credit_latency", lat);
+    if (params->has_param("latency")){
+      params->add_param_override("credit_latency", params->get_param("latency"));
+    } else if (deflt_params){
+      params->add_param_override("credit_latency",
+                       deflt_params->get_either_or_param("latency", "credit_latency"));
+    } else {
+      params->print_scoped_params(std::cerr);
+      spkt_abort_printf("do not have credit_latency parameter");
+    }
   }
 }
 
@@ -135,13 +150,8 @@ sculpin_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
 
-  check_latency(link_params);
-  check_latency(ej_params);
-
-  if (!ej_params->has_param("bandwidth")){
-    ej_params->add_param_override("bandwidth",
-                 inj_params->get_param("bandwidth"));
-  }
+  check_latency(link_params, nullptr);
+  check_latency(ej_params, inj_params);
 
 }
 

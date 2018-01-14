@@ -74,9 +74,10 @@ class sculpin_packet :
 
  public:
   sculpin_packet(
-    serializable* msg,
+    message* msg,
     uint32_t num_bytes,
     bool is_tail,
+    uint64_t flow_id,
     node_id toaddr,
     node_id fromaddr);
 
