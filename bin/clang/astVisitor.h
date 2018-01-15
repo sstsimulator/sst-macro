@@ -75,9 +75,9 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
  * Go through every node in the abstract syntax tree and perform
  * certain skeletonization operations on them using the rewriter object.
  * For certain nodes, we Visit. This means performing a single visit
- * operation in isolation. We do not need parent or children nodes in a Vist.
+ * operation in isolation. We do not need parent or children nodes in a Visit.
  * For certain nodes, we must Traverse. The means performing a pre-visit operation
- * before visiting and child nodes. A post-visit operation is then performed
+ * before visiting child nodes. A post-visit operation is then performed
  * after visiting all child nodes. A traversal also gives the option
  * to cancel all visits to child nodes.
  */

@@ -48,8 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/threading/threading_interface.h>
-#include <ucontext.h>
 #include <sstmac/software/threading/context_util.h>
+#include <ucontext.h>
 
 namespace sstmac {
 namespace sw {

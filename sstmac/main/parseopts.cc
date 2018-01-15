@@ -88,20 +88,6 @@ machine_already_configured(){
     "--inf, --auto/-a, --debug/-d, --pisces, or --macrels flags");
 }
 
-class null_event_scheduler : public sstmac::event_scheduler
-{
- public:
-  null_event_scheduler(sstmac::event_manager* mgr) :
-    sstmac::event_scheduler(mgr, 0)
-  {
-  }
-
-  std::string to_string() const {
-    return "null event scheduler";
-  }
-
-};
-
 int
 parse_opts(int argc, char **argv, opts &oo)
 {
@@ -254,6 +240,7 @@ parse_opts(int argc, char **argv, opts &oo)
       exe_name = exe_name.substr(pos+1);
     }
     bool is_stand_alone = app::factory::is_valid_name("sstmac_app_name");
+#if !SSTMAC_INTEGRATED_SST_CORE
     if (is_stand_alone){
       std::cerr << "WARNING: running standalone executable as-is. This usually happens\n"
                 << "WARNING: when running configure scripts. I hope this is what you want"
@@ -296,6 +283,9 @@ parse_opts(int argc, char **argv, opts &oo)
       } else {
         return PARSE_OPT_EXIT_FAIL;
       }
+#else
+    if (false){
+#endif
     } else {
       std::cerr << "need to specify input file with -f flag" << std::endl;
     }

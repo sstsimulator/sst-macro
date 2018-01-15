@@ -1,16 +1,24 @@
-.PHONY: skeletons pots
 
-if !INTEGRATED_SST_CORE
+SKELETONCASES= 
+
 #------------------------------------------------------------------------------------------#
 #  Skeleton tests (installcheck)                                                        {{{#
 #------------------------------------------------------------------------------------------#
 
-# The CASES variables are used here to simplify the build rules
+if INTEGRATED_SST_CORE
+if HAVE_CLANG
+if BUILD_SUMI_MPI
+SKELETONCASES += liblulesh libhpcg libcomd
+endif
+endif
+else
+if HAVE_CLANG
+SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD
+endif
 
-# These are run with the same rule
-SKELETONCASES= \
+SKELETONCASES += \
   boxml \
-  relocation_ptr_test
+  relocation_ptr_test 
 
 if BUILD_SUMI_MPI
 SKELETONCASES += \
@@ -23,9 +31,6 @@ SKELETONCASES += \
 if !HAVE_UBUNTU
 SKELETONCASES +=  matmul 
 endif
-
-if HAVE_CLANG
-SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD
 endif
 
 endif 
@@ -43,8 +48,36 @@ pots:
 	cp -fpR $(top_srcdir)/skeletons/CoMD/pots .
 	chmod -R u+w pots # required for make distcheck (makes files r/o)
 
+
+if INTEGRATED_SST_CORE
+.PHONY: skeletons pots
+libcomd.so: skeletons
+	cd skeletons/CoMD; PATH=$(bindir):$$PATH $(MAKE) libcomd.so
+
+test_skeleton_libcomd.$(CHKSUF): libcomd.so pots
+	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/CoMD \
+	$(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
+    $(top_builddir)/bin/pysstmac skeletons/CoMD/libcomd.so -f skeletons/CoMD/parameters.ini 
+
+skeletons/lulesh2.0.3/liblulesh.so: skeletons
+	cd skeletons/lulesh2.0.3; PATH=$(bindir):$$PATH $(MAKE) liblulesh.so
+
+test_skeleton_liblulesh.$(CHKSUF): skeletons/lulesh2.0.3/liblulesh.so
+	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/lulesh2.0.3 \
+    $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
+    $(top_builddir)/bin/pysstmac skeletons/lulesh2.0.3/liblulesh.so -f skeletons/lulesh2.0.3/parameters.ini 
+
+skeletons/hpcg-3.0/libhpcg.so: skeletons
+	cd skeletons/hpcg-3.0; PATH=$(bindir):$$PATH $(MAKE) libhpcg.so
+
+test_skeleton_libhpcg.$(CHKSUF): skeletons/hpcg-3.0/libhpcg.so
+	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/hpcg-3.0 \
+    $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
+    $(top_builddir)/bin/pysstmac skeletons/hpcg-3.0/libhpcg.so -f skeletons/hpcg-3.0/parameters.ini 
+else
+.PHONY: skeletons pots
 $(SKELETONCASES): skeletons
-	cd skeletons/$@; PATH=$(bindir):$$PATH $(MAKE)
+	cd skeletons/$@; PATH=$(bindir):$$PATH $(MAKE) 
 
 test_skeleton_boxml.$(CHKSUF): boxml
 	$(PYRUNTEST) 2 $(top_srcdir) $@ text=finalized \
@@ -79,5 +112,5 @@ test_mpi_apps_%.$(CHKSUF): %
 	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
     ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_mpi.ini --no-wall-time 
 
-#------------------------------------------------------------------------------------------#
 endif
+
