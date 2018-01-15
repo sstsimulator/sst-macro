@@ -62,7 +62,7 @@ class pisces_default_packet_allocator :
   }
 
   virtual pisces_payload*
-  new_packet(int bytes, uint64_t flow_id, bool is_tail,
+  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
              node_id toaddr, node_id fromaddr,
              serializable *msg) override {
     return new pisces_default_packet(msg, flow_id, bytes, is_tail,
@@ -82,7 +82,7 @@ class pisces_delay_stats_packet_allocator :
   }
 
   virtual pisces_payload*
-  new_packet(int bytes, uint64_t flow_id, bool is_tail,
+  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
             node_id toaddr, node_id fromaddr,
             serializable *msg) override {
     return new pisces_delay_stats_packet(msg, flow_id, bytes, is_tail,

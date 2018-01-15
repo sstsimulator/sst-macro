@@ -283,7 +283,7 @@ cascade::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsiz
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
-  int bufsize = params->get_byte_length_param("buffer_size");
+  int bufsize = params->get_optional_byte_length_param("buffer_size", 0);
 
   double port_bw = bw * red_[dim];
   int credits = bufsize * red_[dim];

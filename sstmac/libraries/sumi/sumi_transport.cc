@@ -337,7 +337,7 @@ sumi_transport::nidlist() const
 
 void
 sumi_transport::send(
-  long byte_length,
+  uint64_t byte_length,
   sumi::message* msg,
   int sendType,
   int dst_rank)
@@ -348,7 +348,7 @@ sumi_transport::send(
 
 void
 sumi_transport::send(
-  long byte_length,
+  uint64_t byte_length,
   int dst_task,
   node_id dst_node,
   int dst_app,

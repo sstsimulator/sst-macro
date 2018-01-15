@@ -69,7 +69,7 @@ class transport_message :
      const std::string& libname,
      sw::app_id aid,
      sumi::message* msg,
-     long byte_length)
+     uint64_t byte_length)
    : library_interface(libname),
       network_message(aid, byte_length),
       sumi::transport_message(msg)

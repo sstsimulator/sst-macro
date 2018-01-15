@@ -168,6 +168,8 @@ class sim_parameters  {
 
   std::string get_param(const std::string& key, bool throw_on_error = true);
 
+  std::string get_lowercase_param(const std::string& key, bool throw_on_error = true);
+
   std::string get_scoped_param(const std::string& key, bool throw_on_error = true);
 
   sim_parameters* get_optional_local_namespace(const std::string& ns);

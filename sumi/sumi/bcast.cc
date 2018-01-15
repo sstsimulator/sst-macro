@@ -166,7 +166,7 @@ binary_tree_bcast_actor::init_buffers(void* dst, void* src)
   if (dense_me_ == 0) buffer = src; //root
   else buffer = dst;
 
-  long byte_length = nelems_ * type_size_;
+  uint64_t byte_length = nelems_ * type_size_;
   send_buffer_ = my_api_->make_public_buffer(buffer, byte_length);
   recv_buffer_ = send_buffer_;
   result_buffer_ = send_buffer_;

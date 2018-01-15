@@ -109,11 +109,11 @@ class global_communicator :
  public:
   global_communicator(transport* tport);
 
-  int nproc() const;
+  int nproc() const override;
 
-  int comm_to_global_rank(int comm_rank) const;
+  int comm_to_global_rank(int comm_rank) const override;
 
-  int global_to_comm_rank(int global_rank) const;
+  int global_to_comm_rank(int global_rank) const override;
 
  private:
   transport* transport_;
@@ -130,16 +130,16 @@ class shifted_communicator :
     shift_(left_shift)
   {}
 
-  int nproc() const {
+  int nproc() const override {
     return dom_->nproc();
   }
 
-  int comm_to_global_rank(int comm_rank) const {
+  int comm_to_global_rank(int comm_rank) const override {
     int shifted_rank = (comm_rank + shift_) % nproc_;
     return dom_->comm_to_global_rank(shifted_rank);
   }
 
-  int global_to_comm_rank(int global_rank) const {
+  int global_to_comm_rank(int global_rank) const override {
     int comm_rank = dom_->global_to_comm_rank(global_rank);
     int shifted_rank = (comm_rank - shift_ + nproc_) % nproc_;
     return shifted_rank;
@@ -227,15 +227,15 @@ class subrange_communicator :
   {
   }
 
-  int nproc() const {
+  int nproc() const override {
     return nproc_;
   }
 
-  int comm_to_global_rank(int comm_rank) const {
+  int comm_to_global_rank(int comm_rank) const override {
     return comm_rank + start_;
   }
 
-  int global_to_comm_rank(int global_rank) const {
+  int global_to_comm_rank(int global_rank) const override {
     return global_rank - start_;
   }
 

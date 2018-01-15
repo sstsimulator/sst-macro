@@ -130,7 +130,7 @@ class sumi_transport :
    * @param dst
    * @param needs_ack
    */
-  void send(long byte_length, sumi::message* msg, int ty, int dst);
+  void send(uint64_t byte_length, sumi::message* msg, int ty, int dst);
 
   void incoming_message(transport_message* msg);
 
@@ -194,7 +194,7 @@ class sumi_transport :
   int* nidlist() const override;
 
  private:
-  void send(long byte_length,
+  void send(uint64_t byte_length,
     int dest_rank,
     node_id dest_node,
     int dest_app,

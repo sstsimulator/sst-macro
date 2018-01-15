@@ -419,7 +419,7 @@ sim_parameters::check_either_or(const std::string &key1, const std::string &key2
                       key1.c_str(), key2.c_str(), namespace_.c_str());
   } else if (!has_key1 && !has_key2){
     print_scoped_params(std::cerr);
-    spkt_abort_printf("Specified neither %s and %s in namespace %s - need one or the other",
+    spkt_abort_printf("Specified neither %s nor %s in namespace %s - need one or the other",
                       key1.c_str(), key2.c_str(), namespace_.c_str());
   }
   return has_key1;
@@ -1179,6 +1179,14 @@ sim_parameters::get_param(std::string& inout, const std::string& key)
   } else {
     return found;
   }
+}
+
+std::string
+sim_parameters::get_lowercase_param(const std::string& key, bool throw_on_error)
+{
+  std::string param = get_param(key, throw_on_error);
+  std::transform(param.begin(), param.end(), param.begin(), ::tolower);
+  return param;
 }
 
 std::string

@@ -81,7 +81,7 @@ class pisces_abstract_switch :
 
 /**
  @class pisces_switch
- A switch in the network that arbitrates/routes packet_trains
+ A switch in the network that arbitrates/routes packets
  to the next link in the network
  */
 class pisces_switch :
@@ -125,16 +125,13 @@ class pisces_switch :
 
   void deadlock_check(event* ev) override;
 
-  virtual void compatibility_check() const override;
-
   /**
-   Set the link to use when ejecting packets at their endpoint.  A pisces_switch
-   can have any number of ejectors, corresponding to the number of nodes
-   per switch.
-   @param addr The compute node address of the endpoint to eject to
-   @param link The link to the compute node for ejection
+   * @brief compatibility_check
+   * Perform a self-consistency check (before sim starts) on all components.
+   * This usually involves checking dynamic types that cannot be verified at compile-time
+   * and are difficult to detect directly from the parameters (hence would otherwise fail in ctor).
    */
-  void add_ejector(node_id addr, event_handler* link);
+  virtual void compatibility_check() const override;
 
   virtual std::string to_string() const override;
 

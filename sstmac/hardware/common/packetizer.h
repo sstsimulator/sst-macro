@@ -101,8 +101,8 @@ class packetizer :
   virtual link_handler* new_credit_handler() const = 0;
 
  private:
-  virtual void inject(int vn, long bytes,
-                      long byte_offset, message* payload) = 0;
+  virtual void inject(int vn, uint32_t bytes,
+                      uint64_t byte_offset, message* payload) = 0;
 
   virtual bool spaceToSend(int vn, int num_bits) = 0;
 
@@ -134,7 +134,7 @@ class packetizer :
   packetizer(sprockit::sim_parameters* params,
              event_scheduler* parent);
 
-  void bytesArrived(int vn, uint64_t unique_id, int bytes, message* parent);
+  void bytesArrived(int vn, uint64_t unique_id, uint32_t bytes, message* parent);
 
 };
 
