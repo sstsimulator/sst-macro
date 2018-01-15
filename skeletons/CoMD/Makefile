@@ -108,11 +108,15 @@ sstmac_headers:
 ${CoMD_EXE}: CoMD_info.h ${OBJECTS} 
 	${CC} ${CFLAGS} -o ${CoMD_EXE} ${OBJECTS} ${LDFLAGS}
 
+libcomd.so: CoMD_info.h ${OBJECTS} 
+	@echo "Linking SST core .so"
+	${CC} ${CFLAGS} -o $@ ${OBJECTS} ${LDFLAGS}
+
 CoMD_info.h: Makefile
 	./generate_info_header ${CoMD_VARIANT} "$(CC)" "$(CFLAGS)" "$(LDFLAGS)"
 
 clean:
-	rm -f src/*.o CoMD_info.h .depend ${CoMD_EXE} src/.depend.bak .depend.bak src/.depend sstmac_headers
+	rm -f src/*.o CoMD_info.h .depend ${CoMD_EXE} src/.depend.bak .depend.bak src/.depend sstmac_headers libcomd.so
 
 distclean: clean
 	rm -f ${CoMD_EXE} .depend.bak

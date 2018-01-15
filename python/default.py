@@ -19,7 +19,7 @@ while isSoFile:
     importer = ".".join(lib[3:].split(".")[:-1]) #chop off lib and last so
     importer = "sst." + importer
     cmd = "import %s" % importer
-    print "PATH: ", os.environ["SST_LIB_PATH"]
+#    print "PATH: ", os.environ["SST_LIB_PATH"]
     exec(cmd)
     del sys.argv[idx]
   else: isSoFile = False

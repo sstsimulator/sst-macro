@@ -1,0 +1,29 @@
+Running problem size 20^3 per domain until completion
+Num processors: 8
+Total number of elements: 64000
+
+To run other sizes, use -s <integer>.
+To run a fixed number of iterations, use -i <integer>.
+To run a more or less balanced region set, use -b <integer>.
+To change the relative costs of regions, use -c <integer>.
+To print out progress, use -p
+To write an output file for VisIt, use -v
+See help (-h) for more options
+
+Run completed:  
+   Problem size        =  20 
+   MPI tasks           =  8 
+   Iteration count     =  2 
+CalcLagrangeElements                =   0.00812400s
+CalcQForElems                       =   0.01234000s
+UpdateVolumesForElems               =   0.00002800s
+ApplyMaterialPropertiesForElems     =   0.00495400s
+CalcTimeConstraintsForElems         =   0.00007400s
+CalcAccelerationForNodes            =   0.00005300s
+InitStressTermsForElems             =   0.00005300s
+IntegrateStressForElems             =   0.00532600s
+CalcHourglassControlForElems        =   0.02742900s
+CalcVelocityForNodes                =   0.00010600s
+CalcPositionForNodes                =   0.00005200s
+Total time =   0.05920500s
+Simulation is complete, simulated time: 59.2416 ms

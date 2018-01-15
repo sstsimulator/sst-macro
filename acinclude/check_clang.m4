@@ -72,9 +72,11 @@ else
 AM_CONDITIONAL(HAVE_CLANG, true)
 #need to figure out clang absolute include paths
 #because clang libtooling is an abominiation hard-wired to relative paths
-CLANG_LIBTOOLING_LIBS=`$clang/bin/llvm-config --system-libs`
+CLANG_LIBTOOLING_SYSTEM_LIBS=`$clang/bin/llvm-config --system-libs`
+CLANG_LIBTOOLING_LIBS=`$clang/bin/llvm-config --libs`
 
 AC_SUBST([CLANG_LIBTOOLING_LIBS])
+AC_SUBST([CLANG_LIBTOOLING_SYSTEM_LIBS])
 AC_SUBST([CLANG_LIBTOOLING_CXX_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v -std=c++1y -stdlib=libc++ -x c++`")
 AC_SUBST([CLANG_LIBTOOLING_C_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v`")
 fi

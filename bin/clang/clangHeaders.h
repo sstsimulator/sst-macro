@@ -62,6 +62,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "clang/Lex/Lexer.h"
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Sema/Sema.h>
+#include <clang/Basic/Version.h>
 
 #define UNARYOP_LIST()                                                         \
   OPERATOR(PostInc) OPERATOR(PostDec) OPERATOR(PreInc) OPERATOR(PreDec)        \
@@ -81,5 +82,16 @@ Questions? Contact sst-macro-help@sandia.gov
 #define CAO_LIST()                                                             \
   OPERATOR(Mul) OPERATOR(Div) OPERATOR(Rem) OPERATOR(Add) OPERATOR(Sub)        \
       OPERATOR(Shl) OPERATOR(Shr) OPERATOR(And) OPERATOR(Or) OPERATOR(Xor)
+
+#if CLANG_VERSION_MAJOR <= 5
+#define GetTypeString(ty) QualType::getAsString(ty)
+#else
+struct Printing
+{
+  static clang::LangOptions langOpts;
+  static clang::PrintingPolicy policy;
+};
+#define GetTypeString(ty) QualType::getAsString(ty, Printing::policy)
+#endif
 
 #endif // CLANGHEADERS_H

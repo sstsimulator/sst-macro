@@ -47,6 +47,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <fstream>
 
+#if CLANG_VERSION_MAJOR >= 6
+clang::LangOptions Printing::langOpts;
+clang::PrintingPolicy Printing::policy(Printing::langOpts);
+#endif
+
 using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
@@ -127,6 +132,15 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
   PresumedLoc ploc = ci_->getSourceManager().getPresumedLoc(startLoc);
   SourceLocation headerLoc = ploc.getIncludeLoc();
 
+  //ignore eli variables
+  std::string varName = D->getNameAsString();
+  if (varName.size() >= 5){
+    std::string last4 = varName.substr(varName.size() - 4);
+    if (last4 == "_eli"){
+      return false;
+    }
+  }
+
   bool useAllHeaders = false;
   if (headerLoc.isValid() && !useAllHeaders){
     //we are inside a header
@@ -149,98 +163,13 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
 bool
 SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 {
-  if (noSkeletonize_) return true;
+  return true; //don't do this anymore - but keep code around
 
+  if (noSkeletonize_) return true;
   if (deletedStmts_.find(expr) != deletedStmts_.end()){
     //already deleted - do nothing here
     return true;
   }
-
-  return true; //don't do this anymore - but keep code around
-
-  std::string allocatedTypeStr = expr->getAllocatedType().getAsString();
-  if (expr->getNumPlacementArgs() == 0){
-    PrettyPrinter pp;
-    if (expr->isArray()){
-      pp.os << "conditional_array_new<" << allocatedTypeStr << ">(";
-      pp.print(expr->getArraySize());
-      pp.os << ")";
-    } else {
-      pp.os << "conditional_new<" << allocatedTypeStr << ">(";
-      if (expr->hasInitializer()){
-        Expr* init = expr->getInitializer();
-        if (isa<ParenListExpr>(init)){
-          ParenListExpr* pinit = cast<ParenListExpr>(init);
-          for (int i=0; i < pinit->getNumExprs(); ++i){
-            if (i >= 1) pp.os << ",";
-            pp.print(pinit->getExpr(i));
-          }
-        } else {
-          pp.print(init);
-        }
-      } else {
-        const Expr* ctor = expr->getConstructExpr();
-        if (ctor){
-          pp.print(ctor);
-        }
-      }
-      pp.os << ")";
-    }
-    replace(expr, rewriter_, pp.os.str(), *ci_);
-  } else {
-    //might be a placement new or no-throw new
-    Expr* placer = expr->getPlacementArg(0);
-    switch(placer->getStmtClass())
-    {
-      case Stmt::DeclRefExprClass:
-      {
-        DeclRefExpr* dre = cast<DeclRefExpr>(placer);
-        if (dre->getFoundDecl()->getNameAsString() == "sstmac_placement_ptr"){
-          break;
-        }
-      }
-      case Stmt::ImplicitCastExprClass:
-      case Stmt::CStyleCastExprClass:
-      case Stmt::CallExprClass:
-      case Stmt::CXXStaticCastExprClass:
-      case Stmt::UnaryOperatorClass:
-      {
-        QualType type = placer->getType();
-        if (QualType::getAsString(type.split()) == "void *"){
-          PrettyPrinter pp;
-          //placement
-          pp.os << "placement_new<" << allocatedTypeStr << ">(";
-          pp.print(placer);
-          if (expr->isArray()){
-            pp.print(expr->getArraySize());
-          } else if (expr->hasInitializer()){
-            Expr* init = expr->getInitializer();
-            if (isa<ParenListExpr>(init)){
-              ParenListExpr* pinit = cast<ParenListExpr>(init);
-              for (int i=0; i < pinit->getNumExprs(); ++i){
-                pp.os << ",";
-                pp.print(pinit->getExpr(i));
-              }
-            } else {
-              pp.os << ",";
-              pp.print(init);
-            }
-          } else {
-            const Expr* ctor = expr->getConstructExpr();
-            if (ctor){
-              pp.os << ",";
-              pp.print(ctor);
-            }
-          }
-          pp.os << ")";
-          replace(expr, rewriter_, pp.os.str(), *ci_);
-        }
-      }
-      default:
-        break;
-    }
-  }
-  return true;
 }
 
 
@@ -253,20 +182,6 @@ SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueu
   TraverseStmt(expr->getArgument());
   stmt_contexts_.pop_back();
   return true; //don't do this anymore
-
-  std::string allocatedTypeStr = expr->getDestroyedType().getAsString();
-  PrettyPrinter pp;
-  if (expr->isArrayForm()){
-    pp.os << "conditional_delete_array";
-  } else {
-    pp.os << "conditional_delete";
-  }
-  pp.os << "<" << allocatedTypeStr << ">"
-        << "(";
-  pp.print(expr->getArgument());
-  pp.os << ")";
-  replace(expr, rewriter_, pp.os.str(), *ci_);
-  return true;
 }
 
 
@@ -564,7 +479,7 @@ getArrayType(const Type* ty, cArrayConfig& cfg)
     const ConstantArrayType* next = static_cast<const ConstantArrayType*>(qt.getTypePtr()->getAsArrayTypeUnsafe());
     getArrayType(next, cfg);
   } else {
-    cfg.fundamentalType = QualType::getAsString(qt.split());
+    cfg.fundamentalType = GetTypeString(qt.split());
   }
 }
 
@@ -600,7 +515,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
       info->typedefString = sstr.str();
       info->retType = "type" + D->getNameAsString() + "*";
     } else {
-      info->retType = QualType::getAsString(aty->getElementType().split()) + "**";
+      info->retType = GetTypeString(aty->getElementType().split()) + "**";
     }
     return info;
   } else {
@@ -680,7 +595,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   if (arrayInfo){
     retType = arrayInfo->retType;
   } else {
-    retType = QualType::getAsString(D->getType().split()) + "*";
+    retType = GetTypeString(D->getType().split()) + "*";
   }
   varRepl = "(*" + currentNs_->nsPrefix() + var_repl_prefix + "get_" + scopeUniqueVarName + "())";
 
@@ -909,7 +824,7 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
     new_init_pp.os << "static " << arrayInfoPtr->typedefName;
     arrayInfoPtr->isFxnStatic = true;
   } else {
-    new_init_pp.os << "static " << QualType::getAsString(D->getType().split());
+    new_init_pp.os << "static " << GetTypeString(D->getType().split());
   }
   new_init_pp.os << " " << init_prefix << D->getNameAsString();
   if (D->hasInit()){
