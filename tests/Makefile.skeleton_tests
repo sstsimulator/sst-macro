@@ -13,12 +13,11 @@ endif
 endif
 else
 if HAVE_CLANG
-SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD
+SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD relocation_ptr_test 
 endif
 
 SKELETONCASES += \
-  boxml \
-  relocation_ptr_test 
+  boxml 
 
 if BUILD_SUMI_MPI
 SKELETONCASES += \
