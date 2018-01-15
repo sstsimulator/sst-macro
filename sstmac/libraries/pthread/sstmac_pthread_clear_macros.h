@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #undef pthread_timedjoin_np
 #undef pthread_detach
 #undef pthread_equal
+#undef pthread_testcancel
 #undef pthread_attr_init
 #undef pthread_attr_destroy
 #undef pthread_attr_getdetachstate
@@ -157,6 +158,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #undef pthread_setspecific
 #undef pthread_self
 #undef pthread_kill
+#undef pthread_cleanup_pop
+#undef pthread_cleanup_push
+#undef pthread_mutexattr_setpshared
 
 #undef PTHREAD_THREADS_MAX
 #undef PTHREAD_KEYS_MAX
@@ -169,11 +173,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #undef PTHREAD_MUTEX_INITIALIZER
 #undef PTHREAD_RWLOCK_INITIALIZER
 
+#undef PTHREAD_PROCESS_SHARED
+#undef PTHREAD_PROCESS_PRIVATE
 
 #undef pthread_t
 #undef pthread_attr_t
 #undef pthread_key_t
 #undef pthread_cond_t
+#undef pthread_condattr_t
 #undef pthread_mutex_t
 #undef pthread_once_t
 #undef pthread_mutexattr_t
@@ -190,4 +197,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #undef thread_local
 
 #undef PTHREAD_SCOPE_PROCESS 
-#undef PTHREAD_SCOPE_SYSTEM 
+#undef PTHREAD_SCOPE_SYSTEM
+
+#undef PTHREAD_MUTEX_NORMAL
+#undef PTHREAD_MUTEX_ERRORCHECK
+#undef PTHREAD_MUTEX_RECURSIVE
+#undef PTHREAD_MUTEX_DEFAULT
+#undef PTHREAD_MUTEX_ERRORCHECK_NP

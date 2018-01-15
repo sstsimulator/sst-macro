@@ -87,8 +87,8 @@ class processor
   memory_model* mem_;
   node* node_;
 
-
 };
+
 
 }
 } // end of namespace sstmac

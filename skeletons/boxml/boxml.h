@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef BOXML_H_INCLUDED
 #define BOXML_H_INCLUDED
 
-#include <sstmacro.h>
+#include <sstmac/util.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/software/process/app.h>
 //#include <sstmac/software/process/key.h>
@@ -58,7 +58,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <tinyxml2.h>
 #include <containers.h>
 #include <unordered_map>
-#include <mpi.h>
 #include <sstmac/software/process/time.h>
 
 
@@ -142,23 +141,19 @@ namespace lblxml {
 
     ~box_domain() { }
 
-    int
-    nproc() const { return size_; }
+    int nproc() const { return size_; }
 
-    int
-    my_box_number() const {
+    int my_box_number() const {
       return boxes_[my_comm_rank()];
     }
 
-    int
-    comm_to_global_rank(int comm_rank) const {
+    int comm_to_global_rank(int comm_rank) const {
       int box = boxes_[comm_rank];
       int grank =  map_[box];
       return grank;
     }
 
-    int
-    global_to_comm_rank(int global_rank) const {
+    int global_to_comm_rank(int global_rank) const {
       std::cerr << "global_to_comm_rank() aborting\n";
       abort();
     }
@@ -234,94 +229,67 @@ namespace lblxml {
     sprockit::sim_parameters* params_;
     std::set<int> task_processed_;
 
-    void
-    init();
+    void init();
 
-    void
-    read_files();
+    void read_files();
 
-    void
-    read_binary();
+    void read_binary();
 
-    void
-    process_xml(tinyxml2::XMLDocument* doc,
+    void process_xml(tinyxml2::XMLDocument* doc,
                 std::string l1, std::string l2,
                 void (*fp)(tinyxml2::XMLElement*,int));
 
-    void
-    distribute_boxes();
+    void distribute_boxes();
 
-    void
-    distribute_events();
+    void distribute_events();
 
-    void
-    distribute_comp(int idx, event* ev);
+    void distribute_comp(int idx, event* ev);
 
-    void
-    distribute_comm(int idx, event* ev);
+    void distribute_comm(int idx, event* ev);
 
-    void
-    distribute_allreduce(int idx, event* ev);
+    void distribute_allreduce(int idx, event* ev);
 
 #ifdef BOXML_HAVE_TEST
   public:
-    Task*
-    my_skeleton_main();
+    Task* my_skeleton_main();
 
   private:
-    Task*
-    get_task(int id);
+    Task* get_task(int id);
 
-    void
-    add_comp_tasks(int id, int comp_id=-1);
+    void add_comp_tasks(int id, int comp_id=-1);
 
-    Task*
-    build_task_graph();
+    Task* build_task_graph();
 #endif
 
-    void
-    fake_barrier();
+    void fake_barrier();
 
-    void
-    fake_barrier_serial();
+    void fake_barrier_serial();
 
-    void
-    post_recvs();
+    void post_recvs();
 
-    void
-    run_loop();
+    void run_loop();
 
-    void
-    finalize();
+    void finalize();
 
-    void
-    simple_event_done(int index);
+    void simple_event_done(int index);
 
-    void
-    clear_collective_deps(event* ev, event* evl);
+    void clear_collective_deps(event* ev, event* evl);
 
-    void
-    collective_done(int box_number, int event_id);
+    void collective_done(int box_number, int event_id);
 
-    void 
-    recv_boxes(int& n_events);
+    void recv_boxes(int& n_events);
 
-    bool
-    send_boxes(int& n_events);
+    bool send_boxes(int& n_events);
 
-    bool
-    compute_boxes(int& n_events);
+    bool compute_boxes(int& n_events);
 
-    bool
-    reduce(int& n_events);
+    bool reduce(int& n_events);
 
     int count_events();
 
     int incoming_max_size();
 
     void post_more_recvs(int outcount);
-
-    void post_generic_irecv (MPI_Request* request);
 
     void populate_listeners();
 
@@ -345,8 +313,7 @@ namespace lblxml {
 
   public:
     /// Destructor.
-    virtual
-    ~boxml() throw () {}
+    virtual ~boxml() throw () {}
 
     boxml(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
           sstmac::sw::operating_system* os) :

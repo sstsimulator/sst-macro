@@ -98,6 +98,7 @@ nobase_library_include_HEADERS = \
   process/thread_fwd.h \
   process/thread_id.h \
   process/global.h \
+  process/cppglobal.h \
   process/process_context.h \
   threading/context_util.h \
   threading/stack_alloc_chunk.h \

@@ -56,9 +56,10 @@ typedef int (*empty_main_fxn)();
 #ifndef __cplusplus
 #include <stdbool.h>
 #endif
-#include <sstmac/null_buffer.h>
 
 #ifdef __cplusplus
+
+#include <sstmac/software/process/cppglobal.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
 #include <Python.h>

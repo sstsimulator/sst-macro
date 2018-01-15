@@ -115,7 +115,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
-    pragmaConfig_(cfg)
+    pragmaConfig_(cfg),
+    numRelocations_(0)
   {
     initHeaders();
     initReservedNames();
@@ -125,7 +126,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   bool isGlobal(const clang::DeclRefExpr* expr) const {
-    return globals_.find(expr->getFoundDecl()->getCanonicalDecl()) != globals_.end();
+    return globals_.find(mainDecl(expr)) != globals_.end();
   }
 
   PragmaConfig& getPragmaConfig() {
@@ -133,7 +134,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   std::string getGlobalReplacement(clang::NamedDecl* decl) const {
-    auto iter = globals_.find(decl);
+    auto iter = globals_.find(mainDecl(decl));
     if (iter == globals_.end()){
       errorAbort(decl->getLocStart(), *ci_,
                  "getting global replacement for non-global variable");
@@ -211,19 +212,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool TraverseCXXMemberCallExpr(clang::CXXMemberCallExpr* expr, DataRecursionQueue* queue = nullptr);
 
   /**
-   * @brief VisitUnaryOperator Currently no rewrite operations are performed.
-   * Unary operators are not valid in certain global variables usages.
-   * Validate that this unary operator is not a violation.
-   * @param op
-   * @return
-   */
-  bool VisitUnaryOperator(clang::UnaryOperator* op);
-
-  /**
    * @brief VisitVarDecl We only need to visit variables once down the AST.
    *        No pre or post operations.
    * @param D
-   * @return
+   * @return Whether to skip visiting this variable's initialization
    */
   bool visitVarDecl(clang::VarDecl* D);
 
@@ -284,6 +276,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool TraverseCompoundStmt(clang::CompoundStmt* S, DataRecursionQueue* queue = nullptr);
 
   bool TraverseDeclStmt(clang::DeclStmt* op, DataRecursionQueue* queue = nullptr);
+
+  bool TraverseFieldDecl(clang::FieldDecl* fd, DataRecursionQueue* queue = nullptr);
+
+  bool TraverseInitListExpr(clang::InitListExpr* expr, DataRecursionQueue* queue = nullptr);
 
 #define OPERATOR(NAME) \
   bool TraverseBin##NAME(clang::BinaryOperator* op, DataRecursionQueue* queue = nullptr){ \
@@ -392,6 +388,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void replaceMain(clang::FunctionDecl* mainFxn);
 
  private:
+  //whether we are allowed to use global variables in statements
+  //or if they are disallowed because they would break deglobalizer
   clang::Decl* currentTopLevelScope_;
   clang::Rewriter& rewriter_;
   clang::CompilerInstance* ci_;
@@ -402,7 +400,46 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<clang::Stmt*>& deletedStmts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
+
+  /** These should always index by the canonical decl */
   std::map<const clang::Decl*,std::string> globals_;
+  std::map<const clang::Decl*,std::string> scopedNames_;
+
+  static inline const clang::Decl* mainDecl(const clang::Decl* d){
+    return d->getCanonicalDecl();
+  }
+
+  static inline const clang::Decl* mainDecl(const clang::DeclRefExpr* dr){
+    return dr->getDecl()->getCanonicalDecl();
+  }
+
+  std::string activeGlobalScopedName_;
+
+  bool activeGlobal() const {
+    return !activeGlobalScopedName_.empty();
+  }
+
+  void clearActiveGlobal() {
+    activeGlobalScopedName_.clear();
+  }
+
+  void setActiveGlobalScopedName(const std::string& str) {
+    activeGlobalScopedName_ = str;
+  }
+
+  const std::string& activeGlobalScopedName() const {
+    return activeGlobalScopedName_;
+  }
+
+  /**
+   * @brief addRelocation
+   * @param op  The unary operator creating the pointer
+   * @param dr  The global variable being pointed to
+   * @param member  Optionally a specific field of the global variable being pointed to
+   */
+  void addRelocation(clang::UnaryOperator* op, clang::DeclRefExpr* dr,
+                     clang::ValueDecl* member = nullptr);
+
   std::set<std::string> globalsDeclared_;
   bool useAllHeaders_;
   int insideCxxMethod_;
@@ -412,6 +449,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::CXXRecordDecl*> class_contexts_;
   std::list<clang::ForStmt*> loop_contexts_;
   std::list<clang::Stmt*> stmt_contexts_;
+
+  std::list<clang::VarDecl*> activeDecls_;
+  std::list<clang::Expr*> activeInits_;
+
+  int numRelocations_;
 
   typedef enum { LHS, RHS } BinOpSide;
   std::list<BinOpSide> sides_;
@@ -426,16 +468,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
   std::set<clang::FunctionDecl*> keepWithNullArgs_;
   std::set<clang::FunctionDecl*> deleteWithNullArgs_;
-  std::list<clang::DeclStmt*> multiDeclStmts_;
-
-  struct PendingGlobalVar {
-    clang::VarDecl* D;
-    ArrayInfo* infoPtr;
-    AnonRecord* recPtr;
-    PendingGlobalVar(clang::VarDecl* _D, ArrayInfo* _i, AnonRecord* _r) :
-      D(_D), infoPtr(_i), recPtr(_r){}
-  };
-  std::list<PendingGlobalVar> pendingGlobalVars_;
+  std::set<clang::DeclRefExpr*> alreadyReplaced_;
+  std::list<int> initIndices_;
+  std::list<clang::FieldDecl*> activeFieldDecls_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;
@@ -453,7 +488,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return nullptr;
   }
 
-  void replaceGlobalUse(clang::Decl* decl, clang::SourceRange rng);
+  void replaceGlobalUse(clang::DeclRefExpr* expr, clang::SourceRange rng);
 
   clang::Expr* getUnderlyingExpr(clang::Expr *e);
 
@@ -478,9 +513,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   typedef enum {
-    Extern, //regular global variable (C-style)
+    Global, //regular global variable (C-style)
+    FileStatic,
     CxxStatic, //c++ static class variable
-  } GlobalRedirect_t;
+    FxnStatic
+  } GlobalVariable_t;
 
   /**
    * @brief replaceGlobalVar
@@ -494,17 +531,15 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param D             The variable declaration being deglobalized
    * @param staticFxnInfo For static function variables, we will want any info on anonymous records
    *                      returned to us via this variable
-   * @return  Standard clang continue return
+   * @return  Whether to skip visiting this variable's initialization
    */
-   void setupGlobalVar(const std::string& scope_prefix,
-                      const std::string& init_scope_prefix,
-                      const std::string& var_repl_prefix,
+   bool setupGlobalVar(const std::string& scope_prefix,
+                      const std::string& var_ns_prefix,
                       clang::SourceLocation externVarsInsertLoc,
                       clang::SourceLocation getRefInsertLoc,
-                      GlobalRedirect_t red_ty,
+                      GlobalVariable_t global_var_ty,
                       clang::VarDecl* D,
-                      AnonRecord* anonRecord,
-                      ArrayInfo* arrayInfo);
+                      clang::SourceLocation declEnd = clang::SourceLocation());
 
    /**
     * @brief checkAnonStruct See if the type of the variable is an
@@ -527,35 +562,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     *         If D does not have array type, return nullptr
     */
    ArrayInfo* checkArray(clang::VarDecl* D, ArrayInfo* info);
-
-  /**
-   * @brief defineGlobalVarInitializers
-   *        Dump the text needed to define new global variables for
-   *        initializing thread-local variables
-   * @param scope_unique_var_name A modified variable name unique to its scope
-   * @param var_name    The name of the variable in original source code
-   * @param init_prefix A prefix required
-   * @param os  A stream to dump output to
-   */
-  void defineGlobalVarInitializers(
-     const std::string& scope_unique_var_name,
-     const std::string& var_name,
-     const std::string& init_scope_prefix,
-     llvm::raw_string_ostream& os,
-     bool isVolatile);
-
-  /**
-   * @brief declareStaticInitializers
-   *        Similar to #defineGlobalVarInitializers, but we are in class declaration
-   *        and unable to define the symbols. Just declare static variables to be
-   *        defined later.
-   * @param scope_unique_var_name
-   * @param os
-   */
-  void declareStaticInitializers(
-     const std::string& scope_unique_var_name,
-     llvm::raw_string_ostream& os,
-     bool isVolatile);
 
   /**
    * @brief deleteStmt Delete a statement completely in the source-to-source

@@ -106,7 +106,7 @@ node::node(sprockit::sim_parameters* params,
   nic_params->remove_param("id");
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
-  mem_model_ = memory_model::factory::get_optional_param("model", "logP", mem_params, this);
+  mem_model_ = memory_model::factory::get_optional_param("model", "logp", mem_params, this);
 
   sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
   proc_ = processor::factory::get_optional_param("processor", "instruction",

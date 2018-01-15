@@ -28,6 +28,7 @@ CLANGTESTS = \
   pragma_sst_loop_count \
   pragma_omp_parallel
 
+#  deglobal_relocation 
 
 #the CHKSUF will get appended to this later
 CLANGCHECKTESTS=$(CLANGTESTS:%=test_clang_%)

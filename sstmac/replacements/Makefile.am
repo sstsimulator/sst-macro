@@ -19,6 +19,7 @@ nobase_library_include_HEADERS =
 
 nobase_library_include_HEADERS += \
   mpi.h \
+  change_mpi_symbols.h \
   omp.h \
 	fixIntrinsics.h \
   sstCoreElement.h 
@@ -56,6 +57,6 @@ nobase_library_include_HEADERS += \
   signal.h \
   sstmac_pthread_clear.h \
   sys/time.h \
-  sys/signal.h
+  sys/signal.h 
 endif
 

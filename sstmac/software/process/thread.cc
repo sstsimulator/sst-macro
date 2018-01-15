@@ -111,19 +111,10 @@ thread::_get_api(const char* name)
 }
 
 void
-thread::clear_subthread_from_parent_app()
-{
-  //if this is canceled, the parent app might already be dead
-  if (parent_app_){
-    parent_app_->remove_subthread(this);
-  }
-}
-
-void
 thread::cleanup()
 {
-  if (state_ != CANCELED){
-    clear_subthread_from_parent_app();
+  if (state_ != CANCELED && parent_app_ && detach_state_ == DETACHED){
+    parent_app_->remove_subthread(this);
   }
   // We are done, ask the scheduler to remove this task from the
   state_ = DONE;
@@ -151,11 +142,9 @@ thread::run_routine(void* threadptr)
       //all of this is happening ON THE THREAD - it kills itself
       //this is not the DES thread killing it
       self->cleanup();
-    }
-    catch (const kill_exception& ex) {
+    } catch (const kill_exception& ex) {
       //great, we are done
-    }
-    catch (const std::exception &ex) {
+    } catch (const std::exception &ex) {
       cerrn << "thread terminated with exception: " << ex.what()
                 << "\n";
       // should forward the exception to the main thread,
@@ -164,16 +153,14 @@ thread::run_routine(void* threadptr)
       std::cout.flush();
       std::cerr.flush();
       abort();
-    }
-    catch (const std::string& str) {
+    } catch (const std::string& str) {
       cerrn << "thread terminated with string exception: " << str << "\n";
       cerrn << "aborting" << std::endl;
       std::cout.flush();
       std::cerr.flush();
       abort();
     }
-  }
-  else {
+  } else {
     sprockit::abort("thread::run_routine: task has not been initialized");
   }
 }
@@ -195,7 +182,8 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   pthread_concurrency_(0),
   sid_(sid),
   ftag_(ftq_tag::null),
-  protect_tag(false)
+  protect_tag(false),
+  detach_state_(DETACHED)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);

@@ -75,6 +75,7 @@ static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app
 RegisterKeywords(
  { "host_compute_timer", "whether to use the time elapsed on the host machine in compute modeling" },
  { "min_op_cutoff", "the minimum number of operations in a compute before detailed modeling is perfromed" },
+ { "notify", "whether the app should send completion notifications to job root" }
 );
 
 namespace sstmac {
@@ -104,7 +105,8 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   next_condition_(0),
   next_mutex_(0),
   min_op_cutoff_(0),
-  globals_storage_(nullptr)
+  globals_storage_(nullptr),
+  rc_(0)
 {
   int globalsSize = GlobalVariable::globalsSize();
   if (globalsSize != 0){
@@ -116,6 +118,8 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   if (host_compute){
     host_timer_ = new HostTimer;
   }
+
+  notify_ = params->get_optional_bool_param("notify", true);
 }
 
 app::~app()
@@ -242,7 +246,7 @@ app::run()
   SSTMACBacktrace(main);
   os_->increment_app_refcount();
   end_api_call(); //this initializes things, "fake" api call at beginning
-  int rc = skeleton_main();
+  rc_ = skeleton_main();
   //we are ending but perform the equivalent
   //to a start api call to flush any compute
   start_api_call();
@@ -254,12 +258,13 @@ app::run()
   //now we have to send a message to the job launcher to let it know we are done
   os_->decrement_app_refcount();
   //for now assume that the application has finished with a barrier - which is true of like everything
-  if (sid_.task_ == 0){
+  if (sid_.task_ == 0 && notify_){
     int launch_root = os_->node()->launch_root();
     job_stop_event* lev = new job_stop_event(sid_.app_, unique_name_, launch_root, os_->addr());
     os_->execute_kernel(ami::COMM_PMI_SEND, lev);
   }
   task_mapping::remove_global_mapping(sid_.app_, unique_name_);
+  thread_info::deregister_user_space_virtual_thread(stack_);
 }
 
 void
@@ -271,27 +276,16 @@ app::add_subthread(thread *thr)
   subthreads_[thr->thread_id()] = thr;
 }
 
-void
-app::set_subthread_done(thread* thr)
-{
-  subthreads_[thr->thread_id()] = nullptr;
-}
-
 thread*
 app::get_subthread(long id)
 {
-  std::map<long,thread*>::iterator it = subthreads_.find(id);
+  auto it = subthreads_.find(id);
   if (it==subthreads_.end()){
     spkt_throw_printf(sprockit::value_error,
       "unknown thread id %ld",
       id);
   }
   return it->second;
-}
-
-void
-app::clear_subthread_from_parent_app()
-{
 }
 
 void

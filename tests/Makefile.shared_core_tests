@@ -8,16 +8,17 @@ CORE_TEST_DEPS += ../sstmac/install/libmacro.la
 endif
 
 
+if BUILD_SUMI_MPI
 CORETESTS+= \
-  test_core_apps_ping_all_torus_simple \
-  test_core_apps_ping_all_simple_fattree \
-  test_core_apps_ping_all_cascade_simple \
   test_core_apps_mpi_fattree \
+  test_core_apps_ping_all_torus_macrels \
+  test_core_apps_ping_all_simple_fattree \
+  test_core_apps_ping_all_cascade_macrels \
   test_core_apps_ping_all_null_arb \
-  test_core_apps_ping_all_torus_pflow \
-  test_core_apps_ping_all_torus_pflow_new \
-  test_core_apps_ping_all_cascade_pflow_ugal \
-  test_core_apps_ping_all_torus_pflow_ugal \
+  test_core_apps_ping_all_torus_pisces \
+  test_core_apps_ping_all_torus_pisces_new \
+  test_core_apps_ping_all_cascade_pisces_ugal \
+  test_core_apps_ping_all_torus_pisces_ugal \
   test_core_apps_ping_all_torus_valiant \
   test_core_apps_ping_all_hypercube \
   test_core_apps_ping_all_cascade \
@@ -39,4 +40,5 @@ test_core_apps_ping_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 5 and t < 5.2' \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_$*.ini --no-wall-time $(THREAD_ARGS)
 	
+endif
 

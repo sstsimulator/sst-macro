@@ -68,7 +68,7 @@ class memory_message :
   {
   }
 
-  long byte_length() const override {
+  uint64_t byte_length() const override {
     return bytes_;
   }
 
@@ -92,7 +92,7 @@ class memory_message :
 
  private:
   uint64_t id_;
-  long bytes_;
+  uint64_t bytes_;
   double max_bw_;
 };
 
@@ -115,7 +115,7 @@ class pisces_memory_packetizer : public packetizer
 
   void recv_credit(event* ev);
 
-  void inject(int vn, long bytes, long byte_offset, message *payload) override;
+  void inject(int vn, uint32_t bytes, uint64_t byte_offset, message *payload) override;
 
   bool spaceToSend(int vn, int num_bits) override {
     return channelFree_[vn];
@@ -148,7 +148,7 @@ class pisces_memory_model :
   public memory_model,
   public packetizer_callback
 {
-  FactoryRegister("pisces | pisces", memory_model, pisces_memory_model)
+  FactoryRegister("pisces", memory_model, pisces_memory_model)
  public:
   pisces_memory_model(sprockit::sim_parameters* params, node* nd);
 

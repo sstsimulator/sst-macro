@@ -18,3 +18,23 @@ fi
 
 ])
 
+AC_DEFUN([CHECK_SUMI_MPI], [
+
+AC_ARG_ENABLE([sumi-mpi],
+  [AS_HELP_STRING([--(dis|en)able-sumi-mpi],
+    [install support for the SUMI implementation of MPI])],
+  [install_sumi_mpi=$enableval],
+  [install_sumi_mpi=yes])
+
+AH_TEMPLATE([NO_SUMI_MPI],
+            [Define to 1 to not build default SUMI MPI support])
+if test "X$install_sumi_mpi" = "Xyes"; then
+AC_DEFINE_UNQUOTED([NO_SUMI_MPI], 0, [Build SUMI MPI support])
+AM_CONDITIONAL([BUILD_SUMI_MPI], true)
+else
+AC_DEFINE_UNQUOTED([NO_SUMI_MPI], 1, [Do NOT build SUMI MPI support])
+AM_CONDITIONAL([BUILD_SUMI_MPI], false)
+fi
+
+])
+

@@ -216,7 +216,7 @@ pisces_memory_packetizer::init_noise_model()
 }
 
 void
-pisces_memory_packetizer::inject(int vn, long bytes, long byte_offset, message* msg)
+pisces_memory_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message* msg)
 {
   bool is_tail = (bytes + byte_offset) == msg->byte_length();
   pisces_payload* payload = pkt_allocator_->new_packet(bytes, msg->flow_id(), is_tail,

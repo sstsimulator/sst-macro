@@ -375,6 +375,8 @@ class transport {
   void scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
                         collective::config = collective::cfg());
 
+  void wait_barrier(int tag);
+
   /**
    * Essentially just executes a zero-byte allgather.
    * @param tag

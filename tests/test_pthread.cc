@@ -112,10 +112,9 @@ int USER_MAIN(int argc, char** argv)
 {
     void* no_args = 0;
     pthread_t thr1, thr2;
-    pthread_attr_t attr1, attr2;
     int status;
-    status = pthread_create(&thr1, &attr1, &ptest, no_args);
-    status = pthread_create(&thr2, &attr2, &ptest, no_args);
+    status = pthread_create(&thr1, nullptr, &ptest, no_args);
+    status = pthread_create(&thr2, nullptr, &ptest, no_args);
 
     void* ret;
     pthread_join(thr1, &ret);
@@ -124,8 +123,8 @@ int USER_MAIN(int argc, char** argv)
     pthread_args pargs;
     pthread_mutex_init(&pargs.mutex,0);
     pthread_cond_init(&pargs.cond,0);
-    status = pthread_create(&thr1, &attr1, &ptest2, &pargs);
-    status = pthread_create(&thr2, &attr2, &ptest2, &pargs);
+    status = pthread_create(&thr1, nullptr, &ptest2, &pargs);
+    status = pthread_create(&thr2, nullptr, &ptest2, &pargs);
 
     std::cout << "Spawned threads" << std::endl;
     SSTMAC_compute(1);
@@ -139,7 +138,7 @@ int USER_MAIN(int argc, char** argv)
     pthread_join(thr2, &ret);
 
     //spin off another pthread
-    status = pthread_create(&thr1, &attr1, &ptest, &pargs);
+    status = pthread_create(&thr1, nullptr, &ptest, &pargs);
 
     return 0;
 }

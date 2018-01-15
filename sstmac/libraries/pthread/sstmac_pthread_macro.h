@@ -55,11 +55,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #define PTHREAD_CREATE_JOINABLE SSTMAC_PTHREAD_CREATE_JOINABLE
 #define PTHREAD_ONCE_INIT SSTMAC_PTHREAD_ONCE_INIT
 
+#define PTHREAD_MUTEX_NORMAL SSTMAC_PTHREAD_MUTEX_NORMAL
+#define PTHREAD_MUTEX_ERRORCHECK SSTMAC_PTHREAD_MUTEX_ERRORCHECK
+#define PTHREAD_MUTEX_RECURSIVE SSTMAC_PTHREAD_MUTEX_RECURSIVE
+#define PTHREAD_MUTEX_DEFAULT SSTMAC_PTHREAD_MUTEX_DEFAULT
+#define PTHREAD_MUTEX_ERRORCHECK_NP SSTMAC_PTHREAD_MUTEX_ERRORCHECK_NP
+
 #define pthread_create SSTMAC_pthread_create
 #define pthread_exit SSTMAC_pthread_exit
 #define pthread_join SSTMAC_pthread_join
 #define pthread_tryjoin_np SSTMAC_pthread_tryjoin_np
 #define pthread_timedjoin_np SSTMAC_pthread_timedjoin_np
+#define pthread_testcancel SSTMAC_pthread_testcancel
 #define pthread_detach SSTMAC_pthread_detach
 #define pthread_equal SSTMAC_pthread_equal
 #define pthread_attr_init SSTMAC_pthread_attr_init
@@ -172,13 +179,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pthread_kill SSTMAC_pthread_kill
 #define pthread_getspecific SSTMAC_pthread_getspecific
 #define pthread_setspecific SSTMAC_pthread_setspecific
+#define pthread_mutexattr_setpshared SSTMAC_pthread_mutexattr_setpshared
+#define pthread_mutexattr_getpshared SSTMAC_pthread_mutexattr_getpshared
 
-
+#define PTHREAD_PROCESS_SHARED SSTMAC_PTHREAD_PROCESS_SHARED
+#define PTHREAD_PROCESS_PRIVATE SSTMAC_PTHREAD_PROCESS_PRIVATE
 
 #define pthread_t sstmac_pthread_t
 #define pthread_attr_t sstmac_pthread_attr_t
 #define pthread_key_t sstmac_pthread_key_t
 #define pthread_cond_t sstmac_pthread_cond_t
+#define pthread_condattr_t sstmac_pthread_condattr_t
 #define pthread_mutex_t sstmac_pthread_mutex_t
 #define pthread_spinlock_t sstmac_pthread_spinlock_t
 #define pthread_once_t sstmac_pthread_once_t
@@ -188,6 +199,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define pthread_setconcurrency SSTMAC_pthread_setconcurrency
 #define pthread_getconcurrency SSTMAC_pthread_getconcurrency
+
+#define pthread_cleanup_push SSTMAC_pthread_cleanup_push
+#define pthread_cleanup_pop SSTMAC_pthread_cleanup_pop
 
 #define PTHREAD_ONCE_INIT SSTMAC_PTHREAD_ONCE_INIT
 #define PTHREAD_COND_INITIALIZER SSTMAC_PTHREAD_COND_INITIALIZER

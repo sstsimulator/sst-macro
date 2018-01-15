@@ -133,7 +133,7 @@ packetizer::sendWhatYouCan(int vn)
 }
 
 void
-packetizer::bytesArrived(int vn, uint64_t unique_id, int bytes, message *parent)
+packetizer::bytesArrived(int vn, uint64_t unique_id, uint32_t bytes, message *parent)
 {
   message* done = completion_queue_.recv(unique_id, bytes, parent);
   if (done){
@@ -167,15 +167,15 @@ class merlin_packetizer :
   merlin_packetizer(sprockit::sim_parameters* params,
                       event_scheduler* parent);
 
-  std::string to_string() const {
+  std::string to_string() const override {
     return "merling packetizer";
   }
 
-  bool spaceToSend(int vn, int num_bits){
+  bool spaceToSend(int vn, int num_bits) override {
     return m_linkControl->spaceToSend(vn, num_bits);
   }
 
-  void inject(int vn, long bytes, long byte_offset, message *payload);
+  void inject(int vn, uint32_t bytes, uint64_t byte_offset, message *payload) override;
 
   bool recvNotify(int vn);
 
@@ -184,20 +184,20 @@ class merlin_packetizer :
     return true;
   }
 
-  void init(unsigned int phase){
+  void init(unsigned int phase) override {
     m_linkControl->init(phase);
   }
 
-  void setup(){
+  void setup() override {
     m_linkControl->setup();
   }
 
-  link_handler* new_credit_handler() const{
+  link_handler* new_credit_handler() const override {
     spkt_abort_printf("merlin_packetizier::new_ack_handler: never used");
     return nullptr;
   }
 
-  link_handler* new_payload_handler() const{
+  link_handler* new_payload_handler() const override {
     spkt_abort_printf("merlin_packetizier::new_payload_handler: never used");
     return nullptr;
   }
@@ -256,7 +256,7 @@ merlin_packetizer::recvNotify(int vn)
 }
 
 void
-merlin_packetizer::inject(int vn, long bytes, long byte_offset, message* payload)
+merlin_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message* payload)
 {
   SST::Interfaces::SimpleNetwork::nid_t dst = payload->toaddr();
   SST::Interfaces::SimpleNetwork::nid_t src = payload->toaddr();

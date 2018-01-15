@@ -19,7 +19,11 @@ EXTRA_DIST = LICENSE bootstrap.sh \
   docs \
   skeletons
 
-SUBDIRS = $(subdirs) sumi-mpi
+SUBDIRS = $(subdirs)
+
+if BUILD_SUMI_MPI
+SUBDIRS += sumi-mpi
+endif
 
 SUBDIRS += sstmac bin python tests configurations 
 

@@ -17,9 +17,9 @@ library_include_HEADERS = \
   pisces.ini \
   macrels.ini \
   kahuna.ini \
-  hopper_pflow.ini \
+  hopper_pisces.ini \
   small_torus.ini \
-  small_torus_simple.ini \
+  small_torus_macrels.ini \
   dragonfly.ini \
   edison_amm.ini \
   edison_amm1.ini \
@@ -33,24 +33,26 @@ library_include_HEADERS = \
   hopper_amm2.ini \
   hopper_amm3.ini \
   hopper_amm4.ini \
-  hopper_amm1_simple.ini \
-  hopper_amm2_simple.ini \
-  hopper_amm3_simple.ini \
+  hopper_amm1_macrels.ini \
+  hopper_amm2_macrels.ini \
+  hopper_amm3_macrels.ini \
+  trinity_amm.ini \
+  trinity_amm1_sculpin.ini \
   deepthought.ini \
   parsedumpi.ini \
   mpi_test_all.ini \
   mpi_coverage.ini \
   mpi_only_coverage.ini \
   mpi_stats.ini \
-  smp_pflow.ini \
+  smp_pisces.ini \
   smp_mpi_test.ini \
   hopper_nodemap.txt \
   fullmap.txt \
   default.ini \
   sequoia.ini \
-  exa1_pflow.ini \
-  exa1_simple.ini \
-  exa2_pflow.ini \
-  exa2_simple.ini \
+  exa1_pisces.ini \
+  exa1_macrels.ini \
+  exa2_pisces.ini \
+  exa2_macrels.ini \
   exa_mini_top.ini
 

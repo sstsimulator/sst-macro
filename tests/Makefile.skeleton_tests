@@ -7,24 +7,33 @@ SKELETONCASES=
 
 if INTEGRATED_SST_CORE
 if HAVE_CLANG
+if BUILD_SUMI_MPI
 SKELETONCASES += liblulesh libhpcg libcomd
+endif
 endif
 else
 if HAVE_CLANG
-SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD
+SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD relocation_ptr_test 
 endif
 
 SKELETONCASES += \
+  boxml 
+
+if BUILD_SUMI_MPI
+SKELETONCASES += \
   sst_component_example \
+  traffic \
   multiapp \
   sendrecv \
-  traffic \
-  sendrecv_sst_so \
-  boxml
+  sendrecv_sst_so 
+
 if !HAVE_UBUNTU
 SKELETONCASES +=  matmul 
 endif
 endif
+
+endif 
+#### SUMI MPI
 
 SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
 

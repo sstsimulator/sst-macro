@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/process/tls.h>
+#include <sstmac/software/process/global.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sprockit/errors.h>
@@ -55,6 +56,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 static const int tls_sanity_check = 42042042;
+
+std::set<void*> thread_info::active_global_maps_;
 
 void
 thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack, void* globalsMap)
@@ -77,8 +80,30 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
   //this is dirty - so dirty, but it works
   void** globalPtr = (void**) &tls[TLS_GLOBAL_MAP];
   *globalPtr = globalsMap;
+
+  if (globalsMap){
+    active_global_maps_.insert(globalsMap);
+    GlobalVariable::callCtors(globalsMap);
+    GlobalVariable::relocatePointers(globalsMap);
+  }
 }
 
+void
+thread_info::init_global_space(void* ptr, int size, int offset)
+{
+  for (void* globals : active_global_maps_){
+    char* dst = ((char*)globals) + offset;
+    ::memcpy(dst, ptr, size);
+  }
 
+  //also do the global init for any new threads spawned
+  char* dst = ((char*)GlobalVariable::globalInit()) + offset;
+  ::memcpy(dst, ptr, size);
+}
 
+}
+
+extern "C" void sstmac_init_global_space(void* ptr, int size, int offset)
+{
+  sstmac::thread_info::init_global_space(ptr, size, offset);
 }

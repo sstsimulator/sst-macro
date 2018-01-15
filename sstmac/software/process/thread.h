@@ -87,6 +87,11 @@ class thread
   friend class delete_thread_event;
   friend class ftq_scope;
 
+  enum detach_t {
+    JOINABLE=0,
+    DETACHED=1
+  };
+
   /// Help resolve deadlock situations.
   enum state {
     PENDING=0,
@@ -116,8 +121,6 @@ class thread
     return parent_app_;
   }
 
-  virtual void clear_subthread_from_parent_app();
-
   static const int no_core_affinity = -1;
   static const int no_socket_affinity = -1;
   static const int main_thread = -1;
@@ -129,6 +132,14 @@ class thread
 
  public:
   virtual ~thread();
+
+  detach_t detach_state() const {
+    return detach_state_;
+  }
+
+  void set_detach_state(detach_t d) {
+    detach_state_= d;
+  }
 
   state get_state() const {
     return state_;
@@ -368,6 +379,8 @@ class thread
   uint64_t block_counter_;
 
   int pthread_concurrency_;
+
+  detach_t detach_state_;
 
 };
 
