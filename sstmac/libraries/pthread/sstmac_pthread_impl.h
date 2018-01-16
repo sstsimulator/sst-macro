@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_pthread_mutex_t int
 #define sstmac_pthread_spinlock_t int
 #define sstmac_pthread_once_t int
-#define sstmac_pthread_cond_attr int
+#define sstmac_pthread_condattr_t int
 #define sstmac_pthread_mutexattr_t int
 #define sstmac_pthread_rwlock_t int
 #define sstmac_pthread_rwlockattr_t int
@@ -70,13 +70,17 @@ typedef void (*sstmac_pthread_key_destructor_fxn)(void*);
 #define SSTMAC_PTHREAD_THREADS_MAX 1000
 #define SSTMAC_PTHREAD_KEYS_MAX 10000
 #define SSTMAC_PTHREAD_STACK_MIN 16384
-#define SSTAMC_PTHREAD_CREATE_DETACHED 0
+#define SSTMAC_PTHREAD_CREATE_DETACHED 0
 #define SSTMAC_PTHREAD_CREATE_JOINABLE 1
 
-#define PTHREAD_MUTEX_NORMAL     0
-#define PTHREAD_MUTEX_ERRORCHECK 1
-#define PTHREAD_MUTEX_RECURSIVE  2
+#define SSTMAC_PTHREAD_MUTEX_NORMAL     0
+#define SSTMAC_PTHREAD_MUTEX_ERRORCHECK 1
+#define SSTMAC_PTHREAD_MUTEX_RECURSIVE  2
+#define SSTMAC_PTHREAD_MUTEX_DEFAULT 3
+#define SSTMAC_PTHREAD_MUTEX_ERRORCHECK_NP 4
 
+#define SSTMAC_PTHREAD_PROCESS_SHARED 0
+#define SSTMAC_PTHREAD_PROCESS_PRIVATE 1
 
 enum {
  SSTMAC_PTHREAD_SCOPE_PROCESS,
@@ -94,6 +98,7 @@ extern "C"
 
 typedef struct {
   uint64_t cpumask;
+  int detach_state;
 } sstmac_pthread_attr_t;
 
 int SSTMAC_pthread_create(sstmac_pthread_t * thread,
@@ -125,6 +130,8 @@ int SSTMAC_pthread_kill(sstmac_pthread_t thr, int signal);
 
 int SSTMAC_pthread_yield();
 
+int SSTMAC_pthread_testcancel();
+
 int SSTMAC_pthread_mutex_destroy(sstmac_pthread_mutex_t * mutex);
 
 int SSTMAC_pthread_mutex_lock(sstmac_pthread_mutex_t * mutex);
@@ -132,6 +139,14 @@ int SSTMAC_pthread_mutex_lock(sstmac_pthread_mutex_t * mutex);
 int SSTMAC_pthread_mutex_trylock(sstmac_pthread_mutex_t * mutex);
 
 int SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex);
+
+int SSTMAC_pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type);
+
+int SSTMAC_pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+
+int SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t* attr, int* pshared);
+
+int SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t* attr, int pshared);
 
 int SSTMAC_pthread_spin_init(sstmac_pthread_spinlock_t* lock, int pshared);
 
@@ -144,7 +159,11 @@ int SSTMAC_pthread_spin_lock(sstmac_pthread_spinlock_t* lock);
 int SSTMAC_pthread_spin_unlock(sstmac_pthread_spinlock_t* lock);
 
 int SSTMAC_pthread_cond_init(sstmac_pthread_cond_t * cond,
-                         const sstmac_pthread_cond_attr *attr);
+                         const sstmac_pthread_condattr_t *attr);
+
+int SSTMAC_pthread_condattr_init(sstmac_pthread_condattr_t *attr);
+
+int SSTMAC_pthread_condattr_destroy(sstmac_pthread_condattr_t *attr);
 
 int SSTMAC_pthread_cond_destroy(sstmac_pthread_cond_t * cond);
 
@@ -217,6 +236,13 @@ int SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr);
 int SSTMAC_pthread_setconcurrency(int lvl);
 
 int SSTMAC_pthread_getconcurrency();
+
+int SSTMAC_pthread_atfork(void (*prepare)(void), void (*parent)(void),
+                          void (*child)(void));
+
+void SSTMAC_pthread_cleanup_pop(int execute);
+
+void SSTMAC_pthread_cleanup_push(void (*routine)(void*), void* arg);
 
 #ifdef __cplusplus
 }

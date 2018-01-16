@@ -89,6 +89,23 @@ class memory_model :
 
 };
 
+class null_memory_model : public memory_model
+{
+ public:
+  FactoryRegister("null", memory_model, null_memory_model)
+
+  null_memory_model(sprockit::sim_parameters* params, node* nd) :
+    memory_model(params, nd)
+  {
+  }
+
+  std::string to_string() const override { return "null memory"; }
+
+  double max_single_bw() const override { return 1e9; }
+
+  void access(long bytes, double max_bw, callback *cb) override {}
+};
+
 }
 } /* namespace sstmac */
 #endif /* MEMORYMODEL_H_ */

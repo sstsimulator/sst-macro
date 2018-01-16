@@ -188,7 +188,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') \
                                or sarg.endswith(".cxx") or sarg.endswith(".C"):
       sourceFiles.append(sarg)
-    elif sarg.endswith('.S'):
+    elif sarg.endswith('.S') or sarg.endswith(".s"):
       asmFiles = True
     elif sarg == "--verbose":
       verbose = True
@@ -202,7 +202,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       givenFlags.append(sarg)
 
-  exeFromSrc = sourceFiles and not objectFiles and not '-c' in sysargs
+  
+  exeFromSrc = sourceFiles and not '-c' in sysargs
 
   if sstCore:
     givenFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
@@ -223,10 +224,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     src2src = int(os.environ["SSTMAC_SRC2SRC"])
 
   runClang = haveClangSrcToSrc and src2src and runClang
-  for arg in sysargs:
-    if "conftest.c" in arg or "conftest_cfunc" in arg: 
-      runClang = False
-      break
+  #for arg in sysargs:
+  #  if "conftest.c" in arg or "conftest_cfunc" in arg: 
+  #    runClang = False
+  #    break
 
 
   if sys.argv[1] == "--version" or sys.argv[1] == "-V":
@@ -342,7 +343,17 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     # "-Dthread_local=thread_local_not_yet_allowed",
 
   if asmFiles:
-    extraCppFlags = [] #add nothing
+    #just execute the command as-is with no frills
+    cmdArr = [
+      cc
+    ]
+    cmdArr.extend(sysargs)
+    cmd = " ".join(cmdArr)
+    if verbose:
+      sys.stderr.write("%s\n" % cmd)
+    rc = os.system(cmd)
+    return rc
+
 
   if "--no-integrated-cpp" in sysargs:
     extraCppFlags = [] #add nothing
@@ -409,8 +420,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         cxxCmdArr.append("-o")
         cxxCmdArr.append(objTarget)
     allCompilerFlags = sstCxxFlagsStr + sstCppFlagsStr + givenFlagsStr
-    if not "fPIC" in allCompilerFlags:
-      sys.stderr.write("Linker/dlopen will eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
+    #if not "fPIC" in allCompilerFlags:
+    #  sys.stderr.write("Linker/dlopen may eventually fail on .so file: fPIC not in C/CXXFLAGS\n")
   elif objTarget and sourceFiles:
     cxxCmdArr = [
       compiler, 

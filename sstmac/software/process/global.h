@@ -48,6 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstream>
 #include <iostream>
 #include <sstmac/software/process/tls.h>
+#include <list>
+#include <sstmac/software/process/cppglobal.h>
 
 extern int sstmac_global_stacksize;
 
@@ -67,11 +69,57 @@ class GlobalVariable {
     return globalInits;
   }
 
+  static void callCtors(void* globals);
+
+  static void relocatePointers(void* globals);
+
+  static void registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
+                                 void* dstPtr, void* dstBasePtr, int& dstOffset);
+
+  static void registerCtor(CppGlobal* g){
+    cppCtors.push_back(g);
+  }
+
  private:
   static int stackOffset;
   static char* globalInits;
   static int allocSize;
+  static std::list<CppGlobal*> cppCtors;
 
+  struct relocation {
+    int srcOffset;
+    int dstOffset;
+    relocation(int src, int dst) :
+      srcOffset(src), dstOffset(dst) {}
+  };
+  static std::list<relocation> relocations;
+
+
+  struct relocationCfg {
+    void* srcPtr;
+    void* srcBasePtr;
+    int& srcOffset;
+    void* dstPtr;
+    void* dstBasePtr;
+    int& dstOffset;
+    relocationCfg(void* s, void* bs, int& os,
+                 void* d, void* bd, int& od) :
+      srcPtr(s), srcBasePtr(bs), srcOffset(os),
+      dstPtr(d), dstBasePtr(bd), dstOffset(od)
+    {
+    }
+  };
+  static std::list<relocationCfg> relocationCfgs;
+
+};
+
+class RelocationPointer {
+ public:
+  RelocationPointer(void* srcPtr, void* srcBasePtr, int& srcOffset,
+                    void* dstPtr, void* dstBasePtr, int& dstOffset){
+    GlobalVariable::registerRelocation(srcPtr, srcBasePtr, srcOffset,
+                                       dstPtr, dstBasePtr, dstOffset);
+  }
 };
 
 static inline void* get_global_at_offset(int offset){

@@ -88,7 +88,8 @@ SSTMAC_pthread_create(sstmac_pthread_t* pthread,
   software_id newid(parent_app->aid(), parent_app->tid(), unknown_thrid);
   pthread_runner* tr = new pthread_runner(newid,
                            parent_app,
-                           start_routine, arg, os);
+                           start_routine, arg, os,
+                           attr ? attr->detach_state : SSTMAC_PTHREAD_CREATE_JOINABLE);
 
   parent_app->add_subthread(tr);
   *pthread = tr->thread_id();
@@ -137,7 +138,7 @@ SSTMAC_pthread_join(sstmac_pthread_t pthread, void ** status)
   pthread_debug("pthread_join");
   thread* current_thr = current_thread();
   operating_system* os = current_thr->os();
-  app* parent_app = os->current_thread()->parent_app();
+  app* parent_app = current_thr->parent_app();
   thread* joiner = parent_app->get_subthread(pthread);
 
   pthread_debug("joining pthread %ld on thread %ld in app %d",
@@ -150,6 +151,13 @@ SSTMAC_pthread_join(sstmac_pthread_t pthread, void ** status)
   }
 
   parent_app->remove_subthread(pthread);
+  return 0;
+}
+
+extern "C" int
+SSTMAC_pthread_testcancel()
+{
+  sprockit::abort("unimplemented: pthread_testcancel");
   return 0;
 }
 
@@ -169,6 +177,23 @@ SSTMAC_pthread_equal(sstmac_pthread_t thread_1, sstmac_pthread_t thread_2)
     return 1;
   } else {
     return 0;
+  }
+}
+
+extern "C" int
+SSTMAC_pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type)
+{
+  *type = SSTMAC_PTHREAD_MUTEX_NORMAL;
+  return 0;
+}
+
+extern "C" int
+SSTMAC_pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+{
+  if (type == SSTMAC_PTHREAD_MUTEX_NORMAL){
+    return 0;
+  } else {
+    return EINVAL;
   }
 }
 
@@ -352,7 +377,7 @@ SSTMAC_pthread_mutexattr_destroy(sstmac_pthread_mutexattr_t *attr)
 
 extern "C" int
 SSTMAC_pthread_cond_init(sstmac_pthread_cond_t * cond,
-                         const sstmac_pthread_cond_attr *attr)
+                         const sstmac_pthread_condattr_t *attr)
 {
   pthread_debug("pthread_cond_init");  
   //just intialize it
@@ -540,19 +565,17 @@ SSTMAC_pthread_getspecific(sstmac_pthread_key_t key)
 }
 
 extern "C" void
-SSTMAC_pthread_cleanup_push(void
-                            (*routine)(void *), void *routine_arg)
+SSTMAC_pthread_cleanup_pop(int execute)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-                   "pthread::pthread_cleanup_push not implemented");
+  sprockit::abort("not implemented: pthread_cleanup_pop");
 }
 
 extern "C" void
-SSTMAC_pthread_cleanup_pop(int execute)
+SSTMAC_pthread_cleanup_push(void (*routine)(void*), void* arg)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-                   "pthread::pthread_cleanup_pop not implemented");
+  sprockit::abort("not implemented: pthread_cleanup_push");
 }
+
 
 extern "C" int
 SSTMAC_pthread_attr_init(sstmac_pthread_attr_t *attr)
@@ -560,6 +583,7 @@ SSTMAC_pthread_attr_init(sstmac_pthread_attr_t *attr)
   //set all cpus to possibly active
   attr->cpumask = 0;
   attr->cpumask = ~(attr->cpumask);
+  attr->detach_state = SSTMAC_PTHREAD_CREATE_JOINABLE;
   return 0;
 }
 
@@ -611,96 +635,99 @@ extern "C" int
 SSTMAC_pthread_attr_getdetachstate(const sstmac_pthread_attr_t *attr,
                                    int *state)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-                   "pthread::pthread_getdetachstate not implemented");
+  *state = attr->detach_state;
+  return 0;
 }
 
 extern "C" int
 SSTMAC_pthread_attr_setdetachstate(sstmac_pthread_attr_t *attr, int state)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-                   "pthread::pthread_setdetachstate not implemented");
+  attr->detach_state = state;
+  return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_attr_setscope(sstmac_pthread_attr_t*, int scope)
 {
-  if (scope == PTHREAD_SCOPE_PROCESS)
+  if (scope == PTHREAD_SCOPE_PROCESS){
     return ENOTSUP;
-  else
+  } else {
     return 0;
+  }
 }
 
-int
+extern "C" int
 SSTMAC_pthread_attr_getscope(sstmac_pthread_attr_t*, int* scope)
 {
   *scope = PTHREAD_SCOPE_SYSTEM;
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_detach(sstmac_pthread_t thr)
 {
-  //there is no reason to do anything -
-  //all resources associated with this thread
-  //will be released back automatically anyway
+  app* parent_app = current_thread()->parent_app();
+  thread* joiner = parent_app->get_subthread(thr);
+  joiner->set_detach_state(thread::DETACHED);
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_rwlock_rdlock(sstmac_pthread_rwlock_t *rwlock)
 {
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_rwlock_tryrdlock(sstmac_pthread_rwlock_t *rwlock)
 {
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_rwlock_wrlock(sstmac_pthread_rwlock_t *rwlock)
 {
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_rwlock_trywrlock(sstmac_pthread_rwlock_t *rwlock)
 {
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_rwlock_destroy(sstmac_pthread_rwlock_t *rwlock)
 {
   return 0;
 }
 
-int SSTMAC_pthread_rwlock_init(sstmac_pthread_rwlock_t *rwlock,
+extern "C" int
+SSTMAC_pthread_rwlock_init(sstmac_pthread_rwlock_t *rwlock,
        const sstmac_pthread_rwlockattr_t *attr)
 {
   return 0;
 }
 
-int SSTMAC_pthread_rwlock_unlock(sstmac_pthread_rwlock_t* rwlock)
+extern "C" int
+SSTMAC_pthread_rwlock_unlock(sstmac_pthread_rwlock_t* rwlock)
 {
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_rwlockattr_init(sstmac_pthread_rwlockattr_t *attr)
 {
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_rwlockattr_destroy(sstmac_pthread_rwlockattr_t *attr)
 {
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_setconcurrency(int level)
 {
   thread* thr = current_thread();
@@ -708,9 +735,33 @@ SSTMAC_pthread_setconcurrency(int level)
   return 0;
 }
 
-int
+extern "C" int
 SSTMAC_pthread_getconcurrency()
 {
   thread* thr = current_thread();
   return thr->pthread_concurrency();
+}
+
+extern "C" int
+SSTMAC_pthread_atfork(void (*prepare)(void), void (*parent)(void),
+       void (*child)(void))
+{
+  sprockit::abort("not implemented: pthread_atfork");
+  return 0;
+}
+
+extern "C" int
+SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t* attr, int* pshared)
+{
+  *pshared = SSTMAC_PTHREAD_PROCESS_PRIVATE;
+  return 0;
+}
+
+extern "C" int
+SSTMAC_pthread_mutexattr_setpshared(sstmac_pthread_mutexattr_t* attr, int pshared)
+{
+  if (pshared != SSTMAC_PTHREAD_PROCESS_PRIVATE){
+    sprockit::abort("SST does not yet support PTHREAD_PROCESS_SHARED mutex");
+  }
+  return 0;
 }

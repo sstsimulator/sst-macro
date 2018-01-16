@@ -57,15 +57,15 @@ class pthread_runner : public thread
   typedef void* (*start_fxn)(void*);
   start_fxn start_routine_;
   void * arg_;
+  bool finished_;
 
  public:
-  virtual void run();
-
-  virtual void clear_subthread_from_parent_app();
+  virtual void run() override;
 
   pthread_runner(software_id id, app* parent,
                  start_fxn start_routine, void* arg,
-                 operating_system* os);
+                 operating_system* os,
+                 int detach_state);
 
 };
 }

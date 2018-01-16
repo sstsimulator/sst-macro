@@ -47,4 +47,5 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/blas/cblas.h>
 
-#endif // BLAS_H
+#endif
+// BLAS_H

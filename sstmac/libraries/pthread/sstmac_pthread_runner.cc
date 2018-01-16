@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/libraries/pthread/sstmac_pthread_runner.h>
+#include <sstmac/libraries/pthread/sstmac_pthread_impl.h>
 #include <sstmac/software/process/app.h>
 
 namespace sstmac {
@@ -50,19 +51,18 @@ namespace sw {
 
 pthread_runner::pthread_runner(software_id id, app* parent,
                                start_fxn start_routine, void* arg,
-                               operating_system* os)
+                               operating_system* os,
+                               int detach_state)
   : thread(parent->params(), id, os),
     start_routine_(start_routine),
     arg_(arg)
 {
   parent_app_ = parent;
-  parent_app_->add_subthread(this);
-}
-
-void
-pthread_runner::clear_subthread_from_parent_app()
-{
-  parent_app_->set_subthread_done(this);
+  if (detach_state == SSTMAC_PTHREAD_CREATE_DETACHED){
+    set_detach_state(DETACHED);
+  } else {
+    set_detach_state(JOINABLE);
+  }
 }
 
 void
@@ -70,6 +70,7 @@ pthread_runner::run()
 {
   p_txt_ = parent_app_->get_process_context();
   start_routine_(arg_);
+  finished_ = true;
 }
 
 

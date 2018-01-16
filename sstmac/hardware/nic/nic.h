@@ -156,6 +156,8 @@ class nic :
    */
   void recv_message(message* msg);
 
+  void send_to_node(network_message* netmsg);
+
  protected:
   nic(sprockit::sim_parameters* params, node* parent);
 
@@ -169,8 +171,6 @@ class nic :
     @param payload The network message to send
   */
   virtual void do_send(network_message* payload) = 0;
-
-  void send_to_node(network_message* netmsg);
 
   bool negligible_size(int bytes) const {
     return bytes <= negligible_size_;
@@ -222,6 +222,35 @@ class nic :
 
   void finish_memcpy(network_message* msg);
 
+};
+
+class null_nic : public nic
+{
+ public:
+  FactoryRegister("null", nic, null_nic, "implements a nic that models nothing - stand-in only")
+
+  null_nic(sprockit::sim_parameters* params, node* parent) :
+    nic(params, parent)
+  {
+  }
+
+  std::string to_string() const override { return "null nic"; }
+
+  void do_send(network_message* msg) override {}
+
+  void connect_output(sprockit::sim_parameters *params, int src_outport, int dst_inport,
+                      event_link *payload_link) override {}
+
+  void connect_input(sprockit::sim_parameters *params, int src_outport, int dst_inport,
+                     event_link *credit_link) override {}
+
+  timestamp send_latency(sprockit::sim_parameters *params) const override { return timestamp(); }
+
+  timestamp credit_latency(sprockit::sim_parameters *params) const override { return timestamp(); }
+
+  link_handler* payload_handler(int port) const override { return nullptr; }
+
+  link_handler* credit_handler(int port) const override { return nullptr; }
 };
 
 }

@@ -4,18 +4,32 @@
 if !INTEGRATED_SST_CORE
 # These are each run by a specific rule
 SINGLETESTS = \
-  test_uq \
   test_utilities \
   test_pthread \
   test_blas \
   test_blas_finegrained 
 
+test_utilities.$(CHKSUF): test_utilities
+	$(PYRUNTEST) 6 $(top_srcdir) $@ notime ./test_utilities 
+
+test_blas.$(CHKSUF): test_blas
+	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
+    ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas.ini 
+
+test_blas_finegrained.$(CHKSUF): test_blas
+	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
+    ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_finegrained.ini 
+
+test_pthread.$(CHKSUF): test_pthread
+	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
+    ./test_pthread --no-wall-time -f $(srcdir)/test_configs/pthread.ini 
+
+if BUILD_SUMI_MPI
+SINGLETESTS += test_uq
 
 if HAVE_OTF2
 SINGLETESTS += test_otf2 
 endif
-
-#  test_scan  TODO
 
 if ENABLE_DEBUG
 SINGLETESTS += \
@@ -32,20 +46,6 @@ test_uq.$(CHKSUF): test_uq
 	$(PYRUNTEST) 6 $(top_srcdir) $@ notime \
     ./test_uq -f $(srcdir)/test_configs/test_uq.ini
 
-test_utilities.$(CHKSUF): test_utilities
-	$(PYRUNTEST) 6 $(top_srcdir) $@ notime ./test_utilities 
-
-test_blas.$(CHKSUF): test_blas
-	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
-    ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas.ini 
-
-test_blas_finegrained.$(CHKSUF): test_blas
-	$(PYRUNTEST) 6 $(top_srcdir) $@ 't > 0.08 and t < 0.1' \
-    ./test_blas --no-wall-time -f $(srcdir)/test_configs/test_compute_blas_finegrained.ini 
-
-test_pthread.$(CHKSUF): test_pthread
-	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
-    ./test_pthread --no-wall-time -f $(srcdir)/test_configs/pthread.ini 
 
 #------------------------------------------------------------------------------------------#
 #  DUMPI-related tests                                                                  {{{#
@@ -84,5 +84,10 @@ test_otf2.$(CHKSUF): $(SSTMACEXEC) otf2_traces
 	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_otf2_coverage.ini \
           -d mpi --no-wall-time
+endif 
+### SUMI MPI
+
 endif
+#### not integrated core
+
 

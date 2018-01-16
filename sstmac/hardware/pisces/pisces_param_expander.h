@@ -53,9 +53,9 @@ namespace hw {
 class pisces_param_expander :
   public param_expander
 {
- FactoryRegister("pisces | pisces", sstmac::param_expander, pisces_param_expander)
+ FactoryRegister("pisces", sstmac::param_expander, pisces_param_expander)
  public:
-  virtual void expand(sprockit::sim_parameters* params) override;
+  void expand(sprockit::sim_parameters* params) override;
 
  private:
   void expand_amm1_nic(sprockit::sim_parameters* params,

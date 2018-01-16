@@ -50,37 +50,53 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <map>
 #include <ostream>
 #include <sstream>
+#include "clangHeaders.h"
 
 struct GlobalVarNamespace
 {
-  GlobalVarNamespace() : isPrefixSet(false), testPrefix(nullptr) {
+  GlobalVarNamespace() : testPrefix(nullptr) {
     testPrefix = getenv("SSTMAC_CLANG_TEST_PREFIX");
   }
 
+  struct Variable {
+    bool isFxnStatic;
+  };
+
   std::string ns;
-  std::set<std::string> replVars;
+  std::map<std::string, Variable> replVars;
+  std::list<std::string> relocations;
+  std::set<std::string> relocationOffsets;
   std::map<std::string, GlobalVarNamespace> subspaces;
-  char uniqueFilePrefix[256];
+  std::string filenamePrefix;
+
+  /** a prefix to use in test suites to avoid fileame diffs */
   const char* testPrefix;
-  bool isPrefixSet;
 
   bool empty() const {
     return replVars.empty() && subspaces.empty();
   }
 
-  void setFilePrefix(const char* name){
-    ::strcpy(uniqueFilePrefix, name);
-    int len = ::strlen(uniqueFilePrefix);
-    for (int i=0; i < len; ++i){
-      switch (uniqueFilePrefix[i]){
-        case '-':
-        case '/':
-        case '.':
-          uniqueFilePrefix[i] = '_';
-          break;
+  bool variableDefined(const std::string& scopeUniqueName) const {
+    return replVars.find(scopeUniqueName) != replVars.end();
+  }
+
+  const std::string& uniqueFilePrefix(clang::CompilerInstance* ci, clang::SourceLocation loc){
+    if (filenamePrefix.empty()){
+      char uniqueFilePrefix[512];
+      ::strcpy(uniqueFilePrefix, ci->getSourceManager().getFilename(loc).str().c_str());
+      int len = ::strlen(uniqueFilePrefix);
+      for (int i=0; i < len; ++i){
+        switch (uniqueFilePrefix[i]){
+          case '-':
+          case '/':
+          case '.':
+            uniqueFilePrefix[i] = '_';
+            break;
+        }
       }
+      filenamePrefix = uniqueFilePrefix;
     }
-    isPrefixSet = true;
+    return filenamePrefix;
   }
 
   void appendNamespace(const std::string& nestedNS, const std::string& newNS){
@@ -97,22 +113,44 @@ struct GlobalVarNamespace
     return ns;
   }
 
-  const char* filePrefix() const {
-    return testPrefix ? testPrefix : uniqueFilePrefix;
+  const char* filePrefix(clang::CompilerInstance* ci, clang::SourceLocation loc) {
+    return testPrefix ? testPrefix : uniqueFilePrefix(ci, loc).c_str();
+  }
+
+  bool relocationOffsetDeclared(const std::string& name) const {
+    return relocationOffsets.find(name) != relocationOffsets.end();
+  }
+
+  void setRelocationOffsetDeclared(const std::string& name) {
+    relocationOffsets.insert(name);
   }
 
   bool genSSTCode(std::ostream& os, const std::string& indent){
     bool nonEmpty = !replVars.empty();
-    for (const std::string& var : replVars){
-      os << indent << "int __offset_" << var << " = 0;\n";
-      os << indent << "extern int __sizeof_" << var << ";\n";
-      os << indent << "extern void* __ptr_" << var << ";\n";
-      os << indent << "sstmac::GlobalVariable __gv_" << var
-              << "(__offset_" << var
-              << ",__sizeof_" << var
-              << ",__ptr_" << var
-              << ");\n";
+    for (auto& pair : replVars){
+      auto& name = pair.first;
+      Variable& var = pair.second;
+      os << indent << "int __offset_" << name << " = 0;\n";
+      os << indent << "extern int __sizeof_" << name << ";\n";
+      if (!var.isFxnStatic)
+        os << indent << "extern void* __ptr_" << name << ";\n";
+      os << indent << "sstmac::GlobalVariable __gv_" << name
+              << "(__offset_" << name
+              << ",__sizeof_" << name;
+
+      if (var.isFxnStatic){
+        os << ",nullptr";
+      } else {
+        os  << ",__ptr_" << name;
+      }
+
+      os << ");\n";
     }
+
+    for (auto& str : relocations){
+      os << "\n" << str << "\n";
+    }
+
     for (auto& pair : subspaces){
       std::stringstream sstr;
       bool subNotEmpty = false;

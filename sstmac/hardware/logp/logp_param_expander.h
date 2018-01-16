@@ -54,7 +54,7 @@ namespace hw {
 class logp_param_expander :
   public param_expander
 {
-  FactoryRegister("logP | simple | LogP | logp", sstmac::param_expander, logp_param_expander)
+  FactoryRegister("logP | simple | LogP | logp | macrels", sstmac::param_expander, logp_param_expander)
  public:
   virtual void expand(sprockit::sim_parameters* params);
 

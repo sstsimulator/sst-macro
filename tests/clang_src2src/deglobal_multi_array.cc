@@ -6,6 +6,7 @@ extern int z[][2];
 void fxn()
 {
   static int a[3][5];
+  a[0][0] = 2;
 }
 
 static int b[2][2];

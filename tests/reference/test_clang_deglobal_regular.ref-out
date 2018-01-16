@@ -1,9 +1,9 @@
 
-int x = 10;extern int sstmac_global_stacksize; extern int __offset_x; void* __ptr_x = &x; int __sizeof_x = sizeof(x);static inline int* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_x;return (((int*)((void*)offsetPtr))); }  
+int x = 10;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_x; void* __ptr_x = &x; int __sizeof_x = sizeof(x);static inline void* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_x;return (void*)offsetPtr; }  
 
 void fxn()
 {
-  (*get_x()) += 5;
+  (*((int*)get_x())) += 5;
 }
 #include <sstmac/software/process/global.h>
 

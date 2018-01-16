@@ -70,7 +70,7 @@ class packet :
     return is_tail_;
   }
 
-  int byte_length() const {
+  uint32_t byte_length() const {
     return num_bytes_;
   }
 
@@ -96,13 +96,13 @@ class packet :
   packet() : orig_(nullptr) {}
 
   packet(serializable* payload,
-    int num_bytes,
+    uint32_t num_bytes,
     bool is_tail);
 
  protected:
   serializable* orig_;
 
-  int num_bytes_;
+  uint32_t num_bytes_;
 
   bool is_tail_;
 

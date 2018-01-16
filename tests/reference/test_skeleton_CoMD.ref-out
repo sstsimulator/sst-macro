@@ -65,14 +65,14 @@ Simulation Validation:
 Timings for Rank 0
         Timer        # Calls    Avg/Call (s)   Total (s)    % Loop
 ___________________________________________________________________
-total                      1       0.2509        0.2509      201.49
+total                      1       0.2509        0.2509      201.48
 loop                       1       0.1245        0.1245      100.00
 timestep                   1       0.1245        0.1245       99.99
   position                 1       0.0001        0.0001        0.10
   velocity                 2       0.0001        0.0002        0.19
-  redistribute             2       0.0002        0.0005        0.40
-    atomHalo               2       0.0002        0.0005        0.40
-  force                    2       0.1238        0.2476      198.78
+  redistribute             2       0.0003        0.0005        0.40
+    atomHalo               2       0.0003        0.0005        0.40
+  force                    2       0.1238        0.2476      198.77
     eamHalo                2       0.0001        0.0002        0.13
 commHalo                  12       0.0000        0.0004        0.35
 commReduce                12       0.0000        0.0002        0.16
@@ -106,4 +106,4 @@ commReduce           2:    0.0002       0:    0.0002      0.0002      0.0000
  Average atom rate:              0.00 atoms/us
 ---------------------------------------------------
 
-Estimated total runtime of           0.25102642 seconds
+Estimated total runtime of           0.25104148 seconds

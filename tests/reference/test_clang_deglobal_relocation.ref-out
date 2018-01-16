@@ -1,0 +1,33 @@
+
+int x;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_x; void* __ptr_x = &x; int __sizeof_x = sizeof(x);static inline void* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_x;return (void*)offsetPtr; }  
+
+struct y {
+  int* ptr;
+};
+
+struct y yinst = {
+  &x
+};extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_yinst; void* __ptr_yinst = &yinst; int __sizeof_yinst = sizeof(yinst);sstmac::CppGlobal* yinst_sstmac_ctor = sstmac::new_cpp_global<struct y>(__offset_yinst); static inline void* get_yinst(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_yinst;return (void*)offsetPtr; }  int __field_offset_yinst_ptr = offsetof(y,ptr);
+
+struct y yArr[] = {
+  { &x },
+  { 0 }
+};extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_yArr; void* __ptr_yArr = &yArr; int __sizeof_yArr = sizeof(yArr);typedef struct y typeyArr[2];static inline void* get_yArr(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_yArr;return (void*)offsetPtr; }  int __field_offset_yArr_ptr = offsetof(y,ptr);
+#include <sstmac/software/process/global.h>
+
+int __offset_x = 0;
+extern int __sizeof_x;
+extern void* __ptr_x;
+sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,__ptr_x);
+int __offset_yArr = 0;
+extern int __sizeof_yArr;
+extern void* __ptr_yArr;
+sstmac::GlobalVariable __gv_yArr(__offset_yArr,__sizeof_yArr,__ptr_yArr);
+int __offset_yinst = 0;
+extern int __sizeof_yinst;
+extern void* __ptr_yinst;
+sstmac::GlobalVariable __gv_yinst(__offset_yinst,__sizeof_yinst,__ptr_yinst);
+
+extern int __field_offset_yinst_ptr; sstmac::RelocationPointer r0(__offset_x, __offset_yinst + __field_offset_yinst_ptr);
+
+extern int __field_offset_yArr_ptr; sstmac::RelocationPointer r1(__offset_x, __offset_yArr + __field_offset_yArr_ptr);

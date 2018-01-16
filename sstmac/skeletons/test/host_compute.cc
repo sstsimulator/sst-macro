@@ -42,9 +42,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/replacements/mpi.h>
 #include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
+#include <sstmac/software/process/backtrace.h>
+#include <sstmac/skeleton.h>
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
@@ -62,13 +63,8 @@ RegisterKeywords(
 int USER_MAIN(int argc, char** argv)
 {
   SSTMACBacktrace(main);
-  MPI_Init(&argc, &argv);
 
-  int me, nproc;
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
-  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-
-  uint32_t inc = me + 1;
+  uint32_t inc = 1;
   uint32_t sum = 10;
   uint32_t nloops = 1e9;
 
@@ -77,10 +73,7 @@ int USER_MAIN(int argc, char** argv)
     inc = (inc << 5) * 3 + 7;
   }
 
-  if (me == 0){
-    printf("Rank %d got %" PRIu32 "\n", me, sum);
-  }
+  printf("Got %" PRIu32 "\n", sum);
 
-  MPI_Finalize();
   return 0;
 }

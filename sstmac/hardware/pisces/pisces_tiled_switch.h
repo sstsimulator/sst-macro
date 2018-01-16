@@ -56,7 +56,7 @@ namespace hw {
 
 /**
  @class pisces_switch
- A switch in the network that arbitrates/routes packet_trains
+ A switch in the network that arbitrates/routes packets
  to the next link in the network
  */
 class pisces_tiled_switch :
@@ -89,15 +89,6 @@ class pisces_tiled_switch :
   void handle_credit(event* ev);
 
   void handle_payload(event* ev);
-
-  /**
-   Set the link to use when ejecting packets at their endpoint.  A pisces_switch
-   can have any number of ejectors, corresponding to the number of nodes
-   per switch.
-   @param addr The compute node address of the endpoint to eject to
-   @param link The link to the compute node for ejection
-   */
-  void add_ejector(node_id addr, event_handler* link);
 
   virtual std::string to_string() const override;
 

@@ -131,8 +131,8 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
   topology* top = topology_;
 
-  std::string switch_model = switch_params->get_param("model");
-  bool logp_model = switch_model == "logP" || switch_model == "LogP" || switch_model == "logp";
+  std::string switch_model = switch_params->get_lowercase_param("model");
+  bool logp_model = switch_model == "logp" || switch_model == "simple" || switch_model == "macrels";
 
   switches_.resize(top->max_switch_id());
   nodes_.resize(top->max_node_id());

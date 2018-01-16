@@ -57,7 +57,7 @@ namespace hw {
 /**
  @class pisces_branched_switch
  A branched/hierarchical switch in the network that arbitrates/routes
- packet_trains to the next link in the network
+ packets to the next link in the network
  */
 class pisces_branched_switch :
   public pisces_abstract_switch
@@ -89,15 +89,6 @@ class pisces_branched_switch :
   void handle_credit(event* ev);
 
   void handle_payload(event* ev);
-
-  /**
-   Set the link to use when ejecting packets at their endpoint.  A pisces_switch
-   can have any number of ejectors, corresponding to the number of nodes
-   per switch.
-   @param addr The compute node address of the endpoint to eject to
-   @param link The link to the compute node for ejection
-   */
-  void add_ejector(node_id addr, event_handler* link);
 
   virtual std::string to_string() const override;
 
