@@ -143,7 +143,7 @@ struct global {};
 
 template <class T>
 struct global<T*,void> : public GlobalVariable {
-  explicit global() : GlobalVariable(offset,sizeof(T*),nullptr){}
+  explicit global() : GlobalVariable(offset,sizeof(T*), nullptr){}
 
   explicit global(T* t) : GlobalVariable(offset, sizeof(T*), &t){}
 

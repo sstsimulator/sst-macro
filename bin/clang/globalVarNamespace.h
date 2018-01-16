@@ -137,7 +137,7 @@ struct GlobalVarNamespace
       os << indent << "sstmac::GlobalVariable __gv_" << name
               << "(__offset_" << name
               << ",__sizeof_" << name;
-
+              //<< ",\"" << name << "\"";
       if (var.isFxnStatic){
         os << ",nullptr";
       } else {

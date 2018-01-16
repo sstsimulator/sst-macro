@@ -472,14 +472,8 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
   return true;
 }
 
-struct cArrayConfig {
-  std::string fundamentalTypeString;
-  QualType fundamentalType;
-  std::stringstream arrayIndices;
-};
-
-static void
-getArrayType(const Type* ty, cArrayConfig& cfg)
+void
+SkeletonASTVisitor::getArrayType(const Type* ty, cArrayConfig& cfg)
 {
   const ConstantArrayType* aty = static_cast<const ConstantArrayType*>(ty->getAsArrayTypeUnsafe());
   QualType qt = aty->getElementType();
@@ -490,17 +484,20 @@ getArrayType(const Type* ty, cArrayConfig& cfg)
     getArrayType(next, cfg);
   } else {
     cfg.fundamentalTypeString = GetTypeString(qt.split());
+    auto pos = cfg.fundamentalTypeString.find("anonymous struct");
+    if (pos != std::string::npos){
+      cfg.fundamentalTypeString = "anon";
+    }
     cfg.fundamentalType = qt;
   }
 }
 
-static void sizeOfRecord(const RecordDecl* decl, std::ostream& os);
-
-static void sizeOfType(QualType qt, std::ostream& os)
+void
+SkeletonASTVisitor::sizeOfType(QualType qt, std::ostream& os)
 {
   auto ty = qt.getTypePtr();
   if (ty->isFundamentalType()){
-    os << "sizeof(" << QualType::getAsString(qt.split()) << ")";
+    os << "sizeof(" << GetTypeString(qt.split()) << ")";
   } else if (ty->isPointerType()) {
     os << "sizeof(void*)";
   } else if (ty->isStructureType() || ty->isClassType()) {
@@ -520,22 +517,42 @@ static void sizeOfType(QualType qt, std::ostream& os)
   }
 }
 
-static void
-sizeOfRecord(const RecordDecl* decl, std::ostream& os)
+void
+SkeletonASTVisitor::sizeOfRecord(const RecordDecl* decl, std::ostream& os)
 {
   os << "(0";
+  int numDecls = 0;
   for (auto iter=decl->decls_begin(); iter != decl->decls_end(); ++iter){
     Decl* d = *iter;
-    if (isa<VarDecl>(d)){
+    switch (d->getKind()){
+    case Decl::Var:
+    {
       VarDecl* vd = cast<VarDecl>(d);
       os << "+"; sizeOfType(vd->getType(), os);
+      ++numDecls;
+      break;
     }
+    case Decl::Field:
+    {
+      FieldDecl* vd = cast<FieldDecl>(d);
+      os << "+"; sizeOfType(vd->getType(), os);
+      ++numDecls;
+      break;
+    }
+    default:
+      break; //do nothing
+    }
+  }
+  if (numDecls == 0){
+    decl->dump();
+    errorAbort(decl->getLocStart(), *ci_,
+               "failed sizing struct - is this actually empty?");
   }
   os << ")";
 }
 
-static void
-sizeOfString(VarDecl* decl, std::ostream& os)
+void
+SkeletonASTVisitor::sizeOfString(VarDecl* decl, std::ostream& os)
 {
   sizeOfType(decl->getType(), os);
 }
@@ -555,6 +572,12 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
     sstr << "typedef " << cfg.fundamentalTypeString
          << " " << info->typedefName
          << cfg.arrayIndices.str();
+
+    if (cfg.fundamentalTypeString == "anon"){
+      errorAbort(D->getLocStart(), *ci_,
+                 "anonymous struct used in array declaration - cannot refactor");
+    }
+
     info->typedefString = sstr.str();
     info->retType = "type" + D->getNameAsString() + "*";
     return info;
@@ -569,10 +592,15 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
       sstr << "typedef " << cfg.fundamentalTypeString
            << " " << info->typedefName
            << "[]" << cfg.arrayIndices.str();
+      if (cfg.fundamentalTypeString == "anon"){
+        errorAbort(D->getLocStart(), *ci_,
+                   "anonymous struct used in array declaration - cannot refactor");
+      }
       info->typedefString = sstr.str();
       info->retType = "type" + D->getNameAsString() + "*";
     } else {
-      info->retType = GetTypeString(aty->getElementType().split()) + "**";
+      info->retType = GetTypeString(aty->getElementType().split()) + "*";
+      info->needsDeref = false;
     }
     return info;
   } else {
@@ -634,7 +662,15 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
                                    GlobalVariable_t global_var_ty,
                                    VarDecl* D,
                                    SourceLocation declEnd)
-{  
+{
+  if (D->getType().isConstQualified()){
+    return true; //don't refactor const variables
+  } else if (D->getType()->isPointerType()){
+    if (D->getType()->getPointeeType().isConstQualified()){
+      return true;
+    }
+  }
+
   bool skipInit = false;
 
   AnonRecord rec;
@@ -661,8 +697,10 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 
   // roundabout way to get the type of the variable
   std::string retType;
+  bool deref = true;
   if (arrayInfo) {
     retType = arrayInfo->retType;
+    deref = arrayInfo->needsDeref;
   } else {
     retType = GetTypeString(D->getType().split()) + "*";
   }
@@ -829,6 +867,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
        << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize; "
        << " char** globalMapPtr = (char**)(localStorage+" << globalOffsetString << "); "
        << " char* offsetPtr = *globalMapPtr + __offset_" << scopeUniqueVarName << ";"
+       //<< " printf(\"returning global %s ptr %p at offset %d\\n\", "
+       //<< " \"" << scopeUniqueVarName << "\",offsetPtr, __offset_" << scopeUniqueVarName
+       //<< "); fflush(__stdoutp); "
        << "return (void*)offsetPtr; "
        << "}";
     globalsDeclared_.insert(checkName);
@@ -842,7 +883,12 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 
 
   std::stringstream varReplSstr;
-  varReplSstr << "(*((" << retType << ")" << currentNs_->nsPrefix()
+  if (deref){
+    varReplSstr << "(*";
+  } else {
+    varReplSstr << "(";
+  }
+  varReplSstr << "((" << retType << ")" << currentNs_->nsPrefix()
               << var_ns_prefix << "get_" << scopeUniqueVarName << "()))";
   globals_[mainDecl(D)] = varReplSstr.str();
 
@@ -991,6 +1037,13 @@ bool
 SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 {
   if (D->isStaticDataMember()){
+    auto iter = globals_.find(mainDecl(D));
+    if (iter == globals_.end()){
+      //hmm, this must be const or something
+      //because the main decl didn't end up in the globals
+      return true;
+    }
+
     //okay - this sucks - I have no idea how this variable is being declared
     //it could be ns::A::x = 10 for a variable in namespace ns, class A
     //it could namespace ns { A::x = 10 }
@@ -1104,7 +1157,7 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     return false;
   }
 
-  //do not replace const global variables
+  /**
   if (D->getType().isConstQualified()){
     return true; //also skip visiting init portion
   } else if (D->getType()->isPointerType()){
@@ -1112,6 +1165,8 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
       return true;
     }
   }
+  */
+
   /** This doesn't actually make the array itself const
   else if (D->getType()->isConstantArrayType()){
     const ConstantArrayType* aty = cast<const ConstantArrayType>(D->getType());

@@ -102,8 +102,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     std::string typedefName;
     std::string retType;
     bool isFxnStatic;
+    bool needsDeref;
 
-    ArrayInfo() : isFxnStatic(false) {}
+    ArrayInfo() : isFxnStatic(false), needsDeref(true) {}
   };
 
  public:
@@ -584,6 +585,19 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return deleteWithNullArgs_.find(decl) != keepWithNullArgs_.end();
   }
 
+  struct cArrayConfig {
+    std::string fundamentalTypeString;
+    clang::QualType fundamentalType;
+    std::stringstream arrayIndices;
+  };
+
+  void getArrayType(const clang::Type* ty, cArrayConfig& cfg);
+
+  void sizeOfType(clang::QualType qt, std::ostream& os);
+
+  void sizeOfRecord(const clang::RecordDecl* decl, std::ostream& os);
+
+  void sizeOfString(clang::VarDecl* decl, std::ostream& os);
 };
 
 
