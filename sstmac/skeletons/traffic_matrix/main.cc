@@ -131,7 +131,7 @@ class rdma_message :
     sumi::message::serialize_order(ser);
   }
 
-  sumi::message* clone() const override {
+  sumi::message* clone(payload_type_t ty) const override {
     rdma_message* cln = new rdma_message(iter_, num_bytes_);
     cln->set_start(start_);
     cln->set_finish(finish_);

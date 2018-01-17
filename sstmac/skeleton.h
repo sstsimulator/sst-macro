@@ -160,13 +160,14 @@ extern sprockit::sim_parameters* get_params();
  * @param ptr A pointer which may or may not have been skeletonized
  */
 extern "C" void sstmac_free(void* ptr);
-
 extern "C" void* sstmac_memset(void* ptr, int value, unsigned long  sz);
+extern "C" void sstmac_exit(int code);
+extern "C" unsigned int sstmac_alarm(unsigned int);
+extern "C" int sstmac_atexit(void (*)(void));
 
 namespace std {
 
 void sstmac_free(void* ptr);
-
 void* sstmac_memset(void* ptr, int value, unsigned long  sz);
 
 }
@@ -180,7 +181,9 @@ void* sstmac_memset(void* ptr, int value, unsigned long  sz);
  */
 void sstmac_free(void* ptr);
 void* sstmac_memset(void* ptr, int value, unsigned long size);
-
+void sstmac_exit(int code);
+unsigned int sstmac_alarm(unsigned int);
+int sstmac_atexit(void (*)());
 static void* nullptr = 0;
 
 #define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
@@ -193,6 +196,11 @@ static void* nullptr = 0;
 #ifndef memset
 #define memset sstmac_memset
 #endif
+
+#define _exit sstmac_exit
+#define alarm sstmac_alarm
+#define atexit sstmac_atexit
+#define sleep sstmac_sleep
 
 #endif
 

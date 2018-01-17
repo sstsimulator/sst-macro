@@ -257,13 +257,15 @@ transport::poll_new(bool blocking, int cq_id, double timeout)
     message* msg = poll_new(blocking, timeout);
     if (msg){
       if (msg->cq_id() == cq_id){
+        debug_printf(sprockit::dbg::sumi,
+                     "Rank %d got hit %p on CQ %d", rank_, msg, cq_id);
         return msg;
       } else {
-        completion_queues_[cq_id].push_back(msg);
+        completion_queues_[msg->cq_id()].push_back(msg);
       }
     }
     //if I got here and am non-blocking, return null
-    if (!blocking) return nullptr;
+    if (!blocking || timeout > 0) return nullptr;
   }
 }
 
@@ -276,7 +278,7 @@ transport::poll_new(message::payload_type_t ty, bool blocking, int cq_id, double
       if (msg->cq_id() == cq_id && msg->payload_type() == ty){
         return msg;
       } else {
-        completion_queues_[cq_id].push_back(msg);
+        completion_queues_[msg->cq_id()].push_back(msg);
       }
     }
     //if I got here and am non-blocking, return null
@@ -358,6 +360,7 @@ transport::handle(message* msg)
       case message::rdma_get:
       case message::rdma_put:
       case message::eager_payload:
+        msg->write_sync_value();
         if (msg->needs_recv_ack()){
           return msg;
         }
@@ -928,12 +931,11 @@ transport::smsg_send(int dst, message::payload_type_t ev, message* msg,
       completion_queues_[msg->recv_cq()].push_back(msg);
     }
     if (msg->needs_send_ack()){
-      message* ack = msg->clone();
+      message* ack = msg->clone(message::eager_payload_ack);
       ack->set_payload_type(message::eager_payload_ack);
       completion_queues_[msg->send_cq()].push_back(ack);
     }
-  }
-  else {
+  } else {
     do_smsg_send(dst, msg);
   }
 #if SUMI_COMM_SYNC_STATS

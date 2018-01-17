@@ -104,7 +104,7 @@ collective_work_message::clone_into(collective_work_message* cln) const
 }
 
 message*
-collective_done_message::clone() const
+collective_done_message::clone(payload_type_t ty) const
 {
   sprockit::abort("collective_done_message::clone unimplemented");
   return 0;
