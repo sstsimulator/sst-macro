@@ -134,8 +134,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return pragmaConfig_;
   }
 
-  std::string getGlobalReplacement(clang::NamedDecl* decl) const {
-    auto iter = globals_.find(mainDecl(decl));
+  std::string needGlobalReplacement(clang::NamedDecl* decl) {
+    const clang::Decl* md = mainDecl(decl);
+    globalsTouched_.back().insert(md);
+    auto iter = globals_.find(md);
     if (iter == globals_.end()){
       errorAbort(decl->getLocStart(), *ci_,
                  "getting global replacement for non-global variable");
@@ -470,8 +472,17 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<clang::FunctionDecl*> keepWithNullArgs_;
   std::set<clang::FunctionDecl*> deleteWithNullArgs_;
   std::set<clang::DeclRefExpr*> alreadyReplaced_;
+
+  struct GlobalStandin {
+    bool fxnStatic;
+    std::string replText;
+    GlobalStandin() : fxnStatic(false){}
+  };
+
+  std::map<const clang::Decl*,GlobalStandin> globalStandins_;
   std::list<int> initIndices_;
   std::list<clang::FieldDecl*> activeFieldDecls_;
+  std::list<std::set<const clang::Decl*>> globalsTouched_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;
@@ -505,7 +516,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool checkGlobalVar(clang::VarDecl* D);
   bool checkStaticFileVar(clang::VarDecl* D);
   bool checkFileVar(const std::string& filePrefix, clang::VarDecl* D);
-  clang::SourceLocation getEndLoc(const clang::VarDecl* D);
+  /**
+   * @brief getEndLoc
+   * Find and return the position after the starting point where a statement ends
+   * i.e. find the next semi-colon after the starting point
+   * @param startLoc
+   * @return
+   */
+  clang::SourceLocation getEndLoc(clang::SourceLocation startLoc);
   bool insideClass() const {
     return !class_contexts_.empty();
   }
@@ -522,22 +540,25 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   /**
    * @brief replaceGlobalVar
-   * @param scope_prefix       A unique string needed for file-local or ns-local variables
-   * @param init_scope_prefix  A unique string needed when the initializers move out of scope
-   *              (as in static function or class vars) to avoid name conflicts on the initializer
-   * @param var_repl_prefix    An optional string to prepend to the variable replacement function name
-   * @param externVarsInsertLoc The location in the file to declare extern vars from SST/macro.
+   * @param varNameScopePrefix       A unique string needed for file-local or ns-local variable names
+   * @param clsScope            A string identifying all nested class scopes, e.g. (A::B::)
+   * @param externVarsInsertLoc The location in the file to declare extern vars/fxns from SST/macro.
    *                            May be invalid to indicate no insertion should be done.
-   * @param getRefInsertLoc     The location in the file to insert symbol redirect function get_X()
+   * @param varSizeOfInsertLoc  The location in the file to insert int size_X variable
+   * @param offsetInsertLoc     The location to insert the 'extern int __offset_X' declaration
+   *                            May be invalid to indicate insertion just at end of var declaration
+   * @param insertOffsetAfter Whether to insert the offset declaration before/after the given location
    * @param D             The variable declaration being deglobalized
    * @param staticFxnInfo For static function variables, we will want any info on anonymous records
    *                      returned to us via this variable
    * @return  Whether to skip visiting this variable's initialization
    */
-   bool setupGlobalVar(const std::string& scope_prefix,
-                      const std::string& var_ns_prefix,
+   bool setupGlobalVar(const std::string& varNameScopeprefix,
+                      const std::string& clsScope,
                       clang::SourceLocation externVarsInsertLoc,
-                      clang::SourceLocation getRefInsertLoc,
+                      clang::SourceLocation varSizeOfInsertLoc,
+                      clang::SourceLocation offsetInsertLoc,
+                      bool insertOffsetAfter,
                       GlobalVariable_t global_var_ty,
                       clang::VarDecl* D,
                       clang::SourceLocation declEnd = clang::SourceLocation());
@@ -591,6 +612,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     std::stringstream arrayIndices;
   };
 
+  void traverseFunctionBody(clang::Stmt* s);
+
   void getArrayType(const clang::Type* ty, cArrayConfig& cfg);
 
   void sizeOfType(clang::QualType qt, std::ostream& os);
@@ -598,6 +621,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void sizeOfRecord(const clang::RecordDecl* decl, std::ostream& os);
 
   void sizeOfString(clang::VarDecl* decl, std::ostream& os);
+
+  void setFundamentalTypes(clang::QualType qt, cArrayConfig& cfg);
+
 };
 
 

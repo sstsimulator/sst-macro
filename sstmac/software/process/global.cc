@@ -57,7 +57,7 @@ std::list<GlobalVariable::relocation> GlobalVariable::relocations;
 std::list<GlobalVariable::relocationCfg> GlobalVariable::relocationCfgs;
 std::list<CppGlobal*> GlobalVariable::cppCtors;
 
-GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData)
+GlobalVariable::GlobalVariable(int &offset, const int size, const char* name, const void *initData)
 {
 
   offset = stackOffset;
@@ -83,12 +83,10 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const void *initData
 
   //printf("Allocated global variable %s of size %d at offset %d - %s\n",
   //       name, size, offset, (realloc ? "reallocated to fit" : "already fits"));
-  //fflush(stdout);
-
+  fflush(stdout);
 
   if (initData){
     void* initStart = (char*)globalInits + stackOffset;
-    fflush(stdout);
     ::memcpy(initStart, initData, size);
   }
 

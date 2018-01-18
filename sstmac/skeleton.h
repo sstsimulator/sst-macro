@@ -202,6 +202,19 @@ static void* nullptr = 0;
 #define atexit sstmac_atexit
 #define sleep sstmac_sleep
 
+#ifdef __cplusplus
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
+extern int sstmac_global_stacksize;
+static inline char* get_sstmac_global_data(){
+  int stack; int* stackPtr = &stack;
+  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+  char** globalMapPtr = (char**)(localStorage + sizeof(int));
+  return *globalMapPtr;
+}
+
 #endif
 
 

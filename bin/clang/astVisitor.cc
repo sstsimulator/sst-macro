@@ -324,7 +324,7 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
 bool 
 SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+  bool skipVisit = activatePragmasForStmt(stmt);
   if (skipVisit){
     return true;
   }
@@ -337,7 +337,7 @@ SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQue
 bool
 SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(expr);
+  bool skipVisit = activatePragmasForStmt(expr);
   if (skipVisit){
     return true;
   }
@@ -473,6 +473,17 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
 }
 
 void
+SkeletonASTVisitor::setFundamentalTypes(QualType qt, cArrayConfig& cfg)
+{
+  cfg.fundamentalTypeString = GetTypeString(qt.split());
+  auto pos = cfg.fundamentalTypeString.find("anonymous struct");
+  if (pos != std::string::npos){
+    cfg.fundamentalTypeString = "anon";
+  }
+  cfg.fundamentalType = qt;
+}
+
+void
 SkeletonASTVisitor::getArrayType(const Type* ty, cArrayConfig& cfg)
 {
   const ConstantArrayType* aty = static_cast<const ConstantArrayType*>(ty->getAsArrayTypeUnsafe());
@@ -483,12 +494,7 @@ SkeletonASTVisitor::getArrayType(const Type* ty, cArrayConfig& cfg)
     const ConstantArrayType* next = static_cast<const ConstantArrayType*>(qt.getTypePtr()->getAsArrayTypeUnsafe());
     getArrayType(next, cfg);
   } else {
-    cfg.fundamentalTypeString = GetTypeString(qt.split());
-    auto pos = cfg.fundamentalTypeString.find("anonymous struct");
-    if (pos != std::string::npos){
-      cfg.fundamentalTypeString = "anon";
-    }
-    cfg.fundamentalType = qt;
+    setFundamentalTypes(qt, cfg);
   }
 }
 
@@ -565,13 +571,19 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
   bool isConstC99array = ty->isConstantArrayType();
 
   if (isConstC99array){
+    //something of the form type x[N][M];
+    //we possible need to first: typedef type tx[N][M];
+    //replacement global will be tx* xRepl = &(sstmac_global_data + offset)
+    const ArrayType* aty = ty->getAsArrayTypeUnsafe();
     cArrayConfig cfg;
-    getArrayType(ty, cfg);
-    info->typedefName = "type" + D->getNameAsString();
     std::stringstream sstr;
+    info->typedefName = "array_type_" + D->getNameAsString();
+    getArrayType(aty, cfg);
+
     sstr << "typedef " << cfg.fundamentalTypeString
          << " " << info->typedefName
          << cfg.arrayIndices.str();
+
 
     if (cfg.fundamentalTypeString == "anon"){
       errorAbort(D->getLocStart(), *ci_,
@@ -579,27 +591,40 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
     }
 
     info->typedefString = sstr.str();
-    info->retType = "type" + D->getNameAsString() + "*";
+    info->retType = info->typedefName + "*";
+    info->needsDeref = false;
     return info;
   } else if (isC99array){
     const ArrayType* aty = ty->getAsArrayTypeUnsafe();
     const Type* ety = aty->getElementType().getTypePtr();
     if (ety->isConstantArrayType()){
+      //something of the form type x[][M]
+      //we need to first: typedef type tx[][M];
+      //replacement global will be tx* xRepl = &(sstmac_global_data + offset)
       cArrayConfig cfg;
       getArrayType(ety, cfg);
-      info->typedefName = "type" + D->getNameAsString();
+      info->typedefName = "type_" + D->getNameAsString();
       std::stringstream sstr;
       sstr << "typedef " << cfg.fundamentalTypeString
            << " " << info->typedefName
-           << "[]" << cfg.arrayIndices.str();
+           << "[]"  //don't do this anymore
+           << cfg.arrayIndices.str();
       if (cfg.fundamentalTypeString == "anon"){
         errorAbort(D->getLocStart(), *ci_,
                    "anonymous struct used in array declaration - cannot refactor");
       }
       info->typedefString = sstr.str();
-      info->retType = "type" + D->getNameAsString() + "*";
+      info->retType = info->typedefName + "*";
+      info->needsDeref = false;
     } else {
-      info->retType = GetTypeString(aty->getElementType().split()) + "*";
+      //something of the form type x[]
+      //replacement global will type* xRepl;
+      info->typedefName = "type_" + D->getNameAsString();
+      std::stringstream sstr;
+      sstr << "typedef " << GetTypeString(aty->getElementType().split())
+           << " " << info->typedefName << "[]";
+      info->typedefString = sstr.str();
+      info->retType = info->typedefName + "*";
       info->needsDeref = false;
     }
     return info;
@@ -655,10 +680,12 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
 }
 
 bool
-SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
-                                   const std::string& var_ns_prefix,
+SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
+                                   const std::string& clsScopePrefix,
                                    SourceLocation sstmacExternVarsLoc,
-                                   SourceLocation getRefInsertLoc,
+                                   SourceLocation varSizeOfInsertLoc,
+                                   SourceLocation sstmacOffsetLoc,
+                                   bool insertOffsetAfter,
                                    GlobalVariable_t global_var_ty,
                                    VarDecl* D,
                                    SourceLocation declEnd)
@@ -678,7 +705,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   ArrayInfo info;
   ArrayInfo* arrayInfo = checkArray(D, &info);
 
-  if (declEnd.isInvalid()) declEnd = getEndLoc(D);
+  if (declEnd.isInvalid()) declEnd = getEndLoc(D->getLocEnd());
 
   if (declEnd.isInvalid()){
     errorAbort(D->getLocStart(), *ci_,
@@ -686,7 +713,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   }
 
   if (sstmacExternVarsLoc.isInvalid()) sstmacExternVarsLoc = declEnd;
-  if (getRefInsertLoc.isInvalid()) getRefInsertLoc = declEnd;
+  if (varSizeOfInsertLoc.isInvalid()) varSizeOfInsertLoc = declEnd;
 
   //const global variables can't change... so....
   //no reason to do any work tracking them
@@ -738,7 +765,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   }
 
 
-  std::string scopeUniqueVarName = scope_prefix + D->getNameAsString();
+  std::string scopeUniqueVarName = varnameScopeprefix + D->getNameAsString();
   setActiveGlobalScopedName(scopeUniqueVarName);
 
   std::stringstream extern_os;
@@ -748,8 +775,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   } else {
     extern_os << "extern";
   }
-  extern_os << " void sstmac_init_global_space(void*,int,int);"
-            << " extern int __offset_" << scopeUniqueVarName << "; ";
+  extern_os << " void sstmac_init_global_space(void*,int,int);";
 
   rewriter_.InsertText(sstmacExternVarsLoc, extern_os.str());
   scopedNames_[mainDecl(D)] = scopeUniqueVarName;
@@ -775,11 +801,11 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
            << "  sstmac_inited_" << D->getNameAsString() << " = 1; "
            << "}";
         {
-          std::stringstream offset_os;
-          offset_os << "int __sizeof_" << scopeUniqueVarName << " = ";
-          sizeOfString(D, offset_os);
-          offset_os << ";";
-          rewriter_.InsertText(getRefInsertLoc, offset_os.str());
+          std::stringstream size_os;
+          size_os << "int __sizeof_" << scopeUniqueVarName << " = ";
+          sizeOfString(D, size_os);
+          size_os << ";";
+          rewriter_.InsertText(varSizeOfInsertLoc, size_os.str());
         }
         var.isFxnStatic = true;
         break;
@@ -791,6 +817,13 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     rewriter_.InsertText(declEnd, os.str());
     currentNs_->replVars[scopeUniqueVarName] = var;
   }
+
+  std::stringstream offset_os;
+  offset_os << " extern int __offset_" << scopeUniqueVarName << "; ";
+  if (sstmacOffsetLoc.isInvalid()){
+    sstmacOffsetLoc = declEnd;
+  }
+  rewriter_.InsertText(sstmacOffsetLoc, offset_os.str(), insertOffsetAfter);
 
   if (arrayInfo && arrayInfo->needsTypedef()){
     rewriter_.InsertText(declEnd, arrayInfo->typedefString + ";");
@@ -854,53 +887,71 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     }
   }
 
+  //std::string empty;
+  //std::string checkName = currentNs_->nsPrefix() + scopeUniqueVarName;
+  //bool notDeclared = globalsDeclared_.find(checkName) == globalsDeclared_.end();
 
-  std::string empty;
-  llvm::raw_string_ostream os(empty);
-  std::string checkName = currentNs_->nsPrefix() + scopeUniqueVarName;
-  bool notDeclared = globalsDeclared_.find(checkName) == globalsDeclared_.end();
-
-  static const char* globalOffsetString = "sizeof(int)";
-  if (notDeclared){
-    os << "static inline void* get_" << scopeUniqueVarName << "(){ "
-       << " int stack; int* stackPtr = &stack; "
-       << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize; "
-       << " char** globalMapPtr = (char**)(localStorage+" << globalOffsetString << "); "
-       << " char* offsetPtr = *globalMapPtr + __offset_" << scopeUniqueVarName << ";"
-       //<< " printf(\"returning global %s ptr %p at offset %d\\n\", "
-       //<< " \"" << scopeUniqueVarName << "\",offsetPtr, __offset_" << scopeUniqueVarName
-       //<< "); fflush(__stdoutp); "
-       << "return (void*)offsetPtr; "
-       << "}";
-    globalsDeclared_.insert(checkName);
-  }
-  os << "  ";
-
-  if (getRefInsertLoc.isInvalid()){
+  if (varSizeOfInsertLoc.isInvalid()){
     errorAbort(D->getLocStart(), *ci_, "failed replacing global variable declaration");
   }
-  rewriter_.InsertText(getRefInsertLoc, os.str());
 
+  const Decl* md = mainDecl(D);
 
-  std::stringstream varReplSstr;
-  if (deref){
-    varReplSstr << "(*";
-  } else {
-    varReplSstr << "(";
+  std::string uniqueNsPrefix = currentNs_->nsPrefix() + clsScopePrefix;
+  for (int i=0; i < uniqueNsPrefix.size(); ++i){
+    char& next = uniqueNsPrefix.at(i);
+    if (next == ':') next = '_';
   }
-  varReplSstr << "((" << retType << ")" << currentNs_->nsPrefix()
-              << var_ns_prefix << "get_" << scopeUniqueVarName << "()))";
-  globals_[mainDecl(D)] = varReplSstr.str();
+
+  std::string standinName = "sstmac_" + uniqueNsPrefix + scopeUniqueVarName;
+
+  std::stringstream standinSstr;
+  if (!deref){
+    standinSstr << "char* sstmac_tmp_" << scopeUniqueVarName << "="
+                << "(sstmac_global_data + "
+                << currentNs_->nsPrefix() //only this!
+                << "__offset_" << scopeUniqueVarName << "); ";
+    //standinSstr << "char** sstmac_tmp_ptr_" << scopeUniqueVarName << "="
+    //            << "&sstmac_tmp_" << scopeUniqueVarName << "; ";
+  }
+  standinSstr << retType << " " << standinName << "=";
+  if (deref){
+    standinSstr << "(" << retType << ")"
+                << "(sstmac_global_data + "
+                << currentNs_->nsPrefix() //only this!
+                << "__offset_" << scopeUniqueVarName << ")";
+  } else { //create as a pointer
+    standinSstr << "(" << retType << ")"
+                //<< "&" //we need to create a pointer to the variable
+                << "sstmac_tmp_" << scopeUniqueVarName;
+  }
+  GlobalStandin& newStandin = globalStandins_[md];
+  newStandin.replText = standinSstr.str();
+
+  if (global_var_ty == FxnStatic){
+    newStandin.fxnStatic = true;
+    //we need to put the global standin text here!
+    std::string newText = newStandin.replText + "; ";
+    rewriter_.InsertText(declEnd, newText);
+    //it's possible this never gets referenced because of silly code
+    //make sure this gets added to globals touched lists
+    //regardless of whether it shows up in a DeclRefExpr
+    globalsTouched_.back().insert(md);
+  }
+
+  std::stringstream replSstr;
+  replSstr << "(*" << standinName << ")";
+  globals_[md] = replSstr.str();
 
   return skipInit;
 }
 
 clang::SourceLocation
-SkeletonASTVisitor::getEndLoc(const VarDecl *D)
+SkeletonASTVisitor::getEndLoc(SourceLocation searchStart)
 {
   int numTries = 0;
   while (numTries < 1000){
-    SourceLocation newLoc = D->getLocEnd().getLocWithOffset(numTries);
+    SourceLocation newLoc = searchStart.getLocWithOffset(numTries);
     Token res;
     Lexer::getRawToken(newLoc, res, ci_->getSourceManager(), ci_->getLangOpts());
     if (res.getKind() == tok::semi){
@@ -908,7 +959,7 @@ SkeletonASTVisitor::getEndLoc(const VarDecl *D)
     }
     ++numTries;
   }
-  errorAbort(D->getLocStart(), *ci_,
+  errorAbort(searchStart, *ci_,
     "unable to locate end of variable declaration");
   return SourceLocation();
 }
@@ -916,7 +967,10 @@ SkeletonASTVisitor::getEndLoc(const VarDecl *D)
 bool
 SkeletonASTVisitor::checkFileVar(const std::string& filePrefix, VarDecl* D)
 {
-  return setupGlobalVar(filePrefix, "", SourceLocation(), SourceLocation(), FileStatic, D);
+  return setupGlobalVar(filePrefix, "", SourceLocation(),
+                        SourceLocation(),
+                        SourceLocation(), true, //insert after end of decl
+                        FileStatic, D);
 }
 
 bool
@@ -963,6 +1017,7 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
   return setupGlobalVar(scope_prefix, "",
                  outerFxn->getLocStart(),
                  outerFxn->getLocStart(),
+                 outerFxn->getLocStart(), false, //insert after end of decl
                  FxnStatic, D);
 }
 
@@ -992,17 +1047,18 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
       errorAbort(D->getLocStart(), *ci_, "cannot handle static variables in inner classes");
     }
     CXXRecordDecl* outerCls = class_contexts_.front();
-    std::stringstream scope_sstr; scope_sstr << "_";
-    std::stringstream var_repl_sstr;
+    std::stringstream varname_scope_sstr; varname_scope_sstr << "_";
+    std::stringstream cls_scope_sstr;
     for (CXXRecordDecl* decl : class_contexts_){
-      scope_sstr << "_" << decl->getNameAsString();
-      var_repl_sstr << decl->getNameAsString() << "::";
+      varname_scope_sstr << "_" << decl->getNameAsString();
+      cls_scope_sstr << decl->getNameAsString() << "::";
     }
-    std::string scope_prefix = scope_sstr.str();
     if (!D->hasInit()){
       //no need for special scope prefixes - these are fully scoped within in the class
-      setupGlobalVar(scope_prefix, var_repl_sstr.str(),
-                     outerCls->getLocStart(), SourceLocation(), CxxStatic, D);
+      setupGlobalVar(varname_scope_sstr.str(), cls_scope_sstr.str(),
+                     outerCls->getLocStart(), SourceLocation(),
+                     outerCls->getLocStart(), false, //put at beginning of class
+                     CxxStatic, D);
     } //else this must be a const integer if inited in the header file
       //we don't have to "deglobalize" this
   }
@@ -1088,7 +1144,7 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
     for (auto iter = semBegin; iter != sem.end(); ++iter){
       os << "}"; //close namespaces
     }
-    rewriter_.InsertText(getEndLoc(D), os.str());
+    rewriter_.InsertText(getEndLoc(D->getLocEnd()), os.str());
   }
   return true;
 }
@@ -1230,6 +1286,28 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
   }
 }
 
+void
+SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
+{
+  globalsTouched_.emplace_back();
+
+  TraverseStmt(s);
+  auto& currentGlobals = globalsTouched_.back();
+  if (!currentGlobals.empty()){
+    std::stringstream sstr;
+    sstr << "{ char* sstmac_global_data = get_sstmac_global_data();";
+    for (auto d : currentGlobals){
+      GlobalStandin& gs = globalStandins_[d];
+      if (!gs.fxnStatic){
+        sstr << gs.replText << "; ";
+      }
+    }
+    rewriter_.InsertText(s->getLocStart(), sstr.str(), false);
+    rewriter_.InsertText(s->getLocEnd(), " }", true);
+  }
+  globalsTouched_.pop_back();
+}
+
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
@@ -1246,12 +1324,7 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
           SourceLocation start = D->getReturnTypeSourceRange().getBegin();
           if (start.isValid()){
             rewriter_.InsertText(start, " inline ", false);
-            //errorAbort(D->getLocStart(), *ci_,
-            //           "how on earth do you have an invalid source location"
-            //           " for your return type?");
           }
-          //errorAbort(start, *ci_,
-          //           "function tagged always inline, but is not inlined");
         }
       }
     }
@@ -1269,8 +1342,8 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   }
 
   fxn_contexts_.push_back(D);
-  if (!skipVisit){
-    TraverseStmt(D->getBody());
+  if (!skipVisit && D->getBody()){
+    traverseFunctionBody(D->getBody());
   }
   fxn_contexts_.pop_back();
   return true;
@@ -1347,7 +1420,7 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   if (D->isThisDeclarationADefinition()) {
     ++insideCxxMethod_;
     if (!skipVisit){
-      TraverseStmt(D->getBody());
+      traverseFunctionBody(D->getBody());
     }
     --insideCxxMethod_;
   }
@@ -1438,7 +1511,7 @@ SkeletonASTVisitor::addRelocation(UnaryOperator* op, DeclRefExpr* dr, ValueDecl*
 
   std::string ptr_decls = ptr_str.str();
   if (!ptr_decls.empty()){
-    SourceLocation end = getEndLoc(vd);
+    SourceLocation end = getEndLoc(vd->getLocEnd());
     rewriter_.InsertText(end, ptr_decls);
   }
 
@@ -1775,13 +1848,15 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
            "code block deleted by pragma - invalid pragma combination");
     }
 
-    pragmaConfig_.pragmaDepth++;
-    activePragmas_[S] = prg;
-    //pragma takes precedence - must occur in pre-visit
-    prg->activate(S, rewriter_, pragmaConfig_);
+    bool activate = !noSkeletonize_;
+
     //a compute pragma totally deletes the block
     bool blockDeleted = false;
     switch (prg->cls){
+      case SSTPragma::Keep:
+        skipVisit = true;
+        activate = true; //always - regardless of skeletonization
+        break;
       case SSTPragma::Compute:
       case SSTPragma::Delete:
       case SSTPragma::Init:
@@ -1792,6 +1867,14 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
       default: break;
     }
     skipVisit = skipVisit || blockDeleted;
+
+    if (activate){
+      pragmaConfig_.pragmaDepth++;
+      activePragmas_[S] = prg;
+      //pragma takes precedence - must occur in pre-visit
+      prg->activate(S, rewriter_, pragmaConfig_);
+    }
+
   }
   return skipVisit;
 }
@@ -1805,12 +1888,27 @@ SkeletonASTVisitor::activatePragmasForDecl(Decl* D)
       errorAbort(D->getLocStart(), *ci_,
            "code block deleted by pragma - invalid pragma combination");
     }
-    pragmaConfig_.pragmaDepth++;
-    //pragma takes precedence - must occur in pre-visit
-    prg->activate(D, rewriter_, pragmaConfig_);
-    //a compute pragma totally deletes the block
-    bool blockDeleted = prg->cls == SSTPragma::Compute || prg->cls == SSTPragma::Delete;
-    skipVisit = skipVisit || blockDeleted;
+
+    bool activate = !noSkeletonize_;
+    bool blockDeleted = false;
+    switch (prg->cls){
+      case SSTPragma::Keep:
+        skipVisit = true;
+        activate = true; //always - regardless of skeletonization
+        break;
+      case SSTPragma::Compute:
+      case SSTPragma::Delete:
+        blockDeleted = true;
+        break;
+      default: break;
+    }
+
+    if (activate){
+      pragmaConfig_.pragmaDepth++;
+      //pragma takes precedence - must occur in pre-visit
+      prg->activate(D, rewriter_, pragmaConfig_);
+      skipVisit = skipVisit || blockDeleted;
+    }
   }
   return skipVisit;
 }
@@ -1838,11 +1936,18 @@ SkeletonASTVisitor::replaceGlobalUse(DeclRefExpr* expr, SourceRange replRng)
 {
   if (keepGlobals_) return;
 
-  auto iter = globals_.find(mainDecl(expr->getDecl()));
+  const Decl* d = mainDecl(expr->getDecl());
+  auto iter = globals_.find(d);
   if (iter != globals_.end()){
     //there is a bug in Clang I can't quite track down
     //it is erroneously causing DeclRefExpr to get visited twice
     //when they occur inside a struct decl
+    if (globalsTouched_.empty()){
+      warn(expr->getLocStart(), *ci_,
+           "visiting global variable use, but I am not inside function");
+      return;
+    }
+    globalsTouched_.back().insert(d);
     auto done = alreadyReplaced_.find(expr);
     if (done == alreadyReplaced_.end()){
       replace(replRng, rewriter_, iter->second, *ci_);

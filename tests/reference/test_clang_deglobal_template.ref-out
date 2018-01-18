@@ -1,14 +1,14 @@
 
 template <class T> class A {};
-A<int> a;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_a; void* __ptr_a = &a; int __sizeof_a = sizeof(a);sstmac::CppGlobal* a_sstmac_ctor = sstmac::new_cpp_global<A<int>>(__offset_a); static inline void* get_a(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_a;return (void*)offsetPtr; }  
+A<int> a;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_a = &a; int __sizeof_a = sizeof(a); extern int __offset_a; sstmac::CppGlobal* a_sstmac_ctor = sstmac::new_cpp_global<A<int>>(__offset_a); 
 
 void fxn()
-{
-  auto ptr = &(*((A<int>*)get_a()));
-}
+{ char* sstmac_global_data = get_sstmac_global_data();A<int>* sstmac_a=(A<int>*)(sstmac_global_data + __offset_a); {
+  auto ptr = &(*sstmac_a);
+ }}
 #include <sstmac/software/process/global.h>
 
 int __offset_a = 0;
 extern int __sizeof_a;
 extern void* __ptr_a;
-sstmac::GlobalVariable __gv_a(__offset_a,__sizeof_a,__ptr_a);
+sstmac::GlobalVariable __gv_a(__offset_a,__sizeof_a,"a",__ptr_a);
