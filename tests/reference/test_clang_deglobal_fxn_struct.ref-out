@@ -1,5 +1,5 @@
 
- extern int __offset_xyz_fxnannoying; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);int __sizeof_xyz_fxnannoying = sizeof(void*);void fxn()
+ extern int __offset_xyz_fxnannoying; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);int __sizeof_xyz_fxnannoying = sizeof(void*); void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();{
   static struct ugh {
     int a;

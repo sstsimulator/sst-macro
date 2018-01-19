@@ -499,34 +499,55 @@ SkeletonASTVisitor::getArrayType(const Type* ty, cArrayConfig& cfg)
 }
 
 void
-SkeletonASTVisitor::sizeOfType(QualType qt, std::ostream& os)
+SkeletonASTVisitor::addRecordField(SourceLocation typeDeclCutoff,
+                                   const RecordDecl* rd, ReconstructedType& rt,
+                                   std::map<const RecordDecl*, ReconstructedType>& newTypes)
 {
-  auto ty = qt.getTypePtr();
-  if (ty->isFundamentalType()){
-    os << "sizeof(" << GetTypeString(qt.split()) << ")";
-  } else if (ty->isPointerType()) {
-    os << "sizeof(void*)";
-  } else if (ty->isStructureType() || ty->isClassType()) {
-    const RecordDecl* rd = ty->getAsStructureType()->getDecl();
-    sizeOfRecord(rd, os);
-  } else if (ty->isUnionType()) {
-    const RecordDecl* rd = ty->getAsUnionType()->getDecl();
-    sizeOfRecord(rd, os);
-  } else if (ty->isConstantArrayType()) {
-    cArrayConfig cfg;
-    getArrayType(ty, cfg);
-    os << "sizeof(char" << cfg.arrayIndices.str() << ")*";
-    sizeOfType(cfg.fundamentalType, os);
-  } else if (ty->isArrayType()){
-    //not a constant array - so treat as pointer
-    os << "sizeof(void*)";
+  if (rd->getLocStart() < typeDeclCutoff){
+    //oh, cool, we can just directly put this in the specifier
+    rt.classFieldTypes.push_back(rd);
+  } else {
+    //ugh - static struct decl or something
+    //we have to unroll this
+    rt.newClassFieldTypes.push_back(rd);
+    rt.structDependencies.insert(rd);
+    auto iter = newTypes.find(rd);
+    if (iter == newTypes.end()){
+      ReconstructedType& newRt = newTypes[rd];
+      reconstructType(typeDeclCutoff, rd, newRt, newTypes);
+    }
   }
 }
 
 void
-SkeletonASTVisitor::sizeOfRecord(const RecordDecl* decl, std::ostream& os)
+SkeletonASTVisitor::reconstructType(SourceLocation typeDeclCutoff,
+                                    QualType qt, ReconstructedType& rt,
+                                    std::map<const RecordDecl*, ReconstructedType>& newTypes)
 {
-  os << "(0";
+  auto ty = qt.getTypePtr();
+  if (ty->isConstantArrayType()){
+    cArrayConfig cfg;
+    getArrayType(ty, cfg);
+    std::string elementType = getTypeNameForSizing(typeDeclCutoff, cfg.fundamentalType, newTypes);
+    rt.arrayTypes.emplace_back(elementType, cfg.arrayIndices.str());
+  } else if (ty->isFundamentalType() || ty->isPointerType() || ty->isArrayType()){
+    rt.fundamentalFieldTypes.push_back(qt);
+  } else if (ty->isStructureType() || ty->isClassType()){
+     auto rd = ty->getAsStructureType()->getDecl();
+     addRecordField(typeDeclCutoff, rd, rt, newTypes);
+  } else if (ty->isUnionType()) {
+    auto rd = ty->getAsStructureType()->getDecl();
+    addRecordField(typeDeclCutoff, rd, rt, newTypes);
+  }
+}
+
+void
+SkeletonASTVisitor::reconstructType(SourceLocation typeDeclCutoff,
+                                    const RecordDecl* decl, ReconstructedType& rt,
+                                    std::map<const RecordDecl*, ReconstructedType>& newTypes)
+{
+  rt.typeIndex = reconstructCount_++;
+
   int numDecls = 0;
   for (auto iter=decl->decls_begin(); iter != decl->decls_end(); ++iter){
     Decl* d = *iter;
@@ -534,14 +555,14 @@ SkeletonASTVisitor::sizeOfRecord(const RecordDecl* decl, std::ostream& os)
     case Decl::Var:
     {
       VarDecl* vd = cast<VarDecl>(d);
-      os << "+"; sizeOfType(vd->getType(), os);
+      reconstructType(typeDeclCutoff, vd->getType(), rt, newTypes);
       ++numDecls;
       break;
     }
     case Decl::Field:
     {
       FieldDecl* vd = cast<FieldDecl>(d);
-      os << "+"; sizeOfType(vd->getType(), os);
+      reconstructType(typeDeclCutoff, vd->getType(), rt, newTypes);
       ++numDecls;
       break;
     }
@@ -554,13 +575,110 @@ SkeletonASTVisitor::sizeOfRecord(const RecordDecl* decl, std::ostream& os)
     errorAbort(decl->getLocStart(), *ci_,
                "failed sizing struct - is this actually empty?");
   }
-  os << ")";
+}
+
+std::string
+SkeletonASTVisitor::getRecordTypeName(const RecordDecl* rd){
+  SplitQualType st(rd->getTypeForDecl(), Qualifiers());
+  std::string name = GetTypeString(st);
+  if (name.empty()){
+    errorAbort(rd->getLocStart(), *ci_,
+               "got back empty name for struct type");
+  }
+  return name;
 }
 
 void
-SkeletonASTVisitor::sizeOfString(VarDecl* decl, std::ostream& os)
+SkeletonASTVisitor::addTypeReconstructionText(const RecordDecl* rd, ReconstructedType& rt,
+                                              std::map<const RecordDecl*, ReconstructedType>& newTypes,
+                                              std::set<const RecordDecl*>& alreadyDone,
+                                              std::ostream& os)
 {
-  sizeOfType(decl->getType(), os);
+  if (alreadyDone.find(rd) != alreadyDone.end()){
+    return;
+  }
+  alreadyDone.insert(rd);
+
+  for (const RecordDecl* next : rt.structDependencies){
+    auto& rt = newTypes[next];
+    addTypeReconstructionText(next,rt,newTypes,alreadyDone,os);
+  }
+
+  os << "struct sstTmpStructType" << rt.typeIndex << " {";
+  int varCount = 0;
+  for (QualType& qt : rt.fundamentalFieldTypes){
+    if (qt->isFundamentalType()){
+      os << GetTypeString(qt.split()) << " var" << varCount++ << "; ";
+    } else if (qt->isPointerType() || qt->isArrayType()){
+      os << "void* var" << varCount++ << "; ";
+    } else {
+      errorAbort(rd->getLocStart(), *ci_,
+                 "internal error - got bad type in reconstruction");
+    }
+  }
+
+  for (const RecordDecl* rd : rt.classFieldTypes){
+    os << getRecordTypeName(rd) << " var" << varCount++ << "; ";
+  }
+
+  for (const RecordDecl* rd : rt.newClassFieldTypes){
+    auto& newRt = newTypes[rd];
+    //this better have been visit
+    if (newRt.typeIndex == 0){
+      std::cerr << "internal compiler error - unassigned type index" << std::endl;
+      abort();
+    }
+    os << "sstTmpStructType" << newRt.typeIndex << " var" << varCount++ <<"; ";
+  }
+
+  for (auto& pair : rt.arrayTypes){
+    //first = element type
+    //second = array indices
+    os << pair.first << " var" << varCount++ << pair.second << "; ";
+  }
+
+  os << "}; ";
+
+}
+
+std::string
+SkeletonASTVisitor::getTypeNameForSizing(SourceLocation typeDeclCutoff, QualType qt,
+                                         std::map<const RecordDecl*, ReconstructedType>& newTypes)
+{
+  if (qt->isConstantArrayType() || qt->isArrayType()){
+    cArrayConfig cfg;
+    getArrayType(qt.getTypePtr(), cfg);
+    std::string retType = getTypeNameForSizing(typeDeclCutoff, cfg.fundamentalType, newTypes);
+    return retType + cfg.arrayIndices.str();
+  } else if (qt->isFundamentalType()){
+    //easy peasy
+    return GetTypeString(qt.split());
+  } else if (qt->isPointerType()){
+    return "void*";
+  } else if (qt->isStructureType() || qt->isClassType() || qt->isUnionType()){
+    const RecordDecl* rd;
+    if (qt->isUnionType()){
+      rd = qt->getAsUnionType()->getDecl();
+    } else {
+      rd = qt->getAsStructureType()->getDecl();
+    }
+
+    if (rd->getLocStart() < typeDeclCutoff){
+      //also easy peasy
+      return getRecordTypeName(rd);
+    }
+
+    auto& rt = newTypes[rd];
+    reconstructType(typeDeclCutoff, rd, rt, newTypes);
+
+    std::stringstream sstr;
+    sstr << "struct sstTmpStructType" << rt.typeIndex;
+    return sstr.str();
+  } else {
+    std::string error = "bad type for static function variable: " + GetTypeString(qt.split());
+    errorAbort(typeDeclCutoff, *ci_, error);
+    return "";
+  }
 }
 
 SkeletonASTVisitor::ArrayInfo*
@@ -802,9 +920,19 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
            << "}";
         {
           std::stringstream size_os;
-          size_os << "int __sizeof_" << scopeUniqueVarName << " = ";
-          sizeOfString(D, size_os);
-          size_os << ";";
+          std::map<const RecordDecl*, ReconstructedType> newTypes;
+          std::string typeNameToSize = getTypeNameForSizing(fxn_contexts_.front()->getLocStart(),
+                                                            D->getType(), newTypes);
+          if (typeNameToSize.empty()){
+            errorAbort(D->getLocStart(), *ci_,
+                       "internal error: empty type name for variable");
+          }
+          std::set<const RecordDecl*> alreadyDone;
+          for (auto& pair : newTypes){
+            addTypeReconstructionText(pair.first, pair.second, newTypes, alreadyDone, size_os);
+          }
+          size_os << "int __sizeof_" << scopeUniqueVarName << " = "
+                  << "sizeof(" << typeNameToSize << "); ";
           rewriter_.InsertText(varSizeOfInsertLoc, size_os.str());
         }
         var.isFxnStatic = true;

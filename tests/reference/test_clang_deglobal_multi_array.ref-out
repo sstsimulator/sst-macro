@@ -5,7 +5,7 @@ int y[3][4];extern int sstmac_global_stacksize; extern "C" void sstmac_init_glob
 extern int z[][2];extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_z; typedef int type_z[][2];
 static int b[2][2];extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_xyzb = &b; int __sizeof_xyzb = sizeof(b); extern int __offset_xyzb; typedef int array_type_b[2][2];
 
- extern int __offset_xyz_fxna; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);int __sizeof_xyz_fxna = sizeof(char[3][5])*sizeof(int);void fxn()
+ extern int __offset_xyz_fxna; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);int __sizeof_xyz_fxna = sizeof(int[3][5]); void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();char* sstmac_tmp_y=(sstmac_global_data + __offset_y); array_type_y* sstmac_y=(array_type_y*)sstmac_tmp_y; char* sstmac_tmp_x=(sstmac_global_data + __offset_x); array_type_x* sstmac_x=(array_type_x*)sstmac_tmp_x; char* sstmac_tmp_z=(sstmac_global_data + __offset_z); type_z* sstmac_z=(type_z*)sstmac_tmp_z; char* sstmac_tmp_xyzb=(sstmac_global_data + __offset_xyzb); array_type_b* sstmac_xyzb=(array_type_b*)sstmac_tmp_xyzb; {
   static int a[3][5];static int sstmac_inited_a = 0;if (!sstmac_inited_a){  sstmac_init_global_space(&a,__sizeof_xyz_fxna,__offset_xyz_fxna);  sstmac_inited_a = 1; }typedef int array_type_a[3][5];char* sstmac_tmp_xyz_fxna=(sstmac_global_data + __offset_xyz_fxna); array_type_a* sstmac_xyz_fxna=(array_type_a*)sstmac_tmp_xyz_fxna; 
   (*sstmac_xyz_fxna)[0][0] = 1;

@@ -83,7 +83,7 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const char* name, co
 
   //printf("Allocated global variable %s of size %d at offset %d - %s\n",
   //       name, size, offset, (realloc ? "reallocated to fit" : "already fits"));
-  fflush(stdout);
+  //fflush(stdout);
 
   if (initData){
     void* initStart = (char*)globalInits + stackOffset;

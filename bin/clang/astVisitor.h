@@ -117,7 +117,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     insideCxxMethod_(0),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
     pragmaConfig_(cfg),
-    numRelocations_(0)
+    numRelocations_(0),
+    reconstructCount_(0)
   {
     initHeaders();
     initReservedNames();
@@ -616,13 +617,44 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void getArrayType(const clang::Type* ty, cArrayConfig& cfg);
 
-  void sizeOfType(clang::QualType qt, std::ostream& os);
-
-  void sizeOfRecord(const clang::RecordDecl* decl, std::ostream& os);
-
-  void sizeOfString(clang::VarDecl* decl, std::ostream& os);
-
   void setFundamentalTypes(clang::QualType qt, cArrayConfig& cfg);
+
+  struct ReconstructedType {
+    int typeIndex;
+    std::list<clang::QualType> fundamentalFieldTypes;
+    std::list<const clang::RecordDecl*> classFieldTypes;
+    std::list<const clang::RecordDecl*> newClassFieldTypes;
+    std::list<std::pair<std::string,std::string>> arrayTypes;
+    std::set<const clang::RecordDecl*> structDependencies;
+  };
+
+  int reconstructCount_;
+
+  void reconstructType(clang::SourceLocation typeDeclCutoff,
+                      clang::QualType qt, ReconstructedType& rt,
+                      std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
+
+  void reconstructType(clang::SourceLocation typeDeclCutoff,
+                      const clang::RecordDecl* rd, ReconstructedType& rt,
+                      std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
+
+  void addRecordField(clang::SourceLocation typeDeclCutoff,
+                     const clang::RecordDecl* rd, ReconstructedType& rt,
+                     std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
+
+  void addReconstructionDependency(clang::SourceLocation typeDeclCutoff,
+                                   const clang::Type* ty, ReconstructedType& rt);
+
+
+  void addTypeReconstructionText(const clang::RecordDecl* rd, ReconstructedType& rt,
+                                std::map<const clang::RecordDecl*, ReconstructedType>& newTypes,
+                                std::set<const clang::RecordDecl*>& alreadyDone,
+                                std::ostream& os);
+
+  std::string getTypeNameForSizing(clang::SourceLocation typeDeclCutoff, clang::QualType qt,
+                                  std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
+
+  std::string getRecordTypeName(const clang::RecordDecl* rd);
 
 };
 
