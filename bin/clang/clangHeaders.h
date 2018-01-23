@@ -86,12 +86,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #if CLANG_VERSION_MAJOR <= 5
 #define GetTypeString(ty) QualType::getAsString(ty)
 #else
+#define GetTypeString(ty) QualType::getAsString(ty, Printing::policy)
+#endif
+
 struct Printing
 {
   static clang::LangOptions langOpts;
   static clang::PrintingPolicy policy;
 };
-#define GetTypeString(ty) QualType::getAsString(ty, Printing::policy)
-#endif
 
 #endif // CLANGHEADERS_H

@@ -10,7 +10,7 @@
   static struct ugh {
     int a;
     boo x;
-  } uggs[2];static int sstmac_inited_uggs = 0;if (!sstmac_inited_uggs){  sstmac_init_global_space(&uggs,__sizeof_xyz_fxnuggs,__offset_xyz_fxnuggs);  sstmac_inited_uggs = 1; }typedef struct ugh array_type_uggs[2];char* sstmac_tmp_xyz_fxnuggs=(sstmac_global_data + __offset_xyz_fxnuggs); array_type_uggs* sstmac_xyz_fxnuggs=(array_type_uggs*)sstmac_tmp_xyz_fxnuggs; 
+  } uggs[2];static int sstmac_inited_uggs = 0;if (!sstmac_inited_uggs){  sstmac_init_global_space(&uggs,__sizeof_xyz_fxnuggs,__offset_xyz_fxnuggs);  sstmac_inited_uggs = 1; }typedef struct ugh array_type_uggs[2];array_type_uggs* sstmac_xyz_fxnuggs=(array_type_uggs*)(sstmac_global_data + __offset_xyz_fxnuggs); 
 
   static struct again {
     ugh a[1];

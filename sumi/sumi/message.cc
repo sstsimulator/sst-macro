@@ -194,10 +194,16 @@ message::buffer_send(public_buffer& buf, long num_bytes)
   buf.ptr = new_buf;
 }
 
+static char segfault_check[1024];
+
 void
 message::inject_local_to_remote()
 {
   if (local_buffer_.ptr){ //might be null
+    if (num_bytes_ <= 1024){
+      ::memcpy(remote_buffer_.ptr, segfault_check, num_bytes_);
+      ::memcpy(segfault_check, local_buffer_.ptr, num_bytes_);
+    }
     ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
     delete[] (char*) local_buffer_.ptr;
     local_buffer_.ptr = nullptr;

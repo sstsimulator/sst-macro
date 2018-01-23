@@ -48,10 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <fstream>
 #include <sstmac/common/sstmac_config.h>
 
-#if CLANG_VERSION_MAJOR >= 6
 clang::LangOptions Printing::langOpts;
 clang::PrintingPolicy Printing::policy(Printing::langOpts);
-#endif
 
 using namespace clang;
 using namespace clang::driver;
@@ -60,7 +58,7 @@ using namespace clang::tooling;
 static const Type*
 getBaseType(VarDecl* D){
   auto ty = D->getType().getTypePtr();
-  while (ty->isPointerType()){
+  while (ty->isPointerType() && !(ty->isFunctionPointerType() || ty->isFunctionProtoType())){
     ty = ty->getPointeeType().getTypePtr();
   }
   return ty;
@@ -826,6 +824,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   if (declEnd.isInvalid()) declEnd = getEndLoc(D->getLocEnd());
 
   if (declEnd.isInvalid()){
+    D->dump();
     errorAbort(D->getLocStart(), *ci_,
                "unable to locate end of variable declaration");
   }
@@ -848,20 +847,6 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     deref = arrayInfo->needsDeref;
   } else {
     retType = GetTypeString(D->getType().split()) + "*";
-  }
-
-  if (D->getType()->isPointerType()){
-    const Type* subTy = getBaseType(D);
-    if (subTy->isFunctionPointerType() || subTy->isFunctionProtoType()){
-      bool isTypeDef = isa<TypedefType>(subTy);
-      if (!isTypeDef){
-        auto replPos = retType.find("**");
-                                                  //and chop off the last pointer
-        if (replPos != std::string::npos){
-          retType = retType.replace(replPos, 2, "***").substr(0, retType.size() - 1);
-        }
-      }
-    }
   }
 
   if (anonRecord){
@@ -951,6 +936,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   if (sstmacOffsetLoc.isInvalid()){
     sstmacOffsetLoc = declEnd;
   }
+
   rewriter_.InsertText(sstmacOffsetLoc, offset_os.str(), insertOffsetAfter);
 
   if (arrayInfo && arrayInfo->needsTypedef()){
@@ -1015,10 +1001,6 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     }
   }
 
-  //std::string empty;
-  //std::string checkName = currentNs_->nsPrefix() + scopeUniqueVarName;
-  //bool notDeclared = globalsDeclared_.find(checkName) == globalsDeclared_.end();
-
   if (varSizeOfInsertLoc.isInvalid()){
     errorAbort(D->getLocStart(), *ci_, "failed replacing global variable declaration");
   }
@@ -1033,26 +1015,39 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
 
   std::string standinName = "sstmac_" + uniqueNsPrefix + scopeUniqueVarName;
 
+  //fxn pointers mess up everything
+  std::string::size_type fxnPtrPos = std::string::npos;
+  if (D->getType()->isPointerType()){
+    const Type* subTy = getBaseType(D);
+    if (subTy->isFunctionPointerType() || subTy->isFunctionProtoType()){
+      bool isTypeDef = isa<TypedefType>(subTy);
+      if (!isTypeDef){
+        fxnPtrPos = retType.find("**");
+      }
+    }
+  }
+
   std::stringstream standinSstr;
-  if (!deref){
-    standinSstr << "char* sstmac_tmp_" << scopeUniqueVarName << "="
-                << "(sstmac_global_data + "
-                << currentNs_->nsPrefix() //only this!
-                << "__offset_" << scopeUniqueVarName << "); ";
-    //standinSstr << "char** sstmac_tmp_ptr_" << scopeUniqueVarName << "="
-    //            << "&sstmac_tmp_" << scopeUniqueVarName << "; ";
+  if (fxnPtrPos != std::string::npos){
+    //pointer to a function pointer
+    //the substr chops off a trailing "*" that was added up above
+    //instead the * needs to go inside parenthesis for function pointer
+    retType = retType.substr(0, retType.size() - 1);
+    //variable declaration has to look like void(***varname)(int)
+    std::string fullDecl = retType; //have to copy this
+    std::string repl = "***" + standinName;
+    fullDecl = fullDecl.replace(fxnPtrPos, 2, repl);
+    standinSstr << fullDecl;
+    //and the return type needs to be void(***)(int)
+    retType = retType.replace(fxnPtrPos, 2, "***");
+  } else {
+    standinSstr << retType << " " << standinName;
   }
-  standinSstr << retType << " " << standinName << "=";
-  if (deref){
-    standinSstr << "(" << retType << ")"
-                << "(sstmac_global_data + "
-                << currentNs_->nsPrefix() //only this!
-                << "__offset_" << scopeUniqueVarName << ")";
-  } else { //create as a pointer
-    standinSstr << "(" << retType << ")"
-                //<< "&" //we need to create a pointer to the variable
-                << "sstmac_tmp_" << scopeUniqueVarName;
-  }
+  standinSstr << "=(" << retType << ")"
+              << "(sstmac_global_data + "
+              << currentNs_->nsPrefix() //only this!
+              << "__offset_" << scopeUniqueVarName << ")";
+
   GlobalStandin& newStandin = globalStandins_[md];
   newStandin.replText = standinSstr.str();
 
@@ -1078,12 +1073,21 @@ clang::SourceLocation
 SkeletonASTVisitor::getEndLoc(SourceLocation searchStart)
 {
   int numTries = 0;
+  SourceLocation newLoc = searchStart;
   while (numTries < 1000){
-    SourceLocation newLoc = searchStart.getLocWithOffset(numTries);
     Token res;
     Lexer::getRawToken(newLoc, res, ci_->getSourceManager(), ci_->getLangOpts());
     if (res.getKind() == tok::semi){
       return newLoc.getLocWithOffset(1);
+    } else {
+      //JJW 1/22/2018
+      //Need to change it to do this - D->getEndLoc() is incorrect for string literal inits
+      SourceLocation next = Lexer::getLocForEndOfToken(newLoc, 1, ci_->getSourceManager(), Printing::langOpts);
+      if (next == newLoc){
+        newLoc = newLoc.getLocWithOffset(1);
+      } else {
+        newLoc = next;
+      }
     }
     ++numTries;
   }
