@@ -85,12 +85,13 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
  private:
   struct AnonRecord {
     clang::RecordDecl* decl;
+    bool typeNameAdded;
     std::string structType;  //union or struct
     std::string retType;
     bool isFxnStatic;
     //struct X_anonymous_type - gives unique typename to anonymous truct
     std::string typeName;
-    AnonRecord() : decl(nullptr), isFxnStatic(false) {}
+    AnonRecord() : decl(nullptr), isFxnStatic(false), typeNameAdded(false) {}
   };
 
   struct ArrayInfo {
@@ -116,6 +117,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
+    refactorMain_(true),
     pragmaConfig_(cfg),
     numRelocations_(0),
     reconstructCount_(0)
@@ -463,6 +465,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<BinOpSide> sides_;
 
   bool foundCMain_;
+  bool refactorMain_;
   std::string mainName_;
   bool keepGlobals_;
   bool noSkeletonize_;
@@ -655,6 +658,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
                                   std::map<const clang::RecordDecl*, ReconstructedType>& newTypes);
 
   std::string getRecordTypeName(const clang::RecordDecl* rd);
+
+  void arrayFxnPointerTypedef(clang::VarDecl* D, SkeletonASTVisitor::ArrayInfo* info,
+                              std::stringstream& sstr);
 
 };
 

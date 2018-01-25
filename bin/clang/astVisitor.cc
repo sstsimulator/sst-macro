@@ -72,6 +72,11 @@ SkeletonASTVisitor::initConfig()
     bool doSkel = atoi(skelStr);
     noSkeletonize_ = !doSkel;
   }
+
+  const char* mainStr = getenv("SSTMAC_REFACTOR_MAIN");
+  if (mainStr){
+    refactorMain_ = atoi(mainStr);
+  }
 }
 
 void
@@ -156,7 +161,25 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     const char* fullpath = realpath(ploc.getFilename(), fullpathBuffer);
     if (fullpath){
       //is this in the list of valid headers
-      return validHeaders_.find(fullpath) != validHeaders_.end();
+      bool valid = validHeaders_.find(fullpath) != validHeaders_.end();
+      if (!valid){
+        std::string path(fullpath);
+        auto slashPos = path.find_last_of('/');
+        if (slashPos != std::string::npos){
+          path = path.substr(slashPos);
+        }
+        auto dotPos = path.find_last_of('.');
+        if (dotPos == std::string::npos){
+          return valid; //no suffix - assume valid c++ header with no suffix, e.g. <cstdlib>
+        }
+        std::string suffix = path.substr(dotPos+1);
+        if (suffix != "h" && suffix != "hpp"){
+          std::string error = std::string("got included global variable in unknown file ")
+              + fullpath + " with suffix ." + suffix;
+          errorAbort(D->getLocStart(), *ci_, error);
+        }
+      }
+      return valid;
     } else {
       warn(startLoc, *ci_,
            "bad header path location, you probably abused and misused #line in your file");
@@ -517,25 +540,41 @@ SkeletonASTVisitor::addRecordField(SourceLocation typeDeclCutoff,
   }
 }
 
+static RecordDecl* getRecordDeclForType(QualType qt)
+{
+  if (qt->isStructureType() || qt->isClassType()){
+    const RecordType* rt = qt->getAsStructureType();
+    return rt->getDecl();
+  } else if (qt->isUnionType()){
+    const RecordType* rt = qt->getAsUnionType();
+    return rt->getDecl();
+  } else {
+    return nullptr;
+  }
+}
+
 void
 SkeletonASTVisitor::reconstructType(SourceLocation typeDeclCutoff,
                                     QualType qt, ReconstructedType& rt,
                                     std::map<const RecordDecl*, ReconstructedType>& newTypes)
 {
   auto ty = qt.getTypePtr();
-  if (ty->isConstantArrayType()){
+  if (qt->isConstantArrayType()){
     cArrayConfig cfg;
     getArrayType(ty, cfg);
     std::string elementType = getTypeNameForSizing(typeDeclCutoff, cfg.fundamentalType, newTypes);
+    RecordDecl* rd = getRecordDeclForType(cfg.fundamentalType);
+    if (rd){
+      rt.structDependencies.insert(rd);
+    }
     rt.arrayTypes.emplace_back(elementType, cfg.arrayIndices.str());
-  } else if (ty->isFundamentalType() || ty->isPointerType() || ty->isArrayType()){
+  } else if (qt->isFundamentalType() || qt->isPointerType() || qt->isArrayType()){
     rt.fundamentalFieldTypes.push_back(qt);
-  } else if (ty->isStructureType() || ty->isClassType()){
-     auto rd = ty->getAsStructureType()->getDecl();
+  } else {
+    RecordDecl* rd = getRecordDeclForType(qt);
+    if (rd){
      addRecordField(typeDeclCutoff, rd, rt, newTypes);
-  } else if (ty->isUnionType()) {
-    auto rd = ty->getAsStructureType()->getDecl();
-    addRecordField(typeDeclCutoff, rd, rt, newTypes);
+    }
   }
 }
 
@@ -598,8 +637,8 @@ SkeletonASTVisitor::addTypeReconstructionText(const RecordDecl* rd, Reconstructe
   alreadyDone.insert(rd);
 
   for (const RecordDecl* next : rt.structDependencies){
-    auto& rt = newTypes[next];
-    addTypeReconstructionText(next,rt,newTypes,alreadyDone,os);
+    auto& nextRt = newTypes[next];
+    addTypeReconstructionText(next,nextRt,newTypes,alreadyDone,os);
   }
 
   os << "struct sstTmpStructType" << rt.typeIndex << " {";
@@ -679,6 +718,27 @@ SkeletonASTVisitor::getTypeNameForSizing(SourceLocation typeDeclCutoff, QualType
   }
 }
 
+void
+SkeletonASTVisitor::arrayFxnPointerTypedef(VarDecl* D, SkeletonASTVisitor::ArrayInfo* info,
+                                   std::stringstream& sstr)
+{
+  std::string typeStr = GetTypeString(D->getType().split());
+  auto replPos = typeStr.find("*[");
+  std::string typedefText = typeStr.insert(replPos+1, info->typedefName);
+  sstr << "typedef " << typedefText;
+}
+
+static bool isFxnPointerForm(QualType qt)
+{
+  //typedefs need no special treatment
+  bool isTypeDef = isa<TypedefType>(qt.getTypePtr());
+  if (isTypeDef) return false;
+
+  return qt->isFunctionPointerType() || qt->isFunctionProtoType();
+}
+
+
+
 SkeletonASTVisitor::ArrayInfo*
 SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
 {
@@ -687,23 +747,25 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
   bool isConstC99array = ty->isConstantArrayType();
 
   if (isConstC99array){
+    info->typedefName = "array_type_" + D->getNameAsString();
     //something of the form type x[N][M];
     //we possible need to first: typedef type tx[N][M];
     //replacement global will be tx* xRepl = &(sstmac_global_data + offset)
     const ArrayType* aty = ty->getAsArrayTypeUnsafe();
-    cArrayConfig cfg;
     std::stringstream sstr;
-    info->typedefName = "array_type_" + D->getNameAsString();
+    cArrayConfig cfg;
     getArrayType(aty, cfg);
+    if (isFxnPointerForm(cfg.fundamentalType)){
+      arrayFxnPointerTypedef(D, info, sstr);
+    } else {
+      sstr << "typedef " << cfg.fundamentalTypeString
+           << " " << info->typedefName
+           << cfg.arrayIndices.str();
 
-    sstr << "typedef " << cfg.fundamentalTypeString
-         << " " << info->typedefName
-         << cfg.arrayIndices.str();
-
-
-    if (cfg.fundamentalTypeString == "anon"){
-      errorAbort(D->getLocStart(), *ci_,
-                 "anonymous struct used in array declaration - cannot refactor");
+      if (cfg.fundamentalTypeString == "anon"){
+        errorAbort(D->getLocStart(), *ci_,
+                   "anonymous struct used in array declaration - cannot refactor");
+      }
     }
 
     info->typedefString = sstr.str();
@@ -712,22 +774,27 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
     return info;
   } else if (isC99array){
     const ArrayType* aty = ty->getAsArrayTypeUnsafe();
-    const Type* ety = aty->getElementType().getTypePtr();
+    QualType ety = aty->getElementType();
+    //if the element type of the array is itself a constant array
     if (ety->isConstantArrayType()){
       //something of the form type x[][M]
       //we need to first: typedef type tx[][M];
       //replacement global will be tx* xRepl = &(sstmac_global_data + offset)
-      cArrayConfig cfg;
-      getArrayType(ety, cfg);
       info->typedefName = "type_" + D->getNameAsString();
       std::stringstream sstr;
-      sstr << "typedef " << cfg.fundamentalTypeString
-           << " " << info->typedefName
-           << "[]"  //don't do this anymore
-           << cfg.arrayIndices.str();
-      if (cfg.fundamentalTypeString == "anon"){
-        errorAbort(D->getLocStart(), *ci_,
-                   "anonymous struct used in array declaration - cannot refactor");
+      cArrayConfig cfg;
+      getArrayType(ety.getTypePtr(), cfg);
+      if (isFxnPointerForm(cfg.fundamentalType)){
+        arrayFxnPointerTypedef(D, info, sstr);
+      } else {
+        if (cfg.fundamentalTypeString == "anon"){
+          errorAbort(D->getLocStart(), *ci_,
+                     "anonymous struct used in array declaration - cannot refactor");
+        }
+        sstr << "typedef " << cfg.fundamentalTypeString
+             << " " << info->typedefName
+             << "[]"  //don't do this anymore
+             << cfg.arrayIndices.str();
       }
       info->typedefString = sstr.str();
       info->retType = info->typedefName + "*";
@@ -737,8 +804,13 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
       //replacement global will type* xRepl;
       info->typedefName = "type_" + D->getNameAsString();
       std::stringstream sstr;
-      sstr << "typedef " << GetTypeString(aty->getElementType().split())
-           << " " << info->typedefName << "[]";
+      QualType ety = aty->getElementType();
+      if (isFxnPointerForm(ety)){
+        arrayFxnPointerTypedef(D, info, sstr);
+      } else {
+        sstr << "typedef " << GetTypeString(ety.split())
+             << " " << info->typedefName << "[]";
+      }
       info->typedefString = sstr.str();
       info->retType = info->typedefName + "*";
       info->needsDeref = false;
@@ -851,8 +923,11 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
 
   if (anonRecord){
     retType = anonRecord->retType;
-    SourceLocation openBrace = anonRecord->decl->getBraceRange().getBegin();
-    rewriter_.InsertText(openBrace, "  " + anonRecord->typeName, false, false);
+    if (!anonRecord->typeNameAdded){
+      anonRecord->typeNameAdded = true;
+      SourceLocation openBrace = anonRecord->decl->getBraceRange().getBegin();
+      rewriter_.InsertText(openBrace, "  " + anonRecord->typeName, false, false);
+    }
   }
 
   NamespaceDecl* outerNsDecl = getOuterNamespace(D);
@@ -1443,7 +1518,7 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
-  if (D->isMain()){
+  if (D->isMain() && refactorMain_){
     replaceMain(D);
   } else if (D->isTemplateInstantiation()){
     return true; //do not visit implicitly instantiated template stuff
@@ -1598,7 +1673,6 @@ SkeletonASTVisitor::addRelocation(UnaryOperator* op, DeclRefExpr* dr, ValueDecl*
                " - deglobalization cannot create relocation pointer");
   }
 
-
   std::string dstFieldOffsetPtrName;
   std::string srcFieldOffsetPtrName;
   std::stringstream ptr_str;
@@ -1606,7 +1680,8 @@ SkeletonASTVisitor::addRelocation(UnaryOperator* op, DeclRefExpr* dr, ValueDecl*
   VarDecl* vd = activeDecls_.back();
   if (!activeFieldDecls_.empty()){
     std::stringstream sstr;
-    sstr << "__field_offset_ptr_" << vd->getNameAsString();
+    std::string varScopedName = scopedNames_[mainDecl(vd)];
+    sstr << "__field_offset_ptr_" << varScopedName;
     for (FieldDecl* fd : activeFieldDecls_){
       sstr << "_" << fd->getNameAsString();
     }
@@ -1843,9 +1918,17 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
   if (ty->isStructureType()){
     auto str_ty = ty->getAsStructureType();
     if (!str_ty){
-      errorAbort(D->getLocStart(), *ci_, "structure type did not return a record declaration");
+      errorAbort(D->getLocStart(), *ci_,
+                 "structure type did not return a record declaration");
     }
     typedef_structs_[str_ty->getDecl()] = D;
+  } else if (ty->isUnionType()){
+    auto un_ty = ty->getAsUnionType();
+    if (!un_ty){
+      errorAbort(D->getLocStart(), *ci_,
+                 "union type did not return a record declaration");
+    }
+    typedef_structs_[un_ty->getDecl()] = D;
   }
   return true;
 }
@@ -2071,15 +2154,15 @@ SkeletonASTVisitor::replaceGlobalUse(DeclRefExpr* expr, SourceRange replRng)
   const Decl* d = mainDecl(expr->getDecl());
   auto iter = globals_.find(d);
   if (iter != globals_.end()){
-    //there is a bug in Clang I can't quite track down
-    //it is erroneously causing DeclRefExpr to get visited twice
-    //when they occur inside a struct decl
     if (globalsTouched_.empty()){
-      warn(expr->getLocStart(), *ci_,
-           "visiting global variable use, but I am not inside function");
+      //warn(expr->getLocStart(), *ci_,
+      //     "visiting global variable use, but I am not inside function");
       return;
     }
     globalsTouched_.back().insert(d);
+    //there is a bug in Clang I can't quite track down
+    //it is erroneously causing DeclRefExpr to get visited twice
+    //when they occur inside a struct decl
     auto done = alreadyReplaced_.find(expr);
     if (done == alreadyReplaced_.end()){
       replace(replRng, rewriter_, iter->second, *ci_);

@@ -141,6 +141,7 @@ using sprockit::sim_parameters;
 #define define_var_name_pass_through(x) sstmac_dont_ignore_this##x
 #define define_var_name(x) define_var_name_pass_through(x)
 
+#ifndef SSTMAC_NO_REFACTOR_MAIN
 #undef main
 #define main USER_MAIN
 #define USER_MAIN(...) \
@@ -152,6 +153,7 @@ using sprockit::sim_parameters;
   user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
   sst_eli_block(sstmac_app_name) \
  static int user_skeleton_main(__VA_ARGS__)
+#endif
 
 extern sprockit::sim_parameters* get_params();
 
@@ -208,12 +210,21 @@ static void* nullptr = 0;
 #include <stdint.h>
 #endif
 extern int sstmac_global_stacksize;
-static inline char* get_sstmac_global_data(){
+
+#ifdef __STRICT_ANSI__
+#define SSTMAC_INLINE
+#else
+#define SSTMAC_INLINE inline
+#endif
+
+static SSTMAC_INLINE char* get_sstmac_global_data(){
   int stack; int* stackPtr = &stack;
   uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
   char** globalMapPtr = (char**)(localStorage + sizeof(int));
   return *globalMapPtr;
 }
+
+#undef SSTMAC_INLINE
 
 #endif
 
