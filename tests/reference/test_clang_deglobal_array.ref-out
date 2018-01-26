@@ -1,13 +1,13 @@
 
-int x[] = {1,2,3};extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_x; void* __ptr_x = &x; int __sizeof_x = sizeof(x);typedef int typex[3];static inline void* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_x;return (void*)offsetPtr; }  
+int x[] = {1,2,3};extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_x = &x; int __sizeof_x = sizeof(x); extern int __offset_x; typedef int array_type_x[3];
 
 void fxn()
-{
-  int* z = (*((typex*)get_x()));
-}
+{ char* sstmac_global_data = get_sstmac_global_data();array_type_x* sstmac_x=(array_type_x*)(sstmac_global_data + __offset_x); {
+  int* z = (*sstmac_x);
+ }}
 #include <sstmac/software/process/global.h>
 
 int __offset_x = 0;
 extern int __sizeof_x;
 extern void* __ptr_x;
-sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,__ptr_x);
+sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,"x",__ptr_x);

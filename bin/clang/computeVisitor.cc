@@ -59,7 +59,7 @@ struct GlobalVarReplacer
     return visitor->isGlobal(const_cast<DeclRefExpr*>(expr));
   }
   std::string getReplacement(const DeclRefExpr* expr){
-    return visitor->getGlobalReplacement(const_cast<NamedDecl*>(expr->getFoundDecl()));
+    return visitor->needGlobalReplacement(const_cast<NamedDecl*>(expr->getFoundDecl()));
   }
 
   template <class T>

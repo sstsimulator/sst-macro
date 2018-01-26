@@ -84,6 +84,24 @@ void* sstmac_memset(void* ptr, int value, unsigned long sz){
   return ptr;
 }
 
+extern "C" void sstmac_exit(int code)
+{
+  sstmac::sw::operating_system::current_thread()->kill(code);
+}
+
+extern "C" unsigned int sstmac_alarm(unsigned int delay)
+{
+  //for now, do nothing
+  //seriously, why are you using the alarm function?
+  return 0;
+}
+
+extern "C" int sstmac_atexit(void (*fxn)(void))
+{
+  //for now, just ignore any atexit functions
+  return 0;
+}
+
 extern "C"
 int sstmac_gethostname(char* name, size_t len)
 {

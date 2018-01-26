@@ -54,6 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sprockit/util.h>
+#include <sprockit/keyword_registration.h>
 #include <limits>
 #include <cinttypes>
 
@@ -61,6 +62,11 @@ Questions? Contact sst-macro-help@sandia.gov
   debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
 
 RegisterDebugSlot(event_manager_time_vote);
+
+RegisterKeywords(
+  { "num_profile_loops", "the number of loops to execute of the parallel core for profiling parallel overheads" },
+  { "epoch_print_interval", "the print interval for stats on parallel execution" }
+);
 
 #define epoch_debug(...) \
   debug_printf(sprockit::dbg::event_manager_time_vote, \
@@ -84,12 +90,7 @@ clock_cycle_event_map::clock_cycle_event_map(
   epoch_(0)
 {
   num_profile_loops_ = params->get_optional_int_param("num_profile_loops", 0);
-#if 0
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  CPU_SET(rt->me(), &cpuset);
-  sched_setaffinity(0,sizeof(cpu_set_t), &cpuset);
-#endif
+  epoch_print_interval = params->get_optional_int_param("epoch_print_interval", epoch_print_interval); 
 }
 
 int
@@ -120,10 +121,10 @@ clock_cycle_event_map::receive_incoming_events(timestamp vote)
 
   timestamp min_time = no_events_left_time;
   if (!stopped_){
-    event_debug("voting for minimum time %lu", rt_->me(), vote.ticks());
+    event_debug("voting for minimum time %lu on epoch %d", vote.ticks(), epoch_);
     min_time = rt_->send_recv_messages(vote);
 
-    event_debug("got back minimum time %lu", rt_->me(), min_time.ticks());
+    event_debug("got back minimum time %lu", min_time.ticks());
 
     int num_recvs = rt_->num_recvs_done();
     for (int i=0; i < num_recvs; ++i){

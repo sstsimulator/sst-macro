@@ -105,8 +105,21 @@ dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 switch_id
 dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
 {
-  spkt_abort_printf("random selection not implemented");
-  return 0;
+  long nid = current_sw;
+  uint32_t attempt = 0;
+  int srcA = computeA(current_sw);
+  int srcG = computeG(current_sw);
+  int dstA = computeA(dest_sw);
+  int dstG = computeG(dest_sw);
+  while (current_sw == nid) {
+    dstA = random_number(a_, attempt);
+    if (dstG != srcG){
+      dstG = random_number(g_, attempt);
+    } 
+    nid = get_uid(dstA, dstG);
+    ++attempt;
+  }
+  return switch_id(nid);
 }
 
 void
@@ -242,8 +255,8 @@ dragonfly::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
 {
   m[routing::minimal] = 2;
   m[routing::minimal_adaptive] = 2;
-  m[routing::valiant] = 3;
-  m[routing::ugal] = 3;
+  m[routing::valiant] = 6;
+  m[routing::ugal] = 6;
 }
 
 void

@@ -79,7 +79,7 @@ template <class> struct wrap { typedef void type; };
  */
 template<typename T, class Enable=void>
 struct call_finalize_init : public std::false_type {
-public:
+ public:
   void operator()(T* t){
     //if we compile here, class T does not have a finalize_init
     //do nothing
@@ -93,7 +93,7 @@ struct call_finalize_init<T,
    >::type
 > : public std::true_type
 {
-public:
+ public:
   void operator()(T* t){
     //if we compile here, class T does have a finalize_init
     //call that function
@@ -339,7 +339,7 @@ class Factory
 
   static void print_valid_names(std::ostream& os){
     for (auto& pair : *builder_map_){
-      os << pair.first << "->" << pair.second << "\n";
+      os << pair.first << "\n";
     }
   }
 
@@ -382,8 +382,7 @@ class Factory
                   const Args&... args) {
     if (params->has_param(param_name)) {
       return get_param(param_name,params);
-    }
-    else {
+    } else {
       return nullptr;
     }
   }

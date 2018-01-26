@@ -241,8 +241,7 @@ nic::ack_send(network_message* payload)
 void
 nic::intranode_send(network_message* payload)
 {
-  nic_debug("intranode send payload %s",
-    payload->to_string().c_str());
+  nic_debug("intranode send payload %s", payload->to_string().c_str());
 
   switch(payload->type())
   {

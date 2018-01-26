@@ -106,11 +106,12 @@ pisces_delay_stats_packet::serialize_order(serializer& ser)
 std::string
 pisces_default_packet::to_string() const
 {
-  return sprockit::printf("flow %16lu%s, %d bytes bw=%8.4e %d->%d",
+  return sprockit::printf("flow %16lu%s, %d bytes bw=%8.4e %d->%d %s",
                    uint64_t(flow_id()),
                    is_tail_ ? " tail" : "",
                    num_bytes_, bw_,
-                   int(fromaddr()), int(toaddr()), bw_);
+                   int(fromaddr()), int(toaddr()), bw_,
+                   orig_ ? "with payload" : "no payload");
 }
 
 std::string

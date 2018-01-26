@@ -1,12 +1,12 @@
 
-extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_xyz_fxnannoying; int __sizeof_xyz_fxnannoying = sizeof(void*);static inline void* get_xyz_fxnannoying(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_xyz_fxnannoying;return (void*)offsetPtr; }  void fxn()
-{
+ extern int __offset_xyz_fxnannoying; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);int __sizeof_xyz_fxnannoying = sizeof(void*); void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();{
   static struct ugh {
     int a;
-  }* annoying;static int sstmac_inited_annoying = 0;if (!sstmac_inited_annoying){  sstmac_init_global_space(&annoying,__sizeof_xyz_fxnannoying,__offset_xyz_fxnannoying);  sstmac_inited_annoying = 1; }
-}
+  }* annoying;static int sstmac_inited_annoying = 0;if (!sstmac_inited_annoying){  sstmac_init_global_space(&annoying,__sizeof_xyz_fxnannoying,__offset_xyz_fxnannoying);  sstmac_inited_annoying = 1; }struct ugh ** sstmac_xyz_fxnannoying=(struct ugh **)(sstmac_global_data + __offset_xyz_fxnannoying); 
+ }}
 #include <sstmac/software/process/global.h>
 
 int __offset_xyz_fxnannoying = 0;
 extern int __sizeof_xyz_fxnannoying;
-sstmac::GlobalVariable __gv_xyz_fxnannoying(__offset_xyz_fxnannoying,__sizeof_xyz_fxnannoying,nullptr);
+sstmac::GlobalVariable __gv_xyz_fxnannoying(__offset_xyz_fxnannoying,__sizeof_xyz_fxnannoying,"xyz_fxnannoying",nullptr);

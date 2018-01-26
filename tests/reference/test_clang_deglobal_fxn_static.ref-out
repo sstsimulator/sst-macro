@@ -1,27 +1,27 @@
 
-extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_xyz_fxnx; int __sizeof_xyz_fxnx = sizeof(int);static inline void* get_xyz_fxnx(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_xyz_fxnx;return (void*)offsetPtr; }  void fxn()
-{
-  static int x = 10;static int sstmac_inited_x = 0;if (!sstmac_inited_x){  sstmac_init_global_space(&x,__sizeof_xyz_fxnx,__offset_xyz_fxnx);  sstmac_inited_x = 1; }
-  (*((int*)get_xyz_fxnx())) += 5;
-}
+ extern int __offset_xyz_fxnx; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);int __sizeof_xyz_fxnx = sizeof(int); void fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();{
+  static int x = 10;static int sstmac_inited_x = 0;if (!sstmac_inited_x){  sstmac_init_global_space(&x,__sizeof_xyz_fxnx,__offset_xyz_fxnx);  sstmac_inited_x = 1; }int* sstmac_xyz_fxnx=(int*)(sstmac_global_data + __offset_xyz_fxnx); 
+  (*sstmac_xyz_fxnx) += 5;
+ }}
 
-extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_xyz_next_fxny; int __sizeof_xyz_next_fxny = sizeof(int);static inline void* get_xyz_next_fxny(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_xyz_next_fxny;return (void*)offsetPtr; }  extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_xyz_next_fxn_1y; int __sizeof_xyz_next_fxn_1y = sizeof(int);static inline void* get_xyz_next_fxn_1y(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_xyz_next_fxn_1y;return (void*)offsetPtr; }  void next_fxn()
-{
-  static int y = 7;static int sstmac_inited_y = 0;if (!sstmac_inited_y){  sstmac_init_global_space(&y,__sizeof_xyz_next_fxny,__offset_xyz_next_fxny);  sstmac_inited_y = 1; }
+ extern int __offset_xyz_next_fxn_1y;  extern int __offset_xyz_next_fxny; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);int __sizeof_xyz_next_fxny = sizeof(int); extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);int __sizeof_xyz_next_fxn_1y = sizeof(int); void next_fxn()
+{ char* sstmac_global_data = get_sstmac_global_data();{
+  static int y = 7;static int sstmac_inited_y = 0;if (!sstmac_inited_y){  sstmac_init_global_space(&y,__sizeof_xyz_next_fxny,__offset_xyz_next_fxny);  sstmac_inited_y = 1; }int* sstmac_xyz_next_fxny=(int*)(sstmac_global_data + __offset_xyz_next_fxny); 
   {
-    static int y = 8;static int sstmac_inited_y = 0;if (!sstmac_inited_y){  sstmac_init_global_space(&y,__sizeof_xyz_next_fxn_1y,__offset_xyz_next_fxn_1y);  sstmac_inited_y = 1; }
-    (*((int*)get_xyz_next_fxn_1y())) -= 1;
+    static int y = 8;static int sstmac_inited_y = 0;if (!sstmac_inited_y){  sstmac_init_global_space(&y,__sizeof_xyz_next_fxn_1y,__offset_xyz_next_fxn_1y);  sstmac_inited_y = 1; }int* sstmac_xyz_next_fxn_1y=(int*)(sstmac_global_data + __offset_xyz_next_fxn_1y); 
+    (*sstmac_xyz_next_fxn_1y) -= 1;
   }
-  (*((int*)get_xyz_next_fxny())) += 3;
-}
+  (*sstmac_xyz_next_fxny) += 3;
+ }}
 #include <sstmac/software/process/global.h>
 
 int __offset_xyz_fxnx = 0;
 extern int __sizeof_xyz_fxnx;
-sstmac::GlobalVariable __gv_xyz_fxnx(__offset_xyz_fxnx,__sizeof_xyz_fxnx,nullptr);
+sstmac::GlobalVariable __gv_xyz_fxnx(__offset_xyz_fxnx,__sizeof_xyz_fxnx,"xyz_fxnx",nullptr);
 int __offset_xyz_next_fxn_1y = 0;
 extern int __sizeof_xyz_next_fxn_1y;
-sstmac::GlobalVariable __gv_xyz_next_fxn_1y(__offset_xyz_next_fxn_1y,__sizeof_xyz_next_fxn_1y,nullptr);
+sstmac::GlobalVariable __gv_xyz_next_fxn_1y(__offset_xyz_next_fxn_1y,__sizeof_xyz_next_fxn_1y,"xyz_next_fxn_1y",nullptr);
 int __offset_xyz_next_fxny = 0;
 extern int __sizeof_xyz_next_fxny;
-sstmac::GlobalVariable __gv_xyz_next_fxny(__offset_xyz_next_fxny,__sizeof_xyz_next_fxny,nullptr);
+sstmac::GlobalVariable __gv_xyz_next_fxny(__offset_xyz_next_fxny,__sizeof_xyz_next_fxny,"xyz_next_fxny",nullptr);
