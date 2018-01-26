@@ -97,8 +97,12 @@ logp_param_expander::expand_amm1_memory(
 {
   //now just get the strings
   std::string mem_bw_str = mem_params->get_param("bandwidth");
-  mem_params->add_param_override("max_single_bandwidth", mem_bw_str);
-  mem_params->add_param_override("total_bandwidth", mem_bw_str);
+  if (!mem_params->has_param("max_single_bandwidth")){
+    mem_params->add_param_override("max_single_bandwidth", mem_bw_str);
+  } 
+  if (!mem_params->has_param("total_bandwidth")){
+    mem_params->add_param_override("total_bandwidth", mem_bw_str);
+  }
 }
 
 void

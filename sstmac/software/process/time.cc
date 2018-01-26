@@ -58,6 +58,15 @@ extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
   return 0;
 }
 
+extern "C" int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem)
+{
+  uint64_t ticks = req->tv_sec * timestamp::seconds; 
+  ticks += req->tv_nsec * timestamp::nanoseconds;
+  operating_system* os = operating_system::current_os();
+  os->sleep(timestamp(ticks, timestamp::exact));
+  return 0;
+}
+
 //make sure this doesn't get overwritten
 #undef gettimeofday
 extern "C" double sstmac_wall_time()

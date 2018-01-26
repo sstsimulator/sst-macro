@@ -54,14 +54,11 @@ namespace sprockit {
 class serializable
 {
  public:
-  virtual const char*
-  cls_name() const = 0;
+  virtual const char* cls_name() const = 0;
 
-  virtual void
-  serialize_order(sprockit::serializer& ser) = 0;
+  virtual void serialize_order(sprockit::serializer& ser) = 0;
 
-  virtual uint32_t
-  cls_id() const = 0;
+  virtual uint32_t cls_id() const = 0;
 
   virtual ~serializable() { }
 

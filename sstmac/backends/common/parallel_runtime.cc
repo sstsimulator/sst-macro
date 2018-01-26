@@ -217,7 +217,6 @@ parallel_runtime::bcast_file_stream(const std::string &fname)
   } else {
     std::string all_text;
     bcast_string(all_text, 0);
-    //std::cout << all_text << std::endl;
     return new std::stringstream(all_text);
   }
 }
@@ -323,7 +322,11 @@ parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
 
 void parallel_runtime::send_event(ipc_event_t* iev)
 {
-  uint32_t overhead = sizeof(ipc_event_base);
+  //somehow this doesn't return the sum of sizes
+  //uint32_t overhead = sizeof(ipc_event_base);
+  const uint32_t overhead = sizeof(uint32_t) + sizeof(uint32_t)
+    + sizeof(timestamp) + sizeof(uint32_t) + sizeof(uint32_t)
+    + sizeof(int) + sizeof(int) + sizeof(bool);
 
   sprockit::serializer ser;
   ser.start_sizing();

@@ -51,6 +51,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/skeleton.h>
 
+#undef sleep
+
 namespace sstmac {
 
 class test_service : public distributed_service
