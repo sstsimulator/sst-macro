@@ -496,7 +496,7 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
 void
 SkeletonASTVisitor::setFundamentalTypes(QualType qt, cArrayConfig& cfg)
 {
-  cfg.fundamentalTypeString = GetTypeString(qt.split());
+  cfg.fundamentalTypeString = GetAsString(qt);
   auto pos = cfg.fundamentalTypeString.find("anonymous struct");
   if (pos != std::string::npos){
     cfg.fundamentalTypeString = "anon";
@@ -616,8 +616,7 @@ SkeletonASTVisitor::reconstructType(SourceLocation typeDeclCutoff,
 
 std::string
 SkeletonASTVisitor::getRecordTypeName(const RecordDecl* rd){
-  SplitQualType st(rd->getTypeForDecl(), Qualifiers());
-  std::string name = GetTypeString(st);
+  std::string name = GetAsString(rd->getTypeForDecl());
   if (name.empty()){
     errorAbort(rd->getLocStart(), *ci_,
                "got back empty name for struct type");
@@ -645,7 +644,7 @@ SkeletonASTVisitor::addTypeReconstructionText(const RecordDecl* rd, Reconstructe
   int varCount = 0;
   for (QualType& qt : rt.fundamentalFieldTypes){
     if (qt->isFundamentalType()){
-      os << GetTypeString(qt.split()) << " var" << varCount++ << "; ";
+      os << GetAsString(qt) << " var" << varCount++ << "; ";
     } else if (qt->isPointerType() || qt->isArrayType()){
       os << "void* var" << varCount++ << "; ";
     } else {
@@ -689,7 +688,7 @@ SkeletonASTVisitor::getTypeNameForSizing(SourceLocation typeDeclCutoff, QualType
     return retType + cfg.arrayIndices.str();
   } else if (qt->isFundamentalType()){
     //easy peasy
-    return GetTypeString(qt.split());
+    return GetAsString(qt);
   } else if (qt->isPointerType()){
     return "void*";
   } else if (qt->isStructureType() || qt->isClassType() || qt->isUnionType()){
@@ -722,7 +721,7 @@ void
 SkeletonASTVisitor::arrayFxnPointerTypedef(VarDecl* D, SkeletonASTVisitor::ArrayInfo* info,
                                    std::stringstream& sstr)
 {
-  std::string typeStr = GetTypeString(D->getType().split());
+  std::string typeStr = GetAsString(D->getType());
   auto replPos = typeStr.find("*[");
   std::string typedefText = typeStr.insert(replPos+1, info->typedefName);
   sstr << "typedef " << typedefText;
@@ -808,7 +807,7 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
       if (isFxnPointerForm(ety)){
         arrayFxnPointerTypedef(D, info, sstr);
       } else {
-        sstr << "typedef " << GetTypeString(ety.split())
+        sstr << "typedef " << GetAsString(ety)
              << " " << info->typedefName << "[]";
       }
       info->typedefString = sstr.str();
@@ -918,7 +917,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     retType = arrayInfo->retType;
     deref = arrayInfo->needsDeref;
   } else {
-    retType = GetTypeString(D->getType().split()) + "*";
+    retType = GetAsString(D->getType()) + "*";
   }
 
   if (anonRecord){
@@ -1060,7 +1059,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
       PrettyPrinter pp;
       pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"
            << " = sstmac::new_cpp_global<"
-           << QualType::getAsString(D->getType().split())
+           << GetAsString(D->getType())
            << ">(" << "__offset_" << scopeUniqueVarName;
       if (D->getInit()){
         if (D->getInit()->getStmtClass() == Stmt::CXXConstructExprClass){
