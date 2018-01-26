@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 using sstmac::timestamp;
 using os = sstmac::sw::operating_system;
 
-extern "C" int sstmac_sleep(unsigned int secs){
+extern "C" unsigned int sstmac_sleep(unsigned int secs){
   os::current_os()->sleep(timestamp(secs, timestamp::seconds));
   return 0;
 }

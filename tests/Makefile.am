@@ -87,9 +87,9 @@ include Makefile.stats_tests
 include Makefile.unit_tests
 include Makefile.alloc_tests
 include Makefile.external_tests
-include Makefile.skeleton_tests
 include Makefile.core_tests
 endif
+include Makefile.skeleton_tests
 
 
 

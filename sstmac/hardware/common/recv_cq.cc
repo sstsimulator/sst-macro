@@ -86,8 +86,7 @@ recv_cq::recv(uint64_t unique_id, uint32_t bytes, message* orig)
     message* ret = incoming.msg;
     bytes_recved_.erase(unique_id);
     return ret;
-  }
-  else {
+  } else {
     return NULL;
   }
 }

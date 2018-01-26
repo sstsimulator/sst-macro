@@ -57,13 +57,13 @@ namespace hw {
 
 /**
  @class pisces_nic
- Network interface compatible with sending packet trains
+ Network interface compatible with sending pisces packets
  */
 class pisces_nic :
   public nic,
   public packetizer_callback
 {
-  FactoryRegister("pisces | pisces", nic, pisces_nic,
+  FactoryRegister("pisces", nic, pisces_nic,
               "implements a nic that models messages as a packet flow")
  public:
   pisces_nic(sprockit::sim_parameters* params, node* parent);
@@ -118,7 +118,7 @@ class pisces_nic :
 class pisces_netlink :
   public netlink
 {
-  FactoryRegister("pisces | pisces", netlink, pisces_netlink,
+  FactoryRegister("pisces", netlink, pisces_netlink,
               "implements a netlink that models messages as a packet flow")
  public:
   pisces_netlink(sprockit::sim_parameters* params, node* parent);

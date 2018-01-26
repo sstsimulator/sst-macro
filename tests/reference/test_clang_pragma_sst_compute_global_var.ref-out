@@ -1,14 +1,14 @@
 
-int bound_i = 5;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_bound_i; void* __ptr_bound_i = &bound_i; int __sizeof_bound_i = sizeof(bound_i);static inline void* get_bound_i(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_bound_i;return (void*)offsetPtr; }  
-int bound_j = 10;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_bound_j; void* __ptr_bound_j = &bound_j; int __sizeof_bound_j = sizeof(bound_j);static inline void* get_bound_j(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_bound_j;return (void*)offsetPtr; }  
+int bound_i = 5;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_bound_i = &bound_i; int __sizeof_bound_i = sizeof(bound_i); extern int __offset_bound_i; 
+int bound_j = 10;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_bound_j = &bound_j; int __sizeof_bound_j = sizeof(bound_j); extern int __offset_bound_j; 
 
 int fxn()
-{
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_bound_i=(int*)(sstmac_global_data + __offset_bound_i); int* sstmac_bound_j=(int*)(sstmac_global_data + __offset_bound_j); {
   int i=0;
   int mul = 0;
   double* x = new double[10];
   int* idx = new int[5];
- { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=((((*((int*)get_bound_i())))-(0)));  intops += tripCount0*1;{  uint64_t tripCount1=tripCount0*((((*((int*)get_bound_j())))-(0)));  flops += tripCount1*1; readBytes += tripCount1*36; writeBytes += tripCount1*12; intops += tripCount1*16;}}sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/ }
+ { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=((((*sstmac_bound_i))-(0)));  intops += tripCount0*1;{  uint64_t tripCount1=tripCount0*((((*sstmac_bound_j))-(0)));  flops += tripCount1*1; readBytes += tripCount1*36; writeBytes += tripCount1*12; intops += tripCount1*16;}}sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/ }
 
 
 
@@ -22,14 +22,14 @@ int fxn()
 
 
   return 0;
-}
+ }}
 #include <sstmac/software/process/global.h>
 
 int __offset_bound_i = 0;
 extern int __sizeof_bound_i;
 extern void* __ptr_bound_i;
-sstmac::GlobalVariable __gv_bound_i(__offset_bound_i,__sizeof_bound_i,__ptr_bound_i);
+sstmac::GlobalVariable __gv_bound_i(__offset_bound_i,__sizeof_bound_i,"bound_i",__ptr_bound_i);
 int __offset_bound_j = 0;
 extern int __sizeof_bound_j;
 extern void* __ptr_bound_j;
-sstmac::GlobalVariable __gv_bound_j(__offset_bound_j,__sizeof_bound_j,__ptr_bound_j);
+sstmac::GlobalVariable __gv_bound_j(__offset_bound_j,__sizeof_bound_j,"bound_j",__ptr_bound_j);

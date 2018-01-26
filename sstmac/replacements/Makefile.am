@@ -57,6 +57,6 @@ nobase_library_include_HEADERS += \
   signal.h \
   sstmac_pthread_clear.h \
   sys/time.h \
-  sys/signal.h
+  sys/signal.h 
 endif
 

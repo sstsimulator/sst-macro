@@ -11,6 +11,7 @@ test_sumi_%.$(CHKSUF): sumi/sst_%
 if BUILD_SUMI_MPI
 
 CORETESTS+= \
+  test_core_apps_ping_all_torus_sculpin \
   test_core_apps_ping_all_dragonfly \
   test_core_apps_ping_all_dragonfly_minimal \
   test_core_apps_ping_all_ns \

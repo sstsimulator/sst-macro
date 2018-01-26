@@ -102,7 +102,7 @@ logp_nic::mtl_handle(event *ev)
 void
 logp_nic::do_send(network_message* msg)
 {
-  long num_bytes = msg->byte_length();
+  uint64_t num_bytes = msg->byte_length();
   timestamp now_ = now();
   timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
   nic_debug("logp injection queued at %8.4e, sending at %8.4e for message %s",

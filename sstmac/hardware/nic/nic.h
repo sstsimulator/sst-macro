@@ -156,6 +156,8 @@ class nic :
    */
   void recv_message(message* msg);
 
+  void send_to_node(network_message* netmsg);
+
  protected:
   nic(sprockit::sim_parameters* params, node* parent);
 
@@ -169,8 +171,6 @@ class nic :
     @param payload The network message to send
   */
   virtual void do_send(network_message* payload) = 0;
-
-  void send_to_node(network_message* netmsg);
 
   bool negligible_size(int bytes) const {
     return bytes <= negligible_size_;

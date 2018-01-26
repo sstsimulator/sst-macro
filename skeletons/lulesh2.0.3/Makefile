@@ -54,10 +54,14 @@ runlulesh2.0.3: $(OBJECTS2.0)
 	@echo "Linking"
 	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@ 
 
+liblulesh.so: $(OBJECTS2.0)
+	@echo "Linking SST core .so"
+	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@ 
+
 clean:
 	/bin/rm -f *.o *~ $(OBJECTS) $(LULESH_EXEC)
 	/bin/rm -rf *.dSYM
-	rm -f sstmac_headers
+	rm -f sstmac_headers liblulesh.so
 
 tar: clean
 	cd .. ; tar cvf lulesh-2.0.tar LULESH-2.0 ; mv lulesh-2.0.tar LULESH-2.0

@@ -337,7 +337,7 @@ sumi_transport::nidlist() const
 
 void
 sumi_transport::send(
-  long byte_length,
+  uint64_t byte_length,
   sumi::message* msg,
   int sendType,
   int dst_rank)
@@ -348,7 +348,7 @@ sumi_transport::send(
 
 void
 sumi_transport::send(
-  long byte_length,
+  uint64_t byte_length,
   int dst_task,
   node_id dst_node,
   int dst_app,
@@ -444,8 +444,8 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
   if (pending_messages_.empty() && blocking) {
     blocked_threads_.push_back(thr);
     debug_printf(sprockit::dbg::sumi,
-                 "Rank %d sumi queue %p has no pending messages - blocking poller %p",
-                 rank(), this, thr);
+                 "Rank %d sumi queue %p has no pending messages, blocking poller %p: %s",
+                 rank(), this, thr, timeout >= 0. ? "with timeout" : "no timeout");
     if (timeout >= 0.){
       os_->block_timeout(timeout);
     } else {
@@ -471,6 +471,9 @@ sumi_transport::poll_pending_messages(bool blocking, double timeout)
 
   //we have been unblocked because a message has arrived
   transport_message* msg = pending_messages_.front();
+  debug_printf(sprockit::dbg::sumi,
+               "Rank %d sumi queue %p has no pending messages - blocking poller %p",
+               rank(), this, thr);
   pending_messages_.pop_front();
   process(msg);
 

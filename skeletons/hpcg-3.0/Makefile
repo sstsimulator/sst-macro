@@ -55,11 +55,15 @@ all: runhpcg-3.0
 runhpcg-3.0: build/main.o $(HPCG_DEPS)
 	$(LINKER) $(LINKFLAGS) build/main.o $(HPCG_DEPS) $(HPCG_LIBS) -o $@
 
+libhpcg.so: build/main.o $(HPCG_DEPS)
+	@echo "Linking SST core .so"
+	$(LINKER) $(LINKFLAGS) build/main.o $(HPCG_DEPS) $(HPCG_LIBS) -o $@
+
 sstmac_headers: $(ALL_HEADERS)
 	find `pwd` -name "*.hpp" > $@
 
 clean:
-	rm -f build/*.o hpcg-3.0 sstmac_headers
+	rm -f build/*.o hpcg-3.0 sstmac_headers libhpcg.so
 
 .PHONY: all clean
 

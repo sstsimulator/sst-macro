@@ -13,6 +13,20 @@
 
 #include_next <stdlib.h>
 
+#define atexit sstmac_atexit
+#define _exit sstmac_exit
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int sstmac_atexit(void (*)());
+void sstmac_exit(int code);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 
 

@@ -510,6 +510,22 @@ SSTMAC_pthread_cond_broadcast(sstmac_pthread_cond_t * cond)
 }
 
 extern "C" int
+SSTMAC_pthread_condattr_getpshared(const sstmac_pthread_condattr_t* attr, int* pshared)
+{
+  *pshared = SSTMAC_PTHREAD_PROCESS_PRIVATE;
+  return 0;
+}
+
+extern "C" int
+SSTMAC_pthread_condattr_setpshared(sstmac_pthread_condattr_t* attr, int pshared)
+{
+  if (pshared != SSTMAC_PTHREAD_PROCESS_PRIVATE){
+    sprockit::abort("SST does not yet support PTHREAD_PROCESS_SHARED condition");
+  }
+  return 0;
+}
+
+extern "C" int
 SSTMAC_pthread_once(sstmac_pthread_once_t * once_init, void
                     (*init_routine)(void))
 {

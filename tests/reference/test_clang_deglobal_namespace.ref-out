@@ -1,30 +1,30 @@
 
-extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_x; namespace ns {
+extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);namespace ns {
  namespace ns2 {
-  int x = 10;void* __ptr_x = &x; int __sizeof_x = sizeof(x);static inline void* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_x;return (void*)offsetPtr; }  
+  int x = 10;void* __ptr_x = &x; int __sizeof_x = sizeof(x); extern int __offset_x; 
  }
 }
 
-extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int); extern int __offset_x; namespace ns {
-int x = 10;void* __ptr_x = &x; int __sizeof_x = sizeof(x);static inline void* get_x(){  int stack; int* stackPtr = &stack;  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;  char** globalMapPtr = (char**)(localStorage+sizeof(int));  char* offsetPtr = *globalMapPtr + __offset_x;return (void*)offsetPtr; }  
+extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);namespace ns {
+int x = 10;void* __ptr_x = &x; int __sizeof_x = sizeof(x); extern int __offset_x; 
 }
 
 void fxn()
-{
-  (*((int*)::ns::get_x())) += 5;
-  (*((int*)::ns::ns2::get_x())) -= 3;
-}
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac___ns__ns2__x=(int*)(sstmac_global_data + ::ns::ns2::__offset_x); int* sstmac___ns__x=(int*)(sstmac_global_data + ::ns::__offset_x); {
+  (*sstmac___ns__x) += 5;
+  (*sstmac___ns__ns2__x) -= 3;
+ }}
 #include <sstmac/software/process/global.h>
 
 namespace ns {
  int __offset_x = 0;
  extern int __sizeof_x;
  extern void* __ptr_x;
- sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,__ptr_x);
+ sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,"x",__ptr_x);
  namespace ns2 {
   int __offset_x = 0;
   extern int __sizeof_x;
   extern void* __ptr_x;
-  sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,__ptr_x);
+  sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,"x",__ptr_x);
  }
 }

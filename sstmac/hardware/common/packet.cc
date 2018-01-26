@@ -52,7 +52,7 @@ namespace hw {
 
 packet::packet(
   serializable* orig,
-  int num_bytes,
+  uint32_t num_bytes,
   bool is_tail) :
  num_bytes_(num_bytes),
  is_tail_(is_tail),

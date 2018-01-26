@@ -64,6 +64,10 @@ nobase_library_include_HEADERS = \
   pisces/pisces_switch.h \
   pisces/pisces_tiled_switch.h \
   pisces/pisces_memory_model.h \
+  sculpin/sculpin_nic.h \
+  sculpin/sculpin_switch.h \
+  sculpin/sculpin_param_expander.h \
+  sculpin/sculpin.h \
   network/network_id.h \
   network/network_message.h \
   network/network_message_fwd.h \
@@ -133,6 +137,10 @@ libsstmac_hw_la_SOURCES =  \
   pisces/pisces_switch.cc \
   pisces/pisces_tiled_switch.cc \
   pisces/pisces_memory_model.cc \
+  sculpin/sculpin_nic.cc \
+  sculpin/sculpin_switch.cc \
+  sculpin/sculpin_param_expander.cc \
+  sculpin/sculpin.cc \
   network/network_message.cc \
   interconnect/interconnect.cc \
   switch/network_switch.cc \

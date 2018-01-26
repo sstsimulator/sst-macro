@@ -178,13 +178,11 @@ class message :
     payload_type_ = ty;
   }
 
-  virtual message* clone() const;
+  virtual message* clone(payload_type_t ty) const;
 
   message* clone_ack() const;
 
-  message* clone_msg() const {
-    return clone();
-  }
+  virtual void write_sync_value(){}
 
   void set_owns_local_buffer(bool flag){
     owns_local_buffer_ = flag;

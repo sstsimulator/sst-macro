@@ -81,6 +81,7 @@ class thread
 {
  public:
   class kill_exception : public std::exception {};
+  class clean_exit_exception: public std::exception {};
 
   friend class operating_system;
   friend class app;
@@ -195,8 +196,12 @@ class thread
    * This can get called by anyone to have a thread exit, including during normal app termination
    * This must be called while running on this thread's context, NOT the DES thread or any other thread
    */
-  void kill() {
-    throw kill_exception();
+  void kill(int code = 1) {
+    if (code == 0){
+      throw clean_exit_exception();
+    } else {
+      throw kill_exception();
+    }
   }
 
   operating_system* os() const {

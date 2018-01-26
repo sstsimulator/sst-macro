@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stddef.h>
 #include <stdio.h>
 #include <sumi.h>
+#include <skeleton.h>
 
 #define sstmac_app_name relocation_ptr
 

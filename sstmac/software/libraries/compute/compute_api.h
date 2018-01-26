@@ -58,7 +58,7 @@ extern "C" {
  * @param secs
  * @return Always zero, successful return code for Linux
  */
-int sstmac_sleep(unsigned int secs);
+unsigned int sstmac_sleep(unsigned int secs);
 
 /**
  * @brief sstmac_usleep SST virtual equivalent of Linux usleep
