@@ -57,7 +57,7 @@ namespace sstmac {
 
 class GlobalVariable {
  public:
-  GlobalVariable(int& offset, const int size, const void* initData);
+  GlobalVariable(int& offset, const int size, const char* name, const void* initData);
 
   ~GlobalVariable();
 
@@ -143,9 +143,9 @@ struct global {};
 
 template <class T>
 struct global<T*,void> : public GlobalVariable {
-  explicit global() : GlobalVariable(offset,sizeof(T*),nullptr){}
+  explicit global() : GlobalVariable(offset,sizeof(T*),"",nullptr){}
 
-  explicit global(T* t) : GlobalVariable(offset, sizeof(T*), &t){}
+  explicit global(T* t) : GlobalVariable(offset, sizeof(T*), "", &t){}
 
   T*& get() {
     return get_global_ref_at_offset<T*>(offset);
@@ -175,9 +175,9 @@ struct global<T*,void> : public GlobalVariable {
 template <class T>
 struct global<T,typename std::enable_if<std::is_arithmetic<T>::value>::type> : public GlobalVariable {
 
-  explicit global() : GlobalVariable(offset, sizeof(T), nullptr){}
+  explicit global() : GlobalVariable(offset, sizeof(T), "", nullptr){}
 
-  explicit global(const T& t) : GlobalVariable(offset, sizeof(T), &t){}
+  explicit global(const T& t) : GlobalVariable(offset, sizeof(T), "", &t){}
 
   template <class U>
   T& operator=(const U& u){

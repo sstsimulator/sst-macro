@@ -79,22 +79,27 @@ message::is_nic_ack() const
 message*
 message::clone_ack() const
 {
-  message* ack = clone_msg();
   switch (payload_type()){
-    case message::eager_payload:
+    case message::eager_payload: {
+      message* ack = clone(message::eager_payload_ack);
       ack->set_payload_type(message::eager_payload_ack);
-      break;
-    case message::rdma_get:
+      return ack;
+    }
+    case message::rdma_get: {
+      message* ack = clone(message::rdma_get_ack);
       ack->set_payload_type(message::rdma_get_ack);
-      break;
-    case message::rdma_put:
+      return ack;
+    }
+    case message::rdma_put: {
+      message* ack = clone(message::rdma_put_ack);
       ack->set_payload_type(message::rdma_put_ack);
-      break;
+      return ack;
+    }
     default:
       spkt_abort_printf("message::clone_ack: invalid payload type %s for message %s",
         message::tostr(payload_type()), to_string().c_str());
   }
-  return ack;
+  return nullptr;
 }
 
 void
@@ -106,7 +111,7 @@ message::reverse()
 }
 
 message*
-message::clone() const
+message::clone(payload_type_t ty) const
 {
   message* cln = new message;
   clone_into(cln);
@@ -189,10 +194,16 @@ message::buffer_send(public_buffer& buf, long num_bytes)
   buf.ptr = new_buf;
 }
 
+static char segfault_check[1024];
+
 void
 message::inject_local_to_remote()
 {
   if (local_buffer_.ptr){ //might be null
+    if (num_bytes_ <= 1024){
+      ::memcpy(remote_buffer_.ptr, segfault_check, num_bytes_);
+      ::memcpy(segfault_check, local_buffer_.ptr, num_bytes_);
+    }
     ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
     delete[] (char*) local_buffer_.ptr;
     local_buffer_.ptr = nullptr;

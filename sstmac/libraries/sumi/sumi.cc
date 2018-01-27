@@ -50,6 +50,14 @@ Questions? Contact sst-macro-help@sandia.gov
 using namespace sstmac;
 using namespace sstmac::sw;
 
+
+//this redirection macro foobars things here
+#ifdef sleep
+#if sleep == sstmac_sleep
+#undef sleep
+#endif
+#endif
+
 namespace sumi {
 
 static sumi_transport* current_transport()

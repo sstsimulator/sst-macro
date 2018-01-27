@@ -48,10 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <fstream>
 #include <sstmac/common/sstmac_config.h>
 
-#if CLANG_VERSION_MAJOR >= 6
 clang::LangOptions Printing::langOpts;
 clang::PrintingPolicy Printing::policy(Printing::langOpts);
-#endif
 
 using namespace clang;
 using namespace clang::driver;
@@ -60,7 +58,7 @@ using namespace clang::tooling;
 static const Type*
 getBaseType(VarDecl* D){
   auto ty = D->getType().getTypePtr();
-  while (ty->isPointerType()){
+  while (ty->isPointerType() && !(ty->isFunctionPointerType() || ty->isFunctionProtoType())){
     ty = ty->getPointeeType().getTypePtr();
   }
   return ty;
@@ -73,6 +71,11 @@ SkeletonASTVisitor::initConfig()
   if (skelStr){
     bool doSkel = atoi(skelStr);
     noSkeletonize_ = !doSkel;
+  }
+
+  const char* mainStr = getenv("SSTMAC_REFACTOR_MAIN");
+  if (mainStr){
+    refactorMain_ = atoi(mainStr);
   }
 }
 
@@ -158,7 +161,25 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     const char* fullpath = realpath(ploc.getFilename(), fullpathBuffer);
     if (fullpath){
       //is this in the list of valid headers
-      return validHeaders_.find(fullpath) != validHeaders_.end();
+      bool valid = validHeaders_.find(fullpath) != validHeaders_.end();
+      if (!valid){
+        std::string path(fullpath);
+        auto slashPos = path.find_last_of('/');
+        if (slashPos != std::string::npos){
+          path = path.substr(slashPos);
+        }
+        auto dotPos = path.find_last_of('.');
+        if (dotPos == std::string::npos){
+          return valid; //no suffix - assume valid c++ header with no suffix, e.g. <cstdlib>
+        }
+        std::string suffix = path.substr(dotPos+1);
+        if (suffix != "h" && suffix != "hpp"){
+          std::string error = std::string("got included global variable in unknown file ")
+              + fullpath + " with suffix ." + suffix;
+          errorAbort(D->getLocStart(), *ci_, error);
+        }
+      }
+      return valid;
     } else {
       warn(startLoc, *ci_,
            "bad header path location, you probably abused and misused #line in your file");
@@ -324,7 +345,7 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
 bool 
 SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+  bool skipVisit = activatePragmasForStmt(stmt);
   if (skipVisit){
     return true;
   }
@@ -337,7 +358,7 @@ SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQue
 bool
 SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(expr);
+  bool skipVisit = activatePragmasForStmt(expr);
   if (skipVisit){
     return true;
   }
@@ -472,14 +493,19 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
   return true;
 }
 
-struct cArrayConfig {
-  std::string fundamentalTypeString;
-  QualType fundamentalType;
-  std::stringstream arrayIndices;
-};
+void
+SkeletonASTVisitor::setFundamentalTypes(QualType qt, cArrayConfig& cfg)
+{
+  cfg.fundamentalTypeString = GetAsString(qt);
+  auto pos = cfg.fundamentalTypeString.find("anonymous struct");
+  if (pos != std::string::npos){
+    cfg.fundamentalTypeString = "anon";
+  }
+  cfg.fundamentalType = qt;
+}
 
-static void
-getArrayType(const Type* ty, cArrayConfig& cfg)
+void
+SkeletonASTVisitor::getArrayType(const Type* ty, cArrayConfig& cfg)
 {
   const ConstantArrayType* aty = static_cast<const ConstantArrayType*>(ty->getAsArrayTypeUnsafe());
   QualType qt = aty->getElementType();
@@ -489,56 +515,228 @@ getArrayType(const Type* ty, cArrayConfig& cfg)
     const ConstantArrayType* next = static_cast<const ConstantArrayType*>(qt.getTypePtr()->getAsArrayTypeUnsafe());
     getArrayType(next, cfg);
   } else {
-    cfg.fundamentalTypeString = GetTypeString(qt.split());
-    cfg.fundamentalType = qt;
+    setFundamentalTypes(qt, cfg);
   }
 }
 
-static void sizeOfRecord(const RecordDecl* decl, std::ostream& os);
-
-static void sizeOfType(QualType qt, std::ostream& os)
+void
+SkeletonASTVisitor::addRecordField(SourceLocation typeDeclCutoff,
+                                   const RecordDecl* rd, ReconstructedType& rt,
+                                   std::map<const RecordDecl*, ReconstructedType>& newTypes)
 {
-  auto ty = qt.getTypePtr();
-  if (ty->isFundamentalType()){
-    os << "sizeof(" << QualType::getAsString(qt.split()) << ")";
-  } else if (ty->isPointerType()) {
-    os << "sizeof(void*)";
-  } else if (ty->isStructureType() || ty->isClassType()) {
-    const RecordDecl* rd = ty->getAsStructureType()->getDecl();
-    sizeOfRecord(rd, os);
-  } else if (ty->isUnionType()) {
-    const RecordDecl* rd = ty->getAsUnionType()->getDecl();
-    sizeOfRecord(rd, os);
-  } else if (ty->isConstantArrayType()) {
-    cArrayConfig cfg;
-    getArrayType(ty, cfg);
-    os << "sizeof(char" << cfg.arrayIndices.str() << ")*";
-    sizeOfType(cfg.fundamentalType, os);
-  } else if (ty->isArrayType()){
-    //not a constant array - so treat as pointer
-    os << "sizeof(void*)";
-  }
-}
-
-static void
-sizeOfRecord(const RecordDecl* decl, std::ostream& os)
-{
-  os << "(0";
-  for (auto iter=decl->decls_begin(); iter != decl->decls_end(); ++iter){
-    Decl* d = *iter;
-    if (isa<VarDecl>(d)){
-      VarDecl* vd = cast<VarDecl>(d);
-      os << "+"; sizeOfType(vd->getType(), os);
+  if (rd->getLocStart() < typeDeclCutoff){
+    //oh, cool, we can just directly put this in the specifier
+    rt.classFieldTypes.push_back(rd);
+  } else {
+    //ugh - static struct decl or something
+    //we have to unroll this
+    rt.newClassFieldTypes.push_back(rd);
+    rt.structDependencies.insert(rd);
+    auto iter = newTypes.find(rd);
+    if (iter == newTypes.end()){
+      ReconstructedType& newRt = newTypes[rd];
+      reconstructType(typeDeclCutoff, rd, newRt, newTypes);
     }
   }
-  os << ")";
 }
 
-static void
-sizeOfString(VarDecl* decl, std::ostream& os)
+static RecordDecl* getRecordDeclForType(QualType qt)
 {
-  sizeOfType(decl->getType(), os);
+  if (qt->isStructureType() || qt->isClassType()){
+    const RecordType* rt = qt->getAsStructureType();
+    return rt->getDecl();
+  } else if (qt->isUnionType()){
+    const RecordType* rt = qt->getAsUnionType();
+    return rt->getDecl();
+  } else {
+    return nullptr;
+  }
 }
+
+void
+SkeletonASTVisitor::reconstructType(SourceLocation typeDeclCutoff,
+                                    QualType qt, ReconstructedType& rt,
+                                    std::map<const RecordDecl*, ReconstructedType>& newTypes)
+{
+  auto ty = qt.getTypePtr();
+  if (qt->isConstantArrayType()){
+    cArrayConfig cfg;
+    getArrayType(ty, cfg);
+    std::string elementType = getTypeNameForSizing(typeDeclCutoff, cfg.fundamentalType, newTypes);
+    RecordDecl* rd = getRecordDeclForType(cfg.fundamentalType);
+    if (rd){
+      rt.structDependencies.insert(rd);
+    }
+    rt.arrayTypes.emplace_back(elementType, cfg.arrayIndices.str());
+  } else if (qt->isFundamentalType() || qt->isPointerType() || qt->isArrayType()){
+    rt.fundamentalFieldTypes.push_back(qt);
+  } else {
+    RecordDecl* rd = getRecordDeclForType(qt);
+    if (rd){
+     addRecordField(typeDeclCutoff, rd, rt, newTypes);
+    }
+  }
+}
+
+void
+SkeletonASTVisitor::reconstructType(SourceLocation typeDeclCutoff,
+                                    const RecordDecl* decl, ReconstructedType& rt,
+                                    std::map<const RecordDecl*, ReconstructedType>& newTypes)
+{
+  rt.typeIndex = reconstructCount_++;
+
+  int numDecls = 0;
+  for (auto iter=decl->decls_begin(); iter != decl->decls_end(); ++iter){
+    Decl* d = *iter;
+    switch (d->getKind()){
+    case Decl::Var:
+    {
+      VarDecl* vd = cast<VarDecl>(d);
+      reconstructType(typeDeclCutoff, vd->getType(), rt, newTypes);
+      ++numDecls;
+      break;
+    }
+    case Decl::Field:
+    {
+      FieldDecl* vd = cast<FieldDecl>(d);
+      reconstructType(typeDeclCutoff, vd->getType(), rt, newTypes);
+      ++numDecls;
+      break;
+    }
+    default:
+      break; //do nothing
+    }
+  }
+  if (numDecls == 0){
+    decl->dump();
+    errorAbort(decl->getLocStart(), *ci_,
+               "failed sizing struct - is this actually empty?");
+  }
+}
+
+std::string
+SkeletonASTVisitor::getRecordTypeName(const RecordDecl* rd){
+  std::string name = GetAsString(rd->getTypeForDecl());
+  if (name.empty()){
+    errorAbort(rd->getLocStart(), *ci_,
+               "got back empty name for struct type");
+  }
+  return name;
+}
+
+void
+SkeletonASTVisitor::addTypeReconstructionText(const RecordDecl* rd, ReconstructedType& rt,
+                                              std::map<const RecordDecl*, ReconstructedType>& newTypes,
+                                              std::set<const RecordDecl*>& alreadyDone,
+                                              std::ostream& os)
+{
+  if (alreadyDone.find(rd) != alreadyDone.end()){
+    return;
+  }
+  alreadyDone.insert(rd);
+
+  for (const RecordDecl* next : rt.structDependencies){
+    auto& nextRt = newTypes[next];
+    addTypeReconstructionText(next,nextRt,newTypes,alreadyDone,os);
+  }
+
+  os << "struct sstTmpStructType" << rt.typeIndex << " {";
+  int varCount = 0;
+  for (QualType& qt : rt.fundamentalFieldTypes){
+    if (qt->isFundamentalType()){
+      os << GetAsString(qt) << " var" << varCount++ << "; ";
+    } else if (qt->isPointerType() || qt->isArrayType()){
+      os << "void* var" << varCount++ << "; ";
+    } else {
+      errorAbort(rd->getLocStart(), *ci_,
+                 "internal error - got bad type in reconstruction");
+    }
+  }
+
+  for (const RecordDecl* rd : rt.classFieldTypes){
+    os << getRecordTypeName(rd) << " var" << varCount++ << "; ";
+  }
+
+  for (const RecordDecl* rd : rt.newClassFieldTypes){
+    auto& newRt = newTypes[rd];
+    //this better have been visit
+    if (newRt.typeIndex == 0){
+      std::cerr << "internal compiler error - unassigned type index" << std::endl;
+      abort();
+    }
+    os << "sstTmpStructType" << newRt.typeIndex << " var" << varCount++ <<"; ";
+  }
+
+  for (auto& pair : rt.arrayTypes){
+    //first = element type
+    //second = array indices
+    os << pair.first << " var" << varCount++ << pair.second << "; ";
+  }
+
+  os << "}; ";
+
+}
+
+std::string
+SkeletonASTVisitor::getTypeNameForSizing(SourceLocation typeDeclCutoff, QualType qt,
+                                         std::map<const RecordDecl*, ReconstructedType>& newTypes)
+{
+  if (qt->isConstantArrayType() || qt->isArrayType()){
+    cArrayConfig cfg;
+    getArrayType(qt.getTypePtr(), cfg);
+    std::string retType = getTypeNameForSizing(typeDeclCutoff, cfg.fundamentalType, newTypes);
+    return retType + cfg.arrayIndices.str();
+  } else if (qt->isFundamentalType()){
+    //easy peasy
+    return GetAsString(qt);
+  } else if (qt->isPointerType()){
+    return "void*";
+  } else if (qt->isStructureType() || qt->isClassType() || qt->isUnionType()){
+    const RecordDecl* rd;
+    if (qt->isUnionType()){
+      rd = qt->getAsUnionType()->getDecl();
+    } else {
+      rd = qt->getAsStructureType()->getDecl();
+    }
+
+    if (rd->getLocStart() < typeDeclCutoff){
+      //also easy peasy
+      return getRecordTypeName(rd);
+    }
+
+    auto& rt = newTypes[rd];
+    reconstructType(typeDeclCutoff, rd, rt, newTypes);
+
+    std::stringstream sstr;
+    sstr << "struct sstTmpStructType" << rt.typeIndex;
+    return sstr.str();
+  } else {
+    std::string error = "bad type for static function variable: " + GetTypeString(qt.split());
+    errorAbort(typeDeclCutoff, *ci_, error);
+    return "";
+  }
+}
+
+void
+SkeletonASTVisitor::arrayFxnPointerTypedef(VarDecl* D, SkeletonASTVisitor::ArrayInfo* info,
+                                   std::stringstream& sstr)
+{
+  std::string typeStr = GetAsString(D->getType());
+  auto replPos = typeStr.find("*[");
+  std::string typedefText = typeStr.insert(replPos+1, info->typedefName);
+  sstr << "typedef " << typedefText;
+}
+
+static bool isFxnPointerForm(QualType qt)
+{
+  //typedefs need no special treatment
+  bool isTypeDef = isa<TypedefType>(qt.getTypePtr());
+  if (isTypeDef) return false;
+
+  return qt->isFunctionPointerType() || qt->isFunctionProtoType();
+}
+
+
 
 SkeletonASTVisitor::ArrayInfo*
 SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
@@ -548,31 +746,73 @@ SkeletonASTVisitor::checkArray(VarDecl* D, ArrayInfo* info)
   bool isConstC99array = ty->isConstantArrayType();
 
   if (isConstC99array){
-    cArrayConfig cfg;
-    getArrayType(ty, cfg);
-    info->typedefName = "type" + D->getNameAsString();
+    info->typedefName = "array_type_" + D->getNameAsString();
+    //something of the form type x[N][M];
+    //we possible need to first: typedef type tx[N][M];
+    //replacement global will be tx* xRepl = &(sstmac_global_data + offset)
+    const ArrayType* aty = ty->getAsArrayTypeUnsafe();
     std::stringstream sstr;
-    sstr << "typedef " << cfg.fundamentalTypeString
-         << " " << info->typedefName
-         << cfg.arrayIndices.str();
+    cArrayConfig cfg;
+    getArrayType(aty, cfg);
+    if (isFxnPointerForm(cfg.fundamentalType)){
+      arrayFxnPointerTypedef(D, info, sstr);
+    } else {
+      sstr << "typedef " << cfg.fundamentalTypeString
+           << " " << info->typedefName
+           << cfg.arrayIndices.str();
+
+      if (cfg.fundamentalTypeString == "anon"){
+        errorAbort(D->getLocStart(), *ci_,
+                   "anonymous struct used in array declaration - cannot refactor");
+      }
+    }
+
     info->typedefString = sstr.str();
-    info->retType = "type" + D->getNameAsString() + "*";
+    info->retType = info->typedefName + "*";
+    info->needsDeref = false;
     return info;
   } else if (isC99array){
     const ArrayType* aty = ty->getAsArrayTypeUnsafe();
-    const Type* ety = aty->getElementType().getTypePtr();
+    QualType ety = aty->getElementType();
+    //if the element type of the array is itself a constant array
     if (ety->isConstantArrayType()){
-      cArrayConfig cfg;
-      getArrayType(ety, cfg);
-      info->typedefName = "type" + D->getNameAsString();
+      //something of the form type x[][M]
+      //we need to first: typedef type tx[][M];
+      //replacement global will be tx* xRepl = &(sstmac_global_data + offset)
+      info->typedefName = "type_" + D->getNameAsString();
       std::stringstream sstr;
-      sstr << "typedef " << cfg.fundamentalTypeString
-           << " " << info->typedefName
-           << "[]" << cfg.arrayIndices.str();
+      cArrayConfig cfg;
+      getArrayType(ety.getTypePtr(), cfg);
+      if (isFxnPointerForm(cfg.fundamentalType)){
+        arrayFxnPointerTypedef(D, info, sstr);
+      } else {
+        if (cfg.fundamentalTypeString == "anon"){
+          errorAbort(D->getLocStart(), *ci_,
+                     "anonymous struct used in array declaration - cannot refactor");
+        }
+        sstr << "typedef " << cfg.fundamentalTypeString
+             << " " << info->typedefName
+             << "[]"  //don't do this anymore
+             << cfg.arrayIndices.str();
+      }
       info->typedefString = sstr.str();
-      info->retType = "type" + D->getNameAsString() + "*";
+      info->retType = info->typedefName + "*";
+      info->needsDeref = false;
     } else {
-      info->retType = GetTypeString(aty->getElementType().split()) + "**";
+      //something of the form type x[]
+      //replacement global will type* xRepl;
+      info->typedefName = "type_" + D->getNameAsString();
+      std::stringstream sstr;
+      QualType ety = aty->getElementType();
+      if (isFxnPointerForm(ety)){
+        arrayFxnPointerTypedef(D, info, sstr);
+      } else {
+        sstr << "typedef " << GetAsString(ety)
+             << " " << info->typedefName << "[]";
+      }
+      info->typedefString = sstr.str();
+      info->retType = info->typedefName + "*";
+      info->needsDeref = false;
     }
     return info;
   } else {
@@ -627,14 +867,24 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
 }
 
 bool
-SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
-                                   const std::string& var_ns_prefix,
+SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
+                                   const std::string& clsScopePrefix,
                                    SourceLocation sstmacExternVarsLoc,
-                                   SourceLocation getRefInsertLoc,
+                                   SourceLocation varSizeOfInsertLoc,
+                                   SourceLocation sstmacOffsetLoc,
+                                   bool insertOffsetAfter,
                                    GlobalVariable_t global_var_ty,
                                    VarDecl* D,
                                    SourceLocation declEnd)
-{  
+{
+  if (D->getType().isConstQualified()){
+    return true; //don't refactor const variables
+  } else if (D->getType()->isPointerType()){
+    if (D->getType()->getPointeeType().isConstQualified()){
+      return true;
+    }
+  }
+
   bool skipInit = false;
 
   AnonRecord rec;
@@ -642,15 +892,16 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   ArrayInfo info;
   ArrayInfo* arrayInfo = checkArray(D, &info);
 
-  if (declEnd.isInvalid()) declEnd = getEndLoc(D);
+  if (declEnd.isInvalid()) declEnd = getEndLoc(D->getLocEnd());
 
   if (declEnd.isInvalid()){
+    D->dump();
     errorAbort(D->getLocStart(), *ci_,
                "unable to locate end of variable declaration");
   }
 
   if (sstmacExternVarsLoc.isInvalid()) sstmacExternVarsLoc = declEnd;
-  if (getRefInsertLoc.isInvalid()) getRefInsertLoc = declEnd;
+  if (varSizeOfInsertLoc.isInvalid()) varSizeOfInsertLoc = declEnd;
 
   //const global variables can't change... so....
   //no reason to do any work tracking them
@@ -661,30 +912,21 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
 
   // roundabout way to get the type of the variable
   std::string retType;
+  bool deref = true;
   if (arrayInfo) {
     retType = arrayInfo->retType;
+    deref = arrayInfo->needsDeref;
   } else {
-    retType = GetTypeString(D->getType().split()) + "*";
-  }
-
-  if (D->getType()->isPointerType()){
-    const Type* subTy = getBaseType(D);
-    if (subTy->isFunctionPointerType() || subTy->isFunctionProtoType()){
-      bool isTypeDef = isa<TypedefType>(subTy);
-      if (!isTypeDef){
-        auto replPos = retType.find("**");
-                                                  //and chop off the last pointer
-        if (replPos != std::string::npos){
-          retType = retType.replace(replPos, 2, "***").substr(0, retType.size() - 1);
-        }
-      }
-    }
+    retType = GetAsString(D->getType()) + "*";
   }
 
   if (anonRecord){
     retType = anonRecord->retType;
-    SourceLocation openBrace = anonRecord->decl->getBraceRange().getBegin();
-    rewriter_.InsertText(openBrace, "  " + anonRecord->typeName, false, false);
+    if (!anonRecord->typeNameAdded){
+      anonRecord->typeNameAdded = true;
+      SourceLocation openBrace = anonRecord->decl->getBraceRange().getBegin();
+      rewriter_.InsertText(openBrace, "  " + anonRecord->typeName, false, false);
+    }
   }
 
   NamespaceDecl* outerNsDecl = getOuterNamespace(D);
@@ -700,7 +942,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   }
 
 
-  std::string scopeUniqueVarName = scope_prefix + D->getNameAsString();
+  std::string scopeUniqueVarName = varnameScopeprefix + D->getNameAsString();
   setActiveGlobalScopedName(scopeUniqueVarName);
 
   std::stringstream extern_os;
@@ -710,8 +952,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
   } else {
     extern_os << "extern";
   }
-  extern_os << " void sstmac_init_global_space(void*,int,int);"
-            << " extern int __offset_" << scopeUniqueVarName << "; ";
+  extern_os << " void sstmac_init_global_space(void*,int,int);";
 
   rewriter_.InsertText(sstmacExternVarsLoc, extern_os.str());
   scopedNames_[mainDecl(D)] = scopeUniqueVarName;
@@ -737,11 +978,21 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
            << "  sstmac_inited_" << D->getNameAsString() << " = 1; "
            << "}";
         {
-          std::stringstream offset_os;
-          offset_os << "int __sizeof_" << scopeUniqueVarName << " = ";
-          sizeOfString(D, offset_os);
-          offset_os << ";";
-          rewriter_.InsertText(getRefInsertLoc, offset_os.str());
+          std::stringstream size_os;
+          std::map<const RecordDecl*, ReconstructedType> newTypes;
+          std::string typeNameToSize = getTypeNameForSizing(fxn_contexts_.front()->getLocStart(),
+                                                            D->getType(), newTypes);
+          if (typeNameToSize.empty()){
+            errorAbort(D->getLocStart(), *ci_,
+                       "internal error: empty type name for variable");
+          }
+          std::set<const RecordDecl*> alreadyDone;
+          for (auto& pair : newTypes){
+            addTypeReconstructionText(pair.first, pair.second, newTypes, alreadyDone, size_os);
+          }
+          size_os << "int __sizeof_" << scopeUniqueVarName << " = "
+                  << "sizeof(" << typeNameToSize << "); ";
+          rewriter_.InsertText(varSizeOfInsertLoc, size_os.str());
         }
         var.isFxnStatic = true;
         break;
@@ -753,6 +1004,14 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     rewriter_.InsertText(declEnd, os.str());
     currentNs_->replVars[scopeUniqueVarName] = var;
   }
+
+  std::stringstream offset_os;
+  offset_os << " extern int __offset_" << scopeUniqueVarName << "; ";
+  if (sstmacOffsetLoc.isInvalid()){
+    sstmacOffsetLoc = declEnd;
+  }
+
+  rewriter_.InsertText(sstmacOffsetLoc, offset_os.str(), insertOffsetAfter);
 
   if (arrayInfo && arrayInfo->needsTypedef()){
     rewriter_.InsertText(declEnd, arrayInfo->typedefString + ";");
@@ -800,7 +1059,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
       PrettyPrinter pp;
       pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"
            << " = sstmac::new_cpp_global<"
-           << QualType::getAsString(D->getType().split())
+           << GetAsString(D->getType())
            << ">(" << "__offset_" << scopeUniqueVarName;
       if (D->getInit()){
         if (D->getInit()->getStmtClass() == Stmt::CXXConstructExprClass){
@@ -816,53 +1075,97 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& scope_prefix,
     }
   }
 
-
-  std::string empty;
-  llvm::raw_string_ostream os(empty);
-  std::string checkName = currentNs_->nsPrefix() + scopeUniqueVarName;
-  bool notDeclared = globalsDeclared_.find(checkName) == globalsDeclared_.end();
-
-  static const char* globalOffsetString = "sizeof(int)";
-  if (notDeclared){
-    os << "static inline void* get_" << scopeUniqueVarName << "(){ "
-       << " int stack; int* stackPtr = &stack; "
-       << " uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize; "
-       << " char** globalMapPtr = (char**)(localStorage+" << globalOffsetString << "); "
-       << " char* offsetPtr = *globalMapPtr + __offset_" << scopeUniqueVarName << ";"
-       << "return (void*)offsetPtr; "
-       << "}";
-    globalsDeclared_.insert(checkName);
-  }
-  os << "  ";
-
-  if (getRefInsertLoc.isInvalid()){
+  if (varSizeOfInsertLoc.isInvalid()){
     errorAbort(D->getLocStart(), *ci_, "failed replacing global variable declaration");
   }
-  rewriter_.InsertText(getRefInsertLoc, os.str());
 
+  const Decl* md = mainDecl(D);
 
-  std::stringstream varReplSstr;
-  varReplSstr << "(*((" << retType << ")" << currentNs_->nsPrefix()
-              << var_ns_prefix << "get_" << scopeUniqueVarName << "()))";
-  globals_[mainDecl(D)] = varReplSstr.str();
+  std::string uniqueNsPrefix = currentNs_->nsPrefix() + clsScopePrefix;
+  for (int i=0; i < uniqueNsPrefix.size(); ++i){
+    char& next = uniqueNsPrefix.at(i);
+    if (next == ':') next = '_';
+  }
+
+  std::string standinName = "sstmac_" + uniqueNsPrefix + scopeUniqueVarName;
+
+  //fxn pointers mess up everything
+  std::string::size_type fxnPtrPos = std::string::npos;
+  if (D->getType()->isPointerType()){
+    const Type* subTy = getBaseType(D);
+    if (subTy->isFunctionPointerType() || subTy->isFunctionProtoType()){
+      bool isTypeDef = isa<TypedefType>(subTy);
+      if (!isTypeDef){
+        fxnPtrPos = retType.find("**");
+      }
+    }
+  }
+
+  std::stringstream standinSstr;
+  if (fxnPtrPos != std::string::npos){
+    //pointer to a function pointer
+    //the substr chops off a trailing "*" that was added up above
+    //instead the * needs to go inside parenthesis for function pointer
+    retType = retType.substr(0, retType.size() - 1);
+    //variable declaration has to look like void(***varname)(int)
+    std::string fullDecl = retType; //have to copy this
+    std::string repl = "***" + standinName;
+    fullDecl = fullDecl.replace(fxnPtrPos, 2, repl);
+    standinSstr << fullDecl;
+    //and the return type needs to be void(***)(int)
+    retType = retType.replace(fxnPtrPos, 2, "***");
+  } else {
+    standinSstr << retType << " " << standinName;
+  }
+  standinSstr << "=(" << retType << ")"
+              << "(sstmac_global_data + "
+              << currentNs_->nsPrefix() //only this!
+              << "__offset_" << scopeUniqueVarName << ")";
+
+  GlobalStandin& newStandin = globalStandins_[md];
+  newStandin.replText = standinSstr.str();
+
+  if (global_var_ty == FxnStatic){
+    newStandin.fxnStatic = true;
+    //we need to put the global standin text here!
+    std::string newText = newStandin.replText + "; ";
+    rewriter_.InsertText(declEnd, newText);
+    //it's possible this never gets referenced because of silly code
+    //make sure this gets added to globals touched lists
+    //regardless of whether it shows up in a DeclRefExpr
+    globalsTouched_.back().insert(md);
+  }
+
+  std::stringstream replSstr;
+  replSstr << "(*" << standinName << ")";
+  globals_[md] = replSstr.str();
 
   return skipInit;
 }
 
 clang::SourceLocation
-SkeletonASTVisitor::getEndLoc(const VarDecl *D)
+SkeletonASTVisitor::getEndLoc(SourceLocation searchStart)
 {
   int numTries = 0;
+  SourceLocation newLoc = searchStart;
   while (numTries < 1000){
-    SourceLocation newLoc = D->getLocEnd().getLocWithOffset(numTries);
     Token res;
     Lexer::getRawToken(newLoc, res, ci_->getSourceManager(), ci_->getLangOpts());
     if (res.getKind() == tok::semi){
       return newLoc.getLocWithOffset(1);
+    } else {
+      //JJW 1/22/2018
+      //Need to change it to do this - D->getEndLoc() is incorrect for string literal inits
+      SourceLocation next = Lexer::getLocForEndOfToken(newLoc, 1, ci_->getSourceManager(), Printing::langOpts);
+      if (next == newLoc){
+        newLoc = newLoc.getLocWithOffset(1);
+      } else {
+        newLoc = next;
+      }
     }
     ++numTries;
   }
-  errorAbort(D->getLocStart(), *ci_,
+  errorAbort(searchStart, *ci_,
     "unable to locate end of variable declaration");
   return SourceLocation();
 }
@@ -870,7 +1173,10 @@ SkeletonASTVisitor::getEndLoc(const VarDecl *D)
 bool
 SkeletonASTVisitor::checkFileVar(const std::string& filePrefix, VarDecl* D)
 {
-  return setupGlobalVar(filePrefix, "", SourceLocation(), SourceLocation(), FileStatic, D);
+  return setupGlobalVar(filePrefix, "", SourceLocation(),
+                        SourceLocation(),
+                        SourceLocation(), true, //insert after end of decl
+                        FileStatic, D);
 }
 
 bool
@@ -917,6 +1223,7 @@ SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
   return setupGlobalVar(scope_prefix, "",
                  outerFxn->getLocStart(),
                  outerFxn->getLocStart(),
+                 outerFxn->getLocStart(), false, //insert after end of decl
                  FxnStatic, D);
 }
 
@@ -946,17 +1253,18 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
       errorAbort(D->getLocStart(), *ci_, "cannot handle static variables in inner classes");
     }
     CXXRecordDecl* outerCls = class_contexts_.front();
-    std::stringstream scope_sstr; scope_sstr << "_";
-    std::stringstream var_repl_sstr;
+    std::stringstream varname_scope_sstr; varname_scope_sstr << "_";
+    std::stringstream cls_scope_sstr;
     for (CXXRecordDecl* decl : class_contexts_){
-      scope_sstr << "_" << decl->getNameAsString();
-      var_repl_sstr << decl->getNameAsString() << "::";
+      varname_scope_sstr << "_" << decl->getNameAsString();
+      cls_scope_sstr << decl->getNameAsString() << "::";
     }
-    std::string scope_prefix = scope_sstr.str();
     if (!D->hasInit()){
       //no need for special scope prefixes - these are fully scoped within in the class
-      setupGlobalVar(scope_prefix, var_repl_sstr.str(),
-                     outerCls->getLocStart(), SourceLocation(), CxxStatic, D);
+      setupGlobalVar(varname_scope_sstr.str(), cls_scope_sstr.str(),
+                     outerCls->getLocStart(), SourceLocation(),
+                     outerCls->getLocStart(), false, //put at beginning of class
+                     CxxStatic, D);
     } //else this must be a const integer if inited in the header file
       //we don't have to "deglobalize" this
   }
@@ -991,6 +1299,13 @@ bool
 SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 {
   if (D->isStaticDataMember()){
+    auto iter = globals_.find(mainDecl(D));
+    if (iter == globals_.end()){
+      //hmm, this must be const or something
+      //because the main decl didn't end up in the globals
+      return true;
+    }
+
     //okay - this sucks - I have no idea how this variable is being declared
     //it could be ns::A::x = 10 for a variable in namespace ns, class A
     //it could namespace ns { A::x = 10 }
@@ -1035,7 +1350,7 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
     for (auto iter = semBegin; iter != sem.end(); ++iter){
       os << "}"; //close namespaces
     }
-    rewriter_.InsertText(getEndLoc(D), os.str());
+    rewriter_.InsertText(getEndLoc(D->getLocEnd()), os.str());
   }
   return true;
 }
@@ -1104,7 +1419,7 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     return false;
   }
 
-  //do not replace const global variables
+  /**
   if (D->getType().isConstQualified()){
     return true; //also skip visiting init portion
   } else if (D->getType()->isPointerType()){
@@ -1112,6 +1427,8 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
       return true;
     }
   }
+  */
+
   /** This doesn't actually make the array itself const
   else if (D->getType()->isConstantArrayType()){
     const ConstantArrayType* aty = cast<const ConstantArrayType>(D->getType());
@@ -1175,10 +1492,32 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
   }
 }
 
+void
+SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
+{
+  globalsTouched_.emplace_back();
+
+  TraverseStmt(s);
+  auto& currentGlobals = globalsTouched_.back();
+  if (!currentGlobals.empty()){
+    std::stringstream sstr;
+    sstr << "{ char* sstmac_global_data = get_sstmac_global_data();";
+    for (auto d : currentGlobals){
+      GlobalStandin& gs = globalStandins_[d];
+      if (!gs.fxnStatic){
+        sstr << gs.replText << "; ";
+      }
+    }
+    rewriter_.InsertText(s->getLocStart(), sstr.str(), false);
+    rewriter_.InsertText(s->getLocEnd(), " }", true);
+  }
+  globalsTouched_.pop_back();
+}
+
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
-  if (D->isMain()){
+  if (D->isMain() && refactorMain_){
     replaceMain(D);
   } else if (D->isTemplateInstantiation()){
     return true; //do not visit implicitly instantiated template stuff
@@ -1191,12 +1530,7 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
           SourceLocation start = D->getReturnTypeSourceRange().getBegin();
           if (start.isValid()){
             rewriter_.InsertText(start, " inline ", false);
-            //errorAbort(D->getLocStart(), *ci_,
-            //           "how on earth do you have an invalid source location"
-            //           " for your return type?");
           }
-          //errorAbort(start, *ci_,
-          //           "function tagged always inline, but is not inlined");
         }
       }
     }
@@ -1214,8 +1548,8 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   }
 
   fxn_contexts_.push_back(D);
-  if (!skipVisit){
-    TraverseStmt(D->getBody());
+  if (!skipVisit && D->getBody()){
+    traverseFunctionBody(D->getBody());
   }
   fxn_contexts_.pop_back();
   return true;
@@ -1292,7 +1626,7 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   if (D->isThisDeclarationADefinition()) {
     ++insideCxxMethod_;
     if (!skipVisit){
-      TraverseStmt(D->getBody());
+      traverseFunctionBody(D->getBody());
     }
     --insideCxxMethod_;
   }
@@ -1338,7 +1672,6 @@ SkeletonASTVisitor::addRelocation(UnaryOperator* op, DeclRefExpr* dr, ValueDecl*
                " - deglobalization cannot create relocation pointer");
   }
 
-
   std::string dstFieldOffsetPtrName;
   std::string srcFieldOffsetPtrName;
   std::stringstream ptr_str;
@@ -1346,7 +1679,8 @@ SkeletonASTVisitor::addRelocation(UnaryOperator* op, DeclRefExpr* dr, ValueDecl*
   VarDecl* vd = activeDecls_.back();
   if (!activeFieldDecls_.empty()){
     std::stringstream sstr;
-    sstr << "__field_offset_ptr_" << vd->getNameAsString();
+    std::string varScopedName = scopedNames_[mainDecl(vd)];
+    sstr << "__field_offset_ptr_" << varScopedName;
     for (FieldDecl* fd : activeFieldDecls_){
       sstr << "_" << fd->getNameAsString();
     }
@@ -1383,7 +1717,7 @@ SkeletonASTVisitor::addRelocation(UnaryOperator* op, DeclRefExpr* dr, ValueDecl*
 
   std::string ptr_decls = ptr_str.str();
   if (!ptr_decls.empty()){
-    SourceLocation end = getEndLoc(vd);
+    SourceLocation end = getEndLoc(vd->getLocEnd());
     rewriter_.InsertText(end, ptr_decls);
   }
 
@@ -1583,9 +1917,17 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
   if (ty->isStructureType()){
     auto str_ty = ty->getAsStructureType();
     if (!str_ty){
-      errorAbort(D->getLocStart(), *ci_, "structure type did not return a record declaration");
+      errorAbort(D->getLocStart(), *ci_,
+                 "structure type did not return a record declaration");
     }
     typedef_structs_[str_ty->getDecl()] = D;
+  } else if (ty->isUnionType()){
+    auto un_ty = ty->getAsUnionType();
+    if (!un_ty){
+      errorAbort(D->getLocStart(), *ci_,
+                 "union type did not return a record declaration");
+    }
+    typedef_structs_[un_ty->getDecl()] = D;
   }
   return true;
 }
@@ -1720,13 +2062,15 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
            "code block deleted by pragma - invalid pragma combination");
     }
 
-    pragmaConfig_.pragmaDepth++;
-    activePragmas_[S] = prg;
-    //pragma takes precedence - must occur in pre-visit
-    prg->activate(S, rewriter_, pragmaConfig_);
+    bool activate = !noSkeletonize_;
+
     //a compute pragma totally deletes the block
     bool blockDeleted = false;
     switch (prg->cls){
+      case SSTPragma::Keep:
+        skipVisit = true;
+        activate = true; //always - regardless of skeletonization
+        break;
       case SSTPragma::Compute:
       case SSTPragma::Delete:
       case SSTPragma::Init:
@@ -1737,6 +2081,14 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
       default: break;
     }
     skipVisit = skipVisit || blockDeleted;
+
+    if (activate){
+      pragmaConfig_.pragmaDepth++;
+      activePragmas_[S] = prg;
+      //pragma takes precedence - must occur in pre-visit
+      prg->activate(S, rewriter_, pragmaConfig_);
+    }
+
   }
   return skipVisit;
 }
@@ -1750,12 +2102,27 @@ SkeletonASTVisitor::activatePragmasForDecl(Decl* D)
       errorAbort(D->getLocStart(), *ci_,
            "code block deleted by pragma - invalid pragma combination");
     }
-    pragmaConfig_.pragmaDepth++;
-    //pragma takes precedence - must occur in pre-visit
-    prg->activate(D, rewriter_, pragmaConfig_);
-    //a compute pragma totally deletes the block
-    bool blockDeleted = prg->cls == SSTPragma::Compute || prg->cls == SSTPragma::Delete;
-    skipVisit = skipVisit || blockDeleted;
+
+    bool activate = !noSkeletonize_;
+    bool blockDeleted = false;
+    switch (prg->cls){
+      case SSTPragma::Keep:
+        skipVisit = true;
+        activate = true; //always - regardless of skeletonization
+        break;
+      case SSTPragma::Compute:
+      case SSTPragma::Delete:
+        blockDeleted = true;
+        break;
+      default: break;
+    }
+
+    if (activate){
+      pragmaConfig_.pragmaDepth++;
+      //pragma takes precedence - must occur in pre-visit
+      prg->activate(D, rewriter_, pragmaConfig_);
+      skipVisit = skipVisit || blockDeleted;
+    }
   }
   return skipVisit;
 }
@@ -1783,8 +2150,15 @@ SkeletonASTVisitor::replaceGlobalUse(DeclRefExpr* expr, SourceRange replRng)
 {
   if (keepGlobals_) return;
 
-  auto iter = globals_.find(mainDecl(expr->getDecl()));
+  const Decl* d = mainDecl(expr->getDecl());
+  auto iter = globals_.find(d);
   if (iter != globals_.end()){
+    if (globalsTouched_.empty()){
+      //warn(expr->getLocStart(), *ci_,
+      //     "visiting global variable use, but I am not inside function");
+      return;
+    }
+    globalsTouched_.back().insert(d);
     //there is a bug in Clang I can't quite track down
     //it is erroneously causing DeclRefExpr to get visited twice
     //when they occur inside a struct decl

@@ -167,7 +167,7 @@ message* comm_poll();
 
 void compute(double sec);
 
-void sleep(double sec);
+void sleep_hires(double sec);
 
 void sleep_until(double sec);
 

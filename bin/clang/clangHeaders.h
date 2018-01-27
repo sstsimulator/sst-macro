@@ -84,14 +84,27 @@ Questions? Contact sst-macro-help@sandia.gov
       OPERATOR(Shl) OPERATOR(Shr) OPERATOR(And) OPERATOR(Or) OPERATOR(Xor)
 
 #if CLANG_VERSION_MAJOR <= 5
-#define GetTypeString(ty) QualType::getAsString(ty)
+#define GetTypeString(...) clang::QualType::getAsString(__VA_ARGS__)
 #else
+#define GetTypeString(...) clang::QualType::getAsString(__VA_ARGS__, Printing::policy)
+#endif
+
 struct Printing
 {
   static clang::LangOptions langOpts;
   static clang::PrintingPolicy policy;
 };
-#define GetTypeString(ty) QualType::getAsString(ty, Printing::policy)
-#endif
+
+static inline std::string GetAsString(const clang::Type* ty){
+  return GetTypeString(ty, clang::Qualifiers());
+}
+
+static inline std::string GetAsString(clang::SplitQualType sty){
+  return GetTypeString(sty);
+}
+
+static inline std::string GetAsString(clang::QualType qty){
+  return GetTypeString(qty.split());
+}
 
 #endif // CLANGHEADERS_H

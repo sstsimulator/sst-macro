@@ -165,6 +165,10 @@ int SSTMAC_pthread_condattr_init(sstmac_pthread_condattr_t *attr);
 
 int SSTMAC_pthread_condattr_destroy(sstmac_pthread_condattr_t *attr);
 
+int SSTMAC_pthread_condattr_getpshared(const sstmac_pthread_condattr_t* attr, int* pshared);
+
+int SSTMAC_pthread_condattr_setpshared(sstmac_pthread_condattr_t *attr, int pshared);
+
 int SSTMAC_pthread_cond_destroy(sstmac_pthread_cond_t * cond);
 
 int SSTMAC_pthread_cond_wait(sstmac_pthread_cond_t * cond,

@@ -144,6 +144,9 @@ thread::run_routine(void* threadptr)
       self->cleanup();
     } catch (const kill_exception& ex) {
       //great, we are done
+    } catch (const clean_exit_exception& ex) {
+      success = true;
+      self->cleanup();
     } catch (const std::exception &ex) {
       cerrn << "thread terminated with exception: " << ex.what()
                 << "\n";

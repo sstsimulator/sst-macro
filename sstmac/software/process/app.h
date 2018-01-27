@@ -54,6 +54,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
 
+#ifdef sleep
+#if sleep == sstmac_sleep
+#define refactor_sleep_macro
+#undef sleep
+#endif
+#endif
+
 namespace sstmac {
 namespace sw {
 
@@ -286,5 +293,10 @@ void compute_time(double tsec);
 
 }
 } // end of namespace sstmac.
+
+#ifdef refactor_sleep_macro
+#define sleep sstmac_sleep
+#undef refactor_sleep_macro
+#endif
 
 #endif

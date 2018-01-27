@@ -111,7 +111,7 @@ class collective_done_message :
     return vote_;
   }
 
-  message* clone() const override;
+  message* clone(payload_type_t ty) const override;
 
   int comm_rank() const {
     return comm_rank_;
@@ -257,7 +257,7 @@ class collective_work_message :
     return type_;
   }
 
-  message* clone() const override {
+  message* clone(payload_type_t ty) const override {
     collective_work_message* cln = new collective_work_message;
     clone_into(cln);
     return cln;

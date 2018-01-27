@@ -96,7 +96,7 @@ class mpi_message final :
     return cln;
   }
 
-  sumi::message* clone() const override {
+  sumi::message* clone(payload_type_t ty) const override {
     return clone_me();
   }
 

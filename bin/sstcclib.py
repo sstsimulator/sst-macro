@@ -183,6 +183,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg == "-g":
       givenFlags.append(sarg)
       givenOptFlags.append(sarg)
+    elif sarg == "-fvisibility=hidden":
+      #this foobars everything - see GitHub issue #259
+      pass
     elif "-std=" in sarg:
       givenStdFlag=sarg
     elif sarg.endswith('.cpp') or sarg.endswith('.cc') or sarg.endswith('.c') \

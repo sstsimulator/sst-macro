@@ -207,7 +207,7 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
       Expr* init = vd->getInit();
       if (isa<CXXNewExpr>(init)){
         //we can directly skeletonize
-        std::string type = GetTypeString(vd->getType().split());
+        std::string type = GetAsString(vd->getType());
         std::string name = vd->getNameAsString();
         std::stringstream sstr;
         sstr << type << " " << name << " = nullptr;"; //don't know why - but okay, semicolon needed
@@ -308,7 +308,7 @@ SSTMallocPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
   Decl* decl = stmt->getSingleDecl();
   if (isa<VarDecl>(decl)){
     VarDecl* vd = cast<VarDecl>(decl);
-    std::string type = GetTypeString(vd->getType().split());
+    std::string type = GetAsString(vd->getType());
     std::string name = vd->getNameAsString();
     std::stringstream sstr;
     sstr << type << " " << name << " = 0;"; //don't know why - but okay, semicolon needed
