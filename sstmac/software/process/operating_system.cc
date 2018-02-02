@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <stdlib.h>
 #include <sstream>
+#include <csignal>
 
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/sstmac_config.h>
@@ -103,6 +104,11 @@ RegisterKeywords(
 { "context", "the user-space thread context library" },
 );
 
+#include <sstmac/software/process/gdb.h>
+
+void sst_gdb_swap(){
+}
+
 //we have to have a globally visible (to C code) stack-size variable
 extern int sstmac_global_stacksize;
 
@@ -136,6 +142,13 @@ std::vector<operating_system*> operating_system::active_os_;
 operating_system* operating_system::active_os_ = nullptr;
 #endif
 
+bool operating_system::hold_for_gdb_ = false;
+thread_context* operating_system::gdb_context_ = nullptr;
+thread_context* operating_system::gdb_original_context_ = nullptr;
+thread_context* operating_system::gdb_des_context_ = nullptr;
+std::unordered_map<uint32_t,thread*> operating_system::all_threads_;
+bool operating_system::gdb_active_ = false;
+
 operating_system::operating_system(sprockit::sim_parameters* params, hw::node* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
   nthread_(1),
@@ -145,6 +158,7 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   thread_id_(parent->thread()),
 #endif
   node_(parent),
+  active_thread_(nullptr),
   call_graph_(nullptr),
   call_graph_active_(true), //on by default
   des_context_(nullptr),
@@ -410,6 +424,10 @@ operating_system::block()
   active_thread_ = nullptr;
   old_context->pause_context(des_context_);
 
+  while(hold_for_gdb_){
+    sst_gdb_swap();  //do nothing - this is only for gdb purposes
+  }
+
   //restore state to indicate this thread and this OS are active again
   active_os() = this;
   active_thread_ = old_thread;
@@ -471,6 +489,7 @@ operating_system::join_thread(thread* t)
 void
 operating_system::complete_active_thread()
 {
+  all_threads_.erase(active_thread_->thread_id());
   thread* thr_todelete = active_thread_;
 
   //if any threads waiting on the join, unblock them
@@ -585,6 +604,61 @@ operating_system::outcast_app_start(int my_rank, int aid, const std::string& app
   }
 }
 
+thread_context*
+operating_system::active_context()
+{
+  if (active_thread_){
+    return active_thread_->context();
+  } else {
+    return des_context_;
+  }
+}
+
+void
+operating_system::gdb_switch_to_thread(uint32_t id)
+{
+  thread* thr = all_threads_[id];
+  if (thr){
+    thread_context* from_context = nullptr;
+    if (gdb_context_){
+      from_context = gdb_context_;
+    } else {
+      operating_system* os = static_os_thread_context();
+      if (os->active_thread()){
+        from_context = os->active_thread()->context();
+      } else {
+        from_context = os->des_context_;
+      }
+    }
+
+    if (!gdb_original_context_){
+      gdb_original_context_ = from_context;
+    }
+
+    hold_for_gdb_ = true;
+    from_context->jump_context(thr->context());
+  } else {
+    std::cerr << "Invalid rank " << id << std::endl;
+  }
+}
+
+void
+operating_system::gdb_reset()
+{
+  hold_for_gdb_ = false;
+  if (!gdb_original_context_){
+    std::cerr << "Cannot reset GDB/LLDB - never selected thread" << std::endl;
+    return;
+  }
+
+  thread_context* orig = gdb_original_context_;
+  thread_context* current = gdb_context_;
+  gdb_original_context_ = nullptr;
+  gdb_context_ = nullptr;
+
+  current->jump_context(orig);
+}
+
 void
 operating_system::start_thread(thread* t)
 {
@@ -603,6 +677,19 @@ operating_system::start_thread(thread* t)
       stack,
       stack_alloc::stacksize(),
       parent->globals_storage());
+  }
+
+  if (gdb_active_){
+    static thread_lock all_threads_lock;
+    all_threads_lock.lock();
+    auto tid = t->tid();
+    thread*& thrInMap = all_threads_[tid];
+    if (thrInMap){
+      spkt_abort_printf("error: thread %d already exists for app %d",
+                        t->tid(), thrInMap->aid());
+    }
+    thrInMap = t;
+    all_threads_lock.unlock();
   }
 }
 

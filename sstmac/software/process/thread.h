@@ -164,9 +164,9 @@ class thread
 
   void spawn(thread* thr);
 
-  long init_id();
+  uint32_t init_id();
 
-  long thread_id() const {
+  uint32_t thread_id() const {
     return thread_id_;
   }
 
@@ -373,7 +373,7 @@ class thread
 
   void* stack_;
   
-  long thread_id_;
+  uint32_t thread_id_;
 
   thread_context* context_;
   

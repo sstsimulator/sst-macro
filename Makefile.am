@@ -17,6 +17,7 @@ EXTRA_DIST = LICENSE bootstrap.sh \
   manual-sstmacro-7.2.pdf \
   pdes-report-7.2.pdf \
   docs \
+  share \
   skeletons
 
 SUBDIRS = $(subdirs)

@@ -870,3 +870,8 @@ MPI_Call::ID_str(MPI_function func)
 
 
 }
+
+extern "C" void sst_gdb_print_rank(){
+  auto api = sumi::sstmac_mpi();
+  std::cerr << "Current rank is " << api->rank() << std::endl;
+}

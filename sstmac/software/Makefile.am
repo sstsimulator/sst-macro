@@ -25,6 +25,7 @@ libsstmac_sw_la_SOURCES = \
   process/compute_scheduler.cc \
   process/cpuset_compute_scheduler.cc \
   process/simple_compute_scheduler.cc \
+  process/gdb.cc \
   process/key.cc \
   process/global.cc \
   process/graphviz.cc \
@@ -73,6 +74,7 @@ nobase_library_include_HEADERS = \
   ami/ami.h \
   api/api.h \
   api/api_fwd.h \
+  process/gdb.h \
   process/simple_compute_scheduler.h \
   process/cpuset_compute_scheduler.h \
   process/compute_scheduler.h \

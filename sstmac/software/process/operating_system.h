@@ -132,6 +132,10 @@ class operating_system :
     return static_os_thread_context()->addr();
   }
 
+  static void set_gdb_hold(bool flag){
+    hold_for_gdb_ = flag;
+  }
+
   /**
    * @brief execute Execute a compute function.
    * This function MUST begin on a user-space thread
@@ -318,7 +322,17 @@ class operating_system :
     return call_graph_active_;
   }
 
+  static void gdb_switch_to_thread(uint32_t thr_id);
+
+  static void gdb_set_active(int flag){
+    gdb_active_ = flag;
+  }
+
+  static void gdb_reset();
+
  private:
+  thread_context* active_context();
+
   void switch_to_thread(thread* tothread);
 
   void init_threading(sprockit::sim_parameters* params);
@@ -339,7 +353,6 @@ class operating_system :
   hw::node* node_;
   std::unordered_map<std::string, library*> libs_;
   std::unordered_map<library*, int> lib_refcounts_;
-  std::unordered_map<void*, std::list<library*>> libs_by_owner_;
   std::map<std::string, std::list<event*>> pending_library_events_;
 
   thread* active_thread_;
@@ -359,6 +372,13 @@ class operating_system :
   ftq_calendar* ftq_trace_;
 
   bool call_graph_active_;
+
+  static std::unordered_map<uint32_t, thread*> all_threads_;
+  static bool hold_for_gdb_;
+  static thread_context* gdb_context_;
+  static thread_context* gdb_original_context_;
+  static thread_context* gdb_des_context_;
+  static bool gdb_active_;
 
 #if SSTMAC_USE_MULTITHREAD
   static std::vector<operating_system*> active_os_;

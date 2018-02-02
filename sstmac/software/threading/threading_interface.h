@@ -55,6 +55,9 @@ namespace sstmac {
 namespace sw {
 
 
+/**
+ * @brief The thread_context class
+ */
 class thread_context
 {
  public:
@@ -85,6 +88,16 @@ class thread_context
   virtual void resume_context(thread_context* from) = 0;
 
   virtual void pause_context(thread_context* to) = 0;
+
+  /**
+   * @brief jump_context
+   * Jump directly from one context to another.
+   * This bypasses the safety of the start/pause/resume pattern
+   * @param to
+   */
+  virtual void jump_context(thread_context* to){
+    to->resume_context(this);
+  }
 
   /**
    * @brief complete_context Perform all cleanup operations to end this context

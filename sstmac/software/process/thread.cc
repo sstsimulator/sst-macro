@@ -66,7 +66,7 @@ MakeDebugSlot(host_compute)
 namespace sstmac {
 namespace sw {
 
-static thread_safe_long THREAD_ID_CNT(0);
+static thread_safe_u32 THREAD_ID_CNT(0);
 const app_id thread::main_thread_aid(-1);
 const task_id thread::main_thread_tid(-1);
 
@@ -211,7 +211,7 @@ thread::end_api_call()
   }
 }
 
-long
+uint32_t
 thread::init_id()
 {
   //thread id not yet initialized
