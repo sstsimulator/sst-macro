@@ -239,6 +239,8 @@ class operating_system :
    */
   void complete_active_thread();
 
+  void schedule_thread_deletion(thread* thr);
+
   /**
    * @brief start_app
    * Similar to start_thread, but performs special operations associated

@@ -98,8 +98,8 @@ SSTMAC_pthread_create(sstmac_pthread_t* pthread,
     tr->set_cpumask(attr->cpumask);
   }
   
-  pthread_debug("starting pthread %ld on thread %ld in app %d",
-               tr->thread_id(), thr->thread_id(), int(parent_app->tid()));
+  pthread_debug("starting pthread %ld:%p on thread %ld:%p in app %d",
+               tr->thread_id(), tr, thr->thread_id(), thr, int(parent_app->tid()));
   os->start_thread(tr);
 
   return 0;
@@ -141,8 +141,8 @@ SSTMAC_pthread_join(sstmac_pthread_t pthread, void ** status)
   app* parent_app = current_thr->parent_app();
   thread* joiner = parent_app->get_subthread(pthread);
 
-  pthread_debug("joining pthread %ld on thread %ld in app %d",
-               pthread, current_thr->thread_id(), int(parent_app->tid()));
+  pthread_debug("joining pthread %ld:%p on thread %ld:%p in app %d",
+               pthread, joiner, current_thr->thread_id(), current_thr, int(parent_app->tid()));
 
   if (joiner){
     os->join_thread(joiner);

@@ -124,9 +124,9 @@ class thread
 
   static const int no_core_affinity = -1;
   static const int no_socket_affinity = -1;
-  static const int main_thread = -1;
-  static const int nic_thread = -2;
-  static const int rdma_thread = -3;
+  static const uint32_t main_thread = -1;
+  static const uint32_t nic_thread = -2;
+  static const uint32_t rdma_thread = -3;
   static const app_id main_thread_aid;
   static const task_id main_thread_tid;
 

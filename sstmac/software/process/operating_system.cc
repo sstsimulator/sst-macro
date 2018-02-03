@@ -330,13 +330,10 @@ operating_system::execute(ami::COMP_FUNC func, event* data)
   //this will block if the thread has no core to run on
   compute_sched_->reserve_core(active_thread_);
   //initiate the hardware events
-  //key* k = new key(cat);
   callback* cb = new_callback(this, &operating_system::unblock, active_thread_);
   node_->execute(func, data, cb);
   block();
   compute_sched_->release_core(active_thread_);
-  //delete k;
-  //callbacks deleted by core
 }
 
 void
@@ -480,16 +477,29 @@ operating_system::join_thread(thread* t)
         t->thread_id(), active_thread_);
     t->joiners_.push(active_thread_);
     block();
-  }
-  else {
+  } else {
     os_debug("joining completed thread %ld", t->thread_id());
   }
+  delete t;
+}
+
+void
+operating_system::schedule_thread_deletion(thread* thr)
+{
+  //JJW 11/6/2014 This here is weird
+  //The thread has run out of work and is terminating
+  //However, because of weird thread swapping the DES thread
+  //might still operate on the thread... we need to delay the delete
+  //until the DES thread has completely finished processing its current event
+  send_now_self_event_queue(new delete_thread_event(thr));
 }
 
 void
 operating_system::complete_active_thread()
 {
-  all_threads_.erase(active_thread_->thread_id());
+  if (gdb_active_){
+    all_threads_.erase(active_thread_->tid());
+  }
   thread* thr_todelete = active_thread_;
 
   //if any threads waiting on the join, unblock them
@@ -503,13 +513,6 @@ operating_system::complete_active_thread()
     thr_todelete->joiners_.pop();
   }
   active_thread_ = nullptr;
-
-  //JJW 11/6/2014 This here is weird
-  //The thread has run out of work and is terminating
-  //However, because of weird thread swapping the DES thread
-  //might still operate on the thread... we need to delay the delete
-  //until the DES thread has completely finished processing its current event
-  send_now_self_event_queue(new delete_thread_event(thr_todelete));
 
   os_debug("completing context for %ld", thr_todelete->thread_id());
   thr_todelete->context()->complete_context(des_context_);

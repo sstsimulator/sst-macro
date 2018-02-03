@@ -173,9 +173,9 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
           return valid; //no suffix - assume valid c++ header with no suffix, e.g. <cstdlib>
         }
         std::string suffix = path.substr(dotPos+1);
-        if (suffix != "h" && suffix != "hpp"){
-          std::string error = std::string("got included global variable in unknown file ")
-              + fullpath + " with suffix ." + suffix;
+        if (suffix != "h" && suffix != "hpp" && suffix != "tcc"){
+          std::string error = std::string("got included global variable ") + D->getNameAsString()
+              + "in unknown file " + fullpath + " with suffix ." + suffix;
           errorAbort(D->getLocStart(), *ci_, error);
         }
       }
@@ -1248,26 +1248,24 @@ SkeletonASTVisitor::getOuterNamespace(Decl *D)
 bool
 SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
 {
-  if (D->isStaticDataMember()){
-    if (class_contexts_.size() > 1){
-      errorAbort(D->getLocStart(), *ci_, "cannot handle static variables in inner classes");
-    }
-    CXXRecordDecl* outerCls = class_contexts_.front();
-    std::stringstream varname_scope_sstr; varname_scope_sstr << "_";
-    std::stringstream cls_scope_sstr;
-    for (CXXRecordDecl* decl : class_contexts_){
-      varname_scope_sstr << "_" << decl->getNameAsString();
-      cls_scope_sstr << decl->getNameAsString() << "::";
-    }
-    if (!D->hasInit()){
-      //no need for special scope prefixes - these are fully scoped within in the class
-      setupGlobalVar(varname_scope_sstr.str(), cls_scope_sstr.str(),
-                     outerCls->getLocStart(), SourceLocation(),
-                     outerCls->getLocStart(), false, //put at beginning of class
-                     CxxStatic, D);
-    } //else this must be a const integer if inited in the header file
-      //we don't have to "deglobalize" this
+  if (class_contexts_.size() > 1){
+    errorAbort(D->getLocStart(), *ci_, "cannot handle static variables in inner classes");
   }
+  CXXRecordDecl* outerCls = class_contexts_.front();
+  std::stringstream varname_scope_sstr; varname_scope_sstr << "_";
+  std::stringstream cls_scope_sstr;
+  for (CXXRecordDecl* decl : class_contexts_){
+    varname_scope_sstr << "_" << decl->getNameAsString();
+    cls_scope_sstr << decl->getNameAsString() << "::";
+  }
+  if (!D->hasInit()){
+    //no need for special scope prefixes - these are fully scoped within in the class
+    setupGlobalVar(varname_scope_sstr.str(), cls_scope_sstr.str(),
+                   outerCls->getLocStart(), SourceLocation(),
+                   outerCls->getLocStart(), false, //put at beginning of class
+                   CxxStatic, D);
+  } //else this must be a const integer if inited in the header file
+    //we don't have to "deglobalize" this
   return false;
 }
 
@@ -1298,60 +1296,58 @@ scopeString(SourceLocation loc, CompilerInstance& ci, DeclContext* ctx,
 bool
 SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 {
-  if (D->isStaticDataMember()){
-    auto iter = globals_.find(mainDecl(D));
-    if (iter == globals_.end()){
-      //hmm, this must be const or something
-      //because the main decl didn't end up in the globals
-      return true;
-    }
-
-    //okay - this sucks - I have no idea how this variable is being declared
-    //it could be ns::A::x = 10 for a variable in namespace ns, class A
-    //it could namespace ns { A::x = 10 }
-    //we must the variable declarations in the full namespace - we can't cheat
-    DeclContext* lexicalContext = D->getLexicalDeclContext();
-    DeclContext* semanticContext = D->getDeclContext();
-    if (!isa<CXXRecordDecl>(semanticContext)){
-      std::string error = "variable " + D->getNameAsString() + " does not have class semantic context";
-      errorAbort(D->getLocStart(), *ci_, error);
-    }
-    CXXRecordDecl* parentCls = cast<CXXRecordDecl>(semanticContext);
-    std::list<std::string> lex;
-    scopeString(D->getLocStart(), *ci_, lexicalContext, lex);
-    std::list<std::string> sem;
-    scopeString(D->getLocStart(), *ci_, semanticContext, sem);
-
-    //match the format from checkDeclStaticClassVar
-    std::string scope_unique_var_name = "__" + parentCls->getNameAsString() + D->getNameAsString();
-
-    std::string empty;
-    llvm::raw_string_ostream os(empty);
-    //throw away the class name in the list of scopes
-    sem.pop_back();
-    auto semBegin = sem.begin();
-    for (auto& ignore : lex){ //figure out the overlap between lexical and semantic namespaces
-      ++semBegin;
-    }
-    for (auto iter = semBegin; iter != sem.end(); ++iter){ //I must declare vars in the most enclosing namespace
-      os << "namespace " << *iter << " {";
-    }
-
-    std::string init_prefix = parentCls->getNameAsString() + "::";
-    //this has an initial value we need to transfer over
-    //log the variable so we can drop replacement info in the static cxx file
-    //if static and no init given, then we will drop this initialization code at the instantiation point
-    if (D->getType().isVolatileQualified()) os << "volatile ";
-    os << "void* __ptr_" << scope_unique_var_name << " = &"
-       << init_prefix << D->getNameAsString() << "; "
-       << "int __sizeof_" << scope_unique_var_name << " = sizeof("
-       << init_prefix << D->getNameAsString() << ");";
-
-    for (auto iter = semBegin; iter != sem.end(); ++iter){
-      os << "}"; //close namespaces
-    }
-    rewriter_.InsertText(getEndLoc(D->getLocEnd()), os.str());
+  auto iter = globals_.find(mainDecl(D));
+  if (iter == globals_.end()){
+    //hmm, this must be const or something
+    //because the main decl didn't end up in the globals
+    return true;
   }
+
+  //okay - this sucks - I have no idea how this variable is being declared
+  //it could be ns::A::x = 10 for a variable in namespace ns, class A
+  //it could namespace ns { A::x = 10 }
+  //we must the variable declarations in the full namespace - we can't cheat
+  DeclContext* lexicalContext = D->getLexicalDeclContext();
+  DeclContext* semanticContext = D->getDeclContext();
+  if (!isa<CXXRecordDecl>(semanticContext)){
+    std::string error = "variable " + D->getNameAsString() + " does not have class semantic context";
+    errorAbort(D->getLocStart(), *ci_, error);
+  }
+  CXXRecordDecl* parentCls = cast<CXXRecordDecl>(semanticContext);
+  std::list<std::string> lex;
+  scopeString(D->getLocStart(), *ci_, lexicalContext, lex);
+  std::list<std::string> sem;
+  scopeString(D->getLocStart(), *ci_, semanticContext, sem);
+
+  //match the format from checkDeclStaticClassVar
+  std::string scope_unique_var_name = "__" + parentCls->getNameAsString() + D->getNameAsString();
+
+  std::string empty;
+  llvm::raw_string_ostream os(empty);
+  //throw away the class name in the list of scopes
+  sem.pop_back();
+  auto semBegin = sem.begin();
+  for (auto& ignore : lex){ //figure out the overlap between lexical and semantic namespaces
+    ++semBegin;
+  }
+  for (auto iter = semBegin; iter != sem.end(); ++iter){ //I must declare vars in the most enclosing namespace
+    os << "namespace " << *iter << " {";
+  }
+
+  std::string init_prefix = parentCls->getNameAsString() + "::";
+  //this has an initial value we need to transfer over
+  //log the variable so we can drop replacement info in the static cxx file
+  //if static and no init given, then we will drop this initialization code at the instantiation point
+  if (D->getType().isVolatileQualified()) os << "volatile ";
+  os << "void* __ptr_" << scope_unique_var_name << " = &"
+     << init_prefix << D->getNameAsString() << "; "
+     << "int __sizeof_" << scope_unique_var_name << " = sizeof("
+     << init_prefix << D->getNameAsString() << ");";
+
+  for (auto iter = semBegin; iter != sem.end(); ++iter){
+    os << "}"; //close namespaces
+  }
+  rewriter_.InsertText(getEndLoc(D->getLocEnd()), os.str());
   return true;
 }
 
@@ -1374,6 +1370,7 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
     return true;
   }
 
+  //don't skip init on non-globals
   bool skipInit = visitVarDecl(D);
 
   if (D->hasInit() && !skipInit){
@@ -1396,10 +1393,6 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
 bool
 SkeletonASTVisitor::visitVarDecl(VarDecl* D)
 {
-  if (!shouldVisitDecl(D)){
-    return false;
-  }
-
   //we need do nothing with this
   if (D->isConstexpr()){
     return false;
@@ -1419,41 +1412,16 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     return false;
   }
 
-  /**
-  if (D->getType().isConstQualified()){
-    return true; //also skip visiting init portion
-  } else if (D->getType()->isPointerType()){
-    if (D->getType()->getPointeeType().isConstQualified()){
-      return true;
-    }
-  }
-  */
-
-  /** This doesn't actually make the array itself const
-  else if (D->getType()->isConstantArrayType()){
-    const ConstantArrayType* aty = cast<const ConstantArrayType>(D->getType());
-    QualType qty = aty->getElementType();
-    if (qty.isConstQualified()){
-      return true;
-    } else if (qty->isPointerType()){
-      QualType subty = qty->getPointeeType();
-      if (subty.isConstQualified()){
-        return true;
-      }
-    }
-  }
-  */
-
   bool skipInit = false;
-  if (insideClass()){
+  if (insideClass() && D->isStaticDataMember() && shouldVisitDecl(D)){
     skipInit = checkDeclStaticClassVar(D);
-  } else if (insideFxn() && D->isStaticLocal()){
+  } else if (insideFxn() && D->isStaticLocal() && shouldVisitDecl(D)){
     skipInit = checkStaticFxnVar(D);
-  } else if (D->isCXXClassMember()){
+  } else if (D->isCXXClassMember() && D->isStaticDataMember() && shouldVisitDecl(D)){
     skipInit = checkInstanceStaticClassVar(D);
-  } else if (D->getStorageClass() == StorageClass::SC_Static){
+  } else if (D->getStorageClass() == StorageClass::SC_Static && shouldVisitDecl(D)){
     skipInit = checkStaticFileVar(D);
-  } else if (!D->isLocalVarDeclOrParm()){
+  } else if (!D->isLocalVarDeclOrParm() && shouldVisitDecl(D)){
     skipInit = checkGlobalVar(D);
   }
 

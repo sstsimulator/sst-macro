@@ -159,14 +159,14 @@ class app : public thread
    */
   void remove_subthread(thread* thr);
 
-  void remove_subthread(long thr_id);
+  void remove_subthread(uint32_t thr_id);
 
   /**
    * @brief get_subthread
    * @param id
    * @return
    */
-  thread* get_subthread(long id);
+  thread* get_subthread(uint32_t id);
 
   /**
    * Allocate a unique ID for a mutex variable

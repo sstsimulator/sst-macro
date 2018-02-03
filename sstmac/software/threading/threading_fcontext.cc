@@ -69,14 +69,12 @@ class threading_fcontext : public thread_context
     void* stacktop = (char*) stack + sz;
     ctx_ = make_fcontext(stacktop, sz, start_fcontext_thread);
     args_ = args;
-    auto newctx = jump_fcontext(ctx_, this).ctx;
-    ctx_ = newctx;
+    ctx_ = jump_fcontext(ctx_, this).ctx;
   }
 
   void pause_context(thread_context* to) override {
     threading_fcontext* fctx = static_cast<threading_fcontext*>(to);
-    auto newctx = jump_fcontext(transfer_, nullptr).ctx;
-    transfer_ = newctx;
+    transfer_ = jump_fcontext(transfer_, nullptr).ctx;
   }
 
   void resume_context(thread_context* from) override {

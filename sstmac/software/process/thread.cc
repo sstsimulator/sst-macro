@@ -113,8 +113,14 @@ thread::_get_api(const char* name)
 void
 thread::cleanup()
 {
-  if (state_ != CANCELED && parent_app_ && detach_state_ == DETACHED){
-    parent_app_->remove_subthread(this);
+  if (parent_app_){
+    if (detach_state_ == DETACHED && state_ != CANCELED){
+      parent_app_->remove_subthread(this);
+      os_->schedule_thread_deletion(this);
+    } else; //parent will join and then delete this
+  } else {
+    //no matter what, I have to delete myself
+    os_->schedule_thread_deletion(this);
   }
   // We are done, ask the scheduler to remove this task from the
   state_ = DONE;

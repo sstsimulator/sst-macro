@@ -277,19 +277,19 @@ app::add_subthread(thread *thr)
 }
 
 thread*
-app::get_subthread(long id)
+app::get_subthread(uint32_t id)
 {
   auto it = subthreads_.find(id);
   if (it==subthreads_.end()){
     spkt_throw_printf(sprockit::value_error,
-      "unknown thread id %ld",
+      "unknown thread id %u",
       id);
   }
   return it->second;
 }
 
 void
-app::remove_subthread(long id)
+app::remove_subthread(uint32_t id)
 {
   subthreads_.erase(id);
 }
