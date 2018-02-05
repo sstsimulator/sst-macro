@@ -59,6 +59,22 @@ static int pragmaDepth = 0;
 static int maxPragmaDepth = 0;
 std::list<SSTPragma*> pendingPragmas;
 
+void getLiteralDataAsString(const Token &tok, std::ostream &os)
+{
+  const char* data = tok.getLiteralData(); //not null-terminated, direct from buffer
+  for (int i=0 ; i < tok.getLength(); ++i){
+    //must explicitly add chars, this will not hit a \0
+     os << data[i];
+  }
+}
+
+std::string getLiteralDataAsString(const Token &tok)
+{
+  std::stringstream os;
+  getLiteralDataAsString(tok, os);
+  return os.str();
+}
+
 void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
@@ -595,11 +611,7 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::string_literal:
       case tok::numeric_constant:
       {
-        const char* data = next.getLiteralData(); //not null-terminated, direct from buffer
-        for (int i=0 ; i < next.getLength(); ++i){
-          //must explicitly add chars, this will not hit a \0
-           os << data[i];
-        }
+        getLiteralDataAsString(next, os);
         break;
       }
       default:

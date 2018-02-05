@@ -771,7 +771,8 @@ ComputeVisitor::setContext(Stmt* stmt){
 }
 
 void
-ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop, PragmaConfig& cfg)
+ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop, PragmaConfig& cfg,
+                            const std::string& nthread)
 {
   std::stringstream sstr;
   sstr << "{ uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; ";
@@ -780,8 +781,12 @@ ComputeVisitor::replaceStmt(Stmt* stmt, Rewriter& r, Loop& loop, PragmaConfig& c
     //overwrite the static analysis
     sstr << "readBytes=" << cfg.computeMemorySpec << ";";
   }
-  sstr << "sstmac_compute_detailed(flops,intops,readBytes); /*assume write-through for now*/";
-  sstr << " }";
+  if (nthread.empty()){
+    sstr << "sstmac_compute_detailed(flops,intops,readBytes); }";
+  } else {
+    sstr << "sstmac_compute_detailed_nthr(flops,intops,readBytes,"
+         << nthread << "); }";
+  }
   replace(stmt,r,sstr.str(),CI);
 }
 

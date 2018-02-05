@@ -126,6 +126,10 @@ struct SSTPragma {
 
 };
 
+std::string getLiteralDataAsString(const clang::Token& tok);
+
+void getLiteralDataAsString(const clang::Token &tok, std::ostream& os);
+
 class SSTReturnPragma : public SSTPragma {
  public:
   SSTReturnPragma(clang::SourceLocation loc,

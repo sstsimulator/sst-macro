@@ -83,10 +83,12 @@ void sstmac_compute(double secs);
  * @brief sstmac_compute_detailed Model a specific compute block
  * @param nflops  The number of flops executed in the compute block
  * @param nintops The number of int ops executed in the compute block
- *
  * @param bytes
  */
 void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
+
+void sstmac_compute_detailed_nthr(uint64_t nflops, uint64_t nintops, uint64_t bytes,
+                                  int nthread);
 
 /**
  * @brief sstmac_compute_loop

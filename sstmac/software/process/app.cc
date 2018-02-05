@@ -106,6 +106,7 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   next_mutex_(0),
   min_op_cutoff_(0),
   globals_storage_(nullptr),
+  omp_num_threads_(1),
   rc_(0)
 {
   int globalsSize = GlobalVariable::globalsSize();
@@ -120,6 +121,9 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   }
 
   notify_ = params->get_optional_bool_param("notify", true);
+
+  sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
+  omp_num_threads_ = env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
 }
 
 app::~app()
@@ -189,7 +193,7 @@ app::compute_loop(uint64_t num_loops,
 }
 
 void
-app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
+app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthread)
 {
   static const uint64_t overflow = 18006744072479883520ull;
   if (flops > overflow || bytes > overflow){
@@ -198,7 +202,9 @@ app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
   if ((flops+nintops) < min_op_cutoff_){
     return;
   }
-  compute_lib()->compute_detailed(flops, nintops, bytes);
+  compute_lib()->compute_detailed(flops, nintops, bytes,
+                                  //if no number of threads are given, use the default OpenMP cfg
+                                  nthread == use_omp_num_threads ? omp_num_threads_ : nthread);
 }
 
 void

@@ -68,25 +68,21 @@ class lib_compute_inst :
   lib_compute_inst(sprockit::sim_parameters* params, const std::string& libname,
                    software_id id, operating_system* os);
 
-  virtual
-  ~lib_compute_inst() { }
+  virtual ~lib_compute_inst() { }
 
-  void
-  compute_inst(compute_event* msg);
+  void compute_inst(compute_event* msg);
 
-  void
-  compute_detailed(uint64_t flops,
+  void compute_detailed(uint64_t flops,
     uint64_t nintops,
-    uint64_t bytes);
+    uint64_t bytes,
+    int nthread = 1);
 
-  void
-  compute_loop(uint64_t nloops,
+  void compute_loop(uint64_t nloops,
     uint32_t flops_per_loop,
     uint32_t intops_per_loop,
     uint32_t bytes_per_loop);
 
-  virtual void
-  incoming_event(event *ev) override {
+  virtual void incoming_event(event *ev) override {
     library::incoming_event(ev);
   }
 

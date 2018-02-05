@@ -29,6 +29,7 @@ CLANGTESTS = \
   pragma_sst_compute \
   pragma_sst_compute_global_var \
   pragma_sst_loop_count \
+  pragma_omp_parallel_nthr \
   pragma_omp_parallel
 
 #  deglobal_relocation 

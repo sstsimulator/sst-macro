@@ -99,6 +99,12 @@ extern "C" void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint6
     ->compute_detailed(nflops, nintops, bytes);
 }
 
+extern "C" void sstmac_compute_detailed_nthr(uint64_t nflops, uint64_t nintops, uint64_t bytes,
+                                        int nthread){
+  sstmac::sw::operating_system::current_thread()->parent_app()
+    ->compute_detailed(nflops, nintops, bytes, nthread);
+}
+
 extern "C" void sstmac_compute_loop(uint64_t num_loops, uint32_t nflops_per_loop,
                     uint32_t nintops_per_loop, uint32_t bytes_per_loop){
   sstmac::sw::operating_system::current_thread()->parent_app()

@@ -83,7 +83,8 @@ void
 lib_compute_inst::compute_detailed(
   uint64_t flops,
   uint64_t nintops,
-  uint64_t bytes)
+  uint64_t bytes,
+  int nthread)
 {
   /** Configure the compute request */
   auto cmsg = new compute_event_impl<basic_instructions_st>;
@@ -91,6 +92,7 @@ lib_compute_inst::compute_detailed(
   st.flops = flops;
   st.intops = nintops;
   st.mem_sequential = bytes;
+  st.nthread = nthread;
 
   // Do not overwrite an existing tag
   const auto& cur_tag = os_->active_thread()->tag();
