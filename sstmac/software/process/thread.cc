@@ -66,7 +66,7 @@ MakeDebugSlot(host_compute)
 namespace sstmac {
 namespace sw {
 
-static thread_safe_long THREAD_ID_CNT(0);
+static thread_safe_u32 THREAD_ID_CNT(0);
 const app_id thread::main_thread_aid(-1);
 const task_id thread::main_thread_tid(-1);
 
@@ -113,8 +113,14 @@ thread::_get_api(const char* name)
 void
 thread::cleanup()
 {
-  if (state_ != CANCELED && parent_app_ && detach_state_ == DETACHED){
-    parent_app_->remove_subthread(this);
+  if (parent_app_){
+    if (detach_state_ == DETACHED && state_ != CANCELED){
+      parent_app_->remove_subthread(this);
+      os_->schedule_thread_deletion(this);
+    } else; //parent will join and then delete this
+  } else {
+    //no matter what, I have to delete myself
+    os_->schedule_thread_deletion(this);
   }
   // We are done, ask the scheduler to remove this task from the
   state_ = DONE;
@@ -213,7 +219,7 @@ thread::end_api_call()
   }
 }
 
-long
+uint32_t
 thread::init_id()
 {
   //thread id not yet initialized

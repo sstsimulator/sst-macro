@@ -48,7 +48,7 @@ class threading_fcontext : public thread_context
 
   virtual ~threading_fcontext() {}
 
-  threading_fcontext(sprockit::sim_parameters* params) {}
+  threading_fcontext(sprockit::sim_parameters* params){}
 
   thread_context* copy() const override {
     //parameters never actually used
@@ -78,11 +78,17 @@ class threading_fcontext : public thread_context
   }
 
   void resume_context(thread_context* from) override {
-    ctx_ = jump_fcontext(ctx_, nullptr).ctx;
+    auto newctx = jump_fcontext(ctx_, nullptr).ctx;
+    ctx_ = newctx;
   }
 
   void complete_context(thread_context* to) override {
     jump_fcontext(transfer_, nullptr);
+  }
+
+  void jump_context(thread_context* to) override {
+    spkt_abort_printf("error: fcontext interface does not support jump_context feature\n"
+                      "must set SSTMAC_THREADING=pth or ucontext");
   }
 
  private:

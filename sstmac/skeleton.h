@@ -58,6 +58,16 @@ typedef int (*empty_main_fxn)();
 #endif
 
 #ifdef __cplusplus
+extern "C" {
+#endif
+
+double sstmac_sim_time();
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
 
 #include <sstmac/software/process/cppglobal.h>
 
@@ -157,44 +167,12 @@ using sprockit::sim_parameters;
 
 extern sprockit::sim_parameters* get_params();
 
-/**
- * @brief sstmac_free
- * @param ptr A pointer which may or may not have been skeletonized
- */
-extern "C" void sstmac_free(void* ptr);
-extern "C" void* sstmac_memset(void* ptr, int value, unsigned long  sz);
-extern "C" void sstmac_exit(int code);
-extern "C" unsigned int sstmac_alarm(unsigned int);
-extern "C" int sstmac_atexit(void (*)(void));
-
-namespace std {
-
-void sstmac_free(void* ptr);
-void* sstmac_memset(void* ptr, int value, unsigned long  sz);
-
-}
-
-
-
 #else
-/**
- * @brief sstmac_free
- * @param ptr A pointer which may or may not have been skeletonized
- */
-void sstmac_free(void* ptr);
-void* sstmac_memset(void* ptr, int value, unsigned long size);
 static void* nullptr = 0;
 
 #define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
-#ifndef free
-#define free sstmac_free
-#endif
-
-#ifndef memset
-#define memset sstmac_memset
-#endif
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -202,6 +180,7 @@ static void* nullptr = 0;
 #include <stdint.h>
 #endif
 extern int sstmac_global_stacksize;
+
 
 #ifdef __STRICT_ANSI__
 #define SSTMAC_INLINE

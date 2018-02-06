@@ -42,40 +42,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <mpi.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 #define sstmac_app_name runopenmp
 
+double get_time()
+{
+  timeval t_st;
+  gettimeofday(&t_st, 0);
+  double t = t_st.tv_sec + 1e-6 * t_st.tv_usec;
+  return t;
+}
+
 int main(int argc, char** argv)
 {
-  MPI_Init(&argc, &argv);
-
   int worksize = 100000;
   double* array = new double[worksize];
 
-  printf("Starting work at   T=%8.5f\n", MPI_Wtime());
+  printf("Starting work at   T=%8.5f\n", get_time());
 #pragma omp parallel for num_threads(1)
   for (int i=0; i < worksize; ++i){
     array[i] = array[i/2]*array[1/4] + 5*array[i];
   }
 
-  printf("Continuing work at T=%8.5f\n", MPI_Wtime());
+  printf("Continuing work at T=%8.5f\n", get_time());
 #pragma omp parallel for 
   for (int i=0; i < worksize; ++i){
     array[i] = array[i/2]*array[1/4] + 5*array[i];
   }
 
-  printf("Continuing work at T=%8.5f\n", MPI_Wtime());
+  printf("Continuing work at T=%8.5f\n", get_time());
 #pragma omp parallel for num_threads(4)
   for (int i=0; i < worksize; ++i){
     array[i] = array[i/2]*array[1/4] + 5*array[i];
   }
 
-  printf("Finishing work at  T=%8.5f\n", MPI_Wtime());
-
-  MPI_Finalize();
+  printf("Finishing work at  T=%8.5f\n", get_time());
   return 0;
 }
 

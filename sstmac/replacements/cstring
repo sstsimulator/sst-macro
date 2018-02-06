@@ -1,17 +1,30 @@
+#ifndef cstring_header_h_included
+#define cstring_header_h_included
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-
+#define CSTRING_OWNS_STL
 #include <sstmac/replacements/sstmac_pthread_clear.h>
 #include <sstmac/replacements/clear_symbol_macros.h>
+#endif
+
 #include_next <cstring>
+
+#ifndef memset
+#define memset sstmac_memset
+#endif
+
+namespace std {
+void* sstmac_memset(void* ptr, int value, unsigned long  sz);
+}
+
+#ifdef CSTRING_OWNS_STL
+#undef CSTRING_OWNS_STL
 #undef SSTMAC_INSIDE_STL
 #include <sstmac/replacements/return_symbol_macros.h>
 #include <sstmac/replacements/sstmac_pthread_return.h>
-
-#else
-
-#include_next <cstring>
-
 #endif
 
+
+#endif
 

@@ -13,9 +13,9 @@ endif
 endif
 else
 if HAVE_CLANG
-SKELETONCASES += relocation_ptr_test 
+SKELETONCASES += relocation_ptr_test openmp
 if BUILD_SUMI_MPI
-SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD openmp
+SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD 
 endif
 endif
 
