@@ -186,7 +186,9 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   sid_(sid),
   ftag_(ftq_tag::null),
   protect_tag(false),
-  detach_state_(DETACHED)
+  detach_state_(DETACHED),
+  num_active_cores_(1), //start with 1
+  active_core_mask_(0)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);

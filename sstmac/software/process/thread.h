@@ -291,12 +291,20 @@ class thread
     return cpumask_;
   }
   
-  int active_core() const {
-    return active_core_;
+  uint64_t active_core_mask() const {
+    return active_core_mask_;
   }
-  
-  void set_active_core(int core) {
-    active_core_ = core;
+
+  void set_active_core_mask(uint64_t mask){
+    active_core_mask_ = mask;
+  }
+
+  int num_active_cores() const {
+    return num_active_cores_;
+  }
+
+  void set_num_active_cores(int ncores) {
+    num_active_cores_ = ncores;
   }
 
   void* get_tls_value(long thekey) const;
@@ -379,7 +387,9 @@ class thread
   
   uint64_t cpumask_;
   
-  int active_core_;
+  uint64_t active_core_mask_;
+
+  int num_active_cores_;
 
   uint64_t block_counter_;
 

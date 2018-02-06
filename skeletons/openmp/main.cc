@@ -42,80 +42,40 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef CPUSET_COMPUTE_scheduleR_H
-#define CPUSET_COMPUTE_scheduleR_H
+#include <mpi.h>
+#include <stddef.h>
+#include <stdio.h>
 
-#include <sstmac/software/process/compute_scheduler.h>
+#define sstmac_app_name runopenmp
 
-namespace sstmac {
-namespace sw {
-
-class cpuset_compute_scheduler : public compute_scheduler
+int main(int argc, char** argv)
 {
-  FactoryRegister("cpuset", compute_scheduler, cpuset_compute_scheduler,
-              "Compute scheduler that assigns threads to specific cores based on CPU_SET")
- public:  
-  cpuset_compute_scheduler(sprockit::sim_parameters* params,
-                           operating_system* os) :
-    available_cores_(0),
-    compute_scheduler(params, os)
-  {
+  MPI_Init(&argc, &argv);
+
+  int worksize = 100000;
+  double* array = new double[worksize];
+
+  printf("Starting work at   T=%8.5f\n", MPI_Wtime());
+#pragma omp parallel for num_threads(1)
+  for (int i=0; i < worksize; ++i){
+    array[i] = array[i/2]*array[1/4] + 5*array[i];
   }
 
-  void configure(int ncore, int nsocket) override;
-  
-  void reserve_core(thread *thr) override;
-  
-  void release_core(thread *thr) override;
-  
- private:  
-  static inline void remove_core(int core, uint64_t& mask){
-    mask = mask & ~(1<<core);
+  printf("Continuing work at T=%8.5f\n", MPI_Wtime());
+#pragma omp parallel for 
+  for (int i=0; i < worksize; ++i){
+    array[i] = array[i/2]*array[1/4] + 5*array[i];
   }
 
-  static inline void remove_cores(uint64_t cores, uint64_t& mask){
-    mask = mask & ~(cores);
-  }
-  
-  static inline void add_core(int core, uint64_t& mask){
-    mask = mask | (1<<core);
+  printf("Continuing work at T=%8.5f\n", MPI_Wtime());
+#pragma omp parallel for num_threads(4)
+  for (int i=0; i < worksize; ++i){
+    array[i] = array[i/2]*array[1/4] + 5*array[i];
   }
 
-  static inline void add_cores(uint64_t cores, uint64_t &mask){
-    mask = mask | cores;
-  }
+  printf("Finishing work at  T=%8.5f\n", MPI_Wtime());
 
-  inline uint64_t allocated_cores() const {
-    return ~available_cores_;
-  }
-  
- private:
-  uint64_t available_cores_;
-  std::list<thread*> pending_threads_;
-
-
-  /**
-   * @brief allocate_cores
-   * @param ncores  The number of cores to allocate from the mask valid_cores
-   * @param valid_cores The mask specifiying all valid cores as 1s
-   * @param cores_allocated in-out for the cores allocated from valid_cores
-   *                        on return 'false', result undefined
-   * @param thr The thread requesting the cores
-   * @return Whether the allocation succeeded
-   */
-  bool allocate_cores(int ncores, uint64_t valid_cores,
-                      uint64_t& cores_allocated, thread* thr);
-
-  /**
-   * @brief try_reserve_core
-   * @param thr     The thread requesting a certain number of cores
-   * @return Whether the allocation succeeded
-   */
-  bool try_reserve_core(thread* thr);
-
-};
-
-}
+  MPI_Finalize();
+  return 0;
 }
 
-#endif // CPUSET_COMPUTE_scheduleR_H

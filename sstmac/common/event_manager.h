@@ -298,7 +298,7 @@ class event_manager
   int serialize_schedule(char* buf);
 
   struct event_compare {
-    bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) {
+    bool operator()(event_queue_entry* lhs, event_queue_entry* rhs) const {
       bool neq = lhs->time() != rhs->time();
       if (neq) return lhs->time() < rhs->time();
 

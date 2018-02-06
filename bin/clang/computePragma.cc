@@ -174,10 +174,10 @@ SSTPragma*
 SSTOpenMPParallelPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
 {
   static const std::map<std::string, OpenMPProperty> omp_property_map = {
-    {"nthread", OMP_NTHREAD},
+    {"num_threads", OMP_NTHREAD},
   };
 
-  std::string nthread = "1";
+  std::string nthread;
   OpenMPProperty activeProp = OMP_NONE;
   for (const Token& t : tokens){
     switch (t.getKind()){

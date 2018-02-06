@@ -2088,7 +2088,6 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
       //pragma takes precedence - must occur in pre-visit
       prg->activate(S, rewriter_, pragmaConfig_);
     }
-
   }
   return skipVisit;
 }

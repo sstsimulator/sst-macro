@@ -75,7 +75,8 @@ static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app
 RegisterKeywords(
  { "host_compute_timer", "whether to use the time elapsed on the host machine in compute modeling" },
  { "min_op_cutoff", "the minimum number of operations in a compute before detailed modeling is perfromed" },
- { "notify", "whether the app should send completion notifications to job root" }
+ { "notify", "whether the app should send completion notifications to job root" },
+ { "OMP_NUM_THREADS", "environment variable for configuring openmp" },
 );
 
 namespace sstmac {

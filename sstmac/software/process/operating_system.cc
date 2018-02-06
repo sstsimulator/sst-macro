@@ -303,26 +303,34 @@ operating_system::async_kernel(ami::SERVICE_FUNC func,
 }
 
 void
-operating_system::execute_kernel(ami::COMP_FUNC func, event *data,
-                                 callback* cb)
+operating_system::execute(ami::COMP_FUNC func, event *data, int nthr)
 {
-  spkt_abort_printf("operating_system::execute_kernel(%s): not implemented",
-                    ami::tostr(func));
-}
+  int old_ncores = active_thread_->num_active_cores();
+  active_thread_->set_num_active_cores(nthr);
 
-void
-operating_system::execute(ami::COMP_FUNC func, event* data)
-{
   //this will block if the thread has no core to run on
   compute_sched_->reserve_core(active_thread_);
   //initiate the hardware events
-  //key* k = new key(cat);
   callback* cb = new_callback(this, &operating_system::unblock, active_thread_);
-  node_->execute(func, data, cb);
+
+  switch (func) {
+    case sstmac::ami::COMP_INSTR:
+      node_->proc()->compute(data, cb);
+      break;
+    case sstmac::ami::COMP_TIME: {
+      sw::timed_compute_event* ev = safe_cast(sw::timed_compute_event, data);
+      send_delayed_self_event_queue(ev->data(), cb);
+      break;
+    }
+    default:
+      spkt_throw_printf(sprockit::spkt_error,
+            "simplenode: cannot process kernel %s",
+            ami::tostr(func));
+  }
+
   block();
   compute_sched_->release_core(active_thread_);
-  //delete k;
-  //callbacks deleted by core
+  active_thread_->set_num_active_cores(old_ncores);
 }
 
 void

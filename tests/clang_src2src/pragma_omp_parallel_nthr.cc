@@ -7,7 +7,7 @@ int fxn()
   int* idx = new int[5];
   for (i=0; i < 5; ++i){
     mul *= i;
-#pragma omp parallel for nthread(4)
+#pragma omp parallel for num_threads(4)
     for (int j=0; j < 10; ++j){
       mul += (j-1);
       x[j] += i;
@@ -21,12 +21,12 @@ int fxn()
   }
   int anInteger = 45;
   int ret = 0;
-#pragma omp parallel for nthread(anInteger)
+#pragma omp parallel for num_threads(anInteger)
   for (int i=0; i < 1000; ++i){
     ret += 2 * x[i%10];
   }
   
-#pragma omp parallel nthread(6)
+#pragma omp parallel num_threads(6)
   {
   }
 

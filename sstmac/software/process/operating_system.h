@@ -140,10 +140,9 @@ class operating_system :
    * use execute_kernel
    * @param func  The function to perform
    * @param data  Event carrying all the data describing the compute
-   * @param cat   An optional category labeling the type of
-   *              operation
+   * @param nthr  The number of threads that need to execute
    */
-  void execute(ami::COMP_FUNC, event* data);
+  void execute(ami::COMP_FUNC, event* data, int nthr = 1);
 
   /**
    * @brief execute Execute a communication function.
@@ -168,16 +167,6 @@ class operating_system :
    */
   void execute_kernel(ami::COMM_FUNC func, message* data);
 
-  /**
-   * @brief execute Execute a communication function.
-   * This function takes place in "kernel" land
-   * and will never block and context switch.
-   * This function can therefore run on the main DES thread
-   * @param func  The function to perform
-   * @param data  Event carrying all the data describing the compute
-   * @param cb    The callback to invoke when the kernel is complete
-   */
-  void execute_kernel(ami::COMP_FUNC func, event* data, callback* cb);
   /**
    * @brief execute Enqueue an operation to perform
    * This function takes place in "kernel" land

@@ -99,7 +99,7 @@ lib_compute_inst::compute_detailed(
   ftq_scope scope(os_->active_thread(),
       cur_tag.id() == ftq_tag::null.id() ? ftq_tag::compute : cur_tag);
 
-  compute_inst(cmsg);
+  compute_inst(cmsg, nthread);
   delete cmsg;
 }
 
@@ -130,10 +130,10 @@ lib_compute_inst::init(sprockit::sim_parameters* params)
 }
 
 void
-lib_compute_inst::compute_inst(compute_event* cmsg)
+lib_compute_inst::compute_inst(compute_event* cmsg, int nthr)
 {
   SSTMACBacktrace(ComputeInstructions);
-  os_->execute(ami::COMP_INSTR, cmsg);
+  os_->execute(ami::COMP_INSTR, cmsg, nthr);
 }
 
 }

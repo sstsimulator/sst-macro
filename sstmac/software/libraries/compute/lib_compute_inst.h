@@ -70,7 +70,7 @@ class lib_compute_inst :
 
   virtual ~lib_compute_inst() { }
 
-  void compute_inst(compute_event* msg);
+  void compute_inst(compute_event* msg, int nthr = 1);
 
   void compute_detailed(uint64_t flops,
     uint64_t nintops,
