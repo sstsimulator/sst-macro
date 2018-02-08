@@ -81,6 +81,10 @@ RegisterDebugSlot(mpi_check,
     "validation flag that performs various sanity checks to ensure MPI application"
     " runs and terminates cleanly");
 
+RegisterKeywords(
+{ "dump_comm_times", "dump communication time statistics" },
+);
+
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
 sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
