@@ -75,6 +75,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sprockit/spkt_config.h>
 #include <sumi/sumi/sumi_config.h>
 
+#include <sstmac/common/event_manager.h>
+#include <sstmac/backends/native/serial_runtime.h>
+#include <sstmac/software/process/app.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/hardware/node/simple_node.h>
+
 #if SSTMAC_REPO_BUILD
 #include <sstmac_repo.h>
 #endif
@@ -304,7 +310,58 @@ run(opts& oo,
 #endif
 }
 
-void
+static void tokenize(const std::string& in, std::set<std::string>& tokens){
+  std::stringstream sstr(in);
+  std::string item;
+  while (std::getline(sstr, item, ',')){
+    tokens.insert(item);
+  }
+}
+
+int
+run_standalone(int argc, char** argv)
+{
+  std::cerr << "WARNING: running standalone executable as-is. This usually happens\n"
+            << "WARNING: when running configure scripts. I hope this is what you want"
+            << std::endl;
+  //oh, hmm, we are running inside configure
+  //this means we actually just want to run a compiled program
+  //and get the hell out of dodge
+  sstmac::timestamp::init_stamps(1);
+  sprockit::sim_parameters null_params;
+
+  sprockit::sim_parameters* nic_params = null_params.get_optional_namespace("nic");
+  nic_params->add_param_override("model", "null");
+
+  sprockit::sim_parameters* mem_params = null_params.get_optional_namespace("memory");
+  mem_params->add_param_override("model", "null");
+
+  sprockit::sim_parameters* proc_params = null_params.get_optional_namespace("proc");
+  proc_params->add_param_override("frequency", "1ghz");
+  proc_params->add_param_override("ncores", 1);
+
+  null_params.add_param_override("id", 1);
+  null_params.add_param_override("name", "sstmac_app_name");
+  sstmac::sw::software_id id(0,0);
+  sstmac::native::serial_runtime rt(&null_params);
+  sstmac::event_manager mgr(&null_params, &rt);
+  sstmac::hw::simple_node node(&null_params, 1, &mgr);
+  sstmac::sw::operating_system os(&null_params, &node);
+
+  std::stringstream argv_sstr;
+  for (int i=1; i < argc; ++i){
+    argv_sstr << " " << argv[i];
+  }
+  null_params.add_param("argv", argv_sstr.str());
+
+  null_params.add_param_override("notify", "false");
+  sstmac::sw::app* a = sstmac::sw::app::factory::get_value(
+        "sstmac_app_name", &null_params, id, &os);
+  os.start_app(a, "");
+  return a->rc();
+}
+
+int
 try_main(sprockit::sim_parameters* params,
          int argc, char **argv, bool params_only)
 {
@@ -319,6 +376,23 @@ try_main(sprockit::sim_parameters* params,
     rt = sstmac::init();
   }
 
+  const char* list = getenv("SSTMAC_WHITELIST");
+  if (list != nullptr){
+    std::set<std::string> tokens;
+    tokenize(list, tokens);
+    std::string appName = argv[0];
+    //normalize to chop off ./
+    if (appName.at(0) == '.') appName.substr(2);
+    auto lastSlash = appName.find_last_of("/");
+    if (lastSlash != std::string::npos){
+      appName = appName.substr(lastSlash + 1);
+    }
+    if (tokens.find(appName) != tokens.end()){
+      //this executable is whitelisted
+      return run_standalone(argc, argv);
+    }
+  }
+
   opts oo;
   sim_stats stats;
   sstmac::init_opts(oo, argc, argv);
@@ -329,7 +403,7 @@ try_main(sprockit::sim_parameters* params,
   if (!oo.benchmark.empty()){
     benchmark* bm = benchmark::factory::get_value(oo.benchmark, params);
     bm->run();
-    return;
+    return 0;
   }
 
   //do some cleanup and processing of params
@@ -350,7 +424,7 @@ try_main(sprockit::sim_parameters* params,
   }
 
   if (params_only)
-    return;
+    return 0;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (rt && rt->me() == 0){
@@ -382,6 +456,8 @@ try_main(sprockit::sim_parameters* params,
   }
 
   sstmac::finalize(rt);
+
+  return 0;
 }
 
 

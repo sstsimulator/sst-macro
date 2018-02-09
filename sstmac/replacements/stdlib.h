@@ -10,9 +10,9 @@
 
 #include_next <stdlib.h>
 
-#ifndef free
-#define free sstmac_free
-#endif
+//#ifndef free
+//#define free sstmac_free
+//#endif
 
 #define atexit sstmac_atexit
 #define _exit sstmac_exit

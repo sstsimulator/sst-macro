@@ -51,29 +51,35 @@ int sstmac_global_stacksize = 0;
 namespace sstmac {
 
 int GlobalVariable::stackOffset = 0;
-int GlobalVariable::allocSize = 4096;
+int GlobalVariable::allocSize_ = 4096;
 char* GlobalVariable::globalInits = nullptr;
 std::list<GlobalVariable::relocation> GlobalVariable::relocations;
 std::list<GlobalVariable::relocationCfg> GlobalVariable::relocationCfgs;
 std::list<CppGlobal*> GlobalVariable::cppCtors;
+std::unordered_set<void*> GlobalVariable::activeGlobalMaps_;
 
 GlobalVariable::GlobalVariable(int &offset, const int size, const char* name, const void *initData)
 {
-
   offset = stackOffset;
 
   int rem = size % 4;
   int offsetIncrement = rem ? (size + (4-rem)) : size; //align on 32-bits
 
-  bool realloc = globalInits == nullptr;
-  while ((offsetIncrement + stackOffset) > allocSize){
+  bool realloc = false;
+  while ((offsetIncrement + stackOffset) > allocSize_){
     realloc = true;
-    allocSize *= 2; //grow until big enough
+    allocSize_ *= 2; //grow until big enough
   }
 
-  if (realloc){
+  if (realloc && !activeGlobalMaps_.empty()){
+    spkt_abort_printf("dynamically loaded global variable overran storage space\n"
+                      "to fix, explicitly set globals_size = %d in app params",
+                      allocSize_);
+  }
+
+  if (realloc || globalInits == nullptr){
     char* old = globalInits;
-    globalInits = new char[allocSize];
+    globalInits = new char[allocSize_];
     if (old){
       //move everything in that was already there
       ::memcpy(globalInits, old, stackOffset);
@@ -88,6 +94,10 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const char* name, co
   if (initData){
     void* initStart = (char*)globalInits + stackOffset;
     ::memcpy(initStart, initData, size);
+    for (void* seg : activeGlobalMaps_){
+      char* dst = ((char*)seg) + stackOffset;
+      ::memcpy(dst, initData, size);
+    }
   }
 
   stackOffset += offsetIncrement;
@@ -106,6 +116,25 @@ GlobalVariable::registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffse
 }
 
 void
+GlobalVariable::dlopenRelocate()
+{
+  //after a dlopen, there might be new relocations to execute
+  if (!relocationCfgs.empty()){
+    for (auto& cfg : relocationCfgs){
+      int dstFieldDelta = (intptr_t)cfg.dstPtr - (intptr_t)cfg.dstBasePtr;
+      int srcFieldDelta = (intptr_t)cfg.srcPtr - (intptr_t)cfg.srcBasePtr;
+      int src = cfg.srcOffset + srcFieldDelta;
+      int dst = cfg.dstOffset + dstFieldDelta;
+      relocations.emplace_back(src,dst);
+      for (void* seg : activeGlobalMaps_){
+        relocate(relocations.back(), (char*)seg);
+      }
+    }
+    relocationCfgs.clear();
+  }
+}
+
+void
 GlobalVariable::relocatePointers(void* globals)
 {
   if (!relocationCfgs.empty()){
@@ -121,9 +150,7 @@ GlobalVariable::relocatePointers(void* globals)
 
   char* segment = (char*) globals;
   for (relocation& r : relocations){
-    void* src = &segment[r.srcOffset];
-    void** dst = (void**) &segment[r.dstOffset];
-    *dst = src;
+    relocate(r,segment);
   }
 }
 
@@ -143,4 +170,31 @@ GlobalVariable::~GlobalVariable()
   }
 }
 
+void
+GlobalVariable::initGlobalSpace(void* ptr, int size, int offset)
+{
+  for (void* globals : activeGlobalMaps_){
+    char* dst = ((char*)globals) + offset;
+    ::memcpy(dst, ptr, size);
+  }
+
+  //also do the global init for any new threads spawned
+  char* dst = ((char*)GlobalVariable::globalInit()) + offset;
+  ::memcpy(dst, ptr, size);
+}
+
+}
+
+#include <dlfcn.h>
+
+extern "C" void *sstmac_dlopen(const char* filename, int flag)
+{
+  void* ret = dlopen(filename, flag);
+  sstmac::GlobalVariable::dlopenRelocate();
+  return ret;
+}
+
+extern "C" void sstmac_init_global_space(void* ptr, int size, int offset)
+{
+  sstmac::GlobalVariable::initGlobalSpace(ptr, size, offset);
 }

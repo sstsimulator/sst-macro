@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/tls.h>
 #include <list>
 #include <sstmac/software/process/cppglobal.h>
+#include <unordered_set>
 
 extern int sstmac_global_stacksize;
 
@@ -65,16 +66,36 @@ class GlobalVariable {
     return stackOffset;
   }
 
+  static int allocSize() {
+    return allocSize_;
+  }
+
+  static void setAllocSize(int sz){
+    allocSize_ = sz;
+  }
+
   static void* globalInit() {
     return globalInits;
   }
 
   static void callCtors(void* globals);
 
+  static void addActiveSegment(void* globals){
+    activeGlobalMaps_.insert(globals);
+  }
+
+  static void removeActiveSegment(void* globals){
+    activeGlobalMaps_.erase(globals);
+  }
+
+  static void initGlobalSpace(void* ptr, int size, int offset);
+
   static void relocatePointers(void* globals);
 
   static void registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
                                  void* dstPtr, void* dstBasePtr, int& dstOffset);
+
+  static void dlopenRelocate();
 
   static void registerCtor(CppGlobal* g){
     cppCtors.push_back(g);
@@ -83,7 +104,7 @@ class GlobalVariable {
  private:
   static int stackOffset;
   static char* globalInits;
-  static int allocSize;
+  static int allocSize_;
   static std::list<CppGlobal*> cppCtors;
 
   struct relocation {
@@ -94,6 +115,12 @@ class GlobalVariable {
   };
   static std::list<relocation> relocations;
 
+  static inline void relocate(relocation& r, char* segment)
+  {
+    void* src = &segment[r.srcOffset];
+    void** dst = (void**) &segment[r.dstOffset];
+    *dst = src;
+  }
 
   struct relocationCfg {
     void* srcPtr;
@@ -110,6 +137,10 @@ class GlobalVariable {
     }
   };
   static std::list<relocationCfg> relocationCfgs;
+
+ private:
+  static std::unordered_set<void*> activeGlobalMaps_;
+
 
 };
 

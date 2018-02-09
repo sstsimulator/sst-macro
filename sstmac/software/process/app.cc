@@ -76,6 +76,7 @@ RegisterKeywords(
  { "host_compute_timer", "whether to use the time elapsed on the host machine in compute modeling" },
  { "min_op_cutoff", "the minimum number of operations in a compute before detailed modeling is perfromed" },
  { "notify", "whether the app should send completion notifications to job root" },
+ { "globals_size", "the size of the global variable segment to allocate" },
  { "OMP_NUM_THREADS", "environment variable for configuring openmp" },
 );
 
@@ -110,10 +111,15 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   omp_num_threads_(1),
   rc_(0)
 {
-  int globalsSize = GlobalVariable::globalsSize();
-  if (globalsSize != 0){
-    globals_storage_ = new char[globalsSize];
-    ::memcpy(globals_storage_, GlobalVariable::globalInit(), globalsSize);
+  int allocSize = GlobalVariable::allocSize();
+  if (params->has_param("globals_size")){
+    allocSize = params->get_int_param("globals_size");
+    GlobalVariable::setAllocSize(allocSize);
+  }
+  if (allocSize != 0){
+    globals_storage_ = new char[allocSize];
+    ::memcpy(globals_storage_, GlobalVariable::globalInit(), GlobalVariable::globalsSize());
+    fflush(stdout);
   }
   min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
   bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
@@ -420,7 +426,7 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
   int argc = argv_param_vec.size();
   char* argv_buffer = new char[256 * argc];
   char* argv_buffer_ptr = argv_buffer;
-  char** argv = new char*[argc];
+  char** argv = new char*[argc+1];
   for (int i = 0; i < argc; ++i) {
     const std::string& src_str = argv_param_vec[i];
     ::strcpy(argv_buffer_ptr, src_str.c_str());
@@ -428,6 +434,7 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
     //increment pointer for next strcpy
     argv_buffer_ptr += src_str.size() + 1; //+1 for null terminator
   }
+  argv[argc] = nullptr; //missing nullptr - Issue #269
   entry.argc = argc;
   entry.argv = argv;
 }

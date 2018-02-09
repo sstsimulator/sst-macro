@@ -57,8 +57,6 @@ namespace sstmac {
 
 static const int tls_sanity_check = 42042042;
 
-std::set<void*> thread_info::active_global_maps_;
-
 void
 thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack, void* globalsMap)
 {
@@ -82,28 +80,20 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
   *globalPtr = globalsMap;
 
   if (globalsMap){
-    active_global_maps_.insert(globalsMap);
+    GlobalVariable::addActiveSegment(globalsMap);
     GlobalVariable::callCtors(globalsMap);
     GlobalVariable::relocatePointers(globalsMap);
   }
 }
 
 void
-thread_info::init_global_space(void* ptr, int size, int offset)
+thread_info::deregister_user_space_virtual_thread(void* stack)
 {
-  for (void* globals : active_global_maps_){
-    char* dst = ((char*)globals) + offset;
-    ::memcpy(dst, ptr, size);
-  }
-
-  //also do the global init for any new threads spawned
-  char* dst = ((char*)GlobalVariable::globalInit()) + offset;
-  ::memcpy(dst, ptr, size);
+  char* tls = (char*) stack;
+  void** globalsPtr = (void**) &tls[TLS_GLOBAL_MAP];
+  void* globalsMap = *globalsPtr;
+  GlobalVariable::removeActiveSegment(globalsMap);
 }
 
 }
 
-extern "C" void sstmac_init_global_space(void* ptr, int size, int offset)
-{
-  sstmac::thread_info::init_global_space(ptr, size, offset);
-}

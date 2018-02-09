@@ -141,7 +141,9 @@ void run(opts& oo,
     sprockit::sim_parameters* params,
     sim_stats& stats);
 
-void try_main(sprockit::sim_parameters* params,
+int run_standalone(int argc, char** argv);
+
+int try_main(sprockit::sim_parameters* params,
    int argc, char **argv,
    bool params_only = false);
 

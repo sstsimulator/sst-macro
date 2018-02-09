@@ -31,6 +31,7 @@ nobase_library_include_HEADERS += \
   return_symbol_macros.h \
   sstmac_pthread_return.h \
   sys/types.h \
+  dlfcn.h \
   fstream \
   iostream \
   ios \
