@@ -307,6 +307,12 @@ SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
+SSTCallFunctionPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  r.InsertText(s->getLocStart(), repl_, false);
+}
+
+void
 SSTMallocPragma::visitBinaryOperator(BinaryOperator *op, Rewriter &r)
 {
   PrettyPrinter pp;
@@ -681,4 +687,13 @@ SSTAdvanceTimePragmaHandler::allocatePragma(SourceLocation loc, const std::list<
   ++iter;
   SSTPragma::tokenStreamToString(loc, iter, tokens.end(), sstr, ci_);
   return new SSTAdvanceTimePragma(units, sstr.str());
+}
+
+SSTPragma*
+SSTCallFunctionPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  sstr << ";"; //semi-colon not required in pragma
+  return new SSTCallFunctionPragma(sstr.str());
 }

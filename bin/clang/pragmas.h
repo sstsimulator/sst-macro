@@ -82,7 +82,8 @@ struct SSTPragma {
     Memory=11,
     Instead=12,
     BranchPredict=13,
-    AdvanceTime=14
+    AdvanceTime=14,
+    CallFunction=15
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -109,6 +110,12 @@ struct SSTPragma {
     return false;
   }
 
+  /**
+   * @brief firstPass AST gets visited twice - once in a first pass to fill
+   * in declarations/definitions a second pass to actually make changes.
+   * Some pragmas need to be visited on the first pass. Most do not.
+   * @return
+   */
   virtual bool firstPass() const {
     return false;
   }
@@ -274,8 +281,12 @@ class SSTBranchPredictPragma : public SSTPragma {
   const std::string& prediction() const {
     return prediction_;
   }
+  bool reusable() const override {
+    return true;
+  }
  private:
-  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
   std::string prediction_;
 };
 
@@ -289,6 +300,16 @@ class SSTAdvanceTimePragma : public SSTPragma {
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg);
   std::string units_;
   std::string amount_;
+};
+
+class SSTCallFunctionPragma : public SSTPragma {
+ public:
+  SSTCallFunctionPragma(const std::string& repl) : repl_(repl), SSTPragma(CallFunction) {}
+
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+ private:
+  std::string repl_;
 };
 
 class SSTNewPragma : public SSTPragma {
@@ -331,19 +352,17 @@ struct SSTPragmaList {
       if (match){
         if (firstPass){
           if (p->firstPass()){
-            if (!p->reusable()){
-              pragmas.erase(tmp);
-            } else {
+            if (p->reusable()){
               appendPulled(t,p);
             }
+            pragmas.erase(tmp);
             ret.push_back(p);
           }
         } else {
-          if (!p->reusable()){
-            pragmas.erase(tmp);
-          } else {
+          if (p->reusable()){
             appendPulled(t,p);
           }
+          pragmas.erase(tmp);
           ret.push_back(p);
         }
       }
@@ -352,10 +371,16 @@ struct SSTPragmaList {
   }
 
   void appendPulled(clang::Stmt* s, SSTPragma* prg){
+    //for "stacked" pragmas, should visit BASE first
+    //the BASE is the driving pragma and all the rest
+    //are "modifiers" for the base
     pulledStmts[s].push_back(prg);
   }
 
   void appendPulled(clang::Decl* d, SSTPragma* prg){
+    //for "stacked" pragmas, should visit BASE first
+    //the BASE is the driving pragma and all the rest
+    //are "modifiers" for the base
     pulledDecls[d].push_back(prg);
   }
 
@@ -609,6 +634,21 @@ class SSTAdvanceTimePragmaHandler : public SSTTokenStreamPragmaHandler
                        SkeletonASTVisitor& visitor,
                        std::set<clang::Stmt*>& deld) :
     SSTTokenStreamPragmaHandler("advance_time", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+
+};
+
+class SSTCallFunctionPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTCallFunctionPragmaHandler(SSTPragmaList& plist,
+                       clang::CompilerInstance& CI,
+                       SkeletonASTVisitor& visitor,
+                       std::set<clang::Stmt*>& deld) :
+    SSTTokenStreamPragmaHandler("call", plist, CI, visitor, deld){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,

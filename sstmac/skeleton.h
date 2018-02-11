@@ -112,6 +112,8 @@ namespace sstmac {
 
 class vector {
  public:
+  vector() : size_(0) {}
+
   void resize(unsigned long sz){
     size_ = sz;
   }

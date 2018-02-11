@@ -2025,10 +2025,11 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
 {
   bool skipVisit = false;
   for (SSTPragma* prg : pragmas_.getMatches(S)){
-    if (skipVisit){
-      errorAbort(S->getLocStart(), *ci_,
-           "code block deleted by pragma - invalid pragma combination");
-    }
+    //I'm not sure this is actually an error
+    //if (skipVisit){
+    //  errorAbort(S->getLocStart(), *ci_,
+    //       "code block deleted by pragma - invalid pragma combination");
+    //}
 
     bool activate = !noSkeletonize_;
 
