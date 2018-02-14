@@ -1,14 +1,25 @@
+#ifndef sstmac_string_included
+#define sstmac_string_included
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-
+#define STRING_OWNS_STL
 #include <sstmac/replacements/sstmac_pthread_clear.h>
+#include <sstmac/replacements/clear_symbol_macros.h>
+#endif
 
+#ifdef memcpy
+#error should not be set
+#endif
 #include_next <string>
+
+#ifdef STRING_OWNS_STL
+#undef STRING_OWNS_STL
 #undef SSTMAC_INSIDE_STL
-
+#include <sstmac/replacements/return_symbol_macros.h>
 #include <sstmac/replacements/sstmac_pthread_return.h>
+#endif
 
-#else
-#include_next <string>
+
 #endif
 

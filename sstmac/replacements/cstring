@@ -10,12 +10,22 @@
 
 #include_next <cstring>
 
+#ifdef SSTMAC_INSIDE_STL
+#define sstmac_must_return_memcpy
+#define sstmac_must_return_memset
+#else
 #ifndef memset
 #define memset sstmac_memset
+#endif
+#ifndef memcpy
+#define memcpy sstmac_memcpy
+#endif
 #endif
 
 namespace std {
 void* sstmac_memset(void* ptr, int value, unsigned long  sz);
+
+void* sstmac_memcpy(void* dst, const void* src, unsigned long sz);
 }
 
 #ifdef CSTRING_OWNS_STL

@@ -441,6 +441,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     activeGlobalScopedName_.clear();
   }
 
+  void propagateNullness(clang::Stmt* stmt, clang::Decl* decl);
+
   void setActiveGlobalScopedName(const std::string& str) {
     activeGlobalScopedName_ = str;
   }
@@ -478,6 +480,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::ForStmt*> compute_loops_;
   std::list<clang::Stmt*> stmt_contexts_;
   std::list<clang::Expr*> math_contexts_;
+  std::list<clang::Decl*> assignments_;
 
   std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmt_replacements_;
 
@@ -488,7 +491,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   typedef enum { LHS, RHS } BinOpSide;
   std::list<BinOpSide> sides_;
-  std::list<bool> opModifies_;
+  //std::list<bool> opModifies_;
 
   bool foundCMain_;
   bool refactorMain_;

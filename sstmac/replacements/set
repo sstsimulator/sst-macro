@@ -1,21 +1,22 @@
-#ifndef sstmac_ostream_included
-#define sstmac_ostream_included
+#ifndef sstmac_set_included
+#define sstmac_set_included
 
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-#define OSTREAM_OWNS_STL
+#define SET_OWNS_STL
 #include <sstmac/replacements/sstmac_pthread_clear.h>
 #include <sstmac/replacements/clear_symbol_macros.h>
 #endif
 
-#include_next <ostream>
+#include_next <set>
 
-#ifdef OSTREAM_OWNS_STL
-#undef OSTREAM_OWNS_STL
+#ifdef SET_OWNS_STL
+#undef SET_OWNS_STL
 #undef SSTMAC_INSIDE_STL
 #include <sstmac/replacements/return_symbol_macros.h>
 #include <sstmac/replacements/sstmac_pthread_return.h>
 #endif
+
 
 #endif
 

@@ -1,14 +1,23 @@
+#ifndef sstmac_mutex_header_included
+#define sstmac_mutex_header_included
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-
+#define MUTEX_OWNS_STL
 #include <sstmac/replacements/sstmac_pthread_clear.h>
-
-#include_next <mutex>
-#undef SSTMAC_INSIDE_STL
-
-#include <sstmac/replacements/sstmac_pthread_return.h>
-
-#else
-#include_next <mutex>
+#include <sstmac/replacements/clear_symbol_macros.h>
 #endif
+
+#include_next <mutex>
+
+#ifdef MUTEX_OWNS_STL
+#undef MUTEX_OWNS_STL
+#undef SSTMAC_INSIDE_STL
+#include <sstmac/replacements/return_symbol_macros.h>
+#include <sstmac/replacements/sstmac_pthread_return.h>
+#endif
+
+
+#endif
+
 

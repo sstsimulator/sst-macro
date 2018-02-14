@@ -40,6 +40,8 @@ nobase_library_include_HEADERS += \
   condition_variable \
   list \
   map \
+  unordered_map \
+  unordered_set \
   memory \
   mutex \
   thread \
@@ -53,6 +55,7 @@ nobase_library_include_HEADERS += \
   queue \
   sstream \
   stack \
+  set \
   string \
   vector \
   signal.h \

@@ -68,6 +68,14 @@ void* sstmac_memset(void* ptr, int value, unsigned long  sz){
   return ptr;
 }
 
+void* sstmac_memcpy(void *dst, const void *src, unsigned long sz){
+#ifdef memcpy
+#error #sstmac memcpy macro should not be defined in util.cc - refactor needed
+#endif
+  if (isNonNullBuffer(dst) && isNonNullBuffer(src)) memcpy(dst,src,sz);
+  return dst;
+}
+
 void sstmac_free(void* ptr){
   if (isNonNullBuffer(ptr)){
     ::free(ptr);
@@ -82,6 +90,15 @@ void* sstmac_memset(void* ptr, int value, unsigned long sz){
 #endif
   if (isNonNullBuffer(ptr)) memset(ptr,value,sz);
   return ptr;
+}
+
+extern "C"
+void* sstmac_memcpy(void* dst, const void* src, unsigned long sz){
+#ifdef memcpy
+#error #sstmac memcpy macro should not be defined in util.cc - refactor needed
+#endif
+  if (isNonNullBuffer(dst) && isNonNullBuffer(src)) memcpy(dst,src,sz);
+  return dst;
 }
 
 extern "C" void sstmac_exit(int code)

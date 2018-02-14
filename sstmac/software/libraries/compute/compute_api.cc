@@ -89,7 +89,7 @@ extern "C" void sstmac_memwrite(uint64_t bytes){
     ->compute_block_write(bytes);
 }
 
-extern "C" void sstmac_memcpy(uint64_t bytes){
+extern "C" void sstmac_memcopy(uint64_t bytes){
   sstmac::sw::operating_system::current_thread()->parent_app()
     ->compute_block_memcpy(bytes);
 }

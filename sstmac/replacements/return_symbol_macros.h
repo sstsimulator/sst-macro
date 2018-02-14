@@ -10,6 +10,12 @@
 #undef sstmac_must_return_memset
 #endif
 
+#ifdef sstmac_must_return_memcpy
+#undef memcpy
+#define memcpy sstmac_memcpy
+#undef sstmac_must_return_memcpy
+#endif
+
 #ifdef sstmac_must_return_gethostname
 #undef gethostname
 #define gethostname sstmac_gethostname

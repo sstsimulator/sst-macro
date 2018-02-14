@@ -150,14 +150,14 @@ void sstmac_memread(uint64_t bytes);
 
 void sstmac_memwrite(uint64_t bytes);
 
-void sstmac_memcpy(uint64_t bytes);
+void sstmac_memcopy(uint64_t bytes);
 
 #define SSTMAC_sleep(...) sstmac_sleep(__VA_ARGS__)
 #define SSTMAC_usleep(...) sstmac_usleep(__VA_ARGS__)
 #define SSTMAC_compute(...) sstmac_compute(__VA_ARGS__)
 #define SSTMAC_memread(...) sstmac_memread(__VA_ARGS__)
 #define SSTMAC_memwrite(...) sstmac_memwrite(__VA_ARGS__)
-#define SSTMAC_memcpy(...) sstmac_memcpy(__VA_ARGS__)
+#define SSTMAC_memcopy(...) sstmac_memcopy(__VA_ARGS__)
 #define SSTMAC_compute_detailed(...) sstmac_compute_detailed(__VA_ARGS__)
 #define SSTMAC_compute_loop(...) sstmac_compute_loop(__VA_ARGS__)
 #define SSTMAC_compute_loop2(...) sstmac_compute_loop2(__VA_ARGS__)

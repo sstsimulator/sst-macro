@@ -317,24 +317,19 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
       } else {
         //delete the outermost math expr
         Expr* toDel = math_contexts_.front();
-        bool notModifyingLHS = sides_.empty() || sides_.front() == RHS
-                                || !opModifies_.front();
-        if (notModifyingLHS){
-          //replace the binary operator we are part of
-          if (toDel->getType()->isPointerType()){
-            replace(toDel, nullVarPrg->getReplacement());
-            //and now throw out of this
-            throw StmtDeleteException(toDel);
-          } else {
-            std::string error = "null_variable " + nd->getNameAsString()
-                + " is marked replace, but this is only valid for pointer types";
-            errorAbort(expr->getLocStart(), *ci_, error);
-          }
-        } else {
-          //okay, we are a modifying lhs
-          //delete the whole thing
-          deleteNullVariableStmt(toDel, decl);
+        if (!toDel->getType()->isPointerType()){
+          std::stringstream sstr;
+          sstr << "null_variable " << nd->getNameAsString()
+               << " is marked replace, but this is only valid for pointer types: "
+               << "actual type is " << GetAsString(toDel->getType());
+          PrettyPrinter pp;
+          pp.print(toDel);
+          std::cerr << pp.os.str() << std::endl;
+          errorAbort(expr->getLocStart(), *ci_, sstr.str());
         }
+
+        ::replace(math_contexts_.front(), rewriter_, nullVarPrg->getReplacement(), *ci_);
+        throw StmtDeleteException(toDel);
       }
     } else if (stmt_contexts_.empty()){
       //delete the statement it is a part of
@@ -1843,33 +1838,42 @@ SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueu
 {
   bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(op);
 
-  bool opModifies = false;
-  switch (op->getOpcode()){
-    case BO_MulAssign:
-    case BO_DivAssign:
-    case BO_RemAssign:
-    case BO_AddAssign:
-    case BO_SubAssign:
-    case BO_Assign:
-      opModifies = true; //need to update data flow
-      break;
-    default:
-      break;
-  }
 
-
-  PushGuard<clang::Expr*> pg(math_contexts_, op);
-  goIntoContext(op, [&]{
+  auto toExec = [&]{
     if (skipVisit){
       deletedStmts_.insert(op);
     } else {
-      PushGuard<bool> pgSideType(opModifies_, opModifies);
+      //PushGuard<bool> pgSideType(opModifies_, opModifies);
       PushGuard<BinOpSide> pg(sides_, BinOpSide::LHS);
       TraverseStmt(op->getLHS());
       pg.swap(BinOpSide::RHS);
       TraverseStmt(op->getRHS());
     }
-  });
+  };
+
+  switch (op->getOpcode()){
+    case BO_Mul:
+    case BO_Add:
+    case BO_Rem:
+    case BO_Div: {
+      //this is a math operation that we need to grab
+      PushGuard<clang::Expr*> pg(math_contexts_, op);
+      goIntoContext(op, toExec);
+      break;
+    }
+    case BO_Assign: {
+      clang::Expr* lhs = getUnderlyingExpr(op->getLHS());
+      if (lhs->getStmtClass() == Stmt::DeclRefExprClass){
+        DeclRefExpr* dref = cast<DeclRefExpr>(lhs);
+        Decl* decl = dref->getFoundDecl()->getCanonicalDecl();
+        PushGuard<clang::Decl*> pg(assignments_, decl);
+        goIntoContext(op, toExec);
+      }
+    }
+    default:
+      goIntoContext(op, toExec);
+      break;
+  }
 
   return true;
 }
@@ -2027,6 +2031,26 @@ SkeletonASTVisitor::dataTraverseStmtPost(Stmt* S)
 }
 
 void
+SkeletonASTVisitor::propagateNullness(Stmt* stmt, Decl* decl)
+{
+  if (stmt->getStmtClass() == Stmt::DeclStmtClass){
+    DeclStmt* ds = cast<DeclStmt>(stmt);
+    Decl* lhs = ds->getSingleDecl();
+    if (lhs && lhs != decl){
+      //well, crap, the nullness propagates to a new variable
+      if (lhs->getKind() == Decl::Var){
+        //yep, it does
+        VarDecl* vd = cast<VarDecl>(lhs);
+        //propagate the null-ness to this new variable
+        SSTNullVariablePragma* oldPragma = getNullVariable(decl);
+        SSTNullVariablePragma* fakePragma = new SSTNullVariablePragma;
+        pragmaConfig_.nullVariables[vd] = fakePragma;
+      }
+    }
+  }
+}
+
+void
 SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
 {
   if (stmt_contexts_.empty()){
@@ -2101,20 +2125,7 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
     */
   }
 
-  if (s->getStmtClass() == Stmt::DeclStmtClass){
-    DeclStmt* ds = cast<DeclStmt>(s);
-    Decl* lhs = ds->getSingleDecl();
-    if (lhs && lhs != d){
-      //well, crap, the nullness might propagate to a new variable
-      if (lhs->getKind() == Decl::Var){
-        //yep, it does
-        VarDecl* vd = cast<VarDecl>(lhs);
-        //propagate the null-ness to this new variable
-        SSTNullVariablePragma* fakePragma = new SSTNullVariablePragma;
-        pragmaConfig_.nullVariables[vd] = fakePragma;
-      }
-    }
-  }
+  propagateNullness(s,d);
   deleteStmt(s); //now delete it
   //not only delete it, but stop all work on the current statement!
   throw StmtDeleteException(s);
