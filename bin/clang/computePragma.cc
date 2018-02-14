@@ -143,12 +143,14 @@ SSTComputePragma::visitIfStmt(IfStmt* stmt, Rewriter& r, PragmaConfig& cfg)
 void
 SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
 {
+  cfg.astVisitor->appendComputeLoop(stmt);
   ComputeVisitor vis(*CI, *pragmaList, nullptr, cfg.astVisitor); //null, no parent
   Loop loop(0); //depth zeros
   vis.setContext(stmt);
   vis.visitLoop(stmt,loop);
   vis.replaceStmt(stmt,r,loop,cfg, nthread_);
   //cfg.skipNextStmt = true;
+  cfg.astVisitor->popComputeLoop();
 }
 
 void

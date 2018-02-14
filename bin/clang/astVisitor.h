@@ -139,6 +139,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   std::string needGlobalReplacement(clang::NamedDecl* decl) {
     const clang::Decl* md = mainDecl(decl);
+    if (globalsTouched_.empty()){
+      errorAbort(decl->getLocStart(), *ci_,
+                 "internal error: globals touched array is empty");
+    }
     globalsTouched_.back().insert(md);
     auto iter = globals_.find(md);
     if (iter == globals_.end()){
@@ -378,6 +382,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return mainName_;
   }
 
+  void appendComputeLoop(clang::ForStmt* stmt){
+    compute_loops_.push_back(stmt);
+  }
+
+  void popComputeLoop(){
+    compute_loops_.pop_back();
+  }
+
  private:
   clang::NamespaceDecl* getOuterNamespace(clang::Decl* D);
 
@@ -437,6 +449,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return activeGlobalScopedName_;
   }
 
+  void executeCurrentReplacements();
+
+  void replace(clang::SourceRange rng, const std::string& repl);
+
+  void replace(clang::Expr* expr, const std::string& repl){
+    replace(expr->getSourceRange(), repl);
+  }
+
   /**
    * @brief addRelocation
    * @param op  The unary operator creating the pointer
@@ -454,7 +474,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::FunctionDecl*> fxn_contexts_;
   std::list<clang::CXXRecordDecl*> class_contexts_;
   std::list<clang::ForStmt*> loop_contexts_;
+  /* a subset of loop contexts, only those loops that are skeletonized */
+  std::list<clang::ForStmt*> compute_loops_;
   std::list<clang::Stmt*> stmt_contexts_;
+  std::list<clang::Expr*> math_contexts_;
+
+  std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmt_replacements_;
 
   std::list<clang::VarDecl*> activeDecls_;
   std::list<clang::Expr*> activeInits_;
@@ -463,6 +488,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   typedef enum { LHS, RHS } BinOpSide;
   std::list<BinOpSide> sides_;
+  std::list<bool> opModifies_;
 
   bool foundCMain_;
   bool refactorMain_;
@@ -473,8 +499,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<std::string> reservedNames_;
   PragmaConfig& pragmaConfig_;
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
-  std::set<clang::FunctionDecl*> keepWithNullArgs_;
-  std::set<clang::FunctionDecl*> deleteWithNullArgs_;
   std::set<clang::DeclRefExpr*> alreadyReplaced_;
 
   struct GlobalStandin {
@@ -492,6 +516,67 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::map<std::string, MPI_Call> mpiCalls_;
 
  private:
+  /**
+   * Exception-safe pushing back on a list
+   * Forces clean up even if exceptions get thrown
+   */
+  template <class T>
+  struct PushGuard {
+    template <class U>
+    PushGuard(std::list<T>& theList, U&& t) : myList(theList) {
+      myList.push_back(t);
+    }
+
+    ~PushGuard(){ myList.pop_back(); }
+
+    void swap(T&& t){
+      myList.pop_back();
+      myList.push_back(t);
+    }
+
+    std::list<T>& myList;
+  };
+
+  template <class T>
+  struct EmplaceGuard {
+    EmplaceGuard(std::list<T>& theList) : myList(theList) {
+      myList.emplace_back();
+    }
+
+    ~EmplaceGuard(){ myList.pop_back(); }
+
+    std::list<T>& myList;
+  };
+
+
+  struct StmtDeleteException : public std::runtime_error
+  {
+    StmtDeleteException(clang::Stmt* deld) :
+      std::runtime_error("deleted expression"), deleted (deld){}
+    clang::Stmt* deleted;
+  };
+
+  template <class Lambda>
+  void goIntoContext(clang::Stmt* stmt, Lambda&& l){
+    stmt_contexts_.push_back(stmt);
+    stmt_replacements_.emplace_back();
+    bool deleted = false;
+    try {
+      l();
+    } catch (StmtDeleteException& e) {
+      if (stmt != e.deleted){
+        stmt_contexts_.pop_back(); //must pop back now
+        stmt_replacements_.pop_back();
+        //nope! not me - pass it along
+        throw e;
+      }
+      deleted = true;
+    }
+    stmt_contexts_.pop_back();
+    if (!deleted) executeCurrentReplacements();
+    stmt_replacements_.pop_back();
+  }
+
   bool isNullVariable(clang::Decl* d) const {
     return pragmaConfig_.nullVariables.find(d) != pragmaConfig_.nullVariables.end();
   }
@@ -601,14 +686,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param insertLoc The source location where the text should go
    */
   void declareSSTExternVars(clang::SourceLocation insertLoc);
-
-  bool keepWithNullArgs(clang::FunctionDecl* decl) const {
-    return keepWithNullArgs_.find(decl) != keepWithNullArgs_.end();
-  }
-
-  bool deleteWithNullArgs(clang::FunctionDecl* decl) const {
-    return deleteWithNullArgs_.find(decl) != keepWithNullArgs_.end();
-  }
 
   struct cArrayConfig {
     std::string fundamentalTypeString;

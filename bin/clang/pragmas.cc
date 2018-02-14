@@ -388,8 +388,11 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
                                              const std::list<Token> &tokens)
  : SSTPragma(NullVariable)
 {
-  if (tokens.empty()) return;
+  if (tokens.empty()){
+    return;
+  }
 
+  std::set<std::string> replacer;
   std::set<std::string>* inserter = nullptr;
   auto end = tokens.end();
   for (auto iter=tokens.begin(); iter != end; ++iter){
@@ -397,7 +400,8 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
     std::string next;
     switch(token.getKind()){
     case tok::string_literal:
-      next = token.getLiteralData();
+    case tok::numeric_constant:
+      next = getLiteralDataAsString(token);
       break;
     case tok::kw_new:
       next = "new";
@@ -416,11 +420,17 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
       inserter = &nullOnly_;
     } else if (next == "new"){
       inserter = &nullNew_;
+    } else if (next == "replace"){
+      inserter = &replacer;
     } else if (inserter == nullptr){
       errorAbort(loc, CI, "illegal null_variable spec: must begin with 'only', 'except', or 'new'");
     } else {
       inserter->insert(next);
     }
+  }
+
+  if (!replacer.empty()){
+    replacement_ = *replacer.begin();
   }
 }
 

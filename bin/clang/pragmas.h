@@ -169,6 +169,14 @@ class SSTNullVariablePragma : public SSTPragma {
     return true;
   }
 
+  bool hasReplacement() const {
+    return !replacement_.empty();
+  }
+
+  const std::string& getReplacement() const {
+    return replacement_;
+  }
+
   bool hasOnly() const {
     return !nullOnly_.empty();
   }
@@ -207,6 +215,7 @@ class SSTNullVariablePragma : public SSTPragma {
   std::set<std::string> nullOnly_;
   std::set<std::string> nullExcept_;
   std::set<std::string> nullNew_;
+  std::string replacement_;
 };
 
 class SSTNullTypePragma : public SSTNullVariablePragma

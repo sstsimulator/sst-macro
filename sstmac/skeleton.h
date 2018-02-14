@@ -136,6 +136,10 @@ class vector {
     return size_ == 0;
   }
 
+  void clear() {
+    size_ = 0;
+  }
+
  private:
   unsigned long  size_;
 };

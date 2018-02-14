@@ -107,6 +107,8 @@ SkeletonASTVisitor::initReservedNames()
   reservedNames_.insert("dont_ignore_this");
   reservedNames_.insert("ignore_for_app_name");
   reservedNames_.insert("nullptr");
+  reservedNames_.insert("_keywords_");
+  reservedNames_.insert("_keyword_register_");
 }
 
 void
@@ -209,9 +211,10 @@ SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueu
 {
   if (noSkeletonize_) return true;
 
-  stmt_contexts_.push_back(expr);
-  TraverseStmt(expr->getArgument());
-  stmt_contexts_.pop_back();
+  goIntoContext(expr, [&]{
+    TraverseStmt(expr->getArgument());
+  });
+
   return true;
 }
 
@@ -275,14 +278,68 @@ SkeletonASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr* expr)
   return true;
 }
 
+void
+SkeletonASTVisitor::executeCurrentReplacements()
+{
+  for (auto& pair : stmt_replacements_.back()){
+    ::replace(pair.first, rewriter_, pair.second, *ci_);
+  }
+}
+
+void
+SkeletonASTVisitor::replace(SourceRange rng, const std::string& repl)
+{
+  if (stmt_contexts_.empty()){
+    //go ahead an immediately do the replacement
+    ::replace(rng, rewriter_, repl, *ci_);
+  } else {
+    //we can foobar things if we do the replacement immediately
+    //in traversing, a null variable or other trigger might delete the statement we are working on
+    //create a delayed replacement to execute later if needed
+    stmt_replacements_.back().emplace_back(rng, repl);
+  }
+}
+
 bool
 SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
-  Decl* decl =  expr->getFoundDecl()->getCanonicalDecl();
+  clang::NamedDecl* nd = expr->getFoundDecl();
+  Decl* decl = nd->getCanonicalDecl();
+
   if (isNullVariable(decl)){
-    //we need to delete whatever parent statement this is a part of
-    if (stmt_contexts_.empty()){
+    SSTNullVariablePragma* nullVarPrg = getNullVariable(decl);
+    if (nullVarPrg->hasReplacement()){
+      //don't actually delete the expression it is a part of - but replace it
+      //the expression should be a pointer expression involving pointer math
+      if (math_contexts_.empty()){
+        //just replace the decl-ref outright
+        replace(expr, nullVarPrg->getReplacement());
+      } else {
+        //delete the outermost math expr
+        Expr* toDel = math_contexts_.front();
+        bool notModifyingLHS = sides_.empty() || sides_.front() == RHS
+                                || !opModifies_.front();
+        if (notModifyingLHS){
+          //replace the binary operator we are part of
+          if (toDel->getType()->isPointerType()){
+            replace(toDel, nullVarPrg->getReplacement());
+            //and now throw out of this
+            throw StmtDeleteException(toDel);
+          } else {
+            std::string error = "null_variable " + nd->getNameAsString()
+                + " is marked replace, but this is only valid for pointer types";
+            errorAbort(expr->getLocStart(), *ci_, error);
+          }
+        } else {
+          //okay, we are a modifying lhs
+          //delete the whole thing
+          deleteNullVariableStmt(toDel, decl);
+        }
+      }
+    } else if (stmt_contexts_.empty()){
+      //delete the statement it is a part of
       if (pragmaConfig_.deletedRefs.find(expr) == pragmaConfig_.deletedRefs.end()){
+        //there is no stmt context and this was not already deleted
         errorAbort(expr->getLocStart(), *ci_,
                    "null variable used in statement, but context list is empty");
       } //else this was deleted - so no problem
@@ -303,8 +360,8 @@ SkeletonASTVisitor::visitCollective(CallExpr *expr)
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
-    replace(expr->getArg(0), rewriter_, "nullptr", *ci_);
-    replace(expr->getArg(3), rewriter_, "nullptr", *ci_);
+    replace(expr->getArg(0), "nullptr");
+    replace(expr->getArg(3), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
     deletedStmts_.insert(expr->getArg(0));
@@ -320,8 +377,8 @@ SkeletonASTVisitor::visitReduce(CallExpr *expr)
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
-    replace(expr->getArg(0), rewriter_, "nullptr", *ci_);
-    replace(expr->getArg(1), rewriter_, "nullptr", *ci_);
+    replace(expr->getArg(0), "nullptr");
+    replace(expr->getArg(1), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
     deletedStmts_.insert(expr->getArg(0));
@@ -337,7 +394,7 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
   //first buffer argument to nullptr
   if (expr->getArg(0)->getType()->isPointerType()){
     //make sure this isn't a shortcut function without buffers
-    replace(expr->getArg(0), rewriter_, "nullptr", *ci_);
+    replace(expr->getArg(0), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     deletedStmts_.insert(expr->getArg(0));
   }
@@ -379,18 +436,19 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
       }
     }
   }
-  stmt_contexts_.push_back(expr);
-  //TraverseStmt(expr->getImplicitObjectArgument());
-  //this will visit member expr that also visits implicit this
-  TraverseStmt(expr->getCallee());
-  for (int i=0; i < expr->getNumArgs(); ++i){
-    Expr* arg = expr->getArg(i);
-    //this did not get modified
-    if (deletedStmts_.find(arg) == deletedStmts_.end()){
-      TraverseStmt(expr->getArg(i));
+
+  goIntoContext(expr, [&]{
+    //TraverseStmt(expr->getImplicitObjectArgument());
+    //this will visit member expr that also visits implicit this
+    TraverseStmt(expr->getCallee());
+    for (int i=0; i < expr->getNumArgs(); ++i){
+      Expr* arg = expr->getArg(i);
+      //this did not get modified
+      if (deletedStmts_.find(arg) == deletedStmts_.end()){
+        TraverseStmt(expr->getArg(i));
+      }
     }
-  }
-  stmt_contexts_.pop_back();
+  });
 
   return true;
 }
@@ -479,16 +537,15 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
     //we have a set of standard replacements
   }
 
-  stmt_contexts_.push_back(expr);
-  TraverseStmt(expr->getCallee());
-  for (int i=0; i < expr->getNumArgs(); ++i){
-    Expr* arg = expr->getArg(i);
-    if (deletedStmts_.find(arg) == deletedStmts_.end()){
-      TraverseStmt(arg);
+  goIntoContext(expr, [&]{
+    TraverseStmt(expr->getCallee());
+    for (int i=0; i < expr->getNumArgs(); ++i){
+      Expr* arg = expr->getArg(i);
+      if (deletedStmts_.find(arg) == deletedStmts_.end()){
+        TraverseStmt(arg);
+      }
     }
-  }
-  stmt_contexts_.pop_back();
-
+  });
 
   return true;
 }
@@ -1194,7 +1251,8 @@ SkeletonASTVisitor::checkGlobalVar(VarDecl* D)
 void
 SkeletonASTVisitor::deleteStmt(Stmt *s)
 {
-  replace(s, rewriter_, "", *ci_);
+  //go straight to replace, don't delay this
+  ::replace(s, rewriter_, "", *ci_);
 }
 
 static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
@@ -1370,6 +1428,18 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
     return true;
   }
 
+  if (isNullVariable(D)){
+    if (D->getType()->isPointerType()){
+      if (D->hasInit()){
+        replace(D->getInit(), "nullptr");
+      }
+    } else {
+      errorAbort(D->getLocStart(), *ci_,
+                 "null_variable can only be applied to pointer");
+    }
+    return true;
+  }
+
   //don't skip init on non-globals
   bool skipInit = visitVarDecl(D);
 
@@ -1453,7 +1523,7 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
     sstr << "){";
 
     SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
-    replace(rng, rewriter_, sstr.str(), *ci_);
+    replace(rng, sstr.str());
   } else {
     errorAbort(mainFxn->getLocStart(), *ci_,
                "sstmac_app_name macro not defined before main");
@@ -1463,8 +1533,7 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 void
 SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
 {
-  globalsTouched_.emplace_back();
-
+  EmplaceGuard<std::set<const clang::Decl*>> eg(globalsTouched_);
   TraverseStmt(s);
   auto& currentGlobals = globalsTouched_.back();
   if (!currentGlobals.empty()){
@@ -1479,7 +1548,6 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
     rewriter_.InsertText(s->getLocStart(), sstr.str(), false);
     rewriter_.InsertText(s->getLocEnd(), " }", true);
   }
-  globalsTouched_.pop_back();
 }
 
 bool
@@ -1757,9 +1825,9 @@ SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue*
     }
   }
 
-  stmt_contexts_.push_back(op);
-  TraverseStmt(op->getSubExpr());
-  stmt_contexts_.pop_back();
+  goIntoContext(op, [&]{
+    TraverseStmt(op->getSubExpr());
+  });
   return true;
 }
 
@@ -1774,18 +1842,35 @@ bool
 SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueue* queue)
 {
   bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(op);
-  stmt_contexts_.push_back(op);
-  if (skipVisit){
-    deletedStmts_.insert(op);
-  } else {
-    sides_.push_back(BinOpSide::LHS);
-    TraverseStmt(op->getLHS());
-    sides_.pop_back();
-    sides_.push_back(BinOpSide::RHS);
-    TraverseStmt(op->getRHS());
-    sides_.pop_back();
+
+  bool opModifies = false;
+  switch (op->getOpcode()){
+    case BO_MulAssign:
+    case BO_DivAssign:
+    case BO_RemAssign:
+    case BO_AddAssign:
+    case BO_SubAssign:
+    case BO_Assign:
+      opModifies = true; //need to update data flow
+      break;
+    default:
+      break;
   }
-  stmt_contexts_.pop_back();
+
+
+  PushGuard<clang::Expr*> pg(math_contexts_, op);
+  goIntoContext(op, [&]{
+    if (skipVisit){
+      deletedStmts_.insert(op);
+    } else {
+      PushGuard<bool> pgSideType(opModifies_, opModifies);
+      PushGuard<BinOpSide> pg(sides_, BinOpSide::LHS);
+      TraverseStmt(op->getLHS());
+      pg.swap(BinOpSide::RHS);
+      TraverseStmt(op->getRHS());
+    }
+  });
+
   return true;
 }
 
@@ -1797,11 +1882,15 @@ SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
     return true;
   }
 
-  stmt_contexts_.push_back(stmt);
-  TraverseStmt(stmt->getCond());
+  //only make this an "active" statement on the conditional
+  //once we decide to visit the bodies, ignore the if
+  goIntoContext(stmt, [&]{
+    TraverseStmt(stmt->getCond());
+  });
+
   TraverseStmt(stmt->getThen());
   if (stmt->getElse()) TraverseStmt(stmt->getElse());
-  stmt_contexts_.pop_back();
+
   return true;
 }
 
@@ -1812,23 +1901,23 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
   if (skipVisit){
     deletedStmts_.insert(stmt);
   } else {
-    stmt_contexts_.push_back(stmt);
-    if (stmt->isSingleDecl()){
-      Decl* D = stmt->getSingleDecl();
-      SSTNullVariablePragma* prg = getNullVariable(D);
-      if (prg){
-        if (!prg->keepCtor()){
-          deleteStmt(stmt);
+    goIntoContext(stmt, [&]{
+      if (stmt->isSingleDecl()){
+        Decl* D = stmt->getSingleDecl();
+        SSTNullVariablePragma* prg = getNullVariable(D);
+        if (prg){
+          if (!prg->keepCtor()){
+            deleteStmt(stmt);
+          }
+        } else {
+          TraverseDecl(D);
         }
       } else {
-        TraverseDecl(D);
+        for (auto* D : stmt->decls()){
+          TraverseDecl(D);
+        }
       }
-    } else {
-      for (auto* D : stmt->decls()){
-        TraverseDecl(D);
-      }
-    }
-    stmt_contexts_.pop_back();
+    });
   }
 
 
@@ -1861,7 +1950,10 @@ SkeletonASTVisitor::VisitArraySubscriptExpr(ArraySubscriptExpr* expr)
         errorAbort(expr->getLocStart(), *ci_,
                    "array subscript applied to null variable");
       } else {
-        deleteStmt(stmt_contexts_.front());
+        Stmt* toDel = stmt_contexts_.front();
+        deleteStmt(toDel);
+        //break out, stmt is gone
+        throw StmtDeleteException(toDel);
       }
     }
   }
@@ -1950,8 +2042,9 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
          "null variables used as predicate in if-statement - "
          "this could produce undefined behavior - forcing always false");
     IfStmt* ifs = cast<IfStmt>(s);
-    replace(ifs->getCond(), rewriter_, "0", *ci_);
-    return;
+    //force the replacement
+    ::replace(ifs->getCond(), rewriter_, "0", *ci_);
+    throw StmtDeleteException(ifs);
   } else if (s->getStmtClass() == Stmt::CallExprClass){
     CallExpr* call = cast<CallExpr>(s);
     fxnCalled = call->getDirectCallee();
@@ -1960,6 +2053,7 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
     fxnCalled = call->getMethodDecl();
   }
 
+  /** This code is dead, I think
   if (fxnCalled){
     if (keepWithNullArgs(fxnCalled)){
       return;
@@ -1976,8 +2070,14 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
       warn(use_stmt->getLocStart(), *ci_, sstr.str());
     }
   }
+  */
 
   if (!loop_contexts_.empty()){
+      warn(use_stmt->getLocStart(), *ci_,
+           "null variable used inside loop - loop skeletonization "
+           " (if needed) is indicated with #pragma sst compute outside loop");
+    /** This is not an error. Not all loops are compute loops.
+     *  Just warn in case it is a compute-intensive loop
     bool justWarn = false;
     if (d->getKind() == Decl::Var){
       auto cls = s->getStmtClass();
@@ -1993,14 +2093,12 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
       }
     }
     if (justWarn){
-      warn(use_stmt->getLocStart(), *ci_,
-           "null variable used inside loop - loop skeletonization "
-           "must be indicated with #pragma sst compute outside loop");
     } else {
       errorAbort(use_stmt->getLocStart(), *ci_,
                  "null variable used inside loop - loop skeletonization "
                  "must be indicated with #pragma sst compute outside loop");
     }
+    */
   }
 
   if (s->getStmtClass() == Stmt::DeclStmtClass){
@@ -2017,7 +2115,9 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
       }
     }
   }
-  deleteStmt(s); //just delete it
+  deleteStmt(s); //now delete it
+  //not only delete it, but stop all work on the current statement!
+  throw StmtDeleteException(s);
 }
 
 bool
@@ -2132,7 +2232,7 @@ SkeletonASTVisitor::replaceGlobalUse(DeclRefExpr* expr, SourceRange replRng)
     //when they occur inside a struct decl
     auto done = alreadyReplaced_.find(expr);
     if (done == alreadyReplaced_.end()){
-      replace(replRng, rewriter_, iter->second, *ci_);
+      replace(replRng, iter->second);
       alreadyReplaced_.insert(expr);
     }
   }
