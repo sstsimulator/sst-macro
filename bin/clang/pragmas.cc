@@ -386,7 +386,7 @@ SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
- : SSTPragma(NullVariable)
+ : SSTPragma(NullVariable), nullSafe_(false)
 {
   if (tokens.empty()){
     return;
@@ -422,8 +422,13 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
       inserter = &nullNew_;
     } else if (next == "replace"){
       inserter = &replacer;
+    } else if (next == "target"){
+      inserter = &targetNames_;
+    } else if (next == "safe"){
+      nullSafe_ = true;
     } else if (inserter == nullptr){
-      errorAbort(loc, CI, "illegal null_variable spec: must begin with 'only', 'except', or 'new'");
+      errorAbort(loc, CI,
+           "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', or 'target'");
     } else {
       inserter->insert(next);
     }
@@ -437,7 +442,39 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
 void
 SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
-  cfg.nullVariables[d] = this;
+  if (d->getKind() == Decl::Function){
+    FunctionDecl* fd = cast<FunctionDecl>(d);
+
+    if (nullSafe_){
+      //this function is completely null safe
+      cfg.nullSafeFunctions[fd] = this;
+      return; //my work here is done
+    }
+
+    if (targetNames_.empty()){
+      errorAbort(d->getLocStart(), *CI,
+                 "null_variable pragma applied to function must give list of target null parameters");
+    }
+
+    int numHits = 0;
+    for (int i=0; i < fd->getNumParams(); ++i){
+      ParmVarDecl* pvd = fd->getParamDecl(i);
+      if (targetNames_.find(pvd->getNameAsString()) != targetNames_.end()){
+        cfg.nullVariables[pvd] = this;
+        ++numHits;;
+      }
+    }
+    if (numHits != targetNames_.size()){
+      std::stringstream sstr;
+      sstr << "null_variable pragma lists " << targetNames_.size()
+           << " parameters, but they only match " << numHits
+           << " parameter names";
+      errorAbort(d->getLocStart(), *CI, sstr.str());
+    }
+    //no parameters matched target name
+  } else {
+    cfg.nullVariables[d] = this;
+  }
 }
 
 void

@@ -19,8 +19,10 @@
 extern "C" {
 #endif
 
+#pragma sst null_variable safe
 void* sstmac_memset(void* ptr, int value, unsigned long  sz);
 
+#pragma sst null_variable safe
 void* sstmac_memcpy(void* dst, const void* src, unsigned long sz);
 
 #ifdef __cplusplus

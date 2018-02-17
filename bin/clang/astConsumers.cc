@@ -48,6 +48,15 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+void
+SkeletonASTConsumer::initNullWhitelist()
+{
+  nullWhitelist_.insert("gasnetc_AMReplyLongM");
+  nullWhitelist_.insert("_gasnet_put");
+  nullWhitelist_.insert("gasnetc_AMRequestLongM");
+  nullWhitelist_.insert("gasnetc_AMRequestLongAsyncM");
+}
+
 bool
 SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 {
@@ -61,6 +70,9 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
         if (fd->isThisDeclarationADefinition()){
           //also, we only really care about the definition anyway
           allDecls_.push_back(d);
+        }
+        if (isNullWhitelisted(fd->getNameAsString())){
+          visitor_.pragmaConfig_.nullSafeFunctions[fd] = nullptr;
         }
       }
       break;

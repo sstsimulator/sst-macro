@@ -307,29 +307,59 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
   Decl* decl = nd->getCanonicalDecl();
 
   if (isNullVariable(decl)){
+    if (!activeFxnParams_.empty()){
+      //we have "IPA" to deal with here
+      //a null variable MUST map into a null variable - otherwise this is an error
+      ParmVarDecl* pvd = activeFxnParams_.front();
+      if (!isNullVariable(pvd)){
+        const DeclContext* dc = pvd->getParentFunctionOrMethod();
+        if (!isNullSafeFunction(dc)){
+          std::string fxnName;
+          SourceLocation fxnDeclLoc;
+          if (dc->getDeclKind() == Decl::Function){
+            const FunctionDecl* fd = cast<const FunctionDecl>(dc);
+            fxnName = fd->getNameAsString();
+            fxnDeclLoc = fd->getLocStart();
+          }
+          std::stringstream sstr;
+          sstr << "null variable " << nd->getNameAsString()
+              << " mapped into non-null parameter " << pvd->getNameAsString()
+              << " in function ";
+          if (!fxnName.empty()){
+            sstr << fxnName << " declared at "
+                 << fxnDeclLoc.printToString(ci_->getSourceManager());
+          }
+          errorAbort(expr->getLocStart(), *ci_, sstr.str());
+        }
+      }
+    }
+
     SSTNullVariablePragma* nullVarPrg = getNullVariable(decl);
     if (nullVarPrg->hasReplacement()){
       //don't actually delete the expression it is a part of - but replace it
       //the expression should be a pointer expression involving pointer math
-      if (math_contexts_.empty()){
+      if (activeBinOpIdx_ >= 0){
+        auto& pair = bin_ops_[activeBinOpIdx_];
+        BinaryOperator* binOp = pair.first;
+        BinOpSide side = pair.second;
+        Expr* toDel = nullptr;
+        if (binOp->getOpcode() == BO_Assign){
+          if (side == LHS){
+            //replace the whole thing - don't ever assign to replacement value
+            toDel = binOp;
+          } else {
+            //only delete the right-hand side
+            propagateNullness(binOp, decl);
+            toDel = binOp->getRHS();
+          }
+        } else {
+          toDel = binOp;
+        }
+        ::replace(toDel, rewriter_, nullVarPrg->getReplacement(), *ci_);
+        throw StmtDeleteException(toDel);
+      } else {
         //just replace the decl-ref outright
         replace(expr, nullVarPrg->getReplacement());
-      } else {
-        //delete the outermost math expr
-        Expr* toDel = math_contexts_.front();
-        if (!toDel->getType()->isPointerType()){
-          std::stringstream sstr;
-          sstr << "null_variable " << nd->getNameAsString()
-               << " is marked replace, but this is only valid for pointer types: "
-               << "actual type is " << GetAsString(toDel->getType());
-          PrettyPrinter pp;
-          pp.print(toDel);
-          std::cerr << pp.os.str() << std::endl;
-          errorAbort(expr->getLocStart(), *ci_, sstr.str());
-        }
-
-        ::replace(math_contexts_.front(), rewriter_, nullVarPrg->getReplacement(), *ci_);
-        throw StmtDeleteException(toDel);
       }
     } else if (stmt_contexts_.empty()){
       //delete the statement it is a part of
@@ -410,6 +440,9 @@ SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQue
 bool
 SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
 {
+  //this "breaks" connections
+  activeBinOpIdx_ = IndexResetter;
+
   bool skipVisit = activatePragmasForStmt(expr);
   if (skipVisit){
     return true;
@@ -495,6 +528,9 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
 bool
 SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
 {
+  //this "breaks" connections
+  activeBinOpIdx_ = IndexResetter;
+
   bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(expr);
   if (skipVisit){
     return true;
@@ -528,16 +564,23 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
     }
   }
 
-  if (baseFxn){
-    //we have a set of standard replacements
-  }
-
+  FunctionDecl* fd = expr->getDirectCallee();
   goIntoContext(expr, [&]{
     TraverseStmt(expr->getCallee());
     for (int i=0; i < expr->getNumArgs(); ++i){
-      Expr* arg = expr->getArg(i);
-      if (deletedStmts_.find(arg) == deletedStmts_.end()){
-        TraverseStmt(arg);
+      //va_args really foobars things here...
+      //call site can have more args than params in declaration
+      if (fd && i < fd->getNumParams()){
+        PushGuard<ParmVarDecl*> pg(activeFxnParams_, fd->getParamDecl(i));
+        Expr* arg = expr->getArg(i);
+        if (deletedStmts_.find(arg) == deletedStmts_.end()){
+          TraverseStmt(arg);
+        }
+      } else {
+        Expr* arg = expr->getArg(i);
+        if (deletedStmts_.find(arg) == deletedStmts_.end()){
+          TraverseStmt(arg);
+        }
       }
     }
   });
@@ -1837,38 +1880,33 @@ bool
 SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueue* queue)
 {
   bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(op);
-
+  if (skipVisit){
+    deletedStmts_.insert(op);
+    return true;
+  }
 
   auto toExec = [&]{
-    if (skipVisit){
-      deletedStmts_.insert(op);
-    } else {
-      //PushGuard<bool> pgSideType(opModifies_, opModifies);
-      PushGuard<BinOpSide> pg(sides_, BinOpSide::LHS);
-      TraverseStmt(op->getLHS());
-      pg.swap(BinOpSide::RHS);
-      TraverseStmt(op->getRHS());
-    }
+    VectorPushGuard<std::pair<BinaryOperator*,BinOpSide>>
+        pg(bin_ops_, op, BinOpSide::LHS);
+    TraverseStmt(op->getLHS());
+    pg.swap(op, BinOpSide::RHS);
+    TraverseStmt(op->getRHS());
   };
 
   switch (op->getOpcode()){
     case BO_Mul:
     case BO_Add:
     case BO_Rem:
-    case BO_Div: {
-      //this is a math operation that we need to grab
-      PushGuard<clang::Expr*> pg(math_contexts_, op);
+    case BO_Div:
+    case BO_Assign:
+    case BO_MulAssign:
+    case BO_DivAssign:
+    case BO_RemAssign:
+    case BO_AddAssign:
+    case BO_SubAssign: {
+      IndexGuard ig(activeBinOpIdx_, bin_ops_.size());
       goIntoContext(op, toExec);
       break;
-    }
-    case BO_Assign: {
-      clang::Expr* lhs = getUnderlyingExpr(op->getLHS());
-      if (lhs->getStmtClass() == Stmt::DeclRefExprClass){
-        DeclRefExpr* dref = cast<DeclRefExpr>(lhs);
-        Decl* decl = dref->getFoundDecl()->getCanonicalDecl();
-        PushGuard<clang::Decl*> pg(assignments_, decl);
-        goIntoContext(op, toExec);
-      }
     }
     default:
       goIntoContext(op, toExec);
@@ -2031,20 +2069,48 @@ SkeletonASTVisitor::dataTraverseStmtPost(Stmt* S)
 }
 
 void
-SkeletonASTVisitor::propagateNullness(Stmt* stmt, Decl* decl)
+SkeletonASTVisitor::propagateNullness(Decl* target, Decl* src)
 {
-  if (stmt->getStmtClass() == Stmt::DeclStmtClass){
-    DeclStmt* ds = cast<DeclStmt>(stmt);
-    Decl* lhs = ds->getSingleDecl();
-    if (lhs && lhs != decl){
-      //well, crap, the nullness propagates to a new variable
-      if (lhs->getKind() == Decl::Var){
-        //yep, it does
-        VarDecl* vd = cast<VarDecl>(lhs);
-        //propagate the null-ness to this new variable
-        SSTNullVariablePragma* oldPragma = getNullVariable(decl);
-        SSTNullVariablePragma* fakePragma = new SSTNullVariablePragma;
-        pragmaConfig_.nullVariables[vd] = fakePragma;
+  //yep, it does
+  if (target->getKind() != Decl::Var){
+    errorAbort(target->getLocStart(), *ci_,
+          "propagate nullness to declaration that isn't a variable");
+  }
+  VarDecl* vd = cast<VarDecl>(target);
+  //VarDecl* svd = cast<VarDecl>(src);
+  //propagate the null-ness to this new variable
+  SSTNullVariablePragma* oldPragma = getNullVariable(src);
+  SSTNullVariablePragma*& existing = pragmaConfig_.nullVariables[vd];
+  if (!existing){
+    existing = oldPragma->clone();
+  }
+}
+
+void
+SkeletonASTVisitor::propagateNullness(BinaryOperator* op, Decl* decl)
+{
+  Expr* ue = getUnderlyingExpr(op->getLHS());
+  if (ue->getStmtClass() == Stmt::DeclRefExprClass){
+    DeclRefExpr* dref = cast<DeclRefExpr>(ue);
+    //nullness is assigned to an exiting variable
+    //this variable has now become comfortably null
+    propagateNullness(dref->getFoundDecl()->getCanonicalDecl(), decl);
+  }
+}
+
+void
+SkeletonASTVisitor::propagateNullness(Decl* decl)
+{
+  for (Stmt* s : stmt_contexts_){
+    //oh no! nullness propagates to this!
+    if (s->getStmtClass() == Stmt::DeclStmtClass){
+      DeclStmt* ds = cast<DeclStmt>(s);
+      Decl* lhs = ds->getSingleDecl();
+      if (lhs && lhs != decl){
+        //well, crap, yeah, the nullness propagates to a new variable
+        if (lhs->getKind() == Decl::Var){
+          propagateNullness(lhs, decl);
+        }
       }
     }
   }
@@ -2077,55 +2143,13 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* use_stmt, Decl* d)
     fxnCalled = call->getMethodDecl();
   }
 
-  /** This code is dead, I think
-  if (fxnCalled){
-    if (keepWithNullArgs(fxnCalled)){
-      return;
-    } else if (fxnCalled->getNumParams() == 0 || deleteWithNullArgs(fxnCalled)){
-      //if the function takes no parameters - safe to delete because
-      //the callee is the null variable
-      //OR if explicitly marked safe to delete
-    } else {
-      std::stringstream sstr;
-      sstr << "call expression '" << fxnCalled->getNameAsString()
-            << "' has null argument, but I don't know what to do with it\n"
-            << " function should be marked with either "
-            << " pragma sst keep_if_null_args or delete_if_null_args";
-      warn(use_stmt->getLocStart(), *ci_, sstr.str());
-    }
-  }
-  */
-
   if (!loop_contexts_.empty()){
       warn(use_stmt->getLocStart(), *ci_,
            "null variable used inside loop - loop skeletonization "
            " (if needed) is indicated with #pragma sst compute outside loop");
-    /** This is not an error. Not all loops are compute loops.
-     *  Just warn in case it is a compute-intensive loop
-    bool justWarn = false;
-    if (d->getKind() == Decl::Var){
-      auto cls = s->getStmtClass();
-      if (cls == Stmt::BinaryOperatorClass || cls == Stmt::CompoundAssignOperatorClass){
-        if (sides_.back() == LHS){
-          //well, this is on the left hand side
-          VarDecl* vd = cast<VarDecl>(d);
-          if (vd->getType()->isPointerType()){
-            //whatever - pointer arithmetic, let it stay
-            justWarn = true;
-          }
-        }
-      }
-    }
-    if (justWarn){
-    } else {
-      errorAbort(use_stmt->getLocStart(), *ci_,
-                 "null variable used inside loop - loop skeletonization "
-                 "must be indicated with #pragma sst compute outside loop");
-    }
-    */
   }
 
-  propagateNullness(s,d);
+  propagateNullness(d);
   deleteStmt(s); //now delete it
   //not only delete it, but stop all work on the current statement!
   throw StmtDeleteException(s);

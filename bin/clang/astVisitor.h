@@ -82,6 +82,8 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
  * to cancel all visits to child nodes.
  */
 class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor> {
+  friend class SkeletonASTConsumer;
+
  private:
   struct AnonRecord {
     clang::RecordDecl* decl;
@@ -108,6 +110,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     ArrayInfo() : isFxnStatic(false), needsDeref(true) {}
   };
 
+  static constexpr int IndexResetter = -1;
+
+  static bool indexIsSet(int idx){
+    return idx != IndexResetter;
+  }
+
  public:
   SkeletonASTVisitor(clang::Rewriter &R,
                      GlobalVarNamespace& ns,
@@ -115,7 +123,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
                      PragmaConfig& cfg) :
     rewriter_(R), visitingGlobal_(false), deletedStmts_(deld),
     globalNs_(ns), currentNs_(&ns),
-    insideCxxMethod_(0),
+    insideCxxMethod_(0), activeBinOpIdx_(-1),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
     refactorMain_(true),
     pragmaConfig_(cfg),
@@ -441,7 +449,28 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     activeGlobalScopedName_.clear();
   }
 
-  void propagateNullness(clang::Stmt* stmt, clang::Decl* decl);
+  /**
+   * @brief propagateNullness This binOp containsa null variable on RHS.
+   *        See and log if it propagates nullness to another variable
+   * @param binOp
+   * @param decl  The declaration corresponding to the null variable
+   */
+  void propagateNullness(clang::BinaryOperator* binOp, clang::Decl* decl);
+
+  /**
+   * @brief propagateNullness This decl is initialized using a null variable
+   *        Propagate nullness to this new variable
+   * @param dest  The new variable that becomes null
+   * @param src   The existing null variable
+   */
+  void propagateNullness(clang::Decl* dest, clang::Decl* src);
+
+  /**
+   * @brief propagateNullness Seek out any active decl stmts that might
+   * need nullness propagates to it
+   * @param decl  A null variable declaration that is part of the decl stmt
+   */
+  void propagateNullness(clang::Decl* decl);
 
   void setActiveGlobalScopedName(const std::string& str) {
     activeGlobalScopedName_ = str;
@@ -479,7 +508,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   /* a subset of loop contexts, only those loops that are skeletonized */
   std::list<clang::ForStmt*> compute_loops_;
   std::list<clang::Stmt*> stmt_contexts_;
-  std::list<clang::Expr*> math_contexts_;
   std::list<clang::Decl*> assignments_;
 
   std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmt_replacements_;
@@ -490,8 +518,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   int numRelocations_;
 
   typedef enum { LHS, RHS } BinOpSide;
-  std::list<BinOpSide> sides_;
-  //std::list<bool> opModifies_;
+  std::vector<std::pair<clang::BinaryOperator*,BinOpSide>> bin_ops_;
+  int activeBinOpIdx_;
+
+  std::list<clang::ParmVarDecl*> activeFxnParams_;
 
   bool foundCMain_;
   bool refactorMain_;
@@ -541,6 +571,39 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   };
 
   template <class T>
+  struct VectorPushGuard {
+    template <class... Args>
+    VectorPushGuard(std::vector<T>& theVec, Args&& ...args) : myVec(theVec) {
+      myVec.emplace_back(std::forward<Args>(args)...);
+    }
+
+    template <class... Args>
+    void swap(Args&& ...args){
+      myVec.pop_back();
+      myVec.emplace_back(std::forward<Args>(args)...);
+    }
+
+    ~VectorPushGuard(){ myVec.pop_back(); }
+
+    std::vector<T>& myVec;
+  };
+
+  struct IndexGuard {
+    IndexGuard(int& t, int value) {
+      if (t < 0) {
+        t = value;
+        myPtr = &t; //don't overwrite
+      } else {
+        myPtr = nullptr;
+      }
+    }
+
+    ~IndexGuard(){ if (myPtr) *myPtr = IndexResetter; }
+
+    int* myPtr;
+  };
+
+  template <class T>
   struct EmplaceGuard {
     EmplaceGuard(std::list<T>& theList) : myList(theList) {
       myList.emplace_back();
@@ -582,6 +645,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool isNullVariable(clang::Decl* d) const {
     return pragmaConfig_.nullVariables.find(d) != pragmaConfig_.nullVariables.end();
+  }
+
+  bool isNullSafeFunction(const clang::DeclContext* dc) const {
+    return pragmaConfig_.nullSafeFunctions.find(dc) != pragmaConfig_.nullSafeFunctions.end();
   }
 
   SSTNullVariablePragma* getNullVariable(clang::Decl* d) const {

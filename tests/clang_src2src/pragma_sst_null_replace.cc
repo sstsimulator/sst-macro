@@ -1,4 +1,5 @@
 
+#pragma sst null_variable safe
 void test(double* x){
 }
 

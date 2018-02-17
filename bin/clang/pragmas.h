@@ -58,6 +58,7 @@ struct PragmaConfig {
   bool makeNoChanges;
   std::map<std::string,SSTReplacePragma*> replacePragmas;
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
+  std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
   std::set<const clang::DeclRefExpr*> deletedRefs;
   SkeletonASTVisitor* astVisitor;
   PragmaConfig() : pragmaDepth(0),
@@ -163,7 +164,13 @@ class SSTNullVariablePragma : public SSTPragma {
                         clang::CompilerInstance& CI,
                         const std::list<clang::Token>& tokens);
 
-  SSTNullVariablePragma() : SSTPragma(NullVariable) {}
+  SSTNullVariablePragma() : SSTPragma(NullVariable), nullSafe_(false) {}
+
+  virtual SSTNullVariablePragma* clone() const {
+    SSTNullVariablePragma* ret = new SSTNullVariablePragma;
+    clone_into(ret);
+    return ret;
+  }
 
   bool firstPass() const override {
     return true;
@@ -207,6 +214,15 @@ class SSTNullVariablePragma : public SSTPragma {
   }
 
  protected:
+  void clone_into(SSTNullVariablePragma* cln) const {
+    cln->replacement_ = replacement_;
+    cln->nullOnly_ = nullOnly_;
+    cln->nullExcept_ = nullExcept_;
+    cln->nullNew_ = nullNew_;
+    cln->targetNames_ = targetNames_;
+    cln->nullSafe_ = nullSafe_;
+  }
+
   SSTNullVariablePragma(SSTPragma::class_t cls) : SSTPragma(cls){}
 
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
@@ -216,6 +232,8 @@ class SSTNullVariablePragma : public SSTPragma {
   std::set<std::string> nullExcept_;
   std::set<std::string> nullNew_;
   std::string replacement_;
+  std::set<std::string> targetNames_;
+  bool nullSafe_;
 };
 
 class SSTNullTypePragma : public SSTNullVariablePragma
@@ -227,12 +245,23 @@ class SSTNullTypePragma : public SSTNullVariablePragma
 
   void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
 
+  SSTNullVariablePragma* clone() const override {
+    SSTNullTypePragma* ret = new SSTNullTypePragma;
+    ret->newType_ = newType_;
+    clone_into(ret);
+    return ret;
+  }
+
   std::string newType() const {
     return newType_;
   }
 
  private:
   std::string newType_;
+
+  //for cloning
+  SSTNullTypePragma(){}
+
 };
 
 class SSTDeletePragma : public SSTPragma {

@@ -1,6 +1,7 @@
 void test(double a){
 }
 
+#pragma sst null_variable target x
 void test(double* x){
 }
 
