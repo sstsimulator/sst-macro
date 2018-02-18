@@ -209,7 +209,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr* expr);
 
-  bool VisitArraySubscriptExpr(clang::ArraySubscriptExpr* expr);
+  bool TraverseArraySubscriptExpr(clang::ArraySubscriptExpr* expr, DataRecursionQueue* = nullptr);
 
   /**
    * @brief VisitCXXNewExpr Capture all usages of operator delete. Rewrite all
@@ -465,12 +465,18 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   void propagateNullness(clang::Decl* dest, clang::Decl* src);
 
+  bool deleteMemberExpr(clang::MemberExpr* expr);
+
   /**
    * @brief propagateNullness Seek out any active decl stmts that might
    * need nullness propagates to it
    * @param decl  A null variable declaration that is part of the decl stmt
    */
   void propagateNullness(clang::Decl* decl);
+
+  void nullifyIfStmt(clang::IfStmt* if_stmt, clang::Decl* d);
+
+  void visitNullVariable(clang::Expr* expr, clang::NamedDecl* nd);
 
   void setActiveGlobalScopedName(const std::string& str) {
     activeGlobalScopedName_ = str;
@@ -509,6 +515,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::ForStmt*> compute_loops_;
   std::list<clang::Stmt*> stmt_contexts_;
   std::list<clang::Decl*> assignments_;
+  std::list<clang::Expr*> active_derefs_;
+  std::list<clang::IfStmt*> active_ifs_;
+  std::map<clang::MemberExpr*,clang::Expr*> active_cxx_member_calls_;
 
   std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmt_replacements_;
 
@@ -568,6 +577,19 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     }
 
     std::list<T>& myList;
+  };
+
+  template <class T, class U>
+  struct InsertGuard {
+    InsertGuard(std::map<T*,U*>& theMap, T* t, U* u) :
+      myMap(theMap), myKey(t) {
+      myMap.emplace(t,u);
+    }
+
+    ~InsertGuard(){ myMap.erase(myKey); }
+
+    std::map<T*,U*>& myMap;
+    T* myKey;
   };
 
   template <class T>
@@ -659,7 +681,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return nullptr;
   }
 
-  void replaceGlobalUse(clang::DeclRefExpr* expr, clang::SourceRange rng);
+  void maybeReplaceGlobalUse(clang::DeclRefExpr* expr, clang::SourceRange rng);
 
   clang::Expr* getUnderlyingExpr(clang::Expr *e);
 

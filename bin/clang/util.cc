@@ -86,6 +86,13 @@ errorAbort(SourceLocation loc, CompilerInstance &CI, const std::string &error)
 }
 
 void
+internalError(SourceLocation loc, CompilerInstance &CI, const std::string &error)
+{
+  std::string newError = "internal error: " + error;
+  errorAbort(loc, CI, newError);
+}
+
+void
 warn(SourceLocation loc, CompilerInstance &CI, const std::string &warning)
 {
   std::string errorStr;

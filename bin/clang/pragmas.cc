@@ -386,7 +386,7 @@ SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
- : SSTPragma(NullVariable), nullSafe_(false)
+ : SSTPragma(NullVariable), nullSafe_(false), deleteAll_(false)
 {
   if (tokens.empty()){
     return;
@@ -426,6 +426,8 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
       inserter = &targetNames_;
     } else if (next == "safe"){
       nullSafe_ = true;
+    } else if (next == "delete_all"){
+      deleteAll_ = true;
     } else if (inserter == nullptr){
       errorAbort(loc, CI,
            "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', or 'target'");
@@ -464,10 +466,11 @@ SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
         ++numHits;;
       }
     }
+
     if (numHits != targetNames_.size()){
       std::stringstream sstr;
       sstr << "null_variable pragma lists " << targetNames_.size()
-           << " parameters, but they only match " << numHits
+           << " parameters, but they match " << numHits
            << " parameter names";
       errorAbort(d->getLocStart(), *CI, sstr.str());
     }

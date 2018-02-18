@@ -97,6 +97,7 @@ struct PrettyPrinter
 bool isCxx(const std::string& filename);
 bool isValidSrc(const std::string& filename);
 
+void internalError(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
 void errorAbort(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
 void warn(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& warning);
 

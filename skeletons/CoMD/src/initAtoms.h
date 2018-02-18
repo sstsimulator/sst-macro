@@ -15,17 +15,17 @@ typedef struct AtomsSt
    // atom-specific data
    int nLocal;    //!< total number of atoms on this processor
    long long nGlobal;   //!< total number of atoms in simulation
-#pragma sst null_variable
+#pragma sst null_variable delete_all
    int* gid;      //!< A globally unique id for each atom
-#pragma sst null_variable
+#pragma sst null_variable delete_all
    int* iSpecies; //!< the species index of the atom
-#pragma sst null_variable
+#pragma sst null_variable delete_all
    real3*  r;     //!< positions
-#pragma sst null_variable
+#pragma sst null_variable delete_all
    real3*  p;     //!< momenta of atoms
-#pragma sst null_variable
+#pragma sst null_variable delete_all
    real3*  f;     //!< forces
-#pragma sst null_variable
+#pragma sst null_variable delete_all
    real_t* U;     //!< potential energy per atom
 } Atoms;
 

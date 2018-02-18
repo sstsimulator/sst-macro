@@ -164,7 +164,8 @@ class SSTNullVariablePragma : public SSTPragma {
                         clang::CompilerInstance& CI,
                         const std::list<clang::Token>& tokens);
 
-  SSTNullVariablePragma() : SSTPragma(NullVariable), nullSafe_(false) {}
+  SSTNullVariablePragma() : SSTPragma(NullVariable),
+    nullSafe_(false), deleteAll_(false) {}
 
   virtual SSTNullVariablePragma* clone() const {
     SSTNullVariablePragma* ret = new SSTNullVariablePragma;
@@ -213,6 +214,10 @@ class SSTNullVariablePragma : public SSTPragma {
     return !nullOnly_.empty() || !nullExcept_.empty() || !nullNew_.empty();
   }
 
+  bool deleteAll() const {
+    return deleteAll_;
+  }
+
  protected:
   void clone_into(SSTNullVariablePragma* cln) const {
     cln->replacement_ = replacement_;
@@ -221,6 +226,7 @@ class SSTNullVariablePragma : public SSTPragma {
     cln->nullNew_ = nullNew_;
     cln->targetNames_ = targetNames_;
     cln->nullSafe_ = nullSafe_;
+    cln->deleteAll_ = deleteAll_;
   }
 
   SSTNullVariablePragma(SSTPragma::class_t cls) : SSTPragma(cls){}
@@ -234,6 +240,7 @@ class SSTNullVariablePragma : public SSTPragma {
   std::string replacement_;
   std::set<std::string> targetNames_;
   bool nullSafe_;
+  bool deleteAll_;
 };
 
 class SSTNullTypePragma : public SSTNullVariablePragma
