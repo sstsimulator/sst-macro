@@ -442,11 +442,10 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
 }
 
 void
-SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 {
   if (d->getKind() == Decl::Function){
     FunctionDecl* fd = cast<FunctionDecl>(d);
-
     if (nullSafe_){
       //this function is completely null safe
       cfg.nullSafeFunctions[fd] = this;
@@ -481,6 +480,35 @@ SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
+SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  switch(d->getKind()){
+    case Decl::Function:
+      break;
+    case Decl::Field:{
+      FieldDecl* fd = cast<FieldDecl>(d);
+      if (!fd->getType()->isPointerType()){
+        errorAbort(d->getLocStart(), *CI, "only valid to apply null_variable pragma to pointers");
+      }
+      break;
+    }
+    case Decl::Var: {
+      VarDecl* vd = cast<VarDecl>(d);
+      if (!vd->getType()->isPointerType()){
+        errorAbort(d->getLocStart(), *CI, "only valid to apply null_variable pragma to pointers");
+      }
+      break;
+    }
+    default:
+      errorAbort(d->getLocStart(), *CI,
+               "only valid to apply null_variable pragma to functions, variables, and members");
+      break;
+  }
+
+  doActivate(d,r,cfg);
+}
+
+void
 SSTNullVariablePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
   if (s->getStmtClass() == Stmt::DeclStmtClass){
@@ -498,9 +526,10 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
                                      const std::list<Token> &tokens)
  : SSTNullVariablePragma(NullType)
 {
-  if (tokens.empty()){
-    errorAbort(loc, CI, "null_type pragma requires a type argument");
-  }
+  //this is valid - it just means wipe out the type
+  //if (tokens.empty()){
+  //  errorAbort(loc, CI, "null_type pragma requires a type argument");
+  //}
 
   std::list<std::string> toInsert;
   bool connectPrev = false;
@@ -558,10 +587,16 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
     }
     connectPrev = connectNext;
   }
-  newType_ = toInsert.front();
-  toInsert.pop_front();
-  for (auto& str : toInsert){
-    nullExcept_.insert(str);
+
+  if (toInsert.empty()){
+    //just wipeout the thing entirely - just make it a char
+    newType_ = "char";
+  } else {
+    newType_ = toInsert.front();
+    toInsert.pop_front();
+    for (auto& str : toInsert){
+      nullExcept_.insert(str);
+    }
   }
 }
 
@@ -586,7 +621,7 @@ SSTNullTypePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
   }
   std::string repl = newType_ + " " + name;
   replace(d,r,repl,*CI);
-  SSTNullVariablePragma::activate(d,r,cfg);
+  doActivate(d,r,cfg);
 }
 
 void

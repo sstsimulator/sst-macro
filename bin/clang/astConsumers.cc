@@ -96,11 +96,18 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 void
 SkeletonASTConsumer::run()
 {
-  for (Decl* d : allDecls_){
-    visitor_.setTopLevelScope(d);
-    bool isGlobalVar = isa<VarDecl>(d);
-    visitor_.setVisitingGlobal(isGlobalVar);
-    visitor_.TraverseDecl(d);
-    visitor_.setVisitingGlobal(false); //and reset
+  try {
+    for (Decl* d : allDecls_){
+      visitor_.setTopLevelScope(d);
+      bool isGlobalVar = isa<VarDecl>(d);
+      visitor_.setVisitingGlobal(isGlobalVar);
+      visitor_.TraverseDecl(d);
+      visitor_.setVisitingGlobal(false); //and reset
+    }
+  } catch (StmtDeleteException& e) {
+    e.deleted->dump();
+    internalError(e.deleted->getLocStart(), visitor_.getCompilerInstance(),
+               "unhandled delete exception on expression");
   }
+
 }

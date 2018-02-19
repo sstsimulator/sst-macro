@@ -231,6 +231,8 @@ class SSTNullVariablePragma : public SSTPragma {
 
   SSTNullVariablePragma(SSTPragma::class_t cls) : SSTPragma(cls){}
 
+  void doActivate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg);
+
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
 

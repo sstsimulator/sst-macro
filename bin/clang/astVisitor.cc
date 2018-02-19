@@ -209,6 +209,8 @@ SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 bool
 SkeletonASTVisitor::TraverseCXXDeleteExpr(CXXDeleteExpr* expr, DataRecursionQueue* queue)
 {
+  activeBinOpIdx_ = IndexResetter;
+
   if (noSkeletonize_) return true;
 
   goIntoContext(expr, [&]{
@@ -281,7 +283,7 @@ SkeletonASTVisitor::VisitCXXOperatorCallExpr(CXXOperatorCallExpr* expr)
 void
 SkeletonASTVisitor::executeCurrentReplacements()
 {
-  for (auto& pair : stmt_replacements_.back()){
+  for (auto& pair : stmtReplacements_.back()){
     ::replace(pair.first, rewriter_, pair.second, *ci_);
   }
 }
@@ -289,15 +291,146 @@ SkeletonASTVisitor::executeCurrentReplacements()
 void
 SkeletonASTVisitor::replace(SourceRange rng, const std::string& repl)
 {
-  if (stmt_contexts_.empty()){
+  if (stmtContexts_.empty()){
     //go ahead an immediately do the replacement
     ::replace(rng, rewriter_, repl, *ci_);
   } else {
     //we can foobar things if we do the replacement immediately
     //in traversing, a null variable or other trigger might delete the statement we are working on
     //create a delayed replacement to execute later if needed
-    stmt_replacements_.back().emplace_back(rng, repl);
+    stmtReplacements_.back().emplace_back(rng, repl);
   }
+}
+
+Stmt*
+SkeletonASTVisitor::checkNullAssignments(clang::NamedDecl* src, bool hasReplacement)
+{
+  //first check for DeclStmts
+  for (Stmt* s : stmtContexts_){
+    if (s->getStmtClass() == Stmt::DeclStmtClass){
+      DeclStmt* ds = cast<DeclStmt>(s);
+      Decl* lhs = ds->getSingleDecl();
+      if (lhs && lhs->getKind() == Decl::Var){
+        propagateNullness(lhs, src);
+        return s;
+      }
+      break;
+    }
+  }
+
+  Expr* outermost = nullptr;
+  for (int i=activeBinOpIdx_; i < binOps_.size(); ++i){
+    auto& pair = binOps_[i];
+    BinaryOperator* binOp = pair.first;
+    BinOpSide side = pair.second;
+
+    //we are assigning to something on the LHS of this
+    if (binOp->getOpcode() == BO_Assign && side == RHS){
+      Expr* lhs = getUnderlyingExpr(binOp->getLHS());
+      if (lhs->getStmtClass() == Stmt::MemberExprClass){
+        if (!outermost) outermost = binOp;
+        MemberExpr* expr = cast<MemberExpr>(lhs);
+        NamedDecl* member = expr->getMemberDecl();
+        if (!isNullVariable(member) && !hasReplacement){
+          //oooh - not good
+          std::string error = "member " + member->getNameAsString()
+              + " is assigned to null_variable, but is not a null_variable itself";
+          errorAbort(expr->getLocStart(), *ci_, error);
+        }
+      } else if (lhs->getStmtClass() == Stmt::DeclRefExprClass){
+        if (!outermost)  outermost = binOp;
+        DeclRefExpr* dref = cast<DeclRefExpr>(lhs);
+        propagateNullness(dref->getFoundDecl(), src);
+      }
+    }
+  }
+  return outermost;
+}
+
+void
+SkeletonASTVisitor::replaceNullVariableConnectedContext(Expr* expr, const std::string& repl)
+{
+  //don't actually delete the expression it is a part of - but replace it
+  //the expression should be a pointer expression involving pointer math
+  if (activeBinOpIdx_ >= 0){
+    auto& pair = binOps_[activeBinOpIdx_];
+    BinaryOperator* binOp = pair.first;
+    BinOpSide side = pair.second;
+    Expr* toDel = nullptr;
+    if (binOp->getOpcode() == BO_Assign){
+      if (side == LHS){
+        //replace the whole thing - don't ever assign to null value
+        toDel = binOp;
+      } else if (!repl.empty()){
+        //it is the right hand side that needs replacing and I have a repl
+        //this should have happened already - propagateNullness(binOp, nd);
+        toDel = binOp->getRHS();
+      } else {
+        toDel = binOp;
+      }
+    } else {
+      toDel = binOp;
+    }
+    ::replace(toDel, rewriter_, repl, *ci_);
+    throw StmtDeleteException(toDel, *ci_);
+  }
+
+  bool isMemberExpr = expr->getStmtClass() == Stmt::MemberExprClass;
+
+  //figure out the outermost stmt we are connected to
+  Stmt* outermost = nullptr;
+  for (Stmt* s : stmtContexts_){
+    switch(s->getStmtClass()){
+    case Stmt::CallExprClass:
+    case Stmt::ForStmtClass:
+    case Stmt::WhileStmtClass: //clear
+      outermost = nullptr;
+      break;
+    case Stmt::CXXMemberCallExprClass: //members connect to members
+    case Stmt::CXXOperatorCallExprClass:
+    case Stmt::MemberExprClass:
+      if (isMemberExpr){ //we can connect through implicit this
+        if (!outermost) outermost = s;
+      } else {
+        outermost = nullptr;
+      }
+      break;
+    case Stmt::BinaryOperatorClass:
+    case Stmt::CXXDeleteExprClass:
+    case Stmt::UnaryOperatorClass:
+      if (!outermost) outermost = s; //connect
+      break;
+    default:
+      break; //neither break nor add connections
+    }
+  }
+
+  if (outermost){
+    //we need to delet the statement we are connected to
+    replaceNullVariableStmt(outermost, repl);
+  } else {
+    //just replace the expr outright
+    replaceNullVariableStmt(expr, repl);
+  }
+}
+
+void
+SkeletonASTVisitor::nullDereferenceError(Expr* expr, const std::string& varName)
+{
+  std::stringstream sstr;
+  for (Stmt* s : stmtContexts_){
+    switch(s->getStmtClass()){
+    case Stmt::ForStmtClass:
+    case Stmt::WhileStmtClass:
+      sstr << "consider skeletonizing with pragma sst compute here: "
+           << s->getLocStart().printToString(ci_->getSourceManager()) << "\n";
+      break;
+    default:
+      break;
+    }
+  }
+  sstr << "null_variable " << varName << " used in dereference";
+  errorAbort(expr->getLocStart(), *ci_, sstr.str());
 }
 
 void
@@ -305,10 +438,8 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
 {
   SSTNullVariablePragma* nullVarPrg = getNullVariable(nd->getCanonicalDecl());
 
-  if (!nullVarPrg->deleteAll() && !active_derefs_.empty()){
-    std::string error = "null_variable " + nd->getNameAsString() +
-        " used in dereference";
-    errorAbort(expr->getLocStart(), *ci_, error);
+  if (!nullVarPrg->deleteAll() && !activeDerefs_.empty()){
+    nullDereferenceError(expr, nd->getNameAsString());
   }
 
   if (!nullVarPrg->deleteAll() && !activeFxnParams_.empty()){
@@ -338,43 +469,29 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     }
   }
 
-  if (nullVarPrg->hasReplacement()){
-    //don't actually delete the expression it is a part of - but replace it
-    //the expression should be a pointer expression involving pointer math
-    if (activeBinOpIdx_ >= 0){
-      auto& pair = bin_ops_[activeBinOpIdx_];
-      BinaryOperator* binOp = pair.first;
-      BinOpSide side = pair.second;
-      Expr* toDel = nullptr;
-      if (binOp->getOpcode() == BO_Assign){
-        if (side == LHS){
-          //replace the whole thing - don't ever assign to replacement value
-          toDel = binOp;
-        } else {
-          //only delete the right-hand side
-          propagateNullness(binOp, nd);
-          toDel = binOp->getRHS();
-        }
-      } else {
-        toDel = binOp;
-      }
-      ::replace(toDel, rewriter_, nullVarPrg->getReplacement(), *ci_);
-      throw StmtDeleteException(toDel);
-    } else {
-      //just replace the expr outright
-      replace(expr, nullVarPrg->getReplacement());
-    }
-  } else if (!active_ifs_.empty()){
-    if (active_ifs_.size() > 1){
-      errorAbort(active_ifs_.back()->getLocStart(), *ci_,
+  bool hasRepl = nullVarPrg->hasReplacement();
+  Stmt* outerMostAssignment = checkNullAssignments(nd, hasRepl);
+  if (hasRepl){
+    replaceNullVariableConnectedContext(expr, nullVarPrg->getReplacement());
+  } else if (!activeIfs_.empty()){
+    if (activeIfs_.size() > 1){
+      errorAbort(activeIfs_.back()->getLocStart(), *ci_,
                  "internal error: cannot handle nested if-stmts with null variables");
     }
-    IfStmt* s  = active_ifs_.back();
+    IfStmt* s  = activeIfs_.back();
     nullifyIfStmt(s,nd);
-  } else if (nullVarPrg->deleteAll() && !stmt_contexts_.empty()){
-    deleteNullVariableStmt(stmt_contexts_.front(), nd);
+  } else if (nullVarPrg->deleteAll() && !stmtContexts_.empty()){
+    deleteNullVariableStmt(stmtContexts_.front());
+  } else if (outerMostAssignment){
+    //okay, a null is propagating to stuff
+    //however, I have no replacement and so must delete completely
+    deleteNullVariableStmt(outerMostAssignment);
+  } else {
+    //I am not assigning to anyone nor am I passed along as
+    //a function parameter - but I have not been given permission to delete all
+    //that's okay - I'm a meaningless standalone statement - delete me
+    replaceNullVariableConnectedContext(expr, "");
   }
-
 }
 
 bool
@@ -382,10 +499,18 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
   clang::NamedDecl* nd = expr->getFoundDecl();
   if (isNullVariable(nd->getCanonicalDecl())){
-    visitNullVariable(expr, nd);
-  } else { //not a null variable
-    maybeReplaceGlobalUse(expr, expr->getSourceRange());
+    bool shouldVisitNull = true;
+    if (!memberAccesses_.empty()){
+      //the null is the base of a member expr
+      shouldVisitNull = deleteNullVariableMember(nd, memberAccesses_.back());
+    }
+    if (shouldVisitNull){
+      visitNullVariable(expr, nd);
+      return true;
+    }
   }
+  //not a null variable
+  maybeReplaceGlobalUse(expr, expr->getSourceRange());
   return true;
 }
 
@@ -452,9 +577,6 @@ SkeletonASTVisitor::TraverseReturnStmt(clang::ReturnStmt* stmt, DataRecursionQue
 bool
 SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecursionQueue* queue)
 {
-  //this "breaks" connections
-  activeBinOpIdx_ = IndexResetter;
-
   bool skipVisit = activatePragmasForStmt(expr);
   if (skipVisit){
     return true;
@@ -483,12 +605,13 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
       internalError(expr->getLocStart(), *ci_,
                     "base of CXXMemberCallExpr is not a MemberExpr");
     }
-    MemberExpr* me = cast<MemberExpr>(ue);
-    InsertGuard<MemberExpr,Expr> ig(active_cxx_member_calls_, me, expr);
+    InsertGuard<Stmt,Stmt> ig(extendedReplacements_, ue, expr);
     //TraverseStmt(expr->getImplicitObjectArgument());
     //this will visit member expr that also visits implicit this
     TraverseStmt(expr->getCallee());
     for (int i=0; i < expr->getNumArgs(); ++i){
+      //once I start parsing args, I have "broken" all connections with previous binops
+      activeBinOpIdx_ = IndexResetter;
       Expr* arg = expr->getArg(i);
       //this did not get modified
       if (deletedStmts_.find(arg) == deletedStmts_.end()){
@@ -500,16 +623,56 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
   return true;
 }
 
-bool
-SkeletonASTVisitor::deleteMemberExpr(MemberExpr* expr)
+void
+SkeletonASTVisitor::replaceNullWithEmptyType(QualType type, Expr* toRepl)
 {
-  auto iter = active_cxx_member_calls_.find(expr);
-  if (iter != active_cxx_member_calls_.end()){
-    //the member expr is actually a function call
-    //a bit more work to delete
-    Expr* call = iter->second;
-    deleteStmt(call);
-    active_cxx_member_calls_.erase(iter);
+  if (type->isVoidType()){
+    deleteStmt(toRepl);
+    throw StmtDeleteException(toRepl, *ci_);
+  }
+
+  if (type->isReferenceType()){
+    errorAbort(toRepl->getLocStart(), *ci_,
+               "cannot create empty reference for null_variable");
+  }
+
+  std::string repl;
+  if (type->isPointerType()){
+    repl = "nullptr";
+  } else {
+    repl = GetAsString(type) + "()";
+  }
+
+  ::replace(toRepl, rewriter_, repl, *ci_);
+}
+
+/**
+bool
+SkeletonASTVisitor::deleteMemberExpr(SSTNullVariablePragma* prg,
+                                     MemberExpr* expr, NamedDecl* decl)
+{
+  auto iter = activeCxxMemberCalls_.find(expr);
+  if (iter != activeCxxMemberCalls_.end()){
+    CXXMemberCallExpr* call = iter->second;
+    activeCxxMemberCalls_.erase(iter);
+    if (prg->deleteAll()){
+      if (stmtContexts_.empty()){
+        internalError(expr->getLocStart(), *ci_,
+                      "stmt context list empty in deleteMemberExpr");
+      }
+      deleteNullVariableStmt(stmtContexts_.front(), decl);
+      return true;
+    }
+
+    checkNullAssignments(decl, prg->hasReplacement());
+    if (prg->hasReplacement()){
+      ::replace(call, rewriter_, prg->getReplacement(), *ci_);
+    } else {
+      QualType ret = call->getCallReturnType(ci_->getASTContext());
+      //the member expr is actually a function call
+      //a bit more work to delete
+      replaceNullWithEmptyType(ret, call);
+    }
     throw StmtDeleteException(call);
   } else {
     //the member expr is a simple member access
@@ -519,6 +682,33 @@ SkeletonASTVisitor::deleteMemberExpr(MemberExpr* expr)
     return true;
   }
 }
+*/
+
+
+void
+SkeletonASTVisitor::tryVisitNullVariable(Expr* expr, NamedDecl* decl)
+{
+  try {
+    visitNullVariable(expr, decl);
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != expr){
+      throw e;
+    }
+  }
+}
+
+bool
+SkeletonASTVisitor::deleteNullVariableMember(NamedDecl* nullVarDecl, MemberExpr* expr)
+{
+  ValueDecl* member = expr->getMemberDecl();
+  //the class itself is a null variable
+  SSTNullVariablePragma* prg = getNullVariable(nullVarDecl);
+  if (prg->hasExceptions()){
+    return !prg->isException(member); //this might be a thing we dont delete
+  } else if (prg->hasOnly()){
+    return prg->isOnly(member); //this might be a thing we do delete
+  } else return true; //yep, delete
+}
 
 bool
 SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* queue)
@@ -526,41 +716,21 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
   ValueDecl* member = expr->getMemberDecl();
   if (isNullVariable(member)){
     //the member variable itself is declared null
-    visitNullVariable(expr, member);
-    return true;
-  }
-
-  Expr* base = getUnderlyingExpr(expr->getBase());
-  if (base->getStmtClass() == Stmt::DeclRefExprClass){
-    DeclRefExpr* dref = cast<DeclRefExpr>(base);
-    NamedDecl* baseDecl = dref->getFoundDecl();
-    if (isNullVariable(dref->getFoundDecl())){
-      bool delStmt = true;
-      //the class itself is a null variable
-      SSTNullVariablePragma* prg = getNullVariable(baseDecl);
-      if (prg->hasExceptions()){
-        delStmt = !prg->isException(member); //this might be a thing we dont delete
-      } else if (prg->hasOnly()){
-        delStmt = prg->isOnly(member); //this might be a thing we do delete
+    if (!memberAccesses_.empty()){
+      //the member might be part of another member expr
+      MemberExpr* activeMember = memberAccesses_.back();
+      bool del = deleteNullVariableMember(member, activeMember);
+      if (del){
+        //call exception-safe version
+        tryVisitNullVariable(activeMember, member);
       }
-
-      if (delStmt){
-        if (prg->deleteAll() && !stmt_contexts_.empty()){
-          deleteNullVariableStmt(stmt_contexts_.front(), baseDecl);
-          return true;
-        } else {
-          return deleteMemberExpr(expr);
-        }
-      } else {
-        //okay, this is a little awkward
-        //we don't want to FULLY visit the dref
-        //but we do need to check for globalness
-        maybeReplaceGlobalUse(dref, expr->getBase()->getSourceRange());
-        return true;
-      }
+    } else {
+      //nope, standalone member
+      tryVisitNullVariable(expr, member);
     }
   }
 
+  PushGuard<MemberExpr*> pg(memberAccesses_, expr);
   TraverseStmt(expr->getBase());
   return true;
 }
@@ -986,7 +1156,7 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
     return nullptr;
   }
 
-  bool typedefd = typedef_structs_.find(recDecl) != typedef_structs_.end();
+  bool typedefd = typedefStructs_.find(recDecl) != typedefStructs_.end();
   if (!typedefd){
     //if this is a combined struct and variable declaration
     if (recDecl->getNameAsString() == "" || recDecl->getLocStart() == D->getLocStart()){
@@ -1115,7 +1285,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
         {
           std::stringstream size_os;
           std::map<const RecordDecl*, ReconstructedType> newTypes;
-          std::string typeNameToSize = getTypeNameForSizing(fxn_contexts_.front()->getLocStart(),
+          std::string typeNameToSize = getTypeNameForSizing(fxnContexts_.front()->getLocStart(),
                                                             D->getType(), newTypes);
           if (typeNameToSize.empty()){
             errorAbort(D->getLocStart(), *ci_,
@@ -1341,11 +1511,11 @@ static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
 bool
 SkeletonASTVisitor::checkStaticFxnVar(VarDecl *D)
 {
-  FunctionDecl* outerFxn = fxn_contexts_.front();
+  FunctionDecl* outerFxn = fxnContexts_.front();
   std::stringstream prefix_sstr;
   prefix_sstr << "_" << outerFxn->getNameAsString();
 
-  auto& staticVars = static_fxn_var_counts_[outerFxn];
+  auto& staticVars = staticFxnVarCounts_[outerFxn];
   int& cnt = staticVars[D->getNameAsString()];
   //due to scoping, we might have several static fxn vars
   //all with the same name
@@ -1384,13 +1554,13 @@ SkeletonASTVisitor::getOuterNamespace(Decl *D)
 bool
 SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
 {
-  if (class_contexts_.size() > 1){
+  if (classContexts_.size() > 1){
     errorAbort(D->getLocStart(), *ci_, "cannot handle static variables in inner classes");
   }
-  CXXRecordDecl* outerCls = class_contexts_.front();
+  CXXRecordDecl* outerCls = classContexts_.front();
   std::stringstream varname_scope_sstr; varname_scope_sstr << "_";
   std::stringstream cls_scope_sstr;
-  for (CXXRecordDecl* decl : class_contexts_){
+  for (CXXRecordDecl* decl : classContexts_){
     varname_scope_sstr << "_" << decl->getNameAsString();
     cls_scope_sstr << decl->getNameAsString() << "::";
   }
@@ -1661,23 +1831,23 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     skipVisit = noSkeletonize_ ? false : activatePragmasForDecl(D);
   }
 
-  fxn_contexts_.push_back(D);
+  fxnContexts_.push_back(D);
   if (!skipVisit && D->getBody()){
     traverseFunctionBody(D->getBody());
   }
-  fxn_contexts_.pop_back();
+  fxnContexts_.pop_back();
   return true;
 }
 
 bool
 SkeletonASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
 {
-  class_contexts_.push_back(D);
+  classContexts_.push_back(D);
   auto end = D->decls_end();
   for (auto iter=D->decls_begin(); iter != end; ++iter){
     TraverseDecl(*iter);
   }
-  class_contexts_.pop_back();
+  classContexts_.pop_back();
   return true;
 }
 
@@ -1905,7 +2075,7 @@ SkeletonASTVisitor::TraverseUnaryOperator(UnaryOperator* op, DataRecursionQueue*
 
   switch(op->getOpcode()){
     case UO_Deref: {
-      PushGuard<Expr*> pg(active_derefs_, op);
+      PushGuard<Expr*> pg(activeDerefs_, op);
       goIntoContext(op, [&]{
         TraverseStmt(op->getSubExpr());
       });
@@ -1941,7 +2111,7 @@ SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueu
 
   auto toExec = [&]{
     VectorPushGuard<std::pair<BinaryOperator*,BinOpSide>>
-        pg(bin_ops_, op, BinOpSide::LHS);
+        pg(binOps_, op, BinOpSide::LHS);
     TraverseStmt(op->getLHS());
     pg.swap(op, BinOpSide::RHS);
     TraverseStmt(op->getRHS());
@@ -1958,7 +2128,7 @@ SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueu
     case BO_RemAssign:
     case BO_AddAssign:
     case BO_SubAssign: {
-      IndexGuard ig(activeBinOpIdx_, bin_ops_.size());
+      IndexGuard ig(activeBinOpIdx_, binOps_.size());
       goIntoContext(op, toExec);
       break;
     }
@@ -1981,7 +2151,7 @@ SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
   //only make this an "active" statement on the conditional
   //once we decide to visit the bodies, ignore the if
   goIntoContext(stmt, [&]{
-    PushGuard<IfStmt*> pg(active_ifs_, stmt);
+    PushGuard<IfStmt*> pg(activeIfs_, stmt);
     TraverseStmt(stmt->getCond());
   });
 
@@ -2024,7 +2194,7 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
 bool
 SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
 {
-  loop_contexts_.push_back(S);
+  loopContexts_.push_back(S);
   bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
   if (!skipVisit){
     if (S->getInit()) TraverseStmt(S->getInit());
@@ -2032,7 +2202,7 @@ SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
     if (S->getInc()) TraverseStmt(S->getInc());
     if (S->getBody()) TraverseStmt(S->getBody());
   }
-  loop_contexts_.pop_back();
+  loopContexts_.pop_back();
   return true;
 }
 
@@ -2057,7 +2227,7 @@ SkeletonASTVisitor::TraverseArraySubscriptExpr(ArraySubscriptExpr* expr, DataRec
   }
   */
 
-  PushGuard<Expr*> pg(active_derefs_, expr);
+  PushGuard<Expr*> pg(activeDerefs_, expr);
   TraverseStmt(expr->getBase());
   TraverseStmt(expr->getIdx());
 
@@ -2084,14 +2254,14 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
       errorAbort(D->getLocStart(), *ci_,
                  "structure type did not return a record declaration");
     }
-    typedef_structs_[str_ty->getDecl()] = D;
+    typedefStructs_[str_ty->getDecl()] = D;
   } else if (ty->isUnionType()){
     auto un_ty = ty->getAsUnionType();
     if (!un_ty){
       errorAbort(D->getLocStart(), *ci_,
                  "union type did not return a record declaration");
     }
-    typedef_structs_[un_ty->getDecl()] = D;
+    typedefStructs_[un_ty->getDecl()] = D;
   }
   return true;
 }
@@ -2149,36 +2319,6 @@ SkeletonASTVisitor::propagateNullness(Decl* target, Decl* src)
 }
 
 void
-SkeletonASTVisitor::propagateNullness(BinaryOperator* op, Decl* decl)
-{
-  Expr* ue = getUnderlyingExpr(op->getLHS());
-  if (ue->getStmtClass() == Stmt::DeclRefExprClass){
-    DeclRefExpr* dref = cast<DeclRefExpr>(ue);
-    //nullness is assigned to an exiting variable
-    //this variable has now become comfortably null
-    propagateNullness(dref->getFoundDecl()->getCanonicalDecl(), decl);
-  }
-}
-
-void
-SkeletonASTVisitor::propagateNullness(Decl* decl)
-{
-  for (Stmt* s : stmt_contexts_){
-    //oh no! nullness propagates to this!
-    if (s->getStmtClass() == Stmt::DeclStmtClass){
-      DeclStmt* ds = cast<DeclStmt>(s);
-      Decl* lhs = ds->getSingleDecl();
-      if (lhs && lhs != decl){
-        //well, crap, yeah, the nullness propagates to a new variable
-        if (lhs->getKind() == Decl::Var){
-          propagateNullness(lhs, decl);
-        }
-      }
-    }
-  }
-}
-
-void
 SkeletonASTVisitor::nullifyIfStmt(IfStmt* if_stmt, Decl* d)
 {
   //oooooh, not good - I could really foobar things here
@@ -2189,16 +2329,27 @@ SkeletonASTVisitor::nullifyIfStmt(IfStmt* if_stmt, Decl* d)
   IfStmt* ifs = cast<IfStmt>(if_stmt);
   //force the replacement
   ::replace(ifs->getCond(), rewriter_, "0", *ci_);
-  throw StmtDeleteException(ifs);
+  throw StmtDeleteException(ifs, *ci_);
+}
+
+Stmt*
+SkeletonASTVisitor::replaceNullVariableStmt(Stmt* s, const std::string& repl)
+{
+  Stmt* toRepl = s;
+  auto iter = extendedReplacements_.find(s);
+  if (iter != extendedReplacements_.end()){
+    toRepl = iter->second;
+    extendedReplacements_.erase(iter);
+  }
+  ::replace(toRepl->getSourceRange(), rewriter_, repl, *ci_);
+  return toRepl;
 }
 
 void
-SkeletonASTVisitor::deleteNullVariableStmt(Stmt* s, Decl* d)
+SkeletonASTVisitor::deleteNullVariableStmt(Stmt* s)
 {
-  propagateNullness(d);
-  deleteStmt(s); //now delete it
-  //not only delete it, but stop all work on the current statement!
-  throw StmtDeleteException(s);
+  Stmt* actuallyReplaced = replaceNullVariableStmt(s, "");
+  throw StmtDeleteException(actuallyReplaced, *ci_);
 }
 
 bool

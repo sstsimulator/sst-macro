@@ -52,6 +52,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
+struct StmtDeleteException : public std::runtime_error
+{
+  StmtDeleteException(clang::Stmt* deld, clang::CompilerInstance& CI) :
+    std::runtime_error("deleted expression"), deleted (deld){
+    if (deld->getStmtClass() == clang::Stmt::DeclRefExprClass){
+      internalError(deld->getLocStart(), CI,
+                    "DeclRefExpr used in delete exception");
+    }
+  }
+  clang::Stmt* deleted;
+};
+
 class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
 {
 
@@ -143,6 +155,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   PragmaConfig& getPragmaConfig() {
     return pragmaConfig_;
+  }
+
+  clang::CompilerInstance& getCompilerInstance() {
+    return *ci_;
   }
 
   std::string needGlobalReplacement(clang::NamedDecl* decl) {
@@ -391,11 +407,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   }
 
   void appendComputeLoop(clang::ForStmt* stmt){
-    compute_loops_.push_back(stmt);
+    computeLoops_.push_back(stmt);
   }
 
   void popComputeLoop(){
-    compute_loops_.pop_back();
+    computeLoops_.pop_back();
   }
 
  private:
@@ -419,7 +435,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   clang::Decl* currentTopLevelScope_;
   clang::Rewriter& rewriter_;
   clang::CompilerInstance* ci_;
-  std::map<clang::RecordDecl*,clang::TypedefDecl*> typedef_structs_;
+  std::map<clang::RecordDecl*,clang::TypedefDecl*> typedefStructs_;
   SSTPragmaList pragmas_;
   bool visitingGlobal_;
   std::set<clang::FunctionDecl*> templateDefinitions_;
@@ -449,13 +465,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     activeGlobalScopedName_.clear();
   }
 
-  /**
-   * @brief propagateNullness This binOp containsa null variable on RHS.
-   *        See and log if it propagates nullness to another variable
-   * @param binOp
-   * @param decl  The declaration corresponding to the null variable
-   */
-  void propagateNullness(clang::BinaryOperator* binOp, clang::Decl* decl);
 
   /**
    * @brief propagateNullness This decl is initialized using a null variable
@@ -465,18 +474,52 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   void propagateNullness(clang::Decl* dest, clang::Decl* src);
 
-  bool deleteMemberExpr(clang::MemberExpr* expr);
+  bool deleteMemberExpr(SSTNullVariablePragma* prg, clang::MemberExpr* expr,
+                        clang::NamedDecl* decl);
 
   /**
-   * @brief propagateNullness Seek out any active decl stmts that might
-   * need nullness propagates to it
-   * @param decl  A null variable declaration that is part of the decl stmt
+   * @brief replaceNullWithEmptyType
+   *  Given an expression tied to a null variable, replace it with
+   *  a default-constructed type
+   * @param type  The type of the expression
+   * @param toRepl  The expr to replace
    */
-  void propagateNullness(clang::Decl* decl);
+  void replaceNullWithEmptyType(clang::QualType type, clang::Expr* toRepl);
+
+  void deleteNullVariableExpr(clang::Expr* expr);
+
+  clang::Stmt* replaceNullVariableStmt(clang::Stmt* stmt, const std::string& repl);
+
+  /**
+   * @brief checkNullAssignments
+   * @param nd  The null declaration being "propagated" to other values
+   * @param hasReplacement  Whether the null declaration has a sensible null replacement
+   * @return The outer most expression being assigned to
+   */
+  clang::Stmt* checkNullAssignments(clang::NamedDecl* nd, bool hasReplacement);
 
   void nullifyIfStmt(clang::IfStmt* if_stmt, clang::Decl* d);
 
+  /**
+   * @brief visitNullVariable
+   * Visit an expression contained a null variable. Perform any relevant deletions,
+   * safety checks, and log any "propagation" of the null variable into other variables
+   * @param expr
+   * @param nd
+   */
   void visitNullVariable(clang::Expr* expr, clang::NamedDecl* nd);
+
+  void tryVisitNullVariable(clang::Expr* expr, clang::NamedDecl* nd);
+
+  void nullDereferenceError(clang::Expr* expr, const std::string& varName);
+
+  /**
+   * @brief deleteNullVariableMember
+   * @param nullVarDecl The member declaration that is null
+   * @param expr The member expr whose base is the null variable
+   * @return Whether this member access should be deleted
+   */
+  bool deleteNullVariableMember(clang::NamedDecl* nullVarDecl, clang::MemberExpr* expr);
 
   void setActiveGlobalScopedName(const std::string& str) {
     activeGlobalScopedName_ = str;
@@ -507,19 +550,20 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool useAllHeaders_;
   int insideCxxMethod_;
 
-  std::map<clang::FunctionDecl*, std::map<std::string, int>> static_fxn_var_counts_;
-  std::list<clang::FunctionDecl*> fxn_contexts_;
-  std::list<clang::CXXRecordDecl*> class_contexts_;
-  std::list<clang::ForStmt*> loop_contexts_;
+  std::map<clang::FunctionDecl*, std::map<std::string, int>> staticFxnVarCounts_;
+  std::list<clang::FunctionDecl*> fxnContexts_;
+  std::list<clang::CXXRecordDecl*> classContexts_;
+  std::list<clang::ForStmt*> loopContexts_;
   /* a subset of loop contexts, only those loops that are skeletonized */
-  std::list<clang::ForStmt*> compute_loops_;
-  std::list<clang::Stmt*> stmt_contexts_;
+  std::list<clang::ForStmt*> computeLoops_;
+  std::list<clang::Stmt*> stmtContexts_;
   std::list<clang::Decl*> assignments_;
-  std::list<clang::Expr*> active_derefs_;
-  std::list<clang::IfStmt*> active_ifs_;
-  std::map<clang::MemberExpr*,clang::Expr*> active_cxx_member_calls_;
+  std::list<clang::Expr*> activeDerefs_;
+  std::list<clang::IfStmt*> activeIfs_;
+  std::list<clang::MemberExpr*> memberAccesses_;
+  std::map<clang::Stmt*,clang::Stmt*> extendedReplacements_;
 
-  std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmt_replacements_;
+  std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmtReplacements_;
 
   std::list<clang::VarDecl*> activeDecls_;
   std::list<clang::Expr*> activeInits_;
@@ -527,7 +571,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   int numRelocations_;
 
   typedef enum { LHS, RHS } BinOpSide;
-  std::vector<std::pair<clang::BinaryOperator*,BinOpSide>> bin_ops_;
+  std::vector<std::pair<clang::BinaryOperator*,BinOpSide>> binOps_;
   int activeBinOpIdx_;
 
   std::list<clang::ParmVarDecl*> activeFxnParams_;
@@ -614,8 +658,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     IndexGuard(int& t, int value) {
       if (t < 0) {
         t = value;
-        myPtr = &t; //don't overwrite
-      } else {
+        myPtr = &t;
+      } else { //don't overwrite
         myPtr = nullptr;
       }
     }
@@ -636,33 +680,25 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     std::list<T>& myList;
   };
 
-
-  struct StmtDeleteException : public std::runtime_error
-  {
-    StmtDeleteException(clang::Stmt* deld) :
-      std::runtime_error("deleted expression"), deleted (deld){}
-    clang::Stmt* deleted;
-  };
-
   template <class Lambda>
   void goIntoContext(clang::Stmt* stmt, Lambda&& l){
-    stmt_contexts_.push_back(stmt);
-    stmt_replacements_.emplace_back();
+    stmtContexts_.push_back(stmt);
+    stmtReplacements_.emplace_back();
     bool deleted = false;
     try {
       l();
     } catch (StmtDeleteException& e) {
       if (stmt != e.deleted){
-        stmt_contexts_.pop_back(); //must pop back now
-        stmt_replacements_.pop_back();
+        stmtContexts_.pop_back(); //must pop back now
+        stmtReplacements_.pop_back();
         //nope! not me - pass it along
         throw e;
       }
       deleted = true;
     }
-    stmt_contexts_.pop_back();
+    stmtContexts_.pop_back();
     if (!deleted) executeCurrentReplacements();
-    stmt_replacements_.pop_back();
+    stmtReplacements_.pop_back();
   }
 
   bool isNullVariable(clang::Decl* d) const {
@@ -685,7 +721,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   clang::Expr* getUnderlyingExpr(clang::Expr *e);
 
-  void deleteNullVariableStmt(clang::Stmt* use_stmt, clang::Decl* d);
+  void replaceNullVariableConnectedContext(clang::Expr* expr, const std::string& repl);
+
+  void deleteNullVariableStmt(clang::Stmt* stmt);
   bool activatePragmasForStmt(clang::Stmt* S);
   bool activatePragmasForDecl(clang::Decl* D);
   void visitCollective(clang::CallExpr* expr);
@@ -706,10 +744,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   clang::SourceLocation getEndLoc(clang::SourceLocation startLoc);
   bool insideClass() const {
-    return !class_contexts_.empty();
+    return !classContexts_.empty();
   }
   bool insideFxn() const {
-    return !fxn_contexts_.empty();
+    return !fxnContexts_.empty();
   }
 
   typedef enum {
