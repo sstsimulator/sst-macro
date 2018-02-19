@@ -54,6 +54,11 @@ class SSTComputePragma : public SSTPragma {
   SSTComputePragma(const std::string& nthread) :
     SSTPragma(Compute), nthread_(nthread){}
 
+  static void replaceForStmt(clang::ForStmt* stmt, clang::CompilerInstance& CI,
+                             SSTPragmaList& prgList, clang::Rewriter& r,
+                             PragmaConfig& cfg, SkeletonASTVisitor* visitor,
+                             const std::string& nthread);
+
  private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* decl, clang::Rewriter& r, PragmaConfig& cfg) override;

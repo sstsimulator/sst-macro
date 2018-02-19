@@ -165,7 +165,11 @@ class SSTNullVariablePragma : public SSTPragma {
                         const std::list<clang::Token>& tokens);
 
   SSTNullVariablePragma() : SSTPragma(NullVariable),
-    nullSafe_(false), deleteAll_(false) {}
+    nullSafe_(false), deleteAll_(false),
+    declAppliedTo_(nullptr),
+    transitiveFrom_(nullptr),
+    skelComputes_(false)
+  {}
 
   virtual SSTNullVariablePragma* clone() const {
     SSTNullVariablePragma* ret = new SSTNullVariablePragma;
@@ -179,6 +183,22 @@ class SSTNullVariablePragma : public SSTPragma {
 
   bool hasReplacement() const {
     return !replacement_.empty();
+  }
+
+  void setTransitive(SSTNullVariablePragma* prg){
+    transitiveFrom_ = prg;
+  }
+
+  SSTNullVariablePragma* getTransitive() const {
+    return transitiveFrom_;
+  }
+
+  bool isTransitive() const {
+    return transitiveFrom_;
+  }
+
+  clang::NamedDecl* getAppliedDecl() const {
+    return declAppliedTo_;
   }
 
   const std::string& getReplacement() const {
@@ -218,6 +238,10 @@ class SSTNullVariablePragma : public SSTPragma {
     return deleteAll_;
   }
 
+  bool skeletonizeCompute() const {
+    return skelComputes_;
+  }
+
  protected:
   void clone_into(SSTNullVariablePragma* cln) const {
     cln->replacement_ = replacement_;
@@ -227,6 +251,7 @@ class SSTNullVariablePragma : public SSTPragma {
     cln->targetNames_ = targetNames_;
     cln->nullSafe_ = nullSafe_;
     cln->deleteAll_ = deleteAll_;
+    cln->skelComputes_ = skelComputes_;
   }
 
   SSTNullVariablePragma(SSTPragma::class_t cls) : SSTPragma(cls){}
@@ -236,6 +261,9 @@ class SSTNullVariablePragma : public SSTPragma {
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
   void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
 
+  clang::NamedDecl* declAppliedTo_;
+  SSTNullVariablePragma* transitiveFrom_;
+
   std::set<std::string> nullOnly_;
   std::set<std::string> nullExcept_;
   std::set<std::string> nullNew_;
@@ -243,6 +271,7 @@ class SSTNullVariablePragma : public SSTPragma {
   std::set<std::string> targetNames_;
   bool nullSafe_;
   bool deleteAll_;
+  bool skelComputes_;
 };
 
 class SSTNullTypePragma : public SSTNullVariablePragma

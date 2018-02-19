@@ -321,6 +321,8 @@ ComputeVisitor::visitBodyParenExpr(ParenExpr* expr, Loop::Body& body)
   addOperations(expr->getSubExpr(), body);
 }
 
+#define heisenbug fprintf(stderr, "%s:%d\n", __FILE__, __LINE__); fflush(stdout)
+
 void
 ComputeVisitor::visitBodyArraySubscriptExpr(ArraySubscriptExpr* expr, Loop::Body& body, bool isLHS)
 {
@@ -328,7 +330,6 @@ ComputeVisitor::visitBodyArraySubscriptExpr(ArraySubscriptExpr* expr, Loop::Body
   //well, well - we might have a unique memory access
   addOperations(expr->getIdx(), body);
   addOperations(expr->getBase(), body);
-
   //we've added operations - see if this is a new memory access
   MemoryLocation mloc;
   visitAccessArraySubscriptExpr(expr, body, mloc, false); //do not update dependence
@@ -342,8 +343,8 @@ ComputeVisitor::visitBodyArraySubscriptExpr(ArraySubscriptExpr* expr, Loop::Body
             << " with gen dep " << mloc.maxGen
             << " at " << expr->getLocStart().printToString(CI.getSourceManager())
             << std::endl; */
-
-  if (acc.newAccess(mloc.maxGen, currentGeneration, isLHS)){
+  bool newAccess = acc.newAccess(mloc.maxGen, currentGeneration, isLHS);
+  if (newAccess){
     TypeInfo ti = CI.getASTContext().getTypeInfo(expr->getType());
     //std::cout << "sizeof(" << expr->getType()->getTypeClassName()
     //          << ")=" << ti.Width << std::endl;
@@ -353,6 +354,7 @@ ComputeVisitor::visitBodyArraySubscriptExpr(ArraySubscriptExpr* expr, Loop::Body
     else       body.readBytes += ti.Width / 8;
   }
 }
+
 
 void
 ComputeVisitor::visitBodyDeclRefExpr(DeclRefExpr* expr, Loop::Body& body, bool isLHS)

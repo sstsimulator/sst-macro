@@ -56,6 +56,7 @@ SkeletonASTConsumer::initNullWhitelist()
   nullWhitelist_.insert("gasnetc_AMRequestLongM");
   nullWhitelist_.insert("gasnetc_AMRequestLongAsyncM");
   nullWhitelist_.insert("gasnetc_AMReplyMediumM");
+  nullWhitelist_.insert("gasnetc_AMRequestMediumM");
 }
 
 bool

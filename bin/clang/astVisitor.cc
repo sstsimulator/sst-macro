@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "astVisitor.h"
 #include "replacePragma.h"
+#include "computePragma.h"
 #include <iostream>
 #include <fstream>
 #include <sstmac/common/sstmac_config.h>
@@ -364,7 +365,7 @@ SkeletonASTVisitor::replaceNullVariableConnectedContext(Expr* expr, const std::s
       } else if (!repl.empty()){
         //it is the right hand side that needs replacing and I have a repl
         //this should have happened already - propagateNullness(binOp, nd);
-        toDel = binOp->getRHS();
+        toDel = getUnderlyingExpr(binOp->getRHS());
       } else {
         toDel = binOp;
       }
@@ -372,10 +373,14 @@ SkeletonASTVisitor::replaceNullVariableConnectedContext(Expr* expr, const std::s
       toDel = binOp;
     }
     ::replace(toDel, rewriter_, repl, *ci_);
-    throw StmtDeleteException(toDel, *ci_);
+    //pass the delete up to the owner
+    throw StmtDeleteException(toDel);
   }
 
-  bool isMemberExpr = expr->getStmtClass() == Stmt::MemberExprClass;
+  //we are part of a member expr if either we are a member expr
+  //or the base of another member expr
+  bool isMemberExpr = expr->getStmtClass() == Stmt::MemberExprClass
+      || !memberAccesses_.empty();
 
   //figure out the outermost stmt we are connected to
   Stmt* outermost = nullptr;
@@ -418,19 +423,26 @@ void
 SkeletonASTVisitor::nullDereferenceError(Expr* expr, const std::string& varName)
 {
   std::stringstream sstr;
-  for (Stmt* s : stmtContexts_){
-    switch(s->getStmtClass()){
-    case Stmt::ForStmtClass:
-    case Stmt::WhileStmtClass:
-      sstr << "consider skeletonizing with pragma sst compute here: "
-           << s->getLocStart().printToString(ci_->getSourceManager()) << "\n";
-      break;
-    default:
-      break;
-    }
+  for (Stmt* s : loopContexts_){
+    sstr << "consider skeletonizing with pragma sst compute here: "
+         << s->getLocStart().printToString(ci_->getSourceManager()) << "\n";
   }
   sstr << "null_variable " << varName << " used in dereference";
   errorAbort(expr->getLocStart(), *ci_, sstr.str());
+}
+
+void
+SkeletonASTVisitor::addTransitiveNullInformation(NamedDecl* decl, std::ostream& os, SSTNullVariablePragma* prg)
+{
+  os << "\nvariable " << decl->getNameAsString() << " is transitively null ";
+  SSTNullVariablePragma* transPrg = prg->getTransitive();
+  NamedDecl* nd = transPrg->getAppliedDecl();
+  if (nd) os << "from " << nd->getNameAsString();
+  transPrg = transPrg->getTransitive();
+  while (transPrg){
+    nd = transPrg->getAppliedDecl();
+    if (nd) os << "->" << nd->getNameAsString();
+  }
 }
 
 void
@@ -439,6 +451,21 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
   SSTNullVariablePragma* nullVarPrg = getNullVariable(nd->getCanonicalDecl());
 
   if (!nullVarPrg->deleteAll() && !activeDerefs_.empty()){
+    if (nullVarPrg->skeletonizeCompute()){
+      //oh, okay - auto-skeletonize computes involving this
+      if (!loopContexts_.empty()){
+        //skeletonize ALL containing loops
+        Stmt* loop = loopContexts_.front();
+        if (loop->getStmtClass() == Stmt::ForStmtClass){
+          ForStmt* forLoop = cast<ForStmt>(loop);
+          SSTComputePragma::replaceForStmt(forLoop, *ci_, pragmas_, rewriter_,
+                                           pragmaConfig_, this, "");
+        } else {
+          nullDereferenceError(expr, nd->getNameAsString());
+        }
+        throw StmtDeleteException(loop);
+      }
+    }
     nullDereferenceError(expr, nd->getNameAsString());
   }
 
@@ -464,6 +491,8 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
           sstr << fxnName << " declared at "
                << fxnDeclLoc.printToString(ci_->getSourceManager());
         }
+        if (nullVarPrg->isTransitive())
+          addTransitiveNullInformation(nd, sstr, nullVarPrg);
         errorAbort(expr->getLocStart(), *ci_, sstr.str());
       }
     }
@@ -490,6 +519,15 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     //I am not assigning to anyone nor am I passed along as
     //a function parameter - but I have not been given permission to delete all
     //that's okay - I'm a meaningless standalone statement - delete me
+    if (!activeFxnParams_.empty()){
+      //but I can't just delete if I am being passed off to another expression
+      std::stringstream sstr;
+      sstr << "variable " << nd->getNameAsString() << " is a null_variable "
+           << " and passed to a function with no replacement specified ";
+      if (nullVarPrg->isTransitive())
+        addTransitiveNullInformation(nd, sstr, nullVarPrg);
+      errorAbort(expr->getLocStart(), *ci_, sstr.str());
+    }
     replaceNullVariableConnectedContext(expr, "");
   }
 }
@@ -505,7 +543,11 @@ SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
       shouldVisitNull = deleteNullVariableMember(nd, memberAccesses_.back());
     }
     if (shouldVisitNull){
-      visitNullVariable(expr, nd);
+      try {
+        visitNullVariable(expr, nd);
+      } catch (StmtDeleteException& e){
+        if (e.deleted != expr) throw e;
+      }
       return true;
     }
   }
@@ -628,7 +670,7 @@ SkeletonASTVisitor::replaceNullWithEmptyType(QualType type, Expr* toRepl)
 {
   if (type->isVoidType()){
     deleteStmt(toRepl);
-    throw StmtDeleteException(toRepl, *ci_);
+    throw StmtDeleteException(toRepl);
   }
 
   if (type->isReferenceType()){
@@ -645,45 +687,6 @@ SkeletonASTVisitor::replaceNullWithEmptyType(QualType type, Expr* toRepl)
 
   ::replace(toRepl, rewriter_, repl, *ci_);
 }
-
-/**
-bool
-SkeletonASTVisitor::deleteMemberExpr(SSTNullVariablePragma* prg,
-                                     MemberExpr* expr, NamedDecl* decl)
-{
-  auto iter = activeCxxMemberCalls_.find(expr);
-  if (iter != activeCxxMemberCalls_.end()){
-    CXXMemberCallExpr* call = iter->second;
-    activeCxxMemberCalls_.erase(iter);
-    if (prg->deleteAll()){
-      if (stmtContexts_.empty()){
-        internalError(expr->getLocStart(), *ci_,
-                      "stmt context list empty in deleteMemberExpr");
-      }
-      deleteNullVariableStmt(stmtContexts_.front(), decl);
-      return true;
-    }
-
-    checkNullAssignments(decl, prg->hasReplacement());
-    if (prg->hasReplacement()){
-      ::replace(call, rewriter_, prg->getReplacement(), *ci_);
-    } else {
-      QualType ret = call->getCallReturnType(ci_->getASTContext());
-      //the member expr is actually a function call
-      //a bit more work to delete
-      replaceNullWithEmptyType(ret, call);
-    }
-    throw StmtDeleteException(call);
-  } else {
-    //the member expr is a simple member access
-    //the statement itself is deleted
-    //no exceptions required
-    deleteStmt(expr);
-    return true;
-  }
-}
-*/
-
 
 void
 SkeletonASTVisitor::tryVisitNullVariable(Expr* expr, NamedDecl* decl)
@@ -2186,23 +2189,40 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
       }
     });
   }
+  return true;
+}
 
-
+bool
+SkeletonASTVisitor::TraverseWhileStmt(WhileStmt* S, DataRecursionQueue* queue)
+{
+  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+  if (!skipVisit){
+   try{
+     PushGuard<Stmt*> pg(loopContexts_, S);
+     if (S->getCond()) TraverseStmt(S->getCond());
+     if (S->getBody()) TraverseStmt(S->getBody());
+   } catch (StmtDeleteException& e) {
+      if (e.deleted != S) throw e;
+    }
+  }
   return true;
 }
 
 bool
 SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
-{
-  loopContexts_.push_back(S);
+{       
   bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
   if (!skipVisit){
-    if (S->getInit()) TraverseStmt(S->getInit());
-    if (S->getCond()) TraverseStmt(S->getCond());
-    if (S->getInc()) TraverseStmt(S->getInc());
-    if (S->getBody()) TraverseStmt(S->getBody());
+    try {
+      PushGuard<Stmt*> pg(loopContexts_, S);
+      if (S->getInit()) TraverseStmt(S->getInit());
+      if (S->getCond()) TraverseStmt(S->getCond());
+      if (S->getInc()) TraverseStmt(S->getInc());
+      if (S->getBody()) TraverseStmt(S->getBody());
+    } catch (StmtDeleteException& e) {
+      if (e.deleted != S) throw e;
+    }
   }
-  loopContexts_.pop_back();
   return true;
 }
 
@@ -2315,6 +2335,7 @@ SkeletonASTVisitor::propagateNullness(Decl* target, Decl* src)
   SSTNullVariablePragma*& existing = pragmaConfig_.nullVariables[vd];
   if (!existing){
     existing = oldPragma->clone();
+    existing->setTransitive(oldPragma);
   }
 }
 
@@ -2329,7 +2350,7 @@ SkeletonASTVisitor::nullifyIfStmt(IfStmt* if_stmt, Decl* d)
   IfStmt* ifs = cast<IfStmt>(if_stmt);
   //force the replacement
   ::replace(ifs->getCond(), rewriter_, "0", *ci_);
-  throw StmtDeleteException(ifs, *ci_);
+  throw StmtDeleteException(ifs);
 }
 
 Stmt*
@@ -2349,7 +2370,7 @@ void
 SkeletonASTVisitor::deleteNullVariableStmt(Stmt* s)
 {
   Stmt* actuallyReplaced = replaceNullVariableStmt(s, "");
-  throw StmtDeleteException(actuallyReplaced, *ci_);
+  throw StmtDeleteException(actuallyReplaced);
 }
 
 bool

@@ -386,7 +386,11 @@ SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
- : SSTPragma(NullVariable), nullSafe_(false), deleteAll_(false)
+ : SSTPragma(NullVariable),
+   nullSafe_(false), deleteAll_(false),
+   declAppliedTo_(nullptr),
+   transitiveFrom_(nullptr),
+   skelComputes_(false)
 {
   if (tokens.empty()){
     return;
@@ -428,6 +432,8 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
       nullSafe_ = true;
     } else if (next == "delete_all"){
       deleteAll_ = true;
+    } else if (next == "skel_compute"){
+      skelComputes_ = true;
     } else if (inserter == nullptr){
       errorAbort(loc, CI,
            "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', or 'target'");
@@ -441,9 +447,24 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
   }
 }
 
+static NamedDecl* getNamedDecl(Decl* d)
+{
+  switch (d->getKind()){
+    case Decl::Function:
+      return cast<FunctionDecl>(d);
+    case Decl::Field:
+      return cast<FieldDecl>(d);
+    case Decl::Var:
+      return cast<VarDecl>(d);
+    default:
+      return nullptr;
+  }
+}
+
 void
 SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 {
+  declAppliedTo_ = getNamedDecl(d);
   if (d->getKind() == Decl::Function){
     FunctionDecl* fd = cast<FunctionDecl>(d);
     if (nullSafe_){

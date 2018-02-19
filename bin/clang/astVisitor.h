@@ -54,12 +54,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 struct StmtDeleteException : public std::runtime_error
 {
-  StmtDeleteException(clang::Stmt* deld, clang::CompilerInstance& CI) :
+  StmtDeleteException(clang::Stmt* deld) :
     std::runtime_error("deleted expression"), deleted (deld){
-    if (deld->getStmtClass() == clang::Stmt::DeclRefExprClass){
-      internalError(deld->getLocStart(), CI,
-                    "DeclRefExpr used in delete exception");
-    }
   }
   clang::Stmt* deleted;
 };
@@ -299,6 +295,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool TraverseForStmt(clang::ForStmt* S, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseWhileStmt(clang::WhileStmt* S, DataRecursionQueue* queue = nullptr);
+
   bool TraverseUnaryOperator(clang::UnaryOperator* op, DataRecursionQueue* queue = nullptr);
 
   bool TraverseBinaryOperator(clang::BinaryOperator* op, DataRecursionQueue* queue = nullptr);
@@ -500,6 +498,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void nullifyIfStmt(clang::IfStmt* if_stmt, clang::Decl* d);
 
+  void addTransitiveNullInformation(clang::NamedDecl* nd, std::ostream& os,
+                                    SSTNullVariablePragma* prg);
+
   /**
    * @brief visitNullVariable
    * Visit an expression contained a null variable. Perform any relevant deletions,
@@ -553,7 +554,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::map<clang::FunctionDecl*, std::map<std::string, int>> staticFxnVarCounts_;
   std::list<clang::FunctionDecl*> fxnContexts_;
   std::list<clang::CXXRecordDecl*> classContexts_;
-  std::list<clang::ForStmt*> loopContexts_;
+  std::list<clang::Stmt*> loopContexts_; //both fors and whiles
   /* a subset of loop contexts, only those loops that are skeletonized */
   std::list<clang::ForStmt*> computeLoops_;
   std::list<clang::Stmt*> stmtContexts_;

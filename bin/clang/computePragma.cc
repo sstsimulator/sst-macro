@@ -141,16 +141,24 @@ SSTComputePragma::visitIfStmt(IfStmt* stmt, Rewriter& r, PragmaConfig& cfg)
 }
 
 void
-SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
+SSTComputePragma::replaceForStmt(clang::ForStmt* stmt, CompilerInstance& CI, SSTPragmaList& prgList,
+                                 Rewriter& r, PragmaConfig& cfg, SkeletonASTVisitor* visitor,
+                                 const std::string& nthread)
 {
-  cfg.astVisitor->appendComputeLoop(stmt);
-  ComputeVisitor vis(*CI, *pragmaList, nullptr, cfg.astVisitor); //null, no parent
+  visitor->appendComputeLoop(stmt);
+  ComputeVisitor vis(CI, prgList, nullptr, visitor); //null, no parent
   Loop loop(0); //depth zeros
   vis.setContext(stmt);
   vis.visitLoop(stmt,loop);
-  vis.replaceStmt(stmt,r,loop,cfg, nthread_);
+  vis.replaceStmt(stmt,r,loop,cfg, nthread);
   //cfg.skipNextStmt = true;
-  cfg.astVisitor->popComputeLoop();
+  visitor->popComputeLoop();
+}
+
+void
+SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
+{
+  replaceForStmt(stmt, *CI, *pragmaList, r, cfg, cfg.astVisitor, nthread_);
 }
 
 void
