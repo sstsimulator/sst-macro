@@ -106,9 +106,10 @@ SkeletonASTConsumer::run()
       visitor_.setVisitingGlobal(false); //and reset
     }
   } catch (StmtDeleteException& e) {
-    e.deleted->dump();
-    internalError(e.deleted->getLocStart(), visitor_.getCompilerInstance(),
-               "unhandled delete exception on expression");
+    //e.deleted->dump();
+    std::string error = std::string("unhandled delete exception on expression")
+        + " of type " + e.deleted->getStmtClassName();
+    internalError(e.deleted->getLocStart(), visitor_.getCompilerInstance(), error);
   }
 
 }

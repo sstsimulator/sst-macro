@@ -1923,13 +1923,17 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
 bool
 SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+  try {
+    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
 
-  if (!skipVisit){
-    auto end = stmt->body_end();
-    for (auto iter=stmt->body_begin(); iter != end; ++iter){
-      TraverseStmt(*iter);
+    if (!skipVisit){
+      auto end = stmt->body_end();
+      for (auto iter=stmt->body_begin(); iter != end; ++iter){
+        TraverseStmt(*iter);
+      }
     }
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != stmt) throw e;
   }
 
   return true;
@@ -2106,10 +2110,12 @@ SkeletonASTVisitor::TraverseCompoundAssignOperator(CompoundAssignOperator *op, D
 bool
 SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(op);
-  if (skipVisit){
-    deletedStmts_.insert(op);
-    return true;
+  try{
+    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(op);
+    if (skipVisit) return true;
+  } catch (StmtDeleteException& e){
+    if (e.deleted != op) throw e;
+    else return true; //deleted, don't visit anything else
   }
 
   auto toExec = [&]{
@@ -2146,20 +2152,24 @@ SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueu
 bool
 SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
-  if (skipVisit){
-    return true;
+  try {
+    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+    if (skipVisit){
+      return true;
+    }
+
+    //only make this an "active" statement on the conditional
+    //once we decide to visit the bodies, ignore the if
+    goIntoContext(stmt, [&]{
+      PushGuard<IfStmt*> pg(activeIfs_, stmt);
+      TraverseStmt(stmt->getCond());
+    });
+
+    TraverseStmt(stmt->getThen());
+    if (stmt->getElse()) TraverseStmt(stmt->getElse());
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != stmt) throw e;
   }
-
-  //only make this an "active" statement on the conditional
-  //once we decide to visit the bodies, ignore the if
-  goIntoContext(stmt, [&]{
-    PushGuard<IfStmt*> pg(activeIfs_, stmt);
-    TraverseStmt(stmt->getCond());
-  });
-
-  TraverseStmt(stmt->getThen());
-  if (stmt->getElse()) TraverseStmt(stmt->getElse());
 
   return true;
 }
@@ -2167,27 +2177,46 @@ SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
 bool
 SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
-  if (skipVisit){
-    deletedStmts_.insert(stmt);
-  } else {
-    goIntoContext(stmt, [&]{
-      if (stmt->isSingleDecl()){
-        Decl* D = stmt->getSingleDecl();
-        SSTNullVariablePragma* prg = getNullVariable(D);
-        if (prg){
-          if (!prg->keepCtor()){
-            deleteStmt(stmt);
-          }
-        } else {
-          TraverseDecl(D);
+  try {
+    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+    if (skipVisit) return true;
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != stmt) throw e;
+    else return true;
+  }
+
+  goIntoContext(stmt, [&]{
+    if (stmt->isSingleDecl()){
+      Decl* D = stmt->getSingleDecl();
+      SSTNullVariablePragma* prg = getNullVariable(D);
+      if (prg){
+        if (!prg->keepCtor()){
+          deleteStmt(stmt);
         }
       } else {
-        for (auto* D : stmt->decls()){
-          TraverseDecl(D);
-        }
+        TraverseDecl(D);
       }
-    });
+    } else {
+      for (auto* D : stmt->decls()){
+        TraverseDecl(D);
+      }
+    }
+  });
+  return true;
+}
+
+bool
+SkeletonASTVisitor::TraverseDoStmt(DoStmt* S, DataRecursionQueue* queue)
+{
+  try {
+    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+    if (!skipVisit){
+     //PushGuard<Stmt*> pg(loopContexts_, S);
+      if (S->getBody()) TraverseStmt(S->getBody());
+      if (S->getCond()) TraverseStmt(S->getCond());
+    }
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != S) throw e;
   }
   return true;
 }
@@ -2195,34 +2224,36 @@ SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
 bool
 SkeletonASTVisitor::TraverseWhileStmt(WhileStmt* S, DataRecursionQueue* queue)
 {
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
-  if (!skipVisit){
-   try{
+  try {
+    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+    if (!skipVisit){
      PushGuard<Stmt*> pg(loopContexts_, S);
      if (S->getCond()) TraverseStmt(S->getCond());
      if (S->getBody()) TraverseStmt(S->getBody());
-   } catch (StmtDeleteException& e) {
-      if (e.deleted != S) throw e;
     }
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != S) throw e;
   }
   return true;
 }
 
 bool
 SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
-{       
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
-  if (!skipVisit){
-    try {
-      PushGuard<Stmt*> pg(loopContexts_, S);
-      if (S->getInit()) TraverseStmt(S->getInit());
-      if (S->getCond()) TraverseStmt(S->getCond());
-      if (S->getInc()) TraverseStmt(S->getInc());
-      if (S->getBody()) TraverseStmt(S->getBody());
-    } catch (StmtDeleteException& e) {
-      if (e.deleted != S) throw e;
-    }
+{
+  try {
+    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+    if (skipVisit) return true;
+
+    PushGuard<Stmt*> pg(loopContexts_, S);
+    if (S->getInit()) TraverseStmt(S->getInit());
+    if (S->getCond()) TraverseStmt(S->getCond());
+    if (S->getInc()) TraverseStmt(S->getInc());
+    if (S->getBody()) TraverseStmt(S->getBody());
+
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != S) throw e;
   }
+
   return true;
 }
 
@@ -2259,7 +2290,11 @@ SkeletonASTVisitor::VisitStmt(Stmt *S)
 {
   if (noSkeletonize_) return true;
 
-  activatePragmasForStmt(S);
+  try {
+    activatePragmasForStmt(S);
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != S) throw e;
+  }
 
   return true;
 }
@@ -2446,6 +2481,24 @@ SkeletonASTVisitor::activatePragmasForDecl(Decl* D)
     }
   }
   return skipVisit;
+}
+
+Expr*
+SkeletonASTVisitor::getFinalExpr(Expr* e)
+{
+#define sub_case(e,cls) \
+  case Stmt::cls##Class: \
+    e = cast<cls>(e)->getSubExpr(); break
+  while (1){
+    switch(e->getStmtClass()){
+    sub_case(e,UnaryOperator);
+    sub_case(e,ParenExpr);
+    sub_case(e,CStyleCastExpr);
+    sub_case(e,ImplicitCastExpr);
+    default:
+      return e;
+    }
+  }
 }
 
 Expr*

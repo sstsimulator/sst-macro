@@ -295,6 +295,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool TraverseForStmt(clang::ForStmt* S, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseDoStmt(clang::DoStmt* S, DataRecursionQueue* queue = nullptr);
+
   bool TraverseWhileStmt(clang::WhileStmt* S, DataRecursionQueue* queue = nullptr);
 
   bool TraverseUnaryOperator(clang::UnaryOperator* op, DataRecursionQueue* queue = nullptr);
@@ -706,6 +708,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return pragmaConfig_.nullVariables.find(d) != pragmaConfig_.nullVariables.end();
   }
 
+  bool isValidAssignment(clang::Decl* lhs, clang::Expr* rhs);
+
   bool isNullSafeFunction(const clang::DeclContext* dc) const {
     return pragmaConfig_.nullSafeFunctions.find(dc) != pragmaConfig_.nullSafeFunctions.end();
   }
@@ -720,7 +724,21 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void maybeReplaceGlobalUse(clang::DeclRefExpr* expr, clang::SourceRange rng);
 
+  /**
+   * @brief getUnderlyingExpr Follow through parentheses and casts
+   *  to the "significant" expression underneath
+   * @param e The input expression that might have casts/parens
+   * @return  The underlying expression
+   */
   clang::Expr* getUnderlyingExpr(clang::Expr *e);
+
+  /**
+   * @brief getFinalExpr Similar to #getUnderlyingExpr, but also
+   *  follow through unary operators.
+   * @param e The input expression that might have casts/parens/unary ops
+   * @return  The underlying expression
+   */
+  clang::Expr* getFinalExpr(clang::Expr *e);
 
   void replaceNullVariableConnectedContext(clang::Expr* expr, const std::string& repl);
 

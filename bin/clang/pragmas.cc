@@ -156,6 +156,7 @@ SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg)
   default:
     break;
   }
+  throw StmtDeleteException(s);
 }
 
 void
