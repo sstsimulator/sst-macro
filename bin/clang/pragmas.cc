@@ -272,7 +272,9 @@ SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 void
 SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
+  PrettyPrinter pp;
   std::string replacement;
+
   if (units_ == "sec"){
     replacement = "sstmac_compute(" + amount_ + ");";
   } else if (units_ == "msec"){
@@ -286,7 +288,9 @@ SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
         ": must be sec, msec, usec, or nsec";
     errorAbort(s->getLocStart(), *CI, error);
   }
-  r.InsertText(s->getLocEnd(), replacement);
+  
+  pp.os << replacement; 
+  r.InsertText(s->getLocStart(), pp.os.str(), false, false);
 }
 
 void
@@ -661,11 +665,15 @@ SSTAdvanceTimePragmaHandler::allocatePragma(SourceLocation loc, const std::list<
     errorAbort(loc, ci_,
                "advance_time pragma needs at least two arguments: <units> <number>");
   }
+  
+  //Orginal code was ausing assertion to fail inside of token::getLiteralData();
   auto iter = tokens.begin();
-  Token unitTok = *iter;
-  std::string units = unitTok.getLiteralData();
-  std::stringstream sstr;
-  ++iter;
-  SSTPragma::tokenStreamToString(loc, iter, tokens.end(), sstr, ci_);
-  return new SSTAdvanceTimePragma(units, sstr.str());
+
+  std::stringstream units;  
+  iter++;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), iter, units, ci_); 
+
+  std::stringstream sval;
+  SSTPragma::tokenStreamToString(loc, iter, tokens.end(), sval, ci_);
+  return new SSTAdvanceTimePragma(units.str(), sval.str());
 }
