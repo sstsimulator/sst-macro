@@ -104,6 +104,7 @@ transport::transport(sprockit::sim_parameters* params) :
 #endif
   completion_queues_(1), //guaranteed one to begin with
   inited_(false),
+  system_collective_tag_(-1), //negative tags reserved for special system work
   finalized_(false),
   eager_cutoff_(512),
   use_put_protocol_(false),

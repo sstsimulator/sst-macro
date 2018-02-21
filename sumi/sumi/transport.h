@@ -392,6 +392,13 @@ class transport {
     return rank_;
   }
 
+  int allocate_global_collective_tag(){
+    system_collective_tag_--;
+    if (system_collective_tag_ >= 0)
+      system_collective_tag_ = -1;
+    return system_collective_tag_;
+  }
+
   int nproc() const {
     return nproc_;
   }
@@ -523,6 +530,8 @@ class transport {
   bool use_hardware_ack_;
 
   communicator* global_domain_;
+
+  int system_collective_tag_;
 
 #if SUMI_USE_SPINLOCK
   spin_thread_lock lock_;
