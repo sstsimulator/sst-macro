@@ -144,6 +144,8 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTAlwaysComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTStartReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));

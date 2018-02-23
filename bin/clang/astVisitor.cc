@@ -744,7 +744,7 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
   //this "breaks" connections
   activeBinOpIdx_ = IndexResetter;
 
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(expr);
+  bool skipVisit = activatePragmasForStmt(expr);
   if (skipVisit){
     return true;
   }
@@ -1726,9 +1726,7 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   }
 
   if (D->getNameAsString() == "sstmac_appname_str"){
-    const ImplicitCastExpr* expr1 = cast<const ImplicitCastExpr>(D->getInit());
-    const ImplicitCastExpr* expr2 = cast<const ImplicitCastExpr>(expr1->getSubExpr());
-    const StringLiteral* lit = cast<StringLiteral>(expr2->getSubExpr());
+    StringLiteral* lit = cast<StringLiteral>(getUnderlyingExpr(D->getInit()));
     mainName_ = lit->getString();
     return false;
   }
@@ -1924,7 +1922,7 @@ bool
 SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue* queue)
 {
   try {
-    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+    bool skipVisit = activatePragmasForStmt(stmt);
 
     if (!skipVisit){
       auto end = stmt->body_end();
@@ -2111,7 +2109,7 @@ bool
 SkeletonASTVisitor::TraverseBinaryOperator(BinaryOperator* op, DataRecursionQueue* queue)
 {
   try{
-    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(op);
+    bool skipVisit = activatePragmasForStmt(op);
     if (skipVisit) return true;
   } catch (StmtDeleteException& e){
     if (e.deleted != op) throw e;
@@ -2153,7 +2151,7 @@ bool
 SkeletonASTVisitor::TraverseIfStmt(IfStmt* stmt, DataRecursionQueue* queue)
 {
   try {
-    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+    bool skipVisit = activatePragmasForStmt(stmt);
     if (skipVisit){
       return true;
     }
@@ -2178,7 +2176,7 @@ bool
 SkeletonASTVisitor::TraverseDeclStmt(DeclStmt* stmt, DataRecursionQueue* queue)
 {
   try {
-    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(stmt);
+    bool skipVisit = activatePragmasForStmt(stmt);
     if (skipVisit) return true;
   } catch (StmtDeleteException& e) {
     if (e.deleted != stmt) throw e;
@@ -2209,7 +2207,7 @@ bool
 SkeletonASTVisitor::TraverseDoStmt(DoStmt* S, DataRecursionQueue* queue)
 {
   try {
-    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+    bool skipVisit = activatePragmasForStmt(S);
     if (!skipVisit){
      //PushGuard<Stmt*> pg(loopContexts_, S);
       if (S->getBody()) TraverseStmt(S->getBody());
@@ -2225,7 +2223,7 @@ bool
 SkeletonASTVisitor::TraverseWhileStmt(WhileStmt* S, DataRecursionQueue* queue)
 {
   try {
-    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+    bool skipVisit = activatePragmasForStmt(S);
     if (!skipVisit){
      PushGuard<Stmt*> pg(loopContexts_, S);
      if (S->getCond()) TraverseStmt(S->getCond());
@@ -2241,7 +2239,7 @@ bool
 SkeletonASTVisitor::TraverseForStmt(ForStmt *S, DataRecursionQueue* queue)
 {
   try {
-    bool skipVisit = noSkeletonize_ ? false : activatePragmasForStmt(S);
+    bool skipVisit = activatePragmasForStmt(S);
     if (skipVisit) return true;
 
     PushGuard<Stmt*> pg(loopContexts_, S);
@@ -2427,6 +2425,10 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
       case SSTPragma::Keep:
         skipVisit = true;
         activate = true; //always - regardless of skeletonization
+        break;
+      case SSTPragma::AlwaysCompute:
+        blockDeleted = true;
+        activate = true;
         break;
       case SSTPragma::Compute:
       case SSTPragma::Delete:

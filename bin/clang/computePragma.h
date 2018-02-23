@@ -70,6 +70,15 @@ class SSTComputePragma : public SSTPragma {
   void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
 
   std::string nthread_;
+
+ protected:
+  SSTComputePragma(SSTPragma::class_t cls) : SSTPragma(cls) {}
+};
+
+class SSTAlwaysComputePragma : public SSTComputePragma
+{
+ public:
+  SSTAlwaysComputePragma() : SSTComputePragma(AlwaysCompute) {}
 };
 
 class SSTMemoryPragma : public SSTPragma {
@@ -144,6 +153,14 @@ class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> 
   SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
                       SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
    SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
+  {}
+};
+
+class SSTAlwaysComputePragmaHandler : public SSTSimplePragmaHandler<SSTAlwaysComputePragma> {
+ public:
+  SSTAlwaysComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
+   SSTSimplePragmaHandler<SSTAlwaysComputePragma>("always_compute", plist, CI, visitor, deld)
   {}
 };
 

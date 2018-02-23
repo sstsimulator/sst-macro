@@ -79,6 +79,7 @@ void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
   switch(fsp->cls){
+    case SSTPragma::AlwaysCompute:
     case SSTPragma::Keep: //always obey these
       pragmas_.push_back(fsp);
       break;

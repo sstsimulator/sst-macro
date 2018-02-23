@@ -84,7 +84,8 @@ struct SSTPragma {
     Instead=12,
     BranchPredict=13,
     AdvanceTime=14,
-    CallFunction=15
+    CallFunction=15,
+    AlwaysCompute=16
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
