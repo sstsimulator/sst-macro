@@ -1,6 +1,13 @@
 #ifndef sstmac_string_h_included
 #define sstmac_string_h_included
 
+#ifndef SSTMAC_INSIDE_STL
+#define SSTMAC_INSIDE_STL
+#include <sstmac/replacements/sstmac_pthread_clear.h>
+#include <sstmac/replacements/clear_symbol_macros.h>
+#define STRING_H_OWNS_STL
+#endif
+
 #include_next <string.h>
 
 #ifdef SSTMAC_INSIDE_STL
@@ -29,6 +36,12 @@ void* sstmac_memcpy(void* dst, const void* src, unsigned long sz);
 }
 #endif
 
+#ifdef STRING_H_OWNS_STL
+#undef STRING_H_OWNS_STL
+#undef SSTMAC_INSIDE_STL
+#include <sstmac/replacements/sstmac_pthread_return.h>
+#include <sstmac/replacements/return_symbol_macros.h>
+#endif
 
 #endif
 

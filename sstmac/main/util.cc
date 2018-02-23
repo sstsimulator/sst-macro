@@ -113,6 +113,12 @@ extern "C" unsigned int sstmac_alarm(unsigned int delay)
   return 0;
 }
 
+extern "C" int sstmac_on_exit(void(*fxn)(int,void*), void* arg)
+{
+  //for now, just ignore any atexit functions
+  return 0;
+}
+
 extern "C" int sstmac_atexit(void (*fxn)(void))
 {
   //for now, just ignore any atexit functions

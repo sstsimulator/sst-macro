@@ -145,6 +145,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   asmFiles = False
   givenFlags = []
   controlArgs = []
+  compileOnlyArgs = []
   linkerArgs = []
   sourceFiles = []
   objectFiles = []
@@ -170,6 +171,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg.startswith("-W"):
       warningArgs.append(sarg)
       givenFlags.append(sarg)
+    elif sarg == "-g3":
+      compileOnlyArgs.append(sarg)
     elif sarg.startswith("-L"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-l"):
@@ -312,6 +315,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       sstCompilerFlags.append(entry)
   sstCompilerFlagsStr = " ".join(sstCompilerFlags)
 
+  compileOnlyArgsStr = " ".join(compileOnlyArgs)
+
   #okay, figure out which -std flag to include in compilation
   #treat it as a given flag on the command line
 
@@ -391,6 +396,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     sourceFilesStr,
     sstCppFlagsStr,
     extraCppFlagsStr,
+    compileOnlyArgsStr,
     givenFlagsStr,
     sstCompilerFlagsStr
   ]
