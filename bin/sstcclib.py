@@ -21,6 +21,12 @@ def swapSuffix(suffix, path):
   splitter.append(suffix)
   return ".".join(splitter)
 
+def rebaseFolder(path, srcDir, dstDir):
+  folder, fname = os.path.split(path)
+  newBaseFolder = folder.replace(srcDir,dstDir)
+  return os.path.join(newBaseFolder, fname)
+
+
 def addPrefix(prefix, path):
   import os
   splitPath = os.path.split(path)
@@ -29,6 +35,11 @@ def addPrefix(prefix, path):
   else:
     return prefix + path
 
+def addPrefixAndRebase(prefix, path, newBase):
+  import os
+  newPath = addPrefix(prefix, path)
+  folder, name = os.path.split(newPath)
+  return os.path.join(newBase, name)
 
 def addClangArg(a, ret):
   ret.append("--extra-arg=%s" % a)
@@ -499,8 +510,15 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     #this is more complicated - we have to use clang to do a source to source transformation
     #then we need to run the compiler on that modified source
     for srcFile in sourceFiles:
+      target = objTarget
+      if not objTarget:
+        srcName = os.path.split(srcFile)[-1]
+        target = swapSuffix("o", srcName)
+      objBaseFolder, objName = os.path.split(target)
+        
+
       allTemps = TempFiles(delTempFiles, verbose)
-      ppTmpFile = addPrefix("pp.",srcFile)
+      ppTmpFile = addPrefixAndRebase("pp.",srcFile, objBaseFolder)
       cmdArr = ppCmdArr[:]
       cmdArr.append(srcFile)
       cmdArr.append("> %s" % ppTmpFile)
@@ -514,8 +532,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
       ppText = open(ppTmpFile).read()
 
-      srcRepl = addPrefix("sst.pp.",srcFile)
-      cxxInitSrcFile = addPrefix("sstGlobals.pp.",srcFile) + ".cpp"
+      srcRepl = addPrefixAndRebase("sst.pp.",srcFile,objBaseFolder)
+      cxxInitSrcFile = addPrefixAndRebase("sstGlobals.pp.",srcFile,objBaseFolder) + ".cpp"
 
       clangCmdArr = [clangDeglobal]
       if typ == "c++":
@@ -550,10 +568,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         sstCompilerFlagsStr, 
         givenFlagsStr
       ]
-      target = objTarget
-      if not objTarget:
-        srcName = os.path.split(srcFile)[-1]
-        target = swapSuffix("o", srcName)
+
+
       tmpTarget = addPrefix("tmp.", target)
       allTemps.append(tmpTarget)
       cmdArr.append("-o")
