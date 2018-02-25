@@ -13,6 +13,7 @@ def argify(x):
     return x
 
 def delete(files):
+  import traceback
   import os
   os.system("rm -f %s" % (" ".join(files)))
 
@@ -67,10 +68,14 @@ class TempFiles:
   def append(self, f):
     self.files.append(f)
 
+  def __del__(self):
+    self.cleanUp()
+
   def cleanUp(self):
     import os
     import sys
     cmd = "rm -f %s" % " ".join(self.files)
+    import traceback
     if self.doDelete:
         if self.verbose:
           sys.stderr.write("%s\n" % cmd)
@@ -182,6 +187,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg.startswith("-W"):
       warningArgs.append(sarg)
       givenFlags.append(sarg)
+    elif sarg[:6] == "-gstab": 
+      #for some reason, gstab seems to break 
+      #everything when using GNU compiler/linker
+      givenFlags.append("-g")
     elif sarg == "-g3":
       compileOnlyArgs.append(sarg)
     elif sarg.startswith("-L"):
@@ -509,15 +518,14 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if runClang:
     #this is more complicated - we have to use clang to do a source to source transformation
     #then we need to run the compiler on that modified source
+    allTemps = TempFiles(delTempFiles, verbose)
     for srcFile in sourceFiles:
       target = objTarget
       if not objTarget:
         srcName = os.path.split(srcFile)[-1]
         target = swapSuffix("o", srcName)
       objBaseFolder, objName = os.path.split(target)
-        
 
-      allTemps = TempFiles(delTempFiles, verbose)
       ppTmpFile = addPrefixAndRebase("pp.",srcFile, objBaseFolder)
       cmdArr = ppCmdArr[:]
       cmdArr.append(srcFile)
@@ -615,7 +623,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       mergeCmd = " ".join(mergeCmdArr)
       if verbose: sys.stderr.write("%s\n" % mergeCmd)
       rc = os.system(mergeCmd)
-      allTemps.cleanUp()
       if not rc == 0:
         return rc
 
@@ -627,11 +634,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
       cxxInitObjFile = addPrefix("sstGlobals.", swapSuffix("o",srcFile))
       if exeFromSrc:
-        if objTarget:
-          allObjects.append(objTarget)
-        else:
-          allObjects.append(swapSuffix("o", srcFile))
-        #allObjects.append(cxxInitObjFile)
+        newFile = objTarget
+        if not objTarget:
+          newFile = swapSuffix("o", srcFile)
+        allObjects.append(newFile)
+        allTemps.append(newFile)
 
     if exeFromSrc:
       if ldCmdArr:
