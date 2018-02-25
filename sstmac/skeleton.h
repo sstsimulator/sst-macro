@@ -106,8 +106,6 @@ double sstmac_sim_time();
 #include <new>
 #include <utility>
 
-extern int sstmac_global_stacksize;
-
 namespace sstmac {
 
 class vector {
@@ -182,10 +180,12 @@ static void* nullptr = 0;
 
 #ifdef __cplusplus
 #include <cstdint>
+extern "C" int sstmac_global_stacksize;
 #else
 #include <stdint.h>
-#endif
 extern int sstmac_global_stacksize;
+#endif
+
 
 
 #ifdef __STRICT_ANSI__

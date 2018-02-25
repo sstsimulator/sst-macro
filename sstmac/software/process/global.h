@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/cppglobal.h>
 #include <unordered_set>
 
-extern int sstmac_global_stacksize;
+extern "C" int sstmac_global_stacksize;
 
 namespace sstmac {
 

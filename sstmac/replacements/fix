@@ -3,24 +3,15 @@
 import commands
 import re
 
-out = commands.getoutput("make")
-already_done = {}
+#out = commands.getoutput("make")
+out = """
+/opt/local/lib/gcc49/gcc/x86_64-apple-darwin15/4.9.4/include/avx512fintrin.h:9865:10: error: C-style cast from
+      'const __v8di *' to '__m512i' (vector of 8 'long long' values) is not allowed
+"""
+path = "/Users/jjwilke/Programs/sst-macro/context/sstmac/replacements/fixIntrinsics.h"
 
-matches = re.compile("use of undeclared id.*?(__built.*?)'",re.DOTALL).findall(out)
-str_arr = []
-for m in matches:
-  m = m.strip()
-  if not m in already_done:
-    print m
-    str_arr.append("#define %s(x,...) x" % m)
-    already_done[m] = 1
-
-if not matches:
-  print "None"
-else:
-  path = "/home/jjwilke/Programs/sst-macro/conceptual/sstmac/replacements/fixIntrinsics.h"
+def repl(path, str_arr):
   old_text = open(path).read()
-
   new_file = open(path,"w")
   new_file.write(old_text[:-7])
   new_file.write("\n")
@@ -28,4 +19,95 @@ else:
   new_file.write("\n#endif")
   new_file.close()
 
+def run(regex, out, path):
+  already_done = {}
+  matches = regex.findall(out)
 
+  str_arr = []
+  for m in matches:
+    m = m.strip()
+    if not m in already_done:
+      print m
+      str_arr.append("#define %s(x,...) x" % m)
+      already_done[m] = 1
+
+  if not matches:
+    print "None"
+  else:
+    repl(path, str_arr)
+
+regex = re.compile("use of undeclared id.*?(__built.*?)'",re.DOTALL)
+run(regex,out,path)
+regex = re.compile("argument to.*?(__built.*?)'",re.DOTALL)
+run(regex,out,path)
+
+regex = re.compile("C-style cast.*?different size.*? return [(]([_\da-z ]+).*?(__built.*?)[ ']", re.DOTALL)
+already_done = {}
+str_arr = []
+matches = regex.findall(out)
+for typ, name in matches:
+  name = name.strip()
+  if not name in already_done:
+    already_done[name] = 1
+    print name, typ
+    if "__m" in typ:
+      typ = typ.replace("__m","")
+      str_arr.append("#define %s(...) get%s()" % (name, typ))
+    else:
+      str_arr.append("#define %s(...) (0)" % (name))
+if matches:
+  repl(path, str_arr)
+else:
+  print "None"
+
+regex = re.compile("C-style cast from.*?return [(]([_\da-z ]+).*?(__built.*?)[ ']", re.DOTALL)
+already_done = {}
+str_arr = []
+matches = regex.findall(out)
+for typ, name in matches:
+  name = name.strip()
+  if not name in already_done:
+    already_done[name] = 1
+    print name, typ
+    if "__m" in typ:
+      typ = typ.replace("__m","")
+      str_arr.append("#define %s(...) get%s()" % (name, typ))
+    else:
+      str_arr.append("#define %s(...) (0)" % (name))
+if matches:
+  repl(path, str_arr)
+else:
+  print "None"
+
+regex = re.compile("cannot initialize.*?return object of type '(.*?)'.*?return (__built.*?) ", re.DOTALL)
+already_done = {}
+str_arr = []
+matches = regex.findall(out)
+for typ, name in matches:
+  name = name.strip()
+  if not name in already_done:
+    already_done[name] = 1
+    print name, typ
+    if "__m" in typ:
+      typ = typ.replace("__m","")
+      str_arr.append("#define %s(...) get%s()" % (name, typ))
+    else:
+      str_arr.append("#define %s(...) (0)" % (name))
+if matches:
+  repl(path, str_arr)
+else:
+  print "None"
+
+regex = re.compile("cannot initialize a.*?parameter of type.*?(__built.*?) ", re.DOTALL)
+already_done = {}
+matches = regex.findall(out)
+for name in matches:
+  name = name.strip()
+  if not name in already_done:
+    print name
+    already_done[name] = 1
+    str_arr.append("#define %s(...) " % (name))
+if matches:
+  repl(path, str_arr)
+else:
+  print "None"

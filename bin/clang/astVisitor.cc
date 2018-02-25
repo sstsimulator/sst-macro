@@ -110,11 +110,52 @@ SkeletonASTVisitor::initReservedNames()
   reservedNames_.insert("nullptr");
   reservedNames_.insert("_keywords_");
   reservedNames_.insert("_keyword_register_");
+
+  ignoredHeaders_.insert("chrono");
+  ignoredHeaders_.insert("thread_safe_new.h");
+  ignoredHeaders_.insert("_ctype.h");
+  ignoredHeaders_.insert("__locale");
+  ignoredHeaders_.insert("ostream");
+  ignoredHeaders_.insert("istream");
+  ignoredHeaders_.insert("iostream");
+  ignoredHeaders_.insert("fstream");
+  ignoredHeaders_.insert("locale");
+  ignoredHeaders_.insert("iterator");
+  ignoredHeaders_.insert("ios");
+  ignoredHeaders_.insert("algorithm");
+  ignoredHeaders_.insert("__debug");
+  ignoredHeaders_.insert("ios_base.h"); //gcc6 mac
+  ignoredHeaders_.insert("functional");
+  ignoredHeaders_.insert("codecvt.h"); //gcc6 mac
+  ignoredHeaders_.insert("locale_classes.h"); //gcc6 mac
+  ignoredHeaders_.insert("locale_facets.tcc"); //gcc6 mac
+  ignoredHeaders_.insert("locale_facets.h"); //gcc6 mac
+  ignoredHeaders_.insert("localefwd.h"); //gcc6 mac
+  ignoredHeaders_.insert("stl_algobase.h"); //gcc6 mac
+  ignoredHeaders_.insert("basic_string.h"); //gcc49 mac
+
+  globalVarWhitelist_.insert("_DefaultRuneLocale");
+  globalVarWhitelist_.insert("__stdoutp");
+  globalVarWhitelist_.insert("optarg");
+  globalVarWhitelist_.insert("optind");
+  globalVarWhitelist_.insert("opterr");
+  globalVarWhitelist_.insert("daylight");
+  globalVarWhitelist_.insert("tzname");
+  globalVarWhitelist_.insert("timezone");
+  globalVarWhitelist_.insert("optreset");
+  globalVarWhitelist_.insert("suboptarg");
+  globalVarWhitelist_.insert("getdate_err");
+  globalVarWhitelist_.insert("optopt");
+  globalVarWhitelist_.insert("__mb_cur_max");
+  globalVarWhitelist_.insert("sstmac_global_stacksize");
+  globalVarWhitelist_.insert("__stderrp");
+  globalVarWhitelist_.insert("__stdinp");
 }
 
 void
 SkeletonASTVisitor::initHeaders()
 {
+  /**
   const char* headerListFile = getenv("SSTMAC_HEADERS");
   if (headerListFile == nullptr){
     const char* allHeaders = getenv("SSTMAC_ALL_HEADERS");
@@ -135,6 +176,7 @@ SkeletonASTVisitor::initHeaders()
     std::getline(ifs, line);
     validHeaders_.insert(line);
   }
+  */
 }
 
 bool
@@ -157,6 +199,7 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     }
   }
 
+  /**
   bool useAllHeaders = false;
   if (headerLoc.isValid() && !useAllHeaders){
     //we are inside a header
@@ -189,6 +232,50 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
       return false;
     }
   }
+  */
+
+  if (headerLoc.isValid()){
+    char fullpathBuffer[1024];
+    const char* fullpath = realpath(ploc.getFilename(), fullpathBuffer);
+    if (fullpath){
+      std::string includeName(fullpath);
+      auto checkSst = includeName.find("sstmac");
+      if (checkSst != std::string::npos){
+        return false; //never do this on sstmac headers
+      }
+
+      auto checkSumi = includeName.find("sumi");
+      if (checkSumi != std::string::npos){
+        return false; //never do this on sumi headers
+      }
+
+      auto checkSpkt = includeName.find("sprockit");
+      if (checkSpkt != std::string::npos){
+        return false; //never do this on sprockit headers
+      }
+
+      auto slashPos = includeName.find_last_of('/');
+      if (slashPos != std::string::npos){
+        includeName = includeName.substr(slashPos+1);
+      }
+
+      auto iter = ignoredHeaders_.find(includeName);
+      if (iter != ignoredHeaders_.end()){
+        //this is in a header that we know to ignore
+        return false;
+      }
+    }
+
+    auto iter = globalVarWhitelist_.find(D->getNameAsString());
+    if (iter != globalVarWhitelist_.end()){
+      //this variable is whitelisted from de-globalization
+      return false;
+    }
+
+  }
+
+
+
   //not a header - good to go
   return true;
 }

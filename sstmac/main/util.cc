@@ -146,7 +146,7 @@ void sstmac_free(void* ptr){
   if (isNonNullBuffer(ptr)) free(ptr);
 }
 
-double omp_get_wtime(){
+double sstmac_omp_get_wtime(){
   return sstmac_now();
 }
 

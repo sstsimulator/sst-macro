@@ -584,11 +584,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::string mainName_;
   bool keepGlobals_;
   bool noSkeletonize_;
-  std::set<std::string> validHeaders_;
+  std::set<std::string> ignoredHeaders_;
   std::set<std::string> reservedNames_;
   PragmaConfig& pragmaConfig_;
   std::map<clang::Stmt*,SSTPragma*> activePragmas_;
   std::set<clang::DeclRefExpr*> alreadyReplaced_;
+  std::set<std::string> globalVarWhitelist_;
 
   struct GlobalStandin {
     bool fxnStatic;

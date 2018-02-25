@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstdint>
 #include <set>
 
-extern int sstmac_global_stacksize;
+extern "C" int sstmac_global_stacksize;
 
 namespace sstmac {
 

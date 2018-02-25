@@ -10,14 +10,15 @@
 
 
 #include_next <cstdlib>
-
-
-#ifndef free
-#define free sstmac_free
+#ifndef sstmac_stdlib_included_h
+#include <stdlib.h> //force inclusion
 #endif
 
+
+#define sstmac_must_return_free
+
 namespace std {
-void sstmac_free(void* ptr);
+using ::sstmac_free;
 }
 
 

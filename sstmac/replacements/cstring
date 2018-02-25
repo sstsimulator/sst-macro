@@ -23,9 +23,10 @@
 #endif
 
 namespace std {
-void* sstmac_memset(void* ptr, int value, unsigned long  sz);
-
-void* sstmac_memcpy(void* dst, const void* src, unsigned long sz);
+using ::sstmac_memset;
+using ::sstmac_memcpy;
+//void* sstmac_memset(void* ptr, int value, unsigned long  sz);
+//void* sstmac_memcpy(void* dst, const void* src, unsigned long sz);
 }
 
 #ifdef CSTRING_OWNS_STL

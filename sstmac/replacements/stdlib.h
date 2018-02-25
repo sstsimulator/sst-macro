@@ -13,6 +13,22 @@
 #endif
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//gcc is an abomination, which requires these functions to be available
+//because stdlib.h can turn around and include cstdlib
+//because gcc is an abomination
+int sstmac_atexit(void (*)());
+int sstmac_on_exit(void (*)(int,void*),void*);
+void sstmac_exit(int code);
+extern void sstmac_free(void* ptr);
+
+#ifdef __cplusplus
+}
+#endif
+
 #include_next <stdlib.h>
 
 
@@ -21,18 +37,7 @@
 #define _exit sstmac_exit
 #define on_exit sstmac_on_exit
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-int sstmac_atexit(void (*)());
-int sstmac_on_exit(void (*)(int,void*),void*);
-void sstmac_exit(int code);
-void sstmac_free(void* ptr);
-
-#ifdef __cplusplus
-}
-#endif
 
 #ifdef STDLIB_OWNS_STL
 #undef STDLIB_OWNS_STL
