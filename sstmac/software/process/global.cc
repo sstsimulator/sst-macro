@@ -51,6 +51,7 @@ int sstmac_global_stacksize = 0;
 
 namespace sstmac {
 
+/**
 int GlobalVariable::stackOffset = 0;
 int GlobalVariable::allocSize_ = 4096;
 char* GlobalVariable::globalInits = nullptr;
@@ -58,8 +59,34 @@ std::list<GlobalVariable::relocation> GlobalVariable::relocations;
 std::list<GlobalVariable::relocationCfg> GlobalVariable::relocationCfgs;
 std::list<CppGlobal*> GlobalVariable::cppCtors;
 std::unordered_set<void*> GlobalVariable::activeGlobalMaps_;
+*/
 
-GlobalVariable::GlobalVariable(int &offset, const int size, const char* name, const void *initData)
+GlobalVariableContext GlobalVariable::glblCtx;
+GlobalVariableContext GlobalVariable::tlsCtx;
+bool GlobalVariable::inited = false;
+
+GlobalVariable::GlobalVariable(int &offset, const int size, const char* name, const void *initData,
+                               bool tls)
+{
+  if (!inited){
+    tlsCtx.init();
+    glblCtx.init();
+    inited = true;
+  }
+  if (tls) tlsCtx.append(offset, size, name, initData);
+  else glblCtx.append(offset, size, name, initData);
+}
+
+void
+GlobalVariableContext::init()
+{
+  stackOffset = 0;
+  allocSize_ = 4096;
+  globalInits = nullptr;
+}
+
+void
+GlobalVariableContext::append(int &offset, const int size, const char* name, const void *initData)
 {
   offset = stackOffset;
 
@@ -104,12 +131,13 @@ GlobalVariable::GlobalVariable(int &offset, const int size, const char* name, co
   stackOffset += offsetIncrement;
 }
 
-void registerCppGlobal(CppGlobal* g){
-  GlobalVariable::registerCtor(g);
+void registerCppGlobal(CppGlobal* g, bool tls){
+  if (tls) GlobalVariable::tlsCtx.registerCtor(g);
+  else GlobalVariable::glblCtx.registerCtor(g);
 }
 
 void
-GlobalVariable::registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
+GlobalVariableContext::registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
                                    void* dstPtr, void* dstBasePtr, int& dstOffset)
 {
   relocationCfgs.emplace_back(srcPtr, srcBasePtr, srcOffset,
@@ -117,7 +145,7 @@ GlobalVariable::registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffse
 }
 
 void
-GlobalVariable::dlopenRelocate()
+GlobalVariableContext::dlopenRelocate()
 {
   //after a dlopen, there might be new relocations to execute
   if (!relocationCfgs.empty()){
@@ -136,7 +164,7 @@ GlobalVariable::dlopenRelocate()
 }
 
 void
-GlobalVariable::relocatePointers(void* globals)
+GlobalVariableContext::relocatePointers(void* globals)
 {
   if (!relocationCfgs.empty()){
     for (auto& cfg : relocationCfgs){
@@ -156,14 +184,14 @@ GlobalVariable::relocatePointers(void* globals)
 }
 
 void
-GlobalVariable::callCtors(void *globals)
+GlobalVariableContext::callCtors(void *globals)
 {
   for (CppGlobal* g : cppCtors){
     g->allocate(globals);
   }
 }
 
-GlobalVariable::~GlobalVariable()
+GlobalVariableContext::~GlobalVariableContext()
 {
   if (globalInits){
     delete[] globalInits;
@@ -172,7 +200,7 @@ GlobalVariable::~GlobalVariable()
 }
 
 void
-GlobalVariable::initGlobalSpace(void* ptr, int size, int offset)
+GlobalVariableContext::initGlobalSpace(void* ptr, int size, int offset)
 {
   for (void* globals : activeGlobalMaps_){
     char* dst = ((char*)globals) + offset;
@@ -180,7 +208,7 @@ GlobalVariable::initGlobalSpace(void* ptr, int size, int offset)
   }
 
   //also do the global init for any new threads spawned
-  char* dst = ((char*)GlobalVariable::globalInit()) + offset;
+  char* dst = ((char*)globalInits) + offset;
   ::memcpy(dst, ptr, size);
 }
 
@@ -191,11 +219,13 @@ GlobalVariable::initGlobalSpace(void* ptr, int size, int offset)
 extern "C" void *sstmac_dlopen(const char* filename, int flag)
 {
   void* ret = dlopen(filename, flag);
-  sstmac::GlobalVariable::dlopenRelocate();
+  sstmac::GlobalVariable::glblCtx.dlopenRelocate();
+  sstmac::GlobalVariable::tlsCtx.dlopenRelocate();
   return ret;
 }
 
-extern "C" void sstmac_init_global_space(void* ptr, int size, int offset)
+extern "C" void sstmac_init_global_space(void* ptr, int size, int offset, bool tls)
 {
-  sstmac::GlobalVariable::initGlobalSpace(ptr, size, offset);
+  if (tls) sstmac::GlobalVariable::tlsCtx.initGlobalSpace(ptr, size, offset);
+  else sstmac::GlobalVariable::glblCtx.initGlobalSpace(ptr, size, offset);
 }

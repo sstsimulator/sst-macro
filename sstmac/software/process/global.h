@@ -56,56 +56,58 @@ extern "C" int sstmac_global_stacksize;
 namespace sstmac {
 
 class CppGlobal;
-class GlobalVariable {
+class GlobalVariableContext {
  public:
-  GlobalVariable(int& offset, const int size, const char* name, const void* initData);
+  void init();
 
-  ~GlobalVariable();
+  ~GlobalVariableContext();
 
-  static int globalsSize() {
+  void append(int& offset, const int size, const char* name, const void* initData);
+
+  int globalsSize() {
     return stackOffset;
   }
 
-  static int allocSize() {
+  int allocSize() {
     return allocSize_;
   }
 
-  static void setAllocSize(int sz){
+  void setAllocSize(int sz){
     allocSize_ = sz;
   }
 
-  static void* globalInit() {
+  void* globalInit() {
     return globalInits;
   }
 
-  static void callCtors(void* globals);
+  void callCtors(void* globals);
 
-  static void addActiveSegment(void* globals){
+  void addActiveSegment(void* globals){
     activeGlobalMaps_.insert(globals);
   }
 
-  static void removeActiveSegment(void* globals){
+  void removeActiveSegment(void* globals){
     activeGlobalMaps_.erase(globals);
   }
 
-  static void initGlobalSpace(void* ptr, int size, int offset);
+  void initGlobalSpace(void* ptr, int size, int offset);
 
-  static void relocatePointers(void* globals);
+  void relocatePointers(void* globals);
 
-  static void registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
+  void registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
                                  void* dstPtr, void* dstBasePtr, int& dstOffset);
 
-  static void dlopenRelocate();
+  void dlopenRelocate();
 
-  static void registerCtor(CppGlobal* g){
+  void registerCtor(CppGlobal* g){
     cppCtors.push_back(g);
   }
 
  private:
-  static int stackOffset;
-  static char* globalInits;
-  static int allocSize_;
-  static std::list<CppGlobal*> cppCtors;
+  int stackOffset;
+  char* globalInits;
+  int allocSize_;
+  std::list<CppGlobal*> cppCtors;
 
   struct relocation {
     int srcOffset;
@@ -113,7 +115,7 @@ class GlobalVariable {
     relocation(int src, int dst) :
       srcOffset(src), dstOffset(dst) {}
   };
-  static std::list<relocation> relocations;
+  std::list<relocation> relocations;
 
   static inline void relocate(relocation& r, char* segment)
   {
@@ -136,20 +138,33 @@ class GlobalVariable {
     {
     }
   };
-  static std::list<relocationCfg> relocationCfgs;
+  std::list<relocationCfg> relocationCfgs;
 
  private:
-  static std::unordered_set<void*> activeGlobalMaps_;
-
+  std::unordered_set<void*> activeGlobalMaps_;
 
 };
+
+class GlobalVariable {
+ public:
+  GlobalVariable(int& offset, const int size, const char* name, const void* initData,
+                 bool tls = false);
+
+  static GlobalVariableContext glblCtx;
+  static GlobalVariableContext tlsCtx;
+  static bool inited;
+};
+
+
 
 class RelocationPointer {
  public:
   RelocationPointer(void* srcPtr, void* srcBasePtr, int& srcOffset,
                     void* dstPtr, void* dstBasePtr, int& dstOffset){
-    GlobalVariable::registerRelocation(srcPtr, srcBasePtr, srcOffset,
-                                       dstPtr, dstBasePtr, dstOffset);
+
+    GlobalVariableContext& ctx = GlobalVariable::glblCtx;
+    ctx.registerRelocation(srcPtr, srcBasePtr, srcOffset,
+                           dstPtr, dstBasePtr, dstOffset);
   }
 };
 

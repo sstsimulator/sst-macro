@@ -537,8 +537,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    *        add the text "x,y,z" to the ostream, if there is an init
    * @param D   The variable declaration
    * @param os  The os to be appended to
+   * @param leadingComma If not empty, add a leading comma
    */
-  void addInitializers(clang::VarDecl* D, std::ostream& os);
+  void addInitializers(clang::VarDecl* D, std::ostream& os, bool leadingComma);
 
   void executeCurrentReplacements();
 
@@ -607,8 +608,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   struct GlobalStandin {
     bool fxnStatic;
+    bool threadLocal;
     std::string replText;
-    GlobalStandin() : fxnStatic(false){}
+    GlobalStandin() : fxnStatic(false), threadLocal(false) {}
   };
 
   std::map<const clang::Decl*,GlobalStandin> globalStandins_;

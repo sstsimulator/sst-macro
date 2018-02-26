@@ -58,7 +58,8 @@ namespace sstmac {
 
 class thread_info {
  public:
-  static void register_user_space_virtual_thread(int phys_thread_id, void* stack, void* globalsMap);
+  static void register_user_space_virtual_thread(int phys_thread_id, void* stack,
+                                                 void* globalsMap, void* tlsMap);
 
   static void deregister_user_space_virtual_thread(void* stack);
 

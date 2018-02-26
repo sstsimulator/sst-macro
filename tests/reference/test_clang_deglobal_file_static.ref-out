@@ -10,4 +10,4 @@ void fxn()
 int __offset_xyzx = 0;
 extern int __sizeof_xyzx;
 extern void* __ptr_xyzx;
-sstmac::GlobalVariable __gv_xyzx(__offset_xyzx,__sizeof_xyzx,"xyzx",__ptr_xyzx);
+sstmac::GlobalVariable __gv_xyzx(__offset_xyzx,__sizeof_xyzx,"xyzx",__ptr_xyzx,false);

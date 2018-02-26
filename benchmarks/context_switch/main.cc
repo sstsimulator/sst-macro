@@ -58,7 +58,7 @@ void context_switch_benchmark::run()
     args.main_thread = main_thread_;
     thr->start_context(0, sstmac::sw::stack_alloc::alloc(),
              sstmac::sw::stack_alloc::stacksize(),
-             run_subthread, &args, nullptr, main_thread_);
+             run_subthread, &args, nullptr, nullptr, main_thread_);
   }
 
   double start = now();

@@ -181,11 +181,11 @@ static void* nullptr = 0;
 #ifdef __cplusplus
 #include <cstdint>
 extern "C" int sstmac_global_stacksize;
-extern "C" void sstmac_init_global_space(void* ptr, int size, int offset);
+extern "C" void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
 #else
 #include <stdint.h>
 extern int sstmac_global_stacksize;
-extern void sstmac_init_global_space(void* ptr, int size, int offset);
+extern void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
 #endif
 
 
@@ -200,6 +200,13 @@ static SSTMAC_INLINE char* get_sstmac_global_data(){
   int stack; int* stackPtr = &stack;
   uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
   char** globalMapPtr = (char**)(localStorage + sizeof(int));
+  return *globalMapPtr;
+}
+
+static SSTMAC_INLINE char* get_sstmac_tlsl_data(){
+  int stack; int* stackPtr = &stack;
+  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+  char** globalMapPtr = (char**)(localStorage + sizeof(int) + sizeof(void*));
   return *globalMapPtr;
 }
 

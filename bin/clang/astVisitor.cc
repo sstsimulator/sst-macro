@@ -1262,16 +1262,20 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
 }
 
 void
-SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os)
+SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingComma)
 {
   if (!D->hasInit()){
     return;
   }
 
+  Expr* ue = getUnderlyingExpr(D->getInit());
+
   //for now just print the expression
   PrettyPrinter pp;
-  pp.print(D->getInit());
-  os << pp.os.str();
+  pp.print(ue);
+  std::string str = pp.os.str();
+  if (!str.empty() && leadingComma) os << ",";
+  os << str;
 
   /**
   Expr* initExpr = D->getInit();
@@ -1307,6 +1311,19 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     if (D->getType()->getPointeeType().isConstQualified()){
       return true;
     }
+  }
+
+  bool threadLocal = false;
+  switch (D->getTSCSpec()){
+    case TSCS___thread:
+    case TSCS_thread_local:
+    case TSCS__Thread_local:
+      threadLocal = true;
+      errorAbort(D->getLocStart(), *ci_,
+                 "thread local variables not yet allowed");
+      break;
+    default:
+      break;
   }
 
   bool skipInit = false;
@@ -1369,19 +1386,6 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   std::string scopeUniqueVarName = varnameScopeprefix + D->getNameAsString();
   setActiveGlobalScopedName(scopeUniqueVarName);
 
-  /**
-  std::stringstream extern_os;
-  extern_os << "extern int sstmac_global_stacksize; ";
-  if (ci_->getLangOpts().CPlusPlus){
-    extern_os << "extern \"C\"";
-  } else {
-    extern_os << "extern";
-  }
-  extern_os << " void sstmac_init_global_space(void*,int,int);";
-  rewriter_.InsertText(sstmacExternVarsLoc, extern_os.str());
-  */
-
-
   scopedNames_[mainDecl(D)] = scopeUniqueVarName;
 
   /** Whether an extern type_t __offset_X declaration is needed */
@@ -1392,6 +1396,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     bool isVolatile = D->getType().isVolatileQualified();
     GlobalVarNamespace::Variable var;
     var.isFxnStatic = false;
+    var.isThreadLocal = threadLocal;
     switch (global_var_ty){
       case Global:
       case FileStatic:
@@ -1411,15 +1416,17 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
              << " = sstmac::inplace_cpp_global<"
              << "inner_" << scopeUniqueVarName
              << "," << GetAsString(D->getType())
-             << ">(";
-          addInitializers(D, os);
+             << ">(" << std::boolalpha << threadLocal;
+          addInitializers(D, os, true);
           os << ");";
         } else {
           os << "static int sstmac_inited_" << D->getNameAsString() << " = 0;"
             << "if (!sstmac_inited_" << D->getNameAsString() << "){"
             << "  sstmac_init_global_space(&" << D->getNameAsString()
                << "," << "__sizeof_" << scopeUniqueVarName
-               << "," << "__offset_" << scopeUniqueVarName << ");"
+               << "," << "__offset_" << scopeUniqueVarName
+               << "," << (threadLocal ? "1" : "0") //because of C, can't guarantee bools defined
+               << ");"
             << "  sstmac_inited_" << D->getNameAsString() << " = 1; "
             << "}";
           std::stringstream size_os;
@@ -1505,7 +1512,8 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
       pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"
            << " = sstmac::new_cpp_global<"
            << GetAsString(D->getType())
-           << ">(" << "__offset_" << scopeUniqueVarName;
+           << ">(" << "__offset_" << scopeUniqueVarName
+           << "," << (threadLocal ? "true" : "false");
       if (D->getInit()){
         if (D->getInit()->getStmtClass() == Stmt::CXXConstructExprClass){
           CXXConstructExpr* e = cast<CXXConstructExpr>(D->getInit());
@@ -1562,13 +1570,18 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   } else {
     standinSstr << retType << " " << standinName;
   }
-  standinSstr << "=(" << retType << ")"
-              << "(sstmac_global_data + "
-              << currentNs_->nsPrefix() //only this!
-              << "__offset_" << scopeUniqueVarName << ")";
+  standinSstr << "=(" << retType << ")";
+  if (threadLocal){
+    standinSstr << "(sstmac_tls_data + ";
+  } else {
+    standinSstr << "(sstmac_global_data + ";
+  }
+  standinSstr << currentNs_->nsPrefix() //only this!
+             << "__offset_" << scopeUniqueVarName << ")";
 
   GlobalStandin& newStandin = globalStandins_[md];
   newStandin.replText = standinSstr.str();
+  newStandin.threadLocal = threadLocal;
 
   if (global_var_ty == FxnStatic){
     newStandin.fxnStatic = true;
@@ -1854,8 +1867,6 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   //we need do nothing with this
   if (D->isConstexpr()){
     return false;
-  } else if (D->getTSCSpec() != TSCS_unspecified){
-    return false;
   }
 
   if (reservedNames_.find(D->getNameAsString()) != reservedNames_.end()){
@@ -1923,8 +1934,18 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
   TraverseStmt(s);
   auto& currentGlobals = globalsTouched_.back();
   if (!currentGlobals.empty()){
+    bool needGlobalData = false;
+    bool needTlsData = false;
+    for (auto d : currentGlobals){
+      GlobalStandin& gs = globalStandins_[d];
+      needGlobalData = !gs.threadLocal || needGlobalData;
+      needTlsData = gs.threadLocal || needTlsData;
+    }
+
     std::stringstream sstr;
-    sstr << "{ char* sstmac_global_data = get_sstmac_global_data();";
+    sstr << "{ ";
+    if (needGlobalData) sstr << "char* sstmac_global_data = get_sstmac_global_data();";
+    if (needTlsData) sstr << "char* sstmac_tls_data = get_sstmac_tls_data();";
     for (auto d : currentGlobals){
       GlobalStandin& gs = globalStandins_[d];
       if (!gs.fxnStatic){

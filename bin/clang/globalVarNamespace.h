@@ -60,6 +60,7 @@ struct GlobalVarNamespace
 
   struct Variable {
     bool isFxnStatic;
+    bool isThreadLocal;
   };
 
   std::string ns;
@@ -143,8 +144,8 @@ struct GlobalVarNamespace
       } else {
         os  << ",__ptr_" << name;
       }
-
-      os << ");\n";
+      os << "," << std::boolalpha << var.isThreadLocal
+         << ");\n";
     }
 
     for (auto& str : relocations){

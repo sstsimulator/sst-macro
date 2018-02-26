@@ -58,7 +58,8 @@ namespace sstmac {
 static const int tls_sanity_check = 42042042;
 
 void
-thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack, void* globalsMap)
+thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
+                                                void* globalsMap, void* tlsMap)
 {
   size_t stack_mod = ((size_t)stack) % sstmac_global_stacksize;
   if (stack_mod != 0){
@@ -79,10 +80,19 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
   void** globalPtr = (void**) &tls[TLS_GLOBAL_MAP];
   *globalPtr = globalsMap;
 
+  void** tlsPtr = (void**) &tls[TLS_TLS_MAP];
+  *tlsPtr = tlsMap;
+
   if (globalsMap){
-    GlobalVariable::addActiveSegment(globalsMap);
-    GlobalVariable::callCtors(globalsMap);
-    GlobalVariable::relocatePointers(globalsMap);
+    GlobalVariable::glblCtx.addActiveSegment(globalsMap);
+    GlobalVariable::glblCtx.callCtors(globalsMap);
+    GlobalVariable::glblCtx.relocatePointers(globalsMap);
+  }
+
+  if (tlsMap){
+    GlobalVariable::tlsCtx.addActiveSegment(tlsMap);
+    GlobalVariable::tlsCtx.callCtors(tlsMap);
+    GlobalVariable::tlsCtx.relocatePointers(tlsMap);
   }
 }
 
@@ -92,7 +102,7 @@ thread_info::deregister_user_space_virtual_thread(void* stack)
   char* tls = (char*) stack;
   void** globalsPtr = (void**) &tls[TLS_GLOBAL_MAP];
   void* globalsMap = *globalsPtr;
-  GlobalVariable::removeActiveSegment(globalsMap);
+  GlobalVariable::glblCtx.removeActiveSegment(globalsMap);
 }
 
 }

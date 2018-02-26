@@ -12,7 +12,7 @@ class CppGlobal {
   virtual void allocate(void* globalPtr) = 0;
 };
 
-extern void registerCppGlobal(CppGlobal*);
+extern void registerCppGlobal(CppGlobal*, bool tls);
 
 namespace globals {
 
@@ -29,11 +29,11 @@ struct build_indices<0, Is...> : indices<Is...> {};
 template <class T, class... Args>
 class CppGlobalImpl : public CppGlobal {
  public:
-  CppGlobalImpl(int& offset, Args&&... args) :
+  CppGlobalImpl(int& offset, bool tls, Args&&... args) :
     offset_(offset),
     args_(std::forward<Args>(args)...)
   {
-    registerCppGlobal(this);
+    registerCppGlobal(this, tls);
   }
 
   void allocate(void* ptr) override {
@@ -63,8 +63,8 @@ struct CppInplaceGlobalInitializer {
 
 template <class Tag, class T, class... Args>
 struct CppInplaceGlobal {
-  CppInplaceGlobal(Args&&... args) :
-    alloc(offset, std::forward<Args>(args)...)
+  CppInplaceGlobal(bool tls, Args&&... args) :
+    alloc(offset, tls, std::forward<Args>(args)...)
   {
     initer.forceInitialization();
   }
@@ -80,13 +80,13 @@ template <class Tag, class T, class... Args> CppInplaceGlobalInitializer<T>
   CppInplaceGlobal<Tag,T,Args...>::initer(CppInplaceGlobal<Tag,T,Args...>::offset);
 
 template <class T, class... Args>
-CppGlobal* new_cpp_global(int& offset, Args&&... args){
-  return new CppGlobalImpl<T,Args...>(offset, std::forward<Args>(args)...);
+CppGlobal* new_cpp_global(int& offset, bool tls, Args&&... args){
+  return new CppGlobalImpl<T,Args...>(offset, tls, std::forward<Args>(args)...);
 }
 
 template <class Tag, class T, class... Args>
-int inplace_cpp_global(Args&&... args){
-  static CppInplaceGlobal<Tag,T,Args...> init(std::forward<Args>(args)...);
+int inplace_cpp_global(bool tls, Args&&... args){
+  static CppInplaceGlobal<Tag,T,Args...> init(tls, std::forward<Args>(args)...);
   return init.offset;
 }
 

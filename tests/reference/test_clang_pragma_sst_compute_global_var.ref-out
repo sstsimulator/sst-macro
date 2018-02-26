@@ -28,8 +28,8 @@ int fxn()
 int __offset_bound_i = 0;
 extern int __sizeof_bound_i;
 extern void* __ptr_bound_i;
-sstmac::GlobalVariable __gv_bound_i(__offset_bound_i,__sizeof_bound_i,"bound_i",__ptr_bound_i);
+sstmac::GlobalVariable __gv_bound_i(__offset_bound_i,__sizeof_bound_i,"bound_i",__ptr_bound_i,false);
 int __offset_bound_j = 0;
 extern int __sizeof_bound_j;
 extern void* __ptr_bound_j;
-sstmac::GlobalVariable __gv_bound_j(__offset_bound_j,__sizeof_bound_j,"bound_j",__ptr_bound_j);
+sstmac::GlobalVariable __gv_bound_j(__offset_bound_j,__sizeof_bound_j,"bound_j",__ptr_bound_j,false);

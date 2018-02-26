@@ -256,7 +256,8 @@ event_manager::spin_up(void(*fxn)(void*), void* args)
   cfg.fxn = fxn;
   cfg.args = args;
   des_context_->start_context(thread_id_, stack, sw::stack_alloc::stacksize(),
-                              &run_event_manager_thread, &cfg, nullptr, main_thread_);
+                              &run_event_manager_thread, &cfg, nullptr, nullptr,
+                              main_thread_);
   delete main_thread_;
 }
 

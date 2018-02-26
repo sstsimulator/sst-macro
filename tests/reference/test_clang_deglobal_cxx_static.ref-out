@@ -36,16 +36,16 @@ void fxn()
 int __offset___Ax = 0;
 extern int __sizeof___Ax;
 extern void* __ptr___Ax;
-sstmac::GlobalVariable __gv___Ax(__offset___Ax,__sizeof___Ax,"__Ax",__ptr___Ax);
+sstmac::GlobalVariable __gv___Ax(__offset___Ax,__sizeof___Ax,"__Ax",__ptr___Ax,false);
 namespace ns {
  int __offset___Bx = 0;
  extern int __sizeof___Bx;
  extern void* __ptr___Bx;
- sstmac::GlobalVariable __gv___Bx(__offset___Bx,__sizeof___Bx,"__Bx",__ptr___Bx);
+ sstmac::GlobalVariable __gv___Bx(__offset___Bx,__sizeof___Bx,"__Bx",__ptr___Bx,false);
  namespace ns2 {
   int __offset___Cx = 0;
   extern int __sizeof___Cx;
   extern void* __ptr___Cx;
-  sstmac::GlobalVariable __gv___Cx(__offset___Cx,__sizeof___Cx,"__Cx",__ptr___Cx);
+  sstmac::GlobalVariable __gv___Cx(__offset___Cx,__sizeof___Cx,"__Cx",__ptr___Cx,false);
  }
 }

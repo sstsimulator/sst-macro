@@ -89,7 +89,8 @@ thread::init_thread(sprockit::sim_parameters* params,
   context_ = des_thread->copy();
 
   context_->start_context(physical_thread_id, stack, stacksize,
-                          run_routine, this, globals_storage, des_thread);
+                          run_routine, this, globals_storage, nullptr,
+                          des_thread);
 }
 
 uint32_t

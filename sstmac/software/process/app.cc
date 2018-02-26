@@ -111,15 +111,15 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   omp_num_threads_(1),
   rc_(0)
 {
-  int allocSize = GlobalVariable::allocSize();
+  int allocSize = GlobalVariable::glblCtx.allocSize();
   if (params->has_param("globals_size")){
     allocSize = params->get_int_param("globals_size");
-    GlobalVariable::setAllocSize(allocSize);
+    GlobalVariable::glblCtx.setAllocSize(allocSize);
   }
   if (allocSize != 0){
     globals_storage_ = new char[allocSize];
-    ::memcpy(globals_storage_, GlobalVariable::globalInit(), GlobalVariable::globalsSize());
-    fflush(stdout);
+    ::memcpy(globals_storage_, GlobalVariable::glblCtx.globalInit(),
+             GlobalVariable::glblCtx.globalsSize());
   }
   min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
   bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
