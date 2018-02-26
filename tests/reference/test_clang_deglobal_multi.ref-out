@@ -1,5 +1,5 @@
 
-char *y, *z = 0;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_y = &y; int __sizeof_y = sizeof(y); extern int __offset_y; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_z = &z; int __sizeof_z = sizeof(z); extern int __offset_z; 
+char *y, *z = 0;void* __ptr_y = &y; int __sizeof_y = sizeof(y); extern int __offset_y; void* __ptr_z = &z; int __sizeof_z = sizeof(z); extern int __offset_z; 
 
 void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();char ** sstmac_y=(char **)(sstmac_global_data + __offset_y); char ** sstmac_z=(char **)(sstmac_global_data + __offset_z); {

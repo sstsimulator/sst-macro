@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/cppglobal.h>
 
 int sstmac_global_stacksize = 0;
 

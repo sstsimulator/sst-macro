@@ -1261,6 +1261,35 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
   return nullptr;
 }
 
+void
+SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os)
+{
+  if (!D->hasInit()){
+    return;
+  }
+
+  //for now just print the expression
+  PrettyPrinter pp;
+  pp.print(D->getInit());
+  os << pp.os.str();
+
+  /**
+  Expr* initExpr = D->getInit();
+  PrettyPrinter pp;
+  switch (initExpr->getStmtClass()){
+    case Stmt::ParenListExprClass: {
+      ParenListExpr* pe = cast<ParenListExpr>(initExpr);
+      for (int i=0; i < pe->getNumExprs(); ++i){
+        pp.os << i > 0 ? "," : "";
+        pp.print(pe->getExpr(i));
+      }
+      break;
+    }
+    default:
+  }
+  */
+}
+
 bool
 SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
                                    const std::string& clsScopePrefix,
@@ -1340,6 +1369,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   std::string scopeUniqueVarName = varnameScopeprefix + D->getNameAsString();
   setActiveGlobalScopedName(scopeUniqueVarName);
 
+  /**
   std::stringstream extern_os;
   extern_os << "extern int sstmac_global_stacksize; ";
   if (ci_->getLangOpts().CPlusPlus){
@@ -1348,10 +1378,15 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     extern_os << "extern";
   }
   extern_os << " void sstmac_init_global_space(void*,int,int);";
-
   rewriter_.InsertText(sstmacExternVarsLoc, extern_os.str());
+  */
+
+
   scopedNames_[mainDecl(D)] = scopeUniqueVarName;
 
+  /** Whether an extern type_t __offset_X declaration is needed */
+  bool needExternalDecls = true;
+  bool checkCxxCtor = true;
   if (!D->hasExternalStorage()){
     std::stringstream os;
     bool isVolatile = D->getType().isVolatileQualified();
@@ -1365,14 +1400,28 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
            << "int __sizeof_" << scopeUniqueVarName << " = sizeof(" << D->getNameAsString() << ");";
         break;
       case FxnStatic:
-         os << "static int sstmac_inited_" << D->getNameAsString() << " = 0;"
-           << "if (!sstmac_inited_" << D->getNameAsString() << "){"
-           << "  sstmac_init_global_space(&" << D->getNameAsString()
-              << "," << "__sizeof_" << scopeUniqueVarName
-              << "," << "__offset_" << scopeUniqueVarName << ");"
-           << "  sstmac_inited_" << D->getNameAsString() << " = 1; "
-           << "}";
-        {
+        if (insideTemplateFxn()){
+          //okay, this is a little bit weird
+          //we have a template parameter
+          needExternalDecls = false;
+          checkCxxCtor = false;
+          //the offset declaration actually goes here
+          os << "struct inner_" << scopeUniqueVarName << "{};";
+          os << "static int __offset_" << scopeUniqueVarName
+             << " = sstmac::inplace_cpp_global<"
+             << "inner_" << scopeUniqueVarName
+             << "," << GetAsString(D->getType())
+             << ">(";
+          addInitializers(D, os);
+          os << ");";
+        } else {
+          os << "static int sstmac_inited_" << D->getNameAsString() << " = 0;"
+            << "if (!sstmac_inited_" << D->getNameAsString() << "){"
+            << "  sstmac_init_global_space(&" << D->getNameAsString()
+               << "," << "__sizeof_" << scopeUniqueVarName
+               << "," << "__offset_" << scopeUniqueVarName << ");"
+            << "  sstmac_inited_" << D->getNameAsString() << " = 1; "
+            << "}";
           std::stringstream size_os;
           std::map<const RecordDecl*, ReconstructedType> newTypes;
           std::string typeNameToSize = getTypeNameForSizing(fxnContexts_.front()->getLocStart(),
@@ -1397,16 +1446,18 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     }
     //all of this text goes immediately after the variable
     rewriter_.InsertText(declEnd, os.str());
-    currentNs_->replVars[scopeUniqueVarName] = var;
+    if (needExternalDecls) currentNs_->replVars[scopeUniqueVarName] = var;
   }
 
-  std::stringstream offset_os;
-  offset_os << " extern int __offset_" << scopeUniqueVarName << "; ";
-  if (sstmacOffsetLoc.isInvalid()){
-    sstmacOffsetLoc = declEnd;
+  if (needExternalDecls){
+    std::stringstream offset_os;
+    offset_os << " extern int __offset_" << scopeUniqueVarName << "; ";
+    if (sstmacOffsetLoc.isInvalid()){
+      sstmacOffsetLoc = declEnd;
+    }
+    rewriter_.InsertText(sstmacOffsetLoc, offset_os.str(), insertOffsetAfter);
   }
 
-  rewriter_.InsertText(sstmacOffsetLoc, offset_os.str(), insertOffsetAfter);
 
   if (arrayInfo && arrayInfo->needsTypedef()){
     rewriter_.InsertText(declEnd, arrayInfo->typedefString + ";");
@@ -1446,10 +1497,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     }
   }
 
-  if (!D->hasExternalStorage()){
+  if (!D->hasExternalStorage() && checkCxxCtor){
     RecordDecl* rd = D->getType().getTypePtr()->getAsCXXRecordDecl();
     if (rd){
-      Expr* e = D->getInit();
       //well, crap, we have to register a constructor to call
       PrettyPrinter pp;
       pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"

@@ -49,13 +49,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <sstmac/software/process/tls.h>
 #include <list>
-#include <sstmac/software/process/cppglobal.h>
 #include <unordered_set>
 
 extern "C" int sstmac_global_stacksize;
 
 namespace sstmac {
 
+class CppGlobal;
 class GlobalVariable {
  public:
   GlobalVariable(int& offset, const int size, const char* name, const void* initData);

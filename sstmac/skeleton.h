@@ -181,9 +181,11 @@ static void* nullptr = 0;
 #ifdef __cplusplus
 #include <cstdint>
 extern "C" int sstmac_global_stacksize;
+extern "C" void sstmac_init_global_space(void* ptr, int size, int offset);
 #else
 #include <stdint.h>
 extern int sstmac_global_stacksize;
+extern void sstmac_init_global_space(void* ptr, int size, int offset);
 #endif
 
 

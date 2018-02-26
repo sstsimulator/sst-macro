@@ -13,6 +13,7 @@ CLANGTESTS = \
   deglobal_multi_array \
   deglobal_template \
   deglobal_fxn_static \
+  deglobal_fxn_template_static \
   deglobal_fxn_ptr_ptr \
   deglobal_fxn_ptr_array \
   deglobal_fxn_struct \

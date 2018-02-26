@@ -1,6 +1,6 @@
 
 template <class T> class A {};
-A<int> a;extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_a = &a; int __sizeof_a = sizeof(a); extern int __offset_a; sstmac::CppGlobal* a_sstmac_ctor = sstmac::new_cpp_global<A<int>>(__offset_a); 
+A<int> a;void* __ptr_a = &a; int __sizeof_a = sizeof(a); extern int __offset_a; sstmac::CppGlobal* a_sstmac_ctor = sstmac::new_cpp_global<A<int>>(__offset_a); 
 
 void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();A<int>* sstmac_a=(A<int>*)(sstmac_global_data + __offset_a); {

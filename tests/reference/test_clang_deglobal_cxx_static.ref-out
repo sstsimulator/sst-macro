@@ -1,12 +1,12 @@
 
- extern int __offset___Ax; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);struct A {
+ extern int __offset___Ax; struct A {
  static int x;
  void fxn(){ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A____Ax=(int*)(sstmac_global_data + __offset___Ax); {
   (*sstmac_A____Ax) -= 1;
   }}
 };
 
-extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);namespace ns {
+namespace ns {
  extern int __offset___Bx; struct B {
  static int x;
 };

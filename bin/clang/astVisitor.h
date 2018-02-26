@@ -532,12 +532,26 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return activeGlobalScopedName_;
   }
 
+  /**
+   * @brief addInitializers For an initializer A(x,y,z)
+   *        add the text "x,y,z" to the ostream, if there is an init
+   * @param D   The variable declaration
+   * @param os  The os to be appended to
+   */
+  void addInitializers(clang::VarDecl* D, std::ostream& os);
+
   void executeCurrentReplacements();
 
   void replace(clang::SourceRange rng, const std::string& repl);
 
   void replace(clang::Expr* expr, const std::string& repl){
     replace(expr->getSourceRange(), repl);
+  }
+
+  bool insideTemplateFxn() const {
+    if (fxnContexts_.empty()) return false;
+    clang::FunctionDecl* fd = fxnContexts_.back();
+    return fd->isDependentContext();
   }
 
   /**
