@@ -555,6 +555,17 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return fd->isDependentContext();
   }
 
+  bool isThreadLocal(clang::VarDecl* D) const {
+    switch (D->getTSCSpec()){
+      case clang::TSCS___thread:
+      case clang::TSCS_thread_local:
+      case clang::TSCS__Thread_local:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   /**
    * @brief addRelocation
    * @param op  The unary operator creating the pointer

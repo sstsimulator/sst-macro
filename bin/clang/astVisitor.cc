@@ -1313,17 +1313,10 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     }
   }
 
-  bool threadLocal = false;
-  switch (D->getTSCSpec()){
-    case TSCS___thread:
-    case TSCS_thread_local:
-    case TSCS__Thread_local:
-      threadLocal = true;
-      errorAbort(D->getLocStart(), *ci_,
-                 "thread local variables not yet allowed");
-      break;
-    default:
-      break;
+  bool threadLocal = isThreadLocal(D);
+  if (threadLocal){
+    errorAbort(D->getLocStart(), *ci_,
+               "thread local variables not yet allowed");
   }
 
   bool skipInit = false;
@@ -1448,7 +1441,12 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
         var.isFxnStatic = true;
         break;
       case CxxStatic:
-        //actually, we don't put anything her
+        needExternalDecls = false;
+        checkCxxCtor = false;
+        //create an offset for the global variable
+        //also, crap, this has to be public
+        os << " public: "
+           << "static int __offset_" << D->getNameAsString() << ";";
         break;
     }
     //all of this text goes immediately after the variable
@@ -1576,8 +1574,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   } else {
     standinSstr << "(sstmac_global_data + ";
   }
-  standinSstr << currentNs_->nsPrefix() //only this!
-             << "__offset_" << scopeUniqueVarName << ")";
+  standinSstr << currentNs_->nsPrefix()
+              << clsScopePrefix
+              << "__offset_" << scopeUniqueVarName << ")";
 
   GlobalStandin& newStandin = globalStandins_[md];
   newStandin.replText = standinSstr.str();
@@ -1710,6 +1709,7 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
   if (classContexts_.size() > 1){
     errorAbort(D->getLocStart(), *ci_, "cannot handle static variables in inner classes");
   }
+
   CXXRecordDecl* outerCls = classContexts_.front();
   std::stringstream varname_scope_sstr; varname_scope_sstr << "_";
   std::stringstream cls_scope_sstr;
@@ -1717,10 +1717,12 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
     varname_scope_sstr << "_" << decl->getNameAsString();
     cls_scope_sstr << decl->getNameAsString() << "::";
   }
+
   if (!D->hasInit()){
     //no need for special scope prefixes - these are fully scoped within in the class
-    setupGlobalVar(varname_scope_sstr.str(), cls_scope_sstr.str(),
-                   outerCls->getLocStart(), SourceLocation(),
+    //setupGlobalVar(varname_scope_sstr.str(), cls_scope_sstr.str(),
+    setupGlobalVar("", cls_scope_sstr.str(),
+                  outerCls->getLocStart(), SourceLocation(),
                    outerCls->getLocStart(), false, //put at beginning of class
                    CxxStatic, D);
   } //else this must be a const integer if inited in the header file
@@ -1762,6 +1764,7 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
     return true;
   }
 
+
   //okay - this sucks - I have no idea how this variable is being declared
   //it could be ns::A::x = 10 for a variable in namespace ns, class A
   //it could namespace ns { A::x = 10 }
@@ -1781,18 +1784,29 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
   //match the format from checkDeclStaticClassVar
   std::string scope_unique_var_name = "__" + parentCls->getNameAsString() + D->getNameAsString();
 
-  std::string empty;
-  llvm::raw_string_ostream os(empty);
+  std::stringstream os;
   //throw away the class name in the list of scopes
   sem.pop_back();
   auto semBegin = sem.begin();
   for (auto& ignore : lex){ //figure out the overlap between lexical and semantic namespaces
     ++semBegin;
   }
-  for (auto iter = semBegin; iter != sem.end(); ++iter){ //I must declare vars in the most enclosing namespace
+  for (auto iter = semBegin; iter != sem.end(); ++iter){ //I must init/declare vars in the most enclosing namespace
     os << "namespace " << *iter << " {";
   }
 
+  os << "int " << parentCls->getNameAsString()
+     << "::__offset_" << D->getNameAsString()
+     << " = sstmac::inplace_cpp_global<"
+     << parentCls->getNameAsString()
+     << "," << GetAsString(D->getType())
+     << ">(" << std::boolalpha << isThreadLocal(D);
+  addInitializers(D, os, true);
+  os << ");";
+
+
+
+  /** don't need this anymore
   std::string init_prefix = parentCls->getNameAsString() + "::";
   //this has an initial value we need to transfer over
   //log the variable so we can drop replacement info in the static cxx file
@@ -1802,10 +1816,12 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
      << init_prefix << D->getNameAsString() << "; "
      << "int __sizeof_" << scope_unique_var_name << " = sizeof("
      << init_prefix << D->getNameAsString() << ");";
+  */
 
   for (auto iter = semBegin; iter != sem.end(); ++iter){
     os << "}"; //close namespaces
   }
+
   rewriter_.InsertText(getEndLoc(D->getLocEnd()), os.str());
   return true;
 }
