@@ -1,0 +1,17 @@
+
+template <class T>
+struct A {
+ static T x; public: static int __offset_x;
+ void fxn(){ char* sstmac_global_data = get_sstmac_global_data();T* sstmac_A__x=(T*)(sstmac_global_data + A::__offset_x); {
+  (*sstmac_A__x) -= 1;
+  }}
+};
+template <class T> T A<T>::x = 5;template <class T> int A<T>::__offset_x = sstmac::inplace_cpp_global<A<T>,T>(false,5);
+
+namespace ns {
+template <class T, class U>
+struct B {
+ static int x; public: static int __offset_x;
+};
+template <class T, class U> int B<T,U>::x(42);template <class T,class U> int B<T,U>::__offset_x = sstmac::inplace_cpp_global<B<T,U>,int>(false,42);
+}

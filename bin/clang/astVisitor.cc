@@ -1782,7 +1782,6 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
   scopeString(D->getLocStart(), *ci_, semanticContext, sem);
 
   //match the format from checkDeclStaticClassVar
-  std::string scope_unique_var_name = "__" + parentCls->getNameAsString() + D->getNameAsString();
 
   std::stringstream os;
   //throw away the class name in the list of scopes
@@ -1795,16 +1794,37 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
     os << "namespace " << *iter << " {";
   }
 
-  os << "int " << parentCls->getNameAsString()
+  std::string clsName = parentCls->getNameAsString();
+  if (parentCls->isDependentContext()){
+    std::stringstream tmplSstr; //the name A<T,U>
+    os << "template <"; //this gets the prefix <class T, class U>
+    tmplSstr << clsName << "<";
+    ClassTemplateDecl* decl = parentCls->getDescribedClassTemplate();
+    TemplateParameterList* theList = decl->getTemplateParameters();
+    int numParams = theList->size();
+    for (int i=0; i < numParams; ++i){
+      NamedDecl* nd = theList->getParam(i);
+      if (i > 0){
+        os << ",";
+        tmplSstr << ",";
+      }
+      os << "class " << nd->getNameAsString();
+      tmplSstr << nd->getNameAsString();
+    }
+    os << "> ";
+    tmplSstr << ">";
+    clsName = tmplSstr.str();
+  }
+
+
+  os << "int " << clsName
      << "::__offset_" << D->getNameAsString()
      << " = sstmac::inplace_cpp_global<"
-     << parentCls->getNameAsString()
+     << clsName
      << "," << GetAsString(D->getType())
      << ">(" << std::boolalpha << isThreadLocal(D);
   addInitializers(D, os, true);
   os << ");";
-
-
 
   /** don't need this anymore
   std::string init_prefix = parentCls->getNameAsString() + "::";
@@ -2017,12 +2037,11 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 bool
 SkeletonASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
 {
-  classContexts_.push_back(D);
+  PushGuard<CXXRecordDecl*> pg(classContexts_, D);
   auto end = D->decls_end();
   for (auto iter=D->decls_begin(); iter != end; ++iter){
     TraverseDecl(*iter);
   }
-  classContexts_.pop_back();
   return true;
 }
 
@@ -2700,15 +2719,48 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
 {
   if (keepGlobals_) return;
 
-  const Decl* d = mainDecl(expr->getDecl());
-  auto iter = globals_.find(d);
+  if (expr->getDecl()->getKind() != Decl::Var)
+    return;
+
+  VarDecl* vd = cast<VarDecl>(expr->getDecl());
+  const Decl* md = nullptr;
+  MemberSpecializationInfo* msi = nullptr;
+  if (vd->isStaticDataMember()){
+    msi = vd->getMemberSpecializationInfo();
+    if (msi){
+      md = msi->getInstantiatedFrom();
+    } else {
+      md = mainDecl(vd);
+    }
+  } else {
+    md = mainDecl(vd);
+  }
+
+  auto iter = globals_.find(md);
   if (iter != globals_.end()){
     if (globalsTouched_.empty()){
       //warn(expr->getLocStart(), *ci_,
       //     "visiting global variable use, but I am not inside function");
       return;
     }
-    globalsTouched_.back().insert(d);
+
+    if (msi){ //for now, we have to check if this outside class
+      DeclContext* dc = vd->getDeclContext();
+      bool bad = true;
+      for (DeclContext* test : classContexts_){
+        if (test == dc){
+          bad = false;
+          break;
+        }
+      }
+      if (bad){
+        errorAbort(expr->getLocStart(), *ci_,
+            "template static variables cannot currently be accessed outside of class");
+      }
+    }
+
+
+    globalsTouched_.back().insert(md);
     //there is a bug in Clang I can't quite track down
     //it is erroneously causing DeclRefExpr to get visited twice
     //when they occur inside a struct decl

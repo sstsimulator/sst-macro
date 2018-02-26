@@ -20,6 +20,7 @@ CLANGTESTS = \
   deglobal_fxn_struct_reconstruct \
   deglobal_file_static \
   deglobal_cxx_static \
+  deglobal_cxx_template_static \
   pragma_sst_new \
   pragma_sst_init \
   pragma_sst_null_replace \
