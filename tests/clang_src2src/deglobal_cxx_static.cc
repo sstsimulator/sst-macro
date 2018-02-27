@@ -32,3 +32,13 @@ void fxn()
   A::x = 10;
 };
 
+struct DeclTyper {
+  static int get(){ return 0; }
+};
+DeclTyper d;
+
+int goReturn(){
+  return decltype(d)::get();
+}
+
+

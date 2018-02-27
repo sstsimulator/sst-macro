@@ -620,6 +620,13 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
 }
 
 bool
+SkeletonASTVisitor::TraverseDecltypeTypeLoc(DecltypeTypeLoc loc)
+{
+  //don't visit decltype expressions... just let them go
+  return true;
+}
+
+bool
 SkeletonASTVisitor::VisitDeclRefExpr(DeclRefExpr* expr)
 {
   clang::NamedDecl* nd = expr->getFoundDecl();
@@ -1384,6 +1391,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   /** Whether an extern type_t __offset_X declaration is needed */
   bool needExternalDecls = true;
   bool checkCxxCtor = true;
+  bool needClsScope = true;
   if (!D->hasExternalStorage()){
     std::stringstream os;
     bool isVolatile = D->getType().isVolatileQualified();
@@ -1403,8 +1411,13 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
           //we have a template parameter
           needExternalDecls = false;
           checkCxxCtor = false;
+          needClsScope = false;
           //the offset declaration actually goes here
+          //if (innerStructTagsDeclared_.find(D->getDeclContext()) == innerStructTagsDeclared_.end()){
+            //keep from declaring this more than once per decl context
           os << "struct inner_" << scopeUniqueVarName << "{};";
+          //  innerStructTagsDeclared_.insert(D->getDeclContext());
+          //}
           os << "static int __offset_" << scopeUniqueVarName
              << " = sstmac::inplace_cpp_global<"
              << "inner_" << scopeUniqueVarName
@@ -1441,6 +1454,12 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
         var.isFxnStatic = true;
         break;
       case CxxStatic:
+        if (D->getDeclContext()->isDependentContext()){
+          //oh, templates
+          //this variable is private and templated
+          //and should never be accessed with scope
+          needClsScope = false;
+        }
         needExternalDecls = false;
         checkCxxCtor = false;
         //create an offset for the global variable
@@ -1532,13 +1551,16 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
 
   const Decl* md = mainDecl(D);
 
-  std::string uniqueNsPrefix = currentNs_->nsPrefix() + clsScopePrefix;
-  for (int i=0; i < uniqueNsPrefix.size(); ++i){
-    char& next = uniqueNsPrefix.at(i);
-    if (next == ':') next = '_';
+  std::string standinName = "sstmac_";
+  if (needClsScope){
+    std::string uniqueNsPrefix = currentNs_->nsPrefix() + clsScopePrefix;
+    for (int i=0; i < uniqueNsPrefix.size(); ++i){
+      char& next = uniqueNsPrefix.at(i);
+      if (next == ':') next = '_';
+    }
+    standinName += uniqueNsPrefix;
   }
-
-  std::string standinName = "sstmac_" + uniqueNsPrefix + scopeUniqueVarName;
+  standinName += scopeUniqueVarName;
 
   //fxn pointers mess up everything
   std::string::size_type fxnPtrPos = std::string::npos;
@@ -1574,9 +1596,11 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   } else {
     standinSstr << "(sstmac_global_data + ";
   }
-  standinSstr << currentNs_->nsPrefix()
-              << clsScopePrefix
-              << "__offset_" << scopeUniqueVarName << ")";
+  if (needClsScope){
+    standinSstr << currentNs_->nsPrefix()
+                << clsScopePrefix;
+  }
+  standinSstr << "__offset_" << scopeUniqueVarName << ")";
 
   GlobalStandin& newStandin = globalStandins_[md];
   newStandin.replText = standinSstr.str();
@@ -1808,7 +1832,16 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
         os << ",";
         tmplSstr << ",";
       }
-      os << "class " << nd->getNameAsString();
+      if (nd->getKind() == Decl::TemplateTypeParm){
+        os << "class " << nd->getNameAsString();
+      } else if (nd->getKind() == Decl::NonTypeTemplateParm){
+        NonTypeTemplateParmDecl* pd = cast<NonTypeTemplateParmDecl>(nd);
+        os << GetAsString(pd->getType()) << " " << nd->getNameAsString();
+      } else {
+        internalError(D->getLocStart(), *ci_,
+              "got bad template parameter - has incorrect Clang Decl kind");
+      }
+
       tmplSstr << nd->getNameAsString();
     }
     os << "> ";
@@ -1996,10 +2029,15 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
 bool
 SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 {
+
   if (D->isMain() && refactorMain_){
     replaceMain(D);
   } else if (D->isTemplateInstantiation()){
     return true; //do not visit implicitly instantiated template stuff
+  } else if (!D->isThisDeclarationADefinition()){
+    //clang is weird... this can be just a declaration
+    //but it gets its definition filled in...
+    return true;
   }
 
   if (D->hasAttrs()){
@@ -2026,11 +2064,10 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     skipVisit = noSkeletonize_ ? false : activatePragmasForDecl(D);
   }
 
-  fxnContexts_.push_back(D);
+  PushGuard<FunctionDecl*> pg(fxnContexts_, D);
   if (!skipVisit && D->getBody()){
     traverseFunctionBody(D->getBody());
   }
-  fxnContexts_.pop_back();
   return true;
 }
 
@@ -2040,7 +2077,27 @@ SkeletonASTVisitor::TraverseCXXRecordDecl(CXXRecordDecl *D)
   PushGuard<CXXRecordDecl*> pg(classContexts_, D);
   auto end = D->decls_end();
   for (auto iter=D->decls_begin(); iter != end; ++iter){
-    TraverseDecl(*iter);
+    Decl* d = *iter;
+    switch (d->getKind()){
+      case Decl::Var:
+        //so this is wonky - but
+        //I need to know about all variables fist
+        TraverseDecl(d);
+        break;
+      default:
+        break;
+    }
+  }
+  for (auto iter=D->decls_begin(); iter != end; ++iter){
+    Decl* d = *iter;
+    switch (d->getKind()){
+      case Decl::Var:
+        break;
+      default:
+        //now I can visit everything else
+        TraverseDecl(d);
+        break;
+    }
   }
   return true;
 }
@@ -2725,10 +2782,12 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
   VarDecl* vd = cast<VarDecl>(expr->getDecl());
   const Decl* md = nullptr;
   MemberSpecializationInfo* msi = nullptr;
+  ClassTemplateSpecializationDecl* templDecl = nullptr;
   if (vd->isStaticDataMember()){
     msi = vd->getMemberSpecializationInfo();
     if (msi){
       md = msi->getInstantiatedFrom();
+      templDecl = cast<ClassTemplateSpecializationDecl>(vd->getDeclContext());
     } else {
       md = mainDecl(vd);
     }

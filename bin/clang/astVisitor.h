@@ -297,6 +297,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool TraverseDoStmt(clang::DoStmt* S, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseDecltypeTypeLoc(clang::DecltypeTypeLoc loc);
+
   bool TraverseWhileStmt(clang::WhileStmt* S, DataRecursionQueue* queue = nullptr);
 
   bool TraverseUnaryOperator(clang::UnaryOperator* op, DataRecursionQueue* queue = nullptr);
@@ -591,6 +593,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::IfStmt*> activeIfs_;
   std::list<clang::MemberExpr*> memberAccesses_;
   std::map<clang::Stmt*,clang::Stmt*> extendedReplacements_;
+  std::set<clang::DeclContext*> innerStructTagsDeclared_;
 
   std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmtReplacements_;
 

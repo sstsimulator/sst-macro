@@ -31,5 +31,18 @@ void fxn()
   (*sstmac___ns__ns2__C__x) -= 3;
   (*sstmac_A__x) = 10;
  }};
+
+struct DeclTyper {
+  static int get(){ return 0; }
+};
+DeclTyper d;void* __ptr_d = &d; int __sizeof_d = sizeof(d); extern int __offset_d; sstmac::CppGlobal* d_sstmac_ctor = sstmac::new_cpp_global<struct DeclTyper>(__offset_d,false); 
+
+int goReturn(){
+  return decltype(d)::get();
+}
 #include <sstmac/software/process/global.h>
 
+int __offset_d = 0;
+extern int __sizeof_d;
+extern void* __ptr_d;
+sstmac::GlobalVariable __gv_d(__offset_d,__sizeof_d,"d",__ptr_d,false);
