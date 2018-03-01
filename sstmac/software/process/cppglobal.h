@@ -90,6 +90,24 @@ int inplace_cpp_global(bool tls, Args&&... args){
   return init.offset;
 }
 
+/** a special wrapper for variable template members */
+template <class Tag, class T, bool tls>
+class CppVarTemplate {
+ public:
+  template <class... Args>
+  CppVarTemplate(Args&&... args){
+    offset = inplace_cpp_global<Tag,T,Args...>(tls, std::forward<Args>(args)...);
+  }
+
+  T& operator()(){
+    return tls ? get_tls_ref_at_offset<T>(offset) : get_global_ref_at_offset<T>(offset);
+  }
+
+ private:
+  static int offset;
+};
+template <class Tag, class T, bool tls> int CppVarTemplate<Tag,T,tls>::offset = 0;
+
 }
 
 #endif // CPPGLOBAL_H

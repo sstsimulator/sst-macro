@@ -168,17 +168,32 @@ class RelocationPointer {
   }
 };
 
-static inline void* get_global_at_offset(int offset){
+static inline void* get_special_at_offset(int offset, int map_offset)
+{
   int stack; int* stackPtr = &stack;
-  intptr_t stackTopInt = ((intptr_t)stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize + TLS_GLOBAL_MAP;
+  intptr_t stackTopInt = ((intptr_t)stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize + map_offset;
   char** stackTopPtr = (char**) stackTopInt;
   char* globalMap = *stackTopPtr;
   return globalMap + offset;
 }
 
+static inline void* get_global_at_offset(int offset){
+  return get_special_at_offset(offset, TLS_GLOBAL_MAP);
+}
+
+static inline void* get_tls_at_offset(int offset){
+  return get_special_at_offset(offset, TLS_TLS_MAP);
+}
+
 template <class T>
 static inline T& get_global_ref_at_offset(int offset){
   T* t = (T*) get_global_at_offset(offset);
+  return *t;
+}
+
+template <class T>
+static inline T& get_tls_ref_at_offset(int offset){
+  T* t = (T*) get_tls_at_offset(offset);
   return *t;
 }
 

@@ -419,6 +419,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
  private:
   clang::NamespaceDecl* getOuterNamespace(clang::Decl* D);
 
+  void getTemplatePrefixString(std::ostream& os, clang::TemplateParameterList* theList);
+
+  void getTemplateParamsString(std::ostream& os, clang::TemplateParameterList* theList);
+
   bool shouldVisitDecl(clang::VarDecl* D);
 
   void initHeaders();
@@ -447,6 +451,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   /** These should always index by the canonical decl */
   std::map<const clang::Decl*,std::string> globals_;
+  std::set<const clang::Decl*> variableTemplates_;
   std::map<const clang::Decl*,std::string> scopedNames_;
 
   static inline const clang::Decl* mainDecl(const clang::Decl* d){
@@ -549,6 +554,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void replace(clang::Expr* expr, const std::string& repl){
     replace(expr->getSourceRange(), repl);
+  }
+
+  void replace(clang::Decl* decl, const std::string& repl){
+    replace(decl->getSourceRange(), repl);
   }
 
   bool insideTemplateFxn() const {

@@ -1061,10 +1061,10 @@ SkeletonASTVisitor::addTypeReconstructionText(const RecordDecl* rd, Reconstructe
 
   for (const RecordDecl* rd : rt.newClassFieldTypes){
     auto& newRt = newTypes[rd];
-    //this better have been visit
+    //this better have been visited
     if (newRt.typeIndex == 0){
-      std::cerr << "internal compiler error - unassigned type index" << std::endl;
-      abort();
+      internalError(rd->getLocStart(), *ci_,
+                    "unassigned type index");
     }
     os << "sstTmpStructType" << newRt.typeIndex << " var" << varCount++ <<"; ";
   }
@@ -1268,6 +1268,13 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
   return nullptr;
 }
 
+static std::string getExprString(Expr* e)
+{
+  PrettyPrinter pp;
+  pp.print(e);
+  return pp.os.str();
+}
+
 void
 SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingComma)
 {
@@ -1277,12 +1284,35 @@ SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingCo
 
   Expr* ue = getUnderlyingExpr(D->getInit());
 
-  //for now just print the expression
-  PrettyPrinter pp;
-  pp.print(ue);
-  std::string str = pp.os.str();
-  if (!str.empty() && leadingComma) os << ",";
-  os << str;
+  switch (ue->getStmtClass()){
+  case Stmt::CXXConstructExprClass: {
+    CXXConstructExpr* ctor = cast<CXXConstructExpr>(ue);
+    if (ctor->getNumArgs() == 0) return;
+    for (int i=0; i < ctor->getNumArgs(); ++i){
+      if (i > 0 || leadingComma) os << ",";
+      os << getExprString(ctor->getArg(i));
+    }
+  }
+  case Stmt::InitListExprClass: {
+    InitListExpr* init = cast<InitListExpr>(ue);
+    if (init->getNumInits() == 0) return;
+    for (int i=0; i < init->getNumInits(); ++i){
+      //for now just print the expression
+      if (i > 0 || leadingComma) os << ",";
+      os << getExprString(init->getInit(i));
+    }
+    break;
+  }
+  default: {
+    //for now just print the expression
+    std::string str = getExprString(ue);
+    if (!str.empty() && leadingComma) os << ",";
+    os << str;
+    break;
+  }
+  }
+
+
 
   /**
   Expr* initExpr = D->getInit();
@@ -1778,6 +1808,52 @@ scopeString(SourceLocation loc, CompilerInstance& ci, DeclContext* ctx,
   }
 }
 
+void
+SkeletonASTVisitor::getTemplatePrefixString(std::ostream& os, TemplateParameterList* theList)
+{
+  os << "template <"; //this gets the prefix <class T, class U>
+  int numParams = theList->size();
+  for (int i=0; i < numParams; ++i){
+    NamedDecl* nd = theList->getParam(i);
+    if (i > 0){
+      os << ",";
+    }
+    if (nd->getKind() == Decl::TemplateTypeParm){
+      os << "class " << nd->getNameAsString();
+    } else if (nd->getKind() == Decl::NonTypeTemplateParm){
+      NonTypeTemplateParmDecl* pd = cast<NonTypeTemplateParmDecl>(nd);
+      os << GetAsString(pd->getType()) << " " << nd->getNameAsString();
+    } else if (nd->getKind() == Decl::TemplateTemplateParm){
+      TemplateTemplateParmDecl* ttpd = cast<TemplateTemplateParmDecl>(nd);
+      PrettyPrinter pp;
+      pp.print(ttpd);
+      os << pp.os.str();
+    } else {
+      PrettyPrinter pp;
+      pp.os << "got bad template parameter - has incorrect Clang Decl kind: "
+          << nd->getDeclKindName() << "\n";
+      pp.print(nd);
+      internalError(nd->getLocStart(), *ci_, pp.os.str());
+    }
+  }
+  os << "> ";
+}
+
+void
+SkeletonASTVisitor::getTemplateParamsString(std::ostream& os, TemplateParameterList* theList)
+{
+  int numParams = theList->size();
+  for (int i=0; i < numParams; ++i){
+    NamedDecl* nd = theList->getParam(i);
+    if (i > 0){
+      os << ",";
+    }
+    os << nd->getNameAsString();
+  }
+  os << ">";
+}
+
+
 bool
 SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 {
@@ -1821,34 +1897,17 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
   std::string clsName = parentCls->getNameAsString();
   if (parentCls->isDependentContext()){
     std::stringstream tmplSstr; //the name A<T,U>
-    os << "template <"; //this gets the prefix <class T, class U>
     tmplSstr << clsName << "<";
-    ClassTemplateDecl* decl = parentCls->getDescribedClassTemplate();
-    TemplateParameterList* theList = decl->getTemplateParameters();
-    int numParams = theList->size();
-    for (int i=0; i < numParams; ++i){
-      NamedDecl* nd = theList->getParam(i);
-      if (i > 0){
-        os << ",";
-        tmplSstr << ",";
-      }
-      if (nd->getKind() == Decl::TemplateTypeParm){
-        os << "class " << nd->getNameAsString();
-      } else if (nd->getKind() == Decl::NonTypeTemplateParm){
-        NonTypeTemplateParmDecl* pd = cast<NonTypeTemplateParmDecl>(nd);
-        os << GetAsString(pd->getType()) << " " << nd->getNameAsString();
-      } else {
-        internalError(D->getLocStart(), *ci_,
-              "got bad template parameter - has incorrect Clang Decl kind");
-      }
-
-      tmplSstr << nd->getNameAsString();
+    int numLists = D->getNumTemplateParameterLists();
+    if (numLists > 1){
+      internalError(D->getLocStart(), *ci_,
+          "cannot handle nested template declarations");
     }
-    os << "> ";
-    tmplSstr << ">";
+    TemplateParameterList* theList = D->getTemplateParameterList(0);
+    getTemplatePrefixString(os, theList);
+    getTemplateParamsString(tmplSstr, theList);
     clsName = tmplSstr.str();
   }
-
 
   os << "int " << clsName
      << "::__offset_" << D->getNameAsString()
@@ -1894,6 +1953,88 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
     return true;
   }
 
+  if (D->getDescribedVarTemplate()){
+
+    if (D->isStaticDataMember()){
+      const CXXRecordDecl* crd = cast<const CXXRecordDecl>(D->getDeclContext());
+      VarTemplateDecl* vtd = D->getDescribedVarTemplate();
+      TemplateParameterList* theList = vtd->getTemplateParameters();
+      TemplateParameterList* clsList = nullptr;
+
+      std::string clsName = crd->getNameAsString();
+      if (crd->isDependentContext()){ //class is also a template
+        ClassTemplateDecl* decl = crd->getDescribedClassTemplate();
+        if (!decl){
+          internalError(crd->getLocStart(), *ci_,
+                     "template class has no template lists");
+        }
+        clsList = decl->getTemplateParameters();
+        clsName = GetAsString(crd->getTypeForDecl());
+      }
+
+      std::stringstream sstTypeOs;
+      sstTypeOs << " sstmac::CppVarTemplate<" << clsName
+           << "," << GetAsString(D->getType())
+           << "," << std::boolalpha << isThreadLocal(D)
+           << "> ";
+
+      if (D->isThisDeclarationADefinition() == VarDecl::DeclarationOnly){
+        //this is the declaration inside the class of a class static template variable
+        //template <class T> static T member; e.g.
+        std::stringstream sstr;
+        VarTemplateDecl* vtd = D->getDescribedVarTemplate();
+        TemplateParameterList* theList = vtd->getTemplateParameters();
+        getTemplatePrefixString(sstr, theList);
+        sstr << " static " << sstTypeOs.str()
+             << " " << D->getNameAsString() << ";";
+        replace(vtd, sstr.str());
+        variableTemplates_.insert(D);
+        return true;
+      } else {
+        //this is the definition of a class static template variable
+        //template <class T> static T member; e.g.
+        std::stringstream sstr;
+        if (clsList){
+          //I think I get this for free
+          //getTemplatePrefixString(sstr, clsList);
+          //sstr << " ";
+        }
+        getTemplatePrefixString(sstr, theList);
+        sstr << sstTypeOs.str() << " " << clsName  << "::"
+             << D->getNameAsString();
+        if (D->hasInit()){
+          PrettyPrinter pp;
+          pp.print(D->getInit());
+          sstr << pp.os.str();
+        }
+        sstr << ";";
+        replace(vtd, sstr.str());
+      }
+    } else {
+      std::stringstream sstr;
+      sstr << "struct sstmacTagClass" << D->getNameAsString() << "{}; ";
+      VarTemplateDecl* vtd = D->getDescribedVarTemplate();
+      TemplateParameterList* theList = vtd->getTemplateParameters();
+      getTemplatePrefixString(sstr, theList);
+      if (D->isStaticLocal()){
+        sstr << " static";
+      }
+      sstr << " sstmac::CppVarTemplate<sstmacTagClass" << D->getNameAsString()
+           << "," << GetAsString(D->getType())
+           << "," << std::boolalpha << isThreadLocal(D)
+           << "> " << D->getNameAsString();
+      if (D->hasInit()){
+        PrettyPrinter pp;
+        pp.print(D->getInit());
+        sstr << pp.os.str();
+      }
+      sstr << ";";
+      replace(vtd, sstr.str());
+      variableTemplates_.insert(D);
+      return true;
+    }
+  }
+
   if (D->getMemberSpecializationInfo() && D->getTemplateInstantiationPattern()){
     return true;
   }
@@ -1915,13 +2056,11 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
 
   if (D->hasInit() && !skipInit){
     if (visitingGlobal_){
-      activeDecls_.push_back(D);
-      activeInits_.push_back(getUnderlyingExpr(D->getInit()));
-    }
-    TraverseStmt(D->getInit());
-    if (visitingGlobal_){
-      activeDecls_.pop_back();
-      activeInits_.pop_back();
+      PushGuard<VarDecl*> pgD(activeDecls_, D);
+      PushGuard<Expr*> pgI(activeInits_, getUnderlyingExpr(D->getInit()));
+      TraverseStmt(D->getInit());
+    } else {
+      TraverseStmt(D->getInit());
     }
   }
 
@@ -2776,58 +2915,75 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
 {
   if (keepGlobals_) return;
 
-  if (expr->getDecl()->getKind() != Decl::Var)
-    return;
-
-  VarDecl* vd = cast<VarDecl>(expr->getDecl());
-  const Decl* md = nullptr;
-  MemberSpecializationInfo* msi = nullptr;
-  ClassTemplateSpecializationDecl* templDecl = nullptr;
-  if (vd->isStaticDataMember()){
-    msi = vd->getMemberSpecializationInfo();
-    if (msi){
-      md = msi->getInstantiatedFrom();
-      templDecl = cast<ClassTemplateSpecializationDecl>(vd->getDeclContext());
+  switch (expr->getDecl()->getKind()){
+  case Decl::Var: {
+    VarDecl* vd = cast<VarDecl>(expr->getDecl());
+    const Decl* md = nullptr;
+    MemberSpecializationInfo* msi = nullptr;
+    ClassTemplateSpecializationDecl* templDecl = nullptr;
+    if (vd->isStaticDataMember()){
+      msi = vd->getMemberSpecializationInfo();
+      if (msi){
+        md = msi->getInstantiatedFrom();
+        templDecl = cast<ClassTemplateSpecializationDecl>(vd->getDeclContext());
+      } else {
+        md = mainDecl(vd);
+      }
     } else {
       md = mainDecl(vd);
     }
-  } else {
-    md = mainDecl(vd);
-  }
 
-  auto iter = globals_.find(md);
-  if (iter != globals_.end()){
-    if (globalsTouched_.empty()){
-      //warn(expr->getLocStart(), *ci_,
-      //     "visiting global variable use, but I am not inside function");
-      return;
-    }
+    auto iter = globals_.find(md);
+    if (iter != globals_.end()){
+      if (globalsTouched_.empty()){
+        //warn(expr->getLocStart(), *ci_,
+        //     "visiting global variable use, but I am not inside function");
+        return;
+      }
 
-    if (msi){ //for now, we have to check if this outside class
-      DeclContext* dc = vd->getDeclContext();
-      bool bad = true;
-      for (DeclContext* test : classContexts_){
-        if (test == dc){
-          bad = false;
-          break;
+      if (msi){ //for now, we have to check if this outside class
+        DeclContext* dc = vd->getDeclContext();
+        bool bad = true;
+        for (DeclContext* test : classContexts_){
+          if (test == dc){
+            bad = false;
+            break;
+          }
+        }
+        if (bad){
+          errorAbort(expr->getLocStart(), *ci_,
+              "template static variables cannot currently be accessed outside of class");
         }
       }
-      if (bad){
-        errorAbort(expr->getLocStart(), *ci_,
-            "template static variables cannot currently be accessed outside of class");
+
+
+      globalsTouched_.back().insert(md);
+      //there is a bug in Clang I can't quite track down
+      //it is erroneously causing DeclRefExpr to get visited twice
+      //when they occur inside a struct decl
+      auto done = alreadyReplaced_.find(expr);
+      if (done == alreadyReplaced_.end()){
+        replace(replRng, iter->second);
+        alreadyReplaced_.insert(expr);
       }
     }
-
-
-    globalsTouched_.back().insert(md);
-    //there is a bug in Clang I can't quite track down
-    //it is erroneously causing DeclRefExpr to get visited twice
-    //when they occur inside a struct decl
-    auto done = alreadyReplaced_.find(expr);
-    if (done == alreadyReplaced_.end()){
-      replace(replRng, iter->second);
-      alreadyReplaced_.insert(expr);
+    break;
+  }
+  case Decl::VarTemplateSpecialization: {
+    VarTemplateSpecializationDecl* vtsd = cast<VarTemplateSpecializationDecl>(expr->getDecl());
+    MemberSpecializationInfo* msi = vtsd->getMemberSpecializationInfo();
+    VarDecl* staticDecl = vtsd->getInstantiatedFromStaticDataMember();
+    VarDecl* search = msi ? vtsd->getTemplateInstantiationPattern()->getCanonicalDecl()
+         : (staticDecl ? staticDecl : vtsd->getTemplateInstantiationPattern());
+    if (variableTemplates_.find(search) != variableTemplates_.end()){
+      //convert access to a call operator
+      //really weird that I need to do this + 1
+      rewriter_.InsertText(expr->getLocEnd().getLocWithOffset(1), "()", false);
     }
+    break; //proceed
+  }
+  default:
+    break; //nooo!
   }
 }
 

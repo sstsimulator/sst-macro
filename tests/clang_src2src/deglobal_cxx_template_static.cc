@@ -31,6 +31,18 @@ class C {
 template <class T, const char* tag> int C<T,tag>::value;
 template <class T, const char* tag> T C<T,tag>::anotherValue;
 
+class E {};
+
+template <typename>
+class D {
+  static int var;
+  static E e;
+};
+template <class T> int D<T>::var;
+template <class T> E D<T>::e = {};
+
+
+
 
 
 

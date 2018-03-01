@@ -30,5 +30,15 @@ class C {
 
 template <class T, const char* tag> int C<T,tag>::value;template <class T,const char * tag> int C<T,tag>::__offset_value = sstmac::inplace_cpp_global<C<T,tag>,int>(false);
 template <class T, const char* tag> T C<T,tag>::anotherValue;template <class T,const char * tag> int C<T,tag>::__offset_anotherValue = sstmac::inplace_cpp_global<C<T,tag>,T>(false);
+
+class E {};
+
+template <typename>
+class D {
+  static int var; public: static int __offset_var;
+  static E e; public: static int __offset_e;
+};
+template <class T> int D<T>::var;template <class T> int D<T>::__offset_var = sstmac::inplace_cpp_global<D<T>,int>(false);
+template <class T> E D<T>::e = {};template <class T> int D<T>::__offset_e = sstmac::inplace_cpp_global<D<T>,class E>(false);
 #include <sstmac/software/process/global.h>
 
