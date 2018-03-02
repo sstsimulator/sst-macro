@@ -40,6 +40,12 @@ DeclTyper d;void* __ptr_d = &d; int __sizeof_d = sizeof(d); extern int __offset_
 int goReturn(){
   return decltype(d)::get();
 }
+
+
+struct D {
+  static int arr[4]; public: static int __offset_arr;typedef int array_type_arr[4];
+};
+int D::arr[4] = {1,2,3,4};int D::__offset_arr = sstmac::inplace_cpp_global<D,int [4]>(false,1,2,3,4);
 #include <sstmac/software/process/global.h>
 
 int __offset_d = 0;

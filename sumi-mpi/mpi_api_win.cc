@@ -42,64 +42,71 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPICOMMFACTORY_H_INCLUDED
-#define SSTMAC_SOFTWARE_LIBRARIES_MPI_MPI_COMM_MPICOMMFACTORY_H_INCLUDED
-
-#include <sumi-mpi/mpi_comm/mpi_comm.h>
-#include <sumi-mpi/mpi_types/mpi_type.h>
-#include <sumi-mpi/mpi_api_fwd.h>
-#include <sstmac/software/process/task_id.h>
+#include <sumi-mpi/mpi_api.h>
+#include <sprockit/stl_string.h>
 
 namespace sumi {
 
+int
+mpi_api::win_flush(int rank, MPI_Win win)
+{
+  spkt_abort_printf("unimplemented error: MPI_Win_flush");
+  return MPI_SUCCESS;
+}
 
-/**
- * Construct mpi communicators.
- */
-class mpi_comm_factory  {
+int
+mpi_api::win_flush_local(int rank, MPI_Win win)
+{
+  spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
+  return MPI_SUCCESS;
+}
 
- public:
-  mpi_comm_factory(software_id sid, mpi_api* parent);
+int
+mpi_api::win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
+               MPI_Comm comm, MPI_Win *win)
+{
+  spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
+  return MPI_SUCCESS;
+}
 
-  ~mpi_comm_factory();
+int
+mpi_api::win_free(MPI_Win *win)
+{
+  spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
+  return MPI_SUCCESS;
+}
 
-  void init(int rank, int nproc);
+int
+mpi_api::win_lock(int lock_type, int rank, int assert, MPI_Win win)
+{
+  spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
+  return MPI_SUCCESS;
+}
 
- public:
-  mpi_comm* world() const {
-    return worldcomm_;
-  }
+int
+mpi_api::win_unlock(int rank, MPI_Win win)
+{
+  spkt_abort_printf("unimplemented error: MPI_Win_flush_local");
+  return MPI_SUCCESS;
+}
 
-  mpi_comm* self() const {
-    return selfcomm_;
-  }
+int
+mpi_api::get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+             int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype,
+             MPI_Win win)
+{
+  spkt_abort_printf("unimplemented error: MPI_Get");
+  return MPI_SUCCESS;
+}
 
-  mpi_comm* comm_dup(mpi_comm* caller);
-
-  mpi_comm* comm_create(mpi_comm* caller, mpi_group* group);
-
-  mpi_comm* comm_create_group(mpi_comm* caller, mpi_group* group);
-
-  mpi_comm* comm_split(mpi_comm* caller, int color, int key);
-
-  mpi_comm* create_cart(mpi_comm* caller, int ndims,
-                        const int *dims, const int *periods, int reorder);
-
- private:
-  MPI_Comm comm_new_id_agree(mpi_comm* old);
-
- private:
-  mpi_api* parent_;
-
-  app_id aid_;
-
-  /// The next available communicator index.
-  MPI_Comm next_id_;
-
-  mpi_comm* worldcomm_;
-  mpi_comm* selfcomm_;
-};
+int
+mpi_api::put(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+             int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype,
+             MPI_Win win)
+{
+  spkt_abort_printf("unimplemented error: MPI_Put");
+  return MPI_SUCCESS;
+}
 
 }
 
-#endif

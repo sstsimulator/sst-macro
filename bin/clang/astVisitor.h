@@ -49,6 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "pragmas.h"
 #include "globalVarNamespace.h"
 
+#include <unordered_set>
+
 #define visitFxn(cls) \
   bool Visit##cls(clang::cls* c){ return TestStmtMacro(c); }
 
@@ -260,6 +262,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool TraverseCallExpr(clang::CallExpr* expr, DataRecursionQueue* queue = nullptr);
 
+  bool TraverseUnresolvedLookupExpr(clang::UnresolvedLookupExpr* expr,
+                                    DataRecursionQueue* queue = nullptr);
+
   /**
    * @brief TraverseNamespaceDecl We have to traverse namespaces.
    *        We need pre and post operations. We have to explicitly recurse subnodes.
@@ -434,6 +439,15 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void initConfig();
 
   void replaceMain(clang::FunctionDecl* mainFxn);
+
+  /**
+   * @brief getCleanTypeName
+   * Return the name of the type (with full template parameters, if applicable) but
+   * without any struct,class decorators
+   * @param ty
+   * @return The name of the type without any struct,class decorators
+   */
+  std::string getCleanTypeName(clang::QualType ty);
 
  private:
   //whether we are allowed to use global variables in statements
@@ -896,6 +910,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     std::list<std::pair<std::string,std::string>> arrayTypes;
     std::set<const clang::RecordDecl*> structDependencies;
   };
+
+  std::unordered_set<std::string> validHeaders_;
 
   int reconstructCount_;
 

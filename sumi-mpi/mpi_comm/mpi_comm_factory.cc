@@ -118,11 +118,11 @@ mpi_comm_factory::comm_dup(mpi_comm* caller)
 
 
 MPI_Comm
-mpi_comm_factory::comm_new_id_agree(MPI_Comm oldComm)
+mpi_comm_factory::comm_new_id_agree(mpi_comm* commPtr)
 {
   int inputID = next_id_;
   int outputID = 0;
-  collective_op_base* op = parent_->start_allreduce(oldComm, 1, MPI_INT, MPI_MAX, &inputID, &outputID);
+  collective_op_base* op = parent_->start_allreduce(commPtr, 1, MPI_INT, MPI_MAX, &inputID, &outputID);
   parent_->wait_collective(op);
   delete op;
 
@@ -131,17 +131,38 @@ mpi_comm_factory::comm_new_id_agree(MPI_Comm oldComm)
 }
 
 mpi_comm*
+mpi_comm_factory::comm_create_group(mpi_comm* caller, mpi_group* group)
+{
+  //now find my rank
+  int newrank = group->rank_of_task(caller->my_task());
+  if (newrank >= 0) {
+    //okay... this is a little wonky
+    //I need to create the new communicator on a reserved ID first
+    MPI_Comm tmpId = caller->id() * 1000 + 100000;
+    mpi_comm* newComm = new mpi_comm(tmpId, newrank, group, aid_);
+    MPI_Comm cid = comm_new_id_agree(newComm);
+    newComm->set_id(cid);
+    return newComm;
+  } else {
+    //there is no guarantee that an MPI rank in the comm, but not in the group
+    //will actually make this call
+    //all ranks in the comm but not the group should return immediately
+    //and not participate in the collective
+    return mpi_comm::comm_null;
+  }
+}
+
+mpi_comm*
 mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
 {
-  MPI_Comm cid = comm_new_id_agree(caller->id());
+  MPI_Comm cid = comm_new_id_agree(caller);
 
   //now find my rank
   int newrank = group->rank_of_task(caller->my_task());
 
   if (newrank >= 0) {
     return new mpi_comm(cid, newrank, group, aid_);
-  }
-  else {
+  } else {
     return mpi_comm::comm_null;
   }
 
@@ -307,7 +328,7 @@ mpi_comm*
 mpi_comm_factory::create_cart(mpi_comm* caller, int ndims,
                               const int *dims, const int *periods, int reorder)
 {
-  MPI_Comm cid = comm_new_id_agree(caller->id());
+  MPI_Comm cid = comm_new_id_agree(caller);
 
   //now find my rank
   int newrank = caller->group_->rank_of_task(caller->my_task());

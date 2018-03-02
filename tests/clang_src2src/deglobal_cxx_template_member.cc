@@ -30,3 +30,16 @@ void fxn(){
   global<long> = 11;
 }
 
+template <class T>
+void anotherFxn(){
+  A::member<T> = 0;
+  staticGlobal<T>.call();
+}
+
+template <class T, class U>
+void again(){
+  B<T>::template member<U> = 0;
+}
+
+
+

@@ -43,6 +43,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_types/mpi_type.cc \
   sstmac_mpi.cc \
   mpi_api.cc \
+  mpi_api_win.cc \
   mpi_api_collectives.cc \
   mpi_api_comm.cc \
   mpi_api_group.cc \

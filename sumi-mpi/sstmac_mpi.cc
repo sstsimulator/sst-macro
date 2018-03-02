@@ -258,3 +258,47 @@ extern "C" int sstmac_errhandler_create(MPI_Handler_function *function, MPI_Errh
 extern "C" int sstmac_comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *flag){
   return sumi::sstmac_mpi()->comm_get_attr(comm,comm_keyval,attribute_val,flag);
 }
+
+extern "C" int sstmac_win_flush(int rank, MPI_Win win){
+  return sumi::sstmac_mpi()->win_flush(rank, win);
+}
+
+extern "C" int sstmac_win_flush_local(int rank, MPI_Win win){
+  return sumi::sstmac_mpi()->win_flush_local(rank, win);
+}
+
+extern "C" int sstmac_comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm * newcomm){
+  return sumi::sstmac_mpi()->comm_create_group(comm,group,tag,newcomm);
+}
+
+extern "C" int sstmac_win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
+                                     MPI_Comm comm, MPI_Win *win){
+  return sumi::sstmac_mpi()->win_create(base, size, disp_unit, info, comm, win);
+}
+
+extern "C" int sstmac_win_free(MPI_Win *win){
+  return sumi::sstmac_mpi()->win_free(win);
+}
+
+extern "C" int sstmac_win_lock(int lock_type, int rank, int assert, MPI_Win win){
+  return sumi::sstmac_mpi()->win_lock(lock_type, rank, assert, win);
+}
+
+extern "C" int sstmac_win_unlock(int rank, MPI_Win win){
+  return sumi::sstmac_mpi()->win_unlock(rank, win);
+}
+
+extern "C" int sstmac_mpi_get(void *origin_addr, int origin_count, MPI_Datatype
+            origin_datatype, int target_rank, MPI_Aint target_disp,
+            int target_count, MPI_Datatype target_datatype, MPI_Win win){
+  return sumi::sstmac_mpi()->get(origin_addr, origin_count, origin_datatype,
+                                 target_rank, target_disp, target_count, target_datatype, win);
+}
+
+extern "C" int sstmac_mpi_put(const void *origin_addr, int origin_count, MPI_Datatype
+            origin_datatype, int target_rank, MPI_Aint target_disp,
+            int target_count, MPI_Datatype target_datatype, MPI_Win win){
+  return sumi::sstmac_mpi()->put(origin_addr, origin_count, origin_datatype,
+                                 target_rank, target_disp, target_count,
+                                 target_datatype, win);
+}

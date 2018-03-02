@@ -155,7 +155,6 @@ SkeletonASTVisitor::initReservedNames()
 void
 SkeletonASTVisitor::initHeaders()
 {
-  /**
   const char* headerListFile = getenv("SSTMAC_HEADERS");
   if (headerListFile == nullptr){
     const char* allHeaders = getenv("SSTMAC_ALL_HEADERS");
@@ -176,7 +175,6 @@ SkeletonASTVisitor::initHeaders()
     std::getline(ifs, line);
     validHeaders_.insert(line);
   }
-  */
 }
 
 bool
@@ -199,7 +197,6 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     }
   }
 
-  /**
   bool useAllHeaders = false;
   if (headerLoc.isValid() && !useAllHeaders){
     //we are inside a header
@@ -232,8 +229,8 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
       return false;
     }
   }
-  */
 
+  /**
   if (headerLoc.isValid()){
     char fullpathBuffer[1024];
     const char* fullpath = realpath(ploc.getFilename(), fullpathBuffer);
@@ -273,7 +270,7 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
     }
 
   }
-
+  */
 
 
   //not a header - good to go
@@ -1451,7 +1448,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
           os << "static int __offset_" << scopeUniqueVarName
              << " = sstmac::inplace_cpp_global<"
              << "inner_" << scopeUniqueVarName
-             << "," << GetAsString(D->getType())
+             << "," << getCleanTypeName(D->getType())
              << ">(" << std::boolalpha << threadLocal;
           addInitializers(D, os, true);
           os << ");";
@@ -1853,6 +1850,73 @@ SkeletonASTVisitor::getTemplateParamsString(std::ostream& os, TemplateParameterL
   os << ">";
 }
 
+std::string
+SkeletonASTVisitor::getCleanTypeName(QualType ty)
+{
+  //this is a nightmare
+  //trying to do this more elegantly directly from type info
+  //forget it, just do string replace
+  std::string name = GetAsString(ty);
+  auto pos = name.find("struct");
+  if (pos != std::string::npos){
+    name = name.substr(pos + 6);
+    return name;
+  }
+
+  pos = name.find("class");
+  if (pos != std::string::npos){
+    name = name.substr(pos + 5);
+    return name;
+  }
+
+  return name;
+
+  /**
+  if (ty->isStructureType() || ty->isClassType()){
+    CXXRecordDecl* crd = ty->getAsCXXRecordDecl();
+    if (crd){
+      if (crd->isDependentContext()){
+        return GetAsString(ty);
+      } else if (crd->getTemplateInstantiationPattern()){
+        if (isa<TemplateSpecializationType>(ty.getTypePtr())){
+          const TemplateSpecializationType* tySpec = cast<const TemplateSpecializationType>(ty.getTypePtr());
+          if (tySpec->isAliasType()){
+            return ty
+          } else {
+
+          }
+        } else if (isa<TypedefType>(ty.getTypePtr())){
+          //typedefd name with no template parameters
+          const TypedefType* tyDef = cast<TypedefType>(ty);
+          TypedefNameDecl* decl = tyDef->getDecl();
+          return decl->getNameAsString();
+        } else {
+          //not a template context, but a template instantiation
+          return GetAsString(ty);
+        }
+      } else {
+        return crd->getNameAsString();
+      }
+    }
+
+    const RecordType* rt = ty->getAsStructureType();
+    if (rt){
+      RecordDecl* rd = rt->getDecl();
+      if (rd->isDependentContext()){
+        return GetAsString(ty);
+      } else {
+        return rd->getNameAsString();
+      }
+    } else {
+      std::string error = "type " + GetAsString(ty) + " is a structure type, but RecordType is null";
+      internalError(SourceLocation(), *ci_, error);
+    }
+  } else {
+    return GetAsString(ty);
+  }
+  */
+}
+
 
 bool
 SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
@@ -1913,7 +1977,7 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
      << "::__offset_" << D->getNameAsString()
      << " = sstmac::inplace_cpp_global<"
      << clsName
-     << "," << GetAsString(D->getType())
+     << "," << getCleanTypeName(D->getType())
      << ">(" << std::boolalpha << isThreadLocal(D);
   addInitializers(D, os, true);
   os << ");";
@@ -1936,6 +2000,24 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
 
   rewriter_.InsertText(getEndLoc(D->getLocEnd()), os.str());
   return true;
+}
+
+bool
+SkeletonASTVisitor::TraverseUnresolvedLookupExpr(clang::UnresolvedLookupExpr* expr,
+                                                 DataRecursionQueue* queue)
+{
+  for (auto iter=expr->decls_begin(); iter != expr->decls_end(); ++iter){
+    NamedDecl* nd = *iter;
+    if (nd->getKind() == Decl::VarTemplate){
+      VarTemplateDecl* vtd = cast<VarTemplateDecl>(nd);
+      VarDecl* vd = vtd->getCanonicalDecl()->getTemplatedDecl();
+      if (variableTemplates_.find(vd) != variableTemplates_.end()){
+        rewriter_.InsertText(expr->getLocEnd().getLocWithOffset(1), "()", false);
+        return true;
+      }
+    }
+  }
+  return RecursiveASTVisitor<SkeletonASTVisitor>::TraverseUnresolvedLookupExpr(expr);
 }
 
 bool
@@ -2979,6 +3061,9 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
       //convert access to a call operator
       //really weird that I need to do this + 1
       rewriter_.InsertText(expr->getLocEnd().getLocWithOffset(1), "()", false);
+    } else if (vtsd->isStaticDataMember()) {
+      internalError(expr->getLocStart(), *ci_,
+                 "failed replacing static template member");
     }
     break; //proceed
   }

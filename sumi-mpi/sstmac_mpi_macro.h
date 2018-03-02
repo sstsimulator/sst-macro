@@ -197,6 +197,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Group_translate_ranks sumi::sstmac_mpi()->group_translate_ranks
 #define MPI_Errhandler_create sumi::sstmac_mpi()->errhandler_create
 #define MPI_Comm_get_attr sumi::sstmac_mpi()->comm_get_attr
+
+#define MPI_Comm_create_group sumi::sstmac_mpi()->comm_create_group
+#define MPI_Win_flush sumi::sstmac_mpi()->win_flush
+#define MPI_Win_flush_local sumi::sstmac_mpi()->win_flush_local
+#define MPI_Win_lock sumi::sstmac_mpi()->win_lock
+#define MPI_Win_unlock sumi::sstmac_mpi()->win_unlock
+#define MPI_Win_create sumi::sstmac_mpi()->win_create
+#define MPI_Win_free sumi::sstmac_mpi()->win_free
+
+#define MPI_Get sumi::sstmac_mpi()->get
+#define MPI_Put sumi::sstmac_mpi()->put
 #else
 #define MPI_Cart_create sstmac_cart_create
 #define MPI_Cart_get sstmac_cart_get
@@ -349,6 +360,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Group_translate_ranks sstmac_group_translate_ranks
 #define MPI_Errhandler_create sstmac_errhandler_create
 #define MPI_Comm_get_attr sstmac_comm_get_attr
+
+#define MPI_Comm_create_group sstmac_comm_create_group
+#define MPI_Win_flush sstmac_win_flush
+#define MPI_Win_flush_local sstmac_win_flush_local
+#define MPI_Win_lock sstmac_win_lock
+#define MPI_Win_unlock sstmac_win_unlock
+#define MPI_Win_create sstmac_win_create
+#define MPI_Win_free sstmac_win_free
+
+#define MPI_Get sstmac_mpi_get
+#define MPI_Put sstmac_mpi_put
 #endif
 
 
@@ -384,15 +406,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Unpublish_name error not yet implemented
 #define MPI_Accumulate error not yet implemented
 #define MPI_Win_complete error not yet implemented
-#define MPI_Win_create error not yet implemented
 #define MPI_Win_fence error not yet implemented
-#define MPI_Win_free error not yet implemented
 #define MPI_Win_get_group error not yet implemented
-#define MPI_Win_lock error not yet implemented
 #define MPI_Win_post error not yet implemented
 #define MPI_Win_start error not yet implemented
 #define MPI_Win_test error not yet implemented
-#define MPI_Win_unlock error not yet implemented
 #define MPI_Win_wait error not yet implemented
 #define MPI_Add_error_class error not yet implemented
 #define MPI_Add_error_code error not yet implemented
@@ -458,8 +476,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Win_create_errhandler error not yet implemented
 #define MPI_Win_get_errhandler error not yet implemented
 #define MPI_Win_set_errhandler error not yet implemented
-#define MPI_Get error not yet implemented
-#define MPI_Put error not yet implemented
 #define MPI_Dist_graph_create_adjacent error not yet implemented
 #define MPI_Dist_graph_create          error not yet implemented
 #define MPI_Dist_graph_neighbors_count error not yet implemented

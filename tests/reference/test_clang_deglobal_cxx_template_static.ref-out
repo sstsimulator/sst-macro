@@ -39,6 +39,20 @@ class D {
   static E e; public: static int __offset_e;
 };
 template <class T> int D<T>::var;template <class T> int D<T>::__offset_var = sstmac::inplace_cpp_global<D<T>,int>(false);
-template <class T> E D<T>::e = {};template <class T> int D<T>::__offset_e = sstmac::inplace_cpp_global<D<T>,class E>(false);
+template <class T> E D<T>::e = {};template <class T> int D<T>::__offset_e = sstmac::inplace_cpp_global<D<T>, E>(false);
+
+
+template <class T>
+struct F {
+  static A<int> a; public: static int __offset_a;
+};
+template <class T> A<int> F<T>::a;template <class T> int F<T>::__offset_a = sstmac::inplace_cpp_global<F<T>,A<int>>(false);
+
+template <class T>
+struct G {
+  using MemberType = A<int>;
+  static MemberType a; public: static int __offset_a;
+};
+template <class T> typename G<T>::MemberType G<T>::a;template <class T> int G<T>::__offset_a = sstmac::inplace_cpp_global<G<T>,typename G<T>::MemberType>(false);
 #include <sstmac/software/process/global.h>
 

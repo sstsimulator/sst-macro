@@ -96,6 +96,18 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
 
+  if not os.environ.has_key("SSTMAC_HEADERS"):
+    topdir = os.getcwd()
+    #unwind to look for a file named sstmac_headers
+    validPath = True
+    while os.getcwd() != "/":
+      if os.path.isfile("sstmac_headers"):
+        headerPath = os.path.join(os.getcwd(), "sstmac_headers")
+        os.environ["SSTMAC_HEADERS"] = headerPath
+        break
+      os.chdir("..")
+    os.chdir(topdir)
+
   def cleanFlag(flag):
     return flag.replace("${includedir}", includeDir).replace("${exec_prefix}", execPrefix).replace("${prefix}",prefix)
 

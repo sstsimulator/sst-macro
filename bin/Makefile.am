@@ -14,6 +14,7 @@ include $(top_srcdir)/Makefile.common
 bin_PROGRAMS = 
 
 dist_bin_SCRIPTS = \
+findHeaders \
 sst++ \
 libsst++ \
 dsst++ \

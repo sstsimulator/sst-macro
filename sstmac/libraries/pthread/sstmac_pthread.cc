@@ -181,14 +181,14 @@ SSTMAC_pthread_equal(sstmac_pthread_t thread_1, sstmac_pthread_t thread_2)
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type)
+SSTMAC_pthread_mutexattr_gettype(const sstmac_pthread_mutexattr_t* attr, int* type)
 {
   *type = SSTMAC_PTHREAD_MUTEX_NORMAL;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+SSTMAC_pthread_mutexattr_settype(sstmac_pthread_mutexattr_t *attr, int type)
 {
   if (type == SSTMAC_PTHREAD_MUTEX_NORMAL){
     return 0;

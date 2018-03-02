@@ -9,16 +9,16 @@
 #   SST/macroscale directory.
 #
 
-# This order is necessary to satisfy dependencies
-SUBDIRS = \
-machines \
-blas \
-sumi \
-pthread \
-omp \
-uq
+include $(top_srcdir)/Makefile.common
 
+noinst_LTLIBRARIES = libsstmac_omp.la
+library_includedir=$(includedir)/sstmac/libraries/omp
 
-library_includedir=$(includedir)/sstmac/libraries
-library_include_HEADERS =
+AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
+
+libsstmac_omp_la_LDFLAGS = 
+
+libsstmac_omp_la_SOURCES = \
+  libomp.cc
+
 

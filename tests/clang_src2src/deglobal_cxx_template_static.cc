@@ -42,8 +42,18 @@ template <class T> int D<T>::var;
 template <class T> E D<T>::e = {};
 
 
+template <class T>
+struct F {
+  static A<int> a;
+};
+template <class T> A<int> F<T>::a;
 
-
+template <class T>
+struct G {
+  using MemberType = A<int>;
+  static MemberType a;
+};
+template <class T> typename G<T>::MemberType G<T>::a;
 
 
 

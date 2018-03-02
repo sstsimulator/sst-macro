@@ -51,6 +51,86 @@ class CppGlobalImpl : public CppGlobal {
   int& offset_;
 };
 
+template <class T, int N, class Init>
+class CppGlobalImpl<T[N], Init> : public CppGlobal {
+  typedef T arr[N];
+ public:
+  CppGlobalImpl(int& offset, bool tls, Init init) :
+   offset_(offset)
+  {
+    registerCppGlobal(this, tls);
+    ::memcpy(init_, init, sizeof(init));
+  }
+
+  void allocate(void* ptr) override {
+    void* offsetPtr = (char*)ptr + offset_;
+    T* space = new (offsetPtr) T[N];
+    memcpy(space, init_, sizeof(arr));
+  }
+
+ private:
+  T init_[N];
+  int& offset_;
+};
+
+template <class T, size_t N, class... Args>
+struct array_filler {
+  static void fill(T* t, std::tuple<Args...>& args){
+    t[N-1] = std::get<N-1>(args);
+    array_filler<T,N-1,Args...>::fill(t, args);
+  }
+};
+
+template <class T, class... Args>
+struct array_filler<T,0,Args...> {
+  //no-op, we are done
+  static void fill(T* t, std::tuple<Args...>& args){}
+};
+
+template <class T, int N, class... Args>
+class CppGlobalImpl<T[N], Args...> : public CppGlobal {
+  typedef T arr[N];
+ public:
+  CppGlobalImpl(int& offset, bool tls, Args&&... args) :
+   offset_(offset),
+    args_(std::forward<Args>(args)...)
+  {
+    registerCppGlobal(this, tls);
+  }
+
+  void allocate(void* ptr) override {
+    void* offsetPtr = (char*)ptr + offset_;
+    T* space = new (offsetPtr) T[N];
+    array_filler<T,N,Args...>::fill(space, args_);
+  }
+
+ private:
+  std::tuple<Args...> args_;
+  int& offset_;
+};
+
+template <class T>
+class CppGlobalImpl<std::unique_ptr<T>, std::unique_ptr<T>> : public CppGlobal
+{
+ public:
+  CppGlobalImpl(int& offset, bool tls, std::unique_ptr<T> init) :
+   offset_(offset)
+  {
+    registerCppGlobal(this, tls);
+    ptr_.swap(init);
+  }
+
+  void allocate(void* ptr) override {
+    void* offsetPtr = (char*)ptr + offset_;
+    T* t = new T(*ptr_.get()); //really hope this defines a copy ctor
+    std::unique_ptr<T>* uptr = new (offsetPtr) std::unique_ptr<T>(t);
+  }
+
+ private:
+  std::unique_ptr<T> ptr_;
+  int& offset_;
+};
+
 
 template <class T>
 struct CppInplaceGlobalInitializer {

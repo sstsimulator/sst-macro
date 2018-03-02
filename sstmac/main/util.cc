@@ -146,10 +146,6 @@ void sstmac_free(void* ptr){
   if (isNonNullBuffer(ptr)) free(ptr);
 }
 
-double sstmac_omp_get_wtime(){
-  return sstmac_now();
-}
-
 int
 user_skeleton_main_init_fxn(const char* name, main_fxn fxn)
 {

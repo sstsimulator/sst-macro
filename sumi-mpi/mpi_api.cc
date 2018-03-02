@@ -538,10 +538,10 @@ void
 mpi_api::check_key(int key)
 {
   if (keyvals_.find(key) == keyvals_.end()) {
-    spkt_throw_printf(sprockit::spkt_error,
-        "mpi_api::check_key: could not find keyval %d in key_map", key);
+    spkt_abort_printf("mpi_api::check_key: could not find keyval %d in key_map", key);
   }
 }
+
 
 int
 mpi_api::error_string(int errorcode, char *str, int *resultlen)
