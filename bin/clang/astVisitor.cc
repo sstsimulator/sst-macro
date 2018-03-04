@@ -1328,6 +1328,26 @@ SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingCo
   */
 }
 
+CXXConstructExpr*
+SkeletonASTVisitor::getCtor(VarDecl *vd)
+{
+  clang::Expr* expr = vd->getInit();
+  while (1) {
+    switch(expr->getStmtClass()){
+    case Stmt::CXXConstructExprClass:
+      return cast<CXXConstructExpr>(expr);
+    case Stmt::ExprWithCleanupsClass: {
+      expr = cast<ExprWithCleanups>(expr)->getSubExpr();
+      break;
+    }
+    default:
+      return nullptr;
+    }
+  }
+}
+
+
+
 bool
 SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
                                    const std::string& clsScopePrefix,
@@ -1384,18 +1404,19 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   if (arrayInfo) {
     retType = arrayInfo->retType;
     deref = arrayInfo->needsDeref;
-  } else {
-    retType = GetAsString(D->getType()) + "*";
-  }
-
-  if (anonRecord){
+  }  else if (anonRecord){
     retType = anonRecord->retType;
     if (!anonRecord->typeNameAdded){
       anonRecord->typeNameAdded = true;
       SourceLocation openBrace = anonRecord->decl->getBraceRange().getBegin();
       rewriter_.InsertText(openBrace, "  " + anonRecord->typeName, false, false);
     }
+  } else if (D->getType()->isBooleanType()) {
+    retType = "bool*";
+  } else {
+    retType = GetAsString(D->getType()) + "*";
   }
+
 
   NamespaceDecl* outerNsDecl = getOuterNamespace(D);
   if (outerNsDecl){
@@ -1559,17 +1580,28 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
            << GetAsString(D->getType())
            << ">(" << "__offset_" << scopeUniqueVarName
            << "," << (threadLocal ? "true" : "false");
-      if (D->getInit()){
-        if (D->getInit()->getStmtClass() == Stmt::CXXConstructExprClass){
-          CXXConstructExpr* e = cast<CXXConstructExpr>(D->getInit());
-          if (e->getNumArgs() > 0){
+
+      //if (D->getNameAsString() == "default_group_"){
+      //  D->dump();
+      //}
+
+      CXXConstructExpr* ctor = getCtor(D);
+      if (ctor){
+        if (ctor->getNumArgs() > 0){
+          for (int i=0; i < ctor->getNumArgs(); ++i){
             pp.os << ",";
+            Expr* e = getUnderlyingExpr(ctor->getArg(i));
             pp.print(e);
           }
         }
       }
+
       pp.os << "); ";
-      rewriter_.InsertText(declEnd, pp.os.str());
+
+      std::string str = pp.os.str();
+      auto pos = str.find("struct"); //clang, why do you put struct everywhere
+      str = eraseAllStructQualifiers(str);
+      rewriter_.InsertText(declEnd, str);
     }
   }
 
@@ -1664,7 +1696,7 @@ SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
       for (auto iter = expr->explicit_capture_begin();
         iter != expr->explicit_capture_end(); ++iter){
         const LambdaCapture& cap = *iter;
-        if (cap.getCaptureKind() == LCD_ByRef){
+        if (cap.getCaptureKind() == LCK_ByRef){
           //reference doesn't cause any headaches
           continue;
         }
@@ -1932,25 +1964,40 @@ SkeletonASTVisitor::getTemplateParamsString(std::ostream& os, TemplateParameterL
 }
 
 std::string
-SkeletonASTVisitor::getCleanTypeName(QualType ty)
+SkeletonASTVisitor::eraseAllStructQualifiers(const std::string& name)
 {
-  //this is a nightmare
-  //trying to do this more elegantly directly from type info
-  //forget it, just do string replace
-  std::string name = GetAsString(ty);
+  auto pos = name.find("struct");
+  std::string ret = name;
+  while (pos != std::string::npos){
+    ret = ret.replace(pos, 6, " ");
+    pos = ret.find("struct");
+  }
+  return ret;
+}
+
+std::string
+SkeletonASTVisitor::getCleanName(const std::string& name)
+{
   auto pos = name.find("struct");
   if (pos != std::string::npos){
-    name = name.substr(pos + 6);
-    return name;
+    return name.substr(pos + 6);
   }
 
   pos = name.find("class");
   if (pos != std::string::npos){
-    name = name.substr(pos + 5);
-    return name;
+    return name.substr(pos + 5);
   }
 
   return name;
+}
+
+std::string
+SkeletonASTVisitor::getCleanTypeName(QualType ty)
+{
+  return getCleanName(GetAsString(ty));
+  //this is a nightmare
+  //trying to do this more elegantly directly from type info
+  //forget it, just do string replace
 
   /**
   if (ty->isStructureType() || ty->isClassType()){
@@ -3072,6 +3119,10 @@ SkeletonASTVisitor::getUnderlyingExpr(Expr *e)
     sub_case(e,ParenExpr);
     sub_case(e,CStyleCastExpr);
     sub_case(e,ImplicitCastExpr);
+    case Stmt::MaterializeTemporaryExprClass: {
+      MaterializeTemporaryExpr* mte = cast<MaterializeTemporaryExpr>(e);
+      e = mte->GetTemporaryExpr();
+    }
     default:
       return e;
     }

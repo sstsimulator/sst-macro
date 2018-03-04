@@ -131,6 +131,32 @@ class CppGlobalImpl<std::unique_ptr<T>, std::unique_ptr<T>> : public CppGlobal
   int& offset_;
 };
 
+template <class T, class... Args>
+class CppGlobalImpl<std::unique_ptr<T>,Args...> : public CppGlobal
+{
+ public:
+  CppGlobalImpl(int& offset, bool tls, Args&&... args) :
+   offset_(offset), args_(std::forward<Args>(args)...)
+  {
+    registerCppGlobal(this, tls);
+  }
+
+  void allocate(void* ptr) override {
+    void* offsetPtr = (char*)ptr + offset_;
+    T* t = ctor(globals::build_indices<sizeof...(Args)>{});
+    std::unique_ptr<T>* uptr = new (offsetPtr) std::unique_ptr<T>(t);
+  }
+
+ private:
+  template<std::size_t... Is>
+  T* ctor(globals::indices<Is...>) {
+    return new T(std::get<Is>(args_)...);
+  }
+
+  std::tuple<Args...> args_;
+  int& offset_;
+};
+
 
 template <class T>
 struct CppInplaceGlobalInitializer {

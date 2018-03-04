@@ -76,8 +76,7 @@ struct PrettyPrinter
     ty.print(os,Policy);
   }
 
-  std::string
-  print(const clang::BuiltinType* ty){
+  std::string print(const clang::BuiltinType* ty){
     return ty->getName(Policy).str();
   }
 
@@ -85,8 +84,7 @@ struct PrettyPrinter
     sos << os.str() << std::endl;
   }
 
-  std::string
-  str() {
+  std::string str() {
     return os.str();
   }
 

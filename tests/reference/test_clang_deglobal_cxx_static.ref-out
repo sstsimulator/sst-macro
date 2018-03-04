@@ -35,7 +35,7 @@ void fxn()
 struct DeclTyper {
   static int get(){ return 0; }
 };
-DeclTyper d;void* __ptr_d = &d; int __sizeof_d = sizeof(d); extern int __offset_d; sstmac::CppGlobal* d_sstmac_ctor = sstmac::new_cpp_global<struct DeclTyper>(__offset_d,false); 
+DeclTyper d;void* __ptr_d = &d; int __sizeof_d = sizeof(d); extern int __offset_d; sstmac::CppGlobal* d_sstmac_ctor = sstmac::new_cpp_global<  DeclTyper>(__offset_d,false); 
 
 int goReturn(){
   return decltype(d)::get();

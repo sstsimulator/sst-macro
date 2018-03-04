@@ -451,6 +451,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   std::string getCleanTypeName(clang::QualType ty);
 
+  std::string getCleanName(const std::string& in);
+
+  std::string eraseAllStructQualifiers(const std::string& name);
+
   /**
    * @brief addInContextGlobalDeclarations
    * For a given function or lambda body, add the necessary code at beginning/end
@@ -458,6 +462,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param body
    */
   void addInContextGlobalDeclarations(clang::Stmt* body);
+
+  clang::CXXConstructExpr* getCtor(clang::VarDecl* vd);
 
  private:
   //whether we are allowed to use global variables in statements
