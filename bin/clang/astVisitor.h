@@ -233,6 +233,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool TraverseCXXDeleteExpr(clang::CXXDeleteExpr* expr, DataRecursionQueue* = nullptr);
 
+  bool TraverseLambdaExpr(clang::LambdaExpr* expr);
+
   /**
    * @brief VisitCXXMemberCallExpr Certain function calls get redirected to
    * calls on member functions of SST classes. See if this is one such instance.
@@ -448,6 +450,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @return The name of the type without any struct,class decorators
    */
   std::string getCleanTypeName(clang::QualType ty);
+
+  /**
+   * @brief addInContextGlobalDeclarations
+   * For a given function or lambda body, add the necessary code at beginning/end
+   * to bring in all the required global variables
+   * @param body
+   */
+  void addInContextGlobalDeclarations(clang::Stmt* body);
 
  private:
   //whether we are allowed to use global variables in statements

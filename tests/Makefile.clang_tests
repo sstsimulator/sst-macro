@@ -10,6 +10,7 @@ CLANGTESTS = \
   deglobal_multi \
   deglobal_namespace \
   deglobal_array \
+  deglobal_lambda \
   deglobal_multi_array \
   deglobal_template \
   deglobal_fxn_static \

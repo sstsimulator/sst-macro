@@ -1251,7 +1251,7 @@ SkeletonASTVisitor::checkAnonStruct(VarDecl* D, AnonRecord* rec)
   }
 
   bool typedefd = typedefStructs_.find(recDecl) != typedefStructs_.end();
-  if (!typedefd){
+  if (!typedefd && !(recDecl->getKind() == Decl::CXXRecord)){
     //if this is a combined struct and variable declaration
     if (recDecl->getNameAsString() == "" || recDecl->getLocStart() == D->getLocStart()){
       //actually anonymous - no name given to it
@@ -1553,6 +1553,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     if (rd){
       //well, crap, we have to register a constructor to call
       PrettyPrinter pp;
+      if (D->getStorageClass() == SC_Static) pp.os << "static ";
       pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"
            << " = sstmac::new_cpp_global<"
            << GetAsString(D->getType())
@@ -1649,6 +1650,86 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   globals_[md] = replSstr.str();
 
   return skipInit;
+}
+
+bool
+SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
+{
+  LambdaCaptureDefault def = expr->getCaptureDefault();
+  switch (expr->getCaptureDefault()){
+    case LCD_None: {
+      EmplaceGuard<std::set<const clang::Decl*>> eg(globalsTouched_);
+      bool flag = RecursiveASTVisitor<SkeletonASTVisitor>::TraverseLambdaExpr(expr);
+      if (!flag) return flag;
+      for (auto iter = expr->explicit_capture_begin();
+        iter != expr->explicit_capture_end(); ++iter){
+        const LambdaCapture& cap = *iter;
+        if (cap.getCaptureKind() == LCD_ByRef){
+          //reference doesn't cause any headaches
+          continue;
+        }
+
+        //these globals should not be declared inside the lambda
+        if (!cap.capturesVariable()){
+          continue;
+          //errorAbort(cap.getLocation(), *ci_,
+          //           "variable does not capture anything");
+        }
+
+        VarDecl* vd = cap.getCapturedVar();
+        Expr* needed = vd->getInit();
+        if (!needed){
+          continue; //there is no init to worry about, I guess
+        }
+
+        bool cont = true;
+        while (cont && needed->getStmtClass() != Stmt::DeclRefExprClass){
+          switch (needed->getStmtClass()){
+            case Stmt::CXXConstructExprClass: {
+              CXXConstructExpr* next = cast<CXXConstructExpr>(needed);
+              needed = next->getArg(0);
+              break;
+            }
+            case Stmt::ImplicitCastExprClass: {
+              ImplicitCastExpr* next = cast<ImplicitCastExpr>(needed);
+              needed = next->getSubExpr();
+              break;
+            }
+            case Stmt::CXXDependentScopeMemberExprClass: {
+              CXXDependentScopeMemberExpr* next = cast<CXXDependentScopeMemberExpr>(needed);
+              needed = next->getBase();
+              break;
+            }
+            case Stmt::CallExprClass:
+            case Stmt::CXXBoolLiteralExprClass:
+              cont = false;
+              break; //do nothing
+            default: {
+              vd->dump();
+              needed->dump();
+              std::string error = "finding capture target of "
+                  + vd->getNameAsString() + " lead to bad expression type "
+                  + needed->getStmtClassName();
+              errorAbort(vd->getLocStart(), *ci_, error);
+            }
+          }
+        }
+        if (cont){
+          DeclRefExpr* dref = cast<DeclRefExpr>(needed);
+          globalsTouched_.back().erase(dref->getDecl()->getCanonicalDecl());
+        }
+      }
+      addInContextGlobalDeclarations(expr->getBody());
+      break;
+    }
+    case LCD_ByCopy:
+      //this can be confusing for global variables
+      //but an [=] capture of a global variable is "by reference"
+      //so no special work is need for this case
+    case LCD_ByRef:
+      return RecursiveASTVisitor<SkeletonASTVisitor>::TraverseLambdaExpr(expr);
+  }
+  return true;
 }
 
 clang::SourceLocation
@@ -2218,10 +2299,8 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
 }
 
 void
-SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
+SkeletonASTVisitor::addInContextGlobalDeclarations(clang::Stmt* body)
 {
-  EmplaceGuard<std::set<const clang::Decl*>> eg(globalsTouched_);
-  TraverseStmt(s);
   auto& currentGlobals = globalsTouched_.back();
   if (!currentGlobals.empty()){
     bool needGlobalData = false;
@@ -2242,9 +2321,17 @@ SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
         sstr << gs.replText << "; ";
       }
     }
-    rewriter_.InsertText(s->getLocStart(), sstr.str(), false);
-    rewriter_.InsertText(s->getLocEnd(), " }", true);
+    rewriter_.InsertText(body->getLocStart(), sstr.str(), false);
+    rewriter_.InsertText(body->getLocEnd(), " }", true);
   }
+}
+
+void
+SkeletonASTVisitor::traverseFunctionBody(clang::Stmt* s)
+{
+  EmplaceGuard<std::set<const clang::Decl*>> eg(globalsTouched_);
+  TraverseStmt(s);
+  addInContextGlobalDeclarations(s);
 }
 
 bool
