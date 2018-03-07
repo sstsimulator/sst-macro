@@ -364,8 +364,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif givenStdFlag:
       givenFlags.append(givenStdFlag)
     else:
-      sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
-      return 1
+      pass
+      #this flag is no longer required in newer compilers, c++11 might be default
+      #sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
+      #return 1
   else:
     if givenStdFlag:
       givenFlags.append(givenStdFlag)

@@ -6,7 +6,7 @@ struct A {
 } aInst{};void* __ptr_aInst = &aInst; int __sizeof_aInst = sizeof(aInst); extern int __offset_aInst; sstmac::CppGlobal* aInst_sstmac_ctor = sstmac::new_cpp_global<  A>(__offset_aInst,false); 
 
 void fxn()
-{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); struct A* sstmac_aInst=(struct A*)(sstmac_global_data + __offset_aInst); {
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); decltype(aInst)* sstmac_aInst=(decltype(aInst)*)(sstmac_global_data + __offset_aInst); {
   auto l1 = [&]{
     (*sstmac_aInst).x = 0;
     (*sstmac_x) += 5;
@@ -17,7 +17,7 @@ void fxn()
     (*sstmac_x) += 5;
   };
 
-  auto l3 = []{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); struct A* sstmac_aInst=(struct A*)(sstmac_global_data + __offset_aInst); {
+  auto l3 = []{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_x=(int*)(sstmac_global_data + __offset_x); decltype(aInst)* sstmac_aInst=(decltype(aInst)*)(sstmac_global_data + __offset_aInst); {
     (*sstmac_aInst).x = 0;
     (*sstmac_x) += 5;
    }};
@@ -27,7 +27,7 @@ void fxn()
     (*sstmac_x) += 5;
    }};
 
-  auto l5 = [x=(*sstmac_x)]{ char* sstmac_global_data = get_sstmac_global_data();struct A* sstmac_aInst=(struct A*)(sstmac_global_data + __offset_aInst); {
+  auto l5 = [x=(*sstmac_x)]{ char* sstmac_global_data = get_sstmac_global_data();decltype(aInst)* sstmac_aInst=(decltype(aInst)*)(sstmac_global_data + __offset_aInst); {
     (*sstmac_aInst).x = 0;
     int y = x;
    }};

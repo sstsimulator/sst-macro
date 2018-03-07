@@ -159,6 +159,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return *ci_;
   }
 
+  bool isCxx() const {
+    return ci_->getLangOpts().CPlusPlus;
+  }
+
   std::string needGlobalReplacement(clang::NamedDecl* decl) {
     const clang::Decl* md = mainDecl(decl);
     if (globalsTouched_.empty()){
@@ -171,7 +175,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
       errorAbort(decl->getLocStart(), *ci_,
                  "getting global replacement for non-global variable");
     }
-    return iter->second;
+    return iter->second.text;
   }
 
   bool noSkeletonize() const {
@@ -455,6 +459,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   std::string eraseAllStructQualifiers(const std::string& name);
 
+  void addCppGlobalCallExprString(PrettyPrinter& pp, clang::CallExpr* expr, clang::QualType qt);
+
+  void addCppGlobalCtorString(PrettyPrinter& pp, clang::CXXConstructExpr* expr);
+
   /**
    * @brief addInContextGlobalDeclarations
    * For a given function or lambda body, add the necessary code at beginning/end
@@ -480,7 +488,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   GlobalVarNamespace* currentNs_;
 
   /** These should always index by the canonical decl */
-  std::map<const clang::Decl*,std::string> globals_;
+  struct GlobalReplacement {
+    std::string text;
+    bool append;
+    GlobalReplacement(const std::string& str, bool app = false) :
+      append(app), text(str) {}
+  };
+
+  std::map<const clang::Decl*,GlobalReplacement> globals_;
   std::set<const clang::Decl*> variableTemplates_;
   std::map<const clang::Decl*,std::string> scopedNames_;
 

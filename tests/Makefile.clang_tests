@@ -11,6 +11,7 @@ CLANGTESTS = \
   deglobal_namespace \
   deglobal_array \
   deglobal_lambda \
+  deglobal_unique_ptr \
   deglobal_multi_array \
   deglobal_template \
   deglobal_fxn_static \

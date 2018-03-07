@@ -1085,7 +1085,7 @@ SkeletonASTVisitor::getTypeNameForSizing(SourceLocation typeDeclCutoff, QualType
     getArrayType(qt.getTypePtr(), cfg);
     std::string retType = getTypeNameForSizing(typeDeclCutoff, cfg.fundamentalType, newTypes);
     return retType + cfg.arrayIndices.str();
-  } else if (qt->isFundamentalType()){
+  } else if (qt->isFundamentalType() || qt->isEnumeralType()){
     //easy peasy
     return GetAsString(qt);
   } else if (qt->isPointerType()){
@@ -1109,6 +1109,11 @@ SkeletonASTVisitor::getTypeNameForSizing(SourceLocation typeDeclCutoff, QualType
     std::stringstream sstr;
     sstr << "struct sstTmpStructType" << rt.typeIndex;
     return sstr.str();
+  } else if (isa<TypedefType>(qt.getTypePtr())){
+    const TypedefType* tdef = cast<const TypedefType>(qt.getTypePtr());
+    TypedefNameDecl* decl = tdef->getDecl();
+    const Type* next = decl->getTypeForDecl();
+    return getTypeNameForSizing(typeDeclCutoff, QualType(next, 0), newTypes);
   } else {
     std::string error = "bad type for static function variable: " + GetTypeString(qt.split());
     errorAbort(typeDeclCutoff, *ci_, error);
@@ -1273,6 +1278,36 @@ static std::string getExprString(Expr* e)
 }
 
 void
+SkeletonASTVisitor::addCppGlobalCallExprString(PrettyPrinter& pp, CallExpr* expr, QualType ty)
+{
+  pp.os << ",(std::function<void(void*)>)[](void* ptr){"
+        << " auto tptr = (" << GetAsString(ty) << "*)ptr; ";
+  pp.os << " *tptr = "; pp.print(expr); pp.os << ";";
+  pp.os << "}";
+}
+
+void
+SkeletonASTVisitor::addCppGlobalCtorString(PrettyPrinter& pp, CXXConstructExpr* ctor)
+{
+  if (ctor->getNumArgs() > 0){
+    Expr* mainArg = getUnderlyingExpr(ctor->getArg(0));
+    if (ctor->getNumArgs() == 1 && mainArg->getStmtClass() == Stmt::CallExprClass){
+      //ugh, well, I know this is C++ - but the call expression needs to happen at ctor time
+      //which might not happen for a little while longer
+      //I need to create a lambda that will execute the ctor when needed
+      //cast the lambda to an std::function to make partial template specialization work
+      addCppGlobalCallExprString(pp, cast<CallExpr>(mainArg), ctor->getType());
+    } else {
+      for (int i=0; i < ctor->getNumArgs(); ++i){
+        pp.os << ",";
+        Expr* e = getUnderlyingExpr(ctor->getArg(i));
+        pp.print(e);
+      }
+    }
+  }
+}
+
+void
 SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingComma)
 {
   if (!D->hasInit()){
@@ -1283,12 +1318,12 @@ SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingCo
 
   switch (ue->getStmtClass()){
   case Stmt::CXXConstructExprClass: {
+    PrettyPrinter pp;
     CXXConstructExpr* ctor = cast<CXXConstructExpr>(ue);
     if (ctor->getNumArgs() == 0) return;
-    for (int i=0; i < ctor->getNumArgs(); ++i){
-      if (i > 0 || leadingComma) os << ",";
-      os << getExprString(ctor->getArg(i));
-    }
+    addCppGlobalCtorString(pp, ctor);
+    os << pp.str();
+    break;
   }
   case Stmt::InitListExprClass: {
     InitListExpr* init = cast<InitListExpr>(ue);
@@ -1298,6 +1333,12 @@ SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingCo
       if (i > 0 || leadingComma) os << ",";
       os << getExprString(init->getInit(i));
     }
+    break;
+  }
+  case Stmt::CallExprClass: {
+    PrettyPrinter pp;
+    addCppGlobalCallExprString(pp, cast<CallExpr>(ue), D->getType());
+    os << pp.str();
     break;
   }
   default: {
@@ -1413,6 +1454,19 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
     }
   } else if (D->getType()->isBooleanType()) {
     retType = "bool*";
+  } else if (isCxx() && D->getType()->isStructureOrClassType()) {
+    //it's effing obnoxious that I have to do this
+    //the problem is that Clang in its stupidity doesn't print this type with correct namespacing
+    //this produces obnoxious incomplete type or unknown type errors later
+    //rather than directly calling D->getType()....
+    std::stringstream sstr;
+    sstr << "decltype(" << currentNs_->nsPrefix();
+    if (D->isStaticDataMember()){
+      CXXRecordDecl* crd = cast<CXXRecordDecl>(D->getDeclContext());
+      sstr << crd->getNameAsString() << "::";
+    }
+    sstr << D->getNameAsString() << ")*";
+    retType = sstr.str();
   } else {
     retType = GetAsString(D->getType()) + "*";
   }
@@ -1440,6 +1494,7 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
   bool needExternalDecls = true;
   bool checkCxxCtor = true;
   bool needClsScope = true;
+  bool useAccessor = false;
   if (!D->hasExternalStorage()){
     std::stringstream os;
     bool isVolatile = D->getType().isVolatileQualified();
@@ -1502,18 +1557,27 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
         var.isFxnStatic = true;
         break;
       case CxxStatic:
-        if (D->getDeclContext()->isDependentContext()){
-          //oh, templates
-          //this variable is private and templated
-          //and should never be accessed with scope
-          needClsScope = false;
-        }
         needExternalDecls = false;
         checkCxxCtor = false;
         //create an offset for the global variable
         //also, crap, this has to be public
         os << " public: "
            << "static int __offset_" << D->getNameAsString() << ";";
+        if (D->getDeclContext()->isDependentContext()){
+          //oh, templates
+          //this variable is private and templated
+          //and should never be accessed with scope
+          needClsScope = false;
+          //create an accessor method for
+          //use decltype for return... this can create weirdness
+          os << "static decltype(" << D->getNameAsString() << ")& "
+              << D->getNameAsString() << "_getter(){ "
+              << " char* data = " << (threadLocal ? "get_sstmac_tls_data(); " : "get_sstmac_global_data(); ")
+              << " void* offsetPtr = data + __offset_" << D->getNameAsString() << ";"
+              << "return *((decltype(" << D->getNameAsString() << ")*)(offsetPtr));"
+              << "}";
+          useAccessor = true;
+        }
         break;
     }
     //all of this text goes immediately after the variable
@@ -1581,26 +1645,20 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
            << ">(" << "__offset_" << scopeUniqueVarName
            << "," << (threadLocal ? "true" : "false");
 
-      //if (D->getNameAsString() == "default_group_"){
-      //  D->dump();
-      //}
-
       CXXConstructExpr* ctor = getCtor(D);
       if (ctor){
-        if (ctor->getNumArgs() > 0){
-          for (int i=0; i < ctor->getNumArgs(); ++i){
-            pp.os << ",";
-            Expr* e = getUnderlyingExpr(ctor->getArg(i));
-            pp.print(e);
-          }
-        }
+        addCppGlobalCtorString(pp, ctor);
+
       }
 
       pp.os << "); ";
 
       std::string str = pp.os.str();
-      auto pos = str.find("struct"); //clang, why do you put struct everywhere
-      str = eraseAllStructQualifiers(str);
+      auto pos = str.find("struct "); //clang, why do you put struct everywhere
+      if (pos != std::string::npos){
+        str = eraseAllStructQualifiers(str);
+      }
+
       rewriter_.InsertText(declEnd, str);
     }
   }
@@ -1611,75 +1669,80 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
 
   const Decl* md = mainDecl(D);
 
-  std::string standinName = "sstmac_";
-  if (needClsScope){
-    std::string uniqueNsPrefix = currentNs_->nsPrefix() + clsScopePrefix;
-    for (int i=0; i < uniqueNsPrefix.size(); ++i){
-      char& next = uniqueNsPrefix.at(i);
-      if (next == ':') next = '_';
+  if (useAccessor){
+    globals_.insert({md, GlobalReplacement("_getter()", true)});
+  } else {
+    std::string standinName = "sstmac_";
+    if (needClsScope){
+      std::string uniqueNsPrefix = currentNs_->nsPrefix() + clsScopePrefix;
+      for (int i=0; i < uniqueNsPrefix.size(); ++i){
+        char& next = uniqueNsPrefix.at(i);
+        if (next == ':') next = '_';
+      }
+      standinName += uniqueNsPrefix;
     }
-    standinName += uniqueNsPrefix;
-  }
-  standinName += scopeUniqueVarName;
+    standinName += scopeUniqueVarName;
 
-  //fxn pointers mess up everything
-  std::string::size_type fxnPtrPos = std::string::npos;
-  if (D->getType()->isPointerType()){
-    const Type* subTy = getBaseType(D);
-    if (subTy->isFunctionPointerType() || subTy->isFunctionProtoType()){
-      bool isTypeDef = isa<TypedefType>(subTy);
-      if (!isTypeDef){
-        fxnPtrPos = retType.find("**");
+    //fxn pointers mess up everything
+    std::string::size_type fxnPtrPos = std::string::npos;
+    if (D->getType()->isPointerType()){
+      const Type* subTy = getBaseType(D);
+      if (subTy->isFunctionPointerType() || subTy->isFunctionProtoType()){
+        bool isTypeDef = isa<TypedefType>(subTy);
+        if (!isTypeDef){
+          fxnPtrPos = retType.find("**");
+        }
       }
     }
+
+    std::stringstream standinSstr;
+    if (fxnPtrPos != std::string::npos){
+      //pointer to a function pointer
+      //the substr chops off a trailing "*" that was added up above
+      //instead the * needs to go inside parenthesis for function pointer
+      retType = retType.substr(0, retType.size() - 1);
+      //variable declaration has to look like void(***varname)(int)
+      std::string fullDecl = retType; //have to copy this
+      std::string repl = "***" + standinName;
+      fullDecl = fullDecl.replace(fxnPtrPos, 2, repl);
+      standinSstr << fullDecl;
+      //and the return type needs to be void(***)(int)
+      retType = retType.replace(fxnPtrPos, 2, "***");
+    } else {
+      standinSstr << retType << " " << standinName;
+    }
+    standinSstr << "=(" << retType << ")";
+    if (threadLocal){
+      standinSstr << "(sstmac_tls_data + ";
+    } else {
+      standinSstr << "(sstmac_global_data + ";
+    }
+    if (needClsScope){
+      standinSstr << currentNs_->nsPrefix()
+                  << clsScopePrefix;
+    }
+    standinSstr << "__offset_" << scopeUniqueVarName << ")";
+
+    GlobalStandin& newStandin = globalStandins_[md];
+    newStandin.replText = standinSstr.str();
+    newStandin.threadLocal = threadLocal;
+
+    if (global_var_ty == FxnStatic){
+      newStandin.fxnStatic = true;
+      //we need to put the global standin text here!
+      std::string newText = newStandin.replText + "; ";
+      rewriter_.InsertText(declEnd, newText);
+      //it's possible this never gets referenced because of silly code
+      //make sure this gets added to globals touched lists
+      //regardless of whether it shows up in a DeclRefExpr
+      globalsTouched_.back().insert(md);
+    }
+
+    std::stringstream replSstr;
+    replSstr << "(*" << standinName << ")";
+    globals_.insert({md, GlobalReplacement(replSstr.str(), false)});
   }
 
-  std::stringstream standinSstr;
-  if (fxnPtrPos != std::string::npos){
-    //pointer to a function pointer
-    //the substr chops off a trailing "*" that was added up above
-    //instead the * needs to go inside parenthesis for function pointer
-    retType = retType.substr(0, retType.size() - 1);
-    //variable declaration has to look like void(***varname)(int)
-    std::string fullDecl = retType; //have to copy this
-    std::string repl = "***" + standinName;
-    fullDecl = fullDecl.replace(fxnPtrPos, 2, repl);
-    standinSstr << fullDecl;
-    //and the return type needs to be void(***)(int)
-    retType = retType.replace(fxnPtrPos, 2, "***");
-  } else {
-    standinSstr << retType << " " << standinName;
-  }
-  standinSstr << "=(" << retType << ")";
-  if (threadLocal){
-    standinSstr << "(sstmac_tls_data + ";
-  } else {
-    standinSstr << "(sstmac_global_data + ";
-  }
-  if (needClsScope){
-    standinSstr << currentNs_->nsPrefix()
-                << clsScopePrefix;
-  }
-  standinSstr << "__offset_" << scopeUniqueVarName << ")";
-
-  GlobalStandin& newStandin = globalStandins_[md];
-  newStandin.replText = standinSstr.str();
-  newStandin.threadLocal = threadLocal;
-
-  if (global_var_ty == FxnStatic){
-    newStandin.fxnStatic = true;
-    //we need to put the global standin text here!
-    std::string newText = newStandin.replText + "; ";
-    rewriter_.InsertText(declEnd, newText);
-    //it's possible this never gets referenced because of silly code
-    //make sure this gets added to globals touched lists
-    //regardless of whether it shows up in a DeclRefExpr
-    globalsTouched_.back().insert(md);
-  }
-
-  std::stringstream replSstr;
-  replSstr << "(*" << standinName << ")";
-  globals_[md] = replSstr.str();
 
   return skipInit;
 }
@@ -1733,7 +1796,10 @@ SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
               break;
             }
             case Stmt::CallExprClass:
+            case Stmt::MemberExprClass:
             case Stmt::CXXBoolLiteralExprClass:
+            case Stmt::ExprWithCleanupsClass:
+            case Stmt::CXXMemberCallExprClass:
               cont = false;
               break; //do nothing
             default: {
@@ -1966,11 +2032,11 @@ SkeletonASTVisitor::getTemplateParamsString(std::ostream& os, TemplateParameterL
 std::string
 SkeletonASTVisitor::eraseAllStructQualifiers(const std::string& name)
 {
-  auto pos = name.find("struct");
+  auto pos = name.find("struct ");
   std::string ret = name;
   while (pos != std::string::npos){
     ret = ret.replace(pos, 6, " ");
-    pos = ret.find("struct");
+    pos = ret.find("struct ");
   }
   return ret;
 }
@@ -3119,9 +3185,11 @@ SkeletonASTVisitor::getUnderlyingExpr(Expr *e)
     sub_case(e,ParenExpr);
     sub_case(e,CStyleCastExpr);
     sub_case(e,ImplicitCastExpr);
+    sub_case(e,CXXBindTemporaryExpr);
     case Stmt::MaterializeTemporaryExprClass: {
       MaterializeTemporaryExpr* mte = cast<MaterializeTemporaryExpr>(e);
       e = mte->GetTemporaryExpr();
+      break;
     }
     default:
       return e;
@@ -3161,6 +3229,7 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
         return;
       }
 
+      /** Don't do this check anymore, redirect to an accessor method
       if (msi){ //for now, we have to check if this outside class
         DeclContext* dc = vd->getDeclContext();
         bool bad = true;
@@ -3175,15 +3244,26 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
               "template static variables cannot currently be accessed outside of class");
         }
       }
+      */
 
 
       globalsTouched_.back().insert(md);
+      GlobalReplacement& repl = iter->second;
+      std::string replText = repl.text;
+      if (repl.append){
+        //there is a bug in clang that gives me a wrong getLocEnd()
+        //so instead I have to replace...
+        PrettyPrinter pp;
+        pp.print(expr);
+        pp.os << repl.text;
+        replText = pp.os.str();
+      }
       //there is a bug in Clang I can't quite track down
       //it is erroneously causing DeclRefExpr to get visited twice
       //when they occur inside a struct decl
       auto done = alreadyReplaced_.find(expr);
       if (done == alreadyReplaced_.end()){
-        replace(replRng, iter->second);
+        replace(replRng, replText);
         alreadyReplaced_.insert(expr);
       }
     }

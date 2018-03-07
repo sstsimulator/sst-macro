@@ -5,7 +5,7 @@
     int a;
     int x[3];
   };
-  static boo bird;static int sstmac_inited_bird = 0;if (!sstmac_inited_bird){  sstmac_init_global_space(&bird,__sizeof_xyz_fxnbird,__offset_xyz_fxnbird,0);  sstmac_inited_bird = 1; }static sstmac::CppGlobal* bird_sstmac_ctor = sstmac::new_cpp_global<  boo>(__offset_xyz_fxnbird,false); struct boo* sstmac_xyz_fxnbird=(struct boo*)(sstmac_global_data + __offset_xyz_fxnbird); 
+  static boo bird;static int sstmac_inited_bird = 0;if (!sstmac_inited_bird){  sstmac_init_global_space(&bird,__sizeof_xyz_fxnbird,__offset_xyz_fxnbird,0);  sstmac_inited_bird = 1; }static sstmac::CppGlobal* bird_sstmac_ctor = sstmac::new_cpp_global<  boo>(__offset_xyz_fxnbird,false); decltype(bird)* sstmac_xyz_fxnbird=(decltype(bird)*)(sstmac_global_data + __offset_xyz_fxnbird); 
 
   static struct ugh {
     int a;
@@ -15,7 +15,7 @@
   static struct again {
     ugh a[1];
     boo d[5];
-  } yo;static int sstmac_inited_yo = 0;if (!sstmac_inited_yo){  sstmac_init_global_space(&yo,__sizeof_xyz_fxnyo,__offset_xyz_fxnyo,0);  sstmac_inited_yo = 1; }static sstmac::CppGlobal* yo_sstmac_ctor = sstmac::new_cpp_global<  again>(__offset_xyz_fxnyo,false); struct again* sstmac_xyz_fxnyo=(struct again*)(sstmac_global_data + __offset_xyz_fxnyo); 
+  } yo;static int sstmac_inited_yo = 0;if (!sstmac_inited_yo){  sstmac_init_global_space(&yo,__sizeof_xyz_fxnyo,__offset_xyz_fxnyo,0);  sstmac_inited_yo = 1; }static sstmac::CppGlobal* yo_sstmac_ctor = sstmac::new_cpp_global<  again>(__offset_xyz_fxnyo,false); decltype(yo)* sstmac_xyz_fxnyo=(decltype(yo)*)(sstmac_global_data + __offset_xyz_fxnyo); 
  }}
 #include <sstmac/software/process/global.h>
 

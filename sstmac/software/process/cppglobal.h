@@ -2,8 +2,8 @@
 #define sstmac_software_process_CPPGLOBAL_H
 
 #include <tuple>
-#include <iostream>
 #include <sstmac/software/process/global.h>
+#include <functional>
 
 namespace sstmac {
 
@@ -110,50 +110,22 @@ class CppGlobalImpl<T[N], Args...> : public CppGlobal {
 };
 
 template <class T>
-class CppGlobalImpl<std::unique_ptr<T>, std::unique_ptr<T>> : public CppGlobal
+class CppGlobalImpl<T,std::function<void(void*)>> : public CppGlobal
 {
  public:
-  CppGlobalImpl(int& offset, bool tls, std::unique_ptr<T> init) :
-   offset_(offset)
-  {
-    registerCppGlobal(this, tls);
-    ptr_.swap(init);
-  }
-
-  void allocate(void* ptr) override {
-    void* offsetPtr = (char*)ptr + offset_;
-    T* t = new T(*ptr_.get()); //really hope this defines a copy ctor
-    std::unique_ptr<T>* uptr = new (offsetPtr) std::unique_ptr<T>(t);
-  }
-
- private:
-  std::unique_ptr<T> ptr_;
-  int& offset_;
-};
-
-template <class T, class... Args>
-class CppGlobalImpl<std::unique_ptr<T>,Args...> : public CppGlobal
-{
- public:
-  CppGlobalImpl(int& offset, bool tls, Args&&... args) :
-   offset_(offset), args_(std::forward<Args>(args)...)
+  CppGlobalImpl(int& offset, bool tls, std::function<void(void*)> fxn) :
+   offset_(offset), fxn_(fxn)
   {
     registerCppGlobal(this, tls);
   }
 
   void allocate(void* ptr) override {
     void* offsetPtr = (char*)ptr + offset_;
-    T* t = ctor(globals::build_indices<sizeof...(Args)>{});
-    std::unique_ptr<T>* uptr = new (offsetPtr) std::unique_ptr<T>(t);
+    fxn_(offsetPtr);
   }
 
  private:
-  template<std::size_t... Is>
-  T* ctor(globals::indices<Is...>) {
-    return new T(std::get<Is>(args_)...);
-  }
-
-  std::tuple<Args...> args_;
+  std::function<void(void*)> fxn_;
   int& offset_;
 };
 

@@ -52,8 +52,15 @@ template <class T>
 struct G {
   using MemberType = A<int>;
   static MemberType a;
+  static int b;
 };
 template <class T> typename G<T>::MemberType G<T>::a;
+template <class T> int G<T>::b = 0;
+
+void fxn(){
+  G<int>::a.fxn();
+  G<double>::b += 1;
+}
 
 
 
