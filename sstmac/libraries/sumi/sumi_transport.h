@@ -167,6 +167,12 @@ class sumi_transport :
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os);
 
+  sumi_transport(sprockit::sim_parameters* params,
+                 sstmac::sw::software_id sid,
+                 sstmac::sw::operating_system* os,
+                 const std::string& prefix,
+                 const std::string& server_name);
+
   /**
    * @brief sumi_transport Ctor with strict library name. We do not create a server here.
    * Since this has been explicitly named, messages will be directly to a named library.
@@ -178,7 +184,8 @@ class sumi_transport :
   sumi_transport(sprockit::sim_parameters* params,
                  const std::string& libname,
                  sstmac::sw::software_id sid,
-                 sstmac::sw::operating_system* os);
+                 sstmac::sw::operating_system* os,
+                 const std::string& server_name = std::string("sumi_server"));
 
   sumi::public_buffer make_public_buffer(void* buffer, int size) override {
     pin_rdma(size);
