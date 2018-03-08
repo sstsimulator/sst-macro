@@ -97,6 +97,8 @@ nobase_library_include_HEADERS = \
   process/thread_info.h \
   process/tls.h \
   process/thread.h \
+  process/std_thread.h \
+  process/std_mutex.h \
   process/thread_fwd.h \
   process/thread_id.h \
   process/global.h \

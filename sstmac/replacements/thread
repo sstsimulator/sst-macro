@@ -8,7 +8,7 @@
 #include <sstmac/replacements/clear_symbol_macros.h>
 #endif
 
-#include_next <thread>
+#include <sstmac/software/process/std_thread.h>
 
 #ifdef THREAD_OWNS_STL
 #undef THREAD_OWNS_STL

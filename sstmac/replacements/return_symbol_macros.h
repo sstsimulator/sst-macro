@@ -22,3 +22,8 @@
 #undef sstmac_must_return_gethostname
 #endif
 
+#ifdef sstmac_must_return_mutex
+#define mutex sstmac_mutex
+#undef sstmac_must_return_mutex
+#endif
+

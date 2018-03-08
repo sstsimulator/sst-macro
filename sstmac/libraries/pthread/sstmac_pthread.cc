@@ -299,7 +299,7 @@ SSTMAC_pthread_mutex_trylock(sstmac_pthread_mutex_t * mutex)
 
   thread* thr = current_thread();
   mutex_t* mut = thr->parent_app()->get_mutex(*mutex);
-  if (mut == 0){
+  if (mut == nullptr){
     return EINVAL;
   } else if (mut->locked){
     return 1;

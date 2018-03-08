@@ -43,6 +43,8 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/common/thread_safe_int.h>
+#include <sstmac/software/process/std_thread.h>
+#include <sstmac/software/process/std_mutex.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/key.h>
@@ -50,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/api/api.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/common/sst_event.h>
 #include <sprockit/errors.h>
 #include <sprockit/output.h>
@@ -311,12 +314,86 @@ thread::start_thread(thread* thr)
 void
 thread::join()
 {
-  if (!this->is_initialized()) {
+  //JJW 03/08/2018 It can now happen with std::thread wrappers
+  //that you trying joining a thread before it has even initialized
+  //I don't think this is actually an error
+  //if (!this->is_initialized()) {
     // We can't context switch the caller out without first being initialized
-    spkt_throw_printf(sprockit::illformed_error,
-                     "thread::join: target thread has not been initialized.");
-  }
+  //  spkt_throw_printf(sprockit::illformed_error,
+  //                   "thread::join: target thread has not been initialized.");
+  //}
   os_->join_thread(this);
+}
+
+std_thread_base::std_thread_base(thread* thr) :
+  thread(thr->parent_app()->params(),
+         software_id(thr->aid(), thr->tid(), -1),
+         thr->os())
+
+{
+  parent_app_ = thr->parent_app();
+  //std threads need to be joinable
+  set_detach_state(JOINABLE);
+}
+
+std_thread_ctor_wrapper::std_thread_ctor_wrapper() :
+  std_thread_base(operating_system::current_thread())
+{
+}
+
+void start_std_thread(thread *thr)
+{
+  thr->os()->start_thread(thr);
+}
+
+std_mutex::std_mutex()
+{
+  parent_app_ = operating_system::current_thread()->parent_app();
+  id_ = parent_app_->allocate_mutex();
+}
+
+void std_mutex::lock()
+{
+  mutex_t* mut = parent_app_->get_mutex(id_);
+  if (mut == nullptr){
+    spkt_abort_printf("error: bad mutex id for std::mutex: %d", id_);
+  } else if (mut->locked) {
+    mut->waiters.push_back(operating_system::current_thread());
+    parent_app_->os()->block();
+  } else {
+    mut->locked = true;
+  }
+}
+
+std_mutex::~std_mutex()
+{
+  parent_app_->erase_mutex(id_);
+}
+
+void std_mutex::unlock()
+{
+  mutex_t* mut = parent_app_->get_mutex(id_);
+  if (mut == nullptr || !mut->locked){
+    return;
+  } else if (!mut->waiters.empty()){
+    thread* blocker = mut->waiters.front();
+    mut->waiters.pop_front();
+    parent_app_->os()->unblock(blocker);
+  } else {
+    mut->locked = false;
+  }
+}
+
+bool std_mutex::try_lock()
+{
+  mutex_t* mut = parent_app_->get_mutex(id_);
+  if (mut == nullptr){
+    return false;
+  } else if (mut->locked){
+    return false;
+  } else {
+    return true;
+  }
 }
 
 }

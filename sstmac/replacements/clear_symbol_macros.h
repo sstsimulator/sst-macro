@@ -19,3 +19,8 @@
 #define sstmac_must_return_gethostname
 #endif
 
+#ifdef mutex
+#undef mutex
+#define sstmac_must_return_mutex
+#endif
+

@@ -10,6 +10,10 @@
 
 #include_next <mutex>
 
+#include <sstmac/software/process/std_mutex.h>
+#define mutex sstmac_mutex
+
+
 #ifdef MUTEX_OWNS_STL
 #undef MUTEX_OWNS_STL
 #undef SSTMAC_INSIDE_STL
