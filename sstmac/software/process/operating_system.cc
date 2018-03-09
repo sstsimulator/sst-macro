@@ -690,7 +690,8 @@ operating_system::start_thread(thread* t)
       des_context_,
       stack,
       stack_alloc::stacksize(),
-      parent->globals_storage());
+      parent->globals_storage(),
+      parent->new_tls_storage());
   }
 
   if (gdb_active_){

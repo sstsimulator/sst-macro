@@ -248,7 +248,7 @@ class thread
 
   void init_thread(sprockit::sim_parameters* params, int phyiscal_thread_id,
     thread_context* tocopy, void *stack, int stacksize,
-    void* globals_storage);
+    void* globals_storage, void* tls_storage);
 
   virtual void run() = 0;
 

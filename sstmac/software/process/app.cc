@@ -98,6 +98,36 @@ app::allocate_tls_key(destructor_fxn fxn)
   return next;
 }
 
+static char* get_data_segment(sprockit::sim_parameters* params,
+                              const char* param_name, GlobalVariableContext& ctx)
+{
+  int allocSize = ctx.allocSize();
+  if (params->has_param(param_name)){
+    allocSize = params->get_int_param(param_name);
+    if (ctx.allocSize() != allocSize){
+      ctx.setAllocSize(allocSize);
+    }
+  }
+  if (allocSize != 0){
+    char* segment = new char[allocSize];
+    ::memcpy(segment, GlobalVariable::glblCtx.globalInit(),
+             GlobalVariable::glblCtx.globalsSize());
+    return segment;
+  } else {
+    return nullptr;
+  }
+}
+
+char*
+app::allocate_data_segment(bool tls)
+{
+  if (tls){
+    return get_data_segment(params_, "tls_size", GlobalVariable::tlsCtx);
+  } else {
+    return get_data_segment(params_, "globals_size", GlobalVariable::glblCtx);
+  }
+}
+
 app::app(sprockit::sim_parameters *params, software_id sid,
          operating_system* os) :
   thread(params, sid, os),
@@ -111,21 +141,14 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   omp_num_threads_(1),
   rc_(0)
 {
-  int allocSize = GlobalVariable::glblCtx.allocSize();
-  if (params->has_param("globals_size")){
-    allocSize = params->get_int_param("globals_size");
-    GlobalVariable::glblCtx.setAllocSize(allocSize);
-  }
-  if (allocSize != 0){
-    globals_storage_ = new char[allocSize];
-    ::memcpy(globals_storage_, GlobalVariable::glblCtx.globalInit(),
-             GlobalVariable::glblCtx.globalsSize());
-  }
+  globals_storage_ = allocate_data_segment(false); //not tls
   min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
   bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
   if (host_compute){
     host_timer_ = new HostTimer;
   }
+
+
 
   notify_ = params->get_optional_bool_param("notify", true);
 

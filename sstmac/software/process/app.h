@@ -205,6 +205,10 @@ class app : public thread
     return globals_storage_;
   }
 
+  void* new_tls_storage() {
+    return allocate_data_segment(true);
+  }
+
   const std::string& unique_name() const {
     return unique_name_;
   }
@@ -224,6 +228,8 @@ class app : public thread
   sprockit::sim_parameters* params_;
 
  private:
+  char* allocate_data_segment(bool tls);
+
   lib_compute_memmove* compute_lib_;
   std::string unique_name_;
 

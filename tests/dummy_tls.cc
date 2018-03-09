@@ -42,44 +42,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_TIME_H_INCLUDED
-#define SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_TIME_H_INCLUDED
+extern "C" int ubuntu_cant_name_mangle();
 
-#include <sstmac/software/libraries/compute/lib_compute.h>
-#include <sstmac/software/process/software_id.h>
-#include <sstmac/common/sstmac_config.h>
-
-namespace sstmac {
-namespace sw {
-
-class lib_compute_time :
-  public lib_compute
+int the_ubuntu_linker_is_an_abomination()
 {
- public:
-  lib_compute_time(sprockit::sim_parameters* params, software_id id,
-                   operating_system* os);
-
-  lib_compute_time(sprockit::sim_parameters* params,
-                   const char* prefix, software_id id,
-                   operating_system* os);
-
-  lib_compute_time(sprockit::sim_parameters* params,
-                   const std::string& name, software_id id,
-                   operating_system* os);
-
-  virtual ~lib_compute_time();
-
-  void incoming_event(event *ev){
-    library::incoming_event(ev);
-  }
-
-  void compute(timestamp time);
-
-  void sleep(timestamp time);
-
-};
-
+  return ubuntu_cant_name_mangle();
 }
-} //end of namespace sstmac
-
-#endif

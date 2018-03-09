@@ -8,6 +8,7 @@ SINGLETESTS = \
   test_pthread \
   test_blas \
   test_std_thread \
+  test_tls \
   test_blas_finegrained 
 
 test_utilities.$(CHKSUF): test_utilities
@@ -28,6 +29,10 @@ test_pthread.$(CHKSUF): test_pthread
 test_std_thread.$(CHKSUF): test_std_thread
 	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
     ./test_std_thread --no-wall-time -f $(srcdir)/test_configs/std_thread.ini 
+
+test_tls.$(CHKSUF): test_tls
+	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
+    ./test_tls --no-wall-time -f $(srcdir)/test_configs/tls.ini 
 
 if BUILD_SUMI_MPI
 SINGLETESTS += test_uq

@@ -42,44 +42,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_TIME_H_INCLUDED
-#define SSTMAC_SOFTWARE_LIBRARIES_COMPUTE_LIB_COMPUTE_TIME_H_INCLUDED
+#include <sstmac/replacements/thread>
+#include <sstmac/replacements/mutex>
+#include <sstmac/skeleton.h>
+#include <sstmac/compute.h>
+#include <sstmac/software/process/cppglobal.h>
 
-#include <sstmac/software/libraries/compute/lib_compute.h>
-#include <sstmac/software/process/software_id.h>
-#include <sstmac/common/sstmac_config.h>
 
-namespace sstmac {
-namespace sw {
+extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
-class lib_compute_time :
-  public lib_compute
+struct tag1{}; struct tag2{};
+sstmac::CppVarTemplate<tag1,int,true> count(0);
+sstmac::CppVarTemplate<tag2,int,true> id(0);
+
+void thrash(std::mutex* mtx, int myId)
 {
- public:
-  lib_compute_time(sprockit::sim_parameters* params, software_id id,
-                   operating_system* os);
-
-  lib_compute_time(sprockit::sim_parameters* params,
-                   const char* prefix, software_id id,
-                   operating_system* os);
-
-  lib_compute_time(sprockit::sim_parameters* params,
-                   const std::string& name, software_id id,
-                   operating_system* os);
-
-  virtual ~lib_compute_time();
-
-  void incoming_event(event *ev){
-    library::incoming_event(ev);
+  id() = myId;
+  for (int i=0; i < 3; ++i){
+    std::cout << "Thread " << id()
+        << " has count " << count() << std::endl;
+    sstmac_sleep(1);
+    count() += 1;
   }
-
-  void compute(timestamp time);
-
-  void sleep(timestamp time);
-
-};
-
 }
-} //end of namespace sstmac
 
-#endif
+
+#define sstmac_app_name test_tls
+
+int USER_MAIN(int argc, char** argv)
+{
+
+  //now test some mutexes
+  std::mutex mtx;
+  std::thread t0(thrash, &mtx, 0);
+  std::thread t1(thrash, &mtx, 1);
+  std::thread t2(thrash, &mtx, 2);
+
+  t0.join();
+  t1.join();
+  t2.join();
+
+  return 0;
+}
+

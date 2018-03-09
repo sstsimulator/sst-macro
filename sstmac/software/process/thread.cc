@@ -79,7 +79,7 @@ const task_id thread::main_thread_tid(-1);
 void
 thread::init_thread(sprockit::sim_parameters* params,
   int physical_thread_id, thread_context* des_thread, void *stack,
-  int stacksize, void* globals_storage)
+  int stacksize, void* globals_storage, void* tls_storage)
 {
   thread_info::set_thread_id(stack, physical_thread_id);
 
@@ -92,7 +92,9 @@ thread::init_thread(sprockit::sim_parameters* params,
   context_ = des_thread->copy();
 
   context_->start_context(physical_thread_id, stack, stacksize,
-                          run_routine, this, globals_storage, nullptr,
+                          run_routine, this,
+                          globals_storage,
+                          tls_storage,
                           des_thread);
 }
 

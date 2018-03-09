@@ -8,6 +8,7 @@ SSTMAC_DEGLOBAL=$(top_builddir)/bin/sstmac_clang
 CLANGTESTS = \
   deglobal_regular \
   deglobal_multi \
+  deglobal_ctor \
   deglobal_namespace \
   deglobal_array \
   deglobal_lambda \

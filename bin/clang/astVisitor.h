@@ -62,6 +62,14 @@ struct StmtDeleteException : public std::runtime_error
   clang::Stmt* deleted;
 };
 
+struct DeclDeleteException : public std::runtime_error
+{
+  DeclDeleteException(clang::Decl* deld) :
+    std::runtime_error("deleted expression"), deleted (deld){
+  }
+  clang::Decl* deleted;
+};
+
 class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
 {
 
@@ -175,7 +183,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
       errorAbort(decl->getLocStart(), *ci_,
                  "getting global replacement for non-global variable");
     }
-    return iter->second.text;
+    return iter->second.reusableText;
   }
 
   bool noSkeletonize() const {
@@ -484,15 +492,23 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool visitingGlobal_;
   std::set<clang::FunctionDecl*> templateDefinitions_;
   std::set<clang::Stmt*>& deletedStmts_;
+  std::list<clang::CXXConstructorDecl*> ctorContexts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
 
   /** These should always index by the canonical decl */
   struct GlobalReplacement {
-    std::string text;
+     //used at beginning of function so that variable can be reused
+    //without redoing all the lookup work
+    std::string reusableText;
+    //used in ctors and other contexts when variable must be directly
+    //accessed and cannot be reused
+    std::string oneOffText;
     bool append;
-    GlobalReplacement(const std::string& str, bool app = false) :
-      append(app), text(str) {}
+    GlobalReplacement(const std::string& reusable,
+                      const std::string& oneOff,
+                      bool app) :
+      append(app), reusableText(reusable), oneOffText(oneOff) {}
   };
 
   std::map<const clang::Decl*,GlobalReplacement> globals_;
@@ -590,8 +606,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @param D   The variable declaration
    * @param os  The os to be appended to
    * @param leadingComma If not empty, add a leading comma
+   * @return Whether the initializer was a call expression
    */
-  void addInitializers(clang::VarDecl* D, std::ostream& os, bool leadingComma);
+  bool addInitializers(clang::VarDecl* D, std::ostream& os, bool leadingComma);
 
   void executeCurrentReplacements();
 
@@ -766,6 +783,15 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     ~EmplaceGuard(){ myList.pop_back(); }
 
     std::list<T>& myList;
+  };
+
+  struct IncrementGuard {
+    IncrementGuard(int& idx) : myIdx(idx)
+    {
+      ++myIdx;
+    }
+    ~IncrementGuard(){ --myIdx; }
+    int& myIdx;
   };
 
   template <class Lambda>
@@ -975,6 +1001,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void arrayFxnPointerTypedef(clang::VarDecl* D, SkeletonASTVisitor::ArrayInfo* info,
                               std::stringstream& sstr);
 
+
+  /**
+   * @brief getOriginalDeclaration
+   * Fight through all the templates and find the fundamental underlying declaration
+   * @param vd
+   * @return
+   */
+  const clang::Decl* getOriginalDeclaration(clang::VarDecl* vd);
 };
 
 

@@ -52,26 +52,6 @@ using namespace sstmac::sw;
 
 extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
-void* ptest(void* args)
-{
-   SSTMAC_compute(1); 
-   printf("Yes, I reach here!\n");
-   return 0;
-}
-
-void* ptest3(void* args)
-{
-   SSTMAC_compute(1);
-   printf("No, I do not reach here!\n");
-   return 0;
-}
-
-struct pthread_args
-{
-  pthread_cond_t cond;
-  pthread_mutex_t mutex;
-};
-
 void fxn1(const char* arg){
   std::cout << arg << std::endl;
 }
