@@ -60,6 +60,7 @@ struct PragmaConfig {
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
   std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
   std::set<const clang::DeclRefExpr*> deletedRefs;
+  std::string dependentScopeGlobal;
   SkeletonASTVisitor* astVisitor;
   PragmaConfig() : pragmaDepth(0),
     makeNoChanges(false) {}
@@ -85,7 +86,8 @@ struct SSTPragma {
     BranchPredict=13,
     AdvanceTime=14,
     CallFunction=15,
-    AlwaysCompute=16
+    AlwaysCompute=16,
+    GlobalVariable=17
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -157,6 +159,21 @@ class SSTReturnPragma : public SSTPragma {
   void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
 
   std::string repl_;
+};
+
+class SSTGlobalVariablePragma : public SSTPragma {
+ public:
+  SSTGlobalVariablePragma(clang::SourceLocation loc,
+                  clang::CompilerInstance& CI,
+                  const std::string& name) :
+    name_(name), SSTPragma(GlobalVariable)
+  {}
+
+ private:
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
+
+  std::string name_;
 };
 
 class SSTNullVariablePragma : public SSTPragma {
@@ -671,6 +688,21 @@ class SSTNullVariablePragmaHandler : public SSTTokenStreamPragmaHandler
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,
                             const std::list<clang::Token> &tokens) const;
+};
+
+class SSTGlobalVariablePragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTGlobalVariablePragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("global", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+
 };
 
 class SSTReturnPragmaHandler : public SSTTokenStreamPragmaHandler

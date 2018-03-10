@@ -1,34 +1,44 @@
 
 struct A {
- private: static int x; public: static int __offset_x;
+ static int x; public: static int __offset_x;
  void fxn(){ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A__x=(int*)(sstmac_global_data + A::__offset_x); {
   (*sstmac_A__x) -= 1;
   }}
 };
 
+int initFxn();
+
+struct Caller {
+  Caller(int a){}
+};
+
 namespace ns {
 struct B {
- private: static int x; public: static int __offset_x;
+ static int x; public: static int __offset_x;
+ static Caller caller; public: static int __offset_caller;
 };
 namespace ns2 {
  struct C {
-  private: static int x; public: static int __offset_x;
+  static int xx; public: static int __offset_xx;
  };
 }
 }
 
 int ns::B::x = 42;namespace ns {int B::__offset_x = sstmac::inplace_cpp_global<B,int>(false,42);}
+Caller ns::B::caller = initFxn();namespace ns {int B::__offset_caller = sstmac::inplace_cpp_global<B, Caller>(false,initFxn());}
 int A::x = 5;int A::__offset_x = sstmac::inplace_cpp_global<A,int>(false,5);
 namespace ns {
  namespace ns2 {
-  int C::x = 10;int C::__offset_x = sstmac::inplace_cpp_global<C,int>(false,10);
+  int C::xx = 10;int C::__offset_xx = sstmac::inplace_cpp_global<C,int>(false,10);
  }
 }
 
+decltype(ns::B::caller) dtGlbl(0);void* __ptr_dtGlbl = &dtGlbl; int __sizeof_dtGlbl = sizeof(dtGlbl); extern int __offset_dtGlbl; sstmac::CppGlobal* dtGlbl_sstmac_ctor = sstmac::new_cpp_global<decltype(ns::  B::caller)>(__offset_dtGlbl,false,0); 
+
 void fxn()
-{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A__x=(int*)(sstmac_global_data + A::__offset_x); int* sstmac___ns__B__x=(int*)(sstmac_global_data + ::ns::B::__offset_x); int* sstmac___ns__ns2__C__x=(int*)(sstmac_global_data + ::ns::ns2::C::__offset_x); {
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A__x=(int*)(sstmac_global_data + A::__offset_x); int* sstmac___ns__B__x=(int*)(sstmac_global_data + ::ns::B::__offset_x); int* sstmac___ns__ns2__C__xx=(int*)(sstmac_global_data + ::ns::ns2::C::__offset_xx); {
   (*sstmac___ns__B__x) += 1;
-  (*sstmac___ns__ns2__C__x) -= 3;
+  (*sstmac___ns__ns2__C__xx) -= 3;
   (*sstmac_A__x) = 10;
  }};
 
@@ -43,7 +53,7 @@ int goReturn(){
 
 
 struct D {
-  private: static int arr[4]; public: static int __offset_arr;typedef int array_type_arr[4];
+  static int arr[4]; public: static int __offset_arr;typedef int array_type_arr[4];
 };
 int D::arr[4] = {1,2,3,4};int D::__offset_arr = sstmac::inplace_cpp_global<D,int [4]>(false,1,2,3,4);
 #include <sstmac/software/process/global.h>
@@ -52,3 +62,7 @@ int __offset_d = 0;
 extern int __sizeof_d;
 extern void* __ptr_d;
 sstmac::GlobalVariable __gv_d(__offset_d,__sizeof_d,"d",__ptr_d,false);
+int __offset_dtGlbl = 0;
+extern int __sizeof_dtGlbl;
+extern void* __ptr_dtGlbl;
+sstmac::GlobalVariable __gv_dtGlbl(__offset_dtGlbl,__sizeof_dtGlbl,"dtGlbl",__ptr_dtGlbl,false);

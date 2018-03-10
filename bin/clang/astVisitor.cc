@@ -65,6 +65,14 @@ getBaseType(VarDecl* D){
   return ty;
 }
 
+static std::string appendText(clang::Expr* expr, const std::string& toAppend)
+{
+  PrettyPrinter pp;
+  pp.print(expr);
+  pp.os << toAppend;
+  return pp.str();
+}
+
 void
 SkeletonASTVisitor::initConfig()
 {
@@ -835,15 +843,9 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
         //one-off access
         replace(expr, gr.oneOffText);
       } else {
-        std::string replText = gr.reusableText;
         //I hate that clang makes me do this
         //source locations are all messed up and I can't just append
-        if (gr.append){
-          PrettyPrinter pp;
-          pp.print(expr);
-          pp.os << gr.oneOffText;
-          replText = pp.os.str();
-        }
+        std::string replText = gr.append ? appendText(expr, gr.oneOffText) : gr.reusableText;
         replace(expr, replText);
       }
     }
@@ -857,7 +859,7 @@ SkeletonASTVisitor::TraverseMemberExpr(MemberExpr *expr, DataRecursionQueue* que
 bool
 SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
 {
-  //this "breaks" connections
+  //this "breaks" connections for null variable propagation
   activeBinOpIdx_ = IndexResetter;
 
   bool skipVisit = activatePragmasForStmt(expr);
@@ -1305,6 +1307,7 @@ static std::string getExprString(Expr* e)
 void
 SkeletonASTVisitor::addCppGlobalCallExprString(PrettyPrinter& pp, CallExpr* expr, QualType ty)
 {
+  ty.removeLocalConst();
   pp.os << ",(std::function<void(void*)>)[](void* ptr){"
         << " auto tptr = (" << GetAsString(ty) << "*)ptr; ";
   pp.os << " *tptr = "; pp.print(expr); pp.os << ";";
@@ -1588,10 +1591,14 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
         //also, crap, this has to be public
         os << " public: "
            << "static int __offset_" << D->getNameAsString() << ";";
+
         if (D->getDeclContext()->isDependentContext()){
+          dependentStaticMembers_[D->getNameAsString()] = D;
+          //don't privatize this anymore - it breaks all sorts of things like decltype
+          //we used to privatize variables to force compiler errors
+
           //oh, templates
-          //this variable is private and templated
-          //and should never be accessed with scope
+          //this should never be accessed directly - only through new accessor method
           needClsScope = false;
           //create an accessor method for
           //use decltype for return... this can create weirdness
@@ -1987,9 +1994,6 @@ SkeletonASTVisitor::checkDeclStaticClassVar(VarDecl *D)
                   outerCls->getLocStart(), SourceLocation(),
                    outerCls->getLocStart(), false, //put at beginning of class
                    CxxStatic, D);
-    //make this variable private
-    //don't worry, we made "public" everything afterwards
-    rewriter_.InsertText(D->getLocStart(), "private: ", false);
   } //else this must be a const integer if inited in the header file
     //we don't have to "deglobalize" this
 
@@ -2031,7 +2035,11 @@ SkeletonASTVisitor::getTemplatePrefixString(std::ostream& os, TemplateParameterL
       os << ",";
     }
     if (nd->getKind() == Decl::TemplateTypeParm){
-      os << "class " << nd->getNameAsString();
+      os << "class";
+      if (nd->isTemplateParameterPack()){
+        os << "...";
+      }
+      os << " " << nd->getNameAsString();
     } else if (nd->getKind() == Decl::NonTypeTemplateParm){
       NonTypeTemplateParmDecl* pd = cast<NonTypeTemplateParmDecl>(nd);
       os << GetAsString(pd->getType()) << " " << nd->getNameAsString();
@@ -2061,6 +2069,9 @@ SkeletonASTVisitor::getTemplateParamsString(std::ostream& os, TemplateParameterL
       os << ",";
     }
     os << nd->getNameAsString();
+    if (nd->isTemplateParameterPack() || nd->isParameterPack()){
+      os << "...";
+    }
   }
   os << ">";
 }
@@ -2096,6 +2107,7 @@ SkeletonASTVisitor::getCleanName(const std::string& name)
 std::string
 SkeletonASTVisitor::getCleanTypeName(QualType ty)
 {
+  ty.removeLocalConst();
   return getCleanName(GetAsString(ty));
   //this is a nightmare
   //trying to do this more elegantly directly from type info
@@ -2147,6 +2159,37 @@ SkeletonASTVisitor::getCleanTypeName(QualType ty)
   */
 }
 
+SourceLocation
+SkeletonASTVisitor::getVariableNameLocationEnd(VarDecl* D)
+{
+  SourceLocation loc = D->getLocStart();
+  int numTries = 0;
+  while (numTries < 100000){
+    Token res;
+    Lexer::getRawToken(loc, res, ci_->getSourceManager(), ci_->getLangOpts());
+    std::string next;
+    if (res.getKind() == tok::identifier){
+      next = res.getIdentifierInfo()->getName().str();
+    } else if (res.getKind() == tok::raw_identifier) {
+      next = res.getRawIdentifier().str();
+    }
+    if (!next.empty() && next == D->getNameAsString()){
+      return Lexer::getLocForEndOfToken(loc, 0, ci_->getSourceManager(), Printing::langOpts);
+    }
+    //super annoying that I have to do this
+    SourceLocation nextLoc = Lexer::getLocForEndOfToken(loc, 1, ci_->getSourceManager(), Printing::langOpts);
+    if (nextLoc == loc){
+      loc = loc.getLocWithOffset(1);
+    } else {
+      loc = nextLoc;
+    }
+    ++numTries;
+  }
+  internalError(D->getLocStart(), *ci_,
+    "unable to locate variable name");
+  return SourceLocation();
+}
+
 
 bool
 SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
@@ -2157,7 +2200,6 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
     //because the main decl didn't end up in the globals
     return true;
   }
-
 
   //okay - this sucks - I have no idea how this variable is being declared
   //it could be ns::A::x = 10 for a variable in namespace ns, class A
@@ -2229,13 +2271,6 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
   }
 
   rewriter_.InsertText(getEndLoc(D->getLocEnd()), os.str());
-
-  if (isCallExpr){
-    //we have to remove this from the original source code
-    //we don't want the call expr happening during static init
-    ::replace(D, rewriter_, "", *ci_);
-    throw DeclDeleteException(D);
-  }
 
   return true;
 }
@@ -2532,7 +2567,7 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
 
   bool skipVisit = false;
   if (D->isThisDeclarationADefinition()){
-    skipVisit = noSkeletonize_ ? false : activatePragmasForDecl(D);
+    skipVisit = activatePragmasForDecl(D);
   }
 
   PushGuard<FunctionDecl*> pg(fxnContexts_, D);
@@ -2628,14 +2663,90 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   if (D->isTemplateInstantiation())
     return true;
 
-  bool skipVisit = noSkeletonize_ ? false : activatePragmasForDecl(D);
+  bool skipVisit = activatePragmasForDecl(D);
 
-  if (D->isThisDeclarationADefinition()) {
+  if (D->isThisDeclarationADefinition() && !skipVisit) {
     IncrementGuard ig(insideCxxMethod_);
-    if (!skipVisit){
-      traverseFunctionBody(D->getBody());
+    traverseFunctionBody(D->getBody());
+  }
+  return true;
+}
+
+bool
+SkeletonASTVisitor::VisitDependentScopeDeclRefExpr(DependentScopeDeclRefExpr* expr)
+{
+  if (!pragmaConfig_.dependentScopeGlobal.empty()){
+    //we have been told about a global variable that cannot be recongized
+    //because it is a dependent scope expression
+    std::string memberName = expr->getDeclName().getAsString();
+    if (memberName == pragmaConfig_.dependentScopeGlobal){
+      auto iter = dependentStaticMembers_.find(memberName);
+      if (iter == dependentStaticMembers_.end()){
+        std::string warning = "variable " + memberName
+            + " tagged as global, but there are no know globals with that name";
+        warn(expr->getLocStart(), *ci_, warning);
+      }
+      std::string repl = appendText(expr, "_getter()");
+      ::replace(expr, rewriter_, repl, *ci_);
+      pragmaConfig_.dependentScopeGlobal.clear();
+      return true; //skip checks below
+      //std::string error = "pragma gloçbal name " + pragmaConfig_.dependentScopeGlobal
+      //    + " does not match found member name " + memberName;
+      //errorAbort(expr->getLocStart(), *ci_, error);
     }
   }
+
+  auto iter = dependentStaticMembers_.find(expr->getDeclName().getAsString());
+  if (iter != dependentStaticMembers_.end()){
+    clang::VarDecl* vd = iter->second;
+    std::string warning = "member " + vd->getNameAsString()
+        + " used in dependent scope matches global variable at "
+        + vd->getLocStart().printToString(ci_->getSourceManager())
+        + ". I can't tell if this is a global variable. If it is "
+        "please let me know by using #pragma sst global " + vd->getNameAsString();
+    warn(expr->getLocStart(), *ci_, warning);
+  }
+
+
+  return true;
+}
+
+bool
+SkeletonASTVisitor::VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMemberExpr* expr)
+{
+  if (!pragmaConfig_.dependentScopeGlobal.empty()){
+    //we have been told about a global variable that cannot be recongized
+    //because it is a dependent scope expression
+    std::string memberName = expr->getMember().getAsString();
+    if (memberName == pragmaConfig_.dependentScopeGlobal){
+      auto iter = dependentStaticMembers_.find(memberName);
+      if (iter == dependentStaticMembers_.end()){
+        std::string warning = "variable " + memberName
+            + " tagged as global, but there are no know globals with that name";
+        warn(expr->getLocStart(), *ci_, warning);
+      }
+      std::string repl = appendText(expr, "_getter()");
+      ::replace(expr, rewriter_, repl, *ci_);
+      pragmaConfig_.dependentScopeGlobal.clear();
+      return true; //skip checks below
+      //std::string error = "pragma gloçbal name " + pragmaConfig_.dependentScopeGlobal
+      //    + " does not match found member name " + memberName;
+      //errorAbort(expr->getLocStart(), *ci_, error);
+    }
+  }
+
+  auto iter = dependentStaticMembers_.find(expr->getMember().getAsString());
+  if (iter != dependentStaticMembers_.end()){
+    clang::VarDecl* vd = iter->second;
+    std::string warning = "member " + vd->getNameAsString()
+        + " used in dependent scope matches global variable at "
+        + vd->getLocStart().printToString(ci_->getSourceManager())
+        + ". I can't tell if this is a global variable. If it is "
+        "please let me know by using #pragma sst global " + vd->getNameAsString();
+    warn(expr->getLocStart(), *ci_, warning);
+  }
+
+
   return true;
 }
 
@@ -3130,7 +3241,7 @@ SkeletonASTVisitor::deleteNullVariableStmt(Stmt* s)
 bool
 SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
 {
-  bool skipVisit = false;
+  bool skipVisit = false;;
   for (SSTPragma* prg : pragmas_.getMatches(S)){
     //I'm not sure this is actually an error
     //if (skipVisit){
@@ -3143,6 +3254,10 @@ SkeletonASTVisitor::activatePragmasForStmt(Stmt* S)
     //a compute pragma totally deletes the block
     bool blockDeleted = false;
     switch (prg->cls){
+      case SSTPragma::GlobalVariable:
+        skipVisit = false;
+        activate = true;
+        break;
       case SSTPragma::Keep:
         skipVisit = true;
         activate = true; //always - regardless of skeletonization
@@ -3304,15 +3419,7 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
 
 
       globalsTouched_.back().insert(md);
-      std::string replText = repl.reusableText;
-      if (repl.append){
-        //there is a bug in clang that gives me a wrong getLocEnd()
-        //so instead I have to replace...
-        PrettyPrinter pp;
-        pp.print(expr);
-        pp.os << repl.oneOffText;
-        replText = pp.os.str();
-      }
+      std::string replText = repl.append ? appendText(expr, repl.oneOffText) : repl.reusableText;
       //there is a bug in Clang I can't quite track down
       //it is erroneously causing DeclRefExpr to get visited twice
       //when they occur inside a struct decl

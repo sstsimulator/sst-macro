@@ -47,7 +47,16 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/cppglobal.h>
 
-int sstmac_global_stacksize = 0;
+extern "C" int sstmac_global_stacksize = 0;
+
+extern "C" char* static_init_glbls_segment = nullptr;
+extern "C" char* static_init_tls_segment = nullptr;
+extern "C" void allocate_static_init_tls_segment(){
+  static_init_tls_segment = new char[1e6];
+}
+extern "C" void allocate_static_init_glbls_segment(){
+  static_init_glbls_segment = new char[1e6];
+}
 
 namespace sstmac {
 

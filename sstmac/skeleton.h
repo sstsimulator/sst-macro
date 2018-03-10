@@ -181,11 +181,20 @@ static void* nullptr = 0;
 #ifdef __cplusplus
 #include <cstdint>
 extern "C" int sstmac_global_stacksize;
+extern "C" char* static_init_glbls_segment;
+extern "C" char* static_init_tls_segment;
+extern "C" void allocate_static_init_glbls_segment();
+extern "C" void allocate_static_init_tls_segment();
 extern "C" void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
+using _Bool = bool;
 #else
 #include <stdint.h>
 extern int sstmac_global_stacksize;
 extern void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
+extern char* static_init_glbls_segment;
+extern char* static_init_tls_segment;
+extern void allocate_static_init_glbls_segment();
+extern void allocate_static_init_tls_segment();
 #endif
 
 
@@ -196,18 +205,34 @@ extern void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
 #define SSTMAC_INLINE inline
 #endif
 
+
+
 static SSTMAC_INLINE char* get_sstmac_global_data(){
-  int stack; int* stackPtr = &stack;
-  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-  char** globalMapPtr = (char**)(localStorage + sizeof(int));
-  return *globalMapPtr;
+  if (sstmac_global_stacksize == 0){
+    if (static_init_glbls_segment == 0){
+      allocate_static_init_glbls_segment();
+    }
+    return static_init_glbls_segment;
+  } else {
+    int stack; int* stackPtr = &stack;
+    uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+    char** globalMapPtr = (char**)(localStorage + sizeof(int));
+    return *globalMapPtr;
+  }
 }
 
 static SSTMAC_INLINE char* get_sstmac_tlsl_data(){
-  int stack; int* stackPtr = &stack;
-  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-  char** globalMapPtr = (char**)(localStorage + sizeof(int) + sizeof(void*));
-  return *globalMapPtr;
+  if (sstmac_global_stacksize == 0){
+    if (static_init_tls_segment == 0){
+      allocate_static_init_tls_segment();
+    }
+    return static_init_tls_segment;
+  } else {
+    int stack; int* stackPtr = &stack;
+    uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+    char** globalMapPtr = (char**)(localStorage + sizeof(int) + sizeof(void*));
+    return *globalMapPtr;
+  }
 }
 
 #undef SSTMAC_INLINE

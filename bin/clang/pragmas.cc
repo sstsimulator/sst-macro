@@ -80,6 +80,7 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
   switch(fsp->cls){
     case SSTPragma::AlwaysCompute:
+    case SSTPragma::GlobalVariable:
     case SSTPragma::Keep: //always obey these
       pragmas_.push_back(fsp);
       break;
@@ -384,6 +385,19 @@ SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
   }
   std::string repl = "{ return " + repl_ + "; }";
   replace(fd->getBody(), r, repl, *CI);
+}
+
+void
+SSTGlobalVariablePragma::activate(Stmt* s, Rewriter& r, PragmaConfig& cfg)
+{
+  cfg.dependentScopeGlobal = name_;
+}
+
+void
+SSTGlobalVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(d->getLocStart(), *CI,
+             "global pragma should only be applied to statements");
 }
 
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
@@ -763,6 +777,14 @@ SSTReturnPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token
   std::stringstream sstr;
   SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTReturnPragma(loc, ci_, sstr.str());
+}
+
+SSTPragma*
+SSTGlobalVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTGlobalVariablePragma(loc, ci_, sstr.str());
 }
 
 SSTPragma*

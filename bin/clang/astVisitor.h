@@ -279,6 +279,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool TraverseUnresolvedLookupExpr(clang::UnresolvedLookupExpr* expr,
                                     DataRecursionQueue* queue = nullptr);
 
+  bool VisitCXXDependentScopeMemberExpr(clang::CXXDependentScopeMemberExpr* expr);
+
+  bool VisitDependentScopeDeclRefExpr(clang::DependentScopeDeclRefExpr* expr);
+
   /**
    * @brief TraverseNamespaceDecl We have to traverse namespaces.
    *        We need pre and post operations. We have to explicitly recurse subnodes.
@@ -402,6 +406,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @return
    */
   bool dataTraverseStmtPost(clang::Stmt* S);
+
+  clang::SourceLocation getVariableNameLocationEnd(clang::VarDecl* D);
 
   SSTPragmaList& getPragmas(){
     return pragmas_;
@@ -665,6 +671,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::MemberExpr*> memberAccesses_;
   std::map<clang::Stmt*,clang::Stmt*> extendedReplacements_;
   std::set<clang::DeclContext*> innerStructTagsDeclared_;
+
+  /**
+   * @brief dependentStaticMembers_
+   * Static variables of template classes that lead to
+   * CXXDependentScopeMemberExpr in which a global variable cannot be recognized
+   * because it is hidden behind template parameters
+   */
+  std::map<std::string,clang::VarDecl*> dependentStaticMembers_;
 
   std::list<std::list<std::pair<clang::SourceRange,std::string>>> stmtReplacements_;
 
