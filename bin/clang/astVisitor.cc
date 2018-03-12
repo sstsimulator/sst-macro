@@ -1308,10 +1308,10 @@ void
 SkeletonASTVisitor::addCppGlobalCallExprString(PrettyPrinter& pp, CallExpr* expr, QualType ty)
 {
   ty.removeLocalConst();
-  pp.os << ",(std::function<void(void*)>)[](void* ptr){"
-        << " auto tptr = (" << GetAsString(ty) << "*)ptr; ";
-  pp.os << " *tptr = "; pp.print(expr); pp.os << ";";
-  pp.os << "}";
+  pp.os << ",std::function<void(void*)>([](void* ptr){"
+        << "  new (ptr) (" << GetAsString(ty) << ")(";
+  pp.print(expr); pp.os << ");";
+  pp.os << "})";
 }
 
 void
@@ -3351,6 +3351,7 @@ SkeletonASTVisitor::getUnderlyingExpr(Expr *e)
     sub_case(e,CStyleCastExpr);
     sub_case(e,ImplicitCastExpr);
     sub_case(e,CXXBindTemporaryExpr);
+    sub_case(e,ExprWithCleanups);
     case Stmt::MaterializeTemporaryExprClass: {
       MaterializeTemporaryExpr* mte = cast<MaterializeTemporaryExpr>(e);
       e = mte->GetTemporaryExpr();

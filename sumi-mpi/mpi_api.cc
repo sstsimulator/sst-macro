@@ -81,6 +81,10 @@ RegisterDebugSlot(mpi_check,
     "validation flag that performs various sanity checks to ensure MPI application"
     " runs and terminates cleanly");
 
+RegisterKeywords(
+{ "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
+);
+
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
 sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 

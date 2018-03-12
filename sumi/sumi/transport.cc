@@ -240,7 +240,8 @@ transport::poll(bool blocking, int cq_id, double timeout)
 {
   auto& queue = completion_queues_[cq_id];
   debug_printf(sprockit::dbg::sumi,
-               "Rank %d polling for message on cq %d", rank_, cq_id);
+               "Rank %d polling for message on cq %d with time %f",
+               rank_, cq_id, timeout);
 
   if (!queue.empty()){
     message* ret = queue.front();

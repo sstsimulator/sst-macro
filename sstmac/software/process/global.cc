@@ -141,8 +141,11 @@ GlobalVariableContext::append(int &offset, const int size, const char* name, con
 }
 
 void registerCppGlobal(CppGlobal* g, bool tls){
-  if (tls) GlobalVariable::tlsCtx.registerCtor(g);
-  else GlobalVariable::glblCtx.registerCtor(g);
+  if (tls){
+    GlobalVariable::tlsCtx.registerCtor(g);
+  } else {
+    GlobalVariable::glblCtx.registerCtor(g);
+  }
 }
 
 void

@@ -4,6 +4,7 @@
 #include <tuple>
 #include <sstmac/software/process/global.h>
 #include <functional>
+#include <new>
 
 namespace sstmac {
 
@@ -150,7 +151,6 @@ struct CppInplaceGlobal {
   static int offset;
   static CppInplaceGlobalInitializer<T> initer;
 };
-
 
 template <class Tag, class T, class... Args> int
   CppInplaceGlobal<Tag,T,Args...>::offset;
