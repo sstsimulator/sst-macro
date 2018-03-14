@@ -14,7 +14,7 @@ struct A {
 };
 
 
-static unique_ptr<A> myA = make_unique<A>(1,2,3,4,"I declare a thumb war");void* __ptr_xyzmyA = &myA; int __sizeof_xyzmyA = sizeof(myA); extern int __offset_xyzmyA; static sstmac::CppGlobal* myA_sstmac_ctor = sstmac::new_cpp_global<unique_ptr<  A>>(__offset_xyzmyA,false,(std::function<void(void*)>)[](void* ptr){ auto tptr = (unique_ptr<  A>*)ptr;  *tptr = make_unique<  A>(1, 2, 3, 4, "I declare a thumb war");}); 
+static unique_ptr<A> myA = make_unique<A>(1,2,3,4,"I declare a thumb war");void* __ptr_xyzmyA = &myA; int __sizeof_xyzmyA = sizeof(myA); extern int __offset_xyzmyA; static sstmac::CppGlobal* myA_sstmac_ctor = sstmac::new_cpp_global<unique_ptr<  A>>(__offset_xyzmyA,false,std::function<void(void*)>([](void* ptr){  new (ptr) (unique_ptr<  A>)(make_unique<  A>(1, 2, 3, 4, "I declare a thumb war"));})); 
 #include <sstmac/software/process/global.h>
 
 int __offset_xyzmyA = 0;

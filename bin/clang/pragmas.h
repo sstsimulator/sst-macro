@@ -128,7 +128,7 @@ struct SSTPragma {
 
   virtual void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) = 0;
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig &cfg){} //not required
-  virtual void deactivate(clang::Stmt* s, PragmaConfig& cfg){} //not required
+  virtual void deactivate(PragmaConfig& cfg){} //not required
 
   static void tokenStreamToString(clang::SourceLocation loc,
       std::list<clang::Token>::const_iterator beg,
@@ -352,7 +352,7 @@ class SSTKeepPragma : public SSTPragma {
 
   virtual void activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg) override;
 
-  void deactivate(clang::Stmt *s, PragmaConfig &cfg) override {
+  void deactivate(PragmaConfig &cfg) override {
     cfg.makeNoChanges = false;
   }
 };

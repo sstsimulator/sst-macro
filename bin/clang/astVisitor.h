@@ -389,24 +389,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    */
   bool TraverseCXXConstructorDecl(clang::CXXConstructorDecl* D);
 
-  /**
-   * @brief dataTraverseStmtPost Call after the traversal of all statements.
-   * Certain pragmas might have deactivate operations to be performed after traversing
-   * the statement. If there are any activate pragmas, deactivate them now
-   * @param S
-   * @return
-   */
-  bool dataTraverseStmtPre(clang::Stmt* S);
-
-  /**
-   * @brief dataTraverseStmtPost Call after the traversal of all statements.
-   * Certain pragmas might have deactivate operations to be performed after traversing
-   * the statement. If there are any activate pragmas, deactivate them now
-   * @param S
-   * @return
-   */
-  bool dataTraverseStmtPost(clang::Stmt* S);
-
   clang::SourceLocation getVariableNameLocationEnd(clang::VarDecl* D);
 
   SSTPragmaList& getPragmas(){
@@ -701,9 +683,55 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<std::string> ignoredHeaders_;
   std::set<std::string> reservedNames_;
   PragmaConfig& pragmaConfig_;
-  std::map<clang::Stmt*,SSTPragma*> activePragmas_;
   std::set<clang::DeclRefExpr*> alreadyReplaced_;
   std::set<std::string> globalVarWhitelist_;
+
+
+  friend class PragmaActivateGuard;
+  struct PragmaActivateGuard {
+    PragmaActivateGuard(clang::Stmt* s, SkeletonASTVisitor* visitor, bool doVisit = true) :
+      visitor_(visitor)
+    {
+      ++visitor->pragmaConfig_.pragmaDepth;
+      if (doVisit){
+        doCtor(s);
+      }
+    }
+
+    PragmaActivateGuard(clang::Decl* d, SkeletonASTVisitor* visitor, bool doVisit = true) :
+      visitor_(visitor)
+    {
+      ++visitor->pragmaConfig_.pragmaDepth;
+      if (doVisit){
+        doCtor(d);
+      }
+    }
+
+    ~PragmaActivateGuard();
+
+    bool skipVisit() const {
+      return skipVisit_;
+    }
+
+   private:
+    template <class T> void doCtor(T* t){
+      myPragmas_ = visitor_->pragmas_.getMatches<T>(t);
+      //this removes all inactivate pragmas from myPragmas_
+      init();
+      for (SSTPragma* prg : myPragmas_){
+        //pragma takes precedence - must occur in pre-visit
+        activePragmas_.push_back(prg);
+        prg->activate(t, visitor_->rewriter_, visitor_->pragmaConfig_);
+      }
+    }
+
+    void init();
+
+    bool skipVisit_;
+    std::list<SSTPragma*> myPragmas_;
+    std::list<SSTPragma*> activePragmas_;
+    SkeletonASTVisitor* visitor_;
+  };
 
   struct GlobalStandin {
     bool fxnStatic;
@@ -868,8 +896,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void replaceNullVariableConnectedContext(clang::Expr* expr, const std::string& repl);
 
   void deleteNullVariableStmt(clang::Stmt* stmt);
-  bool activatePragmasForStmt(clang::Stmt* S);
-  bool activatePragmasForDecl(clang::Decl* D);
   void visitCollective(clang::CallExpr* expr);
   void visitReduce(clang::CallExpr* expr);
   void visitPt2Pt(clang::CallExpr* expr);
