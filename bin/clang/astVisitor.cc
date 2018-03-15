@@ -161,6 +161,21 @@ SkeletonASTVisitor::initReservedNames()
 }
 
 void
+SkeletonASTVisitor::registerNewKeywords(std::ostream& os)
+{
+  if (pragmaConfig_.newParams.empty()){
+    return;
+  }
+
+  os << "#include <sprockit/keyword_registration.h>"
+     << "\nRegisterKeywords(";
+  for (auto& str : pragmaConfig_.newParams){
+    os << "\n{\"" << str << "\", \"new keyword\" },";
+  }
+  os << "\n);";
+}
+
+void
 SkeletonASTVisitor::initHeaders()
 {
   const char* headerListFile = getenv("SSTMAC_HEADERS");
@@ -3171,7 +3186,8 @@ SkeletonASTVisitor::PragmaActivateGuard::init()
     //a compute pragma totally deletes the block
     bool blockDeleted = false;
     switch (prg->cls){
-      case SSTPragma::GlobalVariable:
+      case SSTPragma::GlobalVariable: //always - regardless of skeletonization
+      case SSTPragma::Overhead:
         skipVisit_ = false;
         activate = true;
         break;

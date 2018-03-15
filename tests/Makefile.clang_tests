@@ -26,6 +26,7 @@ CLANGTESTS = \
   deglobal_cxx_template_static \
   deglobal_cxx_template_member \
   pragma_sst_new \
+  pragma_sst_overhead \
   pragma_sst_init \
   pragma_sst_global \
   pragma_sst_null_replace \

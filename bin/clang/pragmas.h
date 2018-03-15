@@ -60,6 +60,7 @@ struct PragmaConfig {
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
   std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
   std::set<const clang::DeclRefExpr*> deletedRefs;
+  std::set<std::string> newParams;
   std::string dependentScopeGlobal;
   SkeletonASTVisitor* astVisitor;
   PragmaConfig() : pragmaDepth(0),
@@ -87,7 +88,8 @@ struct SSTPragma {
     AdvanceTime=14,
     CallFunction=15,
     AlwaysCompute=16,
-    GlobalVariable=17
+    GlobalVariable=17,
+    Overhead=18
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -382,6 +384,17 @@ class SSTBranchPredictPragma : public SSTPragma {
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
 
   std::string prediction_;
+};
+
+class SSTOverheadPragma : public SSTPragma {
+ public:
+  SSTOverheadPragma(const std::string& paramName)
+    : paramName_(paramName), SSTPragma(Overhead)
+  {}
+ private:
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+  std::string paramName_;
 };
 
 class SSTAdvanceTimePragma : public SSTPragma {
@@ -758,6 +771,21 @@ class SSTCallFunctionPragmaHandler : public SSTTokenStreamPragmaHandler
                        SkeletonASTVisitor& visitor,
                        std::set<clang::Stmt*>& deld) :
     SSTTokenStreamPragmaHandler("call", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+
+};
+
+class SSTOverheadPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTOverheadPragmaHandler(SSTPragmaList& plist,
+                       clang::CompilerInstance& CI,
+                       SkeletonASTVisitor& visitor,
+                       std::set<clang::Stmt*>& deld) :
+    SSTTokenStreamPragmaHandler("overhead", plist, CI, visitor, deld){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,

@@ -146,6 +146,24 @@ void sstmac_free(void* ptr){
   if (isNonNullBuffer(ptr)) free(ptr);
 }
 
+#include <unordered_map>
+
+extern "C"
+void sstmac_advance_time(const char* param_name)
+{
+  sstmac::sw::thread* thr = sstmac::sw::operating_system::current_thread();
+  sstmac::sw::app* parent = thr->parent_app();
+  using ValueCache = std::unordered_map<void*,sstmac::timestamp>;
+  static std::map<sstmac::sw::app_id,ValueCache> cache;
+  auto& subMap = cache[parent->aid()];
+  auto iter = subMap.find((void*)param_name);
+  if (iter == subMap.end()){
+    subMap[(void*)param_name] = parent->params()->get_time_param(param_name);
+    iter = subMap.find((void*)param_name);
+  }
+  parent->compute(iter->second);
+}
+
 int
 user_skeleton_main_init_fxn(const char* name, main_fxn fxn)
 {

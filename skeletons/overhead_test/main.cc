@@ -42,35 +42,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_COMMON_C_PARAMS_H_INCLUDED
-#define SSTMAC_COMMON_C_PARAMS_H_INCLUDED
+#include <memory>
+#include <stddef.h>
+#include <stdio.h>
 
-#ifdef __cplusplus
-extern "C"
+#define sstmac_app_name overhead_test
+
+void emptyFxn(){}
+void emptyFxn2(){}
+
+int main(int argc, char** argv)
 {
-#else
-#include <stdbool.h>
-#endif
-
-int sstmac_get_int_param(const char* str);
-
-int sstmac_get_optional_int_param(const char* str, int val);
-
-long sstmac_get_long_param(const char* str);
-
-long sstmac_get_optional_long_param(char* str, long val);
-
-double sstmac_get_time_param(const char* str);
-
-double sstmac_get_double_param(const char* str);
-
-double sstmac_get_optional_double_param(const char* str, double val);
-
-const char* sstmac_get_param(const char* str);
-
-const char* sstmac_get_optional_param(const char* str, const char* val);
-#ifdef __cplusplus
+#pragma sst overhead fxn1
+  emptyFxn();
+#pragma sst overhead fxn2
+  emptyFxn2();
+  return 0;
 }
-#endif
 
-#endif

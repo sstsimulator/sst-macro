@@ -159,6 +159,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return globals_.find(mainDecl(expr)) != globals_.end();
   }
 
+  void registerNewKeywords(std::ostream& os);
+
   PragmaConfig& getPragmaConfig() {
     return pragmaConfig_;
   }
@@ -685,7 +687,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   PragmaConfig& pragmaConfig_;
   std::set<clang::DeclRefExpr*> alreadyReplaced_;
   std::set<std::string> globalVarWhitelist_;
-
 
   friend class PragmaActivateGuard;
   struct PragmaActivateGuard {

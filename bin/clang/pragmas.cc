@@ -81,6 +81,8 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
   switch(fsp->cls){
     case SSTPragma::AlwaysCompute:
     case SSTPragma::GlobalVariable:
+    case SSTPragma::AdvanceTime:
+    case SSTPragma::Overhead:
     case SSTPragma::Keep: //always obey these
       pragmas_.push_back(fsp);
       break;
@@ -287,6 +289,17 @@ SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   }
   IfStmt* ifs = cast<IfStmt>(s);
   replace(ifs->getCond(), r, prediction_, *CI);
+}
+
+void
+SSTOverheadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  std::stringstream sstr;
+  sstr << "sstmac_advance_time(\""
+       << paramName_
+       << "\");";
+  r.InsertText(s->getLocStart(), sstr.str(), false);
+  cfg.newParams.insert(paramName_);
 }
 
 void
@@ -826,4 +839,12 @@ SSTCallFunctionPragmaHandler::allocatePragma(SourceLocation loc, const std::list
   SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
   sstr << ";"; //semi-colon not required in pragma
   return new SSTCallFunctionPragma(sstr.str());
+}
+
+SSTPragma*
+SSTOverheadPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTOverheadPragma(sstr.str());
 }

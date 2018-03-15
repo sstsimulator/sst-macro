@@ -180,23 +180,23 @@ static void* nullptr = 0;
 
 #ifdef __cplusplus
 #include <cstdint>
-extern "C" int sstmac_global_stacksize;
-extern "C" char* static_init_glbls_segment;
-extern "C" char* static_init_tls_segment;
-extern "C" void allocate_static_init_glbls_segment();
-extern "C" void allocate_static_init_tls_segment();
-extern "C" void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
 using _Bool = bool;
+extern "C" {
 #else
 #include <stdint.h>
-extern int sstmac_global_stacksize;
-extern void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
-extern char* static_init_glbls_segment;
-extern char* static_init_tls_segment;
-extern void allocate_static_init_glbls_segment();
-extern void allocate_static_init_tls_segment();
 #endif
 
+extern int sstmac_global_stacksize;
+extern char* static_init_glbls_segment;
+extern char* static_init_tls_segment;
+void allocate_static_init_glbls_segment();
+void allocate_static_init_tls_segment();
+void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
+void sstmac_advance_time(const char* param_name);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #ifdef __STRICT_ANSI__

@@ -177,6 +177,8 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTBranchPredictPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTCallFunctionPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTOverheadPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
 }
 
 void
@@ -207,6 +209,7 @@ ReplaceAction::EndSourceFileAction()
     //add the header files needed
     ofs << "#include <sstmac/software/process/global.h>\n\n";
     globalNs_.genSSTCode(ofs,"");
+    visitor_.registerNewKeywords(ofs);
     if (visitor_.hasCStyleMain()){
       std::string appname = visitor_.getAppName();
 #if SSTMAC_INTEGRATED_SST_CORE
