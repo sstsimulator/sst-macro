@@ -1314,16 +1314,17 @@ void
 SkeletonASTVisitor::addCppGlobalCallExprString(PrettyPrinter& pp, CallExpr* expr, QualType ty)
 {
   ty.removeLocalConst();
-  pp.os << ",std::function<void(void*)>([](void* ptr){"
+  pp.os << "std::function<void(void*)>([](void* ptr){"
         << "  new (ptr) (" << GetAsString(ty) << ")(";
   pp.print(expr); pp.os << ");";
   pp.os << "})";
 }
 
 void
-SkeletonASTVisitor::addCppGlobalCtorString(PrettyPrinter& pp, CXXConstructExpr* ctor)
+SkeletonASTVisitor::addCppGlobalCtorString(PrettyPrinter& pp, CXXConstructExpr* ctor, bool leadingComma)
 {
   if (ctor->getNumArgs() > 0){
+    if (leadingComma) pp.os << ",";
     Expr* mainArg = getUnderlyingExpr(ctor->getArg(0));
     if (ctor->getNumArgs() == 1 && mainArg->getStmtClass() == Stmt::CallExprClass){
       //ugh, well, I know this is C++ - but the call expression needs to happen at ctor time
@@ -1333,7 +1334,7 @@ SkeletonASTVisitor::addCppGlobalCtorString(PrettyPrinter& pp, CXXConstructExpr* 
       addCppGlobalCallExprString(pp, cast<CallExpr>(mainArg), ctor->getType());
     } else {
       for (int i=0; i < ctor->getNumArgs(); ++i){
-        pp.os << ",";
+        if (i > 0) pp.os << ",";
         Expr* e = getUnderlyingExpr(ctor->getArg(i));
         pp.print(e);
       }
@@ -1355,7 +1356,7 @@ SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingCo
     PrettyPrinter pp;
     CXXConstructExpr* ctor = cast<CXXConstructExpr>(ue);
     if (ctor->getNumArgs() == 0) return false;
-    addCppGlobalCtorString(pp, ctor);
+    addCppGlobalCtorString(pp, ctor, leadingComma);
     os << pp.str();
     return false;
   }
@@ -1371,6 +1372,7 @@ SkeletonASTVisitor::addInitializers(VarDecl *D, std::ostream &os, bool leadingCo
   }
   case Stmt::CallExprClass: {
     PrettyPrinter pp;
+    if (leadingComma) os << ",";
     addCppGlobalCallExprString(pp, cast<CallExpr>(ue), D->getType());
     os << pp.str();
     return true;
@@ -1559,8 +1561,9 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
              << " = sstmac::inplace_cpp_global<"
              << "inner_" << scopeUniqueVarName
              << "," << getCleanTypeName(D->getType())
-             << ">(" << std::boolalpha << threadLocal;
-          addInitializers(D, os, true);
+             << "," << std::boolalpha << threadLocal
+             << ">(";
+          addInitializers(D, os, false); //no leading comma
           os << ");";
         } else {
           os << "static int sstmac_inited_" << D->getNameAsString() << " = 0;"
@@ -1680,13 +1683,13 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
       pp.os << "sstmac::CppGlobal* " << D->getNameAsString() << "_sstmac_ctor"
            << " = sstmac::new_cpp_global<"
            << GetAsString(D->getType())
-           << ">(" << "__offset_" << scopeUniqueVarName
-           << "," << (threadLocal ? "true" : "false");
+           << "," << (threadLocal ? "true" : "false")
+           << ">(" << "__offset_" << scopeUniqueVarName;
 
       CXXConstructExpr* ctor = getCtor(D);
       if (ctor){
-        addCppGlobalCtorString(pp, ctor);
-
+        //need leading comma if there are arguments
+        addCppGlobalCtorString(pp, ctor, true);
       }
 
       pp.os << "); ";
@@ -2256,8 +2259,9 @@ SkeletonASTVisitor::checkInstanceStaticClassVar(VarDecl *D)
      << " = sstmac::inplace_cpp_global<"
      << clsName
      << "," << getCleanTypeName(D->getType())
-     << ">(" << std::boolalpha << isThreadLocal(D);
-  bool isCallExpr = addInitializers(D, os, true);
+     << "," << std::boolalpha << isThreadLocal(D)
+     << ">(";
+  bool isCallExpr = addInitializers(D, os, false); //no leading comma
   os << ");";
 
   /** don't need this anymore

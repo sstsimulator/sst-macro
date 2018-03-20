@@ -459,7 +459,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void addCppGlobalCallExprString(PrettyPrinter& pp, clang::CallExpr* expr, clang::QualType qt);
 
-  void addCppGlobalCtorString(PrettyPrinter& pp, clang::CXXConstructExpr* expr);
+  void addCppGlobalCtorString(PrettyPrinter& pp, clang::CXXConstructExpr* expr, bool leadingComma);
 
   /**
    * @brief addInContextGlobalDeclarations

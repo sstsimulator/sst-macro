@@ -1,10 +1,10 @@
+Thread 0 has count 0
+Thread 1 has count 0
 Thread 2 has count 0
-Thread 2 has count 0
-Thread 2 has count 0
+Thread 0 has count 1
+Thread 1 has count 1
 Thread 2 has count 1
-Thread 2 has count 1
-Thread 2 has count 1
-Thread 2 has count 2
-Thread 2 has count 2
+Thread 0 has count 2
+Thread 1 has count 2
 Thread 2 has count 2
 Estimated total runtime of           3.00000400 seconds

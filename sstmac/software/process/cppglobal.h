@@ -27,10 +27,10 @@ struct build_indices<0, Is...> : indices<Is...> {};
 
 }
 
-template <class T, class... Args>
+template <class T, bool tls, class... Args>
 class CppGlobalImpl : public CppGlobal {
  public:
-  CppGlobalImpl(int& offset, bool tls, Args&&... args) :
+  CppGlobalImpl(int& offset, Args&&... args) :
     offset_(offset),
     args_(std::forward<Args>(args)...)
   {
@@ -52,11 +52,11 @@ class CppGlobalImpl : public CppGlobal {
   int& offset_;
 };
 
-template <class T, int N, class Init>
-class CppGlobalImpl<T[N], Init> : public CppGlobal {
+template <class T, int N, bool tls, class Init>
+class CppGlobalImpl<T[N], tls, Init> : public CppGlobal {
   typedef T arr[N];
  public:
-  CppGlobalImpl(int& offset, bool tls, Init init) :
+  CppGlobalImpl(int& offset, Init init) :
    offset_(offset)
   {
     registerCppGlobal(this, tls);
@@ -88,11 +88,11 @@ struct array_filler<T,0,Args...> {
   static void fill(T* t, std::tuple<Args...>& args){}
 };
 
-template <class T, int N, class... Args>
-class CppGlobalImpl<T[N], Args...> : public CppGlobal {
+template <class T, int N, bool tls, class... Args>
+class CppGlobalImpl<T[N], tls, Args...> : public CppGlobal {
   typedef T arr[N];
  public:
-  CppGlobalImpl(int& offset, bool tls, Args&&... args) :
+  CppGlobalImpl(int& offset, Args&&... args) :
    offset_(offset),
     args_(std::forward<Args>(args)...)
   {
@@ -110,11 +110,11 @@ class CppGlobalImpl<T[N], Args...> : public CppGlobal {
   int& offset_;
 };
 
-template <class T>
-class CppGlobalImpl<T,std::function<void(void*)>> : public CppGlobal
+template <class T, bool tls>
+class CppGlobalImpl<T,tls,std::function<void(void*)>> : public CppGlobal
 {
  public:
-  CppGlobalImpl(int& offset, bool tls, std::function<void(void*)> fxn) :
+  CppGlobalImpl(int& offset, std::function<void(void*)> fxn) :
    offset_(offset), fxn_(fxn)
   {
     registerCppGlobal(this, tls);
@@ -131,40 +131,40 @@ class CppGlobalImpl<T,std::function<void(void*)>> : public CppGlobal
 };
 
 
-template <class T>
+template <class T, bool tls>
 struct CppInplaceGlobalInitializer {
   CppInplaceGlobalInitializer(int& offset) :
-    gVar(offset, sizeof(T), "static", nullptr)
+    gVar(offset, sizeof(T), "static", nullptr, tls)
   {}
   void forceInitialization(){}
   GlobalVariable gVar;
 };
 
-template <class Tag, class T, class... Args>
+template <class Tag, class T, bool tls, class... Args>
 struct CppInplaceGlobal {
-  CppInplaceGlobal(bool tls, Args&&... args) :
-    alloc(offset, tls, std::forward<Args>(args)...)
+  CppInplaceGlobal(Args&&... args) :
+    alloc(offset, std::forward<Args>(args)...)
   {
     initer.forceInitialization();
   }
-  CppGlobalImpl<T,Args...> alloc;
+  CppGlobalImpl<T,tls,Args...> alloc;
   static int offset;
-  static CppInplaceGlobalInitializer<T> initer;
+  static CppInplaceGlobalInitializer<T,tls> initer;
 };
 
-template <class Tag, class T, class... Args> int
-  CppInplaceGlobal<Tag,T,Args...>::offset;
-template <class Tag, class T, class... Args> CppInplaceGlobalInitializer<T>
-  CppInplaceGlobal<Tag,T,Args...>::initer(CppInplaceGlobal<Tag,T,Args...>::offset);
+template <class Tag, class T, bool tls, class... Args> int
+  CppInplaceGlobal<Tag,T,tls,Args...>::offset;
+template <class Tag, class T, bool tls, class... Args> CppInplaceGlobalInitializer<T,tls>
+  CppInplaceGlobal<Tag,T,tls,Args...>::initer(CppInplaceGlobal<Tag,T,tls,Args...>::offset);
 
-template <class T, class... Args>
-CppGlobal* new_cpp_global(int& offset, bool tls, Args&&... args){
-  return new CppGlobalImpl<T,Args...>(offset, tls, std::forward<Args>(args)...);
+template <class T, bool tls, class... Args>
+CppGlobal* new_cpp_global(int& offset, Args&&... args){
+  return new CppGlobalImpl<T,tls,Args...>(offset, std::forward<Args>(args)...);
 }
 
-template <class Tag, class T, class... Args>
-int inplace_cpp_global(bool tls, Args&&... args){
-  static CppInplaceGlobal<Tag,T,Args...> init(tls, std::forward<Args>(args)...);
+template <class Tag, class T, bool tls, class... Args>
+int inplace_cpp_global(Args&&... args){
+  static CppInplaceGlobal<Tag,T,tls,Args...> init(std::forward<Args>(args)...);
   return init.offset;
 }
 
@@ -174,7 +174,7 @@ class CppVarTemplate {
  public:
   template <class... Args>
   CppVarTemplate(Args&&... args){
-    offset = inplace_cpp_global<Tag,T,Args...>(tls, std::forward<Args>(args)...);
+    offset = inplace_cpp_global<Tag,T,tls,Args...>(std::forward<Args>(args)...);
   }
 
   T& operator()(){

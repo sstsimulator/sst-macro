@@ -62,7 +62,7 @@ namespace sumi {
 
 int
 mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
-{
+{  
   start_pt2pt_call(MPI_Send,count,datatype,dest,tag,comm);
   mpi_comm* commPtr = get_comm(comm);
   mpi_request* req = mpi_request::construct(mpi_request::Send);
