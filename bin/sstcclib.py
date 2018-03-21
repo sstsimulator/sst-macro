@@ -630,7 +630,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         return rc
 
       mergeCmdArr = [
-        "ld -r -o",
+        "ld -r --unique -o",
         target,
         tmpTarget, cxxInitObjFile
       ]

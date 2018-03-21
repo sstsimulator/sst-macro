@@ -7,6 +7,5 @@
  }}
 #include <sstmac/software/process/global.h>
 
-int __offset_xyz_fxnannoying = 0;
 extern int __sizeof_xyz_fxnannoying;
-sstmac::GlobalVariable __gv_xyz_fxnannoying(__offset_xyz_fxnannoying,__sizeof_xyz_fxnannoying,"xyz_fxnannoying",nullptr,false);
+int __offset_xyz_fxnannoying = sstmac::GlobalVariable::init(__sizeof_xyz_fxnannoying,"xyz_fxnannoying",nullptr,false);

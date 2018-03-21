@@ -47,15 +47,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/cppglobal.h>
 
-extern "C" int sstmac_global_stacksize = 0;
+extern "C" {
 
-extern "C" char* static_init_glbls_segment = nullptr;
-extern "C" char* static_init_tls_segment = nullptr;
-extern "C" void allocate_static_init_tls_segment(){
-  static_init_tls_segment = new char[1e6];
+int sstmac_global_stacksize = 0;
+char* static_init_glbls_segment = nullptr;
+char* static_init_tls_segment = nullptr;
+void allocate_static_init_tls_segment(){
+  static_init_tls_segment = new char[int(1e6)];
 }
-extern "C" void allocate_static_init_glbls_segment(){
-  static_init_glbls_segment = new char[1e6];
+void allocate_static_init_glbls_segment(){
+  static_init_glbls_segment = new char[int(1e6)];
+}
+
 }
 
 namespace sstmac {
@@ -74,16 +77,16 @@ GlobalVariableContext GlobalVariable::glblCtx;
 GlobalVariableContext GlobalVariable::tlsCtx;
 bool GlobalVariable::inited = false;
 
-GlobalVariable::GlobalVariable(int &offset, const int size, const char* name, const void *initData,
-                               bool tls)
+int
+GlobalVariable::init(const int size, const char* name, const void *initData, bool tls)
 {
   if (!inited){
     tlsCtx.init();
     glblCtx.init();
     inited = true;
   }
-  if (tls) tlsCtx.append(offset, size, name, initData);
-  else glblCtx.append(offset, size, name, initData);
+  if (tls) return tlsCtx.append(size, name, initData);
+  else return glblCtx.append(size, name, initData);
 }
 
 void
@@ -94,10 +97,10 @@ GlobalVariableContext::init()
   globalInits = nullptr;
 }
 
-void
-GlobalVariableContext::append(int &offset, const int size, const char* name, const void *initData)
+int
+GlobalVariableContext::append(const int size, const char* name, const void *initData)
 {
-  offset = stackOffset;
+  int offset = stackOffset;
 
   int rem = size % 4;
   int offsetIncrement = rem ? (size + (4-rem)) : size; //align on 32-bits
@@ -124,9 +127,9 @@ GlobalVariableContext::append(int &offset, const int size, const char* name, con
     }
   }
 
-  //printf("Allocated global variable %s of size %d at offset %d - %s\n",
-  //       name, size, offset, (realloc ? "reallocated to fit" : "already fits"));
-  //fflush(stdout);
+  printf("Allocated global variable %s of size %d at offset %d - %s\n",
+         name, size, offset, (realloc ? "reallocated to fit" : "already fits"));
+  fflush(stdout);
 
   if (initData){
     void* initStart = (char*)globalInits + stackOffset;
@@ -138,6 +141,8 @@ GlobalVariableContext::append(int &offset, const int size, const char* name, con
   }
 
   stackOffset += offsetIncrement;
+
+  return offset;
 }
 
 void registerCppGlobal(CppGlobal* g, bool tls){

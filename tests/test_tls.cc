@@ -71,7 +71,6 @@ void thrash(std::mutex* mtx, int myId)
 
 int USER_MAIN(int argc, char** argv)
 {
-
   //now test some mutexes
   std::mutex mtx;
   std::thread t0(thrash, &mtx, 0);

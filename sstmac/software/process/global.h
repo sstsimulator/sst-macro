@@ -62,7 +62,7 @@ class GlobalVariableContext {
 
   ~GlobalVariableContext();
 
-  void append(int& offset, const int size, const char* name, const void* initData);
+  int append(const int size, const char* name, const void* initData);
 
   int globalsSize() {
     return stackOffset;
@@ -147,8 +147,7 @@ class GlobalVariableContext {
 
 class GlobalVariable {
  public:
-  GlobalVariable(int& offset, const int size, const char* name, const void* initData,
-                 bool tls = false);
+  static int init(const int size, const char* name, const void* initData, bool tls = false);
 
   static GlobalVariableContext glblCtx;
   static GlobalVariableContext tlsCtx;
@@ -204,9 +203,13 @@ struct global {};
 
 template <class T>
 struct global<T*,void> : public GlobalVariable {
-  explicit global() : GlobalVariable(offset,sizeof(T*),"",nullptr){}
+  explicit global(){ 
+    offset = GlobalVariable::init(sizeof(T*),"",nullptr);
+  }
 
-  explicit global(T* t) : GlobalVariable(offset, sizeof(T*), "", &t){}
+  explicit global(T* t){
+    offset = GlobalVariable::init(sizeof(T*), "", &t);
+  }
 
   T*& get() {
     return get_global_ref_at_offset<T*>(offset);
@@ -234,11 +237,17 @@ struct global<T*,void> : public GlobalVariable {
 };
 
 template <class T>
-struct global<T,typename std::enable_if<std::is_arithmetic<T>::value>::type> : public GlobalVariable {
+struct global<T,typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 
-  explicit global() : GlobalVariable(offset, sizeof(T), "", nullptr){}
+  explicit global()
+  {
+    offset = GlobalVariable::init(sizeof(T), "", nullptr);
+  }
 
-  explicit global(const T& t) : GlobalVariable(offset, sizeof(T), "", &t){}
+  explicit global(const T& t)
+  {
+    offset = GlobalVariable::init(sizeof(T), "", &t);
+  } 
 
   template <class U>
   T& operator=(const U& u){

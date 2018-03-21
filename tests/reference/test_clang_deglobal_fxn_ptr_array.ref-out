@@ -41,15 +41,12 @@ void fifth_fxn()
  }}
 #include <sstmac/software/process/global.h>
 
-int __offset_callbacks = 0;
 extern int __sizeof_callbacks;
 extern void* __ptr_callbacks;
-sstmac::GlobalVariable __gv_callbacks(__offset_callbacks,__sizeof_callbacks,"callbacks",__ptr_callbacks,false);
-int __offset_moar_callbacks = 0;
+int __offset_callbacks = sstmac::GlobalVariable::init(__sizeof_callbacks,"callbacks",__ptr_callbacks,false);
 extern int __sizeof_moar_callbacks;
 extern void* __ptr_moar_callbacks;
-sstmac::GlobalVariable __gv_moar_callbacks(__offset_moar_callbacks,__sizeof_moar_callbacks,"moar_callbacks",__ptr_moar_callbacks,false);
-int __offset_more_callbacks = 0;
+int __offset_moar_callbacks = sstmac::GlobalVariable::init(__sizeof_moar_callbacks,"moar_callbacks",__ptr_moar_callbacks,false);
 extern int __sizeof_more_callbacks;
 extern void* __ptr_more_callbacks;
-sstmac::GlobalVariable __gv_more_callbacks(__offset_more_callbacks,__sizeof_more_callbacks,"more_callbacks",__ptr_more_callbacks,false);
+int __offset_more_callbacks = sstmac::GlobalVariable::init(__sizeof_more_callbacks,"more_callbacks",__ptr_more_callbacks,false);

@@ -24,7 +24,6 @@ CLANGTESTS = \
   deglobal_file_static \
   deglobal_cxx_static \
   deglobal_cxx_template_static \
-  deglobal_cxx_template_member \
   pragma_sst_new \
   pragma_sst_overhead \
   pragma_sst_init \
@@ -41,6 +40,7 @@ CLANGTESTS = \
   pragma_omp_parallel_nthr \
   pragma_omp_parallel
 
+#  deglobal_cxx_template_member  #C++14, not required yet
 #  deglobal_relocation 
 
 #the CHKSUF will get appended to this later

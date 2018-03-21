@@ -12,7 +12,6 @@ void next_fxn()
  }}
 #include <sstmac/software/process/global.h>
 
-int __offset_xyzfxn_list = 0;
 extern int __sizeof_xyzfxn_list;
 extern void* __ptr_xyzfxn_list;
-sstmac::GlobalVariable __gv_xyzfxn_list(__offset_xyzfxn_list,__sizeof_xyzfxn_list,"xyzfxn_list",__ptr_xyzfxn_list,false);
+int __offset_xyzfxn_list = sstmac::GlobalVariable::init(__sizeof_xyzfxn_list,"xyzfxn_list",__ptr_xyzfxn_list,false);

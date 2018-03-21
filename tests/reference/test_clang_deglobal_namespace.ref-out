@@ -17,14 +17,12 @@ void fxn()
 #include <sstmac/software/process/global.h>
 
 namespace ns {
- int __offset_x = 0;
  extern int __sizeof_x;
  extern void* __ptr_x;
- sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,"x",__ptr_x,false);
+ int __offset_x = sstmac::GlobalVariable::init(__sizeof_x,"x",__ptr_x,false);
  namespace ns2 {
-  int __offset_x = 0;
   extern int __sizeof_x;
   extern void* __ptr_x;
-  sstmac::GlobalVariable __gv_x(__offset_x,__sizeof_x,"x",__ptr_x,false);
+  int __offset_x = sstmac::GlobalVariable::init(__sizeof_x,"x",__ptr_x,false);
  }
 }

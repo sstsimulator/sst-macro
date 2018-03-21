@@ -33,9 +33,12 @@ struct build_indices<0, Is...> : indices<Is...> {};
 
 template <class Function, class... Args>
 class std_thread : public std_thread_ctor_wrapper {
+  template <class T>
+  typename std::decay<T>::type decay_copy(T&& v) { return std::forward<T>(v); }
+
  public:
   std_thread(Function&& f, Args&&...args) :
-    f_(std::forward<Function>(f)), args_(std::forward<Args>(args)...)
+  f_(std::forward<Function>(f)), args_(decay_copy(std::forward<Args>(args))...)
   {
   }
 
@@ -50,8 +53,15 @@ class std_thread : public std_thread_ctor_wrapper {
   }
 
  private:
-  Function&& f_;
-  std::tuple<Args&&...> args_;
+  Function f_;
+
+  template <typename T>
+  struct decay_remove_ref {
+    typedef typename std::remove_reference<typename std::decay<T>::type>::type type;
+  };
+
+  std::tuple<typename decay_remove_ref<Args>::type...> args_;
+
 
 };
 

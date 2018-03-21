@@ -8,7 +8,7 @@ int fxn()
   int mul = 0;
   double* x = new double[10];
   int* idx = new int[5];
-  { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=((((*sstmac_bound_i))-(0)));  intops += tripCount0*1;{  uint64_t tripCount1=tripCount0*((((*sstmac_bound_j))-(0)));  flops += tripCount1*1; readBytes += tripCount1*36; writeBytes += tripCount1*12; intops += tripCount1*16;}}sstmac_compute_detailed(flops,intops,readBytes); }
+ { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=((((*sstmac_bound_i))-(0)));  intops += tripCount0*1;{  uint64_t tripCount1=tripCount0*((((*sstmac_bound_j))-(0)));  flops += tripCount1*1; readBytes += tripCount1*36; writeBytes += tripCount1*12; intops += tripCount1*16;}}sstmac_compute_detailed(flops,intops,readBytes); }
 
 
 
@@ -25,11 +25,9 @@ int fxn()
  }}
 #include <sstmac/software/process/global.h>
 
-int __offset_bound_i = 0;
 extern int __sizeof_bound_i;
 extern void* __ptr_bound_i;
-sstmac::GlobalVariable __gv_bound_i(__offset_bound_i,__sizeof_bound_i,"bound_i",__ptr_bound_i,false);
-int __offset_bound_j = 0;
+int __offset_bound_i = sstmac::GlobalVariable::init(__sizeof_bound_i,"bound_i",__ptr_bound_i,false);
 extern int __sizeof_bound_j;
 extern void* __ptr_bound_j;
-sstmac::GlobalVariable __gv_bound_j(__offset_bound_j,__sizeof_bound_j,"bound_j",__ptr_bound_j,false);
+int __offset_bound_j = sstmac::GlobalVariable::init(__sizeof_bound_j,"bound_j",__ptr_bound_j,false);

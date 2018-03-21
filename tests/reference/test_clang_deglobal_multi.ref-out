@@ -8,11 +8,9 @@ void fxn()
  }}
 #include <sstmac/software/process/global.h>
 
-int __offset_y = 0;
 extern int __sizeof_y;
 extern void* __ptr_y;
-sstmac::GlobalVariable __gv_y(__offset_y,__sizeof_y,"y",__ptr_y,false);
-int __offset_z = 0;
+int __offset_y = sstmac::GlobalVariable::init(__sizeof_y,"y",__ptr_y,false);
 extern int __sizeof_z;
 extern void* __ptr_z;
-sstmac::GlobalVariable __gv_z(__offset_z,__sizeof_z,"z",__ptr_z,false);
+int __offset_z = sstmac::GlobalVariable::init(__sizeof_z,"z",__ptr_z,false);

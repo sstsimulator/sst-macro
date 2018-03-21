@@ -16,12 +16,9 @@
  }}
 #include <sstmac/software/process/global.h>
 
-int __offset_xyz_fxnx = 0;
 extern int __sizeof_xyz_fxnx;
-sstmac::GlobalVariable __gv_xyz_fxnx(__offset_xyz_fxnx,__sizeof_xyz_fxnx,"xyz_fxnx",nullptr,false);
-int __offset_xyz_next_fxn_1y = 0;
+int __offset_xyz_fxnx = sstmac::GlobalVariable::init(__sizeof_xyz_fxnx,"xyz_fxnx",nullptr,false);
 extern int __sizeof_xyz_next_fxn_1y;
-sstmac::GlobalVariable __gv_xyz_next_fxn_1y(__offset_xyz_next_fxn_1y,__sizeof_xyz_next_fxn_1y,"xyz_next_fxn_1y",nullptr,false);
-int __offset_xyz_next_fxny = 0;
+int __offset_xyz_next_fxn_1y = sstmac::GlobalVariable::init(__sizeof_xyz_next_fxn_1y,"xyz_next_fxn_1y",nullptr,false);
 extern int __sizeof_xyz_next_fxny;
-sstmac::GlobalVariable __gv_xyz_next_fxny(__offset_xyz_next_fxny,__sizeof_xyz_next_fxny,"xyz_next_fxny",nullptr,false);
+int __offset_xyz_next_fxny = sstmac::GlobalVariable::init(__sizeof_xyz_next_fxny,"xyz_next_fxny",nullptr,false);

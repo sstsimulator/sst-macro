@@ -60,7 +60,7 @@ class CppGlobalImpl<T[N], tls, Init> : public CppGlobal {
    offset_(offset)
   {
     registerCppGlobal(this, tls);
-    ::memcpy(init_, init, sizeof(init));
+    memcpy(init_, init, sizeof(init));
   }
 
   void allocate(void* ptr) override {
@@ -133,27 +133,31 @@ class CppGlobalImpl<T,tls,std::function<void(void*)>> : public CppGlobal
 
 template <class T, bool tls>
 struct CppInplaceGlobalInitializer {
-  CppInplaceGlobalInitializer(int& offset) :
-    gVar(offset, sizeof(T), "static", nullptr, tls)
-  {}
+  CppInplaceGlobalInitializer(int& offset) 
+  {
+    offset = GlobalVariable::init(sizeof(T), "static", nullptr, tls);
+  }
   void forceInitialization(){}
-  GlobalVariable gVar;
 };
 
+template <class Tag, class T, bool tls>
+struct CppInplaceGlobalBase {
+  static int offset;
+};
+template <class Tag, class T, bool tls> int
+  CppInplaceGlobalBase<Tag,T,tls>::offset;
+
 template <class Tag, class T, bool tls, class... Args>
-struct CppInplaceGlobal {
+struct CppInplaceGlobal : public CppInplaceGlobalBase<Tag,T,tls> {
   CppInplaceGlobal(Args&&... args) :
-    alloc(offset, std::forward<Args>(args)...)
+    alloc(CppInplaceGlobalBase<Tag,T,tls>::offset, 
+          std::forward<Args>(args)...)
   {
     initer.forceInitialization();
   }
   CppGlobalImpl<T,tls,Args...> alloc;
-  static int offset;
   static CppInplaceGlobalInitializer<T,tls> initer;
 };
-
-template <class Tag, class T, bool tls, class... Args> int
-  CppInplaceGlobal<Tag,T,tls,Args...>::offset;
 template <class Tag, class T, bool tls, class... Args> CppInplaceGlobalInitializer<T,tls>
   CppInplaceGlobal<Tag,T,tls,Args...>::initer(CppInplaceGlobal<Tag,T,tls,Args...>::offset);
 
@@ -174,17 +178,18 @@ class CppVarTemplate {
  public:
   template <class... Args>
   CppVarTemplate(Args&&... args){
-    offset = inplace_cpp_global<Tag,T,tls,Args...>(std::forward<Args>(args)...);
+    int ignore = inplace_cpp_global<Tag,T,tls,Args...>(std::forward<Args>(args)...);
+  }
+
+  int getOffset() const {
+    return CppInplaceGlobalBase<Tag,T,tls>::offset;
   }
 
   T& operator()(){
+    int offset = CppInplaceGlobalBase<Tag,T,tls>::offset;
     return tls ? get_tls_ref_at_offset<T>(offset) : get_global_ref_at_offset<T>(offset);
   }
-
- private:
-  static int offset;
 };
-template <class Tag, class T, bool tls> int CppVarTemplate<Tag,T,tls>::offset = 0;
 
 }
 

@@ -1,6 +1,6 @@
 
 template <class T> class A {};
-A<int> a;void* __ptr_a = &a; int __sizeof_a = sizeof(a); extern int __offset_a; sstmac::CppGlobal* a_sstmac_ctor = sstmac::new_cpp_global<A<int>>(__offset_a,false); 
+A<int> a;void* __ptr_a = &a; int __sizeof_a = sizeof(a); extern int __offset_a; sstmac::CppGlobal* a_sstmac_ctor = sstmac::new_cpp_global<A<int>,false>(__offset_a); 
 
 void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();decltype(a)* sstmac_a=(decltype(a)*)(sstmac_global_data + __offset_a); {
@@ -8,7 +8,6 @@ void fxn()
  }}
 #include <sstmac/software/process/global.h>
 
-int __offset_a = 0;
 extern int __sizeof_a;
 extern void* __ptr_a;
-sstmac::GlobalVariable __gv_a(__offset_a,__sizeof_a,"a",__ptr_a,false);
+int __offset_a = sstmac::GlobalVariable::init(__sizeof_a,"a",__ptr_a,false);
