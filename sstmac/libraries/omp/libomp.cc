@@ -1,10 +1,10 @@
 #include <sstmac/libraries/pthread/sstmac_pthread_impl.h>
-#include <sstmac/replacements/omp.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/processor/processor.h>
+#include <sstmac/replacements/omp.h>
 
 namespace sstmac {
 namespace sw {

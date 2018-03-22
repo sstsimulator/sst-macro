@@ -100,7 +100,7 @@ class mpi_message final :
     return clone_me();
   }
 
-  void serialize_order(serializer& ser) override;
+  void serialize_order(sstmac::serializer& ser) override;
 
   uint64_t payload_bytes() const {
     return uint64_t(count_) * uint64_t(type_packed_size_);

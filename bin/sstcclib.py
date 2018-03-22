@@ -86,6 +86,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   extraLibs = extraLibs.split()
   import os
   import sys
+  import platform
   from configlib import getstatusoutput
   from sstccvars import sstLdFlags, sstCppFlags
   from sstccvars import prefix, execPrefix, includeDir, cc, cxx
@@ -629,8 +630,12 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         allTemps.cleanUp()
         return rc
 
+      linker = "ld -r"
+      if not platform.system() == "Darwin":
+        linker += " --unique"
+      
       mergeCmdArr = [
-        "ld -r --unique -o",
+        linker, "-o",
         target,
         tmpTarget, cxxInitObjFile
       ]

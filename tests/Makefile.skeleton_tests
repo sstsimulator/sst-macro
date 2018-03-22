@@ -16,9 +16,13 @@ if HAVE_CLANG
 SKELETONCASES += \
   relocation_ptr_test \
   openmp \
-  template_global_test \
-  unique_ptr_test \
   overhead_test
+
+if HAVE_CPP14
+SKELETONCASES += \
+  unique_ptr_test \
+  template_global_test 
+endif
 
 if BUILD_SUMI_MPI
 SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD 

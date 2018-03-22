@@ -26,7 +26,7 @@ if BUILD_SUMI_MPI
 SUBDIRS += sumi-mpi
 endif
 
-SUBDIRS += sstmac bin python tests configurations 
+SUBDIRS += sumi sstmac bin python tests configurations 
 
 dist_bin_SCRIPTS = sstmacro-libtool
 

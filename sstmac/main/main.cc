@@ -61,7 +61,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
-#include <sumi/sumi/sumi_config.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/software/api/api.h>

@@ -51,7 +51,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/collective_message.h>
 #include <sumi/timeout.h>
 #include <sumi/communicator.h>
-#include <sumi/thread_safe_set.h>
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
 namespace sumi {

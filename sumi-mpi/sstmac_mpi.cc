@@ -302,3 +302,12 @@ extern "C" int sstmac_mpi_put(const void *origin_addr, int origin_count, MPI_Dat
                                  target_rank, target_disp, target_count,
                                  target_datatype, win);
 }
+
+extern "C" int sstmac_group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group *newgroup){
+  return sumi::sstmac_mpi()->group_range_incl(group, n, ranges, newgroup);
+}
+
+extern "C" int sstmac_pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
+{
+  return sumi::sstmac_mpi()->pack_size(incount, datatype, comm, size);
+}

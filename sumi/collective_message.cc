@@ -42,64 +42,91 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sprockit/test/test.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/thread.h>
-#include <sstmac/libraries/sumi/sumi.h>
-#include <sumi/dense_rank_map.h>
-#include <sumi/transport.h>
+#include <sumi/collective_message.h>
+#include <sstmac/common/serializable.h>
 
-#include <sstmac/util.h>
-#include <sstmac/compute.h>
-#include <sstmac/skeleton.h>
-#include <sprockit/output.h>
+namespace sumi {
 
-#define sstmac_app_name user_app_cxx
-using namespace sstmac;
-using namespace sstmac::sw;
-using namespace sstmac::hw;
-using namespace sumi;
-
-
-void
-run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
+#define enumcase(x) case x: return #x;
+const char*
+collective_work_message::tostr(action_t action)
 {
+  switch(action)
+  {
+    enumcase(eager_payload);
+    enumcase(nack_eager);
+    enumcase(nack_get_header);
+    enumcase(nack_put_header);
+    enumcase(nack_put_payload);
+    enumcase(nack_get_ack);
+    enumcase(rdma_get_header);
+    enumcase(rdma_put_header);
+    enumcase(get_data);
+    enumcase(put_data);
+  }
+  spkt_throw_printf(sprockit::value_error,
+    "collective_work_message::invalid action %d",
+    action);
 }
 
-int
-main(int argc, char **argv)
+void
+collective_work_message::serialize_order(sstmac::serializer &ser)
 {
-  comm_init();
+  message::serialize_order(ser);
+  ser & action_;
+  ser & tag_;
+  ser & type_;
+  ser & round_;
+  ser & dense_sender_;
+  ser & dense_recver_;
+  //ser & failed_procs_;
+}
 
-  //now do a collective with payloads
-  int rank = comm_rank();
-  int nproc = comm_nproc();
+std::string
+collective_work_message::to_string() const
+{
+  return sprockit::printf(
+    "message for collective %s event %s "
+    "recver=%d(%d) sender=%d(%d) nbytes=%d round=%d tag=%d",
+        collective::tostr(type_), message::tostr(message::payload_type()),
+        dense_recver_, recver(), dense_sender_, sender(), byte_length(), round_, tag_);
+}
 
-  int start = 2, nsubrange = 4;
-  int stop = start + nsubrange;
+void
+collective_work_message::clone_into(collective_work_message* cln) const
+{
+  message::clone_into(cln);
+  cln->tag_ = tag_;
+  cln->type_ = type_;
+  cln->round_ = round_;
+  cln->dense_sender_ = dense_sender_;
+  cln->dense_recver_ = dense_recver_;
+}
 
-  if (rank >= start && rank < stop){
-    communicator* dom = new subrange_communicator(rank, start, nsubrange);
-    //test_allgather(dom, 0);
-    //test_allreduce(dom, 1);
-  }
-
-  communicator* dom = new rotate_communicator(rank, nproc, 3);
-  //test_allgather(dom, 2);
-  //test_allreduce(dom, 3);
-
-
-  run_test(dom, 1, 12, options::initial_context, 4);
-
-  run_test(dom, 4, 11, 4, 5);
-
-  run_test(dom, 7, 10, 5, 6);
-
-  run_test(dom, 10, 9, 6, 7);
-
-  comm_finalize();
-
+message*
+collective_done_message::clone(payload_type_t ty) const
+{
+  sprockit::abort("collective_done_message::clone unimplemented");
   return 0;
 }
 
+void
+collective_work_message::reverse()
+{
+  message::reverse();
+  int tmp = dense_recver_;
+  dense_recver_ = dense_sender_;
+  dense_sender_ = tmp;
+}
+
+#ifdef FEATURE_TAG_SUMI_RESILIENCE
+void
+collective_work_message::append_failed(const thread_safe_set<int>& failed)
+{
+  thread_safe_set<int>::iterator end = failed.start_iteration();
+  failed_procs_.insert(failed.begin(), end);
+  failed.end_iteration();
+}
+#endif
+
+}

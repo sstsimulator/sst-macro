@@ -22,7 +22,17 @@ static std::vector<std::string> split_path(const std::string& searchPath)
   return paths;
 }
 
-void load_extern_library(const std::string& libname, const std::string& searchPath){
+std::string load_extern_path_str(){
+  const char* libpath_str = getenv("SST_LIB_PATH");
+  if (libpath_str){
+    return libpath_str;
+  } else {
+    return "";
+  }
+}
+
+void load_extern_library(const std::string& libname, const std::string& searchPath)
+{
   std::vector<std::string> paths = split_path(searchPath);
   //always include current directory
   paths.push_back(".");
@@ -51,6 +61,11 @@ void load_extern_library(const std::string& libname, const std::string& searchPa
     spkt_abort_printf("Opening library %s failed\n:%s", libname.c_str(), dlerror());
   }
 
+}
+
+void load_extern_library(const std::string& libname)
+{
+  load_extern_library(libname, load_extern_path_str());
 }
 
 }

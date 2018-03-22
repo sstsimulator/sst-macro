@@ -73,8 +73,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/sprockit/spkt_config.h>
-#include <sumi/sumi/sumi_config.h>
-
 #include <sstmac/common/event_manager.h>
 #include <sstmac/backends/native/serial_runtime.h>
 #include <sstmac/software/process/app.h>
@@ -87,10 +85,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #if SPKT_REPO_BUILD
 #include <sprockit/sprockit_repo.h>
-#endif
-
-#if SUMI_REPO_BUILD
-#include <sumi/sumi_repo.h>
 #endif
 
 RegisterKeywords(
@@ -344,7 +338,11 @@ run_standalone(int argc, char** argv)
   null_params.add_param_override("name", "sstmac_app_name");
   sstmac::sw::software_id id(0,0);
   sstmac::native::serial_runtime rt(&null_params);
+#if SSTMAC_INTEGRATED_SST_CORE
+  sstmac::event_manager mgr(uint32_t(0));
+#else
   sstmac::event_manager mgr(&null_params, &rt);
+#endif
   sstmac::hw::simple_node node(&null_params, 1, &mgr);
   sstmac::sw::operating_system os(&null_params, &node);
 
@@ -410,12 +408,7 @@ try_main(sprockit::sim_parameters* params,
   sstmac::remap_params(params);
 
   if (params->has_param("external_libs")){
-    const char* libpath_str = getenv("SST_LIB_PATH");
-    std::string pathStr;
-    if (libpath_str){
-      pathStr = libpath_str;
-    }
-
+    std::string pathStr = load_extern_path_str();
     std::vector<std::string> libraries;
     params->get_vector_param("external_libs", libraries);
     for (auto&& lib : libraries){

@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/libraries/sumi/sumi_transport.h>
-#include <sumi/sumi/transport.h>
+#include <sumi/transport.h>
 #include <sstmac/skeleton.h>
 #include <sprockit/keyword_registration.h>
 
@@ -101,7 +101,7 @@ class config_message :
     return recv_buf_;
   }
 
-  virtual void serialize_order(sumi::serializer &ser) override {
+  virtual void serialize_order(sstmac::serializer &ser) override {
     ser & recv_buf_;
     sumi::message::serialize_order(ser);
   }
@@ -124,7 +124,7 @@ class rdma_message :
   {
   }
 
-  virtual void serialize_order(sumi::serializer& ser) override {
+  virtual void serialize_order(sstmac::serializer& ser) override {
     ser & iter_;
     ser & start_;
     ser & finish_;

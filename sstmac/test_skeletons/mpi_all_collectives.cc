@@ -43,63 +43,29 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sprockit/test/test.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/thread.h>
-#include <sstmac/libraries/sumi/sumi.h>
-#include <sumi/dense_rank_map.h>
-#include <sumi/transport.h>
-
 #include <sstmac/util.h>
-#include <sstmac/compute.h>
+#include <sstmac/replacements/mpi.h>
+#include <sstmac/common/runtime.h>
+#include <sstmac/software/process/backtrace.h>
+#include <sumi-mpi/mpi_api.h>
 #include <sstmac/skeleton.h>
-#include <sprockit/output.h>
+#include <sstmac/compute.h>
+#include <sprockit/keyword_registration.h>
 
-#define sstmac_app_name user_app_cxx
-using namespace sstmac;
-using namespace sstmac::sw;
-using namespace sstmac::hw;
-using namespace sumi;
+#define sstmac_app_name mpi_all_collectives
 
-
-void
-run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
+int USER_MAIN(int argc, char** argv)
 {
-}
+  MPI_Init(&argc, &argv);
 
-int
-main(int argc, char **argv)
-{
-  comm_init();
+  int me, nproc;
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  //now do a collective with payloads
-  int rank = comm_rank();
-  int nproc = comm_nproc();
+  MPI_Alltoall(nullptr, 100, MPI_INT, nullptr, 100, MPI_INT, MPI_COMM_WORLD);
+  MPI_Allgather(nullptr, 1000, MPI_DOUBLE, nullptr, 1000, MPI_DOUBLE, MPI_COMM_WORLD);
+  MPI_Allreduce(nullptr, nullptr, 400, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-  int start = 2, nsubrange = 4;
-  int stop = start + nsubrange;
-
-  if (rank >= start && rank < stop){
-    communicator* dom = new subrange_communicator(rank, start, nsubrange);
-    //test_allgather(dom, 0);
-    //test_allreduce(dom, 1);
-  }
-
-  communicator* dom = new rotate_communicator(rank, nproc, 3);
-  //test_allgather(dom, 2);
-  //test_allreduce(dom, 3);
-
-
-  run_test(dom, 1, 12, options::initial_context, 4);
-
-  run_test(dom, 4, 11, 4, 5);
-
-  run_test(dom, 7, 10, 5, 6);
-
-  run_test(dom, 10, 9, 6, 7);
-
-  comm_finalize();
-
+  MPI_Finalize();
   return 0;
 }
-

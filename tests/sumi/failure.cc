@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sumi/dense_rank_map.h>
-#include <sumi/thread_safe_set.h>
 #include <sumi/transport.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/util.h>
@@ -113,14 +112,12 @@ run_test(int me, int todie, int nproc_live, int context, int tag)
 
   dmsg = comm_collective_block(collective::dynamic_tree_vote, tag);
   if (me == 0){
-    const thread_safe_set<int>& failed = comm_failed_ranks();
-    thread_safe_set<int>::iterator it, end = failed.start_iteration();
+    auto& failed = comm_failed_ranks();
     std::stringstream sstr;
     sstr << "Failed = {";
-    for (it = failed.begin(); it != end; ++it){
-      sstr << " " << *it;
+    for (auto rank : failed){
+      sstr << " " << rank;
     }
-    failed.end_iteration();
     sstr << " }";
     printf("%s\n", sstr.str().c_str());
   }

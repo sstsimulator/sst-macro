@@ -59,6 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/link.h>
 
 namespace sstmac {
+extern int run_standalone(int, char**);
 typedef SST::Event::HandlerBase link_handler;
 }
 #else
@@ -97,6 +98,10 @@ class event_scheduler :
 
 #if SSTMAC_INTEGRATED_SST_CORE
  public:
+  std::string to_string() const {
+    return "event scheduler";
+  }
+
   timestamp now() const;
 
   SST::Link* self_link() const {
@@ -114,10 +119,11 @@ class event_scheduler :
   void handle_self_event(SST::Event* ev);
 
  protected:
+  friend int ::sstmac::run_standalone(int, char**);
   event_scheduler(uint32_t loc) :
-   self_link_(nullptr),
-   comp_(nullptr),
-   id_(loc)
+    self_link_(nullptr),
+    comp_(nullptr),
+    id_(loc)
   {
   }
 

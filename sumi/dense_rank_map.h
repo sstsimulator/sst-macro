@@ -42,64 +42,67 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sprockit/test/test.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/thread.h>
-#include <sstmac/libraries/sumi/sumi.h>
-#include <sumi/dense_rank_map.h>
-#include <sumi/transport.h>
+#ifndef sumi_api_DENSE_RANK_MAP_H
+#define sumi_api_DENSE_RANK_MAP_H
 
-#include <sstmac/util.h>
-#include <sstmac/compute.h>
-#include <sstmac/skeleton.h>
-#include <sprockit/output.h>
+#include <set>
+#include <sumi/communicator_fwd.h>
 
-#define sstmac_app_name user_app_cxx
-using namespace sstmac;
-using namespace sstmac::sw;
-using namespace sstmac::hw;
-using namespace sumi;
+namespace sumi {
 
+/**
+* @class dense_rank_map
+* physical <= dense <= virtual
+* sparse rank is a synonym for physical.
+* It's the rank you started with when there were no failures
+* A job starts with 3 nodes {0,1,2}.
+* Node 1 dies. There are 2 live nodes.
+* 0 -> 0
+* 2 -> 1
+*/
+class dense_rank_map {
 
-void
-run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
-{
+ public:
+  int dense_rank(int sparse_rank) const;
+
+  int sparse_rank(int dense_rank) const;
+
+  dense_rank_map();
+
+  dense_rank_map(const std::set<int>& failed, communicator* dom = nullptr);
+
+  ~dense_rank_map();
+
+  void init(const std::set<int>& failed, communicator* dom = nullptr);
+
+ protected:
+  static const int tree_cutoff = 4;
+
+  /**
+   * O(N) search algorithm for new rank for N = # failures
+   * @param sparse_rank
+   * @return
+   */
+  int linear_find_rank(int sparse_rank) const;
+
+  /**
+   * O(log N) search algorithm for new rank,
+   * but with larger prefactor for N = # failures
+   * @param sparse_rank
+   * @return
+   */
+  int tree_find_rank(
+    int sparse_rank,
+    int offset,
+    int num_failed_ranks,
+    int* failed_array) const;
+
+ protected:
+  int num_failed_ranks_;
+  int* failed_ranks_;
+
+};
+
 }
 
-int
-main(int argc, char **argv)
-{
-  comm_init();
-
-  //now do a collective with payloads
-  int rank = comm_rank();
-  int nproc = comm_nproc();
-
-  int start = 2, nsubrange = 4;
-  int stop = start + nsubrange;
-
-  if (rank >= start && rank < stop){
-    communicator* dom = new subrange_communicator(rank, start, nsubrange);
-    //test_allgather(dom, 0);
-    //test_allreduce(dom, 1);
-  }
-
-  communicator* dom = new rotate_communicator(rank, nproc, 3);
-  //test_allgather(dom, 2);
-  //test_allreduce(dom, 3);
-
-
-  run_test(dom, 1, 12, options::initial_context, 4);
-
-  run_test(dom, 4, 11, 4, 5);
-
-  run_test(dom, 7, 10, 5, 6);
-
-  run_test(dom, 10, 9, 6, 7);
-
-  comm_finalize();
-
-  return 0;
-}
-
+#endif // DENSE_RANK_MAP_H

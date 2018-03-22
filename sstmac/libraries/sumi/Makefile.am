@@ -12,8 +12,6 @@
 include $(top_srcdir)/Makefile.common
 
 AM_CPPFLAGS += -I$(top_srcdir)/sumi -I$(top_builddir)/sumi
-AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
-AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
 
 noinst_LTLIBRARIES = libsstmac_sumi.la
 

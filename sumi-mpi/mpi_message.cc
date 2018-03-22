@@ -96,7 +96,7 @@ mpi_message::recompute_bytes()
 }
 
 void
-mpi_message::serialize_order(serializer& ser)
+mpi_message::serialize_order(sstmac::serializer& ser)
 {
   message::serialize_order(ser);
   ser & (src_rank_);

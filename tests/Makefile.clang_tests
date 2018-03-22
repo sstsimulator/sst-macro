@@ -23,7 +23,6 @@ CLANGTESTS = \
   deglobal_fxn_struct_reconstruct \
   deglobal_file_static \
   deglobal_cxx_static \
-  deglobal_cxx_template_static \
   pragma_sst_new \
   pragma_sst_overhead \
   pragma_sst_init \
@@ -39,6 +38,10 @@ CLANGTESTS = \
   pragma_sst_loop_count \
   pragma_omp_parallel_nthr \
   pragma_omp_parallel
+
+if HAVE_CPP14
+  deglobal_cxx_template_static 
+endif
 
 #  deglobal_cxx_template_member  #C++14, not required yet
 #  deglobal_relocation 

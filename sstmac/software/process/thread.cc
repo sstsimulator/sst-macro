@@ -43,8 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/common/thread_safe_int.h>
-#include <sstmac/software/process/std_thread.h>
-#include <sstmac/software/process/std_mutex.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/key.h>
@@ -326,6 +324,15 @@ thread::join()
   //}
   os_->join_thread(this);
 }
+
+} }
+
+#include <sstmac/software/process/std_thread.h>
+#include <sstmac/software/process/std_mutex.h>
+
+namespace sstmac {
+namespace sw {
+
 
 std_thread_base::std_thread_base(thread* thr) :
   thread(thr->parent_app()->params(),
