@@ -88,11 +88,5 @@ class std_thread_standin {
 }
 
 
-
-
-namespace std {
-using thread = sstmac::sw::std_thread_standin;
-}
-
 #endif
 

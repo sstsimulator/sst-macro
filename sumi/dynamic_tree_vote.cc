@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/transport.h>
 #include <sumi/communicator.h>
 #include <sprockit/stl_string.h>
+#include <algorithm>
 
 /*
 #undef debug_printf

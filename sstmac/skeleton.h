@@ -147,7 +147,9 @@ static void* nullptr = 0;
 
 #ifdef __cplusplus
 #include <cstdint>
+#ifndef _Bool
 using _Bool = bool;
+#endif
 extern "C" {
 #else
 #include <stdint.h>

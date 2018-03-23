@@ -10,6 +10,10 @@
 
 #include <sstmac/software/process/std_thread.h>
 
+namespace std {
+using thread = sstmac::sw::std_thread_standin;
+}
+
 #ifdef THREAD_OWNS_STL
 #undef THREAD_OWNS_STL
 #undef SSTMAC_INSIDE_STL

@@ -256,6 +256,7 @@ static struct PyModuleDef py3sstDef {
 };
 #endif
 
+extern "C"
 static void* gen_sst_macro_integrated_pymodule(void)
 {
   static_assert( (sizeof(fxns)/sizeof(myMethod)) ==
