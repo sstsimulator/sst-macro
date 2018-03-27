@@ -74,6 +74,22 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
 }
 
 int
+mpi_api::comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *newcomm)
+{
+  check_init();
+  start_comm_call(MPI_Comm_create_group,comm);
+  mpi_comm* inputPtr = get_comm(comm);
+  mpi_group* groupPtr = get_group(group);
+  mpi_comm* outputPtr = comm_factory_.comm_create_group(inputPtr, groupPtr);
+  add_comm_ptr(outputPtr, newcomm);
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create_group(%s,*%s) finish",
+                comm_str(comm).c_str(), comm_str(*newcomm).c_str());
+  end_api_call();
+  //okay, this is really complicated
+  return MPI_SUCCESS;
+}
+
+int
 mpi_api::comm_size(MPI_Comm comm, int *size)
 {
   start_comm_call(MPI_Comm_size,comm);

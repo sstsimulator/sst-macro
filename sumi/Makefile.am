@@ -1,26 +1,83 @@
 #
-#   This file is part of SST/macroscale:
+#   This file is part of SST/macroscale: 
 #                The macroscale architecture simulator from the SST suite.
-#   Copyright (c) 2009 Sandia Corporation.
+#   Copyright (c) 2011 Sandia Corporation.
 #   This software is distributed under the BSD License.
 #   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 #   the U.S. Government retains certain rights in this software.
-#   For more information, see the LICENSE file in the top
+#   For more information, see the LICENSE file in the top 
 #   SST/macroscale directory.
 #
 
-ACLOCAL_AMFLAGS = -I acinclude
+include $(top_srcdir)/Makefile.common
 
-SUBDIRS = 
+noinst_LTLIBRARIES = libsumi.la
 
-if ENABLE_GNI
-SUBDIRS += gni
-endif
+libsumi_la_LIBADD = 
 
-if ENABLE_MPI
-SUBDIRS += mpi
-endif
 
-SUBDIRS += sumi 
+library_includedir=$(includedir)/sumi
+
+nodist_library_include_HEADERS = 
+
+library_include_HEADERS = \
+ alltoall.h \
+ alltoallv.h \
+ allgather.h \
+ allgatherv.h \
+ allreduce.h \
+ gather.h \
+ gatherv.h \
+ bcast.h \
+ reduce.h \
+ scan.h \
+ scatter.h \
+ scatterv.h \
+ collective.h \
+ collective_actor.h \
+ collective_actor_fwd.h \
+ collective_message.h \
+ collective_message_fwd.h \
+ comm_functions.h \
+ dense_rank_map.h \
+ communicator.h \
+ communicator_fwd.h \
+ dynamic_tree_vote.h \
+ message.h \
+ message_fwd.h \
+ monitor.h \
+ options.h \
+ partner_timeout.h \
+ ping.h \
+ rdma.h \
+ rdma_mdata.h \
+ timeout.h \
+ transport.h \
+ transport_fwd.h 
+
+libsumi_la_SOURCES = \
+ alltoall.cc \
+ alltoallv.cc \
+ transport.cc \
+ allgather.cc \
+ allgatherv.cc \
+ allreduce.cc \
+ bcast.cc \
+ gather.cc \
+ gatherv.cc \
+ reduce.cc \
+ scan.cc \
+ scatter.cc \
+ scatterv.cc \
+ collective.cc \
+ collective_actor.cc \
+ collective_message.cc \
+ dense_rank_map.cc \
+ communicator.cc \
+ dynamic_tree_vote.cc \
+ message.cc \
+ monitor.cc \
+ partner_timeout.cc \
+ ping.cc 
 
 

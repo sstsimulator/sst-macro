@@ -82,6 +82,7 @@ RegisterDebugSlot(mpi_check,
     " runs and terminates cleanly");
 
 RegisterKeywords(
+{ "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
 { "dump_comm_times", "dump communication time statistics" },
 );
 
@@ -542,10 +543,10 @@ void
 mpi_api::check_key(int key)
 {
   if (keyvals_.find(key) == keyvals_.end()) {
-    spkt_throw_printf(sprockit::spkt_error,
-        "mpi_api::check_key: could not find keyval %d in key_map", key);
+    spkt_abort_printf("mpi_api::check_key: could not find keyval %d in key_map", key);
   }
 }
+
 
 int
 mpi_api::error_string(int errorcode, char *str, int *resultlen)
@@ -873,4 +874,9 @@ MPI_Call::ID_str(MPI_function func)
 }
 
 
+}
+
+extern "C" void sst_gdb_print_rank(){
+  auto api = sumi::sstmac_mpi();
+  std::cerr << "Current rank is " << api->rank() << std::endl;
 }

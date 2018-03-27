@@ -83,7 +83,8 @@ void
 lib_compute_inst::compute_detailed(
   uint64_t flops,
   uint64_t nintops,
-  uint64_t bytes)
+  uint64_t bytes,
+  int nthread)
 {
   /** Configure the compute request */
   auto cmsg = new compute_event_impl<basic_instructions_st>;
@@ -91,13 +92,14 @@ lib_compute_inst::compute_detailed(
   st.flops = flops;
   st.intops = nintops;
   st.mem_sequential = bytes;
+  st.nthread = nthread;
 
   // Do not overwrite an existing tag
   const auto& cur_tag = os_->active_thread()->tag();
   ftq_scope scope(os_->active_thread(),
       cur_tag.id() == ftq_tag::null.id() ? ftq_tag::compute : cur_tag);
 
-  compute_inst(cmsg);
+  compute_inst(cmsg, nthread);
   delete cmsg;
 }
 
@@ -128,10 +130,10 @@ lib_compute_inst::init(sprockit::sim_parameters* params)
 }
 
 void
-lib_compute_inst::compute_inst(compute_event* cmsg)
+lib_compute_inst::compute_inst(compute_event* cmsg, int nthr)
 {
   SSTMACBacktrace(ComputeInstructions);
-  os_->execute(ami::COMP_INSTR, cmsg);
+  os_->execute(ami::COMP_INSTR, cmsg, nthr);
 }
 
 }

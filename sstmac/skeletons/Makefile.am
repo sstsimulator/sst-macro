@@ -19,31 +19,18 @@ AM_LDFLAGS += $(OTF2_LDFLAGS)
 endif
 
 AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_builddir)/sumi -I$(top_srcdir)/sumi
-AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements -DSSTMAC=1
 AM_LDFLAGS += -lotf2
 
 libsstmac_skeletons_la_LDFLAGS = 
 
 libsstmac_skeletons_la_SOURCES = \
-  traffic_matrix/main.cc \
-  test/host_compute.cc \
   test/service_test.cc \
-  test/app_hello_world.cc 
+  traffic_matrix/main.cc 
 
 if BUILD_SUMI_MPI
 libsstmac_skeletons_la_SOURCES += \
-  test/compute.cc \
-  test/global_test.cc \
-  test/mpi_coverage_test.cc \
-  test/mpi_ping_all.cc \
-  test/mpi_ping_pong.cc \
-  test/mpi_all_collectives.cc \
-  test/mpi_delay_stats.cc \
-  test/mpi_isend_progress.cc \
   undumpi/parsedumpi.cc \
-  undumpi/parsedumpi_callbacks.cc \
-  test/memory_leak_test.cc \
-  test/sstmac_mpi_test_all.cc 
+  undumpi/parsedumpi_callbacks.cc 
 
 if HAVE_OTF2
   libsstmac_skeletons_la_SOURCES += \

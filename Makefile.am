@@ -17,6 +17,7 @@ EXTRA_DIST = LICENSE bootstrap.sh \
   manual-sstmacro-7.2.pdf \
   pdes-report-7.2.pdf \
   docs \
+  share \
   skeletons
 
 SUBDIRS = $(subdirs)
@@ -25,7 +26,7 @@ if BUILD_SUMI_MPI
 SUBDIRS += sumi-mpi
 endif
 
-SUBDIRS += sstmac bin python tests configurations 
+SUBDIRS += sumi sstmac bin python tests configurations 
 
 dist_bin_SCRIPTS = sstmacro-libtool
 

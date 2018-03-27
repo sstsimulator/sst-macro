@@ -1,14 +1,26 @@
+#ifndef sstmac_thread_included
+#define sstmac_thread_included
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-
+#define THREAD_OWNS_STL
 #include <sstmac/replacements/sstmac_pthread_clear.h>
+#include <sstmac/replacements/clear_symbol_macros.h>
+#endif
 
-#include_next <thread>
+#include <sstmac/software/process/std_thread.h>
+
+namespace std {
+using thread = sstmac::sw::std_thread_standin;
+}
+
+#ifdef THREAD_OWNS_STL
+#undef THREAD_OWNS_STL
 #undef SSTMAC_INSIDE_STL
-
+#include <sstmac/replacements/return_symbol_macros.h>
 #include <sstmac/replacements/sstmac_pthread_return.h>
+#endif
 
-#else
-#include_next <thread>
+
 #endif
 

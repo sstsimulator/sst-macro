@@ -1,3 +1,3 @@
 import sst.macro
-import sst.sstmac_api_mpi_test
+sst.macro.loadLibrary("libsstmac_api_mpi_test.so")
 sst.macro.setupDeprecated()

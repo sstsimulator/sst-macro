@@ -71,7 +71,7 @@ SSTComputePragma::visitAndReplaceStmt(Stmt* stmt, Rewriter& r, PragmaConfig& cfg
   ComputeVisitor vis(*CI, *pragmaList, nullptr, cfg.astVisitor);
   vis.setContext(stmt);
   vis.addOperations(stmt,loop.body);
-  vis.replaceStmt(stmt,r,loop,cfg);
+  vis.replaceStmt(stmt,r,loop,cfg, nthread_);
 }
 
 void
@@ -141,14 +141,24 @@ SSTComputePragma::visitIfStmt(IfStmt* stmt, Rewriter& r, PragmaConfig& cfg)
 }
 
 void
-SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
+SSTComputePragma::replaceForStmt(clang::ForStmt* stmt, CompilerInstance& CI, SSTPragmaList& prgList,
+                                 Rewriter& r, PragmaConfig& cfg, SkeletonASTVisitor* visitor,
+                                 const std::string& nthread)
 {
-  ComputeVisitor vis(*CI, *pragmaList, nullptr, cfg.astVisitor); //null, no parent
+  visitor->appendComputeLoop(stmt);
+  ComputeVisitor vis(CI, prgList, nullptr, visitor); //null, no parent
   Loop loop(0); //depth zeros
   vis.setContext(stmt);
   vis.visitLoop(stmt,loop);
-  vis.replaceStmt(stmt,r,loop,cfg);
+  vis.replaceStmt(stmt,r,loop,cfg, nthread);
   //cfg.skipNextStmt = true;
+  visitor->popComputeLoop();
+}
+
+void
+SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
+{
+  replaceForStmt(stmt, *CI, *pragmaList, r, cfg, cfg.astVisitor, nthread_);
 }
 
 void
@@ -165,4 +175,62 @@ SSTMemoryPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token
   return new SSTMemoryPragma(sstr.str());
 }
 
+enum OpenMPProperty {
+  OMP_NTHREAD,
+  OMP_NONE
+};
+
+SSTPragma*
+SSTOpenMPParallelPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  static const std::map<std::string, OpenMPProperty> omp_property_map = {
+    {"num_threads", OMP_NTHREAD},
+  };
+
+  std::string nthread;
+  OpenMPProperty activeProp = OMP_NONE;
+  for (const Token& t : tokens){
+    switch (t.getKind()){
+    case tok::identifier:
+    {
+      auto next = t.getIdentifierInfo()->getName().str();
+      switch (activeProp) {
+      case OMP_NONE:
+      {
+        auto iter = omp_property_map.find(next);
+        if (iter != omp_property_map.end()){
+          activeProp = iter->second;
+        }
+        break;
+      }
+      case OMP_NTHREAD:
+      {
+        nthread = next;
+        activeProp = OMP_NONE;
+        break;
+      }
+      }
+      break;
+    }
+    case tok::string_literal:
+    case tok::numeric_constant:
+    {
+      switch(activeProp) {
+      case OMP_NTHREAD:
+      {
+        nthread = getLiteralDataAsString(t);
+        activeProp = OMP_NONE;
+        break;
+      }
+      case OMP_NONE:
+        break;
+      }
+    }
+    default:
+      break;
+  } //end switch
+  } //end for
+
+  return new SSTComputePragma(nthread);
+}
 

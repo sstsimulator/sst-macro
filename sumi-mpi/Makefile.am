@@ -19,9 +19,6 @@ AM_CPPFLAGS += \
 	-I$(top_srcdir)/sumi \
 	-I$(top_builddir)/sumi
 
-AM_CPPFLAGS += -I$(top_srcdir)/sstmac/install -DSSTMAC=1
-AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements
-
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
 libsstmac_mpi_la_LDFLAGS = 
@@ -43,6 +40,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_types/mpi_type.cc \
   sstmac_mpi.cc \
   mpi_api.cc \
+  mpi_api_win.cc \
   mpi_api_collectives.cc \
   mpi_api_comm.cc \
   mpi_api_group.cc \

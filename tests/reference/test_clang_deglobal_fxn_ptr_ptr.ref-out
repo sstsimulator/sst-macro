@@ -3,7 +3,7 @@ void fxn(int x)
 {
 }
 
-static void (**fxn_list)(int);extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);void* __ptr_xyzfxn_list = &fxn_list; int __sizeof_xyzfxn_list = sizeof(fxn_list); extern int __offset_xyzfxn_list; 
+static void (**fxn_list)(int);void* __ptr_xyzfxn_list = &fxn_list; int __sizeof_xyzfxn_list = sizeof(fxn_list); extern int __offset_xyzfxn_list; 
 
 void next_fxn()
 { char* sstmac_global_data = get_sstmac_global_data();void (***sstmac_xyzfxn_list)(int)=(void (***)(int))(sstmac_global_data + __offset_xyzfxn_list); {
@@ -12,7 +12,6 @@ void next_fxn()
  }}
 #include <sstmac/software/process/global.h>
 
-int __offset_xyzfxn_list = 0;
 extern int __sizeof_xyzfxn_list;
 extern void* __ptr_xyzfxn_list;
-sstmac::GlobalVariable __gv_xyzfxn_list(__offset_xyzfxn_list,__sizeof_xyzfxn_list,"xyzfxn_list",__ptr_xyzfxn_list);
+int __offset_xyzfxn_list = sstmac::GlobalVariable::init(__sizeof_xyzfxn_list,"xyzfxn_list",__ptr_xyzfxn_list,false);

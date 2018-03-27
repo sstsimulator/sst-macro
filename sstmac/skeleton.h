@@ -58,50 +58,28 @@ typedef int (*empty_main_fxn)();
 #endif
 
 #ifdef __cplusplus
+extern "C" {
+#endif
+
+double sstmac_sim_time();
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
 
 #include <sstmac/software/process/cppglobal.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE && defined(SSTMAC_EXTERNAL_SKELETON)
-#include <Python.h>
-#include <sstCoreElement.h>
-#define sst_eli_block(app) \
-  static PyMethodDef sst_macro_null_methods[] = { \
-      { NULL, NULL, 0, NULL } \
-  }; \
-  static inline void* gen_sst_macro_integrated_pymodule(void) \
-  { \
-    PyObject* module = Py_InitModule("sst." SST_APP_NAME_QUOTED, sst_macro_null_methods); \
-    return module; \
-  } \
-  static const SST::ElementInfoComponent macro_components[] = { \
-      {NULL, NULL, NULL, NULL} \
-  }; \
-  extern "C" { \
-  SST::ElementLibraryInfo ELI_NAME(app) = { \
-      SST_APP_NAME_QUOTED, \
-      "SST Macroscale skeleton app", \
-      macro_components, \
-      NULL, \
-      NULL, \
-      NULL, \
-      NULL, \
-      NULL, \
-      gen_sst_macro_integrated_pymodule \
-  }; \
-  }
-#else
-#define sst_eli_block(app)
-#endif
-
 #include <new>
 #include <utility>
-
-extern int sstmac_global_stacksize;
 
 namespace sstmac {
 
 class vector {
  public:
+  vector() : size_(0) {}
+
   void resize(unsigned long sz){
     size_ = sz;
   }
@@ -122,6 +100,10 @@ class vector {
 
   bool empty() const {
     return size_ == 0;
+  }
+
+  void clear() {
+    size_ = 0;
   }
 
  private:
@@ -151,57 +133,40 @@ using sprockit::sim_parameters;
  static int user_skeleton_main(__VA_ARGS__); \
  static int dont_ignore_this = \
   user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
-  sst_eli_block(sstmac_app_name) \
  static int user_skeleton_main(__VA_ARGS__)
 #endif
 
 extern sprockit::sim_parameters* get_params();
 
-/**
- * @brief sstmac_free
- * @param ptr A pointer which may or may not have been skeletonized
- */
-extern "C" void sstmac_free(void* ptr);
-extern "C" void* sstmac_memset(void* ptr, int value, unsigned long  sz);
-extern "C" void sstmac_exit(int code);
-extern "C" unsigned int sstmac_alarm(unsigned int);
-extern "C" int sstmac_atexit(void (*)(void));
-
-namespace std {
-
-void sstmac_free(void* ptr);
-void* sstmac_memset(void* ptr, int value, unsigned long  sz);
-
-}
-
-
-
 #else
-/**
- * @brief sstmac_free
- * @param ptr A pointer which may or may not have been skeletonized
- */
-void sstmac_free(void* ptr);
-void* sstmac_memset(void* ptr, int value, unsigned long size);
 static void* nullptr = 0;
 
 #define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
-#ifndef free
-#define free sstmac_free
-#endif
-
-#ifndef memset
-#define memset sstmac_memset
-#endif
 
 #ifdef __cplusplus
 #include <cstdint>
+#ifndef _Bool
+using _Bool = bool;
+#endif
+extern "C" {
 #else
 #include <stdint.h>
 #endif
+
 extern int sstmac_global_stacksize;
+extern char* static_init_glbls_segment;
+extern char* static_init_tls_segment;
+void allocate_static_init_glbls_segment();
+void allocate_static_init_tls_segment();
+void sstmac_init_global_space(void* ptr, int size, int offset, bool tls);
+void sstmac_advance_time(const char* param_name);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #ifdef __STRICT_ANSI__
 #define SSTMAC_INLINE
@@ -209,11 +174,34 @@ extern int sstmac_global_stacksize;
 #define SSTMAC_INLINE inline
 #endif
 
+
+
 static SSTMAC_INLINE char* get_sstmac_global_data(){
-  int stack; int* stackPtr = &stack;
-  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-  char** globalMapPtr = (char**)(localStorage + sizeof(int));
-  return *globalMapPtr;
+  if (sstmac_global_stacksize == 0){
+    if (static_init_glbls_segment == 0){
+      allocate_static_init_glbls_segment();
+    }
+    return static_init_glbls_segment;
+  } else {
+    int stack; int* stackPtr = &stack;
+    uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+    char** globalMapPtr = (char**)(localStorage + sizeof(int));
+    return *globalMapPtr;
+  }
+}
+
+static SSTMAC_INLINE char* get_sstmac_tlsl_data(){
+  if (sstmac_global_stacksize == 0){
+    if (static_init_tls_segment == 0){
+      allocate_static_init_tls_segment();
+    }
+    return static_init_tls_segment;
+  } else {
+    int stack; int* stackPtr = &stack;
+    uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+    char** globalMapPtr = (char**)(localStorage + sizeof(int) + sizeof(void*));
+    return *globalMapPtr;
+  }
 }
 
 #undef SSTMAC_INLINE

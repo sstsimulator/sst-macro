@@ -45,11 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <errno.h>
 #include <getopt.h>
 #include <sstmac/main/sstmac.h>
-#include <sstmac/common/event_manager.h>
-#include <sstmac/backends/native/serial_runtime.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/hardware/node/simple_node.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
 #include <sprockit/basic_string_tokenizer.h>
@@ -57,8 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sstmac/common/timestamp.h>
 #include <cstdlib>
-
-using app = sstmac::sw::app;
+#include <sstmac/software/process/app.h>
 
 void
 activate_debugs(const std::string& debug_list)
@@ -239,46 +233,11 @@ parse_opts(int argc, char **argv, opts &oo)
     if (pos!= std::string::npos){
       exe_name = exe_name.substr(pos+1);
     }
-    bool is_stand_alone = app::factory::is_valid_name("sstmac_app_name");
+    bool is_stand_alone = sstmac::sw::app::factory::is_valid_name("sstmac_app_name");
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (is_stand_alone){
-      std::cerr << "WARNING: running standalone executable as-is. This usually happens\n"
-                << "WARNING: when running configure scripts. I hope this is what you want"
-                << std::endl;
-      //oh, hmm, we are running inside configure
-      //this means we actually just want to run a compiled program
-      //and get the hell out of dodge
-      sstmac::timestamp::init_stamps(1);
-      sprockit::sim_parameters null_params;
-
-      sprockit::sim_parameters* nic_params = null_params.get_optional_namespace("nic");
-      nic_params->add_param_override("model", "null");
-
-      sprockit::sim_parameters* mem_params = null_params.get_optional_namespace("memory");
-      mem_params->add_param_override("model", "null");
-
-      sprockit::sim_parameters* proc_params = null_params.get_optional_namespace("proc");
-      proc_params->add_param_override("frequency", "1ghz");
-      proc_params->add_param_override("ncores", 1);
-
-      null_params.add_param_override("id", 1);
-      null_params.add_param_override("name", "sstmac_app_name");
-      sstmac::sw::software_id id(0,0);
-      sstmac::native::serial_runtime rt(&null_params);
-      sstmac::event_manager mgr(&null_params, &rt);
-      sstmac::hw::simple_node node(&null_params, 1, &mgr);
-      sstmac::sw::operating_system os(&null_params, &node);
-
-      std::stringstream argv_sstr;
-      for (int i=1; i < argc; ++i){
-        argv_sstr << " " << argv[i];
-      }
-      null_params.add_param("argv", argv_sstr.str());
-
-      null_params.add_param_override("notify", "false");
-      app* a = sstmac::sw::app::factory::get_value("sstmac_app_name", &null_params, id, &os);
-      os.start_app(a, "");
-      if (a->rc() == 0){
+      int rc = sstmac::run_standalone(argc,argv);
+      if (rc == 0){
         return PARSE_OPT_EXIT_SUCCESS;
       } else {
         return PARSE_OPT_EXIT_FAIL;

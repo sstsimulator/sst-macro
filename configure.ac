@@ -148,6 +148,8 @@ CHECK_BOOST()
 CHECK_MPI_PARALLEL()
 fi
 
+CHECK_CPP_STANDARD()
+
 CHECK_PYTHON()
 
 AM_CONDITIONAL(HAVE_REGEXP, false)
@@ -209,8 +211,6 @@ AC_CONFIG_SUBDIRS([sprockit])
 # Configure dumpi.
 AC_CONFIG_SUBDIRS([sst-dumpi])
 
-AC_CONFIG_SUBDIRS([sumi])
-
 #-------------------------------------------------
 # Custom new.  Make sure this is last otherwise 
 # configure tests will fail.
@@ -232,10 +232,12 @@ AC_CONFIG_FILES([
  sstmac/libraries/blas/Makefile
  sstmac/libraries/sumi/Makefile
  sstmac/libraries/pthread/Makefile
+ sstmac/libraries/omp/Makefile
  sstmac/libraries/machines/Makefile
  sstmac/libraries/uq/Makefile
  sstmac/libraries/Makefile
  sstmac/skeletons/Makefile
+ sstmac/test_skeletons/Makefile
  sstmac/software/Makefile
  sstmac/hardware/Makefile
  sstmac/sst_core/Makefile
@@ -259,6 +261,7 @@ AC_CONFIG_FILES([
  tests/api/globals/Makefile
  docs/doxygen.cfg
  sumi-mpi/Makefile
+ sumi/Makefile
 ])
 
 AC_CONFIG_FILES([bin/sstmacro-config], [chmod +x bin/sstmacro-config])

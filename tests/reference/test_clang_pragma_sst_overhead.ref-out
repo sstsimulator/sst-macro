@@ -1,0 +1,13 @@
+
+void doSomeWork();
+
+void fxn()
+{
+ sstmac_advance_time("task_time");doSomeWork();
+}
+#include <sstmac/software/process/global.h>
+
+#include <sprockit/keyword_registration.h>
+RegisterKeywords(
+{"task_time", "new keyword" },
+);

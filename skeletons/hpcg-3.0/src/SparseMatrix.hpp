@@ -46,9 +46,9 @@ struct SparseMatrix_STRUCT {
   double ** matrixValues; //!< values of matrix entries
 #pragma sst null_variable
   double ** matrixDiagonal; //!< values of matrix diagonal entries
-#pragma sst null_variable
+#pragma sst null_type
   std::map< global_int_t, local_int_t > globalToLocalMap; //!< global-to-local mapping
-#pragma sst null_variable
+#pragma sst null_type
   std::vector< global_int_t > localToGlobalMap; //!< local-to-global mapping
   mutable bool isDotProductOptimized;
   mutable bool isSpmvOptimized;

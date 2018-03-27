@@ -18,22 +18,22 @@ AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 
 library_includedir=$(includedir)/sstmac/backends/native
 nobase_library_include_HEADERS = \
+  serial_runtime.h \
   manager.h \
   manager_fwd.h 
 
 libsstmac_native_la_SOURCES = \
+  serial_runtime.cc \
   manager.cc 
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \
-  serial_runtime.h \
   multithreaded_event_container.h \
   clock_cycle_event_container.h 
 
 libsstmac_native_la_SOURCES += \
   multithreaded_event_container.cc \
-  clock_cycle_event_container.cc \
-  serial_runtime.cc 
+  clock_cycle_event_container.cc 
 endif
 
 

@@ -8,30 +8,40 @@ No available cores from set C intersect cpumask 2 for thread 7
 Core 2 matches from set 4 intersecting cpumask 4 for thread 8
 No available cores from set 8 intersect cpumask 4 for thread 9
 Core 3 matches from set 8 intersecting cpumask 8 for thread 10
-Releasing core 0 for thread 1 yields cpuset 1
+Releasing cores 1 for thread 1 yields cpuset 0
 Core 0 matches from set 1 intersecting cpumask 1 for thread 2
 Finishing compute at T=  1.0000 on thread 1
-Releasing core 1 for thread 5 yields cpuset 2
+Releasing cores 2 for thread 5 yields cpuset 0
+No available cores from set 2 intersect cpumask 1 for thread 3
+No available cores from set 2 intersect cpumask 1 for thread 4
 Core 1 matches from set 2 intersecting cpumask 2 for thread 6
 Finishing compute at T=  1.0000 on thread 5
-Releasing core 2 for thread 8 yields cpuset 4
+Releasing cores 4 for thread 8 yields cpuset 0
+No available cores from set 4 intersect cpumask 1 for thread 3
+No available cores from set 4 intersect cpumask 1 for thread 4
+No available cores from set 4 intersect cpumask 2 for thread 7
 Core 2 matches from set 4 intersecting cpumask 4 for thread 9
 Finishing compute at T=  1.0000 on thread 8
-Releasing core 3 for thread 10 yields cpuset 8
+Releasing cores 8 for thread 10 yields cpuset 0
+No available cores from set 8 intersect cpumask 1 for thread 3
+No available cores from set 8 intersect cpumask 1 for thread 4
+No available cores from set 8 intersect cpumask 2 for thread 7
 Finishing compute at T=  1.0000 on thread 10
-Releasing core 0 for thread 2 yields cpuset 9
+Releasing cores 1 for thread 2 yields cpuset 8
 Core 0 matches from set 1 intersecting cpumask 1 for thread 3
 Finishing compute at T=  2.0000 on thread 2
-Releasing core 1 for thread 6 yields cpuset A
+Releasing cores 2 for thread 6 yields cpuset 8
+No available cores from set A intersect cpumask 1 for thread 4
 Core 1 matches from set 2 intersecting cpumask 2 for thread 7
 Finishing compute at T=  2.0000 on thread 6
-Releasing core 2 for thread 9 yields cpuset C
+Releasing cores 4 for thread 9 yields cpuset 8
+No available cores from set C intersect cpumask 1 for thread 4
 Finishing compute at T=  2.0000 on thread 9
-Releasing core 0 for thread 3 yields cpuset D
+Releasing cores 1 for thread 3 yields cpuset C
 Core 0 matches from set 1 intersecting cpumask 1 for thread 4
 Finishing compute at T=  3.0000 on thread 3
-Releasing core 1 for thread 7 yields cpuset E
+Releasing cores 2 for thread 7 yields cpuset C
 Finishing compute at T=  3.0000 on thread 7
-Releasing core 0 for thread 4 yields cpuset F
+Releasing cores 1 for thread 4 yields cpuset E
 Finishing compute at T=  4.0000 on thread 4
-Estimated total runtime of           4.00000800 seconds
+Estimated total runtime of           4.00000400 seconds

@@ -52,25 +52,23 @@ extern "C"
 #include <stdbool.h>
 #endif
 
-int get_int_param(char* str);
+int sstmac_get_int_param(const char* str);
 
-int get_optional_int_param(char* str, int val);
+int sstmac_get_optional_int_param(const char* str, int val);
 
-long get_long_param(char* str);
+long sstmac_get_long_param(const char* str);
 
-long get_optional_long_param(char* str, long val);
+long sstmac_get_optional_long_param(char* str, long val);
 
-double get_double_param(char* str);
+double sstmac_get_time_param(const char* str);
 
-double get_optional_double_param(char* str, double val);
+double sstmac_get_double_param(const char* str);
 
-const char* get_param(char* str);
+double sstmac_get_optional_double_param(const char* str, double val);
 
-bool get_bool_param(char* str);
+const char* sstmac_get_param(const char* str);
 
-bool get_optional_bool_param(char* str, bool val);
-
-const char* get_optional_param(char* str, char* val);
+const char* sstmac_get_optional_param(const char* str, const char* val);
 #ifdef __cplusplus
 }
 #endif

@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sumi/dense_rank_map.h>
-#include <sumi/thread_safe_set.h>
 #include <sstmac/skeleton.h>
 #define sstmac_app_name user_app_cxx
 using namespace sstmac;
@@ -85,7 +84,7 @@ main(int argc, char **argv)
         sumi::collective::tostr(dmsg->type()));
     }
 
-    const thread_safe_set<int>& failed = dmsg->failed_procs();
+    auto& failed = dmsg->failed_procs();
 
     std::cout << sprockit::printf("t=%8.4e: Rank %d got heartbeat %d with %d failures\n",
                   sstmac_now(), me, dmsg->tag(), failed.size());
@@ -97,8 +96,8 @@ main(int argc, char **argv)
         "Got %d failures, but supposed to be %d failures",
         failed.size(), nfailures[failure_num]);
     }
-    thread_safe_set<int>::iterator it, end = failed.start_iteration();
-    for (it=failed.begin(); it != end; ++it, ++idx){
+    auto end = failed.end();
+    for (auto it=failed.begin(); it != end; ++it, ++idx){
       int failed_rank = *it;
       if (correct_failures[idx] != failed_rank){
         failed.end_iteration();
@@ -107,7 +106,6 @@ main(int argc, char **argv)
             failed_rank, idx, correct_failures[idx]);
       }
     }
-    failed.end_iteration();
     ++failure_num;
     nfailed += failed.size();
   }

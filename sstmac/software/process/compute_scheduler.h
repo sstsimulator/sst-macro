@@ -78,6 +78,10 @@ class compute_scheduler
     return nsocket_;
   }
 
+  /**
+   * @brief reserve_core
+   * @param thr   The physical thread requesting to compute
+   */
   virtual void reserve_core(thread* thr) = 0;
   
   virtual void release_core(thread* thr) = 0;

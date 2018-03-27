@@ -78,13 +78,15 @@ class mpi_comm_factory  {
 
   mpi_comm* comm_create(mpi_comm* caller, mpi_group* group);
 
+  mpi_comm* comm_create_group(mpi_comm* caller, mpi_group* group);
+
   mpi_comm* comm_split(mpi_comm* caller, int color, int key);
 
   mpi_comm* create_cart(mpi_comm* caller, int ndims,
                         const int *dims, const int *periods, int reorder);
 
  private:
-  MPI_Comm comm_new_id_agree(MPI_Comm old);
+  MPI_Comm comm_new_id_agree(mpi_comm* old);
 
  private:
   mpi_api* parent_;

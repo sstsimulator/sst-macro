@@ -1,17 +1,33 @@
+#ifndef sstmac_cstdlib_included_h
+#define sstmac_cstdlib_included_h
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-
 #include <sstmac/replacements/sstmac_pthread_clear.h>
 #include <sstmac/replacements/clear_symbol_macros.h>
-#include_next <cstdlib>
-#undef SSTMAC_INSIDE_STL
+#define CSTDLIB_OWNS_STL
+#endif
 
+
+#include_next <cstdlib>
+#ifndef sstmac_stdlib_included_h
+#include <stdlib.h> //force inclusion
+#endif
+
+
+#define sstmac_must_return_free
+
+namespace std {
+using ::sstmac_free;
+}
+
+
+#ifdef CSTDLIB_OWNS_STL
+#undef CSTDLIB_OWNS_STL
+#undef SSTMAC_INSIDE_STL
 #include <sstmac/replacements/sstmac_pthread_return.h>
 #include <sstmac/replacements/return_symbol_macros.h>
-
-#else
-
-#include_next <cstdlib>
-
 #endif
+
+#endif 
 

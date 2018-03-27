@@ -61,18 +61,20 @@ simple_compute_scheduler::reserve_core(thread* thr)
       ncore_active_, ncores_);
   }
 #endif
-  if (ncore_active_ >= ncores_){
+  int total_cores_needed = thr->num_active_cores() + ncore_active_;
+  if (total_cores_needed > ncores_){
     pending_threads_.push_back(thr);
     os_->block();
   }
-  //If I got here, there are either open cores or I unblocked
-  ++ncore_active_;
+  //If I got here, there are either open cores or I timed out
+  ncore_active_ += thr->num_active_cores();
+  //no worrying about masks
 }
 
 void
 simple_compute_scheduler::release_core(thread* thr)
 {
-  --ncore_active_;
+  ncore_active_ -= thr->num_active_cores();
   if (!pending_threads_.empty()){
     thread* next = pending_threads_.front();
     pending_threads_.pop_front();

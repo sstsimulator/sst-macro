@@ -15,6 +15,7 @@ machines \
 blas \
 sumi \
 pthread \
+omp \
 uq
 
 

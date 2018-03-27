@@ -22,7 +22,7 @@ endif
 libsstmac_la_SOURCES =
 nodist_EXTRA_libsstmac_la_SOURCES = dummy.cxx
 libsstmac_la_LIBADD = \
-  ../../sumi/sumi/libsumi.la \
+  ../../sumi/libsumi.la \
   ../backends/common/libsstmac_backends.la \
   ../backends/native/libsstmac_native.la \
   ../common/libsstmac_common.la \
@@ -31,9 +31,11 @@ libsstmac_la_LIBADD = \
   ../libraries/uq/libsstmac_uq.la \
   ../libraries/machines/libsstmac_machines.la \
   ../libraries/pthread/libsstmac_pthread.la \
+  ../libraries/omp/libsstmac_omp.la \
   ../libraries/sumi/libsstmac_sumi.la \
   ../main/libsstmac_driver.la \
   ../skeletons/libsstmac_skeletons.la \
+  ../test_skeletons/libsstmac_test_skeletons.la \
   ../software/libsstmac_sw.la 
 
 if BUILD_SUMI_MPI

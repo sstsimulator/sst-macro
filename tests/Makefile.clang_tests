@@ -8,11 +8,15 @@ SSTMAC_DEGLOBAL=$(top_builddir)/bin/sstmac_clang
 CLANGTESTS = \
   deglobal_regular \
   deglobal_multi \
+  deglobal_ctor \
   deglobal_namespace \
   deglobal_array \
+  deglobal_lambda \
+  deglobal_unique_ptr \
   deglobal_multi_array \
   deglobal_template \
   deglobal_fxn_static \
+  deglobal_fxn_template_static \
   deglobal_fxn_ptr_ptr \
   deglobal_fxn_ptr_array \
   deglobal_fxn_struct \
@@ -20,7 +24,10 @@ CLANGTESTS = \
   deglobal_file_static \
   deglobal_cxx_static \
   pragma_sst_new \
+  pragma_sst_overhead \
   pragma_sst_init \
+  pragma_sst_global \
+  pragma_sst_null_replace \
   pragma_sst_null_variable \
   pragma_sst_null_vector \
   pragma_sst_scoped_replace \
@@ -29,8 +36,14 @@ CLANGTESTS = \
   pragma_sst_compute \
   pragma_sst_compute_global_var \
   pragma_sst_loop_count \
+  pragma_omp_parallel_nthr \
   pragma_omp_parallel
 
+if HAVE_CPP14
+  deglobal_cxx_template_static 
+endif
+
+#  deglobal_cxx_template_member  #C++14, not required yet
 #  deglobal_relocation 
 
 #the CHKSUF will get appended to this later

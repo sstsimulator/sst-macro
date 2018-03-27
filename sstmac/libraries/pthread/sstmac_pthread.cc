@@ -98,8 +98,8 @@ SSTMAC_pthread_create(sstmac_pthread_t* pthread,
     tr->set_cpumask(attr->cpumask);
   }
   
-  pthread_debug("starting pthread %ld on thread %ld in app %d",
-               tr->thread_id(), thr->thread_id(), int(parent_app->tid()));
+  pthread_debug("starting pthread %ld:%p on thread %ld:%p in app %d",
+               tr->thread_id(), tr, thr->thread_id(), thr, int(parent_app->tid()));
   os->start_thread(tr);
 
   return 0;
@@ -141,8 +141,8 @@ SSTMAC_pthread_join(sstmac_pthread_t pthread, void ** status)
   app* parent_app = current_thr->parent_app();
   thread* joiner = parent_app->get_subthread(pthread);
 
-  pthread_debug("joining pthread %ld on thread %ld in app %d",
-               pthread, current_thr->thread_id(), int(parent_app->tid()));
+  pthread_debug("joining pthread %ld:%p on thread %ld:%p in app %d",
+               pthread, joiner, current_thr->thread_id(), current_thr, int(parent_app->tid()));
 
   if (joiner){
     os->join_thread(joiner);
@@ -181,14 +181,14 @@ SSTMAC_pthread_equal(sstmac_pthread_t thread_1, sstmac_pthread_t thread_2)
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type)
+SSTMAC_pthread_mutexattr_gettype(const sstmac_pthread_mutexattr_t* attr, int* type)
 {
   *type = SSTMAC_PTHREAD_MUTEX_NORMAL;
   return 0;
 }
 
 extern "C" int
-SSTMAC_pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+SSTMAC_pthread_mutexattr_settype(sstmac_pthread_mutexattr_t *attr, int type)
 {
   if (type == SSTMAC_PTHREAD_MUTEX_NORMAL){
     return 0;
@@ -299,7 +299,7 @@ SSTMAC_pthread_mutex_trylock(sstmac_pthread_mutex_t * mutex)
 
   thread* thr = current_thread();
   mutex_t* mut = thr->parent_app()->get_mutex(*mutex);
-  if (mut == 0){
+  if (mut == nullptr){
     return EINVAL;
   } else if (mut->locked){
     return 1;

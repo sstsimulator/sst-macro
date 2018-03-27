@@ -132,6 +132,10 @@ class operating_system :
     return static_os_thread_context()->addr();
   }
 
+  static void set_gdb_hold(bool flag){
+    hold_for_gdb_ = flag;
+  }
+
   /**
    * @brief execute Execute a compute function.
    * This function MUST begin on a user-space thread
@@ -140,10 +144,9 @@ class operating_system :
    * use execute_kernel
    * @param func  The function to perform
    * @param data  Event carrying all the data describing the compute
-   * @param cat   An optional category labeling the type of
-   *              operation
+   * @param nthr  The number of threads that need to execute
    */
-  void execute(ami::COMP_FUNC, event* data);
+  void execute(ami::COMP_FUNC, event* data, int nthr = 1);
 
   /**
    * @brief execute Execute a communication function.
@@ -168,16 +171,6 @@ class operating_system :
    */
   void execute_kernel(ami::COMM_FUNC func, message* data);
 
-  /**
-   * @brief execute Execute a communication function.
-   * This function takes place in "kernel" land
-   * and will never block and context switch.
-   * This function can therefore run on the main DES thread
-   * @param func  The function to perform
-   * @param data  Event carrying all the data describing the compute
-   * @param cb    The callback to invoke when the kernel is complete
-   */
-  void execute_kernel(ami::COMP_FUNC func, event* data, callback* cb);
   /**
    * @brief execute Enqueue an operation to perform
    * This function takes place in "kernel" land
@@ -234,6 +227,8 @@ class operating_system :
    *                               and schedules resources associated with it (stack, etc) to be cleaned up.
    */
   void complete_active_thread();
+
+  void schedule_thread_deletion(thread* thr);
 
   /**
    * @brief start_app
@@ -318,7 +313,17 @@ class operating_system :
     return call_graph_active_;
   }
 
+  static void gdb_switch_to_thread(uint32_t thr_id);
+
+  static void gdb_set_active(int flag){
+    gdb_active_ = flag;
+  }
+
+  static void gdb_reset();
+
  private:
+  thread_context* active_context();
+
   void switch_to_thread(thread* tothread);
 
   void init_threading(sprockit::sim_parameters* params);
@@ -339,7 +344,6 @@ class operating_system :
   hw::node* node_;
   std::unordered_map<std::string, library*> libs_;
   std::unordered_map<library*, int> lib_refcounts_;
-  std::unordered_map<void*, std::list<library*>> libs_by_owner_;
   std::map<std::string, std::list<event*>> pending_library_events_;
 
   thread* active_thread_;
@@ -359,6 +363,13 @@ class operating_system :
   ftq_calendar* ftq_trace_;
 
   bool call_graph_active_;
+
+  static std::unordered_map<uint32_t, thread*> all_threads_;
+  static bool hold_for_gdb_;
+  static thread_context* gdb_context_;
+  static thread_context* gdb_original_context_;
+  static thread_context* gdb_des_context_;
+  static bool gdb_active_;
 
 #if SSTMAC_USE_MULTITHREAD
   static std::vector<operating_system*> active_os_;

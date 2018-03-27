@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/library.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/api/api.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/common/sst_event.h>
 #include <sprockit/errors.h>
 #include <sprockit/output.h>
@@ -66,7 +67,7 @@ MakeDebugSlot(host_compute)
 namespace sstmac {
 namespace sw {
 
-static thread_safe_long THREAD_ID_CNT(0);
+static thread_safe_u32 THREAD_ID_CNT(0);
 const app_id thread::main_thread_aid(-1);
 const task_id thread::main_thread_tid(-1);
 
@@ -76,7 +77,7 @@ const task_id thread::main_thread_tid(-1);
 void
 thread::init_thread(sprockit::sim_parameters* params,
   int physical_thread_id, thread_context* des_thread, void *stack,
-  int stacksize, void* globals_storage)
+  int stacksize, void* globals_storage, void* tls_storage)
 {
   thread_info::set_thread_id(stack, physical_thread_id);
 
@@ -89,7 +90,10 @@ thread::init_thread(sprockit::sim_parameters* params,
   context_ = des_thread->copy();
 
   context_->start_context(physical_thread_id, stack, stacksize,
-                          run_routine, this, globals_storage, des_thread);
+                          run_routine, this,
+                          globals_storage,
+                          tls_storage,
+                          des_thread);
 }
 
 uint32_t
@@ -113,8 +117,14 @@ thread::_get_api(const char* name)
 void
 thread::cleanup()
 {
-  if (state_ != CANCELED && parent_app_ && detach_state_ == DETACHED){
-    parent_app_->remove_subthread(this);
+  if (parent_app_){
+    if (detach_state_ == DETACHED && state_ != CANCELED){
+      parent_app_->remove_subthread(this);
+      os_->schedule_thread_deletion(this);
+    } else; //parent will join and then delete this
+  } else {
+    //no matter what, I have to delete myself
+    os_->schedule_thread_deletion(this);
   }
   // We are done, ask the scheduler to remove this task from the
   state_ = DONE;
@@ -186,7 +196,9 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   sid_(sid),
   ftag_(ftq_tag::null),
   protect_tag(false),
-  detach_state_(DETACHED)
+  detach_state_(DETACHED),
+  num_active_cores_(1), //start with 1
+  active_core_mask_(0)
 {
   //make all cores possible active
   cpumask_ = ~(cpumask_);
@@ -211,7 +223,7 @@ thread::end_api_call()
   }
 }
 
-long
+uint32_t
 thread::init_id()
 {
   //thread id not yet initialized
@@ -302,12 +314,95 @@ thread::start_thread(thread* thr)
 void
 thread::join()
 {
-  if (!this->is_initialized()) {
+  //JJW 03/08/2018 It can now happen with std::thread wrappers
+  //that you trying joining a thread before it has even initialized
+  //I don't think this is actually an error
+  //if (!this->is_initialized()) {
     // We can't context switch the caller out without first being initialized
-    spkt_throw_printf(sprockit::illformed_error,
-                     "thread::join: target thread has not been initialized.");
-  }
+  //  spkt_throw_printf(sprockit::illformed_error,
+  //                   "thread::join: target thread has not been initialized.");
+  //}
   os_->join_thread(this);
+}
+
+} }
+
+#include <sstmac/software/process/std_thread.h>
+#include <sstmac/software/process/std_mutex.h>
+
+namespace sstmac {
+namespace sw {
+
+
+std_thread_base::std_thread_base(thread* thr) :
+  thread(thr->parent_app()->params(),
+         software_id(thr->aid(), thr->tid(), -1),
+         thr->os())
+
+{
+  parent_app_ = thr->parent_app();
+  //std threads need to be joinable
+  set_detach_state(JOINABLE);
+}
+
+std_thread_ctor_wrapper::std_thread_ctor_wrapper() :
+  std_thread_base(operating_system::current_thread())
+{
+}
+
+void start_std_thread(thread *thr)
+{
+  thr->os()->start_thread(thr);
+}
+
+std_mutex::std_mutex()
+{
+  parent_app_ = operating_system::current_thread()->parent_app();
+  id_ = parent_app_->allocate_mutex();
+}
+
+void std_mutex::lock()
+{
+  mutex_t* mut = parent_app_->get_mutex(id_);
+  if (mut == nullptr){
+    spkt_abort_printf("error: bad mutex id for std::mutex: %d", id_);
+  } else if (mut->locked) {
+    mut->waiters.push_back(operating_system::current_thread());
+    parent_app_->os()->block();
+  } else {
+    mut->locked = true;
+  }
+}
+
+std_mutex::~std_mutex()
+{
+  parent_app_->erase_mutex(id_);
+}
+
+void std_mutex::unlock()
+{
+  mutex_t* mut = parent_app_->get_mutex(id_);
+  if (mut == nullptr || !mut->locked){
+    return;
+  } else if (!mut->waiters.empty()){
+    thread* blocker = mut->waiters.front();
+    mut->waiters.pop_front();
+    parent_app_->os()->unblock(blocker);
+  } else {
+    mut->locked = false;
+  }
+}
+
+bool std_mutex::try_lock()
+{
+  mutex_t* mut = parent_app_->get_mutex(id_);
+  if (mut == nullptr){
+    return false;
+  } else if (mut->locked){
+    return false;
+  } else {
+    return true;
+  }
 }
 
 }

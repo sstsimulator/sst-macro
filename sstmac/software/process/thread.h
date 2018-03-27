@@ -111,9 +111,8 @@ class thread
     api* a = _get_api(T::factory_string());
     T* casted = dynamic_cast<T*>(a);
     if (!casted) {
-      spkt_throw_printf(sprockit::value_error,
-               "Failed to cast API to correct type for %s",
-                T::factory_string());
+      spkt_abort_printf("Failed to cast API to correct type for %s: got %s",
+                T::factory_string(), typeid(a).name());
     }
     return casted;
   }
@@ -124,9 +123,9 @@ class thread
 
   static const int no_core_affinity = -1;
   static const int no_socket_affinity = -1;
-  static const int main_thread = -1;
-  static const int nic_thread = -2;
-  static const int rdma_thread = -3;
+  static const uint32_t main_thread = -1;
+  static const uint32_t nic_thread = -2;
+  static const uint32_t rdma_thread = -3;
   static const app_id main_thread_aid;
   static const task_id main_thread_tid;
 
@@ -164,9 +163,9 @@ class thread
 
   void spawn(thread* thr);
 
-  long init_id();
+  uint32_t init_id();
 
-  long thread_id() const {
+  uint32_t thread_id() const {
     return thread_id_;
   }
 
@@ -249,7 +248,7 @@ class thread
 
   void init_thread(sprockit::sim_parameters* params, int phyiscal_thread_id,
     thread_context* tocopy, void *stack, int stacksize,
-    void* globals_storage);
+    void* globals_storage, void* tls_storage);
 
   virtual void run() = 0;
 
@@ -291,12 +290,20 @@ class thread
     return cpumask_;
   }
   
-  int active_core() const {
-    return active_core_;
+  uint64_t active_core_mask() const {
+    return active_core_mask_;
   }
-  
-  void set_active_core(int core) {
-    active_core_ = core;
+
+  void set_active_core_mask(uint64_t mask){
+    active_core_mask_ = mask;
+  }
+
+  int num_active_cores() const {
+    return num_active_cores_;
+  }
+
+  void set_num_active_cores(int ncores) {
+    num_active_cores_ = ncores;
   }
 
   void* get_tls_value(long thekey) const;
@@ -373,13 +380,15 @@ class thread
 
   void* stack_;
   
-  long thread_id_;
+  uint32_t thread_id_;
 
   thread_context* context_;
   
   uint64_t cpumask_;
   
-  int active_core_;
+  uint64_t active_core_mask_;
+
+  int num_active_cores_;
 
   uint64_t block_counter_;
 

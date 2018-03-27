@@ -13,7 +13,17 @@ endif
 endif
 else
 if HAVE_CLANG
-SKELETONCASES += relocation_ptr_test 
+SKELETONCASES += \
+  relocation_ptr_test \
+  openmp \
+  overhead_test
+
+if HAVE_CPP14
+SKELETONCASES += \
+  unique_ptr_test \
+  template_global_test 
+endif
+
 if BUILD_SUMI_MPI
 SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD 
 endif

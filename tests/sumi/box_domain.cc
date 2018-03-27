@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sumi/dense_rank_map.h>
 #include <sumi/transport.h>
-#include <sumi/thread_safe_set.h>
 
 #include <sstmac/util.h>
 #include <sstmac/compute.h>

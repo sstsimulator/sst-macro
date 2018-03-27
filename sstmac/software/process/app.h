@@ -95,6 +95,8 @@ class app : public thread
 
   int allocate_tls_key(destructor_fxn fnx);
 
+  static const int use_omp_num_threads = -1;
+
   static sprockit::sim_parameters* get_params();
 
   app* parent_app() const override {
@@ -114,7 +116,8 @@ class app : public thread
     int nintops_per_loop,
     int bytes_per_loop);
 
-  void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes);
+  void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes,
+                        int nthread = use_omp_num_threads);
 
   void compute_block_read(long bytes);
 
@@ -159,14 +162,14 @@ class app : public thread
    */
   void remove_subthread(thread* thr);
 
-  void remove_subthread(long thr_id);
+  void remove_subthread(uint32_t thr_id);
 
   /**
    * @brief get_subthread
    * @param id
    * @return
    */
-  thread* get_subthread(long id);
+  thread* get_subthread(uint32_t id);
 
   /**
    * Allocate a unique ID for a mutex variable
@@ -202,6 +205,10 @@ class app : public thread
     return globals_storage_;
   }
 
+  void* new_tls_storage() {
+    return allocate_data_segment(true);
+  }
+
   const std::string& unique_name() const {
     return unique_name_;
   }
@@ -221,6 +228,8 @@ class app : public thread
   sprockit::sim_parameters* params_;
 
  private:
+  char* allocate_data_segment(bool tls);
+
   lib_compute_memmove* compute_lib_;
   std::string unique_name_;
 
@@ -228,6 +237,7 @@ class app : public thread
   int next_condition_;
   int next_mutex_;
   int min_op_cutoff_;
+  int omp_num_threads_;
 
   std::map<long, thread*> subthreads_;
   std::map<int, mutex_t> mutexes_;

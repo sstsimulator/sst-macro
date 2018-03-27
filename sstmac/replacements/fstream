@@ -1,14 +1,21 @@
+
+#ifndef sstmac_fstream_included
+#define sstmac_fstream_included
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-
+#define FSTREAM_OWNS_STL
 #include <sstmac/replacements/sstmac_pthread_clear.h>
-
-#include_next <fstream>
-#undef SSTMAC_INSIDE_STL
-
-#include <sstmac/replacements/sstmac_pthread_return.h>
-
-#else
-#include_next <fstream>
+#include <sstmac/replacements/clear_symbol_macros.h>
 #endif
 
+#include_next <fstream>
+
+#ifdef FSTREAM_OWNS_STL
+#undef FSTREAM_OWNS_STL
+#undef SSTMAC_INSIDE_STL
+#include <sstmac/replacements/return_symbol_macros.h>
+#include <sstmac/replacements/sstmac_pthread_return.h>
+#endif
+
+#endif

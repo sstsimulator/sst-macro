@@ -49,7 +49,16 @@ Questions? Contact sst-macro-help@sandia.gov
 class SSTComputePragma : public SSTPragma {
   friend class ComputeVisitor;
  public:
-  SSTComputePragma() : SSTPragma(Compute) {}
+  SSTComputePragma() : SSTPragma(Compute){}
+
+  SSTComputePragma(const std::string& nthread) :
+    SSTPragma(Compute), nthread_(nthread){}
+
+  static void replaceForStmt(clang::ForStmt* stmt, clang::CompilerInstance& CI,
+                             SSTPragmaList& prgList, clang::Rewriter& r,
+                             PragmaConfig& cfg, SkeletonASTVisitor* visitor,
+                             const std::string& nthread);
+
  private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* decl, clang::Rewriter& r, PragmaConfig& cfg) override;
@@ -59,6 +68,17 @@ class SSTComputePragma : public SSTPragma {
   void visitFunctionDecl(clang::FunctionDecl* decl, clang::Rewriter& r, PragmaConfig& cfg);
   void visitIfStmt(clang::IfStmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
   void visitAndReplaceStmt(clang::Stmt* stmt, clang::Rewriter& r, PragmaConfig& cfg);
+
+  std::string nthread_;
+
+ protected:
+  SSTComputePragma(SSTPragma::class_t cls) : SSTPragma(cls) {}
+};
+
+class SSTAlwaysComputePragma : public SSTComputePragma
+{
+ public:
+  SSTAlwaysComputePragma() : SSTComputePragma(AlwaysCompute) {}
 };
 
 class SSTMemoryPragma : public SSTPragma {
@@ -98,10 +118,7 @@ class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
                          std::set<clang::Stmt*>& deld) :
       SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor, deld){}
  private:
-  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
-    //this actually just maps cleanly into a compute pragma
-    return new SSTComputePragma;
-  }
+  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
 };
 
 class SSTLoopCountPragmaHandler : public SSTTokenStreamPragmaHandler
@@ -136,6 +153,14 @@ class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> 
   SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
                       SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
    SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
+  {}
+};
+
+class SSTAlwaysComputePragmaHandler : public SSTSimplePragmaHandler<SSTAlwaysComputePragma> {
+ public:
+  SSTAlwaysComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
+   SSTSimplePragmaHandler<SSTAlwaysComputePragma>("always_compute", plist, CI, visitor, deld)
   {}
 };
 

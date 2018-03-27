@@ -62,21 +62,27 @@ class cpuset_compute_scheduler : public compute_scheduler
   {
   }
 
-  void configure(int ncore, int nsocket);
+  void configure(int ncore, int nsocket) override;
   
-  void reserve_core(thread *thr);
+  void reserve_core(thread *thr) override;
   
-  void release_core(thread *thr);
+  void release_core(thread *thr) override;
   
- private:
-  void allocate_core_to_thread(uint64_t valid_mask, thread* thr);
-  
-  void allocate_core(int core){
-    available_cores_ = available_cores_ & ~(1<<core);
+ private:  
+  static inline void remove_core(int core, uint64_t& mask){
+    mask = mask & ~(1<<core);
+  }
+
+  static inline void remove_cores(uint64_t cores, uint64_t& mask){
+    mask = mask & ~(cores);
   }
   
-  void deallocate_core(int core){
-    available_cores_ = available_cores_ | (1<<core);
+  static inline void add_core(int core, uint64_t& mask){
+    mask = mask | (1<<core);
+  }
+
+  static inline void add_cores(uint64_t cores, uint64_t &mask){
+    mask = mask | cores;
   }
 
   inline uint64_t allocated_cores() const {
@@ -87,6 +93,25 @@ class cpuset_compute_scheduler : public compute_scheduler
   uint64_t available_cores_;
   std::list<thread*> pending_threads_;
 
+
+  /**
+   * @brief allocate_cores
+   * @param ncores  The number of cores to allocate from the mask valid_cores
+   * @param valid_cores The mask specifiying all valid cores as 1s
+   * @param cores_allocated in-out for the cores allocated from valid_cores
+   *                        on return 'false', result undefined
+   * @param thr The thread requesting the cores
+   * @return Whether the allocation succeeded
+   */
+  bool allocate_cores(int ncores, uint64_t valid_cores,
+                      uint64_t& cores_allocated, thread* thr);
+
+  /**
+   * @brief try_reserve_core
+   * @param thr     The thread requesting a certain number of cores
+   * @return Whether the allocation succeeded
+   */
+  bool try_reserve_core(thread* thr);
 
 };
 

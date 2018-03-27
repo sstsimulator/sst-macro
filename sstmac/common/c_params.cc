@@ -42,95 +42,76 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/common/c_params.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/common/c_params.h>
 #include <sstmac/common/sstmac_env.h>
+#include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/app.h>
+#include <sstmac/software/process/operating_system.h>
 
-namespace sstmac {
+static inline sprockit::sim_parameters* get_local_params() {
+  return sstmac::sw::operating_system::current_thread()->parent_app()->params();
+}
 
-/* extern "C" bool
- get_bool_param(const char* str)
- {
-   std::string p(str);
-   return sstmac::env::params->get_bool_param(str);
- }
+union param_val {
+  double d;
+  int i;
+  long l;
+};
 
- extern "C" bool
- get_optional_bool_param(const char* str, bool val)
- {
-   std::string p(str);
-   return sstmac::env::params->get_optional_bool_param(str, val);
- }*/
+using LookupMap = std::unordered_map<void*,param_val>;
+static std::map<int,LookupMap> cache;
 
 extern "C" int
-get_int_param(char* str)
+sstmac_get_int_param(const char* str)
 {
-  std::string p(str);
-  return sstmac::env::params->get_int_param(str);
+  return get_local_params()->get_int_param(str);
 }
 
 extern "C" int
-get_optional_int_param(char* str, int val)
+sstmac_get_optional_int_param(const char* str, int val)
 {
-  std::string p(str);
-  return sstmac::env::params->get_optional_int_param(str, val);
+  return get_local_params()->get_optional_int_param(str, val);
 }
 
 extern "C" long
-get_long_param(char* str)
+sstmac_get_long_param(const char* str)
 {
-  std::string p(str);
-  return sstmac::env::params->get_long_param(str);
+  return get_local_params()->get_long_param(str);
 }
 
 extern "C" long
-get_optional_long_param(char* str, long val)
+sstmac_get_optional_long_param(char* str, long val)
 {
-  std::string p(str);
-  return sstmac::env::params->get_optional_long_param(str, val);
+  return get_local_params()->get_optional_long_param(str, val);
 }
 
 extern "C" double
-get_double_param(char* str)
+sstmac_get_double_param(const char* str)
 {
-  std::string p(str);
-  return sstmac::env::params->get_double_param(str);
+  return get_local_params()->get_double_param(str);
 }
 
 extern "C" double
-get_optional_double_param(char* str, double val)
+sstmac_get_optional_double_param(const char* str, double val)
 {
-  std::string p(str);
-  return sstmac::env::params->get_optional_double_param(str, val);
+  return get_local_params()->get_optional_double_param(str, val);
 }
 
 extern "C" const char*
-get_param(char* str)
+sstmac_get_param(const char* str)
 {
-  std::string p(str);
-  return sstmac::env::params->get_param(str).c_str();
+  return get_local_params()->get_param(str).c_str();
 }
 
 extern "C" const char*
-get_optional_param(char* str, char* val)
+sstmac_get_optional_param(const char* str, const char* val)
 {
-  std::string p(str);
-  std::string sval(val);
-  return sstmac::env::params->get_optional_param(str, sval).c_str();
+  return get_local_params()->get_optional_param(str, val).c_str();
 }
 
-extern "C" bool
-get_bool_param(char* str)
+extern "C" double
+sstmac_get_time_param(const char *str)
 {
-  std::string p(str);
-  return sstmac::env::params->get_bool_param(str);
-}
-
-extern "C" bool
-get_optional_bool_param(char* str, bool val)
-{
-  std::string p(str);
-  return sstmac::env::params->get_optional_bool_param(str, val);
-}
-
+  return get_local_params()->get_time_param(str);
 }

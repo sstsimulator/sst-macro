@@ -45,159 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Address(in,out) *out = ((MPI_Aint) in) + 8
 #define MPI_Get_address(in,out) MPI_Address(in,out)
 
-#ifdef __cplusplus
-#define MPI_Cart_create sumi::sstmac_mpi()->cart_create
-#define MPI_Cart_get sumi::sstmac_mpi()->cart_get
-#define MPI_Cart_rank sumi::sstmac_mpi()->cart_rank
-#define MPI_Cart_shift sumi::sstmac_mpi()->cart_shift
-#define MPI_Cart_coords sumi::sstmac_mpi()->cart_coords
-#define MPI_NodeAddress sumi::sstmac_mpi()->nodeaddress
-#define MPI_Taskid sumi::sstmac_mpi()->taskid
-#define MPI_Errhandler_set sumi::sstmac_mpi()->errhandler_set
-#define MPI_Print sumi::sstmac_mpi()->print
-#define MPI_Init sumi::sstmac_mpi()->init
-#define MPI_Initialized sumi::sstmac_mpi()->initialized
-#define MPI_Abort sumi::sstmac_mpi()->abort
-#define MPI_Finalize sumi::sstmac_mpi()->finalize
-#define MPI_Wait sumi::sstmac_mpi()->wait
-#define MPI_Waitall sumi::sstmac_mpi()->waitall
-#define MPI_Waitany sumi::sstmac_mpi()->waitany
-#define MPI_Waitsome sumi::sstmac_mpi()->waitsome
-#define MPI_Get_count sumi::sstmac_mpi()->get_count
-#define MPI_Test sumi::sstmac_mpi()->test
-#define MPI_Probe sumi::sstmac_mpi()->probe
-#define MPI_Cancel sumi::sstmac_mpi()->cancel
-#define MPI_Request_free sumi::sstmac_mpi()->request_free
-#define MPI_Comm_dup sumi::sstmac_mpi()->comm_dup
-#define MPI_Comm_rank sumi::sstmac_mpi()->comm_rank
-#define MPI_Comm_split sumi::sstmac_mpi()->comm_split
-#define MPI_Comm_size sumi::sstmac_mpi()->comm_size
-#define MPI_Comm_free sumi::sstmac_mpi()->comm_free
-#define MPI_Comm_create sumi::sstmac_mpi()->comm_create
-#define MPI_Comm_group sumi::sstmac_mpi()->comm_group
-#define MPI_Group_incl sumi::sstmac_mpi()->group_incl
-#define MPI_Group_free sumi::sstmac_mpi()->group_free
-#define MPI_Sendrecv sumi::sstmac_mpi()->sendrecv
-#define MPI_Send sumi::sstmac_mpi()->send
-#define MPI_Isend sumi::sstmac_mpi()->isend
-#define MPI_Recv sumi::sstmac_mpi()->recv
-#define MPI_Irecv sumi::sstmac_mpi()->irecv
-#define MPI_Bsend sumi::sstmac_mpi()->send
-#define MPI_Rsend sumi::sstmac_mpi()->send
-#define MPI_Ssend sumi::sstmac_mpi()->send
-#define MPI_Ibsend sumi::sstmac_mpi()->isend
-#define MPI_Issend sumi::sstmac_mpi()->isend
-#define MPI_Irsend sumi::sstmac_mpi()->isend
-#define MPI_Allreduce sumi::sstmac_mpi()->allreduce
-#define MPI_Reduce sumi::sstmac_mpi()->reduce
-#define MPI_Barrier sumi::sstmac_mpi()->barrier
-#define MPI_Bcast sumi::sstmac_mpi()->bcast
-#define MPI_Scan sumi::sstmac_mpi()->scan
-#define MPI_Gather sumi::sstmac_mpi()->gather
-#define MPI_Gatherv sumi::sstmac_mpi()->gatherv
-#define MPI_Allgather sumi::sstmac_mpi()->allgather
-#define MPI_Allgatherv sumi::sstmac_mpi()->allgatherv
-#define MPI_Scatter sumi::sstmac_mpi()->scatter
-#define MPI_Scatterv sumi::sstmac_mpi()->scatterv
-#define MPI_Alltoall sumi::sstmac_mpi()->alltoall
-#define MPI_Iallreduce sumi::sstmac_mpi()->iallreduce
-#define MPI_Ireduce sumi::sstmac_mpi()->ireduce
-#define MPI_Ibarrier sumi::sstmac_mpi()->ibarrier
-#define MPI_Ibcast sumi::sstmac_mpi()->ibcast
-#define MPI_Iscan sumi::sstmac_mpi()->iscan
-#define MPI_Igather sumi::sstmac_mpi()->igather
-#define MPI_Igatherv sumi::sstmac_mpi()->igatherv
-#define MPI_Iallgather sumi::sstmac_mpi()->iallgather
-#define MPI_Iallgatherv sumi::sstmac_mpi()->iallgatherv
-#define MPI_Iscatter sumi::sstmac_mpi()->iscatter
-#define MPI_Iscatterv sumi::sstmac_mpi()->iscatterv
-#define MPI_Ialltoall sumi::sstmac_mpi()->ialltoall
-#define MPI_Ialltoallv sumi::sstmac_mpi()->ialltoallv
-#define MPI_Ialltoallw sumi::sstmac_mpi()->ialltoallw
-#define MPI_Wtime sumi::sstmac_mpi()->wtime
-#define MPI_Disable_Payloads sumi::sstmac_mpi()->disable_Payloads
-#define MPI_Enable_Payloads sumi::sstmac_mpi()->enable_Payloads
-#define MPI_Recv_init sumi::sstmac_mpi()->recv_init
-#define MPI_Startall sumi::sstmac_mpi()->startall
-#define MPI_Start sumi::sstmac_mpi()->start
-#define MPI_Testall sumi::sstmac_mpi()->testall
-#define MPI_Testany sumi::sstmac_mpi()->testany
-#define MPI_Testsome sumi::sstmac_mpi()->testsome
-#define MPI_Test_cancelled sumi::sstmac_mpi()->test_cancelled
-#define MPI_Iprobe sumi::sstmac_mpi()->iprobe
-#define MPI_Gatherv sumi::sstmac_mpi()->gatherv
-#define MPI_Alltoallv sumi::sstmac_mpi()->alltoallv
-#define MPI_Type_contiguous sumi::sstmac_mpi()->type_contiguous
-#define MPI_Type_commit sumi::sstmac_mpi()->type_commit
-#define MPI_Type_free sumi::sstmac_mpi()->type_free
-#define MPI_Wtick sumi::sstmac_mpi()->wtick
-#define MPI_Type_hvector sumi::sstmac_mpi()->type_hvector
-#define MPI_Type_vector sumi::sstmac_mpi()->type_vector
-#define MPI_Type_indexed sumi::sstmac_mpi()->type_indexed
-#define MPI_Type_extent sumi::sstmac_mpi()->type_extent
-#define MPI_Type_dup sumi::sstmac_mpi()->type_dup
-#define MPI_Type_set_name sumi::sstmac_mpi()->type_set_name
-#define MPI_Type_indexed sumi::sstmac_mpi()->type_indexed
-#define MPI_Type_size sumi::sstmac_mpi()->type_size
-#define MPI_Type_get_name sumi::sstmac_mpi()->type_get_name
-#define MPI_Group_excl sumi::sstmac_mpi()->group_excl
-#define MPI_Group_range_incl sumi::sstmac_mpi()->group_range_incl
-#define MPI_Keyval_free sumi::sstmac_mpi()->keyval_free
-#define MPI_Comm_compare sumi::sstmac_mpi()->comm_compare
-#define MPI_Type_extent sumi::sstmac_mpi()->type_extent
-#define MPI_Type_dup sumi::sstmac_mpi()->type_dup
-#define MPI_Type_set_name sumi::sstmac_mpi()->type_set_name
-#define MPI_Type_indexed sumi::sstmac_mpi()->type_indexed
-#define MPI_Type_size sumi::sstmac_mpi()->type_size
-#define MPI_Type_get_name sumi::sstmac_mpi()->type_get_name
-#define MPI_Group_excl sumi::sstmac_mpi()->group_excl
-#define MPI_Testany sumi::sstmac_mpi()->testany
-#define MPI_Testsome sumi::sstmac_mpi()->testsome
-#define MPI_Test_cancelled sumi::sstmac_mpi()->test_cancelled
-#define MPI_Type_indexed sumi::sstmac_mpi()->type_indexed
-#define MPI_Type_hindexed sumi::sstmac_mpi()->type_hindexed
-#define MPI_Type_extent sumi::sstmac_mpi()->type_extent
-#define MPI_Type_size sumi::sstmac_mpi()->type_size
-#define MPI_Type_lb sumi::sstmac_mpi()->type_lb
-#define MPI_Type_ub sumi::sstmac_mpi()->type_ub
-#define MPI_Pack sumi::sstmac_mpi()->pack
-#define MPI_Unpack sumi::sstmac_mpi()->unpack
-#define MPI_Pack_size sumi::sstmac_mpi()->pack_size
-#define MPI_Group_size sumi::sstmac_mpi()->group_size
-#define MPI_Group_rank sumi::sstmac_mpi()->group_rank
-#define MPI_Group_range_incl sumi::sstmac_mpi()->group_range_incl
-#define MPI_Group_compare sumi::sstmac_mpi()->group_compare
-#define MPI_Group_union sumi::sstmac_mpi()->group_union
-#define MPI_Group_intersection sumi::sstmac_mpi()->group_intersection
-#define MPI_Group_difference sumi::sstmac_mpi()->group_difference
-#define MPI_Group_range_excl sumi::sstmac_mpi()->group_range_excl
-#define MPI_Keyval_free sumi::sstmac_mpi()->keyval_free
-#define MPI_Reduce_scatter       sumi::sstmac_mpi()->reduce_scatter
-#define MPI_Finalized sumi::sstmac_mpi()->finalized
-#define MPI_Type_get_extent sumi::sstmac_mpi()->type_get_extent
-#define MPI_Type_get_true_extent sumi::sstmac_mpi()->type_get_true_extent
-#define MPI_Alltoallw sumi::sstmac_mpi()->alltoallw
-#define MPI_Exscan sumi::sstmac_mpi()->exscan
-#define MPI_Comm_set_errhandler sumi::sstmac_mpi()->comm_set_errhandler
-#define MPI_Error_class sumi::sstmac_mpi()->error_class
-#define MPI_Error_string sumi::sstmac_mpi()->error_string
-#define MPI_Type_create_struct sumi::sstmac_mpi()->type_create_struct
-#define MPI_Type_struct sumi::sstmac_mpi()->type_create_struct
-#define MPI_Buffer_attach sumi::sstmac_mpi()->buffer_attach
-#define MPI_Buffer_detach sumi::sstmac_mpi()->buffer_detach
-#define MPI_Init_thread sumi::sstmac_mpi()->init_thread
-#define MPI_Op_create sumi::sstmac_mpi()->op_create
-#define MPI_Op_free sumi::sstmac_mpi()->op_free
-#define MPI_Reduce_scatter_block   sumi::sstmac_mpi()->reduce_scatter_block
-#define MPI_Ireduce_scatter_block   sumi::sstmac_mpi()->ireduce_scatter_block
-#define MPI_Send_init sumi::sstmac_mpi()->send_init
-#define MPI_Bsend_init sumi::sstmac_mpi()->send_init
-#define MPI_Rsend_init sumi::sstmac_mpi()->send_init
-#define MPI_Ssend_init sumi::sstmac_mpi()->send_init
-#define MPI_Group_translate_ranks sumi::sstmac_mpi()->group_translate_ranks
-#define MPI_Errhandler_create sumi::sstmac_mpi()->errhandler_create
-#define MPI_Comm_get_attr sumi::sstmac_mpi()->comm_get_attr
-#else
 #define MPI_Cart_create sstmac_cart_create
 #define MPI_Cart_get sstmac_cart_get
 #define MPI_Cart_rank sstmac_cart_rank
@@ -349,8 +196,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Group_translate_ranks sstmac_group_translate_ranks
 #define MPI_Errhandler_create sstmac_errhandler_create
 #define MPI_Comm_get_attr sstmac_comm_get_attr
-#endif
 
+#define MPI_Comm_create_group sstmac_comm_create_group
+#define MPI_Win_flush sstmac_win_flush
+#define MPI_Win_flush_local sstmac_win_flush_local
+#define MPI_Win_lock sstmac_win_lock
+#define MPI_Win_unlock sstmac_win_unlock
+#define MPI_Win_create sstmac_win_create
+#define MPI_Win_free sstmac_win_free
+
+#define MPI_Get sstmac_mpi_get
+#define MPI_Put sstmac_mpi_put
 
 #define MPI_Intercomm_create error not yet implemented
 #define MPI_Comm_remote_size error not yet implemented
@@ -384,15 +240,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Unpublish_name error not yet implemented
 #define MPI_Accumulate error not yet implemented
 #define MPI_Win_complete error not yet implemented
-#define MPI_Win_create error not yet implemented
 #define MPI_Win_fence error not yet implemented
-#define MPI_Win_free error not yet implemented
 #define MPI_Win_get_group error not yet implemented
-#define MPI_Win_lock error not yet implemented
 #define MPI_Win_post error not yet implemented
 #define MPI_Win_start error not yet implemented
 #define MPI_Win_test error not yet implemented
-#define MPI_Win_unlock error not yet implemented
 #define MPI_Win_wait error not yet implemented
 #define MPI_Add_error_class error not yet implemented
 #define MPI_Add_error_code error not yet implemented
@@ -458,8 +310,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MPI_Win_create_errhandler error not yet implemented
 #define MPI_Win_get_errhandler error not yet implemented
 #define MPI_Win_set_errhandler error not yet implemented
-#define MPI_Get error not yet implemented
-#define MPI_Put error not yet implemented
 #define MPI_Dist_graph_create_adjacent error not yet implemented
 #define MPI_Dist_graph_create          error not yet implemented
 #define MPI_Dist_graph_neighbors_count error not yet implemented

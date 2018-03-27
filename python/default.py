@@ -16,11 +16,7 @@ while isSoFile:
     old = os.environ["SST_LIB_PATH"] 
     os.environ["SST_LIB_PATH"] = old + ":" + folder
     sys.path.append(folder)
-    importer = ".".join(lib[3:].split(".")[:-1]) #chop off lib and last so
-    importer = "sst." + importer
-    cmd = "import %s" % importer
-#    print "PATH: ", os.environ["SST_LIB_PATH"]
-    exec(cmd)
+    loadLibrary(next)
     del sys.argv[idx]
   else: isSoFile = False
   idx += 1

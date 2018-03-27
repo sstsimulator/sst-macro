@@ -49,42 +49,65 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <sstmac/software/process/tls.h>
 #include <list>
-#include <sstmac/software/process/cppglobal.h>
+#include <unordered_set>
 
-extern int sstmac_global_stacksize;
+extern "C" int sstmac_global_stacksize;
 
 namespace sstmac {
 
-class GlobalVariable {
+class CppGlobal;
+class GlobalVariableContext {
  public:
-  GlobalVariable(int& offset, const int size, const char* name, const void* initData);
+  void init();
 
-  ~GlobalVariable();
+  ~GlobalVariableContext();
 
-  static int globalsSize() {
+  int append(const int size, const char* name, const void* initData);
+
+  int globalsSize() {
     return stackOffset;
   }
 
-  static void* globalInit() {
+  int allocSize() {
+    return allocSize_;
+  }
+
+  void setAllocSize(int sz){
+    allocSize_ = sz;
+  }
+
+  void* globalInit() {
     return globalInits;
   }
 
-  static void callCtors(void* globals);
+  void callCtors(void* globals);
 
-  static void relocatePointers(void* globals);
+  void addActiveSegment(void* globals){
+    activeGlobalMaps_.insert(globals);
+  }
 
-  static void registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
+  void removeActiveSegment(void* globals){
+    activeGlobalMaps_.erase(globals);
+  }
+
+  void initGlobalSpace(void* ptr, int size, int offset);
+
+  void relocatePointers(void* globals);
+
+  void registerRelocation(void* srcPtr, void* srcBasePtr, int& srcOffset,
                                  void* dstPtr, void* dstBasePtr, int& dstOffset);
 
-  static void registerCtor(CppGlobal* g){
+  void dlopenRelocate();
+
+  void registerCtor(CppGlobal* g){
     cppCtors.push_back(g);
   }
 
  private:
-  static int stackOffset;
-  static char* globalInits;
-  static int allocSize;
-  static std::list<CppGlobal*> cppCtors;
+  int stackOffset;
+  char* globalInits;
+  int allocSize_;
+  std::list<CppGlobal*> cppCtors;
 
   struct relocation {
     int srcOffset;
@@ -92,8 +115,14 @@ class GlobalVariable {
     relocation(int src, int dst) :
       srcOffset(src), dstOffset(dst) {}
   };
-  static std::list<relocation> relocations;
+  std::list<relocation> relocations;
 
+  static inline void relocate(relocation& r, char* segment)
+  {
+    void* src = &segment[r.srcOffset];
+    void** dst = (void**) &segment[r.dstOffset];
+    *dst = src;
+  }
 
   struct relocationCfg {
     void* srcPtr;
@@ -109,30 +138,61 @@ class GlobalVariable {
     {
     }
   };
-  static std::list<relocationCfg> relocationCfgs;
+  std::list<relocationCfg> relocationCfgs;
+
+ private:
+  std::unordered_set<void*> activeGlobalMaps_;
 
 };
+
+class GlobalVariable {
+ public:
+  static int init(const int size, const char* name, const void* initData, bool tls = false);
+
+  static GlobalVariableContext glblCtx;
+  static GlobalVariableContext tlsCtx;
+  static bool inited;
+};
+
+
 
 class RelocationPointer {
  public:
   RelocationPointer(void* srcPtr, void* srcBasePtr, int& srcOffset,
                     void* dstPtr, void* dstBasePtr, int& dstOffset){
-    GlobalVariable::registerRelocation(srcPtr, srcBasePtr, srcOffset,
-                                       dstPtr, dstBasePtr, dstOffset);
+
+    GlobalVariableContext& ctx = GlobalVariable::glblCtx;
+    ctx.registerRelocation(srcPtr, srcBasePtr, srcOffset,
+                           dstPtr, dstBasePtr, dstOffset);
   }
 };
 
-static inline void* get_global_at_offset(int offset){
+static inline void* get_special_at_offset(int offset, int map_offset)
+{
   int stack; int* stackPtr = &stack;
-  intptr_t stackTopInt = ((intptr_t)stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize + TLS_GLOBAL_MAP;
+  intptr_t stackTopInt = ((intptr_t)stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize + map_offset;
   char** stackTopPtr = (char**) stackTopInt;
   char* globalMap = *stackTopPtr;
   return globalMap + offset;
 }
 
+static inline void* get_global_at_offset(int offset){
+  return get_special_at_offset(offset, TLS_GLOBAL_MAP);
+}
+
+static inline void* get_tls_at_offset(int offset){
+  return get_special_at_offset(offset, TLS_TLS_MAP);
+}
+
 template <class T>
 static inline T& get_global_ref_at_offset(int offset){
   T* t = (T*) get_global_at_offset(offset);
+  return *t;
+}
+
+template <class T>
+static inline T& get_tls_ref_at_offset(int offset){
+  T* t = (T*) get_tls_at_offset(offset);
   return *t;
 }
 
@@ -143,9 +203,13 @@ struct global {};
 
 template <class T>
 struct global<T*,void> : public GlobalVariable {
-  explicit global() : GlobalVariable(offset,sizeof(T*),"",nullptr){}
+  explicit global(){ 
+    offset = GlobalVariable::init(sizeof(T*),"",nullptr);
+  }
 
-  explicit global(T* t) : GlobalVariable(offset, sizeof(T*), "", &t){}
+  explicit global(T* t){
+    offset = GlobalVariable::init(sizeof(T*), "", &t);
+  }
 
   T*& get() {
     return get_global_ref_at_offset<T*>(offset);
@@ -173,11 +237,17 @@ struct global<T*,void> : public GlobalVariable {
 };
 
 template <class T>
-struct global<T,typename std::enable_if<std::is_arithmetic<T>::value>::type> : public GlobalVariable {
+struct global<T,typename std::enable_if<std::is_arithmetic<T>::value>::type> {
 
-  explicit global() : GlobalVariable(offset, sizeof(T), "", nullptr){}
+  explicit global()
+  {
+    offset = GlobalVariable::init(sizeof(T), "", nullptr);
+  }
 
-  explicit global(const T& t) : GlobalVariable(offset, sizeof(T), "", &t){}
+  explicit global(const T& t)
+  {
+    offset = GlobalVariable::init(sizeof(T), "", &t);
+  } 
 
   template <class U>
   T& operator=(const U& u){

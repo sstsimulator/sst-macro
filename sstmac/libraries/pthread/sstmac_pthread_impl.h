@@ -140,9 +140,9 @@ int SSTMAC_pthread_mutex_trylock(sstmac_pthread_mutex_t * mutex);
 
 int SSTMAC_pthread_mutex_unlock(sstmac_pthread_mutex_t * mutex);
 
-int SSTMAC_pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type);
+int SSTMAC_pthread_mutexattr_gettype(const sstmac_pthread_mutexattr_t* attr, int* type);
 
-int SSTMAC_pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+int SSTMAC_pthread_mutexattr_settype(sstmac_pthread_mutexattr_t *attr, int type);
 
 int SSTMAC_pthread_mutexattr_getpshared(const sstmac_pthread_mutexattr_t* attr, int* pshared);
 

@@ -13,6 +13,7 @@ def argify(x):
     return x
 
 def delete(files):
+  import traceback
   import os
   os.system("rm -f %s" % (" ".join(files)))
 
@@ -20,6 +21,12 @@ def swapSuffix(suffix, path):
   splitter = path.split(".")[:-1]
   splitter.append(suffix)
   return ".".join(splitter)
+
+def rebaseFolder(path, srcDir, dstDir):
+  folder, fname = os.path.split(path)
+  newBaseFolder = folder.replace(srcDir,dstDir)
+  return os.path.join(newBaseFolder, fname)
+
 
 def addPrefix(prefix, path):
   import os
@@ -29,6 +36,11 @@ def addPrefix(prefix, path):
   else:
     return prefix + path
 
+def addPrefixAndRebase(prefix, path, newBase):
+  import os
+  newPath = addPrefix(prefix, path)
+  folder, name = os.path.split(newPath)
+  return os.path.join(newBase, name)
 
 def addClangArg(a, ret):
   ret.append("--extra-arg=%s" % a)
@@ -56,10 +68,14 @@ class TempFiles:
   def append(self, f):
     self.files.append(f)
 
+  def __del__(self):
+    self.cleanUp()
+
   def cleanUp(self):
     import os
     import sys
     cmd = "rm -f %s" % " ".join(self.files)
+    import traceback
     if self.doDelete:
         if self.verbose:
           sys.stderr.write("%s\n" % cmd)
@@ -70,6 +86,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   extraLibs = extraLibs.split()
   import os
   import sys
+  import platform
   from configlib import getstatusoutput
   from sstccvars import sstLdFlags, sstCppFlags
   from sstccvars import prefix, execPrefix, includeDir, cc, cxx
@@ -79,6 +96,18 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   from sstccvars import soFlagsStr
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
+
+  if not os.environ.has_key("SSTMAC_HEADERS"):
+    topdir = os.getcwd()
+    #unwind to look for a file named sstmac_headers
+    validPath = True
+    while os.getcwd() != "/":
+      if os.path.isfile("sstmac_headers"):
+        headerPath = os.path.join(os.getcwd(), "sstmac_headers")
+        os.environ["SSTMAC_HEADERS"] = headerPath
+        break
+      os.chdir("..")
+    os.chdir(topdir)
 
   def cleanFlag(flag):
     return flag.replace("${includedir}", includeDir).replace("${exec_prefix}", execPrefix).replace("${prefix}",prefix)
@@ -145,6 +174,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   asmFiles = False
   givenFlags = []
   controlArgs = []
+  compileOnlyArgs = []
   linkerArgs = []
   sourceFiles = []
   objectFiles = []
@@ -170,6 +200,12 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif sarg.startswith("-W"):
       warningArgs.append(sarg)
       givenFlags.append(sarg)
+    elif sarg[:6] == "-gstab": 
+      #for some reason, gstab seems to break 
+      #everything when using GNU compiler/linker
+      givenFlags.append("-g")
+    elif sarg == "-g3":
+      compileOnlyArgs.append(sarg)
     elif sarg.startswith("-L"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-l"):
@@ -312,6 +348,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       sstCompilerFlags.append(entry)
   sstCompilerFlagsStr = " ".join(sstCompilerFlags)
 
+  compileOnlyArgsStr = " ".join(compileOnlyArgs)
+
   #okay, figure out which -std flag to include in compilation
   #treat it as a given flag on the command line
 
@@ -327,8 +365,10 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     elif givenStdFlag:
       givenFlags.append(givenStdFlag)
     else:
-      sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
-      return 1
+      pass
+      #this flag is no longer required in newer compilers, c++11 might be default
+      #sys.stderr.write("no -std= flag obtained from SST - how did you compiled without C++11 or greater?")
+      #return 1
   else:
     if givenStdFlag:
       givenFlags.append(givenStdFlag)
@@ -391,6 +431,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     sourceFilesStr,
     sstCppFlagsStr,
     extraCppFlagsStr,
+    compileOnlyArgsStr,
     givenFlagsStr,
     sstCompilerFlagsStr
   ]
@@ -492,9 +533,15 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if runClang:
     #this is more complicated - we have to use clang to do a source to source transformation
     #then we need to run the compiler on that modified source
+    allTemps = TempFiles(delTempFiles, verbose)
     for srcFile in sourceFiles:
-      allTemps = TempFiles(delTempFiles, verbose)
-      ppTmpFile = addPrefix("pp.",srcFile)
+      target = objTarget
+      if not objTarget:
+        srcName = os.path.split(srcFile)[-1]
+        target = swapSuffix("o", srcName)
+      objBaseFolder, objName = os.path.split(target)
+
+      ppTmpFile = addPrefixAndRebase("pp.",srcFile, objBaseFolder)
       cmdArr = ppCmdArr[:]
       cmdArr.append(srcFile)
       cmdArr.append("> %s" % ppTmpFile)
@@ -508,8 +555,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
       ppText = open(ppTmpFile).read()
 
-      srcRepl = addPrefix("sst.pp.",srcFile)
-      cxxInitSrcFile = addPrefix("sstGlobals.pp.",srcFile) + ".cpp"
+      srcRepl = addPrefixAndRebase("sst.pp.",srcFile,objBaseFolder)
+      cxxInitSrcFile = addPrefixAndRebase("sstGlobals.pp.",srcFile,objBaseFolder) + ".cpp"
 
       clangCmdArr = [clangDeglobal]
       if typ == "c++":
@@ -544,10 +591,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         sstCompilerFlagsStr, 
         givenFlagsStr
       ]
-      target = objTarget
-      if not objTarget:
-        srcName = os.path.split(srcFile)[-1]
-        target = swapSuffix("o", srcName)
+
+
       tmpTarget = addPrefix("tmp.", target)
       allTemps.append(tmpTarget)
       cmdArr.append("-o")
@@ -585,15 +630,18 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         allTemps.cleanUp()
         return rc
 
+      linker = "ld -r"
+      if not platform.system() == "Darwin":
+        linker += " --unique"
+      
       mergeCmdArr = [
-        "ld -r -o",
+        linker, "-o",
         target,
         tmpTarget, cxxInitObjFile
       ]
       mergeCmd = " ".join(mergeCmdArr)
       if verbose: sys.stderr.write("%s\n" % mergeCmd)
       rc = os.system(mergeCmd)
-      allTemps.cleanUp()
       if not rc == 0:
         return rc
 
@@ -605,11 +653,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       srcFileNoSuffix = ".".join(srcFile.split(".")[:-1])
       cxxInitObjFile = addPrefix("sstGlobals.", swapSuffix("o",srcFile))
       if exeFromSrc:
-        if objTarget:
-          allObjects.append(objTarget)
-        else:
-          allObjects.append(swapSuffix("o", srcFile))
-        #allObjects.append(cxxInitObjFile)
+        newFile = objTarget
+        if not objTarget:
+          newFile = swapSuffix("o", srcFile)
+        allObjects.append(newFile)
+        allTemps.append(newFile)
 
     if exeFromSrc:
       if ldCmdArr:

@@ -295,6 +295,7 @@ void updateLinkCells(LinkCell* boxes, Atoms* atoms)
    {
       int iOff = iBox*MAXATOMS;
       int ii=0;
+    #pragma sst loop_count avgAtomsPerBox
       while (ii < boxes->nAtoms[iBox])
       {
          int jBox = getBoxFromCoord(boxes, atoms->r[iOff+ii]);
