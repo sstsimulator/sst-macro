@@ -83,6 +83,7 @@ RegisterDebugSlot(mpi_check,
 
 RegisterKeywords(
 { "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
+{ "dump_comm_times", "dump communication time statistics" },
 );
 
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
