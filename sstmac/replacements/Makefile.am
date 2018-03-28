@@ -51,6 +51,8 @@ nobase_library_include_HEADERS += \
   cstring \
   cstdlib \
   stdlib.h \
+  malloc.h \
+  mm_malloc.h \
   string.h \
   queue \
   sstream \

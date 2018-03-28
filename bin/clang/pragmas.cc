@@ -468,8 +468,7 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
     } else if (next == "skel_compute"){
       skelComputes_ = true;
     } else if (inserter == nullptr){
-      errorAbort(loc, CI,
-           "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', or 'target'");
+      extras_.push_back(next);
     } else {
       inserter->insert(next);
     }
@@ -497,6 +496,12 @@ static NamedDecl* getNamedDecl(Decl* d)
 void
 SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 {
+  if (!extras_.empty()){
+    errorAbort(d->getLocStart(), *CI,
+         "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', 'target',"
+         "'safe', 'delete_all', 'skel_compute'");
+  }
+
   declAppliedTo_ = getNamedDecl(d);
   if (d->getKind() == Decl::Function){
     FunctionDecl* fd = cast<FunctionDecl>(d);
@@ -654,6 +659,84 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
   }
 }
 
+SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
+  SSTNullVariablePragma(loc, CI, tokens)
+{
+  for (auto& str : extras_){
+    nullFields_.insert(str);
+  }
+  extras_.clear();
+  this->cls = NullFields;
+}
+
+void
+SSTNullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  if (cfg.nullFields){
+    errorAbort(d->getLocStart(), *CI,
+               "cannot nest null_fields pragma");
+  }
+  if (!isa<RecordDecl>(d) && !isa<TypedefDecl>(d)){
+    errorAbort(d->getLocStart(), *CI,
+               "null_fields pragma should only be applied to struct declarations");
+  }
+  cfg.nullFields = &nullFields_;
+  cfg.nullFieldPragma = this;
+}
+
+void
+SSTNullFieldsPragma::deactivate(PragmaConfig &cfg)
+{
+  cfg.nullFields = nullptr;
+  cfg.nullFieldPragma = nullptr;
+}
+
+void
+SSTNullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(stmt->getLocStart(), *CI,
+             "null_fields pragma should only be applied to struct declarations, not statements");
+}
+
+SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
+  SSTNullVariablePragma(loc, CI, tokens)
+{
+  this->cls = NonnullFields;
+  for (auto& str : extras_){
+    nonnullFields_.insert(str);
+  }
+  extras_.clear();
+}
+
+void
+SSTNonnullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  if (cfg.nonnullFields){
+    errorAbort(d->getLocStart(), *CI,
+               "cannot nest nonnull_fields pragma");
+  }
+  if (!isa<RecordDecl>(d) && !isa<TypedefDecl>(d)){
+    errorAbort(d->getLocStart(), *CI,
+               "nonnull_fields pragma should only be applied to struct declarations");
+  }
+  cfg.nonnullFields = &nonnullFields_;
+  cfg.nullFieldPragma = this;
+}
+
+void
+SSTNonnullFieldsPragma::deactivate(PragmaConfig &cfg)
+{
+  cfg.nonnullFields = nullptr;
+  cfg.nullFieldPragma = nullptr;
+}
+
+void
+SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(stmt->getLocStart(), *CI,
+             "null_fields pragma should only be applied to struct declarations, not statements");
+}
+
 void
 SSTNullTypePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
@@ -778,6 +861,18 @@ SSTPragma*
 SSTNullVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
 {
   return new SSTNullVariablePragma(loc, ci_, tokens);
+}
+
+SSTPragma*
+SSTNullFieldsPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  return new SSTNullFieldsPragma(loc, ci_, tokens);
+}
+
+SSTPragma*
+SSTNonnullFieldsPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  return new SSTNonnullFieldsPragma(loc, ci_, tokens);
 }
 
 SSTPragma*
