@@ -130,6 +130,7 @@ struct basic_instructions_st
   uint64_t mem_sequential = 0ULL;
   uint64_t flops = 0ULL;
   uint64_t intops = 0ULL;
+  int nthread = 1;
 };
 
 typedef compute_event_impl<timestamp> timed_compute_event;

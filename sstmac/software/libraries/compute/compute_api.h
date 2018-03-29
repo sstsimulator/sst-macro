@@ -83,10 +83,12 @@ void sstmac_compute(double secs);
  * @brief sstmac_compute_detailed Model a specific compute block
  * @param nflops  The number of flops executed in the compute block
  * @param nintops The number of int ops executed in the compute block
- *
  * @param bytes
  */
 void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes);
+
+void sstmac_compute_detailed_nthr(uint64_t nflops, uint64_t nintops, uint64_t bytes,
+                                  int nthread);
 
 /**
  * @brief sstmac_compute_loop
@@ -148,14 +150,14 @@ void sstmac_memread(uint64_t bytes);
 
 void sstmac_memwrite(uint64_t bytes);
 
-void sstmac_memcpy(uint64_t bytes);
+void sstmac_memcopy(uint64_t bytes);
 
 #define SSTMAC_sleep(...) sstmac_sleep(__VA_ARGS__)
 #define SSTMAC_usleep(...) sstmac_usleep(__VA_ARGS__)
 #define SSTMAC_compute(...) sstmac_compute(__VA_ARGS__)
 #define SSTMAC_memread(...) sstmac_memread(__VA_ARGS__)
 #define SSTMAC_memwrite(...) sstmac_memwrite(__VA_ARGS__)
-#define SSTMAC_memcpy(...) sstmac_memcpy(__VA_ARGS__)
+#define SSTMAC_memcopy(...) sstmac_memcopy(__VA_ARGS__)
 #define SSTMAC_compute_detailed(...) sstmac_compute_detailed(__VA_ARGS__)
 #define SSTMAC_compute_loop(...) sstmac_compute_loop(__VA_ARGS__)
 #define SSTMAC_compute_loop2(...) sstmac_compute_loop2(__VA_ARGS__)

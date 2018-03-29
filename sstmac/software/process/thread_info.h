@@ -52,20 +52,16 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstdint>
 #include <set>
 
-extern int sstmac_global_stacksize;
+extern "C" int sstmac_global_stacksize;
 
 namespace sstmac {
 
 class thread_info {
  public:
-  static void register_user_space_virtual_thread(int phys_thread_id, void* stack, void* globalsMap);
+  static void register_user_space_virtual_thread(int phys_thread_id, void* stack,
+                                                 void* globalsMap, void* tlsMap);
 
-  static void deregister_user_space_virtual_thread(void* stack){
-    char* tls = (char*) stack;
-    void** globalsPtr = (void**) &tls[TLS_GLOBAL_MAP];
-    void* globalsMap = *globalsPtr;
-    active_global_maps_.erase(globalsMap);
-  }
+  static void deregister_user_space_virtual_thread(void* stack);
 
   static void set_thread_id(void* stack, int thr){
     int* thrPtr = (int*) stack;
@@ -90,11 +86,6 @@ class thread_info {
     int* tls = (int*) &stack_ptr[TLS_THREAD_ID];
     return *tls;
   }
-
-  static void init_global_space(void* ptr, int size, int offset);
-
- private:
-  static std::set<void*> active_global_maps_;
 
 };
 

@@ -26,7 +26,6 @@ Atoms* initAtoms(LinkCell* boxes)
 
    int maxTotalAtoms = MAXATOMS*boxes->nTotalBoxes;
 
-//#pragma sst delete
    {
    atoms->gid =      (int*)   comdMalloc(maxTotalAtoms*sizeof(int));
    atoms->iSpecies = (int*)   comdMalloc(maxTotalAtoms*sizeof(int));

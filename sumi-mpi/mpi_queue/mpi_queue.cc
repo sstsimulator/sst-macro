@@ -690,8 +690,8 @@ mpi_queue::start_progress_loop(const std::vector<mpi_request*>& reqs)
 void
 mpi_queue::forward_progress(double timeout)
 {
-  mpi_queue_debug("starting forward progress");
-  sumi::message* msg = api_->blocking_poll(timeout);
+  mpi_queue_debug("starting forward progress with timeout=%f", timeout);
+  sumi::message* msg = api_->poll(true, timeout); //block until timeout
   if (msg) handle_poll_msg(msg);
 }
 

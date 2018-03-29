@@ -52,7 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sumi/dense_rank_map.h>
 #include <sumi/transport.h>
-#include <sumi/thread_safe_set.h>
 #include <sstmac/skeleton.h>
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
@@ -61,7 +60,7 @@ void
 run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
 {
   int me = comm_rank();
-  thread_safe_set<int> known_failures = comm_failed_ranks(context);
+  auto known_failures = comm_failed_ranks(context);
   dense_rank_map rmap(known_failures);
   int dense_me = rmap.dense_rank(me);
   if (me == 11){
@@ -109,14 +108,12 @@ run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
 
   dmsg = comm_collective_block(collective::dynamic_tree_vote, tag);
   if (me == 0){
-    const thread_safe_set<int>& failed = comm_failed_ranks();
-    thread_safe_set<int>::iterator it, end = failed.start_iteration();
+    auto& failed = comm_failed_ranks();
     std::stringstream sstr;
     sstr << "Failed = {";
-    for (it = failed.begin(); it != end; ++it){
-      sstr << " " << *it;
+    for (auto rank : failed){
+      sstr << " " << rank;
     }
-    failed.end_iteration();
     sstr << " }";
     printf("%s\n", sstr.str().c_str());
   }

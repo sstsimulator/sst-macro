@@ -26,9 +26,9 @@ typedef struct LinkCellSt
    real3 localMax;      //!< maximum local bounds on processor
    real3 boxSize;       //!< size of box in each dimension
    real3 invBoxSize;    //!< inverse size of box in each dimension
-#pragma sst null_variable
+#pragma sst null_variable delete_all
    int* nAtoms;         //!< total number of atoms in each box
-#pragma sst null_variable
+#pragma sst null_variable delete_all
    int** nbrBoxes;      //!< neighbor boxes for each box
 } LinkCell;
 

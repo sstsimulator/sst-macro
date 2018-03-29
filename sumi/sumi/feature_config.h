@@ -1,6 +1,0 @@
-#ifndef sumi_FEATURE_CONFIG_H
-#define sumi_FEATURE_CONFIG_H
-
-//#define FEATURE_TAG_SUMI_RESILIENCE
-
-#endif // FEATURE_CONFIG_H

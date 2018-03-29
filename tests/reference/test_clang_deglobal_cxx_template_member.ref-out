@@ -1,0 +1,44 @@
+
+struct sstmacTagClassglobal{}; template <class T>  sstmac::CppVarTemplate<sstmacTagClassglobal,T,false> global;;
+
+struct A {
+
+ template <class T>  static  sstmac::CppVarTemplate<A,T,false>  member;
+;
+
+
+};
+template <class T>  sstmac::CppVarTemplate<A,T,false>  A::member(0);;
+
+
+template <class T>
+struct B {
+  template <class U>  static  sstmac::CppVarTemplate<B<T>,U,false>  member;
+;
+
+  void call();
+};
+template <class T>
+template <class U>  sstmac::CppVarTemplate<B<T>,U,false>  B<T>::member(0);;
+
+struct sstmacTagClassstaticGlobal{}; template <class U>  sstmac::CppVarTemplate<sstmacTagClassstaticGlobal,B<U>,false> staticGlobal;;
+
+void fxn(){
+  A::member<int>() = 0;
+  B<double>::member<int>() = 42;
+  staticGlobal<float>().call();
+  global<long>() = 11;
+}
+
+template <class T>
+void anotherFxn(){
+  A::member<T>() = 0;
+  staticGlobal<T>().call();
+}
+
+template <class T, class U>
+void again(){
+  B<T>::template member<U> = 0;
+}
+#include <sstmac/software/process/global.h>
+

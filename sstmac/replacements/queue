@@ -1,14 +1,22 @@
+#ifndef sstmac_queue_included
+#define sstmac_queue_included
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-
+#define QUEUE_OWNS_STL
 #include <sstmac/replacements/sstmac_pthread_clear.h>
+#include <sstmac/replacements/clear_symbol_macros.h>
+#endif
 
 #include_next <queue>
+
+#ifdef QUEUE_OWNS_STL
+#undef QUEUE_OWNS_STL
 #undef SSTMAC_INSIDE_STL
-
+#include <sstmac/replacements/return_symbol_macros.h>
 #include <sstmac/replacements/sstmac_pthread_return.h>
+#endif
 
-#else
-#include_next <queue>
+
 #endif
 

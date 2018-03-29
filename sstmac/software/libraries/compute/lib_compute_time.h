@@ -67,15 +67,14 @@ class lib_compute_time :
                    const std::string& name, software_id id,
                    operating_system* os);
 
-  virtual
-  ~lib_compute_time();
+  virtual ~lib_compute_time();
 
-  void
-  incoming_event(event *ev){
+  void incoming_event(event *ev){
     library::incoming_event(ev);
   }
 
   void compute(timestamp time);
+
   void sleep(timestamp time);
 
 };

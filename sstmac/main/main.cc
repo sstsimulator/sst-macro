@@ -61,7 +61,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/fileio.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
-#include <sumi/sumi/sumi_config.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/software/api/api.h>
@@ -128,7 +127,7 @@ main(int argc, char **argv)
     sprockit::sim_parameters params;
     params.set_public_scope(false); //do not expose top-level params to subspaces
     bool params_only = false;
-    sstmac::try_main(&params, argc, argv, params_only);
+    rc = sstmac::try_main(&params, argc, argv, params_only);
   } catch (const std::exception &e) {
     std::cout.flush();
     std::cerr.flush();
@@ -140,6 +139,6 @@ main(int argc, char **argv)
               << ": caught unknown exception while setting up simulation\n";
     return 1;
   }
-  return 0;
+  return rc;
 }
 #endif // !SSTMAC_INTEGRATED_SST_CORE

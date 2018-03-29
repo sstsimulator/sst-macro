@@ -59,51 +59,69 @@ cpuset_compute_scheduler::configure(int ncore, int nsocket)
   }
 }
 
-void
-cpuset_compute_scheduler::reserve_core(thread *thr)
+bool
+cpuset_compute_scheduler::allocate_cores(int ncores, uint64_t valid_cores,
+                                         uint64_t& cores_allocated, thread* thr)
 {
-  uint64_t valid_cores = available_cores_ & thr->cpumask();  
-  if (valid_cores == 0){
-    debug_printf(sprockit::dbg::compute_scheduler,
-        "No available cores from set %X intersect cpumask %X for thread %ld",
-        available_cores_, thr->cpumask(), thr->thread_id());
-    //no available cores, hold up
-    pending_threads_.push_back(thr);
-    os_->block();
-    //this is guaranteed not to unblock until valid core received
-  } else {
-    allocate_core_to_thread(valid_cores, thr);
-  }
-
-}
-
-void
-cpuset_compute_scheduler::allocate_core_to_thread(uint64_t valid_cores, thread* thr)
-{
-  for (int i=0; i < ncores_; ++i){
+  int ncores_found = 0;
+  cores_allocated = 0;
+  for (int i=0; i < ncores_ && ncores_found < ncores; ++i){
     uint64_t mask = valid_cores & (1<<i);
     if (mask != 0){
-      allocate_core(i);
-      thr->set_active_core(i);
+      ++ncores_found;
+      add_core(i, cores_allocated);
       debug_printf(sprockit::dbg::compute_scheduler,
           "Core %d matches from set %X intersecting cpumask %X for thread %ld",
           i, valid_cores, thr->cpumask(), thr->thread_id());
-      return;
     }
   }
+  return cores_allocated;
+}
 
-  spkt_abort_printf("No cores matches between %X and %X but still trying to allocate",
-                    thr->cpumask(), valid_cores);
+bool
+cpuset_compute_scheduler::try_reserve_core(thread* thr)
+{
+  uint64_t valid_cores = available_cores_ & thr->cpumask();
+  if (thr->num_active_cores() == 1 && valid_cores == 0){
+    //shortcut to optimize for most common case
+    debug_printf(sprockit::dbg::compute_scheduler,
+      "No available cores from set %X intersect cpumask %X for thread %ld",
+      available_cores_, thr->cpumask(), thr->thread_id());
+    return false;
+  }
+  uint64_t cores_allocated;
+  bool succ = allocate_cores(thr->num_active_cores(), valid_cores, cores_allocated, thr);
+  if (succ){
+    remove_cores(cores_allocated, available_cores_);
+    thr->set_active_core_mask(cores_allocated);
+    return true;
+  } else {
+    return false;
+  }
+}
 
+void
+cpuset_compute_scheduler::reserve_core(thread *thr)
+{
+  bool succ = try_reserve_core(thr);
+  if (!succ){
+    //this is guaranteed not to unblock until valid core received
+    pending_threads_.push_back(thr);
+    os_->block();
+  }
 }
 
 void
 cpuset_compute_scheduler::release_core(thread *thr)
 {  
-  deallocate_core(thr->active_core());
   debug_printf(sprockit::dbg::compute_scheduler,
-      "Releasing core %d for thread %ld yields cpuset %X",
-      thr->active_core(), thr->thread_id(), available_cores_);
+      "Releasing cores %X for thread %ld yields cpuset %X",
+      thr->active_core_mask(), thr->thread_id(), available_cores_);
+
+  //put the cores that were allocated to thread back in available
+  add_cores(thr->active_core_mask(), available_cores_);
+
+  thr->set_active_core_mask(0);
   if (pending_threads_.empty())
     return;
   
@@ -112,16 +130,14 @@ cpuset_compute_scheduler::release_core(thread *thr)
   while (it != end){
     tmp = it++;
     thread* thr = *tmp;
-    uint64_t valid_cores = available_cores_ & thr->cpumask();    
-    if (valid_cores != 0){
-      allocate_core_to_thread(valid_cores, thr);
+    bool succ = try_reserve_core(thr);
+    if (succ){
       //the newly freed core allows another thread to continue
       pending_threads_.erase(tmp);
       os_->unblock(thr);
       break;
     }
   }
-  
 }
 
 }

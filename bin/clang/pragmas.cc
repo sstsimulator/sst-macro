@@ -59,16 +59,37 @@ static int pragmaDepth = 0;
 static int maxPragmaDepth = 0;
 std::list<SSTPragma*> pendingPragmas;
 
+void getLiteralDataAsString(const Token &tok, std::ostream &os)
+{
+  const char* data = tok.getLiteralData(); //not null-terminated, direct from buffer
+  for (int i=0 ; i < tok.getLength(); ++i){
+    //must explicitly add chars, this will not hit a \0
+     os << data[i];
+  }
+}
+
+std::string getLiteralDataAsString(const Token &tok)
+{
+  std::stringstream os;
+  getLiteralDataAsString(tok, os);
+  return os.str();
+}
+
 void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
   switch(fsp->cls){
+    case SSTPragma::AlwaysCompute:
+    case SSTPragma::GlobalVariable:
+    case SSTPragma::AdvanceTime:
+    case SSTPragma::Overhead:
     case SSTPragma::Keep: //always obey these
       pragmas_.push_back(fsp);
       break;
     default: //otherwise check if we are skeletonizing
-      if (visitor_.noSkeletonize())
+      if (visitor_.noSkeletonize()){
         return;
+      }
       pragmas_.push_back(fsp);
       break;
   }
@@ -139,6 +160,7 @@ SSTDeletePragma::activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg)
   default:
     break;
   }
+  throw StmtDeleteException(s);
 }
 
 void
@@ -270,6 +292,17 @@ SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
+SSTOverheadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  std::stringstream sstr;
+  sstr << "sstmac_advance_time(\""
+       << paramName_
+       << "\");";
+  r.InsertText(s->getLocStart(), sstr.str(), false);
+  cfg.newParams.insert(paramName_);
+}
+
+void
 SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
   PrettyPrinter pp;
@@ -291,6 +324,12 @@ SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   
   pp.os << replacement; 
   r.InsertText(s->getLocStart(), pp.os.str(), false, false);
+}
+
+void
+SSTCallFunctionPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  r.InsertText(s->getLocStart(), repl_, false);
 }
 
 void
@@ -365,12 +404,32 @@ SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
   replace(fd->getBody(), r, repl, *CI);
 }
 
+void
+SSTGlobalVariablePragma::activate(Stmt* s, Rewriter& r, PragmaConfig& cfg)
+{
+  cfg.dependentScopeGlobal = name_;
+}
+
+void
+SSTGlobalVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(d->getLocStart(), *CI,
+             "global pragma should only be applied to statements");
+}
+
 SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
                                              const std::list<Token> &tokens)
- : SSTPragma(NullVariable)
+ : SSTPragma(NullVariable),
+   nullSafe_(false), deleteAll_(false),
+   declAppliedTo_(nullptr),
+   transitiveFrom_(nullptr),
+   skelComputes_(false)
 {
-  if (tokens.empty()) return;
+  if (tokens.empty()){
+    return;
+  }
 
+  std::set<std::string> replacer;
   std::set<std::string>* inserter = nullptr;
   auto end = tokens.end();
   for (auto iter=tokens.begin(); iter != end; ++iter){
@@ -378,7 +437,8 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
     std::string next;
     switch(token.getKind()){
     case tok::string_literal:
-      next = token.getLiteralData();
+    case tok::numeric_constant:
+      next = getLiteralDataAsString(token);
       break;
     case tok::kw_new:
       next = "new";
@@ -397,18 +457,109 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
       inserter = &nullOnly_;
     } else if (next == "new"){
       inserter = &nullNew_;
+    } else if (next == "replace"){
+      inserter = &replacer;
+    } else if (next == "target"){
+      inserter = &targetNames_;
+    } else if (next == "safe"){
+      nullSafe_ = true;
+    } else if (next == "delete_all"){
+      deleteAll_ = true;
+    } else if (next == "skel_compute"){
+      skelComputes_ = true;
     } else if (inserter == nullptr){
-      errorAbort(loc, CI, "illegal null_variable spec: must begin with 'only', 'except', or 'new'");
+      errorAbort(loc, CI,
+           "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', or 'target'");
     } else {
       inserter->insert(next);
     }
+  }
+
+  if (!replacer.empty()){
+    replacement_ = *replacer.begin();
+  }
+}
+
+static NamedDecl* getNamedDecl(Decl* d)
+{
+  switch (d->getKind()){
+    case Decl::Function:
+      return cast<FunctionDecl>(d);
+    case Decl::Field:
+      return cast<FieldDecl>(d);
+    case Decl::Var:
+      return cast<VarDecl>(d);
+    default:
+      return nullptr;
+  }
+}
+
+void
+SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
+{
+  declAppliedTo_ = getNamedDecl(d);
+  if (d->getKind() == Decl::Function){
+    FunctionDecl* fd = cast<FunctionDecl>(d);
+    if (nullSafe_){
+      //this function is completely null safe
+      cfg.nullSafeFunctions[fd] = this;
+      return; //my work here is done
+    }
+
+    if (targetNames_.empty()){
+      errorAbort(d->getLocStart(), *CI,
+                 "null_variable pragma applied to function must give list of target null parameters");
+    }
+
+    int numHits = 0;
+    for (int i=0; i < fd->getNumParams(); ++i){
+      ParmVarDecl* pvd = fd->getParamDecl(i);
+      if (targetNames_.find(pvd->getNameAsString()) != targetNames_.end()){
+        cfg.nullVariables[pvd] = this;
+        ++numHits;;
+      }
+    }
+
+    if (numHits != targetNames_.size()){
+      std::stringstream sstr;
+      sstr << "null_variable pragma lists " << targetNames_.size()
+           << " parameters, but they match " << numHits
+           << " parameter names";
+      errorAbort(d->getLocStart(), *CI, sstr.str());
+    }
+    //no parameters matched target name
+  } else {
+    cfg.nullVariables[d] = this;
   }
 }
 
 void
 SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
-  cfg.nullVariables[d] = this;
+  switch(d->getKind()){
+    case Decl::Function:
+      break;
+    case Decl::Field:{
+      FieldDecl* fd = cast<FieldDecl>(d);
+      if (!fd->getType()->isPointerType()){
+        errorAbort(d->getLocStart(), *CI, "only valid to apply null_variable pragma to pointers");
+      }
+      break;
+    }
+    case Decl::Var: {
+      VarDecl* vd = cast<VarDecl>(d);
+      if (!vd->getType()->isPointerType()){
+        errorAbort(d->getLocStart(), *CI, "only valid to apply null_variable pragma to pointers");
+      }
+      break;
+    }
+    default:
+      errorAbort(d->getLocStart(), *CI,
+               "only valid to apply null_variable pragma to functions, variables, and members");
+      break;
+  }
+
+  doActivate(d,r,cfg);
 }
 
 void
@@ -429,9 +580,10 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
                                      const std::list<Token> &tokens)
  : SSTNullVariablePragma(NullType)
 {
-  if (tokens.empty()){
-    errorAbort(loc, CI, "null_type pragma requires a type argument");
-  }
+  //this is valid - it just means wipe out the type
+  //if (tokens.empty()){
+  //  errorAbort(loc, CI, "null_type pragma requires a type argument");
+  //}
 
   std::list<std::string> toInsert;
   bool connectPrev = false;
@@ -489,10 +641,16 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
     }
     connectPrev = connectNext;
   }
-  newType_ = toInsert.front();
-  toInsert.pop_front();
-  for (auto& str : toInsert){
-    nullExcept_.insert(str);
+
+  if (toInsert.empty()){
+    //just wipeout the thing entirely - just make it a char
+    newType_ = "char";
+  } else {
+    newType_ = toInsert.front();
+    toInsert.pop_front();
+    for (auto& str : toInsert){
+      nullExcept_.insert(str);
+    }
   }
 }
 
@@ -517,7 +675,7 @@ SSTNullTypePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
   }
   std::string repl = newType_ + " " + name;
   replace(d,r,repl,*CI);
-  SSTNullVariablePragma::activate(d,r,cfg);
+  doActivate(d,r,cfg);
 }
 
 void
@@ -599,11 +757,7 @@ SSTPragma::tokenStreamToString(SourceLocation loc,
       case tok::string_literal:
       case tok::numeric_constant:
       {
-        const char* data = next.getLiteralData(); //not null-terminated, direct from buffer
-        for (int i=0 ; i < next.getLength(); ++i){
-          //must explicitly add chars, this will not hit a \0
-           os << data[i];
-        }
+        getLiteralDataAsString(next, os);
         break;
       }
       default:
@@ -643,6 +797,14 @@ SSTReturnPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token
 }
 
 SSTPragma*
+SSTGlobalVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTGlobalVariablePragma(loc, ci_, sstr.str());
+}
+
+SSTPragma*
 SSTEmptyPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
@@ -676,4 +838,21 @@ SSTAdvanceTimePragmaHandler::allocatePragma(SourceLocation loc, const std::list<
   std::stringstream sval;
   SSTPragma::tokenStreamToString(loc, iter, tokens.end(), sval, ci_);
   return new SSTAdvanceTimePragma(units.str(), sval.str());
+}
+
+SSTPragma*
+SSTCallFunctionPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  sstr << ";"; //semi-colon not required in pragma
+  return new SSTCallFunctionPragma(sstr.str());
+}
+
+SSTPragma*
+SSTOverheadPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  std::stringstream sstr;
+  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTOverheadPragma(sstr.str());
 }

@@ -564,6 +564,11 @@ int sstmac_neighbor_alltoallv(const void *sendbuf, const int sendcounts[], const
 int sstmac_neighbor_alltoallw(const void *sendbuf, const int sendcounts[], const MPI_Aint sdispls[],
                            const MPI_Datatype sendtypes[], void *recvbuf, const int recvcounts[],
                            const MPI_Aint rdispls[], const MPI_Datatype recvtypes[], MPI_Comm comm);
+
+int sstmac_win_flush(int rank, MPI_Win win);
+
+int sstmac_comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm * newcomm);
+
 #ifdef __cplusplus
 }
 #endif

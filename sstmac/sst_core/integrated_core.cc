@@ -194,6 +194,19 @@ set_debug_flags(PyObject* self, PyObject* args)
 }
 
 static PyObject*
+load_extern_so_file(PyObject* self, PyObject* args)
+{
+  std::string pathStr = load_extern_path_str();
+  Py_ssize_t size = PyTuple_Size(args);
+  for (int i=0; i < size; ++i){
+    PyObject* obj = PyTuple_GetItem(args,i);
+    const char* str = PyString_AsString(obj);
+    load_extern_library(str, pathStr);
+  }
+  Py_RETURN_NONE;
+}
+
+static PyObject*
 read_params(PyObject* self, PyObject* args)
 {
   PyObject* sys_argv = PyTuple_GetItem(args, 0);
@@ -225,11 +238,13 @@ struct myMethod {
 static myMethod fxns[] = {
   { "readParams", read_params},
   { "debug", set_debug_flags},
+  { "loadLibrary", load_extern_so_file},
 };
 
 static PyMethodDef sst_macro_integrated_methods[] = {
   { fxns[0].name, fxns[0].fxn, METH_VARARGS, "parse command line options and read parameters" },
   { fxns[1].name, fxns[1].fxn, METH_VARARGS, "set debug flags" },
+  { fxns[2].name, fxns[2].fxn, METH_VARARGS, "load external libraries" },
   { NULL, NULL, 0, NULL }
 };
 

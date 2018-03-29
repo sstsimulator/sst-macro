@@ -102,8 +102,9 @@ instruction_processor::compute(event* ev, callback* cb)
 {
   sw::basic_compute_event* bev = test_cast(sw::basic_compute_event, ev);
   sw::basic_instructions_st& st = bev->data();
+  int nthread = st.nthread;
   // compute execution time in seconds
-  timestamp instr_time = instruction_time(bev);
+  timestamp instr_time = instruction_time(bev) / nthread;
   // now count the number of bytes
   uint64_t bytes = st.mem_sequential;
   // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
@@ -115,7 +116,6 @@ instruction_processor::compute(event* ev, callback* cb)
     double best_possible_bw = bytes / best_possible_time.sec();
     mem_->access(bytes, best_possible_bw, cb);
   }
-
 }
 
 

@@ -136,12 +136,18 @@ void remap_params(sprockit::sim_parameters* params, bool verbose = true);
 
 void load_extern_library(const std::string& libname, const std::string& searchPath);
 
+void load_extern_library(const std::string& libname);
+
+std::string load_extern_path_str();
+
 void run(opts& oo,
     sstmac::parallel_runtime* rt,
     sprockit::sim_parameters* params,
     sim_stats& stats);
 
-void try_main(sprockit::sim_parameters* params,
+int run_standalone(int argc, char** argv);
+
+int try_main(sprockit::sim_parameters* params,
    int argc, char **argv,
    bool params_only = false);
 

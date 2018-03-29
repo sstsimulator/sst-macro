@@ -1,51 +1,66 @@
 
- extern int __offset___Ax; extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);struct A {
- static int x;
- void fxn(){ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A____Ax=(int*)(sstmac_global_data + __offset___Ax); {
-  (*sstmac_A____Ax) -= 1;
+struct A {
+ static int x; public: static int __offset_x;
+ void fxn(){ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A__x=(int*)(sstmac_global_data + A::__offset_x); {
+  (*sstmac_A__x) -= 1;
   }}
 };
 
-extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);extern int sstmac_global_stacksize; extern "C" void sstmac_init_global_space(void*,int,int);namespace ns {
- extern int __offset___Bx; struct B {
- static int x;
+int initFxn();
+
+struct Caller {
+  Caller(int a){}
+};
+
+namespace ns {
+struct B {
+ static int x; public: static int __offset_x;
+ static Caller caller; public: static int __offset_caller;
 };
 namespace ns2 {
-  extern int __offset___Cx; struct C {
-  static int x;
+ struct C {
+  static int xx; public: static int __offset_xx;
  };
 }
 }
 
-int ns::B::x = 42;namespace ns {void* __ptr___Bx = &B::x; int __sizeof___Bx = sizeof(B::x);}
-int A::x = 5;void* __ptr___Ax = &A::x; int __sizeof___Ax = sizeof(A::x);
+int ns::B::x = 42;namespace ns {int B::__offset_x = sstmac::inplace_cpp_global<B,int,false>(42);}
+Caller ns::B::caller = initFxn();namespace ns {int B::__offset_caller = sstmac::inplace_cpp_global<B, Caller,false>(initFxn());}
+int A::x = 5;int A::__offset_x = sstmac::inplace_cpp_global<A,int,false>(5);
 namespace ns {
  namespace ns2 {
-  int C::x = 10;void* __ptr___Cx = &C::x; int __sizeof___Cx = sizeof(C::x);
+  int C::xx = 10;int C::__offset_xx = sstmac::inplace_cpp_global<C,int,false>(10);
  }
 }
+
+decltype(ns::B::caller) dtGlbl(0);void* __ptr_dtGlbl = &dtGlbl; int __sizeof_dtGlbl = sizeof(dtGlbl); extern int __offset_dtGlbl; sstmac::CppGlobal* dtGlbl_sstmac_ctor = sstmac::new_cpp_global<decltype(ns::  B::caller),false>(__offset_dtGlbl,0); 
 
 void fxn()
-{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A____Ax=(int*)(sstmac_global_data + __offset___Ax); int* sstmac___ns__B____Bx=(int*)(sstmac_global_data + ::ns::__offset___Bx); int* sstmac___ns__ns2__C____Cx=(int*)(sstmac_global_data + ::ns::ns2::__offset___Cx); {
-  (*sstmac___ns__B____Bx) += 1;
-  (*sstmac___ns__ns2__C____Cx) -= 3;
-  (*sstmac_A____Ax) = 10;
+{ char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A__x=(int*)(sstmac_global_data + A::__offset_x); int* sstmac___ns__B__x=(int*)(sstmac_global_data + ::ns::B::__offset_x); int* sstmac___ns__ns2__C__xx=(int*)(sstmac_global_data + ::ns::ns2::C::__offset_xx); {
+  (*sstmac___ns__B__x) += 1;
+  (*sstmac___ns__ns2__C__xx) -= 3;
+  (*sstmac_A__x) = 10;
  }};
+
+struct DeclTyper {
+  static int get(){ return 0; }
+};
+DeclTyper d;void* __ptr_d = &d; int __sizeof_d = sizeof(d); extern int __offset_d; sstmac::CppGlobal* d_sstmac_ctor = sstmac::new_cpp_global<  DeclTyper,false>(__offset_d); 
+
+int goReturn(){
+  return decltype(d)::get();
+}
+
+
+struct D {
+  static int arr[4]; public: static int __offset_arr;typedef int array_type_arr[4];
+};
+int D::arr[4] = {1,2,3,4};int D::__offset_arr = sstmac::inplace_cpp_global<D,int [4],false>(1,2,3,4);
 #include <sstmac/software/process/global.h>
 
-int __offset___Ax = 0;
-extern int __sizeof___Ax;
-extern void* __ptr___Ax;
-sstmac::GlobalVariable __gv___Ax(__offset___Ax,__sizeof___Ax,"__Ax",__ptr___Ax);
-namespace ns {
- int __offset___Bx = 0;
- extern int __sizeof___Bx;
- extern void* __ptr___Bx;
- sstmac::GlobalVariable __gv___Bx(__offset___Bx,__sizeof___Bx,"__Bx",__ptr___Bx);
- namespace ns2 {
-  int __offset___Cx = 0;
-  extern int __sizeof___Cx;
-  extern void* __ptr___Cx;
-  sstmac::GlobalVariable __gv___Cx(__offset___Cx,__sizeof___Cx,"__Cx",__ptr___Cx);
- }
-}
+extern int __sizeof_d;
+extern void* __ptr_d;
+int __offset_d = sstmac::GlobalVariable::init(__sizeof_d,"d",__ptr_d,false);
+extern int __sizeof_dtGlbl;
+extern void* __ptr_dtGlbl;
+int __offset_dtGlbl = sstmac::GlobalVariable::init(__sizeof_dtGlbl,"dtGlbl",__ptr_dtGlbl,false);

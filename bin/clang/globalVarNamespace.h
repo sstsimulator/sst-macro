@@ -60,6 +60,7 @@ struct GlobalVarNamespace
 
   struct Variable {
     bool isFxnStatic;
+    bool isThreadLocal;
   };
 
   std::string ns;
@@ -130,21 +131,20 @@ struct GlobalVarNamespace
     for (auto& pair : replVars){
       auto& name = pair.first;
       Variable& var = pair.second;
-      os << indent << "int __offset_" << name << " = 0;\n";
       os << indent << "extern int __sizeof_" << name << ";\n";
       if (!var.isFxnStatic)
         os << indent << "extern void* __ptr_" << name << ";\n";
-      os << indent << "sstmac::GlobalVariable __gv_" << name
-              << "(__offset_" << name
-              << ",__sizeof_" << name
+      os << indent << "int __offset_" << name << " = "
+         << "sstmac::GlobalVariable::init(" 
+              << "__sizeof_" << name
               << ",\"" << name << "\"";
       if (var.isFxnStatic){
         os << ",nullptr";
       } else {
         os  << ",__ptr_" << name;
       }
-
-      os << ");\n";
+      os << "," << std::boolalpha << var.isThreadLocal
+         << ");\n";
     }
 
     for (auto& str : relocations){

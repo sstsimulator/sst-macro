@@ -129,7 +129,7 @@ class multithreaded_event_container :
 
   struct event_compare {
     bool operator()(const std::pair<timestamp,event_scheduler*>& lhs,
-                    const std::pair<timestamp,event_scheduler*>& rhs) {
+                    const std::pair<timestamp,event_scheduler*>& rhs) const {
       if (lhs.first == rhs.first){
         //equal times, break tie
         return lhs.second->component_id() < rhs.second->component_id();

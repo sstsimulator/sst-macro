@@ -189,6 +189,8 @@ class mpi_api :
 
   int comm_group(MPI_Comm comm, MPI_Group* grp);
 
+  int comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm * newcomm);
+
   void comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm);
 
   /**
@@ -521,6 +523,27 @@ class mpi_api :
   int pack_size(int incount, MPI_Datatype datatype,
          MPI_Comm comm, int *size);
 
+  int win_flush(int rank, MPI_Win win);
+
+  int win_flush_local(int rank, MPI_Win win);
+
+  int win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
+                 MPI_Comm comm, MPI_Win *win);
+
+  int win_free(MPI_Win *win);
+
+  int win_lock(int lock_type, int rank, int assert, MPI_Win win);
+
+  int win_unlock(int rank, MPI_Win win);
+
+  int get(void *origin_addr, int origin_count, MPI_Datatype
+              origin_datatype, int target_rank, MPI_Aint target_disp,
+              int target_count, MPI_Datatype target_datatype, MPI_Win win);
+
+  int put(const void *origin_addr, int origin_count, MPI_Datatype
+              origin_datatype, int target_rank, MPI_Aint target_disp,
+              int target_count, MPI_Datatype target_datatype, MPI_Win win);
+
  public:
   int op_create(MPI_User_function* user_fn, int commute, MPI_Op* op);
 
@@ -726,6 +749,10 @@ class mpi_api :
 
   collective_op_base*
   start_allreduce(MPI_Comm comm, int count, MPI_Datatype type,
+               MPI_Op op, const void* src, void* dst);
+
+  collective_op_base*
+  start_allreduce(mpi_comm* commPtr, int count, MPI_Datatype type,
                MPI_Op op, const void* src, void* dst);
 
   collective_op_base*

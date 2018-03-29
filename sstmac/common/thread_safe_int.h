@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/thread_lock.h>
 #include <cstring>
+#include <cstdint>
 
 namespace sstmac {
 
@@ -100,6 +101,8 @@ class thread_safe_int_t :
 
 typedef thread_safe_int_t<int> thread_safe_int;
 typedef thread_safe_int_t<long> thread_safe_long;
+typedef thread_safe_int_t<uint32_t> thread_safe_u32;
+typedef thread_safe_int_t<uint64_t> thread_safe_u64;
 typedef thread_safe_int_t<long long> thread_safe_long_long;
 typedef thread_safe_int_t<size_t> thread_safe_size_t;
 

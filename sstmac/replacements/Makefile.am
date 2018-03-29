@@ -31,6 +31,7 @@ nobase_library_include_HEADERS += \
   return_symbol_macros.h \
   sstmac_pthread_return.h \
   sys/types.h \
+  dlfcn.h \
   fstream \
   iostream \
   ios \
@@ -39,6 +40,8 @@ nobase_library_include_HEADERS += \
   condition_variable \
   list \
   map \
+  unordered_map \
+  unordered_set \
   memory \
   mutex \
   thread \
@@ -52,6 +55,7 @@ nobase_library_include_HEADERS += \
   queue \
   sstream \
   stack \
+  set \
   string \
   vector \
   signal.h \

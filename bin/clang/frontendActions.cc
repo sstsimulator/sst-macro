@@ -144,6 +144,8 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTAlwaysComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTStartReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
@@ -160,6 +162,8 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTReturnPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTGlobalVariablePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTNullTypePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTEmptyPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
@@ -171,6 +175,10 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTInsteadPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTBranchPredictPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTCallFunctionPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTOverheadPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTAdvanceTimePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
 }
@@ -203,35 +211,9 @@ ReplaceAction::EndSourceFileAction()
     //add the header files needed
     ofs << "#include <sstmac/software/process/global.h>\n\n";
     globalNs_.genSSTCode(ofs,"");
+    visitor_.registerNewKeywords(ofs);
     if (visitor_.hasCStyleMain()){
       std::string appname = visitor_.getAppName();
-#if SSTMAC_INTEGRATED_SST_CORE
-      ofs << "#include <sstmac/replacements/sstCoreElement.h>\n\n";
-      ofs << "#include <Python.h>\n\n";
-      ofs << "static PyMethodDef sst_macro_null_methods[] = { "
-        "{ NULL, NULL, 0, NULL }"
-    "}; "
-    "static inline void* gen_sst_macro_integrated_pymodule(void){"
-      "PyObject* module = Py_InitModule(\"sst." << appname << "\", sst_macro_null_methods);"
-      "return module;"
-    "}"
-    "static const SST::ElementInfoComponent macro_components[] = {"
-    "    {NULL, NULL, NULL, NULL}"
-    "};"
-    "extern \"C\" {"
-    "SST::ElementLibraryInfo " << appname << "_eli = {"
-        "\"" << appname << "\","
-        "\"SST Macroscale skeleton app\","
-        "macro_components,"
-        "NULL,"
-        "NULL,"
-        "NULL,"
-        "NULL,"
-        "NULL,"
-        "gen_sst_macro_integrated_pymodule"
-    "}; }";
-#endif
-
       ofs << "int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));\n"
          << "extern \"C\" int sstmac_user_main_" << appname << "(int argc, char** argv);\n"
          << "int " << appname << "_sstmac_initer = user_skeleton_main_init_fxn("

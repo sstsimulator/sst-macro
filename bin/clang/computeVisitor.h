@@ -59,7 +59,8 @@ class ComputeVisitor  {
     context(ctxt)
   {}
 
-  void replaceStmt(clang::Stmt* stmt, clang::Rewriter& r, Loop& loop, PragmaConfig& cfg);
+  void replaceStmt(clang::Stmt* stmt, clang::Rewriter& r, Loop& loop, PragmaConfig& cfg,
+                   const std::string& nthread);
 
   void setContext(clang::Stmt* stmt);
 
@@ -77,7 +78,8 @@ class ComputeVisitor  {
   uint32_t currentGeneration; //0 is sentinel for not inited
   std::map<MemoryLocation,AccessHistory,MemoryLocationCompare> arrays;
   std::map<clang::NamedDecl*,Variable> variables;
-  std::map<clang::ForStmt*,std::string> explicitLoopCounts_;
+  //alloy any statement as key to cover whiles and fors
+  std::map<clang::Stmt*,std::string> explicitLoopCounts_;
   clang::CompilerInstance& CI;
   SSTPragmaList& pragmas;
   Replacements repls;
@@ -137,6 +139,8 @@ class ComputeVisitor  {
   void visitBodyCallExpr(clang::CallExpr* expr, Loop::Body& body);
 
   void visitBodyDeclStmt(clang::DeclStmt* stmt, Loop::Body& body);
+
+  void visitBodyWhileStmt(clang::WhileStmt* stmt, Loop::Body& body);
 
   void checkStmtPragmas(clang::Stmt* s);
 

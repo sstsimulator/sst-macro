@@ -23,6 +23,8 @@ sstCppFlags = [
 sstCore=bool("@SST_CPPFLAGS@")
 soFlagsStr="@LD_SO_FLAGS@"
 
+srcDir="@abs_top_srcdir@"
+buldDir="@abs_top_builddir@"
 prefix="@prefix@"
 execPrefix="@exec_prefix@"
 includeDir="@includedir@"

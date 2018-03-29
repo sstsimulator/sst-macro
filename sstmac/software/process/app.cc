@@ -75,7 +75,9 @@ static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app
 RegisterKeywords(
  { "host_compute_timer", "whether to use the time elapsed on the host machine in compute modeling" },
  { "min_op_cutoff", "the minimum number of operations in a compute before detailed modeling is perfromed" },
- { "notify", "whether the app should send completion notifications to job root" }
+ { "notify", "whether the app should send completion notifications to job root" },
+ { "globals_size", "the size of the global variable segment to allocate" },
+ { "OMP_NUM_THREADS", "environment variable for configuring openmp" },
 );
 
 namespace sstmac {
@@ -96,6 +98,36 @@ app::allocate_tls_key(destructor_fxn fxn)
   return next;
 }
 
+static char* get_data_segment(sprockit::sim_parameters* params,
+                              const char* param_name, GlobalVariableContext& ctx)
+{
+  int allocSize = ctx.allocSize();
+  if (params->has_param(param_name)){
+    allocSize = params->get_int_param(param_name);
+    if (ctx.allocSize() != allocSize){
+      ctx.setAllocSize(allocSize);
+    }
+  }
+  if (allocSize != 0){
+    char* segment = new char[allocSize];
+    ::memcpy(segment, GlobalVariable::glblCtx.globalInit(),
+             GlobalVariable::glblCtx.globalsSize());
+    return segment;
+  } else {
+    return nullptr;
+  }
+}
+
+char*
+app::allocate_data_segment(bool tls)
+{
+  if (tls){
+    return get_data_segment(params_, "tls_size", GlobalVariable::tlsCtx);
+  } else {
+    return get_data_segment(params_, "globals_size", GlobalVariable::glblCtx);
+  }
+}
+
 app::app(sprockit::sim_parameters *params, software_id sid,
          operating_system* os) :
   thread(params, sid, os),
@@ -106,20 +138,22 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   next_mutex_(0),
   min_op_cutoff_(0),
   globals_storage_(nullptr),
+  omp_num_threads_(1),
   rc_(0)
 {
-  int globalsSize = GlobalVariable::globalsSize();
-  if (globalsSize != 0){
-    globals_storage_ = new char[globalsSize];
-    ::memcpy(globals_storage_, GlobalVariable::globalInit(), globalsSize);
-  }
+  globals_storage_ = allocate_data_segment(false); //not tls
   min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
   bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
   if (host_compute){
     host_timer_ = new HostTimer;
   }
 
+
+
   notify_ = params->get_optional_bool_param("notify", true);
+
+  sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
+  omp_num_threads_ = env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
 }
 
 app::~app()
@@ -189,7 +223,7 @@ app::compute_loop(uint64_t num_loops,
 }
 
 void
-app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
+app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthread)
 {
   static const uint64_t overflow = 18006744072479883520ull;
   if (flops > overflow || bytes > overflow){
@@ -198,7 +232,9 @@ app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes)
   if ((flops+nintops) < min_op_cutoff_){
     return;
   }
-  compute_lib()->compute_detailed(flops, nintops, bytes);
+  compute_lib()->compute_detailed(flops, nintops, bytes,
+                                  //if no number of threads are given, use the default OpenMP cfg
+                                  nthread == use_omp_num_threads ? omp_num_threads_ : nthread);
 }
 
 void
@@ -277,19 +313,19 @@ app::add_subthread(thread *thr)
 }
 
 thread*
-app::get_subthread(long id)
+app::get_subthread(uint32_t id)
 {
   auto it = subthreads_.find(id);
   if (it==subthreads_.end()){
     spkt_throw_printf(sprockit::value_error,
-      "unknown thread id %ld",
+      "unknown thread id %u",
       id);
   }
   return it->second;
 }
 
 void
-app::remove_subthread(long id)
+app::remove_subthread(uint32_t id)
 {
   subthreads_.erase(id);
 }
@@ -413,7 +449,7 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
   int argc = argv_param_vec.size();
   char* argv_buffer = new char[256 * argc];
   char* argv_buffer_ptr = argv_buffer;
-  char** argv = new char*[argc];
+  char** argv = new char*[argc+1];
   for (int i = 0; i < argc; ++i) {
     const std::string& src_str = argv_param_vec[i];
     ::strcpy(argv_buffer_ptr, src_str.c_str());
@@ -421,6 +457,7 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
     //increment pointer for next strcpy
     argv_buffer_ptr += src_str.size() + 1; //+1 for null terminator
   }
+  argv[argc] = nullptr; //missing nullptr - Issue #269
   entry.argc = argc;
   entry.argv = argv;
 }

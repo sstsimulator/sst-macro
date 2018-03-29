@@ -55,6 +55,7 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
     visitor_(r),
     firstPass_(r.getPragmas(), R, r.getPragmaConfig())
   {
+    initNullWhitelist();
   }
 
   bool HandleTopLevelDecl(clang::DeclGroupRef DR) override;
@@ -62,11 +63,20 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
   void run();
 
  private:
+  void initNullWhitelist();
+
+  bool isNullWhitelisted(const std::string& name){
+    return nullWhitelist_.find(name) != nullWhitelist_.end();
+  }
+
   SkeletonASTVisitor& visitor_;
 
   FirstPassASTVistor firstPass_;
 
   std::list<clang::Decl*> allDecls_;
+
+  std::set<std::string> nullWhitelist_;
+
 };
 
 

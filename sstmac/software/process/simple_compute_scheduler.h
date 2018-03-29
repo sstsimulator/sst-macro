@@ -60,9 +60,9 @@ class simple_compute_scheduler : public compute_scheduler
     : ncore_active_(0), compute_scheduler(params, os)
   {}
   
-  void reserve_core(thread* thr);
+  void reserve_core(thread* thr) override;
   
-  void release_core(thread* thr);
+  void release_core(thread* thr) override;
 
  private:
   std::list<thread*> pending_threads_;

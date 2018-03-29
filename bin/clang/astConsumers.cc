@@ -48,6 +48,17 @@ using namespace clang;
 using namespace clang::driver;
 using namespace clang::tooling;
 
+void
+SkeletonASTConsumer::initNullWhitelist()
+{
+  nullWhitelist_.insert("gasnetc_AMReplyLongM");
+  nullWhitelist_.insert("_gasnet_put");
+  nullWhitelist_.insert("gasnetc_AMRequestLongM");
+  nullWhitelist_.insert("gasnetc_AMRequestLongAsyncM");
+  nullWhitelist_.insert("gasnetc_AMReplyMediumM");
+  nullWhitelist_.insert("gasnetc_AMRequestMediumM");
+}
+
 bool
 SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 {
@@ -61,6 +72,9 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
         if (fd->isThisDeclarationADefinition()){
           //also, we only really care about the definition anyway
           allDecls_.push_back(d);
+        }
+        if (isNullWhitelisted(fd->getNameAsString())){
+          visitor_.pragmaConfig_.nullSafeFunctions[fd] = nullptr;
         }
       }
       break;
@@ -83,11 +97,19 @@ SkeletonASTConsumer::HandleTopLevelDecl(DeclGroupRef DR)
 void
 SkeletonASTConsumer::run()
 {
-  for (Decl* d : allDecls_){
-    visitor_.setTopLevelScope(d);
-    bool isGlobalVar = isa<VarDecl>(d);
-    visitor_.setVisitingGlobal(isGlobalVar);
-    visitor_.TraverseDecl(d);
-    visitor_.setVisitingGlobal(false); //and reset
+  try {
+    for (Decl* d : allDecls_){
+      visitor_.setTopLevelScope(d);
+      bool isGlobalVar = isa<VarDecl>(d);
+      visitor_.setVisitingGlobal(isGlobalVar);
+      visitor_.TraverseDecl(d);
+      visitor_.setVisitingGlobal(false); //and reset
+    }
+  } catch (StmtDeleteException& e) {
+    //e.deleted->dump();
+    std::string error = std::string("unhandled delete exception on expression")
+        + " of type " + e.deleted->getStmtClassName();
+    internalError(e.deleted->getLocStart(), visitor_.getCompilerInstance(), error);
   }
+
 }

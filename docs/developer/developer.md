@@ -1055,7 +1055,7 @@ Next, the MPI header defines macros that redirect MPI calls.
 #define MPI_Send(...) sumi::sstmac_mpi()->send(__VA_ARGS__)
 ...
 ````
-`current_mpi` is a function we will explore more below.
+`sstmac_mpi` is a function we will explore more below.
 Inside `MPI_Send`, the SST/macro core takes over.
 When necessary, SST/macro will block the active user-space thread and context-switch.
 

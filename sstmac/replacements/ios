@@ -1,14 +1,21 @@
+
+#ifndef sstmac_ios_included
+#define sstmac_ios_included
+
 #ifndef SSTMAC_INSIDE_STL
 #define SSTMAC_INSIDE_STL
-
+#define IOS_OWNS_STL
 #include <sstmac/replacements/sstmac_pthread_clear.h>
-
-#include_next <ios>
-#undef SSTMAC_INSIDE_STL
-
-#include <sstmac/replacements/sstmac_pthread_return.h>
-
-#else
-#include_next <ios>
+#include <sstmac/replacements/clear_symbol_macros.h>
 #endif
 
+#include_next <ios>
+
+#ifdef IOS_OWNS_STL
+#undef IOS_OWNS_STL
+#undef SSTMAC_INSIDE_STL
+#include <sstmac/replacements/return_symbol_macros.h>
+#include <sstmac/replacements/sstmac_pthread_return.h>
+#endif
+
+#endif

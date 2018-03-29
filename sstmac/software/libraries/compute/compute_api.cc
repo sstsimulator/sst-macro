@@ -89,7 +89,7 @@ extern "C" void sstmac_memwrite(uint64_t bytes){
     ->compute_block_write(bytes);
 }
 
-extern "C" void sstmac_memcpy(uint64_t bytes){
+extern "C" void sstmac_memcopy(uint64_t bytes){
   sstmac::sw::operating_system::current_thread()->parent_app()
     ->compute_block_memcpy(bytes);
 }
@@ -97,6 +97,12 @@ extern "C" void sstmac_memcpy(uint64_t bytes){
 extern "C" void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes){
   sstmac::sw::operating_system::current_thread()->parent_app()
     ->compute_detailed(nflops, nintops, bytes);
+}
+
+extern "C" void sstmac_compute_detailed_nthr(uint64_t nflops, uint64_t nintops, uint64_t bytes,
+                                        int nthread){
+  sstmac::sw::operating_system::current_thread()->parent_app()
+    ->compute_detailed(nflops, nintops, bytes, nthread);
 }
 
 extern "C" void sstmac_compute_loop(uint64_t num_loops, uint32_t nflops_per_loop,

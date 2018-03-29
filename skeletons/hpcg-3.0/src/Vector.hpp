@@ -46,7 +46,6 @@ typedef struct Vector_STRUCT Vector;
  */
 inline void InitializeVector(Vector & v, local_int_t localLength) {
   v.localLength = localLength;
-#pragma sst new
   v.values = new double[localLength];
   v.optimizationData = 0;
   return;

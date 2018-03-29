@@ -1,6 +1,6 @@
 
 if !INTEGRATED_SST_CORE
-check_PROGRAMS = test_utilities test_pthread test_blas 
+check_PROGRAMS = test_utilities test_pthread test_blas test_std_thread test_tls
 test_utilities_SOURCES = test_utilities.cc
 test_utilities_LDADD = $(CORE_LIBS)
 
@@ -18,6 +18,20 @@ test_blas_LDADD = $(CORE_LIBS) \
   $(top_builddir)/sstmac/libraries/blas/libsstmac_blas.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
   libsstmac_test_blas.la
+
+noinst_LTLIBRARIES += libsstmac_test_std_thread.la
+test_std_thread_SOURCES = dummy_std_thread.cc
+libsstmac_test_std_thread_la_SOURCES = test_std_thread.cc
+test_std_thread_LDADD = $(CORE_LIBS) \
+  $(top_builddir)/sstmac/main/libsstmac_main.la \
+  libsstmac_test_std_thread.la
+
+noinst_LTLIBRARIES += libsstmac_test_tls.la
+test_tls_SOURCES = dummy_tls.cc
+libsstmac_test_tls_la_SOURCES = test_tls.cc
+test_tls_LDADD = $(CORE_LIBS) \
+  $(top_builddir)/sstmac/main/libsstmac_main.la \
+  libsstmac_test_tls.la
 
 if BUILD_SUMI_MPI
 check_PROGRAMS += test_scan test_uq

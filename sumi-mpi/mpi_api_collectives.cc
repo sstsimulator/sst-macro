@@ -371,10 +371,10 @@ mpi_api::start_allreduce(collective_op* op)
 }
 
 collective_op_base*
-mpi_api::start_allreduce(MPI_Comm comm, int count, MPI_Datatype type,
+mpi_api::start_allreduce(mpi_comm* commPtr, int count, MPI_Datatype type,
                          MPI_Op mop, const void* src, void* dst)
 {
-  collective_op* op = new collective_op(count, get_comm(comm));
+  collective_op* op = new collective_op(count, commPtr);
   if (src == MPI_IN_PLACE){
     src = dst;
   }
@@ -383,6 +383,14 @@ mpi_api::start_allreduce(MPI_Comm comm, int count, MPI_Datatype type,
   start_mpi_collective(collective::allreduce, src, dst, type, type, op);
   start_allreduce(op);
   return op;
+}
+
+
+collective_op_base*
+mpi_api::start_allreduce(MPI_Comm comm, int count, MPI_Datatype type,
+                         MPI_Op mop, const void* src, void* dst)
+{
+  return start_allreduce(get_comm(comm), count, type, mop, src, dst);
 }
 
 int

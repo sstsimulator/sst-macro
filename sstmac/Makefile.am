@@ -20,6 +20,7 @@ STD_SUBDIRS = \
   main \
   libraries \
   skeletons \
+  test_skeletons \
   sst_core \
   install
 
