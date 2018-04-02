@@ -1,3 +1,4 @@
+
 /**
 Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
@@ -62,10 +63,28 @@ struct PragmaConfig {
   std::set<const clang::DeclRefExpr*> deletedRefs;
   std::set<std::string> newParams;
   std::string dependentScopeGlobal;
+  SSTNullVariablePragma* nullFieldPragma;
   SkeletonASTVisitor* astVisitor;
   PragmaConfig() : pragmaDepth(0),
-    makeNoChanges(false) {}
+    makeNoChanges(false), nonnullFields(nullptr), nullFields(nullptr),
+    nullFieldPragma(nullptr){}
   std::string computeMemorySpec;
+
+  SSTNullVariablePragma* getNullField(const std::string& name) const {
+    //if there are non-null fields and this is not one of them
+    if (nullFields && nullFields->find(name) != nullFields->end()){
+      return nullFieldPragma;
+    }
+
+    if (nonnullFields && nonnullFields->find(name) != nonnullFields->end()){
+      return nullFieldPragma;
+    }
+
+    return nullptr;
+  }
+
+  const std::set<std::string>* nonnullFields;
+  const std::set<std::string>* nullFields;
 };
 
 struct SSTPragmaList;
@@ -89,7 +108,9 @@ struct SSTPragma {
     CallFunction=15,
     AlwaysCompute=16,
     GlobalVariable=17,
-    Overhead=18
+    Overhead=18,
+    NonnullFields=19,
+    NullFields=20
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -284,6 +305,7 @@ class SSTNullVariablePragma : public SSTPragma {
   clang::NamedDecl* declAppliedTo_;
   SSTNullVariablePragma* transitiveFrom_;
 
+  std::list<std::string> extras_;
   std::set<std::string> nullOnly_;
   std::set<std::string> nullExcept_;
   std::set<std::string> nullNew_;
@@ -428,6 +450,35 @@ class SSTNewPragma : public SSTPragma {
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
   void visitDeclStmt(clang::DeclStmt *stmt, clang::Rewriter &r);
   void visitBinaryOperator(clang::BinaryOperator *op, clang::Rewriter& r);
+};
+
+class SSTNonnullFieldsPragma : public SSTNullVariablePragma {
+ public:
+  SSTNonnullFieldsPragma(clang::SourceLocation loc,
+                        clang::CompilerInstance& CI,
+                        const std::list<clang::Token>& tokens);
+
+ private:
+  void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
+  void deactivate(PragmaConfig &cfg) override;
+
+  std::set<std::string> nonnullFields_;
+
+};
+
+class SSTNullFieldsPragma : public SSTNullVariablePragma {
+ public:
+  SSTNullFieldsPragma(clang::SourceLocation loc,
+                        clang::CompilerInstance& CI,
+                        const std::list<clang::Token>& tokens);
+
+ private:
+  void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
+  void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
+  void deactivate(PragmaConfig &cfg) override;
+
+  std::set<std::string> nullFields_;
 };
 
 struct SSTPragmaList {
@@ -791,6 +842,34 @@ class SSTOverheadPragmaHandler : public SSTTokenStreamPragmaHandler
   SSTPragma* allocatePragma(clang::SourceLocation loc,
                             const std::list<clang::Token> &tokens) const;
 
+};
+
+class SSTNonnullFieldsPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+public:
+ SSTNonnullFieldsPragmaHandler(SSTPragmaList& plist,
+                      clang::CompilerInstance& CI,
+                      SkeletonASTVisitor& visitor,
+                      std::set<clang::Stmt*>& deld) :
+   SSTTokenStreamPragmaHandler("nonnull_fields", plist, CI, visitor, deld){}
+
+private:
+ SSTPragma* allocatePragma(clang::SourceLocation loc,
+                           const std::list<clang::Token> &tokens) const;
+};
+
+class SSTNullFieldsPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+public:
+ SSTNullFieldsPragmaHandler(SSTPragmaList& plist,
+                      clang::CompilerInstance& CI,
+                      SkeletonASTVisitor& visitor,
+                      std::set<clang::Stmt*>& deld) :
+   SSTTokenStreamPragmaHandler("null_fields", plist, CI, visitor, deld){}
+
+private:
+ SSTPragma* allocatePragma(clang::SourceLocation loc,
+                           const std::list<clang::Token> &tokens) const;
 };
 
 
