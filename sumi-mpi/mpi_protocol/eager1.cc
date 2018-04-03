@@ -57,7 +57,7 @@ eager1::configure_send_buffer(mpi_queue* queue, mpi_message* msg, void *buffer, 
 {
   if (isNonNullBuffer(buffer)){
     void* eager_buf = fill_send_buffer(msg, buffer, typeobj);
-    msg->remote_buffer().ptr = eager_buf;
+    msg->set_remote_buffer(eager_buf);
     msg->set_owns_remote_buffer(true);
   }
   queue->memcopy(msg->payload_bytes());
@@ -111,19 +111,18 @@ eager1::incoming_header(mpi_queue* queue,
     req->set_seqnum(msg->seqnum()); //set seqnum to avoid accidental matches
     queue->waiting_message_.push_front(req);
     req->set_seqnum(msg->seqnum()); //associate the messages
-    msg->local_buffer().ptr = req->recv_buffer_;
+    msg->set_local_buffer(req->recv_buffer_);
   } else {
-    auto& rbuf = msg->remote_buffer();
-    if (rbuf.ptr){
-      auto& lbuf = msg->local_buffer();
-      lbuf.ptr = new char[msg->payload_bytes()];
+    void* rbuf = msg->remote_buffer();
+    if (rbuf){
+      msg->set_local_buffer(new char[msg->payload_bytes()]);
     }
     msg->set_protocol(mpi_protocol::eager1_doublecpy_protocol);
     //this has to go in now
     //the need recv buffer has to push back messages in the order they are received
     //in order to preserve message order semantics
     mpi_message* cln = msg->clone_me();
-    cln->local_buffer().ptr = msg->local_buffer().ptr;
+    cln->set_local_buffer(msg->local_buffer());
     cln->set_in_flight(true);
     queue->need_recv_.push_back(cln);
   }
@@ -188,10 +187,10 @@ eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg,
   msg->set_in_flight(false);
   if (req){
     if (req->recv_buffer_){
-      char* temp_buf = (char*) msg->local_buffer().ptr;
+      char* temp_buf = (char*) msg->local_buffer();
       ::memcpy(req->recv_buffer_, temp_buf, msg->payload_bytes());
       delete[] temp_buf;
-      msg->local_buffer().ptr = temp_buf;
+      msg->set_local_buffer(temp_buf);
     }
     queue->memcopy(msg->payload_bytes());
     queue->finalize_recv(msg, req);

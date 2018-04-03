@@ -49,8 +49,6 @@ library_include_HEADERS = \
  options.h \
  partner_timeout.h \
  ping.h \
- rdma.h \
- rdma_mdata.h \
  timeout.h \
  transport.h \
  transport_fwd.h 

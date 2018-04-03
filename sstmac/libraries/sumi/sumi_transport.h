@@ -180,15 +180,15 @@ class sumi_transport :
                  sstmac::sw::software_id sid,
                  sstmac::sw::operating_system* os);
 
-  sumi::public_buffer make_public_buffer(void* buffer, int size) override {
+  void* make_public_buffer(void* buffer, uint64_t size) override {
     pin_rdma(size);
-    return sumi::public_buffer(buffer);
+    return buffer;
   }
 
-  void unmake_public_buffer(sumi::public_buffer buf, int size) override {}
+  void unmake_public_buffer(void* buf, uint64_t size) override {}
 
-  void free_public_buffer(sumi::public_buffer buf, int size) override {
-    ::free(buf.ptr);
+  void free_public_buffer(void* buf, uint64_t size) override {
+    ::free(buf);
   }
 
   int* nidlist() const override;

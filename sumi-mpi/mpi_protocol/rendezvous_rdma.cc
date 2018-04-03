@@ -71,10 +71,10 @@ rendezvous_get::configure_send_buffer(mpi_queue* queue, mpi_message* msg,
 
   if (isNonNullBuffer(buffer)){
     if (type->contiguous()){
-      msg->remote_buffer().ptr = buffer;
+      msg->set_remote_buffer(buffer);
     } else {
       void* eager_buf = fill_send_buffer(msg, buffer, type);
-      msg->remote_buffer().ptr = eager_buf;
+      msg->set_remote_buffer(eager_buf);
       msg->set_owns_remote_buffer(true);
     }
   }
@@ -114,7 +114,7 @@ rendezvous_get::incoming_header(mpi_queue* queue,
       "found matching request for %s",
       msg->to_string().c_str());
     msg->set_content_type(mpi_message::data);
-    msg->local_buffer().ptr = req->recv_buffer_;
+    msg->set_local_buffer(req->recv_buffer_);
     queue->recv_needs_payload_[msg->unique_int()] = req;
     //generate both a send and recv ack
     //but the send ack might be hardware or software level

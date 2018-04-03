@@ -90,11 +90,11 @@ transport_message::put_on_wire()
   switch(type_){
     case rdma_get_payload:
     case nvram_get_payload:
-      payload_->buffer_remote();
+      payload_->put_remote_on_wire();
       break;
     case rdma_put_payload:
     case payload:
-      payload_->buffer_local();
+      payload_->put_local_on_wire();
       break;
     default:
       break; //nothing to do

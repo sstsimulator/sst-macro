@@ -83,13 +83,13 @@ btree_gather_actor::init_buffers(void *dst, void *src)
     result_buffer_ = recv_buffer_;
   }
 
-  ::memcpy(recv_buffer_.ptr, src, nelems_*type_size_);
+  ::memcpy(recv_buffer_, src, nelems_*type_size_);
 }
 
 void
 btree_gather_actor::finalize_buffers()
 {
-  if (!result_buffer_.ptr)
+  if (!result_buffer_)
     return;
 
   int nproc = cfg_.dom->nproc();
@@ -106,12 +106,12 @@ btree_gather_actor::finalize_buffers()
 void
 btree_gather_actor::start_shuffle(action *ac)
 {
-  if (result_buffer_.ptr){
+  if (result_buffer_){
     //only ever arises in weird midpoint scenarios
     int copy_size = ac->nelems * type_size_;
     int copy_offset = ac->offset * type_size_;
-    char* dst = ((char*)result_buffer_.ptr) + copy_offset;
-    char* src = ((char*)result_buffer_.ptr);
+    char* dst = ((char*)result_buffer_) + copy_offset;
+    char* src = ((char*)result_buffer_);
     ::memcpy(dst, src, copy_size);
   }
 }

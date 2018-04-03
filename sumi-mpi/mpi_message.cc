@@ -164,8 +164,8 @@ mpi_message::to_string() const
 {
   std::stringstream ss;
   ss << "mpimessage("
-     << (void*) local_buffer_.ptr
-     << "," << (void*) remote_buffer_.ptr
+     << (void*) local_buffer_
+     << "," << (void*) remote_buffer_
      << ", count=" << count_
      << ", type=" << type_
      << ", src=" << src_rank_
@@ -176,8 +176,7 @@ mpi_message::to_string() const
 
   if (in_flight_) {
     ss << ", seq=" << seqnum_ << "(ignored)";
-  }
-  else {
+  } else {
     ss << ", seq=" << seqnum_;
   }
   ss   << ", content=" << str(content_type_)

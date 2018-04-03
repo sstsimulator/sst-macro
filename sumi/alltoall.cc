@@ -89,7 +89,7 @@ bruck_alltoall_actor::init_buffers(void* dst, void* src)
 void
 bruck_alltoall_actor::finalize_buffers()
 {
-  if (send_buffer_.ptr){
+  if (send_buffer_){
     int buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
     int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
     my_api_->unmake_public_buffer(result_buffer_, buffer_size);
@@ -124,7 +124,7 @@ bruck_alltoall_actor::shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copy
 void
 bruck_alltoall_actor::start_shuffle(action *ac)
 {
-  if (result_buffer_.ptr == 0) return;
+  if (result_buffer_ == nullptr) return;
 
   if (ac->partner == SEND_SHUFFLE){
     //shuffle to get ready for a send
@@ -214,7 +214,7 @@ bruck_alltoall_actor::finalize()
   int total_size = dense_nproc_ * nelems_ * type_size_;
   int block_size = nelems_ * type_size_;
   char* tmp = new char[total_size];
-  char* result = (char*) result_buffer_.ptr;
+  char* result = (char*) result_buffer_;
   for (int i=0; i < dense_nproc_; ++i){
     char* src = result + i*block_size;
     int dst_index = (dense_me_ + dense_nproc_ - i) % dense_nproc_;

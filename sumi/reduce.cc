@@ -68,7 +68,7 @@ void
 wilke_reduce_actor::finalize_buffers()
 {
   //nothing to do
-  if (!result_buffer_.ptr) return;
+  if (!result_buffer_) return;
 
   //if we need to do operations, then we need a temp buffer for doing sends
   int size = nelems_ * type_size_;
@@ -103,7 +103,7 @@ wilke_reduce_actor::init_buffers(void* dst, void* src)
   send_buffer_ = result_buffer_;
 
   //we will now only work with the dst buffer
-  std::memcpy(send_buffer_.ptr, src, size);
+  std::memcpy(send_buffer_, src, size);
 }
 
 void
