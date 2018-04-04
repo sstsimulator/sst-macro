@@ -158,14 +158,12 @@ MWC::vec_reseed(const std::vector<rngint_t> &seeds)
 {
   if (seeds.size() > 0) {
     z = seeds[0];
-  }
-  else {
+  } else {
     z = defaultz;
   }
   if (seeds.size() > 1) {
     w = seeds[1];
-  }
-  else {
+  } else {
     w = defaultw;
   }
 }
@@ -216,8 +214,7 @@ SHR3::vec_reseed(const std::vector<rngint_t> &seeds)
 {
   if (seeds.size() > 0) {
     jsr = seeds[0];
-  }
-  else {
+  } else {
     jsr = defaultjsr;
   }
 }
@@ -268,8 +265,7 @@ CONG::vec_reseed(const std::vector<rngint_t> &seeds)
 {
   if (seeds.size() > 0) {
     jcong = seeds[0];
-  }
-  else {
+  } else {
     jcong = defaultjcong;
   }
 }
@@ -610,16 +606,14 @@ NormalDistribution::value()
 
   if (X > maxZ_) {
     X = maxZ_;
-  }
-  else if (X < -maxZ_) {
+  } else if (X < -maxZ_) {
     X = -maxZ_;
   }
   X = X * stdev_ + mean_;
 
   if (Y > maxZ_) {
     Y = maxZ_;
-  }
-  else if (Y < -maxZ_) {
+  } else if (Y < -maxZ_) {
     Y = -maxZ_;
   }
   Y = Y * stdev_ + mean_;
