@@ -77,8 +77,7 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
   FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
                      PragmaConfig& cfg);
 
-  bool VisitFieldDecl(clang::FieldDecl* d);
-  bool TraverseDecl(clang::Decl* d);
+  bool VisitDecl(clang::Decl* d);
   bool VisitStmt(clang::Stmt* s);
 
  private:

@@ -277,7 +277,7 @@ SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   PrettyPrinter pp;
   pp.os << "if (" << ifCond_ << "){ ";
   pp.print(s); //put the original statement in the if
-  pp.os << "; } else ";
+  pp.os << "; } else if (0)";
   r.InsertText(s->getLocStart(), pp.os.str(), false, false);
 }
 
@@ -659,6 +659,66 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
   }
 }
 
+
+static void addFields(RecordDecl* rd, PragmaConfig& cfg, bool defaultNull,
+                      std::set<std::string>& fields, SSTNullVariablePragma* prg)
+{
+  for (auto iter=rd->decls_begin(); iter != rd->decls_end(); ++iter){
+    Decl* d = *iter;
+    if (d->getKind() == Decl::Field){
+      FieldDecl* fd = cast<FieldDecl>(d);
+      auto iter = fields.find(fd->getName());
+      if (iter == fields.end()){
+        if (defaultNull) cfg.nullVariables[fd] = prg;
+      } else {
+        if (!defaultNull) cfg.nullVariables[fd] = prg;
+        fields.erase(iter);
+      }
+    }
+  }
+}
+
+
+static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
+                                   std::set<std::string>& fields, SSTNullVariablePragma* prg,
+                                   clang::CompilerInstance& CI)
+{
+  switch (d->getKind()){
+  //case Decl::Function: {
+  //  return;
+  //}
+  case Decl::CXXRecord:
+  case Decl::Record: {
+    RecordDecl* rd = cast<RecordDecl>(d);
+    addFields(rd, cfg, defaultNull, fields, prg);
+    break;
+  }
+  case Decl::Typedef: {
+    TypedefDecl* td = cast<TypedefDecl>(d);
+    if (td->getTypeForDecl() == nullptr){
+      internalError(d->getLocStart(), CI, "typedef declaration has no underlying type");
+      break;
+    } else if (td->getTypeForDecl()->isStructureType()){
+      RecordDecl* rd = td->getTypeForDecl()->getAsStructureType()->getDecl();
+      addFields(rd, cfg, defaultNull, fields, prg);
+      break;
+    }
+  }
+  default:
+    errorAbort(d->getLocStart(), CI,
+               "nonnull_fields pragma should only be applied to struct or function declarations");
+  }
+
+  if (!fields.empty()){
+    std::stringstream sstr;
+    sstr << "Provided variable name not found in attached scope for pragma nonnull_fields:\n";
+    for (auto& str : fields){
+      sstr << " " << str;
+    }
+    errorAbort(d->getLocStart(), CI, sstr.str());
+  }
+}
+
 SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
   SSTNullVariablePragma(loc, CI, tokens)
 {
@@ -672,23 +732,7 @@ SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &C
 void
 SSTNullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
-  if (cfg.nullFields){
-    errorAbort(d->getLocStart(), *CI,
-               "cannot nest null_fields pragma");
-  }
-  if (!isa<RecordDecl>(d) && !isa<TypedefDecl>(d)){
-    errorAbort(d->getLocStart(), *CI,
-               "null_fields pragma should only be applied to struct declarations");
-  }
-  cfg.nullFields = &nullFields_;
-  cfg.nullFieldPragma = this;
-}
-
-void
-SSTNullFieldsPragma::deactivate(PragmaConfig &cfg)
-{
-  cfg.nullFields = nullptr;
-  cfg.nullFieldPragma = nullptr;
+  doActivateFieldsPragma(d, cfg, false, nullFields_, this, *CI);
 }
 
 void
@@ -711,30 +755,14 @@ SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, CompilerInsta
 void
 SSTNonnullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
-  if (cfg.nonnullFields){
-    errorAbort(d->getLocStart(), *CI,
-               "cannot nest nonnull_fields pragma");
-  }
-  if (!isa<RecordDecl>(d) && !isa<TypedefDecl>(d)){
-    errorAbort(d->getLocStart(), *CI,
-               "nonnull_fields pragma should only be applied to struct declarations");
-  }
-  cfg.nonnullFields = &nonnullFields_;
-  cfg.nullFieldPragma = this;
-}
-
-void
-SSTNonnullFieldsPragma::deactivate(PragmaConfig &cfg)
-{
-  cfg.nonnullFields = nullptr;
-  cfg.nullFieldPragma = nullptr;
+  doActivateFieldsPragma(d, cfg, true, nonnullFields_, this, *CI);
 }
 
 void
 SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
 {
   errorAbort(stmt->getLocStart(), *CI,
-             "null_fields pragma should only be applied to struct declarations, not statements");
+             "nonull_fields pragma should only be applied to struct declarations, not statements");
 }
 
 void

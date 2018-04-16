@@ -3440,36 +3440,15 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
 }
 
 bool
-FirstPassASTVistor::VisitFieldDecl(FieldDecl* fd)
+FirstPassASTVistor::VisitDecl(Decl *d)
 {
-  SSTNullVariablePragma* prg = pragmaConfig_.getNullField(fd->getNameAsString());
-  if (prg){
-    pragmaConfig_.nullVariables[fd] = prg;
-  }
-  return RecursiveASTVisitor<FirstPassASTVistor>::VisitFieldDecl(fd);
-}
-
-bool
-FirstPassASTVistor::TraverseDecl(Decl *d)
-{
-  if (!d) return true;
   if (noSkeletonize_) return true;
 
-  std::list<SSTPragma*> pragmas;
-  if (!noSkeletonize_){
-    pragmas = pragmas_.getMatches(d,true);
-    for (SSTPragma* prg : pragmas){
-      prg->activate(d, rewriter_, pragmaConfig_);
-      pragmas_.erase(prg);
-    }
-  }
-
-  RecursiveASTVisitor<FirstPassASTVistor>::TraverseDecl(d);
-
+  std::list<SSTPragma*> pragmas = pragmas_.getMatches(d,true);
   for (SSTPragma* prg : pragmas){
-    prg->deactivate(pragmaConfig_);
+    prg->activate(d, rewriter_, pragmaConfig_);
+    pragmas_.erase(prg);
   }
-
   return true;
 }
 

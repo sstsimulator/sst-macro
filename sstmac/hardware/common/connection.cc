@@ -56,15 +56,33 @@ class timestamp_prefix_fxn :
   public sprockit::debug_prefix_fxn
 {
  public:
-  timestamp_prefix_fxn(sstmac::event_scheduler* mgr) : mgr_(mgr){}
+  timestamp_prefix_fxn(sprockit::sim_parameters* params, event_scheduler* mgr) :
+    mgr_(mgr)
+  {
+    units_ = params->get_optional_param("timestamp_print_units", "s");
+    if (units_ == "ns"){
+      mult_ = 1e9;
+    } else if (units_ == "us"){
+      mult_ = 1e6;
+    } else if (units_ == "s"){
+      mult_ = 1e3;
+    } else if (units_ == "s"){
+      mult_ = 1;
+    } else {
+      spkt_abort_printf("invalid timestamp units for printing function: %s", units_.c_str());
+    }
+  }
 
   std::string str() {
-    double t_ms = mgr_->now().msec();
-    return sprockit::printf("T=%12.8e ms:", t_ms);
+    double t = mgr_->now().sec() * mult_;
+    return sprockit::printf("T=%14.8f %s:", t, units_.c_str());
   }
 
  private:
   event_scheduler* mgr_;
+  std::string units_;
+  double mult_;
+
 };
 
 connectable_component::connectable_component(sprockit::sim_parameters* params,
@@ -74,7 +92,7 @@ connectable_component::connectable_component(sprockit::sim_parameters* params,
 {
   if (!checked_prefix_fxn){
     if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
-      sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(this);
+      sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(params, this);
       sprockit::debug::prefix_fxn = fxn;
     }
     checked_prefix_fxn = true;

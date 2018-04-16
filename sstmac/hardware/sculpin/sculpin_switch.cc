@@ -64,6 +64,7 @@ RegisterNamespaces("switch", "router", "xbar", "link");
 RegisterKeywords(
 { "latency", "latency to traverse a portion of the switch - sets both credit/send" },
 { "bandwidth", "the bandwidth of a given link sending" },
+{ "congestion", "whether to include congestion modeling on switches" },
 );
 
 
@@ -77,11 +78,14 @@ namespace hw {
 sculpin_switch::sculpin_switch(
   sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
   router_(nullptr),
+  congestion_(true),
   network_switch(params, id, mgr)
 {
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
   router_ = router::factory::get_param("name", rtr_params, top_, this);
+
+  congestion_ = params->get_optional_bool_param("congestion", true);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> inj_conns;
@@ -182,7 +186,7 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   if (now > p.next_free){
     p.next_free = now;
   }
-  timestamp first_possible_send = std::max(pkt->departure(), p.next_free);
+  timestamp first_possible_send = congestion_ ? std::max(pkt->departure(), p.next_free) : pkt->departure();
   timestamp extra_delay = first_possible_send - now;
   timestamp time_to_send = pkt->num_bytes() * p.inv_bw;
   p.next_free = first_possible_send + time_to_send;

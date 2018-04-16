@@ -63,28 +63,12 @@ struct PragmaConfig {
   std::set<const clang::DeclRefExpr*> deletedRefs;
   std::set<std::string> newParams;
   std::string dependentScopeGlobal;
-  SSTNullVariablePragma* nullFieldPragma;
   SkeletonASTVisitor* astVisitor;
   PragmaConfig() : pragmaDepth(0),
-    makeNoChanges(false), nonnullFields(nullptr), nullFields(nullptr),
-    nullFieldPragma(nullptr){}
+    makeNoChanges(false)
+  {}
   std::string computeMemorySpec;
-
-  SSTNullVariablePragma* getNullField(const std::string& name) const {
-    //if there are non-null fields and this is not one of them
-    if (nullFields && nullFields->find(name) != nullFields->end()){
-      return nullFieldPragma;
-    }
-
-    if (nonnullFields && nonnullFields->find(name) != nonnullFields->end()){
-      return nullFieldPragma;
-    }
-
-    return nullptr;
-  }
-
-  const std::set<std::string>* nonnullFields;
-  const std::set<std::string>* nullFields;
+  std::list<std::pair<SSTNullVariablePragma*,clang::TypedefDecl*>> pendingTypedefs;
 };
 
 struct SSTPragmaList;
@@ -461,8 +445,7 @@ class SSTNonnullFieldsPragma : public SSTNullVariablePragma {
  private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
-  void deactivate(PragmaConfig &cfg) override;
-
+  bool firstPass() const override { return false; }
   std::set<std::string> nonnullFields_;
 
 };
@@ -474,9 +457,9 @@ class SSTNullFieldsPragma : public SSTNullVariablePragma {
                         const std::list<clang::Token>& tokens);
 
  private:
+  bool firstPass() const override { return false; }
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
-  void deactivate(PragmaConfig &cfg) override;
 
   std::set<std::string> nullFields_;
 };

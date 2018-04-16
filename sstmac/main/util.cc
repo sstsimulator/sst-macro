@@ -61,34 +61,17 @@ get_params(){
   return sstmac::sw::operating_system::current_thread()->parent_app()->params();
 }
 
-
-namespace std {
-void* sstmac_memset(void* ptr, int value, unsigned long  sz){
-  if (isNonNullBuffer(ptr)) std::memset(ptr,value,sz);
-  return ptr;
-}
-
-void* sstmac_memcpy(void *dst, const void *src, unsigned long sz){
-#ifdef memcpy
-#error #sstmac memcpy macro should not be defined in util.cc - refactor needed
-#endif
-  if (isNonNullBuffer(dst) && isNonNullBuffer(src)) memcpy(dst,src,sz);
-  return dst;
-}
-
-void sstmac_free(void* ptr){
-  if (isNonNullBuffer(ptr)){
-    ::free(ptr);
-  }
-}
-}
-
 extern "C"
 void* sstmac_memset(void* ptr, int value, unsigned long sz){
 #ifdef memset
 #error #sstmac memset macro should not be defined in util.cc - refactor needed
 #endif
-  if (isNonNullBuffer(ptr)) memset(ptr,value,sz);
+  if (isNonNullBuffer(ptr)) std::memset(ptr,value,sz);
+  if (sz > 128){
+    //model this as a delay
+    sstmac::sw::operating_system::current_thread()->parent_app()
+        ->compute_block_write(sz);
+  }
   return ptr;
 }
 
@@ -98,7 +81,31 @@ void* sstmac_memcpy(void* dst, const void* src, unsigned long sz){
 #error #sstmac memcpy macro should not be defined in util.cc - refactor needed
 #endif
   if (isNonNullBuffer(dst) && isNonNullBuffer(src)) memcpy(dst,src,sz);
+  if (sz >= 128){
+    //model this as a delay
+    sstmac::sw::operating_system::current_thread()->parent_app()
+        ->compute_block_memcpy(sz);
+  }
   return dst;
+}
+
+namespace std {
+void* sstmac_memset(void* ptr, int value, unsigned long  sz){
+  return ::sstmac_memset(ptr, value, sz);
+}
+
+void* sstmac_memcpy(void *dst, const void *src, unsigned long sz){
+#ifdef memcpy
+#error #sstmac memcpy macro should not be defined in util.cc - refactor needed
+#endif
+  return ::sstmac_memcpy(dst, src, sz);
+}
+
+void sstmac_free(void* ptr){
+  if (isNonNullBuffer(ptr)){
+    ::free(ptr);
+  }
+}
 }
 
 extern "C" void sstmac_exit(int code)

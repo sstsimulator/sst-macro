@@ -73,7 +73,7 @@ lib_compute_memmove::do_access(uint64_t bytes)
   //if (bytes == 0){
   //  return;
   //}
-  long num_loops = bytes / access_width_bytes_;
+  uint64_t num_loops = bytes / access_width_bytes_;
   int nflops = 0;
   int nintops = 1; //memmove instruction
   compute_loop(num_loops, nflops, nintops, access_width_bytes_);

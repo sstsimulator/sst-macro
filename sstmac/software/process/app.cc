@@ -80,6 +80,8 @@ RegisterKeywords(
  { "OMP_NUM_THREADS", "environment variable for configuring openmp" },
 );
 
+MakeDebugSlot(app_compute);
+
 namespace sstmac {
 namespace sw {
 
@@ -110,8 +112,7 @@ static char* get_data_segment(sprockit::sim_parameters* params,
   }
   if (allocSize != 0){
     char* segment = new char[allocSize];
-    ::memcpy(segment, GlobalVariable::glblCtx.globalInit(),
-             GlobalVariable::glblCtx.globalsSize());
+    ::memcpy(segment, ctx.globalInit(), ctx.globalsSize());
     return segment;
   } else {
     return nullptr;
@@ -142,7 +143,7 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   rc_(0)
 {
   globals_storage_ = allocate_data_segment(false); //not tls
-  min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
+  min_op_cutoff_ = params->get_optional_long_param("min_op_cutoff", 1e3);
   bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
   if (host_compute){
     host_timer_ = new HostTimer;
@@ -232,19 +233,24 @@ app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthr
   if ((flops+nintops) < min_op_cutoff_){
     return;
   }
+
+  debug_printf(sprockit::dbg::app_compute,
+               "Rank %d for app %d: detailed compute for flops=%" PRIu64 " intops=%" PRIu64 " bytes=%" PRIu64,
+               sid_.task_, sid_.app_, flops, nintops, bytes);
+
   compute_lib()->compute_detailed(flops, nintops, bytes,
                                   //if no number of threads are given, use the default OpenMP cfg
                                   nthread == use_omp_num_threads ? omp_num_threads_ : nthread);
 }
 
 void
-app::compute_block_read(long bytes)
+app::compute_block_read(uint64_t bytes)
 {
   compute_lib()->read(bytes);
 }
 
 void
-app::compute_block_write(long bytes)
+app::compute_block_write(uint64_t bytes)
 {
   compute_lib()->write(bytes);
 }
@@ -256,7 +262,7 @@ app::get_params()
 }
 
 void
-app::compute_block_memcpy(long bytes)
+app::compute_block_memcpy(uint64_t bytes)
 {
   compute_lib()->copy(bytes);
 }
