@@ -87,7 +87,7 @@ sculpin_packet::serialize_order(serializer& ser)
   packet::serialize_order(ser);
   routable::serialize_order(ser);
   ser & arrival_;
-  ser & departure_;
+  ser & time_to_send_;
   ser & flow_id_;
   ser & priority_;
 }

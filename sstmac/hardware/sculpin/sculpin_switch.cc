@@ -123,8 +123,10 @@ sculpin_switch::connect_output(
   int dst_inport,
   event_link* link)
 {
+  double bw = port_params->get_bandwidth_param("bandwidth");
   port& p = ports_[src_outport];
   p.link = link;
+  p.inv_bw = 1.0/bw;
 }
 
 void
@@ -186,14 +188,15 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   if (now > p.next_free){
     p.next_free = now;
   }
-  timestamp first_possible_send = congestion_ ? std::max(pkt->departure(), p.next_free) : pkt->departure();
-  timestamp extra_delay = first_possible_send - now;
+
+  timestamp extra_delay = p.next_free - now;
   timestamp time_to_send = pkt->num_bytes() * p.inv_bw;
-  p.next_free = first_possible_send + time_to_send;
-  pkt->set_departure(p.next_free);
+  p.next_free += time_to_send;
+  pkt->set_time_to_send(time_to_send);
   p.link->send_extra_delay(extra_delay, pkt);
+
   pkt_debug("packet leaving port %d at t=%8.4e: %s",
-            p.id, first_possible_send.sec(), pkt->to_string().c_str());
+            p.id, p.next_free.sec(), pkt->to_string().c_str());
   if (p.priority_queue.empty()){
     //reset the sequence number for ordering packets
     p.seqnum = 0;
@@ -223,18 +226,18 @@ sculpin_switch::pull_next(int portnum)
 }
 
 void
-sculpin_switch::handle_payload(event *ev)
+sculpin_switch::try_to_send_packet(sculpin_packet* pkt)
 {
-  sculpin_packet* pkt = safe_cast(sculpin_packet, ev);
-  switch_debug("handling payload %s", pkt->to_string().c_str());
-  router_->route(pkt);
-
   timestamp now_ = now();
   pkt->set_arrival(now_);
-
   port& p = ports_[pkt->next_port()];
   pkt->set_seqnum(p.seqnum++);
-  if (p.next_free > now_){
+  if (!congestion_){
+    timestamp time_to_send = pkt->num_bytes() * p.inv_bw;
+    p.next_free += time_to_send;
+    pkt->set_time_to_send(time_to_send);
+    p.link->send(pkt);
+  } else if (p.next_free > now_){
     //oh, well, I have to wait
     if (p.priority_queue.empty()){
       //nothing else is waiting - which means I have to schedule my own pull
@@ -253,6 +256,27 @@ sculpin_switch::handle_payload(event *ev)
     //I must hop in the queue as well
     pkt_debug("new packet has to wait on queue on port %d with %d queued", p.id, p.priority_queue.size());
     p.priority_queue.insert(pkt);
+  }
+}
+
+void
+sculpin_switch::handle_payload(event *ev)
+{
+  sculpin_packet* pkt = safe_cast(sculpin_packet, ev);
+  switch_debug("handling payload %s", pkt->to_string().c_str());
+  router_->route(pkt);
+
+  port& p = ports_[pkt->next_port()];
+  timestamp time_to_send = p.inv_bw * pkt->num_bytes();
+  /** I am processing the head flit - so I assume compatibility with wormhole routing
+   * The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
+  if (pkt->time_to_send() > time_to_send){
+    //delay the packet
+    auto ev = new_callback(this, &sculpin_switch::try_to_send_packet, pkt);
+    timestamp delta_t = pkt->time_to_send() - time_to_send;
+    send_delayed_self_event_queue(delta_t, ev);
+  } else {
+    try_to_send_packet(pkt);
   }
 }
 

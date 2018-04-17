@@ -146,6 +146,8 @@ class sculpin_switch :
  private:
   void send(port& p, sculpin_packet* pkt, timestamp now);
 
+  void try_to_send_packet(sculpin_packet* pkt);
+
   void pull_next(int portnum);
 
 };

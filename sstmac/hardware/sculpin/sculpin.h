@@ -120,12 +120,12 @@ class sculpin_packet :
     arrival_ = time;
   }
 
-  timestamp departure() const {
-    return departure_;
+  timestamp time_to_send() const {
+    return time_to_send_;
   }
 
-  void set_departure(timestamp time) {
-    departure_ = time;
+  void set_time_to_send(timestamp time) {
+    time_to_send_ = time;
   }
 
   int priority() const {
@@ -153,7 +153,7 @@ class sculpin_packet :
 
   timestamp arrival_;
 
-  timestamp departure_;
+  timestamp time_to_send_;
 
   int priority_;
 
