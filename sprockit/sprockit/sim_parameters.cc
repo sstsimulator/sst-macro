@@ -1060,41 +1060,33 @@ sim_parameters::parse_stream(std::istream& in,
     if (line[0] == '#') {
       //a comment
       continue;
-    }
-    else if (line[0] == '}'){
+    } else if (line[0] == '}'){
       //ending a namespace
       ns_queue.pop_back();
-    }
-    else if (line[last_idx] == '{'){ //opening a new namespace
+    } else if (line[last_idx] == '{'){ //opening a new namespace
       std::string ns = line.substr(0, last_idx);
       ns = trim_str(ns);
       sim_parameters* scope = active_scope->get_optional_local_namespace(ns);
       ns_queue.push_back(scope);
-    }
-    else if (line.find("set var ") != std::string::npos) {
+    } else if (line.find("set var ") != std::string::npos) {
       line = line.substr(8);
       std::pair<std::string, std::string> keyval;
       sim_parameters::split_line(line, keyval);
       variables_[keyval.first] = keyval.second;
-    }
-    else if (line.find("=") != std::string::npos) {
+    } else if (line.find("=") != std::string::npos) {
       //an assignment
       active_scope->parse_line(line, fail_on_existing, override_existing);
-    }
-    else if (line.find("include") != std::string::npos) {
+    } else if (line.find("include") != std::string::npos) {
       //an include line
       std::string included_file = trim_str(line.substr(7));
       active_scope->try_to_parse(included_file, fail_on_existing, override_existing);
-    }
-    else if (line.find("unset") != std::string::npos) {
+    } else if (line.find("unset") != std::string::npos) {
       std::string key;
       sim_parameters* scope = active_scope->get_scope_and_key(trim_str(line.substr(5)), key);
       scope->remove_param(key);
-    }
-    else if (line.size() == 0) {
+    } else if (line.size() == 0) {
       //empty
-    }
-    else {
+    } else {
       spkt_abort_printf("invalid input file line of size %d:\n%s---", line.size(), line.c_str());
     }
   }

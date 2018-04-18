@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
+#include <sstmac/common/rng.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/common/connection.h>
@@ -138,6 +139,12 @@ class logp_switch : public connectable_component
   topology* top_;
 
   std::vector<event_link*> nic_links_;
+
+  RNG::MWC* rng_;
+
+  timestamp random_max_extra_latency_;
+  double random_max_extra_byte_delay_;
+  uint32_t random_seed_;
 
 };
 

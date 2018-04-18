@@ -277,7 +277,7 @@ SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   PrettyPrinter pp;
   pp.os << "if (" << ifCond_ << "){ ";
   pp.print(s); //put the original statement in the if
-  pp.os << "; } else ";
+  pp.os << "; } else if (0)";
   r.InsertText(s->getLocStart(), pp.os.str(), false, false);
 }
 
@@ -468,8 +468,7 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
     } else if (next == "skel_compute"){
       skelComputes_ = true;
     } else if (inserter == nullptr){
-      errorAbort(loc, CI,
-           "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', or 'target'");
+      extras_.push_back(next);
     } else {
       inserter->insert(next);
     }
@@ -497,6 +496,12 @@ static NamedDecl* getNamedDecl(Decl* d)
 void
 SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 {
+  if (!extras_.empty()){
+    errorAbort(d->getLocStart(), *CI,
+         "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', 'target',"
+         "'safe', 'delete_all', 'skel_compute'");
+  }
+
   declAppliedTo_ = getNamedDecl(d);
   if (d->getKind() == Decl::Function){
     FunctionDecl* fd = cast<FunctionDecl>(d);
@@ -654,6 +659,112 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
   }
 }
 
+
+static void addFields(RecordDecl* rd, PragmaConfig& cfg, bool defaultNull,
+                      std::set<std::string>& fields, SSTNullVariablePragma* prg)
+{
+  for (auto iter=rd->decls_begin(); iter != rd->decls_end(); ++iter){
+    Decl* d = *iter;
+    if (d->getKind() == Decl::Field){
+      FieldDecl* fd = cast<FieldDecl>(d);
+      auto iter = fields.find(fd->getName());
+      if (iter == fields.end()){
+        if (defaultNull) cfg.nullVariables[fd] = prg;
+      } else {
+        if (!defaultNull) cfg.nullVariables[fd] = prg;
+        fields.erase(iter);
+      }
+    }
+  }
+}
+
+
+static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
+                                   std::set<std::string>& fields, SSTNullVariablePragma* prg,
+                                   clang::CompilerInstance& CI)
+{
+  switch (d->getKind()){
+  //case Decl::Function: {
+  //  return;
+  //}
+  case Decl::CXXRecord:
+  case Decl::Record: {
+    RecordDecl* rd = cast<RecordDecl>(d);
+    addFields(rd, cfg, defaultNull, fields, prg);
+    break;
+  }
+  case Decl::Typedef: {
+    TypedefDecl* td = cast<TypedefDecl>(d);
+    if (td->getTypeForDecl() == nullptr){
+      internalError(d->getLocStart(), CI, "typedef declaration has no underlying type");
+      break;
+    } else if (td->getTypeForDecl()->isStructureType()){
+      RecordDecl* rd = td->getTypeForDecl()->getAsStructureType()->getDecl();
+      addFields(rd, cfg, defaultNull, fields, prg);
+      break;
+    }
+  }
+  default:
+    errorAbort(d->getLocStart(), CI,
+               "nonnull_fields pragma should only be applied to struct or function declarations");
+  }
+
+  if (!fields.empty()){
+    std::stringstream sstr;
+    sstr << "Provided variable name not found in attached scope for pragma nonnull_fields:\n";
+    for (auto& str : fields){
+      sstr << " " << str;
+    }
+    errorAbort(d->getLocStart(), CI, sstr.str());
+  }
+}
+
+SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
+  SSTNullVariablePragma(loc, CI, tokens)
+{
+  for (auto& str : extras_){
+    nullFields_.insert(str);
+  }
+  extras_.clear();
+  this->cls = NullFields;
+}
+
+void
+SSTNullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  doActivateFieldsPragma(d, cfg, false, nullFields_, this, *CI);
+}
+
+void
+SSTNullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(stmt->getLocStart(), *CI,
+             "null_fields pragma should only be applied to struct declarations, not statements");
+}
+
+SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
+  SSTNullVariablePragma(loc, CI, tokens)
+{
+  this->cls = NonnullFields;
+  for (auto& str : extras_){
+    nonnullFields_.insert(str);
+  }
+  extras_.clear();
+}
+
+void
+SSTNonnullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  doActivateFieldsPragma(d, cfg, true, nonnullFields_, this, *CI);
+}
+
+void
+SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
+{
+  errorAbort(stmt->getLocStart(), *CI,
+             "nonull_fields pragma should only be applied to struct declarations, not statements");
+}
+
 void
 SSTNullTypePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
@@ -778,6 +889,18 @@ SSTPragma*
 SSTNullVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
 {
   return new SSTNullVariablePragma(loc, ci_, tokens);
+}
+
+SSTPragma*
+SSTNullFieldsPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  return new SSTNullFieldsPragma(loc, ci_, tokens);
+}
+
+SSTPragma*
+SSTNonnullFieldsPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  return new SSTNonnullFieldsPragma(loc, ci_, tokens);
 }
 
 SSTPragma*

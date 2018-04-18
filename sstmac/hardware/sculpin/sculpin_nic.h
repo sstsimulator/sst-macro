@@ -108,6 +108,8 @@ class sculpin_nic :
 
   void cq_handle(sculpin_packet* pkt);
 
+  void eject(sculpin_packet* pkt);
+
  private:
   timestamp inj_next_free_;
   event_link* inj_link_;

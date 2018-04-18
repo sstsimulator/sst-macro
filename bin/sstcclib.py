@@ -247,8 +247,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if sstCore:
     givenFlags.append(" -DSSTMAC_EXTERNAL_SKELETON")
 
-  if sourceFiles and len(objectFiles) > 1:
-    sys.exit("Specified multiple object files for source compilation: %" % " ".join(objectFiles))
 
   directIncludes = []
   
@@ -530,13 +528,15 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       arCmdArr.extend(linkerArgs)
 
   clangExtraArgs = []
+  #if sourceFiles and len(objectFiles) > 1:
+  #  sys.exit("Specified multiple object files for source compilation: %" % " ".join(objectFiles))
   if runClang:
     #this is more complicated - we have to use clang to do a source to source transformation
     #then we need to run the compiler on that modified source
     allTemps = TempFiles(delTempFiles, verbose)
     for srcFile in sourceFiles:
       target = objTarget
-      if not objTarget:
+      if not objTarget or len(objectFiles) > 1:
         srcName = os.path.split(srcFile)[-1]
         target = swapSuffix("o", srcName)
       objBaseFolder, objName = os.path.split(target)
