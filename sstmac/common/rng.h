@@ -154,6 +154,13 @@ class MWC : public UniformInteger
   void vec_reseed(const std::vector<rngint_t> &seeds) override;
 
   int nseed() override;
+
+ private:
+  void mwc_reseed(rngint_t z_, rngint_t w_){
+    z = z_;
+    w = w_;
+  }
+
 };
 
 /** The 3-shift-register random number generator by George

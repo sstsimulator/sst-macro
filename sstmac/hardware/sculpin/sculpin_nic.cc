@@ -197,7 +197,7 @@ sculpin_nic::do_send(network_message* payload)
     inj_next_free_ += time_to_send;
     pkt_debug("packet injecting at t=%8.4e: %s",
               inj_next_free_.sec(), pkt->to_string().c_str());
-    pkt->set_departure(inj_next_free_);
+    pkt->set_time_to_send(time_to_send);
     inj_link_->send_extra_delay(extra_delay, pkt);
   }
 
@@ -218,23 +218,34 @@ sculpin_nic::cq_handle(sculpin_packet* pkt)
 }
 
 void
-sculpin_nic::handle_payload(event *ev)
+sculpin_nic::eject(sculpin_packet* pkt)
 {
-  sculpin_packet* pkt = static_cast<sculpin_packet*>(ev);
   timestamp now_ = now();
   if (now_ > ej_next_free_){
     ej_next_free_ = now_;
   }
-
   pkt_debug("incoming packet - ejection next free at t=%8.4e: %s",
             ej_next_free_.sec(), pkt->to_string().c_str());
-
-  timestamp first_possible_send = std::max(pkt->departure(), ej_next_free_);
   timestamp time_to_send = pkt->byte_length() * inj_inv_bw_;
-  ej_next_free_ = first_possible_send + time_to_send;
-
+  ej_next_free_ = ej_next_free_ + time_to_send;
   auto qev = new_callback(this, &sculpin_nic::cq_handle, pkt);
   send_self_event_queue(ej_next_free_, qev);
+}
+
+void
+sculpin_nic::handle_payload(event *ev)
+{
+  sculpin_packet* pkt = static_cast<sculpin_packet*>(ev);
+
+  timestamp time_to_send = pkt->byte_length() * inj_inv_bw_;
+  if (time_to_send < pkt->time_to_send()){
+    //tail flit cannot arrive here before it leaves the prev switch
+    auto ev = new_callback(this, &sculpin_nic::eject, pkt);
+    timestamp delta_t = pkt->time_to_send() - time_to_send;
+    send_delayed_self_event_queue(delta_t, ev);
+  } else {
+    eject(pkt);
+  }
 }
 
 void

@@ -119,11 +119,11 @@ class app : public thread
   void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes,
                         int nthread = use_omp_num_threads);
 
-  void compute_block_read(long bytes);
+  void compute_block_read(uint64_t bytes);
 
-  void compute_block_write(long bytes);
+  void compute_block_write(uint64_t bytes);
 
-  void compute_block_memcpy(long bytes);
+  void compute_block_memcpy(uint64_t bytes);
 
   lib_compute_memmove* compute_lib();
 
@@ -236,7 +236,7 @@ class app : public thread
   int next_tls_key_;
   int next_condition_;
   int next_mutex_;
-  int min_op_cutoff_;
+  uint64_t min_op_cutoff_;
   int omp_num_threads_;
 
   std::map<long, thread*> subthreads_;

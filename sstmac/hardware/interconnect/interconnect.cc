@@ -139,8 +139,12 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   netlinks_.resize(top->max_netlink_id());
 
   sprockit::sim_parameters logp_params;
-  logp_param_expander expander;
-  expander.expand_into(&logp_params, params, switch_params);
+  if (logp_model){
+    switch_params->combine_into(&logp_params);
+  } else {
+    logp_param_expander expander;
+    expander.expand_into(&logp_params, params, switch_params);
+  }
 
   logp_switches_.resize(rt_->nthread());
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->num_nodes() + top->num_switches();

@@ -576,6 +576,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     nullDereferenceError(expr, nd->getNameAsString());
   }
 
+  bool nullSafeFunctionCall = false;
   if (!nullVarPrg->deleteAll() && !activeFxnParams_.empty()){
     //we have "IPA" to deal with here
     //a null variable MUST map into a null variable - otherwise this is an error
@@ -603,6 +604,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
         errorAbort(expr->getLocStart(), *ci_, sstr.str());
       }
     }
+    nullSafeFunctionCall = true;
   }
 
   bool hasRepl = nullVarPrg->hasReplacement();
@@ -621,6 +623,20 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
   } else if (outerMostAssignment){
     //okay, a null is propagating to stuff
     //however, I have no replacement and so must delete completely
+    if (outerMostAssignment->getStmtClass() == Stmt::BinaryOperatorClass){
+      BinaryOperator* bop = cast<BinaryOperator>(outerMostAssignment);
+      Expr* lhs = getUnderlyingExpr(bop->getLHS());
+      Expr* rhs = getUnderlyingExpr(bop->getRHS());
+      if (lhs == expr && rhs->getStmtClass() == Stmt::DeclRefExprClass){
+        DeclRefExpr* dref = cast<DeclRefExpr>(rhs);
+        NamedDecl* rnd = dref->getFoundDecl();
+        if (!isNullVariable(rnd->getCanonicalDecl())){
+          std::string warning = "assigning to null " + nd->getNameAsString()
+              + " directly from a non-null variable - skeletonization might be missed";
+          warn(bop->getLocStart(), *ci_, warning);
+        }
+      }
+    }
     deleteNullVariableStmt(outerMostAssignment);
   } else {
     //I am not assigning to anyone nor am I passed along as
@@ -2308,12 +2324,8 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
 {
   try {
 
-  for (SSTPragma* prg : pragmas_.getMatches(D)){
-    pragmaConfig_.pragmaDepth++;
-    //pragma takes precedence - must occur in pre-visit
-    prg->activate(D, rewriter_, pragmaConfig_);
-    pragmaConfig_.pragmaDepth--;
-  }
+  PragmaActivateGuard pag(D, this);
+  if (pag.skipVisit()) return true;
 
   if (pragmaConfig_.makeNoChanges){
     pragmaConfig_.makeNoChanges = false;
@@ -2321,7 +2333,6 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
   }
 
   if (D->getDescribedVarTemplate()){
-
     if (D->isStaticDataMember()){
       const CXXRecordDecl* crd = cast<const CXXRecordDecl>(D->getDeclContext());
       VarTemplateDecl* vtd = D->getDescribedVarTemplate();
@@ -2778,9 +2789,16 @@ SkeletonASTVisitor::TraverseCompoundStmt(CompoundStmt* stmt, DataRecursionQueue*
 bool
 SkeletonASTVisitor::TraverseFieldDecl(clang::FieldDecl* fd, DataRecursionQueue* queue)
 {
-  activeFieldDecls_.push_back(fd);
-  TraverseStmt(fd->getBody());
-  activeFieldDecls_.pop_back();
+  try {
+    PragmaActivateGuard pag(fd, this);
+    if (!pag.skipVisit()){
+      PushGuard<FieldDecl*> pg(activeFieldDecls_, fd);
+      TraverseStmt(fd->getBody());
+    }
+  } catch (DeclDeleteException& e) {
+    if (e.deleted != fd) throw e;
+  }
+
   return true;
 }
 
@@ -3161,17 +3179,18 @@ SkeletonASTVisitor::VisitTypedefDecl(TypedefDecl* D)
 }
 
 bool
-SkeletonASTVisitor::VisitDecl(Decl *D)
+SkeletonASTVisitor::TraverseDecl(Decl *D)
 {
-  if (noSkeletonize_) return true;
+  if (!D) return true;
 
-  for (SSTPragma* prg : pragmas_.getMatches(D)){
-    pragmaConfig_.pragmaDepth++;
-    //pragma takes precedence - must occur in pre-visit
-    prg->activate(D, rewriter_, pragmaConfig_);
-    pragmaConfig_.pragmaDepth--;
+  try {
+    PragmaActivateGuard pag(D, this);
+    if (pag.skipVisit()) return true;
+
+    RecursiveASTVisitor<SkeletonASTVisitor>::TraverseDecl(D);
+  } catch (DeclDeleteException& e) {
+    if (e.deleted != D) throw e;
   }
-
   return true;
 }
 

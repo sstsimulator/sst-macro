@@ -80,6 +80,9 @@ class sculpin_param_expander :
   void check_latency(sprockit::sim_parameters* params,
                      sprockit::sim_parameters* deflt_params = nullptr);
 
+  void check_bandwidth(sprockit::sim_parameters* params,
+                     sprockit::sim_parameters* deflt_params = nullptr);
+
 };
 
 }

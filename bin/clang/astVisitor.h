@@ -205,12 +205,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool VisitStmt(clang::Stmt* S);
 
   /**
-   * @brief VisitDecl Activate any pragmas associated with this declaration
+   * @brief TravsersetDecl Activate any pragmas associated with this declaration
    * This function is not called if a more specific matching function is found
    * @param D
    * @return
    */
-  bool VisitDecl(clang::Decl* D);
+  bool TraverseDecl(clang::Decl* D);
 
   bool VisitTypedefDecl(clang::TypedefDecl* D);
 

@@ -141,8 +141,12 @@ class sculpin_switch :
   link_handler* credit_handler_;
 #endif
 
+  bool congestion_;
+
  private:
   void send(port& p, sculpin_packet* pkt, timestamp now);
+
+  void try_to_send_packet(sculpin_packet* pkt);
 
   void pull_next(int portnum);
 
