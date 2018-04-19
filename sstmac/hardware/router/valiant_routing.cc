@@ -68,7 +68,7 @@ valiant_router::initial_step(
     return final_node;
   }
   topology* top = topol();
-  switch_id middle_switch = top_->random_intermediate_switch(addr(), ej_addr);
+  switch_id middle_switch = top_->random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
   rtbl->set_dest_switch(middle_switch);
   debug_printf(sprockit::dbg::router,
     "Router %s selected random intermediate switch %s for message %s",

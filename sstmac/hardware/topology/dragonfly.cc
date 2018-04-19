@@ -103,7 +103,7 @@ dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 }
 
 switch_id
-dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
+dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw, uint32_t seed)
 {
   long nid = current_sw;
   uint32_t attempt = 0;
@@ -112,9 +112,9 @@ dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
   int dstA = computeA(dest_sw);
   int dstG = computeG(dest_sw);
   while (current_sw == nid) {
-    dstA = random_number(a_, attempt);
+    dstA = random_number(a_, attempt, seed);
     if (dstG != srcG){
-      dstG = random_number(g_, attempt);
+      dstG = random_number(g_, attempt, seed);
     } 
     nid = get_uid(dstA, dstG);
     ++attempt;

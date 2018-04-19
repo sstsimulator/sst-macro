@@ -84,7 +84,7 @@ ugal_router::initial_step(
   }
 
   // Compute and compare minimal and valiant routes
-  switch_id inter = top_->random_intermediate_switch(src,dst);
+  switch_id inter = top_->random_intermediate_switch(src,dst,netsw_->now().ticks());
   int valiant_dst = 
       top_->minimal_distance(src, dst) + top_->minimal_distance(inter, dst);
 

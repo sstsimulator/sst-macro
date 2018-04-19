@@ -369,7 +369,7 @@ class topology : public sprockit::printable
      @return A random switch different from current_sw
   */
   virtual switch_id random_intermediate_switch(
-    switch_id current_sw, switch_id dest_sw = switch_id(-1));
+    switch_id current_sw, switch_id dest_sw, uint32_t seed);
 
   virtual switch_id node_to_injection_switch(node_id nodeaddr, 
    uint16_t ports[], int& num_ports) const {
@@ -439,7 +439,7 @@ class topology : public sprockit::printable
  protected:
   topology(sprockit::sim_parameters* params);
 
-  uint32_t random_number(uint32_t max, uint32_t attempt) const;
+  uint32_t random_number(uint32_t max, uint32_t attempt, uint32_t seed) const;
 
   static sprockit::sim_parameters* setup_port_params(
         int port, int credits, double bw,

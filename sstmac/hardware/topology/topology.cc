@@ -146,7 +146,7 @@ topology::static_topology(sprockit::sim_parameters* params)
 }
 
 uint32_t
-topology::random_number(uint32_t max, uint32_t attempt) const
+topology::random_number(uint32_t max, uint32_t attempt, uint32_t seed) const
 {
 #if SSTMAC_USE_MULTITHREAD
   static thread_lock lock;
@@ -154,7 +154,7 @@ topology::random_number(uint32_t max, uint32_t attempt) const
 #endif
   if (debug_seed_){
     std::vector<RNG::rngint_t> seeds(2);
-    uint32_t time = 42;
+    uint32_t time = seed;
     seeds[1] = seed_ * (time+31) << (attempt + 5);
     seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
     rng_->vec_reseed(seeds);
@@ -167,14 +167,14 @@ topology::random_number(uint32_t max, uint32_t attempt) const
 }
 
 switch_id
-topology::random_intermediate_switch(switch_id current, switch_id dest)
+topology::random_intermediate_switch(switch_id current, switch_id dest, uint32_t seed)
 {
   static thread_lock lock;
   lock.lock();  //need to be thread safe
   long nid = current;
   uint32_t attempt = 0;
   while (current == nid) {
-    nid = random_number(num_switches(), attempt); 
+    nid = random_number(num_switches(), attempt, seed);
     ++attempt;
   }
   lock.unlock();

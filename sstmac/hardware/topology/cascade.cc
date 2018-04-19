@@ -109,7 +109,7 @@ cascade::configure_geometric_paths(std::vector<int> &redundancies)
 }
 
 switch_id
-cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
+cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw, uint32_t seed)
 {
   long nid = current_sw;
   uint32_t attempt = 0;
@@ -119,16 +119,14 @@ cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
     get_coords(current_sw, srcX, srcY, srcG);
     get_coords(dest_sw, dstX, dstY, dstG);
 
-    hisX = random_number(x_, attempt);
-    hisY = random_number(y_, attempt);
+    hisX = random_number(x_, attempt, seed);
+    hisY = random_number(y_, attempt, seed);
     if(!true_random_intermediate_ && dstG == srcG) {
       // already on the correct group
       hisG = srcG;
-
-    }
-    else {
+    } else {
       //randomly select a group
-      hisG = random_number(g_, attempt);
+      hisG = random_number(g_, attempt, seed);
       //now figure out which x,y,g fills the path
       //find_path_to_group(srcX, srcY, srcG, hisX, hisY, hisG);
     }
@@ -160,7 +158,7 @@ bool
 cascade::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
                                 routable::path& path) const
 {
-  int ystart = random_number(y_,0);
+  int ystart = random_number(y_,0,42);
   for (int yy = 0; yy < y_; ++yy) {
     dstY = (ystart + yy) % y_;
     if (xy_connected_to_group(myX, dstY, myG, dstG)) {
@@ -175,7 +173,7 @@ bool
 cascade::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
                                 routable::path& path) const
 {
-  int xstart = random_number(x_,0);
+  int xstart = random_number(x_,0,42);
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
     if (xy_connected_to_group(dstX, myY, myG, dstG)) {

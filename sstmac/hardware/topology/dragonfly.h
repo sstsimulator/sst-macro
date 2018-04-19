@@ -202,7 +202,7 @@ class dragonfly : public cartesian_topology
   }
 
   switch_id random_intermediate_switch(switch_id current_sw,
-                             switch_id dest_sw = switch_id(-1)) override;
+                             switch_id dest_sw, uint32_t seed) override;
 
   void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
