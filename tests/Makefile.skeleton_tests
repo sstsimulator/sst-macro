@@ -8,7 +8,7 @@ SKELETONCASES=
 if INTEGRATED_SST_CORE
 if HAVE_CLANG
 if BUILD_SUMI_MPI
-SKELETONCASES += liblulesh libhpcg libcomd
+SKELETONCASES += liblulesh libhpcg libcomd pic
 endif
 endif
 else
@@ -25,7 +25,7 @@ SKELETONCASES += \
 endif
 
 if BUILD_SUMI_MPI
-SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD 
+SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD pic
 endif
 endif
 

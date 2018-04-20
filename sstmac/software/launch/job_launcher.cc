@@ -120,10 +120,12 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
   bool keep_going = true;
   int aid = 1;
   int last_used_aid = 0;
+  sprockit::sim_parameters* all_app_params = params->get_optional_namespace("app");
   while (keep_going || aid < 10){
     std::string name = sprockit::printf("app%d",aid);
     if (params->has_namespace(name)){
       sprockit::sim_parameters* app_params = params->get_namespace(name);
+      all_app_params->combine_into(app_params);
       app_launch_request* mgr = new app_launch_request(app_params, app_id(aid), name);
       initial_requests_.push_back(mgr);
       keep_going = true;
