@@ -18,7 +18,7 @@ extern "C" {
 #endif
 #pragma sst null_variable safe
 extern void sstmac_free(void* ptr);
-#ifdef __cpluplus
+#ifdef __cplusplus
 }
 #endif
 #define _mm_free sstmac_free

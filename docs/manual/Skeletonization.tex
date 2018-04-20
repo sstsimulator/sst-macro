@@ -76,7 +76,7 @@ the generate shared library files can be added as the first parameters to the \i
 shell>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
 \end{ShellCmd} 
 
-\section{Auto-skeletonization with Clang (Beta)}
+\section{Auto-skeletonization with Clang}
 \label{sec:autoSkeletonization}
 
 The build of the Clang toolchain is described in Section \ref{sec:buildingClang}. 
@@ -125,7 +125,6 @@ for (int i=0; i < N; ++i){
 The SST compiler deduces $16N$ bytes read, $8N$ bytes written, and $16N$ flops (or $8N$ if fused-multiplies are enabled).
 Based on processor speed and memory speed, it then estimates how long the kernel will take without actually executing the loop.
 If not wanting to use OpenMP in the code, \inlinecode{#pragma sst compute} can be used instead of \inlinecode{#pragma omp parallel}.
-
 
 \subsection{Special Pragmas}
 Many special cases can arise that break skeletonization.
