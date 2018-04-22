@@ -54,8 +54,7 @@ namespace sstmac {
 namespace hw {
 
 template <class ParentRouter>
-class multipath_router :
-  public ParentRouter
+class multipath_router : public ParentRouter
 {
   /**
    * @brief The structured_path struct Identifies a (structurally) unique
@@ -91,6 +90,10 @@ class multipath_router :
     //do nothing
   }
 
+  int num_vc() const override {
+    return ParentRouter::num_vc();
+  }
+
  public:
   multipath_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw) :
     ParentRouter(params, top, netsw),
@@ -106,8 +109,7 @@ class multipath_router :
     }
   }
 
-  virtual void
-  route(packet* pkt) override {
+  virtual void route(packet* pkt) override {
     routable::path_set paths;
     ParentRouter::route(pkt);
     routable::path& path = pkt->interface<routable>()->current_path();

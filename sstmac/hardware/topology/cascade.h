@@ -91,6 +91,10 @@ class cascade : public cartesian_topology
     }
   }
 
+  bool is_global_port(uint16_t port) const {
+     return port >= (x_ + y_);
+  }
+
   bool uniform_network_ports() const override {
     return false;
   }
@@ -185,10 +189,6 @@ class cascade : public cartesian_topology
 
   virtual switch_id random_intermediate_switch(switch_id current_sw,
                              switch_id dest_sw, uint32_t seed) override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
-  virtual void new_routing_stage(routable* rtbl) override;
 
   virtual void configure_geometric_paths(std::vector<int> &redundancies);
 

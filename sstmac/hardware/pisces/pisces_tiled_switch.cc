@@ -112,13 +112,13 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
     return;
 
   sprockit::sim_parameters* demuxer_params = params->get_namespace("input");
-  demuxer_params->add_param_override("num_vc", router_->max_num_vc());
+  demuxer_params->add_param_override("num_vc", router_->num_vc());
 
   sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
-  xbar_params->add_param_override("num_vc", router_->max_num_vc());
+  xbar_params->add_param_override("num_vc", router_->num_vc());
 
   sprockit::sim_parameters* muxer_params = params->get_namespace("link");
-  muxer_params->add_param_override("num_vc", router_->max_num_vc());
+  muxer_params->add_param_override("num_vc", router_->num_vc());
 
   int ntiles = nrows_ * ncols_;
   row_input_demuxers_.resize(ntiles);
@@ -211,7 +211,7 @@ pisces_tiled_switch::connect_output(
   int dst_inport,
   event_link* link)
 {
-  params->add_param_override("num_vc", router_->max_num_vc());
+  params->add_param_override("num_vc", router_->num_vc());
   pisces_sender* muxer = col_output_muxers_[src_outport];
   muxer->set_output(params, 0, dst_inport, link);
 }

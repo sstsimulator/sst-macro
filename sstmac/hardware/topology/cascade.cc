@@ -194,7 +194,6 @@ cascade::find_path_to_group(int myX, int myY, int myG,
     path.set_outport(g_port(dstG));
     dstX = myX;
     dstY = myY;
-    path.set_metadata_bit(routable::crossed_timeline);
     return;
   }
 
@@ -229,7 +228,6 @@ cascade::minimal_route_to_switch(
     switch_id dst,
     routable::path &path) const
 {
-  path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
   int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
   int interX, interY;
@@ -247,6 +245,8 @@ cascade::minimal_route_to_switch(
     path.set_outport( y_port(dstY) );
     top_debug("cascade routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
+  } else {
+    spkt_abort_printf("cascade routing error from %d to %d", src, dst);
   }
 }
 
@@ -354,22 +354,6 @@ cascade::configure_individual_port_params(switch_id src,
   setup_port_params(switch_params, x_dimension, x_);
   setup_port_params(switch_params, y_dimension, y_);
   setup_port_params(switch_params, g_dimension, g_);
-}
-
-void
-cascade::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
-{
-  m[routing::minimal] = 2;
-  m[routing::minimal_adaptive] = 2;
-  m[routing::valiant] = 4;
-  m[routing::ugal] = 6;
-}
-
-
-void
-cascade::new_routing_stage(routable* rtbl)
-{
-  rtbl->current_path().unset_metadata_bit(routable::crossed_timeline);
 }
 
 int

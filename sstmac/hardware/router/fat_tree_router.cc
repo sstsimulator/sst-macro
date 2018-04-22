@@ -58,7 +58,7 @@ namespace hw {
 
 fat_tree_router::fat_tree_router(sprockit::sim_parameters* params, topology *top,
                                  network_switch *netsw) :
-  router(params, top, netsw, routing::minimal),
+  minimal_router(params, top, netsw),
   rng_(nullptr)
 {
   ftree_ = safe_cast(fat_tree, top);
@@ -102,33 +102,6 @@ fat_tree_router::~fat_tree_router()
   if (rng_) delete rng_;
 }
 
-#if 0
-void
-fat_tree_router::productive_paths_to_switch(
-  switch_id dst, structured_routable::path_set &paths)
-{
-  structured_routable::path tmp_path;
-  minimal_route_to_switch(dst, tmp_path);
-  int dim = tmp_path.outport() / k_;
-  int dir = tmp_path.outport() % k_;
-  if (dim == fat_tree::down_dimension) {
-    //we have no choice - only one path down is correct
-    paths.resize(1);
-    paths[0] = tmp_path;
-  }
-  else {
-    // we have k productive paths up
-    paths.resize(k_);
-    for (int i=0; i < k_; ++i) {
-      //paths[i].dim = fat_tree::up_dimension;
-      //paths[i].dir = i;
-      paths[i].vc = 0;
-      paths[i].set_outport(ftree_->up_port(i));
-    }
-  }
-}
-#endif
-
 void
 fat_tree_router::route_to_switch(
   switch_id ej_addr,
@@ -137,19 +110,18 @@ fat_tree_router::route_to_switch(
   int pathDir;
   int ej_id = ej_addr;
   int myAddr = my_addr_;
+  path.vc = 0;
   if (ej_id >= min_reachable_leaf_id_ && ej_id < max_reachable_leaf_id_) {
-    path.vc = 1;
+
     long relative_ej_id = ej_id - min_reachable_leaf_id_;
     pathDir = relative_ej_id / num_leaf_switches_per_path_;
     ftree_rter_debug("routing down with dir %d: eject-id=%ld rel-eject-id=%ld",
         pathDir, ej_id, relative_ej_id);
     path.set_outport(ftree_->down_port(pathDir));
-  }
-  else {
+  } else {
     //route up
     pathDir = choose_up_minimal_path();
     path.set_outport(ftree_->up_port(pathDir));
-    path.vc = 0;
     ftree_rter_debug("routing up with dir %d", pathDir);
   }
 }

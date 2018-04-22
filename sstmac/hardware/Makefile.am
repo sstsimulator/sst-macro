@@ -101,6 +101,7 @@ nobase_library_include_HEADERS = \
   router/minimal_routing.h \
   router/multipath_routing.h \
   router/ugal_routing.h \
+  router/par_routing.h \
   router/valiant_routing.h \
   router/fat_tree_router.h 
 
@@ -162,6 +163,7 @@ libsstmac_hw_la_SOURCES =  \
   router/minimal_routing.cc \
   router/multipath_routing.cc \
   router/ugal_routing.cc \
+  router/par_routing.cc \
   router/valiant_routing.cc \
   topology/star.cc \
   topology/structured_topology.cc \

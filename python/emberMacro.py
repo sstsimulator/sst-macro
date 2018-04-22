@@ -26,7 +26,7 @@ macroParams = {
 "topology" : topoParams,
 "injection_latency" : injLat,
 "switch" : {
- "router" : "minimal",
+ "router" : "torus_minimal",
  "arbitrator" : arb,
  "mtu" : mtu,
  "model" : "pisces",

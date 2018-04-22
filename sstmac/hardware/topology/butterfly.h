@@ -95,8 +95,6 @@ class abstract_butterfly :
     return nfly_ + 1;
   }
 
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
-
  protected:
   abstract_butterfly(sprockit::sim_parameters* params,
                      InitMaxPortsIntra i1,

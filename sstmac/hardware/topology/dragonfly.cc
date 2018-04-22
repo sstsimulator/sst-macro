@@ -128,8 +128,6 @@ dragonfly::minimal_route_to_switch(
     switch_id dst,
     routable::path &path) const
 {
-  path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
-
   //see if intra-group
   int srcG = computeG(src);
   int dstG = computeG(dst);
@@ -156,7 +154,6 @@ dragonfly::minimal_route_to_switch(
   int srcRotater = srcA % connected.size();
 
   path.set_outport(connected[srcRotater]);
-  path.set_metadata_bit(routable::crossed_timeline);
 }
 
 int
@@ -248,21 +245,6 @@ dragonfly::configure_individual_port_params(switch_id src, sprockit::sim_paramet
 {
   setup_port_params(switch_params, red_[0], 0, a_);
   setup_port_params(switch_params, red_[1], a_, h_);
-}
-
-void
-dragonfly::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
-{
-  m[routing::minimal] = 2;
-  m[routing::minimal_adaptive] = 2;
-  m[routing::valiant] = 6;
-  m[routing::ugal] = 6;
-}
-
-void
-dragonfly::new_routing_stage(routable* rtbl)
-{
-  rtbl->current_path().unset_metadata_bit(routable::crossed_timeline);
 }
 
 inter_group_wiring::inter_group_wiring(sprockit::sim_parameters *params, dragonfly* top) :

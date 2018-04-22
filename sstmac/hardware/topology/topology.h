@@ -213,13 +213,6 @@ class topology : public sprockit::printable
         netlink_id nodeaddr, uint16_t& switch_port) const = 0;
 
   /**
-   * @brief configure_vc_routing  Configure the number of virtual channels
-   *        required for all supported routing algorithms
-   * @param [inout] m
-   */
-  virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
-
-  /**
    * @brief node_to_ejection_switch Given a destination node,
    *        figure out which switch has an ejection connection to it
    * @param addr

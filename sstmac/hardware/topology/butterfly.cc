@@ -91,15 +91,6 @@ abstract_butterfly::override_params(sprockit::sim_parameters* params)
   return params;
 }
 
-void
-abstract_butterfly::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 2;
-  m[routing::ugal] = 3;
-}
-
 butterfly::butterfly(sprockit::sim_parameters* params) :
   abstract_butterfly(params,
                      InitMaxPortsIntra::I_Remembered,

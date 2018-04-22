@@ -105,6 +105,11 @@ class dragonfly : public cartesian_topology
 {
   FactoryRegister("dragonfly", topology, dragonfly)
  public:
+  struct routing_header {
+    char num_group_hops : 2;
+    char num_hops : 5;
+  };
+
   dragonfly(sprockit::sim_parameters* params);
 
  public:
@@ -114,6 +119,10 @@ class dragonfly : public cartesian_topology
 
   bool uniform_network_ports() const override {
     return false;
+  }
+
+  bool is_global_port(int port) const {
+    return port >= a_;
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
@@ -203,10 +212,6 @@ class dragonfly : public cartesian_topology
 
   switch_id random_intermediate_switch(switch_id current_sw,
                              switch_id dest_sw, uint32_t seed) override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
-  virtual void new_routing_stage(routable* rtbl) override;
 
   virtual void configure_geometric_paths(std::vector<int> &redundancies);
 

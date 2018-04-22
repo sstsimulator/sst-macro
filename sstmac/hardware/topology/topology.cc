@@ -277,15 +277,6 @@ topology::cart_topology() const
   return nullptr;
 }
 
-void
-topology::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 1;
-  m[routing::ugal] = 1;
-}
-
 std::string
 topology::node_label(node_id nid) const
 {
@@ -372,24 +363,17 @@ class merlin_topology : public topology {
     return -1;
   }
 
-  switch_id
-  netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
+  switch_id netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-  }
-
-  switch_id
-  node_to_ejection_switch(node_id addr, uint16_t& port) const override {
+  switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  switch_id
-  node_to_injection_switch(node_id addr, uint16_t& port) const override {
+  switch_id node_to_injection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }

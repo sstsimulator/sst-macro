@@ -62,15 +62,6 @@ fully_connected::fully_connected(sprockit::sim_parameters* params) :
 }
 
 void
-fully_connected::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 2;
-  m[routing::ugal] = 3;
-}
-
-void
 fully_connected::minimal_route_to_switch(switch_id current_sw_addr,
                                   switch_id dest_sw_addr,
                                   routable::path &path) const

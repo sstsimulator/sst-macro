@@ -42,44 +42,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstream>
-#include <sstmac/hardware/topology/star.h>
-#include <sprockit/sim_parameters.h>
+#ifndef sstmac_hardware_network_topology_routing_PAR_ROUTING_H
+#define sstmac_hardware_network_topology_routing_PAR_ROUTING_H
+
+#include <sstmac/hardware/router/ugal_routing.h>
 
 namespace sstmac {
 namespace hw {
 
-star::star(sprockit::sim_parameters* params) :
-  structured_topology(params,
-                      InitMaxPortsIntra::I_Remembered,
-                      InitGeomEjectID::I_Remembered)
+/**
+ * @brief The par_router class
+ * Encapsulates a router that performs Progressive Adaptive Routing
+ * as described by Jiang and Dally
+ * in "Indirect adaptive routing on large scale interconnection networks"
+ * This differs only slightly from UGAL in that the adpative routing decision
+ * is revisited on every step
+ */
+class par_router :
+  public ugal_router
 {
-  max_ports_intra_network_ = 0;
-  eject_geometric_id_ = max_ports_intra_network_;
-}
+ public:
+  par_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-void
-star::minimal_route_to_switch(switch_id current_sw_addr,
-                                  switch_id dest_sw_addr,
-                                  routable::path &path) const
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-      "%s does not implement minimal route to switch (always on eject switch)",
-      to_string().c_str());
-}
+  std::string to_string() const override {
+    return "par";
+  }
 
-void
-star::connected_outports(switch_id src, std::vector<connection>& conns) const
-{
-  conns.resize(0);
-}
+  void route(packet *pkt) override;
 
-void
-star::configure_individual_port_params(
-    switch_id src, sprockit::sim_parameters *switch_params) const
-{
-  topology::configure_individual_port_params(0, num_switches(), switch_params);
-}
+ private:
+  virtual void topology_route(routable* rtbl) override = 0;
+
+};
 
 }
-} //end of namespace sstmac
+}
+
+
+#endif // UGAL_ROUTING_H

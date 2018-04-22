@@ -61,6 +61,16 @@ class torus :
   FactoryRegister("torus | torus", topology, torus,
               "torus implements a high-dimension torus with an arbitrary number of dimensions")
  public:
+  typedef enum {
+    same_path,
+    wrapped_around,
+    new_dimension
+  } route_type_t ;
+
+  struct torus_routing_header {
+    char crossed_timeline : 1;
+  };
+
   torus(sprockit::sim_parameters* params);
 
   typedef enum {
@@ -113,13 +123,18 @@ class torus :
   void minimal_route_to_switch(
     switch_id sid,
     switch_id dst,
-    routable::path& path) const override;
+    routable::path& path) const override {
+    torus_route(sid, dst, path);
+  }
+
+  route_type_t torus_route(
+    switch_id sid,
+    switch_id dst,
+    routable::path& path) const;
 
   int minimal_distance(
     switch_id sid,
     switch_id dst) const override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
   coordinates switch_coords(switch_id) const override;
 
@@ -132,14 +147,11 @@ class torus :
   }
 
  private:
-  void torus_path(bool reset_dim, bool wrapped, int dim, int dir,
-             routable::path& path) const;
-
-  void down_path(
+  route_type_t down_path(
     int dim, int src, int dst,
     routable::path& path) const;
 
-  void up_path(
+  route_type_t up_path(
     int dim, int src, int dst,
     routable::path& path) const;
 

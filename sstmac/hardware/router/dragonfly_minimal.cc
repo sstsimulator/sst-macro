@@ -43,7 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/router/routable.h>
-#include <sstmac/hardware/router/router.h>
+#include <sstmac/hardware/router/minimal_routing.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/dragonfly.h>
 #include <sprockit/util.h>
@@ -56,12 +56,12 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-struct dragonfly_minimal_router : public router {
+struct dragonfly_minimal_router : public minimal_router {
   FactoryRegister("dragonfly_minimal", router, dragonfly_minimal_router)
  public:
   dragonfly_minimal_router(sprockit::sim_parameters* params, topology* top,
                            network_switch* netsw) :
-    router(params, top, netsw, routing::minimal)
+    minimal_router(params, top, netsw)
   {
     dfly_ = dynamic_cast<dragonfly*>(top);
     if (!dfly_){
@@ -80,6 +80,9 @@ struct dragonfly_minimal_router : public router {
       if (g == myG_) continue;
 
       dfly_->group_wiring()->connected_to_group(myG_, g, connections);
+      if (connections.size() == 0){
+        spkt_abort_printf("Got zero group connections from %d->%d", myG_, g);
+      }
       int rotater = myA % connections.size();
       group_ports_[g] = connections[rotater];
     }
@@ -93,14 +96,18 @@ struct dragonfly_minimal_router : public router {
     }
   }
 
-  std::string to_string() const {
+  int num_vc() const override {
+    return 2;
+  }
+
+  std::string to_string() const override {
     return "dragonfly minimal router";
   }
 
-  void route_to_switch(switch_id ej_addr, routable::path& path)
+  void route_to_switch(switch_id ej_addr, routable::path& path) override
   {
-    path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
-
+    auto hdr = path.header<dragonfly::routing_header>();
+    path.vc = hdr->num_group_hops;
     int dstG = dfly_->computeG(ej_addr);
     if (dstG == myG_){
       int dstA = dfly_->computeA(ej_addr);
@@ -108,8 +115,7 @@ struct dragonfly_minimal_router : public router {
     } else {
       int dst_port = group_ports_[dstG];
       if (dst_port >= a_){
-        //direct group hop
-        path.set_metadata_bit(routable::crossed_timeline);
+        hdr->num_group_hops++;
       }
       path.set_outport(dst_port);
     }

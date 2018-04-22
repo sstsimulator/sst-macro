@@ -64,30 +64,14 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-router::router(sprockit::sim_parameters* params,
-  topology *top, network_switch *sw, routing::algorithm_t algo)
- : top_(top), netsw_(sw), algo_(algo), max_num_vc_(0)
+router::router(sprockit::sim_parameters* params, topology *top, network_switch *sw)
+ : top_(top), netsw_(sw)
 {
-  init_vc();
   my_addr_ = switch_id(params->get_int_param("id"));
 }
 
 router::~router()
 {
-}
-
-void
-router::init_vc()
-{
-  max_num_vc_ = 0;
-  top_->configure_vc_routing(num_vc_lookup_);
-  auto iter = num_vc_lookup_.find(algo_);
-  if (iter == num_vc_lookup_.end()){
-    spkt_throw_printf(sprockit::value_error,
-                      "invalid routing algorithm %s for given router",
-                      routing::tostr(algo_));
-  }
-  max_num_vc_ = iter->second;
 }
 
 void
@@ -103,41 +87,6 @@ switch_id
 router::find_ejection_site(node_id node_addr, routable::path &path) const
 {
   return top_->node_to_ejection_switch(node_addr, path.outport());
-}
-
-void
-router::route(packet *pkt)
-{
-  routable* rtbl = pkt->interface<routable>();
-  routable::path& path = rtbl->current_path();
-  switch_id sid = find_ejection_site(pkt->toaddr(), path);
-  if (sid == my_addr_){
-    configure_ejection_path(path);
-    rter_debug("Ejecting %s from switch %d on port %d",
-               pkt->to_string().c_str(), sid, path.outport());
-  } else {
-    route_to_switch(sid, path);
-    rter_debug("Routing %s to switch %d on port %d",
-               pkt->to_string().c_str(), sid, path.outport());
-  }
-}
-
-routing::algorithm_t
-router::str_to_algo(const std::string &str)
-{
-  if (str == "minimal") {
-    return routing::minimal;
-  } else if (str == "valiant") {
-    return routing::valiant;
-  } else if (str == "min_ad") {
-    return routing::minimal_adaptive;
-  } else if (str == "ugal") {
-    return routing::ugal;
-  } else {
-    spkt_throw_printf(sprockit::input_error,
-                     "invalid routing algorithm %s",
-                     str.c_str());
-  }
 }
 
 }

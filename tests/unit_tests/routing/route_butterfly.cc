@@ -56,6 +56,6 @@ void test_butterfly(UnitTest& unit)
   sstmac::env::params = &params;
   params["geometry"] = "4 3";
   params["name"] = "butterfly";
-  params["router.name"] = "minimal";
+  params["router.name"] = "butterfly_minimal";
   test_topology(params);
 }

@@ -54,12 +54,6 @@ namespace hw {
 class routable
 {
  public:
-  typedef enum {
-   valiant_stage,
-   final_stage,
-   crossed_timeline
-  } metadata_slot;
-
   struct path {
    struct outport_t {
      uint16_t global;
@@ -69,9 +63,17 @@ class routable
    int vc;
    /** An identifier indicating what geometric path on the topology this is following */
    int geometric_id;
-   sprockit::metadata_bits<uint32_t> metadata;
+   uint32_t metadata;
+
+   template <class T>
+   T* header() {
+     static_assert(sizeof(T) <= sizeof(metadata),
+                   "given header type too big");
+     return (T*) (&metadata);
+   }
 
    path() :
+     metadata(0),
   #if SSTMAC_SANITY_CHECK
      vc(routing::uninitialized)
   #else
@@ -80,22 +82,6 @@ class routable
    {
      outport_.global = routing::uninitialized;
      outport_.local = routing::uninitialized;
-   }
-
-   bool metadata_bit(metadata_slot slot) const {
-     return metadata.bit(slot);
-   }
-
-   void set_metadata_bit(metadata_slot slot) {
-     metadata.set_bit(slot);
-   }
-
-   void unset_metadata_bit(metadata_slot slot) {
-     metadata.unset_bit(slot);
-   }
-
-   void clear_metadata() {
-     metadata.clear();
    }
 
    uint16_t& outport() {
@@ -125,8 +111,7 @@ class routable
   };
 
  #define MAX_PATHS 32
- class path_set
- {
+ class path_set {
   public:
    path_set() : size_(0) {}
    int size() const { return size_; }

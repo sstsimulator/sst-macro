@@ -67,22 +67,6 @@ routable::serialize_order(serializer& ser)
 
 namespace routing {
 
-const char*
-tostr(routing::algorithm_t algo)
-{
-  switch(algo) {
-      enumcase(minimal);
-      enumcase(valiant);
-      enumcase(minimal_adaptive);
-      enumcase(ugal);
-    default:
-      spkt_throw_printf(sprockit::value_error,
-                       "invalud routing algorithm enum %d",
-                       algo);
-  }
-  return nullptr;
-}
-
 }
 
 }
