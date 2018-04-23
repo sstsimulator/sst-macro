@@ -64,15 +64,8 @@ class par_router :
  public:
   par_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-  std::string to_string() const override {
-    return "par";
-  }
-
-  void route(packet *pkt) override;
-
- private:
-  virtual void topology_route(routable* rtbl) override = 0;
-
+ protected:
+  bool route_common(routable* rtbl);
 };
 
 }

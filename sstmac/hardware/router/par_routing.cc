@@ -56,16 +56,15 @@ par_router::par_router(sprockit::sim_parameters *params, topology *top, network_
 {
 }
 
-void
-par_router::route(packet *pkt)
+bool
+par_router::route_common(routable* rtbl)
 {
   uint16_t dir;
-  routable* rtbl = pkt->interface<routable>();
-  switch_id ej_addr = top_->netlink_to_ejection_switch(pkt->toaddr(), dir);
+  switch_id ej_addr = top_->netlink_to_ejection_switch(rtbl->toaddr(), dir);
   if (ej_addr == my_addr_){
     rtbl->current_path().outport() = dir;
     rtbl->current_path().vc = 0;
-    return;
+    return true;
   }
 
   auto hdr = rtbl->current_path().header<header>();
@@ -76,11 +75,6 @@ par_router::route(packet *pkt)
       routable::path valiant;
       bool go_valiant = switch_paths(ej_addr, middle_switch, orig, valiant);
       if (go_valiant){
-        debug_printf(sprockit::dbg::router,
-          "Router %s selected random intermediate switch %s for message %s",
-            top_->switch_label(my_addr_).c_str(),
-            top_->switch_label(rtbl->dest_switch()).c_str(),
-            pkt->to_string().c_str());
         rtbl->set_dest_switch(middle_switch);
         rtbl->current_path() = valiant;
         hdr->stage_number = valiant_stage;
@@ -91,19 +85,19 @@ par_router::route(packet *pkt)
       break;
     }
     case valiant_stage: {
-      if (my_addr_ != rtbl->dest_switch()){
-        top_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), rtbl->current_path());
+      if (my_addr_ == rtbl->dest_switch()){
+        rtbl->set_dest_switch(ej_addr);
+        hdr->stage_number = final_stage;
         break;
-      } //else - fall through to final stage
-      hdr->stage_number = final_stage;
+      } else {
+        break;
+      }
     }
     case final_stage: {
-      top_->minimal_route_to_switch(my_addr_, ej_addr, rtbl->current_path());
       break;
     }
-    break;
   }
-  topology_route(rtbl);
+  return false;
 }
 
 class dragonfly_par_router : public par_router {
@@ -112,9 +106,13 @@ class dragonfly_par_router : public par_router {
      char num_group_hops : 2;
   };
  public:
-  FactoryRegister("par_dragonfly",
+  FactoryRegister("dragonfly_par",
               router, dragonfly_par_router,
               "router implementing PAR for dragonfly")
+
+  std::string to_string() const override {
+    return "dragonfly PAR router";
+  }
 
   dragonfly_par_router(sprockit::sim_parameters* params, topology *top,
                        network_switch *netsw)
@@ -123,22 +121,25 @@ class dragonfly_par_router : public par_router {
     dfly_ = safe_cast(dragonfly, top);
   }
 
- private:
+  void route(packet *pkt) override {
+    routable* rtbl = pkt->interface<routable>();
+    bool eject = route_common(rtbl);
+    if (eject) return;
+
+    routable::path& path = rtbl->current_path();
+    dfly_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
+    auto hdr = path.header<header>();
+    path.vc = hdr->num_hops;
+    ++hdr->num_hops;
+  }
+
   int num_vc() const override {
     return 5;
   }
 
-  void topology_route(routable* rtbl) override {
-    routable::path& path = rtbl->current_path();
-    auto hdr = path.header<header>();
-    path.vc = hdr->num_hops;
-    if (dfly_->is_global_port(path.outport())){
-      ++hdr->num_group_hops;
-    }
-    ++hdr->num_hops;
-  }
-
+ private:
   dragonfly* dfly_;
+
 };
 
 

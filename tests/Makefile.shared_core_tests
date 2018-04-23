@@ -15,6 +15,9 @@ CORETESTS+= \
   test_core_apps_ping_all_simple_fattree \
   test_core_apps_ping_all_cascade_macrels \
   test_core_apps_ping_all_null_arb \
+  test_core_apps_ping_all_dragonfly_par \
+  test_core_apps_ping_all_dragonfly_ugal \
+  test_core_apps_ping_all_dragonfly_valiant \
   test_core_apps_ping_all_torus_pisces \
   test_core_apps_ping_all_torus_pisces_new \
   test_core_apps_ping_all_cascade_pisces_ugal \

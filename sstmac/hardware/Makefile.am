@@ -161,7 +161,6 @@ libsstmac_hw_la_SOURCES =  \
   router/dragonfly_minimal.cc \
   router/fat_tree_router.cc \
   router/minimal_routing.cc \
-  router/multipath_routing.cc \
   router/ugal_routing.cc \
   router/par_routing.cc \
   router/valiant_routing.cc \

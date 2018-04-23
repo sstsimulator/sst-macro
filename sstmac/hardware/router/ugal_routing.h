@@ -42,13 +42,51 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/router/multipath_routing.h>
-#include <sstmac/hardware/router/minimal_routing.h>
+#ifndef sstmac_hardware_network_topology_routing_UGAL_ROUTING_H
+#define sstmac_hardware_network_topology_routing_UGAL_ROUTING_H
+
 #include <sstmac/hardware/router/valiant_routing.h>
-#include <sstmac/hardware/router/ugal_routing.h>
 
 namespace sstmac {
 namespace hw {
 
+/**
+ * @brief The par_router class
+ * Encapsulates a router that performs Univeral Globally Adaptive Load-balanced
+ * routing as described in PhD Thesis "Load-balanced in routing in interconnection networks"
+ * by A Singh. This differs slightly from PAR in that routing decisions are only
+ * considered once at the source in UGAL
+ */
+class ugal_router : public router
+{
+ public:
+  static const char initial_stage = 0;
+  static const char valiant_stage = 1;
+  static const char final_stage = 2;
+  static const char minimal_only_stage = 3;
+
+  struct header {
+    char stage_number : 3;
+  };
+
+  ugal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
+
+ protected:
+  bool route_common(routable* rtbl);
+
+  bool switch_paths(
+    switch_id orig_dst,
+    switch_id inter,
+    routable::path& orig_path,
+    routable::path& new_path);
+
+  int val_threshold_;
+  int val_preference_factor_;
+
+};
+
 }
 }
+
+
+#endif // UGAL_ROUTING_H
