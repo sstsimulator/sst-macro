@@ -211,6 +211,10 @@ class event_manager
 
   void set_interconnect(hw::interconnect* ic);
 
+  hw::interconnect* interconn() const {
+    return interconn_;
+  }
+
   virtual void schedule_stop(timestamp until);
 
   /**

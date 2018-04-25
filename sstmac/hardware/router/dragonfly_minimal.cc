@@ -75,19 +75,20 @@ struct dragonfly_minimal_router : public minimal_router {
 
     group_ports_.resize(dfly_->g());
 
-    std::vector<int> connections;
+    std::vector<std::pair<int,int>> groupConnections;
     for (int g=0; g < dfly_->g(); ++g){
       if (g == myG_) continue;
 
-      dfly_->group_wiring()->connected_to_group(myG_, g, connections);
-      if (connections.size() == 0){
+      dfly_->group_wiring()->connected_to_group(myG_, g, groupConnections);
+      if (groupConnections.size() == 0){
         spkt_abort_printf("Got zero group connections from %d->%d", myG_, g);
       }
-      int rotater = myA % connections.size();
-      group_ports_[g] = connections[rotater];
+      int rotater = myA % groupConnections.size();
+      group_ports_[g] = groupConnections[rotater].first;
     }
 
     //figure out which groups I have a direct connection to
+    std::vector<int> connections;
     dfly_->group_wiring()->connected_routers(myA, myG_, connections);
     for (int c=0; c < connections.size(); ++c){
       switch_id dst = connections[c];

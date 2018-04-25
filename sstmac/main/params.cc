@@ -252,6 +252,7 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
   if (rtr_name == "minimal")      rtr_params->add_param_override("name", new_rtr_name);
   else if (rtr_name == "valiant") rtr_params->add_param_override("name", new_rtr_name);
   else if (rtr_name == "ugal") rtr_params->add_param_override("name", new_rtr_name);
+  else if (rtr_name == "ugalG") rtr_params->add_param_override("name", new_rtr_name);
   else if (rtr_name == "par") rtr_params->add_param_override("name", new_rtr_name);
 }
 

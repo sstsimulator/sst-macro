@@ -150,10 +150,12 @@ dragonfly::minimal_route_to_switch(
   }
 
   //inter-group and we need local hop to get there
-  group_wiring_->connected_to_group(srcG, dstG, connected);
-  int srcRotater = srcA % connected.size();
+  std::vector<std::pair<int,int>> groupConnections;
+  group_wiring_->connected_to_group(srcG, dstG, groupConnections);
+  int srcRotater = srcA % groupConnections.size();
 
-  path.set_outport(connected[srcRotater]);
+  auto& pair = groupConnections[srcRotater];
+  path.set_outport(pair.first);
 }
 
 int
@@ -307,10 +309,11 @@ class circulant_group_wiring : public inter_group_wiring
    * @param srcG
    * @param dstG
    * @param connected [in-out] The list of all intra-group routers in range (0 ... a-1)
-   *                  that have connections to a router in group dstG
+   *                  that have connections to a router in group dstG. The second entry in the pair
+   *                  is the "port offset", a unique index for the group link
    * @return The number of routers in group srcG with connections to dstG
    */
-  void connected_to_group(int srcG, int dstG, std::vector<int>& connected) const override {
+  void connected_to_group(int srcG, int dstG, std::vector<std::pair<int,int>>& connected) const override {
     connected.clear();
     std::vector<int> tmp;
     for (int a=0; a < a_; ++a){
@@ -318,7 +321,7 @@ class circulant_group_wiring : public inter_group_wiring
       for (int c=0; c < tmp.size(); ++c){
         int g = tmp[c] / a_;
         if (dstG == g){
-          connected.push_back(a);
+          connected.emplace_back(a,c);
           break;
         }
       }

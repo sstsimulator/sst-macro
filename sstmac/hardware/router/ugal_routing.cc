@@ -46,9 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/dragonfly.h>
 #include <sstmac/hardware/topology/torus.h>
 #include <sstmac/hardware/topology/cascade.h>
+#include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/hardware/switch/network_switch.h>
+#include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
+#include <sstream>
 
 namespace sstmac {
 namespace hw {
@@ -60,17 +63,9 @@ ugal_router::ugal_router(sprockit::sim_parameters *params, topology *top, networ
   val_preference_factor_ = params->get_optional_int_param("valiant_preference_factor",1);
 }
 
-bool
-ugal_router::route_common(routable* rtbl)
+void
+ugal_router::route_ugal_common(routable* rtbl, switch_id ej_addr)
 {
-  uint16_t dir;
-  switch_id ej_addr = top_->netlink_to_ejection_switch(rtbl->toaddr(), dir);
-  if (ej_addr == my_addr_){
-    rtbl->current_path().outport() = dir;
-    rtbl->current_path().vc = 0;
-    return true;
-  }
-
   auto hdr = rtbl->current_path().header<header>();
   switch(hdr->stage_number){
     case initial_stage: {
@@ -106,6 +101,20 @@ ugal_router::route_common(routable* rtbl)
     }
     break;
   }
+}
+
+bool
+ugal_router::route_common(routable* rtbl)
+{
+  uint16_t dir;
+  switch_id ej_addr = top_->netlink_to_ejection_switch(rtbl->toaddr(), dir);
+  if (ej_addr == my_addr_){
+    rtbl->current_path().outport() = dir;
+    rtbl->current_path().vc = 0;
+    return true;
+  }
+
+  route_ugal_common(rtbl, ej_addr);
   return false;
 }
 
@@ -128,6 +137,192 @@ ugal_router::switch_paths(
   int valiant_weight = new_queue_length * new_distance;
   return valiant_weight < orig_weight;
 }
+
+
+class dragonfly_ugalG_router : public ugal_router {
+
+  static const char initial_stage = 0;
+  static const char hop_to_entry_stage = 1;
+  static const char hop_to_exit_stage = 2;
+  static const char final_stage = 3;
+  static const char intra_grp_stage = 4;
+
+  struct header : public ugal_router::header {
+    char num_group_hops : 3;
+    uint16_t entryA;
+    uint16_t exitA;
+    uint16_t interGrp;
+  };
+
+ public:
+  FactoryRegister("dragonfly_ugalG",
+              router, dragonfly_ugalG_router,
+              "router implementing UGAL-G routing for dragonfly")
+
+  dragonfly_ugalG_router(sprockit::sim_parameters *params, topology *top, network_switch *netsw)
+    :  ugal_router(params, top, netsw)
+  {
+    dfly_ = safe_cast(dragonfly, top);
+  }
+
+  std::string to_string() const {
+    return "dragonfly UGAL-G router";
+  }
+
+  int num_vc() const {
+    return 3;
+  }
+
+  void route(packet *pkt){
+    uint16_t dir;
+    routable* rtbl = pkt->interface<routable>();
+    routable::path& path = rtbl->current_path();
+
+    switch_id ej_addr = top_->netlink_to_ejection_switch(rtbl->toaddr(), dir);
+    if (ej_addr == my_addr_){
+      rtbl->current_path().outport() = dir;
+      rtbl->current_path().vc = 0;
+      return;
+    }
+
+    header* hdr = path.header<header>();
+    if (hdr->stage_number == initial_stage){
+      int srcGrp = dfly_->computeG(my_addr_);
+      int dstGrp = dfly_->computeG(ej_addr);
+      if (srcGrp == dstGrp){
+        route_ugal_common(rtbl, ej_addr);
+        hdr->stage_number = intra_grp_stage;
+        return;
+      } else {
+        hdr->stage_number = hop_to_entry_stage;
+        select_ugalG_intermediate(rtbl, ej_addr);
+      }
+    }
+
+    //std::cout << "Got header " << (void*) pkt << " at stage " << (uint16_t) hdr->stage_number << std::endl;
+
+    switch(hdr->stage_number){
+    case initial_stage:
+      spkt_abort_printf("invalid stage number: packet did not have stage initialized");
+      break;
+    case hop_to_entry_stage:
+      if (my_addr_ == rtbl->dest_switch()){
+        hdr->stage_number = hop_to_exit_stage;
+        rtbl->set_dest_switch(dfly_->get_uid(hdr->exitA, hdr->interGrp));
+      } else {
+        top_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
+        break;
+      }
+    case hop_to_exit_stage:
+      if (my_addr_ == rtbl->dest_switch()){
+        hdr->stage_number = final_stage;
+        rtbl->set_dest_switch(ej_addr);
+      } else {
+        top_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
+        break;
+      }
+    case final_stage:
+    case intra_grp_stage:
+      top_->minimal_route_to_switch(my_addr_, ej_addr, path);
+      break;
+    }
+
+    path.vc = hdr->num_group_hops;
+    if (dfly_->is_global_port(path.outport())){
+      ++hdr->num_group_hops;
+    }
+  }
+
+  void select_ugalG_intermediate(routable* rtbl, switch_id ej_addr){
+    //this has to be intialized at runtime
+    //this can't happen in the ctor because ic isn't available yet in the event mgr
+    if (!ic_) ic_ = netsw_->event_mgr()->interconn();
+
+    int srcGrp = dfly_->computeG(my_addr_);
+    int dstGrp = dfly_->computeG(ej_addr);
+    routable::path& path = rtbl->current_path();
+
+    header* hdr = path.header<header>();
+    int myA = dfly_->computeA(my_addr_);
+    int minExitA = 0;
+    int minTotalLength = 1e6;
+    int minInterGrp = -1;
+    findMinGroupLink(srcGrp, dstGrp, minExitA, minTotalLength);
+
+    int minEntryA = 0;
+    //std::stringstream sstr;
+    //sstr << sprockit::printf("For packet going from (%d,%d) to (%d,%d) with minimal length=%d:\n",
+    //                         myA, srcGrp, dfly_->computeA(ej_addr), dstGrp, minTotalLength);
+    for (int intGrp=0; intGrp < dfly_->g(); ++intGrp){
+      if (intGrp != srcGrp && intGrp != dstGrp){
+        int entryA, entryLength;
+        int exitA, exitLength;
+        findMinGroupLink(srcGrp, intGrp, entryA, entryLength);
+        findMinGroupLink(intGrp, dstGrp, exitA, exitLength);
+        int totalLength = entryLength + exitLength;
+        //sstr << "\tintermediate=" << intGrp << " found queue lengths="
+        //     << entryLength << "," << exitLength << " for gateways="
+        //    << entryA << "," << exitA << "\n";
+        if (totalLength < minTotalLength){
+          minInterGrp = intGrp;
+          minEntryA = entryA; //gateway in the source group
+          minExitA = exitA; //gateway in the inter group
+          minTotalLength = totalLength;
+        }
+      }
+    }
+
+    //if (minInterGrp != -1) sstr << "Selected intermediate " << minInterGrp << "!\n";
+    //std::cout << sstr.str() << std::endl;
+
+    //we have now found the intermediate group with the least amount of contention
+    switch_id inter_sw;
+    if (minInterGrp == -1){ //route minimally to the dest grp
+      if (minExitA == myA){
+        inter_sw = ej_addr;
+        hdr->stage_number = final_stage;
+      } else {
+        inter_sw = dfly_->get_uid(minExitA, srcGrp);
+        hdr->stage_number = hop_to_exit_stage;
+      }
+    } else {
+      if (minEntryA == myA){
+        inter_sw = dfly_->get_uid(minExitA, minInterGrp);
+        hdr->stage_number = hop_to_exit_stage;
+      } else {
+        inter_sw = dfly_->get_uid(minEntryA, srcGrp);
+        hdr->stage_number = hop_to_entry_stage;
+      }
+    }
+    rtbl->set_dest_switch(inter_sw);
+    hdr->exitA = minExitA;
+    hdr->entryA = minEntryA;
+    hdr->interGrp = minInterGrp;
+  }
+
+  void findMinGroupLink(int srcGrp, int dstGrp, int& srcA, int& queueLength){
+    inter_group_wiring* wiring = dfly_->group_wiring();
+    queueLength = 1e6;
+    std::vector<std::pair<int,int>> sources;
+    wiring->connected_to_group(srcGrp, dstGrp, sources);
+    for (auto& pair : sources){
+      int a = pair.first;
+      int port = dfly_->a() + pair.second;
+      network_switch* nsw = ic_->switch_at(dfly_->get_uid(a, srcGrp));
+      int testLength = nsw->queue_length(port);
+      if (testLength < queueLength){
+        srcA = a;
+        queueLength = testLength;
+      }
+    }
+  }
+
+
+ private:
+  dragonfly* dfly_;
+  interconnect* ic_;
+
+};
 
 class dragonfly_ugal_router : public ugal_router {
   struct header : public ugal_router::header {

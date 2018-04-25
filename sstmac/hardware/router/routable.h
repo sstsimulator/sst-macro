@@ -63,7 +63,7 @@ class routable
    int vc;
    /** An identifier indicating what geometric path on the topology this is following */
    int geometric_id;
-   uint32_t metadata;
+   uint64_t metadata;
 
    template <class T>
    T* header() {

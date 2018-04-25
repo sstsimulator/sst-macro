@@ -66,13 +66,15 @@ class ugal_router : public router
   static const char minimal_only_stage = 3;
 
   struct header {
-    char stage_number : 3;
+    char stage_number : 4;
   };
 
   ugal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
  protected:
   bool route_common(routable* rtbl);
+
+  void route_ugal_common(routable* rtbl, switch_id ej_addr);
 
   bool switch_paths(
     switch_id orig_dst,
