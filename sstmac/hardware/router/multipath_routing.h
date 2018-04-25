@@ -110,9 +110,9 @@ class multipath_router : public ParentRouter
   }
 
   virtual void route(packet* pkt) override {
-    routable::path_set paths;
+    packet::path_set paths;
     ParentRouter::route(pkt);
-    routable::path& path = pkt->interface<routable>()->current_path();
+    packet::path& path = pkt->current_path();
     path.geometric_id = path.outport();
     debug_printf(sprockit::dbg::router,
       "multipath routing: geometric id %d", path.geometric_id);

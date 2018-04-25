@@ -64,22 +64,22 @@ ugal_router::ugal_router(sprockit::sim_parameters *params, topology *top, networ
 }
 
 void
-ugal_router::route_ugal_common(routable* rtbl, switch_id ej_addr)
+ugal_router::route_ugal_common(packet* pkt, switch_id ej_addr)
 {
-  auto hdr = rtbl->current_path().header<header>();
+  auto hdr = pkt->get_header<header>();
   switch(hdr->stage_number){
     case initial_stage: {
       switch_id middle_switch = top_->random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
-      routable::path orig;
-      routable::path valiant;
+      packet::path orig;
+      packet::path valiant;
       bool go_valiant = switch_paths(ej_addr, middle_switch, orig, valiant);
       if (go_valiant){
-        rtbl->set_dest_switch(middle_switch);
-        rtbl->current_path() = valiant;
+        pkt->set_dest_switch(middle_switch);
+        pkt->current_path() = valiant;
         hdr->stage_number = valiant_stage;
       } else {
-        rtbl->set_dest_switch(ej_addr);
-        rtbl->current_path() = orig;
+        pkt->set_dest_switch(ej_addr);
+        pkt->current_path() = orig;
         hdr->stage_number = minimal_only_stage;
       }
       break;
@@ -89,14 +89,14 @@ ugal_router::route_ugal_common(routable* rtbl, switch_id ej_addr)
       break;
     }
     case valiant_stage: {
-      if (my_addr_ == rtbl->dest_switch()){
+      if (my_addr_ == pkt->dest_switch()){
         hdr->stage_number = final_stage;
       } else {
         break;
       }
     }
     case final_stage: {
-      rtbl->set_dest_switch(ej_addr);
+      pkt->set_dest_switch(ej_addr);
       break;
     }
     break;
@@ -104,17 +104,17 @@ ugal_router::route_ugal_common(routable* rtbl, switch_id ej_addr)
 }
 
 bool
-ugal_router::route_common(routable* rtbl)
+ugal_router::route_common(packet* pkt)
 {
   uint16_t dir;
-  switch_id ej_addr = top_->netlink_to_ejection_switch(rtbl->toaddr(), dir);
+  switch_id ej_addr = top_->netlink_to_ejection_switch(pkt->toaddr(), dir);
   if (ej_addr == my_addr_){
-    rtbl->current_path().outport() = dir;
-    rtbl->current_path().vc = 0;
+    pkt->current_path().outport() = dir;
+    pkt->current_path().vc = 0;
     return true;
   }
 
-  route_ugal_common(rtbl, ej_addr);
+  route_ugal_common(pkt, ej_addr);
   return false;
 }
 
@@ -122,8 +122,8 @@ bool
 ugal_router::switch_paths(
   switch_id orig_dst,
   switch_id new_dst,
-  routable::path& orig_path,
-  routable::path& new_path)
+  packet::path& orig_path,
+  packet::path& new_path)
 {
   switch_id src = my_addr_;
   top_->minimal_route_to_switch(src, orig_dst, orig_path);
@@ -138,7 +138,6 @@ ugal_router::switch_paths(
   return valiant_weight < orig_weight;
 }
 
-
 class dragonfly_ugalG_router : public ugal_router {
 
   static const char initial_stage = 0;
@@ -148,7 +147,7 @@ class dragonfly_ugalG_router : public ugal_router {
   static const char intra_grp_stage = 4;
 
   struct header : public ugal_router::header {
-    char num_group_hops : 3;
+    uint8_t num_group_hops : 2;
     uint16_t entryA;
     uint16_t exitA;
     uint16_t interGrp;
@@ -175,27 +174,26 @@ class dragonfly_ugalG_router : public ugal_router {
 
   void route(packet *pkt){
     uint16_t dir;
-    routable* rtbl = pkt->interface<routable>();
-    routable::path& path = rtbl->current_path();
+    packet::path& path = pkt->current_path();
 
-    switch_id ej_addr = top_->netlink_to_ejection_switch(rtbl->toaddr(), dir);
+    switch_id ej_addr = top_->netlink_to_ejection_switch(pkt->toaddr(), dir);
     if (ej_addr == my_addr_){
-      rtbl->current_path().outport() = dir;
-      rtbl->current_path().vc = 0;
+      pkt->current_path().outport() = dir;
+      pkt->current_path().vc = 0;
       return;
     }
 
-    header* hdr = path.header<header>();
+    header* hdr = pkt->get_header<header>();
     if (hdr->stage_number == initial_stage){
       int srcGrp = dfly_->computeG(my_addr_);
       int dstGrp = dfly_->computeG(ej_addr);
       if (srcGrp == dstGrp){
-        route_ugal_common(rtbl, ej_addr);
+        route_ugal_common(pkt, ej_addr);
         hdr->stage_number = intra_grp_stage;
         return;
       } else {
         hdr->stage_number = hop_to_entry_stage;
-        select_ugalG_intermediate(rtbl, ej_addr);
+        select_ugalG_intermediate(pkt, ej_addr);
       }
     }
 
@@ -206,19 +204,19 @@ class dragonfly_ugalG_router : public ugal_router {
       spkt_abort_printf("invalid stage number: packet did not have stage initialized");
       break;
     case hop_to_entry_stage:
-      if (my_addr_ == rtbl->dest_switch()){
+      if (my_addr_ == pkt->dest_switch()){
         hdr->stage_number = hop_to_exit_stage;
-        rtbl->set_dest_switch(dfly_->get_uid(hdr->exitA, hdr->interGrp));
+        pkt->set_dest_switch(dfly_->get_uid(hdr->exitA, hdr->interGrp));
       } else {
-        top_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
+        top_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
         break;
       }
     case hop_to_exit_stage:
-      if (my_addr_ == rtbl->dest_switch()){
+      if (my_addr_ == pkt->dest_switch()){
         hdr->stage_number = final_stage;
-        rtbl->set_dest_switch(ej_addr);
+        pkt->set_dest_switch(ej_addr);
       } else {
-        top_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
+        top_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
         break;
       }
     case final_stage:
@@ -233,16 +231,16 @@ class dragonfly_ugalG_router : public ugal_router {
     }
   }
 
-  void select_ugalG_intermediate(routable* rtbl, switch_id ej_addr){
+  void select_ugalG_intermediate(packet* pkt, switch_id ej_addr){
     //this has to be intialized at runtime
     //this can't happen in the ctor because ic isn't available yet in the event mgr
     if (!ic_) ic_ = netsw_->event_mgr()->interconn();
 
     int srcGrp = dfly_->computeG(my_addr_);
     int dstGrp = dfly_->computeG(ej_addr);
-    routable::path& path = rtbl->current_path();
+    packet::path& path = pkt->current_path();
 
-    header* hdr = path.header<header>();
+    header* hdr = pkt->get_header<header>();
     int myA = dfly_->computeA(my_addr_);
     int minExitA = 0;
     int minTotalLength = 1e6;
@@ -294,7 +292,7 @@ class dragonfly_ugalG_router : public ugal_router {
         hdr->stage_number = hop_to_entry_stage;
       }
     }
-    rtbl->set_dest_switch(inter_sw);
+    pkt->set_dest_switch(inter_sw);
     hdr->exitA = minExitA;
     hdr->entryA = minEntryA;
     hdr->interGrp = minInterGrp;
@@ -350,13 +348,12 @@ class dragonfly_ugal_router : public ugal_router {
   }
 
   void route(packet *pkt) override {
-    routable* rtbl = pkt->interface<routable>();
-    bool eject = route_common(rtbl);
+    bool eject = route_common(pkt);
     if (eject) return;
 
-    routable::path& path = rtbl->current_path();
-    dfly_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
-    auto hdr = path.header<header>();
+    packet::path& path = pkt->current_path();
+    dfly_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
+    auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     if (dfly_->is_global_port(path.outport())){
       ++hdr->num_group_hops;
@@ -394,13 +391,12 @@ class cascade_ugal_router : public ugal_router {
   }
 
   void route(packet *pkt) override {
-    routable* rtbl = pkt->interface<routable>();
-    bool eject = route_common(rtbl);
+    bool eject = route_common(pkt);
     if (eject) return;
 
-    routable::path& path = rtbl->current_path();
-    cascade_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
-    auto hdr = path.header<header>();
+    packet::path& path = pkt->current_path();
+    cascade_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
+    auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     if (cascade_->is_global_port(path.outport())){
       ++hdr->num_group_hops;
@@ -438,13 +434,12 @@ class torus_ugal_router : public ugal_router {
   }
 
   void route(packet* pkt) override {
-    routable* rtbl = pkt->interface<routable>();
-    bool eject = route_common(rtbl);
+    bool eject = route_common(pkt);
     if (eject) return;
 
-    auto& p = rtbl->current_path();
-    torus::route_type_t ty = torus_->torus_route(my_addr_, rtbl->dest_switch(), p);
-    auto hdr = p.header<header>();
+    auto& p = pkt->current_path();
+    torus::route_type_t ty = torus_->torus_route(my_addr_, pkt->dest_switch(), p);
+    auto hdr = pkt->get_header<header>();
     int min_vc = 0;
     switch(ty){
       case torus::same_path:

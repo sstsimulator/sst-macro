@@ -399,7 +399,7 @@ pisces_injection_buffer::handle_credit(event* ev)
 void
 pisces_injection_buffer::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_routable_packet*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_global_outport(0);
   pkt->set_local_outport(0);
   pkt->current_path().vc = 0; //start off on vc 0

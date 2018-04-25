@@ -432,7 +432,7 @@ class merlin_topology : public topology {
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const override {
+    packet::path& path) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 

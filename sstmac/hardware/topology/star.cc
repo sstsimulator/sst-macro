@@ -60,8 +60,8 @@ star::star(sprockit::sim_parameters* params) :
 
 void
 star::minimal_route_to_switch(switch_id current_sw_addr,
-                                  switch_id dest_sw_addr,
-                                  routable::path &path) const
+                              switch_id dest_sw_addr,
+                              packet::path &path) const
 {
   spkt_throw_printf(sprockit::unimplemented_error,
       "%s does not implement minimal route to switch (always on eject switch)",

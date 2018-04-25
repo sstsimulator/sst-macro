@@ -82,7 +82,7 @@ torus::route_type_t
 torus::torus_route(
   switch_id src,
   switch_id dst,
-  routable::path& path) const
+  packet::path& path) const
 {
   int div = 1;
   int ndim = dimensions_.size();
@@ -166,7 +166,7 @@ torus::shortest_path_positive(
 torus::route_type_t
 torus::up_path(
   int dim, int srcX, int dstX,
-  routable::path& path) const
+  packet::path& path) const
 {
   bool reset_dim = (srcX + 1) % dimensions_[dim] == dstX;
   bool wrapped = srcX == (dimensions_[dim]-1);
@@ -179,7 +179,7 @@ torus::up_path(
 torus::route_type_t
 torus::down_path(
   int dim, int src, int dst,
-  routable::path& path) const
+  packet::path& path) const
 {
   bool reset_dim = src == ((dst + 1) % dimensions_[dim]);
   bool wrapped = src == 0;

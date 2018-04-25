@@ -105,11 +105,6 @@ class dragonfly : public cartesian_topology
 {
   FactoryRegister("dragonfly", topology, dragonfly)
  public:
-  struct routing_header {
-    char num_group_hops : 2;
-    char num_hops : 5;
-  };
-
   dragonfly(sprockit::sim_parameters* params);
 
  public:
@@ -202,7 +197,7 @@ class dragonfly : public cartesian_topology
   void minimal_route_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      routable::path &path) const override;
+      packet::path &path) const override;
 
   int minimal_distance(switch_id src, switch_id dst) const override;
 

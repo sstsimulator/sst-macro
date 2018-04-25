@@ -164,12 +164,12 @@ class structured_topology : public topology
   virtual void endpoint_eject_paths_on_switch(
     node_id dest_addr,
     switch_id sw_addr,
-    routable::path_set& paths) const;
+    packet::path_set& paths) const;
 
   void node_eject_paths_on_switch(
       node_id dest_addr,
       switch_id sw_addr,
-      routable::path_set& paths) const {
+      packet::path_set& paths) const {
     endpoint_eject_paths_on_switch(
           dest_addr / num_nodes_per_netlink_,
           sw_addr, paths);

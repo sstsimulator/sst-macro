@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/common/packet.h>
 
@@ -118,7 +117,7 @@ class router : public sprockit::printable
  protected:
   router(sprockit::sim_parameters* params, topology* top, network_switch* sw);
 
-  switch_id find_ejection_site(node_id toaddr, routable::path& path) const;
+  switch_id find_ejection_site(node_id toaddr, packet::path& path) const;
 
  protected:
   switch_id my_addr_;

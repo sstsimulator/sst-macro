@@ -62,41 +62,40 @@ void
 valiant_router::route(packet *pkt)
 {
   uint16_t dir;
-  routable* rtbl = pkt->interface<routable>();
   switch_id ej_addr = top_->netlink_to_ejection_switch(pkt->toaddr(), dir);
   if (ej_addr == my_addr_){
-    rtbl->current_path().vc = 0;
-    rtbl->current_path().outport() = dir;
+    pkt->current_path().vc = 0;
+    pkt->current_path().outport() = dir;
     return;
   }
 
-  auto hdr = rtbl->current_path().header<header>();
+  auto hdr = pkt->get_header<header>();
   switch(hdr->stage_number){
     case initial_stage: {
       switch_id middle_switch = top_->random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
-      rtbl->set_dest_switch(middle_switch);
+      pkt->set_dest_switch(middle_switch);
       debug_printf(sprockit::dbg::router,
         "Router %s selected random intermediate switch %s for message %s",
           top_->switch_label(my_addr_).c_str(),
-          top_->switch_label(rtbl->dest_switch()).c_str(),
+          top_->switch_label(pkt->dest_switch()).c_str(),
           pkt->to_string().c_str());
       hdr->stage_number = valiant_stage;
     }
     case valiant_stage: {
-      if (rtbl->dest_switch() != my_addr_) break;
+      if (pkt->dest_switch() != my_addr_) break;
       else hdr->stage_number = final_stage;
     }
     case final_stage: {
-      rtbl->set_dest_switch(ej_addr);
+      pkt->set_dest_switch(ej_addr);
       if (ej_addr == my_addr_){
-        rtbl->current_path().outport() = dir;
-        rtbl->current_path().vc = 0;
+        pkt->current_path().outport() = dir;
+        pkt->current_path().vc = 0;
         return;
       }
     }
     break;
   }
-  topology_route(rtbl);
+  topology_route(pkt);
 }
 
 class dragonfly_valiant_router : public valiant_router {
@@ -125,10 +124,10 @@ class dragonfly_valiant_router : public valiant_router {
   }
 
  private:
-  void topology_route(routable* rtbl) override {
-    routable::path& path = rtbl->current_path();
-    dfly_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
-    auto hdr = path.header<header>();
+  void topology_route(packet* pkt) override {
+    packet::path& path = pkt->current_path();
+    dfly_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
+    auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     if (dfly_->is_global_port(path.outport())){
       ++hdr->num_group_hops;
@@ -165,10 +164,10 @@ class cascade_valiant_router : public valiant_router {
     return 3;
   }
 
-  void topology_route(routable* rtbl) override {
-    routable::path& path = rtbl->current_path();
-    cascade_->minimal_route_to_switch(my_addr_, rtbl->dest_switch(), path);
-    auto hdr = path.header<header>();
+  void topology_route(packet* pkt) override {
+    packet::path& path = pkt->current_path();
+    cascade_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
+    auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     if (cascade_->is_global_port(path.outport())){
       ++hdr->num_group_hops;
@@ -204,10 +203,10 @@ class torus_valiant_router : public valiant_router {
   }
 
  private:
-  void topology_route(routable* rtbl) override {
-    routable::path& path = rtbl->current_path();
-    auto hdr = path.header<header>();
-    torus::route_type_t ty = torus_->torus_route(my_addr_, rtbl->dest_switch(), path);
+  void topology_route(packet* pkt) override {
+    packet::path& path = pkt->current_path();
+    auto hdr = pkt->get_header<header>();
+    torus::route_type_t ty = torus_->torus_route(my_addr_, pkt->dest_switch(), path);
     if (ty == torus::wrapped_around) hdr->crossed_timeline = 1;
     int min_vc = hdr->crossed_timeline ? 1 : 0;
     switch(hdr->stage_number){

@@ -65,7 +65,7 @@ class par_router :
   par_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
  protected:
-  bool route_common(routable* rtbl);
+  bool route_common(packet* pkt);
 };
 
 }

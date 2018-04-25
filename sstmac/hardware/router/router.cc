@@ -84,7 +84,7 @@ router::compatibility_check() const
 }
 
 switch_id
-router::find_ejection_site(node_id node_addr, routable::path &path) const
+router::find_ejection_site(node_id node_addr, packet::path &path) const
 {
   return top_->node_to_ejection_switch(node_addr, path.outport());
 }

@@ -64,7 +64,7 @@ fully_connected::fully_connected(sprockit::sim_parameters* params) :
 void
 fully_connected::minimal_route_to_switch(switch_id current_sw_addr,
                                   switch_id dest_sw_addr,
-                                  routable::path &path) const
+                                  packet::path &path) const
 {
   path.vc = 0;
   path.set_outport(dest_sw_addr);

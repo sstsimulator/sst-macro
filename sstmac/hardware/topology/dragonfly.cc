@@ -126,7 +126,7 @@ void
 dragonfly::minimal_route_to_switch(
     switch_id src,
     switch_id dst,
-    routable::path &path) const
+    packet::path &path) const
 {
   //see if intra-group
   int srcG = computeG(src);

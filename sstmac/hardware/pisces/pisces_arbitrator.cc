@@ -123,7 +123,7 @@ void
 pisces_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
   timestamp start_send = next_free_ < st.now ? st.now : next_free_;
-  timestamp ser_delay(st.pkt->num_bytes() * inv_out_bw_);
+  timestamp ser_delay(st.pkt->byte_length() * inv_out_bw_);
   next_free_ = start_send + ser_delay;
   st.pkt->set_bw(out_bw_);
   //store and forward
@@ -131,7 +131,7 @@ pisces_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
   st.head_leaves = st.tail_leaves = next_free_;
   //we can send the credit a bit ahead of time
   st.credit_leaves = st.head_leaves
-    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->num_bytes());
+    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->byte_length());
   st.pkt->set_max_incoming_bw(out_bw_);
 }
 
@@ -336,7 +336,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
   }
 #endif
   //zero byte packets break the math below - if tiny, just push it up to 8
-  int bytes_to_send = std::max(payload->num_bytes(), 8);
+  uint32_t bytes_to_send = std::max(payload->num_bytes(), uint32_t(8));
 
   pflow_arb_debug_printf_l0("cut_through arbitrator handling %s at time %10.5e that started arriving at %10.5e",
                             payload->to_string().c_str(), st.now.sec(), payload->arrival().sec());

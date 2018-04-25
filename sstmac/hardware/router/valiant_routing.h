@@ -62,13 +62,13 @@ class valiant_router : public router
   static const char valiant_stage = 1;
   static const char final_stage = 2;
 
-  struct header {
+  struct header : public packet::header {
     char stage_number : 3;
   };
 
   void route(packet *pkt) override;
 
-  virtual void topology_route(routable* rtbl) = 0;
+  virtual void topology_route(packet* pkt) = 0;
 
  protected:
   valiant_router(sprockit::sim_parameters* params, topology* top, network_switch* sw);

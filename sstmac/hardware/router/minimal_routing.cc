@@ -65,15 +65,14 @@ minimal_router::minimal_router(sprockit::sim_parameters* params, topology* top,
 void
 minimal_router::route(packet *pkt)
 {
-  routable* rtbl = pkt->interface<routable>();
-  routable::path& path = rtbl->current_path();
+  packet::path& path = pkt->current_path();
   switch_id sid = find_ejection_site(pkt->toaddr(), path);
   if (sid == my_addr_){
     path.vc = 0;
     rter_debug("Ejecting %s from switch %d on port %d",
                pkt->to_string().c_str(), sid, path.outport());
   } else {
-    route_to_switch(sid, path);
+    route_to_switch(sid, pkt);
     rter_debug("Routing %s to switch %d on port %d",
                pkt->to_string().c_str(), sid, path.outport());
   }
@@ -81,7 +80,7 @@ minimal_router::route(packet *pkt)
 
 class torus_minimal_router : public minimal_router {
  public:
-  struct header {
+  struct header : public packet::header {
      char crossed_timeline : 1;
   };
 
@@ -103,19 +102,20 @@ class torus_minimal_router : public minimal_router {
     return 2;
   }
 
-  void route_to_switch(switch_id sid, routable::path& p) override {
-    torus::route_type_t ty = torus_->torus_route(my_addr_, sid, p);
-    auto hdr = p.header<header>();
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    packet::path& path = pkt->current_path();
+    torus::route_type_t ty = torus_->torus_route(my_addr_, sid, path);
+    auto hdr = pkt->get_header<header>();
     switch(ty){
       case torus::same_path:
-        if (hdr->crossed_timeline) p.vc = 1;
-        else p.vc = 0;
+        if (hdr->crossed_timeline) path.vc = 1;
+        else path.vc = 0;
         break; //keep the original virtual channel
       case torus::new_dimension:
-        p.vc = 0;
+        path.vc = 0;
         break;
       case torus::wrapped_around:
-        p.vc = 1;
+        path.vc = 1;
         break;
     }
   }
@@ -124,49 +124,8 @@ class torus_minimal_router : public minimal_router {
   torus* torus_;
 };
 
-/**
-class dragonfly_minimal_router : public minimal_router {
-  struct header {
-     char num_hops : 3;
-     char num_group_hops : 2;
-  };
- public:
-  FactoryRegister("dragonfly_minimal",
-              router, dragonfly_minimal_router,
-              "router implementing valint routing for dragonfly")
-
-  dragonfly_minimal_router(sprockit::sim_parameters* params, topology *top,
-                           network_switch *netsw)
-    : minimal_router(params, top, netsw)
-  {
-    dfly_ = safe_cast(dragonfly, top);
-  }
-
-  std::string to_string() const override {
-    return "dragonfly minimal router";
-  }
-
-  int num_vc() const override {
-    return 2;
-  }
-
- private:
-  void route_to_switch(switch_id sid, routable::path &path) override {
-    dfly_->minimal_route_to_switch(my_addr_, sid, path);
-    auto hdr = path.header<header>();
-    path.vc = hdr->num_group_hops;
-    if (dfly_->is_global_port(path.outport())){
-      ++hdr->num_group_hops;
-    }
-    ++hdr->num_hops;
-  }
-
-  dragonfly* dfly_;
-};
-*/
-
 class cascade_minimal_router : public minimal_router {
-  struct header {
+  struct header : public packet::header {
      char num_hops : 3;
      char num_group_hops : 2;
   };
@@ -191,9 +150,10 @@ class cascade_minimal_router : public minimal_router {
   }
 
  private:
-  void route_to_switch(switch_id sid, routable::path &path) override {
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    packet::path& path = pkt->current_path();
     cascade_->minimal_route_to_switch(my_addr_, sid, path);
-    auto hdr = path.header<header>();
+    auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     if (cascade_->is_global_port(path.outport())){
       ++hdr->num_group_hops;
@@ -225,7 +185,8 @@ class tapered_fat_tree_minimal_router : public minimal_router {
   }
 
  private:
-  void route_to_switch(switch_id sid, routable::path &path) override {
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    packet::path& path = pkt->current_path();
     top_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }
@@ -252,7 +213,8 @@ class hypercube_minimal_router : public minimal_router {
   }
 
  private:
-  void route_to_switch(switch_id sid, routable::path &path) override {
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    packet::path& path = pkt->current_path();
     top_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }
@@ -279,7 +241,8 @@ class fully_connected_minimal_router : public minimal_router {
   }
 
  private:
-  void route_to_switch(switch_id sid, routable::path &path) override {
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    packet::path& path = pkt->current_path();
     top_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }
@@ -307,7 +270,8 @@ class butterfly_minimal_router : public minimal_router {
   }
 
  private:
-  void route_to_switch(switch_id sid, routable::path &path) override {
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    packet::path& path = pkt->current_path();
     top_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }

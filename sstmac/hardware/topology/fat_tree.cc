@@ -208,7 +208,7 @@ void
 fat_tree::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  routable::path& path) const
+  packet::path& path) const
 {
   spkt_throw_printf(sprockit::unimplemented_error, "fat_tree::minimal_route_to_switch");
 }
@@ -508,7 +508,7 @@ void
 tapered_fat_tree::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  routable::path &path) const
+  packet::path &path) const
 {
   int src_level = level(current_sw_addr);
   int dst_level = level(dest_sw_addr);

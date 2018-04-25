@@ -156,7 +156,7 @@ cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 
 bool
 cascade::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
-                                routable::path& path) const
+                              packet::path& path) const
 {
   int ystart = random_number(y_,0,42);
   for (int yy = 0; yy < y_; ++yy) {
@@ -171,7 +171,7 @@ cascade::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
 
 bool
 cascade::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
-                                routable::path& path) const
+                              packet::path& path) const
 {
   int xstart = random_number(x_,0,42);
   for (int xx = 0; xx < x_; ++xx) {
@@ -186,8 +186,8 @@ cascade::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
 
 void
 cascade::find_path_to_group(int myX, int myY, int myG,
-                              int dstG, int& dstX, int& dstY,
-                              routable::path& path) const
+                            int dstG, int& dstX, int& dstY,
+                            packet::path& path) const
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
@@ -224,9 +224,9 @@ cascade::find_path_to_group(int myX, int myY, int myG,
 
 void
 cascade::minimal_route_to_switch(
-    switch_id src,
-    switch_id dst,
-    routable::path &path) const
+  switch_id src,
+  switch_id dst,
+  packet::path &path) const
 {
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
   int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
@@ -260,7 +260,7 @@ cascade::minimal_distance(switch_id src, switch_id dst) const
     if (srcX != dstX) ++dist;
     if (srcY != dstY) ++dist;
   } else {
-    routable::path path;
+    packet::path path;
     int interX;
     int interY;
     find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);

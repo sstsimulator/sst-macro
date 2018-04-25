@@ -179,7 +179,7 @@ class cascade : public cartesian_topology
   void minimal_route_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      routable::path &path) const override;
+      packet::path &path) const override;
 
   int minimal_distance(switch_id src, switch_id dst) const override;
 
@@ -199,13 +199,13 @@ class cascade : public cartesian_topology
  protected:
   virtual void find_path_to_group(int myX, int myY, int myG, int dstG,
                      int& dstX, int& dstY,
-                     routable::path& path) const;
+                     packet::path& path) const;
 
   bool find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
-                       routable::path& path) const;
+                       packet::path& path) const;
 
   bool find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
-                       routable::path& path) const;
+                       packet::path& path) const;
 
   virtual bool xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
 

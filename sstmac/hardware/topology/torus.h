@@ -123,14 +123,14 @@ class torus :
   void minimal_route_to_switch(
     switch_id sid,
     switch_id dst,
-    routable::path& path) const override {
+    packet::path& path) const override {
     torus_route(sid, dst, path);
   }
 
   route_type_t torus_route(
     switch_id sid,
     switch_id dst,
-    routable::path& path) const;
+    packet::path& path) const;
 
   int minimal_distance(
     switch_id sid,
@@ -149,11 +149,11 @@ class torus :
  private:
   route_type_t down_path(
     int dim, int src, int dst,
-    routable::path& path) const;
+    packet::path& path) const;
 
   route_type_t up_path(
     int dim, int src, int dst,
-    routable::path& path) const;
+    packet::path& path) const;
 
   int shortest_distance(int dim, int src, int dst) const;
 

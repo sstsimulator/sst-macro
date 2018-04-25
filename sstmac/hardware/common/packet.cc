@@ -53,11 +53,20 @@ namespace hw {
 packet::packet(
   serializable* orig,
   uint32_t num_bytes,
-  bool is_tail) :
+  uint64_t flow_id,
+  bool is_tail,
+  node_id fromaddr,
+  node_id toaddr) :
  num_bytes_(num_bytes),
- is_tail_(is_tail),
- orig_(orig)
+ orig_(orig),
+ flow_id_(flow_id),
+ fromaddr_(fromaddr),
+ toaddr_(toaddr)
 {
+  ::memset(header_metadata_, 0, sizeof(header_metadata_));
+  ::memset(stats_metadata_, 0, sizeof(stats_metadata_));
+  auto hdr = get_header<header>();
+  hdr->is_tail = is_tail;
 }
 
 void
@@ -66,7 +75,9 @@ packet::serialize_order(serializer& ser)
   event::serialize_order(ser);
   ser & orig_;
   ser & num_bytes_;
-  ser & is_tail_;
+  ser & flow_id_;
+  ser & header_metadata_;
+  ser & stats_metadata_;
 }
 
 }

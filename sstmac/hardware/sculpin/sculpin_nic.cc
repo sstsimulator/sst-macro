@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/sculpin/sculpin_nic.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/operating_system.h>

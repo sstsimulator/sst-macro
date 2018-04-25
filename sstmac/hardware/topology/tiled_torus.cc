@@ -86,8 +86,8 @@ tiled_torus::tiled_torus(sprockit::sim_parameters *params) :
 
 void
 tiled_torus::get_redundant_paths(
-    routable::path& current,
-    routable::path_set &paths,
+    packet::path& current,
+    packet::path_set &paths,
     switch_id addr) const
 {
   if (current.outport() < first_simple_torus_eject_port_){

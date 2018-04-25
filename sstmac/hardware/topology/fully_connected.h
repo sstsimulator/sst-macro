@@ -100,7 +100,7 @@ class fully_connected : public structured_topology
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const override;
+    packet::path& path) const override;
 
   virtual int num_switches() const override {
     return size_;

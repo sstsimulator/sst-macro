@@ -158,7 +158,6 @@ pisces_sender::send(
   const pisces_output& dest)
 {
   timestamp now_ = now();
-  auto rpkt = static_cast<pisces_routable_packet*>(pkt);
   pkt_arbitration_t st;
   st.incoming_bw = pkt->bw();
   st.now = now_;
@@ -191,7 +190,7 @@ pisces_sender::send(
     "On %s:%p, sending on local port:%d vc:%d {%s} to handler %s:%p on "
     "inport %d at head_leaves=%9.5e tail_leaves=%9.5e",
     to_string().c_str(), this,
-    rpkt->local_outport(), pkt->next_vc(),
+    pkt->local_outport(), pkt->next_vc(),
     pkt->to_string().c_str(),
     dest.link->to_string().c_str(), dest.link,
     dest.dst_inport,

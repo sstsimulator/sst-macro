@@ -83,7 +83,7 @@ class fat_tree_router :
 
   void route_to_switch(
     switch_id sw_addr,
-    routable::path& path) override;
+    packet* pkt) override;
 
   /**
    * @brief choose_up_path

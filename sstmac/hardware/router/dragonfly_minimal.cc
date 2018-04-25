@@ -42,7 +42,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/router/minimal_routing.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/dragonfly.h>
@@ -58,6 +57,12 @@ namespace hw {
 
 struct dragonfly_minimal_router : public minimal_router {
   FactoryRegister("dragonfly_minimal", router, dragonfly_minimal_router)
+
+  struct header : public packet::header {
+    uint8_t num_group_hops : 2;
+    uint8_t num_hops : 4;
+  };
+
  public:
   dragonfly_minimal_router(sprockit::sim_parameters* params, topology* top,
                            network_switch* netsw) :
@@ -105,9 +110,10 @@ struct dragonfly_minimal_router : public minimal_router {
     return "dragonfly minimal router";
   }
 
-  void route_to_switch(switch_id ej_addr, routable::path& path) override
+  void route_to_switch(switch_id ej_addr, packet* pkt) override
   {
-    auto hdr = path.header<dragonfly::routing_header>();
+    packet::path& path = pkt->current_path();
+    auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     int dstG = dfly_->computeG(ej_addr);
     if (dstG == myG_){

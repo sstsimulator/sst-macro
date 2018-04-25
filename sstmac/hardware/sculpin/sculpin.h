@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/hardware/router/routing_enum.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -67,7 +66,6 @@ namespace hw {
  */
 class sculpin_packet :
   public packet,
-  public routable,
   public sprockit::thread_safe_new<sculpin_packet>
 {
   ImplementSerializable(sculpin_packet)
@@ -87,29 +85,8 @@ class sculpin_packet :
 
   virtual ~sculpin_packet() {}
 
-  node_id toaddr() const override {
-   return routable::toaddr();
-  }
-
-  node_id fromaddr() const override {
-    return routable::fromaddr();
-  }
-
-  uint64_t flow_id() const override {
-    return flow_id_;
-  }
-
-  /**
-   @return The number of bytes in this pisces, NOT
-   the total number of bytes in the parent message.
-   See #num_bytes_total
-   */
-  uint32_t num_bytes() const {
-    return num_bytes_;
-  }
-
   int next_port() const {
-    return routable::global_outport();
+    return global_outport();
   }
 
   timestamp arrival() const {
@@ -147,8 +124,6 @@ class sculpin_packet :
   void serialize_order(serializer& ser) override;
 
  private:
-  uint64_t flow_id_;
-
   uint32_t seqnum_;
 
   timestamp arrival_;

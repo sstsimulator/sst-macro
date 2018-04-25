@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/router/fat_tree_router.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sprockit/util.h>
@@ -105,8 +104,9 @@ fat_tree_router::~fat_tree_router()
 void
 fat_tree_router::route_to_switch(
   switch_id ej_addr,
-  routable::path& path)
+  packet* pkt)
 {
+  packet::path& path = pkt->current_path();
   int pathDir;
   int ej_id = ej_addr;
   int myAddr = my_addr_;

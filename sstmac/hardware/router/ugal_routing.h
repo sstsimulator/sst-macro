@@ -65,22 +65,22 @@ class ugal_router : public router
   static const char final_stage = 2;
   static const char minimal_only_stage = 3;
 
-  struct header {
-    char stage_number : 4;
+  struct header : public packet::header {
+    uint8_t stage_number : 3;
   };
 
   ugal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
  protected:
-  bool route_common(routable* rtbl);
+  bool route_common(packet* pkt);
 
-  void route_ugal_common(routable* rtbl, switch_id ej_addr);
+  void route_ugal_common(packet* pkt, switch_id ej_addr);
 
   bool switch_paths(
     switch_id orig_dst,
     switch_id inter,
-    routable::path& orig_path,
-    routable::path& new_path);
+    packet::path& orig_path,
+    packet::path& new_path);
 
   int val_threshold_;
   int val_preference_factor_;

@@ -66,7 +66,7 @@ class minimal_router :
   void route(packet *pkt) override;
 
  protected:
-  virtual void route_to_switch(switch_id sid, routable::path &path) = 0;
+  virtual void route_to_switch(switch_id sid, packet* pkt) = 0;
 
 };
 

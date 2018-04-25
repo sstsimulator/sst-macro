@@ -48,10 +48,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/rng.h>
 #include <sstmac/hardware/topology/coordinates.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/common/connection.h>
+#include <sstmac/hardware/common/packet.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
@@ -280,7 +280,7 @@ class topology : public sprockit::printable
   virtual void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const = 0;
+    packet::path& path) const = 0;
 
   virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
 
@@ -328,8 +328,8 @@ class topology : public sprockit::printable
   virtual void minimal_routes_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& current_path,
-    routable::path_set& paths) const {
+    packet::path& current_path,
+    packet::path_set& paths) const {
     paths.resize(1);
     minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
   }
@@ -406,13 +406,6 @@ class topology : public sprockit::printable
   virtual std::string switch_label(switch_id sid) const;
 
   virtual std::string node_label(node_id nid) const;
-
-  /**
-     Informs topology that a new routing stage has begun, allowing any
-     topology specific state to be modified.
-     @param rinfo Routing info object
-  */
-  virtual void new_routing_stage(routable* rtbl) { }
 
   static topology* static_topology(sprockit::sim_parameters* params);
 

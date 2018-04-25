@@ -198,9 +198,9 @@ tiled_cascade::connected_outports(switch_id src, std::vector<sstmac::hw::topolog
 //---------------------------------------------------------------------
 
 void
-tiled_cascade::get_redundant_paths(routable::path& current,
-                                     routable::path_set& paths,
-                                     switch_id addr) const
+tiled_cascade::get_redundant_paths(packet::path& current,
+                                   packet::path_set& paths,
+                                   switch_id addr) const
 {
   int geomid = current.geometric_id;
   int dim;

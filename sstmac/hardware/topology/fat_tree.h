@@ -157,7 +157,7 @@ class fat_tree :
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const override;
+    packet::path& path) const override;
 
   int minimal_distance(
     switch_id src,
@@ -232,7 +232,7 @@ class tapered_fat_tree : public abstract_fat_tree
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const override;
+    packet::path& path) const override;
 
   int level(switch_id sid) const;
 
