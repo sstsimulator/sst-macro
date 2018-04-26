@@ -34,6 +34,41 @@ The user's manual therefore covers building and running the core set of SST/macr
 The developer's manual covers what you need to know to add new features.
 The SST design is such that external components are built into shared object \inlinecode{.so} files.
 
+\section{Thousand Foot View of Discrete Event Simulation}
+Ignoring the complexities of parallel discrete event simulation (PDES), 
+discrete even simulation works with a very simple set of abstractions.
+Implementing a discrete event simulation requires components, links, and events (Figure~\ref{fig:desCore}).
+Components (or agents) perform operations. Components create, send, and receive events - and that's basically all they do. 
+In one example, each component could represent a compute node in the system.
+Links between components could represent actual, physical links in the network.
+The events sent on links are MPI messages.
+
+Time only advances in the simulator \emph{between} events.
+It is important to distinguish virtual time (the time being estimated by simulation) from wall clock time (the real time the simulator is running).
+Links have an associated latency (delay) and are scheduled by the simulation core to arrive at components at a specific time.
+This list of event arrivals at components creates an event queue (more precisely event heap) that is sorted by soonest event time.
+As events are popped off the heap, the simulation clock is updated.
+The component handles the incoming event, which could cause the component to create and send new events to other components.
+The simulation ends when all components quiesce, with no more events active in the system.
+
+Components never interact directly (i.e. a component can never have a shared-memory pointer to another component).
+Components can only interact with links.
+All information transmitted between components must be encapsulated as an abstract event.
+In parallel discrete event simulation, the challenge is both delivering events through distributed memory and maintaining a consistent virtual clock.
+Without proper synchronization, one component could have its virtual clock advance too quickly.
+It then might receive events from other components with timestamps in the past,
+creating an event order violation.
+As long as developers obey the component, link, and event abstractions, all of these complexities are handled automatically by the simulation core.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.3\textwidth]{figures/desCore}
+
+\includegraphics[width=0.5\textwidth]{figures/pdesCore}
+\caption{Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.}
+\label{fig:desCore}
+\end{figure}
+
 \section{Use of C++}
 SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event simulator designed for macroscale (system-level) experiments in HPC. 
 SST/macro is an object-oriented C++ code that makes heavy use of dynamic types and polymorphism.
@@ -44,12 +79,19 @@ While C++ allows a great deal of flexibility in syntax and code structure, we ar
 Boost is no longer required or even used.
 Some C++11 features like \inlinecode{unordered_map} and \inlinecode{shared_ptr} are used heavily throughout the code.
 
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{figures/EventHandler}
+\caption{Structure of the simulation connecting components with links and event handlers.}
+\label{fig:abstractHandlers}
+\end{figure}
+
 \section{Polymorphism and Modularity}\label{sec:polymorphism}
-The simulation progresses with different modules (classes) exchanging events or messages.
+The simulation progresses with different modules (classes) exchanging events.
 In general, when module 1 sends a message to module 2, module 1 only sees an abstract interface for module 2.
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
 Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences.
-The ``workhorse'' of SST/macro is the base \inlinecode{event} and \inlinecode{message} classes.
+The ``workhorse'' of SST/macro is the base \inlinecode{event}, \inlinecode{event_component}, and \inlinecode{event_handler} classes.
 To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 \begin{CppCode}
@@ -58,7 +100,16 @@ void handle(event* ev){
 }
 \end{CppCode}
 The prototype therefore accepts \emph{any} event type. 
-The class \inlinecode{message} is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
+The interaction of these types is illustrated in Figure~\ref{fig:abstractHandlers}).
+Event handlers are created as dispatch wrappers to member functions of an en \inlinecode{event_component}.
+There are special helper functions and template classes in SST/macro designed to simplify this process.
+A \inlinecode{link} is created connecting two components.
+An \inlinecode{event_handler} is created that dispatches to the \inlinecode{Listener::recv} member function.
+When events are pushed onto the link by \inlinecode{Pinger},
+the simulation core computes the correct link delay.
+After advancing virtual simulation time,
+the simulation core invokes the event handler, which delivers the event to the \inlinecode{Listener}.
+
 Misusing types in SST/macro is \emph{not} a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
@@ -68,7 +119,7 @@ In many cases, though, this cannot be avoided.
 The other consequence is that a lot of dynamic casts appear in the code.
 An abstract \inlinecode{event} type is received, but must be converted to the specific message type desired.
 NOTE: While \emph{some} dynamic casts are sometimes very expensive in C++ (and are implementation-dependent),
-most SST/macro dynamic casts are simple equality tests involving virtual table pointers.
+most SST/macro dynamic casts are simple equality tests involving virtual table pointers and relatively low overhead.
 
 While, SST/macro strives to be as modular as possible, allowing arbitrary memory, NIC, interconnect components,
 in many cases certain physical models are simply not compatible.
