@@ -133,7 +133,7 @@ class dragonfly_par_router : public par_router {
   }
 
   int num_vc() const override {
-    return 5;
+    return 7;
   }
 
  private:

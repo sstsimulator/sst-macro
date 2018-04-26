@@ -96,7 +96,7 @@ class pisces_bandwidth_arbitrator
    */
   virtual void partition(noise_model* noise, int num_intervals);
 
-  virtual int bytes_sending(timestamp now) const = 0;
+  virtual uint32_t bytes_sending(timestamp now) const = 0;
 
  protected:
   pisces_bandwidth_arbitrator(sprockit::sim_parameters* params);
@@ -127,7 +127,7 @@ class pisces_null_arbitrator :
 
   timestamp head_tail_delay(pisces_payload *pkt) override;
 
-  int bytes_sending(timestamp now) const override;
+  uint32_t bytes_sending(timestamp now) const override;
 
 };
 
@@ -157,7 +157,7 @@ class pisces_simple_arbitrator :
     return timestamp();
   }
 
-  int bytes_sending(timestamp now) const override;
+  uint32_t bytes_sending(timestamp now) const override;
 
  protected:
   timestamp next_free_;
@@ -187,7 +187,7 @@ class pisces_cut_through_arbitrator :
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
-  int bytes_sending(timestamp now) const override;
+  uint32_t bytes_sending(timestamp now) const override;
 
   std::string to_string() const override {
     return "cut through arbitrator";

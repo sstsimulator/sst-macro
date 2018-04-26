@@ -135,7 +135,7 @@ pisces_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
   st.pkt->set_max_incoming_bw(out_bw_);
 }
 
-int
+uint32_t
 pisces_simple_arbitrator::bytes_sending(timestamp now) const
 {
   double send_delay = next_free_ > now ? (next_free_ - now).sec() : 0;
@@ -168,7 +168,7 @@ pisces_null_arbitrator::arbitrate(pkt_arbitration_t &st)
   st.pkt->set_max_incoming_bw(out_bw_);
 }
 
-int
+uint32_t
 pisces_null_arbitrator::bytes_sending(timestamp now) const
 {
   return 0;
@@ -215,14 +215,14 @@ pisces_cut_through_arbitrator::~pisces_cut_through_arbitrator()
   }
 }
 
-int
+uint32_t
 pisces_cut_through_arbitrator::bytes_sending(timestamp now) const
 {
-  double next_free =
+  ticks_t next_free =
     head_->start; //just assume that at head_->start link is fully available
-  double now_ = now.sec();
-  double send_delay = next_free > now_ ? (next_free - now_) : 0;
-  int bytes_sending = send_delay * out_bw_;
+  ticks_t now_ = now.ticks();
+  timestamp send_delay(next_free > now_ ? (next_free - now_) : 0, timestamp::exact);
+  int bytes_sending = send_delay.sec() * out_bw_;
   return bytes_sending;
 }
 

@@ -324,8 +324,8 @@ class dragonfly_ugalG_router : public ugal_router {
 
 class dragonfly_ugal_router : public ugal_router {
   struct header : public ugal_router::header {
-     char num_hops : 3;
-     char num_group_hops : 2;
+     uint8_t num_hops : 3;
+     uint8_t num_group_hops : 2;
   };
  public:
   FactoryRegister("dragonfly_ugal",
