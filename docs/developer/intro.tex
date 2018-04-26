@@ -29,10 +29,11 @@ The developer's manual broadly covers the two main aspects of creating new compo
 
 \section{What To Expect In The Developer's Manual}
 The developer's manual is mainly designed for those who wish to extend the simulator or understand its internals.
-This user's manual, in contrast, is mainly designed for those who wish to perform experiments with \emph{new} applications using \emph{existing} hardware models.
+The user's manual, in contrast, is mainly designed for those who wish to perform experiments with \emph{new} applications using \emph{existing} hardware models.
 The user's manual therefore covers building and running the core set of SST/macro features.
 The developer's manual covers what you need to know to add new features.
-The SST design is such that external components are built into shared object \inlinecode{.so} files.
+The SST design is such that external components are built into shared object \inlinecode{.so} files,
+loading them into the simulator core without having to recompile the core itself.
 
 \section{Thousand Foot View of Discrete Event Simulation}
 Ignoring the complexities of parallel discrete event simulation (PDES), 
