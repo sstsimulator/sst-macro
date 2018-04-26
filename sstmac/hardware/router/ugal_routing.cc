@@ -138,6 +138,7 @@ ugal_router::switch_paths(
   return valiant_weight < orig_weight;
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
 class dragonfly_ugalG_router : public ugal_router {
 
   static const char initial_stage = 0;
@@ -321,6 +322,7 @@ class dragonfly_ugalG_router : public ugal_router {
   interconnect* ic_;
 
 };
+#endif
 
 class dragonfly_ugal_router : public ugal_router {
   struct header : public ugal_router::header {

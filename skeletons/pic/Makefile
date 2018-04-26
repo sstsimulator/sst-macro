@@ -24,6 +24,10 @@ all: $(TARGET)
 $(TARGET): $(OBJ) 
 	SSTMAC_SKELETONIZE=1 $(CXX) -o $@ $+ $(LDFLAGS) $(LIBS)  $(CXXFLAGS)
 
+libpic.so: $(OBJ)
+	@echo "Linking SST core .so"
+	$(CXX) $(OBJ) $(LDFLAGS) -lm -o $@ 
+
 %.o: %.cc pic.h
 	SSTMAC_SKELETONIZE=1 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
