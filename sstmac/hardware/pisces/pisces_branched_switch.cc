@@ -115,19 +115,19 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
 
   sprockit::sim_parameters* input_params =
       params->get_namespace("input");
-  input_params->add_param_override("num_vc", router_->max_num_vc());
+  input_params->add_param_override("num_vc", router_->num_vc());
 
   sprockit::sim_parameters* xbar_params =
       params->get_namespace("xbar");
-  xbar_params->add_param_override("num_vc", router_->max_num_vc());
+  xbar_params->add_param_override("num_vc", router_->num_vc());
 
   sprockit::sim_parameters* output_params =
       params->get_namespace("output");
-  output_params->add_param_override("num_vc", router_->max_num_vc());
+  output_params->add_param_override("num_vc", router_->num_vc());
 
   sprockit::sim_parameters* link_params =
       params->get_namespace("link");
-  link_params->add_param_override("num_vc", router_->max_num_vc());
+  link_params->add_param_override("num_vc", router_->num_vc());
 
   // construct the elements
   xbar_ = new pisces_crossbar(xbar_params, this);
@@ -176,7 +176,7 @@ pisces_branched_switch::connect_output(
   int dst_inport,
   event_link* link)
 {
-  params->add_param_override("num_vc", router_->max_num_vc());
+  params->add_param_override("num_vc", router_->num_vc());
   pisces_demuxer* demux = output_demuxers_[src_outport/n_local_ports_];
   demux->set_output(params, src_outport % n_local_ports_, dst_inport, link);
 }

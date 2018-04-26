@@ -243,6 +243,17 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
       params->add_param_override("event_manager", "multithread");
     }
   }
+
+  std::string top_name = top_params->get_param("name");
+  sprockit::sim_parameters* sw_params = params->get_optional_namespace("switch");
+  sprockit::sim_parameters* rtr_params = sw_params->get_optional_namespace("router");
+  std::string rtr_name = rtr_params->get_optional_param("name","");
+  std::string new_rtr_name = top_name + "_" + rtr_name;
+  if (rtr_name == "minimal")      rtr_params->add_param_override("name", new_rtr_name);
+  else if (rtr_name == "valiant") rtr_params->add_param_override("name", new_rtr_name);
+  else if (rtr_name == "ugal") rtr_params->add_param_override("name", new_rtr_name);
+  else if (rtr_name == "ugalG") rtr_params->add_param_override("name", new_rtr_name);
+  else if (rtr_name == "par") rtr_params->add_param_override("name", new_rtr_name);
 }
 
 }

@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_NETWORK_SWTICHES_ROUTING_FATTREEROUTER_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_SWTICHES_ROUTING_FATTREEROUTER_H_INCLUDED
 
-#include <sstmac/hardware/router/router.h>
+#include <sstmac/hardware/router/minimal_routing.h>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/common/rng.h>
 
@@ -58,9 +58,9 @@ namespace hw {
  * a fat tree topology.
  */
 class fat_tree_router :
-  public router
+  public minimal_router
 {
-  FactoryRegister("fattree | ftree", router, fat_tree_router)
+  FactoryRegister("fat_tree", router, fat_tree_router)
  public:
   virtual ~fat_tree_router();
 
@@ -68,6 +68,10 @@ class fat_tree_router :
 
   std::string to_string() const override {
     return "fat tree router";
+  }
+
+  int num_vc() const override {
+    return 1;
   }
 
  private:
@@ -79,7 +83,7 @@ class fat_tree_router :
 
   void route_to_switch(
     switch_id sw_addr,
-    routable::path& path) override;
+    packet* pkt) override;
 
   /**
    * @brief choose_up_path

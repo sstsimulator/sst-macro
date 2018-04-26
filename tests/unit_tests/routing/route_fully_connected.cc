@@ -57,6 +57,6 @@ void test_fully_connected(UnitTest& unit)
   params["geometry"] = "10";
   params["concentration"] = "3";
   params["name"] = "fully_connected";
-  params["router.name"] = "minimal";
+  params["router.name"] = "fully_connected_minimal";
   test_topology(params);
 }

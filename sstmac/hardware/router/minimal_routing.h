@@ -57,20 +57,16 @@ namespace hw {
 class minimal_router :
   public router
 {
-  FactoryRegister("minimal", router, minimal_router,
-              "a routing algorithm for minimal routing on regular topologies")
  public:
   minimal_router(sprockit::sim_parameters* params, topology* top,
-                 network_switch* netsw, routing::algorithm_t algo = routing::minimal);
+                 network_switch* netsw);
 
   virtual ~minimal_router() {}
 
-  std::string to_string() const override {
-    return "minimal router";
-  }
+  void route(packet *pkt) override;
 
  protected:
-  void route_to_switch(switch_id sid, routable::path &path) override;
+  virtual void route_to_switch(switch_id sid, packet* pkt) = 0;
 
 };
 

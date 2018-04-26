@@ -47,8 +47,6 @@ nobase_library_include_HEADERS = \
   common/param_expander.h \
   common/recv_cq.h \
   common/unique_id.h \
-  pisces/packet_allocator.h \
-  pisces/packet_allocator_fwd.h \
   pisces/pisces.h \
   pisces/pisces_fwd.h \
   pisces/pisces_stats.h \
@@ -95,12 +93,11 @@ nobase_library_include_HEADERS = \
   topology/traffic/traffic.h \
   router/router.h \
   router/router_fwd.h \
-  router/routable.h \
-  router/routable_fwd.h \
   router/routing_enum.h \
   router/minimal_routing.h \
   router/multipath_routing.h \
   router/ugal_routing.h \
+  router/par_routing.h \
   router/valiant_routing.h \
   router/fat_tree_router.h 
 
@@ -124,7 +121,6 @@ libsstmac_hw_la_SOURCES =  \
   node/node.cc \
   node/simple_node.cc \
   pisces/pisces.cc \
-  pisces/packet_allocator.cc \
   pisces/pisces_stats.cc \
   pisces/pisces_arbitrator.cc \
   pisces/pisces_buffer.cc \
@@ -156,12 +152,11 @@ libsstmac_hw_la_SOURCES =  \
   topology/tiled_cascade.cc \
   topology/traffic/traffic.cc \
   router/router.cc \
-  router/routable.cc \
   router/dragonfly_minimal.cc \
   router/fat_tree_router.cc \
   router/minimal_routing.cc \
-  router/multipath_routing.cc \
   router/ugal_routing.cc \
+  router/par_routing.cc \
   router/valiant_routing.cc \
   topology/star.cc \
   topology/structured_topology.cc \

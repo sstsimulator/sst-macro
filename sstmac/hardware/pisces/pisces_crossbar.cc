@@ -224,13 +224,12 @@ pisces_NtoM_queue::output_name(pisces_payload* pkt)
 void
 pisces_NtoM_queue::send_payload(pisces_payload* pkt)
 {
-  auto rpkt = static_cast<pisces_routable_packet*>(pkt);
   pisces_debug(
         "On %s:%p local_port:%d vc:%d sending {%s}",
         to_string().c_str(), this,
-        rpkt->local_outport(), pkt->next_vc(),
+        pkt->local_outport(), pkt->next_vc(),
         pkt->to_string().c_str());
-  send(arb_, pkt, inputs_[pkt->inport()], outputs_[rpkt->local_outport()]);
+  send(arb_, pkt, inputs_[pkt->inport()], outputs_[pkt->local_outport()]);
 }
 
 void
@@ -267,10 +266,10 @@ pisces_NtoM_queue::handle_credit(event* ev)
 void
 pisces_NtoM_queue::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_routable_packet*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
 
-  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->routable::vc();
+  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
   int glob_port = pkt->global_outport();
   int loc_port = local_outport(glob_port);
   pkt->set_local_outport(loc_port);

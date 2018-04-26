@@ -187,8 +187,7 @@ pisces_network_buffer::handle_payload(event* ev)
   if (num_credits >= pkt->num_bytes()) {
     num_credits -= pkt->num_bytes();
     send(arb_, pkt, input_, output_);
-  }
-  else {
+  } else {
     queues_[dst_vc].push_back(pkt);
   }
 }
@@ -313,16 +312,16 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
 int
 pisces_network_buffer::queue_length() const
 {
-  long bytes_sending = arb_->bytes_sending(now());
-  long total_bytes_pending = bytes_sending + bytes_delayed_;
-  long queue_length = total_bytes_pending / packet_size_;
+  uint32_t bytes_sending = arb_->bytes_sending(now());
+  uint32_t total_bytes_pending = bytes_sending + bytes_delayed_;
+  int queue_length = total_bytes_pending / packet_size_;
   debug_printf(sprockit::dbg::pisces | sprockit::dbg::pisces_queue,
-    "On %s, %d bytes delayed, %d bytes sending, %d total pending, %d packets in queue",
+    "On %s, %u bytes delayed, %u bytes sending, %d total pending, %d packets in queue",
      to_string().c_str(),
      bytes_delayed_,
      bytes_sending,
      total_bytes_pending, queue_length);
-  return std::max(0L, total_bytes_pending);
+  return std::max(0, queue_length);
 }
 
 pisces_network_buffer::~pisces_network_buffer()
@@ -399,7 +398,7 @@ pisces_injection_buffer::handle_credit(event* ev)
 void
 pisces_injection_buffer::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_routable_packet*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_global_outport(0);
   pkt->set_local_outport(0);
   pkt->current_path().vc = 0; //start off on vc 0

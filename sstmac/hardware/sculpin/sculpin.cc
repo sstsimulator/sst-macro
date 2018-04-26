@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <inttypes.h>
 
 #include <sstmac/hardware/sculpin/sculpin.h>
-#include <sstmac/hardware/router/routable.h>
 
 RegisterDebugSlot(sculpin, "print all the details of the sculpin model")
 
@@ -64,9 +63,7 @@ sculpin_packet::sculpin_packet(
   node_id toaddr,
   node_id fromaddr) :
   priority_(0),
-  flow_id_(flow_id),
-  packet(msg, num_bytes, is_tail),
-  routable(toaddr, fromaddr)
+  packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
 {
 }
 
@@ -74,8 +71,8 @@ std::string
 sculpin_packet::to_string() const
 {
   return sprockit::printf("pkt bytes=%" PRIu32 " flow %" PRIu64 ": %s",
-                          num_bytes_, flow_id_, orig_
-                          ? sprockit::to_string(orig_).c_str()
+                          num_bytes(), flow_id(), orig()
+                          ? sprockit::to_string(orig()).c_str()
                           : "no payload");
 
 }
@@ -85,10 +82,8 @@ sculpin_packet::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
   packet::serialize_order(ser);
-  routable::serialize_order(ser);
   ser & arrival_;
   ser & time_to_send_;
-  ser & flow_id_;
   ser & priority_;
 }
 

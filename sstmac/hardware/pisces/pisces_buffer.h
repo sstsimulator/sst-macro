@@ -78,7 +78,7 @@ class pisces_buffer :
  protected:
   pisces_input input_;
   pisces_output output_;
-  long bytes_delayed_;
+  uint32_t bytes_delayed_;
 
   static const int my_outport = 0;
   static const int my_inport = 0;

@@ -130,8 +130,8 @@ class tiled_cascade : public cascade, public multipath_topology
 
   virtual void configure_geometric_paths(std::vector<int> &redundancies) override;
 
-  virtual void get_redundant_paths(routable::path& inPath,
-                      routable::path_set& outPaths,
+  virtual void get_redundant_paths(packet::path& inPath,
+                      packet::path_set& outPaths,
                       switch_id addr) const  override;
 
  private:

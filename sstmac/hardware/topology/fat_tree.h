@@ -98,7 +98,7 @@ class abstract_fat_tree :
 class fat_tree :
   public abstract_fat_tree
 {
-  FactoryRegister("fattree | fat_tree | ftree", topology, fat_tree,
+  FactoryRegister("fat_tree", topology, fat_tree,
     "Fat tree topology with L levels and radix K.  This fat tree is actually implemented with"
     " commodity switches. Each level of the fat tree has the same number of switches."
     "This is equivalent to archetypal fat tree with fatter links being replaced by MORE links")
@@ -154,12 +154,10 @@ class fat_tree :
     return numleafswitches_ * l_;
   }
 
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const override;
+    packet::path& path) const override;
 
   int minimal_distance(
     switch_id src,
@@ -186,12 +184,12 @@ class fat_tree :
 
 class tapered_fat_tree : public abstract_fat_tree
 {
-  FactoryRegister("tapered_fat_tree | simple_fattree", topology, tapered_fat_tree)
+  FactoryRegister("tapered_fat_tree", topology, tapered_fat_tree)
  public:
   tapered_fat_tree(sprockit::sim_parameters* params);
 
   virtual std::string to_string() const override {
-    return "simple fat tree topology";
+    return "tapered fat tree topology";
   }
 
   virtual ~tapered_fat_tree() {}
@@ -231,13 +229,10 @@ class tapered_fat_tree : public abstract_fat_tree
     int noccupied) const override;
 
   int minimal_distance(switch_id src, switch_id dest) const override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const override;
+    packet::path& path) const override;
 
   int level(switch_id sid) const;
 

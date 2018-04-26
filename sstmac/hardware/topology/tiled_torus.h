@@ -57,8 +57,8 @@ class tiled_torus : public torus, public multipath_topology
  public:
   tiled_torus(sprockit::sim_parameters *params);
 
-  void get_redundant_paths(routable::path& inPath,
-                      routable::path_set& outPaths,
+  void get_redundant_paths(packet::path& inPath,
+                      packet::path_set& outPaths,
                       switch_id addr) const override;
 
   void configure_geometric_paths(std::vector<int>& redundancies) override;

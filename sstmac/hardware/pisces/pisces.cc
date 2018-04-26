@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/pisces/pisces.h>
-#include <sstmac/hardware/router/routable.h>
 
 RegisterDebugSlot(pisces,
     "print all the details of the pisces model including crossbar arbitration"
@@ -62,9 +61,12 @@ const double pisces_payload::uninitialized_bw = -1;
 
 pisces_payload::pisces_payload(
   serializable* msg,
-  int num_bytes,
-  bool is_tail) :
-  packet(msg, num_bytes, is_tail),
+  uint32_t num_bytes,
+  uint64_t flow_id,
+  bool is_tail,
+  node_id fromaddr,
+  node_id toaddr) :
+  packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr),
   bw_(uninitialized_bw),
   max_in_bw_(1.0)
 {
@@ -79,39 +81,18 @@ pisces_payload::serialize_order(serializer& ser)
   ser & bw_;
   ser & max_in_bw_;
   ser & arrival_;
-  ser & vc_;
-}
-
-void
-pisces_routable_packet::serialize_order(serializer& ser)
-{
-  pisces_payload::serialize_order(ser);
-  routable::serialize_order(ser);
-}
-
-void
-pisces_default_packet::serialize_order(serializer& ser)
-{
-  pisces_routable_packet::serialize_order(ser);
-  ser & flow_id_;
-}
-
-void
-pisces_delay_stats_packet::serialize_order(serializer& ser)
-{
-  pisces_default_packet::serialize_order(ser);
-  ser & congestion_delay_;
+  ser & current_vc_;
 }
 
 std::string
-pisces_default_packet::to_string() const
+pisces_payload::to_string() const
 {
   return sprockit::printf("flow %16lu%s, %d bytes bw=%8.4e %d->%d %s",
                    uint64_t(flow_id()),
-                   is_tail_ ? " tail" : "",
-                   num_bytes_, bw_,
+                   is_tail() ? " tail" : "",
+                   byte_length(), bw_,
                    int(fromaddr()), int(toaddr()), bw_,
-                   orig_ ? "with payload" : "no payload");
+                   orig() ? "with payload" : "no payload");
 }
 
 std::string

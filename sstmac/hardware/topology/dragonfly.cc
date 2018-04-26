@@ -103,7 +103,7 @@ dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
 }
 
 switch_id
-dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
+dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw, uint32_t seed)
 {
   long nid = current_sw;
   uint32_t attempt = 0;
@@ -112,9 +112,9 @@ dragonfly::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
   int dstA = computeA(dest_sw);
   int dstG = computeG(dest_sw);
   while (current_sw == nid) {
-    dstA = random_number(a_, attempt);
+    dstA = random_number(a_, attempt, seed);
     if (dstG != srcG){
-      dstG = random_number(g_, attempt);
+      dstG = random_number(g_, attempt, seed);
     } 
     nid = get_uid(dstA, dstG);
     ++attempt;
@@ -126,10 +126,8 @@ void
 dragonfly::minimal_route_to_switch(
     switch_id src,
     switch_id dst,
-    routable::path &path) const
+    packet::path &path) const
 {
-  path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
-
   //see if intra-group
   int srcG = computeG(src);
   int dstG = computeG(dst);
@@ -152,11 +150,12 @@ dragonfly::minimal_route_to_switch(
   }
 
   //inter-group and we need local hop to get there
-  group_wiring_->connected_to_group(srcG, dstG, connected);
-  int srcRotater = srcA % connected.size();
+  std::vector<std::pair<int,int>> groupConnections;
+  group_wiring_->connected_to_group(srcG, dstG, groupConnections);
+  int srcRotater = srcA % groupConnections.size();
 
-  path.set_outport(connected[srcRotater]);
-  path.set_metadata_bit(routable::crossed_timeline);
+  auto& pair = groupConnections[srcRotater];
+  path.set_outport(pair.first);
 }
 
 int
@@ -250,21 +249,6 @@ dragonfly::configure_individual_port_params(switch_id src, sprockit::sim_paramet
   setup_port_params(switch_params, red_[1], a_, h_);
 }
 
-void
-dragonfly::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
-{
-  m[routing::minimal] = 2;
-  m[routing::minimal_adaptive] = 2;
-  m[routing::valiant] = 6;
-  m[routing::ugal] = 6;
-}
-
-void
-dragonfly::new_routing_stage(routable* rtbl)
-{
-  rtbl->current_path().unset_metadata_bit(routable::crossed_timeline);
-}
-
 inter_group_wiring::inter_group_wiring(sprockit::sim_parameters *params, dragonfly* top) :
   a_(top->a()), g_(top->g()), h_(top->h())
 {
@@ -325,10 +309,11 @@ class circulant_group_wiring : public inter_group_wiring
    * @param srcG
    * @param dstG
    * @param connected [in-out] The list of all intra-group routers in range (0 ... a-1)
-   *                  that have connections to a router in group dstG
+   *                  that have connections to a router in group dstG. The second entry in the pair
+   *                  is the "port offset", a unique index for the group link
    * @return The number of routers in group srcG with connections to dstG
    */
-  void connected_to_group(int srcG, int dstG, std::vector<int>& connected) const override {
+  void connected_to_group(int srcG, int dstG, std::vector<std::pair<int,int>>& connected) const override {
     connected.clear();
     std::vector<int> tmp;
     for (int a=0; a < a_; ++a){
@@ -336,7 +321,7 @@ class circulant_group_wiring : public inter_group_wiring
       for (int c=0; c < tmp.size(); ++c){
         int g = tmp[c] / a_;
         if (dstG == g){
-          connected.push_back(a);
+          connected.emplace_back(a,c);
           break;
         }
       }

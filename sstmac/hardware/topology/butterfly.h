@@ -95,8 +95,6 @@ class abstract_butterfly :
     return nfly_ + 1;
   }
 
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const;
-
  protected:
   abstract_butterfly(sprockit::sim_parameters* params,
                      InitMaxPortsIntra i1,
@@ -142,7 +140,7 @@ class butterfly :
 
   void minimal_route_to_switch(switch_id current_sw_addr,
                           switch_id dest_sw_addr,
-                          routable::path &path) const override;
+                          packet::path &path) const override;
 
   bool uniform_switches() const override {
     return true;

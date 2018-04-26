@@ -28,7 +28,7 @@ This case is shown in Figure \ref{fig:topologies:abstractfattree} where there ar
 Higher radix fat trees can be specified, e.g.
 
 \begin{ViFile}
-topology.name = fattree
+topology.name = fat_tree
 topology.geometry = 3 4
 \end{ViFile}
 which would have $4^3 = 64$ compute nodes.
@@ -42,7 +42,7 @@ which would have $4^3 = 64$ compute nodes.
 
 In reality, it is not practical to implement a fat tree exactly as shown in Figure \ref{fig:topologies:abstractfattree}.
 One would need to buy many non-standard, high capacity switches for the higher levels in the fat-tree.
-The simple model is available by specifying \inlineshell{simple_fattree} as the topology, and SST will construct special large switches at higher levels.
+The simple model is available by specifying \inlineshell{tapered_fat_tree} as the topology, and SST will construct special large switches at higher levels.
 The best practical implementation employs all uniform, commodity switches (Figure \ref{fig:topologies:fattreeids}).
 The fat tree is ``virtual'' with several commodity switches grouped together to simulate a heavy-weight, high capacity switch
 at higher levels of the fat tree.

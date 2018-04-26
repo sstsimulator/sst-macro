@@ -52,8 +52,8 @@ namespace hw {
 
 void
 butterfly::minimal_route_to_switch(switch_id src,
-                                    switch_id dst,
-                                    routable::path &path) const
+                                   switch_id dst,
+                                   packet::path &path) const
 {
   int col = src / nswitches_per_col_;
   long group_size = nswitches_per_col_;
@@ -89,15 +89,6 @@ abstract_butterfly::override_params(sprockit::sim_parameters* params)
   }
   nswitches_per_col_ = pow(kary_, nfly_ - 1);
   return params;
-}
-
-void
-abstract_butterfly::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 2;
-  m[routing::ugal] = 3;
 }
 
 butterfly::butterfly(sprockit::sim_parameters* params) :

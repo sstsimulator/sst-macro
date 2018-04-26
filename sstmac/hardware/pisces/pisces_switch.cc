@@ -123,7 +123,7 @@ pisces_switch::pisces_switch(
   xbar_(nullptr)
 {
   sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
-  xbar_params->add_param_override("num_vc", router_->max_num_vc());
+  xbar_params->add_param_override("num_vc", router_->num_vc());
   xbar_ = new pisces_crossbar(xbar_params, this);
   xbar_->set_stat_collector(xbar_stats_);
   xbar_->configure_outports(top_->max_num_ports());
@@ -156,7 +156,7 @@ pisces_switch::output_buffer(sprockit::sim_parameters* params,
     out_buffers_.resize(top_->max_num_ports());
   }
   if (!out_buffers_[src_outport]){
-    params->add_param_override("num_vc", router_->max_num_vc());
+    params->add_param_override("num_vc", router_->num_vc());
     pisces_network_buffer* out_buffer = new pisces_network_buffer(params, this);
 
     out_buffer->set_stat_collector(buf_stats_);

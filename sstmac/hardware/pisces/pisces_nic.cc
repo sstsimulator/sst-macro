@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/operating_system.h>
@@ -303,13 +302,12 @@ void
 pisces_netlink::handle_payload(event* ev)
 {
   pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  routable* rtbl = payload->interface<routable>();
   debug_printf(sprockit::dbg::pisces,
        "netlink %d:%p handling payload %s",
         int(id_), this, payload->to_string().c_str());
   node_id toaddr = payload->toaddr();
   netlink_id dst_netid(toaddr / conc_);
-  routable::path& p = rtbl->current_path();
+  packet::path& p = payload->current_path();
   if (dst_netid == id_){
     //stays local - goes to a node
     int node_offset = toaddr % conc_;

@@ -97,12 +97,10 @@ class star : public structured_topology
   void connected_outports(switch_id src,
        std::vector<connection>& conns) const override;
 
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const override;
+    packet::path& path) const override;
 
   virtual int num_switches() const override {
     return 1;

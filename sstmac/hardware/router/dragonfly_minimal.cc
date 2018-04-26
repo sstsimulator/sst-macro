@@ -42,8 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/router/routable.h>
-#include <sstmac/hardware/router/router.h>
+#include <sstmac/hardware/router/minimal_routing.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/dragonfly.h>
 #include <sprockit/util.h>
@@ -56,12 +55,18 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-struct dragonfly_minimal_router : public router {
+struct dragonfly_minimal_router : public minimal_router {
   FactoryRegister("dragonfly_minimal", router, dragonfly_minimal_router)
+
+  struct header : public packet::header {
+    uint8_t num_group_hops : 2;
+    uint8_t num_hops : 4;
+  };
+
  public:
   dragonfly_minimal_router(sprockit::sim_parameters* params, topology* top,
                            network_switch* netsw) :
-    router(params, top, netsw, routing::minimal)
+    minimal_router(params, top, netsw)
   {
     dfly_ = dynamic_cast<dragonfly*>(top);
     if (!dfly_){
@@ -75,16 +80,20 @@ struct dragonfly_minimal_router : public router {
 
     group_ports_.resize(dfly_->g());
 
-    std::vector<int> connections;
+    std::vector<std::pair<int,int>> groupConnections;
     for (int g=0; g < dfly_->g(); ++g){
       if (g == myG_) continue;
 
-      dfly_->group_wiring()->connected_to_group(myG_, g, connections);
-      int rotater = myA % connections.size();
-      group_ports_[g] = connections[rotater];
+      dfly_->group_wiring()->connected_to_group(myG_, g, groupConnections);
+      if (groupConnections.size() == 0){
+        spkt_abort_printf("Got zero group connections from %d->%d", myG_, g);
+      }
+      int rotater = myA % groupConnections.size();
+      group_ports_[g] = groupConnections[rotater].first;
     }
 
     //figure out which groups I have a direct connection to
+    std::vector<int> connections;
     dfly_->group_wiring()->connected_routers(myA, myG_, connections);
     for (int c=0; c < connections.size(); ++c){
       switch_id dst = connections[c];
@@ -93,14 +102,19 @@ struct dragonfly_minimal_router : public router {
     }
   }
 
-  std::string to_string() const {
+  int num_vc() const override {
+    return 2;
+  }
+
+  std::string to_string() const override {
     return "dragonfly minimal router";
   }
 
-  void route_to_switch(switch_id ej_addr, routable::path& path)
+  void route_to_switch(switch_id ej_addr, packet* pkt) override
   {
-    path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
-
+    packet::path& path = pkt->current_path();
+    auto hdr = pkt->get_header<header>();
+    path.vc = hdr->num_group_hops;
     int dstG = dfly_->computeG(ej_addr);
     if (dstG == myG_){
       int dstA = dfly_->computeA(ej_addr);
@@ -108,8 +122,7 @@ struct dragonfly_minimal_router : public router {
     } else {
       int dst_port = group_ports_[dstG];
       if (dst_port >= a_){
-        //direct group hop
-        path.set_metadata_bit(routable::crossed_timeline);
+        hdr->num_group_hops++;
       }
       path.set_outport(dst_port);
     }

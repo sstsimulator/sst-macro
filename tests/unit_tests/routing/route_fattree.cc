@@ -57,8 +57,8 @@ test_fattree4(UnitTest& unit)
   params["geometry"] = "3 4";
   params["branching"] = "4";
   params["num_levels"] = "3";
-  params["router.name"] = "fattree";
-  params["name"] = "fattree";
+  params["router.name"] = "fat_tree";
+  params["name"] = "fat_tree";
   test_topology(params);
 }
 

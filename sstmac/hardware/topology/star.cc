@@ -59,18 +59,9 @@ star::star(sprockit::sim_parameters* params) :
 }
 
 void
-star::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 1;
-  m[routing::ugal] = 1;
-}
-
-void
 star::minimal_route_to_switch(switch_id current_sw_addr,
-                                  switch_id dest_sw_addr,
-                                  routable::path &path) const
+                              switch_id dest_sw_addr,
+                              packet::path &path) const
 {
   spkt_throw_printf(sprockit::unimplemented_error,
       "%s does not implement minimal route to switch (always on eject switch)",
