@@ -160,7 +160,7 @@ class dragonfly_ugalG_router : public ugal_router {
               "router implementing UGAL-G routing for dragonfly")
 
   dragonfly_ugalG_router(sprockit::sim_parameters *params, topology *top, network_switch *netsw)
-    :  ugal_router(params, top, netsw)
+    :  ugal_router(params, top, netsw), ic_(nullptr)
   {
     dfly_ = safe_cast(dragonfly, top);
   }
