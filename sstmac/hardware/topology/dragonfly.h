@@ -82,7 +82,7 @@ class inter_group_wiring {
    *                  that have connections to a router in group dstG
    * @return The number of routers in group srcG with connections to dstG
    */
-  virtual void connected_to_group(int srcG, int dstG, std::vector<int>& connected) const = 0;
+  virtual void connected_to_group(int srcG, int dstG, std::vector<std::pair<int,int>>& connected) const = 0;
 
  protected:
   inter_group_wiring(sprockit::sim_parameters* params, dragonfly* top);
@@ -114,6 +114,10 @@ class dragonfly : public cartesian_topology
 
   bool uniform_network_ports() const override {
     return false;
+  }
+
+  bool is_global_port(int port) const {
+    return port >= a_;
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
@@ -193,7 +197,7 @@ class dragonfly : public cartesian_topology
   void minimal_route_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      routable::path &path) const override;
+      packet::path &path) const override;
 
   int minimal_distance(switch_id src, switch_id dst) const override;
 
@@ -202,11 +206,7 @@ class dragonfly : public cartesian_topology
   }
 
   switch_id random_intermediate_switch(switch_id current_sw,
-                             switch_id dest_sw = switch_id(-1)) override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
-  virtual void new_routing_stage(routable* rtbl) override;
+                             switch_id dest_sw, uint32_t seed) override;
 
   virtual void configure_geometric_paths(std::vector<int> &redundancies);
 

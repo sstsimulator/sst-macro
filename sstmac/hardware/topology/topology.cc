@@ -146,7 +146,7 @@ topology::static_topology(sprockit::sim_parameters* params)
 }
 
 uint32_t
-topology::random_number(uint32_t max, uint32_t attempt) const
+topology::random_number(uint32_t max, uint32_t attempt, uint32_t seed) const
 {
 #if SSTMAC_USE_MULTITHREAD
   static thread_lock lock;
@@ -154,7 +154,7 @@ topology::random_number(uint32_t max, uint32_t attempt) const
 #endif
   if (debug_seed_){
     std::vector<RNG::rngint_t> seeds(2);
-    uint32_t time = 42;
+    uint32_t time = seed;
     seeds[1] = seed_ * (time+31) << (attempt + 5);
     seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
     rng_->vec_reseed(seeds);
@@ -167,14 +167,14 @@ topology::random_number(uint32_t max, uint32_t attempt) const
 }
 
 switch_id
-topology::random_intermediate_switch(switch_id current, switch_id dest)
+topology::random_intermediate_switch(switch_id current, switch_id dest, uint32_t seed)
 {
   static thread_lock lock;
   lock.lock();  //need to be thread safe
   long nid = current;
   uint32_t attempt = 0;
   while (current == nid) {
-    nid = random_number(num_switches(), attempt); 
+    nid = random_number(num_switches(), attempt, seed);
     ++attempt;
   }
   lock.unlock();
@@ -277,15 +277,6 @@ topology::cart_topology() const
   return nullptr;
 }
 
-void
-topology::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 1;
-  m[routing::ugal] = 1;
-}
-
 std::string
 topology::node_label(node_id nid) const
 {
@@ -372,24 +363,17 @@ class merlin_topology : public topology {
     return -1;
   }
 
-  switch_id
-  netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
+  switch_id netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-  }
-
-  switch_id
-  node_to_ejection_switch(node_id addr, uint16_t& port) const override {
+  switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  switch_id
-  node_to_injection_switch(node_id addr, uint16_t& port) const override {
+  switch_id node_to_injection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
@@ -448,7 +432,7 @@ class merlin_topology : public topology {
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const override {
+    packet::path& path) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 

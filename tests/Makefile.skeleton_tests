@@ -8,7 +8,7 @@ SKELETONCASES=
 if INTEGRATED_SST_CORE
 if HAVE_CLANG
 if BUILD_SUMI_MPI
-SKELETONCASES += liblulesh libhpcg libcomd
+SKELETONCASES += liblulesh libhpcg libcomd libpic
 endif
 endif
 else
@@ -25,7 +25,7 @@ SKELETONCASES += \
 endif
 
 if BUILD_SUMI_MPI
-SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD 
+SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD pic
 endif
 endif
 
@@ -78,6 +78,14 @@ test_skeleton_liblulesh.$(CHKSUF): skeletons/lulesh2.0.3/liblulesh.so
 	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/lulesh2.0.3 \
     $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
     $(top_builddir)/bin/pysstmac skeletons/lulesh2.0.3/liblulesh.so -f skeletons/lulesh2.0.3/parameters.ini 
+
+skeletons/pic/libpic.so: skeletons
+	cd skeletons/pic; PATH=$(bindir):$$PATH $(MAKE) libpic.so
+
+test_skeleton_libpic.$(CHKSUF): skeletons/pic/libpic.so
+	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/pic \
+    $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
+    $(top_builddir)/bin/pysstmac skeletons/pic/libpic.so -f skeletons/pic/parameters.ini 
 
 skeletons/hpcg-3.0/libhpcg.so: skeletons
 	cd skeletons/hpcg-3.0; PATH=$(bindir):$$PATH $(MAKE) libhpcg.so

@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/pisces/pisces_memory_model.h>
-#include <sstmac/hardware/pisces/packet_allocator.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sstmac/software/process/operating_system.h>
@@ -94,8 +93,6 @@ pisces_memory_packetizer::pisces_memory_packetizer(
   max_single_bw_ = params->get_optional_bandwidth_param("max_single_bandwidth", max_bw_);
   latency_ = params->get_time_param("latency");
   arb_ = pisces_bandwidth_arbitrator::factory::get_value("cut_through", params);
-  pkt_allocator_ = packet_allocator::factory
-      ::get_optional_param("packet_allocator", "pisces", params);
 
   init_noise_model();
 
@@ -119,7 +116,6 @@ pisces_memory_packetizer::new_payload_handler() const
 pisces_memory_packetizer::~pisces_memory_packetizer()
 {
   if (arb_) delete arb_;
-  if (pkt_allocator_) delete pkt_allocator_;
   if (bw_noise_) delete bw_noise_;
   if (interval_noise_) delete interval_noise_;
 }
@@ -219,9 +215,9 @@ void
 pisces_memory_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message* msg)
 {
   bool is_tail = (bytes + byte_offset) == msg->byte_length();
-  pisces_payload* payload = pkt_allocator_->new_packet(bytes, msg->flow_id(), is_tail,
-                                                       msg->toaddr(), msg->fromaddr(),
-                                                       is_tail ? msg : nullptr);
+  pisces_payload* payload = new pisces_payload(is_tail ? msg : nullptr,
+                                               bytes, msg->flow_id(), is_tail,
+                                               msg->fromaddr(), msg->toaddr());
 
   payload->set_inport(vn);
   memory_message* orig = safe_cast(memory_message, msg);

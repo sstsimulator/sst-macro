@@ -109,7 +109,7 @@ cascade::configure_geometric_paths(std::vector<int> &redundancies)
 }
 
 switch_id
-cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
+cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw, uint32_t seed)
 {
   long nid = current_sw;
   uint32_t attempt = 0;
@@ -119,16 +119,14 @@ cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw)
     get_coords(current_sw, srcX, srcY, srcG);
     get_coords(dest_sw, dstX, dstY, dstG);
 
-    hisX = random_number(x_, attempt);
-    hisY = random_number(y_, attempt);
+    hisX = random_number(x_, attempt, seed);
+    hisY = random_number(y_, attempt, seed);
     if(!true_random_intermediate_ && dstG == srcG) {
       // already on the correct group
       hisG = srcG;
-
-    }
-    else {
+    } else {
       //randomly select a group
-      hisG = random_number(g_, attempt);
+      hisG = random_number(g_, attempt, seed);
       //now figure out which x,y,g fills the path
       //find_path_to_group(srcX, srcY, srcG, hisX, hisY, hisG);
     }
@@ -158,9 +156,9 @@ cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 
 bool
 cascade::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
-                                routable::path& path) const
+                              packet::path& path) const
 {
-  int ystart = random_number(y_,0);
+  int ystart = random_number(y_,0,42);
   for (int yy = 0; yy < y_; ++yy) {
     dstY = (ystart + yy) % y_;
     if (xy_connected_to_group(myX, dstY, myG, dstG)) {
@@ -173,9 +171,9 @@ cascade::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
 
 bool
 cascade::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
-                                routable::path& path) const
+                              packet::path& path) const
 {
-  int xstart = random_number(x_,0);
+  int xstart = random_number(x_,0,42);
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
     if (xy_connected_to_group(dstX, myY, myG, dstG)) {
@@ -188,15 +186,14 @@ cascade::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
 
 void
 cascade::find_path_to_group(int myX, int myY, int myG,
-                              int dstG, int& dstX, int& dstY,
-                              routable::path& path) const
+                            int dstG, int& dstX, int& dstY,
+                            packet::path& path) const
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
     path.set_outport(g_port(dstG));
     dstX = myX;
     dstY = myY;
-    path.set_metadata_bit(routable::crossed_timeline);
     return;
   }
 
@@ -227,11 +224,10 @@ cascade::find_path_to_group(int myX, int myY, int myG,
 
 void
 cascade::minimal_route_to_switch(
-    switch_id src,
-    switch_id dst,
-    routable::path &path) const
+  switch_id src,
+  switch_id dst,
+  packet::path &path) const
 {
-  path.vc = path.metadata_bit(routable::crossed_timeline) ? 1 : 0;
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
   int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
   int interX, interY;
@@ -249,6 +245,8 @@ cascade::minimal_route_to_switch(
     path.set_outport( y_port(dstY) );
     top_debug("cascade routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
+  } else {
+    spkt_abort_printf("cascade routing error from %d to %d", src, dst);
   }
 }
 
@@ -262,7 +260,7 @@ cascade::minimal_distance(switch_id src, switch_id dst) const
     if (srcX != dstX) ++dist;
     if (srcY != dstY) ++dist;
   } else {
-    routable::path path;
+    packet::path path;
     int interX;
     int interY;
     find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
@@ -356,22 +354,6 @@ cascade::configure_individual_port_params(switch_id src,
   setup_port_params(switch_params, x_dimension, x_);
   setup_port_params(switch_params, y_dimension, y_);
   setup_port_params(switch_params, g_dimension, g_);
-}
-
-void
-cascade::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
-{
-  m[routing::minimal] = 2;
-  m[routing::minimal_adaptive] = 2;
-  m[routing::valiant] = 4;
-  m[routing::ugal] = 6;
-}
-
-
-void
-cascade::new_routing_stage(routable* rtbl)
-{
-  rtbl->current_path().unset_metadata_bit(routable::crossed_timeline);
 }
 
 int

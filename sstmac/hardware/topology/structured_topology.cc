@@ -89,7 +89,7 @@ void
 structured_topology::endpoint_eject_paths_on_switch(
    node_id dest_addr,
    switch_id sw_addr,
-   routable::path_set &paths) const
+   packet::path_set &paths) const
 {
   int node_offset = dest_addr % netlinks_per_switch_;
   int switch_port = node_offset + max_ports_intra_network_;

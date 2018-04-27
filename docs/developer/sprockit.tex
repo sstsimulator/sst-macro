@@ -191,19 +191,18 @@ but keywords can be registered in as many source files as desired.
 The macro is used in the global namespace:
 
 \begin{CppCode}
-RegisterKeywords("nx", "ny", "nz");
+RegisterKeywords(
+ {"nx", "the number in x dimension"},
+ {"ny", "the number in y dimension"},
+ {"nz", "the number in z dimension}}
+);
 \end{CppCode}
 This registers some basic keywords that might be used in a 3D grid application.
+The first entry in the pair is the keyword name, followed by a doc string.
 If strict mode is turned on, any parameters in the input file not matching a known parameter will produce an error.
 
 In many cases a parameter is an enumerated value or fits a pattern.
-\sprockit allows regular expressions to be declared as valid patterns for a keyword.
+Numbers are ignored at the end of a keyword in determining whether it is valid, e.g. \inlinecode{link3 = X} will be valid if the keyword \inlinecode{"link"} is registered.
 
-\begin{CppCode}
-StaticKeywordRegisterRegexp my_regexp("particle\\d+");
-\end{CppCode}
-Here you create a static instance of a keyword registration object.
-The constructor registers the regular expression.
-Now, any keywords matching the regular expression will be considered valid.
 
 

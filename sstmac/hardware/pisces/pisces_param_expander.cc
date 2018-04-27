@@ -316,7 +316,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
   sprockit::sim_parameters* rtr_params = switch_params->get_optional_namespace("router");
   if (rtr_params->has_param("name")) {
     std::string router = rtr_params->get_param("name");
-    std::string new_router = router + "_multipath";
+    std::string new_router = top + "_" + router + "_multipath";
     rtr_params->add_param_override("name", new_router);
   } else {
     spkt_throw_printf(sprockit::value_error,

@@ -50,6 +50,7 @@ libsstmac_sw_la_SOURCES = \
   launch/launch_request.cc \
   launch/node_allocator.cc \
   launch/cart_allocation.cc \
+  launch/greedy_dfly_allocation.cc \
   launch/coordinate_allocation.cc \
   launch/random_allocation.cc \
   launch/node_id_allocation.cc \

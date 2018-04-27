@@ -205,18 +205,12 @@ fat_tree::configure_individual_port_params(switch_id src,
 }
 
 void
-fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 2; //up and down
-}
-
-void
 fat_tree::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  routable::path& path) const
+  packet::path& path) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "fattree::minimal_route_to_switch");
+  spkt_throw_printf(sprockit::unimplemented_error, "fat_tree::minimal_route_to_switch");
 }
 
 int
@@ -254,7 +248,7 @@ tapered_fat_tree::create_partition(
   int nthread,
   int noccupied) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "simple_fat_tree::create_partition");
+  spkt_throw_printf(sprockit::unimplemented_error, "tapered_fat_tree::create_partition");
 /**
   int nworkers = nproc * nthread;
 
@@ -514,7 +508,7 @@ void
 tapered_fat_tree::minimal_route_to_switch(
   switch_id current_sw_addr,
   switch_id dest_sw_addr,
-  routable::path &path) const
+  packet::path &path) const
 {
   int src_level = level(current_sw_addr);
   int dst_level = level(dest_sw_addr);
@@ -556,12 +550,6 @@ tapered_fat_tree::minimal_route_to_switch(
               path.outport(), my_tree);
     }
   }
-}
-
-void
-tapered_fat_tree::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1; //up and down
 }
 
 

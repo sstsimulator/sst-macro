@@ -105,10 +105,44 @@ The developer's manual broadly covers the two main aspects of creating new compo
 
 \section{What To Expect In The Developer's Manual}
 The developer's manual is mainly designed for those who wish to extend the simulator or understand its internals.
-This user's manual, in contrast, is mainly designed for those who wish to perform experiments with new applications using existing hardware models.
+The user's manual, in contrast, is mainly designed for those who wish to perform experiments with new applications using existing hardware models.
 The user's manual therefore covers building and running the core set of SST/macro features.
 The developer's manual covers what you need to know to add new features.
-The SST design is such that external components are built into shared object `.so` files.
+The SST design is such that external components are built into shared object `.so` files,
+loading them into the simulator core without having to recompile the core itself.
+
+\section{Thousand Foot View of Discrete Event Simulation}
+Ignoring the complexities of parallel discrete event simulation (PDES), 
+discrete even simulation works with a very simple set of abstractions.
+Implementing a discrete event simulation requires components, links, and events (Figure~[1](#fig:desCore)).
+Components (or agents) perform operations. Components create, send, and receive events - and that's basically all they do. 
+In one example, each component could represent a compute node in the system.
+Links between components could represent actual, physical links in the network.
+The events sent on links are MPI messages.
+
+Time only advances in the simulator between events.
+It is important to distinguish virtual time (the time being estimated by simulation) from wall clock time (the real time the simulator is running).
+Links have an associated latency (delay) and are scheduled by the simulation core to arrive at components at a specific time.
+This list of event arrivals at components creates an event queue (more precisely event heap) that is sorted by soonest event time.
+As events are popped off the heap, the simulation clock is updated.
+The component handles the incoming event, which could cause the component to create and send new events to other components.
+The simulation ends when all components quiesce, with no more events active in the system.
+
+Components never interact directly (i.e. a component can never have a shared-memory pointer to another component).
+Components can only interact with links.
+All information transmitted between components must be encapsulated as an abstract event.
+In parallel discrete event simulation, the challenge is both delivering events through distributed memory and maintaining a consistent virtual clock.
+Without proper synchronization, one component could have its virtual clock advance too quickly.
+It then might receive events from other components with timestamps in the past,
+creating an event order violation.
+As long as developers obey the component, link, and event abstractions, all of these complexities are handled automatically by the simulation core.
+
+
+![Figure 1: Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/desCore) 
+
+*Figure 1: Basic structure of discrete event simulation linking components with links (of a given latency). Link delays advance the simulation clock, which is coordinated by the discrete event core. Parallel discrete event simulation involves placing components on different MPI ranks. The link objects (and simulator core) are responsible for delivering events across MPI boundaries.*
+
+
 
 \section{Use of C++}
 SST/macro (Structural Simulation Toolkit for Macroscale) is a discrete event simulator designed for macroscale (system-level) experiments in HPC. 
@@ -120,14 +154,21 @@ While C++ allows a great deal of flexibility in syntax and code structure, we ar
 Boost is no longer required or even used.
 Some C++11 features like `unordered_map` and `shared_ptr` are used heavily throughout the code.
 
+
+![Figure 2: Structure of the simulation connecting components with links and event handlers.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/EventHandler) 
+
+*Figure 2: Structure of the simulation connecting components with links and event handlers.*
+
+
+
 ### Section 1.2: Polymorphism and Modularity<a name="sec:polymorphism"></a>
 
 
-The simulation progresses with different modules (classes) exchanging events or messages.
+The simulation progresses with different modules (classes) exchanging events.
 In general, when module 1 sends a message to module 2, module 1 only sees an abstract interface for module 2.
 The polymorphic type of module 2 can vary freely to employ different physics or congestions models without affecting the implementation of module 1. 
 Polymorphism, while greatly simplifying modularity and interchangeability, does have some consequences.
-The "workhorse" of SST/macro is the base `event` and `message` classes.
+The "workhorse" of SST/macro is the base `event`, `event_component`, and `event_handler` classes.
 To increase polymorphism and flexibility, every SST/macro module that receives events does so via the generic function
 
 ````
@@ -136,7 +177,16 @@ void handle(event* ev){
 }
 ````
 The prototype therefore accepts any event type. 
-The class `message` is a special type of event that refers specifically to a message (e.g. MPI message, flow in the context of TCP/IP) carrying a complete block of data or file.
+The interaction of these types is illustrated in Figure~[2](#fig:abstractHandlers)).
+Event handlers are created as dispatch wrappers to member functions of an en `event_component`.
+There are special helper functions and template classes in SST/macro designed to simplify this process.
+A `link` is created connecting two components.
+An `event_handler` is created that dispatches to the `Listener::recv` member function.
+When events are pushed onto the link by `Pinger`,
+the simulation core computes the correct link delay.
+After advancing virtual simulation time,
+the simulation core invokes the event handler, which delivers the event to the `Listener`.
+
 Misusing types in SST/macro is not a compile-time error.
 The onus of correct event types falls on runtime assertions.
 All event types may not be valid for a given module.
@@ -146,7 +196,7 @@ In many cases, though, this cannot be avoided.
 The other consequence is that a lot of dynamic casts appear in the code.
 An abstract `event` type is received, but must be converted to the specific message type desired.
 NOTE: While some dynamic casts are sometimes very expensive in C++ (and are implementation-dependent),
-most SST/macro dynamic casts are simple equality tests involving virtual table pointers.
+most SST/macro dynamic casts are simple equality tests involving virtual table pointers and relatively low overhead.
 
 While, SST/macro strives to be as modular as possible, allowing arbitrary memory, NIC, interconnect components,
 in many cases certain physical models are simply not compatible.
@@ -807,20 +857,19 @@ but keywords can be registered in as many source files as desired.
 The macro is used in the global namespace:
 
 ````
-RegisterKeywords("nx", "ny", "nz");
+RegisterKeywords(
+ {"nx", "the number in x dimension"},
+ {"ny", "the number in y dimension"},
+ {"nz", "the number in z dimension}}
+);
 ````
 This registers some basic keywords that might be used in a 3D grid application.
+The first entry in the pair is the keyword name, followed by a doc string.
 If strict mode is turned on, any parameters in the input file not matching a known parameter will produce an error.
 
 In many cases a parameter is an enumerated value or fits a pattern.
-SProCKit allows regular expressions to be declared as valid patterns for a keyword.
+Numbers are ignored at the end of a keyword in determining whether it is valid, e.g. `link3 = X` will be valid if the keyword `"link"` is registered.
 
-````
-StaticKeywordRegisterRegexp my_regexp("particle\\d+");
-````
-Here you create a static instance of a keyword registration object.
-The constructor registers the regular expression.
-Now, any keywords matching the regular expression will be considered valid.
 
 
 
@@ -904,7 +953,7 @@ Some event handlers will always receive and then send, such as network switches 
 In most cases, events are created by calling the function
 
 ````
-void schedule(const timestamp &t,
+void schedule(timestamp t,
   event_handler* handler,
   event* ev);
 ````
@@ -920,8 +969,7 @@ void handler_event_queue_entry::execute()
 }
 ````
 
-Objects can inherit from `event_handler` to create new event handlers.
-Preferred usage, though, is on-the-fly creation of event handlers through C++ templates.
+Handler are created by on-the-fly creation through C++ templates.
 The interface does not actually expose C++ templates.
 The function `new_handler` defined in `event_callback.h` has the prototype:
 
@@ -1063,7 +1111,7 @@ We can illustrate time advancing with a simple `MPI_Send` example.
 We have discussed that a user-space thread is allocated for each virtual MPI rank.
 The discrete event core, however, still runs on the main application thread (stack).
 Generally, the main thread (DES thread) will handle hardware events while the user-space threads will handle software events (this is relaxed in some places for optimization purposes).
-Figure [1](#fig:desThreadsMPISend), shows a flow chart for execution of the send.
+Figure [3](#fig:desThreadsMPISend), shows a flow chart for execution of the send.
 Operations occurring on the application user-space thread are shaded in blue while operations on the DES thread are shaded in pink.
 Function calls do not advance time (shown in black), but scheduling events (shown in green) do advance time.
 Again, this is just the nature of discrete event simulation.
@@ -1073,9 +1121,9 @@ Virtual time in the simulation therefore advances inside the `MPI_Send` call,
 but the details of how this happens are not apparent in the skeleton app.
 
 
-![Figure 1: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DES) 
+![Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DES) 
 
-*Figure 1: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.*
+*Figure 3: Flow of events for completing a send operation.  Shows basic function calls, block/unblock context switches, and event schedules. User-space thread (application) operations are shown in blue. Main event thread (OS/kernel) operations are shown in pink.*
 
 
 
@@ -1353,21 +1401,21 @@ To better understand how hardware models are put together for simulating interco
 -   Packets arrive at destination NIC and are reassembled (potentially out-of-order)
 -   Message flow is pushed up network software stack
 
-Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [2](#fig:controlFlow)
+Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [4](#fig:controlFlow)
 
 
-![Figure 2: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DecisionFlow) 
+![Figure 4: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DecisionFlow) 
 
-*Figure 2: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.*
-
-
-
-We can dive in deeper to the operations that occur on an individual component, mostly important the crossbar on the network switch. Figure [3](#fig:xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
+*Figure 4: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.*
 
 
-![Figure 3: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/RoutingFlow) 
 
-*Figure 3: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.*
+We can dive in deeper to the operations that occur on an individual component, mostly important the crossbar on the network switch. Figure [5](#fig:xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
+
+
+![Figure 5: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/RoutingFlow) 
+
+*Figure 5: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.*
 
 
 
@@ -1627,7 +1675,7 @@ void pisces_switch::handle_payload(event *ev)
 ````
 The arriving event is sent to either a credit handler or a payload handler,
 which is configured during simulation setup.
-If a packet, the router object selects the next destination (port).
+If a payload packet (rather than a credit), the router object selects the next destination (port).
 The packet is then passed to the crossbar for arbitration.
 
 ### Section 7.8: Topology<a name="sec:topology"></a>
@@ -1638,6 +1686,9 @@ Common examples are the torus, fat tree, or butterfly.
 To understand what these topologies are, there are many resources on the web.
 Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages.
 Here we detail the public interface.
+In SST/macro, topologies are not dynamically stateful.
+They store static information about the geometry of the network and do not update their state as simulation progresses.
+All functions in the interface are const, emphasizing the role of the topology as read-only.
 
 #### 7.8.1: Basic Topology<a name="subsec:basicTopology"></a>
 
@@ -1712,7 +1763,6 @@ struct path {
     int outport;
     int vc;
     int geometric_id;
-    sprockit::metadata_bits<uint32_t> metadata;
 }
 ````
 
@@ -1721,8 +1771,7 @@ For congestion models with channel dependencies, the virtual channel must also b
 In general, network switches and other devices should be completely topology-agnostic.
 The switch is responsible for modeling congestion within itself - crossbar arbitration, credits, outport multiplexing.
 The switch is not able to determine for itself which outport to route along.
-The topology tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port.
-This division of labor is complicated a bit by adaptive routing, but remains essentially the same.  More details are given later.
+The router tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port.
 
 ### Section 7.9: Router<a name="sec:router"></a>
 
@@ -1732,19 +1781,18 @@ The router has a simple public interface
 ````
 class router {
 ...
-  virtual void route(packet* pkt);
-
-  virtual void route_to_switch(switch_id sid, routable::path& path) = 0;
+  virtual void route(packet* pkt) = 0;
 ...
 };
 ````
 
 Different routers exist for the different routing algorithms: 	minimal, valiant, ugal.
-The router objects are specific to a switch and can therefore store state information.
-However, the router should query the topology object for any path-specific information, e.g.
+The router objects are specific to a switch and can store dynamic state information,
+in contrast to the topology which is read-only.
+However, the router can query the topology object for any path-specific information, e.g.
 
 ````
-void minimal_router::route_to_switch(switch_id sid, routable::path& path)
+void minimal_router::route_to_switch(switch_id sid, packet::path& path)
 {
   top_->minimal_route_to_switch(my_addr_, sid, path);
 }
@@ -1757,6 +1805,114 @@ Each router is connect to a switch object which holds all the information about 
 int test_length = get_switch()->queue_length(paths[i].outport);
 ````
 allowing the router to select an alternate path if the congestion is too high. 
+
+\subsection{Flows, Packets, and Routing Headers}
+A flow is a stream of data from a source node to a destination node.
+The most common example of a flow is an MPI message.
+At the source, the flow is broken into discrete units (packets). Each packet then moves independently through the network.
+The flow is reassembled at the destination from the individual packets.
+Packets themselves are also broken up into flits (flow control units) and even phits (physical units).
+However, flits in the same packet are constrained to follow the same route, unlike packets which can route independently.
+
+A challenge for SST/macro is the "factorial" space of possible machine models to support.
+For example, the simulator is intended to support at least two different network contention models (PISCES, SCULPIN);
+five different topologies (torus, hyperX, fat tree, dragonfly, cascade); and four different routing algorithms (Minimal, Valiant, UGAL, PAR).
+This creates already 40 combinations, which can grow even more quickly if new models are added.
+
+Rather than have 40 different packet types, there are only two packet types specific to each contention model that inherit from a standard packet type:
+
+````
+class packet : public event {
+  ...
+};
+````
+Every contention model is unified in requiring a packet to carry 6 things:
+
+-   Source and destination node addresses
+-   `path` object (see below)
+-   Routing header
+-   Payload derived from the original flow
+-   Flow ID - globally unique identifier for the flow
+-   The number of bytes in the packet
+
+````
+node_id toaddr_;
+  node_id fromaddr_;
+  path path_;
+  uint64_t flow_id_;
+  serializable* orig_;
+  char header_metadata_[MAX_HEADER_BYTES];
+  uint32_t num_bytes_;
+````
+The path object has subfields:
+
+````
+struct path {
+   outport_t outport;
+   int vc;
+};
+````
+which indicate the virtual channel and port a packet should follow.
+
+Switches implement contention modeling while routers implement path computation.
+Path computations, in the case of adaptive routing, may depend on the dynamic contention state of the parent switch.
+A switch should never be aware of the exact topology or routing scheme.
+It follows orders from the router, sending packets on the virtual channels and ports computed by the router.
+The switch should call:
+
+````
+rtr_->route(pkt);
+````
+at which point the switch can call
+
+````
+pkt->current_path().vc
+pkt->current_path().outport
+````
+to query for the virtual channel and port requested by the packet (and router).
+In this way, the exact details of the contention model (as implemented in the switch) are decoupled from the routing.
+
+Decoupling the routing algorithm (UGAl, Minimal, etc.) from the topology (torus, dragonfly, etc) can be extremely difficult.
+In general, it is not always possible to implement a generic UGAL, e.g., that is agnostic to the underlying topology.
+For now, rather than have different packet types and a proliferation of virtual methods,
+the packet provides a bucket of bits (`header_metadata_`) that can be used by the router.
+Routing computations are generally the most expensive part of running the simulation and the most complex piece to implement,
+which discourages having different packet types for each routing/topology combination and accessing numerous virtual methods.
+
+The intended usage mode for routing headers is casting the bucket-of-bits to a known type, for which each packet provides a helper template method, e.g.:
+
+````
+void route(packet* pkt) override {
+  auto route_hdr = pkt->get_header<torus_ugal_header>();
+}
+````
+By default each new header type is encouraged to inherit from a parent type:
+
+````
+class packet : public event
+{
+ public:
+  struct header {
+    char is_tail : 1;
+    uint32_t dest_switch : 22;
+  };
+````
+which uses C++ bit fields to reserve 1 bit for storing whether the packet is the tail of the flow and 22 bits for storing the ID of an intermediate destination switch (this pattern is so common it is implemented in the parent packet class). For minimal routing on a torus, e.g.:
+
+````
+class torus_minimal_router : public minimal_router {
+  struct torus_minimal_header : public packet::header {
+     char crossed_timeline : 1;
+  };
+  void route(packet* pkt) override {
+    auto hdr = pkt->get_header<torus_minimal_header>();
+  }
+};
+````
+which adds a single bit for storing whether the packet has crossed a timeline (wrap around link) in the torus. The timeline will be needed for computing the correct virtual channel.
+Routing headers can become much more complex for other topologies and adaptive routing, for which the reader is encouraged to look at the source code for further details.
+These complexities are local to each individual routing method, though, which neatly separates routing from contention modeling.
+
 
 
 

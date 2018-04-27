@@ -398,6 +398,10 @@ int loadAtomsBuffer(void* vparms, void* data, int face, char* charBuf)
          ++nBuf;
       }
    }
+   if (nBuf > s->boxes->nTotalAtoms){
+     fprintf(stderr, "Sending out %d atoms, but only have %d local\n", nBuf, s->boxes->nTotalAtoms);
+     exit(1);
+   }
    s->boxes->nTotalAtoms -= nBuf;
    return nBuf*sizeof(AtomMsg);
 }

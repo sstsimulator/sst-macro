@@ -51,7 +51,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/common/packetizer.h>
 #include <sstmac/common/stats/stat_histogram.h>
-#include <sstmac/hardware/pisces/packet_allocator_fwd.h>
 #include <sstmac/hardware/network/network_message.h>
 
 namespace sstmac {
@@ -116,7 +115,6 @@ class pisces_packetizer :
 
   packet_stats_callback* inj_stats_;
   packet_stats_callback* ej_stats_;
-  packet_allocator* pkt_allocator_;
 
 };
 

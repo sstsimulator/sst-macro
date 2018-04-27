@@ -114,11 +114,11 @@ congestion_spyplot::~congestion_spyplot()
 }
 
 void
-congestion_spyplot::collect_final_event(pisces_payload *pkt)
+congestion_spyplot::collect_final_event(pisces_payload* pkt)
 {
-  auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
-  double delay_ns = dpkt->congestion_delay()*1e9;
-  congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), delay_ns);
+  sprockit::abort("unimplemented: congestion_spyplot::collect_final_event");
+  //double delay_ns = pkt->congestion_delay()*1e9;
+  //congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), delay_ns);
 }
 
 void
@@ -157,19 +157,21 @@ delay_histogram::collect_single_event(const pkt_arbitration_t& st)
 void
 delay_histogram::collect_final_event(pisces_payload* pkt)
 {
-  auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
-  debug("Accumulating final delay of %12.6e for packet on flow %" PRIu64,
-        dpkt->congestion_delay(), dpkt->flow_id());
-  congestion_hist_->collect(dpkt->congestion_delay());
+  sprockit::abort("unimplemented: delay_histogram::collect_final_event");
+  //auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
+  //debug("Accumulating final delay of %12.6e for packet on flow %" PRIu64,
+  //      dpkt->congestion_delay(), dpkt->flow_id());
+  //congestion_hist_->collect(dpkt->congestion_delay());
 }
 
 
 void
 packet_delay_stats::collect_single_event(const pkt_arbitration_t& st)
 {
-  double delay = congestion_delay(st);
-  auto dpkt = safe_cast(pisces_delay_stats_packet, st.pkt);
-  dpkt->accumulate_delay(delay);
+  sprockit::abort("unimplemented: delay_histogram::collect_single_event");
+  //double delay = congestion_delay(st);
+  //auto dpkt = safe_cast(pisces_delay_stats_packet, st.pkt);
+  //dpkt->accumulate_delay(delay);
 }
 
 multi_stats::multi_stats(sprockit::sim_parameters *params, event_scheduler *parent) :

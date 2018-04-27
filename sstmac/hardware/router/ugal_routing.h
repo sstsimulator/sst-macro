@@ -51,69 +51,39 @@ namespace sstmac {
 namespace hw {
 
 /**
- * @brief The ugal_router class
+ * @brief The par_router class
  * Encapsulates a router that performs Univeral Globally Adaptive Load-balanced
  * routing as described in PhD Thesis "Load-balanced in routing in interconnection networks"
- * by A Singh.
+ * by A Singh. This differs slightly from PAR in that routing decisions are only
+ * considered once at the source in UGAL
  */
-class ugal_router :
-  public valiant_router
+class ugal_router : public router
 {
-  FactoryRegister("ugal", router, ugal_router,
-              "router implementing ugal congestion-aware routing")
  public:
+  static const char initial_stage = 0;
+  static const char valiant_stage = 1;
+  static const char final_stage = 2;
+  static const char minimal_only_stage = 3;
+
+  struct header : public packet::header {
+    uint8_t stage_number : 3;
+  };
+
   ugal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-  std::string to_string() const override {
-    return "ugal";
-  }
-
  protected:
-  next_action_t initial_step(
-    routable* rtbl, packet* pkt) override;
+  bool route_common(packet* pkt);
 
-  /**
-    The topology object specifies a virtual channel based purely on geometry.
-    However, the final virtual channel depends on both geometry and
-    routing algorithm.  In this case, we need a separate set of
-    virtual channels depending on whether we are in the first
-    stage (routing to the intermediate switch) or the second stage
-    (routing to the final switch).
-    @param topology_vc The geometry-specific virtual channel
-    @return The second stage virtual channel
-  */
-  int first_stage_vc(int topology_vc) const override {
-    return 3 * topology_vc;
-  }
+  void route_ugal_common(packet* pkt, switch_id ej_addr);
 
-  /**
-    The topology object specifies a virtual channel based purely on geometry.
-    However, the final virtual channel depends on both geometry and
-    routing algorithm.  In this case, we need a separate set of
-    virtual channels depending on whether we are in the first
-    stage (routing to the intermediate switch) or the second stage
-    (routing to the final switch).
-    @param topology_vc The geometry-specific virtual channel
-    @return The second stage virtual channel
-  */
-  int second_stage_vc(int topology_vc) const override {
-    return 3 * topology_vc + 1;
-  }
+  bool switch_paths(
+    switch_id orig_dst,
+    switch_id inter,
+    packet::path& orig_path,
+    packet::path& new_path);
 
-  /**
-    In adition to the valiant stages, ugal has a minimal stage.
-    This requires another set of virtual channels.
-    @param topology_vc The geometry-specific virtual channel
-    @return The zero stage virtual channel
-  */
-  int zero_stage_vc(int topology_vc) const {
-    return 3 * topology_vc + 2;
-  }
-
- protected:
   int val_threshold_;
   int val_preference_factor_;
-
 
 };
 

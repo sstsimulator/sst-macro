@@ -59,7 +59,7 @@ test_cascade_v1(UnitTest& unit)
   params["concentration"] = "2";
   params["group_connections"] = "3";
   params["name"] = "cascade";
-  params["router.name"] = "minimal";
+  params["router.name"] = "cascade_minimal";
   test_topology(params);
 }
 
@@ -74,6 +74,6 @@ test_cascade_v2(UnitTest& unit)
   params["group_connections"] = "3";
   params["seed"] = "14";
   params["name"] = "cascade";
-  params["router.name"] = "minimal";
+  params["router.name"] = "cascade_minimal";
   test_topology(params);
 }
