@@ -21,7 +21,7 @@ if INTEGRATED_SST_CORE
 lib_LTLIBRARIES = libsstmac_api_globals_test.la
 libsstmac_api_globals_test_la_SOURCES = testglobals.cc 
 else
-EXTRA_DIST += testglobals.cc testglobals_eli.cc
+EXTRA_DIST += testglobals.cc 
 check_PROGRAMS = testexec
 testexec_SOURCES = exec.cc
 testexec_LDADD = \
