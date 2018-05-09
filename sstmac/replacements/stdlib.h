@@ -31,6 +31,8 @@ extern void sstmac_free(void* ptr);
 
 #include_next <stdlib.h>
 
+#pragma sst null_variable safe
+void free(void* ptr);
 
 #ifndef __need_malloc_and_calloc
 #define atexit sstmac_atexit
