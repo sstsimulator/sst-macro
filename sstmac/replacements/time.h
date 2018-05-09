@@ -1,12 +1,13 @@
 
 #undef nanosleep
 
+struct timespec;
 #include_next <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-int nanosleep(const struct timespec *req, struct timespec *rem);
+int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem);
 #ifdef __cplusplus
 }
 #endif
