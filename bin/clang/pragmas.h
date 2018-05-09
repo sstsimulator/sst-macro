@@ -54,6 +54,7 @@ class SkeletonASTVisitor;
 
 struct SSTReplacePragma;
 struct SSTNullVariablePragma;
+struct SSTNullVariableGeneratorPragma;
 struct PragmaConfig {
   int pragmaDepth;
   bool makeNoChanges;
@@ -69,6 +70,7 @@ struct PragmaConfig {
   {}
   std::string computeMemorySpec;
   std::list<std::pair<SSTNullVariablePragma*,clang::TypedefDecl*>> pendingTypedefs;
+  SSTNullVariableGeneratorPragma* nullifyDeclarationsPragma;
 };
 
 struct SSTPragmaList;
@@ -94,7 +96,9 @@ struct SSTPragma {
     GlobalVariable=17,
     Overhead=18,
     NonnullFields=19,
-    NullFields=20
+    NullFields=20,
+    StartNullDeclarations=21,
+    StopNullDeclarations=22
   } class_t;
   clang::StringRef name;
   clang::SourceLocation startLoc;
@@ -298,6 +302,37 @@ class SSTNullVariablePragma : public SSTPragma {
   bool nullSafe_;
   bool deleteAll_;
   bool skelComputes_;
+};
+
+class SSTNullVariableStopPragma : public SSTPragma {
+ public:
+  SSTNullVariableStopPragma() : SSTPragma(StopNullDeclarations) {}
+
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
+    cfg.nullifyDeclarationsPragma = nullptr;
+  }
+};
+
+class SSTNullVariableGeneratorPragma : public SSTPragma {
+ public:
+  SSTNullVariableGeneratorPragma(clang::SourceLocation loc,
+                        clang::CompilerInstance& CI,
+                        const std::list<clang::Token>& tokens) :
+    tokens_(tokens),
+    SSTPragma(StartNullDeclarations)
+  {
+  }
+
+  SSTNullVariablePragma* generate(clang::Decl* d, clang::CompilerInstance& CI) const {
+    return new SSTNullVariablePragma(d->getLocStart(), CI, tokens_);
+  }
+
+  void activate(clang::Stmt* s, clang::Rewriter& r, PragmaConfig& cfg) override {
+    cfg.nullifyDeclarationsPragma = this;
+  }
+
+ private:
+  std::list<clang::Token> tokens_;
 };
 
 class SSTNullTypePragma : public SSTNullVariablePragma
@@ -736,6 +771,31 @@ class SSTNullVariablePragmaHandler : public SSTTokenStreamPragmaHandler
   SSTPragma* allocatePragma(clang::SourceLocation loc,
                             const std::list<clang::Token> &tokens) const;
 };
+
+class SSTNullVariableGeneratorPragmaHandler : public SSTTokenStreamPragmaHandler
+{
+ public:
+  SSTNullVariableGeneratorPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTTokenStreamPragmaHandler("start_null_variable", plist, CI, visitor, deld){}
+
+ private:
+  SSTPragma* allocatePragma(clang::SourceLocation loc,
+                            const std::list<clang::Token> &tokens) const;
+};
+
+class SSTNullVariableStopPragmaHandler : public SSTSimplePragmaHandler<SSTNullVariableStopPragma>
+{
+ public:
+  SSTNullVariableStopPragmaHandler(SSTPragmaList& plist,
+                        clang::CompilerInstance& CI,
+                        SkeletonASTVisitor& visitor,
+                        std::set<clang::Stmt*>& deld) :
+     SSTSimplePragmaHandler<SSTNullVariableStopPragma>("stop_null_variable", plist, CI, visitor, deld){}
+};
+
 
 class SSTGlobalVariablePragmaHandler : public SSTTokenStreamPragmaHandler
 {

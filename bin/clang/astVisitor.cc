@@ -158,6 +158,8 @@ SkeletonASTVisitor::initReservedNames()
   globalVarWhitelist_.insert("sstmac_global_stacksize");
   globalVarWhitelist_.insert("__stderrp");
   globalVarWhitelist_.insert("__stdinp");
+
+  sstmacFxnPrepends_.insert("free");
 }
 
 void
@@ -909,6 +911,10 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
     if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
       DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
       std::string fxnName = dref->getFoundDecl()->getNameAsString();
+      if (sstmacFxnPrepends_.find(fxnName) != sstmacFxnPrepends_.end()){
+        rewriter_.InsertText(expr->getCallee()->getLocStart(), "sstmac_", false);
+      }
+
       auto iter = mpiCalls_.find(fxnName);
       if (iter != mpiCalls_.end()){
         MPI_Call call = iter->second;
@@ -2330,6 +2336,12 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
   if (pragmaConfig_.makeNoChanges){
     pragmaConfig_.makeNoChanges = false;
     return true;
+  }
+
+  if (pragmaConfig_.nullifyDeclarationsPragma){
+    SSTNullVariablePragma* prg = pragmaConfig_.nullifyDeclarationsPragma->generate(D, *ci_);
+    prg->CI = ci_;
+    pag.reactivate(D, prg);
   }
 
   if (D->getDescribedVarTemplate()){
