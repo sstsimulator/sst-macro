@@ -584,8 +584,7 @@ operating_system::lib(const std::string& name) const
   auto it = libs_.find(name);
   if (it == libs_.end()) {
     return nullptr;
-  }
-  else {
+  } else {
     return it->second;
   }
 }

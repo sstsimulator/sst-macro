@@ -74,6 +74,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
+#ifdef SSTMAC_OTF2_ENABLED
+#include <dumpi/libotf2dump/otf2writer.h>
+#endif
 
 namespace sumi {
 
@@ -834,6 +837,14 @@ class mpi_api :
   MPI_Request req_counter_;
 
   std::unordered_map<int, keyval*> keyvals_;
+
+#ifdef SSTMAC_OTF2_ENABLED
+  bool otf2_enabled_ = false;
+  std::string otf2_dir_basename_;
+  static int running_count_;
+  static bool otf2_initialized_;
+  static dumpi::OTF2_Writer otf2_writer_;
+#endif
 
   bool generate_ids_;
 

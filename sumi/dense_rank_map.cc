@@ -114,8 +114,7 @@ dense_rank_map::sparse_rank(int dense_rank) const
   for (int i=0; i < num_failed_ranks_; ++i){
     if (rank >= failed_ranks_[i]){
       ++rank;
-    }
-    else if (rank < failed_ranks_[i]){
+    } else if (rank < failed_ranks_[i]){
       return rank; //all done, found it
     }
   }
@@ -127,11 +126,9 @@ dense_rank_map::dense_rank(int sparse_rank) const
 {
   if (num_failed_ranks_ == 0){
     return sparse_rank;
-  }
-  else if (num_failed_ranks_ <= tree_cutoff){
+  } else if (num_failed_ranks_ <= tree_cutoff){
     return linear_find_rank(sparse_rank);
-  }
-  else {
+  } else {
     return tree_find_rank(sparse_rank,
         0, num_failed_ranks_, failed_ranks_);
   }
@@ -150,11 +147,9 @@ dense_rank_map::tree_find_rank(
   if (num_failed == 1){
     if (sparse_rank > failed_array[0]){
       return sparse_rank - (offset + 1);
-    }
-    else if (sparse_rank < failed_array[0]){
+    } else if (sparse_rank < failed_array[0]){
       return sparse_rank - offset;
-    }
-    else {
+    } else {
       spkt_throw_printf(sprockit::value_error,
         "dense_rank_map::trying to get dense rank for failed process %d",
         sparse_rank);
@@ -164,14 +159,12 @@ dense_rank_map::tree_find_rank(
   int middle_index = num_failed / 2;
   if (sparse_rank < failed_array[middle_index]){
     return tree_find_rank(sparse_rank, offset, middle_index, failed_array);
-  }
-  else if (sparse_rank > failed_array[middle_index]){
+  } else if (sparse_rank > failed_array[middle_index]){
     return tree_find_rank(sparse_rank, 
         offset +  middle_index, 
         num_failed - middle_index, 
         failed_array + middle_index);
-  }
-  else {
+  } else {
     spkt_throw_printf(sprockit::value_error,
       "dense_rank_map::trying to get dense rank for failed process %d",
       sparse_rank);

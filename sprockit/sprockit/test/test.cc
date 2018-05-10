@@ -57,8 +57,7 @@ UnitTest::validate(std::ostream &os)
     if (success) {
       os << "SUCCESS: ";
       test->print_descr(os);
-    }
-    else {
+    } else {
       ++nfailed;
       os << "FAILURE: ";
       test->print_descr(os);

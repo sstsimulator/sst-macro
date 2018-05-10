@@ -57,8 +57,7 @@ random_task_mapper::random_task_mapper(sprockit::sim_parameters *params) :
   if(params->has_param("random_indexer_seed")) {
     long seed = params->get_long_param("random_indexer_seed");
     rng_ = RNG::SimpleCombo::construct(seed);
-  }
-  else {
+  } else {
     rng_ = RNG::SimpleCombo::construct();
   }
 }
