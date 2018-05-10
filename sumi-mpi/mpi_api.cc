@@ -121,7 +121,8 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   queue_(nullptr),
   generate_ids_(true),
   crossed_comm_world_barrier_(false),
-  comm_factory_(sid, this)
+  comm_factory_(sid, this),
+  otf2_enabled_(false)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
   queue_ = new mpi_queue(queue_params, sid.task_, this);
@@ -134,6 +135,26 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
 
 #if SSTMAC_COMM_SYNC_STATS
   dump_comm_times_ = params->get_optional_bool_param("dump_comm_times", false);
+#endif
+
+#ifdef OTF2_ENABLED
+  auto otf2_archive_ = params->get_optional_param("otf2_archive", "");
+  otf2_enabled_ = !otf2_archive_.empty();
+
+  if(otf2_enabled_) {
+    otf2_writer_.set_verbosity(dumpi::OWV_WARN);
+    //TODO get parameters from the constructor
+    otf2_writer_.open_archive(otf2_archive_, get_comm(MPI_COMM_WORLD)->size(), true);
+    otf2_writer_.set_comm_mode(dumpi::COMM_MODE_NONE);
+
+    //register default types here
+    //otf2_writer_.register_type(ID, SIZE);
+    otf2_writer_.register_comm_world(worldcomm_->id());
+    otf2_writer_.register_comm_self(selfcomm_->id());
+    otf2_writer_.register_comm_null(MPI_COMM_NULL);
+    //otf2_writer_.register_comm_error(MPI_COMM_ERROR);
+    otf2_writer_.register_comm_error(MPI_REQUEST_NULL);
+  }
 #endif
 }
 
@@ -176,6 +197,14 @@ mpi_api::~mpi_api()
 int
 mpi_api::abort(MPI_Comm comm, int errcode)
 {
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Abort");
+  }
+#endif
+
   spkt_throw_printf(sprockit::value_error,
     "MPI rank %d exited with code %d", rank_, errcode);
   return MPI_SUCCESS;
@@ -185,12 +214,20 @@ int
 mpi_api::comm_rank(MPI_Comm comm, int *rank)
 {
   *rank = get_comm(comm)->rank();
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Abort");
+  }
+#endif
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::init(int* argc, char*** argv)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   if (status_ == is_initialized){
     sprockit::abort("MPI_Init cannot be called twice");
   }
@@ -224,6 +261,12 @@ mpi_api::init(int* argc, char*** argv)
   delete op;
   crossed_comm_world_barrier_ = false;
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Init");
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -240,7 +283,9 @@ mpi_api::check_init()
 //
 int
 mpi_api::finalize()
-{  
+{
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Finalize);
 
   collective_op_base* op = start_barrier("MPI_Finalize", MPI_COMM_WORLD);
@@ -278,6 +323,13 @@ mpi_api::finalize()
   }
 #endif
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Finalize");
+    if (get_comm(MPI_COMM_WORLD)->rank() == 0) otf2_writer_.close_archive();
+  }
+#endif
   return MPI_SUCCESS;
 }
 
@@ -287,14 +339,25 @@ mpi_api::finalize()
 double
 mpi_api::wtime()
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Wtime);
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Wtime");
+#endif
   return os_->now().sec();
 }
 
 int
 mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
   *count = status->count;
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Get_count");
+#endif
   return MPI_SUCCESS;
 }
 

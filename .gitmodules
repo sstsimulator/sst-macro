@@ -1,3 +1,4 @@
 [submodule "sst-dumpi"]
 	path = sst-dumpi
-	url = https://github.com/sstsimulator/sst-dumpi.git
+	url = https://github.com/sknigh/sst-dumpi.git
+   branch = feature/otf2-converter

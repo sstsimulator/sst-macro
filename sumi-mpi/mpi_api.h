@@ -74,6 +74,12 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
+//#warning OTF2_ENABLED should be added to the build system
+#define OTF2_ENABLED
+
+#ifdef OTF2_ENABLED
+#include <sst-dumpi/dumpi/libotf2dump/otf2writer.h>
+#endif
 
 namespace sumi {
 
@@ -834,6 +840,12 @@ class mpi_api :
   MPI_Request req_counter_;
 
   std::unordered_map<int, keyval*> keyvals_;
+
+#ifdef OTF2_ENABLED
+  bool otf2_enabled_;
+  std::string otf2_archive_dir_;
+  dumpi::OTF2_Writer otf2_writer_;
+#endif
 
   bool generate_ids_;
 

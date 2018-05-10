@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi-mpi/mpi_api.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
 
@@ -95,6 +96,13 @@ mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_incl(%d,%d,*%d)",
                 num_ranks, oldgrp, *newgrp);
 
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.mpi_group_incl(comm_world()->rank(), start_time, start_time, oldgrp, num_ranks, ranks, *newgrp);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -122,6 +130,14 @@ mpi_api::group_create_with_id(MPI_Group group, int num_members, const uint32_t *
   mpi_group* grpPtr = new mpi_group(vec_ranks);
   add_group_ptr(grpPtr, &group);
 
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.register_group(group, vec_ranks);
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Comm_create_group");
+  }
+#endif
+
   return true;
 }
 
@@ -139,6 +155,14 @@ mpi_api::group_free(MPI_Group *grp)
     grp_map_.erase(iter);
   }
   *grp = MPI_GROUP_NULL;
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Group_free");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -148,6 +172,14 @@ mpi_api::group_translate_ranks(MPI_Group grp1, int n, const int *ranks1, MPI_Gro
   mpi_group* grp1ptr = get_group(grp1);
   mpi_group* grp2ptr = get_group(grp2);
   grp1ptr->translate_ranks(n, ranks1, ranks2, grp2ptr);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Group_translate_ranks");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

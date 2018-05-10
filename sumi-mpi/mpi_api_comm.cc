@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_comm_call(fxn,comm) \
+  auto call_start_time = (uint64_t)os_->now().usec(); \
   start_mpi_call(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, comm_str(comm).c_str())
 
@@ -70,6 +71,11 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_dup(%s,*%s) finish",
                 comm_str(input).c_str(), comm_str(*output).c_str());
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.mpi_comm_dup(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), input, *output);
+#endif
   return MPI_SUCCESS;
 }
 
@@ -86,6 +92,12 @@ mpi_api::comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *ne
                 comm_str(comm).c_str(), comm_str(*newcomm).c_str());
   end_api_call();
   //okay, this is really complicated
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+   // TODO, not implemented yet
+  }
+#endif
   return MPI_SUCCESS;
 }
 
@@ -95,6 +107,11 @@ mpi_api::comm_size(MPI_Comm comm, int *size)
   start_comm_call(MPI_Comm_size,comm);
   *size = get_comm(comm)->size();
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Comm_size");
+#endif
   return MPI_SUCCESS;
 }
 
@@ -108,6 +125,11 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Comm_create(%s,%d,*%s)",
                 comm_str(input).c_str(), group, comm_str(*output).c_str());
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.mpi_comm_create(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), input, group, *output);
+#endif
   return MPI_SUCCESS;
 }
 
@@ -123,6 +145,13 @@ mpi_api::comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
     mpi_comm* newCommPtr = new mpi_comm(new_comm, new_rank, groupPtr, library::sid_.app_);
     add_comm_ptr(newCommPtr, &new_comm);
   }
+#ifdef OTF2_ENABLED
+  // treate like ::comm_create
+  if(otf2_enabled_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.mpi_comm_create(comm_world()->rank(), start_time, start_time, input, group, new_comm);
+  }
+#endif
 }
 
 int
@@ -130,6 +159,14 @@ mpi_api::comm_group(MPI_Comm comm, MPI_Group* grp)
 {
   mpi_comm* commPtr = get_comm(comm);
   *grp = commPtr->group()->id();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.mpi_comm_group(comm_world()->rank(), start_time, start_time, comm, *grp);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -142,6 +179,14 @@ mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
   mpi_comm* outcommPtr = comm_factory_.create_cart(incommPtr, ndims, dims, periods, reorder);
   add_comm_ptr(outcommPtr, comm_cart);
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  // Cart actions are not fully implemented by the writer.
+  // TODO add warning
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cart_create");
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -162,6 +207,14 @@ mpi_api::cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
 
   c->set_coords(c->mpi_comm::rank(), coords);
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Cart_get");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -174,6 +227,12 @@ mpi_api::cartdim_get(MPI_Comm comm, int *ndims)
     "mpi_api::cartdim_get: mpi comm did not cast to mpi_comm_cart");
   *ndims = c->ndims();
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cartdim_get");
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -186,6 +245,12 @@ mpi_api::cart_rank(MPI_Comm comm, const int coords[], int *rank)
     "mpi_api::cart_rank: mpi comm did not cast to mpi_comm_cart");
   *rank = c->rank(coords);
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cart_rank");
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -200,6 +265,12 @@ mpi_api::cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
   *rank_source = c->shift(direction, -1 * disp);
   *rank_dest = c->shift(direction, disp);
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cart_shift");
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -213,6 +284,12 @@ mpi_api::cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
     "mpi_api::cart_coords: mpi comm did not cast to mpi_comm_cart");
   c->set_coords(rank, coords);
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cart_coords");
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -234,6 +311,13 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
   }
 
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.mpi_comm_split(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), incomm, key, color, *outcomm);
+#endif
+
+
   return MPI_SUCCESS;
 }
 
@@ -249,6 +333,13 @@ mpi_api::comm_free(MPI_Comm* input)
   delete inputPtr;
   *input = MPI_COMM_NULL;
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Comm_free");
+#endif
+
+
   return MPI_SUCCESS;
 }
 
@@ -264,6 +355,14 @@ mpi_api::comm_get_attr(MPI_Comm, int comm_keyval, void* attribute_val, int *flag
   }
   */
   *flag = 0;
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Comm_get_attr");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

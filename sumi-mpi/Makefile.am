@@ -19,9 +19,13 @@ AM_CPPFLAGS += \
 	-I$(top_srcdir)/sumi \
 	-I$(top_builddir)/sumi
 
+#-I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
+
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
-libsstmac_mpi_la_LDFLAGS = 
+
+
+libsstmac_mpi_la_LDFLAGS = otf2dump
 
 libsstmac_mpi_la_SOURCES = \
   mpi_comm/mpi_comm.cc \
