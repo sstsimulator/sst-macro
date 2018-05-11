@@ -130,10 +130,12 @@ parallel_spyplot.num_messages.csv.$(CHKSUF): parallel_spyplot
 bytes_sent_torus: 
 	$(PYRUNTEST) 5 $(top_srcdir) test_stats_$@.$(CHKSUF) True \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_$@.ini --low-res-timer --no-wall-time  
+test_stats_bytes_sent_torus.chk-out: bytes_sent_torus
 
 bytes_sent_fattree: 
 	$(PYRUNTEST) 5 $(top_srcdir) test_stats_$@.$(CHKSUF) True \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_$@.ini --low-res-timer --no-wall-time  
+test_stats_bytes_sent_fattree.chk-out: bytes_sent_fattree
 
 
 endif
