@@ -105,6 +105,7 @@ typedef enum {
   Call_ID_MPI_Group_free,                Call_ID_MPI_Comm_size,
   Call_ID_MPI_Comm_rank,                 Call_ID_MPI_Comm_compare,
   Call_ID_MPI_Comm_dup,                  Call_ID_MPI_Comm_create,
+  Call_ID_MPI_Comm_create_group,
   Call_ID_MPI_Comm_split,                Call_ID_MPI_Comm_free,
   Call_ID_MPI_Comm_test_inter,           Call_ID_MPI_Comm_remote_size,
   Call_ID_MPI_Comm_remote_group,         Call_ID_MPI_Intercomm_create,

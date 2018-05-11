@@ -44,6 +44,7 @@ if DO_GRAPHVIZ_TEST
 #don't do this test unless also including comm sync stats
 SINGLETESTS += test_stat_graphviz 
 endif
+SINGLETESTS += test_sync_stats
 endif
 
 endif
@@ -78,11 +79,13 @@ test.callgrind.$(CHKSUF): $(SSTMACEXEC) test_stat_graphviz.$(CHKSUF)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
 %.num_messages.csv.$(CHKSUF): %
 	$(PYRUNTEST) 5 $(top_srcdir) $@ notime $(NOOP) $@
+
+sync_stats:
+	$(PYRUNTEST) 5 $(top_srcdir) test_sync_stats_tmp.$(CHKSUF) True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_sync_stats.ini --no-wall-time 
+test_sync_stats.$(CHKSUF): sync_stats
+	$(PYRUNTEST) 5 $(top_srcdir) test_sync_stats.$(CHKSUF) notime cat commStats.0.out 
   
-test_stats_bytes_sent_%.$(CHKSUF): bytes_sent_%
-	true
-
-
 histogram:
 	$(PYRUNTEST) 5 $(top_srcdir) test_stats_msg_size_histogram.$(CHKSUF) True \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_stats_msg_size_histogram.ini --low-res-timer --no-wall-time 
@@ -122,7 +125,6 @@ parallel_spyplot.bytes.png.$(CHKSUF): parallel_spyplot
 parallel_spyplot.bytes.csv.$(CHKSUF): parallel_spyplot
 parallel_spyplot.num_messages.png.$(CHKSUF): parallel_spyplot
 parallel_spyplot.num_messages.csv.$(CHKSUF): parallel_spyplot
-
 
 
 bytes_sent_torus: 
