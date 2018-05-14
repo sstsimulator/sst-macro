@@ -53,13 +53,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <math.h>
 
 RegisterKeywords(
-{ "branching", "the branching degree of each level in the tree" },
 { "baseline_bandwidth", "" },
-{ "num_levels", "the number of levels in the fat tree" },
-{ "num_inj_switches_per_subtree", "in a 3-level fat-tree, number of injection switches per pod" },
-{ "num_core_switches", "in a 3-level fat-tree, number of core switches at top-level" },
-{ "num_agg_subtrees", "in a 3-level fat-tree, number of pods or subtree" },
-{ "num_agg_switches_per_subtree", "in a 3-level fat-tree, number of aggregation (2nd-level switches) per subtree (pod)"},
+{ "num_leaf_switches_per_subtree", "number of leaf/injection switches per pod (fixed 3-level fat-tree)" },
+{ "num_core_switches", "number of core switches at top-level (fixed 3-level fat-tree)" },
+{ "num_agg_subtrees", "number of pods or subtree (fixed 3-level fat-tree)" },
+{ "num_agg_switches_per_subtree", "number of aggregation (2nd-level switches) per subtree (pod) (fixed 3-level fat-tree)"},
 );
 
 namespace sstmac {
@@ -71,13 +69,24 @@ abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
                                      InitGeomEjectID i2) :
   structured_topology(params, i1, i2)
 {
+  num_leaf_switches_per_subtree_ =
+      params->get_int_param("num_leaf_switches_per_subtree");
+  num_agg_switches_per_subtree_ =
+      params->get_int_param("num_agg_switches_per_subtree");
+  num_agg_subtrees_ =
+      params->get_int_param("num_agg_subtrees");
+  num_core_switches_ =
+      params->get_int_param("num_core_switches");
+
+  num_leaf_switches_ = num_leaf_switches_per_subtree_ * num_agg_subtrees_;
+  num_agg_switches_ = num_agg_switches_per_subtree_ * num_agg_subtrees_;
 }
 
 void
 abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
                                                        std::vector<injection_port>& nodes) const
 {
-  if (swaddr >= numleafswitches_){
+  if (swaddr >= num_leaf_switches_){
     nodes.resize(0);
   } else {
     structured_topology::nodes_connected_to_injection_switch(swaddr, nodes);
@@ -96,25 +105,48 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
                     InitMaxPortsIntra::I_Remembered,
                     InitGeomEjectID::I_Remembered)
 {
-  if (params->has_param("geometry")){
-    std::vector<int> args;
-    params->get_vector_param("geometry", args);
-    if (args.size() != 2) {
-      spkt_throw_printf(sprockit::input_error,
-                       "fat_tree::init_factory_params: geometry needs 2 parameters, got %d",
-                       args.size());
-    }
-    l_ = args[0];
-    k_ = args[1];
-  } else {
-    l_ = params->get_int_param("num_levels");
-    k_ = params->get_int_param("branching");
+//  if (params->has_param("geometry")){
+//    std::vector<int> args;
+//    params->get_vector_param("geometry", args);
+//    if (args.size() != 2) {
+//      spkt_throw_printf(sprockit::input_error,
+//                       "fat_tree::init_factory_params: geometry needs 2 parameters, got %d",
+//                       args.size());
+//    }
+//    l_ = args[0];
+//    k_ = args[1];
+//  } else {
+//    l_ = params->get_int_param("num_levels");
+//    k_ = params->get_int_param("branching");
+//  }
+
+//  numleafswitches_ = pow(k_, l_ - 1);
+//  toplevel_ = l_ - 1;
+
+//  max_ports_intra_network_ = 2*k_;
+//  eject_geometric_id_ = max_ports_intra_network_;
+
+  up_ports_per_leaf_switch_ =
+      params->get_int_param("up_ports_per_leaf_switch");
+  down_ports_per_agg_switch_ =
+      params->get_int_param("down_ports_per_agg_switch");
+  up_ports_per_agg_switch_ =
+      params->get_int_param("up_ports_per_agg_switch");
+  down_ports_per_core_switch_ =
+      params->get_int_param("down_ports_per_core_switch");
+
+  if (down_ports_per_core_switch < num_agg_switches_) {
+    // TODO error
+  }
+  if (down_ports_per_agg_switch < num_leaf_switches_per_subtree) {
+    // TODO error
   }
 
-  numleafswitches_ = pow(k_, l_ - 1);
-  toplevel_ = l_ - 1;
-
-  max_ports_intra_network_ = 2*k_;
+  int leaf_ports = concentration + up_ports_per_leaf_switch_;
+  int agg_ports = down_ports_per_agg_switch_ +  up_ports_per_agg_switch_;
+  int la_ports = max(leaf_ports,agg_ports);
+  max_ports_intra_network_ = max(la_ports,down_ports_per_core_switch_);
+  // currently assumes port_id == geometric_id (no redundancy)
   eject_geometric_id_ = max_ports_intra_network_;
 }
 
@@ -148,53 +180,146 @@ fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSi
 void
 fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  int branchSize = 1;
-  conns.resize(2*k_);
-  int myRow, myCol;
-  compute_row_col(src, myRow, myCol);
-  for (int row=0; row < myRow; ++row){
-    branchSize *= k_;
-  }
-  int myBranch = myCol / branchSize;
-  int cidx = 0;
-  if (myRow < toplevel_){
-    for (int k=0; k < k_; ++k){
-      int upColumn = upColumnConnection(k_, myCol, k, branchSize);
-      switch_id upDst = switch_at_row_col(myRow+1,upColumn);
-      int upPort = up_port(k);
-      int downPort = down_port(myBranch % k_);
+  // find row
+  int row;
+  int num_non_core = num_leaf_switches_ + num_agg_switches_;
+  if (src < num_leaf_switches_)
+    row = 0;
+  else if (num_leaf_switches_ <= src && src < num_non_core )
+    row = 1;
+  else if (num_non_core <= src)
+    row = 2;
 
-      connection& conn = conns[cidx];
-      conn.src = src;
-      conn.dst = upDst;
-      conn.src_outport = upPort;
-      conn.dst_inport = downPort;
-      ++cidx;
+  // leaf switch
+  if (row == 0){
+    int my_sub_tree = src / num_leaf_switches_per_subtree;
+    int my_sub_tree_spot = src % num_leaf_switches_per_subtree;
+    for (int up_port=0; up_port < up_ports_per_leaf_switch_; ++up_port){
+      int subtree_down_port =
+          my_sub_tree_spot + up_port * num_leaf_switches_per_subtree;
+      int agg_partner_spot =
+          subtree_down_port / down_ports_per_agg_switch_;
+      int agg_partner_port =
+          subtree_down_port % down_ports_per_agg_switch_;
+      int agg_partner_switch =
+          num_leaf_switches_
+          + my_sub_tree * num_agg_switches_per_subtree
+          + agg_partner_spot;
+      connection next;
+      next.dst = agg_partner_switch;
+      next.dst_inport = agg_partner_port;
+      next.src = src;
+      next.src_outport = up_port;
+      conns.push_back(next);
     }
   }
 
-  if (myRow > 0){
-    branchSize /= k_;
-    for (int col=0; col < numleafswitches_; ++col){
-      for (int k=0; k < k_; ++k){
-        int upColumn = upColumnConnection(k_, col, k, branchSize);
-        if (upColumn == myCol){
-          int branch = col / branchSize;
-          switch_id downDst = switch_at_row_col(myRow-1, col);
-          int upPort = up_port(k);
-          int downPort = down_port(branch % k_);
-          connection& conn = conns[cidx];
-          conn.src = src;
-          conn.dst = downDst;
-          conn.src_outport = downPort;
-          conn.dst_inport = upPort;
-          ++cidx;
-        }
-      }
+  // aggregation switch
+  else if (row == 1){
+    int my_sub_tree = (src - num_leaf_switches_)
+        / num_agg_switches_per_subtree;
+    int my_sub_tree_spot = (src - num_leaf_switches)
+        % num_agg_switches_per_subtree;
+    int agg_spot = src - num_leaf_switches_;
+    // up ports
+    for (int up_port=0; up_port < up_ports_per_agg_switch_; ++up_port){
+      int global_core_down_port =
+          up_port * num_agg_switches_ + agg_spot;
+      int core_partner_spot =
+          global_core_down_port / down_ports_per_core_switch_;
+      int core_partner_port =
+          global_core_down_port % down_ports_per_core_switch_;
+      int core_partner_switch =
+          num_leaf_switches_ + num_agg_switches_
+          + core_partner_spot;
+      connection next;
+      next.dst = core_partner_switch;
+      next.dst_inport = core_partner_port;
+      next.src = src;
+      next.src_outport = up_port;
+      conns.push_back(next);
+    }
+    // down ports
+    for (int dwn_port=0; dwn_port < down_ports_per_agg_switch_;
+         ++dwn_port){
+      int leaf_port = dwn_port / num_leaf_switches_per_subtree_;
+      int subtree_leaf_spot = dwn_port % num_leaf_switches_per_subtree_;
+      int leaf_partner_switch =
+          my_sub_tree * num_leaf_switches_per_subtree
+          + subtree_leaf_spot;
+      connection next;
+      next.dst = leaf_partner_switch;
+      next.dst_inport = leaf_port;
+      next.src = src;
+      next.src_outport = dwn_port;
+      conns.push_back(next);
     }
   }
 
-  conns.resize(cidx);
+  // core switch
+  else if (row == 2){
+    // down ports
+    for (int dwn_port=0; dwn_port < down_ports_per_core_switch_;
+         ++dwn_port){
+      int agg_port = dwn_port / num_agg_switches_;
+      int agg_spot = dwn_port % num_agg_switches_;
+      int agg_partner_switch = num_leaf_switches_ + agg_spot;
+      connection next;
+      next.dst = agg_partner_switch;
+      next.dst_inport = agg_port;
+      next.src = src;
+      next.src_outport = dwn_port;
+      conns.push_back(next);
+    }
+  }
+
+//  int branchSize = 1;
+//  conns.resize(2*k_);
+//  int myRow, myCol;
+//  compute_row_col(src, myRow, myCol);
+//  for (int row=0; row < myRow; ++row){
+//    branchSize *= k_;
+//  }
+//  int myBranch = myCol / branchSize;
+//  int cidx = 0;
+//  if (myRow < toplevel_){
+//    for (int k=0; k < k_; ++k){
+//      int upColumn = upColumnConnection(k_, myCol, k, branchSize);
+//      switch_id upDst = switch_at_row_col(myRow+1,upColumn);
+//      int upPort = up_port(k);
+//      int downPort = down_port(myBranch % k_);
+
+//      connection& conn = conns[cidx];
+//      conn.src = src;
+//      conn.dst = upDst;
+//      conn.src_outport = upPort;
+//      conn.dst_inport = downPort;
+//      ++cidx;
+//    }
+//  }
+
+//  if (myRow > 0){
+//    branchSize /= k_;
+//    for (int col=0; col < numleafswitches_; ++col){
+//      for (int k=0; k < k_; ++k){
+//        int upColumn = upColumnConnection(k_, col, k, branchSize);
+//        if (upColumn == myCol){
+//          int branch = col / branchSize;
+//          switch_id downDst = switch_at_row_col(myRow-1, col);
+//          int upPort = up_port(k);
+//          int downPort = down_port(branch % k_);
+//          connection& conn = conns[cidx];
+//          conn.src = src;
+//          conn.dst = downDst;
+//          conn.src_outport = downPort;
+//          conn.dst_inport = upPort;
+//          ++cidx;
+//        }
+//      }
+//    }
+//  }
+
+//  conns.resize(cidx);
 }
 
 void
@@ -217,10 +342,10 @@ int
 fat_tree::minimal_distance(switch_id src,
                            switch_id dst) const
 {
-  int srcRow = src / numleafswitches_;
-  int srcCol = src % numleafswitches_;
-  int dstRow = dst / numleafswitches_;
-  int dstCol = dst % numleafswitches_;
+  int srcRow = src / num_leaf_switches_;
+  int srcCol = src % num_leaf_switches_;
+  int dstRow = dst / num_leaf_switches_;
+  int dstCol = dst % num_leaf_switches_;
 
   int startRow = std::min(srcRow, dstRow);
   int branchSize = pow(k_, startRow);
@@ -346,20 +471,13 @@ tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
                     InitMaxPortsIntra::I_Remembered,
                     InitGeomEjectID::I_Remembered)
 {
-  num_inj_switches_per_subtree_ = params->get_int_param("num_inj_switches_per_subtree");
+  num_leaf_switches_per_subtree_ = params->get_int_param("num_leaf_switches_per_subtree");
   num_agg_switches_per_subtree_ = params->get_int_param("num_agg_switches_per_subtree");
   num_agg_subtrees_ = params->get_int_param("num_agg_subtrees");
   num_core_switches_ = params->get_int_param("num_core_switches");
-  num_inj_switches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
+  num_leaf_switches_ = num_leaf_switches_per_subtree_ * num_agg_subtrees_;
 
-  //double numerator = num_inj_switches_per_subtree_ + num_agg_switches_per_subtree_;
-  //double down_link_fraction = double(num_inj_switches_per_subtree_) / numerator;
-  //double up_link_fraction = num_agg_switches_per_subtree_ / numerator;
-
-  //agg_bw_multiplier_ = up_link_fraction * num_agg_switches_per_subtree_;
   agg_bw_multiplier_ = num_agg_switches_per_subtree_;
-
-  numleafswitches_ = num_inj_switches_per_subtree_ * num_agg_subtrees_;
 
   int max_up_port = std::max(up_port(0), up_port(1));
   int max_core_port = num_agg_subtrees_;
@@ -367,7 +485,7 @@ tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
   
   eject_geometric_id_ = max_ports_intra_network_;
 
-  num_switches_ = num_inj_switches_ + num_agg_subtrees_ + 1;
+  num_switches_ = num_leaf_switches_ + num_agg_subtrees_ + 1;
 }
 
 void
@@ -399,7 +517,7 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
                       link_params, switch_params);
 
     //My down links are not
-    for (int s=0; s < num_inj_switches_per_subtree_; s++){
+    for (int s=0; s < num_leaf_switches_per_subtree_; s++){
       int outport = s;
       setup_port_params(outport,
                         buffer_size,
@@ -456,24 +574,24 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
     for (int s=0; s < num_agg_subtrees_; ++s){
       connection& conn = conns[s];
       conn.src = src;
-      conn.dst = num_inj_switches_ + s;
+      conn.dst = num_leaf_switches_ + s;
       conn.src_outport = s;
       conn.dst_inport = inport;
     }
   } else if (myRow == 1){
     //agg switch
     int myTree = agg_sub_tree(src);
-    int myOffset = myTree * num_inj_switches_per_subtree_;
-    conns.resize(num_inj_switches_per_subtree_ + 1);
+    int myOffset = myTree * num_leaf_switches_per_subtree_;
+    conns.resize(num_leaf_switches_per_subtree_ + 1);
     int inport = up_port(0);
-    for (int s=0; s < num_inj_switches_per_subtree_; ++s){
+    for (int s=0; s < num_leaf_switches_per_subtree_; ++s){
       connection& conn = conns[s];
       conn.src = src;
       conn.dst = myOffset + s;
       conn.src_outport = s;
       conn.dst_inport = inport;
     }
-    connection& upconn = conns[num_inj_switches_per_subtree_];
+    connection& upconn = conns[num_leaf_switches_per_subtree_];
     upconn.src = src;
     upconn.dst = core_switch_id();
     upconn.src_outport = up_port(1);
@@ -481,12 +599,12 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
   } else {
     //inj switch
     int myTree = inj_sub_tree(src);
-    int myOffset = src % num_inj_switches_per_subtree_;
+    int myOffset = src % num_leaf_switches_per_subtree_;
     conns.resize(1);
     int outport = up_port(0);
     connection& conn = conns[0];
     conn.src = src;
-    conn.dst = num_inj_switches_ + myTree;
+    conn.dst = num_leaf_switches_ + myTree;
     conn.src_outport = outport;
     conn.dst_inport = myOffset;
   }
@@ -497,7 +615,7 @@ tapered_fat_tree::level(switch_id sid) const
 {
   if (sid == core_switch_id()){
     return 2;
-  } else if (sid >= num_inj_switches_){
+  } else if (sid >= num_leaf_switches_){
     return 1;
   } else {
     return 0;
@@ -534,7 +652,7 @@ tapered_fat_tree::minimal_route_to_switch(
     int dst_tree = inj_sub_tree(dest_sw_addr);
     if (dst_tree == my_tree){
       //okay, great, I should have direct link
-      path.set_outport(dest_sw_addr % num_inj_switches_per_subtree_);
+      path.set_outport(dest_sw_addr % num_leaf_switches_per_subtree_);
       path.vc = 0;
       top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d hopping from tree %d to tree %d",
               int(dest_sw_addr), dst_level,

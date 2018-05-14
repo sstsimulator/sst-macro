@@ -89,6 +89,13 @@ class abstract_fat_tree :
  private:
   sprockit::sim_parameters*
   override_params(sprockit::sim_parameters* params);
+
+  int num_leaf_switches_;
+  int num_agg_subtrees_;
+  int num_leaf_switches_per_subtree_;
+  int num_agg_switches_per_subtree_;
+  int num_core_switches_;
+  int num_switches_;
 };
 
 /**
@@ -178,8 +185,12 @@ class fat_tree :
 
  private:
   int toplevel_;
-  int k_;
-  int l_;
+  //int k_;
+  //int l_;
+  int up_ports_per_leaf_switch;
+  int down_ports_per_agg_switch;
+  int up_ports_per_agg_switch;
+  int down_ports_per_core_switch;
 };
 
 class tapered_fat_tree : public abstract_fat_tree
@@ -237,15 +248,15 @@ class tapered_fat_tree : public abstract_fat_tree
   int level(switch_id sid) const;
 
   inline int inj_sub_tree(switch_id sid) const {
-    return sid / num_inj_switches_per_subtree_;
+    return sid / num_leaf_switches_per_subtree_;
   }
 
   inline int agg_sub_tree(switch_id sid) const {
-    return (sid - num_inj_switches_);
+    return (sid - num_leaf_switches_);
   }
 
   inline int sub_tree(switch_id sid) const {
-    if (sid > num_inj_switches_){
+    if (sid > num_leaf_switches_){
       return agg_sub_tree(sid);
     } else {
       return inj_sub_tree(sid);
@@ -258,7 +269,7 @@ class tapered_fat_tree : public abstract_fat_tree
       return concentration();
     } else if (level == 1){
       //I have this many down ports - up port comes after
-      return num_inj_switches_per_subtree_;
+      return num_leaf_switches_per_subtree_;
     } else {
       spkt_abort_printf("invalid level %d - cannot go up on fat tree level %d", level, level);
       return -1;
@@ -271,14 +282,8 @@ class tapered_fat_tree : public abstract_fat_tree
 
  private:
   switch_id core_switch_id() const {
-    return num_inj_switches_ + num_agg_subtrees_;
+    return num_leaf_switches_ + num_agg_subtrees_;
   }
-  int num_inj_switches_;
-  int num_agg_subtrees_;
-  int num_inj_switches_per_subtree_;
-  int num_agg_switches_per_subtree_;
-  int num_core_switches_;
-  int num_switches_;
   double agg_bw_multiplier_;
 
 };
