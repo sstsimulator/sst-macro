@@ -135,46 +135,47 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
   down_ports_per_core_switch_ =
       params->get_int_param("down_ports_per_core_switch");
 
-  if (down_ports_per_core_switch < num_agg_switches_) {
+  if (down_ports_per_core_switch_ < num_agg_switches_) {
     // TODO error
   }
-  if (down_ports_per_agg_switch < num_leaf_switches_per_subtree) {
+  if (down_ports_per_agg_switch_ < num_leaf_switches_per_subtree_) {
     // TODO error
   }
 
-  int leaf_ports = concentration + up_ports_per_leaf_switch_;
+  int leaf_ports = concentration() + up_ports_per_leaf_switch_;
   int agg_ports = down_ports_per_agg_switch_ +  up_ports_per_agg_switch_;
-  int la_ports = max(leaf_ports,agg_ports);
-  max_ports_intra_network_ = max(la_ports,down_ports_per_core_switch_);
+  int la_ports = std::max(leaf_ports,agg_ports);
+  max_ports_intra_network_ =
+      std::max(la_ports,down_ports_per_core_switch_);
   // currently assumes port_id == geometric_id (no redundancy)
   eject_geometric_id_ = max_ports_intra_network_;
 }
 
-int
-fat_tree::upColumnConnection(int k, int myColumn, int upPort, int myBranchSize)
-{
-  upPort = upPort % k;
-  int myReplicaID = myColumn % myBranchSize;
-  int portStride = myBranchSize;
-  int upBranchSize = myBranchSize*k;
-  int myVirtualBranch = myColumn/myBranchSize;
-  int upVirtualBranch = myVirtualBranch/k;
-  int ret = upVirtualBranch*upBranchSize + upPort*portStride + myReplicaID;
-  //printf("(c=%d,vc=%d,p=%d)->(c=%d,vc=%d)",
-  //     myColumn, myVirtualColumn, upPort, ret, upVirtualColumn);
-  return ret;
-}
+//int
+//fat_tree::upColumnConnection(int k, int myColumn, int upPort, int myBranchSize)
+//{
+//  upPort = upPort % k;
+//  int myReplicaID = myColumn % myBranchSize;
+//  int portStride = myBranchSize;
+//  int upBranchSize = myBranchSize*k;
+//  int myVirtualBranch = myColumn/myBranchSize;
+//  int upVirtualBranch = myVirtualBranch/k;
+//  int ret = upVirtualBranch*upBranchSize + upPort*portStride + myReplicaID;
+//  //printf("(c=%d,vc=%d,p=%d)->(c=%d,vc=%d)",
+//  //     myColumn, myVirtualColumn, upPort, ret, upVirtualColumn);
+//  return ret;
+//}
 
-int
-fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSize)
-{
-  downPort = downPort % k;
-  int myVirtualBranch = myColumn / myBranchSize;
-  int myReplicaID = myColumn % myBranchSize;
-  int lowerBranchSize = myBranchSize / k;
-  int lowerReplicaID = myReplicaID % lowerBranchSize;
-  return myVirtualBranch*k + downPort*lowerBranchSize + lowerReplicaID;
-}
+//int
+//fat_tree::downColumnConnection(int k, int myColumn, int downPort, int myBranchSize)
+//{
+//  downPort = downPort % k;
+//  int myVirtualBranch = myColumn / myBranchSize;
+//  int myReplicaID = myColumn % myBranchSize;
+//  int lowerBranchSize = myBranchSize / k;
+//  int lowerReplicaID = myReplicaID % lowerBranchSize;
+//  return myVirtualBranch*k + downPort*lowerBranchSize + lowerReplicaID;
+//}
 
 
 void
@@ -192,18 +193,18 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
 
   // leaf switch
   if (row == 0){
-    int my_sub_tree = src / num_leaf_switches_per_subtree;
-    int my_sub_tree_spot = src % num_leaf_switches_per_subtree;
+    int my_sub_tree = src / num_leaf_switches_per_subtree_;
+    int my_sub_tree_spot = src % num_leaf_switches_per_subtree_;
     for (int up_port=0; up_port < up_ports_per_leaf_switch_; ++up_port){
       int subtree_down_port =
-          my_sub_tree_spot + up_port * num_leaf_switches_per_subtree;
+          my_sub_tree_spot + up_port * num_leaf_switches_per_subtree_;
       int agg_partner_spot =
           subtree_down_port / down_ports_per_agg_switch_;
       int agg_partner_port =
           subtree_down_port % down_ports_per_agg_switch_;
       int agg_partner_switch =
           num_leaf_switches_
-          + my_sub_tree * num_agg_switches_per_subtree
+          + my_sub_tree * num_agg_switches_per_subtree_
           + agg_partner_spot;
       connection next;
       next.dst = agg_partner_switch;
@@ -217,9 +218,9 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
   // aggregation switch
   else if (row == 1){
     int my_sub_tree = (src - num_leaf_switches_)
-        / num_agg_switches_per_subtree;
-    int my_sub_tree_spot = (src - num_leaf_switches)
-        % num_agg_switches_per_subtree;
+        / num_agg_switches_per_subtree_;
+    int my_sub_tree_spot = (src - num_leaf_switches_)
+        % num_agg_switches_per_subtree_;
     int agg_spot = src - num_leaf_switches_;
     // up ports
     for (int up_port=0; up_port < up_ports_per_agg_switch_; ++up_port){
@@ -245,7 +246,7 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
       int leaf_port = dwn_port / num_leaf_switches_per_subtree_;
       int subtree_leaf_spot = dwn_port % num_leaf_switches_per_subtree_;
       int leaf_partner_switch =
-          my_sub_tree * num_leaf_switches_per_subtree
+          my_sub_tree * num_leaf_switches_per_subtree_
           + subtree_leaf_spot;
       connection next;
       next.dst = leaf_partner_switch;
@@ -326,7 +327,18 @@ void
 fat_tree::configure_individual_port_params(switch_id src,
                                  sprockit::sim_parameters *switch_params) const
 {
-  topology::configure_individual_port_params(0, 2*k_, switch_params);
+  int num_non_core = num_leaf_switches_ + num_agg_switches_;
+  int nport = 0;
+  if (src < num_leaf_switches_)
+    nport = up_ports_per_leaf_switch_ + concentration();
+  else if (num_leaf_switches_ <= src && src < num_non_core )
+    nport = up_ports_per_agg_switch_ + down_ports_per_agg_switch_;
+  else if (num_non_core <= src)
+    nport = down_ports_per_core_switch_;
+  else {
+    // TODO error
+  }
+  topology::configure_individual_port_params(0, nport, switch_params);
 }
 
 void
@@ -348,13 +360,13 @@ fat_tree::minimal_distance(switch_id src,
   int dstCol = dst % num_leaf_switches_;
 
   int startRow = std::min(srcRow, dstRow);
-  int branchSize = pow(k_, startRow);
+  int branchSize = 0; // TODO ??? pow(k_, startRow);
   int srcBranch = srcCol / branchSize;
   int dstBranch = dstCol / branchSize;
   int stopRow = startRow;
   //keep going up until these land in the same branch
   while (srcBranch != dstBranch){
-    branchSize *= k_;
+    branchSize *= 0; // TODO ??? k_;
     srcBranch = srcCol / branchSize;
     dstBranch = dstCol / branchSize;
     ++stopRow;

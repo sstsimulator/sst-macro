@@ -69,7 +69,7 @@ class abstract_fat_tree :
   }
 
   virtual int num_leaf_switches() const override {
-    return numleafswitches_;
+    return num_leaf_switches_;
   }
 
   void nodes_connected_to_injection_switch(switch_id swaddr,
@@ -84,18 +84,18 @@ class abstract_fat_tree :
                     InitGeomEjectID i2);
 
  protected:
-  int numleafswitches_;
-
- private:
-  sprockit::sim_parameters*
-  override_params(sprockit::sim_parameters* params);
-
+  //int numleafswitches_;
   int num_leaf_switches_;
   int num_agg_subtrees_;
   int num_leaf_switches_per_subtree_;
   int num_agg_switches_per_subtree_;
+  int num_agg_switches_;
   int num_core_switches_;
   int num_switches_;
+
+ private:
+  sprockit::sim_parameters*
+  override_params(sprockit::sim_parameters* params);
 };
 
 /**
@@ -117,13 +117,13 @@ class fat_tree :
     return "fat tree topology";
   }
 
-  inline int up_port(int dir) const {
-    return  k_ + dir;
-  }
+//  inline int up_port(int dir) const {
+//    return  k_ + dir;
+//  }
 
-  inline int down_port(int dir) const {
-    return dir;
-  }
+//  inline int down_port(int dir) const {
+//    return dir;
+//  }
 
   virtual ~fat_tree() {}
 
@@ -131,16 +131,17 @@ class fat_tree :
     return true;
   }
 
-  int l() const {
-    return l_;
-  }
+//  int l() const {
+//    return l_;
+//  }
 
-  int k() const {
-    return k_;
-  }
+//  int k() const {
+//    return k_;
+//  }
 
   int diameter() const override {
-    return (l_ + 1) * 2;
+    //return (l_ + 1) * 2;
+    return 6;
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
@@ -158,7 +159,7 @@ class fat_tree :
 
 
   virtual int num_switches() const override {
-    return numleafswitches_ * l_;
+    return num_leaf_switches_ + num_agg_switches_ + num_core_switches_;
   }
 
   void minimal_route_to_switch(
@@ -170,27 +171,27 @@ class fat_tree :
     switch_id src,
     switch_id dest) const override;
 
-  int switch_at_row_col(int row, int col) const {
-    return row * numleafswitches_ + col;
-  }
+//  int switch_at_row_col(int row, int col) const {
+//    return row * num_leaf_switches_ + col;
+//  }
 
-  void compute_row_col(switch_id sid, int& row, int& col) const {
-    row = sid / numleafswitches_;
-    col = sid % numleafswitches_;
-  }
+//  void compute_row_col(switch_id sid, int& row, int& col) const {
+//    row = sid / num_leaf_switches_;
+//    col = sid % num_leaf_switches_;
+//  }
 
-  static int upColumnConnection(int k, int myColumn, int upPort, int columnSize);
+//  static int upColumnConnection(int k, int myColumn, int upPort, int columnSize);
 
-  static int downColumnConnection(int k, int myColumn, int downPort, int columnSize);
+//  static int downColumnConnection(int k, int myColumn, int downPort, int columnSize);
 
  private:
-  int toplevel_;
+  //int toplevel_;
   //int k_;
   //int l_;
-  int up_ports_per_leaf_switch;
-  int down_ports_per_agg_switch;
-  int up_ports_per_agg_switch;
-  int down_ports_per_core_switch;
+  int up_ports_per_leaf_switch_;
+  int down_ports_per_agg_switch_;
+  int up_ports_per_agg_switch_;
+  int down_ports_per_core_switch_;
 };
 
 class tapered_fat_tree : public abstract_fat_tree
