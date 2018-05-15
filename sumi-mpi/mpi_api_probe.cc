@@ -57,6 +57,8 @@ namespace sumi {
 int
 mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 {
+  auto start_time = (uint64_t)os_->now().usec();
+
   start_probe_call(MPI_Probe,comm,source,tag);
 
   mpi_comm* commPtr = get_comm(comm);
@@ -75,7 +77,7 @@ mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
     auto start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Probe");
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, (uint64_t)os_->now().usec(), "MPI_Probe");
   }
 #endif
 
@@ -85,6 +87,8 @@ mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 int
 mpi_api::iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
 {
+  auto start_time = (uint64_t)os_->now().usec();
+
   start_probe_call(MPI_Iprobe,comm,source,tag);
 
   mpi_comm* commPtr = get_comm(comm);
@@ -105,8 +109,7 @@ mpi_api::iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *statu
 
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
-    auto start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Iprobe");
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, (uint64_t)os_->now().usec(), "MPI_Iprobe");
   }
 #endif
 

@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi-mpi/mpi_api.h>
+#include <sstmac/software/process/operating_system.h>
 #include <climits>
 
 namespace sstmac {
@@ -255,6 +256,14 @@ mpi_api::pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
       return MPI_ERR_TYPE;
   }
   *size = incount * it->second->packed_size();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Pack_size");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -269,6 +278,14 @@ mpi_api::type_set_name(MPI_Datatype id, const char* name)
       return MPI_ERR_TYPE;
   }
   it->second->label = name;
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_set_name");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -285,6 +302,14 @@ mpi_api::type_get_name(MPI_Datatype id, char* name, int* resultlen)
   const std::string& label = it->second->label;
   ::strcpy(name, label.c_str());
   *resultlen = label.size();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_get_name");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -332,6 +357,13 @@ int
 mpi_api::type_hvector(int count, int blocklength, MPI_Aint stride,
                      MPI_Datatype old_type, MPI_Datatype* new_type)
 {
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    // MPI_Type_hvector will be emmitted instead of MPI_Type_vector
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.mpi_type_hvector(comm_world()->rank(), call_start_time, call_start_time, count, blocklength, old_type, *new_type);
+  }
+#endif
   return do_type_hvector(count, blocklength, stride, type_from_id(old_type), new_type);
 }
 
@@ -342,6 +374,7 @@ mpi_api::type_vector(int count, int blocklength, int stride,
 {
   mpi_type* old = type_from_id(old_type);
   MPI_Aint byte_stride = stride * old->extent();
+
   return do_type_hvector(count, blocklength, byte_stride, old, new_type);
 }
 
@@ -393,6 +426,14 @@ int
 mpi_api::type_hindexed(int count, const int lens[], const MPI_Aint* displs,
                       MPI_Datatype intype, MPI_Datatype* outtype)
 {
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    // MPI_Type_hindexed will be emmitted instead of MPI_Type_indexed
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.mpi_type_hindexed(comm_world()->rank(), call_start_time, call_start_time, count, lens, intype, *outtype);
+  }
+#endif
+
   return do_type_hindexed(count, lens, displs, type_from_id(intype), outtype);
 }
 
@@ -424,6 +465,14 @@ mpi_api::type_commit(MPI_Datatype* type)
 {
   mpi_type* type_obj = type_from_id(*type);
   type_obj->set_committed(true);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_commit");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -449,6 +498,12 @@ mpi_api::commit_builtin_type(mpi_type* type, MPI_Datatype id)
   type->set_builtin(true);
   known_types_[id] = type;
   known_types_[id]->set_committed(true);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.register_type(id, type->packed_size());
+  }
+#endif
 }
 
 //
@@ -467,6 +522,14 @@ mpi_api::type_contiguous(int count, MPI_Datatype old_type,
 
   allocate_type_id(new_type_obj);
   *new_type = new_type_obj->id;
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.mpi_type_contiguous(comm_world()->rank(), call_start_time, call_start_time, count, old_type, *new_type);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -529,6 +592,15 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
                 "MPI_Type_struct(%d,<...>,<...>,<...>,*%s)",
                 count, type_str(*newtype).c_str());
 
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    // MPI_Type_struct and MPI_Type_create_struct will emit MPI_Type_struct
+    auto call_start_time = (uint64_t)os_->now().usec();
+    std::vector<dumpi::mpi_type_t> _old_types(old_types, old_types + count);
+    otf2_writer_.mpi_type_struct(comm_world()->rank(), call_start_time, call_start_time, count, blocklens, _old_types.data(), (dumpi::mpi_type_t)*newtype);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -536,6 +608,15 @@ int
 mpi_api::type_size(MPI_Datatype type, int* size)
 {
   *size = type_from_id(type)->packed_size();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_size");
+  }
+#endif
+
+
   return MPI_SUCCESS;
 }
 
@@ -543,6 +624,14 @@ int
 mpi_api::type_extent(MPI_Datatype type, MPI_Aint *extent)
 {
   *extent = type_from_id(type)->extent();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_extent");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -555,6 +644,15 @@ mpi_api::type_dup(MPI_Datatype intype, MPI_Datatype* outtype)
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_dup(%s,*%s)",
                 type_str(intype).c_str(), type_str(*outtype).c_str());
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_dup");
+    otf2_writer_.register_type(*outtype, type_from_id(*outtype)->packed_size());
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -574,6 +672,14 @@ mpi_api::type_free(MPI_Datatype* type)
     known_types_.erase(iter);
     delete obj;
   }
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_free");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

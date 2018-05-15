@@ -78,6 +78,9 @@ mpi_api::test(MPI_Request *request, MPI_Status *status)
 int
 mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
 {
+  MPI_Request req_cpy = *request;
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   _start_mpi_call_(MPI_Test);
   if (test(request, status)){
     mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
@@ -86,12 +89,30 @@ mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
     *flag = 0;
   }
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_test(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          req_cpy,
+                          *flag);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {
+#ifdef OTF2_ENABLED
+  auto call_start_time = (uint64_t)os_->now().usec();
+
+  // Make a copy of requests since they may mutate before OTF2 call
+  std::vector<dumpi::request_t> requests(array_of_requests, array_of_requests + count);
+#endif
+
   _start_mpi_call_(MPI_Testall);
   *flag = 1;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
@@ -106,12 +127,31 @@ mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Stat
       "MPI_Testall(%d,...)", count);
   }
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_testall(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          count,
+                          requests.data(),
+                          *flag);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status *status)
 {
+#ifdef OTF2_ENABLED
+  auto call_start_time = (uint64_t)os_->now().usec();
+
+  // Make a copy of requests since they may mutate before OTF2 call
+  std::vector<dumpi::request_t> requests(array_of_requests, array_of_requests + count);
+#endif
+
   start_api_call();
   if (count == 0){
     *flag = 1;
@@ -127,12 +167,31 @@ mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *fla
     }
   }
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_testany(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          requests.data(),
+                          *indx,
+                          *flag);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
+#ifdef OTF2_ENABLED
+  auto call_start_time = (uint64_t)os_->now().usec();
+
+  // Make a copy of requests since they may mutate before OTF2 call
+  std::vector<dumpi::request_t> requests(array_of_requests, array_of_requests + incount);
+#endif
+
   start_api_call();
   int numComplete = 0;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
@@ -144,6 +203,20 @@ mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount, i
   }
   *outcount = numComplete;
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    std::vector<int> statuses;
+
+    otf2_writer_.mpi_testsome(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          requests.data(),
+                          *outcount,
+                          array_of_indices);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

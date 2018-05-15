@@ -63,6 +63,8 @@ namespace sumi {
 int
 mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {  
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_pt2pt_call(MPI_Send,count,datatype,dest,tag,comm);
   mpi_comm* commPtr = get_comm(comm);
   mpi_request* req = mpi_request::construct(mpi_request::Send);
@@ -70,6 +72,20 @@ mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   queue_->progress_loop(req);
   delete req;
   finish_mpi_call(MPI_Send);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_send(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          datatype,
+                          count,
+                          dest,
+                          comm,
+                          tag);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -80,12 +96,23 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
  MPI_Datatype recvtype, int source, int recvtag,
  MPI_Comm comm, MPI_Status *status)
 {
+
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
   mpi_request* req = do_isend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
   do_recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
   queue_->progress_loop(req);
   delete req;
   finish_mpi_call(MPI_Sendrecv);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    printf("Warning: OTF2 writer does not implement MPI_Sendrecv\n");
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Sendrecv");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -107,6 +134,14 @@ mpi_api::request_free(MPI_Request *req)
     }
   }
   *req = MPI_REQUEST_NULL;
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Request_free");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -132,20 +167,37 @@ mpi_api::do_start(MPI_Request req)
 int
 mpi_api::start(MPI_Request* req)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   _start_mpi_call_(MPI_Start);
   do_start(*req);
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Start");
+  }
+#endif
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::startall(int count, MPI_Request* req)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   _start_mpi_call_(MPI_Startall);
   for (int i=0; i < count; ++i){
     do_start(req[i]);
   }
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Startall");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -154,6 +206,8 @@ mpi_api::send_init(const void *buf, int count,
                    MPI_Datatype datatype, int dest, int tag,
                    MPI_Comm comm, MPI_Request *request)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   _start_mpi_call_(MPI_Send_init);
 
   mpi_request* req = mpi_request::construct(mpi_request::Send);
@@ -176,6 +230,13 @@ mpi_api::send_init(const void *buf, int count,
 
   req->set_persistent(op);
   end_api_call();
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Send_init");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -194,6 +255,9 @@ mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
   using namespace sprockit;
+
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_Ipt2pt_call(MPI_Isend,count,datatype,dest,tag,comm,request);
   mpi_request* req = do_isend(buf, count, datatype, dest, tag, comm);
   add_request_ptr(req, request);
@@ -203,6 +267,21 @@ mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
     tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
   queue_->nonblocking_progress();
   finish_mpi_call(MPI_Isend);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_isend(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          datatype,
+                          count,
+                          dest,
+                          comm,
+                          tag,
+                          *request);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -210,9 +289,25 @@ int
 mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source,
               int tag, MPI_Comm comm, MPI_Status *status)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_pt2pt_call(MPI_Recv,count,datatype,source,tag,comm);
   int rc = do_recv(buf,count,datatype,source,tag,comm,status);
   finish_mpi_call(MPI_Recv);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_recv(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          datatype,
+                          count,
+                          source,
+                          comm,
+                          tag);
+  }
+#endif
+
   return rc;
 }
 
@@ -263,6 +358,8 @@ int
 mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_Ipt2pt_call(MPI_Irecv,count,datatype,dest,tag,comm,request);
 
   using namespace sprockit;
@@ -280,6 +377,21 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   queue_->nonblocking_progress();
   finish_mpi_call(MPI_Irecv);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_irecv(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          datatype,
+                          count,
+                          source,
+                          comm,
+                          tag,
+                          *request);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

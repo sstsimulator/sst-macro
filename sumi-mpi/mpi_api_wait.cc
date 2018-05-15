@@ -53,10 +53,24 @@ namespace sumi {
 int
 mpi_api::wait(MPI_Request *request, MPI_Status *status)
 {
+#ifdef OTF2_ENABLED
+  auto call_start_time = (uint64_t)os_->now().usec();
+  MPI_Request request_cpy = *request;
+#endif
+
   start_mpi_call(MPI_Wait);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Wait(...)");
   int rc = do_wait(request, status);
   finish_mpi_call(MPI_Wait);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_wait(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          request_cpy);
+  }
+#endif
   return rc;
 }
 
@@ -98,6 +112,8 @@ int
 mpi_api::waitall(int count, MPI_Request array_of_requests[],
                  MPI_Status array_of_statuses[])
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Waitall);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
     "MPI_Waitall(%d,...)", count);
@@ -111,6 +127,17 @@ mpi_api::waitall(int count, MPI_Request array_of_requests[],
     do_wait(&array_of_requests[i], status);
   }
   finish_mpi_call(MPI_Waitall);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_waitall(comm_world()->rank(),
+                             call_start_time,
+                             (uint64_t)os_->now().usec(),
+                             count,
+                             array_of_requests);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -118,6 +145,9 @@ int
 mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
                  MPI_Status *status)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+  bool call_completed = false;
+
   start_mpi_call(MPI_Waitany);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitany(...)");
   *indx = MPI_UNDEFINED;
@@ -132,39 +162,56 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
         *indx = i;
         finalize_wait_request(reqPtr, &array_of_requests[i], status);
         finish_mpi_call(MPI_Waitany);
-        return MPI_SUCCESS;
+
+        call_completed = true;
+        break;
+        //return MPI_SUCCESS;
       }
       reqPtrs[numNonnull++] = reqPtr;
     }
   }
 
-  if (numNonnull == 0){
+  if (!call_completed && numNonnull == 0){
     spkt_abort_printf("MPI_Waitany: passed in all null requests, undefined behavior");
-    return MPI_SUCCESS;
+    call_completed = true;
+    //return MPI_SUCCESS;
   }
 
-  //none of them are already done
-  reqPtrs.resize(numNonnull);
-  queue_->start_progress_loop(reqPtrs);
+  if(!call_completed) {
+    //none of them are already done
+    reqPtrs.resize(numNonnull);
+    queue_->start_progress_loop(reqPtrs);
 
-  numNonnull = 0;
-  for (int i=0; i < count; ++i){
-    MPI_Request req = array_of_requests[i];
-    if (req != MPI_REQUEST_NULL){
-      mpi_request* reqPtr = reqPtrs[numNonnull++];
-      if (reqPtr->is_complete()){
-        *indx = i;
-        finalize_wait_request(reqPtr, &array_of_requests[i], status);
-        finish_mpi_call(MPI_Waitany);
-        return MPI_SUCCESS;
+    numNonnull = 0;
+    for (int i=0; i < count; ++i){
+      MPI_Request req = array_of_requests[i];
+      if (req != MPI_REQUEST_NULL){
+        mpi_request* reqPtr = reqPtrs[numNonnull++];
+        if (reqPtr->is_complete()){
+          *indx = i;
+          finalize_wait_request(reqPtr, &array_of_requests[i], status);
+          finish_mpi_call(MPI_Waitany);
+          call_completed = true;
+          break;
+          //return MPI_SUCCESS;
+        }
       }
     }
   }
 
-  spkt_throw_printf(sprockit::value_error,
+  if(!call_completed)
+    spkt_throw_printf(sprockit::value_error,
                     "MPI_Waitany finished, but had no completed requests");
 
-  //must have all been null
+  #ifdef OTF2_ENABLED
+    if(otf2_enabled_) {
+      otf2_writer_.mpi_waitany(comm_world()->rank(),
+                               call_start_time,
+                               (uint64_t)os_->now().usec(),
+                               array_of_requests[*indx]);
+    }
+  #endif
+
   return MPI_SUCCESS;
 }
 
@@ -172,6 +219,8 @@ int
 mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
                   int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Waitsome);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
@@ -195,26 +244,38 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
 
   if (numComplete > 0){
     *outcount = numComplete;
-    return MPI_SUCCESS;
-  }
+    //return MPI_SUCCESS;
+  } else {
+    reqPtrs.resize(numIncomplete);
 
-  reqPtrs.resize(numIncomplete);
+    queue_->start_progress_loop(reqPtrs);
 
-  queue_->start_progress_loop(reqPtrs);
-
-  for (int i=0; i < incount; ++i){
-    MPI_Request req = array_of_requests[i];
-    if (req != MPI_REQUEST_NULL){
-      mpi_request* reqPtr = get_request(req);
-      if (reqPtr->is_complete()){
-        array_of_indices[numComplete++] = i;
-        finalize_wait_request(reqPtr, &array_of_requests[i],
-           ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i]);
+    for (int i=0; i < incount; ++i){
+      MPI_Request req = array_of_requests[i];
+      if (req != MPI_REQUEST_NULL){
+        mpi_request* reqPtr = get_request(req);
+        if (reqPtr->is_complete()){
+          array_of_indices[numComplete++] = i;
+          finalize_wait_request(reqPtr, &array_of_requests[i],
+             ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i]);
+        }
       }
     }
+    *outcount = numComplete;
+    finish_mpi_call(MPI_Waitsome);
   }
-  *outcount = numComplete;
-  finish_mpi_call(MPI_Waitsome);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_waitsome(comm_world()->rank(),
+                              call_start_time,
+                              (uint64_t)os_->now().usec(),
+                              array_of_requests,
+                              *outcount,
+                              array_of_indices);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

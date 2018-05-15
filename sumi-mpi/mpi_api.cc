@@ -46,6 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <time.h>
 #include <climits>
 #include <cmath>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/messages/sleep_event.h>
@@ -84,6 +87,7 @@ RegisterDebugSlot(mpi_check,
 RegisterKeywords(
 { "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
 { "dump_comm_times", "dump communication time statistics" },
+{ "otf2_dir_basename", "Enables OTF2 and combinese this parameter with a timestamp to name the archive"}
 );
 
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
@@ -121,8 +125,10 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   queue_(nullptr),
   generate_ids_(true),
   crossed_comm_world_barrier_(false),
-  comm_factory_(sid, this),
-  otf2_enabled_(false)
+#ifdef OTF2_ENABLED
+  otf2_enabled_(false),
+#endif
+  comm_factory_(sid, this)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
   queue_ = new mpi_queue(queue_params, sid.task_, this);
@@ -137,25 +143,34 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   dump_comm_times_ = params->get_optional_bool_param("dump_comm_times", false);
 #endif
 
-#ifdef OTF2_ENABLED
-  auto otf2_archive_ = params->get_optional_param("otf2_archive", "");
-  otf2_enabled_ = !otf2_archive_.empty();
+  std::string otf2_dir_basename = params->get_optional_param("otf2_dir_basename", "");
+  if(!otf2_dir_basename.empty()) {
+  #ifdef OTF2_ENABLED
+    otf2_enabled_ = true;
 
-  if(otf2_enabled_) {
+    // 30 years and C++ still hasn't come up with a compact way to turn time into formatted strings?
+    time_t rawtime;
+    struct tm * timeinfo;
+    char timestamp [128];
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+    std::strftime (timestamp, sizeof(timestamp), "-%Y%m%d-%H%M",timeinfo);
+
     otf2_writer_.set_verbosity(dumpi::OWV_WARN);
-    //TODO get parameters from the constructor
-    otf2_writer_.open_archive(otf2_archive_, get_comm(MPI_COMM_WORLD)->size(), true);
+    otf2_writer_.open_archive(otf2_dir_basename + timestamp, worldcomm_->size(), true);
     otf2_writer_.set_comm_mode(dumpi::COMM_MODE_NONE);
 
-    //register default types here
-    //otf2_writer_.register_type(ID, SIZE);
+    // Register communicators
     otf2_writer_.register_comm_world(worldcomm_->id());
     otf2_writer_.register_comm_self(selfcomm_->id());
     otf2_writer_.register_comm_null(MPI_COMM_NULL);
-    //otf2_writer_.register_comm_error(MPI_COMM_ERROR);
     otf2_writer_.register_comm_error(MPI_REQUEST_NULL);
-  }
+
+    otf2_writer_.set_clock_resolution(1e6);
+#else
+    spkt_abort_printf("OTF2 parameter 'otf2_dir_basename' used but OTF2 support is not available. Use '--with-otf2' in the configure script.");
 #endif
+  }
 }
 
 void
@@ -306,6 +321,13 @@ mpi_api::finalize()
       os_->now().sec());
   }
 
+  #ifdef OTF2_ENABLED
+  // Write this call to archive before it starts. The barrier can be
+  // used to ensure every rank has been written before closing
+  if(otf2_enabled_) {
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Finalize");
+  }
+  #endif
   transport::finish();
 
 #if SSTMAC_COMM_SYNC_STATS
@@ -326,8 +348,7 @@ mpi_api::finalize()
 
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Finalize");
-    if (get_comm(MPI_COMM_WORLD)->rank() == 0) otf2_writer_.close_archive();
+    if (comm_world()->rank() == 0) otf2_writer_.close_archive();
   }
 #endif
   return MPI_SUCCESS;

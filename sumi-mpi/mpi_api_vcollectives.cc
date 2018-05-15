@@ -110,8 +110,24 @@ mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     void *recvbuf, const int *recvcounts, const int *displs,
                     MPI_Datatype recvtype, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   do_vcoll(allgatherv, MPI_Allgatherv, comm, sendcount, sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_allgatherv(comm_world()->rank(),
+                                call_start_time,
+                                (uint64_t)os_->now().usec(),
+                                get_comm(comm)->size(),
+                                sendcount,
+                                sendtype,
+                                recvcounts,
+                                recvtype,
+                                comm);
+  }
+#endif
   return MPI_SUCCESS;
 }
 
@@ -157,6 +173,8 @@ mpi_api::start_alltoallv(const char* name, MPI_Comm comm,
                          const int *recvcounts, MPI_Datatype recvtype, const int *rdispls,
                          const void *sendbuf,  void *recvbuf)
 {
+
+
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
     "%s(<...>,%s,<...>,%s,%s)", name,
     type_str(sendtype).c_str(), type_str(recvtype).c_str(), comm_str(comm).c_str());
@@ -191,9 +209,26 @@ mpi_api::alltoallv(const void *sendbuf, const int *sendcounts,
                    void *recvbuf, const int *recvcounts,
                    const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   do_vcoll(alltoallv, MPI_Alltoallv, comm,
            sendcounts, sendtype, sdispls,
            recvcounts, recvtype, rdispls, sendbuf, recvbuf);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_alltoallv(comm_world()->rank(),
+                               call_start_time,
+                               (uint64_t)os_->now().usec(),
+                               get_comm(comm)->size(),
+                               sendcounts,
+                               sendtype,
+                               recvcounts,
+                               recvtype,
+                               comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -297,8 +332,27 @@ mpi_api::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, const int *recvcounts, const int *displs,
                  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   do_vcoll(gatherv, MPI_Gatherv, comm, sendcount, sendtype, root,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_gatherv(comm_world()->rank(),
+                             call_start_time,
+                             (uint64_t)os_->now().usec(),
+                             get_comm(comm)->size(),
+                             sendcount,
+                             sendtype,
+                             recvcounts,
+                             recvtype,
+                             root,
+                             false,
+                             comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -384,8 +438,27 @@ int
 mpi_api::scatterv(const void* sendbuf, const int* sendcounts, const int *displs, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   do_vcoll(scatterv, MPI_Scatterv, comm, sendcounts, sendtype, root, displs,
            recvcount, recvtype, sendbuf, recvbuf);
+
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    otf2_writer_.mpi_scatterv(comm_world()->rank(),
+                              call_start_time,
+                              (uint64_t)os_->now().usec(),
+                              get_comm(comm)->size(),
+                              sendcounts,
+                              sendtype,
+                              recvcount,
+                              recvtype,
+                              root,
+                              false,
+                              comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

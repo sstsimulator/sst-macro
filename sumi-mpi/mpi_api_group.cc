@@ -75,6 +75,13 @@ mpi_api::group_range_incl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* n
     }
   }
 
+#ifdef OTF2_ENABLED
+  if(otf2_enabled_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Group_range_incl");
+  }
+#endif
+
   return group_incl(oldgrp, new_ranks.size(), new_ranks.data(), newgrp);
 }
 
