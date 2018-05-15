@@ -673,17 +673,17 @@ tapered_fat_tree::configure_nonuniform_switch_params(switch_id src,
   configure_individual_port_params(src, switch_params);
 }
 
-int
-tapered_fat_tree::level(switch_id sid) const
-{
-  if (sid == core_switch_id()){
-    return 2;
-  } else if (sid >= num_leaf_switches_){
-    return 1;
-  } else {
-    return 0;
-  }
-}
+//int
+//tapered_fat_tree::level(switch_id sid) const
+//{
+//  if (sid == core_switch_id()){
+//    return 2;
+//  } else if (sid >= num_leaf_switches_){
+//    return 1;
+//  } else {
+//    return 0;
+//  }
+//}
 
 }
 } //end of namespace sstmac

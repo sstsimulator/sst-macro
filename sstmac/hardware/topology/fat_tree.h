@@ -99,14 +99,16 @@ class abstract_fat_tree :
     }
   }
 
-  int level(switch_id sid) const;
-
   int minimal_distance(switch_id src, switch_id dest) const override;
+
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     packet::path& path) const override;
-  virtual int up_port(int level) const;
+
+  virtual int up_port(int level) const = 0;
+
+  virtual int level(switch_id sid) const = 0;
 
  protected:
   //int numleafswitches_;
@@ -187,10 +189,10 @@ class fat_tree :
     return num_leaf_switches_ + num_agg_switches_ + num_core_switches_;
   }
 
-  void minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    packet::path& path) const override;
+//  void _to_switch(
+//    switch_id current_sw_addr,
+//    switch_id dest_sw_addr,
+//    packet::path& path) const override;
 
   int minimal_distance(
     switch_id src,
@@ -199,6 +201,15 @@ class fat_tree :
   virtual int up_port(int level) const override {
     if (level == 0) return 0;
     else if (level == 1) return down_ports_per_agg_switch_;
+  }
+
+  int level(switch_id sid) const override {
+    int num_non_core = num_leaf_switches_ + num_agg_switches_;
+    if (sid < num_leaf_switches_)
+      return 0;
+    else if (sid >= num_non_core)
+      return 2;
+    return 1;
   }
 
 //  int switch_at_row_col(int row, int col) const {
@@ -270,7 +281,15 @@ class tapered_fat_tree : public abstract_fat_tree
     int nthread,
     int noccupied) const override;
 
-  int level(switch_id sid) const;
+  int level(switch_id sid) const override {
+    if (sid == core_switch_id()){
+      return 2;
+    } else if (sid >= num_leaf_switches_){
+      return 1;
+    } else {
+      return 0;
+    }
+  }
 
 //  inline int inj_sub_tree(switch_id sid) const {
 //    return sid / num_leaf_switches_per_subtree_;
