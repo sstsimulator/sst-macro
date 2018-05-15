@@ -61,8 +61,8 @@ fat_tree_router::fat_tree_router(sprockit::sim_parameters* params, topology *top
   rng_(nullptr)
 {
   ftree_ = safe_cast(fat_tree, top);
-  k_ = ftree_->k();
-  l_ = ftree_->l();
+//  k_ = ftree_->k();
+//  l_ = ftree_->l();
   seed_ = params->get_optional_long_param("router_seed", -1);
   build_rng();
 
@@ -117,7 +117,7 @@ fat_tree_router::route_to_switch(
     pathDir = relative_ej_id / num_leaf_switches_per_path_;
     ftree_rter_debug("routing down with dir %d: eject-id=%ld rel-eject-id=%ld",
         pathDir, ej_id, relative_ej_id);
-    path.set_outport(ftree_->down_port(pathDir));
+    //path.set_outport(ftree_->down_port(pathDir));
   } else {
     //route up
     pathDir = choose_up_minimal_path();

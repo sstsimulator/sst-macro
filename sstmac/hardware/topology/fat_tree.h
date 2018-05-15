@@ -83,6 +83,31 @@ class abstract_fat_tree :
                     InitMaxPortsIntra i1,
                     InitGeomEjectID i2);
 
+  inline int inj_sub_tree(switch_id sid) const {
+    return sid / num_leaf_switches_per_subtree_;
+  }
+
+  virtual int agg_sub_tree(switch_id sid) const {
+    return (sid - num_leaf_switches_) / num_agg_switches_per_subtree_;
+  }
+
+  inline int sub_tree(switch_id sid) const {
+    if (sid > num_leaf_switches_){
+      return agg_sub_tree(sid);
+    } else {
+      return inj_sub_tree(sid);
+    }
+  }
+
+  int level(switch_id sid) const;
+
+  int minimal_distance(switch_id src, switch_id dest) const override;
+  void minimal_route_to_switch(
+    switch_id current_sw_addr,
+    switch_id dest_sw_addr,
+    packet::path& path) const override;
+  virtual int up_port(int level) const;
+
  protected:
   //int numleafswitches_;
   int num_leaf_switches_;
@@ -117,7 +142,7 @@ class fat_tree :
     return "fat tree topology";
   }
 
-//  inline int up_port(int dir) const {
+//  inline int up_ort(int dir) const {
 //    return  k_ + dir;
 //  }
 
@@ -170,6 +195,11 @@ class fat_tree :
   int minimal_distance(
     switch_id src,
     switch_id dest) const override;
+
+  virtual int up_port(int level) const override {
+    if (level == 0) return 0;
+    else if (level == 1) return down_ports_per_agg_switch_;
+  }
 
 //  int switch_at_row_col(int row, int col) const {
 //    return row * num_leaf_switches_ + col;
@@ -240,29 +270,23 @@ class tapered_fat_tree : public abstract_fat_tree
     int nthread,
     int noccupied) const override;
 
-  int minimal_distance(switch_id src, switch_id dest) const override;
-  void minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    packet::path& path) const override;
-
   int level(switch_id sid) const;
 
-  inline int inj_sub_tree(switch_id sid) const {
-    return sid / num_leaf_switches_per_subtree_;
-  }
+//  inline int inj_sub_tree(switch_id sid) const {
+//    return sid / num_leaf_switches_per_subtree_;
+//  }
 
-  inline int agg_sub_tree(switch_id sid) const {
+  int agg_sub_tree(switch_id sid) const {
     return (sid - num_leaf_switches_);
   }
 
-  inline int sub_tree(switch_id sid) const {
-    if (sid > num_leaf_switches_){
-      return agg_sub_tree(sid);
-    } else {
-      return inj_sub_tree(sid);
-    }
-  }
+//  inline int sub_tree(switch_id sid) const {
+//    if (sid > num_leaf_switches_){
+//      return agg_sub_tree(sid);
+//    } else {
+//      return inj_sub_tree(sid);
+//    }
+//  }
 
   int up_port(int level) const {
     if (level == 0){

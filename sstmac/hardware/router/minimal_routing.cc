@@ -164,6 +164,35 @@ class cascade_minimal_router : public minimal_router {
   cascade* cascade_;
 };
 
+class fat_tree_minimal_router : public minimal_router {
+ public:
+  FactoryRegister("fat_tree_minimal",
+              router, fat_tree_minimal_router,
+              "router implementing minimal routing for fat-tree")
+
+  fat_tree_minimal_router(sprockit::sim_parameters* params,
+                          topology *top,
+                          network_switch *netsw)
+    : minimal_router(params, top, netsw)
+  {
+  }
+
+  std::string to_string() const override {
+    return "fat-tree minimal router";
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
+
+ private:
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    packet::path& path = pkt->current_path();
+    top_->minimal_route_to_switch(my_addr_, sid, path);
+    path.vc = 0;
+  }
+};
+
 class tapered_fat_tree_minimal_router : public minimal_router {
  public:
   FactoryRegister("tapered_fat_tree_minimal",
