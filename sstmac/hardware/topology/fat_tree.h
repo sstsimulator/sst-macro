@@ -72,11 +72,15 @@ class abstract_fat_tree :
     return num_leaf_switches_;
   }
 
-  void nodes_connected_to_injection_switch(switch_id swaddr,
-                            std::vector<injection_port>& nodes) const override;
+  virtual int level(switch_id sid) const = 0;
 
-  void nodes_connected_to_ejection_switch(switch_id swaddr,
-                            std::vector<injection_port>& nodes) const override;
+  void nodes_connected_to_injection_switch(
+      switch_id swaddr,
+      std::vector<injection_port>& nodes) const override;
+
+  void nodes_connected_to_ejection_switch(
+      switch_id swaddr,
+      std::vector<injection_port>& nodes) const override;
 
  protected:
   abstract_fat_tree(sprockit::sim_parameters* params,
@@ -89,6 +93,22 @@ class abstract_fat_tree :
 
   virtual int agg_sub_tree(switch_id sid) const {
     return (sid - num_leaf_switches_) / num_agg_switches_per_subtree_;
+  }
+
+  int subtree(switch_id sid) {
+    int lvl = level(sid);
+    switch (lvl) {
+    case 0:
+      return sid / num_leaf_switches_per_subtree_;
+    case 1:
+      return (sid - num_leaf_switches_) / num_agg_switches_per_subtree_;
+    case 2:
+      return num_agg_subtrees_;
+    }
+  }
+
+  int core_subtree() const {
+    return num_agg_subtrees_;
   }
 
   inline int sub_tree(switch_id sid) const {
@@ -109,8 +129,7 @@ class abstract_fat_tree :
   virtual int up_port(int level) const = 0;
 
   virtual int down_port(int dst_tree) const = 0;
-
-  virtual int level(switch_id sid) const = 0;
+  }
 
  protected:
   //int numleafswitches_;
@@ -135,9 +154,7 @@ class fat_tree :
   public abstract_fat_tree
 {
   FactoryRegister("fat_tree", topology, fat_tree,
-    "Fat tree topology with L levels and radix K.  This fat tree is actually implemented with"
-    " commodity switches. Each level of the fat tree has the same number of switches."
-    "This is equivalent to archetypal fat tree with fatter links being replaced by MORE links")
+    "Flexible fat-tree topology with 3 levels.")
 
  public:
   fat_tree(sprockit::sim_parameters* params);
@@ -146,27 +163,11 @@ class fat_tree :
     return "fat tree topology";
   }
 
-//  inline int up_ort(int dir) const {
-//    return  k_ + dir;
-//  }
-
-//  inline int down_port(int dir) const {
-//    return dir;
-//  }
-
   virtual ~fat_tree() {}
 
   bool uniform_network_ports() const override {
     return true;
   }
-
-//  int l() const {
-//    return l_;
-//  }
-
-//  int k() const {
-//    return k_;
-//  }
 
   int diameter() const override {
     //return (l_ + 1) * 2;
@@ -191,15 +192,6 @@ class fat_tree :
     return num_leaf_switches_ + num_agg_switches_ + num_core_switches_;
   }
 
-//  void _to_switch(
-//    switch_id current_sw_addr,
-//    switch_id dest_sw_addr,
-//    packet::path& path) const override;
-
-//  int minimal_distance(
-//    switch_id src,
-//    switch_id dest) const override;
-
   int up_port(int level) const override {
     if (level == 0) return 0;
     else if (level == 1) return down_ports_per_agg_switch_;
@@ -218,23 +210,7 @@ class fat_tree :
     return 1;
   }
 
-//  int switch_at_row_col(int row, int col) const {
-//    return row * num_leaf_switches_ + col;
-//  }
-
-//  void compute_row_col(switch_id sid, int& row, int& col) const {
-//    row = sid / num_leaf_switches_;
-//    col = sid % num_leaf_switches_;
-//  }
-
-//  static int upColumnConnection(int k, int myColumn, int upPort, int columnSize);
-
-//  static int downColumnConnection(int k, int myColumn, int downPort, int columnSize);
-
  private:
-  //int toplevel_;
-  //int k_;
-  //int l_;
   int up_ports_per_leaf_switch_;
   int down_ports_per_agg_switch_;
   int up_ports_per_agg_switch_;
@@ -248,7 +224,7 @@ class tapered_fat_tree : public abstract_fat_tree
   tapered_fat_tree(sprockit::sim_parameters* params);
 
   virtual std::string to_string() const override {
-    return "tapered fat tree topology";
+    return "tapered fat-tree topology";
   }
 
   virtual ~tapered_fat_tree() {}
@@ -297,21 +273,9 @@ class tapered_fat_tree : public abstract_fat_tree
     }
   }
 
-//  inline int inj_sub_tree(switch_id sid) const {
-//    return sid / num_leaf_switches_per_subtree_;
-//  }
-
   int agg_sub_tree(switch_id sid) const {
     return (sid - num_leaf_switches_);
   }
-
-//  inline int sub_tree(switch_id sid) const {
-//    if (sid > num_leaf_switches_){
-//      return agg_sub_tree(sid);
-//    } else {
-//      return inj_sub_tree(sid);
-//    }
-//  }
 
   int up_port(int level) const {
     if (level == 0){
