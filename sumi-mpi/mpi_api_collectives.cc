@@ -599,14 +599,12 @@ mpi_api::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm co
 
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
-    //TODO iron out 'is_root' concept
     otf2_writer_.mpi_bcast(comm_world()->rank(),
                            call_start_time,
                            (uint64_t)os_->now().usec(),
                            count,
                            type,
                            root,
-                           false,
                            comm);
   }
 #endif
@@ -691,7 +689,6 @@ mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
-    //TODO iron out 'is_root' concept
     otf2_writer_.mpi_gather(comm_world()->rank(),
                             call_start_time,
                             (uint64_t)os_->now().usec(),
@@ -700,7 +697,6 @@ mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                             recvcount,
                             recvtype,
                             root,
-                            false,
                             comm);
   }
 #endif
@@ -810,7 +806,6 @@ mpi_api::reduce(const void *src, void *dst, int count,
 
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
-    //TODO iron out 'is_root' concept
     otf2_writer_.mpi_reduce(comm_world()->rank(),
                             call_start_time,
                             (uint64_t)os_->now().usec(),
@@ -889,7 +884,6 @@ mpi_api::reduce_scatter(const void *src, void *dst, const int *recvcnts,
 
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
-    //TODO iron out 'is_root' concept
     otf2_writer_.mpi_reduce_scatter(comm_world()->rank(),
                                     call_start_time,
                                     (uint64_t)os_->now().usec(),
@@ -991,7 +985,6 @@ mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op m
 
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
-    //TODO iron out 'is_root' concept
     otf2_writer_.mpi_scan(comm_world()->rank(),
                           call_start_time,
                           (uint64_t)os_->now().usec(),
@@ -1072,7 +1065,6 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
 #ifdef OTF2_ENABLED
   if(otf2_enabled_) {
-    //TODO iron out 'is_root' concept
     otf2_writer_.mpi_scatter(comm_world()->rank(),
                           call_start_time,
                           (uint64_t)os_->now().usec(),
@@ -1081,7 +1073,6 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                           recvcount,
                           recvtype,
                           root,
-                          false,
                           comm);
   }
 #endif

@@ -839,7 +839,7 @@ class mpi_api :
   std::unordered_map<int, keyval*> keyvals_;
 
 #ifdef OTF2_ENABLED
-  bool otf2_enabled_;
+  bool otf2_enabled_ = false;
   std::string otf2_archive_dir_;
   dumpi::OTF2_Writer otf2_writer_;
 #endif

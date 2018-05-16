@@ -125,9 +125,6 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   queue_(nullptr),
   generate_ids_(true),
   crossed_comm_world_barrier_(false),
-#ifdef OTF2_ENABLED
-  otf2_enabled_(false),
-#endif
   comm_factory_(sid, this)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");

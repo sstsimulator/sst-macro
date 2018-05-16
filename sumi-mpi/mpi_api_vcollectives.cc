@@ -348,7 +348,6 @@ mpi_api::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                              recvcounts,
                              recvtype,
                              root,
-                             false,
                              comm);
   }
 #endif
@@ -454,7 +453,6 @@ mpi_api::scatterv(const void* sendbuf, const int* sendcounts, const int *displs,
                               recvcount,
                               recvtype,
                               root,
-                              false,
                               comm);
   }
 #endif
