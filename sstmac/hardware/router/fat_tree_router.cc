@@ -49,41 +49,25 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <cmath>
 
+using namespace std;
+
 #define ftree_rter_debug(...) \
   rter_debug("fat tree: %s", sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 namespace hw {
 
-fat_tree_router::fat_tree_router(sprockit::sim_parameters* params, topology *top,
-                                 network_switch *netsw)
-//:  minimal_router(params, top, netsw),
-//  rng_(nullptr)
+fat_tree_router::fat_tree_router(
+    sprockit::sim_parameters* params,
+    topology *top,
+    network_switch *netsw) :
+  router(params, top, netsw)
 {
-//  ftree_ = safe_cast(fat_tree, top);
-//  k_ = ftree_->k();
-//  l_ = ftree_->l();
-//  seed_ = params->get_optional_long_param("router_seed", -1);
-//  build_rng();
-
-//  int switchesperlevel = pow(k_, l_ - 1);
-//  myL_ = my_addr_ / switchesperlevel;
-
-//  num_leaf_switches_reachable_ = pow(k_, myL_);
-//  num_leaf_switches_per_path_ = num_leaf_switches_reachable_ / k_;
-//  int level_relative_id = my_addr_ - myL_ * switchesperlevel;
-
-//  int my_leaf_group = level_relative_id / num_leaf_switches_reachable_;
-//  min_reachable_leaf_id_ = my_leaf_group * num_leaf_switches_reachable_;
-//  max_reachable_leaf_id_ = min_reachable_leaf_id_ + num_leaf_switches_reachable_;
-
-//  numpicked_ = 0;
-//  numpicktop_ = 0;
-
   ft_ = safe_cast(fat_tree, top);
 }
 
-void route(packet* pkt) {
+void
+fat_tree_router::route(packet* pkt) {
 
   int output_port;
   packet::path& path = pkt->current_path();
@@ -93,7 +77,7 @@ void route(packet* pkt) {
   if (dst == my_addr_){
     path.vc = 0;
     rter_debug("Ejecting %s from switch %d on port %d",
-               pkt->to_string().c_str(), sid, path.outport());
+               pkt->to_string().c_str(), dst, path.outport());
   }
 
   // have to route
@@ -116,7 +100,7 @@ void route(packet* pkt) {
       path.set_outport(output_port);
       path.vc = 0;
       top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
-                int(dst), dst_level, int(my_addr_), src_level);
+                int(dst), dst_level, int(my_addr_), my_level);
     }
 
     // definitely have to go down
@@ -125,7 +109,7 @@ void route(packet* pkt) {
       path.set_outport(output_port);
       path.vc = 0;
       top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
-                int(dst), dst_level, int(my_addr_), src_level);
+                int(dst), dst_level, int(my_addr_), my_level);
     }
 
     // aggregator level, can go either way
@@ -136,7 +120,7 @@ void route(packet* pkt) {
         path.set_outport(output_port);
         path.vc = 0;
         top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
-                  int(dst), dst_level, int(my_addr_), src_level);
+                  int(dst), dst_level, int(my_addr_), my_level);
       }
       //nope, have to go to core to hop over to other tree
       else {
@@ -145,12 +129,12 @@ void route(packet* pkt) {
         path.set_outport(output_port);
         path.vc = 0;
         top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
-                  int(dst), dst_level, int(my_addr_), src_level);
+                  int(dst), dst_level, int(my_addr_), my_level);
       }
     }
 
     rter_debug("Routing %s to switch %d on port %d",
-               pkt->to_string().c_str(), sid, path.outport());
+               pkt->to_string().c_str(), my_addr_, path.outport());
   }
 
 }
@@ -159,14 +143,14 @@ void
 fat_tree_router::rotate_subtree_next(int tree) {
   ++subtree_next_[tree];
   if (subtree_next_[tree] >= subtree_fwd_[tree].size())
-    subtree_next_ = 0;
+    subtree_next_[tree] = 0;
 }
 
 void
 fat_tree_router::rotate_leaf_next(int leaf) {
   ++leaf_next_[leaf];
   if (leaf_next_[leaf] >= leaf_fwd_[leaf].size())
-    leaf_next_ = 0;
+    leaf_next_[leaf] = 0;
 }
 
 int
@@ -175,15 +159,15 @@ fat_tree_router::get_up_port(int next_tree) {
   auto ports = subtree_fwd_.find(next_tree);
   if (ports == subtree_fwd_.end()) {
     // haven't forwarded to subtree yet
-    subtree_fwd_.insert(make_pair(next_tree,std::vector<int>));
+    subtree_fwd_.insert(make_pair(next_tree,std::vector<int>()));
     ft_->connected_up_ports(my_addr_,subtree_fwd_[next_tree]);
     subtree_next_[next_tree] = 0;
     ports = subtree_fwd_.find(next_tree);
-    if (ports = subtree_fwd_.end()) {
+    if (ports == subtree_fwd_.end()) {
       // TODO error
     }
   }
-  port = ports->[subtree_next_[next_tree]];
+  port = ports->second.at(subtree_next_[next_tree]);
   rotate_subtree_next(next_tree);
   return port;
 }
@@ -194,15 +178,15 @@ fat_tree_router::get_core_down_port(int next_tree) {
   auto ports = subtree_fwd_.find(next_tree);
   if (ports == subtree_fwd_.end()) {
     // haven't forwarded to subtree yet
-    subtree_fwd_.insert(make_pair(next_tree,std::vector<int>));
+    subtree_fwd_.insert(make_pair(next_tree,std::vector<int>()));
     ft_->connected_core_down_ports(my_addr_,next_tree,subtree_fwd_[next_tree]);
     subtree_next_[next_tree] = 0;
     ports = subtree_fwd_.find(next_tree);
-    if (ports = subtree_fwd_.end()) {
+    if (ports == subtree_fwd_.end()) {
       // TODO error
     }
   }
-  port = ports->[subtree_next_[next_tree]];
+  port = ports->second.at(subtree_next_[next_tree]);
   rotate_subtree_next(next_tree);
   return port;
 }
@@ -213,15 +197,15 @@ fat_tree_router::get_agg_down_port(int dst_leaf) {
   auto ports = leaf_fwd_.find(dst_leaf);
   if (ports == leaf_fwd_.end()) {
     // haven't forwarded to this leaf yet
-    leaf_fwd_.insert(make_pair(dst_leaf,std::vector<int>));
+    leaf_fwd_.insert(make_pair(dst_leaf,std::vector<int>()));
     ft_->connected_agg_down_ports(my_addr_,dst_leaf,leaf_fwd_[dst_leaf]);
     leaf_next_[dst_leaf] = 0;
     ports = leaf_fwd_.find(dst_leaf);
-    if (ports = leaf_fwd_.end()) {
+    if (ports == leaf_fwd_.end()) {
       // TODO error
     }
   }
-  port = ports->[leaf_next_[dst_leaf]];
+  port = ports->second.at(leaf_next_[dst_leaf]);
   rotate_leaf_next(dst_leaf);
   return port;
 }

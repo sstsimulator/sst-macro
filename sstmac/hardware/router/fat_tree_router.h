@@ -62,11 +62,9 @@ class fat_tree_router :
 {
   FactoryRegister("fat_tree", router, fat_tree_router)
  public:
-  virtual ~fat_tree_router();
-
   fat_tree_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-  ~fat_tree_router();
+  virtual ~fat_tree_router() {}
 
   std::string to_string() const override {
     return "fat tree router";
@@ -74,16 +72,24 @@ class fat_tree_router :
 
   void route(packet* pkt) override;
 
-//  int num_vc() const override {
-//    return 1;
-//  }
+  void rotate_subtree_next(int tree);
+
+  void rotate_leaf_next(int leaf);
+
+  int get_up_port(int next_tree);
+
+  int get_core_down_port(int next_tree);
+
+  int get_agg_down_port(int dst_leaf);
+
+  int num_vc() const override { return 1; }
 
  private:
 
-  fat_tree ft_;
-  std::map<int,vector<int>> subtree_fwd_;
+  fat_tree* ft_;
+  std::map<int,std::vector<int>> subtree_fwd_;
   std::map<int,int> subtree_next_;
-  std::map<int,vector<int>> leaf_fwd_;
+  std::map<int,std::vector<int>> leaf_fwd_;
   std::map<int,int> leaf_next_;
 };
 

@@ -313,13 +313,11 @@ fat_tree::connected_up_ports(switch_id src, std::vector<int>& ports) const
   if (lvl == 2)
     return;
   else {
-    int base_port;
-    if (lvl == 0)
-      base_port = concentration();
+    int base_port = 0;
     if (lvl == 1)
-      base_port = down_ports_per_leaf_switch_;
+      base_port = down_ports_per_agg_switch_;
     for (auto it=conns.begin(); it != conns.end(); ++it)
-      if (it.src_outport >= base_port)
+      if (it->src_outport >= base_port)
         ports.push_back(it->src_outport);
   }
 }
@@ -336,7 +334,7 @@ fat_tree::connected_core_down_ports(switch_id src, int next_tree, std::vector<in
   connected_outports(src, conns);
   for (auto it=conns.begin(); it != conns.end(); ++it) {
     int conn_subtree = subtree(it->dst);
-    if (conn_subtree == next_subtree)
+    if (conn_subtree == next_tree)
       ports.push_back(it->src_outport);
   }
 }
