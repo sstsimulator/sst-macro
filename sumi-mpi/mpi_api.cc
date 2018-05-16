@@ -726,6 +726,7 @@ MPI_Call::ID_str(MPI_function func)
   case Call_ID_MPI_Comm_compare: return "MPI_Comm_compare";
   case Call_ID_MPI_Comm_dup: return "MPI_Comm_dup";
   case Call_ID_MPI_Comm_create: return "MPI_Comm_create";
+  case Call_ID_MPI_Comm_create_group: return "MPI_Comm_create_group";
   case Call_ID_MPI_Comm_split: return "MPI_Comm_split";
   case Call_ID_MPI_Comm_free: return "MPI_Comm_free";
   case Call_ID_MPI_Comm_test_inter: return "MPI_Comm_test_inter";

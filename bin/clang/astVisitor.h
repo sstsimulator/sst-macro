@@ -708,6 +708,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
       }
     }
 
+    void reactivate(clang::Decl* d, SSTPragma* prg){
+      ++visitor_->pragmaConfig_.pragmaDepth;
+      activePragmas_.push_back(prg);
+      prg->activate(d, visitor_->rewriter_, visitor_->pragmaConfig_);
+    }
+
     ~PragmaActivateGuard();
 
     bool skipVisit() const {
@@ -745,6 +751,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<int> initIndices_;
   std::list<clang::FieldDecl*> activeFieldDecls_;
   std::list<std::set<const clang::Decl*>> globalsTouched_;
+  std::set<std::string> sstmacFxnPrepends_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;
