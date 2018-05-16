@@ -108,6 +108,8 @@ class abstract_fat_tree :
 
   virtual int up_port(int level) const = 0;
 
+  virtual int down_port(int dst_tree) const = 0;
+
   virtual int level(switch_id sid) const = 0;
 
  protected:
@@ -194,13 +196,17 @@ class fat_tree :
 //    switch_id dest_sw_addr,
 //    packet::path& path) const override;
 
-  int minimal_distance(
-    switch_id src,
-    switch_id dest) const override;
+//  int minimal_distance(
+//    switch_id src,
+//    switch_id dest) const override;
 
-  virtual int up_port(int level) const override {
+  int up_port(int level) const override {
     if (level == 0) return 0;
     else if (level == 1) return down_ports_per_agg_switch_;
+  }
+
+  int down_port(int dst_tree) const override {
+      return dst_tree * num_agg_switches_per_subtree_;
   }
 
   int level(switch_id sid) const override {
@@ -318,6 +324,10 @@ class tapered_fat_tree : public abstract_fat_tree
       spkt_abort_printf("invalid level %d - cannot go up on fat tree level %d", level, level);
       return -1;
     }
+  }
+
+  int down_port(int dst_tree) const override {
+    return dst_tree;
   }
 
   int diameter() const override {
