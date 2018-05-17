@@ -99,7 +99,7 @@ fat_tree_router::route(packet* pkt) {
       output_port = get_up_port(next_tree);
       path.set_outport(output_port);
       path.vc = 0;
-      top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
+      rter_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
                 int(dst), dst_level, int(my_addr_), my_level);
     }
 
@@ -108,7 +108,7 @@ fat_tree_router::route(packet* pkt) {
       output_port = get_core_down_port(dst_tree);
       path.set_outport(output_port);
       path.vc = 0;
-      top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
+      rter_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
                 int(dst), dst_level, int(my_addr_), my_level);
     }
 
@@ -119,7 +119,7 @@ fat_tree_router::route(packet* pkt) {
         output_port = get_agg_down_port(dst);
         path.set_outport(output_port);
         path.vc = 0;
-        top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
+        rter_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
                   int(dst), dst_level, int(my_addr_), my_level);
       }
       //nope, have to go to core to hop over to other tree
@@ -128,13 +128,13 @@ fat_tree_router::route(packet* pkt) {
         output_port = get_up_port(next_tree);
         path.set_outport(output_port);
         path.vc = 0;
-        top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
+        rter_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
                   int(dst), dst_level, int(my_addr_), my_level);
       }
     }
 
     rter_debug("Routing %s to switch %d on port %d",
-               pkt->to_string().c_str(), my_addr_, path.outport());
+               pkt->to_string().c_str(), int(dst), path.outport());
   }
 
 }

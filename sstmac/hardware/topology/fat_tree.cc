@@ -286,7 +286,8 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
     // down ports
     for (int dwn_port=0; dwn_port < down_ports_per_core_switch_;
          ++dwn_port){
-      int agg_port = dwn_port / num_agg_switches_;
+      int core_spot = src - num_agg_switches_ - num_leaf_switches_;
+      int agg_port = core_spot + dwn_port / num_agg_switches_ * num_agg_switches_;
       int agg_spot = dwn_port % num_agg_switches_;
       int agg_partner_switch = num_leaf_switches_ + agg_spot;
       connection next;
