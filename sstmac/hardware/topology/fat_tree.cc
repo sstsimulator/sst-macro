@@ -54,10 +54,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterKeywords(
 { "baseline_bandwidth", "" },
-{ "num_leaf_switches_per_subtree", "number of leaf/injection switches per pod (fixed 3-level fat-tree)" },
 { "num_core_switches", "number of core switches at top-level (fixed 3-level fat-tree)" },
 { "num_agg_subtrees", "number of pods or subtree (fixed 3-level fat-tree)" },
-{ "num_agg_switches_per_subtree", "number of aggregation (2nd-level switches) per subtree (pod) (fixed 3-level fat-tree)"},
+{ "leaf_switches_per_subtree", "number of leaf/injection switches per pod (fixed 3-level fat-tree)" },
+{ "agg_switches_per_subtree", "number of aggregation (2nd-level switches) per subtree (pod) (fixed 3-level fat-tree)"},
 { "up_ports_per_leaf_switch", "number of up ports per leaf switch" },
 { "down_ports_per_agg_switch", "number of down ports per aggregation switch" },
 { "up_ports_per_agg_switch", "number of up ports per aggregation switch" },
@@ -76,22 +76,22 @@ abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
                                      InitGeomEjectID i2) :
   structured_topology(params, i1, i2)
 {
-  num_leaf_switches_per_subtree_ =
-      params->get_int_param("num_leaf_switches_per_subtree");
-  num_agg_switches_per_subtree_ =
-      params->get_int_param("num_agg_switches_per_subtree");
-  num_agg_subtrees_ =
-      params->get_int_param("num_agg_subtrees");
   num_core_switches_ =
       params->get_int_param("num_core_switches");
+  num_agg_subtrees_ =
+      params->get_int_param("num_agg_subtrees");
+  leaf_switches_per_subtree_ =
+      params->get_int_param("leaf_switches_per_subtree");
+  agg_switches_per_subtree_ =
+      params->get_int_param("agg_switches_per_subtree");
 
-  num_leaf_switches_ = num_leaf_switches_per_subtree_ * num_agg_subtrees_;
-  num_agg_switches_ = num_agg_switches_per_subtree_ * num_agg_subtrees_;
+  num_leaf_switches_ = leaf_switches_per_subtree_ * num_agg_subtrees_;
+  num_agg_switches_ = agg_switches_per_subtree_ * num_agg_subtrees_;
 }
 
 void
-abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
-                                                       std::vector<injection_port>& nodes) const
+abstract_fat_tree::nodes_connected_to_injection_switch(
+    switch_id swaddr, std::vector<injection_port>& nodes) const
 {
   if (swaddr >= num_leaf_switches_){
     nodes.resize(0);
@@ -101,8 +101,8 @@ abstract_fat_tree::nodes_connected_to_injection_switch(switch_id swaddr,
 }
 
 void
-abstract_fat_tree::nodes_connected_to_ejection_switch(switch_id swaddr,
-                                                      std::vector<injection_port>& nodes) const
+abstract_fat_tree::nodes_connected_to_ejection_switch(
+    switch_id swaddr, std::vector<injection_port>& nodes) const
 {
   nodes_connected_to_injection_switch(swaddr, nodes);
 }
@@ -137,7 +137,7 @@ abstract_fat_tree::minimal_route_to_switch(
     int dst_tree = inj_subtree(dest_sw_addr);
     if (dst_tree == my_tree){
       //okay, great, I should have direct link
-      path.set_outport(dest_sw_addr % num_leaf_switches_per_subtree_);
+      path.set_outport(dest_sw_addr % leaf_switches_per_subtree_);
       path.vc = 0;
       top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d within tree %d",
                 int(dest_sw_addr), dst_level,
@@ -223,10 +223,10 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
           "down_ports_per_core_switch (%d) must be >= total number of aggregation switches (%d)",
           down_ports_per_core_switch_,num_agg_switches_);
   }
-  if (down_ports_per_agg_switch_ < num_leaf_switches_per_subtree_) {
+  if (down_ports_per_agg_switch_ < leaf_switches_per_subtree_) {
     spkt_throw_printf(sprockit::input_error,
-          "down_ports_per_agg_switch (%d) must be >= num_leaf_switches_per_subtree (%d)",
-          down_ports_per_agg_switch_,num_leaf_switches_per_subtree_);
+          "down_ports_per_agg_switch (%d) must be >= leaf_switches_per_subtree (%d)",
+          down_ports_per_agg_switch_,leaf_switches_per_subtree_);
   }
 
   // check that down ports mod switches is zero
@@ -236,11 +236,11 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
           "down_ports_per_core_switch mod total number of aggregation switches must be zero (%d mod %d = %d)",
           down_ports_per_core_switch_,num_agg_switches_,val);
   }
-  val = down_ports_per_agg_switch_ % num_leaf_switches_per_subtree_;
+  val = down_ports_per_agg_switch_ % leaf_switches_per_subtree_;
   if (val != 0) {
     spkt_throw_printf(sprockit::input_error,
-          "down_ports_per_agg_switch mod num_leaf_switches_per_subtree must be zero (%d mod %d = %d)",
-          down_ports_per_agg_switch_,num_leaf_switches_per_subtree_,val);
+          "down_ports_per_agg_switch mod leaf_switches_per_subtree must be zero (%d mod %d = %d)",
+          down_ports_per_agg_switch_,leaf_switches_per_subtree_,val);
   }
 
   // check that there are enough up ports
@@ -249,10 +249,10 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
           "up_ports_per_agg_switch (%d) must be >= num_core_switches (%d)",
           up_ports_per_agg_switch_,num_core_switches_);
   }
-  if (up_ports_per_leaf_switch_ < num_agg_switches_per_subtree_) {
+  if (up_ports_per_leaf_switch_ < agg_switches_per_subtree_) {
     spkt_throw_printf(sprockit::input_error,
-          "up_ports_per_leaf_switch (%d) must be >= num_agg_switches_per_subtree (%d)",
-          up_ports_per_leaf_switch_,num_agg_switches_per_subtree_);
+          "up_ports_per_leaf_switch (%d) must be >= agg_switches_per_subtree (%d)",
+          up_ports_per_leaf_switch_,agg_switches_per_subtree_);
   }
 
   // check that up ports mod switches is zero
@@ -262,11 +262,11 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
           "up_ports_per_agg_switch mod num_core_switches must be zero (%d mod %d = %d)",
           up_ports_per_agg_switch_,num_core_switches_,val);
   }
-  val = up_ports_per_leaf_switch_ % num_agg_switches_per_subtree_;
+  val = up_ports_per_leaf_switch_ % agg_switches_per_subtree_;
   if (val != 0) {
     spkt_throw_printf(sprockit::input_error,
-          "up_ports_per_leaf_switch mod num_agg_switches_per_subtree must be zero (%d mod %d = %d)",
-          up_ports_per_leaf_switch_,num_agg_switches_per_subtree_,val);
+          "up_ports_per_leaf_switch mod agg_switches_per_subtree must be zero (%d mod %d = %d)",
+          up_ports_per_leaf_switch_,agg_switches_per_subtree_,val);
   }
 
   // check that leaf-agg ports match up
@@ -279,11 +279,11 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
   }
 
   // check that agg-core ports match up
-  ndown = num_agg_switches_per_subtree_ * down_ports_per_agg_switch_;
-  nup = num_leaf_switches_per_subtree_ * up_ports_per_leaf_switch_;
+  ndown = agg_switches_per_subtree_ * down_ports_per_agg_switch_;
+  nup = leaf_switches_per_subtree_ * up_ports_per_leaf_switch_;
   if (ndown != nup) {
     spkt_throw_printf(sprockit::input_error,
-          "num_agg_switches_per_subtree * down_ports_per_agg_switch must equal num_leaf_switches_per_subtree * up_ports_per_leaf_switch (%d != %d)",
+          "agg_switches_per_subtree * down_ports_per_agg_switch must equal leaf_switches_per_subtree * up_ports_per_leaf_switch (%d != %d)",
           ndown,nup);
   }
 
@@ -306,18 +306,18 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
 
   // leaf switch
   if (row == 0){
-    int my_subtree = src / num_leaf_switches_per_subtree_;
-    int my_subtree_spot = src % num_leaf_switches_per_subtree_;
+    int my_subtree = src / leaf_switches_per_subtree_;
+    int my_subtree_spot = src % leaf_switches_per_subtree_;
     for (int up_port=0; up_port < up_ports_per_leaf_switch_; ++up_port){
       int subtree_down_port =
-          my_subtree_spot + up_port * num_leaf_switches_per_subtree_;
+          my_subtree_spot + up_port * leaf_switches_per_subtree_;
       int agg_partner_spot =
           subtree_down_port / down_ports_per_agg_switch_;
       int agg_partner_port =
           subtree_down_port % down_ports_per_agg_switch_;
       int agg_partner_switch =
           num_leaf_switches_
-          + my_subtree * num_agg_switches_per_subtree_
+          + my_subtree * agg_switches_per_subtree_
           + agg_partner_spot;
       top_debug("fat-tree connecting switch:port leaf %i:%i to agg %i:%i",
                 src, up_port, agg_partner_switch, agg_partner_port);
@@ -333,9 +333,9 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
   // aggregation switch
   else if (row == 1){
     int my_subtree = (src - num_leaf_switches_)
-        / num_agg_switches_per_subtree_;
+        / agg_switches_per_subtree_;
     int my_subtree_spot = (src - num_leaf_switches_)
-        % num_agg_switches_per_subtree_;
+        % agg_switches_per_subtree_;
     int agg_spot = src - num_leaf_switches_;
     // up ports
     for (int up_port=0; up_port < up_ports_per_agg_switch_; ++up_port){
@@ -360,13 +360,13 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
     // down ports
     for (int dwn_port=0; dwn_port < down_ports_per_agg_switch_;
          ++dwn_port){
-      int leaf_spot = dwn_port % num_leaf_switches_per_subtree_;
+      int leaf_spot = dwn_port % leaf_switches_per_subtree_;
       int leaf_port = my_subtree_spot +
-          dwn_port / num_leaf_switches_per_subtree_ *
-          num_leaf_switches_per_subtree_;
-      //int leaf_port = dwn_port / num_leaf_switches_per_subtree_ + ;
+          dwn_port / leaf_switches_per_subtree_ *
+          leaf_switches_per_subtree_;
+      //int leaf_port = dwn_port / leaf_switches_per_subtree_ + ;
       int leaf_partner_switch =
-          my_subtree * num_leaf_switches_per_subtree_ + leaf_spot;
+          my_subtree * leaf_switches_per_subtree_ + leaf_spot;
       top_debug("fat-tree connecting switch:port agg %i:%i to leaf %i:%i",
                 src, dwn_port, leaf_partner_switch, leaf_port);
       connection next;
@@ -384,7 +384,8 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
     for (int dwn_port=0; dwn_port < down_ports_per_core_switch_;
          ++dwn_port){
       int core_spot = src - num_agg_switches_ - num_leaf_switches_;
-      int agg_port = core_spot + dwn_port / num_agg_switches_ * num_agg_switches_;
+      int agg_port =
+          core_spot + dwn_port / num_agg_switches_ * num_agg_switches_;
       int agg_spot = dwn_port % num_agg_switches_;
       int agg_partner_switch = num_leaf_switches_ + agg_spot;
       connection next;
@@ -399,27 +400,8 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
   }
 }
 
-void
-fat_tree::connected_up_ports(switch_id src, std::vector<int>& ports) const
-{
-  ports.clear(); // just to be safe
-
-  std::vector<connection> conns;
-  connected_outports(src, conns);
-
-  int lvl = level(src);
-  if (lvl == 2)
-    return;
-  else {
-    int base_port = 0;
-    if (lvl == 1)
-      base_port = down_ports_per_agg_switch_;
-    for (auto it=conns.begin(); it != conns.end(); ++it)
-      if (it->src_outport >= base_port)
-        ports.push_back(it->src_outport);
-  }
-}
-
+// insert all core switch ports that lead to any switch in the
+// subtree designated by next_tree
 void
 fat_tree::connected_core_down_ports(switch_id src, int next_tree, std::vector<int>& ports) const
 {
@@ -437,6 +419,8 @@ fat_tree::connected_core_down_ports(switch_id src, int next_tree, std::vector<in
   }
 }
 
+// insert all aggregator switch ports that lead to the switch
+// designated by dst_leaf
 void
 fat_tree::connected_agg_down_ports(switch_id src, int dst_leaf, std::vector<int>& ports) const
 {
@@ -482,7 +466,7 @@ tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
                     InitMaxPortsIntra::I_Remembered,
                     InitGeomEjectID::I_Remembered)
 {
-  agg_bw_multiplier_ = num_agg_switches_per_subtree_;
+  agg_bw_multiplier_ = agg_switches_per_subtree_;
 
   int max_up_port = std::max(up_port(0), up_port(1));
   int max_core_port = num_agg_subtrees_;
@@ -509,17 +493,17 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
   } else if (myRow == 1){
     //agg switch
     int myTree = agg_subtree(src);
-    int myOffset = myTree * num_leaf_switches_per_subtree_;
-    conns.resize(num_leaf_switches_per_subtree_ + 1);
+    int myOffset = myTree * leaf_switches_per_subtree_;
+    conns.resize(leaf_switches_per_subtree_ + 1);
     int inport = up_port(0);
-    for (int s=0; s < num_leaf_switches_per_subtree_; ++s){
+    for (int s=0; s < leaf_switches_per_subtree_; ++s){
       connection& conn = conns[s];
       conn.src = src;
       conn.dst = myOffset + s;
       conn.src_outport = s;
       conn.dst_inport = inport;
     }
-    connection& upconn = conns[num_leaf_switches_per_subtree_];
+    connection& upconn = conns[leaf_switches_per_subtree_];
     upconn.src = src;
     upconn.dst = core_switch_id();
     upconn.src_outport = up_port(1);
@@ -527,7 +511,7 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
   } else {
     //inj switch
     int myTree = inj_subtree(src);
-    int myOffset = src % num_leaf_switches_per_subtree_;
+    int myOffset = src % leaf_switches_per_subtree_;
     conns.resize(1);
     int outport = up_port(0);
     connection& conn = conns[0];
@@ -567,7 +551,7 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
                       link_params, switch_params);
 
     //My down links are not
-    for (int s=0; s < num_leaf_switches_per_subtree_; s++){
+    for (int s=0; s < leaf_switches_per_subtree_; s++){
       int outport = s;
       setup_port_params(outport,
                         buffer_size,
@@ -597,7 +581,7 @@ tapered_fat_tree::configure_nonuniform_switch_params(switch_id src,
     //okay - nothing doing - normal switches
   } else if (myLevel == 1){
     //this switch is modeling the functionaliy of X commodity switches
-    multiplier = num_agg_switches_per_subtree_;
+    multiplier = agg_switches_per_subtree_;
   } else {
     //this switch is modeling the functionality of X commodity switches
     multiplier = num_core_switches_;
@@ -605,8 +589,10 @@ tapered_fat_tree::configure_nonuniform_switch_params(switch_id src,
 
   sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
   double bw = xbar_params->get_bandwidth_param("bandwidth");
-  //we are overwriting params - we have to make sure that the original baseline bandwidth is preserved
-  double baseline_bw = xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
+  // we are overwriting params -
+  // we have to make sure that the original baseline bandwidth is preserved
+  double baseline_bw =
+      xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
   double xbar_bw = baseline_bw * multiplier;
   (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
   (*xbar_params)["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");

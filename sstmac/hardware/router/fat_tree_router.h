@@ -72,11 +72,14 @@ class fat_tree_router :
 
   void route(packet* pkt) override;
 
+  void rotate_up_next();
+
   void rotate_subtree_next(int tree);
 
   void rotate_leaf_next(int leaf);
 
-  int get_up_port(int next_tree);
+  //int get_up_port(int next_tree);
+  int get_up_port();
 
   int get_core_down_port(int next_tree);
 
@@ -87,6 +90,11 @@ class fat_tree_router :
  private:
 
   fat_tree* ft_;
+
+  // routing -- up (is easy)
+  std::vector<int> up_fwd_;
+  int up_next_;
+  // routing -- down (a little more complicated)
   std::map<int,std::vector<int>> subtree_fwd_;
   std::map<int,int> subtree_next_;
   std::map<int,std::vector<int>> leaf_fwd_;

@@ -89,14 +89,7 @@ fat_tree_router::route(packet* pkt) {
 
     //definitely have to go up
     if (dst_level >= my_level){
-      int next_tree;
-      if (my_level == 0) {
-        next_tree = my_tree;
-      }
-      else if (my_level == 1) {
-        next_tree = ft_->core_subtree();
-      }
-      output_port = get_up_port(next_tree);
+      output_port = get_up_port();
       path.set_outport(output_port);
       path.vc = 0;
       rter_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
@@ -125,7 +118,7 @@ fat_tree_router::route(packet* pkt) {
       //nope, have to go to core to hop over to other tree
       else {
         int next_tree = ft_->core_subtree();
-        output_port = get_up_port(next_tree);
+        output_port = get_up_port();
         path.set_outport(output_port);
         path.vc = 0;
         rter_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
@@ -137,6 +130,13 @@ fat_tree_router::route(packet* pkt) {
                pkt->to_string().c_str(), int(dst), path.outport());
   }
 
+}
+
+void
+fat_tree_router::rotate_up_next() {
+  ++up_next_;
+  if (up_next_ >= up_fwd_.size())
+    up_next_ = 0;
 }
 
 void
@@ -153,59 +153,59 @@ fat_tree_router::rotate_leaf_next(int leaf) {
     leaf_next_[leaf] = 0;
 }
 
+// up is easy -- any "up" port goes up
 int
-fat_tree_router::get_up_port(int next_tree) {
-  int port;
-  auto ports = subtree_fwd_.find(next_tree);
-  if (ports == subtree_fwd_.end()) {
-    // haven't forwarded to subtree yet
-    subtree_fwd_.insert(make_pair(next_tree,std::vector<int>()));
-    ft_->connected_up_ports(my_addr_,subtree_fwd_[next_tree]);
-    subtree_next_[next_tree] = 0;
-    ports = subtree_fwd_.find(next_tree);
-    if (ports == subtree_fwd_.end()) {
-      // TODO error
-    }
+fat_tree_router::get_up_port() {
+  if (up_fwd_.size() == 0) {
+    // haven't forwarded up yet
+    int n_up = ft_->num_up_ports(my_addr_);
+    int first_up = ft_->first_up_port(my_addr_);
+    for (int i=0; i<n_up; ++i)
+      up_fwd_.push_back(first_up + i);
+      up_next_ = 0;
   }
-  port = ports->second.at(subtree_next_[next_tree]);
-  rotate_subtree_next(next_tree);
+  int port = up_fwd_[up_next_];
+  rotate_up_next();
   return port;
 }
 
+// going down from core
+// we can use any port that puts us on the correct subtree
 int
 fat_tree_router::get_core_down_port(int next_tree) {
-  int port;
   auto ports = subtree_fwd_.find(next_tree);
   if (ports == subtree_fwd_.end()) {
     // haven't forwarded to subtree yet
-    subtree_fwd_.insert(make_pair(next_tree,std::vector<int>()));
-    ft_->connected_core_down_ports(my_addr_,next_tree,subtree_fwd_[next_tree]);
+    ft_->connected_core_down_ports(
+          my_addr_,next_tree,subtree_fwd_[next_tree]);
     subtree_next_[next_tree] = 0;
     ports = subtree_fwd_.find(next_tree);
-    if (ports == subtree_fwd_.end()) {
-      // TODO error
-    }
+    if (ports == subtree_fwd_.end())
+      spkt_throw_printf(sprockit::value_error,
+            "can't find subtree forwarding table");
   }
-  port = ports->second.at(subtree_next_[next_tree]);
+  int port = ports->second.at(subtree_next_[next_tree]);
   rotate_subtree_next(next_tree);
   return port;
 }
 
+// going down from aggregator
+// we can use any port that puts us on the correct switch
+// (possibly but not necessarily redundant links)
 int
 fat_tree_router::get_agg_down_port(int dst_leaf) {
-  int port;
   auto ports = leaf_fwd_.find(dst_leaf);
   if (ports == leaf_fwd_.end()) {
     // haven't forwarded to this leaf yet
-    leaf_fwd_.insert(make_pair(dst_leaf,std::vector<int>()));
-    ft_->connected_agg_down_ports(my_addr_,dst_leaf,leaf_fwd_[dst_leaf]);
+    ft_->connected_agg_down_ports(
+          my_addr_,dst_leaf,leaf_fwd_[dst_leaf]);
     leaf_next_[dst_leaf] = 0;
     ports = leaf_fwd_.find(dst_leaf);
-    if (ports == leaf_fwd_.end()) {
-      // TODO error
-    }
+    if (ports == leaf_fwd_.end())
+      spkt_throw_printf(sprockit::value_error,
+                        "can't find leaf forwarding table");
   }
-  port = ports->second.at(leaf_next_[dst_leaf]);
+  int port = ports->second.at(leaf_next_[dst_leaf]);
   rotate_leaf_next(dst_leaf);
   return port;
 }

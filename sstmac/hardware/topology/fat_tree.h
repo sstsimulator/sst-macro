@@ -69,7 +69,7 @@ class abstract_fat_tree :
     return 4;
   }
 
-  virtual int num_leaf_switches() const override {
+  int num_leaf_switches() const override {
     return num_leaf_switches_;
   }
 
@@ -87,7 +87,7 @@ class abstract_fat_tree :
     }
   }
 
-  int core_subtree() const {
+  inline int core_subtree() const {
     return num_agg_subtrees_;
   }
 
@@ -112,11 +112,11 @@ class abstract_fat_tree :
                     InitGeomEjectID i2);
 
   inline int inj_subtree(const switch_id sid) const {
-    return sid / num_leaf_switches_per_subtree_;
+    return sid / leaf_switches_per_subtree_;
   }
 
   virtual int agg_subtree(const switch_id sid) const {
-    return (sid - num_leaf_switches_) / num_agg_switches_per_subtree_;
+    return (sid - num_leaf_switches_) / agg_switches_per_subtree_;
   }
 
   // used for minimal_fat_tree routing
@@ -125,8 +125,8 @@ class abstract_fat_tree :
 
   int num_leaf_switches_;
   int num_agg_subtrees_;
-  int num_leaf_switches_per_subtree_;
-  int num_agg_switches_per_subtree_;
+  int leaf_switches_per_subtree_;
+  int agg_switches_per_subtree_;
   int num_agg_switches_;
   int num_core_switches_;
 
@@ -159,7 +159,7 @@ class fat_tree :
 
   virtual ~fat_tree() {}
 
-  int num_switches() const {
+  int num_switches() const override {
     return num_leaf_switches_ + num_agg_switches_ + num_core_switches_;
   }
 
@@ -170,6 +170,31 @@ class fat_tree :
     else if (sid >= num_non_core)
       return 2;
     return 1;
+  }
+
+  int num_up_ports(switch_id sid) const {
+    int lvl = level(sid);
+    switch (lvl) {
+    case 0:
+      return up_ports_per_leaf_switch_;
+    case 1:
+      return up_ports_per_agg_switch_;
+    }
+    return 0; // else core (lvl==2)
+  }
+
+  int first_up_port(switch_id sid) const {
+    int lvl = level(sid);
+    switch (lvl) {
+    case 0:
+      return 0;
+    case 1:
+      return down_ports_per_agg_switch_;
+    }
+    // else core (lvl==2)
+    spkt_throw_printf(sprockit::value_error,
+                      "requested first up port on core switch");
+    return -1;
   }
 
   bool uniform_network_ports() const override {
@@ -187,9 +212,6 @@ class fat_tree :
   void connected_outports(switch_id src, std::vector<connection>& conns)
   const override;
 
-  void connected_up_ports(switch_id src, std::vector<int>& ports)
-  const;
-
   void connected_core_down_ports(sstmac::switch_id, int, std::vector<int>&)
   const;
 
@@ -204,12 +226,12 @@ class fat_tree :
 protected:
 
   // used for minimal_fat_tree routing
-  int up_port(int level) const override {
+  inline int up_port(int level) const override {
     if (level == 0) return 0;
     else if (level == 1) return down_ports_per_agg_switch_;
   }
-  int down_port(int dst_tree) const override {
-      return dst_tree * num_agg_switches_per_subtree_;
+  inline int down_port(int dst_tree) const override {
+      return dst_tree * agg_switches_per_subtree_;
   }
 
  private:
@@ -236,7 +258,7 @@ class tapered_fat_tree : public abstract_fat_tree
 
   virtual ~tapered_fat_tree() {}
 
-  int num_switches() const {
+  int num_switches() const override {
     return num_leaf_switches_ + num_agg_subtrees_ + 1;
   }
 
@@ -274,17 +296,17 @@ class tapered_fat_tree : public abstract_fat_tree
 protected:
   //int convert_to_port(int dim, int dir) const;
 
-  int agg_subtree(switch_id sid) const {
+  inline int agg_subtree(switch_id sid) const {
     return (sid - num_leaf_switches_);
   }
 
-  int up_port(int level) const {
+  inline int up_port(int level) const {
     if (level == 0){
       //port is after all the compute nodes
       return concentration();
     } else if (level == 1){
       //I have this many down ports - up port comes after
-      return num_leaf_switches_per_subtree_;
+      return leaf_switches_per_subtree_;
     } else {
       spkt_abort_printf("invalid level %d - cannot go up on fat tree level %d", level, level);
       return -1;
@@ -304,7 +326,7 @@ protected:
     int noccupied) const override;
 
  private:
-  switch_id core_switch_id() const {
+  inline switch_id core_switch_id() const {
     return num_leaf_switches_ + num_agg_subtrees_;
   }
   double agg_bw_multiplier_;
