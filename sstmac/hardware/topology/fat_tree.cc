@@ -176,13 +176,6 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
   down_ports_per_core_switch_ =
       params->get_int_param("down_ports_per_core_switch");
 
-  if (down_ports_per_core_switch_ < num_agg_switches_) {
-    // TODO error
-  }
-  if (down_ports_per_agg_switch_ < num_leaf_switches_per_subtree_) {
-    // TODO error
-  }
-
   int leaf_ports = concentration() + up_ports_per_leaf_switch_;
   int agg_ports = down_ports_per_agg_switch_ +  up_ports_per_agg_switch_;
   int la_ports = std::max(leaf_ports,agg_ports);
@@ -190,6 +183,80 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
       std::max(la_ports,down_ports_per_core_switch_);
   // currently assumes port_id == geometric_id (no redundancy)
   eject_geometric_id_ = max_ports_intra_network_;
+
+  // error checking
+  int val;
+
+  // check that there are enough down ports
+  if (down_ports_per_core_switch_ < num_agg_switches_) {
+    spkt_throw_printf(sprockit::input_error,
+          "down_ports_per_core_switch (%d) must be >= total number of aggregation switches (%d)",
+          down_ports_per_core_switch_,num_agg_switches_);
+  }
+  if (down_ports_per_agg_switch_ < num_leaf_switches_per_subtree_) {
+    spkt_throw_printf(sprockit::input_error,
+          "down_ports_per_agg_switch (%d) must be >= num_leaf_switches_per_subtree (%d)",
+          down_ports_per_agg_switch_,num_leaf_switches_per_subtree_);
+  }
+
+  // check that down ports mod switches is zero
+  val = down_ports_per_core_switch_ % num_agg_switches_;
+  if (val != 0) {
+    spkt_throw_printf(sprockit::input_error,
+          "down_ports_per_core_switch mod total number of aggregation switches must be zero (%d mod %d = %d)",
+          down_ports_per_core_switch_,num_agg_switches_,val);
+  }
+  val = down_ports_per_agg_switch_ % num_leaf_switches_per_subtree_;
+  if (val != 0) {
+    spkt_throw_printf(sprockit::input_error,
+          "down_ports_per_agg_switch mod num_leaf_switches_per_subtree must be zero (%d mod %d = %d)",
+          down_ports_per_agg_switch_,num_leaf_switches_per_subtree_,val);
+  }
+
+  // check that there are enough up ports
+  if (up_ports_per_agg_switch_ < num_core_switches_) {
+    spkt_throw_printf(sprockit::input_error,
+          "up_ports_per_agg_switch (%d) must be >= num_core_switches (%d)",
+          up_ports_per_agg_switch_,num_core_switches_);
+  }
+  if (up_ports_per_leaf_switch_ < num_agg_switches_per_subtree_) {
+    spkt_throw_printf(sprockit::input_error,
+          "up_ports_per_leaf_switch (%d) must be >= num_agg_switches_per_subtree (%d)",
+          up_ports_per_leaf_switch_,num_agg_switches_per_subtree_);
+  }
+
+  // check that up ports mod switches is zero
+  val = up_ports_per_agg_switch_ % num_core_switches_;
+  if (val != 0) {
+    spkt_throw_printf(sprockit::input_error,
+          "up_ports_per_agg_switch mod num_core_switches must be zero (%d mod %d = %d)",
+          up_ports_per_agg_switch_,num_core_switches_,val);
+  }
+  val = up_ports_per_leaf_switch_ % num_agg_switches_per_subtree_;
+  if (val != 0) {
+    spkt_throw_printf(sprockit::input_error,
+          "up_ports_per_leaf_switch mod num_agg_switches_per_subtree must be zero (%d mod %d = %d)",
+          up_ports_per_leaf_switch_,num_agg_switches_per_subtree_,val);
+  }
+
+  // check that leaf-agg ports match up
+  int ndown = num_core_switches_ * down_ports_per_core_switch_;
+  int nup = num_agg_switches_ * up_ports_per_agg_switch_;
+  if (ndown != nup) {
+    spkt_throw_printf(sprockit::input_error,
+          "num_core_switches * down_ports_per_core_switch must equal total number of aggregation switches * up_ports_per_agg_switch (%d != %d)",
+          ndown,nup);
+  }
+
+  // check that agg-core ports match up
+  ndown = num_agg_switches_per_subtree_ * down_ports_per_agg_switch_;
+  nup = num_leaf_switches_per_subtree_ * up_ports_per_leaf_switch_;
+  if (ndown != nup) {
+    spkt_throw_printf(sprockit::input_error,
+          "num_agg_switches_per_subtree * down_ports_per_agg_switch must equal num_leaf_switches_per_subtree * up_ports_per_leaf_switch (%d != %d)",
+          ndown,nup);
+  }
+
 }
 
 void
