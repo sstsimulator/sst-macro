@@ -51,6 +51,11 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
+
+/*------------------------------------------------------------------------------
+  abstract_fat_tree
+  ----------------------------------------------------------------------------*/
+
 class abstract_fat_tree :
   public structured_topology
 {
@@ -60,12 +65,8 @@ class abstract_fat_tree :
    down_dimension = 0
   } dimension_t;
 
-  static int pow(int a, int exp){
-    int res = 1;
-    for (int i=0; i < exp; ++i){
-      res *= a;
-    }
-    return res;
+  int diameter() const override {
+    return 4;
   }
 
   virtual int num_leaf_switches() const override {
@@ -74,21 +75,13 @@ class abstract_fat_tree :
 
   virtual int level(switch_id sid) const = 0;
 
-  void nodes_connected_to_injection_switch(
-      switch_id swaddr,
-      std::vector<injection_port>& nodes) const override;
-
-  void nodes_connected_to_ejection_switch(
-      switch_id swaddr,
-      std::vector<injection_port>& nodes) const override;
-
-  int subtree(const switch_id sid) const {
+  inline int subtree(const switch_id sid) const {
     int lvl = level(sid);
     switch (lvl) {
     case 0:
-      return sid / num_leaf_switches_per_subtree_;
+      return inj_subtree(sid);
     case 1:
-      return (sid - num_leaf_switches_) / num_agg_switches_per_subtree_;
+      return agg_subtree(sid);
     case 2:
       return num_agg_subtrees_;
     }
@@ -98,52 +91,54 @@ class abstract_fat_tree :
     return num_agg_subtrees_;
   }
 
- protected:
-  abstract_fat_tree(sprockit::sim_parameters* params,
-                    InitMaxPortsIntra i1,
-                    InitGeomEjectID i2);
+  void nodes_connected_to_injection_switch(
+      switch_id swaddr,
+      std::vector<injection_port>& nodes) const override;
 
-  inline int inj_sub_tree(const switch_id sid) const {
-    return sid / num_leaf_switches_per_subtree_;
-  }
-
-  virtual int agg_sub_tree(const switch_id sid) const {
-    return (sid - num_leaf_switches_) / num_agg_switches_per_subtree_;
-  }
-
-  inline int sub_tree(switch_id sid) const {
-    if (sid > num_leaf_switches_){
-      return agg_sub_tree(sid);
-    } else {
-      return inj_sub_tree(sid);
-    }
-  }
-
-  int minimal_distance(switch_id src, switch_id dest) const override;
+  void nodes_connected_to_ejection_switch(
+      switch_id swaddr,
+      std::vector<injection_port>& nodes) const override;
 
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     packet::path& path) const override;
 
-  virtual int up_port(int level) const = 0;
-
-  virtual int down_port(int dst_tree) const = 0;
+  int minimal_distance(switch_id src, switch_id dest) const override;
 
  protected:
-  //int numleafswitches_;
+  abstract_fat_tree(sprockit::sim_parameters* params,
+                    InitMaxPortsIntra i1,
+                    InitGeomEjectID i2);
+
+  inline int inj_subtree(const switch_id sid) const {
+    return sid / num_leaf_switches_per_subtree_;
+  }
+
+  virtual int agg_subtree(const switch_id sid) const {
+    return (sid - num_leaf_switches_) / num_agg_switches_per_subtree_;
+  }
+
+  // used for minimal_fat_tree routing
+  virtual int up_port(int level) const = 0;
+  virtual int down_port(int dst_tree) const = 0;
+
   int num_leaf_switches_;
   int num_agg_subtrees_;
   int num_leaf_switches_per_subtree_;
   int num_agg_switches_per_subtree_;
   int num_agg_switches_;
   int num_core_switches_;
-  int num_switches_;
 
  private:
   sprockit::sim_parameters*
   override_params(sprockit::sim_parameters* params);
 };
+
+
+/*------------------------------------------------------------------------------
+  fat_tree
+  ----------------------------------------------------------------------------*/
 
 /**
  * @class fat_tree
@@ -164,58 +159,8 @@ class fat_tree :
 
   virtual ~fat_tree() {}
 
-  bool
-  uniform_network_ports() const override {
-    return true;
-  }
-
-  int
-  diameter() const override {
-    //return (l_ + 1) * 2;
-    return 6;
-  }
-
-  bool
-  uniform_switches_non_uniform_network_ports() const override {
-    return true;
-  }
-
-  bool
-  uniform_switches() const override {
-    return true;
-  }
-
-  void
-  connected_outports(switch_id src, std::vector<connection>& conns)
-  const override;
-
-  void
-  connected_up_ports(switch_id src, std::vector<int>& ports) const;
-
-  void
-  connected_core_down_ports(sstmac::switch_id, int, std::vector<int>&) const;
-
-  void
-  connected_agg_down_ports(sstmac::switch_id, int, std::vector<int>&) const;
-
-  void
-  configure_individual_port_params(
-      switch_id src,
-      sprockit::sim_parameters *switch_params)
-  const override;
-
-
-  virtual int num_switches() const override {
+  int num_switches() const {
     return num_leaf_switches_ + num_agg_switches_ + num_core_switches_;
-  }
-
-  int up_port(int level) const override {
-    if (level == 0) return 0;
-    else if (level == 1) return down_ports_per_agg_switch_;
-  }
-
-  int down_port(int dst_tree) const override {
-      return dst_tree * num_agg_switches_per_subtree_;
   }
 
   int level(switch_id sid) const override {
@@ -227,12 +172,57 @@ class fat_tree :
     return 1;
   }
 
+  bool uniform_network_ports() const override {
+    return true;
+  }
+
+  bool uniform_switches_non_uniform_network_ports() const override {
+    return true;
+  }
+
+  bool uniform_switches() const override {
+    return true;
+  }
+
+  void connected_outports(switch_id src, std::vector<connection>& conns)
+  const override;
+
+  void connected_up_ports(switch_id src, std::vector<int>& ports)
+  const;
+
+  void connected_core_down_ports(sstmac::switch_id, int, std::vector<int>&)
+  const;
+
+  void connected_agg_down_ports(sstmac::switch_id, int, std::vector<int>&)
+  const;
+
+  void configure_individual_port_params(
+      switch_id src,
+      sprockit::sim_parameters *switch_params)
+  const override;
+
+protected:
+
+  // used for minimal_fat_tree routing
+  int up_port(int level) const override {
+    if (level == 0) return 0;
+    else if (level == 1) return down_ports_per_agg_switch_;
+  }
+  int down_port(int dst_tree) const override {
+      return dst_tree * num_agg_switches_per_subtree_;
+  }
+
  private:
   int up_ports_per_leaf_switch_;
   int down_ports_per_agg_switch_;
   int up_ports_per_agg_switch_;
   int down_ports_per_core_switch_;
 };
+
+
+/*------------------------------------------------------------------------------
+  tapered_fat_tree
+  ----------------------------------------------------------------------------*/
 
 class tapered_fat_tree : public abstract_fat_tree
 {
@@ -246,6 +236,20 @@ class tapered_fat_tree : public abstract_fat_tree
 
   virtual ~tapered_fat_tree() {}
 
+  int num_switches() const {
+    return num_leaf_switches_ + num_agg_subtrees_ + 1;
+  }
+
+  int level(switch_id sid) const override {
+    if (sid == core_switch_id()){
+      return 2;
+    } else if (sid >= num_leaf_switches_){
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+
   bool uniform_network_ports() const override {
     return false;
   }
@@ -258,39 +262,19 @@ class tapered_fat_tree : public abstract_fat_tree
     return false;
   }
 
-  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
-
-  void configure_nonuniform_switch_params(switch_id src,
-        sprockit::sim_parameters* switch_params) const override;
+  void connected_outports(switch_id src, std::vector<connection>& conns)
+  const override;
 
   void configure_individual_port_params(switch_id src,
       sprockit::sim_parameters *switch_params) const override;
 
-  int num_switches() const override {
-    return num_switches_;
-  }
+  void configure_nonuniform_switch_params(switch_id src,
+        sprockit::sim_parameters* switch_params) const override;
 
-  int convert_to_port(int dim, int dir) const;
+protected:
+  //int convert_to_port(int dim, int dir) const;
 
-  virtual void create_partition(
-    int* switch_to_lp,
-    int* switch_to_thread,
-    int me,
-    int nproc,
-    int nthread,
-    int noccupied) const override;
-
-  int level(switch_id sid) const override {
-    if (sid == core_switch_id()){
-      return 2;
-    } else if (sid >= num_leaf_switches_){
-      return 1;
-    } else {
-      return 0;
-    }
-  }
-
-  int agg_sub_tree(switch_id sid) const {
+  int agg_subtree(switch_id sid) const {
     return (sid - num_leaf_switches_);
   }
 
@@ -311,9 +295,13 @@ class tapered_fat_tree : public abstract_fat_tree
     return dst_tree;
   }
 
-  int diameter() const override {
-    return 4;
-  }
+  virtual void create_partition(
+    int* switch_to_lp,
+    int* switch_to_thread,
+    int me,
+    int nproc,
+    int nthread,
+    int noccupied) const override;
 
  private:
   switch_id core_switch_id() const {
