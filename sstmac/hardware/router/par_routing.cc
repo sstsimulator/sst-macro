@@ -70,10 +70,10 @@ par_router::route_common(packet* pkt)
   auto hdr = pkt->get_header<header>();
   switch(hdr->stage_number){
     case initial_stage: {
-      switch_id middle_switch = top_->random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
-      packet::path orig;
-      packet::path valiant;
-      bool go_valiant = switch_paths(ej_addr, middle_switch, orig, valiant);
+      switch_id middle_switch = random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
+      packet::path orig = output_path(ej_addr);
+      packet::path valiant = output_path(middle_switch);
+      bool go_valiant = switch_paths(ej_addr, middle_switch, orig.outport(), valiant.outport());
       if (go_valiant){
         pkt->set_dest_switch(middle_switch);
         pkt->current_path() = valiant;
@@ -133,7 +133,13 @@ class dragonfly_par_router : public par_router {
   }
 
   int num_vc() const override {
-    return 7;
+    return 8;
+  }
+
+  packet::path output_path(switch_id sid) const override {
+    packet::path p;
+    dfly_->minimal_route_to_switch(my_addr_, sid, p);
+    return p;
   }
 
  private:

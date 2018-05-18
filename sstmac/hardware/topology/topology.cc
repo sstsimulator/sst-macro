@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE && SSTMAC_HAVE_MPI_H
+#if SSTMAC_INTEGRATED_SST_CORE && SSTMAC_HAVE_VALID_MPI
 #include <mpi.h>
 #endif
 
@@ -102,34 +102,20 @@ topology::node_to_logp_switch(node_id nid) const
 }
 #endif
 
-topology::topology(sprockit::sim_parameters* params) :
-  rng_(nullptr)
+topology::topology(sprockit::sim_parameters* params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-#if SSTMAC_HAVE_MPI_H
+#if SSTMAC_HAVE_VALDI_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 #else
   nproc = 1;
 #endif
 #endif
-  std::vector<RNG::rngint_t> seeds(2);
-  seeds[0] = 42;
-  if (params->has_param("seed")) {
-    seed_ = params->get_long_param("seed");
-    seeds[1] = seed_;
-    debug_seed_ = true;
-  } else {
-    seeds[1] = time(NULL);
-    debug_seed_ = false;
-  }
-  rng_ = RNG::MWC::construct(seeds);
-
   main_top_ = this;
 }
 
 topology::~topology()
 {
-  if (rng_) delete rng_;
 }
 
 topology*
@@ -143,42 +129,6 @@ topology::static_topology(sprockit::sim_parameters* params)
     static_topology_ = topology::factory::get_param("name", top_params);
   }
   return static_topology_;
-}
-
-uint32_t
-topology::random_number(uint32_t max, uint32_t attempt, uint32_t seed) const
-{
-#if SSTMAC_USE_MULTITHREAD
-  static thread_lock lock;
-  lock.lock();
-#endif
-  if (debug_seed_){
-    std::vector<RNG::rngint_t> seeds(2);
-    uint32_t time = seed;
-    seeds[1] = seed_ * (time+31) << (attempt + 5);
-    seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
-    rng_->vec_reseed(seeds);
-  } 
-  uint32_t result = rng_->value_in_range(max);
-#if SSTMAC_USE_MULTITHREAD
-  lock.unlock();
-#endif
-  return result;
-}
-
-switch_id
-topology::random_intermediate_switch(switch_id current, switch_id dest, uint32_t seed)
-{
-  static thread_lock lock;
-  lock.lock();  //need to be thread safe
-  long nid = current;
-  uint32_t attempt = 0;
-  while (current == nid) {
-    nid = random_number(num_switches(), attempt, seed);
-    ++attempt;
-  }
-  lock.unlock();
-  return switch_id(nid);
 }
 
 sprockit::sim_parameters*
@@ -427,13 +377,6 @@ class merlin_topology : public topology {
   bool node_id_slot_filled(node_id nid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
     return false;
-  }
-
-  void minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    packet::path& path) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
   }
 
   bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {

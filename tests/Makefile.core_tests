@@ -12,6 +12,9 @@ if BUILD_SUMI_MPI
 
 CORETESTS+= \
   test_core_apps_ping_all_dragonfly_par \
+  test_core_apps_ping_all_dragonfly_par_alltoall \
+  test_core_apps_ping_all_dragonfly_par_single \
+  test_core_apps_ping_all_dragonfly_par_single2 \
   test_core_apps_ping_all_dragonfly_ugal \
   test_core_apps_ping_all_dragonfly_valiant \
   test_core_apps_ping_all_random_macrels \

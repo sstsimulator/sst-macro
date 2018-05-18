@@ -67,7 +67,7 @@ class hypercube :
   void minimal_route_to_switch(
     switch_id src,
     switch_id dst,
-    packet::path& path) const override;
+    packet::path& path) const;
 
   bool uniform_network_ports() const override {
     return false;

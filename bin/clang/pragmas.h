@@ -66,7 +66,8 @@ struct PragmaConfig {
   std::string dependentScopeGlobal;
   SkeletonASTVisitor* astVisitor;
   PragmaConfig() : pragmaDepth(0),
-    makeNoChanges(false)
+    makeNoChanges(false),
+    nullifyDeclarationsPragma(nullptr)
   {}
   std::string computeMemorySpec;
   std::list<std::pair<SSTNullVariablePragma*,clang::TypedefDecl*>> pendingTypedefs;
