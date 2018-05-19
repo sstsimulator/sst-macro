@@ -42,88 +42,29 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_dragonfly_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_dragonfly_H_INCLUDED
+#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_dragonfly_plus_H_INCLUDED
+#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_dragonfly_plus_H_INCLUDED
 
-#include <sstmac/hardware/topology/cartesian_topology.h>
+#include <sstmac/hardware/topology/dragonfly.h>
 
 namespace sstmac {
 namespace hw {
-
-class dragonfly;
-
-class inter_group_wiring {
- public:
-  DeclareFactory(inter_group_wiring,
-    int, /* a=num switches per group */
-    int, /* g=num groups */
-    int /* h=num group links per switch */
-  )
-                
-
-  /**
-   * @brief group_port
-   * @param srcA
-   * @param srcG
-   * @param dstG
-   * @return The port on which router (srcA, srcG) connects to group dstG
-   */
-  virtual int input_group_port(int srcA, int srcG, int srcH, int dstA, int dstG) const = 0;
-
-  /**
-   * @brief connected_routers
-   * @param a The src router index within the group
-   * @param g The src router group
-   * @param connected [in-out] The routers (switch id) for each inter-group interconnection
-   * @return The number of routers in connected array
-   */
-  virtual void connected_routers(int a, int g, std::vector<int>& connected) const = 0;
-
-  /**
-   * @brief connected_to_group
-   * @param srcG
-   * @param dstG
-   * @param connected [in-out] The list of all intra-group routers in range (0 ... a-1)
-   *                  that have connections to a router in group dstG
-   * @return The number of routers in group srcG with connections to dstG
-   */
-  virtual void connected_to_group(int srcG, int dstG, std::vector<std::pair<int,int>>& connected) const = 0;
-
-  virtual switch_id random_intermediate(router* rtr, switch_id current_sw, switch_id dest_sw, uint32_t seed);
-
- protected:
-  /**
-   * @brief inter_group_wiring
-   * @param params
-   * @param a  The number of routers per group
-   * @param g  The number of groups
-   * @param h  The number of group links per router
-   */
-  inter_group_wiring(sprockit::sim_parameters* params, int a, int g, int h);
-
- protected:
-  /** Number of routers per group */
-  int a_;
-  /** Number of groups */
-  int g_;
-  /** Number of group connections per router */
-  int h_;
-};
 
 /**
  * @brief The dragonfly class
  * A canonical dragonfly with notation/structure matching the Dally paper
  * Technology-Driven, Highly-Scalable Dragonfly Topology
  */
-class dragonfly : public cartesian_topology
+class dragonfly_plus : public dragonfly
 {
-  FactoryRegister("dragonfly", topology, dragonfly)
+  FactoryRegister("dragonfly_plus", topology, dragonfly_plus)
+
  public:
-  dragonfly(sprockit::sim_parameters* params);
+  dragonfly_plus(sprockit::sim_parameters* params);
 
  public:
   std::string to_string() const override {
-    return "dragonfly";
+    return "dragonfly+";
   }
 
   bool uniform_network_ports() const override {
@@ -131,15 +72,15 @@ class dragonfly : public cartesian_topology
   }
 
   bool is_global_port(int port) const {
-    return port >= a_;
+    return port >= 2*a_;
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
-    return true;
+    return false;
   }
 
   bool uniform_switches() const override {
-    return true;
+    return false;
   }
 
   void connected_outports(switch_id src, std::vector<connection>& conns) const override;
@@ -147,34 +88,10 @@ class dragonfly : public cartesian_topology
   void configure_individual_port_params(switch_id src,
         sprockit::sim_parameters *switch_params) const override;
 
-  virtual ~dragonfly() {}
+  virtual ~dragonfly_plus() {}
 
   int ndimensions() const {
-    return 2;
-  }
-
-  /**
-   * @brief Following Dally notation
-   * @return the number of routers in a group
-   */
-  int a() const {
-    return a_;
-  }
-
-  /**
-   * @brief Following Dally notation
-   * @return the number of inter-group connections per router
-   */
-  int h() const {
-    return h_;
-  }
-
-  /**
-   * @brief Following Dally notation
-   * @return the total number of groups
-   */
-  int g() const {
-    return g_;
+    return 3;
   }
 
   /**
@@ -183,13 +100,18 @@ class dragonfly : public cartesian_topology
    * @param a
    * @param g
    */
-  inline void get_coords(switch_id sid, int& a, int& g) const {
-    a = computeA(sid);
-    g = computeG(sid);
+  inline void get_coords(switch_id sid, int& row, int& a, int& g) const {
+    row = sid / num_leaf_switches_;
+    a = sid % a_;
+    g = (sid % num_leaf_switches_) / a_;
   }
 
-  int get_uid(int a, int g) const {
-    return a + g * a_;
+  int get_uid(int row, int a, int g) const {
+    return row*num_leaf_switches_ + g*a_ + a;
+  }
+
+  inline int computeRow(switch_id sid) const {
+    return sid / num_leaf_switches_;
   }
 
   inline int computeA(switch_id sid) const {
@@ -197,18 +119,19 @@ class dragonfly : public cartesian_topology
   }
 
   inline int computeG(switch_id sid) const {
-    return sid / a_;
+    return (sid % num_leaf_switches_) / a_;
   }
 
   int num_switches() const override {
-    return a_ * g_;
+    return 2 * a_ * g_;
   }
 
   int num_leaf_switches() const override {
-    return a_ * g_;
+    return num_leaf_switches_;
   }
 
   void minimal_route_to_switch(
+      int& path_rotater,
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
       packet::path &path) const;
@@ -216,39 +139,23 @@ class dragonfly : public cartesian_topology
   int minimal_distance(switch_id src, switch_id dst) const override;
 
   int diameter() const override {
-    return 3;
+    return 5;
   }
-
-  virtual void configure_geometric_paths(std::vector<int> &redundancies);
 
   coordinates switch_coords(switch_id sid) const override {
     coordinates c(2);
-    c[0] = computeA(sid);
-    c[1] = computeG(sid);
+    c[0] = computeRow(sid);
+    c[1] = computeA(sid);
+    c[2] = computeG(sid);
     return c;
   }
 
   switch_id switch_addr(const coordinates &coords) const override {
-    return get_uid(coords[0], coords[1]);
+    return get_uid(coords[0], coords[1], coords[2]);
   }
 
-  inter_group_wiring* group_wiring() const {
-    return group_wiring_;
-  }
-
-  switch_id random_intermediate(router* rtr, switch_id current, switch_id dest, uint32_t seed){
-    return group_wiring_->random_intermediate(rtr,current,dest,seed);
-  }
-
- protected:
-  int a_;
-  int h_;
-  int g_;
-  inter_group_wiring* group_wiring_;
-
-  void setup_port_params(sprockit::sim_parameters* params,
-                    int red, int port_offset, int num_ports) const;
-
+ private:
+  int num_leaf_switches_;
 };
 
 }

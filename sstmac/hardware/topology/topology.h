@@ -141,6 +141,10 @@ class topology : public sprockit::printable
   */
   virtual int num_switches() const = 0;
 
+  virtual int num_leaf_switches() const {
+    return num_switches();
+  }
+
   /**
    * @brief max_switch_id Depending on the node indexing scheme, the maximum switch id
    *  might be larger than the actual number of switches.

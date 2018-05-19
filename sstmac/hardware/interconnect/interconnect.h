@@ -105,6 +105,7 @@ class interconnect
   topology* topology_;
   int num_nodes_;
   int num_switches_;
+  int num_leaf_switches_;
 
  private:
   static interconnect* static_interconnect_;

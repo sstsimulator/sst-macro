@@ -261,7 +261,6 @@ class fully_connected_minimal_router : public minimal_router {
   fully_connected* full_;
 };
 
-
 class butterfly_minimal_router : public minimal_router {
  public:
   FactoryRegister("butterfly_minimal",

@@ -17,6 +17,8 @@ CORETESTS+= \
   test_core_apps_ping_all_dragonfly_par_single2 \
   test_core_apps_ping_all_dragonfly_ugal \
   test_core_apps_ping_all_dragonfly_valiant \
+  test_core_apps_ping_all_dragonfly_plus \
+  test_core_apps_ping_all_dragonfly_plus_par \
   test_core_apps_ping_all_random_macrels \
   test_core_apps_ping_all_torus_sculpin \
   test_core_apps_ping_all_dragonfly \
