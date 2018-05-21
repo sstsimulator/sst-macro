@@ -18,7 +18,11 @@ AC_ARG_ENABLE([spinlock],
   [with_spinlock=$enableval],
   [with_spinlock=no])
 if test "X$with_spinlock" = "Xyes"; then
-  AC_DEFINE_UNQUOTED([USE_SPINLOCK], 1, "Whether to use spin locks for more efficient thread barriers")
+  if test "X$darwin" = "Xfalse"; then
+    AC_DEFINE_UNQUOTED([USE_SPINLOCK], 1, "Whether to use spin locks for more efficient thread barriers")
+  else
+    AC_MSG_ERROR([--enable-spinlock not available on darwin])
+  fi
 fi
 
 # pthread_setaffinity_np checking: from https://github.com/landonf/haiku-buildtools/blob/master/gcc/libgomp/configure.ac
