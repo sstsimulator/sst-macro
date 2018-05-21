@@ -79,8 +79,8 @@ int main(int argc, char** argv)
       std::cout << "Testing torus...\n";
           test_torus(unit);
       std::cout << "Testing fat tree...\n";
-          //test_fattree2(unit);
           test_fattree4(unit);
+          test_fattree_min(unit);
       std::cout << "Testing fully_connected...\n";
           test_fully_connected(unit);
       std::cout << "Testing butterfly...\n";

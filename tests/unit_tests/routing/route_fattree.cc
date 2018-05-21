@@ -66,3 +66,21 @@ test_fattree4(UnitTest& unit)
   params["name"] = "fat_tree";
   test_topology(params);
 }
+
+void
+test_fattree_min(UnitTest& unit)
+{
+  sprockit::sim_parameters params;
+  sstmac::env::params = &params;
+  params["num_core_switches"] = "4";
+  params["down_ports_per_core_switch"] = "16";
+  params["num_agg_subtrees"] = "4";
+  params["agg_switches_per_subtree"] = "4";
+  params["up_ports_per_agg_switch"] = "4";
+  params["down_ports_per_agg_switch"] = "4";
+  params["leaf_switches_per_subtree"] = "4";
+  params["up_ports_per_leaf_switch"] = "4";
+  params["router.name"] = "minimal_fat_tree";
+  params["name"] = "fat_tree";
+  test_topology(params);
+}
