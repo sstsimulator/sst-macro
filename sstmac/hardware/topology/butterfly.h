@@ -140,7 +140,7 @@ class butterfly :
 
   void minimal_route_to_switch(switch_id current_sw_addr,
                           switch_id dest_sw_addr,
-                          packet::path &path) const override;
+                          packet::path &path) const;
 
   bool uniform_switches() const override {
     return true;

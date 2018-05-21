@@ -109,7 +109,7 @@ cascade::configure_geometric_paths(std::vector<int> &redundancies)
 }
 
 switch_id
-cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw, uint32_t seed)
+cascade::random_intermediate(router* rtr, switch_id current_sw, switch_id dest_sw, uint32_t seed)
 {
   long nid = current_sw;
   uint32_t attempt = 0;
@@ -119,14 +119,14 @@ cascade::random_intermediate_switch(switch_id current_sw, switch_id dest_sw, uin
     get_coords(current_sw, srcX, srcY, srcG);
     get_coords(dest_sw, dstX, dstY, dstG);
 
-    hisX = random_number(x_, attempt, seed);
-    hisY = random_number(y_, attempt, seed);
+    hisX = rtr->random_number(x_, attempt, seed);
+    hisY = rtr->random_number(y_, attempt, seed);
     if(!true_random_intermediate_ && dstG == srcG) {
       // already on the correct group
       hisG = srcG;
     } else {
       //randomly select a group
-      hisG = random_number(g_, attempt, seed);
+      hisG = rtr->random_number(g_, attempt, seed);
       //now figure out which x,y,g fills the path
       //find_path_to_group(srcX, srcY, srcG, hisX, hisY, hisG);
     }
@@ -155,10 +155,10 @@ cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 }
 
 bool
-cascade::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
+cascade::find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY,
                               packet::path& path) const
 {
-  int ystart = random_number(y_,0,42);
+  int ystart = rtr->random_number(y_,0,42);
   for (int yy = 0; yy < y_; ++yy) {
     dstY = (ystart + yy) % y_;
     if (xy_connected_to_group(myX, dstY, myG, dstG)) {
@@ -170,10 +170,10 @@ cascade::find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
 }
 
 bool
-cascade::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
+cascade::find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX,
                               packet::path& path) const
 {
-  int xstart = random_number(x_,0,42);
+  int xstart = rtr->random_number(x_,0,42);
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
     if (xy_connected_to_group(dstX, myY, myG, dstG)) {
@@ -185,7 +185,7 @@ cascade::find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
 }
 
 void
-cascade::find_path_to_group(int myX, int myY, int myG,
+cascade::find_path_to_group(router* rtr, int myX, int myY, int myG,
                             int dstG, int& dstX, int& dstY,
                             packet::path& path) const
 {
@@ -197,21 +197,21 @@ cascade::find_path_to_group(int myX, int myY, int myG,
     return;
   }
 
-  if (find_x_path_to_group(myY, myG, dstG, dstX, path)){
+  if (find_x_path_to_group(rtr, myY, myG, dstG, dstX, path)){
     dstY = myY;
     return;
   }
 
-  if (find_y_path_to_group(myX, myG, dstG, dstY, path)){
+  if (find_y_path_to_group(rtr, myX, myG, dstG, dstY, path)){
     dstX = myX;
     return;
   }
 
   //both x and y need to change
-  int xstart = 0; 
+  int xstart = 0;
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
-    if (find_y_path_to_group(dstX, myG, dstG, dstY, path)){
+    if (find_y_path_to_group(rtr, dstX, myG, dstG, dstY, path)){
       return;
     }
   }
@@ -224,6 +224,7 @@ cascade::find_path_to_group(int myX, int myY, int myG,
 
 void
 cascade::minimal_route_to_switch(
+  router* rtr,
   switch_id src,
   switch_id dst,
   packet::path &path) const
@@ -232,7 +233,7 @@ cascade::minimal_route_to_switch(
   int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
   int interX, interY;
   if (srcG != dstG){
-    find_path_to_group(srcX, srcY, srcG, dstG, interX, interY, path);
+    find_path_to_group(rtr, srcX, srcY, srcG, dstG, interX, interY, path);
     top_debug("cascade routing from (%d,%d,%d) to (%d,%d,%d) through "
               "gateway (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG,
@@ -260,6 +261,8 @@ cascade::minimal_distance(switch_id src, switch_id dst) const
     if (srcX != dstX) ++dist;
     if (srcY != dstY) ++dist;
   } else {
+    return 5; //just - don't bother for now
+    /**
     packet::path path;
     int interX;
     int interY;
@@ -269,6 +272,7 @@ cascade::minimal_distance(switch_id src, switch_id dst) const
     if (srcY != interY) ++dist;
     if (dstX != interX) ++dist;
     if (dstY != interY) ++dist;
+    */
   }
   return dist;
 }

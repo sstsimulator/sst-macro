@@ -77,6 +77,7 @@ nobase_library_include_HEADERS = \
   topology/fully_connected.h \
   topology/cascade.h \
   topology/dragonfly.h \
+  topology/dragonfly_plus.h \
   topology/fat_tree.h \
   topology/torus.h \
   topology/multipath_topology.h \
@@ -144,6 +145,7 @@ libsstmac_hw_la_SOURCES =  \
   topology/fully_connected.cc \
   topology/cascade.cc \
   topology/dragonfly.cc \
+  topology/dragonfly_plus.cc \
   topology/fat_tree.cc \
   topology/torus.cc \
   topology/tiled_torus.cc \
