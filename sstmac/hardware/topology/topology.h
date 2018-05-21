@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_NETWORK_SWITCHES_SWITCHTOPOLOGY_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_SWITCHES_SWITCHTOPOLOGY_H_INCLUDED
 
-#include <sstmac/common/rng.h>
 #include <sstmac/hardware/topology/coordinates.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
 #include <sstmac/hardware/router/routing_enum.h>
@@ -141,6 +140,10 @@ class topology : public sprockit::printable
      @return The total number of switches
   */
   virtual int num_switches() const = 0;
+
+  virtual int num_leaf_switches() const {
+    return num_switches();
+  }
 
   /**
    * @brief max_switch_id Depending on the node indexing scheme, the maximum switch id
@@ -265,25 +268,7 @@ class topology : public sprockit::printable
   virtual void nodes_connected_to_ejection_switch(switch_id swid,
                           std::vector<injection_port>& nodes) const = 0;
 
-  /**
-     Given the current location and a destination,
-     compute the minimal path to the destination.
-     The path generally consists of a dimension,
-     a direction or branch along that dimension,
-     a port number for that dim/dir combination,
-     and a virtual channel along the dim/dir
-     appropriate for avoiding deadlock.
-     @param current_sw_addr The addr of the current switch
-     @param dest_sw_addr The addr of the destination switch
-     @param path [inout] A complete path descriptor to the destination switch
-  */
-  virtual void minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    packet::path& path) const = 0;
-
   virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
-
 
   /**** END PURE VIRTUAL INTERFACE *****/
 
@@ -325,15 +310,6 @@ class topology : public sprockit::printable
     return netlink_to_injection_switch(nodeaddr, ignore);
   }
 
-  virtual void minimal_routes_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    packet::path& current_path,
-    packet::path_set& paths) const {
-    paths.resize(1);
-    minimal_route_to_switch(current_sw_addr, dest_sw_addr, paths[0]);
-  }
-
   virtual void create_partition(
     int* switch_to_lp,
     int* switch_to_thread,
@@ -352,17 +328,6 @@ class topology : public sprockit::printable
   static topology* global() {
     return main_top_;
   }
-
-  /**
-     Get a random switch from the topoology.
-     This is most often used in things like valiant routing.
-     The input parameter avoids accidentally returning
-     the exact same switch you are currently on.
-     @param current_sw The current location switch
-     @return A random switch different from current_sw
-  */
-  virtual switch_id random_intermediate_switch(
-    switch_id current_sw, switch_id dest_sw, uint32_t seed);
 
   virtual switch_id node_to_injection_switch(node_id nodeaddr, 
    uint16_t ports[], int& num_ports) const {
@@ -425,8 +390,6 @@ class topology : public sprockit::printable
  protected:
   topology(sprockit::sim_parameters* params);
 
-  uint32_t random_number(uint32_t max, uint32_t attempt, uint32_t seed) const;
-
   static sprockit::sim_parameters* setup_port_params(
         int port, int credits, double bw,
         sprockit::sim_parameters* link_params,
@@ -436,12 +399,6 @@ class topology : public sprockit::printable
            sprockit::sim_parameters* params) const;
 
  protected:
-  RNG::rngint_t seed_;
-
-  bool debug_seed_;
-
-  RNG::MWC* rng_;
-
   std::string name_;
 
   static topology* main_top_;

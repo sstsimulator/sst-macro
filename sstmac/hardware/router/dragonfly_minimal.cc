@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/router/minimal_routing.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/dragonfly.h>
+#include <sstmac/hardware/topology/dragonfly_plus.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <cmath>
@@ -134,6 +135,55 @@ struct dragonfly_minimal_router : public minimal_router {
   int myG_;
   int a_;
 };
+
+class dragonfly_plus_minimal_router : public minimal_router {
+ public:
+  FactoryRegister("dragonfly_plus_minimal",
+              router, dragonfly_plus_minimal_router,
+              "router implementing minimal routing for dragonfly+")
+
+  dragonfly_plus_minimal_router(sprockit::sim_parameters* params, topology *top,
+                         network_switch *netsw)
+    : minimal_router(params, top, netsw)
+  {
+    dfly_ = safe_cast(dragonfly_plus, top);
+    num_leaf_switches_ = dfly_->g() * dfly_->a();
+    //stagger by switch id
+    rotater_ = (my_addr_) % dfly_->a();
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
+
+  std::string to_string() const override {
+    return "dragonfly+ minimal router";
+  }
+
+ private:
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    int srcGrp = (my_addr_%num_leaf_switches_) / dfly_->a();
+    int dstGrp = (sid%num_leaf_switches_) / dfly_->a();
+    int srcRow = my_addr_ / num_leaf_switches_;
+    auto& path = pkt->current_path();
+    if (srcRow == 0){
+      path.set_outport(rotater_);
+      rotater_ = (rotater_ + 1) % dfly_->a();
+    } else if (srcGrp == dstGrp){
+      int dstA = sid % dfly_->a();
+      path.set_outport(dstA);
+    } else {
+      int outport = srcGrp < dstGrp ? (dstGrp - 1) : dstGrp;
+      path.set_outport(dfly_->a() + outport);
+    }
+    path.vc = 0;
+  }
+
+  int num_leaf_switches_;
+  int rotater_;
+  dragonfly_plus* dfly_;
+};
+
 
 }
 }

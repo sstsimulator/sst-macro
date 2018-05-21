@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -109,6 +109,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   topology_ = topology::static_topology(params);
   num_nodes_ = topology_->num_nodes();
   num_switches_ = topology_->num_switches();
+  num_leaf_switches_ = topology_->num_leaf_switches();
   runtime::set_topology(topology_);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -352,7 +353,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
 
   int my_rank = rt_->me();
 
-  for (int i=0; i < num_switches_; ++i){
+  for (int i=0; i < num_leaf_switches_; ++i){
     switch_id sid(i);
     int thread = partition_->thread_for_switch(i);
     int target_rank = partition_->lpid_for_switch(sid);

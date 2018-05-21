@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -65,13 +65,50 @@ namespace sstmac {
 namespace hw {
 
 router::router(sprockit::sim_parameters* params, topology *top, network_switch *sw)
- : top_(top), netsw_(sw)
+ : top_(top), netsw_(sw), rng_(nullptr)
 {
   my_addr_ = switch_id(params->get_int_param("id"));
+  std::vector<RNG::rngint_t> seeds(2);
+  seeds[0] = 42;
+  if (params->has_param("seed")) {
+    seed_ = params->get_long_param("seed");
+    seeds[1] = seed_;
+    debug_seed_ = true;
+  } else {
+    seeds[1] = time(NULL);
+    debug_seed_ = false;
+  }
+  rng_ = RNG::MWC::construct(seeds);
+}
+
+switch_id
+router::random_intermediate_switch(switch_id current, switch_id dest, uint32_t seed)
+{
+  switch_id sid = current;
+  uint32_t attempt = 0;
+  while (current == sid) {
+    sid = random_number(top_->num_switches(), attempt, seed);
+    ++attempt;
+  }
+  return sid;
+}
+
+uint32_t
+router::random_number(uint32_t max, uint32_t attempt, uint32_t seed) const
+{
+  if (debug_seed_){
+    std::vector<RNG::rngint_t> seeds(2);
+    uint32_t time = seed;
+    seeds[1] = seed_ * (time+31) << (attempt + 5);
+    seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
+    rng_->vec_reseed(seeds);
+  }
+  return rng_->value_in_range(max);
 }
 
 router::~router()
 {
+  if (rng_) delete rng_;
 }
 
 void

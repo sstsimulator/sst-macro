@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -72,7 +72,7 @@ valiant_router::route(packet *pkt)
   auto hdr = pkt->get_header<header>();
   switch(hdr->stage_number){
     case initial_stage: {
-      switch_id middle_switch = top_->random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
+      switch_id middle_switch = random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
       pkt->set_dest_switch(middle_switch);
       debug_printf(sprockit::dbg::router,
         "Router %s selected random intermediate switch %s for message %s",
@@ -166,7 +166,7 @@ class cascade_valiant_router : public valiant_router {
 
   void topology_route(packet* pkt) override {
     packet::path& path = pkt->current_path();
-    cascade_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
+    cascade_->minimal_route_to_switch(this, my_addr_, pkt->dest_switch(), path);
     auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     if (cascade_->is_global_port(path.outport())){

@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -290,8 +290,37 @@ class tapered_fat_tree : public abstract_fat_tree
   void configure_individual_port_params(switch_id src,
       sprockit::sim_parameters *switch_params) const override;
 
+<<<<<<< HEAD
   void configure_nonuniform_switch_params(switch_id src,
         sprockit::sim_parameters* switch_params) const override;
+=======
+  int num_switches() const override {
+    return num_switches_;
+  }
+
+  int convert_to_port(int dim, int dir) const;
+
+  virtual void create_partition(
+    int* switch_to_lp,
+    int* switch_to_thread,
+    int me,
+    int nproc,
+    int nthread,
+    int noccupied) const override;
+
+  int minimal_distance(switch_id src, switch_id dest) const override;
+
+  void minimal_route_to_switch(
+    switch_id current_sw_addr,
+    switch_id dest_sw_addr,
+    packet::path& path) const;
+
+  int level(switch_id sid) const;
+
+  inline int inj_sub_tree(switch_id sid) const {
+    return sid / num_inj_switches_per_subtree_;
+  }
+>>>>>>> origin/devel
 
 protected:
   //int convert_to_port(int dim, int dir) const;

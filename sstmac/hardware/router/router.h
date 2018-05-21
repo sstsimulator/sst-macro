@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_NETWORK_ROUTING_ROUTER_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_ROUTING_ROUTER_H_INCLUDED
 
-
+#include <sstmac/common/rng.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/hardware/router/routing_enum.h>
@@ -114,10 +114,15 @@ class router : public sprockit::printable
    */
   virtual int num_vc() const = 0;
 
+  uint32_t random_number(uint32_t max, uint32_t attempt, uint32_t seed) const;
+
  protected:
   router(sprockit::sim_parameters* params, topology* top, network_switch* sw);
 
   switch_id find_ejection_site(node_id toaddr, packet::path& path) const;
+
+  virtual switch_id random_intermediate_switch(
+    switch_id current_sw, switch_id dest_sw, uint32_t seed);
 
  protected:
   switch_id my_addr_;
@@ -125,6 +130,12 @@ class router : public sprockit::printable
   topology* top_;
 
   network_switch* netsw_;
+
+  RNG::rngint_t seed_;
+
+  bool debug_seed_;
+
+  RNG::MWC* rng_;
 
 };
 

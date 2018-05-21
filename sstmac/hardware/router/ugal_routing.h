@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -51,7 +51,7 @@ namespace sstmac {
 namespace hw {
 
 /**
- * @brief The par_router class
+ * @brief The ugal_router class
  * Encapsulates a router that performs Univeral Globally Adaptive Load-balanced
  * routing as described in PhD Thesis "Load-balanced in routing in interconnection networks"
  * by A Singh. This differs slightly from PAR in that routing decisions are only
@@ -76,11 +76,13 @@ class ugal_router : public router
 
   void route_ugal_common(packet* pkt, switch_id ej_addr);
 
+  virtual packet::path output_path(switch_id sid) const = 0;
+
   bool switch_paths(
     switch_id orig_dst,
     switch_id inter,
-    packet::path& orig_path,
-    packet::path& new_path);
+    int orig_port,
+    int new_port);
 
   int val_threshold_;
   int val_preference_factor_;
