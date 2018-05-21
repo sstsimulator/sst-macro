@@ -54,6 +54,8 @@ extern "C" {
 
 int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz);
 
+int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem);
+
 double sstmac_wall_time();
 
 #ifdef __cplusplus

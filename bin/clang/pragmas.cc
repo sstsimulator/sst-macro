@@ -892,6 +892,12 @@ SSTNullVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list
 }
 
 SSTPragma*
+SSTNullVariableGeneratorPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  return new SSTNullVariableGeneratorPragma(loc, ci_, tokens);
+}
+
+SSTPragma*
 SSTNullFieldsPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
 {
   return new SSTNullFieldsPragma(loc, ci_, tokens);

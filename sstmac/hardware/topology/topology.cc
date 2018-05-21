@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE && SSTMAC_HAVE_MPI_H
+#if SSTMAC_INTEGRATED_SST_CORE && SSTMAC_HAVE_VALID_MPI
 #include <mpi.h>
 #endif
 
@@ -106,7 +106,7 @@ topology::topology(sprockit::sim_parameters* params) :
   rng_(nullptr)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-#if SSTMAC_HAVE_MPI_H
+#if SSTMAC_HAVE_VALID_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 #else
   nproc = 1;

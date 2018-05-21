@@ -59,7 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/thread_lock.h>
 #include <cinttypes>
 
-#if SSTMAC_HAVE_MPI_H
+#if SSTMAC_HAVE_VALID_MPI
 #include <mpi.h>
 #endif
 
@@ -163,7 +163,7 @@ graph_viz::global_reduce(parallel_runtime *rt)
   auto trace_size = 1 + 2*nfxns;
   auto total_size = trace_size * nfxns;
 
-#if SSTMAC_HAVE_MPI_H
+#if SSTMAC_HAVE_VALID_MPI
   MPI_Allreduce(MPI_IN_PLACE, data_block_, total_size, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
 #else
   sprockit::abort("cannot support global reduce with MPI");
