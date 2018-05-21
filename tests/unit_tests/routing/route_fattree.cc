@@ -80,7 +80,7 @@ test_fattree_min(UnitTest& unit)
   params["down_ports_per_agg_switch"] = "4";
   params["leaf_switches_per_subtree"] = "4";
   params["up_ports_per_leaf_switch"] = "4";
-  params["router.name"] = "minimal_fat_tree";
+  params["router.name"] = "fat_tree_minimal";
   params["name"] = "fat_tree";
   test_topology(params);
 }
