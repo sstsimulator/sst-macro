@@ -178,6 +178,7 @@ class fat_tree_minimal_router : public minimal_router {
                           network_switch *netsw)
     : minimal_router(params, top, netsw)
   {
+    tree_ = safe_cast(fat_tree, top);
   }
 
   std::string to_string() const override {
@@ -191,9 +192,12 @@ class fat_tree_minimal_router : public minimal_router {
  private:
   void route_to_switch(switch_id sid, packet* pkt) override {
     packet::path& path = pkt->current_path();
-    top_->minimal_route_to_switch(my_addr_, sid, path);
+    tree_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }
+
+  fat_tree* tree_;
+
 };
 
 class tapered_fat_tree_minimal_router : public minimal_router {
