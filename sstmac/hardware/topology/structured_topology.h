@@ -87,7 +87,7 @@ class structured_topology : public topology
      For indirect, num_leaf_switches < num_switches.
      @return The number of leaf switches directly connected to compute nodes
   */
-  virtual int num_leaf_switches() const = 0;
+  virtual int num_leaf_switches() const override = 0;
 
   int max_num_ports() const override {
     return max_ports_injection_ + max_ports_intra_network_;

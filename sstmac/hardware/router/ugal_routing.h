@@ -51,7 +51,7 @@ namespace sstmac {
 namespace hw {
 
 /**
- * @brief The par_router class
+ * @brief The ugal_router class
  * Encapsulates a router that performs Univeral Globally Adaptive Load-balanced
  * routing as described in PhD Thesis "Load-balanced in routing in interconnection networks"
  * by A Singh. This differs slightly from PAR in that routing decisions are only
@@ -76,11 +76,13 @@ class ugal_router : public router
 
   void route_ugal_common(packet* pkt, switch_id ej_addr);
 
+  virtual packet::path output_path(switch_id sid) const = 0;
+
   bool switch_paths(
     switch_id orig_dst,
     switch_id inter,
-    packet::path& orig_path,
-    packet::path& new_path);
+    int orig_port,
+    int new_port);
 
   int val_threshold_;
   int val_preference_factor_;

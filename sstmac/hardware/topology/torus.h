@@ -123,7 +123,7 @@ class torus :
   void minimal_route_to_switch(
     switch_id sid,
     switch_id dst,
-    packet::path& path) const override {
+    packet::path& path) const {
     torus_route(sid, dst, path);
   }
 

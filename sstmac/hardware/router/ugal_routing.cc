@@ -69,10 +69,10 @@ ugal_router::route_ugal_common(packet* pkt, switch_id ej_addr)
   auto hdr = pkt->get_header<header>();
   switch(hdr->stage_number){
     case initial_stage: {
-      switch_id middle_switch = top_->random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
-      packet::path orig;
-      packet::path valiant;
-      bool go_valiant = switch_paths(ej_addr, middle_switch, orig, valiant);
+      switch_id middle_switch = random_intermediate_switch(addr(), ej_addr, netsw_->now().ticks());
+      packet::path orig = output_path(ej_addr);
+      packet::path valiant = output_path(middle_switch);
+      bool go_valiant = switch_paths(ej_addr, middle_switch, orig.outport(), valiant.outport());
       if (go_valiant){
         pkt->set_dest_switch(middle_switch);
         pkt->current_path() = valiant;
@@ -122,14 +122,12 @@ bool
 ugal_router::switch_paths(
   switch_id orig_dst,
   switch_id new_dst,
-  packet::path& orig_path,
-  packet::path& new_path)
+  int orig_port,
+  int new_port)
 {
   switch_id src = my_addr_;
-  top_->minimal_route_to_switch(src, orig_dst, orig_path);
-  top_->minimal_route_to_switch(src, new_dst, new_path);
-  int orig_queue_length = netsw_->queue_length(orig_path.outport());
-  int new_queue_length = netsw_->queue_length(new_path.outport());
+  int orig_queue_length = netsw_->queue_length(orig_port);
+  int new_queue_length = netsw_->queue_length(new_port);
   int orig_distance = top_->minimal_distance(src, orig_dst);
   int new_distance = top_->minimal_distance(src, new_dst)
                       + top_->minimal_distance(new_dst, orig_dst);
@@ -165,15 +163,15 @@ class dragonfly_ugalG_router : public ugal_router {
     dfly_ = safe_cast(dragonfly, top);
   }
 
-  std::string to_string() const {
+  std::string to_string() const override {
     return "dragonfly UGAL-G router";
   }
 
-  int num_vc() const {
+  int num_vc() const override {
     return 3;
   }
 
-  void route(packet *pkt){
+  void route(packet *pkt) override {
     uint16_t dir;
     packet::path& path = pkt->current_path();
 
@@ -209,7 +207,7 @@ class dragonfly_ugalG_router : public ugal_router {
         hdr->stage_number = hop_to_exit_stage;
         pkt->set_dest_switch(dfly_->get_uid(hdr->exitA, hdr->interGrp));
       } else {
-        top_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
+        path = output_path(pkt->dest_switch());
         break;
       }
     case hop_to_exit_stage:
@@ -217,12 +215,12 @@ class dragonfly_ugalG_router : public ugal_router {
         hdr->stage_number = final_stage;
         pkt->set_dest_switch(ej_addr);
       } else {
-        top_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
+        path = output_path(pkt->dest_switch());
         break;
       }
     case final_stage:
     case intra_grp_stage:
-      top_->minimal_route_to_switch(my_addr_, ej_addr, path);
+      path = output_path(ej_addr);
       break;
     }
 
@@ -230,6 +228,12 @@ class dragonfly_ugalG_router : public ugal_router {
     if (dfly_->is_global_port(path.outport())){
       ++hdr->num_group_hops;
     }
+  }
+
+  packet::path output_path(switch_id sid) const override {
+    packet::path p;
+    dfly_->minimal_route_to_switch(my_addr_, sid, p);
+    return p;
   }
 
   void select_ugalG_intermediate(packet* pkt, switch_id ej_addr){
@@ -363,6 +367,12 @@ class dragonfly_ugal_router : public ugal_router {
     ++hdr->num_hops;
   }
 
+  packet::path output_path(switch_id sid) const override {
+    packet::path p;
+    dfly_->minimal_route_to_switch(my_addr_, sid, p);
+    return p;
+  }
+
  private:
   dragonfly* dfly_;
 };
@@ -397,13 +407,19 @@ class cascade_ugal_router : public ugal_router {
     if (eject) return;
 
     packet::path& path = pkt->current_path();
-    cascade_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
+    cascade_->minimal_route_to_switch(this, my_addr_, pkt->dest_switch(), path);
     auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     if (cascade_->is_global_port(path.outport())){
       ++hdr->num_group_hops;
     }
     ++hdr->num_hops;
+  }
+
+  packet::path output_path(switch_id sid) const override {
+    packet::path p;
+    cascade_->minimal_route_to_switch(const_cast<cascade_ugal_router*>(this), my_addr_, sid, p);
+    return p;
   }
 
  private:
@@ -429,6 +445,12 @@ class torus_ugal_router : public ugal_router {
 
   int num_vc() const override {
     return 4;
+  }
+
+  packet::path output_path(switch_id sid) const override {
+    packet::path p;
+    torus_->minimal_route_to_switch(my_addr_, sid, p);
+    return p;
   }
 
   std::string to_string() const override {

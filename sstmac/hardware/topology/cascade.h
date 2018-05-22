@@ -177,9 +177,10 @@ class cascade : public cartesian_topology
   }
 
   void minimal_route_to_switch(
+      router* rtr,
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      packet::path &path) const override;
+      packet::path &path) const;
 
   int minimal_distance(switch_id src, switch_id dst) const override;
 
@@ -187,8 +188,8 @@ class cascade : public cartesian_topology
     return 5;
   }
 
-  virtual switch_id random_intermediate_switch(switch_id current_sw,
-                             switch_id dest_sw, uint32_t seed) override;
+  switch_id random_intermediate(router* rtr, switch_id current_sw,
+                             switch_id dest_sw, uint32_t seed);
 
   virtual void configure_geometric_paths(std::vector<int> &redundancies);
 
@@ -197,14 +198,13 @@ class cascade : public cartesian_topology
   switch_id switch_addr(const coordinates &coords) const override;
 
  protected:
-  virtual void find_path_to_group(int myX, int myY, int myG, int dstG,
-                     int& dstX, int& dstY,
-                     packet::path& path) const;
+  virtual void find_path_to_group(router* rtr, int myX, int myY, int myG, int dstG,
+                     int& dstX, int& dstY, packet::path& path) const;
 
-  bool find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
+  bool find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY,
                        packet::path& path) const;
 
-  bool find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
+  bool find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX,
                        packet::path& path) const;
 
   virtual bool xy_connected_to_group(int myX, int myY, int myG, int dstG) const;

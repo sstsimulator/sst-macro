@@ -48,7 +48,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/torus.h>
 #include <sstmac/hardware/topology/cascade.h>
 #include <sstmac/hardware/topology/dragonfly.h>
+#include <sstmac/hardware/topology/hypercube.h>
 #include <sstmac/hardware/topology/fat_tree.h>
+#include <sstmac/hardware/topology/butterfly.h>
+#include <sstmac/hardware/topology/fully_connected.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sprockit/util.h>
@@ -152,7 +155,7 @@ class cascade_minimal_router : public minimal_router {
  private:
   void route_to_switch(switch_id sid, packet* pkt) override {
     packet::path& path = pkt->current_path();
-    cascade_->minimal_route_to_switch(my_addr_, sid, path);
+    cascade_->minimal_route_to_switch(this, my_addr_, sid, path);
     auto hdr = pkt->get_header<header>();
     path.vc = hdr->num_group_hops;
     if (cascade_->is_global_port(path.outport())){
@@ -162,6 +165,39 @@ class cascade_minimal_router : public minimal_router {
   }
 
   cascade* cascade_;
+};
+
+class fat_tree_minimal_router : public minimal_router {
+ public:
+  FactoryRegister("fat_tree_minimal",
+              router, fat_tree_minimal_router,
+              "router implementing minimal routing for fat-tree")
+
+  fat_tree_minimal_router(sprockit::sim_parameters* params,
+                          topology *top,
+                          network_switch *netsw)
+    : minimal_router(params, top, netsw)
+  {
+    tree_ = safe_cast(fat_tree, top);
+  }
+
+  std::string to_string() const override {
+    return "fat-tree minimal router";
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
+
+ private:
+  void route_to_switch(switch_id sid, packet* pkt) override {
+    packet::path& path = pkt->current_path();
+    tree_->minimal_route_to_switch(my_addr_, sid, path);
+    path.vc = 0;
+  }
+
+  fat_tree* tree_;
+
 };
 
 class tapered_fat_tree_minimal_router : public minimal_router {
@@ -174,6 +210,7 @@ class tapered_fat_tree_minimal_router : public minimal_router {
                          network_switch *netsw)
     : minimal_router(params, top, netsw)
   {
+    tree_ = safe_cast(tapered_fat_tree, top);
   }
 
   std::string to_string() const override {
@@ -187,9 +224,12 @@ class tapered_fat_tree_minimal_router : public minimal_router {
  private:
   void route_to_switch(switch_id sid, packet* pkt) override {
     packet::path& path = pkt->current_path();
-    top_->minimal_route_to_switch(my_addr_, sid, path);
+    tree_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }
+
+  tapered_fat_tree* tree_;
+
 };
 
 class hypercube_minimal_router : public minimal_router {
@@ -202,6 +242,7 @@ class hypercube_minimal_router : public minimal_router {
                          network_switch *netsw)
     : minimal_router(params, top, netsw)
   {
+    cube_ = safe_cast(hypercube, top);
   }
 
   std::string to_string() const override {
@@ -215,9 +256,11 @@ class hypercube_minimal_router : public minimal_router {
  private:
   void route_to_switch(switch_id sid, packet* pkt) override {
     packet::path& path = pkt->current_path();
-    top_->minimal_route_to_switch(my_addr_, sid, path);
+    cube_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }
+
+  hypercube* cube_;
 };
 
 class fully_connected_minimal_router : public minimal_router {
@@ -230,6 +273,7 @@ class fully_connected_minimal_router : public minimal_router {
                          network_switch *netsw)
     : minimal_router(params, top, netsw)
   {
+    full_ = safe_cast(fully_connected, top);
   }
 
   std::string to_string() const override {
@@ -243,11 +287,12 @@ class fully_connected_minimal_router : public minimal_router {
  private:
   void route_to_switch(switch_id sid, packet* pkt) override {
     packet::path& path = pkt->current_path();
-    top_->minimal_route_to_switch(my_addr_, sid, path);
+    full_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }
-};
 
+  fully_connected* full_;
+};
 
 class butterfly_minimal_router : public minimal_router {
  public:
@@ -259,6 +304,7 @@ class butterfly_minimal_router : public minimal_router {
                          network_switch *netsw)
     : minimal_router(params, top, netsw)
   {
+    butt_ = safe_cast(butterfly, top);
   }
 
   std::string to_string() const override {
@@ -272,9 +318,11 @@ class butterfly_minimal_router : public minimal_router {
  private:
   void route_to_switch(switch_id sid, packet* pkt) override {
     packet::path& path = pkt->current_path();
-    top_->minimal_route_to_switch(my_addr_, sid, path);
+    butt_->minimal_route_to_switch(my_addr_, sid, path);
     path.vc = 0;
   }
+
+  butterfly* butt_;
 };
 
 /**
