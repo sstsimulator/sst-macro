@@ -405,6 +405,7 @@ class topology : public sprockit::printable
 
  private:
   static topology* static_topology_;
+  std::string dot_file_;
 
 };
 

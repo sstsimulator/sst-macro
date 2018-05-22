@@ -238,10 +238,9 @@ run_params(opts& oo,
   rt->init_partition_params(params);
 
   native::manager* mgr = new native::manager(params, rt);
-  if (oo.output_graphviz.size() != 0){
-    mgr->interconn()->topol()->output_graphviz(oo.output_graphviz);
-  }
 
+  // topology might have the filename, so call this even if option wasn't given
+  mgr->interconn()->topol()->output_graphviz(oo.output_graphviz);
 
   double start = sstmac_wall_time();
   timestamp stop_time = params->get_optional_time_param("stop_time", 0);
