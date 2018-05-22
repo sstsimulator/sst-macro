@@ -54,24 +54,33 @@ test_fattree4(UnitTest& unit)
 {
   sprockit::sim_parameters params;
   sstmac::env::params = &params;
-  params["geometry"] = "3 4";
-  params["branching"] = "4";
-  params["num_levels"] = "3";
+  params["num_core_switches"] = "4";
+  params["down_ports_per_core_switch"] = "16";
+  params["num_agg_subtrees"] = "4";
+  params["agg_switches_per_subtree"] = "4";
+  params["up_ports_per_agg_switch"] = "4";
+  params["down_ports_per_agg_switch"] = "4";
+  params["leaf_switches_per_subtree"] = "4";
+  params["up_ports_per_leaf_switch"] = "4";
   params["router.name"] = "fat_tree";
   params["name"] = "fat_tree";
   test_topology(params);
 }
 
 void
-test_fattree2(UnitTest& unit)
+test_fattree_min(UnitTest& unit)
 {
   sprockit::sim_parameters params;
   sstmac::env::params = &params;
-  params["geometry"] = "5 2";
-  params["branching"] = "2";
-  params["num_levels"] = "5";
-  params["concentration"] = "2";
-  params["router.name"] = "fattree";
-  params["name"] = "fattree";
+  params["num_core_switches"] = "4";
+  params["down_ports_per_core_switch"] = "16";
+  params["num_agg_subtrees"] = "4";
+  params["agg_switches_per_subtree"] = "4";
+  params["up_ports_per_agg_switch"] = "4";
+  params["down_ports_per_agg_switch"] = "4";
+  params["leaf_switches_per_subtree"] = "4";
+  params["up_ports_per_leaf_switch"] = "4";
+  params["router.name"] = "fat_tree_minimal";
+  params["name"] = "fat_tree";
   test_topology(params);
 }

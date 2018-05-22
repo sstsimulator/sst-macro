@@ -22,9 +22,7 @@ CORETESTS+= \
   test_core_apps_ping_all_torus_valiant \
   test_core_apps_ping_all_hypercube \
   test_core_apps_ping_all_cascade \
-  test_core_apps_ping_all_cascade_valiant  \
-  test_core_apps_ping_all_fattree2 \
-  test_core_apps_ping_all_fattree4 
+  test_core_apps_ping_all_cascade_valiant  
 
 #test_core_apps_ping_all_fully_connected \
 #test_core_apps_ping_all_fully_connected_valiant \
