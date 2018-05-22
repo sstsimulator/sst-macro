@@ -87,7 +87,7 @@ RegisterDebugSlot(mpi_check,
 RegisterKeywords(
 { "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
 { "dump_comm_times", "dump communication time statistics" },
-{ "otf2_dir_basename", "Enables OTF2 and combinese this parameter with a timestamp to name the archive"}
+{ "otf2_dir_basename", "Enables OTF2 and combines this parameter with a timestamp to name the archive"}
 );
 
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
@@ -142,28 +142,9 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
 
   std::string otf2_dir_basename = params->get_optional_param("otf2_dir_basename", "");
   if(!otf2_dir_basename.empty()) {
-  #ifdef SSTMAC_OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
     otf2_enabled_ = true;
-
-    // 30 years and C++ still hasn't come up with a compact way to turn time into formatted strings?
-    time_t rawtime;
-    struct tm * timeinfo;
-    char timestamp [128];
-    time (&rawtime);
-    timeinfo = localtime (&rawtime);
-    std::strftime (timestamp, sizeof(timestamp), "-%Y%m%d-%H%M",timeinfo);
-
-    otf2_writer_.set_verbosity(dumpi::OWV_WARN);
-    otf2_writer_.open_archive(otf2_dir_basename + timestamp, worldcomm_->size(), true);
-    otf2_writer_.set_comm_mode(dumpi::COMM_MODE_NONE);
-
-    // Register communicators
-    otf2_writer_.register_comm_world(worldcomm_->id());
-    otf2_writer_.register_comm_self(selfcomm_->id());
-    otf2_writer_.register_comm_null(MPI_COMM_NULL);
-    otf2_writer_.register_comm_error(MPI_REQUEST_NULL);
-
-    otf2_writer_.set_clock_resolution(1e6);
+    otf2_dir_basename_ = otf2_dir_basename;
 #else
     spkt_abort_printf("OTF2 parameter 'otf2_dir_basename' used but OTF2 support is not available. Use '--with-otf2' in the configure script.");
 #endif
@@ -275,8 +256,29 @@ mpi_api::init(int* argc, char*** argv)
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && comm_world()->rank() == 0) {
+    // 30 years and C++ still hasn't come up with a compact way to turn time into formatted strings?
+    time_t rawtime;
+    struct tm * timeinfo;
+    char timestamp [128];
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+    std::strftime (timestamp, sizeof(timestamp), "-%Y%m%d-%H%M",timeinfo);
+
+    otf2_writer_.set_verbosity(dumpi::OWV_WARN);
+    otf2_writer_.open_archive(otf2_dir_basename_ + timestamp, worldcomm_->size(), true);
+    otf2_writer_.set_comm_mode(dumpi::COMM_MODE_NONE);
+
+    // Register communicators
+    otf2_writer_.register_comm_world(worldcomm_->id());
+    otf2_writer_.register_comm_self(selfcomm_->id());
+    otf2_writer_.register_comm_null(MPI_COMM_NULL);
+    otf2_writer_.register_comm_error(MPI_REQUEST_NULL);
+
+    otf2_writer_.set_clock_resolution(1e6);
+
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Init");
+  }
 #endif
 
   return MPI_SUCCESS;
@@ -954,6 +956,7 @@ MPI_Call::ID_str(MPI_function func)
   }
 }
 
+dumpi::OTF2_Writer mpi_api::otf2_writer_;
 
 }
 

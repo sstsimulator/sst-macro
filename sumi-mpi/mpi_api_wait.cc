@@ -119,11 +119,13 @@ mpi_api::waitall(int count, MPI_Request array_of_requests[],
     "MPI_Waitall(%d,...)", count);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   int last_nonnull = 0;
+  std::vector<MPI_Request> req_vec;
   for (int i=0; i < count; ++i){
     MPI_Status* status = ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i];
     if (array_of_requests[i] != MPI_REQUEST_NULL){
       last_nonnull = i;
     }
+    req_vec.push_back(array_of_requests[i]);
     do_wait(&array_of_requests[i], status);
   }
   finish_mpi_call(MPI_Waitall);
@@ -134,7 +136,7 @@ mpi_api::waitall(int count, MPI_Request array_of_requests[],
                              call_start_time,
                              (uint64_t)os_->now().usec(),
                              count,
-                             array_of_requests);
+                             req_vec.data());
   }
 #endif
 
@@ -148,6 +150,9 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
   auto call_start_time = (uint64_t)os_->now().usec();
   bool call_completed = false;
 
+  // for caching the request in an upper scope before it is destroyed
+  MPI_Request req_val = -1;
+
   start_mpi_call(MPI_Waitany);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitany(...)");
   *indx = MPI_UNDEFINED;
@@ -160,6 +165,7 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
       mpi_request* reqPtr = get_request(req);
       if (reqPtr->is_complete()){
         *indx = i;
+        req_val = req;
         finalize_wait_request(reqPtr, &array_of_requests[i], status);
         finish_mpi_call(MPI_Waitany);
 
@@ -189,6 +195,7 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
         mpi_request* reqPtr = reqPtrs[numNonnull++];
         if (reqPtr->is_complete()){
           *indx = i;
+          req_val = req;
           finalize_wait_request(reqPtr, &array_of_requests[i], status);
           finish_mpi_call(MPI_Waitany);
           call_completed = true;
@@ -205,10 +212,17 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
 
   #ifdef SSTMAC_OTF2_ENABLED
     if(otf2_enabled_) {
-      otf2_writer_.mpi_waitany(comm_world()->rank(),
-                               call_start_time,
-                               (uint64_t)os_->now().usec(),
-                               array_of_requests[*indx]);
+      if(status->count != 0) {
+        otf2_writer_.mpi_waitany(comm_world()->rank(),
+                                 call_start_time,
+                                 (uint64_t)os_->now().usec(),
+                                 req_val);
+      } else {
+        otf2_writer_.generic_call(comm_world()->rank(),
+                                  call_start_time,
+                                  (uint64_t)os_->now().usec(),
+                                  "MPI_Waitany");
+      }
     }
   #endif
 
