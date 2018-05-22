@@ -1,7 +1,7 @@
 #!/bin/sh
 
-git submodule init
-git submodule update
+#git submodule init
+#git submodule update
 ltool=`which glibtoolize`
 if [ "$?" -ne "0" ]; then
   ltool="libtoolize"

@@ -73,7 +73,7 @@ mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   delete req;
   finish_mpi_call(MPI_Send);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_send(comm_world()->rank(),
                           call_start_time,
@@ -106,7 +106,7 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
   delete req;
   finish_mpi_call(MPI_Sendrecv);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     printf("Warning: OTF2 writer does not implement MPI_Sendrecv\n");
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Sendrecv");
@@ -135,7 +135,7 @@ mpi_api::request_free(MPI_Request *req)
   }
   *req = MPI_REQUEST_NULL;
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Request_free");
@@ -173,7 +173,7 @@ mpi_api::start(MPI_Request* req)
   do_start(*req);
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Start");
   }
@@ -192,7 +192,7 @@ mpi_api::startall(int count, MPI_Request* req)
   }
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Startall");
   }
@@ -231,7 +231,7 @@ mpi_api::send_init(const void *buf, int count,
   req->set_persistent(op);
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Send_init");
   }
@@ -268,7 +268,7 @@ mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
   queue_->nonblocking_progress();
   finish_mpi_call(MPI_Isend);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_isend(comm_world()->rank(),
                           call_start_time,
@@ -295,7 +295,7 @@ mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source,
   int rc = do_recv(buf,count,datatype,source,tag,comm,status);
   finish_mpi_call(MPI_Recv);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_recv(comm_world()->rank(),
                           call_start_time,
@@ -378,7 +378,7 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
   queue_->nonblocking_progress();
   finish_mpi_call(MPI_Irecv);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_irecv(comm_world()->rank(),
                           call_start_time,

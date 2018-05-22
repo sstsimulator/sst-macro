@@ -53,7 +53,7 @@ namespace sumi {
 int
 mpi_api::wait(MPI_Request *request, MPI_Status *status)
 {
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   auto call_start_time = (uint64_t)os_->now().usec();
   MPI_Request request_cpy = *request;
 #endif
@@ -63,7 +63,7 @@ mpi_api::wait(MPI_Request *request, MPI_Status *status)
   int rc = do_wait(request, status);
   finish_mpi_call(MPI_Wait);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_wait(comm_world()->rank(),
                           call_start_time,
@@ -128,7 +128,7 @@ mpi_api::waitall(int count, MPI_Request array_of_requests[],
   }
   finish_mpi_call(MPI_Waitall);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_waitall(comm_world()->rank(),
                              call_start_time,
@@ -203,7 +203,7 @@ mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
     spkt_throw_printf(sprockit::value_error,
                     "MPI_Waitany finished, but had no completed requests");
 
-  #ifdef OTF2_ENABLED
+  #ifdef SSTMAC_OTF2_ENABLED
     if(otf2_enabled_) {
       otf2_writer_.mpi_waitany(comm_world()->rank(),
                                call_start_time,
@@ -265,7 +265,7 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
     finish_mpi_call(MPI_Waitsome);
   }
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_waitsome(comm_world()->rank(),
                               call_start_time,

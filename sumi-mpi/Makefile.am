@@ -19,11 +19,6 @@ AM_CPPFLAGS += \
 	-I$(top_srcdir)/sumi \
 	-I$(top_builddir)/sumi
 
-if HAVE_OTF2
-  AM_CPPFLAGS += -DOTF2_ENABLED
-endif
-
-
 #-I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
 
 AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64

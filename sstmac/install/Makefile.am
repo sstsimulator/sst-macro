@@ -46,7 +46,6 @@ endif
 if HAVE_OTF2
 libsstmac_la_LIBADD += $(OTF2_LDFLAGS)
 libsstmac_la_LIBADD += ../../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
-libsstmac_la_CXXFLAGS = -DOTF2_ENABLED
 endif
 
 if USE_MPIPARALLEL

@@ -115,7 +115,7 @@ mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   do_vcoll(allgatherv, MPI_Allgatherv, comm, sendcount, sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_allgatherv(comm_world()->rank(),
                                 call_start_time,
@@ -215,7 +215,7 @@ mpi_api::alltoallv(const void *sendbuf, const int *sendcounts,
            sendcounts, sendtype, sdispls,
            recvcounts, recvtype, rdispls, sendbuf, recvbuf);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_alltoallv(comm_world()->rank(),
                                call_start_time,
@@ -337,7 +337,7 @@ mpi_api::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   do_vcoll(gatherv, MPI_Gatherv, comm, sendcount, sendtype, root,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_gatherv(comm_world()->rank(),
                              call_start_time,
@@ -442,7 +442,7 @@ mpi_api::scatterv(const void* sendbuf, const int* sendcounts, const int *displs,
   do_vcoll(scatterv, MPI_Scatterv, comm, sendcounts, sendtype, root, displs,
            recvcount, recvtype, sendbuf, recvbuf);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_scatterv(comm_world()->rank(),
                               call_start_time,

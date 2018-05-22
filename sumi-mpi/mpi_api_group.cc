@@ -75,7 +75,7 @@ mpi_api::group_range_incl(MPI_Group oldgrp, int n, int ranges[][3], MPI_Group* n
     }
   }
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     auto start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Group_range_incl");
@@ -103,7 +103,7 @@ mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_incl(%d,%d,*%d)",
                 num_ranks, oldgrp, *newgrp);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     auto start_time = (uint64_t)os_->now().usec();
     otf2_writer_.mpi_group_incl(comm_world()->rank(), start_time, start_time, oldgrp, num_ranks, ranks, *newgrp);
@@ -137,7 +137,7 @@ mpi_api::group_create_with_id(MPI_Group group, int num_members, const uint32_t *
   mpi_group* grpPtr = new mpi_group(vec_ranks);
   add_group_ptr(grpPtr, &group);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.register_group(group, vec_ranks);
     auto start_time = (uint64_t)os_->now().usec();
@@ -163,7 +163,7 @@ mpi_api::group_free(MPI_Group *grp)
   }
   *grp = MPI_GROUP_NULL;
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     auto start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Group_free");
@@ -180,7 +180,7 @@ mpi_api::group_translate_ranks(MPI_Group grp1, int n, const int *ranks1, MPI_Gro
   mpi_group* grp2ptr = get_group(grp2);
   grp1ptr->translate_ranks(n, ranks1, ranks2, grp2ptr);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     auto start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Group_translate_ranks");

@@ -142,7 +142,7 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
 
   std::string otf2_dir_basename = params->get_optional_param("otf2_dir_basename", "");
   if(!otf2_dir_basename.empty()) {
-  #ifdef OTF2_ENABLED
+  #ifdef SSTMAC_OTF2_ENABLED
     otf2_enabled_ = true;
 
     // 30 years and C++ still hasn't come up with a compact way to turn time into formatted strings?
@@ -210,7 +210,7 @@ int
 mpi_api::abort(MPI_Comm comm, int errcode)
 {
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Abort");
@@ -226,7 +226,7 @@ int
 mpi_api::comm_rank(MPI_Comm comm, int *rank)
 {
   *rank = get_comm(comm)->rank();
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Abort");
@@ -274,7 +274,7 @@ mpi_api::init(int* argc, char*** argv)
   crossed_comm_world_barrier_ = false;
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Init");
 #endif
@@ -318,7 +318,7 @@ mpi_api::finalize()
       os_->now().sec());
   }
 
-  #ifdef OTF2_ENABLED
+  #ifdef SSTMAC_OTF2_ENABLED
   // Write this call to archive before it starts. The barrier can be
   // used to ensure every rank has been written before closing
   if(otf2_enabled_) {
@@ -343,7 +343,7 @@ mpi_api::finalize()
 #endif
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     if (comm_world()->rank() == 0) otf2_writer_.close_archive();
   }
@@ -359,7 +359,7 @@ mpi_api::wtime()
 {
   auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Wtime);
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Wtime");
 #endif
@@ -372,7 +372,7 @@ mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
   auto call_start_time = (uint64_t)os_->now().usec();
   *count = status->count;
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Get_count");
 #endif

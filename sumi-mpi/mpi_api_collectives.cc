@@ -271,7 +271,7 @@ mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   delete op;
   finish_mpi_call(MPI_Allgather);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_allgather(comm_world()->rank(),
                                call_start_time,
@@ -345,7 +345,7 @@ mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   delete op;
   finish_mpi_call(MPI_Alltoall);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_alltoall(comm_world()->rank(),
                               call_start_time,
@@ -438,7 +438,7 @@ mpi_api::allreduce(const void *src, void *dst, int count,
   delete op;
   finish_mpi_call(MPI_Allreduce);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_allreduce(comm_world()->rank(),
                               call_start_time,
@@ -529,7 +529,7 @@ mpi_api::barrier(MPI_Comm comm)
   delete op;
   finish_mpi_call(MPI_Barrier);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_barrier(comm_world()->rank(),
                               call_start_time,
@@ -597,7 +597,7 @@ mpi_api::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm co
   delete op;
   finish_mpi_call(MPI_Bcast);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_bcast(comm_world()->rank(),
                            call_start_time,
@@ -687,7 +687,7 @@ mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   delete op;
   finish_mpi_call(MPI_Gather);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_gather(comm_world()->rank(),
                             call_start_time,
@@ -804,7 +804,7 @@ mpi_api::reduce(const void *src, void *dst, int count,
   delete op;
   finish_mpi_call(MPI_Reduce);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_reduce(comm_world()->rank(),
                             call_start_time,
@@ -882,7 +882,7 @@ mpi_api::reduce_scatter(const void *src, void *dst, const int *recvcnts,
   delete op;
   finish_mpi_call(MPI_Reduce_scatter);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_reduce_scatter(comm_world()->rank(),
                                     call_start_time,
@@ -983,7 +983,7 @@ mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op m
   delete op;
   finish_mpi_call(MPI_Scan);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_scan(comm_world()->rank(),
                           call_start_time,
@@ -1063,7 +1063,7 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   delete op;
   finish_mpi_call(MPI_Scatter);
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_scatter(comm_world()->rank(),
                           call_start_time,

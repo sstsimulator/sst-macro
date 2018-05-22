@@ -74,7 +74,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
 #include <sst-dumpi/dumpi/libotf2dump/otf2writer.h>
 #endif
 
@@ -838,7 +838,7 @@ class mpi_api :
 
   std::unordered_map<int, keyval*> keyvals_;
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   bool otf2_enabled_ = false;
   std::string otf2_archive_dir_;
   dumpi::OTF2_Writer otf2_writer_;

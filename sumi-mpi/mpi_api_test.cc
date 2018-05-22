@@ -90,7 +90,7 @@ mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
   }
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_test(comm_world()->rank(),
                           call_start_time,
@@ -106,7 +106,7 @@ mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
 int
 mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   auto call_start_time = (uint64_t)os_->now().usec();
 
   // Make a copy of requests since they may mutate before OTF2 call
@@ -128,7 +128,7 @@ mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Stat
   }
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_testall(comm_world()->rank(),
                           call_start_time,
@@ -145,7 +145,7 @@ mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Stat
 int
 mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status *status)
 {
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   auto call_start_time = (uint64_t)os_->now().usec();
 
   // Make a copy of requests since they may mutate before OTF2 call
@@ -168,7 +168,7 @@ mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *fla
   }
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     otf2_writer_.mpi_testany(comm_world()->rank(),
                           call_start_time,
@@ -185,7 +185,7 @@ mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *fla
 int
 mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   auto call_start_time = (uint64_t)os_->now().usec();
 
   // Make a copy of requests since they may mutate before OTF2 call
@@ -204,7 +204,7 @@ mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount, i
   *outcount = numComplete;
   end_api_call();
 
-#ifdef OTF2_ENABLED
+#ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     std::vector<int> statuses;
 
