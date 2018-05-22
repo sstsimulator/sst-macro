@@ -373,15 +373,12 @@ fat_tree::configure_individual_port_params(switch_id src,
   int nport = 0;
   if (src < num_leaf_switches_) {
     nport = up_ports_per_leaf_switch_ + concentration();
-  }
-  else if (num_leaf_switches_ <= src && src < num_non_core ) {
+  } else if (num_leaf_switches_ <= src && src < num_non_core ) {
     nport = up_ports_per_agg_switch_ + down_ports_per_agg_switch_;
-  }
-  else if (num_non_core <= src && src < num_switches()) {
+  } else if (num_non_core <= src && src < num_switches()) {
     nport = down_ports_per_core_switch_;
-  }
-  else {
-    spkt_throw_printf(sprockit::value_error,"switch_id out of range");
+  } else {
+    spkt_abort_printf("switch id %d out of range", src);
   }
   topology::configure_individual_port_params(0, nport, switch_params);
 }

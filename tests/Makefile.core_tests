@@ -36,7 +36,10 @@ CORETESTS+= \
   test_core_apps_ping_pong \
   test_core_apps_ping_pong_slow \
   test_core_apps_ping_pong_amm4 \
-  test_core_apps_ping_pong_amm4_slow 
+  test_core_apps_ping_pong_amm4_slow \
+  test_core_apps_ping_all_fattree2 \
+  test_core_apps_ping_all_fattree4 \
+  test_core_apps_ping_all_fattree_tapered
 
 #  test_core_apps_ping_all_tiled_cascade
 
