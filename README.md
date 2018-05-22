@@ -29,6 +29,6 @@ Visit [sst-simulator.org](http://sst-simulator.org) to learn more about SST core
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-Under the terms of Contract DE-NA0003525 with Sandia Corporation, 
+Under the terms of Contract DE-NA0003525 with NTESS, 
 the U.S. Government retains certain rights in this software.
 
