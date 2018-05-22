@@ -193,6 +193,13 @@ pisces_NtoM_queue::deadlock_check(event* ev)
     pisces_output& poutput = outputs_[local_outport(outport)];
     event_link* output = output_link(next);
     next->set_inport(poutput.dst_inport);
+    std::cerr << to_string() << " going to "
+      << output->to_string()
+      << " outport=" << next->next_port()
+      << " inport=" << next->inport()
+      << " vc=" << next->next_vc()
+      << " : " << next->to_string()
+      << std::endl;
     output->deadlock_check(next);
   }
 #endif

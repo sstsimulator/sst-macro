@@ -264,7 +264,7 @@ class hypercube_par_router : public router {
     uint8_t dstX : 6;
     uint8_t dstY : 6;
     uint8_t dstZ : 6;
-    uint8_t ejPort : 4;
+    uint16_t ejPort;
   };
  public:
   static const char initial_stage = 0;
