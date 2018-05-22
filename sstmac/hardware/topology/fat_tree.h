@@ -239,6 +239,8 @@ protected:
   int down_ports_per_agg_switch_;
   int up_ports_per_agg_switch_;
   int down_ports_per_core_switch_;
+
+  void check_input() const;
 };
 
 
