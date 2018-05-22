@@ -383,7 +383,8 @@ fat_tree::configure_individual_port_params(switch_id src,
   topology::configure_individual_port_params(0, nport, switch_params);
 }
 
-void check_input() const
+void
+fat_tree::check_input() const
 {
   int val;
 
