@@ -87,15 +87,18 @@ logp_nic::mtl_handle(event *ev)
 {
   timestamp now_ = now();
   message* msg = static_cast<message*>(ev);
-  timestamp time_to_recv = inj_bw_inverse_*msg->byte_length();
-  timestamp recv_start = now_ - time_to_recv;
-
-  if (recv_start > next_in_free_){
-    next_in_free_ = now_;
+  if (msg->byte_length() < negligible_size_){
     recv_message(msg);
   } else {
-    next_in_free_ += time_to_recv;
-    send_self_event_queue(next_in_free_, new_callback(this, &nic::recv_message, msg));
+    timestamp time_to_recv = inj_bw_inverse_*msg->byte_length();
+    timestamp recv_start = now_ - time_to_recv;
+    if (recv_start > next_in_free_){
+      next_in_free_ = now_;
+      recv_message(msg);
+    } else {
+      next_in_free_ += time_to_recv;
+      send_self_event_queue(next_in_free_, new_callback(this, &nic::recv_message, msg));
+    }
   }
 }
 
