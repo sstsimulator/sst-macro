@@ -201,6 +201,8 @@ OTF2TraceReplayApp::skeleton_main() {
   verify_replay_success();
 
   OTF2_Reader_Close(event_reader);
+
+  return 0;
 }
 
 CallQueue& OTF2TraceReplayApp::GetCallQueue() {
