@@ -233,7 +233,11 @@ int
 mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
                   int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
+#ifdef SSTMAC_OTF2_ENABLED
+  // Cache the vector before it is destroyed
+  std::vector<MPI_Request> req_vect(array_of_requests, array_of_requests + incount);
   auto call_start_time = (uint64_t)os_->now().usec();
+#endif
 
   start_mpi_call(MPI_Waitsome);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
@@ -284,7 +288,7 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
     otf2_writer_.mpi_waitsome(comm_world()->rank(),
                               call_start_time,
                               (uint64_t)os_->now().usec(),
-                              array_of_requests,
+                              req_vect.data(),
                               *outcount,
                               array_of_indices);
   }

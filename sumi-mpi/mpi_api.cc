@@ -249,12 +249,6 @@ mpi_api::init(int* argc, char*** argv)
 
   status_ = is_initialized;
 
-  collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
-  wait_collective(op);
-  delete op;
-  crossed_comm_world_barrier_ = false;
-  end_api_call();
-
 #ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_ && comm_world()->rank() == 0) {
     // 30 years and C++ still hasn't come up with a compact way to turn time into formatted strings?
@@ -276,10 +270,20 @@ mpi_api::init(int* argc, char*** argv)
     otf2_writer_.register_comm_error(MPI_REQUEST_NULL);
 
     otf2_writer_.set_clock_resolution(1e6);
-
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Init");
+    running_count_ = worldcomm_->size();
   }
 #endif
+
+  collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
+  wait_collective(op);
+
+
+#ifdef SSTMAC_OTF2_ENABLED
+  otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Init");
+#endif
+  delete op;
+  crossed_comm_world_barrier_ = false;
+  end_api_call();
 
   return MPI_SUCCESS;
 }
@@ -343,13 +347,14 @@ mpi_api::finalize()
     ofs.close();
   }
 #endif
-  end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    if (comm_world()->rank() == 0) otf2_writer_.close_archive();
+  if(otf2_enabled_ && --running_count_ == 0) {
+    otf2_writer_.close_archive();
   }
 #endif
+  end_api_call();
+
   return MPI_SUCCESS;
 }
 
@@ -957,6 +962,7 @@ MPI_Call::ID_str(MPI_function func)
 }
 
 dumpi::OTF2_Writer mpi_api::otf2_writer_;
+int mpi_api::running_count_;
 
 }
 
