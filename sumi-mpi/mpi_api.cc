@@ -210,7 +210,7 @@ mpi_api::comm_rank(MPI_Comm comm, int *rank)
 #ifdef SSTMAC_OTF2_ENABLED
   if(otf2_enabled_) {
     auto call_start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Abort");
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Comm_rank");
   }
 #endif
   return MPI_SUCCESS;
