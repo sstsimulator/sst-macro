@@ -288,7 +288,8 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
     // up ports
     for (int up_port=0; up_port < up_ports_per_agg_switch_; ++up_port){
       int global_core_down_port =
-          up_port * num_agg_switches_ + agg_spot;
+          up_port * num_agg_switches_
+          + my_subtree_spot * num_agg_subtrees_ + my_subtree;
       int core_partner_spot =
           global_core_down_port / down_ports_per_core_switch_;
       int core_partner_port =
@@ -312,7 +313,6 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
       int leaf_port = my_subtree_spot +
           dwn_port / leaf_switches_per_subtree_ *
           leaf_switches_per_subtree_;
-      //int leaf_port = dwn_port / leaf_switches_per_subtree_ + ;
       int leaf_partner_switch =
           my_subtree * leaf_switches_per_subtree_ + leaf_spot;
       connection next;
@@ -332,10 +332,13 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
     for (int dwn_port=0; dwn_port < down_ports_per_core_switch_;
          ++dwn_port){
       int core_spot = src - num_agg_switches_ - num_leaf_switches_;
-      int agg_port =
-          core_spot + dwn_port / num_agg_switches_ * num_agg_switches_;
-      int agg_spot = dwn_port % num_agg_switches_;
-      int agg_partner_switch = num_leaf_switches_ + agg_spot;
+      int global_core_port = core_spot * down_ports_per_core_switch_ + dwn_port;
+      int agg_subtree = global_core_port % num_agg_subtrees_;
+      int agg_subtree_spot = (global_core_port % num_agg_switches_)
+          /  num_agg_subtrees_;
+      int agg_port = global_core_port / num_agg_switches_;
+      int agg_partner_switch = num_leaf_switches_
+          + agg_subtree * agg_switches_per_subtree_ + agg_subtree_spot;
       connection next;
       next.dst = agg_partner_switch;
       next.dst_inport = agg_port + down_ports_per_agg_switch_;
@@ -426,10 +429,10 @@ fat_tree::check_input() const
   int val;
 
   // check that there are enough down ports
-  if (down_ports_per_core_switch_ < num_agg_switches_) {
+  if (down_ports_per_core_switch_ < num_agg_subtrees_) {
     spkt_throw_printf(sprockit::input_error,
-          "down_ports_per_core_switch (%d) must be >= total number of aggregation switches (%d)",
-          down_ports_per_core_switch_,num_agg_switches_);
+          "down_ports_per_core_switch (%d) must be >= num_agg_subtrees (%d)",
+          down_ports_per_core_switch_,num_agg_subtrees_);
   }
   if (down_ports_per_agg_switch_ < leaf_switches_per_subtree_) {
     spkt_throw_printf(sprockit::input_error,
@@ -437,12 +440,12 @@ fat_tree::check_input() const
           down_ports_per_agg_switch_,leaf_switches_per_subtree_);
   }
 
-  // check that down ports mod switches is zero
-  val = down_ports_per_core_switch_ % num_agg_switches_;
+  // check that down ports mod subtrees/switches is zero
+  val = down_ports_per_core_switch_ % num_agg_subtrees_;
   if (val != 0) {
     spkt_throw_printf(sprockit::input_error,
-          "down_ports_per_core_switch mod total number of aggregation switches must be zero (%d mod %d = %d)",
-          down_ports_per_core_switch_,num_agg_switches_,val);
+          "down_ports_per_core_switch mod total num_agg_subtrees must equal zero (%d mod %d = %d)",
+          down_ports_per_core_switch_,num_agg_subtrees_,val);
   }
   val = down_ports_per_agg_switch_ % leaf_switches_per_subtree_;
   if (val != 0) {
@@ -452,10 +455,10 @@ fat_tree::check_input() const
   }
 
   // check that there are enough up ports
-  if (up_ports_per_agg_switch_ < num_core_switches_) {
+  if (up_ports_per_agg_switch_ * agg_switches_per_subtree_ < num_core_switches_) {
     spkt_throw_printf(sprockit::input_error,
-          "up_ports_per_agg_switch (%d) must be >= num_core_switches (%d)",
-          up_ports_per_agg_switch_,num_core_switches_);
+          "up_ports_per_agg_switch * agg_switches_per_subtree (%d*%d) must be >= num_core_switches (%d)",
+          up_ports_per_agg_switch_,agg_switches_per_subtree_,num_core_switches_);
   }
   if (up_ports_per_leaf_switch_ < agg_switches_per_subtree_) {
     spkt_throw_printf(sprockit::input_error,
@@ -464,12 +467,6 @@ fat_tree::check_input() const
   }
 
   // check that up ports mod switches is zero
-  val = up_ports_per_agg_switch_ % num_core_switches_;
-  if (val != 0) {
-    spkt_throw_printf(sprockit::input_error,
-          "up_ports_per_agg_switch mod num_core_switches must be zero (%d mod %d = %d)",
-          up_ports_per_agg_switch_,num_core_switches_,val);
-  }
   val = up_ports_per_leaf_switch_ % agg_switches_per_subtree_;
   if (val != 0) {
     spkt_throw_printf(sprockit::input_error,
