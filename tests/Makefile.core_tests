@@ -37,6 +37,8 @@ CORETESTS+= \
   test_core_apps_ping_pong_slow \
   test_core_apps_ping_pong_amm4 \
   test_core_apps_ping_pong_amm4_slow \
+  test_core_apps_mpi_fattree \
+  test_core_apps_ping_all_simple_fattree \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_fattree_tapered
