@@ -192,7 +192,7 @@ mpi_api::abort(MPI_Comm comm, int errcode)
 {
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Abort");
   }
@@ -208,7 +208,7 @@ mpi_api::comm_rank(MPI_Comm comm, int *rank)
 {
   *rank = get_comm(comm)->rank();
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Comm_rank");
   }
@@ -271,6 +271,7 @@ mpi_api::init(int* argc, char*** argv)
 
     otf2_writer_.set_clock_resolution(1e6);
     running_count_ = worldcomm_->size();
+    otf2_initialized_ = true;
   }
 #endif
 
@@ -327,7 +328,7 @@ mpi_api::finalize()
   #ifdef SSTMAC_OTF2_ENABLED
   // Write this call to archive before it starts. The barrier can be
   // used to ensure every rank has been written before closing
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Finalize");
   }
   #endif
@@ -367,7 +368,7 @@ mpi_api::wtime()
   auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Wtime);
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Wtime");
 #endif
   return os_->now().sec();
@@ -380,7 +381,7 @@ mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
   *count = status->count;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Get_count");
 #endif
   return MPI_SUCCESS;
@@ -962,7 +963,8 @@ MPI_Call::ID_str(MPI_function func)
 }
 
 dumpi::OTF2_Writer mpi_api::otf2_writer_;
-int mpi_api::running_count_;
+bool mpi_api::otf2_initialized_ = false;
+int mpi_api::running_count_ = 0;
 
 }
 

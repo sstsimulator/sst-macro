@@ -73,7 +73,7 @@ mpi_api::comm_dup(MPI_Comm input, MPI_Comm *output)
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.mpi_comm_dup(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), input, *output);
 #endif
   return MPI_SUCCESS;
@@ -94,7 +94,7 @@ mpi_api::comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *ne
   //okay, this is really complicated
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
    // TODO, not implemented yet
   }
 #endif
@@ -109,7 +109,7 @@ mpi_api::comm_size(MPI_Comm comm, int *size)
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Comm_size");
 #endif
   return MPI_SUCCESS;
@@ -127,7 +127,7 @@ mpi_api::comm_create(MPI_Comm input, MPI_Group group, MPI_Comm *output)
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.mpi_comm_create(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), input, group, *output);
 #endif
   return MPI_SUCCESS;
@@ -147,7 +147,7 @@ mpi_api::comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
   }
 #ifdef SSTMAC_OTF2_ENABLED
   // treate like ::comm_create
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto start_time = (uint64_t)os_->now().usec();
     otf2_writer_.mpi_comm_create(comm_world()->rank(), start_time, start_time, input, group, new_comm);
   }
@@ -161,7 +161,7 @@ mpi_api::comm_group(MPI_Comm comm, MPI_Group* grp)
   *grp = commPtr->group()->id();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto start_time = (uint64_t)os_->now().usec();
     otf2_writer_.mpi_comm_group(comm_world()->rank(), start_time, start_time, comm, *grp);
   }
@@ -183,7 +183,7 @@ mpi_api::cart_create(MPI_Comm comm_old, int ndims, const int dims[],
 #ifdef SSTMAC_OTF2_ENABLED
   // Cart actions are not fully implemented by the writer.
   // TODO add warning
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cart_create");
 #endif
 
@@ -209,7 +209,7 @@ mpi_api::cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Cart_get");
   }
@@ -229,7 +229,7 @@ mpi_api::cartdim_get(MPI_Comm comm, int *ndims)
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cartdim_get");
 #endif
 
@@ -247,7 +247,7 @@ mpi_api::cart_rank(MPI_Comm comm, const int coords[], int *rank)
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cart_rank");
 #endif
 
@@ -267,7 +267,7 @@ mpi_api::cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cart_shift");
 #endif
 
@@ -286,7 +286,7 @@ mpi_api::cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Cart_coords");
 #endif
 
@@ -313,7 +313,7 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.mpi_comm_split(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), incomm, key, color, *outcomm);
 #endif
 
@@ -335,7 +335,7 @@ mpi_api::comm_free(MPI_Comm* input)
   end_api_call();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
+  if(otf2_enabled_ && otf2_initialized_)
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Comm_free");
 #endif
 
@@ -357,7 +357,7 @@ mpi_api::comm_get_attr(MPI_Comm, int comm_keyval, void* attribute_val, int *flag
   *flag = 0;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Comm_get_attr");
   }

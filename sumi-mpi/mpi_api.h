@@ -842,6 +842,7 @@ class mpi_api :
   bool otf2_enabled_ = false;
   std::string otf2_dir_basename_;
   static int running_count_;
+  static bool otf2_initialized_;
   static dumpi::OTF2_Writer otf2_writer_;
 #endif
 

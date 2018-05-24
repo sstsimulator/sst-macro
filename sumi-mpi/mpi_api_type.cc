@@ -258,7 +258,7 @@ mpi_api::pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
   *size = incount * it->second->packed_size();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Pack_size");
   }
@@ -280,7 +280,7 @@ mpi_api::type_set_name(MPI_Datatype id, const char* name)
   it->second->label = name;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_set_name");
   }
@@ -304,7 +304,7 @@ mpi_api::type_get_name(MPI_Datatype id, char* name, int* resultlen)
   *resultlen = label.size();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_get_name");
   }
@@ -358,7 +358,7 @@ mpi_api::type_hvector(int count, int blocklength, MPI_Aint stride,
                      MPI_Datatype old_type, MPI_Datatype* new_type)
 {
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     // MPI_Type_hvector will be emmitted instead of MPI_Type_vector
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.mpi_type_hvector(comm_world()->rank(), call_start_time, call_start_time, count, blocklength, old_type, *new_type);
@@ -427,7 +427,7 @@ mpi_api::type_hindexed(int count, const int lens[], const MPI_Aint* displs,
                       MPI_Datatype intype, MPI_Datatype* outtype)
 {
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     // MPI_Type_hindexed will be emmitted instead of MPI_Type_indexed
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.mpi_type_hindexed(comm_world()->rank(), call_start_time, call_start_time, count, lens, intype, *outtype);
@@ -467,7 +467,7 @@ mpi_api::type_commit(MPI_Datatype* type)
   type_obj->set_committed(true);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_commit");
   }
@@ -500,7 +500,7 @@ mpi_api::commit_builtin_type(mpi_type* type, MPI_Datatype id)
   known_types_[id]->set_committed(true);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     otf2_writer_.register_type(id, type->packed_size());
   }
 #endif
@@ -524,7 +524,7 @@ mpi_api::type_contiguous(int count, MPI_Datatype old_type,
   *new_type = new_type_obj->id;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.mpi_type_contiguous(comm_world()->rank(), call_start_time, call_start_time, count, old_type, *new_type);
   }
@@ -593,7 +593,7 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
                 count, type_str(*newtype).c_str());
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     // MPI_Type_struct and MPI_Type_create_struct will emit MPI_Type_struct
     auto call_start_time = (uint64_t)os_->now().usec();
     std::vector<dumpi::mpi_type_t> _old_types(old_types, old_types + count);
@@ -610,7 +610,7 @@ mpi_api::type_size(MPI_Datatype type, int* size)
   *size = type_from_id(type)->packed_size();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_size");
   }
@@ -626,7 +626,7 @@ mpi_api::type_extent(MPI_Datatype type, MPI_Aint *extent)
   *extent = type_from_id(type)->extent();
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_extent");
   }
@@ -646,7 +646,7 @@ mpi_api::type_dup(MPI_Datatype intype, MPI_Datatype* outtype)
                 type_str(intype).c_str(), type_str(*outtype).c_str());
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_dup");
     otf2_writer_.register_type(*outtype, type_from_id(*outtype)->packed_size());
@@ -674,7 +674,7 @@ mpi_api::type_free(MPI_Datatype* type)
   }
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     auto call_start_time = (uint64_t)os_->now().usec();
     otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_free");
   }

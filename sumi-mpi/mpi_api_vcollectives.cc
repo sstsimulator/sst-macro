@@ -116,7 +116,7 @@ mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     otf2_writer_.mpi_allgatherv(comm_world()->rank(),
                                 call_start_time,
                                 (uint64_t)os_->now().usec(),
@@ -216,7 +216,7 @@ mpi_api::alltoallv(const void *sendbuf, const int *sendcounts,
            recvcounts, recvtype, rdispls, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     otf2_writer_.mpi_alltoallv(comm_world()->rank(),
                                call_start_time,
                                (uint64_t)os_->now().usec(),
@@ -338,7 +338,7 @@ mpi_api::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     otf2_writer_.mpi_gatherv(comm_world()->rank(),
                              call_start_time,
                              (uint64_t)os_->now().usec(),
@@ -443,7 +443,7 @@ mpi_api::scatterv(const void* sendbuf, const int* sendcounts, const int *displs,
            recvcount, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
+  if(otf2_enabled_ && otf2_initialized_) {
     otf2_writer_.mpi_scatterv(comm_world()->rank(),
                               call_start_time,
                               (uint64_t)os_->now().usec(),
