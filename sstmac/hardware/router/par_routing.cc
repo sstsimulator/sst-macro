@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -264,7 +264,7 @@ class hypercube_par_router : public router {
     uint8_t dstX : 6;
     uint8_t dstY : 6;
     uint8_t dstZ : 6;
-    uint8_t ejPort : 4;
+    uint16_t ejPort;
   };
  public:
   static const char initial_stage = 0;

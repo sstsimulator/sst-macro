@@ -1,9 +1,9 @@
 dnl 
 dnl   This file is part of SST/macroscale: 
 dnl                The macroscale architecture simulator from the SST suite.
-dnl   Copyright (c) 2009 Sandia Corporation.
+dnl   Copyright (c) 2009-2018 NTESS.
 dnl   This software is distributed under the BSD License.
-dnl   Under the terms of Contract DE-NA0003525 with Sandia Corporation,
+dnl   Under the terms of Contract DE-NA0003525 with NTESS,
 dnl   the U.S. Government retains certain rights in this software.
 dnl   For more information, see the LICENSE file in the top 
 dnl   SST/macroscale directory.

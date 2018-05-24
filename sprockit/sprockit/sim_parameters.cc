@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -1057,7 +1057,9 @@ sim_parameters::parse_stream(std::istream& in,
     sim_parameters* active_scope = ns_queue.back();
     int last_idx = line.size() - 1;
 
-    if (line[0] == '#') {
+    if(line.size() == 0) {
+       //empty
+    } else if (line[0] == '#') {
       //a comment
       continue;
     } else if (line[0] == '}'){
@@ -1084,8 +1086,6 @@ sim_parameters::parse_stream(std::istream& in,
       std::string key;
       sim_parameters* scope = active_scope->get_scope_and_key(trim_str(line.substr(5)), key);
       scope->remove_param(key);
-    } else if (line.size() == 0) {
-      //empty
     } else {
       spkt_abort_printf("invalid input file line of size %d:\n%s---", line.size(), line.c_str());
     }
