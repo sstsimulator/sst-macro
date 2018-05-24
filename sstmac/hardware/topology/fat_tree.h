@@ -123,6 +123,9 @@ class abstract_fat_tree :
   virtual int up_port(int level) const = 0;
   virtual int down_port(int dst_tree) const = 0;
 
+  void write_bw_params(sprockit::sim_parameters *switch_params,
+                       double multiplier) const;
+
   int num_leaf_switches_;
   int num_agg_subtrees_;
   int leaf_switches_per_subtree_;
@@ -202,11 +205,11 @@ class fat_tree :
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
-    return true;
+    return false;
   }
 
   bool uniform_switches() const override {
-    return true;
+    return false;
   }
 
   void connected_outports(switch_id src, std::vector<connection>& conns)
@@ -218,10 +221,15 @@ class fat_tree :
   void connected_agg_down_ports(sstmac::switch_id, int, std::vector<int>&)
   const;
 
-  void configure_individual_port_params(
+  void configure_nonuniform_switch_params(
       switch_id src,
       sprockit::sim_parameters *switch_params)
   const override;
+
+  void configure_individual_port_params(
+      switch_id src,
+      sprockit::sim_parameters *switch_params)
+  const override { }
 
 protected:
 

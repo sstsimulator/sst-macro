@@ -62,6 +62,9 @@ RegisterKeywords(
 { "down_ports_per_agg_switch", "number of down ports per aggregation switch" },
 { "up_ports_per_agg_switch", "number of up ports per aggregation switch" },
 { "down_ports_per_core_switch", "number of down ports per core switch" },
+{ "leaf_bandwidth_multiplier", "scale factor for leaf switch xbar bandwidth"},
+{ "agg_bandwidth_multiplier", "scale factor for aggregation switch xbar bandwidth"},
+{ "core_bandwidth_multiplier", "scale factor for core switch xbar bandwidth"},
 );
 
 namespace sstmac {
@@ -186,6 +189,22 @@ abstract_fat_tree::minimal_distance(
     //have to go to core
     return (2-srcLevel) + (1-dstLevel);
   }
+}
+
+void
+abstract_fat_tree::write_bw_params(
+    sprockit::sim_parameters *switch_params,
+    double multiplier) const
+{
+  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
+  double bw = xbar_params->get_bandwidth_param("bandwidth");
+  // we are overwriting params -
+  // we have to make sure that the original baseline bandwidth is preserved
+  double baseline_bw =
+      xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
+  double xbar_bw = baseline_bw * multiplier;
+  (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
+  (*xbar_params)["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");
 }
 
 /*------------------------------------------------------------------------------
@@ -366,21 +385,39 @@ fat_tree::connected_agg_down_ports(switch_id src, int dst_leaf, std::vector<int>
 }
 
 void
-fat_tree::configure_individual_port_params(switch_id src,
-                                 sprockit::sim_parameters *switch_params) const
+fat_tree::configure_nonuniform_switch_params(switch_id src,
+                           sprockit::sim_parameters *switch_params) const
 {
-  int num_non_core = num_leaf_switches_ + num_agg_switches_;
-  int nport = 0;
-  if (src < num_leaf_switches_) {
-    nport = up_ports_per_leaf_switch_ + concentration();
-  } else if (num_leaf_switches_ <= src && src < num_non_core ) {
-    nport = up_ports_per_agg_switch_ + down_ports_per_agg_switch_;
-  } else if (num_non_core <= src && src < num_switches()) {
-    nport = down_ports_per_core_switch_;
-  } else {
-    spkt_abort_printf("switch id %d out of range", src);
-  }
-  topology::configure_individual_port_params(0, nport, switch_params);
+  int my_level = level(src);
+
+  int n_leaf_port = up_ports_per_leaf_switch_ + concentration();
+  int n_agg_port = up_ports_per_agg_switch_ + down_ports_per_agg_switch_;
+  int n_core_port = down_ports_per_core_switch_;
+  int min_port = std::min(n_leaf_port,n_agg_port);
+  min_port = std::min(min_port,n_core_port);
+
+  double multiplier = 1.0;
+  if (my_level == 0 && n_leaf_port > min_port)
+    multiplier *= double(n_leaf_port) / double(min_port);
+  else if (my_level == 1 && n_agg_port > min_port)
+    multiplier *= double(n_agg_port) / double(min_port);
+  else if (my_level == 2 && n_core_port > min_port)
+    multiplier *= double(n_core_port) / double(min_port);
+
+  if ( my_level == 0 &&
+       switch_params->has_param("leaf_bandwidth_multiplier"))
+    multiplier = switch_params->get_double_param("leaf_bandwidth_multiplier");
+  else if ( my_level == 1 &&
+            switch_params->has_param("agg_bandwidth_multiplier"))
+    multiplier = switch_params->get_double_param("agg_bandwidth_multiplier");
+  else if ( my_level == 2 &&
+            switch_params->has_param("core_bandwidth_multiplier"))
+    multiplier = switch_params->get_double_param("core_bandwidth_multiplier");
+
+  top_debug("fat_tree: scaling switch %i by %lf",src,multiplier);
+  write_bw_params(switch_params, multiplier);
+
+
 }
 
 void
@@ -589,16 +626,8 @@ tapered_fat_tree::configure_nonuniform_switch_params(switch_id src,
     multiplier = num_core_switches_;
   }
 
-  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
-  double bw = xbar_params->get_bandwidth_param("bandwidth");
-  // we are overwriting params -
-  // we have to make sure that the original baseline bandwidth is preserved
-  double baseline_bw =
-      xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
-  double xbar_bw = baseline_bw * multiplier;
-  (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
-  (*xbar_params)["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");
-  configure_individual_port_params(src, switch_params);
+  top_debug("abstract_fat_tree: scaling switch %i by %lf",src,multiplier);
+  write_bw_params(switch_params,multiplier);
 }
 
 void
