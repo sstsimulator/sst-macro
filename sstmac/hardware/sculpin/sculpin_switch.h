@@ -47,6 +47,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/sculpin/sculpin.h>
+#include <sstmac/common/sstmac_config.h>
+#if SSTMAC_VTK_ENABLED
+#include <sstmac/hardware/vtk/vtk_stats.h>
+#endif
 
 namespace sstmac {
 namespace hw {
@@ -139,6 +143,10 @@ class sculpin_switch :
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* payload_handler_;
   link_handler* credit_handler_;
+#endif
+
+#if SSTMAC_VTK_ENABLED
+  stat_vtk* vtk_;
 #endif
 
   bool congestion_;

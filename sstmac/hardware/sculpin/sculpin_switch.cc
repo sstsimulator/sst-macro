@@ -77,6 +77,9 @@ namespace hw {
 
 sculpin_switch::sculpin_switch(
   sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
+#if SSTMAC_VTK_ENABLED
+  vtk_(nullptr),
+#endif
   router_(nullptr),
   congestion_(true),
   network_switch(params, id, mgr)
@@ -94,6 +97,14 @@ sculpin_switch::sculpin_switch(
     sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.port);
     ej_params->combine_into(port_params);
   }
+
+#if SSTMAC_VTK_ENABLED
+  vtk_ = optional_stats<stat_vtk>(this,
+        params,
+        "vtk", /* The parameter namespace in the ini file */
+        "vtk" /* The object's factory name */
+   );
+#endif
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   payload_handler_ = new_handler(this, &sculpin_switch::handle_payload);
@@ -195,6 +206,10 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   pkt->set_time_to_send(time_to_send);
   p.link->send_extra_delay(extra_delay, pkt);
 
+#if SSTMAC_VTK_ENABLED
+  if (vtk_) vtk_->collect_departure(p.next_free.ticks(), my_addr_, p.id);
+#endif
+
   pkt_debug("packet leaving port %d at t=%8.4e: %s",
             p.id, p.next_free.sec(), pkt->to_string().c_str());
   if (p.priority_queue.empty()){
@@ -267,6 +282,9 @@ sculpin_switch::handle_payload(event *ev)
   router_->route(pkt);
 
   port& p = ports_[pkt->next_port()];
+#if SSTMAC_VTK_ENABLED
+  if (vtk_) vtk_->collect_arrival(now().ticks(), my_addr_, p.id);
+#endif
   timestamp time_to_send = p.inv_bw * pkt->num_bytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
    * The tail flit cannot leave THIS switch prior to its departure time in the prev switch */

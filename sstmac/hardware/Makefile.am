@@ -14,6 +14,7 @@ include $(top_srcdir)/Makefile.common
 noinst_LTLIBRARIES = libsstmac_hw.la
 
 libsstmac_hw_la_LDFLAGS = 
+libsstmac_hw_la_LIBADD = 
 
 library_includedir=$(includedir)/sstmac/hardware
 
@@ -166,6 +167,16 @@ libsstmac_hw_la_SOURCES =  \
   topology/topology.cc 
 
 
+if HAVE_VTK
+libsstmac_hw_la_SOURCES +=  \
+  vtk/vtk_stats.cc
+nobase_library_include_HEADERS += \
+  vtk/vtk_stats.h
+
+#libsstmac_hw_la_LDFLAGS += $(VTK_LDFLAGS)
+#libsstmac_hw_la_LIBADD += $(VTK_LIBS)
+#AM_CPPFLAGS += $(VTK_CPPFLAGS)
+endif
 
 if INTEGRATED_SST_CORE
 libsstmac_hw_la_SOURCES +=  \
