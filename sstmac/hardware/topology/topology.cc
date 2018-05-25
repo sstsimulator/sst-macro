@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -69,6 +69,7 @@ RegisterKeywords(
 { "concentration", "the number of nodes per switch" },
 { "network_nodes_per_switch", "DEPRECATED: the number of nodes per switch" },
 { "auto", "whether to auto-generate topology based on app size"},
+{ "output_graph", "enable dot format topology graph generation by specifying an output filename"},
 );
 
 RegisterDebugSlot(topology,
@@ -112,6 +113,9 @@ topology::topology(sprockit::sim_parameters* params)
 #endif
 #endif
   main_top_ = this;
+
+  if (params->has_param("output_graph"))
+    dot_file_ = params->get_param("output_graph");
 }
 
 topology::~topology()
@@ -159,7 +163,15 @@ topology::get_port_params(sprockit::sim_parameters *params, int port)
 void
 topology::output_graphviz(const std::string& file)
 {
-  std::ofstream out(file.c_str());
+  std::string file_non_const;
+  if (file.size())
+    file_non_const = file;
+  else if (dot_file_.size())
+    file_non_const = dot_file_;
+  if (file_non_const.size() == 0)
+    return;
+
+  std::ofstream out(file_non_const.c_str());
   out << "graph {\n";
 
   int nsw = num_switches();

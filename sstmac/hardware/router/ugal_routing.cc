@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -146,7 +146,7 @@ class dragonfly_ugalG_router : public ugal_router {
   static const char intra_grp_stage = 4;
 
   struct header : public ugal_router::header {
-    uint8_t num_group_hops : 2;
+    uint8_t num_hops : 3;
     uint16_t entryA;
     uint16_t exitA;
     uint16_t interGrp;
@@ -168,7 +168,7 @@ class dragonfly_ugalG_router : public ugal_router {
   }
 
   int num_vc() const override {
-    return 3;
+    return 6;
   }
 
   void route(packet *pkt) override {
@@ -224,10 +224,8 @@ class dragonfly_ugalG_router : public ugal_router {
       break;
     }
 
-    path.vc = hdr->num_group_hops;
-    if (dfly_->is_global_port(path.outport())){
-      ++hdr->num_group_hops;
-    }
+    path.vc = hdr->num_hops;
+    ++hdr->num_hops;
   }
 
   packet::path output_path(switch_id sid) const override {
@@ -331,7 +329,7 @@ class dragonfly_ugalG_router : public ugal_router {
 class dragonfly_ugal_router : public ugal_router {
   struct header : public ugal_router::header {
      uint8_t num_hops : 3;
-     uint8_t num_group_hops : 2;
+     uint8_t num_group_hops : 3;
   };
  public:
   FactoryRegister("dragonfly_ugal",
@@ -350,7 +348,7 @@ class dragonfly_ugal_router : public ugal_router {
   }
 
   int num_vc() const override {
-    return 3;
+    return 6;
   }
 
   void route(packet *pkt) override {
@@ -360,10 +358,7 @@ class dragonfly_ugal_router : public ugal_router {
     packet::path& path = pkt->current_path();
     dfly_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
     auto hdr = pkt->get_header<header>();
-    path.vc = hdr->num_group_hops;
-    if (dfly_->is_global_port(path.outport())){
-      ++hdr->num_group_hops;
-    }
+    path.vc = hdr->num_hops;
     ++hdr->num_hops;
   }
 
