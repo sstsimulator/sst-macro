@@ -135,7 +135,6 @@ class sculpin_switch :
     std::set<sculpin_packet*, priority_compare> priority_queue;
     event_link* link;
   };
-
   std::vector<port> ports_;
 
   router* router_;

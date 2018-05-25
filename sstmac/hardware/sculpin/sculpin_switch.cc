@@ -207,6 +207,7 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   p.link->send_extra_delay(extra_delay, pkt);
 
 #if SSTMAC_VTK_ENABLED
+  // TODO : do the collection here
   if (vtk_) vtk_->collect_departure(p.next_free.ticks(), my_addr_, p.id);
 #endif
 
@@ -282,6 +283,7 @@ sculpin_switch::handle_payload(event *ev)
   router_->route(pkt);
 
   port& p = ports_[pkt->next_port()];
+
 #if SSTMAC_VTK_ENABLED
   if (vtk_) vtk_->collect_arrival(now().ticks(), my_addr_, p.id);
 #endif

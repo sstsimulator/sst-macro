@@ -3,6 +3,7 @@
 
 #include <sstmac/common/stats/stat_collector.h>
 #include <vector>
+#include <memory>
 
 namespace sstmac {
 namespace hw {
@@ -36,9 +37,23 @@ class stat_vtk : public stat_collector
   }
 
  private:
-  struct Event {};
-  std::map<uint64_t, Event> events_;
+  struct traffic_progress {
+      uint64_t time_; // progress time
+      int id_; // Id of the switch
+      int type_; // arrive or leave
+      int p_; // port of the node Id
+      int intensity_; // traffic intenisity
+  };
 
+  struct traffic_event {
+      uint64_t time_; // progress time
+      int id_; // Id of the switch
+      int p_; // port of the node Id
+      int type_; // arrive or leave
+  };
+
+  std::multimap<uint64_t, std::shared_ptr<traffic_progress>> traffic_progress_map_;
+  std::multimap<uint64_t, std::shared_ptr<traffic_event>> traffic_event_map_;
 };
 
 }
