@@ -75,7 +75,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
 #ifdef SSTMAC_OTF2_ENABLED
-#include <sst-dumpi/dumpi/libotf2dump/otf2writer.h>
+#include <dumpi/libotf2dump/otf2writer.h>
 #endif
 
 namespace sumi {
