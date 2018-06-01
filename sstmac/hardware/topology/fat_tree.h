@@ -215,32 +215,28 @@ class fat_tree :
     return false;
   }
 
-  void connected_outports(switch_id src, std::vector<connection>& conns)
-  const override;
+  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
-  void connected_core_down_ports(sstmac::switch_id, int, std::vector<int>&)
-  const;
+  void connected_core_down_ports(sstmac::switch_id, int, std::vector<int>&) const;
 
-  void connected_agg_down_ports(sstmac::switch_id, int, std::vector<int>&)
-  const;
+  void connected_agg_down_ports(sstmac::switch_id, int, std::vector<int>&) const;
 
   void configure_nonuniform_switch_params(
       switch_id src,
-      sprockit::sim_parameters *switch_params)
-  const override;
+      sprockit::sim_parameters *switch_params) const override;
 
   void configure_individual_port_params(
       switch_id src,
-      sprockit::sim_parameters *switch_params)
-  const override { }
+      sprockit::sim_parameters *switch_params) const override { }
 
-protected:
-
+ protected:
   // used for minimal_fat_tree routing
   inline int up_port(int level) const override {
-    if (level == 0) return 0;
-    else if (level == 1) return down_ports_per_agg_switch_;
-    else {
+    if (level == 0){
+      return 0;
+    } else if (level == 1) {
+      return down_ports_per_agg_switch_;
+    } else {
       spkt_abort_printf("Bad up port level %d - should be 0 or 1", level);
       return -1; //make gcc happy
     }
@@ -310,13 +306,12 @@ class tapered_fat_tree : public abstract_fat_tree
   void configure_nonuniform_switch_params(switch_id src,
         sprockit::sim_parameters* switch_params) const override;
 
-protected:
-
-  inline int agg_subtree(switch_id sid) const {
+ protected:
+  inline int agg_subtree(switch_id sid) const override {
     return (sid - num_leaf_switches_);
   }
 
-  inline int up_port(int level) const {
+  inline int up_port(int level) const override {
     if (level == 0){
       //port is after all the compute nodes
       return concentration();
