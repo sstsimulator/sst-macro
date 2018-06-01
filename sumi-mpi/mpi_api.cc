@@ -338,6 +338,8 @@ mpi_api::type_str(MPI_Datatype mid)
       return sprockit::printf("IND=%d", mid);
     case mpi_type::NONE:
       return sprockit::printf("NONE=%d", mid);
+    default:
+      return "UNKNOWN TYPE";
   }
 }
 
@@ -871,6 +873,9 @@ MPI_Call::ID_str(MPI_function func)
   case Call_ID_MPI_Win_create_errhandler: return "MPI_Win_create_errhandler";
   case Call_ID_MPI_Win_get_errhandler: return "MPI_Win_get_errhandler";
   case Call_ID_MPI_Win_set_errhandler: return "MPI_Win_set_errhandler";
+  default: 
+   spkt_abort_printf("Bad MPI Call ID %d\n", func);
+   return "Unknown or missing MPI function";
   }
 }
 

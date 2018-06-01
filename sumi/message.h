@@ -247,6 +247,9 @@ class message :
      case rdma_put_ack:
      case rdma_get_ack:
       return send_cq_;
+     default:
+      spkt_abort_printf("Bad payload type %d to CQ id", payload_type_);
+      return -1;
     }
   }
 
