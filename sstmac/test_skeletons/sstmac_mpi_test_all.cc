@@ -114,54 +114,54 @@ int USER_MAIN(int argc, char** argv)
   }
 
   //----------first, lets do a ping pong with payload
-  test_sendrecv();
+  //test_sendrecv();
 
-  test_send();
+  //test_send();
 
-  test_isend();
+  //test_isend();
 
   // ---- test nonblocking recv
-  test_asynch();
+  //test_asynch();
 
   // ---- alright, let's try a broadcast
-  test_bcast();
+  //test_bcast();
 
   // --- try a reduce
-  test_reduce();
+  //test_reduce();
 
   // ---- sync up with barrier
-  test_barrier();
+  //test_barrier();
 
   // ---- test allreduce
-  test_allreduce();
+  //test_allreduce();
 
   // ------ test scatter
-  test_scatter();
+  //test_scatter();
 
-  // ------ test gather
-  test_gather();
+//  // ------ test gather
+  //test_gather();
 
   test_scan();
 
-  test_reduce_scatter();
+//  test_reduce_scatter();
 
-  //------ test communicator functions
-  test_comms();
+//  //------ test communicator functions
+//  test_comms();
 
-  // ------ test wait functions
-  test_wait();
+//  // ------ test wait functions
+//  test_wait();
 
   // ------ test allgather
-  test_allgather();
+//  test_allgather();
 
-  // ------ test alltoall
-  test_alltoall();
+//  // ------ test alltoall
+//  test_alltoall();
 
-  // ------ test probing
-  test_probe();
+//  // ------ test probing
+//  test_probe();
 
-  // ------- test persistent
-  test_persistent();
+//  // ------- test persistent
+//  test_persistent();
 
   // ------ test reduce_scatter
   // test_reducescatter();
@@ -192,6 +192,15 @@ int USER_MAIN(int argc, char** argv)
 void
 test_scan()
 {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  int count = 1;
+  int send_pay = rank;
+  int recv_pay = 0;
+  MPI_Scan(&send_pay, &recv_pay, count, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
 #if 0
   mpi_comm* world = mpi()->comm_world();
   int rank = world->rank();
@@ -433,7 +442,6 @@ test_allreduce()
     errors_++;
     failure_printf("allreduce expected %d, got %d", expected, allrecvdata);
   }
-
 }
 
 void
@@ -463,6 +471,16 @@ test_bcast()
 void
 test_scatter()
 {
+  int gsize,*sendarray;
+  int root, myrank, rbuf[1];
+  root = 0;
+  MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
+  if ( myrank == root) {
+     MPI_Comm_size( MPI_COMM_WORLD, &gsize);
+     sendarray = new int[gsize];
+     }
+  MPI_Scatter( sendarray, 1, MPI_INT, rbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
+
   /*  int rank, size;
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -545,6 +563,16 @@ test_scatter()
 void
 test_gather()
 {
+  int gsize,sendarray[1];
+  int root, myrank, *rbuf;
+  root = 0;
+  MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
+  if ( myrank == root) {
+     MPI_Comm_size( MPI_COMM_WORLD, &gsize);
+     rbuf = new int[gsize];
+     }
+  MPI_Gather( sendarray, 1, MPI_INT, rbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
+
   /*  int rank, size;
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -668,6 +696,14 @@ test_gather()
 void
 test_allgather()
 {
+  std::cout << "Entering allgather" << std::endl;
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int count = 1; //arbitrary
+
+  MPI_Allgather(NULL, count, MPI_INT, NULL, count, MPI_INT, MPI_COMM_WORLD);
+
   /*  int rank, size;
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -788,6 +824,11 @@ test_allgather()
 void
 test_alltoall()
 {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  MPI_Alltoall(NULL, 1, MPI_INT, NULL, 1, MPI_INT, MPI_COMM_WORLD);
   /*  int rank, size;
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    MPI_Comm_size(MPI_COMM_WORLD, &size);
