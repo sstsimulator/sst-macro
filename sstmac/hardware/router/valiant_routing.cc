@@ -100,8 +100,7 @@ valiant_router::route(packet *pkt)
 
 class dragonfly_valiant_router : public valiant_router {
   struct header : public valiant_router::header {
-     char num_hops : 3;
-     char num_group_hops : 3;
+     uint8_t num_hops : 4;
   };
  public:
   FactoryRegister("dragonfly_valiant",

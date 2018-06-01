@@ -84,6 +84,9 @@ class abstract_fat_tree :
       return agg_subtree(sid);
     case 2:
       return num_agg_subtrees_;
+    default:
+     spkt_abort_printf("Bad level %d - should be <= 2", lvl);
+     return -1; //make gcc happy
     }
   }
 
@@ -237,6 +240,10 @@ protected:
   inline int up_port(int level) const override {
     if (level == 0) return 0;
     else if (level == 1) return down_ports_per_agg_switch_;
+    else {
+      spkt_abort_printf("Bad up port level %d - should be 0 or 1", level);
+      return -1; //make gcc happy
+    }
   }
   inline int down_port(int dst_tree) const override {
       return dst_tree * agg_switches_per_subtree_;
