@@ -71,6 +71,8 @@ static void test_scatter();
 
 static void test_gather();
 
+static void test_gatherv();
+
 static void test_scan();
 
 static void test_send();
@@ -113,52 +115,50 @@ int USER_MAIN(int argc, char** argv)
        size);
   }
 
-  //----------first, lets do a ping pong with payload
-  //test_sendrecv();
+//  //----------first, lets do a ping pong with payload
+//  test_sendrecv();
+//  test_send();
+//  test_isend();
 
-  //test_send();
+//  // ---- test nonblocking recv
+//  test_asynch();
 
-  //test_isend();
+//  // ---- alright, let's try a broadcast
+//  test_bcast();
 
-  // ---- test nonblocking recv
-  //test_asynch();
+//  // --- try a reduce
+//  test_reduce();
 
-  // ---- alright, let's try a broadcast
-  //test_bcast();
+//  // ---- sync up with barrier
+//  test_barrier();
 
-  // --- try a reduce
-  //test_reduce();
+//  // ---- test allreduce
+//  test_allreduce();
 
-  // ---- sync up with barrier
-  //test_barrier();
-
-  // ---- test allreduce
-  //test_allreduce();
-
-  // ------ test scatter
-  //test_scatter();
+//  // ------ test scatter
+//  test_scatter();
 
 //  // ------ test gather
-  //test_gather();
+//  test_gather();
 
-  test_scan();
+//  test_scan();
 
-//  test_reduce_scatter();
+  //test_reduce_scatter();
 
 //  //------ test communicator functions
-//  test_comms();
+  test_comms();
 
 //  // ------ test wait functions
-//  test_wait();
+  test_wait();
 
   // ------ test allgather
 //  test_allgather();
 
 //  // ------ test alltoall
-//  test_alltoall();
+  test_alltoall();
 
 //  // ------ test probing
-//  test_probe();
+  //test_probe();
 
 //  // ------- test persistent
 //  test_persistent();
@@ -561,6 +561,47 @@ test_scatter()
 }
 
 void
+test_gatherv()
+{
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+#if 0
+  // Rank 0 is the root
+  // Every other rank contributes an array size equivalent to its rank (ie rank 1 sends 1 int, rank 7 sends 7 ints)
+  {
+    int recv_count = (rank == 0) ? (size*size-1)/2 : 0;
+
+    // send size is proportional to rank in this example
+    std::vector<int> send(rank), recv(recv_count), recv_counts(size), displs(size);
+
+    if (rank == 0) {
+      for(int i = 0; i < size; i++)
+        recv_counts[i] = i;
+
+      for(int i = 1; i < size; i++)
+        displs[i] = displs[i - 1] + recv_counts[i - 1];
+    }
+
+    MPI_Gatherv(send.data(), rank, MPI_INT, recv.data(), recv_counts.data(), displs.data(), MPI_INT, 0, MPI_COMM_WORLD);
+  }
+#endif
+#if 0
+  // Rank 0 is root
+  // Every rank sends 1 integer
+  {
+    std::vector<int> recv(size), recv_counts(size, 1), displs(size);
+    for(int i = 0; i < size; i++) displs[i] = i;
+
+    MPI_Gatherv(&rank, 1, MPI_INT, recv.data(), recv_counts.data(), displs.data(), MPI_INT, 0, MPI_COMM_WORLD);
+    std::cout << "Gatherv complete" << std::endl;
+  }
+#endif
+
+}
+
+void
 test_gather()
 {
   int gsize,sendarray[1];
@@ -572,131 +613,11 @@ test_gather()
      rbuf = new int[gsize];
      }
   MPI_Gather( sendarray, 1, MPI_INT, rbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
-
-  /*  int rank, size;
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-   MPI_Comm_size(MPI_COMM_WORLD, &size);
-   int count = 100; //arbitrary
-
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing gather " << " \n";
-
-   std::vector<payload::const_ptr> vals;
-
-   payload::const_ptr load = valuepayload<int>::construct(1 << rank);
-
-   mpi()->gather(count, MPI_DOUBLE, count, MPI_DOUBLE, int(0),
-   MPI_COMM_WORLD, load, vals);
-
-   if (rank == 0)
-   {
-   std::vector::iterator<payload::const*>:: it, end = vals.end();
-
-   if (vals.size() != MPI_COMM_WORLD.size().id)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank << ": GATHER: result vector size ("
-   << vals.size() << ") does not match MPI_COMM_WORLD comm size (" << MPI_COMM_WORLD.size().id
-   << ") \n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   int i = 0;
-   for (it = vals.begin(); it != end; it++)
-   {
-   if (*it)
-   {
-   int expected = (int) (1 << i);
-   const valuepayload<int>::const_ptr scatterdata = ptr_safe_cast<
-   const valuepayload<int> >(*it);
-
-   if (scatterdata->data() != (expected))
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank << ": GATHER: received value "
-   << scatterdata->data() << " and we should have got " << expected << "\n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-   }
-   else
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": NULL payload recv'd for GATHER \n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   i++;
-
-   }
-
-   }
-
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing gatherv " << " \n";
-
-   std::vector<payload::const_ptr> vals2;
-
-   payload::const_ptr load2 = valuepayload<int>::construct(1 << rank);
-   std::vector<int> vcounts;
-
-   for (int i = 0; i < size; i++)
-   {
-   vcounts.push_back(count);
-   }
-
-   mpi()->gatherv(count, MPI_DOUBLE, vcounts, MPI_DOUBLE,
-   int(0), MPI_COMM_WORLD, load2, vals2);
-
-   if (rank == 0)
-   {
-   std::vector::iterator<payload::const*>:: it, end = vals2.end();
-
-   if (vals2.size() != MPI_COMM_WORLD.size().id)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank << ": GATHERV: result vector size ("
-   << vals.size() << ") does not match MPI_COMM_WORLD comm size (" << MPI_COMM_WORLD.size().id
-   << ") \n";
-   }
-
-   int i = 0;
-   for (it = vals2.begin(); it != end; it++)
-   {
-   if (*it)
-   {
-   int expected = (int) (1 << i);
-   const valuepayload<int>::const_ptr scatterdata = ptr_safe_cast<
-   const valuepayload<int> >(*it);
-
-   if (scatterdata->data() != (expected))
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank << ": GATHERV: received value "
-   << scatterdata->data() << " and we should have got " << expected << "\n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-   }
-   else
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": NULL payload recv'd for GATHERV \n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   i++;
-
-   }
-
-   }*/
 }
 
 void
 test_allgather()
 {
-  std::cout << "Entering allgather" << std::endl;
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -828,217 +749,57 @@ test_alltoall()
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  MPI_Alltoall(NULL, 1, MPI_INT, NULL, 1, MPI_INT, MPI_COMM_WORLD);
-  /*  int rank, size;
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-   MPI_Comm_size(MPI_COMM_WORLD, &size);
-   int count = 100; //arbitrary
+  {
+    // Simple example with null buffer
+    MPI_Alltoall(NULL, 1, MPI_INT, NULL, 1, MPI_INT, MPI_COMM_WORLD);
+  }
 
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing alltoall " << " \n";
+  {
+    // Another example with real data
+    if (size > 512)
+      std::cout << "skipping part of MPI_Alltoall test due to Comm size(" << size << " > 512" << std::endl;
 
-   std::vector<payload::const_ptr> vals;
+    std::vector<int> send_vect(size), recv_vect(size);
 
-   for (int i = 0; i < size; i++)
-   {
-   int val = 1 << i;
-   vals.push_back(valuepayload<int>::construct(val));
-   }
+    // Encode the originating processor and index
+    for(int i = 0; i < size; i++)
+      send_vect[i] = (rank * 100) + i;
 
-   std::vector<payload::const_ptr> result;
+    return;
+    MPI_Alltoall(send_vect.data(), size, MPI_INT, recv_vect.data(), size, MPI_INT, MPI_COMM_WORLD);
 
-   mpi()->alltoall(count, MPI_DOUBLE, count, MPI_DOUBLE, MPI_COMM_WORLD,
-   vals, result);
-
-   std::vector::iterator<payload::const*>:: it, end = result.end();
-
-   if (result.size() != MPI_COMM_WORLD.size().id)
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": ALLTOALL: result vector size (" << result.size()
-   << ") does not match MPI_COMM_WORLD comm size (" << MPI_COMM_WORLD.size().id << ") \n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   int i = 0;
-   for (it = result.begin(); it != end; it++)
-   {
-   if (*it)
-   {
-   int expected = (int) (1 << rank);
-   const valuepayload<int>::const_ptr scatterdata = ptr_safe_cast<
-   const valuepayload<int> >(*it);
-
-   if (scatterdata->data() != (expected))
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank << ": ALLTOALL: received value "
-   << scatterdata->data() << " and we should have got " << expected << "\n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-   }
-   else
-   {
-   errors_++;
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": NULL payload recv'd for ALLTOALL for rank " << i << " \n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   i++;
-
-   }*/
-
+    // checking the result, should look like a matrix transpose
+    for(int i = 0; i < size; i++)
+      if(recv_vect[i] != (i * 100) + rank)
+        throw sprockit::spkt_error("Unexpected value in MPI_Alltoall recv buffer! Check your implementation");
+  }
 }
 
 void
 test_comms()
 {
-  /*int rank, size;
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  // A very limited subset of MPI_Comm_* and MPI_Group_* are currently implemented.
+  int rank, size, new_size, new_rank;
+  MPI_Group world_group;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_group(MPI_COMM_WORLD, &world_group);
 
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing comm create \n";
+  MPI_Barrier(MPI_COMM_WORLD);
 
-   MPI_Group gr_ev;
-   MPI_Group gr_odd;
-   for (int i = 0; i < size; i++)
-   {
-   if (i % 2 == 0)
-   gr_ev.members_.push_back(mpiid(i));
-   else
-   gr_odd.members_.push_back(mpiid(i));
-   }
+  // MPI_Comm_split
+  MPI_Comm new_comm;
+  MPI_Comm_split(MPI_COMM_WORLD, rank %2, rank, &new_comm);
 
-   MPI_Comm evens;
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Group new_group;
+  MPI_Comm_group(new_comm, &new_group);
 
-   MPI_Comm_create(MPI_COMM_WORLD, gr_ev, &evens);
+  MPI_Comm_rank(new_comm, &new_rank);
+  MPI_Comm_size(new_comm, &new_size);
 
-   if (rank % 2 == 0)
-   {
-   if (evens == MPI_Comm::comm_null)
-   {
-   SSTMAC_DEBUG
-   <<
-   "ERROR at rank "
-   << rank
-   << ": create_comm returned null comm when it should be a real thing \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-   else
-   {
-
-   if (evens.rank().id != rank / 2)
-   {
-   errors_++;
-   SSTMAC_DEBUG << "testall[" << rank
-   << "] -- my new comm rank is " << evens.rank().id
-   << " and it should be " << (rank / 2) << "\n";
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   if (evens.id().id != 1)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": create produced id " << evens.id().id
-   << " and it should have been " << 1 << " \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   }
-
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing comm dup \n";
-
-   MPI_Comm duped;
-   MPI_Comm_dup(evens, &duped);
-   mpicommid shouldbe(
-   (rank % 2 == 0) ? evens.id().id + 1 : evens.id().id + 2);
-
-   if (duped.id().id != shouldbe.id)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": create_dup produced id " << duped.id().id
-   << " and it should have been " << shouldbe.id << " \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   if (duped.size() != evens.size())
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": create_dup produced comm with size " << duped.size().id
-   << " and it should have been " << evens.size().id << " \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   if (duped.rank() != evens.rank())
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": create_dup produced comm where my rank is "
-   << duped.rank().id << " and it should have been "
-   << evens.rank().id << " \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing comm split \n";
-
-   MPI_Comm mynewsplit;
-   int newkey = duped.rank().id;
-   MPI_Comm_split(duped, ((rank == 2) ? 0 : 1), newkey, &mynewsplit);
-   int sizecheck = (rank == 2) ? 1 : ((duped.size().id) - 1);
-
-   if (mynewsplit == MPI_Comm::comm_null)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": create_split returned null comm \n";
-   errors_++;
-   }
-   else
-   {
-
-   if (mynewsplit.size().id != sizecheck)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": create_split produced comm with size "
-   << mynewsplit.size().id << " and it should have been "
-   << sizecheck << " \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   }
-
-   }
-   else
-   {
-   if (evens != MPI_Comm::comm_null)
-   {
-   SSTMAC_DEBUG
-   <<
-   "ERROR at rank "
-   << rank
-   << ": create_comm returned a real comm when it should have returned the null comm \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   }*/
-
+  if (new_size != size/2 && new_size != (size/2 + 1))
+    throw sprockit::spkt_error("MPI comm size missmatch, check MPI_Comm_split");
 }
 
 void
@@ -1072,73 +833,6 @@ test_wait()
   }
   else {
     MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, MPI_COMM_WORLD);
-  }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  if (rank == 0) {
-    MPI_Request* reqs = new MPI_Request[size - 1];
-
-    for (int i = 1; i < size; i++) {
-      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag, MPI_COMM_WORLD,
-                &reqs[i-1]);
-    }
-
-    MPI_Status stat;
-    int index;
-    MPI_Waitany(size - 1, reqs, &index, &stat);
-
-    if (index != sender - 1) {
-      errors_++;
-      failure_printf("waitany expected sender %d, got %d",
-                     sender - 1, index);
-    }
-
-    delete[] reqs;
-
-  }
-  else if (rank == sender) {
-    MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, MPI_COMM_WORLD);
-  }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  int tag2(699);
-
-  if (rank == 0) {
-    sstmac_sleep(1); //lag me, so the others have a chance to send
-
-    MPI_Request* reqs = new MPI_Request[size - 1];
-
-    for (int i = 1; i < size; i++) {
-      MPI_Request req;
-      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag2, MPI_COMM_WORLD,
-                &req);
-      reqs[i - 1] = (req);
-    }
-
-    MPI_Status* stat = new MPI_Status[size - 1];
-    int* index = new int[size - 1];
-    int outcount;
-    int nrecved = 0;
-    int nexpected = (size / 2) - 1;
-    while (nrecved < nexpected) {
-      MPI_Waitsome(size - 1, reqs, &outcount, index, stat);
-      nrecved += outcount;
-    }
-
-    if (nrecved != nexpected) {
-      errors_++;
-      failure_printf("waitsome expected n=%d, got n=%d",
-                     nexpected, nrecved);
-    }
-
-    delete[] reqs;
-    delete[] stat;
-    delete[] index;
-  }
-  else if (rank % 2 == 0) {
-    MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag2, MPI_COMM_WORLD);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);

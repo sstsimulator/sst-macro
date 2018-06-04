@@ -362,6 +362,7 @@ void OTF2TraceReplayApp::verify_replay_success() {
 
   if(incomplete_calls > 0) { // Something stalled the queue...
     cout << "ERROR: rank " << rank << " has " << incomplete_calls << " incomplete calls!" << endl;
+    cout << "This is likely cased by dangling MPI_Isend/MPI_Irecv(s). The OTF2 trace will be incomplete." << endl;
 
     int calls_to_print = min(incomplete_calls,25);
     cout << "Printing " << calls_to_print << " calls" << endl;
