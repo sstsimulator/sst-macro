@@ -267,7 +267,7 @@ mpi_api::init(int* argc, char*** argv)
     otf2_writer_.register_comm_world(worldcomm_->id());
     otf2_writer_.register_comm_self(selfcomm_->id());
     otf2_writer_.register_comm_null(MPI_COMM_NULL);
-    otf2_writer_.register_comm_error(MPI_REQUEST_NULL);
+    otf2_writer_.register_null_request(MPI_REQUEST_NULL);
 
     otf2_writer_.set_clock_resolution(1e6);
     running_count_ = worldcomm_->size();

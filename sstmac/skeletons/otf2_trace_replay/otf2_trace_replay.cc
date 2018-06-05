@@ -181,6 +181,9 @@ void OTF2TraceReplayApp::build_comm_map() {
       std::string name_str = otf2_string_table[otf2_location_groups[*m].name].c_str();
       comm_map[_id].push_back(rank_from_otf2_string(name_str));
 	  }
+
+    // A group should always be in ascending order
+    std::sort(comm_map[_id].begin(), comm_map[_id].end());
   }
 }
 
