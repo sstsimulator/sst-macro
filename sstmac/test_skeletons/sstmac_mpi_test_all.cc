@@ -576,22 +576,15 @@ test_wait(MPI_Comm comm)
 
   int sender(5);
 
+  // Wait on a bunch of MPI_Irecv
   if (rank == 0) {
-    MPI_Request* reqs = new MPI_Request[size - 1];
+    std::vector<MPI_Status> stat(size - 1);
+    std::vector<MPI_Request> reqs(size - 1);
 
-    for (int i = 1; i < size; i++) {
-      MPI_Request req;
-      MPI_Irecv(NULL, count, MPI_DOUBLE, int(i), tag, comm,
-                &req);
-      reqs[i - 1] = req;
+    for(int i = 0; i < reqs.size(); i++)
+      MPI_Irecv(NULL, count, MPI_DOUBLE, i+1, tag, comm, &reqs[i]);
 
-    }
-
-    MPI_Status* stat = new MPI_Status[size - 1];
-    MPI_Waitall(size - 1, reqs, stat);
-
-    delete[] stat;
-    delete[] reqs;
+    MPI_Waitall(size - 1, reqs.data(), stat.data());
   }
   else {
     MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, comm);
@@ -599,6 +592,16 @@ test_wait(MPI_Comm comm)
 
   MPI_Barrier(comm);
 
+//  // Make sure Waits on empty requests doesn't cause anything to explode
+//  std::vector<MPI_Request> null_requests(2, MPI_REQUEST_NULL);
+//  std::vector<MPI_Status> statuses(null_requests.size());
+//  int outcount = 0, index = 0;
+//  std::vector<int> indices(null_requests.size());
+
+//  MPI_Wait(null_requests.data(), statuses.data());
+//  MPI_Waitall(null_requests.size(), null_requests.data(), statuses.data());
+//  MPI_Waitsome(null_requests.size(), null_requests.data(), &outcount, indices.data(), statuses.data());
+//  MPI_Waitany(statuses.size(), null_requests.data(), &index, statuses.data());
 }
 
 void
