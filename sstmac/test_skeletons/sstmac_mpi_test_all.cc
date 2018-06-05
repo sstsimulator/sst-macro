@@ -471,15 +471,19 @@ test_bcast()
 void
 test_scatter()
 {
-  int gsize,*sendarray;
-  int root, myrank, rbuf[1];
-  root = 0;
-  MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
-  if ( myrank == root) {
-     MPI_Comm_size( MPI_COMM_WORLD, &gsize);
-     sendarray = new int[gsize];
-     }
-  MPI_Scatter( sendarray, 1, MPI_INT, rbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
+  int size, rank, recv = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  std::vector<int> send(size);
+  for(int i = 0; i < size; i++) send[i] = i;
+
+  MPI_Scatter(send.data(), 1, MPI_INT, &recv, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  // Each rank should receive an integer matching its rank
+  if(recv != rank) {
+    failure_printf("Error: Unexpected value from MPI_Scatter on rank %i\n", rank);
+  }
 
   /*  int rank, size;
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -561,58 +565,24 @@ test_scatter()
 }
 
 void
-test_gatherv()
+test_gather()
 {
-  int rank, size;
+  const int root = 0;
+  int size, rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-#if 0
-  // Rank 0 is the root
-  // Every other rank contributes an array size equivalent to its rank (ie rank 1 sends 1 int, rank 7 sends 7 ints)
-  {
-    int recv_count = (rank == 0) ? (size*size-1)/2 : 0;
+  std::vector<int> recv;
+  if (rank == root) recv.resize(size);
 
-    // send size is proportional to rank in this example
-    std::vector<int> send(rank), recv(recv_count), recv_counts(size), displs(size);
+  MPI_Gather(&rank, 1, MPI_INT, recv.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (rank == 0) {
-      for(int i = 0; i < size; i++)
-        recv_counts[i] = i;
-
-      for(int i = 1; i < size; i++)
-        displs[i] = displs[i - 1] + recv_counts[i - 1];
-    }
-
-    MPI_Gatherv(send.data(), rank, MPI_INT, recv.data(), recv_counts.data(), displs.data(), MPI_INT, 0, MPI_COMM_WORLD);
+  // Should have an array with values 0 to (size - 1)
+  if(rank == root) {
+    for(int i = 0; i < recv.size(); i++)
+      if(recv[i] != i)
+        failure_printf("Error: MPI_Gather expected result with value %i at index %i but got %i", i, i, recv[i]);
   }
-#endif
-#if 0
-  // Rank 0 is root
-  // Every rank sends 1 integer
-  {
-    std::vector<int> recv(size), recv_counts(size, 1), displs(size);
-    for(int i = 0; i < size; i++) displs[i] = i;
-
-    MPI_Gatherv(&rank, 1, MPI_INT, recv.data(), recv_counts.data(), displs.data(), MPI_INT, 0, MPI_COMM_WORLD);
-    std::cout << "Gatherv complete" << std::endl;
-  }
-#endif
-
-}
-
-void
-test_gather()
-{
-  int gsize,sendarray[1];
-  int root, myrank, *rbuf;
-  root = 0;
-  MPI_Comm_rank( MPI_COMM_WORLD, &myrank);
-  if ( myrank == root) {
-     MPI_Comm_size( MPI_COMM_WORLD, &gsize);
-     rbuf = new int[gsize];
-     }
-  MPI_Gather( sendarray, 1, MPI_INT, rbuf, 1, MPI_INT, root, MPI_COMM_WORLD);
 }
 
 void
@@ -842,29 +812,21 @@ test_wait()
 void
 test_reducescatter()
 {
-  /* int rank, size;
-   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int rank, size, recv = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing reduce_scatter \n";
+  std::vector<int> send(size), recv_counts(size);
+  for(int i = 0; i < send.size(); i++) send[i] = i;
+  for(int i = 0; i < recv_counts.size(); i++) recv_counts[i] = 1;
 
-   std::vector<int> recvcounts;
+  MPI_Reduce_scatter(send.data(), &recv, recv_counts.data(), MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
-   for (int i = 0; i < size; i++)
-   {
-   recvcounts.push_back(10 * rank);
-   }
+  // the result should be equivalent to the rank
+  if (rank != recv)
+    failure_printf("Rank %i expected %i, but got, %i on MPI_Reduce_scatter", rank, rank, recv);
 
-   mpi()->reduce_scatter(recvcounts, MPI_DOUBLE, mpiop::sum, MPI_COMM_WORLD);
-
-   SSTMAC_DEBUG << "testall[" << rank << "]: reduce_scatter: recv counts: ";
-   for (int i = 0; i < recvcounts.size(); i++)
-   {
-   SSTMAC_DEBUG << recvcounts[i] << ", ";
-   }
-
-   SSTMAC_DEBUG << "\n";*/
-
+  MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void
