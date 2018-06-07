@@ -99,6 +99,7 @@ SkeletonASTVisitor::initMPICalls()
   mpiCalls_["sstmac_allreduce"] = &SkeletonASTVisitor::visitReduce;
   mpiCalls_["sstmac_reduce"] = &SkeletonASTVisitor::visitReduce;
   mpiCalls_["sstmac_allgather"] = &SkeletonASTVisitor::visitCollective;
+  mpiCalls_["sstmac_alltoall"] = &SkeletonASTVisitor::visitCollective;
 
   mpiCalls_["irecv"] = &SkeletonASTVisitor::visitPt2Pt;
   mpiCalls_["isend"] = &SkeletonASTVisitor::visitPt2Pt;
@@ -2323,6 +2324,24 @@ SkeletonASTVisitor::TraverseUnresolvedLookupExpr(clang::UnresolvedLookupExpr* ex
     }
   }
   return RecursiveASTVisitor<SkeletonASTVisitor>::TraverseUnresolvedLookupExpr(expr);
+}
+bool
+SkeletonASTVisitor::TraverseVarTemplateDecl(VarTemplateDecl* D)
+{
+  try {
+  PragmaActivateGuard pag(D, this);
+  if (pag.skipVisit()) return true;
+
+  if (D->getTemplatedDecl()->isConstexpr()){
+    return true;
+  } else {
+    RecursiveASTVisitor<SkeletonASTVisitor>::TraverseVarTemplateDecl(D);
+  }
+
+  } catch (DeclDeleteException& e){
+    if (e.deleted != D) throw e;
+  }
+  return true;
 }
 
 bool
