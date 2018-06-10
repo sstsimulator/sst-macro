@@ -99,6 +99,7 @@ SkeletonASTVisitor::initMPICalls()
   mpiCalls_["sstmac_allreduce"] = &SkeletonASTVisitor::visitReduce;
   mpiCalls_["sstmac_reduce"] = &SkeletonASTVisitor::visitReduce;
   mpiCalls_["sstmac_allgather"] = &SkeletonASTVisitor::visitCollective;
+  mpiCalls_["sstmac_alltoall"] = &SkeletonASTVisitor::visitCollective;
 
   mpiCalls_["irecv"] = &SkeletonASTVisitor::visitPt2Pt;
   mpiCalls_["isend"] = &SkeletonASTVisitor::visitPt2Pt;
