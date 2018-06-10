@@ -2325,6 +2325,24 @@ SkeletonASTVisitor::TraverseUnresolvedLookupExpr(clang::UnresolvedLookupExpr* ex
   }
   return RecursiveASTVisitor<SkeletonASTVisitor>::TraverseUnresolvedLookupExpr(expr);
 }
+bool
+SkeletonASTVisitor::TraverseVarTemplateDecl(VarTemplateDecl* D)
+{
+  try {
+  PragmaActivateGuard pag(D, this);
+  if (pag.skipVisit()) return true;
+
+  if (D->getTemplatedDecl()->isConstexpr()){
+    return true;
+  } else {
+    RecursiveASTVisitor<SkeletonASTVisitor>::TraverseVarTemplateDecl(D);
+  }
+
+  } catch (DeclDeleteException& e){
+    if (e.deleted != D) throw e;
+  }
+  return true;
+}
 
 bool
 SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
