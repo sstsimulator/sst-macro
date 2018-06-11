@@ -520,6 +520,7 @@ mpi_type* mpi_type::mpi_logical = new mpi_type;
 mpi_type* mpi_type::mpi_real = new mpi_type;
 mpi_type* mpi_type::mpi_double_precision = new mpi_type;
 mpi_type* mpi_type::mpi_integer = new mpi_type;
+mpi_type* mpi_type::mpi_cxx_bool = new mpi_type;
 
 mpi_type* mpi_type::mpi_integer1 = new mpi_type;
 mpi_type* mpi_type::mpi_integer2 = new mpi_type;
