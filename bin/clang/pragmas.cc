@@ -443,11 +443,15 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
     case tok::kw_new:
       next = "new";
       break;
+    case tok::kw_nullptr:
+      next = "nullptr";
+      break;
     case tok::identifier:
       next = token.getIdentifierInfo()->getName().str();
       break;
     default:
-      errorAbort(loc, CI, "token to pragma is not a valid string name");
+      std::string error = std::string("token to pragma is not a valid string name: ") + token.getName();
+      errorAbort(loc, CI, error);
       break;
     }
 
