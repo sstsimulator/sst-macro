@@ -124,11 +124,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   clangCppArgs = [
     cleanFlag("-I${includedir}/sstmac/clang_replacements"),
   ]
-  clangCxxArgs = [
-    "-std=c++1y",
-    "-stdlib=libc++", 
-  ]
-  clangCxxArgs.extend(clangLibtoolingCxxFlagsStr.strip().split())
 
   verbose = False
   delTempFiles = True
@@ -241,6 +236,14 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       givenFlags.append(sarg)
 
+  clangCxxArgs = [
+    "-stdlib=libc++", 
+  ]
+  clangCxxArgs.extend(clangLibtoolingCxxFlagsStr.strip().split())
+  if givenStdFlag:
+    clangCxxArgs.append(givenStdFlag)
+  else:
+    clangCxxArgs.append("-std=c++1y")
   
   exeFromSrc = sourceFiles and not '-c' in sysargs
 

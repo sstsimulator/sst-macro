@@ -1853,7 +1853,11 @@ SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
           switch (needed->getStmtClass()){
             case Stmt::CXXConstructExprClass: {
               CXXConstructExpr* next = cast<CXXConstructExpr>(needed);
-              needed = next->getArg(0);
+              if (next->getNumArgs() > 0){
+                needed = next->getArg(0);
+              } else {
+                cont = false;
+              }
               break;
             }
             case Stmt::ImplicitCastExprClass: {

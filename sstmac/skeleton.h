@@ -69,11 +69,20 @@ double sstmac_sim_time();
 
 #ifdef __cplusplus
 
-#include <sstmac/software/process/cppglobal.h>
+//hate that I have to do this for cmake
+#if __cplusplus < 201103L
+#define char16_t char16type
+#define char32_t char32type
+#include <sstream>
+#undef char16_t
+#undef char32_t
+#endif
 
+#include <sstmac/software/process/cppglobal.h>
 #include <new>
 #include <utility>
 
+#if __cplusplus >= 201103L
 namespace sstmac {
 
 class vector {
@@ -110,7 +119,7 @@ class vector {
   unsigned long  size_;
 };
 }
-
+#endif
 
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
