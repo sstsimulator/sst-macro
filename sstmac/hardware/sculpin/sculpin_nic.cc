@@ -214,6 +214,7 @@ sculpin_nic::cq_handle(sculpin_packet* pkt)
   if (msg){
     recv_message(msg);
   }
+  delete pkt;
 }
 
 void
