@@ -25,23 +25,48 @@ static int inline current_thread_id() {
   }
 }
 
+struct thread_allocator_set {
+#define MAX_NUM_NEW_SAFE_THREADS 128
+  std::vector<char*> allocations[MAX_NUM_NEW_SAFE_THREADS];
+  std::vector<void*> available[MAX_NUM_NEW_SAFE_THREADS];
+  ~thread_allocator_set(){
+    for (int i=0; i < MAX_NUM_NEW_SAFE_THREADS; ++i){
+      auto& vec = allocations[i];
+      for (char* ptr : vec){
+        delete[] ptr;
+      }
+    }
+  }
+};
+
 template <class T>
 class thread_safe_new {
  public:
 #if 1
+  static void free_at_end(T* ptr){
+    //do nothing - the allocation is getting cleaned up
+  }
+
+  static T* allocate_at_beginning(){
+    return (T*) allocate(0);
+  }
+
+  static void* allocate(int thread){
+    if (alloc_.available[thread].empty()){
+      grow(thread);
+    }
+    void* ret = alloc_.available[thread].back();
+    alloc_.available[thread].pop_back();
+    return ret;
+  }
+
   static void* operator new(size_t sz){
     if (sz != sizeof(T)){
       spkt_abort_printf("allocating mismatched sizes: %d != %d",
                         sz, sizeof(T));
     }
     int thread = current_thread_id();
-    auto& vec = to_allocate_[thread];
-    if (vec.empty()){
-      grow(vec);
-    }
-    void* ret = vec.back();
-    vec.pop_back();
-    return ret;
+    return allocate(thread);
   }
 
   static void* operator new(size_t sz, void* ptr){
@@ -50,11 +75,18 @@ class thread_safe_new {
 
   static void operator delete(void* ptr){
     int thread = current_thread_id();
-    auto& vec = to_allocate_[thread];
-    vec.push_back(ptr);
+    alloc_.available[thread].push_back(ptr);
+  }
+#else
+  static T* allocate_at_beginning(){
+    return new T;
+  }
+
+  static void free_at_end(T* ptr){
+    delete ptr;
   }
 #endif
-  static void grow(std::vector<void*>& vec){
+  static void grow(int thread){
     size_t unitSize = sizeof(T);
     if (unitSize % 32 != 0){
       size_t rem = 32 - unitSize % 32;
@@ -64,18 +96,18 @@ class thread_safe_new {
     char* newTs = new char[unitSize*increment];
     char* ptr = newTs;
     for (int i=0; i < increment; ++i, ptr += unitSize){
-      vec.push_back(ptr);
+      alloc_.available[thread].push_back(ptr);
     }
+    alloc_.allocations[thread].push_back(newTs);
   }
 
  private:
-#define MAX_NUM_NEW_SAFE_THREADS 128
-  static std::vector<void*> to_allocate_[MAX_NUM_NEW_SAFE_THREADS];
+  static thread_allocator_set alloc_;
   static int constexpr increment = 512;
 
 };
 
-template <class T> std::vector<void*> thread_safe_new<T>::to_allocate_[MAX_NUM_NEW_SAFE_THREADS];
+template <class T> thread_allocator_set thread_safe_new<T>::alloc_;
 
 }
 

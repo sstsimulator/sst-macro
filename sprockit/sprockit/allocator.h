@@ -27,6 +27,7 @@ class allocator
 
   size_t  unit_size;
   std::vector<T*> storage;
+  std::vector<char*> allocations;
 
   allocator() {
     init();
@@ -34,6 +35,12 @@ class allocator
 
   allocator(const allocator&) {
     init();
+  }
+  
+  ~allocator(){
+    for (char* ptr : allocations){
+      delete[] ptr;
+    }
   }
 
   void init(){
@@ -56,6 +63,7 @@ class allocator
     } else {
       if (storage.empty()){
         char* ptr = new char[unit_size*increment];
+        allocations.push_back(ptr);
         storage.resize(increment);
         for (int i=0; i < increment; ++i, ptr += unit_size)
           storage[i] = (T*) ptr;
@@ -112,9 +120,8 @@ class thread_safe_allocator
     if (n > 1){
       std::cerr << "thread safe allocator cannot allocate more than 1 item at a time" << std::endl;
       ::abort();
-    } else {
-      thread_safe_new<T>::operator delete(p);
-    }
+    } 
+    thread_safe_new<T>::operator delete(p);
   }
 
 };

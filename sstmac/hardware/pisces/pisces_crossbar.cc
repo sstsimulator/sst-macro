@@ -117,6 +117,12 @@ pisces_NtoM_queue::~pisces_NtoM_queue()
 {
   if (arb_) delete arb_;
   if (credit_handler_) delete credit_handler_;
+  for (auto& pair : inputs_){
+    if (pair.second.link) delete pair.second.link;
+  }
+  for (auto& out : outputs_){
+    if (out.link) delete out.link;
+  }
 }
 
 void

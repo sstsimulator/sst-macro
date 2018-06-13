@@ -110,6 +110,7 @@ sculpin_nic::~sculpin_nic() throw ()
   delete ack_handler_;
   delete payload_handler_;
 #endif
+  if (inj_link_) delete inj_link_;  
 }
 
 link_handler*
@@ -166,6 +167,8 @@ sculpin_nic::connect_input(
   event_link* link)
 {
   //nothing to do
+  //but we own the link now so have to delete it
+  delete link;
 }
 
 void

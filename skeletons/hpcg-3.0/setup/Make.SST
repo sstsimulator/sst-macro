@@ -110,7 +110,7 @@ HPCG_LIBS     =
 OTHER_OPS =
 #OTHER_OPTS += -fopenmp 
 #OTHER_OPTS += -DHPCG_NO_MPI
-HPCG_OPTS     = -std=c++11 
+HPCG_OPTS     = 
 
 #
 # ----------------------------------------------------------------------

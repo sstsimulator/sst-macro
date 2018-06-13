@@ -264,6 +264,9 @@ event_manager::spin_up(void(*fxn)(void*), void* args)
 void
 event_manager::spin_down()
 {
+  //delete here while we are still on the main thread
+  interconn_->deadlock_check();
+  hw::interconnect::clear_static_interconnect();
   des_context_->complete_context(main_thread_);
 }
 

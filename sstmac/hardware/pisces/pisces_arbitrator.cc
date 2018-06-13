@@ -186,9 +186,7 @@ pisces_cut_through_arbitrator(sprockit::sim_parameters* params)
 
   //thread environments might not be setup yet when allocating
   //placement new this one
-  char* plc_buf = new char[sizeof(bandwidth_epoch)];
-
-  head_ = new (plc_buf) bandwidth_epoch;
+  head_ = bandwidth_epoch::allocate_at_beginning();
   head_->bw_available = out_bw_ * bw_sec_to_tick_conversion_;
   head_->start = 0;
   //just set to super long
@@ -211,7 +209,7 @@ pisces_cut_through_arbitrator::~pisces_cut_through_arbitrator()
     next = next->next;
     //do not delete this for now, treat as permanent
     //this guy gets deleted and created before anything is running
-    delete e;
+    bandwidth_epoch::free_at_end(e);
   }
 }
 

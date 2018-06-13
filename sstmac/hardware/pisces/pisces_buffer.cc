@@ -61,6 +61,8 @@ pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
 
 pisces_buffer::~pisces_buffer()
 {
+  if (input_.link) delete input_.link;
+  if (output_.link) delete output_.link;
 }
 
 void
@@ -339,6 +341,11 @@ pisces_eject_buffer::return_credit(packet* pkt)
 pisces_eject_buffer::pisces_eject_buffer(sprockit::sim_parameters *params, event_scheduler *parent) :
   pisces_buffer(params, parent)
 {
+}
+
+pisces_eject_buffer::~pisces_eject_buffer()
+{
+  if (output_handler_) delete output_handler_;
 }
 
 void

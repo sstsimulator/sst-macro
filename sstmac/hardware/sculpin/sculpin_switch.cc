@@ -114,6 +114,9 @@ sculpin_switch::~sculpin_switch()
   if (credit_handler_) delete credit_handler_;
   if (payload_handler_) delete payload_handler_;
 #endif
+  for (port& p : ports_){
+    if (p.link) delete p.link;
+  }
 }
 
 void
@@ -137,6 +140,8 @@ sculpin_switch::connect_input(
   event_link* link)
 {
   //no-op
+  //but we have to delete the link because we own it
+  delete link;
 }
 
 timestamp
