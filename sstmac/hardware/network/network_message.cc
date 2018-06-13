@@ -166,6 +166,9 @@ network_message::is_metadata() const
     case nvram_get_payload:
     case rdma_put_payload:
       return false;
+    default:
+     spkt_abort_printf("Bad message type %d", type_);
+     return false; //make gcc happy
   }
 }
 

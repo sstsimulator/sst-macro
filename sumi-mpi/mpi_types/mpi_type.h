@@ -262,6 +262,7 @@ class mpi_type
   static mpi_type* mpi_uint16_t;
   static mpi_type* mpi_uint32_t;
   static mpi_type* mpi_uint64_t;
+  static mpi_type* mpi_cxx_bool;
 
  private:
   void pack_action(void* packed_buf, void* unpacked_buf, bool pack) const;

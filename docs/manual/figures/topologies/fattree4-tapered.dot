@@ -1,0 +1,38 @@
+graph {
+sw0 [style=filled,fillcolor="lightblue",shape=rect,label="0"];
+sw1 [style=filled,fillcolor="lightblue",shape=rect,label="1"];
+sw2 [style=filled,fillcolor="lightblue",shape=rect,label="2"];
+sw3 [style=filled,fillcolor="lightblue",shape=rect,label="3"];
+sw4 [style=filled,fillcolor="lightblue",shape=rect,label="4"];
+sw5 [style=filled,fillcolor="lightblue",shape=rect,label="5"];
+sw6 [style=filled,fillcolor="lightblue",shape=rect,label="6"];
+sw7 [style=filled,fillcolor="lightblue",shape=rect,label="7"];
+sw8 [style=filled,fillcolor="lightblue",shape=rect,label="8"];
+sw9 [style=filled,fillcolor="lightblue",shape=rect,label="9"];
+sw10 [style=filled,fillcolor="lightblue",shape=rect,label="10"];
+sw11 [style=filled,fillcolor="lightblue",shape=rect,label="11"];
+sw12 [style=filled,fillcolor="lightblue",shape=rect,label="12"];
+
+edge[];
+sw0--sw8;
+sw0--sw9;
+sw1--sw8;
+sw1--sw9;
+sw2--sw8;
+sw2--sw9;
+sw3--sw8;
+sw3--sw9;
+sw4--sw10;
+sw4--sw11;
+sw5--sw10;
+sw5--sw11;
+sw6--sw10;
+sw6--sw11;
+sw7--sw10;
+sw7--sw11;
+sw8--sw12;
+sw9--sw12;
+sw10--sw12;
+sw11--sw12;
+
+}

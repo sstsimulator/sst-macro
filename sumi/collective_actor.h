@@ -91,6 +91,9 @@ struct action
       sumi_case(unroll);
       sumi_case(resolve);
       sumi_case(join);
+      default:
+       spkt_abort_printf("Bad action type %d", ty);
+       return "";
     }
   }
 

@@ -100,8 +100,7 @@ valiant_router::route(packet *pkt)
 
 class dragonfly_valiant_router : public valiant_router {
   struct header : public valiant_router::header {
-     char num_hops : 3;
-     char num_group_hops : 3;
+     uint8_t num_hops : 4;
   };
  public:
   FactoryRegister("dragonfly_valiant",
@@ -120,7 +119,7 @@ class dragonfly_valiant_router : public valiant_router {
   }
 
   int num_vc() const override {
-    return 3;
+    return 6;
   }
 
  private:
@@ -128,10 +127,7 @@ class dragonfly_valiant_router : public valiant_router {
     packet::path& path = pkt->current_path();
     dfly_->minimal_route_to_switch(my_addr_, pkt->dest_switch(), path);
     auto hdr = pkt->get_header<header>();
-    path.vc = hdr->num_group_hops;
-    if (dfly_->is_global_port(path.outport())){
-      ++hdr->num_group_hops;
-    }
+    path.vc = hdr->num_hops;
     ++hdr->num_hops;
   }
 

@@ -1,10 +1,13 @@
 #ifndef sstmac_software_process_CPPGLOBAL_H
 #define sstmac_software_process_CPPGLOBAL_H
 
-#include <tuple>
+
 #include <sstmac/software/process/global.h>
-#include <functional>
 #include <new>
+
+#if __cplusplus >= 201103L
+#include <tuple>
+#include <functional>
 
 namespace sstmac {
 
@@ -192,5 +195,7 @@ class CppVarTemplate {
 };
 
 }
+
+#endif //C++11
 
 #endif // CPPGLOBAL_H
