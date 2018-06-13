@@ -98,13 +98,21 @@ class vector {
   }
 
   template <class... Args>
-  void push_back(Args... args){
+  void push_back(Args...){
     ++size_;
   }
 
   template <class... Args>
-  void emplace_back(Args... args){
+  void emplace_back(Args...){
     ++size_;
+  }
+
+  std::nullptr_t data() const {
+    return nullptr;
+  }
+
+  std::nullptr_t data() {
+    return nullptr;
   }
 
   bool empty() const {
@@ -118,6 +126,7 @@ class vector {
  private:
   unsigned long  size_;
 };
+
 }
 #endif
 
