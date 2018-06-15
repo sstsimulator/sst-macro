@@ -54,6 +54,8 @@ class stat_vtk : public stat_collector
 
   std::multimap<uint64_t, std::shared_ptr<traffic_progress>> traffic_progress_map_;
   std::multimap<uint64_t, std::shared_ptr<traffic_event>> traffic_event_map_;
+  int count_x_;
+  int count_y_;
 };
 
 }

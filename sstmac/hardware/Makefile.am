@@ -169,13 +169,15 @@ libsstmac_hw_la_SOURCES =  \
 
 if HAVE_VTK
 libsstmac_hw_la_SOURCES +=  \
-  vtk/vtk_stats.cc
+  vtk/vtk_stats.cc \
+  vtk/vtkXMLPVDWriter.cc
 nobase_library_include_HEADERS += \
-  vtk/vtk_stats.h
+  vtk/vtk_stats.h \
+  vtk/vtkXMLPVDWriter.h
 
-#libsstmac_hw_la_LDFLAGS += $(VTK_LDFLAGS)
-#libsstmac_hw_la_LIBADD += $(VTK_LIBS)
-#AM_CPPFLAGS += $(VTK_CPPFLAGS)
+libsstmac_hw_la_LDFLAGS += $(VTK_LDFLAGS)
+libsstmac_hw_la_LIBADD += $(VTK_LIBS)
+AM_CPPFLAGS += $(VTK_CPPFLAGS)
 endif
 
 if INTEGRATED_SST_CORE
