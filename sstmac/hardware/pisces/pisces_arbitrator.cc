@@ -372,8 +372,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(payload_stop, timestamp::exact);
         return;
-      }
-      else if (time_to_send == epoch->length) {
+      } else if (time_to_send == epoch->length) {
         ticks_t payload_stop = epoch->start + time_to_send;
         ticks_t total_send_time = payload_stop - send_start;
         double new_bw = payload->num_bytes()*bw_tick_to_sec_conversion_ / total_send_time;
@@ -385,8 +384,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(payload_stop, timestamp::exact);
         return;
-      }
-      else {
+      } else {
         //this epoch is exhausted
         bytes_to_send -= epoch->bw_available * epoch->length;
         head_ = epoch->next;
