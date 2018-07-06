@@ -170,9 +170,11 @@ libsstmac_hw_la_SOURCES =  \
 if HAVE_VTK
 libsstmac_hw_la_SOURCES +=  \
   vtk/vtk_stats.cc \
+  vtk/vtkTrafficSource.cc \
   vtk/vtkXMLPVDWriter.cc
 nobase_library_include_HEADERS += \
   vtk/vtk_stats.h \
+  vtk/vtkTrafficSource.h \
   vtk/vtkXMLPVDWriter.h
 
 libsstmac_hw_la_LDFLAGS += $(VTK_LDFLAGS)
