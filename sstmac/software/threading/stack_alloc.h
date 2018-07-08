@@ -63,26 +63,31 @@ namespace sw {
  */
 class stack_alloc
 {
- private:
-  /// The memory regions get allocated in chunks.
+ public:
   class chunk;
-  /// This is where we store the memory regions.
-  typedef std::vector<chunk*> chunk_vec_t;
-  static chunk_vec_t chunks_;
+  struct chunk_set {
+    std::vector<chunk*> allocations;
+    std::vector<void*> available;
+    ~chunk_set(){
+      clear();
+    }
+    void clear();
+  };
+ private:
+  static chunk_set chunks_;
   /// Each chunk is of this suggested size.
   static size_t suggested_chunk_;
   /// Each stack request is of this size:
   static size_t stacksize_;
-
-  /// This is our list of un-allocated chunks:
-  typedef std::vector<void*> available_vec_t;
-  static available_vec_t available_;
 
  public:
   static size_t stacksize() {
     return stacksize_;
   }
 
+  ~stack_alloc(){
+    clear();
+  }
 
   static size_t chunksize() {
     return suggested_chunk_;
