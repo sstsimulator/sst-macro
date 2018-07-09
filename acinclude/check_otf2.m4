@@ -50,6 +50,7 @@ AM_CONDITIONAL([HAVE_OTF2], [test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "
 
 if test "x$HAVE_OTF2" = "xyes" -a "X$enable_otf2" != "X$no"; then
 build_otf2=yes
+AC_DEFINE([OTF2_ENABLED],,[Define OTF2 support as enabled])
 else
 build_otf2=no
 fi

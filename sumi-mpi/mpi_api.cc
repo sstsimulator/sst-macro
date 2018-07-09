@@ -46,6 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <time.h>
 #include <climits>
 #include <cmath>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/messages/sleep_event.h>
@@ -84,6 +87,7 @@ RegisterDebugSlot(mpi_check,
 RegisterKeywords(
 { "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
 { "dump_comm_times", "dump communication time statistics" },
+{ "otf2_dir_basename", "Enables OTF2 and combines this parameter with a timestamp to name the archive"}
 );
 
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
@@ -135,6 +139,16 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
 #if SSTMAC_COMM_SYNC_STATS
   dump_comm_times_ = params->get_optional_bool_param("dump_comm_times", false);
 #endif
+
+  std::string otf2_dir_basename = params->get_optional_param("otf2_dir_basename", "");
+  if(!otf2_dir_basename.empty()) {
+#ifdef SSTMAC_OTF2_ENABLED
+    otf2_enabled_ = true;
+    otf2_dir_basename_ = otf2_dir_basename;
+#else
+    spkt_abort_printf("OTF2 parameter 'otf2_dir_basename' used but OTF2 support is not available. Use '--with-otf2' in the configure script.");
+#endif
+  }
 }
 
 void
@@ -176,6 +190,14 @@ mpi_api::~mpi_api()
 int
 mpi_api::abort(MPI_Comm comm, int errcode)
 {
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Abort");
+  }
+#endif
+
   spkt_throw_printf(sprockit::value_error,
     "MPI rank %d exited with code %d", rank_, errcode);
   return MPI_SUCCESS;
@@ -185,12 +207,20 @@ int
 mpi_api::comm_rank(MPI_Comm comm, int *rank)
 {
   *rank = get_comm(comm)->rank();
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    auto call_start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Comm_rank");
+  }
+#endif
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::init(int* argc, char*** argv)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   if (status_ == is_initialized){
     sprockit::abort("MPI_Init cannot be called twice");
   }
@@ -219,11 +249,43 @@ mpi_api::init(int* argc, char*** argv)
 
   status_ = is_initialized;
 
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && comm_world()->rank() == 0) {
+    // 30 years and C++ still hasn't come up with a compact way to turn time into formatted strings?
+    time_t rawtime;
+    struct tm * timeinfo;
+    char timestamp [128];
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+    std::strftime (timestamp, sizeof(timestamp), "-%Y%m%d-%H%M",timeinfo);
+
+    otf2_writer_.set_verbosity(dumpi::OWV_WARN);
+    otf2_writer_.open_archive(otf2_dir_basename_ + timestamp, worldcomm_->size(), true);
+    otf2_writer_.set_comm_mode(dumpi::COMM_MODE_NONE);
+
+    // Register communicators
+    otf2_writer_.register_comm_world(worldcomm_->id());
+    otf2_writer_.register_comm_self(selfcomm_->id());
+    otf2_writer_.register_comm_null(MPI_COMM_NULL);
+    otf2_writer_.register_null_request(MPI_REQUEST_NULL);
+
+    otf2_writer_.set_clock_resolution(1e6);
+    running_count_ = worldcomm_->size();
+    otf2_initialized_ = true;
+  }
+#endif
+
   collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
   wait_collective(op);
+
+
+#ifdef SSTMAC_OTF2_ENABLED
+  otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Init");
+#endif
   delete op;
   crossed_comm_world_barrier_ = false;
   end_api_call();
+
   return MPI_SUCCESS;
 }
 
@@ -240,7 +302,9 @@ mpi_api::check_init()
 //
 int
 mpi_api::finalize()
-{  
+{
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Finalize);
 
   collective_op_base* op = start_barrier("MPI_Finalize", MPI_COMM_WORLD);
@@ -261,6 +325,13 @@ mpi_api::finalize()
       os_->now().sec());
   }
 
+  #ifdef SSTMAC_OTF2_ENABLED
+  // Write this call to archive before it starts. The barrier can be
+  // used to ensure every rank has been written before closing
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Finalize");
+  }
+  #endif
   transport::finish();
 
 #if SSTMAC_COMM_SYNC_STATS
@@ -277,7 +348,14 @@ mpi_api::finalize()
     ofs.close();
   }
 #endif
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && --running_count_ == 0) {
+    otf2_writer_.close_archive();
+  }
+#endif
   end_api_call();
+
   return MPI_SUCCESS;
 }
 
@@ -287,14 +365,25 @@ mpi_api::finalize()
 double
 mpi_api::wtime()
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Wtime);
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Wtime");
+#endif
   return os_->now().sec();
 }
 
 int
 mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
   *count = status->count;
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Get_count");
+#endif
   return MPI_SUCCESS;
 }
 
@@ -879,6 +968,11 @@ MPI_Call::ID_str(MPI_function func)
   }
 }
 
+#ifdef SSTMAC_OTF2_ENABLED
+dumpi::OTF2_Writer mpi_api::otf2_writer_;
+bool mpi_api::otf2_initialized_ = false;
+int mpi_api::running_count_ = 0;
+#endif
 
 }
 
