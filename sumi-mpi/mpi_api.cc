@@ -963,9 +963,11 @@ MPI_Call::ID_str(MPI_function func)
   }
 }
 
+#ifdef SSTMAC_OTF2_ENABLED
 dumpi::OTF2_Writer mpi_api::otf2_writer_;
 bool mpi_api::otf2_initialized_ = false;
 int mpi_api::running_count_ = 0;
+#endif
 
 }
 
