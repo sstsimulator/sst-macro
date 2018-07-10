@@ -197,14 +197,12 @@ normalize_string(const std::string& thestr,
     if (line_length == 0){
         os << next;
         line_length += next.size();
-    }
-    else {
+    } else {
       line_length += next.size() + 1;
       if (line_length > max_length){
         os << "\n" << indent; // go to next line
         line_length = next.size();
-      }
-      else {
+      } else {
         os << " ";
       }
       os << next;

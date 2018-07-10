@@ -109,23 +109,20 @@ void tokenize
       token_len = str.length() - token_pos;
 
       walk_pos += token_len;
-    }
-    else if( delim_pos > walk_pos ) {
+    } else if( delim_pos > walk_pos ) {
       // more tokens / delims left, but a token starts at walk_pos
       token_pos = walk_pos;
       token_len = delim_pos - token_pos;
 
       walk_pos = delim_pos;
-    }
-    else if( delim_pos == walk_pos ) {
+    } else if( delim_pos == walk_pos ) {
       // delimiters start at walk_pos
       walk_pos = str.find_first_not_of( space, walk_pos );
 
       if( walk_pos == StringType::npos ) {
         // only spaces left in str, no more tokens
         break;
-      }
-      else {
+      } else {
         // more tokens left
         continue;
       }

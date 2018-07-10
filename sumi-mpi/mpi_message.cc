@@ -176,8 +176,7 @@ mpi_message::to_string() const
 
   if (in_flight_) {
     ss << ", seq=" << seqnum_ << "(ignored)";
-  }
-  else {
+  } else {
     ss << ", seq=" << seqnum_;
   }
   ss   << ", content=" << str(content_type_)

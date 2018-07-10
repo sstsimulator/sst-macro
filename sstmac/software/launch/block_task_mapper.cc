@@ -77,8 +77,7 @@ block_task_mapper::map_ranks(
     int next_nproc = result.size() + ppn;
     if (next_nproc > nproc) {
       this_ppn = nproc - result.size();
-    }
-    else {
+    } else {
       this_ppn = ppn;
     }
 

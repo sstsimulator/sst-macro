@@ -87,8 +87,7 @@ try_top_info_main(int argc, char **argv)
   int parse_status = parse_opts(argc, argv, oo);
   if (parse_status == PARSE_OPT_EXIT_SUCCESS) {
     return 0;
-  }
-  else if (parse_status == PARSE_OPT_EXIT_FAIL) {
+  } else if (parse_status == PARSE_OPT_EXIT_FAIL) {
     return 1;
   }
 

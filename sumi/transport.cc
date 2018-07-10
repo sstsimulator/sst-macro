@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/transport.h>
 #include <sumi/dynamic_tree_vote.h>
 #include <sumi/allreduce.h>
+#include <sumi/reduce_scatter.h>
 #include <sumi/reduce.h>
 #include <sumi/allgather.h>
 #include <sumi/allgatherv.h>
@@ -88,6 +89,7 @@ collective_algorithm_selector* transport::bcast_selector_ = nullptr;
 collective_algorithm_selector* transport::gather_selector_ = nullptr;
 collective_algorithm_selector* transport::gatherv_selector_ = nullptr;
 collective_algorithm_selector* transport::reduce_selector_ = nullptr;
+collective_algorithm_selector* transport::reduce_scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scan_selector_ = nullptr;
 collective_algorithm_selector* transport::scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
@@ -669,6 +671,21 @@ transport::allreduce(void* dst, void *src, int nelems, int type_size, int tag, r
 }
 
 void
+transport::reduce_scatter(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                     collective::config cfg)
+{
+  if (skip_collective(collective::reduce_scatter, cfg, dst, src, nelems, type_size, tag))
+    return;
+
+  dag_collective* coll = reduce_scatter_selector_ == nullptr
+      ? new halving_reduce_scatter
+      : reduce_scatter_selector_->select(cfg.dom->nproc(), nelems);
+  coll->init(collective::reduce_scatter, this, dst, src, nelems, type_size, tag, cfg);
+  coll->init_reduce(fxn);
+  start_collective(coll);
+}
+
+void
 transport::scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
                 collective::config cfg)
 {
@@ -1040,8 +1057,7 @@ transport::do_heartbeat(int prev_context)
   heartbeat_running_ = true;
   if (heartbeat_tag_ == heartbeat_tag_stop_){
     heartbeat_tag_ = heartbeat_tag_start_;
-  }
-  else {
+  } else {
     ++heartbeat_tag_;
   }
 
@@ -1070,8 +1086,7 @@ transport::ping(int dst, timeout_function* func)
   validate_api();
   if (is_failed(dst)){
     return true;
-  }
-  else {
+  } else {
     monitor_->ping(dst, func);
     return false;
   }
@@ -1107,8 +1122,7 @@ transport::start_watching(int dst, timeout_function *func)
   validate_api();
   if (is_failed(dst)){
     return true;
-  }
-  else {
+  } else {
     debug_printf(sprockit::dbg::sumi | sprockit::dbg::sumi_ping,
       "Rank %d start watching %d", rank_, dst);
     function_set& fset = watchers_[dst];

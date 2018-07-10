@@ -261,6 +261,8 @@ int
 mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Allgather);
   collective_op_base* op = start_allgather(comm,
                         sendcount, sendtype, recvcount, recvtype,
@@ -268,6 +270,20 @@ mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Allgather);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_allgather(comm_world()->rank(),
+                               call_start_time,
+                               (uint64_t)os_->now().usec(),
+                               sendcount,
+                               sendtype,
+                               recvcount,
+                               recvtype,
+                               comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 
 }
@@ -318,6 +334,8 @@ mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype,
                   MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Alltoall);
   collective_op_base* op = start_alltoall(comm,
                                  sendcount, sendtype,
@@ -326,6 +344,20 @@ mpi_api::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Alltoall);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_alltoall(comm_world()->rank(),
+                              call_start_time,
+                              (uint64_t)os_->now().usec(),
+                              sendcount,
+                              sendtype,
+                              recvcount,
+                              recvtype,
+                              comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -397,12 +429,26 @@ int
 mpi_api::allreduce(const void *src, void *dst, int count,
                    MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Allreduce);
   collective_op_base* op = start_allreduce(comm,
                                  count, type, mop, src, dst);
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Allreduce);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_allreduce(comm_world()->rank(),
+                              call_start_time,
+                              (uint64_t)os_->now().usec(),
+                              count,
+                              type,
+                              comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -475,11 +521,23 @@ mpi_api::start_barrier(const char* name, MPI_Comm comm)
 int
 mpi_api::barrier(MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Barrier);
   collective_op_base* op = start_barrier("MPI_Barrier", comm);
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Barrier);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_barrier(comm_world()->rank(),
+                              call_start_time,
+                              (uint64_t)os_->now().usec(),
+                              comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -531,11 +589,26 @@ mpi_api::start_bcast(MPI_Comm comm, int count, MPI_Datatype datatype, int root, 
 int
 mpi_api::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Bcast);
   collective_op_base* op = start_bcast(comm, count, type, root, buffer);
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Bcast);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_bcast(comm_world()->rank(),
+                           call_start_time,
+                           (uint64_t)os_->now().usec(),
+                           count,
+                           type,
+                           root,
+                           comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -605,12 +678,29 @@ int
 mpi_api::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Gather);
   collective_op_base* op = start_gather(comm, sendcount, sendtype, root,
                                  recvcount, recvtype, sendbuf, recvbuf);
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Gather);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_gather(comm_world()->rank(),
+                            call_start_time,
+                            (uint64_t)os_->now().usec(),
+                            sendcount,
+                            sendtype,
+                            recvcount,
+                            recvtype,
+                            root,
+                            comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -705,12 +795,27 @@ int
 mpi_api::reduce(const void *src, void *dst, int count,
                 MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Reduce);
   collective_op_base* op = start_reduce(comm, count,
                                  type, root, mop, src, dst);
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Reduce);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_reduce(comm_world()->rank(),
+                            call_start_time,
+                            (uint64_t)os_->now().usec(),
+                            count,
+                            type,
+                            root,
+                            comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -770,11 +875,25 @@ int
 mpi_api::reduce_scatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Reduce_scatter);
   collective_op_base* op = start_reduce_scatter(comm,recvcnts,type,mop,src,dst);
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Reduce_scatter);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_reduce_scatter(comm_world()->rank(),
+                                    call_start_time,
+                                    (uint64_t)os_->now().usec(),
+                                    get_comm(comm)->size(),
+                                    recvcnts,
+                                    type,
+                                    comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -857,11 +976,24 @@ mpi_api::ireduce_scatter_block(int recvcnt, MPI_Datatype type,
 int
 mpi_api::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Scan);
   collective_op_base* op = start_scan(comm, count, type, mop, src, dst);
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Scan);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_scan(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          count,
+                          type,
+                          comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -922,12 +1054,29 @@ mpi_api::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
                  MPI_Comm comm)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   start_mpi_call(MPI_Scatter);
   collective_op_base* op = start_scatter(comm, sendcount, sendtype, root,
                              recvcount, recvtype, sendbuf, recvbuf);
   wait_collective(op);
   delete op;
   finish_mpi_call(MPI_Scatter);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    otf2_writer_.mpi_scatter(comm_world()->rank(),
+                          call_start_time,
+                          (uint64_t)os_->now().usec(),
+                          sendcount,
+                          sendtype,
+                          recvcount,
+                          recvtype,
+                          root,
+                          comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

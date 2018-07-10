@@ -87,8 +87,7 @@ void dumpi_meta::parsemeta()
     token.clear();
     pst::BasicStringTokenizer::tokenize(line, token, split_on);
     if(token.size() != 2) {
-    }
-    else {
+    } else {
       CallMap_t::iterator it = callback_.find(token[0]);
       if(it != callback_.end()) {
         (this->*(it->second))(token);

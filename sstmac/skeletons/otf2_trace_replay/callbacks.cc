@@ -549,27 +549,68 @@ OTF2_CallbackCode event_mpi_collective_end(
     uint64_t            sizeReceived ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
+    auto comm_size = app->comm_map[comm].size();
 #define HANDLE_CASE(op, ...) case op : { \
             auto call = app->GetCallQueue().PeekBack(); \
             __VA_ARGS__; \
             } break;
 
+    // Each case is interlaced with output from a Scorep trace on 4 ranks sending 1 int with root 0 (where applicable)
     switch (collectiveOp) {
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER,   call->on_trigger = [=]() {call->app->GetMpi()->barrier(comm);})
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST,     call->on_trigger = [=]() {call->app->GetMpi()->bcast(sizeSent, MPI_BYTE, root, comm);})
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER,    call->on_trigger = [=]() {call->app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV,   call->on_trigger = [=]() {call->app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER,   call->on_trigger = [=]() {call->app->GetMpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV,  call->on_trigger = [=]() {call->app->GetMpi()->scatter(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call->on_trigger = [=]() {call->app->GetMpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHERV,call->on_trigger = [=]() {call->app->GetMpi()->allgather(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL,  call->on_trigger = [=]() {call->app->GetMpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLV, call->on_trigger = [=]() {call->app->GetMpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLW, call->on_trigger = [=]() {call->app->GetMpi()->alltoall(sizeSent, MPI_BYTE, sizeReceived, MPI_BYTE, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call->on_trigger = [=]() {call->app->GetMpi()->allreduce(sizeSent, MPI_BYTE, OTF2_OP, comm);})
-    HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE,    call->on_trigger = [=]() {call->app->GetMpi()->reduce(sizeSent, MPI_BYTE, OTF2_OP, root, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE_SCATTER, call->on_trigger = [=]() {call->app->GetMpi()->reduce_scatter_block(sizeReceived, MPI_BYTE, OTF2_OP, comm);})
-		HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN,      call->on_trigger = [=]() {call->app->GetMpi()->scan(sizeSent, MPI_BYTE, OTF2_OP, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_BARRIER,   call->on_trigger = [=]() {call->app->GetMpi()->barrier(comm);})
+    //MPI_COLLECTIVE_END                         0     7399555605472008  Operation: BCAST, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 16, Received: 4
+    //MPI_COLLECTIVE_END                         2     7399555605473214  Operation: BCAST, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
+    //MPI_COLLECTIVE_END                         1     7399555605475368  Operation: BCAST, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
+    //MPI_COLLECTIVE_END                         3     7399555605478615  Operation: BCAST, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_BCAST,     call->on_trigger = [=]() {call->app->GetMpi()->bcast(sizeReceived, MPI_BYTE, root, comm);})
+    //MPI_COLLECTIVE_END                         1     7556711140931805  Operation: GATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         2     7556711141055857  Operation: GATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         3     7556711141080043  Operation: GATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         0     7556711141128100  Operation: GATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 4, Received: 16
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHER,    call->on_trigger = [=]() {call->app->GetMpi()->gather(sizeSent, MPI_BYTE, sizeSent, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_GATHERV,   call->on_trigger = [=]() {std::cout << "MPI_Gatherv not implemented by Sumi-MPI" << std::endl;})
+    //MPI_COLLECTIVE_END                         0     7557948283284700  Operation: SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 16, Received: 4
+    //MPI_COLLECTIVE_END                         1     7557948283284988  Operation: SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
+    //MPI_COLLECTIVE_END                         2     7557948283285064  Operation: SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
+    //MPI_COLLECTIVE_END                         3     7557948283301477  Operation: SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: 0 ("Master thread" <0>), Sent: 0, Received: 4
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTER,   call->on_trigger = [=]() {call->app->GetMpi()->scatter(sizeReceived, MPI_BYTE, sizeReceived, MPI_BYTE, root, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCATTERV,  call->on_trigger = [=]() {std::cout << "MPI_Scatterv not implemented by Sumi-MPI" << std::endl;})
+    //MPI_COLLECTIVE_END                         2     7558923358856786  Operation: ALLGATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         0     7558923358857236  Operation: ALLGATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         1     7558923358857724  Operation: ALLGATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         3     7558923358859170  Operation: ALLGATHER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHER, call->on_trigger = [=]() {call->app->GetMpi()->allgather(sizeSent/comm_size, MPI_BYTE, sizeReceived/comm_size, MPI_BYTE, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLGATHERV,call->on_trigger = [=]() {std::cout << "MPI_Allgatherv not implemented by Sumi-MPI" << std::endl;})
+    //MPI_COLLECTIVE_END                         3     7561894889294896  Operation: ALLTOALL, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         1     7561894889299008  Operation: ALLTOALL, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         2     7561894889326469  Operation: ALLTOALL, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         0     7561894889327660  Operation: ALLTOALL, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALL,  call->on_trigger = [=]() {call->app->GetMpi()->alltoall(sizeSent/comm_size, MPI_BYTE, sizeReceived/comm_size, MPI_BYTE, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLTOALLV, call->on_trigger = [=]() {std::cout << "MPI_Alltoallv not implemented by Sumi-MPI" << std::endl;})
+    //MPI_COLLECTIVE_END                         2     7577512533313071  Operation: ALLREDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         0     7577512533314445  Operation: ALLREDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         1     7577512533314888  Operation: ALLREDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    //MPI_COLLECTIVE_END                         3     7577512533317046  Operation: ALLREDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 16, Received: 16
+    // Cannot model accurately without type size information
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_ALLREDUCE, call->on_trigger = [=]() {call->app->GetMpi()->allreduce((sizeReceived/comm_size)/4, MPI_INT, OTF2_OP, comm);})
+    //MPI_COLLECTIVE_END                         1     7407606802153808  Operation: REDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: 2 ("Master thread" <2>), Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         3     7407606802341911  Operation: REDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: 2 ("Master thread" <2>), Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         0     7407606802394234  Operation: REDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: 2 ("Master thread" <2>), Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         2     7407606802394949  Operation: REDUCE, Communicator: "MPI_COMM_WORLD" <0>, Root: 2 ("Master thread" <2>), Sent: 4, Received: 16
+    // Cannot model accurately without type size information
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE,    call->on_trigger = [=]() {call->app->GetMpi()->reduce(sizeSent/4, MPI_INT, OTF2_OP, root, comm);})
+    //MPI_COLLECTIVE_END                         2     7565304070746368  Operation: REDUCE_SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         3     7565304070843972  Operation: REDUCE_SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         1     7565304070881025  Operation: REDUCE_SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 4, Received: 0
+    //MPI_COLLECTIVE_END                         0     7565304070881276  Operation: REDUCE_SCATTER, Communicator: "MPI_COMM_WORLD" <0>, Root: UNDEFINED, Sent: 4, Received: 16
+    // Cannot model accurately without type size information
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_REDUCE_SCATTER, call->on_trigger = [=]() {
+      int avg_size = sizeReceived/comm_size;
+      std::vector<int> recv_sizes(comm_size);
+      for (auto& recv_size : recv_sizes) recv_size = avg_size;
+      // Cannot reconstruct reduce_scatter from OTF2, only a rough approximation
+      call->app->GetMpi()->reduce_scatter(recv_sizes.data(), MPI_BYTE, OTF2_OP, comm);})
+    HANDLE_CASE(OTF2_COLLECTIVE_OP_SCAN,      call->on_trigger = [=]() {call->app->GetMpi()->scan((sizeSent+sizeReceived)/comm_size, MPI_BYTE, OTF2_OP, comm);})
 
     default:
         cout << "ERROR: Collective not handled; " << (int)collectiveOp << endl;

@@ -279,11 +279,9 @@ get_bandwidth(const char *value, bool &errorflag, bool print_errors)
     }
     if (abbrname.find(units) != abbrname.end()) {
       multiplier = abbrname[units];
-    }
-    else if (fullname.find(lcunits) != fullname.end()) {
+    } else if (fullname.find(lcunits) != fullname.end()) {
       multiplier = fullname[units];
-    }
-    else {
+    } else {
       errorflag = true;
       if (print_errors) cerr0 << "No match for the bandwidth units " << units << "\n";
       return -1;
@@ -376,8 +374,7 @@ byte_length(const char* value, bool& errorflag, bool print_errors)
     std::string units(endptr);
     if (mulmap.find(units) != mulmap.end()) {
       multiplier = mulmap[units];
-    }
-    else {
+    } else {
       errorflag = true;
       if (print_errors) cerr0 << "Invalid time units: " << units << "\n";
       return -1;
@@ -432,8 +429,7 @@ get_timestamp(const char *value, bool &errorflag, bool print_errors)
     }
     if (mulmap.find(units) != mulmap.end()) {
       multiplier = mulmap[units];
-    }
-    else {
+    } else {
       errorflag = true;
       if (print_errors) cerr0 << "Invalid time units: " << units << "\n";
       return -1;
@@ -487,8 +483,7 @@ get_frequency(const char *value, bool &errorflag, bool print_errors)
     }
     if (mulmap.find(units) != mulmap.end()) {
       multiplier = mulmap[units];
-    }
-    else {
+    } else {
       errorflag = true;
       if (print_errors) cerr0 << "Invalid frequency units: " << units << "\n";
       return -1;

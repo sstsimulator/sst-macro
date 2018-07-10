@@ -281,11 +281,9 @@ int parsedumpi_callbacks::get_mpiid(dumpi_source id)
 {
   if(id == DUMPI_ANY_SOURCE) {
     return MPI_ANY_SOURCE;
-  }
-  else if(id == DUMPI_ROOT) {
+  } else if(id == DUMPI_ROOT) {
     return MPI_ROOT;
-  }
-  else {
+  } else {
     return id;
   }
 }
@@ -324,8 +322,7 @@ parsedumpi_callbacks::get_mpitype(dumpi_datatype id)
       int size = datatype_sizes_.size[id];
       mpitype_[id] = mpi_type::builtins[size].id;
       printf("Remapped dumpi type %d to builtin of size %d\n", id, size);
-    }
-    else {
+    } else {
       cerrn << sprockit::printf("Warning: no match for datatype id %d - assuming double\n", int(id));
       mpitype_[id] = MPI_DOUBLE;
     }

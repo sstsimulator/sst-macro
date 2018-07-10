@@ -78,10 +78,7 @@ fat_tree_router::route(packet* pkt) {
     path.vc = 0;
     rter_debug("Ejecting %s from switch %d on port %d",
                pkt->to_string().c_str(), dst, path.outport());
-  }
-
-  // have to route
-  else {
+  } else { // have to route
     int my_level = ft_->level(my_addr_);
     int dst_level = ft_->level(dst);
     int my_tree = ft_->subtree(my_addr_);
@@ -94,19 +91,13 @@ fat_tree_router::route(packet* pkt) {
       path.vc = 0;
       rter_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
                 int(dst), dst_level, int(my_addr_), my_level);
-    }
-
-    // definitely have to go down
-    else if (my_level == 2){
+    } else if (my_level == 2){     // definitely have to go down
       output_port = get_core_down_port(dst_tree);
       path.set_outport(output_port);
       path.vc = 0;
       rter_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
                 int(dst), dst_level, int(my_addr_), my_level);
-    }
-
-    // aggregator level, can go either way
-    else if (my_level == 1){
+    } else if (my_level == 1){ // aggregator level, can go either way
       // in the right tree, going down
       if (dst_tree == my_tree) {
         output_port = get_agg_down_port(dst);
@@ -114,9 +105,7 @@ fat_tree_router::route(packet* pkt) {
         path.vc = 0;
         rter_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
                   int(dst), dst_level, int(my_addr_), my_level);
-      }
-      //nope, have to go to core to hop over to other tree
-      else {
+      } else { //nope, have to go to core to hop over to other tree
         int next_tree = ft_->core_subtree();
         output_port = get_up_port();
         path.set_outport(output_port);
