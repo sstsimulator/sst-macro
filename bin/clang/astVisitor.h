@@ -269,6 +269,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   bool TraverseVarDecl(clang::VarDecl* D);
 
+  bool TraverseVarTemplateDecl(clang::VarTemplateDecl* D);
+
   /**
    * @brief Activate any pragmas associated with this.
    * In contrast to VisitStmt, call expressions can only have special replace pragmas.

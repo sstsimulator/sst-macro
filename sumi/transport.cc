@@ -315,9 +315,8 @@ transport::notify_collective_done(collective_done_message* msg)
 void
 transport::clean_up()
 {
-  std::list<collective*>::iterator it, end = todel_.end();
-  for (it=todel_.begin(); it != end; ++it){
-    delete *it;
+  for (collective* coll : todel_){
+    delete coll;
   }
   todel_.clear();
 }

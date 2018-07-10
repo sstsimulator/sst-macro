@@ -209,6 +209,7 @@ mpi_api::commit_builtin_types()
   op_precommit_type(double, mpi_type::mpi_real8, MPI_REAL8);
   op_precommit_type(long double, mpi_type::mpi_long_double, MPI_LONG_DOUBLE);
 
+  int_precommit_type(bool, mpi_type::mpi_cxx_bool, MPI_CXX_BOOL);
   int_precommit_type(int, mpi_type::mpi_integer, MPI_INTEGER);
   int_precommit_type(char, mpi_type::mpi_integer1, MPI_INTEGER1);
   int_precommit_type(int16_t, mpi_type::mpi_integer2, MPI_INTEGER2);

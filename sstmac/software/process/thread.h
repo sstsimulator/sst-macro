@@ -379,6 +379,8 @@ class thread
   int last_bt_collect_nfxn_;
 
   void* stack_;
+
+  char* tls_storage_;
   
   uint32_t thread_id_;
 

@@ -65,7 +65,7 @@ RegisterKeywords(
 int USER_MAIN(int argc, char** argv)
 {
   //make sure everyone gets here at exatly the same time
-  double now = MPI_Wtime();
+  double now = sstmac_now();
   sstmac_compute(5e-5 - now);
 
   MPI_Init(&argc, &argv);
