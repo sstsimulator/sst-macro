@@ -12,10 +12,11 @@ RegisterKeywords(
 );
 
 void ping(int rank, int src, int dst, int msize) {
-  if (rank == src)
+  if (rank == src) {
     MPI_Send(NULL, msize, MPI_INT, dst, 0, MPI_COMM_WORLD);
-  else if (rank == dst)
+  } else if (rank == dst) {
     MPI_Recv(NULL, msize, MPI_INT, src, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  }
 }
 
 int main(int argc, char** argv)

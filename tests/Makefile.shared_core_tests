@@ -29,7 +29,7 @@ CORETESTS+= \
 #test_core_apps_ping_all_branched_torus
 
 test_core_apps_mpi_%.$(CHKSUF): $(CORE_TEST_DEPS)
-	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 1 and t< 1.2' \
+	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 2 and t < 2.2' \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_mpi_$*.ini --no-wall-time $(THREAD_ARGS)
 
 test_core_apps_ping_%.$(CHKSUF): $(CORE_TEST_DEPS)

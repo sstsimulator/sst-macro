@@ -150,8 +150,7 @@ mpi_comm::get_keyval(keyval* k, void* val, int* flag)
 
   if (keyvals_.find(k->key()) == keyvals_.end()) {
     *flag = 1;
-  }
-  else {
+  } else {
     *flag = 0;
   }
 

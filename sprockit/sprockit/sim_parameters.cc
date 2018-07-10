@@ -763,8 +763,7 @@ sim_parameters::get_bool_param(const std::string &key)
   std::string v = get_param(key);
   if (v == "true" || v == "1") {
     return true;
-  }
-  else if (v != "false" && v != "0") {
+  } else if (v != "false" && v != "0") {
     spkt_abort_printf("sim_parameters::get_bool_param: param %s with value %s is not formatted as a proper boolean",
                      key.c_str(), v.c_str());
   }
@@ -921,8 +920,7 @@ sim_parameters::try_to_parse(
   std::string f_firstchar = inc_file.substr(0, 1);
   if (f_firstchar == "/") {
     //do nothing - this is an absolute path
-  }
-  else {
+  } else {
     size_t pos = fname.find_last_of('/');
     if (pos != std::string::npos) {
       dir = fname.substr(0, pos + 1);

@@ -287,8 +287,7 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
         addr = switch_id(int(nid)/4);
         coordinates my_coords = top->get_node_coords(nid);
         coutn << "Network Injection Buffer " << my_coords.to_string() << "\n";
-    }
-    else {
+    } else {
         addr = switch_id(event_location_.location);
         coordinates my_coords = top->get_switch_coords(addr);
         coutn << "Network Switch Buffer " << my_coords.to_string() << "\n";
@@ -433,8 +432,7 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
         addr = switch_id(int(nid)/4);
         coordinates my_coords = top->get_node_coords(nid);
         coutn << "Network Injection Buffer " << my_coords.to_string() << "\n";
-    }
-    else {
+    } else {
         addr = switch_id(event_location_.location);
         coordinates my_coords = top->get_switch_coords(addr);
         coutn << "Network Switch Buffer " << my_coords.to_string() << "\n";

@@ -91,13 +91,11 @@ static void test_comms(MPI_Comm comm);
 
 static void test_wait(MPI_Comm comm);
 
-//static void test_reducescatter();
+static void test_reducescatter(MPI_Comm comm);
 
 //static void test_probe();
 
 //static void test_persistent();
-
-//static void test_reduce_scatter();
 
 int USER_MAIN(int argc, char** argv)
 {
@@ -136,6 +134,7 @@ int USER_MAIN(int argc, char** argv)
     test_wait(comm);
     test_allgather(comm);
     test_alltoall(comm);
+    test_reducescatter(comm);
     //test_probe(comm);
   }
 
@@ -143,8 +142,7 @@ int USER_MAIN(int argc, char** argv)
 
   if (rank == 0 && errors_ == 0) {
     std::cout << "- Finished testing! test successful \n";
-  }
-  else if (rank == 0 && errors_ != 0) {
+  } else if (rank == 0 && errors_ != 0) {
     std::cerr << "- Finished testing! " << errors_
                  << " ERRORS - test not successful \n";
   }
@@ -175,37 +173,6 @@ test_scan(MPI_Comm comm)
 }
 
 void
-test_reduce_scatter(MPI_Comm comm)
-{
-#if 0
-  int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
-
-  int* sends = (int*) malloc(sizeof(int) * (size * 2));
-  int* recvs = (int*) malloc(sizeof(int) * 2);
-
-  int* recvcnts = (int*) malloc(sizeof(int) * size);
-  for (int i = 0; i < size; i++) {
-    recvcnts[i] = 2;
-    sends[2*i] = 1;
-    sends[2*i+1] = 2;
-  }
-
-  MPI_Reduce_scatter(sends, recvs, recvcnts, MPI_INT, MPI_SUM,
-                     comm);
-
-  if (recvs[0] != size || recvs[1] != size * 2) {
-    errors_++;
-
-    if (stop_at_errors_) {
-      throw sprockit::spkt_error("an error occurred in the application");
-    }
-  }
-#endif
-}
-
-void
 test_send(MPI_Comm comm)
 {
   int rank, size;
@@ -231,8 +198,7 @@ test_send(MPI_Comm comm)
     MPI_Ssend(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, comm);
     MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, comm,
              MPI_STATUS_IGNORE);
-  }
-  else {
+  } else {
     MPI_Recv(MPI_PAYLOAD_IGNORE, 10, MPI_INT, src, 0, comm,
              MPI_STATUS_IGNORE);
     MPI_Send(MPI_PAYLOAD_IGNORE, 10, MPI_INT, dst, 0, comm);
@@ -307,8 +273,7 @@ test_sendrecv(MPI_Comm comm)
       int pay = rank * 1000;
       MPI_Send(&pay, count, MPI_INT, buddy, tag, comm);
 
-    }
-    else {
+    } else {
       MPI_Status stat;
       int recvdata;
       MPI_Recv(&recvdata, count, MPI_INT, buddy, tag, comm,
@@ -372,9 +337,7 @@ test_asynch(MPI_Comm comm)
     int r(1);
     int t(1);
     MPI_Send(NULL, count, MPI_INT, r, t, comm);
-
-  }
-  else if (rank == 1) {
+  } else if (rank == 1) {
     MPI_Request req;
     int r(0);
     int t(1);
@@ -574,10 +537,10 @@ test_wait(MPI_Comm comm)
   int count = 100;
   int tag(698);
 
-  int sender(5);
-
   // Wait on a bunch of MPI_Irecv
   if (rank == 0) {
+    sstmac_sleep(1); //lag me, so the others have a chance to send
+
     std::vector<MPI_Status> stat(size - 1);
     std::vector<MPI_Request> reqs(size - 1);
 
@@ -585,199 +548,46 @@ test_wait(MPI_Comm comm)
       MPI_Irecv(NULL, count, MPI_DOUBLE, i+1, tag, comm, &reqs[i]);
 
     MPI_Waitall(size - 1, reqs.data(), stat.data());
-  }
-  else {
+  } else {
     MPI_Send(NULL, count, MPI_DOUBLE, int(0), tag, comm);
   }
 
   MPI_Barrier(comm);
-
-//  // Make sure Waits on empty requests doesn't cause anything to explode
-//  std::vector<MPI_Request> null_requests(2, MPI_REQUEST_NULL);
-//  std::vector<MPI_Status> statuses(null_requests.size());
-//  int outcount = 0, index = 0;
-//  std::vector<int> indices(null_requests.size());
-
-//  MPI_Wait(null_requests.data(), statuses.data());
-//  MPI_Waitall(null_requests.size(), null_requests.data(), statuses.data());
-//  MPI_Waitsome(null_requests.size(), null_requests.data(), &outcount, indices.data(), statuses.data());
-//  MPI_Waitany(statuses.size(), null_requests.data(), &index, statuses.data());
 }
 
 void
-test_reducescatter()
+test_reducescatter(MPI_Comm comm)
 {
   // sumi does not support reduce_scatter at the moment
-#if 0
+  // it does support reduce scatter block
   int rank, size, recv = 0;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
-  std::vector<int> send(size), recv_counts(size);
-  for(int i = 0; i < send.size(); i++) send[i] = i;
-  for(int i = 0; i < recv_counts.size(); i++) recv_counts[i] = 1;
+  std::vector<int> send(size);
+  for(int i = 0; i < send.size(); i++){
+    if (rank < i){
+      send[i] = 1;
+    } else {
+      send[i] = 0;
+    }
+  }
 
-  MPI_Reduce_scatter(send.data(), &recv, recv_counts.data(), MPI_INT, MPI_MAX, comm);
-
+  /**
+  MPI_Reduce_scatter_block(send.data(), &recv, 1, MPI_INT, MPI_MAX, comm);
   // the result should be equivalent to the rank
-  if (rank != recv)
+  if (rank != recv){
+    ++errors_;
     failure_printf("Rank %i expected %i, but got, %i on MPI_Reduce_scatter", rank, rank, recv);
+  }
+  */
 
   MPI_Barrier(comm);
-#endif
 }
 
 void
 test_probe()
 {
-  /*int rank, size;
-   MPI_Comm_rank(comm, &rank);
-   MPI_Comm_size(comm, &size);
-
-   int count = 100;
-   int tag(713);
-   int tag2(714);
-
-   mpi()->barrier(comm);
-
-   int sender(5);
-
-   SSTMAC_DEBUG << "testall[" << rank << "] -- Testing probe \n";
-
-   if (rank == 0)
-   {
-
-   std::vector<MPI_Request> reqs;
-
-   for (int i = 1; i < size; i++)
-   {
-   MPI_Request req;
-   mpi()->irecv(count, MPI_DOUBLE, int(i), tag, comm, req);
-   reqs.push_back(req);
-   }
-
-   MPI_Status stat;
-   int index;
-   bool flag;
-   std::vector<int> indices;
-   std::vector<MPI_Status> statuses;
-
-   mpi()->test(reqs.at(sender.id), flag, stat);
-
-   if (flag)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": test returned completed, and it probably should not have \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   mpi()->testsome(reqs, indices, statuses);
-
-   if (indices.size() > 0)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": testsome returned completed, and it probably should not have \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   mpi()->testany(reqs, index, flag, stat);
-
-   if (flag)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": testany returned completed, and it probably should not have \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   mpi()->iprobe(sender, tag, comm, flag, stat);
-
-   if (flag)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": iprobe returned completed, and it probably should not have \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   // -------  here is the blocking probe ----------- //
-   mpi()->probe(sender, tag, comm, stat);
-
-   if (!stat)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": blocking probe did not return a valid mpistatus \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   mpi()->test(reqs.at(sender.id - 1), flag, stat);
-
-   if (!flag)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": test returned NOT completed, and it should not have \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   mpi()->testsome(reqs, indices, statuses);
-
-   if (indices.size() != 1)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": testsome returned indices with size " << indices.size()
-   << ", and it should have been 1 \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   mpi()->testany(reqs, index, flag, stat);
-
-   if (index != (sender.id - 1))
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank << ": testany returned index "
-   << index << ", and it should not have been " << (sender.id - 1) << " \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   sleep(timestamp(1));
-
-   mpi()->iprobe(sender, tag2, comm, flag, stat);
-
-   if (!flag)
-   {
-   SSTMAC_DEBUG << "ERROR at rank " << rank
-   << ": iprobe returned NOT completed, and it should not have \n";
-   errors_++;
-   if (stop_at_errors_)
-   throw sprockit::spkt_error("an error occurred in the application");
-   }
-
-   mpi()->recv(count, MPI_DOUBLE, sender, tag2, comm, stat);
-
-   }
-   else if (rank == sender)
-   {
-   compute(timestamp(2));
-   mpi()->send(count, MPI_DOUBLE, int(0), tag, comm);
-
-   mpi()->send(count, MPI_DOUBLE, int(0), tag2, comm);
-   }
-
-   mpi()->barrier(comm);*/
-
 }
 
 void

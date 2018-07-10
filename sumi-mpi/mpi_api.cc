@@ -437,14 +437,11 @@ mpi_api::comm_str(MPI_Comm comm)
 {
   if (comm == comm_world()->id()){
     return "MPI_COMM_WORLD";
-  }
-  else if (comm == comm_self()->id()){
+  } else if (comm == comm_self()->id()){
     return "MPI_COMM_SELF";
-  }
-  else if (comm == mpi_comm::comm_null->id()){
+  } else if (comm == mpi_comm::comm_null->id()){
     return "MPI_COMM_NULL";
-  }
-  else {
+  } else {
     return sprockit::printf("COMM=%d", int(comm));
   }
 }
@@ -454,14 +451,11 @@ mpi_api::comm_str(mpi_comm* comm)
 {
   if (comm == comm_world()){
     return "MPI_COMM_WORLD";
-  }
-  else if (comm == comm_self()){
+  } else if (comm == comm_self()){
     return "MPI_COMM_SELF";
-  }
-  else if (comm == mpi_comm::comm_null){
+  } else if (comm == mpi_comm::comm_null){
     return "MPI_COMM_NULL";
-  }
-  else {
+  } else {
     return sprockit::printf("COMM=%d", int(comm->id()));
   }
 }
@@ -471,8 +465,7 @@ mpi_api::tag_str(int tag)
 {
   if (tag==MPI_ANY_TAG){
     return "int_ANY";
-  }
-  else {
+  } else {
     return sprockit::printf("%d", int(tag));
   }
 }
@@ -482,8 +475,7 @@ mpi_api::src_str(int id)
 {
   if (id == MPI_ANY_SOURCE){
     return "MPI_SOURCE_ANY";
-  }
-  else {
+  } else {
     return sprockit::printf("%d", int(id));
   }
 }
@@ -493,8 +485,7 @@ mpi_api::src_str(mpi_comm* comm, int id)
 {
   if (id == MPI_ANY_SOURCE){
     return "MPI_SOURCE_ANY";
-  }
-  else {
+  } else {
     return sprockit::printf("%d:%d", int(id), int(comm->peer_task(id)));
   }
 }

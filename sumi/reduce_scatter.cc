@@ -41,3 +41,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
+
+#include <sumi/reduce_scatter.h>
+#include <sumi/transport.h>
+#include <sumi/communicator.h>
+#include <sprockit/output.h>
+#include <sprockit/stl_string.h>
+#include <cstring>
+
+#define divide_by_2_round_up(x) ((x/2) + (x%2))
+
+#define divide_by_2_round_down(x) (x/2)
+
+using namespace sprockit::dbg;
+
+namespace sumi {
+
+void
+halving_reduce_scatter_actor::finalize_buffers()
+{
+}
+
+void
+halving_reduce_scatter_actor::init_buffers(void* dst, void* src)
+{
+}
+
+void
+halving_reduce_scatter_actor::init_dag()
+{
+  sprockit::abort("halving_reduce_scatter: not implemented");
+}
+
+bool
+halving_reduce_scatter_actor::is_lower_partner(int virtual_me, int partner_gap)
+{
+}
+
+void
+halving_reduce_scatter_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+{
+}
+
+}
