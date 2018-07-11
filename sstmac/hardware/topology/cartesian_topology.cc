@@ -81,8 +81,7 @@ cartesian_topology::node_coords(node_id uid) const
 {
   if (concentration_ == 1) {
     return switch_coords((switch_id)uid);
-  }
-  else {
+  } else {
     switch_id swid(uid / concentration_);
     int lastidx = uid % concentration_;
     coordinates coords = switch_coords(swid);

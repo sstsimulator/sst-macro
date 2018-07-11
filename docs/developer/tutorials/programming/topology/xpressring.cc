@@ -112,18 +112,15 @@ xpress_ring::minimal_route_to_switch(
     if (up_distance > xpress_cutoff) {
       path.set_outport(jump_up_port);
       path.vc = 0;
-    }
-    else {
+    } else {
       path.outport = up_port;
       path.vc = 0;
     }
-  }
-  else {
+  } else {
     if (down_distance > xpress_cutoff) {
       path.set_outport(jump_down_port);
       path.vc = 0;
-    }
-    else {
+    } else {
       path.set_outport(down_port);
       path.vc = 0;
     }

@@ -328,8 +328,7 @@ sstmac_uq_run(void* queue,
 
     if (spawn_ty == Fork){
       sims[num_running++] = q->fork(params, nresults, results[j]);
-    }
-    else if (spawn_ty == MPIScan){
+    } else if (spawn_ty == MPIScan){
       sims[num_running++] = send_scan_point(q, params, bufferPtr,
                                 nparams, results[j], nresults, param_names, param_values[j]);
       bufferPtr += paramBufferSize;

@@ -97,8 +97,7 @@ eager0::incoming_payload(mpi_queue *queue,
     queue->memcopy(msg->payload_bytes());
     queue->finalize_recv(msg, req);
     delete msg;
-  }
-  else {
+  } else {
     queue->notify_probes(msg);
     queue->buffer_unexpected(msg);
   }

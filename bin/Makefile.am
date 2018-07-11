@@ -55,6 +55,10 @@ exe_LDADD = \
     ../sstmac/install/libsstmac.la \
     ../sprockit/sprockit/libsprockit.la
 
+if HAVE_OTF2
+  exe_LDADD += ../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
+endif
+
 if EXTERNAL_BOOST
   exe_LDADD += $(BOOST_LDFLAGS)
 endif

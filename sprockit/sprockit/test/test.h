@@ -103,8 +103,7 @@ class TestCase_impl :
   void print_error(std::ostream &os) const {
     if (should_be_equal_) {
       os << "SHOULD BE EQUAL";
-    }
-    else {
+    } else {
       os << "SHOULD NOT BE EQUAL";
     }
   }

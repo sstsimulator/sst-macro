@@ -220,8 +220,7 @@ butterfly::nodes_connected_to_injection_switch(switch_id swaddr,
 {
   if (swaddr >= nswitches_per_col_) {
     nodes.resize(0);
-  }
-  else {
+  } else {
     return structured_topology::nodes_connected_to_injection_switch(swaddr, nodes);
   }
 }

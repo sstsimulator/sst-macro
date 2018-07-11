@@ -167,8 +167,7 @@ wilke_reduce_actor::init_dag()
         send_nelems = divide_by_2_round_down(round_nelems);
         send_offset = my_buffer_offset + round_nelems - send_nelems;
         recv_offset = my_buffer_offset;
-      }
-      else {
+      } else {
         virtual_partner = virtual_me - partner_gap;
         send_nelems = divide_by_2_round_up(round_nelems);
         send_offset = my_buffer_offset;
@@ -203,8 +202,8 @@ wilke_reduce_actor::init_dag()
 
         prev_send = send_ac;
         prev_recv = recv_ac;
-      } //end if not real send/recv
-      else {
+       //end if not real send/recv
+      } else {
         debug_printf(sumi_collective,
           "Rank %d:%d skipping partner=%d on round %d with send=(%d,%d) recv=(%d,%d)",
           my_api_->rank(), virtual_me, virtual_partner, i,
@@ -322,8 +321,7 @@ wilke_reduce_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac
   int rnd = ac->round % num_total_rounds_;
   if (rnd < num_reducing_rounds_){
     (fxn_)(dst_buffer, msg_buffer, ac->nelems);
-  }
-  else {
+  } else {
     std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
   }
 }

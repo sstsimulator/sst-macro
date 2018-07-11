@@ -308,8 +308,7 @@ pisces_NtoM_queue::handle_payload(event* ev)
   if (num_credits >= pkt->num_bytes()) {
     num_credits -= pkt->num_bytes();
     send_payload(pkt);
-  }
-  else {
+  } else {
     pisces_debug(
       "On %s:%p, pushing back %s on queue %d=(%d,%d) for nq=%d nvc=%d mapper=(%d,%d,%d)",
       to_string().c_str(), this, pkt->to_string().c_str(),

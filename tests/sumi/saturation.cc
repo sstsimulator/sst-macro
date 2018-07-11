@@ -103,8 +103,7 @@ throughput_thread::run()
     message* msg = comm_poll();
     if (msg->payload_type() == message::rdma_put_ack) {
       //ignore
-    }
-    else if (msg->payload_type() == message::rdma_put) {
+    } else if (msg->payload_type() == message::rdma_put) {
       time_map& times = start_times[msg->sender()];
       time_map::iterator it = times.find(msg.get());
       if (it == times.end()) {
@@ -120,8 +119,7 @@ throughput_thread::run()
       num_messages_counted++;
       average_latency_ms = latency_total / num_messages_counted;
       return;
-    }
-    else {
+    } else {
       spkt_throw_printf(sprockit::illformed_error,
                        "got unexpected message %s",
                        sumi::message::tostr(msg->payload_type()));
@@ -193,14 +191,11 @@ main(int argc, char** argv)
   traffic_pattern::type_t ty;
   if (pattern == "NN" || pattern == "nearest_neighbor") {
     ty = traffic_pattern::nearest_neighbor;
-  }
-  else if (pattern == "BC" || pattern == "bit_complement") {
+  } else if (pattern == "BC" || pattern == "bit_complement") {
     ty = traffic_pattern::bit_complement;
-  }
-  else if (pattern == "TOR" || pattern == "tornado") {
+  } else if (pattern == "TOR" || pattern == "tornado") {
     ty = traffic_pattern::tornado;
-  }
-  else {
+  } else {
     spkt_throw_printf(sprockit::input_error,
                      "invalid traffic pattern %s",
                      pattern.c_str());
@@ -210,20 +205,15 @@ main(int argc, char** argv)
 
   if (params->has_param("pisces_injection_bandwidth")) {
     offered_load_bw = params->get_bandwidth_param("pisces_injection_bandwidth");
-  }
-  else if (params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
+  } else if (params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
     offered_load_bw = params->get_bandwidth_param("cycle_accurate_switch_bandwidth_n2r");
-  }
-  else if (params->has_param("network_injector_capacity_bw")) {
+  } else if (params->has_param("network_injector_capacity_bw")) {
     offered_load_bw = params->get_bandwidth_param("network_injector_capacity_bw");
-  }
-  else if (params->has_param("packet_switch_bandwidth_n2r")) {
+  } else if (params->has_param("packet_switch_bandwidth_n2r")) {
     offered_load_bw = params->get_bandwidth_param("packet_switch_bandwidth_n2r");
-  }
-  else if (params->has_param("network_train_injection_bw")) {
+  } else if (params->has_param("network_train_injection_bw")) {
     offered_load_bw = params->get_bandwidth_param("network_train_injection_bw");
-  }
-  else {
+  } else {
     spkt_throw_printf(sprockit::input_error,
                      "throughput application did not find injection bandwidth");
   }

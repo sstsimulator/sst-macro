@@ -392,8 +392,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     if (!ej_params->has_param("latency")){
       ej_params->add_param_override("send_latency",
                                     link_params->get_param("send_latency"));
-    }
-    else {
+    } else {
       ej_params->add_param_override("send_latency",
                                     ej_params->get_param("latency"));
     }
@@ -443,8 +442,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     send_lat = ej_params->get_param("send_latency");
   if (send_lat.size() == 0){
     ej_params->add_param_override("send_latency", nic_params->get_namespace("injection")->get_either_or_param("send_latency","latency"));
-  }
-  else {
+  } else {
     ej_params->add_param_override("send_latency", send_lat);
   }
 
@@ -452,8 +450,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     credit_lat = ej_params->get_param("credit_latency");
   if (credit_lat.size() == 0){
     ej_params->add_param_override("credit_latency", nic_params->get_namespace("injection")->get_either_or_param("credit_latency","latency"));
-  }
-  else {
+  } else {
     ej_params->add_param_override("credit_latency", credit_lat);
   }
 
