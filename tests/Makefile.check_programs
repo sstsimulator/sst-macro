@@ -7,31 +7,31 @@ test_utilities_LDADD = $(CORE_LIBS)
 noinst_LTLIBRARIES = libsstmac_test_pthread.la
 test_pthread_SOURCES = dummy_pthread.cc
 libsstmac_test_pthread_la_SOURCES = test_pthread.cc
-test_pthread_LDADD = $(CORE_LIBS) \
+test_pthread_LDADD = $(top_builddir)/sstmac/main/libsstmac_main.la \
   libsstmac_test_pthread.la \
-  $(top_builddir)/sstmac/main/libsstmac_main.la
+  $(CORE_LIBS)
 
 noinst_LTLIBRARIES += libsstmac_test_blas.la
 test_blas_SOURCES = dummy_blas.cc
 libsstmac_test_blas_la_SOURCES = test_blas.cc
-test_blas_LDADD = $(CORE_LIBS) \
+test_blas_LDADD = libsstmac_test_blas.la \
   $(top_builddir)/sstmac/libraries/blas/libsstmac_blas.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
-  libsstmac_test_blas.la
+  $(CORE_LIBS)
 
 noinst_LTLIBRARIES += libsstmac_test_std_thread.la
 test_std_thread_SOURCES = dummy_std_thread.cc
 libsstmac_test_std_thread_la_SOURCES = test_std_thread.cc
-test_std_thread_LDADD = $(CORE_LIBS) \
+test_std_thread_LDADD = libsstmac_test_std_thread.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
-  libsstmac_test_std_thread.la
+  $(CORE_LIBS)
 
 noinst_LTLIBRARIES += libsstmac_test_tls.la
 test_tls_SOURCES = dummy_tls.cc
 libsstmac_test_tls_la_SOURCES = test_tls.cc
-test_tls_LDADD = $(CORE_LIBS) \
+test_tls_LDADD = libsstmac_test_tls.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
-  libsstmac_test_tls.la
+  $(CORE_LIBS)
 
 if BUILD_SUMI_MPI
 check_PROGRAMS += test_scan test_uq

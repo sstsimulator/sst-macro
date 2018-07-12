@@ -33,8 +33,8 @@ else
 check_PROGRAMS = testexec
 testexec_SOURCES = exec.cc
 testexec_LDADD = \
-  $(top_builddir)/sstmac/install/libsstmac.la \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
+  $(top_builddir)/sstmac/install/libsstmac.la \
   $(top_builddir)/sprockit/sprockit/libsprockit.la
 
 if EXTERNAL_BOOST
