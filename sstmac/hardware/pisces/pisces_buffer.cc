@@ -61,6 +61,8 @@ pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
 
 pisces_buffer::~pisces_buffer()
 {
+  if (input_.link) delete input_.link;
+  if (output_.link) delete output_.link;
 }
 
 void
@@ -285,8 +287,7 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
         addr = switch_id(int(nid)/4);
         coordinates my_coords = top->get_node_coords(nid);
         coutn << "Network Injection Buffer " << my_coords.to_string() << "\n";
-    }
-    else {
+    } else {
         addr = switch_id(event_location_.location);
         coordinates my_coords = top->get_switch_coords(addr);
         coutn << "Network Switch Buffer " << my_coords.to_string() << "\n";
@@ -339,6 +340,11 @@ pisces_eject_buffer::return_credit(packet* pkt)
 pisces_eject_buffer::pisces_eject_buffer(sprockit::sim_parameters *params, event_scheduler *parent) :
   pisces_buffer(params, parent)
 {
+}
+
+pisces_eject_buffer::~pisces_eject_buffer()
+{
+  if (output_handler_) delete output_handler_;
 }
 
 void
@@ -426,8 +432,7 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
         addr = switch_id(int(nid)/4);
         coordinates my_coords = top->get_node_coords(nid);
         coutn << "Network Injection Buffer " << my_coords.to_string() << "\n";
-    }
-    else {
+    } else {
         addr = switch_id(event_location_.location);
         coordinates my_coords = top->get_switch_coords(addr);
         coutn << "Network Switch Buffer " << my_coords.to_string() << "\n";

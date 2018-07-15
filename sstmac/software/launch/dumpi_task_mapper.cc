@@ -75,8 +75,7 @@ dumpi_task_mapper::node_id_from_hostname(const std::string& hostname)
       sstr << " No hostnames are registered with the allocator."
            " DUMPI traces do not contain topology information."
            " You must use launch_allocation=hostname and provide a hostname map.";
-    }
-    else {
+    } else {
       sstr << std::endl << "Valid hostnames are: ";
       for ( ; it != end; ++it) {
         sstr << std::endl << it->first;
@@ -139,8 +138,7 @@ dumpi_task_mapper::map_ranks(
     node_id nid;
     if (header->meshdim == 0) {
       nid = node_id_from_hostname(hostname);
-    }
-    else {
+    } else {
       nid = node_id_from_coordinates(header->meshdim, header->meshcrd);
     }
 

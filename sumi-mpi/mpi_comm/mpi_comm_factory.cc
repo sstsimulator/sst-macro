@@ -336,8 +336,7 @@ mpi_comm_factory::create_cart(mpi_comm* caller, int ndims,
   if (newrank >= 0) {
     return new mpi_comm_cart(cid, newrank, caller->group_,
                      aid_, ndims, dims, periods, reorder);
-  }
-  else {
+  } else {
     return mpi_comm::comm_null;
   }
 }

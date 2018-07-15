@@ -16,6 +16,10 @@ library_includedir=$(includedir)/sstmac/test_skeletons
 
 AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements -I$(top_srcdir)/sstmac/replacements -DSSTMAC=1
 
+if HAVE_OTF2
+AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
+endif
+
 libsstmac_test_skeletons_la_LDFLAGS = 
 
 libsstmac_test_skeletons_la_SOURCES = \

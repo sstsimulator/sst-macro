@@ -228,6 +228,7 @@ manager::~manager() throw ()
     abort();
   }
   if (event_manager_) delete event_manager_;
+  //hw::interconnect::clear_static_interconnect();
 }
 
 void

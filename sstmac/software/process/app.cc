@@ -136,6 +136,7 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   params_(params),
   next_tls_key_(0),
   next_condition_(0),
+  notify_(true),
   next_mutex_(0),
   min_op_cutoff_(0),
   globals_storage_(nullptr),
@@ -148,8 +149,6 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   if (host_compute){
     host_timer_ = new HostTimer;
   }
-
-
 
   notify_ = params->get_optional_bool_param("notify", true);
 

@@ -186,9 +186,7 @@ pisces_cut_through_arbitrator(sprockit::sim_parameters* params)
 
   //thread environments might not be setup yet when allocating
   //placement new this one
-  char* plc_buf = new char[sizeof(bandwidth_epoch)];
-
-  head_ = new (plc_buf) bandwidth_epoch;
+  head_ = bandwidth_epoch::allocate_at_beginning();
   head_->bw_available = out_bw_ * bw_sec_to_tick_conversion_;
   head_->start = 0;
   //just set to super long
@@ -211,7 +209,7 @@ pisces_cut_through_arbitrator::~pisces_cut_through_arbitrator()
     next = next->next;
     //do not delete this for now, treat as permanent
     //this guy gets deleted and created before anything is running
-    delete e;
+    bandwidth_epoch::free_at_end(e);
   }
 }
 
@@ -288,8 +286,7 @@ pisces_cut_through_arbitrator::clean_up(ticks_t now)
       head_ = epoch->next;
       delete epoch;
       epoch = head_;
-    }
-    else { //we are in the middle of this epoch
+    } else { //we are in the middle of this epoch
       epoch->truncate_after(delta_t);
       return; //we are done
     }
@@ -374,8 +371,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(payload_stop, timestamp::exact);
         return;
-      }
-      else if (time_to_send == epoch->length) {
+      } else if (time_to_send == epoch->length) {
         ticks_t payload_stop = epoch->start + time_to_send;
         ticks_t total_send_time = payload_stop - send_start;
         double new_bw = payload->num_bytes()*bw_tick_to_sec_conversion_ / total_send_time;
@@ -387,8 +383,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(payload_stop, timestamp::exact);
         return;
-      }
-      else {
+      } else {
         //this epoch is exhausted
         bytes_to_send -= epoch->bw_available * epoch->length;
         head_ = epoch->next;
@@ -421,8 +416,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(send_done, timestamp::exact);
         return;
-      }
-      else {
+      } else {
 #if SSTMAC_SANITY_CHECK
         if (epoch->next ==
             0) { //we should never be subtracting from the big long epoch at the end
@@ -443,14 +437,11 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         epoch = epoch->next;
         pflow_arb_debug_print_l2("send not done yet");
       }
-    }
-
-
-    /**
-        The payload is sending slower than the max available bandwidth
-        However, we have a certain number of bytes that are instantly ready to go in the queue
-    */
-    else {
+    } else {
+      /**
+          The payload is sending slower than the max available bandwidth
+          However, we have a certain number of bytes that are instantly ready to go in the queue
+      */
       //the number of bytes available to send is the line
       // BA = INP * t + QUE
       //the number bytes that could have been sent is
@@ -480,8 +471,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(send_done, timestamp::exact);
         return;
-      }
-      else if (time_to_send == epoch->length) {
+      } else if (time_to_send == epoch->length) {
 #if SSTMAC_SANITY_CHECK
         if (epoch->next == 0) {
           //something freaked out numerically
@@ -518,9 +508,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         delete epoch;
         epoch = head_;
         pflow_arb_debug_print_l2("send not done yet");
-      }
-
-      else { //time_to_send = time_to_intersect
+      } else { //time_to_send = time_to_intersect
         //the queue is completely drained during the epoch
         epoch->truncate_after(time_to_send);
         //but we are not done yet - add the contributions

@@ -170,11 +170,9 @@ mpi_queue::configure_send_request(mpi_message* mess, mpi_request* key)
   if (mess->protocol()->send_needs_nic_ack()) {
     send_needs_nic_ack_.push_back(req);
     return true;
-  }
-  else if (mess->protocol()->send_needs_eager_ack()) {
+  } else if (mess->protocol()->send_needs_eager_ack()) {
     send_needs_eager_ack_.push_back(req);
-  }
-  else if (mess->protocol()->send_needs_completion_ack()) {
+  } else if (mess->protocol()->send_needs_completion_ack()) {
     send_needs_completion_ack_[mess->unique_int()] = req;
   }
   return false;
@@ -208,11 +206,9 @@ mpi_queue::protocol(long bytes) const
 {
   if (bytes <= max_vshort_msg_size_) {
     return mpi_protocol::eager0_protocol;
-  }
-  else if (bytes <= max_eager_msg_size_) {
+  } else if (bytes <= max_eager_msg_size_) {
     return mpi_protocol::eager1_singlecpy_protocol;
-  }
-  else {
+  } else {
     return mpi_protocol::rendezvous_protocol;
   }
 }
@@ -459,8 +455,7 @@ mpi_queue::incoming_new_message(mpi_message* message)
           it++;
           handle_new_message(mess);
           ++next_inbound_[tid];
-        }
-        else {
+        } else {
           break;
         }
       }

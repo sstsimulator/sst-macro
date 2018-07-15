@@ -2098,7 +2098,7 @@ node {
   otf2_print_mpi_calls=false
   otf2_print_trace_events=false
   otf2_print_time_deltas=false
-  otf2_warn_unknown_callback=false
+  otf2_print_unknown_callback=false
  }
 }
 ````

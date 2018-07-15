@@ -51,9 +51,13 @@ sstmac_SOURCES = src/sstmac_dummy_main.cc
 sstmac_top_info_SOURCES = src/top_info.cc
 
 exe_LDADD = \
-    ../sprockit/sprockit/libsprockit.la \
     ../sstmac/main/libsstmac_main.la \
-    ../sstmac/install/libsstmac.la
+    ../sstmac/install/libsstmac.la \
+    ../sprockit/sprockit/libsprockit.la
+
+if HAVE_OTF2
+  exe_LDADD += ../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
+endif
 
 if EXTERNAL_BOOST
   exe_LDADD += $(BOOST_LDFLAGS)

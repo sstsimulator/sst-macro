@@ -276,10 +276,7 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
       top_debug("fat-tree connecting switch:port leaf %i:%i to agg %i:%i",
                 src, up_port, agg_partner_switch, agg_partner_port);
     }
-  }
-
-  // aggregation switch
-  else if (row == 1){
+  } else if (row == 1){   // aggregation switch
     int my_subtree = (src - num_leaf_switches_)
         / agg_switches_per_subtree_;
     int my_subtree_spot = (src - num_leaf_switches_)
@@ -324,10 +321,7 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
       top_debug("fat-tree connecting switch:port agg %i:%i to leaf %i:%i",
                 src, dwn_port, leaf_partner_switch, leaf_port);
     }
-  }
-
-  // core switch
-  else if (row == 2){
+  } else if (row == 2){   // core switch
     // down ports
     for (int dwn_port=0; dwn_port < down_ports_per_core_switch_;
          ++dwn_port){

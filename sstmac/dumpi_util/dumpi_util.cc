@@ -70,8 +70,7 @@ dumpi_file_name(int rank, std::string fileroot_)
     if (fp) {
       fclose(fp);
       return std::string(fname);
-    }
-    else {
+    } else {
       if (errno !=
           ENOENT) { //if the error is anything else than a no such file or directory, crash
         spkt_throw_printf(sprockit::io_error,

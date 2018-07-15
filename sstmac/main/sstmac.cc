@@ -253,7 +253,8 @@ run_params(opts& oo,
     fflush(stdout);
     fflush(stderr);
 
-    mgr->interconn()->deadlock_check();
+    //don't do this here anymore - interconn deleted by manager
+    //mgr->interconn()->deadlock_check();
     runtime::check_deadlock();
 
     mgr->finish();

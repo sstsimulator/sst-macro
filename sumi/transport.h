@@ -285,6 +285,27 @@ class transport {
   }
 
   /**
+   * The total size of the input buffer in bytes is nelems*type_size*comm_size
+   * @param dst  Buffer for the result. Can be NULL to ignore payloads.
+   * @param src  Buffer for the input. Can be NULL to ignore payloads.
+   *             Automatically memcpy from src to dst.
+   * @param nelems The number of elements in the result buffer at the end
+   * @param type_size The size of the input type, i.e. sizeof(int), sizeof(double)
+   * @param tag A unique tag identifier for the collective
+   * @param fxn The function that will actually perform the reduction
+   * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
+   * @param context The context (i.e. initial set of failed procs)
+   */
+  void reduce_scatter(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                     collective::config cfg = collective::cfg());
+
+  template <typename data_t, template <typename> class Op>
+  void reduce_scatter(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+    typedef ReduceOp<Op, data_t> op_class_type;
+    reduce_scatter(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+  }
+
+  /**
    * The total size of the input/result buffer in bytes is nelems*type_size
    * @param dst  Buffer for the result. Can be NULL to ignore payloads.
    * @param src  Buffer for the input. Can be NULL to ignore payloads.
@@ -539,6 +560,7 @@ class transport {
   static collective_algorithm_selector* alltoall_selector_;
   static collective_algorithm_selector* alltoallv_selector_;
   static collective_algorithm_selector* allreduce_selector_;
+  static collective_algorithm_selector* reduce_scatter_selector_;
   static collective_algorithm_selector* scan_selector_;
   static collective_algorithm_selector* allgatherv_selector_;
   static collective_algorithm_selector* bcast_selector_;

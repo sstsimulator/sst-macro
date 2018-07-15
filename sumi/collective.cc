@@ -270,12 +270,13 @@ dag_collective::deadlock_check()
   actor_map::iterator it, end = my_actors_.end();
   for (it=my_actors_.begin(); it != end; ++it){
     dag_collective_actor* actor = it->second;
-    if (actor)
+    if (actor) {
       actor->deadlock_check();
-    else
+   } else {
       spkt_throw_printf(sprockit::null_error,
-                        "%s collective deadlocked on rank %d, tag %d, with NULL actor",
-                        tostr(type_), my_api_->rank(), tag_);
+              "%s collective deadlocked on rank %d, tag %d, with NULL actor",
+              tostr(type_), my_api_->rank(), tag_);
+    }
   }
 }
 

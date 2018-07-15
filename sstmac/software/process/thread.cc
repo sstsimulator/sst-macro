@@ -89,6 +89,8 @@ thread::init_thread(sprockit::sim_parameters* params,
 
   context_ = des_thread->copy();
 
+  tls_storage_ = (char*) tls_storage;
+
   context_->start_context(physical_thread_id, stack, stacksize,
                           run_routine, this,
                           globals_storage,
@@ -196,6 +198,7 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   sid_(sid),
   ftag_(ftq_tag::null),
   protect_tag(false),
+  tls_storage_(nullptr),
   detach_state_(DETACHED),
   num_active_cores_(1), //start with 1
   active_core_mask_(0)
@@ -299,6 +302,7 @@ thread::~thread()
     context_->destroy_context();
     delete context_;
   }
+  if (tls_storage_) delete[] tls_storage_;
   if (host_timer_) delete host_timer_;
 }
 

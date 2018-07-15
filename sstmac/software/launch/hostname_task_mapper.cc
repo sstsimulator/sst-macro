@@ -103,8 +103,7 @@ hostname_task_mapper::map_ranks(
         sstr << " No hostnames are registered with hostname_allocation."
              << " This is perhaps not surprising then."
              << " Maybe check that launch_allocation is set to hostname.";
-      }
-      else {
+      } else {
         sstr << std::endl << "Valid hostnames are: ";
         for ( ; it != end; ++it) {
           sstr << std::endl << it->first;
