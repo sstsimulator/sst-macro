@@ -3,23 +3,27 @@ import sys
 import os
 import sst
 
+sst.setStatisticLoadLevel(3)
 
-isSoFile = True
-idx = 1
-while isSoFile:
-  next = sys.argv[idx]
-  if next.endswith(".so"):
-    if not os.path.isfile(next):
-      sys.exit("Invalid library specified %s" % next)
-    folder, lib = os.path.split(next)
-    if not folder: folder = os.getcwd()
-    old = os.environ["SST_LIB_PATH"] 
-    os.environ["SST_LIB_PATH"] = old + ":" + folder
-    sys.path.append(folder)
-    loadLibrary(next)
-    del sys.argv[idx]
-  else: isSoFile = False
-  idx += 1
+#sst.enableAllStatisticsForAllComponents({"type":"sst.TrafficStatistic","rate":"0ns"})
+ic = setupDeprecated()
+print dir(ic.switches[0])
+print ic.num_switches
 
-setupDeprecated()
+trafficStats = sst.StatisticGroup("traffic_intensity_stats")
+trafficStats.addStatistic("traffic_intensity", {"resetOnRead": False})
+#sst.StatisticOutput("sst.statOutputEXODUS", {"filepath" : "./trafJSON.out"})
+trafficStats.setOutput(sst.StatisticOutput("sst.statOutputEXODUS", {"filepath": "/Users/perrinel/Dev/trafEXODUS.out", "count_x":"4", "count_y":"4"}))
+
+for i in range(ic.num_switches):
+  s, params = ic.switches[i]
+  trafficStats.addComponent(s)
+  s.enableStatistics(["traffic_intensity"], {"type":"sst.TrafficStatistic","rate":"0ns"})
+
+#for n in self.nodes:
+#  s.enableStatistics([
+#    "traffic_intensity"], {
+#    "type":"sst.TrafficStatistic",
+#      "rate":"0ns"
+#      })
 
