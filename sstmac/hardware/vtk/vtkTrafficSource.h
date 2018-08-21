@@ -36,6 +36,9 @@
 #include "vtkSmartPointer.h"
 #include "vtk_stats.h"
 
+#if !SSTMAC_INTEGRATED_SST_CORE
+using namespace sstmac::hw;
+#endif
 class vtkTrafficSource : public vtkUnstructuredGridAlgorithm
 {
 public:
@@ -51,7 +54,7 @@ public:
   void SetCells(vtkSmartPointer<vtkCellArray> cells);
 
   // Traffic
-  void SetTrafficProgressMap(std::multimap<uint64_t, std::shared_ptr<sstmac::hw::traffic_progress>> trafficProgressMap);
+  void SetTrafficProgressMap(std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficProgressMap);
   void SetTraffics(vtkSmartPointer<vtkIntArray> traffics);
 
 protected:
@@ -68,7 +71,7 @@ protected:
 
   int NumSteps;
   double *Steps;
-  std::multimap<uint64_t, std::shared_ptr<sstmac::hw::traffic_progress>> traffic_progress_map_;
+  std::multimap<uint64_t, std::shared_ptr<traffic_event>> traffic_progress_map_;
   vtkIntArray * Traffics;
   vtkSmartPointer<vtkPoints> Points;
   vtkSmartPointer<vtkCellArray> Cells;

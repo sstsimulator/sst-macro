@@ -5,23 +5,23 @@
 #include <vector>
 #include <memory>
 
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/sst_types.h>
+using namespace SST;
+#endif
 namespace sstmac {
 namespace hw {
 
-struct traffic_progress {
+#if !SSTMAC_INTEGRATED_SST_CORE
+struct traffic_event {
     uint64_t time_; // progress time
     int id_; // Id of the switch
     int type_; // arrive or leave
     int p_; // port of the node Id
     int intensity_; // traffic intenisity
 };
+#endif
 
-struct traffic_event {
-    uint64_t time_; // progress time
-    int id_; // Id of the switch
-    int p_; // port of the node Id
-    int type_; // arrive or leave
-};
 
 class stat_vtk : public stat_collector
 {
@@ -32,6 +32,7 @@ class stat_vtk : public stat_collector
   std::string to_string() const override {
     return "VTK stats";
   }
+  static void outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y);
 
   void dump_local_data() override;
 
@@ -52,7 +53,7 @@ class stat_vtk : public stat_collector
   }
 
 private:
-  std::multimap<uint64_t, std::shared_ptr<traffic_progress>> traffic_progress_map_;
+  std::multimap<uint64_t, std::shared_ptr<traffic_event>> traffic_progress_map_;
   std::multimap<uint64_t, std::shared_ptr<traffic_event>> traffic_event_map_;
   int count_x_;
   int count_y_;

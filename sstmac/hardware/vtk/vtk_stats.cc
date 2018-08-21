@@ -37,6 +37,160 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
+void stat_vtk::outputExodus (const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y) {
+
+  std::cout << " The call back is called ::: outputExodus"<<std::endl;
+  std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficMap;
+  for(auto elt : traffMap){
+    auto eltSecond =  std::make_shared<traffic_event>(elt.second);
+    trafficMap.insert(std::pair<uint64_t, std::shared_ptr<traffic_event>>(elt.first, eltSecond));
+  }
+
+  // Init traffic value
+  vtkSmartPointer<vtkIntArray> traffic =
+      vtkSmartPointer<vtkIntArray>::New();
+  traffic->SetNumberOfComponents(1);
+  traffic->SetName("MyTraffic");
+  int count_xy = count_x * count_y;
+  traffic->SetNumberOfValues(count_xy);
+  for (auto i = 0; i < count_xy; ++i){
+    traffic->SetValue(i, 0);
+  }
+
+  // Create the vtkPoints
+  vtkSmartPointer<vtkPoints> points =
+      vtkSmartPointer<vtkPoints>::New();
+
+  for (auto j = 0; j < count_y; ++j){
+    for (auto i = 0; i < count_x; ++i){
+      points->InsertNextPoint(i, j, 0);
+    }
+  }
+
+  // Create the vtkCellArray
+  vtkSmartPointer<vtkCellArray> cell_array =
+      vtkSmartPointer<vtkCellArray>::New();
+
+  for (auto i = 0; i < count_xy; ++i){
+    vtkSmartPointer<vtkVertex> point_data =
+        vtkSmartPointer<vtkVertex>::New();
+    point_data->GetPointIds()->SetId(0,i);
+    cell_array->InsertNextCell(point_data);
+  }
+
+  vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
+      vtkSmartPointer<vtkUnstructuredGrid>::New();
+  unstructured_grid->SetPoints(points);
+  unstructured_grid->SetCells(VTK_VERTEX, cell_array);
+  unstructured_grid->GetPointData()->AddArray(traffic);
+
+  // Init Time Step
+  double current_time = -1;
+  double *time_step_value = new double[trafficMap.size() + 1];
+  time_step_value[0] = 0.;
+  int currend_index = 1;
+  for (auto it = trafficMap.cbegin(); it != trafficMap.cend(); ++it){
+    if (it->first != current_time){
+      current_time = it->first;
+      time_step_value[currend_index] =it->first;
+      ++currend_index;
+    }
+  }
+
+  // write the PVD
+  vtkSmartPointer<vtkXMLPVDWriter> pdw_writer =
+      vtkSmartPointer<vtkXMLPVDWriter>::New();
+  pdw_writer->SetFileName("/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.pvd");
+  pdw_writer->SetByteOrderToLittleEndian();
+  pdw_writer->SetCompressorTypeToNone();
+  // pdw_writer->AddInputDataObject(unstructured_grid);
+  pdw_writer->SetInputData(0, unstructured_grid);
+  pdw_writer->SetDataModeToAscii();
+  pdw_writer->GetInputInformation()->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &time_step_value[0], currend_index);
+  pdw_writer->WriteAllTimeStepsOn();
+  //   pdw_writer->Update();
+  pdw_writer->Write();
+
+  // Time is different we need to create a file
+  // Write file
+  vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
+      vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+  writer->SetByteOrderToLittleEndian();
+  writer->SetCompressorTypeToNone();
+  writer->SetDataModeToAscii();
+  writer->SetInputData(0, unstructured_grid);
+
+  currend_index = 0;
+  auto it = trafficMap.cbegin();
+  current_time = -1;
+  for (; it != trafficMap.cend(); ++it){
+    if (it->first != current_time){
+      std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
+      file_name += std::to_string(currend_index);
+      file_name += ".vtu";
+      writer->SetFileName(file_name.c_str());
+
+      writer->Write();
+
+      // update index
+      ++currend_index;
+    }
+
+    current_time = it->first;
+    traffic->SetValue(it->second->id_, it->second->intensity_);
+   //   std::cout << std::to_string(current_time) << ": " << it->second->id_ << ": "<< it->second->intensity_<< ";" <<std::endl;
+  }
+  if(it == trafficMap.cend()){
+    std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
+    file_name += std::to_string(currend_index);
+    file_name += ".vtu";
+    writer->SetFileName(file_name.c_str());
+    writer->Update();
+    writer->Write();
+  }
+
+  vtkSmartPointer<vtkTrafficSource> trafficSource =
+      vtkSmartPointer<vtkTrafficSource>::New();
+  trafficSource->SetSteps(time_step_value);
+  trafficSource->SetNumberOfSteps(currend_index);
+  trafficSource->SetPoints(points);
+  trafficSource->SetCells(cell_array);
+  trafficSource->SetTraffics(traffic);
+  trafficSource->SetTrafficProgressMap(trafficMap);
+  vtkSmartPointer<vtkExodusIIWriter> exodusWriter =
+      vtkSmartPointer<vtkExodusIIWriter>::New();
+  exodusWriter->SetFileName("/Users/perrinel/Dev/sst-macro-jw/build/vtkTrafficSource.e");
+  exodusWriter->SetInputConnection (trafficSource->GetOutputPort());
+  exodusWriter->WriteAllTimeStepsOn ();
+  exodusWriter->Write();
+
+  // write the exodus
+  vtkStdString OutputFile;
+  OutputFile += "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.e";
+  vtkSmartPointer<vtkExodusIIWriter> writer_exo =
+      vtkSmartPointer<vtkExodusIIWriter>::New();
+  writer_exo->SetFileName (OutputFile);
+  writer_exo->SetInputData(0, unstructured_grid);
+  writer_exo->WriteOutBlockIdArrayOn ();
+  writer_exo->WriteOutGlobalNodeIdArrayOn ();
+  writer_exo->WriteOutGlobalElementIdArrayOn ();
+  double range[2]= {0.0, 4.0};
+  auto in_info = writer_exo->GetInputInformation();
+  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), time_step_value, currend_index);
+  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_DEPENDENT_INFORMATION(),1);
+  //  writer_exo->SetGlobalResultArrayStatus( 'traffic', 1 )
+  writer_exo->WriteAllTimeStepsOn ();
+
+  writer_exo->Update();
+  //  writer_exo->GetModelMetadata()->SetTimeSteps(currend_index, &time_step_value[0]);
+  //  writer_exo->Update();
+  //  writer_exo->Write();
+
+  //writer_exo->GetModelMetadata()->PrintGlobalInformation();
+
+};
+
+
 stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
   stat_collector(params)
 {
@@ -58,7 +212,7 @@ stat_vtk::reduce(stat_collector* element)
   std::cout << " reduce " << contribution->traffic_event_map_.size()<<std::endl;
 
   for (auto it = contribution->traffic_event_map_.cbegin(); it != contribution->traffic_event_map_.cend(); ++it){
-    auto tp = std::make_shared<traffic_progress>();
+    auto tp = std::make_shared<traffic_event>();
     tp->time_ = it->first;
     tp->id_ = it->second->id_;
     // How to compute intensity ?
@@ -118,148 +272,7 @@ stat_vtk::dump_global_data()
 
 
 #if SSTMAC_VTK_ENABLED
-  // Init traffic value
-  vtkSmartPointer<vtkIntArray> traffic =
-      vtkSmartPointer<vtkIntArray>::New();
-  traffic->SetNumberOfComponents(1);
-  traffic->SetName("MyTraffic");
-  int count_xy = count_x_ * count_y_;
-  traffic->SetNumberOfValues(count_xy);
-  for (auto i = 0; i < count_xy; ++i){
-    traffic->SetValue(i, 0);
-  }
-
-  // Create the vtkPoints
-  vtkSmartPointer<vtkPoints> points =
-      vtkSmartPointer<vtkPoints>::New();
-
-  for (auto j = 0; j < count_y_; ++j){
-    for (auto i = 0; i < count_x_; ++i){
-      points->InsertNextPoint(i, j, 0);
-    }
-  }
-
-  // Create the vtkCellArray
-  vtkSmartPointer<vtkCellArray> cell_array =
-      vtkSmartPointer<vtkCellArray>::New();
-
-  for (auto i = 0; i < count_xy; ++i){
-    vtkSmartPointer<vtkVertex> point_data =
-        vtkSmartPointer<vtkVertex>::New();
-    point_data->GetPointIds()->SetId(0,i);
-    cell_array->InsertNextCell(point_data);
-  }
-
-  vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
-      vtkSmartPointer<vtkUnstructuredGrid>::New();
-  unstructured_grid->SetPoints(points);
-  unstructured_grid->SetCells(VTK_VERTEX, cell_array);
-  unstructured_grid->GetPointData()->AddArray(traffic);
-
-  // Init Time Step
-  double current_time = -1;
-  double *time_step_value = new double[traffic_progress_map_.size() + 1];
-  time_step_value[0] = 0.;
-  int currend_index = 1;
-  for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
-    if (it->first != current_time){
-      current_time = it->first;
-      time_step_value[currend_index] =it->first;
-      ++currend_index;
-    }
-  }
-
-  // write the PVD
-  vtkSmartPointer<vtkXMLPVDWriter> pdw_writer =
-      vtkSmartPointer<vtkXMLPVDWriter>::New();
-  pdw_writer->SetFileName("/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.pvd");
-  pdw_writer->SetByteOrderToLittleEndian();
-  pdw_writer->SetCompressorTypeToNone();
-  // pdw_writer->AddInputDataObject(unstructured_grid);
-  pdw_writer->SetInputData(0, unstructured_grid);
-  pdw_writer->SetDataModeToAscii();
-  pdw_writer->GetInputInformation()->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &time_step_value[0], currend_index);
-  pdw_writer->WriteAllTimeStepsOn();
-  //   pdw_writer->Update();
-  pdw_writer->Write();
-
-  // Time is different we need to create a file
-  // Write file
-  vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
-      vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-  writer->SetByteOrderToLittleEndian();
-  writer->SetCompressorTypeToNone();
-  writer->SetDataModeToAscii();
-  writer->SetInputData(0, unstructured_grid);
-
-  currend_index = 0;
-  auto it = traffic_progress_map_.cbegin();
-  current_time = -1;
-  for (; it != traffic_progress_map_.cend(); ++it){
-    if (it->first != current_time){
-      std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
-      file_name += std::to_string(currend_index);
-      file_name += ".vtu";
-      writer->SetFileName(file_name.c_str());
-
-      writer->Write();
-
-      // update index
-      ++currend_index;
-    }
-
-    current_time = it->first;
-    traffic->SetValue(it->second->id_, it->second->intensity_);
-   //   std::cout << std::to_string(current_time) << ": " << it->second->id_ << ": "<< it->second->intensity_<< ";" <<std::endl;
-  }
-  if(it == traffic_progress_map_.cend()){
-    std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
-    file_name += std::to_string(currend_index);
-    file_name += ".vtu";
-    writer->SetFileName(file_name.c_str());
-    writer->Update();
-    writer->Write();
-  }
-
-  vtkSmartPointer<vtkTrafficSource> trafficSource =
-      vtkSmartPointer<vtkTrafficSource>::New();
-  trafficSource->SetSteps(time_step_value);
-  trafficSource->SetNumberOfSteps(currend_index);
-  trafficSource->SetPoints(points);
-  trafficSource->SetCells(cell_array);
-  trafficSource->SetTraffics(traffic);
-  trafficSource->SetTrafficProgressMap(traffic_progress_map_);
-  vtkSmartPointer<vtkExodusIIWriter> exodusWriter =
-      vtkSmartPointer<vtkExodusIIWriter>::New();
-  exodusWriter->SetFileName("/Users/perrinel/Dev/sst-macro-jw/build/vtkTrafficSource.e");
-  exodusWriter->SetInputConnection (trafficSource->GetOutputPort());
-  exodusWriter->WriteAllTimeStepsOn ();
-  exodusWriter->Write();
-
-  // write the exodus
-  vtkStdString OutputFile;
-  OutputFile += "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.e";
-  vtkSmartPointer<vtkExodusIIWriter> writer_exo =
-      vtkSmartPointer<vtkExodusIIWriter>::New();
-  writer_exo->SetFileName (OutputFile);
-  writer_exo->SetInputData(0, unstructured_grid);
-  writer_exo->WriteOutBlockIdArrayOn ();
-  writer_exo->WriteOutGlobalNodeIdArrayOn ();
-  writer_exo->WriteOutGlobalElementIdArrayOn ();
-  double range[2]= {0.0, 4.0};
-  auto in_info = writer_exo->GetInputInformation();
-  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), time_step_value, currend_index);
-  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_DEPENDENT_INFORMATION(),1);
-  //  writer_exo->SetGlobalResultArrayStatus( 'traffic', 1 )
-  writer_exo->WriteAllTimeStepsOn ();
-
-  writer_exo->Update();
-  //  writer_exo->GetModelMetadata()->SetTimeSteps(currend_index, &time_step_value[0]);
-  //  writer_exo->Update();
-  //  writer_exo->Write();
-
-  //writer_exo->GetModelMetadata()->PrintGlobalInformation();
-
+  outputExodus(traffic_progress_map_, count_x_, count_y_);
 #endif
 }
 

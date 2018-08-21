@@ -49,7 +49,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/sculpin/sculpin.h>
 #include <sstmac/common/sstmac_config.h>
 #if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/sst_types.h>
 #include <sstmac/hardware/vtk/vtk_stats.h>
+#else
+#include <sstmac/hardware/vtk/vtk_stats.h>
+#endif
 #endif
 
 namespace sstmac {
@@ -63,9 +68,14 @@ namespace hw {
 class sculpin_switch :
   public network_switch
 {
-  RegisterComponent("sculpin", network_switch, sculpin_switch,
+  RegisterSSTComponent("sculpin", network_switch, sculpin_switch,
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A network switch implementing the sculpin model")
+
+  SST_ELI_DOCUMENT_STATISTICS(
+         { "traffic_intensity",    "Count the traffic on a port", "unit of traffic", 1}
+  )
+
  public:
   sculpin_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
 
@@ -145,7 +155,11 @@ class sculpin_switch :
 #endif
 
 #if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+  Statistic<SST::traffic_event>* traffic_intensity;
+#else
   stat_vtk* vtk_;
+#endif
 #endif
 
   bool congestion_;

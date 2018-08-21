@@ -78,7 +78,7 @@ void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics)
   }
 }
 
-void vtkTrafficSource::SetTrafficProgressMap(std::multimap<uint64_t, std::shared_ptr<sstmac::hw::traffic_progress>> trafficProgressMap)
+void vtkTrafficSource::SetTrafficProgressMap(std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficProgressMap)
 {
   this->traffic_progress_map_ = trafficProgressMap;
 }

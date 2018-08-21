@@ -58,7 +58,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/common/event_callback.h>
-
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/factory.h>
+#endif
 RegisterNamespaces("switch", "router", "xbar", "link");
 
 RegisterKeywords(
@@ -77,9 +79,6 @@ namespace hw {
 
 sculpin_switch::sculpin_switch(
   sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
-#if SSTMAC_VTK_ENABLED
-  vtk_(nullptr),
-#endif
   router_(nullptr),
   congestion_(true),
   network_switch(params, id, mgr)
@@ -98,14 +97,22 @@ sculpin_switch::sculpin_switch(
     ej_params->combine_into(port_params);
   }
 
+
 #if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+  traffic_intensity = registerStatistic<SST::traffic_event>("traffic_intensity", getName());
+  std::function<void (const std::multimap<uint64_t, SST::traffic_event> &, int, int)> f =
+      &stat_vtk::outputExodus;
+
+  SST::Factory::getFactory()->registerOptionnalCallback("statOutputEXODUS", f);
+#else
   vtk_ = optional_stats<stat_vtk>(this,
         params,
         "vtk", /* The parameter namespace in the ini file */
         "vtk" /* The object's factory name */
    );
 #endif
-
+#endif
 #if !SSTMAC_INTEGRATED_SST_CORE
   payload_handler_ = new_handler(this, &sculpin_switch::handle_payload);
   credit_handler_ = new_handler(this, &sculpin_switch::handle_credit);
@@ -116,6 +123,8 @@ sculpin_switch::sculpin_switch(
     ports_[i].id = i;
     ports_[i].seqnum = 0;
   }
+
+  init_links(params);
 }
 
 sculpin_switch::~sculpin_switch()
@@ -207,8 +216,18 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   p.link->send_extra_delay(extra_delay, pkt);
 
 #if SSTMAC_VTK_ENABLED
-  // TODO : do the collection here
+#if SSTMAC_INTEGRATED_SST_CORE
+  Params &traffic_intensity_params = traffic_intensity->getDynamicParams();
+  SST::traffic_event evt;
+  evt.time_=p.next_free.ticks();
+  evt.id_=my_addr_;
+  evt.p_=p.id;
+  evt.type_=1;
+  traffic_intensity->addData(evt);
+#else
+  std::cout << "Collect done with SSTMACRO engine "<< std::endl;
   if (vtk_) vtk_->collect_departure(p.next_free.ticks(), my_addr_, p.id);
+#endif
 #endif
 
   pkt_debug("packet leaving port %d at t=%8.4e: %s",
@@ -284,8 +303,20 @@ sculpin_switch::handle_payload(event *ev)
 
   port& p = ports_[pkt->next_port()];
 
+
 #if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+  Params &traffic_intensity_params = traffic_intensity->getDynamicParams();
+
+  SST::traffic_event evt;
+  evt.time_=this->now().ticks();
+  evt.id_=my_addr_;
+  evt.p_=p.id;
+  evt.type_=0;
+  traffic_intensity->addData(evt);
+#else
   if (vtk_) vtk_->collect_arrival(now().ticks(), my_addr_, p.id);
+#endif
 #endif
   timestamp time_to_send = p.inv_bw * pkt->num_bytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
