@@ -37,14 +37,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-void stat_vtk::outputExodus (const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y) {
-
-  std::cout << " The call back is called ::: outputExodus"<<std::endl;
-  std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficMap;
-  for(auto elt : traffMap){
-    auto eltSecond =  std::make_shared<traffic_event>(elt.second);
-    trafficMap.insert(std::pair<uint64_t, std::shared_ptr<traffic_event>>(elt.first, eltSecond));
-  }
+void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<traffic_event>> &trafficMap, int count_x, int count_y){
 
   // Init traffic value
   vtkSmartPointer<vtkIntArray> traffic =
@@ -187,8 +180,19 @@ void stat_vtk::outputExodus (const std::multimap<uint64_t, traffic_event> &traff
   //  writer_exo->Write();
 
   //writer_exo->GetModelMetadata()->PrintGlobalInformation();
+}
 
-};
+void stat_vtk::outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y) {
+
+  std::cout << " The call back is called ::: outputExodus"<<std::endl;
+  std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficMap;
+  for(auto elt : traffMap){
+    auto eltSecond =  std::make_shared<traffic_event>(elt.second);
+    trafficMap.insert(std::pair<uint64_t, std::shared_ptr<traffic_event>>(elt.first, eltSecond));
+  }
+
+  outputExodusWithSharedMap(trafficMap, count_x, count_y);
+}
 
 
 stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
@@ -272,7 +276,7 @@ stat_vtk::dump_global_data()
 
 
 #if SSTMAC_VTK_ENABLED
-  outputExodus(traffic_progress_map_, count_x_, count_y_);
+  outputExodusWithSharedMap(traffic_progress_map_, count_x_, count_y_);
 #endif
 }
 
