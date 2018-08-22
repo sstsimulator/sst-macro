@@ -177,6 +177,15 @@ nobase_library_include_HEADERS += \
   vtk/vtkTrafficSource.h \
   vtk/vtkXMLPVDWriter.h
 
+if INTEGRATED_SST_CORE
+libsstmac_hw_la_SOURCES += \
+   vtk/statoutputexodus.cc
+
+nobase_library_include_HEADERS += \
+   vtk/stattraffic.h \
+   vtk/statoutputexodus.h
+endif
+
 libsstmac_hw_la_LDFLAGS += $(VTK_LDFLAGS)
 libsstmac_hw_la_LIBADD += $(VTK_LIBS)
 AM_CPPFLAGS += $(VTK_CPPFLAGS)

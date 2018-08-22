@@ -12,7 +12,7 @@ print ic.num_switches
 
 trafficStats = sst.StatisticGroup("traffic_intensity_stats")
 trafficStats.addStatistic("traffic_intensity", {"resetOnRead": False})
-#sst.StatisticOutput("sst.statOutputEXODUS", {"filepath" : "./trafJSON.out"})
+#sst.StatisticOutput("sst.statOutputEXODUS", {"filepath" : "./trafExodus.out"})
 trafficStats.setOutput(sst.StatisticOutput("sst.statOutputEXODUS", {"filepath": "/Users/perrinel/Dev/trafEXODUS.out", "count_x":"4", "count_y":"4"}))
 
 for i in range(ic.num_switches):

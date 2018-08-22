@@ -36,9 +36,8 @@
 #include "vtkSmartPointer.h"
 #include "vtk_stats.h"
 
-#if !SSTMAC_INTEGRATED_SST_CORE
 using namespace sstmac::hw;
-#endif
+
 class vtkTrafficSource : public vtkUnstructuredGridAlgorithm
 {
 public:

@@ -6,13 +6,13 @@
 #include <memory>
 
 #if SSTMAC_INTEGRATED_SST_CORE
-#include <sst/core/sst_types.h>
+#include <sst/core/statapi/statfieldinfo.h>
+//#include <sst/core/sst_types.h>
 using namespace SST;
 #endif
 namespace sstmac {
 namespace hw {
 
-#if !SSTMAC_INTEGRATED_SST_CORE
 struct traffic_event {
     uint64_t time_; // progress time
     int id_; // Id of the switch
@@ -20,7 +20,8 @@ struct traffic_event {
     int p_; // port of the node Id
     int intensity_; // traffic intenisity
 };
-#endif
+
+SST_REGISTER_STATISTIC_FIELD(traffic_event, te);
 
 
 class stat_vtk : public stat_collector

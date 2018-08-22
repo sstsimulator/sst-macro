@@ -91,56 +91,56 @@ void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<tra
   }
 
   // write the PVD
-  vtkSmartPointer<vtkXMLPVDWriter> pdw_writer =
-      vtkSmartPointer<vtkXMLPVDWriter>::New();
-  pdw_writer->SetFileName("/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.pvd");
-  pdw_writer->SetByteOrderToLittleEndian();
-  pdw_writer->SetCompressorTypeToNone();
-  // pdw_writer->AddInputDataObject(unstructured_grid);
-  pdw_writer->SetInputData(0, unstructured_grid);
-  pdw_writer->SetDataModeToAscii();
-  pdw_writer->GetInputInformation()->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &time_step_value[0], currend_index);
-  pdw_writer->WriteAllTimeStepsOn();
-  //   pdw_writer->Update();
-  pdw_writer->Write();
+//  vtkSmartPointer<vtkXMLPVDWriter> pdw_writer =
+//      vtkSmartPointer<vtkXMLPVDWriter>::New();
+//  pdw_writer->SetFileName("/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.pvd");
+//  pdw_writer->SetByteOrderToLittleEndian();
+//  pdw_writer->SetCompressorTypeToNone();
+//  // pdw_writer->AddInputDataObject(unstructured_grid);
+//  pdw_writer->SetInputData(0, unstructured_grid);
+//  pdw_writer->SetDataModeToAscii();
+//  pdw_writer->GetInputInformation()->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &time_step_value[0], currend_index);
+//  pdw_writer->WriteAllTimeStepsOn();
+//  //   pdw_writer->Update();
+//  pdw_writer->Write();
 
   // Time is different we need to create a file
   // Write file
-  vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
-      vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-  writer->SetByteOrderToLittleEndian();
-  writer->SetCompressorTypeToNone();
-  writer->SetDataModeToAscii();
-  writer->SetInputData(0, unstructured_grid);
+//  vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
+//      vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+//  writer->SetByteOrderToLittleEndian();
+//  writer->SetCompressorTypeToNone();
+//  writer->SetDataModeToAscii();
+//  writer->SetInputData(0, unstructured_grid);
 
-  currend_index = 0;
-  auto it = trafficMap.cbegin();
-  current_time = -1;
-  for (; it != trafficMap.cend(); ++it){
-    if (it->first != current_time){
-      std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
-      file_name += std::to_string(currend_index);
-      file_name += ".vtu";
-      writer->SetFileName(file_name.c_str());
+//  currend_index = 0;
+//  auto it = trafficMap.cbegin();
+//  current_time = -1;
+//  for (; it != trafficMap.cend(); ++it){
+//    if (it->first != current_time){
+//      std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
+//      file_name += std::to_string(currend_index);
+//      file_name += ".vtu";
+//      writer->SetFileName(file_name.c_str());
 
-      writer->Write();
+//      writer->Write();
 
-      // update index
-      ++currend_index;
-    }
+//      // update index
+//      ++currend_index;
+//    }
 
-    current_time = it->first;
-    traffic->SetValue(it->second->id_, it->second->intensity_);
-   //   std::cout << std::to_string(current_time) << ": " << it->second->id_ << ": "<< it->second->intensity_<< ";" <<std::endl;
-  }
-  if(it == trafficMap.cend()){
-    std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
-    file_name += std::to_string(currend_index);
-    file_name += ".vtu";
-    writer->SetFileName(file_name.c_str());
-    writer->Update();
-    writer->Write();
-  }
+//    current_time = it->first;
+//    traffic->SetValue(it->second->id_, it->second->intensity_);
+//   //   std::cout << std::to_string(current_time) << ": " << it->second->id_ << ": "<< it->second->intensity_<< ";" <<std::endl;
+//  }
+//  if(it == trafficMap.cend()){
+//    std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
+//    file_name += std::to_string(currend_index);
+//    file_name += ".vtu";
+//    writer->SetFileName(file_name.c_str());
+//    writer->Update();
+//    writer->Write();
+//  }
 
   vtkSmartPointer<vtkTrafficSource> trafficSource =
       vtkSmartPointer<vtkTrafficSource>::New();
@@ -158,23 +158,23 @@ void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<tra
   exodusWriter->Write();
 
   // write the exodus
-  vtkStdString OutputFile;
-  OutputFile += "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.e";
-  vtkSmartPointer<vtkExodusIIWriter> writer_exo =
-      vtkSmartPointer<vtkExodusIIWriter>::New();
-  writer_exo->SetFileName (OutputFile);
-  writer_exo->SetInputData(0, unstructured_grid);
-  writer_exo->WriteOutBlockIdArrayOn ();
-  writer_exo->WriteOutGlobalNodeIdArrayOn ();
-  writer_exo->WriteOutGlobalElementIdArrayOn ();
-  double range[2]= {0.0, 4.0};
-  auto in_info = writer_exo->GetInputInformation();
-  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), time_step_value, currend_index);
-  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_DEPENDENT_INFORMATION(),1);
-  //  writer_exo->SetGlobalResultArrayStatus( 'traffic', 1 )
-  writer_exo->WriteAllTimeStepsOn ();
+//  vtkStdString OutputFile;
+//  OutputFile += "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.e";
+//  vtkSmartPointer<vtkExodusIIWriter> writer_exo =
+//      vtkSmartPointer<vtkExodusIIWriter>::New();
+//  writer_exo->SetFileName (OutputFile);
+//  writer_exo->SetInputData(0, unstructured_grid);
+//  writer_exo->WriteOutBlockIdArrayOn ();
+//  writer_exo->WriteOutGlobalNodeIdArrayOn ();
+//  writer_exo->WriteOutGlobalElementIdArrayOn ();
+//  double range[2]= {0.0, 4.0};
+//  auto in_info = writer_exo->GetInputInformation();
+//  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), time_step_value, currend_index);
+//  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_DEPENDENT_INFORMATION(),1);
+//  //  writer_exo->SetGlobalResultArrayStatus( 'traffic', 1 )
+//  writer_exo->WriteAllTimeStepsOn ();
 
-  writer_exo->Update();
+//  writer_exo->Update();
   //  writer_exo->GetModelMetadata()->SetTimeSteps(currend_index, &time_step_value[0]);
   //  writer_exo->Update();
   //  writer_exo->Write();
