@@ -307,13 +307,7 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
 bool
 SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 {
-  return true; //don't do this anymore - but keep code around
-
-  if (noSkeletonize_) return true;
-  if (deletedStmts_.find(expr) != deletedStmts_.end()){
-    //already deleted - do nothing here
-    return true;
-  }
+  return true; //don't do this anymore
 }
 
 
@@ -702,8 +696,8 @@ SkeletonASTVisitor::visitCollective(CallExpr *expr)
     replace(expr->getArg(3), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
-    deletedStmts_.insert(expr->getArg(0));
-    deletedStmts_.insert(expr->getArg(3));
+    deletedArgs_.insert(expr->getArg(0));
+    deletedArgs_.insert(expr->getArg(3));
   }
 }
 
@@ -719,8 +713,8 @@ SkeletonASTVisitor::visitReduce(CallExpr *expr)
     replace(expr->getArg(1), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
-    deletedStmts_.insert(expr->getArg(0));
-    deletedStmts_.insert(expr->getArg(1));
+    deletedArgs_.insert(expr->getArg(0));
+    deletedArgs_.insert(expr->getArg(1));
   }
 }
 
@@ -734,7 +728,7 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
     //make sure this isn't a shortcut function without buffers
     replace(expr->getArg(0), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
-    deletedStmts_.insert(expr->getArg(0));
+    deletedArgs_.insert(expr->getArg(0));
   }
 }
 bool 
@@ -783,7 +777,7 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
       activeBinOpIdx_ = IndexResetter;
       Expr* arg = expr->getArg(i);
       //this did not get modified
-      if (deletedStmts_.find(arg) == deletedStmts_.end()){
+      if (deletedArgs_.find(arg) == deletedArgs_.end()){
         TraverseStmt(expr->getArg(i));
       }
     }
@@ -933,12 +927,12 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
       if (fd && i < fd->getNumParams()){
         PushGuard<ParmVarDecl*> pg(activeFxnParams_, fd->getParamDecl(i));
         Expr* arg = expr->getArg(i);
-        if (deletedStmts_.find(arg) == deletedStmts_.end()){
+        if (deletedArgs_.find(arg) == deletedArgs_.end()){
           TraverseStmt(arg);
         }
       } else {
         Expr* arg = expr->getArg(i);
-        if (deletedStmts_.find(arg) == deletedStmts_.end()){
+        if (deletedArgs_.find(arg) == deletedArgs_.end()){
           TraverseStmt(arg);
         }
       }
@@ -1958,6 +1952,26 @@ SkeletonASTVisitor::deleteStmt(Stmt *s)
 {
   //go straight to replace, don't delay this
   ::replace(s, rewriter_, "", *ci_);
+}
+
+void
+SkeletonASTVisitor::deletePragmaText(SSTPragma *prg, Stmt* s)
+{
+  //eliminate the pragma text
+  if (prg->depth == 0){
+    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
+    ::replace(rng, rewriter_, "", *ci_);
+  }
+}
+
+void
+SkeletonASTVisitor::deletePragmaText(SSTPragma *prg, Decl* d)
+{
+  //eliminate the pragma text
+  if (prg->depth == 0){
+    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
+    ::replace(rng, rewriter_, "", *ci_);
+  }
 }
 
 static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)

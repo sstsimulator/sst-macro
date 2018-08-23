@@ -114,9 +114,8 @@ class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTOpenMPParallelPragmaHandler(SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
-                         SkeletonASTVisitor& visitor,
-                         std::set<clang::Stmt*>& deld) :
-      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor, deld){}
+                         SkeletonASTVisitor& visitor) :
+      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor){}
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
 };
@@ -126,9 +125,8 @@ class SSTLoopCountPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTLoopCountPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("loop_count", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("loop_count", plist, CI, visitor){}
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
     //this actually just maps cleanly into a compute pragma
@@ -141,9 +139,8 @@ class SSTMemoryPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTMemoryPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("memory", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("memory", plist, CI, visitor){}
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
 };
@@ -151,16 +148,16 @@ class SSTMemoryPragmaHandler : public SSTTokenStreamPragmaHandler
 class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {
  public:
   SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
-   SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
+                      SkeletonASTVisitor& visitor) :
+   SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor)
   {}
 };
 
 class SSTAlwaysComputePragmaHandler : public SSTSimplePragmaHandler<SSTAlwaysComputePragma> {
  public:
   SSTAlwaysComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
-   SSTSimplePragmaHandler<SSTAlwaysComputePragma>("always_compute", plist, CI, visitor, deld)
+                      SkeletonASTVisitor& visitor) :
+   SSTSimplePragmaHandler<SSTAlwaysComputePragma>("always_compute", plist, CI, visitor)
   {}
 };
 

@@ -3,24 +3,8 @@
 import os
 import ref
 
-def reref(fname):
-  configStatus = ""
-  try:
-    configStatus = open("../config.status").read()
-  except:
-    sys.exit("could not find valid config.status file")
-
-  import re
-  match = re.compile("srcdir=(.*)").search(configStatus)
-  if not match:
-    sys.exit("could not located srcdir in config.status")
-
-  srcdir = match.groups()[0].strip().strip('"').strip("'")
-  print srcdir
-
-  path = os.path.join(srcdir, "tests", "reference")
-  dst = os.path.join(path, fname.replace("tmp","ref"))
-  cmd = "cp %s %s" % (fname, dst)
+def reref(tmpFile, refFile):
+  cmd = "cp %s %s" % (tmpFile, refFile)
   print cmd
   os.system(cmd)
 
