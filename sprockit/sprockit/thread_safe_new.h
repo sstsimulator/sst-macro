@@ -89,16 +89,23 @@ class thread_safe_new {
     delete ptr;
   }
 #endif
+#define SSTMAC_CACHE_ALIGNMENT 64
   static void grow(int thread){
     size_t unitSize = sizeof(T);
-    if (unitSize % 32 != 0){
-      size_t rem = 32 - unitSize % 32;
+    if (unitSize % SSTMAC_CACHE_ALIGNMENT != 0){
+      size_t rem = SSTMAC_CACHE_ALIGNMENT - unitSize % SSTMAC_CACHE_ALIGNMENT;
       unitSize += rem;
     }
 
     char* newTs = new char[unitSize*increment];
     char* ptr = newTs;
-    for (int i=0; i < increment; ++i, ptr += unitSize){
+    int numElems = increment;
+    if (uintptr_t(ptr) % SSTMAC_CACHE_ALIGNMENT){
+      size_t rem = SSTMAC_CACHE_ALIGNMENT - (uintptr_t(ptr) % SSTMAC_CACHE_ALIGNMENT);
+      ptr += rem;
+      numElems -= 1;
+    }
+    for (int i=0; i < numElems; ++i, ptr += unitSize){
       alloc_.available[thread].push_back(ptr);
     }
     alloc_.allocations[thread].push_back(newTs);
