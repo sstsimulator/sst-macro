@@ -50,7 +50,7 @@ class thread_safe_new {
   template <class... Args>
   static T* allocate_at_beginning(Args&&... args){
     void* ptr = allocate(0);
-    return new T(std::forward<Args>(args)...);
+    return new (ptr) T(std::forward<Args>(args)...);
   }
 
   static void* allocate(int thread){
