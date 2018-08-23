@@ -156,7 +156,7 @@ class sculpin_switch :
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
-  Statistic<SST::traffic_event>* traffic_intensity;
+  std::vector<Statistic<traffic_event>* > traffic_intensity;
 #else
   stat_vtk* vtk_;
 #endif

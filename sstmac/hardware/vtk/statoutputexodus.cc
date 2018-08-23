@@ -16,6 +16,7 @@
 #include <sstmac/hardware/vtk/statoutputexodus.h>
 #include <sst/core/statapi/statgroup.h>
 #include <sstmac/hardware/vtk/stattraffic.h>
+#include <sstmac/hardware/vtk/vtk_stats.h>
 
 namespace sstmac {
 namespace hw {
@@ -207,7 +208,7 @@ void StatisticOutputEXODUS::implStopOutputGroup()
   int count_x = std::atoi(getOutputParameters().find<std::string>("count_x", "1").c_str());
   int count_y = std::atoi(getOutputParameters().find<std::string>("count_y", "1").c_str());
 
-  this->callBackFct(traffic_progress_map_, count_x, count_y);
+  stat_vtk::outputExodus(traffic_progress_map_, count_x, count_y);
 }
 
 } //namespace Statistics

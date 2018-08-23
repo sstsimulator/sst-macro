@@ -100,11 +100,12 @@ sculpin_switch::sculpin_switch(
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
-  traffic_intensity = registerStatistic<SST::traffic_event>("traffic_intensity", getName());
-  std::function<void (const std::multimap<uint64_t, SST::traffic_event> &, int, int)> f =
+  //traffic_intensity = registerStatistic<traffic_event>("traffic_intensity", getName());
+
+  std::function<void (const std::multimap<uint64_t, traffic_event> &, int, int)> f =
       &stat_vtk::outputExodus;
 
-  SST::Factory::getFactory()->registerOptionnalCallback("statOutputEXODUS", f);
+  //SST::Factory::getFactory()->registerOptionnalCallback("statOutputEXODUS", f);
 #else
   vtk_ = optional_stats<stat_vtk>(this,
         params,
@@ -117,12 +118,17 @@ sculpin_switch::sculpin_switch(
   payload_handler_ = new_handler(this, &sculpin_switch::handle_payload);
   credit_handler_ = new_handler(this, &sculpin_switch::handle_credit);
 #endif
-
   ports_.resize(top_->max_num_ports());
   for (int i=0; i < ports_.size(); ++i){
     ports_[i].id = i;
     ports_[i].seqnum = 0;
+#if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+    traffic_intensity.push_back(registerStatistic<traffic_event>("traffic_intensity", getName() + std::to_string(ports_[i].id)));
+#endif
+#endif
   }
+
 
   init_links(params);
 }
@@ -217,13 +223,13 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
-  Params &traffic_intensity_params = traffic_intensity->getDynamicParams();
-  SST::traffic_event evt;
+  traffic_event evt;
   evt.time_=p.next_free.ticks();
   evt.id_=my_addr_;
   evt.p_=p.id;
   evt.type_=1;
-  traffic_intensity->addData(evt);
+  std::cout << "collect statistic of port id" << std::to_string(p.id) <<std::endl;
+  traffic_intensity[p.id]->addData(evt);
 #else
   std::cout << "Collect done with SSTMACRO engine "<< std::endl;
   if (vtk_) vtk_->collect_departure(p.next_free.ticks(), my_addr_, p.id);
@@ -306,14 +312,12 @@ sculpin_switch::handle_payload(event *ev)
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
-  Params &traffic_intensity_params = traffic_intensity->getDynamicParams();
-
-  SST::traffic_event evt;
+  traffic_event evt;
   evt.time_=this->now().ticks();
   evt.id_=my_addr_;
   evt.p_=p.id;
   evt.type_=0;
-  traffic_intensity->addData(evt);
+  traffic_intensity[p.id]->addData(evt);
 #else
   if (vtk_) vtk_->collect_arrival(now().ticks(), my_addr_, p.id);
 #endif
