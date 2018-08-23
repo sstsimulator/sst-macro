@@ -2540,7 +2540,9 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
     std::stringstream sstr;
     sstr << "int sstmac_user_main_" << appname << "(";
     if (mainFxn->getNumParams() == 2){
-      sstr << "int argc, char** argv";
+
+      sstr << "int " << mainFxn->getParamDecl(0)->getNameAsString()
+           << ", char** " << mainFxn->getParamDecl(1)->getNameAsString();
     }
     sstr << "){";
 
