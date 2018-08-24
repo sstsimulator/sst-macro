@@ -103,12 +103,10 @@ void StatisticOutputEXODUS::endOfSimulation()
 
 void StatisticOutputEXODUS::implStartOutputEntries(SST::Statistics::StatisticBase* statistic)
 {
-  std::cout << "StatisticOutputEXODUS::implStartOutputEntries"<< std::endl;
 }
 
 void StatisticOutputEXODUS::implStopOutputEntries()
 {
-  std::cout << "StatisticOutputEXODUS::implStopOutputEntries"<< std::endl;
 }
 
 void StatisticOutputEXODUS::outputField(fieldHandle_t UNUSED(fieldHandle), int32_t data)
@@ -157,18 +155,15 @@ void StatisticOutputEXODUS::printIndent() {
 
 void StatisticOutputEXODUS::implStartRegisterGroup(SST::Statistics::StatisticGroup* group)
 {
-  std::cout << "StatisticOutputEXODUS::implStartRegisterGroup"<< std::endl;
   m_statGroups.push_back(group);
 }
 
 void StatisticOutputEXODUS::implStopRegisterGroup()
 {
-  std::cout << "StatisticOutputEXODUS::implStopRegisterGroup"<< std::endl;
 }
 
 void StatisticOutputEXODUS::implStartOutputGroup(SST::Statistics::StatisticGroup* UNUSED(group))
 {
-  std::cout << "StatisticOutputEXODUS::implStartOutputGroup"<< std::endl;
 }
 
 void StatisticOutputEXODUS::implStopOutputGroup()

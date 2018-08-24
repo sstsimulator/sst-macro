@@ -18,7 +18,7 @@ trafficStats.setOutput(sst.StatisticOutput("sst.statOutputEXODUS", {"filepath": 
 for i in range(ic.num_switches):
   s, params = ic.switches[i]
   trafficStats.addComponent(s)
-  s.enableStatistics(["traffic_intensity"], {"type":"sst.TrafficStatistic","rate":"0ns"})
+  s.enableStatistics(["traffic_intensity"], {"type":"TrafficStatistic","rate":"0ns"})
 
 #for n in self.nodes:
 #  s.enableStatistics([

@@ -228,7 +228,6 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   evt.id_=my_addr_;
   evt.p_=p.id;
   evt.type_=1;
-  std::cout << "collect statistic of port id" << std::to_string(p.id) <<std::endl;
   traffic_intensity[p.id]->addData(evt);
 #else
   std::cout << "Collect done with SSTMACRO engine "<< std::endl;

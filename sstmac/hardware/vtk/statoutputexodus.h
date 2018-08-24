@@ -30,7 +30,7 @@ class StatisticOutputEXODUS : public SST::Statistics::StatisticOutput
 {
 public:
     SST_ELI_REGISTER_STATISTIC_OUTPUT(StatisticOutputEXODUS, "statOutputEXODUS");
-    /** Construct a StatOutputJSON
+    /** Construct a StatOutputEXODUS
      * @param outputParameters - Parameters used for this Statistic Output
      */
     StatisticOutputEXODUS(SST::Params& outputParameters);
