@@ -3,53 +3,27 @@
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/replacements/omp.h>
 
+#undef omp_init_lock
+#undef omp_destroy_lock
+#undef omp_set_lock
+#undef omp_unset_lock
+#undef omp_test_lock
+#undef omp_get_num_threads
+#undef omp_get_thread_num
+#undef omp_get_max_threads
+#undef omp_get_wtime
+#undef omp_get_num_procs
+#undef omp_set_num_threads
+#undef omp_in_parallel
+#undef omp_get_level
+#undef omp_get_ancestor_thread_num
+
 namespace sstmac {
 namespace sw {
-
-struct omp_thread_group {
-  std::vector<sstmac_pthread_t> subthreads;
-};
-
-struct omp_context {
-  uint64_t cpumask;
-  int max_num_threads;
-  int my_id;
-  omp_thread_group* group;
-};
-
-class omp_api : public api {
-  RegisterAPI("omp", omp_api)
- public:
-  omp_api(sprockit::sim_parameters* params,
-          sstmac::sw::software_id sid,
-          sstmac::sw::operating_system* os) :
-    api(params, "omp", sid, os)
-  {
-  }
-
-  omp_context& get_context(uint32_t tid){
-    auto iter = contexts_.find(tid);
-    if (iter == contexts_.end()){
-      spkt_abort_printf("thread id %u is not an OpenMP thread", tid);
-    }
-    return iter->second;
-  }
-
-  void incoming_event(event *ev){
-    //unnecessary
-  }
-
- private:
-  std::map<uint32_t,omp_context> contexts_;
-
-};
-
-}
-}
-
 
 extern "C"
 void sstmac_omp_init_lock(sstmac_omp_lock_t *lock)
@@ -89,25 +63,56 @@ double sstmac_omp_get_wtime(){
 extern "C"
 int sstmac_omp_get_thread_num(){
   sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  auto api = t->get_api<sstmac::sw::omp_api>();
-  auto& ctx = api->get_context(t->thread_id());
-  return ctx.my_id;
+  return t->omp_get_thread_num();
 }
 
 extern "C"
 int sstmac_omp_get_num_threads(){
   sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
-  auto api = t->get_api<sstmac::sw::omp_api>();
-  auto& ctx = api->get_context(t->thread_id());
-  if (ctx.group) return ctx.group->subthreads.size();
-  else return 1;
+  return t->omp_get_num_threads();
 }
 
 extern "C"
 int sstmac_omp_get_max_threads(){
   sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
   //for now, just return number of cores
-  return t->os()->node()->proc()->ncores();
+  return t->omp_get_max_threads();
 }
 
+extern "C"
+int sstmac_omp_get_num_procs()
+{
+  sstmac::sw::operating_system* os = sstmac::sw::operating_system::current_os();
+  return os->node()->proc()->ncores();
+}
 
+extern "C"
+void sstmac_omp_set_num_threads(int nthr)
+{
+  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
+  t->omp_set_num_threads(nthr);
+}
+
+extern "C"
+int sstmac_omp_in_parallel()
+{
+  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
+  return t->omp_in_parallel();
+}
+
+extern "C"
+int sstmac_omp_get_level()
+{
+  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
+  return t->omp_get_level();
+}
+
+extern "C"
+int sstmac_omp_get_ancestor_thread_num()
+{
+  sstmac::sw::thread* t = sstmac::sw::operating_system::current_thread();
+  return t->omp_get_ancestor_thread_num();
+}
+
+}
+}

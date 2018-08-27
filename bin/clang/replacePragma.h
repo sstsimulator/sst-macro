@@ -127,9 +127,8 @@ class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("replace", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("replace", plist, CI, visitor){}
 
   static std::string
   parse(clang::CompilerInstance& CI, clang::SourceLocation loc,
@@ -146,9 +145,8 @@ class SSTInsteadPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTInsteadPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("instead", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("instead", plist, CI, visitor){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,
@@ -161,9 +159,8 @@ class SSTInitPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTInitPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("init", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("init", plist, CI, visitor){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,
@@ -176,9 +173,8 @@ class SSTStartReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTStartReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("start_replace", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("start_replace", plist, CI, visitor){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, 
@@ -190,9 +186,8 @@ class SSTStopReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTStopReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("stop_replace", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("stop_replace", plist, CI, visitor){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, 

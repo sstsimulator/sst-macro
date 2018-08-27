@@ -140,7 +140,6 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   next_mutex_(0),
   min_op_cutoff_(0),
   globals_storage_(nullptr),
-  omp_num_threads_(1),
   rc_(0)
 {
   globals_storage_ = allocate_data_segment(false); //not tls
@@ -153,7 +152,12 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   notify_ = params->get_optional_bool_param("notify", true);
 
   sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
-  omp_num_threads_ = env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
+  omp_contexts_.emplace_back();
+  omp_context& active = omp_contexts_.back();
+  active.max_num_subthreads = active.requested_num_subthreads =
+    env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
+  active.level = 0;
+  active.num_threads = 1;
 }
 
 app::~app()
@@ -237,9 +241,7 @@ app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthr
                "Rank %d for app %d: detailed compute for flops=%" PRIu64 " intops=%" PRIu64 " bytes=%" PRIu64,
                sid_.task_, sid_.app_, flops, nintops, bytes);
 
-  compute_lib()->compute_detailed(flops, nintops, bytes,
-                                  //if no number of threads are given, use the default OpenMP cfg
-                                  nthread == use_omp_num_threads ? omp_num_threads_ : nthread);
+  compute_lib()->compute_detailed(flops, nintops, bytes, nthread);
 }
 
 void

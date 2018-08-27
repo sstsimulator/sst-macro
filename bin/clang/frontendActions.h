@@ -80,7 +80,6 @@ class ReplaceAction : public clang::ASTFrontendAction {
   GlobalVarNamespace globalNs_;
   clang::CompilerInstance* ci_;
   PragmaConfig prgConfig_;
-  std::set<clang::Stmt*> deletedStmts_;
 };
 
 #endif
