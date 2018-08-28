@@ -22,7 +22,8 @@ AM_CPPFLAGS += \
 if HAVE_OTF2
 AM_CPPFLAGS += \
 	-I$(top_srcdir)/sst-dumpi \
-	-I$(top_builddir)/sst-dumpi
+	-I$(top_builddir)/sst-dumpi \
+  $(OTF2_CPPFLAGS)
 endif
 
 #-I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi

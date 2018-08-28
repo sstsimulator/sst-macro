@@ -60,11 +60,11 @@ RegisterKeywords(
   { "otf2_timescale", "Compute time multiplier" },
   { "otf2_terminate_percent", "(Not implemented) Stop trace replay early" },
   { "otf2_print_progress", "(Not implemented) Prints percentage of trace completion" },
-  { "otf2_metafile", "Path to ank OTF2 trace metafile" },
+  { "otf2_metafile", "Path to an OTF2 trace metafile" },
   { "otf2_print_mpi_calls", "Print MPI calls as they are parsed" },
   { "otf2_print_trace_events", "Print trace callbacks as they are called" },
   { "otf2_print_time_deltas", "Print compute times between MPI events" },
-  { "otf2_print_unknown_callback", "Print when an unknown callback is discovered" }
+  { "otf2_print_unknown_callback", "Print when an unknown callback is discovered" },
 );
 
 
@@ -118,39 +118,6 @@ void check_status(OTF2_ErrorCode status, const std::string& description)
   }
 }
 
-void OTF2TraceReplayApp::create_communicators() {
-  auto mpi = GetMpi();
-
-  // Loop over the communicators declared by OTF2, skip first one, which is MPI_COMM_WORLD
-  for (int i = 1; i < comm_map.size(); i++) {
-    auto& comm_rank_list = comm_map[i];
-
-    uint32_t this_rank = this->tid();
-
-    uint32_t* p_rank_list = nullptr;
-    int group_size = 0;
-    if (comm_rank_list.empty()){
-      // An empty rank list implies MPI_COMM_SELF
-      p_rank_list = &this_rank;
-      group_size = 1;
-    } else {
-      p_rank_list = comm_rank_list.data();
-      group_size = comm_rank_list.size();
-    }
-
-    // fetch group ID
-    int group_id = otf2_comms[i].group;
-
-    // create the group
-    bool included = mpi->group_create_with_id(group_id, group_size, p_rank_list);
-    if (included){
-      // create the communicator
-      mpi->comm_create_with_id(MPI_COMM_WORLD, group_id, i);
-    }
-
-  }
-}
-
 OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
         sumi::software_id sid, sstmac::sw::operating_system* os) :
   app(params, sid, os), mpi_(nullptr), call_queue_(this) {
@@ -165,40 +132,19 @@ OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
   print_unknown_callback_ = params->get_optional_bool_param("otf2_print_unknown_callback", false);
 }
 
-// gets rank from the last token in the string
-// ie "MPI Rank 2" -> 2
-uint32_t rank_from_otf2_string(std::string str) {
-	auto str_num = str.substr(str.find_last_of(' ') + 1, 10);
-	return atoi(str_num.c_str());
-}
-
-// fills OTF2TraceReplayApp::comm_map with mpi communicator mappings
-void OTF2TraceReplayApp::build_comm_map() {
-  for (auto _id = 0; _id < otf2_comms.size(); _id++) {
-    auto group = otf2_groups[otf2_comms[_id].group];
-    comm_map.push_back({});
-    for(auto m = group.members.begin(); m != group.members.end(); m++) {
-      std::string name_str = otf2_string_table[otf2_location_groups[*m].name].c_str();
-      comm_map[_id].push_back(rank_from_otf2_string(name_str));
-	  }
-
-    // A group should always be in ascending order
-    std::sort(comm_map[_id].begin(), comm_map[_id].end());
-  }
-}
-
 int
 OTF2TraceReplayApp::skeleton_main() {
   rank = this->tid();
-
-  auto event_reader = initialize_event_reader();
+  if (rank == 0){
+    std::cout << "Running OTF2 replay on "
+        << metafile_ << std::endl;
+  }
 
   mpi_ = get_api<sumi::mpi_api>();
   mpi_->set_generate_ids(false);
   mpi_->init(nullptr,nullptr); //force init here
 
-  build_comm_map();
-  create_communicators();
+  auto event_reader = initialize_event_reader();
 
   initiate_trace_replay(event_reader);
   verify_replay_success();

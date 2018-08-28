@@ -21,5 +21,10 @@ while isSoFile:
   else: isSoFile = False
   idx += 1
 
-setupDeprecated()
+ic = setupDeprecated()
+for sw in ic.switches:
+  sw.addParam()
+  sw.enableStatistics()
+
+
 

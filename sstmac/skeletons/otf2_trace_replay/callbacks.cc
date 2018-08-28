@@ -100,11 +100,7 @@ OTF2_CallbackCode def_string(
   const char*    str)
 {
   auto app = (OTF2TraceReplayApp*)userData;
-  app->otf2_string_table.push_back(str);
-  MPI_CALL_ID id = MPI_call_to_id.get(str);
-  if (id != ID_NULL){
-    app->otf2_mpi_call_map[self] = id;
-  }
+  app->otf2_string_table[self] = str;
   DEF_PRINT("STRING\n");
   return OTF2_CALLBACK_SUCCESS;
 }
@@ -118,14 +114,6 @@ OTF2_CallbackCode def_location(
   uint64_t              numberOfEvents,
   OTF2_LocationGroupRef locationGroup )
 {
-  auto app = (OTF2TraceReplayApp*)userData;
-  app->otf2_locations.push_back({
-	  name,
-	  locationType,
-	  numberOfEvents,
-	  locationGroup});
-
-  DEF_PRINT("LOCATION\n");
   return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -136,12 +124,6 @@ OTF2_CallbackCode def_location_group(
   OTF2_LocationGroupType locationGroupType,
   OTF2_SystemTreeNodeRef systemTreeParent )
 {
-  auto app = (OTF2TraceReplayApp*)userData;
-  app->otf2_location_groups.push_back({
-	 name, locationGroupType, systemTreeParent
-  });
-
-  DEF_PRINT("LOCATION GROUP\n");
   return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -159,8 +141,13 @@ OTF2_CallbackCode def_region(
   uint32_t        endLineNumber )
 {
   auto app = (OTF2TraceReplayApp*)userData;
-  app->otf2_regions.push_back({
-    name, canonicalName, description, regionRole, paradigm, sourceFile});
+
+  auto& str = app->otf2_string_table[name];
+  MPI_CALL_ID id = MPI_call_to_id.get(str);
+  if (id != ID_NULL){
+    app->otf2_regions[self] = id;
+  }
+
   DEF_PRINT("REGION\n");
   return OTF2_CALLBACK_SUCCESS;
 }
@@ -181,7 +168,7 @@ OTF2_CallbackCode def_callpath(
 // May be useful for ID'ing threads
 OTF2_CallbackCode def_group(
   void*           userData,
-  OTF2_GroupRef   self,
+  OTF2_GroupRef   id,
   OTF2_StringRef  name,
   OTF2_GroupType  groupType,
   OTF2_Paradigm   paradigm,
@@ -191,13 +178,26 @@ OTF2_CallbackCode def_group(
 {
   auto app = (OTF2TraceReplayApp*)userData;
 
-  std::vector<uint64_t> member_vect;
-  for (int i = 0; i < numberOfMembers; i++)
-	  member_vect.push_back(members[i]);
+  if (groupType == OTF2_GROUP_TYPE_COMM_SELF){
+    int me = app->rank;
+    app->GetMpi()->group_create_with_id(id, 1, &me);
+    app->otf2_groups[id] = true; //yes, needed
+  } else {
+    std::vector<int> member_vect(numberOfMembers);
+    std::stringstream sstr; sstr << "{ ";
+    for (int i = 0; i < numberOfMembers; i++){
+      member_vect[i] = members[i];
+      sstr << members[i] << " ";
+    }
+    sstr << "}";
 
-  app->otf2_groups.push_back({
-      name, groupType, paradigm, groupFlags, member_vect
-  });
+    std::cout << "Rank " << app->rank
+            << " group " << id
+            << " = " << sstr.str() << std::endl;
+
+    bool included = app->GetMpi()->group_create_with_id(id, numberOfMembers, member_vect.data());
+    app->otf2_groups[id] = included;
+  }
 
   DEF_PRINT("GROUP\n");
   return OTF2_CALLBACK_SUCCESS;
@@ -205,14 +205,30 @@ OTF2_CallbackCode def_group(
 
 OTF2_CallbackCode def_comm(
   void*          userData,
-  OTF2_CommRef   self,
+  OTF2_CommRef   id,
   OTF2_StringRef name,
   OTF2_GroupRef  group,
   OTF2_CommRef   parent )
 {
   auto app = (OTF2TraceReplayApp*)userData;
-  app->otf2_comms.push_back({name, group, parent});
-
+  app->GetMpi()->set_generate_ids(false);
+  bool need_comm = app->otf2_groups[group];
+  if (need_comm){
+    app->GetMpi()->comm_create_with_id(MPI_COMM_WORLD, group, id);
+  } else {
+    auto& str = app->otf2_string_table[name];
+    if (str == "MPI_COMM_WORLD"){
+      MPI_Comm output = id;
+      app->GetMpi()->comm_dup(MPI_COMM_WORLD, &output);
+    } else if (str == "MPI_COMM_SELF"){
+      MPI_Comm output = id;
+      app->GetMpi()->comm_dup(MPI_COMM_SELF, &output);
+    } else {
+      std::cout << "Rank " << app->rank
+             << " does not need comm " << id
+             << " on group " << group << std::endl;
+    }
+  }
   DEF_PRINT("COMMUNICATOR\n");
   return OTF2_CALLBACK_SUCCESS;
 }
@@ -243,43 +259,12 @@ def_location_property(
   return OTF2_CALLBACK_SUCCESS;
 }
 
-/*
-enum OTF2_FileType_enum
-{
-    OTF2_FILETYPE_ANCHOR      = 0,
-    OTF2_FILETYPE_GLOBAL_DEFS = 1,
-    OTF2_FILETYPE_LOCAL_DEFS  = 2,
-    OTF2_FILETYPE_EVENTS      = 3,
-    OTF2_FILETYPE_SNAPSHOTS   = 4,
-    OTF2_FILETYPE_THUMBNAIL   = 5,
-    OTF2_FILETYPE_MARKER      = 6,
-    OTF2_FILETYPE_SIONRANKMAP = 7
-};
-*/
-
-// todo inline this method with def_mapping_table. Was originally following the flow from otf2-print tool
-void traverse_IdMap( uint64_t localId,
-                     uint64_t globalId,
-                     void* userData) {
-  auto app = (OTF2TraceReplayApp*)userData;
-  //app->local_to_global_comm_map[localId] = globalId;
-}
-
 OTF2_CallbackCode
 def_mapping_table(
     void*             userData,
     OTF2_MappingType  mappingType,
-    const OTF2_IdMap* idMap ) {
-
-  if (mappingType == OTF2_FILETYPE_MARKER) {
-    OTF2_IdMapMode map_node;
-
-    OTF2_IdMap_GetMode(idMap, &map_node);
-
-    // OTF2 traverses over the struct by recursively calling with the struct
-    OTF2_IdMap_Traverse(idMap, traverse_IdMap, userData);
-  }
-
+    const OTF2_IdMap* idMap )
+{
   return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -549,7 +534,7 @@ OTF2_CallbackCode event_mpi_collective_end(
     uint64_t            sizeReceived ) {
 
     auto app = (OTF2TraceReplayApp*)userData;
-    auto comm_size = app->comm_map[comm].size();
+    auto comm_size = app->GetMpi()->get_comm(comm)->size();
 #define HANDLE_CASE(op, ...) case op : { \
             auto call = app->GetCallQueue().PeekBack(); \
             __VA_ARGS__; \
@@ -662,11 +647,12 @@ OTF2_CallbackCode event_enter(
 
     auto app = (OTF2TraceReplayApp*)userData;
 
-    auto iter = app->otf2_mpi_call_map.find(app->otf2_regions[region].name);
-    if (iter == app->otf2_mpi_call_map.end()){
+    auto iter = app->otf2_regions.find(region);
+    if (iter == app->otf2_regions.end()){
       if (app->PrintUnknownCallback()) {
-        std::cout << "unknown OTF2 region name \""
-                  << app->otf2_string_table[app->otf2_regions[region].name].c_str() << "\"" << std::endl;
+        std::cout << "unknown OTF2 region \""
+                  << region
+                  << "\"" << std::endl;
       }
       return OTF2_CALLBACK_SUCCESS;
     }
@@ -1116,12 +1102,10 @@ OTF2_CallbackCode event_leave(
   auto app = (OTF2TraceReplayApp*)userData;
   CallQueue& callqueue = app->GetCallQueue();
 
-  auto iter = app->otf2_mpi_call_map.find(app->otf2_regions[region].name);
-  if (iter == app->otf2_mpi_call_map.end()){
+  auto iter = app->otf2_regions.find(region);
+  if (iter == app->otf2_regions.end()){
     if (app->PrintUnknownCallback()) {
-      std::cout << "unknown OTF2 region name \""
-                << app->otf2_string_table[app->otf2_regions[region].name].c_str() << "\""
-                << std::endl;
+      std::cout << "unknown OTF2 region " << region << std::endl;
     }
     return OTF2_CALLBACK_SUCCESS;
   }

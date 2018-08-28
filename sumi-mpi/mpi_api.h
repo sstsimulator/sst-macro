@@ -74,6 +74,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
+#undef SSTMAC_OTF2_ENABLED
 #ifdef SSTMAC_OTF2_ENABLED
 #include <dumpi/libotf2dump/otf2writer.h>
 #endif
@@ -202,7 +203,7 @@ class mpi_api :
    * @param members
    * @return Whether the current rank is in the group
    */
-  bool group_create_with_id(MPI_Group group, int num_members, const uint32_t* members);
+  bool group_create_with_id(MPI_Group group, int num_members, const int* members);
 
   int cart_create(MPI_Comm comm_old, int ndims, const int dims[],
               const int periods[], int reorder, MPI_Comm *comm_cart);
@@ -708,11 +709,11 @@ class mpi_api :
   /* Collective operations */
   collective_op_base* start_barrier(const char* name, MPI_Comm comm);
 
-  collective_op_base* start_bcast(MPI_Comm comm, int count, MPI_Datatype datatype,
+  collective_op_base* start_bcast(const char* name, MPI_Comm comm, int count, MPI_Datatype datatype,
                                   int root, void *buffer);
 
   collective_op_base*
-  start_scatter(MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+  start_scatter(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
            int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
@@ -720,7 +721,7 @@ class mpi_api :
                  const int *displs, int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_gather(MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+  start_gather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
                int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
@@ -729,7 +730,7 @@ class mpi_api :
           const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_allgather(MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+  start_allgather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
             int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
@@ -738,7 +739,7 @@ class mpi_api :
                    const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_alltoall(MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+  start_alltoall(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
                  int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
@@ -747,11 +748,11 @@ class mpi_api :
             const void *sendbuf,  void *recvbuf);
 
   collective_op_base*
-  start_reduce(MPI_Comm comm, int count, MPI_Datatype type, int root,
+  start_reduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type, int root,
                MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_allreduce(MPI_Comm comm, int count, MPI_Datatype type,
+  start_allreduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
                MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
@@ -759,15 +760,15 @@ class mpi_api :
                MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_reduce_scatter(MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
+  start_reduce_scatter(const char* name, MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
                        MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_reduce_scatter_block(MPI_Comm comm, int count, MPI_Datatype type,
+  start_reduce_scatter_block(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
                              MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_scan(MPI_Comm comm, int count, MPI_Datatype type,
+  start_scan(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
              MPI_Op op, const void* src, void* dst);
 
   void do_start(MPI_Request req);
@@ -841,9 +842,7 @@ class mpi_api :
 #ifdef SSTMAC_OTF2_ENABLED
   bool otf2_enabled_ = false;
   std::string otf2_dir_basename_;
-  static int running_count_;
-  static bool otf2_initialized_;
-  static dumpi::OTF2_Writer otf2_writer_;
+  dumpi::OTF2_Writer otf2_writer_;
 #endif
 
   bool generate_ids_;
