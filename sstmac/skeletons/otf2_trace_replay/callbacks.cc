@@ -184,16 +184,9 @@ OTF2_CallbackCode def_group(
     app->otf2_groups[id] = true; //yes, needed
   } else {
     std::vector<int> member_vect(numberOfMembers);
-    std::stringstream sstr; sstr << "{ ";
     for (int i = 0; i < numberOfMembers; i++){
       member_vect[i] = members[i];
-      sstr << members[i] << " ";
     }
-    sstr << "}";
-
-    std::cout << "Rank " << app->rank
-            << " group " << id
-            << " = " << sstr.str() << std::endl;
 
     bool included = app->GetMpi()->group_create_with_id(id, numberOfMembers, member_vect.data());
     app->otf2_groups[id] = included;
@@ -224,9 +217,6 @@ OTF2_CallbackCode def_comm(
       MPI_Comm output = id;
       app->GetMpi()->comm_dup(MPI_COMM_SELF, &output);
     } else {
-      std::cout << "Rank " << app->rank
-             << " does not need comm " << id
-             << " on group " << group << std::endl;
     }
   }
   DEF_PRINT("COMMUNICATOR\n");

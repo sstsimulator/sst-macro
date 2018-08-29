@@ -19,213 +19,121 @@ MPI Rank 3   : MPI_Init()
 MPI Rank 3   : MPI_Init(MPI_COMM_WORLD) on tag 100
 MPI Rank 7   : MPI_Init()
 MPI Rank 7   : MPI_Init(MPI_COMM_WORLD) on tag 100
-Rank 5 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 5   : MPI_Group_create_with_id(id=0,n=10)
-Rank 5 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 5   : MPI_Group_create_with_id(id=1,n=10)
-Rank 5 group 2 = { 0 6 }
 MPI Rank 5   : MPI_Group_create_with_id(id=2,n=2)
-Rank 5 group 3 = { 1 7 }
 MPI Rank 5   : MPI_Group_create_with_id(id=3,n=2)
-Rank 5 group 4 = { 2 8 }
 MPI Rank 5   : MPI_Group_create_with_id(id=4,n=2)
-Rank 5 group 5 = { 3 9 }
 MPI Rank 5   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 5   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 5   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
-Rank 5 does not need comm 1 on group 2
-Rank 5 does not need comm 2 on group 3
-Rank 5 does not need comm 3 on group 4
-Rank 5 does not need comm 4 on group 5
 MPI Rank 5   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 5   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 5   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 9 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 9   : MPI_Group_create_with_id(id=0,n=10)
-Rank 9 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 9   : MPI_Group_create_with_id(id=1,n=10)
-Rank 9 group 2 = { 0 6 }
 MPI Rank 9   : MPI_Group_create_with_id(id=2,n=2)
-Rank 9 group 3 = { 1 7 }
 MPI Rank 9   : MPI_Group_create_with_id(id=3,n=2)
-Rank 9 group 4 = { 2 8 }
 MPI Rank 9   : MPI_Group_create_with_id(id=4,n=2)
-Rank 9 group 5 = { 3 9 }
 MPI Rank 9   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 9   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
-Rank 9 does not need comm 1 on group 2
-Rank 9 does not need comm 2 on group 3
-Rank 9 does not need comm 3 on group 4
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,5,4)
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 9   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 7 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 7   : MPI_Group_create_with_id(id=0,n=10)
-Rank 7 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 7   : MPI_Group_create_with_id(id=1,n=10)
-Rank 7 group 2 = { 0 6 }
 MPI Rank 7   : MPI_Group_create_with_id(id=2,n=2)
-Rank 7 group 3 = { 1 7 }
 MPI Rank 7   : MPI_Group_create_with_id(id=3,n=2)
-Rank 7 group 4 = { 2 8 }
 MPI Rank 7   : MPI_Group_create_with_id(id=4,n=2)
-Rank 7 group 5 = { 3 9 }
 MPI Rank 7   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 7   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
-Rank 7 does not need comm 1 on group 2
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,3,2)
-Rank 7 does not need comm 3 on group 4
-Rank 7 does not need comm 4 on group 5
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 7   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 6 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 6   : MPI_Group_create_with_id(id=0,n=10)
-Rank 6 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 6   : MPI_Group_create_with_id(id=1,n=10)
-Rank 6 group 2 = { 0 6 }
 MPI Rank 6   : MPI_Group_create_with_id(id=2,n=2)
-Rank 6 group 3 = { 1 7 }
 MPI Rank 6   : MPI_Group_create_with_id(id=3,n=2)
-Rank 6 group 4 = { 2 8 }
 MPI Rank 6   : MPI_Group_create_with_id(id=4,n=2)
-Rank 6 group 5 = { 3 9 }
 MPI Rank 6   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 6   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,2,1)
-Rank 6 does not need comm 2 on group 3
-Rank 6 does not need comm 3 on group 4
-Rank 6 does not need comm 4 on group 5
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 6   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 4 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 4   : MPI_Group_create_with_id(id=0,n=10)
-Rank 4 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 4   : MPI_Group_create_with_id(id=1,n=10)
-Rank 4 group 2 = { 0 6 }
 MPI Rank 4   : MPI_Group_create_with_id(id=2,n=2)
-Rank 4 group 3 = { 1 7 }
 MPI Rank 4   : MPI_Group_create_with_id(id=3,n=2)
-Rank 4 group 4 = { 2 8 }
 MPI Rank 4   : MPI_Group_create_with_id(id=4,n=2)
-Rank 4 group 5 = { 3 9 }
 MPI Rank 4   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 4   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 4   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
-Rank 4 does not need comm 1 on group 2
-Rank 4 does not need comm 2 on group 3
-Rank 4 does not need comm 3 on group 4
-Rank 4 does not need comm 4 on group 5
 MPI Rank 4   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 4   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 4   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 3 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 3   : MPI_Group_create_with_id(id=0,n=10)
-Rank 3 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 3   : MPI_Group_create_with_id(id=1,n=10)
-Rank 3 group 2 = { 0 6 }
 MPI Rank 3   : MPI_Group_create_with_id(id=2,n=2)
-Rank 3 group 3 = { 1 7 }
 MPI Rank 3   : MPI_Group_create_with_id(id=3,n=2)
-Rank 3 group 4 = { 2 8 }
 MPI Rank 3   : MPI_Group_create_with_id(id=4,n=2)
-Rank 3 group 5 = { 3 9 }
 MPI Rank 3   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 3   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
-Rank 3 does not need comm 1 on group 2
-Rank 3 does not need comm 2 on group 3
-Rank 3 does not need comm 3 on group 4
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,5,4)
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 3   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 1 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 1   : MPI_Group_create_with_id(id=0,n=10)
-Rank 1 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 1   : MPI_Group_create_with_id(id=1,n=10)
-Rank 1 group 2 = { 0 6 }
 MPI Rank 1   : MPI_Group_create_with_id(id=2,n=2)
-Rank 1 group 3 = { 1 7 }
 MPI Rank 1   : MPI_Group_create_with_id(id=3,n=2)
-Rank 1 group 4 = { 2 8 }
 MPI Rank 1   : MPI_Group_create_with_id(id=4,n=2)
-Rank 1 group 5 = { 3 9 }
 MPI Rank 1   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 1   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
-Rank 1 does not need comm 1 on group 2
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,3,2)
-Rank 1 does not need comm 3 on group 4
-Rank 1 does not need comm 4 on group 5
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 1   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 0 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 0   : MPI_Group_create_with_id(id=0,n=10)
-Rank 0 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 0   : MPI_Group_create_with_id(id=1,n=10)
-Rank 0 group 2 = { 0 6 }
 MPI Rank 0   : MPI_Group_create_with_id(id=2,n=2)
-Rank 0 group 3 = { 1 7 }
 MPI Rank 0   : MPI_Group_create_with_id(id=3,n=2)
-Rank 0 group 4 = { 2 8 }
 MPI Rank 0   : MPI_Group_create_with_id(id=4,n=2)
-Rank 0 group 5 = { 3 9 }
 MPI Rank 0   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 0   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,2,1)
-Rank 0 does not need comm 2 on group 3
-Rank 0 does not need comm 3 on group 4
-Rank 0 does not need comm 4 on group 5
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 0   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 8 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 8   : MPI_Group_create_with_id(id=0,n=10)
-Rank 8 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 8   : MPI_Group_create_with_id(id=1,n=10)
-Rank 8 group 2 = { 0 6 }
 MPI Rank 8   : MPI_Group_create_with_id(id=2,n=2)
-Rank 8 group 3 = { 1 7 }
 MPI Rank 8   : MPI_Group_create_with_id(id=3,n=2)
-Rank 8 group 4 = { 2 8 }
 MPI Rank 8   : MPI_Group_create_with_id(id=4,n=2)
-Rank 8 group 5 = { 3 9 }
 MPI Rank 8   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 8   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
-Rank 8 does not need comm 1 on group 2
-Rank 8 does not need comm 2 on group 3
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,4,3)
-Rank 8 does not need comm 4 on group 5
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 8   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
-Rank 2 group 0 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 2   : MPI_Group_create_with_id(id=0,n=10)
-Rank 2 group 1 = { 0 1 2 3 4 5 6 7 8 9 }
 MPI Rank 2   : MPI_Group_create_with_id(id=1,n=10)
-Rank 2 group 2 = { 0 6 }
 MPI Rank 2   : MPI_Group_create_with_id(id=2,n=2)
-Rank 2 group 3 = { 1 7 }
 MPI Rank 2   : MPI_Group_create_with_id(id=3,n=2)
-Rank 2 group 4 = { 2 8 }
 MPI Rank 2   : MPI_Group_create_with_id(id=4,n=2)
-Rank 2 group 5 = { 3 9 }
 MPI Rank 2   : MPI_Group_create_with_id(id=5,n=2)
 MPI Rank 2   : MPI_Group_create_with_id(id=6,n=1)
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,1,0)
-Rank 2 does not need comm 1 on group 2
-Rank 2 does not need comm 2 on group 3
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,4,3)
-Rank 2 does not need comm 4 on group 5
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,5)
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,6)
 MPI Rank 2   : MPI_Comm_create_with_id(MPI_COMM_WORLD,6,7)
