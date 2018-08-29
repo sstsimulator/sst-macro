@@ -109,7 +109,7 @@ OTF2_EvtReaderCallbacks* create_evt_callbacks() {
     return callbacks;
 }
 
-void check_status(OTF2_ErrorCode status, const std::string& description)
+static void check_status(OTF2_ErrorCode status, const std::string& description)
 {
   if (status != OTF2_SUCCESS){
     spkt_abort_printf("OTF2 Error: %s  %s",
@@ -120,7 +120,7 @@ void check_status(OTF2_ErrorCode status, const std::string& description)
 
 OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
         sumi::software_id sid, sstmac::sw::operating_system* os) :
-  app(params, sid, os), mpi_(nullptr), call_queue_(this) {
+  app(params, sid, os), mpi_(nullptr), rank_(sid.task_), call_queue_(this), total_events_(0) {
   timescale_ = params->get_optional_double_param("otf2_timescale", 1.0);
   terminate_percent_ = params->get_optional_double_param("otf2_terminate_percent", 1);
   print_progress_ = params->get_optional_bool_param("otf2_print_progress", true);
@@ -134,8 +134,7 @@ OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
 
 int
 OTF2TraceReplayApp::skeleton_main() {
-  rank = this->tid();
-  if (rank == 0){
+  if (rank_ == 0){
     std::cout << "Running OTF2 replay on "
         << metafile_ << std::endl;
   }
@@ -152,10 +151,6 @@ OTF2TraceReplayApp::skeleton_main() {
   OTF2_Reader_Close(event_reader);
 
   return 0;
-}
-
-CallQueue& OTF2TraceReplayApp::GetCallQueue() {
-    return call_queue_;
 }
 
 // Indicate that we are starting an MPI call.
@@ -188,7 +183,7 @@ GlobDefLocation_Register(void* userData,
   OTF2_LocationGroupRef locationGroup)
 {
   auto app = (OTF2TraceReplayApp*)userData;
-  app->total_events += numberOfEvents;
+  app->addEvents(numberOfEvents);
 
   return OTF2_CALLBACK_SUCCESS;
 }
@@ -202,8 +197,9 @@ OTF2TraceReplayApp::initialize_event_reader() {
   OTF2_Reader_SetSerialCollectiveCallbacks(reader);
   check_status(OTF2_Reader_GetNumberOfLocations(reader, &number_of_locations), "OTF2_Reader_GetNumberOfLocations\n");
 
-  if (number_of_locations <= rank) {
-    cerr << "ERROR: Rank " << rank << " cannot participate in a trace replay with " << number_of_locations << " ranks" << endl;
+  if (number_of_locations <= rank_) {
+    cerr << "ERROR: Rank " << rank_ << " cannot participate in a trace replay with "
+         << number_of_locations << " ranks" << endl;
     spkt_abort_printf("ASSERT FAILED: Number of MPI ranks must match the number of trace files");
   }
 
@@ -267,7 +263,7 @@ OTF2TraceReplayApp::initialize_event_reader() {
   }
 
   OTF2_Reader_CloseGlobalDefReader(reader, global_def_reader);
-  OTF2_EvtReader* evt_reader = OTF2_Reader_GetEvtReader(reader, rank);
+  OTF2_EvtReader* evt_reader = OTF2_Reader_GetEvtReader(reader, rank_);
   OTF2_EvtReaderCallbacks* event_callbacks = create_evt_callbacks();
   check_status(OTF2_Reader_RegisterEvtCallbacks(reader, evt_reader,
                                        event_callbacks, (void*)this),
@@ -295,45 +291,34 @@ void OTF2TraceReplayApp::initiate_trace_replay(OTF2_Reader* reader) {
   OTF2_Reader_GetNumberOfLocations(reader, &locs);
   //cout << "detected " << locs << endl;
 
-  OTF2_EvtReader* event_reader = OTF2_Reader_GetEvtReader(reader, rank);
+  OTF2_EvtReader* event_reader = OTF2_Reader_GetEvtReader(reader, rank_);
 
   handle_events(reader, event_reader);
 
-  if (rank == 0) std::cout << "OTF2 Trace replay complete" << endl;
+  if (rank_ == 0) std::cout << "OTF2 Trace replay complete" << endl;
 
   // cleanup
   check_status(OTF2_Reader_CloseEvtReader(reader, event_reader), "OTF2_Reader_CloseEvtReader");
   check_status(OTF2_Reader_CloseEvtFiles(reader), "OTF2_Reader_CloseEvtFiles\n");
 }
 
-void OTF2TraceReplayApp::verify_replay_success() {
+void
+OTF2TraceReplayApp::verify_replay_success()
+{
   int incomplete_calls = call_queue_.GetDepth();
 
   if(incomplete_calls > 0) { // Something stalled the queue...
-    cout << "ERROR: rank " << rank << " has " << incomplete_calls << " incomplete calls!" << endl;
+    cout << "ERROR: rank " << rank_ << " has " << incomplete_calls << " incomplete calls!" << endl;
     cout << "This is likely cased by dangling MPI_Isend/MPI_Irecv(s). The OTF2 trace will be incomplete." << endl;
 
     int calls_to_print = min(incomplete_calls,25);
     cout << "Printing " << calls_to_print << " calls" << endl;
 
     for (int i = 0; i < calls_to_print; i++) {
-      auto call = call_queue_.Peek();
+      auto& call = call_queue_.Peek();
       call_queue_.call_queue.pop();
-      cout << "  ==> " << setw(15) << call->ToString() << (call->isready?"\tREADY":"\tNOT READY")<< endl;
+      cout << "  ==> " << setw(15) << call.ToString() << (call.isready?"\tREADY":"\tNOT READY")<< endl;
     }
   }
 }
 
-bool OTF2TraceReplayApp::PrintTraceEvents() {
-	return print_trace_events_;
-}
-
-bool OTF2TraceReplayApp::PrintMpiCalls() {
-	return print_mpi_calls_;
-}
-bool OTF2TraceReplayApp::PrintTimeDeltas() {
-	return print_time_deltas_;
-}
-bool OTF2TraceReplayApp::PrintUnknownCallback() {
-	return print_unknown_callback_;
-}

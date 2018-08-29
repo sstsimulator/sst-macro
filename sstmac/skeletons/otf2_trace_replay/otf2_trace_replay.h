@@ -70,20 +70,39 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
     return mpi_;
   }
 
-  CallQueue& GetCallQueue();
-  bool PrintTraceEvents();
-  bool PrintMpiCalls();
-  bool PrintTimeDeltas();
-  bool PrintUnknownCallback();
+  CallQueue& GetCallQueue(){
+    return call_queue_;
+  }
+
+  bool PrintTraceEvents() const {
+    return print_trace_events_;
+  }
+
+  bool PrintMpiCalls() const {
+    return print_mpi_calls_;
+  }
+
+  bool PrintTimeDeltas() const {
+    return print_time_deltas_;
+  }
+
+  bool PrintUnknownCallback() const {
+    return print_unknown_callback_;
+  }
+
+  int rank() const {
+    return rank_;
+  }
+
+  void addEvents(int events){
+    total_events_ += events;
+  }
 
   int skeleton_main() override;
 
   void StartMpi(const sstmac::timestamp);
+
   void EndMpi(const sstmac::timestamp);
-
-
-  int rank = -1;
-  long total_events = 0;
 
   OTF2_ClockProperties otf2_clock_properties;
   std::map<OTF2_StringRef, std::string> otf2_string_table;
@@ -104,7 +123,6 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
 
   sstmac::timestamp compute_time;
 
-  bool initialized_ = false;
   sumi::mpi_api* mpi_;
 
   double timescale_;
@@ -115,6 +133,8 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   bool print_time_deltas_;
   bool print_unknown_callback_;
   std::string metafile_;
+  int rank_;
+  long total_events_;
 };
 
 #endif /* OTF2_TRACE_REPLAY_H_ */

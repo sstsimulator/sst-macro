@@ -58,18 +58,62 @@ class OTF2TraceReplayApp;
 
 class MpiCall {
  public:
-  MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* app,
-          MPI_CALL_ID id, const char* name);
+  MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* _app,
+          MPI_CALL_ID _id, const char* _name) :
+    isready(false), app(_app),
+    start_time(start),
+    end_time(0),
+    name(_name),
+    id(_id)
+  {
+  }
+
+  MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* _app,
+          MPI_CALL_ID _id, const char* _name,
+          std::function<void()> trigger) :
+    isready(false), app(_app),
+    start_time(start),
+    end_time(0),
+    name(_name),
+    id(_id),
+    on_trigger(trigger)
+  {
+  }
+
+  MpiCall(const MpiCall&) = delete; //to avoid accidental copies
+
 
   ~MpiCall() {}
 
   // Methods
-  sstmac::timestamp GetStart();
-  sstmac::timestamp GetEnd();
-  void SetTrigger(std::function<void()>);
-  bool IsReady();
+  sstmac::timestamp GetStart() const {
+    if (start_time == 0){
+      std::cerr << "Warning: start timestamp is not initialized for " << ToString() << std::endl;
+    }
+    return convert_time(start_time);
+  }
+
+  sstmac::timestamp GetEnd() const {
+    if (end_time == 0){
+      std::cerr << "Warning: end timestamp is not initialized for " << ToString() << std::endl;
+    }
+    return convert_time(end_time);
+  }
+
+  void SetTrigger(std::function<void()> trigger){
+    on_trigger = trigger;
+  }
+
+
+  bool IsReady() const {
+    return isready;
+  }
+
   void Trigger();
-  const char* ToString();
+
+  const char* ToString() const {
+    return name;
+  }
 
   // Members
   OTF2_TimeStamp start_time, end_time;
@@ -79,10 +123,18 @@ class MpiCall {
   MPI_CALL_ID id;
   const char* name;
 
-  static void assert_call(MpiCall* cb, std::string msg);
+  static void assert_call(MpiCall* cb, std::string msg){
+    if (cb == nullptr) {
+      spkt_abort_printf("ASSERT FAILED: %s", msg.c_str());
+    }
+  }
 
  private:
-  sstmac::timestamp convert_time(const OTF2_TimeStamp);
+  sstmac::timestamp convert_time(const OTF2_TimeStamp) const;
+
 };
+
+
+
 
 #endif /* SSTMAC_SKELETONS_OTF2_TRACE_REPLAY_MpiCall_H_ */
