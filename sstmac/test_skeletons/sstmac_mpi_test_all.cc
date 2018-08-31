@@ -304,7 +304,6 @@ test_barrier(MPI_Comm comm)
 void
 test_reduce(MPI_Comm comm)
 {
-  return;
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);

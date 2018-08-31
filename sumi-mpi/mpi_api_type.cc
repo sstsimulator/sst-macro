@@ -457,14 +457,6 @@ mpi_api::type_commit(MPI_Datatype* type)
 {
   mpi_type* type_obj = type_from_id(*type);
   type_obj->set_committed(true);
-
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_ && otf2_initialized_) {
-    auto call_start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_commit");
-  }
-#endif
-
   return MPI_SUCCESS;
 }
 
@@ -596,15 +588,6 @@ int
 mpi_api::type_size(MPI_Datatype type, int* size)
 {
   *size = type_from_id(type)->packed_size();
-
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_ && otf2_initialized_) {
-    auto call_start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_size");
-  }
-#endif
-
-
   return MPI_SUCCESS;
 }
 
@@ -612,14 +595,6 @@ int
 mpi_api::type_extent(MPI_Datatype type, MPI_Aint *extent)
 {
   *extent = type_from_id(type)->extent();
-
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_ && otf2_initialized_) {
-    auto call_start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_extent");
-  }
-#endif
-
   return MPI_SUCCESS;
 }
 
@@ -632,13 +607,6 @@ mpi_api::type_dup(MPI_Datatype intype, MPI_Datatype* outtype)
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_dup(%s,*%s)",
                 type_str(intype).c_str(), type_str(*outtype).c_str());
-
-#ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_writer_){
-    otf2_writer_->writer().register_type(*outtype, new_type_obj->packed_size());
-  }
-#endif
-
   return MPI_SUCCESS;
 }
 
@@ -658,14 +626,6 @@ mpi_api::type_free(MPI_Datatype* type)
     known_types_.erase(iter);
     delete obj;
   }
-
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_ && otf2_initialized_) {
-    auto call_start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Type_free");
-  }
-#endif
-
   return MPI_SUCCESS;
 }
 
