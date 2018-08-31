@@ -154,7 +154,8 @@ OTF2TraceReplayApp::skeleton_main() {
 }
 
 // Indicate that we are starting an MPI call.
-void OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
+void
+OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
   // Time not initialized
   if (compute_time == sstmac::timestamp::zero) return;
 
@@ -165,7 +166,8 @@ void OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
   compute((timescale_ * (wall - compute_time)));
 }
 
-void OTF2TraceReplayApp::EndMpi(const sstmac::timestamp wall) {
+void
+OTF2TraceReplayApp::EndMpi(const sstmac::timestamp wall) {
   compute_time = wall;
 }
 
@@ -203,26 +205,6 @@ OTF2TraceReplayApp::initialize_event_reader() {
     spkt_abort_printf("ASSERT FAILED: Number of MPI ranks must match the number of trace files");
   }
 
-  struct c_vector* locations = (c_vector*) malloc(sizeof(*locations) + number_of_locations * sizeof(*locations->members));
-  locations->capacity = number_of_locations;
-  locations->size = number_of_locations;
-  OTF2_GlobalDefReader* global_def_reader = OTF2_Reader_GetGlobalDefReader(reader);
-  OTF2_GlobalDefReaderCallbacks* global_def_callbacks;
-  global_def_callbacks = create_global_def_callbacks();
-  OTF2_GlobalDefReaderCallbacks_SetLocationCallback(global_def_callbacks, &GlobDefLocation_Register);
-  check_status( OTF2_Reader_RegisterGlobalDefCallbacks(reader, global_def_reader, global_def_callbacks, (void*)this),
-                "OTF2_Reader_RegisterGlobalDefCallbacks\n");
-  OTF2_GlobalDefReaderCallbacks_Delete(global_def_callbacks);
-  uint64_t definitions_read = 0;
-  check_status(OTF2_Reader_ReadAllGlobalDefinitions(reader, global_def_reader, &definitions_read),
-               "OTF2_Reader_ReadAllGlobalDefinitions\n");
-
-  //for (size_t i = 0; i < locations->size; i++) {
-  //  cout << "registering def reader" << endl;
-  //    check_status(OTF2_Reader_SelectLocation(reader, locations->members[i]),
-  //                 "OTF2_Reader_ReadAllGlobalDefinitions\n");
-  //}
-
   bool successful_open_def_files = OTF2_Reader_OpenDefFiles(reader) == OTF2_SUCCESS;
   check_status(OTF2_Reader_OpenEvtFiles(reader), "OTF2_Reader_OpenEvtFiles\n");
 
@@ -233,36 +215,30 @@ OTF2TraceReplayApp::initialize_event_reader() {
                    "OTF2_Reader_RegisterGlobalDefCallbacks\n");
   OTF2_DefReaderCallbacks_Delete(def_callbacks);
 
-  definitions_read = 0;
+  uint64_t definitions_read = 0;
   check_status(OTF2_Reader_ReadAllLocalDefinitions(reader, def_reader, &definitions_read),
                  "OTF2_Reader_ReadAllDefinitions\n");
-
-  /*
-  for (size_t i = 0; i < locations->size; i++) {
-    if (successful_open_def_files) {
-      OTF2_DefReader* def_reader = OTF2_Reader_GetDefReader(reader,
-                                   locations->members[i]);
-
-      if (def_reader) {
-          uint64_t def_reads = 0;
-          check_status(
-              OTF2_Reader_ReadAllLocalDefinitions(reader, def_reader,
-                                                  &def_reads),
-              "OTF2_Reader_ReadAllLocalDefinitions\n");
-          check_status(OTF2_Reader_CloseDefReader(reader, def_reader),
-                       "OTF2_Reader_CloseDefReader\n");
-      }
-    }
-    OTF2_Reader_GetEvtReader(reader, locations->members[i]);
-  }
-  */
 
   if (successful_open_def_files) {
     check_status(OTF2_Reader_CloseDefFiles(reader),
                  "OTF2_Reader_CloseDefFiles\n");
   }
 
+  //struct c_vector* locations = (c_vector*) malloc(sizeof(*locations) + number_of_locations * sizeof(*locations->members));
+  //locations->capacity = number_of_locations;
+  //locations->size = number_of_locations;
+  OTF2_GlobalDefReader* global_def_reader = OTF2_Reader_GetGlobalDefReader(reader);
+  OTF2_GlobalDefReaderCallbacks* global_def_callbacks;
+  global_def_callbacks = create_global_def_callbacks();
+  OTF2_GlobalDefReaderCallbacks_SetLocationCallback(global_def_callbacks, &GlobDefLocation_Register);
+  check_status( OTF2_Reader_RegisterGlobalDefCallbacks(reader, global_def_reader, global_def_callbacks, (void*)this),
+                "OTF2_Reader_RegisterGlobalDefCallbacks\n");
+  OTF2_GlobalDefReaderCallbacks_Delete(global_def_callbacks);
+  definitions_read = 0;
+  check_status(OTF2_Reader_ReadAllGlobalDefinitions(reader, global_def_reader, &definitions_read),
+               "OTF2_Reader_ReadAllGlobalDefinitions\n");
   OTF2_Reader_CloseGlobalDefReader(reader, global_def_reader);
+
   OTF2_EvtReader* evt_reader = OTF2_Reader_GetEvtReader(reader, rank_);
   OTF2_EvtReaderCallbacks* event_callbacks = create_evt_callbacks();
   check_status(OTF2_Reader_RegisterEvtCallbacks(reader, evt_reader,
@@ -270,7 +246,7 @@ OTF2TraceReplayApp::initialize_event_reader() {
       "OTF2_Reader_RegisterEvtCallbacks\n");
   OTF2_EvtReaderCallbacks_Delete(event_callbacks);
 
-  free(locations);
+  //free(locations);
 
   return reader;
 }
@@ -282,6 +258,7 @@ handle_events(OTF2_Reader* reader, OTF2_EvtReader* event_reader) {
 
   check_status(OTF2_Reader_ReadLocalEvents(reader, event_reader, read_all_events, &events_read),
                "Trace replay failure");
+
 	return events_read;
 }
 
@@ -289,11 +266,10 @@ void OTF2TraceReplayApp::initiate_trace_replay(OTF2_Reader* reader) {
   // get the trace reader corresponding to the rank
   uint64_t locs = 0;
   OTF2_Reader_GetNumberOfLocations(reader, &locs);
-  //cout << "detected " << locs << endl;
 
   OTF2_EvtReader* event_reader = OTF2_Reader_GetEvtReader(reader, rank_);
 
-  handle_events(reader, event_reader);
+  uint64_t events_read = handle_events(reader, event_reader);
 
   if (rank_ == 0) std::cout << "OTF2 Trace replay complete" << endl;
 
@@ -308,16 +284,22 @@ OTF2TraceReplayApp::verify_replay_success()
   int incomplete_calls = call_queue_.GetDepth();
 
   if(incomplete_calls > 0) { // Something stalled the queue...
-    cout << "ERROR: rank " << rank_ << " has " << incomplete_calls << " incomplete calls!" << endl;
-    cout << "This is likely cased by dangling MPI_Isend/MPI_Irecv(s). The OTF2 trace will be incomplete." << endl;
+    cerr << "ERROR: rank " << rank_ << " has " << incomplete_calls << " incomplete calls!" << endl;
+    cerr << "This is likely caused by dangling MPI_Isend/MPI_Irecv(s). The OTF2 trace will be incomplete." << endl;
 
     int calls_to_print = min(incomplete_calls,25);
-    cout << "Printing " << calls_to_print << " calls" << endl;
+    cerr << "Printing " << calls_to_print << " calls" << endl;
 
     for (int i = 0; i < calls_to_print; i++) {
       auto& call = call_queue_.Peek();
       call_queue_.call_queue.pop();
-      cout << "  ==> " << setw(15) << call.ToString() << (call.isready?"\tREADY":"\tNOT READY")<< endl;
+      cerr << "  ==> " << setw(15) << call.ToString() << (call.isready?"\tREADY":"\tNOT READY")<< endl;
+    }
+
+    for (auto iter = call_queue_.request_begin(); iter != call_queue_.request_end(); ++iter){
+      cerr << "Stalled on request " << iter->first
+           << " on " << iter->second->ToString()
+           << std::endl;
     }
   }
 }

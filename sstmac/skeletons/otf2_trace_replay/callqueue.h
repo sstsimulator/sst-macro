@@ -117,15 +117,14 @@ class CallQueue {
 
   // Push a new call onto the back of the CallQueue
   void emplaceCall(OTF2_TimeStamp start, OTF2TraceReplayApp* app,
-                   MPI_CALL_ID id, const char* name){
-    call_queue.emplace(start, app, id, name);
+                   MPI_CALL_ID id){
+    call_queue.emplace(start, app, id);
   }
 
   // Push a new call onto the back of the CallQueue
   void emplaceCall(OTF2_TimeStamp start, OTF2TraceReplayApp* app,
-                   MPI_CALL_ID id, const char* name,
-                   std::function<void()> trigger){
-    call_queue.emplace(start, app, id, name, trigger);
+                   MPI_CALL_ID id, std::function<void()> trigger){
+    call_queue.emplace(start, app, id, trigger);
   }
 
   // Notify the CallQueue handlers that a given call was finished
@@ -161,6 +160,14 @@ class CallQueue {
   // Begin tracking a pending MPI call with a request
   void AddRequest(MPI_Request req, MpiCall& cb){
     request_map[req] = &cb;
+  }
+
+  std::unordered_map<MPI_Request, MpiCall*>::const_iterator request_begin() const {
+    return request_map.begin();
+  }
+
+  std::unordered_map<MPI_Request, MpiCall*>::const_iterator request_end() const {
+    return request_map.end();
   }
 
   // Finds an MPI call based on a request

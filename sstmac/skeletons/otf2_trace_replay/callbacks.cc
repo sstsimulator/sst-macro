@@ -206,17 +206,20 @@ OTF2_CallbackCode def_comm(
   OTF2_CommRef   parent )
 {
   auto app = (OTF2TraceReplayApp*)userData;
+  //As I understand it, OTF2 has already done the local to global conversion
+  //All comm IDs in the trace are global IDs
+  auto local_comm_id = id; //app->convertGlobalToLocalComm(id);
   app->GetMpi()->set_generate_ids(false);
   bool need_comm = app->otf2_groups[group];
   if (need_comm){
-    app->GetMpi()->comm_create_with_id(MPI_COMM_WORLD, group, id);
+    app->GetMpi()->comm_create_with_id(MPI_COMM_WORLD, group, local_comm_id);
   } else {
     auto& str = app->otf2_string_table[name];
     if (str == "MPI_COMM_WORLD"){
-      MPI_Comm output = id;
+      MPI_Comm output = local_comm_id;
       app->GetMpi()->comm_dup(MPI_COMM_WORLD, &output);
     } else if (str == "MPI_COMM_SELF"){
-      MPI_Comm output = id;
+      MPI_Comm output = local_comm_id;
       app->GetMpi()->comm_dup(MPI_COMM_SELF, &output);
     } else {
     }
@@ -251,12 +254,27 @@ def_location_property(
   return OTF2_CALLBACK_SUCCESS;
 }
 
+void traverse_IdMap( uint64_t localId,
+                     uint64_t globalId,
+                     void* userData) {
+  auto app = (OTF2TraceReplayApp*)userData;
+  app->localToGlobalComm(localId, globalId);
+}
+
 OTF2_CallbackCode
 def_mapping_table(
     void*             userData,
     OTF2_MappingType  mappingType,
     const OTF2_IdMap* idMap )
 {
+  if (mappingType == OTF2_MAPPING_COMM) {
+    OTF2_IdMapMode map_node;
+
+    OTF2_IdMap_GetMode(idMap, &map_node);
+
+    // OTF2 traverses over the struct by recursively calling with the struct
+    OTF2_IdMap_Traverse(idMap, traverse_IdMap, userData);
+  }
   return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -287,14 +305,11 @@ void add_wait(OTF2TraceReplayApp* app, CallQueue& queue, MPI_Request requestID)
     // a sequence of individual MPI_Wait calls
     // this is a 2nd or later wait request in a waitall (or waitsome)
     queue.emplaceCall(wait_call.start_time, app,
-                      ID_MPI_Wait, wait_call.name,
-                      wait_event);
+                      ID_MPI_Wait, wait_event);
 
-    queue.CallReady(wait_call);
-
-    // the previous call should not advance any time when executing
+    //the previous call should not advance any time when executing
     wait_call.end_time = wait_call.start_time;
-
+    queue.CallReady(wait_call);
 	}
 }
 
@@ -419,8 +434,9 @@ OTF2_CallbackCode event_mpi_irecv(
   callqueue.RemoveRequest((MPI_Request)requestID);
   callqueue.CallReady(call);
 
-  if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents())
+  if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()){
     EVENT_PRINT("IRECV count: " << msgLength << " source: " << sender << " tag: " << msgTag);
+  }
   return OTF2_CALLBACK_SUCCESS;
 }
 
@@ -617,7 +633,7 @@ OTF2_CallbackCode event_parameter_string(
 
 #define CASE_ADD_CALL(call_id) case ID_##call_id: \
     { \
-  app->GetCallQueue().emplaceCall(time,app,ID_##call_id,#call_id); \
+  app->GetCallQueue().emplaceCall(time,app,ID_##call_id); \
   if (((OTF2TraceReplayApp*)userData)->PrintTraceEvents()) \
     EVENT_PRINT("ENTER " << app->GetCallQueue().PeekBack().ToString() << " time: " << time); \
   } \
@@ -1096,7 +1112,7 @@ OTF2_CallbackCode event_leave(
   auto iter = app->otf2_regions.find(region);
   if (iter == app->otf2_regions.end()){
     if (app->PrintUnknownCallback()) {
-      std::cout << "unknown OTF2 region " << region << std::endl;
+      std::cerr << "unknown OTF2 region " << region << std::endl;
     }
     return OTF2_CALLBACK_SUCCESS;
   }

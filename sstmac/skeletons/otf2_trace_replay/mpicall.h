@@ -59,26 +59,25 @@ class OTF2TraceReplayApp;
 class MpiCall {
  public:
   MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* _app,
-          MPI_CALL_ID _id, const char* _name) :
+          MPI_CALL_ID _id) :
     isready(false), app(_app),
     start_time(start),
     end_time(0),
-    name(_name),
     id(_id)
   {
   }
 
   MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* _app,
-          MPI_CALL_ID _id, const char* _name,
-          std::function<void()> trigger) :
+          MPI_CALL_ID _id, std::function<void()> trigger) :
     isready(false), app(_app),
     start_time(start),
     end_time(0),
-    name(_name),
     id(_id),
     on_trigger(trigger)
   {
   }
+
+  static const char* name(MPI_CALL_ID id);
 
   MpiCall(const MpiCall&) = delete; //to avoid accidental copies
 
@@ -112,7 +111,7 @@ class MpiCall {
   void Trigger();
 
   const char* ToString() const {
-    return name;
+    return name(id);
   }
 
   // Members
@@ -121,7 +120,6 @@ class MpiCall {
   OTF2TraceReplayApp* app;
   bool isready;
   MPI_CALL_ID id;
-  const char* name;
 
   static void assert_call(MpiCall* cb, std::string msg){
     if (cb == nullptr) {

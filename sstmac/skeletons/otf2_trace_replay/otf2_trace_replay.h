@@ -98,6 +98,19 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
     total_events_ += events;
   }
 
+  void localToGlobalComm(MPI_Comm local, MPI_Comm global){
+    global_to_local_comm_[global] = local;
+  }
+
+  MPI_Comm convertGlobalToLocalComm(MPI_Comm global){
+    auto iter = global_to_local_comm_.find(global);
+    if (iter == global_to_local_comm_.end()){
+      return global;
+    } else {
+      return iter->second;
+    }
+  }
+
   int skeleton_main() override;
 
   void StartMpi(const sstmac::timestamp);
@@ -122,6 +135,8 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   CallQueue call_queue_;
 
   sstmac::timestamp compute_time;
+
+  std::map<MPI_Comm, MPI_Comm> global_to_local_comm_;
 
   sumi::mpi_api* mpi_;
 

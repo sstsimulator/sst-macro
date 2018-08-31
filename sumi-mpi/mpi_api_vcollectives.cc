@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/otf2_output_stat.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 
@@ -110,22 +111,16 @@ mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     void *recvbuf, const int *recvcounts, const int *displs,
                     MPI_Datatype recvtype, MPI_Comm comm)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto start_clock = trace_clock();
 
   do_vcoll(allgatherv, MPI_Allgatherv, comm, sendcount, sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    otf2_writer_.mpi_allgatherv(comm_world()->rank(),
-                                call_start_time,
-                                (uint64_t)os_->now().usec(),
-                                get_comm(comm)->size(),
-                                sendcount,
-                                sendtype,
-                                recvcounts,
-                                recvtype,
-                                comm);
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_allgatherv(start_clock, trace_clock(),
+       get_comm(comm)->size(), sendcount, sendtype,
+       recvcounts, recvtype, comm);
   }
 #endif
   return MPI_SUCCESS;
@@ -206,23 +201,17 @@ mpi_api::alltoallv(const void *sendbuf, const int *sendcounts,
                    void *recvbuf, const int *recvcounts,
                    const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto start_clock = trace_clock();
 
   do_vcoll(alltoallv, MPI_Alltoallv, comm,
            sendcounts, sendtype, sdispls,
            recvcounts, recvtype, rdispls, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    otf2_writer_.mpi_alltoallv(comm_world()->rank(),
-                               call_start_time,
-                               (uint64_t)os_->now().usec(),
-                               get_comm(comm)->size(),
-                               sendcounts,
-                               sendtype,
-                               recvcounts,
-                               recvtype,
-                               comm);
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_alltoallv(start_clock, trace_clock(),
+        get_comm(comm)->size(), sendcounts, sendtype,
+        recvcounts, recvtype, comm);
   }
 #endif
 
@@ -328,23 +317,16 @@ mpi_api::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, const int *recvcounts, const int *displs,
                  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto start_clock = trace_clock();
 
   do_vcoll(gatherv, MPI_Gatherv, comm, sendcount, sendtype, root,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    otf2_writer_.mpi_gatherv(comm_world()->rank(),
-                             call_start_time,
-                             (uint64_t)os_->now().usec(),
-                             get_comm(comm)->size(),
-                             sendcount,
-                             sendtype,
-                             recvcounts,
-                             recvtype,
-                             root,
-                             comm);
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_gatherv(start_clock, trace_clock(),
+      get_comm(comm)->size(), sendcount, sendtype,
+      recvcounts, recvtype, root, comm);
   }
 #endif
 
@@ -433,23 +415,16 @@ int
 mpi_api::scatterv(const void* sendbuf, const int* sendcounts, const int *displs, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto start_clock = trace_clock();
 
   do_vcoll(scatterv, MPI_Scatterv, comm, sendcounts, sendtype, root, displs,
            recvcount, recvtype, sendbuf, recvbuf);
 
 #ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    otf2_writer_.mpi_scatterv(comm_world()->rank(),
-                              call_start_time,
-                              (uint64_t)os_->now().usec(),
-                              get_comm(comm)->size(),
-                              sendcounts,
-                              sendtype,
-                              recvcount,
-                              recvtype,
-                              root,
-                              comm);
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_scatterv(start_clock, trace_clock(),
+      get_comm(comm)->size(), sendcounts, sendtype,
+      recvcount, recvtype, root, comm);
   }
 #endif
 

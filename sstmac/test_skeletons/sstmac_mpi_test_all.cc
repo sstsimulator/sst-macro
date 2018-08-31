@@ -129,7 +129,7 @@ int USER_MAIN(int argc, char** argv)
     test_allreduce(comm);
     test_scatter(comm);
     test_gather(comm);
-    test_scan(comm);
+    //test_scan(comm);
     test_comms(comm);
     test_wait(comm);
     test_allgather(comm);
@@ -304,6 +304,7 @@ test_barrier(MPI_Comm comm)
 void
 test_reduce(MPI_Comm comm)
 {
+  return;
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);

@@ -74,10 +74,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
-#undef SSTMAC_OTF2_ENABLED
-#ifdef SSTMAC_OTF2_ENABLED
-#include <dumpi/libotf2dump/otf2writer.h>
-#endif
+#include <sumi-mpi/otf2_output_stat_fwd.h>
 
 namespace sumi {
 
@@ -88,6 +85,8 @@ class mpi_api :
   public sstmac::sumi_transport
 {
   RegisterAPI("mpi", mpi_api)
+
+  friend class otf2_writer;
 
  public:
   mpi_api(sprockit::sim_parameters* params,
@@ -639,7 +638,7 @@ class mpi_api :
   void finish_collective(collective_op_base* op);
 
  private:
-  int do_wait(MPI_Request *request, MPI_Status *status);
+  int do_wait(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 
   void finalize_wait_request(mpi_request* reqPtr, MPI_Request* request, MPI_Status* status);
 
@@ -775,7 +774,7 @@ class mpi_api :
 
   void add_immediate_collective(collective_op_base* op, MPI_Request* req);
 
-  bool test(MPI_Request *request, MPI_Status *status);
+  bool test(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 
   int type_size(MPI_Datatype type){
     int ret;
@@ -839,13 +838,13 @@ class mpi_api :
 
   std::unordered_map<int, keyval*> keyvals_;
 
-#ifdef SSTMAC_OTF2_ENABLED
-  bool otf2_enabled_ = false;
-  std::string otf2_dir_basename_;
-  dumpi::OTF2_Writer otf2_writer_;
-#endif
-
   bool generate_ids_;
+
+  uint64_t trace_clock() const;
+
+#ifdef SSTMAC_OTF2_ENABLED
+  otf2_writer* otf2_writer_;
+#endif
 
 #if SSTMAC_COMM_SYNC_STATS
  public:

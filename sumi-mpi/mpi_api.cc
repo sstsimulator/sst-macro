@@ -69,6 +69,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
+#include <sumi-mpi/otf2_output_stat.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
@@ -77,6 +78,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/malloc.h>
 #include <sprockit/keyword_registration.h>
+
+#ifdef SSTMAC_OTF2_ENABLED
+#include <sumi-mpi/otf2_output_stat.h>
+#endif
+
 
 MakeDebugSlot(mpi_sync)
 DeclareDebugSlot(mpi_check)
@@ -124,6 +130,7 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   req_counter_(0),
   queue_(nullptr),
   generate_ids_(true),
+  otf2_writer_(nullptr),
   crossed_comm_world_barrier_(false),
   comm_factory_(sid, this)
 {
@@ -140,16 +147,18 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   dump_comm_times_ = params->get_optional_bool_param("dump_comm_times", false);
 #endif
 
-  auto otf2_dir_basename = params->get_optional_param("otf2_dir_basename", "");
+
 #ifdef SSTMAC_OTF2_ENABLED
-  otf2_dir_basename_ = std::move(otf2_dir_basename);
-  if(otf2_dir_basename_.empty()) {
-    spkt_abort_printf("OTF2 parameter 'otf2_dir_basename' used but OTF2 support is not available."
-                      "Use '--with-otf2' in the configure script.");
-  } else {
-    otf2_enabled_ = true;
-  }
+  sstmac::stat_descr_t otf2_cfg; otf2_cfg.dump_all = true;
+  otf2_writer_ = sstmac::optional_stats<otf2_writer>(os_->node(), params,
+                                              "otf2", "otf2", &otf2_cfg);
 #endif
+}
+
+uint64_t
+mpi_api::trace_clock() const
+{
+  return os_->now().ticks();
 }
 
 void
@@ -159,12 +168,6 @@ mpi_api::delete_statics()
 
 mpi_api::~mpi_api()
 {
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    otf2_writer_.close_archive();
-  }
-#endif
-
   //MUST DELETE HERE
   //cannot delete in finalize
   //this is weird with context switching
@@ -197,14 +200,6 @@ mpi_api::~mpi_api()
 int
 mpi_api::abort(MPI_Comm comm, int errcode)
 {
-
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    auto call_start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Abort");
-  }
-#endif
-
   spkt_throw_printf(sprockit::value_error,
     "MPI rank %d exited with code %d", rank_, errcode);
   return MPI_SUCCESS;
@@ -214,19 +209,13 @@ int
 mpi_api::comm_rank(MPI_Comm comm, int *rank)
 {
   *rank = get_comm(comm)->rank();
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    auto call_start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, call_start_time, "MPI_Comm_rank");
-  }
-#endif
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::init(int* argc, char*** argv)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto start_clock = trace_clock();
 
   if (status_ == is_initialized){
     sprockit::abort("MPI_Init cannot be called twice");
@@ -256,39 +245,18 @@ mpi_api::init(int* argc, char*** argv)
 
   status_ = is_initialized;
 
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_) {
-    otf2_writer_.set_verbosity(dumpi::OWV_WARN);
-    otf2_writer_.set_comm_mode(dumpi::COMM_MODE_NONE);
-    // Register communicators
-    if (rank_ == 0){ //before the barrier
-     otf2_writer_.open_archive(otf2_dir_basename_, nproc_, rank_);
-    }
-  }
-#endif
-
   collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
   wait_collective(op);
 
-#ifdef SSTMAC_OTF2_ENABLED
-  if (otf2_enabled_) { //force after the barrier
-    if (rank_ != 0){
-      otf2_writer_.open_archive(otf2_dir_basename_, nproc_, rank_);
-    }
-    otf2_writer_.register_comm_world(worldcomm_->id());
-    otf2_writer_.register_comm_self(selfcomm_->id());
-    otf2_writer_.register_comm_null(MPI_COMM_NULL);
-    otf2_writer_.register_null_request(MPI_REQUEST_NULL);
-    otf2_writer_.set_clock_resolution(1e6);
-  }
-#endif
-
-#ifdef SSTMAC_OTF2_ENABLED
-  otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Init");
-#endif
   delete op;
   crossed_comm_world_barrier_ = false;
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->init(start_clock, trace_clock(), rank_, nproc_);
+  }
+#endif
 
   return MPI_SUCCESS;
 }
@@ -307,7 +275,7 @@ mpi_api::check_init()
 int
 mpi_api::finalize()
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto start_clock = trace_clock();
 
   start_mpi_call(MPI_Finalize);
 
@@ -316,6 +284,13 @@ mpi_api::finalize()
   delete op;
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().generic_call(start_clock, trace_clock(), "MPI_Finalize");
+    otf2_writer_->assign_global_comm_ids(this);
+  }
+#endif
 
   status_ = is_finalized;
 
@@ -329,13 +304,6 @@ mpi_api::finalize()
       os_->now().sec());
   }
 
-#ifdef SSTMAC_OTF2_ENABLED
-  // Write this call to archive before it starts. The barrier can be
-  // used to ensure every rank has been written before closing
-  if(otf2_enabled_) {
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Finalize");
-  }
-#endif
   transport::finish();
 
 #if SSTMAC_COMM_SYNC_STATS
@@ -364,25 +332,14 @@ mpi_api::finalize()
 double
 mpi_api::wtime()
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Wtime);
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Wtime");
-#endif
   return os_->now().sec();
 }
 
 int
 mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
   *count = status->count;
-
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_)
-    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Get_count");
-#endif
   return MPI_SUCCESS;
 }
 
