@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_comm_call(fxn,comm) \
+  auto call_start_time = (uint64_t)os_->now().usec(); \
   start_mpi_call(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, comm_str(comm).c_str())
 
@@ -111,6 +112,11 @@ mpi_api::comm_size(MPI_Comm comm, int *size)
   start_comm_call(MPI_Comm_size,comm);
   *size = get_comm(comm)->size();
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Comm_size");
+#endif
   return MPI_SUCCESS;
 }
 
@@ -156,6 +162,13 @@ mpi_api::comm_create_with_id(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
     }
 #endif
   }
+#ifdef SSTMAC_OTF2_ENABLED
+  // treate like ::comm_create
+  if(otf2_enabled_ && otf2_initialized_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.mpi_comm_create(comm_world()->rank(), start_time, start_time, input, group, new_comm);
+  }
+#endif
 }
 
 int
@@ -163,6 +176,14 @@ mpi_api::comm_group(MPI_Comm comm, MPI_Group* grp)
 {
   mpi_comm* commPtr = get_comm(comm);
   *grp = commPtr->group()->id();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.mpi_comm_group(comm_world()->rank(), start_time, start_time, comm, *grp);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -310,6 +331,13 @@ mpi_api::comm_free(MPI_Comm* input)
   }
   *input = MPI_COMM_NULL;
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_)
+    otf2_writer_.generic_call(comm_world()->rank(), call_start_time, (uint64_t)os_->now().usec(), "MPI_Comm_free");
+#endif
+
+
   return MPI_SUCCESS;
 }
 
@@ -325,6 +353,14 @@ mpi_api::comm_get_attr(MPI_Comm, int comm_keyval, void* attribute_val, int *flag
   }
   */
   *flag = 0;
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_enabled_ && otf2_initialized_) {
+    auto start_time = (uint64_t)os_->now().usec();
+    otf2_writer_.generic_call(comm_world()->rank(), start_time, start_time, "MPI_Comm_get_attr");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

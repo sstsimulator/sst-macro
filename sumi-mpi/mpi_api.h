@@ -838,6 +838,14 @@ class mpi_api :
 
   std::unordered_map<int, keyval*> keyvals_;
 
+#ifdef SSTMAC_OTF2_ENABLED
+  bool otf2_enabled_ = false;
+  std::string otf2_dir_basename_;
+  static int running_count_;
+  static bool otf2_initialized_;
+  static dumpi::OTF2_Writer otf2_writer_;
+#endif
+
   bool generate_ids_;
 
   uint64_t trace_clock() const;

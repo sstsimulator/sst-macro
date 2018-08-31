@@ -302,7 +302,8 @@ int main(int argc, char** argv)
     move(s,myPatch);
     double stop = get_time();
     if (myPatch.id == 0){
-      printf("Completed step %d in %12.8fs\n", s, stop-start);
+      double t_ms = (stop-start)*1e3;
+      printf("Completed step %d in %10.1fms\n", s, t_ms);
     }
   }
 

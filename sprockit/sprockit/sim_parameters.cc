@@ -1055,8 +1055,8 @@ sim_parameters::parse_stream(std::istream& in,
     sim_parameters* active_scope = ns_queue.back();
     int last_idx = line.size() - 1;
 
-    if(line.size() == 0) {
-       //empty
+    if (line.size() == 0) {
+          //empty
     } else if (line[0] == '#') {
       //a comment
       continue;

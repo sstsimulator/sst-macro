@@ -57,7 +57,12 @@ exe_LDADD =
 exe_LDADD += \
     ../sprockit/sprockit/libsprockit.la \
     ../sstmac/main/libsstmac_main.la \
-    ../sstmac/install/libsstmac.la
+    ../sstmac/install/libsstmac.la \
+    ../sprockit/sprockit/libsprockit.la
+
+if HAVE_OTF2
+  exe_LDADD += ../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
+endif
 
 if HAVE_OTF2
   exe_LDADD += ../sst-dumpi/dumpi/libotf2dump/libotf2dump.la 

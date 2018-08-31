@@ -129,6 +129,7 @@ mpi_api::waitall(int count, MPI_Request array_of_requests[],
     "MPI_Waitall(%d,...)", count);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   int last_nonnull = 0;
+  std::vector<MPI_Request> req_vec;
   for (int i=0; i < count; ++i){
     MPI_Status* status = ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i];
     if (array_of_requests[i] != MPI_REQUEST_NULL){
