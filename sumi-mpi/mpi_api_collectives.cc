@@ -287,10 +287,12 @@ mpi_api::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
           sendcount, sendtype, recvcount, recvtype,
           sendbuf, recvbuf);
 
+#ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
     otf2_writer_->writer().mpi_allgather(start_clock, trace_clock(),
             sendcount, sendtype, recvcount, recvtype, comm);
   }
+#endif
 
   return MPI_SUCCESS;
 

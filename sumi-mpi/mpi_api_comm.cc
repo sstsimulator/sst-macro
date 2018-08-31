@@ -281,11 +281,12 @@ mpi_api::comm_split(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
   }
 
   end_api_call();
-
+#ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
     otf2_writer_->add_comm(outcommPtr, incomm);
     otf2_writer_->writer().mpi_comm_split(start_clock, trace_clock(), incomm, color, key, *outcomm);
   }
+#endif
 
   return MPI_SUCCESS;
 }
