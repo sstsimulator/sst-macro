@@ -73,7 +73,7 @@ class sculpin_switch :
          "A network switch implementing the sculpin model")
 
   SST_ELI_DOCUMENT_STATISTICS(
-         { "traffic_intensity",    "Count the traffic on a port", "unit of traffic", 1}
+    { "traffic_intensity",    "Count the traffic on a port", "unit of traffic", 1}
   )
 
  public:

@@ -21,9 +21,6 @@ struct traffic_event {
     int intensity_; // traffic intenisity
 };
 
-SST_REGISTER_STATISTIC_FIELD(traffic_event, te);
-
-
 class stat_vtk : public stat_collector
 {
   FactoryRegister("vtk", stat_collector, stat_vtk)

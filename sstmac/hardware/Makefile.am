@@ -18,7 +18,34 @@ libsstmac_hw_la_LIBADD =
 
 library_includedir=$(includedir)/sstmac/hardware
 
-nobase_library_include_HEADERS = \
+libsstmac_hw_la_SOURCES = 
+nobase_library_include_HEADERS = 
+
+if HAVE_VTK
+libsstmac_hw_la_SOURCES +=  \
+  vtk/vtk_stats.cc \
+  vtk/vtkTrafficSource.cc \
+  vtk/vtkXMLPVDWriter.cc
+nobase_library_include_HEADERS += \
+  vtk/vtk_stats.h \
+  vtk/vtkTrafficSource.h \
+  vtk/vtkXMLPVDWriter.h
+
+if INTEGRATED_SST_CORE
+libsstmac_hw_la_SOURCES += \
+   vtk/statoutputexodus.cc
+
+nobase_library_include_HEADERS += \
+   vtk/stattraffic.h \
+   vtk/statoutputexodus.h
+endif
+
+libsstmac_hw_la_LDFLAGS += $(VTK_LDFLAGS)
+libsstmac_hw_la_LIBADD += $(VTK_LIBS)
+AM_CPPFLAGS += $(VTK_CPPFLAGS)
+endif
+
+nobase_library_include_HEADERS += \
   logp/logp_nic.h \
   logp/logp_switch.h \
   logp/logp_switch_fwd.h \
@@ -103,7 +130,7 @@ nobase_library_include_HEADERS = \
   router/valiant_routing.h \
   router/fat_tree_router.h 
 
-libsstmac_hw_la_SOURCES =  \
+libsstmac_hw_la_SOURCES +=  \
   logp/logp_nic.cc \
   logp/logp_switch.cc \
   logp/logp_param_expander.cc \
@@ -167,29 +194,6 @@ libsstmac_hw_la_SOURCES =  \
   topology/topology.cc 
 
 
-if HAVE_VTK
-libsstmac_hw_la_SOURCES +=  \
-  vtk/vtk_stats.cc \
-  vtk/vtkTrafficSource.cc \
-  vtk/vtkXMLPVDWriter.cc
-nobase_library_include_HEADERS += \
-  vtk/vtk_stats.h \
-  vtk/vtkTrafficSource.h \
-  vtk/vtkXMLPVDWriter.h
-
-if INTEGRATED_SST_CORE
-libsstmac_hw_la_SOURCES += \
-   vtk/statoutputexodus.cc
-
-nobase_library_include_HEADERS += \
-   vtk/stattraffic.h \
-   vtk/statoutputexodus.h
-endif
-
-libsstmac_hw_la_LDFLAGS += $(VTK_LDFLAGS)
-libsstmac_hw_la_LIBADD += $(VTK_LIBS)
-AM_CPPFLAGS += $(VTK_CPPFLAGS)
-endif
 
 if INTEGRATED_SST_CORE
 libsstmac_hw_la_SOURCES +=  \
