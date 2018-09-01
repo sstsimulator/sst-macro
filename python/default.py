@@ -22,9 +22,6 @@ while isSoFile:
   idx += 1
 
 ic = setupDeprecated()
-for sw in ic.switches:
-  sw.addParam()
-  sw.enableStatistics()
 
 
 
