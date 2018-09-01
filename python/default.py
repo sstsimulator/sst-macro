@@ -21,5 +21,7 @@ while isSoFile:
   else: isSoFile = False
   idx += 1
 
-setupDeprecated()
+ic = setupDeprecated()
+
+
 

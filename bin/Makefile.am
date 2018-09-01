@@ -40,9 +40,6 @@ AM_CPPFLAGS += \
  -I$(top_builddir)/dumpi \
  -I$(top_srcdir)/dumpi
 
-if HAVE_OTF2
-AM_LDFLAGS += $(OTF2_LDFLAGS)
-endif
 
 if !INTEGRATED_SST_CORE
 bin_PROGRAMS += sstmac sstmac_top_info
@@ -50,13 +47,26 @@ bin_PROGRAMS += sstmac sstmac_top_info
 sstmac_SOURCES = src/sstmac_dummy_main.cc
 sstmac_top_info_SOURCES = src/top_info.cc
 
-exe_LDADD = \
+exe_LDADD =
+
+#if HAVE_OTF2
+#  exe_LDADD += ../sst-dumpi/dumpi/libotf2dump/libotf2dump.la 
+#  exe_LDADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)
+#endif
+
+exe_LDADD += \
+    ../sprockit/sprockit/libsprockit.la \
     ../sstmac/main/libsstmac_main.la \
     ../sstmac/install/libsstmac.la \
     ../sprockit/sprockit/libsprockit.la
 
 if HAVE_OTF2
   exe_LDADD += ../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
+endif
+
+if HAVE_OTF2
+  exe_LDADD += ../sst-dumpi/dumpi/libotf2dump/libotf2dump.la 
+#  exe_LDADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)
 endif
 
 if EXTERNAL_BOOST

@@ -57,8 +57,6 @@ namespace sumi {
 int
 mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 {
-  auto start_time = (uint64_t)os_->now().usec();
-
   start_probe_call(MPI_Probe,comm,source,tag);
 
   mpi_comm* commPtr = get_comm(comm);
@@ -74,21 +72,12 @@ mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 
   delete req;
 
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_ && otf2_initialized_) {
-    auto start_time = (uint64_t)os_->now().usec();
-    otf2_writer_.generic_call(comm_world()->rank(), start_time, (uint64_t)os_->now().usec(), "MPI_Probe");
-  }
-#endif
-
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
 {
-  auto start_time = (uint64_t)os_->now().usec();
-
   start_probe_call(MPI_Iprobe,comm,source,tag);
 
   mpi_comm* commPtr = get_comm(comm);
@@ -106,12 +95,6 @@ mpi_api::iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *statu
     if (found) *flag = 1;
     else       *flag = 0;
   }
-
-#ifdef SSTMAC_OTF2_ENABLED
-  if(otf2_enabled_ && otf2_initialized_) {
-    otf2_writer_.generic_call(comm_world()->rank(), start_time, (uint64_t)os_->now().usec(), "MPI_Iprobe");
-  }
-#endif
 
   return MPI_SUCCESS;
 }

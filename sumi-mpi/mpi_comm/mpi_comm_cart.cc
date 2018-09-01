@@ -104,7 +104,6 @@ mpi_comm_cart::shift(int dir, int dis)
     } else {
       return mpi_comm::proc_null;
     }
-
   } else if (coords[dir] < 0) {
     if (periods_[dir]) {
       coords[dir] = (dims_[dir] + coords[dir]) % dims_[dir];

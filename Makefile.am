@@ -32,8 +32,6 @@ dist_bin_SCRIPTS = sstmacro-libtool
 
 ACLOCAL_AMFLAGS = -I acinclude
 
-QMAKE=@qmake_executable@
-
 AM_FFLAGS = $(FFLAG_INT)
 AM_CPPFLAGS += $(SCALAPACK_CPPFLAGS)
 AM_CPPFLAGS += $(LAPACK_CPPFLAGS)
