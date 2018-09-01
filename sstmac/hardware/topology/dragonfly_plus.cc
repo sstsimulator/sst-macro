@@ -166,9 +166,59 @@ dragonfly_plus::configure_individual_port_params(switch_id src, sprockit::sim_pa
     dragonfly::setup_port_params(switch_params, red_[0], 0, a_);
     dragonfly::setup_port_params(switch_params, red_[1], a_, h_);
   }
-
-
 }
+
+topology::vtk_switch_geometry
+dragonfly_plus::get_vtk_geometry(switch_id sid) const
+{
+  int myRow;
+  int myA;
+  int myG;
+  get_coords(sid, myRow, myA, myG);
+
+
+  static const double TWO_PI = 6.283185307179586;
+  static const double PI_OVER_9 = 0.3490658503988659;
+  //we need to figure out the radian offset of the group
+  double inter_group_offset = (myG*TWO_PI) / g_;
+  double intra_group_start = myA*PI_OVER_9 / a_;
+
+  double theta = inter_group_offset + intra_group_start;
+
+  //determine radius to make x-dim of switches 0.33
+  //r*2pi = 0.33*n
+  double radius = (0.33*a_*g_) / TWO_PI;
+
+  /** With no rotation, these are the corners.
+   * These will get rotated appropriately */
+  double zCorner = 0.0;
+  double yCorner = 0.0;
+  double xCorner = radius;
+  if (myRow == 0){
+    //this is the "intra-group" row without group connections
+    //put this in the outer circle
+    xCorner += 1.5;
+  }
+
+  double xSize = 1.0;
+  double ySize = 0.25; //this is the face pointing "into" the circle
+  double zSize = 0.25;
+
+  std::vector<vtk_face_t> ports(a_ + h_);
+  for (int a=0; a < a_; ++a){
+    ports[a] = plusXface; //point out of the circle
+  }
+  for (int h=0; h < h_; ++h){
+    ports[a_ + h] = minusXface; // point into the circle
+  }
+
+  vtk_switch_geometry geom(xSize, ySize, zSize,
+                           xCorner, yCorner, zCorner, theta,
+                           std::move(ports));
+
+  return geom;
+}
+
 
 }
 } //end of namespace sstmac

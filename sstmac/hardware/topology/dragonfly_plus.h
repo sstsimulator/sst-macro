@@ -90,6 +90,8 @@ class dragonfly_plus : public dragonfly
 
   virtual ~dragonfly_plus() {}
 
+  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+
   int ndimensions() const {
     return 3;
   }

@@ -234,6 +234,60 @@ dragonfly::configure_individual_port_params(switch_id src, sprockit::sim_paramet
   setup_port_params(switch_params, red_[1], a_, h_);
 }
 
+topology::vtk_switch_geometry
+dragonfly::get_vtk_geometry(switch_id sid) const
+{
+  /**
+   * The switches are arranged in circle. The faces
+   * pointing into the circle represent inter-group traffic
+   * while the the faces pointing out of the circle are intra-group traffic.
+   * The "reference" switch starts at [radius, 0, 0]
+   * and has dimensions [1.0,0.25,0.25]
+   * This reference switch is rotated by an angle theta determine by the group number
+   * and the position of the switch within the group. The radius is chosen to be large
+   * enough to fit all switches with an inner size of 2.5
+  */
+
+  int myA = computeA(sid);
+  int myG = computeG(sid);
+
+  static const double TWO_PI = 6.283185307179586;
+  static const double PI_OVER_9 = 0.3490658503988659;
+  //we need to figure out the radian offset of the group
+  double inter_group_offset = (myG*TWO_PI) / g_;
+  double intra_group_start = myA*PI_OVER_9 / a_;
+
+  double theta = inter_group_offset + intra_group_start;
+
+  //determine radius to make x-dim of switches 0.33
+  //r*2pi = 0.33*n
+  double radius = (0.33*a_*g_) / TWO_PI;
+
+  /** With no rotation, these are the corners.
+   * These will get rotated appropriately */
+  double zCorner = 0.0;
+  double yCorner = 0.0;
+  double xCorner = radius;
+
+  double xSize = 1.0;
+  double ySize = 0.25; //this is the face pointing "into" the circle
+  double zSize = 0.25;
+
+  std::vector<vtk_face_t> ports(a_ + h_);
+  for (int a=0; a < a_; ++a){
+    ports[a] = plusXface; //point out of the circle
+  }
+  for (int h=0; h < h_; ++h){
+    ports[a_ + h] = minusXface; // point into the circle
+  }
+
+  vtk_switch_geometry geom(xSize, ySize, zSize,
+                           xCorner, yCorner, zCorner, theta,
+                           std::move(ports));
+
+  return geom;
+}
+
 inter_group_wiring::inter_group_wiring(sprockit::sim_parameters *params, int a, int g, int h) :
   a_(a), g_(g), h_(h)
 {

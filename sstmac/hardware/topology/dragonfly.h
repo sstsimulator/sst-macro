@@ -142,6 +142,8 @@ class dragonfly : public cartesian_topology
     return true;
   }
 
+  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+
   void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
   void configure_individual_port_params(switch_id src,

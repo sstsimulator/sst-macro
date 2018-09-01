@@ -80,7 +80,6 @@ namespace hw {
 
 topology* topology::static_topology_ = nullptr;
 topology* topology::main_top_ = nullptr;
-const int topology::eject = -1;
 
 #if SSTMAC_INTEGRATED_SST_CORE
 int topology::nproc = 0;
@@ -260,6 +259,14 @@ topology::label(uint32_t comp_id) const
   } else {
     return switch_label(comp_id - num_nodes());
   }
+}
+
+topology::vtk_switch_geometry
+topology::get_vtk_geometry(switch_id sid) const
+{
+  spkt_abort_printf("unimplemented: topology::get_vtk_geometry for %s",
+                    to_string().c_str());
+  return vtk_switch_geometry(0,0,0,0,0,0,0,std::vector<vtk_face_t>());
 }
 
 class merlin_topology : public topology {

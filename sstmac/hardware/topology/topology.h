@@ -71,8 +71,6 @@ class topology : public sprockit::printable
   DeclareFactory(topology)
 
  public:
-  static const int eject;
-
   struct connection {
     switch_id src;
     switch_id dst;
@@ -80,7 +78,248 @@ class topology : public sprockit::printable
     int dst_inport;
   };
 
-  static const int speedy_port = 1000000;
+  typedef enum {
+    plusXface = 0,
+    plusYface = 1,
+    plusZface = 2,
+    minusXface = 3,
+    minusYface = 4,
+    minusZface = 5
+  } vtk_face_t;
+
+  struct injection_port {
+    node_id nid;
+    int port;
+  };
+
+  struct rotation {
+    double x[3];
+    double y[3];
+    double z[3];
+
+    /**
+     * @brief rotation Initialize as a 3D rotation
+     * @param ux  The x component of the rotation axis
+     * @param uy  The y component of the rotation axis
+     * @param uz  The z component of the rotation axis
+     * @param theta The angle of rotation
+     */
+    rotation(double ux, double uy, double uz, double theta){
+      double cosTh = cos(theta);
+      double oneMinCosth = 1.0 - cosTh;
+      double sinTh = sin(theta);
+      x[0] = cosTh + ux*ux*oneMinCosth;
+      x[1] = ux*uy*oneMinCosth - uz*sinTh;
+      x[2] = ux*uz*oneMinCosth + uy*sinTh;
+
+      y[0] = uy*ux*oneMinCosth + uz*sinTh;
+      y[1] = cosTh + uy*uy*oneMinCosth;
+      y[2] = uy*uz*oneMinCosth - ux*sinTh;
+
+      z[0] = uz*ux*oneMinCosth - uy*sinTh;
+      z[1] = uz*uy*oneMinCosth + ux*sinTh;
+      z[2] = cosTh + uz*uz*oneMinCosth;
+    }
+
+    /**
+     * @brief rotation Initialize as a 2D rotation around Z-axis
+     * @param theta The angle of rotation
+     */
+    rotation(double theta){
+      double cosTh = cos(theta);
+      double sinTh = sin(theta);
+      x[0] = cosTh;
+      x[1] = -sinTh;
+      x[2] = 0.0;
+
+      y[0] = sinTh;
+      y[1] = cosTh;
+      y[2] = 0.0;
+
+      z[0] = 0.0;
+      z[1] = 0.0;
+      z[2] = 1.0;
+    }
+
+  };
+
+  struct xyz {
+    double x;
+    double y;
+    double z;
+
+    xyz() : x(0), y(0), z(0) {}
+
+    xyz(double X, double Y, double Z) :
+      x(X), y(Y), z(Z){}
+
+    double& operator[](int dim){
+      switch(dim){
+      case 0: return x;
+      case 1: return y;
+      case 2: return z;
+      }
+      return x;//never reached, keep compiler from warning
+    }
+
+    xyz rotate(const rotation& r) const {
+      xyz ret;
+      for (int j=0; j < 3; ++j){
+        ret.x += r.x[j] * x;
+        ret.y += r.y[j] * y;
+        ret.z += r.z[j] * z;
+      }
+      return ret;
+    }
+  };
+
+  struct vtk_face_geometry {
+    xyz corner;
+    xyz normal;
+    xyz length;
+    xyz width;
+    xyz depth;
+
+    vtk_face_geometry(const xyz& _corner,
+                      const xyz& _normal,
+                      const xyz& _length,
+                      const xyz& _width,
+                      const xyz& _depth) :
+      corner(_corner), normal(_normal), length(_length),
+      width(_width), depth(_depth) {}
+
+  };
+
+  struct vtk_box_geometry {
+    static const xyz x_axis;
+    static const xyz y_axis;
+    static const xyz z_axis;
+    static const xyz minus_x_axis;
+    static const xyz minus_y_axis;
+    static const xyz minus_z_axis;
+
+    xyz size;
+    xyz corner;
+    rotation rot;
+
+    vtk_box_geometry(double xLength, double yLength, double zLength,
+                 double xCorner, double yCorner, double zCorner,
+                 double xAxis, double yAxis, double zAxis, double theta) :
+      size(xLength,yLength,zLength),
+      corner(xCorner, yCorner, zCorner),
+      rot(xAxis, yAxis, zAxis, theta) {}
+
+    vtk_box_geometry(double xLength, double yLength, double zLength,
+                 double xCorner, double yCorner, double zCorner,
+                 double theta) :
+      size(xLength,yLength,zLength),
+      corner(xCorner, yCorner, zCorner),
+      rot(theta) {}
+
+    vtk_box_geometry(double xLength, double yLength, double zLength,
+                 double xCorner, double yCorner, double zCorner) :
+      vtk_box_geometry(xLength, yLength, zLength, xCorner, yCorner, zCorner, 0.0)
+   {}
+
+    vtk_face_geometry get_face_geometry(const xyz& normal,
+                                        const xyz& corner,
+                                        const xyz& length,
+                                        const xyz& width,
+                                        const xyz& depth) const
+    {
+      vtk_face_geometry geom(
+            normal.rotate(rot),
+            corner.rotate(rot),
+            length.rotate(rot),
+            width.rotate(rot),
+            depth.rotate(rot));
+      return geom;
+    }
+
+    vtk_face_geometry get_face_geometry(vtk_face_t face) const {
+      switch(face){
+      case plusXface:
+        return get_face_geometry(
+              x_axis,
+              plus_x_corner(),
+              y_axis,
+              z_axis,
+              minus_x_axis);
+      case plusYface:
+        return get_face_geometry(
+              y_axis,
+              plus_y_corner(),
+              x_axis,
+              z_axis,
+              minus_y_axis);
+      case plusZface:
+        return get_face_geometry(
+              z_axis,
+              plus_z_corner(),
+              x_axis,
+              y_axis,
+              minus_z_axis);
+      case minusXface:
+        return get_face_geometry(
+              minus_x_axis,
+              corner,
+              y_axis,
+              z_axis,
+              x_axis);
+      case minusYface:
+        return get_face_geometry(
+              minus_y_axis,
+              corner,
+              x_axis,
+              z_axis,
+              y_axis);
+      case minusZface:
+        return get_face_geometry(
+              minus_z_axis,
+              corner,
+              x_axis,
+              y_axis,
+              z_axis);
+      }
+    }
+
+    xyz plus_x_corner() const {
+      xyz loc = corner;
+      loc.x += size.x;
+      return loc;
+    }
+
+    xyz plus_y_corner() const {
+      xyz loc = corner;
+      loc.y += size.y;
+      return loc;
+    }
+
+    xyz plus_z_corner() const {
+      xyz loc = corner;
+      loc.z += size.z;
+      return loc;
+    }
+
+  };
+
+  struct vtk_switch_geometry {
+    vtk_box_geometry box;
+    std::vector<vtk_face_t> port_faces;
+
+    vtk_face_geometry face_on_port(int port){
+      vtk_face_t face = port_faces[port];
+      return box.get_face_geometry(face);
+    }
+
+    vtk_switch_geometry(double xLength, double yLength, double zLength,
+                 double xCorner, double yCorner, double zCorner,
+                 double theta, std::vector<vtk_face_t>&& ports) :
+      port_faces(ports),
+      box(xLength, yLength, zLength,xCorner,yCorner,zCorner,theta)
+    {}
+
+  };
 
  public:
   typedef std::unordered_map<switch_id, connectable*> internal_connectable_map;
@@ -180,6 +419,13 @@ class topology : public sprockit::printable
   virtual bool netlink_id_slot_filled(node_id nid) const = 0;
 
   /**
+   * @brief get_vtk_geometry
+   * @param sid
+   * @return The geometry (box size, rotation, port-face mapping)
+   */
+  virtual vtk_switch_geometry get_vtk_geometry(switch_id sid) const;
+
+  /**
    * @brief num_endpoints To be distinguished slightly from nodes.
    * Multiple nodes can be grouped together with a netlink.  The netlink
    * is then the network endpoint that injects to the switch topology
@@ -244,11 +490,6 @@ class topology : public sprockit::printable
   virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
 
   void output_graphviz(const std::string& file);
-
-  struct injection_port {
-    node_id nid;
-    int port;
-  };
 
   /**
      For a given input switch, return all nodes connected to it.
