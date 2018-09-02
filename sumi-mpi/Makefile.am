@@ -19,9 +19,16 @@ AM_CPPFLAGS += \
 	-I$(top_srcdir)/sumi \
 	-I$(top_builddir)/sumi
 
-AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
+if HAVE_OTF2
+AM_CPPFLAGS += \
+	-I$(top_srcdir)/sst-dumpi \
+	-I$(top_builddir)/sst-dumpi \
+  $(OTF2_CPPFLAGS)
+endif
 
-libsstmac_mpi_la_LDFLAGS = 
+#-I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
+
+AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
 libsstmac_mpi_la_SOURCES = \
   mpi_comm/mpi_comm.cc \
@@ -38,6 +45,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_protocol/eager0.cc \
   mpi_protocol/rendezvous_rdma.cc \
   mpi_types/mpi_type.cc \
+  otf2_output_stat.cc \
   sstmac_mpi.cc \
   mpi_api.cc \
   mpi_api_win.cc \
@@ -86,6 +94,8 @@ nobase_library_include_HEADERS = \
   mpi_wrapper.h \
   mpi_integers.h \
   mpi_call.h \
+  otf2_output_stat.h \
+  otf2_output_stat_fwd.h \
   sstmac_mpi.h \
   sstmac_mpi_macro.h 
   

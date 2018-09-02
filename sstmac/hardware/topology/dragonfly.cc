@@ -72,8 +72,19 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
     spkt_abort_printf("dragonfly topology geometry should have 2 entries: routers per group, num groups");
   }
 
+  static const double TWO_PI = 6.283185307179586;
+  vtk_edge_size_ = params->get_optional_double_param("vtk_edge_size", 0.25);
+
   a_ = dimensions_[0];
   g_ = dimensions_[1];
+
+  //determine radius to make x-dim of switches 0.33
+  //r*2pi = edge*n - edge here is 25% larger than requested edge size
+  vtk_radius_ = (vtk_edge_size_*1.25*a_*g_) / TWO_PI;
+  vtk_box_length_ = 0.2*vtk_radius_;
+
+  vtk_group_radians_ = TWO_PI / g_;
+  vtk_switch_radians_ = vtk_group_radians_ / a_ / 1.5;
 
   if (params->has_param("group_connections")){
     h_ = params->get_int_param("group_connections");
@@ -251,25 +262,19 @@ dragonfly::get_vtk_geometry(switch_id sid) const
   int myA = computeA(sid);
   int myG = computeG(sid);
 
-  static const double TWO_PI = 6.283185307179586;
-  static const double PI_OVER_9 = 0.3490658503988659;
   //we need to figure out the radian offset of the group
-  double inter_group_offset = (myG*TWO_PI) / g_;
-  double intra_group_start = myA*PI_OVER_9 / a_;
+  double inter_group_offset = myG*vtk_group_radians_;
+  double intra_group_start = myA*vtk_switch_radians_;
 
   double theta = inter_group_offset + intra_group_start;
-
-  //determine radius to make x-dim of switches 0.33
-  //r*2pi = 0.33*n
-  double radius = (0.33*a_*g_) / TWO_PI;
 
   /** With no rotation, these are the corners.
    * These will get rotated appropriately */
   double zCorner = 0.0;
   double yCorner = 0.0;
-  double xCorner = radius;
+  double xCorner = vtk_radius_;
 
-  double xSize = 1.0;
+  double xSize = vtk_box_length_;
   double ySize = 0.25; //this is the face pointing "into" the circle
   double zSize = 0.25;
 

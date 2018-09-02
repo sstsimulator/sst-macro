@@ -74,6 +74,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/sumi/sumi_transport.h>
 
+#include <sumi-mpi/otf2_output_stat_fwd.h>
 
 namespace sumi {
 
@@ -84,6 +85,8 @@ class mpi_api :
   public sstmac::sumi_transport
 {
   RegisterAPI("mpi", mpi_api)
+
+  friend class otf2_writer;
 
  public:
   mpi_api(sprockit::sim_parameters* params,
@@ -199,7 +202,7 @@ class mpi_api :
    * @param members
    * @return Whether the current rank is in the group
    */
-  bool group_create_with_id(MPI_Group group, int num_members, const uint32_t* members);
+  bool group_create_with_id(MPI_Group group, int num_members, const int* members);
 
   int cart_create(MPI_Comm comm_old, int ndims, const int dims[],
               const int periods[], int reorder, MPI_Comm *comm_cart);
@@ -635,7 +638,7 @@ class mpi_api :
   void finish_collective(collective_op_base* op);
 
  private:
-  int do_wait(MPI_Request *request, MPI_Status *status);
+  int do_wait(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 
   void finalize_wait_request(mpi_request* reqPtr, MPI_Request* request, MPI_Status* status);
 
@@ -705,11 +708,11 @@ class mpi_api :
   /* Collective operations */
   collective_op_base* start_barrier(const char* name, MPI_Comm comm);
 
-  collective_op_base* start_bcast(MPI_Comm comm, int count, MPI_Datatype datatype,
+  collective_op_base* start_bcast(const char* name, MPI_Comm comm, int count, MPI_Datatype datatype,
                                   int root, void *buffer);
 
   collective_op_base*
-  start_scatter(MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+  start_scatter(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
            int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
@@ -717,7 +720,7 @@ class mpi_api :
                  const int *displs, int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_gather(MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
+  start_gather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype, int root,
                int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
@@ -726,7 +729,7 @@ class mpi_api :
           const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_allgather(MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+  start_allgather(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
             int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
@@ -735,7 +738,7 @@ class mpi_api :
                    const void *sendbuf, void *recvbuf);
 
   collective_op_base*
-  start_alltoall(MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
+  start_alltoall(const char* name, MPI_Comm comm, int sendcount, MPI_Datatype sendtype,
                  int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf);
 
   collective_op_base*
@@ -744,11 +747,11 @@ class mpi_api :
             const void *sendbuf,  void *recvbuf);
 
   collective_op_base*
-  start_reduce(MPI_Comm comm, int count, MPI_Datatype type, int root,
+  start_reduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type, int root,
                MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_allreduce(MPI_Comm comm, int count, MPI_Datatype type,
+  start_allreduce(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
                MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
@@ -756,22 +759,22 @@ class mpi_api :
                MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_reduce_scatter(MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
+  start_reduce_scatter(const char* name, MPI_Comm comm, const int* recvcounts, MPI_Datatype type,
                        MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_reduce_scatter_block(MPI_Comm comm, int count, MPI_Datatype type,
+  start_reduce_scatter_block(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
                              MPI_Op op, const void* src, void* dst);
 
   collective_op_base*
-  start_scan(MPI_Comm comm, int count, MPI_Datatype type,
+  start_scan(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
              MPI_Op op, const void* src, void* dst);
 
   void do_start(MPI_Request req);
 
   void add_immediate_collective(collective_op_base* op, MPI_Request* req);
 
-  bool test(MPI_Request *request, MPI_Status *status);
+  bool test(MPI_Request *request, MPI_Status *status, int& tag, int& source);
 
   int type_size(MPI_Datatype type){
     int ret;
@@ -836,6 +839,12 @@ class mpi_api :
   std::unordered_map<int, keyval*> keyvals_;
 
   bool generate_ids_;
+
+  uint64_t trace_clock() const;
+
+#ifdef SSTMAC_OTF2_ENABLED
+  otf2_writer* otf2_writer_;
+#endif
 
 #if SSTMAC_COMM_SYNC_STATS
  public:

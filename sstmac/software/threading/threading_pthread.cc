@@ -138,8 +138,7 @@ class threading_pthread : public thread_context
     threading_pthread* casted = (threading_pthread*)to;
     if (casted) {
       send_signal(&casted->context_);
-    }
-    else {
+    } else {
       spkt_throw_printf(sprockit::illformed_error,
                        "received non-pthread context on complete_context");
     }

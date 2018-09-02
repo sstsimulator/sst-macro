@@ -239,8 +239,15 @@ run_params(opts& oo,
 
   native::manager* mgr = new native::manager(params, rt);
 
-  // topology might have the filename, so call this even if option wasn't given
+  //dumping the output graph can be activated either on the command line
+  //or activated by a parameter inside the topology
+  //it is safe to call this function event if output_grapvhiz is empty
+  //the topology will check and not dump if neither command line
+  //nor parameter file has activated it
   mgr->interconn()->topol()->output_graphviz(oo.output_graphviz);
+
+  //same story applies for xyz file
+  mgr->interconn()->topol()->output_xyz(oo.output_xyz);
 
   double start = sstmac_wall_time();
   timestamp stop_time = params->get_optional_time_param("stop_time", 0);
@@ -253,7 +260,8 @@ run_params(opts& oo,
     fflush(stdout);
     fflush(stderr);
 
-    mgr->interconn()->deadlock_check();
+    //don't do this here anymore - interconn deleted by manager
+    //mgr->interconn()->deadlock_check();
     runtime::check_deadlock();
 
     mgr->finish();

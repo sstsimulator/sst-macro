@@ -194,8 +194,7 @@ software_launch_request::parse_launch_cmd(
     std::string launcher;
     if (pos != std::string::npos) {
       launcher = launch_cmd.substr(0, pos);
-    }
-    else {
+    } else {
       launcher = launch_cmd;
     }
 
@@ -205,18 +204,15 @@ software_launch_request::parse_launch_cmd(
         int ncores = params->get_optional_int_param("node_cores", 1);
         procs_per_node = ncores > nproc ? nproc : ncores;
       }
-    }
-    else {
+    } else {
       spkt_throw_printf(sprockit::value_error,
                         "invalid launcher %s given", launcher.c_str());
     }
-  }
-  else { //standard launch
+  } else { //standard launch
     try {
       nproc = params->get_long_param("size");
       procs_per_node = params->get_optional_long_param("concentration", 1);
-    }
-    catch (sprockit::input_error& e) {
+    } catch (sprockit::input_error& e) {
       cerr0 << "Problem reading app size parameter in app_launch_request.\n"
                "If this is a DUMPI trace, set app name to dumpi.\n";
       throw e;

@@ -76,13 +76,11 @@ void trim(SequenceT& input)
   const auto& first_non_space = std::find_if_not(input.begin(), input.end(), check_isspace);
   if(first_non_space == input.end()) {
     input = SequenceT(input.begin(), input.begin()+1);
-  }
-  else {
+  } else {
     const auto& last_non_space = std::find_if_not(input.rbegin(), input.rend(), check_isspace);
     if(last_non_space == input.rbegin() + 1) {
       input = SequenceT(first_non_space, input.end());
-    }
-    else {
+    } else {
       input = SequenceT(first_non_space, last_non_space.base() + 1);
     }
   }

@@ -180,27 +180,23 @@ dragonfly_plus::get_vtk_geometry(switch_id sid) const
   static const double TWO_PI = 6.283185307179586;
   static const double PI_OVER_9 = 0.3490658503988659;
   //we need to figure out the radian offset of the group
-  double inter_group_offset = (myG*TWO_PI) / g_;
-  double intra_group_start = myA*PI_OVER_9 / a_;
+  double inter_group_offset = vtk_group_radians_ * myG;
+  double intra_group_start = vtk_switch_radians_ * myA;
 
   double theta = inter_group_offset + intra_group_start;
-
-  //determine radius to make x-dim of switches 0.33
-  //r*2pi = 0.33*n
-  double radius = (0.33*a_*g_) / TWO_PI;
 
   /** With no rotation, these are the corners.
    * These will get rotated appropriately */
   double zCorner = 0.0;
   double yCorner = 0.0;
-  double xCorner = radius;
+  double xCorner = vtk_radius_;
   if (myRow == 0){
     //this is the "intra-group" row without group connections
     //put this in the outer circle
-    xCorner += 1.5;
+    xCorner += 1.5 * vtk_box_length_;
   }
 
-  double xSize = 1.0;
+  double xSize = vtk_box_length_;
   double ySize = 0.25; //this is the face pointing "into" the circle
   double zSize = 0.25;
 

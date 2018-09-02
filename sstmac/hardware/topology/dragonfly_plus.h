@@ -145,7 +145,7 @@ class dragonfly_plus : public dragonfly
   }
 
   coordinates switch_coords(switch_id sid) const override {
-    coordinates c(2);
+    coordinates c(3);
     c[0] = computeRow(sid);
     c[1] = computeA(sid);
     c[2] = computeG(sid);

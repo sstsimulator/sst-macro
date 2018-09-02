@@ -91,6 +91,9 @@ struct action
       sumi_case(unroll);
       sumi_case(resolve);
       sumi_case(join);
+      default:
+       spkt_abort_printf("Bad action type %d", ty);
+       return "";
     }
   }
 
@@ -608,6 +611,7 @@ class dag_collective_actor :
   active_map active_comms_;
   pending_map pending_comms_;
   std::list<action*> completed_actions_;
+  std::list<action*> ready_actions_;
 
   pending_msg_map pending_send_headers_;
   pending_msg_map pending_recv_headers_;

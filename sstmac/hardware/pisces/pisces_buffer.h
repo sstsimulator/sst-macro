@@ -132,6 +132,8 @@ class pisces_eject_buffer :
   pisces_eject_buffer(sprockit::sim_parameters* params,
                            event_scheduler* parent);
 
+  ~pisces_eject_buffer();
+
   void handle_credit(event* ev) override;
 
   void handle_payload(event* ev) override;

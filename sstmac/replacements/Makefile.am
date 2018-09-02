@@ -32,6 +32,7 @@ nobase_library_include_HEADERS += \
   sstmac_pthread_return.h \
   sys/types.h \
   dlfcn.h \
+  future \
   fstream \
   iostream \
   ios \

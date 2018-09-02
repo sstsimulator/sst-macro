@@ -233,6 +233,7 @@ class serializer
       case SIZER: return sizer_.size();
       case PACK: return packer_.size();
       case UNPACK: return unpacker_.size();
+      default: return 0; //make GCC happy 
     }
   }
 

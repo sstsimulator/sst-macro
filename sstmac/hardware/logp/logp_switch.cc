@@ -114,6 +114,9 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_m
 logp_switch::~logp_switch()
 {
   if (rng_) delete rng_;
+  for (event_link* link : nic_links_){
+    delete link;
+  }
 }
 
 void

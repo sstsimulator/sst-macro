@@ -69,7 +69,9 @@ mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
     *status = req->status();
   }
 
+
   delete req;
+
   return MPI_SUCCESS;
 }
 

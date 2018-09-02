@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/otf2_output_stat.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 
@@ -63,6 +64,8 @@ namespace sumi {
 int
 mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {  
+  auto start_clock = trace_clock();
+
   start_pt2pt_call(MPI_Send,count,datatype,dest,tag,comm);
   mpi_comm* commPtr = get_comm(comm);
   mpi_request* req = mpi_request::construct(mpi_request::Send);
@@ -70,6 +73,14 @@ mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
   queue_->progress_loop(req);
   delete req;
   finish_mpi_call(MPI_Send);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_send(start_clock, trace_clock(),
+     datatype, count, dest, comm, tag);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -80,12 +91,21 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
  MPI_Datatype recvtype, int source, int recvtag,
  MPI_Comm comm, MPI_Status *status)
 {
+  auto start_clock = trace_clock();
+
   start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
   mpi_request* req = do_isend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
   do_recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
   queue_->progress_loop(req);
   delete req;
   finish_mpi_call(MPI_Sendrecv);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().generic_call(start_clock, trace_clock(), "MPI_Sendrecv");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -94,6 +114,8 @@ mpi_api::request_free(MPI_Request *req)
 {
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Request_free(REQ=%d)", *req);
+
+  auto start_clock = trace_clock();
 
   mpi_request* reqPtr = get_request(*req);
   if (reqPtr){
@@ -107,6 +129,13 @@ mpi_api::request_free(MPI_Request *req)
     }
   }
   *req = MPI_REQUEST_NULL;
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().generic_call(start_clock, trace_clock(), "MPI_Request_free");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -132,20 +161,37 @@ mpi_api::do_start(MPI_Request req)
 int
 mpi_api::start(MPI_Request* req)
 {
+  auto start_clock = trace_clock();
+
   _start_mpi_call_(MPI_Start);
   do_start(*req);
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_writer_) {
+    sprockit::abort("OTF2 trace MPI_Start unimplemented");
+  }
+#endif
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::startall(int count, MPI_Request* req)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   _start_mpi_call_(MPI_Startall);
   for (int i=0; i < count; ++i){
     do_start(req[i]);
   }
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_) {
+    sprockit::abort("OTF2 trace MPI_Start_all unimplemented");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -154,6 +200,8 @@ mpi_api::send_init(const void *buf, int count,
                    MPI_Datatype datatype, int dest, int tag,
                    MPI_Comm comm, MPI_Request *request)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
+
   _start_mpi_call_(MPI_Send_init);
 
   mpi_request* req = mpi_request::construct(mpi_request::Send);
@@ -176,6 +224,13 @@ mpi_api::send_init(const void *buf, int count,
 
   req->set_persistent(op);
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    sprockit::abort("OTF2 trace MPI_Send_init unimplemented");
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -193,16 +248,25 @@ int
 mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
-  using namespace sprockit;
+  auto start_clock = trace_clock();
+
   start_Ipt2pt_call(MPI_Isend,count,datatype,dest,tag,comm,request);
   mpi_request* req = do_isend(buf, count, datatype, dest, tag, comm);
   add_request_ptr(req, request);
-  mpi_api_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt,
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Isend(%d,%s,%d,%s,%s;REQ=%d)",
     count, type_str(datatype).c_str(), int(dest),
     tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
   queue_->nonblocking_progress();
   finish_mpi_call(MPI_Isend);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_isend(start_clock, trace_clock(),
+      datatype, count, dest, comm, tag, *request);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -210,9 +274,19 @@ int
 mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source,
               int tag, MPI_Comm comm, MPI_Status *status)
 {
+  auto start_clock = trace_clock();
+
   start_pt2pt_call(MPI_Recv,count,datatype,source,tag,comm);
   int rc = do_recv(buf,count,datatype,source,tag,comm,status);
   finish_mpi_call(MPI_Recv);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_recv(start_clock, trace_clock(),
+      datatype, count, source, comm, tag);
+  }
+#endif
+
   return rc;
 }
 
@@ -254,6 +328,12 @@ mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
   op->tag = tag;
   op->comm = comm;
 
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    sprockit::abort("OTF2 trace MPI_Recv_init unimplemented");
+  }
+#endif
+
   req->set_persistent(op);
   end_api_call();
   return MPI_SUCCESS;
@@ -263,6 +343,8 @@ int
 mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
+  auto start_clock = trace_clock();
+
   start_Ipt2pt_call(MPI_Irecv,count,datatype,dest,tag,comm,request);
 
   using namespace sprockit;
@@ -280,6 +362,14 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   queue_->nonblocking_progress();
   finish_mpi_call(MPI_Irecv);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_writer_){
+    otf2_writer_->writer().mpi_irecv(start_clock, trace_clock(),
+      datatype, count, source, comm, tag, *request);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

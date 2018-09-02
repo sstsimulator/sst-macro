@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
 Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -162,13 +162,15 @@ class topology : public sprockit::printable
       return x;//never reached, keep compiler from warning
     }
 
+    xyz operator+(const xyz& r) const {
+      return xyz(x+r.x, y+r.y, z+r.z);
+    }
+
     xyz rotate(const rotation& r) const {
       xyz ret;
-      for (int j=0; j < 3; ++j){
-        ret.x += r.x[j] * x;
-        ret.y += r.y[j] * y;
-        ret.z += r.z[j] * z;
-      }
+      ret.x += r.x[0]*x + r.x[1]*y + r.x[2]*z;
+      ret.y += r.y[0]*x + r.y[1]*y + r.y[2]*z;
+      ret.z += r.z[0]*x + r.z[1]*y + r.z[2]*z;
       return ret;
     }
   };
@@ -201,6 +203,38 @@ class topology : public sprockit::printable
     xyz size;
     xyz corner;
     rotation rot;
+
+    xyz near_corner() const {
+      return corner.rotate(rot);
+    }
+
+    xyz far_corner() const {
+      xyz displaced = corner + size;
+      return displaced.rotate(rot);
+    }
+
+    xyz vertex(int id) const {
+      switch(id){
+      case 0:
+        return corner.rotate(rot);
+      case 1:
+        return xyz(corner.x,corner.y+size.y,corner.z).rotate(rot);
+      case 2:
+        return xyz(corner.x,corner.y,corner.z+size.z).rotate(rot);
+      case 3:
+        return xyz(corner.x,corner.y+size.y,corner.z+size.z).rotate(rot);
+      case 4:
+        return xyz(corner.x+size.x,corner.y,corner.z).rotate(rot);
+      case 5:
+        return xyz(corner.x+size.x,corner.y+size.y,corner.z).rotate(rot);
+      case 6:
+        return xyz(corner.x+size.x,corner.y,corner.z+size.z).rotate(rot);
+      case 7:
+        return xyz(corner.x+size.x,corner.y+size.y,corner.z+size.z).rotate(rot);
+      }
+      spkt_abort_printf("vertex number should be 0-7: got %d", id);
+      return xyz();
+    }
 
     vtk_box_geometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner,
@@ -489,7 +523,23 @@ class topology : public sprockit::printable
   */
   virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
 
-  void output_graphviz(const std::string& file);
+  /**
+   * @brief output_graphviz
+   * Request to output graphviz. If file is given, output will be written there.
+   * If no file is given, topology will use default path from input file.
+   * If not default was given in input file, nothing will be output
+   * @param file An optional file
+   */
+  void output_graphviz(const std::string& file = "");
+
+  /**
+   * @brief output_xyz
+   * Request to output graphviz. If file is given, output will be written there.
+   * If no file is given, topology will use default path from input file.
+   * If not default was given in input file, nothing will be output
+   * @param file An optional file
+   */
+  void output_xyz(const std::string& file = "");
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -570,26 +620,26 @@ class topology : public sprockit::printable
     return main_top_;
   }
 
-  virtual switch_id node_to_injection_switch(node_id nodeaddr, 
+  virtual switch_id node_to_injection_switch(node_id nodeaddr,
    uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return node_to_injection_switch(nodeaddr, ports[0]);
   }
 
-  virtual switch_id node_to_ejection_switch(node_id nodeaddr, 
+  virtual switch_id node_to_ejection_switch(node_id nodeaddr,
    uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return node_to_ejection_switch(nodeaddr, ports[0]);
   }
 
 
-  virtual switch_id netlink_to_injection_switch(node_id nodeaddr, 
+  virtual switch_id netlink_to_injection_switch(node_id nodeaddr,
    uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return netlink_to_injection_switch(nodeaddr, ports[0]);
   }
 
-  virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, 
+  virtual switch_id netlink_to_ejection_switch(node_id nodeaddr,
    uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return netlink_to_ejection_switch(nodeaddr, ports[0]);
@@ -647,10 +697,18 @@ class topology : public sprockit::printable
  private:
   static topology* static_topology_;
   std::string dot_file_;
+  std::string xyz_file_;
 
 };
 
+static inline std::ostream& operator<<(std::ostream& os, const topology::xyz& v) {
+  os << v.x << "," << v.y << "," << v.z;
+  return os;
+}
+
 }
 }
+
+
 
 #endif

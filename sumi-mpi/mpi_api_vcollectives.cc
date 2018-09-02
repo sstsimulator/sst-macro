@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/otf2_output_stat.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 
@@ -110,8 +111,18 @@ mpi_api::allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     void *recvbuf, const int *recvcounts, const int *displs,
                     MPI_Datatype recvtype, MPI_Comm comm)
 {
+  auto start_clock = trace_clock();
+
   do_vcoll(allgatherv, MPI_Allgatherv, comm, sendcount, sendtype,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_allgatherv(start_clock, trace_clock(),
+       get_comm(comm)->size(), sendcount, sendtype,
+       recvcounts, recvtype, comm);
+  }
+#endif
   return MPI_SUCCESS;
 }
 
@@ -157,11 +168,10 @@ mpi_api::start_alltoallv(const char* name, MPI_Comm comm,
                          const int *recvcounts, MPI_Datatype recvtype, const int *rdispls,
                          const void *sendbuf,  void *recvbuf)
 {
-  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
-    "%s(<...>,%s,<...>,%s,%s)", name,
-    type_str(sendtype).c_str(), type_str(recvtype).c_str(), comm_str(comm).c_str());
-
   if (sendbuf || recvbuf){
+    mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_collective,
+      "%s(<...>,%s,<...>,%s,%s)", name,
+      type_str(sendtype).c_str(), type_str(recvtype).c_str(), comm_str(comm).c_str());
     collectivev_op* op = new collectivev_op(const_cast<int*>(sendcounts), const_cast<int*>(sdispls),
                                               const_cast<int*>(recvcounts), const_cast<int*>(rdispls),
                                               get_comm(comm));
@@ -179,7 +189,7 @@ mpi_api::start_alltoallv(const char* name, MPI_Comm comm,
     }
     send_count /= nproc;
     recv_count /= nproc;
-    collective_op_base* op = start_alltoall(comm, send_count, sendtype,
+    collective_op_base* op = start_alltoall(name, comm, send_count, sendtype,
                                             recv_count, recvtype, sendbuf, recvbuf);
     return op;
   }
@@ -191,9 +201,20 @@ mpi_api::alltoallv(const void *sendbuf, const int *sendcounts,
                    void *recvbuf, const int *recvcounts,
                    const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 {
+  auto start_clock = trace_clock();
+
   do_vcoll(alltoallv, MPI_Alltoallv, comm,
            sendcounts, sendtype, sdispls,
            recvcounts, recvtype, rdispls, sendbuf, recvbuf);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_alltoallv(start_clock, trace_clock(),
+        get_comm(comm)->size(), sendcounts, sendtype,
+        recvcounts, recvtype, comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -253,13 +274,12 @@ mpi_api::start_gatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datat
                        const int *recvcounts, const int *displs, MPI_Datatype recvtype,
                        const void *sendbuf, void *recvbuf)
 {
-  mpi_api_debug(sprockit::dbg::mpi,
-    "%s(%d,%s,<...>,%s,%d,%s)", name,
-    sendcount, type_str(sendtype).c_str(),
-    type_str(recvtype).c_str(),
-    int(root), comm_str(comm).c_str());
-
   if (sendbuf || recvbuf){
+    mpi_api_debug(sprockit::dbg::mpi,
+      "%s(%d,%s,<...>,%s,%d,%s)", name,
+      sendcount, type_str(sendtype).c_str(),
+      type_str(recvtype).c_str(),
+      int(root), comm_str(comm).c_str());
     collectivev_op* op = new collectivev_op(sendcount,
                 const_cast<int*>(recvcounts),
                 const_cast<int*>(displs), get_comm(comm));
@@ -286,7 +306,7 @@ mpi_api::start_gatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datat
       }
       recvcount = total_count / nproc;
     }
-    collective_op_base* op = start_gather(comm, sendcount, sendtype, root, recvcount, recvtype,
+    collective_op_base* op = start_gather(name, comm, sendcount, sendtype, root, recvcount, recvtype,
                                           sendbuf, recvbuf);
     return op;
   }
@@ -297,8 +317,19 @@ mpi_api::gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, const int *recvcounts, const int *displs,
                  MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+  auto start_clock = trace_clock();
+
   do_vcoll(gatherv, MPI_Gatherv, comm, sendcount, sendtype, root,
            recvcounts, displs, recvtype, sendbuf, recvbuf);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_gatherv(start_clock, trace_clock(),
+      get_comm(comm)->size(), sendcount, sendtype,
+      recvcounts, recvtype, root, comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -342,13 +373,13 @@ collective_op_base*
 mpi_api::start_scatterv(const char* name, MPI_Comm comm, const int *sendcounts, MPI_Datatype sendtype, int root,
                         const int *displs, int recvcount, MPI_Datatype recvtype, const void *sendbuf, void *recvbuf)
 {
-  mpi_api_debug(sprockit::dbg::mpi,
-    "%s(<...>,%s,%d,%s,%d,%s)", name,
-    type_str(sendtype).c_str(),
-    recvcount, type_str(recvtype).c_str(),
-    int(root), comm_str(comm).c_str());
-
   if (sendbuf || recvbuf){
+    mpi_api_debug(sprockit::dbg::mpi,
+      "%s(<...>,%s,%d,%s,%d,%s)", name,
+      type_str(sendtype).c_str(),
+      recvcount, type_str(recvtype).c_str(),
+      int(root), comm_str(comm).c_str());
+
     collectivev_op* op = new collectivev_op(const_cast<int*>(sendcounts),
                       const_cast<int*>(displs),
                       recvcount, get_comm(comm));
@@ -374,7 +405,7 @@ mpi_api::start_scatterv(const char* name, MPI_Comm comm, const int *sendcounts, 
       }
       sendcount = total_count / nproc;
     }
-    collective_op_base* op = start_scatter(comm, sendcount, sendtype, root,
+    collective_op_base* op = start_scatter(name, comm, sendcount, sendtype, root,
                                            recvcount, recvtype, sendbuf, recvbuf);
     return op;
   }
@@ -384,8 +415,19 @@ int
 mpi_api::scatterv(const void* sendbuf, const int* sendcounts, const int *displs, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
+  auto start_clock = trace_clock();
+
   do_vcoll(scatterv, MPI_Scatterv, comm, sendcounts, sendtype, root, displs,
            recvcount, recvtype, sendbuf, recvbuf);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_scatterv(start_clock, trace_clock(),
+      get_comm(comm)->size(), sendcounts, sendtype,
+      recvcount, recvtype, root, comm);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

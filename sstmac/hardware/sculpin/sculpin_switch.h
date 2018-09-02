@@ -144,6 +144,7 @@ class sculpin_switch :
     uint32_t seqnum;
     std::set<sculpin_packet*, priority_compare> priority_queue;
     event_link* link;
+    port() : link(nullptr){}
   };
   std::vector<port> ports_;
 

@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/otf2_output_stat.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 #include <cassert>
@@ -53,15 +54,31 @@ namespace sumi {
 int
 mpi_api::wait(MPI_Request *request, MPI_Status *status)
 {
+#ifdef SSTMAC_OTF2_ENABLED
+  auto start_clock = trace_clock();
+  MPI_Request request_cpy = *request;
+#endif
+
   start_mpi_call(MPI_Wait);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Wait(...)");
-  int rc = do_wait(request, status);
+
+  int tag, source;
+  int rc = do_wait(request, status, tag, source);
   finish_mpi_call(MPI_Wait);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_) {
+    dumpi::OTF2_Writer::mpi_status_t stat;
+    stat.tag = tag;
+    stat.source = source;
+    otf2_writer_->writer().mpi_wait(start_clock, trace_clock(), request_cpy, &stat);
+  }
+#endif
   return rc;
 }
 
 int
-mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
+mpi_api::do_wait(MPI_Request *request, MPI_Status *status, int& tag, int& source)
 {
   MPI_Request req = *request;
   if (req == MPI_REQUEST_NULL){
@@ -75,6 +92,9 @@ mpi_api::do_wait(MPI_Request *request, MPI_Status *status)
   if (!reqPtr->is_complete()){
    queue_->progress_loop(reqPtr);
   }
+
+  tag = reqPtr->status().MPI_TAG;
+  source = reqPtr->status().MPI_SOURCE;
 
   finalize_wait_request(reqPtr, request, status);
 
@@ -98,19 +118,41 @@ int
 mpi_api::waitall(int count, MPI_Request array_of_requests[],
                  MPI_Status array_of_statuses[])
 {
+#ifdef SSTMAC_OTF2_ENABLED
+  auto start_clock = trace_clock();
+  std::vector<MPI_Request> req_cpy(array_of_requests, array_of_requests + count);
+  std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(count);
+#endif
+
   start_mpi_call(MPI_Waitall);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, 
     "MPI_Waitall(%d,...)", count);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   int last_nonnull = 0;
+  std::vector<MPI_Request> req_vec;
   for (int i=0; i < count; ++i){
     MPI_Status* status = ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i];
     if (array_of_requests[i] != MPI_REQUEST_NULL){
       last_nonnull = i;
     }
-    do_wait(&array_of_requests[i], status);
+    int tag, source;
+    do_wait(&array_of_requests[i], status, tag, source);
+#ifdef SSTMAC_OTF2_ENABLED
+    if (otf2_writer_) {
+      statuses[i].tag = tag;
+      statuses[i].source = source;
+    }
+#endif
   }
   finish_mpi_call(MPI_Waitall);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_) {
+    otf2_writer_->writer().mpi_waitall(start_clock, trace_clock(), count,
+                                       req_cpy.data(), statuses.data());
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -118,53 +160,84 @@ int
 mpi_api::waitany(int count, MPI_Request array_of_requests[], int *indx,
                  MPI_Status *status)
 {
+  auto start_clock = trace_clock();
+
+  // for caching the request in an upper scope before it is destroyed
+  MPI_Request req_val = -1;
+
   start_mpi_call(MPI_Waitany);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitany(...)");
   *indx = MPI_UNDEFINED;
   std::vector<mpi_request*> reqPtrs(count);
   int numNonnull = 0;
+  bool call_completed = false;
   //use a null ptr internally to indicate ignore
   for (int i=0; i < count; ++i){
     MPI_Request req = array_of_requests[i];
     if (req != MPI_REQUEST_NULL){
       mpi_request* reqPtr = get_request(req);
       if (reqPtr->is_complete()){
+#ifdef SSTMAC_OTF2_ENABLED
+        if (otf2_writer_){
+          dumpi::OTF2_Writer::mpi_status_t stat;
+          stat.tag = reqPtr->status().MPI_TAG;
+          stat.source = reqPtr->status().MPI_SOURCE;
+          otf2_writer_->writer().mpi_waitany(start_clock, trace_clock(), req, &stat);
+        }
+#endif
         *indx = i;
+        req_val = req;
         finalize_wait_request(reqPtr, &array_of_requests[i], status);
         finish_mpi_call(MPI_Waitany);
-        return MPI_SUCCESS;
+
+        call_completed = true;
+        break;
+        //return MPI_SUCCESS;
       }
       reqPtrs[numNonnull++] = reqPtr;
     }
   }
 
-  if (numNonnull == 0){
+  if (!call_completed && numNonnull == 0){
     spkt_abort_printf("MPI_Waitany: passed in all null requests, undefined behavior");
-    return MPI_SUCCESS;
+    call_completed = true;
   }
 
-  //none of them are already done
-  reqPtrs.resize(numNonnull);
-  queue_->start_progress_loop(reqPtrs);
+  if(!call_completed) {
+    //none of them are already done
+    reqPtrs.resize(numNonnull);
+    queue_->start_progress_loop(reqPtrs);
 
-  numNonnull = 0;
-  for (int i=0; i < count; ++i){
-    MPI_Request req = array_of_requests[i];
-    if (req != MPI_REQUEST_NULL){
-      mpi_request* reqPtr = reqPtrs[numNonnull++];
-      if (reqPtr->is_complete()){
-        *indx = i;
-        finalize_wait_request(reqPtr, &array_of_requests[i], status);
-        finish_mpi_call(MPI_Waitany);
-        return MPI_SUCCESS;
+    numNonnull = 0;
+    for (int i=0; i < count; ++i){
+      MPI_Request req = array_of_requests[i];
+      if (req != MPI_REQUEST_NULL){
+        mpi_request* reqPtr = reqPtrs[numNonnull++];
+        if (reqPtr->is_complete()){
+#ifdef SSTMAC_OTF2_ENABLED
+          if (otf2_writer_){
+            dumpi::OTF2_Writer::mpi_status_t stat;
+            stat.tag = reqPtr->status().MPI_TAG;
+            stat.source = reqPtr->status().MPI_SOURCE;
+            otf2_writer_->writer().mpi_waitany(start_clock, trace_clock(), req, &stat);
+          }
+#endif
+          *indx = i;
+          req_val = req;
+          finalize_wait_request(reqPtr, &array_of_requests[i], status);
+          finish_mpi_call(MPI_Waitany);
+          call_completed = true;
+          break;
+        }
       }
     }
   }
 
-  spkt_throw_printf(sprockit::value_error,
+  if(!call_completed){
+    spkt_throw_printf(sprockit::value_error,
                     "MPI_Waitany finished, but had no completed requests");
+  }
 
-  //must have all been null
   return MPI_SUCCESS;
 }
 
@@ -172,10 +245,16 @@ int
 mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
                   int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 {
+#ifdef SSTMAC_OTF2_ENABLED
+  // Cache the vector before it is destroyed
+  std::vector<MPI_Request> req_vect(array_of_requests, array_of_requests + incount);
+  std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(incount);
+  auto start_clock = trace_clock();
+#endif
+
   start_mpi_call(MPI_Waitsome);
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
-  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
-    "MPI_Waitsome(...)");
+  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitsome(...)");
   int numComplete = 0;
   int numIncomplete = 0;
   std::vector<mpi_request*> reqPtrs(incount);
@@ -184,6 +263,11 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
     if (req != MPI_REQUEST_NULL){
       mpi_request* reqPtr = get_request(req);
       if (reqPtr->is_complete()){
+#ifdef SSTMAC_OTF2_ENABLED
+        req_vect[i] = req;
+        statuses[i].tag = reqPtr->status().MPI_TAG;
+        statuses[i].source = reqPtr->status().MPI_SOURCE;
+#endif
         array_of_indices[numComplete++] = i;
         finalize_wait_request(reqPtr, &array_of_requests[i],
            ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i]);
@@ -195,26 +279,39 @@ mpi_api::waitsome(int incount, MPI_Request array_of_requests[],
 
   if (numComplete > 0){
     *outcount = numComplete;
-    return MPI_SUCCESS;
-  }
+  } else {
+    reqPtrs.resize(numIncomplete);
 
-  reqPtrs.resize(numIncomplete);
+    queue_->start_progress_loop(reqPtrs);
 
-  queue_->start_progress_loop(reqPtrs);
-
-  for (int i=0; i < incount; ++i){
-    MPI_Request req = array_of_requests[i];
-    if (req != MPI_REQUEST_NULL){
-      mpi_request* reqPtr = get_request(req);
-      if (reqPtr->is_complete()){
-        array_of_indices[numComplete++] = i;
-        finalize_wait_request(reqPtr, &array_of_requests[i],
-           ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i]);
+    for (int i=0; i < incount; ++i){
+      MPI_Request req = array_of_requests[i];
+      if (req != MPI_REQUEST_NULL){
+        mpi_request* reqPtr = get_request(req);
+        if (reqPtr->is_complete()){
+#ifdef SSTMAC_OTF2_ENABLED
+          req_vect[i] = req;
+          statuses[i].tag = reqPtr->status().MPI_TAG;
+          statuses[i].source = reqPtr->status().MPI_SOURCE;
+#endif
+          array_of_indices[numComplete++] = i;
+          finalize_wait_request(reqPtr, &array_of_requests[i],
+             ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i]);
+        }
       }
     }
+    *outcount = numComplete;
+    finish_mpi_call(MPI_Waitsome);
   }
-  *outcount = numComplete;
-  finish_mpi_call(MPI_Waitsome);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_waitsome(start_clock, trace_clock(),
+                                        req_vect.data(), *outcount, array_of_indices,
+                                        statuses.data());
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 

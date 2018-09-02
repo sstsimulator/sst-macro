@@ -43,6 +43,8 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi-mpi/mpi_api.h>
+#include <sumi-mpi/otf2_output_stat.h>
+#include <sstmac/software/process/operating_system.h>
 #include <climits>
 
 namespace sstmac {
@@ -208,6 +210,7 @@ mpi_api::commit_builtin_types()
   op_precommit_type(double, mpi_type::mpi_real8, MPI_REAL8);
   op_precommit_type(long double, mpi_type::mpi_long_double, MPI_LONG_DOUBLE);
 
+  int_precommit_type(bool, mpi_type::mpi_cxx_bool, MPI_CXX_BOOL);
   int_precommit_type(int, mpi_type::mpi_integer, MPI_INTEGER);
   int_precommit_type(char, mpi_type::mpi_integer1, MPI_INTEGER1);
   int_precommit_type(int16_t, mpi_type::mpi_integer2, MPI_INTEGER2);
@@ -255,6 +258,7 @@ mpi_api::pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
       return MPI_ERR_TYPE;
   }
   *size = incount * it->second->packed_size();
+
   return MPI_SUCCESS;
 }
 
@@ -269,6 +273,7 @@ mpi_api::type_set_name(MPI_Datatype id, const char* name)
       return MPI_ERR_TYPE;
   }
   it->second->label = name;
+
   return MPI_SUCCESS;
 }
 
@@ -285,6 +290,7 @@ mpi_api::type_get_name(MPI_Datatype id, char* name, int* resultlen)
   const std::string& label = it->second->label;
   ::strcpy(name, label.c_str());
   *resultlen = label.size();
+
   return MPI_SUCCESS;
 }
 
@@ -332,7 +338,14 @@ int
 mpi_api::type_hvector(int count, int blocklength, MPI_Aint stride,
                      MPI_Datatype old_type, MPI_Datatype* new_type)
 {
-  return do_type_hvector(count, blocklength, stride, type_from_id(old_type), new_type);
+  mpi_type* ty = type_from_id(old_type);
+  int rc = do_type_hvector(count, blocklength, stride, ty, new_type);
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_) {
+    otf2_writer_->writer().register_type(*new_type, count*ty->packed_size());
+  }
+#endif
+  return rc;
 }
 
 /// Creates a vector (strided) datatype
@@ -342,7 +355,13 @@ mpi_api::type_vector(int count, int blocklength, int stride,
 {
   mpi_type* old = type_from_id(old_type);
   MPI_Aint byte_stride = stride * old->extent();
-  return do_type_hvector(count, blocklength, byte_stride, old, new_type);
+  int rc = do_type_hvector(count, blocklength, byte_stride, old, new_type);
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_) {
+    otf2_writer_->writer().register_type(*new_type, count*old->packed_size());
+  }
+#endif
+  return rc;
 }
 
 int
@@ -393,7 +412,14 @@ int
 mpi_api::type_hindexed(int count, const int lens[], const MPI_Aint* displs,
                       MPI_Datatype intype, MPI_Datatype* outtype)
 {
-  return do_type_hindexed(count, lens, displs, type_from_id(intype), outtype);
+  mpi_type* ty = type_from_id(intype);
+  int rc = do_type_hindexed(count, lens, displs, ty, outtype);
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().register_type(*outtype, count*ty->packed_size());
+  }
+#endif
+  return rc;
 }
 
 int
@@ -406,7 +432,14 @@ mpi_api::type_indexed(int count, const int lens[], const int* displs,
   for (int i=0; i < count; ++i){
     byte_displs[i] = displs[i] * type_extent;
   }
-  return do_type_hindexed(count, lens, byte_displs, in_type_obj, outtype);
+
+  int rc = do_type_hindexed(count, lens, byte_displs, in_type_obj, outtype);
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().register_type(*outtype, count*in_type_obj->packed_size());
+  }
+#endif
+  return rc;
 }
 
 std::string
@@ -449,6 +482,12 @@ mpi_api::commit_builtin_type(mpi_type* type, MPI_Datatype id)
   type->set_builtin(true);
   known_types_[id] = type;
   known_types_[id]->set_committed(true);
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_writer_) {
+    otf2_writer_->writer().register_type(id, type->packed_size());
+  }
+#endif
 }
 
 //
@@ -467,6 +506,13 @@ mpi_api::type_contiguous(int count, MPI_Datatype old_type,
 
   allocate_type_id(new_type_obj);
   *new_type = new_type_obj->id;
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().register_type(*new_type, count*old_type_obj->packed_size());
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -528,6 +574,12 @@ mpi_api::type_create_struct(const int count, const int* blocklens,
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_struct(%d,<...>,<...>,<...>,*%s)",
                 count, type_str(*newtype).c_str());
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().register_type(*newtype, new_type_obj->packed_size());
+  }
+#endif
 
   return MPI_SUCCESS;
 }

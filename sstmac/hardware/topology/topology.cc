@@ -113,8 +113,8 @@ topology::topology(sprockit::sim_parameters* params)
 #endif
   main_top_ = this;
 
-  if (params->has_param("output_graph"))
-    dot_file_ = params->get_param("output_graph");
+  dot_file_ = params->get_optional_param("output_graph", "");
+  xyz_file_ = params->get_optional_param("output_xyz", "");
 }
 
 topology::~topology()
@@ -159,18 +159,20 @@ topology::get_port_params(sprockit::sim_parameters *params, int port)
   return params->get_optional_namespace(sprockit::printf("port%d", port));
 }
 
-void
-topology::output_graphviz(const std::string& file)
+static std::string get_outfile(const std::string& cmd_line_given,
+                               const std::string& input_file_given)
 {
-  std::string file_non_const;
-  if (file.size())
-    file_non_const = file;
-  else if (dot_file_.size())
-    file_non_const = dot_file_;
-  if (file_non_const.size() == 0)
-    return;
+  if (!cmd_line_given.empty()) return cmd_line_given; //cmd takes precedence
+  else return input_file_given;
+}
 
-  std::ofstream out(file_non_const.c_str());
+void
+topology::output_graphviz(const std::string& path)
+{
+  std::string output = get_outfile(path, dot_file_);
+  if (output.empty()) return;
+
+  std::ofstream out(output);
   out << "graph {\n";
 
   int nsw = num_switches();
@@ -199,6 +201,26 @@ topology::output_graphviz(const std::string& file)
   }
 
   out << "\n}";
+  out.close();
+}
+
+void
+topology::output_xyz(const std::string& path)
+{
+  std::string output = get_outfile(path, dot_file_);
+  if (output.empty()) return;
+
+  int nsw = num_switches();
+  std::ofstream out(output);
+  for (int sid=0; sid < nsw; ++sid){
+    vtk_switch_geometry geom = get_vtk_geometry(sid);
+
+    out << geom.box.vertex(0);
+    for (int i=1; i < 8; ++i){
+      out << "--" << geom.box.vertex(i);
+    }
+    out << "\n";
+  }
   out.close();
 }
 

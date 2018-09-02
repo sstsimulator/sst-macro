@@ -46,6 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <time.h>
 #include <climits>
 #include <cmath>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/messages/sleep_event.h>
@@ -66,6 +69,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sumi-mpi/mpi_comm/mpi_comm_factory.h>
 #include <sumi-mpi/mpi_types.h>
+#include <sumi-mpi/otf2_output_stat.h>
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
@@ -74,6 +78,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/malloc.h>
 #include <sprockit/keyword_registration.h>
+
+#ifdef SSTMAC_OTF2_ENABLED
+#include <sumi-mpi/otf2_output_stat.h>
+#endif
+
 
 MakeDebugSlot(mpi_sync)
 DeclareDebugSlot(mpi_check)
@@ -84,6 +93,7 @@ RegisterDebugSlot(mpi_check,
 RegisterKeywords(
 { "iprobe_delay", "the delay incurred each time MPI_Iprobe is called" },
 { "dump_comm_times", "dump communication time statistics" },
+{ "otf2_dir_basename", "Enables OTF2 and combines this parameter with a timestamp to name the archive"}
 );
 
 sprockit::StaticNamespaceRegister mpi_ns_reg("mpi");
@@ -120,6 +130,9 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   req_counter_(0),
   queue_(nullptr),
   generate_ids_(true),
+#ifdef SSTMAC_OTF2_ENABLED
+  otf2_writer_(nullptr),
+#endif
   crossed_comm_world_barrier_(false),
   comm_factory_(sid, this)
 {
@@ -135,6 +148,19 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
 #if SSTMAC_COMM_SYNC_STATS
   dump_comm_times_ = params->get_optional_bool_param("dump_comm_times", false);
 #endif
+
+
+#ifdef SSTMAC_OTF2_ENABLED
+  sstmac::stat_descr_t otf2_cfg; otf2_cfg.dump_all = true;
+  otf2_writer_ = sstmac::optional_stats<otf2_writer>(os_->node(), params,
+                                              "otf2", "otf2", &otf2_cfg);
+#endif
+}
+
+uint64_t
+mpi_api::trace_clock() const
+{
+  return os_->now().ticks();
 }
 
 void
@@ -176,6 +202,7 @@ mpi_api::~mpi_api()
 int
 mpi_api::abort(MPI_Comm comm, int errcode)
 {
+
   spkt_throw_printf(sprockit::value_error,
     "MPI rank %d exited with code %d", rank_, errcode);
   return MPI_SUCCESS;
@@ -191,6 +218,8 @@ mpi_api::comm_rank(MPI_Comm comm, int *rank)
 int
 mpi_api::init(int* argc, char*** argv)
 {
+  auto start_clock = trace_clock();
+
   if (status_ == is_initialized){
     sprockit::abort("MPI_Init cannot be called twice");
   }
@@ -221,9 +250,17 @@ mpi_api::init(int* argc, char*** argv)
 
   collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
   wait_collective(op);
+
   delete op;
   crossed_comm_world_barrier_ = false;
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->init(start_clock, trace_clock(), rank_, nproc_);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
@@ -240,7 +277,9 @@ mpi_api::check_init()
 //
 int
 mpi_api::finalize()
-{  
+{
+  auto start_clock = trace_clock();
+
   start_mpi_call(MPI_Finalize);
 
   collective_op_base* op = start_barrier("MPI_Finalize", MPI_COMM_WORLD);
@@ -248,6 +287,13 @@ mpi_api::finalize()
   delete op;
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().generic_call(start_clock, trace_clock(), "MPI_Finalize");
+    otf2_writer_->assign_global_comm_ids(this);
+  }
+#endif
 
   status_ = is_finalized;
 
@@ -277,7 +323,9 @@ mpi_api::finalize()
     ofs.close();
   }
 #endif
+
   end_api_call();
+
   return MPI_SUCCESS;
 }
 
@@ -287,6 +335,7 @@ mpi_api::finalize()
 double
 mpi_api::wtime()
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Wtime);
   return os_->now().sec();
 }
@@ -294,6 +343,7 @@ mpi_api::wtime()
 int
 mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
 {
+  auto call_start_time = (uint64_t)os_->now().usec();
   *count = status->count;
   return MPI_SUCCESS;
 }
@@ -338,6 +388,8 @@ mpi_api::type_str(MPI_Datatype mid)
       return sprockit::printf("IND=%d", mid);
     case mpi_type::NONE:
       return sprockit::printf("NONE=%d", mid);
+    default:
+      return "UNKNOWN TYPE";
   }
 }
 
@@ -346,14 +398,11 @@ mpi_api::comm_str(MPI_Comm comm)
 {
   if (comm == comm_world()->id()){
     return "MPI_COMM_WORLD";
-  }
-  else if (comm == comm_self()->id()){
+  } else if (comm == comm_self()->id()){
     return "MPI_COMM_SELF";
-  }
-  else if (comm == mpi_comm::comm_null->id()){
+  } else if (comm == mpi_comm::comm_null->id()){
     return "MPI_COMM_NULL";
-  }
-  else {
+  } else {
     return sprockit::printf("COMM=%d", int(comm));
   }
 }
@@ -363,14 +412,11 @@ mpi_api::comm_str(mpi_comm* comm)
 {
   if (comm == comm_world()){
     return "MPI_COMM_WORLD";
-  }
-  else if (comm == comm_self()){
+  } else if (comm == comm_self()){
     return "MPI_COMM_SELF";
-  }
-  else if (comm == mpi_comm::comm_null){
+  } else if (comm == mpi_comm::comm_null){
     return "MPI_COMM_NULL";
-  }
-  else {
+  } else {
     return sprockit::printf("COMM=%d", int(comm->id()));
   }
 }
@@ -380,8 +426,7 @@ mpi_api::tag_str(int tag)
 {
   if (tag==MPI_ANY_TAG){
     return "int_ANY";
-  }
-  else {
+  } else {
     return sprockit::printf("%d", int(tag));
   }
 }
@@ -391,8 +436,7 @@ mpi_api::src_str(int id)
 {
   if (id == MPI_ANY_SOURCE){
     return "MPI_SOURCE_ANY";
-  }
-  else {
+  } else {
     return sprockit::printf("%d", int(id));
   }
 }
@@ -402,8 +446,7 @@ mpi_api::src_str(mpi_comm* comm, int id)
 {
   if (id == MPI_ANY_SOURCE){
     return "MPI_SOURCE_ANY";
-  }
-  else {
+  } else {
     return sprockit::printf("%d:%d", int(id), int(comm->peer_task(id)));
   }
 }
@@ -871,9 +914,11 @@ MPI_Call::ID_str(MPI_function func)
   case Call_ID_MPI_Win_create_errhandler: return "MPI_Win_create_errhandler";
   case Call_ID_MPI_Win_get_errhandler: return "MPI_Win_get_errhandler";
   case Call_ID_MPI_Win_set_errhandler: return "MPI_Win_set_errhandler";
+  default: 
+   spkt_abort_printf("Bad MPI Call ID %d\n", func);
+   return "Unknown or missing MPI function";
   }
 }
-
 
 }
 

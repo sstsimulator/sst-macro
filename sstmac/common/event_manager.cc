@@ -264,6 +264,9 @@ event_manager::spin_up(void(*fxn)(void*), void* args)
 void
 event_manager::spin_down()
 {
+  //delete here while we are still on the main thread
+  interconn_->deadlock_check();
+  hw::interconnect::clear_static_interconnect();
   des_context_->complete_context(main_thread_);
 }
 
@@ -379,9 +382,18 @@ event_manager::finish_stats()
         entry.main_collector = entry.collectors.front();
         entry.collectors.clear();
       } else {
-        stat_collector* first = entry.collectors.front();
-        entry.main_collector = first->clone();
-        main_allocated = true;
+        //see if any of the existing ones should be the main
+        for (stat_collector* stat : entry.collectors){
+          if (stat->is_main()){
+            entry.main_collector = stat;
+            break;
+          }
+        }
+        if (!entry.main_collector){
+          stat_collector* first = entry.collectors.front();
+          entry.main_collector = first->clone();
+          main_allocated = true;
+        }
       }
     }
 

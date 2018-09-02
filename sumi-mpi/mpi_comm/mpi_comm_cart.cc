@@ -101,22 +101,17 @@ mpi_comm_cart::shift(int dir, int dis)
     if (periods_[dir]) {
       coords[dir] = coords[dir] % dims_[dir];
       return rank(coords);
-    }
-    else {
+    } else {
       return mpi_comm::proc_null;
     }
-
-  }
-  else if (coords[dir] < 0) {
+  } else if (coords[dir] < 0) {
     if (periods_[dir]) {
       coords[dir] = (dims_[dir] + coords[dir]) % dims_[dir];
       return rank(coords);
-    }
-    else {
+    } else {
       return mpi_comm::proc_null;
     }
-  }
-  else {
+  } else {
     return rank(coords);
   }
 

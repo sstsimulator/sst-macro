@@ -114,8 +114,7 @@ torus::shortest_distance(int dim, int src, int dst) const
   if (dst > src) {
     up_distance = dst - src;
     down_distance = src + (dimensions_[dim] - dst);
-  }
-  else {
+  } else {
     up_distance = dst + (dimensions_[dim] - src);
     down_distance = src - dst;
   }
@@ -123,8 +122,7 @@ torus::shortest_distance(int dim, int src, int dst) const
   if (up_distance > down_distance) {
     //shorter to go down
     return ((src - dst) + dimensions_[dim]) % dimensions_[dim];
-  }
-  else {
+  } else {
     //shorter to go up
     return ((dst - src) + dimensions_[dim]) % dimensions_[dim];
   }

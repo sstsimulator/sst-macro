@@ -55,7 +55,8 @@ namespace hw {
 
 packetizer::packetizer(sprockit::sim_parameters* params, event_scheduler* parent) :
   event_subcomponent(parent), //no self events
-  notifier_(nullptr)
+  notifier_(nullptr),
+  acker_(nullptr)
 {
   packet_size_ = params->get_byte_length_param("mtu");
   double bw = params->get_bandwidth_param("bandwidth");
@@ -66,6 +67,7 @@ packetizer::~packetizer()
 {
   //do not delete - notifiers are owned by the person that passes them in
   //if (notifier_) delete notifier_;
+  if (acker_) delete acker_;
 }
 
 void

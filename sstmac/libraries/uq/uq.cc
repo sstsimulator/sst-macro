@@ -226,8 +226,11 @@ set_param(sprockit::sim_parameters& params, const char* name, uq_param_t& p)
    case ValueWithUnits:
     return params[name].setValue(p.value, p.units);
     break;
-   default:
+   default: {
     spkt_abort_printf("invalid paramter type - make sure param.type is initialized");
+    static std::string make_gcc_warning_disappear;
+    return make_gcc_warning_disappear;
+   }
   }
 }
 
@@ -325,8 +328,7 @@ sstmac_uq_run(void* queue,
 
     if (spawn_ty == Fork){
       sims[num_running++] = q->fork(params, nresults, results[j]);
-    }
-    else if (spawn_ty == MPIScan){
+    } else if (spawn_ty == MPIScan){
       sims[num_running++] = send_scan_point(q, params, bufferPtr,
                                 nparams, results[j], nresults, param_names, param_values[j]);
       bufferPtr += paramBufferSize;

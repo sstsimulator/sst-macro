@@ -246,6 +246,13 @@ class dragonfly : public cartesian_topology
   int a_;
   int h_;
   int g_;
+
+  double vtk_edge_size_;
+  double vtk_radius_;
+  double vtk_box_length_;
+  double vtk_group_radians_;
+  double vtk_switch_radians_;
+
   inter_group_wiring* group_wiring_;
 
   void setup_port_params(sprockit::sim_parameters* params,

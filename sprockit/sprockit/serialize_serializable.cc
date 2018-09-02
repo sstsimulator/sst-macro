@@ -68,8 +68,7 @@ pack_serializable(serializable* s, serializer& ser){
     long cls_id = s->cls_id();
     ser.pack(cls_id);
     s->serialize_order(ser);
-  }
-  else {
+  } else {
     debug_printf(dbg::serialize, "null object");
     long id = null_ptr_id;
     ser.pack(id);
@@ -83,8 +82,7 @@ unpack_serializable(serializable*& s, serializer& ser){
   if (cls_id == null_ptr_id) {
     debug_printf(dbg::serialize, "null pointer object");
     
-  }
-  else {
+  } else {
     debug_printf(dbg::serialize, "unpacking class id %ld", cls_id);
     s = sprockit::serializable_factory::get_serializable(cls_id);
     s->serialize_order(ser);

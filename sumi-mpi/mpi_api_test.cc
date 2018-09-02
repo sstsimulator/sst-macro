@@ -44,13 +44,14 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
+#include <sumi-mpi/otf2_output_stat.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 
 namespace sumi {
 
 bool
-mpi_api::test(MPI_Request *request, MPI_Status *status)
+mpi_api::test(MPI_Request *request, MPI_Status *status, int& tag, int& source)
 {
   _start_mpi_call_(MPI_Test);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
@@ -64,6 +65,8 @@ mpi_api::test(MPI_Request *request, MPI_Status *status)
     if (status != MPI_STATUS_IGNORE){
       *status = reqPtr->status();
     }
+    tag = reqPtr->status().MPI_TAG;
+    source = reqPtr->status().MPI_SOURCE;
     erase_request_ptr(*request);
     *request = MPI_REQUEST_NULL;
     return true;
@@ -78,40 +81,82 @@ mpi_api::test(MPI_Request *request, MPI_Status *status)
 int
 mpi_api::test(MPI_Request *request, int *flag, MPI_Status *status)
 {
+  MPI_Request req_cpy = *request;
+  auto start_clock = trace_clock();
+  int tag, source;
   _start_mpi_call_(MPI_Test);
-  if (test(request, status)){
+  if (test(request, status, tag, source)){
     mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Test(...)");
     *flag = 1;
   } else {
     *flag = 0;
   }
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    dumpi::OTF2_Writer::mpi_status_t stat;
+    stat.tag = tag;
+    stat.source = source;
+    otf2_writer_->writer().mpi_test(start_clock, trace_clock(), req_cpy, *flag, &stat);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[])
 {
+#ifdef SSTMAC_OTF2_ENABLED
+  auto start_clock = trace_clock();
+
+  // Make a copy of requests since they may mutate before OTF2 call
+  std::vector<dumpi::mpi_request_t> requests(array_of_requests, array_of_requests + count);
+  std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(count);
+#endif
+
   _start_mpi_call_(MPI_Testall);
   *flag = 1;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   for (int i=0; i < count; ++i){
     MPI_Status* stat = ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i];
-    if (!test(&array_of_requests[i], stat)){
+    int tag, source;
+    if (!test(&array_of_requests[i], stat, tag, source)){
       *flag = 0;
+      break;
     }
+#ifdef SSTMAC_OTF2_ENABLED
+    statuses[i].tag = tag;
+    statuses[i].source = source;
+#endif
   }
   if (*flag){
     mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request,
       "MPI_Testall(%d,...)", count);
   }
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_testall(start_clock, trace_clock(),
+                          count, requests.data(), *flag, statuses.data());
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
 int
 mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *flag, MPI_Status *status)
 {
+#ifdef SSTMAC_OTF2_ENABLED
+  auto start_clock = trace_clock();
+  // Make a copy of requests since they may mutate before OTF2 call
+  std::vector<dumpi::mpi_request_t> requests(array_of_requests, array_of_requests + count);
+  dumpi::OTF2_Writer::mpi_status_t stat;
+#endif
+
   start_api_call();
   if (count == 0){
     *flag = 1;
@@ -120,30 +165,65 @@ mpi_api::testany(int count, MPI_Request array_of_requests[], int *indx, int *fla
   *flag = 0;
   *indx = MPI_UNDEFINED;
   for (int i=0; i < count; ++i){
-    if (test(&array_of_requests[i], status)){
+    int tag, source;
+    if (test(&array_of_requests[i], status, tag, source)){
       *flag = 1;
       *indx = i;
-      return MPI_SUCCESS;
+#ifdef SSTMAC_OTF2_ENABLED
+      stat.tag = tag;
+      stat.source = source;
+#endif
+      break;
     }
   }
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if (otf2_writer_){
+    otf2_writer_->writer().mpi_testany(start_clock, trace_clock(),
+                          requests.data(), *indx, *flag, &stat);
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
+mpi_api::testsome(int incount, MPI_Request array_of_requests[], int *outcount,
+                  int array_of_indices[], MPI_Status array_of_statuses[])
 {
+#ifdef SSTMAC_OTF2_ENABLED
+  auto start_clock = trace_clock();
+  // Make a copy of requests since they may mutate before OTF2 call
+  std::vector<dumpi::mpi_request_t> requests(array_of_requests, array_of_requests + incount);
+  std::vector<dumpi::OTF2_Writer::mpi_status_t> statuses(incount);
+#endif
+
   start_api_call();
   int numComplete = 0;
   bool ignore_status = array_of_statuses == MPI_STATUSES_IGNORE;
   for (int i=0; i < incount; ++i){
     MPI_Status* stat = ignore_status ? MPI_STATUS_IGNORE : &array_of_statuses[i];
-    if (test(&array_of_requests[i], stat)){
+    int tag, source;
+    if (test(&array_of_requests[i], stat, tag, source)){
       array_of_indices[numComplete++] = i;
+#ifdef SSTMAC_OTF2_ENABLED
+      statuses[i].tag = tag;
+      statuses[i].source = source;
+#endif
     }
   }
   *outcount = numComplete;
   end_api_call();
+
+#ifdef SSTMAC_OTF2_ENABLED
+  if(otf2_writer_){
+    otf2_writer_->writer().mpi_testsome(start_clock, trace_clock(),
+                                        requests.data(), *outcount, array_of_indices,
+                                        statuses.data());
+  }
+#endif
+
   return MPI_SUCCESS;
 }
 
