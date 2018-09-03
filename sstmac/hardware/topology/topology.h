@@ -175,43 +175,10 @@ class topology : public sprockit::printable
     }
   };
 
-  struct vtk_face_geometry {
-    xyz corner;
-    xyz normal;
-    xyz length;
-    xyz width;
-    xyz depth;
-
-    vtk_face_geometry(const xyz& _corner,
-                      const xyz& _normal,
-                      const xyz& _length,
-                      const xyz& _width,
-                      const xyz& _depth) :
-      corner(_corner), normal(_normal), length(_length),
-      width(_width), depth(_depth) {}
-
-  };
-
   struct vtk_box_geometry {
-    static const xyz x_axis;
-    static const xyz y_axis;
-    static const xyz z_axis;
-    static const xyz minus_x_axis;
-    static const xyz minus_y_axis;
-    static const xyz minus_z_axis;
-
     xyz size;
     xyz corner;
     rotation rot;
-
-    xyz near_corner() const {
-      return corner.rotate(rot);
-    }
-
-    xyz far_corner() const {
-      xyz displaced = corner + size;
-      return displaced.rotate(rot);
-    }
 
     xyz vertex(int id) const {
       switch(id){
@@ -255,65 +222,35 @@ class topology : public sprockit::printable
       vtk_box_geometry(xLength, yLength, zLength, xCorner, yCorner, zCorner, 0.0)
    {}
 
-    vtk_face_geometry get_face_geometry(const xyz& normal,
-                                        const xyz& corner,
-                                        const xyz& length,
-                                        const xyz& width,
-                                        const xyz& depth) const
+    vtk_box_geometry(double xLength, double yLength, double zLength,
+                     double xCorner, double yCorner, double zCorner,
+                     const rotation& rot) :
+      size(xLength,yLength,zLength),
+      corner(xCorner,yCorner,zCorner),
+      rot(rot)
     {
-      vtk_face_geometry geom(
-            normal.rotate(rot),
-            corner.rotate(rot),
-            length.rotate(rot),
-            width.rotate(rot),
-            depth.rotate(rot));
-      return geom;
     }
 
-    vtk_face_geometry get_face_geometry(vtk_face_t face) const {
+    vtk_box_geometry get_face_geometry(vtk_face_t face, double face_width_fraction) const {
       switch(face){
       case plusXface:
-        return get_face_geometry(
-              x_axis,
-              plus_x_corner(),
-              y_axis,
-              z_axis,
-              minus_x_axis);
+        return vtk_box_geometry(-face_width_fraction*size.x, size.y, size.z,
+              corner.x + size.x, corner.y, corner.z, rot);
       case plusYface:
-        return get_face_geometry(
-              y_axis,
-              plus_y_corner(),
-              x_axis,
-              z_axis,
-              minus_y_axis);
+        return vtk_box_geometry(size.x, -face_width_fraction*size.y, size.z,
+                                corner.x, corner.y + size.y, corner.z, rot);
       case plusZface:
-        return get_face_geometry(
-              z_axis,
-              plus_z_corner(),
-              x_axis,
-              y_axis,
-              minus_z_axis);
+        return vtk_box_geometry(size.x, size.y, -face_width_fraction*size.z,
+                                corner.x, corner.y, corner.z + size.z, rot);
       case minusXface:
-        return get_face_geometry(
-              minus_x_axis,
-              corner,
-              y_axis,
-              z_axis,
-              x_axis);
+        return vtk_box_geometry(face_width_fraction*size.x, size.y, size.z,
+                                corner.x, corner.y, corner.z, rot);
       case minusYface:
-        return get_face_geometry(
-              minus_y_axis,
-              corner,
-              x_axis,
-              z_axis,
-              y_axis);
+        return vtk_box_geometry(size.x, face_width_fraction*size.y, size.z,
+                                corner.x, corner.y, corner.z, rot);
       case minusZface:
-        return get_face_geometry(
-              minus_z_axis,
-              corner,
-              x_axis,
-              y_axis,
-              z_axis);
+        return vtk_box_geometry(size.x, size.y, face_width_fraction*size.z,
+                                corner.x, corner.y, corner.z, rot);
       }
     }
 
@@ -341,9 +278,14 @@ class topology : public sprockit::printable
     vtk_box_geometry box;
     std::vector<vtk_face_t> port_faces;
 
-    vtk_face_geometry face_on_port(int port){
+    vtk_box_geometry face_on_port(int port, double face_width_fraction) const {
       vtk_face_t face = port_faces[port];
-      return box.get_face_geometry(face);
+      return box.get_face_geometry(face, face_width_fraction);
+    }
+
+
+    vtk_face_t get_face(int port) const {
+      return port_faces[port];
     }
 
     vtk_switch_geometry(double xLength, double yLength, double zLength,
@@ -473,6 +415,8 @@ class topology : public sprockit::printable
    */
   virtual int max_num_ports() const = 0;
 
+  virtual int max_num_intra_network_ports() const = 0;
+
   /**
      For a given node, determine the injection switch
      All messages from this node inject into the network
@@ -540,6 +484,14 @@ class topology : public sprockit::printable
    * @param file An optional file
    */
   void output_xyz(const std::string& file = "");
+
+  static void output_box(std::ostream& os,
+                       const topology::vtk_box_geometry& box,
+                       const std::string& color,
+                       const std::string& alpha);
+
+  static void output_box(std::ostream& os,
+                       const topology::vtk_box_geometry& box);
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -698,7 +650,6 @@ class topology : public sprockit::printable
   static topology* static_topology_;
   std::string dot_file_;
   std::string xyz_file_;
-
 };
 
 static inline std::ostream& operator<<(std::ostream& os, const topology::xyz& v) {

@@ -205,20 +205,39 @@ topology::output_graphviz(const std::string& path)
 }
 
 void
+topology::output_box(std::ostream& os,
+                     const topology::vtk_box_geometry& box)
+{
+  os << box.vertex(0);
+  for (int i=1; i < 8; ++i){
+    os << "->" << box.vertex(i);
+  }
+}
+
+void
+topology::output_box(std::ostream& os,
+                     const topology::vtk_box_geometry& box,
+                     const std::string& color,
+                     const std::string& alpha)
+{
+  output_box(os, box);
+  os << ";color=" << color;
+  os << ";alpha=" << alpha;
+}
+
+void
 topology::output_xyz(const std::string& path)
 {
   std::string output = get_outfile(path, dot_file_);
   if (output.empty()) return;
 
   int nsw = num_switches();
+  //int half = nsw / 2;
   std::ofstream out(output);
+
   for (int sid=0; sid < nsw; ++sid){
     vtk_switch_geometry geom = get_vtk_geometry(sid);
-
-    out << geom.box.vertex(0);
-    for (int i=1; i < 8; ++i){
-      out << "--" << geom.box.vertex(i);
-    }
+    output_box(out, geom.box, "gray", "0.1"); //very transparent
     out << "\n";
   }
   out.close();
@@ -348,8 +367,12 @@ class merlin_topology : public topology {
     return -1;
   }
 
-  switch_id
-  netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
+  int max_num_intra_network_ports() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
+  }
+
+  switch_id netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }

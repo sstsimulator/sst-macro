@@ -81,6 +81,7 @@ sculpin_switch::sculpin_switch(
   sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
   router_(nullptr),
   congestion_(true),
+  stat_hotspots_(nullptr),
   network_switch(params, id, mgr)
 {
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
@@ -129,6 +130,9 @@ sculpin_switch::sculpin_switch(
 #endif
   }
 
+  stat_hotspots_ = optional_stats<stat_hotspot>(this, params,
+     "hotspot", "hotspot");
+  if (stat_hotspots_) stat_hotspots_->configure(my_addr_, top_);
 
   init_links(params);
 }
@@ -235,7 +239,6 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   evt.type_=1;
   traffic_intensity[p.id]->addData(evt);
 #else
-  std::cout << "Collect done with SSTMACRO engine "<< std::endl;
   if (vtk_) vtk_->collect_departure(p.next_free.ticks(), my_addr_, p.id);
 #endif
 #endif
@@ -337,6 +340,8 @@ sculpin_switch::handle_payload(event *ev)
   } else {
     try_to_send_packet(pkt);
   }
+
+  if (stat_hotspots_) stat_hotspots_->collect(p.id, p.priority_queue.size());
 }
 
 std::string

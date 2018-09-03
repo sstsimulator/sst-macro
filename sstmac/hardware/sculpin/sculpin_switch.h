@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/sculpin/sculpin.h>
+#include <sstmac/hardware/sculpin/hotspot.h>
 #include <sstmac/common/sstmac_config.h>
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -164,6 +165,8 @@ class sculpin_switch :
 #endif
 
   bool congestion_;
+
+  stat_hotspot* stat_hotspots_;
 
  private:
   void send(port& p, sculpin_packet* pkt, timestamp now);

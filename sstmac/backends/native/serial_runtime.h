@@ -61,6 +61,8 @@ class serial_runtime :
 
   int64_t allreduce_max(int64_t maxtime) override;
 
+  void global_sum(int *data, int nelems, int root) override;
+
   void global_sum(long *data, int nelems, int root) override;
 
   void global_sum(long long *data, int nelems, int root) override;

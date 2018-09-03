@@ -56,6 +56,7 @@ RegisterKeywords(
 { "h", "the number inter-group connections per router" },
 { "group_connections", "the number of inter-group connections per router"},
 { "inter_group", "the inter-group wiring scheme"},
+{ "vtk_row_spacing", "the relative spacing of dragonfly+ rows" },
 );
 
 namespace sstmac {
@@ -74,6 +75,8 @@ dragonfly_plus::dragonfly_plus(sprockit::sim_parameters* params) :
   }
 
   num_leaf_switches_ = a_*g_;
+
+  vtk_row_spacing_ = params->get_optional_double_param("vtk_row_spacing", 2.0);
 }
 
 void
@@ -176,9 +179,6 @@ dragonfly_plus::get_vtk_geometry(switch_id sid) const
   int myG;
   get_coords(sid, myRow, myA, myG);
 
-
-  static const double TWO_PI = 6.283185307179586;
-  static const double PI_OVER_9 = 0.3490658503988659;
   //we need to figure out the radian offset of the group
   double inter_group_offset = vtk_group_radians_ * myG;
   double intra_group_start = vtk_switch_radians_ * myA;
@@ -193,19 +193,26 @@ dragonfly_plus::get_vtk_geometry(switch_id sid) const
   if (myRow == 0){
     //this is the "intra-group" row without group connections
     //put this in the outer circle
-    xCorner += 1.5 * vtk_box_length_;
+    xCorner += vtk_row_spacing_ * vtk_box_length_;
   }
 
   double xSize = vtk_box_length_;
   double ySize = 0.25; //this is the face pointing "into" the circle
   double zSize = 0.25;
 
-  std::vector<vtk_face_t> ports(a_ + h_);
-  for (int a=0; a < a_; ++a){
-    ports[a] = plusXface; //point out of the circle
-  }
-  for (int h=0; h < h_; ++h){
-    ports[a_ + h] = minusXface; // point into the circle
+  int num_ports = myRow == 0 ? a_ : a_ + h_;
+  std::vector<vtk_face_t> ports(num_ports);
+  if (myRow == 0){
+    for (int a=0; a < a_; ++a){
+      ports[a] = minusXface; //point into the circle at gateway switches
+    }
+  } else {
+    for (int a=0; a < a_; ++a){
+      ports[a] = plusXface; //point out of the circle
+    }
+    for (int h=0; h < h_; ++h){
+      ports[a_ + h] = minusXface; // point into the circle
+    }
   }
 
   vtk_switch_geometry geom(xSize, ySize, zSize,

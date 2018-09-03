@@ -158,6 +158,7 @@ class dragonfly_plus : public dragonfly
 
  private:
   int num_leaf_switches_;
+  double vtk_row_spacing_;
 };
 
 }

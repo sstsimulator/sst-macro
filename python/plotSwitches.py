@@ -1,9 +1,13 @@
 import sys
 import os
 import numpy as np
+
+import matplotlib 
+
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
 import matplotlib.pyplot as plt
+
 
 
 def genFaces(Z):
@@ -29,11 +33,24 @@ def genFaces(Z):
   return faces
 
 
-def addPoly(ax, verts):
+def addPoly(ax, verts, color=None, alpha=0.5, rgb=None):
   faces = genFaces(verts)
   # plot sides
-  ax.add_collection3d(Poly3DCollection(faces, 
-    facecolors='cyan', linewidths=0.5, edgecolors='b', alpha=.95))
+  poly = Poly3DCollection(faces, facecolors=color, linewidths=0.01, edgecolors='black')
+  alpha_tuple = []
+  if not rgb and not color: color = "cyan" #okay to default for now
+  if color:
+    color_tuple = matplotlib.colors.to_rgb(color)
+    for entry in color_tuple: #copy to allow assignment
+      alpha_tuple.append(entry)
+  elif rgb:
+    for entry in rgb:
+      alpha_tuple.append(entry)
+  else:
+    sys.exit("Must give either color name or RGB tuple")
+  alpha_tuple.append(alpha)
+  poly.set_facecolor(alpha_tuple)
+  ax.add_collection3d(poly)
 
 
 if len(sys.argv) != 2:
@@ -54,17 +71,36 @@ maxs = [-100000,-100000,-100000 ]
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 for line in text.strip().splitlines():
-  splitter = line.split("--")
-  if len(splitter) != 8:
+  splitLine = line.split(";")
+  geometry = splitLine[0]
+  attributes = splitLine[1:]
+  geomSplit = geometry.split("->")
+  if len(geomSplit) != 8:
     sys.exit("line is not a valid geometry: %s" % line)
 
-  verts = map(get_xyz, splitter)
+  color = None 
+  rgb = None
+  alpha = 0.5
+  for attr in attributes:
+    split = attr.split("=")
+    if len(split) == 2:
+      name, value = map(lambda x: x.strip().lower(), attr.split("="))
+      if name == "color":
+        color = value
+      elif name == "alpha":
+        alpha = float(value)
+      elif name == "rgb":
+        rgb = map(float, value.split(","))
+    else:
+      sys.stderr.write("Bad key,value pair: %s\n" % attr)
+
+  verts = map(get_xyz, geomSplit)
   for v in verts:
     for i in range(3):
       mins[i] = min(mins[i], v[i])
       maxs[i] = max(maxs[i], v[i]) 
 
-  addPoly(ax, verts)
+  addPoly(ax, verts, color=color, alpha=alpha, rgb=rgb)
 
 
 

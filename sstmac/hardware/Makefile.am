@@ -90,6 +90,7 @@ nobase_library_include_HEADERS += \
   pisces/pisces_switch.h \
   pisces/pisces_tiled_switch.h \
   pisces/pisces_memory_model.h \
+  sculpin/hotspot.h \
   sculpin/sculpin_nic.h \
   sculpin/sculpin_switch.h \
   sculpin/sculpin_param_expander.h \
@@ -162,6 +163,7 @@ libsstmac_hw_la_SOURCES +=  \
   pisces/pisces_switch.cc \
   pisces/pisces_tiled_switch.cc \
   pisces/pisces_memory_model.cc \
+  sculpin/hotspot.cc \
   sculpin/sculpin_nic.cc \
   sculpin/sculpin_switch.cc \
   sculpin/sculpin_param_expander.cc \
