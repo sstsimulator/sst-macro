@@ -39,12 +39,22 @@ namespace hw {
 
 void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<traffic_event>> &trafficMap, int count_x, int count_y){
 
-  // Init traffic value
+  // The goal:
+  // The idea is to construct the geometry using coordinates of the switch and the coordinates of each ports.
+  // Then, we can apply varying time traffic values on ports and switch points.
+
+  // What we know:
+  // We assuming the traffic of each port start with 0
+  // for each time step (key) of the traffic map parameter, we know the traffic value to update for the (switch,port) associated.
+  // The switch traffic value itself needs to be recomputed using the mean of all current traffic values of the ports of the switch.
+
+
+  // Init traffic array with default 0 traffic value
   vtkSmartPointer<vtkIntArray> traffic =
       vtkSmartPointer<vtkIntArray>::New();
   traffic->SetNumberOfComponents(1);
   traffic->SetName("MyTraffic");
-  int count_xy = count_x * count_y;
+  int count_xy = count_x * count_y; //
   traffic->SetNumberOfValues(count_xy);
   for (auto i = 0; i < count_xy; ++i){
     traffic->SetValue(i, 0);
@@ -54,6 +64,7 @@ void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<tra
   vtkSmartPointer<vtkPoints> points =
       vtkSmartPointer<vtkPoints>::New();
 
+  // Use the geometry to place them correctly
   for (auto j = 0; j < count_y; ++j){
     for (auto i = 0; i < count_x; ++i){
       points->InsertNextPoint(i, j, 0);
@@ -89,58 +100,8 @@ void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<tra
       ++currend_index;
     }
   }
-
-  // write the PVD
-//  vtkSmartPointer<vtkXMLPVDWriter> pdw_writer =
-//      vtkSmartPointer<vtkXMLPVDWriter>::New();
-//  pdw_writer->SetFileName("/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.pvd");
-//  pdw_writer->SetByteOrderToLittleEndian();
-//  pdw_writer->SetCompressorTypeToNone();
-//  // pdw_writer->AddInputDataObject(unstructured_grid);
-//  pdw_writer->SetInputData(0, unstructured_grid);
-//  pdw_writer->SetDataModeToAscii();
-//  pdw_writer->GetInputInformation()->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), &time_step_value[0], currend_index);
-//  pdw_writer->WriteAllTimeStepsOn();
-//  //   pdw_writer->Update();
-//  pdw_writer->Write();
-
-  // Time is different we need to create a file
-  // Write file
-//  vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
-//      vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-//  writer->SetByteOrderToLittleEndian();
-//  writer->SetCompressorTypeToNone();
-//  writer->SetDataModeToAscii();
-//  writer->SetInputData(0, unstructured_grid);
-
-//  currend_index = 0;
-//  auto it = trafficMap.cbegin();
-//  current_time = -1;
-//  for (; it != trafficMap.cend(); ++it){
-//    if (it->first != current_time){
-//      std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
-//      file_name += std::to_string(currend_index);
-//      file_name += ".vtu";
-//      writer->SetFileName(file_name.c_str());
-
-//      writer->Write();
-
-//      // update index
-//      ++currend_index;
-//    }
-
-//    current_time = it->first;
-//    traffic->SetValue(it->second->id_, it->second->intensity_);
-//   //   std::cout << std::to_string(current_time) << ": " << it->second->id_ << ": "<< it->second->intensity_<< ";" <<std::endl;
-//  }
-//  if(it == trafficMap.cend()){
-//    std::string file_name = "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats/vtkStats_0_";
-//    file_name += std::to_string(currend_index);
-//    file_name += ".vtu";
-//    writer->SetFileName(file_name.c_str());
-//    writer->Update();
-//    writer->Write();
-//  }
+  // TOCHECK: time_step_value for trafficMap.size() > values >= currend_index isn't intialized (and shouldn't be used)
+  // time_step_value should be resized ?
 
   vtkSmartPointer<vtkTrafficSource> trafficSource =
       vtkSmartPointer<vtkTrafficSource>::New();
@@ -157,29 +118,6 @@ void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<tra
   exodusWriter->WriteAllTimeStepsOn ();
   exodusWriter->Write();
 
-  // write the exodus
-//  vtkStdString OutputFile;
-//  OutputFile += "/Users/perrinel/Dev/sst-macro-jw/build/vtkStats.e";
-//  vtkSmartPointer<vtkExodusIIWriter> writer_exo =
-//      vtkSmartPointer<vtkExodusIIWriter>::New();
-//  writer_exo->SetFileName (OutputFile);
-//  writer_exo->SetInputData(0, unstructured_grid);
-//  writer_exo->WriteOutBlockIdArrayOn ();
-//  writer_exo->WriteOutGlobalNodeIdArrayOn ();
-//  writer_exo->WriteOutGlobalElementIdArrayOn ();
-//  double range[2]= {0.0, 4.0};
-//  auto in_info = writer_exo->GetInputInformation();
-//  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(), time_step_value, currend_index);
-//  in_info->Set(vtkStreamingDemandDrivenPipeline::TIME_DEPENDENT_INFORMATION(),1);
-//  //  writer_exo->SetGlobalResultArrayStatus( 'traffic', 1 )
-//  writer_exo->WriteAllTimeStepsOn ();
-
-//  writer_exo->Update();
-  //  writer_exo->GetModelMetadata()->SetTimeSteps(currend_index, &time_step_value[0]);
-  //  writer_exo->Update();
-  //  writer_exo->Write();
-
-  //writer_exo->GetModelMetadata()->PrintGlobalInformation();
 }
 
 void stat_vtk::outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y) {

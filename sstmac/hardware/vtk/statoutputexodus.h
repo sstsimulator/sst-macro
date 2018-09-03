@@ -29,7 +29,14 @@ class StatisticGroup;
 class StatisticOutputEXODUS : public SST::Statistics::StatisticOutput
 {
 public:
-    SST_ELI_REGISTER_STATISTIC_OUTPUT(StatisticOutputEXODUS, "statOutputEXODUS");
+    SST_ELI_REGISTER_MODULE(
+      StatisticOutputEXODUS,
+      "macro",
+      "statOutputEXODUS",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "VTK Statistic output",
+      "SST::StatisticOutput");
+
     /** Construct a StatOutputEXODUS
      * @param outputParameters - Parameters used for this Statistic Output
      */
