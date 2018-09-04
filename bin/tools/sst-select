@@ -23,6 +23,7 @@ tmpls = [
   "rm -f $path_dir/sstmac",
   "rm -f $path_dir/pysstmac",
   "rm -f $path_dir/dumpi2ascii",
+  "rm -f $path_dir/dumpi2otf2",
   "rm -f $lib_dir/libmacro.so",
   "ln -s $install_folder/bin/dsst++ $path_dir/dsst++",
   "ln -s $install_folder/bin/libsst++ $path_dir/libsst++",
@@ -32,6 +33,7 @@ tmpls = [
   "ln -s $install_folder/bin/sstmac $path_dir/sstmac",
   "ln -s $install_folder/bin/pysstmac $path_dir/pysstmac",
   "ln -s $install_folder/bin/dumpi2ascii $path_dir/dumpi2ascii",
+  "ln -s $install_folder/bin/dumpi2otf2 $path_dir/dumpi2otf2",
   "ln -s $install_folder/lib/libmacro.so $lib_dir/libmacro.so",
 ]
 

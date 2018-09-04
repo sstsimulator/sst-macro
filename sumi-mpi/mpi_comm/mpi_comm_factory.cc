@@ -252,10 +252,13 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   sstmac::sw::api_unlock();
 
   //just model the allgather
-  parent_->allgather(NULL, 3, MPI_INT,
-                     NULL, 3, MPI_INT,
-                     caller->id());
 
+  auto* op = parent_->start_allgather("MPI_Comm_split_allgather", caller->id(),
+                                                3, MPI_INT,
+                                                3, MPI_INT,
+                                                nullptr, nullptr);
+  parent_->wait_collective(op);
+  delete op;
 #endif
 
   mpi_comm* ret;

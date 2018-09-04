@@ -129,7 +129,7 @@ int USER_MAIN(int argc, char** argv)
     test_allreduce(comm);
     test_scatter(comm);
     test_gather(comm);
-    test_scan(comm);
+    //test_scan(comm);
     test_comms(comm);
     test_wait(comm);
     test_allgather(comm);

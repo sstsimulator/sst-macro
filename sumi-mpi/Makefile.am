@@ -22,7 +22,8 @@ AM_CPPFLAGS += \
 if HAVE_OTF2
 AM_CPPFLAGS += \
 	-I$(top_srcdir)/sst-dumpi \
-	-I$(top_builddir)/sst-dumpi
+	-I$(top_builddir)/sst-dumpi \
+  $(OTF2_CPPFLAGS)
 endif
 
 #-I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
@@ -44,6 +45,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_protocol/eager0.cc \
   mpi_protocol/rendezvous_rdma.cc \
   mpi_types/mpi_type.cc \
+  otf2_output_stat.cc \
   sstmac_mpi.cc \
   mpi_api.cc \
   mpi_api_win.cc \
@@ -92,6 +94,8 @@ nobase_library_include_HEADERS = \
   mpi_wrapper.h \
   mpi_integers.h \
   mpi_call.h \
+  otf2_output_stat.h \
+  otf2_output_stat_fwd.h \
   sstmac_mpi.h \
   sstmac_mpi_macro.h 
   

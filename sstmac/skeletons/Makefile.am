@@ -13,19 +13,22 @@ include $(top_srcdir)/Makefile.common
 noinst_LTLIBRARIES = libsstmac_skeletons.la
 library_includedir=$(includedir)/sstmac/skeletons
 
-if HAVE_OTF2
-AM_CPPFLAGS += $(OTF2_CPPFLAGS)
-AM_LDFLAGS += $(OTF2_LDFLAGS)
-endif
 
 AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_builddir)/sumi -I$(top_srcdir)/sumi
-AM_LDFLAGS += -lotf2
 
 libsstmac_skeletons_la_LDFLAGS = 
 
 libsstmac_skeletons_la_SOURCES = \
   test/service_test.cc \
   traffic_matrix/main.cc 
+
+libsstmac_skeletons_la_LIBADD =
+if HAVE_OTF2
+AM_CPPFLAGS += $(OTF2_CPPFLAGS)
+AM_LDFLAGS += $(OTF2_LDFLAGS) 
+libsstmac_skeletons_la_LIBADD += $(OTF2_LIBS)
+libsstmac_skeletons_la_LIBADD += ../../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
+endif
 
 if BUILD_SUMI_MPI
 libsstmac_skeletons_la_SOURCES += \

@@ -131,6 +131,10 @@ class stat_collector : public sprockit::printable
     return do_clone(params_);
   }
 
+  virtual bool is_main() const {
+    return false;
+  }
+
   static int allocate_unique_tag(){
     return unique_tag_counter_++;
   }

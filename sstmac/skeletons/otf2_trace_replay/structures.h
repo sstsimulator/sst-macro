@@ -90,20 +90,6 @@ struct OTF2_Callpath {
   OTF2_RegionRef region;
 };
 
-struct OTF2_Group {
-  OTF2_StringRef name;
-  OTF2_GroupType groupType;
-  OTF2_Paradigm paradigm;
-  OTF2_GroupFlag groupFlags;
-  std::vector<uint64_t> members;
-};
-
-struct OTF2_Comm {
-  OTF2_StringRef name;
-  OTF2_GroupRef group;
-  OTF2_CommRef parent;
-};
-
 struct MPINameIDMap {
   std::unordered_map<std::string, MPI_CALL_ID> idMap;
   MPI_CALL_ID get(const std::string& str){

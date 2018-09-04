@@ -303,6 +303,7 @@ def setupDeprecatedParams(params, debugList=[]):
 
   ic = Interconnect(params)
   ic.build()
+  return ic
 
 def setupDeprecated():
   import sys
@@ -313,4 +314,4 @@ def setupDeprecated():
   for i in range(len(sys.argv)):
     if sys.argv[i] == "-d" or sys.argv[i] == "--debug":
       debugList.extend(sys.argv[i+1].split(","))
-  setupDeprecatedParams(params, debugList)
+  return setupDeprecatedParams(params, debugList)
