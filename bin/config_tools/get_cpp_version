@@ -3,13 +3,18 @@
 import sys
 import re
 from configlib import getoutput
+import os
+
+srcdir = os.path.dirname(os.path.realpath(__file__))
 
 cxx = sys.argv[1]
 cxxflags = ""
 if len(sys.argv) > 2:
   cxxflags = " ".join(sys.argv[2:])
 
-cmd = "%s %s -E bin/config_tools/cpp_version.cc" % (cxx, cxxflags)
+srcFile = os.path.join(srcdir, "cpp_version.cc")
+
+cmd = "%s %s -E %s" % (cxx, cxxflags, srcFile)
 text = getoutput(cmd)
 
 version = int(text.splitlines()[-1].split("=")[1].strip(";").strip("L"))

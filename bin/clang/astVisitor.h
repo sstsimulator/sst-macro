@@ -137,9 +137,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
  public:
   SkeletonASTVisitor(clang::Rewriter &R,
                      GlobalVarNamespace& ns,
-                     std::set<clang::Stmt*>& deld,
                      PragmaConfig& cfg) :
-    rewriter_(R), visitingGlobal_(false), deletedStmts_(deld),
+    rewriter_(R), visitingGlobal_(false),
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0), activeBinOpIdx_(-1),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
@@ -164,6 +163,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   PragmaConfig& getPragmaConfig() {
     return pragmaConfig_;
   }
+
+  void deletePragmaText(SSTPragma* prg, clang::Stmt* s);
+  void deletePragmaText(SSTPragma* prg, clang::Decl* d);
+
 
   clang::CompilerInstance& getCompilerInstance() {
     return *ci_;
@@ -483,7 +486,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   SSTPragmaList pragmas_;
   bool visitingGlobal_;
   std::set<clang::FunctionDecl*> templateDefinitions_;
-  std::set<clang::Stmt*>& deletedStmts_;
   std::list<clang::CXXConstructorDecl*> ctorContexts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
@@ -654,6 +656,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::Decl*> assignments_;
   std::list<clang::Expr*> activeDerefs_;
   std::list<clang::IfStmt*> activeIfs_;
+  //most deletions are tracked through exceptions
+  //however, sometimes a call expr must "lookahead" and delete arguments before
+  //they are traversed in the natural course of AST traversal
+  //note here any arguments that are modified/deleted
+  std::set<clang::Expr*> deletedArgs_;
   std::list<clang::MemberExpr*> memberAccesses_;
   std::map<clang::Stmt*,clang::Stmt*> extendedReplacements_;
   std::set<clang::DeclContext*> innerStructTagsDeclared_;
@@ -731,6 +738,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
         //pragma takes precedence - must occur in pre-visit
         activePragmas_.push_back(prg);
         prg->activate(t, visitor_->rewriter_, visitor_->pragmaConfig_);
+        visitor_->deletePragmaText(prg, t);
       }
     }
 

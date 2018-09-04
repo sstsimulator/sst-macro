@@ -16,6 +16,7 @@ Makefile.in
 /install-sh
 /missing
 /stamp-h1
+ltmain.sh
 
 sst-macro.creator
 sst-macro.files

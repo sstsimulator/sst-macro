@@ -3,6 +3,7 @@ void doSomeWork();
 
 void fxn()
 {
+
  sstmac_advance_time("task_time");doSomeWork();
 }
 #include <sstmac/software/process/global.h>

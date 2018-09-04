@@ -57,7 +57,8 @@ using namespace clang::tooling;
 
 static int pragmaDepth = 0;
 static int maxPragmaDepth = 0;
-std::list<SSTPragma*> pendingPragmas;
+
+SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
 
 void getLiteralDataAsString(const Token &tok, std::ostream &os)
 {
@@ -99,14 +100,14 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
   maxPragmaDepth++;
   fsp->pragmaList = &pragmas_;
   fsp->name = getName();
-  fsp->startLoc = PragmaTok.getLocation();
+  //fsp->startPragmaLoc = PragmaTok.getLocation();
   fsp->CI = &ci_;
   fsp->visitor = &visitor_;
-  fsp->deleted = &deleted_;
   PP.EnableBacktrackAtThisPos(); //this controls the backtrack
   Token pragmaTarget;
   PP.Lex(pragmaTarget); //this might hit another pragma
-  fsp->endLoc = pragmaTarget.getEndLoc();
+  //fsp->endPragmaLoc = pragmaTarget.getLocation();
+  fsp->targetLoc = pragmaTarget.getEndLoc();
   PP.Backtrack();
   if (pragmaDepth == 1){ //this is the top pragma
     //if we hit multiple pragmas, we might have redundant tokens
@@ -118,6 +119,7 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
     maxPragmaDepth = 0;
   }
   --pragmaDepth;
+  fsp->depth = pragmaDepth;
 }
 
 void
@@ -126,6 +128,7 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
                   clang::Token &PragmaTok)
 {
   //the next token should be an eod
+  SSTPragma* fsp = allocatePragma();
   Token eodToken; PP.Lex(eodToken);
   if (!eodToken.is(tok::eod)){
     std::stringstream sstr;
@@ -133,7 +136,10 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
          << " got invalid token type " << eodToken.getName();
     errorAbort(PragmaTok.getLocation(), ci_, sstr.str());
   }
-  SSTPragma* fsp = allocatePragma();
+
+  fsp->pragmaDirectiveLoc = pragmaDirectiveLoc;
+  fsp->startPragmaLoc = PragmaTok.getLocation();
+  fsp->endPragmaLoc = eodToken.getLocation();
   configure(PragmaTok, PP, fsp);
 }
 
@@ -147,6 +153,9 @@ SSTTokenStreamPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind
     PP.Lex(next);
   }
   SSTPragma* fsp = allocatePragma(next.getEndLoc(), tokens);
+  fsp->pragmaDirectiveLoc = pragmaDirectiveLoc;
+  fsp->startPragmaLoc = PragmaTok.getLocation();
+  fsp->endPragmaLoc = next.getLocation();
   configure(PragmaTok, PP, fsp);
 }
 
@@ -234,7 +243,6 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
         std::stringstream sstr;
         sstr << type << " " << name << " = nullptr;"; //don't know why - but okay, semicolon needed
         replace(stmt, r, sstr.str(), *CI);
-        deleted->insert(init);
       } //boy, I really hope this doesn't allocate any memory
     }
   } else {
@@ -251,7 +259,6 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
     pp.print(op->getLHS());
     pp.os << " = nullptr"; //don't know why - but okay, semicolon not needed
     replace(op, r, pp.os.str(),*CI);
-    deleted->insert(op->getRHS());
   } //boy, I really hope this doesn't allocate any memory
 }
 

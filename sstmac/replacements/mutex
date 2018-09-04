@@ -8,11 +8,26 @@
 #include <sstmac/replacements/clear_symbol_macros.h>
 #endif
 
-#include_next <mutex>
-
 #include <sstmac/software/process/std_mutex.h>
-#define mutex sstmac_mutex
 
+namespace std {
+
+using mutex = sstmac::sw::std_mutex;
+
+struct once_flag {
+  constexpr once_flag() noexcept : called(false) {}
+  bool called;
+};
+
+template< class Callable, class... Args >
+void call_once(once_flag& flag, Callable&& f, Args&&... args ){
+  if (!flag.called){
+    f(std::forward<Args>(args)...);
+  }
+  flag.called = true;
+}
+
+}
 
 #ifdef MUTEX_OWNS_STL
 #undef MUTEX_OWNS_STL
