@@ -49,7 +49,6 @@ def getstatusoutput2(cmd,stdin=None,pipe=None):
   if sys.version_info < (3,0):
     import commands
     newCmd = get_cmd_from_pipe2(cmd, stdin, pipe)
-    print newCmd
     return commands.getstatusoutput(newCmd)
 
 

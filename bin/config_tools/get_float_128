@@ -3,13 +3,18 @@
 import sys
 import re
 from configlib import getstatusoutput, getoutput
+import os
+
+srcdir = os.path.dirname(os.path.realpath(__file__))
 
 cxx = sys.argv[1]
 cxxflags = ""
 if len(sys.argv) > 2:
   cxxflags = " ".join(sys.argv[2:])
 
-cmd = "%s %s -o tmp_cpp_version.o -c bin/config_tools/float128.cc" % (cxx, cxxflags)
+srcFile = os.path.join(srcdir, "float128.cc")
+
+cmd = "%s %s -o tmp_cpp_version.o -c %s" % (cxx, cxxflags, srcFile)
 rc, text = getstatusoutput(cmd)
 getoutput("rm -f tmp_cpp_version.o")
 
