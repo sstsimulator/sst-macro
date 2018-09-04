@@ -96,6 +96,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   from sstccvars import soFlagsStr
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
+  from sstccvars import haveFloat128
 
   if not os.environ.has_key("SSTMAC_HEADERS"):
     topdir = os.getcwd()
@@ -244,6 +245,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     clangCxxArgs.append(givenStdFlag)
   else:
     clangCxxArgs.append("-std=c++1y")
+
+  if not haveFloat128:
+    clangCxxArgs.append("-D__float128=clangFloat128Fix")
   
   exeFromSrc = sourceFiles and not '-c' in sysargs
 

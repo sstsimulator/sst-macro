@@ -28,22 +28,36 @@ def getoutput3(cmd,stdin=None,pipe=None):
       sys.stderr.write("\n")
       raise e
 
+def get_cmd_from_pipe2(cmd,stdin,pipe):
+  if stdin:
+    cmd = cmd + " < %s" % stdin
+  elif pipe:
+    str_arr = []
+    for elem in pipe:
+      if " " in elem: str_arr.append("'%s'" % elem)
+      else: str_arr.append(elem)
+    cmd = " ".join(str_arr) + " | " + cmd
+  return cmd
+
 def getoutput2(cmd,stdin=None,pipe=None):
   if sys.version_info < (3,0):
     import commands
-    if stdin:
-      cmd = cmd + " < %s" % stdin
-    elif pipe:
-      str_arr = []
-      for elem in pipe:
-        if " " in elem: str_arr.append("'%s'" % elem)
-        else: str_arr.append(elem)
-      cmd = " ".join(str_arr) + " | " + cmd
-    return commands.getoutput(cmd)
+    newCmd = get_cmd_from_pipe2(cmd, stdin, pipe)
+    return commands.getoutput(newCmd)
+
+def getstatusoutput2(cmd,stdin=None,pipe=None):
+  if sys.version_info < (3,0):
+    import commands
+    newCmd = get_cmd_from_pipe2(cmd, stdin, pipe)
+    print newCmd
+    return commands.getstatusoutput(newCmd)
+
 
 getoutput = None
+getstatusoutput = None
 if sys.version_info < (3,0):
   getoutput = getoutput2
+  getstatusoutput = getstatusoutput2
 else:
   getoutput = getoutput3
   

@@ -85,4 +85,13 @@ AC_SUBST([CLANG_LIBTOOLING_CXX_FLAGS], "`$srcdir/bin/config_tools/get_clang_incl
 AC_SUBST([CLANG_LIBTOOLING_C_FLAGS], "`$srcdir/bin/config_tools/get_clang_includes $clang -E -v`")
 fi
 
+clang_has_float128=`$srcdir/bin/config_tools/get_float_128 $clang/bin/clang++`
+if test "X$clang_has_float128" = "Xyes"; then
+  AC_SUBST([have_float_128], [True])
+else
+  AC_SUBST([have_float_128], [False])
+fi
+
+])
+
 ])
