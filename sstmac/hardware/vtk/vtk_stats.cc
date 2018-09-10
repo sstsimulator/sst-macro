@@ -45,7 +45,10 @@ struct switchContents {
 
 };
 
-void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<traffic_event>> &trafficMap, int count_x, int count_y, topology *topo){
+void
+outputExodusWithSharedMap(const std::string& fileroot,
+   const std::multimap<uint64_t, std::shared_ptr<traffic_event>> &trafficMap,
+   int count_x, int count_y, topology *topo){
 
   // The goal:
   // The idea is to construct the geometry using coordinates of the switch and the coordinates of each ports.
@@ -197,34 +200,39 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   trafficSource->SetTrafficProgressMap(trafficMap);
   vtkSmartPointer<vtkExodusIIWriter> exodusWriter =
       vtkSmartPointer<vtkExodusIIWriter>::New();
-  exodusWriter->SetFileName("/Users/perrinel/Dev/sst-macro-jw/build/vtkTrafficSource.e");
+  std::string fileName = fileroot + ".e";
+  exodusWriter->SetFileName(fileName.c_str());
   exodusWriter->SetInputConnection (trafficSource->GetOutputPort());
   exodusWriter->WriteAllTimeStepsOn ();
   exodusWriter->Write();
 
 }
 
-void stat_vtk::outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y, topology *topo) {
+void
+stat_vtk::outputExodus(const std::string& fileroot,
+    const std::multimap<uint64_t, traffic_event> &traffMap,
+    int count_x, int count_y, topology *topo) {
 
-  std::cout << " The call back is called ::: outputExodus"<<std::endl;
   std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficMap;
   for(auto elt : traffMap){
     auto eltSecond =  std::make_shared<traffic_event>(elt.second);
     trafficMap.insert(std::pair<uint64_t, std::shared_ptr<traffic_event>>(elt.first, eltSecond));
   }
 
-  outputExodusWithSharedMap(trafficMap, count_x, count_y, topo);
+  outputExodusWithSharedMap(fileroot, trafficMap, count_x, count_y, topo);
 }
 
 
 stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
   stat_collector(params)
 {
+  /**
   std::cout << "I got named " << params->get_param("name")
             << " with id "
             << (params->has_param("id") ? params->get_param("id") : "aggregator")
             << std::endl;
   std::cout << "geom " <<params->get_param("count_x") << " "<< params->get_param("count_y") <<std::endl;
+  */
   count_x_ = params->has_param("count_x") ? std::stoi(params->get_param("count_x")) : 0;
   count_y_ = params->has_param("count_y") ? std::stoi(params->get_param("count_y")) : 0;
 }
@@ -232,10 +240,7 @@ stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
 void
 stat_vtk::reduce(stat_collector* element)
 {
-  std::cout << "reduce called on switch" << std::endl;
   stat_vtk* contribution = safe_cast(stat_vtk, element);
-
-  std::cout << " reduce " << contribution->traffic_event_map_.size()<<std::endl;
 
   for (auto it = contribution->traffic_event_map_.cbegin(); it != contribution->traffic_event_map_.cend(); ++it){
     auto tp = std::make_shared<traffic_event>();
@@ -268,8 +273,6 @@ void
 stat_vtk::dump_global_data()
 {
   //here is where I dump the VTU file or whatever
-  std::cout << "dump global data" << std::endl;
-
   std::multimap<int, std::multimap<int, int>> tf_nodes_map;
 
   for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
@@ -298,7 +301,8 @@ stat_vtk::dump_global_data()
 
 
 #if SSTMAC_VTK_ENABLED
-  outputExodusWithSharedMap(traffic_progress_map_, count_x_, count_y_, nullptr);
+  // TODO: Add topology::global instead of nullptr
+  outputExodusWithSharedMap(fileroot_, traffic_progress_map_, count_x_, count_y_, nullptr);
 #endif
 }
 

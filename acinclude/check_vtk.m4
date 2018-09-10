@@ -24,14 +24,20 @@ AC_ARG_ENABLE(vtk,
   [ vtk_version=no ]
 )
 AH_TEMPLATE([VTK_ENABLED], [Whether VTK is available and VTK stats should be built])
-#either $enableval is yes,no if yes, then system install of otf2
-#if custom, folder specified then add to cppflags and ldflags 
 if test "$vtk_version" != "no"; then
 if test "$vtk_version" = "yes"; then
 AC_MSG_ERROR([Must give VTK version --enable-vtk=VERSION])
 fi
 if test -z "$vtk_path"; then
-AC_MSG_ERROR([VTK can only be enabled by giving the install prefix --with-vtk=PREFIX])
+AC_MSG_ERROR([VTK can only be enabled by giving the install prefix --with-vtk=PREFIX, even for system default path])
+fi
+fi
+
+if test "$vtk_version" = "no"; then
+if test -z "$vtk_path"; then
+ignore="ignore"
+else
+AC_MSG_ERROR([VTK path given as --with-vtk=PREFIX, but need version specified as --enable-vtk=VERSION])
 fi
 fi
 

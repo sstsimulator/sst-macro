@@ -3,6 +3,7 @@ sstLdFlags = [
 '-L@libdir@',
 ]
 
+haveFloat128=@have_float_128@
 clangCppFlagsStr="@CLANG_CPPFLAGS@"
 clangLdFlagsStr="@CLANG_LDFLAGS@"
 clangLibtoolingCxxFlagsStr="@CLANG_LIBTOOLING_CXX_FLAGS@"
