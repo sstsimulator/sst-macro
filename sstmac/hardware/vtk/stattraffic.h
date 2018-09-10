@@ -48,7 +48,12 @@ namespace hw {
 class TrafficStatistic : public SST::Statistics::Statistic<traffic_event>
 {
 public:
-  SST_ELI_REGISTER_STATISTIC(TrafficStatistic,traffic_event)
+  SST_ELI_REGISTER_STATISTIC(TrafficStatistic,traffic_event,
+     "macro",
+     "traffic_intensity",
+     SST_ELI_ELEMENT_VERSION(1,0,0),
+     "VTK Traffic visualisation",
+     "SST::Statistic<T>")
 
     TrafficStatistic(SST::BaseComponent* comp, const std::string& statName, const std::string& statSubId, SST::Params& statParams)
         : SST::Statistics::Statistic<traffic_event>(comp, statName, statSubId, statParams)
