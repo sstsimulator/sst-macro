@@ -98,6 +98,8 @@ sculpin_switch::sculpin_switch(
     ej_params->combine_into(port_params);
   }
 
+  // Ensure topology is set
+  topology::static_topology(params);
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -136,8 +138,7 @@ sculpin_switch::sculpin_switch(
 
   init_links(params);
 
-  // Ensure topology is set
-  topology::static_topology(params);
+
 }
 
 sculpin_switch::~sculpin_switch()

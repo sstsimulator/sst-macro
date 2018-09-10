@@ -243,6 +243,8 @@ stat_vtk::reduce(stat_collector* element)
     auto tp = std::make_shared<traffic_event>();
     tp->time_ = it->first;
     tp->id_ = it->second->id_;
+    tp->type_ = it->second->type_;
+    tp->p_ = it->second->p_;
     // How to compute intensity ?
     // Let's do it by making a +1/-1 depending of the type and using the previous scalar value
     int previousIntensity = !contribution->traffic_progress_map_.empty() ?
@@ -261,16 +263,45 @@ void
 stat_vtk::dump_global_data()
 {
   //here is where I dump the VTU file or whatever
-  std::multimap<int, std::multimap<int, int>> tf_nodes_map;
+ // std::multimap<int, std::multimap<int, int>> tf_nodes_map;
 
+//  for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
+//    auto nodeId = it->second->id_;
+//    auto resIt = tf_nodes_map.find(nodeId);
+//    if(resIt == tf_nodes_map.cend()){
+//      auto map = std::multimap<int, int>{};
+//      map.insert({it->first, it->second->intensity_});
+
+//      tf_nodes_map.insert({nodeId, map});
+//    } else {
+//      auto &map = resIt->second;
+//      map.insert({it->first, it->second->intensity_});
+//    }
+//  }
+  // TORM: display the map
+  //  for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
+  //    auto node_id = it->first;
+  //    const auto &map = it->second;
+  //    std::cout<<node_id<<":";
+  //    for(auto it = map.cbegin(); it != map.cend(); ++it){
+  //      std::cout<< it->second << " ";
+  //    }
+  //    std::cout<<std::endl;
+  //  }
+
+  //DUMP FOR TRAFFIC
+  std::cout << "StatisticOutputEXODUS::traffic_progress_map_ size  "<< traffic_progress_map_.size()<< std::endl;
+  std::multimap<std::string, std::multimap<int, int>> tf_nodes_map;
   for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
     auto nodeId = it->second->id_;
-    auto resIt = tf_nodes_map.find(nodeId);
+    auto portId = it->second->p_;
+    auto nodIdPortIdKey = std::to_string(nodeId) +":"+ std::to_string(portId);
+    auto resIt = tf_nodes_map.find(nodIdPortIdKey);
     if(resIt == tf_nodes_map.cend()){
       auto map = std::multimap<int, int>{};
       map.insert({it->first, it->second->intensity_});
 
-      tf_nodes_map.insert({nodeId, map});
+      tf_nodes_map.insert({nodIdPortIdKey, map});
     } else {
       auto &map = resIt->second;
       map.insert({it->first, it->second->intensity_});
