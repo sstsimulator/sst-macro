@@ -30,7 +30,9 @@ class stat_vtk : public stat_collector
   std::string to_string() const override {
     return "VTK stats";
   }
-  static void outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y);
+  static void outputExodus(const std::string& fileroot,
+      const std::multimap<uint64_t, traffic_event> &traffMap,
+      int count_x, int count_y);
 
   void dump_local_data() override;
 

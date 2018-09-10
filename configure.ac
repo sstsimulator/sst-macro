@@ -313,6 +313,11 @@ echo "MPI Timeline Stats $enable_mpi_timeline"
 echo "MPI Sync Stats     $with_comm_sync_stats"
 echo "Graphviz Trace     $enable_graphviz"
 echo "Sanity Checking    $enable_sanity_check"
+if test -z "$vtk_path"; then
+echo "VTK                no"
+else
+echo "VTK                $vtk_version @ $vtk_path"
+fi
 
 echo "---------------------------------------------------------------"
 
