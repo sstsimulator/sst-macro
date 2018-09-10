@@ -200,7 +200,7 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   trafficSource->SetTrafficProgressMap(trafficMap);
   vtkSmartPointer<vtkExodusIIWriter> exodusWriter =
       vtkSmartPointer<vtkExodusIIWriter>::New();
-  std::string fileName = fileroot + ".e";
+  std::string fileName = fileroot;
   exodusWriter->SetFileName(fileName.c_str());
   exodusWriter->SetInputConnection (trafficSource->GetOutputPort());
   exodusWriter->WriteAllTimeStepsOn ();
