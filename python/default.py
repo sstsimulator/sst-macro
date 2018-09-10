@@ -14,7 +14,7 @@ sst.setStatisticLoadLevel(7)
 trafficStats = sst.StatisticGroup("traffic_intensity_stats")
 trafficStats.addStatistic("traffic_intensity", {"resetOnRead": False})
 #sst.StatisticOutput("sst.statOutputEXODUS", {"filepath" : "./trafExodus.out"})
-trafficStats.setOutput(sst.StatisticOutput("macro.statOutputEXODUS", {"filepath": "/Users/perrinel/Dev/trafEXODUS.out", "count_x":"4", "count_y":"4"}))
+trafficStats.setOutput(sst.StatisticOutput("macro.statOutputEXODUS", {"filepath": "/Users/perrinel/Dev/trafEXODUS.e", "count_x":"4", "count_y":"4"}))
 
 for i in range(ic.num_switches):
   s, params = ic.switches[i]

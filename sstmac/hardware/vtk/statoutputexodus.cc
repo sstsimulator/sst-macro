@@ -58,7 +58,7 @@ bool StatisticOutputEXODUS::checkOutputParameters()
     }
 
     // Get the parameters
-    m_FilePath = getOutputParameters().find<std::string>("filepath", "./StatisticOutput.e");
+    m_FilePath = getOutputParameters().find<std::string>("filepath", "./vtkStatisticOutput.e");
     simTimeFlag = getOutputParameters().find<std::string>("outputsimtime", "1");
     rankFlag = getOutputParameters().find<std::string>("outputrank", "1");
 
@@ -204,7 +204,7 @@ void StatisticOutputEXODUS::implStopOutputGroup()
   int count_x = std::atoi(getOutputParameters().find<std::string>("count_x", "1").c_str());
   int count_y = std::atoi(getOutputParameters().find<std::string>("count_y", "1").c_str());
 
-  stat_vtk::outputExodus(traffic_progress_map_, count_x, count_y, topology::global());
+  stat_vtk::outputExodus(m_FilePath, traffic_progress_map_, count_x, count_y, topology::global());
 }
 
 } //namespace Statistics

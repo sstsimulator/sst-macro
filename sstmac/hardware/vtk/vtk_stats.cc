@@ -247,21 +247,12 @@ stat_vtk::reduce(stat_collector* element)
     tp->time_ = it->first;
     tp->id_ = it->second->id_;
     // How to compute intensity ?
-    // Let's do it by making a +1/-1 depending of the previous scalar value
+    // Let's do it by making a +1/-1 depending of the type and using the previous scalar value
     int previousIntensity = !contribution->traffic_progress_map_.empty() ?
           contribution->traffic_progress_map_.crbegin()->second->intensity_ : 0;
     tp->intensity_ = it->second->type_ ? previousIntensity - 1 : previousIntensity + 1;
 
     contribution->traffic_progress_map_.insert({it->first, tp});
-
-    //    if(tp->id_ == 3) {
-    //      std::cout << "intensity "<<tp->time_ << " " << previousIntensity << ":"<<tp->intensity_<< std::endl;
-    //      std::cout<< "map content ";
-    //      for(auto it = contribution->traffic_progress_map_.cbegin(); it != contribution->traffic_progress_map_.cend(); ++it) {
-    //        std::cout<< it->second->intensity_ << " ";
-    //      }
-    //      std::cout<<std::endl;
-    //    }
   }
 
   for (auto& pair : contribution->traffic_progress_map_){
