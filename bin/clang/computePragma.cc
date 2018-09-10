@@ -59,7 +59,7 @@ SSTLoopCountPragma::SSTLoopCountPragma(const std::list<Token> &tokens) :
   SSTPragma(LoopCount)
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(startLoc, tokens.begin(), tokens.end(), sstr, *CI);
+  SSTPragma::tokenStreamToString(startPragmaLoc, tokens.begin(), tokens.end(), sstr, *CI);
   loopCount_ = sstr.str();
 }
 

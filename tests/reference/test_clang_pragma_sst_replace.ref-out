@@ -4,10 +4,13 @@ T* allocate();
 
 void fxn1()
 {
+
  auto x = nullptr;
   auto y = nullptr;
+
  auto z = allocate<int>();
 }
+
 
 void fxn2()
 {
@@ -21,15 +24,19 @@ int compute(){ return 0; }
 void fxn3()
 {
   int a[4];
+
  for (int i=0; i < 3; ++i){
     int x = 5;
   }
+
  for (int i=0; i < 3; ++i){
     int x = 10;
   }
 
   int b[10][10];
+
  int x = 42;
+
 
  for (int i=0; i < 3; ++i){
     int x = 10;
