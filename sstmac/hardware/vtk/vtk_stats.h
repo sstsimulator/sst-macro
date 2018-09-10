@@ -13,6 +13,8 @@ using namespace SST;
 namespace sstmac {
 namespace hw {
 
+class topology;
+
 struct traffic_event {
     uint64_t time_; // progress time
     int id_; // Id of the switch
@@ -30,7 +32,7 @@ class stat_vtk : public stat_collector
   std::string to_string() const override {
     return "VTK stats";
   }
-  static void outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y);
+  static void outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y, topology *topo =nullptr);
 
   void dump_local_data() override;
 

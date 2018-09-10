@@ -1,9 +1,11 @@
 #include <sstmac/hardware/vtk/vtk_stats.h>
-#include <sstmac/hardware/vtk/vtkXMLPVDWriter.h>
 #include <sstmac/hardware/vtk/vtkTrafficSource.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <sstmac/hardware/topology/topology.h>
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
+
+#include <utility>
 
 
 #if SSTMAC_VTK_ENABLED
@@ -13,6 +15,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkPolyVertex.h>
 #include <vtkVertex.h>
+#include <vtkQuad.h>
 #include <vtkCellArray.h>
 #include <vtkXMLUnstructuredGridReader.h>
 #include <vtkDataSetMapper.h>
@@ -23,6 +26,7 @@
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkPointData.h>
+#include <vtkCellData.h>
 #include <vtkVertexGlyphFilter.h>
 #include "vtkStdString.h"
 #include "vtkExodusIIWriter.h"
@@ -37,7 +41,11 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<traffic_event>> &trafficMap, int count_x, int count_y){
+struct switchContents {
+
+};
+
+void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<traffic_event>> &trafficMap, int count_x, int count_y, topology *topo){
 
   // The goal:
   // The idea is to construct the geometry using coordinates of the switch and the coordinates of each ports.
@@ -49,14 +57,24 @@ void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<tra
   // The switch traffic value itself needs to be recomputed using the mean of all current traffic values of the ports of the switch.
 
 
+  // We need to quickly find info associated with the switch
+ std::map<int, switchContents> switchIdToContents;
+ for(auto it = trafficMap.cbegin(); it != trafficMap.cend(); ++it){
+   switchIdToContents.insert(std::make_pair(it->second->id_, switchContents{}));
+ }
+std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl;
+ // store the exact number of switch
+ const int numberOfSwitch = switchIdToContents.size();
+
   // Init traffic array with default 0 traffic value
   vtkSmartPointer<vtkIntArray> traffic =
       vtkSmartPointer<vtkIntArray>::New();
   traffic->SetNumberOfComponents(1);
   traffic->SetName("MyTraffic");
-  int count_xy = count_x * count_y; //
-  traffic->SetNumberOfValues(count_xy);
-  for (auto i = 0; i < count_xy; ++i){
+//  int count_xy = count_x * count_y; //
+  // 1 color per face and 6 face per switch
+  traffic->SetNumberOfValues(numberOfSwitch * 6);
+  for (auto i = 0; i < numberOfSwitch; ++i){
     traffic->SetValue(i, 0);
   }
 
@@ -65,28 +83,94 @@ void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<tra
       vtkSmartPointer<vtkPoints>::New();
 
   // Use the geometry to place them correctly
-  for (auto j = 0; j < count_y; ++j){
-    for (auto i = 0; i < count_x; ++i){
-      points->InsertNextPoint(i, j, 0);
-    }
+  for(auto it = switchIdToContents.cbegin(); it != switchIdToContents.cend(); ++it){
+    auto geom = topo->get_vtk_geometry(it->first);
+    auto box_geom = geom.box;
+    auto v0 = box_geom.vertex(0);
+    auto v1 = box_geom.vertex(1);
+    auto v2 = box_geom.vertex(2);
+    auto v3 = box_geom.vertex(3);
+    auto v4 = box_geom.vertex(4);
+    auto v5 = box_geom.vertex(5);
+    auto v6 = box_geom.vertex(6);
+    auto v7 = box_geom.vertex(7);
+    points->InsertNextPoint(v0.x, v0.y, v0.z);
+    points->InsertNextPoint(v1.x, v1.y, v1.z);
+    points->InsertNextPoint(v2.x, v2.y, v2.z);
+    points->InsertNextPoint(v3.x, v3.y, v3.z);
+    points->InsertNextPoint(v4.x, v4.y, v4.z);
+    points->InsertNextPoint(v5.x, v5.y, v5.z);
+    points->InsertNextPoint(v6.x, v6.y, v6.z);
+    points->InsertNextPoint(v7.x, v7.y, v7.z);
   }
+  std::cout << "vtk_stats : num of points "<< points->GetNumberOfPoints() <<std::endl;
 
   // Create the vtkCellArray
+  // 6 face cell array per switch
   vtkSmartPointer<vtkCellArray> cell_array =
       vtkSmartPointer<vtkCellArray>::New();
 
-  for (auto i = 0; i < count_xy; ++i){
-    vtkSmartPointer<vtkVertex> point_data =
-        vtkSmartPointer<vtkVertex>::New();
-    point_data->GetPointIds()->SetId(0,i);
-    cell_array->InsertNextCell(point_data);
+  for (auto i = 0; i < numberOfSwitch; ++i){
+    vtkSmartPointer<vtkQuad> plusXface =
+        vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> plusYface =
+        vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> plusZface =
+        vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> minusXface =
+        vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> minusYface =
+        vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> minusZface =
+        vtkSmartPointer<vtkQuad>::New();
+
+    auto pIdxStart = i * 8; // 8 points per switch
+    plusXface->GetPointIds()->SetId(0,pIdxStart + 4);
+    plusXface->GetPointIds()->SetId(1,pIdxStart + 6);
+    plusXface->GetPointIds()->SetId(2,pIdxStart + 7);
+    plusXface->GetPointIds()->SetId(3,pIdxStart + 5);
+
+    plusYface->GetPointIds()->SetId(0,pIdxStart + 1);
+    plusYface->GetPointIds()->SetId(1,pIdxStart + 5);
+    plusYface->GetPointIds()->SetId(2,pIdxStart + 7);
+    plusYface->GetPointIds()->SetId(3,pIdxStart + 3);
+
+    plusZface->GetPointIds()->SetId(0,pIdxStart + 6);
+    plusZface->GetPointIds()->SetId(1,pIdxStart + 2);
+    plusZface->GetPointIds()->SetId(2,pIdxStart + 3);
+    plusZface->GetPointIds()->SetId(3,pIdxStart + 7);
+
+    minusXface->GetPointIds()->SetId(0,pIdxStart + 2);
+    minusXface->GetPointIds()->SetId(1,pIdxStart);
+    minusXface->GetPointIds()->SetId(2,pIdxStart + 1);
+    minusXface->GetPointIds()->SetId(3,pIdxStart + 3);
+
+    minusYface->GetPointIds()->SetId(0,pIdxStart + 2);
+    minusYface->GetPointIds()->SetId(1,pIdxStart + 6);
+    minusYface->GetPointIds()->SetId(2,pIdxStart + 4);
+    minusYface->GetPointIds()->SetId(3,pIdxStart);
+
+    minusZface->GetPointIds()->SetId(0,pIdxStart);
+    minusZface->GetPointIds()->SetId(1,pIdxStart + 4);
+    minusZface->GetPointIds()->SetId(2,pIdxStart + 5);
+    minusZface->GetPointIds()->SetId(3,pIdxStart + 1);
+
+    cell_array->InsertNextCell(plusXface);
+    cell_array->InsertNextCell(plusYface);
+    cell_array->InsertNextCell(plusZface);
+    cell_array->InsertNextCell(minusXface);
+    cell_array->InsertNextCell(minusYface);
+    cell_array->InsertNextCell(minusZface);
   }
+
+
+  std::cout << "vtk_stats : num of cells "<< cell_array->GetNumberOfCells()<<std::endl;
 
   vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
       vtkSmartPointer<vtkUnstructuredGrid>::New();
   unstructured_grid->SetPoints(points);
-  unstructured_grid->SetCells(VTK_VERTEX, cell_array);
-  unstructured_grid->GetPointData()->AddArray(traffic);
+  unstructured_grid->SetCells(VTK_QUAD, cell_array);
+  unstructured_grid->GetCellData()->AddArray(traffic);
 
   // Init Time Step
   double current_time = -1;
@@ -120,7 +204,7 @@ void outputExodusWithSharedMap(const std::multimap<uint64_t, std::shared_ptr<tra
 
 }
 
-void stat_vtk::outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y) {
+void stat_vtk::outputExodus(const std::multimap<uint64_t, traffic_event> &traffMap, int count_x, int count_y, topology *topo) {
 
   std::cout << " The call back is called ::: outputExodus"<<std::endl;
   std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficMap;
@@ -129,7 +213,7 @@ void stat_vtk::outputExodus(const std::multimap<uint64_t, traffic_event> &traffM
     trafficMap.insert(std::pair<uint64_t, std::shared_ptr<traffic_event>>(elt.first, eltSecond));
   }
 
-  outputExodusWithSharedMap(trafficMap, count_x, count_y);
+  outputExodusWithSharedMap(trafficMap, count_x, count_y, topo);
 }
 
 
@@ -214,7 +298,7 @@ stat_vtk::dump_global_data()
 
 
 #if SSTMAC_VTK_ENABLED
-  outputExodusWithSharedMap(traffic_progress_map_, count_x_, count_y_);
+  outputExodusWithSharedMap(traffic_progress_map_, count_x_, count_y_, nullptr);
 #endif
 }
 

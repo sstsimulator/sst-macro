@@ -71,9 +71,9 @@ void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics)
   this->Traffics = vtkIntArray::New();
   this->Traffics->SetNumberOfComponents(1);
   this->Traffics->SetName("MyTraffic");
-  this->Traffics->SetNumberOfValues(this->Points->GetNumberOfPoints());
+  this->Traffics->SetNumberOfValues(this->Cells->GetNumberOfCells());
 
-  for(auto i = 0; i < this->Points->GetNumberOfPoints(); ++i){
+  for(auto i = 0; i < this->Cells->GetNumberOfCells(); ++i){
     this->Traffics->SetValue(i, 0);
   }
 }
@@ -153,10 +153,11 @@ int vtkTrafficSource::RequestData(
   auto currentIntensities =  traffic_progress_map_.equal_range(reqTS);
 
   for(auto it = currentIntensities.first; it != currentIntensities.second; ++it){
-    this->Traffics->SetValue(it->second->id_, it->second->intensity_);
+    // traffic face index = switchId * 6 + getFaceIndex(switchId, port)
+    this->Traffics->SetValue(it->second->id_ * 6 + it->second->p_, it->second->intensity_);
   }
 
-  output->GetPointData()->AddArray(this->Traffics);
+  output->GetCellData()->AddArray(this->Traffics);
 
   // Send Topology to output
   vtkPoints *points = vtkPoints::New();
@@ -166,7 +167,7 @@ int vtkTrafficSource::RequestData(
 
   vtkCellArray *cells = vtkCellArray::New();
   cells->DeepCopy(this->Cells);
-  output->SetCells(VTK_VERTEX, this->Cells);
+  output->SetCells(VTK_QUAD, this->Cells);
   cells->Delete();
 
   return 1;

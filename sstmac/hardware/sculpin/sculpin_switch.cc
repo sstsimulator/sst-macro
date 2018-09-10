@@ -103,8 +103,8 @@ sculpin_switch::sculpin_switch(
 #if SSTMAC_INTEGRATED_SST_CORE
   //traffic_intensity = registerStatistic<traffic_event>("traffic_intensity", getName());
 
-  std::function<void (const std::multimap<uint64_t, traffic_event> &, int, int)> f =
-      &stat_vtk::outputExodus;
+//  std::function<void (const std::multimap<uint64_t, traffic_event> &, int, int)> f =
+//      &stat_vtk::outputExodus;
 
   //SST::Factory::getFactory()->registerOptionnalCallback("statOutputEXODUS", f);
 #else
@@ -135,6 +135,9 @@ sculpin_switch::sculpin_switch(
   if (stat_hotspots_) stat_hotspots_->configure(my_addr_, top_);
 
   init_links(params);
+
+  // Ensure topology is set
+  topology::static_topology(params);
 }
 
 sculpin_switch::~sculpin_switch()

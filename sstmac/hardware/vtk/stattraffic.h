@@ -88,6 +88,7 @@ protected:
 
     void addData_impl(const traffic_event& value) override
     {
+
         // USE uintptr_t as value to remove the dynamical parameters;
         //        Params &traffic_intensity_params = this->getDynamicParams();
 
@@ -109,13 +110,11 @@ public:
 
     void clearStatisticData() override
     {
-       // m_sum = 0;
         this->setCollectionCount(0);
     }
 
     void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override
     {
-      std::cout << "StatTraffic::registerOutputFields"<< std::endl;
      // h_traffic_event = statOutput->registerField<NumberBase>("Traffic_event");
     }
 
