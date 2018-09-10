@@ -7,8 +7,6 @@
 
 #include <utility>
 
-
-#if SSTMAC_VTK_ENABLED
 #include <vtkInformation.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkVersion.h>
@@ -30,7 +28,6 @@
 #include <vtkVertexGlyphFilter.h>
 #include "vtkStdString.h"
 #include "vtkExodusIIWriter.h"
-#endif
 
 RegisterKeywords(
 { "name","a test parameter" },
@@ -290,11 +287,7 @@ stat_vtk::dump_global_data()
   //    std::cout<<std::endl;
   //  }
 
-
-#if SSTMAC_VTK_ENABLED
-  // TODO: Add topology::global instead of nullptr
-  outputExodusWithSharedMap(fileroot_, traffic_progress_map_, count_x_, count_y_, nullptr);
-#endif
+  outputExodusWithSharedMap(fileroot_, traffic_progress_map_, count_x_, count_y_, topology::global());
 }
 
 void
