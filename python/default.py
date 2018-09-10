@@ -7,6 +7,10 @@ ic = setupDeprecated()
 print dir(ic.switches[0])
 print ic.num_switches
 
+# Set the Statistic Load Level; Statistics with Enable Levels (set in
+# elementInfoStatistic) lower or equal to the load can be enabled (default = 0)
+sst.setStatisticLoadLevel(7)
+
 trafficStats = sst.StatisticGroup("traffic_intensity_stats")
 trafficStats.addStatistic("traffic_intensity", {"resetOnRead": False})
 #sst.StatisticOutput("sst.statOutputEXODUS", {"filepath" : "./trafExodus.out"})
