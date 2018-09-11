@@ -131,9 +131,9 @@ sculpin_switch::sculpin_switch(
 #endif
 #endif
   }
+  if (vtk_) vtk_->configure(my_addr_, top_);
 
-  stat_hotspots_ = optional_stats<stat_hotspot>(this, params,
-     "hotspot", "hotspot");
+  stat_hotspots_ = optional_stats<stat_hotspot>(this, params, "hotspot", "hotspot");
   if (stat_hotspots_) stat_hotspots_->configure(my_addr_, top_);
 
   init_links(params);
@@ -243,7 +243,7 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   evt.type_=1;
   traffic_intensity[p.id]->addData(evt);
 #else
-  if (vtk_) vtk_->collect_departure(p.next_free.ticks(), my_addr_, p.id);
+  if (vtk_) vtk_->collect_departure(p.next_free.ticks(), p.id);
 #endif
 #endif
 
@@ -330,7 +330,7 @@ sculpin_switch::handle_payload(event *ev)
   evt.type_=0;
   traffic_intensity[p.id]->addData(evt);
 #else
-  if (vtk_) vtk_->collect_arrival(now().ticks(), my_addr_, p.id);
+  if (vtk_) vtk_->collect_arrival(now().ticks(), p.id);
 #endif
 #endif
   timestamp time_to_send = p.inv_bw * pkt->num_bytes();

@@ -78,12 +78,6 @@ void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics)
   }
 }
 
-void vtkTrafficSource::SetTrafficProgressMap(std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficProgressMap)
-{
-  this->traffic_progress_map_ = trafficProgressMap;
-}
-
-
 //----------------------------------------------------------------------------
 int vtkTrafficSource::RequestInformation(
   vtkInformation* reqInfo,
@@ -154,7 +148,9 @@ int vtkTrafficSource::RequestData(
 
   for(auto it = currentIntensities.first; it != currentIntensities.second; ++it){
     // traffic face index = switchId * 6 + getFaceIndex(switchId, port)
-    this->Traffics->SetValue(it->second->id_ * 6 + it->second->p_, it->second->intensity_);
+    traffic_event& event = it->second;
+    auto valueIndex = event.id_ * 6 + event.face_;
+    this->Traffics->SetValue(valueIndex, event.intensity_);
   }
 
   output->GetCellData()->AddArray(this->Traffics);

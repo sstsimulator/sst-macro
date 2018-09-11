@@ -4,6 +4,7 @@
 #include <sstmac/common/stats/stat_collector.h>
 #include <vector>
 #include <memory>
+#include <sstmac/hardware/topology/topology.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/statapi/statfieldinfo.h>
@@ -16,11 +17,15 @@ namespace hw {
 class topology;
 
 struct traffic_event {
-    uint64_t time_; // progress time
-    int id_; // Id of the switch
-    int type_; // arrive or leave
-    int p_; // port of the node Id
-    int intensity_; // traffic intenisity
+  uint64_t time_; // progress time
+  int face_; //the face to color
+  int intensity_;
+  int id_;
+
+  traffic_event(uint64_t t, int face, int intens, int id) :
+    time_(t), face_(face), intensity_(intens), id_(id)
+  {
+  }
 };
 
 class stat_vtk : public stat_collector
@@ -34,8 +39,8 @@ class stat_vtk : public stat_collector
   }
 
   static void outputExodus(const std::string& fileroot,
-      const std::multimap<uint64_t, traffic_event> &traffMap,
-      int count_x, int count_y, topology *topo =nullptr);
+      std::multimap<uint64_t, traffic_event>&& traffMap,
+      topology *topo =nullptr);
 
   void dump_local_data() override;
 
@@ -45,9 +50,9 @@ class stat_vtk : public stat_collector
 
   void clear() override;
 
-  void collect_departure(uint64_t time, int switch_id, int port);
+  void collect_departure(uint64_t time, int port);
 
-  void collect_arrival(uint64_t time, int switch_id, int port);
+  void collect_arrival(uint64_t time, int port);
 
   void reduce(stat_collector *coll) override;
 
@@ -55,11 +60,35 @@ class stat_vtk : public stat_collector
     return new stat_vtk(params);
   }
 
+  int id() const {
+    return id_;
+  }
+
+  void configure(switch_id sid, hw::topology* top);
+
 private:
-  std::multimap<uint64_t, std::shared_ptr<traffic_event>> traffic_progress_map_;
-  std::multimap<uint64_t, std::shared_ptr<traffic_event>> traffic_event_map_;
-  int count_x_;
-  int count_y_;
+  struct face_intensity {
+    int active_ports;
+    int congested_ports;
+    face_intensity() :
+      active_ports(0),
+      congested_ports(0)
+    {
+    }
+  };
+
+  std::vector<hw::topology::vtk_face_t> port_to_face_;
+  std::vector<int> port_intensities_;
+  std::vector<face_intensity> face_intensities_;
+  int congestion_cutoff_;
+  int id_;
+
+  std::vector<traffic_event> event_list_;
+
+  std::multimap<uint64_t, traffic_event> traffic_event_map_;
+  hw::topology* top_;
+
+
 };
 
 }

@@ -201,10 +201,7 @@ void StatisticOutputEXODUS::implStopOutputGroup()
        std::cout<<std::endl;
      }
 
-  int count_x = std::atoi(getOutputParameters().find<std::string>("count_x", "1").c_str());
-  int count_y = std::atoi(getOutputParameters().find<std::string>("count_y", "1").c_str());
-
-  stat_vtk::outputExodus(m_FilePath, traffic_progress_map_, count_x, count_y, topology::global());
+  stat_vtk::outputExodus(m_FilePath, traffic_progress_map_, topology::global());
 }
 
 } //namespace Statistics

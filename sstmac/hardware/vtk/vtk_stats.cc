@@ -30,10 +30,8 @@
 #include "vtkExodusIIWriter.h"
 
 RegisterKeywords(
-{ "name","a test parameter" },
-{ "count_x", "topology size in x dim"},
-{ "count_y", "topology size in y dim"},
-    );
+{ "congestion_cutoff", "the port occupancy level that should be considered 'congestion'" },
+);
 
 namespace sstmac {
 namespace hw {
@@ -44,8 +42,9 @@ struct switchContents {
 
 void
 outputExodusWithSharedMap(const std::string& fileroot,
-   const std::multimap<uint64_t, std::shared_ptr<traffic_event>> &trafficMap,
-   int count_x, int count_y, topology *topo){
+   std::multimap<uint64_t, traffic_event>&& trafficMap,
+   topology *topo)
+{
 
   // The goal:
   // The idea is to construct the geometry using coordinates of the switch and the coordinates of each ports.
@@ -60,7 +59,8 @@ outputExodusWithSharedMap(const std::string& fileroot,
   // We need to quickly find info associated with the switch
  std::map<int, switchContents> switchIdToContents;
  for(auto it = trafficMap.cbegin(); it != trafficMap.cend(); ++it){
-   switchIdToContents.insert(std::make_pair(it->second->id_, switchContents{}));
+   const traffic_event& e = it->second;
+   switchIdToContents.insert(std::make_pair(e.id_, switchContents{}));
  }
 std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl;
  // store the exact number of switch
@@ -194,10 +194,10 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   trafficSource->SetPoints(points);
   trafficSource->SetCells(cell_array);
   trafficSource->SetTraffics(traffic);
-  trafficSource->SetTrafficProgressMap(trafficMap);
+  trafficSource->SetTrafficProgressMap(std::move(trafficMap));
   vtkSmartPointer<vtkExodusIIWriter> exodusWriter =
       vtkSmartPointer<vtkExodusIIWriter>::New();
-  std::string fileName = fileroot;
+  std::string fileName = fileroot + ".e";
   exodusWriter->SetFileName(fileName.c_str());
   exodusWriter->SetInputConnection (trafficSource->GetOutputPort());
   exodusWriter->WriteAllTimeStepsOn ();
@@ -207,31 +207,16 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
 
 void
 stat_vtk::outputExodus(const std::string& fileroot,
-    const std::multimap<uint64_t, traffic_event> &traffMap,
-    int count_x, int count_y, topology *topo) {
-
-  std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficMap;
-  for(auto elt : traffMap){
-    auto eltSecond =  std::make_shared<traffic_event>(elt.second);
-    trafficMap.insert(std::pair<uint64_t, std::shared_ptr<traffic_event>>(elt.first, eltSecond));
-  }
-
-  outputExodusWithSharedMap(fileroot, trafficMap, count_x, count_y, topo);
+    std::multimap<uint64_t, traffic_event>&& traffMap,
+    topology *topo) {
+  outputExodusWithSharedMap(fileroot, std::move(traffMap), topo);
 }
 
 
 stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
   stat_collector(params)
 {
-  /**
-  std::cout << "I got named " << params->get_param("name")
-            << " with id "
-            << (params->has_param("id") ? params->get_param("id") : "aggregator")
-            << std::endl;
-  std::cout << "geom " <<params->get_param("count_x") << " "<< params->get_param("count_y") <<std::endl;
-  */
-  count_x_ = params->has_param("count_x") ? std::stoi(params->get_param("count_x")) : 0;
-  count_y_ = params->has_param("count_y") ? std::stoi(params->get_param("count_y")) : 0;
+  congestion_cutoff_ = params->get_int_param("congestion_cutoff");
 }
 
 void
@@ -239,24 +224,10 @@ stat_vtk::reduce(stat_collector* element)
 {
   stat_vtk* contribution = safe_cast(stat_vtk, element);
 
-  for (auto it = contribution->traffic_event_map_.cbegin(); it != contribution->traffic_event_map_.cend(); ++it){
-    auto tp = std::make_shared<traffic_event>();
-    tp->time_ = it->first;
-    tp->id_ = it->second->id_;
-    tp->type_ = it->second->type_;
-    tp->p_ = it->second->p_;
-    // How to compute intensity ?
-    // Let's do it by making a +1/-1 depending of the type and using the previous scalar value
-    int previousIntensity = !contribution->traffic_progress_map_.empty() ?
-          contribution->traffic_progress_map_.crbegin()->second->intensity_ : 0;
-    tp->intensity_ = it->second->type_ ? previousIntensity - 1 : previousIntensity + 1;
-
-    contribution->traffic_progress_map_.insert({it->first, tp});
+  for (traffic_event& e : contribution->event_list_){
+    traffic_event_map_.emplace(e.time_, e);
   }
 
-  for (auto& pair : contribution->traffic_progress_map_){
-    traffic_progress_map_.insert({pair.first, pair.second});
-  }
 }
 
 void
@@ -290,6 +261,7 @@ stat_vtk::dump_global_data()
   //  }
 
   //DUMP FOR TRAFFIC
+  /**
   std::cout << "StatisticOutputEXODUS::traffic_progress_map_ size  "<< traffic_progress_map_.size()<< std::endl;
   std::multimap<std::string, std::multimap<int, int>> tf_nodes_map;
   for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
@@ -307,6 +279,7 @@ stat_vtk::dump_global_data()
       map.insert({it->first, it->second->intensity_});
     }
   }
+  */
   // TORM: display the map
   //  for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
   //    auto node_id = it->first;
@@ -318,7 +291,7 @@ stat_vtk::dump_global_data()
   //    std::cout<<std::endl;
   //  }
 
-  outputExodusWithSharedMap(fileroot_, traffic_progress_map_, count_x_, count_y_, topology::global());
+  outputExodusWithSharedMap(fileroot_, std::move(traffic_event_map_), topology::global());
 }
 
 void
@@ -333,28 +306,58 @@ stat_vtk::clear()
 }
 
 void
-stat_vtk::collect_arrival(uint64_t time, int switch_id, int port)
+stat_vtk::configure(switch_id sid, topology *top)
 {
-
-  auto tp = std::make_shared<traffic_event>();
-  tp->time_ = time;
-  tp->id_ = switch_id;
-  tp->p_ = port;
-  tp->type_ = 0;
-
-  traffic_event_map_.insert({time, tp});
+  top_ = top;
+  auto geom = top_->get_vtk_geometry(sid);
+  port_to_face_ = geom.port_faces;
+  id_ = sid;
+  port_intensities_.resize(port_to_face_.size());
+  face_intensities_.resize(6);
 }
 
 void
-stat_vtk::collect_departure(uint64_t time, int switch_id, int port)
+stat_vtk::collect_arrival(uint64_t time, int port)
 {
-  auto tp = std::make_shared<traffic_event>();
-  tp->time_ = time;
-  tp->id_ = switch_id;
-  tp->p_ = port;
-  tp->type_ = 1;
+  if (port >= port_intensities_.size()) return;
 
-  traffic_event_map_.insert({time, tp});
+  auto face = port_to_face_[port];
+  face_intensity& face_int = face_intensities_[face];
+  int intensity = ++port_intensities_[port];
+  if (intensity >= congestion_cutoff_){
+    face_int.congested_ports++;
+  } else {
+    face_int.active_ports++;
+  }
+
+  int level = 1; //1 means active
+  if (face_int.congested_ports > 0){
+    level = face_int.congested_ports + 1;
+  }
+
+  event_list_.emplace_back(time, face, level, id_);
+}
+
+void
+stat_vtk::collect_departure(uint64_t time, int port)
+{
+  if (port >= port_intensities_.size()) return;
+
+  auto face = port_to_face_[port];
+  int intensity = port_intensities_[port]--;
+  face_intensity& face_int = face_intensities_[face];
+  if (intensity >= congestion_cutoff_){
+    face_int.congested_ports--;
+  } else {
+    face_int.active_ports--;
+  }
+
+  int level = face_int.active_ports > 0 ? 1 : 0; //1 means active
+  if (face_int.congested_ports > 0){
+    level = face_int.congested_ports + 1;
+  }
+
+  event_list_.emplace_back(time, face, level, id_);
 }
 
 void

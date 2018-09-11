@@ -53,7 +53,10 @@ public:
   void SetCells(vtkSmartPointer<vtkCellArray> cells);
 
   // Traffic
-  void SetTrafficProgressMap(std::multimap<uint64_t, std::shared_ptr<traffic_event>> trafficProgressMap);
+  void SetTrafficProgressMap(std::multimap<uint64_t, traffic_event>&& trafficProgressMap){
+    traffic_progress_map_ = std::move(trafficProgressMap);
+  }
+
   void SetTraffics(vtkSmartPointer<vtkIntArray> traffics);
 
 protected:
@@ -70,7 +73,7 @@ protected:
 
   int NumSteps;
   double *Steps;
-  std::multimap<uint64_t, std::shared_ptr<traffic_event>> traffic_progress_map_;
+  std::multimap<uint64_t, traffic_event> traffic_progress_map_;
   vtkIntArray * Traffics;
   vtkSmartPointer<vtkPoints> Points;
   vtkSmartPointer<vtkCellArray> Cells;
