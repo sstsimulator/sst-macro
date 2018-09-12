@@ -234,62 +234,37 @@ void
 stat_vtk::dump_global_data()
 {
   //here is where I dump the VTU file or whatever
- // std::multimap<int, std::multimap<int, int>> tf_nodes_map;
-
-//  for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
-//    auto nodeId = it->second->id_;
-//    auto resIt = tf_nodes_map.find(nodeId);
-//    if(resIt == tf_nodes_map.cend()){
-//      auto map = std::multimap<int, int>{};
-//      map.insert({it->first, it->second->intensity_});
-
-//      tf_nodes_map.insert({nodeId, map});
-//    } else {
-//      auto &map = resIt->second;
-//      map.insert({it->first, it->second->intensity_});
-//    }
-//  }
-  // TORM: display the map
-  //  for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
-  //    auto node_id = it->first;
-  //    const auto &map = it->second;
-  //    std::cout<<node_id<<":";
-  //    for(auto it = map.cbegin(); it != map.cend(); ++it){
-  //      std::cout<< it->second << " ";
-  //    }
-  //    std::cout<<std::endl;
-  //  }
 
   //DUMP FOR TRAFFIC
-  /**
-  std::cout << "StatisticOutputEXODUS::traffic_progress_map_ size  "<< traffic_progress_map_.size()<< std::endl;
-  std::multimap<std::string, std::multimap<int, int>> tf_nodes_map;
-  for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
-    auto nodeId = it->second->id_;
-    auto portId = it->second->p_;
-    auto nodIdPortIdKey = std::to_string(nodeId) +":"+ std::to_string(portId);
-    auto resIt = tf_nodes_map.find(nodIdPortIdKey);
-    if(resIt == tf_nodes_map.cend()){
-      auto map = std::multimap<int, int>{};
-      map.insert({it->first, it->second->intensity_});
 
-      tf_nodes_map.insert({nodIdPortIdKey, map});
-    } else {
-      auto &map = resIt->second;
-      map.insert({it->first, it->second->intensity_});
-    }
-  }
-  */
-  // TORM: display the map
-  //  for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
-  //    auto node_id = it->first;
-  //    const auto &map = it->second;
-  //    std::cout<<node_id<<":";
-  //    for(auto it = map.cbegin(); it != map.cend(); ++it){
-  //      std::cout<< it->second << " ";
-  //    }
-  //    std::cout<<std::endl;
-  //  }
+//  std::cout << "StatisticOutputEXODUS::traffic_progress_map_ size  "<< traffic_event_map_.size()<< std::endl;
+//  std::multimap<std::string, std::multimap<int, int>> tf_nodes_map;
+//  for (auto it = traffic_event_map_.cbegin(); it != traffic_event_map_.cend(); ++it){
+//    auto nodeId = it->second.id_;
+//    auto portId = it->second.face_;
+//    auto nodIdPortIdKey = std::to_string(nodeId) +":"+ std::to_string(portId);
+//    auto resIt = tf_nodes_map.find(nodIdPortIdKey);
+//    if(resIt == tf_nodes_map.cend()){
+//      auto map = std::multimap<int, int>{};
+//      map.insert({it->first, it->second.intensity_});
+
+//      tf_nodes_map.insert({nodIdPortIdKey, map});
+//    } else {
+//      auto &map = resIt->second;
+//      map.insert({it->first, it->second.intensity_});
+//    }
+//  }
+
+//   // TORM: display the map
+//    for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
+//      auto node_id = it->first;
+//      const auto &map = it->second;
+//      std::cout<<node_id<<":";
+//      for(auto it = map.cbegin(); it != map.cend(); ++it){
+//        std::cout<< it->second << " ";
+//      }
+//      std::cout<<std::endl;
+//    }
 
   outputExodusWithSharedMap(fileroot_, std::move(traffic_event_map_), topology::global());
 }
