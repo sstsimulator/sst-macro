@@ -82,27 +82,30 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   // Create the vtkPoints
   vtkSmartPointer<vtkPoints> points =
       vtkSmartPointer<vtkPoints>::New();
+  points->SetNumberOfPoints(switchIdToContents.size() * 8);
 
   // Use the geometry to place them correctly
+  int idx =0;
   for(auto it = switchIdToContents.cbegin(); it != switchIdToContents.cend(); ++it){
     auto geom = topo->get_vtk_geometry(it->first);
     auto box_geom = geom.box;
-    auto v0 = box_geom.vertex(0);
-    auto v1 = box_geom.vertex(1);
-    auto v2 = box_geom.vertex(2);
-    auto v3 = box_geom.vertex(3);
-    auto v4 = box_geom.vertex(4);
-    auto v5 = box_geom.vertex(5);
-    auto v6 = box_geom.vertex(6);
-    auto v7 = box_geom.vertex(7);
-    points->InsertNextPoint(v0.x, v0.y, v0.z);
-    points->InsertNextPoint(v1.x, v1.y, v1.z);
-    points->InsertNextPoint(v2.x, v2.y, v2.z);
-    points->InsertNextPoint(v3.x, v3.y, v3.z);
-    points->InsertNextPoint(v4.x, v4.y, v4.z);
-    points->InsertNextPoint(v5.x, v5.y, v5.z);
-    points->InsertNextPoint(v6.x, v6.y, v6.z);
-    points->InsertNextPoint(v7.x, v7.y, v7.z);
+    auto v0 = box_geom.vertex(0); // corner (minus_x, minus_y, minus_z)
+    auto v1 = box_geom.vertex(1); // corner (minus_x, plus_y, minus_z)
+    auto v2 = box_geom.vertex(2); // corner (minus_x, minus_y, plus_z)
+    auto v3 = box_geom.vertex(3); // corner (minus_x, plus_y, plus_z)
+    auto v4 = box_geom.vertex(4); // corner (plus_x, minus_y, minus_z)
+    auto v5 = box_geom.vertex(5); // corner (plus_x, plus_y, minus_z)
+    auto v6 = box_geom.vertex(6); // corner (plus_x, minus_y, plus_z)
+    auto v7 = box_geom.vertex(7); // corner (plus_x, plus_y, plus_z)
+    points->SetPoint(idx + 0, v0.x, v0.y, v0.z);
+    points->SetPoint(idx + 1, v1.x, v1.y, v1.z);
+    points->SetPoint(idx + 2, v2.x, v2.y, v2.z);
+    points->SetPoint(idx + 3, v3.x, v3.y, v3.z);
+    points->SetPoint(idx + 4, v4.x, v4.y, v4.z);
+    points->SetPoint(idx + 5, v5.x, v5.y, v5.z);
+    points->SetPoint(idx + 6, v6.x, v6.y, v6.z);
+    points->SetPoint(idx + 7, v7.x, v7.y, v7.z);
+    idx += 8;
   }
   std::cout << "vtk_stats : num of points "<< points->GetNumberOfPoints() <<std::endl;
 
@@ -245,62 +248,37 @@ void
 stat_vtk::dump_global_data()
 {
   //here is where I dump the VTU file or whatever
- // std::multimap<int, std::multimap<int, int>> tf_nodes_map;
-
-//  for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
-//    auto nodeId = it->second->id_;
-//    auto resIt = tf_nodes_map.find(nodeId);
-//    if(resIt == tf_nodes_map.cend()){
-//      auto map = std::multimap<int, int>{};
-//      map.insert({it->first, it->second->intensity_});
-
-//      tf_nodes_map.insert({nodeId, map});
-//    } else {
-//      auto &map = resIt->second;
-//      map.insert({it->first, it->second->intensity_});
-//    }
-//  }
-  // TORM: display the map
-  //  for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
-  //    auto node_id = it->first;
-  //    const auto &map = it->second;
-  //    std::cout<<node_id<<":";
-  //    for(auto it = map.cbegin(); it != map.cend(); ++it){
-  //      std::cout<< it->second << " ";
-  //    }
-  //    std::cout<<std::endl;
-  //  }
 
   //DUMP FOR TRAFFIC
-  /**
-  std::cout << "StatisticOutputEXODUS::traffic_progress_map_ size  "<< traffic_progress_map_.size()<< std::endl;
-  std::multimap<std::string, std::multimap<int, int>> tf_nodes_map;
-  for (auto it = traffic_progress_map_.cbegin(); it != traffic_progress_map_.cend(); ++it){
-    auto nodeId = it->second->id_;
-    auto portId = it->second->p_;
-    auto nodIdPortIdKey = std::to_string(nodeId) +":"+ std::to_string(portId);
-    auto resIt = tf_nodes_map.find(nodIdPortIdKey);
-    if(resIt == tf_nodes_map.cend()){
-      auto map = std::multimap<int, int>{};
-      map.insert({it->first, it->second->intensity_});
 
-      tf_nodes_map.insert({nodIdPortIdKey, map});
-    } else {
-      auto &map = resIt->second;
-      map.insert({it->first, it->second->intensity_});
-    }
-  }
-  */
-  // TORM: display the map
-  //  for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
-  //    auto node_id = it->first;
-  //    const auto &map = it->second;
-  //    std::cout<<node_id<<":";
-  //    for(auto it = map.cbegin(); it != map.cend(); ++it){
-  //      std::cout<< it->second << " ";
-  //    }
-  //    std::cout<<std::endl;
-  //  }
+//  std::cout << "StatisticOutputEXODUS::traffic_progress_map_ size  "<< traffic_event_map_.size()<< std::endl;
+//  std::multimap<std::string, std::multimap<int, int>> tf_nodes_map;
+//  for (auto it = traffic_event_map_.cbegin(); it != traffic_event_map_.cend(); ++it){
+//    auto nodeId = it->second.id_;
+//    auto portId = it->second.face_;
+//    auto nodIdPortIdKey = std::to_string(nodeId) +":"+ std::to_string(portId);
+//    auto resIt = tf_nodes_map.find(nodIdPortIdKey);
+//    if(resIt == tf_nodes_map.cend()){
+//      auto map = std::multimap<int, int>{};
+//      map.insert({it->first, it->second.intensity_});
+
+//      tf_nodes_map.insert({nodIdPortIdKey, map});
+//    } else {
+//      auto &map = resIt->second;
+//      map.insert({it->first, it->second.intensity_});
+//    }
+//  }
+
+//   // TORM: display the map
+//    for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
+//      auto node_id = it->first;
+//      const auto &map = it->second;
+//      std::cout<<node_id<<":";
+//      for(auto it = map.cbegin(); it != map.cend(); ++it){
+//        std::cout<< it->second << " ";
+//      }
+//      std::cout<<std::endl;
+//    }
 
   outputExodusWithSharedMap(fileroot_, std::move(traffic_event_map_), topology::global());
 }
