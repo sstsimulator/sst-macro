@@ -68,7 +68,7 @@ void vtkTrafficSource::SetCells(vtkSmartPointer<vtkCellArray> cells)
 void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics)
 {
   //Send traffic to output
-  this->Traffics = vtkIntArray::New();
+  this->Traffics = vtkDoubleArray::New();
   this->Traffics->SetNumberOfComponents(1);
   this->Traffics->SetName("MyTraffic");
   this->Traffics->SetNumberOfValues(this->Cells->GetNumberOfCells());

@@ -74,7 +74,7 @@ protected:
   int NumSteps;
   double *Steps;
   std::multimap<uint64_t, traffic_event> traffic_progress_map_;
-  vtkIntArray * Traffics;
+  vtkDoubleArray * Traffics;
   vtkSmartPointer<vtkPoints> Points;
   vtkSmartPointer<vtkCellArray> Cells;
 private:

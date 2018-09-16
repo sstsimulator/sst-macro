@@ -30,7 +30,8 @@
 #include "vtkExodusIIWriter.h"
 
 RegisterKeywords(
-{ "congestion_cutoff", "the port occupancy level that should be considered 'congestion'" },
+{ "transition_cutoff", "the port occupancy level that should be considered 'congestion'" },
+{ "ignored_time_gap", "a time gap that should be considered negligible" },
 );
 
 namespace sstmac {
@@ -180,7 +181,7 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   for (auto it = trafficMap.cbegin(); it != trafficMap.cend(); ++it){
     if (it->first != current_time){
       current_time = it->first;
-      time_step_value[currend_index] =it->first;
+      time_step_value[currend_index] = it->first;
       ++currend_index;
     }
   }
@@ -216,7 +217,8 @@ stat_vtk::outputExodus(const std::string& fileroot,
 stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
   stat_collector(params)
 {
-  congestion_cutoff_ = params->get_int_param("congestion_cutoff");
+  transition_cutoff_ = params->get_int_param("transition_cutoff");
+  ignored_gap_ = params->get_optional_time_param("ignored_time_gap", 1e-3);
 }
 
 void
@@ -228,6 +230,15 @@ stat_vtk::reduce(stat_collector* element)
     traffic_event_map_.emplace(e.time_, e);
   }
 
+}
+
+void
+stat_vtk::finalize(timestamp t)
+{
+  clear_pending_departures(t);
+  for (int face=0; face < face_intensities_.size(); ++face){
+    collect_new_level(face, t, 0);
+  }
 }
 
 void
@@ -317,14 +328,41 @@ stat_vtk::configure(switch_id sid, topology *top)
 }
 
 void
-stat_vtk::collect_arrival(uint64_t time, int port)
+stat_vtk::collect_new_level(int face, timestamp time, int level)
 {
+  face_intensity& face_int = face_intensities_[face];
+  timestamp interval_length = time - face_int.pending_collection_start;
+  double current_state_length = (time - face_int.last_collection).msec();
+  double accumulated_state_length = (face_int.last_collection - face_int.pending_collection_start).msec();
+  double total_state_length = current_state_length + accumulated_state_length;
+  double new_level = (face_int.current_level * current_state_length
+                       + face_int.accumulated_level * accumulated_state_length) / total_state_length;
+
+  if (interval_length > ignored_gap_){
+    //we have previous collections that are now large enough  to commit
+    event_list_.emplace_back(
+      face_int.pending_collection_start.ticks(), face, new_level, id_);
+    face_int.pending_collection_start = face_int.last_collection = time;
+    face_int.accumulated_level = 0;
+    face_int.current_level = level;
+  } else {
+    face_int.last_collection = time;
+    face_int.accumulated_level = new_level;
+  }
+  face_int.last_collection = time;
+}
+
+void
+stat_vtk::collect_arrival(timestamp time, int port)
+{
+  clear_pending_departures(time);
+
   if (port >= port_intensities_.size()) return;
 
   auto face = port_to_face_[port];
   face_intensity& face_int = face_intensities_[face];
   int intensity = ++port_intensities_[port];
-  if (intensity >= congestion_cutoff_){
+  if (intensity >= transition_cutoff_){
     face_int.congested_ports++;
   } else {
     face_int.active_ports++;
@@ -332,21 +370,21 @@ stat_vtk::collect_arrival(uint64_t time, int port)
 
   int level = 1; //1 means active
   if (face_int.congested_ports > 0){
-    level = face_int.congested_ports + 1;
+    level = 2;
   }
 
-  event_list_.emplace_back(time, face, level, id_);
+  if (level != face_int.current_level){
+    collect_new_level(face, time, level);
+  }
 }
 
 void
-stat_vtk::collect_departure(uint64_t time, int port)
+stat_vtk::collect_departure(timestamp time, int port)
 {
-  if (port >= port_intensities_.size()) return;
-
   auto face = port_to_face_[port];
   int intensity = port_intensities_[port]--;
   face_intensity& face_int = face_intensities_[face];
-  if (intensity >= congestion_cutoff_){
+  if (intensity >= transition_cutoff_){
     face_int.congested_ports--;
   } else {
     face_int.active_ports--;
@@ -354,10 +392,40 @@ stat_vtk::collect_departure(uint64_t time, int port)
 
   int level = face_int.active_ports > 0 ? 1 : 0; //1 means active
   if (face_int.congested_ports > 0){
-    level = face_int.congested_ports + 1;
+    level = 2;
   }
 
-  event_list_.emplace_back(time, face, level, id_);
+  if (level != face_int.current_level){
+    collect_new_level(face, time, level);
+  }
+
+}
+
+void
+stat_vtk::clear_pending_departures(timestamp now)
+{
+  while (!pending_departures_.empty()){
+    auto& pair = pending_departures_.top();
+    timestamp time = pair.first;
+    int port = pair.second;
+    if (time > now) return;
+
+    collect_departure(time, port);
+    pending_departures_.pop();
+  }
+}
+
+void
+stat_vtk::collect_departure(timestamp now, timestamp time, int port)
+{
+  clear_pending_departures(now);
+  if (port < port_intensities_.size()){
+    if (time > now){
+      pending_departures_.push(std::make_pair(time,port));
+    } else {
+      collect_departure(time, port);
+    }
+  }
 }
 
 void
