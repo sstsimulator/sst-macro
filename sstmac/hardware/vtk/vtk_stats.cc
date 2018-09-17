@@ -313,10 +313,12 @@ stat_vtk::collect_new_level(int face, timestamp time, int level)
   double current_state_length = (time - face_int.last_collection).msec();
   double accumulated_state_length = (face_int.last_collection - face_int.pending_collection_start).msec();
   double total_state_length = current_state_length + accumulated_state_length;
-  double new_level = (face_int.current_level * current_state_length
-                       + face_int.accumulated_level * accumulated_state_length) / total_state_length;
+  double new_level = (total_state_length > 0 ) ?
+        (face_int.current_level * current_state_length
+         + face_int.accumulated_level * accumulated_state_length) / total_state_length
+      : 0.0;
 
-  if (interval_length > ignored_gap_){
+   if (interval_length > ignored_gap_){
     //we have previous collections that are now large enough  to commit
     event_list_.emplace_back(
       face_int.pending_collection_start.ticks(), face, new_level, id_);
