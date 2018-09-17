@@ -243,7 +243,7 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   evt.type_=1;
   traffic_intensity[p.id]->addData(evt);
 #else
-  if (vtk_) vtk_->collect_departure(p.next_free.ticks(), p.id);
+  if (vtk_) vtk_->collect_departure(now, p.next_free, p.id);
 #endif
 #endif
 
@@ -330,7 +330,7 @@ sculpin_switch::handle_payload(event *ev)
   evt.type_=0;
   traffic_intensity[p.id]->addData(evt);
 #else
-  if (vtk_) vtk_->collect_arrival(now().ticks(), p.id);
+  if (vtk_) vtk_->collect_arrival(now(), p.id);
 #endif
 #endif
   timestamp time_to_send = p.inv_bw * pkt->num_bytes();

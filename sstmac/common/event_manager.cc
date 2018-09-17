@@ -328,6 +328,7 @@ event_manager::finish_stats(stat_collector* main, const std::string& name)
 {
   stats_entry& entry = stats_[name];
   for (stat_collector* next : entry.collectors){
+    next->finalize(now_);
     if (entry.dump_all)
       next->dump_local_data();
 

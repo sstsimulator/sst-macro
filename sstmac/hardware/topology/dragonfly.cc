@@ -92,15 +92,6 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
     h_ = params->get_int_param("h");
   }
 
-  /** No longer true - JJW 05/18/2018
-    can never have more group connections than groups
-  if (h_ >= g_){
-    cerr0 << sprockit::printf("WARNING: requested %d group connections, "
-                        "but max should be %d for %d groups\n",
-                        h_, g_-1, g_);
-  }
-  */
-
   max_ports_intra_network_ = a_ + h_;
   eject_geometric_id_ = max_ports_intra_network_;
 
