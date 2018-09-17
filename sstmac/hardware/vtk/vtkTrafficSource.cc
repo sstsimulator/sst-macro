@@ -156,15 +156,11 @@ int vtkTrafficSource::RequestData(
   output->GetCellData()->AddArray(this->Traffics);
 
   // Send Topology to output
-  vtkPoints *points = vtkPoints::New();
-  points->DeepCopy(this->Points);
-  output->SetPoints(points);
-  points->Delete();
-
-  vtkCellArray *cells = vtkCellArray::New();
-  cells->DeepCopy(this->Cells);
+  output->SetPoints(this->Points);
   output->SetCells(VTK_QUAD, this->Cells);
-  cells->Delete();
+
+  // clean
+  //traffic_progress_map_.erase(reqTS);
 
   return 1;
 }
