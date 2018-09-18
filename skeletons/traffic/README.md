@@ -34,7 +34,4 @@ The seeds create a shuffle of the MPI ranks, causing different "intersection" pa
 The benchmark requires that a send/receive pair do not reside on the same node to ensure that all measured bandwidths are from the switch, not the memory system. If send/recv random seeds cannot create a valid scenario, the benchmark will just exit.
 
 The figure demonstrates a 4-port switch experiment with 2 senders and 1 recver.
-![Switch](TrafficFigure.pdf?raw=true "Traffic Illustration")
-
-
-
+![Switch](TrafficFigure.jpg "Traffic Illustration")
