@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -114,9 +114,8 @@ class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTOpenMPParallelPragmaHandler(SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
-                         SkeletonASTVisitor& visitor,
-                         std::set<clang::Stmt*>& deld) :
-      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor, deld){}
+                         SkeletonASTVisitor& visitor) :
+      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor){}
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
 };
@@ -126,9 +125,8 @@ class SSTLoopCountPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTLoopCountPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("loop_count", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("loop_count", plist, CI, visitor){}
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
     //this actually just maps cleanly into a compute pragma
@@ -141,9 +139,8 @@ class SSTMemoryPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTMemoryPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("memory", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("memory", plist, CI, visitor){}
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
 };
@@ -151,16 +148,16 @@ class SSTMemoryPragmaHandler : public SSTTokenStreamPragmaHandler
 class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {
  public:
   SSTComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
-   SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor, deld)
+                      SkeletonASTVisitor& visitor) :
+   SSTSimplePragmaHandler<SSTComputePragma>("compute", plist, CI, visitor)
   {}
 };
 
 class SSTAlwaysComputePragmaHandler : public SSTSimplePragmaHandler<SSTAlwaysComputePragma> {
  public:
   SSTAlwaysComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
-                      SkeletonASTVisitor& visitor, std::set<clang::Stmt*>& deld) :
-   SSTSimplePragmaHandler<SSTAlwaysComputePragma>("always_compute", plist, CI, visitor, deld)
+                      SkeletonASTVisitor& visitor) :
+   SSTSimplePragmaHandler<SSTAlwaysComputePragma>("always_compute", plist, CI, visitor)
   {}
 };
 

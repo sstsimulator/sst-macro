@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -78,11 +78,11 @@ torus::torus(sprockit::sim_parameters* params) :
   eject_geometric_id_ = max_ports_intra_network_;
 }
 
-void
-torus::minimal_route_to_switch(
+torus::route_type_t
+torus::torus_route(
   switch_id src,
   switch_id dst,
-  routable::path& path) const
+  packet::path& path) const
 {
   int div = 1;
   int ndim = dimensions_.size();
@@ -93,16 +93,18 @@ torus::minimal_route_to_switch(
       if (shortest_path_positive(i, srcX, dstX)){
         top_debug("torus routing up on dim %d for switch %d to %d on port %d",
                   i, src, dst, path.outport());
-        up_path(i, srcX, dstX, path);
+        return up_path(i, srcX, dstX, path);
       } else {
-        down_path(i, srcX, dstX, path);
         top_debug("torus routing down on dim %d for switch %d to %d on port %d",
                   i, src, dst, path.outport());
+        return down_path(i, srcX, dstX, path);
+
       }
-      return;
     }
     div *= dimensions_[i];
   }
+  sprockit::abort("torus::torus_route: failed to route correctly on torus");
+  return same_path;
 }
 
 int
@@ -112,8 +114,7 @@ torus::shortest_distance(int dim, int src, int dst) const
   if (dst > src) {
     up_distance = dst - src;
     down_distance = src + (dimensions_[dim] - dst);
-  }
-  else {
+  } else {
     up_distance = dst + (dimensions_[dim] - src);
     down_distance = src - dst;
   }
@@ -121,8 +122,7 @@ torus::shortest_distance(int dim, int src, int dst) const
   if (up_distance > down_distance) {
     //shorter to go down
     return ((src - dst) + dimensions_[dim]) % dimensions_[dim];
-  }
-  else {
+  } else {
     //shorter to go up
     return ((dst - src) + dimensions_[dim]) % dimensions_[dim];
   }
@@ -154,56 +154,37 @@ torus::shortest_path_positive(
   if (dst > src) {
     up_distance = dst - src;
     down_distance = src + (dimensions_[dim] - dst);
-  }
-  else {
+  } else {
     up_distance = dst + (dimensions_[dim] - src);
     down_distance = src - dst;
   }
-
   return up_distance <= down_distance;
 }
 
-void
-torus::torus_path(bool reset_dim, bool wrapped, int dim, int dir,
-                    routable::path& path) const
-{
-  if (wrapped){
-    path.set_metadata_bit(routable::crossed_timeline);
-  }
-
-  if (path.metadata_bit(routable::crossed_timeline)){
-    path.vc = 1;
-  } else {
-    path.vc = 0;
-  }
-  path.set_outport(convert_to_port(dim, dir));
-
-  if (reset_dim){
-    path.unset_metadata_bit(routable::crossed_timeline); //we reached this dim
-  }
-}
-
-void
+torus::route_type_t
 torus::up_path(
   int dim, int srcX, int dstX,
-  routable::path& path) const
+  packet::path& path) const
 {
-
   bool reset_dim = (srcX + 1) % dimensions_[dim] == dstX;
   bool wrapped = srcX == (dimensions_[dim]-1);
-
-  torus_path(reset_dim, wrapped, dim, pos, path);
+  path.set_outport(convert_to_port(dim, pos));
+  if (reset_dim) return new_dimension;
+  else if (wrapped) return wrapped_around;
+  else return same_path;
 }
 
-void
+torus::route_type_t
 torus::down_path(
   int dim, int src, int dst,
-  routable::path& path) const
+  packet::path& path) const
 {
   bool reset_dim = src == ((dst + 1) % dimensions_[dim]);
   bool wrapped = src == 0;
-
-  torus_path(reset_dim, wrapped, dim, neg, path);
+  path.set_outport(convert_to_port(dim, neg));
+  if (reset_dim) return new_dimension;
+  else if (wrapped) return wrapped_around;
+  else return same_path;
 }
 
 void
@@ -265,15 +246,6 @@ torus::connected_outports(switch_id src, std::vector<connection>& conns) const
 
     dim_stride *= dimensions_[i];
   }
-}
-
-void
-torus::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const
-{
-  m[routing::minimal] = 2;
-  m[routing::minimal_adaptive] = 2;
-  m[routing::valiant] = 4;
-  m[routing::ugal] = 6;
 }
 
 coordinates

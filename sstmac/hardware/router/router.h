@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -45,10 +45,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_NETWORK_ROUTING_ROUTER_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_ROUTING_ROUTER_H_INCLUDED
 
-
+#include <sstmac/common/rng.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/common/packet.h>
 
@@ -86,9 +85,7 @@ class router : public sprockit::printable
    * All routing decisions should be stored on the packet object itself.
    * @param pkt
    */
-  virtual void route(packet* pkt);
-
-  virtual void route_to_switch(switch_id sid, routable::path& path) = 0;
+  virtual void route(packet* pkt) = 0;
 
   virtual ~router();
 
@@ -115,23 +112,17 @@ class router : public sprockit::printable
    * @return The maximum number of virtual channels the router must maintain
    *         to implement all possible routing algorithms
    */
-  int max_num_vc() const {
-    return max_num_vc_;
-  }
+  virtual int num_vc() const = 0;
+
+  uint32_t random_number(uint32_t max, uint32_t attempt, uint32_t seed) const;
 
  protected:
-  router(sprockit::sim_parameters* params,
-         topology* top, network_switch* sw, routing::algorithm_t algo);
+  router(sprockit::sim_parameters* params, topology* top, network_switch* sw);
 
-  routing::algorithm_t str_to_algo(const std::string& str);
+  switch_id find_ejection_site(node_id toaddr, packet::path& path) const;
 
-  switch_id find_ejection_site(node_id toaddr, routable::path& path) const;
-
-  inline static void configure_ejection_path(routable::path& path) {
-    path.vc = 0;
-  }
-
-  void init_vc();
+  virtual switch_id random_intermediate_switch(
+    switch_id current_sw, switch_id dest_sw, uint32_t seed);
 
  protected:
   switch_id my_addr_;
@@ -140,12 +131,11 @@ class router : public sprockit::printable
 
   network_switch* netsw_;
 
-  int max_num_vc_;
+  RNG::rngint_t seed_;
 
-  typedef std::map<routing::algorithm_t, int> algo_to_vc_map;
-  algo_to_vc_map num_vc_lookup_;
+  bool debug_seed_;
 
-  routing::algorithm_t algo_;
+  RNG::MWC* rng_;
 
 };
 

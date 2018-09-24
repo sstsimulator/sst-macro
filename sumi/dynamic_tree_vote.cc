@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -188,8 +188,7 @@ dynamic_tree_vote_actor::dynamic_tree_vote_actor(int vote,
 
   if (my_level_ == 0){
     up_partner_ = -1;
-  }
-  else {
+  } else {
     up_partner_ = up_partner(my_level_, my_branch_);
   }
 
@@ -233,8 +232,7 @@ dynamic_tree_vote_actor::send_up_votes()
   if (my_level_ == 0){
     //nothing to do - go straight to sending down
     send_down_votes();
-  }
-  else if (stage_ == recv_vote) {
+  } else if (stage_ == recv_vote) {
     stage_ = up_vote;
     //it could happen that we are triggered to send up votes
     //because we acquired new down partners
@@ -283,8 +281,7 @@ dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int 
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   if (stage_ == up_vote){  //If I am up-voting, go ahead and vote for as many failures as I know
     msg->append_failed(failed_ranks_);
-  }
-  else {
+  } else {
     // I can only send the failures that everyone has agreed upon
     msg->append_failed(agreed_upon_failures_);
   }
@@ -447,8 +444,7 @@ dynamic_tree_vote_actor::recv_unexpected_up_vote(dynamic_tree_vote_message* msg)
       "Rank %s responding after completion to %d on tag=%d ",
       rank_str().c_str(), msg->dense_sender(), tag_);
     send_message(dynamic_tree_vote_message::down_vote, msg->dense_sender());
-  }
-  else {
+  } else {
     //now treat this essentially as a failure notification
     int child = msg->dense_sender();
     int failed_parent = up_partner(child);
@@ -593,8 +589,7 @@ dynamic_tree_vote_actor::contact_new_down_partner(int rank)
     if (!received_up_vote(rank)){
       send_message(dynamic_tree_vote_message::request, rank);
     }
-  }
-  else if (stage_ == down_vote){
+  } else if (stage_ == down_vote){
     //send new down votes on down
       send_message(dynamic_tree_vote_message::down_vote, rank);
   }
@@ -612,8 +607,7 @@ dynamic_tree_vote_actor::add_new_down_partner(int rank)
   if (failed){
     //well, that's a downer
     handle_dense_partner_failure(rank);
-  }
-  else {
+  } else {
     contact_new_down_partner(rank);
   }
 }
@@ -639,8 +633,7 @@ dynamic_tree_vote_actor::up_partner_failed()
   bool failed = ping_neighbor(up_partner_);
   if (failed){
     handle_dense_partner_failure(up_partner_);
-  }
-  else if (stage_ == up_vote){
+  } else if (stage_ == up_vote){
     //yay, partner is still alive
     send_message(dynamic_tree_vote_message::up_vote, up_partner_);
   }
@@ -696,8 +689,7 @@ dynamic_tree_vote_actor::rebalance_around_dense_partner_failure(int rank)
 
   if (rank == up_partner_){
     up_partner_failed();
-  }
-  else {
+  } else {
     down_partner_failed(rank);
   }
 }
@@ -716,8 +708,7 @@ dynamic_tree_vote_actor::handle_dense_partner_failure(int rank)
     debug_printf(sumi_collective | sumi_vote,
         "Rank %s already handled failure of rank %d on tag=%d ",
          rank_str().c_str(), rank, tag_);
-  }
-  else {
+  } else {
     debug_printf(sumi_collective | sumi_vote,
        "Rank %s handling new failure of rank %d on tag=%d ",
        rank_str().c_str(), rank, tag_);

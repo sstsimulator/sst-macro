@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -53,10 +53,9 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-stack_alloc::chunk_vec_t stack_alloc::chunks_;
+stack_alloc::chunk_set stack_alloc::chunks_;
 size_t stack_alloc::suggested_chunk_ = 0;
 size_t stack_alloc::stacksize_ = 0;
-stack_alloc::available_vec_t stack_alloc::available_;
 
 void
 stack_alloc::init(sprockit::sim_parameters *params)
@@ -80,12 +79,13 @@ stack_alloc::init(sprockit::sim_parameters *params)
 }
 
 void
-stack_alloc::clear()
+stack_alloc::chunk_set::clear()
 {
-  for (chunk* ch : chunks_){
+  for (chunk* ch : allocations){
     delete ch;
   }
-  chunks_.clear();
+  allocations.clear();
+  available.clear();
 }
 
 //
@@ -100,17 +100,18 @@ stack_alloc::alloc()
     spkt_throw_printf(sprockit::value_error, "stackalloc::stacksize was not initialized");
   }
 
-  if(available_.empty()){
+  if(chunks_.available.empty()){
     // grab a new chunk.
     chunk* new_chunk = new chunk(stacksize_, suggested_chunk_);
+    chunks_.allocations.push_back(new_chunk);
     void* buf = new_chunk->get_next_stack();
     while (buf){
-      available_.push_back(buf);
+      chunks_.available.push_back(buf);
       buf = new_chunk->get_next_stack();
     }
   }
-  void *buf = available_.back();
-  available_.pop_back();
+  void *buf = chunks_.available.back();
+  chunks_.available.pop_back();
   lock.unlock();
   return buf;
 }
@@ -122,10 +123,9 @@ void stack_alloc::free(void* buf)
 {
   static thread_lock lock; 
   lock.lock();
-  available_.push_back(buf);
+  chunks_.available.push_back(buf);
   lock.unlock();
 }
-
 
 
 }

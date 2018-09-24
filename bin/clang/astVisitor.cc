@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -99,6 +99,7 @@ SkeletonASTVisitor::initMPICalls()
   mpiCalls_["sstmac_allreduce"] = &SkeletonASTVisitor::visitReduce;
   mpiCalls_["sstmac_reduce"] = &SkeletonASTVisitor::visitReduce;
   mpiCalls_["sstmac_allgather"] = &SkeletonASTVisitor::visitCollective;
+  mpiCalls_["sstmac_alltoall"] = &SkeletonASTVisitor::visitCollective;
 
   mpiCalls_["irecv"] = &SkeletonASTVisitor::visitPt2Pt;
   mpiCalls_["isend"] = &SkeletonASTVisitor::visitPt2Pt;
@@ -158,6 +159,8 @@ SkeletonASTVisitor::initReservedNames()
   globalVarWhitelist_.insert("sstmac_global_stacksize");
   globalVarWhitelist_.insert("__stderrp");
   globalVarWhitelist_.insert("__stdinp");
+
+  sstmacFxnPrepends_.insert("free");
 }
 
 void
@@ -304,13 +307,7 @@ SkeletonASTVisitor::shouldVisitDecl(VarDecl* D)
 bool
 SkeletonASTVisitor::VisitCXXNewExpr(CXXNewExpr *expr)
 {
-  return true; //don't do this anymore - but keep code around
-
-  if (noSkeletonize_) return true;
-  if (deletedStmts_.find(expr) != deletedStmts_.end()){
-    //already deleted - do nothing here
-    return true;
-  }
+  return true; //don't do this anymore
 }
 
 
@@ -699,8 +696,8 @@ SkeletonASTVisitor::visitCollective(CallExpr *expr)
     replace(expr->getArg(3), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(3)->getSourceRange(), "nullptr");
-    deletedStmts_.insert(expr->getArg(0));
-    deletedStmts_.insert(expr->getArg(3));
+    deletedArgs_.insert(expr->getArg(0));
+    deletedArgs_.insert(expr->getArg(3));
   }
 }
 
@@ -716,8 +713,8 @@ SkeletonASTVisitor::visitReduce(CallExpr *expr)
     replace(expr->getArg(1), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(1)->getSourceRange(), "nullptr");
-    deletedStmts_.insert(expr->getArg(0));
-    deletedStmts_.insert(expr->getArg(1));
+    deletedArgs_.insert(expr->getArg(0));
+    deletedArgs_.insert(expr->getArg(1));
   }
 }
 
@@ -731,7 +728,7 @@ SkeletonASTVisitor::visitPt2Pt(CallExpr *expr)
     //make sure this isn't a shortcut function without buffers
     replace(expr->getArg(0), "nullptr");
     //rewriter_.ReplaceText(expr->getArg(0)->getSourceRange(), "nullptr");
-    deletedStmts_.insert(expr->getArg(0));
+    deletedArgs_.insert(expr->getArg(0));
   }
 }
 bool 
@@ -780,7 +777,7 @@ SkeletonASTVisitor::TraverseCXXMemberCallExpr(CXXMemberCallExpr* expr, DataRecur
       activeBinOpIdx_ = IndexResetter;
       Expr* arg = expr->getArg(i);
       //this did not get modified
-      if (deletedStmts_.find(arg) == deletedStmts_.end()){
+      if (deletedArgs_.find(arg) == deletedArgs_.end()){
         TraverseStmt(expr->getArg(i));
       }
     }
@@ -909,6 +906,10 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
     if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
       DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
       std::string fxnName = dref->getFoundDecl()->getNameAsString();
+      if (sstmacFxnPrepends_.find(fxnName) != sstmacFxnPrepends_.end()){
+        rewriter_.InsertText(expr->getCallee()->getLocStart(), "sstmac_", false);
+      }
+
       auto iter = mpiCalls_.find(fxnName);
       if (iter != mpiCalls_.end()){
         MPI_Call call = iter->second;
@@ -926,12 +927,12 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
       if (fd && i < fd->getNumParams()){
         PushGuard<ParmVarDecl*> pg(activeFxnParams_, fd->getParamDecl(i));
         Expr* arg = expr->getArg(i);
-        if (deletedStmts_.find(arg) == deletedStmts_.end()){
+        if (deletedArgs_.find(arg) == deletedArgs_.end()){
           TraverseStmt(arg);
         }
       } else {
         Expr* arg = expr->getArg(i);
-        if (deletedStmts_.find(arg) == deletedStmts_.end()){
+        if (deletedArgs_.find(arg) == deletedArgs_.end()){
           TraverseStmt(arg);
         }
       }
@@ -1846,7 +1847,11 @@ SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
           switch (needed->getStmtClass()){
             case Stmt::CXXConstructExprClass: {
               CXXConstructExpr* next = cast<CXXConstructExpr>(needed);
-              needed = next->getArg(0);
+              if (next->getNumArgs() > 0){
+                needed = next->getArg(0);
+              } else {
+                cont = false;
+              }
               break;
             }
             case Stmt::ImplicitCastExprClass: {
@@ -1947,6 +1952,26 @@ SkeletonASTVisitor::deleteStmt(Stmt *s)
 {
   //go straight to replace, don't delay this
   ::replace(s, rewriter_, "", *ci_);
+}
+
+void
+SkeletonASTVisitor::deletePragmaText(SSTPragma *prg, Stmt* s)
+{
+  //eliminate the pragma text
+  if (prg->depth == 0){
+    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
+    ::replace(rng, rewriter_, "", *ci_);
+  }
+}
+
+void
+SkeletonASTVisitor::deletePragmaText(SSTPragma *prg, Decl* d)
+{
+  //eliminate the pragma text
+  if (prg->depth == 0){
+    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
+    ::replace(rng, rewriter_, "", *ci_);
+  }
 }
 
 static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
@@ -2318,6 +2343,24 @@ SkeletonASTVisitor::TraverseUnresolvedLookupExpr(clang::UnresolvedLookupExpr* ex
   }
   return RecursiveASTVisitor<SkeletonASTVisitor>::TraverseUnresolvedLookupExpr(expr);
 }
+bool
+SkeletonASTVisitor::TraverseVarTemplateDecl(VarTemplateDecl* D)
+{
+  try {
+  PragmaActivateGuard pag(D, this);
+  if (pag.skipVisit()) return true;
+
+  if (D->getTemplatedDecl()->isConstexpr()){
+    return true;
+  } else {
+    RecursiveASTVisitor<SkeletonASTVisitor>::TraverseVarTemplateDecl(D);
+  }
+
+  } catch (DeclDeleteException& e){
+    if (e.deleted != D) throw e;
+  }
+  return true;
+}
 
 bool
 SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
@@ -2330,6 +2373,12 @@ SkeletonASTVisitor::TraverseVarDecl(VarDecl* D)
   if (pragmaConfig_.makeNoChanges){
     pragmaConfig_.makeNoChanges = false;
     return true;
+  }
+
+  if (pragmaConfig_.nullifyDeclarationsPragma){
+    SSTNullVariablePragma* prg = pragmaConfig_.nullifyDeclarationsPragma->generate(D, *ci_);
+    prg->CI = ci_;
+    pag.reactivate(D, prg);
   }
 
   if (D->getDescribedVarTemplate()){
@@ -3440,36 +3489,15 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
 }
 
 bool
-FirstPassASTVistor::VisitFieldDecl(FieldDecl* fd)
+FirstPassASTVistor::VisitDecl(Decl *d)
 {
-  SSTNullVariablePragma* prg = pragmaConfig_.getNullField(fd->getNameAsString());
-  if (prg){
-    pragmaConfig_.nullVariables[fd] = prg;
-  }
-  return RecursiveASTVisitor<FirstPassASTVistor>::VisitFieldDecl(fd);
-}
-
-bool
-FirstPassASTVistor::TraverseDecl(Decl *d)
-{
-  if (!d) return true;
   if (noSkeletonize_) return true;
 
-  std::list<SSTPragma*> pragmas;
-  if (!noSkeletonize_){
-    pragmas = pragmas_.getMatches(d,true);
-    for (SSTPragma* prg : pragmas){
-      prg->activate(d, rewriter_, pragmaConfig_);
-      pragmas_.erase(prg);
-    }
-  }
-
-  RecursiveASTVisitor<FirstPassASTVistor>::TraverseDecl(d);
-
+  std::list<SSTPragma*> pragmas = pragmas_.getMatches(d,true);
   for (SSTPragma* prg : pragmas){
-    prg->deactivate(pragmaConfig_);
+    prg->activate(d, rewriter_, pragmaConfig_);
+    pragmas_.erase(prg);
   }
-
   return true;
 }
 

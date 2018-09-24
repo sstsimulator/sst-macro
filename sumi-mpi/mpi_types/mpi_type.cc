@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -235,16 +235,14 @@ mpi_type::bytes_to_elements(size_t bytes) const
 
   if (type_ == PRIM) {
     return bytes / size_;
-  }
-  else if (type_ == PAIR) {
+  } else if (type_ == PAIR) {
     int ret = 0;
     size_t total = 0;
     bool one = true;
     while (total <= bytes) {
       if (one) {
         total += pdata_->base1->size_;
-      }
-      else {
+      } else {
         total += pdata_->base2->size_;
       }
 
@@ -252,8 +250,7 @@ mpi_type::bytes_to_elements(size_t bytes) const
       one = !one;
     }
     return ret - 1;
-  }
-  else if (type_ == VEC) {
+  } else if (type_ == VEC) {
     if (vdata_->blocklen == 0) {
       return 0;
     }
@@ -276,8 +273,7 @@ mpi_type::bytes_to_elements(size_t bytes) const
 
     return ret;
 
-  }
-  else if (type_ == IND) {
+  } else if (type_ == IND) {
 
     int ret = 0;
     size_t total = 0;
@@ -326,8 +322,7 @@ mpi_type::pack_action_primitive(void* packed_buf, void* unpacked_buf, bool pack)
   if (pack){
     //copy into packed array
     ::memcpy(packed_ptr, unpacked_ptr, size_);
-  }
-  else {
+  } else {
     //copy into unpacked array
     ::memcpy(unpacked_ptr, packed_ptr, size_);
   }
@@ -407,8 +402,7 @@ mpi_type::pack_action_pair(void* packed_buf, void* unpacked_buf, bool pack) cons
   if (pack){
     ::memcpy(packed_ptr, unpacked_ptr, first_size);
     ::memcpy(packed_ptr + first_size, unpacked_ptr + pair_alignment, second_size);
-  }
-  else {
+  } else {
     ::memcpy(unpacked_ptr, packed_ptr, first_size);
     ::memcpy(unpacked_ptr + pair_alignment, packed_ptr + first_size, second_size);
   }
@@ -454,14 +448,12 @@ mpi_type::to_string() const
   }
   if (type_ == PAIR) {
     ss << "mpitype(pair, label=\"" << label << "\", size=" << size_ << ")";
-  }
-  else if (type_ == VEC) {
+  } else if (type_ == VEC) {
     ss << "mpitype(vector, label=\"" << label << "\", size=" << size_
        << ", base=" << vdata_->base->to_string() << ", count="
        << vdata_->count << ", blocklen=" << vdata_->blocklen
        << ", stride=" << vdata_->byte_stride << ")";
-  }
-  else if (type_ == IND) {
+  } else if (type_ == IND) {
     ss << "mpitype(indexed/struct, label=\"" << label << "\", size="
        << size_ << ", base=" << idata_->blocks[0].base->to_string()
        << ", blocks=" << idata_->blocks.size() << ")";
@@ -520,6 +512,7 @@ mpi_type* mpi_type::mpi_logical = new mpi_type;
 mpi_type* mpi_type::mpi_real = new mpi_type;
 mpi_type* mpi_type::mpi_double_precision = new mpi_type;
 mpi_type* mpi_type::mpi_integer = new mpi_type;
+mpi_type* mpi_type::mpi_cxx_bool = new mpi_type;
 
 mpi_type* mpi_type::mpi_integer1 = new mpi_type;
 mpi_type* mpi_type::mpi_integer2 = new mpi_type;

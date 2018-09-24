@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -61,6 +61,8 @@ pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
 
 pisces_buffer::~pisces_buffer()
 {
+  if (input_.link) delete input_.link;
+  if (output_.link) delete output_.link;
 }
 
 void
@@ -187,8 +189,7 @@ pisces_network_buffer::handle_payload(event* ev)
   if (num_credits >= pkt->num_bytes()) {
     num_credits -= pkt->num_bytes();
     send(arb_, pkt, input_, output_);
-  }
-  else {
+  } else {
     queues_[dst_vc].push_back(pkt);
   }
 }
@@ -286,8 +287,7 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
         addr = switch_id(int(nid)/4);
         coordinates my_coords = top->get_node_coords(nid);
         coutn << "Network Injection Buffer " << my_coords.to_string() << "\n";
-    }
-    else {
+    } else {
         addr = switch_id(event_location_.location);
         coordinates my_coords = top->get_switch_coords(addr);
         coutn << "Network Switch Buffer " << my_coords.to_string() << "\n";
@@ -313,16 +313,16 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
 int
 pisces_network_buffer::queue_length() const
 {
-  long bytes_sending = arb_->bytes_sending(now());
-  long total_bytes_pending = bytes_sending + bytes_delayed_;
-  long queue_length = total_bytes_pending / packet_size_;
+  uint32_t bytes_sending = arb_->bytes_sending(now());
+  uint32_t total_bytes_pending = bytes_sending + bytes_delayed_;
+  int queue_length = total_bytes_pending / packet_size_;
   debug_printf(sprockit::dbg::pisces | sprockit::dbg::pisces_queue,
-    "On %s, %d bytes delayed, %d bytes sending, %d total pending, %d packets in queue",
+    "On %s, %u bytes delayed, %u bytes sending, %d total pending, %d packets in queue",
      to_string().c_str(),
      bytes_delayed_,
      bytes_sending,
      total_bytes_pending, queue_length);
-  return std::max(0L, total_bytes_pending);
+  return std::max(0, queue_length);
 }
 
 pisces_network_buffer::~pisces_network_buffer()
@@ -340,6 +340,11 @@ pisces_eject_buffer::return_credit(packet* pkt)
 pisces_eject_buffer::pisces_eject_buffer(sprockit::sim_parameters *params, event_scheduler *parent) :
   pisces_buffer(params, parent)
 {
+}
+
+pisces_eject_buffer::~pisces_eject_buffer()
+{
+  if (output_handler_) delete output_handler_;
 }
 
 void
@@ -399,7 +404,7 @@ pisces_injection_buffer::handle_credit(event* ev)
 void
 pisces_injection_buffer::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_routable_packet*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_global_outport(0);
   pkt->set_local_outport(0);
   pkt->current_path().vc = 0; //start off on vc 0
@@ -427,8 +432,7 @@ print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
         addr = switch_id(int(nid)/4);
         coordinates my_coords = top->get_node_coords(nid);
         coutn << "Network Injection Buffer " << my_coords.to_string() << "\n";
-    }
-    else {
+    } else {
         addr = switch_id(event_location_.location);
         coordinates my_coords = top->get_switch_coords(addr);
         coutn << "Network Switch Buffer " << my_coords.to_string() << "\n";

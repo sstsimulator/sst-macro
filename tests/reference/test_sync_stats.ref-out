@@ -1,0 +1,23 @@
+Function         Comm Delay       Synchronization 
+MPI_Isend        0.00003238       0.00000000      
+MPI_Irecv        0.00000509       0.00000000      
+MPI_Wait         0.00328063       0.00016592      
+MPI_Waitall      0.02018994       0.00012503      
+MPI_Barrier      0.00073543       0.00046068      
+MPI_Bcast        0.00527127       0.00742863      
+MPI_Gather       0.02239662       0.00391385      
+MPI_Scatter      0.02168496       0.00695388      
+MPI_Allgather    0.00107128       0.00018238      
+MPI_Alltoall     0.00129977       0.00005839      
+MPI_Reduce       0.02023951       0.00560007      
+MPI_Allreduce    0.00087134       0.00017939      
+MPI_Ibcast       0.00000000       0.00000000      
+MPI_Igather      0.00000000       0.00000000      
+MPI_Iscatter     0.00000000       0.00000000      
+MPI_Iscatterv    0.00000000       0.00000000      
+MPI_Iallgather   0.00000000       0.00000000      
+MPI_Iallgatherv  0.00000000       0.00000000      
+MPI_Ialltoall    0.00000000       0.00000000      
+MPI_Ialltoallv   0.00000000       0.00000000      
+MPI_Ireduce      0.00000000       0.00000000      
+MPI_Iallreduce   0.00000000       0.00000000      

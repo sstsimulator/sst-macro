@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -129,62 +129,24 @@ get_vector(int a, int b, int c, int d, int e, int f, int g){
 
 
 sstmac::node_id
-naddr(long nid)
+naddr(node_id nid)
 {
   return sstmac::node_id(nid);
 }
 
-class routable_pisces :
- public pisces_payload,
- public routable
-{
-  NotSerializable(routable_pisces)
-
-  public:
-   routable_pisces(
-     message* parent,
-     int num_bytes,
-     bool is_tail) :
-    pisces_payload(parent, num_bytes, is_tail),
-    routable(parent->toaddr(), parent->fromaddr())
-  {
-  }
-
-  uint64_t flow_id() const override {
-    return 0;
-  }
-
-  node_id toaddr() const override {
-   return routable::toaddr();
-  }
-
-  node_id fromaddr() const override {
-    return routable::fromaddr();
-  }
-
-  int next_port() const override {
-    return routable::global_outport();
-  }
-
-  int next_vc() const override {
-    return routable::vc();
-  }
-
-};
-
 pisces_payload*
-msg(long nid)
+msg(node_id nid)
 {
   network_message* new_msg = nullptr;//new network_message;
   new_msg->set_toaddr(naddr(nid));
   new_msg->set_flow_id(hw::network_id(0,0));
-  return new routable_pisces(new_msg, 0, 0);
+  return new pisces_payload(new_msg, 0, new_msg->flow_id(), true, 0, 0);
 }
 
 pisces_payload*
-new_packet(message *msg, int bytes, int byte_offset)
+new_packet(message *msg, uint32_t bytes, uint32_t byte_offset)
 {
-  return new routable_pisces(msg, bytes, byte_offset);
+  return new pisces_payload(msg, bytes, 0, true, 0, 0);
 }
 
 void

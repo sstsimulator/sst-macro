@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -86,8 +86,7 @@ debug_print(const char* info, const std::string& rank_str,
     if (type_size == sizeof(int)){
       int* elemPtr = (int*) tmp;
       elem = *elemPtr;
-    }
-    else if (type_size == sizeof(double)){
+    } else if (type_size == sizeof(double)){
       double* elemPtr = (double*) tmp;
       elem = *elemPtr;
     } else {
@@ -417,8 +416,7 @@ dag_collective_actor::add_comm_dependency(action* precursor, action *ac)
     ac->phys_partner = physical_rank;
     if (precursor){
       add_dependency_to_map(precursor->id, ac);
-    }
-    else if (ac->join_counter == 0){
+    } else if (ac->join_counter == 0){
       debug_printf(sumi_collective | sumi_collective_init,
        "Rank %s, collective %s adding initial %s on tag=%d",
        rank_str().c_str(), collective::tostr(type_),
@@ -449,8 +447,7 @@ dag_collective_actor::add_dependency(action* precursor, action *ac)
     default:
       if (precursor){
         add_dependency_to_map(precursor->id, ac);
-      }
-      else if (ac->join_counter == 0){
+      } else if (ac->join_counter == 0){
         initial_actions_.insert(ac);
       } else {
         //no new dependency, but not an initial action
@@ -951,8 +948,7 @@ dag_collective_actor::next_round_ready_to_get(
   if (failed()){
     send_failure_message(ac, collective_work_message::nack_get_ack);
     comm_action_done(ac);
-  }
-  else {
+  } else {
     //reuse the header and send it back
     header->set_action(collective_work_message::get_data);
     header->set_local_buffer(get_recv_buffer(ac));
@@ -1203,8 +1199,7 @@ virtual_rank_map::real_to_virtual(int rank, int* ret) const
   if (rank >= num_actors_two_roles){
     ret[0] = num_actors_two_roles + rank;
     return 1;
-  }
-  else {
+  } else {
     ret[0] = 2*rank;
     ret[1] = ret[0] + 1;
     return 2;
@@ -1220,8 +1215,7 @@ virtual_rank_map::virtual_to_real(int virtual_rank) const
   if (virtual_rank >= 2*num_actors_two_roles){
     int real_rank = virtual_rank - num_actors_two_roles;
     return real_rank;
-  }
-  else {
+  } else {
     int real_rank = virtual_rank / 2;
     return real_rank;
   }
@@ -1297,8 +1291,7 @@ collective_actor::cancel_ping(int dense_rank)
       dense_rank, cm_rank, global_phys_rank, tag_);
       ping_refcounts_.erase(it);
       stop_check_neighbor(global_phys_rank);
-  }
-  else {
+  } else {
     debug_printf(sumi_collective | sumi_ping,
         "Rank %s collective %s(%p) decrement ping refcount to %d for partner %d:%d on tag=%d ",
     rank_str().c_str(), to_string().c_str(), this,
@@ -1319,8 +1312,7 @@ collective_actor::ping_rank(int comm_rank, int dense_rank)
     //we be pinging in the rain, just pinging in the rain
     ++refcount;
     return false; //all is well, we think - we have a pending ping
-  }
-  else {
+  } else {
     int global_phys_rank =  cfg_.dom->comm_to_global_rank(comm_rank);
     debug_printf(sumi_collective | sumi_ping,
       "Rank %s collective %s(%p) begin pinging %d:%d on tag=%d ",
@@ -1337,8 +1329,7 @@ collective_actor::ping_rank(int comm_rank, int dense_rank)
       failed_ranks_.insert(dense_rank);
       ping_refcounts_.erase(comm_rank);
       return true;
-    }
-    else {
+    } else {
       debug_printf(sumi_collective | sumi_ping,
         "Rank %s collective %s(%p) has started new ping to %s on tag=%d ",
         rank_str().c_str(), to_string().c_str(), this,
@@ -1366,8 +1357,7 @@ collective_actor::ping_neighbor(int dense_rank)
 {
   if (!fault_aware_){
     return false; //not failed
-  }
-  else if (is_failed(dense_rank)){
+  } else if (is_failed(dense_rank)){
     //this guy is failed - no reason to communicate
     return true;
   } else {

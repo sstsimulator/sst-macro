@@ -20,7 +20,7 @@ To better understand how hardware models are put together for simulating interco
 Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure \ref{fig:controlFlow}
 
 \begin{figure}
-\includegraphics[width=0.8\textwidth]{figures/DecisionFlow}
+\includegraphics[width=0.75\textwidth]{figures/DecisionFlow}
 \caption{Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.}
 \label{fig:controlFlow}
 \end{figure}
@@ -279,7 +279,7 @@ void pisces_switch::handle_payload(event *ev)
 \end{CppCode}
 The arriving event is sent to either a credit handler or a payload handler,
 which is configured during simulation setup.
-If a packet, the router object selects the next destination (port).
+If a payload packet (rather than a credit), the router object selects the next destination (port).
 The packet is then passed to the crossbar for arbitration.
 
 \section{Topology}
@@ -289,6 +289,9 @@ Common examples are the torus, fat tree, or butterfly.
 To understand what these topologies are, there are many resources on the web.
 Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages.
 Here we detail the public interface.
+In SST/macro, topologies are not dynamically stateful.
+They store static information about the geometry of the network and do not update their state as simulation progresses.
+All functions in the interface are const, emphasizing the role of the topology as read-only.
 
 \subsection{Basic Topology}
 \label{subsec:basicTopology}
@@ -362,7 +365,6 @@ struct path {
     int outport;
     int vc;
     int geometric_id;
-    sprockit::metadata_bits<uint32_t> metadata;
 }
 \end{CppCode}
 
@@ -371,8 +373,7 @@ For congestion models with channel dependencies, the virtual channel must also b
 In general, network switches and other devices should be completely topology-agnostic.
 The switch is responsible for modeling congestion within itself - crossbar arbitration, credits, outport multiplexing.
 The switch is not able to determine for itself which outport to route along.
-The topology tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port.
-This division of labor is complicated a bit by adaptive routing, but remains essentially the same.  More details are given later.
+The router tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port.
 
 \section{Router}\label{sec:router}
 The router has a simple public interface
@@ -380,19 +381,18 @@ The router has a simple public interface
 \begin{CppCode}
 class router {
 ...
-  virtual void route(packet* pkt);
-
-  virtual void route_to_switch(switch_id sid, routable::path& path) = 0;
+  virtual void route(packet* pkt) = 0;
 ...
 };
 \end{CppCode}
 
 Different routers exist for the different routing algorithms: 	minimal, valiant, ugal.
-The router objects are specific to a switch and can therefore store state information.
-However, the router should query the topology object for any path-specific information, e.g.
+The router objects are specific to a switch and can store dynamic state information,
+in contrast to the topology which is read-only.
+However, the router can query the topology object for any path-specific information, e.g.
 
 \begin{CppCode}
-void minimal_router::route_to_switch(switch_id sid, routable::path& path)
+void minimal_router::route_to_switch(switch_id sid, packet::path& path)
 {
   top_->minimal_route_to_switch(my_addr_, sid, path);
 }
@@ -405,5 +405,114 @@ Each router is connect to a switch object which holds all the information about 
 int test_length = get_switch()->queue_length(paths[i].outport);
 \end{CppCode}
 allowing the router to select an alternate path if the congestion is too high. 
+
+\subsection{Flows, Packets, and Routing Headers}
+A flow is a stream of data from a source node to a destination node.
+The most common example of a flow is an MPI message.
+At the source, the flow is broken into discrete units (packets). Each packet then moves independently through the network.
+The flow is reassembled at the destination from the individual packets.
+Packets themselves are also broken up into flits (flow control units) and even phits (physical units).
+However, flits in the same packet are constrained to follow the same route, unlike packets which can route independently.
+
+A challenge for SST/macro is the ``factorial'' space of possible machine models to support.
+For example, the simulator is intended to support at least two different network contention models (PISCES, SCULPIN);
+five different topologies (torus, hyperX, fat tree, dragonfly, cascade); and four different routing algorithms (Minimal, Valiant, UGAL, PAR).
+This creates already 40 combinations, which can grow even more quickly if new models are added.
+
+Rather than have 40 different packet types, there are only two packet types specific to each contention model that inherit from a standard packet type:
+
+\begin{CppCode}
+class packet : public event {
+  ...
+};
+\end{CppCode}
+Every contention model is unified in requiring a packet to carry 6 things:
+\begin{itemize}
+\item Source and destination node addresses
+\item \inlinecode{path} object (see below)
+\item Routing header
+\item Payload derived from the original flow
+\item Flow ID - globally unique identifier for the flow
+\item The number of bytes in the packet
+\end{itemize}
+
+\begin{CppCode}
+  node_id toaddr_;
+  node_id fromaddr_;
+  path path_;
+  uint64_t flow_id_;
+  serializable* orig_;
+  char header_metadata_[MAX_HEADER_BYTES];
+  uint32_t num_bytes_;
+\end{CppCode}
+The path object has subfields:
+
+\begin{CppCode}
+struct path {
+   outport_t outport;
+   int vc;
+};
+\end{CppCode}
+which indicate the virtual channel and port a packet should follow.
+
+Switches implement \emph{contention modeling} while routers implement \emph{path computation}.
+Path computations, in the case of adaptive routing, may depend on the dynamic contention state of the parent switch.
+A switch should never be aware of the exact topology or routing scheme.
+It follows orders from the router, sending packets on the virtual channels and ports computed by the router.
+The switch should call:
+
+\begin{CppCode}
+rtr_->route(pkt);
+\end{CppCode}
+at which point the switch can call
+
+\begin{CppCode}
+pkt->current_path().vc
+pkt->current_path().outport
+\end{CppCode}
+to query for the virtual channel and port requested by the packet (and router).
+In this way, the exact details of the contention model (as implemented in the switch) are decoupled from the routing.
+
+Decoupling the routing algorithm (UGAl, Minimal, etc.) from the topology (torus, dragonfly, etc) can be extremely difficult.
+In general, it is not always possible to implement a generic UGAL, e.g., that is agnostic to the underlying topology.
+For now, rather than have different packet types and a proliferation of virtual methods,
+the packet provides a bucket of bits (\inlinecode{header_metadata_}) that can be used by the router.
+Routing computations are generally the most expensive part of running the simulation and the most complex piece to implement,
+which discourages having different packet types for each routing/topology combination and accessing numerous virtual methods.
+
+The intended usage mode for routing headers is casting the bucket-of-bits to a known type, for which each packet provides a helper template method, e.g.:
+
+\begin{CppCode}
+void route(packet* pkt) override {
+  auto route_hdr = pkt->get_header<torus_ugal_header>();
+}
+\end{CppCode}
+By default each new header type is encouraged to inherit from a parent type:
+
+\begin{CppCode}
+class packet : public event
+{
+ public:
+  struct header {
+    char is_tail : 1;
+    uint32_t dest_switch : 22;
+  };
+\end{CppCode}
+which uses C++ bit fields to reserve 1 bit for storing whether the packet is the tail of the flow and 22 bits for storing the ID of an intermediate destination switch (this pattern is so common it is implemented in the parent packet class). For minimal routing on a torus, e.g.:
+
+\begin{CppCode}
+class torus_minimal_router : public minimal_router {
+  struct torus_minimal_header : public packet::header {
+     char crossed_timeline : 1;
+  };
+  void route(packet* pkt) override {
+    auto hdr = pkt->get_header<torus_minimal_header>();
+  }
+};
+\end{CppCode}
+which adds a single bit for storing whether the packet has crossed a timeline (wrap around link) in the torus. The timeline will be needed for computing the correct virtual channel.
+Routing headers can become much more complex for other topologies and adaptive routing, for which the reader is encouraged to look at the source code for further details.
+These complexities are local to each individual routing method, though, which neatly separates routing from contention modeling.
+
 
 

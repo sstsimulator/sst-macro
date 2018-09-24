@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -80,6 +80,8 @@ RegisterKeywords(
  { "OMP_NUM_THREADS", "environment variable for configuring openmp" },
 );
 
+MakeDebugSlot(app_compute);
+
 namespace sstmac {
 namespace sw {
 
@@ -110,8 +112,7 @@ static char* get_data_segment(sprockit::sim_parameters* params,
   }
   if (allocSize != 0){
     char* segment = new char[allocSize];
-    ::memcpy(segment, GlobalVariable::glblCtx.globalInit(),
-             GlobalVariable::glblCtx.globalsSize());
+    ::memcpy(segment, ctx.globalInit(), ctx.globalsSize());
     return segment;
   } else {
     return nullptr;
@@ -135,25 +136,28 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   params_(params),
   next_tls_key_(0),
   next_condition_(0),
+  notify_(true),
   next_mutex_(0),
   min_op_cutoff_(0),
   globals_storage_(nullptr),
-  omp_num_threads_(1),
   rc_(0)
 {
   globals_storage_ = allocate_data_segment(false); //not tls
-  min_op_cutoff_ = params->get_optional_int_param("min_op_cutoff", 1e3);
+  min_op_cutoff_ = params->get_optional_long_param("min_op_cutoff", 1e3);
   bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
   if (host_compute){
     host_timer_ = new HostTimer;
   }
 
-
-
   notify_ = params->get_optional_bool_param("notify", true);
 
   sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
-  omp_num_threads_ = env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
+  omp_contexts_.emplace_back();
+  omp_context& active = omp_contexts_.back();
+  active.max_num_subthreads = active.requested_num_subthreads =
+    env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
+  active.level = 0;
+  active.num_threads = 1;
 }
 
 app::~app()
@@ -232,19 +236,22 @@ app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthr
   if ((flops+nintops) < min_op_cutoff_){
     return;
   }
-  compute_lib()->compute_detailed(flops, nintops, bytes,
-                                  //if no number of threads are given, use the default OpenMP cfg
-                                  nthread == use_omp_num_threads ? omp_num_threads_ : nthread);
+
+  debug_printf(sprockit::dbg::app_compute,
+               "Rank %d for app %d: detailed compute for flops=%" PRIu64 " intops=%" PRIu64 " bytes=%" PRIu64,
+               sid_.task_, sid_.app_, flops, nintops, bytes);
+
+  compute_lib()->compute_detailed(flops, nintops, bytes, nthread);
 }
 
 void
-app::compute_block_read(long bytes)
+app::compute_block_read(uint64_t bytes)
 {
   compute_lib()->read(bytes);
 }
 
 void
-app::compute_block_write(long bytes)
+app::compute_block_write(uint64_t bytes)
 {
   compute_lib()->write(bytes);
 }
@@ -256,7 +263,7 @@ app::get_params()
 }
 
 void
-app::compute_block_memcpy(long bytes)
+app::compute_block_memcpy(uint64_t bytes)
 {
   compute_lib()->copy(bytes);
 }

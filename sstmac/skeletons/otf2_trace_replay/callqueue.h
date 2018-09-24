@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -92,52 +92,94 @@ class iterable_queue : public std::queue<T,Container> {
 
 class CallQueue {
  public:
-  CallQueue();
-  CallQueue(OTF2TraceReplayApp*);
+  CallQueue() : CallQueue(nullptr) {}
+
+  CallQueue(OTF2TraceReplayApp* a) : app(a) {}
 
   MpiCall* find_latest(MPI_CALL_ID id) {
-    for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++)
-       if (id == (*iter)->id) return *iter;
-
-    std::cout << "Failed to find " << id << ", printing the queue in reverse" << std::endl;
-    for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); iter++)
-      std::cout << (*iter)->id << std::endl;
+    for (auto iter = call_queue.rbegin(); iter != call_queue.rend(); ++iter){
+      MpiCall& call = *iter;
+      if (call.id == id){
+        return &call;
+      }
+    }
     return nullptr;
   }
 
   MpiCall* find_earliest(MPI_CALL_ID id) {
-    for (auto iter = call_queue.begin(); iter != call_queue.end(); iter++)
-      if (id == (*iter)->id) return (*iter);
+    for (MpiCall& call : call_queue){
+      if (call.id == id){
+        return &call;
+      }
+    }
     return nullptr;
   }
 
   // Push a new call onto the back of the CallQueue
-  void AddCall(MpiCall*);
+  void emplaceCall(OTF2_TimeStamp start, OTF2TraceReplayApp* app,
+                   MPI_CALL_ID id){
+    call_queue.emplace(start, app, id);
+  }
+
+  // Push a new call onto the back of the CallQueue
+  void emplaceCall(OTF2_TimeStamp start, OTF2TraceReplayApp* app,
+                   MPI_CALL_ID id, std::function<void()> trigger){
+    call_queue.emplace(start, app, id, trigger);
+  }
 
   // Notify the CallQueue handlers that a given call was finished
   // Returns the number of calls triggered
-  int CallReady(MpiCall*);
+  int CallReady(MpiCall& call){
+    return CallReady(&call);
+  }
+
+  // Notify the CallQueue handlers that a given call was finished
+  // Returns the number of calls triggered
+  int CallReady(MpiCall* call);
 
   // Returns the number of calls waiting in the queue
-  int GetDepth();
+  int GetDepth() const {
+    return call_queue.size();
+  }
 
   // Get the entry at the front of the queue
-  MpiCall* Peek();
+  MpiCall& Peek() {
+    return call_queue.front();
+  }
 
   // Get the entry from the back of the queue
-  MpiCall* PeekBack();
+  MpiCall& PeekBack() {
+    return call_queue.back();
+  }
 
   // Begin tracking a pending MPI call with a request
-  void AddRequest(MPI_Request req, MpiCall*);
+  void AddRequest(MPI_Request req, MpiCall* cb){
+    request_map[req] = cb;
+  }
+
+  // Begin tracking a pending MPI call with a request
+  void AddRequest(MPI_Request req, MpiCall& cb){
+    request_map[req] = &cb;
+  }
+
+  std::unordered_map<MPI_Request, MpiCall*>::const_iterator request_begin() const {
+    return request_map.begin();
+  }
+
+  std::unordered_map<MPI_Request, MpiCall*>::const_iterator request_end() const {
+    return request_map.end();
+  }
 
   // Finds an MPI call based on a request
-  MpiCall* FindRequest(MPI_Request);
+  MpiCall* FindRequest(MPI_Request req) const;
 
   // Stop tracking a pending MPI call
-  void RemoveRequest(MPI_Request);
+  void RemoveRequest(MPI_Request req) {
+    request_map.erase(req);
+  }
 
  private:
-  iterable_queue<MpiCall*> call_queue;
+  iterable_queue<MpiCall> call_queue;
   std::unordered_map<MPI_Request, MpiCall*> request_map;
   OTF2TraceReplayApp* app;
 

@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -120,10 +120,12 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
   bool keep_going = true;
   int aid = 1;
   int last_used_aid = 0;
+  sprockit::sim_parameters* all_app_params = params->get_optional_namespace("app");
   while (keep_going || aid < 10){
     std::string name = sprockit::printf("app%d",aid);
     if (params->has_namespace(name)){
       sprockit::sim_parameters* app_params = params->get_namespace(name);
+      all_app_params->combine_into(app_params);
       app_launch_request* mgr = new app_launch_request(app_params, app_id(aid), name);
       initial_requests_.push_back(mgr);
       keep_going = true;

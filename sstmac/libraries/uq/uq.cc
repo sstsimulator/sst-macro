@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -226,8 +226,11 @@ set_param(sprockit::sim_parameters& params, const char* name, uq_param_t& p)
    case ValueWithUnits:
     return params[name].setValue(p.value, p.units);
     break;
-   default:
+   default: {
     spkt_abort_printf("invalid paramter type - make sure param.type is initialized");
+    static std::string make_gcc_warning_disappear;
+    return make_gcc_warning_disappear;
+   }
   }
 }
 
@@ -325,8 +328,7 @@ sstmac_uq_run(void* queue,
 
     if (spawn_ty == Fork){
       sims[num_running++] = q->fork(params, nresults, results[j]);
-    }
-    else if (spawn_ty == MPIScan){
+    } else if (spawn_ty == MPIScan){
       sims[num_running++] = send_scan_point(q, params, bufferPtr,
                                 nparams, results[j], nresults, param_names, param_values[j]);
       bufferPtr += paramBufferSize;

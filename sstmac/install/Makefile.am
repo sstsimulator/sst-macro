@@ -1,9 +1,9 @@
 #
 #   This file is part of SST/macroscale: 
 #                The macroscale architecture simulator from the SST suite.
-#   Copyright (c) 2011 Sandia Corporation.
+#   Copyright (c) 2009-2018 NTESS.
 #   This software is distributed under the BSD License.
-#   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+#   Under the terms of Contract DE-NA0003525 with NTESS,
 #   the U.S. Government retains certain rights in this software.
 #   For more information, see the LICENSE file in the top 
 #   SST/macroscale directory.
@@ -18,10 +18,15 @@ lib_LTLIBRARIES = libsstmac.la
 libsstmac_la_LDFLAGS = -version-info @SSTMAC_LIBVERSION@
 endif
 
+libsstmac_la_LIBADD = 
+#if HAVE_OTF2
+#libsstmac_la_LIBADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)
+#libsstmac_la_LIBADD += ../../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
+#endif
 
 libsstmac_la_SOURCES =
 nodist_EXTRA_libsstmac_la_SOURCES = dummy.cxx
-libsstmac_la_LIBADD = \
+libsstmac_la_LIBADD += \
   ../../sumi/libsumi.la \
   ../backends/common/libsstmac_backends.la \
   ../backends/native/libsstmac_native.la \
@@ -43,9 +48,10 @@ libsstmac_la_LIBADD += \
   ../../sumi-mpi/libsstmac_mpi.la
 endif
 
-if HAVE_OTF2
-libsstmac_la_LIBADD += $(OTF2_LDFLAGS)
-endif
+#if HAVE_OTF2
+#libsstmac_la_LIBADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)
+#libsstmac_la_LIBADD += ../../sst-dumpi/dumpi/libotf2dump/libotf2dump.la
+#endif
 
 if USE_MPIPARALLEL
 libsstmac_la_LIBADD += ../backends/mpi/libsstmac_mpi_runtime.la 

@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -76,13 +76,11 @@ void trim(SequenceT& input)
   const auto& first_non_space = std::find_if_not(input.begin(), input.end(), check_isspace);
   if(first_non_space == input.end()) {
     input = SequenceT(input.begin(), input.begin()+1);
-  }
-  else {
+  } else {
     const auto& last_non_space = std::find_if_not(input.rbegin(), input.rend(), check_isspace);
     if(last_non_space == input.rbegin() + 1) {
       input = SequenceT(first_non_space, input.end());
-    }
-    else {
+    } else {
       input = SequenceT(first_non_space, last_non_space.base() + 1);
     }
   }

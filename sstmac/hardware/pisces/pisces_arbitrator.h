@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -96,7 +96,7 @@ class pisces_bandwidth_arbitrator
    */
   virtual void partition(noise_model* noise, int num_intervals);
 
-  virtual int bytes_sending(timestamp now) const = 0;
+  virtual uint32_t bytes_sending(timestamp now) const = 0;
 
  protected:
   pisces_bandwidth_arbitrator(sprockit::sim_parameters* params);
@@ -127,7 +127,7 @@ class pisces_null_arbitrator :
 
   timestamp head_tail_delay(pisces_payload *pkt) override;
 
-  int bytes_sending(timestamp now) const override;
+  uint32_t bytes_sending(timestamp now) const override;
 
 };
 
@@ -157,7 +157,7 @@ class pisces_simple_arbitrator :
     return timestamp();
   }
 
-  int bytes_sending(timestamp now) const override;
+  uint32_t bytes_sending(timestamp now) const override;
 
  protected:
   timestamp next_free_;
@@ -187,7 +187,7 @@ class pisces_cut_through_arbitrator :
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
-  int bytes_sending(timestamp now) const override;
+  uint32_t bytes_sending(timestamp now) const override;
 
   std::string to_string() const override {
     return "cut through arbitrator";

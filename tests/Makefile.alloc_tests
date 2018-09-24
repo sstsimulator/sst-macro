@@ -7,6 +7,7 @@ if BUILD_SUMI_MPI
 ALLOCTESTS = \
   test_allocation_cart \
   test_allocation_coordinate \
+  test_allocation_greedy_dfly \
   test_allocation_node_id
 else
 ALLOCTESTS = 

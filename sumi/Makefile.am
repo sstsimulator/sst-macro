@@ -1,9 +1,9 @@
 #
 #   This file is part of SST/macroscale: 
 #                The macroscale architecture simulator from the SST suite.
-#   Copyright (c) 2011 Sandia Corporation.
+#   Copyright (c) 2009-2018 Sandia Corporation.
 #   This software is distributed under the BSD License.
-#   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+#   Under the terms of Contract DE-NA0003525 with NTESS,
 #   the U.S. Government retains certain rights in this software.
 #   For more information, see the LICENSE file in the top 
 #   SST/macroscale directory.
@@ -30,6 +30,7 @@ library_include_HEADERS = \
  gatherv.h \
  bcast.h \
  reduce.h \
+ reduce_scatter.h \
  scan.h \
  scatter.h \
  scatterv.h \
@@ -64,6 +65,7 @@ libsumi_la_SOURCES = \
  gather.cc \
  gatherv.cc \
  reduce.cc \
+ reduce_scatter.cc \
  scan.cc \
  scatter.cc \
  scatterv.cc \

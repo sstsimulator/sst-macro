@@ -1,9 +1,9 @@
 #
 #   This file is part of SST/macroscale: 
 #                The macroscale architecture simulator from the SST suite.
-#   Copyright (c) 2009 Sandia Corporation.
+#   Copyright (c) 2009-2018 NTESS.
 #   This software is distributed under the BSD License.
-#   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+#   Under the terms of Contract DE-NA0003525 with NTESS,
 #   the U.S. Government retains certain rights in this software.
 #   For more information, see the LICENSE file in the top 
 #   SST/macroscale directory.
@@ -19,9 +19,16 @@ AM_CPPFLAGS += \
 	-I$(top_srcdir)/sumi \
 	-I$(top_builddir)/sumi
 
-AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
+if HAVE_OTF2
+AM_CPPFLAGS += \
+	-I$(top_srcdir)/sst-dumpi \
+	-I$(top_builddir)/sst-dumpi \
+  $(OTF2_CPPFLAGS)
+endif
 
-libsstmac_mpi_la_LDFLAGS = 
+#-I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi
+
+AM_FCFLAGS = -I$(top_builddir) -I$(top_srcdir) -m32 -m64
 
 libsstmac_mpi_la_SOURCES = \
   mpi_comm/mpi_comm.cc \
@@ -38,6 +45,7 @@ libsstmac_mpi_la_SOURCES = \
   mpi_protocol/eager0.cc \
   mpi_protocol/rendezvous_rdma.cc \
   mpi_types/mpi_type.cc \
+  otf2_output_stat.cc \
   sstmac_mpi.cc \
   mpi_api.cc \
   mpi_api_win.cc \
@@ -86,6 +94,8 @@ nobase_library_include_HEADERS = \
   mpi_wrapper.h \
   mpi_integers.h \
   mpi_call.h \
+  otf2_output_stat.h \
+  otf2_output_stat_fwd.h \
   sstmac_mpi.h \
   sstmac_mpi_macro.h 
   

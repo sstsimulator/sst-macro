@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi-mpi/mpi_api.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace sumi {
 
@@ -99,7 +100,7 @@ mpi_api::group_incl(MPI_Group oldgrp, int num_ranks, const int *ranks, MPI_Group
 }
 
 bool
-mpi_api::group_create_with_id(MPI_Group group, int num_members, const uint32_t *members)
+mpi_api::group_create_with_id(MPI_Group group, int num_members, const int* members)
 {
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Group_create_with_id(id=%d,n=%d)",
                 group, num_members);
@@ -139,6 +140,7 @@ mpi_api::group_free(MPI_Group *grp)
     grp_map_.erase(iter);
   }
   *grp = MPI_GROUP_NULL;
+
   return MPI_SUCCESS;
 }
 
@@ -148,6 +150,8 @@ mpi_api::group_translate_ranks(MPI_Group grp1, int n, const int *ranks1, MPI_Gro
   mpi_group* grp1ptr = get_group(grp1);
   mpi_group* grp2ptr = get_group(grp2);
   grp1ptr->translate_ranks(n, ranks1, ranks2, grp2ptr);
+
+
   return MPI_SUCCESS;
 }
 

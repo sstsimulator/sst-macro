@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -61,6 +61,16 @@ class torus :
   FactoryRegister("torus | torus", topology, torus,
               "torus implements a high-dimension torus with an arbitrary number of dimensions")
  public:
+  typedef enum {
+    same_path,
+    wrapped_around,
+    new_dimension
+  } route_type_t ;
+
+  struct torus_routing_header {
+    char crossed_timeline : 1;
+  };
+
   torus(sprockit::sim_parameters* params);
 
   typedef enum {
@@ -113,13 +123,18 @@ class torus :
   void minimal_route_to_switch(
     switch_id sid,
     switch_id dst,
-    routable::path& path) const override;
+    packet::path& path) const {
+    torus_route(sid, dst, path);
+  }
+
+  route_type_t torus_route(
+    switch_id sid,
+    switch_id dst,
+    packet::path& path) const;
 
   int minimal_distance(
     switch_id sid,
     switch_id dst) const override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
 
   coordinates switch_coords(switch_id) const override;
 
@@ -132,16 +147,13 @@ class torus :
   }
 
  private:
-  void torus_path(bool reset_dim, bool wrapped, int dim, int dir,
-             routable::path& path) const;
-
-  void down_path(
+  route_type_t down_path(
     int dim, int src, int dst,
-    routable::path& path) const;
+    packet::path& path) const;
 
-  void up_path(
+  route_type_t up_path(
     int dim, int src, int dst,
-    routable::path& path) const;
+    packet::path& path) const;
 
   int shortest_distance(int dim, int src, int dst) const;
 

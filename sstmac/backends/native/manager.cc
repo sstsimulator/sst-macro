@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -74,6 +74,7 @@ RegisterKeywords(
 { "event_manager", "the type of event manager for scheduling/managing events" },
 { "sst_rank", "my logical process within a parallel SST run" },
 { "sst_nproc", "the total number of logical processes within an SST run" },
+{ "timestamp_print_units", "the units of time to print on debug statements" },
 );
 
 
@@ -87,53 +88,120 @@ class timestamp_prefix_fxn :
   public sprockit::debug_prefix_fxn
 {
  public:
-  timestamp_prefix_fxn(event_manager* mgr) : mgr_(mgr){}
+  timestamp_prefix_fxn(sprockit::sim_parameters* params, event_manager* mgr) :
+    mgr_(mgr)
+  {
+    units_ = params->get_optional_param("timestamp_print_units", "s");
+    if (units_ == "ns"){
+      mult_ = 1e9;
+    } else if (units_ == "us"){
+      mult_ = 1e6;
+    } else if (units_ == "s"){
+      mult_ = 1e3;
+    } else if (units_ == "s"){
+      mult_ = 1;
+    } else {
+      spkt_abort_printf("invalid timestamp units for printing function: %s", units_.c_str());
+    }
+  }
 
   std::string str() {
-    double t_ms = mgr_->now().msec();
-    return sprockit::printf("T=%12.8e ms:", t_ms);
+    double t = mgr_->now().sec() * mult_;
+    return sprockit::printf("T=%14.8f %s:", t, units_.c_str());
   }
 
  private:
   event_manager* mgr_;
+  std::string units_;
+  double mult_;
+
 };
+
+static std::string get_first_line_from_cmd(const std::string& cmd)
+{
+  FILE* fp = popen(cmd.c_str(), "r");
+  char buf[4096];
+  char* ret = fgets(buf, 4096, fp);
+  if (ret){
+    std::string ret(buf);
+    auto pos = ret.find_first_of('\n');
+    if (pos == std::string::npos){
+      return ret;
+    } else {
+      return ret.substr(0, pos);
+    }
+  } else {
+    return std::string();
+  }
+}
+
+static std::string get_file_from_suffix(const std::string& suffix)
+{
+  std::string cmd = "ls *." + suffix;
+  return get_first_line_from_cmd(cmd);
+}
+
+static std::string find_file_from_suffix(const std::string& suffix)
+{
+  std::string cmd = "find . -name '*." + suffix + "'";
+  return get_first_line_from_cmd(cmd);
+}
+
+static int recursive_count_files_from_suffix(const std::string& suffix)
+{
+  std::string cmd = "find . -name '*." + suffix + "' | wc";
+  std::string ret = get_first_line_from_cmd(cmd);
+  if (ret.empty()) return 0;
+
+  std::istringstream istr(ret);
+  int n; istr >> n;
+  return n;
+}
 
 int
 manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
 {
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
-  static const char* dmeta = "dumpi_metaname";
-  if (app_params->get_param("name") == "parsedumpi"
-    && !app_params->has_param("launch_cmd"))
-  {
-    std::string dumpi_meta_filename;
-    if (!app_params->has_param(dmeta)){
-      FILE *fp = popen("ls *.meta", "r");
-      char buf[1024];
-      char* ret = fgets(buf, 1024, fp);
-      int len = ::strlen(buf);
-      if (ret){
-        char& lastchar = buf[len-1];
-        if (lastchar == '\n'){
-          lastchar = '\0';
+  static const std::string dmeta = "dumpi_metaname";
+  static const std::string ometa = "otf2_metafile";
+  if (!app_params->has_param("launch_cmd")){
+    int nproc = 0;
+    if (app_params->get_param("name") == "parsedumpi"){
+      std::string dumpi_meta_filename;
+      if (!app_params->has_param(dmeta)){
+        dumpi_meta_filename = get_file_from_suffix("meta");
+        if (dumpi_meta_filename.empty()){
+          sprockit::abort("no dumpi file found in folder or specified with dumpi_metaname");
+        } else {
+          app_params->add_param(dmeta, dumpi_meta_filename);
         }
-        cout0 << "Using dumpi meta " << buf << std::endl;
-        app_params->add_param(dmeta, buf);
       } else {
-        sprockit::abort("no dumpi file found in folder or specified with dumpi_metaname");
+        dumpi_meta_filename = app_params->get_param(dmeta);
       }
-      dumpi_meta_filename = buf;
+      sw::dumpi_meta* meta = new sw::dumpi_meta(dumpi_meta_filename);
+      nproc = meta->num_procs();
+      delete meta;
+    } else if (app_params->get_param("name") == "parseotf2"){
+      std::string otf2_meta_filename;
+      if (!app_params->has_param(ometa)){
+        otf2_meta_filename = find_file_from_suffix("otf2");
+        if (otf2_meta_filename.empty()){
+          sprockit::abort("no OTF2 file found in folder or specified with otf2_metafile");
+        } else {
+          app_params->add_param(ometa, otf2_meta_filename);
+        }
+      } else {
+        otf2_meta_filename = ometa;
+      }
+      nproc = recursive_count_files_from_suffix("evt");
     } else {
-      dumpi_meta_filename = app_params->get_param(dmeta);
     }
-    sw::dumpi_meta* meta = new sw::dumpi_meta(dumpi_meta_filename);
-    int nproc = meta->num_procs();
+    max_nproc = std::max(max_nproc, nproc);
     std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
     app_params->add_param("launch_cmd", cmd);
-    max_nproc = std::max(max_nproc, nproc);
-    delete meta;
   }
+
   int nproc, procs_per_node;
   std::vector<int> ignore;
   app_launch_request::parse_launch_cmd(app_params, nproc,
@@ -185,7 +253,7 @@ manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
   event_manager::global = event_manager_;
 
   if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
-    sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(event_manager_);
+    sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(params, event_manager_);
     sprockit::debug::prefix_fxn = fxn;
   }
 
@@ -209,6 +277,7 @@ manager::~manager() throw ()
     abort();
   }
   if (event_manager_) delete event_manager_;
+  //hw::interconnect::clear_static_interconnect();
 }
 
 void

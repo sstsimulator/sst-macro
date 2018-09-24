@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -114,11 +114,11 @@ congestion_spyplot::~congestion_spyplot()
 }
 
 void
-congestion_spyplot::collect_final_event(pisces_payload *pkt)
+congestion_spyplot::collect_final_event(pisces_payload* pkt)
 {
-  auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
-  double delay_ns = dpkt->congestion_delay()*1e9;
-  congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), delay_ns);
+  sprockit::abort("unimplemented: congestion_spyplot::collect_final_event");
+  //double delay_ns = pkt->congestion_delay()*1e9;
+  //congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), delay_ns);
 }
 
 void
@@ -157,19 +157,21 @@ delay_histogram::collect_single_event(const pkt_arbitration_t& st)
 void
 delay_histogram::collect_final_event(pisces_payload* pkt)
 {
-  auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
-  debug("Accumulating final delay of %12.6e for packet on flow %" PRIu64,
-        dpkt->congestion_delay(), dpkt->flow_id());
-  congestion_hist_->collect(dpkt->congestion_delay());
+  sprockit::abort("unimplemented: delay_histogram::collect_final_event");
+  //auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
+  //debug("Accumulating final delay of %12.6e for packet on flow %" PRIu64,
+  //      dpkt->congestion_delay(), dpkt->flow_id());
+  //congestion_hist_->collect(dpkt->congestion_delay());
 }
 
 
 void
 packet_delay_stats::collect_single_event(const pkt_arbitration_t& st)
 {
-  double delay = congestion_delay(st);
-  auto dpkt = safe_cast(pisces_delay_stats_packet, st.pkt);
-  dpkt->accumulate_delay(delay);
+  sprockit::abort("unimplemented: delay_histogram::collect_single_event");
+  //double delay = congestion_delay(st);
+  //auto dpkt = safe_cast(pisces_delay_stats_packet, st.pkt);
+  //dpkt->accumulate_delay(delay);
 }
 
 multi_stats::multi_stats(sprockit::sim_parameters *params, event_scheduler *parent) :

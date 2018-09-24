@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -48,9 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 /*
  *  This file is part of SST/macroscale:
  *               The macroscale architecture simulator from the SST suite.
- *  Copyright (c) 2009 Sandia Corporation.
+ *  Copyright (c) 2009-2018 NTESS.
  *  This software is distributed under the BSD License.
- *  Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ *  Under the terms of Contract DE-NA0003525 with NTESS,
  *  the U.S. Government retains certain rights in this software.
  *  For more information, see the LICENSE file in the top
  *  SST/macroscale directory.
@@ -73,13 +73,16 @@ RegisterKeywords(
  { "bandwidth", "" },
  { "hop_latency", "" },
  { "out_in_latency", "" },
+ { "random_seed", "a seed for creating randomized message arrivals"},
+ { "random_max_extra_latency", "the maximum extra latency allowed in random scenarios"},
+ { "random_max_extra_byte_delay", "the maximum extra delay per byte in random scenarios"},
 );
 
 namespace sstmac {
 namespace hw {
 
 logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_manager* mgr) :
-  connectable_component(params, cid, mgr)
+  connectable_component(params, cid, mgr), rng_(nullptr)
 {
   top_ = topology::static_topology(nullptr);
 
@@ -95,6 +98,14 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_m
 
   out_in_lat_ = params->get_time_param("out_in_latency");
 
+  if (params->has_param("random_seed")){
+    random_seed_ = params->get_int_param("random_seed");
+    rng_ = RNG::MWC::construct();
+    random_max_extra_latency_ = params->get_time_param("random_max_extra_latency");
+    random_max_extra_byte_delay_ = params->get_time_param("random_max_extra_byte_delay");
+  }
+
+
   nic_links_.resize(top_->num_nodes());
 
   init_links(params);
@@ -102,6 +113,10 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_m
 
 logp_switch::~logp_switch()
 {
+  if (rng_) delete rng_;
+  for (event_link* link : nic_links_){
+    delete link;
+  }
 }
 
 void
@@ -113,11 +128,25 @@ logp_switch::send_event(event *ev)
 void
 logp_switch::send(timestamp start, message* msg)
 {
+  timestamp delay;
+  if (rng_){
+    uint64_t t = start.ticks();
+    t = ((t*random_seed_) << 5) + random_seed_;
+    uint32_t z = (uint32_t)((t & 0xFFFFFFFF00000000LL) >> 32);
+    uint32_t w = (uint32_t)(t & 0xFFFFFFFFLL);
+    rng_->reseed(z, w);
+    double lat_inc = rng_->realvalue();
+    delay += lat_inc * random_max_extra_latency_;
+    double bw_inc = rng_->realvalue();
+    delay += msg->byte_length() * bw_inc * random_max_extra_byte_delay_;
+  }
+
   node_id dst = msg->toaddr();
-  timestamp delay(inv_min_bw_ * msg->byte_length()); //bw term
+  delay += inv_min_bw_ * msg->byte_length(); //bw term
   int num_hops = top_->num_hops_to_node(msg->fromaddr(), dst);
   delay += num_hops * hop_latency_;
-  debug_printf(sprockit::dbg::logp, "sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
+  debug_printf(sprockit::dbg::logp,
+               "sending message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
                num_hops, delay.sec(), out_in_lat_.sec(), msg->to_string().c_str());
 
   timestamp extra_delay = start - now() + delay;

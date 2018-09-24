@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -117,6 +117,12 @@ pisces_NtoM_queue::~pisces_NtoM_queue()
 {
   if (arb_) delete arb_;
   if (credit_handler_) delete credit_handler_;
+  for (auto& pair : inputs_){
+    if (pair.second.link) delete pair.second.link;
+  }
+  for (auto& out : outputs_){
+    if (out.link) delete out.link;
+  }
 }
 
 void
@@ -193,6 +199,13 @@ pisces_NtoM_queue::deadlock_check(event* ev)
     pisces_output& poutput = outputs_[local_outport(outport)];
     event_link* output = output_link(next);
     next->set_inport(poutput.dst_inport);
+    std::cerr << to_string() << " going to "
+      << output->to_string()
+      << " outport=" << next->next_port()
+      << " inport=" << next->inport()
+      << " vc=" << next->next_vc()
+      << " : " << next->to_string()
+      << std::endl;
     output->deadlock_check(next);
   }
 #endif
@@ -224,13 +237,12 @@ pisces_NtoM_queue::output_name(pisces_payload* pkt)
 void
 pisces_NtoM_queue::send_payload(pisces_payload* pkt)
 {
-  auto rpkt = static_cast<pisces_routable_packet*>(pkt);
   pisces_debug(
         "On %s:%p local_port:%d vc:%d sending {%s}",
         to_string().c_str(), this,
-        rpkt->local_outport(), pkt->next_vc(),
+        pkt->local_outport(), pkt->next_vc(),
         pkt->to_string().c_str());
-  send(arb_, pkt, inputs_[pkt->inport()], outputs_[rpkt->local_outport()]);
+  send(arb_, pkt, inputs_[pkt->inport()], outputs_[pkt->local_outport()]);
 }
 
 void
@@ -267,10 +279,10 @@ pisces_NtoM_queue::handle_credit(event* ev)
 void
 pisces_NtoM_queue::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_routable_packet*>(ev);
+  auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
 
-  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->routable::vc();
+  int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
   int glob_port = pkt->global_outport();
   int loc_port = local_outport(glob_port);
   pkt->set_local_outport(loc_port);
@@ -296,8 +308,7 @@ pisces_NtoM_queue::handle_payload(event* ev)
   if (num_credits >= pkt->num_bytes()) {
     num_credits -= pkt->num_bytes();
     send_payload(pkt);
-  }
-  else {
+  } else {
     pisces_debug(
       "On %s:%p, pushing back %s on queue %d=(%d,%d) for nq=%d nvc=%d mapper=(%d,%d,%d)",
       to_string().c_str(), this, pkt->to_string().c_str(),

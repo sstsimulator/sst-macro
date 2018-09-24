@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -123,7 +123,7 @@ void
 pisces_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
 {
   timestamp start_send = next_free_ < st.now ? st.now : next_free_;
-  timestamp ser_delay(st.pkt->num_bytes() * inv_out_bw_);
+  timestamp ser_delay(st.pkt->byte_length() * inv_out_bw_);
   next_free_ = start_send + ser_delay;
   st.pkt->set_bw(out_bw_);
   //store and forward
@@ -131,11 +131,11 @@ pisces_simple_arbitrator::arbitrate(pkt_arbitration_t &st)
   st.head_leaves = st.tail_leaves = next_free_;
   //we can send the credit a bit ahead of time
   st.credit_leaves = st.head_leaves
-    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->num_bytes());
+    + credit_delay(st.pkt->max_incoming_bw(), out_bw_, st.pkt->byte_length());
   st.pkt->set_max_incoming_bw(out_bw_);
 }
 
-int
+uint32_t
 pisces_simple_arbitrator::bytes_sending(timestamp now) const
 {
   double send_delay = next_free_ > now ? (next_free_ - now).sec() : 0;
@@ -168,7 +168,7 @@ pisces_null_arbitrator::arbitrate(pkt_arbitration_t &st)
   st.pkt->set_max_incoming_bw(out_bw_);
 }
 
-int
+uint32_t
 pisces_null_arbitrator::bytes_sending(timestamp now) const
 {
   return 0;
@@ -186,9 +186,7 @@ pisces_cut_through_arbitrator(sprockit::sim_parameters* params)
 
   //thread environments might not be setup yet when allocating
   //placement new this one
-  char* plc_buf = new char[sizeof(bandwidth_epoch)];
-
-  head_ = new (plc_buf) bandwidth_epoch;
+  head_ = bandwidth_epoch::allocate_at_beginning();
   head_->bw_available = out_bw_ * bw_sec_to_tick_conversion_;
   head_->start = 0;
   //just set to super long
@@ -211,18 +209,18 @@ pisces_cut_through_arbitrator::~pisces_cut_through_arbitrator()
     next = next->next;
     //do not delete this for now, treat as permanent
     //this guy gets deleted and created before anything is running
-    delete e;
+    bandwidth_epoch::free_at_end(e);
   }
 }
 
-int
+uint32_t
 pisces_cut_through_arbitrator::bytes_sending(timestamp now) const
 {
-  double next_free =
+  ticks_t next_free =
     head_->start; //just assume that at head_->start link is fully available
-  double now_ = now.sec();
-  double send_delay = next_free > now_ ? (next_free - now_) : 0;
-  int bytes_sending = send_delay * out_bw_;
+  ticks_t now_ = now.ticks();
+  timestamp send_delay(next_free > now_ ? (next_free - now_) : 0, timestamp::exact);
+  int bytes_sending = send_delay.sec() * out_bw_;
   return bytes_sending;
 }
 
@@ -288,8 +286,7 @@ pisces_cut_through_arbitrator::clean_up(ticks_t now)
       head_ = epoch->next;
       delete epoch;
       epoch = head_;
-    }
-    else { //we are in the middle of this epoch
+    } else { //we are in the middle of this epoch
       epoch->truncate_after(delta_t);
       return; //we are done
     }
@@ -336,7 +333,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
   }
 #endif
   //zero byte packets break the math below - if tiny, just push it up to 8
-  int bytes_to_send = std::max(payload->num_bytes(), 8);
+  uint32_t bytes_to_send = std::max(payload->num_bytes(), uint32_t(8));
 
   pflow_arb_debug_printf_l0("cut_through arbitrator handling %s at time %10.5e that started arriving at %10.5e",
                             payload->to_string().c_str(), st.now.sec(), payload->arrival().sec());
@@ -374,8 +371,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(payload_stop, timestamp::exact);
         return;
-      }
-      else if (time_to_send == epoch->length) {
+      } else if (time_to_send == epoch->length) {
         ticks_t payload_stop = epoch->start + time_to_send;
         ticks_t total_send_time = payload_stop - send_start;
         double new_bw = payload->num_bytes()*bw_tick_to_sec_conversion_ / total_send_time;
@@ -387,8 +383,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(payload_stop, timestamp::exact);
         return;
-      }
-      else {
+      } else {
         //this epoch is exhausted
         bytes_to_send -= epoch->bw_available * epoch->length;
         head_ = epoch->next;
@@ -421,8 +416,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(send_done, timestamp::exact);
         return;
-      }
-      else {
+      } else {
 #if SSTMAC_SANITY_CHECK
         if (epoch->next ==
             0) { //we should never be subtracting from the big long epoch at the end
@@ -443,14 +437,11 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         epoch = epoch->next;
         pflow_arb_debug_print_l2("send not done yet");
       }
-    }
-
-
-    /**
-        The payload is sending slower than the max available bandwidth
-        However, we have a certain number of bytes that are instantly ready to go in the queue
-    */
-    else {
+    } else {
+      /**
+          The payload is sending slower than the max available bandwidth
+          However, we have a certain number of bytes that are instantly ready to go in the queue
+      */
       //the number of bytes available to send is the line
       // BA = INP * t + QUE
       //the number bytes that could have been sent is
@@ -480,8 +471,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         st.head_leaves = timestamp(send_start, timestamp::exact);
         st.tail_leaves = timestamp(send_done, timestamp::exact);
         return;
-      }
-      else if (time_to_send == epoch->length) {
+      } else if (time_to_send == epoch->length) {
 #if SSTMAC_SANITY_CHECK
         if (epoch->next == 0) {
           //something freaked out numerically
@@ -518,9 +508,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         delete epoch;
         epoch = head_;
         pflow_arb_debug_print_l2("send not done yet");
-      }
-
-      else { //time_to_send = time_to_intersect
+      } else { //time_to_send = time_to_intersect
         //the queue is completely drained during the epoch
         epoch->truncate_after(time_to_send);
         //but we are not done yet - add the contributions

@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -170,11 +170,9 @@ mpi_queue::configure_send_request(mpi_message* mess, mpi_request* key)
   if (mess->protocol()->send_needs_nic_ack()) {
     send_needs_nic_ack_.push_back(req);
     return true;
-  }
-  else if (mess->protocol()->send_needs_eager_ack()) {
+  } else if (mess->protocol()->send_needs_eager_ack()) {
     send_needs_eager_ack_.push_back(req);
-  }
-  else if (mess->protocol()->send_needs_completion_ack()) {
+  } else if (mess->protocol()->send_needs_completion_ack()) {
     send_needs_completion_ack_[mess->unique_int()] = req;
   }
   return false;
@@ -208,11 +206,9 @@ mpi_queue::protocol(long bytes) const
 {
   if (bytes <= max_vshort_msg_size_) {
     return mpi_protocol::eager0_protocol;
-  }
-  else if (bytes <= max_eager_msg_size_) {
+  } else if (bytes <= max_eager_msg_size_) {
     return mpi_protocol::eager1_singlecpy_protocol;
-  }
-  else {
+  } else {
     return mpi_protocol::rendezvous_protocol;
   }
 }
@@ -459,8 +455,7 @@ mpi_queue::incoming_new_message(mpi_message* message)
           it++;
           handle_new_message(mess);
           ++next_inbound_[tid];
-        }
-        else {
+        } else {
           break;
         }
       }

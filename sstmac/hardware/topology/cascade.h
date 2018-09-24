@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -89,6 +89,10 @@ class cascade : public cartesian_topology
     } else {
       return x_dimension;
     }
+  }
+
+  bool is_global_port(uint16_t port) const {
+     return port >= (x_ + y_);
   }
 
   bool uniform_network_ports() const override {
@@ -173,9 +177,10 @@ class cascade : public cartesian_topology
   }
 
   void minimal_route_to_switch(
+      router* rtr,
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      routable::path &path) const override;
+      packet::path &path) const;
 
   int minimal_distance(switch_id src, switch_id dst) const override;
 
@@ -183,12 +188,8 @@ class cascade : public cartesian_topology
     return 5;
   }
 
-  virtual switch_id random_intermediate_switch(switch_id current_sw,
-                             switch_id dest_sw = switch_id(-1)) override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
-  virtual void new_routing_stage(routable* rtbl) override;
+  switch_id random_intermediate(router* rtr, switch_id current_sw,
+                             switch_id dest_sw, uint32_t seed);
 
   virtual void configure_geometric_paths(std::vector<int> &redundancies);
 
@@ -197,15 +198,14 @@ class cascade : public cartesian_topology
   switch_id switch_addr(const coordinates &coords) const override;
 
  protected:
-  virtual void find_path_to_group(int myX, int myY, int myG, int dstG,
-                     int& dstX, int& dstY,
-                     routable::path& path) const;
+  virtual void find_path_to_group(router* rtr, int myX, int myY, int myG, int dstG,
+                     int& dstX, int& dstY, packet::path& path) const;
 
-  bool find_y_path_to_group(int myX, int myG, int dstG, int& dstY,
-                       routable::path& path) const;
+  bool find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY,
+                       packet::path& path) const;
 
-  bool find_x_path_to_group(int myY, int myG, int dstG, int& dstX,
-                       routable::path& path) const;
+  bool find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX,
+                       packet::path& path) const;
 
   virtual bool xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
 

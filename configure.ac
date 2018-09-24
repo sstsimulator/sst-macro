@@ -1,9 +1,9 @@
 dnl 
 dnl   This file is part of SST/macroscale: 
 dnl                The macroscale architecture simulator from the SST suite.
-dnl   Copyright (c) 2009 Sandia Corporation.
+dnl   Copyright (c) 2009-2018 NTESS.
 dnl   This software is distributed under the BSD License.
-dnl   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+dnl   Under the terms of Contract DE-NA0003525 with NTESS,
 dnl   the U.S. Government retains certain rights in this software.
 dnl   For more information, see the LICENSE file in the top 
 dnl   SST/macroscale directory.
@@ -15,8 +15,8 @@ dnl
 #-------------------------------------------------
 
 # Version info, used both in library versioning and inside sstmacro.
-m4_define([SSTMAC_VERSION_TAG], 7)
-m4_define([SSTMAC_SUBVERSION_TAG], 2)
+m4_define([SSTMAC_VERSION_TAG], 8)
+m4_define([SSTMAC_SUBVERSION_TAG], 0)
 m4_define([SSTMAC_SUBSUBVERSION_TAG], 0)
 
 dnl Enable this for releases
@@ -64,8 +64,8 @@ dnl For new releases the following procedure is used to determine the new versio
 dnl If incompatible changes are made: CURRENT++, REVISION=0, AGE=0
 dnl else if interfaces are added: CURRENT++, REVISION=0, AGE++
 dnl else (no interface changes): REVISION++
-m4_define([SSTMAC_CURRENT_LIBVERS],  7)
-m4_define([SSTMAC_REVISION_LIBVERS], 1)
+m4_define([SSTMAC_CURRENT_LIBVERS],  8)
+m4_define([SSTMAC_REVISION_LIBVERS], 0)
 m4_define([SSTMAC_AGE_LIBVERS],      0)
 m4_define([SSTMAC_LIBVERSION_TAG],
           [SSTMAC_CURRENT_LIBVERS:SSTMAC_REVISION_LIBVERS:SSTMAC_AGE_LIBVERS])

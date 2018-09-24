@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -123,8 +123,7 @@ pinger::execute()
 
   if (arrived_){
     schedule_next();
-  }
-  else {
+  } else {
     failed_ = true;
     my_api_->declare_failed(dst_);
     //while (!functions_.empty()){
@@ -259,8 +258,7 @@ ping_monitor::message_received(message* msg)
     // call the timeout a little early
     my_ping->execute();
     pingers_.erase(ping_partner);
-  }
-  else {
+  } else {
     debug_printf(sumi_ping,
         "Rank %d, returned successful ping from %d : %s",
         api_->rank(), ping_partner,
@@ -300,8 +298,7 @@ ping_monitor::ping(int dst, timeout_function* func)
         api_->rank(), dst, func);
     my_ping = new pinger(api_, dst, timeout_); //just do a ms for now
     my_ping->start();
-  }
-  else if (my_ping->refcount() == 0){ //nobody is waiting on this anymore, but still waiting for last ping
+  } else if (my_ping->refcount() == 0){ //nobody is waiting on this anymore, but still waiting for last ping
     if (my_ping->has_arrived()){
       spkt_throw_printf(sprockit::illformed_error,
         "sumi_api::ping: Rank %d canceled ping to %d is arrived, but not deleted",
@@ -312,15 +309,13 @@ ping_monitor::ping(int dst, timeout_function* func)
         api_->rank(), dst, func);
     my_ping = new pinger(api_, dst, timeout_); //just do a ms for now
     my_ping->wait();
-  }
-  else if (my_ping->has_failed()){
+  } else if (my_ping->has_failed()){
     // the only way this happens is if our ping is started by the ping's failure
     //no need to ping this! - attach and be failed
     debug_printf(sumi_ping,
         "Rank %d attaching to failed ping %p to neighbor %d for function %p refcount=%d",
         api_->rank(), my_ping, dst, func, my_ping->refcount());
-  }
-  else {
+  } else {
     debug_printf(sumi_ping,
         "Rank %d attaching to existing ping %p to neighbor %d for function %p refcount=%d",
         api_->rank(), my_ping, dst, func, my_ping->refcount());
@@ -346,8 +341,7 @@ ping_monitor::cancel_ping(int dst, timeout_function* func)
         "Rank %d erasing ping to neighbor %d for function %p ",
         api_->rank(), dst, func);
     pingers_.erase(dst);
-  }
-  else {
+  } else {
     debug_printf(sumi_ping,
        "Rank %d not erasing ping to neighbor %d for function %p with refcount %d: arrived? %d failed %d ",
        api_->rank(), dst, func, my_ping->refcount(), my_ping->has_arrived(), my_ping->has_failed());

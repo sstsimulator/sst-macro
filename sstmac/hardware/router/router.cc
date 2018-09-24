@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -64,30 +64,51 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-router::router(sprockit::sim_parameters* params,
-  topology *top, network_switch *sw, routing::algorithm_t algo)
- : top_(top), netsw_(sw), algo_(algo), max_num_vc_(0)
+router::router(sprockit::sim_parameters* params, topology *top, network_switch *sw)
+ : top_(top), netsw_(sw), rng_(nullptr)
 {
-  init_vc();
   my_addr_ = switch_id(params->get_int_param("id"));
+  std::vector<RNG::rngint_t> seeds(2);
+  seeds[0] = 42;
+  if (params->has_param("seed")) {
+    seed_ = params->get_long_param("seed");
+    seeds[1] = seed_;
+    debug_seed_ = true;
+  } else {
+    seeds[1] = time(NULL);
+    debug_seed_ = false;
+  }
+  rng_ = RNG::MWC::construct(seeds);
+}
+
+switch_id
+router::random_intermediate_switch(switch_id current, switch_id dest, uint32_t seed)
+{
+  switch_id sid = current;
+  uint32_t attempt = 0;
+  while (current == sid) {
+    sid = random_number(top_->num_switches(), attempt, seed);
+    ++attempt;
+  }
+  return sid;
+}
+
+uint32_t
+router::random_number(uint32_t max, uint32_t attempt, uint32_t seed) const
+{
+  if (debug_seed_){
+    std::vector<RNG::rngint_t> seeds(2);
+    uint32_t time = seed;
+    seeds[1] = seed_ * (time+31) << (attempt + 5);
+    seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
+    rng_->vec_reseed(seeds);
+  }
+  return rng_->value_in_range(max);
 }
 
 router::~router()
 {
-}
-
-void
-router::init_vc()
-{
-  max_num_vc_ = 0;
-  top_->configure_vc_routing(num_vc_lookup_);
-  auto iter = num_vc_lookup_.find(algo_);
-  if (iter == num_vc_lookup_.end()){
-    spkt_throw_printf(sprockit::value_error,
-                      "invalid routing algorithm %s for given router",
-                      routing::tostr(algo_));
-  }
-  max_num_vc_ = iter->second;
+  if (rng_) delete rng_;
 }
 
 void
@@ -100,44 +121,9 @@ router::compatibility_check() const
 }
 
 switch_id
-router::find_ejection_site(node_id node_addr, routable::path &path) const
+router::find_ejection_site(node_id node_addr, packet::path &path) const
 {
   return top_->node_to_ejection_switch(node_addr, path.outport());
-}
-
-void
-router::route(packet *pkt)
-{
-  routable* rtbl = pkt->interface<routable>();
-  routable::path& path = rtbl->current_path();
-  switch_id sid = find_ejection_site(pkt->toaddr(), path);
-  if (sid == my_addr_){
-    configure_ejection_path(path);
-    rter_debug("Ejecting %s from switch %d on port %d",
-               pkt->to_string().c_str(), sid, path.outport());
-  } else {
-    route_to_switch(sid, path);
-    rter_debug("Routing %s to switch %d on port %d",
-               pkt->to_string().c_str(), sid, path.outport());
-  }
-}
-
-routing::algorithm_t
-router::str_to_algo(const std::string &str)
-{
-  if (str == "minimal") {
-    return routing::minimal;
-  } else if (str == "valiant") {
-    return routing::valiant;
-  } else if (str == "min_ad") {
-    return routing::minimal_adaptive;
-  } else if (str == "ugal") {
-    return routing::ugal;
-  } else {
-    spkt_throw_printf(sprockit::input_error,
-                     "invalid routing algorithm %s",
-                     str.c_str());
-  }
 }
 
 }

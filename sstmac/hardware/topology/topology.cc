@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE && SSTMAC_HAVE_MPI_H
+#if SSTMAC_INTEGRATED_SST_CORE && SSTMAC_HAVE_VALID_MPI
 #include <mpi.h>
 #endif
 
@@ -69,6 +69,7 @@ RegisterKeywords(
 { "concentration", "the number of nodes per switch" },
 { "network_nodes_per_switch", "DEPRECATED: the number of nodes per switch" },
 { "auto", "whether to auto-generate topology based on app size"},
+{ "output_graph", "enable dot format topology graph generation by specifying an output filename"},
 );
 
 RegisterDebugSlot(topology,
@@ -102,34 +103,23 @@ topology::node_to_logp_switch(node_id nid) const
 }
 #endif
 
-topology::topology(sprockit::sim_parameters* params) :
-  rng_(nullptr)
+topology::topology(sprockit::sim_parameters* params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-#if SSTMAC_HAVE_MPI_H
+#if SSTMAC_HAVE_VALID_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 #else
   nproc = 1;
 #endif
 #endif
-  std::vector<RNG::rngint_t> seeds(2);
-  seeds[0] = 42;
-  if (params->has_param("seed")) {
-    seed_ = params->get_long_param("seed");
-    seeds[1] = seed_;
-    debug_seed_ = true;
-  } else {
-    seeds[1] = time(NULL);
-    debug_seed_ = false;
-  }
-  rng_ = RNG::MWC::construct(seeds);
-
   main_top_ = this;
+
+  if (params->has_param("output_graph"))
+    dot_file_ = params->get_param("output_graph");
 }
 
 topology::~topology()
 {
-  if (rng_) delete rng_;
 }
 
 topology*
@@ -143,42 +133,6 @@ topology::static_topology(sprockit::sim_parameters* params)
     static_topology_ = topology::factory::get_param("name", top_params);
   }
   return static_topology_;
-}
-
-uint32_t
-topology::random_number(uint32_t max, uint32_t attempt) const
-{
-#if SSTMAC_USE_MULTITHREAD
-  static thread_lock lock;
-  lock.lock();
-#endif
-  if (debug_seed_){
-    std::vector<RNG::rngint_t> seeds(2);
-    uint32_t time = 42;
-    seeds[1] = seed_ * (time+31) << (attempt + 5);
-    seeds[0] = (time+5)*7 + seeds[0]*attempt*42 + 3;
-    rng_->vec_reseed(seeds);
-  } 
-  uint32_t result = rng_->value_in_range(max);
-#if SSTMAC_USE_MULTITHREAD
-  lock.unlock();
-#endif
-  return result;
-}
-
-switch_id
-topology::random_intermediate_switch(switch_id current, switch_id dest)
-{
-  static thread_lock lock;
-  lock.lock();  //need to be thread safe
-  long nid = current;
-  uint32_t attempt = 0;
-  while (current == nid) {
-    nid = random_number(num_switches(), attempt); 
-    ++attempt;
-  }
-  lock.unlock();
-  return switch_id(nid);
 }
 
 sprockit::sim_parameters*
@@ -209,7 +163,15 @@ topology::get_port_params(sprockit::sim_parameters *params, int port)
 void
 topology::output_graphviz(const std::string& file)
 {
-  std::ofstream out(file.c_str());
+  std::string file_non_const;
+  if (file.size())
+    file_non_const = file;
+  else if (dot_file_.size())
+    file_non_const = dot_file_;
+  if (file_non_const.size() == 0)
+    return;
+
+  std::ofstream out(file_non_const.c_str());
   out << "graph {\n";
 
   int nsw = num_switches();
@@ -275,15 +237,6 @@ topology::cart_topology() const
 {
   sprockit::abort("topology::cart_topology: cannot cast to cartesian topology");
   return nullptr;
-}
-
-void
-topology::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 1;
-  m[routing::ugal] = 1;
 }
 
 std::string
@@ -372,24 +325,17 @@ class merlin_topology : public topology {
     return -1;
   }
 
-  switch_id
-  netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
+  switch_id netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-  }
-
-  switch_id
-  node_to_ejection_switch(node_id addr, uint16_t& port) const override {
+  switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
 
-  switch_id
-  node_to_injection_switch(node_id addr, uint16_t& port) const override {
+  switch_id node_to_injection_switch(node_id addr, uint16_t& port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }
@@ -443,13 +389,6 @@ class merlin_topology : public topology {
   bool node_id_slot_filled(node_id nid) const override{
     spkt_abort_printf("merlin topology functions should never be called");
     return false;
-  }
-
-  void minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    routable::path& path) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
   }
 
   bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {

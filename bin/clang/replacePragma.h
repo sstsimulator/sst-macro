@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -127,9 +127,8 @@ class SSTReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("replace", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("replace", plist, CI, visitor){}
 
   static std::string
   parse(clang::CompilerInstance& CI, clang::SourceLocation loc,
@@ -146,9 +145,8 @@ class SSTInsteadPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTInsteadPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("instead", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("instead", plist, CI, visitor){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,
@@ -161,9 +159,8 @@ class SSTInitPragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTInitPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("init", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("init", plist, CI, visitor){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc,
@@ -176,9 +173,8 @@ class SSTStartReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTStartReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("start_replace", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("start_replace", plist, CI, visitor){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, 
@@ -190,9 +186,8 @@ class SSTStopReplacePragmaHandler : public SSTTokenStreamPragmaHandler
  public:
   SSTStopReplacePragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
-                        SkeletonASTVisitor& visitor,
-                        std::set<clang::Stmt*>& deld) :
-     SSTTokenStreamPragmaHandler("stop_replace", plist, CI, visitor, deld){}
+                        SkeletonASTVisitor& visitor) :
+     SSTTokenStreamPragmaHandler("stop_replace", plist, CI, visitor){}
 
  private:
   SSTPragma* allocatePragma(clang::SourceLocation loc, 

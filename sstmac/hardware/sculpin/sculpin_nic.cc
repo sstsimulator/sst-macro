@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/network/network_message.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/sculpin/sculpin_nic.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/software/process/operating_system.h>
@@ -111,6 +110,7 @@ sculpin_nic::~sculpin_nic() throw ()
   delete ack_handler_;
   delete payload_handler_;
 #endif
+  if (inj_link_) delete inj_link_;  
 }
 
 link_handler*
@@ -167,6 +167,8 @@ sculpin_nic::connect_input(
   event_link* link)
 {
   //nothing to do
+  //but we own the link now so have to delete it
+  delete link;
 }
 
 void
@@ -197,7 +199,7 @@ sculpin_nic::do_send(network_message* payload)
     inj_next_free_ += time_to_send;
     pkt_debug("packet injecting at t=%8.4e: %s",
               inj_next_free_.sec(), pkt->to_string().c_str());
-    pkt->set_departure(inj_next_free_);
+    pkt->set_time_to_send(time_to_send);
     inj_link_->send_extra_delay(extra_delay, pkt);
   }
 
@@ -215,26 +217,38 @@ sculpin_nic::cq_handle(sculpin_packet* pkt)
   if (msg){
     recv_message(msg);
   }
+  delete pkt;
+}
+
+void
+sculpin_nic::eject(sculpin_packet* pkt)
+{
+  timestamp now_ = now();
+  if (now_ > ej_next_free_){
+    ej_next_free_ = now_;
+  }
+  pkt_debug("incoming packet - ejection next free at t=%8.4e: %s",
+            ej_next_free_.sec(), pkt->to_string().c_str());
+  timestamp time_to_send = pkt->byte_length() * inj_inv_bw_;
+  ej_next_free_ = ej_next_free_ + time_to_send;
+  auto qev = new_callback(this, &sculpin_nic::cq_handle, pkt);
+  send_self_event_queue(ej_next_free_, qev);
 }
 
 void
 sculpin_nic::handle_payload(event *ev)
 {
   sculpin_packet* pkt = static_cast<sculpin_packet*>(ev);
-  timestamp now_ = now();
-  if (now_ > ej_next_free_){
-    ej_next_free_ = now_;
-  }
 
-  pkt_debug("incoming packet - ejection next free at t=%8.4e: %s",
-            ej_next_free_.sec(), pkt->to_string().c_str());
-
-  timestamp first_possible_send = std::max(pkt->departure(), ej_next_free_);
   timestamp time_to_send = pkt->byte_length() * inj_inv_bw_;
-  ej_next_free_ = first_possible_send + time_to_send;
-
-  auto qev = new_callback(this, &sculpin_nic::cq_handle, pkt);
-  send_self_event_queue(ej_next_free_, qev);
+  if (time_to_send < pkt->time_to_send()){
+    //tail flit cannot arrive here before it leaves the prev switch
+    auto ev = new_callback(this, &sculpin_nic::eject, pkt);
+    timestamp delta_t = pkt->time_to_send() - time_to_send;
+    send_delayed_self_event_queue(delta_t, ev);
+  } else {
+    eject(pkt);
+  }
 }
 
 void

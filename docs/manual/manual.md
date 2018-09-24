@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 7.1.x
+title: Manual for SST-Macro 8.0.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 7.2 User's Manual
+# SST/macro 8.0 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -102,7 +102,7 @@ category: SSTDocumentation
       - [Section 5.1: Basic Application porting](#sec:skel:basic)
          - [5.1.1: Loading external skeletons with the standalone core](#subsec:externalAppStandalone)
          - [5.1.2: Loading external skeletons with the integrated core](#subsec:linkageCore)
-      - [Section 5.2: Auto-skeletonization with Clang (Beta)](#sec:autoSkeletonization)
+      - [Section 5.2: Auto-skeletonization with Clang](#sec:autoSkeletonization)
          - [5.2.1: Skeletonization Issues](#subsec:skeletonIssues)
       - [Section 5.3: Process Encapsulation](#sec:processEncapsulation)
    - [Chapter 6: Clang Source-to-Source Auto-Skeletonization via Pragmas](#clangTutorial)
@@ -2098,7 +2098,7 @@ node {
   otf2_print_mpi_calls=false
   otf2_print_trace_events=false
   otf2_print_time_deltas=false
-  otf2_warn_unknown_callback=false
+  otf2_print_unknown_callback=false
  }
 }
 ````
@@ -3003,7 +3003,7 @@ the generate shared library files can be added as the first parameters to the `p
 shell>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
 ```` 
 
-### Section 5.2: Auto-skeletonization with Clang (Beta)<a name="sec:autoSkeletonization"></a>
+### Section 5.2: Auto-skeletonization with Clang<a name="sec:autoSkeletonization"></a>
 
 
 
@@ -3053,7 +3053,6 @@ for (int i=0; i < N; ++i){
 The SST compiler deduces 16N bytes read, 8N bytes written, and 16N flops (or 8N if fused-multiplies are enabled).
 Based on processor speed and memory speed, it then estimates how long the kernel will take without actually executing the loop.
 If not wanting to use OpenMP in the code, `#pragma sst compute` can be used instead of `#pragma omp parallel`.
-
 
 \subsection{Special Pragmas}
 Many special cases can arise that break skeletonization.
@@ -3414,6 +3413,9 @@ Consider an example from CoMD:
 Inside the compute block, a compute may or may not occur depending on whether a particle distance is less than a cutoff.
 Based on the way CoMD constructs unit cells and halo regions, running CoMD shows that about 1 in 5 neighbor interactions are actually below the cutoff.
 Thus we given the branch prediction the hint 0.2.
+
+\subsection{pragma sst advance\_time [units] [time to advance by]}
+This pragma advances the simulator time by the specified amounts of time. It can be placed before any statement. The units can be the following: sec, msec, usec or nsec for Seconds, milliseconds, microseconds and nanoseconds respectively. 
 
 
 \chapter{Issues and Limitations}

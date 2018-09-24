@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -109,6 +109,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   topology_ = topology::static_topology(params);
   num_nodes_ = topology_->num_nodes();
   num_switches_ = topology_->num_switches();
+  num_leaf_switches_ = topology_->num_leaf_switches();
   runtime::set_topology(topology_);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
@@ -139,8 +140,12 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   netlinks_.resize(top->max_netlink_id());
 
   sprockit::sim_parameters logp_params;
-  logp_param_expander expander;
-  expander.expand_into(&logp_params, params, switch_params);
+  if (logp_model){
+    switch_params->combine_into(&logp_params);
+  } else {
+    logp_param_expander expander;
+    expander.expand_into(&logp_params, params, switch_params);
+  }
 
   logp_switches_.resize(rt_->nthread());
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->num_nodes() + top->num_switches();
@@ -348,7 +353,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
 
   int my_rank = rt_->me();
 
-  for (int i=0; i < num_switches_; ++i){
+  for (int i=0; i < num_leaf_switches_; ++i){
     switch_id sid(i);
     int thread = partition_->thread_for_switch(i);
     int target_rank = partition_->lpid_for_switch(sid);

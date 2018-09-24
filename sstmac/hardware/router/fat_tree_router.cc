@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -43,12 +43,13 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/router/fat_tree_router.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <cmath>
+
+using namespace std;
 
 #define ftree_rter_debug(...) \
   rter_debug("fat tree: %s", sprockit::printf(__VA_ARGS__).c_str())
@@ -56,129 +57,147 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-fat_tree_router::fat_tree_router(sprockit::sim_parameters* params, topology *top,
-                                 network_switch *netsw) :
-  router(params, top, netsw, routing::minimal),
-  rng_(nullptr)
+fat_tree_router::fat_tree_router(
+    sprockit::sim_parameters* params,
+    topology *top,
+    network_switch *netsw) :
+  router(params, top, netsw)
 {
-  ftree_ = safe_cast(fat_tree, top);
-  k_ = ftree_->k();
-  l_ = ftree_->l();
-  seed_ = params->get_optional_long_param("router_seed", -1);
-  build_rng();
-
-  int switchesperlevel = pow(k_, l_ - 1);
-  myL_ = my_addr_ / switchesperlevel;
-
-  num_leaf_switches_reachable_ = pow(k_, myL_);
-  num_leaf_switches_per_path_ = num_leaf_switches_reachable_ / k_;
-  int level_relative_id = my_addr_ - myL_ * switchesperlevel;
-
-  int my_leaf_group = level_relative_id / num_leaf_switches_reachable_;
-  min_reachable_leaf_id_ = my_leaf_group * num_leaf_switches_reachable_;
-  max_reachable_leaf_id_ = min_reachable_leaf_id_ + num_leaf_switches_reachable_;
-
-  numpicked_ = 0;
-  numpicktop_ = 0;
+  ft_ = safe_cast(fat_tree, top);
 }
 
 void
-fat_tree_router::build_rng()
-{
-  long seed = 0;
-  if (seed_ == -1){
-    seed = time(NULL);
-  } else {
-    seed = seed_;
-  }
+fat_tree_router::route(packet* pkt) {
 
-  std::vector<RNG::rngint_t> seeds;
-  seeds.push_back(seed);
-  rng_ = RNG::Combo::construct(seeds);
-}
+  int output_port;
+  packet::path& path = pkt->current_path();
+  switch_id dst = find_ejection_site(pkt->toaddr(), path);
 
-fat_tree_router::~fat_tree_router()
-{
-  if (rng_) delete rng_;
-}
-
-#if 0
-void
-fat_tree_router::productive_paths_to_switch(
-  switch_id dst, structured_routable::path_set &paths)
-{
-  structured_routable::path tmp_path;
-  minimal_route_to_switch(dst, tmp_path);
-  int dim = tmp_path.outport() / k_;
-  int dir = tmp_path.outport() % k_;
-  if (dim == fat_tree::down_dimension) {
-    //we have no choice - only one path down is correct
-    paths.resize(1);
-    paths[0] = tmp_path;
-  }
-  else {
-    // we have k productive paths up
-    paths.resize(k_);
-    for (int i=0; i < k_; ++i) {
-      //paths[i].dim = fat_tree::up_dimension;
-      //paths[i].dir = i;
-      paths[i].vc = 0;
-      paths[i].set_outport(ftree_->up_port(i));
-    }
-  }
-}
-#endif
-
-void
-fat_tree_router::route_to_switch(
-  switch_id ej_addr,
-  routable::path& path)
-{
-  int pathDir;
-  int ej_id = ej_addr;
-  int myAddr = my_addr_;
-  if (ej_id >= min_reachable_leaf_id_ && ej_id < max_reachable_leaf_id_) {
-    path.vc = 1;
-    long relative_ej_id = ej_id - min_reachable_leaf_id_;
-    pathDir = relative_ej_id / num_leaf_switches_per_path_;
-    ftree_rter_debug("routing down with dir %d: eject-id=%ld rel-eject-id=%ld",
-        pathDir, ej_id, relative_ej_id);
-    path.set_outport(ftree_->down_port(pathDir));
-  }
-  else {
-    //route up
-    pathDir = choose_up_minimal_path();
-    path.set_outport(ftree_->up_port(pathDir));
+  // already there
+  if (dst == my_addr_){
     path.vc = 0;
-    ftree_rter_debug("routing up with dir %d", pathDir);
+    rter_debug("Ejecting %s from switch %d on port %d",
+               pkt->to_string().c_str(), dst, path.outport());
+  } else { // have to route
+    int my_level = ft_->level(my_addr_);
+    int dst_level = ft_->level(dst);
+    int my_tree = ft_->subtree(my_addr_);
+    int dst_tree = ft_->subtree(dst);
+
+    //definitely have to go up
+    if (dst_level >= my_level){
+      output_port = get_up_port();
+      path.set_outport(output_port);
+      path.vc = 0;
+      rter_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
+                int(dst), dst_level, int(my_addr_), my_level);
+    } else if (my_level == 2){     // definitely have to go down
+      output_port = get_core_down_port(dst_tree);
+      path.set_outport(output_port);
+      path.vc = 0;
+      rter_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
+                int(dst), dst_level, int(my_addr_), my_level);
+    } else if (my_level == 1){ // aggregator level, can go either way
+      // in the right tree, going down
+      if (dst_tree == my_tree) {
+        output_port = get_agg_down_port(dst);
+        path.set_outport(output_port);
+        path.vc = 0;
+        rter_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d",
+                  int(dst), dst_level, int(my_addr_), my_level);
+      } else { //nope, have to go to core to hop over to other tree
+        int next_tree = ft_->core_subtree();
+        output_port = get_up_port();
+        path.set_outport(output_port);
+        path.vc = 0;
+        rter_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
+                  int(dst), dst_level, int(my_addr_), my_level);
+      }
+    }
+
+    rter_debug("Routing %s to switch %d on port %d",
+               pkt->to_string().c_str(), int(dst), path.outport());
   }
+
 }
 
+void
+fat_tree_router::rotate_up_next() {
+  ++up_next_;
+  if (up_next_ >= up_fwd_.size())
+    up_next_ = 0;
+}
+
+void
+fat_tree_router::rotate_subtree_next(int tree) {
+  ++subtree_next_[tree];
+  if (subtree_next_[tree] >= subtree_fwd_[tree].size())
+    subtree_next_[tree] = 0;
+}
+
+void
+fat_tree_router::rotate_leaf_next(int leaf) {
+  ++leaf_next_[leaf];
+  if (leaf_next_[leaf] >= leaf_fwd_[leaf].size())
+    leaf_next_[leaf] = 0;
+}
+
+// up is easy -- any "up" port goes up
 int
-fat_tree_router::choose_up_minimal_path()
-{
-  int ret = numpicked_;
-  numpicked_ = (numpicked_ + 1) % k_;
-  return ret;
+fat_tree_router::get_up_port() {
+  if (up_fwd_.size() == 0) {
+    // haven't forwarded up yet
+    int n_up = ft_->num_up_ports(my_addr_);
+    int first_up = ft_->first_up_port(my_addr_);
+    for (int i=0; i<n_up; ++i)
+      up_fwd_.push_back(first_up + i);
+      up_next_ = 0;
+  }
+  int port = up_fwd_[up_next_];
+  rotate_up_next();
+  return port;
 }
 
+// going down from core
+// we can use any port that puts us on the correct subtree
 int
-fat_tree_router::number_minimal_paths(packet* pkt) const
-{
-  switch_id ej_addr = top_->netlink_to_ejection_switch(pkt->toaddr());
-  long ej_id = ej_addr;
-  if (ej_addr == my_addr_) {
-    return 1;
+fat_tree_router::get_core_down_port(int next_tree) {
+  auto ports = subtree_fwd_.find(next_tree);
+  if (ports == subtree_fwd_.end()) {
+    // haven't forwarded to subtree yet
+    ft_->connected_core_down_ports(
+          my_addr_,next_tree,subtree_fwd_[next_tree]);
+    subtree_next_[next_tree] = 0;
+    ports = subtree_fwd_.find(next_tree);
+    if (ports == subtree_fwd_.end())
+      spkt_throw_printf(sprockit::value_error,
+            "can't find subtree forwarding table");
   }
-  else if (ej_id >= min_reachable_leaf_id_ && ej_id < max_reachable_leaf_id_) {
-    return 1;
-  }
-  else {
-    //route up
-    return k_;
-  }
+  int port = ports->second.at(subtree_next_[next_tree]);
+  rotate_subtree_next(next_tree);
+  return port;
 }
 
+// going down from aggregator
+// we can use any port that puts us on the correct switch
+// (possibly but not necessarily redundant links)
+int
+fat_tree_router::get_agg_down_port(int dst_leaf) {
+  auto ports = leaf_fwd_.find(dst_leaf);
+  if (ports == leaf_fwd_.end()) {
+    // haven't forwarded to this leaf yet
+    ft_->connected_agg_down_ports(
+          my_addr_,dst_leaf,leaf_fwd_[dst_leaf]);
+    leaf_next_[dst_leaf] = 0;
+    ports = leaf_fwd_.find(dst_leaf);
+    if (ports == leaf_fwd_.end())
+      spkt_throw_printf(sprockit::value_error,
+                        "can't find leaf forwarding table");
+  }
+  int port = ports->second.at(leaf_next_[dst_leaf]);
+  rotate_leaf_next(dst_leaf);
+  return port;
+}
 
 }
 }

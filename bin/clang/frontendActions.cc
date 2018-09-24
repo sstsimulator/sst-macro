@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -57,7 +57,7 @@ using namespace clang::driver;
 using namespace clang::tooling;
 
 ReplaceAction::ReplaceAction() :
-  visitor_(rewriter_, globalNs_, deletedStmts_, prgConfig_)
+  visitor_(rewriter_, globalNs_, prgConfig_)
 {
 }
 
@@ -101,7 +101,7 @@ ReplaceAction::ExecuteAction()
   //okay, super annoying - I have to DELETE the openmp handlers
   DeleteOpenMPPragma deleter; ci_->getPreprocessor().RemovePragmaHandler(&deleter);
   ci_->getPreprocessor().AddPragmaHandler("omp", new SSTOpenMPParallelPragmaHandler(
-                     visitor_.getPragmas(), *ci_, visitor_, deletedStmts_)); //and put it back
+                     visitor_.getPragmas(), *ci_, visitor_)); //and put it back
 
   S.getPreprocessor().EnterMainSourceFile();
   P.Initialize();
@@ -132,59 +132,73 @@ ReplaceAction::ExecuteAction()
   Consumer.HandleTranslationUnit(S.getASTContext());
 }
 
+struct PragmaPPCallback : public PPCallbacks {
+
+  void PragmaDirective(SourceLocation Loc, PragmaIntroducerKind Introducer) override {
+    SSTPragmaHandler::pragmaDirectiveLoc = Loc;
+  }
+
+};
+
 void
 ReplaceAction::initPragmas(CompilerInstance& CI)
 {
+  CI.getPreprocessor().addPPCallbacks(llvm::make_unique<PragmaPPCallback>());
+
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTDeletePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTDeletePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTMallocPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTMallocPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTNewPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTNewPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTComputePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTAlwaysComputePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTAlwaysComputePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTStartReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTStartReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTStopReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTStopReplacePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTKeepPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTKeepPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTNullVariablePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTNullVariablePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTLoopCountPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTLoopCountPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTInitPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTInitPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTReturnPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTReturnPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTGlobalVariablePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTGlobalVariablePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTNullTypePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTNullTypePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTEmptyPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTEmptyPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTKeepIfPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTKeepIfPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTMemoryPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTMemoryPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTInsteadPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTInsteadPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTBranchPredictPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTBranchPredictPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTCallFunctionPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTCallFunctionPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTOverheadPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTOverheadPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTAdvanceTimePragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTAdvanceTimePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTNonnullFieldsPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTNonnullFieldsPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
-    new SSTNullFieldsPragmaHandler(visitor_.getPragmas(), CI, visitor_, deletedStmts_));
+    new SSTNullFieldsPragmaHandler(visitor_.getPragmas(), CI, visitor_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTNullVariableGeneratorPragmaHandler(visitor_.getPragmas(), CI, visitor_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTNullVariableStopPragmaHandler(visitor_.getPragmas(), CI, visitor_));
 }
 
 void

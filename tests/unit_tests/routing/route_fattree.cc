@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -54,24 +54,33 @@ test_fattree4(UnitTest& unit)
 {
   sprockit::sim_parameters params;
   sstmac::env::params = &params;
-  params["geometry"] = "3 4";
-  params["branching"] = "4";
-  params["num_levels"] = "3";
-  params["router.name"] = "fattree";
-  params["name"] = "fattree";
+  params["num_core_switches"] = "4";
+  params["down_ports_per_core_switch"] = "16";
+  params["num_agg_subtrees"] = "4";
+  params["agg_switches_per_subtree"] = "4";
+  params["up_ports_per_agg_switch"] = "4";
+  params["down_ports_per_agg_switch"] = "4";
+  params["leaf_switches_per_subtree"] = "4";
+  params["up_ports_per_leaf_switch"] = "4";
+  params["router.name"] = "fat_tree";
+  params["name"] = "fat_tree";
   test_topology(params);
 }
 
 void
-test_fattree2(UnitTest& unit)
+test_fattree_min(UnitTest& unit)
 {
   sprockit::sim_parameters params;
   sstmac::env::params = &params;
-  params["geometry"] = "5 2";
-  params["branching"] = "2";
-  params["num_levels"] = "5";
-  params["concentration"] = "2";
-  params["router.name"] = "fattree";
-  params["name"] = "fattree";
+  params["num_core_switches"] = "4";
+  params["down_ports_per_core_switch"] = "16";
+  params["num_agg_subtrees"] = "4";
+  params["agg_switches_per_subtree"] = "4";
+  params["up_ports_per_agg_switch"] = "4";
+  params["down_ports_per_agg_switch"] = "4";
+  params["leaf_switches_per_subtree"] = "4";
+  params["up_ports_per_leaf_switch"] = "4";
+  params["router.name"] = "fat_tree_minimal";
+  params["name"] = "fat_tree";
   test_topology(params);
 }

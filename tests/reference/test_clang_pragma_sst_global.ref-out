@@ -13,6 +13,7 @@ template <class T> B A<T>::x;template <class T> int A<T>::__offset_x = sstmac::i
 template <class T>
 void
 A<T>::fxn(){
+
  this->x_getter().fxn();
   decltype(A<T>::x) var;
 }

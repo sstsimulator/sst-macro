@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/hardware/router/routing_enum.h>
-#include <sstmac/hardware/router/routable.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -67,7 +66,6 @@ namespace hw {
  */
 class sculpin_packet :
   public packet,
-  public routable,
   public sprockit::thread_safe_new<sculpin_packet>
 {
   ImplementSerializable(sculpin_packet)
@@ -87,29 +85,8 @@ class sculpin_packet :
 
   virtual ~sculpin_packet() {}
 
-  node_id toaddr() const override {
-   return routable::toaddr();
-  }
-
-  node_id fromaddr() const override {
-    return routable::fromaddr();
-  }
-
-  uint64_t flow_id() const override {
-    return flow_id_;
-  }
-
-  /**
-   @return The number of bytes in this pisces, NOT
-   the total number of bytes in the parent message.
-   See #num_bytes_total
-   */
-  uint32_t num_bytes() const {
-    return num_bytes_;
-  }
-
   int next_port() const {
-    return routable::global_outport();
+    return global_outport();
   }
 
   timestamp arrival() const {
@@ -120,12 +97,12 @@ class sculpin_packet :
     arrival_ = time;
   }
 
-  timestamp departure() const {
-    return departure_;
+  timestamp time_to_send() const {
+    return time_to_send_;
   }
 
-  void set_departure(timestamp time) {
-    departure_ = time;
+  void set_time_to_send(timestamp time) {
+    time_to_send_ = time;
   }
 
   int priority() const {
@@ -147,13 +124,11 @@ class sculpin_packet :
   void serialize_order(serializer& ser) override;
 
  private:
-  uint64_t flow_id_;
-
   uint32_t seqnum_;
 
   timestamp arrival_;
 
-  timestamp departure_;
+  timestamp time_to_send_;
 
   int priority_;
 

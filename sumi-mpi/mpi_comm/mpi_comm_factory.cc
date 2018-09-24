@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -252,10 +252,13 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   sstmac::sw::api_unlock();
 
   //just model the allgather
-  parent_->allgather(NULL, 3, MPI_INT,
-                     NULL, 3, MPI_INT,
-                     caller->id());
 
+  auto* op = parent_->start_allgather("MPI_Comm_split_allgather", caller->id(),
+                                                3, MPI_INT,
+                                                3, MPI_INT,
+                                                nullptr, nullptr);
+  parent_->wait_collective(op);
+  delete op;
 #endif
 
   mpi_comm* ret;
@@ -336,8 +339,7 @@ mpi_comm_factory::create_cart(mpi_comm* caller, int ndims,
   if (newrank >= 0) {
     return new mpi_comm_cart(cid, newrank, caller->group_,
                      aid_, ndims, dims, periods, reorder);
-  }
-  else {
+  } else {
     return mpi_comm::comm_null;
   }
 }

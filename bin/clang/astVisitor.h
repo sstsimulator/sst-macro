@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -77,8 +77,7 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
   FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
                      PragmaConfig& cfg);
 
-  bool VisitFieldDecl(clang::FieldDecl* d);
-  bool TraverseDecl(clang::Decl* d);
+  bool VisitDecl(clang::Decl* d);
   bool VisitStmt(clang::Stmt* s);
 
  private:
@@ -138,9 +137,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
  public:
   SkeletonASTVisitor(clang::Rewriter &R,
                      GlobalVarNamespace& ns,
-                     std::set<clang::Stmt*>& deld,
                      PragmaConfig& cfg) :
-    rewriter_(R), visitingGlobal_(false), deletedStmts_(deld),
+    rewriter_(R), visitingGlobal_(false),
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0), activeBinOpIdx_(-1),
     foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
@@ -165,6 +163,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   PragmaConfig& getPragmaConfig() {
     return pragmaConfig_;
   }
+
+  void deletePragmaText(SSTPragma* prg, clang::Stmt* s);
+  void deletePragmaText(SSTPragma* prg, clang::Decl* d);
+
 
   clang::CompilerInstance& getCompilerInstance() {
     return *ci_;
@@ -269,6 +271,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool visitVarDecl(clang::VarDecl* D);
 
   bool TraverseVarDecl(clang::VarDecl* D);
+
+  bool TraverseVarTemplateDecl(clang::VarTemplateDecl* D);
 
   /**
    * @brief Activate any pragmas associated with this.
@@ -482,7 +486,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   SSTPragmaList pragmas_;
   bool visitingGlobal_;
   std::set<clang::FunctionDecl*> templateDefinitions_;
-  std::set<clang::Stmt*>& deletedStmts_;
   std::list<clang::CXXConstructorDecl*> ctorContexts_;
   GlobalVarNamespace& globalNs_;
   GlobalVarNamespace* currentNs_;
@@ -653,6 +656,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<clang::Decl*> assignments_;
   std::list<clang::Expr*> activeDerefs_;
   std::list<clang::IfStmt*> activeIfs_;
+  //most deletions are tracked through exceptions
+  //however, sometimes a call expr must "lookahead" and delete arguments before
+  //they are traversed in the natural course of AST traversal
+  //note here any arguments that are modified/deleted
+  std::set<clang::Expr*> deletedArgs_;
   std::list<clang::MemberExpr*> memberAccesses_;
   std::map<clang::Stmt*,clang::Stmt*> extendedReplacements_;
   std::set<clang::DeclContext*> innerStructTagsDeclared_;
@@ -709,6 +717,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
       }
     }
 
+    void reactivate(clang::Decl* d, SSTPragma* prg){
+      ++visitor_->pragmaConfig_.pragmaDepth;
+      activePragmas_.push_back(prg);
+      prg->activate(d, visitor_->rewriter_, visitor_->pragmaConfig_);
+    }
+
     ~PragmaActivateGuard();
 
     bool skipVisit() const {
@@ -724,6 +738,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
         //pragma takes precedence - must occur in pre-visit
         activePragmas_.push_back(prg);
         prg->activate(t, visitor_->rewriter_, visitor_->pragmaConfig_);
+        visitor_->deletePragmaText(prg, t);
       }
     }
 
@@ -746,6 +761,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::list<int> initIndices_;
   std::list<clang::FieldDecl*> activeFieldDecls_;
   std::list<std::set<const clang::Decl*>> globalsTouched_;
+  std::set<std::string> sstmacFxnPrepends_;
 
   typedef void (SkeletonASTVisitor::*MPI_Call)(clang::CallExpr* expr);
   std::map<std::string, MPI_Call> mpiCalls_;

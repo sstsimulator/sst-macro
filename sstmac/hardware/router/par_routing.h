@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -42,54 +42,34 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/pisces/packet_allocator.h>
-#include <sstmac/hardware/pisces/pisces.h>
-#include <sstmac/hardware/router/routable.h>
-#include <sprockit/sim_parameters.h>
-#include <sstmac/hardware/network/network_message.h>
+#ifndef sstmac_hardware_network_topology_routing_PAR_ROUTING_H
+#define sstmac_hardware_network_topology_routing_PAR_ROUTING_H
+
+#include <sstmac/hardware/router/ugal_routing.h>
 
 namespace sstmac {
 namespace hw {
 
-class pisces_default_packet_allocator :
- public packet_allocator
+/**
+ * @brief The par_router class
+ * Encapsulates a router that performs Progressive Adaptive Routing
+ * as described by Jiang and Dally
+ * in "Indirect adaptive routing on large scale interconnection networks"
+ * This differs only slightly from UGAL in that the adpative routing decision
+ * is revisited on every step
+ */
+class par_router :
+  public ugal_router
 {
-  FactoryRegister("pisces | default", packet_allocator, pisces_default_packet_allocator)
  public:
-  pisces_default_packet_allocator(sprockit::sim_parameters* params)
-    : packet_allocator(params)
-  {
-  }
+  par_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-             node_id toaddr, node_id fromaddr,
-             serializable *msg) override {
-    return new pisces_default_packet(msg, flow_id, bytes, is_tail,
-                             toaddr, fromaddr);
-  }
+ protected:
+  bool route_common(packet* pkt);
 };
-
-
-class pisces_delay_stats_packet_allocator :
- public packet_allocator
-{
-  FactoryRegister("delay_stats", packet_allocator, pisces_delay_stats_packet_allocator)
- public:
-  pisces_delay_stats_packet_allocator(sprockit::sim_parameters* params)
-   : packet_allocator(params)
-  {
-  }
-
-  virtual pisces_payload*
-  new_packet(uint32_t bytes, uint64_t flow_id, bool is_tail,
-            node_id toaddr, node_id fromaddr,
-            serializable *msg) override {
-    return new pisces_delay_stats_packet(msg, flow_id, bytes, is_tail,
-                            toaddr, fromaddr);
-  }
-};
-
 
 }
 }
+
+
+#endif // UGAL_ROUTING_H

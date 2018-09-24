@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -51,7 +51,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/common/packetizer.h>
 #include <sstmac/common/stats/stat_histogram.h>
-#include <sstmac/hardware/pisces/packet_allocator_fwd.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sst/core/interfaces/simpleNetwork.h>
 
@@ -63,30 +62,26 @@ namespace hw {
  * through the detailed modeling PISCSES network.  The serializable* payload
  * should always be an SST::Request object
  */
-class simple_network_packet : public pisces_routable_packet
+class simple_network_packet : public pisces_payload
 {
   NotSerializable(simple_network_packet)
 
  public:
   simple_network_packet(
     serializable* msg,
-    int num_bytes,
+    uint32_t num_bytes,
     bool is_tail,
     node_id toaddr,
     node_id fromaddr,
     int vn) :
-   pisces_routable_packet(msg, num_bytes, is_tail, toaddr, fromaddr),
+   pisces_payload(msg, num_bytes, is_tail, 0,/*flow id ignored*/
+                  toaddr, fromaddr),
    vn_(vn)
   {
   }
 
-  uint64_t flow_id() const override {
-    spkt_abort_printf("simple network does not use flow IDs");
-    return 0;
-  }
-
   SST::Interfaces::SimpleNetwork::Request* request() const {
-    return dynamic_cast<SST::Interfaces::SimpleNetwork::Request*>(orig_);
+    return dynamic_cast<SST::Interfaces::SimpleNetwork::Request*>(orig());
   }
 
   int vn() const {

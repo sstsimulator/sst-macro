@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -57,7 +57,8 @@ using namespace clang::tooling;
 
 static int pragmaDepth = 0;
 static int maxPragmaDepth = 0;
-std::list<SSTPragma*> pendingPragmas;
+
+SourceLocation SSTPragmaHandler::pragmaDirectiveLoc;
 
 void getLiteralDataAsString(const Token &tok, std::ostream &os)
 {
@@ -99,14 +100,14 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
   maxPragmaDepth++;
   fsp->pragmaList = &pragmas_;
   fsp->name = getName();
-  fsp->startLoc = PragmaTok.getLocation();
+  //fsp->startPragmaLoc = PragmaTok.getLocation();
   fsp->CI = &ci_;
   fsp->visitor = &visitor_;
-  fsp->deleted = &deleted_;
   PP.EnableBacktrackAtThisPos(); //this controls the backtrack
   Token pragmaTarget;
   PP.Lex(pragmaTarget); //this might hit another pragma
-  fsp->endLoc = pragmaTarget.getEndLoc();
+  //fsp->endPragmaLoc = pragmaTarget.getLocation();
+  fsp->targetLoc = pragmaTarget.getEndLoc();
   PP.Backtrack();
   if (pragmaDepth == 1){ //this is the top pragma
     //if we hit multiple pragmas, we might have redundant tokens
@@ -118,6 +119,7 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
     maxPragmaDepth = 0;
   }
   --pragmaDepth;
+  fsp->depth = pragmaDepth;
 }
 
 void
@@ -126,6 +128,7 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
                   clang::Token &PragmaTok)
 {
   //the next token should be an eod
+  SSTPragma* fsp = allocatePragma();
   Token eodToken; PP.Lex(eodToken);
   if (!eodToken.is(tok::eod)){
     std::stringstream sstr;
@@ -133,7 +136,10 @@ SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
          << " got invalid token type " << eodToken.getName();
     errorAbort(PragmaTok.getLocation(), ci_, sstr.str());
   }
-  SSTPragma* fsp = allocatePragma();
+
+  fsp->pragmaDirectiveLoc = pragmaDirectiveLoc;
+  fsp->startPragmaLoc = PragmaTok.getLocation();
+  fsp->endPragmaLoc = eodToken.getLocation();
   configure(PragmaTok, PP, fsp);
 }
 
@@ -147,6 +153,9 @@ SSTTokenStreamPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind
     PP.Lex(next);
   }
   SSTPragma* fsp = allocatePragma(next.getEndLoc(), tokens);
+  fsp->pragmaDirectiveLoc = pragmaDirectiveLoc;
+  fsp->startPragmaLoc = PragmaTok.getLocation();
+  fsp->endPragmaLoc = next.getLocation();
   configure(PragmaTok, PP, fsp);
 }
 
@@ -234,7 +243,6 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
         std::stringstream sstr;
         sstr << type << " " << name << " = nullptr;"; //don't know why - but okay, semicolon needed
         replace(stmt, r, sstr.str(), *CI);
-        deleted->insert(init);
       } //boy, I really hope this doesn't allocate any memory
     }
   } else {
@@ -251,7 +259,6 @@ SSTNewPragma::visitBinaryOperator(BinaryOperator *op, Rewriter& r)
     pp.print(op->getLHS());
     pp.os << " = nullptr"; //don't know why - but okay, semicolon not needed
     replace(op, r, pp.os.str(),*CI);
-    deleted->insert(op->getRHS());
   } //boy, I really hope this doesn't allocate any memory
 }
 
@@ -277,7 +284,7 @@ SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   PrettyPrinter pp;
   pp.os << "if (" << ifCond_ << "){ ";
   pp.print(s); //put the original statement in the if
-  pp.os << "; } else ";
+  pp.os << "; } else if (0)";
   r.InsertText(s->getLocStart(), pp.os.str(), false, false);
 }
 
@@ -443,11 +450,15 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
     case tok::kw_new:
       next = "new";
       break;
+    case tok::kw_nullptr:
+      next = "nullptr";
+      break;
     case tok::identifier:
       next = token.getIdentifierInfo()->getName().str();
       break;
     default:
-      errorAbort(loc, CI, "token to pragma is not a valid string name");
+      std::string error = std::string("token to pragma is not a valid string name: ") + token.getName();
+      errorAbort(loc, CI, error);
       break;
     }
 
@@ -659,6 +670,66 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
   }
 }
 
+
+static void addFields(RecordDecl* rd, PragmaConfig& cfg, bool defaultNull,
+                      std::set<std::string>& fields, SSTNullVariablePragma* prg)
+{
+  for (auto iter=rd->decls_begin(); iter != rd->decls_end(); ++iter){
+    Decl* d = *iter;
+    if (d->getKind() == Decl::Field){
+      FieldDecl* fd = cast<FieldDecl>(d);
+      auto iter = fields.find(fd->getName());
+      if (iter == fields.end()){
+        if (defaultNull) cfg.nullVariables[fd] = prg;
+      } else {
+        if (!defaultNull) cfg.nullVariables[fd] = prg;
+        fields.erase(iter);
+      }
+    }
+  }
+}
+
+
+static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
+                                   std::set<std::string>& fields, SSTNullVariablePragma* prg,
+                                   clang::CompilerInstance& CI)
+{
+  switch (d->getKind()){
+  //case Decl::Function: {
+  //  return;
+  //}
+  case Decl::CXXRecord:
+  case Decl::Record: {
+    RecordDecl* rd = cast<RecordDecl>(d);
+    addFields(rd, cfg, defaultNull, fields, prg);
+    break;
+  }
+  case Decl::Typedef: {
+    TypedefDecl* td = cast<TypedefDecl>(d);
+    if (td->getTypeForDecl() == nullptr){
+      internalError(d->getLocStart(), CI, "typedef declaration has no underlying type");
+      break;
+    } else if (td->getTypeForDecl()->isStructureType()){
+      RecordDecl* rd = td->getTypeForDecl()->getAsStructureType()->getDecl();
+      addFields(rd, cfg, defaultNull, fields, prg);
+      break;
+    }
+  }
+  default:
+    errorAbort(d->getLocStart(), CI,
+               "nonnull_fields pragma should only be applied to struct or function declarations");
+  }
+
+  if (!fields.empty()){
+    std::stringstream sstr;
+    sstr << "Provided variable name not found in attached scope for pragma nonnull_fields:\n";
+    for (auto& str : fields){
+      sstr << " " << str;
+    }
+    errorAbort(d->getLocStart(), CI, sstr.str());
+  }
+}
+
 SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
   SSTNullVariablePragma(loc, CI, tokens)
 {
@@ -672,23 +743,7 @@ SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &C
 void
 SSTNullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
-  if (cfg.nullFields){
-    errorAbort(d->getLocStart(), *CI,
-               "cannot nest null_fields pragma");
-  }
-  if (!isa<RecordDecl>(d) && !isa<TypedefDecl>(d)){
-    errorAbort(d->getLocStart(), *CI,
-               "null_fields pragma should only be applied to struct declarations");
-  }
-  cfg.nullFields = &nullFields_;
-  cfg.nullFieldPragma = this;
-}
-
-void
-SSTNullFieldsPragma::deactivate(PragmaConfig &cfg)
-{
-  cfg.nullFields = nullptr;
-  cfg.nullFieldPragma = nullptr;
+  doActivateFieldsPragma(d, cfg, false, nullFields_, this, *CI);
 }
 
 void
@@ -711,30 +766,14 @@ SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, CompilerInsta
 void
 SSTNonnullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
-  if (cfg.nonnullFields){
-    errorAbort(d->getLocStart(), *CI,
-               "cannot nest nonnull_fields pragma");
-  }
-  if (!isa<RecordDecl>(d) && !isa<TypedefDecl>(d)){
-    errorAbort(d->getLocStart(), *CI,
-               "nonnull_fields pragma should only be applied to struct declarations");
-  }
-  cfg.nonnullFields = &nonnullFields_;
-  cfg.nullFieldPragma = this;
-}
-
-void
-SSTNonnullFieldsPragma::deactivate(PragmaConfig &cfg)
-{
-  cfg.nonnullFields = nullptr;
-  cfg.nullFieldPragma = nullptr;
+  doActivateFieldsPragma(d, cfg, true, nonnullFields_, this, *CI);
 }
 
 void
 SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
 {
   errorAbort(stmt->getLocStart(), *CI,
-             "null_fields pragma should only be applied to struct declarations, not statements");
+             "nonull_fields pragma should only be applied to struct declarations, not statements");
 }
 
 void
@@ -861,6 +900,12 @@ SSTPragma*
 SSTNullVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
 {
   return new SSTNullVariablePragma(loc, ci_, tokens);
+}
+
+SSTPragma*
+SSTNullVariableGeneratorPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+{
+  return new SSTNullVariableGeneratorPragma(loc, ci_, tokens);
 }
 
 SSTPragma*

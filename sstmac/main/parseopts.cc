@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -94,6 +94,7 @@ parse_opts(int argc, char **argv, opts &oo)
   int print_params = 0;
   int debugflags = 0;
   int dodumpi = 0;
+  int dootf2 = 0;
   int lowrestimer = 0;
   int run_ping_all = 0;
   int infinite_network = 0;
@@ -113,6 +114,7 @@ parse_opts(int argc, char **argv, opts &oo)
     { "param", required_argument, NULL, 'p' },
     { "srun", required_argument, NULL, 's' },
     { "dumpi", no_argument, &dodumpi, 1 },
+    { "otf2", no_argument, &dootf2, 1 },
     { "debug-flags", no_argument, &debugflags, 1},
     { "mpitest", no_argument, &dompitest, 1 },
     { "print-nodes", no_argument, &printnodes, 1 },
@@ -133,7 +135,7 @@ parse_opts(int argc, char **argv, opts &oo)
   std::list<std::pair<std::string, std::string> > paramlist;
   oo.params = new sprockit::sim_parameters;
   optind = 1;
-  while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:b:V:g:D:", gopt, NULL))
+  while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:b:V:g:D:o:", gopt, NULL))
          != -1) {
     switch (ch) {
       case 0:
@@ -215,7 +217,7 @@ parse_opts(int argc, char **argv, opts &oo)
     machine_configured = true;
   }
 
-  if (dodumpi) {
+  if (dodumpi || dootf2) {
     if (!machine_configured){
       sprockit::sim_parameters params("debug.ini");
       //do not overwrite existing parameters
@@ -223,7 +225,11 @@ parse_opts(int argc, char **argv, opts &oo)
       machine_configured = true;
     }
     need_config_file = false;
-    oo.params->add_param("node.app1.name", "parsedumpi");
+    if (dodumpi){
+      oo.params->add_param("node.app1.name", "parsedumpi");
+    } else if (dootf2) {
+      oo.params->add_param("node.app1.name", "parseotf2");
+    }
   }
 
   if (oo.configfile == "" && need_config_file){

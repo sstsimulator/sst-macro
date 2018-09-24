@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -54,66 +54,38 @@ namespace hw {
  * @brief The ugal_router class
  * Encapsulates a router that performs Univeral Globally Adaptive Load-balanced
  * routing as described in PhD Thesis "Load-balanced in routing in interconnection networks"
- * by A Singh.
+ * by A Singh. This differs slightly from PAR in that routing decisions are only
+ * considered once at the source in UGAL
  */
-class ugal_router :
-  public valiant_router
+class ugal_router : public router
 {
-  FactoryRegister("ugal", router, ugal_router,
-              "router implementing ugal congestion-aware routing")
  public:
+  static const char initial_stage = 0;
+  static const char valiant_stage = 1;
+  static const char final_stage = 2;
+  static const char minimal_only_stage = 3;
+
+  struct header : public packet::header {
+    uint8_t stage_number : 3;
+  };
+
   ugal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
 
-  std::string to_string() const override {
-    return "ugal";
-  }
-
  protected:
-  next_action_t initial_step(
-    routable* rtbl, packet* pkt) override;
+  bool route_common(packet* pkt);
 
-  /**
-    The topology object specifies a virtual channel based purely on geometry.
-    However, the final virtual channel depends on both geometry and
-    routing algorithm.  In this case, we need a separate set of
-    virtual channels depending on whether we are in the first
-    stage (routing to the intermediate switch) or the second stage
-    (routing to the final switch).
-    @param topology_vc The geometry-specific virtual channel
-    @return The second stage virtual channel
-  */
-  int first_stage_vc(int topology_vc) const override {
-    return 3 * topology_vc;
-  }
+  void route_ugal_common(packet* pkt, switch_id ej_addr);
 
-  /**
-    The topology object specifies a virtual channel based purely on geometry.
-    However, the final virtual channel depends on both geometry and
-    routing algorithm.  In this case, we need a separate set of
-    virtual channels depending on whether we are in the first
-    stage (routing to the intermediate switch) or the second stage
-    (routing to the final switch).
-    @param topology_vc The geometry-specific virtual channel
-    @return The second stage virtual channel
-  */
-  int second_stage_vc(int topology_vc) const override {
-    return 3 * topology_vc + 1;
-  }
+  virtual packet::path output_path(switch_id sid) const = 0;
 
-  /**
-    In adition to the valiant stages, ugal has a minimal stage.
-    This requires another set of virtual channels.
-    @param topology_vc The geometry-specific virtual channel
-    @return The zero stage virtual channel
-  */
-  int zero_stage_vc(int topology_vc) const {
-    return 3 * topology_vc + 2;
-  }
+  bool switch_paths(
+    switch_id orig_dst,
+    switch_id inter,
+    int orig_port,
+    int new_port);
 
- protected:
   int val_threshold_;
   int val_preference_factor_;
-
 
 };
 

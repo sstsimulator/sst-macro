@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -68,8 +68,7 @@ pack_serializable(serializable* s, serializer& ser){
     long cls_id = s->cls_id();
     ser.pack(cls_id);
     s->serialize_order(ser);
-  }
-  else {
+  } else {
     debug_printf(dbg::serialize, "null object");
     long id = null_ptr_id;
     ser.pack(id);
@@ -83,8 +82,7 @@ unpack_serializable(serializable*& s, serializer& ser){
   if (cls_id == null_ptr_id) {
     debug_printf(dbg::serialize, "null pointer object");
     
-  }
-  else {
+  } else {
     debug_printf(dbg::serialize, "unpacking class id %ld", cls_id);
     s = sprockit::serializable_factory::get_serializable(cls_id);
     s->serialize_order(ser);

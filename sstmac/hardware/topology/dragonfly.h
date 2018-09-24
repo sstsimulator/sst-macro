@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -54,7 +54,12 @@ class dragonfly;
 
 class inter_group_wiring {
  public:
-  DeclareFactory(inter_group_wiring, dragonfly*)
+  DeclareFactory(inter_group_wiring,
+    int, /* a=num switches per group */
+    int, /* g=num groups */
+    int /* h=num group links per switch */
+  )
+                
 
   /**
    * @brief group_port
@@ -82,10 +87,19 @@ class inter_group_wiring {
    *                  that have connections to a router in group dstG
    * @return The number of routers in group srcG with connections to dstG
    */
-  virtual void connected_to_group(int srcG, int dstG, std::vector<int>& connected) const = 0;
+  virtual void connected_to_group(int srcG, int dstG, std::vector<std::pair<int,int>>& connected) const = 0;
+
+  virtual switch_id random_intermediate(router* rtr, switch_id current_sw, switch_id dest_sw, uint32_t seed);
 
  protected:
-  inter_group_wiring(sprockit::sim_parameters* params, dragonfly* top);
+  /**
+   * @brief inter_group_wiring
+   * @param params
+   * @param a  The number of routers per group
+   * @param g  The number of groups
+   * @param h  The number of group links per router
+   */
+  inter_group_wiring(sprockit::sim_parameters* params, int a, int g, int h);
 
  protected:
   /** Number of routers per group */
@@ -114,6 +128,10 @@ class dragonfly : public cartesian_topology
 
   bool uniform_network_ports() const override {
     return false;
+  }
+
+  bool is_global_port(int port) const {
+    return port >= a_;
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
@@ -193,20 +211,13 @@ class dragonfly : public cartesian_topology
   void minimal_route_to_switch(
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      routable::path &path) const override;
+      packet::path &path) const;
 
   int minimal_distance(switch_id src, switch_id dst) const override;
 
   int diameter() const override {
     return 3;
   }
-
-  switch_id random_intermediate_switch(switch_id current_sw,
-                             switch_id dest_sw = switch_id(-1)) override;
-
-  void configure_vc_routing(std::map<routing::algorithm_t, int> &m) const override;
-
-  virtual void new_routing_stage(routable* rtbl) override;
 
   virtual void configure_geometric_paths(std::vector<int> &redundancies);
 
@@ -225,11 +236,14 @@ class dragonfly : public cartesian_topology
     return group_wiring_;
   }
 
- private:
+  switch_id random_intermediate(router* rtr, switch_id current, switch_id dest, uint32_t seed){
+    return group_wiring_->random_intermediate(rtr,current,dest,seed);
+  }
+
+ protected:
   int a_;
   int h_;
   int g_;
-  bool true_random_intermediate_;
   inter_group_wiring* group_wiring_;
 
   void setup_port_params(sprockit::sim_parameters* params,

@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -316,7 +316,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
   sprockit::sim_parameters* rtr_params = switch_params->get_optional_namespace("router");
   if (rtr_params->has_param("name")) {
     std::string router = rtr_params->get_param("name");
-    std::string new_router = router + "_multipath";
+    std::string new_router = top + "_" + router + "_multipath";
     rtr_params->add_param_override("name", new_router);
   } else {
     spkt_throw_printf(sprockit::value_error,
@@ -392,8 +392,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     if (!ej_params->has_param("latency")){
       ej_params->add_param_override("send_latency",
                                     link_params->get_param("send_latency"));
-    }
-    else {
+    } else {
       ej_params->add_param_override("send_latency",
                                     ej_params->get_param("latency"));
     }
@@ -443,8 +442,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     send_lat = ej_params->get_param("send_latency");
   if (send_lat.size() == 0){
     ej_params->add_param_override("send_latency", nic_params->get_namespace("injection")->get_either_or_param("send_latency","latency"));
-  }
-  else {
+  } else {
     ej_params->add_param_override("send_latency", send_lat);
   }
 
@@ -452,8 +450,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     credit_lat = ej_params->get_param("credit_latency");
   if (credit_lat.size() == 0){
     ej_params->add_param_override("credit_latency", nic_params->get_namespace("injection")->get_either_or_param("credit_latency","latency"));
-  }
-  else {
+  } else {
     ej_params->add_param_override("credit_latency", credit_lat);
   }
 

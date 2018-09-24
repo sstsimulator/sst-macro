@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -78,7 +78,7 @@ class pisces_buffer :
  protected:
   pisces_input input_;
   pisces_output output_;
-  long bytes_delayed_;
+  uint32_t bytes_delayed_;
 
   static const int my_outport = 0;
   static const int my_inport = 0;
@@ -131,6 +131,8 @@ class pisces_eject_buffer :
  public:
   pisces_eject_buffer(sprockit::sim_parameters* params,
                            event_scheduler* parent);
+
+  ~pisces_eject_buffer();
 
   void handle_credit(event* ev) override;
 

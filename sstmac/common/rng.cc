@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -158,14 +158,12 @@ MWC::vec_reseed(const std::vector<rngint_t> &seeds)
 {
   if (seeds.size() > 0) {
     z = seeds[0];
-  }
-  else {
+  } else {
     z = defaultz;
   }
   if (seeds.size() > 1) {
     w = seeds[1];
-  }
-  else {
+  } else {
     w = defaultw;
   }
 }
@@ -216,8 +214,7 @@ SHR3::vec_reseed(const std::vector<rngint_t> &seeds)
 {
   if (seeds.size() > 0) {
     jsr = seeds[0];
-  }
-  else {
+  } else {
     jsr = defaultjsr;
   }
 }
@@ -268,8 +265,7 @@ CONG::vec_reseed(const std::vector<rngint_t> &seeds)
 {
   if (seeds.size() > 0) {
     jcong = seeds[0];
-  }
-  else {
+  } else {
     jcong = defaultjcong;
   }
 }
@@ -610,16 +606,14 @@ NormalDistribution::value()
 
   if (X > maxZ_) {
     X = maxZ_;
-  }
-  else if (X < -maxZ_) {
+  } else if (X < -maxZ_) {
     X = -maxZ_;
   }
   X = X * stdev_ + mean_;
 
   if (Y > maxZ_) {
     Y = maxZ_;
-  }
-  else if (Y < -maxZ_) {
+  } else if (Y < -maxZ_) {
     Y = -maxZ_;
   }
   Y = Y * stdev_ + mean_;

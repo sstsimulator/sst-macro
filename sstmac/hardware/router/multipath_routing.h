@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -54,8 +54,7 @@ namespace sstmac {
 namespace hw {
 
 template <class ParentRouter>
-class multipath_router :
-  public ParentRouter
+class multipath_router : public ParentRouter
 {
   /**
    * @brief The structured_path struct Identifies a (structurally) unique
@@ -91,6 +90,10 @@ class multipath_router :
     //do nothing
   }
 
+  int num_vc() const override {
+    return ParentRouter::num_vc();
+  }
+
  public:
   multipath_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw) :
     ParentRouter(params, top, netsw),
@@ -106,11 +109,10 @@ class multipath_router :
     }
   }
 
-  virtual void
-  route(packet* pkt) override {
-    routable::path_set paths;
+  virtual void route(packet* pkt) override {
+    packet::path_set paths;
     ParentRouter::route(pkt);
-    routable::path& path = pkt->interface<routable>()->current_path();
+    packet::path& path = pkt->current_path();
     path.geometric_id = path.outport();
     debug_printf(sprockit::dbg::router,
       "multipath routing: geometric id %d", path.geometric_id);

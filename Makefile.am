@@ -1,9 +1,9 @@
 #
 #   This file is part of SST/macroscale: 
 #                The macroscale architecture simulator from the SST suite.
-#   Copyright (c) 2009 Sandia Corporation.
+#   Copyright (c) 2009-2018 NTESS.
 #   This software is distributed under the BSD License.
-#   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+#   Under the terms of Contract DE-NA0003525 with NTESS,
 #   the U.S. Government retains certain rights in this software.
 #   For more information, see the LICENSE file in the top 
 #   SST/macroscale directory.
@@ -13,8 +13,8 @@ include $(top_srcdir)/Makefile.common
 
 # Files that should be distributed but are not built.
 EXTRA_DIST = LICENSE bootstrap.sh \
-  developer-sstmacro-7.2.pdf \
-  manual-sstmacro-7.2.pdf \
+  developer-sstmacro-8.0.pdf \
+  manual-sstmacro-8.0.pdf \
   pdes-report-7.2.pdf \
   docs \
   share \
@@ -31,8 +31,6 @@ SUBDIRS += sumi sstmac bin python tests configurations
 dist_bin_SCRIPTS = sstmacro-libtool
 
 ACLOCAL_AMFLAGS = -I acinclude
-
-QMAKE=@qmake_executable@
 
 AM_FFLAGS = $(FFLAG_INT)
 AM_CPPFLAGS += $(SCALAPACK_CPPFLAGS)

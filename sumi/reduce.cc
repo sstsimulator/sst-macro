@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -167,8 +167,7 @@ wilke_reduce_actor::init_dag()
         send_nelems = divide_by_2_round_down(round_nelems);
         send_offset = my_buffer_offset + round_nelems - send_nelems;
         recv_offset = my_buffer_offset;
-      }
-      else {
+      } else {
         virtual_partner = virtual_me - partner_gap;
         send_nelems = divide_by_2_round_up(round_nelems);
         send_offset = my_buffer_offset;
@@ -203,8 +202,8 @@ wilke_reduce_actor::init_dag()
 
         prev_send = send_ac;
         prev_recv = recv_ac;
-      } //end if not real send/recv
-      else {
+       //end if not real send/recv
+      } else {
         debug_printf(sumi_collective,
           "Rank %d:%d skipping partner=%d on round %d with send=(%d,%d) recv=(%d,%d)",
           my_api_->rank(), virtual_me, virtual_partner, i,
@@ -322,8 +321,7 @@ wilke_reduce_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac
   int rnd = ac->round % num_total_rounds_;
   if (rnd < num_reducing_rounds_){
     (fxn_)(dst_buffer, msg_buffer, ac->nelems);
-  }
-  else {
+  } else {
     std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
   }
 }

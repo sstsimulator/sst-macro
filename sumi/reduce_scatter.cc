@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -41,3 +41,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Questions? Contact sst-macro-help@sandia.gov
 */
+
+#include <sumi/reduce_scatter.h>
+#include <sumi/transport.h>
+#include <sumi/communicator.h>
+#include <sprockit/output.h>
+#include <sprockit/stl_string.h>
+#include <cstring>
+
+#define divide_by_2_round_up(x) ((x/2) + (x%2))
+
+#define divide_by_2_round_down(x) (x/2)
+
+using namespace sprockit::dbg;
+
+namespace sumi {
+
+void
+halving_reduce_scatter_actor::finalize_buffers()
+{
+}
+
+void
+halving_reduce_scatter_actor::init_buffers(void* dst, void* src)
+{
+}
+
+void
+halving_reduce_scatter_actor::init_dag()
+{
+  sprockit::abort("halving_reduce_scatter: not implemented");
+}
+
+bool
+halving_reduce_scatter_actor::is_lower_partner(int virtual_me, int partner_gap)
+{
+  return false;
+}
+
+void
+halving_reduce_scatter_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+{
+}
+
+}

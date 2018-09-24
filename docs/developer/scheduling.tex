@@ -76,7 +76,7 @@ Some event handlers will always receive and then send, such as network switches 
 In most cases, events are created by calling the function
 
 \begin{CppCode}
-void schedule(const timestamp &t,
+void schedule(timestamp t,
   event_handler* handler,
   event* ev);
 \end{CppCode}
@@ -92,8 +92,7 @@ void handler_event_queue_entry::execute()
 }
 \end{CppCode}
 
-Objects can inherit from \inlinecode{event_handler} to create new event handlers.
-Preferred usage, though, is on-the-fly creation of event handlers through C++ templates.
+Handler are created by on-the-fly creation through C++ templates.
 The interface does not actually expose C++ templates.
 The function \inlinecode{new_handler} defined in \inlineshell{event_callback.h} has the prototype:
 

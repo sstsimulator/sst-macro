@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -58,18 +58,61 @@ class OTF2TraceReplayApp;
 
 class MpiCall {
  public:
-  MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* app,
-          MPI_CALL_ID id, const char* name);
+  MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* _app,
+          MPI_CALL_ID _id) :
+    isready(false), app(_app),
+    start_time(start),
+    end_time(0),
+    id(_id)
+  {
+  }
+
+  MpiCall(OTF2_TimeStamp start, OTF2TraceReplayApp* _app,
+          MPI_CALL_ID _id, std::function<void()> trigger) :
+    isready(false), app(_app),
+    start_time(start),
+    end_time(0),
+    id(_id),
+    on_trigger(trigger)
+  {
+  }
+
+  static const char* name(MPI_CALL_ID id);
+
+  MpiCall(const MpiCall&) = delete; //to avoid accidental copies
+
 
   ~MpiCall() {}
 
   // Methods
-  sstmac::timestamp GetStart();
-  sstmac::timestamp GetEnd();
-  void SetTrigger(std::function<void()>);
-  bool IsReady();
+  sstmac::timestamp GetStart() const {
+    if (start_time == 0){
+      std::cerr << "Warning: start timestamp is not initialized for " << ToString() << std::endl;
+    }
+    return convert_time(start_time);
+  }
+
+  sstmac::timestamp GetEnd() const {
+    if (end_time == 0){
+      std::cerr << "Warning: end timestamp is not initialized for " << ToString() << std::endl;
+    }
+    return convert_time(end_time);
+  }
+
+  void SetTrigger(std::function<void()> trigger){
+    on_trigger = trigger;
+  }
+
+
+  bool IsReady() const {
+    return isready;
+  }
+
   void Trigger();
-  const char* ToString();
+
+  const char* ToString() const {
+    return name(id);
+  }
 
   // Members
   OTF2_TimeStamp start_time, end_time;
@@ -77,12 +120,19 @@ class MpiCall {
   OTF2TraceReplayApp* app;
   bool isready;
   MPI_CALL_ID id;
-  const char* name;
 
-  static void assert_call(MpiCall* cb, std::string msg);
+  static void assert_call(MpiCall* cb, std::string msg){
+    if (cb == nullptr) {
+      spkt_abort_printf("ASSERT FAILED: %s", msg.c_str());
+    }
+  }
 
  private:
-  sstmac::timestamp convert_time(const OTF2_TimeStamp);
+  sstmac::timestamp convert_time(const OTF2_TimeStamp) const;
+
 };
+
+
+
 
 #endif /* SSTMAC_SKELETONS_OTF2_TRACE_REPLAY_MpiCall_H_ */

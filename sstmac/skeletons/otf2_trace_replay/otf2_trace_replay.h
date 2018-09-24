@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -70,32 +70,58 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
     return mpi_;
   }
 
-  CallQueue& GetCallQueue();
-  bool PrintTraceEvents();
-  bool PrintMpiCalls();
-  bool PrintTimeDeltas();
-  bool PrintUnknownCallback();
+  CallQueue& GetCallQueue(){
+    return call_queue_;
+  }
+
+  bool PrintTraceEvents() const {
+    return print_trace_events_;
+  }
+
+  bool PrintMpiCalls() const {
+    return print_mpi_calls_;
+  }
+
+  bool PrintTimeDeltas() const {
+    return print_time_deltas_;
+  }
+
+  bool PrintUnknownCallback() const {
+    return print_unknown_callback_;
+  }
+
+  int rank() const {
+    return rank_;
+  }
+
+  void addEvents(int events){
+    total_events_ += events;
+  }
+
+  void localToGlobalComm(MPI_Comm local, MPI_Comm global){
+    global_to_local_comm_[global] = local;
+  }
+
+  MPI_Comm convertGlobalToLocalComm(MPI_Comm global){
+    auto iter = global_to_local_comm_.find(global);
+    if (iter == global_to_local_comm_.end()){
+      return global;
+    } else {
+      return iter->second;
+    }
+  }
 
   int skeleton_main() override;
 
   void StartMpi(const sstmac::timestamp);
+
   void EndMpi(const sstmac::timestamp);
 
-
-  int rank = -1;
-  long total_events = 0;
-
   OTF2_ClockProperties otf2_clock_properties;
-  std::vector<std::string> otf2_string_table;
-  //std::unordered_map<OTF2_RegionRef, OTF2_Region> otf2_regions;
-  std::vector<OTF2_Region> otf2_regions;
+  std::map<OTF2_StringRef, std::string> otf2_string_table;
+  std::map<OTF2_RegionRef, MPI_CALL_ID> otf2_regions;
   std::vector<OTF2_Callpath> otf2_callpaths;
-  std::vector<OTF2_Group> otf2_groups;
-  std::vector<OTF2_Comm> otf2_comms;
-  std::vector<OTF2_Location> otf2_locations;
-  std::vector<OTF2_LocationGroup> otf2_location_groups;
-  std::unordered_map<OTF2_StringRef, MPI_CALL_ID> otf2_mpi_call_map;
-  std::vector<std::vector<uint32_t>> comm_map;
+  std::map<OTF2_GroupRef,bool> otf2_groups;
 
   ~OTF2TraceReplayApp() throw()	{ }
 
@@ -103,8 +129,6 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   OTF2_Reader* initialize_event_reader();
   void initiate_trace_replay(OTF2_Reader*);
   void verify_replay_success();
-  void build_comm_map();
-  void create_communicators();
 
 
  private:
@@ -112,7 +136,8 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
 
   sstmac::timestamp compute_time;
 
-  bool initialized_ = false;
+  std::map<MPI_Comm, MPI_Comm> global_to_local_comm_;
+
   sumi::mpi_api* mpi_;
 
   double timescale_;
@@ -123,6 +148,8 @@ class OTF2TraceReplayApp : public sstmac::sw::app {
   bool print_time_deltas_;
   bool print_unknown_callback_;
   std::string metafile_;
+  int rank_;
+  long total_events_;
 };
 
 #endif /* OTF2_TRACE_REPLAY_H_ */

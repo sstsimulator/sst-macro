@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -51,7 +51,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/stats/stat_spyplot.h>
-#include <sstmac/hardware/pisces/packet_allocator.h>
 #include <sprockit/errors.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -69,7 +68,6 @@ pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
  ej_buffer_(nullptr),
  inj_stats_(nullptr),
  ej_stats_(nullptr),
- pkt_allocator_(nullptr),
  packetizer(params, parent)
 {
   init(params, parent);
@@ -93,9 +91,6 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_component* paren
   ej_stats_ = packet_stats_callback::factory::
                         get_optional_param("stats", "null", ej_params, parent);
 
-  pkt_allocator_ = packet_allocator::factory
-      ::get_optional_param("packet_allocator", "pisces", params);
-
   event_handler* handler = new_handler(this, &pisces_packetizer::recv_packet);
   ej_buffer_->set_output_handler(handler);
 }
@@ -106,7 +101,6 @@ pisces_packetizer::~pisces_packetizer()
   if (ej_buffer_) delete ej_buffer_;
   if (inj_stats_) delete inj_stats_;
   if (ej_stats_) delete ej_stats_;
-  if (pkt_allocator_) delete pkt_allocator_;
 }
 
 void
@@ -173,9 +167,9 @@ pisces_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message*
 {
   bool is_tail = (byte_offset + bytes) == msg->byte_length();
   //only carry the payload if you're the tail packet
-  pisces_payload* payload = pkt_allocator_->new_packet(bytes, msg->flow_id(), is_tail,
-                                                       msg->toaddr(), msg->fromaddr(),
-                                                       is_tail ? msg : nullptr);
+  pisces_payload* payload = new pisces_payload(is_tail ? msg : nullptr,
+                                               bytes, msg->flow_id(), is_tail,
+                                               msg->fromaddr(), msg->toaddr());
   inj_buffer_->handle_payload(payload);
 }
 

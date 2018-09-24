@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -112,6 +112,21 @@ sculpin_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
 }
 
 void
+sculpin_param_expander::check_bandwidth(sprockit::sim_parameters* params,
+                                      sprockit::sim_parameters* deflt_params)
+{
+  if (!params->has_param("bandwidth")){
+    if (deflt_params){
+      params->add_param_override("bandwidth",
+                                 deflt_params->get_param("bandwidth"));
+    } else {
+      params->print_scoped_params(std::cerr);
+      spkt_abort_printf("do not have bandwidth parameter");
+    }
+  }
+}
+
+void
 sculpin_param_expander::check_latency(sprockit::sim_parameters* params,
                                       sprockit::sim_parameters* deflt_params)
 {
@@ -152,6 +167,8 @@ sculpin_param_expander::expand_amm1_network(sprockit::sim_parameters* params,
 
   check_latency(link_params, nullptr);
   check_latency(ej_params, inj_params);
+  check_bandwidth(link_params, nullptr);
+  check_bandwidth(ej_params, inj_params);
 
 }
 

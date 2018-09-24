@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -52,8 +52,8 @@ namespace hw {
 
 void
 butterfly::minimal_route_to_switch(switch_id src,
-                                    switch_id dst,
-                                    routable::path &path) const
+                                   switch_id dst,
+                                   packet::path &path) const
 {
   int col = src / nswitches_per_col_;
   long group_size = nswitches_per_col_;
@@ -89,15 +89,6 @@ abstract_butterfly::override_params(sprockit::sim_parameters* params)
   }
   nswitches_per_col_ = pow(kary_, nfly_ - 1);
   return params;
-}
-
-void
-abstract_butterfly::configure_vc_routing(std::map<routing::algorithm_t, int> &m) const
-{
-  m[routing::minimal] = 1;
-  m[routing::minimal_adaptive] = 1;
-  m[routing::valiant] = 2;
-  m[routing::ugal] = 3;
 }
 
 butterfly::butterfly(sprockit::sim_parameters* params) :
@@ -229,8 +220,7 @@ butterfly::nodes_connected_to_injection_switch(switch_id swaddr,
 {
   if (swaddr >= nswitches_per_col_) {
     nodes.resize(0);
-  }
-  else {
+  } else {
     return structured_topology::nodes_connected_to_injection_switch(swaddr, nodes);
   }
 }

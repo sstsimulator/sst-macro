@@ -7,7 +7,7 @@ LULESH_EXEC = runlulesh2.0.3
 
 SKEL=1
 
-MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -std=c++11 -O3
+MPICXX = sst++ -DUSE_MPI=1 -Dsstmac_app_name=lulesh -O3
 CXX = $(MPICXX)
 
 SOURCES2.0 = \

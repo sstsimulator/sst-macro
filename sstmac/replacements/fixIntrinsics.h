@@ -1,6 +1,9 @@
 #ifndef sstmac_replacements_fix_intrinsics_h
 #define sstmac_replacements_fix_intrinsics_h
 
+#define __is_aggregate(x) true
+#define __has_unique_object_representations(x) true
+
 /** functions that are static in gcc and not static in clang
     change their names temporarily to get clang to not freak out */
 #define __rdtsc __redirect_rdtsc
@@ -2057,6 +2060,8 @@ extern mymask64 getmask64();
 #define __builtin_ia32_expandloaddf512_maskz(...) get512d()
 #define __builtin_ia32_expandloadsf512_maskz(...) get512()
 #define __builtin_ia32_expandloadsi512_maskz(...) get512i()
+
+struct clangFloat128Fix {};
 
 #endif
 

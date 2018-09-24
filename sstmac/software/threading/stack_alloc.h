@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -63,26 +63,31 @@ namespace sw {
  */
 class stack_alloc
 {
- private:
-  /// The memory regions get allocated in chunks.
+ public:
   class chunk;
-  /// This is where we store the memory regions.
-  typedef std::vector<chunk*> chunk_vec_t;
-  static chunk_vec_t chunks_;
+  struct chunk_set {
+    std::vector<chunk*> allocations;
+    std::vector<void*> available;
+    ~chunk_set(){
+      clear();
+    }
+    void clear();
+  };
+ private:
+  static chunk_set chunks_;
   /// Each chunk is of this suggested size.
   static size_t suggested_chunk_;
   /// Each stack request is of this size:
   static size_t stacksize_;
-
-  /// This is our list of un-allocated chunks:
-  typedef std::vector<void*> available_vec_t;
-  static available_vec_t available_;
 
  public:
   static size_t stacksize() {
     return stacksize_;
   }
 
+  ~stack_alloc(){
+    clear();
+  }
 
   static size_t chunksize() {
     return suggested_chunk_;

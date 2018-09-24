@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -281,11 +281,9 @@ int parsedumpi_callbacks::get_mpiid(dumpi_source id)
 {
   if(id == DUMPI_ANY_SOURCE) {
     return MPI_ANY_SOURCE;
-  }
-  else if(id == DUMPI_ROOT) {
+  } else if(id == DUMPI_ROOT) {
     return MPI_ROOT;
-  }
-  else {
+  } else {
     return id;
   }
 }
@@ -324,8 +322,7 @@ parsedumpi_callbacks::get_mpitype(dumpi_datatype id)
       int size = datatype_sizes_.size[id];
       mpitype_[id] = mpi_type::builtins[size].id;
       printf("Remapped dumpi type %d to builtin of size %d\n", id, size);
-    }
-    else {
+    } else {
       cerrn << sprockit::printf("Warning: no match for datatype id %d - assuming double\n", int(id));
       mpitype_[id] = MPI_DOUBLE;
     }

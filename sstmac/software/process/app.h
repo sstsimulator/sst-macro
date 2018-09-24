@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -95,8 +95,6 @@ class app : public thread
 
   int allocate_tls_key(destructor_fxn fnx);
 
-  static const int use_omp_num_threads = -1;
-
   static sprockit::sim_parameters* get_params();
 
   app* parent_app() const override {
@@ -116,14 +114,11 @@ class app : public thread
     int nintops_per_loop,
     int bytes_per_loop);
 
-  void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes,
-                        int nthread = use_omp_num_threads);
+  void compute_block_read(uint64_t bytes);
 
-  void compute_block_read(long bytes);
+  void compute_block_write(uint64_t bytes);
 
-  void compute_block_write(long bytes);
-
-  void compute_block_memcpy(long bytes);
+  void compute_block_memcpy(uint64_t bytes);
 
   lib_compute_memmove* compute_lib();
 
@@ -230,14 +225,15 @@ class app : public thread
  private:
   char* allocate_data_segment(bool tls);
 
+  void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes, int nthread);
+
   lib_compute_memmove* compute_lib_;
   std::string unique_name_;
 
   int next_tls_key_;
   int next_condition_;
   int next_mutex_;
-  int min_op_cutoff_;
-  int omp_num_threads_;
+  uint64_t min_op_cutoff_;
 
   std::map<long, thread*> subthreads_;
   std::map<int, mutex_t> mutexes_;

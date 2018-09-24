@@ -96,6 +96,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   from sstccvars import soFlagsStr
   from sstccvars import clangCppFlagsStr, clangLdFlagsStr
   from sstccvars import clangLibtoolingCxxFlagsStr, clangLibtoolingCFlagsStr
+  from sstccvars import haveFloat128
 
   if not os.environ.has_key("SSTMAC_HEADERS"):
     topdir = os.getcwd()
@@ -124,11 +125,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   clangCppArgs = [
     cleanFlag("-I${includedir}/sstmac/clang_replacements"),
   ]
-  clangCxxArgs = [
-    "-std=c++1y",
-    "-stdlib=libc++", 
-  ]
-  clangCxxArgs.extend(clangLibtoolingCxxFlagsStr.strip().split())
 
   verbose = False
   delTempFiles = True
@@ -241,6 +237,17 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       givenFlags.append(sarg)
 
+  clangCxxArgs = [
+    "-stdlib=libc++", 
+  ]
+  clangCxxArgs.extend(clangLibtoolingCxxFlagsStr.strip().split())
+  if givenStdFlag:
+    clangCxxArgs.append(givenStdFlag)
+  else:
+    clangCxxArgs.append("-std=c++1y")
+
+  if not haveFloat128:
+    clangCxxArgs.append("-D__float128=clangFloat128Fix")
   
   exeFromSrc = sourceFiles and not '-c' in sysargs
 

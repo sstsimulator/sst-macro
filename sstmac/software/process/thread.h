@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -121,14 +121,14 @@ class thread
     return parent_app_;
   }
 
-  static const int no_core_affinity = -1;
-  static const int no_socket_affinity = -1;
-  static const uint32_t main_thread = -1;
-  static const uint32_t nic_thread = -2;
-  static const uint32_t rdma_thread = -3;
-  static const app_id main_thread_aid;
-  static const task_id main_thread_tid;
-
+  static constexpr int no_core_affinity = -1;
+  static constexpr int no_socket_affinity = -1;
+  static constexpr uint32_t main_thread = -1;
+  static constexpr uint32_t nic_thread = -2;
+  static constexpr uint32_t rdma_thread = -3;
+  static constexpr app_id main_thread_aid = -1;
+  static constexpr task_id main_thread_tid = -1;
+  static constexpr int use_omp_num_threads = -1;
 
  public:
   virtual ~thread();
@@ -306,6 +306,45 @@ class thread
     num_active_cores_ = ncores;
   }
 
+  void compute_detailed(uint64_t flops, uint64_t intops,
+                        uint64_t bytes, int nthread=use_omp_num_threads);
+
+  int omp_get_thread_num() const {
+    auto& active = omp_contexts_.back();
+    return active.id;
+  }
+
+  int omp_get_num_threads() const {
+    auto& active = omp_contexts_.back();
+    return active.num_threads;
+  }
+
+  int omp_get_max_threads() const {
+    auto& active = omp_contexts_.back();
+    return active.max_num_subthreads;
+  }
+
+  int omp_get_ancestor_thread_num() const {
+    auto& active = omp_contexts_.back();
+    return active.parent_id;
+  }
+
+  void omp_set_num_threads(int thr) {
+    auto& active = omp_contexts_.back();
+    active.requested_num_subthreads = thr;
+  }
+
+  int omp_get_level() const {
+    auto& active = omp_contexts_.back();
+    return active.level;
+  }
+
+  int omp_in_parallel() {
+    auto& active = omp_contexts_.back();
+    bool parallel = active.level > 0;
+    return parallel ? 1 : 0;
+  }
+
   void* get_tls_value(long thekey) const;
 
   void set_tls_value(long thekey, void* ptr);
@@ -325,6 +364,8 @@ class thread
     return ftag_;
   }
 
+  void spawn_omp_parallel();
+
  protected:
   thread(sprockit::sim_parameters* params, software_id sid, operating_system* os);
 
@@ -333,9 +374,26 @@ class thread
   virtual api* _get_api(const char* name);
 
  private:
+  struct omp_context {
+    omp_context* parent;
+    int level;
+    int id;
+    int parent_id;
+    int num_threads;
+    int requested_num_subthreads;
+    int max_num_subthreads;
+    std::vector<thread*> subthreads;
+    omp_context() :
+      parent(nullptr), id(0), parent_id(-1),
+      num_threads(1), max_num_subthreads(1)
+    {}
+  };
+
   /// Run routine that defines the initial context for this task.
   /// This routine calls the virtual thread::run method.
   static void run_routine(void* threadptr);
+
+  void set_omp_parent_context(int id, const omp_context& parent);
 
   /**
    * This should only ever be invoked by the delete thread event.
@@ -379,6 +437,8 @@ class thread
   int last_bt_collect_nfxn_;
 
   void* stack_;
+
+  char* tls_storage_;
   
   uint32_t thread_id_;
 
@@ -395,6 +455,8 @@ class thread
   int pthread_concurrency_;
 
   detach_t detach_state_;
+
+  std::list<omp_context> omp_contexts_;
 
 };
 

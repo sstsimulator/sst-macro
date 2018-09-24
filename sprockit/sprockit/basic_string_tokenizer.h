@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -109,23 +109,20 @@ void tokenize
       token_len = str.length() - token_pos;
 
       walk_pos += token_len;
-    }
-    else if( delim_pos > walk_pos ) {
+    } else if( delim_pos > walk_pos ) {
       // more tokens / delims left, but a token starts at walk_pos
       token_pos = walk_pos;
       token_len = delim_pos - token_pos;
 
       walk_pos = delim_pos;
-    }
-    else if( delim_pos == walk_pos ) {
+    } else if( delim_pos == walk_pos ) {
       // delimiters start at walk_pos
       walk_pos = str.find_first_not_of( space, walk_pos );
 
       if( walk_pos == StringType::npos ) {
         // only spaces left in str, no more tokens
         break;
-      }
-      else {
+      } else {
         // more tokens left
         continue;
       }

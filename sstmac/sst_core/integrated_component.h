@@ -1,5 +1,5 @@
 /**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
 
@@ -8,7 +8,7 @@ by National Technology and Engineering Solutions of Sandia, LLC., a wholly
 owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
-Copyright (c) 2009-2017, NTESS
+Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       disclaimer in the documentation and/or other materials provided
       with the distribution.
 
-    * Neither the name of Sandia Corporation nor the names of its
+    * Neither the name of the copyright holder nor the names of its
       contributors may be used to endorse or promote products derived
       from this software without specific prior written permission.
 
@@ -77,15 +77,18 @@ using SST::SST_ELI_getTertiaryNumberFromVersion;
    {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
    {"rtr",                   "Special link to Merlin router",       {}}
 
-#define RegisterComponent(name,parent,cls,lib,cat,desc) \
+#define RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
   FactoryRegister(name,parent,cls,desc) \
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS() \
-  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,SST_ELI_ELEMENT_VERSION(7,1,0),desc,cat) \
+  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,SST_ELI_ELEMENT_VERSION(8,0,0),desc,cat) \
   SST_ELI_DOCUMENT_PARAMS() \
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
-  SST_ELI_DOCUMENT_STATISTICS() \
   cls(SST::ComponentId_t id, SST::Params& params) : \
     cls(make_spkt_params_from_sst_params(params), id, nullptr){}
+
+#define RegisterComponent(name,parent,cls,lib,cat,desc) \
+  RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
+  SST_ELI_DOCUMENT_STATISTICS()
 
 #define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
   FactoryRegister(name,parent,cls,desc) \
