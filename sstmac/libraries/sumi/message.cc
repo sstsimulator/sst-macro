@@ -93,7 +93,7 @@ transport_message::put_on_wire()
       payload_->put_remote_on_wire();
       break;
     case rdma_put_payload:
-      if (payload_->local_buffer().ptr && !payload_->remote_buffer().ptr){
+      if (payload_->local_buffer() && !payload_->remote_buffer()){
         spkt_abort_printf("RDMA put with local buffer, but not remote buffer");
       }
     case payload:
