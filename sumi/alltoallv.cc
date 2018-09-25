@@ -81,7 +81,7 @@ direct_alltoallv_actor::init_buffers(void* dst, void* src)
 void
 direct_alltoallv_actor::finalize_buffers()
 {
-  if (result_buffer_.ptr){
+  if (result_buffer_){
     my_api_->unmake_public_buffer(result_buffer_, total_recv_size_);
     my_api_->unmake_public_buffer(send_buffer_, total_send_size_);
   }

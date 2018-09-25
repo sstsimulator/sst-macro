@@ -90,14 +90,14 @@ transport_message::put_on_wire()
   switch(type_){
     case rdma_get_payload:
     case nvram_get_payload:
-      payload_->buffer_remote();
+      payload_->put_remote_on_wire();
       break;
     case rdma_put_payload:
-      if (payload_->local_buffer().ptr && !payload_->remote_buffer().ptr){
+      if (payload_->local_buffer() && !payload_->remote_buffer()){
         spkt_abort_printf("RDMA put with local buffer, but not remote buffer");
       }
     case payload:
-      payload_->buffer_local();
+      payload_->put_local_on_wire();
       break;
     default:
       break; //nothing to do

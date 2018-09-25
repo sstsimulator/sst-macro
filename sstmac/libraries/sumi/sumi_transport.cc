@@ -138,6 +138,13 @@ class sumi_server :
 };
 
 sumi_transport::sumi_transport(sprockit::sim_parameters* params,
+                               sstmac::sw::software_id sid,
+                               sstmac::sw::operating_system* os) :
+  sumi_transport(params, "sumi", sid, os)
+{
+}
+
+sumi_transport::sumi_transport(sprockit::sim_parameters* params,
                const char* prefix,
                sstmac::sw::software_id sid,
                sstmac::sw::operating_system* os) :
@@ -147,19 +154,22 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
 
 sumi_transport::sumi_transport(sprockit::sim_parameters* params,
                sstmac::sw::software_id sid,
-               sstmac::sw::operating_system* os) :
-  sumi_transport(params, "sumi", sid, os)
+               sstmac::sw::operating_system* os,
+               const std::string& prefix,
+               const std::string& server_name) :
+  sumi_transport(params, standard_lib_name(prefix.c_str(), sid), sid, os, server_name)
 {
 }
 
-
 sumi_transport::sumi_transport(sprockit::sim_parameters* params,
-    const std::string& libname, sstmac::sw::software_id sid,
-    sstmac::sw::operating_system* os) :
+                               const std::string& libname,
+                               sstmac::sw::software_id sid,
+                               sstmac::sw::operating_system* os,
+                               const std::string& server_name) :
   //the name of the transport itself should be mapped to a unique name
   api(params, libname, sid, os),
   //the server is what takes on the specified libname
-  server_libname_("sumi_server"),
+  server_libname_(server_name),
   transport(params),
   user_lib_time_(nullptr),
   spy_num_messages_(nullptr),
@@ -167,6 +177,7 @@ sumi_transport::sumi_transport(sprockit::sim_parameters* params,
   collective_cq_id_(1), //this gets assigned elsewhere
   pt2pt_cq_id_(0) //put pt2pt sends on the default cq
 {
+
   collective_cq_id_ = allocate_cq();
   rank_ = sid.task_;
   library* server_lib = os_->lib(server_libname_);

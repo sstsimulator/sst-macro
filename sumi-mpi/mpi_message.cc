@@ -164,8 +164,8 @@ mpi_message::to_string() const
 {
   std::stringstream ss;
   ss << "mpimessage("
-     << (void*) local_buffer_.ptr
-     << "," << (void*) remote_buffer_.ptr
+     << (void*) local_buffer_
+     << "," << (void*) remote_buffer_
      << ", count=" << count_
      << ", type=" << type_
      << ", src=" << src_rank_
