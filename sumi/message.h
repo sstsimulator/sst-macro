@@ -133,6 +133,9 @@ class message :
           uint64_t num_bytes,
           class_t cls,
           payload_type_t pty) :
+    local_buffer_(nullptr),
+    remote_buffer_(nullptr),
+    num_bytes_(num_bytes),
     payload_type_(pty),
     class_(cls),
     sender_(sender),
@@ -140,10 +143,7 @@ class message :
     send_cq_(-1),
     recv_cq_(-1),
     owns_local_buffer_(false),
-    owns_remote_buffer_(false),
-    local_buffer_(nullptr),
-    remote_buffer_(nullptr),
-    num_bytes_(num_bytes)
+    owns_remote_buffer_(false)
   #if SSTMAC_COMM_SYNC_STATS
     ,sent_(-1),
     header_arrived_(-1),
