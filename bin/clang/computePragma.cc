@@ -311,7 +311,7 @@ SSTMemoizeComputePragmaHandler::allocatePragma(const std::map<std::string, std::
 
   PresumedLoc ploc = ci_.getSourceManager().getPresumedLoc(pragmaLoc_);
   std::stringstream token_sstr;
-  token_sstr << ploc.getFilename() << ploc.getLine();
+  token_sstr << ploc.getFilename() << ":" << ploc.getLine();
 
   return new SSTMemoizeComputePragma(token_sstr.str(), skeletonize, model,
                                      std::move(inputs));

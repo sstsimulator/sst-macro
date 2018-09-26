@@ -119,6 +119,7 @@ class SSTMemoizeComputePragma : public SSTPragma
     SSTPragma(Memoize),
     token_(token),
     skeletonize_(skeletonize),
+    model_(model),
     inputs_(std::move(inputs))
   {}
 

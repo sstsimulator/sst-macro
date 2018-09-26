@@ -158,7 +158,7 @@ static void* nullptr = 0;
   user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
  static int user_skeleton_main(__VA_ARGS__)
 #else
-#define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
+#define main sstmac_ignore_for_app_name(); static const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
 

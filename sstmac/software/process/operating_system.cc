@@ -141,7 +141,10 @@ struct null_regression : public operating_system::regression_model
     : operating_system::regression_model(params), computed_(false) {}
 
   double compute(int n_params, double params[]) override {
-    if (!computed_) compute_mean();
+    if (!computed_){
+      computed_ = true;
+      compute_mean();
+    }
     return mean_;
   }
 
@@ -177,6 +180,7 @@ struct linear_regression : public operating_system::regression_model
     }
     if (!computed_){
       compute_regression();
+      computed_ = true;
     }
     double val = m_*params[0] + b_;
     return val;
@@ -519,6 +523,18 @@ operating_system::stop_memoize(const char *token, int n_params, double params[])
   memoize_model_ = nullptr;
   memoize_token_ = "";
   memoize_start_ = 0;
+}
+
+void
+operating_system::compute_memoize(const char *token, int n_params, double params[])
+{
+  regression_model* model = memoized_models_[token];
+  if (model == nullptr){
+    spkt_abort_printf("No model found for memoization tag %s - did you run memoize pass?",
+                      token);
+  }
+  double time = model->compute(n_params, params);
+  current_os()->compute(timestamp(time));
 }
 
 void

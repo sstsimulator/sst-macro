@@ -109,6 +109,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         break
       os.chdir("..")
     os.chdir(topdir)
+  
+  memoizing = False
+  if os.environ.has_key("SSTMAC_MEMOIZE"):
+    val = int(os.environ["SSTMAC_MEMOIZE"])
+    memoizing = bool(val)
 
   def cleanFlag(flag):
     return flag.replace("${includedir}", includeDir).replace("${exec_prefix}", execPrefix).replace("${prefix}",prefix)
@@ -154,6 +159,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   if runClang:
     sstCppFlags.append("-DSSTMAC_NO_REFACTOR_MAIN")
+  if memoizing:
+    sstCppFlags.append("-DSSTMAC_NO_REPLACEMENTS")
 
   newLdFlags = []
   for entry in sstLdFlags:
@@ -239,6 +246,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       getObjTarget=False
     else:
       givenFlags.append(sarg)
+
+  if ldTarget:
+    if ldTarget.startswith("lib") and ldTarget.endswith("so"):
+      includeMain = False
+    
 
   clangCxxArgs = [
     "-stdlib=libc++", 

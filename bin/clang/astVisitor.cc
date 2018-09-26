@@ -87,7 +87,7 @@ SkeletonASTVisitor::initConfig()
     refactorMain_ = atoi(mainStr);
   }
 
-  const char* memoStr = getenv("SSTMAC_MEMOIZE_PASS");
+  const char* memoStr = getenv("SSTMAC_MEMOIZE");
   if (memoStr){
     memoizePass_ = atoi(memoStr);
   }

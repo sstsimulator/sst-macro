@@ -146,21 +146,21 @@ extern "C" void sstmac_start_memoize(const char *token, const char* model)
   sstmac::sw::operating_system::start_memoize(token, model);
 }
 
-extern "C" void sstmac_stop_memoize0(const char* token)
+extern "C" void sstmac_finish_memoize0(const char* token)
 {
   double params[0];
   sstmac::sw::operating_system::stop_memoize(token, 0, params);
 }
 
-extern "C" void sstmac_stop_memoize1(const char *token, double param1)
+extern "C" void sstmac_finish_memoize1(const char *token, double param1)
 {
   double params[1];
   params[0] = param1;
   sstmac::sw::operating_system::stop_memoize(token, 1, params);
 }
 
-extern "C" void sstmac_stop_memoize2(const char *token, const char* model,
-                                      double param1, double param2)
+extern "C" void sstmac_finish_memoize2(const char *token,
+                                       double param1, double param2)
 {
   double params[2];
   params[0] = param1;

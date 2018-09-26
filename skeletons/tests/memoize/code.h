@@ -42,29 +42,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sstmac_software_process_TIME_H
-#define sstmac_software_process_TIME_H
-
+#include <unistd.h>
 #include <sys/time.h>
+#include <cmath>
 
-#ifndef SSTMAC_NO_REPLACEMENTS
-#define gettimeofday SSTMAC_gettimeofday
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz);
-
-int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem);
-
-double sstmac_virtual_time();
-
-double sstmac_wall_time();
-
-#ifdef __cplusplus
+static void run(){
+#pragma sst memoize model(null)
+  sleep(1);
 }
-#endif
 
-#endif // TIME_H
+#define sstmac_app_name memoize_sleep
+
+int main(int argc, char** argv)
+{
+  double wall_start = sstmac_wall_time();
+  double vir_start = sstmac_virtual_time();
+  run();
+  double wall_stop = sstmac_wall_time();
+  double vir_stop = sstmac_virtual_time();
+  double t_vir = round(vir_stop - vir_start);
+  double t_wall = round(wall_stop - wall_start);
+#ifndef SSTMAC_NO_REPLACEMENTS
+  static const char* name = "skeleton";
+#else
+  static const char* name = "memoize";
+#endif
+  printf("Running %10s:   wall=%.1f virtual=%.1f\n", name, t_wall, t_vir);
+  return 0;
+}
+
