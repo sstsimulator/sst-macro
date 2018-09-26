@@ -86,6 +86,11 @@ SkeletonASTVisitor::initConfig()
   if (mainStr){
     refactorMain_ = atoi(mainStr);
   }
+
+  const char* memoStr = getenv("SSTMAC_MEMOIZE_PASS");
+  if (memoStr){
+    memoizePass_ = atoi(memoStr);
+  }
 }
 
 void
@@ -2515,6 +2520,9 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   if (D->getNameAsString() == "sstmac_appname_str"){
     StringLiteral* lit = cast<StringLiteral>(getUnderlyingExpr(D->getInit()));
     mainName_ = lit->getString();
+    if (memoizePass_){
+      mainName_ = mainName_ + "_memoize";
+    }
     return false;
   }
 
@@ -2544,28 +2552,26 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
   std::string suffix2 = sourceFile.substr(sourceFile.size()-2,2);
   bool isC = suffix2 == ".c";
 
-  if (isC){    
-    foundCMain_ = true;
-    std::string appname = getAppName();
-    if (appname.size() == 0){
-      errorAbort(mainFxn->getLocStart(), *ci_,
-                 "sstmac_app_name macro not defined before main");
-    }
-    std::stringstream sstr;
-    sstr << "int sstmac_user_main_" << appname << "(";
-    if (mainFxn->getNumParams() == 2){
+  foundCMain_ = true;
 
-      sstr << "int " << mainFxn->getParamDecl(0)->getNameAsString()
-           << ", char** " << mainFxn->getParamDecl(1)->getNameAsString();
-    }
-    sstr << "){";
+  std::string appname = getAppName();
 
-    SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
-    replace(rng, sstr.str());
-  } else {
+  if (appname.size() == 0){
     errorAbort(mainFxn->getLocStart(), *ci_,
                "sstmac_app_name macro not defined before main");
   }
+  std::stringstream sstr;
+  if (!isC) sstr << "extern \"C\" ";
+  sstr << "int sstmac_user_main_" << appname << "(";
+  if (mainFxn->getNumParams() == 2){
+
+    sstr << "int " << mainFxn->getParamDecl(0)->getNameAsString()
+         << ", char** " << mainFxn->getParamDecl(1)->getNameAsString();
+  }
+  sstr << "){";
+
+  SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
+  replace(rng, sstr.str());
 }
 
 void
@@ -3255,12 +3261,14 @@ SkeletonASTVisitor::PragmaActivateGuard::init()
   while (iter != end){
     auto tmp = iter++;
     SSTPragma* prg = *tmp;
+
     bool activate = !visitor_->noSkeletonize();
 
     //a compute pragma totally deletes the block
     bool blockDeleted = false;
     switch (prg->cls){
-      case SSTPragma::GlobalVariable: //always - regardless of skeletonization
+      case SSTPragma::Memoize:  //always - regardless of skeletonization
+      case SSTPragma::GlobalVariable:
       case SSTPragma::Overhead:
         skipVisit_ = false;
         activate = true;

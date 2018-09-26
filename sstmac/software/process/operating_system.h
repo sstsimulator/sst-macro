@@ -83,6 +83,14 @@ class operating_system :
   friend class thread;
 
  public:
+  struct regression_model {
+    DeclareFactory(regression_model)
+    regression_model(sprockit::sim_parameters* params){}
+
+    virtual double compute(int n_params, double params[]) = 0;
+    virtual void collect(double time, int n_params, double params[]) = 0;
+  };
+
   operating_system(sprockit::sim_parameters* params, hw::node* parent);
 
   virtual ~operating_system();
@@ -321,6 +329,10 @@ class operating_system :
 
   static void gdb_reset();
 
+  static void start_memoize(const char* token, const char* model);
+  static void compute_memoize(const char* token, int n_params, double params[]);
+  static void stop_memoize(const char* token, int n_params, double params[]);
+
  private:
   thread_context* active_context();
 
@@ -364,6 +376,10 @@ class operating_system :
 
   bool call_graph_active_;
 
+  static std::map<std::string, regression_model*> memoized_models_;
+  static std::string memoize_token_;
+  static regression_model* memoize_model_;
+  static double memoize_start_;
   static std::unordered_map<uint32_t, thread*> all_threads_;
   static bool hold_for_gdb_;
   static thread_context* gdb_context_;

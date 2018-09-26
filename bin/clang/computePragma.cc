@@ -59,7 +59,7 @@ SSTLoopCountPragma::SSTLoopCountPragma(const std::list<Token> &tokens) :
   SSTPragma(LoopCount)
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(startPragmaLoc, tokens.begin(), tokens.end(), sstr, *CI);
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, *CI);
   loopCount_ = sstr.str();
 }
 
@@ -162,16 +162,48 @@ SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
 }
 
 void
+SSTMemoizeComputePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (visitor->memoizePass()){
+    std::stringstream start_sstr;
+    start_sstr << "sstmac_start_memoize("
+       << "\"" << token_ << "\",\"" << model_ << "\"" << "); ";
+    r.InsertText(s->getLocStart(), start_sstr.str(), false);
+    std::stringstream finish_sstr;
+    finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "(\"" << token_ << "\"";
+    for (auto& str : inputs_){
+      finish_sstr << "," << str;
+    }
+    finish_sstr << ");";
+    SourceLocation insertLoc = s->getLocEnd().getLocWithOffset(1);
+    r.InsertText(insertLoc, finish_sstr.str(), true);
+  } else {
+    std::stringstream sstr;
+    sstr << "sstmac_compute_memoize" << inputs_.size() << "("
+       << "\"" << token_ << "\"";
+    for (auto& str : inputs_){
+      sstr << "," << str;
+    }
+    sstr << ");";
+    if (skeletonize_){
+      replace(s, r, sstr.str(), *CI);
+    } else {
+      r.InsertText(s->getLocStart(), sstr.str(), false);
+    }
+  }
+}
+
+void
 SSTMemoryPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
   cfg.computeMemorySpec = memSpec_;
 }
 
 SSTPragma*
-SSTMemoryPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTMemoryPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTMemoryPragma(sstr.str());
 }
 
@@ -181,7 +213,7 @@ enum OpenMPProperty {
 };
 
 SSTPragma*
-SSTOpenMPParallelPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTOpenMPParallelPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   static const std::map<std::string, OpenMPProperty> omp_property_map = {
     {"num_threads", OMP_NTHREAD},
@@ -232,5 +264,56 @@ SSTOpenMPParallelPragmaHandler::allocatePragma(SourceLocation loc, const std::li
   } //end for
 
   return new SSTComputePragma(nthread);
+}
+
+SSTPragma*
+SSTMemoizeComputePragmaHandler::allocatePragma(const std::map<std::string, std::list<std::string>>& in_args) const
+{
+  auto args = in_args;
+  bool skeletonize = true;
+  auto iter = args.find("skeletonize");
+  if (iter != args.end()){
+    std::string val = iter->second.front();
+    if (val == "true"){
+      skeletonize = true;
+    } else if (val == "false"){
+      skeletonize = false;
+    } else {
+      errorAbort(pragmaLoc_, ci_, "skeletonize argument must be true/false");
+    }
+    args.erase(iter);
+  }
+
+  iter = args.find("inputs");
+  std::list<std::string> inputs;
+  if (iter != args.end()){
+    inputs = std::move(iter->second);
+    args.erase(iter);
+  }
+
+  std::string model = "null";
+  iter = args.find("model");
+  if (iter != args.end()){
+    model = iter->second.front();
+    args.erase(iter);
+  }
+
+  if (!args.empty()){
+    //we got passed an invalid argument
+    std::stringstream sstr;
+    sstr << "got invalid args for memoize pragma: ";
+    for (auto& pair : args){
+      sstr << pair.first << ",";
+    }
+    errorAbort(pragmaLoc_, ci_, sstr.str());
+  }
+
+
+  PresumedLoc ploc = ci_.getSourceManager().getPresumedLoc(pragmaLoc_);
+  std::stringstream token_sstr;
+  token_sstr << ploc.getFilename() << ploc.getLine();
+
+  return new SSTMemoizeComputePragma(token_sstr.str(), skeletonize, model,
+                                     std::move(inputs));
 }
 

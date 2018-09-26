@@ -152,6 +152,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     newCppFlags.append(cleanFlag(entry))
   sstCppFlags = newCppFlags
 
+  if runClang:
+    sstCppFlags.append("-DSSTMAC_NO_REFACTOR_MAIN")
+
   newLdFlags = []
   for entry in sstLdFlags:
     newLdFlags.append(cleanFlag(entry))

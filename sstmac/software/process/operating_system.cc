@@ -62,6 +62,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/ftq.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
+#include <sstmac/software/process/time.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/process/thread_info.h>
@@ -133,6 +134,72 @@ class delete_thread_event :
   thread* thr_;
 };
 
+struct null_regression : public operating_system::regression_model
+{
+  FactoryRegister("null", operating_system::regression_model, null_regression)
+  null_regression(sprockit::sim_parameters* params)
+    : operating_system::regression_model(params), computed_(false) {}
+
+  double compute(int n_params, double params[]) override {
+    if (!computed_) compute_mean();
+    return mean_;
+  }
+
+  void collect(double time, int n_params, double params[]) override {
+    samples_.push_back(time);
+  }
+
+ private:
+  void compute_mean(){
+    double total = 0;
+    for (double d : samples_){
+      total += d;
+    }
+    mean_ = total / samples_.size();
+  }
+
+  double mean_;
+  std::vector<double> samples_;
+  bool computed_;
+
+};
+
+struct linear_regression : public operating_system::regression_model
+{
+  FactoryRegister("linear", operating_system::regression_model, linear_regression)
+
+  linear_regression(sprockit::sim_parameters* params)
+    : operating_system::regression_model(params), computed_(false) {}
+
+  double compute(int n, double params[]) override {
+    if (n != 1){
+      spkt_abort_printf("linear regression can only take one parameter - got %d", n);
+    }
+    if (!computed_){
+      compute_regression();
+    }
+    double val = m_*params[0] + b_;
+    return val;
+  }
+
+  void collect(double time, int n_params, double params[]) override {
+    if (n_params != 1){
+      spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
+    }
+    samples_.emplace_back(time, params[0]);
+  }
+
+ private:
+  void compute_regression(){
+    spkt_abort_printf("linear_regression::compute_regression not implemented");
+  }
+
+  double m_;
+  double b_;
+  std::vector<std::pair<double,double>> samples_;
+  bool computed_;
+};
+
 static sprockit::need_delete_statics<operating_system> del_statics;
 static stats_unique_tag cg_tag;
 
@@ -148,6 +215,10 @@ thread_context* operating_system::gdb_original_context_ = nullptr;
 thread_context* operating_system::gdb_des_context_ = nullptr;
 std::unordered_map<uint32_t,thread*> operating_system::all_threads_;
 bool operating_system::gdb_active_ = false;
+operating_system::regression_model* operating_system::memoize_model_ = nullptr;
+std::string operating_system::memoize_token_;
+std::map<std::string, operating_system::regression_model*> operating_system::memoized_models_;
+double operating_system::memoize_start_ = 0;
 
 operating_system::operating_system(sprockit::sim_parameters* params, hw::node* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -415,6 +486,39 @@ operating_system::print_libs(std::ostream &os) const
   for (auto& pair : libs_){
     os << pair.first << "\n";
   }
+}
+
+void
+operating_system::start_memoize(const char *token, const char* model_name)
+{
+  sprockit::sim_parameters* params = current_os()->params();
+  regression_model* model = nullptr;
+  auto iter = memoized_models_.find(token);
+  if (iter == memoized_models_.end()){
+    model = regression_model::factory::get_value(model_name, params);
+    memoized_models_[token] = model;
+  } else {
+    model = iter->second;
+  }
+  memoize_start_ = sstmac_wall_time();
+  memoize_token_ = token;
+  memoize_model_ = model;
+}
+
+void
+operating_system::stop_memoize(const char *token, int n_params, double params[])
+{
+  if (memoize_token_ != token){
+    spkt_abort_printf("stopping memoize %s, but active memoize is %s",
+                      token, memoize_token_.c_str());
+  }
+  double stop = sstmac_wall_time();
+  double t_total = stop - memoize_start_;
+  memoize_model_->collect(t_total, n_params, params);
+
+  memoize_model_ = nullptr;
+  memoize_token_ = "";
+  memoize_start_ = 0;
 }
 
 void

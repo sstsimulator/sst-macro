@@ -136,7 +136,12 @@ class vector {
 
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;
-
+extern sprockit::sim_parameters* get_params();
+//end C++
+#else
+//need for C
+static void* nullptr = 0;
+#endif
 
 #define define_var_name_pass_through(x) sstmac_dont_ignore_this##x
 #define define_var_name(x) define_var_name_pass_through(x)
@@ -152,13 +157,7 @@ using sprockit::sim_parameters;
  static int dont_ignore_this = \
   user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
  static int user_skeleton_main(__VA_ARGS__)
-#endif
-
-extern sprockit::sim_parameters* get_params();
-
 #else
-static void* nullptr = 0;
-
 #define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 

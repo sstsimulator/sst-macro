@@ -1,0 +1,35 @@
+
+int fxn()
+{
+  int i=0;
+  int mul = 0;
+  double* x = new double[10];
+  int* idx = new int[5];
+
+ sstmac_start_memoize("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc8",""); for (i=0; i < 5; ++i){
+    mul *= i;
+    for (int j=0; j < 10; ++j){
+      mul += (j-1);
+      x[j] += i;
+      mul -= x[j];
+      j=7;
+      mul += x[j];
+      mul *= x[idx[i]];
+      idx[i] -= 3;
+      mul *= x[idx[i]];
+    }
+  }; sstmac_finish_memoize1("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc8",5);
+  return 0;
+}
+
+char sstmac_appname_str[] = "pragma_test";
+extern "C" int sstmac_user_main_pragma_test_memoize(){
+
+  return 0;
+}
+#include <sstmac/software/process/global.h>
+
+int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));
+extern "C" int sstmac_user_main_pragma_test_memoize(int argc, char** argv);
+int pragma_test_memoize_sstmac_initer = user_skeleton_main_init_fxn("pragma_test_memoize",sstmac_user_main_pragma_test_memoize);
+

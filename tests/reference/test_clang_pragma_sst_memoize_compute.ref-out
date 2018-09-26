@@ -1,0 +1,25 @@
+
+int fxn()
+{
+  int i=0;
+  int mul = 0;
+  double* x = new double[10];
+  int* idx = new int[5];
+
+ sstmac_compute_memoize1("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize_compute.cc8",5);
+
+
+
+
+
+
+
+
+
+
+
+
+  return 0;
+}
+#include <sstmac/software/process/global.h>
+

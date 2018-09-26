@@ -1,4 +1,4 @@
-/**
+﻿/**
 Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
 LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
 retains certain rights in this software.
@@ -71,15 +71,99 @@ void getLiteralDataAsString(const Token &tok, std::ostream &os)
 
 std::string getLiteralDataAsString(const Token &tok)
 {
-  std::stringstream os;
-  getLiteralDataAsString(tok, os);
-  return os.str();
+  std::stringstream sstr;
+  getLiteralDataAsString(tok, sstr);
+  return sstr.str();
+}
+
+static void tokenToString(const Token& tok, std::ostream& os,
+                          clang::CompilerInstance& CI)
+{
+  switch(tok.getKind()){
+  case tok::identifier:
+    os << tok.getIdentifierInfo()->getNameStart();
+    break;
+  case tok::semi:
+    os << ";";
+    break;
+  case tok::l_paren:
+    os << '(';
+    break;
+  case tok::r_paren:
+    os << ')';
+    break;
+  case tok::comma:
+    os << ',';
+    break;
+  case tok::less:
+    os << "<";
+    break;
+  case tok::slash:
+    os << "/";
+    break;
+  case tok::star:
+    os << "*";
+    break;
+  case tok::period:
+    os << ".";
+    break;
+  case tok::kw_return:
+    os << "return ";
+    break;
+  case tok::coloncolon:
+    os << "::";
+    break;
+  case tok::kw_long:
+    os << "long";
+    break;
+  case tok::kw_int:
+    os << "int";
+    break;
+  case tok::kw_double:
+    os << "double";
+    break;
+  case tok::equalequal:
+    os << "==";
+    break;
+  case tok::kw_sizeof:
+    os << "sizeof";
+    break;
+  case tok::minus:
+    os << "-";
+    break;
+  case tok::percent:
+    os << "%";
+    break;
+  case tok::kw_true:
+    os << "true";
+    break;
+  case tok::kw_false:
+    os << "false";
+    break;
+  case tok::arrow:
+    os << "->";
+    break;
+  case tok::kw_nullptr:
+    os << "nullptr";
+    break;
+  case tok::string_literal:
+  case tok::numeric_constant:
+  {
+    getLiteralDataAsString(tok, os);
+    break;
+  }
+  default:
+    std::cerr << "bad token: " << tok.getName() << std::endl;
+    errorAbort(tok.getLocation(), CI, "invalid token in pragma");
+    break;
+  }
 }
 
 void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
   switch(fsp->cls){
+    case SSTPragma::Memoize:
     case SSTPragma::AlwaysCompute:
     case SSTPragma::GlobalVariable:
     case SSTPragma::AdvanceTime:
@@ -123,28 +207,7 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 }
 
 void
-SSTSimplePragmaHandler_base::HandlePragma(clang::Preprocessor &PP,
-                  clang::PragmaIntroducerKind Introducer,
-                  clang::Token &PragmaTok)
-{
-  //the next token should be an eod
-  SSTPragma* fsp = allocatePragma();
-  Token eodToken; PP.Lex(eodToken);
-  if (!eodToken.is(tok::eod)){
-    std::stringstream sstr;
-    sstr << "Pragma handler for " << getName().str()
-         << " got invalid token type " << eodToken.getName();
-    errorAbort(PragmaTok.getLocation(), ci_, sstr.str());
-  }
-
-  fsp->pragmaDirectiveLoc = pragmaDirectiveLoc;
-  fsp->startPragmaLoc = PragmaTok.getLocation();
-  fsp->endPragmaLoc = eodToken.getLocation();
-  configure(PragmaTok, PP, fsp);
-}
-
-void
-SSTTokenStreamPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer, Token &PragmaTok)
+SSTPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind Introducer, Token& PragmaTok)
 {
   std::list<Token> tokens;
   Token next; PP.Lex(next);
@@ -152,11 +215,82 @@ SSTTokenStreamPragmaHandler::HandlePragma(Preprocessor &PP, PragmaIntroducerKind
     tokens.push_back(next);
     PP.Lex(next);
   }
-  SSTPragma* fsp = allocatePragma(next.getEndLoc(), tokens);
+  pragmaLoc_ = PragmaTok.getLocation();
+
+  SSTPragma* fsp = handleSSTPragma(tokens);
   fsp->pragmaDirectiveLoc = pragmaDirectiveLoc;
   fsp->startPragmaLoc = PragmaTok.getLocation();
   fsp->endPragmaLoc = next.getLocation();
+
   configure(PragmaTok, PP, fsp);
+}
+
+static std::string getStringToken(const Token& next, clang::CompilerInstance& ci)
+{
+  //the next token should be a string naming the argument
+  std::string argName;
+  switch (next.getKind()){
+    case tok::string_literal:
+      argName = next.getLiteralData();
+      break;
+    case tok::identifier:
+      argName = next.getIdentifierInfo()->getName().str();
+      break;
+    default: {
+      std::string error = std::string("invalid pragma token of type ") + next.getName()
+         + " - expected string literal argument name";
+      errorAbort(next.getLocation(), ci, error);
+    }
+  }
+  return argName;
+}
+
+static void assertToken(const Token& tok, tok::TokenKind kind, clang::CompilerInstance& ci)
+{
+  if (tok.getKind() != kind){
+    std::string error = std::string("invalid pragma token of type ") + tok.getName()
+       + " - expected " + tok::getTokenName(kind);
+    errorAbort(tok.getLocation(), ci, error);
+  }
+}
+
+SSTPragma*
+SSTStringMapPragmaHandler::handleSSTPragma(const std::list<clang::Token>& tokens) const
+{
+  std::map<std::string, std::list<std::string>> allArgs;
+  auto iter = tokens.begin();
+  auto incrementIter = [&](){
+    ++iter;
+    if (iter == tokens.end()){
+      if (iter == tokens.end()){
+        errorAbort(pragmaLoc_, ci_,
+         "mis-formatted pragma, pragma modifiers should be of the form 'arg(a)' or 'arg(a,b)'");
+      }
+    }
+  };
+
+  while (iter != tokens.end()){
+    auto argName = getStringToken(*iter, ci_);
+    incrementIter();
+    assertToken(*iter, tok::l_paren, ci_);
+    incrementIter();
+    std::list<std::string> argList;
+    while ((*iter).getKind() != tok::r_paren){
+      std::stringstream sstr;
+      while ((*iter).getKind() != tok::comma &&
+             (*iter).getKind() != tok::r_paren){
+        tokenToString(*iter, sstr, ci_);
+        incrementIter();
+      }
+      std::string str = sstr.str();
+      if (!str.empty()){
+        argList.push_back(sstr.str());
+      }
+    }
+    allArgs[argName] = std::move(argList);
+    ++iter;
+  }
+  return allocatePragma(allArgs);
 }
 
 void
@@ -424,7 +558,7 @@ SSTGlobalVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
              "global pragma should only be applied to statements");
 }
 
-SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstance& CI,
+SSTNullVariablePragma::SSTNullVariablePragma(CompilerInstance& CI,
                                              const std::list<Token> &tokens)
  : SSTPragma(NullVariable),
    nullSafe_(false), deleteAll_(false),
@@ -458,7 +592,7 @@ SSTNullVariablePragma::SSTNullVariablePragma(SourceLocation loc, CompilerInstanc
       break;
     default:
       std::string error = std::string("token to pragma is not a valid string name: ") + token.getName();
-      errorAbort(loc, CI, error);
+      errorAbort(token.getLocation(), CI, error);
       break;
     }
 
@@ -592,7 +726,7 @@ SSTNullVariablePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   }
 }
 
-SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
+SSTNullTypePragma::SSTNullTypePragma(CompilerInstance& CI,
                                      const std::list<Token> &tokens)
  : SSTNullVariablePragma(NullType)
 {
@@ -646,7 +780,7 @@ SSTNullTypePragma::SSTNullTypePragma(SourceLocation loc, CompilerInstance& CI,
       break;
     default: {
       std::string err = std::string("token ") + token.getName() + " is not valid in type names";
-      errorAbort(loc, CI, err);
+      errorAbort(token.getLocation(), CI, err);
       break;
     }
     }
@@ -730,8 +864,8 @@ static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
   }
 }
 
-SSTNullFieldsPragma::SSTNullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
-  SSTNullVariablePragma(loc, CI, tokens)
+SSTNullFieldsPragma::SSTNullFieldsPragma(CompilerInstance &CI, const std::list<Token> &tokens) :
+  SSTNullVariablePragma(CI, tokens)
 {
   for (auto& str : extras_){
     nullFields_.insert(str);
@@ -753,8 +887,8 @@ SSTNullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
              "null_fields pragma should only be applied to struct declarations, not statements");
 }
 
-SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(SourceLocation loc, CompilerInstance &CI, const std::list<Token> &tokens) :
-  SSTNullVariablePragma(loc, CI, tokens)
+SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(CompilerInstance &CI, const std::list<Token> &tokens) :
+  SSTNullVariablePragma(CI, tokens)
 {
   this->cls = NonnullFields;
   for (auto& str : extras_){
@@ -801,171 +935,92 @@ SSTNullTypePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTPragma::tokenStreamToString(SourceLocation loc,
-                               std::list<Token>::const_iterator beg,
+SSTPragma::tokenStreamToString(std::list<Token>::const_iterator beg,
                                std::list<Token>::const_iterator end,
                                std::ostream& os,
                                CompilerInstance& CI)
 {
   for (auto iter=beg; iter != end; ++iter){
-    const Token& next = *iter;
-    switch (next.getKind()){
-      case tok::identifier:
-        os << next.getIdentifierInfo()->getNameStart();
-        break;
-      case tok::semi:
-        os << ";";
-        break;
-      case tok::l_paren:
-        os << '(';
-        break;
-      case tok::r_paren:
-        os << ')';
-        break;
-      case tok::comma:
-        os << ',';
-        break;
-      case tok::less:
-        os << "<";
-        break;
-      case tok::slash:
-        os << "/";
-        break;
-      case tok::star:
-        os << "*";
-        break;
-      case tok::period:
-        os << ".";
-        break;
-      case tok::kw_return:
-        os << "return ";
-        break;
-      case tok::coloncolon:
-        os << "::";
-        break;
-      case tok::kw_long:
-        os << "long";
-        break;
-      case tok::kw_int:
-        os << "int";
-        break;
-      case tok::kw_double:
-        os << "double";
-        break;
-      case tok::equalequal:
-        os << "==";
-        break;
-      case tok::kw_sizeof:
-        os << "sizeof";
-        break;
-      case tok::minus:
-        os << "-";
-        break;
-      case tok::percent:
-        os << "%";
-        break;
-      case tok::kw_true:
-        os << "true";
-        break;
-      case tok::kw_false:
-        os << "false";
-        break;
-      case tok::arrow:
-        os << "->";
-        break;
-      case tok::kw_nullptr:
-        os << "nullptr";
-        break;
-      case tok::string_literal:
-      case tok::numeric_constant:
-      {
-        getLiteralDataAsString(next, os);
-        break;
-      }
-      default:
-        std::cerr << "bad token: " << next.getName() << std::endl;
-        errorAbort(loc, CI, "invalid token in replace pragma");
-        break;
-    }
+    tokenToString(*iter, os, CI);
   }
 }
 
 SSTPragma*
-SSTNullTypePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTNullTypePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
-  return new SSTNullTypePragma(loc, ci_, tokens);
+  return new SSTNullTypePragma(ci_, tokens);
 }
 
 SSTPragma*
-SSTNullVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTNullVariablePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
-  return new SSTNullVariablePragma(loc, ci_, tokens);
+  return new SSTNullVariablePragma(ci_, tokens);
 }
 
 SSTPragma*
-SSTNullVariableGeneratorPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTNullVariableGeneratorPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
-  return new SSTNullVariableGeneratorPragma(loc, ci_, tokens);
+  return new SSTNullVariableGeneratorPragma(ci_, tokens);
 }
 
 SSTPragma*
-SSTNullFieldsPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTNullFieldsPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
-  return new SSTNullFieldsPragma(loc, ci_, tokens);
+  return new SSTNullFieldsPragma(ci_, tokens);
 }
 
 SSTPragma*
-SSTNonnullFieldsPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTNonnullFieldsPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
-  return new SSTNonnullFieldsPragma(loc, ci_, tokens);
+  return new SSTNonnullFieldsPragma(ci_, tokens);
 }
 
 SSTPragma*
-SSTKeepIfPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTKeepIfPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTKeepIfPragma(sstr.str());
 }
 
 SSTPragma*
-SSTReturnPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTReturnPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTReturnPragma(loc, ci_, sstr.str());
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTReturnPragma(ci_, sstr.str());
 }
 
 SSTPragma*
-SSTGlobalVariablePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTGlobalVariablePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
-  return new SSTGlobalVariablePragma(loc, ci_, sstr.str());
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
+  return new SSTGlobalVariablePragma(ci_, sstr.str());
 }
 
 SSTPragma*
-SSTEmptyPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTEmptyPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTEmptyPragma(sstr.str());
 }
 
 SSTPragma*
-SSTBranchPredictPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTBranchPredictPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTBranchPredictPragma(sstr.str());
 }
 
 SSTPragma*
-SSTAdvanceTimePragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTAdvanceTimePragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   if (tokens.size() < 2){
-    errorAbort(loc, ci_,
-               "advance_time pragma needs at least two arguments: <units> <number>");
+    errorAbort(pragmaLoc_, ci_,
+      "advance_time pragma needs at least two arguments: <units> <number>");
   }
   
   //Orginal code was ausing assertion to fail inside of token::getLiteralData();
@@ -973,26 +1028,26 @@ SSTAdvanceTimePragmaHandler::allocatePragma(SourceLocation loc, const std::list<
 
   std::stringstream units;  
   iter++;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), iter, units, ci_); 
+  SSTPragma::tokenStreamToString(tokens.begin(), iter, units, ci_);
 
   std::stringstream sval;
-  SSTPragma::tokenStreamToString(loc, iter, tokens.end(), sval, ci_);
+  SSTPragma::tokenStreamToString(iter, tokens.end(), sval, ci_);
   return new SSTAdvanceTimePragma(units.str(), sval.str());
 }
 
 SSTPragma*
-SSTCallFunctionPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTCallFunctionPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
   sstr << ";"; //semi-colon not required in pragma
   return new SSTCallFunctionPragma(sstr.str());
 }
 
 SSTPragma*
-SSTOverheadPragmaHandler::allocatePragma(SourceLocation loc, const std::list<Token> &tokens) const
+SSTOverheadPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
 {
   std::stringstream sstr;
-  SSTPragma::tokenStreamToString(loc, tokens.begin(), tokens.end(), sstr, ci_);
+  SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTOverheadPragma(sstr.str());
 }

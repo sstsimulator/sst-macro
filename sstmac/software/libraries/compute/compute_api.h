@@ -152,6 +152,23 @@ void sstmac_memwrite(uint64_t bytes);
 
 void sstmac_memcopy(uint64_t bytes);
 
+/**
+This has to work from C, so we must regrettably use VA_ARGS
+*/
+void sstmac_start_memoize(const char* token, const char* model);
+void sstmac_start_memoize(const char* token, const char* model);
+void sstmac_start_memoize(const char* token, const char* model);
+
+void sstmac_finish_memoize0(const char* token);
+void sstmac_finish_memoize1(const char* token, double p1);
+void sstmac_finish_memoize2(const char* token, double p1, double p2);
+
+void sstmac_compute_memoize0(const char* token);
+void sstmac_compute_memoize1(const char* token, double p1);
+void sstmac_compute_memoize2(const char* token, double p1, double p2);
+
+void sstmac_stop_memoize(const char* token);
+
 #define SSTMAC_sleep(...) sstmac_sleep(__VA_ARGS__)
 #define SSTMAC_usleep(...) sstmac_usleep(__VA_ARGS__)
 #define SSTMAC_compute(...) sstmac_compute(__VA_ARGS__)

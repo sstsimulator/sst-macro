@@ -141,7 +141,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     rewriter_(R), visitingGlobal_(false),
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0), activeBinOpIdx_(-1),
-    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
+    foundCMain_(false), keepGlobals_(false),
+    noSkeletonize_(true),
+    memoizePass_(false),
     refactorMain_(true),
     pragmaConfig_(cfg),
     numRelocations_(0),
@@ -197,6 +199,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void setCompilerInstance(clang::CompilerInstance& c){
     ci_ = &c;
+  }
+
+  bool memoizePass() const {
+    return memoizePass_;
   }
 
   /**
@@ -691,6 +697,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::string mainName_;
   bool keepGlobals_;
   bool noSkeletonize_;
+  bool memoizePass_;
   std::set<std::string> ignoredHeaders_;
   std::set<std::string> reservedNames_;
   PragmaConfig& pragmaConfig_;
