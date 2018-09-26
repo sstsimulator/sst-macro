@@ -12,12 +12,10 @@ def getTime(fname):
   else:
     return "No time"
 
-def check(fname):
-  path = "/Users/jjwilke/Programs/sst-macro/event_queues/tests/reference"
-  dst = os.path.join(path, fname.replace("tmp","ref"))
+def check(tmpFile, refFile):
   print fname
-  print getTime(fname)
-  print getTime(dst)
+  print getTime(tmpFile)
+  print getTime(refFile)
   print "\n"
 
 

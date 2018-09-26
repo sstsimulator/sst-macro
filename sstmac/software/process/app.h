@@ -95,8 +95,6 @@ class app : public thread
 
   int allocate_tls_key(destructor_fxn fnx);
 
-  static const int use_omp_num_threads = -1;
-
   static sprockit::sim_parameters* get_params();
 
   app* parent_app() const override {
@@ -115,9 +113,6 @@ class app : public thread
     int nflops_per_loop,
     int nintops_per_loop,
     int bytes_per_loop);
-
-  void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes,
-                        int nthread = use_omp_num_threads);
 
   void compute_block_read(uint64_t bytes);
 
@@ -230,6 +225,8 @@ class app : public thread
  private:
   char* allocate_data_segment(bool tls);
 
+  void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes, int nthread);
+
   lib_compute_memmove* compute_lib_;
   std::string unique_name_;
 
@@ -237,7 +234,6 @@ class app : public thread
   int next_condition_;
   int next_mutex_;
   uint64_t min_op_cutoff_;
-  int omp_num_threads_;
 
   std::map<long, thread*> subthreads_;
   std::map<int, mutex_t> mutexes_;

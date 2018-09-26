@@ -55,7 +55,7 @@ class ReplaceAction : public clang::ASTFrontendAction {
   ReplaceAction();
 
 #if CLANG_VERSION_MAJOR <= 5
-  bool BeginSourceFileAction(clang::CompilerInstance &CI, llvm::StringRef Filename) override;
+  bool BeginSourceFileAction(clang::CompilerInstance &CI, llvm::StringRef Filename);
 #else
   bool BeginSourceFileAction(clang::CompilerInstance &CI) override;
 #endif
@@ -80,7 +80,6 @@ class ReplaceAction : public clang::ASTFrontendAction {
   GlobalVarNamespace globalNs_;
   clang::CompilerInstance* ci_;
   PragmaConfig prgConfig_;
-  std::set<clang::Stmt*> deletedStmts_;
 };
 
 #endif

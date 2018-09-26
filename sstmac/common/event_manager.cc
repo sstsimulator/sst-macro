@@ -382,9 +382,18 @@ event_manager::finish_stats()
         entry.main_collector = entry.collectors.front();
         entry.collectors.clear();
       } else {
-        stat_collector* first = entry.collectors.front();
-        entry.main_collector = first->clone();
-        main_allocated = true;
+        //see if any of the existing ones should be the main
+        for (stat_collector* stat : entry.collectors){
+          if (stat->is_main()){
+            entry.main_collector = stat;
+            break;
+          }
+        }
+        if (!entry.main_collector){
+          stat_collector* first = entry.collectors.front();
+          entry.main_collector = first->clone();
+          main_allocated = true;
+        }
       }
     }
 

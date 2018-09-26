@@ -95,13 +95,13 @@ extern "C" void sstmac_memcopy(uint64_t bytes){
 }
 
 extern "C" void sstmac_compute_detailed(uint64_t nflops, uint64_t nintops, uint64_t bytes){
-  sstmac::sw::operating_system::current_thread()->parent_app()
+  sstmac::sw::operating_system::current_thread()
     ->compute_detailed(nflops, nintops, bytes);
 }
 
 extern "C" void sstmac_compute_detailed_nthr(uint64_t nflops, uint64_t nintops, uint64_t bytes,
                                         int nthread){
-  sstmac::sw::operating_system::current_thread()->parent_app()
+  sstmac::sw::operating_system::current_thread()
     ->compute_detailed(nflops, nintops, bytes, nthread);
 }
 

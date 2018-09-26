@@ -47,9 +47,10 @@ class thread_safe_new {
     //do nothing - the allocation is getting cleaned up
   }
 
-  static T* allocate_at_beginning(){
+  template <class... Args>
+  static T* allocate_at_beginning(Args&&... args){
     void* ptr = allocate(0);
-    return new (ptr) T;
+    return new (ptr) T(std::forward<Args>(args)...);
   }
 
   static void* allocate(int thread){
@@ -79,8 +80,9 @@ class thread_safe_new {
     alloc_.available[thread].push_back(ptr);
   }
 #else
-  static T* allocate_at_beginning(){
-    return new T;
+  template <class... Args>
+  static T* allocate_at_beginning(Args&&... args){
+    return new T(std::forward<Args>(args)...);
   }
 
   static void free_at_end(T* ptr){

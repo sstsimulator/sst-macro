@@ -38,7 +38,7 @@ if BUILD_SUMI_MPI
 SINGLETESTS += test_uq
 
 if HAVE_OTF2
-SINGLETESTS += test_otf2 
+SINGLETESTS += test_otf2 test_otf2_write
 endif
 
 if ENABLE_DEBUG
@@ -94,6 +94,12 @@ test_otf2.$(CHKSUF): $(SSTMACEXEC) otf2_traces
 	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_otf2_coverage.ini \
           -d mpi --no-wall-time
+
+test_otf2_write.$(CHKSUF): $(SSTMACEXEC) 
+	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
+    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_otf2_write.ini \
+          --no-wall-time
+
 endif 
 ### SUMI MPI
 

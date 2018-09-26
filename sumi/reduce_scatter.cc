@@ -76,6 +76,7 @@ halving_reduce_scatter_actor::init_dag()
 bool
 halving_reduce_scatter_actor::is_lower_partner(int virtual_me, int partner_gap)
 {
+  return false;
 }
 
 void

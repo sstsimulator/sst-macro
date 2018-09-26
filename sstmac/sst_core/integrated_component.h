@@ -77,15 +77,18 @@ using SST::SST_ELI_getTertiaryNumberFromVersion;
    {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
    {"rtr",                   "Special link to Merlin router",       {}}
 
-#define RegisterComponent(name,parent,cls,lib,cat,desc) \
+#define RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
   FactoryRegister(name,parent,cls,desc) \
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS() \
-  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,SST_ELI_ELEMENT_VERSION(7,1,0),desc,cat) \
+  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,SST_ELI_ELEMENT_VERSION(8,0,0),desc,cat) \
   SST_ELI_DOCUMENT_PARAMS() \
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
-  SST_ELI_DOCUMENT_STATISTICS() \
   cls(SST::ComponentId_t id, SST::Params& params) : \
     cls(make_spkt_params_from_sst_params(params), id, nullptr){}
+
+#define RegisterComponent(name,parent,cls,lib,cat,desc) \
+  RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
+  SST_ELI_DOCUMENT_STATISTICS()
 
 #define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
   FactoryRegister(name,parent,cls,desc) \

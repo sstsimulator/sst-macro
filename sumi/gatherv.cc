@@ -73,7 +73,7 @@ btree_gatherv_actor::init_buffers(void *dst, void *src)
 void
 btree_gatherv_actor::finalize_buffers()
 {
-  if (!result_buffer_.ptr)
+  if (!result_buffer_)
     return;
 
 }

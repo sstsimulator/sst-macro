@@ -475,7 +475,10 @@ class dag_collective_actor :
 
  protected:
   dag_collective_actor() :
-    slicer_(nullptr)
+    slicer_(nullptr),
+    result_buffer_(nullptr),
+    recv_buffer_(nullptr),
+    send_buffer_(nullptr)
   {
   }
 
@@ -547,9 +550,9 @@ class dag_collective_actor :
    * @param buf in/out parameter that will hold the correct buffer
    * @return The size of the buffer in bytes
    */
-  size_t set_send_buffer(action* ac, public_buffer& buf);
+  void* get_send_buffer(action* ac, uint64_t& nbytes);
 
-  void set_recv_buffer(action* ac, public_buffer& buf);
+  void* get_recv_buffer(action* ac);
 
   collective_work_message* new_message(action* ac, collective_work_message::action_t act);
 
@@ -593,15 +596,15 @@ class dag_collective_actor :
   /**
   * @brief This where I send data from
   */
-  public_buffer send_buffer_;
+  void* send_buffer_;
   /**
   * @brief This is where I directly receive data from neighbors
   */
-  public_buffer recv_buffer_;
+  void* recv_buffer_;
   /**
   * @brief This is where I accumulate or put results after a receive
   */
-  public_buffer result_buffer_;
+  void* result_buffer_;
 
   collective::type_t type_;
 
@@ -611,6 +614,7 @@ class dag_collective_actor :
   active_map active_comms_;
   pending_map pending_comms_;
   std::list<action*> completed_actions_;
+  std::list<action*> ready_actions_;
 
   pending_msg_map pending_send_headers_;
   pending_msg_map pending_recv_headers_;

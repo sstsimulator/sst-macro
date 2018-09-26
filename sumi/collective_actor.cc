@@ -326,8 +326,8 @@ dag_collective_actor::send_eager_message(action* ac)
    "for buffer %p = %d + %p",
    rank_str().c_str(), to_string().c_str(), this,
    ac->partner, tag_,
-   msg->eager_buffer(),
-   ac->offset, send_buffer_.ptr);
+   msg->local_buffer(),
+   ac->offset, send_buffer_);
 
   do_sumi_debug_print("sending to", rank_str().c_str(), ac->partner,
    ac->round, ac->offset, msg->nelems(), type_size_, msg->eager_buffer());
@@ -353,7 +353,7 @@ dag_collective_actor::send_rdma_put_header(action* ac)
    rank_str().c_str(), to_string().c_str(), this, msg,
    rank_str(ac->partner).c_str(),
    ac->round, tag_,
-   msg->remote_buffer().ptr, ac->offset, recv_buffer_.ptr);
+   msg->remote_buffer(), ac->offset, recv_buffer_);
 
   my_api_->send_header(ac->phys_partner, msg, message::no_ack, cfg_.cq_id);
 }
@@ -374,8 +374,8 @@ dag_collective_actor::send_rdma_get_header(action* ac)
    rank_str().c_str(), to_string().c_str(), this,
    rank_str(ac->partner).c_str(),
    ac->round, tag_,
-   msg->remote_buffer().ptr,
-   ac->offset, send_buffer_.ptr);
+   msg->remote_buffer(),
+   ac->offset, send_buffer_);
 
   int dst = dense_to_global_dst(ac->partner);
   my_api_->send_header(dst, msg, message::no_ack, cfg_.cq_id);
@@ -829,44 +829,40 @@ dag_collective_actor::data_recved(
   data_recved(ac, msg, recvd_buffer);
 }
 
-void
-dag_collective_actor::set_recv_buffer(action* ac_, public_buffer& recv_buf)
+void*
+dag_collective_actor::get_recv_buffer(action* ac_)
 {
   recv_action* ac = static_cast<recv_action*>(ac_);
-  recv_buf = ac->buf_type != recv_action::in_place
+  void* recv_buf = ac->buf_type != recv_action::in_place
                 ? recv_buffer_ : result_buffer_;
-  recv_buf.offset_ptr(ac->offset*type_size_);
-  if (result_buffer_.ptr && recv_buf.ptr == 0){
+  if (result_buffer_ && recv_buf == nullptr){
     sprockit::abort("working with real payload, but somehow getting a null buffer");
   }
+  return sumi::message::offset_ptr(recv_buf,ac->offset*type_size_);
 }
 
-size_t
-dag_collective_actor::set_send_buffer(action* ac_, public_buffer& send_buf)
+void*
+dag_collective_actor::get_send_buffer(action* ac_, uint64_t& nbytes)
 {
   send_action* ac = static_cast<send_action*>(ac_);
-  size_t nbytes = ac->nelems * type_size_;
+  nbytes = ac->nelems * type_size_;
   switch(ac->buf_type){
     case send_action::in_place:
       if (slicer_->contiguous()){
-        send_buf = result_buffer_;
-        send_buf.offset_ptr(ac->offset*slicer_->element_packed_size());
+        return sumi::message::offset_ptr(result_buffer_, ac->offset*slicer_->element_packed_size());
       } else {
-        send_buf = send_buffer_; //will use a temp buffer
         nbytes = slicer_->pack_send_buf(send_buffer_, result_buffer_,
                                ac->offset, ac->nelems);
+        return send_buffer_;
       }
       break;
     case send_action::temp_send:
-      send_buf = send_buffer_;
-      send_buf.offset_ptr(ac->offset*type_size_);
+      return sumi::message::offset_ptr(send_buffer_, ac->offset*type_size_);
       break;
     case send_action::prev_recv:
-      send_buf = recv_buffer_;
-      send_buf.offset_ptr(ac->offset*type_size_);
+      return sumi::message::offset_ptr(recv_buffer_, ac->offset*type_size_);
       break;
   }
-  return nbytes;
 }
 
 collective_work_message*
@@ -880,22 +876,27 @@ dag_collective_actor::new_message(action* ac, collective_work_message::action_t 
 
   switch(act){
     case collective_work_message::eager_payload: {
-      size_t nbytes = set_send_buffer(ac, msg->local_buffer());
+      uint64_t nbytes;
+      void* buf = get_send_buffer(ac, nbytes);
+      msg->set_local_buffer(buf);
       msg->set_byte_length(nbytes);
       break;
     }
     case collective_work_message::rdma_get_header: {
-      size_t nbytes = set_send_buffer(ac, msg->remote_buffer());
+      uint64_t nbytes;
+      void* buf = get_send_buffer(ac, nbytes);
+      msg->set_remote_buffer(buf);
       msg->set_byte_length(nbytes);
       break;
     }
     case collective_work_message::rdma_put_header:
-      set_recv_buffer(ac, msg->remote_buffer());
+      msg->set_remote_buffer(get_recv_buffer(ac));
       break;
     default:
-    spkt_abort_printf("collective_actor::new message: created with invalid type %s",
+      spkt_abort_printf("collective_actor::new message: created with invalid type %s",
                collective_work_message::tostr(act));
   }
+
   return msg;
 }
 
@@ -917,8 +918,9 @@ dag_collective_actor::next_round_ready_to_put(
     //reuse the header and send it back
     header->set_action(collective_work_message::put_data);
     header->reverse();
-    size_t size = set_send_buffer(ac, header->local_buffer());
+    uint64_t size; void* buf = get_send_buffer(ac, size);
     header->set_byte_length(size);
+    header->set_local_buffer(buf);
 
     debug_printf(sumi_collective | sumi_collective_sendrecv,
       "Rank %s, collective %s(%p) starting put %d elems at offset %d to %d(%d) for round=%d tag=%d msg %p",
@@ -949,7 +951,7 @@ dag_collective_actor::next_round_ready_to_get(
   } else {
     //reuse the header and send it back
     header->set_action(collective_work_message::get_data);
-    set_recv_buffer(ac, header->local_buffer());
+    header->set_local_buffer(get_recv_buffer(ac));
 
     debug_printf(sumi_collective | sumi_collective_sendrecv,
         "Rank %s, collective %s(%p) starting get %d elems at offset %d from %d(%d) for round=%d tag=%d msg %p",
@@ -989,7 +991,7 @@ dag_collective_actor::incoming_recv_message(action* ac, collective_work_message*
     break;
   case collective_work_message::eager_payload:
     //data recved will clear the actions
-    data_recved(ac, msg, msg->eager_buffer());
+    data_recved(ac, msg, msg->local_buffer());
     delete msg;
     break;
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
@@ -1088,7 +1090,7 @@ dag_collective_actor::done_msg() const
 {
   auto msg = new collective_done_message(tag_, type_, cfg_.dom, cfg_.cq_id);
   msg->set_comm_rank( cfg_.dom->my_comm_rank());
-  msg->set_result(result_buffer_.ptr);
+  msg->set_result(result_buffer_);
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   auto end = failed_ranks_.start_iteration();
   for (auto it = failed_ranks_.begin(); it != end; ++it){

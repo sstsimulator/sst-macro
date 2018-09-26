@@ -2061,5 +2061,7 @@ extern mymask64 getmask64();
 #define __builtin_ia32_expandloadsf512_maskz(...) get512()
 #define __builtin_ia32_expandloadsi512_maskz(...) get512i()
 
+struct clangFloat128Fix {};
+
 #endif
 

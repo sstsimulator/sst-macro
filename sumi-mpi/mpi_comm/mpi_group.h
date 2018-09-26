@@ -77,6 +77,14 @@ class mpi_group  {
     id_ = grp;
   }
 
+  bool is_comm_world() const {
+    return is_comm_world_;
+  }
+
+  const std::vector<task_id>& world_ranks() const {
+    return local_to_world_map_;
+  }
+
   /**
    * @brief rank_of_task See if task exists in this group.
    *      If yes, return its rank within the group.

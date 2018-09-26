@@ -36,6 +36,7 @@ int fxn()
 
   int n = vec.size();
 
+
  { uint64_t flops=0; uint64_t readBytes=0; uint64_t writeBytes=0; uint64_t intops=0; {  uint64_t tripCount0=(((vec.size())-(0)));  flops += tripCount0*1;}sstmac_compute_detailed(flops,intops,readBytes); }
 
 
