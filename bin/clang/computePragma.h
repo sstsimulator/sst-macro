@@ -123,13 +123,33 @@ class SSTMemoizeComputePragma : public SSTPragma
     inputs_(std::move(inputs))
   {}
 
+  bool firstPass(const clang::Decl *d) const override {
+    return true;
+  }
+
   void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
 
  private:
+  /**
+   * @brief doReplace
+   * @param s
+   * @param r
+   * @param callArgs
+   * @param callParams
+   * @param insertAfterStartToken Whether to insert the sstmac_X_memoize call
+   *        before or after the start token of the statement
+   * @param insertAfterEndToken
+   */
+  void doReplace(clang::Stmt* firstStmt, clang::Stmt* lasStmt, clang::Stmt* fullStmt,
+                 clang::Rewriter& r, clang::Expr** callArgs,
+                 const clang::ParmVarDecl** callParams);
+
   std::string token_;
   std::string model_;
   bool skeletonize_;
   std::list<std::string> inputs_;
+  std::list<int> fxnArgInputs_;
 };
 
 class SSTOpenMPParallelPragmaHandler : public SSTPragmaHandler

@@ -1931,6 +1931,16 @@ SkeletonASTVisitor::getEndLoc(SourceLocation searchStart)
   return SourceLocation();
 }
 
+void
+SkeletonASTVisitor::checkFunctionPragma(FunctionDecl* fd)
+{
+  auto iter = pragmaConfig_.functionPragmas.find(fd->getCanonicalDecl());
+  if (iter != pragmaConfig_.functionPragmas.end()){
+    SSTPragma* prg = iter->second;
+    prg->activate(fd, rewriter_, pragmaConfig_);
+  }
+}
+
 bool
 SkeletonASTVisitor::checkFileVar(const std::string& filePrefix, VarDecl* D)
 {
@@ -1957,26 +1967,6 @@ SkeletonASTVisitor::deleteStmt(Stmt *s)
 {
   //go straight to replace, don't delay this
   ::replace(s, rewriter_, "", *ci_);
-}
-
-void
-SkeletonASTVisitor::deletePragmaText(SSTPragma *prg, Stmt* s)
-{
-  //eliminate the pragma text
-  if (prg->depth == 0){
-    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
-    ::replace(rng, rewriter_, "", *ci_);
-  }
-}
-
-void
-SkeletonASTVisitor::deletePragmaText(SSTPragma *prg, Decl* d)
-{
-  //eliminate the pragma text
-  if (prg->depth == 0){
-    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
-    ::replace(rng, rewriter_, "", *ci_);
-  }
 }
 
 static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
@@ -2619,8 +2609,6 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   } else if (D->isTemplateInstantiation()){
     return true; //do not visit implicitly instantiated template stuff
   } else if (!D->isThisDeclarationADefinition()){
-    //clang is weird... this can be just a declaration
-    //but it gets its definition filled in...
     return true;
   }
 
@@ -2644,6 +2632,7 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   }
 
   PragmaActivateGuard pag(D, this, D->isThisDeclarationADefinition());
+  checkFunctionPragma(D);
   if (!pag.skipVisit() && D->getBody()){
     PushGuard<FunctionDecl*> pg(fxnContexts_, D);
     traverseFunctionBody(D->getBody());
@@ -2736,8 +2725,6 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   //this got implicitly inserted into AST - has no source location
   if (D->isTemplateInstantiation())
     return true;
-
-
 
   PragmaActivateGuard pag(D, this);
   if (D->isThisDeclarationADefinition() && !pag.skipVisit()) {
@@ -3253,7 +3240,7 @@ SkeletonASTVisitor::TraverseDecl(Decl *D)
 
 
 void
-SkeletonASTVisitor::PragmaActivateGuard::init()
+PragmaActivateGuard::init()
 {
   skipVisit_ = false;
   auto iter = myPragmas_.begin();
@@ -3262,7 +3249,7 @@ SkeletonASTVisitor::PragmaActivateGuard::init()
     auto tmp = iter++;
     SSTPragma* prg = *tmp;
 
-    bool activate = !visitor_->noSkeletonize();
+    bool activate = skeletonizing_;
 
     //a compute pragma totally deletes the block
     bool blockDeleted = false;
@@ -3297,18 +3284,28 @@ SkeletonASTVisitor::PragmaActivateGuard::init()
     }
   }
 
-  if (visitor_->pragmaConfig_.makeNoChanges){
+  if (pragmaConfig_.makeNoChanges){
     skipVisit_ = true;
-    visitor_->pragmaConfig_.makeNoChanges = false;
+    pragmaConfig_.makeNoChanges = false;
   }
 }
 
-SkeletonASTVisitor::PragmaActivateGuard::~PragmaActivateGuard()
+PragmaActivateGuard::~PragmaActivateGuard()
 {
   for (SSTPragma* prg : activePragmas_){
-    prg->deactivate(visitor_->pragmaConfig_);
+    prg->deactivate(pragmaConfig_);
   }
-  visitor_->pragmaConfig_.pragmaDepth--;
+  pragmaConfig_.pragmaDepth--;
+}
+
+void
+PragmaActivateGuard::deletePragmaText(SSTPragma *prg, CompilerInstance& ci)
+{
+  //eliminate the pragma text
+  if (prg->depth == 0){
+    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
+    ::replace(rng, rewriter_, "", ci);
+  }
 }
 
 void
@@ -3501,32 +3498,20 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
 bool
 FirstPassASTVistor::VisitDecl(Decl *d)
 {
-  if (noSkeletonize_) return true;
-
-  std::list<SSTPragma*> pragmas = pragmas_.getMatches(d,true);
-  for (SSTPragma* prg : pragmas){
-    prg->activate(d, rewriter_, pragmaConfig_);
-    pragmas_.erase(prg);
-  }
+  PragmaActivateGuard pag(d, this, !noSkeletonize_);
   return true;
 }
 
 bool
 FirstPassASTVistor::VisitStmt(Stmt *s)
 {
-  if (noSkeletonize_) return true;
-
-  std::list<SSTPragma*> pragmas = pragmas_.getMatches(s,true);
-  for (SSTPragma* prg : pragmas){
-    prg->activate(s, rewriter_, pragmaConfig_);
-    pragmas_.erase(prg);
-  }
+  PragmaActivateGuard pag(s, this, !noSkeletonize_);
   return true;
 }
 
-FirstPassASTVistor::FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
-                   PragmaConfig& cfg) :
-  pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg), noSkeletonize_(false)
+FirstPassASTVistor::FirstPassASTVistor(CompilerInstance& ci,
+  SSTPragmaList& prgs, clang::Rewriter& rw, PragmaConfig& cfg) :
+  ci_(ci), pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg), noSkeletonize_(false)
 {
   const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){

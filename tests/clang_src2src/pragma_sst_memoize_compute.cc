@@ -1,3 +1,9 @@
+#pragma sst memoize skeletonize(false) model(linear) inputs(niter)
+void memoFxn(int niter);
+
+void memoFxn(int n){
+  for (int i=0; i < n; ++i);
+}
 
 int fxn()
 {
@@ -19,6 +25,8 @@ int fxn()
       mul *= x[idx[i]];
     }
   }
+  memoFxn(10);
+  memoFxn(i+12);
   return 0;
 }
 

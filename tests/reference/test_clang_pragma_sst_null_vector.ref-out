@@ -29,6 +29,7 @@ struct vector {
 
 int fxn()
 {
+
  sstmac::vector vec;
   vec.resize(100);
 

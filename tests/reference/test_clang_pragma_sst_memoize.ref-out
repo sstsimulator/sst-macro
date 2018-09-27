@@ -1,4 +1,11 @@
 
+
+void memoFxn(int niter);
+
+void memoFxn(int n){
+  sstmac_start_memoize("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc:2","linear"); for (int i=0; i < n; ++i);; sstmac_finish_memoize1("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc:2",n);
+}
+
 int fxn()
 {
   int i=0;
@@ -6,7 +13,7 @@ int fxn()
   double* x = new double[10];
   int* idx = new int[5];
 
- sstmac_start_memoize("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc8",""); for (i=0; i < 5; ++i){
+ sstmac_start_memoize("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc:15","linear"); for (i=0; i < 5; ++i){
     mul *= i;
     for (int j=0; j < 10; ++j){
       mul += (j-1);
@@ -18,7 +25,9 @@ int fxn()
       idx[i] -= 3;
       mul *= x[idx[i]];
     }
-  }; sstmac_finish_memoize1("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc8",5);
+  }; sstmac_finish_memoize1("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc:15",5);
+  memoFxn(10);
+  memoFxn(i+12);
   return 0;
 }
 

@@ -162,34 +162,126 @@ SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
 }
 
 void
-SSTMemoizeComputePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+SSTMemoizeComputePragma::doReplace(Stmt* firstStmt, Stmt* lastStmt, Stmt* fullSmt,
+                                   Rewriter& r, Expr** callArgs, const ParmVarDecl** callParams)
 {
+  std::string argsStr;
+  if (!fxnArgInputs_.empty()){
+    if (!callArgs && !callParams){
+      internalError(firstStmt->getLocStart(), *CI,
+           "have function args, but no call args or call params");
+    }
+    //this better be a function call
+    PrettyPrinter pp;
+    for (int idx : fxnArgInputs_){
+      pp.os << ",";
+      if (callArgs) pp.print(callArgs[idx]);
+      else          pp.os << callParams[idx]->getNameAsString();
+    }
+    argsStr = pp.str();
+  } else if (!inputs_.empty()) {
+    std::stringstream args_sstr;
+    for (auto& str : inputs_){
+      args_sstr << "," << str;
+    }
+    argsStr = args_sstr.str();
+  }
+
   if (visitor->memoizePass()){
     std::stringstream start_sstr;
     start_sstr << "sstmac_start_memoize("
        << "\"" << token_ << "\",\"" << model_ << "\"" << "); ";
-    r.InsertText(s->getLocStart(), start_sstr.str(), false);
+    r.InsertText(firstStmt->getLocStart(), start_sstr.str(), false);
     std::stringstream finish_sstr;
-    finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "(\"" << token_ << "\"";
-    for (auto& str : inputs_){
-      finish_sstr << "," << str;
-    }
-    finish_sstr << ");";
-    SourceLocation insertLoc = s->getLocEnd().getLocWithOffset(1);
+    finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "(\"" << token_
+                << "\"" << argsStr << ");";
+
+    SourceLocation insertLoc = lastStmt->getLocEnd().getLocWithOffset(1);
     r.InsertText(insertLoc, finish_sstr.str(), true);
   } else {
     std::stringstream sstr;
     sstr << "sstmac_compute_memoize" << inputs_.size() << "("
-       << "\"" << token_ << "\"";
-    for (auto& str : inputs_){
-      sstr << "," << str;
-    }
-    sstr << ");";
+       << "\"" << token_ << "\"" << argsStr << ");";
     if (skeletonize_){
-      replace(s, r, sstr.str(), *CI);
+      replace(fullSmt, r, sstr.str(), *CI);
     } else {
-      r.InsertText(s->getLocStart(), sstr.str(), false);
+      r.InsertText(firstStmt->getLocStart(), sstr.str(), false);
     }
+  }
+}
+
+void
+SSTMemoizeComputePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (!fxnArgInputs_.empty()){
+    CallExpr* expr = nullptr;
+    switch (s->getStmtClass()){
+    case Stmt::CallExprClass:
+    case Stmt::CXXMemberCallExprClass:
+      expr = cast<CallExpr>(s);
+      doReplace(s, s, s, r, expr->getArgs(), nullptr);
+      break;
+      break;
+    default:
+      internalError(expr->getLocStart(), *CI,
+                 "memoize pragma activated on statement that is not a call expression");
+    }
+  } else {
+    doReplace(s, s, s, r, nullptr, nullptr);
+  }
+}
+
+void
+SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
+{
+  FunctionDecl* fd = nullptr;
+  switch(d->getKind()){
+  case Decl::Function:
+  case Decl::CXXMethod:
+    fd = cast<FunctionDecl>(d);
+    break;
+  default:
+    errorAbort(d->getLocStart(), *CI,
+           "memoize pragma applied to declaration that is not a function");
+  }
+
+  auto iter = cfg.functionPragmas.find(fd->getCanonicalDecl());
+  if (iter == cfg.functionPragmas.end()){
+    cfg.functionPragmas[fd->getCanonicalDecl()] = this;
+    //first time hitting the function decl -  configure it
+    //don't do modifications yet
+    //just in case this gets called twice for a weird reason
+    fxnArgInputs_.clear();
+    for (auto& str : inputs_){
+      bool found = false;
+      for (int i=0; i < fd->getNumParams(); ++i){
+        ParmVarDecl* pvd = fd->getParamDecl(i);
+        if (pvd->getNameAsString() == str){
+          found = true;
+          fxnArgInputs_.push_back(i);
+          break;
+        }
+      }
+      if (!found){
+        std::string error = "memoization input " + str
+            + " to function declaration could not be matched to any parameter";
+        errorAbort(d->getLocStart(), *CI, error);
+      }
+    }
+  }
+
+  if (fd->getBody()){
+    if (fd->getBody()->getStmtClass() != Stmt::CompoundStmtClass){
+      internalError(fd->getLocStart(), *CI, "function decl body is not a compound statement");
+    }
+    CompoundStmt* cs = cast<CompoundStmt>(fd->getBody());
+    std::vector<const ParmVarDecl*> params(fd->getNumParams());
+    for (int i=0; i < fd->getNumParams(); ++i) params[i] = fd->getParamDecl(i);
+    doReplace(cs->body_front(), cs->body_back(), cs,
+              r, nullptr, params.data());
+    //oh we can visit the body
+    //and make sure we don't visit it again
+    cfg.functionPragmas.erase(fd->getCanonicalDecl());
   }
 }
 

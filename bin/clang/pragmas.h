@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 class SkeletonASTVisitor;
 
+struct SSTPragma;
 struct SSTReplacePragma;
 struct SSTNullVariablePragma;
 struct SSTNullVariableGeneratorPragma;
@@ -60,6 +61,7 @@ struct PragmaConfig {
   bool makeNoChanges;
   std::map<std::string,SSTReplacePragma*> replacePragmas;
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
+  std::map<clang::FunctionDecl*,SSTPragma*> functionPragmas;
   std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
   std::set<const clang::DeclRefExpr*> deletedRefs;
   std::set<std::string> newParams;
@@ -133,9 +135,14 @@ struct SSTPragma {
    * @brief firstPass AST gets visited twice - once in a first pass to fill
    * in declarations/definitions a second pass to actually make changes.
    * Some pragmas need to be visited on the first pass. Most do not.
+   * @param d tag parameter, whether declarations should be visited first pass
    * @return
    */
-  virtual bool firstPass() const {
+  virtual bool firstPass(const clang::Decl* d) const {
+    return false;
+  }
+
+  virtual bool firstPass(const clang::Stmt* s) const {
     return false;
   }
 
@@ -207,7 +214,7 @@ class SSTNullVariablePragma : public SSTPragma {
     return ret;
   }
 
-  bool firstPass() const override {
+  bool firstPass(const clang::Decl* d) const override {
     return true;
   }
 
@@ -478,7 +485,7 @@ class SSTNonnullFieldsPragma : public SSTNullVariablePragma {
  private:
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
-  bool firstPass() const override { return false; }
+  bool firstPass(const clang::Decl* d) const override { return false; }
   std::set<std::string> nonnullFields_;
 
 };
@@ -489,7 +496,7 @@ class SSTNullFieldsPragma : public SSTNullVariablePragma {
                       const std::list<clang::Token>& tokens);
 
  private:
-  bool firstPass() const override { return false; }
+  bool firstPass(const clang::Decl* d) const override { return false; }
   void activate(clang::Stmt *stmt, clang::Rewriter &r, PragmaConfig& cfg) override;
   void activate(clang::Decl* d, clang::Rewriter &r, PragmaConfig& cfg) override;
 
@@ -524,7 +531,7 @@ struct SSTPragmaList {
       bool match = p->matches<T>(t);
       if (match){
         if (firstPass){
-          if (p->firstPass()){
+          if (p->firstPass(t)){
             if (p->reusable()){
               appendPulled(t,p);
             }
