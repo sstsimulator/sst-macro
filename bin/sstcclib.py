@@ -6,6 +6,20 @@ SSTMAC_SRC2SRC=0 or 1: run a source-to-source pass converting globals to TLS (de
 SSTMAC_CONFIG=0: running automake, cmake - skip certain steps to fool build system
 """
 
+
+def getProcName():
+  import os
+  import commands
+  import sys
+  pid = int(os.getppid())
+  runCmds = commands.getoutput("ps -p %d" % pid).splitlines()[-1].split()
+  runCmds = runCmds[3:]
+  firstCmd = runCmds[0].lstrip("-")
+  if firstCmd in ("/bin/sh", "sh", "bash", "/bin/bash", "tcsh", "/bin/tcsh", "zsh", "/bin/zsh"):
+    firstCmd = runCmds[1]
+  cmd = os.path.split(firstCmd)[-1]
+  return cmd
+
 def argify(x):
   if ' ' in x: 
     return "'%s'" % x
@@ -115,6 +129,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     val = int(os.environ["SSTMAC_MEMOIZE"])
     memoizing = bool(val)
 
+  skeletonizing = False
+  if os.environ.has_key("SSTMAC_SKELETONIZE"):
+    val = int(os.environ["SSTMAC_SKELETONIZE"])
+    skeletonizing = bool(val)
+
   def cleanFlag(flag):
     return flag.replace("${includedir}", includeDir).replace("${exec_prefix}", execPrefix).replace("${prefix}",prefix)
 
@@ -131,9 +150,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     cleanFlag("-I${includedir}/sstmac/clang_replacements"),
   ]
 
-  verbose = False
-  delTempFiles = True
-  libifyExe = sstCore
+  verbose = False     #whether to print verbose output
+  delTempFiles = True #whether to delete all temp files created
+  keepExe = False     #whether to keep exes as exes or convert to SST libX.so
   if "SSTMAC_VERBOSE" in os.environ:
     flag = int(os.environ["SSTMAC_VERBOSE"])
     verbose = verbose or flag
@@ -142,7 +161,11 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     delTempFiles = delTempFiles and flag
   if "SSTMAC_CONFIG" in os.environ:
     flag = int(os.environ["SSTMAC_CONFIG"])
-    libifyExe = libifyExe and not flag
+    keepExe = flag
+
+  parentProc = getProcName()
+  if parentProc == "cmake" or parentProc == "configure":
+    keepExe = True
 
   haveClangSrcToSrc = bool(clangCppFlagsStr)
   clangDeglobal = None
@@ -157,23 +180,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     newCppFlags.append(cleanFlag(entry))
   sstCppFlags = newCppFlags
 
-  if runClang:
-    sstCppFlags.append("-DSSTMAC_NO_REFACTOR_MAIN")
-  if memoizing:
-    sstCppFlags.append("-DSSTMAC_NO_REPLACEMENTS")
-
-  newLdFlags = []
-  for entry in sstLdFlags:
-    newLdFlags.append(cleanFlag(entry))
-  for entry in sstLibs:
-    newLdFlags.append(cleanFlag(entry))
-  sstLdFlags = newLdFlags
-
-  sstCppFlagsStr=" ".join(sstCppFlags)
-  sstLdFlagsStr =  " ".join(sstLdFlags)
-  ld = cc 
-  repldir = os.path.join(includeDir, "sstmac", "replacements")
-  repldir = cleanFlag(repldir)
 
   sysargs = sys.argv[1:]
 
@@ -190,7 +196,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   ldTarget = None
   getObjTarget = False
   givenStdFlag = None
+  validGccArgs = []
   for arg in sysargs:
+    eatArg = False
     sarg = arg.strip().strip("'")
     #okay, well, the flags might have literal quotes in them
     #which get lost passing into here - restore all " to literal quotes
@@ -201,6 +209,14 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if getObjTarget:
         objTarget = sarg
         getObjTarget=False
+    elif sarg == "--skeletonize":
+      eatArg = True
+      os.environ["SSTMAC_SKELETONIZE"] = "1"
+      skeletonizing = True
+    elif sarg == "--memoize":
+      eatArg = True
+      os.environ["SSTMAC_MEMOIZE"] = "1"
+      memoizing = True
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
     elif sarg.startswith("-W"):
@@ -247,6 +263,30 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     else:
       givenFlags.append(sarg)
 
+    if not eatArg:
+      validGccArgs.append(sarg)
+
+  if keepExe and sstCore:
+    sys.exit("Running with sst-core does not allow --keep-exe - must create libX.so")
+
+  if runClang:
+    sstCppFlags.append("-DSSTMAC_NO_REFACTOR_MAIN")
+  if memoizing:
+    sstCppFlags.append("-DSSTMAC_NO_REPLACEMENTS")
+
+  newLdFlags = []
+  for entry in sstLdFlags:
+    newLdFlags.append(cleanFlag(entry))
+  for entry in sstLibs:
+    newLdFlags.append(cleanFlag(entry))
+  sstLdFlags = newLdFlags
+
+  sstCppFlagsStr=" ".join(sstCppFlags)
+  sstLdFlagsStr =  " ".join(sstLdFlags)
+  ld = cc 
+  repldir = os.path.join(includeDir, "sstmac", "replacements")
+  repldir = cleanFlag(repldir)
+
   if ldTarget:
     if ldTarget.startswith("lib") and ldTarget.endswith("so"):
       includeMain = False
@@ -283,11 +323,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     src2src = int(os.environ["SSTMAC_SRC2SRC"])
 
   runClang = haveClangSrcToSrc and src2src and runClang
-  #for arg in sysargs:
-  #  if "conftest.c" in arg or "conftest_cfunc" in arg: 
-  #    runClang = False
-  #    break
-
 
   if sys.argv[1] == "--version" or sys.argv[1] == "-V":
     import inspect, os
@@ -410,7 +445,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     cmdArr = [
       cc
     ]
-    cmdArr.extend(sysargs)
+    cmdArr.extend(validGccArgs)
     cmd = " ".join(cmdArr)
     if verbose:
       sys.stderr.write("%s\n" % cmd)
@@ -455,6 +490,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
     givenFlagsStr,
     sstCompilerFlagsStr
   ]
+
   if '-c' in sysargs or ppOnly:
     runClang = runClang and (not ppOnly)
     if runClang:
@@ -499,40 +535,24 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       extraLibsStr, 
       ldpathMaker
     ]
-  else: #there is no object target specified, but are source files
+  else: #we are building an exe or a lib
     if not ldTarget: ldTarget = "a.out"
     #linking executable/lib from object files (or source files)
     runClang = runClang and sourceFiles
 
-    if not sstCore:
-      ldCmdArr = [
-        ld,
-        objectFilesStr,
-        extraLibsStr,
-        sstLdFlagsStr, 
-        givenFlagsStr,
-        sstCompilerFlagsStr,
-        extraLibsStr, 
-        ldpathMaker,
-        "-o",
-        ldTarget
-      ]
-      ldCmdArr.extend(linkerArgs)
-      if sourceFiles and not runClang: 
-        ldCmdArr.extend(sourceFileCompileFlags)
-    elif libifyExe:
+    if not keepExe: #turn exe into a library
       libTarget = ldTarget
-      libTargetName = os.path.split(ldTarget)[-1]
-      splitter = libTargetName.split(".")
-      if not "so" in splitter[1:]:
-        libTarget += ".so"
-        libTargetName += ".so"
-      if not libTargetName.startswith("lib"):
-        splitter = os.path.split(libTarget)
-        newNameArr = []
-        newNameArr.extend(splitter)
-        newNameArr[-1] = "lib" + libTargetName
-        libTarget = os.path.join(*newNameArr)
+      #libTargetName = os.path.split(ldTarget)[-1]
+      #splitter = libTargetName.split(".")
+      #if not "so" in splitter[1:]:
+      #  libTarget += ".so"
+      #  libTargetName += ".so"
+      #if not libTargetName.startswith("lib"):
+      #  splitter = os.path.split(libTarget)
+      #  newNameArr = []
+      #  newNameArr.extend(splitter)
+      #  newNameArr[-1] = "lib" + libTargetName
+      #  libTarget = os.path.join(*newNameArr)
 
       arCmdArr = [
         ld,
@@ -548,6 +568,22 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if sourceFiles and not runClang: 
         arCmdArr.extend(sourceFileCompileFlags)
       arCmdArr.extend(linkerArgs)
+    else: #keep commands as they are
+      ldCmdArr = [
+        ld,
+        objectFilesStr,
+        extraLibsStr,
+        sstLdFlagsStr, 
+        givenFlagsStr,
+        sstCompilerFlagsStr,
+        extraLibsStr, 
+        ldpathMaker,
+        "-o",
+        ldTarget
+      ]
+      ldCmdArr.extend(linkerArgs)
+      if sourceFiles and not runClang: 
+        ldCmdArr.extend(sourceFileCompileFlags)
 
   clangExtraArgs = []
   #if sourceFiles and len(objectFiles) > 1:

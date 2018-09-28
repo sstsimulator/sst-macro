@@ -169,6 +169,9 @@ void sstmac_compute_memoize2(const char* token, double p1, double p2);
 
 void sstmac_stop_memoize(const char* token);
 
+void* sstmac_alloc_stack(int sz, int md_sz);
+void sstmac_free_stack(void* ptr);
+
 #define SSTMAC_sleep(...) sstmac_sleep(__VA_ARGS__)
 #define SSTMAC_usleep(...) sstmac_usleep(__VA_ARGS__)
 #define SSTMAC_compute(...) sstmac_compute(__VA_ARGS__)

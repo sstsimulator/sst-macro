@@ -30,7 +30,7 @@ OBJ := $(SRC:.cc=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS)
+	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS) 
 
 $(LIBTARGET): $(OBJ)
 	ar rvs $(LIBTARGET) $(OBJ)

@@ -163,6 +163,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     pragmaConfig_.astVisitor = this;
   }
 
+  /**
+   * @brief getUnderlyingExpr Follow through parentheses and casts
+   *  to the "significant" expression underneath
+   * @param e The input expression that might have casts/parens
+   * @return  The underlying expression
+   */
+  static clang::Expr* getUnderlyingExpr(clang::Expr *e);
+
   bool isGlobal(const clang::DeclRefExpr* expr) const {
     return globals_.find(mainDecl(expr)) != globals_.end();
   }
@@ -518,6 +526,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<const clang::Decl*> variableTemplates_;
   std::map<const clang::Decl*,std::string> scopedNames_;
 
+
   static inline const clang::Decl* mainDecl(const clang::Decl* d){
     return d->getCanonicalDecl();
   }
@@ -855,14 +864,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void maybeReplaceGlobalUse(clang::DeclRefExpr* expr, clang::SourceRange rng);
 
   /**
-   * @brief getUnderlyingExpr Follow through parentheses and casts
-   *  to the "significant" expression underneath
-   * @param e The input expression that might have casts/parens
-   * @return  The underlying expression
-   */
-  clang::Expr* getUnderlyingExpr(clang::Expr *e);
-
-  /**
    * @brief getFinalExpr Similar to #getUnderlyingExpr, but also
    *  follow through unary operators.
    * @param e The input expression that might have casts/parens/unary ops
@@ -883,6 +884,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   bool checkGlobalVar(clang::VarDecl* D);
   bool checkStaticFileVar(clang::VarDecl* D);
   bool checkFileVar(const std::string& filePrefix, clang::VarDecl* D);
+  bool haveActiveFxnParam() const {
+    if (activeFxnParams_.empty()) return false;
+    return activeFxnParams_.back();
+  }
   /**
    * @brief getEndLoc
    * Find and return the position after the starting point where a statement ends
@@ -974,6 +979,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   };
 
   void traverseFunctionBody(clang::Stmt* s);
+
+  bool doTraverseLambda(clang::LambdaExpr* expr);
 
   void getArrayType(const clang::Type* ty, cArrayConfig& cfg);
 
@@ -1080,8 +1087,8 @@ struct PragmaActivateGuard {
       if (doVisit){
         //pragma takes precedence - must occur in pre-visit
         activePragmas_.push_back(prg);
-        prg->activate(t, rewriter_, pragmaConfig_);
         deletePragmaText(prg, ci);
+        prg->activate(t, rewriter_, pragmaConfig_);
       }
     }
   }

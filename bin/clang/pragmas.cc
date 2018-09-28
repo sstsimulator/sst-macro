@@ -168,6 +168,7 @@ SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
     case SSTPragma::GlobalVariable:
     case SSTPragma::AdvanceTime:
     case SSTPragma::Overhead:
+    case SSTPragma::StackAlloc:
     case SSTPragma::Keep: //always obey these
       pragmas_.push_back(fsp);
       break;
@@ -1050,4 +1051,76 @@ SSTOverheadPragmaHandler::handleSSTPragma(const std::list<Token> &tokens) const
   std::stringstream sstr;
   SSTPragma::tokenStreamToString(tokens.begin(), tokens.end(), sstr, ci_);
   return new SSTOverheadPragma(sstr.str());
+}
+
+SSTPragma*
+SSTStackAllocPragmaHandler::allocatePragma(const std::map<std::string, std::list<std::string>>& in_args) const
+{
+  std::string toFree;
+  std::string stackSize;
+  std::string mdataSize = "0";
+
+  auto args = in_args;
+
+  auto iter = args.find("free");
+  if (iter != args.end()){
+    toFree = iter->second.front();
+    args.erase(iter);
+  }
+
+  iter = args.find("alloc");
+  if (iter != args.end()){
+    auto& list = iter->second;
+    stackSize = list.front();
+    if (list.size()  == 2){
+      mdataSize = list.back();
+    }
+    args.erase(iter);
+  }
+
+  if (!stackSize.empty() && !toFree.empty()){
+    errorAbort(pragmaLoc_, ci_, "cannot have both free and alloc for stack pragma");
+  }
+
+  if (!args.empty()){
+    errorAbort(pragmaLoc_, ci_, "invalid token passed to pragma: allowed alloc,free");
+  }
+
+  return new SSTStackAllocPragma(stackSize, mdataSize, toFree);
+}
+
+void
+SSTStackAllocPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
+{
+  if (toFree_.size()){
+    std::string repl = "sstmac_free_stack(" + toFree_ + ")";
+    replace(s, r, repl, *CI);
+    throw StmtDeleteException(s);
+  } else {
+    Expr* toRepl = nullptr;
+    switch(s->getStmtClass()){
+    case Stmt::BinaryOperatorClass: {
+      BinaryOperator* bop = cast<BinaryOperator>(s);
+      toRepl = bop->getRHS();
+      break;
+    }
+    case Stmt::DeclStmtClass: {
+      DeclStmt* decl = cast<DeclStmt>(s);
+      VarDecl* vd = cast<VarDecl>(decl->getSingleDecl());
+      toRepl = vd->getInit();
+      break;
+    }
+    default: {
+      std::string error = std::string("stack alloc pragma can only be applied to assignments - got ")
+          + s->getStmtClassName();
+      errorAbort(s->getLocStart(), *CI, error);
+    }
+    }
+
+    toRepl = SkeletonASTVisitor::getUnderlyingExpr(toRepl);
+
+    std::string repl = "sstmac_alloc_stack(" + stackSize_ + "," + mdataSize_ + ")";
+    replace(toRepl, r, repl, *CI);
+    throw StmtDeleteException(s);
+  }
 }

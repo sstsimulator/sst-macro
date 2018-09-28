@@ -53,6 +53,7 @@ typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/software/process/tls.h>
 #ifndef __cplusplus
 #include <stdbool.h>
 #endif
@@ -202,12 +203,12 @@ static SSTMAC_INLINE char* get_sstmac_global_data(){
   } else {
     int stack; int* stackPtr = &stack;
     uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-    char** globalMapPtr = (char**)(localStorage + sizeof(int));
+    char** globalMapPtr = (char**)(localStorage + TLS_GLOBAL_MAP);
     return *globalMapPtr;
   }
 }
 
-static SSTMAC_INLINE char* get_sstmac_tlsl_data(){
+static SSTMAC_INLINE char* get_sstmac_tls_data(){
   if (sstmac_global_stacksize == 0){
     if (static_init_tls_segment == 0){
       allocate_static_init_tls_segment();
@@ -216,7 +217,7 @@ static SSTMAC_INLINE char* get_sstmac_tlsl_data(){
   } else {
     int stack; int* stackPtr = &stack;
     uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-    char** globalMapPtr = (char**)(localStorage + sizeof(int) + sizeof(void*));
+    char** globalMapPtr = (char**)(localStorage + TLS_TLS_MAP);
     return *globalMapPtr;
   }
 }

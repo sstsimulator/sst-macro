@@ -3,8 +3,8 @@
 void memoFxn(int niter);
 
 void memoFxn(int n){
-  sstmac_start_memoize("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc:2","linear"); for (int i=0; i < n; ++i);; sstmac_finish_memoize1("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc:2",n);
-}
+  sstmac_start_memoize("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc:2","linear"); for (int i=0; i < n; ++i);
+; sstmac_finish_memoize1("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize.cc:2",n);}
 
 int fxn()
 {

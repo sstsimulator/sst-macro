@@ -141,9 +141,9 @@ class SSTMemoizeComputePragma : public SSTPragma
    *        before or after the start token of the statement
    * @param insertAfterEndToken
    */
-  void doReplace(clang::Stmt* firstStmt, clang::Stmt* lasStmt, clang::Stmt* fullStmt,
-                 clang::Rewriter& r, clang::Expr** callArgs,
-                 const clang::ParmVarDecl** callParams);
+  void doReplace(clang::SourceLocation startInsert, clang::SourceLocation finalInsert, clang::Stmt* stmt,
+                 bool insertStartAfter, bool insertFinalAfter,
+                 clang::Rewriter& r, clang::Expr** callArgs, const clang::ParmVarDecl** callParams);
 
   std::string token_;
   std::string model_;

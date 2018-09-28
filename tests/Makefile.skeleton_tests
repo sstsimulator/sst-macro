@@ -103,7 +103,7 @@ $(SKELETONCASES): skeletons
 
 test_skeleton_boxml.$(CHKSUF): boxml
 	$(PYRUNTEST) 2 $(top_srcdir) $@ text=finalized \
-    ./skeletons/boxml/runboxml \
+    $(SSTMACEXEC) --exe=./skeletons/boxml/runboxml \
     -f $(top_srcdir)/skeletons/boxml/example/parameters.ini \
     -p node.app1.boxml_boxfile=$(top_srcdir)/skeletons/boxml/example/ks.4.new.boxes.xml \
     -p node.app1.boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
@@ -115,11 +115,11 @@ test_skeleton_memoize.$(CHKSUF): memoize
 
 test_skeleton_%.$(CHKSUF): % 
 	$(PYRUNTEST) 60 $(top_srcdir) $@ Exact \
-    ./skeletons/$*/run$* -f $(top_builddir)/tests/skeletons/$*/parameters.ini --no-wall-time
+    $(SSTMACEXEC) --exe=./skeletons/$*/run$* -f $(top_builddir)/tests/skeletons/$*/parameters.ini --no-wall-time
 
 test_skeleton_CoMD.$(CHKSUF): CoMD pots
 	$(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
-    ./skeletons/CoMD/runCoMD -f $(top_srcdir)/skeletons/CoMD/parameters.ini --no-wall-time
+    $(SSTMACEXEC) --exe=./skeletons/CoMD/runCoMD -f $(top_srcdir)/skeletons/CoMD/parameters.ini --no-wall-time
 
 test_skeleton_sst_component_example.$(CHKSUF): sst_component_example $(SSTMACEXEC)
 	SST_LIB_PATH=skeletons/sst_component_example \
@@ -131,13 +131,6 @@ test_skeleton_sendrecv_sst_so.$(CHKSUF): sendrecv_sst_so $(SSTMACEXEC)
 	 $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(top_srcdir)/skeletons/tests/sendrecv_sst_so/parameters.ini --no-wall-time
 
-test_apps_%.$(CHKSUF): %
-	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
-    ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_app.ini --no-wall-time 
-
-test_mpi_apps_%.$(CHKSUF): %
-	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
-    ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_mpi.ini --no-wall-time 
 
 endif
 

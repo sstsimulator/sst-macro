@@ -45,9 +45,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_software_process_tls_H
 #define sstmac_software_process_tls_H
 
-#define TLS_THREAD_ID 0
-#define TLS_GLOBAL_MAP sizeof(int)
-#define TLS_TLS_MAP sizeof(int) + sizeof(void*)
-#define TLS_SANITY_CHECK sizeof(int) + sizeof(void*) + sizeof(void*)
+//start at 64 to avoid conflicts with other libs
+#define TLS_OFFSET 64
+#define TLS_THREAD_ID TLS_OFFSET
+#define TLS_GLOBAL_MAP TLS_THREAD_ID + sizeof(int)
+#define TLS_TLS_MAP TLS_GLOBAL_MAP + sizeof(void*)
+#define TLS_SANITY_CHECK TLS_TLS_MAP + sizeof(void*)
+#define TLS_END TLS_SANITY_CHECK + sizeof(int)
+#define TLS_SIZE (TLS_END - TLS_OFFSET)
 
 #endif

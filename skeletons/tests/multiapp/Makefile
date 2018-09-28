@@ -7,7 +7,7 @@ CXXFLAGS := -fPIC
 CPPFLAGS := -I.
 LIBDIR :=  
 PREFIX := 
-LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
+LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib 
 
 OBJ := $(SRC:.cc=.o) 
 OBJ := $(OBJ:.cpp=.o)

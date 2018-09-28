@@ -102,7 +102,8 @@ struct SSTPragma {
     NullFields=20,
     StartNullDeclarations=21,
     StopNullDeclarations=22,
-    Memoize=23
+    Memoize=23,
+    StackAlloc=24
   } class_t;
   clang::StringRef name;
   clang::SourceLocation pragmaDirectiveLoc;
@@ -889,5 +890,33 @@ class SSTNullFieldsPragmaHandler : public SSTPragmaHandler
   SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const;
 };
 
+class SSTStackAllocPragma : public SSTPragma
+{
+ public:
+  SSTStackAllocPragma(const std::string& stackSize,
+                      const std::string& mdataSize,
+                      const std::string& toFree) :
+     SSTPragma(StackAlloc), stackSize_(stackSize), mdataSize_(mdataSize), toFree_(toFree) {}
+
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+ private:
+  std::string stackSize_;
+  std::string mdataSize_;
+  std::string toFree_;
+};
+
+class SSTStackAllocPragmaHandler : public SSTStringMapPragmaHandler
+{
+ public:
+  SSTStackAllocPragmaHandler(SSTPragmaList& plist,
+                      clang::CompilerInstance& CI,
+                      SkeletonASTVisitor& visitor) :
+    SSTStringMapPragmaHandler("stack", plist, CI, visitor){}
+
+ private:
+  SSTPragma* allocatePragma(const std::map<std::string, std::list<std::string>>& args) const override;
+
+};
 
 #endif

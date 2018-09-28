@@ -532,11 +532,11 @@ void
 SkeletonASTVisitor::nullDereferenceError(Expr* expr, const std::string& varName)
 {
   std::stringstream sstr;
-  for (Stmt* s : loopContexts_){
-    sstr << "consider skeletonizing with pragma sst compute here: "
-         << s->getLocStart().printToString(ci_->getSourceManager()) << "\n";
-  }
   sstr << "null_variable " << varName << " used in dereference";
+  for (Stmt* s : loopContexts_){
+    sstr << "\nconsider skeletonizing with pragma sst compute here: "
+         << s->getLocStart().printToString(ci_->getSourceManager());
+  }
   errorAbort(expr->getLocStart(), *ci_, sstr.str());
 }
 
@@ -579,7 +579,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
   }
 
   bool nullSafeFunctionCall = false;
-  if (!nullVarPrg->deleteAll() && !activeFxnParams_.empty()){
+  if (!nullVarPrg->deleteAll() && haveActiveFxnParam()){
     //we have "IPA" to deal with here
     //a null variable MUST map into a null variable - otherwise this is an error
     ParmVarDecl* pvd = activeFxnParams_.front();
@@ -644,7 +644,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     //I am not assigning to anyone nor am I passed along as
     //a function parameter - but I have not been given permission to delete all
     //that's okay - I'm a meaningless standalone statement - delete me
-    if (!activeFxnParams_.empty()){
+    if (haveActiveFxnParam()){
       //but I can't just delete if I am being passed off to another expression
       std::stringstream sstr;
       sstr << "variable " << nd->getNameAsString() << " is a null_variable "
@@ -887,63 +887,65 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
 {
   //this "breaks" connections for null variable propagation
   activeBinOpIdx_ = IndexResetter;
+  try {
+    PragmaActivateGuard pag(expr, this);
+    if (pag.skipVisit()) return true;
 
-  PragmaActivateGuard pag(expr, this);
-  if (pag.skipVisit()) return true;
+    DeclRefExpr* baseFxn = nullptr;
+    if (!noSkeletonize_ && !pragmaConfig_.replacePragmas.empty()){
+      Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
+      if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
+        //this is a basic function call
+        baseFxn = cast<DeclRefExpr>(fxn);
+        std::string fxnName = baseFxn->getFoundDecl()->getNameAsString();
+        for (auto& pair : pragmaConfig_.replacePragmas){
+          SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
+          if (replPrg->fxn() == fxnName){
+            replPrg->run(expr, rewriter_);
+            return true;
+          }
+        }
+      }
+    } else if (!noSkeletonize_) {
+      Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
+      if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
+        DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
+        std::string fxnName = dref->getFoundDecl()->getNameAsString();
+        if (sstmacFxnPrepends_.find(fxnName) != sstmacFxnPrepends_.end()){
+          rewriter_.InsertText(expr->getCallee()->getLocStart(), "sstmac_", false);
+        }
 
-  DeclRefExpr* baseFxn = nullptr;
-  if (!noSkeletonize_ && !pragmaConfig_.replacePragmas.empty()){
-    Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
-    if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
-      //this is a basic function call
-      baseFxn = cast<DeclRefExpr>(fxn);
-      std::string fxnName = baseFxn->getFoundDecl()->getNameAsString();
-      for (auto& pair : pragmaConfig_.replacePragmas){
-        SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
-        if (replPrg->fxn() == fxnName){
-          replPrg->run(expr, rewriter_);
-          return true;
+        auto iter = mpiCalls_.find(fxnName);
+        if (iter != mpiCalls_.end()){
+          MPI_Call call = iter->second;
+          (this->*call)(expr);
         }
       }
     }
-  } else if (!noSkeletonize_) {
-    Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
-    if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
-      DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
-      std::string fxnName = dref->getFoundDecl()->getNameAsString();
-      if (sstmacFxnPrepends_.find(fxnName) != sstmacFxnPrepends_.end()){
-        rewriter_.InsertText(expr->getCallee()->getLocStart(), "sstmac_", false);
-      }
 
-      auto iter = mpiCalls_.find(fxnName);
-      if (iter != mpiCalls_.end()){
-        MPI_Call call = iter->second;
-        (this->*call)(expr);
+    FunctionDecl* fd = expr->getDirectCallee();
+    goIntoContext(expr, [&]{
+      TraverseStmt(expr->getCallee());
+      for (int i=0; i < expr->getNumArgs(); ++i){
+        //va_args really foobars things here...
+        //call site can have more args than params in declaration
+        if (fd && i < fd->getNumParams()){
+          PushGuard<ParmVarDecl*> pg(activeFxnParams_, fd->getParamDecl(i));
+          Expr* arg = expr->getArg(i);
+          if (deletedArgs_.find(arg) == deletedArgs_.end()){
+            TraverseStmt(arg);
+          }
+        } else {
+          Expr* arg = expr->getArg(i);
+          if (deletedArgs_.find(arg) == deletedArgs_.end()){
+            TraverseStmt(arg);
+          }
+        }
       }
-    }
+    });
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != expr) throw e;
   }
-
-  FunctionDecl* fd = expr->getDirectCallee();
-  goIntoContext(expr, [&]{
-    TraverseStmt(expr->getCallee());
-    for (int i=0; i < expr->getNumArgs(); ++i){
-      //va_args really foobars things here...
-      //call site can have more args than params in declaration
-      if (fd && i < fd->getNumParams()){
-        PushGuard<ParmVarDecl*> pg(activeFxnParams_, fd->getParamDecl(i));
-        Expr* arg = expr->getArg(i);
-        if (deletedArgs_.find(arg) == deletedArgs_.end()){
-          TraverseStmt(arg);
-        }
-      } else {
-        Expr* arg = expr->getArg(i);
-        if (deletedArgs_.find(arg) == deletedArgs_.end()){
-          TraverseStmt(arg);
-        }
-      }
-    }
-  });
-
   return true;
 }
 
@@ -1820,6 +1822,20 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
 bool
 SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
 {
+  if (activeFxnParams_.empty()){
+    return doTraverseLambda(expr);
+  } else {
+    //lambdas are a glorious pain - they might be a function param
+    //we don't want to the compound stmt lambda body to think we are still traversing
+    //a function param, though
+    PushGuard<ParmVarDecl*> pg(activeFxnParams_, nullptr);
+    return doTraverseLambda(expr);
+  }
+}
+
+bool
+SkeletonASTVisitor::doTraverseLambda(LambdaExpr* expr)
+{
   LambdaCaptureDefault def = expr->getCaptureDefault();
   switch (expr->getCaptureDefault()){
     case LCD_None: {
@@ -1898,8 +1914,9 @@ SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
       //this can be confusing for global variables
       //but an [=] capture of a global variable is "by reference"
       //so no special work is need for this case
-    case LCD_ByRef:
+    case LCD_ByRef: {
       return RecursiveASTVisitor<SkeletonASTVisitor>::TraverseLambdaExpr(expr);
+    }
   }
   return true;
 }
@@ -2631,12 +2648,17 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     return true;
   }
 
-  PragmaActivateGuard pag(D, this, D->isThisDeclarationADefinition());
-  checkFunctionPragma(D);
-  if (!pag.skipVisit() && D->getBody()){
-    PushGuard<FunctionDecl*> pg(fxnContexts_, D);
-    traverseFunctionBody(D->getBody());
+  try {
+    PragmaActivateGuard pag(D, this, D->isThisDeclarationADefinition());
+    checkFunctionPragma(D);
+    if (!pag.skipVisit() && D->getBody()){
+      PushGuard<FunctionDecl*> pg(fxnContexts_, D);
+      traverseFunctionBody(D->getBody());
+    }
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != D->getBody()) throw e;
   }
+
   return true;
 }
 
@@ -3254,6 +3276,7 @@ PragmaActivateGuard::init()
     //a compute pragma totally deletes the block
     bool blockDeleted = false;
     switch (prg->cls){
+      case SSTPragma::StackAlloc:
       case SSTPragma::Memoize:  //always - regardless of skeletonization
       case SSTPragma::GlobalVariable:
       case SSTPragma::Overhead:

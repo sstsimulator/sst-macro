@@ -69,7 +69,7 @@ endif
 ifeq ($(DO_MPI), ON)
 INCLUDES += ${MPI_INCLUDE}
 CFLAGS += -DDO_MPI
-LDFLAGS += ${MPI_LIB}
+LDFLAGS += ${MPI_LIB} 
 endif
 CoMD_EXE = runCoMD
 

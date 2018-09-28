@@ -162,13 +162,14 @@ SSTComputePragma::visitForStmt(ForStmt *stmt, Rewriter &r, PragmaConfig& cfg)
 }
 
 void
-SSTMemoizeComputePragma::doReplace(Stmt* firstStmt, Stmt* lastStmt, Stmt* fullSmt,
+SSTMemoizeComputePragma::doReplace(SourceLocation startInsert, SourceLocation finalInsert, Stmt* fullStmt,
+                                   bool insertStartAfter, bool insertFinalAfter,
                                    Rewriter& r, Expr** callArgs, const ParmVarDecl** callParams)
 {
   std::string argsStr;
   if (!fxnArgInputs_.empty()){
     if (!callArgs && !callParams){
-      internalError(firstStmt->getLocStart(), *CI,
+      internalError(startInsert, *CI,
            "have function args, but no call args or call params");
     }
     //this better be a function call
@@ -191,21 +192,23 @@ SSTMemoizeComputePragma::doReplace(Stmt* firstStmt, Stmt* lastStmt, Stmt* fullSm
     std::stringstream start_sstr;
     start_sstr << "sstmac_start_memoize("
        << "\"" << token_ << "\",\"" << model_ << "\"" << "); ";
-    r.InsertText(firstStmt->getLocStart(), start_sstr.str(), false);
+    r.InsertText(startInsert, start_sstr.str(), insertStartAfter);
     std::stringstream finish_sstr;
     finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "(\"" << token_
                 << "\"" << argsStr << ");";
 
-    SourceLocation insertLoc = lastStmt->getLocEnd().getLocWithOffset(1);
-    r.InsertText(insertLoc, finish_sstr.str(), true);
+    if (insertFinalAfter) finalInsert = finalInsert.getLocWithOffset(1);
+    r.InsertText(finalInsert, finish_sstr.str(), insertFinalAfter);
   } else {
     std::stringstream sstr;
     sstr << "sstmac_compute_memoize" << inputs_.size() << "("
        << "\"" << token_ << "\"" << argsStr << ");";
     if (skeletonize_){
-      replace(fullSmt, r, sstr.str(), *CI);
+      SourceRange rng(startInsert, finalInsert);
+      replace(rng, r, sstr.str(), *CI);
+      throw StmtDeleteException(fullStmt);
     } else {
-      r.InsertText(firstStmt->getLocStart(), sstr.str(), false);
+      r.InsertText(startInsert, sstr.str(), insertStartAfter);
     }
   }
 }
@@ -213,22 +216,25 @@ SSTMemoizeComputePragma::doReplace(Stmt* firstStmt, Stmt* lastStmt, Stmt* fullSm
 void
 SSTMemoizeComputePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
+  Expr** args = nullptr;
   if (!fxnArgInputs_.empty()){
     CallExpr* expr = nullptr;
     switch (s->getStmtClass()){
     case Stmt::CallExprClass:
     case Stmt::CXXMemberCallExprClass:
       expr = cast<CallExpr>(s);
-      doReplace(s, s, s, r, expr->getArgs(), nullptr);
+      args = expr->getArgs();
+      //doReplace(s->getLocStart(), s->getLocEnd(), s,
+      //          false, true, r, expr->getArgs(), nullptr);
       break;
       break;
     default:
       internalError(expr->getLocStart(), *CI,
                  "memoize pragma activated on statement that is not a call expression");
     }
-  } else {
-    doReplace(s, s, s, r, nullptr, nullptr);
   }
+  doReplace(s->getLocStart(), s->getLocEnd(), s,
+              false, true, r, args, nullptr);
 }
 
 void
@@ -270,15 +276,15 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     }
   }
 
-  if (fd->getBody()){
+  if (fd->isThisDeclarationADefinition() && fd->getBody()){
     if (fd->getBody()->getStmtClass() != Stmt::CompoundStmtClass){
       internalError(fd->getLocStart(), *CI, "function decl body is not a compound statement");
     }
     CompoundStmt* cs = cast<CompoundStmt>(fd->getBody());
     std::vector<const ParmVarDecl*> params(fd->getNumParams());
     for (int i=0; i < fd->getNumParams(); ++i) params[i] = fd->getParamDecl(i);
-    doReplace(cs->body_front(), cs->body_back(), cs,
-              r, nullptr, params.data());
+    doReplace(cs->body_front()->getLocStart(), cs->getLocEnd(), cs,
+              false, false, r, nullptr, params.data());
     //oh we can visit the body
     //and make sure we don't visit it again
     cfg.functionPragmas.erase(fd->getCanonicalDecl());
