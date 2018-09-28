@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#define SPKT_TLS_OFFSET 64
+
 namespace sprockit {
 
 template <class T>
@@ -20,7 +22,7 @@ static int inline current_thread_id() {
     intptr_t stackptr = (intptr_t) &x;
     intptr_t stack_mult = stackptr / stacksize;
     char* aligned_stack_ptr = (char*) (stack_mult * stacksize);
-    int* thrPtr = (int*) aligned_stack_ptr;
+    int* thrPtr = (int*) (aligned_stack_ptr + SPKT_TLS_OFFSET);
     return *thrPtr;
   }
 }

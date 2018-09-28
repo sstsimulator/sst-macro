@@ -16,7 +16,8 @@ def getProcName():
   runCmds = runCmds[3:]
   firstCmd = runCmds[0].lstrip("-")
   if firstCmd in ("/bin/sh", "sh", "bash", "/bin/bash", "tcsh", "/bin/tcsh", "zsh", "/bin/zsh"):
-    firstCmd = runCmds[1]
+    if len(runCmds) > 1: #it might just be bash
+      firstCmd = runCmds[1]
   cmd = os.path.split(firstCmd)[-1]
   return cmd
 

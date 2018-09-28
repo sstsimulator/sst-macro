@@ -83,7 +83,7 @@ class thread_info {
 
   static inline int current_physical_thread_id(){
     char* stack_ptr = get_current_stack();
-    int* tls = (int*) &stack_ptr[TLS_THREAD_ID];
+    int* tls = (int*) &stack_ptr[SSTMAC_TLS_THREAD_ID];
     return *tls;
   }
 

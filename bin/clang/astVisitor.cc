@@ -2533,6 +2533,10 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
     return false;
   }
 
+  //memoization should do no refactoring of global variables
+  if (memoizePass_)
+    return false;
+
   bool skipInit = false;
   if (insideClass() && D->isStaticDataMember() && shouldVisitDecl(D)){
     skipInit = checkDeclStaticClassVar(D);

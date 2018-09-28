@@ -201,8 +201,8 @@ SSTMemoizeComputePragma::doReplace(SourceLocation startInsert, SourceLocation fi
     r.InsertText(finalInsert, finish_sstr.str(), insertFinalAfter);
   } else {
     std::stringstream sstr;
-    sstr << "sstmac_compute_memoize" << inputs_.size() << "("
-       << "\"" << token_ << "\"" << argsStr << ");";
+    sstr << "{ sstmac_compute_memoize" << inputs_.size() << "("
+       << "\"" << token_ << "\"" << argsStr << "); }";
     if (skeletonize_){
       SourceRange rng(startInsert, finalInsert);
       replace(rng, r, sstr.str(), *CI);
@@ -251,6 +251,10 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
            "memoize pragma applied to declaration that is not a function");
   }
 
+  if (!givenName_){
+    token_ = fd->getNameAsString();
+  }
+
   auto iter = cfg.functionPragmas.find(fd->getCanonicalDecl());
   if (iter == cfg.functionPragmas.end()){
     cfg.functionPragmas[fd->getCanonicalDecl()] = this;
@@ -283,7 +287,9 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     CompoundStmt* cs = cast<CompoundStmt>(fd->getBody());
     std::vector<const ParmVarDecl*> params(fd->getNumParams());
     for (int i=0; i < fd->getNumParams(); ++i) params[i] = fd->getParamDecl(i);
-    doReplace(cs->body_front()->getLocStart(), cs->getLocEnd(), cs,
+    bool replaceBody = skeletonize_ && !visitor->memoizePass();
+    doReplace(replaceBody ? cs->getLocStart() : cs->body_front()->getLocStart(),
+              cs->getLocEnd(), cs,
               false, false, r, nullptr, params.data());
     //oh we can visit the body
     //and make sure we don't visit it again
@@ -406,12 +412,23 @@ SSTMemoizeComputePragmaHandler::allocatePragma(const std::map<std::string, std::
     errorAbort(pragmaLoc_, ci_, sstr.str());
   }
 
+  std::string name;
+  bool givenName = false;
+  iter = args.find("name");
+  if (iter != args.end()){
+    name = iter->second.front();
+    args.erase(iter);
+    givenName = true;
+  } else {
+    PresumedLoc ploc = ci_.getSourceManager().getPresumedLoc(pragmaLoc_);
+    std::stringstream token_sstr;
+    token_sstr << ploc.getFilename() << ":" << ploc.getLine();
+    name = token_sstr.str();
+  }
 
-  PresumedLoc ploc = ci_.getSourceManager().getPresumedLoc(pragmaLoc_);
-  std::stringstream token_sstr;
-  token_sstr << ploc.getFilename() << ":" << ploc.getLine();
 
-  return new SSTMemoizeComputePragma(token_sstr.str(), skeletonize, model,
-                                     std::move(inputs));
+
+  return new SSTMemoizeComputePragma(name, skeletonize, model,
+                                     std::move(inputs), givenName);
 }
 

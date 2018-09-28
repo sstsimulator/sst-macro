@@ -115,11 +115,13 @@ class SSTMemoizeComputePragma : public SSTPragma
  public:
   SSTMemoizeComputePragma(const std::string& token,
       bool skeletonize, const std::string& model,
-      std::list<std::string>&& inputs) :
+      std::list<std::string>&& inputs,
+      bool givenName) :
     SSTPragma(Memoize),
     token_(token),
     skeletonize_(skeletonize),
     model_(model),
+    givenName_(givenName),
     inputs_(std::move(inputs))
   {}
 
@@ -149,6 +151,7 @@ class SSTMemoizeComputePragma : public SSTPragma
   std::string model_;
   bool skeletonize_;
   std::list<std::string> inputs_;
+  bool givenName_;
   std::list<int> fxnArgInputs_;
 };
 

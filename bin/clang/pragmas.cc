@@ -263,33 +263,50 @@ SSTStringMapPragmaHandler::handleSSTPragma(const std::list<clang::Token>& tokens
   auto incrementIter = [&](){
     ++iter;
     if (iter == tokens.end()){
-      if (iter == tokens.end()){
-        errorAbort(pragmaLoc_, ci_,
-         "mis-formatted pragma, pragma modifiers should be of the form 'arg(a)' or 'arg(a,b)'");
-      }
+      errorAbort(pragmaLoc_, ci_,
+       "mis-formatted pragma, pragma modifiers should be of the form 'arg(a)' or 'arg(a,b)'");
     }
   };
 
-  while (iter != tokens.end()){
-    auto argName = getStringToken(*iter, ci_);
-    incrementIter();
-    assertToken(*iter, tok::l_paren, ci_);
-    incrementIter();
-    std::list<std::string> argList;
-    while ((*iter).getKind() != tok::r_paren){
-      std::stringstream sstr;
-      while ((*iter).getKind() != tok::comma &&
-             (*iter).getKind() != tok::r_paren){
-        tokenToString(*iter, sstr, ci_);
-        incrementIter();
+
+  int parenDepth = 0;
+  std::list<std::string> argList;
+  std::stringstream sstr;
+  std::string argName;
+  for (const Token& t : tokens){
+    switch(t.getKind()){
+    case tok::l_paren: {
+      if (parenDepth == 0){
+        argName = sstr.str();
+        sstr.str("");
+      } else {
+        tokenToString(t, sstr, ci_);
       }
-      std::string str = sstr.str();
-      if (!str.empty()){
-        argList.push_back(sstr.str());
-      }
+      ++parenDepth;
+      break;
     }
-    allArgs[argName] = std::move(argList);
-    ++iter;
+    case tok::r_paren:
+      if (parenDepth == 1){
+        argList.push_back(sstr.str());
+        sstr.str("");
+        allArgs[argName] = std::move(argList);
+      } else {
+        tokenToString(t, sstr, ci_);
+      }
+      --parenDepth;
+      break;
+    case tok::comma:
+      if (parenDepth == 1){
+        argList.push_back(sstr.str());
+        sstr.str("");
+      } else {
+        tokenToString(t, sstr, ci_);
+      }
+      break;
+    default:
+      tokenToString(t, sstr, ci_);
+      break;
+    }
   }
   return allocatePragma(allArgs);
 }

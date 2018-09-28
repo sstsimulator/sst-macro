@@ -51,9 +51,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <string.h>
 #include <stdint.h>
+#include <sprockit/thread_safe_new.h>
 #include <list>
 
 namespace sstmac {
+
+#if (SSTMAC_TLS_OFFSET != SPKT_TLS_OFFSET)
+#error sprockit and sstmac do not agree on stack TLS offset
+#endif
 
 static const int tls_sanity_check = 42042042;
 
@@ -70,17 +75,17 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
 
   //essentially treat this as thread-local storage
   char* tls = (char*) stack;
-  int* thr_id_ptr = (int*) &tls[TLS_THREAD_ID];
+  int* thr_id_ptr = (int*) &tls[SSTMAC_TLS_THREAD_ID];
   *thr_id_ptr = phys_thread_id;
 
-  int* sanity_ptr = (int*) &tls[TLS_SANITY_CHECK];
+  int* sanity_ptr = (int*) &tls[SSTMAC_TLS_SANITY_CHECK];
   *sanity_ptr = tls_sanity_check;
 
   //this is dirty - so dirty, but it works
-  void** globalPtr = (void**) &tls[TLS_GLOBAL_MAP];
+  void** globalPtr = (void**) &tls[SSTMAC_TLS_GLOBAL_MAP];
   *globalPtr = globalsMap;
 
-  void** tlsPtr = (void**) &tls[TLS_TLS_MAP];
+  void** tlsPtr = (void**) &tls[SSTMAC_TLS_TLS_MAP];
   *tlsPtr = tlsMap;
 
   if (globalsMap){
@@ -100,7 +105,7 @@ void
 thread_info::deregister_user_space_virtual_thread(void* stack)
 {
   char* tls = (char*) stack;
-  void** globalsPtr = (void**) &tls[TLS_GLOBAL_MAP];
+  void** globalsPtr = (void**) &tls[SSTMAC_TLS_GLOBAL_MAP];
   void* globalsMap = *globalsPtr;
   GlobalVariable::glblCtx.removeActiveSegment(globalsMap);
 }

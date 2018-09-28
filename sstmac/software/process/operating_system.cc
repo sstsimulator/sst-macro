@@ -137,8 +137,9 @@ class delete_thread_event :
 struct null_regression : public operating_system::regression_model
 {
   FactoryRegister("null", operating_system::regression_model, null_regression)
-  null_regression(sprockit::sim_parameters* params)
-    : operating_system::regression_model(params), computed_(false) {}
+  null_regression(sprockit::sim_parameters* params,
+                  const std::string& key)
+    : operating_system::regression_model(params, key), computed_(false) {}
 
   double compute(int n_params, double params[]) override {
     if (!computed_){
@@ -150,6 +151,15 @@ struct null_regression : public operating_system::regression_model
 
   void collect(double time, int n_params, double params[]) override {
     samples_.push_back(time);
+  }
+
+  void finish() override {
+    compute_mean();
+    std::string file = key() + ".memo";
+    std::ofstream ofs(file);
+    ofs << key()
+        << "\n" << mean_;
+    ofs.close();
   }
 
  private:
@@ -171,8 +181,9 @@ struct linear_regression : public operating_system::regression_model
 {
   FactoryRegister("linear", operating_system::regression_model, linear_regression)
 
-  linear_regression(sprockit::sim_parameters* params)
-    : operating_system::regression_model(params), computed_(false) {}
+  linear_regression(sprockit::sim_parameters* params,
+                    const std::string& key)
+    : operating_system::regression_model(params, key), computed_(false) {}
 
   double compute(int n, double params[]) override {
     if (n != 1){
@@ -183,6 +194,7 @@ struct linear_regression : public operating_system::regression_model
       computed_ = true;
     }
     double val = m_*params[0] + b_;
+    //std::cout << "Computed " << key() << "->f(" << params[0] << ") = " << val << std::endl;
     return val;
   }
 
@@ -190,12 +202,44 @@ struct linear_regression : public operating_system::regression_model
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
-    samples_.emplace_back(time, params[0]);
+    samples_.emplace_back(params[0], time);
+
+    //std::cout << "Collected " << key() << "->f(" << params[0] << ") = " << time << std::endl;
+  }
+
+  void finish() override {
+    compute_regression();
+    std::string file = key() + ".memo";
+    std::ofstream ofs(file);
+    ofs << key()
+        << "\n" << m_
+        << "\n" << b_;
+    ofs.close();
   }
 
  private:
   void compute_regression(){
-    spkt_abort_printf("linear_regression::compute_regression not implemented");
+    double meanX = 0;
+    double meanY = 0;
+    for (auto& pair : samples_){
+      meanX += pair.second;
+      meanY += pair.second;
+    }
+    meanX /= samples_.size();
+    meanY /= samples_.size();
+
+    double Cov = 0;
+    double Var = 0;
+    for (auto& pair : samples_){
+      double dx = pair.first - meanX;
+      double dy = pair.second - meanY;
+      Var += dx*dx;
+      Cov += dx*dy;
+    }
+
+    b_ = Cov / Var;
+    m_ = meanY - b_*meanX;
+    //std::cout << "Computed " << key() << "-> m=" << m_ << " b=" << b_ << std::endl;
   }
 
   double m_;
@@ -268,6 +312,14 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   } else {
     compute_sched_->configure(1, 1);
   }
+
+  if (memoized_models_.empty()){
+    sprockit::sim_parameters* memo_params = params->get_optional_namespace("memoize");
+    if (memo_params->has_param("glob")){
+      spkt_abort_printf("unimplemented: memoization read glob");
+    }
+  }
+
 }
 
 void
@@ -457,6 +509,10 @@ operating_system::increment_app_refcount()
 void
 operating_system::simulation_done()
 {
+  for (auto& pair : memoized_models_){
+    auto* model = pair.second;
+    model->finish();
+  }
 }
 
 library*
@@ -499,7 +555,7 @@ operating_system::start_memoize(const char *token, const char* model_name)
   regression_model* model = nullptr;
   auto iter = memoized_models_.find(token);
   if (iter == memoized_models_.end()){
-    model = regression_model::factory::get_value(model_name, params);
+    model = regression_model::factory::get_value(model_name, params, token);
     memoized_models_[token] = model;
   } else {
     model = iter->second;

@@ -203,7 +203,7 @@ static SSTMAC_INLINE char* get_sstmac_global_data(){
   } else {
     int stack; int* stackPtr = &stack;
     uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-    char** globalMapPtr = (char**)(localStorage + TLS_GLOBAL_MAP);
+    char** globalMapPtr = (char**)(localStorage + SSTMAC_TLS_GLOBAL_MAP);
     return *globalMapPtr;
   }
 }
@@ -217,7 +217,7 @@ static SSTMAC_INLINE char* get_sstmac_tls_data(){
   } else {
     int stack; int* stackPtr = &stack;
     uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-    char** globalMapPtr = (char**)(localStorage + TLS_TLS_MAP);
+    char** globalMapPtr = (char**)(localStorage + SSTMAC_TLS_TLS_MAP);
     return *globalMapPtr;
   }
 }

@@ -84,11 +84,20 @@ class operating_system :
 
  public:
   struct regression_model {
-    DeclareFactory(regression_model)
-    regression_model(sprockit::sim_parameters* params){}
+    DeclareFactory(regression_model, const std::string&)
+
+    regression_model(sprockit::sim_parameters* params,
+                     const std::string& key) : key_(key) {}
+
+    const std::string& key() const {
+      return key_;
+    }
 
     virtual double compute(int n_params, double params[]) = 0;
     virtual void collect(double time, int n_params, double params[]) = 0;
+    virtual void finish() = 0;
+   private:
+    std::string key_;
   };
 
   operating_system(sprockit::sim_parameters* params, hw::node* parent);
