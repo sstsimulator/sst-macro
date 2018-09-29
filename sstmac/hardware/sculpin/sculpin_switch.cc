@@ -82,6 +82,9 @@ sculpin_switch::sculpin_switch(
   router_(nullptr),
   congestion_(true),
   stat_hotspots_(nullptr),
+#if SSTMAC_VTK_ENABLED && !SSTMAC_INTEGRATED_SST_CORE
+  vtk_(nullptr),
+#endif
   network_switch(params, id, mgr)
 {
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");

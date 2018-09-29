@@ -11,7 +11,7 @@ int fxn()
   int mul = 0;
   double* x = new double[10];
   int* idx = new int[5];
-#pragma sst memoize skeletonize(true) inputs(5) model(linear)
+#pragma sst memoize skeletonize(true) inputs(5) model(linear) name(forloop)
   for (i=0; i < 5; ++i){
     mul *= i;
     for (int j=0; j < 10; ++j){

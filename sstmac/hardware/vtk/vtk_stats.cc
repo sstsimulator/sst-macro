@@ -14,6 +14,7 @@
 #include <vtkPolyVertex.h>
 #include <vtkVertex.h>
 #include <vtkQuad.h>
+#include <vtkLine.h>
 #include <vtkCellArray.h>
 #include <vtkXMLUnstructuredGridReader.h>
 #include <vtkDataSetMapper.h>
@@ -74,7 +75,7 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   traffic->SetName("MyTraffic");
 //  int count_xy = count_x * count_y; //
   // 1 color per face and 6 face per switch
-  traffic->SetNumberOfValues(numberOfSwitch * 6);
+  traffic->SetNumberOfValues(numberOfSwitch * (6));
   for (auto i = 0; i < numberOfSwitch; ++i){
     traffic->SetValue(i, 0);
   }
@@ -114,6 +115,7 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   vtkSmartPointer<vtkCellArray> cell_array =
       vtkSmartPointer<vtkCellArray>::New();
 
+  std::vector<int> cell_types; cell_types.reserve(numberOfSwitch*(6));
   for (auto i = 0; i < numberOfSwitch; ++i){
     vtkSmartPointer<vtkQuad> plusXface =
         vtkSmartPointer<vtkQuad>::New();
@@ -159,21 +161,46 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
     minusZface->GetPointIds()->SetId(2,pIdxStart + 5);
     minusZface->GetPointIds()->SetId(3,pIdxStart + 1);
 
-    cell_array->InsertNextCell(plusXface);
-    cell_array->InsertNextCell(plusYface);
-    cell_array->InsertNextCell(plusZface);
-    cell_array->InsertNextCell(minusXface);
-    cell_array->InsertNextCell(minusYface);
-    cell_array->InsertNextCell(minusZface);
+    cell_array->InsertNextCell(plusXface);  cell_types.push_back(VTK_QUAD);
+    cell_array->InsertNextCell(plusYface);  cell_types.push_back(VTK_QUAD);
+    cell_array->InsertNextCell(plusZface);  cell_types.push_back(VTK_QUAD);
+    cell_array->InsertNextCell(minusXface); cell_types.push_back(VTK_QUAD);
+    cell_array->InsertNextCell(minusYface); cell_types.push_back(VTK_QUAD);
+    cell_array->InsertNextCell(minusZface); cell_types.push_back(VTK_QUAD);
   }
 
+  /**
+  for (int i=0; i < numberOfSwitch; ++i){
+    auto pIdxStart = i * 8; // 8 points per switch
+    vtkSmartPointer<vtkLine> link0 = vtkSmartPointer<vtkLine>::New();
+    link0.Get()->GetPointIds()->SetId(0,pIdxStart);
+    link0.Get()->GetPointIds()->SetId(1,pIdxStart+4);
+
+    vtkSmartPointer<vtkLine> link1 = vtkSmartPointer<vtkLine>::New();
+    link1.Get()->GetPointIds()->SetId(0,pIdxStart);
+    link1.Get()->GetPointIds()->SetId(1,pIdxStart+5);
+
+    vtkSmartPointer<vtkLine> link2 = vtkSmartPointer<vtkLine>::New();
+    link2.Get()->GetPointIds()->SetId(0,pIdxStart);
+    link2.Get()->GetPointIds()->SetId(1,pIdxStart+6);
+
+    vtkSmartPointer<vtkLine> link3 = vtkSmartPointer<vtkLine>::New();
+    link3.Get()->GetPointIds()->SetId(0,pIdxStart);
+    link3.Get()->GetPointIds()->SetId(1,pIdxStart+7);
+
+    cell_array->InsertNextCell(link0); cell_types.push_back(VTK_LINE);
+    cell_array->InsertNextCell(link1); cell_types.push_back(VTK_LINE);
+    cell_array->InsertNextCell(link2); cell_types.push_back(VTK_LINE);
+    cell_array->InsertNextCell(link3); cell_types.push_back(VTK_LINE);
+  }
+  */
 
   std::cout << "vtk_stats : num of cells "<< cell_array->GetNumberOfCells()<<std::endl;
 
   vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
       vtkSmartPointer<vtkUnstructuredGrid>::New();
   unstructured_grid->SetPoints(points);
-  unstructured_grid->SetCells(VTK_QUAD, cell_array);
+  unstructured_grid->SetCells(cell_types.data(), cell_array);
   unstructured_grid->GetCellData()->AddArray(traffic);
 
   // Init Time Step
@@ -197,6 +224,7 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   trafficSource->SetNumberOfSteps(currend_index);
   trafficSource->SetPoints(points);
   trafficSource->SetCells(cell_array);
+  trafficSource->SetCellTypes(std::move(cell_types));
   trafficSource->SetTraffics(traffic);
   trafficSource->SetTrafficProgressMap(std::move(trafficMap));
   vtkSmartPointer<vtkExodusIIWriter> exodusWriter =
@@ -239,8 +267,14 @@ void
 stat_vtk::finalize(timestamp t)
 {
   clear_pending_departures(t);
+  ignored_gap_ = 0;
   for (int face=0; face < face_intensities_.size(); ++face){
+    if (face_intensities_[face].current_level != 0){
+      spkt_abort_printf("Face %d on VTK %d did not return to zero", face, id_);
+    }
     collect_new_level(face, t, 0);
+    //and push back a zero event at the end
+    event_list_.emplace_back(t.ticks(), face, 0, id_);
   }
 }
 
@@ -310,24 +344,25 @@ stat_vtk::collect_new_level(int face, timestamp time, int level)
 {
   face_intensity& face_int = face_intensities_[face];
   timestamp interval_length = time - face_int.pending_collection_start;
-  double current_state_length = (time - face_int.last_collection).msec();
-  double accumulated_state_length = (face_int.last_collection - face_int.pending_collection_start).msec();
-  double total_state_length = current_state_length + accumulated_state_length;
-  double new_level = (face_int.current_level * current_state_length
-                       + face_int.accumulated_level * accumulated_state_length) / total_state_length;
+  if (time != face_int.pending_collection_start){ //otherwise this will NaN
+    double current_state_length = (time - face_int.last_collection).msec();
+    double accumulated_state_length = (face_int.last_collection - face_int.pending_collection_start).msec();
+    double total_state_length = (time - face_int.pending_collection_start).msec();
+    double new_level = (face_int.current_level * current_state_length
+                         + face_int.accumulated_level * accumulated_state_length) / total_state_length;
 
-  if (interval_length > ignored_gap_){
-    //we have previous collections that are now large enough  to commit
-    event_list_.emplace_back(
-      face_int.pending_collection_start.ticks(), face, new_level, id_);
-    face_int.pending_collection_start = face_int.last_collection = time;
-    face_int.accumulated_level = 0;
-    face_int.current_level = level;
-  } else {
-    face_int.last_collection = time;
-    face_int.accumulated_level = new_level;
+    if (interval_length > ignored_gap_){
+      //we have previous collections that are now large enough  to commit
+      event_list_.emplace_back(
+        face_int.pending_collection_start.ticks(), face, new_level, id_);
+      face_int.pending_collection_start = face_int.last_collection = time;
+      face_int.accumulated_level = 0;
+    } else {
+      face_int.last_collection = time;
+      face_int.accumulated_level = new_level;
+    }
   }
-  face_int.last_collection = time;
+  face_int.current_level = level;
 }
 
 void
@@ -340,15 +375,28 @@ stat_vtk::collect_arrival(timestamp time, int port)
   auto face = port_to_face_[port];
   face_intensity& face_int = face_intensities_[face];
   int intensity = ++port_intensities_[port];
-  if (intensity >= transition_cutoff_){
+  if (intensity == transition_cutoff_){
     face_int.congested_ports++;
-  } else {
+  } else if (intensity < transition_cutoff_){
     face_int.active_ports++;
   }
 
   int level = 1; //1 means active
   if (face_int.congested_ports > 0){
     level = 2;
+  }
+
+  /**
+  if (id_ == 17 && face == 3){
+    printf("Port %d arrive: active=%d congested=%d intensity=%d level=%d pending=%d old_level=%d\n",
+           port, face_int.active_ports, face_int.congested_ports, intensity, level,
+           pending_departures_.size(), face_int.current_level);
+  }
+  */
+
+  if (abs(level - face_int.current_level) > 1){
+    spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on face=%d port=%d",
+                      face_int.current_level, level, id_, face, port);
   }
 
   if (level != face_int.current_level){
@@ -360,17 +408,30 @@ void
 stat_vtk::collect_departure(timestamp time, int port)
 {
   auto face = port_to_face_[port];
-  int intensity = port_intensities_[port]--;
   face_intensity& face_int = face_intensities_[face];
-  if (intensity >= transition_cutoff_){
+  int intensity = --port_intensities_[port];
+  if (intensity == (transition_cutoff_-1)){
     face_int.congested_ports--;
-  } else {
+  } else if (intensity == 0){
     face_int.active_ports--;
   }
 
   int level = face_int.active_ports > 0 ? 1 : 0; //1 means active
   if (face_int.congested_ports > 0){
     level = 2;
+  }
+
+  /**
+  if (id_ == 17 && face == 3){
+    printf("Port %d depart: active=%d congested=%d intensity=%d level=%d pending=%d old_level=%d\n",
+           port, face_int.active_ports, face_int.congested_ports, intensity, level,
+           pending_departures_.size(), face_int.current_level);
+  }
+  */
+
+  if (abs(level - face_int.current_level) > 1){
+    spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on face=%d port=%d",
+                      face_int.current_level, level, id_, face, port);
   }
 
   if (level != face_int.current_level){

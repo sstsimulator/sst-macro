@@ -178,8 +178,6 @@ class job_launcher : public service
   /** The set of available nodes - equivalent to std::set<node_id> */
   ordered_node_set available_;
   std::list<app_launch_request*> initial_requests_;
-  //map from aid to a dlopen handle (only when app uses exe=  param)
-  std::map<int,void*> dlopens_;
 
  private:
   void add_launch_requests(sprockit::sim_parameters* params);

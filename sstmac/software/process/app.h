@@ -212,6 +212,10 @@ class app : public thread
     unique_name_ = name;
   }
 
+  static void check_dlopen(int aid, sprockit::sim_parameters* params);
+
+  void check_dlclose();
+
  protected:
   friend class thread;
 
@@ -246,6 +250,14 @@ class app : public thread
   bool notify_;
 
   int rc_;
+
+  struct dlopen_entry {
+    void* handle;
+    int refcount;
+    dlopen_entry() : handle(nullptr), refcount(0){}
+  };
+
+  static std::map<int, dlopen_entry> dlopens_;
 
 };
 

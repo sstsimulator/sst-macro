@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/common/thread_lock.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <unistd.h>
@@ -79,6 +80,7 @@ app_launcher::incoming_event(event* ev)
     software_id sid(lev->aid(), lev->tid());
     sprockit::sim_parameters* app_params = new sprockit::sim_parameters(&lev->app_params());
 
+    app::check_dlopen(lev->aid(), app_params);
     app* theapp = app::factory::get_param("name", app_params, sid, os_);
     theapp->set_unique_name(lev->unique_name());
     int intranode_rank = num_apps_launched_[lev->aid()]++;
@@ -86,6 +88,7 @@ app_launcher::incoming_event(event* ev)
     if (core_affinity != thread::no_core_affinity){
       theapp->set_affinity(core_affinity);
     }
+
     os_->start_app(theapp, lev->unique_name());
   }
   delete lev;

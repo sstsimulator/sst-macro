@@ -69,6 +69,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/api/api.h>
+#include <sstmac/main/sstmac.h>
 
 static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
 
@@ -83,6 +84,8 @@ RegisterKeywords(
 
 MakeDebugSlot(app_compute);
 
+void sstmac_app_loaded(int aid){}
+
 namespace sstmac {
 namespace sw {
 
@@ -91,6 +94,8 @@ std::map<std::string, app::main_fxn>*
 std::map<std::string, app::empty_main_fxn>*
   user_app_cxx_empty_main::empty_main_fxns_ = nullptr;
 std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
+
+std::map<int, app::dlopen_entry> app::dlopens_;
 
 int
 app::allocate_tls_key(destructor_fxn fxn)
@@ -118,6 +123,41 @@ static char* get_data_segment(sprockit::sim_parameters* params,
   } else {
     return nullptr;
   }
+}
+
+
+static thread_lock dlopen_lock;
+
+void
+app::check_dlopen(int aid, sprockit::sim_parameters* params)
+{
+  if (params->has_param("exe")){
+    dlopen_lock.lock();
+    std::string libname = params->get_param("exe");
+    dlopen_entry& entry = dlopens_[aid];
+    if (entry.refcount == 0){
+      entry.handle = load_extern_library(libname, "");
+    }
+    ++entry.refcount;
+    sstmac_app_loaded(aid);
+    dlopen_lock.unlock();
+  }
+}
+
+void
+app::check_dlclose()
+{
+  dlopen_lock.lock();
+  auto iter = dlopens_.find(aid());
+  if (iter != dlopens_.end()){
+    dlopen_entry& entry = iter->second;
+    --entry.refcount;
+    if (entry.refcount == 0){
+      unload_extern_library(entry.handle);
+      dlopens_.erase(iter);
+    }
+  }
+  dlopen_lock.unlock();
 }
 
 char*

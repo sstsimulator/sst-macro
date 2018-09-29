@@ -131,11 +131,11 @@ int vtkTrafficSource::RequestData(
     return 0;
   }
 
-  double reqTS(0);
+  uint64_t reqTS(0);
   if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
   {
-    reqTS = outInfo->Get
-      (vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    double requested = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    reqTS = llround(requested);
   }
 
   //if analytic compute the value at that time
@@ -157,14 +157,16 @@ int vtkTrafficSource::RequestData(
 
   // Send Topology to output
   vtkPoints *points = vtkPoints::New();
-  points->DeepCopy(this->Points);
+  points->ShallowCopy(this->Points);
   output->SetPoints(points);
   points->Delete();
 
-  vtkCellArray *cells = vtkCellArray::New();
-  cells->DeepCopy(this->Cells);
-  output->SetCells(VTK_QUAD, this->Cells);
-  cells->Delete();
+  //vtkCellArray *cells = vtkCellArray::New();
+  //cells->ShallowCopy(this->Cells);
+
+  output->SetCells(CellTypes.data(), this->Cells);
+
+  //cells->Delete();
 
   return 1;
 }

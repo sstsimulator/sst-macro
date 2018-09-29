@@ -52,6 +52,11 @@ public:
   void SetPoints(vtkSmartPointer<vtkPoints> points);
   void SetCells(vtkSmartPointer<vtkCellArray> cells);
 
+  template <class Vec> //allow move or copy
+  void SetCellTypes(Vec&& types){
+    CellTypes = std::forward<Vec>(types);
+  }
+
   // Traffic
   void SetTrafficProgressMap(std::multimap<uint64_t, traffic_event>&& trafficProgressMap){
     traffic_progress_map_ = std::move(trafficProgressMap);
@@ -77,6 +82,9 @@ protected:
   vtkDoubleArray * Traffics;
   vtkSmartPointer<vtkPoints> Points;
   vtkSmartPointer<vtkCellArray> Cells;
+  vtkSmartPointer<vtkCellArray> Lines;
+  std::vector<int> CellTypes;
+
 private:
   vtkTrafficSource(const vtkTrafficSource&) = delete;
   void operator=(const vtkTrafficSource&) = delete;

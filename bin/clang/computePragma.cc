@@ -402,16 +402,6 @@ SSTMemoizeComputePragmaHandler::allocatePragma(const std::map<std::string, std::
     args.erase(iter);
   }
 
-  if (!args.empty()){
-    //we got passed an invalid argument
-    std::stringstream sstr;
-    sstr << "got invalid args for memoize pragma: ";
-    for (auto& pair : args){
-      sstr << pair.first << ",";
-    }
-    errorAbort(pragmaLoc_, ci_, sstr.str());
-  }
-
   std::string name;
   bool givenName = false;
   iter = args.find("name");
@@ -426,7 +416,15 @@ SSTMemoizeComputePragmaHandler::allocatePragma(const std::map<std::string, std::
     name = token_sstr.str();
   }
 
-
+  if (!args.empty()){
+    //we got passed an invalid argument
+    std::stringstream sstr;
+    sstr << "got invalid args for memoize pragma: ";
+    for (auto& pair : args){
+      sstr << pair.first << ",";
+    }
+    errorAbort(pragmaLoc_, ci_, sstr.str());
+  }
 
   return new SSTMemoizeComputePragma(name, skeletonize, model,
                                      std::move(inputs), givenName);

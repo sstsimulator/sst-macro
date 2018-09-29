@@ -93,15 +93,15 @@ class stat_vtk : public stat_collector
   void collect_new_level(int face, timestamp time, int level);
 
   struct compare_pair {
-    bool operator()(const std::pair<timestamp,double>& l, const std::pair<timestamp,double>& r){
+    bool operator()(const std::pair<timestamp,int>& l, const std::pair<timestamp,int>& r){
       return l.first > r.first;
     }
   };
 
   std::vector<hw::topology::vtk_face_t> port_to_face_;
   std::vector<int> port_intensities_;
-  std::priority_queue<std::pair<timestamp,double>,
-      std::vector<std::pair<timestamp,double>>,
+  std::priority_queue<std::pair<timestamp,int>,
+      std::vector<std::pair<timestamp,int>>,
       compare_pair> pending_departures_;
   std::vector<face_intensity> face_intensities_;
   int transition_cutoff_;

@@ -214,6 +214,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       eatArg = True
       os.environ["SSTMAC_SKELETONIZE"] = "1"
       skeletonizing = True
+    elif sarg == "--keep-exe":
+      keepExe = True
+      eatArg = True
     elif sarg == "--memoize":
       eatArg = True
       os.environ["SSTMAC_MEMOIZE"] = "1"

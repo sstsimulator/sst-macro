@@ -12,7 +12,7 @@ int fxn()
   double* x = new double[10];
   int* idx = new int[5];
 
- { sstmac_compute_memoize1("/Users/jjwilke/Programs/sst-macro/memoize/tests/clang_src2src/pragma_sst_memoize_compute.cc:14",5); }
+ { sstmac_compute_memoize1("forloop",5); }
 
 
 
