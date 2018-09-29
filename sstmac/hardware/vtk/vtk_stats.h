@@ -84,7 +84,7 @@ class stat_vtk : public stat_collector
     face_intensity() :
       active_ports(0),
       congested_ports(0),
-      accumulated_level(0),
+      accumulated_level(0.),
       current_level(0)
     {
     }
