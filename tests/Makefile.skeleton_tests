@@ -14,6 +14,7 @@ endif
 else
 if HAVE_CLANG
 SKELETONCASES += \
+  memoize \
   relocation_ptr_test \
   openmp \
   overhead_test
@@ -53,6 +54,7 @@ SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
 skeletons:
 	rm -fr skeletons
 	cp -fpR $(top_srcdir)/skeletons .
+	cp -fpR $(top_srcdir)/skeletons/tests/* skeletons
 	chmod -R u+w skeletons # required for make distcheck (makes files r/o)
 
 pots:
@@ -101,18 +103,23 @@ $(SKELETONCASES): skeletons
 
 test_skeleton_boxml.$(CHKSUF): boxml
 	$(PYRUNTEST) 2 $(top_srcdir) $@ text=finalized \
-    ./skeletons/boxml/runboxml \
+    $(SSTMACEXEC) --exe=./skeletons/boxml/runboxml \
     -f $(top_srcdir)/skeletons/boxml/example/parameters.ini \
     -p node.app1.boxml_boxfile=$(top_srcdir)/skeletons/boxml/example/ks.4.new.boxes.xml \
     -p node.app1.boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
 
+test_skeleton_memoize.$(CHKSUF): memoize
+	SST_LIB_PATH=skeletons/memoize \
+	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 1.8 and t < 2.2' \
+    $(SSTMACEXEC) -f $(top_srcdir)/skeletons/tests/memoize/parameters.ini --no-wall-time
+
 test_skeleton_%.$(CHKSUF): % 
 	$(PYRUNTEST) 60 $(top_srcdir) $@ Exact \
-    ./skeletons/$*/run$* -f $(top_srcdir)/skeletons/$*/parameters.ini --no-wall-time
+    $(SSTMACEXEC) --exe=./skeletons/$*/run$* -f $(top_builddir)/tests/skeletons/$*/parameters.ini --no-wall-time
 
 test_skeleton_CoMD.$(CHKSUF): CoMD pots
 	$(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
-    ./skeletons/CoMD/runCoMD -f $(top_srcdir)/skeletons/CoMD/parameters.ini --no-wall-time
+    $(SSTMACEXEC) --exe=./skeletons/CoMD/runCoMD -f $(top_srcdir)/skeletons/CoMD/parameters.ini --no-wall-time
 
 test_skeleton_sst_component_example.$(CHKSUF): sst_component_example $(SSTMACEXEC)
 	SST_LIB_PATH=skeletons/sst_component_example \
@@ -122,15 +129,8 @@ test_skeleton_sst_component_example.$(CHKSUF): sst_component_example $(SSTMACEXE
 test_skeleton_sendrecv_sst_so.$(CHKSUF): sendrecv_sst_so $(SSTMACEXEC)
 	SST_LIB_PATH=skeletons/sendrecv_sst_so \
 	 $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
-   $(SSTMACEXEC) -f $(top_srcdir)/skeletons/sendrecv_sst_so/parameters.ini --no-wall-time
+   $(SSTMACEXEC) -f $(top_srcdir)/skeletons/tests/sendrecv_sst_so/parameters.ini --no-wall-time
 
-test_apps_%.$(CHKSUF): %
-	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
-    ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_app.ini --no-wall-time 
-
-test_mpi_apps_%.$(CHKSUF): %
-	$(PYRUNTEST) 3 $(top_srcdir) $@ True \
-    ./skeletons/$*/runsst -f $(srcdir)/test_configs/test_$*_mpi.ini --no-wall-time 
 
 endif
 

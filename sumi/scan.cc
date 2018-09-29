@@ -63,7 +63,7 @@ void
 simultaneous_btree_scan_actor::finalize_buffers()
 {
   //nothing to do
-  if (!result_buffer_.ptr) return;
+  if (!result_buffer_) return;
 
   int size = nelems_ * type_size_;
   my_api_->unmake_public_buffer(result_buffer_, size);
@@ -86,7 +86,7 @@ simultaneous_btree_scan_actor::init_buffers(void* dst, void* src)
   send_buffer_ = my_api_->allocate_public_buffer(size);
 
   //and put the initial set of values in
-  std::memcpy(send_buffer_.ptr, src, size);
+  std::memcpy(send_buffer_, src, size);
   std::memcpy(dst, src, size);
 }
 
@@ -131,7 +131,7 @@ simultaneous_btree_scan_actor::init_dag()
     recv_partner = me - gap;
     valid_send = send_partner < nproc;
     valid_recv = recv_partner >= 0;
-    if (valid_send && recv_buffer_.ptr){
+    if (valid_send && recv_buffer_){
       //we need to memcpy the result buffer into the send buffer for the next round
       memcpy_ac = new shuffle_action(rnd, 0);
       add_dependency(send_ac, memcpy_ac);
@@ -159,7 +159,7 @@ void
 simultaneous_btree_scan_actor::start_shuffle(action *ac)
 {
   int size = type_size_ * nelems_;
-  ::memcpy(send_buffer_.ptr, result_buffer_.ptr, size);
+  ::memcpy(send_buffer_, result_buffer_, size);
 }
 
 }

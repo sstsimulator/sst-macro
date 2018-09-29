@@ -94,20 +94,20 @@ class config_message :
  public:
   config_message(){} //need for serialization
 
-  config_message(const sumi::public_buffer& recv_buf) :
+  config_message(void* recv_buf) :
     recv_buf_(recv_buf){}
 
-  sumi::public_buffer recv_buf() const {
+  void* recv_buf() const {
     return recv_buf_;
   }
 
   virtual void serialize_order(sstmac::serializer &ser) override {
-    ser & recv_buf_;
+    ser.primitive(recv_buf_);
     sumi::message::serialize_order(ser);
   }
 
  private:
-  sumi::public_buffer recv_buf_;
+  void* recv_buf_;
 };
 
 class rdma_message :
@@ -193,8 +193,8 @@ void do_all_sends(
   sumi::transport* tport,
   int chunk_size,
   const std::vector<int>& send_partners,
-  const std::vector<sumi::public_buffer>& send_chunks,
-  const std::vector<sumi::public_buffer>& recv_chunks,
+  const std::vector<void*>& send_chunks,
+  const std::vector<void*>& recv_chunks,
   double timeout,
   std::list<rdma_message*>& done)
 {
@@ -202,8 +202,8 @@ void do_all_sends(
   double local_timeout = (timeout / npartners) * 0.9; //fudge factor of 0.9 to lower it a bit
   for (int i=0; i < npartners; ++i){
     rdma_message* msg = new rdma_message(iteration, chunk_size);
-    msg->local_buffer() = send_chunks[i];
-    msg->remote_buffer() = recv_chunks[i];
+    msg->set_local_buffer(send_chunks[i]);
+    msg->set_local_buffer(recv_chunks[i]);
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d putting to %d on iteration %d chunk of size %d: %p -> %p",
       tport->rank(), send_partners[i], 
@@ -276,8 +276,8 @@ int USER_MAIN(int argc, char** argv)
 
   //allocate 256 replicas of the 256 KB chunk
   int npartners = mixing;
-  std::vector<sumi::public_buffer> recv_chunks(npartners);
-  std::vector<sumi::public_buffer> send_chunks(npartners);
+  std::vector<void*> recv_chunks(npartners);
+  std::vector<void*> send_chunks(npartners);
 
   debug_printf(sprockit::dbg::traffic_matrix,
     "Rank %d starting run with mixing=%d, niter=%d, scatter=%d",
@@ -308,14 +308,12 @@ int USER_MAIN(int argc, char** argv)
     rank_to_send_partner_index[send_partners[i]] = i;
   }
 
-  sumi::public_buffer send_buf;// = tport->allocate_public_buffer(window_bytes);
-  sumi::public_buffer recv_buf;// = tport->allocate_public_buffer(window_bytes);
+  void* send_buf = nullptr;// = tport->allocate_public_buffer(window_bytes);
+  void* recv_buf = nullptr;// = tport->allocate_public_buffer(window_bytes);
   int chunk_size = window_bytes / mixing;
   for (int i=0; i < npartners; ++i){
-    send_chunks[i] = send_buf;
-    send_chunks[i].offset_ptr(chunk_size*i);
-    recv_chunks[i] = recv_buf;
-    recv_chunks[i].offset_ptr(chunk_size*i);
+    send_chunks[i] = sumi::message::offset_ptr(send_buf, chunk_size*i);
+    recv_chunks[i] = sumi::message::offset_ptr(recv_buf, chunk_size*i);
   }
 
   //send all my config messages

@@ -4,6 +4,7 @@
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
 #include <sumi-mpi/mpi_api.h>
 #include <sstmac/backends/common/parallel_runtime.h>
+#include <limits>
 
 #ifdef SSTMAC_OTF2_ENABLED
 

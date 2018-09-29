@@ -53,6 +53,7 @@ typedef int (*main_fxn)(int,char**);
 typedef int (*empty_main_fxn)();
 
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/software/process/tls.h>
 #ifndef __cplusplus
 #include <stdbool.h>
 #endif
@@ -136,7 +137,12 @@ class vector {
 
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;
-
+extern sprockit::sim_parameters* get_params();
+//end C++
+#else
+//need for C
+static void* nullptr = 0;
+#endif
 
 #define define_var_name_pass_through(x) sstmac_dont_ignore_this##x
 #define define_var_name(x) define_var_name_pass_through(x)
@@ -152,14 +158,8 @@ using sprockit::sim_parameters;
  static int dont_ignore_this = \
   user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
  static int user_skeleton_main(__VA_ARGS__)
-#endif
-
-extern sprockit::sim_parameters* get_params();
-
 #else
-static void* nullptr = 0;
-
-#define main ignore_for_app_name; const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
+#define main sstmac_ignore_for_app_name(); static const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif
 
 
@@ -203,12 +203,12 @@ static SSTMAC_INLINE char* get_sstmac_global_data(){
   } else {
     int stack; int* stackPtr = &stack;
     uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-    char** globalMapPtr = (char**)(localStorage + sizeof(int));
+    char** globalMapPtr = (char**)(localStorage + SSTMAC_TLS_GLOBAL_MAP);
     return *globalMapPtr;
   }
 }
 
-static SSTMAC_INLINE char* get_sstmac_tlsl_data(){
+static SSTMAC_INLINE char* get_sstmac_tls_data(){
   if (sstmac_global_stacksize == 0){
     if (static_init_tls_segment == 0){
       allocate_static_init_tls_segment();
@@ -217,7 +217,7 @@ static SSTMAC_INLINE char* get_sstmac_tlsl_data(){
   } else {
     int stack; int* stackPtr = &stack;
     uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-    char** globalMapPtr = (char**)(localStorage + sizeof(int) + sizeof(void*));
+    char** globalMapPtr = (char**)(localStorage + SSTMAC_TLS_TLS_MAP);
     return *globalMapPtr;
   }
 }

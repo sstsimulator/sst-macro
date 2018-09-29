@@ -42,8 +42,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sumi/rdma.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <cmath>
 
-namespace sumi {
-
+static void run(){
+#pragma sst memoize model(null)
+  sleep(1);
 }
+
+#define sstmac_app_name memoize_sleep
+
+int main(int argc, char** argv)
+{
+  double wall_start = sstmac_wall_time();
+  double vir_start = sstmac_virtual_time();
+  run();
+  double wall_stop = sstmac_wall_time();
+  double vir_stop = sstmac_virtual_time();
+  double t_vir = round(vir_stop - vir_start);
+  double t_wall = round(wall_stop - wall_start);
+#ifndef SSTMAC_NO_REPLACEMENTS
+  static const char* name = "skeleton";
+#else
+  static const char* name = "memoize";
+#endif
+  printf("Running %10s:   wall=%.1f virtual=%.1f\n", name, t_wall, t_vir);
+  return 0;
+}
+

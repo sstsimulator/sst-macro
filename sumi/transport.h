@@ -54,7 +54,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/comm_functions.h>
 #include <sumi/options.h>
 #include <sumi/ping.h>
-#include <sumi/rdma.h>
 #include <sumi/communicator_fwd.h>
 
 DeclareDebugSlot(sumi);
@@ -444,15 +443,15 @@ class transport {
    */
   message* handle(message* msg);
 
-  virtual public_buffer allocate_public_buffer(int size) {
-    return public_buffer(::malloc(size));
+  void* allocate_public_buffer(uint64_t size) {
+    return ::malloc(size);
   }
 
-  virtual public_buffer make_public_buffer(void* buffer, int size) = 0;
+  virtual void* make_public_buffer(void* buffer, uint64_t size) = 0;
 
-  virtual void unmake_public_buffer(public_buffer buf, int size) = 0;
+  virtual void unmake_public_buffer(void* buf, uint64_t size) = 0;
 
-  virtual void free_public_buffer(public_buffer buf, int size) = 0;
+  virtual void free_public_buffer(void* buf, uint64_t size) = 0;
 
   virtual void memcopy(uint64_t bytes) = 0;
 

@@ -56,6 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_callback.h>
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
+#include <sstmac/main/sstmac.h>
 
 RegisterKeywords(
  { "services", "a list of services to launch on a subset or all of the nodes" },
@@ -162,6 +163,13 @@ job_launcher::component_id() const
 void
 job_launcher::cleanup_app(job_stop_event* ev)
 {
+  auto iter = dlopens_.find(ev->aid());
+  if (iter != dlopens_.end()){
+    void* handle = iter->second;
+    dlopens_.erase(iter);
+    unload_extern_library(handle);
+  }
+
   task_mapping::ptr themap = task_mapping::global_mapping(ev->aid());
   task_mapping::remove_global_mapping(ev->aid(), ev->unique_name());
   const std::vector<node_id>& rank_to_node = themap->rank_to_node();
@@ -181,6 +189,13 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
      topology_, allocation,
      mapping->rank_to_node(),
      mapping->node_to_rank());
+
+  if (request->app_params()->has_param("exe")){
+    std::string libname = request->app_params()->get_param("exe");
+    void* handle = load_extern_library(libname, "");
+    dlopens_[request->aid()] = handle;
+  }
+
   task_mapping::add_global_mapping(request->aid(), request->app_namespace(), mapping);
   os_->outcast_app_start(0, request->aid(), request->app_namespace(), mapping, request->app_params(),
                        true/*must include myself (the root) in bcast*/);

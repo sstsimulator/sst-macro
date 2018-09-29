@@ -48,20 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <memory>
 #include <sprockit/util.h>
 #include <sprockit/printable.h>
-#include <sumi/rdma.h>
 #include <sstmac/common/serializable.h>
 #include <sstmac/common/sstmac_config.h>
-
-START_SERIALIZATION_NAMESPACE
-template <>
-class serialize<sumi::public_buffer>
-{
- public:
-  void operator()(sumi::public_buffer& buf, serializer& ser){
-    ser.primitive(buf);
-  }
-};
-END_SERIALIZATION_NAMESPACE
 
 namespace sumi {
 
@@ -70,6 +58,12 @@ class message :
   public sstmac::serializable
 {
  ImplementSerializable(message)
+
+ public:
+  static void* offset_ptr(void* in, int offset){
+    if (in) return ((char*)in) + offset;
+    else return nullptr;
+  }
 
  public:
   virtual std::string to_string() const override;
@@ -112,7 +106,7 @@ class message :
   {
   }
 
-  message(long num_bytes) :
+  message(uint64_t num_bytes) :
     message(-1,-1,num_bytes)
   {
   }
@@ -122,23 +116,25 @@ class message :
   {
   }
 
-  message(long num_bytes, class_t cls) :
+  message(uint64_t num_bytes, class_t cls) :
     message(-1,-1,num_bytes,cls,none)
   {
   }
 
   message(int sender,
           int recver,
-          long num_bytes) :
+          uint64_t num_bytes) :
     message(sender, recver, num_bytes, pt2pt, none)
   {
   }
 
   message(int sender,
           int recver,
-          long num_bytes,
+          uint64_t num_bytes,
           class_t cls,
           payload_type_t pty) :
+    local_buffer_(nullptr),
+    remote_buffer_(nullptr),
     num_bytes_(num_bytes),
     payload_type_(pty),
     class_(cls),
@@ -177,6 +173,10 @@ class message :
     payload_type_ = ty;
   }
 
+  void set_byte_length(uint64_t bytes) {
+    num_bytes_ = bytes;
+  }
+
   virtual message* clone(payload_type_t ty) const;
 
   message* clone_ack() const;
@@ -191,9 +191,19 @@ class message :
     owns_remote_buffer_ = flag;
   }
 
-  void buffer_remote();
+  /**
+   * Update the remote buffer to simulate injecting packets
+   * such that the original remote buffer is free to use again
+   * in the application
+   */
+  virtual void put_remote_on_wire();
 
-  void buffer_local();
+  /**
+   * Update the local buffer to simulate injecting packets
+   * such that the original local buffer is free to use again
+   * in the application
+   */
+  virtual void put_local_on_wire();
 
   class_t class_type() const {
     return class_;
@@ -253,8 +263,12 @@ class message :
     }
   }
 
-  void set_byte_length(uint64_t bytes) {
-    num_bytes_ = bytes;
+  void set_local_buffer(void* buf) {
+    local_buffer_ = buf;
+  }
+
+  void set_remote_buffer(void* buf) {
+    remote_buffer_ = buf;
   }
 
   virtual void reverse();
@@ -276,7 +290,7 @@ class message :
   }
 
   bool has_payload() const {
-    return local_buffer_.ptr || remote_buffer_.ptr;
+    return local_buffer_ || remote_buffer_;
   }
 
   /**
@@ -297,31 +311,29 @@ class message :
 
   void memmove_local_to_remote();
 
-  sumi::public_buffer& local_buffer() { return local_buffer_; }
-  sumi::public_buffer& remote_buffer() { return remote_buffer_; }
-
-  const sumi::public_buffer& local_buffer() const { return local_buffer_; }
-  const sumi::public_buffer& remote_buffer() const { return remote_buffer_; }
-
-  void*& eager_buffer() {
-   return local_buffer_.ptr;
-  }
+  void* local_buffer() const { return local_buffer_; }
+  void* remote_buffer() const { return remote_buffer_; }
 
  protected:
   void clone_into(message* cln) const;
 
-  static void buffer_send(public_buffer& buf, long num_bytes);
+  /**
+   * @brief buffer
+   * @param src
+   * @param num_bytes
+   * @return A new buffer containing the contents of the input buffer
+   */
+  static void* buffer(void* src, uint64_t num_bytes);
 
  protected:
+  void* local_buffer_;
+  void* remote_buffer_;
   uint64_t num_bytes_;
-  sumi::public_buffer local_buffer_;
-  sumi::public_buffer remote_buffer_;
 
  private:
   payload_type_t payload_type_;
 
   class_t class_;
-
   int sender_;
 
   int recver_;

@@ -82,7 +82,7 @@ btree_scatterv_actor::init_buffers(void *dst, void *src)
     } else {
       ::memcpy(dst, src, result_size);
       recv_buffer_ = result_buffer_; //won't ever actually be used
-      result_buffer_.ptr = dst;
+      result_buffer_ = dst;
     }
   } else {
     recv_buffer_ = my_api_->allocate_public_buffer(max_recv_buf_size);
@@ -90,7 +90,7 @@ btree_scatterv_actor::init_buffers(void *dst, void *src)
     if (me  % 2 == 1){ //I receive into my final buffer
       result_buffer_ = my_api_->make_public_buffer(dst, result_size);
     } else {
-      result_buffer_.ptr = dst;
+      result_buffer_ = dst;
     }
   }
 }
@@ -98,9 +98,6 @@ btree_scatterv_actor::init_buffers(void *dst, void *src)
 void
 btree_scatterv_actor::finalize_buffers()
 {
-  if (!result_buffer_.ptr)
-    return;
-
 }
 
 void

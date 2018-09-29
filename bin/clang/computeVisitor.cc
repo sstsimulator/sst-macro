@@ -695,7 +695,10 @@ void
 ComputeVisitor::visitInitialBinaryOperator(clang::BinaryOperator* op, ForLoopSpec* spec)
 {
   if (op->getLHS()->getStmtClass() != Stmt::DeclRefExprClass){
-    errorAbort(op->getLocStart(), CI, "skeletonized loop initializer is not simple assignment");
+    op->dump();
+    std::string error = std::string("skeletonized loop initializer is not simple assignment: got ")
+                                    + op->getLHS()->getStmtClassName();
+    errorAbort(op->getLocStart(), CI, error);
   } else {
     DeclRefExpr* dre = cast<DeclRefExpr>(op->getLHS());
     spec->incrementer = dre->getFoundDecl();

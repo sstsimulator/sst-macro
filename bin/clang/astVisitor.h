@@ -72,15 +72,22 @@ struct DeclDeleteException : public std::runtime_error
 
 class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
 {
-
  public:
-  FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
+  friend class PragmaActivateGuard;
+
+  FirstPassASTVistor(clang::CompilerInstance& ci,
+                     SSTPragmaList& prgs, clang::Rewriter& rw,
                      PragmaConfig& cfg);
 
   bool VisitDecl(clang::Decl* d);
   bool VisitStmt(clang::Stmt* s);
 
+  clang::CompilerInstance& getCompilerInstance() {
+    return ci_;
+  }
+
  private:
+  clang::CompilerInstance& ci_;
   SSTPragmaList& pragmas_;
   PragmaConfig& pragmaConfig_;
   clang::Rewriter& rewriter_;
@@ -141,7 +148,9 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     rewriter_(R), visitingGlobal_(false),
     globalNs_(ns), currentNs_(&ns),
     insideCxxMethod_(0), activeBinOpIdx_(-1),
-    foundCMain_(false), keepGlobals_(false), noSkeletonize_(true),
+    foundCMain_(false), keepGlobals_(false),
+    noSkeletonize_(true),
+    memoizePass_(false),
     refactorMain_(true),
     pragmaConfig_(cfg),
     numRelocations_(0),
@@ -154,6 +163,14 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     pragmaConfig_.astVisitor = this;
   }
 
+  /**
+   * @brief getUnderlyingExpr Follow through parentheses and casts
+   *  to the "significant" expression underneath
+   * @param e The input expression that might have casts/parens
+   * @return  The underlying expression
+   */
+  static clang::Expr* getUnderlyingExpr(clang::Expr *e);
+
   bool isGlobal(const clang::DeclRefExpr* expr) const {
     return globals_.find(mainDecl(expr)) != globals_.end();
   }
@@ -163,10 +180,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   PragmaConfig& getPragmaConfig() {
     return pragmaConfig_;
   }
-
-  void deletePragmaText(SSTPragma* prg, clang::Stmt* s);
-  void deletePragmaText(SSTPragma* prg, clang::Decl* d);
-
 
   clang::CompilerInstance& getCompilerInstance() {
     return *ci_;
@@ -197,6 +210,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void setCompilerInstance(clang::CompilerInstance& c){
     ci_ = &c;
+  }
+
+  bool memoizePass() const {
+    return memoizePass_;
   }
 
   /**
@@ -509,6 +526,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<const clang::Decl*> variableTemplates_;
   std::map<const clang::Decl*,std::string> scopedNames_;
 
+
   static inline const clang::Decl* mainDecl(const clang::Decl* d){
     return d->getCanonicalDecl();
   }
@@ -691,6 +709,7 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::string mainName_;
   bool keepGlobals_;
   bool noSkeletonize_;
+  bool memoizePass_;
   std::set<std::string> ignoredHeaders_;
   std::set<std::string> reservedNames_;
   PragmaConfig& pragmaConfig_;
@@ -698,57 +717,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::set<std::string> globalVarWhitelist_;
 
   friend class PragmaActivateGuard;
-  struct PragmaActivateGuard {
-    PragmaActivateGuard(clang::Stmt* s, SkeletonASTVisitor* visitor, bool doVisit = true) :
-      visitor_(visitor)
-    {
-      ++visitor->pragmaConfig_.pragmaDepth;
-      if (doVisit){
-        doCtor(s);
-      }
-    }
-
-    PragmaActivateGuard(clang::Decl* d, SkeletonASTVisitor* visitor, bool doVisit = true) :
-      visitor_(visitor)
-    {
-      ++visitor->pragmaConfig_.pragmaDepth;
-      if (doVisit){
-        doCtor(d);
-      }
-    }
-
-    void reactivate(clang::Decl* d, SSTPragma* prg){
-      ++visitor_->pragmaConfig_.pragmaDepth;
-      activePragmas_.push_back(prg);
-      prg->activate(d, visitor_->rewriter_, visitor_->pragmaConfig_);
-    }
-
-    ~PragmaActivateGuard();
-
-    bool skipVisit() const {
-      return skipVisit_;
-    }
-
-   private:
-    template <class T> void doCtor(T* t){
-      myPragmas_ = visitor_->pragmas_.getMatches<T>(t);
-      //this removes all inactivate pragmas from myPragmas_
-      init();
-      for (SSTPragma* prg : myPragmas_){
-        //pragma takes precedence - must occur in pre-visit
-        activePragmas_.push_back(prg);
-        prg->activate(t, visitor_->rewriter_, visitor_->pragmaConfig_);
-        visitor_->deletePragmaText(prg, t);
-      }
-    }
-
-    void init();
-
-    bool skipVisit_;
-    std::list<SSTPragma*> myPragmas_;
-    std::list<SSTPragma*> activePragmas_;
-    SkeletonASTVisitor* visitor_;
-  };
 
   struct GlobalStandin {
     bool fxnStatic;
@@ -896,14 +864,6 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void maybeReplaceGlobalUse(clang::DeclRefExpr* expr, clang::SourceRange rng);
 
   /**
-   * @brief getUnderlyingExpr Follow through parentheses and casts
-   *  to the "significant" expression underneath
-   * @param e The input expression that might have casts/parens
-   * @return  The underlying expression
-   */
-  clang::Expr* getUnderlyingExpr(clang::Expr *e);
-
-  /**
    * @brief getFinalExpr Similar to #getUnderlyingExpr, but also
    *  follow through unary operators.
    * @param e The input expression that might have casts/parens/unary ops
@@ -917,12 +877,17 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   void visitCollective(clang::CallExpr* expr);
   void visitReduce(clang::CallExpr* expr);
   void visitPt2Pt(clang::CallExpr* expr);
+  void checkFunctionPragma(clang::FunctionDecl* fd);
   bool checkDeclStaticClassVar(clang::VarDecl* D);
   bool checkInstanceStaticClassVar(clang::VarDecl* D);
   bool checkStaticFxnVar(clang::VarDecl* D);
   bool checkGlobalVar(clang::VarDecl* D);
   bool checkStaticFileVar(clang::VarDecl* D);
   bool checkFileVar(const std::string& filePrefix, clang::VarDecl* D);
+  bool haveActiveFxnParam() const {
+    if (activeFxnParams_.empty()) return false;
+    return activeFxnParams_.back();
+  }
   /**
    * @brief getEndLoc
    * Find and return the position after the starting point where a statement ends
@@ -931,9 +896,11 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @return
    */
   clang::SourceLocation getEndLoc(clang::SourceLocation startLoc);
+
   bool insideClass() const {
     return !classContexts_.empty();
   }
+
   bool insideFxn() const {
     return !fxnContexts_.empty();
   }
@@ -1013,6 +980,8 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
 
   void traverseFunctionBody(clang::Stmt* s);
 
+  bool doTraverseLambda(clang::LambdaExpr* expr);
+
   void getArrayType(const clang::Type* ty, cArrayConfig& cfg);
 
   void setFundamentalTypes(clang::QualType qt, cArrayConfig& cfg);
@@ -1067,6 +1036,74 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
    * @return
    */
   const clang::Decl* getOriginalDeclaration(clang::VarDecl* vd);
+};
+
+struct PragmaActivateGuard {
+  template <class T> //either decl/stmt
+  PragmaActivateGuard(T* t, SkeletonASTVisitor* visitor, bool doVisit = true) :
+    PragmaActivateGuard(t, *visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
+      visitor->pragmas_, doVisit, false/*2nd pass*/, !visitor->noSkeletonize())
+  {
+  }
+
+  template <class T>
+  PragmaActivateGuard(T* t, FirstPassASTVistor* visitor, bool doVisit = true) :
+    PragmaActivateGuard(t, visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
+      visitor->pragmas_, doVisit, true/*1st pass*/, !visitor->noSkeletonize_)
+  {
+  }
+
+  void reactivate(clang::Decl* d, SSTPragma* prg){
+    ++pragmaConfig_.pragmaDepth;
+    activePragmas_.push_back(prg);
+    prg->activate(d, rewriter_, pragmaConfig_);
+  }
+
+  ~PragmaActivateGuard();
+
+  bool skipVisit() const {
+    return skipVisit_;
+  }
+
+ private:
+  template <class T> //either decl/stmt
+  PragmaActivateGuard(T* t,
+       clang::CompilerInstance& ci,
+       PragmaConfig& cfg,
+       clang::Rewriter& rewriter,
+       SSTPragmaList& pragmas,
+       bool doVisit, bool firstPass,
+       bool skeletonizing) :
+    pragmaConfig_(cfg),
+    rewriter_(rewriter),
+    pragmas_(pragmas),
+    skeletonizing_(skeletonizing)
+  {
+    ++pragmaConfig_.pragmaDepth;
+    myPragmas_ = pragmas_.getMatches<T>(t, firstPass);
+    //this removes all inactivate pragmas from myPragmas_
+    init();
+    for (SSTPragma* prg : myPragmas_){
+      if (doVisit){
+        //pragma takes precedence - must occur in pre-visit
+        activePragmas_.push_back(prg);
+        deletePragmaText(prg, ci);
+        prg->activate(t, rewriter_, pragmaConfig_);
+      }
+    }
+  }
+
+  void init();
+
+  void deletePragmaText(SSTPragma* prg, clang::CompilerInstance& ci);
+
+  bool skipVisit_;
+  bool skeletonizing_;
+  std::list<SSTPragma*> myPragmas_;
+  std::list<SSTPragma*> activePragmas_;
+  PragmaConfig& pragmaConfig_;
+  clang::Rewriter& rewriter_;
+  SSTPragmaList& pragmas_;
 };
 
 

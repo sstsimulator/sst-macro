@@ -53,11 +53,11 @@ const int message::header_size = 64;
 message::~message()
 {
   if (owns_remote_buffer_){
-    char* buf = (char*) remote_buffer_.ptr;
+    char* buf = (char*) remote_buffer_;
     delete[] buf;
   }
   if (owns_local_buffer_){
-    char* buf = (char*) local_buffer_.ptr;
+    char* buf = (char*) local_buffer_;
     delete[] buf;
   }
 }
@@ -177,6 +177,7 @@ message::clone_into(message* cln) const
   cln->recver_ = recver_;
   cln->send_cq_ = send_cq_;
   cln->recv_cq_ = recv_cq_;
+  cln->num_bytes_ = num_bytes_;
 #if SSTMAC_COMM_SYNC_STATS
   cln->sent_ = sent_;
   cln->header_arrived_ = header_arrived_;
@@ -185,22 +186,23 @@ message::clone_into(message* cln) const
 #endif
 }
 
-void
-message::buffer_send(public_buffer& buf, long num_bytes)
+void*
+message::buffer(void* src, uint64_t num_bytes)
 {
   void* new_buf = new char[num_bytes];
-  void* old_buf = buf.ptr;
-  ::memcpy(new_buf, old_buf, num_bytes);
-  buf.ptr = new_buf;
+  ::memcpy(new_buf, src, num_bytes);
+  return new_buf;
 }
 
 void
 message::inject_local_to_remote()
 {
-  if (local_buffer_.ptr){ //might be null
-    ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
-    delete[] (char*) local_buffer_.ptr;
-    local_buffer_.ptr = nullptr;
+  //due to scatter-gather elements, it's now allowed
+  //to have a null remote buffer
+  if (local_buffer_ && remote_buffer_){ //might be null
+    ::memcpy(remote_buffer_, local_buffer_, num_bytes_);
+    delete[] (char*) local_buffer_;
+    local_buffer_ = nullptr;
     owns_local_buffer_ = false;
   }
 }
@@ -208,18 +210,22 @@ message::inject_local_to_remote()
 void
 message::memmove_local_to_remote()
 {
-  if (local_buffer_.ptr){ //might be null
-    ::memcpy(remote_buffer_.ptr, local_buffer_.ptr, num_bytes_);
+  //due to scatter-gather elements, it's now allowed
+  //to have a null remote buffer
+  if (local_buffer_ && remote_buffer_){ //might be null
+    ::memcpy(remote_buffer_, local_buffer_, num_bytes_);
   }
 }
 
 void
 message::inject_remote_to_local()
 {
-  if (remote_buffer_.ptr){
-    ::memcpy(local_buffer_.ptr, remote_buffer_.ptr, num_bytes_);
-    delete[] (char*) remote_buffer_.ptr;
-    remote_buffer_.ptr = nullptr;
+  //due to scatter-gather elements, it's now allowed
+  //to have a null remote buffer
+  if (local_buffer_ && remote_buffer_){
+    ::memcpy(local_buffer_, remote_buffer_, num_bytes_);
+    delete[] (char*) remote_buffer_;
+    remote_buffer_ = nullptr;
     owns_remote_buffer_ = false;
   }
 }
@@ -227,25 +233,29 @@ message::inject_remote_to_local()
 void
 message::memmove_remote_to_local()
 {
-  if (remote_buffer_.ptr){
-    ::memcpy(local_buffer_.ptr, remote_buffer_.ptr, num_bytes_);
+  //due to scatter-gather elements, it's now allowed
+  //to have a null local buffer
+  if (remote_buffer_ && local_buffer_){
+    ::memcpy(local_buffer_, remote_buffer_, num_bytes_);
   }
 }
 
 void
-message::buffer_local()
+message::put_local_on_wire()
 {
-  if (!owns_local_buffer_ && local_buffer_.ptr){
-    buffer_send(local_buffer_, num_bytes_);
+  if (!owns_local_buffer_ && local_buffer_){
+    void* old = local_buffer_;
+    local_buffer_ = buffer(local_buffer_, num_bytes_);
     owns_local_buffer_ = true;
   }
 }
 
 void
-message::buffer_remote()
+message::put_remote_on_wire()
 {
-  if (!owns_remote_buffer_ && remote_buffer_.ptr){
-    buffer_send(remote_buffer_, num_bytes_);
+  if (!owns_remote_buffer_ && remote_buffer_){
+    void* old = remote_buffer_;
+    remote_buffer_ = buffer(remote_buffer_, num_bytes_);
     owns_remote_buffer_ = true;
   }
 }
@@ -255,14 +265,14 @@ message::serialize_buffers(sstmac::serializer& ser)
   switch (payload_type_)
   {
     case rdma_get:
-      if (remote_buffer_.ptr){
-        ser & sstmac::array(remote_buffer_.ptr, num_bytes_);
+      if (remote_buffer_){
+        ser & sstmac::array(remote_buffer_, num_bytes_);
       }
       break;
     case rdma_put:
     case eager_payload:
-      if (local_buffer_.ptr){
-        ser & sstmac::array(local_buffer_.ptr, num_bytes_);
+      if (local_buffer_){
+        ser & sstmac::array(local_buffer_, num_bytes_);
       }
       break;
     default:
@@ -286,8 +296,8 @@ message::serialize_order(sstmac::serializer &ser)
   ser & num_bytes_;
   ser & send_cq_;
   ser & recv_cq_;
-  ser & local_buffer_;
-  ser & remote_buffer_;
+  ser.primitive(local_buffer_);
+  ser.primitive(remote_buffer_);
   ser & owns_remote_buffer_;
   ser & owns_local_buffer_;
 }

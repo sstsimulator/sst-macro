@@ -67,6 +67,12 @@ extern "C" int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *
   return 0;
 }
 
+extern "C" double sstmac_virtual_time()
+{
+  operating_system* os = operating_system::current_os();
+  return os->now().sec();
+}
+
 //make sure this doesn't get overwritten
 #undef gettimeofday
 extern "C" double sstmac_wall_time()

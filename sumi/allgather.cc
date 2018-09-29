@@ -86,7 +86,7 @@ bruck_allgather_actor::init_buffers(void* dst, void* src)
 void
 bruck_allgather_actor::finalize_buffers()
 {
-  if (result_buffer_.ptr){
+  if (result_buffer_){
     long buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
     my_api_->unmake_public_buffer(send_buffer_, buffer_size);
   }

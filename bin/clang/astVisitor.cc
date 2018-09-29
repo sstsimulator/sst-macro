@@ -86,6 +86,11 @@ SkeletonASTVisitor::initConfig()
   if (mainStr){
     refactorMain_ = atoi(mainStr);
   }
+
+  const char* memoStr = getenv("SSTMAC_MEMOIZE");
+  if (memoStr){
+    memoizePass_ = atoi(memoStr);
+  }
 }
 
 void
@@ -527,11 +532,11 @@ void
 SkeletonASTVisitor::nullDereferenceError(Expr* expr, const std::string& varName)
 {
   std::stringstream sstr;
-  for (Stmt* s : loopContexts_){
-    sstr << "consider skeletonizing with pragma sst compute here: "
-         << s->getLocStart().printToString(ci_->getSourceManager()) << "\n";
-  }
   sstr << "null_variable " << varName << " used in dereference";
+  for (Stmt* s : loopContexts_){
+    sstr << "\nconsider skeletonizing with pragma sst compute here: "
+         << s->getLocStart().printToString(ci_->getSourceManager());
+  }
   errorAbort(expr->getLocStart(), *ci_, sstr.str());
 }
 
@@ -574,7 +579,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
   }
 
   bool nullSafeFunctionCall = false;
-  if (!nullVarPrg->deleteAll() && !activeFxnParams_.empty()){
+  if (!nullVarPrg->deleteAll() && haveActiveFxnParam()){
     //we have "IPA" to deal with here
     //a null variable MUST map into a null variable - otherwise this is an error
     ParmVarDecl* pvd = activeFxnParams_.front();
@@ -639,7 +644,7 @@ SkeletonASTVisitor::visitNullVariable(Expr* expr, NamedDecl* nd)
     //I am not assigning to anyone nor am I passed along as
     //a function parameter - but I have not been given permission to delete all
     //that's okay - I'm a meaningless standalone statement - delete me
-    if (!activeFxnParams_.empty()){
+    if (haveActiveFxnParam()){
       //but I can't just delete if I am being passed off to another expression
       std::stringstream sstr;
       sstr << "variable " << nd->getNameAsString() << " is a null_variable "
@@ -882,63 +887,65 @@ SkeletonASTVisitor::TraverseCallExpr(CallExpr* expr, DataRecursionQueue* queue)
 {
   //this "breaks" connections for null variable propagation
   activeBinOpIdx_ = IndexResetter;
+  try {
+    PragmaActivateGuard pag(expr, this);
+    if (pag.skipVisit()) return true;
 
-  PragmaActivateGuard pag(expr, this);
-  if (pag.skipVisit()) return true;
+    DeclRefExpr* baseFxn = nullptr;
+    if (!noSkeletonize_ && !pragmaConfig_.replacePragmas.empty()){
+      Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
+      if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
+        //this is a basic function call
+        baseFxn = cast<DeclRefExpr>(fxn);
+        std::string fxnName = baseFxn->getFoundDecl()->getNameAsString();
+        for (auto& pair : pragmaConfig_.replacePragmas){
+          SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
+          if (replPrg->fxn() == fxnName){
+            replPrg->run(expr, rewriter_);
+            return true;
+          }
+        }
+      }
+    } else if (!noSkeletonize_) {
+      Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
+      if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
+        DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
+        std::string fxnName = dref->getFoundDecl()->getNameAsString();
+        if (sstmacFxnPrepends_.find(fxnName) != sstmacFxnPrepends_.end()){
+          rewriter_.InsertText(expr->getCallee()->getLocStart(), "sstmac_", false);
+        }
 
-  DeclRefExpr* baseFxn = nullptr;
-  if (!noSkeletonize_ && !pragmaConfig_.replacePragmas.empty()){
-    Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
-    if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
-      //this is a basic function call
-      baseFxn = cast<DeclRefExpr>(fxn);
-      std::string fxnName = baseFxn->getFoundDecl()->getNameAsString();
-      for (auto& pair : pragmaConfig_.replacePragmas){
-        SSTReplacePragma* replPrg = static_cast<SSTReplacePragma*>(pair.second);
-        if (replPrg->fxn() == fxnName){
-          replPrg->run(expr, rewriter_);
-          return true;
+        auto iter = mpiCalls_.find(fxnName);
+        if (iter != mpiCalls_.end()){
+          MPI_Call call = iter->second;
+          (this->*call)(expr);
         }
       }
     }
-  } else if (!noSkeletonize_) {
-    Expr* fxn = getUnderlyingExpr(const_cast<Expr*>(expr->getCallee()));
-    if (fxn->getStmtClass() == Stmt::DeclRefExprClass){
-      DeclRefExpr* dref = cast<DeclRefExpr>(fxn);
-      std::string fxnName = dref->getFoundDecl()->getNameAsString();
-      if (sstmacFxnPrepends_.find(fxnName) != sstmacFxnPrepends_.end()){
-        rewriter_.InsertText(expr->getCallee()->getLocStart(), "sstmac_", false);
-      }
 
-      auto iter = mpiCalls_.find(fxnName);
-      if (iter != mpiCalls_.end()){
-        MPI_Call call = iter->second;
-        (this->*call)(expr);
+    FunctionDecl* fd = expr->getDirectCallee();
+    goIntoContext(expr, [&]{
+      TraverseStmt(expr->getCallee());
+      for (int i=0; i < expr->getNumArgs(); ++i){
+        //va_args really foobars things here...
+        //call site can have more args than params in declaration
+        if (fd && i < fd->getNumParams()){
+          PushGuard<ParmVarDecl*> pg(activeFxnParams_, fd->getParamDecl(i));
+          Expr* arg = expr->getArg(i);
+          if (deletedArgs_.find(arg) == deletedArgs_.end()){
+            TraverseStmt(arg);
+          }
+        } else {
+          Expr* arg = expr->getArg(i);
+          if (deletedArgs_.find(arg) == deletedArgs_.end()){
+            TraverseStmt(arg);
+          }
+        }
       }
-    }
+    });
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != expr) throw e;
   }
-
-  FunctionDecl* fd = expr->getDirectCallee();
-  goIntoContext(expr, [&]{
-    TraverseStmt(expr->getCallee());
-    for (int i=0; i < expr->getNumArgs(); ++i){
-      //va_args really foobars things here...
-      //call site can have more args than params in declaration
-      if (fd && i < fd->getNumParams()){
-        PushGuard<ParmVarDecl*> pg(activeFxnParams_, fd->getParamDecl(i));
-        Expr* arg = expr->getArg(i);
-        if (deletedArgs_.find(arg) == deletedArgs_.end()){
-          TraverseStmt(arg);
-        }
-      } else {
-        Expr* arg = expr->getArg(i);
-        if (deletedArgs_.find(arg) == deletedArgs_.end()){
-          TraverseStmt(arg);
-        }
-      }
-    }
-  });
-
   return true;
 }
 
@@ -1815,6 +1822,20 @@ SkeletonASTVisitor::setupGlobalVar(const std::string& varnameScopeprefix,
 bool
 SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
 {
+  if (activeFxnParams_.empty()){
+    return doTraverseLambda(expr);
+  } else {
+    //lambdas are a glorious pain - they might be a function param
+    //we don't want to the compound stmt lambda body to think we are still traversing
+    //a function param, though
+    PushGuard<ParmVarDecl*> pg(activeFxnParams_, nullptr);
+    return doTraverseLambda(expr);
+  }
+}
+
+bool
+SkeletonASTVisitor::doTraverseLambda(LambdaExpr* expr)
+{
   LambdaCaptureDefault def = expr->getCaptureDefault();
   switch (expr->getCaptureDefault()){
     case LCD_None: {
@@ -1893,8 +1914,9 @@ SkeletonASTVisitor::TraverseLambdaExpr(LambdaExpr* expr)
       //this can be confusing for global variables
       //but an [=] capture of a global variable is "by reference"
       //so no special work is need for this case
-    case LCD_ByRef:
+    case LCD_ByRef: {
       return RecursiveASTVisitor<SkeletonASTVisitor>::TraverseLambdaExpr(expr);
+    }
   }
   return true;
 }
@@ -1926,6 +1948,16 @@ SkeletonASTVisitor::getEndLoc(SourceLocation searchStart)
   return SourceLocation();
 }
 
+void
+SkeletonASTVisitor::checkFunctionPragma(FunctionDecl* fd)
+{
+  auto iter = pragmaConfig_.functionPragmas.find(fd->getCanonicalDecl());
+  if (iter != pragmaConfig_.functionPragmas.end()){
+    SSTPragma* prg = iter->second;
+    prg->activate(fd, rewriter_, pragmaConfig_);
+  }
+}
+
 bool
 SkeletonASTVisitor::checkFileVar(const std::string& filePrefix, VarDecl* D)
 {
@@ -1952,26 +1984,6 @@ SkeletonASTVisitor::deleteStmt(Stmt *s)
 {
   //go straight to replace, don't delay this
   ::replace(s, rewriter_, "", *ci_);
-}
-
-void
-SkeletonASTVisitor::deletePragmaText(SSTPragma *prg, Stmt* s)
-{
-  //eliminate the pragma text
-  if (prg->depth == 0){
-    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
-    ::replace(rng, rewriter_, "", *ci_);
-  }
-}
-
-void
-SkeletonASTVisitor::deletePragmaText(SSTPragma *prg, Decl* d)
-{
-  //eliminate the pragma text
-  if (prg->depth == 0){
-    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
-    ::replace(rng, rewriter_, "", *ci_);
-  }
 }
 
 static bool isCombinedDecl(VarDecl* vD, RecordDecl* rD)
@@ -2515,8 +2527,15 @@ SkeletonASTVisitor::visitVarDecl(VarDecl* D)
   if (D->getNameAsString() == "sstmac_appname_str"){
     StringLiteral* lit = cast<StringLiteral>(getUnderlyingExpr(D->getInit()));
     mainName_ = lit->getString();
+    if (memoizePass_){
+      mainName_ = mainName_ + "_memoize";
+    }
     return false;
   }
+
+  //memoization should do no refactoring of global variables
+  if (memoizePass_)
+    return false;
 
   bool skipInit = false;
   if (insideClass() && D->isStaticDataMember() && shouldVisitDecl(D)){
@@ -2544,26 +2563,26 @@ SkeletonASTVisitor::replaceMain(clang::FunctionDecl* mainFxn)
   std::string suffix2 = sourceFile.substr(sourceFile.size()-2,2);
   bool isC = suffix2 == ".c";
 
-  if (isC){    
-    foundCMain_ = true;
-    std::string appname = getAppName();
-    if (appname.size() == 0){
-      errorAbort(mainFxn->getLocStart(), *ci_,
-                 "sstmac_app_name macro not defined before main");
-    }
-    std::stringstream sstr;
-    sstr << "int sstmac_user_main_" << appname << "(";
-    if (mainFxn->getNumParams() == 2){
-      sstr << "int argc, char** argv";
-    }
-    sstr << "){";
+  foundCMain_ = true;
 
-    SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
-    replace(rng, sstr.str());
-  } else {
+  std::string appname = getAppName();
+
+  if (appname.size() == 0){
     errorAbort(mainFxn->getLocStart(), *ci_,
                "sstmac_app_name macro not defined before main");
   }
+  std::stringstream sstr;
+  if (!isC) sstr << "extern \"C\" ";
+  sstr << "int sstmac_user_main_" << appname << "(";
+  if (mainFxn->getNumParams() == 2){
+
+    sstr << "int " << mainFxn->getParamDecl(0)->getNameAsString()
+         << ", char** " << mainFxn->getParamDecl(1)->getNameAsString();
+  }
+  sstr << "){";
+
+  SourceRange rng(mainFxn->getLocStart(), mainFxn->getBody()->getLocStart());
+  replace(rng, sstr.str());
 }
 
 void
@@ -2611,8 +2630,6 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
   } else if (D->isTemplateInstantiation()){
     return true; //do not visit implicitly instantiated template stuff
   } else if (!D->isThisDeclarationADefinition()){
-    //clang is weird... this can be just a declaration
-    //but it gets its definition filled in...
     return true;
   }
 
@@ -2635,11 +2652,17 @@ SkeletonASTVisitor::TraverseFunctionDecl(clang::FunctionDecl* D)
     return true;
   }
 
-  PragmaActivateGuard pag(D, this, D->isThisDeclarationADefinition());
-  if (!pag.skipVisit() && D->getBody()){
-    PushGuard<FunctionDecl*> pg(fxnContexts_, D);
-    traverseFunctionBody(D->getBody());
+  try {
+    PragmaActivateGuard pag(D, this, D->isThisDeclarationADefinition());
+    checkFunctionPragma(D);
+    if (!pag.skipVisit() && D->getBody()){
+      PushGuard<FunctionDecl*> pg(fxnContexts_, D);
+      traverseFunctionBody(D->getBody());
+    }
+  } catch (StmtDeleteException& e) {
+    if (e.deleted != D->getBody()) throw e;
   }
+
   return true;
 }
 
@@ -2728,8 +2751,6 @@ SkeletonASTVisitor::TraverseCXXMethodDecl(CXXMethodDecl *D)
   //this got implicitly inserted into AST - has no source location
   if (D->isTemplateInstantiation())
     return true;
-
-
 
   PragmaActivateGuard pag(D, this);
   if (D->isThisDeclarationADefinition() && !pag.skipVisit()) {
@@ -3245,7 +3266,7 @@ SkeletonASTVisitor::TraverseDecl(Decl *D)
 
 
 void
-SkeletonASTVisitor::PragmaActivateGuard::init()
+PragmaActivateGuard::init()
 {
   skipVisit_ = false;
   auto iter = myPragmas_.begin();
@@ -3253,12 +3274,15 @@ SkeletonASTVisitor::PragmaActivateGuard::init()
   while (iter != end){
     auto tmp = iter++;
     SSTPragma* prg = *tmp;
-    bool activate = !visitor_->noSkeletonize();
+
+    bool activate = skeletonizing_;
 
     //a compute pragma totally deletes the block
     bool blockDeleted = false;
     switch (prg->cls){
-      case SSTPragma::GlobalVariable: //always - regardless of skeletonization
+      case SSTPragma::StackAlloc:
+      case SSTPragma::Memoize:  //always - regardless of skeletonization
+      case SSTPragma::GlobalVariable:
       case SSTPragma::Overhead:
         skipVisit_ = false;
         activate = true;
@@ -3287,18 +3311,28 @@ SkeletonASTVisitor::PragmaActivateGuard::init()
     }
   }
 
-  if (visitor_->pragmaConfig_.makeNoChanges){
+  if (pragmaConfig_.makeNoChanges){
     skipVisit_ = true;
-    visitor_->pragmaConfig_.makeNoChanges = false;
+    pragmaConfig_.makeNoChanges = false;
   }
 }
 
-SkeletonASTVisitor::PragmaActivateGuard::~PragmaActivateGuard()
+PragmaActivateGuard::~PragmaActivateGuard()
 {
   for (SSTPragma* prg : activePragmas_){
-    prg->deactivate(visitor_->pragmaConfig_);
+    prg->deactivate(pragmaConfig_);
   }
-  visitor_->pragmaConfig_.pragmaDepth--;
+  pragmaConfig_.pragmaDepth--;
+}
+
+void
+PragmaActivateGuard::deletePragmaText(SSTPragma *prg, CompilerInstance& ci)
+{
+  //eliminate the pragma text
+  if (prg->depth == 0){
+    SourceRange rng(prg->pragmaDirectiveLoc, prg->endPragmaLoc);
+    ::replace(rng, rewriter_, "", ci);
+  }
 }
 
 void
@@ -3491,32 +3525,20 @@ SkeletonASTVisitor::maybeReplaceGlobalUse(DeclRefExpr* expr, SourceRange replRng
 bool
 FirstPassASTVistor::VisitDecl(Decl *d)
 {
-  if (noSkeletonize_) return true;
-
-  std::list<SSTPragma*> pragmas = pragmas_.getMatches(d,true);
-  for (SSTPragma* prg : pragmas){
-    prg->activate(d, rewriter_, pragmaConfig_);
-    pragmas_.erase(prg);
-  }
+  PragmaActivateGuard pag(d, this, !noSkeletonize_);
   return true;
 }
 
 bool
 FirstPassASTVistor::VisitStmt(Stmt *s)
 {
-  if (noSkeletonize_) return true;
-
-  std::list<SSTPragma*> pragmas = pragmas_.getMatches(s,true);
-  for (SSTPragma* prg : pragmas){
-    prg->activate(s, rewriter_, pragmaConfig_);
-    pragmas_.erase(prg);
-  }
+  PragmaActivateGuard pag(s, this, !noSkeletonize_);
   return true;
 }
 
-FirstPassASTVistor::FirstPassASTVistor(SSTPragmaList& prgs, clang::Rewriter& rw,
-                   PragmaConfig& cfg) :
-  pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg), noSkeletonize_(false)
+FirstPassASTVistor::FirstPassASTVistor(CompilerInstance& ci,
+  SSTPragmaList& prgs, clang::Rewriter& rw, PragmaConfig& cfg) :
+  ci_(ci), pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg), noSkeletonize_(false)
 {
   const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){

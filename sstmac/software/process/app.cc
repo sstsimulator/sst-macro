@@ -78,6 +78,7 @@ RegisterKeywords(
  { "notify", "whether the app should send completion notifications to job root" },
  { "globals_size", "the size of the global variable segment to allocate" },
  { "OMP_NUM_THREADS", "environment variable for configuring openmp" },
+ { "exe", "an optional exe .so file to load for this app" },
 );
 
 MakeDebugSlot(app_compute);
