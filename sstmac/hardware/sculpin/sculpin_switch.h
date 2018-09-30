@@ -140,6 +140,7 @@ class sculpin_switch :
 
   struct port {
     int id;
+    int dst_port;
     timestamp next_free;
     double inv_bw;
     uint32_t seqnum;

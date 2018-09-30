@@ -272,6 +272,13 @@ class topology : public sprockit::printable
       return loc;
     }
 
+    xyz center() const {
+      double newX = (corner.x + size.x*0.5);
+      double newY = (corner.y + size.y*0.5);
+      double newZ = (corner.z + size.z*0.5);
+      return xyz(newX, newY, newZ).rotate(rot);
+    }
+
   };
 
   struct vtk_switch_geometry {
@@ -400,6 +407,10 @@ class topology : public sprockit::printable
    * @return The geometry (box size, rotation, port-face mapping)
    */
   virtual vtk_switch_geometry get_vtk_geometry(switch_id sid) const;
+
+  virtual bool is_curved_vtk_link(switch_id sid, int port) const {
+    return false;
+  }
 
   /**
    * @brief num_endpoints To be distinguished slightly from nodes.

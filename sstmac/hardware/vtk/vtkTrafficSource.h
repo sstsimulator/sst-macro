@@ -52,9 +52,20 @@ public:
   void SetPoints(vtkSmartPointer<vtkPoints> points);
   void SetCells(vtkSmartPointer<vtkCellArray> cells);
 
+  void SetNumObjects(int num_switches, int num_links){
+    link_index_offset_ = num_switches*6; //6 faces;
+    num_switches_ = num_switches;
+    num_links_ = num_links;
+  }
+
   template <class Vec> //allow move or copy
   void SetCellTypes(Vec&& types){
     CellTypes = std::forward<Vec>(types);
+  }
+
+  template <class Map> //allow move or copy
+  void SetPortLinkMap(Map&& map){
+    port_to_link_id_ = std::forward<Map>(map);
   }
 
   // Traffic
@@ -79,11 +90,15 @@ protected:
   int NumSteps;
   double *Steps;
   std::multimap<uint64_t, traffic_event> traffic_progress_map_;
+  std::unordered_map<uint32_t,int> port_to_link_id_;
   vtkDoubleArray * Traffics;
   vtkSmartPointer<vtkPoints> Points;
   vtkSmartPointer<vtkCellArray> Cells;
   vtkSmartPointer<vtkCellArray> Lines;
   std::vector<int> CellTypes;
+  int num_switches_;
+  int num_links_;
+  int link_index_offset_;
 
 private:
   vtkTrafficSource(const vtkTrafficSource&) = delete;

@@ -236,6 +236,16 @@ dragonfly::configure_individual_port_params(switch_id src, sprockit::sim_paramet
   setup_port_params(switch_params, red_[1], a_, h_);
 }
 
+bool
+dragonfly::is_curved_vtk_link(switch_id sid, int port) const
+{
+  if (port >= a_){
+    return false; //global link - these are straight lines
+  } else {
+    return true; //local link - these need to be curved
+  }
+}
+
 topology::vtk_switch_geometry
 dragonfly::get_vtk_geometry(switch_id sid) const
 {

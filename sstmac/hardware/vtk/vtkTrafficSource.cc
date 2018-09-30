@@ -149,8 +149,9 @@ int vtkTrafficSource::RequestData(
   for(auto it = currentIntensities.first; it != currentIntensities.second; ++it){
     // traffic face index = switchId * 6 + getFaceIndex(switchId, port)
     traffic_event& event = it->second;
-    auto valueIndex = event.id_ * 6 + event.face_;
-    this->Traffics->SetValue(valueIndex, event.intensity_);
+    vtk_port port(event.id_, event.port_);
+    int link = port_to_link_id_[port.id32()];
+    this->Traffics->SetValue(link_index_offset_ + link, event.intensity_);
   }
 
   output->GetCellData()->AddArray(this->Traffics);

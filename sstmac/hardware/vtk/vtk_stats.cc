@@ -15,7 +15,10 @@
 #include <vtkVertex.h>
 #include <vtkQuad.h>
 #include <vtkLine.h>
+#include <vtkLagrangeCurve.h>
+#include <vtkCubicLine.h>
 #include <vtkCellArray.h>
+#include <vtkQuadraticEdge.h>
 #include <vtkXMLUnstructuredGridReader.h>
 #include <vtkDataSetMapper.h>
 #include <vtkActor.h>
@@ -33,17 +36,15 @@
 RegisterKeywords(
 { "transition_cutoff", "the port occupancy level that should be considered 'congestion'" },
 { "ignored_time_gap", "a time gap that should be considered negligible" },
+{ "bidirectional_shift", "the displacement in space for each direction of a birectional link" },
 );
 
 namespace sstmac {
 namespace hw {
 
-struct switchContents {
-
-};
-
 void
 outputExodusWithSharedMap(const std::string& fileroot,
+   double bidirectional_shift,
    std::multimap<uint64_t, traffic_event>&& trafficMap,
    topology *topo)
 {
@@ -57,38 +58,96 @@ outputExodusWithSharedMap(const std::string& fileroot,
   // for each time step (key) of the traffic map parameter, we know the traffic value to update for the (switch,port) associated.
   // The switch traffic value itself needs to be recomputed using the mean of all current traffic values of the ports of the switch.
 
+  int num_switches = topo->num_switches();
 
-  // We need to quickly find info associated with the switch
- std::map<int, switchContents> switchIdToContents;
- for(auto it = trafficMap.cbegin(); it != trafficMap.cend(); ++it){
-   const traffic_event& e = it->second;
-   switchIdToContents.insert(std::make_pair(e.id_, switchContents{}));
- }
-std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl;
- // store the exact number of switch
- const int numberOfSwitch = switchIdToContents.size();
+
+  std::unordered_map<uint32_t,uint64_t> outport_to_link;
+  for (int i=0; i < num_switches; ++i){
+    std::vector<topology::connection> conns;
+    topo->connected_outports(i, conns);
+    for (topology::connection& conn : conns){
+      uint16_t id1 = conn.src;
+      uint16_t id2 = conn.dst;
+      uint16_t port1 = conn.src_outport;
+      uint16_t port2 = conn.dst_inport;
+      vtk_link link(id1,port1,id2,port2);
+      vtk_port port(id1,port1);
+      outport_to_link[port.id32()] = link.id64();
+
+      vtk_link test_link = vtk_link::construct(link.id64());
+      if (   test_link.id1 != link.id1 || test_link.id2 != link.id2
+          || test_link.port1 != link.port1 || test_link.port2 != link.port2){
+        spkt_abort_printf("Bad link bit arithmetic: link(%d,%d,%d,%d) != link(%d,%d,%d,%d)",
+                          int(link.id1), int(link.port1), int(link.id2), int(link.port2),
+                          int(test_link.id1), int(test_link.port1), int(test_link.id2), int(test_link.port2));
+      }
+    }
+  }
+
+  int global_link_id = 0;
+  std::unordered_map<uint64_t,int> global_link_to_vtk_cell_mapping;
+  for (auto& pair : trafficMap){
+    traffic_event& e = pair.second;
+    vtk_port p(e.id_, e.port_);
+    vtk_port test_p = vtk_port::construct(p.id32());
+    if (test_p.id != p.id || test_p.port != p.port){
+      spkt_abort_printf("Bad port bit arithmetic: port(%d,%d) != port(%d,%d)",
+                        int(p.id), int(p.port), int(test_p.id), int(test_p.port));
+    }
+
+    uint32_t port_global_id = p.id32();
+    auto iter = outport_to_link.find(port_global_id);
+    if (iter == outport_to_link.end()){
+      spkt_abort_printf("Could not find link for global port %d = %d x %d",
+                        int(port_global_id), int(e.id_), int(e.port_));
+    }
+    uint64_t linkId = iter->second;
+
+    auto link_iter = global_link_to_vtk_cell_mapping.find(linkId);
+    if (link_iter == global_link_to_vtk_cell_mapping.end()){
+      global_link_to_vtk_cell_mapping[linkId] = global_link_id++;
+    }
+  }
+  std::cout << "vtk_stats : num links=" << global_link_to_vtk_cell_mapping.size() << std::endl;
+  std::cout << "vtk_stats : num switches=" << num_switches << std::endl;
+
+  //if a link is never used in the simulation, don't draw it
+  //limit the visualization to only those links that actually matter
+  int num_links_to_paint = global_link_to_vtk_cell_mapping.size();
+
 
   // Init traffic array with default 0 traffic value
-  vtkSmartPointer<vtkIntArray> traffic =
-      vtkSmartPointer<vtkIntArray>::New();
+  vtkSmartPointer<vtkIntArray> traffic = vtkSmartPointer<vtkIntArray>::New();
   traffic->SetNumberOfComponents(1);
   traffic->SetName("MyTraffic");
-//  int count_xy = count_x * count_y; //
+  //  int count_xy = count_x * count_y; //
   // 1 color per face and 6 face per switch
-  traffic->SetNumberOfValues(numberOfSwitch * (6));
-  for (auto i = 0; i < numberOfSwitch; ++i){
+  int numTrafficValues = num_switches*6 + num_links_to_paint;
+  traffic->SetNumberOfValues(numTrafficValues);
+  for (auto i = 0; i < numTrafficValues; ++i){
     traffic->SetValue(i, 0);
   }
 
+  static constexpr int NUM_POINTS_PER_LINK = 3;
+
+  int num_switch_points = num_switches*8;
+  int num_link_points = num_links_to_paint*NUM_POINTS_PER_LINK;
+
+  /** Each switch has 8 vertices
+   *  Each link has an additional (optional) midpoint defining it as a parabola */
+  int numPoints = num_switch_points + num_link_points;
+
   // Create the vtkPoints
-  vtkSmartPointer<vtkPoints> points =
-      vtkSmartPointer<vtkPoints>::New();
-  points->SetNumberOfPoints(switchIdToContents.size() * 8);
+  vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+  points->SetNumberOfPoints(numPoints);
+
+
+  std::vector<topology::vtk_switch_geometry> geoms; geoms.reserve(num_switches);
 
   // Use the geometry to place them correctly
   int idx =0;
-  for(auto it = switchIdToContents.cbegin(); it != switchIdToContents.cend(); ++it){
-    auto geom = topo->get_vtk_geometry(it->first);
+  for (int swid = 0; swid < num_switches; ++swid){
+    auto geom = topo->get_vtk_geometry(swid);
     auto box_geom = geom.box;
     auto v0 = box_geom.vertex(0); // corner (minus_x, minus_y, minus_z)
     auto v1 = box_geom.vertex(1); // corner (minus_x, plus_y, minus_z)
@@ -107,28 +166,24 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
     points->SetPoint(idx + 6, v6.x, v6.y, v6.z);
     points->SetPoint(idx + 7, v7.x, v7.y, v7.z);
     idx += 8;
+    geoms.push_back(geom);
   }
-  std::cout << "vtk_stats : num of points "<< points->GetNumberOfPoints() <<std::endl;
+
+
+  std::cout << "vtk_stats : num points=" << points->GetNumberOfPoints() <<std::endl;
 
   // Create the vtkCellArray
   // 6 face cell array per switch
-  vtkSmartPointer<vtkCellArray> cell_array =
-      vtkSmartPointer<vtkCellArray>::New();
+  vtkSmartPointer<vtkCellArray> cell_array = vtkSmartPointer<vtkCellArray>::New();
 
-  std::vector<int> cell_types; cell_types.reserve(numberOfSwitch*(6));
-  for (auto i = 0; i < numberOfSwitch; ++i){
-    vtkSmartPointer<vtkQuad> plusXface =
-        vtkSmartPointer<vtkQuad>::New();
-    vtkSmartPointer<vtkQuad> plusYface =
-        vtkSmartPointer<vtkQuad>::New();
-    vtkSmartPointer<vtkQuad> plusZface =
-        vtkSmartPointer<vtkQuad>::New();
-    vtkSmartPointer<vtkQuad> minusXface =
-        vtkSmartPointer<vtkQuad>::New();
-    vtkSmartPointer<vtkQuad> minusYface =
-        vtkSmartPointer<vtkQuad>::New();
-    vtkSmartPointer<vtkQuad> minusZface =
-        vtkSmartPointer<vtkQuad>::New();
+  std::vector<int> cell_types; cell_types.reserve(num_switches*6 + num_links_to_paint);
+  for (auto i = 0; i < num_switches; ++i){
+    vtkSmartPointer<vtkQuad> plusXface = vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> plusYface = vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> plusZface = vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> minusXface = vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> minusYface = vtkSmartPointer<vtkQuad>::New();
+    vtkSmartPointer<vtkQuad> minusZface = vtkSmartPointer<vtkQuad>::New();
 
     auto pIdxStart = i * 8; // 8 points per switch
     plusXface->GetPointIds()->SetId(0,pIdxStart + 4);
@@ -169,33 +224,52 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
     cell_array->InsertNextCell(minusZface); cell_types.push_back(VTK_QUAD);
   }
 
-  /**
-  for (int i=0; i < numberOfSwitch; ++i){
-    auto pIdxStart = i * 8; // 8 points per switch
-    vtkSmartPointer<vtkLine> link0 = vtkSmartPointer<vtkLine>::New();
-    link0.Get()->GetPointIds()->SetId(0,pIdxStart);
-    link0.Get()->GetPointIds()->SetId(1,pIdxStart+4);
+  std::unordered_map<uint32_t,int> port_to_link_id;
+  for (auto& pair : global_link_to_vtk_cell_mapping){
+    uint64_t hash_id = pair.first;
+    int global_id = pair.second;
+    vtk_link link = vtk_link::construct(hash_id);
+    topology::vtk_switch_geometry switch1 = topo->get_vtk_geometry(link.id1);//geoms[link.id1];
+    topology::vtk_switch_geometry switch2 = topo->get_vtk_geometry(link.id2);//geoms[link.id2];
+    topology::vtk_box_geometry face1 = switch1.face_on_port(link.port1, 0.0);
+    topology::vtk_box_geometry face2 = switch2.face_on_port(link.port2, 0.0);
+    topology::vtk_box_geometry face3 = link.id1 > link.id2
+          ? switch1.face_on_port(link.port1, -4.0)
+          : switch2.face_on_port(link.port2, -4.0);
+    int idx = num_switch_points + global_id * NUM_POINTS_PER_LINK;
+    auto c1 = face1.center();
+    auto c2 = face2.center();
+    auto c3 = face3.center();
 
-    vtkSmartPointer<vtkLine> link1 = vtkSmartPointer<vtkLine>::New();
-    link1.Get()->GetPointIds()->SetId(0,pIdxStart);
-    link1.Get()->GetPointIds()->SetId(1,pIdxStart+5);
+    //links are bidirectional - which means two links will get painted on top of each other
+    //for now (for lack of a better way) shift +/- on the z-axis to avoid conflicts
+    double z_shift = link.id1 > link.id2 ? bidirectional_shift : -bidirectional_shift;
+    c1.z += z_shift;
+    c2.z += z_shift;
+    c3.z += z_shift;
 
-    vtkSmartPointer<vtkLine> link2 = vtkSmartPointer<vtkLine>::New();
-    link2.Get()->GetPointIds()->SetId(0,pIdxStart);
-    link2.Get()->GetPointIds()->SetId(1,pIdxStart+6);
+    points->SetPoint(idx + 0, c1.x, c1.y, c1.z);
+    points->SetPoint(idx + 1, c2.x, c2.y, c2.z);
+    points->SetPoint(idx + 2, c3.x, c3.y, c3.z);
 
-    vtkSmartPointer<vtkLine> link3 = vtkSmartPointer<vtkLine>::New();
-    link3.Get()->GetPointIds()->SetId(0,pIdxStart);
-    link3.Get()->GetPointIds()->SetId(1,pIdxStart+7);
+    if (topo->is_curved_vtk_link(link.id1, link.port1)){
+      vtkSmartPointer<vtkQuadraticEdge> line = vtkSmartPointer<vtkQuadraticEdge>::New();
+      line->GetPointIds()->SetId(0, idx + 0);
+      line->GetPointIds()->SetId(1, idx + 1);
+      line->GetPointIds()->SetId(2, idx + 2);
+      cell_array->InsertNextCell(line); cell_types.push_back(VTK_QUADRATIC_EDGE);
+    } else {
+      vtkSmartPointer<vtkLine> line = vtkSmartPointer<vtkLine>::New();
+      line->GetPointIds()->SetId(0, idx + 0);
+      line->GetPointIds()->SetId(1, idx + 1);
+      cell_array->InsertNextCell(line); cell_types.push_back(VTK_LINE);
+    }
 
-    cell_array->InsertNextCell(link0); cell_types.push_back(VTK_LINE);
-    cell_array->InsertNextCell(link1); cell_types.push_back(VTK_LINE);
-    cell_array->InsertNextCell(link2); cell_types.push_back(VTK_LINE);
-    cell_array->InsertNextCell(link3); cell_types.push_back(VTK_LINE);
+    vtk_port vp(link.id1, link.port1);
+    port_to_link_id[vp.id32()] = global_id;
   }
-  */
 
-  std::cout << "vtk_stats : num of cells "<< cell_array->GetNumberOfCells()<<std::endl;
+  std::cout << "vtk_stats : num cells=" << cell_array->GetNumberOfCells()<<std::endl;
 
   vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
       vtkSmartPointer<vtkUnstructuredGrid>::New();
@@ -218,17 +292,17 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
   // TOCHECK: time_step_value for trafficMap.size() > values >= currend_index isn't intialized (and shouldn't be used)
   // time_step_value should be resized ?
 
-  vtkSmartPointer<vtkTrafficSource> trafficSource =
-      vtkSmartPointer<vtkTrafficSource>::New();
+  vtkSmartPointer<vtkTrafficSource> trafficSource = vtkSmartPointer<vtkTrafficSource>::New();
+  trafficSource->SetNumObjects(num_switches, num_links_to_paint);
   trafficSource->SetSteps(time_step_value);
   trafficSource->SetNumberOfSteps(currend_index);
   trafficSource->SetPoints(points);
   trafficSource->SetCells(cell_array);
   trafficSource->SetCellTypes(std::move(cell_types));
   trafficSource->SetTraffics(traffic);
+  trafficSource->SetPortLinkMap(std::move(port_to_link_id));
   trafficSource->SetTrafficProgressMap(std::move(trafficMap));
-  vtkSmartPointer<vtkExodusIIWriter> exodusWriter =
-      vtkSmartPointer<vtkExodusIIWriter>::New();
+  vtkSmartPointer<vtkExodusIIWriter> exodusWriter = vtkSmartPointer<vtkExodusIIWriter>::New();
   std::string fileName = fileroot + ".e";
   exodusWriter->SetFileName(fileName.c_str());
   exodusWriter->SetInputConnection (trafficSource->GetOutputPort());
@@ -239,9 +313,11 @@ std::cout << "vtk_stats : num of switch "<< switchIdToContents.size()<<std::endl
 
 void
 stat_vtk::outputExodus(const std::string& fileroot,
+    double bidirectional_shift,
     std::multimap<uint64_t, traffic_event>&& traffMap,
     topology *topo) {
-  outputExodusWithSharedMap(fileroot, std::move(traffMap), topo);
+  outputExodusWithSharedMap(fileroot, bidirectional_shift,
+                            std::move(traffMap), topo);
 }
 
 
@@ -250,6 +326,7 @@ stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
 {
   transition_cutoff_ = params->get_int_param("transition_cutoff");
   ignored_gap_ = params->get_optional_time_param("ignored_time_gap", 1e-3);
+  bidirectional_shift_ = params->get_optional_double_param("bidirectional_shift", 0.02);
 }
 
 void
@@ -268,53 +345,22 @@ stat_vtk::finalize(timestamp t)
 {
   clear_pending_departures(t);
   ignored_gap_ = 0;
-  for (int face=0; face < face_intensities_.size(); ++face){
-    if (face_intensities_[face].current_level != 0){
-      spkt_abort_printf("Face %d on VTK %d did not return to zero", face, id_);
+  for (int port=0; port < port_intensities_.size(); ++port){
+    if (port_intensities_[port].current_level != 0){
+      spkt_abort_printf("Port %d on VTK %d did not return to zero", port, id_);
     }
-    collect_new_level(face, t, 0);
+    //collect_new_level(port, t, 0);
     //and push back a zero event at the end
-    event_list_.emplace_back(t.ticks(), face, 0, id_);
+    //event_list_.emplace_back(t.ticks(), face, 0, id_);
   }
 }
 
 void
 stat_vtk::dump_global_data()
 {
-  //here is where I dump the VTU file or whatever
-
-  //DUMP FOR TRAFFIC
-
-//  std::cout << "StatisticOutputEXODUS::traffic_progress_map_ size  "<< traffic_event_map_.size()<< std::endl;
-//  std::multimap<std::string, std::multimap<int, int>> tf_nodes_map;
-//  for (auto it = traffic_event_map_.cbegin(); it != traffic_event_map_.cend(); ++it){
-//    auto nodeId = it->second.id_;
-//    auto portId = it->second.face_;
-//    auto nodIdPortIdKey = std::to_string(nodeId) +":"+ std::to_string(portId);
-//    auto resIt = tf_nodes_map.find(nodIdPortIdKey);
-//    if(resIt == tf_nodes_map.cend()){
-//      auto map = std::multimap<int, int>{};
-//      map.insert({it->first, it->second.intensity_});
-
-//      tf_nodes_map.insert({nodIdPortIdKey, map});
-//    } else {
-//      auto &map = resIt->second;
-//      map.insert({it->first, it->second.intensity_});
-//    }
-//  }
-
-//   // TORM: display the map
-//    for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
-//      auto node_id = it->first;
-//      const auto &map = it->second;
-//      std::cout<<node_id<<":";
-//      for(auto it = map.cbegin(); it != map.cend(); ++it){
-//        std::cout<< it->second << " ";
-//      }
-//      std::cout<<std::endl;
-//    }
-
-  outputExodusWithSharedMap(fileroot_, std::move(traffic_event_map_), topology::global());
+  outputExodusWithSharedMap(fileroot_, bidirectional_shift_,
+                            std::move(traffic_event_map_),
+                            topology::global());
 }
 
 void
@@ -335,34 +381,35 @@ stat_vtk::configure(switch_id sid, topology *top)
   auto geom = top_->get_vtk_geometry(sid);
   port_to_face_ = geom.port_faces;
   id_ = sid;
+  raw_port_intensities_.resize(port_to_face_.size());
   port_intensities_.resize(port_to_face_.size());
-  face_intensities_.resize(6);
+  //face_intensities_.resize(6);
 }
 
 void
-stat_vtk::collect_new_level(int face, timestamp time, int level)
+stat_vtk::collect_new_level(int port, timestamp time, int level)
 {
-  face_intensity& face_int = face_intensities_[face];
-  timestamp interval_length = time - face_int.pending_collection_start;
-  if (time != face_int.pending_collection_start){ //otherwise this will NaN
-    double current_state_length = (time - face_int.last_collection).msec();
-    double accumulated_state_length = (face_int.last_collection - face_int.pending_collection_start).msec();
-    double total_state_length = (time - face_int.pending_collection_start).msec();
-    double new_level = (face_int.current_level * current_state_length
-                         + face_int.accumulated_level * accumulated_state_length) / total_state_length;
+  port_intensity& port_int = port_intensities_[port];
+  timestamp interval_length = time - port_int.pending_collection_start;
+  if (time != port_int.pending_collection_start){ //otherwise this will NaN
+    double current_state_length = (time - port_int.last_collection).msec();
+    double accumulated_state_length = (port_int.last_collection - port_int.pending_collection_start).msec();
+    double total_state_length = (time - port_int.pending_collection_start).msec();
+    double new_level = (port_int.current_level * current_state_length
+                         + port_int.accumulated_level * accumulated_state_length) / total_state_length;
 
     if (interval_length > ignored_gap_){
       //we have previous collections that are now large enough  to commit
       event_list_.emplace_back(
-        face_int.pending_collection_start.ticks(), face, new_level, id_);
-      face_int.pending_collection_start = face_int.last_collection = time;
-      face_int.accumulated_level = 0;
+        port_int.pending_collection_start.ticks(), port, new_level, id_);
+      port_int.pending_collection_start = port_int.last_collection = time;
+      port_int.accumulated_level = 0;
     } else {
-      face_int.last_collection = time;
-      face_int.accumulated_level = new_level;
+      port_int.last_collection = time;
+      port_int.accumulated_level = new_level;
     }
   }
-  face_int.current_level = level;
+  port_int.current_level = level;
 }
 
 void
@@ -372,70 +419,44 @@ stat_vtk::collect_arrival(timestamp time, int port)
 
   if (port >= port_intensities_.size()) return;
 
-  auto face = port_to_face_[port];
-  face_intensity& face_int = face_intensities_[face];
-  int intensity = ++port_intensities_[port];
-  if (intensity == transition_cutoff_){
-    face_int.congested_ports++;
-  } else if (intensity < transition_cutoff_){
-    face_int.active_ports++;
-  }
+  port_intensity& port_int = port_intensities_[port];
+  int intensity = ++raw_port_intensities_[port];
 
   int level = 1; //1 means active
-  if (face_int.congested_ports > 0){
+  if (intensity >= transition_cutoff_){
     level = 2;
   }
 
-  /**
-  if (id_ == 17 && face == 3){
-    printf("Port %d arrive: active=%d congested=%d intensity=%d level=%d pending=%d old_level=%d\n",
-           port, face_int.active_ports, face_int.congested_ports, intensity, level,
-           pending_departures_.size(), face_int.current_level);
-  }
-  */
-
-  if (abs(level - face_int.current_level) > 1){
-    spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on face=%d port=%d",
-                      face_int.current_level, level, id_, face, port);
+  if (abs(level - port_int.current_level) > 1){
+    spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on port=%d",
+                      port_int.current_level, level, id_, port);
   }
 
-  if (level != face_int.current_level){
-    collect_new_level(face, time, level);
+  if (level != port_int.current_level){
+    collect_new_level(port, time, level);
   }
 }
 
 void
 stat_vtk::collect_departure(timestamp time, int port)
 {
-  auto face = port_to_face_[port];
-  face_intensity& face_int = face_intensities_[face];
-  int intensity = --port_intensities_[port];
-  if (intensity == (transition_cutoff_-1)){
-    face_int.congested_ports--;
-  } else if (intensity == 0){
-    face_int.active_ports--;
-  }
+  port_intensity& port_int = port_intensities_[port];
+  int intensity = --raw_port_intensities_[port];
 
-  int level = face_int.active_ports > 0 ? 1 : 0; //1 means active
-  if (face_int.congested_ports > 0){
+  int level = 0;
+  if (intensity >= transition_cutoff_){
     level = 2;
+  } else if (intensity > 0){
+    level = 1;
   }
 
-  /**
-  if (id_ == 17 && face == 3){
-    printf("Port %d depart: active=%d congested=%d intensity=%d level=%d pending=%d old_level=%d\n",
-           port, face_int.active_ports, face_int.congested_ports, intensity, level,
-           pending_departures_.size(), face_int.current_level);
-  }
-  */
-
-  if (abs(level - face_int.current_level) > 1){
-    spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on face=%d port=%d",
-                      face_int.current_level, level, id_, face, port);
+  if (abs(level - port_int.current_level) > 1){
+    spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on port=%d",
+                      port_int.current_level, level, id_, port);
   }
 
-  if (level != face_int.current_level){
-    collect_new_level(face, time, level);
+  if (level != port_int.current_level){
+    collect_new_level(port, time, level);
   }
 
 }

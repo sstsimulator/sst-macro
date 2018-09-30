@@ -167,6 +167,7 @@ sculpin_switch::connect_output(
   port& p = ports_[src_outport];
   p.link = link;
   p.inv_bw = 1.0/bw;
+  p.dst_port = dst_inport;
 }
 
 void
