@@ -15,6 +15,8 @@ int sstmac_gethostname(const char* name, size_t sz);
 
 unsigned int sstmac_sleep(unsigned int secs);
 
+unsigned int sstmac_sleep_until(double t);
+
 unsigned int sstmac_alarm(unsigned int);
 
 #ifdef __cplusplus

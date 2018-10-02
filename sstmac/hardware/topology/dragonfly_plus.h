@@ -132,6 +132,10 @@ class dragonfly_plus : public dragonfly
     return num_leaf_switches_;
   }
 
+  bool is_curved_vtk_link(switch_id sid, int port) const override {
+    return false;
+  }
+
   void minimal_route_to_switch(
       int& path_rotater,
       switch_id current_sw_addr,

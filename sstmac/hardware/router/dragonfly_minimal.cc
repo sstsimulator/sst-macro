@@ -136,20 +136,58 @@ struct dragonfly_minimal_router : public minimal_router {
   int a_;
 };
 
-class dragonfly_plus_minimal_router : public minimal_router {
+class dragonfly_plus_alltoall_minimal_router : public router {
  public:
-  FactoryRegister("dragonfly_plus_minimal",
-              router, dragonfly_plus_minimal_router,
+  FactoryRegister("dragonfly_plus_alltoall_minimal",
+              router, dragonfly_plus_alltoall_minimal_router,
               "router implementing minimal routing for dragonfly+")
 
-  dragonfly_plus_minimal_router(sprockit::sim_parameters* params, topology *top,
+  dragonfly_plus_alltoall_minimal_router(sprockit::sim_parameters* params, topology *top,
                          network_switch *netsw)
-    : minimal_router(params, top, netsw)
+    : router(params, top, netsw)
   {
     dfly_ = safe_cast(dragonfly_plus, top);
     num_leaf_switches_ = dfly_->g() * dfly_->a();
     //stagger by switch id
     rotater_ = (my_addr_) % dfly_->a();
+
+    covering_ = dfly_->h() / (dfly_->g() - 1);
+    if (covering_ == 0){
+      spkt_abort_printf("dragonfly+ minimal router for alltoall wiring does"
+                        " not have full covering");
+    }
+
+    int mod = dfly_->h() % (dfly_->g() - 1);
+    if (mod != 0){
+      spkt_abort_printf("dragonfly+ group connections h=%d is not evenly divided by N-1 for N=%d groups",
+                        dfly_->h(), dfly_->g());
+    }
+
+    grp_rotaters_.resize(dfly_->g());
+    for (int i=0; i < dfly_->g(); ++i){
+      grp_rotaters_[i] = 0;
+    }
+
+    my_g_ = (my_addr_%num_leaf_switches_) / dfly_->a();
+    my_row_ = my_addr_ / num_leaf_switches_;
+
+
+    std::vector<int> connected;
+    int my_a = dfly_->computeA(my_addr_);
+    dfly_->group_wiring()->connected_routers(my_a, my_g_, connected);
+    for (int p=0; p < connected.size(); ++p){
+      int my_expected_g = p / covering_;
+      if (my_expected_g >= my_g_){
+        ++my_expected_g;
+      }
+      int dst = connected[p];
+      int actual_g = dfly_->computeG(dst);
+      if (my_expected_g != actual_g){
+        spkt_abort_printf("Router %d expected group %d on port %d, but got group %d",
+                          my_addr_, my_expected_g, p, actual_g);
+      }
+    }
+
   }
 
   int num_vc() const override {
@@ -157,30 +195,42 @@ class dragonfly_plus_minimal_router : public minimal_router {
   }
 
   std::string to_string() const override {
-    return "dragonfly+ minimal router";
+    return "dragonfly+ minimal circulant router";
   }
 
  private:
-  void route_to_switch(switch_id sid, packet* pkt) override {
-    int srcGrp = (my_addr_%num_leaf_switches_) / dfly_->a();
-    int dstGrp = (sid%num_leaf_switches_) / dfly_->a();
-    int srcRow = my_addr_ / num_leaf_switches_;
-    auto& path = pkt->current_path();
-    if (srcRow == 0){
+  void route(packet *pkt) override {
+    uint16_t dir;
+    switch_id ej_addr = dfly_->netlink_to_ejection_switch(pkt->toaddr(), dir);
+    packet::path& path = pkt->current_path();
+    if (ej_addr == my_addr_){
+      path.set_outport(dir);
+      path.vc = 0;
+      return;
+    }
+
+    int dstG = (ej_addr % num_leaf_switches_) / dfly_->a();
+    if (my_row_ == 0){
       path.set_outport(rotater_);
       rotater_ = (rotater_ + 1) % dfly_->a();
-    } else if (srcGrp == dstGrp){
-      int dstA = sid % dfly_->a();
+    } else if (my_g_ == dstG){
+      int dstA = ej_addr % dfly_->a();
       path.set_outport(dstA);
     } else {
-      int outport = srcGrp < dstGrp ? (dstGrp - 1) : dstGrp;
-      path.set_outport(dfly_->a() + outport);
+      int grpOffset = my_g_ < dstG ? dstG - 1 : dstG;
+      int port = grpOffset*covering_ + grp_rotaters_[dstG] + dfly_->a();
+      grp_rotaters_[dstG] = (grp_rotaters_[dstG] + 1) % covering_;
+      path.set_outport(port);
     }
     path.vc = 0;
   }
 
   int num_leaf_switches_;
   int rotater_;
+  int my_g_;
+  int my_row_;
+  std::vector<int> grp_rotaters_;
+  int covering_;
   dragonfly_plus* dfly_;
 };
 

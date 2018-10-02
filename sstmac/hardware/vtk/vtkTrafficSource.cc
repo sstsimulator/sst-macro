@@ -73,8 +73,12 @@ void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics)
   this->Traffics->SetName("MyTraffic");
   this->Traffics->SetNumberOfValues(this->Cells->GetNumberOfCells());
 
-  for(auto i = 0; i < this->Cells->GetNumberOfCells(); ++i){
-    this->Traffics->SetValue(i, 0);
+  for (int i=0; i < num_switches_*6; ++i){
+    this->Traffics->SetValue(i, 0.01); //paint switches as always 0.01
+  }
+
+  for (int i=0; i < num_links_; ++i){
+    this->Traffics->SetValue(i+num_switches_*6, 0.0);
   }
 }
 

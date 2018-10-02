@@ -58,6 +58,11 @@ extern "C" unsigned int sstmac_sleep(unsigned int secs){
   return 0;
 }
 
+extern "C" unsigned sstmac_sleep_until(double t){
+  os::current_os()->sleep_until(timestamp(t));
+  return 0;
+}
+
 extern "C" int sstmac_usleep(unsigned int usecs){
   os::current_os()->sleep(timestamp(usecs, timestamp::microseconds));
   return 0;

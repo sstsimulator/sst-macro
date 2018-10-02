@@ -154,6 +154,7 @@ class stat_vtk : public stat_collector
     timestamp pending_collection_start;
     int current_level;
     double accumulated_level;
+    double active_vtk_level;
     port_intensity() :
       accumulated_level(0.),
       current_level(0)
@@ -163,27 +164,33 @@ class stat_vtk : public stat_collector
 
   void collect_new_level(int port, timestamp time, int level);
 
+  void new_intensity(timestamp time, int port, int increment, const char* type);
+
   struct compare_pair {
     bool operator()(const std::pair<timestamp,int>& l, const std::pair<timestamp,int>& r){
       return l.first > r.first;
     }
   };
 
+  std::vector<int> intensity_levels_;
   std::vector<hw::topology::vtk_face_t> port_to_face_;
   std::vector<int> raw_port_intensities_;
   std::priority_queue<std::pair<timestamp,int>,
       std::vector<std::pair<timestamp,int>>,
       compare_pair> pending_departures_;
   std::vector<port_intensity> port_intensities_;
-  int transition_cutoff_;
   timestamp ignored_gap_;
   double bidirectional_shift_;
   int id_;
+
+  std::vector<std::pair<int,int>> filters_;
 
   std::vector<traffic_event> event_list_;
 
   std::multimap<uint64_t, traffic_event> traffic_event_map_;
   hw::topology* top_;
+
+  bool active_;
 
 };
 

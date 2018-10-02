@@ -474,6 +474,11 @@ class alltoall_group_wiring : public inter_group_wiring
     inter_group_wiring(params, a, g, h)
   {
     covering_ = h_ / (g_-1);
+    if (covering_ == 0){
+      spkt_abort_printf("Group connections h=%d is not able to provide all-to-all covering for g=%d",
+                        h_, g_);
+    }
+
     stride_ = a_ / covering_;
 
     top_debug("alltoall links cover groups %dx with stride=%d", covering_, stride_);

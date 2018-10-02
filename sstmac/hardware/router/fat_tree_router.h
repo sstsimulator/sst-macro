@@ -81,9 +81,12 @@ class fat_tree_router :
   //int get_up_port(int next_tree);
   int get_up_port();
 
-  int get_core_down_port(int next_tree);
-
-  int get_agg_down_port(int dst_leaf);
+  /**
+   * @brief get_down_port
+   * @param path Either a subtree or a leaf offset
+   * @return
+   */
+  int get_down_port(int path);
 
   int num_vc() const override { return 1; }
 
@@ -91,14 +94,15 @@ class fat_tree_router :
 
   fat_tree* ft_;
 
-  // routing -- up (is easy)
-  std::vector<int> up_fwd_;
   int up_next_;
+  int my_row_;
+  int my_tree_;
+  int first_up_port_;
+  int num_up_ports_;
+
   // routing -- down (a little more complicated)
-  std::map<int,std::vector<int>> subtree_fwd_;
-  std::map<int,int> subtree_next_;
-  std::map<int,std::vector<int>> leaf_fwd_;
-  std::map<int,int> leaf_next_;
+  std::vector<std::vector<int>> down_routes_;
+  std::vector<int> down_rotaters_;
 };
 
 }

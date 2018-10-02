@@ -34,13 +34,16 @@
 #include "vtkExodusIIWriter.h"
 
 RegisterKeywords(
-{ "transition_cutoff", "the port occupancy level that should be considered 'congestion'" },
+{ "intensity_levels", "the port occupancy level that should cause intensity transitions" },
 { "ignored_time_gap", "a time gap that should be considered negligible" },
 { "bidirectional_shift", "the displacement in space for each direction of a birectional link" },
+{ "filter", "filter on id" },
 );
 
 namespace sstmac {
 namespace hw {
+
+static constexpr double link_midpoint_shift = 2.0;
 
 void
 outputExodusWithSharedMap(const std::string& fileroot,
@@ -234,8 +237,8 @@ outputExodusWithSharedMap(const std::string& fileroot,
     topology::vtk_box_geometry face1 = switch1.face_on_port(link.port1, 0.0);
     topology::vtk_box_geometry face2 = switch2.face_on_port(link.port2, 0.0);
     topology::vtk_box_geometry face3 = link.id1 > link.id2
-          ? switch1.face_on_port(link.port1, -4.0)
-          : switch2.face_on_port(link.port2, -4.0);
+          ? switch1.face_on_port(link.port1, -link_midpoint_shift)
+          : switch2.face_on_port(link.port2, -link_midpoint_shift);
     int idx = num_switch_points + global_id * NUM_POINTS_PER_LINK;
     auto c1 = face1.center();
     auto c2 = face2.center();
@@ -246,7 +249,9 @@ outputExodusWithSharedMap(const std::string& fileroot,
     double z_shift = link.id1 > link.id2 ? bidirectional_shift : -bidirectional_shift;
     c1.z += z_shift;
     c2.z += z_shift;
-    c3.z += z_shift;
+    /** move this quite far out of the plane for clarity */
+    int link_shift = link.port1 + link.port2;
+    c3.z += link_shift % 2 ? -link_shift*0.05 : link_shift*0.05;
 
     points->SetPoint(idx + 0, c1.x, c1.y, c1.z);
     points->SetPoint(idx + 1, c2.x, c2.y, c2.z);
@@ -270,6 +275,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
   }
 
   std::cout << "vtk_stats : num cells=" << cell_array->GetNumberOfCells()<<std::endl;
+  std::cout << "vtk_stats : num events=" << trafficMap.size() << std::endl;
 
   vtkSmartPointer<vtkUnstructuredGrid> unstructured_grid =
       vtkSmartPointer<vtkUnstructuredGrid>::New();
@@ -322,11 +328,21 @@ stat_vtk::outputExodus(const std::string& fileroot,
 
 
 stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
-  stat_collector(params)
+  stat_collector(params), active_(true)
 {
-  transition_cutoff_ = params->get_int_param("transition_cutoff");
   ignored_gap_ = params->get_optional_time_param("ignored_time_gap", 1e-3);
   bidirectional_shift_ = params->get_optional_double_param("bidirectional_shift", 0.02);
+  params->get_vector_param("intensity_levels", intensity_levels_);
+
+  if (params->has_param("filter")){
+    std::vector<int> filters;
+    params->get_vector_param("filter", filters);
+    for (int i=0; i < filters.size(); i += 2){
+      int start = filters[i];
+      int stop = filters[i+1];
+      filters_.emplace_back(start, stop);
+    }
+  }
 }
 
 void
@@ -343,15 +359,27 @@ stat_vtk::reduce(stat_collector* element)
 void
 stat_vtk::finalize(timestamp t)
 {
+  if (!active_) return;
+
   clear_pending_departures(t);
   ignored_gap_ = 0;
   for (int port=0; port < port_intensities_.size(); ++port){
     if (port_intensities_[port].current_level != 0){
       spkt_abort_printf("Port %d on VTK %d did not return to zero", port, id_);
     }
-    //collect_new_level(port, t, 0);
-    //and push back a zero event at the end
-    //event_list_.emplace_back(t.ticks(), face, 0, id_);
+    auto& port_int = port_intensities_[port];
+    //some ports may have collected nothing
+    if (port_int.last_collection.ticks() != 0){
+      timestamp final_zero_time = port_int.last_collection;
+      collect_new_level(port, t, 0);
+      traffic_event& e = event_list_.back();
+      if (e.intensity_ != 0){
+        //this needs to go to zero
+        event_list_.emplace_back(final_zero_time.ticks(), port, 0, id_);
+      }
+      //and push back a zero event at the end
+      //event_list_.emplace_back(t.ticks(), port, 0, id_);
+    }
   }
 }
 
@@ -384,6 +412,16 @@ stat_vtk::configure(switch_id sid, topology *top)
   raw_port_intensities_.resize(port_to_face_.size());
   port_intensities_.resize(port_to_face_.size());
   //face_intensities_.resize(6);
+
+  if (!filters_.empty()){
+    active_ = false;
+    for (auto& pair : filters_){
+      if (pair.first <= id_ && id_ <= pair.second){
+        active_ = true;
+        break;
+      }
+    }
+  }
 }
 
 void
@@ -399,12 +437,21 @@ stat_vtk::collect_new_level(int port, timestamp time, int level)
                          + port_int.accumulated_level * accumulated_state_length) / total_state_length;
 
     if (interval_length > ignored_gap_){
+      //printf("Switch=%d port=%d at level=%f at t=%llu\n",
+      //       id_, port, new_level, port_int.pending_collection_start.ticks());
       //we have previous collections that are now large enough  to commit
-      event_list_.emplace_back(
-        port_int.pending_collection_start.ticks(), port, new_level, id_);
+      if (port_int.pending_collection_start.ticks() == 0){
+        //we need this to check to avoid having non-zero state accidentally at the beginning
+        event_list_.emplace_back(port_int.last_collection.ticks(), port, new_level, id_);
+      } else {
+        event_list_.emplace_back(port_int.pending_collection_start.ticks(), port, new_level, id_);
+      }
       port_int.pending_collection_start = port_int.last_collection = time;
       port_int.accumulated_level = 0;
+      port_int.active_vtk_level = new_level;
     } else {
+      //printf("Switch=%d port=%d accumulated to level=%f at t=%llu for start=%llu\n",
+      //       id_, port, new_level, time.ticks(), port_int.pending_collection_start.ticks());
       port_int.last_collection = time;
       port_int.accumulated_level = new_level;
     }
@@ -413,52 +460,49 @@ stat_vtk::collect_new_level(int port, timestamp time, int level)
 }
 
 void
-stat_vtk::collect_arrival(timestamp time, int port)
+stat_vtk::new_intensity(timestamp time, int port, int increment, const char* type)
 {
-  clear_pending_departures(time);
-
-  if (port >= port_intensities_.size()) return;
-
   port_intensity& port_int = port_intensities_[port];
-  int intensity = ++raw_port_intensities_[port];
+  raw_port_intensities_[port] += increment;
+  int intensity = raw_port_intensities_[port];
 
-  int level = 1; //1 means active
-  if (intensity >= transition_cutoff_){
-    level = 2;
+  int level = 0;
+  for (int i=intensity_levels_.size()-1; i >=0; --i){
+    if (intensity >= intensity_levels_[i]){
+      level = i+1;
+      break;
+    }
   }
+
+  //printf("Switch=%d port=%d %s to intensity=%d level=%d at t=%llu\n",
+  //       id_, port, type, intensity, level, time.ticks());
 
   if (abs(level - port_int.current_level) > 1){
     spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on port=%d",
                       port_int.current_level, level, id_, port);
   }
 
-  if (level != port_int.current_level){
+  if (level != port_int.current_level || port_int.active_vtk_level != double(level)){
     collect_new_level(port, time, level);
   }
 }
 
 void
+stat_vtk::collect_arrival(timestamp time, int port)
+{
+  if (!active_) return;
+
+  clear_pending_departures(time);
+
+  if (port >= port_intensities_.size()) return;
+
+  new_intensity(time, port, 1, "arrive");
+}
+
+void
 stat_vtk::collect_departure(timestamp time, int port)
 {
-  port_intensity& port_int = port_intensities_[port];
-  int intensity = --raw_port_intensities_[port];
-
-  int level = 0;
-  if (intensity >= transition_cutoff_){
-    level = 2;
-  } else if (intensity > 0){
-    level = 1;
-  }
-
-  if (abs(level - port_int.current_level) > 1){
-    spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on port=%d",
-                      port_int.current_level, level, id_, port);
-  }
-
-  if (level != port_int.current_level){
-    collect_new_level(port, time, level);
-  }
-
+  new_intensity(time, port, -1, "depart");
 }
 
 void
@@ -478,6 +522,8 @@ stat_vtk::clear_pending_departures(timestamp now)
 void
 stat_vtk::collect_departure(timestamp now, timestamp time, int port)
 {
+  if (!active_) return;
+
   clear_pending_departures(now);
   if (port < port_intensities_.size()){
     if (time > now){

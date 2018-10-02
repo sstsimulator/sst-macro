@@ -288,6 +288,9 @@ sculpin_switch::try_to_send_packet(sculpin_packet* pkt)
   pkt->set_arrival(now_);
   port& p = ports_[pkt->next_port()];
   pkt->set_seqnum(p.seqnum++);
+
+  static int max_queue_depth = 0;
+
   if (!congestion_){
     timestamp time_to_send = pkt->num_bytes() * p.inv_bw;
     p.next_free += time_to_send;
