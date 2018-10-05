@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/sculpin/sculpin.h>
 #include <sstmac/hardware/sculpin/hotspot.h>
+#include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/sstmac_config.h>
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -83,6 +84,10 @@ class sculpin_switch :
   virtual ~sculpin_switch();
 
   int queue_length(int port) const override;
+
+  router* rter() const override {
+    return router_;
+  }
 
   void connect_output(
     sprockit::sim_parameters* params,
@@ -168,6 +173,9 @@ class sculpin_switch :
   bool congestion_;
 
   stat_hotspot* stat_hotspots_;
+  stat_histogram* delay_hist_;
+  std::set<node_id> src_stat_filter_;
+  std::set<node_id> dst_stat_filter_;
 
  private:
   void send(port& p, sculpin_packet* pkt, timestamp now);
@@ -175,6 +183,8 @@ class sculpin_switch :
   void try_to_send_packet(sculpin_packet* pkt);
 
   void pull_next(int portnum);
+
+  bool do_not_filter_packet(sculpin_packet* pkt);
 
 };
 

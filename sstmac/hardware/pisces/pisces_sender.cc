@@ -43,7 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/pisces/pisces_sender.h>
-#include <sstmac/hardware/router/valiant_routing.h>
+#include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/common/stats/stat_spyplot.h>

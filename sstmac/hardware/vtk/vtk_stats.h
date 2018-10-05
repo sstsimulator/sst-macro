@@ -5,6 +5,7 @@
 #include <vector>
 #include <queue>
 #include <memory>
+#include <tuple>
 #include <sstmac/hardware/topology/topology.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -20,16 +21,20 @@ class topology;
 struct traffic_event {
   uint64_t time_; // progress time
   int port_;
-  double intensity_;
+  int face_;
+  //this is mutable due to the nonsense that is
+  //C++ sets that does not allow modifying items in the set
+  //even after collision
+  mutable double level_;
   int id_;
 
-  traffic_event(uint64_t t, int port, double intens, int id) :
-    time_(t), port_(port), intensity_(intens), id_(id)
+  traffic_event(uint64_t t, int port, int face, double lev, int id) :
+    time_(t), port_(port), level_(lev), face_(face), id_(id)
   {
   }
 };
 
-#define VTK_UPPER32_MASK =
+#define VTK_NUM_CELLS_PER_SWITCH 7
 
 struct vtk_link {
   uint16_t id1;
@@ -114,6 +119,7 @@ class stat_vtk : public stat_collector
   static void outputExodus(const std::string& fileroot,
       double bidirectional_shift,
       std::multimap<uint64_t, traffic_event>&& traffMap,
+      const std::set<int>& special_fills,
       topology *topo =nullptr);
 
   void dump_local_data() override;
@@ -124,9 +130,9 @@ class stat_vtk : public stat_collector
 
   void clear() override;
 
-  void collect_departure(timestamp now, timestamp time, int port);
+  void collect_departure(timestamp now, timestamp time, int port, intptr_t id);
 
-  void collect_arrival(timestamp time, int port);
+  void collect_arrival(timestamp time, int port, intptr_t id);
 
   void reduce(stat_collector *coll) override;
 
@@ -143,7 +149,7 @@ class stat_vtk : public stat_collector
   void configure(switch_id sid, hw::topology* top);
 
  private:
-  void collect_departure(timestamp time, int port);
+  void collect_departure(timestamp time, int port, intptr_t id);
 
   void clear_pending_departures(timestamp now);
 
@@ -155,6 +161,8 @@ class stat_vtk : public stat_collector
     int current_level;
     double accumulated_level;
     double active_vtk_level;
+    std::map<intptr_t,timestamp> delayed;
+    timestamp last_wait_finished;
     port_intensity() :
       accumulated_level(0.),
       current_level(0)
@@ -164,33 +172,54 @@ class stat_vtk : public stat_collector
 
   void collect_new_level(int port, timestamp time, int level);
 
-  void new_intensity(timestamp time, int port, int increment, const char* type);
+  void collect_new_intensity(timestamp time, int port, int intensity);
 
-  struct compare_pair {
-    bool operator()(const std::pair<timestamp,int>& l, const std::pair<timestamp,int>& r){
-      return l.first > r.first;
+  void increment_intensity(timestamp time, int port, int increment, const char* type);
+
+  struct delayed_event {
+    timestamp time;
+    int port;
+    intptr_t id;
+    delayed_event(timestamp t, int p, intptr_t i) :
+      time(t), port(p), id(i){}
+  };
+
+  struct compare_delayed_event {
+    bool operator()(const delayed_event& l, const delayed_event& r){
+      return l.time < r.time;
+    }
+  };
+
+  struct compare_events {
+    bool operator()(const traffic_event& l, const traffic_event& r){
+      if (l.time_ != r.time_) return l.time_ < r.time_;
+      if (l.id_ != r.id_) return l.id_ < r.id_;
+      return l.port_ < r.port_;
     }
   };
 
   std::vector<int> intensity_levels_;
   std::vector<hw::topology::vtk_face_t> port_to_face_;
   std::vector<int> raw_port_intensities_;
-  std::priority_queue<std::pair<timestamp,int>,
-      std::vector<std::pair<timestamp,int>>,
-      compare_pair> pending_departures_;
+  std::priority_queue<delayed_event,
+      std::vector<delayed_event>,
+      compare_delayed_event> pending_departures_;
   std::vector<port_intensity> port_intensities_;
   timestamp ignored_gap_;
   double bidirectional_shift_;
   int id_;
 
   std::vector<std::pair<int,int>> filters_;
+  std::set<int> special_fills_;
 
-  std::vector<traffic_event> event_list_;
+  std::set<traffic_event, compare_events> sorted_event_list_;
 
   std::multimap<uint64_t, traffic_event> traffic_event_map_;
   hw::topology* top_;
 
   bool active_;
+  bool collect_delays_;
+  bool flicker_;
 
 };
 

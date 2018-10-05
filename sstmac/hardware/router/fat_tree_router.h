@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_NETWORK_SWTICHES_ROUTING_FATTREEROUTER_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_SWTICHES_ROUTING_FATTREEROUTER_H_INCLUDED
 
-#include <sstmac/hardware/router/minimal_routing.h>
+#include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/common/rng.h>
 

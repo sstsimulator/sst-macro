@@ -177,6 +177,89 @@ fat_tree_router::get_down_port(int path)
   return port;
 }
 
+class fat_tree_minimal_router : public router {
+ public:
+  FactoryRegister("fat_tree_minimal",
+              router, fat_tree_minimal_router,
+              "router implementing minimal routing for fat-tree")
+
+  fat_tree_minimal_router(sprockit::sim_parameters* params,
+                          topology *top,
+                          network_switch *netsw)
+    : router(params, top, netsw)
+  {
+    tree_ = safe_cast(fat_tree, top);
+  }
+
+  std::string to_string() const override {
+    return "fat-tree minimal router";
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
+
+  void route(packet* pkt) override {
+    uint16_t dir;
+    switch_id ej_addr = top_->node_to_ejection_switch(pkt->toaddr(), dir);
+    if (ej_addr == my_addr_){
+      pkt->current_path().outport() = dir;
+      pkt->current_path().vc = 0;
+      return;
+    }
+
+    packet::path& path = pkt->current_path();
+    tree_->minimal_route_to_switch(my_addr_, ej_addr, path);
+    path.vc = 0;
+  }
+
+ private:
+  fat_tree* tree_;
+
+};
+
+class tapered_fat_tree_minimal_router : public router {
+ public:
+  FactoryRegister("tapered_fat_tree_minimal",
+              router, tapered_fat_tree_minimal_router,
+              "router implementing minimal routing for cascade")
+
+  struct header : public packet::header {};
+
+  tapered_fat_tree_minimal_router(sprockit::sim_parameters* params, topology *top,
+                         network_switch *netsw)
+    : router(params, top, netsw)
+  {
+    tree_ = safe_cast(tapered_fat_tree, top);
+  }
+
+  std::string to_string() const override {
+    return "tapered fat tree minimal router";
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
+
+  void route(packet *pkt) override {
+    uint16_t dir;
+    switch_id ej_addr = top_->node_to_ejection_switch(pkt->toaddr(), dir);
+    if (ej_addr == my_addr_){
+      pkt->current_path().outport() = dir;
+      pkt->current_path().vc = 0;
+      return;
+    }
+
+    packet::path& path = pkt->current_path();
+    tree_->minimal_route_to_switch(my_addr_, ej_addr, path);
+    path.vc = 0;
+  }
+
+ private:
+  tapered_fat_tree* tree_;
+
+};
+
 
 }
 }

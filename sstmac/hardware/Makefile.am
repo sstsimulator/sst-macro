@@ -123,11 +123,7 @@ nobase_library_include_HEADERS += \
   router/router.h \
   router/router_fwd.h \
   router/routing_enum.h \
-  router/minimal_routing.h \
   router/multipath_routing.h \
-  router/ugal_routing.h \
-  router/par_routing.h \
-  router/valiant_routing.h \
   router/fat_tree_router.h 
 
 libsstmac_hw_la_SOURCES +=  \
@@ -183,12 +179,14 @@ libsstmac_hw_la_SOURCES +=  \
   topology/tiled_cascade.cc \
   topology/traffic/traffic.cc \
   router/router.cc \
-  router/dragonfly_minimal.cc \
   router/fat_tree_router.cc \
-  router/minimal_routing.cc \
-  router/ugal_routing.cc \
-  router/par_routing.cc \
-  router/valiant_routing.cc \
+  router/cascade_routing.cc \
+  router/dragonfly_routing.cc \
+  router/dragonfly_routing.cc \
+  router/dragonfly_plus_routing.cc \
+  router/hypercube_routing.cc \
+  router/cascade_routing.cc \
+  router/torus_routing.cc \
   topology/star.cc \
   topology/structured_topology.cc \
   topology/cartesian_topology.cc \

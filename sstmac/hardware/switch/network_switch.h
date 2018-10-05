@@ -87,6 +87,8 @@ class network_switch :
     return my_addr_;
   }
 
+  virtual router* rter() const = 0;
+
   virtual void compatibility_check() const {
     //by default, nothing
   }

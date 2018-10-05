@@ -33,6 +33,8 @@
 
 vtkStandardNewMacro(vtkTrafficSource);
 
+static constexpr double idle_switch_intensity = 0.01;
+
 //----------------------------------------------------------------------------
 vtkTrafficSource::vtkTrafficSource()
 {
@@ -65,20 +67,32 @@ void vtkTrafficSource::SetCells(vtkSmartPointer<vtkCellArray> cells)
 }
 
 // Traffic
-void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics)
+void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics,
+                                   const std::set<int>& nonzero_fills)
 {
+  special_fills_ = nonzero_fills;
+
   //Send traffic to output
   this->Traffics = vtkDoubleArray::New();
   this->Traffics->SetNumberOfComponents(1);
   this->Traffics->SetName("MyTraffic");
   this->Traffics->SetNumberOfValues(this->Cells->GetNumberOfCells());
 
-  for (int i=0; i < num_switches_*6; ++i){
-    this->Traffics->SetValue(i, 0.01); //paint switches as always 0.01
+  int cell = 0;
+  for (int i=0; i < num_switches_; ++i){
+    double intensity = idle_switch_intensity;
+    if (nonzero_fills.find(i) != nonzero_fills.end()){
+      intensity = 5.;
+    }
+    for (int j=0; j < VTK_NUM_CELLS_PER_SWITCH; ++j, ++cell){
+      this->Traffics->SetValue(cell, intensity); //paint switches as always 0.01
+      intensity = 0; //only the first one (main box) should start nonzero
+    }
   }
 
+  link_index_offset_ = num_switches_ * VTK_NUM_CELLS_PER_SWITCH;
   for (int i=0; i < num_links_; ++i){
-    this->Traffics->SetValue(i+num_switches_*6, 0.0);
+    this->Traffics->SetValue(i+link_index_offset_, 0);
   }
 }
 
@@ -127,6 +141,9 @@ int vtkTrafficSource::RequestData(
   vtkInformationVector* outVector
   )
 {
+
+  static int timestep = 0;
+
   vtkInformation *outInfo = outVector->GetInformationObject(0);
   vtkUnstructuredGrid *output= vtkUnstructuredGrid::SafeDownCast(
     outInfo->Get(vtkDataObject::DATA_OBJECT()));
@@ -154,8 +171,58 @@ int vtkTrafficSource::RequestData(
     // traffic face index = switchId * 6 + getFaceIndex(switchId, port)
     traffic_event& event = it->second;
     vtk_port port(event.id_, event.port_);
-    int link = port_to_link_id_[port.id32()];
-    this->Traffics->SetValue(link_index_offset_ + link, event.intensity_);
+
+    auto iter = port_to_link_id_.find(port.id32());
+    if (iter == port_to_link_id_.end()){
+      spkt_abort_printf("VTK %d port %d on hash %d has no associated link",
+                        event.id_, event.port_, int(port.id32()));
+    }
+    int link = iter->second;
+    vtk_link vl = vtk_link::construct(local_to_global_link_id_[port.id32()]);
+    this->Traffics->SetValue(link_index_offset_ + link, event.level_);
+    double max_i = idle_switch_intensity;
+
+    /**
+    if (special_fills_.find(event.id_) == special_fills_.end()){
+      auto& map = port_intensities_[event.id_];
+      map[event.port_] = event.level_;
+
+      for (auto& pair : map){
+        max_i = std::max(max_i, pair.second);
+      }
+
+      int offset = event.id_ * 6;
+      for (int i=0; i < 6; ++i){
+        this->Traffics->SetValue(offset + i, max_i);
+      }
+    }
+
+    max_i = idle_switch_intensity;
+    if (special_fills_.find(vl.id2) == special_fills_.end()){
+      auto& map = port_intensities_[vl.id2];
+      map[100*vl.port2] = event.level_;
+      for (auto& pair : map){
+        max_i = std::max(max_i, pair.second);
+      }
+      int offset = vl.id2 * 6;
+      for (int i=0; i < 6; ++i){
+        this->Traffics->SetValue(offset + i, max_i);
+      }
+    }
+    */
+
+    {
+      int offset = event.id_ * VTK_NUM_CELLS_PER_SWITCH + 1; //+1 is main box
+      int face = geoms_[event.id_].get_face(event.port_);
+      this->Traffics->SetValue(offset + face, event.level_);
+    }
+    {
+      int offset = vl.id2 * VTK_NUM_CELLS_PER_SWITCH + 1; //+1 is main box
+      int face = geoms_[vl.id2].get_face(vl.port2);
+      this->Traffics->SetValue(offset + face, event.level_);
+    }
+
+
   }
 
   output->GetCellData()->AddArray(this->Traffics);
