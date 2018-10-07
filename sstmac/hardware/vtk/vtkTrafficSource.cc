@@ -33,8 +33,6 @@
 
 vtkStandardNewMacro(vtkTrafficSource);
 
-static constexpr double idle_switch_intensity = 0.01;
-
 //----------------------------------------------------------------------------
 vtkTrafficSource::vtkTrafficSource()
 {
@@ -67,11 +65,8 @@ void vtkTrafficSource::SetCells(vtkSmartPointer<vtkCellArray> cells)
 }
 
 // Traffic
-void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics,
-                                   const std::set<int>& nonzero_fills)
+void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics)
 {
-  special_fills_ = nonzero_fills;
-
   //Send traffic to output
   this->Traffics = vtkDoubleArray::New();
   this->Traffics->SetNumberOfComponents(1);
@@ -80,9 +75,9 @@ void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics,
 
   int cell = 0;
   for (int i=0; i < num_switches_; ++i){
-    double intensity = idle_switch_intensity;
-    if (nonzero_fills.find(i) != nonzero_fills.end()){
-      intensity = 5.;
+    double intensity = display_cfg_.idle_switch_color;
+    if (display_cfg_.special_fills.find(i) != display_cfg_.special_fills.end()){
+      intensity = display_cfg_.highlight_switch_color;
     }
     for (int j=0; j < VTK_NUM_CELLS_PER_SWITCH; ++j, ++cell){
       this->Traffics->SetValue(cell, intensity); //paint switches as always 0.01
@@ -92,7 +87,7 @@ void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics,
 
   link_index_offset_ = num_switches_ * VTK_NUM_CELLS_PER_SWITCH;
   for (int i=0; i < num_links_; ++i){
-    this->Traffics->SetValue(i+link_index_offset_, 0);
+    this->Traffics->SetValue(i+link_index_offset_, display_cfg_.idle_link_color);
   }
 }
 
@@ -179,47 +174,30 @@ int vtkTrafficSource::RequestData(
     }
     int link = iter->second;
     vtk_link vl = vtk_link::construct(local_to_global_link_id_[port.id32()]);
-    this->Traffics->SetValue(link_index_offset_ + link, event.level_);
-    double max_i = idle_switch_intensity;
+    this->Traffics->SetValue(link_index_offset_ + link, event.color_);
 
-    /**
-    if (special_fills_.find(event.id_) == special_fills_.end()){
-      auto& map = port_intensities_[event.id_];
-      map[event.port_] = event.level_;
-
-      for (auto& pair : map){
-        max_i = std::max(max_i, pair.second);
-      }
-
-      int offset = event.id_ * 6;
-      for (int i=0; i < 6; ++i){
-        this->Traffics->SetValue(offset + i, max_i);
-      }
-    }
-
-    max_i = idle_switch_intensity;
-    if (special_fills_.find(vl.id2) == special_fills_.end()){
-      auto& map = port_intensities_[vl.id2];
-      map[100*vl.port2] = event.level_;
-      for (auto& pair : map){
-        max_i = std::max(max_i, pair.second);
-      }
-      int offset = vl.id2 * 6;
-      for (int i=0; i < 6; ++i){
-        this->Traffics->SetValue(offset + i, max_i);
-      }
-    }
-    */
 
     {
       int offset = event.id_ * VTK_NUM_CELLS_PER_SWITCH + 1; //+1 is main box
       int face = geoms_[event.id_].get_face(event.port_);
-      this->Traffics->SetValue(offset + face, event.level_);
+      auto& map = face_intensities_[event.id_];
+      double max_i = 0;//idle_switch_intensity;
+      map[face][event.port_] = event.color_;
+      for (auto& pair : map[face]){
+        max_i = std::max(pair.second, max_i);
+      }
+      this->Traffics->SetValue(offset + face, max_i);
     }
     {
       int offset = vl.id2 * VTK_NUM_CELLS_PER_SWITCH + 1; //+1 is main box
       int face = geoms_[vl.id2].get_face(vl.port2);
-      this->Traffics->SetValue(offset + face, event.level_);
+      auto& map = face_intensities_[vl.id2];
+      double max_i = 0;//idle_switch_intensity;
+      map[face][vl.port2] = event.color_;
+      for (auto& pair : map[face]){
+        max_i = std::max(pair.second, max_i);
+      }
+      this->Traffics->SetValue(offset + face, max_i);
     }
 
 

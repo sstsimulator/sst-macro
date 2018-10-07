@@ -36,10 +36,14 @@
 
 RegisterKeywords(
 { "intensity_levels", "the port occupancy level that should cause intensity transitions" },
-{ "ignored_time_gap", "a time gap that should be considered negligible" },
+{ "idle_switch_color", "the color value to use for idle switches" },
+{ "idle_link_color", "the color value to use for idle links" },
+{ "highlight_switch_color", "the color value to use for specially highlighted switches" },
+{ "highlight_link_color", "the color value to use for specially highlighed links" },
+{ "min_interval", "the minimum time interval to paint as a given color" },
 { "bidirectional_shift", "the displacement in space for each direction of a birectional link" },
 { "filter", "filter on id" },
-{ "fill", "a list of switches to fill with special color"},
+{ "highlight", "a list of switches to fill with special highlight color"},
 { "collect_delays", "whether to collect packet delays as the intensity"},
 { "flicker", "whether to 'flicker' when packets leave/arrive" },
 );
@@ -51,9 +55,8 @@ static constexpr double link_midpoint_shift = 2.0;
 
 void
 outputExodusWithSharedMap(const std::string& fileroot,
-   double bidirectional_shift,
    std::multimap<uint64_t, traffic_event>&& trafficMap,
-   const std::set<int>& special_fills,
+   stat_vtk::display_config display_cfg,
    topology *topo)
 {
 
@@ -233,7 +236,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
 
     //links are bidirectional - which means two links will get painted on top of each other
     //for now (for lack of a better way) shift +/- on the z-axis to avoid conflicts
-    double z_shift = link.id1 > link.id2 ? bidirectional_shift : -bidirectional_shift;
+    double z_shift = link.id1 > link.id2 ? display_cfg.bidirectional_shift : -display_cfg.bidirectional_shift;
     c1.z += z_shift;
     c2.z += z_shift;
     /** move this quite far out of the plane for clarity */
@@ -283,6 +286,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
   // time_step_value should be resized ?
 
   vtkSmartPointer<vtkTrafficSource> trafficSource = vtkSmartPointer<vtkTrafficSource>::New();
+  trafficSource->SetDisplayParameters(display_cfg);
   trafficSource->SetNumObjects(num_switches, num_links_to_paint);
   trafficSource->SetSteps(time_step_value);
   trafficSource->SetNumberOfSteps(currend_index);
@@ -290,7 +294,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
   trafficSource->SetGeometries(std::move(geoms));
   trafficSource->SetCells(cell_array);
   trafficSource->SetCellTypes(std::move(cell_types));
-  trafficSource->SetTraffics(traffic, special_fills);
+  trafficSource->SetTraffics(traffic);
   trafficSource->SetPortLinkMap(std::move(port_to_vtk_cell_mapping));
   trafficSource->SetLocalToGlobalLinkMap(std::move(outport_to_link));
   trafficSource->SetTrafficProgressMap(std::move(trafficMap));
@@ -305,22 +309,24 @@ outputExodusWithSharedMap(const std::string& fileroot,
 
 void
 stat_vtk::outputExodus(const std::string& fileroot,
-    double bidirectional_shift,
     std::multimap<uint64_t, traffic_event>&& traffMap,
-    const std::set<int>& special_fills,
+    const display_config& cfg,
     topology *topo)
 {
-  outputExodusWithSharedMap(fileroot, bidirectional_shift,
-                            std::move(traffMap), special_fills,
-                            topo);
+  outputExodusWithSharedMap(fileroot, std::move(traffMap),
+                            cfg, topo);
 }
 
 
 stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
   stat_collector(params), active_(true)
 {
-  ignored_gap_ = params->get_optional_time_param("ignored_time_gap", 1e-3);
-  bidirectional_shift_ = params->get_optional_double_param("bidirectional_shift", 0.02);
+  min_interval_ = params->get_optional_time_param("min_interval", 1e-6);
+  display_cfg_.bidirectional_shift = params->get_optional_double_param("bidirectional_shift", 0.02);
+  display_cfg_.highlight_link_color = params->get_optional_double_param("highlight_link_color", 1.0);
+  display_cfg_.highlight_switch_color = params->get_optional_double_param("highlight_switch_color", 1.0);
+  display_cfg_.idle_link_color = params->get_optional_double_param("idle_link_color", 0);
+  display_cfg_.idle_switch_color = params->get_optional_double_param("idle_switch_color", 0.01);
   params->get_vector_param("intensity_levels", intensity_levels_);
   collect_delays_ = params->get_optional_bool_param("collect_delays", true);
   flicker_ = params->get_optional_bool_param("flicker", true);
@@ -335,10 +341,10 @@ stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
     }
   }
 
-  if (params->has_param("fill")){
+  if (params->has_param("highlight")){
     std::vector<int> fills;
-    params->get_vector_param("fill", fills);
-    for (int f : fills) special_fills_.insert(f);
+    params->get_vector_param("highlight", fills);
+    for (int f : fills) display_cfg_.special_fills.insert(f);
   }
 }
 
@@ -359,15 +365,19 @@ stat_vtk::finalize(timestamp t)
   if (!active_) return;
 
   clear_pending_departures(t);
-  ignored_gap_ = 0;
-  for (int port=0; port < port_intensities_.size(); ++port){
-    if (port_intensities_[port].current_level != 0){
+  min_interval_ = 0;
+  for (int port=0; port < port_states_.size(); ++port){
+    if (port_states_[port].current_level != 0){
       spkt_abort_printf("Port %d on VTK %d did not return to zero", port, id_);
     }
-    auto& port_int = port_intensities_[port];
+    auto& port_int = port_states_[port];
     //some ports may have collected nothing
     if (port_int.last_collection.ticks() != 0){
-      collect_new_level(port, t, 0);
+      collect_new_color(t, port, 0);
+    }
+
+    if (port_int.active_vtk_color != 0){
+      spkt_abort_printf("Port %d on VTK %d did not return to zero", port, id_);
     }
 
     if (!port_int.delayed.empty()){
@@ -380,9 +390,8 @@ stat_vtk::finalize(timestamp t)
 void
 stat_vtk::dump_global_data()
 {
-  outputExodusWithSharedMap(fileroot_, bidirectional_shift_,
-                            std::move(traffic_event_map_),
-                            special_fills_,  topology::global());
+  outputExodusWithSharedMap(fileroot_, std::move(traffic_event_map_),
+                            display_cfg_, topology::global());
 }
 
 void
@@ -404,7 +413,7 @@ stat_vtk::configure(switch_id sid, topology *top)
   port_to_face_ = geom.port_faces;
   id_ = sid;
   raw_port_intensities_.resize(port_to_face_.size());
-  port_intensities_.resize(port_to_face_.size());
+  port_states_.resize(port_to_face_.size());
   //face_intensities_.resize(6);
 
   if (!filters_.empty()){
@@ -419,59 +428,55 @@ stat_vtk::configure(switch_id sid, topology *top)
 }
 
 void
-stat_vtk::collect_new_level(int port, timestamp time, int level)
+stat_vtk::collect_new_color(timestamp time, int port, double color)
 {
-  port_intensity& port_int = port_intensities_[port];
+  port_state& port_int = port_states_[port];
   timestamp interval_length = time - port_int.pending_collection_start;
 
-  if (ignored_gap_.ticks() == 0){
+  if (min_interval_.ticks() == 0){
     //log all events - no aggregation or averaging
-    port_int.current_level = level;
-    auto pair = sorted_event_list_.emplace(time.ticks(), port, port_to_face_[port], level, id_);
+    auto pair = sorted_event_list_.emplace(time.ticks(), port, color, id_);
     if (!pair.second){
       //we got blocked! overwrite their value
       auto& e = *pair.first;
-      int old_level = e.level_;
-      e.level_ = level;
-
+      e.color_ = color;
     }
+    port_int.active_vtk_color = color;
     return;
   }
 
-
-  double new_level = level;
+  double new_color = color;
   if (time != port_int.pending_collection_start){ //otherwise this will NaN
     double current_state_length = (time - port_int.last_collection).msec();
     double accumulated_state_length = (port_int.last_collection - port_int.pending_collection_start).msec();
     double total_state_length = (time - port_int.pending_collection_start).msec();
-    new_level = (port_int.current_level * current_state_length
-                  + port_int.accumulated_level * accumulated_state_length) / total_state_length;
+    new_color = (port_int.current_color * current_state_length
+                  + port_int.accumulated_color * accumulated_state_length) / total_state_length;
   }
 
-  if (interval_length >= ignored_gap_){
+  if (interval_length >= min_interval_){
     //we have previous collections that are now large enough  to commit
     if (port_int.pending_collection_start.ticks() == 0){
       //we need this to check to avoid having non-zero state accidentally at the beginning
-      sorted_event_list_.emplace(port_int.last_collection.ticks(), port,
-                                 port_to_face_[port], new_level, id_);
+      sorted_event_list_.emplace(port_int.last_collection.ticks(),
+                                 port, new_color, id_);
     } else {
-      sorted_event_list_.emplace(port_int.pending_collection_start.ticks(), port,
-                                 port_to_face_[port], new_level, id_);
+      sorted_event_list_.emplace(port_int.pending_collection_start.ticks(),
+                                 port, new_color, id_);
     }
     port_int.pending_collection_start = port_int.last_collection = time;
-    port_int.accumulated_level = 0;
-    port_int.active_vtk_level = new_level;
+    port_int.accumulated_color = 0;
+    port_int.active_vtk_color = new_color;
   } else {
     port_int.last_collection = time;
-    port_int.accumulated_level = new_level;
+    port_int.accumulated_color = new_color;
   }
-  port_int.current_level = level;
 }
 
 void
-stat_vtk::collect_new_intensity(timestamp time, int port, int intensity)
+stat_vtk::collect_new_intensity(timestamp time, int port, double intensity)
 {
-  auto& port_int = port_intensities_[port];
+  auto& port_int = port_states_[port];
   int level = 0;
   for (int i=intensity_levels_.size()-1; i >=0; --i){
     if (intensity >= intensity_levels_[i]){
@@ -480,20 +485,15 @@ stat_vtk::collect_new_intensity(timestamp time, int port, int intensity)
     }
   }
 
-  //if (abs(level - port_int.current_level) > 1){
-  //  spkt_abort_printf("vtk_stats::bad level transition from %d to %d for VTK=%d on port=%d",
-  //                    port_int.current_level, level, id_, port);
-  //}
-
-  if (level != port_int.current_level || port_int.active_vtk_level != double(level)){
-    collect_new_level(port, time, level);
+  if (level != port_int.current_level || port_int.active_vtk_color != double(level)){
+    collect_new_color(time, port, level);
+    port_int.current_level = level;
   }
 }
 
 void
 stat_vtk::increment_intensity(timestamp time, int port, int increment, const char* type)
 {
-  port_intensity& port_int = port_intensities_[port];
   raw_port_intensities_[port] += increment;
   int intensity = raw_port_intensities_[port];
   collect_new_intensity(time, port, intensity);
@@ -506,10 +506,10 @@ stat_vtk::collect_arrival(timestamp time, int port, intptr_t id)
 
   clear_pending_departures(time);
 
-  if (port >= port_intensities_.size()) return;
+  if (port >= port_states_.size()) return;
 
   if (collect_delays_){
-    auto& port_int = port_intensities_[port];
+    auto& port_int = port_states_[port];
     port_int.delayed[id] = time;
   } else {
     increment_intensity(time, port, 1, "arrive");
@@ -521,7 +521,7 @@ stat_vtk::collect_departure(timestamp time, int port, intptr_t id)
 {
   static const timestamp min_time_gap(5e-9);
   if (collect_delays_){
-    auto& port_int = port_intensities_[port];
+    auto& port_int = port_states_[port];
     auto iter = port_int.delayed.find(id);
     if (iter == port_int.delayed.end()){
       spkt_abort_printf("Switch %d port %d has no previous events matching id %llu",
@@ -534,13 +534,13 @@ stat_vtk::collect_departure(timestamp time, int port, intptr_t id)
       time_start_waiting = port_int.last_wait_finished + min_time_gap;
     }
     timestamp delay = time - arrival;
-    double nanosecond_delay = delay.nsec();
-    collect_new_intensity(time_start_waiting, port, lround(nanosecond_delay));
+
+    collect_new_color(time_start_waiting, port, delay.usec());
 
     port_int.last_wait_finished = time;
     if (flicker_){
       //cause a flicker after each packet
-      collect_new_intensity(time - min_time_gap, port, 0);
+      collect_new_color(time - min_time_gap, port, 0);
     }
   } else {
     increment_intensity(time, port, -1, "depart");
@@ -565,7 +565,7 @@ stat_vtk::collect_departure(timestamp now, timestamp time, int port, intptr_t id
   if (!active_) return;
 
   clear_pending_departures(now);
-  if (port < port_intensities_.size()){
+  if (port < port_states_.size()){
     if (time > now){
       pending_departures_.emplace(time, port, id);
     } else {

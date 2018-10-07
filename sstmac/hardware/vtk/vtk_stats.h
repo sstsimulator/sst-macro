@@ -21,15 +21,14 @@ class topology;
 struct traffic_event {
   uint64_t time_; // progress time
   int port_;
-  int face_;
   //this is mutable due to the nonsense that is
   //C++ sets that does not allow modifying items in the set
   //even after collision
-  mutable double level_;
+  mutable double color_;
   int id_;
 
-  traffic_event(uint64_t t, int port, int face, double lev, int id) :
-    time_(t), port_(port), level_(lev), face_(face), id_(id)
+  traffic_event(uint64_t t, int port, double c, int id) :
+    time_(t), port_(port), color_(c), id_(id)
   {
   }
 };
@@ -110,6 +109,15 @@ class stat_vtk : public stat_collector
 {
   FactoryRegister("vtk", stat_collector, stat_vtk)
  public:
+  struct display_config {
+    double idle_switch_color;
+    double idle_link_color;
+    double highlight_switch_color;
+    double highlight_link_color;
+    double bidirectional_shift;
+    std::set<int> special_fills;
+  };
+
   stat_vtk(sprockit::sim_parameters* params);
 
   std::string to_string() const override {
@@ -117,9 +125,8 @@ class stat_vtk : public stat_collector
   }
 
   static void outputExodus(const std::string& fileroot,
-      double bidirectional_shift,
       std::multimap<uint64_t, traffic_event>&& traffMap,
-      const std::set<int>& special_fills,
+      const display_config& cfg,
       topology *topo =nullptr);
 
   void dump_local_data() override;
@@ -153,26 +160,38 @@ class stat_vtk : public stat_collector
 
   void clear_pending_departures(timestamp now);
 
-  struct port_intensity {
+  /**
+   * @brief The port_state struct
+   * The VTK collection has 3 different types of quantities
+   * Intensity = this is the raw input value (a double) saying what some
+   *             quantity of interest is (contention delay, queue depth)
+   * Level = this is a discrete quantity that maps the intensity to an integer
+   *         level based upon a given set of thresholds
+   * Color = this is the value (a double) that is written as a VTK state
+   *         at a given timepoint. Depending on configuration,
+   *         either intensity or level could be written as the color
+  */
+  struct port_state {
     int active_ports;
     int congested_ports;
     timestamp last_collection;
     timestamp pending_collection_start;
     int current_level;
-    double accumulated_level;
-    double active_vtk_level;
+    double accumulated_color;
+    double current_color;
+    double active_vtk_color;
     std::map<intptr_t,timestamp> delayed;
     timestamp last_wait_finished;
-    port_intensity() :
-      accumulated_level(0.),
+    port_state() :
+      accumulated_color(0.),
       current_level(0)
     {
     }
   };
 
-  void collect_new_level(int port, timestamp time, int level);
+  void collect_new_intensity(timestamp time, int port, double intens);
 
-  void collect_new_intensity(timestamp time, int port, int intensity);
+  void collect_new_color(timestamp time, int port, double color);
 
   void increment_intensity(timestamp time, int port, int increment, const char* type);
 
@@ -204,13 +223,13 @@ class stat_vtk : public stat_collector
   std::priority_queue<delayed_event,
       std::vector<delayed_event>,
       compare_delayed_event> pending_departures_;
-  std::vector<port_intensity> port_intensities_;
-  timestamp ignored_gap_;
-  double bidirectional_shift_;
+  std::vector<port_state> port_states_;
+  timestamp min_interval_;
   int id_;
 
   std::vector<std::pair<int,int>> filters_;
-  std::set<int> special_fills_;
+
+  display_config display_cfg_;
 
   std::set<traffic_event, compare_events> sorted_event_list_;
 

@@ -71,7 +71,7 @@ libcomd.so: skeletons
 test_skeleton_libcomd.$(CHKSUF): libcomd.so pots
 	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/CoMD \
 	$(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
-    $(top_builddir)/bin/pysstmac skeletons/CoMD/libcomd.so -f skeletons/CoMD/parameters.ini 
+    $(top_builddir)/bin/pysstmac --exe=skeletons/CoMD/libcomd.so -f skeletons/CoMD/parameters.ini 
 
 skeletons/lulesh2.0.3/liblulesh.so: skeletons
 	cd skeletons/lulesh2.0.3; PATH=$(bindir):$$PATH $(MAKE) liblulesh.so
@@ -79,7 +79,7 @@ skeletons/lulesh2.0.3/liblulesh.so: skeletons
 test_skeleton_liblulesh.$(CHKSUF): skeletons/lulesh2.0.3/liblulesh.so
 	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/lulesh2.0.3 \
     $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
-    $(top_builddir)/bin/pysstmac skeletons/lulesh2.0.3/liblulesh.so -f skeletons/lulesh2.0.3/parameters.ini 
+    $(top_builddir)/bin/pysstmac --exe=skeletons/lulesh2.0.3/liblulesh.so -f skeletons/lulesh2.0.3/parameters.ini 
 
 skeletons/pic/libpic.so: skeletons
 	cd skeletons/pic; PATH=$(bindir):$$PATH $(MAKE) libpic.so
@@ -87,7 +87,7 @@ skeletons/pic/libpic.so: skeletons
 test_skeleton_libpic.$(CHKSUF): skeletons/pic/libpic.so
 	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/pic \
     $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
-    $(top_builddir)/bin/pysstmac skeletons/pic/libpic.so -f skeletons/pic/parameters.ini 
+    $(top_builddir)/bin/pysstmac --exe=skeletons/pic/libpic.so -f skeletons/pic/parameters.ini 
 
 skeletons/hpcg-3.0/libhpcg.so: skeletons
 	cd skeletons/hpcg-3.0; PATH=$(bindir):$$PATH $(MAKE) libhpcg.so
@@ -95,7 +95,7 @@ skeletons/hpcg-3.0/libhpcg.so: skeletons
 test_skeleton_libhpcg.$(CHKSUF): skeletons/hpcg-3.0/libhpcg.so
 	SST_LIB_PATH=$(SST_LIB_PATH):$(PWD)/skeletons/hpcg-3.0 \
     $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
-    $(top_builddir)/bin/pysstmac skeletons/hpcg-3.0/libhpcg.so -f skeletons/hpcg-3.0/parameters.ini 
+    $(top_builddir)/bin/pysstmac --exe=skeletons/hpcg-3.0/libhpcg.so -f skeletons/hpcg-3.0/parameters.ini 
 else
 .PHONY: skeletons pots
 $(SKELETONCASES): skeletons

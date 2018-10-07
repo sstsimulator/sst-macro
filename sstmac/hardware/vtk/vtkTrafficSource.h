@@ -45,6 +45,10 @@ public:
   vtkTypeMacro(vtkTrafficSource,vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
+  void SetDisplayParameters(const stat_vtk::display_config& cfg){
+    display_cfg_ = cfg;
+  }
+
   void SetNumberOfSteps(double count);
   void SetSteps(double *steps);
 
@@ -56,7 +60,8 @@ public:
     link_index_offset_ = num_switches*VTK_NUM_CELLS_PER_SWITCH; //6 faces;
     num_switches_ = num_switches;
     num_links_ = num_links;
-    port_intensities_.resize(num_switches);
+    std::vector<std::map<int,double>> tmpl{6};
+    face_intensities_.resize(num_switches, tmpl); //resize all vectors to size 6
   }
 
   void SetGeometries(std::vector<topology::vtk_switch_geometry>&& vec){
@@ -83,8 +88,7 @@ public:
     traffic_progress_map_ = std::move(trafficProgressMap);
   }
 
-  void SetTraffics(vtkSmartPointer<vtkIntArray> traffics,
-                   const std::set<int>& special_fills);
+  void SetTraffics(vtkSmartPointer<vtkIntArray> traffics);
 
   void SetPaintSwitches(uint64_t paintLength);
 
@@ -114,9 +118,9 @@ protected:
   int num_switches_;
   int num_links_;
   int link_index_offset_;
-  std::set<int> special_fills_;
+  stat_vtk::display_config display_cfg_;
 
-  std::vector<std::map<int,double>> port_intensities_;
+  std::vector<std::vector<std::map<int,double>>> face_intensities_;
 
 
 private:
