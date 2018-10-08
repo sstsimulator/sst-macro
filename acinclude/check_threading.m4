@@ -124,6 +124,53 @@ else
 AM_CONDITIONAL(HAVE_PTH, false)
 fi
 
+AC_LINK_IFELSE(
+[AC_LANG_PROGRAM(
+[
+  #include <pthread.h>
+],[
+  pthread_create(0,0,0,0);
+  pthread_join(0,0);
+])],
+[
+AC_MSG_CHECKING([whether pthreads is automatically usable])
+AC_MSG_RESULT([yes])
+enable_pthread="yes"
+],[
+AC_MSG_CHECKING([whether pthreads is automatically usable])
+AC_MSG_RESULT([no])
+enable_pthread="no"
+])
+
+if test "$enable_pthread" = no; then
+LIBSAVE="$LIBS"
+LIBS="$LIBS -lpthread"
+AC_LINK_IFELSE(
+[AC_LANG_PROGRAM(
+  [
+    #include <pthread.h>
+  ],[
+    pthread_create(0,0,0,0);
+    pthread_join(0,0);
+  ])],
+[
+  AC_MSG_RESULT([yes])
+  enable_pthread="yes"
+],[
+  AC_MSG_RESULT([no])
+  enable_pthread="no"
+  LIBS="$LIBSAVE"
+  if test "$user_with_pthread" = yes; then
+    AC_MSG_ERROR([pthreads tests failed])
+  fi
+])
+fi
+
+AH_TEMPLATE([HAVE_PTHREAD], [Define to make pthreads available for threading])
+if test "$enable_pthread" = yes; then
+AC_DEFINE(HAVE_PTHREAD)
+fi
+
 macCheck=`echo $host_os | awk '{print substr(\$ 1,0,6)}'`
 
 AM_CONDITIONAL(FCONTEXT_X86, [test "X$host_cpu" = "Xx86_64"])
