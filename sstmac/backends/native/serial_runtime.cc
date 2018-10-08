@@ -99,6 +99,12 @@ serial_runtime::global_sum(long *data, int nelems, int root)
 }
 
 void
+serial_runtime::global_sum(int* data, int nelems, int root)
+{
+  //do nothing
+}
+
+void
 serial_runtime::global_sum(long long *data, int nelems, int root)
 {
   //do nothing

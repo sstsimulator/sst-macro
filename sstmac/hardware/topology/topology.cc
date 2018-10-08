@@ -80,7 +80,6 @@ namespace hw {
 
 topology* topology::static_topology_ = nullptr;
 topology* topology::main_top_ = nullptr;
-const int topology::eject = -1;
 
 #if SSTMAC_INTEGRATED_SST_CORE
 int topology::nproc = 0;
@@ -114,8 +113,8 @@ topology::topology(sprockit::sim_parameters* params)
 #endif
   main_top_ = this;
 
-  if (params->has_param("output_graph"))
-    dot_file_ = params->get_param("output_graph");
+  dot_file_ = params->get_optional_param("output_graph", "");
+  xyz_file_ = params->get_optional_param("output_xyz", "");
 }
 
 topology::~topology()
@@ -160,18 +159,20 @@ topology::get_port_params(sprockit::sim_parameters *params, int port)
   return params->get_optional_namespace(sprockit::printf("port%d", port));
 }
 
-void
-topology::output_graphviz(const std::string& file)
+static std::string get_outfile(const std::string& cmd_line_given,
+                               const std::string& input_file_given)
 {
-  std::string file_non_const;
-  if (file.size())
-    file_non_const = file;
-  else if (dot_file_.size())
-    file_non_const = dot_file_;
-  if (file_non_const.size() == 0)
-    return;
+  if (!cmd_line_given.empty()) return cmd_line_given; //cmd takes precedence
+  else return input_file_given;
+}
 
-  std::ofstream out(file_non_const.c_str());
+void
+topology::output_graphviz(const std::string& path)
+{
+  std::string output = get_outfile(path, dot_file_);
+  if (output.empty()) return;
+
+  std::ofstream out(output);
   out << "graph {\n";
 
   int nsw = num_switches();
@@ -200,6 +201,45 @@ topology::output_graphviz(const std::string& file)
   }
 
   out << "\n}";
+  out.close();
+}
+
+void
+topology::output_box(std::ostream& os,
+                     const topology::vtk_box_geometry& box)
+{
+  os << box.vertex(0);
+  for (int i=1; i < 8; ++i){
+    os << "->" << box.vertex(i);
+  }
+}
+
+void
+topology::output_box(std::ostream& os,
+                     const topology::vtk_box_geometry& box,
+                     const std::string& color,
+                     const std::string& alpha)
+{
+  output_box(os, box);
+  os << ";color=" << color;
+  os << ";alpha=" << alpha;
+}
+
+void
+topology::output_xyz(const std::string& path)
+{
+  std::string output = get_outfile(path, dot_file_);
+  if (output.empty()) return;
+
+  int nsw = num_switches();
+  //int half = nsw / 2;
+  std::ofstream out(output);
+
+  for (int sid=0; sid < nsw; ++sid){
+    vtk_switch_geometry geom = get_vtk_geometry(sid);
+    output_box(out, geom.box, "gray", "0.1"); //very transparent
+    out << "\n";
+  }
   out.close();
 }
 
@@ -262,6 +302,14 @@ topology::label(uint32_t comp_id) const
   }
 }
 
+topology::vtk_switch_geometry
+topology::get_vtk_geometry(switch_id sid) const
+{
+  spkt_abort_printf("unimplemented: topology::get_vtk_geometry for %s",
+                    to_string().c_str());
+  return vtk_switch_geometry(0,0,0,0,0,0,0,std::vector<vtk_face_t>());
+}
+
 class merlin_topology : public topology {
   FactoryRegister("merlin", topology, merlin_topology)
  public:
@@ -319,8 +367,12 @@ class merlin_topology : public topology {
     return -1;
   }
 
-  switch_id
-  netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
+  int max_num_intra_network_ports() const override {
+    spkt_abort_printf("merlin topology functions should never be called");
+    return -1;
+  }
+
+  switch_id netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }

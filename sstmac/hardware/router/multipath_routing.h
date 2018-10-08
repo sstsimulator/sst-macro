@@ -56,6 +56,7 @@ namespace hw {
 template <class ParentRouter>
 class multipath_router : public ParentRouter
 {
+  using ParentRouter::my_addr_;
   /**
    * @brief The structured_path struct Identifies a (structurally) unique
    * path in the topology. For example, there might be multiple links on a
@@ -114,16 +115,14 @@ class multipath_router : public ParentRouter
     ParentRouter::route(pkt);
     packet::path& path = pkt->current_path();
     path.geometric_id = path.outport();
-    debug_printf(sprockit::dbg::router,
-      "multipath routing: geometric id %d", path.geometric_id);
+    rter_debug("multipath routing: geometric id %d", path.geometric_id);
 
     top_->get_redundant_paths(path, paths, this->addr());
 
     int path_id = path.geometric_id;
     int next_index = geom_paths_[path_id].next_index();
     path = paths[next_index];
-    debug_printf(sprockit::dbg::router,
-      "multipath routing: index %d yielded outport %d", next_index, path.outport());
+    rter_debug("multipath routing: index %d yielded outport %d", next_index, path.outport());
   }
 
  private:

@@ -274,5 +274,41 @@ torus::switch_addr(const coordinates& coords) const
 }
 
 
+topology::vtk_switch_geometry
+torus::get_vtk_geometry(switch_id sid) const
+{
+  coordinates coords = switch_coords(sid);
+  int ndims = dimensions_.size();
+  if (ndims > 3 || ndims < 2){
+    spkt_abort_printf("cannot generate xyz coordinates for topologies with ndims=%d - only 2D or 3D torus allowed",
+                      ndims);
+  }
+
+  /**
+   * Each box is size 1x1x1... leave a 0.5 gap between switches
+   */
+  double xCorner = 1.5*coords[0];
+  double yCorner = 1.5*coords[1];
+  double zCorner = 1.5*(ndims > 2 ? coords[2] : 0);
+  double xSize = 1.0;
+  double ySize = 1.0;
+  double zSize = 1.0;
+  double theta = 0.0;
+
+  std::vector<vtk_face_t> faces(6);
+  faces[convert_to_port(0,0)] = plusXface;
+  faces[convert_to_port(0,1)] = minusXface;
+  faces[convert_to_port(1,0)] = plusYface;
+  faces[convert_to_port(1,1)] = minusYface;
+  faces[convert_to_port(2,0)] = plusZface;
+  faces[convert_to_port(2,1)] = minusZface;
+
+  vtk_switch_geometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,
+                           std::move(faces));
+
+  return geom;
+}
+
+
 }
 } //end of namespace sstmac

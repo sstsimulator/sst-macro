@@ -42,34 +42,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sstmac_hardware_network_topology_routing_PAR_ROUTING_H
-#define sstmac_hardware_network_topology_routing_PAR_ROUTING_H
+#include <unistd.h>
+#include <sys/time.h>
+#include <cmath>
 
-#include <sstmac/hardware/router/ugal_routing.h>
+static void run(){
+#pragma sst memoize model(null)
+  sleep(1);
+}
 
-namespace sstmac {
-namespace hw {
+#define sstmac_app_name memoize_sleep
 
-/**
- * @brief The par_router class
- * Encapsulates a router that performs Progressive Adaptive Routing
- * as described by Jiang and Dally
- * in "Indirect adaptive routing on large scale interconnection networks"
- * This differs only slightly from UGAL in that the adpative routing decision
- * is revisited on every step
- */
-class par_router :
-  public ugal_router
+int main(int argc, char** argv)
 {
- public:
-  par_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);
-
- protected:
-  bool route_common(packet* pkt);
-};
-
+  double wall_start = sstmac_wall_time();
+  double vir_start = sstmac_virtual_time();
+  run();
+  double wall_stop = sstmac_wall_time();
+  double vir_stop = sstmac_virtual_time();
+  double t_vir = round(vir_stop - vir_start);
+  double t_wall = round(wall_stop - wall_start);
+#ifndef SSTMAC_NO_REPLACEMENTS
+  static const char* name = "skeleton";
+#else
+  static const char* name = "memoize";
+#endif
+  printf("Running %10s:   wall=%.1f virtual=%.1f\n", name, t_wall, t_vir);
+  return 0;
 }
-}
 
-
-#endif // UGAL_ROUTING_H

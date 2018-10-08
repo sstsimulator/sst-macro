@@ -177,11 +177,11 @@ static inline void* get_special_at_offset(int offset, int map_offset)
 }
 
 static inline void* get_global_at_offset(int offset){
-  return get_special_at_offset(offset, TLS_GLOBAL_MAP);
+  return get_special_at_offset(offset, SSTMAC_TLS_GLOBAL_MAP);
 }
 
 static inline void* get_tls_at_offset(int offset){
-  return get_special_at_offset(offset, TLS_TLS_MAP);
+  return get_special_at_offset(offset, SSTMAC_TLS_TLS_MAP);
 }
 
 template <class T>

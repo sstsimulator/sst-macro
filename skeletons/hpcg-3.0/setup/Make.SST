@@ -127,7 +127,7 @@ CXX          = SSTMAC_HEADERS=`pwd`/sstmac_headers SSTMAC_SKELETONIZE=$(SKEL) ss
 CXXFLAGS     = $(HPCG_DEFS) -O3 -ffast-math -ftree-vectorize -fPIC
 #
 LINKER       = $(CXX)
-LINKFLAGS    = $(CXXFLAGS)
+LINKFLAGS    = $(CXXFLAGS) 
 #
 ARCHIVER     = ar
 ARFLAGS      = r

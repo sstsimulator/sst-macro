@@ -167,6 +167,11 @@ class SSTIntegratedComponent
 #define RegisterComponent(name,parent,cls,lib,cat,desc) \
   FactoryRegister(name,parent,cls,desc)
 
+#define RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
+  FactoryRegister(name,parent,cls,desc)
+
+#define SST_ELI_DOCUMENT_STATISTICS(...)
+
 #define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
   FactoryRegister(name,parent,cls,desc)
 

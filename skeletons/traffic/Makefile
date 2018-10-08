@@ -3,7 +3,9 @@ SRC := main.cc
 
 CXX :=    sst++
 CC :=     sstcc
-CXXFLAGS := -fPIC -O3
+#CXX :=    mpicxx
+#CC :=     mpicc
+CXXFLAGS := -fPIC -O3 -std=c++11
 CPPFLAGS := -I.
 LIBDIR :=  
 PREFIX := 

@@ -64,7 +64,7 @@ class timestamp_prefix_fxn :
       mult_ = 1e9;
     } else if (units_ == "us"){
       mult_ = 1e6;
-    } else if (units_ == "s"){
+    } else if (units_ == "ms"){
       mult_ = 1e3;
     } else if (units_ == "s"){
       mult_ = 1;

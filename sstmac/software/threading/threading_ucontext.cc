@@ -78,12 +78,9 @@ class threading_ucontext : public thread_context
 
   void destroy_context() override {}
 
-  void start_context(int physical_thread_id, void* stack, size_t stacksize, void
-                (*func)(void*), void *args,
-                void* globals_storage, void* tls_storage,
-                thread_context* from) override {
-    thread_info::register_user_space_virtual_thread(physical_thread_id, stack,
-                                                    globals_storage, tls_storage);
+  void start_context(void* stack, size_t stacksize,
+                     void(*func)(void*), void *args,
+                     thread_context* from) override {
 
     funcptr funcp(func);
     voidptr voidp(args);

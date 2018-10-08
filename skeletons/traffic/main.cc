@@ -126,9 +126,9 @@ void check_argument(int arg, const char* descr){
    }
 }
 
-void blast(int recver, MPI_Request* reqs, void* buffer, std::vector<double>& tputs);
-void get_blasted(const std::vector<int>& senders, MPI_Request* reqs, void* buffer);
-void be_useless();
+void send_traffic(int recver, MPI_Request* reqs, void* buffer, std::vector<double>& tputs);
+void recv_traffic(const std::vector<int>& senders, MPI_Request* reqs, void* buffer);
+void do_nothing();
 
 int main(int argc, char** argv)
 {
@@ -266,15 +266,13 @@ int main(int argc, char** argv)
     }
   }
 
-
-
   MPI_Comm roleComm;
 
   MPI_Barrier(MPI_COMM_WORLD);
   if (recver_from_me != -1){
     MPI_Comm_split(MPI_COMM_WORLD, 0, my_send_idx, &roleComm);
     std::vector<double> tputs(buffer_sizes.size());
-    blast(recver_from_me, reqs, buffer, tputs);
+    send_traffic(recver_from_me, reqs, buffer, tputs);
     std::vector<double> allTputs(buffer_sizes.size()*num_senders);
   #pragma sst keep
     MPI_Allgather(tputs.data(), buffer_sizes.size(), MPI_DOUBLE,
@@ -295,10 +293,10 @@ int main(int argc, char** argv)
     }
   } else if (!senders_to_me.empty()){
     MPI_Comm_split(MPI_COMM_WORLD, 1, 0, &roleComm);
-    get_blasted(senders_to_me, reqs, buffer);
+    recv_traffic(senders_to_me, reqs, buffer);
   } else {
     MPI_Comm_split(MPI_COMM_WORLD, 2, 0, &roleComm);
-    be_useless();
+    do_nothing();
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -306,7 +304,7 @@ int main(int argc, char** argv)
   return 0;
 }
 
-void blast(int partner, int niter, int buffer_size, int num_sends, int window_size,
+void send_traffic(int partner, int niter, int buffer_size, int num_sends, int window_size,
            MPI_Request* reqs, void* buffer){
   for (int i=0 ; i < niter; ++i){
     int num_windows = num_sends / window_size;
@@ -324,15 +322,15 @@ void blast(int partner, int niter, int buffer_size, int num_sends, int window_si
   MPI_Recv(&ack,1,MPI_INT,partner,tag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
 }
 
-void blast(int recver, MPI_Request* reqs, void* buffer, std::vector<double>& tputs){
+void send_traffic(int recver, MPI_Request* reqs, void* buffer, std::vector<double>& tputs){
   //send a total of 100MB in 1MB window sizes, starting from 1KB base size
   int num_buffer_sizes = buffer_sizes.size();
   for (int i=0; i < num_buffer_sizes; ++i){
-    blast(recver, warmup, buffer_sizes[i], total_num_sends[i], 
+    send_traffic(recver, warmup, buffer_sizes[i], total_num_sends[i], 
           window_num_sends[i], reqs, buffer);
     struct timeval t_start;
     gettimeofday(&t_start, NULL);
-    blast(recver, nrepeat, buffer_sizes[i], total_num_sends[i], 
+    send_traffic(recver, nrepeat, buffer_sizes[i], total_num_sends[i], 
           window_num_sends[i], reqs, buffer);
 
     struct timeval t_stop;
@@ -345,7 +343,7 @@ void blast(int recver, MPI_Request* reqs, void* buffer, std::vector<double>& tpu
   }
 }
 
-void get_blasted(const std::vector<int>& senders, int niter, 
+void recv_traffic(const std::vector<int>& senders, int niter, 
                  int buffer_size, int num_sends, int window_size,
                  MPI_Request* reqs, void* buffer){
   for (int i=0 ; i < niter; ++i){
@@ -370,22 +368,23 @@ void get_blasted(const std::vector<int>& senders, int niter,
   }
 }
 
-void get_blasted(const std::vector<int>& senders, MPI_Request* reqs, void* buffer){
+void recv_traffic(const std::vector<int>& senders, MPI_Request* reqs, void* buffer){
   //send a total of 100MB in 1MB window sizes, starting from 1KB base size
   int num_buffer_sizes = buffer_sizes.size();
   for (int i=0; i < num_buffer_sizes; ++i){
-    get_blasted(senders, warmup, buffer_sizes[i], total_num_sends[i], 
+    recv_traffic(senders, warmup, buffer_sizes[i], total_num_sends[i], 
           window_num_sends[i], reqs, buffer);
-    get_blasted(senders, nrepeat, buffer_sizes[i], total_num_sends[i], 
+    recv_traffic(senders, nrepeat, buffer_sizes[i], total_num_sends[i], 
           window_num_sends[i], reqs, buffer);
     MPI_Barrier(MPI_COMM_WORLD);
   }
 }
 
-void be_useless()
+void do_nothing()
 {
   int num_buffer_sizes = buffer_sizes.size();
   for (int i=0; i < num_buffer_sizes; ++i){
     MPI_Barrier(MPI_COMM_WORLD);
   }
 }
+

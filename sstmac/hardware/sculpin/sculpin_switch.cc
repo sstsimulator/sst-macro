@@ -58,13 +58,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/common/event_callback.h>
-
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/factory.h>
+#endif
 RegisterNamespaces("switch", "router", "xbar", "link");
 
 RegisterKeywords(
 { "latency", "latency to traverse a portion of the switch - sets both credit/send" },
 { "bandwidth", "the bandwidth of a given link sending" },
 { "congestion", "whether to include congestion modeling on switches" },
+{ "filter_stat_source", "list of specific source nodes to collect statistics for" },
+{ "filter_stat_destination", "list of specific destination nodes to collect statistis for" },
 );
 
 
@@ -79,6 +83,11 @@ sculpin_switch::sculpin_switch(
   sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
   router_(nullptr),
   congestion_(true),
+  delay_hist_(nullptr),
+  stat_hotspots_(nullptr),
+#if SSTMAC_VTK_ENABLED && !SSTMAC_INTEGRATED_SST_CORE
+  vtk_(nullptr),
+#endif
   network_switch(params, id, mgr)
 {
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
@@ -95,16 +104,60 @@ sculpin_switch::sculpin_switch(
     ej_params->combine_into(port_params);
   }
 
+  // Ensure topology is set
+  topology::static_topology(params);
+
+#if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+  //traffic_intensity = registerStatistic<traffic_event>("traffic_intensity", getName());
+
+//  std::function<void (const std::multimap<uint64_t, traffic_event> &, int, int)> f =
+//      &stat_vtk::outputExodus;
+
+  //SST::Factory::getFactory()->registerOptionnalCallback("statOutputEXODUS", f);
+#else
+  vtk_ = optional_stats<stat_vtk>(this,
+        params,
+        "vtk", /* The parameter namespace in the ini file */
+        "vtk" /* The object's factory name */
+   );
+  if (vtk_) vtk_->configure(my_addr_, top_);
+#endif
+#endif
 #if !SSTMAC_INTEGRATED_SST_CORE
   payload_handler_ = new_handler(this, &sculpin_switch::handle_payload);
   credit_handler_ = new_handler(this, &sculpin_switch::handle_credit);
 #endif
-
   ports_.resize(top_->max_num_ports());
   for (int i=0; i < ports_.size(); ++i){
     ports_[i].id = i;
     ports_[i].seqnum = 0;
+#if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+    traffic_intensity.push_back(registerStatistic<traffic_event>("traffic_intensity", getName() + std::to_string(ports_[i].id)));
+#endif
+#endif
   }
+
+  stat_hotspots_ = optional_stats<stat_hotspot>(this, params, "hotspot", "hotspot");
+  if (stat_hotspots_) stat_hotspots_->configure(my_addr_, top_);
+
+  delay_hist_ = optional_stats<stat_histogram>(this, params, "delays", "histogram");
+
+  init_links(params);
+
+  if (params->has_param("filter_stat_source")){
+    std::vector<int> filter;
+    params->get_vector_param("filter_stat_source", filter);
+    for (int src : filter) src_stat_filter_.insert(src);
+  }
+
+  if (params->has_param("filter_stat_destination")){
+    std::vector<int> filter;
+    params->get_vector_param("filter_stat_destination", filter);
+    for (int dst : filter) dst_stat_filter_.insert(dst);
+  }
+
 }
 
 sculpin_switch::~sculpin_switch()
@@ -130,6 +183,7 @@ sculpin_switch::connect_output(
   port& p = ports_[src_outport];
   p.link = link;
   p.inv_bw = 1.0/bw;
+  p.dst_port = dst_inport;
 }
 
 void
@@ -200,8 +254,29 @@ sculpin_switch::send(port& p, sculpin_packet* pkt, timestamp now)
   pkt->set_time_to_send(time_to_send);
   p.link->send_extra_delay(extra_delay, pkt);
 
+  if (delay_hist_){
+    timestamp delay = p.next_free - pkt->arrival();
+    delay_hist_->collect(delay.usec());
+  }
+
+#if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+  traffic_event evt;
+  evt.time_=p.next_free.ticks();
+  evt.id_=my_addr_;
+  evt.p_=p.id;
+  evt.type_=1;
+  traffic_intensity[p.id]->addData(evt);
+#else
+  if (vtk_ && do_not_filter_packet(pkt)){
+    vtk_->collect_departure(now, p.next_free, p.id, intptr_t(pkt));
+  }
+#endif
+#endif
+
   pkt_debug("packet leaving port %d at t=%8.4e: %s",
             p.id, p.next_free.sec(), pkt->to_string().c_str());
+
   if (p.priority_queue.empty()){
     //reset the sequence number for ordering packets
     p.seqnum = 0;
@@ -234,9 +309,28 @@ void
 sculpin_switch::try_to_send_packet(sculpin_packet* pkt)
 {
   timestamp now_ = now();
+
   pkt->set_arrival(now_);
   port& p = ports_[pkt->next_port()];
   pkt->set_seqnum(p.seqnum++);
+
+#if SSTMAC_VTK_ENABLED
+#if SSTMAC_INTEGRATED_SST_CORE
+  traffic_event evt;
+  evt.time_=this->now().ticks();
+  evt.id_=my_addr_;
+  evt.p_=p.id;
+  evt.type_=0;
+  traffic_intensity[p.id]->addData(evt);
+#else
+  if (vtk_ && do_not_filter_packet(pkt)){
+    vtk_->collect_arrival(now(), p.id, intptr_t(pkt));
+  }
+#endif
+#endif
+
+  static int max_queue_depth = 0;
+
   if (!congestion_){
     timestamp time_to_send = pkt->num_bytes() * p.inv_bw;
     p.next_free += time_to_send;
@@ -264,14 +358,22 @@ sculpin_switch::try_to_send_packet(sculpin_packet* pkt)
   }
 }
 
+bool
+sculpin_switch::do_not_filter_packet(sculpin_packet* pkt)
+{
+  bool keep_src = src_stat_filter_.empty() || (src_stat_filter_.find(pkt->fromaddr()) != src_stat_filter_.end());
+  bool keep_dst = dst_stat_filter_.empty() || (dst_stat_filter_.find(pkt->toaddr()) != dst_stat_filter_.end());
+  return keep_src && keep_dst;
+}
+
 void
 sculpin_switch::handle_payload(event *ev)
 {
   sculpin_packet* pkt = safe_cast(sculpin_packet, ev);
   switch_debug("handling payload %s", pkt->to_string().c_str());
   router_->route(pkt);
-
   port& p = ports_[pkt->next_port()];
+
   timestamp time_to_send = p.inv_bw * pkt->num_bytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
    * The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
@@ -282,6 +384,10 @@ sculpin_switch::handle_payload(event *ev)
     send_delayed_self_event_queue(delta_t, ev);
   } else {
     try_to_send_packet(pkt);
+  }
+
+  if (stat_hotspots_ && do_not_filter_packet(pkt)){
+    stat_hotspots_->collect(p.id, p.priority_queue.size());
   }
 }
 

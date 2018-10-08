@@ -45,13 +45,22 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/software/process/app.h>
+#include <sstmac/software/process/time.h>
 #include <sstmac/software/libraries/compute/compute_api.h>
+#include <sprockit/thread_safe_new.h>
+#include <sstmac/skeleton.h>
+
 
 using sstmac::timestamp;
 using os = sstmac::sw::operating_system;
 
 extern "C" unsigned int sstmac_sleep(unsigned int secs){
   os::current_os()->sleep(timestamp(secs, timestamp::seconds));
+  return 0;
+}
+
+extern "C" unsigned sstmac_sleep_until(double t){
+  os::current_os()->sleep_until(timestamp(t));
   return 0;
 }
 
@@ -137,4 +146,124 @@ sstmac_compute_loop4(uint64_t isize, uint64_t jsize, uint64_t ksize, uint64_t ls
   uint64_t num_loops = isize * jsize * ksize * lsize;
   sstmac::sw::operating_system::current_thread()->parent_app()
     ->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
+}
+
+extern "C" void sstmac_start_memoize(const char *token, const char* model)
+{
+  sstmac::sw::operating_system::start_memoize(token, model);
+}
+
+extern "C" void sstmac_finish_memoize0(const char* token)
+{
+  double params[0];
+  sstmac::sw::operating_system::stop_memoize(token, 0, params);
+}
+
+extern "C" void sstmac_finish_memoize1(const char *token, double param1)
+{
+  double params[1];
+  params[0] = param1;
+  sstmac::sw::operating_system::stop_memoize(token, 1, params);
+}
+
+extern "C" void sstmac_finish_memoize2(const char *token,
+                                       double param1, double param2)
+{
+  double params[2];
+  params[0] = param1;
+  params[1] = param2;
+  sstmac::sw::operating_system::stop_memoize(token, 2, params);
+}
+
+extern "C" void sstmac_compute_memoize0(const char* token)
+{
+  double params[0];
+  sstmac::sw::operating_system::compute_memoize(token, 0, params);
+}
+
+extern "C" void sstmac_compute_memoize1(const char *token, double param1)
+{
+  double params[1];
+  params[0] = param1;
+  sstmac::sw::operating_system::compute_memoize(token, 1, params);
+}
+
+extern "C" void sstmac_compute_memoize2(const char *token, double param1, double param2)
+{
+  double params[2];
+  params[0] = param1;
+  params[1] = param2;
+  sstmac::sw::operating_system::compute_memoize(token, 2, params);
+}
+
+extern "C" void* sstmac_alloc_stack(int sz, int md_sz)
+{
+  if (md_sz >= SSTMAC_TLS_OFFSET){
+    spkt_abort_printf("Cannot have stack metadata larger than %d - requested %d",
+                      SSTMAC_TLS_OFFSET, md_sz);
+  }
+  if (sz > sstmac::sw::operating_system::stacksize()){
+    spkt_abort_printf("Cannot allocate stack larger than %d - requested %d",
+                      sstmac::sw::operating_system::stacksize(), sz);
+  }
+  void* stack = sstmac::sw::stack_alloc::alloc();
+  uintptr_t localStorage = get_sstmac_tls();
+
+  void* new_mdata = (char*)stack + SSTMAC_TLS_OFFSET;
+  void* old_mdata = (char*)localStorage + SSTMAC_TLS_OFFSET;
+  ::memcpy(new_mdata, old_mdata, SSTMAC_TLS_SIZE);
+
+  return stack;
+}
+
+extern "C" void sstmac_free_stack(void* ptr)
+{
+  sstmac::sw::stack_alloc::free(ptr);
+}
+
+
+extern "C" void sstmac_push_implicit_state1(int state0)
+{
+  uintptr_t localStorage = get_sstmac_tls();
+  int* num_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+
+  int n = *num_states;
+  states[n] = state0;
+  n++;
+  *num_states = n;
+}
+
+extern "C" void sstmac_push_implicit_state2(int state0, int state1)
+{
+  uintptr_t localStorage = get_sstmac_tls();
+  int* num_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+
+  int n = *num_states;
+  states[n] = state0;
+  states[n+1] = state1;
+  n += 2;
+  *num_states = n;
+}
+
+extern "C" void sstmac_push_implicit_state3(int state0, int state1, int state2)
+{
+  uintptr_t localStorage = get_sstmac_tls();
+  int* num_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+
+  int n = *num_states;
+  states[n] = state0;
+  states[n+1] = state1;
+  states[n+2] = state2;
+  n += 3;
+  *num_states = n;
+}
+
+extern "C" void sstmac_pop_implicit_state(int n_states)
+{
+  uintptr_t localStorage = get_sstmac_tls();
+  int* num_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  (*num_states) -= n_states;
 }

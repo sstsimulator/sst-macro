@@ -95,6 +95,9 @@ class router : public sprockit::printable
     return netsw_;
   }
 
+  bool switch_paths(int orig_distance, int new_distance,
+          int orig_port, int new_port) const;
+
   /**
    * @brief addr
    * @return
@@ -120,9 +123,6 @@ class router : public sprockit::printable
   router(sprockit::sim_parameters* params, topology* top, network_switch* sw);
 
   switch_id find_ejection_site(node_id toaddr, packet::path& path) const;
-
-  virtual switch_id random_intermediate_switch(
-    switch_id current_sw, switch_id dest_sw, uint32_t seed);
 
  protected:
   switch_id my_addr_;

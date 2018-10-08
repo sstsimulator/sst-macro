@@ -14,10 +14,37 @@ include $(top_srcdir)/Makefile.common
 noinst_LTLIBRARIES = libsstmac_hw.la
 
 libsstmac_hw_la_LDFLAGS = 
+libsstmac_hw_la_LIBADD = 
 
 library_includedir=$(includedir)/sstmac/hardware
 
-nobase_library_include_HEADERS = \
+libsstmac_hw_la_SOURCES = 
+nobase_library_include_HEADERS = 
+
+if HAVE_VTK
+libsstmac_hw_la_SOURCES +=  \
+  vtk/vtk_stats.cc \
+  vtk/vtkTrafficSource.cc
+
+nobase_library_include_HEADERS += \
+  vtk/vtk_stats.h \
+  vtk/vtkTrafficSource.h
+
+if INTEGRATED_SST_CORE
+libsstmac_hw_la_SOURCES += \
+   vtk/statoutputexodus.cc
+
+nobase_library_include_HEADERS += \
+   vtk/stattraffic.h \
+   vtk/statoutputexodus.h
+endif
+
+libsstmac_hw_la_LDFLAGS += $(VTK_LDFLAGS)
+libsstmac_hw_la_LIBADD += $(VTK_LIBS)
+AM_CPPFLAGS += $(VTK_CPPFLAGS)
+endif
+
+nobase_library_include_HEADERS += \
   logp/logp_nic.h \
   logp/logp_switch.h \
   logp/logp_switch_fwd.h \
@@ -62,6 +89,7 @@ nobase_library_include_HEADERS = \
   pisces/pisces_switch.h \
   pisces/pisces_tiled_switch.h \
   pisces/pisces_memory_model.h \
+  sculpin/hotspot.h \
   sculpin/sculpin_nic.h \
   sculpin/sculpin_switch.h \
   sculpin/sculpin_param_expander.h \
@@ -95,14 +123,10 @@ nobase_library_include_HEADERS = \
   router/router.h \
   router/router_fwd.h \
   router/routing_enum.h \
-  router/minimal_routing.h \
   router/multipath_routing.h \
-  router/ugal_routing.h \
-  router/par_routing.h \
-  router/valiant_routing.h \
   router/fat_tree_router.h 
 
-libsstmac_hw_la_SOURCES =  \
+libsstmac_hw_la_SOURCES +=  \
   logp/logp_nic.cc \
   logp/logp_switch.cc \
   logp/logp_param_expander.cc \
@@ -134,6 +158,7 @@ libsstmac_hw_la_SOURCES =  \
   pisces/pisces_switch.cc \
   pisces/pisces_tiled_switch.cc \
   pisces/pisces_memory_model.cc \
+  sculpin/hotspot.cc \
   sculpin/sculpin_nic.cc \
   sculpin/sculpin_switch.cc \
   sculpin/sculpin_param_expander.cc \
@@ -154,12 +179,14 @@ libsstmac_hw_la_SOURCES =  \
   topology/tiled_cascade.cc \
   topology/traffic/traffic.cc \
   router/router.cc \
-  router/dragonfly_minimal.cc \
   router/fat_tree_router.cc \
-  router/minimal_routing.cc \
-  router/ugal_routing.cc \
-  router/par_routing.cc \
-  router/valiant_routing.cc \
+  router/cascade_routing.cc \
+  router/dragonfly_routing.cc \
+  router/dragonfly_routing.cc \
+  router/dragonfly_plus_routing.cc \
+  router/hypercube_routing.cc \
+  router/cascade_routing.cc \
+  router/torus_routing.cc \
   topology/star.cc \
   topology/structured_topology.cc \
   topology/cartesian_topology.cc \

@@ -248,16 +248,15 @@ void
 event_manager::spin_up(void(*fxn)(void*), void* args)
 {
   void* stack = sw::stack_alloc::alloc();
-  sstmac::thread_info::set_thread_id(stack, thread_id_);
+  sstmac::thread_info::register_user_space_virtual_thread(thread_id_, stack, nullptr, nullptr);
   main_thread_ = des_context_->copy();
   main_thread_->init_context();
   spin_up_config cfg;
   cfg.mgr = this;
   cfg.fxn = fxn;
   cfg.args = args;
-  des_context_->start_context(thread_id_, stack, sw::stack_alloc::stacksize(),
-                              &run_event_manager_thread, &cfg, nullptr, nullptr,
-                              main_thread_);
+  des_context_->start_context(stack, sw::stack_alloc::stacksize(),
+                              &run_event_manager_thread, &cfg, main_thread_);
   delete main_thread_;
 }
 
@@ -328,6 +327,7 @@ event_manager::finish_stats(stat_collector* main, const std::string& name)
 {
   stats_entry& entry = stats_[name];
   for (stat_collector* next : entry.collectors){
+    next->finalize(now_);
     if (entry.dump_all)
       next->dump_local_data();
 

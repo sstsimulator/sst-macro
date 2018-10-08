@@ -140,6 +140,7 @@ class torus :
 
   switch_id switch_addr(const coordinates &coords) const override;
 
+  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
 
  protected:
   inline int convert_to_port(int dim, int dir) const {

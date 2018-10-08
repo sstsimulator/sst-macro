@@ -181,6 +181,7 @@ job_launcher::satisfy_launch_request(app_launch_request* request, const ordered_
      topology_, allocation,
      mapping->rank_to_node(),
      mapping->node_to_rank());
+
   task_mapping::add_global_mapping(request->aid(), request->app_namespace(), mapping);
   os_->outcast_app_start(0, request->aid(), request->app_namespace(), mapping, request->app_params(),
                        true/*must include myself (the root) in bcast*/);

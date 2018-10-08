@@ -1,0 +1,54 @@
+
+
+void memoFxn(int niter);
+
+void memoFxn(int n){
+  { sstmac_compute_memoize1("memoFxn",n); }sstmac_push_implicit_state1(n);for (int i=0; i < n; ++i);
+; sstmac_pop_implicit_state(1);}
+
+
+void testFxn(int param){
+}
+
+
+void anotherTestFxn(int param){
+  sstmac_push_implicit_state1(param);param += 5;
+; sstmac_pop_implicit_state(1);}
+
+int fxn()
+{
+  int i=0;
+  int mul = 0;
+  double* x = new double[10];
+  int* idx = new int[5];
+
+ { sstmac_compute_memoize1("forloop",5); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+ sstmac_push_implicit_state1(mul);memoFxn(10); sstmac_pop_implicit_state(1);;
+  memoFxn(i+12);
+  return 0;
+}
+
+char sstmac_appname_str[] = "pragma_test";
+extern "C" int sstmac_user_main_pragma_test(){
+
+  return 0;
+}
+#include <sstmac/software/process/global.h>
+
+int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));
+extern "C" int sstmac_user_main_pragma_test(int argc, char** argv);
+int pragma_test_sstmac_initer = user_skeleton_main_init_fxn("pragma_test",sstmac_user_main_pragma_test);
+

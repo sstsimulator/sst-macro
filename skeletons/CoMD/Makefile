@@ -22,7 +22,7 @@ CoMD_VARIANT=openmp-mpi
 
 #CC = mpicc
 CC = sstcc
-OPTFLAGS = -O3
+OPTFLAGS = -O0 -g
 
 CFLAGS = -std=c99 -fPIC
 INCLUDES = 
@@ -69,7 +69,7 @@ endif
 ifeq ($(DO_MPI), ON)
 INCLUDES += ${MPI_INCLUDE}
 CFLAGS += -DDO_MPI
-LDFLAGS += ${MPI_LIB}
+LDFLAGS += ${MPI_LIB} 
 endif
 CoMD_EXE = runCoMD
 

@@ -199,6 +199,12 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTNullVariableGeneratorPragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTNullVariableStopPragmaHandler(visitor_.getPragmas(), CI, visitor_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTMemoizeComputePragmaHandler(visitor_.getPragmas(), CI, visitor_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTStackAllocPragmaHandler(visitor_.getPragmas(), CI, visitor_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTImplicitStatePragmaHandler(visitor_.getPragmas(), CI, visitor_));
 }
 
 void
