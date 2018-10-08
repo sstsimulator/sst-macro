@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/time.h>
 #include <sstmac/software/libraries/compute/compute_api.h>
 #include <sprockit/thread_safe_new.h>
+#include <sstmac/skeleton.h>
 
 
 using sstmac::timestamp;
@@ -206,8 +207,7 @@ extern "C" void* sstmac_alloc_stack(int sz, int md_sz)
                       sstmac::sw::operating_system::stacksize(), sz);
   }
   void* stack = sstmac::sw::stack_alloc::alloc();
-  int getstack; int* stackPtr = &getstack;
-  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+  uintptr_t localStorage = get_sstmac_tls();
 
   void* new_mdata = (char*)stack + SSTMAC_TLS_OFFSET;
   void* old_mdata = (char*)localStorage + SSTMAC_TLS_OFFSET;
@@ -219,4 +219,51 @@ extern "C" void* sstmac_alloc_stack(int sz, int md_sz)
 extern "C" void sstmac_free_stack(void* ptr)
 {
   sstmac::sw::stack_alloc::free(ptr);
+}
+
+
+extern "C" void sstmac_push_implicit_state1(int state0)
+{
+  uintptr_t localStorage = get_sstmac_tls();
+  int* num_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+
+  int n = *num_states;
+  states[n] = state0;
+  n++;
+  *num_states = n;
+}
+
+extern "C" void sstmac_push_implicit_state2(int state0, int state1)
+{
+  uintptr_t localStorage = get_sstmac_tls();
+  int* num_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+
+  int n = *num_states;
+  states[n] = state0;
+  states[n+1] = state1;
+  n += 2;
+  *num_states = n;
+}
+
+extern "C" void sstmac_push_implicit_state3(int state0, int state1, int state2)
+{
+  uintptr_t localStorage = get_sstmac_tls();
+  int* num_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+
+  int n = *num_states;
+  states[n] = state0;
+  states[n+1] = state1;
+  states[n+2] = state2;
+  n += 3;
+  *num_states = n;
+}
+
+extern "C" void sstmac_pop_implicit_state(int n_states)
+{
+  uintptr_t localStorage = get_sstmac_tls();
+  int* num_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  (*num_states) -= n_states;
 }

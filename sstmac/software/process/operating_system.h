@@ -55,7 +55,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
-
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/event_scheduler.h>
 
@@ -93,8 +92,10 @@ class operating_system :
       return key_;
     }
 
-    virtual double compute(int n_params, double params[]) = 0;
-    virtual void collect(double time, int n_params, double params[]) = 0;
+    virtual double compute(int n_params, const double params[],
+                           int n_states, const int states[]) = 0;
+    virtual void collect(double time, int n_params, const double params[],
+                         int n_states, const int states[]) = 0;
     virtual void finish() = 0;
    private:
     std::string key_;

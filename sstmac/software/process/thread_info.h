@@ -63,27 +63,9 @@ class thread_info {
 
   static void deregister_user_space_virtual_thread(void* stack);
 
-  static void set_thread_id(void* stack, int thr){
-    int* thrPtr = (int*) stack;
-    *thrPtr = thr;
-  }
-
-  static int get_thread_id(void* stack){
-    int* thrPtr = (int*) stack;
-    return *thrPtr;
-  }
-
-  static inline char* get_current_stack(){
-    char x;
-    intptr_t stackptr = (intptr_t) &x;
-    intptr_t stack_mult = stackptr / sstmac_global_stacksize;
-    char* aligned_stack_ptr = (char*) (stack_mult * sstmac_global_stacksize);
-    return aligned_stack_ptr;
-  }
-
   static inline int current_physical_thread_id(){
-    char* stack_ptr = get_current_stack();
-    int* tls = (int*) &stack_ptr[SSTMAC_TLS_THREAD_ID];
+    uintptr_t localStorage = get_sstmac_tls();
+    int* tls = (int*) (localStorage + SSTMAC_TLS_THREAD_ID);
     return *tls;
   }
 

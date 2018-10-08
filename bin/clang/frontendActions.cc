@@ -203,6 +203,8 @@ ReplaceAction::initPragmas(CompilerInstance& CI)
     new SSTMemoizeComputePragmaHandler(visitor_.getPragmas(), CI, visitor_));
   CI.getPreprocessor().AddPragmaHandler("sst",
     new SSTStackAllocPragmaHandler(visitor_.getPragmas(), CI, visitor_));
+  CI.getPreprocessor().AddPragmaHandler("sst",
+    new SSTImplicitStatePragmaHandler(visitor_.getPragmas(), CI, visitor_));
 }
 
 void

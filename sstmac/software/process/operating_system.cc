@@ -141,7 +141,8 @@ struct null_regression : public operating_system::regression_model
                   const std::string& key)
     : operating_system::regression_model(params, key), computed_(false) {}
 
-  double compute(int n_params, double params[]) override {
+  double compute(int n_params, const double params[],
+                 int n_states, const int states[]) override {
     if (!computed_){
       computed_ = true;
       compute_mean();
@@ -149,7 +150,8 @@ struct null_regression : public operating_system::regression_model
     return mean_;
   }
 
-  void collect(double time, int n_params, double params[]) override {
+  void collect(double time, int n_params, const double params[],
+               int n_states, const int states[]) override {
     samples_.push_back(time);
   }
 
@@ -185,9 +187,10 @@ struct linear_regression : public operating_system::regression_model
                     const std::string& key)
     : operating_system::regression_model(params, key), computed_(false) {}
 
-  double compute(int n, double params[]) override {
-    if (n != 1){
-      spkt_abort_printf("linear regression can only take one parameter - got %d", n);
+  double compute(int n_params, const double params[],
+                 int n_states, const int states[]) override {
+    if (n_params != 1){
+      spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
     if (!computed_){
       compute_regression();
@@ -198,7 +201,8 @@ struct linear_regression : public operating_system::regression_model
     return val;
   }
 
-  void collect(double time, int n_params, double params[]) override {
+  void collect(double time, int n_params, const double params[],
+               int n_states, const int states[]) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
@@ -377,7 +381,7 @@ operating_system::init_threading(sprockit::sim_parameters* params)
   lock.unlock();
 
   //make sure to stash the thread ID in some thread-local storage
-  void* stack = thread_info::get_current_stack();
+  void* stack = (void*) get_sstmac_tls();
   thread_info::set_thread_id(stack, threadId());
 #endif
 
@@ -568,13 +572,21 @@ operating_system::start_memoize(const char *token, const char* model_name)
 void
 operating_system::stop_memoize(const char *token, int n_params, double params[])
 {
+
+
   if (memoize_token_ != token){
     spkt_abort_printf("stopping memoize %s, but active memoize is %s",
                       token, memoize_token_.c_str());
   }
   double stop = sstmac_wall_time();
   double t_total = stop - memoize_start_;
-  memoize_model_->collect(t_total, n_params, params);
+
+  uintptr_t localStorage = get_sstmac_tls();
+  int* n_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+
+  memoize_model_->collect(t_total, n_params, params,
+                          *n_states, states);
 
   memoize_model_ = nullptr;
   memoize_token_ = "";
@@ -589,7 +601,10 @@ operating_system::compute_memoize(const char *token, int n_params, double params
     spkt_abort_printf("No model found for memoization tag %s - did you run memoize pass?",
                       token);
   }
-  double time = model->compute(n_params, params);
+  uintptr_t localStorage = get_sstmac_tls();
+  int* n_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
+  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+  double time = model->compute(n_params, params, *n_states, states);
   current_os()->compute(timestamp(time));
 }
 

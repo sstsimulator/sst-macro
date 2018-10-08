@@ -22,7 +22,7 @@ CoMD_VARIANT=openmp-mpi
 
 #CC = mpicc
 CC = sstcc
-OPTFLAGS = -O3
+OPTFLAGS = -O0 -g
 
 CFLAGS = -std=c99 -fPIC
 INCLUDES = 

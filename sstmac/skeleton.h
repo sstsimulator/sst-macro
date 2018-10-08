@@ -186,13 +186,13 @@ void sstmac_advance_time(const char* param_name);
 #endif
 
 
+#ifndef SSTMAC_INLINE
 #ifdef __STRICT_ANSI__
 #define SSTMAC_INLINE
 #else
 #define SSTMAC_INLINE inline
 #endif
-
-
+#endif
 
 static SSTMAC_INLINE char* get_sstmac_global_data(){
   if (sstmac_global_stacksize == 0){
@@ -201,9 +201,7 @@ static SSTMAC_INLINE char* get_sstmac_global_data(){
     }
     return static_init_glbls_segment;
   } else {
-    int stack; int* stackPtr = &stack;
-    uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-    char** globalMapPtr = (char**)(localStorage + SSTMAC_TLS_GLOBAL_MAP);
+    char** globalMapPtr = (char**)(get_sstmac_tls() + SSTMAC_TLS_GLOBAL_MAP);
     return *globalMapPtr;
   }
 }
@@ -215,9 +213,7 @@ static SSTMAC_INLINE char* get_sstmac_tls_data(){
     }
     return static_init_tls_segment;
   } else {
-    int stack; int* stackPtr = &stack;
-    uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
-    char** globalMapPtr = (char**)(localStorage + SSTMAC_TLS_TLS_MAP);
+    char** globalMapPtr = (char**)(get_sstmac_tls() + SSTMAC_TLS_TLS_MAP);
     return *globalMapPtr;
   }
 }

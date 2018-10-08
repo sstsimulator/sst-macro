@@ -133,16 +133,6 @@ class SSTMemoizeComputePragma : public SSTPragma
   void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
 
  private:
-  /**
-   * @brief doReplace
-   * @param s
-   * @param r
-   * @param callArgs
-   * @param callParams
-   * @param insertAfterStartToken Whether to insert the sstmac_X_memoize call
-   *        before or after the start token of the statement
-   * @param insertAfterEndToken
-   */
   void doReplace(clang::SourceLocation startInsert, clang::SourceLocation finalInsert, clang::Stmt* stmt,
                  bool insertStartAfter, bool insertFinalAfter,
                  clang::Rewriter& r, clang::Expr** callArgs, const clang::ParmVarDecl** callParams);
@@ -153,6 +143,32 @@ class SSTMemoizeComputePragma : public SSTPragma
   std::list<std::string> inputs_;
   bool givenName_;
   std::list<int> fxnArgInputs_;
+  std::set<clang::Decl*> written_;
+};
+
+class SSTImplicitStatePragma : public SSTPragma
+{
+ public:
+  SSTImplicitStatePragma(std::list<std::string>&& inputs) :
+    SSTPragma(ImplicitState),
+    inputs_(std::move(inputs))
+  {}
+
+  bool firstPass(const clang::Decl *d) const override {
+    return true;
+  }
+
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+ private:
+  void doReplace(clang::SourceLocation startInsert, clang::SourceLocation finalInsert, clang::Stmt* stmt,
+                 bool insertStartAfter, bool insertFinalAfter,
+                 clang::Rewriter& r, clang::Expr** callArgs, const clang::ParmVarDecl** callParams);
+
+  std::list<int> fxnArgInputs_;
+  std::list<std::string> inputs_;
+  std::set<clang::Decl*> written_;
 };
 
 class SSTOpenMPParallelPragmaHandler : public SSTPragmaHandler
@@ -213,6 +229,17 @@ class SSTMemoizeComputePragmaHandler : public SSTStringMapPragmaHandler
   SSTMemoizeComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
                      SkeletonASTVisitor& visitor) :
    SSTStringMapPragmaHandler("memoize", plist, CI, visitor)
+  {}
+ private:
+  SSTPragma* allocatePragma(const std::map<std::string, std::list<std::string>>& args) const override;
+};
+
+class SSTImplicitStatePragmaHandler : public SSTStringMapPragmaHandler
+{
+ public:
+  SSTImplicitStatePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                     SkeletonASTVisitor& visitor) :
+   SSTStringMapPragmaHandler("implicit_state", plist, CI, visitor)
   {}
  private:
   SSTPragma* allocatePragma(const std::map<std::string, std::list<std::string>>& args) const override;

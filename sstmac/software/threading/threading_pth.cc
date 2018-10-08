@@ -82,14 +82,11 @@ class threading_pth : public thread_context
     }
   }
 
-  void start_context(int physical_thread_id, void *stack, size_t stacksize, void
-                (*func)(void*), void *args, void* globals_storage, void* tls_storage,
-                thread_context* from) override {
+  void start_context(void *stack, size_t stacksize,
+                     void(*func)(void*), void *args, thread_context* from) override {
     if (stacksize < (16384)) {
       sprockit::abort("threading_pth::start_context: PTH does not accept stacks smaller than 16KB");
     }
-    thread_info::register_user_space_virtual_thread(physical_thread_id, stack,
-                                                    globals_storage, tls_storage);
     init_context();
     int retval = pth_uctx_make(context_, (char*) stack, stacksize, NULL, func, args, NULL);
     if (retval != TRUE) {

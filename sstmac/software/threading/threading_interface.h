@@ -80,10 +80,8 @@ class thread_context
    * @param globals_storage
    * @param from
    */
-  virtual void start_context(int physical_thread_id,
-                void *stack, size_t stacksize,
+  virtual void start_context(void *stack, size_t stacksize,
                 void (*func)(void*), void *args,
-                void* globals_storage, void* tls_storage,
                 thread_context* from) = 0;
 
   virtual void resume_context(thread_context* from) = 0;

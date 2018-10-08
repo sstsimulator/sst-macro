@@ -1953,8 +1953,10 @@ SkeletonASTVisitor::checkFunctionPragma(FunctionDecl* fd)
 {
   auto iter = pragmaConfig_.functionPragmas.find(fd->getCanonicalDecl());
   if (iter != pragmaConfig_.functionPragmas.end()){
-    SSTPragma* prg = iter->second;
-    prg->activate(fd, rewriter_, pragmaConfig_);
+    auto& set = iter->second;
+    for (SSTPragma* prg : set){
+      prg->activate(fd, rewriter_, pragmaConfig_);
+    }
   }
 }
 

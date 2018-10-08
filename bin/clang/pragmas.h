@@ -61,7 +61,7 @@ struct PragmaConfig {
   bool makeNoChanges;
   std::map<std::string,SSTReplacePragma*> replacePragmas;
   std::map<clang::Decl*,SSTNullVariablePragma*> nullVariables;
-  std::map<clang::FunctionDecl*,SSTPragma*> functionPragmas;
+  std::map<clang::FunctionDecl*,std::set<SSTPragma*>> functionPragmas;
   std::map<const clang::DeclContext*,SSTNullVariablePragma*> nullSafeFunctions;
   std::set<const clang::DeclRefExpr*> deletedRefs;
   std::set<std::string> newParams;
@@ -103,7 +103,8 @@ struct SSTPragma {
     StartNullDeclarations=21,
     StopNullDeclarations=22,
     Memoize=23,
-    StackAlloc=24
+    StackAlloc=24,
+    ImplicitState=25
   } class_t;
   clang::StringRef name;
   clang::SourceLocation pragmaDirectiveLoc;

@@ -59,14 +59,9 @@ class threading_fcontext : public thread_context
 
   void destroy_context() override {}
 
-  void start_context(int physical_thread_id,
-      void *stack, size_t sz,
+  void start_context(void *stack, size_t sz,
       void (*func)(void*), void *args,
-      void* globals_storage,
-      void* tls_storage,
       thread_context* from) override {
-    thread_info::register_user_space_virtual_thread(physical_thread_id, stack,
-                                                    globals_storage, tls_storage);
     fxn_ = func;
     void* stacktop = (char*) stack + sz;
     ctx_ = make_fcontext(stacktop, sz, start_fcontext_thread);

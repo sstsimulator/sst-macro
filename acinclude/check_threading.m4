@@ -2,22 +2,6 @@
 
 AC_DEFUN([CHECK_THREADING], [
 
-# Find out if we want pthreads as an option
-AH_TEMPLATE([HAVE_PTHREAD], [Define to make pthreads available for threading])
-AC_ARG_WITH(pthread,
-  [AS_HELP_STRING(
-    [--with-pthread],
-    [Control whether or not pthreads is available. Default is yes.]
-    )],
-  [
-    user_with_pthread=yes
-    enable_pthread=$enableval
-  ], [
-    user_with_pthread=no
-    enable_pthread=yes
-  ]
-)
-
 AH_TEMPLATE([HAVE_UCONTEXT], [Define to make ucontext available for threading])
 AC_ARG_WITH(ucontext,
   [AS_HELP_STRING(
@@ -52,62 +36,6 @@ AC_ARG_WITH(pth,
     enable_pth=yes
   ]
 )
-
-if test "X$have_integrated_core" = "Xyes"; then
-  AC_MSG_RESULT([pthread virtual thread interface not compatible with unified core -- disabling])
-  enable_pthread=no
-else
-  if test "$enable_pthread" != no; then
-    AC_LINK_IFELSE(
-      [AC_LANG_PROGRAM(
-        [
-          #include <pthread.h>
-        ],[
-          pthread_create(0,0,0,0);
-          pthread_join(0,0);
-        ])],
-      [
-       AC_MSG_CHECKING([whether pthreads is automatically usable])
-       AC_MSG_RESULT([yes])
-        enable_pthread="yes"
-      ],[
-        AC_MSG_CHECKING([whether pthreads is automatically usable])
-        AC_MSG_RESULT([no])
-        enable_pthread="no"
-        if test "$user_with_pthread" = yes; then
-          AC_MSG_ERROR([pthreads tests failed])
-        fi
-      ])
-
-    if test "$enable_pthread" = no; then
-      LIBSAVE="$LIBS"
-      LIBS="$LIBS -lpthread"
-      AC_LINK_IFELSE(
-        [AC_LANG_PROGRAM(
-          [
-            #include <pthread.h>
-          ],[
-            pthread_create(0,0,0,0);
-            pthread_join(0,0);
-          ])],
-        [
-          AC_MSG_RESULT([yes])
-          enable_pthread="yes"
-        ],[
-          AC_MSG_RESULT([no])
-          enable_pthread="no"
-          LIBS="$LIBSAVE"
-          if test "$user_with_pthread" = yes; then
-            AC_MSG_ERROR([pthreads tests failed])
-          fi
-        ])
-    fi
-
-    if test "$enable_pthread" = yes; then
-      AC_DEFINE(HAVE_PTHREAD)
-    fi
-  fi
-fi
 
 if test "$enable_ucontext" != no; then
   AC_LINK_IFELSE(
