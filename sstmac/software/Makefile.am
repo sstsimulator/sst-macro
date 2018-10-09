@@ -38,7 +38,6 @@ libsstmac_sw_la_SOURCES = \
   threading/context_util.cc \
   threading/stack_alloc_chunk.cc \
   threading/stack_alloc.cc \
-  threading/threading_pthread.cc \
   libraries/library.cc \
   libraries/compute/compute_api.cc \
   libraries/compute/compute_event.cc \

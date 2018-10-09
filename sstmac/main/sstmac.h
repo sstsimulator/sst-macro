@@ -68,6 +68,7 @@ struct opts {
   std::string cpu_affinity;
   std::string benchmark;
   std::string output_graphviz;
+  std::string output_xyz;
   std::string params_dump_file;
 
   opts() :
@@ -134,9 +135,11 @@ void remap_deprecated_params(sprockit::sim_parameters* params);
 
 void remap_params(sprockit::sim_parameters* params, bool verbose = true);
 
-void load_extern_library(const std::string& libname, const std::string& searchPath);
+void* load_extern_library(const std::string& libname, const std::string& searchPath);
 
-void load_extern_library(const std::string& libname);
+void* load_extern_library(const std::string& libname);
+
+void unload_extern_library(void* handle);
 
 std::string load_extern_path_str();
 

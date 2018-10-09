@@ -155,6 +155,48 @@ hypercube::connected_outports(switch_id src, std::vector<connection>& conns) con
   }
 }
 
+topology::vtk_switch_geometry
+hypercube::get_vtk_geometry(switch_id sid) const
+{
+  coordinates coords = switch_coords(sid);
+  int ndims = dimensions_.size();
+  if (ndims > 3 || ndims < 2){
+    spkt_abort_printf("cannot generate xyz coordinates for topologies with ndims=%d - only 2D or 3D torus allowed",
+                      ndims);
+  }
+
+  /**
+   * Each box is size 1x1x1... leave a 0.5 gap between switches
+   */
+  double xCorner = 1.5*coords[0];
+  double yCorner = 1.5*coords[1];
+  double zCorner = 1.5*(ndims > 2 ? coords[2] : 0);
+  double xSize = 1.0;
+  double ySize = 1.0;
+  double zSize = 1.0;
+  double theta = 0.0;
+
+  int num_ports = 0;
+  for (int d=0; d < ndims; ++d){
+    num_ports += dimensions_[d];
+  }
+
+  vtk_face_t dim_to_face[] = { plusXface, plusYface, plusZface };
+
+  std::vector<vtk_face_t> faces(num_ports);
+  for (int d=0; d < ndims; ++d){
+    int port_offset = dim_to_outport_[d];
+    for (int p=0; p < dimensions_[d]; ++p){
+      faces[port_offset+p] = dim_to_face[d];
+    }
+  }
+
+  vtk_switch_geometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,
+                           std::move(faces));
+
+  return geom;
+}
+
 
 
 }

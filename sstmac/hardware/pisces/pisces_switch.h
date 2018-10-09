@@ -66,6 +66,10 @@ class pisces_abstract_switch :
     return buf_stats_;
   }
 
+  router* rter() const override {
+    return router_;
+  }
+
  protected:
   pisces_abstract_switch(
     sprockit::sim_parameters* params,

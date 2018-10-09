@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
 Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -57,6 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
 #include <unordered_map>
+#include <cmath>
 
 DeclareDebugSlot(topology)
 
@@ -71,8 +72,6 @@ class topology : public sprockit::printable
   DeclareFactory(topology)
 
  public:
-  static const int eject;
-
   struct connection {
     switch_id src;
     switch_id dst;
@@ -80,7 +79,231 @@ class topology : public sprockit::printable
     int dst_inport;
   };
 
-  static const int speedy_port = 1000000;
+  typedef enum {
+    plusXface = 0,
+    plusYface = 1,
+    plusZface = 2,
+    minusXface = 3,
+    minusYface = 4,
+    minusZface = 5
+  } vtk_face_t;
+
+  struct injection_port {
+    node_id nid;
+    int port;
+  };
+
+  struct rotation {
+    double x[3];
+    double y[3];
+    double z[3];
+
+    /**
+     * @brief rotation Initialize as a 3D rotation
+     * @param ux  The x component of the rotation axis
+     * @param uy  The y component of the rotation axis
+     * @param uz  The z component of the rotation axis
+     * @param theta The angle of rotation
+     */
+    rotation(double ux, double uy, double uz, double theta){
+      double cosTh = cos(theta);
+      double oneMinCosth = 1.0 - cosTh;
+      double sinTh = sin(theta);
+      x[0] = cosTh + ux*ux*oneMinCosth;
+      x[1] = ux*uy*oneMinCosth - uz*sinTh;
+      x[2] = ux*uz*oneMinCosth + uy*sinTh;
+
+      y[0] = uy*ux*oneMinCosth + uz*sinTh;
+      y[1] = cosTh + uy*uy*oneMinCosth;
+      y[2] = uy*uz*oneMinCosth - ux*sinTh;
+
+      z[0] = uz*ux*oneMinCosth - uy*sinTh;
+      z[1] = uz*uy*oneMinCosth + ux*sinTh;
+      z[2] = cosTh + uz*uz*oneMinCosth;
+    }
+
+    /**
+     * @brief rotation Initialize as a 2D rotation around Z-axis
+     * @param theta The angle of rotation
+     */
+    rotation(double theta){
+      double cosTh = cos(theta);
+      double sinTh = sin(theta);
+      x[0] = cosTh;
+      x[1] = -sinTh;
+      x[2] = 0.0;
+
+      y[0] = sinTh;
+      y[1] = cosTh;
+      y[2] = 0.0;
+
+      z[0] = 0.0;
+      z[1] = 0.0;
+      z[2] = 1.0;
+    }
+
+  };
+
+  struct xyz {
+    double x;
+    double y;
+    double z;
+
+    xyz() : x(0), y(0), z(0) {}
+
+    xyz(double X, double Y, double Z) :
+      x(X), y(Y), z(Z){}
+
+    double& operator[](int dim){
+      switch(dim){
+      case 0: return x;
+      case 1: return y;
+      case 2: return z;
+      }
+      return x;//never reached, keep compiler from warning
+    }
+
+    xyz operator+(const xyz& r) const {
+      return xyz(x+r.x, y+r.y, z+r.z);
+    }
+
+    xyz rotate(const rotation& r) const {
+      xyz ret;
+      ret.x += r.x[0]*x + r.x[1]*y + r.x[2]*z;
+      ret.y += r.y[0]*x + r.y[1]*y + r.y[2]*z;
+      ret.z += r.z[0]*x + r.z[1]*y + r.z[2]*z;
+      return ret;
+    }
+  };
+
+  struct vtk_box_geometry {
+    xyz size;
+    xyz corner;
+    rotation rot;
+
+    xyz vertex(int id) const {
+      switch(id){
+      case 0:
+        return corner.rotate(rot);
+      case 1:
+        return xyz(corner.x,corner.y+size.y,corner.z).rotate(rot);
+      case 2:
+        return xyz(corner.x,corner.y,corner.z+size.z).rotate(rot);
+      case 3:
+        return xyz(corner.x,corner.y+size.y,corner.z+size.z).rotate(rot);
+      case 4:
+        return xyz(corner.x+size.x,corner.y,corner.z).rotate(rot);
+      case 5:
+        return xyz(corner.x+size.x,corner.y+size.y,corner.z).rotate(rot);
+      case 6:
+        return xyz(corner.x+size.x,corner.y,corner.z+size.z).rotate(rot);
+      case 7:
+        return xyz(corner.x+size.x,corner.y+size.y,corner.z+size.z).rotate(rot);
+      }
+      spkt_abort_printf("vertex number should be 0-7: got %d", id);
+      return xyz();
+    }
+
+    vtk_box_geometry(double xLength, double yLength, double zLength,
+                 double xCorner, double yCorner, double zCorner,
+                 double xAxis, double yAxis, double zAxis, double theta) :
+      size(xLength,yLength,zLength),
+      corner(xCorner, yCorner, zCorner),
+      rot(xAxis, yAxis, zAxis, theta) {}
+
+    vtk_box_geometry(double xLength, double yLength, double zLength,
+                 double xCorner, double yCorner, double zCorner,
+                 double theta) :
+      size(xLength,yLength,zLength),
+      corner(xCorner, yCorner, zCorner),
+      rot(theta) {}
+
+    vtk_box_geometry(double xLength, double yLength, double zLength,
+                 double xCorner, double yCorner, double zCorner) :
+      vtk_box_geometry(xLength, yLength, zLength, xCorner, yCorner, zCorner, 0.0)
+   {}
+
+    vtk_box_geometry(double xLength, double yLength, double zLength,
+                     double xCorner, double yCorner, double zCorner,
+                     const rotation& rot) :
+      size(xLength,yLength,zLength),
+      corner(xCorner,yCorner,zCorner),
+      rot(rot)
+    {
+    }
+
+    vtk_box_geometry get_face_geometry(vtk_face_t face, double face_width_fraction) const {
+      switch(face){
+      case plusXface:
+        return vtk_box_geometry(-face_width_fraction*size.x, size.y, size.z,
+              corner.x + size.x, corner.y, corner.z, rot);
+      case plusYface:
+        return vtk_box_geometry(size.x, -face_width_fraction*size.y, size.z,
+                                corner.x, corner.y + size.y, corner.z, rot);
+      case plusZface:
+        return vtk_box_geometry(size.x, size.y, -face_width_fraction*size.z,
+                                corner.x, corner.y, corner.z + size.z, rot);
+      case minusXface:
+        return vtk_box_geometry(face_width_fraction*size.x, size.y, size.z,
+                                corner.x, corner.y, corner.z, rot);
+      case minusYface:
+        return vtk_box_geometry(size.x, face_width_fraction*size.y, size.z,
+                                corner.x, corner.y, corner.z, rot);
+      case minusZface:
+        return vtk_box_geometry(size.x, size.y, face_width_fraction*size.z,
+                                corner.x, corner.y, corner.z, rot);
+      }
+    }
+
+    xyz plus_x_corner() const {
+      xyz loc = corner;
+      loc.x += size.x;
+      return loc;
+    }
+
+    xyz plus_y_corner() const {
+      xyz loc = corner;
+      loc.y += size.y;
+      return loc;
+    }
+
+    xyz plus_z_corner() const {
+      xyz loc = corner;
+      loc.z += size.z;
+      return loc;
+    }
+
+    xyz center() const {
+      double newX = (corner.x + size.x*0.5);
+      double newY = (corner.y + size.y*0.5);
+      double newZ = (corner.z + size.z*0.5);
+      return xyz(newX, newY, newZ).rotate(rot);
+    }
+
+  };
+
+  struct vtk_switch_geometry {
+    vtk_box_geometry box;
+    std::vector<vtk_face_t> port_faces;
+
+    vtk_box_geometry face_on_port(int port, double face_width_fraction) const {
+      vtk_face_t face = port_faces[port];
+      return box.get_face_geometry(face, face_width_fraction);
+    }
+
+
+    vtk_face_t get_face(int port) const {
+      return port_faces[port];
+    }
+
+    vtk_switch_geometry(double xLength, double yLength, double zLength,
+                 double xCorner, double yCorner, double zCorner,
+                 double theta, std::vector<vtk_face_t>&& ports) :
+      port_faces(ports),
+      box(xLength, yLength, zLength,xCorner,yCorner,zCorner,theta)
+    {}
+
+  };
 
  public:
   typedef std::unordered_map<switch_id, connectable*> internal_connectable_map;
@@ -180,6 +403,17 @@ class topology : public sprockit::printable
   virtual bool netlink_id_slot_filled(node_id nid) const = 0;
 
   /**
+   * @brief get_vtk_geometry
+   * @param sid
+   * @return The geometry (box size, rotation, port-face mapping)
+   */
+  virtual vtk_switch_geometry get_vtk_geometry(switch_id sid) const;
+
+  virtual bool is_curved_vtk_link(switch_id sid, int port) const {
+    return false;
+  }
+
+  /**
    * @brief num_endpoints To be distinguished slightly from nodes.
    * Multiple nodes can be grouped together with a netlink.  The netlink
    * is then the network endpoint that injects to the switch topology
@@ -192,6 +426,8 @@ class topology : public sprockit::printable
    * @return
    */
   virtual int max_num_ports() const = 0;
+
+  virtual int max_num_intra_network_ports() const = 0;
 
   /**
      For a given node, determine the injection switch
@@ -243,12 +479,31 @@ class topology : public sprockit::printable
   */
   virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
 
-  void output_graphviz(const std::string& file);
+  /**
+   * @brief output_graphviz
+   * Request to output graphviz. If file is given, output will be written there.
+   * If no file is given, topology will use default path from input file.
+   * If not default was given in input file, nothing will be output
+   * @param file An optional file
+   */
+  void output_graphviz(const std::string& file = "");
 
-  struct injection_port {
-    node_id nid;
-    int port;
-  };
+  /**
+   * @brief output_xyz
+   * Request to output graphviz. If file is given, output will be written there.
+   * If no file is given, topology will use default path from input file.
+   * If not default was given in input file, nothing will be output
+   * @param file An optional file
+   */
+  void output_xyz(const std::string& file = "");
+
+  static void output_box(std::ostream& os,
+                       const topology::vtk_box_geometry& box,
+                       const std::string& color,
+                       const std::string& alpha);
+
+  static void output_box(std::ostream& os,
+                       const topology::vtk_box_geometry& box);
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -329,26 +584,26 @@ class topology : public sprockit::printable
     return main_top_;
   }
 
-  virtual switch_id node_to_injection_switch(node_id nodeaddr, 
+  virtual switch_id node_to_injection_switch(node_id nodeaddr,
    uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return node_to_injection_switch(nodeaddr, ports[0]);
   }
 
-  virtual switch_id node_to_ejection_switch(node_id nodeaddr, 
+  virtual switch_id node_to_ejection_switch(node_id nodeaddr,
    uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return node_to_ejection_switch(nodeaddr, ports[0]);
   }
 
 
-  virtual switch_id netlink_to_injection_switch(node_id nodeaddr, 
+  virtual switch_id netlink_to_injection_switch(node_id nodeaddr,
    uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return netlink_to_injection_switch(nodeaddr, ports[0]);
   }
 
-  virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, 
+  virtual switch_id netlink_to_ejection_switch(node_id nodeaddr,
    uint16_t ports[], int& num_ports) const {
     num_ports = 1;
     return netlink_to_ejection_switch(nodeaddr, ports[0]);
@@ -406,10 +661,17 @@ class topology : public sprockit::printable
  private:
   static topology* static_topology_;
   std::string dot_file_;
-
+  std::string xyz_file_;
 };
 
+static inline std::ostream& operator<<(std::ostream& os, const topology::xyz& v) {
+  os << v.x << "," << v.y << "," << v.z;
+  return os;
+}
+
 }
 }
+
+
 
 #endif

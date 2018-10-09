@@ -70,6 +70,10 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
+static constexpr double box_size   = 1.0;
+static constexpr double box_stride = 1.5;
+static constexpr double row_gap = 4.0;
+
 /*------------------------------------------------------------------------------
   abstract_fat_tree
   ----------------------------------------------------------------------------*/
@@ -90,6 +94,11 @@ abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
 
   num_leaf_switches_ = leaf_switches_per_subtree_ * num_agg_subtrees_;
   num_agg_switches_ = agg_switches_per_subtree_ * num_agg_subtrees_;
+
+  static const double TWO_PI = 6.283185307179586;
+  double circumference_needed = box_stride * 1.1 * num_leaf_switches_; //1.6 factor for spacing, extra room
+  vtk_radius_ = circumference_needed / TWO_PI;
+  vtk_subtree_theta_ = TWO_PI / num_agg_subtrees_;
 }
 
 void
@@ -235,6 +244,82 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
 
   // check for errors
   check_input();
+}
+
+topology::vtk_switch_geometry
+fat_tree::get_vtk_geometry(switch_id sid) const
+{
+
+  int core_row_cutoff = num_leaf_switches_ + num_agg_switches_;
+  int agg_row_cutoff = num_leaf_switches_;
+  int num_in_row = 0;
+  int row = 0;
+  int slot = 0;
+  int subtree = 0;
+  double midpoint = 0;
+  std::vector<vtk_face_t> ports;
+  if (sid >= core_row_cutoff){
+    row = 2;
+    slot = (sid - core_row_cutoff);
+    int ports_per_core_switch = up_ports_per_agg_switch_*num_agg_switches_/num_core_switches_;
+    ports.resize(ports_per_core_switch);
+    for (int p=0; p < ports_per_core_switch; ++p){
+      ports[p] = plusZface;
+    }
+    num_in_row = num_core_switches_;
+    midpoint = double(num_core_switches_) * 0.5;
+  } else if (sid >= agg_row_cutoff){
+    row = 1;
+    int offset = sid - agg_row_cutoff;
+    ports.resize(down_ports_per_agg_switch_ + up_ports_per_agg_switch_);
+    for (int p=0; p < down_ports_per_agg_switch_; ++p){
+      ports[p] = plusYface;
+    }
+    for (int p=0; p < up_ports_per_agg_switch_; ++p){
+      ports[p+down_ports_per_agg_switch_] = minusYface;
+    }
+    subtree = offset / agg_switches_per_subtree_;
+    slot = offset % agg_switches_per_subtree_;
+    num_in_row = num_agg_switches_;
+    midpoint = double(agg_switches_per_subtree_) * 0.5;
+  } else {
+    row = 0;
+    int offset = sid;
+    ports.resize(up_ports_per_leaf_switch_);
+    for (int p=0; p < up_ports_per_leaf_switch_; ++p){
+      ports[p] = minusYface;
+    }
+    subtree = offset / leaf_switches_per_subtree_;
+    slot = offset % leaf_switches_per_subtree_;
+    num_in_row = num_leaf_switches_;
+    midpoint = double(leaf_switches_per_subtree_) * 0.5;
+  }
+
+  double xSize = box_size;
+  double ySize = box_size;
+  double zSize = box_size * 0.25;
+  double xCorner = 0.0;
+  double yCorner = 0.0;
+  double zCorner = 0.0;
+  double theta = 0;
+  double midpoint_delta = slot - midpoint;
+  if (row == 2){
+    //center the core switches around the origin
+    xCorner = midpoint_delta * (box_stride * 2);
+    yCorner = -1;
+    xSize = box_size * 2;
+    ySize = box_size * 2;
+  } else {
+    xCorner = midpoint_delta * box_stride;
+    yCorner = vtk_radius_ + box_size*row_gap*(1-row); //agg switches point into circle
+    theta = subtree * vtk_subtree_theta_;
+  }
+
+  vtk_switch_geometry geom(xSize, ySize, zSize,
+                           xCorner, yCorner, zCorner, theta,
+                           std::move(ports));
+
+  return geom;
 }
 
 void
@@ -413,8 +498,6 @@ fat_tree::configure_nonuniform_switch_params(switch_id src,
 
   top_debug("fat_tree: scaling switch %i by %lf",src,multiplier);
   write_bw_params(switch_params, multiplier);
-
-
 }
 
 void

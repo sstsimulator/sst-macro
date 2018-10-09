@@ -50,6 +50,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/delete.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
+#include <sstmac/hardware/topology/fat_tree.h>
+#include <sstmac/hardware/topology/butterfly.h>
+#include <sstmac/hardware/topology/fully_connected.h>
 
 RegisterDebugSlot(router);
 RegisterDebugSlot(routing);
@@ -81,16 +84,18 @@ router::router(sprockit::sim_parameters* params, topology *top, network_switch *
   rng_ = RNG::MWC::construct(seeds);
 }
 
-switch_id
-router::random_intermediate_switch(switch_id current, switch_id dest, uint32_t seed)
+bool
+router::switch_paths(
+  int orig_distance,
+  int new_distance,
+  int orig_port,
+  int new_port) const
 {
-  switch_id sid = current;
-  uint32_t attempt = 0;
-  while (current == sid) {
-    sid = random_number(top_->num_switches(), attempt, seed);
-    ++attempt;
-  }
-  return sid;
+  int orig_queue_length = netsw_->queue_length(orig_port);
+  int new_queue_length = netsw_->queue_length(new_port);
+  int orig_weight = orig_queue_length * orig_distance;
+  int valiant_weight = new_queue_length * new_distance;
+  return valiant_weight < orig_weight;
 }
 
 uint32_t
@@ -125,6 +130,87 @@ router::find_ejection_site(node_id node_addr, packet::path &path) const
 {
   return top_->node_to_ejection_switch(node_addr, path.outport());
 }
+
+
+class fully_connected_minimal_router : public router {
+ public:
+  FactoryRegister("fully_connected_minimal",
+              router, fully_connected_minimal_router,
+              "router implementing minimal routing for fully connected")
+
+  fully_connected_minimal_router(sprockit::sim_parameters* params, topology *top,
+                         network_switch *netsw)
+    : router(params, top, netsw)
+  {
+    full_ = safe_cast(fully_connected, top);
+  }
+
+  std::string to_string() const override {
+    return "fully connected minimal router";
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
+
+  void route(packet *pkt) override {
+    uint16_t dir;
+    switch_id ej_addr = full_->netlink_to_ejection_switch(pkt->toaddr(), dir);
+    if (ej_addr == my_addr_){
+      pkt->current_path().outport() = dir;
+      pkt->current_path().vc = 0;
+      return;
+    }
+
+    packet::path& path = pkt->current_path();
+    full_->minimal_route_to_switch(my_addr_, ej_addr, path);
+    path.vc = 0;
+  }
+
+ private:
+  fully_connected* full_;
+};
+
+class butterfly_minimal_router : public router {
+ public:
+  struct header : public packet::header {};
+
+  FactoryRegister("butterfly_minimal",
+              router, butterfly_minimal_router,
+              "router implementing minimal routing for fully connected")
+
+  butterfly_minimal_router(sprockit::sim_parameters* params, topology *top,
+                         network_switch *netsw)
+    : router(params, top, netsw)
+  {
+    butt_ = safe_cast(butterfly, top);
+  }
+
+  std::string to_string() const override {
+    return "butterfly minimal router";
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
+
+  void route(packet *pkt) override {
+    uint16_t dir;
+    switch_id ej_addr = butt_->netlink_to_ejection_switch(pkt->toaddr(), dir);
+    if (ej_addr == my_addr_){
+      pkt->current_path().outport() = dir;
+      pkt->current_path().vc = 0;
+      return;
+    }
+
+    packet::path& path = pkt->current_path();
+    butt_->minimal_route_to_switch(my_addr_, ej_addr, path);
+    path.vc = 0;
+  }
+
+ private:
+  butterfly* butt_;
+};
 
 }
 }

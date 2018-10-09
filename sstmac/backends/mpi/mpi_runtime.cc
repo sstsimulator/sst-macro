@@ -123,6 +123,16 @@ mpi_runtime::global_max(int *data, int nelems, int root)
 }
 
 void
+mpi_runtime::global_sum(int* data, int nelems, int root)
+{
+  if (nproc_ == 1)
+    return;
+
+  do_reduce(data, nelems, MPI_INT, MPI_SUM, root);
+}
+
+
+void
 mpi_runtime::global_sum(long long *data, int nelems, int root)
 {
   if (nproc_ == 1)

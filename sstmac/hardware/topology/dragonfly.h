@@ -142,6 +142,10 @@ class dragonfly : public cartesian_topology
     return true;
   }
 
+  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+
+  bool is_curved_vtk_link(switch_id sid, int port) const override;
+
   void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
   void configure_individual_port_params(switch_id src,
@@ -244,6 +248,13 @@ class dragonfly : public cartesian_topology
   int a_;
   int h_;
   int g_;
+
+  double vtk_edge_size_;
+  double vtk_radius_;
+  double vtk_box_length_;
+  double vtk_group_radians_;
+  double vtk_switch_radians_;
+
   inter_group_wiring* group_wiring_;
 
   void setup_port_params(sprockit::sim_parameters* params,

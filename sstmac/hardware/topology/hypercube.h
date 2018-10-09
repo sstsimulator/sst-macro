@@ -88,6 +88,8 @@ class hypercube :
 
   int minimal_distance(switch_id src, switch_id dst) const override;
 
+  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+
  protected:
   int radix_;
   int ndim_;

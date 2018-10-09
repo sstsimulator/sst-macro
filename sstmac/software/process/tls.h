@@ -45,9 +45,38 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_software_process_tls_H
 #define sstmac_software_process_tls_H
 
-#define TLS_THREAD_ID 0
-#define TLS_GLOBAL_MAP sizeof(int)
-#define TLS_TLS_MAP sizeof(int) + sizeof(void*)
-#define TLS_SANITY_CHECK sizeof(int) + sizeof(void*) + sizeof(void*)
+//start at 64 to avoid conflicts with other libs
+#define SSTMAC_TLS_OFFSET 64
+#define SSTMAC_TLS_THREAD_ID SSTMAC_TLS_OFFSET
+#define SSTMAC_TLS_GLOBAL_MAP SSTMAC_TLS_THREAD_ID + sizeof(int)
+#define SSTMAC_TLS_TLS_MAP SSTMAC_TLS_GLOBAL_MAP + sizeof(void*)
+#define SSTMAC_TLS_SANITY_CHECK SSTMAC_TLS_TLS_MAP + sizeof(void*)
+#define SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS SSTMAC_TLS_SANITY_CHECK + sizeof(int)
+#define SSTMAC_TLS_IMPLICIT_STATE SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS + sizeof(int)*8
+#define SSTMAC_TLS_END SSTMAC_TLS_IMPLICIT_STATE + sizeof(int)
+#define SSTMAC_TLS_SIZE (SSTMAC_TLS_END - SSTMAC_TLS_OFFSET)
+
+#ifndef SSTMAC_INLINE
+#ifdef __STRICT_ANSI__
+#define SSTMAC_INLINE
+#else
+#define SSTMAC_INLINE inline
+#endif
+#endif
+
+#ifdef __cplusplus
+#include <cstdint>
+extern "C" int sstmac_global_stacksize;
+#else
+#include <stdint.h>
+extern int sstmac_global_stacksize;
+#endif
+
+
+static SSTMAC_INLINE uintptr_t get_sstmac_tls(){
+  int stack; int* stackPtr = &stack;
+  uintptr_t localStorage = ((uintptr_t) stackPtr/sstmac_global_stacksize)*sstmac_global_stacksize;
+  return localStorage;
+}
 
 #endif

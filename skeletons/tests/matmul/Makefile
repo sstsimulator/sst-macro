@@ -1,13 +1,13 @@
-TARGET := runmultiapp
-SRC := allgather.cc allreduce.cc
+TARGET := runmatmul
+SRC := main.cc
 
 CXX :=    sst++
 CC :=     sstcc
 CXXFLAGS := -fPIC
 CPPFLAGS := -I.
-LIBDIR :=  
-PREFIX := 
-LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
+LIBDIR :=   
+PREFIX :=   
+LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib 
 
 OBJ := $(SRC:.cc=.o) 
 OBJ := $(OBJ:.cpp=.o)
@@ -18,16 +18,16 @@ OBJ := $(OBJ:.c=.o)
 all: $(TARGET)
 
 $(TARGET): $(OBJ) 
-	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS)  $(CXXFLAGS)
+	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS) 
 
 %.o: %.cc 
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	SSTMAC_SKELETONIZE=1 $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 clean: 
-	rm -f $(TARGET) *.o
+	rm -f $(TARGET) $(OBJ) 
 
 install: $(TARGET)
 	cp $< $(PREFIX)/bin

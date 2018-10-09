@@ -56,6 +56,7 @@ RegisterKeywords(
 { "h", "the number inter-group connections per router" },
 { "group_connections", "the number of inter-group connections per router"},
 { "inter_group", "the inter-group wiring scheme"},
+{ "vtk_row_spacing", "the relative spacing of dragonfly+ rows" },
 );
 
 namespace sstmac {
@@ -74,6 +75,8 @@ dragonfly_plus::dragonfly_plus(sprockit::sim_parameters* params) :
   }
 
   num_leaf_switches_ = a_*g_;
+
+  vtk_row_spacing_ = params->get_optional_double_param("vtk_row_spacing", 2.0);
 }
 
 void
@@ -166,9 +169,59 @@ dragonfly_plus::configure_individual_port_params(switch_id src, sprockit::sim_pa
     dragonfly::setup_port_params(switch_params, red_[0], 0, a_);
     dragonfly::setup_port_params(switch_params, red_[1], a_, h_);
   }
-
-
 }
+
+topology::vtk_switch_geometry
+dragonfly_plus::get_vtk_geometry(switch_id sid) const
+{
+  int myRow;
+  int myA;
+  int myG;
+  get_coords(sid, myRow, myA, myG);
+
+  //we need to figure out the radian offset of the group
+  double inter_group_offset = vtk_group_radians_ * myG;
+  double intra_group_start = vtk_switch_radians_ * myA;
+
+  double theta = inter_group_offset + intra_group_start;
+
+  /** With no rotation, these are the corners.
+   * These will get rotated appropriately */
+  double zCorner = 0.0;
+  double yCorner = 0.0;
+  double xCorner = vtk_radius_;
+  if (myRow == 0){
+    //this is the "intra-group" row without group connections
+    //put this in the outer circle
+    xCorner += vtk_row_spacing_ * vtk_box_length_;
+  }
+
+  double xSize = vtk_box_length_;
+  double ySize = 0.25; //this is the face pointing "into" the circle
+  double zSize = 0.25;
+
+  int num_ports = myRow == 0 ? a_ : a_ + h_;
+  std::vector<vtk_face_t> ports(num_ports);
+  if (myRow == 0){
+    for (int a=0; a < a_; ++a){
+      ports[a] = minusXface; //point into the circle at gateway switches
+    }
+  } else {
+    for (int a=0; a < a_; ++a){
+      ports[a] = plusXface; //point out of the circle
+    }
+    for (int h=0; h < h_; ++h){
+      ports[a_ + h] = minusXface; // point into the circle
+    }
+  }
+
+  vtk_switch_geometry geom(xSize, ySize, zSize,
+                           xCorner, yCorner, zCorner, theta,
+                           std::move(ports));
+
+  return geom;
+}
+
 
 }
 } //end of namespace sstmac

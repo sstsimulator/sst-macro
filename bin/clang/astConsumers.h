@@ -53,7 +53,7 @@ class SkeletonASTConsumer : public clang::ASTConsumer {
  public:
   SkeletonASTConsumer(clang::Rewriter &R, SkeletonASTVisitor& r) :
     visitor_(r),
-    firstPass_(r.getPragmas(), R, r.getPragmaConfig())
+    firstPass_(r.getCompilerInstance(), r.getPragmas(), R, r.getPragmaConfig())
   {
     initNullWhitelist();
   }

@@ -72,23 +72,25 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
     spkt_abort_printf("dragonfly topology geometry should have 2 entries: routers per group, num groups");
   }
 
+  static const double TWO_PI = 6.283185307179586;
+  vtk_edge_size_ = params->get_optional_double_param("vtk_edge_size", 0.25);
+
   a_ = dimensions_[0];
   g_ = dimensions_[1];
+
+  //determine radius to make x-dim of switches 0.33
+  //r*2pi = edge*n - edge here is 25% larger than requested edge size
+  vtk_radius_ = (vtk_edge_size_*1.25*a_*g_) / TWO_PI;
+  vtk_box_length_ = 0.2*vtk_radius_;
+
+  vtk_group_radians_ = TWO_PI / g_;
+  vtk_switch_radians_ = vtk_group_radians_ / a_ / 1.5;
 
   if (params->has_param("group_connections")){
     h_ = params->get_int_param("group_connections");
   } else {
     h_ = params->get_int_param("h");
   }
-
-  /** No longer true - JJW 05/18/2018
-    can never have more group connections than groups
-  if (h_ >= g_){
-    cerr0 << sprockit::printf("WARNING: requested %d group connections, "
-                        "but max should be %d for %d groups\n",
-                        h_, g_-1, g_);
-  }
-  */
 
   max_ports_intra_network_ = a_ + h_;
   eject_geometric_id_ = max_ports_intra_network_;
@@ -232,6 +234,64 @@ dragonfly::configure_individual_port_params(switch_id src, sprockit::sim_paramet
 {
   setup_port_params(switch_params, red_[0], 0, a_);
   setup_port_params(switch_params, red_[1], a_, h_);
+}
+
+bool
+dragonfly::is_curved_vtk_link(switch_id sid, int port) const
+{
+  if (port >= a_){
+    return false; //global link - these are straight lines
+  } else {
+    return true; //local link - these need to be curved
+  }
+}
+
+topology::vtk_switch_geometry
+dragonfly::get_vtk_geometry(switch_id sid) const
+{
+  /**
+   * The switches are arranged in circle. The faces
+   * pointing into the circle represent inter-group traffic
+   * while the the faces pointing out of the circle are intra-group traffic.
+   * The "reference" switch starts at [radius, 0, 0]
+   * and has dimensions [1.0,0.25,0.25]
+   * This reference switch is rotated by an angle theta determine by the group number
+   * and the position of the switch within the group. The radius is chosen to be large
+   * enough to fit all switches with an inner size of 2.5
+  */
+
+  int myA = computeA(sid);
+  int myG = computeG(sid);
+
+  //we need to figure out the radian offset of the group
+  double inter_group_offset = myG*vtk_group_radians_;
+  double intra_group_start = myA*vtk_switch_radians_;
+
+  double theta = inter_group_offset + intra_group_start;
+
+  /** With no rotation, these are the corners.
+   * These will get rotated appropriately */
+  double zCorner = 0.0;
+  double yCorner = 0.0;
+  double xCorner = vtk_radius_;
+
+  double xSize = vtk_box_length_;
+  double ySize = 0.25; //this is the face pointing "into" the circle
+  double zSize = 0.25;
+
+  std::vector<vtk_face_t> ports(a_ + h_);
+  for (int a=0; a < a_; ++a){
+    ports[a] = plusXface; //point out of the circle
+  }
+  for (int h=0; h < h_; ++h){
+    ports[a_ + h] = minusXface; // point into the circle
+  }
+
+  vtk_switch_geometry geom(xSize, ySize, zSize,
+                           xCorner, yCorner, zCorner, theta,
+                           std::move(ports));
+
+  return geom;
 }
 
 inter_group_wiring::inter_group_wiring(sprockit::sim_parameters *params, int a, int g, int h) :
@@ -414,6 +474,11 @@ class alltoall_group_wiring : public inter_group_wiring
     inter_group_wiring(params, a, g, h)
   {
     covering_ = h_ / (g_-1);
+    if (covering_ == 0){
+      spkt_abort_printf("Group connections h=%d is not able to provide all-to-all covering for g=%d",
+                        h_, g_);
+    }
+
     stride_ = a_ / covering_;
 
     top_debug("alltoall links cover groups %dx with stride=%d", covering_, stride_);

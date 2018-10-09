@@ -15,13 +15,13 @@ CORETESTS+= \
   test_core_apps_ping_all_null_arb \
   test_core_apps_ping_all_torus_pisces \
   test_core_apps_ping_all_torus_pisces_new \
-  test_core_apps_ping_all_cascade_pisces_ugal \
   test_core_apps_ping_all_torus_pisces_ugal \
   test_core_apps_ping_all_torus_valiant \
   test_core_apps_ping_all_hypercube \
-  test_core_apps_ping_all_cascade \
-  test_core_apps_ping_all_cascade_valiant  
+  test_core_apps_ping_all_cascade 
 
+#  test_core_apps_ping_all_cascade_valiant  
+#  test_core_apps_ping_all_cascade_pisces_ugal \
 #test_core_apps_ping_all_fully_connected \
 #test_core_apps_ping_all_fully_connected_valiant \
 #test_core_apps_ping_all_star \

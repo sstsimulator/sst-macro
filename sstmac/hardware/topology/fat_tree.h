@@ -135,6 +135,8 @@ class abstract_fat_tree :
   int agg_switches_per_subtree_;
   int num_agg_switches_;
   int num_core_switches_;
+  double vtk_radius_;
+  double vtk_subtree_theta_;
 
  private:
   sprockit::sim_parameters*
@@ -215,6 +217,40 @@ class fat_tree :
     return false;
   }
 
+  bool is_curved_vtk_link(switch_id sid, int port) const override {
+    return false;
+  }
+
+  int num_agg_subtrees() const {
+    return num_agg_subtrees_;
+  }
+
+  int num_agg_switches() const {
+    return num_agg_switches_;
+  }
+
+  int agg_switches_per_subtree() const {
+    return agg_switches_per_subtree_;
+  }
+
+  int leaf_switches_per_subtree() const {
+    return leaf_switches_per_subtree_;
+  }
+
+  int up_ports_per_agg_switch() const {
+    return up_ports_per_agg_switch_;
+  }
+
+  int down_ports_per_agg_switch() const {
+    return down_ports_per_agg_switch_;
+  }
+
+  int up_ports_per_leaf_switch() const {
+    return up_ports_per_leaf_switch_;
+  }
+
+  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+
   void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 
   void connected_core_down_ports(sstmac::switch_id, int, std::vector<int>&) const;
@@ -250,6 +286,9 @@ class fat_tree :
   int down_ports_per_agg_switch_;
   int up_ports_per_agg_switch_;
   int down_ports_per_core_switch_;
+
+  double leaf_agg_bw_;
+  double agg_core_bw_;
 
   void check_input() const;
 };

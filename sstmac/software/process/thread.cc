@@ -77,8 +77,8 @@ thread::init_thread(sprockit::sim_parameters* params,
   int physical_thread_id, thread_context* des_thread, void *stack,
   int stacksize, void* globals_storage, void* tls_storage)
 {
-  thread_info::set_thread_id(stack, physical_thread_id);
-
+  thread_info::register_user_space_virtual_thread(physical_thread_id, stack,
+                                                  globals_storage, tls_storage);
   stack_ = stack;
 
   init_id();
@@ -89,10 +89,8 @@ thread::init_thread(sprockit::sim_parameters* params,
 
   tls_storage_ = (char*) tls_storage;
 
-  context_->start_context(physical_thread_id, stack, stacksize,
+  context_->start_context(stack, stacksize,
                           run_routine, this,
-                          globals_storage,
-                          tls_storage,
                           des_thread);
 }
 

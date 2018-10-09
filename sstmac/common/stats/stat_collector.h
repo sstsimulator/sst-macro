@@ -107,6 +107,8 @@ class stat_collector : public sprockit::printable
 
   virtual void clear() = 0;
 
+  virtual void finalize(timestamp t){}
+
   bool registered() const {
     return registered_;
   }

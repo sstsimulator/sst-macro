@@ -93,6 +93,10 @@ class structured_topology : public topology
     return max_ports_injection_ + max_ports_intra_network_;
   }
 
+  int max_num_intra_network_ports() const override {
+    return max_ports_intra_network_;
+  }
+
   bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const override {
     net_id = nid / num_nodes_per_netlink_;
     offset = nid % num_nodes_per_netlink_;

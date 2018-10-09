@@ -92,6 +92,7 @@ class SSTMemoryPragma : public SSTPragma {
 class SSTLoopCountPragma : public SSTPragma {
  public:
   SSTLoopCountPragma(const std::list<clang::Token> &tokens);
+
   const std::string& count() const {
     return loopCount_;
   }
@@ -109,40 +110,101 @@ class SSTLoopCountPragma : public SSTPragma {
   std::string loopCount_;
 };
 
-class SSTOpenMPParallelPragmaHandler : public SSTTokenStreamPragmaHandler
+class SSTMemoizeComputePragma : public SSTPragma
+{
+ public:
+  SSTMemoizeComputePragma(const std::string& token,
+      bool skeletonize, const std::string& model,
+      std::list<std::string>&& inputs,
+      bool givenName) :
+    SSTPragma(Memoize),
+    token_(token),
+    skeletonize_(skeletonize),
+    model_(model),
+    givenName_(givenName),
+    inputs_(std::move(inputs))
+  {}
+
+  bool firstPass(const clang::Decl *d) const override {
+    return true;
+  }
+
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+ private:
+  void doReplace(clang::SourceLocation startInsert, clang::SourceLocation finalInsert, clang::Stmt* stmt,
+                 bool insertStartAfter, bool insertFinalAfter,
+                 clang::Rewriter& r, clang::Expr** callArgs, const clang::ParmVarDecl** callParams);
+
+  std::string token_;
+  std::string model_;
+  bool skeletonize_;
+  std::list<std::string> inputs_;
+  bool givenName_;
+  std::list<int> fxnArgInputs_;
+  std::set<clang::Decl*> written_;
+};
+
+class SSTImplicitStatePragma : public SSTPragma
+{
+ public:
+  SSTImplicitStatePragma(std::list<std::string>&& inputs) :
+    SSTPragma(ImplicitState),
+    inputs_(std::move(inputs))
+  {}
+
+  bool firstPass(const clang::Decl *d) const override {
+    return true;
+  }
+
+  void activate(clang::Stmt *s, clang::Rewriter &r, PragmaConfig &cfg) override;
+  void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
+
+ private:
+  void doReplace(clang::SourceLocation startInsert, clang::SourceLocation finalInsert, clang::Stmt* stmt,
+                 bool insertStartAfter, bool insertFinalAfter,
+                 clang::Rewriter& r, clang::Expr** callArgs, const clang::ParmVarDecl** callParams);
+
+  std::list<int> fxnArgInputs_;
+  std::list<std::string> inputs_;
+  std::set<clang::Decl*> written_;
+};
+
+class SSTOpenMPParallelPragmaHandler : public SSTPragmaHandler
 {
  public:
   SSTOpenMPParallelPragmaHandler(SSTPragmaList& plist,
                          clang::CompilerInstance& CI,
                          SkeletonASTVisitor& visitor) :
-      SSTTokenStreamPragmaHandler("parallel", plist, CI, visitor){}
+      SSTPragmaHandler("parallel", plist, CI, visitor){}
  private:
-  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
+  SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const override;
 };
 
-class SSTLoopCountPragmaHandler : public SSTTokenStreamPragmaHandler
+class SSTLoopCountPragmaHandler : public SSTPragmaHandler
 {
  public:
   SSTLoopCountPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
                         SkeletonASTVisitor& visitor) :
-     SSTTokenStreamPragmaHandler("loop_count", plist, CI, visitor){}
+     SSTPragmaHandler("loop_count", plist, CI, visitor){}
  private:
-  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const {
+  SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const override {
     //this actually just maps cleanly into a compute pragma
     return new SSTLoopCountPragma(tokens);
   }
 };
 
-class SSTMemoryPragmaHandler : public SSTTokenStreamPragmaHandler
+class SSTMemoryPragmaHandler : public SSTPragmaHandler
 {
  public:
   SSTMemoryPragmaHandler(SSTPragmaList& plist,
                         clang::CompilerInstance& CI,
                         SkeletonASTVisitor& visitor) :
-     SSTTokenStreamPragmaHandler("memory", plist, CI, visitor){}
+     SSTPragmaHandler("memory", plist, CI, visitor){}
  private:
-  SSTPragma* allocatePragma(clang::SourceLocation loc, const std::list<clang::Token> &tokens) const;
+  SSTPragma* handleSSTPragma(const std::list<clang::Token> &tokens) const override;
 };
 
 class SSTComputePragmaHandler : public SSTSimplePragmaHandler<SSTComputePragma> {
@@ -159,6 +221,28 @@ class SSTAlwaysComputePragmaHandler : public SSTSimplePragmaHandler<SSTAlwaysCom
                       SkeletonASTVisitor& visitor) :
    SSTSimplePragmaHandler<SSTAlwaysComputePragma>("always_compute", plist, CI, visitor)
   {}
+};
+
+class SSTMemoizeComputePragmaHandler : public SSTStringMapPragmaHandler
+{
+ public:
+  SSTMemoizeComputePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                     SkeletonASTVisitor& visitor) :
+   SSTStringMapPragmaHandler("memoize", plist, CI, visitor)
+  {}
+ private:
+  SSTPragma* allocatePragma(const std::map<std::string, std::list<std::string>>& args) const override;
+};
+
+class SSTImplicitStatePragmaHandler : public SSTStringMapPragmaHandler
+{
+ public:
+  SSTImplicitStatePragmaHandler(SSTPragmaList& plist, clang::CompilerInstance& CI,
+                     SkeletonASTVisitor& visitor) :
+   SSTStringMapPragmaHandler("implicit_state", plist, CI, visitor)
+  {}
+ private:
+  SSTPragma* allocatePragma(const std::map<std::string, std::list<std::string>>& args) const override;
 };
 
 

@@ -9,6 +9,5 @@ fi
 $ltool \
   && (cd sprockit && $ltool ) \
   && (cd sst-dumpi && $ltool ) \
-  && (cd sumi && $ltool ) \
   && autoreconf --force --install
 

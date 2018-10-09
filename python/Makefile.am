@@ -15,6 +15,7 @@ python_includedir=$(includedir)/python
 EXTRA_DIST= \
   jobScheduler.py \
   merlin.py \
+  plotSwitches.py \
   emberMacro.py \
   emberLoadInfo.py \
   emberDefaultParams.py 
