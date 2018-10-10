@@ -244,9 +244,16 @@ event_manager::register_pending()
   pending_slot_ = (pending_slot_+1) % num_pending_slots;
 }
 
+static int nactive_threads = 0;
+static thread_lock active_lock;
+
 void
 event_manager::spin_up(void(*fxn)(void*), void* args)
 {
+  active_lock.lock();
+  ++nactive_threads;
+  active_lock.unlock();
+  
   void* stack = sw::stack_alloc::alloc();
   sstmac::thread_info::register_user_space_virtual_thread(thread_id_, stack, nullptr, nullptr);
   main_thread_ = des_context_->copy();
@@ -263,9 +270,15 @@ event_manager::spin_up(void(*fxn)(void*), void* args)
 void
 event_manager::spin_down()
 {
-  //delete here while we are still on the main thread
-  interconn_->deadlock_check();
-  hw::interconnect::clear_static_interconnect();
+  active_lock.lock();
+  --nactive_threads;
+  if (nactive_threads == 0){
+    //delete here while we are still on a user-space thread
+    //annoying but necessary
+    interconn_->deadlock_check();
+    hw::interconnect::clear_static_interconnect();
+  }
+  active_lock.unlock();
   des_context_->complete_context(main_thread_);
 }
 

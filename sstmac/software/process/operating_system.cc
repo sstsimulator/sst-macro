@@ -379,10 +379,6 @@ operating_system::init_threading(sprockit::sim_parameters* params)
     active_os_.resize(nthread());
   }
   lock.unlock();
-
-  //make sure to stash the thread ID in some thread-local storage
-  void* stack = (void*) get_sstmac_tls();
-  thread_info::set_thread_id(stack, threadId());
 #endif
 
   des_context_ = thread_context::factory::get_optional_param(
