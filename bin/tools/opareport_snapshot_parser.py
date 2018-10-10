@@ -168,7 +168,7 @@ if __name__ == '__main__':
     if args.guid_name_map or args.all:
         out_dict['guid_name_map'] = gen_guid_name_map(xml_root, args.shorten_name)
     if args.guid_lid_map or args.all:
-        out_dict['guid_map'] = gen_node_lid_map(xml_root)
+        out_dict['guid_lid_map'] = gen_node_lid_map(xml_root)
     if args.lid_guid_map or args.all:
         out_dict['lid_guid_map'] = gen_lid_node_map(xml_root)
 
