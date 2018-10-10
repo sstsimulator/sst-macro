@@ -141,8 +141,7 @@ struct null_regression : public operating_system::regression_model
                   const std::string& key)
     : operating_system::regression_model(params, key), computed_(false) {}
 
-  double compute(int n_params, const double params[],
-                 int n_states, const int states[]) override {
+  double compute(int n_params, const double params[], int states[]) override {
     if (!computed_){
       computed_ = true;
       compute_mean();
@@ -150,8 +149,7 @@ struct null_regression : public operating_system::regression_model
     return mean_;
   }
 
-  void collect(double time, int n_params, const double params[],
-               int n_states, const int states[]) override {
+  void collect(double time, int n_params, const double params[], const int states[]) override {
     samples_.push_back(time);
   }
 
@@ -187,8 +185,7 @@ struct linear_regression : public operating_system::regression_model
                     const std::string& key)
     : operating_system::regression_model(params, key), computed_(false) {}
 
-  double compute(int n_params, const double params[],
-                 int n_states, const int states[]) override {
+  double compute(int n_params, const double params[],  int states[]) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
@@ -201,8 +198,7 @@ struct linear_regression : public operating_system::regression_model
     return val;
   }
 
-  void collect(double time, int n_params, const double params[],
-               int n_states, const int states[]) override {
+  void collect(double time, int n_params, const double params[], const int states[]) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
@@ -324,6 +320,10 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
     }
   }
 
+  sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
+  for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
+    env_[iter->first] = iter->second.value;
+  }
 }
 
 void
@@ -582,11 +582,9 @@ operating_system::stop_memoize(const char *token, int n_params, double params[])
   double t_total = stop - memoize_start_;
 
   uintptr_t localStorage = get_sstmac_tls();
-  int* n_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
   int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
 
-  memoize_model_->collect(t_total, n_params, params,
-                          *n_states, states);
+  memoize_model_->collect(t_total, n_params, params, states);
 
   memoize_model_ = nullptr;
   memoize_token_ = "";
@@ -602,9 +600,8 @@ operating_system::compute_memoize(const char *token, int n_params, double params
                       token);
   }
   uintptr_t localStorage = get_sstmac_tls();
-  int* n_states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE_NUM_ENUMS);
   int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  double time = model->compute(n_params, params, *n_states, states);
+  double time = model->compute(n_params, params, states);
   current_os()->compute(timestamp(time));
 }
 

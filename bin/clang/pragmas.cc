@@ -163,6 +163,7 @@ void
 SSTPragmaHandler::configure(Token& PragmaTok, Preprocessor& PP, SSTPragma* fsp)
 {
   switch(fsp->cls){
+    case SSTPragma::ImplicitState:
     case SSTPragma::Memoize:
     case SSTPragma::AlwaysCompute:
     case SSTPragma::GlobalVariable:

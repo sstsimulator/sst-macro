@@ -169,10 +169,13 @@ void sstmac_compute_memoize2(const char* token, double p1, double p2);
 
 void sstmac_stop_memoize(const char* token);
 
-void sstmac_push_implicit_state1(int state0);
-void sstmac_push_implicit_state2(int state0, int state1);
-void sstmac_push_implicit_state3(int state0, int state1, int state2);
-void sstmac_pop_implicit_state(int n_states);
+void sstmac_set_implicit_state1(int type0, int state0);
+void sstmac_set_implicit_state2(int type0, int state0, int type1, int state1);
+void sstmac_set_implicit_state3(int type0, int state0, int type1, int state1,
+                                int type2, int state2);
+void sstmac_unset_implicit_state1(int type0);
+void sstmac_unset_implicit_state2(int type0, int type1);
+void sstmac_unset_implicit_state3(int type0, int type1, int type2);
 
 void* sstmac_alloc_stack(int sz, int md_sz);
 void sstmac_free_stack(void* ptr);

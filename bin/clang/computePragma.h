@@ -149,9 +149,9 @@ class SSTMemoizeComputePragma : public SSTPragma
 class SSTImplicitStatePragma : public SSTPragma
 {
  public:
-  SSTImplicitStatePragma(std::list<std::string>&& inputs) :
+  SSTImplicitStatePragma(std::map<std::string,std::string>&& values) :
     SSTPragma(ImplicitState),
-    inputs_(std::move(inputs))
+    values_(std::move(values))
   {}
 
   bool firstPass(const clang::Decl *d) const override {
@@ -162,12 +162,12 @@ class SSTImplicitStatePragma : public SSTPragma
   void activate(clang::Decl *d, clang::Rewriter &r, PragmaConfig &cfg) override;
 
  private:
-  void doReplace(clang::SourceLocation startInsert, clang::SourceLocation finalInsert, clang::Stmt* stmt,
+  void doReplace(clang::SourceLocation startInsert, clang::SourceLocation finalInsert,
                  bool insertStartAfter, bool insertFinalAfter,
-                 clang::Rewriter& r, clang::Expr** callArgs, const clang::ParmVarDecl** callParams);
+                 clang::Rewriter& r, const std::map<std::string,std::string>& values);
 
-  std::list<int> fxnArgInputs_;
-  std::list<std::string> inputs_;
+  std::map<std::string,int> fxnArgValues_;
+  std::map<std::string,std::string> values_;
   std::set<clang::Decl*> written_;
 };
 

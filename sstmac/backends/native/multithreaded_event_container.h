@@ -112,34 +112,12 @@ class multithreaded_event_container :
 
   std::vector<event_manager*> thread_managers_;
 
-  timestamp min_registry_time() const {
-    if (registry_.empty()){
-      return no_events_left_time;
-    } else {
-      return registry_.begin()->first;
-    }
-  }
-
   void run_work();
 
   std::vector<thread_queue> queues_;
   std::vector<int> cpu_affinity_;
   std::vector<pthread_t> pthreads_;
   std::vector<pthread_attr_t> pthread_attrs_;
-
-  struct event_compare {
-    bool operator()(const std::pair<timestamp,event_scheduler*>& lhs,
-                    const std::pair<timestamp,event_scheduler*>& rhs) const {
-      if (lhs.first == rhs.first){
-        //equal times, break tie
-        return lhs.second->component_id() < rhs.second->component_id();
-      } else {
-        return lhs.first < rhs.first;
-      }
-    }
-  };
-  typedef std::set<std::pair<timestamp, event_manager*>, event_compare> registry_t;
-  registry_t registry_;
 
 };
 

@@ -551,7 +551,7 @@ SSTMAC_pthread_key_create(sstmac_pthread_key_t * key, void
 extern "C" int
 SSTMAC_pthread_key_delete(sstmac_pthread_key_t key)
 {
-  pthread_debug("pthread_key_delete");  
+  pthread_debug("delete key %d on tid=%d", key, current_thread()->tid());
   //this is really a no-op
   return 0;
 }
@@ -559,8 +559,9 @@ SSTMAC_pthread_key_delete(sstmac_pthread_key_t key)
 extern "C" int
 SSTMAC_pthread_setspecific(sstmac_pthread_key_t key, const void * pointer)
 {
-  pthread_debug("pthread_setspecific");  
   thread* current = current_thread();
+  pthread_debug("set key %d to pointer %p on tid=%d",
+                key, pointer, current->tid());
   current->set_tls_value(key, const_cast<void*>(pointer));
   return 0;
 }
@@ -568,16 +569,19 @@ SSTMAC_pthread_setspecific(sstmac_pthread_key_t key, const void * pointer)
 extern "C" void *
 SSTMAC_pthread_getspecific(sstmac_pthread_key_t key)
 {
-  pthread_debug("pthread_getspecific");  
   thread* current = current_thread();
-  if (current == 0){
-    //why the hell are you calling this function?
+  if (current == nullptr){
+    //why are you calling this function?
     //are you in cxa finalize? write better code
     //so I don't have to make SST cover your mistakes
+    pthread_debug("no current thread on key=%d", key);
     return NULL;
   }
 
-  return current->get_tls_value(key);
+  void* ptr = current->get_tls_value(key);
+  pthread_debug("got key %d to pointer %p on tid=%d",
+                key, ptr, current->tid());
+  return ptr;
 }
 
 extern "C" void

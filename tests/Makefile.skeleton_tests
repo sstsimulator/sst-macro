@@ -113,8 +113,14 @@ test_skeleton_memoize.$(CHKSUF): memoize
 	$(PYRUNTEST) 10 $(top_srcdir) $@ 't > 1.8 and t < 2.2' \
     $(SSTMACEXEC) -f $(top_srcdir)/skeletons/tests/memoize/parameters.ini --no-wall-time
 
+test_skeleton_multiapp.$(CHKSUF): multiapp
+	SST_LIB_PATH=skeletons/multiapp \
+    $(PYRUNTEST) 60 $(top_srcdir) $@ Exact \
+    $(SSTMACEXEC) -f $(top_builddir)/tests/skeletons/multiapp/parameters.ini --no-wall-time
+
 test_skeleton_%.$(CHKSUF): % 
-	$(PYRUNTEST) 60 $(top_srcdir) $@ Exact \
+	SST_LIB_PATH=skeletons/$* \
+    $(PYRUNTEST) 60 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) --exe=./skeletons/$*/run$* -f $(top_builddir)/tests/skeletons/$*/parameters.ini --no-wall-time
 
 test_skeleton_CoMD.$(CHKSUF): CoMD pots
