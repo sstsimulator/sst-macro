@@ -38,6 +38,7 @@ CORETESTS+= \
   test_core_apps_ping_pong_amm4 \
   test_core_apps_ping_pong_amm4_slow \
   test_core_apps_mpi_fattree \
+  test_core_apps_ping_all_tree_table \
   test_core_apps_ping_all_simple_fattree \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 \
@@ -49,6 +50,10 @@ test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 6 $(top_srcdir) $@ Exact \
     $(SSTMACEXEC) --no-wall-time -f $(srcdir)/test_configs/test_compute_api.ini 
 
+test_core_apps_ping_all_tree_table.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
+   $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tree_table.ini \
+   -p switch.router.fileroot=$(top_srcdir)/tests/test_configs/rtr_tbl
 
 test_core_apps_ping_all_tiled_cascade.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \

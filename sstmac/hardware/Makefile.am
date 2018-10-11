@@ -179,6 +179,7 @@ libsstmac_hw_la_SOURCES +=  \
   topology/tiled_cascade.cc \
   topology/traffic/traffic.cc \
   router/router.cc \
+  router/table_routing.cc \
   router/fat_tree_router.cc \
   router/cascade_routing.cc \
   router/dragonfly_routing.cc \
