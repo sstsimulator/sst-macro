@@ -185,6 +185,8 @@ CHECK_OTF2()
 
 CHECK_VTK()
 
+CHECK_NLOHMANN_JSON()
+
 CHECK_MPI_TIMELINE_STATS()
 
 CHECK_THREAD_PARALLEL()
@@ -318,6 +320,7 @@ echo "VTK                no"
 else
 echo "VTK                $vtk_version @ $vtk_path"
 fi
+echo "JSON Parsing       $json_enabled"
 
 echo "---------------------------------------------------------------"
 
