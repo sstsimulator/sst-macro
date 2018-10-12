@@ -73,6 +73,15 @@ class hypercube :
     return false;
   }
 
+  int max_num_ports() const override {
+    int sum = 0;
+    for (int size : dimensions_) sum += size;
+    return sum + concentration();
+  }
+
+  void endpoints_connected_to_injection_switch(switch_id swaddr,
+         std::vector<injection_port>& nodes) const override;
+
   bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }

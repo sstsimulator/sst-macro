@@ -382,6 +382,22 @@ sim_parameters::get_optional_vector_param(const std::string &key, std::vector<st
 }
 
 void
+sim_parameters::get_optional_vector_param(const std::string &key, std::vector<int>& vals)
+{
+  if (has_param(key)){
+    get_vector_param(key, vals);
+  }
+}
+
+void
+sim_parameters::get_optional_vector_param(const std::string &key, std::vector<double>& vals)
+{
+  if (has_param(key)){
+    get_vector_param(key, vals);
+  }
+}
+
+void
 sim_parameters::get_vector_param(const std::string& key,
                                  std::vector<std::string>& vals)
 {

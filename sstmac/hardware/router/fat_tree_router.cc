@@ -110,27 +110,26 @@ fat_tree_router::fat_tree_router(
 
 void
 fat_tree_router::route(packet* pkt) {
-
-  int output_port;
   packet::path& path = pkt->current_path();
-  switch_id dst = find_ejection_site(pkt->toaddr(), path);
+  switch_id dst = pkt->toaddr() / ft_->concentration();
 
   // already there
   if (dst == my_addr_){
     path.vc = 0;
+    path.outport() = pkt->toaddr() % ft_->concentration() + ft_->up_ports_per_leaf_switch();
     rter_debug("Ejecting %s from switch %d on port %d",
                pkt->to_string().c_str(), dst, path.outport());
   } else { // have to route
     int dst_tree = ft_->subtree(dst);
     if (my_row_ == 0){ //leat switch - going up
       //definitely have to go up since we didn't eject
-      output_port = get_up_port();
+      int output_port = get_up_port();
       path.set_outport(output_port);
       path.vc = 0;
       rter_debug("fat_tree: routing up to get to s=%d through l=1 from s=%d,l=0",
                 int(dst), int(my_addr_));
     } else if (my_row_ == 2){     // definitely have to go down
-      output_port = get_down_port(dst_tree);
+      int output_port = get_down_port(dst_tree);
       path.set_outport(output_port);
       path.vc = 0;
       rter_debug("fat_tree: routing down to get to s=%d through l=1 from s=%d,l=2",
@@ -139,13 +138,13 @@ fat_tree_router::route(packet* pkt) {
       // in the right tree, going down
       if (dst_tree == my_tree_) {
         int dst_leaf = dst % ft_->leaf_switches_per_subtree();
-        output_port = get_down_port(dst_leaf);
+        int output_port = get_down_port(dst_leaf);
         path.set_outport(output_port);
         path.vc = 0;
         rter_debug("fat_tree: routing down to get to s=%d,l=0 from s=%d,l=1",
                   int(dst), int(my_addr_));
       } else { //nope, have to go to core to hop over to other tree
-        output_port = get_up_port();
+        int output_port = get_up_port();
         path.set_outport(output_port);
         path.vc = 0;
         rter_debug("fat_tree: routing up to get to s=%d through l=2 from s=%d,l=1",
@@ -200,10 +199,9 @@ class fat_tree_minimal_router : public router {
   }
 
   void route(packet* pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = top_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / tree_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      pkt->current_path().outport() = pkt->toaddr() % tree_->concentration() + tree_->up_ports_per_leaf_switch();
       pkt->current_path().vc = 0;
       return;
     }
@@ -242,10 +240,9 @@ class tapered_fat_tree_minimal_router : public router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = top_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / tree_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      pkt->current_path().outport() = pkt->toaddr() % tree_->concentration();
       pkt->current_path().vc = 0;
       return;
     }

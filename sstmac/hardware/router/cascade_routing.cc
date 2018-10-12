@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/router/router.h>
-#include <sstmac/hardware/router/multipath_routing.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/cascade.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
@@ -76,6 +75,7 @@ class cascade_minimal_router : public router {
     my_x_ = cascade_->computeX(my_addr_);
     my_y_ = cascade_->computeY(my_addr_);
     my_g_ = cascade_->computeG(my_addr_);
+    inj_port_offset_ = cascade_->numX() + cascade_->numY() + cascade_->numG();
   }
 
   std::string to_string() const override {
@@ -87,10 +87,9 @@ class cascade_minimal_router : public router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = cascade_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / cascade_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      pkt->current_path().outport() = pkt->toaddr() % cascade_->concentration() + inj_port_offset_;
       pkt->current_path().vc = 0;
       return;
     }
@@ -110,6 +109,7 @@ class cascade_minimal_router : public router {
   int my_y_;
   int my_g_;
   cascade* cascade_;
+  int inj_port_offset_;
 };
 
 /**

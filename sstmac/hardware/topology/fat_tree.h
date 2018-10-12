@@ -94,14 +94,6 @@ class abstract_fat_tree :
     return num_agg_subtrees_;
   }
 
-  void nodes_connected_to_injection_switch(
-      switch_id swaddr,
-      std::vector<injection_port>& nodes) const override;
-
-  void nodes_connected_to_ejection_switch(
-      switch_id swaddr,
-      std::vector<injection_port>& nodes) const override;
-
   void minimal_route_to_switch(
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
@@ -110,9 +102,7 @@ class abstract_fat_tree :
   int minimal_distance(switch_id src, switch_id dest) const override;
 
  protected:
-  abstract_fat_tree(sprockit::sim_parameters* params,
-                    InitMaxPortsIntra i1,
-                    InitGeomEjectID i2);
+  abstract_fat_tree(sprockit::sim_parameters* params);
 
   inline int inj_subtree(const switch_id sid) const {
     return sid / leaf_switches_per_subtree_;
@@ -180,6 +170,12 @@ class fat_tree :
     return 1;
   }
 
+  int max_num_ports() const override {
+    int first_max = std::max(concentration() + up_ports_per_leaf_switch_,
+                             down_ports_per_agg_switch_ + up_ports_per_agg_switch_);
+    return std::max(first_max, down_ports_per_core_switch_);
+  }
+
   int num_up_ports(switch_id sid) const {
     int lvl = level(sid);
     switch (lvl) {
@@ -220,6 +216,10 @@ class fat_tree :
   bool is_curved_vtk_link(switch_id sid, int port) const override {
     return false;
   }
+
+  void endpoints_connected_to_injection_switch(
+      switch_id swaddr,
+      std::vector<injection_port>& nodes) const override;
 
   int num_agg_subtrees() const {
     return num_agg_subtrees_;
@@ -322,6 +322,15 @@ class tapered_fat_tree : public abstract_fat_tree
     } else {
       return 0;
     }
+  }
+
+  void endpoints_connected_to_injection_switch(
+      switch_id swaddr,
+      std::vector<injection_port>& nodes) const override;
+
+  int max_num_ports() const override {
+    int first_max = std::max(concentration() + 1, leaf_switches_per_subtree_ + 1);
+    return std::max(first_max, num_agg_subtrees_);
   }
 
   bool uniform_network_ports() const override {

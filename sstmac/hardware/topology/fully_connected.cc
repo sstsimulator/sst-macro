@@ -50,15 +50,11 @@ namespace sstmac {
 namespace hw {
 
 fully_connected::fully_connected(sprockit::sim_parameters* params) :
-  structured_topology(params,
-                      InitMaxPortsIntra::I_Remembered,
-                      InitGeomEjectID::I_Remembered)
+  structured_topology(params)
 {
   std::vector<int> args;
   params->get_vector_param("geometry", args);
   size_ = args[0];
-  max_ports_intra_network_ = num_switches();
-  eject_geometric_id_ = max_ports_intra_network_;
 }
 
 void
@@ -68,6 +64,19 @@ fully_connected::minimal_route_to_switch(switch_id current_sw_addr,
 {
   path.vc = 0;
   path.set_outport(dest_sw_addr);
+}
+
+void
+fully_connected::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
+{
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = num_switches() + i;
+    port.ep_port = 0;
+  }
 }
 
 void

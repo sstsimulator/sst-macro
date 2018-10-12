@@ -51,7 +51,6 @@ namespace sstmac {
 
 typedef uint32_t switch_id;
 typedef uint32_t node_id;
-typedef uint32_t netlink_id;
 
 
 } // end namespace sstmac

@@ -81,6 +81,9 @@ class cascade : public cartesian_topology
     return "cascade";
   }
 
+  void endpoints_connected_to_injection_switch(switch_id swaddr,
+          std::vector<injection_port>& nodes) const override;
+
   dimension_t dim_for_port(int port){
     if (port >= (x_ + y_)){
       return g_dimension;
@@ -89,6 +92,10 @@ class cascade : public cartesian_topology
     } else {
       return x_dimension;
     }
+  }
+
+  int max_num_ports() const override {
+    return x_ + y_ + g_ + concentration();
   }
 
   bool is_global_port(uint16_t port) const {
@@ -190,8 +197,6 @@ class cascade : public cartesian_topology
 
   switch_id random_intermediate(router* rtr, switch_id current_sw,
                              switch_id dest_sw, uint32_t seed);
-
-  virtual void configure_geometric_paths(std::vector<int> &redundancies);
 
   coordinates switch_coords(switch_id) const override;
 

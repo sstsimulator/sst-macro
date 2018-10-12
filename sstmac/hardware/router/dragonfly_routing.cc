@@ -42,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/router/multipath_routing.h>
+#include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/dragonfly.h>
 #include <sstmac/hardware/topology/dragonfly_plus.h>
@@ -136,14 +136,15 @@ struct dragonfly_minimal_router : public router {
 
   void route(packet *pkt) override
   {
-    uint16_t dir;
-    switch_id ej_addr = dfly_->node_to_ejection_switch(pkt->toaddr(), dir);
-    if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+    switch_id ejaddr = pkt->toaddr() / dfly_->concentration();
+    if (ejaddr == my_addr_){
+      int port = pkt->toaddr() % dfly_->concentration();
+      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
       pkt->current_path().vc = 0;
       return;
     }
-    route_to_switch(pkt, ej_addr);
+
+    route_to_switch(pkt, ejaddr);
   }
 
   void route_to_switch(packet* pkt, switch_id ej_addr)
@@ -292,10 +293,10 @@ class dragonfly_valiant_router : public dragonfly_minimal_router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = dfly_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      int port = pkt->toaddr() % dfly_->concentration();
+      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
       pkt->current_path().vc = 0;
       return;
     }
@@ -422,10 +423,10 @@ class dragonfly_ugal_router : public dragonfly_valiant_router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = dfly_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      int port = pkt->toaddr() % dfly_->concentration();
+      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
       pkt->current_path().vc = 0;
       return;
     }
@@ -519,12 +520,10 @@ class dragonfly_ugalG_router : public dragonfly_ugal_router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    packet::path& path = pkt->current_path();
-
-    switch_id ej_addr = dfly_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      int port = pkt->toaddr() % dfly_->concentration();
+      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
       pkt->current_path().vc = 0;
       return;
     }
@@ -532,7 +531,7 @@ class dragonfly_ugalG_router : public dragonfly_ugal_router {
     int srcGrp = dfly_->computeG(my_addr_);
     int dstGrp = dfly_->computeG(ej_addr);
     int dstA = dfly_->computeA(ej_addr);
-
+    packet::path& path = pkt->current_path();
 
     header* hdr = pkt->get_header<header>();
     rter_debug("handling packet %p at stage %d: %s",
@@ -702,10 +701,10 @@ class dragonfly_par_router : public dragonfly_ugal_router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = dfly_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      int port = pkt->toaddr() % dfly_->concentration();
+      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
       pkt->current_path().vc = 0;
       return;
     }
@@ -742,15 +741,6 @@ class dragonfly_par_router : public dragonfly_ugal_router {
   }
 
 };
-
-class multipath_dragonfly_valiant_router : public multipath_router<dragonfly_valiant_router> {
-  FactoryRegister("dragonfly_valiant_multipath", router, multipath_dragonfly_valiant_router)
- public:
-  multipath_dragonfly_valiant_router(sprockit::sim_parameters* params,
-                                     topology* top, network_switch* netsw) :
-   multipath_router(params,top,netsw){}
-};
-
 
 }
 }

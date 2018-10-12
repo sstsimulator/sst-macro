@@ -64,9 +64,7 @@ namespace hw {
 static const double PI = 3.141592653589793238462;
 
 dragonfly::dragonfly(sprockit::sim_parameters* params) :
-  cartesian_topology(params,
-                     InitMaxPortsIntra::I_Remembered,
-                     InitGeomEjectID::I_Remembered)
+  cartesian_topology(params)
 {
   if (dimensions_.size() != 2){
     spkt_abort_printf("dragonfly topology geometry should have 2 entries: routers per group, num groups");
@@ -92,17 +90,21 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
     h_ = params->get_int_param("h");
   }
 
-  max_ports_intra_network_ = a_ + h_;
-  eject_geometric_id_ = max_ports_intra_network_;
-
   group_wiring_ = inter_group_wiring::factory::get_optional_param("inter_group", "circulant", params, 
     a_, g_, h_);
 }
 
 void
-dragonfly::configure_geometric_paths(std::vector<int> &redundancies)
+dragonfly::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
 {
-  spkt_abort_printf("not implemented: dragonfly::configure geometric paths");
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = a_ + h_ + i;
+    port.ep_port = 0;
+  }
 }
 
 void
@@ -279,12 +281,40 @@ dragonfly::get_vtk_geometry(switch_id sid) const
   double ySize = 0.25; //this is the face pointing "into" the circle
   double zSize = 0.25;
 
-  std::vector<vtk_face_t> ports(a_ + h_);
+  std::vector<vtk_switch_geometry::port_geometry> ports(a_ + h_ + concentration());
+  double port_fraction_a = 1.0 / a_;
+  double port_fraction_h = 1.0 / h_;
+  double port_fraction_c = 1.0 / concentration();
+
   for (int a=0; a < a_; ++a){
-    ports[a] = plusXface; //point out of the circle
+    vtk_switch_geometry::port_geometry& p = ports[a];
+    p.x_offset = 1.0;
+    p.x_size = -0.3;
+    p.y_offset = a * port_fraction_a;
+    p.y_size = port_fraction_a;
+    p.z_offset = 0;
+    p.z_size = 1.0;
   }
+
   for (int h=0; h < h_; ++h){
-    ports[a_ + h] = minusXface; // point into the circle
+    vtk_switch_geometry::port_geometry& p = ports[a_ + h];
+    p.x_offset = 0;
+    p.x_size = 0.3;
+    p.y_offset = h * port_fraction_h;
+    p.y_size = port_fraction_h;
+    p.z_offset = 0;
+    p.z_size = 1.0;
+  }
+
+
+  for (int c=0; c < concentration(); ++c){
+    vtk_switch_geometry::port_geometry& p = ports[a_ + h_ + c];
+    p.x_offset = 0.35;
+    p.x_size = 0.35;
+    p.y_offset = c * port_fraction_c;
+    p.y_size = port_fraction_c;
+    p.z_offset = 0;
+    p.z_size = 1.0;
   }
 
   vtk_switch_geometry geom(xSize, ySize, zSize,

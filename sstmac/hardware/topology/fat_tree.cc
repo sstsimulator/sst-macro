@@ -78,10 +78,8 @@ static constexpr double row_gap = 4.0;
   abstract_fat_tree
   ----------------------------------------------------------------------------*/
 
-abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
-                                     InitMaxPortsIntra i1,
-                                     InitGeomEjectID i2) :
-  structured_topology(params, i1, i2)
+abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params) :
+  structured_topology(params)
 {
   num_core_switches_ =
       params->get_int_param("num_core_switches");
@@ -99,24 +97,6 @@ abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params,
   double circumference_needed = box_stride * 1.1 * num_leaf_switches_; //1.6 factor for spacing, extra room
   vtk_radius_ = circumference_needed / TWO_PI;
   vtk_subtree_theta_ = TWO_PI / num_agg_subtrees_;
-}
-
-void
-abstract_fat_tree::nodes_connected_to_injection_switch(
-    switch_id swaddr, std::vector<injection_port>& nodes) const
-{
-  if (swaddr >= num_leaf_switches_){
-    nodes.resize(0);
-  } else {
-    structured_topology::nodes_connected_to_injection_switch(swaddr, nodes);
-  }
-}
-
-void
-abstract_fat_tree::nodes_connected_to_ejection_switch(
-    switch_id swaddr, std::vector<injection_port>& nodes) const
-{
-  nodes_connected_to_injection_switch(swaddr, nodes);
 }
 
 void
@@ -221,9 +201,7 @@ abstract_fat_tree::write_bw_params(
   ----------------------------------------------------------------------------*/
 
 fat_tree::fat_tree(sprockit::sim_parameters* params) :
-  abstract_fat_tree(params,
-                    InitMaxPortsIntra::I_Remembered,
-                    InitGeomEjectID::I_Remembered)
+  abstract_fat_tree(params)
 {
   up_ports_per_leaf_switch_ =
       params->get_int_param("up_ports_per_leaf_switch");
@@ -237,10 +215,6 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
   int leaf_ports = concentration() + up_ports_per_leaf_switch_;
   int agg_ports = down_ports_per_agg_switch_ +  up_ports_per_agg_switch_;
   int la_ports = std::max(leaf_ports,agg_ports);
-  max_ports_intra_network_ =
-      std::max(la_ports,down_ports_per_core_switch_);
-  // currently assumes port_id == geometric_id (no redundancy)
-  eject_geometric_id_ = max_ports_intra_network_;
 
   // check for errors
   check_input();
@@ -249,7 +223,6 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
 topology::vtk_switch_geometry
 fat_tree::get_vtk_geometry(switch_id sid) const
 {
-
   int core_row_cutoff = num_leaf_switches_ + num_agg_switches_;
   int agg_row_cutoff = num_leaf_switches_;
   int num_in_row = 0;
@@ -257,7 +230,8 @@ fat_tree::get_vtk_geometry(switch_id sid) const
   int slot = 0;
   int subtree = 0;
   double midpoint = 0;
-  std::vector<vtk_face_t> ports;
+  std::vector<vtk_switch_geometry::port_geometry> ports;
+  /**
   if (sid >= core_row_cutoff){
     row = 2;
     slot = (sid - core_row_cutoff);
@@ -294,6 +268,7 @@ fat_tree::get_vtk_geometry(switch_id sid) const
     num_in_row = num_leaf_switches_;
     midpoint = double(leaf_switches_per_subtree_) * 0.5;
   }
+  */
 
   double xSize = box_size;
   double ySize = box_size;
@@ -570,22 +545,32 @@ fat_tree::check_input() const
   }
 }
 
+void
+fat_tree::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
+{
+  if (level(swaddr) > 0){
+    nodes.clear();
+    return;
+  }
+
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = up_ports_per_leaf_switch_ + i;
+    port.ep_port = 0;
+  }
+}
+
 /*------------------------------------------------------------------------------
   tapered_fat_tree
   ----------------------------------------------------------------------------*/
 
 tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
-  abstract_fat_tree(params,
-                    InitMaxPortsIntra::I_Remembered,
-                    InitGeomEjectID::I_Remembered)
+  abstract_fat_tree(params)
 {
   agg_bw_multiplier_ = agg_switches_per_subtree_;
-
-  int max_up_port = std::max(up_port(0), up_port(1));
-  int max_core_port = num_agg_subtrees_;
-  max_ports_intra_network_ = std::max(max_up_port, max_core_port);
-
-  eject_geometric_id_ = max_ports_intra_network_;
 }
 
 void
@@ -703,6 +688,25 @@ tapered_fat_tree::configure_nonuniform_switch_params(switch_id src,
   top_debug("abstract_fat_tree: scaling switch %i by %lf",src,multiplier);
   write_bw_params(switch_params,multiplier);
 }
+
+void
+tapered_fat_tree::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
+{
+  if (level(swaddr) > 0){
+    nodes.clear();
+    return;
+  }
+
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = i;
+    port.ep_port = 0;
+  }
+}
+
 
 void
 tapered_fat_tree::create_partition(

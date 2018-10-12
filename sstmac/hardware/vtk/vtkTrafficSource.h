@@ -56,12 +56,12 @@ public:
   void SetPoints(vtkSmartPointer<vtkPoints> points);
   void SetCells(vtkSmartPointer<vtkCellArray> cells);
 
-  void SetNumObjects(int num_switches, int num_links){
-    link_index_offset_ = num_switches*VTK_NUM_CELLS_PER_SWITCH; //6 faces;
+  void SetNumObjects(int num_switches, int num_links,
+                     std::vector<int>&& switch_cell_offsets){
+    link_index_offset_ = switch_cell_offsets.back();
     num_switches_ = num_switches;
     num_links_ = num_links;
-    std::vector<std::map<int,double>> tmpl{6};
-    face_intensities_.resize(num_switches, tmpl); //resize all vectors to size 6
+    cell_offsets_ = std::move(switch_cell_offsets);
   }
 
   void SetGeometries(std::vector<topology::vtk_switch_geometry>&& vec){
@@ -114,13 +114,12 @@ protected:
   vtkSmartPointer<vtkCellArray> Cells;
   vtkSmartPointer<vtkCellArray> Lines;
   std::vector<int> CellTypes;
+  std::vector<int> cell_offsets_;
   std::vector<topology::vtk_switch_geometry> geoms_;
   int num_switches_;
   int num_links_;
   int link_index_offset_;
   stat_vtk::display_config display_cfg_;
-
-  std::vector<std::vector<std::map<int,double>>> face_intensities_;
 
 
 private:

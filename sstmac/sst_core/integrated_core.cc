@@ -299,7 +299,6 @@ static void* gen_sst_macro_integrated_pymodule(void)
   hw::topology::nproc = nproc*nthread;
 
   PyModule_AddIntConstant(module, "SwitchLogPInjectionPort", 0);
-  PyModule_AddIntConstant(module, "NICMainInjectionPort", hw::nic::Injection);
   PyModule_AddIntConstant(module, "NICLogPInjectionPort", hw::nic::LogP);
 
   sstmac::py_init_system(module);

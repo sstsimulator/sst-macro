@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pisces_packetizer_H
 
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/nic/netlink.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/common/packetizer.h>

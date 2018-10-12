@@ -50,7 +50,6 @@ void test_fully_connected(UnitTest& unit);
 void test_fattree2(UnitTest& unit);
 void test_fattree4(UnitTest& unit);
 void test_fattree_min(UnitTest& unit);
-void test_butterfly(UnitTest& unit);
 void test_fbfly(UnitTest& unit);
 void test_cascade_v1(UnitTest& unit);
 void test_cascade_v2(UnitTest& unit);
@@ -84,8 +83,6 @@ int main(int argc, char** argv)
           test_fattree_min(unit);
       std::cout << "Testing fully_connected...\n";
           test_fully_connected(unit);
-      std::cout << "Testing butterfly...\n";
-          test_butterfly(unit);
       std::cout << "Testing fbfly...\n";
           test_fbfly(unit);
       std::cout << "Testing cascade...\n";

@@ -63,9 +63,7 @@ equals(const std::vector<int>& coords, int x, int y, int z)
 }
 
 torus::torus(sprockit::sim_parameters* params) :
-  cartesian_topology(params,
-                     InitMaxPortsIntra::I_Remembered,
-                     InitGeomEjectID::I_Remembered)
+  cartesian_topology(params)
 {
   num_switches_ = 1;
   diameter_ = 0;
@@ -73,9 +71,21 @@ torus::torus(sprockit::sim_parameters* params) :
     num_switches_ *= dimensions_[i];
     diameter_ += dimensions_[i] / 2;
   }
+}
 
-  max_ports_intra_network_ = 2 * dimensions_.size();
-  eject_geometric_id_ = max_ports_intra_network_;
+void
+torus::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
+{
+  int total_ports = dimensions_.size() * 2;
+
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = total_ports + i;
+    port.ep_port = 0;
+  }
 }
 
 torus::route_type_t
@@ -295,16 +305,18 @@ torus::get_vtk_geometry(switch_id sid) const
   double zSize = 1.0;
   double theta = 0.0;
 
-  std::vector<vtk_face_t> faces(6);
+  std::vector<vtk_switch_geometry::port_geometry> ports(6);
+  /**
   faces[convert_to_port(0,0)] = plusXface;
   faces[convert_to_port(0,1)] = minusXface;
   faces[convert_to_port(1,0)] = plusYface;
   faces[convert_to_port(1,1)] = minusYface;
   faces[convert_to_port(2,0)] = plusZface;
   faces[convert_to_port(2,1)] = minusZface;
+  */
 
   vtk_switch_geometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,
-                           std::move(faces));
+                           std::move(ports));
 
   return geom;
 }

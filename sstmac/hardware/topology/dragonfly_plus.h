@@ -96,6 +96,13 @@ class dragonfly_plus : public dragonfly
     return 3;
   }
 
+  void endpoints_connected_to_injection_switch(switch_id swaddr,
+         std::vector<injection_port>& nodes) const override;
+
+  int max_num_ports() const override {
+    return std::max(a_ + h_, a_ + concentration());
+  }
+
   /**
    * @brief get_coords
    * @param sid

@@ -62,7 +62,6 @@ sculpin_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* switch_params = params->get_optional_namespace("switch");
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
 
 
   nic_params->add_param_override("model", "sculpin");

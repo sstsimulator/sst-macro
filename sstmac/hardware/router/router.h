@@ -122,8 +122,6 @@ class router : public sprockit::printable
  protected:
   router(sprockit::sim_parameters* params, topology* top, network_switch* sw);
 
-  switch_id find_ejection_site(node_id toaddr, packet::path& path) const;
-
  protected:
   switch_id my_addr_;
 

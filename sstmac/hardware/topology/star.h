@@ -71,6 +71,10 @@ class star : public structured_topology
     return 1;
   }
 
+  int max_num_ports() const override {
+    return concentration();
+  }
+
   int num_leaf_switches() const override {
     return 0;
   }
@@ -78,6 +82,9 @@ class star : public structured_topology
   int minimal_distance(switch_id src, switch_id dst) const override {
     return 1;
   }
+
+  void endpoints_connected_to_injection_switch(switch_id swaddr,
+               std::vector<injection_port>& nodes) const override;
 
   bool uniform_network_ports() const override {
     return true;

@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/router/router.h>
-#include <sstmac/hardware/router/multipath_routing.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/torus.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
@@ -73,6 +72,7 @@ class torus_minimal_router : public router {
     : router(params, top, netsw)
   {
     torus_ = safe_cast(torus, top);
+    inj_port_offset_ = 2*torus_->ndimensions();
   }
 
   std::string to_string() const override {
@@ -84,10 +84,9 @@ class torus_minimal_router : public router {
   }
 
   void route(packet* pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = torus_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      pkt->current_path().outport() = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
       pkt->current_path().vc = 0;
       return;
     }
@@ -115,6 +114,7 @@ class torus_minimal_router : public router {
 
  protected:
   torus* torus_;
+  int inj_port_offset_;
 };
 
 class torus_valiant_router : public torus_minimal_router {
@@ -156,10 +156,9 @@ class torus_valiant_router : public torus_minimal_router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = torus_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      pkt->current_path().outport() = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
       pkt->current_path().vc = 0;
       return;
     }
@@ -223,10 +222,9 @@ class torus_ugal_router : public torus_valiant_router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = torus_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
+      pkt->current_path().outport() = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
       pkt->current_path().vc = 0;
       return;
     }
@@ -294,13 +292,6 @@ class torus_ugal_router : public torus_valiant_router {
 
 };
 
-
-class multipath_torus_minimal_router : public multipath_router<torus_minimal_router> {
-  FactoryRegister("torus_minimal_multipath", router, multipath_torus_minimal_router)
- public:
-  multipath_torus_minimal_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw) :
-   multipath_router(params,top,netsw){}
-};
 
 }
 }

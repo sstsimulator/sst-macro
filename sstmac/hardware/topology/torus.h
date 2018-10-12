@@ -88,6 +88,13 @@ class torus :
     return diameter_;
   }
 
+  int max_num_ports() const override {
+    return 2*dimensions_.size() + concentration();
+  }
+
+  void endpoints_connected_to_injection_switch(switch_id swaddr,
+         std::vector<injection_port>& nodes) const override;
+
   /// Returns the vector giving each dimension of the torus.
   const std::vector<int>& dimensions() const {
     return dimensions_;

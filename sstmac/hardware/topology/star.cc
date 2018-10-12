@@ -50,12 +50,8 @@ namespace sstmac {
 namespace hw {
 
 star::star(sprockit::sim_parameters* params) :
-  structured_topology(params,
-                      InitMaxPortsIntra::I_Remembered,
-                      InitGeomEjectID::I_Remembered)
+  structured_topology(params)
 {
-  max_ports_intra_network_ = 0;
-  eject_geometric_id_ = max_ports_intra_network_;
 }
 
 void
@@ -72,6 +68,19 @@ void
 star::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   conns.resize(0);
+}
+
+void
+star::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
+{
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = i;
+    port.ep_port = 0;
+  }
 }
 
 void

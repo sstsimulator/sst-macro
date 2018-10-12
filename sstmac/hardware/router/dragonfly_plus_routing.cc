@@ -124,15 +124,14 @@ class dragonfly_plus_alltoall_minimal_router : public router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = dfly_->node_to_ejection_switch(pkt->toaddr(), dir);
-    packet::path& path = pkt->current_path();
+    switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
-      path.set_outport(dir);
-      path.vc = 0;
+      pkt->current_path().set_outport(pkt->toaddr() % dfly_->concentration() + dfly_->a());
+      pkt->current_path().vc = 0;
       return;
     }
 
+    auto& path = pkt->current_path();
     int dstG = (ej_addr % num_leaf_switches_) / dfly_->a();
     if (my_row_ == 0){
       if (static_route_){
@@ -204,13 +203,12 @@ class dragonfly_plus_par_router : public dragonfly_plus_alltoall_minimal_router 
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = dfly_->node_to_ejection_switch(pkt->toaddr(), dir);
+    switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     packet::path& path = pkt->current_path();
     auto hdr = pkt->get_header<header>();
     if (my_row_ == 0){
       if (ej_addr == my_addr_){
-        pkt->current_path().outport() = dir;
+        pkt->current_path().outport() = pkt->toaddr() % dfly_->concentration() + dfly_->a();
         pkt->current_path().vc = 0;
       } else {
         //gotta route up

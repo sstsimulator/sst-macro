@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_hardware_nic_pisces_nic_H
 
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/nic/netlink.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
 #include <sstmac/hardware/pisces/pisces_packetizer.h>
@@ -115,60 +114,6 @@ class pisces_nic :
 #endif
 };
 
-class pisces_netlink :
-  public netlink
-{
-  FactoryRegister("pisces", netlink, pisces_netlink,
-              "implements a netlink that models messages as a packet flow")
- public:
-  pisces_netlink(sprockit::sim_parameters* params, node* parent);
-
-  virtual ~pisces_netlink();
-
-  std::string
-  to_string() const override {
-    return "packet flow netlink";
-  }
-
-  void handle_credit(event* ev);
-
-  void handle_payload(event* ev);
-
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
-
-  link_handler* payload_handler(int port) const override;
-
-  link_handler* credit_handler(int port) const override;
-
-  virtual void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override;
-
-  virtual void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override;
-
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
-
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
-
- private:
-  static const int really_big_buffer;
-  pisces_crossbar* inj_block_;
-  pisces_crossbar* ej_block_;
-  int tile_rotater_;
-  bool inited_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* payload_handler_;
-  link_handler* ack_handler_;
-#endif
-};
 
 }
 } // end of namespace sstmac

@@ -48,10 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
   namespace hw {
 
-cartesian_topology::cartesian_topology(sprockit::sim_parameters *params,
-                                       InitMaxPortsIntra i1,
-                                       InitGeomEjectID i2) :
-  structured_topology(params, i1, i2)
+cartesian_topology::cartesian_topology(sprockit::sim_parameters *params) :
+  structured_topology(params)
 {
   params->get_vector_param("geometry", dimensions_);
   if (dimensions_.size() == 0) {

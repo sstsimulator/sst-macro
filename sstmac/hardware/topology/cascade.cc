@@ -64,9 +64,7 @@ namespace hw {
 static const double PI = 3.141592653589793238462;
 
 cascade::cascade(sprockit::sim_parameters* params) :
-  cartesian_topology(params,
-                     InitMaxPortsIntra::I_Remembered,
-                     InitGeomEjectID::I_Remembered)
+  cartesian_topology(params)
 {
   x_ = dimensions_[0];
   y_ = dimensions_[1];
@@ -84,28 +82,19 @@ cascade::cascade(sprockit::sim_parameters* params) :
                         group_con_, g_-1, g_);
     group_con_ = g_ - 1;
   }
-
-  max_ports_intra_network_ = x_ + y_ + g_;
-  eject_geometric_id_ = max_ports_intra_network_;
 }
 
 void
-cascade::configure_geometric_paths(std::vector<int> &redundancies)
+cascade::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
 {
-  int npaths = x_ + y_ + group_con_ + netlinks_per_switch_;
-  redundancies.resize(npaths);
-  //do x paths, then y paths, then g paths
-  int path = 0;
-  for (int x=0; x < x_; ++x, ++path){
-    redundancies[path] = red_[x_dimension];
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = x_ + y_ + g_ + i;
+    port.ep_port = 0;
   }
-  for (int y=0; y < y_; ++y, ++path){
-    redundancies[path] = red_[y_dimension];
-  }
-  for (int g=0; g < group_con_; ++g, ++path){
-    redundancies[path] = red_[g_dimension];
-  }
-  configure_injection_geometry(redundancies);
 }
 
 switch_id

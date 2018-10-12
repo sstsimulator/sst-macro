@@ -366,6 +366,7 @@ class operating_system :
   std::unordered_map<std::string, library*> libs_;
   std::unordered_map<library*, int> lib_refcounts_;
   std::map<std::string, std::list<event*>> pending_library_events_;
+  std::map<std::string, std::string> env_;
 
   thread* active_thread_;
 

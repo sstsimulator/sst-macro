@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/nic/nic.h>
-#include <sstmac/hardware/nic/netlink.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/pisces/pisces.h>
@@ -95,7 +94,6 @@ interconnect::static_interconnect()
 #if !SSTMAC_INTEGRATED_SST_CORE
 interconnect::~interconnect()
 {
-  sprockit::delete_vector(netlinks_);
   sprockit::delete_vector(nodes_);
   sprockit::delete_vector(logp_switches_);
   sprockit::delete_vector(switches_);
@@ -126,9 +124,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
   sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  sprockit::sim_parameters* nlink_inj_params = netlink_params->get_optional_namespace("injection");
-  sprockit::sim_parameters* nlink_ej_params = netlink_params->get_optional_namespace("ejection");
 
   topology* top = topology_;
 
@@ -137,7 +132,6 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
   switches_.resize(top->max_switch_id());
   nodes_.resize(top->max_node_id());
-  netlinks_.resize(top->max_netlink_id());
 
   sprockit::sim_parameters logp_params;
   if (logp_model){
@@ -157,18 +151,14 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
 
   interconn_debug("Interconnect building endpoints");
-  build_endpoints(node_params, nic_params,netlink_params, mgr);
+  build_endpoints(node_params, nic_params, mgr);
   if (!logp_model){
     interconn_debug("Interconnect building switches");
     build_switches(switch_params, mgr);
     interconn_debug("Interconnect connecting switches");
     connect_switches(mgr, switch_params);
     interconn_debug("Interconnect connecting endpoints");
-    if (netlinks_.empty()){
-      connect_endpoints(mgr, inj_params, inj_params, ej_params);
-    } else {
-      connect_endpoints(mgr, nlink_inj_params, nlink_ej_params, ej_params);
-    }
+    connect_endpoints(mgr, inj_params, inj_params, ej_params);
     configure_interconnect_lookahead(params);
   } else {
     //lookahead is actually higher
@@ -228,8 +218,7 @@ interconnect::node_to_logp_switch(node_id nid) const
 #if SSTMAC_INTEGRATED_SST_CORE
   return topology_->node_to_logp_switch(nid);
 #else
-  uint16_t ignore;
-  switch_id real_sw_id = topology_->node_to_injection_switch(nid, ignore);
+  switch_id real_sw_id = topology_->endpoint_to_switch(nid);
   int target_rank = partition_->lpid_for_switch(real_sw_id);
   return target_rank;
 #endif
@@ -257,75 +246,49 @@ interconnect::connect_endpoints(event_manager* mgr,
                                 sprockit::sim_parameters* sw_ej_params)
 {
   int num_nodes = topology_->num_nodes();
+  int num_switches = topology_->num_switches();
   int me = rt_->me();
-  for (int nodeaddr=0; nodeaddr < num_nodes; ++nodeaddr){
-    node_id netlink_id;
-    int netlink_offset;
-    connectable* ep = nullptr;
-    switch_id injaddr;
-    switch_id ejaddr;
-    int ep_id;
-    //map to topology-specific port
-    int num_inj_ports;
-    uint16_t inj_ports[32];
-    int num_ej_ports;
-    uint16_t ej_ports[32];
-    bool has_netlink = topology_->node_to_netlink(nodeaddr, netlink_id, netlink_offset);
-    if (has_netlink) {
-      if (netlink_offset == 0){
-        injaddr = topology_->netlink_to_injection_switch(netlink_id, inj_ports, num_inj_ports);
-        ejaddr = topology_->netlink_to_injection_switch(netlink_id, ej_ports, num_ej_ports);
-        ep_id = netlink_id;
-      } else {
-        continue; //no connection required
-      }
-    } else {
-      injaddr = topology_->node_to_injection_switch(nodeaddr, inj_ports, num_inj_ports);
-      ejaddr = topology_->node_to_injection_switch(nodeaddr, ej_ports, num_ej_ports);
-      ep_id = nodeaddr;
-    }
-
+  std::vector<topology::injection_port> ports;
+  for (int i=0; i < num_switches; ++i){
     //parallel - I don't own this
-    int target_rank = partition_->lpid_for_switch(injaddr);
+    int target_rank = partition_->lpid_for_switch(i);
     if (target_rank != me) continue;
 
-    event_scheduler* parent_node = nodes_[nodeaddr];
-    if (has_netlink){
-      ep = netlinks_[netlink_id];
-    }	else {
-      ep = nodes_[nodeaddr]->get_nic();
-    }
+    network_switch* injsw = switches_[i];
+    network_switch* ejsw = switches_[i];
 
-    // connect endpoints to switches
-    network_switch* injsw = switches_[injaddr];
-    for (int i=0; i < num_inj_ports; ++i){
-      int injector_port = i;
-      int switch_port = inj_ports[i];
+
+    topology_->endpoints_connected_to_injection_switch(i, ports);
+    for (topology::injection_port& p : ports){
+      node* ep = nodes_[p.nid];
+
       interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
-          int(injaddr), injsw, ep_id, ep, switch_port, injector_port);
-      auto credit_link = allocate_local_link(injsw, parent_node, ep->credit_handler(injector_port),
+          i, injsw, p.nid, ep, p.switch_port, p.ep_port);
+
+      auto credit_link = allocate_local_link(injsw, ep, ep->credit_handler(p.ep_port),
                                              injsw->credit_latency(sw_ej_params));
-      injsw->connect_input(sw_ej_params, injector_port, switch_port, credit_link);
-      auto payload_link = allocate_local_link(parent_node, injsw, injsw->payload_handler(switch_port),
+      injsw->connect_input(sw_ej_params, p.ep_port, p.switch_port, credit_link);
+      auto payload_link = allocate_local_link(ep, injsw, injsw->payload_handler(p.switch_port),
                                               ep->send_latency(ep_inj_params));
-      ep->connect_output(ep_inj_params, injector_port, switch_port, payload_link);
+      ep->connect_output(ep_inj_params, p.ep_port, p.switch_port, payload_link);
     }
 
-    // connect switches to endpoints
-    network_switch* ejsw = switches_[ejaddr];
-    for (int i=0; i < num_ej_ports; ++i){
-      int ejector_port = i;
-      int switch_port = ej_ports[i];
+    topology_->endpoints_connected_to_ejection_switch(i, ports);
+    for (topology::injection_port& p : ports){
+      node* ep = nodes_[p.nid];
+
       interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
-          int(ejaddr), ejsw, ep_id, ep, switch_port, ejector_port);
-      auto payload_link = allocate_local_link(ejsw, parent_node, ep->payload_handler(ejector_port),
+          int(i), ejsw, p.nid, ep, p.switch_port, p.ep_port);
+
+      auto payload_link = allocate_local_link(ejsw, ep, ep->payload_handler(p.ep_port),
                                               ejsw->send_latency(sw_ej_params));
-      ejsw->connect_output(sw_ej_params, switch_port, ejector_port, payload_link);
-      auto credit_link = allocate_local_link(parent_node, ejsw, ejsw->credit_handler(switch_port),
+      ejsw->connect_output(sw_ej_params, p.switch_port, p.ep_port, payload_link);
+      auto credit_link = allocate_local_link(ep, ejsw, ejsw->credit_handler(p.switch_port),
                                              ep->credit_latency(ep_ej_params));
-      ep->connect_input(ep_ej_params, switch_port, ejector_port, credit_link);
+      ep->connect_input(ep_ej_params, p.switch_port, p.ep_port, credit_link);
     }
   }
+
 }
 
 void
@@ -342,13 +305,8 @@ interconnect::setup()
 void
 interconnect::build_endpoints(sprockit::sim_parameters* node_params,
                   sprockit::sim_parameters* nic_params,
-                  sprockit::sim_parameters* netlink_params,
                   event_manager* mgr)
 {
-  sprockit::sim_parameters* nlink_ej_params =
-      netlink_params->get_optional_namespace("ejection");
-  sprockit::sim_parameters* nlink_inj_params =
-      netlink_params->get_optional_namespace("injection");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
 
   int my_rank = rt_->me();
@@ -358,17 +316,13 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
     int thread = partition_->thread_for_switch(i);
     int target_rank = partition_->lpid_for_switch(sid);
     std::vector<topology::injection_port> nodes;
-    topology_->nodes_connected_to_injection_switch(sid, nodes);
+    topology_->endpoints_connected_to_injection_switch(sid, nodes);
     interconn_debug("switch %d maps to target rank %d", i, target_rank);
 
     for (int n=0; n < nodes.size(); ++n){
       node_id nid = nodes[n].nid;
-      if (!topology_->node_id_slot_filled(nid))
-        continue;
-
       auto local_logp_switch = logp_switches_[thread];
 
-      int port = nodes[n].port;
       if (my_rank == target_rank){
         //local node - actually build it
         node_params->add_param_override("id", int(nid));
@@ -389,48 +343,6 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
           event_link* out_link = allocate_local_link(nullptr, nd, nd->payload_handler(nic::LogP),
                                                      local_logp_switch->send_latency(nullptr));
           logp_switches_[i]->connect_output(nid, out_link);
-        }
-
-
-        netlink_id net_id;
-        int netlink_offset;
-        bool has_netlink = topology_->node_to_netlink(nid, net_id, netlink_offset);
-        if (has_netlink){
-          netlink_params->add_param_override("id", int(net_id));
-          netlink* nlink = netlinks_[net_id];
-          if (!nlink){
-            nlink = netlink::factory::get_param("model", netlink_params, nd);
-            netlinks_[net_id] = nlink;
-          }
-          netlink_params->remove_param("id");
-          int inj_port = nlink->node_port(netlink_offset);
-          interconn_debug("Adding netlink %d connected to switch %d, node %d on port %d for rank %d",
-            int(net_id), i, nid, inj_port, my_rank);
-
-          // connect nic to netlink
-
-          auto link = allocate_local_link(nd, nd, the_nic->credit_handler(nic::Injection),
-                                          nlink->credit_latency(nlink_inj_params));
-          nlink->connect_input(nlink_ej_params,
-                               nic::Injection, inj_port,
-                               link);
-          link = allocate_local_link(nd, nd, nlink->payload_handler(inj_port),
-                                     the_nic->send_latency(inj_params));
-          the_nic->connect_output(inj_params,
-                           nic::Injection, inj_port,
-                           link);
-
-          // connect netlink to nic
-          link = allocate_local_link(nd, nd, the_nic->payload_handler(nic::Injection),
-                                     nlink->send_latency(nlink_ej_params));
-          nlink->connect_output(nlink_ej_params,
-                        inj_port, nic::Injection,
-                        link);
-          link = allocate_local_link(nd, nd, nlink->credit_handler(inj_port),
-                                     the_nic->credit_latency(inj_params));
-          the_nic->connect_input(inj_params,
-                           inj_port, nic::Injection,
-                           link);
         }
       } else {
         for (int i=0; i < rt_->nthread(); ++i){
@@ -456,9 +368,6 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
   switch_id num_switch_ids = topology_->max_switch_id();
   int id_offset = topology_->num_nodes();
   for (switch_id i=0; i < num_switch_ids; ++i){
-    if (!topology_->switch_id_slot_filled(i))
-      continue; //don't build
-
     switch_params->add_param_override("id", int(i));
     if (partition_->lpid_for_switch(i) == my_rank){
       if (!all_switches_same)
@@ -568,9 +477,6 @@ interconnect::deadlock_check()
   for (network_switch* netsw : switches_){
     if (netsw)
       netsw->deadlock_check();
-  }
-  for (netlink* nlink : netlinks_){
-    if (nlink) nlink->deadlock_check();
   }
   for (node* nd: nodes_){
     if (nd) nd->deadlock_check();

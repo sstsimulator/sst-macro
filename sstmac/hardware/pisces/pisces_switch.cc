@@ -91,7 +91,7 @@ pisces_abstract_switch::pisces_abstract_switch(
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> conns;
-  top_->nodes_connected_to_ejection_switch(my_addr_, conns);
+  top_->endpoints_connected_to_ejection_switch(my_addr_, conns);
   if (!ej_params->has_param("credits")){
     //never be limited by credits
     ej_params->add_param_override("credits", "1GB");
@@ -100,7 +100,7 @@ pisces_abstract_switch::pisces_abstract_switch(
   pisces_sender::configure_payload_port_latency(ej_params);
 
   for (topology::injection_port& conn : conns){
-    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.port);
+    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
     ej_params->combine_into(port_params);
   }
 
