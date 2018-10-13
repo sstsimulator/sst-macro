@@ -124,9 +124,10 @@ pisces_switch::pisces_switch(
 {
   sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
   xbar_params->add_param_override("num_vc", router_->num_vc());
-  xbar_ = new pisces_crossbar(xbar_params, this);
+  xbar_ = new pisces_crossbar(xbar_params, this,
+                              top_->max_num_ports(), top_->max_num_ports(),
+                              router_->num_vc(), true/*yes, update vc*/);
   xbar_->set_stat_collector(xbar_stats_);
-  xbar_->configure_ports(top_->max_num_ports(), top_->max_num_ports());
   init_links(params);
   out_buffers_.resize(top_->max_num_ports());
   inports_.resize(top_->max_num_ports());
@@ -155,8 +156,7 @@ pisces_switch::connect_output(
   int dst_inport,
   event_link* link)
 {
-  port_params->add_param_override("num_vc", router_->num_vc());
-  pisces_network_buffer* out_buffer = new pisces_network_buffer(port_params, this);
+  pisces_buffer* out_buffer = new pisces_buffer(port_params, this, router_->num_vc());
   out_buffer->set_output(port_params, src_outport, dst_inport, link);
   out_buffer->set_stat_collector(buf_stats_);
 
@@ -177,7 +177,7 @@ pisces_switch::input_port::handle(event *ev)
   parent->rter()->route(payload);
   hdr->inport = this->port;
   hdr->stage = 0;
-  hdr->outports[0] = payload->outport();
+  hdr->outports[0] = payload->edge_outport();
   hdr->outports[1] = 0; //buffer
   parent->xbar()->handle_payload(payload);
 }

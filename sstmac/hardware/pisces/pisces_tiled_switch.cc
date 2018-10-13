@@ -112,13 +112,10 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
     return;
 
   sprockit::sim_parameters* demuxer_params = params->get_namespace("input");
-  demuxer_params->add_param_override("num_vc", router_->num_vc());
 
   sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
-  xbar_params->add_param_override("num_vc", router_->num_vc());
 
   sprockit::sim_parameters* muxer_params = params->get_namespace("link");
-  muxer_params->add_param_override("num_vc", router_->num_vc());
 
   int ntiles = nrows_ * ncols_;
   dst_inports_.resize(ntiles);
@@ -129,22 +126,20 @@ pisces_tiled_switch::init_components(sprockit::sim_parameters* params)
   for (int r=0; r < nrows_; ++r){
     for (int c=0; c < ncols_; ++c){
       int tile = row_col_to_tile(r, c);
-      pisces_demuxer* dm = new pisces_demuxer(demuxer_params, this);
-      dm->configure_ports(1, ncols_);
-      dm->set_update_vc(false);
+      pisces_demuxer* dm = new pisces_demuxer(demuxer_params, this, ncols_,
+                                              router_->num_vc(), false/*no vc update*/);
       row_input_demuxers_[tile] = dm;
 
       // divide by num columns to get row for output muxer
-      pisces_crossbar* xbar = new pisces_crossbar(xbar_params, this);
-      xbar->configure_ports(ncols_, ncols_);
-      xbar->set_update_vc(false);
+      pisces_crossbar* xbar = new pisces_crossbar(xbar_params, this, ncols_, ncols_,
+                                                  router_->num_vc(), true/*yes vc update*/);
       xbar->set_stat_collector(xbar_stats_);
 
       // packet leaves the switch from the muxer
       // credits will arrive back at muxer with global port ids,
       // need to map these to local ports as well as payloads
-      pisces_muxer* muxer = new pisces_muxer(muxer_params, this);
-      muxer->configure_ports(ncols_, 1);
+      pisces_muxer* muxer = new pisces_muxer(muxer_params, this, ncols_,
+                                             router_->num_vc(), false/*no vc update*/);
 
       col_output_muxers_[tile] = muxer;
       xbar_tiles_[tile] = xbar;
@@ -258,7 +253,7 @@ pisces_tiled_switch::handle_payload(event *ev)
   //now figure out the new port I am routing to
   router_->route(payload);
 
-  int edge_port = payload->outport();
+  int edge_port = payload->edge_outport();
   int dst_inport = dst_inports_[edge_port];
   //hdr->arrival_port = dst_inport;
   hdr->stage = 0;
@@ -268,7 +263,7 @@ pisces_tiled_switch::handle_payload(event *ev)
   debug_printf(sprockit::dbg::pisces,
                "tiled switch %d: routed payload %s to port %d, vc %d = %d,%d",
                int(my_addr_), payload->to_string().c_str(),
-               payload->outport(), payload->next_vc(),
+               payload->edge_outport(), payload->next_vc(),
                get_row(edge_port), get_col(edge_port));
   demuxer->handle_payload(payload);
 }

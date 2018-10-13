@@ -63,12 +63,12 @@ namespace sstmac {
 namespace hw {
 
 pisces_packetizer::pisces_packetizer(sprockit::sim_parameters* params,
-                                     event_component* parent) :
+                                     event_component* parent, int num_vc) :
  inj_buffer_(nullptr),
  ej_buffer_(nullptr),
  inj_stats_(nullptr),
  ej_stats_(nullptr),
- packetizer(params, parent)
+ packetizer(params, parent, num_vc)
 {
   init(params, parent);
 }
@@ -77,7 +77,7 @@ void
 pisces_packetizer::init(sprockit::sim_parameters* params, event_component* parent)
 {
   pisces_sender::configure_payload_port_latency(params);
-  inj_buffer_ = new pisces_injection_buffer(params, parent);
+  inj_buffer_ = new pisces_buffer(params, parent, 1/*single vc for inj*/);
   inj_stats_ = packet_stats_callback::factory::
                 get_optional_param("stats", "null", params, parent);
   inj_buffer_->set_stat_collector(inj_stats_);
@@ -87,12 +87,10 @@ pisces_packetizer::init(sprockit::sim_parameters* params, event_component* paren
   ej_params->add_param_override("send_latency", "0ns");
   ej_params->add_param_override("credit_latency", params->get_param("send_latency"));
   ej_params->add_param_override("credits", 1<<30);
-  ej_buffer_ = new pisces_eject_buffer(ej_params, parent);
+  event_handler* handler = new_handler(this, &pisces_packetizer::recv_packet);
+  ej_buffer_ = new pisces_endpoint(ej_params, parent, handler);
   ej_stats_ = packet_stats_callback::factory::
                         get_optional_param("stats", "null", ej_params, parent);
-
-  event_handler* handler = new_handler(this, &pisces_packetizer::recv_packet);
-  ej_buffer_->set_output_handler(handler);
 }
 
 pisces_packetizer::~pisces_packetizer()
@@ -116,23 +114,13 @@ pisces_packetizer::setup()
 link_handler*
 pisces_packetizer::new_credit_handler() const
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &pisces_packetizer::recv_credit);
-#else
-  return new_handler(const_cast<pisces_packetizer*>(this),
-                         &pisces_packetizer::recv_credit);
-#endif
 }
 
 link_handler*
 pisces_packetizer::new_payload_handler() const
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &pisces_packetizer::recv_packet);
-#else
-  return new_handler(const_cast<pisces_packetizer*>(this),
-                           &pisces_packetizer::recv_packet);
-#endif
+  return new_link_handler(ej_buffer_, &pisces_endpoint::handle_payload);
 }
 
 void
@@ -155,11 +143,23 @@ pisces_packetizer::deadlock_check(event* ev)
 {
 }
 
+std::string
+pisces_packetizer::to_string() const
+{
+  return "injection" + topology::global()->label(component_id());
+}
+
 bool
 pisces_packetizer::spaceToSend(int vn, int num_bits)
 {
   //convert back to bytes
-  return inj_buffer_->space_to_send(num_bits/8);
+  return inj_buffer_->space_to_send(vn, num_bits/8);
+}
+
+uint32_t
+pisces_packetizer::spaceAvailable(int vn) const
+{
+  return inj_buffer_->num_credit(vn);
 }
 
 void
@@ -173,12 +173,6 @@ pisces_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message*
   inj_buffer_->handle_payload(payload);
 }
 
-void
-pisces_packetizer::recv_packet_common(pisces_payload* pkt)
-{
-  ej_buffer_->return_credit(pkt);
-  ej_stats_->collect_final_event(pkt);
-}
 
 void
 pisces_packetizer::set_output(sprockit::sim_parameters* params,
@@ -199,7 +193,7 @@ void
 pisces_simple_packetizer::recv_packet(event* ev)
 {
   pisces_payload* pkt = static_cast<pisces_payload*>(ev);
-  recv_packet_common(pkt);
+  ej_stats_->collect_final_event(pkt);
   int vn = 0;
   packetArrived(vn, pkt);
 }
@@ -209,7 +203,7 @@ pisces_cut_through_packetizer::recv_packet(event* ev)
 {
   pisces_payload* pkt = static_cast<pisces_payload*>(ev);
   int vn = 0;
-  recv_packet_common(pkt);
+  ej_stats_->collect_final_event(pkt);
   timestamp delay(pkt->num_bytes() / pkt->bw());
   debug_printf(sprockit::dbg::pisces,
     "packet %s scheduled to arrive at packetizer after delay of t=%12.6es",

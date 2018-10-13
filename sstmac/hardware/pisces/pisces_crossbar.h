@@ -69,13 +69,13 @@ class pisces_NtoM_queue :
   virtual ~pisces_NtoM_queue();
 
   pisces_NtoM_queue(sprockit::sim_parameters* params,
-                         event_scheduler* parent);
+                   event_scheduler* parent,
+                   int num_in_ports, int num_out_ports, int num_vc,
+                   bool update_vc);
 
   void handle_payload(event* ev) override;
 
   void handle_credit(event* ev) override;
-
-  void handle_credits(int port, int vc, int num_credits);
 
   event_handler* credit_handler();
 
@@ -97,42 +97,26 @@ class pisces_NtoM_queue :
 
   void deadlock_check(event* ev) override;
 
-  void configure_ports(int inports, int outports) {
-    inputs_.resize(inports);
-    resize_outports(outports);
-  }
-
  protected:
-  typedef std::vector<input> input_map;
-  typedef std::vector<output> output_map;
-  typedef std::vector<int> credit_map;
-  typedef std::vector<payload_queue> queue_map;
-
   pisces_bandwidth_arbitrator* arb_;
 
-  input_map inputs_;
-  output_map outputs_;
+  std::vector<input> inputs_;
+  std::vector<output> outputs_;
   //indexed by slot number = (port,vc)
-  credit_map credits_;
+  std::vector<int> credits_;
   //indexed by slot number = (port,vc)
-  queue_map queues_;
+  std::vector<payload_queue> queues_;
 #if SSTMAC_SANITY_CHECK
-  credit_map initial_credits_;
+  std::vector<int> initial_credits_;
 #endif
 
   int num_vc_;
-  int port_offset_;
-  int port_div_;
-  int port_mod_;
-
   event_handler* credit_handler_;
   event_handler* payload_handler_;
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
   std::map<int, std::map<int, std::list<pisces_payload*> > > blocked_messages_;
-
-  std::string tile_id_;
 
  protected:
   void send_payload(pisces_payload* pkt);
@@ -163,7 +147,9 @@ class pisces_demuxer :
 {
  public:
   pisces_demuxer(sprockit::sim_parameters* params,
-                      event_scheduler* parent);
+                 event_scheduler* parent,
+                 int num_out_ports, int num_vc,
+                 bool update_vc);
 
   std::string pisces_name() const override {
     return "demuxer";
@@ -177,7 +163,9 @@ class pisces_muxer :
 {
  public:
   pisces_muxer(sprockit::sim_parameters* params,
-                    event_scheduler* parent);
+               event_scheduler* parent,
+               int num_in_ports, int num_vc,
+               bool update_vc);
 
   std::string pisces_name() const override {
     return "muxer";
@@ -189,7 +177,9 @@ class pisces_crossbar :
 {
  public:
   pisces_crossbar(sprockit::sim_parameters* params,
-                       event_scheduler* parent);
+                  event_scheduler* parent,
+                  int num_in_ports, int num_out_ports, int num_vc,
+                  bool update_vc);
 
   std::string pisces_name() const override {
     return "crossbar";

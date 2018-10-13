@@ -92,8 +92,8 @@ hypercube::minimal_route_to_switch(
     int srcX = (src / div) % dimensions_[i];
     int dstX = (dst / div) % dimensions_[i];
     if (srcX != dstX){
-      hdr->vc = 0;
-      hdr->port = convert_to_port(i, dstX);
+      hdr->deadlock_vc = 0;
+      hdr->edge_port = convert_to_port(i, dstX);
       return;
     }
     div *= dimensions_[i];

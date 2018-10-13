@@ -151,7 +151,7 @@ class pisces_switch :
     void handle(event* ev);
 
     std::string to_string() const {
-      return parent->to_string();
+      return parent->xbar()->to_string();
     }
   };
 

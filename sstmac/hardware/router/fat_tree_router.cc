@@ -115,34 +115,34 @@ fat_tree_router::route(packet* pkt) {
 
   // already there
   if (dst == my_addr_){
-    hdr->vc = 0;
-    hdr->port = pkt->toaddr() % ft_->concentration() + ft_->up_ports_per_leaf_switch();
+    hdr->deadlock_vc = 0;
+    hdr->edge_port = pkt->toaddr() % ft_->concentration() + ft_->up_ports_per_leaf_switch();
     rter_debug("Ejecting %s from switch %d on port %d",
-               pkt->to_string().c_str(), dst, int(hdr->port));
+               pkt->to_string().c_str(), dst, int(hdr->edge_port));
   } else { // have to route
     int dst_tree = ft_->subtree(dst);
     if (my_row_ == 0){ //leat switch - going up
       //definitely have to go up since we didn't eject
-      hdr->port = get_up_port();
-      hdr->vc = 0;
+      hdr->edge_port = get_up_port();
+      hdr->deadlock_vc = 0;
       rter_debug("fat_tree: routing up to get to s=%d through l=1 from s=%d,l=0",
                 int(dst), int(my_addr_));
     } else if (my_row_ == 2){     // definitely have to go down
-      hdr->port = get_down_port(dst_tree);
-      hdr->vc = 0;
+      hdr->edge_port = get_down_port(dst_tree);
+      hdr->deadlock_vc = 0;
       rter_debug("fat_tree: routing down to get to s=%d through l=1 from s=%d,l=2",
                 int(dst), int(my_addr_));
     } else if (my_row_ == 1){ // aggregator level, can go either way
       // in the right tree, going down
       if (dst_tree == my_tree_) {
         int dst_leaf = dst % ft_->leaf_switches_per_subtree();
-        hdr->port = get_down_port(dst_leaf);
-        hdr->vc = 0;
+        hdr->edge_port = get_down_port(dst_leaf);
+        hdr->deadlock_vc = 0;
         rter_debug("fat_tree: routing down to get to s=%d,l=0 from s=%d,l=1",
                   int(dst), int(my_addr_));
       } else { //nope, have to go to core to hop over to other tree
-        hdr->port = get_up_port();
-        hdr->vc = 0;
+        hdr->edge_port = get_up_port();
+        hdr->deadlock_vc = 0;
         rter_debug("fat_tree: routing up to get to s=%d through l=2 from s=%d,l=1",
                   int(dst), int(my_addr_));
       }
@@ -150,7 +150,7 @@ fat_tree_router::route(packet* pkt) {
         spkt_abort_printf("Got bad level=%d on switch %d", my_row_, my_addr_);
     }
     rter_debug("Routing %s to switch %d on port %d",
-               pkt->to_string().c_str(), int(dst), int(hdr->port));
+               pkt->to_string().c_str(), int(dst), int(hdr->edge_port));
   }
 }
 
@@ -200,32 +200,32 @@ class tapered_fat_tree_minimal_router : public router {
     int dst_level = tree_->level(dst);
     //question is whether I go up or down
     if (dst_level >= src_level){ //definitely have to go up
-      hdr->port = tree_->up_port(src_level);
-      hdr->vc = 0;
+      hdr->edge_port = tree_->up_port(src_level);
+      hdr->deadlock_vc = 0;
       top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
                 int(dst), dst_level,
                 int(my_addr_), src_level);
     } else if (src_level == 2){
       //definitely have to go down
       int dst_subtree = dst_level == 0 ? tree_->inj_subtree(dst) : tree_->agg_subtree(my_addr_);
-      hdr->port = tree_->down_port(dst_subtree);
-      hdr->vc = 0;
+      hdr->edge_port = tree_->down_port(dst_subtree);
+      hdr->deadlock_vc = 0;
       top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d",
-                int(dst), dst_level, int(my_addr_), src_level, int(hdr->port));
+                int(dst), dst_level, int(my_addr_), src_level, int(hdr->edge_port));
     } else if (src_level == 1){
       //going to level 0, but may have to go up or down to get there
       int my_tree = tree_->agg_subtree(my_addr_);
       int dst_tree = tree_->inj_subtree(dst);
       if (dst_tree == my_tree){
         //okay, great, I should have direct link
-        hdr->port = dst % tree_->leaf_switches_per_subtree();
-        hdr->vc = 0;
+        hdr->edge_port = dst % tree_->leaf_switches_per_subtree();
+        hdr->deadlock_vc = 0;
         top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d within tree %d",
-                  int(dst), dst_level, int(my_addr_), src_level, int(hdr->port), my_tree);
+                  int(dst), dst_level, int(my_addr_), src_level, int(hdr->edge_port), my_tree);
       } else {
         //nope, have to go to core to hope over to other tree
-        hdr->port = tree_->up_port(src_level);
-        hdr->vc = 0;
+        hdr->edge_port = tree_->up_port(src_level);
+        hdr->deadlock_vc = 0;
         top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d hopping from tree %d to tree %d",
                         int(dst), dst_level, int(my_addr_), src_level, my_tree, dst_tree);
       }
@@ -236,8 +236,8 @@ class tapered_fat_tree_minimal_router : public router {
     auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / tree_->concentration();
     if (ej_addr == my_addr_){
-      hdr->port = pkt->toaddr() % tree_->concentration();
-      hdr->vc = 0;
+      hdr->edge_port = pkt->toaddr() % tree_->concentration();
+      hdr->deadlock_vc = 0;
       return;
     }
 

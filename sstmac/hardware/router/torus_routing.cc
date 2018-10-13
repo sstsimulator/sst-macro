@@ -88,15 +88,15 @@ class torus_minimal_router : public router {
     auto& dimensions_ = torus_->dimensions();
     if ((srcX + 1) % dimensions_[dim] == dstX){
       //move onto next dimension
-      hdr->vc = 0;
+      hdr->deadlock_vc = 0;
       hdr->crossed_timeline = 0;
     } else if (srcX == (dimensions_[dim]-1)){
       hdr->crossed_timeline = 1;
-      hdr->vc = 1;
+      hdr->deadlock_vc = 1;
     } else {
-      hdr->vc = hdr->crossed_timeline ? 1 : 0;
+      hdr->deadlock_vc = hdr->crossed_timeline ? 1 : 0;
     }
-    hdr->port = torus_->convert_to_port(dim, torus::pos);
+    hdr->edge_port = torus_->convert_to_port(dim, torus::pos);
   }
 
   void down_path( int dim, int src, int dst, header* hdr) const
@@ -104,15 +104,15 @@ class torus_minimal_router : public router {
     auto& dimensions_ = torus_->dimensions();
     if (src == ((dst + 1) % dimensions_[dim])){
       //move onto next dimension
-      hdr->vc = 0;
+      hdr->deadlock_vc = 0;
       hdr->crossed_timeline = 0;
     } else if (src == 0){
       hdr->crossed_timeline = 1;
-      hdr->vc = 1;
+      hdr->deadlock_vc = 1;
     } else {
-      hdr->vc = hdr->crossed_timeline ? 1 : 0;
+      hdr->deadlock_vc = hdr->crossed_timeline ? 1 : 0;
     }
-    hdr->port = torus_->convert_to_port(dim, torus::neg);
+    hdr->edge_port = torus_->convert_to_port(dim, torus::neg);
   }
 
   void minimal_route(switch_id dst, header* hdr){
@@ -126,12 +126,12 @@ class torus_minimal_router : public router {
       if (srcX != dstX){
         if (torus_->shortest_path_positive(i, srcX, dstX)){
           top_debug("torus routing up on dim %d for switch %d to %d on port %d",
-                    i, src, dst, int(hdr->port));
+                    i, src, dst, int(hdr->edge_port));
           up_path(i, srcX, dstX, hdr);
           return;
         } else {
           top_debug("torus routing down on dim %d for switch %d to %d on port %d",
-                    i, src, dst, int(hdr->port));
+                    i, src, dst, int(hdr->edge_port));
           down_path(i, srcX, dstX, hdr);
           return;
         }
@@ -145,8 +145,8 @@ class torus_minimal_router : public router {
     auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      hdr->port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
-      hdr->vc = 0;
+      hdr->edge_port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
+      hdr->deadlock_vc = 0;
       return;
     }
 
@@ -201,8 +201,8 @@ class torus_valiant_router : public torus_minimal_router {
     auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      hdr->port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
-      hdr->vc = 0;
+      hdr->edge_port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
+      hdr->deadlock_vc = 0;
       return;
     }
 
@@ -215,7 +215,7 @@ class torus_valiant_router : public torus_minimal_router {
         hdr->stage_number = valiant_stage;
         rter_debug("chose intermediate %d for pkt %s on %d:%d",
                    inter, pkt->to_string().c_str(),
-                   int(hdr->port), int(hdr->vc));
+                   int(hdr->edge_port), int(hdr->deadlock_vc));
         break;
       }
       case valiant_stage: {
@@ -226,7 +226,7 @@ class torus_valiant_router : public torus_minimal_router {
         } else {
           rter_debug("route to intermediate %d for pkt %s on %d:%d",
                      int(hdr->dest_switch), pkt->to_string().c_str(),
-                     int(hdr->port), int(hdr->vc));
+                     int(hdr->edge_port), int(hdr->deadlock_vc));
           minimal_route(hdr->dest_switch, hdr);
           break;
         }
@@ -234,10 +234,10 @@ class torus_valiant_router : public torus_minimal_router {
       case final_stage: {
         minimal_route(ej_addr, hdr);
         hdr->dest_switch = ej_addr;
-        hdr->vc += 2; //final stage vc moves
+        hdr->deadlock_vc += 2; //final stage vc moves
         rter_debug("route to final %d for pkt %s on %d:%d",
                    int(hdr->dest_switch), pkt->to_string().c_str(),
-                   int(hdr->port), int(hdr->vc));
+                   int(hdr->edge_port), int(hdr->deadlock_vc));
         break;
       }
       break;
@@ -269,8 +269,8 @@ class torus_ugal_router : public torus_valiant_router {
     auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      hdr->port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
-      hdr->vc = 0;
+      hdr->edge_port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
+      hdr->deadlock_vc = 0;
       return;
     }
 
@@ -283,20 +283,20 @@ class torus_ugal_router : public torus_valiant_router {
         int ugal_dist = torus_->minimal_distance(my_addr_, inter) +
                         torus_->minimal_distance(inter, ej_addr);
 
-        int ugal_metric = netsw_->queue_length(ugal.port) * ugal_dist;
-        int min_metric = netsw_->queue_length(min.port) * min_dist;
+        int ugal_metric = netsw_->queue_length(ugal.edge_port) * ugal_dist;
+        int min_metric = netsw_->queue_length(min.edge_port) * min_dist;
 
         if (ugal_metric < min_metric){
           hdr->dest_switch = inter;
           hdr->stage_number = valiant_stage;
           rter_debug("chose intermediate %d for pkt %s on %d:%d",
                      inter, pkt->to_string().c_str(),
-                     int(hdr->port), int(hdr->vc));
+                     int(hdr->edge_port), int(hdr->deadlock_vc));
         } else {
           hdr->dest_switch = ej_addr;
           hdr->stage_number = minimal_only_stage;
           rter_debug("chose minimal %d for pkt %s on %d:%d",
-                     ej_addr, pkt->to_string().c_str(), int(hdr->port), int(hdr->vc));
+                     ej_addr, pkt->to_string().c_str(), int(hdr->edge_port), int(hdr->deadlock_vc));
         }
         minimal_route(hdr->dest_switch, hdr);
         break;
@@ -309,7 +309,7 @@ class torus_ugal_router : public torus_valiant_router {
         } else {
           rter_debug("route to intermediate %d for pkt %s on %d:%d",
                      int(hdr->dest_switch), pkt->to_string().c_str(),
-                     int(hdr->port), int(hdr->vc));
+                     int(hdr->edge_port), int(hdr->deadlock_vc));
           minimal_route(hdr->dest_switch, hdr);
           break;
         }
@@ -317,16 +317,16 @@ class torus_ugal_router : public torus_valiant_router {
       case final_stage: {
         minimal_route(ej_addr, hdr);
         hdr->dest_switch = ej_addr;
-        hdr->vc += 2; //final stage vc moves
+        hdr->deadlock_vc += 2; //final stage vc moves
         rter_debug("route to final %d for pkt %s on %d:%d",
                    int(hdr->dest_switch), pkt->to_string().c_str(),
-                   int(hdr->port), int(hdr->vc));
+                   int(hdr->edge_port), int(hdr->deadlock_vc));
         break;
       }
       case minimal_only_stage: {
         rter_debug("route to minimal %d for pkt %s on %d:%d",
                    int(hdr->dest_switch), pkt->to_string().c_str(),
-                   int(hdr->port), int(hdr->vc));
+                   int(hdr->edge_port), int(hdr->deadlock_vc));
         minimal_route(ej_addr, hdr);
         break;
       }

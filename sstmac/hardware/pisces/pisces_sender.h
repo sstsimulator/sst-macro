@@ -127,10 +127,6 @@ class pisces_sender :
 
   std::string to_string() const override;
 
-  void set_update_vc(bool flag){
-    update_vc_ = flag;
-  }
-
   timestamp send_latency() const {
     return send_lat_;
   }
@@ -141,7 +137,8 @@ class pisces_sender :
 
  protected:
   pisces_sender(sprockit::sim_parameters* params,
-                event_scheduler* parent);
+                event_scheduler* parent,
+                bool update_vc);
 
   void send_credit(input& inp, pisces_payload* payload,
           timestamp packet_tail_leaves);

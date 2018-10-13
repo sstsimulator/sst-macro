@@ -125,7 +125,7 @@ class pisces_payload :
   }
 
   int next_vc() const {
-    return rtr_header<packet::header>()->vc;
+    return rtr_header<packet::header>()->deadlock_vc;
   }
 
   void update_vc() {

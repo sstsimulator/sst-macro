@@ -39,13 +39,13 @@ class hypercube_minimal_router : public router {
     auto* hdr = pkt->rtr_header<packet::header>();
     switch_id ej_addr = pkt->toaddr() / cube_->concentration();
     if (ej_addr == my_addr_){
-      hdr->port = pkt->toaddr() % cube_->concentration() + inj_offset_;
-      hdr->vc = 0;
+      hdr->edge_port = pkt->toaddr() % cube_->concentration() + inj_offset_;
+      hdr->deadlock_vc = 0;
       return;
     }
 
     cube_->minimal_route_to_switch(my_addr_, ej_addr, hdr);
-    hdr->vc = 0;
+    hdr->deadlock_vc = 0;
   }
 
  protected:
@@ -136,9 +136,9 @@ class hypercube_par_router : public hypercube_minimal_router {
       hdr->dstZ = coords[2];
       hdr->ejPort = pkt->toaddr() % cube_->concentration() + inj_offset_;
       hdr->stage_number = minimal_stage;
-      hdr->vc = 0;
+      hdr->deadlock_vc = 0;
       if (ej_addr == my_addr_){
-        hdr->port = hdr->ejPort;
+        hdr->edge_port = hdr->ejPort;
         return;
       }
     }
@@ -162,17 +162,17 @@ class hypercube_par_router : public hypercube_minimal_router {
          valiantPort = coords[2] + x_ + y_;
        } else {
           //oh - um - eject
-         hdr->port = hdr->ejPort;
-         hdr->vc = 0;
+         hdr->edge_port = hdr->ejPort;
+         hdr->deadlock_vc = 0;
          return;
        }
       int minLength = netsw_->queue_length(minimalPort);
       int valLength = netsw_->queue_length(valiantPort) * 2;
       if (minLength <= valLength){
-        hdr->port = minimalPort;
+        hdr->edge_port = minimalPort;
       } else {
         switch_id inter = cube_->switch_addr(coords);
-        hdr->port = valiantPort;
+        hdr->edge_port = valiantPort;
         hdr->dest_switch = inter;
         hdr->stage_number = valiant_stage;
       }
@@ -182,11 +182,11 @@ class hypercube_par_router : public hypercube_minimal_router {
       if (my_addr_ != hdr->dest_switch){
         auto coords = cube_->switch_coords(hdr->dest_switch);
         if (coords[0] != myX_){
-          hdr->port = coords[0];
+          hdr->edge_port = coords[0];
         } else if (coords[1] != myY_){
-          hdr->port = coords[1]+x_;
+          hdr->edge_port = coords[1]+x_;
         } else {
-          hdr->port = coords[2]+x_+y_;
+          hdr->edge_port = coords[2]+x_+y_;
         }
         break;
       }
@@ -203,15 +203,15 @@ class hypercube_par_router : public hypercube_minimal_router {
         port = hdr->dstZ+x_+y_;
       } else {
         //oh - um - eject
-       hdr->port = hdr->ejPort;
-       hdr->vc = 0;
+       hdr->edge_port = hdr->ejPort;
+       hdr->deadlock_vc = 0;
        return;
       }
-      hdr->port = port;
+      hdr->edge_port = port;
     }
     }
 
-    hdr->vc = hdr->nhops;
+    hdr->deadlock_vc = hdr->nhops;
     hdr->nhops++;
   }
 

@@ -63,11 +63,9 @@ class packet :
 
  public:
   struct header {
-    char is_tail : 1;
-    uint16_t port;
-    uint8_t row : 4;
-    uint8_t col : 4;
-    uint8_t vc : 4;
+    char is_tail : 1; //whether this is the last packet in a flow
+    uint16_t edge_port; //the outport number on the edge (not an internal port)
+    uint8_t deadlock_vc : 4; //the vc needed for routing deadlock without QoS
   };
 
   serializable* orig() const {
@@ -122,24 +120,24 @@ class packet :
     fromaddr_ = from;
   }
 
-  int vc() const {
+  int deadlock_vc() const {
     auto hdr = rtr_header<header>();
-    return hdr->vc;
+    return hdr->deadlock_vc;
   }
 
-  void set_outport(const int port) {
+  void set_edge_outport(const int port) {
     auto hdr = rtr_header<header>();
-    hdr->port = port;
+    hdr->edge_port = port;
   }
 
-  void set_vc(const int vc) {
+  void set_deadlock_vc(const int vc) {
     auto hdr = rtr_header<header>();
-    hdr->vc = vc;
+    hdr->deadlock_vc = vc;
   }
 
-  int outport() const {
+  int edge_outport() const {
     auto hdr = rtr_header<header>();
-    return hdr->port;
+    return hdr->edge_port;
   }
 
   virtual void serialize_order(serializer& ser) override;

@@ -63,7 +63,7 @@ class pisces_packetizer :
 {
  public:
   pisces_packetizer(sprockit::sim_parameters* params,
-                    event_component* parent);
+                    event_component* parent, int num_vc);
 
   virtual ~pisces_packetizer();
 
@@ -72,6 +72,8 @@ class pisces_packetizer :
   void setup() override;
 
   bool spaceToSend(int vn, int num_bits) override;
+
+  uint32_t spaceAvailable(int vn) const override;
 
   void inject(int vn, uint32_t bytes, uint64_t byte_offset, message *payload) override;
 
@@ -82,6 +84,8 @@ class pisces_packetizer :
             int port, event_link* input);
 
   void recv_credit(event* credit);
+
+  std::string to_string() const override;
 
   /**
    * @brief recv_packet Receive new packet arriving from network.
@@ -98,15 +102,12 @@ class pisces_packetizer :
 
   void deadlock_check(event* ev) override;
 
- protected:
-  void recv_packet_common(pisces_payload* pkt);
-
  private:
   void init(sprockit::sim_parameters* params, event_component* parent);
 
  protected:
-  pisces_injection_buffer* inj_buffer_;
-  pisces_eject_buffer* ej_buffer_;
+  pisces_buffer* inj_buffer_;
+  pisces_endpoint* ej_buffer_;
 
   recv_cq completion_queue_;
 
@@ -126,8 +127,8 @@ class pisces_cut_through_packetizer : public pisces_packetizer
   FactoryRegister("cut_through | null", packetizer, pisces_cut_through_packetizer)
  public:
   pisces_cut_through_packetizer(sprockit::sim_parameters* params,
-                                event_component* parent) :
-    pisces_packetizer(params, parent)
+                                event_component* parent, int num_vc) :
+    pisces_packetizer(params, parent, num_vc)
   {
   }
 
@@ -137,10 +138,6 @@ class pisces_cut_through_packetizer : public pisces_packetizer
    * @param pkt
    */
   void recv_packet(event* pkt) override;
-
-  std::string to_string() const override {
-    return "cut through packetizer";
-  }
 
 };
 
@@ -152,13 +149,9 @@ class pisces_simple_packetizer : public pisces_packetizer
   FactoryRegister("simple", packetizer, pisces_simple_packetizer)
  public:
   pisces_simple_packetizer(sprockit::sim_parameters* params,
-                           event_component* parent) :
-    pisces_packetizer(params, parent)
+                           event_component* parent, int num_vc) :
+    pisces_packetizer(params, parent, num_vc)
   {
-  }
-
-  std::string to_string() const override {
-    return "simple packetizer";
   }
 
   /**

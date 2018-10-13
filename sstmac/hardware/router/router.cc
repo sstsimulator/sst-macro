@@ -93,6 +93,9 @@ router::switch_paths(
   int new_queue_length = netsw_->queue_length(new_port);
   int orig_weight = orig_queue_length * orig_distance;
   int valiant_weight = new_queue_length * new_distance;
+  rter_debug("comparing minimal(%d) %d=%dx%d against non-minimal(%d) %d=%dx%d",
+             orig_port, orig_weight, orig_queue_length, orig_distance,
+             new_port, valiant_weight, new_queue_length, new_distance);
   return valiant_weight < orig_weight;
 }
 
@@ -143,11 +146,11 @@ class fully_connected_minimal_router : public router {
   void route(packet *pkt) override {
     switch_id ej_addr = pkt->toaddr() / full_->concentration();
     if (ej_addr == my_addr_){
-      pkt->set_outport(pkt->toaddr() % full_->concentration());
+      pkt->set_edge_outport(pkt->toaddr() % full_->concentration());
     } else {
-      pkt->set_outport(ej_addr);
+      pkt->set_edge_outport(ej_addr);
     }
-    pkt->set_vc(0);
+    pkt->set_deadlock_vc(0);
   }
 
  private:

@@ -86,7 +86,7 @@ class sculpin_packet :
   virtual ~sculpin_packet() {}
 
   int next_port() const {
-    return rtr_header<header>()->port;
+    return rtr_header<header>()->edge_port;
   }
 
   timestamp arrival() const {

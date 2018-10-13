@@ -108,36 +108,27 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
   if (!input_muxers_.empty())
     return;
 
-  sprockit::sim_parameters* input_params =
-      params->get_namespace("input");
-  input_params->add_param_override("num_vc", router_->num_vc());
+  sprockit::sim_parameters* input_params = params->get_namespace("input");
 
-  sprockit::sim_parameters* xbar_params =
-      params->get_namespace("xbar");
-  xbar_params->add_param_override("num_vc", router_->num_vc());
+  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
 
   sprockit::sim_parameters* output_params = params->get_namespace("output");
-  output_params->add_param_override("num_vc", router_->num_vc());
 
-  sprockit::sim_parameters* link_params = params->get_namespace("link");
-  link_params->add_param_override("num_vc", router_->num_vc());
 
   // construct the elements
-  xbar_ = new pisces_crossbar(xbar_params, this);
-  xbar_->configure_ports(n_local_xbars_, n_local_xbars_);
+  xbar_ = new pisces_crossbar(xbar_params, this, n_local_xbars_, n_local_xbars_,
+                              router_->num_vc(), true/*yes, update vc*/);
   input_muxers_.resize(n_local_xbars_);
   output_demuxers_.resize(n_local_xbars_);
   for (int i=0; i < n_local_xbars_; ++i) {
-    pisces_muxer* mux = new pisces_muxer(input_params, this);
-    mux->configure_ports(n_local_ports_, 1);
-    mux->set_update_vc(false);
+    pisces_muxer* mux = new pisces_muxer(input_params, this, n_local_ports_, router_->num_vc(),
+                                         false/*no vc update here*/);
     input_port& input = input_muxers_[i];
     input.mux = mux;
     input.parent = this;
 
-    pisces_demuxer* demux = new pisces_demuxer(output_params, this);
-    demux->configure_ports(1, n_local_ports_);
-    demux->set_update_vc(false);
+    pisces_demuxer* demux = new pisces_demuxer(output_params, this, n_local_ports_, router_->num_vc(),
+                                               false/*no vc update here*/);
     output_demuxers_[i] = demux;
   }
 
@@ -214,7 +205,7 @@ pisces_branched_switch::input_port::handle(event *ev)
   //now figure out the new port I am routing to
   parent->rter()->route(payload);
 
-  int edge_port = payload->outport();
+  int edge_port = payload->edge_outport();
   int xbar_exit_port = edge_port / parent->n_local_ports_;
   int demuxer_exit_port = edge_port % parent->n_local_ports_;;
 
@@ -226,7 +217,7 @@ pisces_branched_switch::input_port::handle(event *ev)
   debug_printf(sprockit::dbg::pisces,
                "tiled switch %d: routed payload %s to port %d",
                parent->addr(), payload->to_string().c_str(),
-               payload->outport());
+               payload->edge_outport());
   mux->handle_payload(payload);
 }
 

@@ -73,7 +73,7 @@ class packetizer_callback
 class packetizer :
   public event_subcomponent
 {
-  DeclareFactory(packetizer, event_component*)
+  DeclareFactory(packetizer, event_component*, int/*vcs*/)
  public:
   virtual ~packetizer();
 
@@ -93,7 +93,7 @@ class packetizer :
     acker_ = link;
   }
 
-  int packetSize() const {
+  uint32_t packetSize() const {
     return packet_size_;
   }
 
@@ -106,23 +106,25 @@ class packetizer :
 
   virtual bool spaceToSend(int vn, int num_bits) = 0;
 
+  virtual uint32_t spaceAvailable(int vn) const = 0;
+
  private:
   recv_cq completion_queue_;
 
   struct pending_send{
     message* msg;
     message* ack;
-    long bytes_left;
-    long offset;
+    uint64_t bytes_left;
+    uint64_t offset;
     pending_send() : ack(nullptr) {}
   };
 
   using pending_list = std::list<pending_send, sprockit::thread_safe_allocator<pending_send>>;
   using pending_alloc = sprockit::thread_safe_allocator<std::pair<const int, pending_list>>;
 
-  std::map<int, pending_list, std::less<int>, pending_alloc> pending_;
+  std::vector<pending_list> pending_;
 
-  int packet_size_;
+  uint32_t packet_size_;
 
   double inv_bw_;
 
@@ -132,7 +134,7 @@ class packetizer :
 
  protected:
   packetizer(sprockit::sim_parameters* params,
-             event_scheduler* parent);
+             event_scheduler* parent, int num_vc);
 
   void bytesArrived(int vn, uint64_t unique_id, uint32_t bytes, message* parent);
 

@@ -75,10 +75,11 @@ payload_queue::pop(int num_credits)
 
 pisces_sender::pisces_sender(
   sprockit::sim_parameters* params,
-  event_scheduler* parent) :
+  event_scheduler* parent,
+  bool update_vc) :
   event_subcomponent(parent), //no self handlers
   stat_collector_(nullptr),
-  update_vc_(true)
+  update_vc_(update_vc)
 {
   send_lat_ = params->get_time_param("send_latency");
   credit_lat_ = params->get_time_param("credit_latency");
@@ -127,7 +128,7 @@ pisces_sender::send_credit(
       "On %s:%p on inport %d, crediting %s:%p port:%d:%d vc:%d {%s} after delay %9.5e after latency %9.5e with %p",
       to_string().c_str(), this, int(payload->next_local_inport()),
       inp.link->to_string().c_str(), inp.link,
-      payload->outport(), payload->next_local_outport(), src_vc,
+      payload->edge_outport(), payload->next_local_outport(), src_vc,
       payload->to_string().c_str(),
       credit_departure_delay.sec(), credit_lat_.sec(),
       credit);

@@ -117,7 +117,7 @@ cascade::find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY
   for (int yy = 0; yy < y_; ++yy) {
     dstY = (ystart + yy) % y_;
     if (xy_connected_to_group(myX, dstY, myG, dstG)) {
-      hdr->port = y_port(dstY);
+      hdr->edge_port = y_port(dstY);
       return true;
     }
   }
@@ -132,7 +132,7 @@ cascade::find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
     if (xy_connected_to_group(dstX, myY, myG, dstG)) {
-      hdr->port = x_port(dstX);
+      hdr->edge_port = x_port(dstX);
       return true;
     }
   }
@@ -146,7 +146,7 @@ cascade::find_path_to_group(router* rtr, int myX, int myY, int myG,
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
-    hdr->port = g_port(dstG);
+    hdr->edge_port = g_port(dstG);
     dstX = myX;
     dstY = myY;
     return;
@@ -190,15 +190,15 @@ cascade::minimal_route_to_switch(
     top_debug("cascade routing from (%d,%d,%d) to (%d,%d,%d) through "
               "gateway (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG,
-              interX, interY, srcG, int(hdr->port));
+              interX, interY, srcG, int(hdr->edge_port));
   } else if (srcX != dstX){
-    hdr->port = x_port(dstX);
+    hdr->edge_port = x_port(dstX);
     top_debug("cascade routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, int(hdr->port));
+              srcX, srcY, srcG, dstX, dstY, dstG, int(hdr->edge_port));
   } else if (srcY != dstY){
-    hdr->port = y_port(dstY);
+    hdr->edge_port = y_port(dstY);
     top_debug("cascade routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, int(hdr->port));
+              srcX, srcY, srcG, dstX, dstY, dstG, int(hdr->edge_port));
   } else {
     spkt_abort_printf("cascade routing error from %d to %d", src, dst);
   }

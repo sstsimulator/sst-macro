@@ -90,14 +90,14 @@ class cascade_minimal_router : public router {
     auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / cascade_->concentration();
     if (ej_addr == my_addr_){
-      hdr->port = pkt->toaddr() % cascade_->concentration() + inj_port_offset_;
-      hdr->vc = 0;
+      hdr->edge_port = pkt->toaddr() % cascade_->concentration() + inj_port_offset_;
+      hdr->deadlock_vc = 0;
       return;
     }
 
     cascade_->minimal_route_to_switch(this, my_addr_, ej_addr, pkt->rtr_header<header>());
-    hdr->vc = hdr->num_group_hops;
-    if (cascade_->is_global_port(hdr->port)){
+    hdr->deadlock_vc = hdr->num_group_hops;
+    if (cascade_->is_global_port(hdr->edge_port)){
       ++hdr->num_group_hops;
     }
     ++hdr->num_hops;

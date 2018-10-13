@@ -70,7 +70,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
 
 
   packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
-                                              inj_params, parent);
+                                              inj_params, parent, 1); //single vc for now
   packetizer_->setArrivalNotify(this);
   auto inj_link = allocate_local_link(timestamp(), parent_, mtl_handler());
   packetizer_->setInjectionAcker(inj_link);
