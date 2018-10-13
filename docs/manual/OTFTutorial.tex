@@ -9,7 +9,7 @@ http://www.vi-hps.org/projects/score-p
 \end{ViFile}
 
 
-Trace collection requires both Score-P and OTF2 installations. Trace replay with SST/macro requires OTF2.
+Trace collection requires both Score-P and OTF2 installations. Trace replay with SST/macro requires only OTF2.
 
 
 \subsection{Trace Collection}
@@ -70,8 +70,7 @@ node {
 
 \subsection{Trace Emission}
 \label{subsec:otf:traceEmission}
-SST/macro can emmit OTF2 traces from MPI simulations.
-Include "otf2\_dir\_basename" in your configuration and provide an archive name (which may include a path) to generate OTF2 output.
+SST/macro can emmit OTF2 traces from MPI simulations. This gets activated by:
 
 \begin{ViFile}
 ...
@@ -79,13 +78,11 @@ Include "otf2\_dir\_basename" in your configuration and provide an archive name 
 node {
  app1 {
   ...
-  otf2\_dir\_basename = "otf2\_out"
+    otf2 {
+      fileroot = dump
+    }
   ...
  }
 }
 
 \end{ViFile}
-
-The simulator will throw an error if the parameter is specified and it was not built with OTF2 support.
-
-Trace output does not currently support multi-process simulations.

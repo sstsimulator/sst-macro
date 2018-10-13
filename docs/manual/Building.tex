@@ -149,7 +149,7 @@ For MacPorts installation, this means configuring SST/macro with:
 ../configure --with-pth=/opt/local
 \end{ShellCmd}
 
-\subsection{fcontext (and a note on Boost)}\label{subsubsec:boost}
+\subsection{fcontext}\label{subsubsec:fcontext}
 The fcontext library for user-space threading is now integrated directly with the SST/macro distribution.
 This provides much greater performance than GNU pth or standard Linux ucontext.
 Users may see as much as a 20\% improvement in simulator performance.
@@ -312,7 +312,7 @@ On some systems, linking Clang might blow out your memory. If that is the case, 
 Run \inlineshell{make install}. The libTooling library will now be available at the \inlineshell{\$install} location.
 
 \subsection{Building SST/macro with Clang}
-Now that clang is installled, you only need to add the configure flag \inlineshell{--with-clang} pointing it to the install location from above.
+Now that clang is installed, you only need to add the configure flag \inlineshell{--with-clang} pointing it to the install location from above.
 You must use the same Clang compiler to build SST that you used to build libTooling.
 
 \begin{ShellCmd}
@@ -333,10 +333,8 @@ OTF2 is a general purpose trace format with specialized callbacks for the MPI AP
 where the OTF2 root is the installation prefix for a valid OTF2 build. OTF2 can be obtained from the Score-P project at {http://www.vi-hps.org/projects/score-p}.
 Detailed build and usage instructions can be found on the website.
 
-\subsection{Building with VTK (Beta)}
-\label{sec:buildingVTK}
-
-
+%\subsection{Building with VTK (Beta)}
+%\label{sec:buildingVTK}
 
 \section{Running an Application}\label{sec:building:running}
 \subsection{SST Python Scripts}
@@ -374,24 +372,22 @@ After \sstmacro has been installed and your PATH variable set correctly, for sta
 \begin{ShellCmd}
 sst-macro> cd skeletons/sendrecv
 sst-macro/skeletons/sendrecv> make
-sst-macro/skeleton/sendrecv> ./runsstmac -f parameters.ini
+sst-macro/skeleton/sendrecv> sstmac -f parameters.ini --exe=./runsstmac
 \end{ShellCmd}
 
 You should see some output that tells you 1) the estimated total (simulated) runtime of the simulation, and 
 2) the wall-time that it took for the simulation to run.  
 Both of these numbers should be small since it's a trivial program. 
-
-This is how simulations generally work in \sstmacro: you build skeleton code and link it with the simulator to produce a binary.  
-Then you run that binary and pass it a parameter file which describes the machine model to use.  For running on the main SST core, a few extra flags are required.  Rather than generating a standalone executable, the compiler wrapper generates a shared library. Users can always write their own Python scripts, which will be required for more advanced usage. However, users can also just use the \inlineshell{pysstmac} script.
-
-\begin{ShellCmd}
-sst-macro/skeletons/sendrecv> pysstmac librunsendrecv.so -f parameters.ini
-\end{ShellCmd}
-Any extra shared libraries can be given as the first few parameters and these will automatically be imported.
+This is how simulations generally work in \sstmacro: you build skeleton code and link it with the simulator to produce an importable library.  
+The importable library contains hooks for loading a skeleton app into the simulator.
+NOTE: \inlineshell{runsstmac} appears to be an executable, but is actually built as a shared library. 
+If using a regular compiler (e.g. gcc), the Makefile would produce an executable \inlineshell{runsstmac}.
+To ensure that building apps for SST require no modification to an existing build system,
+SST simple builds a shared library \inlineshell{runsstmac} rather than requiring renaming to the standard convention
+\inlineshell{librunsstmac.so}.
 
 \subsection{Makefiles}
 \label{subsec:tutorial:makefiles}
-
 We recommend structuring the Makefile for your project like the one seen in \inlineshell{skeletons/sendrecv/Makefile} :
 
 \begin{ViFile}
@@ -412,7 +408,7 @@ The SST compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc} automagica
 \subsection{Command-line arguments}
 \label{subsec:tutorial:cmdline}
 
-There are only a few basic command-line arguments you'll ever need to use with \sstmacro, listed below
+There are few common command-line arguments with \sstmacro, listed below
 
 \begin{itemize}
 \item -h/--help: Print some typical help info
@@ -420,6 +416,7 @@ There are only a few basic command-line arguments you'll ever need to use with \
 This can be relative to the current directory, an absolute path, or the name of a pre-set file that is in sstmacro/configurations 
 (which installs to /path-to-install/include/configurations, and gets searched along with current directory). 
 \item --dumpi: If you are in a folder with all the DUMPI traces, you can invoke the main \inlinecode{sstmac} executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
+\item --otf2: If you are in a folder with all the OTF2 traces, you can invoke the main \inlinecode{sstmac} executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
 \item -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section \ref{sec:dbgoutput}
 \item -p [parameter]=[value]: Setting a parameter value (overrides what is in the parameter file)
 \item -t [value]: Stop the simulation at simulated time [value]
@@ -429,7 +426,7 @@ This can be relative to the current directory, an absolute path, or the name of 
 \section{Parallel Simulations in Standalone Mode}
 \label{sec:PDES}
 
-\sstmacro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode will be discouraged as parallel simulations should use the unified SST core. However, near-term, hybrid modes and other optimizations are not fully supported in the unified SST core. They standalone core may still be required for certain cases.
+\sstmacro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode will be discouraged as parallel simulations should use the unified SST core. However, near-term, hybrid modes and other optimizations are not fully supported in the unified SST core. The standalone core may still be required for certain cases.
 
 \subsection{Distributed Memory Parallel}
 \label{subsec:mpiparallel}
@@ -484,7 +481,7 @@ Job launchers may in some cases provide duplicate functionality and either metho
 Parallel simulation speedups are likely to be modest for small runs.
 Speeds are best with serious congestion or heavy interconnect traffic.
 Weak scaling is usually achievable with 100-500 simulated MPI ranks per logical process.
-Even without speedup, parallel simulation can certainly be useful in overcoming memory constraints, expanding the maximum memory footprint. 
+Even without speedup, parallel simulation can certainly be useful in overcoming memory constraints.
 }
 
 \section{Debug Output}
@@ -502,27 +499,16 @@ which will output something like
     mpi
         print all the basic operations that occur on each rank - only API calls are
         logged, not any implementation details
-    mpi_check
-        validation flag that performs various sanity checks to ensure MPI application
-        runs and terminates cleanly
-    mpi_collective
-        print information about MPI collective calls as well as implementation details
-    mpi_pt2pt
-        print information about MPI point-to-point calls as well as implementation
-        details
+    router
+        print all operations occurring in the router
      ....
 \end{ViFile}
-The most important flag for validating simulations is the \inlineshell{mpi_check} flag,
-which causes special sanity checks and a final validation check to ensure the simulation has finished cleanly.
-Some of the debug flags can generate information overload and will only be useful to a serious developer, rather than a user.
+
 
 To turn on debug output, add the following to the input file
 
 \begin{ViFile}
-debug = mpi  mpi_check
+debug = mpi 
 \end{ViFile}
 listing all flags you want separated by spaces.
-Note: this is a major shift from the previous (and really tedious, unfriendly) debug system of past versions.
-The new system allows much finer-grained, simpler printing of debug output.
-Additionally, it allows new debug flags to very easily defined.
-More info on declaring new debug flags in your own code can be found in the developer's reference.
+

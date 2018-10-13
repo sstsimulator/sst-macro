@@ -12,10 +12,16 @@ The \inlineshell{--enable-graphviz} flag defines an instrumentation macro throug
 This instrumentation must be \emph{compiled} into \sstmacro.
 In the default build, the instrumentation is not added since the instrumentation has a high overhead.
 However, \sstmacro only instruments a select group of the most important functions so the overhead should only be 10-50\%.
-After installing the instrumented version of \sstmacro, a call graph is collected by adding a simple filename to the parameter file.
+After installing the instrumented version of \sstmacro, a call graph must be activated as part of the OS component.
 
 \begin{ViFile}
-call_graph = <fileroot>
+node {
+  os {
+    call_graph {
+      fileroot = <fileroot>
+    }
+  }
+}
 \end{ViFile}
 After running, a \inlineshell{<fileroot>.callgrind.out} file should appear in the folder.
 

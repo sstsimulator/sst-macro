@@ -23,6 +23,21 @@ In abstract machine models, these methods are selected as:
 \begin{ViFile}
 congestion_model = logP
 \end{ViFile}
+Details are shown for traffic moving from source to destination in Figure \ref{fig:macrelsOverview}.
+Modeling occurs on entire flows, rather than individual packets. 
+
+\begin{enumerate}
+\item Flows queue waiting for NIC injection link to become available. Flow is forwarded to destination NIC based after computed delay. 
+\item Flows queue waiting for NIC ejection link to become available. Flow finishes after ejection link becomes available.
+\end{enumerate}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{figures/macrels.pdf}
+\caption{MACRELS (Messages with AnalytiC REally Lightweight Simulation) skips congestion modeling and approximates send delays using a simple latency/bandwidth estimate, similar to the LogGOP model. Modeling occurs on entire flows, rather than individual packets. For details on numbered steps, see text.}
+\label{fig:macrelsOverview}
+\end{figure}
+
 
 \subsection{Packet Models: PISCES}
 \label{subsec:tutorial:pisces}
@@ -38,7 +53,26 @@ Flit-level detail would be way too computationally intense for large-scale simul
 All routing decisions are made on packets as a while. 
 Two flits in the same packet cannot take different paths through the network.
 However, they may not travel together.
-PISCES provides two mechanisms for treating flit-level flow control.
+
+PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme-Scale) models individual packets moving through the network. Flits (flow-control units) are approximately modeled using flow-like approximations. Packets can have partial occupancies in several different buffers, approximating wormhole routing. However, arbitration is modeled on whole packets, not individual flits (see Figure \ref{fig:piscesOverview})
+\begin{enumerate}
+\item A message (flow) is broken up into packets. Depending on available space in the Tx buffer, a limited number of packets may be able to queue up in the buffer. If credits are available in the Rx buffer for the link and the link is idle, the packet moves into the next Rx buffer after a computed delay.
+\item The router selects a path for the packet and the packet requests to the crossbar to transmit to the corresponding output port. If credits are available for the Rx buffer, the crossbar may select the packet in arbitration and move it to the output buffer. After moving, the Rx buffer returns credits to the previous Tx buffer for that packet.
+\item Step 1 is repeated for the next Rx buffer, waiting for credits and link availability.
+\item Repeat Step 2
+\item Repeat Step 3
+\item Packet arrives in NIC Rx queue and queues waiting to inject into local memory. After injection, the Rx buffer returns credits to the corresponding Tx buffer.
+\end{enumerate}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/pisces_overview.pdf}
+\caption[PISCES model]{PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme-Scale) models individual packets moving through the network. Flits (flow-control units) are approximately modeled using flow-like approximations. For details on numbered steps, see text.}
+\label{fig:piscesOverview}
+\end{figure}
+
+
+PISCES provides two mechanisms for treating flit-level flow control discussed next.
 
 \subsubsection{PISCES simple model}
 \label{subsubsec:tutorial:simplePisces}
@@ -67,6 +101,7 @@ which sets the packet size to 1024B.
 For the simple model, packet sizes larger than 256-512B are not recommended.
 Packet sizes on production supercomputers are often small (96-128B).
 Small packet sizes with the simple model can be a good compromise for having more fine-grained routing but cheaper congestion modeling in the arbitrator.
+More details are given in Figure \ref{fig:piscesOverview}.
 
 \subsubsection{PISCES cut-through model}
 \label{subsubsec:tutorial:cutThroughPisces}
@@ -134,6 +169,24 @@ Finally, the fourth packet (blue) arrives at t=3.0.
 There is some available bandwidth. After the third packet finishes, the fourth packet can now send at maximum.
 Because of the initial delay, the outgoing bandwidth is somewhat reduced.
 We have $H$=3.0, $T$=4.38, and $O$=0.73.
+
+\subsection{SCULPIN}
+Under current architectural trends, switches have ample buffer space and crossbar bandwidth, making the mostly likely bottleneck edge bandwidth through the output ports.
+SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. Unlike PISCES, individual flits are not able to wormhole route across links interspersed with flits from other packets.
+\begin{enumerate}
+\item A message (flow) is broken up into packets. Each packet waits in the queue to send based on link availability and QoS.
+\item After being selected, the packets are forwarded to the switch. Packets are immediately routed to the correct output port, skipping crossbar arbitration. Packets wait in unbounded queues, thereby assuming sufficient buffer space is always available.
+\item Repeat Step 1. Packet waits in queue until link becomes available based on QoS. Packet is immediately forwarded to next output port, skipping arbitration
+\item Repeat Step 1.
+\item Packet arrives in NIC Rx queue (no credits, buffer assumed to always have space). Packets queue waiting to inject into local memory.
+\end{enumerate}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{figures/sculpin.pdf}
+\caption[SCULPIN model]{SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. For details on numbered steps, see text.}
+\label{fig:sculpin}
+\end{figure}
 
 \subsection{Flow}
 \label{subsec:tutorial:flow}

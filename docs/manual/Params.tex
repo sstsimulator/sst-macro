@@ -99,7 +99,7 @@ redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartes
 
 \openTable
 \hline
-model \paramType{string} & simple & simple & The type of node model (level of detail) for node-level operations \\
+name \paramType{string} & simple & simple & The type of node model (level of detail) for node-level operations \\
 \hline
 services \paramType{vector of strings} & Empty & Valid service names & For  details, see section on distributed services in developer's manual. Advanced feature. \\
 \hline
@@ -110,11 +110,9 @@ services \paramType{vector of strings} & Empty & Valid service names & For  deta
 
 \openTable
 \hline
-model \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
+name \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
 \hline
 packetizer \paramType{string} & cut\_through & merlin, simple, cut\_through & The type of packetizer for injecting flows into the network. Merlin is part of sst-elements. Simple and cut-through use PISCES \\
-\hline
-packet\_allocator \paramType{string} & pisces & pisces & The packet object used by the NIC. Certain type of statistics or congestion models may require custom packets with extra fields. \\
 \hline
 negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
 \hline

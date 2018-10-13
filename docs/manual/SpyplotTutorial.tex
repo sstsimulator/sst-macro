@@ -17,10 +17,18 @@ Larger amounts of data (red) are sent to nearest neighbors while decreasing amou
 \end{figure}
 
 Various spyplots can be activated by boolean parameters in the input file.
-The most commonly used are the MPI spyplots, for which you must add
+The most commonly used are the MPI spyplots, for which you activate the spyplot as part of the MPI subcomponent.
 
 \begin{ViFile}
-mpi_spyplot = <fileroot>
+node {
+  app1 {
+    mpi {
+      traffic_matrix {
+        fileroot = test
+      }
+    }
+  }
+}
 \end{ViFile}
 
 After running there will be a .csv and .png file in the folder, with e.g. \inlineshell{fileroot = test}
@@ -31,10 +39,16 @@ test.png
 test.csv
 \end{ShellCmd}
 \inlineshell{test.png} shows the number of bytes exchanged between MPI ranks.
-To extend the analysis you can specify
+To extend the analysis you can instead specify as part of the NIC subcomponent
 
 \begin{ViFile}
-network_spyplot = <fileroot>
+node {
+  nic {
+    traffic_matrix {
+      fileroot = test
+    }
+  }
+}
 \end{ViFile}
 A new csv/png will appear showing the number of bytes exchanged between physical nodes, 
 accumulating together all MPI ranks sharing the same node.

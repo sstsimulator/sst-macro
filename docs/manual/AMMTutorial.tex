@@ -25,9 +25,9 @@ The details of individual abstract machine models are given in the following sec
 The optional accuracy parameter is less well-defined and the exact meaning varies considerably between congestion models.
 In general, the accuracy parameter represents how coarse-grained the simulation is in bytes.
 It basically corresponds to a packet-size. How many bytes are modeled moving through the machine separately at a time?
-If the parameter is set to 8 bytes, e.g., that basically means we are doing flit-level modeling.
-If the parameter is set to 8192 bytes, e.g. that means we are doing very coarse-grained modeling which only really affects large messages.
-If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fine-grained modeling on real packet sizes, but we are ignoring flit-level details.
+If the parameter is set to 8 bytes, e.g., that is essentially flit-level modeling.
+If the parameter is set to 8192 bytes, e.g. that is very coarse-grained modeling which only really affects large messages.
+If the parameter is set to 100-1000 bytes, e.g., that is fine-grained modeling on real packet sizes, but ignoring flit-level details.
 
 \subsection{Common Parameters}
 \label{subsec:commonParams}
@@ -88,11 +88,11 @@ node {
 
 The link latency is the latency required for a single packet to traverse one switch and hop to the next one in the network.
 Thus, even in the most basic of network models, there is a still a notion of topology that affects the number of hops and therefore the latency.
-To compute the total network network latency as one would observe in an MPI ping-ping benchmark, one would compute
+To compute the total network network latency as one would observe in an MPI ping-ping benchmark, one would compute using the hop latency and the injection latency
 \[
 lat = n_{hops} * lat_{hop} + 2*lat_{inj}
 \]
-using the hop latency and the injection latency.
+
 
 This abstract machine model is a good place to start for getting a ``lay of the land'' for simulations - and the simplest to configure.
 However, it has a few deficiencies that can cause problems when there is serious memory or network congestion.
