@@ -127,7 +127,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
   topology* top = topology_;
 
-  std::string switch_model = switch_params->get_lowercase_param("model");
+  std::string switch_model = switch_params->get_lowercase_param("name");
   bool logp_model = switch_model == "logp" || switch_model == "simple" || switch_model == "macrels";
 
   switches_.resize(top->max_switch_id());
@@ -328,7 +328,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         node_params->add_param_override("id", int(nid));
         uint32_t comp_id = nid;
         event_manager* node_mgr = mgr->thread_manager(thread);
-        node* nd = node::factory::get_optional_param("model", "simple", node_params,
+        node* nd = node::factory::get_optional_param("name", "simple", node_params,
                                                      comp_id, node_mgr);
         node_params->remove_param("id"); //you don't have to let it linger
         nic* the_nic = nd->get_nic();
@@ -360,7 +360,7 @@ void
 interconnect::build_switches(sprockit::sim_parameters* switch_params,
                              event_manager* mgr)
 {
-  bool simple_model = switch_params->get_param("model") == "simple";
+  bool simple_model = switch_params->get_param("name") == "simple";
   if (simple_model) return; //nothing to do
 
   int my_rank = rt_->me();
@@ -374,7 +374,7 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
         topology_->configure_nonuniform_switch_params(i, switch_params);
       int thread = partition_->thread_for_switch(i);
       uint32_t comp_id = i + topology_->num_nodes();
-      switches_[i] = network_switch::factory::get_param("model",
+      switches_[i] = network_switch::factory::get_param("name",
                       switch_params, comp_id, mgr->thread_manager(thread));
     } else {
       switches_[i] = nullptr;
@@ -397,7 +397,7 @@ interconnect::switch_component_id(switch_id sid) const
 void
 interconnect::connect_switches(event_manager* mgr, sprockit::sim_parameters* switch_params)
 {
-  bool simple_model = switch_params->get_param("model") == "simple";
+  bool simple_model = switch_params->get_param("name") == "simple";
   if (simple_model) return; //nothing to do
 
   std::vector<topology::connection> outports(64); //allocate 64 spaces optimistically

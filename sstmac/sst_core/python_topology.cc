@@ -276,7 +276,7 @@ sys_get_ejection_connections(SystemPy_t* self, PyObject* swIdx)
 static bool is_logp(SystemPy_t* self)
 {
   sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
-  return switch_params->get_lowercase_param("model") == "logp";
+  return switch_params->get_lowercase_param("name") == "logp";
 }
 
 static PyObject*

@@ -59,9 +59,9 @@ logp_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
 
-  nic_params->add_param_override("model", "logp");
-  switch_params->add_param_override("model", "logp");
-  mem_params->add_param_override("model", "pisces");
+  nic_params->add_param_override("name", "logp");
+  switch_params->add_param_override("name", "logp");
+  mem_params->add_param_override("name", "pisces");
 
   int packet_size = params->get_optional_int_param("accurary_parameter", 4096000);
   int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", packet_size);

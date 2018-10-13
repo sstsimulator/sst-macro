@@ -102,11 +102,11 @@ node::node(sprockit::sim_parameters* params,
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   nic_params->add_param_override("id", int(my_addr_));
-  nic_ = nic::factory::get_param("model", nic_params, this);
+  nic_ = nic::factory::get_param("name", nic_params, this);
   nic_params->remove_param("id");
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
-  mem_model_ = memory_model::factory::get_optional_param("model", "logp", mem_params, this);
+  mem_model_ = memory_model::factory::get_optional_param("name", "logp", mem_params, this);
 
   sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
   proc_ = processor::factory::get_optional_param("processor", "instruction",
