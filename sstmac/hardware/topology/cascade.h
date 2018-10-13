@@ -175,11 +175,11 @@ class cascade : public cartesian_topology
     return (sid / (x_*y_));
   }
 
-  int num_switches() const override {
+  switch_id num_switches() const override {
     return x_ * y_ * g_;
   }
 
-  int num_leaf_switches() const override {
+  switch_id num_leaf_switches() const override {
     return x_ * y_ * g_;
   }
 
@@ -187,39 +187,39 @@ class cascade : public cartesian_topology
       router* rtr,
       switch_id current_sw_addr,
       switch_id dest_sw_addr,
-      packet::path &path) const;
+      packet::header* hdr) const;
 
-  int minimal_distance(switch_id src, switch_id dst) const override;
+  int minimal_distance(switch_id src, switch_id dst) const;
 
-  virtual int diameter() const override {
-    return 5;
+  int num_hops_to_node(node_id src, node_id dst) const override {
+    return minimal_distance(src / concentration_, dst / concentration_);
   }
 
-  switch_id random_intermediate(router* rtr, switch_id current_sw,
-                             switch_id dest_sw, uint32_t seed);
+  int diameter() const override {
+    return 5;
+  }
 
   coordinates switch_coords(switch_id) const override;
 
   switch_id switch_addr(const coordinates &coords) const override;
 
  protected:
-  virtual void find_path_to_group(router* rtr, int myX, int myY, int myG, int dstG,
-                     int& dstX, int& dstY, packet::path& path) const;
+  void find_path_to_group(router* rtr, int myX, int myY, int myG, int dstG,
+                     int& dstX, int& dstY, packet::header* hdr) const;
 
   bool find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY,
-                       packet::path& path) const;
+                       packet::header* hdr) const;
 
   bool find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX,
-                       packet::path& path) const;
+                       packet::header* hdr) const;
 
-  virtual bool xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
+  bool xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
 
  protected:
   int x_;
   int y_;
   int g_;
   int group_con_;
-  bool true_random_intermediate_;
 
   void setup_port_params(sprockit::sim_parameters* params,
                     int dim, int dimsize) const;

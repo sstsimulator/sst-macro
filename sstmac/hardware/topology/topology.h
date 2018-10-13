@@ -362,9 +362,9 @@ class topology : public sprockit::printable
      switches that are only a part of the network
      @return The total number of switches
   */
-  virtual int num_switches() const = 0;
+  virtual switch_id num_switches() const = 0;
 
-  virtual int num_leaf_switches() const {
+  virtual switch_id num_leaf_switches() const {
     return num_switches();
   }
 
@@ -375,7 +375,7 @@ class topology : public sprockit::printable
    */
   virtual switch_id max_switch_id() const = 0;
 
-  virtual int num_nodes() const = 0;
+  virtual node_id num_nodes() const = 0;
 
   /**
    * @brief max_node_id Depending on the node indexing scheme, the maximum node id
@@ -400,14 +400,6 @@ class topology : public sprockit::printable
    * @return
    */
   virtual int max_num_ports() const = 0;
-
-  /**
-    This gives the minimal distance counting the number of hops between switches.
-    @param src. The source switch.
-    @param dest. The destination switch.
-    @return The number of hops to final destination
-  */
-  virtual int minimal_distance(switch_id src, switch_id dst) const = 0;
 
   /**
     This gives the minimal distance counting the number of hops between switches.

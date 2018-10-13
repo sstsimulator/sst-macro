@@ -172,8 +172,11 @@ pisces_nic::connect_input(
   int dst_inport,
   event_link* link)
 {
+  //src_outport and dst_inport are global ports
+  //the pisces objects need to be connected with local ports
+  int buffer_port = 0;
   pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
-  packer->set_input(params, src_outport, link);
+  packer->set_input(params, buffer_port, link);
 }
 
 void

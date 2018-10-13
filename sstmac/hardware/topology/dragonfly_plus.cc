@@ -95,16 +95,6 @@ dragonfly_plus::endpoints_connected_to_injection_switch(switch_id swaddr,
   }
 }
 
-void
-dragonfly_plus::minimal_route_to_switch(
-  int& path_rotater,
-  switch_id src,
-  switch_id dst,
-  packet::path &path) const
-{
-
-}
-
 int
 dragonfly_plus::minimal_distance(switch_id src, switch_id dst) const
 {

@@ -63,9 +63,11 @@ packet::packet(
  fromaddr_(fromaddr),
  toaddr_(toaddr)
 {
-  ::memset(header_metadata_, 0, sizeof(header_metadata_));
+  ::memset(rtr_metadata_, 0, sizeof(rtr_metadata_));
   ::memset(stats_metadata_, 0, sizeof(stats_metadata_));
-  auto hdr = get_header<header>();
+  ::memset(nic_metadata_, 0, sizeof(nic_metadata_));
+  ::memset(control_flow_metadata_, 0, sizeof(control_flow_metadata_));
+  auto hdr = rtr_header<header>();
   hdr->is_tail = is_tail;
 }
 
@@ -76,8 +78,10 @@ packet::serialize_order(serializer& ser)
   ser & orig_;
   ser & num_bytes_;
   ser & flow_id_;
-  ser & header_metadata_;
+  ser & control_flow_metadata_;
+  ser & rtr_metadata_;
   ser & stats_metadata_;
+  ser & nic_metadata_;
 }
 
 }

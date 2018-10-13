@@ -53,6 +53,8 @@ namespace sstmac {
 namespace hw {
 
 #define MAX_HEADER_BYTES 16
+#define MAX_CONTROL_BYTES 8
+#define MAX_NIC_BYTES 8
 #define MAX_STAT_BYTES 8
 class packet :
   public event,
@@ -62,7 +64,10 @@ class packet :
  public:
   struct header {
     char is_tail : 1;
-    uint32_t dest_switch : 22;
+    uint16_t port;
+    uint8_t row : 4;
+    uint8_t col : 4;
+    uint8_t vc : 4;
   };
 
   serializable* orig() const {
@@ -74,87 +79,32 @@ class packet :
   }
 
   template <class T>
-  T* get_header() {
-    static_assert(sizeof(T) <= sizeof(header_metadata_),
+  T* rtr_header() {
+    static_assert(sizeof(T) <= sizeof(rtr_metadata_),
                   "given header type too big");
-    return (T*) (&header_metadata_);
+    return (T*) (&rtr_metadata_);
   }
 
   template <class T>
-  const T* get_header() const {
-    static_assert(sizeof(T) <= sizeof(header_metadata_),
+  const T* rtr_header() const {
+    static_assert(sizeof(T) <= sizeof(rtr_metadata_),
                   "given header type too big");
-    return (T*) (&header_metadata_);
+    return (T*) (&rtr_metadata_);
   }
 
+  template <class T>
+  T* control_header() {
+    static_assert(sizeof(T) <= sizeof(control_flow_metadata_),
+                  "given header type too big");
+    return (T*) (&control_flow_metadata_);
+  }
 
-  struct path {
-   struct outport_t {
-     uint16_t global;
-     uint16_t local;
-   };
-   outport_t outport_;
-   int vc;
-   /** An identifier indicating what geometric path on the topology this is following */
-   int geometric_id;
-
-   path() :
-  #if SSTMAC_SANITY_CHECK
-     vc(routing::uninitialized)
-  #else
-     vc(0)
-  #endif
-   {
-     outport_.global = routing::uninitialized;
-     outport_.local = routing::uninitialized;
-   }
-
-   uint16_t& outport() {
-     return outport_.global;
-   }
-
-   uint16_t& global_outport() {
-     return outport_.global;
-   }
-
-   uint16_t& local_outport() {
-     return outport_.local;
-   }
-
-   void set_outport(const uint16_t port) {
-     outport_.global = port;
-   }
-
-   void set_global_outport(const uint16_t port) {
-     outport_.global = port;
-   }
-
-   void set_local_outport(const uint16_t port) {
-     outport_.local = port;
-   }
-  };
-
-  #define MAX_PATHS 32
-  class path_set {
-   public:
-    path_set() : size_(0) {}
-    int size() const { return size_; }
-    void resize(int s){
-      if (s > MAX_PATHS){
-       spkt_throw_printf(sprockit::value_error,
-         "routable::path_set size exceeds max %d", MAX_PATHS);
-      }
-      size_ = s;
-    }
-
-    path& operator[](int idx){
-      return paths_[idx];
-    }
-
-   private:
-    int size_;
-    path paths_[MAX_PATHS];
-  };
+  template <class T>
+  const T* control_header() const {
+    static_assert(sizeof(T) <= sizeof(control_flow_metadata_),
+                  "given header type too big");
+    return (T*) (&control_flow_metadata_);
+  }
 
   node_id toaddr() const {
     return toaddr_;
@@ -172,57 +122,30 @@ class packet :
     fromaddr_ = from;
   }
 
-  path& current_path() {
-    return path_;
-  }
-
-  void check_vc() {
-    if (path_.vc == routing::uninitialized)
-      path_.vc = 0;
-  }
-
   int vc() const {
-    return path_.vc;
+    auto hdr = rtr_header<header>();
+    return hdr->vc;
   }
 
   void set_outport(const int port) {
-    path_.outport_.global = port;
+    auto hdr = rtr_header<header>();
+    hdr->port = port;
   }
 
-  void set_global_outport(const int port) {
-    path_.outport_.global = port;
-  }
-
-  void set_local_outport(const int port) {
-    path_.outport_.local = port;
+  void set_vc(const int vc) {
+    auto hdr = rtr_header<header>();
+    hdr->vc = vc;
   }
 
   int outport() const {
-    return path_.outport_.global;
-  }
-
-  int global_outport() const {
-    return path_.outport_.global;
-  }
-
-  int local_outport() const {
-    return path_.outport_.local;
+    auto hdr = rtr_header<header>();
+    return hdr->port;
   }
 
   virtual void serialize_order(serializer& ser) override;
 
-  void set_dest_switch(switch_id sid) {
-    auto hdr = get_header<header>();
-    hdr->dest_switch = sid;
-  }
-
-  switch_id dest_switch() const {
-    auto hdr = get_header<header>();
-    return hdr->dest_switch;
-  }
-
   bool is_tail() const {
-    auto hdr = get_header<header>();
+    auto hdr = rtr_header<header>();
     return hdr->is_tail;
   }
 
@@ -243,13 +166,15 @@ class packet :
 
   node_id fromaddr_;
 
-  path path_;
-
   uint64_t flow_id_;
 
   serializable* orig_;
 
-  char header_metadata_[MAX_HEADER_BYTES];
+  char rtr_metadata_[MAX_HEADER_BYTES];
+
+  char control_flow_metadata_[MAX_CONTROL_BYTES];
+
+  char nic_metadata_[MAX_NIC_BYTES];
 
   char stats_metadata_[MAX_STAT_BYTES];
 
@@ -265,22 +190,9 @@ class packet :
     node_id fromaddr,
     node_id toadadr);
 
-
 };
 
 }
 }
-
-START_SERIALIZATION_NAMESPACE
-template <>
-class serialize<sstmac::hw::packet::path>
-{
- public:
-  void operator()(sstmac::hw::packet::path& info, serializer& ser){
-    ser.primitive(info);
-  }
-};
-END_SERIALIZATION_NAMESPACE
-
 
 #endif

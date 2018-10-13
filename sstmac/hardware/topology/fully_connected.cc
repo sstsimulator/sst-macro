@@ -58,15 +58,6 @@ fully_connected::fully_connected(sprockit::sim_parameters* params) :
 }
 
 void
-fully_connected::minimal_route_to_switch(switch_id current_sw_addr,
-                                  switch_id dest_sw_addr,
-                                  packet::path &path) const
-{
-  path.vc = 0;
-  path.set_outport(dest_sw_addr);
-}
-
-void
 fully_connected::endpoints_connected_to_injection_switch(switch_id swaddr,
                                    std::vector<injection_port>& nodes) const
 {

@@ -100,87 +100,6 @@ abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params) :
 }
 
 void
-abstract_fat_tree::minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    packet::path& path) const
-{
-  int src_level = level(current_sw_addr);
-  int dst_level = level(dest_sw_addr);
-  //question is whether I go up or down
-  if (dst_level >= src_level){ //definitely have to go up
-    path.set_outport(up_port(src_level));
-    path.vc = 0;
-    top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d",
-              int(dest_sw_addr), dst_level,
-              int(current_sw_addr), src_level);
-  } else if (src_level == 2){
-    //definitely have to go down
-    int dst_subtree = dst_level == 0 ? inj_subtree(dest_sw_addr) : agg_subtree(dest_sw_addr);
-    path.set_outport(down_port(dst_subtree));
-    path.vc = 0;
-    top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d",
-              int(dest_sw_addr), dst_level,
-              int(current_sw_addr), src_level,
-              path.outport());
-  } else if (src_level == 1){
-    //going to level 0, but may have to go up or down to get there
-    int my_tree = agg_subtree(current_sw_addr);
-    int dst_tree = inj_subtree(dest_sw_addr);
-    if (dst_tree == my_tree){
-      //okay, great, I should have direct link
-      path.set_outport(dest_sw_addr % leaf_switches_per_subtree_);
-      path.vc = 0;
-      top_debug("fat_tree: routing down to get to s=%d,l=%d from s=%d,l=%d on port %d within tree %d",
-                int(dest_sw_addr), dst_level,
-                int(current_sw_addr), src_level,
-                path.outport(), my_tree);
-    } else {
-      //nope, have to go to core to hope over to other tree
-      path.set_outport(up_port(src_level));
-      path.vc = 0;
-      top_debug("fat_tree: routing up to get to s=%d,l=%d from s=%d,l=%d hopping from tree %d to tree %d",
-                      int(dest_sw_addr), dst_level,
-                      int(current_sw_addr), src_level,
-                      my_tree, dst_tree);
-    }
-  }
-}
-
-int
-abstract_fat_tree::minimal_distance(
-  switch_id src,
-  switch_id dst) const
-{
-  if (src == dst) return 0;
-
-  int srcLevel = level(src);
-  int dstLevel = level(dst);
-  if (srcLevel == 2){
-    return srcLevel - dstLevel;
-  } else if (dstLevel == 2){
-    return dstLevel - srcLevel;
-  }
-
-
-  int srcTree = subtree(src);
-  int dstTree = subtree(dst);
-  if (srcTree == dstTree){
-    if (srcLevel == dstLevel){
-      //okay - a bit weird
-      //I have to hop up then hop down to get where I want
-      return 2;
-    } else {
-      //I can hop directly up or down to desired location
-      return 1;
-    }
-  } else {
-    //have to go to core
-    return (2-srcLevel) + (1-dstLevel);
-  }
-}
-
-void
 abstract_fat_tree::write_bw_params(
     sprockit::sim_parameters *switch_params,
     double multiplier) const
@@ -403,42 +322,6 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
                 src, dwn_port, agg_partner_switch, next.dst_inport);
     }
   }
-}
-
-// insert all core switch ports that lead to any switch in the
-// subtree designated by next_tree
-void
-fat_tree::connected_core_down_ports(switch_id src, int next_tree, std::vector<int>& ports) const
-{
-  int lvl = level(src);
-  if (lvl != 2)
-    return;
-
-  ports.clear(); // just to be safe
-  std::vector<connection> conns;
-  connected_outports(src, conns);
-  for (auto it=conns.begin(); it != conns.end(); ++it) {
-    int conn_subtree = subtree(it->dst);
-    if (conn_subtree == next_tree)
-      ports.push_back(it->src_outport);
-  }
-}
-
-// insert all aggregator switch ports that lead to the switch
-// designated by dst_leaf
-void
-fat_tree::connected_agg_down_ports(switch_id src, int dst_leaf, std::vector<int>& ports) const
-{
-  int lvl = level(src);
-  if (lvl != 1)
-    return;
-
-  ports.clear(); // just to be safe
-  std::vector<connection> conns;
-  connected_outports(src, conns);
-  for (auto it=conns.begin(); it != conns.end(); ++it)
-    if (it->dst == dst_leaf)
-      ports.push_back(it->src_outport);
 }
 
 void

@@ -55,16 +55,6 @@ star::star(sprockit::sim_parameters* params) :
 }
 
 void
-star::minimal_route_to_switch(switch_id current_sw_addr,
-                              switch_id dest_sw_addr,
-                              packet::path &path) const
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-      "%s does not implement minimal route to switch (always on eject switch)",
-      to_string().c_str());
-}
-
-void
 star::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   conns.resize(0);

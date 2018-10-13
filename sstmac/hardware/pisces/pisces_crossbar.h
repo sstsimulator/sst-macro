@@ -75,6 +75,8 @@ class pisces_NtoM_queue :
 
   void handle_credit(event* ev) override;
 
+  void handle_credits(int port, int vc, int num_credits);
+
   event_handler* credit_handler();
 
   event_handler* payload_handler();
@@ -91,108 +93,18 @@ class pisces_NtoM_queue :
     return port * num_vc_ + vc;
   }
 
-  void set_tile_id(std::string id) {
-    tile_id_ = id;
-  }
-
-  std::string tile_id() const {
-    return tile_id_;
-  }
-
   void deadlock_check() override;
 
   void deadlock_check(event* ev) override;
 
-  class port_mapper
-  {
-  public:
-    port_mapper() {}
-    virtual ~port_mapper() {}
-    virtual int local_port(const int) const = 0;
-  };
-
-  class identity_mapper : public port_mapper
-  {
-  private:
-  public:
-    identity_mapper() {}
-    ~identity_mapper() {}
-    virtual int local_port(const int port) const override {
-      return port;
-    }
-  };
-
-  class constant_mapper : public port_mapper
-  {
-  private:
-    int constant_;
-  public:
-    constant_mapper(int constant) : constant_(constant) {}
-    ~constant_mapper() {}
-    virtual int local_port(const int port) const override {
-      return constant_;
-    }
-  };
-
-  class offset_mapper : public port_mapper
-  {
-  private:
-    int offset_;
-  public:
-    offset_mapper(int offset) : offset_(offset)  {}
-    ~offset_mapper() {}
-    virtual int local_port(const int port) const override {
-      return port - offset_;
-    }
-  };
-
-  class div_mapper : public port_mapper
-  {
-  private:
-    int div_;
-  public:
-    div_mapper(int div) : div_(div) {
-    }
-    ~div_mapper() {}
-    virtual int local_port(const int port) const override {
-      return port / div_;
-    }
-  };
-
-  class mod_mapper : public port_mapper
-  {
-  private:
-    int mod_;
-  public:
-    mod_mapper(int mod) : mod_(mod) {}
-    ~mod_mapper() {}
-    virtual int local_port(const int port) const override {
-      return port % mod_;
-    }
-  };
-
-  void configure_outports(int num_ports,
-                     std::unique_ptr<port_mapper> mapper
-                     = std::unique_ptr<port_mapper>(new identity_mapper()),
-                     std::unique_ptr<port_mapper> credit_mapper
-                     = std::unique_ptr<port_mapper>(new identity_mapper()) ) {
-    resize(num_ports);
-    outport_mapper_ = std::move(mapper);
-    credit_mapper_ = std::move(credit_mapper);
-  }
-
-  int local_outport(int port) {
-    return outport_mapper_->local_port(port);
-  }
-
-  int local_outport_credit(int port) {
-    return credit_mapper_->local_port(port);
+  void configure_ports(int inports, int outports) {
+    inputs_.resize(inports);
+    resize_outports(outports);
   }
 
  protected:
-  typedef std::unordered_map<int, pisces_input> input_map;
-
-  typedef std::vector<pisces_output> output_map;
+  typedef std::vector<input> input_map;
+  typedef std::vector<output> output_map;
   typedef std::vector<int> credit_map;
   typedef std::vector<payload_queue> queue_map;
 
@@ -204,6 +116,9 @@ class pisces_NtoM_queue :
   credit_map credits_;
   //indexed by slot number = (port,vc)
   queue_map queues_;
+#if SSTMAC_SANITY_CHECK
+  credit_map initial_credits_;
+#endif
 
   int num_vc_;
   int port_offset_;
@@ -225,14 +140,11 @@ class pisces_NtoM_queue :
   void build_blocked_messages();
 
  private:
-  std::unique_ptr<port_mapper> outport_mapper_;
-  std::unique_ptr<port_mapper> credit_mapper_;
-
   inline int& credit(int port, int vc){
     return credits_[slot(port, vc)];
   }
 
-  void resize(int num_ports);
+  void resize_outports(int num_ports);
 
   inline payload_queue& queue(int port, int vc){
     return queues_[slot(port, vc)];

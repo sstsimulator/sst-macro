@@ -80,7 +80,7 @@ class structured_topology : public topology
      For indirect, num_leaf_switches < num_switches.
      @return The number of leaf switches directly connected to compute nodes
   */
-  virtual int num_leaf_switches() const override = 0;
+  virtual switch_id num_leaf_switches() const override = 0;
 
   virtual void endpoints_connected_to_ejection_switch(switch_id swid,
                        std::vector<injection_port>& nodes) const override;
@@ -89,18 +89,12 @@ class structured_topology : public topology
     return concentration_;
   }
 
-  int num_nodes() const override {
+  node_id num_nodes() const override {
     return concentration_ * num_leaf_switches();
   }
 
   switch_id endpoint_to_switch(node_id nid) const override {
     return nid / concentration_;
-  }
-
-  int num_hops_to_node(node_id src, node_id dst) const override {
-    switch_id src_sw = src / concentration_;
-    switch_id dst_sw = dst / concentration_;
-    return minimal_distance(src_sw, dst_sw);
   }
 
   switch_id max_switch_id() const override {

@@ -87,18 +87,17 @@ class cascade_minimal_router : public router {
   }
 
   void route(packet *pkt) override {
+    auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / cascade_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = pkt->toaddr() % cascade_->concentration() + inj_port_offset_;
-      pkt->current_path().vc = 0;
+      hdr->port = pkt->toaddr() % cascade_->concentration() + inj_port_offset_;
+      hdr->vc = 0;
       return;
     }
 
-    packet::path& path = pkt->current_path();
-    cascade_->minimal_route_to_switch(this, my_addr_, ej_addr, path);
-    auto hdr = pkt->get_header<header>();
-    path.vc = hdr->num_group_hops;
-    if (cascade_->is_global_port(path.outport())){
+    cascade_->minimal_route_to_switch(this, my_addr_, ej_addr, pkt->rtr_header<header>());
+    hdr->vc = hdr->num_group_hops;
+    if (cascade_->is_global_port(hdr->port)){
       ++hdr->num_group_hops;
     }
     ++hdr->num_hops;

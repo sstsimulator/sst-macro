@@ -66,34 +66,22 @@ struct payload_queue {
 
   pisces_payload* pop(int num_credits);
 
-  pisces_payload* front();
+  pisces_payload* front(){
+    if (queue.empty()){
+      return nullptr;
+    }
+    return queue.front();
+  }
+
 
   size_t size() const {
     return queue.size();
   }
 
-  void push_back(pisces_payload* payload);
-
-};
-
-struct pisces_input {
-  int src_outport;
-  event_link* link;
-  pisces_input() :
-    src_outport(-1),
-    link(nullptr)
-  {
+  void push_back(pisces_payload* payload){
+    queue.push_back(payload);
   }
-};
 
-struct pisces_output {
-  int dst_inport;
-  event_link* link;
-  pisces_output() :
-    dst_inport(-1),
-    link(nullptr)
-  {
-  }
 };
 
 class pisces_sender :
@@ -101,6 +89,18 @@ class pisces_sender :
 {
   DeclareFactory(pisces_sender, event_component*)
  public:
+  struct input {
+    int port_to_credit;
+    event_link* link;
+    input() : link(nullptr){}
+  };
+
+  struct output {
+    int arrival_port;
+    event_link* link;
+    output() : link(nullptr){}
+  };
+
   virtual ~pisces_sender() {}
 
   virtual void set_input(sprockit::sim_parameters* params,
@@ -143,14 +143,11 @@ class pisces_sender :
   pisces_sender(sprockit::sim_parameters* params,
                 event_scheduler* parent);
 
-  virtual void send_credit(const pisces_input& src,
-    pisces_payload* payload,
-    timestamp packet_tail_leaves);
+  void send_credit(input& inp, pisces_payload* payload,
+          timestamp packet_tail_leaves);
 
   void send(pisces_bandwidth_arbitrator* arb,
-       pisces_payload* pkt,
-       const pisces_input& src,
-       const pisces_output& dest);
+       pisces_payload* pkt, input& to_credit, output& to_send);
 
  protected:
   packet_stats_callback* stat_collector_;

@@ -124,25 +124,25 @@ class dragonfly_plus_alltoall_minimal_router : public router {
   }
 
   void route(packet *pkt) override {
+    auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().set_outport(pkt->toaddr() % dfly_->concentration() + dfly_->a());
-      pkt->current_path().vc = 0;
+      hdr->port = pkt->toaddr() % dfly_->concentration() + dfly_->a();
+      hdr->vc = 0;
       return;
     }
 
-    auto& path = pkt->current_path();
     int dstG = (ej_addr % num_leaf_switches_) / dfly_->a();
     if (my_row_ == 0){
       if (static_route_){
-        path.set_outport(ej_addr % dfly_->a());
+        hdr->port = ej_addr % dfly_->a();
       } else {
-        path.set_outport(rotater_);
+        hdr->port = rotater_;
         rotater_ = (rotater_ + 1) % dfly_->a();
       }
     } else if (my_g_ == dstG){
       int dstA = ej_addr % dfly_->a();
-      path.set_outport(dstA);
+      hdr->port = dstA;
     } else {
       int rotater;
       int grpOffset = my_g_ < dstG ? dstG - 1 : dstG;
@@ -153,9 +153,9 @@ class dragonfly_plus_alltoall_minimal_router : public router {
         grp_rotaters_[dstG] = (grp_rotaters_[dstG] + 1) % covering_;
       }
       int port = grpOffset*covering_ + rotater + dfly_->a();
-      path.set_outport(port);
+      hdr->port = port;
     }
-    path.vc = 0;
+    hdr->vc = 0;
   }
 
  protected:
@@ -204,31 +204,30 @@ class dragonfly_plus_par_router : public dragonfly_plus_alltoall_minimal_router 
 
   void route(packet *pkt) override {
     switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
-    packet::path& path = pkt->current_path();
-    auto hdr = pkt->get_header<header>();
+    auto hdr = pkt->rtr_header<header>();
     if (my_row_ == 0){
       if (ej_addr == my_addr_){
-        pkt->current_path().outport() = pkt->toaddr() % dfly_->concentration() + dfly_->a();
-        pkt->current_path().vc = 0;
+        hdr->port = pkt->toaddr() % dfly_->concentration() + dfly_->a();
+        hdr->vc = 0;
       } else {
         //gotta route up
-        path.set_outport(up_rotater_);
+        hdr->port = up_rotater_;
         up_rotater_ = (up_rotater_ + 1) % dfly_->a();
-        path.vc = 0;
+        hdr->vc = 0;
       }
     } else {
       int dstG = (ej_addr % num_leaf_switches_) / dfly_->a();
       if (my_g_ == dstG){
         //go down to the eject stage
         int dstA = ej_addr % dfly_->a();
-        path.set_outport(dstA);
+        hdr->port = dstA;
         //don't change the vc
       } else if (hdr->stage_number == valiant_stage) {
         int grpOffset = my_g_ < dstG ? dstG - 1 : dstG;
         int port = grpOffset*covering_ + grp_rotaters_[dstG] + dfly_->a();
         grp_rotaters_[dstG] = (grp_rotaters_[dstG] + 1) % covering_;
-        path.set_outport(port);
-        path.vc = 1; //yep - here now
+        hdr->port = port;
+        hdr->vc = 1; //yep - here now
       } else {
         //we must make a ugal decision here
         int interG = my_g_;
@@ -252,14 +251,14 @@ class dragonfly_plus_par_router : public dragonfly_plus_alltoall_minimal_router 
         int minimalMetric = netsw_->queue_length(minimalPort);
 
         if (minimalMetric <= valiantMetric){
-          path.set_outport(minimalPort);
+          hdr->port = minimalPort;
           hdr->stage_number = final_stage;
           grp_rotaters_[dstG] = (grp_rotaters_[dstG] + 1) % covering_;
         } else {
-          path.set_outport(valiantPort);
+          hdr->port = valiantPort;
           hdr->stage_number = valiant_stage;
         }
-        path.vc = 0;
+        hdr->vc = 0;
       }
     }
   }

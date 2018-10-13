@@ -76,11 +76,6 @@ pisces_branched_switch::pisces_branched_switch(
   n_local_ports_ = args[0];
   n_local_xbars_ = args[1];
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  payload_handler_ = new_handler(this, &pisces_branched_switch::handle_payload);
-  ack_handler_ = new_handler(this, &pisces_branched_switch::handle_credit);
-#endif
-
   init_components(params);
 }
 
@@ -99,8 +94,8 @@ pisces_branched_switch::credit_latency(sprockit::sim_parameters *params) const
 pisces_branched_switch::~pisces_branched_switch()
 {
   delete xbar_;
-  for (pisces_muxer* mux : input_muxers_)
-    if (mux) delete mux;
+  for (auto& mux : input_muxers_)
+    if (mux.mux) delete mux.mux;
   for (pisces_demuxer* demux : output_demuxers_)
     if (demux) delete demux;
 }
@@ -121,38 +116,34 @@ pisces_branched_switch::init_components(sprockit::sim_parameters* params)
       params->get_namespace("xbar");
   xbar_params->add_param_override("num_vc", router_->num_vc());
 
-  sprockit::sim_parameters* output_params =
-      params->get_namespace("output");
+  sprockit::sim_parameters* output_params = params->get_namespace("output");
   output_params->add_param_override("num_vc", router_->num_vc());
 
-  sprockit::sim_parameters* link_params =
-      params->get_namespace("link");
+  sprockit::sim_parameters* link_params = params->get_namespace("link");
   link_params->add_param_override("num_vc", router_->num_vc());
 
   // construct the elements
   xbar_ = new pisces_crossbar(xbar_params, this);
-  xbar_->configure_outports(n_local_xbars_,divide_port_mapper(n_local_xbars_));
+  xbar_->configure_ports(n_local_xbars_, n_local_xbars_);
   input_muxers_.resize(n_local_xbars_);
   output_demuxers_.resize(n_local_xbars_);
   for (int i=0; i < n_local_xbars_; ++i) {
-    std::string location(std::to_string(i));
-
     pisces_muxer* mux = new pisces_muxer(input_params, this);
-    mux->configure_outports(1,constant_port_mapper(0));
-    mux->set_tile_id(location);
+    mux->configure_ports(n_local_ports_, 1);
     mux->set_update_vc(false);
-    input_muxers_[i] = mux;
+    input_port& input = input_muxers_[i];
+    input.mux = mux;
+    input.parent = this;
 
     pisces_demuxer* demux = new pisces_demuxer(output_params, this);
-    demux->configure_outports(n_local_ports_,mod_port_mapper(n_local_ports_));
-    demux->set_tile_id(location);
+    demux->configure_ports(1, n_local_ports_);
     demux->set_update_vc(false);
     output_demuxers_[i] = demux;
   }
 
   // connect input muxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
-    pisces_muxer* mux = input_muxers_[i];
+    pisces_muxer* mux = input_muxers_[i].mux;
     auto out_lnk = allocate_local_link(mux->send_latency(), this, xbar_->payload_handler());
     mux->set_output(input_params,0,i,out_lnk);
     auto in_lnk = allocate_local_link(xbar_->credit_latency(), this, mux->credit_handler());
@@ -188,40 +179,15 @@ pisces_branched_switch::connect_input(
   int dst_inport,
   event_link* link)
 {
-  pisces_muxer* muxer = input_muxers_[dst_inport/n_local_ports_];
+  pisces_muxer* muxer = input_muxers_[dst_inport/n_local_ports_].mux;
   muxer->set_input(params, dst_inport % n_local_ports_, src_outport, link);
 }
 
 int
 pisces_branched_switch::queue_length(int port) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
-    "pisces_tiled_switch::queue_length");
-}
-
-void
-pisces_branched_switch::handle_credit(event *ev)
-{
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  pisces_demuxer* demux = output_demuxers_[credit->port()/n_local_ports_];
-  demux->handle_credit(credit);
-}
-
-void
-pisces_branched_switch::handle_payload(event *ev)
-{
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  debug_printf(sprockit::dbg::pisces,
-               "tiled switch %d: incoming payload %s",
-               int(my_addr_), payload->to_string().c_str());
-  pisces_muxer* muxer = input_muxers_[payload->inport()/n_local_ports_];
-  //now figure out the new port I am routing to
-  router_->route(payload);
-  debug_printf(sprockit::dbg::pisces,
-               "tiled switch %d: routed payload %s to port %d",
-               int(my_addr_), payload->to_string().c_str(),
-               payload->next_port());
-  muxer->handle_payload(payload);
+  spkt_abort_printf("unimplemented: pisces_tiled_switch::queue_length");
+  return 0;
 }
 
 std::string
@@ -233,28 +199,49 @@ pisces_branched_switch::to_string() const
 link_handler*
 pisces_branched_switch::credit_handler(int port) const
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &pisces_branched_switch::handle_credit);
-#else
-  return ack_handler_;
-#endif
+  pisces_demuxer* demux = output_demuxers_[port];
+  return new_link_handler(demux, &pisces_demuxer::handle_payload);
+}
+
+void
+pisces_branched_switch::input_port::handle(event *ev)
+{
+  pisces_payload* payload = static_cast<pisces_payload*>(ev);
+  auto* hdr = payload->ctrl_header();
+  debug_printf(sprockit::dbg::pisces,
+               "tiled switch %d: incoming payload %s",
+               int(parent->addr()), payload->to_string().c_str());
+  //now figure out the new port I am routing to
+  parent->rter()->route(payload);
+
+  int edge_port = payload->outport();
+  int xbar_exit_port = edge_port / parent->n_local_ports_;
+  int demuxer_exit_port = edge_port % parent->n_local_ports_;;
+
+  hdr->stage = 0;
+  hdr->outports[0] = 0; //only 1
+  hdr->outports[1] = xbar_exit_port;
+  hdr->outports[2] = demuxer_exit_port;
+
+  debug_printf(sprockit::dbg::pisces,
+               "tiled switch %d: routed payload %s to port %d",
+               parent->addr(), payload->to_string().c_str(),
+               payload->outport());
+  mux->handle_payload(payload);
 }
 
 link_handler*
 pisces_branched_switch::payload_handler(int port) const
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &pisces_branched_switch::handle_payload);
-#else
-  return payload_handler_;
-#endif
+  input_port* mux = const_cast<input_port*>(&input_muxers_[port]);
+  return new_link_handler(mux, &input_port::handle);
 }
 
 void
 pisces_branched_switch::deadlock_check()
 {
   for (int i=0; i < n_local_xbars_; ++i){
-    input_muxers_[i]->deadlock_check();
+    input_muxers_[i].mux->deadlock_check();
     output_demuxers_[i]->deadlock_check();
   }
 }
@@ -263,7 +250,7 @@ void
 pisces_branched_switch::deadlock_check(event *ev)
 {
   for (int i=0; i < n_local_xbars_; ++i){
-    input_muxers_[i]->deadlock_check(ev);
+    input_muxers_[i].mux->deadlock_check(ev);
     output_demuxers_[i]->deadlock_check(ev);
   }
 }

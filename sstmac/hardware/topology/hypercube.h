@@ -67,7 +67,7 @@ class hypercube :
   void minimal_route_to_switch(
     switch_id src,
     switch_id dst,
-    packet::path& path) const;
+    packet::header* hdr) const;
 
   bool uniform_network_ports() const override {
     return false;
@@ -95,7 +95,11 @@ class hypercube :
     return dim_to_outport_[dim] + dir;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const override;
+  int minimal_distance(switch_id src, switch_id dst) const;
+
+  int num_hops_to_node(node_id src, node_id dst) const override {
+    return minimal_distance(src/concentration_, dst/concentration_);
+  }
 
   vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
 

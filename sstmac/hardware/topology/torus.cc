@@ -88,35 +88,6 @@ torus::endpoints_connected_to_injection_switch(switch_id swaddr,
   }
 }
 
-torus::route_type_t
-torus::torus_route(
-  switch_id src,
-  switch_id dst,
-  packet::path& path) const
-{
-  int div = 1;
-  int ndim = dimensions_.size();
-  for (int i=0; i < ndim; ++i){
-    int srcX = (src / div) % dimensions_[i];
-    int dstX = (dst / div) % dimensions_[i];
-    if (srcX != dstX){
-      if (shortest_path_positive(i, srcX, dstX)){
-        top_debug("torus routing up on dim %d for switch %d to %d on port %d",
-                  i, src, dst, path.outport());
-        return up_path(i, srcX, dstX, path);
-      } else {
-        top_debug("torus routing down on dim %d for switch %d to %d on port %d",
-                  i, src, dst, path.outport());
-        return down_path(i, srcX, dstX, path);
-
-      }
-    }
-    div *= dimensions_[i];
-  }
-  sprockit::abort("torus::torus_route: failed to route correctly on torus");
-  return same_path;
-}
-
 int
 torus::shortest_distance(int dim, int src, int dst) const
 {
@@ -169,32 +140,6 @@ torus::shortest_path_positive(
     down_distance = src - dst;
   }
   return up_distance <= down_distance;
-}
-
-torus::route_type_t
-torus::up_path(
-  int dim, int srcX, int dstX,
-  packet::path& path) const
-{
-  bool reset_dim = (srcX + 1) % dimensions_[dim] == dstX;
-  bool wrapped = srcX == (dimensions_[dim]-1);
-  path.set_outport(convert_to_port(dim, pos));
-  if (reset_dim) return new_dimension;
-  else if (wrapped) return wrapped_around;
-  else return same_path;
-}
-
-torus::route_type_t
-torus::down_path(
-  int dim, int src, int dst,
-  packet::path& path) const
-{
-  bool reset_dim = src == ((dst + 1) % dimensions_[dim]);
-  bool wrapped = src == 0;
-  path.set_outport(convert_to_port(dim, neg));
-  if (reset_dim) return new_dimension;
-  else if (wrapped) return wrapped_around;
-  else return same_path;
 }
 
 void

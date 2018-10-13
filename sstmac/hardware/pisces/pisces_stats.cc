@@ -218,7 +218,7 @@ bytes_sent_collector::bytes_sent_collector(sprockit::sim_parameters *params,
 void
 bytes_sent_collector::collect_single_event(const pkt_arbitration_t& st)
 {
-  bytes_sent_->record(st.pkt->next_port(), st.pkt->byte_length());
+  bytes_sent_->record(st.pkt->outport(), st.pkt->byte_length());
 }
 
 byte_hop_collector::~byte_hop_collector()

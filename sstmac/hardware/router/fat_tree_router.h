@@ -60,6 +60,7 @@ namespace hw {
 class fat_tree_router :
   public router
 {
+  using header = packet::header;
   FactoryRegister("fat_tree", router, fat_tree_router)
  public:
   fat_tree_router(sprockit::sim_parameters* params, topology* top, network_switch* netsw);

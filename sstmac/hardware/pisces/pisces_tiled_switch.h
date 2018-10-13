@@ -66,6 +66,10 @@ class pisces_tiled_switch :
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A tiled network switch implementing the packet flow congestion model")
  public:
+  struct header : public pisces_payload::header {
+    uint16_t arrival_port;
+  };
+
   pisces_tiled_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
 
   int queue_length(int port) const override;
@@ -98,12 +102,19 @@ class pisces_tiled_switch :
 
   void deadlock_check(event* ev) override;
 
+  int get_row(int tile) const {
+    return tile / ncols_;
+  }
+
+  int get_col(int tile) const {
+    return tile / nrows_;
+  }
+
  protected:
   std::vector<pisces_demuxer*> row_input_demuxers_;
-
   std::vector<pisces_crossbar*> xbar_tiles_;
-
   std::vector<pisces_muxer*> col_output_muxers_;
+  std::vector<int> dst_inports_;
 
   int nrows_;
 

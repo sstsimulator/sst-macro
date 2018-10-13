@@ -70,6 +70,20 @@ class pisces_payload :
   public sprockit::thread_safe_new<pisces_payload>
 {
  public:
+  struct header {
+    uint8_t stage : 2;
+    uint8_t outports[3];
+    uint16_t inport;
+  };
+
+  header* ctrl_header() {
+    return control_header<header>();
+  }
+
+  const header* ctrl_header() const {
+    return control_header<header>();
+  }
+
   ImplementSerializable(pisces_payload)
 
   static const double uninitialized_bw;
@@ -94,12 +108,24 @@ class pisces_payload :
     return current_vc_;
   }
 
-  int next_port() const {
-    return packet::global_outport();
+  void advance_stage(){
+    auto* hdr = ctrl_header();
+    hdr->inport = hdr->outports[hdr->stage];
+    hdr->stage++;
+  }
+
+  int next_local_outport() const {
+    auto* hdr = ctrl_header();
+    return hdr->outports[hdr->stage];
+  }
+
+  int next_local_inport() const {
+    auto* hdr = ctrl_header();
+    return hdr->inport;
   }
 
   int next_vc() const {
-    return packet::vc();
+    return rtr_header<packet::header>()->vc;
   }
 
   void update_vc() {
@@ -109,6 +135,11 @@ class pisces_payload :
     } else {
       current_vc_ = new_vc;
     }
+  }
+
+  void set_inport(int port) {
+    auto* hdr = ctrl_header();
+    hdr->inport = port;
   }
 
   timestamp arrival() const {
@@ -154,20 +185,10 @@ class pisces_payload :
     return byte_length() / bw_;
   }
 
-  void set_inport(int port) {
-    inport_ = port;
-  }
-
-  int inport() const {
-    return inport_;
-  }
-
   void serialize_order(serializer& ser) override;
 
  protected:
   pisces_payload(){} //for serialization
-
-  int inport_;
 
   double bw_;
 

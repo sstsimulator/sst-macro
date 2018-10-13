@@ -131,11 +131,11 @@ class dragonfly_plus : public dragonfly
     return (sid % num_leaf_switches_) / a_;
   }
 
-  int num_switches() const override {
+  switch_id num_switches() const override {
     return 2 * a_ * g_;
   }
 
-  int num_leaf_switches() const override {
+  switch_id num_leaf_switches() const override {
     return num_leaf_switches_;
   }
 
@@ -143,13 +143,11 @@ class dragonfly_plus : public dragonfly
     return false;
   }
 
-  void minimal_route_to_switch(
-      int& path_rotater,
-      switch_id current_sw_addr,
-      switch_id dest_sw_addr,
-      packet::path &path) const;
+  int minimal_distance(switch_id src, switch_id dst) const;
 
-  int minimal_distance(switch_id src, switch_id dst) const override;
+  int num_hops_to_node(node_id src, node_id dst) const override {
+    return minimal_distance(src / concentration_, dst/ concentration_);
+  }
 
   int diameter() const override {
     return 5;

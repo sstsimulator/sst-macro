@@ -324,11 +324,11 @@ class merlin_topology : public topology {
     return "merlin topology";
   }
 
-  int num_switches() const override {
+  switch_id num_switches() const override {
     return num_switches_;
   }
 
-  int num_nodes() const override {
+  node_id num_nodes() const override {
     return num_nodes_;
   }
 
@@ -362,11 +362,6 @@ class merlin_topology : public topology {
   }
 
   int max_num_ports() const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-    return -1;
-  }
-
-  int minimal_distance(switch_id src, switch_id dst) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return -1;
   }

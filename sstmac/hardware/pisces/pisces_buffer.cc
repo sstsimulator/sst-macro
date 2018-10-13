@@ -69,21 +69,21 @@ void
 pisces_buffer::set_input(
   sprockit::sim_parameters* params,
   int this_inport, int src_outport,
-  event_link* input)
+  event_link* link)
 {
-  input_.src_outport = src_outport;
-  input_.link = input;
-  input->validate_latency(credit_lat_);
+  input_.link = link;
+  input_.port_to_credit = src_outport;
+  link->validate_latency(credit_lat_);
 }
 
 void
 pisces_buffer::set_output(sprockit::sim_parameters* params,
                          int this_outport, int dst_inport,
-                         event_link* output)
+                         event_link* link)
 {
-  output->validate_latency(send_lat_);
-  output_.link = output;
-  output_.dst_inport = dst_inport;
+  link->validate_latency(send_lat_);
+  output_.link = link;
+  output_.arrival_port = dst_inport;
 }
 
 pisces_network_buffer::pisces_network_buffer(
@@ -93,6 +93,9 @@ pisces_network_buffer::pisces_network_buffer(
     num_vc_(params->get_int_param("num_vc")),
     queues_(num_vc_),
     credits_(num_vc_, 0),
+ #if SSTMAC_SANITY_CHECK
+    initial_credits_(num_vc_,0),
+ #endif
     packet_size_(params->get_byte_length_param("mtu")),
     payload_handler_(nullptr)
 {
@@ -100,6 +103,9 @@ pisces_network_buffer::pisces_network_buffer(
   long num_credits_per_vc = credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;
+#if SSTMAC_SANITY_CHECK
+    initial_credits_[i] = num_credits_per_vc;
+#endif
   }
   arb_ = pisces_bandwidth_arbitrator::factory::
           get_param("arbitrator", params);
@@ -112,10 +118,8 @@ pisces_network_buffer::handle_credit(event* ev)
   int vc = credit->vc();
 #if SSTMAC_SANITY_CHECK
   if (vc >= credits_.size()) {
-    spkt_throw_printf(sprockit::value_error,
-                     "pisces_buffer::handle_credit: on %s, port %d, invalid vc %d",
-                     to_string().c_str(),
-                     credit->port(), vc);
+    spkt_abort_printf("pisces_buffer::handle_credit: on %s, port %d, invalid vc %d",
+                     to_string().c_str(), credit->port(), vc);
   }
 #endif
   int& num_credits = credits_[vc];
@@ -124,12 +128,21 @@ pisces_network_buffer::handle_credit(event* ev)
   bytes_delayed_ -= credit->num_credits();
 
   pisces_debug(
-    "On %s with %d credits, handling {%s} for vc:%d -> byte delay now %d",
+    "On %s with %d credits, handling credit {%s} for vc:%d -> byte delay now %d",
      to_string().c_str(),
      num_credits,
      credit->to_string().c_str(),
-     vc,
-     bytes_delayed_);
+     vc, bytes_delayed_);
+
+#if SSTMAC_SANITY_CHECK
+  if (credit->port() != 0){
+    spkt_abort_printf("pisces_buffer::handle_credit: got nonzero port");
+  }
+
+  if (num_credits > initial_credits_[vc]){
+    spkt_abort_printf("initial credits exceeded");
+  }
+#endif
 
   /** while we have sendable payloads, do it */
   pisces_payload* payload = queues_[vc].pop(num_credits);
@@ -167,11 +180,8 @@ pisces_network_buffer::handle_payload(event* ev)
 
 #if SSTMAC_SANITY_CHECK
   if (dst_vc >= credits_.size()) {
-    spkt_throw_printf(sprockit::value_error,
-                     "pisces_buffer::handle_payload: on %s, port %d, invalid vc %d",
-                     to_string().c_str(),
-                     pkt->next_port(),
-                     dst_vc);
+    spkt_abort_printf("pisces_buffer::handle_payload: on %s, port %d, invalid vc %d",
+                     to_string().c_str(), pkt->outport(), dst_vc);
   }
 #endif
   int& num_credits = credits_[dst_vc];
@@ -190,6 +200,11 @@ pisces_network_buffer::handle_payload(event* ev)
     num_credits -= pkt->num_bytes();
     send(arb_, pkt, input_, output_);
   } else {
+#if SSTMAC_SANITY_CHECK
+    if (dst_vc >= queues_.size()){
+      spkt_abort_printf("Bad VC %d: max is %d", dst_vc, queues_.size() - 1);
+    }
+#endif
     queues_[dst_vc].push_back(pkt);
   }
 }
@@ -204,12 +219,10 @@ pisces_network_buffer::deadlock_check()
     if (pkt){
       int vc = pkt->next_vc();
       deadlocked_channels_.insert(vc);
-      pkt->set_inport(output_.dst_inport);
       vc = update_vc_ ? pkt->next_vc() : pkt->vc();
       std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i
         << " going to " << output_.link->to_string()
-        << " outport=" << pkt->next_port()
-        << " inport=" << pkt->inport()
+        << " outport=" << pkt->outport()
         << " vc=" << vc
         << std::endl;
       output_.link->deadlock_check(pkt);
@@ -243,8 +256,6 @@ pisces_network_buffer::deadlock_check(event* ev)
   }
 
   pisces_payload* payload = safe_cast(pisces_payload, ev);
-  int outport = payload->next_port();
-  int inport = payload->inport();
   int vc = update_vc_ ? payload->next_vc() : payload->vc();
   if (deadlocked_channels_.find(vc) != deadlocked_channels_.end()){
     spkt_throw_printf(sprockit::value_error,
@@ -255,16 +266,15 @@ pisces_network_buffer::deadlock_check(event* ev)
 
   std::list<pisces_payload*>& blocked = blocked_messages_[vc];
   if (blocked.empty()){
-    spkt_throw_printf(sprockit::value_error,
-      "channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
+    int outport = payload->next_local_outport();
+    int inport = payload->next_local_inport();
+    spkt_abort_printf("channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
       outport, inport, vc);
   } else {
     pisces_payload* next = blocked.front();
-    next->set_inport(output_.dst_inport);
     std::cerr << to_string() << " going to "
       << output_.link->to_string()
-      << " outport=" << next->next_port()
-      << " inport=" << next->inport()
+      << " outport=" << next->outport()
       << " vc=" << next->next_vc()
       << " : " << next->to_string()
       << std::endl;
@@ -405,9 +415,9 @@ void
 pisces_injection_buffer::handle_payload(event* ev)
 {
   auto pkt = static_cast<pisces_payload*>(ev);
-  pkt->set_global_outport(0);
-  pkt->set_local_outport(0);
-  pkt->current_path().vc = 0; //start off on vc 0
+  auto hdr = pkt->ctrl_header();
+  pkt->set_outport(0);
+  pkt->set_vc(0);
   pkt->set_arrival(now());
   credits_ -= pkt->byte_length();
   //we only get here if we cleared the credits

@@ -83,33 +83,74 @@ class torus_minimal_router : public router {
     return 2;
   }
 
+  void up_path( int dim, int srcX, int dstX, header* hdr) const
+  {
+    auto& dimensions_ = torus_->dimensions();
+    if ((srcX + 1) % dimensions_[dim] == dstX){
+      //move onto next dimension
+      hdr->vc = 0;
+      hdr->crossed_timeline = 0;
+    } else if (srcX == (dimensions_[dim]-1)){
+      hdr->crossed_timeline = 1;
+      hdr->vc = 1;
+    } else {
+      hdr->vc = hdr->crossed_timeline ? 1 : 0;
+    }
+    hdr->port = torus_->convert_to_port(dim, torus::pos);
+  }
+
+  void down_path( int dim, int src, int dst, header* hdr) const
+  {
+    auto& dimensions_ = torus_->dimensions();
+    if (src == ((dst + 1) % dimensions_[dim])){
+      //move onto next dimension
+      hdr->vc = 0;
+      hdr->crossed_timeline = 0;
+    } else if (src == 0){
+      hdr->crossed_timeline = 1;
+      hdr->vc = 1;
+    } else {
+      hdr->vc = hdr->crossed_timeline ? 1 : 0;
+    }
+    hdr->port = torus_->convert_to_port(dim, torus::neg);
+  }
+
+  void minimal_route(switch_id dst, header* hdr){
+    switch_id src = my_addr_;
+    auto& dimensions_ = torus_->dimensions();
+    int div = 1;
+    int ndim = dimensions_.size();
+    for (int i=0; i < ndim; ++i){
+      int srcX = (src / div) % dimensions_[i];
+      int dstX = (dst / div) % dimensions_[i];
+      if (srcX != dstX){
+        if (torus_->shortest_path_positive(i, srcX, dstX)){
+          top_debug("torus routing up on dim %d for switch %d to %d on port %d",
+                    i, src, dst, int(hdr->port));
+          up_path(i, srcX, dstX, hdr);
+          return;
+        } else {
+          top_debug("torus routing down on dim %d for switch %d to %d on port %d",
+                    i, src, dst, int(hdr->port));
+          down_path(i, srcX, dstX, hdr);
+          return;
+        }
+      }
+      div *= dimensions_[i];
+    }
+    sprockit::abort("torus: failed to route correctly on torus");
+  }
+
   void route(packet* pkt) override {
+    auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
-      pkt->current_path().vc = 0;
+      hdr->port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
+      hdr->vc = 0;
       return;
     }
 
-    route_to_switch(pkt, ej_addr);
-  }
-
-  void route_to_switch(packet* pkt, switch_id ej_addr) {
-    packet::path& path = pkt->current_path();
-    torus::route_type_t ty = torus_->torus_route(my_addr_, ej_addr, path);
-    auto hdr = pkt->get_header<header>();
-    switch(ty){
-      case torus::same_path:
-        if (hdr->crossed_timeline) path.vc = 1;
-        else path.vc = 0;
-        break; //keep the original virtual channel
-      case torus::new_dimension:
-        path.vc = 0;
-        break;
-      case torus::wrapped_around:
-        path.vc = 1;
-        break;
-    }
+    minimal_route(ej_addr, hdr);
   }
 
  protected:
@@ -125,6 +166,7 @@ class torus_valiant_router : public torus_minimal_router {
 
   struct header : public torus_minimal_router::header {
     uint8_t stage_number : 3;
+    uint32_t dest_switch : 24;
   };
 
   FactoryRegister("torus_valiant",
@@ -156,44 +198,46 @@ class torus_valiant_router : public torus_minimal_router {
   }
 
   void route(packet *pkt) override {
+    auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
-      pkt->current_path().vc = 0;
+      hdr->port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
+      hdr->vc = 0;
       return;
     }
 
-    auto hdr = pkt->get_header<header>();
+
     switch(hdr->stage_number){
       case initial_stage: {
         switch_id inter = get_intermediate(pkt, ej_addr);
-        pkt->set_dest_switch(inter);
-        route_to_switch(pkt, inter);
+        hdr->dest_switch = inter;
+        minimal_route(inter, hdr);
         hdr->stage_number = valiant_stage;
         rter_debug("chose intermediate %d for pkt %s on %d:%d",
                    inter, pkt->to_string().c_str(),
-                   pkt->current_path().outport(), pkt->current_path().vc);
+                   int(hdr->port), int(hdr->vc));
         break;
       }
       case valiant_stage: {
-        if (my_addr_ == pkt->dest_switch()){
+        if (my_addr_ == hdr->dest_switch){
           hdr->stage_number = final_stage;
-          rter_debug("reached intermediate %d for pkt %s", pkt->dest_switch(), pkt->to_string().c_str());
+          rter_debug("reached intermediate %d for pkt %s",
+                     int(hdr->dest_switch), pkt->to_string().c_str());
         } else {
           rter_debug("route to intermediate %d for pkt %s on %d:%d",
-                     pkt->dest_switch(), pkt->to_string().c_str(),
-                     pkt->current_path().outport(), pkt->current_path().vc);
-          route_to_switch(pkt, pkt->dest_switch());
+                     int(hdr->dest_switch), pkt->to_string().c_str(),
+                     int(hdr->port), int(hdr->vc));
+          minimal_route(hdr->dest_switch, hdr);
           break;
         }
       }
       case final_stage: {
-        route_to_switch(pkt, ej_addr);
-        pkt->set_dest_switch(ej_addr);
-        pkt->current_path().vc += 2; //final stage vc moves
+        minimal_route(ej_addr, hdr);
+        hdr->dest_switch = ej_addr;
+        hdr->vc += 2; //final stage vc moves
         rter_debug("route to final %d for pkt %s on %d:%d",
-                   pkt->dest_switch(), pkt->to_string().c_str(),
-                   pkt->current_path().outport(), pkt->current_path().vc);
+                   int(hdr->dest_switch), pkt->to_string().c_str(),
+                   int(hdr->port), int(hdr->vc));
         break;
       }
       break;
@@ -222,68 +266,68 @@ class torus_ugal_router : public torus_valiant_router {
   }
 
   void route(packet *pkt) override {
+    auto* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / torus_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
-      pkt->current_path().vc = 0;
+      hdr->port = pkt->toaddr() % torus_->concentration() + inj_port_offset_;
+      hdr->vc = 0;
       return;
     }
 
-    auto hdr = pkt->get_header<header>();
     switch(hdr->stage_number){
       case initial_stage: {
         switch_id inter = get_intermediate(pkt, ej_addr);
-        packet::path ugal; torus_->minimal_route_to_switch(my_addr_, inter, ugal);
-        packet::path min; torus_->minimal_route_to_switch(my_addr_, ej_addr, min);
+        header ugal; minimal_route(inter, &ugal);
+        header min; minimal_route(ej_addr, &min);
         int min_dist = torus_->minimal_distance(my_addr_, ej_addr);
         int ugal_dist = torus_->minimal_distance(my_addr_, inter) +
                         torus_->minimal_distance(inter, ej_addr);
 
-        int ugal_metric = netsw_->queue_length(ugal.outport()) * ugal_dist;
-        int min_metric = netsw_->queue_length(min.outport()) * min_dist;
+        int ugal_metric = netsw_->queue_length(ugal.port) * ugal_dist;
+        int min_metric = netsw_->queue_length(min.port) * min_dist;
 
         if (ugal_metric < min_metric){
-          pkt->set_dest_switch(inter);
+          hdr->dest_switch = inter;
           hdr->stage_number = valiant_stage;
           rter_debug("chose intermediate %d for pkt %s on %d:%d",
                      inter, pkt->to_string().c_str(),
-                     pkt->current_path().outport(), pkt->current_path().vc);
+                     int(hdr->port), int(hdr->vc));
         } else {
-          pkt->set_dest_switch(ej_addr);
+          hdr->dest_switch = ej_addr;
           hdr->stage_number = minimal_only_stage;
           rter_debug("chose minimal %d for pkt %s on %d:%d",
-                     ej_addr, pkt->to_string().c_str(),
-                     pkt->current_path().outport(), pkt->current_path().vc);
+                     ej_addr, pkt->to_string().c_str(), int(hdr->port), int(hdr->vc));
         }
-        route_to_switch(pkt, pkt->dest_switch());
+        minimal_route(hdr->dest_switch, hdr);
         break;
       }
       case valiant_stage: {
-        if (my_addr_ == pkt->dest_switch()){
+        if (my_addr_ == hdr->dest_switch){
           hdr->stage_number = final_stage;
-          rter_debug("reached intermediate %d for pkt %s", pkt->dest_switch(), pkt->to_string().c_str());
+          rter_debug("reached intermediate %d for pkt %s",
+                     int(hdr->dest_switch), pkt->to_string().c_str());
         } else {
           rter_debug("route to intermediate %d for pkt %s on %d:%d",
-                     pkt->dest_switch(), pkt->to_string().c_str(),
-                     pkt->current_path().outport(), pkt->current_path().vc);
-          route_to_switch(pkt, pkt->dest_switch());
+                     int(hdr->dest_switch), pkt->to_string().c_str(),
+                     int(hdr->port), int(hdr->vc));
+          minimal_route(hdr->dest_switch, hdr);
           break;
         }
       }
       case final_stage: {
-        route_to_switch(pkt, ej_addr);
-        pkt->set_dest_switch(ej_addr);
-        pkt->current_path().vc += 2; //final stage vc moves
+        minimal_route(ej_addr, hdr);
+        hdr->dest_switch = ej_addr;
+        hdr->vc += 2; //final stage vc moves
         rter_debug("route to final %d for pkt %s on %d:%d",
-                   pkt->dest_switch(), pkt->to_string().c_str(),
-                   pkt->current_path().outport(), pkt->current_path().vc);
+                   int(hdr->dest_switch), pkt->to_string().c_str(),
+                   int(hdr->port), int(hdr->vc));
         break;
       }
       case minimal_only_stage: {
         rter_debug("route to minimal %d for pkt %s on %d:%d",
-                 pkt->dest_switch(), pkt->to_string().c_str(),
-                 pkt->current_path().outport(), pkt->current_path().vc);
-        route_to_switch(pkt, ej_addr);
+                   int(hdr->dest_switch), pkt->to_string().c_str(),
+                   int(hdr->port), int(hdr->vc));
+        minimal_route(ej_addr, hdr);
         break;
       }
     }

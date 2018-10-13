@@ -76,12 +76,9 @@ class pisces_buffer :
   pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent);
 
  protected:
-  pisces_input input_;
-  pisces_output output_;
+  input input_;
+  output output_;
   uint32_t bytes_delayed_;
-
-  static const int my_outport = 0;
-  static const int my_inport = 0;
 };
 
 class pisces_network_buffer :
@@ -113,6 +110,9 @@ class pisces_network_buffer :
   int num_vc_;
   std::vector<payload_queue> queues_;
   std::vector<int> credits_;
+#if SSTMAC_SANITY_CHECK
+  std::vector<int> initial_credits_;
+#endif
 
  private:
   void build_blocked_messages();

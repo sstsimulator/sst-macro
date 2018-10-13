@@ -107,42 +107,6 @@ dragonfly::endpoints_connected_to_injection_switch(switch_id swaddr,
   }
 }
 
-void
-dragonfly::minimal_route_to_switch(
-    switch_id src,
-    switch_id dst,
-    packet::path &path) const
-{
-  //see if intra-group
-  int srcG = computeG(src);
-  int dstG = computeG(dst);
-  if (srcG == dstG){
-    int dstA = computeA(dst);
-    path.set_outport(dstA);
-    return;
-  }
-
-  int srcA = computeA(src);
-  //see if inter-group, but direct connection to that group
-  std::vector<int> connected;
-  group_wiring_->connected_routers(srcA, srcG, connected);
-  for (int c=0; c < connected.size(); ++c){
-    int testG = computeG(connected[c]);
-    if (testG == dstG){
-      path.set_outport(c + a_);
-      return;
-    }
-  }
-
-  //inter-group and we need local hop to get there
-  std::vector<std::pair<int,int>> groupConnections;
-  group_wiring_->connected_to_group(srcG, dstG, groupConnections);
-  int srcRotater = srcA % groupConnections.size();
-
-  auto& pair = groupConnections[srcRotater];
-  path.set_outport(pair.first);
-}
-
 int
 dragonfly::minimal_distance(switch_id src, switch_id dst) const
 {

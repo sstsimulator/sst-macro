@@ -36,16 +36,16 @@ class hypercube_minimal_router : public router {
   }
 
   void route(packet *pkt) override {
+    auto* hdr = pkt->rtr_header<packet::header>();
     switch_id ej_addr = pkt->toaddr() / cube_->concentration();
-    packet::path& path = pkt->current_path();
     if (ej_addr == my_addr_){
-      path.set_outport(pkt->toaddr() % cube_->concentration() + inj_offset_);
-      path.vc = 0;
+      hdr->port = pkt->toaddr() % cube_->concentration() + inj_offset_;
+      hdr->vc = 0;
       return;
     }
 
-    cube_->minimal_route_to_switch(my_addr_, ej_addr, pkt->current_path());
-    pkt->current_path().vc = 0;
+    cube_->minimal_route_to_switch(my_addr_, ej_addr, hdr);
+    hdr->vc = 0;
   }
 
  protected:
@@ -61,6 +61,7 @@ class hypercube_par_router : public hypercube_minimal_router {
     uint8_t dstY : 6;
     uint8_t dstZ : 6;
     uint16_t ejPort;
+    uint32_t dest_switch : 24;
   };
 
  public:
@@ -125,9 +126,7 @@ class hypercube_par_router : public hypercube_minimal_router {
   }
 
   void route(packet *pkt) override {
-    auto hdr = pkt->get_header<header>();
-    auto& path = pkt->current_path();
-
+    auto hdr = pkt->rtr_header<header>();
     switch(hdr->stage_number){
     case initial_stage: {
       switch_id ej_addr = pkt->toaddr() / cube_->concentration();
@@ -137,9 +136,9 @@ class hypercube_par_router : public hypercube_minimal_router {
       hdr->dstZ = coords[2];
       hdr->ejPort = pkt->toaddr() % cube_->concentration() + inj_offset_;
       hdr->stage_number = minimal_stage;
-      path.vc = 0;
+      hdr->vc = 0;
       if (ej_addr == my_addr_){
-        path.set_outport(hdr->ejPort);
+        hdr->port = hdr->ejPort;
         return;
       }
     }
@@ -163,31 +162,31 @@ class hypercube_par_router : public hypercube_minimal_router {
          valiantPort = coords[2] + x_ + y_;
        } else {
           //oh - um - eject
-         path.set_outport(hdr->ejPort);
-         path.vc = 0;
+         hdr->port = hdr->ejPort;
+         hdr->vc = 0;
          return;
        }
       int minLength = netsw_->queue_length(minimalPort);
       int valLength = netsw_->queue_length(valiantPort) * 2;
       if (minLength <= valLength){
-        path.set_outport(minimalPort);
+        hdr->port = minimalPort;
       } else {
         switch_id inter = cube_->switch_addr(coords);
-        path.set_outport(valiantPort);
-        pkt->set_dest_switch(inter);
+        hdr->port = valiantPort;
+        hdr->dest_switch = inter;
         hdr->stage_number = valiant_stage;
       }
       break;
     }
     case valiant_stage: {
-      if (my_addr_ != pkt->dest_switch()){
-        auto coords = cube_->switch_coords(pkt->dest_switch());
+      if (my_addr_ != hdr->dest_switch){
+        auto coords = cube_->switch_coords(hdr->dest_switch);
         if (coords[0] != myX_){
-          path.set_outport(coords[0]);
+          hdr->port = coords[0];
         } else if (coords[1] != myY_){
-          path.set_outport(coords[1]+x_);
+          hdr->port = coords[1]+x_;
         } else {
-          path.set_outport(coords[2]+x_+y_);
+          hdr->port = coords[2]+x_+y_;
         }
         break;
       }
@@ -204,16 +203,15 @@ class hypercube_par_router : public hypercube_minimal_router {
         port = hdr->dstZ+x_+y_;
       } else {
         //oh - um - eject
-       path.set_outport(hdr->ejPort);
-       path.vc = 0;
+       hdr->port = hdr->ejPort;
+       hdr->vc = 0;
        return;
       }
-      path.set_outport(port);
+      hdr->port = port;
     }
     }
 
-
-    path.vc = hdr->nhops;
+    hdr->vc = hdr->nhops;
     hdr->nhops++;
   }
 

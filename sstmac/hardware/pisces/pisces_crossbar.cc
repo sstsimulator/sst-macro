@@ -82,14 +82,11 @@ pisces_muxer::pisces_muxer(
 }
 
 pisces_NtoM_queue::
-pisces_NtoM_queue(sprockit::sim_parameters* params,
-                       event_scheduler* parent)
+pisces_NtoM_queue(sprockit::sim_parameters* params, event_scheduler* parent)
   : pisces_sender(params, parent),
     credit_handler_(nullptr),
     payload_handler_(nullptr),
-    tile_id_(""),
-    outport_mapper_(new identity_mapper()),
-    credit_mapper_(new identity_mapper())
+    tile_id_("")
 {
   num_vc_ = params->get_int_param("num_vc");
   arb_ = pisces_bandwidth_arbitrator::factory::get_param("arbitrator", params);
@@ -117,8 +114,8 @@ pisces_NtoM_queue::~pisces_NtoM_queue()
 {
   if (arb_) delete arb_;
   if (credit_handler_) delete credit_handler_;
-  for (auto& pair : inputs_){
-    if (pair.second.link) delete pair.second.link;
+  for (auto& inp : inputs_){
+    if (inp.link) delete inp.link;
   }
   for (auto& out : outputs_){
     if (out.link) delete out.link;
@@ -133,17 +130,14 @@ pisces_NtoM_queue::deadlock_check()
     payload_queue& queue = queues_[i];
     pisces_payload* pkt = queue.front();
     while (pkt){
-      deadlocked_channels_[pkt->next_port()].insert(pkt->next_vc());
-      pisces_output& poutput = outputs_[local_outport(pkt->next_port())];
+      deadlocked_channels_[pkt->outport()].insert(pkt->next_vc());
       event_link* output = output_link(pkt);
       if (output){
-        pkt->set_inport(poutput.dst_inport);
         int vc = update_vc_ ? pkt->next_vc() : pkt->vc();
         std::cerr << "Starting deadlock check on " << to_string()
                   << " on queue " << i
                   << " going to " << output->to_string()
-                  << " outport=" << pkt->next_port()
-                  << " inport=" << pkt->inport()
+                  << " outport=" << pkt->outport()
                   << " vc=" << vc
                   << " for message " << pkt->to_string()
                   << std::endl;
@@ -163,7 +157,7 @@ pisces_NtoM_queue::build_blocked_messages()
     payload_queue& queue = queues_[i];
     pisces_payload* pkt = queue.pop(1000000);
     while (pkt){
-      blocked_messages_[pkt->inport()][pkt->vc()].push_back(pkt);
+      blocked_messages_[pkt->next_local_inport()][pkt->vc()].push_back(pkt);
       pkt = queue.pop(10000000);
     }
   }
@@ -178,31 +172,27 @@ pisces_NtoM_queue::deadlock_check(event* ev)
   }
 
   pisces_payload* payload = safe_cast(pisces_payload, ev);
-  int outport = payload->next_port();
-  int inport = payload->inport();
+  int inport = payload->next_local_inport();
   int vc = update_vc_ ? payload->next_vc() : payload->vc();
-  std::set<int>& deadlocked_vcs = deadlocked_channels_[outport];
+  std::set<int>& deadlocked_vcs = deadlocked_channels_[payload->outport()];
   if (deadlocked_vcs.find(vc) != deadlocked_vcs.end()){
     spkt_throw_printf(sprockit::value_error,
       "found deadlock:\n%s", to_string().c_str());
   }
 
-  deadlocked_channels_[outport].insert(vc);
+  deadlocked_channels_[payload->outport()].insert(vc);
 
   std::list<pisces_payload*>& blocked = blocked_messages_[inport][vc];
   if (blocked.empty()){
     spkt_throw_printf(sprockit::value_error,
       "channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
-      outport, inport, vc);
+      payload->outport(), inport, vc);
   } else {
     pisces_payload* next = blocked.front();
-    pisces_output& poutput = outputs_[local_outport(outport)];
     event_link* output = output_link(next);
-    next->set_inport(poutput.dst_inport);
     std::cerr << to_string() << " going to "
       << output->to_string()
-      << " outport=" << next->next_port()
-      << " inport=" << next->inport()
+      << " outport=" << next->outport()
       << " vc=" << next->next_vc()
       << " : " << next->to_string()
       << std::endl;
@@ -214,18 +204,14 @@ pisces_NtoM_queue::deadlock_check(event* ev)
 std::string
 pisces_NtoM_queue::input_name(pisces_payload* pkt)
 {
-  event_link* link = inputs_[pkt->inport()].link;
+  event_link* link = inputs_[pkt->next_local_inport()].link;
   return link->to_string();
 }
 
 event_link*
 pisces_NtoM_queue::output_link(pisces_payload* pkt)
 {
-  int loc_port = local_outport(pkt->next_port());
-  event_link* link = outputs_[loc_port].link;
-  if (!link)
-    return nullptr;
-  return link;
+  return outputs_[pkt->next_local_outport()].link;
 }
 
 std::string
@@ -237,43 +223,54 @@ pisces_NtoM_queue::output_name(pisces_payload* pkt)
 void
 pisces_NtoM_queue::send_payload(pisces_payload* pkt)
 {
-  pisces_debug(
-        "On %s:%p local_port:%d vc:%d sending {%s}",
-        to_string().c_str(), this,
-        pkt->local_outport(), pkt->next_vc(),
-        pkt->to_string().c_str());
-  send(arb_, pkt, inputs_[pkt->inport()], outputs_[pkt->local_outport()]);
+#if SSTMAC_SANITY_CHECK
+  int port = pkt->next_local_outport();
+  if (port >= outputs_.size() || outputs_[port].link == nullptr){
+    auto* hdr = pkt->ctrl_header();
+    spkt_abort_printf("got bad outport %d on stage %d", port, int(hdr->stage));
+  }
+  port = pkt->next_local_inport();
+  if (port >= inputs_.size()){
+    auto* hdr = pkt->ctrl_header();
+    spkt_abort_printf("got bad inport %d on stage %d", port, int(hdr->stage));
+  }
+#endif
+  send(arb_, pkt, inputs_[pkt->next_local_inport()], outputs_[pkt->next_local_outport()]);
 }
 
 void
-pisces_NtoM_queue::handle_credit(event* ev)
+pisces_NtoM_queue::handle_credit(event *ev)
 {
-  pisces_debug(
-    "On %s:%p handling credit",
-     to_string().c_str(), this);
   pisces_credit* pkt = static_cast<pisces_credit*>(ev);
-  int loc_outport = local_outport_credit(pkt->port());
-  int vc = pkt->vc();
-  int channel = loc_outport * num_vc_ + vc;
+  handle_credits(pkt->port(), pkt->vc(), pkt->num_credits());
+  delete pkt;
+}
 
-  int& num_credits = credit(loc_outport, vc);
+void
+pisces_NtoM_queue::handle_credits(int local_port, int vc, int credits)
+{
+  int channel = local_port * num_vc_ + vc;
+
+  int& num_credits = credit(local_port, vc);
 
   pisces_debug(
-    "On %s:%p with %d credits, handling credit {%s} for local port:%d vc:%d channel:%d",
+    "On %s:%p with %d credits, handling credit for local port:%d vc:%d channel:%d",
      to_string().c_str(), this,
-     num_credits,
-     pkt->to_string().c_str(),
-     loc_outport, vc, channel);
+     num_credits, local_port, vc, channel);
 
-  num_credits += pkt->num_credits();
+  num_credits += credits;
 
-  pisces_payload* payload = queue(loc_outport, vc).pop(num_credits);
+#if SSTMAC_SANITY_CHECK
+  if (num_credits > initial_credits_[slot(local_port,vc)]){
+    spkt_abort_printf("initial credits exceeded");
+  }
+#endif
+
+  pisces_payload* payload = queue(local_port, vc).pop(num_credits);
   if (payload) {
     num_credits -= payload->num_bytes();
     send_payload(payload);
   }
-
-  delete pkt;
 }
 
 void
@@ -282,15 +279,13 @@ pisces_NtoM_queue::handle_payload(event* ev)
   auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
 
+  auto* hdr = pkt->ctrl_header();
   int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
-  int glob_port = pkt->global_outport();
-  int loc_port = local_outport(glob_port);
-  pkt->set_local_outport(loc_port);
+  int loc_port = hdr->outports[hdr->stage];
   pisces_debug(
-   "On %s:%p, handling {%s} for global_port:%d vc:%d local_port:%d",
+   "On %s:%p, handling {%s} for vc:%d local_port:%d on stage %d",
     to_string().c_str(), this,
-    pkt->to_string().c_str(),
-    glob_port, dst_vc, loc_port);
+    pkt->to_string().c_str(), dst_vc, loc_port, int(hdr->stage));
 
   if (dst_vc < 0 || loc_port < 0){
     spkt_abort_printf("On %s handling {%s}, got negative vc,local_port %d,%d",
@@ -319,38 +314,39 @@ pisces_NtoM_queue::handle_payload(event* ev)
 }
 
 void
-pisces_NtoM_queue::resize(int num_ports)
+pisces_NtoM_queue::resize_outports(int num_ports)
 {
   outputs_.resize(num_ports);
   queues_.resize(num_ports*num_vc_);
   credits_.resize(num_ports*num_vc_);
+#if SSTMAC_SANITY_CHECK
+  initial_credits_.resize(num_ports*num_vc_);
+#endif
 }
 
 void
 pisces_NtoM_queue::set_input(
   sprockit::sim_parameters* port_params,
   int my_inport, int src_outport,
-  event_link* input)
+  event_link* link)
 {
   // ports are local for local links and global otherwise
 
   debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s:%d setting input %s:%d",
     to_string().c_str(), my_inport,
-    input? input->to_string().c_str() : "null", src_outport);
-  pisces_input inp;
-  inp.src_outport = src_outport;
-  inp.link = input;
-  inputs_[my_inport] = inp;
-
-  input->validate_latency(credit_lat_);
+    link ? link->to_string().c_str() : "null", src_outport);
+  input& inp = inputs_[my_inport];
+  inp.link = link;
+  inp.port_to_credit = src_outport;
+  link->validate_latency(credit_lat_);
 }
 
 void
 pisces_NtoM_queue::set_output(
   sprockit::sim_parameters* port_params,
   int my_outport, int dst_inport,
-  event_link* output)
+  event_link* link)
 {
   // must be called with local my_outport (if there's a difference)
   // global port numbers aren't unique for individual elements of
@@ -361,21 +357,19 @@ pisces_NtoM_queue::set_output(
   debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
     "On %s setting output %s:%d for local port %d, mapper=(%d,%d,%d) of %d",
     to_string().c_str(),
-    output->to_string().c_str(), dst_inport,
+    link->to_string().c_str(), dst_inport,
     my_outport, port_offset_, port_div_, port_mod_,
     outputs_.size());
-
-  pisces_output out;
-  out.dst_inport = dst_inport;
-  out.link = output;
 
   if (my_outport > outputs_.size()) {
     spkt_throw_printf(sprockit::value_error,
                       "pisces_crossbar: my_outport %i > outputs_.size() %i",
                       my_outport, outputs_.size());
   }
-  output->validate_latency(send_lat_);
-  outputs_[my_outport] = out;
+  link->validate_latency(send_lat_);
+  output& out = outputs_[my_outport];
+  out.link = link;
+  out.arrival_port = dst_inport;
 
   int num_credits = port_params->get_byte_length_param("credits");
   int num_credits_per_vc = num_credits / num_vc_;
@@ -386,6 +380,9 @@ pisces_NtoM_queue::set_output(
                  num_credits_per_vc,
                  my_outport, i);
     credit(my_outport, i) = num_credits_per_vc;
+#if SSTMAC_SANITY_CHECK
+    initial_credits_[slot(my_outport,i)] = num_credits_per_vc;
+#endif
   }
 }
 

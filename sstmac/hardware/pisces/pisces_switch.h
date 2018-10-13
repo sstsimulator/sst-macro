@@ -121,13 +121,13 @@ class pisces_switch :
 
   timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
-  void handle_credit(event* ev);
-
-  void handle_payload(event* ev);
-
   void deadlock_check() override;
 
   void deadlock_check(event* ev) override;
+
+  pisces_crossbar* xbar() const {
+    return xbar_;
+  }
 
   /**
    * @brief compatibility_check
@@ -140,20 +140,26 @@ class pisces_switch :
   virtual std::string to_string() const override;
 
  private:
+  struct input_port {
+    pisces_switch* parent;
+    int port;
+
+    int component_id() const {
+      return parent->addr();
+    }
+
+    void handle(event* ev);
+
+    std::string to_string() const {
+      return parent->to_string();
+    }
+  };
+
   std::vector<pisces_sender*> out_buffers_;
+  std::vector<input_port> inports_;
 
   pisces_crossbar* xbar_;
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* ack_handler_;
-  link_handler* payload_handler_;
-  event_handler* pkt_handler_; //handles either type
-#endif
-
- private:
-  void resize_buffers();
-
-  pisces_sender* output_buffer(sprockit::sim_parameters* params, int port);
 
 };
 

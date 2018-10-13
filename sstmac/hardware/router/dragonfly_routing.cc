@@ -136,11 +136,12 @@ struct dragonfly_minimal_router : public router {
 
   void route(packet *pkt) override
   {
+    auto* hdr = pkt->rtr_header<header>();
     switch_id ejaddr = pkt->toaddr() / dfly_->concentration();
     if (ejaddr == my_addr_){
       int port = pkt->toaddr() % dfly_->concentration();
-      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
-      pkt->current_path().vc = 0;
+      hdr->port = dfly_->a() + dfly_->h() + port;
+      hdr->vc = 0;
       return;
     }
 
@@ -149,13 +150,12 @@ struct dragonfly_minimal_router : public router {
 
   void route_to_switch(packet* pkt, switch_id ej_addr)
   {
-    packet::path& path = pkt->current_path();
-    auto hdr = pkt->get_header<header>();
-    path.vc = hdr->num_group_hops;
+    auto hdr = pkt->rtr_header<header>();
+    hdr->vc = hdr->num_group_hops;
     int dstG = dfly_->computeG(ej_addr);
     if (dstG == my_g_){
       int dstA = dfly_->computeA(ej_addr);
-      path.set_outport(dstA);
+      hdr->port = dstA;
     } else {
       int dst_port;
       if (static_route_){
@@ -172,7 +172,7 @@ struct dragonfly_minimal_router : public router {
         spkt_abort_printf("Got bad group port %d going to group %d from switch=(%d,%d)",
                           dst_port, dstG, my_a_, my_g_);
       }
-      path.set_outport(dst_port);
+      hdr->port = dst_port;
     }
   }
 
@@ -196,6 +196,7 @@ class dragonfly_valiant_router : public dragonfly_minimal_router {
 
   struct header : public dragonfly_minimal_router::header {
     uint8_t stage_number : 3;
+    uint32_t dest_switch : 24;
   };
 
   FactoryRegister("dragonfly_valiant",
@@ -270,10 +271,10 @@ class dragonfly_valiant_router : public dragonfly_minimal_router {
     while (new_g == my_g_ || new_g == dst_g){
       new_g = random_number(dfly_->g(), attempt++, seed);
     }
-    auto hdr = pkt->get_header<header>();
+    auto hdr = pkt->rtr_header<header>();
     auto val_dest = group_gateways_[new_g][gateway_rotater_[new_g]];
-    pkt->current_path().set_outport(val_dest.first);
-    pkt->set_dest_switch(val_dest.second);
+    hdr->port = val_dest.first;
+    hdr->dest_switch = val_dest.second;
     gateway_rotater_[new_g] = (gateway_rotater_[new_g] + 1) % group_gateways_[new_g].size();
     hdr->stage_number = valiant_stage;
   }
@@ -286,22 +287,21 @@ class dragonfly_valiant_router : public dragonfly_minimal_router {
       new_a = random_number(dfly_->a(), attempt++, seed);
     }
 
-    auto hdr = pkt->get_header<header>();
-    pkt->current_path().set_outport(new_a);
-    pkt->set_dest_switch(dfly_->get_uid(new_a, my_g_));
+    auto hdr = pkt->rtr_header<header>();
+    hdr->port = new_a;
+    hdr->dest_switch = dfly_->get_uid(new_a, my_g_);
     hdr->stage_number = valiant_stage;
   }
 
   void route(packet *pkt) override {
+    auto hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
-      int port = pkt->toaddr() % dfly_->concentration();
-      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
-      pkt->current_path().vc = 0;
+      hdr->port = dfly_->a() + dfly_->h() + pkt->toaddr() % dfly_->concentration();
+      hdr->vc = 0;
       return;
     }
 
-    auto hdr = pkt->get_header<header>();
     switch(hdr->stage_number){
       case initial_stage: {
         int dst_a = dfly_->computeA(ej_addr);
@@ -315,21 +315,21 @@ class dragonfly_valiant_router : public dragonfly_minimal_router {
         break;
       }
       case valiant_stage: {
-        if (my_addr_ == pkt->dest_switch()){
+        if (my_addr_ == hdr->dest_switch){
           hdr->stage_number = final_stage;
         } else {
-          route_to_switch(pkt, pkt->dest_switch());
+          route_to_switch(pkt, hdr->dest_switch);
           break;
         }
       }
       case final_stage: {
         route_to_switch(pkt, ej_addr);
-        pkt->set_dest_switch(ej_addr);
+        hdr->dest_switch = ej_addr;
         break;
       }
       break;
     }
-    pkt->current_path().vc = hdr->num_hops;
+    hdr->vc = hdr->num_hops;
     ++hdr->num_hops;
   }
 
@@ -375,18 +375,18 @@ class dragonfly_ugal_router : public dragonfly_valiant_router {
     auto val_dest = group_gateways_[new_g][gateway_rotater_[new_g]];
     int min_port = group_ports_[dst_g][group_port_rotaters_[dst_g]];
 
-    auto hdr = pkt->get_header<header>();
+    auto hdr = pkt->rtr_header<header>();
     bool go_valiant = switch_paths(min_dist, val_dist, min_port, val_dest.first);
     if (go_valiant){
-      pkt->current_path().set_outport(val_dest.first);
-      pkt->set_dest_switch(val_dest.second);
+      hdr->port = val_dest.first;
+      hdr->dest_switch = val_dest.second;
       gateway_rotater_[new_g] = (gateway_rotater_[new_g] + 1) % group_gateways_[new_g].size();
       hdr->stage_number = valiant_stage;
       rter_debug("chose inter-grp ugal port %d to intermediate %d : pkt=%p:%s",
                  val_dest.first, val_dest.second, pkt, pkt->to_string().c_str());
     } else { //minimal
-      pkt->current_path().set_outport(min_port);
-      pkt->set_dest_switch(dfly_->get_uid(dst_a,dst_g));
+      hdr->port = min_port;
+      hdr->dest_switch = dfly_->get_uid(dst_a,dst_g);
       gateway_rotater_[dst_g] = (gateway_rotater_[dst_g] + 1) % group_gateways_[dst_g].size();
       hdr->stage_number = minimal_stage;
       rter_debug("chose inter-grp minimal port %d: pkt=%p:%s",
@@ -405,17 +405,17 @@ class dragonfly_ugal_router : public dragonfly_valiant_router {
     int min_dist = 1;
     int val_dist = 2;
 
-    auto hdr = pkt->get_header<header>();
+    auto hdr = pkt->rtr_header<header>();
     bool go_valiant = switch_paths(min_dist, val_dist, dst_a, new_a);
     if (go_valiant){
-      pkt->current_path().set_outport(new_a);
-      pkt->set_dest_switch(dfly_->get_uid(new_a, my_g_));
+      hdr->port = new_a;
+      hdr->dest_switch = dfly_->get_uid(new_a, my_g_);
       hdr->stage_number = valiant_stage;
       rter_debug("chose intra-grp ugal port %d to intermediate %d : pkt=%p:%s",
-                 new_a, int(pkt->dest_switch()), pkt, pkt->to_string().c_str());
+                 new_a, int(hdr->dest_switch), pkt, pkt->to_string().c_str());
     } else { //minimal
-      pkt->current_path().set_outport(dst_a);
-      pkt->set_dest_switch(dfly_->get_uid(dst_a, my_g_));
+      hdr->port = dst_a;
+      hdr->dest_switch = dfly_->get_uid(dst_a, my_g_);
       hdr->stage_number = minimal_stage;
       rter_debug("chose intra-grp minimal port %d: pkt=%p:%s",
                  dst_a, pkt, pkt->to_string().c_str());
@@ -423,15 +423,15 @@ class dragonfly_ugal_router : public dragonfly_valiant_router {
   }
 
   void route(packet *pkt) override {
+    auto hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
       int port = pkt->toaddr() % dfly_->concentration();
-      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
-      pkt->current_path().vc = 0;
+      hdr->port = dfly_->a() + dfly_->h() + port;
+      hdr->vc = 0;
       return;
     }
 
-    auto hdr = pkt->get_header<header>();
     switch(hdr->stage_number){
       case initial_stage: {
         int dst_a = dfly_->computeA(ej_addr);
@@ -447,33 +447,31 @@ class dragonfly_ugal_router : public dragonfly_valiant_router {
         //don't reconsider my decision
         route_to_switch(pkt, ej_addr);
         rter_debug("continue to minimal %d on port %d: pkt=%p:%s",
-                 ej_addr, pkt->current_path().outport(),
-                 pkt, pkt->to_string().c_str());
+                 ej_addr, int(hdr->port), pkt, pkt->to_string().c_str());
         break;
       }
       case valiant_stage: {
-        if (my_addr_ == pkt->dest_switch()){
+        if (my_addr_ == hdr->dest_switch){
           hdr->stage_number = final_stage;
         } else {
-          route_to_switch(pkt, pkt->dest_switch());
+          route_to_switch(pkt, hdr->dest_switch);
           rter_debug("route to valiant intermediate %d on port %d: pkt=%p:%s",
-                     (int(pkt->dest_switch())), pkt->current_path().outport(),
+                     int(hdr->dest_switch), int(hdr->port),
                      pkt, pkt->to_string().c_str());
           break;
         }
       }
       case final_stage: {
-        pkt->set_dest_switch(ej_addr);
+        hdr->dest_switch = ej_addr;
         route_to_switch(pkt, ej_addr);
         rter_debug("route to final %d on port %d: pkt=%p:%s",
-                   ej_addr, pkt->current_path().outport(),
-                   pkt, pkt->to_string().c_str());
+                   ej_addr, int(hdr->port),  pkt, pkt->to_string().c_str());
         break;
       }
       break;
     }
-    pkt->current_path().vc = hdr->num_hops;
-    if (pkt->current_path().vc >= num_vc()){
+    hdr->vc = hdr->num_hops;
+    if (hdr->vc >= num_vc()){
       spkt_abort_printf("Packet %p:%s too many hops", pkt, pkt->to_string().c_str());
     }
     ++hdr->num_hops;
@@ -494,11 +492,10 @@ class dragonfly_ugalG_router : public dragonfly_ugal_router {
   static const char intra_grp_stage = 4;
 
   struct header : public dragonfly_ugal_router::header {
-    uint16_t entryA;
-    uint8_t entryPort : 8;
-    uint16_t exitA;
-    uint8_t exitPort : 8;
-    uint16_t interGrp;
+    uint8_t entryA;
+    uint8_t entryPort;
+    uint8_t exitA;
+    uint8_t exitPort;
   };
 
  public:
@@ -520,20 +517,19 @@ class dragonfly_ugalG_router : public dragonfly_ugal_router {
   }
 
   void route(packet *pkt) override {
+    header* hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
       int port = pkt->toaddr() % dfly_->concentration();
-      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
-      pkt->current_path().vc = 0;
+      hdr->port = dfly_->a() + dfly_->h() + port;
+      hdr->vc = 0;
       return;
     }
 
     int srcGrp = dfly_->computeG(my_addr_);
     int dstGrp = dfly_->computeG(ej_addr);
     int dstA = dfly_->computeA(ej_addr);
-    packet::path& path = pkt->current_path();
 
-    header* hdr = pkt->get_header<header>();
     rter_debug("handling packet %p at stage %d: %s",
                pkt, int(hdr->stage_number), pkt->to_string().c_str());
     if (hdr->stage_number == initial_stage){
@@ -552,32 +548,33 @@ class dragonfly_ugalG_router : public dragonfly_ugal_router {
       spkt_abort_printf("invalid stage number: packet did not have stage initialized");
       break;
     case hop_to_entry_stage:
-      if (my_addr_ == pkt->dest_switch()){
+      if (my_addr_ == hdr->dest_switch){
         hdr->stage_number = hop_to_exit_stage;
-        path.set_outport(hdr->entryPort);
-        pkt->set_dest_switch(dfly_->get_uid(hdr->exitA, hdr->interGrp));
+        hdr->port = hdr->entryPort;
+        int interGrp = dfly_->computeG(hdr->dest_switch);
+        hdr->dest_switch = dfly_->get_uid(hdr->exitA, interGrp);
         break;
       } else {
-        path.set_outport(hdr->entryA);
+        hdr->port = hdr->entryA;
         break;
       }
       break;
     case hop_to_exit_stage:
-      if (my_addr_ == pkt->dest_switch()){
+      if (my_addr_ == hdr->dest_switch){
         hdr->stage_number = final_stage;
-        pkt->set_dest_switch(ej_addr);
-        path.set_outport(hdr->exitPort);
+        hdr->dest_switch = ej_addr;
+        hdr->port = hdr->exitPort;
       } else {
-        path.set_outport(hdr->exitA);
+        hdr->port = hdr->exitA;
       }
       break;
     case final_stage:
     case intra_grp_stage:
-      path.set_outport(dstA);
+      hdr->port = dstA;
       break;
     }
 
-    path.vc = hdr->num_hops;
+    hdr->vc = hdr->num_hops;
     ++hdr->num_hops;
   }
 
@@ -587,7 +584,7 @@ class dragonfly_ugalG_router : public dragonfly_ugal_router {
     rter_debug("selecting ugal intermediate for final group %d for switch %d",
                dstGrp, ej_addr);
 
-    header* hdr = pkt->get_header<header>();
+    header* hdr = pkt->rtr_header<header>();
     int minTotalLength = std::numeric_limits<int>::max();
     int minInterGrp = -1;
     std::pair<int,int> minPath = findLocalMinGroupLink(dstGrp, minTotalLength);
@@ -618,7 +615,6 @@ class dragonfly_ugalG_router : public dragonfly_ugal_router {
     hdr->exitPort = secondHalfPath.first;
     hdr->entryA = dfly_->computeA(firstHalfPath.second);
     hdr->entryPort = firstHalfPath.first;
-    hdr->interGrp = minInterGrp;
     if (minInterGrp == -1){ //route minimally to the dest grp
       inter_sw = dfly_->get_uid(hdr->exitA, my_g_);
       hdr->stage_number = hop_to_exit_stage;
@@ -626,8 +622,7 @@ class dragonfly_ugalG_router : public dragonfly_ugal_router {
       inter_sw = dfly_->get_uid(hdr->entryA, my_g_);
       hdr->stage_number = hop_to_entry_stage;
     }
-    pkt->set_dest_switch(inter_sw);
-
+    hdr->dest_switch = inter_sw;
 
     rter_debug("finally selected path length %d to switch %d through group %d for packet %p:%s: entry=%d:%d->exit=%d:%d",
                minTotalLength, inter_sw, minInterGrp, pkt, pkt->to_string().c_str(),
@@ -701,15 +696,15 @@ class dragonfly_par_router : public dragonfly_ugal_router {
   }
 
   void route(packet *pkt) override {
+    auto hdr = pkt->rtr_header<header>();
     switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
       int port = pkt->toaddr() % dfly_->concentration();
-      pkt->current_path().set_outport(dfly_->a() + dfly_->h() + port);
-      pkt->current_path().vc = 0;
+      hdr->port = dfly_->a() + dfly_->h() + port;
+      hdr->vc = 0;
       return;
     }
 
-    auto hdr = pkt->get_header<header>();
     switch(hdr->stage_number){
       case initial_stage: {
         int dst_a = dfly_->computeA(ej_addr);
@@ -722,21 +717,21 @@ class dragonfly_par_router : public dragonfly_ugal_router {
         break;
       }
       case valiant_stage: {
-        if (my_addr_ == pkt->dest_switch()){
+        if (my_addr_ == hdr->dest_switch){
           hdr->stage_number = final_stage;
         } else {
-          route_to_switch(pkt, pkt->dest_switch());
+          route_to_switch(pkt, hdr->dest_switch);
           break;
         }
       }
       case final_stage: {
         route_to_switch(pkt, ej_addr);
-        pkt->set_dest_switch(ej_addr);
+        hdr->dest_switch = ej_addr;
         break;
       }
       break;
     }
-    pkt->current_path().vc = hdr->num_hops;
+    hdr->vc = hdr->num_hops;
     ++hdr->num_hops;
   }
 

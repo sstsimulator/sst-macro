@@ -22,7 +22,6 @@ CORETESTS+= \
   test_core_apps_ping_all_random_macrels \
   test_core_apps_ping_all_torus_sculpin \
   test_core_apps_ping_all_dragonfly \
-  test_core_apps_ping_all_dragonfly_ugalG \
   test_core_apps_ping_all_dragonfly_minimal \
   test_core_apps_ping_all_ns \
   test_core_apps_ping_all_hypercube_par \

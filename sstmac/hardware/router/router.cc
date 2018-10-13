@@ -143,14 +143,11 @@ class fully_connected_minimal_router : public router {
   void route(packet *pkt) override {
     switch_id ej_addr = pkt->toaddr() / full_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = pkt->toaddr() % full_->concentration();
-      pkt->current_path().vc = 0;
-      return;
+      pkt->set_outport(pkt->toaddr() % full_->concentration());
+    } else {
+      pkt->set_outport(ej_addr);
     }
-
-    packet::path& path = pkt->current_path();
-    full_->minimal_route_to_switch(my_addr_, ej_addr, path);
-    path.vc = 0;
+    pkt->set_vc(0);
   }
 
  private:

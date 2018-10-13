@@ -84,7 +84,7 @@ void
 hypercube::minimal_route_to_switch(
   switch_id src,
   switch_id dst,
-  packet::path& path) const
+  packet::header* hdr) const
 {
   int ndim = dimensions_.size();
   int div = 1;
@@ -92,8 +92,8 @@ hypercube::minimal_route_to_switch(
     int srcX = (src / div) % dimensions_[i];
     int dstX = (dst / div) % dimensions_[i];
     if (srcX != dstX){
-      path.vc = 0;
-      path.set_outport(convert_to_port(i, dstX));
+      hdr->vc = 0;
+      hdr->port = convert_to_port(i, dstX);
       return;
     }
     div *= dimensions_[i];
