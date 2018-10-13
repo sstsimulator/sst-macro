@@ -89,7 +89,7 @@ class Interconnect:
 
   def defaultEpFxn(self, nodeID):
     nodeParams = self.params["node"]
-    compName = nodeParams["model"] + "_node"
+    compName = nodeParams["name"] + "_node"
     node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
     node.addParams(macroToCoreParams(nodeParams))
     node.addParam("id", nodeID)
@@ -98,7 +98,7 @@ class Interconnect:
   def buildSwitches(self):
     for i in range(self.num_switches):
       switchParams = self.system.switchParams(i)
-      compName = switchParams["model"] + "_switch"
+      compName = switchParams["name"] + "_switch"
       switch = sst.Component("Switch %d" % i, "macro.%s" % compName)
       switch.addParams(macroToCoreParams(switchParams))
       switch.addParam("id", i)

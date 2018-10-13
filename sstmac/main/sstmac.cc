@@ -332,10 +332,10 @@ run_standalone(int argc, char** argv)
   sprockit::sim_parameters null_params;
 
   sprockit::sim_parameters* nic_params = null_params.get_optional_namespace("nic");
-  nic_params->add_param_override("model", "null");
+  nic_params->add_param_override("name", "null");
 
   sprockit::sim_parameters* mem_params = null_params.get_optional_namespace("memory");
-  mem_params->add_param_override("model", "null");
+  mem_params->add_param_override("name", "null");
 
   sprockit::sim_parameters* proc_params = null_params.get_optional_namespace("proc");
   proc_params->add_param_override("frequency", "1ghz");

@@ -74,10 +74,10 @@ pisces_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
 
 
-  nic_params->add_param_override("model", "pisces");
-  switch_params->add_param_override("model", "pisces");
-  if (!mem_params->has_scoped_param("model")){
-    mem_params->add_param_override("model", "pisces");
+  nic_params->add_param_override("name", "pisces");
+  switch_params->add_param_override("name", "pisces");
+  if (!mem_params->has_scoped_param("name")){
+    mem_params->add_param_override("name", "pisces");
   }
 
   buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
@@ -131,7 +131,7 @@ void
 pisces_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
                                           sprockit::sim_parameters* mem_params)
 {
-  if (mem_params->get_scoped_param("model") != "null"){
+  if (mem_params->get_scoped_param("name") != "null"){
     mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
   }
 }
@@ -241,7 +241,7 @@ pisces_param_expander::expand_amm2_memory(sprockit::sim_parameters* params,
                                           sprockit::sim_parameters* mem_params)
 {
   expand_amm1_memory(params, mem_params);
-  if (mem_params->get_scoped_param("model") != "null"){
+  if (mem_params->get_scoped_param("name") != "null"){
     //mem_params->add_param_override("max_single_bandwidth",
     //                               params->get_param("max_memory_bandwidth"));
   }
@@ -280,7 +280,7 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
   top_params->add_param_override("tiles_per_col", nrows);
   top_params->add_param_override("name", newtop);
 
-  switch_params->add_param_override("model", "pisces_tiled");
+  switch_params->add_param_override("name", "pisces_tiled");
 
   sprockit::sim_parameters* rtr_params = switch_params->get_optional_namespace("router");
   if (rtr_params->has_param("name")) {
@@ -314,11 +314,6 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
   sprockit::sim_parameters* node_params = params->get_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-
-  if (!netlink_params->has_param("model")){
-    netlink_params->add_param("model", switch_params->get_optional_param("model","null"));
-  }
 
   std::string link_lat = link_params->get_optional_param("latency","");
 
@@ -376,62 +371,6 @@ pisces_param_expander::expand_amm4_network(sprockit::sim_parameters* params,
     ej_params->add_param("arbitrator", "cut_through");
   }
   ej_params->add_param_override("credit_latency", "0ns");
-
-  // setup netlink (required)
-  int nl_conc = netlink_params->get_int_param("concentration");
-  top_params->add_param_override("netlink_concentration", nl_conc);
-  netlink_params->add_param_override("model", "pisces");
-  inj_params = netlink_params->get_optional_namespace("injection");
-  ej_params = netlink_params->get_optional_namespace("ejection");
-
-  std::string send_lat, credit_lat;
-  if (inj_params->has_param("latency"))
-    send_lat = credit_lat = inj_params->get_param("latency");
-
-  if (inj_params->has_param("send_latency"))
-    send_lat = inj_params->get_param("send_latency");
-  if (send_lat.size() == 0){
-    inj_params->add_param_override("send_latency", link_params->get_param("send_latency"));
-  } else {
-    inj_params->add_param_override("send_latency", send_lat);
-  }
-
-  if (inj_params->has_param("credit_latency"))
-    credit_lat = inj_params->get_param("credit_latency");
-  if (credit_lat.size() == 0){
-    inj_params->add_param_override("credit_latency", link_params->get_param("credit_latency"));
-  } else {
-    inj_params->add_param_override("credit_latency", credit_lat);
-  }
-
-  if (ej_params->has_param("latency"))
-    send_lat = credit_lat = inj_params->get_param("latency");
-
-  if (ej_params->has_param("send_latency"))
-    send_lat = ej_params->get_param("send_latency");
-  if (send_lat.size() == 0){
-    ej_params->add_param_override("send_latency", nic_params->get_namespace("injection")->get_either_or_param("send_latency","latency"));
-  } else {
-    ej_params->add_param_override("send_latency", send_lat);
-  }
-
-  if (ej_params->has_param("credit_latency"))
-    credit_lat = ej_params->get_param("credit_latency");
-  if (credit_lat.size() == 0){
-    ej_params->add_param_override("credit_latency", nic_params->get_namespace("injection")->get_either_or_param("credit_latency","latency"));
-  } else {
-    ej_params->add_param_override("credit_latency", credit_lat);
-  }
-
-  if (!inj_params->has_param("bandwidth"))
-    inj_params->add_param_override("bandwidth", link_params->get_param("bandwidth"));
-  if (!ej_params->has_param("bandwidth"))
-    ej_params->add_param_override("bandwidth", nic_params->get_namespace("injection")->get_param("bandwidth"));
-
-  (*inj_params)["credits"].setByteLength(buffer_size, "B");
-  (*inj_params)["num_vc"] = 1;
-  (*ej_params)["credits"].setByteLength(100, "GB");
-  (*ej_params)["num_vc"] = 1;
 }
 
 void
@@ -441,15 +380,6 @@ pisces_param_expander::expand_amm4_nic(sprockit::sim_parameters* params,
 {
   // set arb and number of credits on nic
   expand_amm1_nic(params, nic_params);
-
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
-  int conc = netlink_params->get_int_param("concentration");
-  int red = top_params->get_optional_int_param("injection_redundant", 1);
-  //the netlink block combines all the paths together
-
-  //netlink_params->add_param_override("ninject", red);
-  //netlink_params->add_param_override("neject", conc);
-  netlink_params->add_param_override("model", "pisces");
 }
 
 }
