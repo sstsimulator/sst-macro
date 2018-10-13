@@ -53,9 +53,9 @@ The parameters work the same way as the output parameters.
 But where do the handlers come from? Connectable objects must implement:
 
 \begin{CppCode}
-virtual link_handler* credit_handler(int port) const = 0;
+virtual link_handler* credit_handler(int port) = 0;
 
-virtual link_handler* payload_handler(int port) const = 0;
+virtual link_handler* payload_handler(int port) = 0;
 \end{CppCode}
 
 These \inlinecode{link_handler} objects are a special instance of \inlinecode{event_handler}.

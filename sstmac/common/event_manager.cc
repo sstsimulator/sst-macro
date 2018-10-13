@@ -244,6 +244,8 @@ event_manager::register_pending()
   pending_slot_ = (pending_slot_+1) % num_pending_slots;
 }
 
+static int nactive_threads = 0;
+
 void
 event_manager::spin_up(void(*fxn)(void*), void* args)
 {
@@ -263,10 +265,14 @@ event_manager::spin_up(void(*fxn)(void*), void* args)
 void
 event_manager::spin_down()
 {
-  //delete here while we are still on the main thread
-  interconn_->deadlock_check();
-  hw::interconnect::clear_static_interconnect();
-  des_context_->complete_context(main_thread_);
+  static thread_lock lock;
+  lock.lock();
+  if (interconn_){
+    //delete here while we are still on the main thread
+    interconn_->deadlock_check();
+    hw::interconnect::clear_static_interconnect();
+    des_context_->complete_context(main_thread_);
+  }
 }
 
 void

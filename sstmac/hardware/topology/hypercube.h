@@ -67,11 +67,20 @@ class hypercube :
   void minimal_route_to_switch(
     switch_id src,
     switch_id dst,
-    packet::path& path) const;
+    packet::header* hdr) const;
 
   bool uniform_network_ports() const override {
     return false;
   }
+
+  int max_num_ports() const override {
+    int sum = 0;
+    for (int size : dimensions_) sum += size;
+    return sum + concentration();
+  }
+
+  void endpoints_connected_to_injection_switch(switch_id swaddr,
+         std::vector<injection_port>& nodes) const override;
 
   bool uniform_switches_non_uniform_network_ports() const override {
     return true;
@@ -86,7 +95,11 @@ class hypercube :
     return dim_to_outport_[dim] + dir;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const override;
+  int minimal_distance(switch_id src, switch_id dst) const;
+
+  int num_hops_to_node(node_id src, node_id dst) const override {
+    return minimal_distance(src/concentration_, dst/concentration_);
+  }
 
   vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
 

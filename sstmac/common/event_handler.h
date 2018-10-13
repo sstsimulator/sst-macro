@@ -143,7 +143,7 @@ class member_fxn_handler_impl :
   virtual ~member_fxn_handler_impl(){}
 
   std::string to_string() const override {
-    return sprockit::to_string(obj_);
+    return obj_->to_string();
   }
 
   void handle(event* ev) override {

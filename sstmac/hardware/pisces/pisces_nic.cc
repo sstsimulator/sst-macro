@@ -62,8 +62,6 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-const int pisces_netlink::really_big_buffer = 1<<30;
-
 pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   nic(params, parent),
   packetizer_(nullptr)
@@ -72,7 +70,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
 
 
   packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
-                                              inj_params, parent);
+                                              inj_params, parent, 1); //single vc for now
   packetizer_->setArrivalNotify(this);
   auto inj_link = allocate_local_link(timestamp(), parent_, mtl_handler());
   packetizer_->setInjectionAcker(inj_link);
@@ -174,8 +172,11 @@ pisces_nic::connect_input(
   int dst_inport,
   event_link* link)
 {
+  //src_outport and dst_inport are global ports
+  //the pisces objects need to be connected with local ports
+  int buffer_port = 0;
   pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
-  packer->set_input(params, src_outport, link);
+  packer->set_input(params, buffer_port, link);
 }
 
 void
@@ -190,168 +191,6 @@ void
 pisces_nic::deadlock_check()
 {
   packetizer_->deadlock_check();
-}
-
-void
-pisces_netlink::connect_output(
-  sprockit::sim_parameters* params,
-  int src_outport, int dst_inport,
-  event_link* link)
-{
-  if (is_node_port(src_outport)){
-    // set nic payload handler
-    // ej_block payload handler will offset ports --
-    // -- need to match (use local ports)
-    int offset = node_offset(src_outport);
-    ej_block_->set_output(params, offset, dst_inport, link);
-  } else {
-    // set switch payload handler
-    inj_block_->set_output(params, src_outport, dst_inport, link);
-  }
-}
-
-void
-pisces_netlink::connect_input(
-  sprockit::sim_parameters* params,
-  int src_outport, int dst_inport,
-  event_link* link)
-{
-  if (is_node_port(dst_inport)){
-    // set nic credit handler
-    inj_block_->set_input(params, dst_inport, src_outport, link);
-  } else {
-    // set switch credit handler
-    ej_block_->set_input(params, dst_inport, src_outport, link);
-  }
-}
-
-pisces_netlink::pisces_netlink(sprockit::sim_parameters *params, node *parent)
-  : netlink(params, parent),
-  inj_block_(nullptr),
-  ej_block_(nullptr),
-  tile_rotater_(0)
-{
-  sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
-  inj_block_ = new pisces_crossbar(inj_params, parent);
-  // tile ports start at 0, so local and global ports are identical
-  inj_block_->configure_outports(num_tiles_);
-  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
-  ej_block_ = new pisces_crossbar(ej_params, parent);
-  // node ports > tile ports, must be offset
-  ej_block_->configure_outports(conc_,
-                                offset_port_mapper(num_tiles_),
-                                offset_port_mapper(num_tiles_));
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  ack_handler_ = new_handler(this,
-                             &pisces_netlink::handle_credit);
-
-  payload_handler_ = new_handler(this,
-                             &pisces_netlink::handle_payload);
-#endif
-}
-
-void
-pisces_netlink::deadlock_check()
-{
-  ej_block_->deadlock_check();
-  inj_block_->deadlock_check();
-}
-
-void
-pisces_netlink::deadlock_check(event* ev)
-{
-}
-
-link_handler*
-pisces_netlink::payload_handler(int port) const
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &pisces_netlink::handle_payload);
-#else
-  return payload_handler_;
-#endif
-}
-
-link_handler*
-pisces_netlink::credit_handler(int port) const
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &pisces_netlink::handle_credit);
-#else
-  return ack_handler_;
-#endif
-}
-
-void
-pisces_netlink::handle_credit(event* ev)
-{
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  debug_printf(sprockit::dbg::pisces,
-     "netlink %d:%p handling credit %s",
-     component_id(), this,
-     credit->to_string().c_str());
-  if (is_node_port(credit->port())){
-    ej_block_->handle_credit(credit);
-  } else {
-    inj_block_->handle_credit(credit);
-  }
-}
-
-void
-pisces_netlink::handle_payload(event* ev)
-{
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  debug_printf(sprockit::dbg::pisces,
-       "netlink %d:%p handling payload %s",
-        int(id_), this, payload->to_string().c_str());
-  node_id toaddr = payload->toaddr();
-  netlink_id dst_netid(toaddr / conc_);
-  packet::path& p = payload->current_path();
-  if (dst_netid == id_){
-    //stays local - goes to a node
-    int node_offset = toaddr % conc_;
-    // ej_block expects global port
-    p.set_outport(netlink::node_port(node_offset));
-    p.vc = 0;
-    p.geometric_id = 0;
-    debug_printf(sprockit::dbg::pisces,
-     "netlink %d ejecting %s to node %d at offset %d to port %d",
-        int(id_), sprockit::to_string(ev).c_str(), int(toaddr), node_offset, p.outport());
-    ej_block_->handle_payload(payload);
-  } else {
-    //goes to switch, global/local port is identical for switch ports
-    p.set_outport(netlink::switch_port(tile_rotater_));
-    p.vc = 0;
-    debug_printf(sprockit::dbg::pisces,
-     "netlink %d injecting msg %s to node %d on redundant path %d of %d to port %d",
-        int(id_), sprockit::to_string(ev).c_str(),
-        int(toaddr), tile_rotater_, num_tiles_, p.outport());
-    tile_rotater_ = (tile_rotater_ + 1) % num_tiles_;
-    inj_block_->handle_payload(payload);
-  }
-}
-
-timestamp
-pisces_netlink::send_latency(sprockit::sim_parameters *params) const
-{
-  return params->get_time_param("send_latency");
-}
-
-timestamp
-pisces_netlink::credit_latency(sprockit::sim_parameters *params) const
-{
-  return params->get_time_param("credit_latency");
-}
-
-pisces_netlink::~pisces_netlink()
-{
-  if (ej_block_) delete ej_block_;
-  if (inj_block_) delete inj_block_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  delete ack_handler_;
-  delete payload_handler_;
-#endif
 }
 
 }

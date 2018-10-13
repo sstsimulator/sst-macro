@@ -77,7 +77,6 @@ pisces_payload::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
   packet::serialize_order(ser);
-  ser & inport_;
   ser & bw_;
   ser & max_in_bw_;
   ser & arrival_;

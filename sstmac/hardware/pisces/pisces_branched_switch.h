@@ -86,10 +86,6 @@ class pisces_branched_switch :
 
   timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
-  void handle_credit(event* ev);
-
-  void handle_payload(event* ev);
-
   virtual std::string to_string() const override;
 
   virtual ~pisces_branched_switch();
@@ -98,18 +94,29 @@ class pisces_branched_switch :
 
   void deadlock_check(event* ev) override;
 
- protected:
+ private:
   int n_local_xbars_;
   int n_local_ports_;
 
   pisces_crossbar* xbar_;
-  std::vector<pisces_muxer*> input_muxers_;
-  std::vector<pisces_demuxer*> output_demuxers_;
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* ack_handler_;
-  link_handler* payload_handler_;
-#endif
+  struct input_port {
+    pisces_branched_switch* parent;
+    pisces_muxer* mux;
+
+    int component_id() const {
+      return parent->addr();
+    }
+
+    void handle(event* ev);
+
+    std::string to_string() const {
+      return parent->to_string();
+    }
+  };
+
+  std::vector<input_port> input_muxers_;
+  std::vector<pisces_demuxer*> output_demuxers_;
 
  private:
   void resize_buffers();

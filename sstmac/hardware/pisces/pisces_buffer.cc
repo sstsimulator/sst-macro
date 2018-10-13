@@ -47,52 +47,50 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/runtime.h>
 #include <sprockit/util.h>
 
-#define PRINT_FINISH_DETAILS 0
-
 namespace sstmac {
 namespace hw {
 
-pisces_buffer::
-pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
-  pisces_sender(params, parent),
-  bytes_delayed_(0)
-{
-}
 
 pisces_buffer::~pisces_buffer()
 {
   if (input_.link) delete input_.link;
   if (output_.link) delete output_.link;
+  if (arb_) delete arb_;
+  if (payload_handler_) delete payload_handler_;
 }
 
 void
 pisces_buffer::set_input(
   sprockit::sim_parameters* params,
   int this_inport, int src_outport,
-  event_link* input)
+  event_link* link)
 {
-  input_.src_outport = src_outport;
-  input_.link = input;
-  input->validate_latency(credit_lat_);
+  input_.link = link;
+  input_.port_to_credit = src_outport;
+  link->validate_latency(credit_lat_);
 }
 
 void
 pisces_buffer::set_output(sprockit::sim_parameters* params,
                          int this_outport, int dst_inport,
-                         event_link* output)
+                         event_link* link)
 {
-  output->validate_latency(send_lat_);
-  output_.link = output;
-  output_.dst_inport = dst_inport;
+  link->validate_latency(send_lat_);
+  output_.link = link;
+  output_.arrival_port = dst_inport;
 }
 
-pisces_network_buffer::pisces_network_buffer(
+pisces_buffer::pisces_buffer(
   sprockit::sim_parameters* params,
-  event_scheduler* parent)
-  : pisces_buffer(params, parent),
-    num_vc_(params->get_int_param("num_vc")),
-    queues_(num_vc_),
-    credits_(num_vc_, 0),
+  event_scheduler* parent, int num_vc)
+  : pisces_sender(params, parent, false/*buffers do not update vc*/),
+    bytes_delayed_(0),
+    num_vc_(num_vc),
+    queues_(num_vc),
+    credits_(num_vc, 0),
+ #if SSTMAC_SANITY_CHECK
+    initial_credits_(num_vc,0),
+ #endif
     packet_size_(params->get_byte_length_param("mtu")),
     payload_handler_(nullptr)
 {
@@ -100,22 +98,25 @@ pisces_network_buffer::pisces_network_buffer(
   long num_credits_per_vc = credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;
+#if SSTMAC_SANITY_CHECK
+    initial_credits_[i] = num_credits_per_vc;
+#endif
   }
   arb_ = pisces_bandwidth_arbitrator::factory::
           get_param("arbitrator", params);
+
+  payload_handler_ = new_handler(this, &pisces_buffer::handle_payload);
 }
 
 void
-pisces_network_buffer::handle_credit(event* ev)
+pisces_buffer::handle_credit(event* ev)
 {
   pisces_credit* credit = static_cast<pisces_credit*>(ev);
   int vc = credit->vc();
 #if SSTMAC_SANITY_CHECK
   if (vc >= credits_.size()) {
-    spkt_throw_printf(sprockit::value_error,
-                     "pisces_buffer::handle_credit: on %s, port %d, invalid vc %d",
-                     to_string().c_str(),
-                     credit->port(), vc);
+    spkt_abort_printf("pisces_buffer::handle_credit: on %s, port %d, invalid vc %d",
+                     to_string().c_str(), credit->port(), vc);
   }
 #endif
   int& num_credits = credits_[vc];
@@ -124,12 +125,21 @@ pisces_network_buffer::handle_credit(event* ev)
   bytes_delayed_ -= credit->num_credits();
 
   pisces_debug(
-    "On %s with %d credits, handling {%s} for vc:%d -> byte delay now %d",
+    "On %s with %d credits, handling credit {%s} for vc:%d -> byte delay now %d",
      to_string().c_str(),
      num_credits,
      credit->to_string().c_str(),
-     vc,
-     bytes_delayed_);
+     vc, bytes_delayed_);
+
+#if SSTMAC_SANITY_CHECK
+  if (credit->port() != 0){
+    spkt_abort_printf("pisces_buffer::handle_credit: got nonzero port");
+  }
+
+  if (num_credits > initial_credits_[vc]){
+    spkt_abort_printf("initial credits exceeded");
+  }
+#endif
 
   /** while we have sendable payloads, do it */
   pisces_payload* payload = queues_[vc].pop(num_credits);
@@ -145,17 +155,8 @@ pisces_network_buffer::handle_credit(event* ev)
   delete credit;
 }
 
-event_handler*
-pisces_network_buffer::payload_handler()
-{
-  if (!payload_handler_){
-    payload_handler_ = new_handler(this, &pisces_network_buffer::handle_payload);
-  }
-  return payload_handler_;
-}
-
 void
-pisces_network_buffer::handle_payload(event* ev)
+pisces_buffer::handle_payload(event* ev)
 {
   auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
@@ -167,21 +168,16 @@ pisces_network_buffer::handle_payload(event* ev)
 
 #if SSTMAC_SANITY_CHECK
   if (dst_vc >= credits_.size()) {
-    spkt_throw_printf(sprockit::value_error,
-                     "pisces_buffer::handle_payload: on %s, port %d, invalid vc %d",
-                     to_string().c_str(),
-                     pkt->next_port(),
-                     dst_vc);
+    spkt_abort_printf("pisces_buffer::handle_payload: on %s, port %d, invalid vc %d",
+                     to_string().c_str(), pkt->edge_outport(), dst_vc);
   }
 #endif
-  int& num_credits = credits_[dst_vc];
 
+  int& num_credits = credits_[dst_vc];
   pisces_debug(
-    "On %s with %d credits, handling {%s} for vc:%d",
-    to_string().c_str(),
-    num_credits,
-    pkt->to_string().c_str(),
-    dst_vc);
+    "On %s with %d credits, handling payload {%s} for vc:%d",
+    to_string().c_str(), num_credits,
+    pkt->to_string().c_str(), dst_vc);
 
   // it either gets queued or gets sent
   // either way there's a delay accumulating for other messages
@@ -190,12 +186,17 @@ pisces_network_buffer::handle_payload(event* ev)
     num_credits -= pkt->num_bytes();
     send(arb_, pkt, input_, output_);
   } else {
+#if SSTMAC_SANITY_CHECK
+    if (dst_vc >= queues_.size()){
+      spkt_abort_printf("Bad VC %d: max is %d", dst_vc, queues_.size() - 1);
+    }
+#endif
     queues_[dst_vc].push_back(pkt);
   }
 }
 
 void
-pisces_network_buffer::deadlock_check()
+pisces_buffer::deadlock_check()
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   for (int i=0; i < queues_.size(); ++i){
@@ -204,12 +205,10 @@ pisces_network_buffer::deadlock_check()
     if (pkt){
       int vc = pkt->next_vc();
       deadlocked_channels_.insert(vc);
-      pkt->set_inport(output_.dst_inport);
       vc = update_vc_ ? pkt->next_vc() : pkt->vc();
       std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i
         << " going to " << output_.link->to_string()
-        << " outport=" << pkt->next_port()
-        << " inport=" << pkt->inport()
+        << " outport=" << pkt->edge_outport()
         << " vc=" << vc
         << std::endl;
       output_.link->deadlock_check(pkt);
@@ -219,7 +218,7 @@ pisces_network_buffer::deadlock_check()
 }
 
 void
-pisces_network_buffer::build_blocked_messages()
+pisces_buffer::build_blocked_messages()
 {
   //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
@@ -235,7 +234,7 @@ pisces_network_buffer::build_blocked_messages()
 }
 
 void
-pisces_network_buffer::deadlock_check(event* ev)
+pisces_buffer::deadlock_check(event* ev)
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   if (blocked_messages_.empty()){
@@ -243,8 +242,6 @@ pisces_network_buffer::deadlock_check(event* ev)
   }
 
   pisces_payload* payload = safe_cast(pisces_payload, ev);
-  int outport = payload->next_port();
-  int inport = payload->inport();
   int vc = update_vc_ ? payload->next_vc() : payload->vc();
   if (deadlocked_channels_.find(vc) != deadlocked_channels_.end()){
     spkt_throw_printf(sprockit::value_error,
@@ -255,16 +252,15 @@ pisces_network_buffer::deadlock_check(event* ev)
 
   std::list<pisces_payload*>& blocked = blocked_messages_[vc];
   if (blocked.empty()){
-    spkt_throw_printf(sprockit::value_error,
-      "channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
+    int outport = payload->next_local_outport();
+    int inport = payload->next_local_inport();
+    spkt_abort_printf("channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
       outport, inport, vc);
   } else {
     pisces_payload* next = blocked.front();
-    next->set_inport(output_.dst_inport);
     std::cerr << to_string() << " going to "
       << output_.link->to_string()
-      << " outport=" << next->next_port()
-      << " inport=" << next->inport()
+      << " outport=" << next->edge_outport()
       << " vc=" << next->next_vc()
       << " : " << next->to_string()
       << std::endl;
@@ -273,45 +269,8 @@ pisces_network_buffer::deadlock_check(event* ev)
 #endif
 }
 
-#if PRINT_FINISH_DETAILS
-extern void
-print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
-#endif
-
-
-#if PRINT_FINISH_DETAILS
-    switch_id addr;
-    structured_topology* top = safe_cast(structured_topology, sstmac_runtime::current_topology());
-    if (event_location_.is_node_id()){
-        node_id nid = event_location_.convert_to_node_id();
-        addr = switch_id(int(nid)/4);
-        coordinates my_coords = top->get_node_coords(nid);
-        coutn << "Network Injection Buffer " << my_coords.to_string() << "\n";
-    } else {
-        addr = switch_id(event_location_.location);
-        coordinates my_coords = top->get_switch_coords(addr);
-        coutn << "Network Switch Buffer " << my_coords.to_string() << "\n";
-    }
-
-     coutn << "\tQueue\n";
-     for (int i=0; i < queues_.size(); ++i){
-        coutn << "\t\tVC " << i << std::endl;
-        payload_queue& que = queues_[i];
-        payload_queue::iterator pit, pend = que.end();
-        for (pit = que.begin(); pit != pend; ++pit){
-            pisces_payload* pkt = *pit;
-            print_msg("\t\t\tPending: ", addr, msg);
-        }
-    }
-
-    coutn << "\tQueue\n";
-    for (int i=0; i < credits_.size(); ++i){
-        coutn << "\t\tVC " << i << " credits=" << credits_[i] << "\n";
-    }
-#endif
-
 int
-pisces_network_buffer::queue_length() const
+pisces_buffer::queue_length() const
 {
   uint32_t bytes_sending = arb_->bytes_sending(now());
   uint32_t total_bytes_pending = bytes_sending + bytes_delayed_;
@@ -325,150 +284,47 @@ pisces_network_buffer::queue_length() const
   return std::max(0, queue_length);
 }
 
-pisces_network_buffer::~pisces_network_buffer()
-{
-  if (arb_) delete arb_;
-  if (payload_handler_) delete payload_handler_;
-}
-
-void
-pisces_eject_buffer::return_credit(packet* pkt)
-{
-  send_credit(input_, safe_cast(pisces_payload, pkt), now());
-}
-
-pisces_eject_buffer::pisces_eject_buffer(sprockit::sim_parameters *params, event_scheduler *parent) :
-  pisces_buffer(params, parent)
+pisces_endpoint::pisces_endpoint(sprockit::sim_parameters *params, event_scheduler *parent,
+                                 event_handler* handler) :
+  pisces_sender(params, parent, false/*no vc update on buffer*/),
+  output_handler_(handler)
 {
 }
 
-pisces_eject_buffer::~pisces_eject_buffer()
+pisces_endpoint::~pisces_endpoint()
 {
   if (output_handler_) delete output_handler_;
 }
 
 void
-pisces_eject_buffer::handle_payload(event* ev)
+pisces_endpoint::handle_payload(event* ev)
 {
   auto pkt = static_cast<pisces_payload*>(ev);
   pkt->set_arrival(now());
   debug_printf(sprockit::dbg::pisces,
-    "On %s, handling {%s}",
+    "On %s, handling payload {%s}, done sending",
     to_string().c_str(),
     pkt->to_string().c_str());
-  return_credit(pkt);
+
   output_handler_->handle(pkt);
+
+  //endpoints are assumed to be infinite
+  //immediately return a credit
+  send_credit(input_, pkt, now());
 }
 
 void
-pisces_eject_buffer::handle_credit(event* ev)
+pisces_endpoint::handle_credit(event* ev)
 {
   spkt_throw_printf(sprockit::illformed_error,
                    "pisces_eject_buffer::handle_credit: should not handle credits");
 }
 
-pisces_injection_buffer::
-pisces_injection_buffer(sprockit::sim_parameters* params, event_scheduler* parent) :
-  pisces_buffer(params, parent)
-{
-  packet_size_ = params->get_byte_length_param("mtu");
-  credits_ = params->get_byte_length_param("credits");
-  arb_ = pisces_bandwidth_arbitrator::factory::
-          get_param("arbitrator", params);
-  if (send_lat_.ticks_int64() == 0){
-    params->print_scoped_params(std::cerr);
-    spkt_abort_printf("Injection buffer incorrectly initialized with zero latency - must be nonzero");
-  }
-}
-
 void
-pisces_injection_buffer::handle_credit(event* ev)
+pisces_endpoint::set_output(sprockit::sim_parameters *params, int this_outport, int dst_inport, event_link *link)
 {
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  debug_printf(sprockit::dbg::pisces,
-    "On %s with %d credits, handling {%s} -> byte delay now %d",
-     to_string().c_str(),
-     credits_,
-     credit->to_string().c_str(),
-     bytes_delayed_);
-
-  credits_ += credit->num_credits();
-  //we've cleared out some of the delay
-  bytes_delayed_ -= credit->num_credits();
-
-  delete credit;
-  //send_what_you_can();
-  //delete msg;
+  spkt_abort_printf("pisces_endpoint::set_output: should not be called, endpoint has no output");
 }
-
-void
-pisces_injection_buffer::handle_payload(event* ev)
-{
-  auto pkt = static_cast<pisces_payload*>(ev);
-  pkt->set_global_outport(0);
-  pkt->set_local_outport(0);
-  pkt->current_path().vc = 0; //start off on vc 0
-  pkt->set_arrival(now());
-  credits_ -= pkt->byte_length();
-  //we only get here if we cleared the credits
-  send(arb_, pkt, input_, output_);
-}
-
-pisces_injection_buffer::~pisces_injection_buffer()
-{
-  if (arb_) delete arb_;
-}
-
-#if PRINT_FINISH_DETAILS
-extern void
-print_msg(const std::string& prefix, switch_id addr, pisces_payload* pkt);
-#endif
-
-#if PRINT_FINISH_DETAILS
-    switch_id addr;
-    structured_topology* top = safe_cast(structured_topology, sstmac_runtime::current_topology());
-    if (event_location_.is_node_id()){
-        node_id nid = event_location_.convert_to_node_id();
-        addr = switch_id(int(nid)/4);
-        coordinates my_coords = top->get_node_coords(nid);
-        coutn << "Network Injection Buffer " << my_coords.to_string() << "\n";
-    } else {
-        addr = switch_id(event_location_.location);
-        coordinates my_coords = top->get_switch_coords(addr);
-        coutn << "Network Switch Buffer " << my_coords.to_string() << "\n";
-    }
-
-     coutn << "\tQueue\n";
-     for (int i=0; i < queues_.size(); ++i){
-        coutn << "\t\tVC " << i << std::endl;
-        payload_queue& que = queues_[i];
-        payload_queue::iterator pit, pend = que.end();
-        for (pit = que.begin(); pit != pend; ++pit){
-            pisces_payload* pkt = *pit;
-            print_msg("\t\t\tPending: ", addr, msg);
-        }
-    }
-
-    coutn << "\tQueue\n";
-    for (int i=0; i < credits_.size(); ++i){
-        coutn << "\t\tVC " << i << " credits=" << credits_[i] << "\n";
-    }
-#endif
-
-int
-pisces_injection_buffer::queue_length() const
-{
-  long bytes_sending = arb_->bytes_sending(now());
-  long total_bytes_pending = bytes_sending + bytes_delayed_;
-  long queue_length = total_bytes_pending / packet_size_;
-  debug_printf(sprockit::dbg::pisces,
-    "On %s, %d bytes delayed, %d total pending, %d packets in queue\n",
-     to_string().c_str(),
-     bytes_delayed_,
-     total_bytes_pending, queue_length);
-  return std::max(0L, total_bytes_pending);
-}
-
 
 
 }

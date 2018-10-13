@@ -80,9 +80,7 @@ class cartesian_topology :
   std::string switch_label(switch_id sid) const override;
 
  protected:
-  cartesian_topology(sprockit::sim_parameters* params,
-                     InitMaxPortsIntra i1,
-                     InitGeomEjectID i2);
+  cartesian_topology(sprockit::sim_parameters* params);
 
   /**
    * The number of redundant links (ports) comprising a geometric

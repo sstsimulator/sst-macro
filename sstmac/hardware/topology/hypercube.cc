@@ -60,15 +60,31 @@ hypercube::hypercube(sprockit::sim_parameters* params) :
     dim_to_outport_[i] = offset;
     offset += dimensions_[i];
   }
-  max_ports_intra_network_ = offset;
-  eject_geometric_id_ = max_ports_intra_network_;
+}
+
+void
+hypercube::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
+{
+  int total_ports = 0;
+  for (int size : dimensions_){
+    total_ports += size;
+  }
+
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = total_ports + i;
+    port.ep_port = 0;
+  }
 }
 
 void
 hypercube::minimal_route_to_switch(
   switch_id src,
   switch_id dst,
-  packet::path& path) const
+  packet::header* hdr) const
 {
   int ndim = dimensions_.size();
   int div = 1;
@@ -76,8 +92,8 @@ hypercube::minimal_route_to_switch(
     int srcX = (src / div) % dimensions_[i];
     int dstX = (dst / div) % dimensions_[i];
     if (srcX != dstX){
-      path.vc = 0;
-      path.set_outport(convert_to_port(i, dstX));
+      hdr->deadlock_vc = 0;
+      hdr->edge_port = convert_to_port(i, dstX);
       return;
     }
     div *= dimensions_[i];
@@ -181,18 +197,20 @@ hypercube::get_vtk_geometry(switch_id sid) const
     num_ports += dimensions_[d];
   }
 
-  vtk_face_t dim_to_face[] = { plusXface, plusYface, plusZface };
+  //vtk_face_t dim_to_face[] = { plusXface, plusYface, plusZface };
 
-  std::vector<vtk_face_t> faces(num_ports);
+  std::vector<vtk_switch_geometry::port_geometry> ports(num_ports);
+  /**
   for (int d=0; d < ndims; ++d){
     int port_offset = dim_to_outport_[d];
     for (int p=0; p < dimensions_[d]; ++p){
       faces[port_offset+p] = dim_to_face[d];
     }
   }
+  */
 
   vtk_switch_geometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,
-                           std::move(faces));
+                           std::move(ports));
 
   return geom;
 }

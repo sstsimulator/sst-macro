@@ -90,7 +90,8 @@ class topology : public sprockit::printable
 
   struct injection_port {
     node_id nid;
-    int port;
+    int switch_port;
+    int ep_port;
   };
 
   struct rotation {
@@ -232,27 +233,14 @@ class topology : public sprockit::printable
     {
     }
 
-    vtk_box_geometry get_face_geometry(vtk_face_t face, double face_width_fraction) const {
-      switch(face){
-      case plusXface:
-        return vtk_box_geometry(-face_width_fraction*size.x, size.y, size.z,
-              corner.x + size.x, corner.y, corner.z, rot);
-      case plusYface:
-        return vtk_box_geometry(size.x, -face_width_fraction*size.y, size.z,
-                                corner.x, corner.y + size.y, corner.z, rot);
-      case plusZface:
-        return vtk_box_geometry(size.x, size.y, -face_width_fraction*size.z,
-                                corner.x, corner.y, corner.z + size.z, rot);
-      case minusXface:
-        return vtk_box_geometry(face_width_fraction*size.x, size.y, size.z,
-                                corner.x, corner.y, corner.z, rot);
-      case minusYface:
-        return vtk_box_geometry(size.x, face_width_fraction*size.y, size.z,
-                                corner.x, corner.y, corner.z, rot);
-      case minusZface:
-        return vtk_box_geometry(size.x, size.y, face_width_fraction*size.z,
-                                corner.x, corner.y, corner.z, rot);
-      }
+    vtk_box_geometry get_sub_geometry(double x_start, double x_span,
+                                      double y_start, double y_span,
+                                      double z_start, double z_span) const {
+
+      return vtk_box_geometry(size.x * x_span, size.y * y_span, size.z * z_span,
+                              corner.x + size.x * x_start,
+                              corner.y + size.y * y_start,
+                              corner.z + size.z * z_start, rot);
     }
 
     xyz plus_x_corner() const {
@@ -280,27 +268,40 @@ class topology : public sprockit::printable
       return xyz(newX, newY, newZ).rotate(rot);
     }
 
+    xyz x_anchor() const {
+      //return the center of the front face
+      double newX = corner.x;
+      double newY = corner.y + size.y*0.5;
+      double newZ = corner.z + size.y*0.5;
+      return xyz(newX, newY, newZ).rotate(rot);
+    }
+
   };
 
   struct vtk_switch_geometry {
     vtk_box_geometry box;
-    std::vector<vtk_face_t> port_faces;
+    struct port_geometry {
+      double x_size;
+      double y_size;
+      double z_size;
+      double x_offset;
+      double y_offset;
+      double z_offset;
+    };
+    std::vector<port_geometry> ports;
 
-    vtk_box_geometry face_on_port(int port, double face_width_fraction) const {
-      vtk_face_t face = port_faces[port];
-      return box.get_face_geometry(face, face_width_fraction);
-    }
-
-
-    vtk_face_t get_face(int port) const {
-      return port_faces[port];
+    vtk_box_geometry get_port_geometry(int port) const {
+      auto& cfg = ports[port];
+      return box.get_sub_geometry(cfg.x_offset, cfg.x_size,
+                                  cfg.y_offset, cfg.y_size,
+                                  cfg.z_offset, cfg.z_size);
     }
 
     vtk_switch_geometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner,
-                 double theta, std::vector<vtk_face_t>&& ports) :
-      port_faces(ports),
-      box(xLength, yLength, zLength,xCorner,yCorner,zCorner,theta)
+                 double theta, std::vector<port_geometry>&& ps) :
+      box(xLength, yLength, zLength,xCorner,yCorner,zCorner,theta),
+      ports(std::move(ps))
     {}
 
   };
@@ -362,9 +363,9 @@ class topology : public sprockit::printable
      switches that are only a part of the network
      @return The total number of switches
   */
-  virtual int num_switches() const = 0;
+  virtual switch_id num_switches() const = 0;
 
-  virtual int num_leaf_switches() const {
+  virtual switch_id num_leaf_switches() const {
     return num_switches();
   }
 
@@ -375,14 +376,7 @@ class topology : public sprockit::printable
    */
   virtual switch_id max_switch_id() const = 0;
 
-  /**
-   * @brief swithc_id_slot_filled
-   * @param sid
-   * @return Whether a switch object should be built for a given switch_id
-   */
-  virtual bool switch_id_slot_filled(switch_id sid) const = 0;
-
-  virtual int num_nodes() const = 0;
+  virtual node_id num_nodes() const = 0;
 
   /**
    * @brief max_node_id Depending on the node indexing scheme, the maximum node id
@@ -390,17 +384,6 @@ class topology : public sprockit::printable
    * @return The max node id
    */
   virtual node_id max_node_id() const = 0;
-
-  /**
-   * @brief node_id_slot_filled
-   * @param nid
-   * @return Whether a node object should be built for a given node_id
-   */
-  virtual bool node_id_slot_filled(node_id nid) const = 0;
-
-  virtual switch_id max_netlink_id() const = 0;
-
-  virtual bool netlink_id_slot_filled(node_id nid) const = 0;
 
   /**
    * @brief get_vtk_geometry
@@ -414,62 +397,10 @@ class topology : public sprockit::printable
   }
 
   /**
-   * @brief num_endpoints To be distinguished slightly from nodes.
-   * Multiple nodes can be grouped together with a netlink.  The netlink
-   * is then the network endpoint that injects to the switch topology
-   * @return
-   */
-  virtual int num_netlinks() const = 0;
-
-  /**
    * @brief Return the maximum number of ports on any switch in the network
    * @return
    */
   virtual int max_num_ports() const = 0;
-
-  virtual int max_num_intra_network_ports() const = 0;
-
-  /**
-     For a given node, determine the injection switch
-     All messages from this node inject into the network
-     through this switch
-     @param nodeaddr The node to inject to
-     @param switch_port [inout] The port on the switch the node injects on
-     @return The switch that injects from the node
-  */
-  virtual switch_id netlink_to_injection_switch(
-        netlink_id nodeaddr, uint16_t& switch_port) const = 0;
-
-  /**
-     For a given node, determine the ejection switch
-     All messages to this node eject into the network
-     through this switch
-     @param nodeaddr The node to eject from
-     @param switch_port [inout] The port on the switch the node ejects on
-     @return The switch that ejects into the node
-  */
-  virtual switch_id netlink_to_ejection_switch(
-        netlink_id nodeaddr, uint16_t& switch_port) const = 0;
-
-  /**
-   * @brief node_to_ejection_switch Given a destination node,
-   *        figure out which switch has an ejection connection to it
-   * @param addr
-   * @param port  The port number on the switch that leads to ejection
-   *              to the particular node
-   * @return
-   */
-  virtual switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const = 0;
-
-  virtual switch_id node_to_injection_switch(node_id addr, uint16_t& port) const = 0;
-
-  /**
-    This gives the minimal distance counting the number of hops between switches.
-    @param src. The source switch.
-    @param dest. The destination switch.
-    @return The number of hops to final destination
-  */
-  virtual int minimal_distance(switch_id src, switch_id dst) const = 0;
 
   /**
     This gives the minimal distance counting the number of hops between switches.
@@ -478,6 +409,8 @@ class topology : public sprockit::printable
     @return The number of hops to final destination
   */
   virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
+
+  virtual switch_id endpoint_to_switch(node_id) const = 0;
 
   /**
    * @brief output_graphviz
@@ -511,7 +444,7 @@ class topology : public sprockit::printable
      switch is an internal switch not connected to any nodes
      @return The nodes connected to switch for injection
   */
-  virtual void nodes_connected_to_injection_switch(switch_id swid,
+  virtual void endpoints_connected_to_injection_switch(switch_id swid,
                           std::vector<injection_port>& nodes) const = 0;
 
   /**
@@ -520,50 +453,9 @@ class topology : public sprockit::printable
      switch is an internal switch not connected to any nodes
      @return The nodes connected to switch for ejection
   */
-  virtual void nodes_connected_to_ejection_switch(switch_id swid,
+  virtual void endpoints_connected_to_ejection_switch(switch_id swid,
                           std::vector<injection_port>& nodes) const = 0;
-
-  virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
-
   /**** END PURE VIRTUAL INTERFACE *****/
-
-  /**
-     For a given node, determine the ejection switch
-     All messages to this node eject into the network
-     through this switch
-     @param nodeaddr The node to eject from
-     @param switch_port [inout] The port on the switch the node ejects on
-     @return The switch that ejects into the node
-  */
-  uint16_t endpoint_to_injection_port(node_id nodeaddr) const {
-    uint16_t port;
-    switch_id sid = netlink_to_injection_switch(nodeaddr, port);
-    return port;
-  }
-
-  /**
-     For a given node, determine the ejection switch
-     All messages to this node eject into the network
-     through this switch
-     @param nodeaddr The node to eject from
-     @param switch_port [inout] The port on the switch the node ejects on
-     @return The switch that ejects into the node
-  */
-  uint16_t netlink_to_ejection_port(netlink_id nodeaddr) const {
-    uint16_t port;
-    switch_id sid = netlink_to_ejection_switch(nodeaddr, port);
-    return port;
-  }
-
-  switch_id netlink_to_ejection_switch(netlink_id nodeaddr) const {
-    uint16_t ignore;
-    return netlink_to_ejection_switch(nodeaddr, ignore);
-  }
-
-  switch_id netlink_to_injection_switch(netlink_id nodeaddr) const {
-    uint16_t ignore;
-    return netlink_to_injection_switch(nodeaddr, ignore);
-  }
 
   virtual void create_partition(
     int* switch_to_lp,
@@ -582,31 +474,6 @@ class topology : public sprockit::printable
 
   static topology* global() {
     return main_top_;
-  }
-
-  virtual switch_id node_to_injection_switch(node_id nodeaddr,
-   uint16_t ports[], int& num_ports) const {
-    num_ports = 1;
-    return node_to_injection_switch(nodeaddr, ports[0]);
-  }
-
-  virtual switch_id node_to_ejection_switch(node_id nodeaddr,
-   uint16_t ports[], int& num_ports) const {
-    num_ports = 1;
-    return node_to_ejection_switch(nodeaddr, ports[0]);
-  }
-
-
-  virtual switch_id netlink_to_injection_switch(node_id nodeaddr,
-   uint16_t ports[], int& num_ports) const {
-    num_ports = 1;
-    return netlink_to_injection_switch(nodeaddr, ports[0]);
-  }
-
-  virtual switch_id netlink_to_ejection_switch(node_id nodeaddr,
-   uint16_t ports[], int& num_ports) const {
-    num_ports = 1;
-    return netlink_to_ejection_switch(nodeaddr, ports[0]);
   }
 
   /**

@@ -68,7 +68,7 @@ geometry \paramType{vector of int} & No default & See Topology section & Geometr
 \hline 
 auto \paramType{bool} & false & Whether to auto-generate the topology based on the application size. \\
 \hline
-name \paramType{string} & No default & torus, cascade, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
+name \paramType{string} & No default & torus, cascade, dragonfly, fat\_tree, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
 \hline 
 seed \paramType{long} & System time & & If no value given, random numbers for topology will be generated from system time \\
 \hline
@@ -240,27 +240,6 @@ frequency & No default & & The baseline frequency of the node \\
 parallelism \paramType{double} & 1.0 & Positive number & Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. \\
 \hline
 \end{tabular}
-
-\section{Namespace ``netlink''}
-\label{sec:netlink:Params}
-
-\openTable
-\hline
-model \paramType{string} & null & null, pisces & The type of netlink congestion model to use. If null, no netlink blocks will be used.  \\
-\hline
-concentration \paramType{int} & No default & Positive int & The number of nodes connected to a given netlink. The node concentration per switch must be greater than or equal to the node concentration per netlink. \\
-\hline
-num\_tiles \paramType{int} & 1 & Positive int & The number of router tiles the netlink connects to. Only relevant for tiled router models. Advanced usage. \\
-\hline
-\end{tabular}
-
-\subsection{Namespace ``netlink.injection"}
-\label{subsec:netlink:injection:Params}
-\input{piscesSender}
-
-\subsection{Namespace ``netlink.ejection"}
-\label{subsec:netlink:ejection:Params}
-\input{piscesSender}
 
 \section{Namespace ``mpi"}
 \label{sec:mpi:Params}

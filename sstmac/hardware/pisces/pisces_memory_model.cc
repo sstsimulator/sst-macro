@@ -80,7 +80,7 @@ pisces_memory_packetizer::pisces_memory_packetizer(
   bw_noise_(nullptr),
   interval_noise_(nullptr),
   num_noisy_intervals_(0),
-  packetizer(params, parent)
+  packetizer(params, parent, PISCES_MEM_DEFAULT_NUM_CHANNELS)
 {
   for (int i=0; i < PISCES_MEM_DEFAULT_NUM_CHANNELS; ++i){
     channelFree_[i] = true;

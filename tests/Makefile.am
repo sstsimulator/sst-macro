@@ -20,7 +20,7 @@ AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi \
 
 
 
-SUBDIRS = unit_tests sumi
+SUBDIRS = sumi
 
 if BUILD_SUMI_MPI
 SUBDIRS += api/mpi 
@@ -84,7 +84,6 @@ if !INTEGRATED_SST_CORE
 include Makefile.check_programs
 include Makefile.single_tests
 include Makefile.stats_tests
-include Makefile.unit_tests
 include Makefile.alloc_tests
 include Makefile.external_tests
 include Makefile.core_tests

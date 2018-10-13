@@ -21,6 +21,10 @@ class hypercube_minimal_router : public router {
     : router(params, top, netsw)
   {
     cube_ = safe_cast(hypercube, top);
+    inj_offset_ = 0;
+    for (int size : cube_->dimensions()){
+      inj_offset_ += size;
+    }
   }
 
   std::string to_string() const override {
@@ -32,24 +36,24 @@ class hypercube_minimal_router : public router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = cube_->node_to_ejection_switch(pkt->toaddr(), dir);
-    packet::path& path = pkt->current_path();
+    auto* hdr = pkt->rtr_header<packet::header>();
+    switch_id ej_addr = pkt->toaddr() / cube_->concentration();
     if (ej_addr == my_addr_){
-      path.set_outport(dir);
-      path.vc = 0;
+      hdr->edge_port = pkt->toaddr() % cube_->concentration() + inj_offset_;
+      hdr->deadlock_vc = 0;
       return;
     }
 
-    cube_->minimal_route_to_switch(my_addr_, ej_addr, pkt->current_path());
-    pkt->current_path().vc = 0;
+    cube_->minimal_route_to_switch(my_addr_, ej_addr, hdr);
+    hdr->deadlock_vc = 0;
   }
 
- private:
+ protected:
   hypercube* cube_;
+  int inj_offset_;
 };
 
-class hypercube_par_router : public router {
+class hypercube_par_router : public hypercube_minimal_router {
   struct header : public packet::header {
     uint8_t stage_number : 3;
     uint8_t nhops : 3;
@@ -57,6 +61,7 @@ class hypercube_par_router : public router {
     uint8_t dstY : 6;
     uint8_t dstZ : 6;
     uint16_t ejPort;
+    uint32_t dest_switch : 24;
   };
 
  public:
@@ -75,9 +80,8 @@ class hypercube_par_router : public router {
 
   hypercube_par_router(sprockit::sim_parameters* params, topology *top,
                        network_switch *netsw)
-    : router(params, top, netsw)
+    : hypercube_minimal_router(params, top, netsw)
   {
-    cube_ = safe_cast(hypercube, top);
     auto coords = cube_->switch_coords(my_addr_);
     if (coords.size() != 3){
       spkt_abort_printf("PAR routing currently only valid for 3D");
@@ -122,22 +126,19 @@ class hypercube_par_router : public router {
   }
 
   void route(packet *pkt) override {
-    auto hdr = pkt->get_header<header>();
-    auto& path = pkt->current_path();
-
+    auto hdr = pkt->rtr_header<header>();
     switch(hdr->stage_number){
     case initial_stage: {
-      uint16_t dir;
-      switch_id ej_addr = cube_->node_to_ejection_switch(pkt->toaddr(), dir);
+      switch_id ej_addr = pkt->toaddr() / cube_->concentration();
       auto coords = cube_->switch_coords(ej_addr);
       hdr->dstX = coords[0];
       hdr->dstY = coords[1];
       hdr->dstZ = coords[2];
-      hdr->ejPort = dir;
+      hdr->ejPort = pkt->toaddr() % cube_->concentration() + inj_offset_;
       hdr->stage_number = minimal_stage;
-      path.vc = 0;
+      hdr->deadlock_vc = 0;
       if (ej_addr == my_addr_){
-        path.set_outport(hdr->ejPort);
+        hdr->edge_port = hdr->ejPort;
         return;
       }
     }
@@ -161,31 +162,31 @@ class hypercube_par_router : public router {
          valiantPort = coords[2] + x_ + y_;
        } else {
           //oh - um - eject
-         path.set_outport(hdr->ejPort);
-         path.vc = 0;
+         hdr->edge_port = hdr->ejPort;
+         hdr->deadlock_vc = 0;
          return;
        }
       int minLength = netsw_->queue_length(minimalPort);
       int valLength = netsw_->queue_length(valiantPort) * 2;
       if (minLength <= valLength){
-        path.set_outport(minimalPort);
+        hdr->edge_port = minimalPort;
       } else {
         switch_id inter = cube_->switch_addr(coords);
-        path.set_outport(valiantPort);
-        pkt->set_dest_switch(inter);
+        hdr->edge_port = valiantPort;
+        hdr->dest_switch = inter;
         hdr->stage_number = valiant_stage;
       }
       break;
     }
     case valiant_stage: {
-      if (my_addr_ != pkt->dest_switch()){
-        auto coords = cube_->switch_coords(pkt->dest_switch());
+      if (my_addr_ != hdr->dest_switch){
+        auto coords = cube_->switch_coords(hdr->dest_switch);
         if (coords[0] != myX_){
-          path.set_outport(coords[0]);
+          hdr->edge_port = coords[0];
         } else if (coords[1] != myY_){
-          path.set_outport(coords[1]+x_);
+          hdr->edge_port = coords[1]+x_;
         } else {
-          path.set_outport(coords[2]+x_+y_);
+          hdr->edge_port = coords[2]+x_+y_;
         }
         break;
       }
@@ -202,16 +203,15 @@ class hypercube_par_router : public router {
         port = hdr->dstZ+x_+y_;
       } else {
         //oh - um - eject
-       path.set_outport(hdr->ejPort);
-       path.vc = 0;
+       hdr->edge_port = hdr->ejPort;
+       hdr->deadlock_vc = 0;
        return;
       }
-      path.set_outport(port);
+      hdr->edge_port = port;
     }
     }
 
-
-    path.vc = hdr->nhops;
+    hdr->deadlock_vc = hdr->nhops;
     hdr->nhops++;
   }
 
@@ -220,7 +220,6 @@ class hypercube_par_router : public router {
   }
 
  private:
-  hypercube* cube_;
   int myX_;
   int myY_;
   int myZ_;

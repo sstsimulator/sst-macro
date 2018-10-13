@@ -52,7 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/nic/nic_fwd.h>
-#include <sstmac/hardware/nic/netlink_fwd.h>
 #include <sstmac/hardware/switch/network_switch_fwd.h>
 
 #include <sstmac/backends/common/sim_partition_fwd.h>
@@ -184,7 +183,6 @@ class interconnect
 
   void build_endpoints(sprockit::sim_parameters* node_params,
                     sprockit::sim_parameters* nic_params,
-                    sprockit::sim_parameters* netlink_params,
                     event_manager* mgr);
 
   void build_switches(sprockit::sim_parameters* switch_params,
@@ -213,9 +211,6 @@ class interconnect
 
   partition* partition_;
   parallel_runtime* rt_;
-
-  typedef std::vector<netlink*> netlink_map;
-  netlink_map netlinks_;
 #endif
 };
 

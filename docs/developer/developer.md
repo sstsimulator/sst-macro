@@ -1721,10 +1721,6 @@ virtual int num_endpoints() const = 0;
 
 virtual int max_num_ports() const = 0;
 
-virtual switch_id netlink_to_injection_switch(node_id nodeaddr, uint16_t& switch_port) const = 0;
-
-virtual switch_id netlink_to_ejection_switch(node_id nodeaddr, uint16_t& switch_port) const = 0;
-
 virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
 
 virtual switch_id node_to_ejection_switch(node_id addr, int& port) const = 0;
@@ -1733,18 +1729,16 @@ virtual int minimal_distance(switch_id src, switch_id dst) const = 0;
 
 virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
 
-virtual void nodes_connected_to_injection_switch(switch_id swid,
+virtual void endpoints_connected_to_injection_switch(switch_id swid,
                       std::vector<injection_port>& nodes) const = 0;
 
-virtual void nodes_connected_to_ejection_switch(switch_id swid,
+virtual void endpoints_connected_to_ejection_switch(switch_id swid,
                       std::vector<injection_port>& nodes) const = 0;
 
 virtual void minimal_route_to_switch(
  switch_id current_sw_addr,
  switch_id dest_sw_addr,
  routable::path& path) const = 0;
-
-virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
 ````
 
 These functions are documented in the `topology.h` header file.

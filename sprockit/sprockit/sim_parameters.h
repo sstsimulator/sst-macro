@@ -372,6 +372,10 @@ class sim_parameters  {
 
   void get_optional_vector_param(const std::string& key, std::vector<std::string>& vals);
 
+  void get_optional_vector_param(const std::string& key, std::vector<int>& vals);
+
+  void get_optional_vector_param(const std::string& key, std::vector<double>& vals);
+
   sim_parameters* get_namespace(const std::string& ns);
 
   sim_parameters* get_optional_namespace(const std::string& ns);
