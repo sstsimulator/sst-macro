@@ -273,7 +273,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if keepExe and sstCore:
     sys.exit("Running with sst-core does not allow --keep-exe - must create libX.so")
 
-  if runClang:
+  if runClang and haveClangSrcToSrc:
     sstCppFlags.append("-DSSTMAC_NO_REFACTOR_MAIN")
   if memoizing:
     sstCppFlags.append("-DSSTMAC_NO_REPLACEMENTS")
