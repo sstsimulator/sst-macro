@@ -142,7 +142,7 @@ pisces_buffer::handle_credit(event* ev)
 #endif
 
   /** while we have sendable payloads, do it */
-  pisces_payload* payload = queues_[vc].pop(num_credits);
+  pisces_packet* payload = queues_[vc].pop(num_credits);
   while (payload) {
     num_credits -= payload->num_bytes();
     //this actually doesn't create any new delay
@@ -158,13 +158,9 @@ pisces_buffer::handle_credit(event* ev)
 void
 pisces_buffer::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_payload*>(ev);
+  auto pkt = static_cast<pisces_packet*>(ev);
   pkt->set_arrival(now());
   int dst_vc = pkt->vc();
-#if SSTMAC_SANITY_CHECK
-  //vc default to uninit instead of zero to make sure routers set VC
-  dst_vc = dst_vc == routing::uninitialized ? 0 : dst_vc;
-#endif
 
 #if SSTMAC_SANITY_CHECK
   if (dst_vc >= credits_.size()) {
@@ -201,7 +197,7 @@ pisces_buffer::deadlock_check()
 #if !SSTMAC_INTEGRATED_SST_CORE
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    pisces_payload* pkt = queue.front();
+    pisces_packet* pkt = queue.front();
     if (pkt){
       int vc = pkt->next_vc();
       deadlocked_channels_.insert(vc);
@@ -223,7 +219,7 @@ pisces_buffer::build_blocked_messages()
   //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    pisces_payload* pkt = queue.pop(1000000);
+    pisces_packet* pkt = queue.pop(1000000);
     while (pkt){
       blocked_messages_[pkt->vc()].push_back(pkt);
       //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
@@ -241,7 +237,7 @@ pisces_buffer::deadlock_check(event* ev)
     build_blocked_messages();
   }
 
-  pisces_payload* payload = safe_cast(pisces_payload, ev);
+  pisces_packet* payload = safe_cast(pisces_packet, ev);
   int vc = update_vc_ ? payload->next_vc() : payload->vc();
   if (deadlocked_channels_.find(vc) != deadlocked_channels_.end()){
     spkt_throw_printf(sprockit::value_error,
@@ -250,14 +246,14 @@ pisces_buffer::deadlock_check(event* ev)
 
   deadlocked_channels_.insert(vc);
 
-  std::list<pisces_payload*>& blocked = blocked_messages_[vc];
+  std::list<pisces_packet*>& blocked = blocked_messages_[vc];
   if (blocked.empty()){
     int outport = payload->next_local_outport();
     int inport = payload->next_local_inport();
     spkt_abort_printf("channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
       outport, inport, vc);
   } else {
-    pisces_payload* next = blocked.front();
+    pisces_packet* next = blocked.front();
     std::cerr << to_string() << " going to "
       << output_.link->to_string()
       << " outport=" << next->edge_outport()
@@ -299,7 +295,7 @@ pisces_endpoint::~pisces_endpoint()
 void
 pisces_endpoint::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_payload*>(ev);
+  auto pkt = static_cast<pisces_packet*>(ev);
   pkt->set_arrival(now());
   debug_printf(sprockit::dbg::pisces,
     "On %s, handling payload {%s}, done sending",

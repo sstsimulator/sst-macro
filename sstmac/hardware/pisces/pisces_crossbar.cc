@@ -141,7 +141,7 @@ pisces_NtoM_queue::deadlock_check()
 #if !SSTMAC_INTEGRATED_SST_CORE
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    pisces_payload* pkt = queue.front();
+    pisces_packet* pkt = queue.front();
     while (pkt){
       deadlocked_channels_[pkt->edge_outport()].insert(pkt->next_vc());
       event_link* output = output_link(pkt);
@@ -168,7 +168,7 @@ pisces_NtoM_queue::build_blocked_messages()
 {
   for (int i=0; i < queues_.size(); ++i){
     payload_queue& queue = queues_[i];
-    pisces_payload* pkt = queue.pop(1000000);
+    pisces_packet* pkt = queue.pop(1000000);
     while (pkt){
       blocked_messages_[pkt->next_local_inport()][pkt->vc()].push_back(pkt);
       pkt = queue.pop(10000000);
@@ -184,7 +184,7 @@ pisces_NtoM_queue::deadlock_check(event* ev)
     build_blocked_messages();
   }
 
-  pisces_payload* payload = safe_cast(pisces_payload, ev);
+  pisces_packet* payload = safe_cast(pisces_packet, ev);
   int inport = payload->next_local_inport();
   int vc = update_vc_ ? payload->next_vc() : payload->vc();
   std::set<int>& deadlocked_vcs = deadlocked_channels_[payload->edge_outport()];
@@ -195,13 +195,13 @@ pisces_NtoM_queue::deadlock_check(event* ev)
 
   deadlocked_channels_[payload->edge_outport()].insert(vc);
 
-  std::list<pisces_payload*>& blocked = blocked_messages_[inport][vc];
+  std::list<pisces_packet*>& blocked = blocked_messages_[inport][vc];
   if (blocked.empty()){
     spkt_throw_printf(sprockit::value_error,
       "channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
       payload->edge_outport(), inport, vc);
   } else {
-    pisces_payload* next = blocked.front();
+    pisces_packet* next = blocked.front();
     event_link* output = output_link(next);
     std::cerr << to_string() << " going to "
       << output->to_string()
@@ -215,37 +215,35 @@ pisces_NtoM_queue::deadlock_check(event* ev)
 }
 
 std::string
-pisces_NtoM_queue::input_name(pisces_payload* pkt)
+pisces_NtoM_queue::input_name(pisces_packet* pkt)
 {
   event_link* link = inputs_[pkt->next_local_inport()].link;
   return link->to_string();
 }
 
 event_link*
-pisces_NtoM_queue::output_link(pisces_payload* pkt)
+pisces_NtoM_queue::output_link(pisces_packet* pkt)
 {
   return outputs_[pkt->next_local_outport()].link;
 }
 
 std::string
-pisces_NtoM_queue::output_name(pisces_payload* pkt)
+pisces_NtoM_queue::output_name(pisces_packet* pkt)
 {
   return output_link(pkt)->to_string();
 }
 
 void
-pisces_NtoM_queue::send_payload(pisces_payload* pkt)
+pisces_NtoM_queue::send_payload(pisces_packet* pkt)
 {
 #if SSTMAC_SANITY_CHECK
   int port = pkt->next_local_outport();
   if (port >= outputs_.size() || outputs_[port].link == nullptr){
-    auto* hdr = pkt->ctrl_header();
-    spkt_abort_printf("got bad outport %d on stage %d", port, int(hdr->stage));
+    spkt_abort_printf("got bad outport %d on stage %d", port, int(pkt->stage()));
   }
   port = pkt->next_local_inport();
   if (port >= inputs_.size() || inputs_[port].link == nullptr){
-    auto* hdr = pkt->ctrl_header();
-    spkt_abort_printf("got bad inport %d on stage %d", port, int(hdr->stage));
+    spkt_abort_printf("got bad inport %d on stage %d", port, int(pkt->stage()));
   }
 #endif
   send(arb_, pkt, inputs_[pkt->next_local_inport()], outputs_[pkt->next_local_outport()]);
@@ -279,7 +277,7 @@ pisces_NtoM_queue::handle_credit(event *ev)
   }
 #endif
 
-  pisces_payload* payload = queue(pkt->port(), pkt->vc()).pop(num_credits);
+  pisces_packet* payload = queue(pkt->port(), pkt->vc()).pop(num_credits);
   if (payload) {
     num_credits -= payload->num_bytes();
     send_payload(payload);
@@ -290,16 +288,15 @@ pisces_NtoM_queue::handle_credit(event *ev)
 void
 pisces_NtoM_queue::handle_payload(event* ev)
 {
-  auto pkt = static_cast<pisces_payload*>(ev);
+  auto pkt = static_cast<pisces_packet*>(ev);
   pkt->set_arrival(now());
 
-  auto* hdr = pkt->ctrl_header();
   int dst_vc = update_vc_ ? pkt->next_vc() : pkt->vc();
-  int loc_port = hdr->outports[hdr->stage];
+  int loc_port = pkt->next_local_outport();
   pisces_debug(
    "On %s:%p, handling payload {%s} for vc:%d local_port:%d on stage %d",
     to_string().c_str(), this,
-    pkt->to_string().c_str(), dst_vc, loc_port, int(hdr->stage));
+    pkt->to_string().c_str(), dst_vc, loc_port, int(pkt->stage()));
 
   if (dst_vc < 0 || loc_port < 0){
     spkt_abort_printf("On %s handling {%s}, got negative vc,local_port %d,%d",

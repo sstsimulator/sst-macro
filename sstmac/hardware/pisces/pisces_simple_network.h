@@ -61,7 +61,7 @@ namespace hw {
  * through the detailed modeling PISCSES network.  The serializable* payload
  * should always be an SST::Request object
  */
-class simple_network_packet : public pisces_payload
+class simple_network_packet : public pisces_packet
 {
   NotSerializable(simple_network_packet)
 
@@ -73,7 +73,7 @@ class simple_network_packet : public pisces_payload
     node_id toaddr,
     node_id fromaddr,
     int vn) :
-   pisces_payload(msg, num_bytes, is_tail, 0,/*flow id ignored*/
+   pisces_packet(msg, num_bytes, is_tail, 0,/*flow id ignored*/
                   toaddr, fromaddr),
    vn_(vn)
   {
@@ -227,7 +227,7 @@ class pisces_simple_network :
   std::list<simple_network_packet*> vn0_pkts_;
   std::list<simple_network_message*> vn1_msgs_;
 
-  pisces_injection_buffer* inj_buffer_;
+  pisces_buffer* inj_buffer_;
   pisces_bandwidth_arbitrator* arb_;  //arbitrator for computing message delays
   SST::Link* logp_link_;   //used for sending control messages to LogP overlay network
   SST::Link* credit_link_; //used for returning credits to ejection switch

@@ -115,7 +115,6 @@ nobase_library_include_HEADERS += \
   topology/traffic/traffic.h \
   router/router.h \
   router/router_fwd.h \
-  router/routing_enum.h \
   router/fat_tree_router.h 
 
 libsstmac_hw_la_SOURCES +=  \

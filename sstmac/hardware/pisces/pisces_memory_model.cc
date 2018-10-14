@@ -215,7 +215,7 @@ void
 pisces_memory_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message* msg)
 {
   bool is_tail = (bytes + byte_offset) == msg->byte_length();
-  pisces_payload* payload = new pisces_payload(is_tail ? msg : nullptr,
+  pisces_packet* payload = new pisces_packet(is_tail ? msg : nullptr,
                                                bytes, msg->flow_id(), is_tail,
                                                msg->fromaddr(), msg->toaddr());
 
@@ -233,7 +233,7 @@ pisces_memory_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, m
 }
 
 void
-pisces_memory_packetizer::handle_payload(int vn, pisces_payload* pkt)
+pisces_memory_packetizer::handle_payload(int vn, pisces_packet* pkt)
 {
   //set the bandwidth to the max single bw
   pkt->init_bw(max_single_bw_);

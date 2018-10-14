@@ -121,20 +121,12 @@ class pisces_memory_packetizer : public packetizer
     return channelFree_[vn];
   }
 
-  uint32_t spaceAvailable(int vn) const override {
-    if (channelFree_[vn]){
-      return std::numeric_limits<uint32_t>::max();
-    } else {
-      return 0;
-    }
-  }
-
   double max_single_bw() const {
     return max_single_bw_;
   }
 
  private:
-  void handle_payload(int vn, pisces_payload* pkt);
+  void handle_payload(int vn, pisces_packet* pkt);
 
   void init_noise_model();
 

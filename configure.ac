@@ -256,8 +256,6 @@ AC_CONFIG_FILES([
  configurations/Makefile
  tests/Makefile
  tests/external/Makefile
- tests/unit_tests/Makefile
- tests/unit_tests/util/Makefile
  tests/sumi/Makefile
  tests/api/mpi/Makefile
  tests/api/globals/Makefile

@@ -128,15 +128,15 @@ pisces_switch::pisces_switch(
                               top_->max_num_ports(), top_->max_num_ports(),
                               router_->num_vc(), true/*yes, update vc*/);
   xbar_->set_stat_collector(xbar_stats_);
-  init_links(params);
   out_buffers_.resize(top_->max_num_ports());
   inports_.resize(top_->max_num_ports());
-
   for (int i=0; i < inports_.size(); ++i){
     input_port& inp = inports_[i];
     inp.port = i;
     inp.parent = this;
   }
+
+  init_links(params);
 }
 
 pisces_switch::~pisces_switch()
@@ -157,28 +157,26 @@ pisces_switch::connect_output(
   event_link* link)
 {
   pisces_buffer* out_buffer = new pisces_buffer(port_params, this, router_->num_vc());
-  out_buffer->set_output(port_params, src_outport, dst_inport, link);
   out_buffer->set_stat_collector(buf_stats_);
-
   int buffer_inport = 0;
   auto out_link = allocate_local_link(xbar_->send_latency(), this, out_buffer->payload_handler());
   xbar_->set_output(port_params, src_outport, buffer_inport, out_link);
   auto in_link = allocate_local_link(out_buffer->credit_latency(), this, xbar_->credit_handler());
   out_buffer->set_input(port_params, buffer_inport, src_outport, in_link);
+  out_buffers_[src_outport] = out_buffer;
 
+
+  out_buffer->set_output(port_params, src_outport, dst_inport, link);
   out_buffers_[src_outport] = out_buffer;
 }
 
 void
 pisces_switch::input_port::handle(event *ev)
 {
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  auto* hdr = payload->ctrl_header();
+  pisces_packet* payload = static_cast<pisces_packet*>(ev);
   parent->rter()->route(payload);
-  hdr->inport = this->port;
-  hdr->stage = 0;
-  hdr->outports[0] = payload->edge_outport();
-  hdr->outports[1] = 0; //buffer
+  payload->reset_stages(payload->edge_outport(), 0);
+  payload->set_inport(this->port);
   parent->xbar()->handle_payload(payload);
 }
 
@@ -237,15 +235,19 @@ pisces_switch::to_string() const
 }
 
 link_handler*
-pisces_switch::credit_handler(int port) const
+pisces_switch::credit_handler(int port)
 {
+  if (port >= out_buffers_.size()){
+    spkt_abort_printf("Got invalid port %d request for credit handler - max is %d",
+                      port, out_buffers_.size() - 1);
+  }
   return new_link_handler(out_buffers_[port], &pisces_sender::handle_credit);
 }
 
 link_handler*
-pisces_switch::payload_handler(int port) const
+pisces_switch::payload_handler(int port)
 {
-  input_port* inp = const_cast<input_port*>(&inports_[port]);
+  input_port* inp = &inports_[port];
   return new_link_handler(inp, &input_port::handle);
 }
 

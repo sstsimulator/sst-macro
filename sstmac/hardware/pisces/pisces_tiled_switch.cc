@@ -242,8 +242,8 @@ pisces_tiled_switch::handle_credit(event *ev)
 void
 pisces_tiled_switch::handle_payload(event *ev)
 {
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  auto* hdr = payload->control_header<header>();
+  pisces_packet* payload = static_cast<pisces_packet*>(ev);
+
   debug_printf(sprockit::dbg::pisces,
                "tiled switch %d: incoming payload %s",
                int(my_addr_), payload->to_string().c_str());
@@ -255,10 +255,8 @@ pisces_tiled_switch::handle_payload(event *ev)
 
   int edge_port = payload->edge_outport();
   int dst_inport = dst_inports_[edge_port];
-  //hdr->arrival_port = dst_inport;
-  hdr->stage = 0;
-  hdr->outports[0] = get_col(edge_port);
-  hdr->outports[1] = get_row(edge_port);
+
+  payload->reset_stages(get_col(edge_port), get_row(edge_port));
 
   debug_printf(sprockit::dbg::pisces,
                "tiled switch %d: routed payload %s to port %d, vc %d = %d,%d",
@@ -275,7 +273,7 @@ pisces_tiled_switch::to_string() const
 }
 
 link_handler*
-pisces_tiled_switch::credit_handler(int port) const
+pisces_tiled_switch::credit_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &pisces_tiled_switch::handle_credit);
@@ -285,7 +283,7 @@ pisces_tiled_switch::credit_handler(int port) const
 }
 
 link_handler*
-pisces_tiled_switch::payload_handler(int port) const
+pisces_tiled_switch::payload_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &pisces_tiled_switch::handle_payload);

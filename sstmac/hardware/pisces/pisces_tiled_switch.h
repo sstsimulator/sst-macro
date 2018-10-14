@@ -66,7 +66,7 @@ class pisces_tiled_switch :
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A tiled network switch implementing the packet flow congestion model")
  public:
-  struct header : public pisces_payload::header {
+  struct header : public pisces_packet::header {
     uint16_t arrival_port;
   };
 
@@ -82,9 +82,9 @@ class pisces_tiled_switch :
                 int src_outport, int dst_inport,
                 event_link* link) override;
 
-  link_handler* credit_handler(int port) const override;
+  link_handler* credit_handler(int port) override;
 
-  link_handler* payload_handler(int port) const override;
+  link_handler* payload_handler(int port) override;
 
   timestamp send_latency(sprockit::sim_parameters *params) const override;
 

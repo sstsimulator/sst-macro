@@ -248,9 +248,9 @@ class null_nic : public nic
 
   timestamp credit_latency(sprockit::sim_parameters *params) const override { return timestamp(); }
 
-  link_handler* payload_handler(int port) const override { return nullptr; }
+  link_handler* payload_handler(int port) override { return nullptr; }
 
-  link_handler* credit_handler(int port) const override { return nullptr; }
+  link_handler* credit_handler(int port) override { return nullptr; }
 };
 
 }

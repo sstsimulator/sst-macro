@@ -156,20 +156,17 @@ pisces_packetizer::spaceToSend(int vn, int num_bits)
   return inj_buffer_->space_to_send(vn, num_bits/8);
 }
 
-uint32_t
-pisces_packetizer::spaceAvailable(int vn) const
-{
-  return inj_buffer_->num_credit(vn);
-}
-
 void
 pisces_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message* msg)
 {
   bool is_tail = (byte_offset + bytes) == msg->byte_length();
   //only carry the payload if you're the tail packet
-  pisces_payload* payload = new pisces_payload(is_tail ? msg : nullptr,
+  pisces_packet* payload = new pisces_packet(is_tail ? msg : nullptr,
                                                bytes, msg->flow_id(), is_tail,
                                                msg->fromaddr(), msg->toaddr());
+  //start on a singel virtual channel (0)
+  payload->set_deadlock_vc(0);
+  payload->update_vc();
   inj_buffer_->handle_payload(payload);
 }
 
@@ -192,7 +189,7 @@ pisces_packetizer::set_input(sprockit::sim_parameters* params,
 void
 pisces_simple_packetizer::recv_packet(event* ev)
 {
-  pisces_payload* pkt = static_cast<pisces_payload*>(ev);
+  pisces_packet* pkt = static_cast<pisces_packet*>(ev);
   ej_stats_->collect_final_event(pkt);
   int vn = 0;
   packetArrived(vn, pkt);
@@ -201,7 +198,7 @@ pisces_simple_packetizer::recv_packet(event* ev)
 void
 pisces_cut_through_packetizer::recv_packet(event* ev)
 {
-  pisces_payload* pkt = static_cast<pisces_payload*>(ev);
+  pisces_packet* pkt = static_cast<pisces_packet*>(ev);
   int vn = 0;
   ej_stats_->collect_final_event(pkt);
   timestamp delay(pkt->num_bytes() / pkt->bw());

@@ -119,7 +119,7 @@ pisces_nic::~pisces_nic() throw ()
 }
 
 link_handler*
-pisces_nic::payload_handler(int port) const
+pisces_nic::payload_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   if (port == nic::LogP){
@@ -137,7 +137,7 @@ pisces_nic::payload_handler(int port) const
 }
 
 link_handler*
-pisces_nic::credit_handler(int port) const
+pisces_nic::credit_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return packetizer_->new_credit_handler();

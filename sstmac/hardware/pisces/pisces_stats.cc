@@ -89,7 +89,7 @@ packet_stats_callback::packet_stats_callback(sprockit::sim_parameters *params, e
 }
 
 void
-packet_stats_callback::collect_final_event(pisces_payload *pkt)
+packet_stats_callback::collect_final_event(pisces_packet *pkt)
 {
   sprockit::abort("stats object does not support collecting final events");
 }
@@ -114,7 +114,7 @@ congestion_spyplot::~congestion_spyplot()
 }
 
 void
-congestion_spyplot::collect_final_event(pisces_payload* pkt)
+congestion_spyplot::collect_final_event(pisces_packet* pkt)
 {
   sprockit::abort("unimplemented: congestion_spyplot::collect_final_event");
   //double delay_ns = pkt->congestion_delay()*1e9;
@@ -129,7 +129,7 @@ congestion_spyplot::collect_single_event(const pkt_arbitration_t &st)
 }
 
 void
-congestion_spyplot::collect(double congestion_delay, pisces_payload* pkt)
+congestion_spyplot::collect(double congestion_delay, pisces_packet* pkt)
 {
   congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), congestion_delay);
 }
@@ -155,7 +155,7 @@ delay_histogram::collect_single_event(const pkt_arbitration_t& st)
 }
 
 void
-delay_histogram::collect_final_event(pisces_payload* pkt)
+delay_histogram::collect_final_event(pisces_packet* pkt)
 {
   sprockit::abort("unimplemented: delay_histogram::collect_final_event");
   //auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
@@ -187,7 +187,7 @@ multi_stats::multi_stats(sprockit::sim_parameters *params, event_scheduler *pare
 }
 
 void
-multi_stats::collect_final_event(pisces_payload *pkt)
+multi_stats::collect_final_event(pisces_packet *pkt)
 {
   for (auto cb : cbacks_){
     cb->collect_final_event(pkt);

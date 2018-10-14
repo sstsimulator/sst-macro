@@ -69,7 +69,7 @@ pisces_simple_network::pisces_simple_network(sprockit::sim_parameters *params, S
 
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   pisces_sender::configure_payload_port_latency(inj_params);
-  inj_buffer_ = new pisces_injection_buffer(inj_params, this);
+  inj_buffer_ = new pisces_buffer(inj_params, this, 1);
 
   event_handler* handler = new_handler(this, &pisces_simple_network::credit_arrived);
   inj_buffer_->set_input(inj_params, 0, 0, new event_link(self_link(), comp));
@@ -97,7 +97,7 @@ pisces_simple_network::init_links(sprockit::sim_parameters* params)
       credit_link_ = link;
     } else if (port_type == "output"){
       inj_buffer_->set_output(inj_params, src_outport, dst_inport, new event_link(link, comp()));
-      configureLink(pair.first, new_link_handler(inj_buffer_, &pisces_injection_buffer::handle_credit));
+      configureLink(pair.first, new_link_handler(inj_buffer_, &pisces_buffer::handle_credit));
     } else if (port_type == "in-out"){
       logp_link_ = link;
       configureLink(pair.first, new_link_handler(this, &pisces_simple_network::ctrl_msg_arrived));
@@ -122,7 +122,7 @@ bool
 pisces_simple_network::send_pisces_network(Request* req, int vn)
 {
   int bytes = req->size_in_bits / 8;
-  if (!inj_buffer_->space_to_send(bytes))
+  if (!inj_buffer_->space_to_send(vn, bytes))
     return false;
 
   uint64_t ignore_flow_id = 0;
@@ -201,7 +201,7 @@ pisces_simple_network::recv(int vn)
     simple_network_packet* pkt = vn0_pkts_.front();
     vn0_pkts_.pop_front();
     int num_bytes = pkt->byte_length();
-    pisces_credit* credit = new pisces_credit(pkt->outport(), pkt->pisces_payload::vc(), num_bytes);
+    pisces_credit* credit = new pisces_credit(pkt->edge_outport(), pkt->pisces_packet::vc(), num_bytes);
     credit_link_->send(0, time_converter_, credit);
     auto req = pkt->request();
     delete pkt;

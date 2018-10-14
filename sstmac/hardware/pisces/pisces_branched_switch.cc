@@ -188,7 +188,7 @@ pisces_branched_switch::to_string() const
 }
 
 link_handler*
-pisces_branched_switch::credit_handler(int port) const
+pisces_branched_switch::credit_handler(int port)
 {
   pisces_demuxer* demux = output_demuxers_[port];
   return new_link_handler(demux, &pisces_demuxer::handle_payload);
@@ -197,32 +197,28 @@ pisces_branched_switch::credit_handler(int port) const
 void
 pisces_branched_switch::input_port::handle(event *ev)
 {
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  auto* hdr = payload->ctrl_header();
+  pisces_packet* pkt = static_cast<pisces_packet*>(ev);
   debug_printf(sprockit::dbg::pisces,
                "tiled switch %d: incoming payload %s",
-               int(parent->addr()), payload->to_string().c_str());
+               int(parent->addr()), pkt->to_string().c_str());
   //now figure out the new port I am routing to
-  parent->rter()->route(payload);
+  parent->rter()->route(pkt);
 
-  int edge_port = payload->edge_outport();
+  int edge_port = pkt->edge_outport();
   int xbar_exit_port = edge_port / parent->n_local_ports_;
   int demuxer_exit_port = edge_port % parent->n_local_ports_;;
 
-  hdr->stage = 0;
-  hdr->outports[0] = 0; //only 1
-  hdr->outports[1] = xbar_exit_port;
-  hdr->outports[2] = demuxer_exit_port;
+  pkt->reset_stages(0, xbar_exit_port, demuxer_exit_port);
 
   debug_printf(sprockit::dbg::pisces,
                "tiled switch %d: routed payload %s to port %d",
-               parent->addr(), payload->to_string().c_str(),
-               payload->edge_outport());
-  mux->handle_payload(payload);
+               parent->addr(), pkt->to_string().c_str(),
+               pkt->edge_outport());
+  mux->handle_payload(pkt);
 }
 
 link_handler*
-pisces_branched_switch::payload_handler(int port) const
+pisces_branched_switch::payload_handler(int port)
 {
   input_port* mux = const_cast<input_port*>(&input_muxers_[port]);
   return new_link_handler(mux, &input_port::handle);

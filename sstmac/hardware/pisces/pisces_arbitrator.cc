@@ -151,7 +151,7 @@ pisces_null_arbitrator::pisces_null_arbitrator(sprockit::sim_parameters* params)
 }
 
 timestamp
-pisces_null_arbitrator::head_tail_delay(pisces_payload *pkt)
+pisces_null_arbitrator::head_tail_delay(pisces_packet *pkt)
 {
   timestamp ser_delay(pkt->num_bytes() / pkt->bw());
   return ser_delay;
@@ -197,7 +197,7 @@ pisces_cut_through_arbitrator(sprockit::sim_parameters* params)
 
 
 timestamp
-pisces_cut_through_arbitrator::head_tail_delay(pisces_payload *pkt)
+pisces_cut_through_arbitrator::head_tail_delay(pisces_packet *pkt)
 {
   timestamp ser_delay(pkt->num_bytes() / pkt->bw());
   return ser_delay;
@@ -313,7 +313,7 @@ pisces_cut_through_arbitrator::arbitrate(pkt_arbitration_t &st)
 void
 pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
 {
-  pisces_payload* payload = st.pkt;
+  pisces_packet* payload = st.pkt;
   payload->init_bw(out_bw_);
   double payload_bw = payload->bw() * bw_sec_to_tick_conversion_;
 #if SSTMAC_SANITY_CHECK

@@ -112,7 +112,7 @@ class pisces_buffer :
 
  pisces_bandwidth_arbitrator* arb_;
  std::set<int> deadlocked_channels_;
- std::map<int, std::list<pisces_payload*> > blocked_messages_;
+ std::map<int, std::list<pisces_packet*> > blocked_messages_;
  int packet_size_;
  event_handler* payload_handler_;
 

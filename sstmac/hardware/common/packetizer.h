@@ -106,8 +106,6 @@ class packetizer :
 
   virtual bool spaceToSend(int vn, int num_bits) = 0;
 
-  virtual uint32_t spaceAvailable(int vn) const = 0;
-
  private:
   recv_cq completion_queue_;
 
