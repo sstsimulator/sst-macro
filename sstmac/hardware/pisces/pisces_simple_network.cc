@@ -201,7 +201,7 @@ pisces_simple_network::recv(int vn)
     simple_network_packet* pkt = vn0_pkts_.front();
     vn0_pkts_.pop_front();
     int num_bytes = pkt->byte_length();
-    pisces_credit* credit = new pisces_credit(pkt->outport(), pkt->pisces_payload::vc(), num_bytes);
+    pisces_credit* credit = new pisces_credit(pkt->outport(), pkt->pisces_packet::vc(), num_bytes);
     credit_link_->send(0, time_converter_, credit);
     auto req = pkt->request();
     delete pkt;

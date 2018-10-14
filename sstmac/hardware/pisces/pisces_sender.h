@@ -60,13 +60,13 @@ namespace hw {
 
 struct payload_queue {
 
-  std::list<pisces_payload*> queue;
+  std::list<pisces_packet*> queue;
 
-  typedef std::list<pisces_payload*>::iterator iterator;
+  typedef std::list<pisces_packet*>::iterator iterator;
 
-  pisces_payload* pop(int num_credits);
+  pisces_packet* pop(int num_credits);
 
-  pisces_payload* front(){
+  pisces_packet* front(){
     if (queue.empty()){
       return nullptr;
     }
@@ -78,7 +78,7 @@ struct payload_queue {
     return queue.size();
   }
 
-  void push_back(pisces_payload* payload){
+  void push_back(pisces_packet* payload){
     queue.push_back(payload);
   }
 
@@ -140,11 +140,11 @@ class pisces_sender :
                 event_scheduler* parent,
                 bool update_vc);
 
-  void send_credit(input& inp, pisces_payload* payload,
+  void send_credit(input& inp, pisces_packet* payload,
           timestamp packet_tail_leaves);
 
   void send(pisces_bandwidth_arbitrator* arb,
-       pisces_payload* pkt, input& to_credit, output& to_send);
+       pisces_packet* pkt, input& to_credit, output& to_send);
 
  protected:
   packet_stats_callback* stat_collector_;

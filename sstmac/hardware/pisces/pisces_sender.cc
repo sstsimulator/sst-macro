@@ -59,12 +59,12 @@ static int num_credits = 0;
 namespace sstmac {
 namespace hw {
 
-pisces_payload*
+pisces_packet*
 payload_queue::pop(int num_credits)
 {
   auto it = queue.begin(), end = queue.end();
   for (; it != end; ++it){
-    pisces_payload* pkt = *it;
+    pisces_packet* pkt = *it;
     if (pkt->num_bytes() <= num_credits){
       queue.erase(it);
       return pkt;
@@ -109,7 +109,7 @@ pisces_sender::configure_credit_port_latency(sprockit::sim_parameters* params)
 
 void
 pisces_sender::send_credit(
-  input& inp, pisces_payload* payload,
+  input& inp, pisces_packet* payload,
   timestamp credits_ready)
 {
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
@@ -140,7 +140,7 @@ pisces_sender::send_credit(
 void
 pisces_sender::send(
   pisces_bandwidth_arbitrator* arb,
-  pisces_payload* pkt,
+  pisces_packet* pkt,
   input& to_credit, output& to_send)
 {
   timestamp now_ = now();
@@ -160,7 +160,7 @@ pisces_sender::send(
   if (stat_collector_) stat_collector_->collect_single_event(st);
 
 #if SSTMAC_SANITY_CHECK
-  if (pkt->bw() <= 0 && pkt->bw() != pisces_payload::uninitialized_bw) {
+  if (pkt->bw() <= 0 && pkt->bw() != pisces_packet::uninitialized_bw) {
     spkt_throw_printf(sprockit::value_error,
                      "On %s, got negative bandwidth for msg %s",
                      to_string().c_str(),

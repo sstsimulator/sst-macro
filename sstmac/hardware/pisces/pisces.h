@@ -65,31 +65,17 @@ namespace hw {
  same path between endpoints.  This is usually one fraction of
  a larger message.
  */
-class pisces_payload :
+class pisces_packet :
   public packet,
-  public sprockit::thread_safe_new<pisces_payload>
+  public sprockit::thread_safe_new<pisces_packet>
 {
  public:
-  struct header {
-    uint8_t stage : 2;
-    uint8_t outports[3];
-    uint16_t inport;
-  };
-
-  header* ctrl_header() {
-    return control_header<header>();
-  }
-
-  const header* ctrl_header() const {
-    return control_header<header>();
-  }
-
-  ImplementSerializable(pisces_payload)
+  ImplementSerializable(pisces_packet)
 
   static const double uninitialized_bw;
 
  public:
-  pisces_payload(
+  pisces_packet(
     serializable* msg,
     uint32_t num_bytes,
     uint64_t flow_id,
@@ -99,7 +85,7 @@ class pisces_payload :
 
   std::string to_string() const override;
 
-  virtual ~pisces_payload() {}
+  virtual ~pisces_packet() {}
 
   /**
     Needed because of routable_message ambiguity
@@ -108,20 +94,40 @@ class pisces_payload :
     return current_vc_;
   }
 
+  /**
+   * @brief reset_stages Configure the internal ports to traverse on a switch
+   * @param port0
+   */
+  void reset_stages(uint8_t port0){
+    stage_ = 0;
+    outports_[0] = port0;
+  }
+
+  void reset_stages(uint8_t port0, uint8_t port1){
+    reset_stages(port0);
+    outports_[1] = port1;
+  }
+
+  void reset_stages(uint8_t port0, uint8_t port1, uint8_t port2){
+    reset_stages(port0, port1);
+    outports_[2] = port2;
+  }
+
   void advance_stage(){
-    auto* hdr = ctrl_header();
-    hdr->inport = hdr->outports[hdr->stage];
-    hdr->stage++;
+    inport_ = outports_[stage_];
+    ++stage_;
+  }
+
+  uint8_t stage() const {
+    return stage_;
   }
 
   int next_local_outport() const {
-    auto* hdr = ctrl_header();
-    return hdr->outports[hdr->stage];
+    return outports_[stage_];
   }
 
   int next_local_inport() const {
-    auto* hdr = ctrl_header();
-    return hdr->inport;
+    return inport_;
   }
 
   int next_vc() const {
@@ -138,8 +144,7 @@ class pisces_payload :
   }
 
   void set_inport(int port) {
-    auto* hdr = ctrl_header();
-    hdr->inport = port;
+    inport_ = port;;
   }
 
   timestamp arrival() const {
@@ -173,6 +178,11 @@ class pisces_payload :
     bw_ = bw;
   }
 
+  /**
+   * @brief max_incoming_bw The maximum bandwidth a packet
+   *        could have on its current component (always > #bw())
+   * @return
+   */
   double max_incoming_bw() const {
     return max_in_bw_;
   }
@@ -187,8 +197,8 @@ class pisces_payload :
 
   void serialize_order(serializer& ser) override;
 
- protected:
-  pisces_payload(){} //for serialization
+ private:
+  pisces_packet(){} //for serialization
 
   double bw_;
 
@@ -197,6 +207,12 @@ class pisces_payload :
   timestamp arrival_;
 
   int current_vc_;
+
+  uint8_t stage_;
+
+  uint8_t outports_[3];
+
+  uint16_t inport_;
 
 };
 

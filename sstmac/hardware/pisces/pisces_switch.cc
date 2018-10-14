@@ -172,13 +172,10 @@ pisces_switch::connect_output(
 void
 pisces_switch::input_port::handle(event *ev)
 {
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  auto* hdr = payload->ctrl_header();
+  pisces_packet* payload = static_cast<pisces_packet*>(ev);
   parent->rter()->route(payload);
-  hdr->inport = this->port;
-  hdr->stage = 0;
-  hdr->outports[0] = payload->edge_outport();
-  hdr->outports[1] = 0; //buffer
+  payload->reset_stages(payload->edge_outport(), 0);
+  payload->set_inport(this->port);
   parent->xbar()->handle_payload(payload);
 }
 

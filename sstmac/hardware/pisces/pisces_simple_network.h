@@ -61,7 +61,7 @@ namespace hw {
  * through the detailed modeling PISCSES network.  The serializable* payload
  * should always be an SST::Request object
  */
-class simple_network_packet : public pisces_payload
+class simple_network_packet : public pisces_packet
 {
   NotSerializable(simple_network_packet)
 
@@ -73,7 +73,7 @@ class simple_network_packet : public pisces_payload
     node_id toaddr,
     node_id fromaddr,
     int vn) :
-   pisces_payload(msg, num_bytes, is_tail, 0,/*flow id ignored*/
+   pisces_packet(msg, num_bytes, is_tail, 0,/*flow id ignored*/
                   toaddr, fromaddr),
    vn_(vn)
   {

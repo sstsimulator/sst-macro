@@ -65,11 +65,11 @@ class packet :
   struct header {
     char is_tail : 1; //whether this is the last packet in a flow
     uint16_t edge_port; //the outport number on the edge (not an internal port)
-    uint8_t deadlock_vc : 4; //the vc needed for routing deadlock without QoS
+    uint8_t deadlock_vc : 4; //the vc needed for routing deadlock (without QoS)
   };
 
   serializable* orig() const {
-    return orig_;
+    return payload_;
   }
 
   virtual std::string to_string() const override {
@@ -88,20 +88,6 @@ class packet :
     static_assert(sizeof(T) <= sizeof(rtr_metadata_),
                   "given header type too big");
     return (T*) (&rtr_metadata_);
-  }
-
-  template <class T>
-  T* control_header() {
-    static_assert(sizeof(T) <= sizeof(control_flow_metadata_),
-                  "given header type too big");
-    return (T*) (&control_flow_metadata_);
-  }
-
-  template <class T>
-  const T* control_header() const {
-    static_assert(sizeof(T) <= sizeof(control_flow_metadata_),
-                  "given header type too big");
-    return (T*) (&control_flow_metadata_);
   }
 
   node_id toaddr() const {
@@ -166,17 +152,15 @@ class packet :
 
   uint64_t flow_id_;
 
-  serializable* orig_;
+  uint32_t num_bytes_;
+
+  serializable* payload_;
 
   char rtr_metadata_[MAX_HEADER_BYTES];
-
-  char control_flow_metadata_[MAX_CONTROL_BYTES];
 
   char nic_metadata_[MAX_NIC_BYTES];
 
   char stats_metadata_[MAX_STAT_BYTES];
-
-  uint32_t num_bytes_;
 
  protected:
   packet() : packet(nullptr, 0, 0, false, 0, 0) {}

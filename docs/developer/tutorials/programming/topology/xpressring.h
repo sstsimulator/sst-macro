@@ -84,46 +84,31 @@ class xpress_ring :
   void configure_individual_port_params(switch_id src,
               sprockit::sim_parameters* switch_params) const override;
 
-  void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override;
-
   void connected_outports(switch_id src,
         std::vector<topology::connection>& conns) const override;
 
-  /**
-  Workhorse function for implementing #minimal_route_to_switch
-  and #minimal_route_to_node.
-  Given source/dest coordinates, find the minimal path.
-  @param current_sw_addr The addr of the current switch
-  @param dest_sw_addr The addr of the destination switch
-  @param path [inout] A complete path descriptor to the destination switch
-  */
-  void minimal_route_to_switch(
-    switch_id src,
-    switch_id dest,
-    routable::path& path) const override;
+  void endpoints_connected_to_injection_switch(switch_id swid,
+               std::vector<injection_port> &nodes) const override;
 
-  /**
-  The function accepts either source or node coordinates.
-  This gives the minimal distance counting the number of hops between switches.
-  If node coordinates are given, the last coordinate is just ignored.
-  @param src_coords. The source coordinates. This can be either switch or node coordinates.
-  @param dest_coords. The destination coordinates. This can be either switch or node coordinates.
-  @return The number of hops to final destination
-  */
-  int minimal_distance(
-    switch_id src,
-    switch_id dest) const override;
+  int num_hops_to_node(node_id src, node_id dest) const override;
 
-  int num_switches() const override {
+  switch_id num_leaf_switches() const override {
+    return ring_size_;
+  }
+
+  int max_num_ports() const override {
+    return 4;
+  }
+
+  switch_id num_switches() const override {
     return ring_size_;
   }
 
   int diameter() const override;
 
  private:
-  int num_hops(int total_distance) const;
+  int num_hops_for_distance(int distance) const;
 
- private:
   int ring_size_;
 
   int jump_size_;

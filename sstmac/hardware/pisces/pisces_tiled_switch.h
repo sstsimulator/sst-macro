@@ -66,7 +66,7 @@ class pisces_tiled_switch :
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A tiled network switch implementing the packet flow congestion model")
  public:
-  struct header : public pisces_payload::header {
+  struct header : public pisces_packet::header {
     uint16_t arrival_port;
   };
 

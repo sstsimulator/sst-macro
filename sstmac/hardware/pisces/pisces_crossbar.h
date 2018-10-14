@@ -116,10 +116,10 @@ class pisces_NtoM_queue :
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
-  std::map<int, std::map<int, std::list<pisces_payload*> > > blocked_messages_;
+  std::map<int, std::map<int, std::list<pisces_packet*> > > blocked_messages_;
 
  protected:
-  void send_payload(pisces_payload* pkt);
+  void send_payload(pisces_packet* pkt);
 
   void build_blocked_messages();
 
@@ -134,11 +134,11 @@ class pisces_NtoM_queue :
     return queues_[slot(port, vc)];
   }
 
-  std::string input_name(pisces_payload* pkt);
+  std::string input_name(pisces_packet* pkt);
 
-  std::string output_name(pisces_payload* pkt);
+  std::string output_name(pisces_packet* pkt);
 
-  event_link* output_link(pisces_payload* pkt);
+  event_link* output_link(pisces_packet* pkt);
 
 };
 
