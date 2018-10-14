@@ -241,7 +241,8 @@ ReplaceAction::EndSourceFileAction()
       ofs << "int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));\n"
          << "extern \"C\" int sstmac_user_main_" << appname << "(int argc, char** argv);\n"
          << "int " << appname << "_sstmac_initer = user_skeleton_main_init_fxn("
-           << "\"" << appname << "\",sstmac_user_main_" << appname << ");\n\n";
+           << "\"" << appname << "\",sstmac_user_main_" << appname << ");\n\n"
+           << "extern \"C\" const char exe_main_name[] = \"" << appname << "\";\n";
     }
   } else {
     llvm::errs() << "Failed opening " << sstGlobalFile << "\n";

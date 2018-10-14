@@ -92,10 +92,17 @@ class operating_system :
       return key_;
     }
 
-    virtual double compute(int n_params, const double params[],
-                           int n_states, const int states[]) = 0;
-    virtual void collect(double time, int n_params, const double params[],
-                         int n_states, const int states[]) = 0;
+    /**
+     * @brief compute
+     * @param n_params
+     * @param params
+     * @param states A list of discrete states (that can be modified)
+     * @return The time to compute
+     */
+    virtual double compute(int n_params, const double params[], int states[]) = 0;
+
+    virtual void collect(double time, int n_params, const double params[], const int states[]) = 0;
+
     virtual void finish() = 0;
    private:
     std::string key_;
@@ -291,6 +298,14 @@ class operating_system :
 
   sprockit::sim_parameters* params() const {
     return params_;
+  }
+
+  std::map<std::string,std::string>::const_iterator env_begin() const {
+    return env_.begin();
+  }
+
+  std::map<std::string,std::string>::const_iterator env_end() const {
+    return env_.end();
   }
 
   /**

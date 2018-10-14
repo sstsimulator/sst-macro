@@ -413,8 +413,7 @@ class sim_parameters  {
   }
 
   template <class T>
-  T*
-  extra_data() const {
+  T* extra_data() const {
     void* ptr = _extra_data();
     return static_cast<T*>(ptr);
   }
@@ -448,7 +447,6 @@ class sim_parameters  {
    */
   bool check_either_or(const std::string& key1,
                        const std::string& key2);
-
 
   sim_parameters* parent_;
 
@@ -507,6 +505,8 @@ class sim_parameters  {
   bool get_param(std::string& inout, const std::string& key);
 
   bool get_scoped_param(std::string& inout, const std::string& key);
+
+
 
 
 };

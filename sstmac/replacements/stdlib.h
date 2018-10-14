@@ -25,6 +25,10 @@ int sstmac_on_exit(void (*)(int,void*),void*);
 void sstmac_exit(int code);
 extern void sstmac_free(void* ptr);
 
+char* sstmac_getenv(const char* name);
+int sstmac_putenv(char* input);
+int sstmac_setenv(const char* name, const char* val, int overwrite);
+
 #ifdef __cplusplus
 }
 #endif
@@ -38,6 +42,9 @@ void free(void* ptr);
 #define atexit sstmac_atexit
 #define _exit sstmac_exit
 #define on_exit sstmac_on_exit
+#define getenv sstmac_getenv
+#define setenv sstmac_setenv
+#define putenv sstmac_putenv
 
 
 

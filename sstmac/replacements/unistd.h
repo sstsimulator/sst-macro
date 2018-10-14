@@ -4,8 +4,10 @@
 #include_next <unistd.h>
 
 #ifndef SSTMAC_NO_REPLACEMENTS
-#define gethostname sstmac_gethostname
 #define sleep       sstmac_sleep
+#endif
+
+#define gethostname sstmac_gethostname
 #define alarm       sstmac_alarm
 
 #ifdef __cplusplus
@@ -22,7 +24,7 @@ unsigned int sstmac_alarm(unsigned int);
 #ifdef __cplusplus
 }
 #endif
-#endif
+
 
 #endif
 

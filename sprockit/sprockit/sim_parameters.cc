@@ -1279,7 +1279,9 @@ sim_parameters::do_add_param(
     "sim_parameters: setting key %s to value %s\n",
     key.c_str(), val.c_str());
 
-  KeywordRegistration::validate_keyword(key,val);
+  //if (this->namespace_ != "env"){ //special reserved namespace
+  //  KeywordRegistration::validate_keyword(key,val);
+  //}
 
   key_value_map::iterator it = params_.find(key);
 

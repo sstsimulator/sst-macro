@@ -142,6 +142,12 @@ class app : public thread
     return params_;
   }
 
+  char* getenv(const std::string& name) const;
+
+  int putenv(char* input);
+
+  int setenv(const std::string& name, const std::string& value, int overwrite);
+
   /**
    * Let a parent application know about the existence of a subthread
    * If thread does not have an initialized ID, a unique ID is allocated for the thread
@@ -244,6 +250,9 @@ class app : public thread
   std::map<int, condition_t> conditions_;
   std::map<int, destructor_fxn> tls_key_fxns_;
   std::map<std::string, api*> apis_;
+  std::map<std::string,std::string> env_;
+
+  char env_string_[64];
 
   char* globals_storage_;
 
@@ -254,6 +263,7 @@ class app : public thread
   struct dlopen_entry {
     void* handle;
     int refcount;
+    std::string name;
     dlopen_entry() : handle(nullptr), refcount(0){}
   };
 
