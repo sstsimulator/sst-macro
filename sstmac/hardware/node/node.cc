@@ -128,13 +128,13 @@ node::node(sprockit::sim_parameters* params,
 }
 
 link_handler*
-node::credit_handler(int port) const
+node::credit_handler(int port)
 {
   return nic_->credit_handler(port);
 }
 
 link_handler*
-node::payload_handler(int port) const
+node::payload_handler(int port)
 {
   return nic_->payload_handler(port);
 }

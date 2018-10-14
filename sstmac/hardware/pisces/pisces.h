@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/messages/sst_message.h>
-#include <sstmac/hardware/router/routing_enum.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -135,16 +134,11 @@ class pisces_packet :
   }
 
   void update_vc() {
-    int new_vc = next_vc();
-    if (new_vc == routing::uninitialized){
-      current_vc_ = 0;
-    } else {
-      current_vc_ = new_vc;
-    }
+    current_vc_ = next_vc();
   }
 
   void set_inport(int port) {
-    inport_ = port;;
+    inport_ = port;
   }
 
   timestamp arrival() const {

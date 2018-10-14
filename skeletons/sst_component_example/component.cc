@@ -160,11 +160,11 @@ class dummy_switch : public test_component {
     test_component::init(phase);
   }
 
-  link_handler* credit_handler(int port) const override {
+  link_handler* credit_handler(int port) override {
     return new_link_handler(this, &dummy_switch::recv_credit);
   }
 
-  link_handler* payload_handler(int port) const override {
+  link_handler* payload_handler(int port) override {
     return new_link_handler(this, &dummy_switch::recv_payload);
   }
 

@@ -273,7 +273,7 @@ pisces_tiled_switch::to_string() const
 }
 
 link_handler*
-pisces_tiled_switch::credit_handler(int port) const
+pisces_tiled_switch::credit_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &pisces_tiled_switch::handle_credit);
@@ -283,7 +283,7 @@ pisces_tiled_switch::credit_handler(int port) const
 }
 
 link_handler*
-pisces_tiled_switch::payload_handler(int port) const
+pisces_tiled_switch::payload_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &pisces_tiled_switch::handle_payload);

@@ -188,7 +188,7 @@ pisces_branched_switch::to_string() const
 }
 
 link_handler*
-pisces_branched_switch::credit_handler(int port) const
+pisces_branched_switch::credit_handler(int port)
 {
   pisces_demuxer* demux = output_demuxers_[port];
   return new_link_handler(demux, &pisces_demuxer::handle_payload);
@@ -218,7 +218,7 @@ pisces_branched_switch::input_port::handle(event *ev)
 }
 
 link_handler*
-pisces_branched_switch::payload_handler(int port) const
+pisces_branched_switch::payload_handler(int port)
 {
   input_port* mux = const_cast<input_port*>(&input_muxers_[port]);
   return new_link_handler(mux, &input_port::handle);

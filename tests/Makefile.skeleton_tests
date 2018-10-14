@@ -38,8 +38,7 @@ SKELETONCASES += \
   sst_component_example \
   traffic \
   multiapp \
-  sendrecv \
-  sendrecv_sst_so 
+  sendrecv
 
 if !HAVE_UBUNTU
 SKELETONCASES +=  matmul 
@@ -125,11 +124,6 @@ test_skeleton_sst_component_example.$(CHKSUF): sst_component_example $(SSTMACEXE
 	SST_LIB_PATH=skeletons/sst_component_example \
 	 $(PYRUNTEST) 10 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(top_srcdir)/skeletons/sst_component_example/parameters.ini --no-wall-time
-
-test_skeleton_sendrecv_sst_so.$(CHKSUF): sendrecv_sst_so $(SSTMACEXEC)
-	SST_LIB_PATH=skeletons/sendrecv_sst_so \
-	 $(PYRUNTEST) 3 $(top_srcdir) $@ Exact \
-   $(SSTMACEXEC) -f $(top_srcdir)/skeletons/tests/sendrecv_sst_so/parameters.ini --no-wall-time
 
 
 endif

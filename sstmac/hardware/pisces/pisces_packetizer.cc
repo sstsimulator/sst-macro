@@ -164,6 +164,9 @@ pisces_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message*
   pisces_packet* payload = new pisces_packet(is_tail ? msg : nullptr,
                                                bytes, msg->flow_id(), is_tail,
                                                msg->fromaddr(), msg->toaddr());
+  //start on a singel virtual channel (0)
+  payload->set_deadlock_vc(0);
+  payload->update_vc();
   inj_buffer_->handle_payload(payload);
 }
 

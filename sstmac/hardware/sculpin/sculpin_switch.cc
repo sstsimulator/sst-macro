@@ -412,7 +412,7 @@ sculpin_switch::to_string() const
 }
 
 link_handler*
-sculpin_switch::credit_handler(int port) const
+sculpin_switch::credit_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &sculpin_switch::handle_credit);
@@ -422,7 +422,7 @@ sculpin_switch::credit_handler(int port) const
 }
 
 link_handler*
-sculpin_switch::payload_handler(int port) const
+sculpin_switch::payload_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &sculpin_switch::handle_payload);

@@ -113,9 +113,9 @@ class pisces_switch :
     int dst_inport,
     event_link* link) override;
 
-  link_handler* credit_handler(int port) const override;
+  link_handler* credit_handler(int port) override;
 
-  link_handler* payload_handler(int port) const override;
+  link_handler* payload_handler(int port) override;
 
   timestamp send_latency(sprockit::sim_parameters *params) const override;
 
@@ -140,6 +140,8 @@ class pisces_switch :
   virtual std::string to_string() const override;
 
  private:
+  void get_buffer(int outport);
+
   struct input_port {
     pisces_switch* parent;
     int port;

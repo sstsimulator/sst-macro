@@ -82,9 +82,9 @@ class pisces_tiled_switch :
                 int src_outport, int dst_inport,
                 event_link* link) override;
 
-  link_handler* credit_handler(int port) const override;
+  link_handler* credit_handler(int port) override;
 
-  link_handler* payload_handler(int port) const override;
+  link_handler* payload_handler(int port) override;
 
   timestamp send_latency(sprockit::sim_parameters *params) const override;
 

@@ -87,11 +87,11 @@ class logp_nic :
     return "simple nic";
   }
 
-  link_handler* credit_handler(int port) const override {
+  link_handler* credit_handler(int port) override {
     return new_link_handler(this, &logp_nic::drop_event);
   }
 
-  link_handler* payload_handler(int port) const override;
+  link_handler* payload_handler(int port) override;
 
   timestamp send_latency(sprockit::sim_parameters *params) const override;
 

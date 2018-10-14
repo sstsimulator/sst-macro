@@ -161,10 +161,6 @@ pisces_buffer::handle_payload(event* ev)
   auto pkt = static_cast<pisces_packet*>(ev);
   pkt->set_arrival(now());
   int dst_vc = pkt->vc();
-#if SSTMAC_SANITY_CHECK
-  //vc default to uninit instead of zero to make sure routers set VC
-  dst_vc = dst_vc == routing::uninitialized ? 0 : dst_vc;
-#endif
 
 #if SSTMAC_SANITY_CHECK
   if (dst_vc >= credits_.size()) {

@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/rng.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
-#include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/common/packet.h>
 
 #include <sprockit/debug.h>

@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/topology/coordinates.h>
 #include <sstmac/hardware/topology/traffic/traffic.h>
-#include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/common/packet.h>

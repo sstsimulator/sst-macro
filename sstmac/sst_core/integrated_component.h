@@ -143,14 +143,14 @@ class SSTIntegratedComponent
    * @param port
    * @return The handler that will receive payloads from an SST link
    */
-  virtual SST::Event::HandlerBase* payload_handler(int port) const = 0;
+  virtual SST::Event::HandlerBase* payload_handler(int port) = 0;
 
   /**
    * @brief credit_handler
    * @param port
    * @return The handler that will receive credits from an SST link
    */
-  virtual SST::Event::HandlerBase* credit_handler(int port) const = 0;
+  virtual SST::Event::HandlerBase* credit_handler(int port) = 0;
 
   void init_links(sprockit::sim_parameters* params);
 

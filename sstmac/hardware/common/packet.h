@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sst_event.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
-#include <sstmac/hardware/router/routing_enum.h>
 
 namespace sstmac {
 namespace hw {
