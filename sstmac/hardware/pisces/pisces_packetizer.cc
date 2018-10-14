@@ -156,12 +156,6 @@ pisces_packetizer::spaceToSend(int vn, int num_bits)
   return inj_buffer_->space_to_send(vn, num_bits/8);
 }
 
-uint32_t
-pisces_packetizer::spaceAvailable(int vn) const
-{
-  return inj_buffer_->num_credit(vn);
-}
-
 void
 pisces_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message* msg)
 {

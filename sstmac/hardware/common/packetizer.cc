@@ -102,10 +102,8 @@ packetizer::deadlock_check()
 {
   for (int vn=0; vn < pending_.size(); ++vn){
     auto& queue = pending_[vn];
-    int bytes = spaceAvailable(vn);
     for (pending_send& send : queue){
       std::cerr << "Packetizer " << to_string() << " can't send " << send.msg->to_string()
-                << " with only " << bytes << " available on vc=" << vn
                 << std::endl;
     }
   }
@@ -173,7 +171,7 @@ class merlin_packetizer :
   FactoryRegister("merlin", packetizer, merlin_packetizer);
  public:
   merlin_packetizer(sprockit::sim_parameters* params,
-                      event_scheduler* parent);
+                    event_scheduler* parent, int num_vc);
 
   std::string to_string() const override {
     return "merling packetizer";
@@ -218,8 +216,8 @@ class merlin_packetizer :
 };
 
 merlin_packetizer::merlin_packetizer(sprockit::sim_parameters *params,
-                                     event_scheduler* parent) :
-  packetizer(params, parent)
+                                     event_scheduler* parent, int num_vc) :
+  packetizer(params, parent, num_vc)
 {
   SST::Component* comp = safe_cast(SST::Component, parent);
   SST::Params& sst_params = *params->extra_data<SST::Params>();

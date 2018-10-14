@@ -227,7 +227,7 @@ class pisces_simple_network :
   std::list<simple_network_packet*> vn0_pkts_;
   std::list<simple_network_message*> vn1_msgs_;
 
-  pisces_injection_buffer* inj_buffer_;
+  pisces_buffer* inj_buffer_;
   pisces_bandwidth_arbitrator* arb_;  //arbitrator for computing message delays
   SST::Link* logp_link_;   //used for sending control messages to LogP overlay network
   SST::Link* credit_link_; //used for returning credits to ejection switch
