@@ -19,13 +19,34 @@ To better understand how hardware models are put together for simulating interco
 
 Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure \ref{fig:controlFlow}
 
+In general, sending data across the network (as in, e.g.., MPI), requires the following components:
+
+\begin{itemize}
+\item Packetization: handled by \inlinecode{nic} class. Converts flows (MPI messages) into smaller packets.
+\item Network topology: handled by \inlinecode{topology} class. Defines the geometry of the network, determining how nodes are connected to switches and how switches are interconnected. It also defines which ports are used for each connection.
+\item Fabric management (not yet implemented in SST)
+\item Routing: handled by \inlinecode{router} class. Using the defined topology, compute the path that should be taken by a packet. The path is defined by the port numbers that should be taken.
+\item Flow control and congestion: handled by \inlinecode{network_switch} class. Once a path is defined by the router, arbitrate packets (flits) when they contend for bandwidth.
+\end{itemize}
+As much as possible, these components try to be independent. However, there are inter-dependencies, as shown in Figure \ref{fig:dependencies}.
+The router requires topology information to compute paths. For adaptive routing decisions, the router also requires contention information from the network switch.
+The network switch requires the computed paths (ports) from the router.
+
 \begin{figure}
+\centering
+\includegraphics[width=1.0\textwidth]{figures/components}
+\caption{Components used modeling interconnect and dependencies between them.}
+\label{fig:dependencies}
+\end{figure}
+
+\begin{figure}
+\centering
 \includegraphics[width=0.75\textwidth]{figures/DecisionFlow}
 \caption{Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.}
 \label{fig:controlFlow}
 \end{figure}
 
-We can dive in deeper to the operations that occur on an individual component, mostly important the crossbar on the network switch. Figure \ref{fig:xbarFlow} shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
+We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure \ref{fig:xbarFlow} shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
 
 \begin{figure}
 \includegraphics[width=0.9\textwidth]{figures/RoutingFlow}
@@ -33,15 +54,104 @@ We can dive in deeper to the operations that occur on an individual component, m
 \label{fig:xbarFlow}
 \end{figure}
 
+\section{Packets}
+Packet must hold information for endpoint control on the NIC, routing decisions, and flow control. 
+Packets therefore suffer from a ``combinatorial explosion'' depending on which NIC model is coupled with which flow control mechanism and which routing algorithm.
+For example, the simulator is intended to support at least two different network contention models (PISCES, SCULPIN);
+five different topologies (torus, hyperX, fat tree, dragonfly, cascade); and four different routing algorithms (Minimal, Valiant, UGAL, PAR).
+This creates already 40 combinations, which can grow even more quickly if new models are added.
+If the C++ type of the packet were to depend on all of these, messy multiple inheritance patterns can result or 40 different packet types would be needed.
+Some C++ patterns (e.g. policies) are designed to help implement combinatorial problems like this without multiple inheritance,
+but this is not a good match for our case.
+
+Flow control is generally the most complicated and requires the most data. 
+\emph{Inheritance} from the base packet class is used to create packet types that are compatible with a particular congestion model.
+For different routing or endpoint (NIC) methods, the packet object allocates blocks to be used as metadata for the different classes. 
+These metadata blocks can then be cast as needed for each of the different functions.
+
+\begin{CppCode}
+char rtr_metadata_[MAX_HEADER_BYTES];
+char nic_metadata_[MAX_NIC_BYTES];
+\end{CppCode}
+Defaults are chosen for the compile-time constants (8-16 bytes) and these can be changed as needed.
+In the same way that a router or NIC allocates bits for certain functions, SST/macro uses bitsets stored in the metadata blocks.
+For example, for adaptive routing on a dragonfly, we have the following bitset:
+
+\begin{CppCode}
+struct routing_header  {
+ char is_tail : 1;
+ uint16_t edge_port; 
+ uint8_t deadlock_vc : 4;
+ uint8_t num_group_hops : 2;
+ uint8_t num_hops : 4;
+ uint8_t stage_number : 3;
+ uint32_t dest_switch : 24;
+};
+\end{CppCode}
+The 54 bits here store the information needed by a router to implement progressive adaptive routing (PAR). 
+For flow control on a particular type of switch, e.g. PISCES (see User's manual), we have a type \inlinecode{pisces_packet}
+that inherits from \inlinecode{packet} and adds the following fields:
+
+\begin{CppCode}
+class pisces_packet : public packet {
+....
+uint8_t stage;
+uint8_t outports[3];
+uint16_t inport;
+double bw_;
+double max_in_bw_;
+timestamp arrival_;
+int current_vc_;
+...
+};
+\end{CppCode}
+These provide the path and flow control information needed to implement the PISCES contention model.
+
+Inside router or switch flow control code, the metadata regions can be accessed as:
+\begin{CppCode}
+template <class T>
+T* rtr_header()  {
+  return (T*) (&rtr_metadata_);
+}
+\end{CppCode}
+which returns the raw bytes cast to the correct C++ bitset type.
+
+There is some universal information needed by all packets, which is not stored in the bitset:
+
+\begin{CppCode}
+node_id toaddr_;
+node_id fromaddr_;
+uint64_t flow_id_;
+uint32_t num_bytes_;
+serializable* payload_;
+\end{CppCode}
+This covers the source and destination nodes, a unique ID for the flow (e.g. MPI message) the packet came from, the number of bytes of the flow, and optionally a payload object carrying extra data.
+
+To summarize, we have: \\
+
+\begin{tabular}{lll}
+\hline
+Information & Where Stored & Access Method \\
+\hline
+\hline
+Node address & \inlinecode{packet} base class & Always available \\
+Flow ID & \inlinecode{packet} base class & Always available \\
+Packet size & \inlinecode{packet} base class & Always available \\
+Routing & Metadata block in \inlinecode{packet} & Cast raw bytes \\
+Flow control & Subclass of \inlinecode{packet} & Dynamic cast \inlinecode{packet} \\
+\hline
+\end{tabular} 
+
+
 \section{Connectables}
 \label{sec:connectables}
 With a basic overview of how the simulation proceeds, we can now look at the actual SST/macro class types.
 While in common usage, \sstmacro follows a well-defined machine model (see below),
 it generally allows any set of components to be connected. 
-As discussed in Chapter \ref{chapter:des}, the simulation proceeds by having event components exchange messages,
+As discussed in Chapter \ref{chapter:des}, the simulation proceeds by having event components exchange events,
 each scheduled to arrive at a specific time.
 \sstmacro provides a generic interface for any set of hardware components to be linked together.
-Any hardware component that connects to other components and exchanges messages must inherit from the \inlinecode{connectable} class.
+Any hardware component that connects to other components and exchanges events must inherit from the \inlinecode{connectable} class.
 The \inlinecode{connectable} class presents a standard virtual interface
 
 \begin{CppCode}
@@ -52,20 +162,17 @@ class connectable
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) = 0;
+    event_link* link) = 0;
 
-  virtual void
-  connect_input(
+  virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) = 0;
-
-
+    event_link* link) = 0;
 };
 \end{CppCode}
 
-First, port numbers must be assigned identifying the output port at the source and in the input port at the destination.
+First, port numbers must be assigned identifying the output port at the source and the input port at the destination.
 For example, a switch may have several outgoing connections, each of which must be assigned a unique port number.
 The connection must be configured at both source and destination.
 The function is called twice for each side of the connection. If we have a source and destination:
@@ -108,7 +215,145 @@ Combining the factory system for polymorphic types and the connectable system fo
 \sstmacro provides flexibility for building essentially any machine model you want.
 However, \sstmacro provides a recommended machine structure to guide constructing machine models.
 
-\section{Interconnect}\label{sec:topInterconnect}
+\section{Topology}
+\label{sec:topology}
+Of critical importance for the network modeling is the topology of the interconnect.
+Common examples are the torus or fat tree.
+To understand what these topologies are, there are many resources on the web.
+Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages.
+Here we detail the public interface.
+In SST/macro, topologies are not dynamically stateful.
+They store static information about the geometry of the network and do not update their state as simulation progresses.
+All functions in the interface are const, emphasizing the role of the topology as read-only.
+
+Not all topologies are ``regular'' like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure.
+The abstract topology base class is intended to cover both cases.
+The most important functions in the \topcls class are
+
+\begin{CppCode}
+class topology {
+...
+virtual bool uniform_network_ports() const = 0;
+
+virtual bool uniform_switches_non_uniform_network_ports() const = 0;
+
+virtual bool uniform_switches() const = 0;
+
+virtual void connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
+
+virtual void configure_individual_port_params(switch_id src,
+      sprockit::sim_parameters* switch_params) const = 0;
+
+virtual in num_switches() const = 0;
+
+virtual int num_nodes() const = 0;
+
+virtual int num_endpoints() const = 0;
+
+virtual int max_num_ports() const = 0;
+
+virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
+
+virtual void endpoints_connected_to_injection_switch(switch_id swid,
+                      std::vector<injection_port>& nodes) const = 0;
+
+virtual void endpoints_connected_to_ejection_switch(switch_id swid,
+                      std::vector<injection_port>& nodes) const = 0;
+\end{CppCode}
+
+These functions are documented in the \inlineshell{topology.h} header file.
+The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch.
+Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
+The most important functions are \inlinecode{endpoints_connected_to_injection_switch} - which nodes are connected to which switches and which ports make the links -
+and also \inlinecode{connected_outports} - which switches are connected to which switches and which ports make the links.
+
+The \inlinecode{connection} struct is:
+
+\begin{CppCode}
+struct connection {
+    switch_id src;
+    switch_id dst;
+    int src_outport;
+    int dst_inport;
+};
+\end{CppCode}
+which specifies a source and destination switch for a given link and which ports connect the link.
+Similarly, the struct \inlinecode{injection_port} is:
+
+\begin{CppCode}
+struct injection_port {
+  node_id nid;
+  int switch_port;
+  int ep_port;
+};
+\end{CppCode}
+which specifies which node a switch is connected to and which ports connect the link.
+
+The topology provides the \emph{geometry} of the network, but does not tell packets which of the available paths to take. 
+That task is left to the router.
+
+
+\section{Router}\label{sec:router}
+The router has a simple public interface
+
+\begin{CppCode}
+class router {
+...
+  virtual void route(packet* pkt) = 0;
+...
+};
+\end{CppCode}
+
+Different routers exist for the different routing algorithms and different topologies: 	minimal, valiant, ugal.
+The router objects are specific to a switch and can store dynamic state information,
+in contrast to the topology which is read-only.
+
+For adaptive routing, a bit more work is done.
+Each router is connect to a switch object which holds all the information about queue lengths, e.g.
+
+\begin{CppCode}
+int test_length = get_switch()->queue_length(paths[i].outport);
+\end{CppCode}
+allowing the router to select an alternate path if the congestion is too high. 
+
+The router primarily computes two things: \emph{edge} output port and \emph{deadlock-free} virtual channels.
+Internal to a switch, a packet (flit) may traverse many different components.
+All these internal details are opaque to the router.
+The router only knows about the ports on the edge of the switch that connect an external network link. 
+The switch component, given an exit port, must navigate the packet through the internal component (crossbar, muxer, demuxer, bus, etc).
+
+Similarly, the router selects virtual channels based on deadlock-free routing, not quality of service (QoS).
+Different priority (QoS) levels could be specified at the NIC.
+The control flow component (switch), is responsible for using the deadlock virtual channel and the QoS virtual channel together to move the packets. 
+
+
+
+\section{Network Switch: Flow Control}\label{sec:networkSwitch}
+The topology and the router only provide path information and do not actually model congestion.
+Congestion is modeled via flow control - choosing which packets or flits move across a link when there is contention.
+The basic scheme for most switches follows the code below for the \inlinecode{pisces} model.
+
+\begin{CppCode}
+void pisces_switch::handle_credit(event *ev)
+{
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  out_buffers_[credit->port()]->handle_credit(credit);
+}
+
+void pisces_switch::handle_payload(event *ev)
+{
+  pisces_payload* payload = static_cast<pisces_payload*>(ev);
+  router_->route(payload);
+  xbar_->handle_payload(payload);
+}
+\end{CppCode}
+The arriving event is sent to either a credit handler or a payload handler,
+which is configured during simulation setup.
+If a payload packet (rather than a credit), the router object selects the next destination (port).
+The packet is then passed to the crossbar for arbitration.
+A switch inherits from \inlinecode{connectable}, requiring it to implement the \inlinecode{connect_output/connect_input} and \inlinecode{payload_handler/credit_handler} functions.
+
+\section{Interconnect: Putting it all together}\label{sec:topInterconnect}
 For all standard runs, the entire hardware model is driven by the interconnect object.
 The interconnect creates nodes, creates network switches, chooses a topology, and connects all of the network endpoints together.
 In this regard, the interconnect also choose what types of components are being connected together.
@@ -256,257 +501,6 @@ For more details on the use of user-space threading to model applications,
 see the User's manual.
 
 
-\section{Network Switch}\label{sec:networkSwitch}
-
-Unlike the other classes above, a network switch is not required to implement any specific functions.
-It is only required to be an \inlinecode{event_handler}, providing the usual \inlinecode{handle(event* ev)}.
-The internal details can essentially be arbitrary.
-However, the basic scheme for most switches follows the code below for the \inlinecode{pisces} model.
-
-\begin{CppCode}
-void pisces_switch::handle_credit(event *ev)
-{
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  out_buffers_[credit->port()]->handle_credit(credit);
-}
-
-void pisces_switch::handle_payload(event *ev)
-{
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  router_->route(payload);
-  xbar_->handle_payload(payload);
-}
-\end{CppCode}
-The arriving event is sent to either a credit handler or a payload handler,
-which is configured during simulation setup.
-If a payload packet (rather than a credit), the router object selects the next destination (port).
-The packet is then passed to the crossbar for arbitration.
-
-\section{Topology}
-\label{sec:topology}
-Of critical importance for the network modeling is the topology of the interconnect.
-Common examples are the torus or fat tree.
-To understand what these topologies are, there are many resources on the web.
-Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages.
-Here we detail the public interface.
-In SST/macro, topologies are not dynamically stateful.
-They store static information about the geometry of the network and do not update their state as simulation progresses.
-All functions in the interface are const, emphasizing the role of the topology as read-only.
-
-\subsection{Basic Topology}
-\label{subsec:basicTopology}
-Not all topologies are ``regular'' like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure.
-The abstract topology base class is intended to cover both cases.
-Irregular or arbitrary topology connections are not fully supported yet.
-
-The most important functions in the \topcls class are
-
-\begin{CppCode}
-class topology {
-...
-virtual bool uniform_network_ports() const = 0;
-
-virtual bool uniform_switches_non_uniform_network_ports() const = 0;
-
-virtual bool uniform_switches() const = 0;
-
-virtual void connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
-
-virtual void configure_individual_port_params(switch_id src,
-      sprockit::sim_parameters* switch_params) const = 0;
-
-virtual in num_switches() const = 0;
-
-virtual int num_nodes() const = 0;
-
-virtual int num_endpoints() const = 0;
-
-virtual int max_num_ports() const = 0;
-
-virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
-
-virtual switch_id node_to_ejection_switch(node_id addr, int& port) const = 0;
-
-virtual int minimal_distance(switch_id src, switch_id dst) const = 0;
-
-virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
-
-virtual void endpoints_connected_to_injection_switch(switch_id swid,
-                      std::vector<injection_port>& nodes) const = 0;
-
-virtual void endpoints_connected_to_ejection_switch(switch_id swid,
-                      std::vector<injection_port>& nodes) const = 0;
-
-virtual void minimal_route_to_switch(
- switch_id current_sw_addr,
- switch_id dest_sw_addr,
- routable::path& path) const = 0;
-\end{CppCode}
-
-These functions are documented in the \inlineshell{topology.h} header file.
-The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch.
-Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
-The topology must provide a mapping between a node and its ejection and injection points.
-Additionally, the topology must indicate a port number or offset for the injection in case the switch has many nodes injecting to it.
-The most important thing to distinguish here are \nodeid and \switchid types.
-These are typedefs that distinguish between a switch in the topology and a node or network endpoint.
-
-Besides just forming the connections, a topology is responsible for routing.
-Given a source switch and the final destination, a topology must fill out path information.
-
-\begin{CppCode}
-struct path {
-    int outport;
-    int vc;
-    int geometric_id;
-}
-\end{CppCode}
-
-The most important information is the outport, telling a switch which port to route along to arrive at the destination.
-For congestion models with channel dependencies, the virtual channel must also be given to avoid deadlock.
-In general, network switches and other devices should be completely topology-agnostic.
-The switch is responsible for modeling congestion within itself - crossbar arbitration, credits, outport multiplexing.
-The switch is not able to determine for itself which outport to route along.
-The router tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port.
-
-\section{Router}\label{sec:router}
-The router has a simple public interface
-
-\begin{CppCode}
-class router {
-...
-  virtual void route(packet* pkt) = 0;
-...
-};
-\end{CppCode}
-
-Different routers exist for the different routing algorithms: 	minimal, valiant, ugal.
-The router objects are specific to a switch and can store dynamic state information,
-in contrast to the topology which is read-only.
-However, the router can query the topology object for any path-specific information, e.g.
-
-\begin{CppCode}
-void minimal_router::route_to_switch(switch_id sid, packet::path& path)
-{
-  top_->minimal_route_to_switch(my_addr_, sid, path);
-}
-\end{CppCode}
-
-For adaptive routing, a bit more work is done.
-Each router is connect to a switch object which holds all the information about queue lengths, e.g.
-
-\begin{CppCode}
-int test_length = get_switch()->queue_length(paths[i].outport);
-\end{CppCode}
-allowing the router to select an alternate path if the congestion is too high. 
-
-\subsection{Flows, Packets, and Routing Headers}
-A flow is a stream of data from a source node to a destination node.
-The most common example of a flow is an MPI message.
-At the source, the flow is broken into discrete units (packets). Each packet then moves independently through the network.
-The flow is reassembled at the destination from the individual packets.
-Packets themselves are also broken up into flits (flow control units) and even phits (physical units).
-However, flits in the same packet are constrained to follow the same route, unlike packets which can route independently.
-
-A challenge for SST/macro is the ``factorial'' space of possible machine models to support.
-For example, the simulator is intended to support at least two different network contention models (PISCES, SCULPIN);
-five different topologies (torus, hyperX, fat tree, dragonfly, cascade); and four different routing algorithms (Minimal, Valiant, UGAL, PAR).
-This creates already 40 combinations, which can grow even more quickly if new models are added.
-
-Rather than have 40 different packet types, there are only two packet types specific to each contention model that inherit from a standard packet type:
-
-\begin{CppCode}
-class packet : public event {
-  ...
-};
-\end{CppCode}
-Every contention model is unified in requiring a packet to carry 6 things:
-\begin{itemize}
-\item Source and destination node addresses
-\item \inlinecode{path} object (see below)
-\item Routing header
-\item Payload derived from the original flow
-\item Flow ID - globally unique identifier for the flow
-\item The number of bytes in the packet
-\end{itemize}
-
-\begin{CppCode}
-  node_id toaddr_;
-  node_id fromaddr_;
-  path path_;
-  uint64_t flow_id_;
-  serializable* orig_;
-  char header_metadata_[MAX_HEADER_BYTES];
-  uint32_t num_bytes_;
-\end{CppCode}
-The path object has subfields:
-
-\begin{CppCode}
-struct path {
-   outport_t outport;
-   int vc;
-};
-\end{CppCode}
-which indicate the virtual channel and port a packet should follow.
-
-Switches implement \emph{contention modeling} while routers implement \emph{path computation}.
-Path computations, in the case of adaptive routing, may depend on the dynamic contention state of the parent switch.
-A switch should never be aware of the exact topology or routing scheme.
-It follows orders from the router, sending packets on the virtual channels and ports computed by the router.
-The switch should call:
-
-\begin{CppCode}
-rtr_->route(pkt);
-\end{CppCode}
-at which point the switch can call
-
-\begin{CppCode}
-pkt->current_path().vc
-pkt->current_path().outport
-\end{CppCode}
-to query for the virtual channel and port requested by the packet (and router).
-In this way, the exact details of the contention model (as implemented in the switch) are decoupled from the routing.
-
-Decoupling the routing algorithm (UGAl, Minimal, etc.) from the topology (torus, dragonfly, etc) can be extremely difficult.
-In general, it is not always possible to implement a generic UGAL, e.g., that is agnostic to the underlying topology.
-For now, rather than have different packet types and a proliferation of virtual methods,
-the packet provides a bucket of bits (\inlinecode{header_metadata_}) that can be used by the router.
-Routing computations are generally the most expensive part of running the simulation and the most complex piece to implement,
-which discourages having different packet types for each routing/topology combination and accessing numerous virtual methods.
-
-The intended usage mode for routing headers is casting the bucket-of-bits to a known type, for which each packet provides a helper template method, e.g.:
-
-\begin{CppCode}
-void route(packet* pkt) override {
-  auto route_hdr = pkt->get_header<torus_ugal_header>();
-}
-\end{CppCode}
-By default each new header type is encouraged to inherit from a parent type:
-
-\begin{CppCode}
-class packet : public event
-{
- public:
-  struct header {
-    char is_tail : 1;
-    uint32_t dest_switch : 22;
-  };
-\end{CppCode}
-which uses C++ bit fields to reserve 1 bit for storing whether the packet is the tail of the flow and 22 bits for storing the ID of an intermediate destination switch (this pattern is so common it is implemented in the parent packet class). For minimal routing on a torus, e.g.:
-
-\begin{CppCode}
-class torus_minimal_router : public minimal_router {
-  struct torus_minimal_header : public packet::header {
-     char crossed_timeline : 1;
-  };
-  void route(packet* pkt) override {
-    auto hdr = pkt->get_header<torus_minimal_header>();
-  }
-};
-\end{CppCode}
-which adds a single bit for storing whether the packet has crossed a timeline (wrap around link) in the torus. The timeline will be needed for computing the correct virtual channel.
-Routing headers can become much more complex for other topologies and adaptive routing, for which the reader is encouraged to look at the source code for further details.
-These complexities are local to each individual routing method, though, which neatly separates routing from contention modeling.
 
 
 

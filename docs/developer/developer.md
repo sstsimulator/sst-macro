@@ -50,14 +50,13 @@ category: SSTDocumentation
    - [Chapter 7: Hardware Models](#chapter:hardware)
       - [Section 7.1: Overview](#sec:topOverview)
       - [Section 7.2: Connectables](#sec:connectables)
-      - [Section 7.3: Interconnect](#sec:topInterconnect)
-      - [Section 7.4: Node](#sec:node)
-      - [Section 7.5: Network Interface (NIC)](#sec:nic)
-      - [Section 7.6: Memory Model](#sec:memModel)
-      - [Section 7.7: Network Switch](#sec:networkSwitch)
-      - [Section 7.8: Topology](#sec:topology)
-         - [7.8.1: Basic Topology](#subsec:basicTopology)
-      - [Section 7.9: Router](#sec:router)
+      - [Section 7.3: Topology](#sec:topology)
+      - [Section 7.4: Router](#sec:router)
+      - [Section 7.5: Network Switch: Flow Control](#sec:networkSwitch)
+      - [Section 7.6: Interconnect: Putting it all together](#sec:topInterconnect)
+      - [Section 7.7: Node](#sec:node)
+      - [Section 7.8: Network Interface (NIC)](#sec:nic)
+      - [Section 7.9: Memory Model](#sec:memModel)
    - [Chapter 8: A Custom Object: Beginning To End](#chapter:custom)
    - [Chapter 9: How SST-macro Launches](#chapter:launching)
       - [Section 9.1: Configuration of Simulation](#sec:simConfig)
@@ -516,7 +515,7 @@ virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* payload_handler) = 0;
+    event_link* payload_handler) = 0;
 ````
 This is invoked on the source component of a link giving the port numbers on either end of the link.
 It gives the source component the payload handler that will be invoked on the destination component.
@@ -532,7 +531,7 @@ virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* credit_handler) = 0;
+    event_link* credit_handler) = 0;
 ````
 Similar to `connect_output`, this is invoked on the destination component of a link.
 Instead of giving a payload handler to receive new events,
@@ -542,9 +541,9 @@ The parameters work the same way as the output parameters.
 But where do the handlers come from? Connectable objects must implement:
 
 ````
-virtual link_handler* credit_handler(int port) const = 0;
+virtual link_handler* credit_handler(int port) = 0;
 
-virtual link_handler* payload_handler(int port) const = 0;
+virtual link_handler* payload_handler(int port) = 0;
 ````
 
 These `link_handler` objects are a special instance of `event_handler`.
@@ -1401,22 +1400,126 @@ To better understand how hardware models are put together for simulating interco
 -   Packets arrive at destination NIC and are reassembled (potentially out-of-order)
 -   Message flow is pushed up network software stack
 
-Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [4](#fig:controlFlow)
+Through the network, packets must move through buffers (waiting for credits) and arbitrate for bandwidth through the switch crossbar and then through the ser/des link on the switch output buffers.  The control-flow diagram for transporting a flow from one endpoint to another via packets is shown in Figure [5](#fig:controlFlow)
+
+In general, sending data across the network (as in, e.g.., MPI), requires the following components:
 
 
-![Figure 4: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DecisionFlow) 
+-   Packetization: handled by `nic` class. Converts flows (MPI messages) into smaller packets.
+-   Network topology: handled by `topology` class. Defines the geometry of the network, determining how nodes are connected to switches and how switches are interconnected. It also defines which ports are used for each connection.
+-   Fabric management (not yet implemented in SST)
+-   Routing: handled by `router` class. Using the defined topology, compute the path that should be taken by a packet. The path is defined by the port numbers that should be taken.
+-   Flow control and congestion: handled by `network_switch` class. Once a path is defined by the router, arbitrate packets (flits) when they contend for bandwidth.
+As much as possible, these components try to be independent. However, there are inter-dependencies, as shown in Figure [4](#fig:dependencies).
+The router requires topology information to compute paths. For adaptive routing decisions, the router also requires contention information from the network switch.
+The network switch requires the computed paths (ports) from the router.
 
-*Figure 4: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.*
+
+![Figure 4: Components used modeling interconnect and dependencies between them.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/components) 
+
+*Figure 4: Components used modeling interconnect and dependencies between them.*
 
 
 
-We can dive in deeper to the operations that occur on an individual component, mostly important the crossbar on the network switch. Figure [5](#fig:xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
+
+![Figure 5: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/DecisionFlow) 
+
+*Figure 5: Decision diagram showing the various control flow operations that occur as a message is transport across the network via individual packet operations.*
 
 
-![Figure 5: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/RoutingFlow) 
 
-*Figure 5: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.*
+We can dive in deeper to the operations that occur on an individual component, mos importantly the crossbar on the network switch. Figure [6](#fig:xbarFlow) shows code and program flow for a packet arriving at a network switch.  The packet is routed (virtual function, configurable via input file parameters), credits are allocated to the packet, and finally the packet is arbitrated across the crossbar. After arbitration, a statistics callback can be invoked to collect any performance metrics of interest (congestion, traffic, idle time).
 
+
+![Figure 6: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/RoutingFlow) 
+
+*Figure 6: Code flow for routing, arbitration, and stats collections of packets traversing the crossbar on the network switch.*
+
+
+
+\section{Packets}
+Packet must hold information for endpoint control on the NIC, routing decisions, and flow control. 
+Packets therefore suffer from a "combinatorial explosion" depending on which NIC model is coupled with which flow control mechanism and which routing algorithm.
+For example, the simulator is intended to support at least two different network contention models (PISCES, SCULPIN);
+five different topologies (torus, hyperX, fat tree, dragonfly, cascade); and four different routing algorithms (Minimal, Valiant, UGAL, PAR).
+This creates already 40 combinations, which can grow even more quickly if new models are added.
+If the C++ type of the packet were to depend on all of these, messy multiple inheritance patterns can result or 40 different packet types would be needed.
+Some C++ patterns (e.g. policies) are designed to help implement combinatorial problems like this without multiple inheritance,
+but this is not a good match for our case.
+
+Flow control is generally the most complicated and requires the most data. 
+Inheritance from the base packet class is used to create packet types that are compatible with a particular congestion model.
+For different routing or endpoint (NIC) methods, the packet object allocates blocks to be used as metadata for the different classes. 
+These metadata blocks can then be cast as needed for each of the different functions.
+
+````
+char rtr_metadata_[MAX_HEADER_BYTES];
+char nic_metadata_[MAX_NIC_BYTES];
+````
+Defaults are chosen for the compile-time constants (8-16 bytes) and these can be changed as needed.
+In the same way that a router or NIC allocates bits for certain functions, SST/macro uses bitsets stored in the metadata blocks.
+For example, for adaptive routing on a dragonfly, we have the following bitset:
+
+````
+struct routing_header  {
+ char is_tail : 1;
+ uint16_t edge_port; 
+ uint8_t deadlock_vc : 4;
+ uint8_t num_group_hops : 2;
+ uint8_t num_hops : 4;
+ uint8_t stage_number : 3;
+ uint32_t dest_switch : 24;
+};
+````
+The 54 bits here store the information needed by a router to implement progressive adaptive routing (PAR). 
+For flow control on a particular type of switch, e.g. PISCES (see User's manual), we have a type `pisces_packet`
+that inherits from `packet` and adds the following fields:
+
+````
+class pisces_packet : public packet {
+....
+uint8_t stage;
+uint8_t outports[3];
+uint16_t inport;
+double bw_;
+double max_in_bw_;
+timestamp arrival_;
+int current_vc_;
+...
+};
+````
+These provide the path and flow control information needed to implement the PISCES contention model.
+
+Inside router or switch flow control code, the metadata regions can be accessed as:
+````
+template <class T>
+T* rtr_header()  {
+  return (T*) (&rtr_metadata_);
+}
+````
+which returns the raw bytes cast to the correct C++ bitset type.
+
+There is some universal information needed by all packets, which is not stored in the bitset:
+
+````
+node_id toaddr_;
+node_id fromaddr_;
+uint64_t flow_id_;
+uint32_t num_bytes_;
+serializable* payload_;
+````
+This covers the source and destination nodes, a unique ID for the flow (e.g. MPI message) the packet came from, the number of bytes of the flow, and optionally a payload object carrying extra data.
+
+To summarize, we have: \\
+
+
+| Information | Where Stored | Access Method |
+|-------------|--------------|---------------|
+| Node address | `packet` base class | Always available |
+| Flow ID | `packet` base class | Always available |
+| Packet size | `packet` base class | Always available |
+| Routing | Metadata block in `packet` | Cast raw bytes |
+| Flow control | Subclass of `packet` | Dynamic cast `packet` | 
 
 
 ### Section 7.2: Connectables<a name="sec:connectables"></a>
@@ -1425,10 +1528,10 @@ We can dive in deeper to the operations that occur on an individual component, m
 With a basic overview of how the simulation proceeds, we can now look at the actual SST/macro class types.
 While in common usage, SST-macro follows a well-defined machine model (see below),
 it generally allows any set of components to be connected. 
-As discussed in Chapter [5](#chapter:des), the simulation proceeds by having event components exchange messages,
+As discussed in Chapter [5](#chapter:des), the simulation proceeds by having event components exchange events,
 each scheduled to arrive at a specific time.
 SST-macro provides a generic interface for any set of hardware components to be linked together.
-Any hardware component that connects to other components and exchanges messages must inherit from the `connectable` class.
+Any hardware component that connects to other components and exchanges events must inherit from the `connectable` class.
 The `connectable` class presents a standard virtual interface
 
 ````
@@ -1439,20 +1542,17 @@ class connectable
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) = 0;
+    event_link* link) = 0;
 
-  virtual void
-  connect_input(
+  virtual void connect_input(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* handler) = 0;
-
-
+    event_link* link) = 0;
 };
 ````
 
-First, port numbers must be assigned identifying the output port at the source and in the input port at the destination.
+First, port numbers must be assigned identifying the output port at the source and the input port at the destination.
 For example, a switch may have several outgoing connections, each of which must be assigned a unique port number.
 The connection must be configured at both source and destination.
 The function is called twice for each side of the connection. If we have a source and destination:
@@ -1472,7 +1572,7 @@ Some "meta"-object should create connections between objects.
 In general, this work is left to a `interconnect` object.
 An object should never be responsible for knowing about the "world" outside itself.
 A topology or interconnect tells the object to make a connection rather than the object deciding to make the connection itself.
-This will be illustrated below in [7.8](#sec:topology).
+This will be illustrated below in [7.3](#sec:topology).
 
 The second rule to follow is that a connect function should never call another connect function.
 In general, a single call to a connect function should create a single link.
@@ -1495,7 +1595,150 @@ Combining the factory system for polymorphic types and the connectable system fo
 SST-macro provides flexibility for building essentially any machine model you want.
 However, SST-macro provides a recommended machine structure to guide constructing machine models.
 
-### Section 7.3: Interconnect<a name="sec:topInterconnect"></a>
+### Section 7.3: Topology<a name="sec:topology"></a>
+
+
+Of critical importance for the network modeling is the topology of the interconnect.
+Common examples are the torus or fat tree.
+To understand what these topologies are, there are many resources on the web.
+Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages.
+Here we detail the public interface.
+In SST/macro, topologies are not dynamically stateful.
+They store static information about the geometry of the network and do not update their state as simulation progresses.
+All functions in the interface are const, emphasizing the role of the topology as read-only.
+
+Not all topologies are "regular" like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure.
+The abstract topology base class is intended to cover both cases.
+The most important functions in the `topology` class are
+
+````
+class topology {
+...
+virtual bool uniform_network_ports() const = 0;
+
+virtual bool uniform_switches_non_uniform_network_ports() const = 0;
+
+virtual bool uniform_switches() const = 0;
+
+virtual void connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
+
+virtual void configure_individual_port_params(switch_id src,
+      sprockit::sim_parameters* switch_params) const = 0;
+
+virtual in num_switches() const = 0;
+
+virtual int num_nodes() const = 0;
+
+virtual int num_endpoints() const = 0;
+
+virtual int max_num_ports() const = 0;
+
+virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
+
+virtual void endpoints_connected_to_injection_switch(switch_id swid,
+                      std::vector<injection_port>& nodes) const = 0;
+
+virtual void endpoints_connected_to_ejection_switch(switch_id swid,
+                      std::vector<injection_port>& nodes) const = 0;
+````
+
+These functions are documented in the `topology.h` header file.
+The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch.
+Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
+The most important functions are `endpoints_connected_to_injection_switch` - which nodes are connected to which switches and which ports make the links -
+and also `connected_outports` - which switches are connected to which switches and which ports make the links.
+
+The `connection` struct is:
+
+````
+struct connection {
+    switch_id src;
+    switch_id dst;
+    int src_outport;
+    int dst_inport;
+};
+````
+which specifies a source and destination switch for a given link and which ports connect the link.
+Similarly, the struct `injection_port` is:
+
+````
+struct injection_port {
+  node_id nid;
+  int switch_port;
+  int ep_port;
+};
+````
+which specifies which node a switch is connected to and which ports connect the link.
+
+The topology provides the geometry of the network, but does not tell packets which of the available paths to take. 
+That task is left to the router.
+
+
+### Section 7.4: Router<a name="sec:router"></a>
+
+
+The router has a simple public interface
+
+````
+class router {
+...
+  virtual void route(packet* pkt) = 0;
+...
+};
+````
+
+Different routers exist for the different routing algorithms and different topologies: 	minimal, valiant, ugal.
+The router objects are specific to a switch and can store dynamic state information,
+in contrast to the topology which is read-only.
+
+For adaptive routing, a bit more work is done.
+Each router is connect to a switch object which holds all the information about queue lengths, e.g.
+
+````
+int test_length = get_switch()->queue_length(paths[i].outport);
+````
+allowing the router to select an alternate path if the congestion is too high. 
+
+The router primarily computes two things: edge output port and deadlock-free virtual channels.
+Internal to a switch, a packet (flit) may traverse many different components.
+All these internal details are opaque to the router.
+The router only knows about the ports on the edge of the switch that connect an external network link. 
+The switch component, given an exit port, must navigate the packet through the internal component (crossbar, muxer, demuxer, bus, etc).
+
+Similarly, the router selects virtual channels based on deadlock-free routing, not quality of service (QoS).
+Different priority (QoS) levels could be specified at the NIC.
+The control flow component (switch), is responsible for using the deadlock virtual channel and the QoS virtual channel together to move the packets. 
+
+
+
+### Section 7.5: Network Switch: Flow Control<a name="sec:networkSwitch"></a>
+
+
+The topology and the router only provide path information and do not actually model congestion.
+Congestion is modeled via flow control - choosing which packets or flits move across a link when there is contention.
+The basic scheme for most switches follows the code below for the `pisces` model.
+
+````
+void pisces_switch::handle_credit(event *ev)
+{
+  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  out_buffers_[credit->port()]->handle_credit(credit);
+}
+
+void pisces_switch::handle_payload(event *ev)
+{
+  pisces_payload* payload = static_cast<pisces_payload*>(ev);
+  router_->route(payload);
+  xbar_->handle_payload(payload);
+}
+````
+The arriving event is sent to either a credit handler or a payload handler,
+which is configured during simulation setup.
+If a payload packet (rather than a credit), the router object selects the next destination (port).
+The packet is then passed to the crossbar for arbitration.
+A switch inherits from `connectable`, requiring it to implement the `connect_output/connect_input` and `payload_handler/credit_handler` functions.
+
+### Section 7.6: Interconnect: Putting it all together<a name="sec:topInterconnect"></a>
 
 
 For all standard runs, the entire hardware model is driven by the interconnect object.
@@ -1553,7 +1796,7 @@ The `connected_outports` function takes a given source switch and returns all th
 switch is supposed to make.  Each switch must provide `payload_handler` and `ack_handler` functions to return
 the `event_handler` that should receive either new packets (payload) or credits (ack) for the connections.
 
-### Section 7.4: Node<a name="sec:node"></a>
+### Section 7.7: Node<a name="sec:node"></a>
 
 
 Although the `node` can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface.
@@ -1571,7 +1814,7 @@ A node is only required to implement those functions that it needs to do.
 The various function parameters are enums for the different operations a node may perform:
 computation or communication. Computation functions are those that require compute resources. Service functions are special functions that run in the background and "lightweight" such that any modeling of processor allocation should be avoided. Service functions are run "for free" with no compute 
 
-### Section 7.5: Network Interface (NIC)<a name="sec:nic"></a>
+### Section 7.8: Network Interface (NIC)<a name="sec:nic"></a>
 
 
 The network interface can implement many services, but the basic public interface requires the NIC to do three things:
@@ -1634,7 +1877,7 @@ event_handler* mtl_handler() const {
 A special completion queue object tracks chunks and processes out-of-order arrivals,
 notifying the NIC when the entire message is done.
 
-### Section 7.6: Memory Model<a name="sec:memModel"></a>
+### Section 7.9: Memory Model<a name="sec:memModel"></a>
 
 
 As with the NIC and node, the memory model class can have a complex implementation under the hood,
@@ -1650,262 +1893,6 @@ For more details on the use of user-space threading to model applications,
 see the User's manual.
 
 
-### Section 7.7: Network Switch<a name="sec:networkSwitch"></a>
-
-
-
-Unlike the other classes above, a network switch is not required to implement any specific functions.
-It is only required to be an `event_handler`, providing the usual `handle(event* ev)`.
-The internal details can essentially be arbitrary.
-However, the basic scheme for most switches follows the code below for the `pisces` model.
-
-````
-void pisces_switch::handle_credit(event *ev)
-{
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  out_buffers_[credit->port()]->handle_credit(credit);
-}
-
-void pisces_switch::handle_payload(event *ev)
-{
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  router_->route(payload);
-  xbar_->handle_payload(payload);
-}
-````
-The arriving event is sent to either a credit handler or a payload handler,
-which is configured during simulation setup.
-If a payload packet (rather than a credit), the router object selects the next destination (port).
-The packet is then passed to the crossbar for arbitration.
-
-### Section 7.8: Topology<a name="sec:topology"></a>
-
-
-Of critical importance for the network modeling is the topology of the interconnect.
-Common examples are the torus, fat tree, or butterfly.
-To understand what these topologies are, there are many resources on the web.
-Regardless of the actual structure as a torus or tree, the topology should present a common interface to the interconnect and NIC for routing messages.
-Here we detail the public interface.
-In SST/macro, topologies are not dynamically stateful.
-They store static information about the geometry of the network and do not update their state as simulation progresses.
-All functions in the interface are const, emphasizing the role of the topology as read-only.
-
-#### 7.8.1: Basic Topology<a name="subsec:basicTopology"></a>
-
-
-Not all topologies are "regular" like a torus.  Ad hoc computer networks (like the internet) are ordered with IP addresses, but don't follow a regular geometric structure.
-The abstract topology base class is intended to cover both cases.
-Irregular or arbitrary topology connections are not fully supported yet.
-
-The most important functions in the `topology` class are
-
-````
-class topology {
-...
-virtual bool uniform_network_ports() const = 0;
-
-virtual bool uniform_switches_non_uniform_network_ports() const = 0;
-
-virtual bool uniform_switches() const = 0;
-
-virtual void connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
-
-virtual void configure_individual_port_params(switch_id src,
-      sprockit::sim_parameters* switch_params) const = 0;
-
-virtual in num_switches() const = 0;
-
-virtual int num_nodes() const = 0;
-
-virtual int num_endpoints() const = 0;
-
-virtual int max_num_ports() const = 0;
-
-virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
-
-virtual switch_id node_to_ejection_switch(node_id addr, int& port) const = 0;
-
-virtual int minimal_distance(switch_id src, switch_id dst) const = 0;
-
-virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
-
-virtual void endpoints_connected_to_injection_switch(switch_id swid,
-                      std::vector<injection_port>& nodes) const = 0;
-
-virtual void endpoints_connected_to_ejection_switch(switch_id swid,
-                      std::vector<injection_port>& nodes) const = 0;
-
-virtual void minimal_route_to_switch(
- switch_id current_sw_addr,
- switch_id dest_sw_addr,
- routable::path& path) const = 0;
-````
-
-These functions are documented in the `topology.h` header file.
-The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch.
-Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
-The topology must provide a mapping between a node and its ejection and injection points.
-Additionally, the topology must indicate a port number or offset for the injection in case the switch has many nodes injecting to it.
-The most important thing to distinguish here are `node_id` and `switch_id` types.
-These are typedefs that distinguish between a switch in the topology and a node or network endpoint.
-
-Besides just forming the connections, a topology is responsible for routing.
-Given a source switch and the final destination, a topology must fill out path information.
-
-````
-struct path {
-    int outport;
-    int vc;
-    int geometric_id;
-}
-````
-
-The most important information is the outport, telling a switch which port to route along to arrive at the destination.
-For congestion models with channel dependencies, the virtual channel must also be given to avoid deadlock.
-In general, network switches and other devices should be completely topology-agnostic.
-The switch is responsible for modeling congestion within itself - crossbar arbitration, credits, outport multiplexing.
-The switch is not able to determine for itself which outport to route along.
-The router tells the switch which port it needs and the switch determines what sort of congestion delay to expect on that port.
-
-### Section 7.9: Router<a name="sec:router"></a>
-
-
-The router has a simple public interface
-
-````
-class router {
-...
-  virtual void route(packet* pkt) = 0;
-...
-};
-````
-
-Different routers exist for the different routing algorithms: 	minimal, valiant, ugal.
-The router objects are specific to a switch and can store dynamic state information,
-in contrast to the topology which is read-only.
-However, the router can query the topology object for any path-specific information, e.g.
-
-````
-void minimal_router::route_to_switch(switch_id sid, packet::path& path)
-{
-  top_->minimal_route_to_switch(my_addr_, sid, path);
-}
-````
-
-For adaptive routing, a bit more work is done.
-Each router is connect to a switch object which holds all the information about queue lengths, e.g.
-
-````
-int test_length = get_switch()->queue_length(paths[i].outport);
-````
-allowing the router to select an alternate path if the congestion is too high. 
-
-\subsection{Flows, Packets, and Routing Headers}
-A flow is a stream of data from a source node to a destination node.
-The most common example of a flow is an MPI message.
-At the source, the flow is broken into discrete units (packets). Each packet then moves independently through the network.
-The flow is reassembled at the destination from the individual packets.
-Packets themselves are also broken up into flits (flow control units) and even phits (physical units).
-However, flits in the same packet are constrained to follow the same route, unlike packets which can route independently.
-
-A challenge for SST/macro is the "factorial" space of possible machine models to support.
-For example, the simulator is intended to support at least two different network contention models (PISCES, SCULPIN);
-five different topologies (torus, hyperX, fat tree, dragonfly, cascade); and four different routing algorithms (Minimal, Valiant, UGAL, PAR).
-This creates already 40 combinations, which can grow even more quickly if new models are added.
-
-Rather than have 40 different packet types, there are only two packet types specific to each contention model that inherit from a standard packet type:
-
-````
-class packet : public event {
-  ...
-};
-````
-Every contention model is unified in requiring a packet to carry 6 things:
-
--   Source and destination node addresses
--   `path` object (see below)
--   Routing header
--   Payload derived from the original flow
--   Flow ID - globally unique identifier for the flow
--   The number of bytes in the packet
-
-````
-node_id toaddr_;
-  node_id fromaddr_;
-  path path_;
-  uint64_t flow_id_;
-  serializable* orig_;
-  char header_metadata_[MAX_HEADER_BYTES];
-  uint32_t num_bytes_;
-````
-The path object has subfields:
-
-````
-struct path {
-   outport_t outport;
-   int vc;
-};
-````
-which indicate the virtual channel and port a packet should follow.
-
-Switches implement contention modeling while routers implement path computation.
-Path computations, in the case of adaptive routing, may depend on the dynamic contention state of the parent switch.
-A switch should never be aware of the exact topology or routing scheme.
-It follows orders from the router, sending packets on the virtual channels and ports computed by the router.
-The switch should call:
-
-````
-rtr_->route(pkt);
-````
-at which point the switch can call
-
-````
-pkt->current_path().vc
-pkt->current_path().outport
-````
-to query for the virtual channel and port requested by the packet (and router).
-In this way, the exact details of the contention model (as implemented in the switch) are decoupled from the routing.
-
-Decoupling the routing algorithm (UGAl, Minimal, etc.) from the topology (torus, dragonfly, etc) can be extremely difficult.
-In general, it is not always possible to implement a generic UGAL, e.g., that is agnostic to the underlying topology.
-For now, rather than have different packet types and a proliferation of virtual methods,
-the packet provides a bucket of bits (`header_metadata_`) that can be used by the router.
-Routing computations are generally the most expensive part of running the simulation and the most complex piece to implement,
-which discourages having different packet types for each routing/topology combination and accessing numerous virtual methods.
-
-The intended usage mode for routing headers is casting the bucket-of-bits to a known type, for which each packet provides a helper template method, e.g.:
-
-````
-void route(packet* pkt) override {
-  auto route_hdr = pkt->get_header<torus_ugal_header>();
-}
-````
-By default each new header type is encouraged to inherit from a parent type:
-
-````
-class packet : public event
-{
- public:
-  struct header {
-    char is_tail : 1;
-    uint32_t dest_switch : 22;
-  };
-````
-which uses C++ bit fields to reserve 1 bit for storing whether the packet is the tail of the flow and 22 bits for storing the ID of an intermediate destination switch (this pattern is so common it is implemented in the parent packet class). For minimal routing on a torus, e.g.:
-
-````
-class torus_minimal_router : public minimal_router {
-  struct torus_minimal_header : public packet::header {
-     char crossed_timeline : 1;
-  };
-  void route(packet* pkt) override {
-    auto hdr = pkt->get_header<torus_minimal_header>();
-  }
-};
-````
-which adds a single bit for storing whether the packet has crossed a timeline (wrap around link) in the torus. The timeline will be needed for computing the correct virtual channel.
-Routing headers can become much more complex for other topologies and adaptive routing, for which the reader is encouraged to look at the source code for further details.
-These complexities are local to each individual routing method, though, which neatly separates routing from contention modeling.
 
 
 
@@ -1973,35 +1960,36 @@ determining how many switches are in the ring and how big a "jump" link is.
 The topology then needs to tell objects how to connect
 
 ````
-void xpress_ring::connect_objects(connectable_map& objects)
+void xpress_ring::connected_outports(switch_id src, std::vector<connection>& conns)
 {
-  for (int i=0; i < ring_size_; ++i) {
-    connectable* center_obj = objects[switch_id(i)];
+  conns.resize(4); //every switch has 4 connections
+  auto& plusConn = conns[0];
+  plusConn.src = src;
+  plusConn.dst = (src+1) % ring_size_;
+  plusConn.src_outport = 0;
+  plusConn.dst_inport = 1; 
 
-    switch_id up_idx((i + 1) % ring_size_);
-    connectable* up_partner = find_object(objects, cloner, up_idx);
-    center_obj->connect(up_port, down_port, connectable::network_link, up_partner);
+  auto& minusConn = conns[1];
+  minusConn.src = src;
+  minusConn.dst = (src -1 + ring_size) % ring_size_;
+  minusConn.src_outport = 1;
+  minusConn.dst_inport = 0;   
 
-    switch_id down_idx((i + ring_size_ - 1) % ring_size_);
-    connectable* down_partner = find_object(objects, cloner, down_idx);
-    center_obj->connect_mod_at_port(down_port, up_port, connectable::network_link,
-                                    down_partner);
+  auto& jumpUpConn = conns[2];
+  jumpUpConn.src = src;
+  jumpUpConn.dst = (src + jump_size_) % ring_size_;
+  jumpUpConn.src_outport = 2;
+  jumpUpConn.dst_inport = 3;
 
-    switch_id jump_up_idx((i + jump_size_) % ring_size_);
-    connectable* jump_up_partner = find_object(objects, cloner, jump_up_idx);
-    center_obj->connect(jump_up_port, jump_down_port, connectable::network_link,
-                                    jump_up_partner);
-
-    switch_id jump_down_idx((i + ring_size_ - jump_size_) % ring_size_);
-    connectable* jump_down_partner = find_object(objects, cloner,
-                                         jump_down_idx);
-    center_obj->connect(jump_down_port, jump_up_port, connectable::network_link,
-                                    jump_down_partner);
-  }
+  auto& jumpDownConn = conns[2];
+  jumpDownConn.src = src;
+  jumpDownConn.dst = (src - jump_size_ + ring_size) % ring_size_;
+  jumpDownConn.src_outport = 3;
+  jumpDownConn.dst_inport = 2;
 }
 ````
-We loop through every switch in the ring and form +/- connections to neighbors and +/- connections to jump partners.
-Each of the four connections get a different unique port number.  We must identify both the outport port for the sender and the input port for the receiver.
+Each of the four connections get a different unique port number.  
+We must identify both the outport port for the sender and the input port for the receiver.
 
 To compute the distance between two switches
 
@@ -2035,103 +2023,6 @@ xpress_ring::minimal_distance(
 ````
 Essentially you compute the number of jumps to get close to the final destination and then the number of remaining single steps.
 
-For computing coordinates, the topology has dimension one.
-
-````
-switch_id xpress_ring::get_switch_id(const coordinates& coords) const
-{
-  return switch_id(coords[0]);
-}
-
-void xpress_ring::get_productive_path(
-  int dim,
-  const coordinates& src,
-  const coordinates& dst,
-  routable::path& path) const
-{
-  minimal_route_to_coords(src, dst, path);
-}
-
-void xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
-{
-  coords[0] = int(swid);
-}
-````
-Thus the coordinate vector is a single element with the `switch_id`.
-
-The most complicated function is the routing function.
-
-````
-void xpress_ring::minimal_route_to_coords(
-  const coordinates& src_coords,
-  const coordinates& dest_coords,
-  routable::path& path) const
-{
-  int src_pos = src_coords[0];
-  int dest_pos = dest_coords[0];
-
-  //can route up or down
-  int up_distance = abs(dest_pos - src_pos);
-  int down_distance = abs(src_pos + ring_size_ - dest_pos);
-  int xpress_cutoff = jump_size_ / 2;
-````
-First we compute the distance in the up and down directions.
-We also compute the cutoff distance where it is better to jump or step to the next switch.
-If going up is a shorter distance, we have
-
-````
-if (up_distance <= down_distance) {
-    if (up_distance > xpress_cutoff) {
-      path.outport = jump_up_port;
-      path.dim = UP;
-      path.dir = jump;
-      path.vc = 0;
-    }
-    else {
-      path.outport = up_port;
-      path.dim = UP;
-      path.dir = step;
-      path.vc = 0;
-    }
-  }
-````
-We then decide if it is better to step or jump.
-We do not concern ourselves with virtual channels here and just set it to zero.
-Similarly, if the down direction in the ring is better
-
-````
-else {
-    if (down_distance > xpress_cutoff) {
-      path.outport = jump_down_port;
-      path.dim = DOWN;
-      path.dir = jump;
-      path.vc = 0;
-    }
-    else {
-      path.outport = down_port;
-      path.dim = DOWN;
-      path.dir = step;
-      path.vc = 0;
-    }
-  }
-}
-````
-
-For adaptive routing, we need to compute productive paths.
-In this case, we only have a single dimension so there is little adaptive routing flexibility.
-The only productive paths are the minimal paths.
-
-````
-void xpress_ring::get_productive_path(
-  int dim,
-  const coordinates& src,
-  const coordinates& dst,
-  routable::path& path) const
-{
-  minimal_route_to_coords(src, dst, path);
-}
-````
-
 We are now ready to use our topology in an application.
 In this case, we just demo with the built-in MPI ping all program from SST-macro.
 Here every node in the network sends a point-to-point message to every other node.
@@ -2144,36 +2035,7 @@ topology.name = xpress
 topology.xpress_ring_size = 10
 topology.xpress_jump_size = 5
 ````
-with application launch parameters
 
-````
-# Launch parameters
-launch_indexing = block
-launch_allocation = first_available
-launch_cmd_app1 = aprun -n10 -N1
-launch_app1 = mpi_test_all
-````
-The file also includes a basic machine model.
-
-After compiling in the folder, we produce an executable `runsstmac`.
-Running the executable, we get the following
-
-````
-Estimated total runtime of           0.00029890 seconds
-SST/macro ran for       0.4224 seconds
-````
-where the SST-macro wall clock time will vary depending on platform.
-We estimate the communication pattern executes and finishes in 0.30 ms.
-Suppose we change the jump size to a larger number.
-Communication between distant nodes will be faster, but communication between medium-distance nodes will be slower.
-We now set `jump_size = 10` and get the output
-
-````
-Estimated total runtime of           0.00023990 seconds
-SST/macro ran for       0.4203 seconds
-````
-We estimate the communication pattern executes and finishes in 0.24 ms, a bit faster.
-Thus, this communication pattern favors longer jump links.
 
 
 

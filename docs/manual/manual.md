@@ -29,15 +29,15 @@ category: SSTDocumentation
             - [Build SST/macro element library](#subsec:buildElementLib)
          - [2.1.4: Post-Build](#subsec:postbuild)
          - [2.1.5: GNU pth for user-space threading: DEPRECATED](#subsubsec:pth)
-         - [2.1.6: fcontext (and a note on Boost)](#subsubsec:boost)
+         - [2.1.6: fcontext](#subsubsec:fcontext)
          - [2.1.7: Known Issues](#subsec:build:issues)
       - [Section 2.2: Building DUMPI](#sec:building:dumpi)
          - [2.2.1: Known Issues](#subsubsec:building:dumpi:issues)
-      - [Section 2.3: Building with OTF2 (Beta)](#sec:buildingOtf2)
-      - [Section 2.4: Building Clang source-to-source support (Beta)](#sec:buildingClang)
-         - [2.4.1: Building Clang libTooling](#subsec:buildingClanglibTooling)
+      - [Section 2.3: Building Clang source-to-source support](#sec:buildingClang)
+         - [2.3.1: Building Clang libTooling](#subsec:buildingClanglibTooling)
             - [The Easy Way: Mac OS X](#subsubsec:libToolingOSX)
             - [The Hard Way](#subsubsec:libTooling)
+      - [Section 2.4: Building with OTF2 (Beta)](#sec:buildingOtf2)
       - [Section 2.5: Running an Application](#sec:building:running)
          - [2.5.1: SST Python Scripts](#subsec:SSTPythonScripts)
          - [2.5.2: Building Skeleton Applications](#sec:tutorial:runapp)
@@ -79,6 +79,7 @@ category: SSTDocumentation
       - [Section 3.9: Using Score-P and OTF2 (Beta)](#sec:tutorial:otf)
          - [3.9.1: Trace Collection](#subsec:otf:traceCollection)
          - [3.9.2: Trace Replay](#subsec:otf:traceReplay)
+         - [3.9.3: Trace Emission](#subsec:otf:traceEmission)
       - [Section 3.10: Call Graph Visualization](#sec:tutorials:callgraph)
       - [Section 3.11: Spyplot Diagrams](#sec:tutorials:spyplot)
       - [Section 3.12: Fixed-Time Quanta Charts](#sec:tutorials:ftq)
@@ -87,26 +88,26 @@ category: SSTDocumentation
          - [3.13.2: Congestion Delay Histogram](#subsec:congestionDelayHistogram)
          - [3.13.3: Congestion Spyplot and Multi-stats](#subsec:congestionSpyplot)
    - [Chapter 4: Topologies](#chapter:topologies)
-      - [Section 4.1: Topology Query Utility](#sec:topologyQuery)
-      - [Section 4.2: Torus](#subsec:tutorial:hypercube)
-      - [Section 4.3: Hypercube](#subsec:tutorial:hypercube)
-         - [4.3.1: Allocation and indexing](#subsec:hypercube:allocation)
-         - [4.3.2: Routing](#subsec:hypercube:routing)
-      - [Section 4.4: Fat Tree](#sec:tutorial:fattree)
-         - [4.4.1: Allocation and indexing](#subsec:fattree:allocation)
-         - [4.4.2: Routing](#subsec:fattree:routing)
-      - [Section 4.5: Cascade](#sec:tutorial:cascade)
-         - [4.5.1: Allocation and indexing](#subsec:cascade:allocatoin)
-         - [4.5.2: Routing](#subsec:cascade:routing)
+      - [Section 4.1: Torus](#subsec:tutorial:hypercube)
+      - [Section 4.2: Hypercube](#subsec:tutorial:hypercube)
+         - [4.2.1: Allocation and indexing](#subsec:hypercube:allocation)
+         - [4.2.2: Routing](#subsec:hypercube:routing)
+      - [Section 4.3: Fat Tree](#sec:tutorial:fattree)
+         - [4.3.1: Switch Crossbar Bandwidth Scaling](#subsec:fattree:xbarbw)
+         - [4.3.2: Routing](#subsec:fattree:routing)
+      - [Section 4.4: Cascade](#sec:tutorial:cascade)
+         - [4.4.1: Allocation and indexing](#subsec:cascade:allocatoin)
+         - [4.4.2: Routing](#subsec:cascade:routing)
    - [Chapter 5: External Applications and Skeletonization](#chap:appsAndSkeletonization)
       - [Section 5.1: Basic Application porting](#sec:skel:basic)
          - [5.1.1: Loading external skeletons with the standalone core](#subsec:externalAppStandalone)
-         - [5.1.2: Loading external skeletons with the integrated core](#subsec:linkageCore)
       - [Section 5.2: Auto-skeletonization with Clang](#sec:autoSkeletonization)
          - [5.2.1: Skeletonization Issues](#subsec:skeletonIssues)
       - [Section 5.3: Process Encapsulation](#sec:processEncapsulation)
    - [Chapter 6: Clang Source-to-Source Auto-Skeletonization via Pragmas](#clangTutorial)
-      - [Section 6.1: Fortran](#subsec:issues:fortran)
+      - [Section 6.1: Memoization pragmas](#sec:memoization)
+         - [6.1.1: pragma sst implicit\_state X(Y) ...](#subsec:implicitStates)
+      - [Section 6.2: Fortran](#subsec:issues:fortran)
    - [Chapter 7: Detailed Parameter Listings](#chapter:parameters)
       - [Section 7.1: Global namespace](#sec:globalParams)
       - [Section 7.2: Namespace "topology"](#sec:topologyParams)
@@ -125,21 +126,18 @@ category: SSTDocumentation
             - [Namespace ``node.os.call\_graph"](#subsubsec:node:os:callGraph:Params)
             - [Namespace ``node.os.ftq"](#subsubsec:node:os:ftq:Params)
          - [7.3.4: Namespace ``node.proc"](#subsec:node:proc:Params)
-      - [Section 7.4: Namespace "netlink"](#sec:netlink:Params)
-         - [7.4.1: Namespace "netlink.injection"](#subsec:netlink:injection:Params)
-         - [7.4.2: Namespace ``netlink.ejection"](#subsec:netlink:ejection:Params)
-      - [Section 7.5: Namespace ``mpi"](#sec:mpi:Params)
-         - [7.5.1: Namespace ``mpi.queue"](#subsec:mpi:queue:Params)
-      - [Section 7.6: Namespace "switch"](#subsec:switch:Params)
-         - [7.6.1: Namespace "switch.router"](#subsec:switch:router:Params)
-         - [7.6.2: Namespace "switch.output\_buffer"](#subsec:switch:outputBuffer:Params)
+      - [Section 7.4: Namespace "mpi"](#sec:mpi:Params)
+         - [7.4.1: Namespace ``mpi.queue"](#subsec:mpi:queue:Params)
+      - [Section 7.5: Namespace "switch"](#subsec:switch:Params)
+         - [7.5.1: Namespace "switch.router"](#subsec:switch:router:Params)
+         - [7.5.2: Namespace "switch.output\_buffer"](#subsec:switch:outputBuffer:Params)
             - [Namespace ``switch.output\_buffer.delay\_histogram"](#subsubsec:switch:outputBuffer:delayHistogram:Params)
             - [Namespace "switch.output\_buffer.byte\_hops"](#subsubsec:switch:outputBuffer:delayHistogram:Params)
-         - [7.6.3: Namespace "switch.xbar"](#sec:switch:outputBuffer:delayHistogram:Params)
+         - [7.5.3: Namespace "switch.xbar"](#sec:switch:outputBuffer:delayHistogram:Params)
             - [Namespace ``switch.xbar.bytes\_sent"](#subsubsec:switch:xbar:bytesSent:Params)
-         - [7.6.4: Namespace "switch.link"](#subsec:switch:link:Params)
-         - [7.6.5: Namespace "switch.ejection"](#subsec:switch:ejection:Params)
-      - [Section 7.7: Namespace "appN"](#sec:appN:Params)
+         - [7.5.4: Namespace "switch.link"](#subsec:switch:link:Params)
+         - [7.5.5: Namespace "switch.ejection"](#subsec:switch:ejection:Params)
+      - [Section 7.6: Namespace "appN"](#sec:appN:Params)
 
 
 
@@ -226,9 +224,8 @@ if (rank == 0){
 This is exactly the functionality that SST/macro provides.
 Instead of using `mpic++`, you compile the code with {sst++}.
 This modifies your code and intercepts MPI calls, running them through the simulator instead of an actual MPI implementation.
-Your code will execute and run exactly the same.
-Your application won't even know the difference.
-The only major hiccup is that you now need a parameter file with information like:
+Your code will execute and run exactly the same, and your application won't even know the difference.
+You now need a parameter file with information like:
 
 ````
 node {
@@ -253,7 +250,7 @@ Things get more complicated when you bring skeletonization into play.
 The use case above is emulation, exactly reproducing MPI functionality.
 In skeletonization or simulation, SST/macro will mimic as closely as possible the original application,
 but avoids as much computation and as much memory allocation as possible.
-This allows to pack in as many simulated MPI ranks as possible into your single `sstmac` process.
+This allows packing in as many simulated (virtual) MPI ranks as possible into your single `sstmac` process.
 
 \section{What To Expect In The User's Manual}
 This user's manual is mainly designed for those who wish to perform experiments with new applications using existing hardware models.
@@ -300,16 +297,16 @@ The following are dependencies for SST-macro.
 
 
 -   (optional) Git is needed in order to clone the source code repository, but you can also download a tar (Section [2.1.1](#subsec:build:downloading)).
--   (Mac) You need either the GNU pth library or Boost fcontext. GNU pth is downloadable from MacPorts (see Section [2.1.5](#subsubsec:pth))
 -   Autoconf: 2.68 or later
 -   Automake: 1.11.1 or later
 -   Libtool: 2.4 or later
--   A C/C++ compiler is required with C++11 support.  gcc >=4.8 and clang >= 3.7 are known to work.
+-   A C/C++ compiler is required with C++11 support.  gcc >=4.8.5 and clang >= 3.7 are known to work.
 -   (optional) OTF2: 2.0 or later for OTF2 trace replay.
--   (optional) Doxygen and Graphviz are needed to build the documentation.
+-   (optional) VTK 8.1 or later for creating Exodus files for traffic visualization
+-   (optional) Paraview 5.0 or greater for visualizing Exodus files
+-   (optional) Doxygen and Graphviz are needed to build the source code documentation.
 -   (optional) KCacheGrind or QCacheGrind to display call graphs
 -   (optional) Clang development libraries to enable SST source-to-source compiler
--   (optional) Boost 1.65 and above for fcontext user-space threading.
 
 #### 2.1.3: Configuration and Building<a name="subsec:build:configure"></a>
 
@@ -345,8 +342,6 @@ The workflow for installing and running on the standalone SST/macro core:
 
 The recommended mode for maximum flexibility is to run using the SST core downloadable from http://sst-simulator.org/SSTPages/SSTMainDownloads.
 Building and installing sets up the discrete event simulation core required for all SST elements.
-SST core no longer has Boost dependencies! Directions for building Boost (if desired) are still below in [2.1.6](#subsubsec:boost).
-Boost is still useful for optimal performance through the fcontext library. 
 
 ##### Build SST/macro element library<a name="subsec:buildElementLib"></a>
 
@@ -363,17 +358,16 @@ sst-macro> cd build
 sst-macro/build> ../configure --prefix=$PATH_TO_INSTALL --with-sst-core=$PATH_TO_SST_CORE CC=MPICC CXX=MPICXX
 ````
 `PATH_TO_SST_CORE` should be the prefix install directory used when installing the core.  
-The MPI compilers should be the same compilers used for building Boost and SST core.
+The MPI compilers should be the same compilers used for building SST core.
 
 SST/macro can still be built in standalone mode for a select set of features that have not been fully migrated to the SST core.  
 The installation and running are the same for both modes - simply remove the `--with--sst-core` parameter.  
-A complete list of options for standalone building can be seen by running `../configure --help`.   Some common options include:
+A complete list of options for building can be seen by running `../configure --help`.   Some common options for both standalone and main SST core include:
 
 
 -   --(dis|en)able-graphviz : Enables the collection of simulated call graphs, which can be viewed with graphviz.
 Disabled by default.
 -   --(dis|en)able-custom-new : Memory is allocated in larger chunks in the simulator, which can speed up large simulations.
--   --(dis|en)able-multithread : This configures for thread-level parallelism for (hopefully) faster simulation
 -   --(dis|en)able-otf2[=location]: Enable OTF2 trace replay, requires a path to OTF2 installation.
 -   --with-clang[=location]: Enable Clang source-to-source tools by pointing to Clang development libraries
 
@@ -424,16 +418,12 @@ For MacPorts installation, this means configuring SST/macro with:
 ../configure --with-pth=/opt/local
 ````
 
-#### 2.1.6: fcontext (and a note on Boost)<a name="subsubsec:boost"></a>
+#### 2.1.6: fcontext<a name="subsubsec:fcontext"></a>
 
 
-Boost is no longer required for SST core.
-However, Boost 1.65 and above support the fcontext library for user-space threading,
-but this is now integrated directly with the SST/macro distribution.
+The fcontext library for user-space threading is now integrated directly with the SST/macro distribution.
 This provides much greater performance than GNU pth or standard Linux ucontext.
 Users may see as much as a 20\
-Your best bet is to just avoid doing anything with Boost.
-
 fcontext should be activated by default. To force activation fcontext, you can either set the environment variable:
 
 ````
@@ -509,25 +499,14 @@ the libtool script.  Search for predeps/postdeps and set the values to empty.
 This will clear all the erroneous linker flags.  The compilation/linkage should still work since 
 all necessary flags are set by the wrappers.
 
-### Section 2.3: Building with OTF2 (Beta)<a name="sec:buildingOtf2"></a>
 
-
-OTF2 is a general purpose trace format with specialized callbacks for the MPI API. OTF2 traces are generated by programs compiled with Score-P compiler wrappers. SST/macro 7.0 supports OTF2 trace replay when configured with 
-
-````
-./configure --enable-otf2=<OTF2-root>
-````
-where the OTF2 root is the installation prefix for a valid OTF2 build. OTF2 can be obtained from the Score-P project at {http://www.vi-hps.org/projects/score-p}.
-Detailed build and usage instructions can be found on the website.
-
-
-### Section 2.4: Building Clang source-to-source support (Beta)<a name="sec:buildingClang"></a>
+### Section 2.3: Building Clang source-to-source support<a name="sec:buildingClang"></a>
 
 
 
 To enable Clang source-to-source support it is not sufficient to have a Clang compiler.  You have to install a special libTooling library for Clang.
 
-#### 2.4.1: Building Clang libTooling<a name="subsec:buildingClanglibTooling"></a>
+#### 2.3.1: Building Clang libTooling<a name="subsec:buildingClanglibTooling"></a>
 
 
 
@@ -607,7 +586,7 @@ On some systems, linking Clang might blow out your memory. If that is the case, 
 Run `make install`. The libTooling library will now be available at the `\$install` location.
 
 \subsection{Building SST/macro with Clang}
-Now that clang is installled, you only need to add the configure flag `--with-clang` pointing it to the install location from above.
+Now that clang is installed, you only need to add the configure flag `--with-clang` pointing it to the install location from above.
 You must use the same Clang compiler to build SST that you used to build libTooling.
 
 ````
@@ -617,6 +596,20 @@ You must use the same Clang compiler to build SST that you used to build libTool
 Clang source-to-source support will now be built into the `sst++` compiler. 
 If Clang development libraries are available in the default system path (as is often the case with LLVM models, e..g `module load llvm`),
 then you can just put `--with-clang`.
+
+### Section 2.4: Building with OTF2 (Beta)<a name="sec:buildingOtf2"></a>
+
+
+OTF2 is a general purpose trace format with specialized callbacks for the MPI API. OTF2 traces are generated by programs compiled with Score-P compiler wrappers. SST/macro 8.1 supports OTF2 trace replay and OTF2 trace generation when configured with 
+
+````
+./configure --enable-otf2=<OTF2-root>
+````
+where the OTF2 root is the installation prefix for a valid OTF2 build. OTF2 can be obtained from the Score-P project at {http://www.vi-hps.org/projects/score-p}.
+Detailed build and usage instructions can be found on the website.
+
+
+
 
 ### Section 2.5: Running an Application<a name="sec:building:running"></a>
 
@@ -658,23 +651,21 @@ After SST-macro has been installed and your PATH variable set correctly, for sta
 ````
 sst-macro> cd skeletons/sendrecv
 sst-macro/skeletons/sendrecv> make
-sst-macro/skeleton/sendrecv> ./runsstmac -f parameters.ini
+sst-macro/skeleton/sendrecv> sstmac -f parameters.ini --exe=./runsstmac
 ````
 
 You should see some output that tells you 1) the estimated total (simulated) runtime of the simulation, and 
 2) the wall-time that it took for the simulation to run.  
 Both of these numbers should be small since it's a trivial program. 
-
-This is how simulations generally work in SST-macro: you build skeleton code and link it with the simulator to produce a binary.  
-Then you run that binary and pass it a parameter file which describes the machine model to use.  For running on the main SST core, a few extra flags are required.  Rather than generating a standalone executable, the compiler wrapper generates a shared library. Users can always write their own Python scripts, which will be required for more advanced usage. However, users can also just use the `pysstmac` script.
-
-````
-sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
-````
-Any extra shared libraries can be given as the first few parameters and these will automatically be imported.
+This is how simulations generally work in SST-macro: you build skeleton code and link it with the simulator to produce an importable library.  
+The importable library contains hooks for loading a skeleton app into the simulator.
+NOTE: `runsstmac` appears to be an executable, but is actually built as a shared library. 
+If using a regular compiler (e.g. gcc), the Makefile would produce an executable `runsstmac`.
+To ensure that building apps for SST require no modification to an existing build system,
+SST simple builds a shared library `runsstmac` rather than requiring renaming to the standard convention
+`librunsstmac.so`.
 
 #### 2.5.3: Makefiles<a name="subsec:tutorial:makefiles"></a>
-
 
 
 We recommend structuring the Makefile for your project like the one seen in `skeletons/sendrecv/Makefile` :
@@ -698,7 +689,7 @@ The SST compiler wrappers `sst++` and `sstcc` automagically configure and map th
 
 
 
-There are only a few basic command-line arguments you'll ever need to use with SST-macro, listed below
+There are few common command-line arguments with SST-macro, listed below
 
 
 -   -h/--help: Print some typical help info
@@ -706,6 +697,7 @@ There are only a few basic command-line arguments you'll ever need to use with S
 This can be relative to the current directory, an absolute path, or the name of a pre-set file that is in sstmacro/configurations 
 (which installs to /path-to-install/include/configurations, and gets searched along with current directory).
 -   --dumpi: If you are in a folder with all the DUMPI traces, you can invoke the main `sstmac` executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
+-   --otf2: If you are in a folder with all the OTF2 traces, you can invoke the main `sstmac` executable with this option.  This replays the trace in a special debug mode for quickly validating the correctness of a trace.
 -   -d [debug flags]: A list of debug flags to activate as a comma-separated list (no spaces) - see Section [2.7](#sec:dbgoutput)
 -   -p [parameter]=[value]: Setting a parameter value (overrides what is in the parameter file)
 -   -t [value]: Stop the simulation at simulated time [value]
@@ -715,7 +707,7 @@ This can be relative to the current directory, an absolute path, or the name of 
 
 
 
-SST-macro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode will be discouraged as parallel simulations should use the unified SST core. However, near-term, hybrid modes and other optimizations are not fully supported in the unified SST core. They standalone core may still be required for certain cases.
+SST-macro supports running parallel discrete event simulation (PDES) in distributed memory (MPI), threaded shared memory (pthreads) and hybrid (MPI+pthreads) modes.  Running these in standalone mode will be discouraged as parallel simulations should use the unified SST core. However, near-term, hybrid modes and other optimizations are not fully supported in the unified SST core. The standalone core may still be required for certain cases.
 
 #### 2.6.1: Distributed Memory Parallel<a name="subsec:mpiparallel"></a>
 
@@ -771,7 +763,7 @@ Job launchers may in some cases provide duplicate functionality and either metho
 Parallel simulation speedups are likely to be modest for small runs.
 Speeds are best with serious congestion or heavy interconnect traffic.
 Weak scaling is usually achievable with 100-500 simulated MPI ranks per logical process.
-Even without speedup, parallel simulation can certainly be useful in overcoming memory constraints, expanding the maximum memory footprint. 
+Even without speedup, parallel simulation can certainly be useful in overcoming memory constraints.
 
 
 ### Section 2.7: Debug Output<a name="sec:dbgoutput"></a>
@@ -790,30 +782,19 @@ which will output something like
 mpi
         print all the basic operations that occur on each rank - only API calls are
         logged, not any implementation details
-    mpi_check
-        validation flag that performs various sanity checks to ensure MPI application
-        runs and terminates cleanly
-    mpi_collective
-        print information about MPI collective calls as well as implementation details
-    mpi_pt2pt
-        print information about MPI point-to-point calls as well as implementation
-        details
+    router
+        print all operations occurring in the router
      ....
 ````
-The most important flag for validating simulations is the `mpi_check` flag,
-which causes special sanity checks and a final validation check to ensure the simulation has finished cleanly.
-Some of the debug flags can generate information overload and will only be useful to a serious developer, rather than a user.
+
 
 To turn on debug output, add the following to the input file
 
 ````
-debug = mpi  mpi_check
+debug = mpi
 ````
 listing all flags you want separated by spaces.
-Note: this is a major shift from the previous (and really tedious, unfriendly) debug system of past versions.
-The new system allows much finer-grained, simpler printing of debug output.
-Additionally, it allows new debug flags to very easily defined.
-More info on declaring new debug flags in your own code can be found in the developer's reference.
+
 
 
 
@@ -829,7 +810,6 @@ More info on declaring new debug flags in your own code can be found in the deve
 A minimal parameter file setting up a 2D-torus topology is shown below. 
 A detailed listing of parameter namespaces and keywords is given in Section [7](#chapter:parameters).
 The preferred input files now use namespaces.
-However, for consistency with previous versions, we also show the deprecated parameters.
 
 ````
 amm_model = amm1
@@ -881,24 +861,6 @@ The input file follows a basic syntax of `parameter = value`.
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
 
-\subsection{Naming Conventions}
-There are some patterns in the naming of SST parameters. The most critical is "model" versus "name". Consider:
-
-````
-switch {
- model = pisces
- router {
-  name = minimal
- }
-}
-````
-
-The distinction here is subtle, but important. When a parameter has the name "model" it means there are important approximations being made.
-The model does not necessarily reproduce a real switch or node or NIC.
-It's not a choice of algorithm. It's the choice of an approximate hardware model.
-In contrast, when selecting an algorithm that is trying to reproduce "exact" behavior, the parameter is "name."
-This indicates the name of an algorithm, not an approximate model.
-
 
 #### 3.1.1: Parameter Namespace Rules<a name="subsec:parameterNamespace"></a>
 
@@ -908,7 +870,7 @@ The parameter `node.memory.model` will be nested in namespace `memory` inside na
 If inside a given namespace, SST-macro looks within that namespace first.
 If unable to find it, the input parser moves through the namespace nesting to find the value.
 This exactly follows C++ namespace rules with one important exception. 
-The "global" namespace is reserved for special keywords that get translated.
+The "global" namespace is reserved for special keywords.
 Keywords in the global namespace are not visible to any components.
 
 
@@ -919,8 +881,8 @@ node.memory.model = pisces
 ````
 If I am building the node's memory system, the initialization will look for `memory::model` inside namespace `node` first, returning the value `pisces`. 
 
-The preferred syntax from 6.1 more closely resembles C++ namespace declarations. 
-Namespaces can be scoped using brackets \{\}:
+The preferred syntax more closely resembles C++ namespace declarations. 
+Namespaces are scoped using brackets \{\}:
 
 ````
 node {
@@ -1038,9 +1000,9 @@ The details of individual abstract machine models are given in the following sec
 The optional accuracy parameter is less well-defined and the exact meaning varies considerably between congestion models.
 In general, the accuracy parameter represents how coarse-grained the simulation is in bytes.
 It basically corresponds to a packet-size. How many bytes are modeled moving through the machine separately at a time?
-If the parameter is set to 8 bytes, e.g., that basically means we are doing flit-level modeling.
-If the parameter is set to 8192 bytes, e.g. that means we are doing very coarse-grained modeling which only really affects large messages.
-If the parameter is set to 100-1000 bytes, e.g., that means we are doing more fine-grained modeling on real packet sizes, but we are ignoring flit-level details.
+If the parameter is set to 8 bytes, e.g., that is essentially flit-level modeling.
+If the parameter is set to 8192 bytes, e.g. that is very coarse-grained modeling which only really affects large messages.
+If the parameter is set to 100-1000 bytes, e.g., that is fine-grained modeling on real packet sizes, but ignoring flit-level details.
 
 #### 3.2.1: Common Parameters<a name="subsec:commonParams"></a>
 
@@ -1100,11 +1062,11 @@ node {
 
 The link latency is the latency required for a single packet to traverse one switch and hop to the next one in the network.
 Thus, even in the most basic of network models, there is a still a notion of topology that affects the number of hops and therefore the latency.
-To compute the total network network latency as one would observe in an MPI ping-ping benchmark, one would compute
+To compute the total network network latency as one would observe in an MPI ping-ping benchmark, one would compute using the hop latency and the injection latency
 
 lat = n(hops) * lat(hop) + 2*lat(inj)
 
-using the hop latency and the injection latency.
+
 
 This abstract machine model is a good place to start for getting a "lay of the land" for simulations - and the simplest to configure.
 However, it has a few deficiencies that can cause problems when there is serious memory or network congestion.
@@ -1332,6 +1294,21 @@ In abstract machine models, these methods are selected as:
 ````
 congestion_model = logP
 ````
+Details are shown for traffic moving from source to destination in Figure [9](#fig:macrelsOverview).
+Modeling occurs on entire flows, rather than individual packets. 
+
+\begin{enumerate}
+\item Flows queue waiting for NIC injection link to become available. Flow is forwarded to destination NIC based after computed delay. 
+\item Flows queue waiting for NIC ejection link to become available. Flow finishes after ejection link becomes available.
+\end{enumerate}
+
+
+![Figure 9: MACRELS (Messages with AnalytiC REally Lightweight Simulation) skips congestion modeling and approximates send delays using a simple latency/bandwidth estimate, similar to the LogGOP model. Modeling occurs on entire flows, rather than individual packets. For details on numbered steps, see text.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/macrels.pdf) 
+
+*Figure 9: MACRELS (Messages with AnalytiC REally Lightweight Simulation) skips congestion modeling and approximates send delays using a simple latency/bandwidth estimate, similar to the LogGOP model. Modeling occurs on entire flows, rather than individual packets. For details on numbered steps, see text.*
+
+
+
 
 #### 3.4.2: Packet Models: PISCES<a name="subsec:tutorial:pisces"></a>
 
@@ -1348,7 +1325,26 @@ Flit-level detail would be way too computationally intense for large-scale simul
 All routing decisions are made on packets as a while. 
 Two flits in the same packet cannot take different paths through the network.
 However, they may not travel together.
-PISCES provides two mechanisms for treating flit-level flow control.
+
+PISCES (Packet-flow Interconnect Simulation for Congestion at Extreme-Scale) models individual packets moving through the network. Flits (flow-control units) are approximately modeled using flow-like approximations. Packets can have partial occupancies in several different buffers, approximating wormhole routing. However, arbitration is modeled on whole packets, not individual flits (see Figure [10](#fig:piscesOverview))
+\begin{enumerate}
+\item A message (flow) is broken up into packets. Depending on available space in the Tx buffer, a limited number of packets may be able to queue up in the buffer. If credits are available in the Rx buffer for the link and the link is idle, the packet moves into the next Rx buffer after a computed delay.
+\item The router selects a path for the packet and the packet requests to the crossbar to transmit to the corresponding output port. If credits are available for the Rx buffer, the crossbar may select the packet in arbitration and move it to the output buffer. After moving, the Rx buffer returns credits to the previous Tx buffer for that packet.
+\item Step 1 is repeated for the next Rx buffer, waiting for credits and link availability.
+\item Repeat Step 2
+\item Repeat Step 3
+\item Packet arrives in NIC Rx queue and queues waiting to inject into local memory. After injection, the Rx buffer returns credits to the corresponding Tx buffer.
+\end{enumerate}
+
+
+![Figure 10](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/pisces_overview.pdf) 
+
+*Figure 10*
+
+
+
+
+PISCES provides two mechanisms for treating flit-level flow control discussed next.
 
 ##### PISCES simple model<a name="subsubsec:tutorial:simplePisces"></a>
 
@@ -1378,16 +1374,17 @@ which sets the packet size to 1024B.
 For the simple model, packet sizes larger than 256-512B are not recommended.
 Packet sizes on production supercomputers are often small (96-128B).
 Small packet sizes with the simple model can be a good compromise for having more fine-grained routing but cheaper congestion modeling in the arbitrator.
+More details are given in Figure [10](#fig:piscesOverview).
 
 ##### PISCES cut-through model<a name="subsubsec:tutorial:cutThroughPisces"></a>
 
 
 
 
-![Figure 9: Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
+![Figure 11: Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
 Full details are given in the text.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/pisces) 
 
-*Figure 9: Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
+*Figure 11: Timeline of four different packets passing through a PISCES cut-through bandwidth arbitrator. The incoming bandwidth (I) and outgoing bandwidth (O) are shown for each packet.  Time is the horizontal axis. Bandwidth consumed by a packet is shown by the vertical extent of each packet. The individual events are 1) First packet arrives 2) Second packet arrives with reduced bandwidth but no available bandwidth 3) First packet finishes. Second packet can begin sending. 4) Third packet arrives and begins sending with remaining bandwidth. 5) Fourth packet arrives, but no available bandwidth. 6) Second packet finishes. Third packet increases bandwidth. Fourth packet can begin sending. 7) Third packet finishes. Fourth packet increases bandwidth. 8) Fourth packet finishes.
 Full details are given in the text.*
 
 
@@ -1401,7 +1398,7 @@ It's requested as:
 ````
 arbitrator = cut_through
 ````
-Figure [9](#fig:pisces) shows a timeline for the data being transmitted through a crossbar, SerDes, or other network component with a "fixed bandwidth." 
+Figure [11](#fig:pisces) shows a timeline for the data being transmitted through a crossbar, SerDes, or other network component with a "fixed bandwidth." 
 Each component is essentially a pipe with some flow bandwidth.
 The arbitrator divides its limited bandwidth amongst incoming packets.
 Packets fill the pipeline, consuming bandwidth.
@@ -1418,7 +1415,7 @@ Modeling a packet delay starts with two input parameters and computes three outp
 In the simple model, a packet either consumes all the bandwidth or none of the bandwidth.
 To account for flit-level pipelining, the cut-through model allows packets to consume partial bandwidths.
 Consider an aribitrator that has a maximum bandwidth of 1.0.
-The first packet (purple, Figure [9](#fig:pisces)) arrives with a full incoming bandwidth of 1.0 and head arrival of t=0.0.
+The first packet (purple, Figure [11](#fig:pisces)) arrives with a full incoming bandwidth of 1.0 and head arrival of t=0.0.
 It therefore consumes all the available bandwidth. 
 The head of the packet can actually leave immediately (as it must to properly pipeline or cut-through).
 The tail leaves after all bytes have sent at t=1.0.
@@ -1446,6 +1443,24 @@ Finally, the fourth packet (blue) arrives at t=3.0.
 There is some available bandwidth. After the third packet finishes, the fourth packet can now send at maximum.
 Because of the initial delay, the outgoing bandwidth is somewhat reduced.
 We have H=3.0, T=4.38, and O=0.73.
+
+\subsection{SCULPIN}
+Under current architectural trends, switches have ample buffer space and crossbar bandwidth, making the mostly likely bottleneck edge bandwidth through the output ports.
+SCULPIN (Simple Congestion Unbuffered Latency Packet Interconnection Network) models the main source of contention in today's networks occurring on the output port ser/des. Unlike PISCES, individual flits are not able to wormhole route across links interspersed with flits from other packets.
+\begin{enumerate}
+\item A message (flow) is broken up into packets. Each packet waits in the queue to send based on link availability and QoS.
+\item After being selected, the packets are forwarded to the switch. Packets are immediately routed to the correct output port, skipping crossbar arbitration. Packets wait in unbounded queues, thereby assuming sufficient buffer space is always available.
+\item Repeat Step 1. Packet waits in queue until link becomes available based on QoS. Packet is immediately forwarded to next output port, skipping arbitration
+\item Repeat Step 1.
+\item Packet arrives in NIC Rx queue (no credits, buffer assumed to always have space). Packets queue waiting to inject into local memory.
+\end{enumerate}
+
+
+![Figure 12](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sculpin.pdf) 
+
+*Figure 12*
+
+
 
 #### 3.4.3: Flow<a name="subsec:tutorial:flow"></a>
 
@@ -1575,22 +1590,22 @@ topology.concentration = 1
 ````
 which has 9 nodes arranged in a 3x3 mesh.  
 For the launch command `aprun -n 8 -N 2`, we must allocate 4 compute nodes from the pool of 9.
-Our first option is to specify the first available allocation scheme (Figure [10](#fig:allocation:first_available))
+Our first option is to specify the first available allocation scheme (Figure [13](#fig:allocation:first_available))
 
 ````
 node.app1.allocation = first_available
 ````
 
-![Figure 10: First available Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/firstavailable.png) 
+![Figure 13: First available Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/firstavailable.png) 
 
-*Figure 10: First available Allocation of 4 Compute Codes on a 3x3 2D Torus*
+*Figure 13: First available Allocation of 4 Compute Codes on a 3x3 2D Torus*
 
 
 In first available, the allocator simply loops through the list of available nodes as they are numbered by the topology object.
 In the case of a 2D torus, the topology numbers by looping through columns in a row.
 In general, first available will give a contiguous allocation, but it won't necessarily be ideally structured.
 
-To give more structure to the allocation, a Cartesian allocator can be used (Figure [11](#fig:allocation:cartesian)).
+To give more structure to the allocation, a Cartesian allocator can be used (Figure [14](#fig:allocation:cartesian)).
 
 ````
 app1 {
@@ -1600,9 +1615,9 @@ app1 {
 }
 ````
 
-![Figure 11: Cartesian Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/cartesian.png) 
+![Figure 14: Cartesian Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/cartesian.png) 
 
-*Figure 11: Cartesian Allocation of 4 Compute Codes on a 3x3 2D Torus*
+*Figure 14: Cartesian Allocation of 4 Compute Codes on a 3x3 2D Torus*
 
 
 Rather than just looping through the list of available nodes, we explicitly allocate a 2x2 block from the torus.
@@ -1612,9 +1627,9 @@ If testing how "topology agnostic" your application is, you can also choose a ra
 node.app1.allocation = random
 ````
 
-![Figure 12: Random Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/random.png) 
+![Figure 15: Random Allocation of 4 Compute Codes on a 3x3 2D Torus](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/allocation/random.png) 
 
-*Figure 12: Random Allocation of 4 Compute Codes on a 3x3 2D Torus*
+*Figure 15: Random Allocation of 4 Compute Codes on a 3x3 2D Torus*
 
 
 
@@ -1630,26 +1645,26 @@ which means a random allocation will give different results from Cartesian and f
 Once nodes are allocated, the MPI ranks (or equivalent) must be assigned to physical nodes, i.e. indexed.
 The simplest strategies are block and round-robin.  If only running one MPI rank per node, the two strategies are equivalent,
 indexing MPI ranks in the order received from the allocation list.
-If running multiple MPI ranks per node, block indexing tries to keep consecutive MPI ranks on the same node (Figure [13](#fig:indexing:block)).
+If running multiple MPI ranks per node, block indexing tries to keep consecutive MPI ranks on the same node (Figure [16](#fig:indexing:block)).
 
 ````
 node.app1.indexing = block
 ````
 
-![Figure 13: Block Indexing of 8 MPI Ranks on 4 Compute Nodes](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/block.png) 
+![Figure 16: Block Indexing of 8 MPI Ranks on 4 Compute Nodes](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/block.png) 
 
-*Figure 13: Block Indexing of 8 MPI Ranks on 4 Compute Nodes*
+*Figure 16: Block Indexing of 8 MPI Ranks on 4 Compute Nodes*
 
 
-In contrast, round-robin spreads out MPI ranks by assigning consecutive MPI ranks on different nodes (Figure [14](#fig:indexing:round_robin)).
+In contrast, round-robin spreads out MPI ranks by assigning consecutive MPI ranks on different nodes (Figure [17](#fig:indexing:round_robin)).
 
 ````
 node.app1.indexing = round_robin
 ````
 
-![Figure 14: Round-Robin Indexing of 8 MPI Ranks on 4 Compute Nodes](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/roundrobin.png) 
+![Figure 17: Round-Robin Indexing of 8 MPI Ranks on 4 Compute Nodes](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/indexing/roundrobin.png) 
 
-*Figure 14: Round-Robin Indexing of 8 MPI Ranks on 4 Compute Nodes*
+*Figure 17: Round-Robin Indexing of 8 MPI Ranks on 4 Compute Nodes*
 
 
 Finally, one may also choose
@@ -1734,7 +1749,7 @@ SST-macro simulates many parallel processes, but itself runs as a single process
 SST-macro manages each parallel process as a user-space thread (application thread), allocating a thread stack and frame of execution.
 User-space threading is necessary for large simulations since otherwise the kernel would be overwhelmed scheduling thousands of threads.
 
-SST-macro is driven by a simulation thread which manages the user-space thread scheduling (Figure [15](#fig:des)).
+SST-macro is driven by a simulation thread which manages the user-space thread scheduling (Figure [18](#fig:des)).
 In the most common (and simplest) use case, all user-space threads are serialized, running one at a time.
 The main simulation thread must manage all synchronizations, yielding execution to process threads at the appropriate times.
 The main simulation thread is usually abbreviated as the DES (discrete event simulation) thread.
@@ -1744,9 +1759,9 @@ the simulator will schedule a MESSAGE ARRIVED event 5 &mu;s ahead of the current
 Every simulation starts by scheduling the same set of events: launch process 0, launch process 1, etc.
 
 
-![Figure 15: Progression of Discrete Event Simulation for Simple Send/Recv Example](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/des/events.png) 
+![Figure 18: Progression of Discrete Event Simulation for Simple Send/Recv Example](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/des/events.png) 
 
-*Figure 15: Progression of Discrete Event Simulation for Simple Send/Recv Example*
+*Figure 18: Progression of Discrete Event Simulation for Simple Send/Recv Example*
 
 
 
@@ -1914,7 +1929,6 @@ The parameter file then becomes, e.g.
 ````
 node {
  app1 {
-  launch_type = dumpi
   indexing = dumpi
   allocation = dumpi
   name = parsedumpi
@@ -1922,9 +1936,7 @@ node {
  }
 }
 ````
-We have a new parameter `launch_type` set to `dumpi`.
-This was implicit before, taking the default value of `skeleton`.
-We also set indexing and allocation parameters to read from the DUMPI trace.
+We set indexing and allocation parameters to read from the DUMPI trace.
 The application name is a special app that parses the DUMPI trace.
 Finally, we direct SST-macro to the DUMPI metafile produced when the trace was collected.
 To extract the topology information, locate the `.bin` file corresponding to MPI rank 0.
@@ -1972,7 +1984,6 @@ The new parameter file, for a fictional machine called deep thought
 # Launch parameters
 node {
  app1 {
-  launch_type = dumpi
   indexing = dumpi
   allocation = hostname
   name = parsedumpi
@@ -2043,7 +2054,7 @@ http://www.vi-hps.org/projects/score-p
 ````
 
 
-Trace collection requires both Score-P and OTF2 installations. Trace replay with SST/macro requires OTF2.
+Trace collection requires both Score-P and OTF2 installations. Trace replay with SST/macro requires only OTF2.
 
 
 #### 3.9.1: Trace Collection<a name="subsec:otf:traceCollection"></a>
@@ -2103,6 +2114,25 @@ node {
 }
 ````
 
+#### 3.9.3: Trace Emission<a name="subsec:otf:traceEmission"></a>
+
+
+SST/macro can emmit OTF2 traces from MPI simulations. This gets activated by:
+
+````
+...
+
+node {
+ app1 {
+  ...
+    otf2 {
+      fileroot = dump
+    }
+  ...
+ }
+}
+````
+
 
 
 
@@ -2118,10 +2148,16 @@ The `--enable-graphviz` flag defines an instrumentation macro throughout the SST
 This instrumentation must be compiled into SST-macro.
 In the default build, the instrumentation is not added since the instrumentation has a high overhead.
 However, SST-macro only instruments a select group of the most important functions so the overhead should only be 10-50\
-After installing the instrumented version of SST-macro, a call graph is collected by adding a simple filename to the parameter file.
+After installing the instrumented version of SST-macro, a call graph must be activated as part of the OS component.
 
 ````
-call_graph = <fileroot>
+node {
+  os {
+    call_graph {
+      fileroot = <fileroot>
+    }
+  }
+}
 ````
 After running, a `<fileroot>.callgrind.out` file should appear in the folder.
 
@@ -2131,33 +2167,33 @@ The download also includes a QCachegrind subfolder, providing the same functiona
 This is highly recommended for Mac users.
 
 
-![Figure 16: QCachegrind GUI](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/gui.png) 
+![Figure 19: QCachegrind GUI](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/gui.png) 
 
-*Figure 16: QCachegrind GUI*
+*Figure 19: QCachegrind GUI*
 
 
 
-The basic QCachegrind GUI is shown in Figure [16](#fig:qcgui).  
+The basic QCachegrind GUI is shown in Figure [19](#fig:qcgui).  
 On the left, a sidebar contains the list of all functions instrumented with the percent of total execution time spent in the function.
 In the center pane, the call graph is shown.  
 To navigate the call graph, a small window in the bottom right corner can be used to change the view pane.
-Zooming into one region (Figure [17](#fig:qcgraphone)), we see a set of MPI functions (Barrier, Scan, Allgatherv).
+Zooming into one region (Figure [20](#fig:qcgraphone)), we see a set of MPI functions (Barrier, Scan, Allgatherv).
 Each of the functions enters a polling loop, which dominates the total execution time.  
 A small portion of the polling loop calls the ``Handle Socket Header" function.
-Double-clicking this node unrolls more details in the call graph (Figure [18](#fig:qcgraphtwo)).
+Double-clicking this node unrolls more details in the call graph (Figure [21](#fig:qcgraphtwo)).
 Here we see the function splits execution time between buffering messages (memcpy) and posting headers (Compute Time).
 
 
-![Figure 17: QCachegrind Call Graph of MPI Functions](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/callgraph1.png) 
+![Figure 20: QCachegrind Call Graph of MPI Functions](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/callgraph1.png) 
 
-*Figure 17: QCachegrind Call Graph of MPI Functions*
-
-
+*Figure 20: QCachegrind Call Graph of MPI Functions*
 
 
-![Figure 18: QCachegrind Expanded Call Graph of Eager 0 Function](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/callgraph2.png) 
 
-*Figure 18: QCachegrind Expanded Call Graph of Eager 0 Function*
+
+![Figure 21: QCachegrind Expanded Call Graph of Eager 0 Function](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/graphviz/callgraph2.png) 
+
+*Figure 21: QCachegrind Expanded Call Graph of Eager 0 Function*
 
 
 
@@ -2170,21 +2206,29 @@ Here we see the function splits execution time between buffering messages (memcp
 
 Spyplots visualize communication matrices, showing either the number of messages or number of bytes sent between two network endpoints.
 They are essentially contour diagrams, where instead of a continuous function F(x,y) we are plotting the communication matrix M(i,j).
-An example spyplot is shown for a simple application that only executes an MPI\_Allreduce (Figure [19](#fig:spyplot)).
+An example spyplot is shown for a simple application that only executes an MPI\_Allreduce (Figure [22](#fig:spyplot)).
 Larger amounts of data (red) are sent to nearest neighbors while decreasing amounts (blue) are sent to MPI ranks further away.
 
 
-![Figure 19: Spyplot of Bytes Transferred Between MPI Ranks for MPI\_Allreduce](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/spyplot/mpi_spyplot.png) 
+![Figure 22: Spyplot of Bytes Transferred Between MPI Ranks for MPI\_Allreduce](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/spyplot/mpi_spyplot.png) 
 
-*Figure 19: Spyplot of Bytes Transferred Between MPI Ranks for MPI\_Allreduce*
+*Figure 22: Spyplot of Bytes Transferred Between MPI Ranks for MPI\_Allreduce*
 
 
 
 Various spyplots can be activated by boolean parameters in the input file.
-The most commonly used are the MPI spyplots, for which you must add
+The most commonly used are the MPI spyplots, for which you activate the spyplot as part of the MPI subcomponent.
 
 ````
-mpi_spyplot = <fileroot>
+node {
+  app1 {
+    mpi {
+      traffic_matrix {
+        fileroot = test
+      }
+    }
+  }
+}
 ````
 
 After running there will be a .csv and .png file in the folder, with e.g. `fileroot = test`
@@ -2195,10 +2239,16 @@ test.png
 test.csv
 ````
 `test.png` shows the number of bytes exchanged between MPI ranks.
-To extend the analysis you can specify
+To extend the analysis you can instead specify as part of the NIC subcomponent
 
 ````
-network_spyplot = <fileroot>
+node {
+  nic {
+    traffic_matrix {
+      fileroot = test
+    }
+  }
+}
 ````
 A new csv/png will appear showing the number of bytes exchanged between physical nodes, 
 accumulating together all MPI ranks sharing the same node.
@@ -2214,15 +2264,15 @@ This gives a better sense of spatial locality when many MPI ranks are on the sam
 
 
 
-![Figure 20: Application Activity (Fixed-Time Quanta; FTQ) histogram](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/matplotlib/ftq/pic1024.png) 
+![Figure 23: Application Activity (Fixed-Time Quanta; FTQ) histogram](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/matplotlib/ftq/pic1024.png) 
 
-*Figure 20: Application Activity (Fixed-Time Quanta; FTQ) histogram*
+*Figure 23: Application Activity (Fixed-Time Quanta; FTQ) histogram*
 
 
 
 Another way of visualizing application activity is a fixed-time quanta (FTQ) chart.
 While the call graph gives a very detailed profile of what critical code regions, they lack temporal information. 
-Figure [20](#fig:ftq) displays the proportion of time spent by ranks in MPI communication and computation in a PIC trace replay with respect to simulation time.
+Figure [23](#fig:ftq) displays the proportion of time spent by ranks in MPI communication and computation in a PIC trace replay with respect to simulation time.
 After running, two new files appear in the folder: `<fileroot>_app1.py` and `<fileroot>_app1.dat` that can use Python's matplotlib to generate plots.
 Previously, plots were generated using Gnuplot, but this has been deprecated in favor of much more aesthetically pleasing maplotlib output.
 
@@ -2284,12 +2334,12 @@ node {
 The statistics are activated when the parameter reader sees the namespace `message_size_histogram`.
 In this case, we ask for a logarithmic distribution.
 The bin size here is in logarithmic units, i.e. group results in bins corresponding to an exponent range of size 1.
-An example generated for Nekbone with 1024 processors is in Figure [21](#fig:nekboneSizeHistogram).
+An example generated for Nekbone with 1024 processors is in Figure [24](#fig:nekboneSizeHistogram).
 
 
-![Figure 21: Logarithmic histogram of message sizes sent by Nekbone application](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/messageSizeHistogramNekbone) 
+![Figure 24: Logarithmic histogram of message sizes sent by Nekbone application](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/messageSizeHistogramNekbone) 
 
-*Figure 21: Logarithmic histogram of message sizes sent by Nekbone application*
+*Figure 24: Logarithmic histogram of message sizes sent by Nekbone application*
 
 
 
@@ -2327,13 +2377,13 @@ After running
 shell>gnuplot delay.p
 ````
 a PNG file `delay.png` is generated.
-The generated histogram is shown in Figure [22](#fig:nekboneDelayHistogram). 
+The generated histogram is shown in Figure [25](#fig:nekboneDelayHistogram). 
 Delays, when occurring in this case, are usually on the order of a few &mu;s.
 
 
-![Figure 22: Histogram of message sizes sent by Nekbone application](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/delayHistogramNekbone) 
+![Figure 25: Histogram of message sizes sent by Nekbone application](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/delayHistogramNekbone) 
 
-*Figure 22: Histogram of message sizes sent by Nekbone application*
+*Figure 25: Histogram of message sizes sent by Nekbone application*
 
 
 
@@ -2389,14 +2439,14 @@ node {
 We set the stats collector to `multi`.
 We then supply the list of desired stats to the `callbacks` parameter.
 Zooming into the Nekbone example, we can see congestion hotspots.
-For the most part, very little congestion appears in Figure [23](#fig:nekboneCongestionSpyplot).
+For the most part, very little congestion appears in Figure [26](#fig:nekboneCongestionSpyplot).
 However (at least for the Torus topology used here),
 there are a few off-diagonal regions that show some congestion.
 
 
-![Figure 23: Spyplot showing congestion hotspots for certain source/destination pairs for Nekbone.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/congestionSpyplotNekbone) 
+![Figure 26: Spyplot showing congestion hotspots for certain source/destination pairs for Nekbone.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/congestionSpyplotNekbone) 
 
-*Figure 23: Spyplot showing congestion hotspots for certain source/destination pairs for Nekbone.*
+*Figure 26: Spyplot showing congestion hotspots for certain source/destination pairs for Nekbone.*
 
 
 
@@ -2418,57 +2468,56 @@ Here we introduce the basics of other topologies within SST that are more comple
 These are generally higher-radix or path-diverse topologies like fat tree, dragonfly, and flattened butterfly.  
 As noted in [3.3](#sec:tutorial:topology), a more thorough and excellent discussions of these topologies is given in "High Performance Datacenter Networks" by Dennis Abts and John Kim.
 
-### Section 4.1: Topology Query Utility<a name="sec:topologyQuery"></a>
-
-
-Understanding topology inputs and geometries can sometimes be challenging.
-SST-macro provides an executable for testing topology inputs and doing example coordinate computations.
-After making and installing, an executable `sstmac_top_info` will appear in the `bin` folder.
-The invocation of `sstmac_top_info` is exactly the same as the main `sstmac` executable.
-For the example parameter file named `machine.ini`:
-
-````
-topology.name = fattree
-topology.geometry = 4 3
-````
-
-we run
-
-````
-bin> sstmac_top_info -f machine.ini
-````
-which produces the output
-
-````
-Number of nodes:         81
-Number of leaf switches: 27
-Number of switches:      94
-````
-
-detailing the produced geometry.  Here the fat tree has a total of 94 switches, 27 of which are "leaf" switches directly connected to compute nodes.
-The output is followed by the prompt
-
-````
-NextInput:
-````
-
-One can either enter a single number (switch ID) or set of coordinates.
-If given a switch ID, the coordinates are computed.
-If coordinates are given, the switch ID is computed.
-
-````
-NextInput: 32
-Switch ID maps to coordinates [ 2 0 1 2 ]
-NextInput: 2 0 1 2
-Coordinates map to switch ID 32
-````
-
-The program is just exited with Ctrl-C.
-The meaning of the above coordinates is detail below for fat tree (Section [4.4](#sec:tutorial:fattree)).
 
 
 
-### Section 4.2: Torus<a name="subsec:tutorial:hypercube"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Section 4.1: Torus<a name="subsec:tutorial:hypercube"></a>
 
 
 
@@ -2533,13 +2582,13 @@ The last entry in `cart_sizes` indicates that both nodes on each switch should b
 
 
 
-### Section 4.3: Hypercube<a name="subsec:tutorial:hypercube"></a>
+### Section 4.2: Hypercube<a name="subsec:tutorial:hypercube"></a>
 
 
 
 Although never used at scale in a production system, the generalized hypercube is an important topology to understand, particularly for flattened butterfly and Cascade.
 The (k,n) generalized hypercube is geometrically an N-dimensional torus with each dimension having size k (although dimension sizes need not be equal).
-Here we show a (4,2) generalized hypercube (Figure [24](#fig:topologies:hypercubeConnected)).  This would be specified in SST as:
+Here we show a (4,2) generalized hypercube (Figure [27](#fig:topologies:hypercubeConnected)).  This would be specified in SST as:
 
 ````
 topology.name = hypercube
@@ -2547,13 +2596,13 @@ topology.geometry = 4 4
 ````
 indicating size 4 in two dimensions. 
 
-While a torus only has nearest-neighbor connections, a hypercube has full connectivity within a row and column (Figure [24](#fig:topologies:hypercubeConnected)).
+While a torus only has nearest-neighbor connections, a hypercube has full connectivity within a row and column (Figure [27](#fig:topologies:hypercubeConnected)).
 Any switches in the same row or same column can send packets with only a single hop.
 
 
-![Figure 24: Hypercube with links and connections within a row/column](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_connected.png) 
+![Figure 27: Hypercube with links and connections within a row/column](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_connected.png) 
 
-*Figure 24: Hypercube with links and connections within a row/column*
+*Figure 27: Hypercube with links and connections within a row/column*
 
 
 
@@ -2570,7 +2619,7 @@ topology.geometry = 4 5 6
 where now we have full connections within horizontal rows, horizontal columns, and vertical columns.
 Here each switch has radix 12 (3 connections in X, 4 connections in Y, 5 connections in Z). 
 
-#### 4.3.1: Allocation and indexing<a name="subsec:hypercube:allocation"></a>
+#### 4.2.1: Allocation and indexing<a name="subsec:hypercube:allocation"></a>
 
 
 
@@ -2600,205 +2649,181 @@ The first line indicates 5 entries each with 2 coordinates.
 Each line then defines where MPI ranks 0-4 will be placed
 
 
-![Figure 25: Hypercube allocation for given set of coordinates](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_allocation.png) 
+![Figure 28: Hypercube allocation for given set of coordinates](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_allocation.png) 
 
-*Figure 25: Hypercube allocation for given set of coordinates*
+*Figure 28: Hypercube allocation for given set of coordinates*
 
 
 
-#### 4.3.2: Routing<a name="subsec:hypercube:routing"></a>
+#### 4.2.2: Routing<a name="subsec:hypercube:routing"></a>
 
 
 
 Hypercubes allow very path-diverse routing because of its extra connections.
-In the case of minimal routing (Figure [26](#fig:topologies:hypercubePath)), two different minimal paths from blue to red are shown.
+In the case of minimal routing (Figure [29](#fig:topologies:hypercubePath)), two different minimal paths from blue to red are shown.
 While dimension order routing would rigorously go X then Y, you can still route minimally over two paths either randomly selecting to balance load or routing based on congestion.
 
 
-![Figure 26: Minimal routing within a hypercube showing path diversity. Packet travels from blue to red, passing through green intermediate switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_path.png) 
+![Figure 29: Minimal routing within a hypercube showing path diversity. Packet travels from blue to red, passing through green intermediate switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_path.png) 
 
-*Figure 26: Minimal routing within a hypercube showing path diversity. Packet travels from blue to red, passing through green intermediate switches.*
+*Figure 29: Minimal routing within a hypercube showing path diversity. Packet travels from blue to red, passing through green intermediate switches.*
 
 
 
 To fully maximize path diversity on adversarial traffic patterns, though, path-diverse topologies can benefit from Valiant routing.
 Here, rather than directly routing to the final destination, packets first route to random intermediate switches on a minimal path.
-Then they route again from the intermediate switch to the final destination also on a minimal path (Figure [27](#fig:topologies:hypercubeValiant)).
+Then they route again from the intermediate switch to the final destination also on a minimal path (Figure [30](#fig:topologies:hypercubeValiant)).
 Although it increases the hop count and therefore the point-to-point latency, it utilizes more paths and therefore increases the effective point-to-point bandwidth.
 
 
-![Figure 27: Valiant routing within a hypercube.  Packet travels from blue to red via a random intermediate destination shown in gray. Additional intermediate switches are shown in green.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_valiant.png) 
+![Figure 30: Valiant routing within a hypercube.  Packet travels from blue to red via a random intermediate destination shown in gray. Additional intermediate switches are shown in green.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/hypercube/hypercube_valiant.png) 
 
-*Figure 27: Valiant routing within a hypercube.  Packet travels from blue to red via a random intermediate destination shown in gray. Additional intermediate switches are shown in green.*
-
-
+*Figure 30: Valiant routing within a hypercube.  Packet travels from blue to red via a random intermediate destination shown in gray. Additional intermediate switches are shown in green.*
 
 
 
-### Section 4.4: Fat Tree<a name="sec:tutorial:fattree"></a>
+
+
+### Section 4.3: Fat Tree<a name="sec:tutorial:fattree"></a>
 
 
 
-Within SST, a fat tree is defined by the following parameters:
+SST provides a very flexible fat-tree topology which allows both full bandwidth and tapered bandwidth configurations using either uniform or non-uniform switches.  
+This flexibility requires a farily complicated set of input parameters which are best introduced by examining a couple of example configurations.  Consider the full-bandwidth topology in Figure~[31](#fig:topologies:fullfattree) which uses uniform 8-port switches throughout.
 
-````
-topology.name = fattree
-topology.geometry = 4 2
-````
-The first number, 4, indicates the number of levels in the fat tree.
-The second number, 2, indicates the radix or branching factor of the tree.
-The number of compute nodes in this topology is 2^4 = 16.
-This is illustrated conceptually in Figure [28](#fig:topologies:abstractfattree).
-The color coding will become clear later.
-We note this is somewhat confusing since the fat tree appears to have 5 levels.
-Here the topology is defined by the number of levels containing switches or the number of branches.
-This is done for a very specific reason.  
-At the final level, you may wish to have a different branching fraction for the compute nodes, e.g.
 
-````
-topology.concentration = 1
-````
-This loads the injection bandwidth for the compute node dedicating its own injection switch.
-If the parameter `network_nodes_per_switch` is omitted, it defaults to the fat tree radix.
-This case is shown in Figure [28](#fig:topologies:abstractfattree) where there are two nodes injecting to the same switch.
-Higher radix fat trees can be specified, e.g.
+![Figure 31: Full-bandwidth fat-tree topology using uniform 8-port switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/topologies/fattree4.pdf) 
+
+*Figure 31: Full-bandwidth fat-tree topology using uniform 8-port switches.*
+
+
+
+The SST fat-tree is strictly a 3-level topology, with the switch levels refered to as leaf (bottom), aggregation (middle), and core (top).
+Interconnected leaf and aggregation switches form an aggregation subtree, which forms the basic unit of a fat-tree topology.
+The structure of the aggregation subtree is, itself, flexible and places few constraints on the number of subtrees or the way they are connected to the core level.
+In Figure~[31](#fig:topologies:fullfattree), there are 4 leaf switches and 4 aggregation switches per subtree, and each leaf switch has a concentration of four nodes per switch.
+Balancing bandwidth, there are 4 ports going up from each leaf switch and 4 ports going down from each aggregation switch.
+This subtree can be specified as follows:
 
 ````
-topology.name = fattree
-topology.geometry = 3 4
+topology.leaf_switches_per_subtree = 4
+topology.agg_switches_per_subtree = 4
+topology.concentration = 4
+topology.up_ports_per_leaf_switch = 4
+topology.down_ports_per_agg_switch = 4
 ````
-which would have 4^3 = 64 compute nodes.
 
-
-![Figure 28: Abstract, conceptual picture of Fat Tree topology](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/fattree/abstract_fattree.png) 
-
-*Figure 28: Abstract, conceptual picture of Fat Tree topology*
-
-
-
-In reality, it is not practical to implement a fat tree exactly as shown in Figure [28](#fig:topologies:abstractfattree).
-One would need to buy many non-standard, high capacity switches for the higher levels in the fat-tree.
-The simple model is available by specifying `simple_fattree` as the topology, and SST will construct special large switches at higher levels.
-The best practical implementation employs all uniform, commodity switches (Figure [29](#fig:topologies:fattreeids)).
-The fat tree is "virtual" with several commodity switches grouped together to simulate a heavy-weight, high capacity switch
-at higher levels of the fat tree.
-The connection between the physical implementation and the conceptual fat tree can easily be seen by the color coding.
-For example, the second row contains eight switches, but only two virtual switches.
-Each virtual switch is composed of four commodity switches.
-
-
-![Figure 29: Physical implementation of Fat Tree with commodity switches showing ID numbering](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/fattree/fattree_ids.png) 
-
-*Figure 29: Physical implementation of Fat Tree with commodity switches showing ID numbering*
-
-
-
-Within SST, each switch is assigned a unique ID, starting from zero in the bottom row and proceeding through the top level.
-In addition, each compute node is also assigned a unique ID from 0 to 15.
-The switches can also be defined by a set of coordinates.
-While the choice of coordinate system for a 3D torus is obvious, 
-the coordinate system for the fat tree is less clear.
-In SST, we define a 2D mesh coordinate system for the row (level) and column of the switch.
-
-
-#### 4.4.1: Allocation and indexing<a name="subsec:fattree:allocation"></a>
-
-
-The numbering of compute nodes is shown in Figure [29](#fig:topologies:fattreeids).
-Consider the case
+In this example we have 2 aggregation subtrees.
+There are four ports going up from each aggregation switch.
+All of the ports on the core switches go down, so the number of core switches required (4) is only half the number of total aggregation switches (8).
+This core configuration can be specified as follows:
 
 ````
-node.app1.launch_cmd = aprun -n 4 -N 1
+topologies.num_agg_subtrees = 2
+topologies.num_core_switches = 4
+topologies.up_ports_per_agg_switch = 4
+topologies.down_ports_per_core_switch = 8
 ````
-which launches four processes all on distinct nodes.
-In the simplest allocation and indexing scheme (first available),
-processes would be placed in order on 0,1,2,3.
-An alternative allocation/indexing scheme uses the Node ID allocator.
 
-````
-node {
- app1 {
-  allocation = node_id
-  indexing = node_id
-  node_id_file = nodes.txt
- }
-}
-````
-Here `nodes.txt` would contain the number of nodes on the first line, followed by the list of Node IDs, in order, of where to place MPI ranks.
-For the file
+Putting it all together with the topology name results in:
 
 ````
-4
-0
-4
-8
-12
+topology.name = fat_tree
+logy.leaf_switches_per_subtree = 4
+topology.agg_switches_per_subtree = 4
+topology.concentration = 4
+topology.up_ports_per_leaf_switch = 4
+topology.down_ports_per_agg_switch = 4
+topologies.num_agg_subtrees = 2
+topologies.num_core_switches = 4
+topologies.up_ports_per_agg_switch = 4
+topologies.down_ports_per_core_switch = 8
 ````
-Four MPI ranks would be placed in spatially distant parts of the machine.
 
-If indexing differs from allocation (usually because there are multiple MPI ranks per node), both an allocation and an indexing file are needed.
-Suppose we have:
+The next example, though somewhat contrived, better demonstrates the fat-tree input flexibility.
+Suppose that one wanted to use the same 8-port switches to construct a 3-level fat-tree that was both cheaper and had more endpoints (nodes), at the cost of interswitch bandwidth.
+One possible configuration is shown in Figure~[32](#fig:topologies:taperedfattree).
 
-````
-node.app1.launch_cmd = aprun -n 4 -N 2
-````
-We then need:
 
-````
-node {
- app1 {
-  allocation = node_id
-  indexing = node_id
-  node_id_allocation_file = alloc.txt
-  node_id_indexing_file = index.txt
- }
-}
-````
-where the contents of `alloc.txt` are, e.g.
+![Figure 32: A tapered fat-tree topology using uniform 8-port switches.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/topologies/fattree4-tapered.pdf) 
 
-````
-2
-0
-1
-````
-choosing nodes 0 and 1 in the allocation and then `index.txt` would be, e.g.
+*Figure 32: A tapered fat-tree topology using uniform 8-port switches.*
+
+
+
+Here the concentration has been increased to 6 nodes per leaf switch, leaving only two up ports per leaf switch.
+Thus an aggregation subtree has a total of only 8 leaf up ports, which requires at least two aggregation switches (in order to have any ports left to connect into the core).
+Each aggregation switch is then required to have 4 ports heading down.
+The subtree can be configured as follows:
 
 ````
-4
-0
-1
-0
-1
+topology.leaf_switches_per_subtree = 4
+topology.agg_switches_per_subtree = 2
+topology.concentration = 6
+topology.up_ports_per_leaf_switch = 2
+topology.down_ports_per_agg_switch = 4
 ````
-which round-robin assigns rank 0 to node, rank 1 to node 1, rank 2 to node 0, and so on.
 
-#### 4.4.2: Routing<a name="subsec:fattree:routing"></a>
+There are a total of four aggregation switches.
+If the bandwidth is allowed to taper again, a single 8-port core switch can accomodate 2 ports coming up from each aggregation switch.
+This core configuration can be specified as follows:
+
+````
+topologies.num_agg_subtrees = 2
+topologies.num_core_switches = 1
+topologies.up_ports_per_agg_switch = 2
+topologies.down_ports_per_core_switch = 8
+````
+
+This is a heavily tapered tree and also has the downside of using only 6 ports per switch in the aggregation level.
+This example was chosen more for its illustrative rather than practical value, though there are certainly applications where it would be perfectly adequate. 
+More practical tapering becomes an option when you increase the number of ports per switch, but visualizations become more difficult to grasp.
+
+The following constraints must be met for a valid configuration.
+
+-   Down ports must equal up ports: leaf up ports (`leaf_switches_per_subtree` \cdot `up_ports_per_leaf_switch`) must equal aggregation down ports (`agg_switches_per_subtree` \cdot `down_ports_per_agg_switch`), and total aggregation up ports (`up_ports_per_agg_switch` \cdot `agg_switches_per_subtree` \cdot `num_agg_subtrees`) must equal total core down ports (`num_core_switches` \cdot `down_ports_per_core_switch`).
+-   Need enough down ports -- each switch must have at least one link into each "unit" (subtree or switch, depending on level) below it:  `down_ports_per_core_switch` must be \geq `num_agg_subtrees`, and `down_ports_per_agg_switch` must be \geq `leaf_switches_per_subtree`.
+-   Need enough up ports -- each "unit" (subtree or switch) must have at least one link into each switch above it: `up_ports_per_agg_switch` \cdot `agg_switches_per_subtree` must be \geq `num_core_switches`, and `up_ports_per_leaf_switch` must be \geq `agg_switches_per_subtree`.
+-   Connections need to be regular:
+  \begin{itemize}
+-   `down_ports_per_core_switch` \bmod `num_agg_subtrees` must equal zero
+-   `down_ports_per_agg_switch` \bmod `leaf_switches_per_subtree` must equal zero
+-   `up_ports_per_leaf_switch` \bmod `agg_switches_per_subtree` must equal zero
+\end{itemize}
+
+#### 4.3.1: Switch Crossbar Bandwidth Scaling<a name="subsec:fattree:xbarbw"></a>
 
 
 
-Fat tree routing is actually straightforward, but can employ path diversity.
-Suppose you are routing from Node 0 to Node 2 (Figure [29](#fig:topologies:fattreeids)).
-At the first stage, you have no choice.
-You must route to Switch 1.
-At the second stage, you can either route to Switch 8 or Switch 9.
-Suppose you branch to Switch 9. 
-At this point, you are done moving up.
-The packet now proceeds down the fat-tree.
-On the downward routing, there is no path diversity.
-Only a single, minimal route exists to the destination node.
-In the simplest case, Switch 1 alternates between selecting Switch 8 and Switch 9 to distribute load.
-In a more complicated scheme, Switch 1 could adaptively route selecting either Switch 8 or Switch 9 based on congestion information.
+Allowing non-uniform switches in the topology implies that switch crossbar bandwidth should be non-uniform as well.
+By default, SST assumes `switch.xbar.bandwidth` specifies the bandwidth for the switch type with the lowest port count.
+The crossbar bandwidth is scaled by the total number of ports for all other switch types. 
+Input keywords are provided to override this default behavior.
+For the tapered-bandwidth example above, uniform switch bandwidth can be maintained by setting all bandwidth scaling to 1.0:
+
+````
+topology.leaf_bandwidth_multiplier = 1.0
+topology.agg_bandwidth_multiplier = 1.0
+topology.core_bandwidth_multiplier = 1.0
+````
+
+#### 4.3.2: Routing<a name="subsec:fattree:routing"></a>
 
 
 
-### Section 4.5: Cascade<a name="sec:tutorial:cascade"></a>
+The fat-tree topology should be used in conjunction with `router = fat_tree`, which will maximize the utilization of path diversity.
+There is a `fat_tree_minimal` router which will use the lowest numbered valid port for any destination; this will result in poor network performance and is primarily useful for testing and perhaps experiments where network contention is desired.
+
+
+
+### Section 4.4: Cascade<a name="sec:tutorial:cascade"></a>
 
 
 
 
-![Figure 30: Schematic of cascade with three groups showing hypercube intragroup links and high bandwidth intergroup global links](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascade.png) 
+![Figure 33: Schematic of cascade with three groups showing hypercube intragroup links and high bandwidth intergroup global links](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascade.png) 
 
-*Figure 30: Schematic of cascade with three groups showing hypercube intragroup links and high bandwidth intergroup global links*
+*Figure 33: Schematic of cascade with three groups showing hypercube intragroup links and high bandwidth intergroup global links*
 
 
 
@@ -2807,7 +2832,7 @@ A 3D torus is on the low-radix extreme while a hypercube is a high-radix extreme
 A variation on the dragonfly is the cascade topology implemented by Cray on their Aries interconnects.
 A cascade is sometimes viewed as a generalization of flattened butterfly and hypercube topologies with "virtual" switches of very high radix,
 not dissimilar from the fat-tree implementation with many physical commodity switches composing a single virtual switch.
-The cascade topology (Figure [30](#fig:topologies:cascade)) is actually quite simple.
+The cascade topology (Figure [33](#fig:topologies:cascade)) is actually quite simple.
 Small groups are connected as a generalized hypercube with full connectivity within a row or column.
 Intergroup connections (global links) provide pathways for hopping between groups.
 A cascade is usually understood through three parameters:
@@ -2822,14 +2847,14 @@ The caveat is that in many implementations global links are grouped together for
 These demonstrate well-balanced ratios.
 In general, scaling out a cascade should not increase the size of a group, only the number of groups.
 
-#### 4.5.1: Allocation and indexing<a name="subsec:cascade:allocatoin"></a>
+#### 4.4.1: Allocation and indexing<a name="subsec:cascade:allocatoin"></a>
 
 
 
 The cascade coordinate system is essentially the same as a 3D torus.
 The group 2D hypercube layout defines X and Y coordinates.
 The group number defines a Z or G coordinate.
-Thus the topology in Figure [30](#fig:topologies:cascade) would be specified as
+Thus the topology in Figure [33](#fig:topologies:cascade) would be specified as
 
 ````
 topology.name = cascade
@@ -2842,7 +2867,7 @@ To complete the specification, the number of global links (h) for each router mu
 topology.group_connections = 10
 ````
 
-#### 4.5.2: Routing<a name="subsec:cascade:routing"></a>
+#### 4.4.2: Routing<a name="subsec:cascade:routing"></a>
 
 
 
@@ -2859,13 +2884,13 @@ To effectively utilize all the available bandwidth, packets should have a high a
 Packets sent between two routers should take as many different paths as possible to maximize the effective bandwidth point-to-point.
 
 
-![Figure 31: Schematic of cascade showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascademinroute.png) 
+![Figure 34: Schematic of cascade showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascademinroute.png) 
 
-*Figure 31: Schematic of cascade showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.*
+*Figure 34: Schematic of cascade showing minimal route. Traveling between groups requires routing to the correct global link, hopping the global link, then routing within a group to the correct final node.*
 
 
 
-Minimal routing itself has a few complications (Figure [31](#fig:topologies:cascademinroute)).
+Minimal routing itself has a few complications (Figure [34](#fig:topologies:cascademinroute)).
 Each router only has a few global links.  
 Thus, traveling from e.g. the blue router at X=3,Y=2,G=0 to the red router at X=1,Y=2,G=2, there is no direct link between the routers.
 Furthermore, there is no direct link between Groups 0 and 2.
@@ -2875,9 +2900,9 @@ This router has a global link to Group 2, allowing the packet to hop to the next
 Finally, the minimal route completes by hopping within Group 2 to the final destination.
 
 
-![Figure 32: Schematic of cascade showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascadevaliant.png) 
+![Figure 35: Schematic of cascade showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/tikz/cascade/cascadevaliant.png) 
 
-*Figure 32: Schematic of cascade showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.*
+*Figure 35: Schematic of cascade showing Valiant route. Traveling between groups requires routing to a random intermediate node, then routing minimally to the final destination.*
 
 
 
@@ -2932,82 +2957,56 @@ router = ugal
 ### Section 5.1: Basic Application porting<a name="sec:skel:basic"></a>
 
 
-There are three parts to successfully taking a C++ code and turning it into a running application.
+There are three parts to successfully taking a C++ code and turning it into a scalable simulation.
 
--   Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling `hostname`), these functions must be redirected to SST-macro rather than calling the native libraries on the machine running the simulator.
+-   Symbol Interception: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling `hostname`), these functions must be redirected to SST-macro rather than calling the native libraries on the machine running the simulator.
 You get all redirected linkage for free by using
 the SST compiler wrappers `sst++` and `sstcc` installed in the `bin` folder.
 -   Skeletonization: While SST-macro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 1K or more MPI ranks) you must strip down or "skeletonize" the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed.
 -   Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but not its own data segment (global variables).
 Virtual processes share the same address space and the same global variables.  A Beta version of the auto-skeletonizing clang-based SST compiler is available with the 7.X releases. If the Beta is not stable with your application, manual refactoring may be necessary if you have global variables.
 
+Now in Beta, another possible feature is available:
+
+-   Memoization hooks: Rather than building an app for simulation, build an app with special profiling hooks. There is no skeletonization or redirected linkage, but the runtime or performance counters obtained by running should be used to build models for simulation.
+
+There are generally 3 modes of using an application common with SST/macro:
+
+-   Simulation: As lightweight as possible without sacrificing accuracy. Intended to be used for performance estimation at large scales.
+-   Emulation/Virtualization: Run a parallel or distributed application within a single simulator thread/process - primarily useful for debugging.
+-   Memoization: Run a full application within the simulator, collecting performance counters or timers on critical sections
+
+
+
+|  | Simulator hooks | Symbol interception | Skeletonization | Process encapsulation |
+|--|-----------------|---------------------|-----------------|-----------------------|
+| Simulation | Yes | Yes | Yes | Yes |
+| Virtualization | Yes | Yes | No | Yes |
+| Memoizaiton | Yes | No | No | No |
+
+
 #### 5.1.1: Loading external skeletons with the standalone core<a name="subsec:externalAppStandalone"></a>
 
 
 You should always write your own skeleton applications in an external folder rather then integrating directly into the `sstmac` executable.
-You have two options for running your skeleton app within the simulation:
+Existing make systems can be used unmodified. Rather than producing an executable, though, SST/macro produces a shared library.
+These shared libraries are then imported into the main `sstmac` executable.
 
--   Create a new executable with your skeleton app built-in
--   Create a library `libX.so` and have `sstmac` load it at runtime
-
-\subsubsection{New Executable}
 If you follow the example in the `skeletons/sendrecv` folder,
-the Makefile shows how to generate a new executable.
-If you are using `sst++`, it will automatically link your executable with the right SST libraries.
-When you run your created executable, it will spawn an SST/macro simulation of your app.
-If your application is named `runapp`, you would run it exactly like the `sstmac`:
+the Makefile shows how to generate an importable skeleton.
+If you are using `sst++`, it will automatically convert executables into loadable libraries.
+If your application is named `runapp`, you would run it with `sstmac`:
 
 ````
-./runapp -f parameters.ini
+./runapp -f parameters.ini --exe=./runapp
 ````
-where your new executable replaces `sstmac`.
-
-\subsubsection{Dynamically Loaded Library}
-If you follow the example in the `skeletons/sendrecv_sst_so` folder,
-the Makefile shows how to generate a skeleton application as an external library.
-Instead of replacing the `sstmac` executable, you tell the `sstmac` to load the library in the parameter file.
-
-````
-external_libs = libsendrecv.so
-````
-The library `libsendrecv.so` can be generated with standard compiler flags for shared libraries by using the `sst++` compiler.
-Once the `external_libs` parameter is set in the file, you can run:
-
-````
-sstmac -f parameters.ini
-````
-with the standard executable `sstmac`.
-
-#### 5.1.2: Loading external skeletons with the integrated core<a name="subsec:linkageCore"></a>
-
-
-While the main `libmacro.so` provides the bulk of SST/macro functionality, 
-users may wish to compile and run external skeletons.  This is basically the same workflow as shown above for dynamically loaded libraries.
-When the executable is generated, SST-macro will also generate a `libX.so` containing all the element info.
-This can then be used for SST simulations.
-The `default.py` script used by `pysstmac` must also be edited.  The top lines was previously
-
-````
-import sst.macro
-````
-This only loads the main components, not the external skeleton. You must add
-
-````
-import sst.X
-````
-where X is the name of your skeleton. This causes the core to also load the shared library corresponding to your external skeleton app.
-If using the SST compiler wrappers, the ELI block and .so file will actually be generated automatically.  As shown in Section [2.5](#sec:building:running),
-the generate shared library files can be added as the first parameters to the `pysstmac` script.
-
-````
-shell>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
-```` 
+directing to load the library as a skeleton executable.
 
 ### Section 5.2: Auto-skeletonization with Clang<a name="sec:autoSkeletonization"></a>
 
 
 
-The build of the Clang toolchain is described in Section [2.4](#sec:buildingClang). 
+The build of the Clang toolchain is described in Section [2.3](#sec:buildingClang). 
 This enables a source-to-source translation capability in the `sst++` compiler that can auto-skeletonize computation and fix global variable references.
 Some of this can be accomplished automatically (global variables), but most of it (removing computation and memory allocations) must occur through pragmas.
 A good example of skeletonization can be found in the lulesh2.0.3 example in the skeletons folder. Most of the available SST pragmas are used there.
@@ -3145,9 +3144,9 @@ The auto-skeletonizing compiler is designed to do three main things:
 \section{Pragma Overview}
 
 
-![Figure 33: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/compilerWorkflow) 
+![Figure 36: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/compilerWorkflow) 
 
-*Figure 33: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.*
+*Figure 36: Source-to-source transformation workflow for SST compiler. For C source files, g++ can be swapped with gcc. The choice of underlying compiler is actually arbitrary and can be clang, gcc, icc, etc.*
 
 
 
@@ -3160,7 +3159,7 @@ Here another temporary C++ source file (even if the original file is C)
 is generated that has all static global variable registrations.
 The corresponding object file is merged with the original object file,
 creating a complete SST-macro object file with the transformed code and C++ static registrations.
-This workflow is shown in Figure [33](#fig:compilerWorkflow).
+This workflow is shown in Figure [36](#fig:compilerWorkflow).
 
 \subsection{Compiler Environment Variables}
 
@@ -3173,6 +3172,10 @@ If set to zero, deactivates skeletonization.
 This does not deactivate global variable redirection.
 Thus, with `SSTMAC_SRC2SRC=1` and `SSTMAC_SKELETONIZE=0`,
 SST-macro will act as an MPI emulator executing a full code but with global variables refactored to maintain correctness.
+
+\subsubsection{SSTMAC\_MEMOIZE: Default 0}
+If set to nonzero, activates memoization hooks. 
+This deactivates all global variable refactoring, all symbol interception, and all skeletonization.
 
 \subsubsection{SSTMAC\_HEADERS: No default}
 The compiler wrapper will only redirect global variables that it knows should definitely be modified.
@@ -3418,6 +3421,138 @@ Thus we given the branch prediction the hint 0.2.
 This pragma advances the simulator time by the specified amounts of time. It can be placed before any statement. The units can be the following: sec, msec, usec or nsec for Seconds, milliseconds, microseconds and nanoseconds respectively. 
 
 
+
+### Section 6.1: Memoization pragmas<a name="sec:memoization"></a>
+
+
+
+\subsection{Memoization models}
+To understand the memoization pragmas, we first introduce how models get constructed in the SST/macro runtime.
+Source-to-source transformations based on the pragmas causes the following hooks to get inserted:
+
+````
+void sstmac_start_memoize(const char* token, const char* model);
+void sstmac_finish_memoize0(const char* token);
+void sstmac_finish_memoize1(const char* token, double p1);
+void sstmac_finish_memoize2(const char* token, double p1, double p2);
+...
+````
+A start call begins a memoization region for a specific name.
+The memoization collection is closed by calling one of the finish functions.
+The finish functions take input parameters. 
+Given input parameters x,y causes a function F(x,y) to be fit to the timer or performance counters.
+
+If building a skeleton application that uses memoization data, a different hook gets inserted:
+````
+void sstmac_compute_memoize0(const char* token);
+void sstmac_compute_memoize1(const char* token, double p1);
+void sstmac_compute_memoize2(const char* token, double p1, double p2);
+...
+````
+Assuming a model F(x,y) has been fit in a memoization pass,
+that function is invoked with the given parameters to estimate a time or performance counter.
+
+Memoization models are implemented by inheriting from a standard class
+
+````
+struct regression_model {
+...
+virtual double compute(int n_params, const double params[], int states[]) = 0;
+virtual void collect(double time, int n_params, const double params[], const int states[]) = 0;
+...
+````
+A call to `sstmac_finish_memoize2` causes `collect(2,..)` to get invoked on the model.
+The `states` array is discussed more later in [6.1.1](#subsec:implicitStates)
+
+\subsection{pragma sst memoize [skeletonize(...)] [model(...)] [inputs(...)] [name(...)]}
+
+-   skeletonize: boolean for whether code block should still be executed or remove entirely (default: true)
+-   model: string name for a type of model (e.g. linear, kmeans) specifying which model to construct and fit (no default)
+-   inputs: a comma-separated list of C++ expressions that are the numeric inputs
+-   name: a unique name to use for identifying the memoization region (default: see below)
+If the `name` parameter is not given, the file and line number is used for basic expressions while the function name is used if applied to a function.
+Consider the example:
+
+````
+#pragma sst memoize skeletonize(true) model(least_squares) inputs(ncol,nlink,nrow) 
+void dgemm(int ncol, int nlink, int nrow, double* left, double* right);
+````
+When running the memoization pass, the memoization hooks get invoked as:
+
+````
+sstmac_start_memoize("dgemm", "least_squares");
+dgemm(....);
+sstmac_finish_memoize3("dgemm", ncol, nlink, nrow);
+````
+With `skeletonize` set to true, the skeleton app would be:
+
+````
+sstmac_compute_memoize("dgemm", ncol, nlink, nrow);
+````
+With skeletonize set to false:
+
+````
+sstmac_compute_memoize("dgemm", ncol, nlink, nrow);
+dgemm(...);
+````
+Both the memoization function and the original function would both get invoked.
+
+#### 6.1.1: pragma sst implicit\_state X(Y) ...<a name="subsec:implicitStates"></a>
+
+
+The implicit state pragma sets certain hardware or software states not captured by the inputs to the memoization pragma.
+This might involve DVFS states, different runs of a task in which data is "cold" or "hot" in cache, or different types of cores.
+The implicit state lasts for the scope of the statement:
+
+````
+#pragma sst implict_state ...
+{
+ //all statements here have that state
+}
+
+#pragma sst implicit_state ...
+fxn(...) //implicit state lasts the entire function
+````
+
+The arguments to the pragma are best understood by example:
+
+````
+#pragma sst implicit_state dvfs(1) cache(hot)
+fxn(...)
+````
+This causes a source code transformation to:
+
+````
+sstmac_set_implicit_state2(dvfs,1,cache,hot);
+fxn(...);
+sstmac_unset_implicit_state2(dvfs,cache);
+````
+For now, the functions take integer arguments (this may get relaxed to arbitrary strings).
+Thus, e.g. enums must be available or compilation will fail:
+
+````
+enum states {
+ dvfs=0,
+ cache=1
+};
+enum cache_states {
+ cold=0,
+ hot=1
+};
+````
+
+If a `sstmac_finish_memoize` function got invoked, the states could be read:
+
+````
+void collect(double time, int n_params, const double params[], 
+			const int states[]) const override {
+  int dvfs_state = states[dvfs];  //1
+  int cache_state = states[cache]; //1
+}
+````
+
+
+
 \chapter{Issues and Limitations}
 \section{Polling in applications}
 
@@ -3433,7 +3568,7 @@ creates problems for the simulation. Virtual time never advances in the MPI\_Ipr
 This causes an infinite loop that never returns to the discrete event manager. 
 Even if configured so that time progresses, the code will work but will take a very long time to run.
 
-### Section 6.1: Fortran<a name="subsec:issues:fortran"></a>
+### Section 6.2: Fortran<a name="subsec:issues:fortran"></a>
 
 
 
@@ -3499,7 +3634,7 @@ The allowed parameter types are:
 |-------------|---------|---------|-------------|
 | geometry (vector of int) | No default | See Topology section | Geometry configuration of the topology. For details of the keyword, users should refer to Section [4](#chapter:topologies) |
 | auto (bool) | false | Whether to auto-generate the topology based on the application size. |
-| name (string) | No default | torus, cascade, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree | The name of the topology to build. For details, see Section [4](#chapter:topologies) |
+| name (string) | No default | torus, cascade, dragonfly, fat\_tree, crossbar, tapered\_fat\_tree | The name of the topology to build. For details, see Section [4](#chapter:topologies) |
 | seed (long) | System time |  | If no value given, random numbers for topology will be generated from system time |
 | concentration (int) | 1 | Positive int | The number of nodes per network switch. For indirect networks, this is the number of nodes per leaf switch. |
 | num\_leaf\_switches (int) | No default | Positive int | Only relevant for fat trees. This is the number of switches at the lowest level of the tree that are connected to compute nodes. Depending on how the fat tree is specified, this number may not be required. |
@@ -3519,7 +3654,7 @@ The allowed parameter types are:
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| model (string) | simple | simple | The type of node model (level of detail) for node-level operations |
+| name (string) | simple | simple | The type of node model (level of detail) for node-level operations |
 | services (vector of strings) | Empty | Valid service names | For  details, see section on distributed services in developer's manual. Advanced feature. |
 
 #### 7.3.1: Namespace "node.nic"<a name="subsec:node:nic:Params"></a>
@@ -3529,9 +3664,8 @@ The allowed parameter types are:
 
 | Name (type) | Default | Allowed | Description |
 |-------------|---------|---------|-------------|
-| model (string) | No default | pisces, logP | The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. |
+| name (string) | No default | pisces, logP | The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. |
 | packetizer (string) | cut\_through | merlin, simple, cut\_through | The type of packetizer for injecting flows into the network. Merlin is part of sst-elements. Simple and cut-through use PISCES |
-| packet\_allocator (string) | pisces | pisces | The packet object used by the NIC. Certain type of statistics or congestion models may require custom packets with extra fields. |
 | negligible\_size (byte length) | 256B |  | Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. |
 
 ##### Namespace "node.nic.delay\_histogram"<a name="subsubsec:node:nic:delayHistogram:Params"></a>
@@ -3615,7 +3749,6 @@ All other parameters can be filled in from `node.nic.injection`.
 | bandwidth | No default |  | The bandwidth of the arbitrator |
 | send\_latency (time) | No default |  | The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). |
 | credit\_latency (time) | No default |  | The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). |
-| num\_vc (int) | Computed | Positive int | If not specified, SST will estimate the number of virtual channels based on the topology and routing. If given and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. |
 | credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
@@ -3632,7 +3765,6 @@ All other parameters can be filled in from `node.nic.injection`.
 | bandwidth | No default |  | The bandwidth of the arbitrator |
 | send\_latency (time) | No default |  | The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). |
 | credit\_latency (time) | No default |  | The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). |
-| num\_vc (int) | Computed | Positive int | If not specified, SST will estimate the number of virtual channels based on the topology and routing. If given and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. |
 | credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
@@ -3688,50 +3820,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | frequency | No default |  | The baseline frequency of the node |
 | parallelism (double) | 1.0 | Positive number | Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. |
 
-### Section 7.4: Namespace "netlink"<a name="sec:netlink:Params"></a>
-
-
-
-
-| Name (type) | Default | Allowed | Description |
-|-------------|---------|---------|-------------|
-| model (string) | null | null, pisces | The type of netlink congestion model to use. If null, no netlink blocks will be used. |
-| concentration (int) | No default | Positive int | The number of nodes connected to a given netlink. The node concentration per switch must be greater than or equal to the node concentration per netlink. |
-| num\_tiles (int) | 1 | Positive int | The number of router tiles the netlink connects to. Only relevant for tiled router models. Advanced usage. |
-
-#### 7.4.1: Namespace "netlink.injection"<a name="subsec:netlink:injection:Params"></a>
-
-
-
-| Name (type) | Default | Allowed | Description |
-|-------------|---------|---------|-------------|
-| arbitrator (string) | cut\_through | null, simple, cut\_through | Bandwidth arbitrator for PISCES congestion modeling. Null uses simple delays with no congestion. Simple uses store-and-forward that is cheap to compute, but can have severe latency errors for large packets. Cut-through approximates pipelining of flits across stages. |
-| latency (time) | No default |  | If given, overwrites the send and credit latency parameters. Depending on component, the entire latency may be put on either the credits or the send. |
-| bandwidth | No default |  | The bandwidth of the arbitrator |
-| send\_latency (time) | No default |  | The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). |
-| credit\_latency (time) | No default |  | The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). |
-| num\_vc (int) | Computed | Positive int | If not specified, SST will estimate the number of virtual channels based on the topology and routing. If given and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. |
-| credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
-| mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
-
-
-#### 7.4.2: Namespace ``netlink.ejection"<a name="subsec:netlink:ejection:Params"></a>
-
-
-
-| Name (type) | Default | Allowed | Description |
-|-------------|---------|---------|-------------|
-| arbitrator (string) | cut\_through | null, simple, cut\_through | Bandwidth arbitrator for PISCES congestion modeling. Null uses simple delays with no congestion. Simple uses store-and-forward that is cheap to compute, but can have severe latency errors for large packets. Cut-through approximates pipelining of flits across stages. |
-| latency (time) | No default |  | If given, overwrites the send and credit latency parameters. Depending on component, the entire latency may be put on either the credits or the send. |
-| bandwidth | No default |  | The bandwidth of the arbitrator |
-| send\_latency (time) | No default |  | The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). |
-| credit\_latency (time) | No default |  | The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). |
-| num\_vc (int) | Computed | Positive int | If not specified, SST will estimate the number of virtual channels based on the topology and routing. If given and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. |
-| credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
-| mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
-
-
-### Section 7.5: Namespace ``mpi"<a name="sec:mpi:Params"></a>
+### Section 7.4: Namespace "mpi"<a name="sec:mpi:Params"></a>
 
 
 
@@ -3740,8 +3829,9 @@ All other parameters can be filled in from `node.nic.injection`.
 |-------------|---------|---------|-------------|
 | test\_delay (time) | 0 |  | The minimum time spent by MPI on each MPI\_Test call |
 | iprobe\_delay (time) | 0 |  | The minimum time spent by MPI on each MPI\_Iprobe call |
+| otf2\_dir\_basename (time) | empty string |  | Enables OTF2 and combines this parameter with a timestamp to name the archive |
 
-#### 7.5.1: Namespace ``mpi.queue"<a name="subsec:mpi:queue:Params"></a>
+#### 7.4.1: Namespace ``mpi.queue"<a name="subsec:mpi:queue:Params"></a>
 
 
 
@@ -3754,7 +3844,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | post\_header\_delay (time) | 0 |  | The mimimum time spent by MPI sending headers into pre-allocated mailboxes |
 | poll\_delay (time) | 0 |  | The minimum time spent by MPI each time it polls for incoming messages |
 
-### Section 7.6: Namespace "switch"<a name="subsec:switch:Params"></a>
+### Section 7.5: Namespace "switch"<a name="subsec:switch:Params"></a>
 
 
 
@@ -3764,7 +3854,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | model (string) | No default | logP, pisces | The type of switch model (level of detail) for modeling network traffic. |
 | buffer\_size (byte length) | No default |  | The size of input and output buffers on each switch. This determines the number of credits available to other components |
 
-#### 7.6.1: Namespace "switch.router"<a name="subsec:switch:router:Params"></a>
+#### 7.5.1: Namespace "switch.router"<a name="subsec:switch:router:Params"></a>
 
 
 
@@ -3774,7 +3864,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | name (string) | No default | minimal, valiant, ugal, dragonfly\_minimal, fat\_tree | The name of the routing algorithm to use for routing packets. |
 | ugal\_threshold (int) | 0 |  | The minimum number of network hops required before UGAL is considered. All path lengths less than value automatically use minimal. |
 
-#### 7.6.2: Namespace "switch.output\_buffer"<a name="subsec:switch:outputBuffer:Params"></a>
+#### 7.5.2: Namespace "switch.output\_buffer"<a name="subsec:switch:outputBuffer:Params"></a>
 
 
 
@@ -3804,7 +3894,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | fileroot (string) | No default |  | The path of a file to be created (or overwritten) where results from the statistics will be placed. |
 
 
-#### 7.6.3: Namespace "switch.xbar"<a name="sec:switch:outputBuffer:delayHistogram:Params"></a>
+#### 7.5.3: Namespace "switch.xbar"<a name="sec:switch:outputBuffer:delayHistogram:Params"></a>
 
 
 
@@ -3817,7 +3907,6 @@ All other parameters can be filled in from `node.nic.injection`.
 | bandwidth | No default |  | The bandwidth of the arbitrator |
 | send\_latency (time) | No default |  | The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). |
 | credit\_latency (time) | No default |  | The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). |
-| num\_vc (int) | Computed | Positive int | If not specified, SST will estimate the number of virtual channels based on the topology and routing. If given and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. |
 | credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
@@ -3830,7 +3919,7 @@ All other parameters can be filled in from `node.nic.injection`.
 | fileroot (string) | No default |  | The path of a file to be created (or overwritten) where results from the statistics will be placed. |
 
 
-#### 7.6.4: Namespace "switch.link"<a name="subsec:switch:link:Params"></a>
+#### 7.5.4: Namespace "switch.link"<a name="subsec:switch:link:Params"></a>
 
 
 
@@ -3841,12 +3930,11 @@ All other parameters can be filled in from `node.nic.injection`.
 | bandwidth | No default |  | The bandwidth of the arbitrator |
 | send\_latency (time) | No default |  | The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). |
 | credit\_latency (time) | No default |  | The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). |
-| num\_vc (int) | Computed | Positive int | If not specified, SST will estimate the number of virtual channels based on the topology and routing. If given and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. |
 | credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-#### 7.6.5: Namespace "switch.ejection"<a name="subsec:switch:ejection:Params"></a>
+#### 7.5.5: Namespace "switch.ejection"<a name="subsec:switch:ejection:Params"></a>
 
 
 This namespace is not actually required. 
@@ -3860,12 +3948,11 @@ If unspecified, all of the values here will be filled in from `nic.injection`.
 | bandwidth | No default |  | The bandwidth of the arbitrator |
 | send\_latency (time) | No default |  | The latency to send a packet to the next stage in the network. This can be omitted if the generic latency parameter is given (see above). |
 | credit\_latency (time) | No default |  | The latency to send a credit to the previous network stage. This can be omitted if the generic latency parameter is given (see above). |
-| num\_vc (int) | Computed | Positive int | If not specified, SST will estimate the number of virtual channels based on the topology and routing. If given and parameter is too small, the system can deadlock. If too large, buffer resources will be underutilized. |
 | credits (byte length) | No default |  | The number of initial credits for the component. Corresponds to an input buffer on another component. In many cases, SST/macro can compute this from other parameters and fill in the value. In some cases, it will be required. |
 | mtu (byte length) | 1024B |  | The packet size. All messages (flows) will be broken into units of this size. |
 
 
-### Section 7.7: Namespace "appN"<a name="sec:appN:Params"></a>
+### Section 7.6: Namespace "appN"<a name="sec:appN:Params"></a>
 
 
 This is a series of namespaces `app1`, `app2`, and so on for each of the launched applications. These should be contained within the `node` namespace.
