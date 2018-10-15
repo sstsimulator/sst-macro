@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define one_indent "  "
 #define two_indent "    "
 
+#if 0
 #define pflow_arb_debug_printf_l0(format_str, ...) \
   debug_printf(sprockit::dbg::pisces,  \
     " [arbitrator] " format_str , \
@@ -67,11 +68,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #define pflow_arb_debug_print_l2(format_str) \
   debug_printf(sprockit::dbg::pisces,  \
     two_indent " [arbitrator] " format_str "%s", "")
-
-//#define pflow_arb_debug_printf_l0(format_str, ...) 
-//#define pflow_arb_debug_printf_l1(format_str, ...) 
-//#define pflow_arb_debug_printf_l2(format_str, ...) 
-//#define pflow_arb_debug_print_l2(format_str) 
+#else
+#define pflow_arb_debug_printf_l0(format_str, ...)
+#define pflow_arb_debug_printf_l1(format_str, ...)
+#define pflow_arb_debug_printf_l2(format_str, ...)
+#define pflow_arb_debug_print_l2(format_str)
+#endif
 
 namespace sstmac {
 namespace hw {
@@ -149,7 +151,7 @@ pisces_null_arbitrator::pisces_null_arbitrator(sprockit::sim_parameters* params)
 }
 
 timestamp
-pisces_null_arbitrator::head_tail_delay(pisces_payload *pkt)
+pisces_null_arbitrator::head_tail_delay(pisces_packet *pkt)
 {
   timestamp ser_delay(pkt->num_bytes() / pkt->bw());
   return ser_delay;
@@ -195,7 +197,7 @@ pisces_cut_through_arbitrator(sprockit::sim_parameters* params)
 
 
 timestamp
-pisces_cut_through_arbitrator::head_tail_delay(pisces_payload *pkt)
+pisces_cut_through_arbitrator::head_tail_delay(pisces_packet *pkt)
 {
   timestamp ser_delay(pkt->num_bytes() / pkt->bw());
   return ser_delay;
@@ -311,7 +313,7 @@ pisces_cut_through_arbitrator::arbitrate(pkt_arbitration_t &st)
 void
 pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
 {
-  pisces_payload* payload = st.pkt;
+  pisces_packet* payload = st.pkt;
   payload->init_bw(out_bw_);
   double payload_bw = payload->bw() * bw_sec_to_tick_conversion_;
 #if SSTMAC_SANITY_CHECK
@@ -327,8 +329,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
   long bytes_queued = payload_bw * (send_start - payload->arrival().ticks_int64());
 #if SSTMAC_SANITY_CHECK
   if (bytes_queued < 0) {
-    spkt_throw_printf(sprockit::value_error,
-                     "Payload has negative number of bytes queued: bw=%12.8e send_start=%20.16e arrival=%20.16e",
+    spkt_abort_printf("Payload has negative number of bytes queued: bw=%12.8e send_start=%20.16e arrival=%20.16e",
                      payload->bw(), send_start, payload->arrival());
   }
 #endif
@@ -476,8 +477,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
         if (epoch->next == 0) {
           //something freaked out numerically
           //time_to_send should never equal the length of the big long, last epoch
-          spkt_throw_printf(sprockit::illformed_error,
-                           "Time to send pisces is way too long:\n"
+          spkt_abort_printf("Time to send pisces is way too long:\n"
                            "send_all_time=%20.16e\n"
                            "time_to_intersect=%20.16e\n"
                            "epoch_length=%20.16e\n"
@@ -520,7 +520,7 @@ pisces_cut_through_arbitrator::do_arbitrate(pkt_arbitration_t &st)
     }
 
     if (!head_) {
-      spkt_throw_printf(sprockit::illformed_error, "head is null");
+      spkt_abort_printf("pisces_arbitrator: head is null");
     }
 
   }

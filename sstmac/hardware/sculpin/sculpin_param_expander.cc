@@ -62,13 +62,12 @@ sculpin_param_expander::expand(sprockit::sim_parameters* params)
   sprockit::sim_parameters* switch_params = params->get_optional_namespace("switch");
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
   sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
-  sprockit::sim_parameters* netlink_params = params->get_optional_namespace("netlink");
 
 
-  nic_params->add_param_override("model", "sculpin");
-  switch_params->add_param_override("model", "sculpin");
-  if (!mem_params->has_scoped_param("model")){
-    mem_params->add_param_override("model", "pisces");
+  nic_params->add_param_override("name", "sculpin");
+  switch_params->add_param_override("name", "sculpin");
+  if (!mem_params->has_scoped_param("name")){
+    mem_params->add_param_override("name", "pisces");
   }
 
   if (!mem_params->has_param("mtu")){
@@ -106,7 +105,7 @@ void
 sculpin_param_expander::expand_amm1_memory(sprockit::sim_parameters* params,
                                           sprockit::sim_parameters* mem_params)
 {
-  if (mem_params->get_scoped_param("model") != "null"){
+  if (mem_params->get_scoped_param("name") != "null"){
     mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
   }
 }

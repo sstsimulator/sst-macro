@@ -5,7 +5,6 @@
 A minimal parameter file setting up a 2D-torus topology is shown below. 
 A detailed listing of parameter namespaces and keywords is given in Section \ref{chapter:parameters}.
 The preferred input files now use namespaces.
-However, for consistency with previous versions, we also show the deprecated parameters.
 
 \begin{ViFile}
 amm_model = amm1
@@ -57,25 +56,6 @@ The input file follows a basic syntax of \inlinefile{parameter = value}.
 Parameter names follow C++ variable rules (letters, numbers, underscore) while parameter values can contain spaces.  Trailing and leading whitespaces are stripped from parameters.
 Comments can be included on lines starting with \#.
 
-\subsection{Naming Conventions}
-There are some patterns in the naming of SST parameters. The most critical is ``model'' versus ``name''. Consider:
-
-\begin{CppCode}
-
-switch {
- model = pisces
- router {
-  name = minimal
- }
-}
-\end{CppCode}
-
-The distinction here is subtle, but important. When a parameter has the name ``model'' it means there are important approximations being made.
-The model does not necessarily reproduce a real switch or node or NIC.
-It's not a choice of algorithm. It's the choice of an approximate hardware model.
-In contrast, when selecting an algorithm that is trying to reproduce ``exact'' behavior, the parameter is ``name.''
-This indicates the name of an algorithm, not an approximate model.
-
 
 \subsection{Parameter Namespace Rules}
 \label{subsec:parameterNamespace}
@@ -84,7 +64,7 @@ The parameter \inlineshell{node.memory.model} will be nested in namespace \inlin
 If inside a given namespace, \sstmacro looks within that namespace first.
 If unable to find it, the input parser moves through the namespace nesting to find the value.
 This exactly follows C++ namespace rules with one important exception. 
-The ``global'' namespace is reserved for special keywords that get translated.
+The ``global'' namespace is reserved for special keywords.
 Keywords in the global namespace are not visible to any components.
 
 
@@ -95,8 +75,8 @@ node.memory.model = pisces
 \end{ViFile}
 If I am building the node's memory system, the initialization will look for \inlineshell{memory::model} inside namespace \inlineshell{node} first, returning the value \inlineshell{pisces}. 
 
-The preferred syntax from 6.1 more closely resembles C++ namespace declarations. 
-Namespaces can be scoped using brackets \{\}:
+The preferred syntax more closely resembles C++ namespace declarations. 
+Namespaces are scoped using brackets \{\}:
 
 \begin{ViFile}
 node {

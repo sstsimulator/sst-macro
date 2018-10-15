@@ -27,7 +27,7 @@ There are four critical abstract functions in the virtual interface. First:
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* payload_handler) = 0;
+    event_link* payload_handler) = 0;
 \end{CppCode}
 This is invoked on the source component of a link giving the port numbers on either end of the link.
 It gives the source component the payload handler that will be invoked on the destination component.
@@ -43,7 +43,7 @@ The next connection function is:
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_handler* credit_handler) = 0;
+    event_link* credit_handler) = 0;
 \end{CppCode}
 Similar to \inlinecode{connect_output}, this is invoked on the destination component of a link.
 Instead of giving a payload handler to receive new events,
@@ -53,9 +53,9 @@ The parameters work the same way as the output parameters.
 But where do the handlers come from? Connectable objects must implement:
 
 \begin{CppCode}
-virtual link_handler* credit_handler(int port) const = 0;
+virtual link_handler* credit_handler(int port) = 0;
 
-virtual link_handler* payload_handler(int port) const = 0;
+virtual link_handler* payload_handler(int port) = 0;
 \end{CppCode}
 
 These \inlinecode{link_handler} objects are a special instance of \inlinecode{event_handler}.

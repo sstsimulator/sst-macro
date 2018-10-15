@@ -1,0 +1,127 @@
+% !TEX root = manual.tex
+
+\section{Memoization pragmas}\label{sec:memoization}
+
+\subsection{Memoization models}
+To understand the memoization pragmas, we first introduce how models get constructed in the SST/macro runtime.
+Source-to-source transformations based on the pragmas causes the following hooks to get inserted:
+
+\begin{CppCode}
+void sstmac_start_memoize(const char* token, const char* model);
+void sstmac_finish_memoize0(const char* token);
+void sstmac_finish_memoize1(const char* token, double p1);
+void sstmac_finish_memoize2(const char* token, double p1, double p2);
+...
+\end{CppCode}
+A start call begins a memoization region for a specific name.
+The memoization collection is closed by calling one of the finish functions.
+The finish functions take input parameters. 
+Given input parameters $x$,$y$ causes a function $F(x,y)$ to be fit to the timer or performance counters.
+
+If building a skeleton application that uses memoization data, a different hook gets inserted:
+\begin{CppCode}
+void sstmac_compute_memoize0(const char* token);
+void sstmac_compute_memoize1(const char* token, double p1);
+void sstmac_compute_memoize2(const char* token, double p1, double p2);
+...
+\end{CppCode}
+Assuming a model $F(x,y)$ has been fit in a memoization pass,
+that function is invoked with the given parameters to estimate a time or performance counter.
+
+Memoization models are implemented by inheriting from a standard class
+
+\begin{CppCode}
+struct regression_model {
+...
+virtual double compute(int n_params, const double params[], int states[]) = 0;
+virtual void collect(double time, int n_params, const double params[], const int states[]) = 0;
+...
+\end{CppCode}
+A call to \inlinecode{sstmac_finish_memoize2} causes \inlinecode{collect(2,..)} to get invoked on the model.
+The \inlinecode{states} array is discussed more later in \ref{subsec:implicitStates}
+
+\subsection{pragma sst memoize [skeletonize(...)] [model(...)] [inputs(...)] [name(...)]}
+\begin{itemize}
+\item skeletonize: boolean for whether code block should still be executed or remove entirely (default: true)
+\item model: string name for a type of model (e.g. linear, kmeans) specifying which model to construct and fit (no default)
+\item inputs: a comma-separated list of C++ expressions that are the numeric inputs
+\item name: a unique name to use for identifying the memoization region (default: see below)
+\end{itemize}
+If the \inlinecode{name} parameter is not given, the file and line number is used for basic expressions while the function name is used if applied to a function.
+Consider the example:
+
+\begin{CppCode}
+#pragma sst memoize skeletonize(true) model(least_squares) inputs(ncol,nlink,nrow) 
+void dgemm(int ncol, int nlink, int nrow, double* left, double* right);
+\end{CppCode}
+When running the memoization pass, the memoization hooks get invoked as:
+
+\begin{CppCode}
+sstmac_start_memoize("dgemm", "least_squares");
+dgemm(....);
+sstmac_finish_memoize3("dgemm", ncol, nlink, nrow);
+\end{CppCode}
+With \inlinecode{skeletonize} set to true, the skeleton app would be:
+
+\begin{CppCode}
+sstmac_compute_memoize("dgemm", ncol, nlink, nrow);
+\end{CppCode}
+With skeletonize set to false:
+
+\begin{CppCode}
+sstmac_compute_memoize("dgemm", ncol, nlink, nrow);
+dgemm(...);
+\end{CppCode}
+Both the memoization function and the original function would both get invoked.
+
+\subsection{pragma sst implicit\_state X(Y) ...}\label{subsec:implicitStates}
+The implicit state pragma sets certain hardware or software states not captured by the inputs to the memoization pragma.
+This might involve DVFS states, different runs of a task in which data is ``cold'' or ``hot'' in cache, or different types of cores.
+The implicit state lasts for the scope of the statement:
+
+\begin{CppCode}
+#pragma sst implict_state ...
+{
+ //all statements here have that state
+}
+
+#pragma sst implicit_state ...
+fxn(...) //implicit state lasts the entire function
+\end{CppCode}
+
+The arguments to the pragma are best understood by example:
+
+\begin{CppCode}
+#pragma sst implicit_state dvfs(1) cache(hot)
+fxn(...)
+\end{CppCode}
+This causes a source code transformation to:
+
+\begin{CppCode}
+sstmac_set_implicit_state2(dvfs,1,cache,hot);
+fxn(...);
+sstmac_unset_implicit_state2(dvfs,cache);
+\end{CppCode}
+For now, the functions take integer arguments (this may get relaxed to arbitrary strings).
+Thus, e.g. enums must be available or compilation will fail:
+
+\begin{CppCode}
+enum states {
+ dvfs=0,
+ cache=1
+};
+enum cache_states {
+ cold=0,
+ hot=1
+};
+\end{CppCode}
+
+If a \inlinecode{sstmac_finish_memoize} function got invoked, the states could be read:
+
+\begin{CppCode}
+void collect(double time, int n_params, const double params[], 
+			const int states[]) const override {
+  int dvfs_state = states[dvfs];  //1
+  int cache_state = states[cache]; //1
+}
+\end{CppCode}

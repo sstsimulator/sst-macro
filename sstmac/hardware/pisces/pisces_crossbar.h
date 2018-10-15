@@ -69,7 +69,9 @@ class pisces_NtoM_queue :
   virtual ~pisces_NtoM_queue();
 
   pisces_NtoM_queue(sprockit::sim_parameters* params,
-                         event_scheduler* parent);
+                   event_scheduler* parent,
+                   int num_in_ports, int num_out_ports, int num_vc,
+                   bool update_vc);
 
   void handle_payload(event* ev) override;
 
@@ -91,158 +93,52 @@ class pisces_NtoM_queue :
     return port * num_vc_ + vc;
   }
 
-  void set_tile_id(std::string id) {
-    tile_id_ = id;
-  }
-
-  std::string tile_id() const {
-    return tile_id_;
-  }
-
   void deadlock_check() override;
 
   void deadlock_check(event* ev) override;
 
-  class port_mapper
-  {
-  public:
-    port_mapper() {}
-    virtual ~port_mapper() {}
-    virtual int local_port(const int) const = 0;
-  };
-
-  class identity_mapper : public port_mapper
-  {
-  private:
-  public:
-    identity_mapper() {}
-    ~identity_mapper() {}
-    virtual int local_port(const int port) const override {
-      return port;
-    }
-  };
-
-  class constant_mapper : public port_mapper
-  {
-  private:
-    int constant_;
-  public:
-    constant_mapper(int constant) : constant_(constant) {}
-    ~constant_mapper() {}
-    virtual int local_port(const int port) const override {
-      return constant_;
-    }
-  };
-
-  class offset_mapper : public port_mapper
-  {
-  private:
-    int offset_;
-  public:
-    offset_mapper(int offset) : offset_(offset)  {}
-    ~offset_mapper() {}
-    virtual int local_port(const int port) const override {
-      return port - offset_;
-    }
-  };
-
-  class div_mapper : public port_mapper
-  {
-  private:
-    int div_;
-  public:
-    div_mapper(int div) : div_(div) {
-    }
-    ~div_mapper() {}
-    virtual int local_port(const int port) const override {
-      return port / div_;
-    }
-  };
-
-  class mod_mapper : public port_mapper
-  {
-  private:
-    int mod_;
-  public:
-    mod_mapper(int mod) : mod_(mod) {}
-    ~mod_mapper() {}
-    virtual int local_port(const int port) const override {
-      return port % mod_;
-    }
-  };
-
-  void configure_outports(int num_ports,
-                     std::unique_ptr<port_mapper> mapper
-                     = std::unique_ptr<port_mapper>(new identity_mapper()),
-                     std::unique_ptr<port_mapper> credit_mapper
-                     = std::unique_ptr<port_mapper>(new identity_mapper()) ) {
-    resize(num_ports);
-    outport_mapper_ = std::move(mapper);
-    credit_mapper_ = std::move(credit_mapper);
-  }
-
-  int local_outport(int port) {
-    return outport_mapper_->local_port(port);
-  }
-
-  int local_outport_credit(int port) {
-    return credit_mapper_->local_port(port);
-  }
-
  protected:
-  typedef std::unordered_map<int, pisces_input> input_map;
-
-  typedef std::vector<pisces_output> output_map;
-  typedef std::vector<int> credit_map;
-  typedef std::vector<payload_queue> queue_map;
-
   pisces_bandwidth_arbitrator* arb_;
 
-  input_map inputs_;
-  output_map outputs_;
+  std::vector<input> inputs_;
+  std::vector<output> outputs_;
   //indexed by slot number = (port,vc)
-  credit_map credits_;
+  std::vector<int> credits_;
   //indexed by slot number = (port,vc)
-  queue_map queues_;
+  std::vector<payload_queue> queues_;
+#if SSTMAC_SANITY_CHECK
+  std::vector<int> initial_credits_;
+#endif
 
   int num_vc_;
-  int port_offset_;
-  int port_div_;
-  int port_mod_;
-
   event_handler* credit_handler_;
   event_handler* payload_handler_;
 
   std::map<int, std::set<int> > deadlocked_channels_;
 
-  std::map<int, std::map<int, std::list<pisces_payload*> > > blocked_messages_;
-
-  std::string tile_id_;
+  std::map<int, std::map<int, std::list<pisces_packet*> > > blocked_messages_;
 
  protected:
-  void send_payload(pisces_payload* pkt);
+  void send_payload(pisces_packet* pkt);
 
   void build_blocked_messages();
 
  private:
-  std::unique_ptr<port_mapper> outport_mapper_;
-  std::unique_ptr<port_mapper> credit_mapper_;
-
   inline int& credit(int port, int vc){
     return credits_[slot(port, vc)];
   }
 
-  void resize(int num_ports);
+  void resize_outports(int num_ports);
 
   inline payload_queue& queue(int port, int vc){
     return queues_[slot(port, vc)];
   }
 
-  std::string input_name(pisces_payload* pkt);
+  std::string input_name(pisces_packet* pkt);
 
-  std::string output_name(pisces_payload* pkt);
+  std::string output_name(pisces_packet* pkt);
 
-  event_link* output_link(pisces_payload* pkt);
+  event_link* output_link(pisces_packet* pkt);
 
 };
 
@@ -251,7 +147,9 @@ class pisces_demuxer :
 {
  public:
   pisces_demuxer(sprockit::sim_parameters* params,
-                      event_scheduler* parent);
+                 event_scheduler* parent,
+                 int num_out_ports, int num_vc,
+                 bool update_vc);
 
   std::string pisces_name() const override {
     return "demuxer";
@@ -265,7 +163,9 @@ class pisces_muxer :
 {
  public:
   pisces_muxer(sprockit::sim_parameters* params,
-                    event_scheduler* parent);
+               event_scheduler* parent,
+               int num_in_ports, int num_vc,
+               bool update_vc);
 
   std::string pisces_name() const override {
     return "muxer";
@@ -277,7 +177,9 @@ class pisces_crossbar :
 {
  public:
   pisces_crossbar(sprockit::sim_parameters* params,
-                       event_scheduler* parent);
+                  event_scheduler* parent,
+                  int num_in_ports, int num_out_ports, int num_vc,
+                  bool update_vc);
 
   std::string pisces_name() const override {
     return "crossbar";

@@ -126,7 +126,7 @@ class pisces_memory_packetizer : public packetizer
   }
 
  private:
-  void handle_payload(int vn, pisces_payload* pkt);
+  void handle_payload(int vn, pisces_packet* pkt);
 
   void init_noise_model();
 

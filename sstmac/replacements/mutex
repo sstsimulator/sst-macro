@@ -36,6 +36,9 @@ void call_once(once_flag& flag, Callable&& f, Args&&... args ){
 #include <sstmac/replacements/sstmac_pthread_return.h>
 #endif
 
+//clang is really bad about including this
+//and it accidentally works because mutex brings this in
+#include <climits>
 
 #endif
 

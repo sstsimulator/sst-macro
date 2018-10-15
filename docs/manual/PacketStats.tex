@@ -47,7 +47,6 @@ The NIC parameters now become:
 \begin{ViFile}
 node {
  nic {
-  packet_allocator = delay_stats
   ejection {
    stats = delay_histogram
    delay_histogram {
@@ -107,7 +106,6 @@ However, we now want to collect both a spyplot and the histogram.
 \begin{ViFile}
 node {
  nic {
-  packet_allocator = delay_stats
   ejection {
    stats = multi
    callbacks = congestion_spyplot delay_histogram

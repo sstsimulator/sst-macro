@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/sculpin/sculpin.h>
-#include <sstmac/hardware/sculpin/hotspot.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/sstmac_config.h>
 #if SSTMAC_VTK_ENABLED
@@ -101,9 +100,9 @@ class sculpin_switch :
     int dst_inport,
     event_link* link) override;
 
-  link_handler* credit_handler(int port) const override;
+  link_handler* credit_handler(int port) override;
 
-  link_handler* payload_handler(int port) const override;
+  link_handler* payload_handler(int port) override;
 
   timestamp send_latency(sprockit::sim_parameters *params) const override;
 
@@ -172,10 +171,16 @@ class sculpin_switch :
 
   bool congestion_;
 
-  stat_hotspot* stat_hotspots_;
   stat_histogram* delay_hist_;
+
   std::set<node_id> src_stat_filter_;
   std::set<node_id> dst_stat_filter_;
+  std::set<node_id> src_stat_highlight_;
+  std::set<node_id> dst_stat_highlight_;
+
+  double highlight_scale_;
+  bool vtk_flicker_;
+
 
  private:
   void send(port& p, sculpin_packet* pkt, timestamp now);
@@ -184,7 +189,12 @@ class sculpin_switch :
 
   void pull_next(int portnum);
 
-  bool do_not_filter_packet(sculpin_packet* pkt);
+  /**
+   * @brief do_not_filter_packet
+   * @param pkt
+   * @return >0 scale factor for packet if allowed, <0 if packet should be filtered
+   */
+  double do_not_filter_packet(sculpin_packet* pkt);
 
 };
 

@@ -98,9 +98,9 @@ class node :
 
   timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
-  link_handler* payload_handler(int port) const override;
+  link_handler* payload_handler(int port) override;
 
-  link_handler* credit_handler(int port) const override;
+  link_handler* credit_handler(int port) override;
 
   /**
    @return  The object encapsulating the memory model

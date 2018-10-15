@@ -1,10 +1,18 @@
 
+enum implicit_states {
+  null=0,
+  length,
+  size,
+  temp
+};
+
+
 
 void memoFxn(int niter);
 
 void memoFxn(int n){
-  { sstmac_compute_memoize1("memoFxn",n); }sstmac_push_implicit_state1(n);for (int i=0; i < n; ++i);
-; sstmac_pop_implicit_state(1);}
+  { sstmac_compute_memoize1("memoFxn",n); }sstmac_set_implicit_state1(length,n); for (int i=0; i < n; ++i);
+; sstmac_unset_implicit_state1(length);}
 
 
 void testFxn(int param){
@@ -12,8 +20,8 @@ void testFxn(int param){
 
 
 void anotherTestFxn(int param){
-  sstmac_push_implicit_state1(param);param += 5;
-; sstmac_pop_implicit_state(1);}
+  sstmac_set_implicit_state2(size,param,temp,param); param += 5;
+; sstmac_unset_implicit_state2(size,temp);}
 
 int fxn()
 {
@@ -36,7 +44,7 @@ int fxn()
 
 
 
- sstmac_push_implicit_state1(mul);memoFxn(10); sstmac_pop_implicit_state(1);;
+ sstmac_set_implicit_state1(temp,mul); memoFxn(10); sstmac_unset_implicit_state1(temp);;
   memoFxn(i+12);
   return 0;
 }
@@ -52,3 +60,4 @@ int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));
 extern "C" int sstmac_user_main_pragma_test(int argc, char** argv);
 int pragma_test_sstmac_initer = user_skeleton_main_init_fxn("pragma_test",sstmac_user_main_pragma_test);
 
+extern "C" const char exe_main_name[] = "pragma_test";

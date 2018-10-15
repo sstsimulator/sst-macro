@@ -57,9 +57,9 @@ RegisterDebugSlot(pisces_config,
 namespace sstmac {
 namespace hw {
 
-const double pisces_payload::uninitialized_bw = -1;
+const double pisces_packet::uninitialized_bw = -1;
 
-pisces_payload::pisces_payload(
+pisces_packet::pisces_packet(
   serializable* msg,
   uint32_t num_bytes,
   uint64_t flow_id,
@@ -73,11 +73,10 @@ pisces_payload::pisces_payload(
 }
 
 void
-pisces_payload::serialize_order(serializer& ser)
+pisces_packet::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
   packet::serialize_order(ser);
-  ser & inport_;
   ser & bw_;
   ser & max_in_bw_;
   ser & arrival_;
@@ -85,7 +84,7 @@ pisces_payload::serialize_order(serializer& ser)
 }
 
 std::string
-pisces_payload::to_string() const
+pisces_packet::to_string() const
 {
   return sprockit::printf("flow %16lu%s, %d bytes bw=%8.4e %d->%d %s",
                    uint64_t(flow_id()),

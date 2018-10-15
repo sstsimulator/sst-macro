@@ -135,8 +135,21 @@ app::check_dlopen(int aid, sprockit::sim_parameters* params)
     dlopen_lock.lock();
     std::string libname = params->get_param("exe");
     dlopen_entry& entry = dlopens_[aid];
+    entry.name = libname;
     if (entry.refcount == 0){
-      entry.handle = load_extern_library(libname, "");
+      entry.handle = load_extern_library(libname, load_extern_path_str());
+    }
+    void* name = dlsym(entry.handle, "exe_main_name");
+    if (name){
+      const char* str_name = (const char*) name;
+      if (params->has_param("name")){
+        if (params->get_param("name") != std::string(str_name)){
+          spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
+                            "%s != %s", aid, str_name, params->get_param("name").c_str());
+        }
+      } else {
+        params->add_param("name", str_name);
+      }
     }
     ++entry.refcount;
     sstmac_app_loaded(aid);
@@ -153,6 +166,7 @@ app::check_dlclose()
     dlopen_entry& entry = iter->second;
     --entry.refcount;
     if (entry.refcount == 0){
+      std::cerr << "Unloading library " << entry.name << std::endl;
       unload_extern_library(entry.handle);
       dlopens_.erase(iter);
     }
@@ -199,6 +213,18 @@ app::app(sprockit::sim_parameters *params, software_id sid,
     env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
   active.level = 0;
   active.num_threads = 1;
+
+  for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
+    env_[iter->first] = iter->second.value;
+  }
+
+  for (auto iter=os->env_begin(); iter != os->env_end(); ++iter){
+    auto my_iter = env_.find(iter->first);
+    if (my_iter == env_.end()){
+      //don't overwrite - app env taks precedence
+      env_[iter->first] = iter->second;
+    }
+  }
 }
 
 app::~app()
@@ -209,6 +235,47 @@ app::~app()
   if (globals_storage_) delete[] globals_storage_;
   //we own a unique copy
   if (params_) delete params_;
+}
+
+int
+app::putenv(char* input)
+{
+  spkt_abort_printf("app::putenv: not implemented - cannot put %d",
+                    input);
+  return 0;
+}
+
+int
+app::setenv(const std::string &name, const std::string &value, int overwrite)
+{
+  if (overwrite){
+    env_[name] = value;
+  } else {
+    auto iter = env_.find(name);
+    if (iter == env_.end()){
+      env_[name] = value;
+    }
+  }
+  return 0;
+}
+
+char*
+app::getenv(const std::string &name) const
+{
+  char* my_buf = const_cast<char*>(env_string_);
+  auto iter = env_.find(name);
+  if (iter == env_.end()){
+    return nullptr;
+  } else {
+    auto& val = iter->second;
+    if (val.size() >= sizeof(env_string_)){
+      spkt_abort_printf("Environment variable %s=%s is too long - need less than %d",
+                        name.c_str(), val.c_str(), int(val.size()));
+    }
+    ::strcpy(my_buf, val.data());
+  }
+  //ugly but necessary
+  return my_buf;
 }
 
 lib_compute_memmove*
@@ -349,6 +416,7 @@ app::run()
   }
   task_mapping::remove_global_mapping(sid_.app_, unique_name_);
   thread_info::deregister_user_space_virtual_thread(stack_);
+  check_dlclose();
 }
 
 void

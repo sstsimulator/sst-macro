@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/router/router.h>
-#include <sstmac/hardware/router/multipath_routing.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/cascade.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
@@ -76,6 +75,7 @@ class cascade_minimal_router : public router {
     my_x_ = cascade_->computeX(my_addr_);
     my_y_ = cascade_->computeY(my_addr_);
     my_g_ = cascade_->computeG(my_addr_);
+    inj_port_offset_ = cascade_->numX() + cascade_->numY() + cascade_->numG();
   }
 
   std::string to_string() const override {
@@ -87,19 +87,17 @@ class cascade_minimal_router : public router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = cascade_->node_to_ejection_switch(pkt->toaddr(), dir);
+    auto* hdr = pkt->rtr_header<header>();
+    switch_id ej_addr = pkt->toaddr() / cascade_->concentration();
     if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
-      pkt->current_path().vc = 0;
+      hdr->edge_port = pkt->toaddr() % cascade_->concentration() + inj_port_offset_;
+      hdr->deadlock_vc = 0;
       return;
     }
 
-    packet::path& path = pkt->current_path();
-    cascade_->minimal_route_to_switch(this, my_addr_, ej_addr, path);
-    auto hdr = pkt->get_header<header>();
-    path.vc = hdr->num_group_hops;
-    if (cascade_->is_global_port(path.outport())){
+    cascade_->minimal_route_to_switch(this, my_addr_, ej_addr, pkt->rtr_header<header>());
+    hdr->deadlock_vc = hdr->num_group_hops;
+    if (cascade_->is_global_port(hdr->edge_port)){
       ++hdr->num_group_hops;
     }
     ++hdr->num_hops;
@@ -110,6 +108,7 @@ class cascade_minimal_router : public router {
   int my_y_;
   int my_g_;
   cascade* cascade_;
+  int inj_port_offset_;
 };
 
 /**

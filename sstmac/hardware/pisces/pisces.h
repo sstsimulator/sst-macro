@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/messages/sst_message.h>
-#include <sstmac/hardware/router/routing_enum.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -65,17 +64,17 @@ namespace hw {
  same path between endpoints.  This is usually one fraction of
  a larger message.
  */
-class pisces_payload :
+class pisces_packet :
   public packet,
-  public sprockit::thread_safe_new<pisces_payload>
+  public sprockit::thread_safe_new<pisces_packet>
 {
  public:
-  ImplementSerializable(pisces_payload)
+  ImplementSerializable(pisces_packet)
 
   static const double uninitialized_bw;
 
  public:
-  pisces_payload(
+  pisces_packet(
     serializable* msg,
     uint32_t num_bytes,
     uint64_t flow_id,
@@ -85,7 +84,7 @@ class pisces_payload :
 
   std::string to_string() const override;
 
-  virtual ~pisces_payload() {}
+  virtual ~pisces_packet() {}
 
   /**
     Needed because of routable_message ambiguity
@@ -94,21 +93,52 @@ class pisces_payload :
     return current_vc_;
   }
 
-  int next_port() const {
-    return packet::global_outport();
+  /**
+   * @brief reset_stages Configure the internal ports to traverse on a switch
+   * @param port0
+   */
+  void reset_stages(uint8_t port0){
+    stage_ = 0;
+    outports_[0] = port0;
+  }
+
+  void reset_stages(uint8_t port0, uint8_t port1){
+    reset_stages(port0);
+    outports_[1] = port1;
+  }
+
+  void reset_stages(uint8_t port0, uint8_t port1, uint8_t port2){
+    reset_stages(port0, port1);
+    outports_[2] = port2;
+  }
+
+  void advance_stage(){
+    inport_ = outports_[stage_];
+    ++stage_;
+  }
+
+  uint8_t stage() const {
+    return stage_;
+  }
+
+  int next_local_outport() const {
+    return outports_[stage_];
+  }
+
+  int next_local_inport() const {
+    return inport_;
   }
 
   int next_vc() const {
-    return packet::vc();
+    return rtr_header<packet::header>()->deadlock_vc;
   }
 
   void update_vc() {
-    int new_vc = next_vc();
-    if (new_vc == routing::uninitialized){
-      current_vc_ = 0;
-    } else {
-      current_vc_ = new_vc;
-    }
+    current_vc_ = next_vc();
+  }
+
+  void set_inport(int port) {
+    inport_ = port;
   }
 
   timestamp arrival() const {
@@ -142,6 +172,11 @@ class pisces_payload :
     bw_ = bw;
   }
 
+  /**
+   * @brief max_incoming_bw The maximum bandwidth a packet
+   *        could have on its current component (always > #bw())
+   * @return
+   */
   double max_incoming_bw() const {
     return max_in_bw_;
   }
@@ -154,20 +189,10 @@ class pisces_payload :
     return byte_length() / bw_;
   }
 
-  void set_inport(int port) {
-    inport_ = port;
-  }
-
-  int inport() const {
-    return inport_;
-  }
-
   void serialize_order(serializer& ser) override;
 
- protected:
-  pisces_payload(){} //for serialization
-
-  int inport_;
+ private:
+  pisces_packet(){} //for serialization
 
   double bw_;
 
@@ -176,6 +201,12 @@ class pisces_payload :
   timestamp arrival_;
 
   int current_vc_;
+
+  uint8_t stage_;
+
+  uint8_t outports_[3];
+
+  uint16_t inport_;
 
 };
 

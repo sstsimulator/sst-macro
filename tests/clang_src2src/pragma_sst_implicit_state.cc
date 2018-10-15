@@ -1,17 +1,25 @@
 
+enum implicit_states {
+  null=0,
+  length,
+  size,
+  temp
+};
+ 
+
 #pragma sst memoize skeletonize(false) model(linear) inputs(niter)
-#pragma sst implicit_state inputs(niter)
+#pragma sst implicit_state length(niter)
 void memoFxn(int niter);
 
 void memoFxn(int n){
   for (int i=0; i < n; ++i);
 }
 
-#pragma sst implicit_state inputs(param)
+#pragma sst implicit_state size(param) temp(param)
 void testFxn(int param){
 }
 
-#pragma sst implicit_state inputs(param)
+#pragma sst implicit_state size(param) temp(param)
 void anotherTestFxn(int param){
   param += 5;
 }
@@ -36,7 +44,7 @@ int fxn()
       mul *= x[idx[i]];
     }
   }
-#pragma sst implicit_state inputs(mul)
+#pragma sst implicit_state temp(mul)
   memoFxn(10);
   memoFxn(i+12);
   return 0;

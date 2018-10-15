@@ -92,10 +92,17 @@ class operating_system :
       return key_;
     }
 
-    virtual double compute(int n_params, const double params[],
-                           int n_states, const int states[]) = 0;
-    virtual void collect(double time, int n_params, const double params[],
-                         int n_states, const int states[]) = 0;
+    /**
+     * @brief compute
+     * @param n_params
+     * @param params
+     * @param states A list of discrete states (that can be modified)
+     * @return The time to compute
+     */
+    virtual double compute(int n_params, const double params[], int states[]) = 0;
+
+    virtual void collect(double time, int n_params, const double params[], const int states[]) = 0;
+
     virtual void finish() = 0;
    private:
     std::string key_;
@@ -293,6 +300,14 @@ class operating_system :
     return params_;
   }
 
+  std::map<std::string,std::string>::const_iterator env_begin() const {
+    return env_.begin();
+  }
+
+  std::map<std::string,std::string>::const_iterator env_end() const {
+    return env_.end();
+  }
+
   /**
    * @brief sleep Sleep for a specified delay. Sleeps do not require
    *        core reservation, unlike #compute. Sleeps always begin immediately.
@@ -367,6 +382,7 @@ class operating_system :
   std::unordered_map<std::string, library*> libs_;
   std::unordered_map<library*, int> lib_refcounts_;
   std::map<std::string, std::list<event*>> pending_library_events_;
+  std::map<std::string, std::string> env_;
 
   thread* active_thread_;
 

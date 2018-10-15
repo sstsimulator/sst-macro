@@ -22,28 +22,22 @@ CORETESTS+= \
   test_core_apps_ping_all_random_macrels \
   test_core_apps_ping_all_torus_sculpin \
   test_core_apps_ping_all_dragonfly \
-  test_core_apps_ping_all_dragonfly_ugalG \
   test_core_apps_ping_all_dragonfly_minimal \
   test_core_apps_ping_all_ns \
   test_core_apps_ping_all_hypercube_par \
   test_core_apps_compute \
   test_core_apps_host_compute \
   test_core_apps_ping_all_uneven_tree \
-  test_core_apps_ping_all_torus_netlink \
   test_core_apps_stop_time \
   test_core_apps_distributed_service \
-  test_core_apps_ping_all_tiled_torus \
   test_core_apps_ping_pong \
   test_core_apps_ping_pong_slow \
-  test_core_apps_ping_pong_amm4 \
-  test_core_apps_ping_pong_amm4_slow \
   test_core_apps_mpi_fattree \
   test_core_apps_ping_all_simple_fattree \
   test_core_apps_ping_all_fattree2 \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_fattree_tapered
 
-#  test_core_apps_ping_all_tiled_cascade
 
 test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 6 $(top_srcdir) $@ Exact \

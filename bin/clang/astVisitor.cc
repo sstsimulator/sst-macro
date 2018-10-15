@@ -3283,6 +3283,7 @@ PragmaActivateGuard::init()
     bool blockDeleted = false;
     switch (prg->cls){
       case SSTPragma::StackAlloc:
+      case SSTPragma::ImplicitState:
       case SSTPragma::Memoize:  //always - regardless of skeletonization
       case SSTPragma::GlobalVariable:
       case SSTPragma::Overhead:

@@ -48,7 +48,6 @@ RegisterKeywords(
   { "id", "" },
   { "negligible_size", "the minimum message size before detailed modeling is performed" },
   { "name", ""},
-  { "model", "" },
   { "mtu", "" },
   { "type", "" },
   { "latency", "" },

@@ -195,21 +195,30 @@ void py_init_system(PyObject*  module)
 }
 
 static PyObject*
-sys_get_injection_connections(SystemPy_t* self, PyObject* nodeIdx)
+sys_convert_to_list(const std::vector<sstmac::hw::topology::injection_port>& ports)
 {
-  int nid = PyInt_AsLong(nodeIdx);
-  uint16_t ports[32];
-  int num_ports;
-  sstmac::switch_id sid = self->macro_topology
-      ->netlink_to_injection_switch(nid, ports, num_ports);
-  int iports[32];
-  for (int i=0; i<32; ++i) iports[i] = ports[i];
-  PyObject* intTuple = sstmac::py_get_int_tuple(num_ports, iports);
-  PyObject* tuple = PyTuple_New(2);
-  PyObject* swIdx = PyInt_FromLong(sid);
-  PyTuple_SetItem(tuple, 0, swIdx);
-  PyTuple_SetItem(tuple, 1, intTuple);
+  PyObject* tuple = PyTuple_New(ports.size());
+  for (int i=0; i < ports.size(); ++i){
+    const sstmac::hw::topology::injection_port& port = ports[i];
+    PyObject* portTuple = PyTuple_New(3);
+    PyObject* nodeIdx = PyInt_FromLong(port.nid);
+    PyTuple_SetItem(portTuple, 0, nodeIdx);
+    PyObject* swPort = PyInt_FromLong(port.switch_port);
+    PyTuple_SetItem(portTuple, 1, swPort);
+    PyObject* epPort = PyInt_FromLong(port.ep_port);
+    PyTuple_SetItem(portTuple, 2, epPort);
+    PyTuple_SetItem(tuple, i, portTuple);
+  }
   return tuple;
+}
+
+static PyObject*
+sys_get_injection_connections(SystemPy_t* self, PyObject* swIdx)
+{
+  int sid = PyInt_AsLong(swIdx);
+  std::vector<sstmac::hw::topology::injection_port> ports;
+  self->macro_topology->endpoints_connected_to_injection_switch(sid, ports);
+  return sys_convert_to_list(ports);
 }
 
 static PyObject*
@@ -256,27 +265,18 @@ sys_node_to_logp_switch(SystemPy_t* self, PyObject* idx)
 }
 
 static PyObject*
-sys_get_ejection_connections(SystemPy_t* self, PyObject* nodeIdx)
+sys_get_ejection_connections(SystemPy_t* self, PyObject* swIdx)
 {
-  int nid = PyInt_AsLong(nodeIdx);
-  uint16_t ports[32];
-  int num_ports;
-  sstmac::switch_id sid = self->macro_topology
-      ->netlink_to_ejection_switch(nid, ports, num_ports);
-  int iports[32];
-  for (int i=0; i<32; ++i) iports[i] = ports[i];
-  PyObject* intTuple = sstmac::py_get_int_tuple(num_ports, iports);
-  PyObject* tuple = PyTuple_New(2);
-  PyObject* swIdx = PyInt_FromLong(sid);
-  PyTuple_SetItem(tuple, 0, swIdx);
-  PyTuple_SetItem(tuple, 1, intTuple);
-  return tuple;
+  int sid = PyInt_AsLong(swIdx);
+  std::vector<sstmac::hw::topology::injection_port> ports;
+  self->macro_topology->endpoints_connected_to_ejection_switch(sid, ports);
+  return sys_convert_to_list(ports);
 }
 
 static bool is_logp(SystemPy_t* self)
 {
   sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
-  return switch_params->get_lowercase_param("model") == "logp";
+  return switch_params->get_lowercase_param("name") == "logp";
 }
 
 static PyObject*

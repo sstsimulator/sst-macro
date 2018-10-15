@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class pisces_payload;
+class pisces_packet;
 class pisces_credit;
 
 }

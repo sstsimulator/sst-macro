@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_hardware_network_NETWORK_MESSAGE_H
 
 #include <sstmac/common/messages/sst_message.h>
-#include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/network/network_id.h>
 #include <sstmac/software/process/task_id.h>
 #include <sstmac/software/process/app_id.h>

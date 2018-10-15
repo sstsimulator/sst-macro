@@ -216,6 +216,11 @@ parse_opts(int argc, char **argv, opts &oo)
     }
   }
 
+  if (debugflags){
+    sprockit::debug::print_all_debug_slots(std::cout);
+    return PARSE_OPT_EXIT_SUCCESS;
+  }
+
   if (infinite_network) {
     sprockit::sim_parameters params("infinite.ini");
     params.combine_into(oo.params);
@@ -292,10 +297,6 @@ parse_opts(int argc, char **argv, opts &oo)
     oo.params->add_param("node.app1.name", "mpi_ping_all");
   }
 
-  if (debugflags){
-    sprockit::debug::print_all_debug_slots(std::cout);
-    return PARSE_OPT_EXIT_SUCCESS;
-  }
   /** check to see if we should do an mpitestall */
   if (dompitest) {
     if (oo.configfile != "") {

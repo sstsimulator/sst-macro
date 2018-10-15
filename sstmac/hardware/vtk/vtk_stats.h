@@ -115,6 +115,11 @@ class stat_vtk : public stat_collector
     double highlight_switch_color;
     double highlight_link_color;
     double bidirectional_shift;
+    double min_face_color;
+    double max_face_color_sum;
+    double scale_face_color_sum;
+    double active_face_width;
+    std::string name;
     std::set<int> special_fills;
   };
 
@@ -137,9 +142,9 @@ class stat_vtk : public stat_collector
 
   void clear() override;
 
-  void collect_departure(timestamp now, timestamp time, int port, intptr_t id);
+  void collect_new_intensity(timestamp time, int port, double intens);
 
-  void collect_arrival(timestamp time, int port, intptr_t id);
+  void collect_new_color(timestamp time, int port, double color);
 
   void reduce(stat_collector *coll) override;
 
@@ -156,10 +161,6 @@ class stat_vtk : public stat_collector
   void configure(switch_id sid, hw::topology* top);
 
  private:
-  void collect_departure(timestamp time, int port, intptr_t id);
-
-  void clear_pending_departures(timestamp now);
-
   /**
    * @brief The port_state struct
    * The VTK collection has 3 different types of quantities
@@ -180,32 +181,11 @@ class stat_vtk : public stat_collector
     double accumulated_color;
     double current_color;
     double active_vtk_color;
-    std::map<intptr_t,timestamp> delayed;
     timestamp last_wait_finished;
     port_state() :
       accumulated_color(0.),
       current_level(0)
     {
-    }
-  };
-
-  void collect_new_intensity(timestamp time, int port, double intens);
-
-  void collect_new_color(timestamp time, int port, double color);
-
-  void increment_intensity(timestamp time, int port, int increment, const char* type);
-
-  struct delayed_event {
-    timestamp time;
-    int port;
-    intptr_t id;
-    delayed_event(timestamp t, int p, intptr_t i) :
-      time(t), port(p), id(i){}
-  };
-
-  struct compare_delayed_event {
-    bool operator()(const delayed_event& l, const delayed_event& r){
-      return l.time < r.time;
     }
   };
 
@@ -218,11 +198,6 @@ class stat_vtk : public stat_collector
   };
 
   std::vector<int> intensity_levels_;
-  std::vector<hw::topology::vtk_face_t> port_to_face_;
-  std::vector<int> raw_port_intensities_;
-  std::priority_queue<delayed_event,
-      std::vector<delayed_event>,
-      compare_delayed_event> pending_departures_;
   std::vector<port_state> port_states_;
   timestamp min_interval_;
   int id_;
@@ -237,7 +212,6 @@ class stat_vtk : public stat_collector
   hw::topology* top_;
 
   bool active_;
-  bool collect_delays_;
   bool flicker_;
 
 };

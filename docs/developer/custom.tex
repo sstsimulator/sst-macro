@@ -61,35 +61,36 @@ determining how many switches are in the ring and how big a ``jump'' link is.
 The topology then needs to tell objects how to connect
 
 \begin{CppCode}
-void xpress_ring::connect_objects(connectable_map& objects)
+void xpress_ring::connected_outports(switch_id src, std::vector<connection>& conns)
 {
-  for (int i=0; i < ring_size_; ++i) {
-    connectable* center_obj = objects[switch_id(i)];
-
-    switch_id up_idx((i + 1) % ring_size_);
-    connectable* up_partner = find_object(objects, cloner, up_idx);
-    center_obj->connect(up_port, down_port, connectable::network_link, up_partner);
-
-    switch_id down_idx((i + ring_size_ - 1) % ring_size_);
-    connectable* down_partner = find_object(objects, cloner, down_idx);
-    center_obj->connect_mod_at_port(down_port, up_port, connectable::network_link,
-                                    down_partner);
-
-    switch_id jump_up_idx((i + jump_size_) % ring_size_);
-    connectable* jump_up_partner = find_object(objects, cloner, jump_up_idx);
-    center_obj->connect(jump_up_port, jump_down_port, connectable::network_link,
-                                    jump_up_partner);
-
-    switch_id jump_down_idx((i + ring_size_ - jump_size_) % ring_size_);
-    connectable* jump_down_partner = find_object(objects, cloner,
-                                         jump_down_idx);
-    center_obj->connect(jump_down_port, jump_up_port, connectable::network_link,
-                                    jump_down_partner);
-  }
+  conns.resize(4); //every switch has 4 connections
+  auto& plusConn = conns[0];
+  plusConn.src = src;
+  plusConn.dst = (src+1) % ring_size_;
+  plusConn.src_outport = 0;
+  plusConn.dst_inport = 1; 
+  
+  auto& minusConn = conns[1];
+  minusConn.src = src;
+  minusConn.dst = (src -1 + ring_size) % ring_size_;
+  minusConn.src_outport = 1;
+  minusConn.dst_inport = 0;   
+  
+  auto& jumpUpConn = conns[2];
+  jumpUpConn.src = src;
+  jumpUpConn.dst = (src + jump_size_) % ring_size_;
+  jumpUpConn.src_outport = 2;
+  jumpUpConn.dst_inport = 3;
+  
+  auto& jumpDownConn = conns[2];
+  jumpDownConn.src = src;
+  jumpDownConn.dst = (src - jump_size_ + ring_size) % ring_size_;
+  jumpDownConn.src_outport = 3;
+  jumpDownConn.dst_inport = 2;
 }
 \end{CppCode}
-We loop through every switch in the ring and form $+/-$ connections to neighbors and $+/-$ connections to jump partners.
-Each of the four connections get a different unique port number.  We must identify both the outport port for the sender and the input port for the receiver.
+Each of the four connections get a different unique port number.  
+We must identify both the outport port for the sender and the input port for the receiver.
 
 To compute the distance between two switches
 
@@ -123,103 +124,6 @@ xpress_ring::minimal_distance(
 \end{CppCode}
 Essentially you compute the number of jumps to get close to the final destination and then the number of remaining single steps.
 
-For computing coordinates, the topology has dimension one.
-
-\begin{CppCode}
-switch_id xpress_ring::get_switch_id(const coordinates& coords) const
-{
-  return switch_id(coords[0]);
-}
-
-void xpress_ring::get_productive_path(
-  int dim,
-  const coordinates& src,
-  const coordinates& dst,
-  routable::path& path) const
-{
-  minimal_route_to_coords(src, dst, path);
-}
-
-void xpress_ring::compute_switch_coords(switch_id swid, coordinates& coords) const
-{
-  coords[0] = int(swid);
-}
-\end{CppCode}
-Thus the coordinate vector is a single element with the \switchid.
-
-The most complicated function is the routing function.
-
-\begin{CppCode}
-void xpress_ring::minimal_route_to_coords(
-  const coordinates& src_coords,
-  const coordinates& dest_coords,
-  routable::path& path) const
-{
-  int src_pos = src_coords[0];
-  int dest_pos = dest_coords[0];
-
-  //can route up or down
-  int up_distance = abs(dest_pos - src_pos);
-  int down_distance = abs(src_pos + ring_size_ - dest_pos);
-  int xpress_cutoff = jump_size_ / 2;
-\end{CppCode}
-First we compute the distance in the up and down directions.
-We also compute the cutoff distance where it is better to jump or step to the next switch.
-If going up is a shorter distance, we have
-
-\begin{CppCode}
-  if (up_distance <= down_distance) {
-    if (up_distance > xpress_cutoff) {
-      path.outport = jump_up_port;
-      path.dim = UP;
-      path.dir = jump;
-      path.vc = 0;
-    }
-    else {
-      path.outport = up_port;
-      path.dim = UP;
-      path.dir = step;
-      path.vc = 0;
-    }
-  }
-\end{CppCode}
-We then decide if it is better to step or jump.
-We do not concern ourselves with virtual channels here and just set it to zero.
-Similarly, if the down direction in the ring is better
-
-\begin{CppCode}
-  else {
-    if (down_distance > xpress_cutoff) {
-      path.outport = jump_down_port;
-      path.dim = DOWN;
-      path.dir = jump;
-      path.vc = 0;
-    }
-    else {
-      path.outport = down_port;
-      path.dim = DOWN;
-      path.dir = step;
-      path.vc = 0;
-    }
-  }
-}
-\end{CppCode}
-
-For adaptive routing, we need to compute productive paths.
-In this case, we only have a single dimension so there is little adaptive routing flexibility.
-The only productive paths are the minimal paths.
-
-\begin{CppCode}
-void xpress_ring::get_productive_path(
-  int dim,
-  const coordinates& src,
-  const coordinates& dst,
-  routable::path& path) const
-{
-  minimal_route_to_coords(src, dst, path);
-}
-\end{CppCode}
-
 We are now ready to use our topology in an application.
 In this case, we just demo with the built-in MPI ping all program from \sstmacro.
 Here every node in the network sends a point-to-point message to every other node.
@@ -232,35 +136,6 @@ topology.name = xpress
 topology.xpress_ring_size = 10
 topology.xpress_jump_size = 5
 \end{ViFile}
-with application launch parameters
 
-\begin{ViFile}
-# Launch parameters
-launch_indexing = block
-launch_allocation = first_available
-launch_cmd_app1 = aprun -n10 -N1
-launch_app1 = mpi_test_all
-\end{ViFile}
-The file also includes a basic machine model.
-
-After compiling in the folder, we produce an executable \inlineshell{runsstmac}.
-Running the executable, we get the following
-
-\begin{ShellCmd}
-Estimated total runtime of           0.00029890 seconds
-SST/macro ran for       0.4224 seconds
-\end{ShellCmd}
-where the \sstmacro wall clock time will vary depending on platform.
-We estimate the communication pattern executes and finishes in 0.30 ms.
-Suppose we change the jump size to a larger number.
-Communication between distant nodes will be faster, but communication between medium-distance nodes will be slower.
-We now set \inlinefile{jump_size = 10} and get the output
-
-\begin{ShellCmd}
-Estimated total runtime of           0.00023990 seconds
-SST/macro ran for       0.4203 seconds
-\end{ShellCmd}
-We estimate the communication pattern executes and finishes in 0.24 ms, a bit faster.
-Thus, this communication pattern favors longer jump links.
 
 

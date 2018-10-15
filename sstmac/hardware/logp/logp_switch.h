@@ -93,11 +93,11 @@ class logp_switch : public connectable_component
     //do nothing
   }
 
-  link_handler* payload_handler(int port) const override {
+  link_handler* payload_handler(int port) override {
     return new_link_handler(this, &logp_switch::send_event);
   }
 
-  link_handler* credit_handler(int port) const override {
+  link_handler* credit_handler(int port) override {
     return new_link_handler(this, &logp_switch::drop_event);
   }
 

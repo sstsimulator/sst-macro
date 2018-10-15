@@ -71,13 +71,24 @@ class fully_connected : public structured_topology
     return 1;
   }
 
-  int num_leaf_switches() const override {
+  int max_num_ports() const override {
+    return size_ + concentration();
+  }
+
+  switch_id num_leaf_switches() const override {
     return size_;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const override {
+  int minimal_distance(switch_id src, switch_id dst) const {
     return 1;
   }
+
+  int num_hops_to_node(node_id src, node_id dst) const override {
+    return 1;
+  }
+
+  void endpoints_connected_to_injection_switch(switch_id swid,
+                          std::vector<injection_port>& nodes) const override;
 
   bool uniform_network_ports() const override {
     return true;
@@ -97,17 +108,12 @@ class fully_connected : public structured_topology
   void connected_outports(switch_id src,
        std::vector<connection>& conns) const override;
 
-  void minimal_route_to_switch(
-    switch_id current_sw_addr,
-    switch_id dest_sw_addr,
-    packet::path& path) const;
-
-  virtual int num_switches() const override {
+  switch_id num_switches() const override {
     return size_;
   }
 
  private:
-  long size_;
+  switch_id size_;
 
 };
 
