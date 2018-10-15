@@ -23,6 +23,7 @@ library_include_HEADERS = \
   dragonfly.ini \
   edison_amm.ini \
   edison_amm1.ini \
+  edison_amm1_sculpin.ini \
   edison_amm2.ini \
   edison_amm3.ini \
   edison_amm4.ini \
