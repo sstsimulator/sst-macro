@@ -143,8 +143,10 @@ app::check_dlopen(int aid, sprockit::sim_parameters* params)
     if (name){
       const char* str_name = (const char*) name;
       if (params->has_param("name")){
-        spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n",
-                          "%s != %s", str_name, params->get_param("name").c_str(), aid);
+        if (params->get_param("name") != std::string(str_name)){
+          spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
+                            "%s != %s", aid, str_name, params->get_param("name").c_str());
+        }
       } else {
         params->add_param("name", str_name);
       }
