@@ -186,3 +186,25 @@ user_skeleton_main_init_fxn(const char* name, empty_main_fxn fxn)
   sstmac::sw::user_app_cxx_empty_main::register_main_fxn(name, fxn);
   return 42;
 }
+
+extern "C"
+char* sstmac_getenv(const char* name)
+{
+  sstmac::sw::app* a = sstmac::sw::operating_system::current_thread()->parent_app();
+  return a->getenv(name);
+}
+
+extern "C"
+int sstmac_setenv(const char* name, const char* value, int overwrite)
+{
+  sstmac::sw::app* a = sstmac::sw::operating_system::current_thread()->parent_app();
+  return a->setenv(name, value, overwrite);
+}
+
+extern "C"
+int sstmac_putenv(char* input)
+{
+  sstmac::sw::app* a = sstmac::sw::operating_system::current_thread()->parent_app();
+  return a->putenv(input);
+}
+

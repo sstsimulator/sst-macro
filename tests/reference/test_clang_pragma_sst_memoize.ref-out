@@ -42,3 +42,4 @@ int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));
 extern "C" int sstmac_user_main_pragma_test_memoize(int argc, char** argv);
 int pragma_test_memoize_sstmac_initer = user_skeleton_main_init_fxn("pragma_test_memoize",sstmac_user_main_pragma_test_memoize);
 
+extern "C" const char exe_main_name[] = "pragma_test_memoize";

@@ -372,6 +372,10 @@ class sim_parameters  {
 
   void get_optional_vector_param(const std::string& key, std::vector<std::string>& vals);
 
+  void get_optional_vector_param(const std::string& key, std::vector<int>& vals);
+
+  void get_optional_vector_param(const std::string& key, std::vector<double>& vals);
+
   sim_parameters* get_namespace(const std::string& ns);
 
   sim_parameters* get_optional_namespace(const std::string& ns);
@@ -409,8 +413,7 @@ class sim_parameters  {
   }
 
   template <class T>
-  T*
-  extra_data() const {
+  T* extra_data() const {
     void* ptr = _extra_data();
     return static_cast<T*>(ptr);
   }
@@ -444,7 +447,6 @@ class sim_parameters  {
    */
   bool check_either_or(const std::string& key1,
                        const std::string& key2);
-
 
   sim_parameters* parent_;
 
@@ -503,6 +505,8 @@ class sim_parameters  {
   bool get_param(std::string& inout, const std::string& key);
 
   bool get_scoped_param(std::string& inout, const std::string& key);
+
+
 
 
 };

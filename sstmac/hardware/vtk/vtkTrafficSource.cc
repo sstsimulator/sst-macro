@@ -70,22 +70,24 @@ void vtkTrafficSource::SetTraffics(vtkSmartPointer<vtkIntArray> traffics)
   //Send traffic to output
   this->Traffics = vtkDoubleArray::New();
   this->Traffics->SetNumberOfComponents(1);
-  this->Traffics->SetName("MyTraffic");
+  this->Traffics->SetName(display_cfg_.name.c_str());
   this->Traffics->SetNumberOfValues(this->Cells->GetNumberOfCells());
 
-  int cell = 0;
   for (int i=0; i < num_switches_; ++i){
     double intensity = display_cfg_.idle_switch_color;
     if (display_cfg_.special_fills.find(i) != display_cfg_.special_fills.end()){
       intensity = display_cfg_.highlight_switch_color;
     }
-    for (int j=0; j < VTK_NUM_CELLS_PER_SWITCH; ++j, ++cell){
-      this->Traffics->SetValue(cell, intensity); //paint switches as always 0.01
-      intensity = 0; //only the first one (main box) should start nonzero
+
+    int cell_start=cell_offsets_[i];
+    int cell_stop=cell_offsets_[i+1];
+    this->Traffics->SetValue(cell_start, intensity);
+
+    for (int c=cell_start+1; c < cell_stop; ++c){
+      this->Traffics->SetValue(c,0);
     }
   }
 
-  link_index_offset_ = num_switches_ * VTK_NUM_CELLS_PER_SWITCH;
   for (int i=0; i < num_links_; ++i){
     this->Traffics->SetValue(i+link_index_offset_, display_cfg_.idle_link_color);
   }
@@ -168,40 +170,20 @@ int vtkTrafficSource::RequestData(
     vtk_port port(event.id_, event.port_);
 
     auto iter = port_to_link_id_.find(port.id32());
-    if (iter == port_to_link_id_.end()){
-      spkt_abort_printf("VTK %d port %d on hash %d has no associated link",
-                        event.id_, event.port_, int(port.id32()));
-    }
-    int link = iter->second;
-    vtk_link vl = vtk_link::construct(local_to_global_link_id_[port.id32()]);
-    this->Traffics->SetValue(link_index_offset_ + link, event.color_);
-
-
-    {
-      int offset = event.id_ * VTK_NUM_CELLS_PER_SWITCH + 1; //+1 is main box
-      int face = geoms_[event.id_].get_face(event.port_);
-      auto& map = face_intensities_[event.id_];
-      double max_i = 0;//idle_switch_intensity;
-      map[face][event.port_] = event.color_;
-      for (auto& pair : map[face]){
-        max_i = std::max(pair.second, max_i);
-      }
-      this->Traffics->SetValue(offset + face, max_i);
-    }
-    {
-      int offset = vl.id2 * VTK_NUM_CELLS_PER_SWITCH + 1; //+1 is main box
-      int face = geoms_[vl.id2].get_face(vl.port2);
-      auto& map = face_intensities_[vl.id2];
-      double max_i = 0;//idle_switch_intensity;
-      map[face][vl.port2] = event.color_;
-      for (auto& pair : map[face]){
-        max_i = std::max(pair.second, max_i);
-      }
-      this->Traffics->SetValue(offset + face, max_i);
+    if (iter != port_to_link_id_.end()){ //port has a link to show
+      int link = iter->second;
+      vtk_link vl = vtk_link::construct(local_to_global_link_id_[port.id32()]);
+      this->Traffics->SetValue(link_index_offset_ + link, event.color_);
+      int cell = cell_offsets_[vl.id2] + vl.port2 + 1;
+      this->Traffics->SetValue(cell, event.color_);
     }
 
-
+    //std::cout << "Writing color=" << event.color_ << " on " << event.id_ << " port " << event.port_
+   //           << " at t=" << reqTS << " on step=" << timestep << std::endl;
+    int cell = cell_offsets_[event.id_] + event.port_ + 1;
+    this->Traffics->SetValue(cell, event.color_);
   }
+  ++timestep;
 
   output->GetCellData()->AddArray(this->Traffics);
 

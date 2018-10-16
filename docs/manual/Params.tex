@@ -68,7 +68,7 @@ geometry \paramType{vector of int} & No default & See Topology section & Geometr
 \hline 
 auto \paramType{bool} & false & Whether to auto-generate the topology based on the application size. \\
 \hline
-name \paramType{string} & No default & torus, cascade, dragonfly, fat\_tree, butterfly, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
+name \paramType{string} & No default & torus, cascade, dragonfly, fat\_tree, crossbar, tapered\_fat\_tree & The name of the topology to build. For details, see Section \ref{chapter:topologies} \\
 \hline 
 seed \paramType{long} & System time & & If no value given, random numbers for topology will be generated from system time \\
 \hline
@@ -99,7 +99,7 @@ redundant \paramType{vector of int} & vector of 1's & Positive ints & For Cartes
 
 \openTable
 \hline
-model \paramType{string} & simple & simple & The type of node model (level of detail) for node-level operations \\
+name \paramType{string} & simple & simple & The type of node model (level of detail) for node-level operations \\
 \hline
 services \paramType{vector of strings} & Empty & Valid service names & For  details, see section on distributed services in developer's manual. Advanced feature. \\
 \hline
@@ -110,11 +110,9 @@ services \paramType{vector of strings} & Empty & Valid service names & For  deta
 
 \openTable
 \hline
-model \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
+name \paramType{string} & No default & pisces, logP & The type of NIC model (level of detail) for modeling injection of messages (flows) to/from the network. \\
 \hline
 packetizer \paramType{string} & cut\_through & merlin, simple, cut\_through & The type of packetizer for injecting flows into the network. Merlin is part of sst-elements. Simple and cut-through use PISCES \\
-\hline
-packet\_allocator \paramType{string} & pisces & pisces & The packet object used by the NIC. Certain type of statistics or congestion models may require custom packets with extra fields. \\
 \hline
 negligible\_size \paramType{byte length} & 256B & & Messages (flows) smaller than size will not go through detailed congestion modeling. They will go through a simple analytic model to compute the delay. \\
 \hline
@@ -240,27 +238,6 @@ frequency & No default & & The baseline frequency of the node \\
 parallelism \paramType{double} & 1.0 & Positive number & Fudge factor to account for superscalar processor. Number of flops per cycle performed by processor. \\
 \hline
 \end{tabular}
-
-\section{Namespace ``netlink''}
-\label{sec:netlink:Params}
-
-\openTable
-\hline
-model \paramType{string} & null & null, pisces & The type of netlink congestion model to use. If null, no netlink blocks will be used.  \\
-\hline
-concentration \paramType{int} & No default & Positive int & The number of nodes connected to a given netlink. The node concentration per switch must be greater than or equal to the node concentration per netlink. \\
-\hline
-num\_tiles \paramType{int} & 1 & Positive int & The number of router tiles the netlink connects to. Only relevant for tiled router models. Advanced usage. \\
-\hline
-\end{tabular}
-
-\subsection{Namespace ``netlink.injection"}
-\label{subsec:netlink:injection:Params}
-\input{piscesSender}
-
-\subsection{Namespace ``netlink.ejection"}
-\label{subsec:netlink:ejection:Params}
-\input{piscesSender}
 
 \section{Namespace ``mpi"}
 \label{sec:mpi:Params}

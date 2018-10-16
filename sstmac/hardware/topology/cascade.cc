@@ -55,7 +55,6 @@ Questions? Contact sst-macro-help@sandia.gov
 RegisterKeywords(
 { "topology_group_connections", "DEPRECATED: for group-based topologies, number of group connections per router" },
 { "group_connections", "for group-based topologies (dragonfly), number of group connections per router" },
-{ "true_random_intermediate", "" },
 );
 
 namespace sstmac {
@@ -64,18 +63,13 @@ namespace hw {
 static const double PI = 3.141592653589793238462;
 
 cascade::cascade(sprockit::sim_parameters* params) :
-  cartesian_topology(params,
-                     InitMaxPortsIntra::I_Remembered,
-                     InitGeomEjectID::I_Remembered)
+  cartesian_topology(params)
 {
   x_ = dimensions_[0];
   y_ = dimensions_[1];
   g_ = dimensions_[2];
 
   group_con_ = params->get_int_param("group_connections");
-  true_random_intermediate_ =
-      params->get_optional_bool_param("true_random_intermediate",
-                                      false);
 
   //can never have more group connections than groups
   if (group_con_ >= g_){
@@ -84,58 +78,19 @@ cascade::cascade(sprockit::sim_parameters* params) :
                         group_con_, g_-1, g_);
     group_con_ = g_ - 1;
   }
-
-  max_ports_intra_network_ = x_ + y_ + g_;
-  eject_geometric_id_ = max_ports_intra_network_;
 }
 
 void
-cascade::configure_geometric_paths(std::vector<int> &redundancies)
+cascade::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
 {
-  int npaths = x_ + y_ + group_con_ + netlinks_per_switch_;
-  redundancies.resize(npaths);
-  //do x paths, then y paths, then g paths
-  int path = 0;
-  for (int x=0; x < x_; ++x, ++path){
-    redundancies[path] = red_[x_dimension];
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = x_ + y_ + g_ + i;
+    port.ep_port = 0;
   }
-  for (int y=0; y < y_; ++y, ++path){
-    redundancies[path] = red_[y_dimension];
-  }
-  for (int g=0; g < group_con_; ++g, ++path){
-    redundancies[path] = red_[g_dimension];
-  }
-  configure_injection_geometry(redundancies);
-}
-
-switch_id
-cascade::random_intermediate(router* rtr, switch_id current_sw, switch_id dest_sw, uint32_t seed)
-{
-  long nid = current_sw;
-  uint32_t attempt = 0;
-  while (current_sw == nid) {
-
-    int srcX, srcY, srcG, dstX, dstY, dstG, hisX, hisY, hisG;
-    get_coords(current_sw, srcX, srcY, srcG);
-    get_coords(dest_sw, dstX, dstY, dstG);
-
-    hisX = rtr->random_number(x_, attempt, seed);
-    hisY = rtr->random_number(y_, attempt, seed);
-    if(!true_random_intermediate_ && dstG == srcG) {
-      // already on the correct group
-      hisG = srcG;
-    } else {
-      //randomly select a group
-      hisG = rtr->random_number(g_, attempt, seed);
-      //now figure out which x,y,g fills the path
-      //find_path_to_group(srcX, srcY, srcG, hisX, hisY, hisG);
-    }
-
-    nid = get_uid(hisX, hisY, hisG);
-    ++attempt;
-  }
-
-  return switch_id(nid);
 }
 
 bool
@@ -156,13 +111,13 @@ cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 
 bool
 cascade::find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY,
-                              packet::path& path) const
+                              packet::header* hdr) const
 {
   int ystart = rtr->random_number(y_,0,42);
   for (int yy = 0; yy < y_; ++yy) {
     dstY = (ystart + yy) % y_;
     if (xy_connected_to_group(myX, dstY, myG, dstG)) {
-      path.set_outport(y_port(dstY));
+      hdr->edge_port = y_port(dstY);
       return true;
     }
   }
@@ -171,13 +126,13 @@ cascade::find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY
 
 bool
 cascade::find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX,
-                              packet::path& path) const
+                              packet::header* hdr) const
 {
   int xstart = rtr->random_number(x_,0,42);
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
     if (xy_connected_to_group(dstX, myY, myG, dstG)) {
-      path.set_outport( x_port(dstX) );
+      hdr->edge_port = x_port(dstX);
       return true;
     }
   }
@@ -187,22 +142,22 @@ cascade::find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX
 void
 cascade::find_path_to_group(router* rtr, int myX, int myY, int myG,
                             int dstG, int& dstX, int& dstY,
-                            packet::path& path) const
+                            packet::header* hdr) const
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
-    path.set_outport(g_port(dstG));
+    hdr->edge_port = g_port(dstG);
     dstX = myX;
     dstY = myY;
     return;
   }
 
-  if (find_x_path_to_group(rtr, myY, myG, dstG, dstX, path)){
+  if (find_x_path_to_group(rtr, myY, myG, dstG, dstX, hdr)){
     dstY = myY;
     return;
   }
 
-  if (find_y_path_to_group(rtr, myX, myG, dstG, dstY, path)){
+  if (find_y_path_to_group(rtr, myX, myG, dstG, dstY, hdr)){
     dstX = myX;
     return;
   }
@@ -211,7 +166,7 @@ cascade::find_path_to_group(router* rtr, int myX, int myY, int myG,
   int xstart = 0;
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
-    if (find_y_path_to_group(rtr, dstX, myG, dstG, dstY, path)){
+    if (find_y_path_to_group(rtr, dstX, myG, dstG, dstY, hdr)){
       return;
     }
   }
@@ -224,28 +179,26 @@ cascade::find_path_to_group(router* rtr, int myX, int myY, int myG,
 
 void
 cascade::minimal_route_to_switch(
-  router* rtr,
-  switch_id src,
-  switch_id dst,
-  packet::path &path) const
+  router* rtr, switch_id src,
+  switch_id dst, packet::header* hdr) const
 {
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
   int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
   int interX, interY;
   if (srcG != dstG){
-    find_path_to_group(rtr, srcX, srcY, srcG, dstG, interX, interY, path);
+    find_path_to_group(rtr, srcX, srcY, srcG, dstG, interX, interY, hdr);
     top_debug("cascade routing from (%d,%d,%d) to (%d,%d,%d) through "
               "gateway (%d,%d,%d) on port %d",
               srcX, srcY, srcG, dstX, dstY, dstG,
-              interX, interY, srcG, path.outport());
+              interX, interY, srcG, int(hdr->edge_port));
   } else if (srcX != dstX){
-    path.set_outport( x_port(dstX) );
+    hdr->edge_port = x_port(dstX);
     top_debug("cascade routing X from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
+              srcX, srcY, srcG, dstX, dstY, dstG, int(hdr->edge_port));
   } else if (srcY != dstY){
-    path.set_outport( y_port(dstY) );
+    hdr->edge_port = y_port(dstY);
     top_debug("cascade routing Y from (%d,%d,%d) to (%d,%d,%d) on port %d",
-              srcX, srcY, srcG, dstX, dstY, dstG, path.outport());
+              srcX, srcY, srcG, dstX, dstY, dstG, int(hdr->edge_port));
   } else {
     spkt_abort_printf("cascade routing error from %d to %d", src, dst);
   }

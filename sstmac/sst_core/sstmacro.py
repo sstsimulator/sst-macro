@@ -89,7 +89,7 @@ class Interconnect:
 
   def defaultEpFxn(self, nodeID):
     nodeParams = self.params["node"]
-    compName = nodeParams["model"] + "_node"
+    compName = nodeParams["name"] + "_node"
     node = sst.Component("Node %d" % nodeID, "macro.%s" % compName)
     node.addParams(macroToCoreParams(nodeParams))
     node.addParam("id", nodeID)
@@ -98,7 +98,7 @@ class Interconnect:
   def buildSwitches(self):
     for i in range(self.num_switches):
       switchParams = self.system.switchParams(i)
-      compName = switchParams["model"] + "_switch"
+      compName = switchParams["name"] + "_switch"
       switch = sst.Component("Switch %d" % i, "macro.%s" % compName)
       switch.addParams(macroToCoreParams(switchParams))
       switch.addParam("id", i)
@@ -156,18 +156,18 @@ class Interconnect:
     else:
       lat = self.params["node"]["nic"]["injection"]["latency"]
 
-    for epId in range(self.num_nodes):
-      injSwitchId,connections = self.system.injectionConnections(epId)
-      injSwitchComp, params = self.switches[injSwitchId]
-      ep = self.nodes[epId]
-      epPort = sst.macro.NICMainInjectionPort
-      for injPort in connections:
-        makeUniLink("injection",ep,epId,epPort,injSwitchComp,injSwitchId,injPort,lat)
+    for swId in range(self.num_switches):
+      connections = self.system.injectionConnections(swId)
+      for epId, switchPort, injPort in connections:
+        ep = self.nodes[epId]
+        injSwitchComp, params = self.switches[swId]
+        makeUniLink("injection",ep,epId,injPort,injSwitchComp,swId,switchPort,lat)
 
-      ejSwitchId,connections = self.system.ejectionConnections(epId)
-      ejSwitchComp, params = self.switches[ejSwitchId]
-      for ejPort in connections:
-        makeUniLink("ejection",ejSwitchComp,ejSwitchId,ejPort,ep,epId,epPort,
+      connections = self.system.ejectionConnections(swId)
+      for epId, switchPort, ejPort, in connections:
+        ep = self.nodes[epId]
+        ejSwitchComp, params = self.switches[swId]
+        makeUniLink("ejection",ejSwitchComp,swId,switchPort,ep,epId,ejPort,
                     outLat=lat,inLat=smallLatency)
 
   def fillInParamsLogP(self):

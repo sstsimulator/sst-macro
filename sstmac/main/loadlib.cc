@@ -33,24 +33,27 @@ std::string load_extern_path_str(){
 
 void* load_extern_library(const std::string& libname, const std::string& searchPath)
 {
-  std::vector<std::string> paths = split_path(searchPath);
-  //always include current directory
-  paths.push_back(".");
+  struct stat sbuf;
+  int ret = stat(libname.c_str(), &sbuf);
   std::string fullpath;
-  void *handle;
+  if (ret != 0){
+    std::vector<std::string> paths = split_path(searchPath);
+    //always include current directory
+    paths.push_back(".");
 
-  int ret = 1;
-  for (auto&& path : paths) {
-    struct stat sbuf;
-
-    fullpath = path + "/" + libname;
-    ret = stat(fullpath.c_str(), &sbuf);
-    if (ret == 0) break;
+    for (auto&& path : paths) {
+      fullpath = path + "/" + libname;
+      ret = stat(fullpath.c_str(), &sbuf);
+      if (ret == 0) break;
+    }
+  } else {
+    fullpath = libname;
   }
 
   if (ret != 0){
     //didn't find it
-    spkt_abort_printf("%s not found in current directory or in $SST_LIB_PATH", libname.c_str());
+    spkt_abort_printf("%s not found in current directory or in path=%s",
+                      libname.c_str(), searchPath.c_str());
   }
 
   std::cerr << "Loading external library " << fullpath << std::endl;
@@ -58,7 +61,7 @@ void* load_extern_library(const std::string& libname, const std::string& searchP
   // This is a little weird, but always try the last path - if we
   // didn't succeed in the stat, we'll get a file not found error
   // from dlopen, which is a useful error message for the user.
-  handle = dlopen(fullpath.c_str(), RTLD_NOW|RTLD_LOCAL);
+  void* handle = dlopen(fullpath.c_str(), RTLD_NOW|RTLD_LOCAL);
   if (NULL == handle) {
     spkt_abort_printf("Opening library %s failed\n:%s", libname.c_str(), dlerror());
   }

@@ -53,10 +53,12 @@ RegisterDebugSlot(packetizer);
 namespace sstmac {
 namespace hw {
 
-packetizer::packetizer(sprockit::sim_parameters* params, event_scheduler* parent) :
+packetizer::packetizer(sprockit::sim_parameters* params, event_scheduler* parent,
+                       int num_vc) :
   event_subcomponent(parent), //no self events
   notifier_(nullptr),
-  acker_(nullptr)
+  acker_(nullptr),
+  pending_(num_vc)
 {
   packet_size_ = params->get_byte_length_param("mtu");
   double bw = params->get_bandwidth_param("bandwidth");
@@ -98,9 +100,11 @@ packetizer::start(int vn, message *msg)
 void
 packetizer::deadlock_check()
 {
-  for (auto& pair : pending_){
-    for (pending_send& send : pair.second){
-      std::cerr << "Packetizer can't send " << send.msg->to_string() << std::endl;
+  for (int vn=0; vn < pending_.size(); ++vn){
+    auto& queue = pending_[vn];
+    for (pending_send& send : queue){
+      std::cerr << "Packetizer " << to_string() << " can't send " << send.msg->to_string()
+                << std::endl;
     }
   }
 }
@@ -111,9 +115,9 @@ packetizer::sendWhatYouCan(int vn)
   auto& pending = pending_[vn];
   while (!pending.empty()){
     pending_send& next = pending.front();
-    long initial_offset = next.offset;
+    uint64_t initial_offset = next.offset;
     while (next.bytes_left){
-      long num_bytes = std::min(next.bytes_left, long(packet_size_));
+      uint64_t num_bytes = std::min(next.bytes_left, uint64_t(packet_size_));
       if (!spaceToSend(vn, num_bytes*8)){
         pkt_debug("no space to send %d bytes on vn %d", num_bytes, vn);
         return;
@@ -124,7 +128,7 @@ packetizer::sendWhatYouCan(int vn)
       next.offset += num_bytes;
       next.bytes_left -= num_bytes;
     }
-    long bytes_sent = next.offset - initial_offset;
+    uint64_t bytes_sent = next.offset - initial_offset;
     if (next.ack){
       timestamp time_to_send(bytes_sent * inv_bw_);
       acker_->send_extra_delay(time_to_send, next.ack);
@@ -167,7 +171,7 @@ class merlin_packetizer :
   FactoryRegister("merlin", packetizer, merlin_packetizer);
  public:
   merlin_packetizer(sprockit::sim_parameters* params,
-                      event_scheduler* parent);
+                    event_scheduler* parent, int num_vc);
 
   std::string to_string() const override {
     return "merling packetizer";
@@ -212,8 +216,8 @@ class merlin_packetizer :
 };
 
 merlin_packetizer::merlin_packetizer(sprockit::sim_parameters *params,
-                                     event_scheduler* parent) :
-  packetizer(params, parent)
+                                     event_scheduler* parent, int num_vc) :
+  packetizer(params, parent, num_vc)
 {
   SST::Component* comp = safe_cast(SST::Component, parent);
   SST::Params& sst_params = *params->extra_data<SST::Params>();

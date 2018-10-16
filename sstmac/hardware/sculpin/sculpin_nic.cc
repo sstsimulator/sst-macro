@@ -114,7 +114,7 @@ sculpin_nic::~sculpin_nic() throw ()
 }
 
 link_handler*
-sculpin_nic::payload_handler(int port) const
+sculpin_nic::payload_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   if (port == nic::LogP){
@@ -132,7 +132,7 @@ sculpin_nic::payload_handler(int port) const
 }
 
 link_handler*
-sculpin_nic::credit_handler(int port) const
+sculpin_nic::credit_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &sculpin_nic::handle_credit);

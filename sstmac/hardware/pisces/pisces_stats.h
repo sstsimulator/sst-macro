@@ -66,7 +66,7 @@ struct pkt_arbitration_t
   timestamp head_leaves;
   timestamp tail_leaves;
   timestamp credit_leaves;
-  pisces_payload* pkt;
+  pisces_packet* pkt;
   int src_outport;
   int dst_inport;
 };
@@ -97,7 +97,7 @@ class packet_stats_callback
    *          attached to a packet at the end of the path
    * @param pkt
    */
-  virtual void collect_final_event(pisces_payload* pkt);
+  virtual void collect_final_event(pisces_packet* pkt);
 
   /**
    * @brief id
@@ -128,10 +128,10 @@ class congestion_spyplot :
 
   virtual void collect_single_event(const pkt_arbitration_t& st);
 
-  virtual void collect_final_event(pisces_payload* pkt);
+  virtual void collect_final_event(pisces_packet* pkt);
 
  protected:
-  void collect(double delay_us, pisces_payload* pkt);
+  void collect(double delay_us, pisces_packet* pkt);
 
  private:
   stat_spyplot* congestion_spyplot_;
@@ -147,7 +147,7 @@ class delay_histogram :
 
   virtual ~delay_histogram();
 
-  virtual void collect_final_event(pisces_payload* pkt);
+  virtual void collect_final_event(pisces_packet* pkt);
 
   virtual void collect_single_event(const pkt_arbitration_t& st);
 
@@ -180,7 +180,7 @@ class null_stats : public packet_stats_callback
 
   virtual void collect_single_event(const pkt_arbitration_t &st){}
 
-  virtual void collect_final_event(pisces_payload *pkt){}
+  virtual void collect_final_event(pisces_packet *pkt){}
 };
 
 class multi_stats : public packet_stats_callback
@@ -191,7 +191,7 @@ class multi_stats : public packet_stats_callback
 
   void collect_single_event(const pkt_arbitration_t &st);
 
-  void collect_final_event(pisces_payload *pkt);
+  void collect_final_event(pisces_packet *pkt);
 
  private:
   std::vector<packet_stats_callback*> cbacks_;

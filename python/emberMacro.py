@@ -29,7 +29,7 @@ macroParams = {
  "router" : "torus_minimal",
  "arbitrator" : arb,
  "mtu" : mtu,
- "model" : "pisces",
+ "name" : "pisces",
  "buffer_size" : bufSize,
  "ejection" : {
    "latency" : injLat,

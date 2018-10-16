@@ -134,6 +134,10 @@ class dragonfly : public cartesian_topology
     return port >= a_;
   }
 
+  int max_num_ports() const override {
+    return a_ + h_ + concentration();
+  }
+
   bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }
@@ -204,26 +208,26 @@ class dragonfly : public cartesian_topology
     return sid / a_;
   }
 
-  int num_switches() const override {
+  switch_id num_switches() const override {
     return a_ * g_;
   }
 
-  int num_leaf_switches() const override {
+  switch_id num_leaf_switches() const override {
     return a_ * g_;
   }
 
-  void minimal_route_to_switch(
-      switch_id current_sw_addr,
-      switch_id dest_sw_addr,
-      packet::path &path) const;
+  int minimal_distance(switch_id src, switch_id dst) const;
 
-  int minimal_distance(switch_id src, switch_id dst) const override;
+  int num_hops_to_node(node_id src, node_id dst) const override {
+    return minimal_distance(src / concentration_, dst / concentration_);
+  }
 
   int diameter() const override {
     return 3;
   }
 
-  virtual void configure_geometric_paths(std::vector<int> &redundancies);
+  void endpoints_connected_to_injection_switch(switch_id swaddr,
+         std::vector<injection_port>& nodes) const override;
 
   coordinates switch_coords(switch_id sid) const override {
     coordinates c(2);

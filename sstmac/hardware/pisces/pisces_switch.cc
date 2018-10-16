@@ -91,7 +91,7 @@ pisces_abstract_switch::pisces_abstract_switch(
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> conns;
-  top_->nodes_connected_to_ejection_switch(my_addr_, conns);
+  top_->endpoints_connected_to_ejection_switch(my_addr_, conns);
   if (!ej_params->has_param("credits")){
     //never be limited by credits
     ej_params->add_param_override("credits", "1GB");
@@ -100,7 +100,7 @@ pisces_abstract_switch::pisces_abstract_switch(
   pisces_sender::configure_payload_port_latency(ej_params);
 
   for (topology::injection_port& conn : conns){
-    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.port);
+    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
     ej_params->combine_into(port_params);
   }
 
@@ -124,51 +124,29 @@ pisces_switch::pisces_switch(
 {
   sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
   xbar_params->add_param_override("num_vc", router_->num_vc());
-  xbar_ = new pisces_crossbar(xbar_params, this);
+  xbar_ = new pisces_crossbar(xbar_params, this,
+                              top_->max_num_ports(), top_->max_num_ports(),
+                              router_->num_vc(), true/*yes, update vc*/);
   xbar_->set_stat_collector(xbar_stats_);
-  xbar_->configure_outports(top_->max_num_ports());
+  out_buffers_.resize(top_->max_num_ports());
+  inports_.resize(top_->max_num_ports());
+  for (int i=0; i < inports_.size(); ++i){
+    input_port& inp = inports_[i];
+    inp.port = i;
+    inp.parent = this;
+  }
+
   init_links(params);
-#if !SSTMAC_INTEGRATED_SST_CORE
-  payload_handler_ = new_handler(this, &pisces_switch::handle_payload);
-  ack_handler_ = new_handler(this, &pisces_switch::handle_credit);
-#endif
 }
 
 pisces_switch::~pisces_switch()
 {
   if (xbar_) delete xbar_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (ack_handler_) delete ack_handler_;
-  if (payload_handler_) delete payload_handler_;
-#endif
   int nbuffers = out_buffers_.size();
   for (int i=0; i < nbuffers; ++i){
-    pisces_sender* buf = out_buffers_[i];
+    auto* buf = out_buffers_[i];
     if (buf) delete buf;
   }
-}
-
-pisces_sender*
-pisces_switch::output_buffer(sprockit::sim_parameters* params,
-                                  int src_outport)
-{
-  if (out_buffers_.empty()){
-    out_buffers_.resize(top_->max_num_ports());
-  }
-  if (!out_buffers_[src_outport]){
-    params->add_param_override("num_vc", router_->num_vc());
-    pisces_network_buffer* out_buffer = new pisces_network_buffer(params, this);
-
-    out_buffer->set_stat_collector(buf_stats_);
-    out_buffers_[src_outport] = out_buffer;
-
-    int buffer_inport = 0;
-    auto out_link = allocate_local_link(xbar_->send_latency(), this, out_buffer->payload_handler());
-    xbar_->set_output(params, src_outport, buffer_inport, out_link);
-    auto in_link = allocate_local_link(out_buffer->credit_latency(), this, xbar_->credit_handler());
-    out_buffer->set_input(params, buffer_inport, src_outport, in_link);
-  }
-  return out_buffers_[src_outport];
 }
 
 void
@@ -178,9 +156,28 @@ pisces_switch::connect_output(
   int dst_inport,
   event_link* link)
 {
-  //create an output buffer for the port
-  pisces_sender* out_buffer = output_buffer(port_params, src_outport);
+  pisces_buffer* out_buffer = new pisces_buffer(port_params, this, router_->num_vc());
+  out_buffer->set_stat_collector(buf_stats_);
+  int buffer_inport = 0;
+  auto out_link = allocate_local_link(xbar_->send_latency(), this, out_buffer->payload_handler());
+  xbar_->set_output(port_params, src_outport, buffer_inport, out_link);
+  auto in_link = allocate_local_link(out_buffer->credit_latency(), this, xbar_->credit_handler());
+  out_buffer->set_input(port_params, buffer_inport, src_outport, in_link);
+  out_buffers_[src_outport] = out_buffer;
+
+
   out_buffer->set_output(port_params, src_outport, dst_inport, link);
+  out_buffers_[src_outport] = out_buffer;
+}
+
+void
+pisces_switch::input_port::handle(event *ev)
+{
+  pisces_packet* payload = static_cast<pisces_packet*>(ev);
+  parent->rter()->route(payload);
+  payload->reset_stages(payload->edge_outport(), 0);
+  payload->set_inport(this->port);
+  parent->xbar()->handle_payload(payload);
 }
 
 void
@@ -190,7 +187,8 @@ pisces_switch::connect_input(
   int dst_inport,
   event_link* link)
 {
-  xbar_->set_input(port_params, dst_inport, src_outport, link);
+  int buffer_port = 0;
+  xbar_->set_input(port_params, dst_inport, buffer_port, link);
 }
 
 timestamp
@@ -230,23 +228,6 @@ pisces_switch::queue_length(int port) const
   return buf->queue_length();
 }
 
-void
-pisces_switch::handle_credit(event *ev)
-{
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  switch_debug("handling credit %s", credit->to_string().c_str());
-  out_buffers_[credit->port()]->handle_credit(credit);
-}
-
-void
-pisces_switch::handle_payload(event *ev)
-{
-  pisces_payload* payload = static_cast<pisces_payload*>(ev);
-  switch_debug("handling payload %s", payload->to_string().c_str());
-  router_->route(payload);
-  xbar_->handle_payload(payload);
-}
-
 std::string
 pisces_switch::to_string() const
 {
@@ -254,23 +235,20 @@ pisces_switch::to_string() const
 }
 
 link_handler*
-pisces_switch::credit_handler(int port) const
+pisces_switch::credit_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &pisces_switch::handle_credit);
-#else
-  return ack_handler_;
-#endif
+  if (port >= out_buffers_.size()){
+    spkt_abort_printf("Got invalid port %d request for credit handler - max is %d",
+                      port, out_buffers_.size() - 1);
+  }
+  return new_link_handler(out_buffers_[port], &pisces_sender::handle_credit);
 }
 
 link_handler*
-pisces_switch::payload_handler(int port) const
+pisces_switch::payload_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return new_link_handler(this, &pisces_switch::handle_payload);
-#else
-  return payload_handler_;
-#endif
+  input_port* inp = &inports_[port];
+  return new_link_handler(inp, &input_port::handle);
 }
 
 }

@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/rng.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
-#include <sstmac/hardware/router/routing_enum.h>
 #include <sstmac/hardware/common/packet.h>
 
 #include <sprockit/debug.h>
@@ -95,9 +94,6 @@ class router : public sprockit::printable
     return netsw_;
   }
 
-  bool switch_paths(int orig_distance, int new_distance,
-          int orig_port, int new_port) const;
-
   /**
    * @brief addr
    * @return
@@ -117,12 +113,29 @@ class router : public sprockit::printable
    */
   virtual int num_vc() const = 0;
 
+  /**
+   * @brief random_number
+   * @param max     Select number [0,max) exclusive
+   * @param attempt Optional argument to reseed if calling from a loop
+   * @param seed    Optional seed for seeding if in debug mode
+   * @return
+   */
   uint32_t random_number(uint32_t max, uint32_t attempt, uint32_t seed) const;
 
  protected:
   router(sprockit::sim_parameters* params, topology* top, network_switch* sw);
 
-  switch_id find_ejection_site(node_id toaddr, packet::path& path) const;
+  /**
+   * @brief switch_paths Decide which path is 'shortest' based on
+   *  distance and queue lengths
+   * @param orig_distance
+   * @param new_distance
+   * @param orig_port
+   * @param new_port
+   * @return Whether the original path is estimated to be shorter
+   */
+  bool switch_paths(int orig_distance, int new_distance,
+          int orig_port, int new_port) const;
 
  protected:
   switch_id my_addr_;

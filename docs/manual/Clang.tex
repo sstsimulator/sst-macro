@@ -45,6 +45,10 @@ This does not deactivate global variable redirection.
 Thus, with \inlineshell{SSTMAC_SRC2SRC=1} and \inlineshell{SSTMAC_SKELETONIZE=0},
 \sstmacro will act as an MPI emulator executing a full code but with global variables refactored to maintain correctness.
 
+\subsubsection{SSTMAC\_MEMOIZE: Default 0}
+If set to nonzero, activates memoization hooks. 
+This deactivates all global variable refactoring, all symbol interception, and all skeletonization.
+
 \subsubsection{SSTMAC\_HEADERS: No default}
 The compiler wrapper will only redirect global variables that it knows should definitely be modified.
 All global variables found in source files will be redirected.
@@ -287,3 +291,5 @@ Thus we given the branch prediction the hint 0.2.
 
 \subsection{pragma sst advance\_time [units] [time to advance by]}
 This pragma advances the simulator time by the specified amounts of time. It can be placed before any statement. The units can be the following: sec, msec, usec or nsec for Seconds, milliseconds, microseconds and nanoseconds respectively. 
+
+\input{Memoization}

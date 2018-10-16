@@ -5,76 +5,55 @@
 
 \section{Basic Application porting}
 \label{sec:skel:basic}
-There are three parts to successfully taking a C++ code and turning it into a running application.
+There are three parts to successfully taking a C++ code and turning it into a scalable simulation.
 \begin{itemize}
-\item Redirected linkage: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling \inlinecode{hostname}), these functions must be redirected to \sstmacro rather than calling the native libraries on the machine running the simulator.
+\item Symbol Interception: Rather than linking to MPI, pThreads, or other parallel libraries (or even calling \inlinecode{hostname}), these functions must be redirected to \sstmacro rather than calling the native libraries on the machine running the simulator.
 You get all redirected linkage for free by using
 the SST compiler wrappers \inlineshell{sst++} and \inlineshell{sstcc} installed in the \inlineshell{bin} folder.
 \item Skeletonization: While \sstmacro can run in emulation mode, executing your entire application exactly, this is not scalable.  To simulate at scale (i.e. 1K or more MPI ranks) you must strip down or ``skeletonize'' the application to the minimal amount of computation.  The energy and time cost of expensive compute kernels are then simulated via models rather than explicitly executed. 
-
 \item Process encapsulation: Each virtual process being simulated is not an actual physical process. It is instead modeled as a lightweight user-space thread.  This means each virtual process has its own stack and register variables, but not its own data segment (global variables).
 Virtual processes share the same address space and the same global variables.  A Beta version of the auto-skeletonizing clang-based SST compiler is available with the 7.X releases. If the Beta is not stable with your application, manual refactoring may be necessary if you have global variables.
-
 \end{itemize}
+
+Now in Beta, another possible feature is available:
+\begin{itemize}
+\item Memoization hooks: Rather than building an app for simulation, build an app with special profiling hooks. There is no skeletonization or redirected linkage, but the runtime or performance counters obtained by running should be used to build models for simulation.
+\end{itemize}
+
+There are generally 3 modes of using an application common with SST/macro:
+\begin{itemize}
+\item Simulation: As lightweight as possible without sacrificing accuracy. Intended to be used for performance estimation at large scales.
+\item Emulation/Virtualization: Run a parallel or distributed application within a single simulator thread/process - primarily useful for debugging.
+\item Memoization: Run a full application within the simulator, collecting performance counters or timers on critical sections
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{l l l l l}
+\hline
+ & Simulator hooks & Symbol interception & Skeletonization & Process encapsulation \\
+\hline
+\hline
+Simulation & Yes & Yes & Yes & Yes \\
+Virtualization & Yes & Yes & No & Yes \\
+Memoizaiton & Yes & No & No & No \\
+\hline
+\end{tabular}
+\end{center}
 
 \subsection{Loading external skeletons with the standalone core}\label{subsec:externalAppStandalone}
 You should always write your own skeleton applications in an external folder rather then integrating directly into the \inlineshell{sstmac} executable.
-You have two options for running your skeleton app within the simulation:
-\begin{itemize}
-\item Create a new executable with your skeleton app built-in
-\item Create a library \inlineshell{libX.so} and have \inlineshell{sstmac} load it at runtime
-\end{itemize}
+Existing make systems can be used unmodified. Rather than producing an executable, though, SST/macro produces a shared library.
+These shared libraries are then imported into the main \inlinecode{sstmac} executable.
 
-\subsubsection{New Executable}
 If you follow the example in the \inlineshell{skeletons/sendrecv} folder,
-the Makefile shows how to generate a new executable.
-If you are using \inlineshell{sst++}, it will automatically link your executable with the right SST libraries.
-When you run your created executable, it will spawn an SST/macro simulation of your app.
-If your application is named \inlineshell{runapp}, you would run it exactly like the \inlineshell{sstmac}:
+the Makefile shows how to generate an importable skeleton.
+If you are using \inlineshell{sst++}, it will automatically convert executables into loadable libraries.
+If your application is named \inlineshell{runapp}, you would run it with \inlineshell{sstmac}:
 
 \begin{ShellCmd}
-./runapp -f parameters.ini
+./runapp -f parameters.ini --exe=./runapp
 \end{ShellCmd}
-where your new executable replaces \inlineshell{sstmac}.
-
-\subsubsection{Dynamically Loaded Library}
-If you follow the example in the \inlineshell{skeletons/sendrecv_sst_so} folder,
-the Makefile shows how to generate a skeleton application as an external library.
-Instead of replacing the \inlineshell{sstmac} executable, you tell the \inlineshell{sstmac} to load the library in the parameter file.
-
-\begin{ViFile}
-external_libs = libsendrecv.so
-\end{ViFile}
-The library \inlineshell{libsendrecv.so} can be generated with standard compiler flags for shared libraries by using the \inlineshell{sst++} compiler.
-Once the \inlineshell{external_libs} parameter is set in the file, you can run:
-
-\begin{ShellCmd}
-sstmac -f parameters.ini
-\end{ShellCmd}
-with the standard executable \inlineshell{sstmac}.
-
-\subsection{Loading external skeletons with the integrated core}\label{subsec:linkageCore}
-While the main \inlineshell{libmacro.so} provides the bulk of SST/macro functionality, 
-users may wish to compile and run external skeletons.  This is basically the same workflow as shown above for dynamically loaded libraries.
-When the executable is generated, \sstmacro will also generate a \inlineshell{libX.so} containing all the element info.
-This can then be used for SST simulations.
-The \inlineshell{default.py} script used by \inlineshell{pysstmac} must also be edited.  The top lines was previously
-
-\begin{ViFile}
-import sst.macro
-\end{ViFile}
-This only loads the main components, not the external skeleton. You must add
-
-\begin{ViFile}
-import sst.X
-\end{ViFile}
-where X is the name of your skeleton. This causes the core to also load the shared library corresponding to your external skeleton app.
-If using the SST compiler wrappers, the ELI block and .so file will actually be generated automatically.  As shown in Section \ref{sec:building:running},
-the generate shared library files can be added as the first parameters to the \inlineshell{pysstmac} script.
-
-\begin{ShellCmd}
-shell>sst-macro/skeletons/sendrecv> pysstmac librunsstmac.so -f parameters.ini
-\end{ShellCmd} 
+directing to load the library as a skeleton executable.
 
 \section{Auto-skeletonization with Clang}
 \label{sec:autoSkeletonization}

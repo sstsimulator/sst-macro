@@ -1,4 +1,4 @@
-TARGET := runmultiapp
+TARGET := runallgather runallreduce
 SRC := allgather.cc allreduce.cc
 
 CXX :=    sst++
@@ -17,14 +17,11 @@ OBJ := $(OBJ:.c=.o)
 
 all: $(TARGET)
 
-$(TARGET): $(OBJ) 
+run%: %.o
 	$(CXX) -o $@ $+ $(LDFLAGS) $(LIBS)  $(CXXFLAGS)
 
 %.o: %.cc 
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
-
-%.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 clean: 
 	rm -f $(TARGET) *.o

@@ -27,3 +27,18 @@
 #undef sstmac_must_return_mutex
 #endif
 
+#ifdef sstmac_must_return_getenv
+#define getenv sstmac_getenv
+#undef sstmac_must_return_getenv
+#endif
+
+#ifdef sstmac_must_return_setenv
+#define setenv sstmac_setenv
+#undef sstmac_must_return_setenv
+#endif
+
+#ifdef sstmac_must_return_putenv
+#define putenv sstmac_putenv
+#undef sstmac_must_return_putenv
+#endif
+

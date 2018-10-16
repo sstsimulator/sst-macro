@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/messages/sst_message.h>
-#include <sstmac/hardware/router/routing_enum.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -86,7 +85,7 @@ class sculpin_packet :
   virtual ~sculpin_packet() {}
 
   int next_port() const {
-    return global_outport();
+    return rtr_header<header>()->edge_port;
   }
 
   timestamp arrival() const {

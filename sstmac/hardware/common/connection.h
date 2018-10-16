@@ -92,23 +92,23 @@ class connectable {
     int dst_inport,
     event_link* credit_link) = 0;
 
+  virtual timestamp send_latency(sprockit::sim_parameters* params) const = 0;
+
+  virtual timestamp credit_latency(sprockit::sim_parameters* params) const = 0;
+
   /**
    * @brief credit_handler
    * @param port
    * @return Can be null, if no credits are ever to be received
    */
-  virtual link_handler* credit_handler(int port) const = 0;
-
-  virtual timestamp send_latency(sprockit::sim_parameters* params) const = 0;
-
-  virtual timestamp credit_latency(sprockit::sim_parameters* params) const = 0;
+  virtual link_handler* credit_handler(int port) = 0;
 
   /**
    * @brief payload_handler
    * @param port
    * @return A new handler for incoming payloads on the given port
    */
-  virtual link_handler* payload_handler(int port) const = 0;
+  virtual link_handler* payload_handler(int port) = 0;
 
 };
 

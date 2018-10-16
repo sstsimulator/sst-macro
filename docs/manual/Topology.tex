@@ -9,52 +9,52 @@ Here we introduce the basics of other topologies within SST that are more comple
 These are generally higher-radix or path-diverse topologies like fat tree, dragonfly, and flattened butterfly.  
 As noted in \ref{sec:tutorial:topology}, a more thorough and excellent discussions of these topologies is given in ``High Performance Datacenter Networks'' by Dennis Abts and John Kim.
 
-\section{Topology Query Utility}
-\label{sec:topologyQuery}
-Understanding topology inputs and geometries can sometimes be challenging.
-\sstmacro provides an executable for testing topology inputs and doing example coordinate computations.
-After making and installing, an executable \inlineshell{sstmac_top_info} will appear in the \inlineshell{bin} folder.
-The invocation of \inlineshell{sstmac_top_info} is exactly the same as the main \inlineshell{sstmac} executable.
-For the example parameter file named \inlineshell{machine.ini}:
-
-\begin{ViFile}
-topology.name = fat_tree
-topology.geometry = 4 3
-\end{ViFile}
-
-we run
-
-\begin{ShellCmd}
-bin> sstmac_top_info -f machine.ini
-\end{ShellCmd}
-which produces the output
-
-\begin{ViFile}
-Number of nodes:         81
-Number of leaf switches: 27
-Number of switches:      94
-\end{ViFile}
-
-detailing the produced geometry.  Here the fat tree has a total of 94 switches, 27 of which are ``leaf'' switches directly connected to compute nodes.
-The output is followed by the prompt
-
-\begin{ShellCmd}
-NextInput: 
-\end{ShellCmd}
-
-One can either enter a single number (switch ID) or set of coordinates.
-If given a switch ID, the coordinates are computed.
-If coordinates are given, the switch ID is computed.
-
-\begin{ShellCmd}
-NextInput: 32
-Switch ID maps to coordinates [ 2 0 1 2 ]
-NextInput: 2 0 1 2
-Coordinates map to switch ID 32
-\end{ShellCmd}
-
-The program is just exited with Ctrl-C.
-The meaning of the above coordinates is detail below for fat tree (Section \ref{sec:tutorial:fattree}).
+%\section{Topology Query Utility}
+%\label{sec:topologyQuery}
+%Understanding topology inputs and geometries can sometimes be challenging.
+%\sstmacro provides an executable for testing topology inputs and doing example coordinate computations.
+%After making and installing, an executable \inlineshell{sstmac_top_info} will appear in the \inlineshell{bin} folder.
+%The invocation of \inlineshell{sstmac_top_info} is exactly the same as the main \inlineshell{sstmac} executable.
+%For the example parameter file named \inlineshell{machine.ini}:
+%
+%\begin{ViFile}
+%topology.name = fat_tree
+%topology.geometry = 4 3
+%\end{ViFile}
+%
+%we run
+%
+%\begin{ShellCmd}
+%bin> sstmac_top_info -f machine.ini
+%\end{ShellCmd}
+%which produces the output
+%
+%\begin{ViFile}
+%Number of nodes:         81
+%Number of leaf switches: 27
+%Number of switches:      94
+%\end{ViFile}
+%
+%detailing the produced geometry.  Here the fat tree has a total of 94 switches, 27 of which are ``leaf'' switches directly connected to compute nodes.
+%The output is followed by the prompt
+%
+%\begin{ShellCmd}
+%NextInput: 
+%\end{ShellCmd}
+%
+%One can either enter a single number (switch ID) or set of coordinates.
+%If given a switch ID, the coordinates are computed.
+%If coordinates are given, the switch ID is computed.
+%
+%\begin{ShellCmd}
+%NextInput: 32
+%Switch ID maps to coordinates [ 2 0 1 2 ]
+%NextInput: 2 0 1 2
+%Coordinates map to switch ID 32
+%\end{ShellCmd}
+%
+%The program is just exited with Ctrl-C.
+%The meaning of the above coordinates is detail below for fat tree (Section \ref{sec:tutorial:fattree}).
 
 
 \input{Torus}

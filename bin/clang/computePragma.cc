@@ -304,47 +304,30 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 }
 
 void
-SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation finalInsert, Stmt* fullStmt,
+SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation finalInsert,
                                    bool insertStartAfter, bool insertFinalAfter,
-                                   Rewriter& r, Expr** callArgs, const ParmVarDecl** callParams)
+                                   Rewriter& r, const std::map<std::string,std::string>& values)
 {
-  std::string argsStr;
   bool first = true;
-  if (!fxnArgInputs_.empty()){
-    if (!callArgs && !callParams){
-      internalError(startInsert, *CI,
-           "have function args, but no call args or call params");
-    }
-    //this better be a function call
-    PrettyPrinter pp;
-    for (int idx : fxnArgInputs_){
-      if (!first){
-        pp.os << ",";
-        first = false;
-      }
-      if (callArgs) pp.print(callArgs[idx]);
-      else          pp.os << callParams[idx]->getNameAsString();
-    }
-    argsStr = pp.str();
-  } else if (!inputs_.empty()) {
-    std::stringstream args_sstr;
-    for (auto& str : inputs_){
-      if (!first){
-        args_sstr << ",";
-        first = false;
-      }
-      args_sstr << str;
-    }
-    argsStr = args_sstr.str();
-  }
-
   std::stringstream start_sstr;
-  start_sstr << "sstmac_push_implicit_state" << inputs_.size()
-             << "(" << argsStr << ");";
+  start_sstr << "sstmac_set_implicit_state" << values_.size() << "(";
+  for (auto& pair : values){
+    if (!first) start_sstr << ",";
+    start_sstr << pair.first << "," << pair.second;
+    first = false;
+  }
+  start_sstr << "); ";
   r.InsertText(startInsert, start_sstr.str(), insertStartAfter);
 
+  first = true;
   std::stringstream finish_sstr;
-  finish_sstr << "; sstmac_pop_implicit_state(" << inputs_.size() << ");";
+  finish_sstr << "; sstmac_unset_implicit_state" << values_.size() << "(";
+  for (auto& pair : values){
+    if (!first) finish_sstr << ",";
+    first = false;
+    finish_sstr << pair.first;
+  }
+  finish_sstr << ");";
 
   if (insertFinalAfter) finalInsert = finalInsert.getLocWithOffset(1);
   r.InsertText(finalInsert, finish_sstr.str(), insertFinalAfter);
@@ -353,22 +336,8 @@ SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation fin
 void
 SSTImplicitStatePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
-  Expr** args = nullptr;
-  if (!fxnArgInputs_.empty()){
-    CallExpr* expr = nullptr;
-    switch (s->getStmtClass()){
-    case Stmt::CallExprClass:
-    case Stmt::CXXMemberCallExprClass:
-      expr = cast<CallExpr>(s);
-      args = expr->getArgs();
-      break;
-    default:
-      internalError(expr->getLocStart(), *CI,
-                 "memoize pragma activated on statement that is not a call expression");
-    }
-  }
-  doReplace(s->getLocStart(), s->getLocEnd(), s,
-            false, true, r, args, nullptr);
+  doReplace(s->getLocStart(), s->getLocEnd(),
+            false, true, r, values_);
 }
 
 void
@@ -391,19 +360,19 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     //first time hitting the function decl -  configure it
     //don't do modifications yet
     //just in case this gets called twice for a weird reason
-    fxnArgInputs_.clear();
-    for (auto& str : inputs_){
+    fxnArgValues_.clear();
+    for (auto& pair : values_){
       bool found = false;
       for (int i=0; i < fd->getNumParams(); ++i){
         ParmVarDecl* pvd = fd->getParamDecl(i);
-        if (pvd->getNameAsString() == str){
+        if (pvd->getNameAsString() == pair.second){
           found = true;
-          fxnArgInputs_.push_back(i);
+          fxnArgValues_[pair.first] = i;
           break;
         }
       }
       if (!found){
-        std::string error = "memoization input " + str
+        std::string error = "memoization input " + pair.first
             + " to function declaration could not be matched to any parameter";
         errorAbort(d->getLocStart(), *CI, error);
       }
@@ -417,13 +386,13 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     if (written_.find(fd) == written_.end()){
       CompoundStmt* cs = cast<CompoundStmt>(fd->getBody());
       std::vector<const ParmVarDecl*> params(fd->getNumParams());
-      for (int i=0; i < fd->getNumParams(); ++i){
-        params[i] = fd->getParamDecl(i);
+      std::map<std::string,std::string> values;
+      for (auto& pair : fxnArgValues_){
+        values[pair.first] = fd->getParamDecl(pair.second)->getNameAsString();
       }
       if (cs->body_front()){
         doReplace(cs->body_front()->getLocStart(),
-                  cs->getLocEnd(), cs,
-                  false, false, r, nullptr, params.data());
+                  cs->getLocEnd(), false, false, r, values);
       }
       written_.insert(fd);
     }
@@ -566,24 +535,20 @@ SSTMemoizeComputePragmaHandler::allocatePragma(const std::map<std::string, std::
 SSTPragma*
 SSTImplicitStatePragmaHandler::allocatePragma(const std::map<std::string, std::list<std::string>>& in_args) const
 {
-  auto args = in_args;
-  auto iter = args.find("inputs");
-  std::list<std::string> inputs;
-  if (iter != args.end()){
-    inputs = std::move(iter->second);
-    args.erase(iter);
-  }
 
-  if (!args.empty()){
-    //we got passed an invalid argument
-    std::stringstream sstr;
-    sstr << "got invalid args for implicit_state pragma: ";
-    for (auto& pair : args){
-      sstr << pair.first << ",";
+  std::map<std::string,std::string> values;
+  for (auto& pair : in_args){
+    if (pair.second.size() > 1){
+      std::string error = "cannot specify multiple values for implicit state " + pair.first;
+      errorAbort(pragmaLoc_, ci_, error);
     }
-    errorAbort(pragmaLoc_, ci_, sstr.str());
+    if (pair.second.empty()){
+      values[pair.first] = "0";
+    } else {
+      values[pair.first] = pair.second.front();
+    }
   }
 
-  return new SSTImplicitStatePragma(std::move(inputs));
+  return new SSTImplicitStatePragma(std::move(values));
 }
 

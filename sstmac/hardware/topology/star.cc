@@ -50,28 +50,27 @@ namespace sstmac {
 namespace hw {
 
 star::star(sprockit::sim_parameters* params) :
-  structured_topology(params,
-                      InitMaxPortsIntra::I_Remembered,
-                      InitGeomEjectID::I_Remembered)
+  structured_topology(params)
 {
-  max_ports_intra_network_ = 0;
-  eject_geometric_id_ = max_ports_intra_network_;
-}
-
-void
-star::minimal_route_to_switch(switch_id current_sw_addr,
-                              switch_id dest_sw_addr,
-                              packet::path &path) const
-{
-  spkt_throw_printf(sprockit::unimplemented_error,
-      "%s does not implement minimal route to switch (always on eject switch)",
-      to_string().c_str());
 }
 
 void
 star::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   conns.resize(0);
+}
+
+void
+star::endpoints_connected_to_injection_switch(switch_id swaddr,
+                                   std::vector<injection_port>& nodes) const
+{
+  nodes.resize(concentration_);
+  for (int i = 0; i < concentration_; i++) {
+    injection_port& port = nodes[i];
+    port.nid = swaddr*concentration_ + i;
+    port.switch_port = i;
+    port.ep_port = 0;
+  }
 }
 
 void

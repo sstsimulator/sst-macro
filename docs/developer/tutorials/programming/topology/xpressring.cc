@@ -48,17 +48,14 @@ namespace sstmac {
 namespace hw {
 
 xpress_ring::xpress_ring(sprockit::sim_parameters* params)
-  : structured_topology(params, InitMaxPortsIntra::I_Remembered, InitGeomEjectID::I_Remembered)
+  : structured_topology(params)
 {
   ring_size_ = params->get_int_param("xpress_ring_size");
   jump_size_ = params->get_int_param("xpress_jump_size");
-  max_ports_intra_network_ = 4;
-  eject_geometric_id_ = max_ports_intra_network_;
 }
 
 void
-xpress_ring::connected_outports(switch_id src,
-                            std::vector<connection>& conns) const
+xpress_ring::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   conns.resize(4); //+1/-1 conns, +jump,-jump conns
   conns[0].src = src;
@@ -83,52 +80,39 @@ xpress_ring::connected_outports(switch_id src,
 }
 
 void
+xpress_ring::endpoints_connected_to_injection_switch(switch_id swid,
+                                                     std::vector<injection_port> &nodes) const
+{
+  nodes.resize(concentration());
+  for (int i=0; i < concentration(); ++i){
+    injection_port& port = nodes[i];
+    port.ep_port = 0;
+    port.switch_port = 4 + i;
+    port.nid = concentration() * swid + i;
+  }
+}
+
+void
 xpress_ring::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
 {
   topology::configure_individual_port_params(0, 4, switch_params);
 }
 
-void
-xpress_ring::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const 
+int
+xpress_ring::num_hops_to_node(node_id src_node, node_id dest_node) const
 {
-  m[routing::minimal] = 1;
-  m[routing::valiant] = 2;
-  m[routing::ugal] = 3;
-}
+  switch_id src = src_node / concentration_;
+  switch_id dest = dest_node / concentration_;
 
-void
-xpress_ring::minimal_route_to_switch(
-  switch_id src,
-  switch_id dest,
-  routable::path& path) const
-{
-  //can route up or down
   int up_distance = abs(dest - src);
   int down_distance = abs(src + ring_size_ - dest);
 
-  int xpress_cutoff = jump_size_ / 2;
-
-  if (up_distance <= down_distance) {
-    if (up_distance > xpress_cutoff) {
-      path.set_outport(jump_up_port);
-      path.vc = 0;
-    } else {
-      path.outport = up_port;
-      path.vc = 0;
-    }
-  } else {
-    if (down_distance > xpress_cutoff) {
-      path.set_outport(jump_down_port);
-      path.vc = 0;
-    } else {
-      path.set_outport(down_port);
-      path.vc = 0;
-    }
-  }
+  int total_distance = std::max(up_distance, down_distance);
+  return num_hops_for_distance(total_distance);
 }
 
 int
-xpress_ring::num_hops(int total_distance) const
+xpress_ring::num_hops_for_distance(int total_distance) const
 {
   int num_jumps = total_distance / jump_size_;
   int num_steps = total_distance % jump_size_;
@@ -142,23 +126,11 @@ xpress_ring::num_hops(int total_distance) const
 }
 
 int
-xpress_ring::minimal_distance(
-  switch_id src,
-  switch_id dest) const
-{
-  int up_distance = abs(dest - src);
-  int down_distance = abs(src + ring_size_ - dest);
-
-  int total_distance = std::max(up_distance, down_distance);
-  return num_hops(total_distance);
-}
-
-int
 xpress_ring::diameter() const
 {
   //half-way around the ring is the biggest
   int halfway = ring_size_ / 2;
-  return num_hops(halfway);
+  return num_hops_for_distance(halfway);
 }
 
 

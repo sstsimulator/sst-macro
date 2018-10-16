@@ -125,7 +125,6 @@ The parameter file then becomes, e.g.
 \begin{ViFile}
 node {
  app1 {
-  launch_type = dumpi
   indexing = dumpi
   allocation = dumpi
   name = parsedumpi
@@ -133,9 +132,7 @@ node {
  }
 }
 \end{ViFile}
-We have a new parameter \inlinefile{launch_type} set to \inlinefile{dumpi}.
-This was implicit before, taking the default value of \inlinefile{skeleton}.
-We also set indexing and allocation parameters to read from the DUMPI trace.
+We set indexing and allocation parameters to read from the DUMPI trace.
 The application name is a special app that parses the DUMPI trace.
 Finally, we direct \sstmacro to the DUMPI metafile produced when the trace was collected.
 To extract the topology information, locate the \inlineshell{.bin} file corresponding to MPI rank 0.
@@ -183,7 +180,6 @@ The new parameter file, for a fictional machine called deep thought
 # Launch parameters
 node {
  app1 {
-  launch_type = dumpi
   indexing = dumpi
   allocation = hostname
   name = parsedumpi

@@ -151,7 +151,7 @@ logp_nic::connect_input(
 }
 
 link_handler*
-logp_nic::payload_handler(int port) const
+logp_nic::payload_handler(int port)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &nic::mtl_handle);

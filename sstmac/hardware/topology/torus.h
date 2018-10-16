@@ -88,6 +88,13 @@ class torus :
     return diameter_;
   }
 
+  int max_num_ports() const override {
+    return 2*dimensions_.size() + concentration();
+  }
+
+  void endpoints_connected_to_injection_switch(switch_id swaddr,
+         std::vector<injection_port>& nodes) const override;
+
   /// Returns the vector giving each dimension of the torus.
   const std::vector<int>& dimensions() const {
     return dimensions_;
@@ -95,11 +102,11 @@ class torus :
 
   coordinates neighbor_at_port(switch_id sid, int port);
 
-  int num_switches() const override {
+  switch_id num_switches() const override {
     return num_switches_;
   }
 
-  int num_leaf_switches() const override {
+  switch_id num_leaf_switches() const override {
     return num_switches();
   }
 
@@ -120,21 +127,11 @@ class torus :
   void configure_individual_port_params(switch_id src,
             sprockit::sim_parameters *switch_params) const override;
 
-  void minimal_route_to_switch(
-    switch_id sid,
-    switch_id dst,
-    packet::path& path) const {
-    torus_route(sid, dst, path);
+  int minimal_distance(switch_id sid, switch_id dst) const;
+
+  int num_hops_to_node(node_id src, node_id dst) const override {
+    return minimal_distance(src / concentration_, dst / concentration_);
   }
-
-  route_type_t torus_route(
-    switch_id sid,
-    switch_id dst,
-    packet::path& path) const;
-
-  int minimal_distance(
-    switch_id sid,
-    switch_id dst) const override;
 
   coordinates switch_coords(switch_id) const override;
 
@@ -142,19 +139,9 @@ class torus :
 
   vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
 
- protected:
-  inline int convert_to_port(int dim, int dir) const {
+  int convert_to_port(int dim, int dir) const {
     return 2*dim + dir;
   }
-
- private:
-  route_type_t down_path(
-    int dim, int src, int dst,
-    packet::path& path) const;
-
-  route_type_t up_path(
-    int dim, int src, int dst,
-    packet::path& path) const;
 
   int shortest_distance(int dim, int src, int dst) const;
 
@@ -163,7 +150,7 @@ class torus :
 
  protected: //must be visible to hypercube
   int diameter_;
-  long num_switches_;
+  switch_id num_switches_;
 
 };
 

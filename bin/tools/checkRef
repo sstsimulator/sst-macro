@@ -13,7 +13,6 @@ def getTime(fname):
     return "No time"
 
 def check(tmpFile, refFile):
-  print fname
   print getTime(tmpFile)
   print getTime(refFile)
   print "\n"
