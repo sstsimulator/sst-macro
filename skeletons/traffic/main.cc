@@ -55,6 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <algorithm>
 #include <sys/time.h>
 #include <cstring>
+#include <functional>
 
 #define sstmac_app_name traffic_pattern
 
@@ -71,7 +72,7 @@ const std::vector<int> window_num_sends =
   { 16, 16, 16,  16,  16,  16,  4,   4,   4,    4,    4,    4,    4,    4,    4,     4,     4,     4};
 
 void usage(std::ostream& os){
-  os << "usage: ./run <num_senders> <num_recvers> <send_seed> <recv_seed>" << std::endl;
+  os << "usage: ./run <num_senders> <num_recvers> <seed>" << std::endl;
 }
 
 void crash(const std::string& err){
@@ -130,9 +131,68 @@ void send_traffic(int recver, MPI_Request* reqs, void* buffer, std::vector<doubl
 void recv_traffic(const std::vector<int>& senders, MPI_Request* reqs, void* buffer);
 void do_nothing();
 
+std::vector<int> gen_senders_list(int ranks, int count, int seed = -1) {
+  std::vector<int> possible_senders;
+
+  if (ranks/2 < count)
+    crash("Cannot have more senders than nodes");
+
+  // Make a list of every possible sender rank
+  for (int i = 0; i < ranks; i+=2)
+    possible_senders.push_back(i);
+
+  // scramble the list when a seed is given
+  if (seed > 0) {
+    std::mt19937 mt(seed);
+    std::shuffle(possible_senders.begin(), possible_senders.end(), mt);
+  }
+
+  return std::vector<int>(possible_senders.begin(), possible_senders.begin() + count);
+}
+
+// Returns whether two ranks are on the same node, assuming ranks are placed in pairs
+bool is_same_node(int rank1, int rank2) {
+  return (std::abs(rank1 - rank2) == 1) && std::min(rank1, rank2) % 2 == 0;
+}
+
+std::vector<int> gen_receiver_list(const std::vector<int>& senders, int ranks, int count, int seed = -1) {
+
+  // Enumerate every possible receiver rank
+  std::vector<int> possible_receivers;
+  for (int i = 1; i < ranks; i+=2)
+    possible_receivers.push_back(i);
+
+  // Jumble the ranks around if there is a seed
+  if (seed > 0) {
+    std::mt19937 mt(seed);
+    std::shuffle(possible_receivers.begin(), possible_receivers.end(), mt);
+  }
+
+  // limit the choice of receivers to specified count
+  possible_receivers.erase(possible_receivers.begin() + count, possible_receivers.end());
+
+  std::vector<int> receivers;
+  auto rand_elem = std::bind(std::uniform_int_distribution<int>(0, possible_receivers.size() - 1),
+                             std::mt19937(std::max(1, seed)));
+
+  // Pair a random receiver with a sender.
+  for(const auto sender : senders) {
+    auto candidate_idx = rand_elem();
+    auto candidate = possible_receivers[candidate_idx];
+    // If the sender and receiver are on the same node,
+    // select the next receiver rank
+    if (is_same_node(sender, candidate))
+      candidate = possible_receivers[(candidate_idx + 1) % count];
+
+    receivers.push_back(candidate);
+  }
+
+  return receivers;
+}
+
 int main(int argc, char** argv)
 {
-  if (argc != 5){
+  if (argc != 4){
     crash("wrong number of arguments");
   }
 
@@ -178,7 +238,6 @@ int main(int argc, char** argv)
     }
   }
 
-
 /**
   This randomly generates a list of senders and recvers.
   The skeleton is set up assuming one recver and one sender process per node.
@@ -202,13 +261,8 @@ int main(int argc, char** argv)
     crash("num_recvers cannot be more than half the total number of ranks");
   } 
 
-  int send_seed = std::atoi(argv[3]);
-  if (send_seed == 0){
-    crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
-  }
-
-  int recv_seed = std::atoi(argv[4]);
-  if (recv_seed == 0){
+  int seed = std::atoi(argv[3]);
+  if (seed == 0){
     crash("bad seed value - must be non-zero integer or negative to indicate no shuffle");
   }
 
@@ -217,30 +271,10 @@ int main(int argc, char** argv)
   }
   int senders_per_recver = num_senders / num_recvers;
 
-  int num_half = nproc/2;
-  std::vector<int> recvers(num_half);
-  for (int i=0; i < num_half; ++i){
-    recvers[i] = 2*i + 1; //recvers are odd
-  }
+    //std::cout << nproc << " " << num_senders << " " << num_recvers << " " << seed << std::endl;
 
-  std::vector<int> senders(num_half);
-  for (int i=0; i < num_half; ++i){
-    senders[i] = 2*i; //senders are even
-  }
-
-  if (send_seed > 0){ //don't shuffle if negative
-    std::mt19937 mt(send_seed);
-    std::shuffle(senders.begin(), senders.end(), mt);
-  }
-
-  if (recv_seed > 0){
-    recvers = shuffled_recvers(num_senders, senders, recv_seed, num_half, num_recvers);
-  } else {
-    recvers.resize(num_recvers);
-    for (int i=0; i < num_recvers; ++i){
-      recvers[i] = 2*i + 1;
-    }
-  }
+  auto senders = gen_senders_list(nproc, num_senders, seed);
+  auto recvers = gen_receiver_list(senders, nproc, num_recvers, seed);
 
   std::vector<int> senders_to_me;
   int recver_from_me = -1;
@@ -249,7 +283,7 @@ int main(int argc, char** argv)
   for (int s=0; s < num_senders; ++s){
     int recver = recvers[s/senders_per_recver];
     int sender = senders[s];
-    if ( (sender+1) == recver && recv_seed > 0 && send_seed > 0 ){
+    if ( (sender+1) == recver && seed > 0 ){
       //don't let sender and recver be on same node
       std::cerr << "sender and recver are same node! invalid" << std::endl;
       MPI_Finalize();
