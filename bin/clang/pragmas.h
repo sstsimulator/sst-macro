@@ -126,7 +126,7 @@ struct SSTPragma {
 
   template <class T>
   bool matches(T* s){
-    return startPragmaLoc < s->getLocStart() && s->getLocStart() <= targetLoc;
+    return startPragmaLoc < getStart(s) && getStart(s) <= targetLoc;
   }
 
   virtual bool reusable() const {

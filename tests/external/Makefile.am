@@ -28,10 +28,6 @@ AM_CPPFLAGS += -I$(top_builddir)/sstmac/replacements \
 
 test_LDADD = 
 
-if EXTERNAL_BOOST
-  test_LDADD += $(BOOST_LDFLAGS)
-endif
-
 test_LDADD += \
   $(top_builddir)/sstmac/main/libsstmac_main.la \
   $(top_builddir)/sstmac/install/libsstmac.la \

@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "replacements.h"
 #include "recurseAll.h"
 #include "astVisitor.h"
+#include "util.h"
 #include <sstream>
 
 struct VariableScope {
@@ -63,7 +64,7 @@ struct VariableScope {
       return false; //well crap, null scope
     }
 
-    clang::SourceLocation loc = expr->getFoundDecl()->getLocStart();
+    clang::SourceLocation loc = getStart(expr->getFoundDecl());
     return loc > start && loc < stop;
   }
 };
@@ -110,12 +111,12 @@ struct ValidateScope {
       std::stringstream sstr;
       sstr << "control variable '" << d->getNameAsString()
            << "' declared at "
-           << d->getLocStart().printToString(CI.getSourceManager())
+           << getStartLocString(d, CI)
            << " of type " << d->getDeclKindName()
            << " which is inside skeletonized block starting at "
            << scope.stop.printToString(CI.getSourceManager())
            << " - must use #pragma sst replace";
-      errorAbort(expr->getLocStart(), CI, sstr.str());
+      errorAbort(expr, CI, sstr.str());
     }
     return false;
   }

@@ -224,7 +224,11 @@ ReplaceAction::EndSourceFileAction()
   }
 
   std::error_code rc;
+#if CLANG_VERSION_MAJOR >= 7
+  llvm::raw_fd_ostream fs(sstSourceFile, rc, llvm::sys::fs::FA_Write);
+#else
   llvm::raw_fd_ostream fs(sstSourceFile, rc, llvm::sys::fs::F_RW);
+#endif
   rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID()).write(fs);
   fs.close();
 

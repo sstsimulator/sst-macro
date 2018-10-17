@@ -16,12 +16,6 @@ AC_ARG_WITH([sst-core],
 )
 
 if test "X$have_integrated_core" = "Xyes"; then
-  if test "X$HAVE_BOOST" = "Xyes"; then
-    AC_MSG_ERROR([Please don't specify --with-boost when compiling for integrated core, core's boost is automatically used.])
-  fi
-fi
-
-if test "X$have_integrated_core" = "Xyes"; then
   AC_CONFIG_FILES([bin/pysstmac], [chmod +x bin/pysstmac])
   AC_CONFIG_FILES([bin/sstmac-check], [chmod +x bin/sstmac-check])
   AC_CONFIG_FILES([tests/api/mpi/testexec], [chmod +x tests/api/mpi/testexec])
@@ -68,12 +62,6 @@ if test "X$have_integrated_core" = "Xyes"; then
 
   # Already failed if user tried to specify --with-boost.  We insist on using whatever sst-core
   # was configured with.
-  BOOST_CPPFLAGS="`$SST/bin/sst-config --BOOST_CPPFLAGS`"
-  BOOST_LDFLAGS="`$SST/bin/sst-config --BOOST_LDFLAGS`"
-  AC_SUBST(BOOST_CPPFLAGS)
-  AC_SUBST(BOOST_LDFLAGS)
-  AC_MSG_RESULT([set external boost to true])
-  AM_CONDITIONAL(EXTERNAL_BOOST, true)
 
   AM_CONDITIONAL([USE_MPIPARALLEL], false)
 else

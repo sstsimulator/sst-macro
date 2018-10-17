@@ -74,9 +74,5 @@ libmacro_la_LIBADD = \
 
 libmacro_la_LDFLAGS = -module -shared -version-info @SSTMAC_LIBVERSION@
 
-if EXTERNAL_BOOST
-  libmacro_la_LDFLAGS += $(BOOST_LDFLAGS)
-endif
-
 endif
 

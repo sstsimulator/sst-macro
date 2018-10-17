@@ -39,6 +39,13 @@ virtual void collect(double time, int n_params, const double params[], const int
 \end{CppCode}
 A call to \inlinecode{sstmac_finish_memoize2} causes \inlinecode{collect(2,..)} to get invoked on the model.
 The \inlinecode{states} array is discussed more later in \ref{subsec:implicitStates}
+Models are registered using the SST/macro factory system. 
+If wanting to add a least-squares model, factory register as:
+
+\begin{CppCode}
+struct least_squares : public regression model {
+ FactoryRegister("least_squares", operating_system::regression_model, least_squares)
+\end{CppCode}
 
 \subsection{pragma sst memoize [skeletonize(...)] [model(...)] [inputs(...)] [name(...)]}
 \begin{itemize}

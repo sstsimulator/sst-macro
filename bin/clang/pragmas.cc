@@ -349,8 +349,7 @@ SSTEmptyPragma::activate(clang::Decl* d, clang::Rewriter& r, PragmaConfig& cfg){
 void
 SSTEmptyPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
-  errorAbort(s->getLocStart(), *CI,
-       "pragma empty should only apply to declarations, not statmements");
+  errorAbort(s, *CI, "pragma empty should only apply to declarations, not statmements");
 }
 
 void
@@ -382,7 +381,7 @@ void
 SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
 {
   if (!stmt->isSingleDecl()){
-    errorAbort(stmt->getLocStart(), *CI, "cannot skeletonize multi-declarations");
+    errorAbort(stmt, *CI, "cannot skeletonize multi-declarations");
   }
   Decl* decl = stmt->getSingleDecl();
   if (isa<VarDecl>(decl)){
@@ -399,7 +398,7 @@ SSTNewPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
       } //boy, I really hope this doesn't allocate any memory
     }
   } else {
-    errorAbort(stmt->getLocStart(), *CI, "sst malloc pragma applied to non-variable declaration");
+    errorAbort(stmt, *CI, "sst malloc pragma applied to non-variable declaration");
   }
 }
 
@@ -425,7 +424,7 @@ SSTNewPragma::activate(Stmt* stmt, Rewriter &r, PragmaConfig& cfg)
     scase(DeclStmt,stmt,r);
     scase(BinaryOperator,stmt,r);
     default: //well - that was stupid of you
-      warn(stmt->getLocStart(), *CI, "pragma new not applied to operator new or binary operator");
+      warn(stmt, *CI, "pragma new not applied to operator new or binary operator");
       break;
   }
 #undef scase
@@ -438,14 +437,14 @@ SSTKeepIfPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   pp.os << "if (" << ifCond_ << "){ ";
   pp.print(s); //put the original statement in the if
   pp.os << "; } else if (0)";
-  r.InsertText(s->getLocStart(), pp.os.str(), false, false);
+  r.InsertText(getStart(s), pp.os.str(), false, false);
 }
 
 void
 SSTBranchPredictPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
   if (s->getStmtClass() != Stmt::IfStmtClass){
-    errorAbort(s->getLocStart(), *CI, "predicate pragma not applied to if statement");
+    errorAbort(s, *CI, "predicate pragma not applied to if statement");
   }
   IfStmt* ifs = cast<IfStmt>(s);
   replace(ifs->getCond(), r, prediction_, *CI);
@@ -458,7 +457,7 @@ SSTOverheadPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   sstr << "sstmac_advance_time(\""
        << paramName_
        << "\");";
-  r.InsertText(s->getLocStart(), sstr.str(), false);
+  r.InsertText(getStart(s), sstr.str(), false);
   cfg.newParams.insert(paramName_);
 }
 
@@ -479,17 +478,17 @@ SSTAdvanceTimePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
   } else {
     std::string error = "invalid time units: " + units_ +
         ": must be sec, msec, usec, or nsec";
-    errorAbort(s->getLocStart(), *CI, error);
+    errorAbort(s, *CI, error);
   }
   
   pp.os << replacement; 
-  r.InsertText(s->getLocStart(), pp.os.str(), false, false);
+  r.InsertText(getStart(s), pp.os.str(), false, false);
 }
 
 void
 SSTCallFunctionPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
-  r.InsertText(s->getLocStart(), repl_, false);
+  r.InsertText(getStart(s), repl_, false);
 }
 
 void
@@ -506,7 +505,7 @@ void
 SSTMallocPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
 {
   if (!stmt->isSingleDecl()){
-    errorAbort(stmt->getLocStart(), *CI, "cannot skeletonize multi-declarations");
+    errorAbort(stmt, *CI, "cannot skeletonize multi-declarations");
   }
   Decl* decl = stmt->getSingleDecl();
   if (isa<VarDecl>(decl)){
@@ -517,8 +516,7 @@ SSTMallocPragma::visitDeclStmt(DeclStmt *stmt, Rewriter &r)
     sstr << type << " " << name << " = 0;"; //don't know why - but okay, semicolon needed
     replace(stmt, r, sstr.str(), *CI);
   } else {
-    errorAbort(stmt->getLocStart(), *CI,
-               "sst malloc pragma applied to non-variable declaration");
+    errorAbort(stmt, *CI, "sst malloc pragma applied to non-variable declaration");
   }
 }
 
@@ -542,7 +540,7 @@ void
 SSTReturnPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
   if (s->getStmtClass() != Stmt::ReturnStmtClass){
-    errorAbort(s->getLocStart(), *CI,
+    errorAbort(s, *CI,
               "pragma return not applied to return statement");
   }
   replace(s, r, "return " + repl_, *CI);
@@ -552,13 +550,11 @@ void
 SSTReturnPragma::activate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 {
   if (d->getKind() != Decl::Function){
-    errorAbort(d->getLocStart(), *CI,
-      "pragma return not applied to function definition");
+    errorAbort(d, *CI, "pragma return not applied to function definition");
   }
   FunctionDecl* fd = cast<FunctionDecl>(d);
   if (!fd->hasBody()){
-    errorAbort(d->getLocStart(), *CI,
-      "pragma return applied to function declaration - must be definition");
+    errorAbort(d, *CI, "pragma return applied to function declaration - must be definition");
   }
   std::string repl = "{ return " + repl_ + "; }";
   replace(fd->getBody(), r, repl, *CI);
@@ -573,8 +569,7 @@ SSTGlobalVariablePragma::activate(Stmt* s, Rewriter& r, PragmaConfig& cfg)
 void
 SSTGlobalVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 {
-  errorAbort(d->getLocStart(), *CI,
-             "global pragma should only be applied to statements");
+  errorAbort(d, *CI, "global pragma should only be applied to statements");
 }
 
 SSTNullVariablePragma::SSTNullVariablePragma(CompilerInstance& CI,
@@ -661,9 +656,8 @@ void
 SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
 {
   if (!extras_.empty()){
-    errorAbort(d->getLocStart(), *CI,
-         "illegal null_variable spec: must be with 'only', 'except', 'new', 'replace', 'target',"
-         "'safe', 'delete_all', 'skel_compute'");
+    errorAbort(d, *CI, "illegal null_variable spec: "
+      "must be with 'only', 'except', 'new', 'replace', 'target', 'safe', 'delete_all', 'skel_compute'");
   }
 
   declAppliedTo_ = getNamedDecl(d);
@@ -676,8 +670,7 @@ SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
     }
 
     if (targetNames_.empty()){
-      errorAbort(d->getLocStart(), *CI,
-                 "null_variable pragma applied to function must give list of target null parameters");
+      errorAbort(d, *CI, "null_variable pragma applied to function must give list of target null parameters");
     }
 
     int numHits = 0;
@@ -694,7 +687,7 @@ SSTNullVariablePragma::doActivate(Decl* d, Rewriter& r, PragmaConfig& cfg)
       sstr << "null_variable pragma lists " << targetNames_.size()
            << " parameters, but they match " << numHits
            << " parameter names";
-      errorAbort(d->getLocStart(), *CI, sstr.str());
+      errorAbort(d, *CI, sstr.str());
     }
     //no parameters matched target name
   } else {
@@ -711,20 +704,19 @@ SSTNullVariablePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     case Decl::Field:{
       FieldDecl* fd = cast<FieldDecl>(d);
       if (!fd->getType()->isPointerType()){
-        errorAbort(d->getLocStart(), *CI, "only valid to apply null_variable pragma to pointers");
+        errorAbort(d, *CI, "only valid to apply null_variable pragma to pointers");
       }
       break;
     }
     case Decl::Var: {
       VarDecl* vd = cast<VarDecl>(d);
       if (!vd->getType()->isPointerType()){
-        errorAbort(d->getLocStart(), *CI, "only valid to apply null_variable pragma to pointers");
+        errorAbort(d, *CI, "only valid to apply null_variable pragma to pointers");
       }
       break;
     }
     default:
-      errorAbort(d->getLocStart(), *CI,
-               "only valid to apply null_variable pragma to functions, variables, and members");
+      errorAbort(d, *CI, "only valid to apply null_variable pragma to functions, variables, and members");
       break;
   }
 
@@ -740,7 +732,7 @@ SSTNullVariablePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
       activate(*iter,r,cfg);
     }
   } else {
-    errorAbort(s->getLocStart(), *CI,
+    errorAbort(s, *CI,
         "pragma null_variable should only apply to declaration statements");
   }
 }
@@ -860,7 +852,7 @@ static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
   case Decl::Typedef: {
     TypedefDecl* td = cast<TypedefDecl>(d);
     if (td->getTypeForDecl() == nullptr){
-      internalError(d->getLocStart(), CI, "typedef declaration has no underlying type");
+      internalError(d, CI, "typedef declaration has no underlying type");
       break;
     } else if (td->getTypeForDecl()->isStructureType()){
       RecordDecl* rd = td->getTypeForDecl()->getAsStructureType()->getDecl();
@@ -869,8 +861,7 @@ static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
     }
   }
   default:
-    errorAbort(d->getLocStart(), CI,
-               "nonnull_fields pragma should only be applied to struct or function declarations");
+    errorAbort(d, CI, "nonnull_fields pragma should only be applied to struct or function declarations");
   }
 
   if (!fields.empty()){
@@ -879,7 +870,7 @@ static void doActivateFieldsPragma(Decl* d, PragmaConfig& cfg, bool defaultNull,
     for (auto& str : fields){
       sstr << " " << str;
     }
-    errorAbort(d->getLocStart(), CI, sstr.str());
+    errorAbort(d, CI, sstr.str());
   }
 }
 
@@ -902,8 +893,8 @@ SSTNullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 void
 SSTNullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
 {
-  errorAbort(stmt->getLocStart(), *CI,
-             "null_fields pragma should only be applied to struct declarations, not statements");
+  errorAbort(stmt, *CI,
+      "null_fields pragma should only be applied to struct declarations, not statements");
 }
 
 SSTNonnullFieldsPragma::SSTNonnullFieldsPragma(CompilerInstance &CI, const std::list<Token> &tokens) :
@@ -925,8 +916,8 @@ SSTNonnullFieldsPragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 void
 SSTNonnullFieldsPragma::activate(Stmt *stmt, Rewriter &r, PragmaConfig &cfg)
 {
-  errorAbort(stmt->getLocStart(), *CI,
-             "nonull_fields pragma should only be applied to struct declarations, not statements");
+  errorAbort(stmt, *CI,
+     "nonull_fields pragma should only be applied to struct declarations, not statements");
 }
 
 void
@@ -945,8 +936,7 @@ SSTNullTypePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     break;
   }
   default:
-    errorAbort(d->getLocStart(), *CI,
-        "null_type pragma can only be applied to field or variable declaration");
+    errorAbort(d, *CI, "null_type pragma can only be applied to field or variable declaration");
   }
   std::string repl = newType_ + " " + name;
   replace(d,r,repl,*CI);
@@ -1131,7 +1121,7 @@ SSTStackAllocPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
     default: {
       std::string error = std::string("stack alloc pragma can only be applied to assignments - got ")
           + s->getStmtClassName();
-      errorAbort(s->getLocStart(), *CI, error);
+      errorAbort(s, *CI, error);
     }
     }
 

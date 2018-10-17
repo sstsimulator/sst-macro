@@ -37,9 +37,6 @@ testexec_LDADD = \
   $(top_builddir)/sstmac/install/libsstmac.la \
   $(top_builddir)/sprockit/sprockit/libsprockit.la
 
-if EXTERNAL_BOOST
-  testexec_LDADD += $(BOOST_LDFLAGS)
-endif
 if USE_MPIPARALLEL
 testexec_LDADD += $(top_builddir)/sstmac/backends/mpi/libsstmac_mpi_runtime.la
 endif
