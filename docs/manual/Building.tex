@@ -255,15 +255,15 @@ The Clang libraries will be placed into \inlineshell{/opt/local/libexec/llvm-dev
 \subsubsection{The Hard Way}
 \label{subsubsec:libTooling}
 For operating systems other than OS X, building Clang support has a few steps (and takes quite a while to build), but is straightforward.
-Instead of having an all-in-one tarball, you will have to download 2 different components. You can install more if you want build libc++, but these are not required.
+Instead of having an all-in-one tarball, you will have to download several different components. You can install more if you want build libc++, but these are not required.
 Obtain the following from \url{http://releases.llvm.org/download.html}.
 
 \begin{itemize}
 \item LLVM source code
 \item Clang source code
-\item (optional, not recommended unless needed) libc++ source code
-\item (optional, not recommended unless needed) libc++abi source code
-\item (optional, not recommended) compiler-rt source code
+\item libc++ source code
+\item libc++abi source code
+\item compiler-rt source code
 \item (optional, not recommended) OpenMP source code
 \end{itemize}
 
@@ -280,7 +280,7 @@ The setup script places each tarball in the following subfolders of the main LLV
 \item projects/openmp
 \end{itemize}
 
-Only Clang is a strict dependency. Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
+Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
 You no longer need to use Clang to build Clang. 
 For the most stable results, though, you should a pre-existing Clang compiler to build the Clang development libraries.
 
@@ -293,7 +293,7 @@ cmake ../llvm \
   -DCMAKE_INSTALL_PREFIX=$install
 \end{ViFile}
 
-To build a complete LLVM/Clang (again, not required unless you absolutely need a new libc++), run:
+To build a complete LLVM/Clang run:
 
 \begin{ViFile}
 cmake ../llvm \
@@ -310,6 +310,23 @@ cmake ../llvm \
 
 On some systems, linking Clang might blow out your memory. If that is the case, you have to set \inlineshell{LD=ld.gold} for the linker.
 Run \inlineshell{make install}. The libTooling library will now be available at the \inlineshell{\$install} location.
+
+Any compiler used for SST (g++, icpc, clang++) can generally be mixed with most versions of the libtooling source-to-source library.
+NOTE: The same compiler used to build SST must have been used to build the libtooling library.
+However, the table below contains versions that are recommended or approved and which combinations are untested (but may work).
+
+\begin{tabular}{l l}
+\hline
+Compiler to build SST & Libtooling version \\
+\hline
+\hline
+Clang 4,5,6 & 4,5,6 \\
+Clang 7,8 & 7,8 \\
+GCC 4.8-6 & 4-7 \\
+GCC 7- & ? \\
+ ? & 8 \\
+\hline
+\end{tabular}
 
 \subsection{Building SST/macro with Clang}
 Now that clang is installed, you only need to add the configure flag \inlineshell{--with-clang} pointing it to the install location from above.

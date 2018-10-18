@@ -531,15 +531,15 @@ The Clang libraries will be placed into `/opt/local/libexec/llvm-devel/lib`, so 
 
 
 For operating systems other than OS X, building Clang support has a few steps (and takes quite a while to build), but is straightforward.
-Instead of having an all-in-one tarball, you will have to download 2 different components. You can install more if you want build libc++, but these are not required.
+Instead of having an all-in-one tarball, you will have to download several different components. You can install more if you want build libc++, but these are not required.
 Obtain the following from http://releases.llvm.org/download.html.
 
 
 -   LLVM source code
 -   Clang source code
--   (optional, not recommended unless needed) libc++ source code
--   (optional, not recommended unless needed) libc++abi source code
--   (optional, not recommended) compiler-rt source code
+-   libc++ source code
+-   libc++abi source code
+-   compiler-rt source code
 -   (optional, not recommended) OpenMP source code
 
 Setting up the folders can be done automatically using the `setup-clang` script in `bin/tools` folder in sst-macro. Put all of downloaded tarballs in a folder, e.g. `clang-llvm`. Then run `setup-clang` in the directory. 
@@ -550,11 +550,11 @@ The setup script places each tarball in the following subfolders of the main LLV
 
 -   tools/clang
 -   projects/compiler-rt
--   projects/libc++
--   projects/libc++abi
+-   projects/libcxx
+-   projects/libcxxabi
 -   projects/openmp
 
-Only Clang is a strict dependency. Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
+Using CMake (assuming you are in a build subdirectory of the LLVM tree), you would run the script below to configure.
 You no longer need to use Clang to build Clang. 
 For the most stable results, though, you should a pre-existing Clang compiler to build the Clang development libraries.
 
@@ -567,7 +567,7 @@ cmake ../llvm \
   -DCMAKE_INSTALL_PREFIX=$install
 ````
 
-To build a complete LLVM/Clang (again, not required unless you absolutely need a new libc++), run:
+To build a complete LLVM/Clang run:
 
 ````
 cmake ../llvm \
@@ -584,6 +584,19 @@ cmake ../llvm \
 
 On some systems, linking Clang might blow out your memory. If that is the case, you have to set `LD=ld.gold` for the linker.
 Run `make install`. The libTooling library will now be available at the `\$install` location.
+
+Any compiler used for SST (g++, icpc, clang++) can generally be mixed with most versions of the libtooling source-to-source library.
+NOTE: The same compiler used to build SST must have been used to build the libtooling library.
+However, the table below contains versions that are recommended or approved and which combinations are untested (but may work).
+
+
+| Compiler to build SST | Libtooling version |
+|-----------------------|--------------------|
+| Clang 4,5,6 | 4,5,6 |
+| Clang 7,8 | 7,8 |
+| GCC 4.8-6 | 4-7 |
+| GCC 7- | ? |
+| ? | 8 |
 
 \subsection{Building SST/macro with Clang}
 Now that clang is installed, you only need to add the configure flag `--with-clang` pointing it to the install location from above.
@@ -2357,7 +2370,6 @@ The NIC parameters now become:
 ````
 node {
  nic {
-  packet_allocator = delay_stats
   ejection {
    stats = delay_histogram
    delay_histogram {
@@ -2418,7 +2430,6 @@ However, we now want to collect both a spyplot and the histogram.
 ````
 node {
  nic {
-  packet_allocator = delay_stats
   ejection {
    stats = multi
    callbacks = congestion_spyplot delay_histogram
@@ -2982,7 +2993,7 @@ There are generally 3 modes of using an application common with SST/macro:
 |--|-----------------|---------------------|-----------------|-----------------------|
 | Simulation | Yes | Yes | Yes | Yes |
 | Virtualization | Yes | Yes | No | Yes |
-| Memoizaiton | Yes | No | No | No |
+| Memoization | Yes | No | No | No |
 
 
 #### 5.1.1: Loading external skeletons with the standalone core<a name="subsec:externalAppStandalone"></a>
@@ -3463,6 +3474,13 @@ virtual void collect(double time, int n_params, const double params[], const int
 ````
 A call to `sstmac_finish_memoize2` causes `collect(2,..)` to get invoked on the model.
 The `states` array is discussed more later in [6.1.1](#subsec:implicitStates)
+Models are registered using the SST/macro factory system. 
+If wanting to add a least-squares model, factory register as:
+
+````
+struct least_squares : public regression model {
+ FactoryRegister("least_squares", operating_system::regression_model, least_squares)
+````
 
 \subsection{pragma sst memoize [skeletonize(...)] [model(...)] [inputs(...)] [name(...)]}
 
