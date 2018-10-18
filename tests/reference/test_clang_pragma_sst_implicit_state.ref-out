@@ -1,3 +1,5 @@
+/Users/jjwilke/Programs/sst-macro/clang_versions/tests/clang_src2src/pragma_sst_implicit_state.cc:49:36: error: use of undeclared identifier 'niter'
+1 error generated.
 
 enum implicit_states {
   null=0,
@@ -11,8 +13,8 @@ enum implicit_states {
 void memoFxn(int niter);
 
 void memoFxn(int n){
-  { sstmac_compute_memoize1("memoFxn",n); }sstmac_set_implicit_state1(length,n); for (int i=0; i < n; ++i);
-; sstmac_unset_implicit_state1(length);}
+  { sstmac_compute_memoize1("memoFxn",n); }for (int i=0; i < n; ++i);
+}
 
 
 void testFxn(int param){
@@ -45,7 +47,8 @@ int fxn()
 
 
  sstmac_set_implicit_state1(temp,mul); memoFxn(10); sstmac_unset_implicit_state1(temp);;
-  memoFxn(i+12);
+
+ sstmac_set_implicit_state1(length,niter); memoFxn(i+12); sstmac_unset_implicit_state1(length);;
   return 0;
 }
 

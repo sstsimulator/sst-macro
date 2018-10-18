@@ -42,10 +42,6 @@ AM_LDFLAGS += $(SCALAPACK_LDFLAGS)
 AM_LDFLAGS += $(LAPACK_LDFLAGS)
 AM_LDFLAGS += $(BLAS_LDFLAGS)
 
-if EXTERNAL_BOOST
-AM_LDFLAGS += $(BOOST_LDFLAGS)
-endif
-
 .PHONY: doc superclean gui
 doc:
 	cd docs && doxygen doxygen.cfg

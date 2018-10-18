@@ -192,14 +192,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::string needGlobalReplacement(clang::NamedDecl* decl) {
     const clang::Decl* md = mainDecl(decl);
     if (globalsTouched_.empty()){
-      errorAbort(decl->getLocStart(), *ci_,
-                 "internal error: globals touched array is empty");
+      errorAbort(decl, *ci_, "internal error: globals touched array is empty");
     }
     globalsTouched_.back().insert(md);
     auto iter = globals_.find(md);
     if (iter == globals_.end()){
-      errorAbort(decl->getLocStart(), *ci_,
-                 "getting global replacement for non-global variable");
+      errorAbort(decl, *ci_, "getting global replacement for non-global variable");
     }
     return iter->second.reusableText;
   }

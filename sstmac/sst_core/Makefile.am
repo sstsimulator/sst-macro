@@ -44,11 +44,6 @@ BUILT_SOURCES = sstmacro.inc
 
 libsstmac_sst_core_la_LDFLAGS = 
 
-if EXTERNAL_BOOST
-  libsstmac_sst_core_la_LDFLAGS += $(BOOST_LDFLAGS)
-endif
-
-
 # micro pieces, baseclasses, etc needed for linking in the rest of sstmac
 libsstmac_sst_core_la_SOURCES =  \
   partitioner.cc \

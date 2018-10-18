@@ -99,6 +99,18 @@ void internalError(clang::SourceLocation loc, clang::CompilerInstance& CI, const
 void errorAbort(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& error);
 void warn(clang::SourceLocation loc, clang::CompilerInstance& CI, const std::string& warning);
 
+void warn(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
+void warn(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
+
+void errorAbort(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
+void errorAbort(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
+
+void internalError(const clang::Stmt* s, clang::CompilerInstance& CI, const std::string& error);
+void internalError(const clang::Decl* decl, clang::CompilerInstance& CI, const std::string& error);
+
+void insertBefore(const clang::Stmt* s, clang::Rewriter& r, const std::string& text);
+void insertAfter(const clang::Stmt* s, clang::Rewriter& r, const std::string& text);
+
 inline bool operator<=(const clang::SourceLocation &LHS, const clang::SourceLocation &RHS) {
   return LHS < RHS || LHS == RHS;
 }
@@ -119,5 +131,17 @@ void replace(const clang::Stmt* s, clang::Rewriter& r,
 
 void replace(const clang::Decl* d, clang::Rewriter& r,
              const std::string& repl, clang::CompilerInstance& CI);
+
+static inline std::string getString(clang::SourceLocation loc, clang::CompilerInstance& CI){
+  return loc.printToString(CI.getSourceManager());
+}
+
+static inline std::string getStartLocString(const clang::Expr* e, clang::CompilerInstance& CI){
+  return getString(getStart(e), CI);
+}
+
+static inline std::string getStartLocString(const clang::Decl* d, clang::CompilerInstance& CI){
+  return getString(getStart(d), CI);
+}
 
 #endif

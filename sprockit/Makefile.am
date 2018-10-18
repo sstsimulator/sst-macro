@@ -14,9 +14,5 @@ ACLOCAL_AMFLAGS = -I acinclude
 EXTRA_DIST = bin/runtest bin/configlib.py
 
 SUBDIRS = sprockit test
-if EXTERNAL_BOOST
-AM_LDFLAGS = $(BOOST_LDFLAGS)
-AM_LDFLAGS += $(BOOST_REGEX_LIB)
-endif
 
 

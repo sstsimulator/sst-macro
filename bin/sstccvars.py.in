@@ -10,7 +10,6 @@ clangLibtoolingCxxFlagsStr="@CLANG_LIBTOOLING_CXX_FLAGS@"
 clangLibtoolingCFlagsStr="@CLANG_LIBTOOLING_C_FLAGS@"
 
 sstCppFlags = [
-"@BOOST_CPPFLAGS@",
 "@SST_CPPFLAGS@",
 "@CPPFLAGS@",
 "-I${includedir}/sstmac",

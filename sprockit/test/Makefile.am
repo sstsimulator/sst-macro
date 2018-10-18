@@ -19,12 +19,6 @@ test_serialize_SOURCES = test_serialize.cc
 test_serialize_LDADD = \
   ../sprockit/libsprockit.la
 
-
-if EXTERNAL_BOOST
-AM_LDFLAGS = $(BOOST_LDFLAGS)
-AM_LDFLAGS += $(BOOST_REGEX_LIB)
-endif
-
 check-local: 
 	$(top_srcdir)/bin/runtest 2 test_serialize.out ./test_serialize
 endif
