@@ -76,7 +76,7 @@ class star : public structured_topology
   }
 
   switch_id num_leaf_switches() const override {
-    return 0;
+    return 1;
   }
 
   int minimal_distance(switch_id src, switch_id dst) const {
