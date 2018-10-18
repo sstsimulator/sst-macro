@@ -295,6 +295,10 @@ class event_subcomponent
   {
   }
 
+  event_scheduler* parent() const {
+    return parent_;
+  }
+
  private:
   const timestamp* now_;
 #endif

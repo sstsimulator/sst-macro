@@ -11,6 +11,7 @@ void next_fxn()
   (*sstmac_xyzfxn_list)[0] = fxn;
  }}
 #include <sstmac/software/process/global.h>
+#include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_xyzfxn_list;
 extern void* __ptr_xyzfxn_list;

@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdlib.h>
 #include <sstream>
 #include <csignal>
-
 #include <sstmac/common/messages/sst_message.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_callback.h>
@@ -134,14 +133,29 @@ class delete_thread_event :
   thread* thr_;
 };
 
-struct null_regression : public operating_system::regression_model
+struct null_implicit_state : public operating_system::implicit_state
+{
+  FactoryRegister("null", operating_system::implicit_state, null_implicit_state)
+
+  null_implicit_state(sprockit::sim_parameters* params) :
+    operating_system::implicit_state(params){}
+
+  void set_state(int type, int value) override {}
+  void unset_state(int type) override {}
+};
+
+struct null_regression : public operating_system::thread_safe_timer_model<double>
 {
   FactoryRegister("null", operating_system::regression_model, null_regression)
+
+  using parent = operating_system::thread_safe_timer_model<double>;
+
   null_regression(sprockit::sim_parameters* params,
                   const std::string& key)
-    : operating_system::regression_model(params, key), computed_(false) {}
+    : parent(params, key), computed_(false) {}
 
-  double compute(int n_params, const double params[], int states[]) override {
+  double compute(int n_params, const double params[],
+                 operating_system::implicit_state* state) override {
     if (!computed_){
       computed_ = true;
       compute_mean();
@@ -149,17 +163,40 @@ struct null_regression : public operating_system::regression_model
     return mean_;
   }
 
-  void collect(double time, int n_params, const double params[], const int states[]) override {
-    samples_.push_back(time);
+  int start_collection() override {
+    return parent::start();
   }
 
-  void finish() override {
+  void finish_collection(int thr_tag, int n_params, const double params[],
+                         operating_system::implicit_state* state) override {
+    parent::finish(thr_tag);
+  }
+
+  void finalize(sstmac::timestamp t) override {
     compute_mean();
     std::string file = key() + ".memo";
     std::ofstream ofs(file);
     ofs << key()
         << "\n" << mean_;
     ofs.close();
+  }
+
+  void dump_global_data() override {}
+
+  void dump_local_data() override {}
+
+  std::string to_string() const override {
+    return "mean";
+  }
+
+  void clear() override {}
+
+  void reduce(stat_collector* coll) override {}
+
+  void global_reduce(sstmac::parallel_runtime* rt) override {}
+
+  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
+    return new null_regression(params, key());
   }
 
  private:
@@ -172,20 +209,20 @@ struct null_regression : public operating_system::regression_model
   }
 
   double mean_;
-  std::vector<double> samples_;
   bool computed_;
 
 };
 
-struct linear_regression : public operating_system::regression_model
+struct linear_regression : public operating_system::thread_safe_timer_model<std::pair<double,double>>
 {
   FactoryRegister("linear", operating_system::regression_model, linear_regression)
-
+  using parent = operating_system::thread_safe_timer_model<std::pair<double,double>>;
   linear_regression(sprockit::sim_parameters* params,
                     const std::string& key)
-    : operating_system::regression_model(params, key), computed_(false) {}
+    : parent(params, key), computed_(false) {}
 
-  double compute(int n_params, const double params[],  int states[]) override {
+  double compute(int n_params, const double params[],
+                 operating_system::implicit_state* state) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
@@ -198,16 +235,37 @@ struct linear_regression : public operating_system::regression_model
     return val;
   }
 
-  void collect(double time, int n_params, const double params[], const int states[]) override {
+  int start_collection() override {
+    return parent::start();
+  }
+
+  void dump_global_data() override {}
+
+  void dump_local_data() override {}
+
+  std::string to_string() const override {
+    return "linear";
+  }
+
+  void clear() override {}
+
+  void reduce(stat_collector* coll) override {}
+
+  void global_reduce(sstmac::parallel_runtime* rt) override {}
+
+  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
+    return new null_regression(params, key());
+  }
+
+  void finish_collection(int thr_tag, int n_params, const double params[],
+                         operating_system::implicit_state* state) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
-    samples_.emplace_back(params[0], time);
-
-    //std::cout << "Collected " << key() << "->f(" << params[0] << ") = " << time << std::endl;
+    parent::finish(thr_tag, params[0]);
   }
 
-  void finish() override {
+  void finalize(sstmac::timestamp t) override {
     compute_regression();
     std::string file = key() + ".memo";
     std::ofstream ofs(file);
@@ -244,7 +302,6 @@ struct linear_regression : public operating_system::regression_model
 
   double m_;
   double b_;
-  std::vector<std::pair<double,double>> samples_;
   bool computed_;
 };
 
@@ -263,10 +320,8 @@ thread_context* operating_system::gdb_original_context_ = nullptr;
 thread_context* operating_system::gdb_des_context_ = nullptr;
 std::unordered_map<uint32_t,thread*> operating_system::all_threads_;
 bool operating_system::gdb_active_ = false;
-operating_system::regression_model* operating_system::memoize_model_ = nullptr;
-std::string operating_system::memoize_token_;
-std::map<std::string, operating_system::regression_model*> operating_system::memoized_models_;
-double operating_system::memoize_start_ = 0;
+std::map<std::string,operating_system::regression_model*> operating_system::memoize_models_;
+std::map<std::string,std::string>* operating_system::memoize_init_ = nullptr;
 
 operating_system::operating_system(sprockit::sim_parameters* params, hw::node* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -307,23 +362,45 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
 
   stack_alloc::init(params);
 
+  rebuild_memoizations();
+
   if (node_) {
     compute_sched_->configure(node_->proc()->ncores(), node_->nsocket());
   } else {
     compute_sched_->configure(1, 1);
   }
 
-  if (memoized_models_.empty()){
-    sprockit::sim_parameters* memo_params = params->get_optional_namespace("memoize");
-    if (memo_params->has_param("glob")){
-      spkt_abort_printf("unimplemented: memoization read glob");
-    }
-  }
-
   sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
   for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
     env_[iter->first] = iter->second.value;
   }
+}
+
+void
+operating_system::rebuild_memoizations()
+{
+  if (!memoize_init_) return;
+
+  for (auto& pair : *memoize_init_){
+    auto iter = memoize_models_.find(pair.first);
+    if (iter == memoize_models_.end()){
+      sprockit::sim_parameters* memo_params = params_->get_optional_namespace(pair.first);
+      memo_params->add_param_override("fileroot", pair.first);
+      auto* model = regression_model::factory::get_value(pair.second, memo_params, pair.first);
+      memoize_models_[pair.first] = model;
+      parent()->event_mgr()->register_stat(model, nullptr);
+    }
+  }
+}
+
+void
+operating_system::add_memoization(const std::string& name, const std::string& model)
+{
+  if (!memoize_init_){
+    memoize_init_ = new std::map<std::string,std::string>;
+  }
+  (*memoize_init_)[name] = model;
+
 }
 
 void
@@ -509,10 +586,6 @@ operating_system::increment_app_refcount()
 void
 operating_system::simulation_done()
 {
-  for (auto& pair : memoized_models_){
-    auto* model = pair.second;
-    model->finish();
-  }
 }
 
 library*
@@ -548,55 +621,47 @@ operating_system::print_libs(std::ostream &os) const
   }
 }
 
-void
+int
 operating_system::start_memoize(const char *token, const char* model_name)
 {
-  sprockit::sim_parameters* params = current_os()->params();
-  regression_model* model = nullptr;
-  auto iter = memoized_models_.find(token);
-  if (iter == memoized_models_.end()){
-    model = regression_model::factory::get_value(model_name, params, token);
-    memoized_models_[token] = model;
-  } else {
-    model = iter->second;
+  auto iter = memoize_models_.find(token);
+  if (iter == memoize_models_.end()){
+    spkt_abort_printf("memoization %s for model %s was not registered - likely a compiler wrapper error",
+                      token, model_name);
   }
-  memoize_start_ = sstmac_wall_time();
-  memoize_token_ = token;
-  memoize_model_ = model;
+
+  regression_model* model = iter->second;
+  return model->start_collection();
 }
 
 void
-operating_system::stop_memoize(const char *token, int n_params, double params[])
+operating_system::stop_memoize(int thr_tag, const char *token, int n_params, double params[])
 {
-
-
-  if (memoize_token_ != token){
-    spkt_abort_printf("stopping memoize %s, but active memoize is %s",
-                      token, memoize_token_.c_str());
+  auto iter = memoize_models_.find(token);
+  if (iter == memoize_models_.end()){
+    spkt_abort_printf("memoization %s was not registered - likely a compiler wrapper error",
+                      token);
   }
-  double stop = sstmac_wall_time();
-  double t_total = stop - memoize_start_;
 
   uintptr_t localStorage = get_sstmac_tls();
-  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-
-  memoize_model_->collect(t_total, n_params, params, states);
-
-  memoize_model_ = nullptr;
-  memoize_token_ = "";
-  memoize_start_ = 0;
+  auto* states = (implicit_state*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+  regression_model* model = iter->second;
+  model->finish_collection(thr_tag, n_params, params, states);
 }
 
 void
 operating_system::compute_memoize(const char *token, int n_params, double params[])
 {
-  regression_model* model = memoized_models_[token];
-  if (model == nullptr){
-    spkt_abort_printf("No model found for memoization tag %s - did you run memoize pass?",
+  auto iter = memoize_models_.find(token);
+  if (iter == memoize_models_.end()){
+    spkt_abort_printf("memoization %s was not registered - likely a compiler wrapper error",
                       token);
   }
+
+  regression_model* model = iter->second;
+
   uintptr_t localStorage = get_sstmac_tls();
-  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+  auto* states = (implicit_state*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
   double time = model->compute(n_params, params, states);
   current_os()->compute(timestamp(time));
 }

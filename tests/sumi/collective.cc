@@ -46,9 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sstmac/util.h>
 #include <sstmac/compute.h>
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/process/operating_system.h>
-#include <sstmac/software/process/thread.h>
 #include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/common/runtime.h>
 #include <sumi/transport.h>

@@ -20,6 +20,7 @@ A<T>::fxn(){
 
 decltype(A<int>::x) var;void* __ptr_var = &var; int __sizeof_var = sizeof(var); extern int __offset_var; sstmac::CppGlobal* var_sstmac_ctor = sstmac::new_cpp_global<decltype(A<int>::x),false>(__offset_var); 
 #include <sstmac/software/process/global.h>
+#include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_var;
 extern void* __ptr_var;

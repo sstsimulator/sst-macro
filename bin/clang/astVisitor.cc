@@ -3286,13 +3286,16 @@ PragmaActivateGuard::init()
       case SSTPragma::ImplicitState:
       case SSTPragma::Memoize:  //always - regardless of skeletonization
       case SSTPragma::GlobalVariable:
-      case SSTPragma::Overhead:
         skipVisit_ = false;
         activate = true;
         break;
       case SSTPragma::Keep:
         skipVisit_ = true;
         activate = true; //always - regardless of skeletonization
+        break;
+      case SSTPragma::Overhead:
+        activate = !memoizing_;
+        skipVisit_ = false;
         break;
       case SSTPragma::AlwaysCompute:
         blockDeleted = true;
@@ -3541,11 +3544,17 @@ FirstPassASTVistor::VisitStmt(Stmt *s)
 
 FirstPassASTVistor::FirstPassASTVistor(CompilerInstance& ci,
   SSTPragmaList& prgs, clang::Rewriter& rw, PragmaConfig& cfg) :
-  ci_(ci), pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg), noSkeletonize_(false)
+  ci_(ci), pragmas_(prgs), rewriter_(rw), pragmaConfig_(cfg), noSkeletonize_(false),
+  memoizePass_(false)
 {
   const char* skelStr = getenv("SSTMAC_SKELETONIZE");
   if (skelStr){
     bool doSkel = atoi(skelStr);
     noSkeletonize_ = !doSkel;
+  }
+
+  const char* memoStr = getenv("SSTMAC_MEMOIZE");
+  if (memoStr){
+    memoizePass_ = atoi(memoStr);
   }
 }

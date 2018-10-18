@@ -188,14 +188,20 @@ SSTMemoizeComputePragma::doReplace(SourceLocation startInsert, SourceLocation fi
     argsStr = args_sstr.str();
   }
 
+
+
   if (visitor->memoizePass()){
+    PresumedLoc ploc = CI->getSourceManager().getPresumedLoc(startInsert);
+    int line = ploc.getLine();
+
     std::stringstream start_sstr;
-    start_sstr << "sstmac_start_memoize("
+    start_sstr << "int sstmac_thr_tag" << line << " = sstmac_start_memoize("
        << "\"" << token_ << "\",\"" << model_ << "\"" << "); ";
     r.InsertText(startInsert, start_sstr.str(), insertStartAfter);
     std::stringstream finish_sstr;
-    finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "(\"" << token_
-                << "\"" << argsStr << ");";
+    finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "("
+                << "sstmac_thr_tag" << line << ","
+                << "\"" << token_ << "\"" << argsStr << ");";
 
     if (insertFinalAfter) finalInsert = finalInsert.getLocWithOffset(1);
     r.InsertText(finalInsert, finish_sstr.str(), insertFinalAfter);
@@ -233,6 +239,8 @@ SSTMemoizeComputePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
                  "memoize pragma activated on statement that is not a call expression");
     }
   }
+
+  cfg.astVisitor->getActiveNamespace()->addMemoization(token_, model_);
   doReplace(s->getLocStart(), s->getLocEnd(), s,
               false, true, r, args, nullptr);
 }
@@ -254,6 +262,8 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
   if (!givenName_){
     token_ = fd->getNameAsString();
   }
+
+  cfg.astVisitor->getActiveNamespace()->addMemoization(token_, model_);
 
   auto iter = cfg.functionPragmas.find(fd->getCanonicalDecl());
   if (iter == cfg.functionPragmas.end()){
@@ -305,12 +315,14 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 
 void
 SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation finalInsert,
-                                   bool insertStartAfter, bool insertFinalAfter,
-                                   Rewriter& r, const std::map<std::string,std::string>& values)
+                                  bool insertStartAfter, bool insertFinalAfter,
+                                  Rewriter& r, const std::map<std::string,std::string>& values)
 {
+  std::string state_type = visitor->memoizePass() ? "memoize" : "compute";
+
   bool first = true;
   std::stringstream start_sstr;
-  start_sstr << "sstmac_set_implicit_state" << values_.size() << "(";
+  start_sstr << "sstmac_set_implicit_" << state_type << "_state" << values_.size() << "(";
   for (auto& pair : values){
     if (!first) start_sstr << ",";
     start_sstr << pair.first << "," << pair.second;
@@ -321,7 +333,7 @@ SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation fin
 
   first = true;
   std::stringstream finish_sstr;
-  finish_sstr << "; sstmac_unset_implicit_state" << values_.size() << "(";
+  finish_sstr << "; sstmac_unset_implicit_" << state_type << "_state" << values_.size() << "(";
   for (auto& pair : values){
     if (!first) finish_sstr << ",";
     first = false;

@@ -90,6 +90,9 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
   void** tlsPtr = (void**) &tls[SSTMAC_TLS_TLS_MAP];
   *tlsPtr = tlsMap;
 
+  void** statePtr = (void**) &tls[SSTMAC_TLS_IMPLICIT_STATE];
+  *statePtr = nullptr;
+
   globals_lock.lock();
   if (globalsMap){
     GlobalVariable::glblCtx.addActiveSegment(globalsMap);

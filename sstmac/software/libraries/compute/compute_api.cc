@@ -148,31 +148,66 @@ sstmac_compute_loop4(uint64_t isize, uint64_t jsize, uint64_t ksize, uint64_t ls
     ->compute_loop(num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
 
-extern "C" void sstmac_start_memoize(const char *token, const char* model)
+extern "C" int sstmac_start_memoize(const char *token, const char* model)
 {
-  sstmac::sw::operating_system::start_memoize(token, model);
+  return sstmac::sw::operating_system::start_memoize(token, model);
 }
 
-extern "C" void sstmac_finish_memoize0(const char* token)
+extern "C" void sstmac_finish_memoize0(int thr_tag, const char* token)
 {
   double params[0];
-  sstmac::sw::operating_system::stop_memoize(token, 0, params);
+  sstmac::sw::operating_system::stop_memoize(thr_tag, token, 0, params);
 }
 
-extern "C" void sstmac_finish_memoize1(const char *token, double param1)
+extern "C" void sstmac_finish_memoize1(int thr_tag, const char *token, double param1)
 {
   double params[1];
   params[0] = param1;
-  sstmac::sw::operating_system::stop_memoize(token, 1, params);
+  sstmac::sw::operating_system::stop_memoize(thr_tag, token, 1, params);
 }
 
-extern "C" void sstmac_finish_memoize2(const char *token,
+extern "C" void sstmac_finish_memoize2(int thr_tag, const char *token,
                                        double param1, double param2)
 {
   double params[2];
   params[0] = param1;
   params[1] = param2;
-  sstmac::sw::operating_system::stop_memoize(token, 2, params);
+  sstmac::sw::operating_system::stop_memoize(thr_tag, token, 2, params);
+}
+
+extern "C" void sstmac_finish_memoize3(int thr_tag, const char *token,
+                                       double param1, double param2, double param3)
+{
+  double params[3];
+  params[0] = param1;
+  params[1] = param2;
+  params[2] = param3;
+  sstmac::sw::operating_system::stop_memoize(thr_tag, token, 3, params);
+}
+
+extern "C" void sstmac_finish_memoize4(int thr_tag, const char *token,
+                                       double param1, double param2, double param3,
+                                       double param4)
+{
+  double params[4];
+  params[0] = param1;
+  params[1] = param2;
+  params[2] = param3;
+  params[3] = param4;
+  sstmac::sw::operating_system::stop_memoize(thr_tag, token, 4, params);
+}
+
+extern "C" void sstmac_finish_memoize5(int thr_tag, const char *token,
+                                       double param1, double param2, double param3,
+                                       double param4, double param5)
+{
+  double params[5];
+  params[0] = param1;
+  params[1] = param2;
+  params[2] = param3;
+  params[3] = param4;
+  params[4] = param5;
+  sstmac::sw::operating_system::stop_memoize(thr_tag, token, 5, params);
 }
 
 extern "C" void sstmac_compute_memoize0(const char* token)
@@ -194,6 +229,39 @@ extern "C" void sstmac_compute_memoize2(const char *token, double param1, double
   params[0] = param1;
   params[1] = param2;
   sstmac::sw::operating_system::compute_memoize(token, 2, params);
+}
+
+extern "C" void sstmac_compute_memoize3(const char *token, double param1, double param2,
+                                        double param3)
+{
+  double params[3];
+  params[0] = param1;
+  params[1] = param2;
+  params[2] = param3;
+  sstmac::sw::operating_system::compute_memoize(token, 3, params);
+}
+
+extern "C" void sstmac_compute_memoize4(const char *token, double param1, double param2,
+                                        double param3, double param4)
+{
+  double params[4];
+  params[0] = param1;
+  params[1] = param2;
+  params[2] = param3;
+  params[3] = param4;
+  sstmac::sw::operating_system::compute_memoize(token, 4, params);
+}
+
+extern "C" void sstmac_compute_memoize5(const char *token, double param1, double param2,
+                                        double param3, double param4, double param5)
+{
+  double params[5];
+  params[0] = param1;
+  params[1] = param2;
+  params[2] = param3;
+  params[3] = param4;
+  params[4] = param5;
+  sstmac::sw::operating_system::compute_memoize(token, 5, params);
 }
 
 extern "C" void* sstmac_alloc_stack(int sz, int md_sz)
@@ -221,52 +289,114 @@ extern "C" void sstmac_free_stack(void* ptr)
   sstmac::sw::stack_alloc::free(ptr);
 }
 
-
-extern "C" void sstmac_set_implicit_state1(int type0, int state0)
-{
+static inline sstmac::sw::operating_system::implicit_state*
+get_implicit_compute_state(){
   uintptr_t localStorage = get_sstmac_tls();
-  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  states[type0] = state0;
+  auto* statePtr = (sstmac::sw::operating_system::implicit_state**)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
+  if (*statePtr == nullptr){
+      sprockit::sim_parameters* params = sstmac::sw::operating_system::current_os()->params();
+      *statePtr = sstmac::sw::operating_system::implicit_state::factory
+                    ::get_optional_param("implicit_state", "null", params);
+  }
+  return *statePtr;
 }
 
-extern "C" void sstmac_set_implicit_state2(int type0, int state0, int type1, int state1)
-{
-  uintptr_t localStorage = get_sstmac_tls();
-  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  states[type0] = state0;
-  states[type1] = state1;
+static thread_local sstmac::sw::operating_system::implicit_state* implicit_memo_state_ = nullptr;
+
+static inline sstmac::sw::operating_system::implicit_state*
+get_implicit_memoize_state(){
+  if (!implicit_memo_state_){
+      sprockit::sim_parameters* params = sstmac::sw::operating_system::current_os()->params();
+      implicit_memo_state_ = sstmac::sw::operating_system::implicit_state::factory
+                    ::get_optional_param("implicit_state", "null", params);
+  }
+  return implicit_memo_state_;
 }
 
-extern "C" void sstmac_set_implicit_state3(int type0, int state0, int type1, int state1,
+
+
+extern "C" void sstmac_set_implicit_compute_state1(int type0, int state0)
+{
+  auto* state = get_implicit_compute_state();
+  state->set_state(type0, state0);
+}
+
+extern "C" void sstmac_set_implicit_compute_state2(int type0, int state0, int type1, int state1)
+{
+  auto* state = get_implicit_compute_state();
+  state->set_state(type0, state0);
+  state->set_state(type1, state1);
+}
+
+extern "C" void sstmac_set_implicit_compute_state3(int type0, int state0, int type1, int state1,
                                             int type2, int state2)
 {
-  uintptr_t localStorage = get_sstmac_tls();
-  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  states[type0] = state0;
-  states[type1] = state1;
-  states[type2] = state2;
+  auto* state = get_implicit_compute_state();
+  state->set_state(type0, state0);
+  state->set_state(type1, state1);
+  state->set_state(type2, state2);
 }
 
-extern "C" void sstmac_unset_implicit_state1(int type0)
+extern "C" void sstmac_unset_implicit_compute_state1(int type0)
 {
-  uintptr_t localStorage = get_sstmac_tls();
-  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  states[type0] = 0;
+  auto* state = get_implicit_compute_state();
+  state->unset_state(type0);
 }
 
-extern "C" void sstmac_unset_implicit_state2(int type0, int type1)
+extern "C" void sstmac_unset_implicit_compute_state2(int type0, int type1)
 {
-  uintptr_t localStorage = get_sstmac_tls();
-  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  states[type0] = 0;
-  states[type1] = 0;
+  auto* state = get_implicit_compute_state();
+  state->unset_state(type0);
+  state->unset_state(type1);
 }
 
-extern "C" void sstmac_unset_implicit_state3(int type0, int type1, int type2)
+extern "C" void sstmac_unset_implicit_compute_state3(int type0, int type1, int type2)
 {
-  uintptr_t localStorage = get_sstmac_tls();
-  int* states = (int*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  states[type0] = 0;
-  states[type1] = 0;
-  states[type2] = 0;
+  auto* state = get_implicit_compute_state();
+  state->unset_state(type0);
+  state->unset_state(type1);
+  state->unset_state(type2);
+}
+
+extern "C" void sstmac_set_implicit_memoize_state1(int type0, int state0)
+{
+  auto* state = get_implicit_memoize_state();
+  state->set_state(type0, state0);
+}
+
+extern "C" void sstmac_set_implicit_memoize_state2(int type0, int state0, int type1, int state1)
+{
+  auto* state = get_implicit_memoize_state();
+  state->set_state(type0, state0);
+  state->set_state(type1, state1);
+}
+
+extern "C" void sstmac_set_implicit_memoize_state3(int type0, int state0, int type1, int state1,
+                                            int type2, int state2)
+{
+  auto* state = get_implicit_memoize_state();
+  state->set_state(type0, state0);
+  state->set_state(type1, state1);
+  state->set_state(type2, state2);
+}
+
+extern "C" void sstmac_unset_implicit_memoize_state1(int type0)
+{
+  auto* state = get_implicit_memoize_state();
+  state->unset_state(type0);
+}
+
+extern "C" void sstmac_unset_implicit_memoize_state2(int type0, int type1)
+{
+  auto* state = get_implicit_memoize_state();
+  state->unset_state(type0);
+  state->unset_state(type1);
+}
+
+extern "C" void sstmac_unset_implicit_memoize_state3(int type0, int type1, int type2)
+{
+  auto* state = get_implicit_memoize_state();
+  state->unset_state(type0);
+  state->unset_state(type1);
+  state->unset_state(type2);
 }

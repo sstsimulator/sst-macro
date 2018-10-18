@@ -57,6 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sstmac/common/messages/sst_message_fwd.h>
 #include <sstmac/common/event_scheduler.h>
+#include <sstmac/common/thread_lock.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
@@ -72,6 +73,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 DeclareDebugSlot(os);
 
+extern "C" double sstmac_wall_time();
+
 namespace sstmac {
 namespace sw {
 
@@ -82,11 +85,21 @@ class operating_system :
   friend class thread;
 
  public:
-  struct regression_model {
+  struct implicit_state {
+    DeclareFactory(implicit_state)
+
+    implicit_state(sprockit::sim_parameters* params){}
+
+    virtual void set_state(int type, int value) = 0;
+    virtual void unset_state(int type) = 0;
+  };
+
+  struct regression_model : public stat_collector {
     DeclareFactory(regression_model, const std::string&)
 
     regression_model(sprockit::sim_parameters* params,
-                     const std::string& key) : key_(key) {}
+                     const std::string& key)
+     : stat_collector(params), key_(key) { }
 
     const std::string& key() const {
       return key_;
@@ -99,13 +112,82 @@ class operating_system :
      * @param states A list of discrete states (that can be modified)
      * @return The time to compute
      */
-    virtual double compute(int n_params, const double params[], int states[]) = 0;
+    virtual double compute(int n_params, const double params[],
+                           operating_system::implicit_state* state) = 0;
 
-    virtual void collect(double time, int n_params, const double params[], const int states[]) = 0;
+    /**
+     * @brief start_collection
+     * @return A tag for matching thread-local storage later
+     */
+    virtual int start_collection() = 0;
 
-    virtual void finish() = 0;
+    virtual void finish_collection(int thr_tag, int n_params, const double params[],
+                                   operating_system::implicit_state* state) = 0;
+
+
    private:
     std::string key_;
+  };
+
+  template <class Sample>
+  struct thread_safe_timer_model : public regression_model
+  {
+    thread_safe_timer_model(sprockit::sim_parameters* params,
+                            const std::string& key) :
+      regression_model(params, key), free_slots_(100), timers_(100)
+    {
+      for (int i=0; i < free_slots_.size(); ++i) free_slots_[i] = i;
+    }
+
+    int start(){
+      int slot = allocate_slot();
+      timers_[slot] = sstmac_wall_time();
+      return slot;
+    }
+
+    template <class... Args>
+    void finish(int thr_tag, Args&&... args){
+      double timer = sstmac_wall_time();
+      double t_total = timer - timers_[thr_tag];
+      lock();
+      samples_.emplace_back(std::forward<Args>(args)..., t_total);
+      free_slot_no_lock(thr_tag);
+      unlock();
+    }
+
+   protected:
+    std::vector<Sample> samples_;
+
+    void lock(){
+      lock_.lock();
+    }
+
+    void unlock(){
+      lock_.unlock();
+    }
+
+   private:
+    int allocate_slot(){
+      lock_.lock();
+      int slot = free_slots_.back();
+      free_slots_.pop_back();;
+      lock_.unlock();
+      return slot;
+    }
+
+    void free_slot(int slot) {
+      lock_.lock();
+      free_slots_.push_back(slot);
+      lock_.unlock();
+    }
+
+    void free_slot_no_lock(int slot){
+      free_slots_.push_back(slot);
+    }
+
+    std::vector<double> timers_;
+    thread_lock lock_;
+    std::vector<int> free_slots_;
   };
 
   operating_system(sprockit::sim_parameters* params, hw::node* parent);
@@ -160,6 +242,8 @@ class operating_system :
   static void set_gdb_hold(bool flag){
     hold_for_gdb_ = flag;
   }
+
+  static void add_memoization(const std::string& model, const std::string& name);
 
   /**
    * @brief execute Execute a compute function.
@@ -254,6 +338,8 @@ class operating_system :
   void complete_active_thread();
 
   void schedule_thread_deletion(thread* thr);
+
+  void rebuild_memoizations();
 
   /**
    * @brief start_app
@@ -354,9 +440,9 @@ class operating_system :
 
   static void gdb_reset();
 
-  static void start_memoize(const char* token, const char* model);
+  static int start_memoize(const char* token, const char* model);
   static void compute_memoize(const char* token, int n_params, double params[]);
-  static void stop_memoize(const char* token, int n_params, double params[]);
+  static void stop_memoize(int thr_tag, const char* token, int n_params, double params[]);
 
  private:
   thread_context* active_context();
@@ -402,10 +488,9 @@ class operating_system :
 
   bool call_graph_active_;
 
-  static std::map<std::string, regression_model*> memoized_models_;
-  static std::string memoize_token_;
-  static regression_model* memoize_model_;
-  static double memoize_start_;
+  static std::map<std::string, regression_model*> memoize_models_;
+  static std::map<std::string, std::string>* memoize_init_;
+
   static std::unordered_map<uint32_t, thread*> all_threads_;
   static bool hold_for_gdb_;
   static thread_context* gdb_context_;
