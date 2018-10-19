@@ -6,6 +6,7 @@ void fxn()
   int* z = (*sstmac_x);
  }}
 #include <sstmac/software/process/global.h>
+#include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_x;
 extern void* __ptr_x;

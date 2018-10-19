@@ -3442,14 +3442,16 @@ To understand the memoization pragmas, we first introduce how models get constru
 Source-to-source transformations based on the pragmas causes the following hooks to get inserted:
 
 ````
-void sstmac_start_memoize(const char* token, const char* model);
-void sstmac_finish_memoize0(const char* token);
-void sstmac_finish_memoize1(const char* token, double p1);
-void sstmac_finish_memoize2(const char* token, double p1, double p2);
+int sstmac_start_memoize(const char* token, const char* model);
+void sstmac_finish_memoize0(int tag, const char* token);
+void sstmac_finish_memoize1(int tag, const char* token, double p1);
+void sstmac_finish_memoize2(int tag, const char* token, double p1, double p2);
 ...
 ````
 A start call begins a memoization region for a specific name.
-The memoization collection is closed by calling one of the finish functions.
+The start function must return an integer tag identifying the memoization instance.
+This tag gets passed back into the finish function above.
+This is primarily useful for thread-safe collection, but can be generally more useful.
 The finish functions take input parameters. 
 Given input parameters x,y causes a function F(x,y) to be fit to the timer or performance counters.
 
@@ -3468,12 +3470,15 @@ Memoization models are implemented by inheriting from a standard class
 ````
 struct regression_model {
 ...
-virtual double compute(int n_params, const double params[], int states[]) = 0;
-virtual void collect(double time, int n_params, const double params[], const int states[]) = 0;
+virtual double compute(int n_params, const double params[], implicit_state* state) = 0;
+virtual int start_collection() = 0;
+virtual void finish_collection(int n_params, const double params[], implicit_state* state) = 0;
 ...
 ````
-A call to `sstmac_finish_memoize2` causes `collect(2,..)` to get invoked on the model.
-The `states` array is discussed more later in [6.1.1](#subsec:implicitStates)
+A call to `sstmac_finish_memoize2` causes `finish_collection(2,..)` to get invoked on the model.
+The `states` object is discussed more later in [6.1.1](#subsec:implicitStates).
+For now, `compute` only returns a double (total time).
+Generalized performance models are planned for future versions.
 Models are registered using the SST/macro factory system. 
 If wanting to add a least-squares model, factory register as:
 
@@ -3498,9 +3503,9 @@ void dgemm(int ncol, int nlink, int nrow, double* left, double* right);
 When running the memoization pass, the memoization hooks get invoked as:
 
 ````
-sstmac_start_memoize("dgemm", "least_squares");
+int tag = sstmac_start_memoize("dgemm", "least_squares");
 dgemm(....);
-sstmac_finish_memoize3("dgemm", ncol, nlink, nrow);
+sstmac_finish_memoize3(tag, "dgemm", ncol, nlink, nrow);
 ````
 With `skeletonize` set to true, the skeleton app would be:
 
@@ -3559,15 +3564,11 @@ enum cache_states {
 };
 ````
 
-If a `sstmac_finish_memoize` function got invoked, the states could be read:
-
-````
-void collect(double time, int n_params, const double params[], 
-			const int states[]) const override {
-  int dvfs_state = states[dvfs];  //1
-  int cache_state = states[cache]; //1
-}
-````
+If a `sstmac_finish_memoize` function got invoked, the states could be read.
+The class `implicit_state` is a base class only and carries no data by default.
+Specific memoization models are intended to be used only with known implicit state classes.
+As such, the memoization model `collect`, etc, functions must dynamic cast to an expected type.
+A library of standard implicit state implementations is planned for future releases.
 
 
 

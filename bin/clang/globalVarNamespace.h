@@ -67,6 +67,7 @@ struct GlobalVarNamespace
   std::map<std::string, Variable> replVars;
   std::list<std::string> relocations;
   std::set<std::string> relocationOffsets;
+  std::map<std::string,std::string> memoizationModels;
   std::map<std::string, GlobalVarNamespace> subspaces;
   std::string filenamePrefix;
 
@@ -81,21 +82,31 @@ struct GlobalVarNamespace
     return replVars.find(scopeUniqueName) != replVars.end();
   }
 
+  void addMemoization(const std::string& name, const std::string& model){
+    memoizationModels[name] = model;
+  }
+
+  static std::string makeCxxName(const std::string& name){
+    char uniqueFilePrefix[1024];
+    ::strcpy(uniqueFilePrefix, name.c_str());
+    int len = ::strlen(uniqueFilePrefix);
+    for (int i=0; i < len; ++i){
+      switch (uniqueFilePrefix[i]){
+        case '-':
+        case '/':
+        case '.':
+        case ':':
+          uniqueFilePrefix[i] = '_';
+          break;
+      }
+    }
+    return uniqueFilePrefix;
+  }
+
+
   const std::string& uniqueFilePrefix(clang::CompilerInstance* ci, clang::SourceLocation loc){
     if (filenamePrefix.empty()){
-      char uniqueFilePrefix[512];
-      ::strcpy(uniqueFilePrefix, ci->getSourceManager().getFilename(loc).str().c_str());
-      int len = ::strlen(uniqueFilePrefix);
-      for (int i=0; i < len; ++i){
-        switch (uniqueFilePrefix[i]){
-          case '-':
-          case '/':
-          case '.':
-            uniqueFilePrefix[i] = '_';
-            break;
-        }
-      }
-      filenamePrefix = uniqueFilePrefix;
+      filenamePrefix = makeCxxName(ci->getSourceManager().getFilename(loc).str());
     }
     return filenamePrefix;
   }
@@ -145,6 +156,11 @@ struct GlobalVarNamespace
       }
       os << "," << std::boolalpha << var.isThreadLocal
          << ");\n";
+    }
+
+    for (auto& pair : memoizationModels){
+      os << "static sstmac::Memoization memoize_" << makeCxxName(pair.first)
+         << "(\"" << pair.first << "\",\"" << pair.second << "\");\n";
     }
 
     for (auto& str : relocations){

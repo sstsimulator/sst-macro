@@ -44,8 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include "boxml.h"
 #include "lock_array.h"
-#include <sstmac/common/config.h>
-#include <sstmac/software/process/operating_system.h>
 
 #include <cstdlib>
 

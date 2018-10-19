@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_TLS_TLS_MAP SSTMAC_TLS_GLOBAL_MAP + sizeof(void*)
 #define SSTMAC_TLS_SANITY_CHECK SSTMAC_TLS_TLS_MAP + sizeof(void*)
 #define SSTMAC_TLS_IMPLICIT_STATE SSTMAC_TLS_SANITY_CHECK + sizeof(int)
-#define SSTMAC_TLS_END SSTMAC_TLS_IMPLICIT_STATE + sizeof(int)*32
+#define SSTMAC_TLS_END SSTMAC_TLS_IMPLICIT_STATE + sizeof(void*)
 #define SSTMAC_TLS_SIZE (SSTMAC_TLS_END - SSTMAC_TLS_OFFSET)
 
 #ifndef SSTMAC_INLINE

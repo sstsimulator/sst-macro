@@ -87,33 +87,33 @@ errorAbort(SourceLocation loc, CompilerInstance &CI, const std::string &error)
 
 void
 errorAbort(const Decl *decl, CompilerInstance &CI, const std::string &error){
-  errorAbort(decl, CI, error);
+  errorAbort(getStart(decl), CI, error);
 }
 
 void
 errorAbort(const Stmt *s, CompilerInstance &CI, const std::string &error){
-  errorAbort(s, CI, error);
+  errorAbort(getStart(s), CI, error);
 }
 
 void
 warn(const Decl *decl, CompilerInstance &CI, const std::string &error){
-  warn(decl, CI, error);
+  warn(getStart(decl), CI, error);
 }
 
 void
 warn(const Stmt *s, CompilerInstance &CI, const std::string &error){
-  warn(s, CI, error);
+  warn(getStart(s), CI, error);
 }
 
 
 void
 internalError(const Decl *decl, CompilerInstance &CI, const std::string &error){
-  internalError(decl, CI, error);
+  internalError(getStart(decl), CI, error);
 }
 
 void
 internalError(const Stmt *s, CompilerInstance &CI, const std::string &error){
-  internalError(s, CI, error);
+  internalError(getStart(s), CI, error);
 }
 
 
