@@ -383,6 +383,7 @@ operating_system::rebuild_memoizations()
 
   for (auto& pair : *memoize_init_){
     auto iter = memoize_models_.find(pair.first);
+#if !SSTMAC_INTEGRATED_SST_CORE
     if (iter == memoize_models_.end()){
       sprockit::sim_parameters* memo_params = params_->get_optional_namespace(pair.first);
       memo_params->add_param_override("fileroot", pair.first);
@@ -390,6 +391,10 @@ operating_system::rebuild_memoizations()
       memoize_models_[pair.first] = model;
       parent()->event_mgr()->register_stat(model, nullptr);
     }
+#else
+    spkt_abort_printf("do not yet support memoization in integrated core - failed memoizing %s",
+                      pair.first.c_str());
+#endif
   }
 }
 

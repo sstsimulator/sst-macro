@@ -62,7 +62,7 @@ ReplaceAction::ReplaceAction() :
 }
 
 bool
-#if CLANG_VERSION_MAJOR <=5
+#if CLANG_VERSION_MAJOR <=4
 ReplaceAction::BeginSourceFileAction(CompilerInstance &CI, llvm::StringRef Filename)
 #else
 ReplaceAction::BeginSourceFileAction(CompilerInstance &CI)

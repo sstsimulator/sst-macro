@@ -79,7 +79,7 @@ AC_DEFINE_UNQUOTED([OFFSET_OF_MACRO], [$offset], "the definition of the offsetof
 CLANG_LIBTOOLING_SYSTEM_LIBS=`$clang/bin/llvm-config --system-libs`
 CLANG_LIBTOOLING_LIBS=`$clang/bin/llvm-config --libs`
 
-clang_compatibility=`$srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS`
+clang_compatibility=`$srcdir/bin/config_tools/check_clang_compatibility $CXX $clang $srcdir/bin/config_tools/clang_version_test.cc $CXXFLAGS $SST_CXXFLAGS`
 if test "X$clang_compatibility" != "X"; then
 AC_MSG_ERROR([$clang_compatibility])
 fi
