@@ -368,6 +368,8 @@ class operating_system :
 
   void print_libs(std::ostream& os = std::cout) const;
 
+  implicit_state* get_implicit_state();
+
   hw::node* node() const {
     return node_;
   }

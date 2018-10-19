@@ -109,7 +109,7 @@ SkeletonASTConsumer::run()
     //e.deleted->dump();
     std::string error = std::string("unhandled delete exception on expression")
         + " of type " + e.deleted->getStmtClassName();
-    internalError(e.deleted->getLocStart(), visitor_.getCompilerInstance(), error);
+    internalError(getStart(e.deleted), visitor_.getCompilerInstance(), error);
   }
 
 }

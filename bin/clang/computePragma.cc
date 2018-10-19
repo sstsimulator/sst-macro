@@ -230,18 +230,18 @@ SSTMemoizeComputePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
     case Stmt::CXXMemberCallExprClass:
       expr = cast<CallExpr>(s);
       args = expr->getArgs();
-      //doReplace(s->getLocStart(), s->getLocEnd(), s,
+      //doReplace(getStart(s), s->getLocEnd(), s,
       //          false, true, r, expr->getArgs(), nullptr);
       break;
       break;
     default:
-      internalError(expr->getLocStart(), *CI,
+      internalError(getStart(expr), *CI,
                  "memoize pragma activated on statement that is not a call expression");
     }
   }
 
   cfg.astVisitor->getActiveNamespace()->addMemoization(token_, model_);
-  doReplace(s->getLocStart(), s->getLocEnd(), s,
+  doReplace(getStart(s), getEnd(s), s,
               false, true, r, args, nullptr);
 }
 
@@ -255,8 +255,7 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     fd = cast<FunctionDecl>(d);
     break;
   default:
-    errorAbort(d->getLocStart(), *CI,
-           "memoize pragma applied to declaration that is not a function");
+    errorAbort(d, *CI, "memoize pragma applied to declaration that is not a function");
   }
 
   if (!givenName_){
@@ -285,14 +284,14 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
       if (!found){
         std::string error = "memoization input " + str
             + " to function declaration could not be matched to any parameter";
-        errorAbort(d->getLocStart(), *CI, error);
+        errorAbort(d, *CI, error);
       }
     }
   }
 
   if (fd->isThisDeclarationADefinition() && fd->getBody()){
     if (fd->getBody()->getStmtClass() != Stmt::CompoundStmtClass){
-      internalError(fd->getLocStart(), *CI, "function decl body is not a compound statement");
+      internalError(fd, *CI, "function decl body is not a compound statement");
     }
 
     if (written_.find(fd) == written_.end()){
@@ -303,8 +302,8 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
       }
       bool replaceBody = skeletonize_ && !visitor->memoizePass();
       if (cs->body_front()){
-        doReplace(replaceBody ? cs->getLocStart() : cs->body_front()->getLocStart(),
-                  cs->getLocEnd(), cs,
+        doReplace(replaceBody ? getStart(cs) : getStart(cs->body_front()),
+                  getEnd(cs), cs,
                   false, false, r, nullptr, params.data());
       }
       written_.insert(fd);
@@ -348,7 +347,7 @@ SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation fin
 void
 SSTImplicitStatePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
-  doReplace(s->getLocStart(), s->getLocEnd(),
+  doReplace(getStart(s), getEnd(s),
             false, true, r, values_);
 }
 
@@ -362,8 +361,7 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     fd = cast<FunctionDecl>(d);
     break;
   default:
-    errorAbort(d->getLocStart(), *CI,
-           "implicit state pragma applied to declaration that is not a function");
+    errorAbort(d, *CI, "implicit state pragma applied to declaration that is not a function");
   }
 
   auto& set = cfg.functionPragmas[fd->getCanonicalDecl()];
@@ -386,14 +384,14 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
       if (!found){
         std::string error = "memoization input " + pair.first
             + " to function declaration could not be matched to any parameter";
-        errorAbort(d->getLocStart(), *CI, error);
+        errorAbort(d, *CI, error);
       }
     }
   }
 
   if (fd->isThisDeclarationADefinition() && fd->getBody()){
     if (fd->getBody()->getStmtClass() != Stmt::CompoundStmtClass){
-      internalError(fd->getLocStart(), *CI, "function decl body is not a compound statement");
+      internalError(fd, *CI, "function decl body is not a compound statement");
     }
     if (written_.find(fd) == written_.end()){
       CompoundStmt* cs = cast<CompoundStmt>(fd->getBody());
@@ -403,8 +401,8 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
         values[pair.first] = fd->getParamDecl(pair.second)->getNameAsString();
       }
       if (cs->body_front()){
-        doReplace(cs->body_front()->getLocStart(),
-                  cs->getLocEnd(), false, false, r, values);
+        doReplace(getStart(cs->body_front()),
+                  getEnd(cs), false, false, r, values);
       }
       written_.insert(fd);
     }

@@ -144,7 +144,6 @@ if test "X$have_integrated_core" = "Xyes"; then
 ac_configure_args="$ac_configure_args --with-cxxflags='$CXXFLAGS'"
 else
 CHECK_CPP11()
-CHECK_BOOST()
 CHECK_MPI_PARALLEL()
 fi
 

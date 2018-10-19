@@ -157,5 +157,32 @@ class fully_connected_minimal_router : public router {
   fully_connected* full_;
 };
 
+class star_minimal_router : public router {
+ public:
+  FactoryRegister("star_minimal",
+              router, star_minimal_router,
+              "router implementing minimal routing for star")
+
+  star_minimal_router(sprockit::sim_parameters* params, topology *top,
+                      network_switch *netsw)
+    : router(params, top, netsw)
+  {
+  }
+
+  std::string to_string() const override {
+    return "star minimal router";
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
+
+  void route(packet *pkt) override {
+    pkt->set_edge_outport(pkt->toaddr());
+  }
+
+ private:
+};
+
 }
 }

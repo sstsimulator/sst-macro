@@ -8,7 +8,6 @@ enum implicit_states {
  
 
 #pragma sst memoize skeletonize(false) model(linear) inputs(niter)
-#pragma sst implicit_state length(niter)
 void memoFxn(int niter);
 
 void memoFxn(int n){
@@ -46,6 +45,7 @@ int fxn()
   }
 #pragma sst implicit_state temp(mul)
   memoFxn(10);
+#pragma sst implicit_state length(5)
   memoFxn(i+12);
   return 0;
 }

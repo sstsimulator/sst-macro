@@ -69,11 +69,6 @@ if USE_MPIPARALLEL
 CORE_LIBS += ../sstmac/backends/mpi/libsstmac_mpi_runtime.la
 endif
 
-if EXTERNAL_BOOST
-AM_LDFLAGS += $(BOOST_LDFLAGS)
-endif
-
-
 CORETESTS=
 
 include Makefile.shared_core_tests

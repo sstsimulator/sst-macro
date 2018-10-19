@@ -301,19 +301,10 @@ get_implicit_compute_state(){
   return *statePtr;
 }
 
-static thread_local sstmac::sw::operating_system::implicit_state* implicit_memo_state_ = nullptr;
-
 static inline sstmac::sw::operating_system::implicit_state*
 get_implicit_memoize_state(){
-  if (!implicit_memo_state_){
-      sprockit::sim_parameters* params = sstmac::sw::operating_system::current_os()->params();
-      implicit_memo_state_ = sstmac::sw::operating_system::implicit_state::factory
-                    ::get_optional_param("implicit_state", "null", params);
-  }
-  return implicit_memo_state_;
+  return sstmac::sw::operating_system::current_os()->get_implicit_state();
 }
-
-
 
 extern "C" void sstmac_set_implicit_compute_state1(int type0, int state0)
 {

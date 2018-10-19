@@ -634,6 +634,18 @@ operating_system::start_memoize(const char *token, const char* model_name)
   return model->start_collection();
 }
 
+static thread_local sstmac::sw::operating_system::implicit_state* implicit_memo_state_ = nullptr;
+
+operating_system::implicit_state*
+operating_system::get_implicit_state()
+{
+  if (!implicit_memo_state_){
+      implicit_memo_state_ = sstmac::sw::operating_system::implicit_state::factory
+                    ::get_optional_param("implicit_state", "null", params_);
+  }
+  return implicit_memo_state_;
+}
+
 void
 operating_system::stop_memoize(int thr_tag, const char *token, int n_params, double params[])
 {
