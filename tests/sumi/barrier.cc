@@ -43,15 +43,15 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sprockit/test/test.h>
-#include <sstmac/libraries/sumi/sumi.h>
-#include <sstmac/libraries/sumi/sumi_transport.h>
-#include <sstmac/common/runtime.h>
-#include <sumi/transport.h>
-
 #include <sprockit/output.h>
+#include <sstmac/common/runtime.h>
 #include <sstmac/util.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
+#include <sumi/transport.h>
+#include <sumi/sumi.h>
+
+
 
 #define sstmac_app_name user_app_cxx
 using namespace sumi;

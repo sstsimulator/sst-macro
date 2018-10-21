@@ -46,13 +46,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #define BOXML_H_INCLUDED
 
 #include <sstmac/util.h>
-#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/common/sim_thread_lock.h>
 #include <sstmac/common/stats/stat_histogram_fwd.h>
 #include <sstmac/common/stats/stat_local_double_fwd.h>
+#include <sumi/sumi.h>
 #include <tinyxml2.h>
 #include <containers.h>
 #include <unordered_map>

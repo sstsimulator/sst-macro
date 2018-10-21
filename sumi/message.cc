@@ -303,6 +303,137 @@ message::serialize_order(sstmac::serializer &ser)
 }
 
 void
+transport_message::serialize_order(sstmac::serializer& ser)
+{
+  network_message::serialize_order(ser);
+  library_interface::serialize_order(ser);
+  ser & payload_;
+  //only the transport message can know
+  //if the buffers themselves need to be serialized
+  switch(network_message::type_){
+    case payload:
+    case rdma_get_payload:
+    case rdma_put_payload:
+      payload_->serialize_buffers(ser);
+      break;
+    default:
+      break;
+      //do nothing
+  }
+
+  ser & src_;
+  ser & dest_;
+  ser & src_app_;
+  ser & dest_app_;
+}
+
+std::string
+transport_message::to_string() const
+{
+  return sprockit::printf("sumi transport message %lu to node %d from %d:%d to %d:%d carrying %s",
+    flow_id(), toaddr_, src_, src_app_, dest_, dest_app_, sprockit::to_string(payload_).c_str());
+}
+
+void
+transport_message::put_on_wire()
+{
+  switch(type_){
+    case rdma_get_payload:
+    case nvram_get_payload:
+      payload_->put_remote_on_wire();
+      break;
+    case rdma_put_payload:
+      if (payload_->local_buffer() && !payload_->remote_buffer()){
+        spkt_abort_printf("RDMA put with local buffer, but not remote buffer");
+      }
+    case payload:
+      payload_->put_local_on_wire();
+      break;
+    default:
+      break; //nothing to do
+  }
+}
+
+void
+transport_message::take_off_wire()
+{
+  switch (type()){
+    case rdma_get_payload:
+      payload_->inject_remote_to_local();
+      break;
+    case rdma_put_payload:
+      payload_->inject_local_to_remote();
+      break;
+    default:
+      break;
+  }
+}
+
+void
+transport_message::intranode_memmove()
+{
+  switch (type()){
+    case rdma_get_payload:
+      payload_->memmove_remote_to_local();
+      break;
+    case rdma_put_payload:
+      payload_->memmove_local_to_remote();
+      break;
+    default:
+      break;
+  }
+}
+
+sstmac::hw::network_message*
+transport_message::clone_injection_ack() const
+{
+#if SSTMAC_SANITY_CHECK
+  if (network_message::type_ == network_message::null_netmsg_type){
+    sprockit::abort("message::clone_injection_ack: null network message type");
+  }
+#endif
+  transport_message* cln = new transport_message;
+  clone_into(cln);
+  cln->payload_ = payload_->clone_ack();
+#if SSTMAC_SANITY_CHECK
+  if (cln->network_message::type() == network_message::null_netmsg_type){
+    sprockit::abort("message::clone_injection_ack: did not clone correctly");
+  }
+#endif
+  cln->convert_to_ack();
+  return cln;
+}
+
+void
+transport_message::clone_into(transport_message* cln) const
+{
+  //the payload is actually immutable now - so this is safe
+  cln->payload_ = payload_;
+  cln->src_app_ = src_app_;
+  cln->dest_app_ = dest_app_;
+  cln->src_ = src_;
+  cln->dest_ = dest_;
+  network_message::clone_into(cln);
+  library_interface::clone_into(cln);
+}
+
+void
+transport_message::reverse()
+{
+  //payload_->reverse();
+  network_message::reverse();
+  int src = src_;
+  int dst = dest_;
+  src_ = dst;
+  dest_ = src;
+
+  src = src_app_;
+  dst = dest_app_;
+  src_app_ = dst;
+  dest_app_ = src;
+}
+
+void
 system_bcast_message::serialize_order(sstmac::serializer& ser)
 {
   message::serialize_order(ser);

@@ -45,11 +45,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/launch_request.h>
 #include <sstmac/util.h>
-#include <sumi/transport.h>
-#include <sstmac/libraries/sumi/sumi.h>
-#include <sstmac/libraries/sumi/distributed_service.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/skeleton.h>
+#include <sumi/transport.h>
+#include <sumi/sumi.h>
+#include <sumi/distributed_service.h>
+
 
 #undef sleep
 
@@ -112,7 +113,7 @@ int USER_MAIN(int argc, char** argv)
   int num_messages = params->get_optional_int_param("num_tasks", 10);
   timestamp task_length(1e-3);
 
-  sumi_transport* tport = sumi::sumi_api();
+  sumi::transport* tport = sumi::sumi_api();
   tport->init();
 
   sstmac::sw::task_mapping::ptr srv = sstmac::sw::task_mapping::global_mapping("test_service");

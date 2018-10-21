@@ -42,104 +42,67 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sumi_message_h
-#define sumi_message_h
+#ifndef distributed_service_h
+#define distributed_service_h
 
-#include <sstmac/hardware/network/network_message.h>
-#include <sstmac/software/process/operating_system_fwd.h>
-#include <sstmac/common/messages/library_message.h>
-#include <sstmac/libraries/sumi/message_fwd.h>
-#include <sumi/message.h>
-#include <sprockit/thread_safe_new.h>
+#include <sstmac/software/process/app.h>
+#include <sstmac/software/libraries/service.h>
+#include <sumi/transport.h>
+#include <sumi/message_fwd.h>
+#include <sprockit/keyword_registration.h>
 
 namespace sstmac {
 
-class transport_message :
-  public ::sstmac::hw::network_message,
-  public ::sumi::transport_message,
-  public ::sstmac::library_interface,
-  public sprockit::thread_safe_new<transport_message>
+class distributed_service :
+ public sumi::transport
 {
-   ImplementSerializable(transport_message)
-
+  DeclareFactory(distributed_service, const std::string&, sw::software_id, sw::operating_system*)
  public:
-  transport_message(){} //needed for serialization
-
-  transport_message(
-     const std::string& libname,
-     sw::app_id aid,
-     sumi::message* msg,
-     uint64_t byte_length)
-   : library_interface(libname),
-      network_message(aid, byte_length),
-      sumi::transport_message(msg)
+  distributed_service(sprockit::sim_parameters* params,
+                      const std::string& libname,
+                      sw::software_id sid,
+                      sw::operating_system* os) :
+    sumi::transport(params, libname.c_str(), sid, os),
+    terminated_(false)
   {
   }
 
-  virtual void serialize_order(serializer& ser) override;
+  virtual ~distributed_service(){}
 
-  sumi::message* take_payload() {
-    auto ret = payload_;
-    payload_ = nullptr;
-    return ret;
-  }
-
-  sumi::message* get_payload() const {
-    return payload_;
-  }
-
-  std::string to_string() const override;
-
-  int dest_rank() const {
-    return dest_;
-  }
-
-  void set_dest_rank(int dest) {
-    dest_ = dest;
-  }
-
-  int src_rank() const {
-    return src_;
-  }
-
-  void set_src_rank(int src) {
-    src_ = src;
-  }
-
-  void set_apps(int src, int dst){
-    src_app_ = src;
-    dest_app_ = dst;
-  }
-
-  int src_app() const {
-    return src_app_;
-  }
-
-  int dest_app() const {
-    return dest_app_;
-  }
-
-  virtual void put_on_wire() override;
-  virtual void take_off_wire() override;
-  virtual void intranode_memmove() override;
-
-  ::sstmac::hw::network_message* clone_injection_ack() const override;
+  virtual void run() = 0;
 
  protected:
-  void clone_into(transport_message* cln) const;
+  sumi::message* poll_for_message(bool blocking);
 
-  void reverse() override;
+  bool terminated() const {
+    return terminated_;
+  }
 
- private:
-  int src_;
-  int dest_;
-  int src_app_;
-  int dest_app_;
-
+  bool terminated_;
 
 };
 
+class distributed_service_app :
+  public sstmac::sw::app
+{
+  FactoryRegister("distributed_service", sw::app, distributed_service_app)
+ public:
+  distributed_service_app(sprockit::sim_parameters* params,
+                      sw::software_id sid,
+                      sw::operating_system* os);
+
+  int skeleton_main() override;
+
+ private:
+  std::string libname_;
+
+};
+
+#define ServiceRegister(str, name) \
+  NamespaceRegister(str, name) \
+  FactoryRegister(str, distributed_service, name)
 
 }
 
-#endif // MESSAGE_H
+
+#endif

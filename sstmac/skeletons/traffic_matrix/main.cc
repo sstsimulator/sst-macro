@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/main/driver.h>
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
-#include <sstmac/libraries/sumi/sumi_transport.h>
 #include <sumi/transport.h>
 #include <sstmac/skeleton.h>
 #include <sprockit/keyword_registration.h>
@@ -243,8 +242,8 @@ quiesce(sumi::transport* tport,
 
 int USER_MAIN(int argc, char** argv)
 {
-  sstmac::sumi_transport* tport = sstmac::sw::operating_system::current_thread()
-      ->get_api<sstmac::sumi_transport>();
+  sumi::transport* tport = sstmac::sw::operating_system::current_thread()
+      ->get_api<sumi::transport>();
 
   tport->init();
 

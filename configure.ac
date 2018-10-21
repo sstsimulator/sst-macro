@@ -231,7 +231,6 @@ AC_CONFIG_FILES([
  sstmac/install/Makefile
  sstmac/dumpi_util/Makefile
  sstmac/libraries/blas/Makefile
- sstmac/libraries/sumi/Makefile
  sstmac/libraries/pthread/Makefile
  sstmac/libraries/omp/Makefile
  sstmac/libraries/machines/Makefile

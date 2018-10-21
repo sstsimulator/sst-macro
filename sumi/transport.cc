@@ -64,15 +64,38 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
- { "lazy_watch", "whether failure notifications can be receive without active pinging" },
- { "eager_cutoff", "what message size in bytes to switch from eager to rendezvous" },
- { "use_put_protocol", "whether to use a put or get protocol for pt2pt sends" },
- { "algorithm", "the specific algorithm to use for a given collecitve" },
- { "comm_sync_stats", "whether to track synchronization stats for communication" },
- { "smp_single_copy_size", "the minimum size of message for single-copy protocol" },
- { "max_eager_msg_size", "the maximum size for using eager pt2pt protocol" },
- { "max_vshort_msg_size", "the maximum size for mailbox protocol" },
+{ "lazy_watch", "whether failure notifications can be receive without active pinging" },
+{ "eager_cutoff", "what message size in bytes to switch from eager to rendezvous" },
+{ "use_put_protocol", "whether to use a put or get protocol for pt2pt sends" },
+{ "algorithm", "the specific algorithm to use for a given collecitve" },
+{ "comm_sync_stats", "whether to track synchronization stats for communication" },
+{ "smp_single_copy_size", "the minimum size of message for single-copy protocol" },
+{ "max_eager_msg_size", "the maximum size for using eager pt2pt protocol" },
+{ "max_vshort_msg_size", "the maximum size for mailbox protocol" },
+{ "post_rdma_delay", "the time it takes to post an RDMA operation" },
+{ "post_header_delay", "the time it takes to send an eager message" },
+{ "poll_delay", "the time it takes to poll for an incoming message" },
+{ "rdma_pin_latency", "the latency for each RDMA pin information" },
+{ "rdma_page_delay", "the per-page delay for RDMA pinning" },
 );
+
+#include <sstmac/common/sstmac_config.h>
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/event.h>
+#endif
+#include <sumi/transport.h>
+#include <sumi/message.h>
+#include <sstmac/software/process/app.h>
+#include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/key.h>
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/hardware/node/node.h>
+#include <sstmac/common/event_callback.h>
+#include <sstmac/common/runtime.h>
+#include <sstmac/common/stats/stat_spyplot.h>
+#include <sprockit/output.h>
+
+using namespace sprockit::dbg;
 
 RegisterDebugSlot(sumi);
 
@@ -94,7 +117,104 @@ collective_algorithm_selector* transport::scan_selector_ = nullptr;
 collective_algorithm_selector* transport::scatter_selector_ = nullptr;
 collective_algorithm_selector* transport::scatterv_selector_ = nullptr;
 
-transport::transport(sprockit::sim_parameters* params) :
+class sumi_server :
+  public sstmac::sw::service
+{
+
+ public:
+  sumi_server(transport* tport)
+    : service(tport->server_libname(),
+       sstmac::sw::software_id(-1, -1), //belongs to no application
+       tport->os())
+  {
+  }
+
+  void register_proc(int rank, transport* proc){
+    int app_id = proc->sid().app_;
+    debug_printf(sprockit::dbg::sumi,
+                 "sumi_server registering rank %d for app %d",
+                 rank, app_id);
+    transport*& slot = procs_[app_id][rank];
+    if (slot){
+      spkt_abort_printf("sumi_server: already registered rank %d for app %d on node %d",
+                        rank, app_id, os_->addr());
+    }
+    slot = proc;
+
+    auto iter = pending_.begin();
+    auto end = pending_.end();
+    while (iter != end){
+      auto tmp = iter++;
+      transport_message* msg = *tmp;
+      if (msg->dest_rank() == rank && msg->dest_app() == proc->sid().app_){
+        pending_.erase(tmp);
+        proc->incoming_message(msg);
+      }
+    }
+  }
+
+  bool unregister_proc(int rank, transport* proc){
+    int app_id = proc->sid().app_;
+    auto iter = procs_.find(app_id);
+    auto& subMap = iter->second;
+    subMap.erase(rank);
+    if (subMap.empty()){
+      procs_.erase(iter);
+    }
+    return procs_.empty();
+  }
+
+  void incoming_event(sstmac::event *ev){
+    transport_message* smsg = safe_cast(transport_message, ev);
+    debug_printf(sprockit::dbg::sumi,
+                 "sumi_server %d: incoming message %s",
+                 os_->addr(), smsg->get_payload()->to_string().c_str());
+    transport* tport = procs_[smsg->dest_app()][smsg->dest_rank()];
+    if (!tport){
+      pending_.push_back(smsg);
+    } else {
+      tport->incoming_message(smsg);
+    }
+  }
+
+ private:
+  std::map<int, std::map<int, transport*> > procs_;
+  std::list<transport_message*> pending_;
+
+};
+
+transport::transport(sprockit::sim_parameters* params,
+                               sstmac::sw::software_id sid,
+                               sstmac::sw::operating_system* os) :
+ transport(params, "sumi", sid, os)
+{
+}
+
+transport::transport(sprockit::sim_parameters* params,
+               const char* prefix,
+               sstmac::sw::software_id sid,
+               sstmac::sw::operating_system* os) :
+  transport(params, standard_lib_name(prefix, sid), sid, os)
+{
+}
+
+transport::transport(sprockit::sim_parameters* params,
+               sstmac::sw::software_id sid,
+               sstmac::sw::operating_system* os,
+               const std::string& prefix,
+               const std::string& server_name) :
+  transport(params, standard_lib_name(prefix.c_str(), sid), sid, os, server_name)
+{
+}
+
+transport::transport(sprockit::sim_parameters* params,
+                     const std::string& libname,
+                     sstmac::sw::software_id sid,
+                     sstmac::sw::operating_system* os,
+                     const std::string& server_name) :
+  //the name of the transport itself should be mapped to a unique name
+  api(params, libname, sid, os),
+  //the server is what takes on the specified libname
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   lazy_watch_(false),
   heartbeat_active_(false),
@@ -110,18 +230,50 @@ transport::transport(sprockit::sim_parameters* params) :
   finalized_(false),
   eager_cutoff_(512),
   use_put_protocol_(false),
-  use_hardware_ack_(false),
-  global_domain_(nullptr)
+  global_domain_(nullptr),
+  server_libname_(server_name),
+  user_lib_time_(nullptr),
+  spy_num_messages_(nullptr),
+  spy_bytes_(nullptr),
+  collective_cq_id_(1), //this gets assigned elsewhere
+  pt2pt_cq_id_(0) //put pt2pt sends on the default cq
 {
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-  heartbeat_tag_start_ = 1e9;
-  heartbeat_tag_stop_ = heartbeat_tag_start_ + 10000;
-  heartbeat_tag_ = heartbeat_tag_start_;
 
-  monitor_ = activity_monitor::factory::get_optional_param("activity_monitor", "ping",
-                                        params, this);
-  lazy_watch_ = params->get_optional_bool_param("lazy_watch", true);
-#endif
+  collective_cq_id_ = allocate_cq();
+  rank_ = sid.task_;
+  auto* server_lib = os_->lib(server_libname_);
+  sumi_server* server;
+  // only do one server per app per node
+  if (server_lib == nullptr) {
+    server = new sumi_server(this);
+    server->start();
+  } else {
+    server = safe_cast(sumi_server, server_lib);
+  }
+
+  post_rdma_delay_ = params->get_optional_time_param("post_rdma_delay", 0);
+  post_header_delay_ = params->get_optional_time_param("post_header_delay", 0);
+  poll_delay_ = params->get_optional_time_param("poll_delay", 0);
+  user_lib_time_ = new sstmac::sw::lib_compute_time(params, "sumi-user-lib-time", sid, os);
+
+  rdma_pin_latency_ = params->get_optional_time_param("rdma_pin_latency", 0);
+  rdma_page_delay_ = params->get_optional_time_param("rdma_page_delay", 0);
+  pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
+  page_size_ = params->get_optional_byte_length_param("rdma_page_size", 4096);
+
+  rank_mapper_ = sstmac::sw::task_mapping::global_mapping(sid.app_);
+  nproc_ = rank_mapper_->nproc();
+  component_id_ = os_->component_id();
+
+  global_domain_ = new global_communicator(this);
+
+  server->register_proc(rank_, this);
+
+  spy_num_messages_ = sstmac::optional_stats<sstmac::stat_spyplot>(des_scheduler(),
+        params, "traffic_matrix", "ascii", "num_messages");
+  spy_bytes_ = sstmac::optional_stats<sstmac::stat_spyplot>(des_scheduler(),
+        params, "traffic_matrix", "ascii", "bytes");
+
   eager_cutoff_ = params->get_optional_int_param("eager_cutoff", 512);
   use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
 }
@@ -151,20 +303,10 @@ transport::validate_api()
 }
 
 void
-transport::set_use_hardware_ack(bool flag)
-{
-  if (flag && !supports_hardware_ack()){
-    sprockit::abort("transport::chosen transport does not support hardware acks");
-  }
-  use_hardware_ack_ = flag;
-}
-
-void
 transport::init()
 {
   //THIS SHOULD ONLY BE CALLED AFTER RANK and NPROC are known
   inited_ = true;
-  global_domain_ = new global_communicator(this);
 }
 
 void
@@ -294,6 +436,57 @@ transport::poll_new(bool blocking, double timeout)
       return nullptr;
     }
   }
+}
+
+sumi::transport_message*
+transport::poll_pending_messages(bool blocking, double timeout)
+{
+  if (poll_delay_.ticks_int64()) {
+    user_lib_time_->compute(poll_delay_);
+  }
+
+  sstmac::sw::thread* thr = os_->active_thread();
+  if (pending_messages_.empty() && blocking) {
+    blocked_threads_.push_back(thr);
+    debug_printf(sprockit::dbg::sumi,
+                 "Rank %d sumi queue %p has no pending messages, blocking poller %p: %s",
+                 rank(), this, thr, timeout >= 0. ? "with timeout" : "no timeout");
+    if (timeout >= 0.){
+      os_->block_timeout(timeout);
+    } else {
+      os_->block();
+    }
+    if (timeout <= 0){
+      if (pending_messages_.empty()){
+        spkt_abort_printf("SUMI transport rank %d unblocked with no messages and no timeout",
+          rank_, timeout);
+      }
+    } else {
+      if (pending_messages_.empty()){
+        //timed out, erase blocker from list
+        auto iter = blocked_threads_.begin();
+        while (*iter != thr) ++iter;
+        blocked_threads_.erase(iter);
+        return nullptr;
+      }
+    }
+  } else if (pending_messages_.empty()){
+    return nullptr;
+  }
+
+  //we have been unblocked because a message has arrived
+  transport_message* msg = pending_messages_.front();
+  debug_printf(sprockit::dbg::sumi,
+               "Rank %d sumi queue %p has no pending messages - blocking poller %p",
+               rank(), this, thr);
+  pending_messages_.pop_front();
+  process(msg);
+
+  debug_printf(sprockit::dbg::sumi,
+               "rank %d polling on %p returned msg %s",
+               rank(), this, msg->to_string().c_str());
+
+  return msg;
 }
 
 message*
@@ -470,6 +663,14 @@ transport::~transport()
   if (monitor_) delete monitor_;
 #endif
   if (global_domain_) delete global_domain_;
+
+  delete user_lib_time_;
+  sumi_server* server = safe_cast(sumi_server, os_->lib(server_libname_));
+  bool del = server->unregister_proc(rank_, this);
+  if (del) delete server;
+
+  //if (spy_bytes_) delete spy_bytes_;
+  //if (spy_num_messages_) delete spy_num_messages_;
 }
 
 void
@@ -488,47 +689,6 @@ transport::dynamic_tree_vote(int vote, int tag, vote_fxn fxn, collective::config
   dynamic_tree_vote_collective* voter = new dynamic_tree_vote_collective(vote, fxn, tag, this, cfg);
   start_collective(voter);
 }
-
-template <class Map, class Val, class Key>
-bool pull_from_map(Val& val, const Map& m, const Key& k)
-{
-  typedef typename Map::iterator iterator;
-  iterator it = m.find(k);
-  if (m.find(k) == m.end()){
-    return false;
-  } else {
-    val = it->second;
-    m.erase(it);
-    return true;
-  }
-}
-
-template <class Map, class Val, class Key1, class Key2>
-bool
-pull_from_map(Val& val, const Map& m, const Key1& k1, const Key2& k2)
-{
-  typedef typename Map::iterator iterator;
-  iterator it = m.find(k1);
-  if (it == m.end()) return false;
-
-  bool ret = check_map(val, it->second, k2);
-  if (it->second.empty()) m.erase(it);
-  return ret;
-}
-
-template <class Map, class Val, class Key1, class Key2, class Key3>
-bool
-pull_from_map(Val& val, const Map& m, const Key1& k1, const Key2& k2, const Key3& k3)
-{
-  typedef typename Map::iterator iterator;
-  iterator it = m.find(k1);
-  if (it == m.end()) return false;
-
-  bool ret = check_map(val, it->second, k2, k3);
-  if (it->second.empty()) m.erase(it);
-  return ret;
-}
-
 
 void
 transport::deliver_pending(collective* coll, int tag, collective::type_t ty)
@@ -942,7 +1102,11 @@ transport::smsg_send(int dst, message::payload_type_t ev, message* msg,
       completion_queues_[msg->send_cq()].push_back(ack);
     }
   } else {
-    do_smsg_send(dst, msg);
+    if (post_header_delay_.ticks_int64()) {
+      user_lib_time_->compute(post_header_delay_);
+    }
+    send(msg->byte_length(), msg,
+      sstmac::hw::network_message::payload, dst);
   }
 #if SSTMAC_COMM_SYNC_STATS
   msg->set_time_sent(wall_time());
@@ -960,7 +1124,13 @@ transport::rdma_get(int src, message* msg,
   configure_send(src, message::rdma_get, msg);
   msg->set_send_cq(send_cq);
   msg->set_recv_cq(recv_cq);
-  do_rdma_get(src, msg);
+
+  if (post_rdma_delay_.ticks_int64()) {
+    user_lib_time_->compute(post_rdma_delay_);
+  }
+
+  send(msg->byte_length(), msg,
+    sstmac::hw::network_message::rdma_get_request, src);
 }
 
 void
@@ -970,13 +1140,12 @@ transport::rdma_put(int dst, message* msg,
   configure_send(dst, message::rdma_put, msg);
   msg->set_send_cq(send_cq);
   msg->set_recv_cq(recv_cq);
-  do_rdma_put(dst, msg);
-}
-void
-transport::nvram_get(int src, message* msg)
-{
-  configure_send(src, message::nvram_get, msg);
-  do_nvram_get(src, msg);
+
+  if (post_rdma_delay_.ticks_int64()) {
+    user_lib_time_->compute(post_rdma_delay_);
+  }
+  send(msg->byte_length(), msg,
+    sstmac::hw::network_message::rdma_put_payload, dst);
 }
 
 void
@@ -1019,173 +1188,212 @@ transport::send_payload(int dst, message* msg, int send_cq, int recv_cq)
   smsg_send(dst, message::eager_payload, msg, send_cq, recv_cq);
 }
 
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-void
-transport::start_heartbeat(double interval)
-{
-  if (heartbeat_active_){
-    spkt_throw_printf(sprockit::illformed_error,
-        "sumi_api::start_heartbeat: heartbeat already active");
-    return;
-  }
 
-  heartbeat_active_ = true;
-  heartbeat_interval_ = interval;
-  do_heartbeat(options::initial_context);
+void
+transport::pin_rdma(uint64_t bytes)
+{
+  int num_pages = bytes / page_size_;
+  if (bytes % page_size_) ++num_pages;
+  sstmac::timestamp pin_delay = rdma_pin_latency_ + num_pages*rdma_page_delay_;
+  compute(pin_delay);
 }
 
-void
-transport::stop_heartbeat()
+sstmac::event_scheduler*
+transport::des_scheduler() const
 {
-  heartbeat_active_ = false;
+  return os_->node();
 }
 
 void
-transport::next_heartbeat()
+transport::memcopy(uint64_t bytes)
 {
-  //because of weirdness in scheduling
-  //we might get a heartbeat request after finalizing
-  if (!finalized_)
-    do_heartbeat(heartbeat_tag_);
+  os_->current_thread()->parent_app()->compute_block_memcpy(bytes);
 }
 
 void
-transport::do_heartbeat(int prev_context)
+transport::incoming_event(sstmac::event *ev)
 {
-  CHECK_IF_I_AM_DEAD(return);
-
-  heartbeat_running_ = true;
-  if (heartbeat_tag_ == heartbeat_tag_stop_){
-    heartbeat_tag_ = heartbeat_tag_start_;
-  } else {
-    ++heartbeat_tag_;
-  }
-
-  if (nproc() == 1)
-    return;
-
-  int vote = 1;
-  dynamic_tree_vote_collective* voter = new dynamic_tree_vote_collective(
-    vote, &And<int>::op, heartbeat_tag_, this, global_domain_, prev_context);
-  collectives_[collective::dynamic_tree_vote][heartbeat_tag_] = voter;
-  voter->start();
-  deliver_pending(voter, heartbeat_tag_, collective::dynamic_tree_vote);
-
+  spkt_abort_printf("sumi_transport::incoming_event: should not directly handle events");
 }
 
 void
-transport::cancel_ping(int dst, timeout_function* func)
+transport::shutdown_server(int dest_rank, sstmac::node_id dest_node, int dest_app)
 {
-  monitor_->cancel_ping(dst, func);
+  auto msg = new sumi::system_bcast_message(sumi::system_bcast_message::shutdown, dest_rank);
+  client_server_send(dest_rank, dest_node, dest_app, msg);
 }
 
-bool
-transport::ping(int dst, timeout_function* func)
+void
+transport::client_server_send(
+  int dst_task,
+  sstmac::node_id dst_node,
+  int dst_app,
+  sumi::message* msg)
 {
-  CHECK_IF_I_AM_DEAD(return false);
-  validate_api();
-  if (is_failed(dst)){
-    return true;
-  } else {
-    monitor_->ping(dst, func);
-    return false;
+  msg->set_send_cq(sumi::message::no_ack);
+  msg->set_recv_cq(sumi::message::default_cq);
+  send(msg->byte_length(),
+       dst_task, dst_node, dst_app, msg,
+       sstmac::hw::network_message::payload);
+}
+
+void
+transport::client_server_rdma_put(
+  int dst_task,
+  sstmac::node_id dst_node,
+  int dst_app,
+  sumi::message* msg)
+{
+  msg->set_send_cq(sumi::message::no_ack);
+  msg->set_recv_cq(sumi::message::default_cq);
+  send(msg->byte_length(),
+       dst_task, dst_node, dst_app, msg,
+       sstmac::hw::network_message::rdma_put_payload);
+}
+
+void
+transport::process(transport_message* smsg)
+{
+  sumi::message* my_msg = smsg->get_payload();
+  debug_printf(sprockit::dbg::sumi,
+     "sumi transport rank %d in app %d processing message of type %s: %s",
+     rank(), sid().app_, transport_message::tostr(smsg->type()), my_msg->to_string().c_str());
+  switch (smsg->type())
+  {
+   //depending on the type, we might have to mutate the incoming message
+   case sstmac::hw::network_message::failure_notification:
+    my_msg->set_payload_type(sumi::message::failure);
+    break;
+   case sstmac::hw::network_message::rdma_get_nack:
+    my_msg->set_payload_type(sumi::message::rdma_get_nack);
+    break;
+   case sstmac::hw::network_message::payload_sent_ack:
+    my_msg->set_payload_type(sumi::message::eager_payload_ack);
+    break;
+   case sstmac::hw::network_message::rdma_get_sent_ack:
+    my_msg->set_payload_type(sumi::message::rdma_get_ack);
+    break;
+   case sstmac::hw::network_message::rdma_put_sent_ack:
+    my_msg->set_payload_type(sumi::message::rdma_put_ack);
+    break;
+   default:
+    break; //do nothing
+  }
+}
+
+int*
+transport::nidlist() const
+{
+  //just cast an int* - it's fine
+  //the types are the same size and the bits can be
+  //interpreted correctly
+  return (int*) rank_mapper_->rank_to_node().data();
+}
+
+void
+transport::send(
+  uint64_t byte_length,
+  sumi::message* msg,
+  int sendType,
+  int dst_rank)
+{
+  sstmac::node_id dst_node = rank_mapper_->rank_to_node(dst_rank);
+  send(byte_length, dst_rank, dst_node, sid().app_, msg, sendType);
+}
+
+void
+transport::send(
+  uint64_t byte_length,
+  int dst_task,
+  sstmac::node_id dst_node,
+  int dst_app,
+  sumi::message* msg,
+  int ty)
+{
+  sstmac::sw::app_id aid = sid().app_;
+  transport_message* tmsg = new transport_message(server_libname_, aid, msg, byte_length);
+  tmsg->sstmac::hw::network_message::set_type((sstmac::hw::network_message::type_t)ty);
+  tmsg->toaddr_ = dst_node;
+  tmsg->set_src_rank(rank_);
+  tmsg->set_dest_rank(dst_task);
+  //send intra-app
+  tmsg->set_apps(sid().app_, dst_app);
+  tmsg->set_needs_ack(msg->needs_send_ack());
+
+  if (spy_num_messages_) spy_num_messages_->add_one(rank_, dst_task);
+  if (spy_bytes_) spy_bytes_->add(rank_, dst_task, byte_length);
+
+  sstmac::sw::library::os_->execute(sstmac::ami::COMM_SEND, tmsg);
+}
+
+void
+transport::compute(sstmac::timestamp t)
+{
+  user_lib_time_->compute(t);
+}
+
+double
+transport::wall_time() const
+{
+  return now().sec();
+}
+
+sumi::collective_done_message*
+transport::collective_block(sumi::collective::type_t ty, int tag, int cq_id)
+{
+  //first we have to loop through the completion queue to see if it already exists
+  while(1){
+    auto& collective_cq = completion_queues_[collective_cq_id_];
+    auto end = collective_cq.end();
+    for (auto it=collective_cq.begin(); it != end; ++it){
+      sumi::message* msg = *it;
+      if (msg->class_type() == sumi::message::collective_done){
+        //this is a collective done message
+        auto cmsg = dynamic_cast<sumi::collective_done_message*>(msg);
+        if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
+          collective_cq.erase(it);
+          return cmsg;
+        }
+      }
+    }
+
+    sumi::message* msg = poll_new(true); //blocking
+    if (msg->class_type() == sumi::message::collective_done){
+      //this is a collective done message
+      auto cmsg = dynamic_cast<sumi::collective_done_message*>(msg);
+      if (tag == cmsg->tag() && ty == cmsg->type()){  //done!
+        return cmsg;
+      }
+      collective_cq.push_back(msg);
+    } else {
+      completion_queues_[pt2pt_cq_id_].push_back(msg);
+    }
   }
 }
 
 void
-transport::stop_watching(int dst, timeout_function* func)
+transport::incoming_message(transport_message *msg)
 {
-  if (!lazy_watch_){
-    cancel_ping(dst, func);
-    return;
+#if SSTMAC_COMM_SYNC_STATS
+  if (msg){
+    msg->get_payload()->set_time_arrived(wall_time());
   }
-
-  watcher_map::iterator it = watchers_.find(dst);
-  if (it==watchers_.end()){
-    spkt_throw_printf(sprockit::value_error,
-      "transport not watching %d, cannot erase", dst);
-  }
-  function_set& fset = it->second;
-  int refcount = fset.erase(func);
-  if (refcount == 0){
-    watchers_.erase(it);
-  }
-}
-
-bool
-transport::start_watching(int dst, timeout_function *func)
-{
-  if (!lazy_watch_){
-    return ping(dst, func);
-  }
-
-  validate_api();
-  if (is_failed(dst)){
-    return true;
-  } else {
-    debug_printf(sprockit::dbg::sumi | sprockit::dbg::sumi_ping,
-      "Rank %d start watching %d", rank_, dst);
-    function_set& fset = watchers_[dst];
-    fset.append(func);
-    return false;
-  }
-}
-
-void
-transport::fail_watcher(int dst)
-{
-  if (!lazy_watch_)
-    return;
-
-  std::map<int, function_set>::iterator it = watchers_.find(dst);
-  if (it == watchers_.end())
-    return;
-
-  debug_printf(sprockit::dbg::sumi | sprockit::dbg::sumi_ping,
-    "Rank %d failing watcher for %d", rank_, dst);
-  function_set& fset = it->second;
-  fset.timeout_all_listeners(dst);
-  watchers_.erase(dst);
-}
-
-void
-transport::die()
-{
-  is_dead_ = true;
-  go_die();
-  throw terminate_exception();
-}
-
-void
-transport::revive()
-{
-  is_dead_ = false;
-  go_revive();
-}
-
-void
-transport::renew_pings()
-{
-  monitor_->renew_pings(wall_time());
-}
-
-static const thread_safe_set<int> empty_set;
-
-const thread_safe_set<int>&
-transport::failed_ranks(int context) const
-{
-  if (context == options::initial_context){
-    return empty_set;
-  }
-
-  auto it = votes_done_.find(context);
-  if (it == votes_done_.end()){
-    spkt_throw_printf(sprockit::value_error,
-        "sumi_api::failed_rank: unknown or uncommitted context %d on rank %d",
-        context, rank_);
-  }
-  return it->second.failed_ranks;
-}
 #endif
+  pending_messages_.push_back(msg);
+
+  if (!blocked_threads_.empty()) {
+    sstmac::sw::thread* next_thr = blocked_threads_.front();
+    debug_printf(sprockit::dbg::sumi,
+                 "sumi queue %p unblocking poller %p to handle message %s",
+                  this, next_thr, msg->get_payload()->to_string().c_str());
+    blocked_threads_.pop_front();
+    os_->unblock(next_thr);
+  } else {
+    debug_printf(sprockit::dbg::sumi,
+                 "sumi queue %p has no pollers to unblock for message %s",
+                  this, msg->get_payload()->to_string().c_str());
+  }
+}
+
 
 }

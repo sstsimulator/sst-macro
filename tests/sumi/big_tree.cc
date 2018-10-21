@@ -44,7 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/test/test.h>
 #include <sstmac/software/process/thread.h>
-#include <sstmac/libraries/sumi/sumi.h>
+#include <sumi/sumi.h>
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
 

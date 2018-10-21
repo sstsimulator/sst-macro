@@ -21,6 +21,9 @@ library_includedir=$(includedir)/sumi
 nodist_library_include_HEADERS = 
 
 library_include_HEADERS = \
+ sumi.h \
+ sumi_thread.h \
+ distributed_service.h \
  alltoall.h \
  alltoallv.h \
  allgather.h \
@@ -55,6 +58,9 @@ library_include_HEADERS = \
  transport_fwd.h 
 
 libsumi_la_SOURCES = \
+ sumi.cc \
+ sumi_thread.cc \
+ distributed_service.cc \
  alltoall.cc \
  alltoallv.cc \
  transport.cc \

@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sprockit/util.h>
-#include <sstmac/libraries/sumi/sumi_transport.h>
+#include <sumi/transport.h>
 
 using namespace sstmac;
 using namespace sstmac::sw;
@@ -60,13 +60,13 @@ using namespace sstmac::sw;
 
 namespace sumi {
 
-static sumi_transport* current_transport()
+static transport* current_transport()
 {
   thread* t = thread::current();
-  return t->get_api<sumi_transport>();
+  return t->get_api<transport>();
 }
 
-sumi_transport* sumi_api()
+transport* sumi_api()
 {
   return current_transport();
 }
@@ -189,12 +189,6 @@ void comm_rdma_put(int dst, message* msg)
 {
   msg->set_class_type(message::pt2pt);
   current_transport()->rdma_put(dst, msg, message::no_ack, message::default_cq);
-}
-
-void comm_nvram_get(int dst, message* msg)
-{
-  msg->set_class_type(message::pt2pt);
-  current_transport()->nvram_get(dst, msg);
 }
 
 void comm_rdma_get(int dst, message* msg)

@@ -45,16 +45,30 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_api_TRANSPORT_H
 #define sumi_api_TRANSPORT_H
 
-#include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
-#include <unordered_map>
-#include <sprockit/util.h>
+#include <sstmac/common/stats/stat_spyplot_fwd.h>
+#include <sstmac/software/launch/job_launcher_fwd.h>
+#include <sstmac/software/libraries/service.h>
+#include <sstmac/software/api/api.h>
+#include <sstmac/software/process/key.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
+
+
+#include <sumi/message_fwd.h>
+#include <sumi/collective.h>
+#include <sumi/comm_functions.h>
+#include <sumi/transport.h>
 #include <sumi/collective_message.h>
 #include <sumi/collective.h>
 #include <sumi/comm_functions.h>
 #include <sumi/options.h>
 #include <sumi/ping.h>
 #include <sumi/communicator_fwd.h>
+
+#include <sprockit/debug.h>
+#include <sprockit/factories/factory.h>
+#include <sprockit/util.h>
+
+#include <unordered_map>
 
 DeclareDebugSlot(sumi);
 
@@ -72,14 +86,111 @@ struct enum_hash {
   }
 };
 
-class transport {
+class transport : public sstmac::sw::api {
   DeclareFactory(transport)
  public:
-  virtual ~transport();
+  RegisterAPI("sumi_transport", transport)
 
-  virtual void init();
-  
-  virtual void finish();
+  transport(sprockit::sim_parameters* params,
+                 sstmac::sw::software_id sid,
+                 sstmac::sw::operating_system* os);
+
+  void init();
+
+  void finish();
+
+  ~transport();
+
+  void send(uint64_t byte_length,
+    int dest_rank,
+    sstmac::node_id dest_node,
+    int dest_app,
+    sumi::message* msg,
+    int ty);
+
+  void process(transport_message* msg);
+
+  int pt2pt_cq_id() const {
+    return pt2pt_cq_id_;
+  }
+
+  int collective_cq_id() const {
+    return collective_cq_id_;
+  }
+
+  void incoming_event(sstmac::event *ev);
+
+  void compute(sstmac::timestamp t);
+
+  void client_server_send(
+    int dest_rank,
+    sstmac::node_id dest_node,
+    int dest_app,
+    sumi::message* msg);
+
+  void client_server_rdma_put(
+    int dest_rank,
+    sstmac::node_id dest_node,
+    int dest_app,
+    sumi::message* msg);
+
+  /**
+   * Block on a collective of a particular type and tag
+   * until that collective is complete
+   * @param ty
+   * @param tag
+   * @return
+   */
+  sumi::collective_done_message* collective_block(
+      sumi::collective::type_t ty, int tag, int cq_id = 0);
+
+  double wall_time() const;
+
+  sumi::transport_message* poll_pending_messages(bool blocking, double timeout = -1);
+
+  /**
+   * @brief send Intra-app. Send within the same process launch (i.e. intra-comm MPI_COMM_WORLD). This contrasts
+   *  with client_server_send which exchanges messages between different apps
+   * @param byte_length
+   * @param msg
+   * @param ty
+   * @param dst
+   * @param needs_ack
+   */
+  void send(uint64_t byte_length, sumi::message* msg, int ty, int dst);
+
+  void incoming_message(transport_message* msg);
+
+  void shutdown_server(int dest_rank, sstmac::node_id dest_node, int dest_app);
+
+  std::string server_libname() const {
+    return server_libname_;
+  }
+
+  sstmac::event_scheduler* des_scheduler() const;
+
+  void memcopy(uint64_t bytes);
+
+  void pin_rdma(uint64_t bytes);
+
+  void smsg_send(int dst, sumi::message* msg);
+
+  void rdma_put(int dst, sumi::message* msg);
+
+  void rdma_get(int src, sumi::message* msg);
+
+  void* make_public_buffer(void* buffer, uint64_t size) {
+    pin_rdma(size);
+    return buffer;
+  }
+
+  void unmake_public_buffer(void* buf, uint64_t size) {}
+
+  void free_public_buffer(void* buf, uint64_t size) {
+    ::free(buf);
+  }
+
+  int* nidlist() const;
 
   void deadlock_check();
 
@@ -133,8 +244,6 @@ class transport {
    * @param recv_cq  Where an ack should be generated recv-side when the message is fully received
    */
   void rdma_get(int src, message* msg, int send_cq, int recv_cq);
-
-  void nvram_get(int src, message* msg);
   
   /**
    Check if a message has been received on a specific completion queue.
@@ -213,30 +322,6 @@ class transport {
 
   message* poll_new(bool blocking, int cq_id, double timeout);
 
-  /**
-   * @brief poll_pending_messages
-   * @param blocking  Whether to block if no messages are available
-   * @param timeout   How long to block if no messages found
-   * @return A transport message carrying a message
-   */
-  virtual transport_message* poll_pending_messages(bool blocking, double timeout) = 0;
-
-  virtual void send_terminate(int dst) = 0;
-
-  virtual double wall_time() const = 0;
-
-  virtual int* nidlist() const = 0;
-
-  /**
-   * Block on a collective of a particular type and tag
-   * until that collective is complete
-   * @param ty
-   * @param tag
-   * @return
-   */
-  virtual collective_done_message* collective_block(
-      collective::type_t ty, int tag, int cq_id = 0) = 0;
-
   bool use_eager_protocol(uint64_t byte_length) const {
     return byte_length < eager_cutoff_;
   }
@@ -255,12 +340,6 @@ class transport {
 
   void set_put_protocol(bool flag) {
     use_put_protocol_ = flag;
-  }
-
-  void set_use_hardware_ack(bool flag);
-
-  virtual bool supports_hardware_ack() const {
-    return false;
   }
 
   void send_self_terminate();
@@ -346,7 +425,7 @@ class transport {
     scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
   }
 
-  virtual void reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+  void reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
     reduce_fxn fxn, collective::config cfg = collective::cfg());
 
   template <typename data_t, template <typename> class Op>
@@ -431,8 +510,7 @@ class transport {
     return eager_cutoff_;
   }
 
-  void notify_collective_done(collective_done_message* msg);
-
+  void notify_collective_done(collective_done_message* msg);  
 
   /**
    * @brief handle Receive some version of point-2-point message.
@@ -447,32 +525,39 @@ class transport {
     return ::malloc(size);
   }
 
-  virtual void* make_public_buffer(void* buffer, uint64_t size) = 0;
-
-  virtual void unmake_public_buffer(void* buf, uint64_t size) = 0;
-
-  virtual void free_public_buffer(void* buf, uint64_t size) = 0;
-
-  virtual void memcopy(uint64_t bytes) = 0;
-
  protected:
-  void clean_up();
+  transport(sprockit::sim_parameters* params,
+           const char* prefix,
+           sstmac::sw::software_id sid,
+           sstmac::sw::operating_system* os);
 
-  void configure_send(int dst,
-    message::payload_type_t ev,
-    message* msg);
+  transport(sprockit::sim_parameters* params,
+           sstmac::sw::software_id sid,
+           sstmac::sw::operating_system* os,
+           const std::string& prefix,
+           const std::string& server_name);
 
-  virtual void do_smsg_send(int dst, message* msg) = 0;
+  /**
+   * @brief sumi_transport Ctor with strict library name. We do not create a server here.
+   * Since this has been explicitly named, messages will be directly to a named library.
+   * @param params
+   * @param libname
+   * @param sid
+   * @param os
+   */
+  transport(sprockit::sim_parameters* params,
+           const std::string& libname,
+           sstmac::sw::software_id sid,
+           sstmac::sw::operating_system* os,
+           const std::string& server_name = std::string("sumi_server"));
 
-  virtual void do_rdma_put(int dst, message* msg) = 0;
 
-  virtual void do_rdma_get(int src, message* msg) = 0;
+#if SSTMAC_COMM_SYNC_STATS
+ public:
+  virtual void collect_sync_delays(double wait_start, message* msg){}
 
-  virtual void do_nvram_get(int src, message* msg) = 0;
-
-  virtual void go_die() = 0;
-
-  virtual void go_revive() = 0;
+  virtual void start_collective_sync_delays(){}
+#endif
 
  private:  
   void finish_collective(collective* coll, collective_done_message* dmsg);
@@ -483,10 +568,20 @@ class transport {
 
   void deliver_pending(collective* coll, int tag, collective::type_t ty);
   
- protected:
   transport(sprockit::sim_parameters* params);
   
   void validate_api();
+
+  void configure_send(int dst, message::payload_type_t ev, message* msg);
+
+  void poll_cast_error(const char* file, int line, const char* cls, message* msg){
+    spkt_throw_printf(sprockit::value_error,
+       "Could not cast incoming message to type %s\n"
+       "Got %s\n"
+       "%s:%d",
+       cls, msg->to_string().c_str(),
+       file, line);
+  }
 
   /**
    * @brief poll_new Return a new message not already in the completion queue
@@ -496,7 +591,6 @@ class transport {
    */
   message* poll_new(bool blocking, double timeout = -1);
 
- private:
   /**
    * Helper function for doing operations necessary to close out a heartbeat
    * @param dmsg
@@ -508,6 +602,19 @@ class transport {
     void* dst, void *src,
     int nelems, int type_size,
     int tag);
+
+  void clean_up();
+
+ protected:
+  std::vector<std::list<message*>> completion_queues_;
+
+  bool inited_;
+
+  bool finalized_;
+
+  int rank_;
+
+  int nproc_;
 
  private:
   template <typename Key, typename Value>
@@ -522,39 +629,15 @@ class transport {
   pending_map pending_collective_msgs_;
 
   std::list<collective*> todel_;
-
- protected:
-  bool inited_;
-  
-  bool finalized_;
-  
-  int rank_;
-
-  int nproc_;
   
   uint32_t eager_cutoff_;
 
-  std::vector<std::list<message*>> completion_queues_;
-
   bool use_put_protocol_;
-
-  bool use_hardware_ack_;
 
   communicator* global_domain_;
 
   int system_collective_tag_;
 
- private:
-  void poll_cast_error(const char* file, int line, const char* cls, message* msg){
-    spkt_throw_printf(sprockit::value_error,
-       "Could not cast incoming message to type %s\n"
-       "Got %s\n"
-       "%s:%d",
-       cls, msg->to_string().c_str(),
-       file, line);
-  }
-
- private:
   static collective_algorithm_selector* allgather_selector_;
   static collective_algorithm_selector* alltoall_selector_;
   static collective_algorithm_selector* alltoallv_selector_;
@@ -568,166 +651,40 @@ class transport {
   static collective_algorithm_selector* reduce_selector_;
   static collective_algorithm_selector* scatter_selector_;
   static collective_algorithm_selector* scatterv_selector_;
+  static sstmac::sw::ftq_tag sumi_transport_tag;
+  static sstmac::sw::ftq_tag poll_delay_tag;
 
+  std::string server_libname_;
 
-#if SSTMAC_COMM_SYNC_STATS
- public:
-  virtual void collect_sync_delays(double wait_start, message* msg){}
+  sstmac::sw::task_mapping_ptr rank_mapper_;
 
-  virtual void start_collective_sync_delays(){}
-#endif
+  std::list<transport_message*> pending_messages_;
 
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
- public:
-  int nproc_alive() const {
-    return nproc_ - failed_ranks_.size();
-  }
+  std::list<sstmac::sw::thread*> blocked_threads_;
 
-  int nproc_failed() const {
-    return failed_ranks_.size();
-  }
+  uint32_t component_id_;
 
-  virtual void schedule_ping_timeout(pinger* pnger, double to) = 0;
+  sstmac::timestamp post_rdma_delay_;
 
-  virtual void send_ping_request(int dst) = 0;
+  sstmac::timestamp post_header_delay_;
 
-  /**
-   * Get the set of failed ranks associated with a given context
-   * @param context The context for which you want to know the set of failed procs,
-   *                default parameter is "default_context" which is the beginning, i.e. no failed procs
-   * @throw If the context is unknown - i.e. no vote has executed with that tag number
-   * @return The set of failed procs
-   */
-  const thread_safe_set<int>& failed_ranks(int context) const;
+  sstmac::timestamp poll_delay_;
 
-  const thread_safe_set<int>& failed_ranks() const {
-    return failed_ranks_;
-  }
+  sstmac::sw::lib_compute_time* user_lib_time_;
 
-  void clear_failures() {
-    failed_ranks_.clear();
-  }
+  sstmac::stat_spyplot* spy_num_messages_;
 
-  void declare_failed(int rank) {
-    failed_ranks_.insert(rank);
-  }
+  sstmac::stat_spyplot* spy_bytes_;
 
-  bool is_failed(int rank) const {
-    return failed_ranks_.count(rank);
-  }
+  int collective_cq_id_;
 
-  bool is_alive(int rank) const {
-    return failed_ranks_.count(rank) == 0;
-  }
+  int pt2pt_cq_id_;
 
-  void die();
+  sstmac::timestamp rdma_pin_latency_;
+  sstmac::timestamp rdma_page_delay_;
+  int page_size_;
+  bool pin_delay_;
 
-  void revive();
-
-  bool is_dead() const {
-    return is_dead_;
-  }
-
-  /**
-   * Cancel a currently active ping
-   * @param dst
-   * @param func
-   */
-  void cancel_ping(int dst, timeout_function* func);
-
-  /**
-    @param dst The neighbor
-    @param func The timeout function to be invoked if no response
-                or NACK received
-    @return True if the dst node is already known to be failed. False if not.
-  */
-  bool ping(int dst, timeout_function* func);
-
-  /**
-   * @brief watch Wait on heartbeat notifcations for failures on this node.
-   * Do NOT actively ping.  Wait instead for failure notifications.
-   * @param dst
-   * @param func
-   * @return True if the dst node is already known to be failed. False if not.
-   */
-  bool start_watching(int dst, timeout_function* func);
-
-  void stop_watching(int dst, timeout_function* func);
-
-  void renew_pings();
-
-  /**
-   * Start regular heartbeat (i.e. vote) collectives going
-   * This informs the application at regular intervals of any new process failures
-   * @param interval The time in seconds at which to regularly execute heartbeats
-   */
-  virtual void start_heartbeat(double interval);
-
-  /**
-   * Let the current heartbeat finish and then stop them executing.
-   */
-  virtual void stop_heartbeat();
-
- protected:
-  double heartbeat_interval_;
-
-  void next_heartbeat();
-
- private:
-  bool lazy_watch_;
-
-  activity_monitor* monitor_;
-
-  bool heartbeat_active_;
-
-  bool heartbeat_running_;
-
-  bool is_heartbeat(collective_done_message* dmsg) const {
-    return dmsg->tag() >= heartbeat_tag_start_ && dmsg->tag() <= heartbeat_tag_stop_;
-  }
-
-  int nspares_;
-
-  thread_safe_int<uint32_t> recovery_lock_;
-
-  struct vote_result {
-    int vote;
-    thread_safe_set<int> failed_ranks;
-    vote_result(int v, const thread_safe_set<int>& f) :
-      vote(v), failed_ranks(f)
-    {
-    }
-    vote_result() : vote(0) {}
-  };
-  typedef std::map<int, vote_result> vote_map;
-  vote_map votes_done_;
-
-  bool is_dead_;
-
-  int heartbeat_tag_;
-  thread_safe_set<int> failed_ranks_;
-
-  int heartbeat_tag_start_;
-
-  int heartbeat_tag_stop_;
-
-  typedef std::map<int, function_set> watcher_map;
-  watcher_map watchers_;
-
-  void fail_watcher(int dst);
-
-  void start_recovery();
-
-  void end_recovery();
-
-  virtual void schedule_next_heartbeat() = 0;
-
-  /**
-   * Actually do the work of executing a heartbeat
-   * @param prev_context The context number for the last successful heartbeat
-   */
-  void do_heartbeat(int prev_context);
-#endif
 };
 
 class terminate_exception : public std::exception

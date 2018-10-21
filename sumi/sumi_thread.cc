@@ -42,68 +42,29 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef distributed_service_h
-#define distributed_service_h
-
-#include <sstmac/software/process/app.h>
-#include <sstmac/software/libraries/service.h>
-#include <sstmac/libraries/sumi/sumi_transport.h>
-#include <sumi/transport_fwd.h>
-#include <sumi/message_fwd.h>
-#include <sprockit/keyword_registration.h>
+#include <sumi/sumi_thread.h>
+#include <sstmac/software/process/operating_system.h>
 
 namespace sstmac {
 
-class distributed_service :
- public sumi_transport
+uint64_t sumi_thread::num_threads_ = 0;
+
+sumi_thread::sumi_thread(sprockit::sim_parameters* params, sw::software_id sid,
+                         sw::operating_system* os) :
+  thread(params, sid, os)
 {
-  DeclareFactory(distributed_service, const std::string&, sw::software_id, sw::operating_system*)
- public:
-  distributed_service(sprockit::sim_parameters* params,
-                      const std::string& libname,
-                      sw::software_id sid,
-                      sw::operating_system* os) :
-    sumi_transport(params, libname.c_str(), sid, os),
-    terminated_(false)
-  {
-  }
-
-  virtual ~distributed_service(){}
-
-  virtual void run() = 0;
-
- protected:
-  sumi::message* poll_for_message(bool blocking);
-
-  bool terminated() const {
-    return terminated_;
-  }
-
-  bool terminated_;
-
-};
-
-class distributed_service_app :
-  public sstmac::sw::app
-{
-  FactoryRegister("distributed_service", sw::app, distributed_service_app)
- public:
-  distributed_service_app(sprockit::sim_parameters* params,
-                      sw::software_id sid,
-                      sw::operating_system* os);
-
-  int skeleton_main() override;
-
- private:
-  std::string libname_;
-
-};
-
-#define ServiceRegister(str, name) \
-  NamespaceRegister(str, name) \
-  FactoryRegister(str, distributed_service, name)
-
 }
 
+void
+sumi_thread::start()
+{
+  sstmac::sw::operating_system::current_thread()->spawn(this);
+}
 
-#endif
+void
+sumi_thread::compute(double sec)
+{
+  parent_app_->compute(timestamp(sec));
+}
+
+}

@@ -72,7 +72,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <unordered_map>
 #include <sprockit/factories/factory.h>
 
-#include <sstmac/libraries/sumi/sumi_transport.h>
+#include <sumi/transport.h>
 
 #include <sumi-mpi/otf2_output_stat_fwd.h>
 
@@ -81,8 +81,7 @@ namespace sumi {
 using sstmac::sw::software_id;
 using sstmac::sw::operating_system;
 
-class mpi_api :
-  public sstmac::sumi_transport
+class mpi_api : public sumi::transport
 {
   RegisterAPI("mpi", mpi_api)
 

@@ -49,7 +49,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/printable.h>
 #include <sstmac/common/serializable.h>
+#include <sstmac/hardware/network/network_message.h>
+#include <sstmac/software/process/operating_system_fwd.h>
+#include <sstmac/common/messages/library_message.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sumi/message.h>
+#include <sprockit/thread_safe_new.h>
+
 
 namespace sumi {
 
@@ -425,29 +431,92 @@ class system_bcast_message : public message
   action_t action_;
 };
 
-/**
-* @brief The transport_message class
-* Base class for anything that carries a sumi message as a payload
-*/
-class transport_message {
+class transport_message :
+  public ::sstmac::hw::network_message,
+  public ::sstmac::library_interface,
+  public sprockit::thread_safe_new<transport_message>
+{
+   ImplementSerializable(transport_message)
+
  public:
+  transport_message(
+     const std::string& libname,
+     sstmac::sw::app_id aid,
+     sumi::message* msg,
+     uint64_t byte_length)
+   : network_message(aid, byte_length),
+   library_interface(libname),
+   payload_(msg)
+  {
+  }
+
+  void serialize_order(sstmac::serializer& ser) override;
+
   sumi::message* take_payload() {
     auto ret = payload_;
     payload_ = nullptr;
     return ret;
   }
 
+  sumi::message* get_payload() const {
+    return payload_;
+  }
+
+  std::string to_string() const override;
+
+  int dest_rank() const {
+    return dest_;
+  }
+
+  void set_dest_rank(int dest) {
+    dest_ = dest;
+  }
+
+  int src_rank() const {
+    return src_;
+  }
+
+  void set_src_rank(int src) {
+    src_ = src;
+  }
+
+  void set_apps(int src, int dst){
+    src_app_ = src;
+    dest_app_ = dst;
+  }
+
+  int src_app() const {
+    return src_app_;
+  }
+
+  int dest_app() const {
+    return dest_app_;
+  }
+
+  virtual void put_on_wire() override;
+  virtual void take_off_wire() override;
+  virtual void intranode_memmove() override;
+
+  ::sstmac::hw::network_message* clone_injection_ack() const override;
+
   virtual ~transport_message(){
     if (payload_) delete payload_;
   }
 
- protected:
-  transport_message(sumi::message* pload) :
-    payload_(pload) {}
+  void clone_into(transport_message* cln) const;
 
+  void reverse() override;
+
+ private:
   transport_message(){} //for serialization
 
   sumi::message* payload_;
+
+  int src_;
+  int dest_;
+  int src_app_;
+  int dest_app_;
+
 };
 
 }

@@ -87,34 +87,34 @@ class network_message :
    node_id to,
    node_id from,
    uint64_t payload_bytes) :
-    aid_(aid),
-    needs_ack_(true),
     toaddr_(to),
     fromaddr_(from),
+    aid_(aid),
+    needs_ack_(true),
     bytes_(payload_bytes),
     type_(null_netmsg_type)
   {
   }
 
   network_message(node_id toaddr, node_id fromaddr, int num_bytes) :
-    bytes_(num_bytes),
     toaddr_(toaddr),
-    fromaddr_(fromaddr)
+    fromaddr_(fromaddr),
+    bytes_(num_bytes)
   {
   }
 
   network_message(sw::app_id aid, uint64_t payload_bytes) :
-   bytes_(payload_bytes),
+   aid_(aid),
    needs_ack_(true),
-   type_(null_netmsg_type),
-   aid_(aid)
+   bytes_(payload_bytes),
+   type_(null_netmsg_type)
   {
   }
 
   network_message() //for serialization
    : needs_ack_(true),
-    type_(null_netmsg_type),
-    bytes_(0)
+     bytes_(0),
+     type_(null_netmsg_type)
   {
   }
 

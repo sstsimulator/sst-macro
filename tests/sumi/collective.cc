@@ -46,10 +46,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sstmac/util.h>
 #include <sstmac/compute.h>
-#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/common/runtime.h>
-#include <sumi/transport.h>
 #include <sstmac/skeleton.h>
+#include <sumi/sumi.h>
+#include <sumi/transport.h>
 
 #define sstmac_app_name user_app_cxx
 

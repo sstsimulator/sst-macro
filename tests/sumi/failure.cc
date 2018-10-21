@@ -46,12 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
-#include <sstmac/libraries/sumi/sumi.h>
-#include <sumi/dense_rank_map.h>
-#include <sumi/transport.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/util.h>
 #include <sstmac/compute.h>
+#include <sumi/dense_rank_map.h>
+#include <sumi/transport.h>
+#include <sumi/sumi.h>
 
 #define sstmac_app_name user_app_cxx
 

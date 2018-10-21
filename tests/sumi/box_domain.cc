@@ -43,7 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sprockit/test/test.h>
-#include <sstmac/libraries/sumi/sumi.h>
+#include <sumi/sumi.h>
 #include <sumi/dense_rank_map.h>
 #include <sumi/transport.h>
 
