@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
-#include <sumi-mpi/mpi_queue/mpi_queue_send_request.h>
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 #include <sumi-mpi/mpi_api.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request.h>
@@ -53,153 +52,88 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-eager1::configure_send_buffer(mpi_queue* queue, mpi_message* msg, void *buffer, mpi_type* typeobj)
+eager1::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid, int count,
+              mpi_type* typeobj, int tag, MPI_Comm comm, int seq_id, mpi_request* key)
 {
+  void* eager_buf = nullptr;
   if (isNonNullBuffer(buffer)){
-    void* eager_buf = fill_send_buffer(msg, buffer, typeobj);
-    msg->set_remote_buffer(eager_buf);
-    msg->set_owns_remote_buffer(true);
+    eager_buf = fill_send_buffer(count, buffer, typeobj);
   }
-  queue->memcopy(msg->payload_bytes());
+
+  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, sizeof(mpi_message)/*metadata size*/, nullptr,
+                                     sumi::message::no_ack, mpi_->pt2pt_cq_id(), sumi::message::pt2pt,
+                                     src_rank, dst_rank, count, typeobj->id, typeobj->packed_size(),
+                                     tag, comm, seq_id, EAGER1, eager_buf);
+
+  key->complete();
 }
 
 void
-eager1::send_header(mpi_queue* queue,
-                    mpi_message* msg)
+eager1::incoming_header(mpi_message* msg)
 {
-  SSTMACBacktrace(MPIEager1Protocol_Send_RDMA_Header);
-  msg->set_content_type(mpi_message::header);
+  char* send_buf = (char*) msg->send_buffer();
+  char* recv_buf = nullptr;
+  if (send_buf){
+    recv_buf = new char[msg->payload_size()];
+  }
+  msg->advance_stage();
+  mpi_->rdma_get_request_response(msg, msg->payload_size(), recv_buf, send_buf,
+                                  mpi_->pt2pt_cq_id(), mpi_->pt2pt_cq_id());
+}
 
-  queue->post_header(msg, sumi::message::header, false/*the send is "done" - no need to ack*/);
+void
+eager1::incoming_payload(mpi_message* msg)
+{
+  SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Payload);
+  mpi_queue_recv_request* req = queue_->find_matching_recv(msg);
+  if (req) incoming(msg, req);
+}
 
-  /** the send will have copied into a temp buffer so we can 'ack' the buffer for now */
-  mpi_queue::send_needs_ack_t::iterator it, end =
-    queue->send_needs_eager_ack_.end();
-  for (it = queue->send_needs_eager_ack_.begin(); it != end; ++it) {
-    if ((*it)->matches(msg)) {
-      // Match.
-      mpi_queue_send_request* sreq = *it;
-      sreq->complete(msg);
-      queue->send_needs_eager_ack_.erase(it);
-      delete sreq;
-      return;
+void
+eager1::incoming(mpi_message *msg, mpi_queue_recv_request* req)
+{
+  if (req->recv_buffer_){
+    char* temp_recv_buf = (char*) msg->local_buffer();
+#if SSTMAC_SANITY_CHECK
+    if (!temp_recv_buf){
+      spkt_abort_printf("have receiver buffer but no local buffer on %s", msg->to_string().c_str());
     }
+#endif
+    ::memcpy(req->recv_buffer_, temp_recv_buf, msg->payload_bytes());
+    delete[] temp_recv_buf;
   }
-  spkt_throw_printf(sprockit::illformed_error,
-        "eager1 protocol could not find request to complete");
-}
-
-void
-eager1::incoming_header(mpi_queue *queue,
-                        mpi_message*msg)
-{
-  mpi_queue_recv_request* req =
-    queue->pop_pending_request(msg, false);
-  incoming_header(queue, msg, req);
-}
-
-void
-eager1::incoming_header(mpi_queue* queue,
-                        mpi_message* msg,
-                        mpi_queue_recv_request* req)
-{
-  SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Header);
-  if (req) {
-    //we can post an RDMA get request direct to the buffer
-    //make sure to put the request back in, but alert it
-    //that it should expect a data payload next time
-    req->set_seqnum(msg->seqnum()); //set seqnum to avoid accidental matches
-    queue->waiting_message_.push_front(req);
-    req->set_seqnum(msg->seqnum()); //associate the messages
-    msg->set_local_buffer(req->recv_buffer_);
-  } else {
-    void* rbuf = msg->remote_buffer();
-    if (rbuf){
-      msg->set_local_buffer(new char[msg->payload_bytes()]);
-    }
-    msg->set_protocol(mpi_protocol::eager1_doublecpy_protocol);
-    //this has to go in now
-    //the need recv buffer has to push back messages in the order they are received
-    //in order to preserve message order semantics
-    mpi_message* cln = msg->clone_me();
-    cln->set_local_buffer(msg->local_buffer());
-    cln->set_in_flight(true);
-    queue->need_recv_.push_back(cln);
-  }
-  msg->set_in_flight(true);
-  queue->notify_probes(msg);
-
-  // this has already been received by mpi in sequence
-  // make sure mpi still handles this since it won't match
-  // the current sequence number
-  msg->set_content_type(mpi_message::data);
-  // generate an ack ONLY on the recv end
-  queue->post_rdma(msg, false, true);
-}
-
-void
-eager1_singlecpy::incoming_payload(mpi_queue *queue,
-                         mpi_message*msg)
-{
-  mpi_queue_recv_request* req = queue->pop_waiting_request(msg);
-  //guaranteed that req is posted before payload arrives
-  incoming_payload(queue, msg, req);
+  queue_->memcopy(msg->payload_bytes());
+  queue_->finalize_recv(msg, req);
   delete msg;
 }
 
 void
-eager1_singlecpy::incoming_payload(mpi_queue *queue,
-                                   mpi_message*msg,
-                                   mpi_queue_recv_request *req)
+eager1::incoming_ack(mpi_message *msg)
 {
-  if (!req){
-    sprockit::abort("eager1_singlecpy::incoming_payload: null recv request");
-  }
-  SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Payload);
-  //already RDMA'd correctly - just finish
-  queue->memcopy(msg->payload_bytes()); //simulate
-  queue->finalize_recv(msg, req);
-}
-
-void
-eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg)
-{
-  auto iter = queue->in_flight_messages_.find(msg->unique_int());
-  mpi_queue_recv_request* req = nullptr;
-  int taskid_ = queue->api()->rank();
-  if (iter != queue->in_flight_messages_.end()){
-    mpi_queue_debug("matched request to message %s", msg->to_string().c_str());
-    req = iter->second;
-    queue->in_flight_messages_.erase(iter);
-  } else {
-    mpi_queue_debug("did not match request to message %s", msg->to_string().c_str());
-  }
-  incoming_payload(queue, msg, req);
-}
-
-void
-eager1_doublecpy::incoming_payload(mpi_queue* queue, mpi_message* msg,
-                                   mpi_queue_recv_request* req)
-{
-  SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Payload);
-  //We did not RDMA get directly into the buffer
-  //finish the transfer
-  msg->set_in_flight(false);
-  if (req){
-    if (req->recv_buffer_){
-      char* temp_buf = (char*) msg->local_buffer();
-      ::memcpy(req->recv_buffer_, temp_buf, msg->payload_bytes());
-      delete[] temp_buf;
-      msg->set_local_buffer(temp_buf);
-    }
-    queue->memcopy(msg->payload_bytes());
-    queue->finalize_recv(msg, req);
-    fflush(stdout);
-  } else {
-    //drop a sentinel value to indicate the payload is here
-    queue->in_flight_messages_[msg->unique_int()] = nullptr;
+  if (msg->remote_buffer()){
+    char* temp_send_buf = (char*) msg->remote_buffer();
+    delete[] temp_send_buf;
   }
   delete msg;
+}
+
+void
+eager1::incoming(mpi_message* msg)
+{
+  switch(msg->network_message::type()){
+  case sstmac::hw::network_message::payload:
+    incoming_header(msg);
+    break;
+  case sstmac::hw::network_message::rdma_get_sent_ack:
+    incoming_ack(msg);
+    break;
+  case sstmac::hw::network_message::rdma_get_payload:
+    incoming_payload(msg);
+    break;
+  default:
+    spkt_abort_printf("Got bad message type %s for eager1::incoming",
+                      sstmac::hw::network_message::tostr(msg->network_message::type()));
+  }
 }
 
 

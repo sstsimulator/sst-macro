@@ -170,18 +170,18 @@ dynamic_tree_vote_actor::dynamic_tree_vote_actor(int vote,
   stage_(recv_vote)
 {
   int ignore;
-  position(dense_me_, my_level_, my_branch_);
+  position(dom_me_, my_level_, my_branch_);
   //figure out the bottom level from nproc
-  position(dense_nproc_-1,bottom_level_,ignore);
+  position(dom_nproc_-1,bottom_level_,ignore);
   level_stats(my_level_, my_level_start_, my_level_size_);
 
   if (my_level_ != bottom_level_){
     int partner = down_partner(my_level_, my_branch_);
-    if (partner < dense_nproc_){
+    if (partner < dom_nproc_){
       down_partners_.insert(partner);
     }
     ++partner;
-    if (partner < dense_nproc_){
+    if (partner < dom_nproc_){
       down_partners_.insert(partner);
     }
   }
@@ -194,7 +194,7 @@ dynamic_tree_vote_actor::dynamic_tree_vote_actor(int vote,
 
   debug_printf(sumi_collective | sumi_vote,
     "Rank %s from nproc=%d(%d) is at level=%d start=%d bottom=%d in branch=%d up=%d down=%s on tag=%d ",
-    rank_str().c_str(), dense_nproc_, my_api_->nproc(),
+    rank_str().c_str(), dom_nproc_, my_api_->nproc(),
     my_level_, my_level_start_, bottom_level_ + 1,
     my_branch_, up_partner_, stl_string(down_partners_).c_str(), tag_);
 }
@@ -277,7 +277,6 @@ dynamic_tree_vote_actor::start()
 void
 dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int virtual_dst)
 {
-  auto msg = new dynamic_tree_vote_message(vote_, ty, tag_, dense_me_, virtual_dst);
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   if (stage_ == up_vote){  //If I am up-voting, go ahead and vote for as many failures as I know
     msg->append_failed(failed_ranks_);
@@ -294,7 +293,10 @@ dynamic_tree_vote_actor::send_message(dynamic_tree_vote_message::type_t ty, int 
     stl_string(msg->failed_procs()).c_str());
 #endif
   int global_phys_dst = global_rank(virtual_dst);
-  my_api_->send_payload(global_phys_dst, msg, message::no_ack, cfg_.cq_id);
+  my_api_->smsg_send<dynamic_tree_vote_message>(global_phys_dst, 0, nullptr,
+                                                message::no_ack, cfg_.cq_id, message::collective,
+                                                dom_me_, virtual_dst,
+                                                vote_, ty, tag_);
 }
 
 void
@@ -425,7 +427,7 @@ dynamic_tree_vote_actor::recv_expected_up_vote(dynamic_tree_vote_message* msg)
 {
   debug_printf(sumi_collective | sumi_vote,
     "Rank %s got expected up vote %d on stage %s from rank=%d on tag=%d - need %s, have %s",
-    rank_str().c_str(), msg->vote(), tostr(stage_), msg->dense_sender(), tag_,
+    rank_str().c_str(), msg->vote(), tostr(stage_), msg->sender(), tag_,
     stl_string(down_partners_).c_str(), stl_string(up_votes_recved_).c_str());
 
   if (up_vote_ready()){
@@ -479,11 +481,11 @@ dynamic_tree_vote_actor::recv_up_vote(dynamic_tree_vote_message* msg)
 {
   debug_printf(sumi_collective | sumi_vote,
     "Rank %s got up vote %d on stage %s from rank=%d on tag=%d ",
-    rank_str().c_str(), msg->vote(), tostr(stage_), msg->dense_sender(), tag_);
+    rank_str().c_str(), msg->vote(), tostr(stage_), msg->sender(), tag_);
 
   merge_result(msg);
 
-  int src = msg->dense_sender();
+  int src = msg->sender();
   //if (is_failed(src)){
     //just ignore this - dangling message that got delivered
     //while its parent node failed in transit
@@ -502,14 +504,6 @@ dynamic_tree_vote_actor::recv_up_vote(dynamic_tree_vote_message* msg)
 void
 dynamic_tree_vote_actor::recv(dynamic_tree_vote_message* msg)
 {
-  if (is_failed(msg->dense_sender())){
-    debug_printf(sumi_collective | sumi_vote | sumi_collective_sendrecv,
-      "Rank %s skipping message from %d:%d on tag=%d because that rank is already dead",
-      rank_str().c_str(), msg->dense_sender(), msg->sender(), tag_);
-    //ignore this - sometimes messages from dead nodes get caught in transit
-    return;
-  }
-
   switch (msg->type())
   {
   case dynamic_tree_vote_message::up_vote:
@@ -518,11 +512,6 @@ dynamic_tree_vote_actor::recv(dynamic_tree_vote_message* msg)
   case dynamic_tree_vote_message::down_vote:
     recv_down_vote(msg);
     break;
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-  case dynamic_tree_vote_message::request:
-    recv_adoption_request(msg);
-    break;
-#endif
   default:
     sprockit::abort("invalid message type in dynamic tree vote");
     break;
@@ -536,7 +525,7 @@ dynamic_tree_vote_collective::dynamic_tree_vote_collective(
   vote_(vote),
   fxn_(fxn)
 {
-  actors_[dense_me_] = new dynamic_tree_vote_actor(vote, fxn, tag, my_api, cfg);
+  actors_[dom_me_] = new dynamic_tree_vote_actor(vote, fxn, tag, my_api, cfg);
   refcounts_[cfg_.dom->my_comm_rank()] = actors_.size();
 }
 

@@ -285,8 +285,9 @@ struct outcast_iterator {
     return ret;
   }
 
-  int nranks_;
   int my_rank_;
+  int nranks_;
+
 
  private:
   void pvt_forward_to(int& num_ranks, int ranks[], int offset, int blocksize){
@@ -329,8 +330,8 @@ struct incast_iterator {
     pvt_config(num_to_send, num_to_recv, to_send, to_recv, 0, power2_size);
   }
 
-  int nranks_;
   int my_rank_;
+  int nranks_;
 
  private:
   void pvt_config(int& num_send, int& num_recv, int to_send[], int to_recv[], int offset, int blocksize){

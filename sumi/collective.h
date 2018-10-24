@@ -177,8 +177,8 @@ class collective
  protected:
   transport* my_api_;
   config cfg_;
-  int dense_me_;
-  int dense_nproc_;
+  int dom_me_;
+  int dom_nproc_;
   bool complete_;
   int tag_;
 

@@ -59,6 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/gatherv.h>
 #include <sumi/scatterv.h>
 #include <sumi/scan.h>
+#include <sstmac/common/event_callback.h>
 #include <sprockit/stl_string.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -145,8 +146,8 @@ class sumi_server :
     auto end = pending_.end();
     while (iter != end){
       auto tmp = iter++;
-      transport_message* msg = *tmp;
-      if (msg->dest_rank() == rank && msg->dest_app() == proc->sid().app_){
+      message* msg = *tmp;
+      if (msg->target_rank() == rank && msg->aid() == proc->sid().app_){
         pending_.erase(tmp);
         proc->incoming_message(msg);
       }
@@ -165,12 +166,15 @@ class sumi_server :
   }
 
   void incoming_event(sstmac::event *ev){
-    transport_message* smsg = safe_cast(transport_message, ev);
+    message* smsg = safe_cast(message, ev);
     debug_printf(sprockit::dbg::sumi,
-                 "sumi_server %d: incoming message %s",
-                 os_->addr(), smsg->get_payload()->to_string().c_str());
-    transport* tport = procs_[smsg->dest_app()][smsg->dest_rank()];
+                 "sumi_server %d: incoming %s",
+                 os_->addr(), smsg->to_string().c_str());
+    transport* tport = procs_[smsg->aid()][smsg->target_rank()];
     if (!tport){
+      debug_printf(sprockit::dbg::sumi,
+                  "sumi_server %d: message pending to app %d, target %d",
+                  os_->addr(), smsg->aid(), smsg->target_rank());
       pending_.push_back(smsg);
     } else {
       tport->incoming_message(smsg);
@@ -179,7 +183,7 @@ class sumi_server :
 
  private:
   std::map<int, std::map<int, transport*> > procs_;
-  std::list<transport_message*> pending_;
+  std::list<message*> pending_;
 
 };
 
@@ -316,43 +320,8 @@ transport::finish()
   //this should really loop through and kill off all the pings
   //so none of them execute
   finalized_ = true;
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-  debug_printf(sprockit::dbg::sumi,
-      "Rank %d sending finalize terminate to %s",
-      rank_, failed_ranks_.to_string().c_str());
-
-  thread_safe_set<int>::iterator it, end = failed_ranks_.start_iteration();
-  for (it=failed_ranks_.begin(); it != end; ++it){
-    int dst = *it;
-    debug_printf(sprockit::dbg::sumi,
-        "Rank %d sending finalize terminate to %d",
-        rank_, dst);
-    send_terminate(dst);
-  }
-  failed_ranks_.end_iteration();
-
-  monitor_->validate_done();
-  stop_heartbeat();
-  delete monitor_;
-  monitor_ = nullptr;
-#endif
 }
 
-message*
-transport::poll(message::payload_type_t ty, bool blocking, int cq_id, double timeout)
-{
-  auto& queue = completion_queues_[cq_id];
-  auto end = queue.end();
-  for (auto iter = cq_begin(cq_id); iter != end; ++iter){
-    message* msg = *iter;
-    if (msg->payload_type() == ty){
-      queue.erase(iter);
-      return msg;
-    }
-  }
-
-  return poll_new(ty,blocking,cq_id,timeout);
-}
 
 message*
 transport::poll(bool blocking, double timeout)
@@ -395,6 +364,11 @@ transport::poll_new(bool blocking, int cq_id, double timeout)
                      "Rank %d got hit %p on CQ %d", rank_, msg, cq_id);
         return msg;
       } else {
+#if SSTMAC_SANITY_CHECK
+        if (msg->class_type() == message::collective){
+          spkt_abort_printf("collective message should never be pushed back on CQ");
+        }
+#endif
         completion_queues_[msg->cq_id()].push_back(msg);
       }
     }
@@ -404,31 +378,13 @@ transport::poll_new(bool blocking, int cq_id, double timeout)
 }
 
 message*
-transport::poll_new(message::payload_type_t ty, bool blocking, int cq_id, double timeout)
-{
-  while (1){
-    message* msg = poll_new(blocking, timeout);
-    if (msg){
-      if (msg->cq_id() == cq_id && msg->payload_type() == ty){
-        return msg;
-      } else {
-        completion_queues_[msg->cq_id()].push_back(msg);
-      }
-    }
-    //if I got here and am non-blocking, return null
-    if (!blocking) return nullptr;
-  }
-}
-
-message*
 transport::poll_new(bool blocking, double timeout)
 {
   debug_printf(sprockit::dbg::sumi, "Rank %d polling for NEW message", rank_);
   while (1){
-    transport_message* tmsg = poll_pending_messages(blocking, timeout);
+    message* tmsg = poll_pending_messages(blocking, timeout);
     if (tmsg){
-      message* cq_notifier = handle(tmsg->take_payload());
-      delete tmsg;
+      message* cq_notifier = handle(tmsg);
       if (cq_notifier || !blocking){
         return cq_notifier;
       }
@@ -438,7 +394,7 @@ transport::poll_new(bool blocking, double timeout)
   }
 }
 
-sumi::transport_message*
+message*
 transport::poll_pending_messages(bool blocking, double timeout)
 {
   if (poll_delay_.ticks_int64()) {
@@ -475,12 +431,11 @@ transport::poll_pending_messages(bool blocking, double timeout)
   }
 
   //we have been unblocked because a message has arrived
-  transport_message* msg = pending_messages_.front();
+  message* msg = pending_messages_.front();
   debug_printf(sprockit::dbg::sumi,
                "Rank %d sumi queue %p has no pending messages - blocking poller %p",
                rank(), this, thr);
   pending_messages_.pop_front();
-  process(msg);
 
   debug_printf(sprockit::dbg::sumi,
                "rank %d polling on %p returned msg %s",
@@ -520,10 +475,10 @@ message*
 transport::handle(message* msg)
 {
   debug_printf(sprockit::dbg::sumi,
-    "Rank %d got message %p of class %s, payload %s for sender %d, recver %d, send cq %d, recv cq %d",
-     rank_, msg,
-     message::tostr(msg->class_type()), message::tostr(msg->payload_type()),
-     msg->sender(), msg->recver(),
+    "Rank %d got message %s %p of class %s for sender %d, recver %d, target %d, send cq %d, recv cq %d",
+     rank_, msg->sstmac::hw::network_message::type_str(), msg,
+     message::tostr(msg->class_type()),
+     msg->sender(), msg->recver(), msg->target_rank(),
      msg->send_cq(), msg->recv_cq());
 
   //we might have collectives to delete and cleanup
@@ -534,24 +489,25 @@ transport::handle(message* msg)
   switch (msg->class_type())
   {
   case message::bcast:
+    spkt_abort_printf("sumi::transport: cannot do system bcast");
     //root initiated global broadcast of some metadata
-    system_bcast(msg);
+    //system_bcast(msg);
     return msg;
   case message::terminate:
   case message::collective_done:
   case message::pt2pt: {
-    switch (msg->payload_type()){
-      case message::rdma_get:
-      case message::rdma_put:
-      case message::eager_payload:
+    switch (msg->sstmac::hw::network_message::type()){
+      case sstmac::hw::network_message::rdma_get_payload:
+      case sstmac::hw::network_message::rdma_put_payload:
+      case sstmac::hw::network_message::payload:
         msg->write_sync_value();
         if (msg->needs_recv_ack()){
           return msg;
         }
         break;
-      case message::rdma_get_ack:
-      case message::rdma_put_ack:
-      case message::eager_payload_ack:
+      case sstmac::hw::network_message::rdma_get_sent_ack:
+      case sstmac::hw::network_message::rdma_put_sent_ack:
+      case sstmac::hw::network_message::payload_sent_ack:
         if (msg->needs_send_ack()){
           return msg;
         }
@@ -563,15 +519,16 @@ transport::handle(message* msg)
   }
   case message::collective: {
     collective_work_message* cmsg = dynamic_cast<collective_work_message*>(msg);
-    if (cmsg->send_cq() == -1 && cmsg->recv_cq() == -1) abort();
+    if (cmsg->send_cq() == -1 && cmsg->recv_cq() == -1){
+      spkt_abort_printf("both CQs are invalid for %s", msg->to_string().c_str())
+    }
     int tag = cmsg->tag();
     collective::type_t ty = cmsg->type();
     tag_to_collective_map::iterator it = collectives_[ty].find(tag);
     if (it == collectives_[ty].end()){
       debug_printf(sprockit::dbg::sumi_collective_sendrecv,
-        "Rank %d, queuing %p %s %s from %d on tag %d for type %s",
+        "Rank %d, queuing %p %s from %d on tag %d for type %s",
         rank_, msg,
-        message::tostr(msg->payload_type()),
         message::tostr(msg->class_type()),
         msg->sender(),
         tag, collective::tostr(ty));
@@ -601,9 +558,8 @@ transport::handle(message* msg)
 #endif
   case message::no_class: {
       spkt_throw_printf(sprockit::value_error,
-        "transport::handle: got message %s with no class of type %s",
-        msg->to_string().c_str(),
-        message::tostr(msg->payload_type()));
+        "transport::handle: got message %s with no class",
+        msg->to_string().c_str());
   }
   default: {
       spkt_throw_printf(sprockit::value_error,
@@ -614,6 +570,7 @@ transport::handle(message* msg)
   return nullptr;
 }
 
+#if 0
 void
 transport::system_bcast(message* msg)
 {
@@ -648,13 +605,14 @@ transport::system_bcast(message* msg)
     effective_target = my_effective_rank + partner_gap;
   }
 }
+#endif
 
 void
 transport::send_self_terminate()
 {
-  message* msg = new message();
-  msg->set_class_type(message::terminate);
-  send_header(rank_, msg, message::no_ack, message::default_cq); //send to self
+  smsg_send<message>(rank_, 0, nullptr,
+                     message::no_ack, message::default_cq,
+                     message::terminate);
 }
 
 transport::~transport()
@@ -1074,122 +1032,6 @@ transport::finish_collective(collective* coll, collective_done_message* dmsg)
 
 
 void
-transport::smsg_send(int dst, message::payload_type_t ev, message* msg,
-                     int send_cq, int recv_cq)
-{
-  configure_send(dst, ev, msg);
-  msg->set_send_cq(send_cq);
-  msg->set_recv_cq(recv_cq);
-
-  if (send_cq == -1 && recv_cq == -1) abort();
-
-  debug_printf(sprockit::dbg::sumi,
-    "Rank %d SUMI sending short message to %d, send ack %srequested ",
-    rank_, dst,
-    (msg->needs_send_ack() ? "" : "NOT "));
-
-  if (dst == rank_) {
-    //deliver to self
-    debug_printf(sprockit::dbg::sumi,
-      "Rank %d SUMI sending self message", rank_);
-
-    if (msg->needs_recv_ack()){
-      completion_queues_[msg->recv_cq()].push_back(msg);
-    }
-    if (msg->needs_send_ack()){
-      message* ack = msg->clone(message::eager_payload_ack);
-      ack->set_payload_type(message::eager_payload_ack);
-      completion_queues_[msg->send_cq()].push_back(ack);
-    }
-  } else {
-    if (post_header_delay_.ticks_int64()) {
-      user_lib_time_->compute(post_header_delay_);
-    }
-    send(msg->byte_length(), msg,
-      sstmac::hw::network_message::payload, dst);
-  }
-#if SSTMAC_COMM_SYNC_STATS
-  msg->set_time_sent(wall_time());
-#endif
-}
-
-void
-transport::rdma_get(int src, message* msg,
-                    int send_cq, int recv_cq)
-{
-  if (send_cq == -1 && recv_cq == -1){
-    spkt_abort_printf("no completion queues specified for message %s", msg->to_string().c_str());
-  }
-
-  configure_send(src, message::rdma_get, msg);
-  msg->set_send_cq(send_cq);
-  msg->set_recv_cq(recv_cq);
-
-  if (post_rdma_delay_.ticks_int64()) {
-    user_lib_time_->compute(post_rdma_delay_);
-  }
-
-  send(msg->byte_length(), msg,
-    sstmac::hw::network_message::rdma_get_request, src);
-}
-
-void
-transport::rdma_put(int dst, message* msg,
-                    int send_cq, int recv_cq)
-{
-  configure_send(dst, message::rdma_put, msg);
-  msg->set_send_cq(send_cq);
-  msg->set_recv_cq(recv_cq);
-
-  if (post_rdma_delay_.ticks_int64()) {
-    user_lib_time_->compute(post_rdma_delay_);
-  }
-  send(msg->byte_length(), msg,
-    sstmac::hw::network_message::rdma_put_payload, dst);
-}
-
-void
-transport::configure_send(int dst, message::payload_type_t ev, message* msg)
-{
-  switch(ev)
-  {
-  //this is a bit weird here
-  //we want to maintain notation of send/recv dst/src as in MPI
-  //for an RDMA get the recver sends a request - thus it is sort of a sender
-  //however we want to maintain the notion that the source of the message is where the data lives
-  //thus the destination sends a request to the source
-  case message::rdma_get:
-    msg->set_sender(dst);
-    msg->set_recver(rank_);
-    break;
-  default:
-    msg->set_sender(rank_);
-    msg->set_recver(dst);
-    break;
-  }
-  msg->set_payload_type(ev);
-
-  if (msg->class_type() == message::no_class){
-    spkt_throw_printf(sprockit::value_error,
-        "sending message %s with no class",
-        msg->to_string().c_str());
-  }
-}
-
-void
-transport::send_header(int dst, message* msg, int send_cq, int recv_cq)
-{
-  smsg_send(dst, message::header, msg, send_cq, recv_cq);
-}
-
-void
-transport::send_payload(int dst, message* msg, int send_cq, int recv_cq)
-{
-  smsg_send(dst, message::eager_payload, msg, send_cq, recv_cq);
-}
-
-
-void
 transport::pin_rdma(uint64_t bytes)
 {
   int num_pages = bytes / page_size_;
@@ -1219,8 +1061,11 @@ transport::incoming_event(sstmac::event *ev)
 void
 transport::shutdown_server(int dest_rank, sstmac::node_id dest_node, int dest_app)
 {
+  spkt_abort_printf("transport::shutdown_server");
+  /**
   auto msg = new sumi::system_bcast_message(sumi::system_bcast_message::shutdown, dest_rank);
   client_server_send(dest_rank, dest_node, dest_app, msg);
+  */
 }
 
 void
@@ -1230,11 +1075,14 @@ transport::client_server_send(
   int dst_app,
   sumi::message* msg)
 {
+  spkt_abort_printf("transport::client_server_send");
+  /**
   msg->set_send_cq(sumi::message::no_ack);
   msg->set_recv_cq(sumi::message::default_cq);
   send(msg->byte_length(),
        dst_task, dst_node, dst_app, msg,
        sstmac::hw::network_message::payload);
+  */
 }
 
 void
@@ -1244,41 +1092,14 @@ transport::client_server_rdma_put(
   int dst_app,
   sumi::message* msg)
 {
+  spkt_abort_printf("transport::client_rdma_put");
+  /**
   msg->set_send_cq(sumi::message::no_ack);
   msg->set_recv_cq(sumi::message::default_cq);
   send(msg->byte_length(),
        dst_task, dst_node, dst_app, msg,
        sstmac::hw::network_message::rdma_put_payload);
-}
-
-void
-transport::process(transport_message* smsg)
-{
-  sumi::message* my_msg = smsg->get_payload();
-  debug_printf(sprockit::dbg::sumi,
-     "sumi transport rank %d in app %d processing message of type %s: %s",
-     rank(), sid().app_, transport_message::tostr(smsg->type()), my_msg->to_string().c_str());
-  switch (smsg->type())
-  {
-   //depending on the type, we might have to mutate the incoming message
-   case sstmac::hw::network_message::failure_notification:
-    my_msg->set_payload_type(sumi::message::failure);
-    break;
-   case sstmac::hw::network_message::rdma_get_nack:
-    my_msg->set_payload_type(sumi::message::rdma_get_nack);
-    break;
-   case sstmac::hw::network_message::payload_sent_ack:
-    my_msg->set_payload_type(sumi::message::eager_payload_ack);
-    break;
-   case sstmac::hw::network_message::rdma_get_sent_ack:
-    my_msg->set_payload_type(sumi::message::rdma_get_ack);
-    break;
-   case sstmac::hw::network_message::rdma_put_sent_ack:
-    my_msg->set_payload_type(sumi::message::rdma_put_ack);
-    break;
-   default:
-    break; //do nothing
-  }
+  */
 }
 
 int*
@@ -1291,42 +1112,6 @@ transport::nidlist() const
 }
 
 void
-transport::send(
-  uint64_t byte_length,
-  sumi::message* msg,
-  int sendType,
-  int dst_rank)
-{
-  sstmac::node_id dst_node = rank_mapper_->rank_to_node(dst_rank);
-  send(byte_length, dst_rank, dst_node, sid().app_, msg, sendType);
-}
-
-void
-transport::send(
-  uint64_t byte_length,
-  int dst_task,
-  sstmac::node_id dst_node,
-  int dst_app,
-  sumi::message* msg,
-  int ty)
-{
-  sstmac::sw::app_id aid = sid().app_;
-  transport_message* tmsg = new transport_message(server_libname_, aid, msg, byte_length);
-  tmsg->sstmac::hw::network_message::set_type((sstmac::hw::network_message::type_t)ty);
-  tmsg->toaddr_ = dst_node;
-  tmsg->set_src_rank(rank_);
-  tmsg->set_dest_rank(dst_task);
-  //send intra-app
-  tmsg->set_apps(sid().app_, dst_app);
-  tmsg->set_needs_ack(msg->needs_send_ack());
-
-  if (spy_num_messages_) spy_num_messages_->add_one(rank_, dst_task);
-  if (spy_bytes_) spy_bytes_->add(rank_, dst_task, byte_length);
-
-  sstmac::sw::library::os_->execute(sstmac::ami::COMM_SEND, tmsg);
-}
-
-void
 transport::compute(sstmac::timestamp t)
 {
   user_lib_time_->compute(t);
@@ -1336,6 +1121,113 @@ double
 transport::wall_time() const
 {
   return now().sec();
+}
+
+void
+transport::send(message* m)
+{
+#if SSTMAC_COMM_SYNC_STATS
+  msg->set_time_sent(wall_time());
+#endif
+  if (spy_num_messages_) spy_num_messages_->add_one(m->sender(), m->recver());
+  if (spy_bytes_){
+    switch(m->sstmac::hw::network_message::type()){
+    case sstmac::hw::network_message::payload:
+      spy_bytes_->add(m->sender(), m->recver(), m->byte_length());
+      break;
+    case sstmac::hw::network_message::rdma_get_request:
+    case sstmac::hw::network_message::rdma_put_payload:
+      spy_bytes_->add(m->sender(), m->recver(), m->payload_bytes());
+      break;
+    default:
+      break;
+    }
+  }
+
+  switch(m->sstmac::hw::network_message::type()){
+    case sstmac::hw::network_message::payload:
+      if (m->recver() == rank_){
+        //deliver to self
+        debug_printf(sprockit::dbg::sumi,
+          "Rank %d SUMI sending self message", rank_);
+        if (m->needs_recv_ack()){
+          os_->send_now_self_event_queue(sstmac::new_callback(os_->component_id(), this, &transport::incoming_message, m));
+        }
+        if (m->needs_send_ack()){
+          auto* ack = m->clone_injection_ack();
+          os_->send_now_self_event_queue(
+            sstmac::new_callback(os_->component_id(), this, &transport::incoming_message, static_cast<message*>(ack)));
+        }
+      } else {
+        if (post_header_delay_.ticks_int64()) {
+          user_lib_time_->compute(post_header_delay_);
+        }
+        sstmac::sw::library::os_->execute(sstmac::ami::COMM_SEND, m);
+      }
+      break;
+    case sstmac::hw::network_message::rdma_get_request:
+    case sstmac::hw::network_message::rdma_put_payload:
+      if (post_rdma_delay_.ticks_int64()) {
+        user_lib_time_->compute(post_rdma_delay_);
+      }
+      sstmac::sw::library::os_->execute(sstmac::ami::COMM_SEND, m);
+      break;
+    default:
+      spkt_abort_printf("attempting to initiate send with invalid type %d",
+                        m->type())
+  }
+}
+
+void
+transport::smsg_send_response(message* m, uint64_t size, void* buffer, int local_cq, int remote_cq)
+{
+  //reverse both hardware and software info
+  m->sstmac::hw::network_message::reverse();
+  m->reverse();
+  m->setup_smsg(buffer, size);
+  m->set_send_cq(local_cq);
+  m->set_recv_cq(remote_cq);
+  m->sstmac::hw::network_message::set_type(message::payload);
+  send(m);
+}
+
+void
+transport::rdma_get_request_response(message* m, uint64_t size,
+                                     void* local_buffer, void* remote_buffer,
+                                     int local_cq, int remote_cq)
+{
+  //do not reverse send/recver - this is hardware reverse, not software reverse
+  m->sstmac::hw::network_message::reverse();
+  m->setup_rdma_get(local_buffer, remote_buffer, size);
+  m->set_send_cq(remote_cq);
+  m->set_recv_cq(local_cq);
+  m->sstmac::hw::network_message::set_type(message::rdma_get_request);
+  send(m);
+}
+
+void
+transport::rdma_get_response(message* m, uint64_t size, int local_cq, int remote_cq)
+{
+  smsg_send_response(m, size, nullptr, local_cq, remote_cq);
+}
+
+void
+transport::rdma_put_response(message* m, uint64_t payload_bytes,
+                 void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq)
+{
+  m->reverse();
+  m->sstmac::hw::network_message::reverse();
+  m->setup_rdma_put(loc_buffer, remote_buffer, payload_bytes);
+  m->set_send_cq(local_cq);
+  m->set_recv_cq(remote_cq);
+  m->sstmac::hw::network_message::set_type(message::rdma_put_payload);
+  send(m);
+}
+
+uint64_t
+transport::allocate_flow_id()
+{
+  return os_->node()->allocate_unique_id();
 }
 
 sumi::collective_done_message*
@@ -1372,7 +1264,7 @@ transport::collective_block(sumi::collective::type_t ty, int tag, int cq_id)
 }
 
 void
-transport::incoming_message(transport_message *msg)
+transport::incoming_message(message *msg)
 {
 #if SSTMAC_COMM_SYNC_STATS
   if (msg){
@@ -1385,13 +1277,13 @@ transport::incoming_message(transport_message *msg)
     sstmac::sw::thread* next_thr = blocked_threads_.front();
     debug_printf(sprockit::dbg::sumi,
                  "sumi queue %p unblocking poller %p to handle message %s",
-                  this, next_thr, msg->get_payload()->to_string().c_str());
+                  this, next_thr, msg->to_string().c_str());
     blocked_threads_.pop_front();
     os_->unblock(next_thr);
   } else {
     debug_printf(sprockit::dbg::sumi,
                  "sumi queue %p has no pollers to unblock for message %s",
-                  this, msg->get_payload()->to_string().c_str());
+                  this, msg->to_string().c_str());
   }
 }
 

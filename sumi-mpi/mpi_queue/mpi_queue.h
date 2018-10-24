@@ -62,7 +62,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol_fwd.h>
 
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request_fwd.h>
-#include <sumi-mpi/mpi_queue/mpi_queue_send_request_fwd.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_probe_request_fwd.h>
 
 #include <queue>
@@ -77,9 +76,6 @@ class mpi_queue
   friend class mpi_protocol;
   friend class eager0;
   friend class eager1;
-  friend class eager1_singlecpy;
-  friend class eager1_doublecpy;
-  friend class rendezvous_protocol;
   friend class rendezvous_get;
   friend class mpi_queue_send_request;
   friend class mpi_queue_recv_request;
@@ -103,10 +99,6 @@ class mpi_queue
         int source, int tag);
 
   bool iprobe(mpi_comm* comm, int source, int tag, MPI_Status* stat);
-
-  void incoming_progress_loop_message(mpi_message* message);
-
-  mpi_protocol* protocol(long bytes) const;
 
   mpi_api* api() const {
     return api_;
@@ -138,7 +130,7 @@ class mpi_queue
     bool needs_send_ack,
     bool needs_recv_ack);
 
-  void post_header(mpi_message* msg, sumi::message::payload_type_t ty, bool needs_ack);
+  void incoming_new_message(mpi_message* message);
 
  private:
   struct sortbyseqnum {
@@ -147,58 +139,17 @@ class mpi_queue
 
   typedef std::set<mpi_message*, sortbyseqnum> hold_list_t;
 
-  typedef std::list<mpi_queue_recv_request*> pending_message_t;
-
-  typedef std::list<mpi_message*> need_recv_t;
-
-  typedef std::list<mpi_queue_send_request*> send_needs_ack_t;
-
-  typedef std::unordered_map<int, mpi_message*> reorderlist_t;
-
-  typedef std::map<mpi_message::id, mpi_queue_send_request*> ack_needed_t;
-
-  typedef std::map<mpi_message::id, mpi_queue_recv_request*> pending_req_map;
-
-  typedef std::list<mpi_queue_probe_request*> probelist_t;
-
  private:
   void handle_poll_msg(sumi::message* msg);
 
   void handle_collective_done(sumi::message* msg);
 
-  void incoming_completion_ack(mpi_message* message);
-
-  void incoming_new_message(mpi_message* message);
-
-  void handle_nic_ack(mpi_message* message);
-
   void handle_new_message(mpi_message* message);
 
   void notify_probes(mpi_message* message);
 
-  mpi_queue_recv_request*
-  pop_matching_request(pending_message_t& pending, mpi_message* message);
-
-  mpi_queue_recv_request*
-  pop_pending_request(mpi_message* message,
-                       bool set_need_recv = true);
-
-  mpi_queue_recv_request* pop_waiting_request(mpi_message* message);
-
   mpi_message* find_matching_recv(mpi_queue_recv_request* req);
-
-  void send_completion_ack(mpi_message* message);
-
-  mpi_message* send_message(void* buffer, int count, MPI_Datatype type,
-                int dst_rank, int tag, mpi_comm* comm);
-
-  /**
-   * @brief configure_send_request
-   * @param mess
-   * @param req
-   * @return Whether a nic send ack is required for this send
-   */
-  bool configure_send_request(mpi_message* mess, mpi_request* req);
+  mpi_queue_recv_request* find_matching_recv(mpi_message* msg);
 
   void clear_pending();
 
@@ -214,29 +165,14 @@ class mpi_queue
   /// Hold messages that arrived out of order.
   std::unordered_map<task_id, hold_list_t> held_;
 
-  /// The (locally unique) id that will be given to the next message.
-  mpi_message::id next_id_;
-
-  pending_message_t pending_message_;
-
-  pending_message_t waiting_message_;
-
-  std::map<mpi_message::id,mpi_queue_recv_request*> in_flight_messages_;
-
   /// Inbound messages waiting for a matching receive request.
-  need_recv_t need_recv_;
+  std::list<mpi_message*> need_recv_match_;
+  std::list<mpi_queue_recv_request*> need_send_match_;
 
-  /// Save all sends so we can match up the nic acks that come back
-  send_needs_ack_t send_needs_nic_ack_;
-  send_needs_ack_t send_needs_eager_ack_;
-
-  ack_needed_t send_needs_completion_ack_;
-
-  /// Requests that sent an ack and are waiting for the rest of their data.
-  pending_req_map recv_needs_payload_;
+  std::vector<mpi_protocol*> protocols_;
 
   /// Probe requests watching
-  probelist_t probelist_;
+  std::list<mpi_queue_probe_request*> probelist_;
 
   task_id taskid_;
 
@@ -258,6 +194,9 @@ class mpi_queue
 //for local use in mpi queue object
 #define mpi_queue_debug(...) \
   mpi_queue_action_debug(int(taskid_), __VA_ARGS__)
+
+#define mpi_queue_protocol_debug(...) \
+  mpi_queue_action_debug(mpi_->rank(), __VA_ARGS__)
 
 
 #endif

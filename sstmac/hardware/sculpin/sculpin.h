@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sculpin_packet_h
 
 #include <sstmac/hardware/common/packet.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -71,7 +71,7 @@ class sculpin_packet :
 
  public:
   sculpin_packet(
-    message* msg,
+    flow* msg,
     uint32_t num_bytes,
     bool is_tail,
     uint64_t flow_id,

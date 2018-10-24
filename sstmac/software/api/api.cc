@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/libraries/compute/lib_compute_memmove.h>
 #include <sstmac/software/api/api.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/common/thread_lock.h>
 #include <sprockit/sim_parameters.h>

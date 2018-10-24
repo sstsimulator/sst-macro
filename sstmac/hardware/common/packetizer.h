@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define PACKETIZER_H
 
 #include <sprockit/factories/factory.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/hardware/common/recv_cq.h>
@@ -62,36 +62,72 @@ DeclareDebugSlot(packetizer)
 namespace sstmac {
 namespace hw {
 
-class packetizer_callback
-{
- public:
-  virtual void notify(int vn, message* msg) = 0;
-
-  virtual ~packetizer_callback(){}
-};
-
 class packetizer :
   public event_subcomponent
 {
   DeclareFactory(packetizer, event_component*, int/*vcs*/)
  public:
+  struct arrive_notifier {
+    virtual void operator()(int vn, flow* f) = 0;
+    virtual ~arrive_notifier(){}
+  };
+
+  struct depart_notifier {
+    virtual void operator()(timestamp delay, flow* f) = 0;
+    virtual ~depart_notifier(){}
+  };
+
+  template <class T, class Fxn>
+  struct arrive_notifier_impl :  public arrive_notifier {
+    arrive_notifier_impl(T* t, Fxn f) : t_(t), f_(f) {}
+
+    void operator()(int vn, flow* f) override {
+      (t_->*f_)(vn, f);
+    }
+   private:
+    T* t_;
+    Fxn f_;
+  };
+
+  template <class T, class Fxn>
+  struct depart_notifier_impl :  public depart_notifier {
+    depart_notifier_impl(T* t, Fxn f) : t_(t), f_(f) {}
+
+    void operator()(timestamp delay, flow* f) override {
+      (t_->*f_)(delay, f);
+    }
+   private:
+    T* t_;
+    Fxn f_;
+  };
+
+  template <class T, class Fxn>
+  void setArrivalNotifier(T* t, Fxn f){
+    arrive_notifier_ = new arrive_notifier_impl<T,Fxn>(t,f);
+  }
+
+  template <class T, class Fxn>
+  void setDepartNotifier(T* t, Fxn f){
+    depart_notifier_ = new depart_notifier_impl<T,Fxn>(t,f);
+  }
+
   virtual ~packetizer();
 
-  void start(int vn, message* payload);
+  void start(int vn, flow* payload);
 
   void packetArrived(int vn, packet* pkt);
 
   void sendWhatYouCan(int vn);
 
-  void setArrivalNotify(packetizer_callback* handler){
-    notifier_ = handler;
+  void setArrivalNotify(arrive_notifier* handler){
+    arrive_notifier_ = handler;
+  }
+
+  void setDepartureNotify(depart_notifier* handler){
+    depart_notifier_ = handler;
   }
 
   void deadlock_check();
-
-  void setInjectionAcker(event_link* link){
-    acker_ = link;
-  }
 
   uint32_t packetSize() const {
     return packet_size_;
@@ -102,7 +138,7 @@ class packetizer :
 
  private:
   virtual void inject(int vn, uint32_t bytes,
-                      uint64_t byte_offset, message* payload) = 0;
+                      uint64_t byte_offset, flow* payload) = 0;
 
   virtual bool spaceToSend(int vn, int num_bits) = 0;
 
@@ -110,11 +146,10 @@ class packetizer :
   recv_cq completion_queue_;
 
   struct pending_send{
-    message* msg;
-    message* ack;
+    flow* msg;
     uint64_t bytes_left;
     uint64_t offset;
-    pending_send() : ack(nullptr) {}
+    pending_send(){}
   };
 
   using pending_list = std::list<pending_send, sprockit::thread_safe_allocator<pending_send>>;
@@ -126,15 +161,15 @@ class packetizer :
 
   double inv_bw_;
 
-  packetizer_callback* notifier_;
+  arrive_notifier* arrive_notifier_;
 
-  event_link* acker_;
+  depart_notifier* depart_notifier_;
 
  protected:
   packetizer(sprockit::sim_parameters* params,
              event_scheduler* parent, int num_vc);
 
-  void bytesArrived(int vn, uint64_t unique_id, uint32_t bytes, message* parent);
+  void bytesArrived(int vn, uint64_t unique_id, uint32_t bytes, flow* parent);
 
 };
 

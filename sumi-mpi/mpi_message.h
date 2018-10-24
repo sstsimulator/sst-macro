@@ -53,7 +53,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_id.h>
 
 #include <sstmac/software/process/operating_system_fwd.h>
-#include <sumi-mpi/mpi_protocol/mpi_protocol_fwd.h>
 #include <sumi/message.h>
 #include <sprockit/thread_safe_new.h>
 
@@ -66,65 +65,47 @@ class mpi_message final :
   ImplementSerializable(mpi_message)
 
  public:
-  typedef uint64_t id;
-
-  typedef enum {
-    null_content, data, header, eager_payload, completion_ack, fake
-  } content_type_t;
-
-  void recompute_bytes();
-
- public:
-  mpi_message(int src, int dst, int count,
+  template <class... Args>
+  mpi_message(int src_rank, int dst_rank, int count,
               MPI_Datatype type, int type_packed_size,
-              int tag,
-              MPI_Comm commid, int seqnum,
-              mpi_message::id msgid,
-              mpi_protocol* protocol);
-
-  mpi_message(){}
+              int tag, MPI_Comm commid, int seqnum,
+              int pid, void* send_buffer, Args&&... args) :
+    sumi::message(std::forward<Args>(args)...),
+    src_rank_(src_rank),
+    dst_rank_(dst_rank),
+    count_(count),
+    type_(type), type_packed_size_(type_packed_size),
+    tag_(tag), commid_(commid),
+    seqnum_(seqnum),
+    protocol_(pid),
+    send_buffer_(send_buffer),
+    stage_(0)
+  {
+  }
 
   std::string to_string() const override;
-
-  static const char* str(content_type_t content_type);
 
   ~mpi_message() throw ();
 
   sumi::mpi_message* clone_me() const {
-    mpi_message* cln = new mpi_message;
-    clone_into(cln);
+    mpi_message* cln = new mpi_message(*this);
     return cln;
   }
 
-  sumi::message* clone(payload_type_t ty) const override {
-    return clone_me();
+  sstmac::hw::network_message* clone_injection_ack() const override {
+    auto* msg = clone_me();
+    msg->convert_to_ack();
+    return msg;
   }
 
   void serialize_order(sstmac::serializer& ser) override;
-
-  uint64_t payload_bytes() const {
-    return uint64_t(count_) * uint64_t(type_packed_size_);
-  }
-
-  mpi_protocol* protocol() const;
-
-  void set_protocol(mpi_protocol* protocol);
-
-  void payload_to_completion_ack();
 
   int count() const {
     return count_;
   }
 
-
-  bool is_payload() const {
-    switch (content_type_){
-  case eager_payload:
-  case data:
-    return true;
-  default:
-    return false;
-    }
+  void* send_buffer() const {
+    return send_buffer_;
   }
 
   MPI_Datatype type() const {
@@ -133,6 +114,10 @@ class mpi_message final :
 
   int type_packed_size() const {
     return type_packed_size_;
+  }
+
+  uint64_t payload_size() const {
+    return type_packed_size_ * count_;
   }
 
   int tag() const {
@@ -151,45 +136,30 @@ class mpi_message final :
     return src_rank_;
   }
 
-  void set_src_rank(int rank) {
-    src_rank_ = rank;
-  }
-
   int dst_rank() const {
     return dst_rank_;
   }
 
-  void set_dst_rank(int rank) {
-    dst_rank_ = rank;
+  int protocol() const {
+    return protocol_;
   }
 
-  mpi_message::id unique_int() const {
-    return msgid_;
+  void advance_stage(){
+    stage_++;
   }
 
-  content_type_t content_type() const {
-    return content_type_;
-  }
-
-  void set_content_type(content_type_t ty) {
-    content_type_ = ty;
-    recompute_bytes();
+  int stage() const {
+    return stage_;
   }
 
   void build_status(MPI_Status* stat) const;
 
-  void set_in_flight(bool flag){
-    in_flight_ = flag;
-  }
-
-  bool in_flight() const {
-    return in_flight_;
-  }
-
  protected:
-  void clone_into(mpi_message* cln) const;
+  //void clone_into(mpi_message* cln) const;
 
- protected:
+ private:
+  mpi_message(){} //for serialization
+
   int src_rank_;
   int dst_rank_;
   int count_;
@@ -198,10 +168,9 @@ class mpi_message final :
   int tag_;
   MPI_Comm commid_;
   int seqnum_;
-  mpi_message::id msgid_;
-  content_type_t content_type_;
   int protocol_;
-  bool in_flight_;
+  void* send_buffer_;
+  int stage_;
 
 };
 

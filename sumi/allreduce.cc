@@ -92,15 +92,15 @@ wilke_allreduce_actor::init_dag()
 
   int virtual_nproc, log2nproc, midpoint;
   compute_tree(log2nproc, midpoint, virtual_nproc);
-  virtual_rank_map rank_map(dense_nproc_, virtual_nproc);
+  virtual_rank_map rank_map(dom_nproc_, virtual_nproc);
   int my_roles[2];
-  int num_roles = rank_map.real_to_virtual(dense_me_, my_roles);
+  int num_roles = rank_map.real_to_virtual(dom_me_, my_roles);
 
   int num_doubling_rounds = log2nproc;
 
   debug_printf(sumi_collective,
     "Rank %s configured allreduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds",
-    rank_str().c_str(), tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
+    rank_str().c_str(), tag_, dom_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
 
   //on my final wave of send/recvs, need to change behavior depending on
   //whether types are contiguous or not
@@ -133,7 +133,7 @@ wilke_allreduce_actor::init_dag()
     int round_offset = 2*num_doubling_rounds;
     debug_printf(sumi_collective,
       "Rank %d configuring allreduce for virtual role=%d tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds ",
-      my_api_->rank(), virtual_me, tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
+      my_api_->rank(), virtual_me, tag_, dom_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
     for (int i=0; i < num_doubling_rounds; ++i){
       //again, see comment above about weirndess of round numberings
       int rnd = (i == 0 || i_am_even) ? i : i + round_offset;

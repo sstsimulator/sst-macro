@@ -87,7 +87,10 @@ distributed_service_app::skeleton_main()
 sumi::message*
 distributed_service::poll_for_message(bool blocking)
 {
+  spkt_abort_printf("distributed_service::not implemented");
+
   sumi::message* msg = poll(blocking);
+  /**
   if (msg && msg->class_type() == sumi::message::bcast){
     auto smsg = dynamic_cast<sumi::system_bcast_message*>(msg);
     if (smsg->action() == sumi::system_bcast_message::shutdown){
@@ -95,6 +98,7 @@ distributed_service::poll_for_message(bool blocking)
       return nullptr;
     }
   }
+  */
   return msg;
 }
 

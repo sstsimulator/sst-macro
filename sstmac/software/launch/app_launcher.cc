@@ -133,19 +133,19 @@ start_app_event::serialize_order(serializer &ser)
     std::string paramStr = sstr.str();
     ser & paramStr;
   }
-  mapping_ = task_mapping::serialize_order(aid_, ser);
+  mapping_ = task_mapping::serialize_order(aid(), ser);
 }
 
 std::string
 start_app_event::to_string() const
 {
-  return sprockit::printf("start_app_event: app=%d task=%d node=%d", aid_, tid(), toaddr());
+  return sprockit::printf("start_app_event: app=%d task=%d node=%d", aid(), tid(), toaddr());
 }
 
 std::string
 job_stop_event::to_string() const
 {
-  return sprockit::printf("job_stop_event: app=%d task=%d node=%d", aid_, tid(), fromaddr());
+  return sprockit::printf("job_stop_event: app=%d task=%d node=%d", aid(), tid(), fromaddr());
 }
 
 

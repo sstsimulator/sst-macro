@@ -58,9 +58,7 @@ namespace hw {
  @class pisces_nic
  Network interface compatible with sending pisces packets
  */
-class pisces_nic :
-  public nic,
-  public packetizer_callback
+class pisces_nic : public nic
 {
   FactoryRegister("pisces", nic, pisces_nic,
               "implements a nic that models messages as a packet flow")
@@ -77,9 +75,11 @@ class pisces_nic :
 
   virtual ~pisces_nic() throw ();
 
-  void notify(int vn, message* msg) override {
-    recv_message(msg);
+  void flowArrived(int vn, flow* msg) {
+    recv_message(static_cast<network_message*>(msg));
   }
+
+  void flowDeparted(timestamp delay, flow* msg);
 
   virtual void connect_output(
     sprockit::sim_parameters* params,
@@ -108,6 +108,7 @@ class pisces_nic :
 
  protected:
   packetizer* packetizer_;
+  event_link* self_mtl_link_;
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* payload_handler_;
   link_handler* ack_handler_;

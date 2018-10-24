@@ -222,8 +222,8 @@ mpi_api::wait_collective(collective_op_base* op)
         pending.push_back(cmsg);
       }
     } else {
-      mpi_message* mpiMsg = dynamic_cast<mpi_message*>(msg);
-      queue_->incoming_progress_loop_message(mpiMsg);
+      mpi_message* mpiMsg = safe_cast(mpi_message, msg);
+      queue_->incoming_new_message(mpiMsg);
     }
   }
 

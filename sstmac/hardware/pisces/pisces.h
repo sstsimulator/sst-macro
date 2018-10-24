@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define PACKETFLOW_H
 
 #include <sstmac/hardware/common/packet.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sprockit/thread_safe_new.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -239,16 +239,6 @@ class pisces_credit :
   int port() const {
     return port_;
   }
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  bool is_payload() const override {
-    return false;
-  }
-
-  bool is_ack() const override {
-    return true;
-  }
-#endif
 
   int num_credits() const {
     return num_credits_;

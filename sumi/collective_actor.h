@@ -238,111 +238,28 @@ class collective_actor
 
   collective_actor(){} //will be initialized later
 
-  int global_rank(int dense_rank) const;
+  int global_rank(int dom_rank) const;
 
-  /**
-   * domain <= dense <= virtual
-   * A job starts with 4 nodes {0,1,2}.
-   * Node 1 dies. There are 2 live nodes.
-   * A collective starts with 4 virtual actors {0,1,2,3}
-   * 0 -> 0
-   * 1 -> 0
-   * 2 -> 2
-   * 3 -> 2
-   * @return
-   */
-  int comm_rank(int dense_rank) const;
+  int dom_to_global_dst(int dom_dst);
 
-  int dense_to_global_dst(int dense_dst);
-
-  std::string rank_str(int dense_rank) const;
+  std::string rank_str(int dom_rank) const;
 
   virtual void finalize(){}
 
  protected:
   transport* my_api_;
 
-  int dense_me_;
+  int dom_me_;
 
-  int dense_nproc_;
+  int dom_nproc_;
 
   int tag_;
-
-  std::map<int, int> ping_refcounts_;
-
-  dense_rank_map rank_map_;
 
   timeout_function* timeout_;
 
   collective::config cfg_;
 
   bool complete_;
-
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
- public:
-  void partner_ping_failed(int global_rank);
-
- protected:
-  bool ping_rank(int phys_rank, int dense_rank);
-
-  bool is_failed(int dense_rank) const {
-    return failed_ranks_.count(dense_rank);
-  }
-
-  bool is_alive(int dense_rank) const {
-    return failed_ranks_.count(dense_rank) == 0;
-  }
-
-  virtual bool check_neighbor(int global_phys_rank);
-
-  virtual void stop_check_neighbor(int global_phys_rank);
-
-  bool failed() const {
-    return !failed_ranks_.empty();
-  }
-
-  bool do_ping_neighbor(int dense_rank);
-
-  thread_safe_set<int> failed_ranks_;
-
- std::string failed_proc_string() const;
-
- /**
-  * Validation function to make sure all pings are cleared
-  */
- void validate_pings_cleared();
-
- /**
-  * Start pinging neighbor to make sure they are still alive
-  * @param rank
-  */
- bool ping_neighbor(int dense_rank);
-
- /**
-  * Stop pinging neighbor. I am done with them.
-  * They can be dead for all I care.
-  * @param rank
-  */
- void cancel_ping(int dense_rank);
-
- /**
-  * Notification that a partner failed.
-  * Here the partner is identified by dense rank.
-  * See #dense_rank
-  * @param dense_rank
-  */
- virtual void dense_partner_ping_failed(int dense_rank) = 0;
-#else
-  bool ping_neighbor(int rank) const {
-    return false;
-  }
-
-  bool failed() const { return false; }
-
-  bool is_failed(int rank) const {
-    return false;
-  }
-#endif
 
 };
 
@@ -508,11 +425,8 @@ class dag_collective_actor :
 
   void start_send(action* ac);
   void start_recv(action* ac);
-  void start_send_nack_instead(action* ac);
-  void start_recv_nack_instead(action* ac);
   void do_send(action* ac);
   void do_recv(action* ac);
-  void send_failure_message(action* ac, collective_work_message::action_t ty);
 
   void start_action(action* ac);
 
@@ -526,13 +440,7 @@ class dag_collective_actor :
   void next_round_ready_to_get(action* ac,
     collective_work_message* header);
 
-  void incoming_recv_message(action* ac, collective_work_message* msg);
-
-  void incoming_send_message(action* ac, collective_work_message* msg);
-
-  void incoming_message(collective_work_message* msg);
-
-  void incoming_nack(action::type_t ty, collective_work_message* msg);
+  void incoming_header(collective_work_message* msg);
 
   void data_recved(collective_work_message* msg, void* recvd_buffer);
 
@@ -553,8 +461,6 @@ class dag_collective_actor :
   void* get_send_buffer(action* ac, uint64_t& nbytes);
 
   void* get_recv_buffer(action* ac);
-
-  collective_work_message* new_message(action* ac, collective_work_message::action_t act);
 
   collective_done_message* done_msg() const;
 
@@ -585,8 +491,6 @@ class dag_collective_actor :
   void clear_dependencies(action* ac);
 
   action* comm_action_done(action::type_t ty, int round, int partner);
-
-  void fail_actions(int dense_rank);
 
  protected:
   int type_size_;

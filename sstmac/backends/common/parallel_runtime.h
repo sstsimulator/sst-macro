@@ -45,8 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef PARALLEL_RUNTIME_H
 #define PARALLEL_RUNTIME_H
 
-
-#include <sstmac/common/messages/message_buffer_cache.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/thread_lock.h>
 #include <sstmac/common/timestamp.h>

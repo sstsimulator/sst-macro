@@ -44,7 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/unique_id.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sprockit/serializer.h>
 
 namespace sstmac {

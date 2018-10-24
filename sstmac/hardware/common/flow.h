@@ -42,31 +42,70 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/common/messages/message_buffer_cache.h>
-#include <sprockit/errors.h>
+#ifndef SSTMAC_COMMON_MESSAGES_SST_MESSAGE_H_INCLUDED
+#define SSTMAC_COMMON_MESSAGES_SST_MESSAGE_H_INCLUDED
+
+
+#include <sstmac/common/serializable.h>
+#include <sstmac/common/node_address.h>
+#include <sprockit/metadata_bits.h>
+#include <sstmac/common/sst_event.h>
+
 
 namespace sstmac {
 
-void*
-message_buffer_cache::pop()
+class flow :
+  public event,
+  public sprockit::printable
 {
-  if (buffers_.empty()){
-    char* new_buf = new char[buf_size_ * num_bufs_window_];
-    char* bufptr = new_buf;
-    for (int i=0; i < num_bufs_window_; ++i, bufptr += buf_size_){
-      buffers_.push_back(bufptr);
-    }
+ public:
+  /**
+   * Virtual function to return size. Child classes should impement this
+   * if they want any size tracked / modeled.
+   * @return Zero size, meant to be implemented by children.
+   */
+  uint64_t byte_length() const {
+    return byte_length_;
   }
 
-  void* ret = buffers_.front();
-  buffers_.pop_front();
-  return ret;
-}
+  virtual ~flow(){}
 
-void
-message_buffer_cache::push(void *buffer)
-{
-  buffers_.push_front(buffer);
-}
+  void set_flow_id(uint64_t id) {
+    flow_id_ = id;
+  }
 
-}
+  uint64_t flow_id() const {
+    return flow_id_;
+  }
+
+  std::string libname() const {
+    return libname_;
+  }
+
+  void set_flow_size(uint64_t sz) {
+    byte_length_ = sz;
+  }
+
+  virtual void serialize_order(sstmac::serializer& ser) override {
+    ser & flow_id_;
+    ser & byte_length_;
+    ser & libname_;
+    event::serialize_order(ser);
+  }
+
+ protected:
+  flow(uint64_t id, uint64_t size, const std::string& libname = "") :
+    flow_id_(id), byte_length_(size), libname_(libname)
+  {
+  }
+
+  uint64_t flow_id_;
+  uint64_t byte_length_;
+  std::string libname_;
+
+};
+
+
+
+} // end of namespace sstmac
+#endif

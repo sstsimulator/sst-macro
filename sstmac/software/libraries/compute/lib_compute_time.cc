@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
-#include <sstmac/common/messages/sleep_event.h>
 #include <sstmac/software/process/thread.h>
 
 namespace sstmac {

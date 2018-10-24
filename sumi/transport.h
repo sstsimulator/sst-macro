@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sumi_api_TRANSPORT_H
 
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
-#include <sstmac/software/launch/job_launcher_fwd.h>
+#include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/process/key.h>
@@ -101,14 +101,85 @@ class transport : public sstmac::sw::api {
 
   ~transport();
 
-  void send(uint64_t byte_length,
-    int dest_rank,
-    sstmac::node_id dest_node,
-    int dest_app,
-    sumi::message* msg,
-    int ty);
+  /**
+   * @brief smsg_send_response After receiving a short message m, use that message object to return a response
+   * This function "reverses" the sender/recever
+   * @param m
+   * @param loc_buffer
+   * @param local_cq
+   * @param remote_cq
+   * @return
+   */
+  void smsg_send_response(message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq);
 
-  void process(transport_message* msg);
+  /**
+   * @brief rdma_get_response After receiving a short message payload coordinating an RDMA get,
+   * use that message object to send an rdma get
+   * @param m
+   * @param loc_buffer
+   * @param remote_buffer
+   * @param local_cq
+   * @param remote_cq
+   * @return
+   */
+  void rdma_get_request_response(message* m, uint64_t sz, void* loc_buffer, void* remote_buffer,
+                                 int local_cq, int remote_cq);
+
+  void rdma_get_response(message* m, uint64_t sz, int local_cq, int remote_cq);
+
+  /**
+   * @brief rdma_put_response
+   * @param m
+   * @param loc_buffer
+   * @param remote_buffer
+   * @param local_cq
+   * @param remote_cq
+   * @return
+   */
+  void rdma_put_response(message* m, uint64_t payload_bytes,
+                             void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq);
+
+  template <class T, class... Args>
+  uint64_t rdma_get(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
+                    int local_cq, int remote_cq, message::class_t cls, Args&&... args){
+    uint64_t flow_id = allocate_flow_id();
+    bool needs_ack = remote_cq != message::no_ack;
+    T* t = new T(std::forward<Args>(args)...,
+                 rank_, remote_proc, remote_cq, local_cq, cls,
+                 flow_id, server_libname(), sid().app_,
+                 rank_mapper_->rank_to_node(remote_proc), addr(),
+                 byte_length, needs_ack, local_buffer, remote_buffer, message::rdma_get{});
+    send(t);
+    return flow_id;
+  }
+
+  template <class T, class... Args>
+  uint64_t rdma_put(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
+                    int local_cq, int remote_cq, message::class_t cls, Args&&... args){
+    uint64_t flow_id = allocate_flow_id();
+    bool needs_ack = local_cq != message::no_ack;
+    T* t = new T(std::forward<Args>(args)...,
+                 rank_, remote_proc, local_cq, remote_cq, cls,
+                 flow_id, server_libname(), sid().app_,
+                 rank_mapper_->rank_to_node(remote_proc), addr(),
+                 byte_length, needs_ack, local_buffer, remote_buffer, message::rdma_put{});
+    send(t);
+    return flow_id;
+  }
+
+  template <class T, class... Args>
+  uint64_t smsg_send(int remote_proc, uint64_t byte_length, void* buffer,
+                     int local_cq, int remote_cq, message::class_t cls, Args&&... args){
+    uint64_t flow_id = allocate_flow_id();
+    bool needs_ack = local_cq != message::no_ack;
+    T* t = new T(std::forward<Args>(args)...,
+                 rank_, remote_proc, local_cq, remote_cq, cls,
+                 flow_id, server_libname(), sid().app_,
+                 rank_mapper_->rank_to_node(remote_proc), addr(),
+                 byte_length, needs_ack, buffer, message::header{});
+    send(t);
+    return flow_id;
+  }
 
   int pt2pt_cq_id() const {
     return pt2pt_cq_id_;
@@ -146,20 +217,9 @@ class transport : public sstmac::sw::api {
 
   double wall_time() const;
 
-  sumi::transport_message* poll_pending_messages(bool blocking, double timeout = -1);
+  sumi::message* poll_pending_messages(bool blocking, double timeout = -1);
 
-  /**
-   * @brief send Intra-app. Send within the same process launch (i.e. intra-comm MPI_COMM_WORLD). This contrasts
-   *  with client_server_send which exchanges messages between different apps
-   * @param byte_length
-   * @param msg
-   * @param ty
-   * @param dst
-   * @param needs_ack
-   */
-  void send(uint64_t byte_length, sumi::message* msg, int ty, int dst);
-
-  void incoming_message(transport_message* msg);
+  void incoming_message(message* msg);
 
   void shutdown_server(int dest_rank, sstmac::node_id dest_node, int dest_app);
 
@@ -172,12 +232,6 @@ class transport : public sstmac::sw::api {
   void memcopy(uint64_t bytes);
 
   void pin_rdma(uint64_t bytes);
-
-  void smsg_send(int dst, sumi::message* msg);
-
-  void rdma_put(int dst, sumi::message* msg);
-
-  void rdma_get(int src, sumi::message* msg);
 
   void* make_public_buffer(void* buffer, uint64_t size) {
     pin_rdma(size);
@@ -195,55 +249,6 @@ class transport : public sstmac::sw::api {
   void deadlock_check();
 
   int allocate_cq();
-
-  /**
-   Send a message directly to a destination node.
-   This assumes there is buffer space available at the destination to eagerly receive.
-   * @param dst         The destination of the message
-   * @param ev          An enum for the type of payload carried
-   * @param needs_ack   Whether an ack should be generated notifying that the message was fully injected
-   * @param msg         The message to send (full message at the MTL layer)
-   */
-  void smsg_send(int dst,
-     message::payload_type_t ev,
-     message* msg,
-     int send_cq, int recv_cq);
-
-  /**
-   Helper function for #smsg_send. Directly send a message header.
-   * @param dst
-   * @param msg
-   */
-  void send_header(int dst, message* msg, int send_cq, int recv_cq);
-
-  /**
-   Helper function for #smsg_send. Directly send an actual data payload.
-   * @param dst
-   * @param msg
-   */
-  void send_payload(int dst, message* msg, int send_cq, int recv_cq);
-
-  /**
-   Put a message directly to the destination node.
-   This assumes the application has properly configured local/remote buffers for the transfer.
-   * @param dst      Where the data is being put (destination)
-   * @param msg      The message to send (full message at the MTL layer).
-   *                 Should have local/remote buffers configured for RDMA.
-   * @param needs_send_ack  Whether an ack should be generated send-side when the message is fully injected
-   * @param needs_recv_ack  Whether an ack should be generated recv-side when the message is fully received
-   */
-  void rdma_put(int dst, message* msg, int send_cq, int recv_cq);
-
-  /**
-   Get a message directly from the source node.
-   This assumes the application has properly configured local/remote buffers for the transfer.
-   * @param src      Where the data is being put (destination)
-   * @param msg      The message to send (full message at the MTL layer).
-   *                 Should have local/remote buffers configured for RDMA.
-   * @param send_cq  Where an ack should be generated send-side (source) when the message is fully injected
-   * @param recv_cq  Where an ack should be generated recv-side when the message is fully received
-   */
-  void rdma_get(int src, message* msg, int send_cq, int recv_cq);
   
   /**
    Check if a message has been received on a specific completion queue.
@@ -315,10 +320,6 @@ class transport : public sstmac::sw::api {
     completion_queues_[cq_id].erase(it);
     return msg;
   }
-
-  message* poll(message::payload_type_t ty, bool blocking, int cq_id, double timeout = -1);
-
-  message* poll_new(message::payload_type_t ty, bool blocking, int cq_id, double timeout);
 
   message* poll_new(bool blocking, int cq_id, double timeout);
 
@@ -479,8 +480,7 @@ class transport : public sstmac::sw::api {
   void barrier(int tag, collective::config = collective::cfg());
 
   void bcast(int root, void* buf, int nelems, int type_size, int tag, collective::config cfg = collective::cfg());
-  
-  void system_bcast(message* msg);
+
 
   int rank() const {
     return rank_;
@@ -572,8 +572,6 @@ class transport : public sstmac::sw::api {
   
   void validate_api();
 
-  void configure_send(int dst, message::payload_type_t ev, message* msg);
-
   void poll_cast_error(const char* file, int line, const char* cls, message* msg){
     spkt_throw_printf(sprockit::value_error,
        "Could not cast incoming message to type %s\n"
@@ -606,6 +604,10 @@ class transport : public sstmac::sw::api {
   void clean_up();
 
  protected:
+  void send(message* m);
+
+  uint64_t allocate_flow_id();
+
   std::vector<std::list<message*>> completion_queues_;
 
   bool inited_;
@@ -656,9 +658,9 @@ class transport : public sstmac::sw::api {
 
   std::string server_libname_;
 
-  sstmac::sw::task_mapping_ptr rank_mapper_;
+  sstmac::sw::task_mapping::ptr rank_mapper_;
 
-  std::list<transport_message*> pending_messages_;
+  std::list<message*> pending_messages_;
 
   std::list<sstmac::sw::thread*> blocked_threads_;
 

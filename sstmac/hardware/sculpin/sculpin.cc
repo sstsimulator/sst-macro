@@ -56,7 +56,7 @@ namespace sstmac {
 namespace hw {
 
 sculpin_packet::sculpin_packet(
-  message* msg,
+  flow* msg,
   uint32_t num_bytes,
   bool is_tail,
   uint64_t flow_id,

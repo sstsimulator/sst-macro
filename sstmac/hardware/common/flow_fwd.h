@@ -42,42 +42,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef MESSAGE_BUFFER_CACHE_H
-#define MESSAGE_BUFFER_CACHE_H
-
-#include <list>
-#include <string>
+#ifndef SST_MESSAGE_FWD_H
+#define SST_MESSAGE_FWD_H
 
 namespace sstmac {
 
-class message_buffer_cache  {
- public:
-  void* pop();
-
-  void push(void* buffer);
-
-  message_buffer_cache(int buf_size, int num_bufs_window) :
-    buf_size_(buf_size),
-    num_bufs_window_(num_bufs_window)
-  {
-  }
-
-  message_buffer_cache(){}
-
-  void init(int buf_size, int num_bufs_window){
-    buf_size_ = buf_size;
-    num_bufs_window_ = num_bufs_window;
-  }
-
- protected:
-  std::list<void*> buffers_;
-
-  int buf_size_;
-
-  int num_bufs_window_;
-
-};
+class flow;
+class library_interface;
 
 }
 
-#endif // MESSAGE_BUFFER_CACHE_H
+
+#endif // SST_MESSAGE_FWD_H

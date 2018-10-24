@@ -65,12 +65,12 @@ namespace sstmac {
 namespace hw {
 
 std::string
-memory_message::to_string() const
+memory_flow::to_string() const
 {
   uint32_t num, node;
-  unique_event_id::unpack(id_, node, num);
+  unique_event_id::unpack(flow_id(), node, num);
   return sprockit::printf("memory message %lu: seqnum %d on node %d with %d bytes",
-                          id_, node, num, bytes_);
+                          flow_id(), node, num, byte_length());
 }
 
 pisces_memory_packetizer::pisces_memory_packetizer(
@@ -130,7 +130,7 @@ pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node 
   }
 
   mem_packetizer_ = new pisces_memory_packetizer(params, nd);
-  mem_packetizer_->setArrivalNotify(this);
+  mem_packetizer_->setArrivalNotifier(this, &pisces_memory_model::notify);
 }
 
 pisces_memory_model::~pisces_memory_model()
@@ -143,7 +143,7 @@ pisces_memory_model::access(
   long bytes, double max_bw,
   callback* cb)
 {
-  memory_message* msg = new memory_message(bytes,
+  memory_flow* msg = new memory_flow(bytes,
                    parent_node_->allocate_unique_id(), max_bw);
 
   if (channels_available_.empty()){
@@ -156,7 +156,7 @@ pisces_memory_model::access(
 }
 
 void
-pisces_memory_model::start(int channel, memory_message* msg, callback *cb)
+pisces_memory_model::start(int channel, memory_flow* msg, callback *cb)
 {
   debug("Node %d starting access %lu on vn %d of size %ld with bw %8.4e",
         parent_node_->addr(), msg->flow_id(), channel, msg->byte_length(), msg->max_bw());
@@ -165,7 +165,7 @@ pisces_memory_model::start(int channel, memory_message* msg, callback *cb)
 }
 
 void
-pisces_memory_model::notify(int vn, message* msg)
+pisces_memory_model::notify(int vn, flow* msg)
 {
   debug("Node %d finished access %lu on vn %d of size %ld",
         parent_node_->addr(), msg->flow_id(), vn, msg->byte_length());
@@ -212,15 +212,15 @@ pisces_memory_packetizer::init_noise_model()
 }
 
 void
-pisces_memory_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message* msg)
+pisces_memory_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, flow* msg)
 {
   bool is_tail = (bytes + byte_offset) == msg->byte_length();
   pisces_packet* payload = new pisces_packet(is_tail ? msg : nullptr,
-                                               bytes, msg->flow_id(), is_tail,
-                                               msg->fromaddr(), msg->toaddr());
+                                             bytes, msg->flow_id(), is_tail,
+                                             sstmac::node_id(), sstmac::node_id());
 
   payload->set_inport(vn);
-  memory_message* orig = safe_cast(memory_message, msg);
+  memory_flow* orig = safe_cast(memory_flow, msg);
   if (orig->max_bw() != 0){
     payload->set_bw(orig->max_bw());
   }

@@ -63,6 +63,8 @@ nobase_library_include_HEADERS += \
   node/node.h \
   node/node_fwd.h \
   node/simple_node.h \
+  common/flow.h \
+  common/flow_fwd.h \
   common/connection.h \
   common/connection_fwd.h \
   common/failable.h \

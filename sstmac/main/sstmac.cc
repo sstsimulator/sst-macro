@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_env.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/native/serial_runtime.h>
 #include <sstmac/backends/native/manager.h>

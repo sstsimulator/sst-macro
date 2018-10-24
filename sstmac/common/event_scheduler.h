@@ -290,8 +290,8 @@ class event_subcomponent
 #else
  protected:
   event_subcomponent(event_scheduler* parent) :
-    parent_(parent),
-    now_(parent->now_ptr())
+    now_(parent->now_ptr()),
+    parent_(parent)
   {
   }
 
@@ -432,9 +432,9 @@ class event_link {
 class local_link : public event_link {
  public:
   local_link(timestamp latency, event_scheduler* src, event_scheduler* dst, event_handler* hand) :
+    event_link(latency, src),
     handler_(hand),
-    dst_(dst),
-    event_link(latency, src)
+    dst_(dst)
   {
   }
 
@@ -445,9 +445,9 @@ class local_link : public event_link {
    * @param hand
    */
   local_link(timestamp latency, event_scheduler* es, event_handler* hand) :
+    event_link(latency, es),
     handler_(hand),
-    dst_(es),
-    event_link(latency, es)
+    dst_(es)
   {
   }
 
@@ -507,10 +507,12 @@ class ipc_link : public event_link {
   ipc_link(timestamp latency, int rank,
            event_scheduler* src, uint32_t dst,
            int port, bool is_credit) :
-    rank_(rank), dst_(dst),
+    event_link(latency, src),
     is_credit_(is_credit),
-    port_(port),
-    event_link(latency, src)
+    rank_(rank),
+    dst_(dst),
+    port_(port)
+
   {
     set_min_remote_latency(latency);
   }
@@ -540,8 +542,8 @@ class ipc_link : public event_link {
  private:
   bool is_credit_;
   int rank_;
-  int port_;
   uint32_t dst_;
+  int port_;
 
 };
 

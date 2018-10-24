@@ -29,7 +29,6 @@ CORETESTS+= \
   test_core_apps_host_compute \
   test_core_apps_ping_all_uneven_tree \
   test_core_apps_stop_time \
-  test_core_apps_distributed_service \
   test_core_apps_ping_pong \
   test_core_apps_ping_pong_slow \
   test_core_apps_mpi_fattree \
@@ -38,6 +37,7 @@ CORETESTS+= \
   test_core_apps_ping_all_fattree4 \
   test_core_apps_ping_all_fattree_tapered
 
+#  test_core_apps_distributed_service 
 
 test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 6 $(top_srcdir) $@ Exact \

@@ -212,9 +212,9 @@ event_manager::schedule_incoming(ipc_event_t* iev)
 {
   auto comp = interconn_->component(iev->dst);
   event_handler* dst_handler = iev->credit ? comp->credit_handler(iev->port) : comp->payload_handler(iev->port);
-  prll_debug("thread %d scheduling incoming event at %12.8e to device %d:%s, payload? %d:   %s",
+  prll_debug("thread %d scheduling incoming event at %12.8e to device %d:%s, %s",
     thread_id_, iev->t.sec(), iev->dst, dst_handler->to_string().c_str(),
-    iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
+    sprockit::to_string(iev->ev).c_str());
   auto qev = new handler_event_queue_entry(iev->ev, dst_handler, iev->src);
   qev->set_seqnum(iev->seqnum);
   qev->set_time(iev->t);

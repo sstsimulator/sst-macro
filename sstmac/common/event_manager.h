@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_location.h>
 
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/sst_event_fwd.h>

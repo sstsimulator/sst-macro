@@ -44,7 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/recv_cq.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sprockit/output.h>
 
 namespace sstmac {
@@ -64,8 +64,8 @@ recv_cq::print()
   }
 }
 
-message*
-recv_cq::recv(uint64_t unique_id, uint32_t bytes, message* orig)
+flow*
+recv_cq::recv(uint64_t unique_id, uint32_t bytes, flow* orig)
 {
   incoming_msg& incoming  = bytes_recved_[unique_id];
 #if SSTMAC_SANITY_CHECK
@@ -83,7 +83,7 @@ recv_cq::recv(uint64_t unique_id, uint32_t bytes, message* orig)
   incoming.bytes_arrived += bytes;
 
   if (incoming.bytes_arrived == incoming.bytes_total){
-    message* ret = incoming.msg;
+    flow* ret = incoming.msg;
     bytes_recved_.erase(unique_id);
     return ret;
   } else {
@@ -91,11 +91,11 @@ recv_cq::recv(uint64_t unique_id, uint32_t bytes, message* orig)
   }
 }
 
-message*
+flow*
 recv_cq::recv(packet* pkt)
 {
-  message* flow = dynamic_cast<message*>(pkt->orig());
-  return recv(pkt->flow_id(), pkt->byte_length(), flow);
+  flow* payload = dynamic_cast<flow*>(pkt->orig());
+  return recv(pkt->flow_id(), pkt->byte_length(), payload);
 }
 
 }

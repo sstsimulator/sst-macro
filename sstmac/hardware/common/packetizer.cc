@@ -56,8 +56,8 @@ namespace hw {
 packetizer::packetizer(sprockit::sim_parameters* params, event_scheduler* parent,
                        int num_vc) :
   event_subcomponent(parent), //no self events
-  notifier_(nullptr),
-  acker_(nullptr),
+  arrive_notifier_(nullptr),
+  depart_notifier_(nullptr),
   pending_(num_vc)
 {
   packet_size_ = params->get_byte_length_param("mtu");
@@ -67,13 +67,12 @@ packetizer::packetizer(sprockit::sim_parameters* params, event_scheduler* parent
 
 packetizer::~packetizer()
 {
-  //do not delete - notifiers are owned by the person that passes them in
-  //if (notifier_) delete notifier_;
-  if (acker_) delete acker_;
+  if (arrive_notifier_) delete arrive_notifier_;
+  if (depart_notifier_) delete depart_notifier_;
 }
 
 void
-packetizer::start(int vn, message *msg)
+packetizer::start(int vn, flow *msg)
 {
   pkt_debug("starting on vn %d message %s", vn, msg->to_string().c_str());
 
@@ -86,12 +85,6 @@ packetizer::start(int vn, message *msg)
   }
   next.offset = 0;
   next.msg = msg;
-  if (msg->needs_ack()){
-    //we have to clone the ack here
-    //the main msg might get deleted at any point in time
-    //during the injection process
-    next.ack = msg->clone_ack();
-  }
   pending_[vn].push_back(next);
 
   sendWhatYouCan(vn);
@@ -129,28 +122,30 @@ packetizer::sendWhatYouCan(int vn)
       next.bytes_left -= num_bytes;
     }
     uint64_t bytes_sent = next.offset - initial_offset;
-    if (next.ack){
+
+    if (depart_notifier_){
       timestamp time_to_send(bytes_sent * inv_bw_);
-      acker_->send_extra_delay(time_to_send, next.ack);
+      (*depart_notifier_)(time_to_send, next.msg);
     }
+
     //the entire packet sent
     pending.pop_front();
   }
 }
 
 void
-packetizer::bytesArrived(int vn, uint64_t unique_id, uint32_t bytes, message *parent)
+packetizer::bytesArrived(int vn, uint64_t unique_id, uint32_t bytes, flow *parent)
 {
-  message* done = completion_queue_.recv(unique_id, bytes, parent);
+  flow* done = completion_queue_.recv(unique_id, bytes, parent);
   if (done){
-    notifier_->notify(vn, done);
+    (*arrive_notifier_)(vn, done);
   }
 }
 
 void
 packetizer::packetArrived(int vn, packet* pkt)
 {
-  message* payload = dynamic_cast<message*>(pkt->orig());
+  flow* payload = dynamic_cast<flow*>(pkt->orig());
   bytesArrived(vn, pkt->flow_id(), pkt->byte_length(), payload);
   delete pkt;
 }

@@ -116,18 +116,24 @@ collective::init(type_t ty, transport *api, int tag, const config& cfg)
   dense_nproc_ = rank_map.dense_rank(dom->nproc());
   dense_me_ = rank_map.dense_rank(dom->my_comm_rank());
 #else
-  dense_nproc_ = cfg.dom->nproc();
-  dense_me_ = cfg.dom->my_comm_rank();
+  dom_nproc_ = cfg.dom->nproc();
+  dom_me_ = cfg.dom->my_comm_rank();
 #endif
 
   debug_printf(sumi_collective | sumi_vote,
     "Rank %d=%d built collective of size %d in role=%d, tag=%d, context=%d",
-    my_api_->rank(), cfg.dom->my_comm_rank(), cfg.dom->nproc(), dense_me_, tag, cfg.context);
+    my_api_->rank(), cfg.dom->my_comm_rank(), cfg.dom->nproc(), dom_me_, tag, cfg.context);
 }
 
 collective::collective(type_t ty, transport* api, int tag, const config& cfg)
 {
   init(ty, api, tag, cfg);
+}
+
+void
+collective::add_actors(collective *coll)
+{
+  sprockit::abort("collective:add_actors: collective should not dynamically add actors");
 }
 
 void
@@ -149,24 +155,9 @@ collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collec
 }
 
 void
-collective::add_actors(collective *coll)
-{
-  sprockit::abort("collective:add_actors: collective should not dynamically add actors");
-}
-
-void
 collective::recv(collective_work_message* msg)
 {
-  switch(msg->payload_type())
-  {
-    case message::rdma_get_ack:
-    case message::rdma_put_ack:
-      recv(msg->dense_sender(), msg); //I got an ack because my send data went out
-      break;
-    default:
-      recv(msg->dense_recver(), msg); //all other messages have the correct directionality - I am the recver in the transaction
-      break;
-  }
+  recv(msg->dom_target_rank(), msg);
 }
 
 collective::~collective()
@@ -207,7 +198,7 @@ dag_collective::init_actors()
   actor->init_buffers(dst_buffer_, src_buffer_);
   actor->init_dag();
 
-  my_actors_[dense_me_] = actor;
+  my_actors_[dom_me_] = actor;
   refcounts_[cfg_.dom->my_comm_rank()] = my_actors_.size();
 }
 
@@ -230,22 +221,18 @@ void
 dag_collective::recv(int target, collective_work_message* msg)
 {
   debug_printf(sumi_collective | sumi_collective_sendrecv,
-    "Rank %d=%d %s got %s:%p from %d=%d on tag=%d for target %d",
-    my_api_->rank(), dense_me_,
+    "Rank %d=%d %s got from %d on tag=%d for target %d",
+    my_api_->rank(), dom_me_,
     collective::tostr(type_),
-    message::tostr(msg->payload_type()), msg,
-    msg->sender(), msg->dense_sender(),
-    tag_, target);
+    msg->sender(), tag_, target);
 
   dag_collective_actor* vr = my_actors_[target];
   if (!vr){
     //data-centric collective - this actor does not exist
     pending_.push_back(msg);
-    //spkt_throw_printf(sprockit::value_error,
-    //  "virtual_bruck_actor::recv: invalid handler %d for endpoint %d for %s on tag=%d ",
-    //  target, my_api_->rank(),
-    //  msg->to_string().c_str(),
-    //  tag_);
+      debug_printf(sumi_collective | sumi_collective_sendrecv,
+                  "dag actor %d does not yet exit - queueing %s",
+                  target, msg->to_string().c_str())
   } else {
     vr->recv(msg);
   }
@@ -273,9 +260,8 @@ dag_collective::deadlock_check()
     if (actor) {
       actor->deadlock_check();
    } else {
-      spkt_throw_printf(sprockit::null_error,
-              "%s collective deadlocked on rank %d, tag %d, with NULL actor",
-              tostr(type_), my_api_->rank(), tag_);
+      spkt_abort_printf("%s collective deadlocked on rank %d, tag %d, with NULL actor %d",
+              tostr(type_), my_api_->rank(), tag_, it->first);
     }
   }
 }

@@ -68,7 +68,7 @@ direct_alltoallv_actor::init_buffers(void* dst, void* src)
   if (src){
     total_send_size_ = 0;
     total_recv_size_ = 0;
-    for (int i=0; i < dense_nproc_; ++i){
+    for (int i=0; i < dom_nproc_; ++i){
       total_send_size_ += send_counts_[i];
       total_recv_size_ += recv_counts_[i];
     }
@@ -94,12 +94,12 @@ direct_alltoallv_actor::add_action(
   int num_initial,
   int stride)
 {
-  int partner = (dense_me_ + dense_nproc_ + stride*stride_direction) % dense_nproc_;
+  int partner = (dom_me_ + dom_nproc_ + stride*stride_direction) % dom_nproc_;
   action* ac = actions[partner];
   if (stride < num_initial){
     dag_collective_actor::add_action(ac);
   } else {
-    int prev_partner = (partner + dense_nproc_ - num_initial*stride_direction) % dense_nproc_;
+    int prev_partner = (partner + dom_nproc_ - num_initial*stride_direction) % dom_nproc_;
     action* prev = actions[prev_partner];
     add_dependency(prev, ac);
   }
@@ -108,8 +108,8 @@ direct_alltoallv_actor::add_action(
 void
 direct_alltoallv_actor::init_dag()
 {
-  std::vector<action*> recvs(dense_nproc_);
-  std::vector<action*> sends(dense_nproc_);
+  std::vector<action*> recvs(dom_nproc_);
+  std::vector<action*> sends(dom_nproc_);
 
   recv_action::buf_type_t recv_ty = slicer_->contiguous() ?
         recv_action::in_place : recv_action::unpack_temp_buf;
@@ -117,7 +117,7 @@ direct_alltoallv_actor::init_dag()
   int send_offset = 0;
   int recv_offset = 0;
   int round = 0;
-  for (int i=0; i < dense_nproc_; ++i){
+  for (int i=0; i < dom_nproc_; ++i){
     action* recv = new recv_action(round, i, recv_ty);
     action* send = new send_action(round, i, send_action::in_place);
     send->offset = send_offset;
@@ -130,7 +130,7 @@ direct_alltoallv_actor::init_dag()
   }
 
   int num_initial = 3;
-  for (int i=0; i < dense_nproc_; ++i){
+  for (int i=0; i < dom_nproc_; ++i){
     //move down for recvs
     add_action(recvs, -1, num_initial, i);
     //move down for sends

@@ -411,7 +411,8 @@ app::run()
   //for now assume that the application has finished with a barrier - which is true of like everything
   if (sid_.task_ == 0 && notify_){
     int launch_root = os_->node()->launch_root();
-    job_stop_event* lev = new job_stop_event(sid_.app_, unique_name_, launch_root, os_->addr());
+    job_stop_event* lev = new job_stop_event(os_->node()->allocate_unique_id(),
+                                             sid_.app_, unique_name_, launch_root, os_->addr());
     os_->execute_kernel(ami::COMM_PMI_SEND, lev);
   }
   task_mapping::remove_global_mapping(sid_.app_, unique_name_);

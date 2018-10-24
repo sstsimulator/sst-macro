@@ -164,39 +164,6 @@ int comm_nproc()
   return current_transport()->nproc();
 }
 
-/**
-    @param dst The destination to send to
-*/
-void comm_send(int dst, message::payload_type_t ty, message* msg)
-{
-  msg->set_class_type(message::pt2pt);
-  current_transport()->smsg_send(dst, ty, msg, message::no_ack, message::default_cq);
-}
-
-void comm_send_header(int dst, message* msg)
-{
-  msg->set_class_type(message::pt2pt);
-  current_transport()->send_header(dst, msg, message::no_ack, message::default_cq);
-}
-
-void comm_send_payload(int dst, message* msg)
-{
-  msg->set_class_type(message::pt2pt);
-  current_transport()->send_payload(dst, msg, message::no_ack, message::default_cq);
-}
-
-void comm_rdma_put(int dst, message* msg)
-{
-  msg->set_class_type(message::pt2pt);
-  current_transport()->rdma_put(dst, msg, message::no_ack, message::default_cq);
-}
-
-void comm_rdma_get(int dst, message* msg)
-{
-  msg->set_class_type(message::pt2pt);
-  current_transport()->rdma_get(dst, msg, message::no_ack, message::default_cq);
-}
-
 message* comm_poll()
 {
   return current_transport()->blocking_poll(message::default_cq);

@@ -49,6 +49,16 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
+network_message::~network_message()
+{
+  if (wire_buffer_){
+    delete[] (char*) wire_buffer_;
+  }
+  if (smsg_buffer_){
+    delete[] (char*) smsg_buffer_;
+  }
+}
+
 bool
 network_message::is_nic_ack() const
 {
@@ -62,6 +72,105 @@ network_message::is_nic_ack() const
     return false;
   }
 }
+
+void
+network_message::put_on_wire()
+{
+  switch(type_){
+    case rdma_get_payload:
+    case nvram_get_payload:
+      put_buffer_on_wire(remote_buffer_, payload_bytes_);
+      break;
+    case rdma_put_payload:
+      put_buffer_on_wire(local_buffer_, payload_bytes_);
+      break;
+    case payload:
+      put_buffer_on_wire(smsg_buffer_, byte_length());
+      smsg_buffer_ = nullptr;
+      break;
+    default:
+      break; //nothing to do
+  }
+}
+
+void
+network_message::put_buffer_on_wire(void* buf, uint64_t sz)
+{
+  if (buf){
+    wire_buffer_ = new char[sz];
+    ::memcpy(wire_buffer_, buf, sz);
+  }
+}
+
+void
+network_message::take_buffer_off_wire(void *buf, uint64_t sz)
+{
+  if (buf){
+    ::memcpy(buf, wire_buffer_, sz);
+    delete[] (char*) wire_buffer_;
+    wire_buffer_ = nullptr;
+  }
+}
+
+void
+network_message::take_off_wire()
+{
+  switch (type_){
+    case rdma_get_payload:
+      take_buffer_off_wire(local_buffer_, payload_bytes_);
+      break;
+    case rdma_put_payload:
+      take_buffer_off_wire(remote_buffer_, payload_bytes_);
+      break;
+    case payload:
+      smsg_buffer_ = wire_buffer_;
+      wire_buffer_ = nullptr;
+      break;
+    default:
+      break;
+  }
+}
+
+void
+network_message::intranode_memmove()
+{
+  switch (type()){
+    case rdma_get_payload:
+      memmove_remote_to_local();
+      break;
+    case rdma_put_payload:
+      memmove_local_to_remote();
+      break;
+    case payload:
+      put_buffer_on_wire(smsg_buffer_, byte_length());
+      smsg_buffer_ = wire_buffer_;
+      wire_buffer_ = nullptr;
+      break;
+    default:
+      break;
+  }
+}
+
+void
+network_message::memmove_local_to_remote()
+{
+  //due to scatter-gather elements, it's now allowed
+  //to have a null remote buffer
+  if (local_buffer_ && remote_buffer_){ //might be null
+    ::memcpy(remote_buffer_, local_buffer_, payload_bytes_);
+  }
+}
+
+void
+network_message::memmove_remote_to_local()
+{
+  //due to scatter-gather elements, it's now allowed
+  //to have a null local buffer
+  if (remote_buffer_ && local_buffer_){
+    ::memcpy(local_buffer_, remote_buffer_, payload_bytes_);
+  }
+}
+
 
 void
 network_message::convert_to_ack()
@@ -82,6 +191,9 @@ network_message::convert_to_ack()
       spkt_abort_printf("network_message::clone_injection_ack: cannot ack msg type %s", tostr(type_));
       break;
   }
+  flow::byte_length_ = 32;
+  wire_buffer_ = nullptr;
+  smsg_buffer_ = nullptr;
 }
 
 void
@@ -133,16 +245,22 @@ network_message::tostr(type_t ty)
 void
 network_message::serialize_order(serializer& ser)
 {
-  message::serialize_order(ser);
+  flow::serialize_order(ser);
   ser & needs_ack_;
   ser & toaddr_;
   ser & fromaddr_;
-  ser & flow_id_;
-  ser & bytes_;
+  ser & payload_bytes_;
   ser & type_;
   ser & aid_;
   if (type_ == null_netmsg_type){
     spkt_abort_printf("failed serializing network message - got null type");
+  }
+  ser.primitive(remote_buffer_);
+  ser.primitive(local_buffer_);
+  ser.primitive(smsg_buffer_);
+  //then there will be a wire buffer
+  if (remote_buffer_ || local_buffer_ || smsg_buffer_){
+    ser & sstmac::array(wire_buffer_, payload_bytes_);
   }
 }
 
@@ -175,28 +293,18 @@ network_message::is_metadata() const
 void
 network_message::nic_reverse(type_t newtype)
 {
-  reverse();
+  //hardware level reverse only
+  network_message::reverse();
   type_ = newtype;
-}
-
-uint64_t
-network_message::byte_length() const
-{
-  switch (type_)
-  {
-    case rdma_get_request:
-    case rdma_get_sent_ack:
-    case rdma_put_sent_ack:
-    case payload_sent_ack:
-    case rdma_get_nack:
-    case rdma_put_nack:
-      return 32; //hack for now CHANGE
-    default:
-      //never return less than 8 bytes - every message has to carry somethng
-      return std::max(uint64_t(8), bytes_);
+  switch(newtype){
+  case rdma_get_payload:
+    set_flow_size(payload_bytes_);
+    break;
+  default: break;
   }
 }
 
+/**
 void
 network_message::clone_into(network_message* cln) const
 {
@@ -207,6 +315,7 @@ network_message::clone_into(network_message* cln) const
   cln->bytes_ = bytes_;
   cln->type_ = type_;
 }
+*/
 
 }
 }

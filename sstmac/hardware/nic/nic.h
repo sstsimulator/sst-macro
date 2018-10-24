@@ -56,7 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_histogram_fwd.h>
 #include <sstmac/common/stats/stat_local_int_fwd.h>
 #include <sstmac/common/stats/stat_global_int_fwd.h>
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 
 #include <sprockit/debug.h>
@@ -154,7 +154,7 @@ class nic :
    it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.
    @param chunk
    */
-  void recv_message(message* msg);
+  void recv_message(network_message* msg);
 
   void send_to_node(network_message* netmsg);
 

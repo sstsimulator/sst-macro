@@ -146,7 +146,7 @@ nic::~nic()
 void
 nic::mtl_handle(event *ev)
 {
-  recv_message(static_cast<message*>(ev));
+  recv_message(static_cast<network_message*>(ev));
 }
 
 void
@@ -166,21 +166,20 @@ nic::inject_send(network_message* netmsg, sw::operating_system* os)
   if (netmsg->toaddr() == my_addr_){
     intranode_send(netmsg);
   } else {
+    netmsg->put_on_wire();
     internode_send(netmsg);
   }
 }
 
 void
-nic::recv_message(message* msg)
+nic::recv_message(network_message* netmsg)
 {
   if (parent_->failed()){
     return;
   }
 
   nic_debug("receiving message %s",
-    msg->to_string().c_str());
-
-  network_message* netmsg = safe_cast(network_message, msg);
+    netmsg->to_string().c_str());
 
   nic_debug("handling message %s:%lu of type %s from node %d while running",
     netmsg->to_string().c_str(),
@@ -270,8 +269,8 @@ nic::intranode_send(network_message* payload)
 void
 nic::finish_memcpy(network_message* payload)
 {
-  payload->intranode_memmove();
   ack_send(payload);
+  payload->intranode_memmove();
   send_to_node(payload);
 }
 
@@ -318,8 +317,8 @@ void
 nic::internode_send(network_message* netmsg)
 {
   record_message(netmsg);
-  nic_debug("internode send payload %s",
-    netmsg->to_string().c_str());
+  nic_debug("internode send payload of size %d %s",
+    int(netmsg->byte_length()), netmsg->to_string().c_str());
   //we might not have a logp overlay network
   if (negligible_size(netmsg->byte_length())){
     ack_send(netmsg);

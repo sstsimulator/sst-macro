@@ -44,7 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/ami/ami.h>
 #include <sprockit/errors.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 
 namespace sstmac {
 namespace ami {

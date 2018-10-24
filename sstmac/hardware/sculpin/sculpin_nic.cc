@@ -213,9 +213,9 @@ sculpin_nic::do_send(network_message* payload)
 void
 sculpin_nic::cq_handle(sculpin_packet* pkt)
 {
-  message* msg = cq_.recv(pkt);
+  flow* msg = cq_.recv(pkt);
   if (msg){
-    recv_message(msg);
+    recv_message(static_cast<network_message*>(msg));
   }
   delete pkt;
 }

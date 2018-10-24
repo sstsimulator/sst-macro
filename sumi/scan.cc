@@ -98,8 +98,8 @@ simultaneous_btree_scan_actor::init_dag()
   int log2nproc, midpoint, virtual_nproc;
   compute_tree(log2nproc, midpoint, virtual_nproc);
 
-  int nproc = dense_nproc_;
-  int me = dense_me_;
+  int nproc = dom_nproc_;
+  int me = dom_me_;
   int gap = 1;
   int send_partner = me + gap;
   int recv_partner = me - gap;

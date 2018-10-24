@@ -45,12 +45,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <stdlib.h>
 #include <sstream>
 #include <csignal>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/common/event_manager.h>
-#include <sstmac/common/messages/library_message.h>
 #include <sstmac/software/launch/launch_request.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
@@ -557,19 +556,16 @@ operating_system::execute(ami::COMP_FUNC func, event *data, int nthr)
 }
 
 void
-operating_system::execute_kernel(ami::COMM_FUNC func,
-                                 message* data)
+operating_system::execute_kernel(ami::COMM_FUNC func, flow* data)
 {
   switch(func){
   case sstmac::ami::COMM_SEND: {
     hw::network_message* netmsg = safe_cast(hw::network_message, data);
-    netmsg->set_fromaddr(my_addr_);
-    node_->send_to_nic(netmsg);
+    node_->get_nic()->inject_send(netmsg, this);
     break;
   }
   case sstmac::ami::COMM_PMI_SEND: {
     hw::network_message* netmsg = safe_cast(hw::network_message, data);
-    netmsg->set_fromaddr(my_addr_);
     node_->get_nic()->send_to_logp_switch(netmsg);
     break;
   }
@@ -876,8 +872,8 @@ operating_system::outcast_app_start(int my_rank, int aid, const std::string& app
   for (int r=0; r < num_to_send; ++r){
     int dst_rank = ranks[r];
     int dst_nid = mapping->rank_to_node(dst_rank);
-    sw::start_app_event* lev = new start_app_event(aid, app_ns,
-                                     mapping, dst_rank, dst_nid,
+    sw::start_app_event* lev = new start_app_event(node_->allocate_unique_id(),
+                                     aid, app_ns, mapping, dst_rank, dst_nid,
                                      addr(), app_params);
     node_->get_nic()->send_to_logp_switch(lev);
   }
@@ -1008,16 +1004,16 @@ void
 operating_system::handle_event(event* ev)
 {  
   //this better be an incoming event to a library, probably from off node
-  library_interface* libmsg = test_cast(library_interface, ev);
+  flow* libmsg = test_cast(flow, ev);
   if (!libmsg) {
     spkt_throw_printf(sprockit::illformed_error,
       "operating_system::handle_event: got event %s instead of library event",
       sprockit::to_string(ev).c_str());
   }
 
-  bool found = handle_library_event(libmsg->lib_name(), ev);
+  bool found = handle_library_event(libmsg->libname(), ev);
   if (!found){
-    pending_library_events_[libmsg->lib_name()].push_back(ev);
+    pending_library_events_[libmsg->libname()].push_back(ev);
   }
 }
 

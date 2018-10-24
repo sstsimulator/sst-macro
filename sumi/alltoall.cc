@@ -71,8 +71,8 @@ bruck_alltoall_actor::init_buffers(void* dst, void* src)
   if (src){
     //put everything into the dst buffer to begin
     //but we have to shuffle for bruck algorithm
-    int offset = dense_me_ * nelems_ * type_size_;
-    int total_size = dense_nproc_ * nelems_ * type_size_;
+    int offset = dom_me_ * nelems_ * type_size_;
+    int total_size = dom_nproc_ * nelems_ * type_size_;
     char* srcPtr = (char*) src;
     char* dstPtr = (char*) dst;
     int copySize = total_size - offset;
@@ -101,7 +101,7 @@ bruck_alltoall_actor::finalize_buffers()
 void
 bruck_alltoall_actor::shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp)
 {
-  int nproc = dense_nproc_;
+  int nproc = dom_nproc_;
   char* tmp_buffer = (char*) tmpBuf;
   char* main_buffer = (char*) mainBuf;
   int blocksPerCopy = ac->offset;
@@ -143,8 +143,8 @@ bruck_alltoall_actor::init_dag()
   compute_tree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
 
   int partnerGap = 1;
-  int me = dense_me_;
-  int nproc = dense_nproc_;
+  int me = dom_me_;
+  int nproc = dom_nproc_;
   action* prev_shuffle = nullptr;
   if (nprocs_extra_round) ++num_rounds;
 
@@ -211,13 +211,13 @@ bruck_alltoall_actor::finalize()
     return;
   }
 
-  int total_size = dense_nproc_ * nelems_ * type_size_;
+  int total_size = dom_nproc_ * nelems_ * type_size_;
   int block_size = nelems_ * type_size_;
   char* tmp = new char[total_size];
   char* result = (char*) result_buffer_;
-  for (int i=0; i < dense_nproc_; ++i){
+  for (int i=0; i < dom_nproc_; ++i){
     char* src = result + i*block_size;
-    int dst_index = (dense_me_ + dense_nproc_ - i) % dense_nproc_;
+    int dst_index = (dom_me_ + dom_nproc_ - i) % dom_nproc_;
     char* dst = tmp + dst_index*block_size;
     ::memcpy(dst, src, block_size);
   }
@@ -227,7 +227,7 @@ bruck_alltoall_actor::finalize()
   do_sumi_debug_print("final result buf",
     rank_str().c_str(), dense_me_,
     -1,
-    0, nelems_*dense_nproc_,
+    0, nelems_*dom_nproc_,
     type_size_,
     result_buffer_.ptr);
 

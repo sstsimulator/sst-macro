@@ -73,7 +73,7 @@ class pisces_packetizer :
 
   bool spaceToSend(int vn, int num_bits) override;
 
-  void inject(int vn, uint32_t bytes, uint64_t byte_offset, message *payload) override;
+  void inject(int vn, uint32_t bytes, uint64_t byte_offset, flow *payload) override;
 
   void set_output(sprockit::sim_parameters* params,
              int port, event_link* output);

@@ -266,14 +266,5 @@ node::fail_stop()
   cancel_all_messages();
 }
 
-void
-node::send_to_nic(network_message* netmsg)
-{
-  node_debug("sending to %d", int(netmsg->toaddr()));
-  netmsg->set_flow_id(allocate_unique_id());
-  netmsg->put_on_wire();
-  nic_->inject_send(netmsg, os_);
-}
-
 }
 } // end of namespace sstmac

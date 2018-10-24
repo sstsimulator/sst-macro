@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/processor/processor.h>
 #include <sstmac/common/timestamp.h>
-#include <sstmac/common/messages/timed_event.h>
 
 namespace sstmac {
 namespace hw {

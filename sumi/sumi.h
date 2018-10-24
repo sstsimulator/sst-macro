@@ -55,6 +55,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
+sumi::transport* sumi_api();
+
 void comm_init();
 
 void comm_finalize();
@@ -63,22 +65,32 @@ int comm_rank();
 
 int comm_nproc();
 
-/**
-    @param dst The destination to send to
-*/
-void comm_send_header(int dst, message* msg);
+template <class T, class... Args>
+void rdma_get(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
+              int local_cq, int remote_cq, Args&&... args){
 
-void comm_cancel_ping(int dst, int tag);
+  sumi_api()->rdma_get(remote_proc, byte_length, local_buffer, remote_buffer,
+                       local_cq, remote_cq, sumi::message::pt2pt,
+                       std::forward<Args>(args)...);
+}
 
-void comm_ping(int dst, int tag, timeout_function* func);
+template <class T, class... Args>
+void rdma_put(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
+                  int local_cq, int remote_cq, Args&&... args){
 
-void comm_send_payload(int dst, message* msg);
+  sumi_api()->rdma_put(remote_proc, byte_length, local_buffer, remote_buffer,
+                       local_cq, remote_cq, sumi::message::pt2pt,
+                       std::forward<Args>(args)...);
+}
 
-void comm_send(int dst, message::payload_type_t ev, message* msg);
+template <class T, class... Args>
+void smsg_send(int remote_proc, uint64_t byte_length, void* buffer,
+                   int local_cq, int remote_cq, Args&&... args){
 
-void comm_rdma_put(int dst, message* msg);
-
-void comm_rdma_get(int dst, message* msg);
+  sumi_api()->smsg_send(remote_proc, byte_length, buffer,
+                        local_cq, remote_cq, sumi::message::pt2pt,
+                        std::forward<Args>(args)...);
+}
 
 void comm_alltoall(void* dst, void* src, int nelems, int type_size, int tag,
                    collective::config cfg = collective::cfg());
@@ -177,8 +189,6 @@ void sleep_until(double sec);
  *         At application launch, time is zero.
  */
 double wall_time();
-
-sumi::transport* sumi_api();
 
 }
 

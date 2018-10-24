@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_PROCESSOR_COMPUTEscheduleR_H_INCLUDED
 #define SSTMAC_HARDWARE_PROCESSOR_COMPUTEscheduleR_H_INCLUDED
 
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>

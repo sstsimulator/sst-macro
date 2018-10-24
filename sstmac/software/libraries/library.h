@@ -66,7 +66,7 @@ class library
     return libname_;
   }
 
-  virtual std::string lib_name() const {
+  const std::string& lib_name() const {
     return libname_;
   }
 

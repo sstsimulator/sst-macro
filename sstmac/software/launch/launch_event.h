@@ -46,8 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_LIBRARIES_LAUNCH_MESSAGES_LAUNCH_MESSAGE_H_INCLUDED
 
 #include <sstmac/hardware/network/network_message.h>
-#include <sstmac/common/messages/library_message.h>
-#include <sstmac/common/messages/timed_event.h>
 #include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/app_id.h>
@@ -57,10 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class launch_event :
-  public hw::network_message,
-  public library_interface,
-  public timed_interface
+class launch_event : public hw::network_message
 {
  public:
   typedef enum {
@@ -70,23 +65,17 @@ class launch_event :
 
   std::string to_string() const override {
     return sprockit::printf("launch event app=%d task=%d node=%d",
-                            aid_, tid_, toaddr_);
+                            aid(), tid_, toaddr());
   }
 
   void serialize_order(serializer& ser) override {
     hw::network_message::serialize_order(ser);
-    timed_interface::serialize_order(ser);
-    library_interface::serialize_order(ser);
     ser & ty_;
     ser & tid_;
   }
 
   task_id tid() const {
     return tid_;
-  }
-
-  app_id aid() const {
-    return aid_;
   }
 
   std::string unique_name() const {
@@ -100,17 +89,16 @@ class launch_event :
   network_message* clone_injection_ack() const override;
 
  protected:
-  launch_event(type_t ty, app_id aid, task_id tid,
+  launch_event(uint64_t flow_id,
+               type_t ty, app_id aid, task_id tid,
                const std::string& unique_name,
                node_id to, node_id from,
                const std::string& libname) :
     ty_(ty), tid_(tid),
     unique_name_(unique_name),
-    library_interface(libname),
-    network_message(aid, to, from, 0)
+    network_message(flow_id, libname, aid, to, from, sizeof(launch_event),
+                    false, nullptr, header{})
   {
-    network_message::type_ = payload;
-    set_needs_ack(false);
   }
 
   launch_event(){} //for serialization
@@ -128,14 +116,14 @@ class start_app_event :
 {
   ImplementSerializable(start_app_event)
  public:
-  start_app_event(app_id aid,
+  start_app_event(uint64_t flow_id, app_id aid,
      const std::string& unique_name,
      task_mapping::ptr mapping,
      task_id tid,
      node_id to,
      node_id from,
      const sprockit::sim_parameters* app_params) :
-    launch_event(Start, aid, tid, unique_name, to, from, "launcher"),
+    launch_event(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
     app_params_(app_params)
   {
@@ -168,11 +156,11 @@ class job_stop_event : public launch_event
 {
   ImplementSerializable(job_stop_event)
  public:
-  job_stop_event(app_id aid,
+  job_stop_event(uint64_t flow_id, app_id aid,
      const std::string& unique_name,
      node_id to,
      node_id from) :
-    launch_event(Stop, aid, 0, unique_name, to, from, "job_launcher")
+    launch_event(flow_id, Stop, aid, 0, unique_name, to, from, "job_launcher")
   {
   }
 

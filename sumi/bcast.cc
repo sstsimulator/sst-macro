@@ -163,7 +163,7 @@ void
 binary_tree_bcast_actor::init_buffers(void* dst, void* src)
 {
   void* buffer;
-  if (dense_me_ == 0) buffer = src; //root
+  if (dom_me_ == 0) buffer = src; //root
   else buffer = dst;
 
   uint64_t byte_length = nelems_ * type_size_;

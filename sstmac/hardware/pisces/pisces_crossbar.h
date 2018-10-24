@@ -87,8 +87,6 @@ class pisces_NtoM_queue :
   void set_output(sprockit::sim_parameters* params,
              int my_outport, int dst_inport, event_link* link) override;
 
-  virtual void start_message(message* msg);
-
   inline int slot(int port, int vc) const {
     return port * num_vc_ + vc;
   }

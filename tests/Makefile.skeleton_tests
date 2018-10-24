@@ -30,8 +30,8 @@ SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD pic
 endif
 endif
 
-SKELETONCASES += \
-  boxml 
+#SKELETONCASES += \
+#  boxml 
 
 if BUILD_SUMI_MPI
 SKELETONCASES += \

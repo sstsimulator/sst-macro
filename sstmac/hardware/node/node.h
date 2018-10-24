@@ -183,12 +183,6 @@ class node :
 
   void handle(event* ev);
 
-  /**
-   Push a network message (operation at the MTL layer) onto the NIC
-   @param netmsg
-  */
-  void send_to_nic(network_message* netmsg);
-
   void deadlock_check() override;
 
   void deadlock_check(event* ev) override;

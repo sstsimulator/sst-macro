@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_hardware_packet_h
 
 #include <sstmac/common/sst_event.h>
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/hardware/common/flow_fwd.h>
 
 namespace sstmac {
 namespace hw {

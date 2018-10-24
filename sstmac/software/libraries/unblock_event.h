@@ -57,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
  */
 
 #include <sstmac/common/sst_event.h>
-#include <sstmac/common/messages/sst_message.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/key.h>
 #include <sprockit/thread_safe_new.h>

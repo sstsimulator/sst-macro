@@ -396,11 +396,5 @@ pisces_NtoM_queue::set_output(
 }
 
 
-void
-pisces_NtoM_queue::start_message(message* msg)
-{
-  sprockit::abort("pisces_NtoM_queue:: should never start a flow");
-}
-
 }
 }

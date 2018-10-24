@@ -59,8 +59,6 @@ class dynamic_tree_vote_message :
  ImplementSerializable(dynamic_tree_vote_message)
 
  public:
-  dynamic_tree_vote_message(){} //for serialization
-
   typedef enum {
     up_vote,
     down_vote,
@@ -81,20 +79,20 @@ class dynamic_tree_vote_message :
 
   virtual void serialize_order(sstmac::serializer &ser) override;
 
-  dynamic_tree_vote_message(int vote, type_t ty, int tag, int virtual_src, int virtual_dst) :
-    //0 = buffer
-    //0 = nelems
-    //0 = type_size
-    //-1 = not done by round
-    collective_work_message(collective::dynamic_tree_vote, eager_payload,
-      sizeof(int) + sizeof(std::set<int>),
-      tag, -1, virtual_src, virtual_dst),
+  template<class... Args>
+  dynamic_tree_vote_message(int dom_sender, int dom_recver,
+                            int vote, type_t ty, int tag,
+                            Args&&... args) :
+    collective_work_message(collective::dynamic_tree_vote, dom_sender, dom_recver,
+                            eager, tag, 0/*round*/, nullptr, std::forward<Args>(args)...),
     type_(ty),
     vote_(vote)
   {
   }
 
- protected:
+ private:
+  dynamic_tree_vote_message(){} //for serialization
+
   type_t type_;
 
   int vote_;

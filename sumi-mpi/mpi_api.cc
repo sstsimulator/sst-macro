@@ -51,7 +51,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <ctime>
 
 #include <sstmac/common/runtime.h>
-#include <sstmac/common/messages/sleep_event.h>
 
 #include <sumi-mpi/mpi_queue/mpi_queue.h>
 

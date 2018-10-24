@@ -67,8 +67,8 @@ bruck_allgather_actor::init_buffers(void* dst, void* src)
   if (src){
     int block_size = nelems_ * type_size_;
     if (in_place){
-      if (dense_me_ != 0){
-        int inPlaceOffset = dense_me_* block_size;
+      if (dom_me_ != 0){
+        int inPlaceOffset = dom_me_* block_size;
         void* inPlaceSrc = ((char*)src + inPlaceOffset);
         std::memcpy(dst, inPlaceSrc, block_size);
       }
@@ -114,11 +114,11 @@ bruck_allgather_actor::init_dag()
 
   int partner_gap = 1;
   int round_nelems = nelems_;
-  int nproc = dense_nproc_;
+  int nproc = dom_nproc_;
   action *prev_send = 0, *prev_recv = 0;
   for (int i=0; i < num_rounds; ++i){
-    int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
-    int recv_partner = (dense_me_ + partner_gap) % nproc;
+    int send_partner = (dom_me_ + nproc - partner_gap) % nproc;
+    int recv_partner = (dom_me_ + partner_gap) % nproc;
     action* send_ac = new send_action(i, send_partner, send_action::in_place);
     action* recv_ac = new recv_action(i, recv_partner, recv_action::in_place);
     send_ac->offset = 0;
@@ -139,8 +139,8 @@ bruck_allgather_actor::init_dag()
 
   if (nprocs_extra_round){
     int nelems_extra_round = nprocs_extra_round * nelems_;
-    int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
-    int recv_partner = (dense_me_ + partner_gap) % nproc;
+    int send_partner = (dom_me_ + nproc - partner_gap) % nproc;
+    int recv_partner = (dom_me_ + partner_gap) % nproc;
     action* send_ac = new send_action(num_rounds+1,send_partner, send_action::in_place);
     action* recv_ac = new recv_action(num_rounds+1,recv_partner, recv_action::in_place);
     send_ac->offset = 0;
@@ -166,19 +166,19 @@ bruck_allgather_actor::finalize()
 {
   // rank 0 need not reorder
   // or no buffers
-  if (dense_me_ == 0 || result_buffer_ == 0){
+  if (dom_me_ == 0 || result_buffer_ == 0){
     return;
   }
 
   //we need to reorder things a bit
   //first, copy everything out
-  int total_nelems = nelems_* dense_nproc_;
+  int total_nelems = nelems_* dom_nproc_;
   int total_size = total_nelems * type_size_;
   char* tmp = new char[total_size];
   std::memcpy(tmp, result_buffer_, total_size);
 
 
-  int my_offset = nelems_ * dense_me_;
+  int my_offset = nelems_ * dom_me_;
 
   int copy_size = (total_nelems - my_offset) * type_size_;
   int copy_offset = my_offset * type_size_;

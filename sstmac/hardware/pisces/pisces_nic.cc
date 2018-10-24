@@ -71,9 +71,10 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
 
   packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
                                               inj_params, parent, 1); //single vc for now
-  packetizer_->setArrivalNotify(this);
-  auto inj_link = allocate_local_link(timestamp(), parent_, mtl_handler());
-  packetizer_->setInjectionAcker(inj_link);
+  packetizer_->setArrivalNotifier(this, &pisces_nic::flowArrived);
+  packetizer_->setDepartNotifier(this, &pisces_nic::flowDeparted);
+
+  self_mtl_link_ = allocate_local_link(timestamp(), parent_, mtl_handler());
 
   //make port 0 a copy of the injection params
   sprockit::sim_parameters* port0_params = params->get_optional_namespace("port0");
@@ -83,6 +84,16 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   ack_handler_ = packetizer_->new_credit_handler();
   payload_handler_ = packetizer_->new_payload_handler();
 #endif
+}
+
+void
+pisces_nic::flowDeparted(timestamp delay, flow *msg)
+{
+  network_message* netmsg = static_cast<network_message*>(msg);
+  if (netmsg->needs_ack()){
+    nic_debug("acking %s", netmsg->to_string().c_str());
+    self_mtl_link_->send_extra_delay(delay, netmsg->clone_injection_ack());
+  }
 }
 
 timestamp

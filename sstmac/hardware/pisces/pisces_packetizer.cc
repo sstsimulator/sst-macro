@@ -157,13 +157,15 @@ pisces_packetizer::spaceToSend(int vn, int num_bits)
 }
 
 void
-pisces_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message* msg)
+pisces_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, flow* f)
 {
-  bool is_tail = (byte_offset + bytes) == msg->byte_length();
+  network_message* netmsg = safe_cast(network_message, f);
+
+  bool is_tail = (byte_offset + bytes) == netmsg->byte_length();
   //only carry the payload if you're the tail packet
-  pisces_packet* payload = new pisces_packet(is_tail ? msg : nullptr,
-                                               bytes, msg->flow_id(), is_tail,
-                                               msg->fromaddr(), msg->toaddr());
+  pisces_packet* payload = new pisces_packet(is_tail ? netmsg : nullptr,
+                                               bytes, netmsg->flow_id(), is_tail,
+                                               netmsg->fromaddr(), netmsg->toaddr());
   //start on a singel virtual channel (0)
   payload->set_deadlock_vc(0);
   payload->update_vc();

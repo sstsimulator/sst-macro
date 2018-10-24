@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/thread_lock.h>
 
@@ -64,7 +64,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/graphviz_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
 #include <sstmac/software/process/global.h>
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <unordered_map>
 #include <sprockit/debug.h>
@@ -265,7 +265,7 @@ class operating_system :
    * use execute_kernel
    * @param data  Event carrying all the data describing the compute
    */
-  void execute(ami::COMM_FUNC func, message* data){
+  void execute(ami::COMM_FUNC func, flow* data){
     return execute_kernel(func, data);
   }
 
@@ -278,7 +278,7 @@ class operating_system :
    * @param data  Event carrying all the data describing the compute
    * @return A return code specifying success or failure
    */
-  void execute_kernel(ami::COMM_FUNC func, message* data);
+  void execute_kernel(ami::COMM_FUNC func, flow* data);
 
   /**
    * @brief execute Enqueue an operation to perform

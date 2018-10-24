@@ -85,16 +85,17 @@ class sumi_param_bcaster : public sprockit::param_bcaster
 static const int window_bytes = 262144;
 
 
-class config_message :
-  public sumi::message
+class config_message : public sumi::message
 {
   ImplementSerializable(config_message)
 
  public:
   config_message(){} //need for serialization
 
-  config_message(void* recv_buf) :
-    recv_buf_(recv_buf){}
+  template <class... Args>
+  config_message(void* recv_buf, Args&&... args) :
+    sumi::message(std::forward<Args>(args)...), recv_buf_(recv_buf)
+  {}
 
   void* recv_buf() const {
     return recv_buf_;
@@ -117,9 +118,10 @@ class rdma_message :
  public:
   rdma_message(){} //need for serialization
 
-  rdma_message(int iter, int num_bytes) :
-   sumi::message(num_bytes),
-   iter_(iter)
+ template <class... Args>
+  rdma_message(int iter, double start_time, Args&&... args) :
+   sumi::message(std::forward<Args>(args)...),
+   iter_(iter), start_(start_time)
   {
   }
 
@@ -130,11 +132,9 @@ class rdma_message :
     sumi::message::serialize_order(ser);
   }
 
-  sumi::message* clone(payload_type_t ty) const override {
-    rdma_message* cln = new rdma_message(iter_, num_bytes_);
-    cln->set_start(start_);
-    cln->set_finish(finish_);
-    clone_into(cln);
+  network_message* clone_injection_ack() const override {
+    auto* cln = new rdma_message(*this);
+    cln->convert_to_ack();;
     return cln;
   }
 
@@ -173,8 +173,8 @@ progress_loop(sumi::transport* tport, double timeout,
       msg->set_finish(now);
       done.push_back(msg);
       debug_printf(sprockit::dbg::traffic_matrix,
-        "Rank %d got incoming message at t=%10.6e of type %s from %d",
-        tport->rank(), now, sumi::message::tostr(msg->payload_type()), msg->sender());
+        "Rank %d got incoming message at t=%10.6e from %d",
+        tport->rank(), now, msg->sender());
     } else {
       debug_printf(sprockit::dbg::traffic_matrix,
         "Rank %d timed out in progress loop at t=%10.6e",
@@ -200,16 +200,13 @@ void do_all_sends(
   int npartners = send_partners.size();
   double local_timeout = (timeout / npartners) * 0.9; //fudge factor of 0.9 to lower it a bit
   for (int i=0; i < npartners; ++i){
-    rdma_message* msg = new rdma_message(iteration, chunk_size);
-    msg->set_local_buffer(send_chunks[i]);
-    msg->set_local_buffer(recv_chunks[i]);
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d putting to %d on iteration %d chunk of size %d: %p -> %p",
       tport->rank(), send_partners[i], 
       iteration, chunk_size,
       ((void*)send_chunks[i]), ((void*)recv_chunks[i]));
-    tport->rdma_put(send_partners[i], msg, send_cq, recv_cq);
-    msg->set_start(tport->wall_time());
+    tport->rdma_put<rdma_message>(send_partners[i], chunk_size, send_chunks[i], recv_chunks[i],
+                    send_cq, recv_cq, sumi::message::pt2pt, iteration, tport->wall_time());
     //stagger the sends, try to make progress on pendind messages
     progress_loop(tport, local_timeout, done);
   }
@@ -317,11 +314,12 @@ int USER_MAIN(int argc, char** argv)
 
   //send all my config messages
   for (int i=0; i < npartners; ++i){
-    config_message* msg = new config_message(recv_chunks[i]);
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d sending config message to partner %d",
       tport->rank(), recv_partners[i]);
-    tport->send_header(recv_partners[i], msg, sumi::message::no_ack, sumi::message::default_cq);
+    tport->smsg_send<config_message>(recv_partners[i], 0, nullptr,
+                                     sumi::message::no_ack, sumi::message::default_cq,
+                                     sumi::message::pt2pt, recv_chunks[i]);
   }
 
   int configs_recved = 0;

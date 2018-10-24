@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/sumi.h>
 #include <sumi/distributed_service.h>
 
+#if 0
 
 #undef sleep
 
@@ -132,3 +133,5 @@ int USER_MAIN(int argc, char** argv)
   tport->finish();
   return 0;
 }
+
+#endif

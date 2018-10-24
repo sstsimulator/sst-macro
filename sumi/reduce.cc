@@ -73,7 +73,7 @@ wilke_reduce_actor::finalize_buffers()
   //if we need to do operations, then we need a temp buffer for doing sends
   int size = nelems_ * type_size_;
 
-  if (dense_me_ == root_){
+  if (dom_me_ == root_){
     my_api_->unmake_public_buffer(result_buffer_, size);
   } else {
     my_api_->free_public_buffer(result_buffer_, size);
@@ -90,7 +90,7 @@ wilke_reduce_actor::init_buffers(void* dst, void* src)
   //if we need to do operations, then we need a temp buffer for doing sends
   int size = nelems_ * type_size_;
 
-  if (dense_me_ == root_){
+  if (dom_me_ == root_){
     //I need a full buffer - but I was passed it
     result_buffer_ = my_api_->make_public_buffer(dst, size);
   } else {
@@ -114,16 +114,16 @@ wilke_reduce_actor::init_dag()
   int log2nproc, midpoint, virtual_nproc;
   compute_tree(log2nproc, midpoint, virtual_nproc);
 
-  virtual_rank_map rank_map(dense_nproc_, virtual_nproc);
+  virtual_rank_map rank_map(dom_nproc_, virtual_nproc);
   int my_roles[2];
-  int num_roles = rank_map.real_to_virtual(dense_me_, my_roles);
+  int num_roles = rank_map.real_to_virtual(dom_me_, my_roles);
 
   int num_doubling_rounds = log2nproc;
   bool i_am_midpoint = false;
 
   debug_printf(sumi_collective,
     "Rank %s configured reduce for tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds",
-    rank_str().c_str(), tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
+    rank_str().c_str(), tag_, dom_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
 
   //I either receive directly into the final buffer
   //Or I have to receive a bunch of packed stuff into a temp buffer
@@ -156,7 +156,7 @@ wilke_reduce_actor::init_dag()
     int round_offset = 2*num_doubling_rounds;
     debug_printf(sumi_collective,
       "Rank %d configuring reduce for virtual role=%d tag=%d for nproc=%d(%d) virtualized to n=%d over %d rounds ",
-      my_api_->rank(), virtual_me, tag_, dense_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
+      my_api_->rank(), virtual_me, tag_, dom_nproc_, my_api_->nproc(), virtual_nproc, log2nproc);
     for (int i=0; i < num_doubling_rounds; ++i){
       //again, see comment above about weirndess of round numberings
       int rnd = (i == 0 || i_am_even) ? i : i + round_offset;
@@ -270,28 +270,28 @@ wilke_reduce_actor::init_dag()
     int round = 4*num_doubling_rounds - 1;
     int nelems_split = divide_by_2_round_up(nelems_);
     //rank 0 and midpoint must send to root
-    if (dense_me_ == 0){
+    if (dom_me_ == 0){
       action* send_ac = new send_action(round, root_, fan_in_send_type);
       send_ac->nelems = nelems_split;
       send_ac->offset = 0;
       add_dependency(final_join, send_ac);
     }
 
-    if (dense_me_ == 1 && root_ != dense_me_){
+    if (dom_me_ == 1 && root_ != dom_me_){
       action* send_ac = new send_action(round, root_, fan_in_send_type);
       send_ac->nelems = nelems_ - nelems_split;
       send_ac->offset = nelems_split;
       add_dependency(final_join, send_ac);
     }
 
-    if (dense_me_ == root_){
+    if (dom_me_ == root_){
       action* recv_ac = new recv_action(round, 0, fan_in_recv_type);
       recv_ac->nelems = nelems_split;
       recv_ac->offset = 0;
       add_dependency(final_join, recv_ac);
     }
 
-    if (dense_me_ == root_ && root_ != 1){
+    if (dom_me_ == root_ && root_ != 1){
       action* recv_ac = new recv_action(round, 1, fan_in_recv_type);
       recv_ac->nelems = nelems_ - nelems_split;
       recv_ac->offset = nelems_split;
