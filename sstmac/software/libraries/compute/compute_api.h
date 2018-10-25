@@ -155,23 +155,50 @@ void sstmac_memcopy(uint64_t bytes);
 /**
 This has to work from C, so we must regrettably use VA_ARGS
 */
-void sstmac_start_memoize(const char* token, const char* model);
+/**
+ * @brief sstmac_start_memoize
+ * @param token
+ * @param model
+ * @return A thread tag to identify thread-local storage later
+ */
+int sstmac_start_memoize(const char* token, const char* model);
 
-void sstmac_finish_memoize0(const char* token);
-void sstmac_finish_memoize1(const char* token, double p1);
-void sstmac_finish_memoize2(const char* token, double p1, double p2);
+void sstmac_finish_memoize0(int thr_tag, const char* token);
+void sstmac_finish_memoize1(int thr_tag, const char* token, double p1);
+void sstmac_finish_memoize2(int thr_tag, const char* token, double p1, double p2);
+void sstmac_finish_memoize3(int thr_tag, const char* token, double p1, double p2,
+                            double p3);
+void sstmac_finish_memoize4(int thr_tag, const char* token, double p1, double p2,
+                            double p3, double p4);
+void sstmac_finish_memoize5(int thr_tag, const char* token, double p1, double p2,
+                            double p3, double p4, double p5);
 
 void sstmac_compute_memoize0(const char* token);
 void sstmac_compute_memoize1(const char* token, double p1);
 void sstmac_compute_memoize2(const char* token, double p1, double p2);
+void sstmac_compute_memoize3(const char* token, double p1, double p2,
+                             double p3);
+void sstmac_compute_memoize4(const char* token, double p1, double p2,
+                             double p3, double p4);
+void sstmac_compute_memoize5(const char* token, double p1, double p2,
+                             double p3, double p4, double p5);
 
-void sstmac_set_implicit_state1(int type0, int state0);
-void sstmac_set_implicit_state2(int type0, int state0, int type1, int state1);
-void sstmac_set_implicit_state3(int type0, int state0, int type1, int state1,
-                                int type2, int state2);
-void sstmac_unset_implicit_state1(int type0);
-void sstmac_unset_implicit_state2(int type0, int type1);
-void sstmac_unset_implicit_state3(int type0, int type1, int type2);
+
+void sstmac_set_implicit_memoize_state1(int type0, int state0);
+void sstmac_set_implicit_memoize_state2(int type0, int state0, int type1, int state1);
+void sstmac_set_implicit_memoize_state3(int type0, int state0, int type1, int state1,
+                                        int type2, int state2);
+void sstmac_unset_implicit_memoize_state1(int type0);
+void sstmac_unset_implicit_memoize_state2(int type0, int type1);
+void sstmac_unset_implicit_memoize_state3(int type0, int type1, int type2);
+
+void sstmac_set_implicit_compute_state1(int type0, int state0);
+void sstmac_set_implicit_compute_state2(int type0, int state0, int type1, int state1);
+void sstmac_set_implicit_compute_state3(int type0, int state0, int type1, int state1,
+                                        int type2, int state2);
+void sstmac_unset_implicit_compute_state1(int type0);
+void sstmac_unset_implicit_compute_state2(int type0, int type1);
+void sstmac_unset_implicit_compute_state3(int type0, int type1, int type2);
 
 void* sstmac_alloc_stack(int sz, int md_sz);
 void sstmac_free_stack(void* ptr);

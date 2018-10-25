@@ -129,11 +129,11 @@ fi
 
 CHECK_DLOPEN()
 
+CHECK_SST_CORE()
+
 CHECK_CLANG()
 
 CHECK_GCC()
-
-CHECK_SST_CORE()
 
 AC_CHECK_HEADERS([mpi.h],
   have_mpi_header=yes,
@@ -144,7 +144,6 @@ if test "X$have_integrated_core" = "Xyes"; then
 ac_configure_args="$ac_configure_args --with-cxxflags='$CXXFLAGS'"
 else
 CHECK_CPP11()
-CHECK_BOOST()
 CHECK_MPI_PARALLEL()
 fi
 

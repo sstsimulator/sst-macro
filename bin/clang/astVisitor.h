@@ -92,6 +92,7 @@ class FirstPassASTVistor : public clang::RecursiveASTVisitor<FirstPassASTVistor>
   PragmaConfig& pragmaConfig_;
   clang::Rewriter& rewriter_;
   bool noSkeletonize_;
+  bool memoizePass_;
 };
 
 /**
@@ -181,6 +182,10 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
     return pragmaConfig_;
   }
 
+  GlobalVarNamespace* getActiveNamespace() const {
+    return currentNs_;
+  }
+
   clang::CompilerInstance& getCompilerInstance() {
     return *ci_;
   }
@@ -192,14 +197,12 @@ class SkeletonASTVisitor : public clang::RecursiveASTVisitor<SkeletonASTVisitor>
   std::string needGlobalReplacement(clang::NamedDecl* decl) {
     const clang::Decl* md = mainDecl(decl);
     if (globalsTouched_.empty()){
-      errorAbort(decl->getLocStart(), *ci_,
-                 "internal error: globals touched array is empty");
+      errorAbort(decl, *ci_, "internal error: globals touched array is empty");
     }
     globalsTouched_.back().insert(md);
     auto iter = globals_.find(md);
     if (iter == globals_.end()){
-      errorAbort(decl->getLocStart(), *ci_,
-                 "getting global replacement for non-global variable");
+      errorAbort(decl, *ci_, "getting global replacement for non-global variable");
     }
     return iter->second.reusableText;
   }
@@ -1042,14 +1045,16 @@ struct PragmaActivateGuard {
   template <class T> //either decl/stmt
   PragmaActivateGuard(T* t, SkeletonASTVisitor* visitor, bool doVisit = true) :
     PragmaActivateGuard(t, *visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
-      visitor->pragmas_, doVisit, false/*2nd pass*/, !visitor->noSkeletonize())
+      visitor->pragmas_, doVisit, false/*2nd pass*/, !visitor->noSkeletonize(),
+      visitor->memoizePass())
   {
   }
 
   template <class T>
   PragmaActivateGuard(T* t, FirstPassASTVistor* visitor, bool doVisit = true) :
     PragmaActivateGuard(t, visitor->ci_, visitor->pragmaConfig_, visitor->rewriter_,
-      visitor->pragmas_, doVisit, true/*1st pass*/, !visitor->noSkeletonize_)
+      visitor->pragmas_, doVisit, true/*1st pass*/, !visitor->noSkeletonize_,
+      visitor->memoizePass_)
   {
   }
 
@@ -1073,11 +1078,12 @@ struct PragmaActivateGuard {
        clang::Rewriter& rewriter,
        SSTPragmaList& pragmas,
        bool doVisit, bool firstPass,
-       bool skeletonizing) :
+       bool skeletonizing, bool memoizing) :
     pragmaConfig_(cfg),
     rewriter_(rewriter),
     pragmas_(pragmas),
-    skeletonizing_(skeletonizing)
+    skeletonizing_(skeletonizing),
+    memoizing_(memoizing)
   {
     ++pragmaConfig_.pragmaDepth;
     myPragmas_ = pragmas_.getMatches<T>(t, firstPass);
@@ -1099,6 +1105,7 @@ struct PragmaActivateGuard {
 
   bool skipVisit_;
   bool skeletonizing_;
+  bool memoizing_;
   std::list<SSTPragma*> myPragmas_;
   std::list<SSTPragma*> activePragmas_;
   PragmaConfig& pragmaConfig_;

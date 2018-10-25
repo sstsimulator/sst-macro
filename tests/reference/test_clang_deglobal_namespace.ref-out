@@ -15,6 +15,7 @@ void fxn()
   (*sstmac___ns__ns2__x) -= 3;
  }}
 #include <sstmac/software/process/global.h>
+#include <sstmac/software/process/memoize.h>
 
 namespace ns {
  extern int __sizeof_x;

@@ -86,6 +86,38 @@ errorAbort(SourceLocation loc, CompilerInstance &CI, const std::string &error)
 }
 
 void
+errorAbort(const Decl *decl, CompilerInstance &CI, const std::string &error){
+  errorAbort(getStart(decl), CI, error);
+}
+
+void
+errorAbort(const Stmt *s, CompilerInstance &CI, const std::string &error){
+  errorAbort(getStart(s), CI, error);
+}
+
+void
+warn(const Decl *decl, CompilerInstance &CI, const std::string &error){
+  warn(getStart(decl), CI, error);
+}
+
+void
+warn(const Stmt *s, CompilerInstance &CI, const std::string &error){
+  warn(getStart(s), CI, error);
+}
+
+
+void
+internalError(const Decl *decl, CompilerInstance &CI, const std::string &error){
+  internalError(getStart(decl), CI, error);
+}
+
+void
+internalError(const Stmt *s, CompilerInstance &CI, const std::string &error){
+  internalError(getStart(s), CI, error);
+}
+
+
+void
 internalError(SourceLocation loc, CompilerInstance &CI, const std::string &error)
 {
   std::string newError = "internal error: " + error;
@@ -132,4 +164,15 @@ replace(const Stmt *s, Rewriter &r, const std::string &repl, CompilerInstance& C
   replace(s->getSourceRange(), r, repl, CI);
 }
 
+void
+insertBefore(const Stmt *s, Rewriter &r, const std::string &text)
+{
+  r.InsertText(getStart(s), text, false);
+}
+
+void
+insertAfter(const Stmt *s, Rewriter &r, const std::string &text)
+{
+  r.InsertText(getEnd(s), text, true);
+}
 

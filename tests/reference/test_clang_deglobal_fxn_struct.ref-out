@@ -6,6 +6,7 @@
   }* annoying;static int sstmac_inited_annoying = 0;if (!sstmac_inited_annoying){  sstmac_init_global_space(&annoying,__sizeof_xyz_fxnannoying,__offset_xyz_fxnannoying,0);  sstmac_inited_annoying = 1; }struct ugh ** sstmac_xyz_fxnannoying=(struct ugh **)(sstmac_global_data + __offset_xyz_fxnannoying); 
  }}
 #include <sstmac/software/process/global.h>
+#include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_xyz_fxnannoying;
 int __offset_xyz_fxnannoying = sstmac::GlobalVariable::init(__sizeof_xyz_fxnannoying,"xyz_fxnannoying",nullptr,false);

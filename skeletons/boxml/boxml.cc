@@ -45,10 +45,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include "boxml.h"
 #include "lock_array.h"
 #include <sprockit/factories/factory.h>
+#include <sstmac/common/event_manager.h>
+#include <sstmac/common/runtime.h>
 #include <sstmac/common/sim_thread_lock.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/common/stats/stat_local_double.h>
-#include <sstmac/common/event_manager.h>
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(

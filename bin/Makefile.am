@@ -69,10 +69,6 @@ if HAVE_OTF2
 #  exe_LDADD += $(OTF2_LDFLAGS) $(OTF2_LIBS)
 endif
 
-if EXTERNAL_BOOST
-  exe_LDADD += $(BOOST_LDFLAGS)
-endif
-
 
 sstmac_LDADD = $(exe_LDADD) -ldl 
 sstmac_top_info_LDADD = $(exe_LDADD)

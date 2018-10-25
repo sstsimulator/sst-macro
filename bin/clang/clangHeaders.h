@@ -107,4 +107,36 @@ static inline std::string GetAsString(clang::QualType qty){
   return GetTypeString(qty.split());
 }
 
+static inline clang::SourceLocation getStart(const clang::Stmt* s){
+#if CLANG_VERSION_MAJOR >= 8
+  return s->getBeginLoc();
+#else
+  return s->getLocStart();
+#endif
+}
+
+static inline clang::SourceLocation getStart(const clang::Decl* decl){
+#if CLANG_VERSION_MAJOR >= 8
+  return decl->getBeginLoc();
+#else
+  return decl->getLocStart();
+#endif
+}
+
+static inline clang::SourceLocation getEnd(const clang::Decl* decl){
+#if CLANG_VERSION_MAJOR >= 8
+  return decl->getEndLoc();
+#else
+  return decl->getLocEnd();
+#endif
+}
+
+static inline clang::SourceLocation getEnd(const clang::Stmt* s){
+#if CLANG_VERSION_MAJOR >= 8
+  return s->getEndLoc();
+#else
+  return s->getLocEnd();
+#endif
+}
+
 #endif // CLANGHEADERS_H

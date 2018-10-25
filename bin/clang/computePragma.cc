@@ -188,14 +188,20 @@ SSTMemoizeComputePragma::doReplace(SourceLocation startInsert, SourceLocation fi
     argsStr = args_sstr.str();
   }
 
+
+
   if (visitor->memoizePass()){
+    PresumedLoc ploc = CI->getSourceManager().getPresumedLoc(startInsert);
+    int line = ploc.getLine();
+
     std::stringstream start_sstr;
-    start_sstr << "sstmac_start_memoize("
+    start_sstr << "int sstmac_thr_tag" << line << " = sstmac_start_memoize("
        << "\"" << token_ << "\",\"" << model_ << "\"" << "); ";
     r.InsertText(startInsert, start_sstr.str(), insertStartAfter);
     std::stringstream finish_sstr;
-    finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "(\"" << token_
-                << "\"" << argsStr << ");";
+    finish_sstr << "; sstmac_finish_memoize" << inputs_.size() << "("
+                << "sstmac_thr_tag" << line << ","
+                << "\"" << token_ << "\"" << argsStr << ");";
 
     if (insertFinalAfter) finalInsert = finalInsert.getLocWithOffset(1);
     r.InsertText(finalInsert, finish_sstr.str(), insertFinalAfter);
@@ -224,16 +230,18 @@ SSTMemoizeComputePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
     case Stmt::CXXMemberCallExprClass:
       expr = cast<CallExpr>(s);
       args = expr->getArgs();
-      //doReplace(s->getLocStart(), s->getLocEnd(), s,
+      //doReplace(getStart(s), s->getLocEnd(), s,
       //          false, true, r, expr->getArgs(), nullptr);
       break;
       break;
     default:
-      internalError(expr->getLocStart(), *CI,
+      internalError(getStart(expr), *CI,
                  "memoize pragma activated on statement that is not a call expression");
     }
   }
-  doReplace(s->getLocStart(), s->getLocEnd(), s,
+
+  cfg.astVisitor->getActiveNamespace()->addMemoization(token_, model_);
+  doReplace(getStart(s), getEnd(s), s,
               false, true, r, args, nullptr);
 }
 
@@ -247,13 +255,14 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     fd = cast<FunctionDecl>(d);
     break;
   default:
-    errorAbort(d->getLocStart(), *CI,
-           "memoize pragma applied to declaration that is not a function");
+    errorAbort(d, *CI, "memoize pragma applied to declaration that is not a function");
   }
 
   if (!givenName_){
     token_ = fd->getNameAsString();
   }
+
+  cfg.astVisitor->getActiveNamespace()->addMemoization(token_, model_);
 
   auto iter = cfg.functionPragmas.find(fd->getCanonicalDecl());
   if (iter == cfg.functionPragmas.end()){
@@ -275,14 +284,14 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
       if (!found){
         std::string error = "memoization input " + str
             + " to function declaration could not be matched to any parameter";
-        errorAbort(d->getLocStart(), *CI, error);
+        errorAbort(d, *CI, error);
       }
     }
   }
 
   if (fd->isThisDeclarationADefinition() && fd->getBody()){
     if (fd->getBody()->getStmtClass() != Stmt::CompoundStmtClass){
-      internalError(fd->getLocStart(), *CI, "function decl body is not a compound statement");
+      internalError(fd, *CI, "function decl body is not a compound statement");
     }
 
     if (written_.find(fd) == written_.end()){
@@ -293,8 +302,8 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
       }
       bool replaceBody = skeletonize_ && !visitor->memoizePass();
       if (cs->body_front()){
-        doReplace(replaceBody ? cs->getLocStart() : cs->body_front()->getLocStart(),
-                  cs->getLocEnd(), cs,
+        doReplace(replaceBody ? getStart(cs) : getStart(cs->body_front()),
+                  getEnd(cs), cs,
                   false, false, r, nullptr, params.data());
       }
       written_.insert(fd);
@@ -305,12 +314,14 @@ SSTMemoizeComputePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
 
 void
 SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation finalInsert,
-                                   bool insertStartAfter, bool insertFinalAfter,
-                                   Rewriter& r, const std::map<std::string,std::string>& values)
+                                  bool insertStartAfter, bool insertFinalAfter,
+                                  Rewriter& r, const std::map<std::string,std::string>& values)
 {
+  std::string state_type = visitor->memoizePass() ? "memoize" : "compute";
+
   bool first = true;
   std::stringstream start_sstr;
-  start_sstr << "sstmac_set_implicit_state" << values_.size() << "(";
+  start_sstr << "sstmac_set_implicit_" << state_type << "_state" << values_.size() << "(";
   for (auto& pair : values){
     if (!first) start_sstr << ",";
     start_sstr << pair.first << "," << pair.second;
@@ -321,7 +332,7 @@ SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation fin
 
   first = true;
   std::stringstream finish_sstr;
-  finish_sstr << "; sstmac_unset_implicit_state" << values_.size() << "(";
+  finish_sstr << "; sstmac_unset_implicit_" << state_type << "_state" << values_.size() << "(";
   for (auto& pair : values){
     if (!first) finish_sstr << ",";
     first = false;
@@ -336,7 +347,7 @@ SSTImplicitStatePragma::doReplace(SourceLocation startInsert, SourceLocation fin
 void
 SSTImplicitStatePragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
 {
-  doReplace(s->getLocStart(), s->getLocEnd(),
+  doReplace(getStart(s), getEnd(s),
             false, true, r, values_);
 }
 
@@ -350,8 +361,7 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
     fd = cast<FunctionDecl>(d);
     break;
   default:
-    errorAbort(d->getLocStart(), *CI,
-           "implicit state pragma applied to declaration that is not a function");
+    errorAbort(d, *CI, "implicit state pragma applied to declaration that is not a function");
   }
 
   auto& set = cfg.functionPragmas[fd->getCanonicalDecl()];
@@ -374,14 +384,14 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
       if (!found){
         std::string error = "memoization input " + pair.first
             + " to function declaration could not be matched to any parameter";
-        errorAbort(d->getLocStart(), *CI, error);
+        errorAbort(d, *CI, error);
       }
     }
   }
 
   if (fd->isThisDeclarationADefinition() && fd->getBody()){
     if (fd->getBody()->getStmtClass() != Stmt::CompoundStmtClass){
-      internalError(fd->getLocStart(), *CI, "function decl body is not a compound statement");
+      internalError(fd, *CI, "function decl body is not a compound statement");
     }
     if (written_.find(fd) == written_.end()){
       CompoundStmt* cs = cast<CompoundStmt>(fd->getBody());
@@ -391,8 +401,8 @@ SSTImplicitStatePragma::activate(Decl *d, Rewriter &r, PragmaConfig &cfg)
         values[pair.first] = fd->getParamDecl(pair.second)->getNameAsString();
       }
       if (cs->body_front()){
-        doReplace(cs->body_front()->getLocStart(),
-                  cs->getLocEnd(), false, false, r, values);
+        doReplace(getStart(cs->body_front()),
+                  getEnd(cs), false, false, r, values);
       }
       written_.insert(fd);
     }

@@ -199,6 +199,10 @@ class stat_collector : public sprockit::printable
 
   virtual stat_collector* do_clone(sprockit::sim_parameters* params) const = 0;
 
+  virtual bool require_filroote() const {
+    return true;
+  }
+
  protected:
   int id_;
   std::string fileroot_;

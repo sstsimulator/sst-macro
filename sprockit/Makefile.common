@@ -6,9 +6,4 @@ AM_CPPFLAGS += $(SST_CPPFLAGS)
 AM_CXXFLAGS += $(SST_CXXFLAGS)
 endif
 
-if EXTERNAL_BOOST
-  AM_CPPFLAGS += $(BOOST_CPPFLAGS)
-else
-  AM_CPPFLAGS += -I$(top_srcdir)/boost
-endif
 

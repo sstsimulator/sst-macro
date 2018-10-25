@@ -56,6 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_callback.h>
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
+#include <sstmac/main/sstmac.h>
 
 RegisterKeywords(
  { "services", "a list of services to launch on a subset or all of the nodes" },
@@ -82,6 +83,7 @@ job_launcher::job_launcher(sprockit::sim_parameters* params,
   }
 
   add_launch_requests(params);
+  os->rebuild_memoizations();
 }
 
 void
@@ -130,6 +132,14 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
       initial_requests_.push_back(mgr);
       keep_going = true;
       last_used_aid = aid;
+
+      if (app_params->has_param("exe")){
+        //load and unload the library to bring statics in
+        std::string libname = app_params->get_param("exe");
+        void* handle = load_extern_library(libname, load_extern_path_str());
+        unload_extern_library(handle);
+      }
+
     } else {
       keep_going = false;
     }
@@ -151,6 +161,9 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
     initial_requests_.push_back(mgr);
     ++aid;
   }
+
+  //just in case any memoizations were loaded
+  os_->rebuild_memoizations();
 }
 
 uint32_t

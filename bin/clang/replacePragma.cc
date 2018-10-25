@@ -163,7 +163,7 @@ struct ReplaceStatementVisit {
           if (vd->hasInit()) {
             cfg.replacedExprs.push_back(vd->getInit());
           } else {
-            errorAbort(stmt->getLocStart(), CI,
+            errorAbort(getStart(stmt), CI,
               "replace pragma applied to declaration with no initializer");
           }
         }
@@ -183,7 +183,7 @@ SSTReplacePragma::run(Stmt *s, std::list<const Expr*>& replacedExprs)
   recurseAll<PreVisit,PostVisit>(s, *CI, rcfg);
   if (replacedExprs.size() == 0){
     std::string error = "replace pragma '" + fxn_ + "' did not match anything";
-    errorAbort(s->getLocStart(), *CI, error);
+    errorAbort(s, *CI, error);
   }
 }
 
@@ -258,7 +258,7 @@ SSTInitPragma::activate(Stmt *s, Rewriter &r, PragmaConfig &cfg)
     repl_case(DeclStmt,s,r);
     repl_case(BinaryOperator,s,r);
     default:
-      errorAbort(s->getLocStart(), *CI,
+      errorAbort(s, *CI,
                  "pragma init not applied to initialization statement");
   }
 #undef repl_case
@@ -280,17 +280,17 @@ void
 SSTInitPragma::activateDeclStmt(DeclStmt* s, Rewriter& r)
 {
   if (!s->isSingleDecl()){
-    errorAbort(s->getLocStart(), *CI,
+    errorAbort(s, *CI,
                "pragma init cannot apply to multiple declaration");
   }
   Decl* d = s->getSingleDecl();
   if (!isa<VarDecl>(d)){
-    errorAbort(s->getLocStart(), *CI,
+    errorAbort(s, *CI,
                "pragma init only applies to variable declarations");
   }
   VarDecl* vd = cast<VarDecl>(d);
   if (!vd->hasInit()){
-    errorAbort(s->getLocStart(), *CI,
+    errorAbort(s, *CI,
                "pragma init applied to variable without initializer");
   }
   replace(vd->getInit(), r, init_, *CI);

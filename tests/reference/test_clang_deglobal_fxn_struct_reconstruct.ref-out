@@ -18,6 +18,7 @@
   } yo;static int sstmac_inited_yo = 0;if (!sstmac_inited_yo){  sstmac_init_global_space(&yo,__sizeof_xyz_fxnyo,__offset_xyz_fxnyo,0);  sstmac_inited_yo = 1; }static sstmac::CppGlobal* yo_sstmac_ctor = sstmac::new_cpp_global<  again,false>(__offset_xyz_fxnyo); decltype(yo)* sstmac_xyz_fxnyo=(decltype(yo)*)(sstmac_global_data + __offset_xyz_fxnyo); 
  }}
 #include <sstmac/software/process/global.h>
+#include <sstmac/software/process/memoize.h>
 
 extern int __sizeof_xyz_fxnbird;
 int __offset_xyz_fxnbird = sstmac::GlobalVariable::init(__sizeof_xyz_fxnbird,"xyz_fxnbird",nullptr,false);
