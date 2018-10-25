@@ -75,11 +75,8 @@ main(int argc, char **argv)
   comm_init();
 
   sumi::transport* tport = sumi_api();
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(tport, &sumi::transport::deadlock_check));
 
   int me = comm_rank();
-  if (me == 0) sstmac::runtime::enter_deadlock_region();
 
   if (me != 5){
     start_barrier();
@@ -89,8 +86,6 @@ main(int argc, char **argv)
   msg = comm_poll();
 
   comm_finalize();
-
-  if (me == 0) sstmac::runtime::exit_deadlock_region();
 
   return 0;
 }

@@ -19,7 +19,6 @@ AM_CPPFLAGS += -I$(top_builddir)/sst-dumpi -I$(top_srcdir)/sst-dumpi -I$(top_bui
 libsstmac_skeletons_la_LDFLAGS = 
 
 libsstmac_skeletons_la_SOURCES = \
-  test/service_test.cc \
   traffic_matrix/main.cc 
 
 libsstmac_skeletons_la_LIBADD =

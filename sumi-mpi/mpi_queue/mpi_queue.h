@@ -132,6 +132,14 @@ class mpi_queue
 
   void incoming_new_message(mpi_message* message);
 
+  int pt2pt_cq_id() const{
+    return pt2pt_cq_;
+  }
+
+  int coll_cq_id() const {
+    return coll_cq_;
+  }
+
  private:
   struct sortbyseqnum {
     bool operator()(mpi_message* a, mpi_message*b) const;
@@ -140,11 +148,21 @@ class mpi_queue
   typedef std::set<mpi_message*, sortbyseqnum> hold_list_t;
 
  private:
-  void handle_poll_msg(sumi::message* msg);
+  /**
+   * @brief incoming_pt2pt_message Message might be held up due to sequencing constraints
+   * @param msg
+   */
+  void incoming_pt2pt_message(sumi::message* msg);
 
-  void handle_collective_done(sumi::message* msg);
+  /**
+   * @brief handle_pt2pt_message Message is guaranteed to satisfy sequencing constraints
+   * @param msg
+   */
+  void handle_pt2pt_message(mpi_message* msg);
 
-  void handle_new_message(mpi_message* message);
+  void incoming_collective_message(sumi::message* message);
+
+  void incoming_message(sumi::message* message);
 
   void notify_probes(mpi_message* message);
 
@@ -182,6 +200,9 @@ class mpi_queue
 
   int max_vshort_msg_size_;
   int max_eager_msg_size_;
+
+  int pt2pt_cq_;
+  int coll_cq_;
 
 };
 

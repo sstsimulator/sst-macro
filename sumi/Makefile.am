@@ -23,7 +23,6 @@ nodist_library_include_HEADERS =
 library_include_HEADERS = \
  sumi.h \
  sumi_thread.h \
- distributed_service.h \
  alltoall.h \
  alltoallv.h \
  allgather.h \
@@ -46,7 +45,6 @@ library_include_HEADERS = \
  dense_rank_map.h \
  communicator.h \
  communicator_fwd.h \
- dynamic_tree_vote.h \
  message.h \
  message_fwd.h \
  monitor.h \
@@ -60,7 +58,6 @@ library_include_HEADERS = \
 libsumi_la_SOURCES = \
  sumi.cc \
  sumi_thread.cc \
- distributed_service.cc \
  alltoall.cc \
  alltoallv.cc \
  transport.cc \
@@ -80,7 +77,6 @@ libsumi_la_SOURCES = \
  collective_message.cc \
  dense_rank_map.cc \
  communicator.cc \
- dynamic_tree_vote.cc \
  message.cc \
  monitor.cc \
  partner_timeout.cc \

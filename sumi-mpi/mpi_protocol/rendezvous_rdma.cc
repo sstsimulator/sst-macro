@@ -86,9 +86,9 @@ rendezvous_get::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task
 {
   void* send_buf = configure_send_buffer(count, buffer, type);
   uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, sizeof(mpi_message), nullptr,
-                             sumi::message::no_ack, mpi_->pt2pt_cq_id(), sumi::message::pt2pt,
-                             src_rank, dst_rank, count, type->id, type->packed_size(),
-                             tag, comm, seq_id, RENDEZVOUS_GET, send_buf);
+                             sumi::message::no_ack, queue_->pt2pt_cq_id(), sumi::message::pt2pt,
+                             src_rank, dst_rank, type->id,  tag, comm, seq_id,
+                             count, type->packed_size(), send_buf, RENDEZVOUS_GET);
   send_flows_.emplace(std::piecewise_construct,
                       std::forward_as_tuple(flow_id),
                       std::forward_as_tuple(req, buffer, send_buf));
@@ -166,8 +166,8 @@ rendezvous_get::incoming(mpi_message *msg, mpi_queue_recv_request* req)
 
   recv_flows_[msg->flow_id()] = req;
   msg->advance_stage();
-  mpi_->rdma_get_request_response(msg, msg->payload_size(), req->recv_buffer_, msg->send_buffer(),
-                   mpi_->pt2pt_cq_id(), software_ack_ ? sumi::message::no_ack : mpi_->pt2pt_cq_id());
+  mpi_->rdma_get_request_response(msg, msg->payload_size(), req->recv_buffer_, msg->partner_buffer(),
+                   queue_->pt2pt_cq_id(), software_ack_ ? sumi::message::no_ack : queue_->pt2pt_cq_id());
 
 }
 
@@ -186,7 +186,7 @@ rendezvous_get::incoming_payload(mpi_message* msg)
   if (software_ack_){
     msg->advance_stage();
     mpi_->smsg_send_response(msg, sizeof(mpi_message), nullptr,
-                             sumi::message::no_ack, mpi_->pt2pt_cq_id());
+                             sumi::message::no_ack, queue_->pt2pt_cq_id());
   } else {
     delete msg;
   }

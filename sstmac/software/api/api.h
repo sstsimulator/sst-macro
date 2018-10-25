@@ -108,9 +108,14 @@ class api :
    */
   void end_api_call();
 
+  sprockit::sim_parameters* params() const {
+    return params_;
+  }
+
  protected:
   HostTimer* host_timer_;
   lib_compute_time* compute_;
+  sprockit::sim_parameters* params_;
 
  private:
   void init(sprockit::sim_parameters *params);

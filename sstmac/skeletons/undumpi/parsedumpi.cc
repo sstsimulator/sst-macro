@@ -101,9 +101,7 @@ int parsedumpi::skeleton_main()
   // Ready to go.
   //only rank 0 should print progress
   bool print_my_progress = rank == 0 && print_progress_;
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(mpi(), &sumi::transport::deadlock_check));
-  sstmac::runtime::enter_deadlock_region();
+
   try {
     cbacks.parse_stream(fname.c_str(), print_my_progress);
   } catch (parsedumpi::early_termination& e) {
@@ -115,8 +113,6 @@ int parsedumpi::skeleton_main()
     std::cout << "Parsedumpi finalized on rank 0 - trace "
       << fileroot_ << " successful!" << std::endl;
   }
-
-  sstmac::runtime::exit_deadlock_region();
 
   return 0;
 

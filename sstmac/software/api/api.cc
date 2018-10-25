@@ -90,6 +90,7 @@ api::init(sprockit::sim_parameters* params)
     host_timer_ = new HostTimer();
     compute_ = operating_system::current_thread()->parent_app()->compute_lib();
   }
+  params_ = params;
 }
 
 void

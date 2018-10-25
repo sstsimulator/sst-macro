@@ -234,7 +234,7 @@ class collective_actor
   void init(transport* my_api, int tag, const collective::config& cfg);
 
  protected:
-  collective_actor(transport* my_api, int tag, const collective::config& cfg);
+  collective_actor(collective_engine* engine, int tag, const collective::config& cfg);
 
   collective_actor(){} //will be initialized later
 
@@ -248,6 +248,8 @@ class collective_actor
 
  protected:
   transport* my_api_;
+
+  collective_engine* engine_;
 
   int dom_me_;
 
@@ -381,6 +383,8 @@ class dag_collective_actor :
   virtual void init_dag() = 0;
   virtual void init_tree(){}
 
+  collective_done_message* done_msg() const;
+
  private:
   template <class T, class U> using alloc = sprockit::thread_safe_allocator<std::pair<const T,U>>;
   typedef std::map<uint32_t, action*, std::less<uint32_t>,
@@ -461,8 +465,6 @@ class dag_collective_actor :
   void* get_send_buffer(action* ac, uint64_t& nbytes);
 
   void* get_recv_buffer(action* ac);
-
-  collective_done_message* done_msg() const;
 
   virtual void start_shuffle(action* ac);
 

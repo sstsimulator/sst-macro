@@ -98,27 +98,6 @@ run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
   }
   printf("Rank %d passed allgather\n", me);
 
-
-  sstmac_usleep(100);
-  if (me == todie){
-    printf("Rank %d going down!\n", me);
-    comm_kill_node();
-  }
-  comm_vote<And>(1, tag, context, dom);
-
-
-  dmsg = comm_collective_block(collective::dynamic_tree_vote, tag);
-  if (me == 0){
-    auto& failed = comm_failed_ranks();
-    std::stringstream sstr;
-    sstr << "Failed = {";
-    for (auto rank : failed){
-      sstr << " " << rank;
-    }
-    sstr << " }";
-    printf("%s\n", sstr.str().c_str());
-  }
-
   sstmac_usleep(100);
 }
 

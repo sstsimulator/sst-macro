@@ -82,9 +82,9 @@ mpi_api::finish_vcollective_op(collective_op_base* op_)
 void
 mpi_api::start_allgatherv(collectivev_op* op)
 {
-  transport::allgatherv(op->tmp_recvbuf, op->tmp_sendbuf,
+  coll_engine_->allgatherv(op->tmp_recvbuf, op->tmp_sendbuf,
                   op->recvcounts, op->sendtype->packed_size(), op->tag,
-                  collective::cfg().comm(op->comm).cqId(collective_cq_id()));
+                  collective::cfg().comm(op->comm));
 
 }
 
@@ -156,10 +156,10 @@ mpi_api::iallgatherv(int sendcount, MPI_Datatype sendtype,
 void
 mpi_api::start_alltoallv(collectivev_op* op)
 {
-  transport::alltoallv(op->tmp_recvbuf, op->tmp_sendbuf,
+  coll_engine_->alltoallv(op->tmp_recvbuf, op->tmp_sendbuf,
                   op->sendcounts, op->recvcounts,
                   op->sendtype->packed_size(), op->tag,
-                  collective::cfg().comm(op->comm).cqId(collective_cq_id()));
+                  collective::cfg().comm(op->comm));
 }
 
 collective_op_base*

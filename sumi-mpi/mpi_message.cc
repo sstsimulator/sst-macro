@@ -58,17 +58,13 @@ namespace sumi {
 void
 mpi_message::serialize_order(sstmac::serializer& ser)
 {
-  message::serialize_order(ser);
+  protocol_message::serialize_order(ser);
   ser & (src_rank_);
   ser & (dst_rank_);
-  ser & (count_);
   ser & type_;
-  ser & type_packed_size_;
   ser & (tag_);
   ser & (commid_);
   ser & (seqnum_);
-  ser & (protocol_);
-  ser & stage_;
 }
 
 
@@ -81,8 +77,8 @@ mpi_message::build_status(MPI_Status* stat) const
 {
   stat->MPI_SOURCE = src_rank_;
   stat->MPI_TAG = tag_;
-  stat->count = count_;
-  stat->bytes_received = count_ * type_packed_size_;
+  stat->count = count();
+  stat->bytes_received = payload_size();
 }
 
 std::string
@@ -92,13 +88,13 @@ mpi_message::to_string() const
   ss << "mpimessage("
      << (void*) local_buffer()
      << "," << (void*) remote_buffer()
-     << ", count=" << count_
+     << ", count=" << count()
      << ", type=" << type_
      << ", src=" << src_rank_
      << ", dst=" << dst_rank_
      << ", tag=" << tag_
      << ", seq=" << seqnum_
-     << ", stage=" << stage_
+     << ", stage=" << stage()
      << ", protocol=" << protocol()
      << ", type=" << sstmac::hw::network_message::type_str();
 

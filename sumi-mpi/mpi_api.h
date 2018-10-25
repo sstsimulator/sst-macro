@@ -546,6 +546,10 @@ class mpi_api : public sumi::transport
               origin_datatype, int target_rank, MPI_Aint target_disp,
               int target_count, MPI_Datatype target_datatype, MPI_Win win);
 
+  collective_engine* coll_engine() const {
+    return coll_engine_;
+  }
+
  public:
   int op_create(MPI_User_function* user_fn, int commute, MPI_Op* op);
 
@@ -834,6 +838,8 @@ class mpi_api : public sumi::transport
   typedef std::unordered_map<MPI_Request, mpi_request*> req_ptr_map;
   req_ptr_map req_map_;
   MPI_Request req_counter_;
+
+  collective_engine* coll_engine_;
 
   std::unordered_map<int, keyval*> keyvals_;
 

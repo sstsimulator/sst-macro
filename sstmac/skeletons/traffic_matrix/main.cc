@@ -69,17 +69,19 @@ static const int recv_cq = 0;
 class sumi_param_bcaster : public sprockit::param_bcaster
 {
  public:
-  sumi_param_bcaster(sumi::transport* tp) : tport_(tp), tag_(12345) {}
+  sumi_param_bcaster(sumi::collective_engine* engine) : engine_(engine), tag_(12345) {}
 
   void bcast(void *buf, int size, int me, int root){
-    tport_->bcast(root, buf, size, sizeof(char), tag_);
-    tport_->collective_block(sumi::collective::bcast, tag_);
+    engine_->bcast(root, buf, size, sizeof(char), tag_);
+    sumi::collective_done_message* msg = nullptr;
+    auto* dmsg = engine_->block_until_next();
+    delete dmsg;
     ++tag_;
   }
 
  private:
   int tag_;
-  sumi::transport* tport_;
+  sumi::collective_engine* engine_;
 };
 
 static const int window_bytes = 262144;
@@ -166,7 +168,7 @@ progress_loop(sumi::transport* tport, double timeout,
     "Rank %d entering progress loop at t=%10.6e - stop=%10.6e, timeout=%10.6e",
     tport->rank(), now, stop, timeout);
   while (timeout > 0){
-    rdma_message* msg = SUMI_POLL_TIME(tport,rdma_message,timeout);
+    rdma_message* msg = dynamic_cast<rdma_message*>(tport->poll(false, timeout));
     now = tport->wall_time();
     if (msg){ //need if statement, if timed out then no message
       timeout = stop - now; //timeout shrinks
@@ -225,7 +227,7 @@ quiesce(sumi::transport* tport,
     "Rank %d starting quiescence: need %d, have %d p=%d n=%d",
     tport->rank(), ntotal, done.size(), npartners, niterations);
   while (done.size() < ntotal){
-    rdma_message* msg = SUMI_POLL(tport, rdma_message);
+    rdma_message* msg = dynamic_cast<rdma_message*>(tport->poll(true));
     double now = tport->wall_time();
     msg->set_finish(now);
     done.push_back(msg);
@@ -329,7 +331,7 @@ int USER_MAIN(int argc, char** argv)
     "Rank %d waiting on %d config messages from recv partners",
     tport->rank(), npartners);
   while (configs_recved < npartners){
-    config_message* msg = SUMI_POLL(tport, config_message);
+    config_message* msg = dynamic_cast<config_message*>(tport->poll(true));
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d received config message from %d",
         tport->rank(), msg->sender());
@@ -339,8 +341,10 @@ int USER_MAIN(int argc, char** argv)
   }
 
   int tag = 42;
-  tport->barrier(tag);
-  tport->collective_block(sumi::collective::barrier, tag);
+
+  auto* engine = new sumi::collective_engine(params, tport);
+  engine->barrier(tag);
+  engine->block_until_next();
 
   std::list<rdma_message*> done;
 

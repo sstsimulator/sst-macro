@@ -94,6 +94,9 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   protocols_[mpi_protocol::EAGER0] = new eager0(params, this);
   protocols_[mpi_protocol::EAGER1] = new eager1(params, this);
   protocols_[mpi_protocol::RENDEZVOUS_GET] = new rendezvous_get(params, this);
+
+  pt2pt_cq_ = api_->allocate_cq();
+  coll_cq_ = api_->coll_engine()->cq();
 }
 
 void
@@ -283,18 +286,36 @@ mpi_queue::find_matching_recv(mpi_message* message)
   return nullptr;
 }
 
+void
+mpi_queue::incoming_collective_message(sumi::message* m)
+{
+  collective_work_message* msg = safe_cast(collective_work_message, m);
+  collective_done_message* cmsg = api_->coll_engine()->incoming(msg);
+  if (cmsg){
+    mpi_comm* comm = safe_cast(mpi_comm, cmsg->dom());
+    mpi_request* req = comm->get_request(cmsg->tag());
+    collective_op_base* op = req->collective_data();
+    api_->finish_collective(op);
+    req->complete();
+    delete op;
+    delete cmsg;
+  }
+}
+
 //
 // Handle a new incoming message.  Can be either an eager send (with data)
 // or a new handshake request
 //
 void
-mpi_queue::incoming_new_message(mpi_message* message)
+mpi_queue::incoming_pt2pt_message(message* m)
 {
-  mpi_queue_debug("incoming new message %s", message->to_string().c_str());
+  mpi_queue_debug("incoming new message %s", m->to_string().c_str());
+
+  mpi_message* message = safe_cast(mpi_message, m);
 
   if (message->stage() > 0 || message->is_nic_ack()){
     //already matched - pass that on through
-    handle_new_message(message);
+    handle_pt2pt_message(message);
     return;
   }
 
@@ -305,7 +326,7 @@ mpi_queue::incoming_new_message(mpi_message* message)
         int(tid), int(next_inbound));
 
 
-    handle_new_message(message);
+    handle_pt2pt_message(message);
     ++next_inbound;
 
     // Handle any messages that have been freed by the arrival of this one
@@ -318,7 +339,7 @@ mpi_queue::incoming_new_message(mpi_message* message)
         if (mess->seqnum() <= next_inbound_[tid]) {
           //it = held_[tid].erase(it);
           it++;
-          handle_new_message(mess);
+          handle_pt2pt_message(mess);
           ++next_inbound;
         } else {
           break;
@@ -354,22 +375,22 @@ mpi_queue::notify_probes(mpi_message* message)
 }
 
 void
-mpi_queue::handle_new_message(mpi_message* message)
+mpi_queue::handle_pt2pt_message(mpi_message* message)
 {
   mpi_protocol* protocol = protocols_[message->protocol()];
   protocol->incoming(message);
 }
 
 void
-mpi_queue::handle_poll_msg(sumi::message* msg)
+mpi_queue::incoming_message(sumi::message* msg)
 {
-  if (msg->class_type() == message::collective_done){
-    handle_collective_done(msg);
+  if (msg->cq_id() == pt2pt_cq_){
+    incoming_pt2pt_message(msg);
+  } else if (msg->cq_id() == coll_cq_){
+    incoming_collective_message(msg);
   } else {
-    mpi_message* mpimsg = dynamic_cast<mpi_message*>(msg);
-    mpi_queue_debug("continuing progress loop on incoming msg %s",
-                    mpimsg->to_string().c_str());
-    incoming_new_message(mpimsg);
+    spkt_abort_printf("Got bad completion queue %d for message %s",
+                      msg->cq_id(), msg->to_string().c_str());
   }
 }
 
@@ -378,7 +399,7 @@ mpi_queue::nonblocking_progress()
 {
   sumi::message* msg = api_->poll(false); //do not block
   while (msg){
-    handle_poll_msg(msg);
+    incoming_message(msg);
     msg = api_->poll(false);
   }
 }
@@ -397,7 +418,7 @@ mpi_queue::progress_loop(mpi_request* req)
   while (!req->is_complete()) {
     mpi_queue_debug("blocking on progress loop");
     sumi::message* msg = api_->poll(true); //block until message arrives
-    handle_poll_msg(msg);
+    incoming_message(msg);
 #if SSTMAC_COMM_SYNC_STATS
     if (req->is_complete()){
       api_->collect_sync_delays(wait_start.sec(), msg);
@@ -406,7 +427,6 @@ mpi_queue::progress_loop(mpi_request* req)
   }
 
   mpi_queue_debug("finishing progress loop");
-
   return api_->now();
 }
 
@@ -430,7 +450,7 @@ mpi_queue::start_progress_loop(const std::vector<mpi_request*>& reqs)
   while (!at_least_one_complete(reqs)) {
     mpi_queue_debug("blocking on progress loop");
     sumi::message* msg = api_->poll(true); //block until msg arrives
-    handle_poll_msg(msg);
+    incoming_message(msg);
   }
   mpi_queue_debug("finishing progress loop");
 }
@@ -440,7 +460,7 @@ mpi_queue::forward_progress(double timeout)
 {
   mpi_queue_debug("starting forward progress with timeout=%f", timeout);
   sumi::message* msg = api_->poll(true, timeout); //block until timeout
-  if (msg) handle_poll_msg(msg);
+  if (msg) incoming_message(msg);
 }
 
 void
@@ -449,19 +469,6 @@ mpi_queue::start_progress_loop(
   sstmac::timestamp timeout)
 {
   start_progress_loop(req);
-}
-
-void
-mpi_queue::handle_collective_done(sumi::message* msg)
-{
-  auto cmsg = dynamic_cast<collective_done_message*>(msg);
-  mpi_comm* comm = safe_cast(mpi_comm, cmsg->dom());
-  mpi_request* req = comm->get_request(cmsg->tag());
-  collective_op_base* op = req->collective_data();
-  api_->finish_collective(op);
-  req->complete();
-  delete op;
-  delete cmsg;
 }
 
 void

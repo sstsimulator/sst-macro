@@ -113,9 +113,11 @@ collective_actor::init(transport *my_api, int tag, const collective::config& cfg
   dom_me_ = cfg_.dom->my_comm_rank();
 }
 
-collective_actor::collective_actor(transport* my_api, int tag, const collective::config& cfg)
+collective_actor::collective_actor(collective_engine* engine, int tag, const collective::config& cfg) :
+  engine_(engine),
+  my_api_(engine->tport())
 {
-  init(my_api, tag, cfg);
+  init(my_api_, tag, cfg);
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   timeout_ = new collective_timeout(this);
 #endif
@@ -295,8 +297,8 @@ dag_collective_actor::send_eager_message(action* ac)
   my_api_->smsg_send<collective_work_message>(ac->phys_partner, num_bytes, buf,
                                               message::no_ack, cfg_.cq_id, message::collective,
                                               type_, dom_me_, ac->partner,
-                                              collective_work_message::eager,
-                                              tag_, ac->round, buf); //do not ack the send
+                                              tag_, ac->round, ac->nelems, type_size_,
+                                              nullptr, collective_work_message::eager); //do not ack the send
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending eager message to %d on tag=%d offset=%d",
@@ -313,8 +315,8 @@ dag_collective_actor::send_rdma_put_header(action* ac)
   my_api_->smsg_send<collective_work_message>(ac->phys_partner, 0, buf,
                                               message::no_ack, cfg_.cq_id, message::collective,
                                               type_, dom_me_, ac->partner,
-                                              collective_work_message::put,
-                                              tag_, ac->round, buf);
+                                              tag_, ac->round,
+                                              ac->nelems, type_size_, buf, collective_work_message::put);
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending put header to %s on round=%d tag=%d offset=%d",
@@ -331,8 +333,8 @@ dag_collective_actor::send_rdma_get_header(action* ac)
   my_api_->smsg_send<collective_work_message>(ac->phys_partner, sizeof(collective_work_message), buf,
                                               message::no_ack, cfg_.cq_id, message::collective,
                                               type_, dom_me_, ac->partner,
-                                              collective_work_message::get,
-                                              tag_, ac->round, buf); //do not ack the send
+                                              tag_, ac->round,
+                                              ac->nelems, type_size_, buf, collective_work_message::get); //do not ack the send
 
   debug_printf(sumi_collective | sumi_collective_sendrecv | sumi_failure,
    "Rank %s, collective %s(%p) sending RDMA get header to %d on tag=%d offset=%d",
@@ -466,9 +468,9 @@ dag_collective_actor::protocol_t
 dag_collective_actor::protocol_for_action(action* ac) const
 {
   uint64_t byte_length = ac->nelems*type_size_;
-  if (my_api_->use_eager_protocol(byte_length)){
+  if (engine_->use_eager_protocol(byte_length)){
     return eager_protocol;
-  } else if (my_api_->use_get_protocol()){
+  } else if (engine_->use_get_protocol()){
     return get_protocol;
   } else {
     return put_protocol;
@@ -487,7 +489,7 @@ dag_collective_actor::do_recv(action* ac)
 {
   active_comms_[ac->id] = ac;
   uint64_t byte_length = ac->nelems*type_size_;
-  if (my_api_->use_eager_protocol(byte_length) || my_api_->use_get_protocol()){
+  if (engine_->use_eager_protocol(byte_length) || engine_->use_get_protocol()){
     //I need to wait for the sender to contact me
   } else {
     //put protocol, I need to tell the sender where to put it
@@ -736,7 +738,7 @@ dag_collective_actor::next_round_ready_to_put(
   header->reverse();
 
   uint64_t size; void* buf = get_send_buffer(ac, size);
-  my_api_->rdma_put_response(header, size, buf, header->buffer(),
+  my_api_->rdma_put_response(header, size, buf, header->partner_buffer(),
                              cfg_.cq_id, cfg_.cq_id);
 
   debug_printf(sumi_collective | sumi_collective_sendrecv,
@@ -758,7 +760,7 @@ dag_collective_actor::next_round_ready_to_get(
     header, header->round(), tag_, header->dom_sender());
 
   my_api_->rdma_get_request_response(header, ac->nelems*type_size_,
-                                     get_recv_buffer(ac), header->buffer(),
+                                     get_recv_buffer(ac), header->partner_buffer(),
                                      cfg_.cq_id, cfg_.cq_id);
 
   debug_printf(sumi_collective | sumi_collective_sendrecv,
@@ -852,8 +854,6 @@ dag_collective_actor::put_done_notification()
     rank_str().c_str(), tag_);
 
   finalize_buffers();
-
-  my_api_->notify_collective_done(done_msg());
   timeout_ = 0;
 }
 

@@ -450,49 +450,6 @@ test_barrier(int tag)
   printf("t=%4.2f finished barrier on rank %d\n", sstmac_now(), rank);
 }
 
-
-void
-test_dynamic_tree_vote(int tag)
-{
-  int vote = comm_rank() * 2;
-  int answer = (comm_nproc()-1) * 2;
-  comm_vote<Max>(vote, tag);
-
-  message* msg = comm_poll();
-  auto dmsg = dynamic_cast<collective_done_message*>(msg);
-  if (dmsg->tag() != tag || dmsg->type() != collective::dynamic_tree_vote){
-    sprockit::abort("vote got invalid completion message");
-  }
-
-  if (dmsg->vote() != answer){
-    cerrn << sprockit::printf("got final vote %d on rank %d, but answer is %d\n",
-        dmsg->vote(), comm_rank(), answer);
-  }
-
-}
-
-void
-test_failed_collectives()
-{
-
-  int tag = 717;
-  int rank = comm_rank();
-  int nelems = 10000;
-  void* null = 0;
-
-  comm_allreduce<char,Add>(null,null,nelems,tag,
-                           collective::cfg().resilient(true));
-  comm_collective_block(collective::allreduce, tag);
-  printf("t=%6.2f: passed failed allreduce on rank %d\n", sstmac_now(), rank);
-
-
-  tag = 818;
-  comm_allgather(null,null,nelems,sizeof(int),tag,
-                 collective::cfg().resilient(true));
-  comm_collective_block(collective::allgather, tag);
-  printf("t=%6.2f: passed failed allgather on rank %d\n", sstmac_now(), rank);
-}
-
 void
 test_alltoall(int tag)
 {
@@ -536,12 +493,6 @@ main(int argc, char **argv)
 {
   comm_init();
 
-  sstmac::runtime::enter_deadlock_region();
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
-
-  test_dynamic_tree_vote(1);
-
   test_allreduce(2);
 
   test_allreduce_payload(3);
@@ -578,9 +529,8 @@ main(int argc, char **argv)
   test_scan_payload(21);
 
   sstmac_sleep(100);
-  //test_failed_collectives();
 
   comm_finalize();
-  sstmac::runtime::exit_deadlock_region();
+
   return 0;
 }

@@ -64,10 +64,6 @@ int USER_MAIN(int argc, char** argv)
 {
   MPI_Init(&argc, &argv);
 
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(sumi::sstmac_mpi(), &sumi::transport::deadlock_check));
-  sstmac::runtime::enter_deadlock_region();
-
   double t_start = MPI_Wtime();
 
   int me, nproc;
@@ -120,6 +116,6 @@ int USER_MAIN(int argc, char** argv)
   delete[] reqs;
 
   MPI_Finalize();
-  sstmac::runtime::exit_deadlock_region();
+
   return 0;
 }

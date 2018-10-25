@@ -57,20 +57,12 @@ namespace sumi {
  * This encapsulates all the information about a collective that has completed in the background
  */
 class collective_done_message :
-  public message,
   public sprockit::thread_safe_new<collective_done_message>
 {
 
  public:
-  std::string to_string() const override {
-    return "collective done message";
-  }
-
   collective_done_message(int tag, collective::type_t ty, communicator* dom, uint8_t cq_id) :
-    message(-1, -1, cq_id, cq_id, collective_done,
-            -1, "", -1, -1, -1, -1, false, nullptr, network_message::header{}),
-    tag_(tag), result_(0), vote_(0), type_(ty),
-    dom_(dom)
+    tag_(tag), result_(0), vote_(0), type_(ty), dom_(dom)
   {
   }
 
@@ -106,12 +98,6 @@ class collective_done_message :
     return vote_;
   }
 
-  sstmac::hw::network_message* clone_injection_ack() const override {
-    auto* cln = new collective_done_message(*this);
-    cln->convert_to_ack();
-    return cln;
-  }
-
   int comm_rank() const {
     return comm_rank_;
   }
@@ -134,7 +120,7 @@ class collective_done_message :
  * Main message type used by collectives
  */
 class collective_work_message :
-  public message
+  public protocol_message
 {
   ImplementSerializable(collective_work_message)
  public:
@@ -147,18 +133,16 @@ class collective_work_message :
   collective_work_message(
     collective::type_t type,
     int dom_sender, int dom_recver,
-    protocol_t p,
     int tag, int round,
-    void* buffer,
+    int nelems, int type_size, void* buffer, protocol_t p,
     Args&&... args) :
-    message(std::forward<Args>(args)...),
+    protocol_message(nelems, type_size, buffer, p,
+                     std::forward<Args>(args)...),
     tag_(tag),
     type_(type),
     round_(round),
     dom_sender_(dom_sender),
-    dom_recver_(dom_recver),
-    protocol_(p),
-    buffer_(buffer)
+    dom_recver_(dom_recver)
   {
     if (this->class_type() != collective){
       spkt_abort_printf("collective work message is not of type collect");
@@ -171,13 +155,9 @@ class collective_work_message :
 
   virtual std::string to_string() const override;
 
-  static const char* tostr(protocol_t p);
+  static const char* tostr(int p);
 
   virtual void serialize_order(sstmac::serializer& ser) override;
-
-  protocol_t protocol() const {
-    return protocol_;
-  }
 
   int tag() const {
     return tag_;
@@ -212,10 +192,6 @@ class collective_work_message :
     return round_;
   }
 
-  void* buffer() const {
-    return buffer_;
-  }
-
   collective::type_t type() const {
     return type_;
   }
@@ -239,10 +215,6 @@ class collective_work_message :
   int dom_sender_;
 
   int dom_recver_;
-
-  protocol_t protocol_;
-
-  void* buffer_;
 
 };
 

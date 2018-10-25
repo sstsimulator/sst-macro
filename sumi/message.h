@@ -269,6 +269,69 @@ class message : public sstmac::hw::network_message
 #endif
 };
 
+class protocol_message : public message {
+ public:
+  uint64_t count() const {
+    return count_;
+  }
+
+  int type_size() const {
+    return type_size_;
+  }
+
+  void* partner_buffer() const {
+    return partner_buffer_;
+  }
+
+  uint64_t payload_size() const {
+    return count_ * type_size_;
+  }
+
+  int protocol() const {
+    return protocol_;
+  }
+
+  int stage() const {
+    return stage_;
+  }
+
+  void advance_stage() {
+    stage_++;
+  }
+
+ protected:
+  template <class... Args>
+  protocol_message(uint64_t count, int type_size, void* partner_buffer, int protocol,
+                   Args&&... args) :
+    message(std::forward<Args>(args)...),
+    count_(count), type_size_(type_size),
+    partner_buffer_(partner_buffer),
+    protocol_(protocol),
+    stage_(0)
+  {
+  }
+
+  virtual void serialize_order(sstmac::serializer& ser){
+    ser & stage_;
+    ser & protocol_;
+    ser & count_;
+    ser & type_size_;
+    ser.primitive(partner_buffer_);
+    message::serialize_order(ser);
+  }
+
+ protected:
+  protocol_message(){}
+
+ private:
+  uint64_t count_;
+  int type_size_;
+  void* partner_buffer_;
+  int stage_;
+  int protocol_;
+
+};
+
 }
 
 #endif // SIMPLE_MESSAGE_H

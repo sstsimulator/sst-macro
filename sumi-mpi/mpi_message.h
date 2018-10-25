@@ -59,27 +59,25 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 class mpi_message final :
-  public sumi::message,
+  public sumi::protocol_message,
   public sprockit::thread_safe_new<mpi_message>
 {
   ImplementSerializable(mpi_message)
 
  public:
   template <class... Args>
-  mpi_message(int src_rank, int dst_rank, int count,
-              MPI_Datatype type, int type_packed_size,
-              int tag, MPI_Comm commid, int seqnum,
-              int pid, void* send_buffer, Args&&... args) :
-    sumi::message(std::forward<Args>(args)...),
+  mpi_message(int src_rank, int dst_rank,
+              MPI_Datatype type, int tag, MPI_Comm commid, int seqnum,
+              int count, int type_size, void* partner_buf, int protocol,
+              Args&&... args) :
+    sumi::protocol_message(count, type_size, partner_buf, protocol,
+                           std::forward<Args>(args)...),
     src_rank_(src_rank),
     dst_rank_(dst_rank),
-    count_(count),
-    type_(type), type_packed_size_(type_packed_size),
-    tag_(tag), commid_(commid),
-    seqnum_(seqnum),
-    protocol_(pid),
-    send_buffer_(send_buffer),
-    stage_(0)
+    type_(type),
+    tag_(tag),
+    commid_(commid),
+    seqnum_(seqnum)
   {
   }
 
@@ -100,24 +98,8 @@ class mpi_message final :
 
   void serialize_order(sstmac::serializer& ser) override;
 
-  int count() const {
-    return count_;
-  }
-
-  void* send_buffer() const {
-    return send_buffer_;
-  }
-
   MPI_Datatype type() const {
     return type_;
-  }
-
-  int type_packed_size() const {
-    return type_packed_size_;
-  }
-
-  uint64_t payload_size() const {
-    return type_packed_size_ * count_;
   }
 
   int tag() const {
@@ -140,18 +122,6 @@ class mpi_message final :
     return dst_rank_;
   }
 
-  int protocol() const {
-    return protocol_;
-  }
-
-  void advance_stage(){
-    stage_++;
-  }
-
-  int stage() const {
-    return stage_;
-  }
-
   void build_status(MPI_Status* stat) const;
 
  protected:
@@ -162,15 +132,10 @@ class mpi_message final :
 
   int src_rank_;
   int dst_rank_;
-  int count_;
   MPI_Datatype type_;
-  int type_packed_size_;
   int tag_;
   MPI_Comm commid_;
   int seqnum_;
-  int protocol_;
-  void* send_buffer_;
-  int stage_;
 
 };
 

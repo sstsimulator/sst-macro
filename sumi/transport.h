@@ -86,14 +86,16 @@ struct enum_hash {
   }
 };
 
+class collective_engine;
+
 class transport : public sstmac::sw::api {
   DeclareFactory(transport)
  public:
   RegisterAPI("sumi_transport", transport)
 
   transport(sprockit::sim_parameters* params,
-                 sstmac::sw::software_id sid,
-                 sstmac::sw::operating_system* os);
+            sstmac::sw::software_id sid,
+            sstmac::sw::operating_system* os);
 
   void init();
 
@@ -137,7 +139,7 @@ class transport : public sstmac::sw::api {
    * @return
    */
   void rdma_put_response(message* m, uint64_t payload_bytes,
-                             void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq);
+                         void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq);
 
   template <class T, class... Args>
   uint64_t rdma_get(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
@@ -181,39 +183,9 @@ class transport : public sstmac::sw::api {
     return flow_id;
   }
 
-  int pt2pt_cq_id() const {
-    return pt2pt_cq_id_;
-  }
-
-  int collective_cq_id() const {
-    return collective_cq_id_;
-  }
-
   void incoming_event(sstmac::event *ev);
 
   void compute(sstmac::timestamp t);
-
-  void client_server_send(
-    int dest_rank,
-    sstmac::node_id dest_node,
-    int dest_app,
-    sumi::message* msg);
-
-  void client_server_rdma_put(
-    int dest_rank,
-    sstmac::node_id dest_node,
-    int dest_app,
-    sumi::message* msg);
-
-  /**
-   * Block on a collective of a particular type and tag
-   * until that collective is complete
-   * @param ty
-   * @param tag
-   * @return
-   */
-  sumi::collective_done_message* collective_block(
-      sumi::collective::type_t ty, int tag, int cq_id = 0);
 
   double wall_time() const;
 
@@ -233,6 +205,10 @@ class transport : public sstmac::sw::api {
 
   void pin_rdma(uint64_t bytes);
 
+  void* allocate_public_buffer(uint64_t size) {
+    return ::malloc(size);
+  }
+
   void* make_public_buffer(void* buffer, uint64_t size) {
     pin_rdma(size);
     return buffer;
@@ -245,10 +221,6 @@ class transport : public sstmac::sw::api {
   }
 
   int* nidlist() const;
-
-  void deadlock_check();
-
-  int allocate_cq();
   
   /**
    Check if a message has been received on a specific completion queue.
@@ -280,48 +252,142 @@ class transport : public sstmac::sw::api {
    @param timeout   Timeout in seconds
    @return          The next message to be received. Message is NULL on timeout
   */
-  message* blocking_poll(int cq_id, double timeout = -1);
-
-  template <class T> T*
-  poll(const char* file, int line, const char* cls) {
-    message* msg = poll(true);
-    T* result = dynamic_cast<T*>(msg);
-    if (!result){
-      poll_cast_error(file, line, cls, msg);
-    }
-    return result;
+  message* blocking_poll(int cq_id, double timeout = -1){
+    return poll(true, cq_id, timeout);
   }
 
-  template <class T> T*
-  poll(double timeout, const char* file, int line, const char* cls) {
-    message* msg = poll(true, timeout);
-    T* result = dynamic_cast<T*>(msg);
-    if (msg && !result){
-      poll_cast_error(file, line, cls, msg);
-    }
-    return result;
+  int allocate_cq();
+
+  collective_engine* engine() const {
+    return engine_;
   }
 
-#define SUMI_POLL(tport, msgtype) tport->poll<msgtype>(__FILE__, __LINE__, #msgtype)
-#define SUMI_POLL_TIME(tport, msgtype, to) tport->poll<msgtype>(to, __FILE__, __LINE__, #msgtype)
-
-  void cq_push_back(int cq_id, message* msg);
-
-  std::list<message*>::iterator cq_begin(int cq_id){
-    return completion_queues_[cq_id].begin();
+  int rank() const {
+    return rank_;
   }
 
-  std::list<message*>::iterator cq_end(int cq_id){
-    return completion_queues_[cq_id].end();
+  int nproc() const {
+    return nproc_;
   }
 
-  message* pop(int cq_id, std::list<message*>::iterator it){
-    message* msg = *it;
-    completion_queues_[cq_id].erase(it);
-    return msg;
+  void make_engine();
+
+ protected:
+  transport(sprockit::sim_parameters* params,
+           const char* prefix,
+           sstmac::sw::software_id sid,
+           sstmac::sw::operating_system* os);
+
+  transport(sprockit::sim_parameters* params,
+           sstmac::sw::software_id sid,
+           sstmac::sw::operating_system* os,
+           const std::string& prefix,
+           const std::string& server_name);
+
+  /**
+   * @brief sumi_transport Ctor with strict library name. We do not create a server here.
+   * Since this has been explicitly named, messages will be directly to a named library.
+   * @param params
+   * @param libname
+   * @param sid
+   * @param os
+   */
+  transport(sprockit::sim_parameters* params,
+           const std::string& libname,
+           sstmac::sw::software_id sid,
+           sstmac::sw::operating_system* os,
+           const std::string& server_name = std::string("sumi_server"));
+
+ private:    
+  transport(sprockit::sim_parameters* params);
+
+  void block(std::list<sstmac::sw::thread*>& threads, double timeout);
+
+  message* find_message();
+  
+  void validate_api();
+
+  void send(message* m);
+
+  uint64_t allocate_flow_id();
+
+  std::vector<std::list<message*>> completion_queues_;
+
+  std::vector<std::list<sstmac::sw::thread*>> cq_blocked_threads_;
+
+  std::list<sstmac::sw::thread*> blocked_threads_;
+
+  uint32_t component_id_;
+
+  sstmac::timestamp post_rdma_delay_;
+
+  sstmac::timestamp post_header_delay_;
+
+  sstmac::timestamp poll_delay_;
+
+  sstmac::sw::lib_compute_time* user_lib_time_;
+
+  sstmac::stat_spyplot* spy_num_messages_;
+
+  sstmac::stat_spyplot* spy_bytes_;
+
+  sstmac::timestamp rdma_pin_latency_;
+  sstmac::timestamp rdma_page_delay_;
+  int page_size_;
+  bool pin_delay_;
+
+  collective_engine* engine_;
+
+ protected:
+  bool inited_;
+
+  bool finalized_;
+
+  int rank_;
+
+  int nproc_;
+
+  std::string server_libname_;
+
+  sstmac::sw::task_mapping::ptr rank_mapper_;
+
+};
+
+class collective_engine
+{
+ public:
+  collective_engine(sprockit::sim_parameters* params,
+                    transport* tport);
+
+  ~collective_engine();
+
+  int cq() const {
+    return cq_id_;
   }
 
-  message* poll_new(bool blocking, int cq_id, double timeout);
+  collective_done_message* incoming(message* m);
+
+  int allocate_global_collective_tag(){
+    system_collective_tag_--;
+    if (system_collective_tag_ >= 0)
+      system_collective_tag_ = -1;
+    return system_collective_tag_;
+  }
+
+  communicator* global_dom() const {
+    return global_domain_;
+  }
+
+  /**
+   * The cutoff for message size in bytes
+   * for switching between an eager protocol and a rendezvous RDMA protocol
+   * @return
+   */
+  uint32_t eager_cutoff() const {
+    return eager_cutoff_;
+  }
+
+  void notify_collective_done(collective_done_message* msg);
 
   bool use_eager_protocol(uint64_t byte_length) const {
     return byte_length < eager_cutoff_;
@@ -343,25 +409,7 @@ class transport : public sstmac::sw::api {
     use_put_protocol_ = flag;
   }
 
-  void send_self_terminate();
-  
-  /**
-   * The total size of the input/result buffer in bytes is nelems*type_size
-   * This always run in a fault-tolerant fashion
-   * This uses a dynamic tree structure that reconnects partners when failures are detected
-   * @param vote The vote (currently restricted to integer) from this process
-   * @param nelems The number of elements in the input and result buffer.
-   * @param tag A unique tag identifier for the collective
-   * @param fxn The function that merges vote, usually AND, OR, MAX, MIN
-   * @param context The context (i.e. initial set of failed procs)
-   */
-  void dynamic_tree_vote(int vote, int tag, vote_fxn fxn, collective::config cfg = collective::cfg());
-
-  template <template <class> class VoteOp>
-  void vote(int vote, int tag, collective::config cfg = collective::cfg()){
-    typedef VoteOp<int> op_class_type;
-    dynamic_tree_vote(vote, tag, &op_class_type::op, cfg);
-  }
+  collective_done_message* block_until_next();
 
   /**
    * The total size of the input buffer in bytes is nelems*type_size*comm_size
@@ -435,6 +483,9 @@ class transport : public sstmac::sw::api {
     reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
   }
 
+  transport* tport() const {
+    return tport_;
+  }
 
   /**
    * The total size of the input/result buffer in bytes is nelems*type_size
@@ -481,85 +532,17 @@ class transport : public sstmac::sw::api {
 
   void bcast(int root, void* buf, int nelems, int type_size, int tag, collective::config cfg = collective::cfg());
 
+  void clean_up();
 
-  int rank() const {
-    return rank_;
-  }
+  void deadlock_check();
 
-  int allocate_global_collective_tag(){
-    system_collective_tag_--;
-    if (system_collective_tag_ >= 0)
-      system_collective_tag_ = -1;
-    return system_collective_tag_;
-  }
+ private:
+  bool skip_collective(collective::type_t ty,
+                        collective::config& cfg,
+                        void* dst, void *src,
+                        int nelems, int type_size,
+                        int tag);
 
-  int nproc() const {
-    return nproc_;
-  }
-
-  communicator* global_dom() const {
-    return global_domain_;
-  }
-
-  /**
-   * The cutoff for message size in bytes
-   * for switching between an eager protocol and a rendezvous RDMA protocol
-   * @return
-   */
-  uint32_t eager_cutoff() const {
-    return eager_cutoff_;
-  }
-
-  void notify_collective_done(collective_done_message* msg);  
-
-  /**
-   * @brief handle Receive some version of point-2-point message.
-   *  Return either the original message or a collective done message
-   *  if the message is part of a collective and the collective is done
-   * @param msg A point to point message that might be part of a collective
-   * @return Null, if collective message and collective is not done
-   */
-  message* handle(message* msg);
-
-  void* allocate_public_buffer(uint64_t size) {
-    return ::malloc(size);
-  }
-
- protected:
-  transport(sprockit::sim_parameters* params,
-           const char* prefix,
-           sstmac::sw::software_id sid,
-           sstmac::sw::operating_system* os);
-
-  transport(sprockit::sim_parameters* params,
-           sstmac::sw::software_id sid,
-           sstmac::sw::operating_system* os,
-           const std::string& prefix,
-           const std::string& server_name);
-
-  /**
-   * @brief sumi_transport Ctor with strict library name. We do not create a server here.
-   * Since this has been explicitly named, messages will be directly to a named library.
-   * @param params
-   * @param libname
-   * @param sid
-   * @param os
-   */
-  transport(sprockit::sim_parameters* params,
-           const std::string& libname,
-           sstmac::sw::software_id sid,
-           sstmac::sw::operating_system* os,
-           const std::string& server_name = std::string("sumi_server"));
-
-
-#if SSTMAC_COMM_SYNC_STATS
- public:
-  virtual void collect_sync_delays(double wait_start, message* msg){}
-
-  virtual void start_collective_sync_delays(){}
-#endif
-
- private:  
   void finish_collective(collective* coll, collective_done_message* dmsg);
 
   void start_collective(collective* coll);
@@ -567,78 +550,9 @@ class transport : public sstmac::sw::api {
   void validate_collective(collective::type_t ty, int tag);
 
   void deliver_pending(collective* coll, int tag, collective::type_t ty);
-  
-  transport(sprockit::sim_parameters* params);
-  
-  void validate_api();
-
-  void poll_cast_error(const char* file, int line, const char* cls, message* msg){
-    spkt_throw_printf(sprockit::value_error,
-       "Could not cast incoming message to type %s\n"
-       "Got %s\n"
-       "%s:%d",
-       cls, msg->to_string().c_str(),
-       file, line);
-  }
-
-  /**
-   * @brief poll_new Return a new message not already in the completion queue
-   * @param blocking
-   * @param timeout
-   * @return A message if found, null message if non-blocking or timed out
-   */
-  message* poll_new(bool blocking, double timeout = -1);
-
-  /**
-   * Helper function for doing operations necessary to close out a heartbeat
-   * @param dmsg
-   */
-  void vote_done(int context, collective_done_message* dmsg);
-
-  bool skip_collective(collective::type_t ty,
-    collective::config& cfg,
-    void* dst, void *src,
-    int nelems, int type_size,
-    int tag);
-
-  void clean_up();
-
- protected:
-  void send(message* m);
-
-  uint64_t allocate_flow_id();
-
-  std::vector<std::list<message*>> completion_queues_;
-
-  bool inited_;
-
-  bool finalized_;
-
-  int rank_;
-
-  int nproc_;
 
  private:
-  template <typename Key, typename Value>
-  using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
-
-  typedef std::unordered_map<int,collective*> tag_to_collective_map;
-  typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
-  collective_map collectives_;
-
-  typedef std::unordered_map<int,std::list<collective_work_message*>> tag_to_pending_map;
-  typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
-  pending_map pending_collective_msgs_;
-
-  std::list<collective*> todel_;
-  
-  uint32_t eager_cutoff_;
-
-  bool use_put_protocol_;
-
-  communicator* global_domain_;
-
-  int system_collective_tag_;
+  transport* tport_;
 
   static collective_algorithm_selector* allgather_selector_;
   static collective_algorithm_selector* alltoall_selector_;
@@ -656,38 +570,30 @@ class transport : public sstmac::sw::api {
   static sstmac::sw::ftq_tag sumi_transport_tag;
   static sstmac::sw::ftq_tag poll_delay_tag;
 
-  std::string server_libname_;
+  template <typename Key, typename Value>
+  using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
 
-  sstmac::sw::task_mapping::ptr rank_mapper_;
+  typedef std::unordered_map<int,collective*> tag_to_collective_map;
+  typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
+  collective_map collectives_;
 
-  std::list<message*> pending_messages_;
+  typedef std::unordered_map<int,std::list<collective_work_message*>> tag_to_pending_map;
+  typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
+  pending_map pending_collective_msgs_;
 
-  std::list<sstmac::sw::thread*> blocked_threads_;
+  std::list<collective*> todel_;
 
-  uint32_t component_id_;
+  communicator* global_domain_;
 
-  sstmac::timestamp post_rdma_delay_;
+  uint32_t eager_cutoff_;
 
-  sstmac::timestamp post_header_delay_;
+  bool use_put_protocol_;
 
-  sstmac::timestamp poll_delay_;
-
-  sstmac::sw::lib_compute_time* user_lib_time_;
-
-  sstmac::stat_spyplot* spy_num_messages_;
-
-  sstmac::stat_spyplot* spy_bytes_;
-
-  int collective_cq_id_;
-
-  int pt2pt_cq_id_;
-
-  sstmac::timestamp rdma_pin_latency_;
-  sstmac::timestamp rdma_page_delay_;
-  int page_size_;
-  bool pin_delay_;
-
+  int system_collective_tag_;
+  int cq_id_;
 };
+
+
 
 class terminate_exception : public std::exception
 {

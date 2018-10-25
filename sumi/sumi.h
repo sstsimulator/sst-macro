@@ -57,6 +57,8 @@ namespace sumi {
 
 sumi::transport* sumi_api();
 
+sumi::collective_engine* sumi_engine();
+
 void comm_init();
 
 void comm_finalize();
@@ -151,26 +153,6 @@ void comm_reduce(int root, void* dst, void* src, int nelems, int tag,
 }
 
 void comm_barrier(int tag, collective::config cfg = collective::cfg());
-
-/**
-* The total size of the input/result buffer in bytes is nelems*type_size
-* This always run in a fault-tolerant fashion
-* This uses a dynamic tree structure that reconnects partners when failures are detected
-* @param vote The vote (currently restricted to integer) from this process
-* @param nelems The number of elements in the input and result buffer.
-* @param tag A unique tag identifier for the collective
-* @param fxn The function that merges vote, usually AND, OR, MAX, MIN
-* @param context The context (i.e. initial set of failed procs)
-*/
-void comm_vote(int vote, int tag, vote_fxn fxn, collective::config cfg = collective::cfg());
-
-template <template <class> class VoteOp>
-void comm_vote(int vote, int tag, collective::config cfg = collective::cfg()){
-  typedef VoteOp<int> op_class_type;
-  comm_vote(vote, tag, &op_class_type::op, cfg);
-}
-
-collective_done_message* comm_collective_block(collective::type_t ty, int tag);
 
 message* comm_poll();
 

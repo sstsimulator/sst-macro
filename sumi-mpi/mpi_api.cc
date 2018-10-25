@@ -129,6 +129,7 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   req_counter_(0),
   queue_(nullptr),
   generate_ids_(true),
+  coll_engine_(nullptr),
 #ifdef SSTMAC_OTF2_ENABLED
   otf2_writer_(nullptr),
 #endif
@@ -143,6 +144,8 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
 
   double test_delay_s = params->get_optional_time_param("test_delay", 0);
   test_delay_us_ = test_delay_s * 1e6;
+
+  coll_engine_ = new collective_engine(params, this);
 
 #if SSTMAC_COMM_SYNC_STATS
   dump_comm_times_ = params->get_optional_bool_param("dump_comm_times", false);
@@ -306,6 +309,7 @@ mpi_api::finalize()
       os_->now().sec());
   }
 
+  coll_engine_->clean_up();
   transport::finish();
 
 #if SSTMAC_COMM_SYNC_STATS

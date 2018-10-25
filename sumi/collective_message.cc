@@ -49,7 +49,7 @@ namespace sumi {
 
 #define enumcase(x) case x: return #x;
 const char*
-collective_work_message::tostr(protocol_t p)
+collective_work_message::tostr(int p)
 {
   switch(p)
   {
@@ -65,13 +65,11 @@ collective_work_message::tostr(protocol_t p)
 void
 collective_work_message::serialize_order(sstmac::serializer &ser)
 {
-  message::serialize_order(ser);
+  protocol_message::serialize_order(ser);
   //ser & action_;
-  ser & protocol_;
   ser & tag_;
   ser & type_;
   ser & round_;
-  ser.primitive(buffer_);
   //ser & failed_procs_;
 }
 

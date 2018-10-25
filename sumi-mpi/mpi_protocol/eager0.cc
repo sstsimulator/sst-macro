@@ -56,15 +56,14 @@ eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid,
               int tag, MPI_Comm comm, int seq_id, mpi_request* req)
 {
   SSTMACBacktrace(MPIEager0Protocol_Send_Header);
-  mpi_api* mpi = queue_->api();
   void* temp_buf = nullptr;
   if (isNonNullBuffer(buffer)){
     temp_buf = fill_send_buffer(count, buffer, typeobj);
   }
-  uint64_t flow_id = mpi->smsg_send<mpi_message>(tid, count*typeobj->packed_size(), temp_buf,
-                              mpi->pt2pt_cq_id(), mpi->pt2pt_cq_id(), sumi::message::pt2pt,
-                              src_rank, dst_rank, count, typeobj->id, typeobj->packed_size(),
-                              tag, comm, seq_id, EAGER0, nullptr);
+  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, count*typeobj->packed_size(), temp_buf,
+                              queue_->pt2pt_cq_id(), queue_->pt2pt_cq_id(), sumi::message::pt2pt,
+                              src_rank, dst_rank, typeobj->id,  tag, comm, seq_id,
+                              count, typeobj->packed_size(), nullptr, EAGER0);
   send_flows_[flow_id] = temp_buf;
   req->complete();
 }
@@ -108,6 +107,5 @@ eager0::incoming(mpi_message* msg)
     queue_->notify_probes(msg);
   }
 }
-
 
 }

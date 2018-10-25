@@ -66,14 +66,27 @@ static transport* current_transport()
   return t->get_api<transport>();
 }
 
+static collective_engine* current_engine()
+{
+  auto* tport = current_transport();
+  tport->make_engine();
+  return tport->engine();
+}
+
 transport* sumi_api()
 {
   return current_transport();
 }
 
+collective_engine* sumi_engine()
+{
+  return current_engine();
+}
+
 void comm_init()
 {
-  current_transport()->init();
+  auto* tport = current_transport();
+  tport->init();
 }
 
 void comm_kill_process()
@@ -92,66 +105,56 @@ void comm_finalize()
   current_transport()->finish();
 }
 
-void comm_vote(int vote, int tag, vote_fxn fxn, collective::config cfg)
-{
-  current_transport()->dynamic_tree_vote(vote, tag, fxn, cfg);
-}
-
 void
 comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, collective::config cfg)
 {
-  current_transport()->allreduce(dst, src, nelems, type_size, tag, fxn, cfg);
+  current_engine()->allreduce(dst, src, nelems, type_size, tag, fxn, cfg);
 }
 
 void comm_scan(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, collective::config cfg)
 {
-  current_transport()->scan(dst, src, nelems, type_size, tag, fxn, cfg);
+  current_engine()->scan(dst, src, nelems, type_size, tag, fxn, cfg);
 }
 
 void
 comm_reduce(int root, void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, collective::config cfg)
 {
-  current_transport()->reduce(root, dst, src, nelems, type_size, tag, fxn, cfg);
+  current_engine()->reduce(root, dst, src, nelems, type_size, tag, fxn, cfg);
 }
 
 void comm_alltoall(void *dst, void *src, int nelems, int type_size, int tag, collective::config cfg)
 {
-  current_transport()->alltoall(dst, src, nelems, type_size, tag, cfg);
+  current_engine()->alltoall(dst, src, nelems, type_size, tag, cfg);
 }
 
 void comm_allgather(void *dst, void *src, int nelems, int type_size, int tag, collective::config cfg)
 {
-  current_transport()->allgather(dst, src, nelems, type_size, tag, cfg);
+  current_engine()->allgather(dst, src, nelems, type_size, tag, cfg);
 }
 
 void comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, collective::config cfg)
 {
-  current_transport()->allgatherv(dst, src, recv_counts, type_size, tag, cfg);
+  current_engine()->allgatherv(dst, src, recv_counts, type_size, tag, cfg);
 }
 
 void comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag, collective::config cfg)
 {
-  current_transport()->gather(root, dst, src, nelems, type_size, tag, cfg);
+  current_engine()->gather(root, dst, src, nelems, type_size, tag, cfg);
 }
 
 void comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, collective::config cfg)
 {
-  current_transport()->scatter(root, dst, src, nelems, type_size, tag, cfg);
+  current_engine()->scatter(root, dst, src, nelems, type_size, tag, cfg);
 }
 
 void comm_bcast(int root, void *buffer, int nelems, int type_size, int tag, collective::config cfg)
 {
-  current_transport()->bcast(root, buffer, nelems, type_size, tag, cfg);
+  current_engine()->bcast(root, buffer, nelems, type_size, tag, cfg);
 }
 
 void comm_barrier(int tag, collective::config cfg)
 {
-  current_transport()->barrier(tag, cfg);
-}
-
-collective_done_message* comm_collective_block(collective::type_t ty, int tag)
-{
-  return current_transport()->collective_block(ty, tag);
+  current_engine()->barrier(tag, cfg);
 }
 
 int comm_rank()
@@ -195,44 +198,5 @@ void compute(double sec)
   app* my_app = thr->parent_app();
   my_app->compute(timestamp(sec));
 }
-
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-void
-comm_start_heartbeat(double interval)
-{
-  current_transport()->start_heartbeat(interval);
-}
-
-void
-comm_stop_heartbeat()
-{
-  current_transport()->stop_heartbeat();
-}
-
-const thread_safe_set<int>&
-comm_failed_ranks()
-{
-  return current_transport()->failed_ranks();
-}
-
-const thread_safe_set<int>&
-comm_failed_ranks(int context)
-{
-  return current_transport()->failed_ranks(context);
-}
-
-void
-comm_cancel_ping(int dst, timeout_function* func)
-{
-  current_transport()->cancel_ping(dst, func);
-}
-
-void
-comm_ping(int dst, timeout_function* func)
-{
-  current_transport()->ping(dst, func);
-}
-#endif
-
 
 }

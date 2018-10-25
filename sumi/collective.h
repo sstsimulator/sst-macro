@@ -80,9 +80,7 @@ class collective
     reduce_scatter,
     scan,
     scatter,
-    scatterv,
-    dynamic_tree_vote,
-    heartbeat
+    scatterv
   } type_t;
 
   struct config {
@@ -131,9 +129,9 @@ class collective
 
   static const char* tostr(type_t ty);
 
-  virtual void recv(int target, collective_work_message* msg) = 0;
+  virtual collective_done_message* recv(int target, collective_work_message* msg) = 0;
 
-  void recv(collective_work_message* msg);
+  collective_done_message* recv(collective_work_message* msg);
 
   virtual void start() = 0;
 
@@ -193,7 +191,7 @@ class dag_collective :
   DeclareFactory(dag_collective)
 
  public:
-  void recv(int target, collective_work_message* msg) override;
+  collective_done_message* recv(int target, collective_work_message* msg) override;
 
   void start() override;
 

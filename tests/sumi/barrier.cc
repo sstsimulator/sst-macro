@@ -57,11 +57,11 @@ Questions? Contact sst-macro-help@sandia.gov
 using namespace sumi;
 
 void
-run_test(transport* tport, int tag)
+run_test(collective_engine* engine, int tag)
 {
-  tport->barrier(tag);
-  collective_done_message* msg = tport->collective_block(collective::barrier, tag);
-  if (tport->rank() == 0){
+  engine->barrier(tag);
+  engine->block_until_next();
+  if (engine->tport()->rank() == 0){
     printf("Cleared barrier %d\n", tag);
   }
 }
@@ -72,14 +72,12 @@ main(int argc, char **argv)
   transport* tport = sumi_api();
   tport->init();
 
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(sumi_api(), &sumi::transport::deadlock_check));
+  collective_engine* engine = new collective_engine(tport->params(), tport);
 
-  sstmac::runtime::enter_deadlock_region();
-  run_test(tport,0);
-  run_test(tport,1);
-  run_test(tport,2);
+  run_test(engine,0);
+  run_test(engine,1);
+  run_test(engine,2);
   tport->finish();
-  sstmac::runtime::exit_deadlock_region();
+
   return 0;
 }

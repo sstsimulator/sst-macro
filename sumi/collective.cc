@@ -92,8 +92,6 @@ collective::tostr(type_t ty)
     enumcase(reduce_scatter);
     enumcase(scan);
     enumcase(barrier);
-    enumcase(dynamic_tree_vote);
-    enumcase(heartbeat);
     enumcase(bcast);
   }
   spkt_throw_printf(sprockit::value_error,
@@ -154,10 +152,10 @@ collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collec
   }
 }
 
-void
+collective_done_message*
 collective::recv(collective_work_message* msg)
 {
-  recv(msg->dom_target_rank(), msg);
+  return recv(msg->dom_target_rank(), msg);
 }
 
 collective::~collective()
@@ -217,7 +215,7 @@ dag_collective::init(type_t type,
   dst_buffer_ = dst;
 }
 
-void
+collective_done_message*
 dag_collective::recv(int target, collective_work_message* msg)
 {
   debug_printf(sumi_collective | sumi_collective_sendrecv,
@@ -233,8 +231,14 @@ dag_collective::recv(int target, collective_work_message* msg)
       debug_printf(sumi_collective | sumi_collective_sendrecv,
                   "dag actor %d does not yet exit - queueing %s",
                   target, msg->to_string().c_str())
+    return nullptr;
   } else {
     vr->recv(msg);
+    if (vr->complete()){
+      return vr->done_msg();
+    } else {
+      return nullptr;
+    }
   }
 }
 

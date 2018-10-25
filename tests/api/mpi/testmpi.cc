@@ -698,10 +698,6 @@ int USER_MAIN(int argc, char *argv[])
   sprockit::sim_parameters* params = get_params();
   testmode_ = params->get_int_param("testsuite_testmode");
 
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(sumi::sstmac_mpi(), &sumi::transport::deadlock_check));
-  sstmac::runtime::enter_deadlock_region();
-
   double t_start = get_time();
 
   switch (testmode_)
@@ -1564,8 +1560,6 @@ int USER_MAIN(int argc, char *argv[])
   double t_total = t_stop - t_start;
   if (sumi::sstmac_mpi()->rank() == 0)
     printf("MPI test ran for %8.4fms\n", t_total*1e3);
-
-  sstmac::runtime::exit_deadlock_region();
 
   return 0;
 }
