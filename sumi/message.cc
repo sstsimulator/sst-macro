@@ -70,7 +70,6 @@ message::tostr(class_t ty)
   {
     enumcase(pt2pt);
     enumcase(collective);
-    enumcase(collective_done);
     enumcase(ping);
     enumcase(bcast);
     enumcase(terminate);

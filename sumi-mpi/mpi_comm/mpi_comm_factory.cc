@@ -124,7 +124,6 @@ mpi_comm_factory::comm_new_id_agree(mpi_comm* commPtr)
   int outputID = 0;
   collective_op_base* op = parent_->start_allreduce(commPtr, 1, MPI_INT, MPI_MAX, &inputID, &outputID);
   parent_->wait_collective(op);
-  delete op;
 
   next_id_ = outputID + 1;
   return outputID;
@@ -258,7 +257,6 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
                                                 3, MPI_INT,
                                                 nullptr, nullptr);
   parent_->wait_collective(op);
-  delete op;
 #endif
 
   mpi_comm* ret;

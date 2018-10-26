@@ -59,8 +59,8 @@ using namespace sumi;
 void
 run_test(collective_engine* engine, int tag)
 {
-  engine->barrier(tag);
-  engine->block_until_next();
+  engine->barrier(tag, sumi::message::default_cq);
+  engine->block_until_next(sumi::message::default_cq);
   if (engine->tport()->rank() == 0){
     printf("Cleared barrier %d\n", tag);
   }

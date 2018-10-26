@@ -103,20 +103,6 @@ namespace sumi {
 
 const int options::initial_context = -2;
 
-collective_algorithm_selector* collective_engine::allgather_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::alltoall_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::alltoallv_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::allreduce_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::allgatherv_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::bcast_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::gather_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::gatherv_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::reduce_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::reduce_scatter_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::scan_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::scatter_selector_ = nullptr;
-collective_algorithm_selector* collective_engine::scatterv_selector_ = nullptr;
-
 class sumi_server :
   public sstmac::sw::service
 {
@@ -223,9 +209,10 @@ transport::transport(sprockit::sim_parameters* params,
   server_libname_(server_name),
   user_lib_time_(nullptr),
   spy_num_messages_(nullptr),
-  spy_bytes_(nullptr)
+  spy_bytes_(nullptr),
+  completion_queues_(1),
+  cq_blocked_threads_(1)
 {
-
   rank_ = sid.task_;
   auto* server_lib = os_->lib(server_libname_);
   sumi_server* server;
@@ -270,6 +257,15 @@ transport::allocate_cq()
 {
   uint8_t ret = completion_queues_.size();
   completion_queues_.emplace_back();
+  cq_blocked_threads_.emplace_back();
+  auto iter = held_.find(ret);
+  if (iter != held_.end()){
+    auto& list = iter->second;
+    for (message* m : list){
+      completion_queues_[ret].push_back(m);
+    }
+    held_.erase(iter);
+  }
   return ret;
 }
 
@@ -372,6 +368,8 @@ transport::~transport()
   sumi_server* server = safe_cast(sumi_server, os_->lib(server_libname_));
   bool del = server->unregister_proc(rank_, this);
   if (del) delete server;
+
+  if (engine_) delete engine_;
 
   //if (spy_bytes_) delete spy_bytes_;
   //if (spy_num_messages_) delete spy_num_messages_;
@@ -543,23 +541,27 @@ transport::incoming_message(message *msg)
 
   int cq = msg->is_nic_ack() ? msg->send_cq() : msg->recv_cq();
   if (cq != message::no_ack){
-    completion_queues_[cq].push_back(msg);
-    auto& queue = cq_blocked_threads_[cq];
-    if (!queue.empty()){
-      sstmac::sw::thread* next_thr = queue.front();
-      debug_printf(sprockit::dbg::sumi,
-                   "sumi queue %p unblocking CQ %d poller %p to handle message %s",
-                    this, cq, next_thr, msg->to_string().c_str());
-      queue.pop_front();
-      os_->unblock(next_thr);
-    } else if (!blocked_threads_.empty()){
-      //there is someone blocked looking for something on any completion queue
-      auto* next_thr = blocked_threads_.front();
-      debug_printf(sprockit::dbg::sumi,
-                   "sumi queue %p poller %p to handle message %s",
-                    this, next_thr, msg->to_string().c_str());
-      blocked_threads_.pop_front();
-      os_->unblock(next_thr);
+    if (cq >= completion_queues_.size()){
+      held_[cq].push_back(msg);
+    } else {
+      completion_queues_[cq].push_back(msg);
+      auto& queue = cq_blocked_threads_[cq];
+      if (!queue.empty()){
+        sstmac::sw::thread* next_thr = queue.front();
+        debug_printf(sprockit::dbg::sumi,
+                     "sumi queue %p unblocking CQ %d poller %p to handle %s",
+                      this, cq, next_thr, msg->to_string().c_str());
+        queue.pop_front();
+        os_->unblock(next_thr);
+      } else if (!blocked_threads_.empty()){
+        //there is someone blocked looking for something on any completion queue
+        auto* next_thr = blocked_threads_.front();
+        debug_printf(sprockit::dbg::sumi,
+                     "sumi queue %p poller %p to handle %s",
+                      this, next_thr, msg->to_string().c_str());
+        blocked_threads_.pop_front();
+        os_->unblock(next_thr);
+      }
     }
   }
 }
@@ -570,7 +572,6 @@ collective_engine::collective_engine(sprockit::sim_parameters *params, transport
   use_put_protocol_(false),
   global_domain_(nullptr),
   tport_(tport)
-
 {
   global_domain_ = new global_communicator(tport);
   eager_cutoff_ = params->get_optional_int_param("eager_cutoff", 512);
@@ -583,15 +584,15 @@ collective_engine::~collective_engine()
 }
 
 void
-collective_engine::notify_collective_done(collective_done_message* msg)
+collective_engine::notify_collective_done(int rank, collective::type_t ty, int tag)
 {
-  collective* coll = collectives_[msg->type()][msg->tag()];
+  collective* coll = collectives_[ty][tag];
   if (!coll){
     spkt_throw_printf(sprockit::value_error,
       "transport::notify_collective_done: invalid collective of type %s, tag %d",
-       collective::tostr(msg->type()), msg->tag());
+       collective::tostr(ty), tag);
   }
-  finish_collective(coll, msg);
+  finish_collective(coll, rank, ty, tag);
 }
 
 void
@@ -610,258 +611,211 @@ collective_engine::deadlock_check()
   }
 }
 
-bool
+collective_done_message*
 collective_engine::skip_collective(collective::type_t ty,
-  collective::config& cfg,
+  int cq_id, communicator* comm,
   void* dst, void *src,
   int nelems, int type_size,
   int tag)
 {
-  if (cfg.dom == nullptr) cfg.dom = global_domain_;
-
-  if (cfg.dom->nproc() == 1){
+  if (!comm) comm = global_domain_;
+  if (comm->nproc() == 1){
     if (dst && src && (dst != src)){
       ::memcpy(dst, src, nelems*type_size);
     }
-    return true;
+    return new collective_done_message(tag, ty, comm, cq_id);
   } else {
-    return false;
+    return nullptr;
   }
 }
 
-void
+collective_done_message*
 collective_engine::allreduce(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                     collective::config cfg)
+                             int cq_id, communicator* comm)
 {
- if (skip_collective(collective::allreduce, cfg, dst, src, nelems, type_size, tag)) return;
+ auto* msg = skip_collective(collective::allreduce, cq_id, comm, dst, src, nelems, type_size, tag);
+ if (msg) return msg;
 
-  dag_collective* coll = allreduce_selector_ == nullptr
-      ? new wilke_halving_allreduce
-      : allreduce_selector_->select(cfg.dom->nproc(), nelems);
-  coll->init(collective::allreduce, tport_, dst, src, nelems, type_size, tag, cfg);
-  coll->init_reduce(fxn);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new wilke_halving_allreduce(this, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+sumi::collective_done_message*
 collective_engine::reduce_scatter(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                     collective::config cfg)
+                                  int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::reduce_scatter, cfg, dst, src, nelems, type_size, tag)) return;
+  auto* msg = skip_collective(collective::reduce_scatter, cq_id, comm, dst, src, nelems, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = reduce_scatter_selector_ == nullptr
-      ? new halving_reduce_scatter
-      : reduce_scatter_selector_->select(cfg.dom->nproc(), nelems);
-  coll->init(collective::reduce_scatter, tport_, dst, src, nelems, type_size, tag, cfg);
-  coll->init_reduce(fxn);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new halving_reduce_scatter(this, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+sumi::collective_done_message*
 collective_engine::scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                collective::config cfg)
+                        int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::scan, cfg, dst, src, nelems, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::scan, cq_id, comm, dst, src, nelems, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = scan_selector_ == nullptr
-      ? new simultaneous_btree_scan
-      : scan_selector_->select(cfg.dom->nproc(), nelems);
-
-  coll->init(collective::scan, tport_, dst, src, nelems, type_size, tag, cfg);
-  coll->init_reduce(fxn);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new simultaneous_btree_scan(this, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+  return start_collective(coll);
 }
 
 
-void
+collective_done_message*
 collective_engine::reduce(int root, void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                  collective::config cfg)
+                          int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::reduce, cfg, dst, src, nelems, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::reduce, cq_id, comm, dst, src, nelems, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = reduce_selector_ == nullptr
-      ? new wilke_halving_reduce
-      : reduce_selector_->select(cfg.dom->nproc(), nelems);
-  coll->init(collective::reduce, tport_, dst, src, nelems, type_size, tag, cfg);
-  coll->init_root(root);
-  coll->init_reduce(fxn);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new wilke_halving_reduce(this, root, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
-collective_engine::bcast(int root, void *buf, int nelems, int type_size, int tag, collective::config cfg)
+collective_done_message*
+collective_engine::bcast(int root, void *buf, int nelems, int type_size, int tag,
+                         int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::bcast, cfg, buf, buf, nelems, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::bcast, cq_id, comm, buf, buf, nelems, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = bcast_selector_ == nullptr
-      ? new binary_tree_bcast_collective
-      : bcast_selector_->select(cfg.dom->nproc(), nelems);
-
-  coll->init(collective::bcast, tport_, buf, buf, nelems, type_size, tag, cfg);
-  coll->init_root(root);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new binary_tree_bcast_collective(this, root, buf, nelems, type_size, tag, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::gatherv(int root, void *dst, void *src,
                    int sendcnt, int *recv_counts,
-                   int type_size, int tag,
-                   collective::config cfg)
+                   int type_size, int tag, int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::gatherv, cfg, dst, src, sendcnt, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::gatherv, cq_id, comm, dst, src, sendcnt, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = gatherv_selector_ == nullptr
-      ? new btree_gatherv
-      : gatherv_selector_->select(cfg.dom->nproc(), recv_counts);
-  coll->init(collective::gatherv, tport_, dst, src, sendcnt, type_size, tag, cfg);
-  coll->init_root(root);
-  coll->init_recv_counts(recv_counts);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new btree_gatherv(this, root, dst, src, sendcnt, recv_counts, type_size, tag, cq_id, comm);
   sprockit::abort("gatherv");
-  start_collective(coll);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::gather(int root, void *dst, void *src, int nelems, int type_size, int tag,
-                  collective::config cfg)
+                          int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::gather, cfg, dst, src, nelems, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::gather, cq_id, comm, dst, src, nelems, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = gather_selector_ == nullptr
-      ? new btree_gather
-      : gather_selector_->select(cfg.dom->nproc(), nelems);
-
-  coll->init(collective::gather, tport_, dst, src, nelems, type_size, tag, cfg);
-  coll->init_root(root);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new btree_gather(this, root, dst, src, nelems, type_size, tag, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::scatter(int root, void *dst, void *src, int nelems, int type_size, int tag,
-                   collective::config cfg)
+                           int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::scatter, cfg, dst, src, nelems, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::scatter, cq_id, comm, dst, src, nelems, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = scatter_selector_ == nullptr
-      ? new btree_scatter
-      : scatter_selector_->select(cfg.dom->nproc(), nelems);
-
-  coll->init(collective::scatter, tport_, dst, src, nelems, type_size, tag, cfg);
-  coll->init_root(root);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new btree_scatter(this, root, dst, src, nelems, type_size, tag, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::scatterv(int root, void *dst, void *src, int* send_counts, int recvcnt, int type_size, int tag,
-                    collective::config cfg)
+                            int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::scatterv, cfg, dst, src, recvcnt, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::scatterv, cq_id, comm, dst, src, recvcnt, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = scatterv_selector_ == nullptr
-      ? new btree_scatterv
-      : scatterv_selector_->select(cfg.dom->nproc(), send_counts);
-
-  coll->init(collective::scatterv, tport_, dst, src, recvcnt, type_size, tag, cfg);
-  coll->init_root(root);
-  coll->init_send_counts(send_counts);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new btree_scatterv(this, root, dst, src, send_counts, recvcnt, type_size, tag, cq_id, comm);
   sprockit::abort("scatterv");
-  start_collective(coll);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::alltoall(void *dst, void *src, int nelems, int type_size, int tag,
-                    collective::config cfg)
+                            int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::alltoall, cfg, dst, src, nelems, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::alltoall, cq_id, comm, dst, src, nelems, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = alltoall_selector_ == nullptr
-      ? new bruck_alltoall_collective
-      : alltoall_selector_->select(cfg.dom->nproc(), nelems);
-
-  coll->init(collective::alltoall, tport_, dst, src, nelems, type_size, tag, cfg);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new bruck_alltoall_collective(this, dst, src, nelems, type_size, tag, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::alltoallv(void *dst, void *src, int* send_counts, int* recv_counts, int type_size, int tag,
-                     collective::config cfg)
+                             int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::alltoallv, cfg, dst, src, send_counts[0], type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::alltoallv, cq_id, comm, dst, src, send_counts[0], type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = alltoallv_selector_ == nullptr
-      ? new direct_alltoallv_collective
-      : alltoallv_selector_->select(cfg.dom->nproc(), send_counts);
-
-  coll->init(collective::alltoallv, tport_, dst, src, 0, type_size, tag, cfg);
-  coll->init_recv_counts(recv_counts);
-  coll->init_send_counts(send_counts);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new direct_alltoallv_collective(this, dst, src, send_counts, recv_counts, type_size, tag, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::allgather(void *dst, void *src, int nelems, int type_size, int tag,
-                     collective::config cfg)
+                             int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::allgather, cfg, dst, src, nelems, type_size, tag))
-    return;
+ auto* msg = skip_collective(collective::allgather, cq_id, comm, dst, src, nelems, type_size, tag);
+ if (msg) return msg;
 
-  dag_collective* coll = allgather_selector_ == nullptr
-      ? new bruck_allgather_collective
-      : allgather_selector_->select(cfg.dom->nproc(), nelems);
-
-  coll->init(collective::allgather, tport_, dst, src, nelems, type_size, tag, cfg);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new bruck_allgather_collective(
+        collective::allgather, this, dst, src, nelems, type_size, tag, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag,
-                      collective::config cfg)
+                              int cq_id, communicator* comm)
 {
   //if the allgatherv is skipped, we have a single recv count
   int nelems = *recv_counts;
-  if (skip_collective(collective::allgatherv, cfg, dst, src, nelems, type_size, tag))
-    return;
+  auto* msg = skip_collective(collective::allgatherv, cq_id, comm, dst, src, nelems, type_size, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = allgatherv_selector_ == nullptr
-      ? new bruck_allgatherv_collective
-      : allgatherv_selector_->select(cfg.dom->nproc(), recv_counts);
-
-  //for the time being, ignore size and use the small-message algorithm
-  coll->init(collective::allgatherv, tport_, dst, src, 0, type_size, tag, cfg);
-  coll->init_recv_counts(recv_counts);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new bruck_allgatherv_collective(this, dst, src, recv_counts, type_size, tag, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
-collective_engine::barrier(int tag, collective::config cfg)
+collective_done_message*
+collective_engine::barrier(int tag, int cq_id, communicator* comm)
 {
-  if (skip_collective(collective::barrier, cfg, 0, 0, 0, 0, tag))
-    return;
+  auto* msg = skip_collective(collective::barrier, cq_id, comm, 0, 0, 0, 0, tag);
+  if (msg) return msg;
 
-  dag_collective* coll = new bruck_allgather_collective;
-  coll->init(collective::barrier, tport_, 0, 0, 0, 0, tag, cfg);
-  start_collective(coll);
+  if (!comm) comm = global_domain_;
+  dag_collective* coll = new bruck_allgather_collective(collective::barrier, this, nullptr, nullptr, 0, 0, tag, cq_id, comm);
+  return start_collective(coll);
 }
 
-void
+collective_done_message*
 collective_engine::deliver_pending(collective* coll, int tag, collective::type_t ty)
 {
   std::list<collective_work_message*> pending = pending_collective_msgs_[ty][tag];
   pending_collective_msgs_[ty].erase(tag);
   std::list<collective_work_message*>::iterator it, end = pending.end();
 
+  collective_done_message* dmsg = nullptr;
   for (it = pending.begin(); it != end; ++it){
     collective_work_message* msg = *it;
-    coll->recv(msg);
+    dmsg = coll->recv(msg);
   }
+  return dmsg;
 }
 
 void
@@ -888,10 +842,9 @@ collective_engine::validate_collective(collective::type_t ty, int tag)
     collective::tostr(ty), tag);
 }
 
-void
+collective_done_message*
 collective_engine::start_collective(collective* coll)
 {
-  coll->cfg().cqId(cq_id_);
   coll->init_actors();
   int tag = coll->tag();
   collective::type_t ty = coll->type();
@@ -899,30 +852,29 @@ collective_engine::start_collective(collective* coll)
   collective*& existing = collectives_[ty][tag];
   if (existing){
     coll->start();
-    existing->add_actors(coll);
+    auto* msg = existing->add_actors(coll);
     delete coll;
+    return msg;
   } else {
     existing = coll;
     coll->start();
-    deliver_pending(coll, tag, ty);
+    return deliver_pending(coll, tag, ty);
   }
 }
 
 void
-collective_engine::finish_collective(collective* coll, collective_done_message* dmsg)
+collective_engine::finish_collective(collective* coll, int rank, collective::type_t ty, int tag)
 {
   bool deliver_cq_msg; bool delete_collective;
-  coll->actor_done(dmsg->comm_rank(), deliver_cq_msg, delete_collective);
+  coll->actor_done(rank, deliver_cq_msg, delete_collective);
   debug_printf(sprockit::dbg::sumi,
     "Rank %d finishing collective of type %s tag %d",
-    tport_->rank(), collective::tostr(dmsg->type()), dmsg->tag());
+    tport_->rank(), ty, tag);
 
   if (!deliver_cq_msg)
     return;
 
   coll->complete();
-  collective::type_t ty = dmsg->type();
-  int tag = dmsg->tag();
   if (delete_collective && !coll->persistent()){ //otherwise collective must exist FOREVER
     collectives_[ty].erase(tag);
     todel_.push_back(coll);
@@ -931,15 +883,15 @@ collective_engine::finish_collective(collective* coll, collective_done_message* 
   pending_collective_msgs_[ty].erase(tag);
   debug_printf(sprockit::dbg::sumi,
     "Rank %d finished collective of type %s tag %d",
-    tport_->rank(), collective::tostr(dmsg->type()), dmsg->tag());
+    tport_->rank(), ty, tag);
 }
 
 void
 collective_engine::wait_barrier(int tag)
 {
   if (tport_->nproc() == 1) return;
-  barrier(tag);
-  auto* dmsg = block_until_next();
+  barrier(tag, message::default_cq);
+  auto* dmsg = block_until_next(message::default_cq);
 }
 
 void
@@ -964,7 +916,7 @@ collective_engine::incoming(message* msg)
   collective::type_t ty = cmsg->type();
   tag_to_collective_map::iterator it = collectives_[ty].find(tag);
   if (it == collectives_[ty].end()){
-    debug_printf(sprockit::dbg::sumi_collective_sendrecv,
+    debug_printf(sprockit::dbg::sumi_collective,
       "Rank %d, queuing %p %s from %d on tag %d for type %s",
       tport_->rank(), msg,
       message::tostr(msg->class_type()),
@@ -981,11 +933,11 @@ collective_engine::incoming(message* msg)
 }
 
 collective_done_message*
-collective_engine::block_until_next()
+collective_engine::block_until_next(int cq_id)
 {
   collective_done_message* dmsg = nullptr;
   while (dmsg == nullptr){
-    auto* msg = tport_->blocking_poll(cq_id_);
+    auto* msg = tport_->blocking_poll(cq_id);
     dmsg = incoming(msg);
   }
   return dmsg;

@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 {
   auto engine = sumi::sumi_engine();
   engine->tport()->init();
-  int rank = tport->rank();
+  int rank = engine->tport()->rank();
   *xGlobal.x = rank;
   engine->wait_barrier(0);
   printf("Rank %d is %d\n", rank, x);

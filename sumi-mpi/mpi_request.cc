@@ -50,7 +50,7 @@ namespace sumi {
 
 collective_op_base::collective_op_base(mpi_comm* cm) :
   comm(cm), packed_send(false), packed_recv(false),
-  tag(cm->next_collective_tag())
+  tag(cm->next_collective_tag()), complete(false)
 {
 }
 

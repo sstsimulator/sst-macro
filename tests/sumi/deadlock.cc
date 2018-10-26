@@ -58,7 +58,7 @@ void
 start_allreduce()
 {
   int tag = 12;
-  comm_allreduce<int,Add>(0, 0, 256, tag);
+  comm_allreduce<int,Add>(0, 0, 256, tag, message::default_cq);
 }
 
 void
@@ -66,7 +66,7 @@ start_barrier()
 {
   int tag = 20;
   //then execute barrier
-  comm_barrier(tag);
+  comm_barrier(tag, message::default_cq);
 }
 
 int

@@ -106,55 +106,58 @@ void comm_finalize()
 }
 
 void
-comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, collective::config cfg)
+comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
+               int cq_id, communicator* comm)
 {
-  current_engine()->allreduce(dst, src, nelems, type_size, tag, fxn, cfg);
+  current_engine()->allreduce(dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
-void comm_scan(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, collective::config cfg)
+void comm_scan(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
+               int cq_id, communicator* comm)
 {
-  current_engine()->scan(dst, src, nelems, type_size, tag, fxn, cfg);
+  current_engine()->scan(dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
 void
-comm_reduce(int root, void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn, collective::config cfg)
+comm_reduce(int root, void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
+            int cq_id, communicator* comm)
 {
-  current_engine()->reduce(root, dst, src, nelems, type_size, tag, fxn, cfg);
+  current_engine()->reduce(root, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
-void comm_alltoall(void *dst, void *src, int nelems, int type_size, int tag, collective::config cfg)
+void comm_alltoall(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, communicator* comm)
 {
-  current_engine()->alltoall(dst, src, nelems, type_size, tag, cfg);
+  current_engine()->alltoall(dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_allgather(void *dst, void *src, int nelems, int type_size, int tag, collective::config cfg)
+void comm_allgather(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, communicator* comm)
 {
-  current_engine()->allgather(dst, src, nelems, type_size, tag, cfg);
+  current_engine()->allgather(dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, collective::config cfg)
+void comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, int cq_id, communicator* comm)
 {
-  current_engine()->allgatherv(dst, src, recv_counts, type_size, tag, cfg);
+  current_engine()->allgatherv(dst, src, recv_counts, type_size, tag, cq_id, comm);
 }
 
-void comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag, collective::config cfg)
+void comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, communicator* comm)
 {
-  current_engine()->gather(root, dst, src, nelems, type_size, tag, cfg);
+  current_engine()->gather(root, dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, collective::config cfg)
+void comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, communicator* comm)
 {
-  current_engine()->scatter(root, dst, src, nelems, type_size, tag, cfg);
+  current_engine()->scatter(root, dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_bcast(int root, void *buffer, int nelems, int type_size, int tag, collective::config cfg)
+void comm_bcast(int root, void *buffer, int nelems, int type_size, int tag, int cq_id, communicator* comm)
 {
-  current_engine()->bcast(root, buffer, nelems, type_size, tag, cfg);
+  current_engine()->bcast(root, buffer, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_barrier(int tag, collective::config cfg)
+void comm_barrier(int tag, int cq_id, communicator* comm)
 {
-  current_engine()->barrier(tag, cfg);
+  current_engine()->barrier(tag, cq_id, comm);
 }
 
 int comm_rank()

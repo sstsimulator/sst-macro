@@ -83,7 +83,7 @@ mpi_queue::sortbyseqnum::operator()(mpi_message* a,
 
 mpi_queue::mpi_queue(sprockit::sim_parameters* params,
                      int task_id,
-                     mpi_api* api) :
+                     mpi_api* api, collective_engine* engine) :
   taskid_(task_id),
   api_(api)
 {
@@ -96,7 +96,42 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   protocols_[mpi_protocol::RENDEZVOUS_GET] = new rendezvous_get(params, this);
 
   pt2pt_cq_ = api_->allocate_cq();
-  coll_cq_ = api_->coll_engine()->cq();
+  coll_cq_ = api_->allocate_cq();
+}
+
+struct init_struct {
+  int pt2pt_cq_id;
+  int coll_cq_id;
+  bool all_equal;
+};
+
+void
+mpi_queue::init()
+{
+  auto init_fxn = [](void* out, const void* src, int nelems){
+    auto* outs= (init_struct*)out;
+    auto* srcs = (init_struct*)src;
+    for (int i=0; i < nelems; ++i){
+      auto& out = outs[i];
+      auto& src = srcs[i];
+      out.all_equal = src.all_equal
+          && out.pt2pt_cq_id == src.pt2pt_cq_id
+          && out.coll_cq_id == src.coll_cq_id;
+    }
+  };
+  init_struct init;
+  init.coll_cq_id = coll_cq_;
+  init.pt2pt_cq_id = pt2pt_cq_;
+  init.all_equal = true;
+  api_->engine()->allreduce(&init, &init, 1, sizeof(init_struct), 0, init_fxn,
+                            message::default_cq);
+  auto* cmsg = api_->engine()->block_until_next(message::default_cq);
+  if (cmsg->tag() != 0){
+    spkt_abort_printf("got bad collective done message in mpi_queue::init");
+  }
+  if (!init.all_equal){
+    spkt_abort_printf("MPI_Init: procs did not agree on completion queue ids");
+  }
 }
 
 void
@@ -290,7 +325,7 @@ void
 mpi_queue::incoming_collective_message(sumi::message* m)
 {
   collective_work_message* msg = safe_cast(collective_work_message, m);
-  collective_done_message* cmsg = api_->coll_engine()->incoming(msg);
+  collective_done_message* cmsg = api_->engine()->incoming(msg);
   if (cmsg){
     mpi_comm* comm = safe_cast(mpi_comm, cmsg->dom());
     mpi_request* req = comm->get_request(cmsg->tag());
@@ -389,7 +424,7 @@ mpi_queue::incoming_message(sumi::message* msg)
   } else if (msg->cq_id() == coll_cq_){
     incoming_collective_message(msg);
   } else {
-    spkt_abort_printf("Got bad completion queue %d for message %s",
+    spkt_abort_printf("Got bad completion queue %d for %s",
                       msg->cq_id(), msg->to_string().c_str());
   }
 }
@@ -418,6 +453,9 @@ mpi_queue::progress_loop(mpi_request* req)
   while (!req->is_complete()) {
     mpi_queue_debug("blocking on progress loop");
     sumi::message* msg = api_->poll(true); //block until message arrives
+    if (!msg){
+      spkt_abort_printf("polling returned null message");
+    }
     incoming_message(msg);
 #if SSTMAC_COMM_SYNC_STATS
     if (req->is_complete()){
@@ -450,6 +488,9 @@ mpi_queue::start_progress_loop(const std::vector<mpi_request*>& reqs)
   while (!at_least_one_complete(reqs)) {
     mpi_queue_debug("blocking on progress loop");
     sumi::message* msg = api_->poll(true); //block until msg arrives
+    if (!msg){
+      spkt_abort_printf("polling returned null message");
+    }
     incoming_message(msg);
   }
   mpi_queue_debug("finishing progress loop");

@@ -57,16 +57,18 @@ class btree_gather_actor :
 {
 
  public:
-  std::string
-  to_string() const override {
+  btree_gather_actor(collective_engine* engine, int root, void* dst, void* src,
+                     int nelems, int type_size, int tag, int cq_id, communicator* comm)
+    : dag_collective_actor(collective::gather, engine, dst, src, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems) {}
+
+  std::string to_string() const override {
     return "btree gather actor";
   }
 
-  btree_gather_actor(int root) : root_(root) {}
-
  protected:
   void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
+  void init_buffers() override;
   void init_dag() override;
   void init_tree() override;
   void start_shuffle(action *ac) override;
@@ -74,39 +76,32 @@ class btree_gather_actor :
 
  private:
   int root_;
+  int nelems_;
   int midpoint_;
   int log2nproc_;
 
 };
 
-class btree_gather :
-  public dag_collective
+class btree_gather : public dag_collective
 {
-
  public:
-  btree_gather(int root) : root_(root){}
-
-  btree_gather() : root_(-1){}
+  btree_gather(collective_engine* engine, int root, void* dst, void* src,
+               int nelems, int type_size, int tag, int cq_id, communicator* comm)
+   : dag_collective(gather, engine, dst, src, type_size, tag, cq_id, comm),
+     root_(root), nelems_(nelems) {}
 
   std::string to_string() const override {
     return "btree gather";
   }
 
   dag_collective_actor* new_actor() const override {
-    return new btree_gather_actor(root_);
-  }
-
-  dag_collective* clone() const override {
-    return new btree_gather(root_);
-  }
-
-  void init_root(int root) override{
-    root_ = root;
+    return new btree_gather_actor(engine_, root_, dst_buffer_, src_buffer_, nelems_, type_size_,
+                                  tag_, cq_id_, comm_);
   }
 
  private:
-  int* recv_counts_;
   int root_;
+  int nelems_;
 
 };
 

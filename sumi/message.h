@@ -78,7 +78,6 @@ class message : public sstmac::hw::network_message
     pt2pt,
     bcast,
     collective,
-    collective_done,
     no_class,
     fake
  } class_t;
@@ -306,8 +305,8 @@ class protocol_message : public message {
     message(std::forward<Args>(args)...),
     count_(count), type_size_(type_size),
     partner_buffer_(partner_buffer),
-    protocol_(protocol),
-    stage_(0)
+    stage_(0),
+    protocol_(protocol)
   {
   }
 

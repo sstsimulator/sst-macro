@@ -88,6 +88,7 @@ struct collective_op_base
   int sendcnt;
   int recvcnt;
   int root;
+  bool complete;
 
   virtual ~collective_op_base(){}
 

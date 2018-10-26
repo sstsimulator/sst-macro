@@ -57,24 +57,26 @@ class btree_scatter_actor :
 {
 
  public:
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "btree scatter actor";
   }
 
-  btree_scatter_actor(int root) : root_(root) {}
+  btree_scatter_actor(collective_engine* engine,int root, void *dst, void *src, int nelems,
+                      int type_size, int tag, int cq_id, communicator* comm)
+    : dag_collective_actor(collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems) {}
 
  protected:
   void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
+  void init_buffers() override;
   void init_dag() override;
   void init_tree() override;
 
-  void buffer_action(void *dst_buffer,
-                     void *msg_buffer, action* ac) override;
+  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
  private:
   int root_;
+  int nelems_;
   int midpoint_;
   int log2nproc_;
 
@@ -85,31 +87,23 @@ class btree_scatter :
 {
 
  public:
-  btree_scatter(int root) : root_(root){}
+  btree_scatter(collective_engine* engine, int root, void *dst, void *src, int nelems,
+                int type_size, int tag, int cq_id, communicator* comm)
+    : dag_collective(scatter, engine, dst, src, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems) {}
 
-  btree_scatter() : root_(-1){}
-
-  std::string
-  to_string() const override {
+  std::string to_string() const override {
     return "btree scatter";
   }
 
-  dag_collective_actor*
-  new_actor() const override {
-    return new btree_scatter_actor(root_);
-  }
-
-  dag_collective*
-  clone() const override {
-    return new btree_scatter(root_);
-  }
-
-  void init_root(int root) override {
-    root_ = root;
+  dag_collective_actor* new_actor() const override {
+    return new btree_scatter_actor(engine_, root_, dst_buffer_, src_buffer_,
+                                   nelems_, type_size_, tag_, cq_id_, comm_);
   }
 
  private:
   int root_;
+  int nelems_;
 
 };
 

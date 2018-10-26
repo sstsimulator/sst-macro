@@ -58,39 +58,50 @@ class bruck_allgather_actor :
 {
 
  public:
+  bruck_allgather_actor(collective::type_t ty, collective_engine* engine, void* dst, void* src,
+                        int nelems, int type_size, int tag, int cq_id, communicator* comm)
+    : bruck_actor(ty, engine, dst, src, type_size, tag, cq_id, comm),
+      nelems_(nelems)
+  {
+  }
+
   std::string to_string() const override {
     return "bruck allgather actor";
   }
 
- protected:
+ private:
   void finalize() override;
-
   void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
+  void init_buffers() override;
   void init_dag() override;
-
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
+  int nelems_;
 
 };
 
 class bruck_allgather_collective :
   public dag_collective
 {
-  FactoryRegister("bruck_allgather", dag_collective, bruck_allgather_collective)
  public:
+  bruck_allgather_collective(type_t ty, collective_engine* engine, void* dst, void* src,
+                             int nelems, int type_size, int tag, int cq_id, communicator* comm)
+   : dag_collective(ty, engine, dst, src, type_size, tag, cq_id, comm),
+     nelems_(nelems)
+  {
+  }
+
   std::string to_string() const override {
     return "bruck allgather";
   }
 
   dag_collective_actor* new_actor() const override {
-    return new bruck_allgather_actor;
+    return new bruck_allgather_actor(type_, engine_, dst_buffer_, src_buffer_, nelems_, type_size_,
+                                     tag_, cq_id_, comm_);
   }
 
-  dag_collective* clone() const override {
-    return new bruck_allgather_collective;
-  }
-
+ private:
+  int nelems_;
 };
 
 }

@@ -54,10 +54,6 @@ using namespace sprockit::dbg;
 
 namespace sumi {
 
-simultaneous_btree_scan::simultaneous_btree_scan(int root, reduce_fxn fxn) :
- root_(root), fxn_(fxn)
-{
-}
 
 void
 simultaneous_btree_scan_actor::finalize_buffers()
@@ -72,8 +68,10 @@ simultaneous_btree_scan_actor::finalize_buffers()
 }
 
 void
-simultaneous_btree_scan_actor::init_buffers(void* dst, void* src)
+simultaneous_btree_scan_actor::init_buffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   if (!src) return;
 
   //if we need to do operations, then we need a temp buffer for doing sends
@@ -142,11 +140,6 @@ simultaneous_btree_scan_actor::init_dag()
     prev_recv = recv_ac;
     prev_memcpy = memcpy_ac;
   }
-}
-
-simultaneous_btree_scan_actor::simultaneous_btree_scan_actor(int root, reduce_fxn fxn) :
-   root_(root), fxn_(fxn)
-{
 }
 
 void

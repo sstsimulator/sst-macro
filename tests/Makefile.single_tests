@@ -35,7 +35,7 @@ test_tls.$(CHKSUF): test_tls
     ./test_tls --no-wall-time -f $(srcdir)/test_configs/tls.ini 
 
 if BUILD_SUMI_MPI
-SINGLETESTS += test_uq
+#SINGLETESTS += test_uq
 
 if HAVE_OTF2
 SINGLETESTS += test_otf2 test_otf2_write

@@ -2,6 +2,7 @@
 #define THREAD_SAFE_NEW_H
 
 #include <vector>
+#include <sprockit/spkt_config.h>
 
 #define SPKT_TLS_OFFSET 64
 
@@ -44,7 +45,16 @@ struct thread_allocator_set {
 template <class T>
 class thread_safe_new {
  public:
-#if 1
+#if SPKT_VALGRIND_MODE
+  template <class... Args>
+  static T* allocate_at_beginning(Args&&... args){
+    return new T(std::forward<Args>(args)...);
+  }
+
+  static void free_at_end(T* ptr){
+    delete ptr;
+  }
+#else
   static void free_at_end(T* ptr){
     //do nothing - the allocation is getting cleaned up
   }
@@ -80,15 +90,6 @@ class thread_safe_new {
   static void operator delete(void* ptr){
     int thread = current_thread_id();
     alloc_.available[thread].push_back(ptr);
-  }
-#else
-  template <class... Args>
-  static T* allocate_at_beginning(Args&&... args){
-    return new T(std::forward<Args>(args)...);
-  }
-
-  static void free_at_end(T* ptr){
-    delete ptr;
   }
 #endif
 #define SSTMAC_CACHE_ALIGNMENT 64

@@ -95,22 +95,22 @@ void smsg_send(int remote_proc, uint64_t byte_length, void* buffer,
 }
 
 void comm_alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-                   collective::config cfg = collective::cfg());
+                   int cq_id, communicator* comm = nullptr);
 
 void comm_allgather(void* dst, void* src, int nelems, int type_size, int tag,
-                    collective::config cfg = collective::cfg());
+                   int cq_id, communicator* comm = nullptr);
 
 void comm_allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-                     collective::config cfg = collective::cfg());
+                   int cq_id, communicator* comm = nullptr);
 
 void comm_gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-                 collective::config cfg = collective::cfg());
+                 int cq_id, communicator* comm = nullptr);
 
 void comm_scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-                  collective::config cfg = collective::cfg());
+                  int cq_id, communicator* comm = nullptr);
 
 void comm_bcast(int root, void* buffer, int nelems, int type_size, int tag,
-                collective::config cfg = collective::cfg());
+                int cq_id, communicator* comm = nullptr);
 
 /**
 * The total size of the input/result buffer in bytes is nelems*type_size
@@ -124,35 +124,33 @@ void comm_bcast(int root, void* buffer, int nelems, int type_size, int tag,
 * @param context The context (i.e. initial set of failed procs)
 */
 void comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                    collective::config cfg = collective::cfg());
+                    int cq_id, communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_allreduce(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+void comm_allreduce(void* dst, void* src, int nelems, int tag, int cq_id, communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+  comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
 void comm_scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-               collective::config cfg = collective::cfg());
+               int cq_id, communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_scan(void* dst, void* src, int nelems, int tag,
-               collective::config cfg = collective::cfg()){
+void comm_scan(void* dst, void* src, int nelems, int tag,int cq_id, communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+  comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
 void comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                 collective::config cfg = collective::cfg());
+                 int cq_id, communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_reduce(int root, void* dst, void* src, int nelems, int tag,
-                 collective::config cfg = collective::cfg()){
+void comm_reduce(int root, void* dst, void* src, int nelems, int tag,int cq_id, communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+  comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
-void comm_barrier(int tag, collective::config cfg = collective::cfg());
+void comm_barrier(int tag, int cq_id, communicator* comm = nullptr);
 
 message* comm_poll();
 

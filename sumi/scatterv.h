@@ -61,23 +61,26 @@ class btree_scatterv_actor :
     return "btree scatterv actor";
   }
 
-  btree_scatterv_actor(int root, int* send_counts) :
-    root_(root), send_counts_(send_counts) {}
+  btree_scatterv_actor(collective_engine* engine, int root, void *dst, void *src,
+                       int* send_counts, int recvcnt, int type_size, int tag,
+                       int cq_id, communicator* comm) :
+    dag_collective_actor(collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
+    root_(root), send_counts_(send_counts), recvcnt_(recvcnt) {}
 
  protected:
   void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
+  void init_buffers() override;
   void init_dag() override;
   void init_tree() override;
 
-  void buffer_action(void *dst_buffer,
-                     void *msg_buffer, action* ac) override;
+  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
  private:
   int root_;
   int midpoint_;
   int log2nproc_;
   int* send_counts_;
+  int recvcnt_;
 
 };
 
@@ -86,34 +89,25 @@ class btree_scatterv :
 {
 
  public:
-  btree_scatterv(int root) :
-    root_(root) {}
-
-  btree_scatterv() : root_(-1){}
+  btree_scatterv(collective_engine* engine, int root, void *dst, void *src,
+                 int* send_counts, int recvcnt, int type_size, int tag,
+                 int cq_id, communicator* comm)
+    : dag_collective(scatterv, engine, dst, src,type_size, tag, cq_id, comm),
+    root_(root), send_counts_(send_counts), recvcnt_(recvcnt) {}
 
   std::string to_string() const override {
     return "btree scatterv";
   }
 
   dag_collective_actor* new_actor() const override {
-    return new btree_scatterv_actor(root_, send_counts_);
-  }
-
-  dag_collective* clone() const override {
-    return new btree_scatterv(root_);
-  }
-
-  void init_root(int root) override {
-    root_ = root;
-  }
-
-  void init_send_counts(int *nelems) override  {
-    send_counts_ = nelems;
+    return new btree_scatterv_actor(engine_, root_, dst_buffer_, src_buffer_,
+                                    send_counts_, recvcnt_, type_size_, tag_, cq_id_, comm_);
   }
 
  private:
   int root_;
   int* send_counts_;
+  int recvcnt_;
 
 };
 

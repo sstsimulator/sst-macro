@@ -63,8 +63,10 @@ using namespace sprockit::dbg;
 namespace sumi {
 
 void
-direct_alltoallv_actor::init_buffers(void* dst, void* src)
+direct_alltoallv_actor::init_buffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   if (src){
     total_send_size_ = 0;
     total_recv_size_ = 0;

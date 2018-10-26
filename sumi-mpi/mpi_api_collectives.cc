@@ -52,7 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
   start_mpi_call(fxn); \
   auto op = start_##coll(#fxn, __VA_ARGS__); \
   wait_collective(op); \
-  delete op; \
   finish_mpi_call(fxn);
 
 #define start_coll(coll, fxn, ...) \
@@ -68,8 +67,15 @@ mpi_api::add_immediate_collective(collective_op_base* op, MPI_Request* req)
 {
   mpi_request* reqPtr = mpi_request::construct(mpi_request::Collective);
   reqPtr->set_collective(op);
+  mpi_api_debug(sprockit::dbg::mpi, "waiting on immediate collective on tag %d", op->tag);
   op->comm->add_request(op->tag, reqPtr);
   add_request_ptr(reqPtr, req);
+
+  if (op->complete){
+    finish_collective(op);
+    delete op;
+    reqPtr->complete();
+  }
 }
 
 void
@@ -77,7 +83,7 @@ mpi_api::start_mpi_collective(collective::type_t ty,
                               const void *sendbuf, void *recvbuf,
                               MPI_Datatype sendtype, MPI_Datatype recvtype,
                               collective_op_base* op)
-{
+{  
   op->ty = ty;
   op->sendbuf = const_cast<void*>(sendbuf);
   op->recvbuf = recvbuf;
@@ -138,6 +144,7 @@ mpi_api::start_mpi_collective(collective::type_t ty,
   } else {
     op->tmp_recvbuf = recvbuf;
   }
+
 
 }
 
@@ -202,11 +209,13 @@ void
 mpi_api::wait_collective(collective_op_base* op)
 {
   bool is_comm_world = op->comm->id() == MPI_COMM_WORLD;
-  if (op->comm->nproc() == 1){
+  if (op->complete){
     finish_collective(op);
+    delete op;
   } else {
     mpi_request req(mpi_request::Collective);
     req.set_collective(op);
+    op->comm->add_request(op->tag, &req);
     queue_->progress_loop(&req);
   }
 
@@ -216,12 +225,12 @@ mpi_api::wait_collective(collective_op_base* op)
   }
 }
 
-void
+collective_done_message*
 mpi_api::start_allgather(collective_op *op)
 {
-  coll_engine_->allgather(op->tmp_recvbuf, op->tmp_sendbuf,
+  return engine_->allgather(op->tmp_recvbuf, op->tmp_sendbuf,
                   op->sendcnt, op->sendtype->packed_size(), op->tag,
-                  collective::cfg().comm(op->comm));
+                  queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -236,7 +245,11 @@ mpi_api::start_allgather(const char* name, MPI_Comm comm, int sendcount, MPI_Dat
 
   collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
   start_mpi_collective(collective::allgather, sendbuf, recvbuf, sendtype, recvtype, op);
-  start_allgather(op);
+  auto* msg = start_allgather(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -294,12 +307,12 @@ mpi_api::iallgather(int sendcount, MPI_Datatype sendtype,
   return iallgather(NULL, sendcount, sendtype, NULL, recvcount, recvtype, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_alltoall(collective_op* op)
 {
-  coll_engine_->alltoall(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+  return engine_->alltoall(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                       op->sendtype->packed_size(), op->tag,
-                      collective::cfg().comm(op->comm));
+                      queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -314,7 +327,11 @@ mpi_api::start_alltoall(const char* name, MPI_Comm comm, int sendcount, MPI_Data
 
   collective_op* op = new collective_op(sendcount, recvcount, get_comm(comm));
   start_mpi_collective(collective::alltoall, sendbuf, recvbuf, sendtype, recvtype, op);
-  start_alltoall(op);
+  auto* msg = start_alltoall(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -369,13 +386,13 @@ mpi_api::ialltoall(int sendcount, MPI_Datatype sendtype,
                    recvcount, recvtype, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_allreduce(collective_op* op)
 {
   reduce_fxn fxn = get_collective_function(op);
-  coll_engine_->allreduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+  return engine_->allreduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                        op->sendtype->packed_size(), op->tag,
-                       fxn, collective::cfg().comm(op->comm));
+                       fxn, queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -389,7 +406,11 @@ mpi_api::start_allreduce(mpi_comm* commPtr, int count, MPI_Datatype type,
 
   op->op = mop;
   start_mpi_collective(collective::allreduce, src, dst, type, type, op);
-  start_allreduce(op);
+  auto* msg = start_allreduce(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -448,11 +469,11 @@ mpi_api::iallreduce(int count, MPI_Datatype type, MPI_Op op,
   return iallreduce(NULL, NULL, count, type, op, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_barrier(collective_op* op)
 {
   op->ty = collective::barrier;
-  coll_engine_->barrier(op->tag, collective::cfg().comm(op->comm));
+  return engine_->barrier(op->tag, queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -461,7 +482,11 @@ mpi_api::start_barrier(const char* name, MPI_Comm comm)
   collective_op* op = new collective_op(0, get_comm(comm));
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) on tag %d",
     name, comm_str(comm).c_str(), int(op->tag));
-  start_barrier(op);
+  auto* msg = start_barrier(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -472,7 +497,6 @@ mpi_api::barrier(MPI_Comm comm)
   start_mpi_call(MPI_Barrier);
   collective_op_base* op = start_barrier("MPI_Barrier", comm);
   wait_collective(op);
-  delete op;
   finish_mpi_call(MPI_Barrier);
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -494,14 +518,13 @@ mpi_api::ibarrier(MPI_Comm comm, MPI_Request *req)
   return MPI_SUCCESS;
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_bcast(collective_op* op)
 {
   void* buf = op->comm->rank() == op->root ? op->tmp_sendbuf : op->tmp_recvbuf;
-  coll_engine_->bcast(op->root, buf,
-                   op->sendcnt,
-                   op->sendtype->packed_size(), op->tag,
-                   collective::cfg().comm(op->comm));
+  return engine_->bcast(op->root, buf, op->sendcnt,
+                 op->sendtype->packed_size(), op->tag,
+                 queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -529,8 +552,11 @@ mpi_api::start_bcast(const char* name, MPI_Comm comm, int count, MPI_Datatype da
   }
 
   start_mpi_collective(collective::bcast, sendbuf, recvbuf, sendtype, recvtype, op);
-  start_bcast(op);
-
+  auto* msg = start_bcast(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -575,12 +601,12 @@ mpi_api::ibcast(int count, MPI_Datatype datatype, int root,
   return ibcast(NULL, count, datatype, root, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_gather(collective_op* op)
 {
-  coll_engine_->gather(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+  return engine_->gather(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                     op->sendtype->packed_size(), op->tag,
-                    collective::cfg().comm(op->comm));
+                    queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -615,7 +641,11 @@ mpi_api::start_gather(const char* name, MPI_Comm comm, int sendcount, MPI_Dataty
   }
 
   start_mpi_collective(collective::gather, sendbuf, recvbuf, sendtype, recvtype, op);
-  start_gather(op);
+  auto* msg = start_gather(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -690,13 +720,13 @@ mpi_api::get_collective_function(collective_op_base* op)
   }
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_reduce(collective_op* op)
 {
   reduce_fxn fxn = get_collective_function(op);
-  coll_engine_->reduce(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+  return engine_->reduce(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                     op->sendtype->packed_size(), op->tag,
-                    fxn, collective::cfg().comm(op->comm));
+                    fxn, queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -722,8 +752,11 @@ mpi_api::start_reduce(const char* name, MPI_Comm comm, int count, MPI_Datatype t
   }
 
   start_mpi_collective(collective::reduce, src, dst, sendtype, recvtype, op);
-  start_reduce(op);
-
+  auto* msg = start_reduce(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -768,13 +801,13 @@ mpi_api::ireduce(int count, MPI_Datatype type, MPI_Op op, int root, MPI_Comm com
   return ireduce(NULL, NULL, count, type, op, root, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_reduce_scatter(collective_op* op)
 {
   sprockit::abort("sumi::reduce_scatter");
 
   reduce_fxn fxn = get_collective_function(op);
-
+  return nullptr;
   //transport::allreduce(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
   //                     op->sendtype->packed_size(), op->tag,
   //                     fxn, false, options::initial_context, op->comm);
@@ -789,7 +822,11 @@ mpi_api::start_reduce_scatter(const char* name, MPI_Comm comm, const int* recvco
 
   collective_op* op = nullptr;
   start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);
-  start_reduce_scatter(op);
+  auto* msg = start_reduce_scatter(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   op->op = mop;
 
   return op;
@@ -845,9 +882,12 @@ mpi_api::start_reduce_scatter_block(const char* name, MPI_Comm comm, int count, 
 
   collective_op* op = nullptr;
   start_mpi_collective(collective::reduce_scatter, src, dst, type, type, op);
-  start_reduce_scatter(op);
+  auto* msg = start_reduce_scatter(op);
   op->op = mop;
-
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -884,13 +924,13 @@ mpi_api::ireduce_scatter_block(int recvcnt, MPI_Datatype type,
   return ireduce_scatter_block(NULL, NULL, recvcnt, type, op, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_scan(collective_op* op)
 {
   reduce_fxn fxn = get_collective_function(op);
-  coll_engine_->scan(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+  return engine_->scan(op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                   op->sendtype->packed_size(), op->tag,
-                  fxn, collective::cfg().comm(op->comm));
+                  fxn, queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -909,7 +949,11 @@ mpi_api::start_scan(const char* name, MPI_Comm comm, int count, MPI_Datatype typ
 
   op->op = mop;
   start_mpi_collective(collective::scan, src, dst, type, type, op);
-  start_scan(op);
+  auto* msg = start_scan(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -950,12 +994,12 @@ mpi_api::iscan(int count, MPI_Datatype type, MPI_Op op,
   return iscan(NULL, NULL, count, type, op, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_scatter(collective_op* op)
 {
-  coll_engine_->scatter(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
+  return engine_->scatter(op->root, op->tmp_recvbuf, op->tmp_sendbuf, op->sendcnt,
                      op->sendtype->packed_size(), op->tag,
-                     collective::cfg().comm(op->comm));
+                     queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -979,8 +1023,11 @@ mpi_api::start_scatter(const char* name, MPI_Comm comm, int sendcount, MPI_Datat
   }
 
   start_mpi_collective(collective::scatter, sendbuf, recvbuf, sendtype, recvtype, op);
-  start_scatter(op);
-
+  auto* msg = start_scatter(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 

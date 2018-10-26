@@ -81,9 +81,12 @@ class mpi_queue
   friend class mpi_queue_recv_request;
 
  public:
-  mpi_queue(sprockit::sim_parameters* params, int task_id, mpi_api* api);
+  mpi_queue(sprockit::sim_parameters* params, int task_id,
+            mpi_api* api, collective_engine* engine);
 
   ~mpi_queue() throw ();
+
+  void init();
 
   static void delete_statics();
 

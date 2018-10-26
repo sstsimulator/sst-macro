@@ -56,14 +56,16 @@ btree_scatter_actor::init_tree()
 }
 
 void
-btree_scatter_actor::init_buffers(void *dst, void *src)
+btree_scatter_actor::init_buffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   //check dst - everyone has dst, not everyone has a source
   if (!dst)
     return;
 
-  int me = cfg_.dom->my_comm_rank();
-  int nproc = cfg_.dom->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int result_size = nelems_ * type_size_;
   int max_recv_buf_size = midpoint_*nelems_*type_size_;
   if (me == root_){
@@ -117,8 +119,8 @@ btree_scatter_actor::finalize_buffers()
   if (!result_buffer_)
     return;
 
-  int nproc = cfg_.dom->nproc();
-  int me = cfg_.dom->my_comm_rank();
+  int nproc = comm_->nproc();
+  int me = comm_->my_comm_rank();
   int result_size = nelems_*type_size_;
   int max_recv_buf_size = midpoint_*nelems_*type_size_;
   if (me == root_){
@@ -149,8 +151,8 @@ btree_scatter_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *a
 void
 btree_scatter_actor::init_dag()
 {
-  int me = cfg_.dom->my_comm_rank();
-  int nproc = cfg_.dom->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int round = 0;
 
   action* prev = nullptr;

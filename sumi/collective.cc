@@ -63,10 +63,6 @@ RegisterDebugSlot(sumi_collective_init,
  "print all debug output for collectives performed within the sumi framework")
 RegisterDebugSlot(sumi_collective,
  "print all debug output for collectives performed within the sumi framework")
-RegisterDebugSlot(sumi_collective_sendrecv,
- "print all debug output for individual send/recv operations done by a sumi collective")
-RegisterDebugSlot(sumi_collective_round,
- "print all debug output for configuring/running collectives like allreduce based on round-by-round communication")
 RegisterDebugSlot(sumi_vote,
  "print all debug output for fault-tolerant voting collectives within the sumi framework")
 
@@ -98,40 +94,21 @@ collective::tostr(type_t ty)
       "collective::tostr: unknown type %d", ty);
 }
 
-void
-collective::init(type_t ty, transport *api, int tag, const config& cfg)
+collective::collective(type_t ty, collective_engine* engine, int tag, int cq_id, communicator* comm) :
+  type_(ty), engine_(engine), my_api_(engine->tport()), tag_(tag),
+  dom_nproc_(comm->nproc()), dom_me_(comm->my_comm_rank()),
+  complete_(false), comm_(comm), cq_id_(cq_id)
 {
-  my_api_ = api;
-  cfg_ = cfg;
-  complete_ = false;
-  tag_ = tag;
-  type_ = ty;
-
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-  const thread_safe_set<int>& failed = api->failed_ranks(context);
-  dense_rank_map rank_map(failed, dom);
-
-  dense_nproc_ = rank_map.dense_rank(dom->nproc());
-  dense_me_ = rank_map.dense_rank(dom->my_comm_rank());
-#else
-  dom_nproc_ = cfg.dom->nproc();
-  dom_me_ = cfg.dom->my_comm_rank();
-#endif
-
   debug_printf(sumi_collective | sumi_vote,
-    "Rank %d=%d built collective of size %d in role=%d, tag=%d, context=%d",
-    my_api_->rank(), cfg.dom->my_comm_rank(), cfg.dom->nproc(), dom_me_, tag, cfg.context);
+    "Rank %d=%d built collective of size %d in role=%d, tag=%d",
+    my_api_->rank(), comm_->my_comm_rank(), comm_->nproc(), dom_me_, tag);
 }
 
-collective::collective(type_t ty, transport* api, int tag, const config& cfg)
-{
-  init(ty, api, tag, cfg);
-}
-
-void
+collective_done_message*
 collective::add_actors(collective *coll)
 {
   sprockit::abort("collective:add_actors: collective should not dynamically add actors");
+  return nullptr;
 }
 
 void
@@ -170,55 +147,19 @@ dag_collective::~dag_collective()
   }
 }
 
-dag_collective*
-dag_collective::construct(const std::string& name, sprockit::sim_parameters *params)
-{
-  sprockit::sim_parameters* collective_params = params->get_namespace(name);
-  return dag_collective::factory::get_param("algorithm", collective_params);
-}
-
-dag_collective*
-dag_collective::construct(const std::string& name, sprockit::sim_parameters *params, reduce_fxn fxn)
-{
-  sprockit::sim_parameters* collective_params = params->get_namespace(name);
-  dag_collective* coll = dag_collective::factory::get_param("algorithm", collective_params);
-  coll->init_reduce(fxn);
-  return coll;
-}
-
 void
 dag_collective::init_actors()
 {
   dag_collective_actor* actor = new_actor();
-
-  actor->init(type_, my_api_, nelems_, type_size_, tag_, cfg_);
-  actor->init_tree();
-  actor->init_buffers(dst_buffer_, src_buffer_);
-  actor->init_dag();
-
+  actor->init();
   my_actors_[dom_me_] = actor;
-  refcounts_[cfg_.dom->my_comm_rank()] = my_actors_.size();
-}
-
-void
-dag_collective::init(type_t type,
-  transport *my_api,
-  void *dst, void *src,
-  int nelems, int type_size,
-  int tag, const config& cfg)
-{
-  collective::init(type, my_api, tag, cfg);
-  fault_aware_ = cfg.fault_aware;
-  nelems_ = nelems;
-  type_size_ = type_size;
-  src_buffer_ = src;
-  dst_buffer_ = dst;
+  refcounts_[dom_me_] = my_actors_.size();
 }
 
 collective_done_message*
 dag_collective::recv(int target, collective_work_message* msg)
 {
-  debug_printf(sumi_collective | sumi_collective_sendrecv,
+  debug_printf(sumi_collective | sprockit::dbg::sumi,
     "Rank %d=%d %s got from %d on tag=%d for target %d",
     my_api_->rank(), dom_me_,
     collective::tostr(type_),
@@ -228,7 +169,7 @@ dag_collective::recv(int target, collective_work_message* msg)
   if (!vr){
     //data-centric collective - this actor does not exist
     pending_.push_back(msg);
-      debug_printf(sumi_collective | sumi_collective_sendrecv,
+      debug_printf(sumi_collective | sprockit::dbg::sumi,
                   "dag actor %d does not yet exit - queueing %s",
                   target, msg->to_string().c_str())
     return nullptr;
@@ -270,7 +211,7 @@ dag_collective::deadlock_check()
   }
 }
 
-void
+collective_done_message*
 dag_collective::add_actors(collective* coll)
 {
   dag_collective* ar = static_cast<dag_collective*>(coll);
@@ -283,12 +224,14 @@ dag_collective::add_actors(collective* coll)
 
   std::list<collective_work_message*> pending = pending_;
   pending_.clear();
+  collective_done_message* msg = nullptr;
   { std::list<collective_work_message*>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
-    collective::recv(*it);
+    msg = collective::recv(*it);
   } }
 
   ar->my_actors_.clear();
+  return msg;
 }
 
 }

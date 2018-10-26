@@ -63,8 +63,10 @@ using namespace sprockit::dbg;
 namespace sumi {
 
 void
-bruck_alltoall_actor::init_buffers(void* dst, void* src)
+bruck_alltoall_actor::init_buffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   int log2nproc, num_rounds, nprocs_extra_round;
   compute_tree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
 
@@ -90,7 +92,7 @@ void
 bruck_alltoall_actor::finalize_buffers()
 {
   if (send_buffer_){
-    int buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
+    int buffer_size = nelems_ * type_size_ * comm_->nproc();
     int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
     my_api_->unmake_public_buffer(result_buffer_, buffer_size);
     my_api_->free_public_buffer(recv_buffer_, tmp_buffer_size);

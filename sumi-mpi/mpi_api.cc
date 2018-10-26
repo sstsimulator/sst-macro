@@ -129,7 +129,6 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   req_counter_(0),
   queue_(nullptr),
   generate_ids_(true),
-  coll_engine_(nullptr),
 #ifdef SSTMAC_OTF2_ENABLED
   otf2_writer_(nullptr),
 #endif
@@ -137,15 +136,14 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   comm_factory_(sid, this)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
-  queue_ = new mpi_queue(queue_params, sid.task_, this);
+  engine_ = new collective_engine(queue_params, this);
+  queue_ = new mpi_queue(queue_params, sid.task_, this, engine_);
 
   double probe_delay_s = params->get_optional_time_param("iprobe_delay", 0);
   iprobe_delay_us_ = probe_delay_s * 1e6;
 
   double test_delay_s = params->get_optional_time_param("test_delay", 0);
   test_delay_us_ = test_delay_s * 1e6;
-
-  coll_engine_ = new collective_engine(params, this);
 
 #if SSTMAC_COMM_SYNC_STATS
   dump_comm_times_ = params->get_optional_bool_param("dump_comm_times", false);
@@ -250,10 +248,8 @@ mpi_api::init(int* argc, char*** argv)
 
   status_ = is_initialized;
 
-  collective_op_base* op = start_barrier("MPI_Init", MPI_COMM_WORLD);
-  wait_collective(op);
+  queue_->init();
 
-  delete op;
   crossed_comm_world_barrier_ = false;
   end_api_call();
 
@@ -286,7 +282,6 @@ mpi_api::finalize()
 
   collective_op_base* op = start_barrier("MPI_Finalize", MPI_COMM_WORLD);
   wait_collective(op);
-  delete op;
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
 
@@ -309,7 +304,7 @@ mpi_api::finalize()
       os_->now().sec());
   }
 
-  coll_engine_->clean_up();
+  engine_->clean_up();
   transport::finish();
 
 #if SSTMAC_COMM_SYNC_STATS

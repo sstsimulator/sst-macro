@@ -52,7 +52,6 @@ Questions? Contact sst-macro-help@sandia.gov
   start_mpi_call(fxn); \
   auto op = start_##coll(#fxn, __VA_ARGS__); \
   wait_collective(op); \
-  delete op; \
   finish_mpi_call(fxn);
 
 #define start_vcoll(coll, fxn, ...) \
@@ -79,12 +78,12 @@ mpi_api::finish_vcollective_op(collective_op_base* op_)
   }
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_allgatherv(collectivev_op* op)
 {
-  coll_engine_->allgatherv(op->tmp_recvbuf, op->tmp_sendbuf,
+  return engine_->allgatherv(op->tmp_recvbuf, op->tmp_sendbuf,
                   op->recvcounts, op->sendtype->packed_size(), op->tag,
-                  collective::cfg().comm(op->comm));
+                  queue_->coll_cq_id(), op->comm);
 
 }
 
@@ -102,7 +101,11 @@ mpi_api::start_allgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Da
   collectivev_op* op = new collectivev_op(sendcount, const_cast<int*>(recvcounts),
                                           const_cast<int*>(displs), get_comm(comm));
   start_mpi_collective(collective::allgatherv, sendbuf, recvbuf, sendtype, recvtype, op);
-  start_allgatherv(op);
+  auto* msg = start_allgatherv(op);
+  if (msg){
+    op->complete = true;
+    delete msg;
+  }
   return op;
 }
 
@@ -153,13 +156,13 @@ mpi_api::iallgatherv(int sendcount, MPI_Datatype sendtype,
                     recvtype, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_alltoallv(collectivev_op* op)
 {
-  coll_engine_->alltoallv(op->tmp_recvbuf, op->tmp_sendbuf,
+  return engine_->alltoallv(op->tmp_recvbuf, op->tmp_sendbuf,
                   op->sendcounts, op->recvcounts,
                   op->sendtype->packed_size(), op->tag,
-                  collective::cfg().comm(op->comm));
+                  queue_->coll_cq_id(), op->comm);
 }
 
 collective_op_base*
@@ -176,7 +179,11 @@ mpi_api::start_alltoallv(const char* name, MPI_Comm comm,
                                               const_cast<int*>(recvcounts), const_cast<int*>(rdispls),
                                               get_comm(comm));
     start_mpi_collective(collective::alltoallv, sendbuf, recvbuf, sendtype, recvtype, op);
-    start_alltoallv(op);
+    auto* msg = start_alltoallv(op);
+    if (msg){
+      op->complete = true;
+      delete msg;
+    }
     return op;
   } else {
     mpi_comm* commPtr = get_comm(comm);
@@ -260,10 +267,11 @@ mpi_api::ialltoallw(const void *sendbuf, const int sendcounts[],
   return MPI_SUCCESS;
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_gatherv(collectivev_op* op)
 {
   sprockit::abort("sumi::gatherv: not implemented");
+  return nullptr;
   //transport::gatherv(op->tmp_recvbuf, op->tmp_sendbuf,
   //                     op->sendcnt, typeSize, op->tag,
   //                false, options::initial_context, op->comm);
@@ -293,7 +301,11 @@ mpi_api::start_gatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datat
     }
 
     start_mpi_collective(collective::gatherv, sendbuf, recvbuf, sendtype, recvtype, op);
-    start_gatherv(op);
+    auto* msg = start_gatherv(op);
+    if (msg){
+      op->complete = true;
+      delete msg;
+    }
     return op;
   } else {
     mpi_comm* commPtr = get_comm(comm);
@@ -360,10 +372,11 @@ mpi_api::igatherv(int sendcount, MPI_Datatype sendtype,
                   recvcounts, NULL, recvtype, root, comm, req);
 }
 
-void
+sumi::collective_done_message*
 mpi_api::start_scatterv(collectivev_op* op)
 {
   sprockit::abort("sumi::scatterv: not implemented");
+  return nullptr;
   //transport::allgatherv(op->tmp_recvbuf, op->tmp_sendbuf,
   //                     op->sendcnt, typeSize, op->tag,
   //                false, options::initial_context, op->comm);
@@ -392,7 +405,11 @@ mpi_api::start_scatterv(const char* name, MPI_Comm comm, const int *sendcounts, 
     }
 
     start_mpi_collective(collective::scatterv, sendbuf, recvbuf, sendtype, recvtype, op);
-    start_scatterv(op);
+    auto* msg = start_scatterv(op);
+    if (msg){
+      op->complete = true;
+      delete msg;
+    }
     return op;
   } else {
     mpi_comm* commPtr = get_comm(comm);

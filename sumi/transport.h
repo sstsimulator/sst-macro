@@ -336,8 +336,6 @@ class transport : public sstmac::sw::api {
   int page_size_;
   bool pin_delay_;
 
-  collective_engine* engine_;
-
  protected:
   bool inited_;
 
@@ -346,6 +344,10 @@ class transport : public sstmac::sw::api {
   int rank_;
 
   int nproc_;
+
+  std::map<int,std::list<message*>> held_;
+
+  collective_engine* engine_;
 
   std::string server_libname_;
 
@@ -360,10 +362,6 @@ class collective_engine
                     transport* tport);
 
   ~collective_engine();
-
-  int cq() const {
-    return cq_id_;
-  }
 
   collective_done_message* incoming(message* m);
 
@@ -387,7 +385,7 @@ class collective_engine
     return eager_cutoff_;
   }
 
-  void notify_collective_done(collective_done_message* msg);
+  void notify_collective_done(int rank, collective::type_t ty, int tag);
 
   bool use_eager_protocol(uint64_t byte_length) const {
     return byte_length < eager_cutoff_;
@@ -409,7 +407,7 @@ class collective_engine
     use_put_protocol_ = flag;
   }
 
-  collective_done_message* block_until_next();
+  collective_done_message* block_until_next(int cq_id);
 
   /**
    * The total size of the input buffer in bytes is nelems*type_size*comm_size
@@ -423,13 +421,14 @@ class collective_engine
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  void reduce_scatter(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                     collective::config cfg = collective::cfg());
+  collective_done_message* reduce_scatter(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                                          int cq_id, communicator* comm = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void reduce_scatter(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+  collective_done_message* reduce_scatter(void* dst, void* src, int nelems, int tag,
+                                          int cq_id, communicator* comm = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
-    reduce_scatter(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+    return reduce_scatter(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
   }
 
   /**
@@ -444,13 +443,14 @@ class collective_engine
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  void allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                         collective::config cfg = collective::cfg());
+  collective_done_message* allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                                     int cq_id, communicator* comm = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void allreduce(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+  collective_done_message* allreduce(void* dst, void* src, int nelems, int tag,
+                                     int cq_id, communicator* comm = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
-    allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+    return allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
   }
 
   /**
@@ -465,22 +465,22 @@ class collective_engine
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  void scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-        collective::config cfg = collective::cfg());
+  collective_done_message* scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+                                int cq_id, communicator* comm = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void scan(void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+  collective_done_message* scan(void* dst, void* src, int nelems, int tag, int cq_id, communicator* comm = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
-    scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+    return scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
   }
 
-  void reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
-    reduce_fxn fxn, collective::config cfg = collective::cfg());
+  collective_done_message* reduce(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                                  reduce_fxn fxn, int cq_id, communicator* comm = nullptr);
 
   template <typename data_t, template <typename> class Op>
-  void reduce(int root, void* dst, void* src, int nelems, int tag, collective::config cfg = collective::cfg()){
+  collective_done_message* reduce(int root, void* dst, void* src, int nelems, int tag, int cq_id, communicator* comm = nullptr){
     typedef ReduceOp<Op, data_t> op_class_type;
-    reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cfg);
+    return reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
   }
 
   transport* tport() const {
@@ -497,29 +497,28 @@ class collective_engine
    * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
    * @param context The context (i.e. initial set of failed procs)
    */
-  void allgather(void* dst, void* src, int nelems, int type_size, int tag,
-                         collective::config = collective::cfg());
+  collective_done_message* allgather(void* dst, void* src, int nelems, int type_size, int tag,
+                                     int cq_id, communicator* comm = nullptr);
 
-  void allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-                          collective::config = collective::cfg());
+  collective_done_message* allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
+                                      int cq_id, communicator* comm = nullptr);
 
-  void gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-                      collective::config = collective::cfg());
+  collective_done_message* gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                                  int cq_id, communicator* comm = nullptr);
 
-  void gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
-                       collective::config = collective::cfg());
+  collective_done_message* gatherv(int root, void* dst, void* src, int sendcnt, int* recv_counts, int type_size, int tag,
+                                   int cq_id, communicator* comm = nullptr);
 
-  void alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-                        collective::config = collective::cfg());
+  collective_done_message* alltoall(void* dst, void* src, int nelems, int type_size, int tag,
+                                    int cq_id, communicator* comm = nullptr);
+  collective_done_message* alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
+                                     int cq_id, communicator* comm = nullptr);
 
-  void alltoallv(void* dst, void* src, int* send_counts, int* recv_counts, int type_size, int tag,
-                         collective::config = collective::cfg());
+  collective_done_message* scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+                                   int cq_id, communicator* comm = nullptr);
 
-  void scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-                 collective::config = collective::cfg());
-
-  void scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
-                        collective::config = collective::cfg());
+  collective_done_message* scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
+                                    int cq_id, communicator* comm = nullptr);
 
   void wait_barrier(int tag);
 
@@ -528,45 +527,32 @@ class collective_engine
    * @param tag
    * @param fault_aware
    */
-  void barrier(int tag, collective::config = collective::cfg());
+  collective_done_message* barrier(int tag, int cq_id, communicator* comm = nullptr);
 
-  void bcast(int root, void* buf, int nelems, int type_size, int tag, collective::config cfg = collective::cfg());
+  collective_done_message* bcast(int root, void* buf, int nelems, int type_size, int tag,
+                                 int cq_id, communicator* comm = nullptr);
 
   void clean_up();
 
   void deadlock_check();
 
  private:
-  bool skip_collective(collective::type_t ty,
-                        collective::config& cfg,
+  collective_done_message* skip_collective(collective::type_t ty,
+                        int cq_id, communicator* comm,
                         void* dst, void *src,
                         int nelems, int type_size,
                         int tag);
 
-  void finish_collective(collective* coll, collective_done_message* dmsg);
+  void finish_collective(collective* coll, int rank, collective::type_t ty, int tag);
 
-  void start_collective(collective* coll);
+  collective_done_message* start_collective(collective* coll);
 
   void validate_collective(collective::type_t ty, int tag);
 
-  void deliver_pending(collective* coll, int tag, collective::type_t ty);
+  collective_done_message* deliver_pending(collective* coll, int tag, collective::type_t ty);
 
  private:
   transport* tport_;
-
-  static collective_algorithm_selector* allgather_selector_;
-  static collective_algorithm_selector* alltoall_selector_;
-  static collective_algorithm_selector* alltoallv_selector_;
-  static collective_algorithm_selector* allreduce_selector_;
-  static collective_algorithm_selector* reduce_scatter_selector_;
-  static collective_algorithm_selector* scan_selector_;
-  static collective_algorithm_selector* allgatherv_selector_;
-  static collective_algorithm_selector* bcast_selector_;
-  static collective_algorithm_selector* gather_selector_;
-  static collective_algorithm_selector* gatherv_selector_;
-  static collective_algorithm_selector* reduce_selector_;
-  static collective_algorithm_selector* scatter_selector_;
-  static collective_algorithm_selector* scatterv_selector_;
   static sstmac::sw::ftq_tag sumi_transport_tag;
   static sstmac::sw::ftq_tag poll_delay_tag;
 
@@ -590,7 +576,6 @@ class collective_engine
   bool use_put_protocol_;
 
   int system_collective_tag_;
-  int cq_id_;
 };
 
 

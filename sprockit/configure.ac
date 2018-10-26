@@ -110,6 +110,8 @@ fi
 
 CHECK_REGEX()
 
+CHECK_DEBUG()
+
 AH_TEMPLATE([ATOMIC_REFCOUNT], ["Whether refcounts need to be atomic operations - only x86 compatible"])
 AC_ARG_ENABLE(atomic-refcount,
   [AS_HELP_STRING(

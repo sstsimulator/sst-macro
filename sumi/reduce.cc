@@ -59,10 +59,6 @@ using namespace sprockit::dbg;
 
 namespace sumi {
 
-wilke_halving_reduce::wilke_halving_reduce(int root, reduce_fxn fxn) :
- root_(root), fxn_(fxn)
-{
-}
 
 void
 wilke_reduce_actor::finalize_buffers()
@@ -83,8 +79,11 @@ wilke_reduce_actor::finalize_buffers()
 }
 
 void
-wilke_reduce_actor::init_buffers(void* dst, void* src)
+wilke_reduce_actor::init_buffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
+
   if (!src) return;
 
   //if we need to do operations, then we need a temp buffer for doing sends
@@ -301,11 +300,6 @@ wilke_reduce_actor::init_dag()
 
   num_reducing_rounds_ = num_doubling_rounds;
   num_total_rounds_ = num_doubling_rounds * 2;
-}
-
-wilke_reduce_actor::wilke_reduce_actor(int root, reduce_fxn fxn) :
-   root_(root), fxn_(fxn)
-{
 }
 
 bool

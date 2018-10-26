@@ -63,16 +63,23 @@ class wilke_reduce_actor :
 
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
 
-  wilke_reduce_actor(int root, reduce_fxn fxn);
+  wilke_reduce_actor(collective_engine* engine, int root, void* dst, void* src,
+                     int nelems, int type_size, int tag, reduce_fxn fxn, int cq_id, communicator* comm) :
+    dag_collective_actor(collective::reduce, engine, dst, src, type_size, tag, cq_id, comm, fxn),
+    fxn_(fxn), nelems_(nelems), root_(root)
+  {
+  }
 
  private:
   bool is_lower_partner(int virtual_me, int partner_gap);
   void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
+  void init_buffers() override;
   void init_dag() override;
 
  private:
   reduce_fxn fxn_;
+
+  int nelems_;
 
   int root_;
 
@@ -85,36 +92,29 @@ class wilke_reduce_actor :
 class wilke_halving_reduce :
   public dag_collective
 {
-  FactoryRegister("wilke", dag_collective, wilke_halving_reduce)
  public:
+  wilke_halving_reduce(collective_engine* engine, int root, void* dst, void* src,
+                       int nelems, int type_size, int tag, reduce_fxn fxn, int cq_id, communicator* comm)
+    : dag_collective(reduce, engine, dst, src, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems), fxn_(fxn)
+  {
+  }
+
   std::string to_string() const override {
     return "sumi allreduce";
   }
 
-  wilke_halving_reduce(int root, reduce_fxn fxn);
-
-  wilke_halving_reduce() : root_(-1) {}
-
-  virtual void init_reduce(reduce_fxn fxn) override{
-    fxn_ = fxn;
-  }
-
   dag_collective_actor* new_actor() const override {
-    return new wilke_reduce_actor(root_, fxn_);
-  }
-
-  void init_root(int root) override {
-    root_ = root;
-  }
-
-  dag_collective* clone() const override {
-    return new wilke_halving_reduce(root_, fxn_);
+    return new wilke_reduce_actor(engine_, root_, dst_buffer_, src_buffer_, nelems_, type_size_,
+                                  tag_, fxn_, cq_id_, comm_);
   }
 
  private:
-  reduce_fxn fxn_;
-
   int root_;
+
+  int nelems_;
+
+  reduce_fxn fxn_;
 
 };
 

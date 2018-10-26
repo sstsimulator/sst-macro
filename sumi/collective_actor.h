@@ -231,12 +231,10 @@ class collective_actor
 
   std::string rank_str() const;
 
-  void init(transport* my_api, int tag, const collective::config& cfg);
+  virtual void init() = 0;
 
  protected:
-  collective_actor(collective_engine* engine, int tag, const collective::config& cfg);
-
-  collective_actor(){} //will be initialized later
+  collective_actor(collective_engine* engine, int tag, int cq_id, communicator* comm);
 
   int global_rank(int dom_rank) const;
 
@@ -257,9 +255,9 @@ class collective_actor
 
   int tag_;
 
-  timeout_function* timeout_;
+  communicator* comm_;
 
-  collective::config cfg_;
+  int cq_id_;
 
   bool complete_;
 
@@ -267,6 +265,8 @@ class collective_actor
 
 class slicer {
  public:
+  static reduce_fxn null_reduce_fxn;
+
   /**
    * @brief pack_in
    * @param packedBuf
@@ -298,6 +298,9 @@ class default_slicer :
 {
 
  public:
+  default_slicer(int ty_size, reduce_fxn f = null_reduce_fxn) :
+    type_size(ty_size), fxn(f){}
+
   size_t pack_send_buf(void* packedBuf, void* unpackedObj, 
             int offset, int nelems) const {
     char* dstptr = (char*) packedBuf;
@@ -349,7 +352,7 @@ class dag_collective_actor :
  public communicator::rank_callback
 {
  public:
-  virtual std::string to_string() const = 0;
+  virtual std::string to_string() const override = 0;
 
   virtual ~dag_collective_actor();
 
@@ -366,24 +369,13 @@ class dag_collective_actor :
 
   void deadlock_check() const;
 
-  void init(collective::type_t type,
-    transport* my_api, int nelems,
-    int type_size, int tag,
-    const collective::config& cfg){
-    collective_actor::init(my_api, tag, cfg);
-    type_ = type;
-    nelems_ = nelems;
-    type_size_ = type_size;
-    slicer_ = new default_slicer;
-    slicer_->type_size = type_size;
-  }
-
-  virtual void init_buffers(void* dst, void* src) = 0;
-  virtual void finalize_buffers() = 0;
-  virtual void init_dag() = 0;
-  virtual void init_tree(){}
-
   collective_done_message* done_msg() const;
+
+  void init() override {
+    init_tree();
+    init_dag();
+    init_buffers();
+  }
 
  private:
   template <class T, class U> using alloc = sprockit::thread_safe_allocator<std::pair<const T,U>>;
@@ -395,11 +387,16 @@ class dag_collective_actor :
                    alloc<uint32_t,collective_work_message*>> pending_msg_map;
 
  protected:
-  dag_collective_actor() :
-    slicer_(nullptr),
-    result_buffer_(nullptr),
+  dag_collective_actor(collective::type_t ty, collective_engine* engine, void* dst, void * src,
+                       int type_size, int tag, int cq_id, communicator* comm,
+                       reduce_fxn fxn = slicer::null_reduce_fxn) :
+    collective_actor(engine, tag, cq_id, comm),
+    type_(ty),
+    slicer_(new default_slicer(type_size, fxn)),
+    type_size_(type_size),
+    result_buffer_(dst),
     recv_buffer_(nullptr),
-    send_buffer_(nullptr)
+    send_buffer_(src)
   {
   }
 
@@ -408,8 +405,7 @@ class dag_collective_actor :
 
   void compute_tree(int& log2nproc, int& midpoint, int& nproc) const;
 
-  static bool
-  is_shared_role(int role, int num_roles, int* my_roles){
+  static bool is_shared_role(int role, int num_roles, int* my_roles){
     for (int r=0; r < num_roles; ++r){
       if (role == my_roles[r]){
         return true;
@@ -419,9 +415,15 @@ class dag_collective_actor :
   }
 
  private:
+  virtual void init_tree(){}
+  virtual void init_dag() = 0;
+  virtual void init_buffers() = 0;
+  virtual void finalize_buffers() = 0;
+
+
   void add_comm_dependency(action* precursor, action* ac);
   void add_dependency_to_map(uint32_t id, action* ac);
-  void rank_resolved(int global_rank, int comm_rank);
+  void rank_resolved(int global_rank, int comm_rank) override;
 
   void check_collective_done();
 
@@ -497,8 +499,6 @@ class dag_collective_actor :
  protected:
   int type_size_;
 
-  int nelems_;
-
   /**
   * @brief This where I send data from
   */
@@ -541,6 +541,12 @@ class dag_collective_actor :
 class bruck_actor : public dag_collective_actor
 {
  protected:
+  bruck_actor(collective::type_t ty, collective_engine* engine, void* dst, void* src,
+              int type_size, int tag, int cq_id, communicator* comm) :
+    dag_collective_actor(ty, engine, dst, src, type_size, tag, cq_id, comm)
+  {
+  }
+
   void compute_tree(int& log2nproc, int& midpoint,
                int& num_rounds, int& nprocs_extra_round) const;
 

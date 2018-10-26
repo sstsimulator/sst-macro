@@ -57,9 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 DeclareDebugSlot(sumi_collective)
 DeclareDebugSlot(sumi_vote)
-DeclareDebugSlot(sumi_collective_sendrecv)
 DeclareDebugSlot(sumi_collective_init)
-DeclareDebugSlot(sumi_collective_round)
 
 namespace sumi {
 
@@ -83,32 +81,6 @@ class collective
     scatterv
   } type_t;
 
-  struct config {
-    bool fault_aware = false;
-    int context = options::initial_context;
-    communicator* dom = nullptr;
-    uint8_t cq_id = 0;
-
-    config& cqId(uint8_t id){
-      cq_id = id;
-      return *this;
-    }
-
-    config& comm(communicator* d){
-      dom = d;
-      return *this;
-    }
-
-    config& resilient(bool flag){
-      fault_aware = flag;
-      return *this;
-    }
-  };
-
-  static config cfg(){
-    return config();
-  }
-
   virtual std::string to_string() const = 0;
 
   virtual ~collective();
@@ -123,10 +95,6 @@ class collective
     return false;
   }
 
-  int context() const {
-    return cfg_.context;
-  }
-
   static const char* tostr(type_t ty);
 
   virtual collective_done_message* recv(int target, collective_work_message* msg) = 0;
@@ -136,7 +104,7 @@ class collective
   virtual void start() = 0;
 
   communicator* comm() const {
-    return cfg_.dom;
+    return comm_;
   }
 
   bool complete() const {
@@ -157,24 +125,22 @@ class collective
 
   void actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_event);
 
-  virtual void add_actors(collective* coll);
+  virtual collective_done_message* add_actors(collective* coll);
 
   static const int default_nproc = -1;
 
   virtual void deadlock_check(){}
 
-  void init(type_t type, transport* api, int tag, const config& cfg);
-
   virtual void init_actors(){}
 
  protected:
-  collective(type_t type, transport* api, int tag, const config& cfg);
-
-  collective(){} //to be initialized later
+  collective(type_t type, collective_engine* engine, int tag, int cq_id, communicator* comm);
 
  protected:
   transport* my_api_;
-  config cfg_;
+  collective_engine* engine_;
+  int cq_id_;
+  communicator* comm_;
   int dom_me_;
   int dom_nproc_;
   bool complete_;
@@ -188,44 +154,30 @@ class collective
 class dag_collective :
   public collective
 {
-  DeclareFactory(dag_collective)
-
  public:
   collective_done_message* recv(int target, collective_work_message* msg) override;
 
   void start() override;
 
-  void init(type_t type, transport *my_api,
-    void *dst, void *src,
-    int nelems, int type_size,
-    int tag, const config& cfg);
+  void deadlock_check() override;
 
   void init_actors() override;
 
-  virtual dag_collective* clone() const = 0;
-
-  virtual void init_reduce(reduce_fxn fxn){}
-
-  virtual void init_root(int root){}
-
-  virtual void init_recv_counts(int* nelems){}
-
-  virtual void init_send_counts(int* nelems){}
-
-  void deadlock_check() override;
-
   virtual ~dag_collective();
-
-  static dag_collective* construct(const std::string& name,  sprockit::sim_parameters* params, reduce_fxn fxn);
-
-  static dag_collective* construct(const std::string& name,  sprockit::sim_parameters *params);
 
  protected:
   virtual dag_collective_actor* new_actor() const = 0;
 
-  void add_actors(collective *coll) override;
+  collective_done_message* add_actors(collective *coll) override;
 
  protected:
+  dag_collective(collective::type_t ty, collective_engine* engine, void *dst, void *src,
+                 int type_size, int tag, int cq_id, communicator* comm) :
+    collective(ty, engine, tag, cq_id, comm),
+    src_buffer_(src), dst_buffer_(dst), type_size_(type_size), fault_aware_(false)
+  {
+  }
+
   typedef std::map<int, dag_collective_actor*> actor_map;
   actor_map my_actors_;
 
@@ -233,22 +185,12 @@ class dag_collective :
 
   void* dst_buffer_;
 
-  int nelems_;
-
   int type_size_;
 
   bool fault_aware_;
 
   std::list<collective_work_message*> pending_;
 };
-
-class collective_algorithm_selector
-{
- public:
-  virtual dag_collective* select(int nproc, int nelems) = 0;
-  virtual dag_collective* select(int nproc, int* counts) = 0;
-};
-
 
 }
 

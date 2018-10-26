@@ -67,8 +67,10 @@ wilke_allreduce_actor::finalize_buffers()
 }
 
 void
-wilke_allreduce_actor::init_buffers(void* dst, void* src)
+wilke_allreduce_actor::init_buffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   //if we need to do operations, then we need a temp buffer for doing sends
   int size = nelems_ * type_size_;
 

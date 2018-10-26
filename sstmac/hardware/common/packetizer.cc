@@ -271,7 +271,7 @@ merlin_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, message*
   }
   SST::Interfaces::SimpleNetwork::Request* req =
         new SST::Interfaces::SimpleNetwork::Request(dst, src, bytes*8, head, tail, ev_payload);
-  pkt_debug("merling injecting %d bytes at offset %d on vn %d for message %s",
+  pkt_debug("merling injecting %d bytes at offset %d on vn %d for %s",
             bytes, byte_offset, vn, payload->to_string().c_str());
   m_linkControl->send(req, vn);
 }

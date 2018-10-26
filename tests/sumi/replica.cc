@@ -71,8 +71,7 @@ test_allreduce(int cm_rank)
   int* dst_buffer = new int[nelems];
   int tag = 13;
   communicator* dom = new index_communicator(cm_rank, ndomain, indices);
-  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag,
-                          collective::cfg().comm(dom));
+  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, message::default_cq);
 }
 
 
@@ -82,14 +81,8 @@ wait_allreduce(int cm_rank)
   printf("Waiting on allreduce collective for domain rank %d, physical rank %d\n",
     cm_rank, comm_rank());
 
-  message* msg = comm_poll(); //wait on allreduce
-  if (msg->class_type() != message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
-      "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
-  }
+  auto* dmsg = sumi_engine()->block_until_next(message::default_cq);
 
-  auto dmsg = dynamic_cast<collective_done_message*>(msg);
   int* dst_buffer = (int*) dmsg->result();
   int nelems = 2*comm_nproc();
   if (cm_rank == 0){
@@ -115,7 +108,7 @@ main(int argc, char **argv)
 
   for (int i=0; i < ndomain; ++i){
     if (indices[i] == me){
-      wait_allreduce(i);
+      sumi_engine()->block_until_next(message::default_cq);
     }
   }
 

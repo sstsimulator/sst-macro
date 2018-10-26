@@ -83,7 +83,7 @@ binary_tree_bcast_actor::init_internal(int offsetMe, int windowSize,
         send_action::in_place : send_action::prev_recv;
 
   int stride = windowSize;
-  int nproc = cfg_.dom->nproc();
+  int nproc = comm_->nproc();
   while (stride > 0){
     int partner = offsetMe + stride;
     if (partner < windowStop){ //might not be power of 2
@@ -145,8 +145,8 @@ void
 binary_tree_bcast_actor::init_dag()
 {
   int roundNproc = 1;
-  int nproc = cfg_.dom->nproc();
-  int me = cfg_.dom->my_comm_rank();
+  int nproc = comm_->nproc();
+  int me = comm_->my_comm_rank();
   while (roundNproc < nproc){
     roundNproc *= 2;
   }
@@ -160,12 +160,13 @@ binary_tree_bcast_actor::init_dag()
 }
 
 void
-binary_tree_bcast_actor::init_buffers(void* dst, void* src)
+binary_tree_bcast_actor::init_buffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   void* buffer;
   if (dom_me_ == 0) buffer = src; //root
   else buffer = dst;
-
   uint64_t byte_length = nelems_ * type_size_;
   send_buffer_ = my_api_->make_public_buffer(buffer, byte_length);
   recv_buffer_ = send_buffer_;

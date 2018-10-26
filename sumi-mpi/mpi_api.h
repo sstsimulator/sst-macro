@@ -546,10 +546,6 @@ class mpi_api : public sumi::transport
               origin_datatype, int target_rank, MPI_Aint target_disp,
               int target_count, MPI_Datatype target_datatype, MPI_Win win);
 
-  collective_engine* coll_engine() const {
-    return coll_engine_;
-  }
-
  public:
   int op_create(MPI_User_function* user_fn, int commute, MPI_Op* op);
 
@@ -674,35 +670,35 @@ class mpi_api : public sumi::transport
 
   std::string type_label(MPI_Datatype tid);
 
-  void start_allgather(collective_op* op);
+  sumi::collective_done_message*  start_allgather(collective_op* op);
 
-  void start_alltoall(collective_op* op);
+  sumi::collective_done_message*  start_alltoall(collective_op* op);
 
-  void start_allreduce(collective_op* op);
+  sumi::collective_done_message*  start_allreduce(collective_op* op);
 
-  void start_barrier(collective_op* op);
+  sumi::collective_done_message*  start_barrier(collective_op* op);
 
-  void start_bcast(collective_op* op);
+  sumi::collective_done_message*  start_bcast(collective_op* op);
 
-  void start_gather(collective_op* op);
+  sumi::collective_done_message*  start_gather(collective_op* op);
 
-  void start_reduce(collective_op* op);
+  sumi::collective_done_message*  start_reduce(collective_op* op);
 
-  void start_reduce_scatter(collective_op* op);
+  sumi::collective_done_message*  start_reduce_scatter(collective_op* op);
 
-  void start_reduce_scatter_block(collective_op* op);
+  sumi::collective_done_message*  start_reduce_scatter_block(collective_op* op);
 
-  void start_scan(collective_op* op);
+  sumi::collective_done_message*  start_scan(collective_op* op);
 
-  void start_scatter(collective_op* op);
+  sumi::collective_done_message*  start_scatter(collective_op* op);
 
-  void start_allgatherv(collectivev_op* op);
+  sumi::collective_done_message*  start_allgatherv(collectivev_op* op);
 
-  void start_alltoallv(collectivev_op* op);
+  sumi::collective_done_message*  start_alltoallv(collectivev_op* op);
 
-  void start_gatherv(collectivev_op* op);
+  sumi::collective_done_message*  start_gatherv(collectivev_op* op);
 
-  void start_scatterv(collectivev_op* op);
+  sumi::collective_done_message* start_scatterv(collectivev_op* op);
 
   void finish_collective_op(collective_op_base* op_);
 
@@ -838,8 +834,6 @@ class mpi_api : public sumi::transport
   typedef std::unordered_map<MPI_Request, mpi_request*> req_ptr_map;
   req_ptr_map req_map_;
   MPI_Request req_counter_;
-
-  collective_engine* coll_engine_;
 
   std::unordered_map<int, keyval*> keyvals_;
 

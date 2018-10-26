@@ -53,12 +53,14 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 class direct_alltoallv_actor :
-  public bruck_actor
+  public dag_collective_actor
 {
-
  public:
-  direct_alltoallv_actor(int* send_counts, int* recv_counts) :
-    send_counts_(send_counts), recv_counts_(recv_counts) {}
+  direct_alltoallv_actor(collective_engine* engine, void *dst, void *src, int* send_counts, int* recv_counts,
+                         int type_size, int tag, int cq_id, communicator* comm) :
+    dag_collective_actor(collective::alltoallv, engine, dst, src, type_size, tag, cq_id, comm),
+    send_counts_(send_counts), recv_counts_(recv_counts)
+  {}
 
   std::string to_string() const override {
     return "bruck all-to-allv actor";
@@ -69,7 +71,7 @@ class direct_alltoallv_actor :
 
   void finalize_buffers() override;
 
-  void init_buffers(void *dst, void *src) override;
+  void init_buffers() override;
 
   void init_dag() override;
 
@@ -82,7 +84,6 @@ class direct_alltoallv_actor :
     int num_initial,
     int stride);
 
-  int midpoint_;
   int* send_counts_;
   int* recv_counts_;
   int total_recv_size_;
@@ -92,26 +93,20 @@ class direct_alltoallv_actor :
 class direct_alltoallv_collective :
   public dag_collective
 {
-  FactoryRegister("bruck_alltoall", dag_collective, direct_alltoallv_collective)
  public:
+    direct_alltoallv_collective(collective_engine* engine, void *dst, void *src, int* send_counts, int* recv_counts,
+                           int type_size, int tag, int cq_id, communicator* comm) :
+      dag_collective(collective::alltoallv, engine, dst, src, type_size, tag, cq_id, comm),
+      send_counts_(send_counts), recv_counts_(recv_counts)
+    {}
+
   std::string to_string() const override {
     return "all-to-all";
   }
 
   dag_collective_actor* new_actor() const override {
-    return new direct_alltoallv_actor(send_counts_, recv_counts_);
-  }
-
-  dag_collective* clone() const override {
-    return new direct_alltoallv_collective;
-  }
-
-  void init_send_counts(int* nelems) override {
-    send_counts_ = nelems;
-  }
-
-  void init_recv_counts(int* nelems) override {
-    recv_counts_ = nelems;
+    return new direct_alltoallv_actor(engine_, dst_buffer_, src_buffer_, send_counts_, recv_counts_,
+                                      type_size_, tag_, cq_id_, comm_);
   }
 
  private:

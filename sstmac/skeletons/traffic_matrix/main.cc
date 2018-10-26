@@ -72,9 +72,9 @@ class sumi_param_bcaster : public sprockit::param_bcaster
   sumi_param_bcaster(sumi::collective_engine* engine) : engine_(engine), tag_(12345) {}
 
   void bcast(void *buf, int size, int me, int root){
-    engine_->bcast(root, buf, size, sizeof(char), tag_);
+    engine_->bcast(root, buf, size, sizeof(char), tag_, sumi::message::default_cq);
     sumi::collective_done_message* msg = nullptr;
-    auto* dmsg = engine_->block_until_next();
+    auto* dmsg = engine_->block_until_next(sumi::message::default_cq);
     delete dmsg;
     ++tag_;
   }
@@ -331,7 +331,11 @@ int USER_MAIN(int argc, char** argv)
     "Rank %d waiting on %d config messages from recv partners",
     tport->rank(), npartners);
   while (configs_recved < npartners){
-    config_message* msg = dynamic_cast<config_message*>(tport->poll(true));
+    sumi::message* smsg = tport->poll(true, sumi::message::default_cq);
+    config_message* msg = dynamic_cast<config_message*>(smsg);
+    if (!msg){
+      spkt_abort_printf("Expected config message - got %s", smsg->to_string().c_str());
+    }
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d received config message from %d",
         tport->rank(), msg->sender());
@@ -343,8 +347,9 @@ int USER_MAIN(int argc, char** argv)
   int tag = 42;
 
   auto* engine = new sumi::collective_engine(params, tport);
-  engine->barrier(tag);
-  engine->block_until_next();
+  int coll_cq = engine->tport()->allocate_cq();
+  engine->barrier(tag, coll_cq);
+  engine->block_until_next(coll_cq);
 
   std::list<rdma_message*> done;
 

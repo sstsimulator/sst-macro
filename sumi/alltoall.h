@@ -56,6 +56,13 @@ class bruck_alltoall_actor :
   public bruck_actor
 {
  public:
+  bruck_alltoall_actor(collective_engine* engine, void* dst, void* src,
+                       int nelems, int type_size, int tag, int cq_id, communicator* comm)
+    : bruck_actor(collective::alltoall, engine, dst, src, type_size, tag, cq_id, comm),
+      nelems_(nelems)
+  {
+  }
+
   std::string to_string() const override {
     return "bruck all-to-all actor";
   }
@@ -64,7 +71,7 @@ class bruck_alltoall_actor :
   void finalize() override;
 
   void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
+  void init_buffers() override;
   void init_dag() override;
 
   void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
@@ -74,25 +81,29 @@ class bruck_alltoall_actor :
   void shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp);
 
   int midpoint_;
+  int nelems_;
 };
 
 class bruck_alltoall_collective :
   public dag_collective
 {
-  FactoryRegister("bruck_alltoall", dag_collective, bruck_alltoall_collective)
  public:
+  bruck_alltoall_collective(collective_engine* engine, void* dst, void* src,
+                            int nelems, int type_size, int tag, int cq_id, communicator* comm)
+    : dag_collective(alltoall, engine, dst, src, type_size, tag, cq_id, comm),
+      nelems_(nelems)
+  {
+  }
+
   std::string to_string() const override {
     return "all-to-all";
   }
 
   dag_collective_actor* new_actor() const override {
-    return new bruck_alltoall_actor;
+    return new bruck_alltoall_actor(engine_, dst_buffer_, src_buffer_, nelems_, type_size_, tag_, cq_id_, comm_);
   }
-
-  dag_collective* clone() const override {
-    return new bruck_alltoall_collective;
-  }
-
+ private:
+  int nelems_;
 };
 
 }

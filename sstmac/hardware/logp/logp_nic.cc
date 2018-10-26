@@ -108,7 +108,7 @@ logp_nic::do_send(network_message* msg)
   uint64_t num_bytes = msg->byte_length();
   timestamp now_ = now();
   timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
-  nic_debug("logp injection queued at %8.4e, sending at %8.4e for message %s",
+  nic_debug("logp injection queued at %8.4e, sending at %8.4e for %s",
             now_.sec(), start_send.sec(), msg->to_string().c_str());
 
   timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);

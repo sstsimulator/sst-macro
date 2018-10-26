@@ -63,7 +63,7 @@ halving_reduce_scatter_actor::finalize_buffers()
 }
 
 void
-halving_reduce_scatter_actor::init_buffers(void* dst, void* src)
+halving_reduce_scatter_actor::init_buffers()
 {
 }
 

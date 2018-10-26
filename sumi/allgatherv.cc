@@ -59,20 +59,11 @@ using namespace sprockit::dbg;
 
 namespace sumi {
 
-bruck_allgatherv_actor::bruck_allgatherv_actor(int* counts) : recv_counts_(counts)
-{
-}
-
 void
-bruck_allgatherv_actor::init_buffers(void* dst, void* src)
+bruck_allgatherv_actor::init_buffers()
 {
-  total_nelems_ = 0;
-  for (int i=0; i < dom_nproc_; ++i){
-    if (i == dom_me_)
-      my_offset_ = total_nelems_;
-    total_nelems_ += recv_counts_[i];
-  }
-
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   bool in_place = dst == src;
   if (dst){ //src can be null
     //put everything into the dst buffer to begin
@@ -95,7 +86,7 @@ bruck_allgatherv_actor::init_buffers(void* dst, void* src)
 void
 bruck_allgatherv_actor::finalize_buffers()
 {
-  long buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
+  uint64_t buffer_size = total_nelems_ * type_size_ * comm_->nproc();
   my_api_->unmake_public_buffer(send_buffer_, buffer_size);
 }
 

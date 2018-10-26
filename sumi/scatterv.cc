@@ -53,7 +53,7 @@ btree_scatterv_actor::init_tree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
-  int nproc = cfg_.dom->nproc();
+  int nproc = comm_->nproc();
   while (midpoint_ < nproc){
     midpoint_ *= 2;
     log2nproc_++;
@@ -63,18 +63,20 @@ btree_scatterv_actor::init_tree()
 }
 
 void
-btree_scatterv_actor::init_buffers(void *dst, void *src)
+btree_scatterv_actor::init_buffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   //check dst - everyone has dst, not everyone has a source
   if (!dst)
     return;
 
-  int me = cfg_.dom->my_comm_rank();
-  int nproc = cfg_.dom->nproc();
-  int result_size = nelems_ * type_size_;
-  int max_recv_buf_size = midpoint_*nelems_*type_size_;
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
+  int result_size = recvcnt_ * type_size_;
+  int max_recv_buf_size = midpoint_*recvcnt_*type_size_;
   if (me == root_){
-    int buf_size = nproc * nelems_ * type_size_;
+    int buf_size = nproc * recvcnt_ * type_size_;
     send_buffer_ = my_api_->make_public_buffer(src, buf_size);
     if (root_ != 0){
       recv_buffer_ = my_api_->allocate_public_buffer(max_recv_buf_size);
@@ -109,8 +111,8 @@ btree_scatterv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *
 void
 btree_scatterv_actor::init_dag()
 {
-  int me = cfg_.dom->my_comm_rank();
-  int nproc = cfg_.dom->nproc();
+  int me = comm_->my_comm_rank();
+  int nproc = comm_->nproc();
   int round = 0;
 
 }

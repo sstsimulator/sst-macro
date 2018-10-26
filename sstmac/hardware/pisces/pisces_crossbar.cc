@@ -152,7 +152,7 @@ pisces_NtoM_queue::deadlock_check()
                   << " going to " << output->to_string()
                   << " outport=" << pkt->edge_outport()
                   << " vc=" << vc
-                  << " for message " << pkt->to_string()
+                  << " for " << pkt->to_string()
                   << std::endl;
         output->deadlock_check(pkt);
       }
