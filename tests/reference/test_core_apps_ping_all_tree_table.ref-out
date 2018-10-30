@@ -1,0 +1,19 @@
+Rank 2 = 5000.0086ms
+Rank 0 = 5000.0087ms
+Rank 3 = 5000.0098ms
+Rank 1 = 5000.0115ms
+Rank 4 = 5000.0132ms
+Rank 5 = 5000.0198ms
+Rank 6 = 5000.0218ms
+Rank 7 = 5000.0237ms
+Rank 8 = 5000.0349ms
+Rank 10 = 5000.0388ms
+Rank 9 = 5000.0416ms
+Rank 11 = 5000.0437ms
+Rank 14 = 5000.0482ms
+Rank 12 = 5000.0493ms
+Rank 13 = 5000.0512ms
+Rank 15 = 5000.0524ms
+Estimated total runtime of           5.00005548 seconds
+SSTMAC   repo:   aaa64b0ba5e950d8def9169022a7aaa8c679442c
+SST/macro ran for       0.0144 seconds
