@@ -51,55 +51,54 @@ namespace sstmac {
 namespace hw {
 
 /**
- *  @class star
- *  The star topology generates a network which connects
-    each node a central hub.
+ *  @class file
+ *  The file topology generates a network by reading from a file.
  */
-class star : public structured_topology
+class file : public structured_topology
 {
-  FactoryRegister("star | crossbar", topology, star)
+  FactoryRegister("file", topology, file)
  public:
   std::string to_string() const override {
-    return "star topology";
+    return "file topology";
   }
 
-  virtual ~star() {}
+  virtual ~file() {}
 
-  star(sprockit::sim_parameters* params);
+  file(sprockit::sim_parameters* params);
 
   int diameter() const override {
-    return 1;
+    return diameter_;
   }
 
   int max_num_ports() const override {
-    return concentration();
+    spkt_abort_printf("max_num_ports() not implemented");
   }
 
   switch_id num_leaf_switches() const override {
-    return 1;
+    spkt_abort_printf("num_leaf_switches() not implemented");
   }
 
   int minimal_distance(switch_id src, switch_id dst) const {
-    return 1;
+    spkt_abort_printf("minimal_distance() not implemented");
   }
 
   int num_hops_to_node(node_id src, node_id dst) const override {
-    return 1;
+    spkt_abort_printf("num_hops_to_node() not implemented");
   }
 
   void endpoints_connected_to_injection_switch(switch_id swaddr,
                std::vector<injection_port>& nodes) const override;
 
   bool uniform_network_ports() const override {
-    return true;
+    spkt_abort_printf("uniform_network_ports() not implemented");
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
-    return false;
+    spkt_abort_printf("uniform_switches_non_uniform_network_ports() not implemented");
   }
 
   bool uniform_switches() const override {
-    return true;
+    spkt_abort_printf("uniform_switches() not implemented");
   }
 
   void configure_individual_port_params(switch_id src,
@@ -109,11 +108,11 @@ class star : public structured_topology
        std::vector<connection>& conns) const override;
 
   switch_id num_switches() const override {
-    return 1;
+    spkt_abort_printf("num_switches() not implemented");
   }
 
   node_id num_nodes() const override {
-    return concentration_;
+    spkt_abort_printf("num_nodes() not implemented");
   }
 
 };

@@ -43,41 +43,35 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstream>
-#include <sstmac/hardware/topology/star.h>
+#include <sstmac/hardware/topology/file.h>
 #include <sprockit/sim_parameters.h>
 
 namespace sstmac {
 namespace hw {
 
-star::star(sprockit::sim_parameters* params) :
+file::star(sprockit::sim_parameters* params) :
   structured_topology(params)
 {
 }
 
 void
-star::connected_outports(switch_id src, std::vector<connection>& conns) const
+file::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  conns.resize(0);
+  spkt_abort_printf("connected_outports() not implemented");
 }
 
 void
-star::endpoints_connected_to_injection_switch(switch_id swaddr,
+file::endpoints_connected_to_injection_switch(switch_id swaddr,
                                    std::vector<injection_port>& nodes) const
 {
-  nodes.resize(concentration_);
-  for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
-    port.nid = swaddr*concentration_ + i;
-    port.switch_port = i;
-    port.ep_port = 0;
-  }
+  spkt_abort_printf("endpoints_connected_to_injection_switch() not implemented");
 }
 
 void
-star::configure_individual_port_params(
+file::configure_individual_port_params(
     switch_id src, sprockit::sim_parameters *switch_params) const
 {
-  topology::configure_individual_port_params(0, num_switches(), switch_params);
+  spkt_abort_printf("configure_individual_port_params() not implemented");
 }
 
 }
