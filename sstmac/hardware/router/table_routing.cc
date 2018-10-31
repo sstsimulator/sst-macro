@@ -45,13 +45,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/topology/multipath_topology.h>
+//#include <sstmac/hardware/topology/multipath_topology.h>
 #include <sprockit/util.h>
 #include <sprockit/delete.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 #include <sstmac/hardware/topology/fat_tree.h>
-#include <sstmac/hardware/topology/butterfly.h>
+//#include <sstmac/hardware/topology/butterfly.h>
 #include <sstmac/hardware/topology/fully_connected.h>
 #include <sstream>
 #include <fstream>
@@ -112,18 +112,10 @@ class table_router : public router {
   }
 
   void route(packet *pkt) override {
-    uint16_t dir;
-    switch_id ej_addr = top_->node_to_ejection_switch(pkt->toaddr(), dir);
-    if (ej_addr == my_addr_){
-      pkt->current_path().outport() = dir;
-      pkt->current_path().vc = 0;
-      return;
-    }
-
     int port = table_[pkt->toaddr()];
-    pkt->current_path().set_outport(port);
+    pkt->set_edge_outport(port);
     //for now only valid on topologies with minimal/no vcs
-    pkt->current_path().vc = 0;
+    pkt->set_deadlock_vc(0);
     rter_debug("packet to %d sent to port %d", pkt->toaddr(), port);
   }
 
