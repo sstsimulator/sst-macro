@@ -103,6 +103,7 @@ nobase_library_include_HEADERS += \
   topology/dragonfly.h \
   topology/dragonfly_plus.h \
   topology/fat_tree.h \
+  topology/file.h \
   topology/torus.h \
   topology/hypercube.h \
   topology/topology.h \
@@ -160,6 +161,7 @@ libsstmac_hw_la_SOURCES +=  \
   topology/dragonfly.cc \
   topology/dragonfly_plus.cc \
   topology/fat_tree.cc \
+  topology/file.cc \
   topology/torus.cc \
   topology/hypercube.cc \
   topology/coordinates.cc \

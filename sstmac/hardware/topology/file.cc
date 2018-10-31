@@ -46,25 +46,67 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/file.h>
 #include <sprockit/sim_parameters.h>
 
+using namespace nlohmann;
+
 namespace sstmac {
 namespace hw {
 
-file::star(sprockit::sim_parameters* params) :
-  structured_topology(params)
+file::file(sprockit::sim_parameters* params) :
+  topology(params)
 {
+  std::string fname = params->get_param("filename");
+  std::ifstream in(fname);
+  in >> json_;
+  //std::cout << json_;
+
+  num_nodes_ = json_.at("num_nodes");
+  std::cout << "\nnum_nodes: " << num_nodes_ << "\n";
+  num_switches_ = json_.at("num_switches");
+  std::cout << "\nnum_switches: " << num_switches_ << "\n";
 }
 
 void
 file::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
-  spkt_abort_printf("connected_outports() not implemented");
+  conns.clear();
+
+  json links = json_.at("switch_to_switch_links");
+
+  for(auto it = links.begin(); it != links.end(); it++ ) {
+      connection c;
+      if (src == it->at("switch1")) {
+          c.src = src;
+          c.src_outport = it->at("switch1_port");
+          c.dst = it->at("switch2");
+          c.dst_inport = it->at("switch2_port");
+          conns.push_back(c);
+        }
+      else if (src == it->at("switch2")) {
+          c.src = src;
+          c.src_outport = it->at("switch1_port");
+          c.dst = it->at("switch2");
+          c.dst_inport = it->at("switch2_port");
+          conns.push_back(c);
+        }
+    }
+
 }
 
 void
 file::endpoints_connected_to_injection_switch(switch_id swaddr,
                                    std::vector<injection_port>& nodes) const
 {
-  spkt_abort_printf("endpoints_connected_to_injection_switch() not implemented");
+  nodes.clear();
+  json links = json_.at("node_to_switch_links");
+  for(auto it = links.begin(); it != links.end(); it++ ) {
+      if (swaddr == it->at("switch")) {
+          injection_port ip;
+          ip.nid = it->at("node");
+          ip.ep_port = it->at("node_port");
+          ip.switch_port = it->at("switch_port");
+          nodes.push_back(ip);
+        }
+    }
 }
 
 void
