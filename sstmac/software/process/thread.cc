@@ -137,12 +137,12 @@ void
 thread::run_routine(void* threadptr)
 {
   thread* self = (thread*) threadptr;
-
   // Go.
   if (self->is_initialized()) {
     self->state_ = ACTIVE;
     bool success = false;
     try {
+      sstmac::sw::operating_system::core_allocate_guard guard(self->os(), self);
       self->run();
       success = true;
       //this doesn't so much kill the thread as context switch it out
@@ -196,7 +196,6 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   protect_tag(false),
   tls_storage_(nullptr),
   detach_state_(DETACHED),
-  num_active_cores_(1), //start with 1
   active_core_mask_(0)
 {
   //make all cores possible active

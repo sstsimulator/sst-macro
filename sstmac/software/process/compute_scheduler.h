@@ -60,10 +60,11 @@ namespace sw {
 
 class compute_scheduler
 {
-  DeclareFactory(compute_scheduler, sw::operating_system*)
+  DeclareFactory(compute_scheduler, sw::operating_system*, int/*ncores*/, int/*nsockets*/)
  public:
-  compute_scheduler(sprockit::sim_parameters* params, sw::operating_system* os) :
-    os_(os)
+  compute_scheduler(sprockit::sim_parameters* params, sw::operating_system* os,
+                    int ncores, int nsockets) :
+    os_(os), ncores_(ncores), nsocket_(nsockets)
   {
   }
 
@@ -82,19 +83,10 @@ class compute_scheduler
    * @brief reserve_core
    * @param thr   The physical thread requesting to compute
    */
-  virtual void reserve_core(thread* thr) = 0;
+  virtual void reserve_cores(int ncore, thread* thr) = 0;
   
-  virtual void release_core(thread* thr) = 0;
-  
-  /**
-   * @brief configure
-   * @param ncore   The number of cores PER socket
-   * @param nsocket The number of sockets
-   */
-  virtual void configure(int ncore, int nsocket);
+  virtual void release_cores(int ncore, thread* thr) = 0;
 
- protected:
-  compute_scheduler();
 
  protected:
   int ncores_;

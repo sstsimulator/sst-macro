@@ -56,16 +56,16 @@ class simple_compute_scheduler : public compute_scheduler
               "Compute scheduler that migrates work to any open core")
  public:
   simple_compute_scheduler(sprockit::sim_parameters*params,
-                           operating_system* os)
-    : ncore_active_(0), compute_scheduler(params, os)
+                           operating_system* os, int ncore, int nsocket)
+    : ncore_active_(0), compute_scheduler(params, os, ncore, nsocket)
   {}
   
-  void reserve_core(thread* thr) override;
+  void reserve_cores(int ncore, thread* thr) override;
   
-  void release_core(thread* thr) override;
+  void release_cores(int ncore, thread* thr) override;
 
  private:
-  std::list<thread*> pending_threads_;
+  std::list<std::pair<int,thread*>> pending_threads_;
   int ncore_active_;
 };
 

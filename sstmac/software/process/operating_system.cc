@@ -343,7 +343,9 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   my_addr_ = node_ ? node_->addr() : 0;
 
   compute_sched_ = compute_scheduler::factory::get_optional_param(
-                     "compute_scheduler", "simple", params, this);
+                     "compute_scheduler", "simple", params, this,
+                      node_ ? node_->proc()->ncores() : 1,
+                      node_ ? node_->nsocket() : 1);
 
 #if SSTMAC_HAVE_GRAPHVIZ
   stat_descr_t stat_descr;
@@ -362,12 +364,6 @@ operating_system::operating_system(sprockit::sim_parameters* params, hw::node* p
   stack_alloc::init(params);
 
   rebuild_memoizations();
-
-  if (node_) {
-    compute_sched_->configure(node_->proc()->ncores(), node_->nsocket());
-  } else {
-    compute_sched_->configure(1, 1);
-  }
 
   sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
   for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
@@ -405,6 +401,12 @@ operating_system::add_memoization(const std::string& name, const std::string& mo
   }
   (*memoize_init_)[name] = model;
 
+}
+
+void
+operating_system::allocate_core(thread *thr)
+{
+  compute_sched_->reserve_cores(1, thr);
 }
 
 void
@@ -485,7 +487,11 @@ operating_system::sleep(timestamp t)
 {
   sw::unblock_event* ev = new sw::unblock_event(this, active_thread_);
   send_delayed_self_event_queue(t, ev);
+  int ncores = active_thread_->num_active_cores();
+  //when sleeping, release all cores
+  compute_sched_->release_cores(ncores, active_thread_);
   block();
+  compute_sched_->reserve_cores(ncores, active_thread_);
 }
 
 void
@@ -493,11 +499,13 @@ operating_system::sleep_until(timestamp t)
 {
   timestamp now_ = now();
   if (t > now_){
-    //sw::key* k = sw::key::construct();
     sw::unblock_event* ev = new sw::unblock_event(this, active_thread_);
     send_self_event_queue(t, ev);
+    int ncores = active_thread_->num_active_cores();
+    //when sleeping, release all cores
+    compute_sched_->release_cores(ncores, active_thread_);
     block();
-    //delete k;
+    compute_sched_->reserve_cores(ncores, active_thread_);
   }
 }
 
@@ -509,11 +517,9 @@ operating_system::compute(timestamp t)
   ftq_scope scope(active_thread_,
       cur_tag.id() == ftq_tag::null.id()?ftq_tag::compute:cur_tag);
 
-  //Make sure I have a core to execute on
-  //this will block if the thread has no core to run on
-  compute_sched_->reserve_core(active_thread_);
-  sleep(t);
-  compute_sched_->release_core(active_thread_);
+  sw::unblock_event* ev = new sw::unblock_event(this, active_thread_);
+  send_delayed_self_event_queue(t, ev);
+  block();
 }
 
 
@@ -527,11 +533,11 @@ operating_system::async_kernel(ami::SERVICE_FUNC func,
 void
 operating_system::execute(ami::COMP_FUNC func, event *data, int nthr)
 {
-  int old_ncores = active_thread_->num_active_cores();
-  active_thread_->set_num_active_cores(nthr);
+  int owned_ncores = active_thread_->num_active_cores();
+  if (owned_ncores < nthr){
+    compute_sched_->reserve_cores(nthr-owned_ncores, active_thread_);
+  }
 
-  //this will block if the thread has no core to run on
-  compute_sched_->reserve_core(active_thread_);
   //initiate the hardware events
   callback* cb = new_callback(this, &operating_system::unblock, active_thread_);
 
@@ -551,8 +557,10 @@ operating_system::execute(ami::COMP_FUNC func, event *data, int nthr)
   }
 
   block();
-  compute_sched_->release_core(active_thread_);
-  active_thread_->set_num_active_cores(old_ncores);
+
+  if (owned_ncores < nthr){
+    compute_sched_->release_cores(nthr-owned_ncores,active_thread_);
+  }
 }
 
 void
@@ -680,6 +688,17 @@ operating_system::compute_memoize(const char *token, int n_params, double params
 }
 
 void
+operating_system::reassign_cores(thread *thr)
+{
+  int ncores = thr->num_active_cores();
+  //this is not equivalent to a no-op
+  //I could release cores - then based on changes
+  //to the cpumask, reserve different cores
+  compute_sched_->release_cores(ncores, thr);
+  compute_sched_->reserve_cores(ncores, thr);
+}
+
+void
 operating_system::block()
 {
   timestamp before = now();
@@ -749,7 +768,11 @@ operating_system::join_thread(thread* t)
     os_debug("joining thread %ld - thread not done so blocking on thread %p",
         t->thread_id(), active_thread_);
     t->joiners_.push(active_thread_);
+    int ncores = active_thread_->num_active_cores();
+    //when joining - release all cores
+    compute_sched_->release_cores(ncores, active_thread_);
     block();
+    compute_sched_->reserve_cores(ncores, active_thread_);
   } else {
     os_debug("joining completed thread %ld", t->thread_id());
   }
@@ -773,6 +796,7 @@ operating_system::complete_active_thread()
   if (gdb_active_){
     all_threads_.erase(active_thread_->tid());
   }
+  compute_sched_->release_cores(1, active_thread_);
   thread* thr_todelete = active_thread_;
 
   //if any threads waiting on the join, unblock them

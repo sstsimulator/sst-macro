@@ -227,6 +227,8 @@ class operating_system :
     return nthread_;
   }
 
+  void reassign_cores(thread* thr);
+
   static void delete_statics();
 
   static operating_system* current_os(){
@@ -463,7 +465,28 @@ class operating_system :
 
   bool handle_library_event(const std::string& name, event* ev);
 
+  struct core_allocate_guard {
+    core_allocate_guard(operating_system* os, thread* thr) :
+      thr_(thr), os_(os)
+    {
+      os->allocate_core(thr);
+    }
+
+    ~core_allocate_guard(){
+      os_->deallocate_core(thr_);
+    }
+
+    operating_system* os_;
+    thread* thr_;
+  };
+
+
  private:
+  friend class core_allocate_guard;
+  void allocate_core(thread* thr);
+  void deallocate_core(thread* thr);
+
+
   int thread_id_;
   int nthread_;
   hw::node* node_;

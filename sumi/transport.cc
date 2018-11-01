@@ -211,7 +211,8 @@ transport::transport(sprockit::sim_parameters* params,
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   completion_queues_(1),
-  cq_blocked_threads_(1)
+  cq_blocked_threads_(1),
+  engine_(nullptr)
 {
   rank_ = sid.task_;
   auto* server_lib = os_->lib(server_libname_);
