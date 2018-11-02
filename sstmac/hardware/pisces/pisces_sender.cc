@@ -115,9 +115,8 @@ pisces_sender::send_credit(
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
   pisces_credit* credit = new pisces_credit(inp.port_to_credit,
                                             src_vc, payload->num_bytes());
-  //there is a certain minimum latency on credits
-  timestamp now_ = now();
-  timestamp credit_departure_delay = credits_ready - now_;
+
+  timestamp credit_departure_delay = credits_ready - now();
   if (credit_departure_delay < credit_lat_){
     credit_departure_delay = timestamp();
   } else {
@@ -125,7 +124,8 @@ pisces_sender::send_credit(
     credit_departure_delay -= credit_lat_;
   }
   pisces_debug(
-      "On %s:%p on inport %d, crediting %s:%p port:%d:%d vc:%d {%s} after delay %9.5e after latency %9.5e with %p",
+      "On %s:%p on inport %d, crediting %s:%p port:%d:%d vc:%d {%s}"
+      "after delay %9.5e after latency %9.5e with %p",
       to_string().c_str(), this, int(payload->next_local_inport()),
       inp.link->to_string().c_str(), inp.link,
       payload->edge_outport(), payload->next_local_outport(), src_vc,
@@ -137,7 +137,7 @@ pisces_sender::send_credit(
   inp.link->send_extra_delay(credit_departure_delay, credit);
 }
 
-void
+timestamp
 pisces_sender::send(
   pisces_bandwidth_arbitrator* arb,
   pisces_packet* pkt,
@@ -196,6 +196,8 @@ pisces_sender::send(
   timestamp departure_delay = st.head_leaves - now_;
   to_send.link->validate_latency(send_lat_);
   to_send.link->send_extra_delay(departure_delay, pkt);
+
+  return st.tail_leaves;
 }
 
 std::string

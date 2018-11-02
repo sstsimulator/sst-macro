@@ -122,11 +122,6 @@ class pisces_tiled_switch :
 
   int row_buffer_num_bytes_;
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* ack_handler_;
-  link_handler* payload_handler_;
-#endif
-
  private:
   int row_col_to_tile(int row, int col);
 

@@ -58,6 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
+#include <sstmac/software/process/progress_queue.h>
 
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
@@ -76,9 +77,7 @@ namespace hw {
  * This object helps ornament network operations with information about
  * the process (ppid) involved.
  */
-class nic :
-  public failable,
-  public connectable_subcomponent
+class nic : public connectable_subcomponent
 {
   DeclareFactory(nic,node*)
  public:
@@ -108,19 +107,9 @@ class nic :
    * @param netmsg The message being injected
    * @param os     The OS to use form software compute delays
    */
-  void inject_send(network_message* netmsg, sw::operating_system* os);
+  void inject_send(network_message* netmsg);
 
-  /**
-   * @brief next_free
-   * @return The next time the NIC would be free to start an operation
-   */
-  timestamp next_free() const {
-    return next_free_;
-  }
-
-  event_handler* mtl_handler() const {
-    return event_mtl_handler_;
-  }
+  event_handler* mtl_handler() const;
 
   virtual void mtl_handle(event* ev);
 
@@ -146,8 +135,6 @@ class nic :
    */
   void intranode_send(network_message* payload);
 
-  void send_to_logp_switch(network_message* netmsg);
-
   /**
    The NIC can either receive an entire message (bypass the byte-transfer layer)
    or it can receive packets.  If an incoming message is a full message (not a packet),
@@ -157,6 +144,14 @@ class nic :
   void recv_message(network_message* msg);
 
   void send_to_node(network_message* netmsg);
+
+  event_link* logp_link() const {
+    return logp_link_;
+  }
+
+  virtual std::function<void(network_message*)> ctrl_ioctl();
+
+  virtual std::function<void(network_message*)> data_ioctl();
 
  protected:
   nic(sprockit::sim_parameters* params, node* parent);
@@ -183,21 +178,8 @@ class nic :
 
   node* parent_;
 
-  event_handler* event_mtl_handler_;
-
-#if SSTMAC_INTEGRATED_SST_CORE
  protected:
-  event_link* logp_switch_;
-#else
- public:
-  void set_logp_switch(logp_switch* sw){
-    logp_switch_ = sw;
-  }
- protected:
-  logp_switch* logp_switch_;
-
-  link_handler* link_mtl_handler_;
-#endif
+  event_link* logp_link_;
 
  private:
   stat_spyplot* spy_num_messages_;
@@ -205,10 +187,10 @@ class nic :
   stat_histogram* hist_msg_size_;
   stat_local_int* local_bytes_sent_;
   stat_global_int* global_bytes_sent_;
-  timestamp next_free_;
-  timestamp post_latency_;
-  double nic_pipeline_multiplier_;
-  double post_inv_bw_;
+  sw::single_progress_queue<network_message> queue_;
+
+ protected:
+  sw::operating_system* os_;
 
  private:
   /**

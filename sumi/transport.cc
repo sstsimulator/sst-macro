@@ -211,9 +211,13 @@ transport::transport(sprockit::sim_parameters* params,
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   completion_queues_(1),
-  cq_blocked_threads_(1),
-  engine_(nullptr)
+  engine_(nullptr),
+  default_progress_queue_(os),
+  nic_ioctl_(os->nic_data_ioctl())
 {
+  completion_queues_[0] = std::bind(&default_progress_queue::incoming,
+                                    &default_progress_queue_, 0, std::placeholders::_1);
+
   rank_ = sid.task_;
   auto* server_lib = os_->lib(server_libname_);
   sumi_server* server;
@@ -253,21 +257,18 @@ transport::make_engine()
   if (!engine_) engine_ = new collective_engine(params_, this);
 }
 
-int
-transport::allocate_cq()
+void
+transport::allocate_cq(int id, std::function<void(message*)>&& f)
 {
-  uint8_t ret = completion_queues_.size();
-  completion_queues_.emplace_back();
-  cq_blocked_threads_.emplace_back();
-  auto iter = held_.find(ret);
+  completion_queues_[id] = std::move(f);
+  auto iter = held_.find(id);
   if (iter != held_.end()){
     auto& list = iter->second;
     for (message* m : list){
-      completion_queues_[ret].push_back(m);
+      f(m);
     }
     held_.erase(iter);
   }
-  return ret;
 }
 
 void
@@ -291,72 +292,6 @@ transport::finish()
   //this should really loop through and kill off all the pings
   //so none of them execute
   finalized_ = true;
-}
-
-message*
-transport::find_message()
-{
-  for (auto& queue : completion_queues_){
-    if (!queue.empty()){
-      message* ret = queue.front();
-      queue.pop_front();
-      return ret;
-    }
-  }
-  return nullptr;
-}
-
-message*
-transport::poll(bool blocking, double timeout)
-{
-  message* msg = find_message();
-  if (!msg && blocking){
-    block(blocked_threads_, timeout);
-    return find_message();
-  } else {
-    return msg;
-  }
-}
-
-message*
-transport::poll(bool blocking, int cq_id, double timeout)
-{
-  auto& queue = completion_queues_[cq_id];
-  debug_printf(sprockit::dbg::sumi,
-               "Rank %d polling for message on cq %d with time %f",
-               rank_, cq_id, timeout);
-
-  if (!queue.empty()){
-    message* ret = queue.front();
-    queue.pop_front();
-    return ret;
-  }
-
-  if (blocking){
-    block(cq_blocked_threads_[cq_id], timeout);
-    auto& queue = completion_queues_[cq_id];
-    if (queue.empty()){ //oh, must have timed out
-      return nullptr;
-    } else {
-      message* msg = queue.front();
-      queue.pop_front();
-      return msg;
-    }
-  } else {
-    return nullptr;
-  }
-}
-
-void
-transport::block(std::list<sstmac::sw::thread*>& blocked, double timeout)
-{
-  sstmac::sw::thread* thr = os_->active_thread();
-  blocked.push_back(thr);
-  if (timeout >= 0.){
-    os_->block_timeout(timeout);
-  } else {
-    os_->block();
-  }
 }
 
 transport::~transport()
@@ -452,18 +387,20 @@ transport::send(message* m)
         debug_printf(sprockit::dbg::sumi,
           "Rank %d SUMI sending self message", rank_);
         if (m->needs_recv_ack()){
-          os_->send_now_self_event_queue(sstmac::new_callback(os_->component_id(), this, &transport::incoming_message, m));
+          completion_queues_[m->recv_cq()](m);
+          //os_->send_now_self_event_queue(sstmac::new_callback(os_->component_id(), this, &transport::incoming_message, m));
         }
         if (m->needs_send_ack()){
           auto* ack = m->clone_injection_ack();
-          os_->send_now_self_event_queue(
-            sstmac::new_callback(os_->component_id(), this, &transport::incoming_message, static_cast<message*>(ack)));
+          completion_queues_[m->send_cq()](static_cast<message*>(ack));
+          //os_->send_now_self_event_queue(
+          //  sstmac::new_callback(os_->component_id(), this, &transport::incoming_message, static_cast<message*>(ack)));
         }
       } else {
         if (post_header_delay_.ticks_int64()) {
           user_lib_time_->compute(post_header_delay_);
         }
-        sstmac::sw::library::os_->execute(sstmac::ami::COMM_SEND, m);
+        nic_ioctl_(m);
       }
       break;
     case sstmac::hw::network_message::rdma_get_request:
@@ -471,7 +408,7 @@ transport::send(message* m)
       if (post_rdma_delay_.ticks_int64()) {
         user_lib_time_->compute(post_rdma_delay_);
       }
-      sstmac::sw::library::os_->execute(sstmac::ami::COMM_SEND, m);
+      nic_ioctl_(m);
       break;
     default:
       spkt_abort_printf("attempting to initiate send with invalid type %d",
@@ -545,24 +482,7 @@ transport::incoming_message(message *msg)
     if (cq >= completion_queues_.size()){
       held_[cq].push_back(msg);
     } else {
-      completion_queues_[cq].push_back(msg);
-      auto& queue = cq_blocked_threads_[cq];
-      if (!queue.empty()){
-        sstmac::sw::thread* next_thr = queue.front();
-        debug_printf(sprockit::dbg::sumi,
-                     "sumi queue %p unblocking CQ %d poller %p to handle %s",
-                      this, cq, next_thr, msg->to_string().c_str());
-        queue.pop_front();
-        os_->unblock(next_thr);
-      } else if (!blocked_threads_.empty()){
-        //there is someone blocked looking for something on any completion queue
-        auto* next_thr = blocked_threads_.front();
-        debug_printf(sprockit::dbg::sumi,
-                     "sumi queue %p poller %p to handle %s",
-                      this, next_thr, msg->to_string().c_str());
-        blocked_threads_.pop_front();
-        os_->unblock(next_thr);
-      }
+      completion_queues_[cq](msg);
     }
   }
 }

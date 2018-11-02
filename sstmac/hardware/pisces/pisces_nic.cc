@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/hardware/common/recv_cq.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
@@ -64,36 +65,31 @@ namespace hw {
 
 pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   nic(params, parent),
-  packetizer_(nullptr)
+  pending_inject_(1)
 {
   sprockit::sim_parameters* inj_params = params->get_namespace("injection");
+  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
 
-
-  packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
-                                              inj_params, parent, 1); //single vc for now
-  packetizer_->setArrivalNotifier(this, &pisces_nic::flowArrived);
-  packetizer_->setDepartNotifier(this, &pisces_nic::flowDeparted);
-
-  self_mtl_link_ = allocate_local_link(timestamp(), parent_, mtl_handler());
+  self_mtl_link_ = allocate_local_link(timestamp(), parent,
+                                       new_link_handler(this, &nic::mtl_handle));
 
   //make port 0 a copy of the injection params
+  //this looks pointless, but is needed for integrated core (I think)
   sprockit::sim_parameters* port0_params = params->get_optional_namespace("port0");
   inj_params->combine_into(port0_params);
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  ack_handler_ = packetizer_->new_credit_handler();
-  payload_handler_ = packetizer_->new_payload_handler();
-#endif
-}
+  pisces_sender::configure_payload_port_latency(inj_params);
+  inj_buffer_ = new pisces_buffer(inj_params, parent, 1/*single vc for inj*/);
+  inj_stats_ = packet_stats_callback::factory::
+                get_optional_param("stats", "null", params, parent);
+  inj_buffer_->set_stat_collector(inj_stats_);
 
-void
-pisces_nic::flowDeparted(timestamp delay, flow *msg)
-{
-  network_message* netmsg = static_cast<network_message*>(msg);
-  if (netmsg->needs_ack()){
-    nic_debug("acking %s", netmsg->to_string().c_str());
-    self_mtl_link_->send_extra_delay(delay, netmsg->clone_injection_ack());
-  }
+  credit_lat_ = inj_params->get_time_param("send_latency");
+  ej_stats_ = packet_stats_callback::factory::
+                        get_optional_param("stats", "null", ej_params, parent);
+
+  packet_size_ = inj_params->get_byte_length_param("mtu");
+
 }
 
 timestamp
@@ -111,50 +107,35 @@ pisces_nic::credit_latency(sprockit::sim_parameters *params) const
 void
 pisces_nic::init(unsigned int phase)
 {
-  packetizer_->init(phase);
 }
 
 void
 pisces_nic::setup()
 {
-  packetizer_->setup();
 }
 
 pisces_nic::~pisces_nic() throw ()
 {
-  if (packetizer_) delete packetizer_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  delete ack_handler_;
-  delete payload_handler_;
-#endif
+  if (inj_buffer_) delete inj_buffer_;
+  if (inj_stats_) delete inj_stats_;
+  if (ej_stats_) delete ej_stats_;
+  if (self_mtl_link_) delete self_mtl_link_;
 }
 
 link_handler*
 pisces_nic::payload_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   if (port == nic::LogP){
     return new_link_handler(this, &nic::mtl_handle);
   } else {
-    return packetizer_->new_payload_handler();
+    return new_link_handler(this, &pisces_nic::incoming_packet);
   }
-#else
-  if (port == nic::LogP){
-    return link_mtl_handler_;
-  } else {
-    return payload_handler_;
-  }
-#endif
 }
 
 link_handler*
 pisces_nic::credit_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return packetizer_->new_credit_handler();
-#else
-  return ack_handler_;
-#endif
+  return new_link_handler(this, &pisces_nic::packet_sent);
 }
 
 void
@@ -165,14 +146,11 @@ pisces_nic::connect_output(
   event_link* link)
 {
   if (src_outport == Injection){
-    pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
-    packer->set_output(params, dst_inport, link);
-#if SSTMAC_INTEGRATED_SST_CORE
+    inj_buffer_->set_output(params, src_outport, dst_inport, link);
   } else if (src_outport == LogP) {
-    logp_switch_ = link;
-#endif
+    logp_link_ = link;
   } else {
-    spkt_abort_printf("Invalid switch port %d in pisces_nic::connect_output", src_outport);
+    spkt_abort_printf("Invalid port %d in pisces_nic::connect_output", src_outport);
   }
 }
 
@@ -183,25 +161,120 @@ pisces_nic::connect_input(
   int dst_inport,
   event_link* link)
 {
-  //src_outport and dst_inport are global ports
-  //the pisces objects need to be connected with local ports
-  int buffer_port = 0;
-  pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
-  packer->set_input(params, buffer_port, link);
+  credit_link_ = link;
+}
+
+uint64_t
+pisces_nic::inject(int vn, uint64_t offset, network_message* netmsg)
+{
+  pisces_debug("On %s, trying to inject %s",
+               to_string().c_str(), netmsg->to_string().c_str());
+  while (inj_buffer_->space_to_send(vn, packet_size_)){
+    uint64_t bytes = std::min(uint64_t(packet_size_), netmsg->byte_length() - offset);
+    bool is_tail = (offset + bytes) == netmsg->byte_length();
+    //only carry the payload if you're the tail packet
+    pisces_packet* payload = new pisces_packet(is_tail ? netmsg : nullptr,
+                                               bytes, netmsg->flow_id(), is_tail,
+                                               netmsg->fromaddr(), netmsg->toaddr());
+    //start on a singel virtual channel (0)
+    payload->set_deadlock_vc(0);
+    payload->update_vc();
+    payload->reset_stages(0);
+    payload->set_inport(0);
+    timestamp t = inj_buffer_->send_payload(payload);
+
+    pisces_debug("On %s, injecting from %lu->%lu on %s",
+                 to_string().c_str(), offset, offset + bytes, netmsg->to_string().c_str());
+
+    offset += bytes;
+
+    if (offset == netmsg->byte_length()){
+      if (netmsg->needs_ack()){
+        send_self_event_queue(t, new_callback(this, &nic::mtl_handle,
+                     netmsg->clone_injection_ack()));
+      }
+      return offset;
+    }
+  }
+  return offset;
 }
 
 void
-pisces_nic::do_send(network_message* payload)
+pisces_nic::do_send(network_message* netmsg)
 {
-  nic_debug("packet flow: sending %s", payload->to_string().c_str());
+  nic_debug("packet flow: sending %s", netmsg->to_string().c_str());
   int vn = 0; //we only ever use one virtual network
-  packetizer_->start(vn, payload);
+
+
+  uint64_t offset = inject(vn, 0, netmsg);
+  if (offset < netmsg->byte_length()){
+    pending_inject_[vn].emplace(offset, netmsg->byte_length(), netmsg);
+  }
+}
+
+void
+pisces_nic::packet_arrived(pisces_packet* pkt)
+{
+  ej_stats_->collect_final_event(pkt);
+  auto* msg = completion_queue_.recv(pkt);
+  if (msg){
+    recv_message(static_cast<network_message*>(msg));
+  }
+  delete pkt;
+  int buffer_port = 0;
+  pisces_credit* credit = new pisces_credit(buffer_port, pkt->vc(), pkt->byte_length());
+  credit_link_->send(credit);
+}
+
+void
+pisces_nic::packet_sent(event* ev)
+{
+  pisces_debug("On %s, packet sent notification", to_string().c_str());
+  pisces_credit* credit = safe_cast(pisces_credit, ev);
+  int vc = credit->vc();
+  inj_buffer_->handle_credit(ev);
+  while (!pending_inject_[vc].empty()){
+    auto& pending = pending_inject_[vc].front();
+    pending.bytes_sent = inject(vc, pending.bytes_sent, pending.msg);
+    if (pending.bytes_sent == pending.msg->byte_length()){
+      pending_inject_[vc].pop();
+    } else {
+      //ran out of space - jump out
+      return;
+    }
+  }
+}
+
+void
+pisces_nic::incoming_packet(event* ev)
+{
+  pisces_packet* pkt = safe_cast(pisces_packet, ev);
+  if (cut_through_){
+    //these are pipelined
+    double delay = pkt->byte_length() / pkt->bw();
+    send_delayed_self_event_queue(delay, new_callback(this, &pisces_nic::packet_arrived, pkt));
+  } else {
+    packet_arrived(pkt);
+  }
 }
 
 void
 pisces_nic::deadlock_check()
 {
-  packetizer_->deadlock_check();
+  for (auto& queue : pending_inject_){
+    while (!queue.empty()){
+      pending& p = queue.front();
+      std::cerr << "Message " << p.msg->to_string()
+         << " has not finished injecting: " << p.bytes_sent
+         << " sent out of " << p.bytes_total << std::endl;
+      queue.pop();
+    }
+  }
+}
+
+void
+pisces_nic::deadlock_check(event* ev)
+{
 }
 
 }

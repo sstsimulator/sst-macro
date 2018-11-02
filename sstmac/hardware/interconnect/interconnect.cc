@@ -321,7 +321,9 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
 
     for (int n=0; n < nodes.size(); ++n){
       node_id nid = nodes[n].nid;
-      auto local_logp_switch = logp_switches_[thread];
+      int ep_port = nodes[n].ep_port;
+      int sw_port = nodes[n].switch_port;
+      logp_switch* local_logp_switch = logp_switches_[thread];
 
       if (my_rank == target_rank){
         //local node - actually build it
@@ -334,7 +336,10 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
         nic* the_nic = nd->get_nic();
 
         //nic sends to only its specific logp switch
-        the_nic->set_logp_switch(local_logp_switch);
+        event_link* logp_link = allocate_local_link(nd, local_logp_switch,
+                                                    local_logp_switch->payload_handler(sw_port),
+                                                    timestamp(0));
+        the_nic->connect_output(inj_params, nic::LogP, sw_port, logp_link);
 
         nodes_[nid] = nd;
         components_[nid] = nd;

@@ -61,6 +61,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/time.h>
+#include <sstmac/software/process/progress_queue.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/compute_scheduler.h>
 #include <sstmac/software/process/thread_info.h>
@@ -410,6 +411,12 @@ operating_system::allocate_core(thread *thr)
 }
 
 void
+operating_system::deallocate_core(thread *thr)
+{
+  compute_sched_->release_cores(1, thr);
+}
+
+void
 operating_system::init_threads(int nthread)
 {
 #if SSTMAC_USE_MULTITHREAD
@@ -522,12 +529,16 @@ operating_system::compute(timestamp t)
   block();
 }
 
-
-void
-operating_system::async_kernel(ami::SERVICE_FUNC func,
-                               event *data)
+std::function<void(hw::network_message*)>
+operating_system::nic_data_ioctl()
 {
-  node_->execute(func, data);
+  return node_->get_nic()->data_ioctl();
+}
+
+std::function<void(hw::network_message*)>
+operating_system::nic_ctrl_ioctl()
+{
+  return node_->get_nic()->ctrl_ioctl();
 }
 
 void
@@ -560,23 +571,6 @@ operating_system::execute(ami::COMP_FUNC func, event *data, int nthr)
 
   if (owned_ncores < nthr){
     compute_sched_->release_cores(nthr-owned_ncores,active_thread_);
-  }
-}
-
-void
-operating_system::execute_kernel(ami::COMM_FUNC func, flow* data)
-{
-  switch(func){
-  case sstmac::ami::COMM_SEND: {
-    hw::network_message* netmsg = safe_cast(hw::network_message, data);
-    node_->get_nic()->inject_send(netmsg, this);
-    break;
-  }
-  case sstmac::ami::COMM_PMI_SEND: {
-    hw::network_message* netmsg = safe_cast(hw::network_message, data);
-    node_->get_nic()->send_to_logp_switch(netmsg);
-    break;
-  }
   }
 }
 
@@ -899,7 +893,7 @@ operating_system::outcast_app_start(int my_rank, int aid, const std::string& app
     sw::start_app_event* lev = new start_app_event(node_->allocate_unique_id(),
                                      aid, app_ns, mapping, dst_rank, dst_nid,
                                      addr(), app_params);
-    node_->get_nic()->send_to_logp_switch(lev);
+    node_->get_nic()->logp_link()->send(lev);
   }
 }
 

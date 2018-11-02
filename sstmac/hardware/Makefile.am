@@ -69,7 +69,6 @@ nobase_library_include_HEADERS += \
   common/connection_fwd.h \
   common/failable.h \
   common/packet.h \
-  common/packetizer.h \
   common/packet_fwd.h \
   common/param_expander.h \
   common/recv_cq.h \
@@ -84,7 +83,6 @@ nobase_library_include_HEADERS += \
   pisces/pisces_branched_switch.h \
   pisces/pisces_crossbar.h \
   pisces/pisces_nic.h \
-  pisces/pisces_packetizer.h \
   pisces/pisces_sender.h \
   pisces/pisces_switch.h \
   pisces/pisces_tiled_switch.h \
@@ -129,7 +127,6 @@ libsstmac_hw_la_SOURCES +=  \
   processor/instruction_processor.cc \
   common/connection.cc \
   common/packet.cc \
-  common/packetizer.cc \
   common/param_expander.cc \
   common/recv_cq.cc \
   memory/memory_model.cc \
@@ -144,7 +141,6 @@ libsstmac_hw_la_SOURCES +=  \
   pisces/pisces_branched_switch.cc \
   pisces/pisces_crossbar.cc \
   pisces/pisces_nic.cc \
-  pisces/pisces_packetizer.cc \
   pisces/pisces_param_expander.cc \
   pisces/pisces_sender.cc \
   pisces/pisces_switch.cc \

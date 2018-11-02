@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
-#include <sstmac/hardware/pisces/pisces_packetizer.h>
+#include <sstmac/hardware/common/recv_cq.h>
 #include <sstmac/common/stats/stat_histogram.h>
 
 namespace sstmac {
@@ -75,12 +75,6 @@ class pisces_nic : public nic
 
   virtual ~pisces_nic() throw ();
 
-  void flowArrived(int vn, flow* msg) {
-    recv_message(static_cast<network_message*>(msg));
-  }
-
-  void flowDeparted(timestamp delay, flow* msg);
-
   virtual void connect_output(
     sprockit::sim_parameters* params,
     int src_outport,
@@ -101,18 +95,53 @@ class pisces_nic : public nic
 
   timestamp credit_latency(sprockit::sim_parameters *params) const override;
 
+  void packet_sent(event* ev);
+
+  void incoming_packet(event* ev);
+
   void deadlock_check() override;
 
- protected:
-  virtual void do_send(network_message* payload) override;
+  void deadlock_check(event* ev) override;
 
- protected:
-  packetizer* packetizer_;
+ private:
+  void packet_arrived(pisces_packet* pkt);
+
+  void do_send(network_message* payload) override;
+
+  uint64_t inject(int vn, uint64_t offset, network_message* msg);
+
+  struct pending {
+    uint64_t bytes_sent;
+    uint64_t bytes_total;
+    network_message* msg;
+
+    pending(uint64_t offset, uint64_t size, network_message* m) :
+      bytes_sent(offset), bytes_total(size), msg(m)
+    {
+    }
+
+  };
+
+  std::vector<std::queue<pending>> pending_inject_;
+
   event_link* self_mtl_link_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* payload_handler_;
-  link_handler* ack_handler_;
-#endif
+  pisces_buffer* inj_buffer_;
+
+  recv_cq completion_queue_;
+
+  timestamp credit_lat_;
+
+  event_link* credit_link_;
+
+  node_id my_addr_;
+
+  uint32_t packet_size_;
+
+  bool cut_through_;
+
+  packet_stats_callback* inj_stats_;
+  packet_stats_callback* ej_stats_;
+
 };
 
 

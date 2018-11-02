@@ -56,7 +56,6 @@ pisces_buffer::~pisces_buffer()
   if (input_.link) delete input_.link;
   if (output_.link) delete output_.link;
   if (arb_) delete arb_;
-  if (payload_handler_) delete payload_handler_;
 }
 
 void
@@ -91,11 +90,10 @@ pisces_buffer::pisces_buffer(
  #if SSTMAC_SANITY_CHECK
     initial_credits_(num_vc,0),
  #endif
-    packet_size_(params->get_byte_length_param("mtu")),
-    payload_handler_(nullptr)
+    packet_size_(params->get_byte_length_param("mtu"))
 {
   int credits = params->get_byte_length_param("credits");
-  long num_credits_per_vc = credits / num_vc_;
+  int num_credits_per_vc = credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;
 #if SSTMAC_SANITY_CHECK
@@ -104,8 +102,6 @@ pisces_buffer::pisces_buffer(
   }
   arb_ = pisces_bandwidth_arbitrator::factory::
           get_param("arbitrator", params);
-
-  payload_handler_ = new_handler(this, &pisces_buffer::handle_payload);
 }
 
 void
@@ -137,7 +133,8 @@ pisces_buffer::handle_credit(event* ev)
   }
 
   if (num_credits > initial_credits_[vc]){
-    spkt_abort_printf("initial credits exceeded");
+    spkt_abort_printf("initial credits exceeded on %s",
+                      to_string().c_str());
   }
 #endif
 
@@ -189,6 +186,19 @@ pisces_buffer::handle_payload(event* ev)
 #endif
     queues_[dst_vc].push_back(pkt);
   }
+}
+
+timestamp
+pisces_buffer::send_payload(pisces_packet *pkt)
+{
+  pkt->set_arrival(now());
+  int dst_vc = pkt->vc();
+  int& num_credits = credits_[dst_vc];
+  // it either gets queued or gets sent
+  // either way there's a delay accumulating for other messages
+  bytes_delayed_ += pkt->num_bytes();
+  num_credits -= pkt->num_bytes();
+  return send(arb_, pkt, input_, output_);
 }
 
 void
@@ -279,49 +289,6 @@ pisces_buffer::queue_length() const
      total_bytes_pending, queue_length);
   return std::max(0, queue_length);
 }
-
-pisces_endpoint::pisces_endpoint(sprockit::sim_parameters *params, event_scheduler *parent,
-                                 event_handler* handler) :
-  pisces_sender(params, parent, false/*no vc update on buffer*/),
-  output_handler_(handler)
-{
-}
-
-pisces_endpoint::~pisces_endpoint()
-{
-  if (output_handler_) delete output_handler_;
-}
-
-void
-pisces_endpoint::handle_payload(event* ev)
-{
-  auto pkt = static_cast<pisces_packet*>(ev);
-  pkt->set_arrival(now());
-  debug_printf(sprockit::dbg::pisces,
-    "On %s, handling payload {%s}, done sending",
-    to_string().c_str(),
-    pkt->to_string().c_str());
-
-  output_handler_->handle(pkt);
-
-  //endpoints are assumed to be infinite
-  //immediately return a credit
-  send_credit(input_, pkt, now());
-}
-
-void
-pisces_endpoint::handle_credit(event* ev)
-{
-  spkt_throw_printf(sprockit::illformed_error,
-                   "pisces_eject_buffer::handle_credit: should not handle credits");
-}
-
-void
-pisces_endpoint::set_output(sprockit::sim_parameters *params, int this_outport, int dst_inport, event_link *link)
-{
-  spkt_abort_printf("pisces_endpoint::set_output: should not be called, endpoint has no output");
-}
-
 
 }
 }

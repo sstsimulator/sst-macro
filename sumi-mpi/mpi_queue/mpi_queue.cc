@@ -70,6 +70,8 @@ RegisterKeywords(
 DeclareDebugSlot(mpi_all_sends);
 RegisterDebugSlot(mpi_all_sends);
 
+using namespace std::placeholders;
+
 namespace sumi {
 
 static sprockit::need_delete_statics<mpi_queue> del_statics;
@@ -85,7 +87,8 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
                      int task_id,
                      mpi_api* api, collective_engine* engine) :
   taskid_(task_id),
-  api_(api)
+  api_(api),
+  queue_(api->os())
 {
   max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
   max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
@@ -95,8 +98,11 @@ mpi_queue::mpi_queue(sprockit::sim_parameters* params,
   protocols_[mpi_protocol::EAGER1] = new eager1(params, this);
   protocols_[mpi_protocol::RENDEZVOUS_GET] = new rendezvous_get(params, this);
 
-  pt2pt_cq_ = api_->allocate_cq();
-  coll_cq_ = api_->allocate_cq();
+  pt2pt_cq_ = api_->allocate_cq_id();
+  coll_cq_ = api_->allocate_cq_id();
+
+  api_->allocate_cq(pt2pt_cq_, std::bind(&progress_queue::incoming, &queue_, pt2pt_cq_, _1));
+  api_->allocate_cq(coll_cq_, std::bind(&progress_queue::incoming, &queue_, coll_cq_, _1));
 }
 
 struct init_struct {
@@ -452,7 +458,7 @@ mpi_queue::progress_loop(mpi_request* req)
   sstmac::timestamp wait_start = api_->now();
   while (!req->is_complete()) {
     mpi_queue_debug("blocking on progress loop");
-    sumi::message* msg = api_->poll(true); //block until message arrives
+    sumi::message* msg = queue_.find_any();
     if (!msg){
       spkt_abort_printf("polling returned null message");
     }
@@ -487,7 +493,7 @@ mpi_queue::start_progress_loop(const std::vector<mpi_request*>& reqs)
   mpi_queue_debug("starting progress loop");
   while (!at_least_one_complete(reqs)) {
     mpi_queue_debug("blocking on progress loop");
-    sumi::message* msg = api_->poll(true); //block until msg arrives
+    sumi::message* msg = queue_.find_any();
     if (!msg){
       spkt_abort_printf("polling returned null message");
     }

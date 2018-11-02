@@ -66,7 +66,7 @@ logp_memory_model::logp_memory_model(sprockit::sim_parameters* params, node* nd)
 }
 
 void
-logp_memory_model::access(long bytes, double max_bw, callback* cb)
+logp_memory_model::access(uint64_t bytes, double max_bw, callback* cb)
 {
   mem_debug("simple model: doing access of %ld bytes", bytes);
 

@@ -347,7 +347,7 @@ int USER_MAIN(int argc, char** argv)
   int tag = 42;
 
   auto* engine = new sumi::collective_engine(params, tport);
-  int coll_cq = engine->tport()->allocate_cq();
+  int coll_cq = engine->tport()->allocate_default_cq();
   engine->barrier(tag, coll_cq);
   engine->block_until_next(coll_cq);
 

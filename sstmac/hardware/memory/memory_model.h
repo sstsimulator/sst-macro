@@ -71,7 +71,7 @@ class memory_model :
 
   virtual ~memory_model();
 
-  virtual void access(long bytes, double max_bw, callback* cb) = 0;
+  virtual void access(uint64_t bytes, double max_bw, callback* cb) = 0;
 
   virtual std::string to_string() const = 0;
 
@@ -103,7 +103,7 @@ class null_memory_model : public memory_model
 
   double max_single_bw() const override { return 1e9; }
 
-  void access(long bytes, double max_bw, callback *cb) override {}
+  void access(uint64_t bytes, double max_bw, callback *cb) override {}
 };
 
 }

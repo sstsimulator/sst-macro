@@ -156,11 +156,6 @@ class sculpin_switch :
 
   router* router_;
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* payload_handler_;
-  link_handler* credit_handler_;
-#endif
-
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
   std::vector<Statistic<traffic_event>* > traffic_intensity;

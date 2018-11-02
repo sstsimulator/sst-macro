@@ -73,8 +73,7 @@ class member_fxn_callback :
   }
 
  private:
-  template <int ...S>
-  void dispatch(seq<S...>){
+  template <int ...S> void dispatch(seq<S...>){
     (obj_->*fxn_)(std::get<S>(params_)...);
   }
 

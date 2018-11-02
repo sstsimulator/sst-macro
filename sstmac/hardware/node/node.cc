@@ -262,7 +262,6 @@ void
 node::fail_stop()
 {
   fail();
-  nic_->fail();
   cancel_all_messages();
 }
 

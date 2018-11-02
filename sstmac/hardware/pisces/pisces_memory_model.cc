@@ -64,209 +64,140 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-std::string
-memory_flow::to_string() const
-{
-  uint32_t num, node;
-  unique_event_id::unpack(flow_id(), node, num);
-  return sprockit::printf("memory message %lu: seqnum %d on node %d with %d bytes",
-                          flow_id(), node, num, byte_length());
-}
 
-pisces_memory_packetizer::pisces_memory_packetizer(
-  sprockit::sim_parameters* params,
-  event_scheduler* parent) :
-  arb_(nullptr),
-  bw_noise_(nullptr),
-  interval_noise_(nullptr),
-  num_noisy_intervals_(0),
-  packetizer(params, parent, PISCES_MEM_DEFAULT_NUM_CHANNELS)
-{
-  for (int i=0; i < PISCES_MEM_DEFAULT_NUM_CHANNELS; ++i){
-    channelFree_[i] = true;
-  }
 
-  if (!params->has_param("mtu"))
-    params->add_param("mtu", "100GB");
-
-  max_bw_ = params->get_bandwidth_param("total_bandwidth");
-  max_single_bw_ = params->get_optional_bandwidth_param("max_single_bandwidth", max_bw_);
-  latency_ = params->get_time_param("latency");
-  arb_ = pisces_bandwidth_arbitrator::factory::get_value("cut_through", params);
-
-  init_noise_model();
-
-  debug("initializing pisces memory packetizer with mtu %d", packetSize());
-}
-
-link_handler*
-pisces_memory_packetizer::new_credit_handler() const
-{
-  spkt_abort_printf("pisces_memory_packetizer::new_ack_handler: not used");
-  return nullptr;
-}
-
-link_handler*
-pisces_memory_packetizer::new_payload_handler() const
-{
-  spkt_abort_printf("pisces_memory_packetizer::new_payload_handler: not used");
-  return nullptr;
-}
-
-pisces_memory_packetizer::~pisces_memory_packetizer()
-{
-  if (arb_) delete arb_;
-  if (bw_noise_) delete bw_noise_;
-  if (interval_noise_) delete interval_noise_;
-}
 
 pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node *nd) :
+  arb_(nullptr),
   memory_model(params, nd)
 {
-  nchannels_ = PISCES_MEM_DEFAULT_NUM_CHANNELS;
+  nchannels_ = params->get_optional_int_param("nchannels", 8);
   channels_available_.resize(nchannels_);
   for (int i=0; i < nchannels_; ++i){
     channels_available_[i] = i;
   }
 
-  mem_packetizer_ = new pisces_memory_packetizer(params, nd);
-  mem_packetizer_->setArrivalNotifier(this, &pisces_memory_model::notify);
+  for (int i=0; i < nchannels_; ++i){
+    channel_requests_.emplace_back(0,0,nullptr);
+  }
+
+  packet_size_ = params->get_optional_byte_length_param("mtu", 100e9);
+  max_bw_ = params->get_bandwidth_param("total_bandwidth");
+  max_single_bw_ = params->get_optional_bandwidth_param("max_single_bandwidth", max_bw_);
+  latency_ = params->get_time_param("latency");
+  arb_ = pisces_bandwidth_arbitrator::factory::get_value("cut_through", params);
 }
 
 pisces_memory_model::~pisces_memory_model()
 {
-  if (mem_packetizer_) delete mem_packetizer_;
+  if (arb_) delete arb_;
 }
 
 void
-pisces_memory_model::access(
-  long bytes, double max_bw,
-  callback* cb)
+pisces_memory_model::access(uint64_t bytes, double max_bw, callback* cb)
 {
-  memory_flow* msg = new memory_flow(bytes,
-                   parent_node_->allocate_unique_id(), max_bw);
-
   if (channels_available_.empty()){
-    stalled_requests_.push_back(std::make_pair(msg,cb));
+    stalled_requests_.emplace_back(bytes, max_bw, cb);
   } else {
     int channel = channels_available_.back();
     channels_available_.pop_back();
-    start(channel, msg, cb);
+    start(channel, bytes, max_bw, cb);
   }
 }
 
 void
-pisces_memory_model::start(int channel, memory_flow* msg, callback *cb)
+pisces_memory_model::start(int channel, uint64_t bytes, double max_bw, callback *cb)
 {
-  debug("Node %d starting access %lu on vn %d of size %ld with bw %8.4e",
-        parent_node_->addr(), msg->flow_id(), channel, msg->byte_length(), msg->max_bw());
-  mem_packetizer_->start(channel, msg);
-  pending_requests_[msg] = cb;
-}
+  debug("Node %d starting access on channnel %d of size %ld with bw %8.4e",
+        parent_node_->addr(), channel, bytes, max_single_bw_);
 
-void
-pisces_memory_model::notify(int vn, flow* msg)
-{
-  debug("Node %d finished access %lu on vn %d of size %ld",
-        parent_node_->addr(), msg->flow_id(), vn, msg->byte_length());
-
-  callback* cb = pending_requests_[msg];
-  pending_requests_.erase(msg);
-  //happening now
-  delete msg;
-  send_now_self_event_queue(cb);
-  if (stalled_requests_.empty()){
-    channels_available_.push_back(vn);
+  if (bytes <= packet_size_){
+    timestamp t = access(channel, bytes, max_bw, cb);
+    send_self_event_queue(t, new_callback(this, &pisces_memory_model::channel_free, channel));
   } else {
-    auto& pair = stalled_requests_.front();
-    start(vn, pair.first, pair.second);
+    request& req = channel_requests_[channel];
+    req.bytes_arrived = 0;
+    req.bytes_total = bytes;
+    req.cb = cb;
+    req.max_bw = max_bw;
+    access(channel, packet_size_, max_bw,
+           new_callback(this, &pisces_memory_model::data_arrived, channel, packet_size_));
+  }
+
+}
+
+void
+pisces_memory_model::channel_free(int channel)
+{
+  if (!stalled_requests_.empty()){
+    request& req = stalled_requests_.front();
     stalled_requests_.pop_front();
+    start(channel, req.bytes_total, req.max_bw, req.cb);
+  } else {
+    channels_available_.push_back(channel);
   }
 }
 
-#if 0
-int
-pisces_memory_model::allocate_channel()
+void
+pisces_memory_model::data_arrived(int channel, uint32_t bytes)
+{
+  request& ch = channel_requests_[channel];
+  ch.bytes_arrived += bytes;
+  debug("Node %d channel %d now has %lu bytes arrived of %lu total",
+        addr(), channel, ch.bytes_arrived, ch.bytes_total);
+  if (ch.bytes_arrived == ch.bytes_total){
+    ch.cb->execute();
+    delete ch.cb;
+    channel_free(channel);
+  } else {
+    uint32_t next_bytes = std::min(uint32_t(packet_size_),
+                                   uint32_t(ch.bytes_total - ch.bytes_arrived));
+    access(channel, next_bytes, ch.max_bw,
+           new_callback(this, &pisces_memory_model::data_arrived, channel, next_bytes));
+  }
+}
+
+void
+pisces_memory_model::access(pisces_packet* pkt, double max_bw, callback* cb)
 {
   if (channels_available_.empty()){
-    //double size of pending
-    int newsize = nchannels_*2;
-    for (int i=nchannels_; i != newsize; ++i){
-      channels_available_.push_back(i);
-    }
-    nchannels_ = newsize;
-  }
-  int channel = channels_available_.front();
-  channels_available_.pop_front();
-  return channel;
-}
-#endif
-
-void
-pisces_memory_packetizer::init_noise_model()
-{
-  if (bw_noise_){
-    arb_->partition(interval_noise_, num_noisy_intervals_);
-    arb_->init_noise_model(bw_noise_);
+    stalled_requests_.emplace_back(max_bw, cb, pkt);
+  } else {
+    int channel = channels_available_.back();
+    channels_available_.pop_back();
+    access(channel, pkt, max_bw, cb);
   }
 }
 
-void
-pisces_memory_packetizer::inject(int vn, uint32_t bytes, uint64_t byte_offset, flow* msg)
+timestamp
+pisces_memory_model::access(int channel, pisces_packet* pkt, double max_bw, callback* cb)
 {
-  bool is_tail = (bytes + byte_offset) == msg->byte_length();
-  pisces_packet* payload = new pisces_packet(is_tail ? msg : nullptr,
-                                             bytes, msg->flow_id(), is_tail,
-                                             sstmac::node_id(), sstmac::node_id());
+  pkt->set_inport(channel);
 
-  payload->set_inport(vn);
-  memory_flow* orig = safe_cast(memory_flow, msg);
-  if (orig->max_bw() != 0){
-    payload->set_bw(orig->max_bw());
-  }
-
-  debug("injecting %s on vn %d of size=%ld bw=%8.4e",
-        payload->to_string().c_str(), vn, payload->byte_length(), payload->bw());
-
-  channelFree_[vn] = false;
-  handle_payload(vn, payload);
-}
-
-void
-pisces_memory_packetizer::handle_payload(int vn, pisces_packet* pkt)
-{
   //set the bandwidth to the max single bw
-  pkt->init_bw(max_single_bw_);
+  pkt->init_bw(max_bw);
   pkt->set_arrival(now().sec());
   pkt_arbitration_t st;
   st.pkt = pkt;
   st.now = now();
   arb_->arbitrate(st);
 
-  debug("memory packet %s leaving on vn %d at t=%8.4e",
-    pkt->to_string().c_str(), vn, st.tail_leaves.sec());
+  debug("Node %d memory packet %s leaving on channel %d at t=%8.4e",
+    addr(), pkt->to_string().c_str(), channel, st.tail_leaves.sec());
 
-  send_self_event_queue(st.tail_leaves,
-    new_callback(this, &packetizer::packetArrived, vn, pkt));
-
-  //send some credits back
-  int ignore_vc = -1;
-  pisces_credit* credit = new pisces_credit(vn, ignore_vc, pkt->num_bytes());
   //here we do not optimistically send credits = only when the packet leaves
-  send_self_event_queue(st.tail_leaves,
-    new_callback(this, &pisces_memory_packetizer::recv_credit, credit));
+  send_self_event_queue(st.tail_leaves, cb);
+
+  return st.tail_leaves;
 }
 
-void
-pisces_memory_packetizer::recv_credit(event* ev)
+timestamp
+pisces_memory_model::access(int channel, uint32_t bytes, double max_bw, callback* cb)
 {
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  debug("got credit %s on vn %d", credit->to_string().c_str(), credit->port());
-
-  int channel = credit->port();
-  delete credit;
-  channelFree_[channel] = true;
-  sendWhatYouCan(channel);
+  pisces_packet pkt(nullptr, bytes, -1, false, //doesn't matter
+                    sstmac::node_id(), sstmac::node_id());
+  timestamp t = access(channel, &pkt, max_bw, cb);
+  return t;
 }
 
 }

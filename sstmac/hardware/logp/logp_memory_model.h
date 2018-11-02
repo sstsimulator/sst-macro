@@ -67,7 +67,7 @@ class logp_memory_model : public memory_model
     return "logGP memory model";
   }
 
-  void access(long bytes, double max_bw, callback* cb) override;
+  void access(uint64_t bytes, double max_bw, callback* cb) override;
 
   double max_single_bw() const override {
     return bw_;

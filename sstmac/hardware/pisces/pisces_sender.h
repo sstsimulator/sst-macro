@@ -111,9 +111,9 @@ class pisces_sender :
     int my_outport, int dst_inport,
     event_link* link) = 0;
 
-  virtual void handle_credit(event* ev) = 0;
-
   virtual void handle_payload(event* ev) = 0;
+
+  virtual void handle_credit(event* ev) = 0;
 
   static void configure_credit_port_latency(sprockit::sim_parameters* params);
 
@@ -143,7 +143,7 @@ class pisces_sender :
   void send_credit(input& inp, pisces_packet* payload,
           timestamp packet_tail_leaves);
 
-  void send(pisces_bandwidth_arbitrator* arb,
+  timestamp send(pisces_bandwidth_arbitrator* arb,
        pisces_packet* pkt, input& to_credit, output& to_send);
 
  protected:
