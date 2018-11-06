@@ -320,18 +320,10 @@ class topology : public sprockit::printable
    *        this returns true.
    * @return
    */
-  virtual bool uniform_network_ports() const = 0;
+  virtual bool uniform_switch_ports() const = 0;
 
   /**
-   * @brief Whether all switches are the same, albeit with each port on the switch
-   *        having slightly different latency/bandwidth configurations
-   * @return
-   */
-  virtual bool uniform_switches_non_uniform_network_ports() const = 0;
-
-  /**
-   * @brief Whether all switches are the same and all ports on those switches
-   *        have exactly the same configuration
+   * @brief Whether all switches are the same
    * @return
    */
   virtual bool uniform_switches() const = 0;
@@ -506,7 +498,7 @@ class topology : public sprockit::printable
     static_topology_ = nullptr;
   }
 
-  static sprockit::sim_parameters* get_port_params(sprockit::sim_parameters* params, int port);
+  static std::string get_port_namespace(int port);
 
  protected:
   topology(sprockit::sim_parameters* params);

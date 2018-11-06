@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FILE_H_INCLUDED
 #define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FILE_H_INCLUDED
 
+#include <utility>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/libraries/nlohmann/json.hpp>
 
@@ -68,7 +69,7 @@ class file : public topology
   file(sprockit::sim_parameters* params);
 
   int max_num_ports() const override {
-    spkt_abort_printf("max_num_ports() not implemented");
+    return max_port_;
   }
 
   switch_id max_switch_id() const override {
@@ -104,16 +105,12 @@ class file : public topology
   void endpoints_connected_to_injection_switch(switch_id swaddr,
                std::vector<injection_port>& nodes) const override;
 
-  bool uniform_network_ports() const override {
-    return false;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return false;
+  bool uniform_switch_ports() const override {
+    return true;
   }
 
   bool uniform_switches() const override {
-    return false;
+    return true;
   }
 
   void configure_individual_port_params(switch_id src,
@@ -133,7 +130,10 @@ class file : public topology
 private:
   int num_nodes_;
   int num_switches_;
+  int max_port_;
   nlohmann::json json_;
+  std::map<int, std::map< int, std::set< std::pair<int,int> > > > switch_connection_map_;
+  std::map<int, std::map< int, std::set< std::pair<int,int> > > > node_connection_map_;
 
 };
 

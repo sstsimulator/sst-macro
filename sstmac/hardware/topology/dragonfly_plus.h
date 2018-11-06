@@ -67,16 +67,12 @@ class dragonfly_plus : public dragonfly
     return "dragonfly+";
   }
 
-  bool uniform_network_ports() const override {
+  bool uniform_switch_ports() const override {
     return false;
   }
 
   bool is_global_port(int port) const {
     return port >= 2*a_;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return false;
   }
 
   bool uniform_switches() const override {

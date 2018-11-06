@@ -403,15 +403,15 @@ interconnect::connect_switches(event_manager* mgr, sprockit::sim_parameters* swi
   std::vector<topology::connection> outports(64); //allocate 64 spaces optimistically
 
   //might be super uniform in which all ports are the same
-  bool all_ports_same = topology_->uniform_network_ports();
   //or it might be mostly uniform in which all the switches are the same
   //even if the individual ports on each switch are different
-  bool all_switches_same = topology_->uniform_switches_non_uniform_network_ports();
+  bool all_ports_same = topology_->uniform_switch_ports();
+  bool all_switches_same = topology_->uniform_switches();
 
   sprockit::sim_parameters* port_params;
   if (all_ports_same){
     port_params = switch_params->get_namespace("link");
-  } else if (all_switches_same){
+  } else if (all_switches_same && !all_ports_same){
     topology_->configure_individual_port_params(switch_id(0), switch_params);
   }
 
@@ -420,11 +420,14 @@ interconnect::connect_switches(event_manager* mgr, sprockit::sim_parameters* swi
     int thread = partition_->thread_for_switch(i);
     topology_->connected_outports(src, outports);
     network_switch* src_sw = switches_[src];
-    if (!all_switches_same) topology_->configure_individual_port_params(src, switch_params);
+    if (!all_switches_same && !all_ports_same){
+      topology_->configure_individual_port_params(src, switch_params);
+    }
     interconn_debug("interconnect: num intranetwork ports: %i", outports.size());
     for (topology::connection& conn : outports){
       if (!all_ports_same){
-        port_params = topology::get_port_params(switch_params, conn.src_outport);
+        std::string port_ns = topology::get_port_namespace(conn.src_outport);
+        port_params = switch_params->get_namespace(port_ns);
       }
 
       network_switch* dst_sw = switches_[conn.dst];

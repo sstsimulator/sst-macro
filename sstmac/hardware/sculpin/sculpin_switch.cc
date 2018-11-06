@@ -99,11 +99,20 @@ sculpin_switch::sculpin_switch(
   congestion_ = params->get_optional_bool_param("congestion", true);
   vtk_flicker_ = params->get_optional_bool_param("vtk_flicker", true);
 
+//  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+//  std::vector<topology::injection_port> inj_conns;
+//  top_->endpoints_connected_to_ejection_switch(my_addr_, inj_conns);
+//  for (topology::injection_port& conn : inj_conns){
+//    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
+//    ej_params->combine_into(port_params);
+//  }
+
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> inj_conns;
   top_->endpoints_connected_to_ejection_switch(my_addr_, inj_conns);
   for (topology::injection_port& conn : inj_conns){
-    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
+    auto port_ns = topology::get_port_namespace(conn.switch_port);
+    sprockit::sim_parameters* port_params = params->get_optional_namespace(port_ns);
     ej_params->combine_into(port_params);
   }
 

@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 
 using namespace nlohmann;
+using namespace std;
 
 namespace sstmac {
 namespace hw {
@@ -63,16 +64,48 @@ file::file(sprockit::sim_parameters* params) :
   std::cout << "\nnum_nodes: " << num_nodes_ << "\n";
   num_switches_ = json_.at("num_switches");
   std::cout << "\nnum_switches: " << num_switches_ << "\n";
+
+  max_port_ = 0;
+  json links = json_.at("switch_to_switch_links");
+  for (auto it = links.begin(); it != links.end(); it++) {
+    int sw1 = it->at("switch1");
+    int sw2 = it->at("switch2");
+    int prt1 = it->at("switch1_port");
+    int prt2 = it->at("switch2_port");
+    switch_connection_map_[sw1][sw2].insert(pair<int,int>(prt1,prt2));
+    switch_connection_map_[sw2][sw1].insert(pair<int,int>(prt2,prt1));
+    max_port_ = std::max(max_port_, prt1);
+    max_port_ = std::max(max_port_, prt2);
+  }
+
+  links = json_.at("node_to_switch_links");
+  for (auto it = links.begin(); it != links.end(); it++) {
+     int sw = it->at("switch");
+     int nd = it->at("node");
+     int nd_port = it->at("node_port");
+     int sw_port = it->at("switch_port");
+     node_connection_map_[sw][nd].insert(pair<int,int>(sw_port,nd_port));
+  }
+
+  int max_nps = 0;
+  for (auto it = node_connection_map_.begin();
+       it != node_connection_map_.end();
+       ++it) {
+    for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
+      max_nps = std::max(max_nps, (int) it2->second.size());
+    }
+  }
+
+  max_port_ += max_nps;
+
 }
 
 void
 file::connected_outports(switch_id src, std::vector<connection>& conns) const
 {
   conns.clear();
-
   json links = json_.at("switch_to_switch_links");
-
-  for(auto it = links.begin(); it != links.end(); it++ ) {
+  for (auto it = links.begin(); it != links.end(); it++) {
       connection c;
       if (src == it->at("switch1")) {
           c.src = src;
@@ -89,7 +122,6 @@ file::connected_outports(switch_id src, std::vector<connection>& conns) const
           conns.push_back(c);
         }
     }
-
 }
 
 void
@@ -98,7 +130,7 @@ file::endpoints_connected_to_injection_switch(switch_id swaddr,
 {
   nodes.clear();
   json links = json_.at("node_to_switch_links");
-  for(auto it = links.begin(); it != links.end(); it++ ) {
+  for (auto it = links.begin(); it != links.end(); it++) {
       if (swaddr == it->at("switch")) {
           injection_port ip;
           ip.nid = it->at("node");

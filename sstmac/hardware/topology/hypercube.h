@@ -69,7 +69,7 @@ class hypercube :
     switch_id dst,
     packet::header* hdr) const;
 
-  bool uniform_network_ports() const override {
+  bool uniform_switch_ports() const override {
     return false;
   }
 
@@ -81,10 +81,6 @@ class hypercube :
 
   void endpoints_connected_to_injection_switch(switch_id swaddr,
          std::vector<injection_port>& nodes) const override;
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return true;
-  }
 
   void connected_outports(switch_id src, std::vector<connection>& conns) const override;
 

@@ -100,12 +100,11 @@ pisces_abstract_switch::pisces_abstract_switch(
   pisces_sender::configure_payload_port_latency(ej_params);
 
   for (topology::injection_port& conn : conns){
-    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
+    auto port_ns = topology::get_port_namespace(conn.switch_port);
+    sprockit::sim_parameters* port_params = params->get_optional_namespace(port_ns);
     ej_params->combine_into(port_params);
   }
-
 }
-
 
 
 pisces_abstract_switch::~pisces_abstract_switch()

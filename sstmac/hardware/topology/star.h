@@ -90,12 +90,8 @@ class star : public structured_topology
   void endpoints_connected_to_injection_switch(switch_id swaddr,
                std::vector<injection_port>& nodes) const override;
 
-  bool uniform_network_ports() const override {
+  bool uniform_switch_ports() const override {
     return true;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return false;
   }
 
   bool uniform_switches() const override {

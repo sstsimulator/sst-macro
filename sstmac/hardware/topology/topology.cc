@@ -153,10 +153,10 @@ topology::setup_port_params(int port, int credits, double bw,
   return port_params;
 }
 
-sprockit::sim_parameters*
-topology::get_port_params(sprockit::sim_parameters *params, int port)
+std::string
+topology::get_port_namespace(int port)
 {
-  return params->get_optional_namespace(sprockit::printf("port%d", port));
+  return std::string("port") + std::to_string(port);
 }
 
 static std::string get_outfile(const std::string& cmd_line_given,
@@ -266,8 +266,8 @@ topology::configure_individual_port_params(
       switch_params->get_namespace("link");
   for (int i=0; i < nports; ++i){
     int port = port_start + i;
-    sprockit::sim_parameters* port_params =
-        get_port_params(switch_params, port);
+    std::string port_ns = get_port_namespace(port);
+    sprockit::sim_parameters* port_params = switch_params->get_namespace(port_ns);
     link_params->combine_into(port_params);
   }
 }
@@ -332,12 +332,7 @@ class merlin_topology : public topology {
     return num_nodes_;
   }
 
-  bool uniform_network_ports() const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-    return false;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switch_ports() const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return false;
   }

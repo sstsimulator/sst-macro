@@ -190,12 +190,8 @@ class fat_tree :
     return -1;
   }
 
-  bool uniform_network_ports() const override {
+  bool uniform_switch_ports() const override {
     return true;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return false;
   }
 
   bool uniform_switches() const override {
@@ -367,11 +363,7 @@ class tapered_fat_tree : public abstract_fat_tree
     return std::max(first_max, num_agg_subtrees_);
   }
 
-  bool uniform_network_ports() const override {
-    return false;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
+  bool uniform_switch_ports() const override {
     return false;
   }
 
