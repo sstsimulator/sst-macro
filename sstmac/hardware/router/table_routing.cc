@@ -81,17 +81,22 @@ class table_router : public router {
     std::ifstream ifs(fname);
     if (!ifs.good()){
       spkt_abort_printf("Table for router %d could not be found at %s",
-                        my_addr_, fname.c_str())
+                        my_addr_, fname.c_str());
     }
 
     std::string line;
+    int size = table_.size();
     while (ifs.good()){
       std::getline(ifs, line);
       std::istringstream istr(line);
-      int sid, port;
-      istr >> sid;
+      int nid, port;
+      istr >> nid;
       istr >> port;
-      table_[sid] = port;
+      if (nid > (size - 1) ) {
+        spkt_abort_printf("Table router invalid node id %d in file %s",
+                          nid, fname.c_str());
+      }
+      table_[nid] = port;
     }
 
     for (int i=0; i < table_.size(); ++i){

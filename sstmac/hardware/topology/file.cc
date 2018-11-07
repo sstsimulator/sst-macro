@@ -64,6 +64,7 @@ file::file(sprockit::sim_parameters* params) :
   std::cout << "\nnum_nodes: " << num_nodes_ << "\n";
   num_switches_ = json_.at("num_switches");
   std::cout << "\nnum_switches: " << num_switches_ << "\n";
+  num_hops_ = json_.at("avg_num_hops");
 
   max_port_ = 0;
   json links = json_.at("switch_to_switch_links");
@@ -77,6 +78,15 @@ file::file(sprockit::sim_parameters* params) :
     max_port_ = std::max(max_port_, prt1);
     max_port_ = std::max(max_port_, prt2);
   }
+  std::cout << "intranet ports: " << max_port_ << "\n";
+
+  std:set<int> leafs;
+  links = json_.at("node_to_switch_links");
+  for (auto it = links.begin(); it != links.end(); it++) {
+    int sw = it->at("switch");
+    leafs.insert( sw );
+  }
+  num_leaf_switches_ = leafs.size();
 
   links = json_.at("node_to_switch_links");
   for (auto it = links.begin(); it != links.end(); it++) {
@@ -95,8 +105,11 @@ file::file(sprockit::sim_parameters* params) :
       max_nps = std::max(max_nps, (int) it2->second.size());
     }
   }
+  std::cout << "max_nps:" << max_nps << "\n";
 
-  max_port_ += max_nps;
+  // +2 because we start indexing at zero
+  max_port_ += max_nps + 2;
+  std::cout << "\nmax_port: " << max_port_ << "\n";
 
 }
 
@@ -113,12 +126,22 @@ file::connected_outports(switch_id src, std::vector<connection>& conns) const
           c.dst = it->at("switch2");
           c.dst_inport = it->at("switch2_port");
           conns.push_back(c);
+          c.dst = src;
+          c.dst_inport = it->at("switch1_port");
+          c.src = it->at("switch2");
+          c.src_outport = it->at("switch2_port");
+          conns.push_back(c);
         }
       else if (src == it->at("switch2")) {
           c.src = src;
           c.src_outport = it->at("switch1_port");
           c.dst = it->at("switch2");
           c.dst_inport = it->at("switch2_port");
+          conns.push_back(c);
+          c.dst = src;
+          c.dst_inport = it->at("switch1_port");
+          c.src = it->at("switch2");
+          c.src_outport = it->at("switch2_port");
           conns.push_back(c);
         }
     }

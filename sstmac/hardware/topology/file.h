@@ -85,7 +85,7 @@ class file : public topology
   }
 
   switch_id num_leaf_switches() const override {
-    return 0;
+    return num_leaf_switches_;
   }
 
   int minimal_distance(switch_id src, switch_id dst) const {
@@ -93,7 +93,8 @@ class file : public topology
   }
 
   int num_hops_to_node(node_id src, node_id dst) const override {
-    spkt_abort_printf("num_hops_to_node() not implemented");
+    // extremely approximate
+    return num_hops_;
   }
 
   void endpoints_connected_to_ejection_switch(
@@ -130,7 +131,9 @@ class file : public topology
 private:
   int num_nodes_;
   int num_switches_;
+  int num_leaf_switches_;
   int max_port_;
+  int num_hops_;
   nlohmann::json json_;
   std::map<int, std::map< int, std::set< std::pair<int,int> > > > switch_connection_map_;
   std::map<int, std::map< int, std::set< std::pair<int,int> > > > node_connection_map_;

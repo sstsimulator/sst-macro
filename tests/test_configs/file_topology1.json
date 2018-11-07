@@ -1,19 +1,20 @@
 {  "num_switches" : 4,
    "num_nodes" : 6,
+   "avg_num_hops" : 4,
    "switch_to_switch_links" : [
-     { "switch1" : 0, "switch1_port" : 0, "switch2" : 1, "switch2_port" : 0 },
-     { "switch1" : 0, "switch1_port" : 1, "switch2" : 1, "switch2_port" : 1 },
-     { "switch1" : 0, "switch1_port" : 2, "switch2" : 2, "switch2_port" : 0 },
-     { "switch1" : 0, "switch1_port" : 3, "switch2" : 2, "switch2_port" : 1 },
-     { "switch1" : 0, "switch1_port" : 4, "switch2" : 3, "switch2_port" : 0 },
-     { "switch1" : 0, "switch1_port" : 5, "switch2" : 3, "switch2_port" : 1 }
+     { "switch1" : 3, "switch1_port" : 0, "switch2" : 0, "switch2_port" : 0 },
+     { "switch1" : 3, "switch1_port" : 1, "switch2" : 0, "switch2_port" : 1 },
+     { "switch1" : 3, "switch1_port" : 2, "switch2" : 1, "switch2_port" : 0 },
+     { "switch1" : 3, "switch1_port" : 3, "switch2" : 1, "switch2_port" : 1 },
+     { "switch1" : 3, "switch1_port" : 4, "switch2" : 2, "switch2_port" : 0 },
+     { "switch1" : 3, "switch1_port" : 5, "switch2" : 2, "switch2_port" : 1 }
    ],
    "node_to_switch_links" : [
-     { "node" : 0, "node_port" : 0, "switch" : 1, "switch_port" : 2 },
-     { "node" : 1, "node_port" : 0, "switch" : 1, "switch_port" : 3 },
-     { "node" : 2, "node_port" : 0, "switch" : 2, "switch_port" : 2 },
-     { "node" : 3, "node_port" : 0, "switch" : 2, "switch_port" : 3 },
-     { "node" : 4, "node_port" : 0, "switch" : 3, "switch_port" : 2 },
-     { "node" : 5, "node_port" : 0, "switch" : 3, "switch_port" : 3 }
+     { "node" : 0, "node_port" : 0, "switch" : 0, "switch_port" : 6 },
+     { "node" : 1, "node_port" : 0, "switch" : 0, "switch_port" : 7 },
+     { "node" : 2, "node_port" : 0, "switch" : 1, "switch_port" : 6 },
+     { "node" : 3, "node_port" : 0, "switch" : 1, "switch_port" : 7 },
+     { "node" : 4, "node_port" : 0, "switch" : 2, "switch_port" : 6 },
+     { "node" : 5, "node_port" : 0, "switch" : 2, "switch_port" : 7 }
    ]
 }
