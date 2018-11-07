@@ -126,22 +126,12 @@ file::connected_outports(switch_id src, std::vector<connection>& conns) const
           c.dst = it->at("switch2");
           c.dst_inport = it->at("switch2_port");
           conns.push_back(c);
-          c.dst = src;
-          c.dst_inport = it->at("switch1_port");
-          c.src = it->at("switch2");
-          c.src_outport = it->at("switch2_port");
-          conns.push_back(c);
         }
       else if (src == it->at("switch2")) {
           c.src = src;
-          c.src_outport = it->at("switch1_port");
-          c.dst = it->at("switch2");
-          c.dst_inport = it->at("switch2_port");
-          conns.push_back(c);
-          c.dst = src;
-          c.dst_inport = it->at("switch1_port");
-          c.src = it->at("switch2");
           c.src_outport = it->at("switch2_port");
+          c.dst = it->at("switch1");
+          c.dst_inport = it->at("switch1_port");
           conns.push_back(c);
         }
     }
