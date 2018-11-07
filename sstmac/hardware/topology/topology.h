@@ -55,6 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
+#include <sprockit/errors.h>
 #include <unordered_map>
 #include <cmath>
 
@@ -492,6 +493,48 @@ class topology : public sprockit::printable
   }
 
   virtual cartesian_topology* cart_topology() const;
+
+  virtual node_id node_name_to_id(std::string name) const
+  {
+    std::size_t pos = name.find("node");
+    if (pos != 0)
+      throw sprockit::input_error("topology: node name should be node<n>");
+    std::string number(name,4);
+    node_id id;
+    try {
+      id = stoi(number);
+    }
+    catch(...) {
+      throw sprockit::input_error("topology: node name should be node<n>");
+    }
+    return id;
+  }
+
+  virtual switch_id switch_name_to_id(std::string name) const
+  {
+    std::size_t pos = name.find("switch");
+    if (pos != 0)
+      throw sprockit::input_error("topology: switch name should be switch<n>");
+    std::string number(name,6);
+    switch_id id;
+    try {
+      id = stoi(number);
+    }
+    catch(...) {
+      throw sprockit::input_error("topology: switch name should be switch<n>");
+    }
+    return id;
+  }
+
+  virtual std::string node_id_to_name(node_id id) const
+  {
+    return std::string("node") + std::to_string(id);
+  }
+
+  virtual std::string switch_id_to_name(switch_id id) const
+  {
+    return std::string("switch") + std::to_string(id);
+  }
 
   static void clear_static_topology(){
     if (static_topology_) delete static_topology_;

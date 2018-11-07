@@ -53,9 +53,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/fat_tree.h>
 //#include <sstmac/hardware/topology/butterfly.h>
 #include <sstmac/hardware/topology/fully_connected.h>
+#include <sstmac/libraries/nlohmann/json.hpp>
 #include <sstream>
 #include <fstream>
-
 
 RegisterKeywords(
 { "fileroot", "the file prefix for reading in tables" },
@@ -74,30 +74,16 @@ class table_router : public router {
     router(params, top, sw),
     table_(top->num_nodes(), -1)
   {
-    std::string fileprefix = params->get_param("fileroot");
-    std::stringstream sstr;
-    sstr << fileprefix << "." << my_addr_;
-    std::string fname = sstr.str();
-    std::ifstream ifs(fname);
-    if (!ifs.good()){
-      spkt_abort_printf("Table for router %d could not be found at %s",
-                        my_addr_, fname.c_str());
-    }
+    std::string fname = params->get_param("filename");
+    std::ifstream in(fname);
+    nlohmann::json jsn;
+    in >> jsn;
 
-    std::string line;
+    nlohmann::json routes =
+        jsn.at("switches").at( top->switch_id_to_name(my_addr_) ).at("routes");
     int size = table_.size();
-    while (ifs.good()){
-      std::getline(ifs, line);
-      std::istringstream istr(line);
-      int nid, port;
-      istr >> nid;
-      istr >> port;
-      if (nid > (size - 1) ) {
-        spkt_abort_printf("Table router invalid node id %d in file %s",
-                          nid, fname.c_str());
-      }
-      table_[nid] = port;
-    }
+    for (auto it = routes.begin(); it != routes.end(); ++it)
+      table_[top->node_name_to_id(it.key())] = it.value();
 
     for (int i=0; i < table_.size(); ++i){
       if (table_[i] == -1){

@@ -69,7 +69,7 @@ class file : public topology
   file(sprockit::sim_parameters* params);
 
   int max_num_ports() const override {
-    return max_port_;
+    return max_num_ports_;
   }
 
   switch_id max_switch_id() const override {
@@ -128,16 +128,57 @@ class file : public topology
     return num_nodes_;
   }
 
+  node_id node_name_to_id(std::string name) const override {
+    auto it = node_name_map_.find(name);
+    if( it == node_name_map_.end())
+      spkt_throw_printf(sprockit::input_error,
+        "file topology: can't find node id for %s", name.c_str());
+    return node_id(it->second);
+  }
+
+  switch_id switch_name_to_id(std::string name) const override {
+    auto it = switch_name_map_.find(name);
+    if( it == switch_name_map_.end())
+      spkt_throw_printf(sprockit::input_error,
+        "file topology: can't find switch id for %s", name.c_str());
+    return switch_id(it->second);
+  }
+
+  std::string node_id_to_name(node_id id) const override {
+    // find switch name
+    std::string key;
+    for (auto &i : node_name_map_) {
+       if (i.second == id) {
+          key = i.first;
+          break;
+       }
+    }
+    return key;
+  }
+
+  std::string switch_id_to_name(switch_id id) const override {
+    // find switch name
+    std::string key;
+    for (auto &i : switch_name_map_) {
+       if (i.second == id) {
+          key = i.first;
+          break;
+       }
+    }
+    return key;
+  }
+
 private:
   int num_nodes_;
   int num_switches_;
   int num_leaf_switches_;
-  int max_port_;
+  int max_num_ports_;
   int num_hops_;
   nlohmann::json json_;
-  std::map<int, std::map< int, std::set< std::pair<int,int> > > > switch_connection_map_;
-  std::map<int, std::map< int, std::set< std::pair<int,int> > > > node_connection_map_;
-
+  nlohmann::json switches_;
+  nlohmann::json nodes_;
+  std::map<std::string,int> node_name_map_;
+  std::map<std::string,int> switch_name_map_;
 };
 
 }

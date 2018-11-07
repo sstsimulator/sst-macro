@@ -19,12 +19,13 @@ CORETESTS+= \
   test_core_apps_ping_all_dragonfly_valiant \
   test_core_apps_ping_all_dragonfly_plus \
   test_core_apps_ping_all_dragonfly_plus_par \
-  test_core_apps_ping_all_random_macrels \
-  test_core_apps_ping_all_torus_sculpin \
   test_core_apps_ping_all_dragonfly \
   test_core_apps_ping_all_dragonfly_minimal \
-  test_core_apps_ping_all_ns \
+  test_core_apps_ping_all_file \
   test_core_apps_ping_all_hypercube_par \
+  test_core_apps_ping_all_ns \
+  test_core_apps_ping_all_random_macrels \
+  test_core_apps_ping_all_torus_sculpin \
   test_core_apps_compute \
   test_core_apps_host_compute \
   test_core_apps_ping_all_uneven_tree \
@@ -47,7 +48,13 @@ test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 test_core_apps_ping_all_tree_table.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
    $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_tree_table.ini \
-   -p switch.router.fileroot=$(top_srcdir)/tests/test_configs/rtr_tbl
+   -p switch.router.filename=$(top_srcdir)/tests/test_configs/rtr_tbl.json
+
+test_core_apps_ping_all_file.$(CHKSUF): $(SSTMACEXEC)
+	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \
+   $(SSTMACEXEC) -f $(srcdir)/test_configs/test_ping_all_file.ini \
+   -p switch.router.filename=$(top_srcdir)/tests/test_configs/rtr_tbl_file_topology1.json \
+   -p topology.filename=$(top_srcdir)/tests/test_configs/file_topology1.json
 
 test_core_apps_ping_all_tiled_cascade.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 15 $(top_srcdir) $@ Exact \

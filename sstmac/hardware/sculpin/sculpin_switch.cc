@@ -399,12 +399,8 @@ sculpin_switch::handle_payload(event *ev)
   sculpin_packet* pkt = safe_cast(sculpin_packet, ev);
   switch_debug("handling payload %s", pkt->to_string().c_str());
   router_->route(pkt);
-  std::cerr << "pkt->next_port():" << pkt->next_port() << "\n";
   port& p = ports_[pkt->next_port()];
-  std::cerr << "p:" << &p << "\n";
 
-  std::cerr << "p.inv_bw:" << p.inv_bw << "\n";
-  std::cerr << "pkt->num_bytes:" << pkt->num_bytes() << "\n";
   timestamp time_to_send = p.inv_bw * pkt->num_bytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
    * The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
