@@ -747,7 +747,7 @@ sim_parameters::deprecated_optional_bool_param(const std::string &key, bool def)
 }
 
 bool
-sim_parameters::get_optional_bool_param(const std::string &key, int def)
+sim_parameters::get_optional_bool_param(const std::string &key, bool def)
 {
   if (has_param(key)) {
     return get_bool_param(key);

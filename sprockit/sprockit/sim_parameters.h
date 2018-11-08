@@ -278,7 +278,7 @@ class sim_parameters  {
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  bool get_optional_bool_param(const std::string &key, int def);
+  bool get_optional_bool_param(const std::string &key, bool def);
 
   double get_bandwidth_param(const std::string& key);
 

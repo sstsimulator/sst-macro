@@ -79,6 +79,8 @@ class stack_alloc
   static size_t suggested_chunk_;
   /// Each stack request is of this size:
   static size_t stacksize_;
+  /// Optionally added a protected stack between each stack we return
+  static bool protect_stacks_;
 
  public:
   static size_t stacksize() {
