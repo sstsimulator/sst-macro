@@ -60,7 +60,9 @@ eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid,
   if (isNonNullBuffer(buffer)){
     temp_buf = fill_send_buffer(count, buffer, typeobj);
   }
-  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, count*typeobj->packed_size(), temp_buf,
+  uint64_t payload_bytes = count*typeobj->packed_size();
+  queue_->memcopy(payload_bytes);
+  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, payload_bytes, temp_buf,
                               queue_->pt2pt_cq_id(), queue_->pt2pt_cq_id(), sumi::message::pt2pt,
                               src_rank, dst_rank, typeobj->id,  tag, comm, seq_id,
                               count, typeobj->packed_size(), nullptr, EAGER0);

@@ -205,6 +205,7 @@ transport::transport(sprockit::sim_parameters* params,
   api(params, libname, sid, os),
   //the server is what takes on the specified libname
   inited_(false),
+  engine_(nullptr),
   finalized_(false),
   server_libname_(server_name),
   user_lib_time_(nullptr),
