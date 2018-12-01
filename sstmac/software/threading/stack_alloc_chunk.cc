@@ -58,11 +58,12 @@ namespace sw {
 //
 // Make a new chunk.
 //
-stack_alloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size) :
+stack_alloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size, bool protect) :
   addr_(nullptr),
-  size_(suggested_chunk_size),
-  stacksize_(stacksize), 
-  next_stack_(0)
+  protect_(protect),
+  size_((protect_) ? 2 * suggested_chunk_size : suggested_chunk_size),
+  stacksize_(stacksize),
+  step_size_((protect_) ? 2 * stacksize_ : stacksize_)
 {
   // Now allocate our chunk.
   int mmap_flags = MAP_PRIVATE | MAP_ANON;
@@ -77,20 +78,33 @@ stack_alloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size) :
   //make sure we are aligned on boundaries of size stack_size
   size_t stack_mod = ((size_t)addr_) % stacksize_;
   if (stack_mod != 0){ //this aligns us on boundaries
-    next_stack_ = stacksize_ - stack_mod;
+    next_stack_offset_ = stacksize_ - stack_mod;
+  }
+
+  // If protected we need to mprotect the first stack and advance our offset to
+  // the end of the second stack
+  if(protect_){
+    // Start protection on the first stack
+    auto protected_offset_ = next_stack_offset_;
+    next_stack_offset_ += stacksize_; // Second stack is first usable stack
+
+    while(protected_offset_ + step_size_ < size_){
+      void *protected_address = addr_ + protected_offset_;
+      mprotect(protected_address, stacksize_, PROT_NONE);
+      protected_offset_ += step_size_;
+    }
   }
 }
 
 void* 
 stack_alloc::chunk::get_next_stack() {
-  size_t unit = stacksize_;
-  if(next_stack_+unit >= size_) {
+  if(next_stack_offset_ + step_size_ >= size_) {
     return nullptr;
-  } else {
-    void* rv = addr_ + next_stack_;
-    next_stack_ += unit;
-    return rv;
-  }
+  } 
+
+  void* rv = addr_ + next_stack_offset_;
+  next_stack_offset_ += step_size_;
+  return rv;
 }
 
 stack_alloc::chunk::~chunk()
@@ -99,7 +113,6 @@ stack_alloc::chunk::~chunk()
     munmap(addr_, size_);
   }
 }
-
 
 }
 } // end of namespace sstmac
