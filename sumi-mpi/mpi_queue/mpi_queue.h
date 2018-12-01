@@ -51,6 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
 #include <sumi-mpi/mpi_types/mpi_type.h>
 
+#include <sstmac/software/process/progress_queue.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 
 #include <sprockit/factories/factory.h>
@@ -77,8 +78,9 @@ class mpi_queue
   friend class eager0;
   friend class eager1;
   friend class rendezvous_get;
-  friend class mpi_queue_send_request;
   friend class mpi_queue_recv_request;
+
+  using progress_queue = sstmac::sw::multi_progress_queue<message>;
 
  public:
   mpi_queue(sprockit::sim_parameters* params, int task_id,
@@ -194,6 +196,8 @@ class mpi_queue
 
   /// Probe requests watching
   std::list<mpi_queue_probe_request*> probelist_;
+
+  progress_queue queue_;
 
   task_id taskid_;
 

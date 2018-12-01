@@ -50,8 +50,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/software/process/key.h>
+#include <sstmac/software/process/progress_queue.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
-
 
 #include <sumi/message_fwd.h>
 #include <sumi/collective.h>
@@ -69,6 +69,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 
 #include <unordered_map>
+#include <queue>
 
 DeclareDebugSlot(sumi);
 
@@ -86,12 +87,13 @@ struct enum_hash {
   }
 };
 
-class collective_engine;
 
 class transport : public sstmac::sw::api {
   DeclareFactory(transport)
  public:
   RegisterAPI("sumi_transport", transport)
+
+  using default_progress_queue = sstmac::sw::multi_progress_queue<message>;
 
   transport(sprockit::sim_parameters* params,
             sstmac::sw::software_id sid,
@@ -231,7 +233,9 @@ class transport : public sstmac::sw::api {
    @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  message* poll(bool blocking, int cq_id, double timeout = -1);
+  message* poll(bool blocking, int cq_id, double timeout = -1){
+    return default_progress_queue_.find(cq_id, blocking, timeout);
+  }
 
   /**
    Check all completion queues if a message has been received.
@@ -241,7 +245,9 @@ class transport : public sstmac::sw::api {
    @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  message* poll(bool blocking, double timeout = -1);
+  message* poll(bool blocking, double timeout = -1){
+    return default_progress_queue_.find_any(blocking, timeout);
+  }
 
   /**
    Block until a message is received.
@@ -256,7 +262,27 @@ class transport : public sstmac::sw::api {
     return poll(true, cq_id, timeout);
   }
 
-  int allocate_cq();
+  int allocate_cq_id(){
+    if (free_cq_ids_.empty()){
+      int id = completion_queues_.size();
+      completion_queues_.emplace_back();
+      return id;
+    } else {
+      int id = free_cq_ids_.front();
+      free_cq_ids_.pop();
+      return id;
+    }
+  }
+
+  int allocate_default_cq(){
+    int id = allocate_cq_id();
+    allocate_cq(id, std::bind(&default_progress_queue::incoming,
+                          &default_progress_queue_,
+                          id, std::placeholders::_1));
+    return id;
+  }
+
+  void allocate_cq(int id, std::function<void(message*)>&& f);
 
   collective_engine* engine() const {
     return engine_;
@@ -300,10 +326,6 @@ class transport : public sstmac::sw::api {
 
  private:    
   transport(sprockit::sim_parameters* params);
-
-  void block(std::list<sstmac::sw::thread*>& threads, double timeout);
-
-  message* find_message();
   
   void validate_api();
 
@@ -311,11 +333,7 @@ class transport : public sstmac::sw::api {
 
   uint64_t allocate_flow_id();
 
-  std::vector<std::list<message*>> completion_queues_;
-
-  std::vector<std::list<sstmac::sw::thread*>> cq_blocked_threads_;
-
-  std::list<sstmac::sw::thread*> blocked_threads_;
+  std::vector<std::function<void(message*)>> completion_queues_;
 
   uint32_t component_id_;
 
@@ -347,11 +365,17 @@ class transport : public sstmac::sw::api {
 
   std::map<int,std::list<message*>> held_;
 
+  std::queue<int> free_cq_ids_;
+
   collective_engine* engine_;
 
   std::string server_libname_;
 
   sstmac::sw::task_mapping::ptr rank_mapper_;
+
+  default_progress_queue default_progress_queue_;
+
+  std::function<void(sstmac::hw::network_message*)> nic_ioctl_;
 
 };
 
@@ -576,6 +600,7 @@ class collective_engine
   bool use_put_protocol_;
 
   int system_collective_tag_;
+
 };
 
 

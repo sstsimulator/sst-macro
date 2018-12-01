@@ -68,9 +68,7 @@ RegisterNamespaces("nic", "message_sizes", "traffic_matrix",
 RegisterKeywords(
 { "nic_name", "DEPRECATED: the type of NIC to use on the node" },
 { "network_spyplot", "DEPRECATED: the file root of all stats showing traffic matrix" },
-{ "post_bandwidth", "the throughput of the NIC posting messages" },
 { "post_latency", "the latency of the NIC posting messages" },
-{ "pipeline_fraction", "the fraction of NIC post work that can be pipelined" },
 );
 
 #define DEFAULT_NEGLIGIBLE_SIZE 256
@@ -87,29 +85,12 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   local_bytes_sent_(nullptr),
   global_bytes_sent_(nullptr),
   parent_(parent),
-  event_mtl_handler_(nullptr),
   my_addr_(parent->addr()),
-  nic_pipeline_multiplier_(0.),
-  logp_switch_(nullptr),
-  post_inv_bw_(0),
-  post_latency_(0),
-  next_free_(0),
+  logp_link_(nullptr),
+  os_(parent->os()),
+  queue_(parent->os()),
   connectable_subcomponent(parent) //no self events with NIC
 {
-  event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
-  //node_handler_ = new_handler(parent, &node::handle);
-
-  if (params->has_param("post_latency")){
-    post_latency_ = params->get_time_param("post_latency");
-    sprockit::sim_parameters* inj_params = params->get_namespace("injection");
-    double bw = inj_params->get_bandwidth_param("bandwidth");
-    post_inv_bw_ = 1.0 / bw;
-    //by default, assume very little contention on the nic
-    double nic_pipeline_fraction = params->get_double_param("pipeline_fraction");
-    //we multiply by the percent that is NOT pipelineable
-    nic_pipeline_multiplier_ = 1.0 - nic_pipeline_fraction;
-  }
-
   negligible_size_ = params->get_optional_int_param("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
   spy_num_messages_ = optional_stats<stat_spyplot>(parent,
@@ -123,24 +104,26 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
   //global_bytes_sent_->set_label("NIC Total Bytes Sent");
   hist_msg_size_ = optional_stats<stat_histogram>(parent,
         params, "message_size_histogram", "histogram");
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_mtl_handler_ = new_handler(this, &nic::mtl_handle);
-#endif
 }
 
 nic::~nic()
 {
   //if (node_handler_) delete node_handler_;
-  if (event_mtl_handler_) delete event_mtl_handler_;
+  //if (event_mtl_handler_) delete event_mtl_handler_;
   //if (spy_bytes_) delete spy_bytes_;
   //if (spy_num_messages_) delete spy_num_messages_;
   //if (local_bytes_sent_) delete local_bytes_sent_;
   //if (global_bytes_sent_) delete global_bytes_sent_;
   //if (hist_msg_size_) delete hist_msg_size_;
 #if !SSTMAC_INTEGRATED_SST_CORE
-  delete link_mtl_handler_;
+  //delete link_mtl_handler_;
 #endif
+}
+
+event_handler*
+nic::mtl_handler() const
+{
+  return new_handler(const_cast<nic*>(this), &nic::mtl_handle);
 }
 
 void
@@ -154,15 +137,21 @@ nic::delete_statics()
 {
 }
 
-void
-nic::inject_send(network_message* netmsg, sw::operating_system* os)
+std::function<void(network_message*)>
+nic::ctrl_ioctl()
 {
-  uint64_t bytes = netmsg->byte_length();
-  timestamp delay = post_latency_ + timestamp(post_inv_bw_ * bytes);
-  timestamp nic_ready = next_free_ + delay;
-  next_free_ = next_free_ + delay * nic_pipeline_multiplier_;
-  os->sleep_until(nic_ready);
+  return std::bind(&event_link::send, logp_link_, std::placeholders::_1);
+}
 
+std::function<void(network_message*)>
+nic::data_ioctl()
+{
+  return std::bind(&nic::inject_send, this, std::placeholders::_1);
+}
+
+void
+nic::inject_send(network_message* netmsg)
+{
   if (netmsg->toaddr() == my_addr_){
     intranode_send(netmsg);
   } else {
@@ -174,13 +163,6 @@ nic::inject_send(network_message* netmsg, sw::operating_system* os)
 void
 nic::recv_message(network_message* netmsg)
 {
-  if (parent_->failed()){
-    return;
-  }
-
-  nic_debug("receiving message %s",
-    netmsg->to_string().c_str());
-
   nic_debug("handling message %s:%lu of type %s from node %d while running",
     netmsg->to_string().c_str(),
     netmsg->flow_id(),
@@ -196,16 +178,15 @@ nic::recv_message(network_message* netmsg)
     }
     case network_message::nvram_get_request: {
       netmsg->nic_reverse(network_message::nvram_get_payload);
-      internode_send(netmsg);
-      break;
-    }
-    case network_message::rdma_get_sent_ack:
-    case network_message::payload_sent_ack:
-    case network_message::rdma_put_sent_ack: {
+      //internode_send(netmsg);
       parent_->handle(netmsg);
       break;
     }
-    case network_message::failure_notification: {
+    case network_message::failure_notification:
+    case network_message::rdma_get_sent_ack:
+    case network_message::payload_sent_ack:
+    case network_message::rdma_put_sent_ack: {
+      //node_link_->send(netmsg);
       parent_->handle(netmsg);
       break;
     }
@@ -215,7 +196,8 @@ nic::recv_message(network_message* netmsg)
     case network_message::nvram_get_payload:
     case network_message::payload: {
       netmsg->take_off_wire();
-      send_to_node(netmsg);
+      parent_->handle(netmsg);
+      //node_link_->send(netmsg);
       break;
     }
     default: {
@@ -322,17 +304,10 @@ nic::internode_send(network_message* netmsg)
   //we might not have a logp overlay network
   if (negligible_size(netmsg->byte_length())){
     ack_send(netmsg);
-    send_to_logp_switch(netmsg);
+    logp_link_->send(netmsg);
   } else {
     do_send(netmsg);
   }
-}
-
-void
-nic::send_to_logp_switch(network_message* netmsg)
-{
-  nic_debug("send to logP switch %s", netmsg->to_string().c_str());
-  logp_switch_->send(netmsg);
 }
 
 void

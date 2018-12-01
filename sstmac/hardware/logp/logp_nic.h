@@ -115,10 +115,6 @@ class logp_nic :
 
   event_handler* ack_handler_;
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* payload_handler_;
-#endif
-
 };
 
 }

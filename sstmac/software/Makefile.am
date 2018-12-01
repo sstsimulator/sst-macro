@@ -22,6 +22,7 @@ libsstmac_sw_la_LIBADD =
 libsstmac_sw_la_SOURCES = \
   ami/ami.cc \
   api/api.cc \
+  process/progress_queue.cc \
   process/compute_scheduler.cc \
   process/cpuset_compute_scheduler.cc \
   process/simple_compute_scheduler.cc \
@@ -76,6 +77,7 @@ nobase_library_include_HEADERS = \
   api/api.h \
   api/api_fwd.h \
   process/gdb.h \
+  process/progress_queue.h \
   process/simple_compute_scheduler.h \
   process/cpuset_compute_scheduler.h \
   process/compute_scheduler.h \

@@ -75,11 +75,6 @@ sculpin_nic::sculpin_nic(sprockit::sim_parameters* params, node* parent) :
   //make port 0 a copy of the injection params
   sprockit::sim_parameters* port0_params = params->get_optional_namespace("port0");
   inj_params->combine_into(port0_params);
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  ack_handler_ = new_handler(this, &sculpin_nic::handle_credit);
-  payload_handler_ = new_handler(this, &sculpin_nic::handle_payload);
-#endif
 }
 
 timestamp
@@ -106,39 +101,23 @@ sculpin_nic::setup()
 
 sculpin_nic::~sculpin_nic() throw ()
 {
-#if !SSTMAC_INTEGRATED_SST_CORE
-  delete ack_handler_;
-  delete payload_handler_;
-#endif
   if (inj_link_) delete inj_link_;  
 }
 
 link_handler*
 sculpin_nic::payload_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   if (port == nic::LogP){
     return new_link_handler(this, &nic::mtl_handle);
   } else {
     return new_link_handler(this, &sculpin_nic::handle_payload);
   }
-#else
-  if (port == nic::LogP){
-    return link_mtl_handler_;
-  } else {
-    return payload_handler_;
-  }
-#endif
 }
 
 link_handler*
 sculpin_nic::credit_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &sculpin_nic::handle_credit);
-#else
-  return ack_handler_;
-#endif
 }
 
 void
@@ -150,10 +129,8 @@ sculpin_nic::connect_output(
 {
   if (src_outport == Injection){
     inj_link_ = link;
-#if SSTMAC_INTEGRATED_SST_CORE
   } else if (src_outport == LogP) {
-    logp_switch_ = link;
-#endif
+    logp_link_ = link;
   } else {
     spkt_abort_printf("Invalid switch port %d in pisces_nic::connect_output", src_outport);
   }

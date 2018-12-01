@@ -1866,13 +1866,7 @@ The methods are not pure virtual.  Depending on the congestion model,  the NIC m
 Upon receipt, just as for ACKs, the NIC should deliver the message to the node to interpret.
 In general, `nic::handle` is intended to handle packets. 
 If a NIC supports direct handling of complete messages (MTL) instead of packets (BTL),
-it should provide a message handler:
-
-````
-event_handler* mtl_handler() const {
-  return mtl_handler_;
-}
-````
+it should provide a message handler.
 
 A special completion queue object tracks chunks and processes out-of-order arrivals,
 notifying the NIC when the entire message is done.

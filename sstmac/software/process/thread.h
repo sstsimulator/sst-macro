@@ -294,16 +294,28 @@ class thread
     return active_core_mask_;
   }
 
-  void set_active_core_mask(uint64_t mask){
-    active_core_mask_ = mask;
+  static inline void add_core(int core, uint64_t& mask){
+    mask = mask | (1<<core);
+  }
+
+  static inline void remove_core(int core, uint64_t& mask){
+    mask = mask & ~(1<<core);
+  }
+
+  void add_active_core(int core){
+    active_cores_.push_back(core);
+    add_core(core, active_core_mask_);
+  }
+
+  int pop_active_core() {
+    int core = active_cores_.back();
+    active_cores_.pop_back();
+    remove_core(core, active_core_mask_);
+    return core;
   }
 
   int num_active_cores() const {
-    return num_active_cores_;
-  }
-
-  void set_num_active_cores(int ncores) {
-    num_active_cores_ = ncores;
+    return active_cores_.size();
   }
 
   void compute_detailed(uint64_t flops, uint64_t intops,
@@ -367,6 +379,8 @@ class thread
   void spawn_omp_parallel();
 
  protected:
+  friend class core_allocate_guard;
+
   thread(sprockit::sim_parameters* params, software_id sid, operating_system* os);
 
   friend api* static_get_api(const char *name);
@@ -432,7 +446,9 @@ class thread
 
   bool timed_out_;
 
-  std::map<long, void*> tls_values_;
+  std::map<int, void*> tls_values_;
+
+  std::vector<int> active_cores_;
 
   int last_bt_collect_nfxn_;
 
@@ -447,8 +463,6 @@ class thread
   uint64_t cpumask_;
   
   uint64_t active_core_mask_;
-
-  int num_active_cores_;
 
   uint64_t block_counter_;
 

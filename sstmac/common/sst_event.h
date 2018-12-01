@@ -131,13 +131,14 @@ class event_queue_entry : public event
 class callback :
   public event_queue_entry
 {
+ public:
+  virtual ~callback(){}
+
  protected:
   callback(uint32_t local) :
     event_queue_entry(local, local)
   {
   }
-
-  virtual ~callback(){}
 
 };
 

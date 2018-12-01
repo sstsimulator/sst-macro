@@ -52,17 +52,7 @@ RegisterDebugSlot(compute_scheduler, "Print all debug information related to the
 namespace sstmac {
 namespace sw {
 
-compute_scheduler::compute_scheduler()
-{
-}
 
-void
-compute_scheduler::configure(int ncores, int nsocket)
-{
-  ncores_ = ncores * nsocket;
-  nsocket_ = nsocket;
-  cores_per_socket_ = ncores;
-}
 
 } //end namespace hw
 } //end of namespace sstmac

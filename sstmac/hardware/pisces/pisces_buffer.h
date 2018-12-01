@@ -72,16 +72,14 @@ class pisces_buffer :
 
   void handle_payload(event* ev) override;
 
+  timestamp send_payload(pisces_packet* pkt);
+
   bool space_to_send(int vc, int bytes){
     return credits_[vc] >= bytes;
   }
 
   int num_credit(int vc) const {
     return credits_[vc];
-  }
-
-  event_handler* payload_handler() const {
-    return payload_handler_;
   }
 
   std::string pisces_name() const override {
@@ -101,56 +99,19 @@ class pisces_buffer :
   output output_;
   uint32_t bytes_delayed_;
 
- int num_vc_;
- std::vector<payload_queue> queues_;
- std::vector<int> credits_;
+  int num_vc_;
+  std::vector<payload_queue> queues_;
+  std::vector<int> credits_;
 #if SSTMAC_SANITY_CHECK
- std::vector<int> initial_credits_;
+  std::vector<int> initial_credits_;
 #endif
 
- void build_blocked_messages();
+  void build_blocked_messages();
 
- pisces_bandwidth_arbitrator* arb_;
- std::set<int> deadlocked_channels_;
- std::map<int, std::list<pisces_packet*> > blocked_messages_;
- int packet_size_;
- event_handler* payload_handler_;
-
-};
-
-class pisces_endpoint :
-  public pisces_sender
-{
- public:
-  pisces_endpoint(sprockit::sim_parameters* params,
-                  event_scheduler* parent,
-                  event_handler* output);
-
-  ~pisces_endpoint();
-
-  void handle_credit(event* ev) override;
-
-  void handle_payload(event* ev) override;
-
-  std::string pisces_name() const override {
-    return "endpoint";
-  }
-
-  void set_output(sprockit::sim_parameters* params,
-    int this_outport, int dst_inport,
-    event_link* link) override;
-
-  void set_input(
-    sprockit::sim_parameters* params,
-    int this_inport, int src_outport,
-    event_link* link) override {
-    input_.port_to_credit = src_outport;
-    input_.link = link;
-  }
-
- private:
-  input input_;
-  event_handler* output_handler_;
+  pisces_bandwidth_arbitrator* arb_;
+  std::set<int> deadlocked_channels_;
+  std::map<int, std::list<pisces_packet*> > blocked_messages_;
+  int packet_size_;
 
 };
 

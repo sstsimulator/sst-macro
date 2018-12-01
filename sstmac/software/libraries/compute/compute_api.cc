@@ -85,7 +85,7 @@ extern "C" int sstmac_fsleep(double secs){
 }
 
 extern "C" void sstmac_compute(double secs){
-  sstmac::sw::operating_system::current_thread()->parent_app()->compute(sstmac::timestamp(secs));
+  sstmac::sw::operating_system::current_os()->compute(secs);
 }
 
 extern "C" void sstmac_memread(uint64_t bytes){

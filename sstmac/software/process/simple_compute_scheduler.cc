@@ -51,7 +51,7 @@ namespace sstmac {
 namespace sw {
 
 void
-simple_compute_scheduler::reserve_core(thread* thr)
+simple_compute_scheduler::reserve_cores(int ncores, thread* thr)
 {
 #if SSTMAC_SANITY_CHECK
   if (ncore_active_ > ncores_){
@@ -61,24 +61,34 @@ simple_compute_scheduler::reserve_core(thread* thr)
       ncore_active_, ncores_);
   }
 #endif
-  int total_cores_needed = thr->num_active_cores() + ncore_active_;
+  int total_cores_needed = ncores + ncore_active_;
   if (total_cores_needed > ncores_){
-    pending_threads_.push_back(thr);
+    pending_threads_.emplace_back(ncores, thr);
     os_->block();
   }
-  //If I got here, there are either open cores or I timed out
-  ncore_active_ += thr->num_active_cores();
   //no worrying about masks
+  for (int i=ncore_active_; i < ncore_active_ + ncores; ++i){
+    thr->add_active_core(i);
+  }
+  ncore_active_ += ncores;
 }
 
 void
-simple_compute_scheduler::release_core(thread* thr)
+simple_compute_scheduler::release_cores(int ncores, thread* thr)
 {
-  ncore_active_ -= thr->num_active_cores();
-  if (!pending_threads_.empty()){
-    thread* next = pending_threads_.front();
-    pending_threads_.pop_front();
-    os_->unblock(next);
+  ncore_active_ -= ncores;
+  for (int i=0; i < ncores; ++i){
+    thr->pop_active_core();
+  }
+
+  while (!pending_threads_.empty()){
+    auto pair = pending_threads_.front();
+    int ncores_needed = pair.first;
+    int ncores_free = ncores_ - ncore_active_;
+    if (ncores_free >= ncores_needed){
+      pending_threads_.pop_front();
+      os_->unblock(pair.second);
+    }
   }
 }
 

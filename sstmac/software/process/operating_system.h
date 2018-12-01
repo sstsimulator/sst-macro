@@ -56,6 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
 #include <sstmac/hardware/common/flow_fwd.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/thread_lock.h>
 
@@ -227,6 +228,8 @@ class operating_system :
     return nthread_;
   }
 
+  void reassign_cores(thread* thr);
+
   static void delete_statics();
 
   static operating_system* current_os(){
@@ -257,40 +260,9 @@ class operating_system :
    */
   void execute(ami::COMP_FUNC, event* data, int nthr = 1);
 
-  /**
-   * @brief execute Execute a communication function.
-   * This function MUST begin on a user-space thread
-   * since it may block and context switch until completion.
-   * To invoke compute operations for the main DES thread,
-   * use execute_kernel
-   * @param data  Event carrying all the data describing the compute
-   */
-  void execute(ami::COMM_FUNC func, flow* data){
-    return execute_kernel(func, data);
-  }
+  std::function<void(hw::network_message*)> nic_data_ioctl();
 
-  /**
-   * @brief execute Execute a compute function.
-   * This function takes place in "kernel" land
-   * and will never block and context switch.
-   * This function can therefore run on the main DES thread
-   * @param func  The function to perform
-   * @param data  Event carrying all the data describing the compute
-   * @return A return code specifying success or failure
-   */
-  void execute_kernel(ami::COMM_FUNC func, flow* data);
-
-  /**
-   * @brief execute Enqueue an operation to perform
-   * This function takes place in "kernel" land
-   * and will never block and context switch.
-   * This function can therefore run on the main DES thread.
-   * The function must run asynchronously and immediately return
-   * with no virtual time advancing.
-   * @param func  The function to perform
-   * @param data  Event carrying all the data describing the compute
-   */
-  void async_kernel(ami::SERVICE_FUNC func, event* data);
+  std::function<void(hw::network_message*)> nic_ctrl_ioctl();
   
   /**
    * @brief block Block the currently running thread context.
@@ -463,7 +435,28 @@ class operating_system :
 
   bool handle_library_event(const std::string& name, event* ev);
 
+  struct core_allocate_guard {
+    core_allocate_guard(operating_system* os, thread* thr) :
+      thr_(thr), os_(os)
+    {
+      os->allocate_core(thr);
+    }
+
+    ~core_allocate_guard(){
+      os_->deallocate_core(thr_);
+    }
+
+    operating_system* os_;
+    thread* thr_;
+  };
+
+
  private:
+  friend class core_allocate_guard;
+  void allocate_core(thread* thr);
+  void deallocate_core(thread* thr);
+
+
   int thread_id_;
   int nthread_;
   hw::node* node_;

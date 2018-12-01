@@ -127,17 +127,15 @@ sculpin_switch::sculpin_switch(
   if (vtk_) vtk_->configure(my_addr_, top_);
 #endif
 #endif
-#if !SSTMAC_INTEGRATED_SST_CORE
-  payload_handler_ = new_handler(this, &sculpin_switch::handle_payload);
-  credit_handler_ = new_handler(this, &sculpin_switch::handle_credit);
-#endif
+
   ports_.resize(top_->max_num_ports());
   for (int i=0; i < ports_.size(); ++i){
     ports_[i].id = i;
     ports_[i].seqnum = 0;
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
-    traffic_intensity.push_back(registerStatistic<traffic_event>("traffic_intensity", getName() + std::to_string(ports_[i].id)));
+    traffic_intensity.push_back(registerStatistic<traffic_event>(
+              "traffic_intensity", getName() + std::to_string(ports_[i].id)));
 #endif
 #endif
   }
@@ -174,10 +172,6 @@ sculpin_switch::sculpin_switch(
 sculpin_switch::~sculpin_switch()
 {
   if (router_) delete router_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (credit_handler_) delete credit_handler_;
-  if (payload_handler_) delete payload_handler_;
-#endif
   for (port& p : ports_){
     if (p.link) delete p.link;
   }
@@ -414,21 +408,13 @@ sculpin_switch::to_string() const
 link_handler*
 sculpin_switch::credit_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &sculpin_switch::handle_credit);
-#else
-  return credit_handler_;
-#endif
 }
 
 link_handler*
 sculpin_switch::payload_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &sculpin_switch::handle_payload);
-#else
-  return payload_handler_;
-#endif
 }
 
 }

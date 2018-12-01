@@ -413,7 +413,7 @@ app::run()
     int launch_root = os_->node()->launch_root();
     job_stop_event* lev = new job_stop_event(os_->node()->allocate_unique_id(),
                                              sid_.app_, unique_name_, launch_root, os_->addr());
-    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
+    os_->nic_ctrl_ioctl()(lev);
   }
   task_mapping::remove_global_mapping(sid_.app_, unique_name_);
   thread_info::deregister_user_space_virtual_thread(stack_);

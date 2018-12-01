@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/hardware/common/unique_id.h>
+#include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/common/failable.h>
 
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
@@ -74,9 +75,7 @@ DeclareDebugSlot(node);
 namespace sstmac {
 namespace hw {
 
-class node :
-  public failable,
-  public connectable_component
+class node : public failable, public connectable_component
 {
   DeclareFactory(node,uint32_t,event_manager*)
  public:

@@ -48,7 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/sculpin/sculpin_switch.h>
-#include <sstmac/hardware/pisces/pisces_packetizer.h>
+#include <sstmac/hardware/common/recv_cq.h>
+
 
 namespace sstmac {
 namespace hw {
@@ -120,11 +121,6 @@ class sculpin_nic :
 
   timestamp ej_next_free_;
   recv_cq cq_;
-
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* payload_handler_;
-  link_handler* ack_handler_;
-#endif
 };
 
 }

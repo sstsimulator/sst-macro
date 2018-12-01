@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/hardware/node/node.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/event_callback.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -120,12 +121,8 @@ logp_nic::do_send(network_message* msg)
     parent_->send_self_event_queue(next_out_free_, ack_ev);
   }
 
-#if SSTMAC_INTEGRATED_SST_CORE
   timestamp extra_delay = start_send - now_;
-  logp_switch_->send_extra_delay(extra_delay, msg);
-#else
-  logp_switch_->send(start_send, msg);
-#endif
+  logp_link_->send_extra_delay(extra_delay, msg);
 }
 
 void
@@ -135,9 +132,7 @@ logp_nic::connect_output(
   int dst_inport,
   event_link* link)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  logp_switch_ = link;
-#endif
+  logp_link_ = link;
 }
 
 void
@@ -153,11 +148,7 @@ logp_nic::connect_input(
 link_handler*
 logp_nic::payload_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &nic::mtl_handle);
-#else
-  return mtl_handler();
-#endif
 }
 
 }

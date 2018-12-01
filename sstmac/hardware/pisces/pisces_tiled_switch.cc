@@ -73,11 +73,6 @@ pisces_tiled_switch::pisces_tiled_switch(sprockit::sim_parameters* params,
   nrows_ = params->get_int_param("nrows");
   ncols_ = params->get_int_param("ncols");
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-  payload_handler_ = new_handler(this, &pisces_tiled_switch::handle_payload);
-  ack_handler_ = new_handler(this, &pisces_tiled_switch::handle_credit);
-#endif
-
   init_components(params);
 }
 
@@ -275,21 +270,13 @@ pisces_tiled_switch::to_string() const
 link_handler*
 pisces_tiled_switch::credit_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &pisces_tiled_switch::handle_credit);
-#else
-  return ack_handler_;
-#endif
 }
 
 link_handler*
 pisces_tiled_switch::payload_handler(int port)
 {
-#if SSTMAC_INTEGRATED_SST_CORE
   return new_link_handler(this, &pisces_tiled_switch::handle_payload);
-#else
-  return payload_handler_;
-#endif
 }
 
 void
