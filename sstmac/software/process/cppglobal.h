@@ -176,6 +176,7 @@ CppGlobal* new_cpp_global(int& offset, Args&&... args){
 template <class Tag, class T, bool tls, class... Args>
 int inplace_cpp_global(Args&&... args){
   static CppInplaceGlobal<Tag,T,tls,Args...> init(std::forward<Args>(args)...);
+  static CppGlobalHolder holder(&init.alloc, tls);
   return init.offset;
 }
 
