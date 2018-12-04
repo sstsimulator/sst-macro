@@ -45,8 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_api_TIMEOUT_H
 #define sumi_api_TIMEOUT_H
 
-#include <sumi/message.h>
-
 namespace sumi {
 
 /**

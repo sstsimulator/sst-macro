@@ -160,7 +160,7 @@ pisces_switch::connect_output(
   out_buffer->set_stat_collector(buf_stats_);
   int buffer_inport = 0;
   auto out_link = allocate_local_link(xbar_->send_latency(), this,
-                new_link_handler(out_buffer, &pisces_buffer::handle_payload));
+                new_handler(out_buffer, &pisces_buffer::handle_payload));
   xbar_->set_output(port_params, src_outport, buffer_inport, out_link);
   auto in_link = allocate_local_link(out_buffer->credit_latency(), this, xbar_->credit_handler());
   out_buffer->set_input(port_params, buffer_inport, src_outport, in_link);

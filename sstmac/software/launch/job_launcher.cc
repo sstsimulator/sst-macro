@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/software/launch/job_launch_event.h>
 #include <sstmac/software/launch/launch_request.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/logp/logp_switch.h>
 #include <sstmac/common/runtime.h>
@@ -133,12 +134,14 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
       keep_going = true;
       last_used_aid = aid;
 
-      if (app_params->has_param("exe")){
-        //load and unload the library to bring statics in
-        std::string libname = app_params->get_param("exe");
-        void* handle = load_extern_library(libname, load_extern_path_str());
-        unload_extern_library(handle);
-      }
+      app::check_dlopen(aid, app_params);
+
+      //if (app_params->has_param("exe")){
+      //  //load and unload the library to bring statics in
+      //  std::string libname = app_params->get_param("exe");
+      //  void* handle = load_extern_library(libname, load_extern_path_str());
+      //  unload_extern_library(handle);
+      //}
 
     } else {
       keep_going = false;
@@ -175,6 +178,8 @@ job_launcher::component_id() const
 void
 job_launcher::cleanup_app(job_stop_event* ev)
 {
+  app::check_dlclose(ev->aid());
+
   task_mapping::ptr themap = task_mapping::global_mapping(ev->aid());
   task_mapping::remove_global_mapping(ev->aid(), ev->unique_name());
   const std::vector<node_id>& rank_to_node = themap->rank_to_node();

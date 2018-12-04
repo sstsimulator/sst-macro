@@ -129,9 +129,12 @@ mpi_queue::init()
   init.coll_cq_id = coll_cq_;
   init.pt2pt_cq_id = pt2pt_cq_;
   init.all_equal = true;
-  api_->engine()->allreduce(&init, &init, 1, sizeof(init_struct), 0, init_fxn,
-                            message::default_cq);
-  auto* cmsg = api_->engine()->block_until_next(message::default_cq);
+  auto cmsg = api_->engine()->allreduce(&init, &init, 1, sizeof(init_struct), 0, init_fxn,
+                            message::default_cq);\
+  if (cmsg == nullptr){
+    cmsg = api_->engine()->block_until_next(message::default_cq);
+  }
+
   if (cmsg->tag() != 0){
     spkt_abort_printf("got bad collective done message in mpi_queue::init");
   }

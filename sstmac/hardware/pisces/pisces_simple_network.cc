@@ -136,7 +136,8 @@ pisces_simple_network::send_pisces_network(Request* req, int vn)
 bool
 pisces_simple_network::send_logp_network(SST::Interfaces::SimpleNetwork::Request *req, int vn)
 {
-  simple_network_message* msg = new simple_network_message(req, req->dest, nid_, req->size_in_bits/8);
+  simple_network_message* msg = new simple_network_message(
+        req, req->dest, nid_, req->size_in_bits/8);
   //control network
   logp_link_->send(0, time_converter_, msg);
   if (send_functor_) (*send_functor_)(vn);

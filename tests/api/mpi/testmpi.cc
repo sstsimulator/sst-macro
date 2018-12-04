@@ -1558,8 +1558,11 @@ int USER_MAIN(int argc, char *argv[])
 
   double t_stop = get_time();
   double t_total = t_stop - t_start;
-  if (sumi::sstmac_mpi()->rank() == 0)
+  static bool printed = false;
+  if (!printed){
     printf("MPI test ran for %8.4fms\n", t_total*1e3);
+    printed = true;
+  } 
 
   return 0;
 }

@@ -65,8 +65,10 @@ using sprockit::range_error;
 using sprockit::spkt_error;
 
 extern "C" double sstmac_now();
+extern "C" void sstmac_sleep_precise(double secs);
 #else
 double sstmac_now();
+void sstmac_sleep_precise(double secs);
 #endif
 
 #endif

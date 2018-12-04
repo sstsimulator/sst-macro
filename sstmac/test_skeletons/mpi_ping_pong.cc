@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <vector>
 #include <sstmac/skeleton.h>
+#include <sprockit/keyword_registration.h>
 
 #define sstmac_app_name mpi_ping_pong
 

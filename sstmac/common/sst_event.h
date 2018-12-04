@@ -46,14 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_BACKENDS_NATIVE_SSTEVENT_H_INCLUDED
 
 #include <sstmac/common/serializable.h>
-#include <sstmac/common/event_handler.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/common/event_location.h>
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/event.h>
-#include <sst/core/output.h>
 #endif
 
 namespace sstmac {

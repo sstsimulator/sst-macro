@@ -348,6 +348,13 @@ thread::start_thread(thread* thr)
 }
 
 void
+thread::set_cpumask(uint64_t cpumask)
+{
+  cpumask_ = cpumask;
+  os_->reassign_cores(this);
+}
+
+void
 thread::join()
 {
   //JJW 03/08/2018 It can now happen with std::thread wrappers

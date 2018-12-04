@@ -282,9 +282,7 @@ class thread
     cpumask_ = 0;
   }
 
-  void set_cpumask(uint64_t cpumask){
-    cpumask_ = cpumask;
-  }
+  void set_cpumask(uint64_t cpumask);
   
   uint64_t cpumask() const {
     return cpumask_;

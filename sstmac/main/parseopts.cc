@@ -145,7 +145,7 @@ parse_opts(int argc, char **argv, opts &oo)
         //this set an input flag
         break;
       case 'e':
-        sstmac::load_extern_library(optarg, "");
+        oo.params->add_param_override("node.app1.exe", optarg);
         break;
       case 'h':
         oo.help = 1;

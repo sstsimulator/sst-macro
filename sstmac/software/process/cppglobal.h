@@ -16,7 +16,15 @@ class CppGlobal {
   virtual void allocate(void* globalPtr) = 0;
 };
 
-extern void registerCppGlobal(CppGlobal*, bool tls);
+struct CppGlobalHolder {
+  CppGlobalHolder(CppGlobal* glbl, bool tls);
+
+  ~CppGlobalHolder();
+
+ private:
+  CppGlobal* glbl_;
+  bool tls_;
+};
 
 namespace globals {
 
@@ -37,7 +45,6 @@ class CppGlobalImpl : public CppGlobal {
     offset_(offset),
     args_(std::forward<Args>(args)...)
   {
-    registerCppGlobal(this, tls);
   }
 
   void allocate(void* ptr) override {
@@ -62,7 +69,6 @@ class CppGlobalImpl<T[N], tls, Init> : public CppGlobal {
   CppGlobalImpl(int& offset, Init init) :
    offset_(offset)
   {
-    registerCppGlobal(this, tls);
     memcpy(init_, init, sizeof(init));
   }
 
@@ -99,7 +105,6 @@ class CppGlobalImpl<T[N], tls, Args...> : public CppGlobal {
    offset_(offset),
     args_(std::forward<Args>(args)...)
   {
-    registerCppGlobal(this, tls);
   }
 
   void allocate(void* ptr) override {
@@ -120,7 +125,6 @@ class CppGlobalImpl<T,tls,std::function<void(void*)>> : public CppGlobal
   CppGlobalImpl(int& offset, std::function<void(void*)> fxn) :
    offset_(offset), fxn_(fxn)
   {
-    registerCppGlobal(this, tls);
   }
 
   void allocate(void* ptr) override {

@@ -33,7 +33,7 @@ namespace ns {
  }
 }
 
-decltype(ns::B::caller) dtGlbl(0);void* __ptr_dtGlbl = &dtGlbl; int __sizeof_dtGlbl = sizeof(dtGlbl); extern int __offset_dtGlbl; sstmac::CppGlobal* dtGlbl_sstmac_ctor = sstmac::new_cpp_global<decltype(ns::  B::caller),false>(__offset_dtGlbl,0); 
+decltype(ns::B::caller) dtGlbl(0);void* __ptr_dtGlbl = &dtGlbl; int __sizeof_dtGlbl = sizeof(dtGlbl); extern int __offset_dtGlbl; sstmac::CppGlobalHolder dtGlbl_sstmac_ctor(sstmac::new_cpp_global<decltype(ns::  B::caller),false>(__offset_dtGlbl,0),false);
 
 void fxn()
 { char* sstmac_global_data = get_sstmac_global_data();int* sstmac_A__x=(int*)(sstmac_global_data + A::__offset_x); int* sstmac___ns__B__x=(int*)(sstmac_global_data + ::ns::B::__offset_x); int* sstmac___ns__ns2__C__xx=(int*)(sstmac_global_data + ::ns::ns2::C::__offset_xx); {
@@ -45,7 +45,7 @@ void fxn()
 struct DeclTyper {
   static int get(){ return 0; }
 };
-DeclTyper d;void* __ptr_d = &d; int __sizeof_d = sizeof(d); extern int __offset_d; sstmac::CppGlobal* d_sstmac_ctor = sstmac::new_cpp_global<  DeclTyper,false>(__offset_d); 
+DeclTyper d;void* __ptr_d = &d; int __sizeof_d = sizeof(d); extern int __offset_d; sstmac::CppGlobalHolder d_sstmac_ctor(sstmac::new_cpp_global<  DeclTyper,false>(__offset_d),false);
 
 int goReturn(){
   return decltype(d)::get();

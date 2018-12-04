@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
-#include <sstmac/hardware/common/packetizer.h>
 #include <sstmac/common/stats/stat_histogram.h>
 #include <sstmac/hardware/network/network_message.h>
 #include <sst/core/interfaces/simpleNetwork.h>
@@ -100,12 +99,24 @@ class simple_network_packet : public pisces_packet
  */
 class simple_network_message : public network_message
 {
+  NotSerializable(simple_network_packet)
+
  public:
   simple_network_message(SST::Interfaces::SimpleNetwork::Request* req,
                          node_id to, node_id from, int bytes) :
-    network_message(to, from, bytes),
+    network_message(uint64_t(-1), //flow_id irrelevant
+                    "", //libname irrelevant
+                    0, //aid irrelevant,
+                    to, from, bytes,
+                    false, //no ack
+                    nullptr, //no buffer
+                    network_message::header{}),
     req_(req)
   {
+  }
+
+  network_message* clone_injection_ack() const override {
+    return new simple_network_message(req_, toaddr(), fromaddr(), byte_length());
   }
 
   SST::Interfaces::SimpleNetwork::Request* req() const {

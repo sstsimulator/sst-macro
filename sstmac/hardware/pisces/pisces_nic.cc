@@ -71,7 +71,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
 
   self_mtl_link_ = allocate_local_link(timestamp(), parent,
-                                       new_link_handler(this, &nic::mtl_handle));
+                                    new_handler(this, &nic::mtl_handle));
 
   //make port 0 a copy of the injection params
   //this looks pointless, but is needed for integrated core (I think)

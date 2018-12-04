@@ -47,10 +47,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
-#include <sumi-mpi/mpi_api.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
+#include <mpi.h>
 
 #define sstmac_app_name mpi_all_collectives
 

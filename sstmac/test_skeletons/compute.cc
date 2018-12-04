@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
+#include <sstmac/software/process/backtrace.h>
 
 RegisterKeywords(
  { "nloop" , "the number of loops to perform" },

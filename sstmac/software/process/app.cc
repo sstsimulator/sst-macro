@@ -157,11 +157,12 @@ app::check_dlopen(int aid, sprockit::sim_parameters* params)
   }
 }
 
+
 void
-app::check_dlclose()
+app::check_dlclose(int aid)
 {
   dlopen_lock.lock();
-  auto iter = dlopens_.find(aid());
+  auto iter = dlopens_.find(aid);
   if (iter != dlopens_.end()){
     dlopen_entry& entry = iter->second;
     --entry.refcount;

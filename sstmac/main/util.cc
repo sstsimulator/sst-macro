@@ -56,6 +56,11 @@ sstmac_now(){
   return sstmac::sw::operating_system::current_os()->now().sec();
 }
 
+extern "C" void
+sstmac_sleep_precise(double secs){
+  sstmac::sw::operating_system::current_os()->sleep(secs);
+}
+
 sprockit::sim_parameters*
 get_params(){
   return sstmac::sw::operating_system::current_thread()->parent_app()->params();

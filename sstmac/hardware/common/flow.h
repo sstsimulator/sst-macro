@@ -48,8 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/serializable.h>
 #include <sstmac/common/node_address.h>
-#include <sprockit/metadata_bits.h>
 #include <sstmac/common/sst_event.h>
+#include <sprockit/printable.h>
 
 
 namespace sstmac {

@@ -220,7 +220,7 @@ class app : public thread
 
   static void check_dlopen(int aid, sprockit::sim_parameters* params);
 
-  void check_dlclose();
+  static void check_dlclose(int aid);
 
  protected:
   friend class thread;
@@ -233,6 +233,10 @@ class app : public thread
   sprockit::sim_parameters* params_;
 
  private:
+  void check_dlclose(){
+    check_dlclose(aid());
+  }
+
   char* allocate_data_segment(bool tls);
 
   void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes, int nthread);

@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_PROCESS_GLOBAL_H_INCLUDED
 #define SSTMAC_SOFTWARE_PROCESS_GLOBAL_H_INCLUDED
 
-//#include <sstream>
 #include <iostream>
 #include <sstmac/software/process/tls.h>
 #include <list>
@@ -102,6 +101,8 @@ class GlobalVariableContext {
   void registerCtor(CppGlobal* g){
     cppCtors.push_back(g);
   }
+
+  void unregisterCtor(CppGlobal* g);
 
  private:
   int stackOffset;

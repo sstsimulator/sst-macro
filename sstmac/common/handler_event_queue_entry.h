@@ -2,6 +2,7 @@
 #define sstmac_common_handler_queue_entry_H
 
 #include <sstmac/common/sst_event.h>
+#include <sstmac/common/event_handler.h>
 #include <sprockit/thread_safe_new.h>
 
 namespace sstmac {

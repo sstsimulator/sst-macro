@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sst_event.h>
 #include <sstmac/hardware/common/flow_fwd.h>
+#include <sprockit/printable.h>
 
 namespace sstmac {
 namespace hw {

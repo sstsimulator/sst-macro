@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <vector>
 #include <string>
 #include <stdio.h>
-//#include <regex>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/serializable.h>
 #include <unordered_map>
