@@ -104,7 +104,9 @@ class thread_safe_allocator
   struct rebind { typedef thread_safe_allocator<U> other; };
 
   void destroy(pointer p) { p->~T(); }
-  void construct(pointer p, const T& val){ new ((T*) p) T(val); }
+
+  template <class U, class... Args>
+  void construct(U* p, Args&&... args){ ::new ((void*)p) U(std::forward<Args>(args)...); }
 
   pointer allocate(size_type n, const void * = 0) {
     //ignore hints

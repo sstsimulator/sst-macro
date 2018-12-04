@@ -74,13 +74,13 @@ timestep                   1       0.1245        0.1245       99.99
     atomHalo               2       0.0003        0.0005        0.40
   force                    2       0.1238        0.2476      198.78
     eamHalo                2       0.0001        0.0002        0.13
-commHalo                  12       0.0000        0.0004        0.35
+commHalo                  12       0.0000        0.0004        0.34
 commReduce                12       0.0000        0.0002        0.15
 
 Timing Statistics Across 4 Ranks:
         Timer        Rank: Min(s)       Rank: Max(s)      Avg(s)    Stdev(s)
 _____________________________________________________________________________
-total                0:    0.2509       3:    0.2509      0.2509      0.0000
+total                0:    0.2509       0:    0.2509      0.2509      0.0000
 loop                 0:    0.1245       0:    0.1245      0.1245      0.0000
 timestep             0:    0.1245       0:    0.1245      0.1245      0.0000
   position           0:    0.0001       0:    0.0001      0.0001      0.0000
@@ -106,4 +106,4 @@ commReduce           0:    0.0002       0:    0.0002      0.0002      0.0000
  Average atom rate:              0.00 atoms/us
 ---------------------------------------------------
 
-Simulation is complete, simulated time: 250.98 ms
+Simulation is complete, simulated time: 250.972 ms
