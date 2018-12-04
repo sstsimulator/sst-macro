@@ -1,7 +1,7 @@
-T(sstmac_simple_daxpy) =   0.03129208 ms
-T(sstmac_simple_daxpy) =   0.03129208 ms
-T(sstmac_simple_daxpy) =   0.03209593 ms
-T(sstmac_simple_daxpy) =   0.03209593 ms
+T(sstmac_simple_daxpy) =   0.03129802 ms
+T(sstmac_simple_daxpy) =   0.03129802 ms
+T(sstmac_simple_daxpy) =   0.03208587 ms
+T(sstmac_simple_daxpy) =   0.03208587 ms
 T(sstmac_simple_dgemv) =   1.59976004 ms
 T(sstmac_simple_dgemv) =   1.59976004 ms
 T(sstmac_simple_dgemv) =   1.59951653 ms
@@ -14,4 +14,4 @@ T(sstmac_simple_ddot) =   0.04707617 ms
 T(sstmac_simple_ddot) =   0.04707617 ms
 T(sstmac_simple_ddot) =   0.04731239 ms
 T(sstmac_simple_ddot) =   0.04731239 ms
-Estimated total runtime of           0.08309785 seconds
+Estimated total runtime of           0.08309789 seconds

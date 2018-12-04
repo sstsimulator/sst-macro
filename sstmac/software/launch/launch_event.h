@@ -96,7 +96,8 @@ class launch_event : public hw::network_message
                const std::string& libname) :
     ty_(ty), tid_(tid),
     unique_name_(unique_name),
-    network_message(flow_id, libname, aid, to, from, sizeof(launch_event),
+    network_message(flow_id, libname, aid, to, from,
+                    256, //use rough fixed size to avoid platform-dependent sizeof(...)
                     false, nullptr, header{})
   {
   }

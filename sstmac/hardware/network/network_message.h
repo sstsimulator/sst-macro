@@ -111,7 +111,8 @@ class network_message : public flow
    void* remote_buf,
    rdma_get ctor_tag) :
     network_message(flow_id, libname, aid, to, from,
-                    sizeof(network_message), payload_size, needs_ack, local_buf, remote_buf, nullptr,
+                    64/*default to 64 bytes for now*/,
+                    payload_size, needs_ack, local_buf, remote_buf, nullptr,
                     rdma_get_request)
   {
   }
