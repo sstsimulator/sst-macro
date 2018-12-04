@@ -1,18 +1,18 @@
 Rank 0 on MPI_Comm 0 passed test: 1.02e-04
-Rank 0 on MPI_Comm 0 passed test: 8.80e-03
-Rank 0 on MPI_Comm 0 passed test: 9.26e-03
-Rank 0 on MPI_Comm 0 passed test: 9.36e-03
-Rank 0 on MPI_Comm 0 passed test: 9.55e-03
-Rank 0 on MPI_Comm 2 passed test: 9.59e-03
+Rank 0 on MPI_Comm 0 passed test: 8.79e-03
+Rank 0 on MPI_Comm 0 passed test: 9.25e-03
+Rank 0 on MPI_Comm 0 passed test: 9.35e-03
+Rank 0 on MPI_Comm 0 passed test: 9.53e-03
+Rank 0 on MPI_Comm 2 passed test: 9.58e-03
+Rank 0 on MPI_Comm 2 passed test: 9.61e-03
+Rank 0 on MPI_Comm 2 passed test: 9.61e-03
 Rank 0 on MPI_Comm 2 passed test: 9.62e-03
 Rank 0 on MPI_Comm 2 passed test: 9.62e-03
-Rank 0 on MPI_Comm 2 passed test: 9.63e-03
-Rank 0 on MPI_Comm 2 passed test: 9.63e-03
-Rank 0 on MPI_Comm 2 passed test: 9.63e-03
-Rank 0 on MPI_Comm 2 passed test: 1.07e-02
-Rank 0 on MPI_Comm 2 passed test: 1.07e-02
-Rank 0 on MPI_Comm 2 passed test: 1.07e-02
-Rank 0 on MPI_Comm 2 passed test: 1.07e-02
+Rank 0 on MPI_Comm 2 passed test: 9.62e-03
+Rank 0 on MPI_Comm 2 passed test: 1.06e-02
+Rank 0 on MPI_Comm 2 passed test: 1.06e-02
+Rank 0 on MPI_Comm 2 passed test: 1.06e-02
+Rank 0 on MPI_Comm 2 passed test: 1.06e-02
 Rank 0 on MPI_Comm 2 passed test: 1.07e-02
 Rank 0 on MPI_Comm 2 passed test: 1.07e-02
 Rank 0 on MPI_Comm 2 passed test: 1.09e-02
@@ -29,8 +29,8 @@ Rank 0 on MPI_Comm 2 passed test: 1.10e-02
 Rank 0 on MPI_Comm 2 passed test: 1.10e-02
 Rank 0 on MPI_Comm 2 passed test: 1.10e-02
 Rank 0 on MPI_Comm 2 passed test: 1.10e-02
-Rank 0 on MPI_Comm 2 passed test: 1.11e-02
-Rank 0 on MPI_Comm 2 passed test: 1.11e-02
+Rank 0 on MPI_Comm 2 passed test: 1.10e-02
+Rank 0 on MPI_Comm 2 passed test: 1.10e-02
 Rank 0 on MPI_Comm 2 passed test: 1.11e-02
 Rank 0 on MPI_Comm 2 passed test: 1.11e-02
 Rank 0 on MPI_Comm 3 passed test: 1.11e-02
@@ -123,4 +123,4 @@ Rank 0 on MPI_Comm 3 passed test: 1.15e-02
 Rank 0 on MPI_Comm 3 passed test: 1.15e-02
 Rank 0 on MPI_Comm 3 passed test: 1.16e-02
 Rank 0 on MPI_Comm 3 passed test: 1.16e-02
-Estimated total runtime of           0.01158337 seconds
+Estimated total runtime of           0.01157621 seconds

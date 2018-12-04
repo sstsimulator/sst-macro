@@ -318,8 +318,8 @@ dag_collective_actor::send_rdma_get_header(action* ac)
 {
   uint64_t num_bytes;
   void* buf = get_send_buffer(ac, num_bytes);
-  my_api_->smsg_send<collective_work_message>(ac->phys_partner, sizeof(collective_work_message), buf,
-                                              message::no_ack, cq_id_, message::collective,
+  my_api_->smsg_send<collective_work_message>(ac->phys_partner, 64, //use platform-independent size
+                                              buf, message::no_ack, cq_id_, message::collective,
                                               type_, dom_me_, ac->partner,
                                               tag_, ac->round,
                                               ac->nelems, type_size_, buf, collective_work_message::get); //do not ack the send
