@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <mpi.h>
 #include <sys/time.h>
+#include <cstring>
 #include "pic.h"
 
 void backfill(Patch& patch)

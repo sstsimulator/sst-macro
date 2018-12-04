@@ -1,6 +1,7 @@
 #include <vector>
 #include <cstdlib>
 #include <mpi.h>
+#include <cstring>
 #include <sprockit/keyword_registration.h>
 #include "pic.h"
 

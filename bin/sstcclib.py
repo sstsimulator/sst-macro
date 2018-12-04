@@ -414,11 +414,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
   if typ == "c++":
     if sstStdFlag and givenStdFlag:
-      #take whichever is greater
-      if sstStdFlag > givenStdFlag:
-        givenFlags.append(sstStdFlag)
-      else:
-        givenFlags.append(givenStdFlag)
+      sys.stderr.write("WARNING: SST compiled with %s, but app compiled with %s\n" % (sstStdFlag, givenStdFlag))
+      givenFlags.append(givenStdFlag)
     elif sstStdFlag:
       givenFlags.append(sstStdFlag)
     elif givenStdFlag:
