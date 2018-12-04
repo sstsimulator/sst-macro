@@ -85,7 +85,7 @@ rendezvous_get::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task
                       int tag, MPI_Comm comm, int seq_id, mpi_request* req)
 {
   void* send_buf = configure_send_buffer(count, buffer, type);
-  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, sizeof(mpi_message), nullptr,
+  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, 64/*fixed size, not sizeof()*/, nullptr,
                              sumi::message::no_ack, queue_->pt2pt_cq_id(), sumi::message::pt2pt,
                              src_rank, dst_rank, type->id,  tag, comm, seq_id,
                              count, type->packed_size(), send_buf, RENDEZVOUS_GET);
@@ -185,7 +185,7 @@ rendezvous_get::incoming_payload(mpi_message* msg)
   queue_->finalize_recv(msg, req);
   if (software_ack_){
     msg->advance_stage();
-    mpi_->smsg_send_response(msg, sizeof(mpi_message), nullptr,
+    mpi_->smsg_send_response(msg, 64/*more sizeof(...) fixes*/, nullptr,
                              sumi::message::no_ack, queue_->pt2pt_cq_id());
   } else {
     delete msg;
