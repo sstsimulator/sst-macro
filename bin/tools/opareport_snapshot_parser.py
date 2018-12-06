@@ -170,9 +170,9 @@ def sst_map(name_prefix, guid_name_map, link_table):
 
         cur_map = name_map[name] = {'outports': {}}
         for (outport, (guid, inport)) in link_table[guid].items():
-            cur_map['outports'][str(outport)] = {
+            cur_map['outports'][str(outport - 1)] = {
                 'destination': guid_name_map[guid],
-                'inport': inport}
+                'inport': inport - 1}
     return (name_map, unmapped)
 
 def named_routing_tables(routing_table, guid_name_map, lid_guid_map):
@@ -183,7 +183,7 @@ def named_routing_tables(routing_table, guid_name_map, lid_guid_map):
         cur_id = new_rt[guid_name_map[guid]] = {'routes': {}}
         for (lid, port) in lid_port_map.items():
             if lid in lid_guid_map: # Switches don't have LIDs
-                cur_id['routes'][guid_name_map[lid_guid_map[lid]]] = port
+                cur_id['routes'][guid_name_map[lid_guid_map[lid]]] = port - 1
     return new_rt
 
 # https://gist.github.com/angstwad/bf22d1822c38a92ec0a9#gistcomment-1986197
