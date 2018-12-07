@@ -311,18 +311,20 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
 
   int my_rank = rt_->me();
 
-  for (int i=0; i < num_leaf_switches_; ++i){
+  for (int i=0; i < num_switches_; ++i){
     switch_id sid(i);
-    int thread = partition_->thread_for_switch(i);
-    int target_rank = partition_->lpid_for_switch(sid);
     std::vector<topology::injection_port> nodes;
     topology_->endpoints_connected_to_injection_switch(sid, nodes);
+    if( !nodes.size() )
+      continue;
+    int thread = partition_->thread_for_switch(i);
+    int target_rank = partition_->lpid_for_switch(sid);
     interconn_debug("switch %d maps to target rank %d", i, target_rank);
 
     for (int n=0; n < nodes.size(); ++n){
       node_id nid = nodes[n].nid;
       auto local_logp_switch = logp_switches_[thread];
-      interconn_debug("building node %d on leaf switch %d", n, i);
+      interconn_debug("building node %d on leaf switch %d", nid, i);
 
       if (my_rank == target_rank){
         //local node - actually build it

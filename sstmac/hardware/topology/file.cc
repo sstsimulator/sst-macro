@@ -58,6 +58,9 @@ file::file(sprockit::sim_parameters* params) :
 {
   std::string fname = params->get_param("filename");
   std::ifstream in(fname);
+  if( in.fail() )
+    spkt_throw_printf(sprockit::input_error,
+      "file topology: failed to open file %s", fname.c_str());
   in >> json_;
 
   num_hops_ = json_.at("avg_num_hops");
