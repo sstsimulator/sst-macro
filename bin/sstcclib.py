@@ -57,14 +57,6 @@ def addPrefixAndRebase(prefix, path, newBase):
   folder, name = os.path.split(newPath)
   return os.path.join(newBase, name)
 
-def addClangArg(a, ret):
-  ret.append("--extra-arg=%s" % a)
-
-def addClangArgs(argList, ret):
-  for a in argList:
-    addClangArg(a,ret)
-  return ret
-  
 def runCmdArr(cmdArr,verbose):
   import sys,os
   if cmdArr:
@@ -193,6 +185,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   objectFiles = []
   warningArgs = []
   givenOptFlags = []
+  forwardedClangArgs = []
   objTarget = None
   ldTarget = None
   getObjTarget = False
@@ -212,14 +205,14 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         getObjTarget=False
     elif sarg == "--skeletonize":
       eatArg = True
-      os.environ["SSTMAC_SKELETONIZE"] = "1"
+      forwardedClangArgs.append(sarg)
       skeletonizing = True
     elif sarg == "--keep-exe":
       keepExe = True
       eatArg = True
-    elif sarg == "--memoize":
+    elif sarg.startswith("--memoize"):
       eatArg = True
-      os.environ["SSTMAC_MEMOIZE"] = "1"
+      forwardedClangArgs.append(sarg)
       memoizing = True
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)
@@ -618,18 +611,20 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       cxxInitSrcFile = addPrefixAndRebase("sstGlobals.pp.",srcFile,objBaseFolder) + ".cpp"
 
       clangCmdArr = [clangDeglobal]
-      if typ == "c++":
-        addClangArgs(clangCxxArgs, clangCmdArr)
-        addClangArgs(clangLibtoolingCxxFlagsStr.split(), clangCmdArr)
-      else:
-        addClangArgs(clangLibtoolingCFlagsStr.split(), clangCmdArr)
-      #oh, hell, I have to fix intrinsics
+      #don't use the clang --extra-arg anymore - put them after the '--'
+      clangCmdArr.append(ppTmpFile)
+      clangCmdArr.extend(forwardedClangArgs)
+      clangCmdArr.append("--")
+      #all of the compiler options go after the -- separator
+      #fix intrinsics which might not be known to clang if using a different compiler
       intrinsicsFixerPath = os.path.join(cleanFlag(includeDir), "sstmac", "replacements", "fixIntrinsics.h")
       intrinsicsFixer = "-include%s" % intrinsicsFixerPath
-      addClangArg(intrinsicsFixer, clangCmdArr)
-
-      clangCmdArr.append(ppTmpFile)
-      clangCmdArr.append("--")
+      clangCmdArr.append(intrinsicsFixer)
+      if typ == "c++":
+        clangCmdArr.extend(clangCxxArgs)
+        clangCmdArr.extend(clangLibtoolingCxxFlagsStr.split())
+      else:
+        clangCmdArr.extend(clangLibtoolingCFlagsStr.split())
       clangCmdArr.extend(warningArgs)
       clangCmd = " ".join(clangCmdArr)
       if verbose: sys.stderr.write("%s\n" % clangCmd)
