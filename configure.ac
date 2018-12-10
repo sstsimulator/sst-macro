@@ -194,7 +194,7 @@ CHECK_STL_REPLACEMENT_HEADERS()
 
 CHECK_COMM_SYNC_STATS()
 
-CHECK_CLANG_LIBTOOLING()
+CHECK_CLANG_LLVM()
 
 #-------------------------------------------------
 # Configure subdirs
@@ -235,6 +235,7 @@ AC_CONFIG_FILES([
  sstmac/backends/common/Makefile
  sstmac/backends/native/Makefile
  sstmac/backends/mpi/Makefile
+ sstmac/llvm/Makefile
  sstmac/main/Makefile
  sstmac/common/Makefile
  sstmac/replacements/Makefile

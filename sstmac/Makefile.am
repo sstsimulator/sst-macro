@@ -22,7 +22,8 @@ STD_SUBDIRS = \
   skeletons \
   test_skeletons \
   sst_core \
-  install
+  install \
+  llvm
 
 library_includedir=$(includedir)/sstmac
 

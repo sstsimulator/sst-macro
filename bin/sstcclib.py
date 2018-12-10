@@ -88,6 +88,9 @@ class TempFiles:
           sys.stderr.write("%s\n" % cmd)
         os.system(cmd)
 
+def addLlvmPasses(passList, passStr):
+  passList.extend(passStr.split(","))
+
 def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=True, runClang=True):
   extraLibsStr = extraLibs
   extraLibs = extraLibs.split()
@@ -175,7 +178,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
 
   sysargs = sys.argv[1:]
-
   asmFiles = False
   givenFlags = []
   controlArgs = []
@@ -191,6 +193,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   getObjTarget = False
   givenStdFlag = None
   validGccArgs = []
+  llvmPasses = []
   for arg in sysargs:
     eatArg = False
     sarg = arg.strip().strip("'")
@@ -205,12 +208,18 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         getObjTarget=False
     elif sarg == "--skeletonize":
       eatArg = True
+      if "=" in sarg:
+        passStr = sarg.split("=")[1]
+        addLlvmPasses(llvmPasses, passStr, prefix)
       forwardedClangArgs.append(sarg)
       skeletonizing = True
     elif sarg == "--keep-exe":
       keepExe = True
       eatArg = True
     elif sarg.startswith("--memoize"):
+      if "=" in sarg:
+        passStr = sarg.split("=")[1]
+        addLlvmPasses(llvmPasses, passStr)
       eatArg = True
       forwardedClangArgs.append(sarg)
       memoizing = True
@@ -455,6 +464,17 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   if redefineSymbols: 
     extraCppFlags.insert(0,"-I%s" % repldir)
 
+  llvmPassesArr = []
+  if llvmPasses:
+    llvmPassesArr.append("-Xclang")
+    llvmPassesArr.append("-disable-O0-optnone")
+  for passName in llvmPasses:
+    llvmPassesArr.append("-Xclang")
+    llvmPassesArr.append("-load")
+    llvmPassesArr.append("-Xclang")
+    fullName = "lib%s.so" % passName
+    llvmPassesArr.append(os.path.join(prefix, "lib", fullName))
+  llvmPassesStr = " ".join(llvmPassesArr)
   
   cxxCmdArr = []
   ldCmdArr = []
@@ -643,6 +663,7 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         extraCppFlagsStr, 
         sstCppFlagsStr, 
         sstCompilerFlagsStr, 
+        llvmPassesStr,
         givenFlagsStr
       ]
 
