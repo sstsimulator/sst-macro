@@ -14,17 +14,18 @@ include $(top_srcdir)/Makefile.common
 AM_CPPFLAGS += ${LLVM_CPPFLAGS}
 AM_CXXFLAGS += -fno-rtti
 
+#this contains instrumentation functions usable by LLVM
+if HAVE_CLANG
+noinst_LTLIBRARIES = libsstmac_inst.la
+libsstmac_inst_la_SOURCES = \
+  meminst.cc
 
 lib_LTLIBRARIES = \
   libmemtrace.la
 
-libmemtrace_la_SOURCES = memtrace.cc
-libmemtrace_la_LIBADD = \
- ../install/libsstmac.la \
- ../../sprockit/sprockit/libspkt_temp.la 
+libmemtrace_la_SOURCES = \
+  memtrace.cc
 
-# ${LLVM_LIBS} \
-# ${LLVM_SYSTEM_LIBS}
 
 libmemtrace_la_LDFLAGS = \
  ${LLVM_LDFLAGS} \
@@ -33,3 +34,4 @@ libmemtrace_la_LDFLAGS = \
  -Wl,-rpath,@CLANG_INSTALL_DIR@/lib 
 
 
+endif
