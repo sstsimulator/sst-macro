@@ -69,8 +69,11 @@ file::file(sprockit::sim_parameters* params) :
   nodes_ = json_.at("nodes");
   num_nodes_ = nodes_.size();
   int i=0;
-  for (auto it = nodes_.begin(); it != nodes_.end(); ++it, ++i)
+  for (auto it = nodes_.begin(); it != nodes_.end(); ++it, ++i) {
+    top_debug("file topology: mapping node %s to %d", it.key().c_str(), i);
     node_name_map_[it.key()] = i;
+  }
+    
 
   // index the switches
   switches_ = json_.at("switches");

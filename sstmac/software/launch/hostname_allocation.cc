@@ -100,43 +100,45 @@ hostname_allocation::read_map_file(
                      "%s: bad num nodes, %d, in node map file",
                      here, nnode);
   }
-  int ncoor = -1;
-  in >> ncoor;
-  if (ncoor <= 0) {
-    spkt_throw_printf(
-      sprockit::value_error,
-      "%s: bad num coords, %d, in node map file",
-      here, ncoor);
-  }
+//  int ncoor = -1;
+//  in >> ncoor;
+//  if (ncoor <= 0) {
+//    spkt_throw_printf(
+//      sprockit::value_error,
+//      "%s: bad num coords, %d, in node map file",
+//      here, ncoor);
+//  }
 
   for (int i = 0; i < nnode; i++) {
 
     std::string hostname;
     in >> hostname;
 
-    if (hostname.size() == 0) {
-      spkt_throw_printf(sprockit::value_error,
-                       "%s: bad hostname in map file",
-                       here);
-    }
-    std::vector<int> coor(ncoor);
-    for (int j = 0; j < ncoor; j++) {
-      coor[j] = -1;
-      in >> coor[j];
-      if (coor[j] < 0) {
-        std::stringstream sstr;
-        sstr << "[";
-        for (int k=0; k < ncoor; k++) {
-          sstr << " " << coor[k];
-        }
-        sstr << " ]";
+//    if (hostname.size() == 0) {
+//      spkt_throw_printf(sprockit::value_error,
+//                       "%s: bad hostname in map file",
+//                       here);
+//    }
+//    std::vector<int> coor(ncoor);
+//    for (int j = 0; j < ncoor; j++) {
+//      coor[j] = -1;
+//      in >> coor[j];
+//      if (coor[j] < 0) {
+//        std::stringstream sstr;
+//        sstr << "[";
+//        for (int k=0; k < ncoor; k++) {
+//          sstr << " " << coor[k];
+//        }
+//        sstr << " ]";
 
-        spkt_throw_printf(sprockit::value_error,
-                         "%s: bad coordinates %s in map file",
-                         here, sstr.str().c_str());
-      }
-    }
+//        spkt_throw_printf(sprockit::value_error,
+//                         "%s: bad coordinates %s in map file",
+//                         here, sstr.str().c_str());
+//      }
+//    }
 
+    //hostmap[hostname] = coor;
+    std::vector<int> coor={i};
     hostmap[hostname] = coor;
   }
 
@@ -155,16 +157,18 @@ hostname_allocation::allocate(int nnode_requested,
     spkt_throw_printf(sprockit::value_error, "hostname_allocation::allocate: null topology");
   }
 
-  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
+  //hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
   std::map<std::string, std::vector<int> >::iterator it, end = hostmap.end();
 
   for (it = hostmap.begin(); it != end; it++) {
-    std::vector<int> coords = it->second;
-    // find node index for this vertex
-    node_id nid = regtop->node_addr(coords);
-    hostnamemap_[it->first] = nid;
-    nodenum_to_host_map_[nid] = it->first;
-    allocation.insert(nid);
+//    std::vector<int> coords = it->second;
+//    // find node index for this vertex
+//    node_id nid = regtop->node_addr(coords);
+    //hostnamemap_[it->first] = nid;
+    hostnamemap_[it->first] = it->second[0];
+    //nodenum_to_host_map_[nid] = it->first;
+    nodenum_to_host_map_[it->second[0]] = it->first;
+    allocation.insert(it->second[0]);
   }
 
   return true;
