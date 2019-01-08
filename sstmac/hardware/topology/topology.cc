@@ -102,7 +102,8 @@ topology::node_to_logp_switch(node_id nid) const
 }
 #endif
 
-topology::topology(sprockit::sim_parameters* params)
+topology::topology(sprockit::sim_parameters* params) :
+  maps_inited_(false)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_VALID_MPI
@@ -308,6 +309,37 @@ topology::get_vtk_geometry(switch_id sid) const
   spkt_abort_printf("unimplemented: topology::get_vtk_geometry for %s",
                     to_string().c_str());
   return vtk_switch_geometry(0,0,0,0,0,0,0,std::vector<vtk_switch_geometry::port_geometry>());
+}
+
+std::string
+topology::node_id_to_name(node_id i)
+{
+  if(!maps_inited_) init_maps_default();
+  auto it = hostmap_.find(i);
+  if (it == hostmap_.end())
+    spkt_abort_printf("topology: can't find %d in hostname map",i);
+  return it->second;
+}
+
+node_id
+topology::node_name_to_id(std::string hostname)
+{
+  if(!maps_inited_) init_maps_default();
+  auto it = idmap_.find(hostname);
+  if (it == idmap_.end())
+    spkt_abort_printf("topology: can't find %s in hostname map",
+                      hostname.c_str());
+  return it->second;
+}
+
+void
+topology::init_maps_default()
+{
+  for (int i=0; i < num_nodes(); ++i) {
+    std::string name = std::string("nid") + std::to_string(i);
+    idmap_[name] = i;
+    hostmap_[i] = name;
+  }
 }
 
 class merlin_topology : public topology {

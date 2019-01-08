@@ -71,9 +71,9 @@ class hostname_allocation : public node_allocator
    * @param mapfile name of the map file
    * @param hostmap map in which host mappings are placed
    */
-  static void read_map_file(parallel_runtime* rt,
+  static void read_host_file(parallel_runtime* rt,
                 const char* here, const std::string &mapfile,
-                std::map<std::string,std::vector<int> >& hostmap);
+                std::list<std::string>& hostmap);
 
   bool allocate(int nnode_requested,
     const ordered_node_set& available,
@@ -81,13 +81,9 @@ class hostname_allocation : public node_allocator
 
   virtual ~hostname_allocation() throw () {}
 
-  typedef std::unordered_map<std::string, node_id> nodemap_t;
-  static nodemap_t hostnamemap_;
-
-  static std::map<long, std::string> nodenum_to_host_map_;
 
  protected:
-  std::string mapfile_;
+  std::string hostfile_;
 
 };
 

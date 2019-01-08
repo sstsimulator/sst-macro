@@ -55,8 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
- { "launch_hostname_list", "DEPRECATED: a line-by-line list of hostnames to allocate for a job" },
- { "hostname_list", "a line-by-line list of hostnames to allocate for a job" },
+ { "hostmap", "a line-by-line list of hostnames to map each task to" },
 );
 
 namespace sstmac {
@@ -65,7 +64,7 @@ namespace sw {
 hostname_task_mapper::hostname_task_mapper(sprockit::sim_parameters *params) :
   task_mapper(params)
 {
-  listfile_ = params->get_param("hostname_list");
+  listfile_ = params->get_param("hostmap");
 }
 
 void
@@ -88,34 +87,39 @@ hostname_task_mapper::map_ranks(
 
     sstr << hostname << "\n";
 
+//    auto nid_it = hostname_allocation::hostnamemap_.find(hostname);
+//    auto end = hostname_allocation::hostnamemap_.end();
 
-    auto nid_it = hostname_allocation::hostnamemap_.find(hostname);
-    auto end = hostname_allocation::hostnamemap_.end();
-
-    if (nid_it == end) {
-      std::stringstream sstr;
-      sstr << hostname << " from file " << listfile_ <<
-           " does not exist in node map.";
-
-      auto it = hostname_allocation::hostnamemap_.begin();
-
-      if (it == end) {
-        sstr << " No hostnames are registered with hostname_allocation."
-             << " This is perhaps not surprising then."
-             << " Maybe check that launch_allocation is set to hostname.";
-      } else {
-        sstr << std::endl << "Valid hostnames are: ";
-        for ( ; it != end; ++it) {
-          sstr << std::endl << it->first;
-        }
-        sstr << std::endl << std::endl
-             << "Are you sure the hostname file and node map"
-             " are from the same machine?";
-      }
-      sprockit::abort(sstr.str());
+    node_id nid;
+    if (!topology_) {
+      spkt_throw_printf(sprockit::value_error, "hostname_task_mapper: null topology");
     }
+    nid = topology_->node_name_to_id(hostname);
 
-    node_id nid = nid_it->second;
+//    if (nid_it == end) {
+//      std::stringstream sstr;
+//      sstr << hostname << " from file " << listfile_ <<
+//           " does not exist in node map.";
+
+//      auto it = hostname_allocation::hostnamemap_.begin();
+
+//      if (it == end) {
+//        sstr << " No hostnames are registered with hostname_allocation."
+//             << " This is perhaps not surprising then."
+//             << " Maybe check that launch_allocation is set to hostname.";
+//      } else {
+//        sstr << std::endl << "Valid hostnames are: ";
+//        for ( ; it != end; ++it) {
+//          sstr << std::endl << it->first;
+//        }
+//        sstr << std::endl << std::endl
+//             << "Are you sure the hostname file and node map"
+//             " are from the same machine?";
+//      }
+//      sprockit::abort(sstr.str());
+//    }
+
+//    node_id nid = nid_it->second;
 
     debug_printf(sprockit::dbg::indexing,
         "hostname_task_mapper: rank %d is on hostname %s at nid=%d",

@@ -128,13 +128,13 @@ class file : public topology
     return num_nodes_;
   }
 
-  node_id node_name_to_id(std::string name) const override {
-    auto it = node_name_map_.find(name);
-    if( it == node_name_map_.end())
-      spkt_throw_printf(sprockit::input_error,
-        "file topology: can't find node id for %s", name.c_str());
-    return node_id(it->second);
-  }
+//  node_id node_name_to_id(std::string name) const override {
+//    auto it = node_name_map_.find(name);
+//    if( it == node_name_map_.end())
+//      spkt_throw_printf(sprockit::input_error,
+//        "file topology: can't find node id for %s", name.c_str());
+//    return node_id(it->second);
+//  }
 
   switch_id switch_name_to_id(std::string name) const override {
     auto it = switch_name_map_.find(name);
@@ -144,17 +144,17 @@ class file : public topology
     return switch_id(it->second);
   }
 
-  std::string node_id_to_name(node_id id) const override {
-    // find switch name
-    std::string key;
-    for (auto &i : node_name_map_) {
-       if (i.second == id) {
-          key = i.first;
-          break;
-       }
-    }
-    return key;
-  }
+//  std::string node_id_to_name(node_id id) const override {
+//    // find switch name
+//    std::string key;
+//    for (auto &i : node_name_map_) {
+//       if (i.second == id) {
+//          key = i.first;
+//          break;
+//       }
+//    }
+//    return key;
+//  }
 
   std::string switch_id_to_name(switch_id id) const override {
     // find switch name

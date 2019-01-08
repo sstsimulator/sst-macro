@@ -71,9 +71,11 @@ file::file(sprockit::sim_parameters* params) :
   int i=0;
   for (auto it = nodes_.begin(); it != nodes_.end(); ++it, ++i) {
     top_debug("file topology: mapping node %s to %d", it.key().c_str(), i);
-    node_name_map_[it.key()] = i;
+    //node_name_map_[it.key()] = i;
+    idmap_[it.key()] = i;
+    hostmap_[i] = it.key();
   }
-    
+  maps_inited_ = true;
 
   // index the switches
   switches_ = json_.at("switches");
@@ -94,8 +96,8 @@ file::file(sprockit::sim_parameters* params) :
     for (auto prt = outports.begin(); prt != outports.end(); ++prt) {
 
       // determine leaf switches and max node ports
-      auto nd = node_name_map_.find(prt->at("destination"));
-      if( nd != node_name_map_.end() ) {
+      auto nd = idmap_.find(prt->at("destination"));
+      if( nd != idmap_.end() ) {
         leafs.insert(sid);
         ++node_ports;
       }
@@ -164,8 +166,8 @@ file::endpoints_connected_to_injection_switch(switch_id swaddr,
 
   json outports = switches_.at(key).at("outports");
   for (auto prt = outports.begin(); prt != outports.end(); ++prt) {
-    auto it = node_name_map_.find(prt->at("destination"));
-    if( it != node_name_map_.end() ) {
+    auto it = idmap_.find(prt->at("destination"));
+    if( it != idmap_.end() ) {
       injection_port ip;
       ip.nid = it->second;
       ip.ep_port = prt->at("inport");
