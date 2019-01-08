@@ -1,0 +1,88 @@
+{
+  "switches" : {
+    "switch0" : {
+      "routes" : {
+        "node0" : 2,
+        "node1" : 3,
+        "node2" : 0,
+        "node3" : 1,
+        "node4" : 0,
+        "node5" : 1,
+        "node6" : 0,
+        "node7" : 1
+      }
+    },	
+    "switch1" : {
+      "routes" : {
+        "node0" : 1,
+        "node1" : 0,
+        "node2" : 2,
+        "node3" : 3,
+        "node4" : 1,
+        "node5" : 0,
+        "node6" : 1,
+        "node7" : 0
+      }
+    },
+    "switch2" : {
+      "routes" : {
+        "node0" : 0,
+        "node1" : 0,
+        "node2" : 0,
+        "node3" : 1,
+        "node4" : 2,
+        "node5" : 3,
+        "node6" : 0,
+        "node7" : 1
+      }
+    },
+    "switch3" : {
+      "routes" : {
+        "node0" : 1,
+        "node1" : 0,
+        "node2" : 1,
+        "node3" : 0,
+        "node4" : 1,
+        "node5" : 0,
+        "node6" : 2,
+        "node7" : 3
+      }
+    },
+    "switch4" : {
+      "routes" : {
+        "node0" : 0,
+        "node1" : 2,
+        "node2" : 1,
+        "node3" : 3,
+        "node4" : 4,
+        "node5" : 5,
+        "node6" : 4,
+        "node7" : 5
+      }
+    },
+    "switch5" : {
+      "routes" : {
+        "node0" : 4,
+        "node1" : 5,
+        "node2" : 4,
+        "node3" : 5,
+        "node4" : 0,
+        "node5" : 2,
+        "node6" : 1,
+        "node7" : 3
+      }
+    },
+    "switch6" : {
+      "routes" : {
+        "node0" : 0,
+        "node1" : 2,
+        "node2" : 0,
+        "node3" : 2,
+        "node4" : 1,
+        "node5" : 3,
+        "node6" : 1,
+        "node7" : 3
+      }
+    }
+  }
+}

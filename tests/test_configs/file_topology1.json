@@ -1,0 +1,71 @@
+{ 
+  "avg_num_hops" : 4,
+  "switches" : { 
+    "switch0" : {
+      "outports" : { 
+        "0" : { "destination" : "switch3", "inport" : 0 },
+        "1" : { "destination" : "switch3", "inport" : 1 },
+        "6" : { "destination" : "node0", "inport" : 0},
+        "7" : { "destination" : "node1", "inport" : 0}
+      }
+    },
+    "switch1" : {
+      "outports" : { 
+        "0" : { "destination" : "switch3", "inport" : 2 },
+        "1" : { "destination" : "switch3", "inport" : 3 },
+        "6" : { "destination" : "node2", "inport" : 0},
+        "7" : { "destination" : "node3", "inport" : 0}
+      }
+    },
+    "switch2" : {
+      "outports" : { 
+        "0" : { "destination" : "switch3", "inport" : 4 },
+        "1" : { "destination" : "switch3", "inport" : 5 },
+        "6" : { "destination" : "node4", "inport" : 0},
+        "7" : { "destination" : "node5", "inport" : 0}
+      }
+    },
+    "switch3" : { 
+      "outports" : { 
+        "0" : { "destination" : "switch0", "inport" : 0 },
+        "1" : { "destination" : "switch0", "inport" : 1 },
+        "2" : { "destination" : "switch1", "inport" : 0 },
+        "3" : { "destination" : "switch1", "inport" : 1 },
+        "4" : { "destination" : "switch2", "inport" : 0 },
+        "5" : { "destination" : "switch2", "inport" : 1 }
+      } 
+    }
+  },
+  "nodes" : { 
+    "node0" : { 
+      "outports" : { 
+        "0" : {"destination" : "switch0", "inport" : 6 }
+      } 
+    }, 
+    "node1" : {
+      "outports" : {
+        "0" : {"destination" : "switch0", "inport" : 7 }
+      }
+    },
+    "node2" : {
+      "outports" : {
+        "0" : {"destination" : "switch1", "inport" : 6 }
+      }
+    },
+    "node3" : {
+      "outports" : {
+        "0" : {"destination" : "switch1", "inport" : 7 }
+      }
+    },
+    "node4" : {
+      "outports" : {
+        "0" : {"destination" : "switch2", "inport" : 6 }
+      }
+    },
+    "node5" : {
+      "outports" : {
+        "0" : {"destination" : "switch2", "inport" : 7 }
+      }
+    }
+  }
+}

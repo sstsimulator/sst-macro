@@ -110,15 +110,11 @@ class torus :
     return num_switches();
   }
 
-  bool uniform_network_ports() const override {
+  bool uniform_switch_ports() const override {
     return false;
   }
 
   bool uniform_switches() const override {
-    return true;
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
     return true;
   }
 

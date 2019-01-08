@@ -42,71 +42,77 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_HYPERCUBE_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_HYPERCUBE_H_INCLUDED
+#include <sstmac/hardware/router/router.h>
+#include <sstmac/hardware/switch/network_switch.h>
+#include <sstmac/hardware/topology/topology.h>
+//#include <sstmac/hardware/topology/multipath_topology.h>
+#include <sprockit/util.h>
+#include <sprockit/delete.h>
+#include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+#include <sstmac/hardware/topology/fat_tree.h>
+//#include <sstmac/hardware/topology/butterfly.h>
+#include <sstmac/hardware/topology/fully_connected.h>
+#include <sstmac/libraries/nlohmann/json.hpp>
+#include <sstream>
+#include <fstream>
 
-#include <sstmac/hardware/topology/torus.h>
+RegisterKeywords(
+{ "fileroot", "the file prefix for reading in tables" },
+);
 
 namespace sstmac {
 namespace hw {
 
-class hypercube :
-  public torus
-{
-  FactoryRegister("hypercube", topology, hypercube,
-              "hypercube implements a high-dimension torus with an arbitrary number of dimensions")
+class table_router : public router {
  public:
-  hypercube(sprockit::sim_parameters* params);
+  FactoryRegister("table",
+              router, table_router,
+              "router implementing table-based routing")
+
+  table_router(sprockit::sim_parameters* params, topology* top, network_switch* sw) :
+    router(params, top, sw),
+    table_(top->num_nodes(), -1)
+  {
+    std::string fname = params->get_param("filename");
+    std::ifstream in(fname);
+    nlohmann::json jsn;
+    in >> jsn;
+
+    nlohmann::json routes =
+        jsn.at("switches").at( top->switch_id_to_name(my_addr_) ).at("routes");
+    int size = table_.size();
+    for (auto it = routes.begin(); it != routes.end(); ++it)
+      table_[top->node_name_to_id(it.key())] = it.value();
+
+    for (int i=0; i < table_.size(); ++i){
+      if (table_[i] == -1){
+        spkt_abort_printf("No port specified on switch %d to destination %d",
+                          my_addr_, i);
+      }
+    }
+
+  }
+
+  int num_vc() const override {
+    return 1;
+  }
 
   std::string to_string() const override {
-    return "torus topology";
+    return "table-based router";
   }
 
-  virtual ~hypercube() {}
-
-  void minimal_route_to_switch(
-    switch_id src,
-    switch_id dst,
-    packet::header* hdr) const;
-
-  bool uniform_switch_ports() const override {
-    return false;
+  void route(packet *pkt) override {
+    int port = table_[pkt->toaddr()];
+    pkt->set_edge_outport(port);
+    //for now only valid on topologies with minimal/no vcs
+    pkt->set_deadlock_vc(0);
+    rter_debug("packet to %d sent to port %d", pkt->toaddr(), port);
   }
 
-  int max_num_ports() const override {
-    int sum = 0;
-    for (int size : dimensions_) sum += size;
-    return sum + concentration();
-  }
-
-  void endpoints_connected_to_injection_switch(switch_id swaddr,
-         std::vector<injection_port>& nodes) const override;
-
-  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
-
-  void configure_individual_port_params(switch_id src,
-           sprockit::sim_parameters *switch_params) const override;
-
-  inline int convert_to_port(int dim, int dir) const {
-    return dim_to_outport_[dim] + dir;
-  }
-
-  int minimal_distance(switch_id src, switch_id dst) const;
-
-  int num_hops_to_node(node_id src, node_id dst) const override {
-    return minimal_distance(src/concentration_, dst/concentration_);
-  }
-
-  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
-
- protected:
-  int radix_;
-  int ndim_;
-  std::vector<int> dim_to_outport_;
-
+ private:
+  std::vector<int> table_;
 };
 
 }
-} //end of namespace sstmac
-
-#endif // HYPERCUBE_H
+}

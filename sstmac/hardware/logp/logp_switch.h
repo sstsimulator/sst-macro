@@ -73,6 +73,11 @@ class logp_switch : public connectable_component
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A switch that implements a basic delay model with no congestion modeling")
 
+  struct contention_model {
+    DeclareFactory(contention_model)
+    virtual double value() = 0;
+  };
+
  public:
   logp_switch(sprockit::sim_parameters* params, uint32_t cid, event_manager* mgr);
 
@@ -142,6 +147,8 @@ class logp_switch : public connectable_component
   std::vector<event_link*> nic_links_;
 
   RNG::MWC* rng_;
+
+  contention_model* contention_model_;
 
   timestamp random_max_extra_latency_;
   double random_max_extra_byte_delay_;

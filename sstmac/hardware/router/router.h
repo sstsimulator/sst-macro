@@ -70,7 +70,7 @@ namespace hw {
 
 /**
   @class router
-  Class that computes the next step a messag should taken in traversing
+  Class that computes the next step a message should taken in traversing
   the network.  This performs routing operations only and is not actually
   a 'component' in the network - those are switches.  Switch and router
   are not synonymous in SST/macro.  All switches have routers.

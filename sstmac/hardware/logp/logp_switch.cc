@@ -66,6 +66,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 #include <sstmac/software/launch/launch_event.h>
+#include <random>
 
 MakeDebugSlot(logp)
 
@@ -82,7 +83,8 @@ namespace sstmac {
 namespace hw {
 
 logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_manager* mgr) :
-  connectable_component(params, cid, mgr), rng_(nullptr)
+  connectable_component(params, cid, mgr),
+  rng_(nullptr), contention_model_(nullptr)
 {
   top_ = topology::static_topology(nullptr);
 
@@ -103,6 +105,12 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_m
     rng_ = RNG::MWC::construct();
     random_max_extra_latency_ = params->get_time_param("random_max_extra_latency");
     random_max_extra_byte_delay_ = params->get_time_param("random_max_extra_byte_delay");
+  }
+
+  if (params->has_namespace("contention")){
+    std::cout << "Have contention model!" << std::endl;
+    contention_model_ = contention_model::factory::get_extra_param("model",
+           params->get_namespace("contention"));
   }
 
 
@@ -139,6 +147,9 @@ logp_switch::send(timestamp start, network_message* msg)
     delay += lat_inc * random_max_extra_latency_;
     double bw_inc = rng_->realvalue();
     delay += msg->byte_length() * bw_inc * random_max_extra_byte_delay_;
+  } else if (contention_model_) {
+    double contention = contention_model_->value();
+    delay += msg->byte_length() * inv_min_bw_ * contention;
   }
 
   node_id dst = msg->toaddr();
@@ -156,7 +167,53 @@ logp_switch::send(timestamp start, network_message* msg)
   lnk->multi_send_extra_delay(extra_delay, msg, this);
 }
 
+struct sliding_contention_model : public logp_switch::contention_model
+{
+ public:
+  FactoryRegister("sliding", logp_switch::contention_model, sliding_contention_model)
 
+  sliding_contention_model(sprockit::sim_parameters* params)
+  {
+    range_ = params->get_optional_int_param("range", 100);
+    if (params->has_param("cutoffs")){
+      params->get_vector_param("cutoffs", cutoffs_);
+    } else {
+      cutoffs_.resize(2);
+      cutoffs_[0] = 60;
+      cutoffs_[1] = 90;
+    }
+
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    state_ = gen();
+  }
+
+  double value() override {
+    int num = xorshift64() % range_;
+    for (int i=cutoffs_.size() - 1; i >= 0; --i){
+      if (num > cutoffs_[i]){
+        return i + 1;
+      }
+    }
+    return 0; //no contention
+  }
+
+ private:
+  uint64_t xorshift64()
+  {
+    uint64_t x = state_;
+    x^= x << 13;
+    x^= x >> 7;
+    x^= x << 17;
+    state_ = x;
+    return x;
+  }
+
+  int range_;
+  std::vector<int> cutoffs_;
+  uint64_t state_;
+
+};
 
 
 }

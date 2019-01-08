@@ -130,8 +130,8 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   std::string switch_model = switch_params->get_lowercase_param("name");
   bool logp_model = switch_model == "logp" || switch_model == "simple" || switch_model == "macrels";
 
-  switches_.resize(top->max_switch_id());
-  nodes_.resize(top->max_node_id());
+  switches_.resize(num_switches_);
+  nodes_.resize(num_nodes_);
 
   sprockit::sim_parameters logp_params;
   if (logp_model){
@@ -311,12 +311,14 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
 
   int my_rank = rt_->me();
 
-  for (int i=0; i < num_leaf_switches_; ++i){
+  for (int i=0; i < num_switches_; ++i){
     switch_id sid(i);
-    int thread = partition_->thread_for_switch(i);
-    int target_rank = partition_->lpid_for_switch(sid);
     std::vector<topology::injection_port> nodes;
     topology_->endpoints_connected_to_injection_switch(sid, nodes);
+    if( !nodes.size() )
+      continue;
+    int thread = partition_->thread_for_switch(i);
+    int target_rank = partition_->lpid_for_switch(sid);
     interconn_debug("switch %d maps to target rank %d", i, target_rank);
 
     for (int n=0; n < nodes.size(); ++n){
@@ -324,6 +326,7 @@ interconnect::build_endpoints(sprockit::sim_parameters* node_params,
       int ep_port = nodes[n].ep_port;
       int sw_port = nodes[n].switch_port;
       logp_switch* local_logp_switch = logp_switches_[thread];
+      interconn_debug("building node %d on leaf switch %d", nid, i);
 
       if (my_rank == target_rank){
         //local node - actually build it
@@ -370,9 +373,8 @@ interconnect::build_switches(sprockit::sim_parameters* switch_params,
 
   int my_rank = rt_->me();
   bool all_switches_same = topology_->uniform_switches();
-  switch_id num_switch_ids = topology_->max_switch_id();
   int id_offset = topology_->num_nodes();
-  for (switch_id i=0; i < num_switch_ids; ++i){
+  for (switch_id i=0; i < num_switches_; ++i){
     switch_params->add_param_override("id", int(i));
     if (partition_->lpid_for_switch(i) == my_rank){
       if (!all_switches_same)
@@ -408,35 +410,39 @@ interconnect::connect_switches(event_manager* mgr, sprockit::sim_parameters* swi
   std::vector<topology::connection> outports(64); //allocate 64 spaces optimistically
 
   //might be super uniform in which all ports are the same
-  bool all_ports_same = topology_->uniform_network_ports();
   //or it might be mostly uniform in which all the switches are the same
   //even if the individual ports on each switch are different
-  bool all_switches_same = topology_->uniform_switches_non_uniform_network_ports();
+  bool all_ports_same = topology_->uniform_switch_ports();
+  bool all_switches_same = topology_->uniform_switches();
 
   sprockit::sim_parameters* port_params;
   if (all_ports_same){
     port_params = switch_params->get_namespace("link");
-  } else if (all_switches_same){
+  } else if (all_switches_same && !all_ports_same){
     topology_->configure_individual_port_params(switch_id(0), switch_params);
   }
 
   for (int i=0; i < num_switches_; ++i){
+    interconn_debug("interconnect: connecting switch %i", i);
     switch_id src(i);
     int thread = partition_->thread_for_switch(i);
     topology_->connected_outports(src, outports);
     network_switch* src_sw = switches_[src];
-    if (!all_switches_same) topology_->configure_individual_port_params(src, switch_params);
+    if (!all_switches_same && !all_ports_same){
+      topology_->configure_individual_port_params(src, switch_params);
+    }
     interconn_debug("interconnect: num intranetwork ports: %i", outports.size());
     for (topology::connection& conn : outports){
       if (!all_ports_same){
-        port_params = topology::get_port_params(switch_params, conn.src_outport);
+        std::string port_ns = topology::get_port_namespace(conn.src_outport);
+        port_params = switch_params->get_namespace(port_ns);
       }
 
-      network_switch* dst_sw = switches_[conn.dst];
       interconn_debug("%s connecting to %s on ports %d:%d",
                 topology_->switch_label(src).c_str(),
                 topology_->switch_label(conn.dst).c_str(),
                 conn.src_outport, conn.dst_inport);
+      network_switch* dst_sw = switches_[conn.dst];
 
       if (src_sw){
         event_link* payload_link = nullptr;

@@ -104,15 +104,17 @@ abstract_fat_tree::write_bw_params(
     sprockit::sim_parameters *switch_params,
     double multiplier) const
 {
-  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
-  double bw = xbar_params->get_bandwidth_param("bandwidth");
-  // we are overwriting params -
-  // we have to make sure that the original baseline bandwidth is preserved
-  double baseline_bw =
-      xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
-  double xbar_bw = baseline_bw * multiplier;
-  (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
-  (*xbar_params)["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");
+  if (switch_params->has_namespace("xbar")){
+    sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
+    double bw = xbar_params->get_bandwidth_param("bandwidth");
+    // we are overwriting params -
+    // we have to make sure that the original baseline bandwidth is preserved
+    double baseline_bw =
+        xbar_params->get_optional_bandwidth_param("baseline_bandwidth", bw);
+    double xbar_bw = baseline_bw * multiplier;
+    (*xbar_params)["bandwidth"].setBandwidth(xbar_bw/1e9, "GB/s");
+    (*xbar_params)["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");
+  }
 }
 
 /*------------------------------------------------------------------------------

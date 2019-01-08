@@ -42,49 +42,65 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_STAR_H_INCLUDED
-#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_STAR_H_INCLUDED
+#ifndef SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FILE_H_INCLUDED
+#define SSTMAC_HARDWARE_NETWORK_TOPOLOGY_FILE_H_INCLUDED
 
+#include <utility>
 #include <sstmac/hardware/topology/structured_topology.h>
+#include <sstmac/libraries/nlohmann/json.hpp>
 
 namespace sstmac {
 namespace hw {
 
 /**
- *  @class star
- *  The star topology generates a network which connects
-    each node a central hub.
+ *  @class file
+ *  The file topology generates a network by reading from a file.
  */
-class star : public structured_topology
+class file : public topology
 {
-  FactoryRegister("star | crossbar", topology, star)
+  FactoryRegister("file", topology, file)
  public:
   std::string to_string() const override {
-    return "star topology";
+    return "file topology";
   }
 
-  virtual ~star() {}
+  virtual ~file() {}
 
-  star(sprockit::sim_parameters* params);
-
-  int diameter() const override {
-    return 1;
-  }
+  file(sprockit::sim_parameters* params);
 
   int max_num_ports() const override {
-    return concentration();
+    return max_num_ports_;
+  }
+
+  switch_id max_switch_id() const override {
+    return num_switches_ - 1;
+  }
+
+  node_id max_node_id() const override {
+    return num_nodes_ - 1;
+  }
+
+  switch_id endpoint_to_switch(node_id) const override {
+    spkt_abort_printf("endpoint_to_switch() not implemented");
   }
 
   switch_id num_leaf_switches() const override {
-    return 1;
+    return num_leaf_switches_;
   }
 
   int minimal_distance(switch_id src, switch_id dst) const {
-    return 1;
+    spkt_abort_printf("minimal_distance() not implemented");
   }
 
   int num_hops_to_node(node_id src, node_id dst) const override {
-    return 1;
+    // extremely approximate
+    return num_hops_;
+  }
+
+  void endpoints_connected_to_ejection_switch(
+      switch_id swaddr,
+      std::vector<injection_port>& nodes) const override {
+    endpoints_connected_to_injection_switch(swaddr,nodes);
   }
 
   void endpoints_connected_to_injection_switch(switch_id swaddr,
@@ -105,13 +121,64 @@ class star : public structured_topology
        std::vector<connection>& conns) const override;
 
   switch_id num_switches() const override {
-    return 1;
+    return num_switches_;
   }
 
   node_id num_nodes() const override {
-    return concentration_;
+    return num_nodes_;
   }
 
+  node_id node_name_to_id(std::string name) const override {
+    auto it = node_name_map_.find(name);
+    if( it == node_name_map_.end())
+      spkt_throw_printf(sprockit::input_error,
+        "file topology: can't find node id for %s", name.c_str());
+    return node_id(it->second);
+  }
+
+  switch_id switch_name_to_id(std::string name) const override {
+    auto it = switch_name_map_.find(name);
+    if( it == switch_name_map_.end())
+      spkt_throw_printf(sprockit::input_error,
+        "file topology: can't find switch id for %s", name.c_str());
+    return switch_id(it->second);
+  }
+
+  std::string node_id_to_name(node_id id) const override {
+    // find switch name
+    std::string key;
+    for (auto &i : node_name_map_) {
+       if (i.second == id) {
+          key = i.first;
+          break;
+       }
+    }
+    return key;
+  }
+
+  std::string switch_id_to_name(switch_id id) const override {
+    // find switch name
+    std::string key;
+    for (auto &i : switch_name_map_) {
+       if (i.second == id) {
+          key = i.first;
+          break;
+       }
+    }
+    return key;
+  }
+
+private:
+  int num_nodes_;
+  int num_switches_;
+  int num_leaf_switches_;
+  int max_num_ports_;
+  int num_hops_;
+  nlohmann::json json_;
+  nlohmann::json switches_;
+  nlohmann::json nodes_;
+  std::map<std::string,int> node_name_map_;
+  std::map<std::string,int> switch_name_map_;
 };
 
 }

@@ -126,7 +126,7 @@ class dragonfly : public cartesian_topology
     return "dragonfly";
   }
 
-  bool uniform_network_ports() const override {
+  bool uniform_switch_ports() const override {
     return false;
   }
 
@@ -136,10 +136,6 @@ class dragonfly : public cartesian_topology
 
   int max_num_ports() const override {
     return a_ + h_ + concentration();
-  }
-
-  bool uniform_switches_non_uniform_network_ports() const override {
-    return true;
   }
 
   bool uniform_switches() const override {
