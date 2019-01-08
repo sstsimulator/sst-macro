@@ -494,21 +494,21 @@ class topology : public sprockit::printable
 
   virtual cartesian_topology* cart_topology() const;
 
-  virtual node_id node_name_to_id(std::string name) const
-  {
-    std::size_t pos = name.find("node");
-    if (pos != 0)
-      throw sprockit::input_error("topology: node name should be node<n>");
-    std::string number(name,4);
-    node_id id;
-    try {
-      id = stoi(number);
-    }
-    catch(...) {
-      throw sprockit::input_error("topology: node name should be node<n>");
-    }
-    return id;
-  }
+  virtual node_id node_name_to_id(std::string name);
+//  {
+//    std::size_t pos = name.find("node");
+//    if (pos != 0)
+//      throw sprockit::input_error("topology: node name should be node<n>");
+//    std::string number(name,4);
+//    node_id id;
+//    try {
+//      id = stoi(number);
+//    }
+//    catch(...) {
+//      throw sprockit::input_error("topology: node name should be node<n>");
+//    }
+//    return id;
+//  }
 
   virtual switch_id switch_name_to_id(std::string name) const
   {
@@ -526,10 +526,10 @@ class topology : public sprockit::printable
     return id;
   }
 
-  virtual std::string node_id_to_name(node_id id) const
-  {
-    return std::string("node") + std::to_string(id);
-  }
+  virtual std::string node_id_to_name(node_id id);
+//  {
+//    return std::string("node") + std::to_string(id);
+//  }
 
   virtual std::string switch_id_to_name(switch_id id) const
   {
@@ -543,7 +543,13 @@ class topology : public sprockit::printable
 
   static std::string get_port_namespace(int port);
 
- protected:
+//  std::string host_name(node_id i);
+//  node_id host_id(std::string hostname);
+
+protected:
+
+  bool maps_inited_;
+
   topology(sprockit::sim_parameters* params);
 
   static sprockit::sim_parameters* setup_port_params(
@@ -556,13 +562,17 @@ class topology : public sprockit::printable
 
  protected:
   std::string name_;
-
   static topology* main_top_;
+  std::map<std::string,node_id> idmap_;
+  std::map<node_id,std::string> hostmap_;
 
  private:
   static topology* static_topology_;
   std::string dot_file_;
   std::string xyz_file_;
+
+
+  void init_maps_default();
 };
 
 static inline std::ostream& operator<<(std::ostream& os, const topology::xyz& v) {
