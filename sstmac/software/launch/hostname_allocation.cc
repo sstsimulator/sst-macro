@@ -72,7 +72,7 @@ hostname_allocation::read_host_file(
   parallel_runtime* rt,
   const char* here,
   const std::string &hostfile,
-  std::list<std::string>& hosts)
+  std::vector<std::string>& hosts)
 {
   debug_printf(sprockit::dbg::allocation,
     "hostname_allocation: reading host file %s",
@@ -91,15 +91,16 @@ hostname_allocation::allocate(int nnode_requested,
  const ordered_node_set& available,
  ordered_node_set &allocation) const
 {
-  std::list< std::string > hosts;
+  std::vector< std::string > hosts;
   read_host_file(rt_, "hostname_allocation::allocate", hostfile_, hosts);
 
   if (!topology_) {
     spkt_throw_printf(sprockit::value_error, "hostname_allocation::allocate: null topology");
   }
 
-  for (auto it = hosts.begin(); it != hosts.end(); it++)
-    allocation.insert(topology_->node_name_to_id(*it));
+  for (auto& str : hosts){
+    allocation.insert(topology_->node_name_to_id(str));
+  }
 
   return true;
 }

@@ -80,7 +80,7 @@ template <class> struct wrap { typedef void type; };
 template<typename T, class Enable=void>
 struct call_finalize_init : public std::false_type {
  public:
-  void operator()(T* t){
+  void operator()(T* t, sprockit::sim_parameters* params){
     //if we compile here, class T does not have a finalize_init
     //do nothing
   }
@@ -89,15 +89,15 @@ struct call_finalize_init : public std::false_type {
 template<typename T>
 struct call_finalize_init<T,
   typename wrap<
-    decltype(std::declval<T>().finalize_init())
+    decltype(std::declval<T>().finalize_init(nullptr))
    >::type
 > : public std::true_type
 {
  public:
-  void operator()(T* t){
+  void operator()(T* t, sprockit::sim_parameters* params){
     //if we compile here, class T does have a finalize_init
     //call that function
-    t->finalize_init();
+    t->finalize_init(params);
   }
 };
 
@@ -121,8 +121,7 @@ struct constructible_from
 };
 
 template <typename T, typename Enable, typename... Args>
-struct call_constructor_impl {
-};
+struct call_constructor_impl { };
 
 /**
  *  Class used to call particular constructors.  This will get invoked via SFINAE
@@ -252,8 +251,7 @@ class Factory
    */
   static void add_to_map(const std::string& namestr, builder_t* desc,
             std::map<std::string, builder_t*>* builder_map,
-            std::map<std::string, std::list<std::string> >* alias_map)
-  {
+            std::map<std::string, std::list<std::string> >* alias_map) {
     // The namestr can be a | separate list of valid names, e.g.
     // "simple | LogP" to allow either name to map to the correct type
     std::string space = "|";
@@ -306,7 +304,7 @@ class Factory
                        valname.c_str(), name_);
     }
     T* p = builder->build(params, args...);
-    call_finalize_init<T>()(p);
+    call_finalize_init<T>()(p, params);
     return p;
   }
 
@@ -330,8 +328,7 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  get_value(const std::string& valname,
+  static T* get_value(const std::string& valname,
             sim_parameters* params,
             const Args&... args) {
     return _get_value(valname, params, args...);
@@ -357,8 +354,7 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  get_param(const std::string& param_name,
+  static T* get_param(const std::string& param_name,
             sim_parameters* params,
             const Args&... args) {
     return _get_value(params->get_param(param_name),
@@ -376,8 +372,7 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  static T*
-  get_extra_param(const std::string& param_name,
+  static T* get_extra_param(const std::string& param_name,
                   sim_parameters* params,
                   const Args&... args) {
     if (params->has_param(param_name)) {
@@ -387,8 +382,7 @@ class Factory
     }
   }
 
-  static T*
-  get_extra_value(const std::string& param_value,
+  static T* get_extra_value(const std::string& param_value,
                   sim_parameters* params,
                   const Args&... args){
     if (!builder_map_)

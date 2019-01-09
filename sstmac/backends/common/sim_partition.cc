@@ -159,7 +159,7 @@ occupied_block_partition::~occupied_block_partition()
 }
 
 void
-block_partition::finalize_init()
+block_partition::finalize_init(sprockit::sim_parameters* params)
 {
   partition_switches();
 }

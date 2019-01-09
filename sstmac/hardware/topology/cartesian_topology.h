@@ -89,6 +89,11 @@ class cartesian_topology :
   std::vector<int> red_;
   std::vector<int> dimensions_;
 
+ private:
+  void read_coord_file(const std::string& path);
+
+  void init_hostname_map(sprockit::sim_parameters* params) override;
+
 };
 
 }

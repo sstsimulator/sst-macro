@@ -155,7 +155,7 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
   int nproc = world_size.rank;
   dummy_runtime rt(&part_params, me.rank, nproc, nthread);
   block_partition part(&part_params, &rt);
-  part.finalize_init();
+  part.finalize_init(nullptr);
   hw::topology* top = part.top();
   int num_switches = is_logp ? 0 : top->num_switches();
   int num_nodes = top->num_nodes();

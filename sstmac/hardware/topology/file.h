@@ -82,6 +82,7 @@ class file : public topology
 
   switch_id endpoint_to_switch(node_id) const override {
     spkt_abort_printf("endpoint_to_switch() not implemented");
+    return switch_id(0);
   }
 
   switch_id num_leaf_switches() const override {
@@ -90,6 +91,7 @@ class file : public topology
 
   int minimal_distance(switch_id src, switch_id dst) const {
     spkt_abort_printf("minimal_distance() not implemented");
+    return 0;
   }
 
   int num_hops_to_node(node_id src, node_id dst) const override {
@@ -168,7 +170,9 @@ class file : public topology
     return key;
   }
 
-private:
+ private:
+  void init_hostname_map(sprockit::sim_parameters* params) override;
+
   int num_nodes_;
   int num_switches_;
   int num_leaf_switches_;

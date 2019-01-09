@@ -44,6 +44,14 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+#include <sstream>
+
+RegisterKeywords(
+{ "launch_dumpi_mapname", "DEPRECATED: a file containing a line-by-line list of hostnames and their coordintes" },
+{ "launch_hostname_map", "DEPRECATED: a file containing a line-by-line list of hostnames and their coordinates" },
+{ "hostname_map", "a file containing a line-by-line list of hostnames and their coordintes" },
+);
 
 namespace sstmac {
   namespace hw {
@@ -72,6 +80,80 @@ cartesian_topology::cartesian_topology(sprockit::sim_parameters *params) :
       red_[i] = 1;
     }
   }
+}
+
+void
+cartesian_topology::init_hostname_map(sprockit::sim_parameters* params)
+{
+  if (params->has_param("hostname_map")){
+    read_coord_file(params->get_param("hostname_map"));
+  } else {
+    topology::init_hostname_map(params);
+  }
+}
+
+void
+cartesian_topology::read_coord_file(const std::string& fname)
+{
+  std::ifstream in(fname.c_str());
+
+  int nnode = -1;
+  in >> nnode;
+  if (nnode <= 0) {
+    spkt_abort_printf("topology::read_coord_file: bad num nodes, %d, in node map file", nnode);
+  }
+
+  hostmap_.resize(num_nodes());
+
+  if (nnode < num_nodes()){
+    std::cerr << "WARNING: only provided "  << nnode << " hostnames, but topology has "
+              << num_nodes() << " nodes" << std::endl;
+  } else if (nnode > num_nodes()){
+    spkt_abort_printf("gave %d hostnames in %s, but only have %d nodes",
+                      nnode, fname.c_str(), num_nodes());
+  }
+
+
+
+  int ncoor = -1;
+  in >> ncoor;
+  if (ncoor <= 0) {
+    spkt_abort_printf("bad num coords, %d, in node map file", ncoor);
+  }
+
+  for (int i = 0; i < nnode; i++) {
+
+    std::string hostname;
+    in >> hostname;
+
+    if (hostname.size() == 0) {
+      spkt_abort_printf("bad hostname in map file");
+    }
+    std::vector<int> coor(ncoor);
+    for (int j = 0; j < ncoor; j++) {
+      coor[j] = -1;
+      in >> coor[j];
+      if (coor[j] < 0) {
+        std::stringstream sstr;
+        sstr << "[";
+        for (int k=0; k < ncoor; k++) {
+          sstr << " " << coor[k];
+        }
+        sstr << " ]";
+
+        spkt_abort_printf("bad coordinates %s in map file", sstr.str().c_str());
+      }
+    }
+
+    node_id nid = node_addr(coor);
+    if (nid >= hostmap_.size()){
+      spkt_abort_printf("bad node number %d - max is %d in file %s",
+                        nid, hostmap_.size() -1, fname.c_str());
+    }
+    hostmap_[nid] = hostname;
+    idmap_[hostname] = nid;
+  }
+
 }
 
 coordinates

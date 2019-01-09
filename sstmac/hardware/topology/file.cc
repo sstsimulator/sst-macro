@@ -69,13 +69,13 @@ file::file(sprockit::sim_parameters* params) :
   nodes_ = json_.at("nodes");
   num_nodes_ = nodes_.size();
   int i=0;
+  hostmap_.resize(num_nodes_);
   for (auto it = nodes_.begin(); it != nodes_.end(); ++it, ++i) {
     top_debug("file topology: mapping node %s to %d", it.key().c_str(), i);
     //node_name_map_[it.key()] = i;
     idmap_[it.key()] = i;
     hostmap_[i] = it.key();
   }
-  maps_inited_ = true;
 
   // index the switches
   switches_ = json_.at("switches");
@@ -117,7 +117,12 @@ file::file(sprockit::sim_parameters* params) :
   // compute max number of ports (switch ports + node ports)
   // +2 because we start indexing at zero
   max_num_ports_ += max_node_ports + 2;
+}
 
+void
+file::init_hostname_map(sprockit::sim_parameters* params)
+{
+  //this is done in the constructor
 }
 
 void

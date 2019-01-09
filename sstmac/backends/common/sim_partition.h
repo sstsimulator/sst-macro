@@ -90,7 +90,7 @@ class partition
     return switch_to_thread_[switch_id];
   }
 
-  virtual void finalize_init(){}
+  virtual void finalize_init(sprockit::sim_parameters* params){}
 
  protected:
   partition(sprockit::sim_parameters* params, parallel_runtime* rt);
@@ -149,7 +149,7 @@ class block_partition :
 
   virtual ~block_partition();
 
-  void finalize_init();
+  void finalize_init(sprockit::sim_parameters* params);
 
   virtual void partition_switches();
 

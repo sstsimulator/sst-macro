@@ -449,6 +449,10 @@ class topology : public sprockit::printable
                           std::vector<injection_port>& nodes) const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
 
+  void finalize_init(sprockit::sim_parameters* params){
+    init_hostname_map(params);
+  }
+
   virtual void create_partition(
     int* switch_to_lp,
     int* switch_to_thread,
@@ -476,9 +480,7 @@ class topology : public sprockit::printable
    *        Output is non-default unique params.
    */
   virtual void configure_nonuniform_switch_params(switch_id src,
-        sprockit::sim_parameters* switch_params) const
-  {
-  }
+        sprockit::sim_parameters* switch_params) const {}
 
   std::string label(uint32_t comp_id) const;
 
@@ -494,24 +496,9 @@ class topology : public sprockit::printable
 
   virtual cartesian_topology* cart_topology() const;
 
-  virtual node_id node_name_to_id(std::string name);
-//  {
-//    std::size_t pos = name.find("node");
-//    if (pos != 0)
-//      throw sprockit::input_error("topology: node name should be node<n>");
-//    std::string number(name,4);
-//    node_id id;
-//    try {
-//      id = stoi(number);
-//    }
-//    catch(...) {
-//      throw sprockit::input_error("topology: node name should be node<n>");
-//    }
-//    return id;
-//  }
+  node_id node_name_to_id(const std::string& name) const;
 
-  virtual switch_id switch_name_to_id(std::string name) const
-  {
+  virtual switch_id switch_name_to_id(std::string name) const {
     std::size_t pos = name.find("switch");
     if (pos != 0)
       throw sprockit::input_error("topology: switch name should be switch<n>");
@@ -527,12 +514,8 @@ class topology : public sprockit::printable
   }
 
   virtual std::string node_id_to_name(node_id id);
-//  {
-//    return std::string("node") + std::to_string(id);
-//  }
 
-  virtual std::string switch_id_to_name(switch_id id) const
-  {
+  virtual std::string switch_id_to_name(switch_id id) const {
     return std::string("switch") + std::to_string(id);
   }
 
@@ -543,13 +526,7 @@ class topology : public sprockit::printable
 
   static std::string get_port_namespace(int port);
 
-//  std::string host_name(node_id i);
-//  node_id host_id(std::string hostname);
-
-protected:
-
-  bool maps_inited_;
-
+ protected:
   topology(sprockit::sim_parameters* params);
 
   static sprockit::sim_parameters* setup_port_params(
@@ -560,19 +537,17 @@ protected:
   void configure_individual_port_params(int port_offset, int nports,
            sprockit::sim_parameters* params) const;
 
+  virtual void init_hostname_map(sprockit::sim_parameters* params);
+
  protected:
-  std::string name_;
   static topology* main_top_;
-  std::map<std::string,node_id> idmap_;
-  std::map<node_id,std::string> hostmap_;
+  std::unordered_map<std::string,node_id> idmap_;
+  std::vector<std::string> hostmap_;
 
  private:
   static topology* static_topology_;
   std::string dot_file_;
   std::string xyz_file_;
-
-
-  void init_maps_default();
 };
 
 static inline std::ostream& operator<<(std::ostream& os, const topology::xyz& v) {

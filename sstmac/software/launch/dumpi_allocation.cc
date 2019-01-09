@@ -73,8 +73,6 @@ dumpi_allocation::allocate(
    const ordered_node_set& available,
    ordered_node_set& allocation) const
 {
-  hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
-
   dumpi_meta* meta = new dumpi_meta(metafile_);
   int nrank = meta->num_procs();
   for (int i = 0; i < nrank; i++) {
@@ -93,23 +91,26 @@ dumpi_allocation::allocate(
     }
 
     if (header->meshdim == 0) {
-      spkt_throw_printf(sprockit::input_error,
-                       "dumpi_allocation::allocate: trace file %s contains no mesh info. No mesh coordinates found.\n"
-                       "To run the trace you will need to use launch_allocation = hostname.\n"
-                       "You will also need to give a hostname_map file giving the machine topology.\n"
-                       "Alternatively, the trace file may just be corrupted.",
-                       fname.c_str());
+      //there better be a topology initialized that maps hostnames
+      node_id nid = topology_->node_name_to_id(header->hostname);
+      allocation.insert(nid);
+    } else { //read mesh coords directly
+      hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
+      hw::coordinates coord_vec(header->meshdim);
+      for (int i=0; i < header->meshdim; ++i) {
+        coord_vec[i] = header->meshcrd[i];
+      }
+      node_id nid = regtop->node_addr(coord_vec);
+      allocation.insert(nid);
+      //spkt_throw_printf(sprockit::input_error,
+      //                 "dumpi_allocation::allocate: trace file %s contains no mesh info. No mesh coordinates found.\n"
+      //                 "To run the trace you will need to use launch_allocation = hostname.\n"
+      //                 "You will also need to give a hostname_map file giving the machine topology.\n"
+      //                 "Alternatively, the trace file may just be corrupted.",
+      //                 fname.c_str());
     }
-    hw::coordinates coord_vec(header->meshdim);
-    for (int i=0; i < header->meshdim; ++i) {
-      coord_vec[i] = header->meshcrd[i];
-    }
-    node_id nid = regtop->node_addr(coord_vec);
-
-    allocation.insert(nid);
     dumpi_free_header(header);
   }
-
   return true;
 }
 

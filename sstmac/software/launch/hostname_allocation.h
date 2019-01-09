@@ -73,7 +73,7 @@ class hostname_allocation : public node_allocator
    */
   static void read_host_file(parallel_runtime* rt,
                 const char* here, const std::string &mapfile,
-                std::list<std::string>& hostmap);
+                std::vector<std::string>& hostmap);
 
   bool allocate(int nnode_requested,
     const ordered_node_set& available,

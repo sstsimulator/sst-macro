@@ -102,8 +102,7 @@ topology::node_to_logp_switch(node_id nid) const
 }
 #endif
 
-topology::topology(sprockit::sim_parameters* params) :
-  maps_inited_(false)
+topology::topology(sprockit::sim_parameters* params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_VALID_MPI
@@ -314,28 +313,34 @@ topology::get_vtk_geometry(switch_id sid) const
 std::string
 topology::node_id_to_name(node_id i)
 {
-  if(!maps_inited_) init_maps_default();
-  auto it = hostmap_.find(i);
-  if (it == hostmap_.end())
-    spkt_abort_printf("topology: can't find %d in hostname map",i);
-  return it->second;
+  if (i >= hostmap_.size()){
+    spkt_abort_printf("Invalid node id %d given to topology::node_id_to_name", i)
+  }
+  return hostmap_[i];
 }
 
 node_id
-topology::node_name_to_id(std::string hostname)
+topology::node_name_to_id(const std::string& hostname) const
 {
-  if(!maps_inited_) init_maps_default();
   auto it = idmap_.find(hostname);
-  if (it == idmap_.end())
+  if (it == idmap_.end()){
     spkt_abort_printf("topology: can't find %s in hostname map",
                       hostname.c_str());
+  }
   return it->second;
 }
 
 void
-topology::init_maps_default()
+topology::init_hostname_map(sprockit::sim_parameters* params)
 {
-  for (int i=0; i < num_nodes(); ++i) {
+  if (!idmap_.empty() || !hostmap_.empty()){
+    spkt_abort_printf("topology::init_hostname_map: maps not empty");
+  }
+
+  int nn = num_nodes();
+  hostmap_.resize(nn);
+
+  for (int i=0; i < nn; ++i) {
     std::string name = std::string("nid") + std::to_string(i);
     idmap_[name] = i;
     hostmap_[i] = name;
