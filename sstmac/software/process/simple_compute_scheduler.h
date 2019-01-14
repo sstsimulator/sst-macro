@@ -50,22 +50,22 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class simple_compute_scheduler : public compute_scheduler
+class SimpleComputeScheduler : public ComputeScheduler
 {
-  FactoryRegister("simple", compute_scheduler, simple_compute_scheduler,
+  FactoryRegister("simple", ComputeScheduler, SimpleComputeScheduler,
               "Compute scheduler that migrates work to any open core")
  public:
-  simple_compute_scheduler(sprockit::sim_parameters*params,
-                           operating_system* os, int ncore, int nsocket)
-    : ncore_active_(0), compute_scheduler(params, os, ncore, nsocket)
+  SimpleComputeScheduler(sprockit::sim_parameters*params,
+                           OperatingSystem* os, int ncore, int nsocket)
+    : ncore_active_(0), ComputeScheduler(params, os, ncore, nsocket)
   {}
   
-  void reserve_cores(int ncore, thread* thr) override;
+  void reserveCores(int ncore, Thread* thr) override;
   
-  void release_cores(int ncore, thread* thr) override;
+  void releaseCores(int ncore, Thread* thr) override;
 
  private:
-  std::list<std::pair<int,thread*>> pending_threads_;
+  std::list<std::pair<int,Thread*>> pending_threads_;
   int ncore_active_;
 };
 

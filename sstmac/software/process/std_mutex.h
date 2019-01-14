@@ -6,11 +6,11 @@
 namespace sstmac {
 namespace sw {
 
-class std_mutex {
+class stdMutex {
  public:
-  std_mutex();
+  stdMutex();
 
-  ~std_mutex();
+  ~stdMutex();
 
   void lock();
 
@@ -20,14 +20,14 @@ class std_mutex {
 
  private:
   int id_;
-  app* parent_app_;
+  App* parent_app_;
 };
 
 }
 }
 
 namespace std {
-using sstmac_mutex = sstmac::sw::std_mutex;
+using sstmac_mutex = sstmac::sw::stdMutex;
 }
 
 #endif

@@ -119,8 +119,8 @@ static void check_status(OTF2_ErrorCode status, const std::string& description)
 }
 
 OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
-        sumi::software_id sid, sstmac::sw::operating_system* os) :
-  app(params, sid, os), mpi_(nullptr), rank_(sid.task_), call_queue_(this), total_events_(0) {
+        sumi::SoftwareId sid, sstmac::sw::OperatingSystem* os) :
+  App(params, sid, os), mpi_(nullptr), rank_(sid.task_), call_queue_(this), total_events_(0) {
   timescale_ = params->get_optional_double_param("otf2_timescale", 1.0);
   terminate_percent_ = params->get_optional_double_param("otf2_terminate_percent", 1);
   print_progress_ = params->get_optional_bool_param("otf2_print_progress", true);
@@ -133,13 +133,13 @@ OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
 }
 
 int
-OTF2TraceReplayApp::skeleton_main() {
+OTF2TraceReplayApp::skeletonMain() {
   if (rank_ == 0){
     std::cout << "Running OTF2 replay on "
         << metafile_ << std::endl;
   }
 
-  mpi_ = get_api<sumi::mpi_api>();
+  mpi_ = get_api<sumi::MpiApi>();
   mpi_->set_generate_ids(false);
   mpi_->init(nullptr,nullptr); //force init here
 
@@ -155,9 +155,9 @@ OTF2TraceReplayApp::skeleton_main() {
 
 // Indicate that we are starting an MPI call.
 void
-OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
+OTF2TraceReplayApp::StartMpi(const sstmac::Timestamp wall) {
   // Time not initialized
-  if (compute_time == sstmac::timestamp::zero) return;
+  if (compute_time == sstmac::Timestamp::zero) return;
 
   if (PrintTimeDeltas()) {
     cout << "\u0394T " << (wall-compute_time).sec() << " seconds"<< endl;
@@ -167,7 +167,7 @@ OTF2TraceReplayApp::StartMpi(const sstmac::timestamp wall) {
 }
 
 void
-OTF2TraceReplayApp::EndMpi(const sstmac::timestamp wall) {
+OTF2TraceReplayApp::EndMpi(const sstmac::Timestamp wall) {
   compute_time = wall;
 }
 

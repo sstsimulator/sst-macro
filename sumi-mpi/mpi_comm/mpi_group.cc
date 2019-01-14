@@ -49,24 +49,24 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-mpi_group::mpi_group(const std::vector<task_id>& tl) :
+MpiGroup::MpiGroup(const std::vector<TaskId>& tl) :
   local_to_world_map_(tl),
   is_comm_world_(false),
   size_(tl.size())
 {
 }
 
-mpi_group::mpi_group(size_t size) :
+MpiGroup::MpiGroup(size_t size) :
  size_(size),
  is_comm_world_(true)
 {
 } // the comm_world constructor to save space
 
-task_id
-mpi_group::at(int rank)
+TaskId
+MpiGroup::at(int rank)
 {
   if (is_comm_world_){
-    return task_id(rank);
+    return TaskId(rank);
   } else {
     if (rank >= local_to_world_map_.size()){
       spkt_throw_printf(sprockit::value_error,
@@ -79,20 +79,20 @@ mpi_group::at(int rank)
 }
 
 void
-mpi_group::translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, mpi_group* other_grp){
+MpiGroup::translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, MpiGroup* other_grp){
   for (int i=0; i < n_ranks; ++i){
     int input_rank = my_ranks[i];
     if (input_rank == MPI_PROC_NULL){
       other_ranks[i] = MPI_PROC_NULL;
     } else {
       int global_rank_i = is_comm_world_ ? input_rank : local_to_world_map_[input_rank];
-      other_ranks[i] = other_grp->rank_of_task(global_rank_i);
+      other_ranks[i] = other_grp->rankOfTask(global_rank_i);
     }
   }
 }
 
 int
-mpi_group::rank_of_task(task_id t) const
+MpiGroup::rankOfTask(TaskId t) const
 {
   if (is_comm_world_){
     return int(t);

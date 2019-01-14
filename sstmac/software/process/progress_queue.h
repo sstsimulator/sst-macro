@@ -9,25 +9,25 @@
 namespace sstmac {
 namespace sw {
 
-struct progress_queue {
-  operating_system* os;
+struct ProgressQueue {
+  OperatingSystem* os;
 
-  progress_queue(operating_system* os) : os(os)
+  ProgressQueue(OperatingSystem* os) : os(os)
   {
   }
 
-  void block(std::queue<thread*>& q, double timeout);
-  void unblock(std::queue<thread*>& q);
+  void block(std::queue<Thread*>& q, double timeout);
+  void unblock(std::queue<Thread*>& q);
 
 };
 
 template <class item>
-struct single_progress_queue : public progress_queue {
+struct SingleProgressQueue : public ProgressQueue {
   std::queue<item*> items;
-  std::queue<thread*> pending_threads;
+  std::queue<Thread*> pending_threads;
 
-  single_progress_queue(operating_system* os) :
-    progress_queue(os)
+  SingleProgressQueue(OperatingSystem* os) :
+    ProgressQueue(os)
   {
   }
 
@@ -63,13 +63,13 @@ struct single_progress_queue : public progress_queue {
 };
 
 template <class item>
-struct multi_progress_queue : public progress_queue {
-  std::queue<thread*> any_threads;
+struct MultiProgressQueue : public ProgressQueue {
+  std::queue<Thread*> any_threads;
   std::map<int,std::queue<item*>> queues;
-  std::map<int,std::queue<thread*>> pending_threads;
-  operating_system* os;
+  std::map<int,std::queue<Thread*>> pending_threads;
+  OperatingSystem* os;
 
-  multi_progress_queue(operating_system* os) : progress_queue(os)
+  MultiProgressQueue(OperatingSystem* os) : ProgressQueue(os)
   {
   }
 

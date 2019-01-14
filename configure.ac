@@ -282,7 +282,7 @@ echo "OS                 $os"
 echo "C compiler         $CC"
 echo "C++ compiler       $CXX"
 echo "CFLAGS             $CFLAGS"
-echo "CXXFLAGS           $CXXFLAGS"
+echo "CXXFLAGS           $CXXFLAGS $SST_CXXFLAGS"
 echo "CPPFLAGS           $CPPFLAGS"
 echo "LDFLAGS            $LDFLAGS"
 echo

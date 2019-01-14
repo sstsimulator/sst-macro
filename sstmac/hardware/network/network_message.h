@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class network_message : public flow
+class NetworkMessage : public Flow
 {
  public:
   typedef enum {
@@ -83,52 +83,52 @@ class network_message : public flow
   } type_t;
 
  public:
-  network_message(
+  NetworkMessage(
    uint64_t flow_id,
    const std::string& libname,
-   sw::app_id aid,
-   node_id to,
-   node_id from,
+   sw::AppId aid,
+   NodeId to,
+   NodeId from,
    uint64_t size,
    bool needs_ack,
    void* buf,
    header ctor_tag) :
-    network_message(flow_id, libname, aid, to, from,
+    NetworkMessage(flow_id, libname, aid, to, from,
                     size, 0, needs_ack, nullptr, nullptr, buf,
                     payload)
   {
   }
 
-  network_message(
+  NetworkMessage(
    uint64_t flow_id,
    const std::string& libname,
-   sw::app_id aid,
-   node_id to,
-   node_id from,
+   sw::AppId aid,
+   NodeId to,
+   NodeId from,
    uint64_t payload_size,
    bool needs_ack,
    void* local_buf,
    void* remote_buf,
    rdma_get ctor_tag) :
-    network_message(flow_id, libname, aid, to, from,
+    NetworkMessage(flow_id, libname, aid, to, from,
                     64/*default to 64 bytes for now*/,
                     payload_size, needs_ack, local_buf, remote_buf, nullptr,
                     rdma_get_request)
   {
   }
 
-  network_message(
+  NetworkMessage(
    uint64_t flow_id,
    const std::string& libname,
-   sw::app_id aid,
-   node_id to,
-   node_id from,
+   sw::AppId aid,
+   NodeId to,
+   NodeId from,
    uint64_t payload_size,
    bool needs_ack,
    void* local_buf,
    void* remote_buf,
    rdma_put ctor_tag) :
-    network_message(flow_id, libname, aid, to, from,
+    NetworkMessage(flow_id, libname, aid, to, from,
                     payload_size, payload_size, needs_ack, local_buf, remote_buf, nullptr,
                     rdma_put_payload)
   {
@@ -136,96 +136,96 @@ class network_message : public flow
 
 
 
-  virtual std::string to_string() const override {
+  virtual std::string toString() const override {
     return "network message";
   }
 
-  virtual ~network_message();
+  virtual ~NetworkMessage();
 
   static const char* tostr(nic_event_t mut);
 
   static const char* tostr(type_t ty);
 
-  const char* type_str() const {
+  const char* typeStr() const {
     return tostr(type_);
   }
 
-  bool is_metadata() const;
+  bool isMetadata() const;
 
-  virtual network_message* clone_injection_ack() const = 0;
+  virtual NetworkMessage* cloneInjectionAck() const = 0;
 
-  void nic_reverse(type_t newtype);
+  void nicReverse(type_t newtype);
 
-  bool is_nic_ack() const;
+  bool isNicAck() const;
 
-  uint64_t payload_bytes() const {
+  uint64_t payloadBytes() const {
     return payload_bytes_;
   }
 
-  node_id toaddr() const {
+  NodeId toaddr() const {
     return toaddr_;
   }
 
-  node_id fromaddr() const {
+  NodeId fromaddr() const {
     return fromaddr_;
   }
 
-  void setup_smsg(void* buf, uint64_t sz){
+  void setupSmsg(void* buf, uint64_t sz){
     payload_bytes_ = 0;
-    set_flow_size(sz);
+    setFlowSize(sz);
     smsg_buffer_ = buf;
     type_ = payload;
   }
 
-  void setup_rdma_put(void* local_buf, void* remote_buf, uint64_t sz){
+  void setupRdmaPut(void* local_buf, void* remote_buf, uint64_t sz){
     type_ = rdma_put_payload;
     local_buffer_ = local_buf;
     remote_buffer_ = remote_buf;
     payload_bytes_ = sz;
-    set_flow_size(sz);
+    setFlowSize(sz);
   }
 
-  void setup_rdma_get(void* local_buf, void* remote_buf, uint64_t sz){
+  void setupRdmaGet(void* local_buf, void* remote_buf, uint64_t sz){
     type_ = rdma_get_request;
     local_buffer_ = local_buf;
     remote_buffer_ = remote_buf;
     payload_bytes_ = sz;
   }
 
-  void set_type(type_t ty){
+  void setType(type_t ty){
     type_ = ty;
   }
 
-  void put_on_wire();
+  void putOnWire();
 
-  void take_off_wire();
+  void takeOffWire();
 
   void intranode_memmove();
 
-  void memmove_remote_to_local();
+  void memmoveRemoteToLocal();
 
-  void memmove_local_to_remote();
+  void memmoveLocalToRemote();
 
-  void* local_buffer() const { return local_buffer_; }
+  void* localBuffer() const { return local_buffer_; }
 
-  void* remote_buffer() const { return remote_buffer_; }
+  void* remoteBuffer() const { return remote_buffer_; }
 
-  void* smsg_buffer() const { return smsg_buffer_; }
+  void* smsgBuffer() const { return smsg_buffer_; }
 
-  void* wire_buffer() const { return wire_buffer_; }
+  void* wireBuffer() const { return wire_buffer_; }
 
-  bool needs_ack() const {
+  bool needsAck() const {
     //only paylods get acked
     return needs_ack_ && type_ >= payload;
   }
 
-  void set_needs_ack(bool flag){
+  void setNeedsAck(bool flag){
     needs_ack_ = flag;
   }
 
   virtual void serialize_order(serializer& ser) override;
 
-  sw::app_id aid() const {
+  sw::AppId aid() const {
     return aid_;
   }
 
@@ -236,12 +236,12 @@ class network_message : public flow
   void reverse();
 
  protected:
-  //void clone_into(network_message* cln) const;
+  //void clone_into(NetworkMessage* cln) const;
 
-  void convert_to_ack();
+  void convertToAck();
 
-  network_message() : //for serialization
-   flow(-1, 0),
+  NetworkMessage() : //for serialization
+   Flow(-1, 0),
    needs_ack_(true),
    payload_bytes_(0),
    type_(null_netmsg_type)
@@ -249,12 +249,12 @@ class network_message : public flow
   }
 
  private:
-  network_message(
+  NetworkMessage(
    uint64_t flow_id,
    const std::string& libname,
-   sw::app_id aid,
-   node_id to,
-   node_id from,
+   sw::AppId aid,
+   NodeId to,
+   NodeId from,
    uint64_t size,
    uint64_t payload_bytes,
    bool needs_ack,
@@ -262,7 +262,7 @@ class network_message : public flow
    void* remote_buf,
    void* smsg_buf,
    type_t ty) :
-    flow(flow_id, size, libname),
+    Flow(flow_id, size, libname),
     smsg_buffer_(smsg_buf),
     local_buffer_(local_buf),
     remote_buffer_(remote_buf),
@@ -276,9 +276,9 @@ class network_message : public flow
   {
   }
 
-  void put_buffer_on_wire(void* buf, uint64_t sz);
+  void putBufferOnWire(void* buf, uint64_t sz);
 
-  void take_buffer_off_wire(void* buf, uint64_t sz);
+  void takeBufferOffWire(void* buf, uint64_t sz);
 
   void* smsg_buffer_;
 
@@ -293,15 +293,15 @@ class network_message : public flow
 
   uint64_t flow_id_;
 
-  sw::app_id aid_;
+  sw::AppId aid_;
 
   bool needs_ack_;
 
   uint64_t payload_bytes_;
 
-  node_id toaddr_;
+  NodeId toaddr_;
 
-  node_id fromaddr_;
+  NodeId fromaddr_;
 
   type_t type_;
 

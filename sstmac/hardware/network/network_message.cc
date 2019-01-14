@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-network_message::~network_message()
+NetworkMessage::~NetworkMessage()
 {
   if (wire_buffer_){
     delete[] (char*) wire_buffer_;
@@ -60,7 +60,7 @@ network_message::~network_message()
 }
 
 bool
-network_message::is_nic_ack() const
+NetworkMessage::isNicAck() const
 {
   switch(type_)
   {
@@ -74,18 +74,18 @@ network_message::is_nic_ack() const
 }
 
 void
-network_message::put_on_wire()
+NetworkMessage::putOnWire()
 {
   switch(type_){
     case rdma_get_payload:
     case nvram_get_payload:
-      put_buffer_on_wire(remote_buffer_, payload_bytes_);
+      putBufferOnWire(remote_buffer_, payload_bytes_);
       break;
     case rdma_put_payload:
-      put_buffer_on_wire(local_buffer_, payload_bytes_);
+      putBufferOnWire(local_buffer_, payload_bytes_);
       break;
     case payload:
-      put_buffer_on_wire(smsg_buffer_, byte_length());
+      putBufferOnWire(smsg_buffer_, byteLength());
       smsg_buffer_ = nullptr;
       break;
     default:
@@ -94,7 +94,7 @@ network_message::put_on_wire()
 }
 
 void
-network_message::put_buffer_on_wire(void* buf, uint64_t sz)
+NetworkMessage::putBufferOnWire(void* buf, uint64_t sz)
 {
   if (buf){
     wire_buffer_ = new char[sz];
@@ -103,7 +103,7 @@ network_message::put_buffer_on_wire(void* buf, uint64_t sz)
 }
 
 void
-network_message::take_buffer_off_wire(void *buf, uint64_t sz)
+NetworkMessage::takeBufferOffWire(void *buf, uint64_t sz)
 {
   if (buf){
     ::memcpy(buf, wire_buffer_, sz);
@@ -113,14 +113,14 @@ network_message::take_buffer_off_wire(void *buf, uint64_t sz)
 }
 
 void
-network_message::take_off_wire()
+NetworkMessage::takeOffWire()
 {
   switch (type_){
     case rdma_get_payload:
-      take_buffer_off_wire(local_buffer_, payload_bytes_);
+      takeBufferOffWire(local_buffer_, payload_bytes_);
       break;
     case rdma_put_payload:
-      take_buffer_off_wire(remote_buffer_, payload_bytes_);
+      takeBufferOffWire(remote_buffer_, payload_bytes_);
       break;
     case payload:
       smsg_buffer_ = wire_buffer_;
@@ -132,17 +132,17 @@ network_message::take_off_wire()
 }
 
 void
-network_message::intranode_memmove()
+NetworkMessage::intranode_memmove()
 {
   switch (type()){
     case rdma_get_payload:
-      memmove_remote_to_local();
+      memmoveRemoteToLocal();
       break;
     case rdma_put_payload:
-      memmove_local_to_remote();
+      memmoveLocalToRemote();
       break;
     case payload:
-      put_buffer_on_wire(smsg_buffer_, byte_length());
+      putBufferOnWire(smsg_buffer_, byteLength());
       smsg_buffer_ = wire_buffer_;
       wire_buffer_ = nullptr;
       break;
@@ -152,7 +152,7 @@ network_message::intranode_memmove()
 }
 
 void
-network_message::memmove_local_to_remote()
+NetworkMessage::memmoveLocalToRemote()
 {
   //due to scatter-gather elements, it's now allowed
   //to have a null remote buffer
@@ -162,7 +162,7 @@ network_message::memmove_local_to_remote()
 }
 
 void
-network_message::memmove_remote_to_local()
+NetworkMessage::memmoveRemoteToLocal()
 {
   //due to scatter-gather elements, it's now allowed
   //to have a null local buffer
@@ -173,7 +173,7 @@ network_message::memmove_remote_to_local()
 
 
 void
-network_message::convert_to_ack()
+NetworkMessage::convertToAck()
 {
   reverse();
   switch(type_)
@@ -188,26 +188,26 @@ network_message::convert_to_ack()
       type_ = payload_sent_ack;
       break;
     default:
-      spkt_abort_printf("network_message::clone_injection_ack: cannot ack msg type %s", tostr(type_));
+      spkt_abort_printf("NetworkMessage::clone_injection_ack: cannot ack msg type %s", tostr(type_));
       break;
   }
-  flow::byte_length_ = 32;
+  Flow::byte_length_ = 32;
   wire_buffer_ = nullptr;
   smsg_buffer_ = nullptr;
 }
 
 void
-network_message::reverse()
+NetworkMessage::reverse()
 {
   //also flip the addresses
-  node_id dst = fromaddr_;
-  node_id src = toaddr_;
+  NodeId dst = fromaddr_;
+  NodeId src = toaddr_;
   toaddr_ = dst;
   fromaddr_ = src;
 }
 
 const char*
-network_message::tostr(nic_event_t mut)
+NetworkMessage::tostr(nic_event_t mut)
 {
   switch (mut) {
       enumcase(RDMA_GET_REQ_TO_RSP);
@@ -215,11 +215,11 @@ network_message::tostr(nic_event_t mut)
       enumcase(NVRAM_GET_REQ_TO_RSP);
   }
   spkt_throw_printf(sprockit::value_error,
-       "network_message: invalid nic event %d", mut);
+       "NetworkMessage: invalid nic event %d", mut);
 }
 
 const char*
-network_message::tostr(type_t ty)
+NetworkMessage::tostr(type_t ty)
 {
   switch(ty)
   {
@@ -238,14 +238,14 @@ network_message::tostr(type_t ty)
       enumcase(failure_notification);
   }
   spkt_throw_printf(sprockit::value_error,
-    "network_message::tostr: unknown type_t %d",
+    "NetworkMessage::tostr: unknown type_t %d",
     ty);
 }
 
 void
-network_message::serialize_order(serializer& ser)
+NetworkMessage::serialize_order(serializer& ser)
 {
-  flow::serialize_order(ser);
+  Flow::serialize_order(ser);
   ser & needs_ack_;
   ser & toaddr_;
   ser & fromaddr_;
@@ -265,7 +265,7 @@ network_message::serialize_order(serializer& ser)
 }
 
 bool
-network_message::is_metadata() const
+NetworkMessage::isMetadata() const
 {
   switch(type_)
   {
@@ -291,14 +291,14 @@ network_message::is_metadata() const
 }
 
 void
-network_message::nic_reverse(type_t newtype)
+NetworkMessage::nicReverse(type_t newtype)
 {
   //hardware level reverse only
-  network_message::reverse();
+  NetworkMessage::reverse();
   type_ = newtype;
   switch(newtype){
   case rdma_get_payload:
-    set_flow_size(payload_bytes_);
+    setFlowSize(payload_bytes_);
     break;
   default: break;
   }
@@ -306,7 +306,7 @@ network_message::nic_reverse(type_t newtype)
 
 /**
 void
-network_message::clone_into(network_message* cln) const
+NetworkMessage::clone_into(NetworkMessage* cln) const
 {
   cln->needs_ack_ = needs_ack_;
   cln->toaddr_ = toaddr_;

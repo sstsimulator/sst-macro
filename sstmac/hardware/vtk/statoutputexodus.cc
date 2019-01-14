@@ -192,16 +192,16 @@ void StatisticOutputEXODUS::implStopOutputGroup()
 
   //  TORM: display the map in the console
      for (auto it = tf_nodes_map.cbegin(); it != tf_nodes_map.cend(); ++it){
-       auto node_id = it->first;
+       auto NodeId = it->first;
        const auto &map = it->second;
-       std::cout<<node_id<<":::";
+       std::cout<<NodeId<<":::";
        for(auto it = map.cbegin(); it != map.cend(); ++it){
          std::cout<< it->second << " ";
        }
        std::cout<<std::endl;
      }
 
-  stat_vtk::outputExodus(m_FilePath, traffic_progress_map_, topology::global());
+  stat_vtk::outputExodus(m_FilePath, traffic_progress_map_, Topology::global());
 }
 
 } //namespace Statistics

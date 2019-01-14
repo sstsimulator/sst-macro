@@ -11,7 +11,7 @@ class christopher_guest :
  public:
   christopher_guest(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "count rugen";
   }
 

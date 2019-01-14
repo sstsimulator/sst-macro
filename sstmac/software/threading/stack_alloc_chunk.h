@@ -57,7 +57,7 @@ namespace sw {
 /**
  * A chunk of allocated memory to be divided into fixed-size stacks.
  */
-class stack_alloc::chunk
+class StackAlloc::chunk
 {
   /// The base address of my memory region.
   char *addr_;
@@ -78,7 +78,7 @@ class stack_alloc::chunk
 
   ~chunk();
 
-  void*  get_next_stack();
+  void*  getNextStack();
 
 };
 

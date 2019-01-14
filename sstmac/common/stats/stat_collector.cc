@@ -56,40 +56,15 @@ RegisterKeywords(
 
 namespace sstmac {
 
-int stat_collector::unique_tag_counter_ = 0;
+int StatCollector::unique_tag_counter_ = 0;
 
-stats_unique_tag::stats_unique_tag() : id(stat_collector::allocate_unique_tag())
-{
-}
-
-stat_collector::~stat_collector()
+StatCollector::~StatCollector()
 {
   if (params_) delete params_;
 }
 
-stat_collector*
-stat_collector::find_unique_stat(event_scheduler* es, int unique_tag)
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_abort_printf("stats registration not compatible with SST core");
-  return nullptr;
-#else
-  return es->event_mgr()->find_unique_stat(unique_tag);
-#endif
-}
-
-void
-stat_collector::register_unique_stat(event_scheduler* es, stat_collector* sc, stat_descr_t* descr)
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_abort_printf("stats registration not compatible with SST core");
-#else
-  es->event_mgr()->register_unique_stat(sc, descr);
-#endif
-}
-
 bool
-stat_collector::check_open(std::fstream& myfile, const std::string& fname, std::ios::openmode ios_flags)
+StatCollector::checkOpen(std::fstream& myfile, const std::string& fname, std::ios::openmode ios_flags)
 {
   if (!myfile.is_open()) {
     myfile.open(fname.c_str(), ios_flags);
@@ -102,7 +77,7 @@ stat_collector::check_open(std::fstream& myfile, const std::string& fname, std::
   return true;
 }
 
-stat_collector::stat_collector(sprockit::sim_parameters* params) :
+StatCollector::StatCollector(sprockit::sim_parameters* params) :
   registered_(false),
   id_(-1),
   params_(new sprockit::sim_parameters(params))
@@ -114,21 +89,21 @@ stat_collector::stat_collector(sprockit::sim_parameters* params) :
   id_ = params->get_optional_int_param("id", -1);
 }
 
-stat_collector*
-stat_collector::required_build(sprockit::sim_parameters* params,
+StatCollector*
+StatCollector::requiredBuild(sprockit::sim_parameters* params,
                       const std::string& ns,
                       const std::string& deflt,
                       stat_descr_t* descr)
 {
-  stat_collector* coll = optional_build(params, ns, deflt, descr);
+  StatCollector* coll = optionalBuild(params, ns, deflt, descr);
   if (!coll){
-    stats_error(params, ns, deflt);
+    statsError(params, ns, deflt);
   }
   return coll;
 }
 
 void
-stat_collector::stats_error(sprockit::sim_parameters *params,
+StatCollector::statsError(sprockit::sim_parameters *params,
                             const std::string &ns,
                             const std::string &deflt)
 {
@@ -146,8 +121,8 @@ stat_collector::stats_error(sprockit::sim_parameters *params,
   }
 }
 
-stat_collector*
-stat_collector::optional_build(sprockit::sim_parameters* params,
+StatCollector*
+StatCollector::optionalBuild(sprockit::sim_parameters* params,
                       const std::string& ns,
                       const std::string& deflt,
                       stat_descr_t* descr)
@@ -169,24 +144,24 @@ stat_collector::optional_build(sprockit::sim_parameters* params,
     old_params->combine_into(params);
   }
 
-  stat_collector* stats = stat_collector::factory::get_optional_param(
+  StatCollector* stats = StatCollector::factory::get_optional_param(
         "type", deflt, params);
 
   return stats;
 }
 
 void
-stat_collector::register_optional_stat(event_scheduler* parent, stat_collector *coll, stat_descr_t* descr)
+StatCollector::registerOptionalStat(EventScheduler* parent, StatCollector *coll, stat_descr_t* descr)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("stat_collector::register_optional_state: should not be called with integrated core");
 #else
-  parent->register_stat(coll, descr);
+  parent->registerStat(coll, descr);
 #endif
 }
 
-stat_value_base::stat_value_base(sprockit::sim_parameters *params) :
-  stat_collector(params)
+StatValueBase::StatValueBase(sprockit::sim_parameters *params) :
+  StatCollector(params)
 {
   id_ = params->get_int_param("id");
 }

@@ -55,100 +55,100 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-logp_nic::logp_nic(sprockit::sim_parameters* params, node* parent) :
+LogPNIC::LogPNIC(sprockit::sim_parameters* params, Node* parent) :
   next_out_free_(0),
-  nic(params, parent)
+  NIC(params, parent)
 {
-  ack_handler_ = new_handler(parent, &node::handle);
+  ack_handler_ = newHandler(parent, &Node::handle);
   sprockit::sim_parameters* inj_params = params->get_namespace("injection");
   double inj_bw = inj_params->get_bandwidth_param("bandwidth");
   inj_bw_inverse_ = 1.0/inj_bw;
   inj_lat_ = inj_params->get_time_param("latency");
 }
 
-timestamp
-logp_nic::send_latency(sprockit::sim_parameters *params) const
+Timestamp
+LogPNIC::sendLatency(sprockit::sim_parameters *params) const
 {
   return params->get_time_param("latency");
 }
 
-timestamp
-logp_nic::credit_latency(sprockit::sim_parameters *params) const
+Timestamp
+LogPNIC::creditLatency(sprockit::sim_parameters *params) const
 {
   return params->get_time_param("latency");
 }
 
-logp_nic::~logp_nic()
+LogPNIC::~LogPNIC()
 {
   if (ack_handler_) delete ack_handler_;
 }
 
 void
-logp_nic::mtl_handle(event *ev)
+LogPNIC::mtlHandle(Event *ev)
 {
-  timestamp now_ = now();
-  network_message* msg = static_cast<network_message*>(ev);
-  if (msg->byte_length() < negligible_size_){
-    recv_message(msg);
+  Timestamp now_ = now();
+  NetworkMessage* msg = static_cast<NetworkMessage*>(ev);
+  if (msg->byteLength() < negligibleSize_){
+    recvMessage(msg);
   } else {
-    timestamp time_to_recv = inj_bw_inverse_*msg->byte_length();
-    timestamp recv_start = now_ - time_to_recv;
+    Timestamp time_to_recv = inj_bw_inverse_*msg->byteLength();
+    Timestamp recv_start = now_ - time_to_recv;
     if (recv_start > next_in_free_){
       next_in_free_ = now_;
-      recv_message(msg);
+      recvMessage(msg);
     } else {
       next_in_free_ += time_to_recv;
-      send_self_event_queue(next_in_free_, new_callback(this, &nic::recv_message, msg));
+      sendExecutionEvent(next_in_free_, newCallback(this, &NIC::recvMessage, msg));
     }
   }
 }
 
 void
-logp_nic::do_send(network_message* msg)
+LogPNIC::doSend(NetworkMessage* msg)
 {
-  uint64_t num_bytes = msg->byte_length();
-  timestamp now_ = now();
-  timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
+  uint64_t num_bytes = msg->byteLength();
+  Timestamp now_ = now();
+  Timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
   nic_debug("logp injection queued at %8.4e, sending at %8.4e for %s",
-            now_.sec(), start_send.sec(), msg->to_string().c_str());
+            now_.sec(), start_send.sec(), msg->toString().c_str());
 
-  timestamp time_to_inject = inj_lat_ + timestamp(inj_bw_inverse_ * num_bytes);
+  Timestamp time_to_inject = inj_lat_ + Timestamp(inj_bw_inverse_ * num_bytes);
   next_out_free_ = start_send + time_to_inject;
 
-  if (msg->needs_ack()){
-    network_message* acker = msg->clone_injection_ack();
-    auto ack_ev = new_callback(parent_, &node::handle, acker);
-    parent_->send_self_event_queue(next_out_free_, ack_ev);
+  if (msg->needsAck()){
+    NetworkMessage* acker = msg->cloneInjectionAck();
+    auto ack_ev = newCallback(parent_, &Node::handle, acker);
+    parent_->sendExecutionEvent(next_out_free_, ack_ev);
   }
 
-  timestamp extra_delay = start_send - now_;
-  logp_link_->send_extra_delay(extra_delay, msg);
+  Timestamp extra_delay = start_send - now_;
+  logp_link_->send(extra_delay, msg);
 }
 
 void
-logp_nic::connect_output(
+LogPNIC::connectOutput(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_link* link)
+  EventLink* link)
 {
   logp_link_ = link;
 }
 
 void
-logp_nic::connect_input(
+LogPNIC::connectInput(
   sprockit::sim_parameters* params,
   int src_outport,
   int dst_inport,
-  event_link* link)
+  EventLink* link)
 {
   //nothing needed
 }
 
-link_handler*
-logp_nic::payload_handler(int port)
+LinkHandler*
+LogPNIC::payloadHandler(int port)
 {
-  return new_link_handler(this, &nic::mtl_handle);
+  return newLinkHandler(this, &NIC::mtlHandle);
 }
 
 }

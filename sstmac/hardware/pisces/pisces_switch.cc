@@ -60,8 +60,8 @@ RegisterNamespaces("switch", "router", "congestion_stats", "xbar", "link",
 RegisterKeywords(
 { "stats", "specify the statistics collection to be performed on this switch" },
 { "latency", "latency to traverse a portion of the switch - sets both credit/send" },
-{ "send_latency", "latency to send data to the next stage" },
-{ "credit_latency", "latency to send credit to the previous stage" },
+{ "sendLatency", "latency to send data to the next stage" },
+{ "creditLatency", "latency to send credit to the previous stage" },
 { "credits", "the number of initial credits available to switch component" },
 { "num_vc", "the number of virtual channels a switch must allow" },
 );
@@ -70,75 +70,71 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-pisces_abstract_switch::pisces_abstract_switch(
-  sprockit::sim_parameters *params, uint32_t id, event_manager *mgr) :
+PiscesAbstractSwitch::PiscesAbstractSwitch(sprockit::sim_parameters *params, uint32_t id) :
   buf_stats_(nullptr),
   xbar_stats_(nullptr),
   router_(nullptr),
-  network_switch(params, id, mgr)
+  NetworkSwitch(params, id)
 {
   sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
-  xbar_stats_ = packet_stats_callback::factory::get_optional_param("stats", "null",
+  xbar_stats_ = PacketStatsCallback::factory::get_optional_param("stats", "null",
                                              xbar_params, this);
 
   sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
-  buf_stats_ = packet_stats_callback::factory::get_optional_param("stats", "null",
+  buf_stats_ = PacketStatsCallback::factory::get_optional_param("stats", "null",
                                              buf_params, this);
 
   sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
-  router_ = router::factory::get_param("name", rtr_params, top_, this);
+  router_ = Router::factory::get_param("name", rtr_params, top_, this);
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
-  std::vector<topology::injection_port> conns;
-  top_->endpoints_connected_to_ejection_switch(my_addr_, conns);
+  std::vector<Topology::injection_port> conns;
+  top_->endpointsConnectedToEjectionSwitch(my_addr_, conns);
   if (!ej_params->has_param("credits")){
     //never be limited by credits
     ej_params->add_param_override("credits", "1GB");
   }
 
-  pisces_sender::configure_payload_port_latency(ej_params);
+  PiscesSender::configurePayloadPortLatency(ej_params);
 
-  for (topology::injection_port& conn : conns){
-    auto port_ns = topology::get_port_namespace(conn.switch_port);
+  for (Topology::injection_port& conn : conns){
+    auto port_ns = Topology::getPortNamespace(conn.switch_port);
     sprockit::sim_parameters* port_params = params->get_optional_namespace(port_ns);
     ej_params->combine_into(port_params);
   }
 }
 
 
-pisces_abstract_switch::~pisces_abstract_switch()
+PiscesAbstractSwitch::~PiscesAbstractSwitch()
 {
   if (buf_stats_) delete buf_stats_;
   if (xbar_stats_) delete xbar_stats_;
   if (router_) delete router_;
 }
 
-pisces_switch::pisces_switch(
-  sprockit::sim_parameters* params,
-  uint32_t id,
-  event_manager* mgr)
-: pisces_abstract_switch(params, id, mgr),
+PiscesSwitch::PiscesSwitch(sprockit::sim_parameters* params, uint32_t id)
+: PiscesAbstractSwitch(params, id),
   xbar_(nullptr)
 {
   sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
-  xbar_params->add_param_override("num_vc", router_->num_vc());
-  xbar_ = new pisces_crossbar(xbar_params, this,
-                              top_->max_num_ports(), top_->max_num_ports(),
-                              router_->num_vc(), true/*yes, update vc*/);
-  xbar_->set_stat_collector(xbar_stats_);
-  out_buffers_.resize(top_->max_num_ports());
-  inports_.resize(top_->max_num_ports());
+  xbar_params->add_param_override("num_vc", router_->numVC());
+  xbar_ = new PiscesCrossbar(xbar_params, this,
+                              top_->maxNumPorts(), top_->maxNumPorts(),
+                              router_->numVC(), true/*yes, update vc*/);
+  xbar_->setStatCollector(xbar_stats_);
+  out_buffers_.resize(top_->maxNumPorts());
+  inports_.resize(top_->maxNumPorts());
   for (int i=0; i < inports_.size(); ++i){
     input_port& inp = inports_[i];
     inp.port = i;
     inp.parent = this;
   }
 
-  init_links(params);
+  initLinks(params);
 }
 
-pisces_switch::~pisces_switch()
+PiscesSwitch::~PiscesSwitch()
 {
   if (xbar_) delete xbar_;
   int nbuffers = out_buffers_.size();
@@ -149,106 +145,106 @@ pisces_switch::~pisces_switch()
 }
 
 void
-pisces_switch::connect_output(
+PiscesSwitch::connectOutput(
   sprockit::sim_parameters* port_params,
   int src_outport,
   int dst_inport,
-  event_link* link)
+  EventLink* link)
 {
-  pisces_buffer* out_buffer = new pisces_buffer(port_params, this, router_->num_vc());
-  out_buffer->set_stat_collector(buf_stats_);
+  PiscesBuffer* out_buffer = new PiscesBuffer(port_params, this, router_->numVC());
+  out_buffer->setStatCollector(buf_stats_);
   int buffer_inport = 0;
-  auto out_link = allocate_local_link(xbar_->send_latency(), this,
-                new_handler(out_buffer, &pisces_buffer::handle_payload));
-  xbar_->set_output(port_params, src_outport, buffer_inport, out_link);
-  auto in_link = allocate_local_link(out_buffer->credit_latency(), this, xbar_->credit_handler());
-  out_buffer->set_input(port_params, buffer_inport, src_outport, in_link);
+  auto out_link = allocateSubLink(xbar_->sendLatency(), this,
+                newHandler(out_buffer, &PiscesBuffer::handlePayload));
+  xbar_->setOutput(port_params, src_outport, buffer_inport, out_link);
+  auto in_link = allocateSubLink(out_buffer->creditLatency(), this, xbar_->creditHandler());
+  out_buffer->setInput(port_params, buffer_inport, src_outport, in_link);
   out_buffers_[src_outport] = out_buffer;
 
 
-  out_buffer->set_output(port_params, src_outport, dst_inport, link);
+  out_buffer->setOutput(port_params, src_outport, dst_inport, link);
   out_buffers_[src_outport] = out_buffer;
 }
 
 void
-pisces_switch::input_port::handle(event *ev)
+PiscesSwitch::input_port::handle(Event *ev)
 {
-  pisces_packet* payload = static_cast<pisces_packet*>(ev);
-  parent->rter()->route(payload);
-  payload->reset_stages(payload->edge_outport(), 0);
-  payload->set_inport(this->port);
-  parent->xbar()->handle_payload(payload);
+  PiscesPacket* payload = static_cast<PiscesPacket*>(ev);
+  parent->router()->route(payload);
+  payload->resetStages(payload->edgeOutport(), 0);
+  payload->setInport(this->port);
+  parent->xbar()->handlePayload(payload);
 }
 
 void
-pisces_switch::connect_input(
+PiscesSwitch::connectInput(
   sprockit::sim_parameters* port_params,
   int src_outport,
   int dst_inport,
-  event_link* link)
+  EventLink* link)
 {
   int buffer_port = 0;
-  xbar_->set_input(port_params, dst_inport, buffer_port, link);
+  xbar_->setInput(port_params, dst_inport, buffer_port, link);
 }
 
-timestamp
-pisces_switch::send_latency(sprockit::sim_parameters *params) const
+Timestamp
+PiscesSwitch::sendLatency(sprockit::sim_parameters *params) const
 {
-  return params->get_time_param("send_latency");
+  return params->get_time_param("sendLatency");
 }
 
-timestamp
-pisces_switch::credit_latency(sprockit::sim_parameters *params) const
+Timestamp
+PiscesSwitch::creditLatency(sprockit::sim_parameters *params) const
 {
-  return params->get_namespace("xbar")->get_time_param("credit_latency");
-}
-
-void
-pisces_switch::compatibility_check() const
-{
-  router_->compatibility_check();
-}
-
-void
-pisces_switch::deadlock_check()
-{
-  xbar_->deadlock_check();
-}
-
-void
-pisces_switch::deadlock_check(event *ev)
-{
-  xbar_->deadlock_check(ev);
+  return params->get_namespace("xbar")->get_time_param("creditLatency");
 }
 
 int
-pisces_switch::queue_length(int port) const
+PiscesSwitch::queueLength(int port) const
 {
-  pisces_buffer* buf = static_cast<pisces_buffer*>(out_buffers_[port]);
-  return buf->queue_length();
+  PiscesBuffer* buf = static_cast<PiscesBuffer*>(out_buffers_[port]);
+  return buf->queueLength();
 }
 
 std::string
-pisces_switch::to_string() const
+PiscesSwitch::toString() const
 {
   return sprockit::printf("packet flow switch %d", int(my_addr_));
 }
 
-link_handler*
-pisces_switch::credit_handler(int port)
+void
+PiscesSwitch::setup()
+{
+  for (auto* buf : out_buffers_){
+    if (buf) buf->setup();
+  }
+  xbar_->setup();
+}
+
+void
+PiscesSwitch::init(unsigned int phase)
+{
+  for (auto* buf : out_buffers_){
+    if (buf) buf->init(phase);
+  }
+  xbar_->init(phase);
+}
+
+LinkHandler*
+PiscesSwitch::creditHandler(int port)
 {
   if (port >= out_buffers_.size()){
     spkt_abort_printf("Got invalid port %d request for credit handler - max is %d",
                       port, out_buffers_.size() - 1);
   }
-  return new_link_handler(out_buffers_[port], &pisces_sender::handle_credit);
+  return newLinkHandler(out_buffers_[port], &PiscesSender::handleCredit);
 }
 
-link_handler*
-pisces_switch::payload_handler(int port)
+LinkHandler*
+PiscesSwitch::payloadHandler(int port)
 {
   input_port* inp = &inports_[port];
-  return new_link_handler(inp, &input_port::handle);
+  return newLinkHandler(inp, &input_port::handle);
 }
 
 }

@@ -50,37 +50,37 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class sculpin_param_expander :
-  public param_expander
+class SculpinParamExpander :
+  public ParamExpander
 {
- FactoryRegister("sculpin", sstmac::param_expander, sculpin_param_expander)
+  FactoryRegister("sculpin", sstmac::ParamExpander, SculpinParamExpander)
  public:
   void expand(sprockit::sim_parameters* params) override;
 
  private:
-  void expand_amm1_nic(sprockit::sim_parameters* params,
+  void expandAmm1Nic(sprockit::sim_parameters* params,
                        sprockit::sim_parameters* top_params,
                        sprockit::sim_parameters* nic_params);
 
-  void expand_amm1_network(sprockit::sim_parameters* params,
+  void expandAmm1Network(sprockit::sim_parameters* params,
                            sprockit::sim_parameters* switch_params);
 
-  void expand_amm1_memory(sprockit::sim_parameters* params,
+  void expandAmm1Memory(sprockit::sim_parameters* params,
                           sprockit::sim_parameters* mem_params);
 
-  void expand_amm4_nic(sprockit::sim_parameters* params,
+  void expandAmm4Nic(sprockit::sim_parameters* params,
                        sprockit::sim_parameters* top_params,
                        sprockit::sim_parameters* nic_params);
 
-  void expand_amm4_network(sprockit::sim_parameters* params,
+  void expandAmm4Network(sprockit::sim_parameters* params,
                            sprockit::sim_parameters* top_params,
                            sprockit::sim_parameters* nic_params);
 
  private:
-  void check_latency(sprockit::sim_parameters* params,
+  void checkLatency(sprockit::sim_parameters* params,
                      sprockit::sim_parameters* deflt_params = nullptr);
 
-  void check_bandwidth(sprockit::sim_parameters* params,
+  void checkBandwidth(sprockit::sim_parameters* params,
                      sprockit::sim_parameters* deflt_params = nullptr);
 
 };

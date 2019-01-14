@@ -54,32 +54,32 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class instruction_processor :
-  public simple_processor
+class InstructionProcessor :
+  public SimpleProcessor
 {
-  FactoryRegister("instruction", processor, instruction_processor,
+  FactoryRegister("instruction", Processor, InstructionProcessor,
               "Extension of simpleprocessor that estimates compute time of instruction counters")
  public:
-  instruction_processor(sprockit::sim_parameters* params,
-                        memory_model* mem, node* nd);
+  InstructionProcessor(sprockit::sim_parameters* params,
+                        MemoryModel* mem, Node* nd);
 
-  virtual ~instruction_processor();
+  virtual ~InstructionProcessor();
 
-  virtual void compute(event* ev, callback* cb) override;
-
- protected:
-  void set_memop_distribution(double stdev);
-
-  void set_flop_distribution(double stdev);
-
-  timestamp instruction_time(sw::basic_compute_event* msg);
+  virtual void compute(Event* ev, ExecutionEvent* cb) override;
 
  protected:
-  timestamp tflop_;
-  timestamp tintop_;
-  timestamp tmemseq_;
-  timestamp tmemrnd_;
-  timestamp max_single_mem_inv_bw_; //in sec/byte
+  void setMemopDistribution(double stdev);
+
+  void setFlopDistribution(double stdev);
+
+  Timestamp instructionTime(sw::BasicComputeEvent* msg);
+
+ protected:
+  Timestamp tflop_;
+  Timestamp tintop_;
+  Timestamp tmemseq_;
+  Timestamp tmemrnd_;
+  Timestamp max_single_mem_inv_bw_; //in sec/byte
 
   uint64_t negligible_bytes_;
 

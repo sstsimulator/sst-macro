@@ -65,10 +65,10 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-router::router(sprockit::sim_parameters* params, topology *top, network_switch *sw)
+Router::Router(sprockit::sim_parameters* params, Topology *top, NetworkSwitch *sw)
  : top_(top), netsw_(sw), rng_(nullptr)
 {
-  my_addr_ = switch_id(params->get_int_param("id"));
+  my_addr_ = SwitchId(params->get_int_param("id"));
   std::vector<RNG::rngint_t> seeds(2);
   seeds[0] = 42;
   if (params->has_param("seed")) {
@@ -83,14 +83,14 @@ router::router(sprockit::sim_parameters* params, topology *top, network_switch *
 }
 
 bool
-router::switch_paths(
+Router::switchPaths(
   int orig_distance,
   int new_distance,
   int orig_port,
   int new_port) const
 {
-  int orig_queue_length = netsw_->queue_length(orig_port);
-  int new_queue_length = netsw_->queue_length(new_port);
+  int orig_queue_length = netsw_->queueLength(orig_port);
+  int new_queue_length = netsw_->queueLength(new_port);
   int orig_weight = orig_queue_length * orig_distance;
   int valiant_weight = new_queue_length * new_distance;
   rter_debug("comparing minimal(%d) %d=%dx%d against non-minimal(%d) %d=%dx%d",
@@ -100,7 +100,7 @@ router::switch_paths(
 }
 
 uint32_t
-router::random_number(uint32_t max, uint32_t attempt, uint32_t seed) const
+Router::randomNumber(uint32_t max, uint32_t attempt, uint32_t seed) const
 {
   if (debug_seed_){
     std::vector<RNG::rngint_t> seeds(2);
@@ -112,76 +112,69 @@ router::random_number(uint32_t max, uint32_t attempt, uint32_t seed) const
   return rng_->value_in_range(max);
 }
 
-router::~router()
+Router::~Router()
 {
   if (rng_) delete rng_;
 }
 
-void
-router::compatibility_check() const
-{
-}
-
-class fully_connected_minimal_router : public router {
+class FullyConnectedMinimalRouter : public Router {
  public:
   FactoryRegister("fully_connected_minimal",
-              router, fully_connected_minimal_router,
+              Router, FullyConnectedMinimalRouter,
               "router implementing minimal routing for fully connected")
 
-  fully_connected_minimal_router(sprockit::sim_parameters* params, topology *top,
-                         network_switch *netsw)
-    : router(params, top, netsw)
+  FullyConnectedMinimalRouter(sprockit::sim_parameters* params, Topology *top,
+                         NetworkSwitch *netsw)
+    : Router(params, top, netsw)
   {
-    full_ = safe_cast(fully_connected, top);
+    full_ = safe_cast(FullyConnected, top);
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "fully connected minimal router";
   }
 
-  int num_vc() const override {
+  int numVC() const override {
     return 1;
   }
 
-  void route(packet *pkt) override {
-    switch_id ej_addr = pkt->toaddr() / full_->concentration();
+  void route(Packet *pkt) override {
+    SwitchId ej_addr = pkt->toaddr() / full_->concentration();
     if (ej_addr == my_addr_){
-      pkt->set_edge_outport(pkt->toaddr() % full_->concentration());
+      pkt->setEdgeOutport(pkt->toaddr() % full_->concentration());
     } else {
-      pkt->set_edge_outport(ej_addr);
+      pkt->setEdgeOutport(ej_addr);
     }
-    pkt->set_deadlock_vc(0);
+    pkt->setDeadlockVC(0);
   }
 
  private:
-  fully_connected* full_;
+  FullyConnected* full_;
 };
 
-class star_minimal_router : public router {
+class StarMinimalRouter : public Router {
  public:
   FactoryRegister("star_minimal",
-              router, star_minimal_router,
+              Router, StarMinimalRouter,
               "router implementing minimal routing for star")
 
-  star_minimal_router(sprockit::sim_parameters* params, topology *top,
-                      network_switch *netsw)
-    : router(params, top, netsw)
+  StarMinimalRouter(sprockit::sim_parameters* params, Topology *top, NetworkSwitch *netsw)
+    : Router(params, top, netsw)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "star minimal router";
   }
 
-  int num_vc() const override {
+  int numVC() const override {
     return 1;
   }
 
-  void route(packet *pkt) override {
-    pkt->set_edge_outport(pkt->toaddr());
+  void route(Packet *pkt) override {
+    pkt->setEdgeOutport(pkt->toaddr());
   }
 
- private:
 };
 
 }

@@ -61,7 +61,7 @@ void
 outputExodusWithSharedMap(const std::string& fileroot,
    std::multimap<uint64_t, traffic_event>&& trafficMap,
    stat_vtk::display_config display_cfg,
-   topology *topo)
+   Topology *topo)
 {
 
   // The goal:
@@ -73,15 +73,15 @@ outputExodusWithSharedMap(const std::string& fileroot,
   // for each time step (key) of the traffic map parameter, we know the traffic value to update for the (switch,port) associated.
   // The switch traffic value itself needs to be recomputed using the mean of all current traffic values of the ports of the switch.
 
-  int num_switches = topo->num_switches();
-  std::vector<topology::vtk_switch_geometry> geoms; geoms.reserve(num_switches);
+  int num_switches = topo->numSwitches();
+  std::vector<Topology::vtk_switch_geometry> geoms; geoms.reserve(num_switches);
 
 
   std::unordered_map<uint32_t,uint64_t> outport_to_link;
   for (int i=0; i < num_switches; ++i){
-    std::vector<topology::connection> conns;
-    topo->connected_outports(i, conns);
-    for (topology::connection& conn : conns){
+    std::vector<Topology::connection> conns;
+    topo->connectedOutports(i, conns);
+    for (Topology::connection& conn : conns){
       uint16_t id1 = conn.src;
       uint16_t id2 = conn.dst;
       uint16_t port1 = conn.src_outport;
@@ -99,7 +99,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
       }
     }
 
-    geoms.push_back(topo->get_vtk_geometry(i));
+    geoms.push_back(topo->getVtkGeometry(i));
   }
 
   int global_link_id = 0;
@@ -149,7 +149,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
 
   int num_unique_boxes = 0;
   for (int swid=0; swid < num_switches; ++swid){
-    auto geom = topo->get_vtk_geometry(swid);
+    auto geom = topo->getVtkGeometry(swid);
     num_unique_boxes += 1 + geom.ports.size();
   }
 
@@ -175,7 +175,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
   std::vector<int> cell_offsets; cell_offsets.reserve(num_switches + 1);
 
   int num_boxes = 0;
-  auto addBox = [&](topology::vtk_box_geometry& box_geom){
+  auto addBox = [&](Topology::vtk_box_geometry& box_geom){
     //auto v0 = box_geom.vertex(0); // corner (minus_x, minus_y, minus_z)
     //auto v1 = box_geom.vertex(1); // corner (minus_x, plus_y, minus_z)
     //auto v2 = box_geom.vertex(2); // corner (minus_x, minus_y, plus_z)
@@ -224,7 +224,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
   // Use the geometry to place them correctly
   for (int swid = 0; swid < num_switches; ++swid){
     cell_offsets.push_back(cell_types.size());
-    auto geom = topo->get_vtk_geometry(swid);
+    auto geom = topo->getVtkGeometry(swid);
     addBox(geom.box);
 
     for (int port=0; port < geom.ports.size(); ++port){
@@ -245,10 +245,10 @@ outputExodusWithSharedMap(const std::string& fileroot,
     vtk_port vp = vtk_port::construct(port_hash_id);
     uint64_t link_hash_id = outport_to_link[port_hash_id];
     vtk_link link = vtk_link::construct(link_hash_id);
-    topology::vtk_switch_geometry switch1 = topo->get_vtk_geometry(link.id1);//geoms[link.id1];
-    topology::vtk_switch_geometry switch2 = topo->get_vtk_geometry(link.id2);//geoms[link.id2];
-    topology::vtk_box_geometry port1 = switch1.get_port_geometry(link.port1);
-    topology::vtk_box_geometry port2 = switch2.get_port_geometry(link.port2);
+    Topology::vtk_switch_geometry switch1 = topo->getVtkGeometry(link.id1);//geoms[link.id1];
+    Topology::vtk_switch_geometry switch2 = topo->getVtkGeometry(link.id2);//geoms[link.id2];
+    Topology::vtk_box_geometry port1 = switch1.get_port_geometry(link.port1);
+    Topology::vtk_box_geometry port2 = switch2.get_port_geometry(link.port2);
 
     int offset = num_boxes*NUM_POINTS_PER_BOX + link_id * NUM_POINTS_PER_LINK;
     auto c1 = port1.x_anchor();
@@ -277,7 +277,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
     points->SetPoint(offset + 0, c1.x, c1.y, c1.z);
     points->SetPoint(offset + 1, c2.x, c2.y, c2.z);
     points->SetPoint(offset + 2, c3.x, c3.y, c3.z);
-    if (topo->is_curved_vtk_link(link.id1, link.port1)){
+    if (topo->isCurvedVtkLink(link.id1, link.port1)){
       vtkSmartPointer<vtkQuadraticEdge> line = vtkSmartPointer<vtkQuadraticEdge>::New();
       line->GetPointIds()->SetId(0, offset + 0);
       line->GetPointIds()->SetId(1, offset + 1);
@@ -352,7 +352,7 @@ void
 stat_vtk::outputExodus(const std::string& fileroot,
     std::multimap<uint64_t, traffic_event>&& traffMap,
     const display_config& cfg,
-    topology *topo)
+    Topology *topo)
 {
   outputExodusWithSharedMap(fileroot, std::move(traffMap),
                             cfg, topo);
@@ -360,7 +360,7 @@ stat_vtk::outputExodus(const std::string& fileroot,
 
 
 stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
-  stat_collector(params), active_(true)
+  StatCollector(params), active_(true)
 {
   min_interval_ = params->get_optional_time_param("min_interval", 1e-6);
   display_cfg_.bidirectional_shift = params->get_optional_double_param("bidirectional_shift", 0.02);
@@ -394,7 +394,7 @@ stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
 }
 
 void
-stat_vtk::reduce(stat_collector* element)
+stat_vtk::reduce(StatCollector* element)
 {
   stat_vtk* contribution = safe_cast(stat_vtk, element);
 
@@ -405,7 +405,7 @@ stat_vtk::reduce(stat_collector* element)
 }
 
 void
-stat_vtk::finalize(timestamp t)
+stat_vtk::finalize(Timestamp t)
 {
   if (!active_) return;
 
@@ -429,14 +429,14 @@ stat_vtk::finalize(timestamp t)
 }
 
 void
-stat_vtk::dump_global_data()
+stat_vtk::dumpGlobalData()
 {
   outputExodusWithSharedMap(fileroot_, std::move(traffic_event_map_),
-                            display_cfg_, topology::global());
+                            display_cfg_, Topology::global());
 }
 
 void
-stat_vtk::dump_local_data()
+stat_vtk::dumpLocalData()
 {
   //if I want a file per node/switch
 }
@@ -447,10 +447,10 @@ stat_vtk::clear()
 }
 
 void
-stat_vtk::configure(switch_id sid, topology *top)
+stat_vtk::configure(SwitchId sid, Topology *top)
 {
   top_ = top;
-  auto geom = top_->get_vtk_geometry(sid);
+  auto geom = top_->getVtkGeometry(sid);
   id_ = sid;
   port_states_.resize(geom.ports.size());
 
@@ -466,12 +466,12 @@ stat_vtk::configure(switch_id sid, topology *top)
 }
 
 void
-stat_vtk::collect_new_color(timestamp time, int port, double color)
+stat_vtk::collect_new_color(Timestamp time, int port, double color)
 {
   if (!active_ || port >= port_states_.size()) return;
 
   port_state& port_int = port_states_[port];
-  timestamp interval_length = time - port_int.pending_collection_start;
+  Timestamp interval_length = time - port_int.pending_collection_start;
 
   if (min_interval_.ticks() == 0){
     //log all events - no aggregation or averaging
@@ -514,7 +514,7 @@ stat_vtk::collect_new_color(timestamp time, int port, double color)
 }
 
 void
-stat_vtk::collect_new_intensity(timestamp time, int port, double intensity)
+stat_vtk::collect_new_intensity(Timestamp time, int port, double intensity)
 {
   if (!active_ || port >= port_states_.size()) return;
 
@@ -535,7 +535,7 @@ stat_vtk::collect_new_intensity(timestamp time, int port, double intensity)
 
 
 void
-stat_vtk::global_reduce(parallel_runtime *rt)
+stat_vtk::globalReduce(ParallelRuntime *rt)
 {
   if (rt->nproc() > 1){
     sprockit::abort("stat_vtk::global_reduce for MPI parallel");

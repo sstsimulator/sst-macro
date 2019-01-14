@@ -56,7 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/sst_core/integrated_component.h>
 #endif
 
-RegisterDebugSlot(network_switch)
+RegisterDebugSlot(NetworkSwitch)
 
 RegisterKeywords(
  { "switch_name", "DEPRECATED: the name of the switch model to use" },
@@ -67,24 +67,24 @@ RegisterNamespaces("switch");
 namespace sstmac {
 namespace hw {
 
-network_switch::~network_switch()
+NetworkSwitch::~NetworkSwitch()
 {
 }
 
 
-network_switch::network_switch(sprockit::sim_parameters *params, uint32_t id, event_manager *mgr)
- : connectable_component(params, id, mgr) //no self messages for a switch
+NetworkSwitch::NetworkSwitch(sprockit::sim_parameters *params, uint32_t id)
+ : ConnectableComponent(params, id) //no self messages for a switch
 {
   my_addr_ = params->get_int_param("id");
-  top_ = topology::static_topology(params);
+  top_ = Topology::staticTopology(params);
 }
 
 void
-network_switch::init(unsigned int phase)
+NetworkSwitch::init(unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   if (phase == 0){
-    event_component::init(phase);
+    Component::init(phase);
   }
 #endif
 }

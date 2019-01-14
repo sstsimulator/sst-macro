@@ -58,7 +58,7 @@ namespace sw {
 //
 // Make a new chunk.
 //
-stack_alloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size, bool protect) :
+StackAlloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size, bool protect) :
   addr_(nullptr),
   protect_(protect),
   size_((protect_) ? 2 * suggested_chunk_size : suggested_chunk_size),
@@ -97,7 +97,7 @@ stack_alloc::chunk::chunk(size_t stacksize, size_t suggested_chunk_size, bool pr
 }
 
 void* 
-stack_alloc::chunk::get_next_stack() {
+StackAlloc::chunk::getNextStack() {
   if(next_stack_offset_ + step_size_ >= size_) {
     return nullptr;
   } 
@@ -107,7 +107,7 @@ stack_alloc::chunk::get_next_stack() {
   return rv;
 }
 
-stack_alloc::chunk::~chunk()
+StackAlloc::chunk::~chunk()
 {
   if(addr_) {
     munmap(addr_, size_);

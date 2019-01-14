@@ -72,7 +72,7 @@ int USER_MAIN(int argc, char** argv)
 
   //send/recv from all the other procs
   void* null_buffer = nullptr;
-  sprockit::sim_parameters* params = get_params();
+  sprockit::sim_parameters* params = getParams();
   int count = params->get_optional_byte_length_param("message_size", 100);
   bool print_times = params->get_optional_bool_param("print_times", true);
   int tag = 42;

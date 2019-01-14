@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-btree_gather_actor::init_tree()
+BtreeGatherActor::initTree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
@@ -63,7 +63,7 @@ btree_gather_actor::init_tree()
 }
 
 void
-btree_gather_actor::init_buffers()
+BtreeGatherActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
@@ -75,12 +75,12 @@ btree_gather_actor::init_buffers()
 
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
-    result_buffer_ = my_api_->make_public_buffer(dst, buf_size);
+    result_buffer_ = my_api_->makePublicBuffer(dst, buf_size);
     recv_buffer_ = result_buffer_;
     send_buffer_ = result_buffer_;
   } else {
     int max_recv_buf_size = midpoint_*nelems_*type_size_;
-    recv_buffer_ = my_api_->allocate_public_buffer(max_recv_buf_size);
+    recv_buffer_ = my_api_->allocatePublicBuffer(max_recv_buf_size);
     send_buffer_ = recv_buffer_;
     result_buffer_ = recv_buffer_;
   }
@@ -89,7 +89,7 @@ btree_gather_actor::init_buffers()
 }
 
 void
-btree_gather_actor::finalize_buffers()
+BtreeGatherActor::finalizeBuffers()
 {
   if (!result_buffer_)
     return;
@@ -98,15 +98,15 @@ btree_gather_actor::finalize_buffers()
   int me = comm_->my_comm_rank();
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
-    my_api_->unmake_public_buffer(result_buffer_, buf_size);
+    my_api_->unmakePublicBuffer(result_buffer_, buf_size);
   } else {
     int max_recv_buf_size = midpoint_*nelems_*type_size_;
-    my_api_->free_public_buffer(recv_buffer_,max_recv_buf_size);
+    my_api_->freePublicBuffer(recv_buffer_,max_recv_buf_size);
   }
 }
 
 void
-btree_gather_actor::start_shuffle(action *ac)
+BtreeGatherActor::startShuffle(Action *ac)
 {
   if (result_buffer_){
     //only ever arises in weird midpoint scenarios
@@ -119,13 +119,13 @@ btree_gather_actor::start_shuffle(action *ac)
 }
 
 void
-btree_gather_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac)
+BtreeGatherActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-btree_gather_actor::init_dag()
+BtreeGatherActor::initDag()
 {
   int me = comm_->my_comm_rank();
   int nproc = comm_->nproc();
@@ -141,7 +141,7 @@ btree_gather_actor::init_dag()
   //everyone should immediately pack all their buffers and then run the collective
   //directly on already packed data
 
-  action* prev = 0;
+  Action* prev = 0;
 
   int partnerGap = 1;
   int stride = 2;
@@ -153,25 +153,25 @@ btree_gather_actor::init_dag()
       //I am a recver
       int partner = me + partnerGap;
       if (partner < nproc){
-        action* recv = new recv_action(round, partner, recv_action::in_place);
+        Action* recv = new RecvAction(round, partner, RecvAction::in_place);
         int recvChunkStart = me + partnerGap;
         int recvChunkStop = std::min(recvChunkStart+partnerGap, nproc);
         int recvChunkSize = recvChunkStop - recvChunkStart;
         recv->nelems = nelems_ * recvChunkSize;
         recv->offset = partnerGap * nelems_;  //I receive into top half of my buffer
-        add_dependency(prev, recv);
+        addDependency(prev, recv);
         prev = recv;
       }
     } else {
       //I am a sender
       int partner = me - partnerGap;
-      action* send = new send_action(round, partner, send_action::in_place);
+      Action* send = new SendAction(round, partner, SendAction::in_place);
       int sendChunkStart = me;
       int sendChunkStop = std::min(sendChunkStart+partnerGap,nproc);
       int sendChunkSize = sendChunkStop - sendChunkStart;
       send->nelems = nelems_*sendChunkSize;
       send->offset = 0; //I send my whole buffer
-      add_dependency(prev, send);
+      addDependency(prev, send);
       prev = send;
       break; //I am done, yo
     }
@@ -183,10 +183,10 @@ btree_gather_actor::init_dag()
   round = log2nproc_;
   if (root_ != 0 && root_ == midpoint_ && me == root_){
     //I have to shuffle my data
-    action* shuffle = new shuffle_action(round, me);
+    Action* shuffle = new ShuffleAction(round, me);
     shuffle->offset = midpoint_ * nelems_;
     shuffle->nelems = (nproc - midpoint_) * nelems_;
-    add_dependency(prev, shuffle);
+    addDependency(prev, shuffle);
     prev = shuffle;
   }
 
@@ -197,33 +197,33 @@ btree_gather_actor::init_dag()
       int size_1st_half = midpoint_;
       int size_2nd_half = nproc - midpoint_;
       //recv 1st half from 0
-      action* recv = new recv_action(round, 0, recv_action::in_place);
+      Action* recv = new RecvAction(round, 0, RecvAction::in_place);
       recv->offset = 0;
       recv->nelems = nelems_ * size_1st_half;
-      add_dependency(prev, recv);
+      addDependency(prev, recv);
       //recv 2nd half from midpoint - unless I am the midpoint
       if (midpoint_ != root_){
-        recv = new recv_action(round, midpoint_, recv_action::in_place);
+        recv = new RecvAction(round, midpoint_, RecvAction::in_place);
         recv->offset = midpoint_*nelems_;
         recv->nelems = nelems_ * size_2nd_half;
-        add_dependency(prev, recv);
+        addDependency(prev, recv);
       }
     }
     //0 must send the first half to the root
     if (me == 0){
-      action* send = new send_action(round, root_, send_action::in_place);
+      Action* send = new SendAction(round, root_, SendAction::in_place);
       send->offset = 0; //send whole thing
       send->nelems = nelems_*midpoint_;
-      add_dependency(prev,send);
+      addDependency(prev,send);
     }
     //midpoint must send the second half to the root
     //unless it is the root
     if (me == midpoint_ && midpoint_ != root_){
-      action* send = new send_action(round, root_, send_action::in_place);
+      Action* send = new SendAction(round, root_, SendAction::in_place);
       int size = nproc - midpoint_;
       send->offset = 0;
       send->nelems = nelems_ * size;
-      add_dependency(prev,send);
+      addDependency(prev,send);
     }
   }
 }

@@ -65,7 +65,7 @@ collective_work_message::tostr(int p)
 void
 collective_work_message::serialize_order(sstmac::serializer &ser)
 {
-  protocol_message::serialize_order(ser);
+  ProtocolMessage::serialize_order(ser);
   //ser & action_;
   ser & tag_;
   ser & type_;
@@ -74,12 +74,12 @@ collective_work_message::serialize_order(sstmac::serializer &ser)
 }
 
 std::string
-collective_work_message::to_string() const
+collective_work_message::toString() const
 {
   return sprockit::printf(
     "message for collective %s recver=%d sender=%d nbytes=%d round=%d tag=%d %s %d->%d",
-     collective::tostr(type_), recver(), sender(), payload_bytes(), round_, tag_,
-     sstmac::hw::network_message::type_str(), toaddr(), fromaddr());
+     collective::tostr(type_), recver(), sender(), payloadBytes(), round_, tag_,
+     sstmac::hw::NetworkMessage::typeStr(), toaddr(), fromaddr());
 }
 
 /**

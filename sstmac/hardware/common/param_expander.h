@@ -50,15 +50,15 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class param_expander : public sstmac::param_expander
+class ParamExpander : public sstmac::ParamExpander
 {
 
  protected:
-  virtual double network_bandwidth_multiplier(sprockit::sim_parameters* params) const;
+  virtual double networkBandwidthMultiplier(sprockit::sim_parameters* params) const;
 
-  virtual double switch_bandwidth_multiplier(sprockit::sim_parameters* params) const;
+  virtual double switchBandwidthMultiplier(sprockit::sim_parameters* params) const;
 
-  virtual int switch_buffer_multiplier(sprockit::sim_parameters* params) const;
+  virtual int switchBufferMultiplier(sprockit::sim_parameters* params) const;
 
 };
 

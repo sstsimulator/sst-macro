@@ -51,11 +51,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstream>
 #include <cstring>
 
-sprockit::need_delete_statics<sumi::mpi_type> delete_static_types;
+sprockit::need_deleteStatics<sumi::MpiType> delete_static_types;
 
 namespace sumi {
 
-mpi_type::mpi_type() :
+MpiType::MpiType() :
   id(-1),
   committed_(false),
   contiguous_(true),
@@ -69,7 +69,7 @@ mpi_type::mpi_type() :
 }
 
 void
-mpi_type::delete_statics()
+MpiType::deleteStatics()
 {
   free_static_ptr(mpi_null);
   free_static_ptr(mpi_char);
@@ -131,7 +131,7 @@ mpi_type::delete_statics()
 }
 
 void
-mpi_type::init_primitive(const char* labelit, int size)
+MpiType::init_primitive(const char* labelit, int size)
 {
   extent_ = size;
   size_ = size;
@@ -143,13 +143,13 @@ mpi_type::init_primitive(const char* labelit, int size)
 // MPI datatypes.
 //
 void
-mpi_type::init_primitive(const std::string& labelit, const int sizeit, int align)
+MpiType::init_primitive(const std::string& labelit, const int sizeit, int align)
 {
   init_primitive(labelit.c_str(), sizeit, align);
 }
 
 void
-mpi_type::init_primitive(const char* labelit, mpi_type* b1, mpi_type* b2, int s)
+MpiType::init_primitive(const char* labelit, MpiType* b1, MpiType* b2, int s)
 {
   label = labelit;
   type_ = PAIR;
@@ -161,25 +161,25 @@ mpi_type::init_primitive(const char* labelit, mpi_type* b1, mpi_type* b2, int s)
 }
 
 void
-mpi_type::init_primitive(const std::string &labelit, mpi_type* b1,
-                   mpi_type* b2, int s)
+MpiType::init_primitive(const std::string &labelit, MpiType* b1,
+                   MpiType* b2, int s)
 {
   init_primitive(labelit.c_str(), b1, b2, s);
 }
 
 sumi::reduce_fxn
-mpi_type::op(MPI_Op theOp) const
+MpiType::op(MPI_Op theOp) const
 {
   auto it = fxns_.find(theOp);
   if (it == fxns_.end()){
     spkt_throw_printf(sprockit::value_error, "type %s has no operator %d",
-           to_string().c_str(), theOp);
+           toString().c_str(), theOp);
   }
   return it->second;
 }
 
 void
-mpi_type::init_vector(const std::string &labelit, mpi_type* base,
+MpiType::init_vector(const std::string &labelit, MpiType* base,
                    int count, int block, MPI_Aint byte_stride)
 {
   if (base->id == MPI_Datatype(-1)){
@@ -208,7 +208,7 @@ mpi_type::init_vector(const std::string &labelit, mpi_type* base,
 }
 
 void
-mpi_type::init_indexed(const std::string &labelit,
+MpiType::init_indexed(const std::string &labelit,
                    inddata* dat, int sz, int ext)
 {
   label = labelit;
@@ -219,7 +219,7 @@ mpi_type::init_indexed(const std::string &labelit,
   contiguous_ = extent_ == size_;
 }
 
-mpi_type::~mpi_type()
+MpiType::~MpiType()
 {
  if (idata_) delete idata_;
  if (vdata_) delete vdata_;
@@ -227,7 +227,7 @@ mpi_type::~mpi_type()
 }
 
 int
-mpi_type::bytes_to_elements(size_t bytes) const
+MpiType::bytes_to_elements(size_t bytes) const
 {
   if (size_ == 0) {
     return 0;
@@ -300,14 +300,14 @@ mpi_type::bytes_to_elements(size_t bytes) const
 }
 
 void
-mpi_type::pack(const void* inbuf, void *outbuf) const
+MpiType::pack(const void* inbuf, void *outbuf) const
 {
   //we are packing from inbuf into outbuf
   pack_action(outbuf, const_cast<void*>(inbuf), true);
 }
 
 void
-mpi_type::unpack(const void* inbuf, void *outbuf) const
+MpiType::unpack(const void* inbuf, void *outbuf) const
 {
   //we are unpacking from inbuf into outbuf
   //false = unpack
@@ -315,7 +315,7 @@ mpi_type::unpack(const void* inbuf, void *outbuf) const
 }
 
 void
-mpi_type::pack_action_primitive(void* packed_buf, void* unpacked_buf, bool pack) const
+MpiType::pack_action_primitive(void* packed_buf, void* unpacked_buf, bool pack) const
 {
   char* packed_ptr = (char*) packed_buf;
   char* unpacked_ptr = (char*) unpacked_buf;
@@ -329,7 +329,7 @@ mpi_type::pack_action_primitive(void* packed_buf, void* unpacked_buf, bool pack)
 }
 
 void
-mpi_type::pack_action_vector(void* packed_buf, void* unpacked_buf, bool pack) const
+MpiType::pack_action_vector(void* packed_buf, void* unpacked_buf, bool pack) const
 {
   char* packed_ptr = (char*) packed_buf;
   char* unpacked_ptr = (char*) unpacked_buf;
@@ -343,7 +343,7 @@ mpi_type::pack_action_vector(void* packed_buf, void* unpacked_buf, bool pack) co
 }
 
 void
-mpi_type::pack_action_indexed(void* packed_buf, void* unpacked_buf, bool pack) const
+MpiType::pack_action_indexed(void* packed_buf, void* unpacked_buf, bool pack) const
 {
   char* packed_ptr = (char*) packed_buf;
   char* unpacked_ptr = (char*) unpacked_buf;
@@ -356,7 +356,7 @@ mpi_type::pack_action_indexed(void* packed_buf, void* unpacked_buf, bool pack) c
       else     { src = packed_ptr;   dst = unpacked_ptr; }
       ::memcpy(dst, src, size*next_block.num);
     } else {
-      if (pack) next_block.base->pack_send(unpacked_ptr, packed_ptr, next_block.num);
+      if (pack) next_block.base->packSend(unpacked_ptr, packed_ptr, next_block.num);
       else      next_block.base->unpack_recv(packed_ptr, unpacked_ptr, next_block.num);
     }
     packed_ptr += size*next_block.num;
@@ -365,7 +365,7 @@ mpi_type::pack_action_indexed(void* packed_buf, void* unpacked_buf, bool pack) c
 }
 
 void
-mpi_type::pack_send(void* srcbuf, void* dstbuf, int sendcnt)
+MpiType::packSend(void* srcbuf, void* dstbuf, int sendcnt)
 {
   char* src = (char*) srcbuf;
   char* dst = (char*) dstbuf;
@@ -377,7 +377,7 @@ mpi_type::pack_send(void* srcbuf, void* dstbuf, int sendcnt)
 }
 
 void
-mpi_type::unpack_recv(void *srcbuf, void *dstbuf, int recvcnt)
+MpiType::unpack_recv(void *srcbuf, void *dstbuf, int recvcnt)
 {
   char* src = (char*) srcbuf;
   char* dst = (char*) dstbuf;
@@ -389,7 +389,7 @@ mpi_type::unpack_recv(void *srcbuf, void *dstbuf, int recvcnt)
 }
 
 void
-mpi_type::pack_action_pair(void* packed_buf, void* unpacked_buf, bool pack) const
+MpiType::pack_action_pair(void* packed_buf, void* unpacked_buf, bool pack) const
 {
   int bytes_done = 0;
   int first_size = pdata_->base1->size_;
@@ -412,7 +412,7 @@ mpi_type::pack_action_pair(void* packed_buf, void* unpacked_buf, bool pack) cons
 }
 
 void
-mpi_type::pack_action(void* packed_buf, void* unpacked_buf, bool pack) const
+MpiType::pack_action(void* packed_buf, void* unpacked_buf, bool pack) const
 {
   switch(type_)
   {
@@ -439,7 +439,7 @@ mpi_type::pack_action(void* packed_buf, void* unpacked_buf, bool pack) const
 }
 
 std::string
-mpi_type::to_string() const
+MpiType::toString() const
 {
   std::stringstream ss(std::stringstream::in | std::stringstream::out);
   if (type_ == PRIM) {
@@ -450,12 +450,12 @@ mpi_type::to_string() const
     ss << "mpitype(pair, label=\"" << label << "\", size=" << size_ << ")";
   } else if (type_ == VEC) {
     ss << "mpitype(vector, label=\"" << label << "\", size=" << size_
-       << ", base=" << vdata_->base->to_string() << ", count="
+       << ", base=" << vdata_->base->toString() << ", count="
        << vdata_->count << ", blocklen=" << vdata_->blocklen
        << ", stride=" << vdata_->byte_stride << ")";
   } else if (type_ == IND) {
     ss << "mpitype(indexed/struct, label=\"" << label << "\", size="
-       << size_ << ", base=" << idata_->blocks[0].base->to_string()
+       << size_ << ", base=" << idata_->blocks[0].base->toString()
        << ", blocks=" << idata_->blocks.size() << ")";
 
   }
@@ -466,84 +466,84 @@ mpi_type::to_string() const
 // Fairly self-explanatory.
 //
 std::ostream&
-operator<<(std::ostream &os, mpi_type* type)
+operator<<(std::ostream &os, MpiType* type)
 {
-  os << type->to_string();
+  os << type->toString();
   return os;
 }
 
 //
 // The data types defined by the MPI standard.
 //
-mpi_type* mpi_type::mpi_null = new mpi_type;
-mpi_type* mpi_type::mpi_char = new mpi_type;
-mpi_type* mpi_type::mpi_signed_char = new mpi_type;
-mpi_type* mpi_type::mpi_wchar = new mpi_type;
-mpi_type* mpi_type::mpi_unsigned_long_long = new mpi_type;
-mpi_type* mpi_type::mpi_lb = new mpi_type;
-mpi_type* mpi_type::mpi_ub = new mpi_type;
-mpi_type* mpi_type::mpi_unsigned_char = new mpi_type;
-mpi_type* mpi_type::mpi_byte = new mpi_type;
-mpi_type* mpi_type::mpi_short = new mpi_type;
-mpi_type* mpi_type::mpi_unsigned_short = new mpi_type;
-mpi_type* mpi_type::mpi_int = new mpi_type;
-mpi_type* mpi_type::mpi_unsigned = new mpi_type;
-mpi_type* mpi_type::mpi_long = new mpi_type;
-mpi_type* mpi_type::mpi_unsigned_long = new mpi_type;
-mpi_type* mpi_type::mpi_float = new mpi_type;
-mpi_type* mpi_type::mpi_double = new mpi_type;
-mpi_type* mpi_type::mpi_long_double = new mpi_type;
-mpi_type* mpi_type::mpi_long_long_int = new mpi_type;
-mpi_type* mpi_type::mpi_long_long = new mpi_type;
-mpi_type* mpi_type::mpi_packed = new mpi_type;
+MpiType* MpiType::mpi_null = new MpiType;
+MpiType* MpiType::mpi_char = new MpiType;
+MpiType* MpiType::mpi_signed_char = new MpiType;
+MpiType* MpiType::mpi_wchar = new MpiType;
+MpiType* MpiType::mpi_unsigned_long_long = new MpiType;
+MpiType* MpiType::mpi_lb = new MpiType;
+MpiType* MpiType::mpi_ub = new MpiType;
+MpiType* MpiType::mpi_unsigned_char = new MpiType;
+MpiType* MpiType::mpi_byte = new MpiType;
+MpiType* MpiType::mpi_short = new MpiType;
+MpiType* MpiType::mpi_unsigned_short = new MpiType;
+MpiType* MpiType::mpi_int = new MpiType;
+MpiType* MpiType::mpi_unsigned = new MpiType;
+MpiType* MpiType::mpi_long = new MpiType;
+MpiType* MpiType::mpi_unsigned_long = new MpiType;
+MpiType* MpiType::mpi_float = new MpiType;
+MpiType* MpiType::mpi_double = new MpiType;
+MpiType* MpiType::mpi_long_double = new MpiType;
+MpiType* MpiType::mpi_long_long_int = new MpiType;
+MpiType* MpiType::mpi_long_long = new MpiType;
+MpiType* MpiType::mpi_packed = new MpiType;
 
 //pair types
-mpi_type* mpi_type::mpi_float_int = new mpi_type;
-mpi_type* mpi_type::mpi_double_int = new mpi_type;
-mpi_type* mpi_type::mpi_long_int = new mpi_type;
-mpi_type* mpi_type::mpi_short_int = new mpi_type;
-mpi_type* mpi_type::mpi_2int = new mpi_type;
-mpi_type* mpi_type::mpi_long_double_int = new mpi_type;
+MpiType* MpiType::mpi_float_int = new MpiType;
+MpiType* MpiType::mpi_double_int = new MpiType;
+MpiType* MpiType::mpi_long_int = new MpiType;
+MpiType* MpiType::mpi_short_int = new MpiType;
+MpiType* MpiType::mpi_2int = new MpiType;
+MpiType* MpiType::mpi_long_double_int = new MpiType;
 
 //fortran nonsense
-mpi_type* mpi_type::mpi_complex = new mpi_type;
-mpi_type* mpi_type::mpi_double_complex = new mpi_type;
-mpi_type* mpi_type::mpi_logical = new mpi_type;
-mpi_type* mpi_type::mpi_real = new mpi_type;
-mpi_type* mpi_type::mpi_double_precision = new mpi_type;
-mpi_type* mpi_type::mpi_integer = new mpi_type;
-mpi_type* mpi_type::mpi_cxx_bool = new mpi_type;
+MpiType* MpiType::mpi_complex = new MpiType;
+MpiType* MpiType::mpi_double_complex = new MpiType;
+MpiType* MpiType::mpi_logical = new MpiType;
+MpiType* MpiType::mpi_real = new MpiType;
+MpiType* MpiType::mpi_double_precision = new MpiType;
+MpiType* MpiType::mpi_integer = new MpiType;
+MpiType* MpiType::mpi_cxx_bool = new MpiType;
 
-mpi_type* mpi_type::mpi_integer1 = new mpi_type;
-mpi_type* mpi_type::mpi_integer2 = new mpi_type;
-mpi_type* mpi_type::mpi_integer4 = new mpi_type;
-mpi_type* mpi_type::mpi_integer8 = new mpi_type;
-mpi_type* mpi_type::mpi_real4 = new mpi_type;
-mpi_type* mpi_type::mpi_real8 = new mpi_type;
-mpi_type* mpi_type::mpi_real16 = new mpi_type;
+MpiType* MpiType::mpi_integer1 = new MpiType;
+MpiType* MpiType::mpi_integer2 = new MpiType;
+MpiType* MpiType::mpi_integer4 = new MpiType;
+MpiType* MpiType::mpi_integer8 = new MpiType;
+MpiType* MpiType::mpi_real4 = new MpiType;
+MpiType* MpiType::mpi_real8 = new MpiType;
+MpiType* MpiType::mpi_real16 = new MpiType;
 
-mpi_type* mpi_type::mpi_complex8 = new mpi_type;
-mpi_type* mpi_type::mpi_complex16 = new mpi_type;
-mpi_type* mpi_type::mpi_complex32 = new mpi_type;
+MpiType* MpiType::mpi_complex8 = new MpiType;
+MpiType* MpiType::mpi_complex16 = new MpiType;
+MpiType* MpiType::mpi_complex32 = new MpiType;
 
-mpi_type* mpi_type::mpi_int8_t = new mpi_type;
-mpi_type* mpi_type::mpi_int16_t = new mpi_type;
-mpi_type* mpi_type::mpi_int32_t = new mpi_type;
-mpi_type* mpi_type::mpi_int64_t = new mpi_type;
+MpiType* MpiType::mpi_int8_t = new MpiType;
+MpiType* MpiType::mpi_int16_t = new MpiType;
+MpiType* MpiType::mpi_int32_t = new MpiType;
+MpiType* MpiType::mpi_int64_t = new MpiType;
 
-mpi_type* mpi_type::mpi_uint8_t = new mpi_type;
-mpi_type* mpi_type::mpi_uint16_t = new mpi_type;
-mpi_type* mpi_type::mpi_uint32_t = new mpi_type;
-mpi_type* mpi_type::mpi_uint64_t = new mpi_type;
+MpiType* MpiType::mpi_uint8_t = new MpiType;
+MpiType* MpiType::mpi_uint16_t = new MpiType;
+MpiType* MpiType::mpi_uint32_t = new MpiType;
+MpiType* MpiType::mpi_uint64_t = new MpiType;
 
 //fortran pairs
-mpi_type* mpi_type::mpi_2integer = new mpi_type;
-mpi_type* mpi_type::mpi_2complex = new mpi_type;
-mpi_type* mpi_type::mpi_2double_complex = new mpi_type;
-mpi_type* mpi_type::mpi_2real = new mpi_type;
-mpi_type* mpi_type::mpi_2double_precision = new mpi_type;
-mpi_type* mpi_type::mpi_character = new mpi_type;
+MpiType* MpiType::mpi_2integer = new MpiType;
+MpiType* MpiType::mpi_2complex = new MpiType;
+MpiType* MpiType::mpi_2double_complex = new MpiType;
+MpiType* MpiType::mpi_2real = new MpiType;
+MpiType* MpiType::mpi_2double_precision = new MpiType;
+MpiType* MpiType::mpi_character = new MpiType;
 
-std::map<int, mpi_type> mpi_type::builtins;
+std::map<int, MpiType> MpiType::builtins;
 
 }

@@ -25,7 +25,7 @@ int indexed_of_vectors_test(void);
 int struct_of_basics_test(void);
 
 /** helper functions */
-char *combiner_to_string(int combiner);
+char *combiner_toString(int combiner);
 int parse_args(int argc, char **argv);
 
 int contents(int argc, char **argv)
@@ -107,7 +107,7 @@ int builtin_float_test(void)
     if (combiner != MPI_COMBINER_NAMED) errs++;
     if (verbose && combiner != MPI_COMBINER_NAMED)
 	fprintf(stderr, "combiner = %s; should be named\n", 
-		combiner_to_string(combiner));
+		combiner_toString(combiner));
 
     /** Note: it is erroneous to call MPI_Type_get_contents() on a basic. */
     return errs;
@@ -189,7 +189,7 @@ int vector_of_vectors_test(void)
 				 ntypes);
 	if (combiner != MPI_COMBINER_VECTOR)
 	    fprintf(stderr, "outer vector combiner = %s; should be vector\n",
-		    combiner_to_string(combiner));
+		    combiner_toString(combiner));
     }
     if (errs) {
 	if (verbose) fprintf(stderr, "aborting after %d errors\n", errs);
@@ -263,7 +263,7 @@ int vector_of_vectors_test(void)
 				 ntypes);
 	if (combiner != MPI_COMBINER_VECTOR)
 	    fprintf(stderr, "inner vector combiner = %s; should be vector\n",
-		    combiner_to_string(combiner));
+		    combiner_toString(combiner));
     }
     if (errs) {
 	if (verbose) fprintf(stderr, "aborting after %d errors\n", errs);
@@ -356,7 +356,7 @@ int optimizable_vector_of_basics_test(void)
 	if (ntypes != 1) fprintf(stderr, "ntypes = %d; should be 1\n", ntypes);
 	if (combiner != MPI_COMBINER_VECTOR)
 	    fprintf(stderr, "combiner = %s; should be vector\n",
-		    combiner_to_string(combiner));
+		    combiner_toString(combiner));
     }
 
     ints = (int*)malloc(nints * sizeof(*ints));
@@ -439,7 +439,7 @@ int indexed_of_basics_test(void)
 	if (ntypes != 1) fprintf(stderr, "ntypes = %d; should be 1\n", ntypes);
 	if (combiner != MPI_COMBINER_INDEXED)
 	    fprintf(stderr, "combiner = %s; should be indexed\n",
-		    combiner_to_string(combiner));
+		    combiner_toString(combiner));
     }
 
     ints = (int*)malloc(nints * sizeof(*ints));
@@ -560,7 +560,7 @@ int indexed_of_vectors_test(void)
 	if (ntypes != 1) fprintf(stderr, "ntypes = %d; should be 1\n", ntypes);
 	if (combiner != MPI_COMBINER_INDEXED)
 	    fprintf(stderr, "combiner = %s; should be indexed\n",
-		    combiner_to_string(combiner));
+		    combiner_toString(combiner));
     }
 
     if (errs) {
@@ -646,7 +646,7 @@ int indexed_of_vectors_test(void)
 				 ntypes);
 	if (combiner != MPI_COMBINER_VECTOR)
 	    fprintf(stderr, "inner vector combiner = %s; should be vector\n",
-		    combiner_to_string(combiner));
+		    combiner_toString(combiner));
     }
     if (errs) {
 	if (verbose) fprintf(stderr, "aborting after %d errors\n", errs);
@@ -744,7 +744,7 @@ int struct_of_basics_test(void)
 	if (ntypes != 3) fprintf(stderr, "ntypes = %d; should be 3\n", ntypes);
 	if (combiner != MPI_COMBINER_STRUCT)
 	    fprintf(stderr, "combiner = %s; should be struct\n",
-		    combiner_to_string(combiner));
+		    combiner_toString(combiner));
     }
 
     ints = malloc(nints * sizeof(*ints));
@@ -803,11 +803,11 @@ int struct_of_basics_test(void)
 }
 #endif
 
-/** combiner_to_string(combiner)
+/** combiner_toString(combiner)
  *
  * Converts a numeric combiner into a pointer to a string used for printing.
  */
-char *combiner_to_string(int combiner)
+char *combiner_toString(int combiner)
 {
     static char c_named[]    = "named";
     static char c_contig[]   = "contig";

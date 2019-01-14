@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-btree_gatherv_actor::init_tree()
+BtreeGathervActor::initTree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
@@ -63,7 +63,7 @@ btree_gatherv_actor::init_tree()
 }
 
 void
-btree_gatherv_actor::init_buffers()
+BtreeGathervActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
@@ -72,7 +72,7 @@ btree_gatherv_actor::init_buffers()
 }
 
 void
-btree_gatherv_actor::finalize_buffers()
+BtreeGathervActor::finalizeBuffers()
 {
   if (!result_buffer_)
     return;
@@ -80,13 +80,13 @@ btree_gatherv_actor::finalize_buffers()
 }
 
 void
-btree_gatherv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac)
+BtreeGathervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-btree_gatherv_actor::init_dag()
+BtreeGathervActor::initDag()
 {
   int me = comm_->my_comm_rank();
   int nproc = comm_->nproc();

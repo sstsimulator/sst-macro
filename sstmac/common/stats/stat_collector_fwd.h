@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define STAT_COLLECTOR_FWD_H
 
 namespace sstmac {
-class stat_collector;
+class StatCollector;
 }
 
 #endif // STAT_COLLECTOR_FWD_H

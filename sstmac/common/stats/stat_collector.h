@@ -55,27 +55,19 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-struct stats_unique_tag {
- stats_unique_tag();
- int id;
-};
-
 struct stat_descr_t {
   bool dump_all;
   bool reduce_all;
   bool dump_main;
   bool need_delete;
   const char* suffix;
-  stats_unique_tag* unique_tag;
-
 
   stat_descr_t() :
     dump_all(false),
     reduce_all(true),
     dump_main(true),
     need_delete(false),
-    suffix(nullptr),
-    unique_tag(nullptr)
+    suffix(nullptr)
   {
   }
 };
@@ -87,27 +79,27 @@ struct stat_descr_t {
  * because no merging of stat objects takes place, which means
  * you'll get one file for each stat object.
  */
-class stat_collector : public sprockit::printable
+class StatCollector : public sprockit::printable
 {
-  DeclareFactory(stat_collector)
+  DeclareFactory(StatCollector)
  public:
-  virtual ~stat_collector();
+  virtual ~StatCollector();
 
   /** After post-processing, this notifies the collector to dump data to a file
    *  @param name The root of the filename to dump to */
-  virtual void dump_local_data() = 0;
+  virtual void dumpLocalData() = 0;
 
   /** After post-processing, this notifies the collector to dump data to a file
    *  @param name The root of the filename to dump to */
-  virtual void dump_global_data() = 0;
+  virtual void dumpGlobalData() = 0;
 
-  virtual void global_reduce(parallel_runtime* rt) = 0;
+  virtual void globalReduce(ParallelRuntime* rt) = 0;
 
-  virtual void reduce(stat_collector* coll) = 0;
+  virtual void reduce(StatCollector* coll) = 0;
 
   virtual void clear() = 0;
 
-  virtual void finalize(timestamp t){}
+  virtual void finalize(Timestamp t){}
 
   bool registered() const {
     return registered_;
@@ -129,21 +121,17 @@ class stat_collector : public sprockit::printable
     return fileroot_;
   }
 
-  stat_collector* clone() const {
-    return do_clone(params_);
+  StatCollector* clone() const {
+    return doClone(params_);
   }
 
-  virtual bool is_main() const {
+  virtual bool isMain() const {
     return false;
   }
 
-  static int allocate_unique_tag(){
+  static int allocateUniqueTag(){
     return unique_tag_counter_++;
   }
-
-  static stat_collector* find_unique_stat(event_scheduler* es, int unique_tag);
-
-  static void register_unique_stat(event_scheduler* es, stat_collector* sc, stat_descr_t* descr);
 
   /**
    * @brief optional_build Build a stats object with all paramters
@@ -157,7 +145,7 @@ class stat_collector : public sprockit::printable
    * @return        The corresponding stat_collector object otherwise
    *                a nullptr if no parameters exist in the given namespace
    */
-  static stat_collector* optional_build(sprockit::sim_parameters* params,
+  static StatCollector* optionalBuild(sprockit::sim_parameters* params,
                 const std::string& ns,
                 const std::string& deflt,
                 stat_descr_t* descr);
@@ -173,20 +161,20 @@ class stat_collector : public sprockit::printable
    * @return        The corresponding stat_collector object, otherwise abort
    *                if no parameters exist in the given namespace
    */
-  static stat_collector* required_build(sprockit::sim_parameters* params,
+  static StatCollector* requiredBuild(sprockit::sim_parameters* params,
                 const std::string& ns,
                 const std::string& deflt,
                 stat_descr_t* descr);
 
-  static void stats_error(sprockit::sim_parameters* params,
+  static void statsError(sprockit::sim_parameters* params,
              const std::string& ns,
              const std::string& deflt);
 
-  static void register_optional_stat(event_scheduler* parent,
-                                     stat_collector* coll, stat_descr_t* descr);
+  static void registerOptionalStat(EventScheduler* parent,
+                                     StatCollector* coll, stat_descr_t* descr);
 
  protected:
-  stat_collector(sprockit::sim_parameters* params);
+  StatCollector(sprockit::sim_parameters* params);
 
   /**
    * Check to see if the file is open.  If not, try and open it and set
@@ -194,12 +182,12 @@ class stat_collector : public sprockit::printable
    * wrong.
    * @return
    */
-  static bool check_open(std::fstream& myfile, const std::string& fname,
+  static bool checkOpen(std::fstream& myfile, const std::string& fname,
              std::ios::openmode flags = std::ios::out);
 
-  virtual stat_collector* do_clone(sprockit::sim_parameters* params) const = 0;
+  virtual StatCollector* doClone(sprockit::sim_parameters* params) const = 0;
 
-  virtual bool require_filroote() const {
+  virtual bool requireFileroot() const {
     return true;
   }
 
@@ -214,15 +202,15 @@ class stat_collector : public sprockit::printable
 
 };
 
-class stat_value_base : public stat_collector
+class StatValueBase : public StatCollector
 {
  public:
-  void set_label(std::string label) {
+  void setLabel(std::string label) {
     label_ = label;
   }
 
  protected:
-  stat_value_base(sprockit::sim_parameters* params);
+  StatValueBase(sprockit::sim_parameters* params);
 
   int id_;
 
@@ -231,7 +219,7 @@ class stat_value_base : public stat_collector
 };
 
 template <class T>
-class stat_value : public stat_value_base
+class StatValue : public StatValueBase
 {
  public:
   void collect(const T& val){
@@ -239,8 +227,8 @@ class stat_value : public stat_value_base
   }
 
  protected:
-  stat_value(sprockit::sim_parameters* params) :
-    stat_value_base(params)
+  StatValue(sprockit::sim_parameters* params) :
+    StatValueBase(params)
   {
   }
 
@@ -252,64 +240,55 @@ class stat_value : public stat_value_base
  * See documentation for stat_collector::required_build
  */
 template <class T>
-T* required_stats(event_scheduler* parent,
+T* requiredStats(EventScheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
               stat_descr_t* descr = nullptr){
-  stat_collector* coll = stat_collector::required_build(params,ns,deflt,descr);
+  StatCollector* coll = StatCollector::requiredBuild(params,ns,deflt,descr);
   T* t = dynamic_cast<T*>(coll);
   if (!t){
-    stat_collector::stats_error(params, ns, deflt);
+    StatCollector::statsError(params, ns, deflt);
   }
-  stat_collector::register_optional_stat(parent, t, descr);
+  StatCollector::registerOptionalStat(parent, t, descr);
   return t;
 }
 
 template <class T>
-T* required_stats(event_scheduler* parent,
+T* requiredStats(EventScheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
               const char* suffix){
   stat_descr_t descr;
   descr.suffix = suffix;
-  return required_stats<T>(parent, params, ns, deflt, suffix);
+  return requiredStats<T>(parent, params, ns, deflt, suffix);
 }
 
 /**
  * See documentation for stat_collector::optional_build
  */
 template <class T>
-T* optional_stats(event_scheduler* parent,
+T* optionalStats(EventScheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
-              stat_descr_t* descr = nullptr){
-
-  if (descr && descr->unique_tag){
-    stat_collector* coll = stat_collector::find_unique_stat(parent, descr->unique_tag->id);
-    if (coll) return dynamic_cast<T*>(coll);
-  }
-
-  stat_collector* coll = stat_collector::optional_build(params, ns, deflt, descr);
+              stat_descr_t* descr = nullptr)
+{
+  StatCollector* coll = StatCollector::optionalBuild(params, ns, deflt, descr);
   if (coll){
     T* t = dynamic_cast<T*>(coll);
     if (!t){
-      stat_collector::stats_error(params, ns, deflt);
+      StatCollector::statsError(params, ns, deflt);
     }
-    if (descr && descr->unique_tag){
-      stat_collector::register_unique_stat(parent, t, descr);
-    } else {
-      stat_collector::register_optional_stat(parent, t, descr);
-    }
+    StatCollector::registerOptionalStat(parent, t, descr);
     return t;
   }
   else return nullptr;
 }
 
 template <class T>
-T* optional_stats(event_scheduler* parent,
+T* optionalStats(EventScheduler* parent,
               sprockit::sim_parameters* params,
               const std::string& ns,
               const std::string& deflt,
@@ -317,7 +296,7 @@ T* optional_stats(event_scheduler* parent,
 {
   stat_descr_t descr;
   descr.suffix = suffix;
-  return optional_stats<T>(parent, params, ns, deflt, &descr);
+  return optionalStats<T>(parent, params, ns, deflt, &descr);
 }
 
 

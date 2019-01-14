@@ -30,7 +30,7 @@ CONFIGTESTS += test_configs_sequoia
 COVERAGETESTS = \
   test_feature_nic_contention \
   test_memory_leak \
-  test_feature_excl_job_launcher \
+  test_feature_excl_JobLauncher \
   test_coverage_smp_pisces \
   test_coverage_trinity_amm1_sculpin \
   test_coverage_edison_amm1_sculpin \

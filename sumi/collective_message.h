@@ -56,12 +56,12 @@ namespace sumi {
  * The message that is actually delivered when calling #sumi::comm_poll
  * This encapsulates all the information about a collective that has completed in the background
  */
-class collective_done_message :
-  public sprockit::thread_safe_new<collective_done_message>
+class CollectiveDoneMessage :
+  public sprockit::thread_safe_new<CollectiveDoneMessage>
 {
 
  public:
-  collective_done_message(int tag, collective::type_t ty, communicator* dom, uint8_t cq_id) :
+  CollectiveDoneMessage(int tag, collective::type_t ty, Communicator* dom, uint8_t cq_id) :
     tag_(tag), result_(0), vote_(0), type_(ty), dom_(dom)
   {
   }
@@ -74,7 +74,7 @@ class collective_done_message :
     return type_;
   }
 
-  communicator* dom() const {
+  Communicator* dom() const {
     return dom_;
   }
 
@@ -112,7 +112,7 @@ class collective_done_message :
   int vote_;
   collective::type_t type_;
   int comm_rank_;
-  communicator* dom_;
+  Communicator* dom_;
 };
 
 /**
@@ -120,7 +120,7 @@ class collective_done_message :
  * Main message type used by collectives
  */
 class collective_work_message :
-  public protocol_message
+  public ProtocolMessage
 {
   ImplementSerializable(collective_work_message)
  public:
@@ -136,7 +136,7 @@ class collective_work_message :
     int tag, int round,
     int nelems, int type_size, void* buffer, protocol_t p,
     Args&&... args) :
-    protocol_message(nelems, type_size, buffer, p,
+    ProtocolMessage(nelems, type_size, buffer, p,
                      std::forward<Args>(args)...),
     tag_(tag),
     type_(type),
@@ -144,7 +144,7 @@ class collective_work_message :
     dom_sender_(dom_sender),
     dom_recver_(dom_recver)
   {
-    if (this->class_type() != collective){
+    if (this->classType() != collective){
       spkt_abort_printf("collective work message is not of type collect");
     }
   }
@@ -153,7 +153,7 @@ class collective_work_message :
     std::swap(dom_sender_, dom_recver_);
   }
 
-  virtual std::string to_string() const override;
+  virtual std::string toString() const override;
 
   static const char* tostr(int p);
 
@@ -172,18 +172,18 @@ class collective_work_message :
   }
 
   int dom_target_rank() const {
-    switch (network_message::type()){
-     case network_message::payload:
-     case network_message::rdma_get_payload:
-     case network_message::rdma_put_payload:
-     case network_message::rdma_get_nack:
+    switch (NetworkMessage::type()){
+     case NetworkMessage::payload:
+     case NetworkMessage::rdma_get_payload:
+     case NetworkMessage::rdma_put_payload:
+     case NetworkMessage::rdma_get_nack:
       return dom_recver_;
-     case network_message::payload_sent_ack:
-     case network_message::rdma_get_sent_ack:
-     case network_message::rdma_put_sent_ack:
+     case NetworkMessage::payload_sent_ack:
+     case NetworkMessage::rdma_get_sent_ack:
+     case NetworkMessage::rdma_put_sent_ack:
       return dom_sender_;
      default:
-      spkt_abort_printf("Bad payload type %d to CQ id", network_message::type());
+      spkt_abort_printf("Bad payload type %d to CQ id", NetworkMessage::type());
       return -1;
     }
   }
@@ -196,9 +196,9 @@ class collective_work_message :
     return type_;
   }
 
-  sstmac::hw::network_message* clone_injection_ack() const override {
+  sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
     collective_work_message* cln = new collective_work_message(*this);
-    cln->convert_to_ack();
+    cln->convertToAck();
     return cln;
   }
 

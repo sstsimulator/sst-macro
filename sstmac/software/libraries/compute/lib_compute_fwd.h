@@ -48,11 +48,11 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class lib_compute_memmove;
-class lib_compute_sleep;
-class lib_compute_time;
-class lib_compute_inst;
-class lib_compute_loops;
+class LibComputeMemmove;
+class LibComputeSleep;
+class LibComputeTime;
+class LibComputeInst;
+class LibComputeLoops;
 
 } }
 

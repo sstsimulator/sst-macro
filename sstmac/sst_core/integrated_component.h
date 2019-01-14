@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/hardware/common/connection_fwd.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE
+#if ACTUAL_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
 #include <sst/core/linkMap.h>
 #include <sst/core/params.h>
@@ -103,7 +103,7 @@ namespace sstmac {
 
 /**
  * @brief The SSTIntegratedComponent class  Provides common functionality
- * for converting an sst/macro standalone event_component into a
+ * for converting an sst/macro standalone Component into a
  * a SST::Component compatible with integration
  */
 class SSTIntegratedComponent
@@ -111,46 +111,46 @@ class SSTIntegratedComponent
 {
  public:
   /**
-   * @brief connect_input All of these classes should implement the
-   *        connectable interface
+   * @brief connectInput All of these classes should implement the
+   *        Connectable interface
    * @param params
    * @param src_outport
    * @param dst_inport
    * @param mod
    */
-  virtual void connect_input(
+  virtual void connectInput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) = 0;
+    EventLink* link) = 0;
 
   /**
-   * @brief connect_output  All of these classes should implement
-   *                        the connectable interface
+   * @brief connectOutput  All of these classes should implement
+   *                        the Connectable interface
    * @param params
    * @param src_outport
    * @param dst_inport
    * @param mod
    */
-  virtual void connect_output(
+  virtual void connectOutput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) = 0;
+    EventLink* link) = 0;
 
   /**
-   * @brief payload_handler
+   * @brief payloadHandler
    * @param port
    * @return The handler that will receive payloads from an SST link
    */
-  virtual SST::Event::HandlerBase* payload_handler(int port) = 0;
+  virtual SST::Event::HandlerBase* payloadHandler(int port) = 0;
 
   /**
-   * @brief credit_handler
+   * @brief creditHandler
    * @param port
    * @return The handler that will receive credits from an SST link
    */
-  virtual SST::Event::HandlerBase* credit_handler(int port) = 0;
+  virtual SST::Event::HandlerBase* creditHandler(int port) = 0;
 
   void init_links(sprockit::sim_parameters* params);
 

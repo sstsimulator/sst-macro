@@ -54,21 +54,21 @@ DeclareDebugSlot(lib_compute)
 namespace sstmac {
 namespace sw {
 
-class lib_compute :
-  public library
+class LibCompute :
+  public Library
 {  
   
  protected:
-  lib_compute(sprockit::sim_parameters* params,
-              const std::string& libname, software_id sid,
-              operating_system* os)
-    : library(libname, sid, os) {
+  LibCompute(sprockit::sim_parameters* params,
+              const std::string& libname, SoftwareId sid,
+              OperatingSystem* os)
+    : Library(libname, sid, os) {
   }
 
-  lib_compute(sprockit::sim_parameters* params,
-              const char* name, software_id sid,
-              operating_system* os)
-    : library(name, sid, os)
+  LibCompute(sprockit::sim_parameters* params,
+              const char* name, SoftwareId sid,
+              OperatingSystem* os)
+    : Library(name, sid, os)
   {
   }
 

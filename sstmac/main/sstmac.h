@@ -67,8 +67,8 @@ struct opts {
   bool low_res_timer;
   std::string cpu_affinity;
   std::string benchmark;
-  std::string output_graphviz;
-  std::string output_xyz;
+  std::string outputGraphviz;
+  std::string outputXYZ;
   std::string params_dump_file;
 
   opts() :
@@ -100,7 +100,7 @@ struct sim_stats {
   {}
 };
 
-int parse_opts(int argc, char **argv, opts &oo);
+int parseOpts(int argc, char **argv, opts &oo);
 
 void print_help(int argc, char **argv);
 
@@ -123,43 +123,43 @@ class benchmark {
   }
 };
 
-parallel_runtime* init();
+ParallelRuntime* init();
 
-void finalize(parallel_runtime* rt);
+void finalize(ParallelRuntime* rt);
 
-void init_opts(opts& oo, int argc, char** argv);
+void initOpts(opts& oo, int argc, char** argv);
 
-void init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel);
+void initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel);
 
-void remap_deprecated_params(sprockit::sim_parameters* params);
+void remapDeprecatedParams(sprockit::sim_parameters* params);
 
-void remap_params(sprockit::sim_parameters* params, bool verbose = true);
+void remapParams(sprockit::sim_parameters* params, bool verbose = true);
 
-void* load_extern_library(const std::string& libname, const std::string& searchPath);
+void* loadExternLibrary(const std::string& libname, const std::string& searchPath);
 
-void* load_extern_library(const std::string& libname);
+void* loadExternLibrary(const std::string& libname);
 
-void unload_extern_library(void* handle);
+void unloadExternLibrary(void* handle);
 
-std::string load_extern_path_str();
+std::string loadExternPathStr();
 
 void run(opts& oo,
-    sstmac::parallel_runtime* rt,
+    sstmac::ParallelRuntime* rt,
     sprockit::sim_parameters* params,
     sim_stats& stats);
 
-int run_standalone(int argc, char** argv);
+int runStandalone(int argc, char** argv);
 
-int try_main(sprockit::sim_parameters* params,
+int tryMain(sprockit::sim_parameters* params,
    int argc, char **argv,
    bool params_only = false);
 
-void run_params(opts& oo,
-  parallel_runtime* rt,
+void runParams(opts& oo,
+  ParallelRuntime* rt,
   sprockit::sim_parameters* params,
    sim_stats& stats);
 
-void init_first_run(parallel_runtime* rt,
+void initFirstRun(ParallelRuntime* rt,
     sprockit::sim_parameters* params);
 
 }

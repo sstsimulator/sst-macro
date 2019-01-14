@@ -61,23 +61,23 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-hostname_task_mapper::hostname_task_mapper(sprockit::sim_parameters *params) :
-  task_mapper(params)
+HostnameTaskMapper::HostnameTaskMapper(sprockit::sim_parameters *params) :
+  TaskMapper(params)
 {
   listfile_ = params->get_param("hostmap");
 }
 
 void
-hostname_task_mapper::map_ranks(
+HostnameTaskMapper::mapRanks(
   const ordered_node_set& nodes,
   int ppn,
-  std::vector<node_id> &result,
+  std::vector<NodeId> &result,
   int nproc)
 {
   int nrank = nproc;
   result.resize(nrank);
 
-  std::istream* nodelistptr = rt_->bcast_file_stream(listfile_);
+  std::istream* nodelistptr = rt_->bcastFileStream(listfile_);
   std::istream& nodelist = *nodelistptr;
 
   std::stringstream sstr;
@@ -90,11 +90,11 @@ hostname_task_mapper::map_ranks(
 //    auto nid_it = hostname_allocation::hostnamemap_.find(hostname);
 //    auto end = hostname_allocation::hostnamemap_.end();
 
-    node_id nid;
+    NodeId nid;
     if (!topology_) {
       spkt_throw_printf(sprockit::value_error, "hostname_task_mapper: null topology");
     }
-    nid = topology_->node_name_to_id(hostname);
+    nid = topology_->nodeNameToId(hostname);
 
 //    if (nid_it == end) {
 //      std::stringstream sstr;
@@ -119,7 +119,7 @@ hostname_task_mapper::map_ranks(
 //      sprockit::abort(sstr.str());
 //    }
 
-//    node_id nid = nid_it->second;
+//    NodeId nid = nid_it->second;
 
     debug_printf(sprockit::dbg::indexing,
         "hostname_task_mapper: rank %d is on hostname %s at nid=%d",

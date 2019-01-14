@@ -58,44 +58,44 @@ namespace sw {
  * A wrapper for an appid, taskid pair
  *
  */
-struct software_id {
-  app_id app_;
-  task_id task_;
-  thread_id thread_;
+struct SoftwareId {
+  AppId app_;
+  TaskId task_;
+  ThreadId thread_;
 
-  explicit software_id(app_id a, task_id t, thread_id th = thread_id(0))
+  explicit SoftwareId(AppId a, TaskId t, ThreadId th = ThreadId(0))
     : app_(a), task_(t), thread_(th) {}
 
-  software_id() : app_(-1), task_(-1) { }
+  SoftwareId() : app_(-1), task_(-1) { }
 
-  std::string to_string() const {
+  std::string toString() const {
     std::stringstream ss(std::stringstream::in | std::stringstream::out);
     ss << "software_id(" << app_ << ", " << task_ << "," << thread_ << ")";
     return ss.str();
   }
 };
 
-inline bool operator==(const software_id &a, const software_id &b)
+inline bool operator==(const SoftwareId &a, const SoftwareId &b)
 {
   return (a.app_ == b.app_ && a.task_ == b.task_ && a.thread_ == b.thread_);
 }
-inline bool operator!=(const software_id &a, const software_id &b)
+inline bool operator!=(const SoftwareId &a, const SoftwareId &b)
 {
   return (a.app_ != b.app_ || a.task_ != b.task_ || a.thread_ != b.thread_);
 }
-inline bool operator<(const software_id &a, const software_id &b)
+inline bool operator<(const SoftwareId &a, const SoftwareId &b)
 {
   return (a.task_ < b.task_);
 }
-inline bool operator>(const software_id &a, const software_id &b)
+inline bool operator>(const SoftwareId &a, const SoftwareId &b)
 {
   return (a.task_ > b.task_);
 }
 
 
-inline std::ostream& operator<<(std::ostream &os, const software_id &n)
+inline std::ostream& operator<<(std::ostream &os, const SoftwareId &n)
 {
-  return (os << n.to_string());
+  return (os << n.toString());
 }
 
 }

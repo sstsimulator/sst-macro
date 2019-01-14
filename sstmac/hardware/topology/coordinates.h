@@ -61,7 +61,7 @@ class coordinates :
 
   coordinates(int nelem);
 
-  std::string to_string() const;
+  std::string toString() const;
 
 };
 

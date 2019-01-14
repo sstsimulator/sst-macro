@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 
-#if SSTMAC_INTEGRATED_SST_CORE
+#if ACTUAL_INTEGRATED_CORE //SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/serialization/serializer_fwd.h>
 #include <sst/core/serialization/serializable.h>
 #include <sst/core/serialization/serialize_serializable.h>
@@ -71,29 +71,41 @@ using SST::Core::Serialization::raw_ptr;
    namespace SST { namespace Core { namespace Serialization {
 #define SER_NAMESPACE_CLOSE } } }
 
+#define START_SERIALIZATION_NAMESPACE namespace SST { namespace Core { namespace Serialization {
+#define END_SERIALIZATION_NAMESPACE } } }
+
 #else
 #include <sprockit/serializer_fwd.h>
 #include <sprockit/serializable.h>
 #include <sprockit/serialize_serializable.h>
 #include <sprockit/serializer.h>
 
-#define START_SERIALIZATION_NAMESPACE namespace sprockit {
-#define END_SERIALIZATION_NAMESPACE }
-
-#define FRIEND_SERIALIZATION   template <class T> friend class sstmac::serialize
-
-namespace sstmac {
-using sprockit::serializable;
-using sprockit::serializable_type;
-using sprockit::serialize;
-using sprockit::serializer;
+namespace SST {
+namespace Core {
+namespace Serialization {
+template <class T> using serializable_type = sprockit::serializable_type<T>;
+template <class T> using serialize = typename sprockit::serialize<T>;
+using serializable = sprockit::serializable;
 using sprockit::array;
 using sprockit::raw_ptr;
+using serializer = sprockit::serializer;
+}
+}
 }
 
-#define SER_NAMESPACE_OPEN namespace sprockit {
-#define SER_NAMESPACE_CLOSE }
+#define START_SERIALIZATION_NAMESPACE namespace sprockit {
+#define END_SERIALIZATION_NAMESPACE }
+#define FRIEND_SERIALIZATION   template <class T> friend class sprockit::serialize
 
 #endif
+
+namespace sstmac {
+using serializer = SST::Core::Serialization::serializer;
+template <class T> using serializable_type = SST::Core::Serialization::serializable_type<T>;
+template <class T> using serialize = typename SST::Core::Serialization::serialize<T>;
+using serializable = SST::Core::Serialization::serializable;
+using SST::Core::Serialization::array;
+using SST::Core::Serialization::raw_ptr;
+}
 
 #endif

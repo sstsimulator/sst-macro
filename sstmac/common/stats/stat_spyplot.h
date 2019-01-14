@@ -58,83 +58,49 @@ namespace sstmac {
 /**
  * this stat_collector class keeps a spy plot
  */
-class stat_spyplot :
-  public stat_collector
+class StatSpyplot :
+  public StatCollector
 {
-  FactoryRegister("ascii", stat_collector, stat_spyplot)
+  FactoryRegister("ascii", StatCollector, StatSpyplot)
  public:
-  virtual std::string to_string() const override {
+  virtual std::string toString() const override {
     return "stat_spyplot";
   }
 
-  virtual void dump_to_file(const std::string& froot);
+  virtual void dumpToFile(const std::string& froot);
 
-  virtual void dump_local_data() override;
+  virtual void dumpLocalData() override;
 
-  virtual void dump_global_data() override;
+  virtual void dumpGlobalData() override;
 
-  virtual void reduce(stat_collector *coll) override;
+  virtual void reduce(StatCollector *coll) override;
 
-  virtual void global_reduce(parallel_runtime *rt) override;
+  virtual void globalReduce(ParallelRuntime *rt) override;
 
   virtual void clear() override;
 
-  virtual ~stat_spyplot() {}
+  virtual ~StatSpyplot() {}
 
   virtual void add_one(int source, int dest);
 
   virtual void add(int source, int dest, long num);
 
-  virtual stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new stat_spyplot(params);
+  virtual StatCollector* doClone(sprockit::sim_parameters* params) const override {
+    return new StatSpyplot(params);
   }
 
-  stat_spyplot(sprockit::sim_parameters* params) :
+  StatSpyplot(sprockit::sim_parameters* params) :
     max_dest_(0),
-    stat_collector(params)
+    StatCollector(params)
   {
   }
 
  protected:
-  typedef std::unordered_map<int, long> long_map;
-  typedef std::unordered_map<int, long_map> spyplot_map;
-  spyplot_map vals_;
+  std::unordered_map<int,std::unordered_map<int,uint64_t>> vals_;
   int max_dest_;
 
 };
 
-/**
- * this stat_collector class keeps a spy plot, and outputs it as a png
- */
-class stat_spyplot_png : public stat_spyplot
-{
-  FactoryRegister("png", stat_collector, stat_spyplot_png)
- public:
-  stat_spyplot_png(sprockit::sim_parameters* params);
-
-  std::string to_string() const override {
-    return "stat_spyplot_png";
-  }
-
-  virtual void add(int source, int dest, long num) override;
-
-  virtual void dump_to_file(const std::string& froot) override;
-
-  void set_normalization(long max) {
-    normalization_ = max;
-  }
-
-  virtual ~stat_spyplot_png() {}
-
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new stat_spyplot_png(params);
-  }
-
- private:
-  long normalization_;
-  bool fill_;
-
-};
 
 }
 

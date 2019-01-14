@@ -65,44 +65,43 @@ namespace sstmac {
 namespace sw {
 
 
-class ftq_epoch
+class FTQEpoch
 {
  private:
-  friend class app_ftq_calendar;
+  friend class AppFTQCalendar;
 
-  long long* totals_;
+  uint64_t* totals_;
 
  public:
-  ftq_epoch();
+  FTQEpoch();
 
-  virtual ~ftq_epoch();
+  virtual ~FTQEpoch();
 
-  void collect(int key_typeid, long ticks) {
+  void collect(int key_typeid, uint64_t ticks) {
     totals_[key_typeid] += ticks;
   }
 
-  void init(int num_events, long long* buffer);
+  void init(int num_events, uint64_t* buffer);
 
-  long long event_time(int key_typeid) const {
+  uint64_t eventTime(int key_typeid) const {
     return totals_[key_typeid];
   }
 
-  void set_event_time(int key_typeid, long long count) {
+  void setEventTime(int key_typeid, uint64_t count) {
     totals_[key_typeid] = count;
   }
 
 };
 
-class app_ftq_calendar
+class AppFTQCalendar
 {
  public:
-  app_ftq_calendar(int aid,
-                   const std::string& appname,
-                   long nticks_epoch);
+  AppFTQCalendar(int aid, const std::string& appname,
+                 uint64_t nticks_epoch);
 
   void dump(const std::string& fileroot);
 
-  virtual ~app_ftq_calendar();
+  virtual ~AppFTQCalendar();
 
   /**
     Resolution of the ticks is set by timestamp_resolution parameter.
@@ -113,18 +112,18 @@ class app_ftq_calendar
     @param ticks_begin The time the event started
     @param num_ticks The duration of the event
   */
-  void collect(int event_typeid, int tid, long ticks_begin, long num_ticks);
+  void collect(int event_typeid, int tid, uint64_t ticks_begin, uint64_t num_ticks);
 
-  void reduce(app_ftq_calendar* cal);
+  void reduce(AppFTQCalendar* cal);
 
-  void global_reduce(parallel_runtime* rt);
+  void globalReduce(ParallelRuntime* rt);
 
  private:
-  std::vector<ftq_epoch> epochs_;
+  std::vector<FTQEpoch> epochs_;
 
-  ftq_epoch aggregate_;
+  FTQEpoch aggregate_;
 
-  std::list<long long*> buffers_;
+  std::list<uint64_t*> buffers_;
 
   void dump(std::ofstream& os);
 
@@ -132,74 +131,74 @@ class app_ftq_calendar
 
   int max_tid_;
 
-  long max_epoch_;
+  uint64_t max_epoch_;
 
-  long max_epoch_allocated_;
+  uint64_t max_epoch_allocated_;
 
-  long num_ticks_epoch_;
+  uint64_t num_ticks_epoch_;
 
   std::string appname_;
 
-  void dump_matplotlib_histogram(const std::string& fileroot);
+  void dumpMatplotlibHistogram(const std::string& fileroot);
 
-  void allocate_epochs(long max_epoch);
+  void allocateEpochs(uint64_t max_epoch);
 
-  static const long allocation_num_epochs;
+  static const uint64_t allocation_num_epochs;
 
 };
 
-class ftq_calendar :
-  public stat_collector
+class FTQCalendar :
+  public StatCollector
 {
-  FactoryRegister("ftq", stat_collector, ftq_calendar)
+  FactoryRegister("ftq", StatCollector, FTQCalendar)
  public:
-  ftq_calendar(sprockit::sim_parameters* params);
+  FTQCalendar(sprockit::sim_parameters* params);
 
   void init(long nticks_per_epoch);
 
-  virtual ~ftq_calendar();
+  virtual ~FTQCalendar();
 
   void collect(int event_typeid,
                int aid,
                int tid,
-               long ticks_begin,
-               long num_ticks);
+               uint64_t ticks_begin,
+               uint64_t num_ticks);
 
-  app_ftq_calendar* get_calendar(int aid) const;
+  AppFTQCalendar* get_calendar(int aid) const;
 
-  void register_app(int aid, const std::string& appname);
+  void registerApp(int aid, const std::string& appname);
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
   void clear() override;
 
-  void reduce(stat_collector* coll) override;
+  void reduce(StatCollector* coll) override;
 
-  void global_reduce(parallel_runtime *rt) override;
+  void globalReduce(ParallelRuntime *rt) override;
 
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new ftq_calendar(params);
+  StatCollector* doClone(sprockit::sim_parameters* params) const override {
+    return new FTQCalendar(params);
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "FTQCalendar";
   }
 
  private:
-  static std::unordered_map<int, app_ftq_calendar*> calendars_;
+  static std::unordered_map<int, AppFTQCalendar*> calendars_;
 
-  long num_ticks_epoch_;
+  uint64_t num_ticks_epoch_;
 
 };
 
 // Ensures an ftq_tag is used for the life of this object
-class ftq_scope {
+class FTQScope {
 public:
-    ftq_scope(thread*, ftq_tag);
-    ftq_scope(thread*);
-    ~ftq_scope();
+    FTQScope(Thread*, FTQTag);
+    FTQScope(Thread*);
+    ~FTQScope();
 
 private:
     // We don't want dynamic allocations.
@@ -208,8 +207,8 @@ private:
 
     // private members
     bool _tag_previously_protected;
-    ftq_tag _previous_tag;
-    thread* _thread;
+    FTQTag _previous_tag;
+    Thread* _thread;
 };
 
 }

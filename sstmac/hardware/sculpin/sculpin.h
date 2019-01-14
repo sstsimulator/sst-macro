@@ -64,43 +64,43 @@ namespace hw {
  a larger message.
  */
 class sculpin_packet :
-  public packet,
+  public Packet,
   public sprockit::thread_safe_new<sculpin_packet>
 {
   ImplementSerializable(sculpin_packet)
 
  public:
   sculpin_packet(
-    flow* msg,
-    uint32_t num_bytes,
-    bool is_tail,
-    uint64_t flow_id,
-    node_id toaddr,
-    node_id fromaddr);
+    Flow* msg,
+    uint32_t numBytes,
+    bool isTail,
+    uint64_t flowId,
+    NodeId toaddr,
+    NodeId fromaddr);
 
   sculpin_packet(){} //for serialization
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
   virtual ~sculpin_packet() {}
 
   int next_port() const {
-    return rtr_header<header>()->edge_port;
+    return rtrHeader<header>()->edge_port;
   }
 
-  timestamp arrival() const {
+  Timestamp arrival() const {
     return arrival_;
   }
 
-  void set_arrival(timestamp time) {
+  void set_arrival(Timestamp time) {
     arrival_ = time;
   }
 
-  timestamp time_to_send() const {
+  Timestamp time_to_send() const {
     return time_to_send_;
   }
 
-  void set_time_to_send(timestamp time) {
+  void setTime_to_send(Timestamp time) {
     time_to_send_ = time;
   }
 
@@ -116,7 +116,7 @@ class sculpin_packet :
     return seqnum_;
   }
 
-  void set_seqnum(uint32_t s){
+  void setSeqnum(uint32_t s){
     seqnum_ = s;
   }
 
@@ -125,9 +125,9 @@ class sculpin_packet :
  private:
   uint32_t seqnum_;
 
-  timestamp arrival_;
+  Timestamp arrival_;
 
-  timestamp time_to_send_;
+  Timestamp time_to_send_;
 
   int priority_;
 

@@ -248,7 +248,7 @@ class SimulationQueue
 
   static void publishResults(){}
 
-  static void delete_statics();
+  static void deleteStatics();
 
   Simulation* sendScanPoint(int bufferSize, char* bufferPtr,
                             int nresults, double* resultPtr = nullptr);
@@ -281,7 +281,7 @@ class SimulationQueue
  private:
   bool built_up_;
   std::list<Simulation*> pending_;
-  parallel_runtime* rt_;
+  ParallelRuntime* rt_;
   sprockit::sim_parameters template_params_;
   opts template_opts_;
   static double* results_;

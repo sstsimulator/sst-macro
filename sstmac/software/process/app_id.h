@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-typedef int app_id;
+typedef int AppId;
 
 }
 } // end of namespace sstmac

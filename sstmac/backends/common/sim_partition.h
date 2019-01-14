@@ -65,35 +65,35 @@ namespace sstmac {
  * the parent_map_ member variable stores a flat map of switch to
  * partition.
  */
-class partition
+class Partition
 {
-  DeclareFactory(partition, parallel_runtime*)
+  DeclareFactory(Partition, ParallelRuntime*)
  public:
-  virtual ~partition();
+  virtual ~Partition();
 
-  int num_switches_total() const {
+  int numSwitchesTotal() const {
     return num_switches_total_;
   }
 
-  int lpid_for_switch(int switch_id) const {
+  int lpidForSwitch(int id) const {
 #if SSTMAC_SANITY_CHECK
-    if (switch_id >= num_switches_total_){
+    if (id >= num_switches_total_){
       spkt_throw_printf(sprockit::value_error,
           "partition::lpid_for_switch: invalid switch %d",
-          switch_id);
+          id);
     }
 #endif
-    return switch_to_lpid_[switch_id];
+    return switch_to_lpid_[id];
   }
 
-  int thread_for_switch(int switch_id) const {
-    return switch_to_thread_[switch_id];
+  int threadForSwitch(int id) const {
+    return switch_to_thread_[id];
   }
 
-  virtual void finalize_init(sprockit::sim_parameters* params){}
+  virtual void finalizeInit(sprockit::sim_parameters* params){}
 
  protected:
-  partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  Partition(sprockit::sim_parameters* params, ParallelRuntime* rt);
 
  protected:
   int* switch_to_lpid_;
@@ -108,70 +108,70 @@ class partition
 
   int me_;
 
-  parallel_runtime* rt_;
+  ParallelRuntime* rt_;
 
 };
 
-class serial_partition :
-  public partition
+class SerialPartition :
+  public Partition
 {
-  FactoryRegister("serial", partition, serial_partition)
+  FactoryRegister("serial", Partition, SerialPartition)
  public:
-  serial_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  SerialPartition(sprockit::sim_parameters* params, ParallelRuntime* rt);
 
-  virtual ~serial_partition();
+  virtual ~SerialPartition();
 
 };
 
-class topology_partition :
-  public partition
+class TopologyPartition :
+  public Partition
 {
-  FactoryRegister("topology", partition, topology_partition)
+  FactoryRegister("topology", Partition, TopologyPartition)
 
  public:
-  topology_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  TopologyPartition(sprockit::sim_parameters* params, ParallelRuntime* rt);
 
-  virtual ~topology_partition();
+  virtual ~TopologyPartition();
 
  protected:
-   hw::topology* fake_top_;
+   hw::Topology* fake_top_;
 
    int noccupied_;
 
 };
 
-class block_partition :
-  public partition
+class BlockPartition :
+  public Partition
 {
-  FactoryRegister("block", partition, block_partition)
+  FactoryRegister("block", Partition, BlockPartition)
  public:
-  block_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  BlockPartition(sprockit::sim_parameters* params, ParallelRuntime* rt);
 
-  virtual ~block_partition();
+  virtual ~BlockPartition();
 
-  void finalize_init(sprockit::sim_parameters* params);
+  void finalizeInit(sprockit::sim_parameters* params);
 
-  virtual void partition_switches();
+  virtual void partitionSwitches();
 
-  hw::topology* top() const {
+  hw::Topology* topology() const {
     return fake_top_;
   }
 
  protected:
-   hw::topology* fake_top_;
+   hw::Topology* fake_top_;
 
 };
 
-class occupied_block_partition :
-  public block_partition
+class OccupiedBlockPartition :
+  public BlockPartition
 {
-  FactoryRegister("occupied_block", partition, occupied_block_partition)
+  FactoryRegister("occupied_block", Partition, OccupiedBlockPartition)
  public:
-  occupied_block_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  OccupiedBlockPartition(sprockit::sim_parameters* params, ParallelRuntime* rt);
 
-  virtual ~occupied_block_partition();
+  virtual ~OccupiedBlockPartition();
 
-  virtual void partition_switches();
+  virtual void partitionSwitches();
 
  protected:
   int occupied_switches_;

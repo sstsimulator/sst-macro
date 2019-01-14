@@ -53,15 +53,15 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class hostname_allocation : public node_allocator
+class HostnameAllocation : public NodeAllocator
 {
-  FactoryRegister("hostname", node_allocator, hostname_allocation,
+  FactoryRegister("hostname", NodeAllocator, HostnameAllocation,
               "Given a file containing one hostname/coordinate pair per line, "
               "return a node allocation with all hosts in the file")
  public:
-  hostname_allocation(sprockit::sim_parameters* params);
+  HostnameAllocation(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "hostname allocation";
   }
 
@@ -71,7 +71,7 @@ class hostname_allocation : public node_allocator
    * @param mapfile name of the map file
    * @param hostmap map in which host mappings are placed
    */
-  static void read_host_file(parallel_runtime* rt,
+  static void readHostFile(ParallelRuntime* rt,
                 const char* here, const std::string &mapfile,
                 std::vector<std::string>& hostmap);
 
@@ -79,7 +79,7 @@ class hostname_allocation : public node_allocator
     const ordered_node_set& available,
     ordered_node_set &allocation) const override;
 
-  virtual ~hostname_allocation() throw () {}
+  virtual ~HostnameAllocation() throw () {}
 
 
  protected:

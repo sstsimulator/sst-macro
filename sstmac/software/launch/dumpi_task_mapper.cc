@@ -59,8 +59,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-node_id
-dumpi_task_mapper::node_id_from_hostname(const std::string& hostname)
+NodeId
+DumpiTaskMapper::nodeIdFromHostname(const std::string& hostname)
 {
 //  auto aptr_it = hostname_allocation::hostnamemap_.find(hostname);
 //  auto end = hostname_allocation::hostnamemap_.end();
@@ -90,11 +90,11 @@ dumpi_task_mapper::node_id_from_hostname(const std::string& hostname)
   if (!topology_) {
     spkt_throw_printf(sprockit::value_error, "dumpi_task_mapper: null topology");
   }
-  return topology_->node_name_to_id(hostname);
+  return topology_->nodeNameToId(hostname);
 }
 
-node_id
-dumpi_task_mapper::node_id_from_coordinates(int ncoord, int *coords)
+NodeId
+DumpiTaskMapper::nodeIdFromCoordinates(int ncoord, int *coords)
 {
   hw::coordinates coord_vec(ncoord);
   for (int i=0; i < ncoord; ++i) {
@@ -103,28 +103,28 @@ dumpi_task_mapper::node_id_from_coordinates(int ncoord, int *coords)
   return regtop_->node_addr(coord_vec);
 }
 
-dumpi_task_mapper::dumpi_task_mapper(sprockit::sim_parameters *params) :
-  task_mapper(params)
+DumpiTaskMapper::DumpiTaskMapper(sprockit::sim_parameters *params) :
+  TaskMapper(params)
 {
   metaname_ = params->get_param("dumpi_metaname");
-  regtop_ = safe_cast(hw::cartesian_topology, topology_);
+  regtop_ = safe_cast(hw::CartesianTopology, topology_);
 }
 
 void
-dumpi_task_mapper::map_ranks(
+DumpiTaskMapper::mapRanks(
   const ordered_node_set& nodes,
   int ppn,
-  std::vector<node_id> &result,
+  std::vector<NodeId> &result,
   int nproc)
 {
-  dumpi_meta* meta = new dumpi_meta(metaname_);
+  DumpiMeta* meta = new DumpiMeta(metaname_);
 
   int nrank = getnumprocs(meta);
   result.resize(nrank);
   cout0 << "nrank: " << nrank << std::endl;
 
   for (int i = 0; i < nrank; i++) {
-    std::string fname = dumpi_file_name(i, meta->dirplusfileprefix_);
+    std::string fname = dumpiFileName(i, meta->dirplusfileprefix_);
     dumpi_profile *profile = undumpi_open(fname.c_str());
     if (profile == NULL) {
       spkt_abort_printf("dumpiindexer::allocate: unable to open %s", fname.c_str());
@@ -139,11 +139,11 @@ dumpi_task_mapper::map_ranks(
     }
 
     std::string hostname(header->hostname);
-    node_id nid;
+    NodeId nid;
     if (header->meshdim == 0) {
-      nid = node_id_from_hostname(hostname);
+      nid = nodeIdFromHostname(hostname);
     } else {
-      nid = node_id_from_coordinates(header->meshdim, header->meshcrd);
+      nid = nodeIdFromCoordinates(header->meshdim, header->meshcrd);
     }
 
     dumpi_free_header(header);

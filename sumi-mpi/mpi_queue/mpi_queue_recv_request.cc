@@ -54,14 +54,14 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-mpi_queue_recv_request::mpi_queue_recv_request(
-  mpi_request* key,
-  mpi_queue* queue,
+MpiQueueRecvRequest::MpiQueueRecvRequest(
+  MpiRequest* key,
+  MpiQueue* queue,
   int count,
   MPI_Datatype type,
   int source, int tag, MPI_Comm comm, void* buffer) :
   queue_(queue), source_(source), tag_(tag), comm_(comm),
-  seqnum_(0), count_(count), type_(queue->api()->type_from_id(type)),
+  seqnum_(0), count_(count), type_(queue->api()->typeFromId(type)),
   key_(key), final_buffer_(buffer), recv_buffer_(nullptr)
 {
   if (isNonNullBuffer(buffer) && !type_->contiguous()){
@@ -71,39 +71,39 @@ mpi_queue_recv_request::mpi_queue_recv_request(
   }
 }
 
-mpi_queue_recv_request::~mpi_queue_recv_request()
+MpiQueueRecvRequest::~MpiQueueRecvRequest()
 {
 }
 
 bool
-mpi_queue_recv_request::is_cancelled() const {
-  return key_ && key_->is_cancelled();
+MpiQueueRecvRequest::is_cancelled() const {
+  return key_ && key_->isCancelled();
 }
 
 bool
-mpi_queue_recv_request::matches(mpi_message* msg)
+MpiQueueRecvRequest::matches(MpiMessage* msg)
 {
   bool count_equals = true; //count_ == msg->count();
   bool comm_equals = comm_ == msg->comm();
   bool seq_equals = true; //seqnum_ == msg->seqnum();
-  bool src_equals = source_ == msg->src_rank() || source_ == MPI_ANY_SOURCE;
+  bool src_equals = source_ == msg->srcRank() || source_ == MPI_ANY_SOURCE;
   bool tag_equals = tag_ == msg->tag() || tag_ == MPI_ANY_TAG;
   bool match = comm_equals && seq_equals && src_equals && tag_equals && count_equals;
 
   if (match){
-    int incoming_bytes = msg->payload_bytes();
-    mpi_api* api = queue_->api();
+    int incoming_bytes = msg->payloadBytes();
+    MpiApi* api = queue_->api();
     int recv_buffer_size = count_ * type_->packed_size();
     if (incoming_bytes > recv_buffer_size){
       spkt_abort_printf("MPI matching error: incoming message has %d bytes, but matches buffer of too small size %d:\n"
                         "MPI_Recv(%d,%s,%s,%s,%s) matches\n"
                         "MPI_Send(%d,%s,%d,%s,%s)",
                         incoming_bytes, recv_buffer_size,
-                        count_, api->type_str(type_->id).c_str(),
-                        api->src_str(source_).c_str(), api->tag_str(tag_).c_str(),
-                        api->comm_str(comm_).c_str(),
-                        msg->count(), api->type_str(msg->type()).c_str(), msg->dst_rank(),
-                        api->tag_str(msg->tag()).c_str(), api->comm_str(msg->comm()).c_str());
+                        count_, api->typeStr(type_->id).c_str(),
+                        api->srcStr(source_).c_str(), api->tagStr(tag_).c_str(),
+                        api->commStr(comm_).c_str(),
+                        msg->count(), api->typeStr(msg->type()).c_str(), msg->dstRank(),
+                        api->tagStr(msg->tag()).c_str(), api->commStr(msg->comm()).c_str());
     }
   }
   return match;

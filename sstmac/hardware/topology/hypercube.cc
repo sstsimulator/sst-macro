@@ -50,8 +50,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-hypercube::hypercube(sprockit::sim_parameters* params) :
-  torus(params)
+Hypercube::Hypercube(sprockit::sim_parameters* params) :
+  Torus(params)
 {
   ndim_ = dimensions_.size();
   dim_to_outport_.resize(ndim_);
@@ -63,7 +63,7 @@ hypercube::hypercube(sprockit::sim_parameters* params) :
 }
 
 void
-hypercube::endpoints_connected_to_injection_switch(switch_id swaddr,
+Hypercube::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
   int total_ports = 0;
@@ -81,10 +81,10 @@ hypercube::endpoints_connected_to_injection_switch(switch_id swaddr,
 }
 
 void
-hypercube::minimal_route_to_switch(
-  switch_id src,
-  switch_id dst,
-  packet::header* hdr) const
+Hypercube::minimalRouteToSwitch(
+  SwitchId src,
+  SwitchId dst,
+  Packet::header* hdr) const
 {
   int ndim = dimensions_.size();
   int div = 1;
@@ -93,7 +93,7 @@ hypercube::minimal_route_to_switch(
     int dstX = (dst / div) % dimensions_[i];
     if (srcX != dstX){
       hdr->deadlock_vc = 0;
-      hdr->edge_port = convert_to_port(i, dstX);
+      hdr->edge_port = convertToPort(i, dstX);
       return;
     }
     div *= dimensions_[i];
@@ -101,9 +101,9 @@ hypercube::minimal_route_to_switch(
 }
 
 int
-hypercube::minimal_distance(
-  switch_id src,
-  switch_id dst) const
+Hypercube::minimalDistance(
+  SwitchId src,
+  SwitchId dst) const
 {
   int dist = 0;
   int div = 1;
@@ -120,7 +120,7 @@ hypercube::minimal_distance(
 }
 
 void
-hypercube::configure_individual_port_params(switch_id src,
+Hypercube::configureIndividualPortParams(SwitchId src,
                                           sprockit::sim_parameters *switch_params) const
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
@@ -130,14 +130,14 @@ hypercube::configure_individual_port_params(switch_id src,
     double port_bw = bw * red_[dim];
     int credits = bufsize * red_[dim];
     for (int dir=0; dir < dimensions_[dim]; ++dir){
-      int port = convert_to_port(dim, dir);
-      setup_port_params(port, credits, port_bw, link_params, switch_params);
+      int port = convertToPort(dim, dir);
+      setupPortParams(port, credits, port_bw, link_params, switch_params);
     }
   }
 }
 
 void
-hypercube::connected_outports(switch_id src, std::vector<connection>& conns) const
+Hypercube::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   int nconns = 0;
   for (int dim=0; dim < dimensions_.size(); ++dim){
@@ -154,10 +154,10 @@ hypercube::connected_outports(switch_id src, std::vector<connection>& conns) con
     for (int dstX=0; dstX < dimsize; ++dstX) {
       if (dstX == srcX) continue;
 
-      switch_id dst = src + (dstX - srcX) * dim_stride;
+      SwitchId dst = src + (dstX - srcX) * dim_stride;
 
-      int outport = convert_to_port(dim, dstX);
-      int inport = convert_to_port(dim, srcX);
+      int outport = convertToPort(dim, dstX);
+      int inport = convertToPort(dim, srcX);
 
       connection& conn = conns[cidx];
       conn.src = src;
@@ -171,10 +171,10 @@ hypercube::connected_outports(switch_id src, std::vector<connection>& conns) con
   }
 }
 
-topology::vtk_switch_geometry
-hypercube::get_vtk_geometry(switch_id sid) const
+Topology::vtk_switch_geometry
+Hypercube::getVtkGeometry(SwitchId sid) const
 {
-  coordinates coords = switch_coords(sid);
+  coordinates coords = switchCoords(sid);
   int ndims = dimensions_.size();
   if (ndims > 3 || ndims < 2){
     spkt_abort_printf("cannot generate xyz coordinates for topologies with ndims=%d - only 2D or 3D torus allowed",

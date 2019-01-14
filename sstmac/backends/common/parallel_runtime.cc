@@ -69,12 +69,12 @@ RegisterKeywords(
 
 namespace sstmac {
 
-const int parallel_runtime::global_root = -1;
-parallel_runtime* parallel_runtime::static_runtime_ = nullptr;
+const int ParallelRuntime::global_root = -1;
+ParallelRuntime* ParallelRuntime::static_runtime_ = nullptr;
 static int backupSize = 10e6;
 
 char*
-parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
+ParallelRuntime::comm_buffer::allocateSpace(size_t size, IpcEvent *ev)
 {
   uint64_t newOffset = add_int64_atomic(size, &bytesAllocated);
   uint64_t myStartPos = newOffset - size;
@@ -117,7 +117,7 @@ parallel_runtime::comm_buffer::allocateSpace(size_t size, ipc_event_t *ev)
 }
 
 void
-parallel_runtime::comm_buffer::copyToBackup()
+ParallelRuntime::comm_buffer::copyToBackup()
 {
   if (backups.empty()) return;
 
@@ -135,7 +135,7 @@ parallel_runtime::comm_buffer::copyToBackup()
 }
 
 void
-parallel_runtime::comm_buffer::reset()
+ParallelRuntime::comm_buffer::reset()
 {
   if (!backups.empty()){
     int growRatio = bytesAllocated / allocSize;
@@ -152,7 +152,7 @@ parallel_runtime::comm_buffer::reset()
 }
 
 void
-parallel_runtime::comm_buffer::realloc(size_t size)
+ParallelRuntime::comm_buffer::realloc(size_t size)
 {
   char* oldAlloc = allocation;
   allocSize = size;
@@ -164,7 +164,7 @@ parallel_runtime::comm_buffer::realloc(size_t size)
 }
 
 void
-parallel_runtime::bcast_string(std::string& str, int root)
+ParallelRuntime::bcastString(std::string& str, int root)
 {
   if (nproc_ == 1)
     return;
@@ -185,7 +185,7 @@ parallel_runtime::bcast_string(std::string& str, int root)
 }
 
 std::istream*
-parallel_runtime::bcast_file_stream(const std::string &fname)
+ParallelRuntime::bcastFileStream(const std::string &fname)
 {
 
   if (me_ == 0){
@@ -209,20 +209,20 @@ parallel_runtime::bcast_file_stream(const std::string &fname)
       sstr << line << "\n";
     }
     std::string all_text = sstr.str();
-    bcast_string(all_text, 0);
+    bcastString(all_text, 0);
     //go back to the beginning of the file
     fstr->clear();
     fstr->seekg(0, fstr->beg);
     return fstr;
   } else {
     std::string all_text;
-    bcast_string(all_text, 0);
+    bcastString(all_text, 0);
     return new std::stringstream(all_text);
   }
 }
 
 void
-parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
+ParallelRuntime::initPartitionParams(sprockit::sim_parameters *params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("parallel_runtime::init_partition_params: should not be used with integrated core");
@@ -233,12 +233,12 @@ parallel_runtime::init_partition_params(sprockit::sim_parameters *params)
   if (nthread_ == 1 && nproc_ == 1){
     deflt = "serial";
   }
-  part_ = partition::factory::get_optional_param("partition", deflt, params, this);
+  part_ = Partition::factory::get_optional_param("partition", deflt, params, this);
 #endif
 }
 
-parallel_runtime*
-parallel_runtime::static_runtime(sprockit::sim_parameters* params)
+ParallelRuntime*
+ParallelRuntime::staticRuntime(sprockit::sim_parameters* params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return nullptr;
@@ -246,7 +246,7 @@ parallel_runtime::static_runtime(sprockit::sim_parameters* params)
   static thread_lock rt_lock;
   rt_lock.lock();
   if (!static_runtime_){
-    static_runtime_ = parallel_runtime::factory::get_param("runtime", params);
+    static_runtime_ = ParallelRuntime::factory::get_param("runtime", params);
   }
   rt_lock.unlock();
   return static_runtime_;
@@ -254,9 +254,9 @@ parallel_runtime::static_runtime(sprockit::sim_parameters* params)
 }
 
 void
-parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
+ParallelRuntime::initRuntimeParams(sprockit::sim_parameters *params)
 {
-  num_recvs_done_ = 0;
+  numRecvsDone_ = 0;
   num_sends_done_ = 0;
   sends_done_.resize(nproc_);
 
@@ -281,7 +281,7 @@ parallel_runtime::init_runtime_params(sprockit::sim_parameters *params)
 #endif
 }
 
-parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
+ParallelRuntime::ParallelRuntime(sprockit::sim_parameters* params,
                                    int me, int nproc)
   : part_(nullptr),
     me_(me),
@@ -300,14 +300,14 @@ parallel_runtime::parallel_runtime(sprockit::sim_parameters* params,
   sprockit::output::init_errn(&std::cerr);
 }
 
-parallel_runtime::~parallel_runtime()
+ParallelRuntime::~ParallelRuntime()
 {
   if (part_) delete part_;
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
+ParallelRuntime::run_serialize(serializer& ser, IpcEvent* iev)
 {
   ser & iev->ser_size; //this must be first!!!
   ser & iev->dst;  //this must be first!!!
@@ -320,12 +320,12 @@ parallel_runtime::run_serialize(serializer& ser, ipc_event_t* iev)
   ser & iev->ev;
 }
 
-void parallel_runtime::send_event(ipc_event_t* iev)
+void ParallelRuntime::sendEvent(IpcEvent* iev)
 {
   //somehow this doesn't return the sum of sizes
   //uint32_t overhead = sizeof(ipc_event_base);
   const uint32_t overhead = sizeof(uint32_t) + sizeof(uint32_t)
-    + sizeof(timestamp) + sizeof(uint32_t) + sizeof(uint32_t)
+    + sizeof(Timestamp) + sizeof(uint32_t) + sizeof(uint32_t)
     + sizeof(int) + sizeof(int) + sizeof(bool);
 
   sprockit::serializer ser;
@@ -338,22 +338,22 @@ void parallel_runtime::send_event(ipc_event_t* iev)
   ser.start_packing(ptr, iev->ser_size);
   debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",
                iev->ser_size, iev->rank, iev->t.sec(),
-               sprockit::to_string(iev->ev).c_str());
+               sprockit::toString(iev->ev).c_str());
   run_serialize(ser, iev);
 }
 #endif
 
 void
-parallel_runtime::reset_send_recv()
+ParallelRuntime::resetSendRecv()
 {
   for (int i=0; i < num_sends_done_; ++i){
     send_buffers_[sends_done_[i]].reset();
   }
-  for (int i=0; i < num_recvs_done_; ++i){
+  for (int i=0; i < numRecvsDone_; ++i){
     recv_buffers_[i].reset();
   }
   num_sends_done_ = 0;
-  num_recvs_done_ = 0;
+  numRecvsDone_ = 0;
 }
 
 

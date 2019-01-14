@@ -105,7 +105,7 @@ class param_bcaster {
  public:
   virtual void bcast(void* buf, int size, int me, int root) = 0;
 
-  void bcast_string(std::string& str, int me, int root);
+  void bcastString(std::string& str, int me, int root);
 };
 
 class sim_parameters  {

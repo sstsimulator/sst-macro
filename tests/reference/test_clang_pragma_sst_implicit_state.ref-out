@@ -1,5 +1,5 @@
 
-enum implicit_states {
+enum ImplicitStates {
   null=0,
   length,
   size,
@@ -60,8 +60,8 @@ extern "C" int sstmac_user_main_pragma_test(){
 
 static sstmac::Memoization memoize_forloop("forloop","linear");
 static sstmac::Memoization memoize_memoFxn("memoFxn","linear");
-int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));
+int userSkeletonMainInitFxn(const char* name, int (*foo)(int,char**));
 extern "C" int sstmac_user_main_pragma_test(int argc, char** argv);
-int pragma_test_sstmac_initer = user_skeleton_main_init_fxn("pragma_test",sstmac_user_main_pragma_test);
+int pragma_test_sstmac_initer = userSkeletonMainInitFxn("pragma_test",sstmac_user_main_pragma_test);
 
 extern "C" const char exe_main_name[] = "pragma_test";

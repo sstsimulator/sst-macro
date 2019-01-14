@@ -64,93 +64,93 @@ namespace hw {
  *        using the LogGP model.  See "LogGP in Theory and Practice"
  *        by Hoefler and Schneider.
  */
-class logp_switch : public connectable_component
+class LogPSwitch : public ConnectableComponent
 {
-  DeclareFactory(logp_switch,uint32_t,event_manager*)
+  DeclareFactory(LogPSwitch,uint32_t)
 
  public:
-  RegisterComponent("logP | simple | LogP | logp", logp_switch, logp_switch,
+  RegisterComponent("logP | simple | LogP | logp", LogPSwitch, LogPSwitch,
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A switch that implements a basic delay model with no congestion modeling")
 
-  struct contention_model {
-    DeclareFactory(contention_model)
+  struct ContentionModel {
+    DeclareFactory(ContentionModel)
     virtual double value() = 0;
   };
 
  public:
-  logp_switch(sprockit::sim_parameters* params, uint32_t cid, event_manager* mgr);
+  LogPSwitch(sprockit::sim_parameters* params, uint32_t cid);
 
-  virtual ~logp_switch();
+  virtual ~LogPSwitch();
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "LogP switch";
   }
 
-  void connect_output(sprockit::sim_parameters *params,
+  void connectOutput(sprockit::sim_parameters *params,
                       int src_outport, int dst_inport,
-                      event_link *payload_link) override {
+                      EventLink *payload_link) override {
     nic_links_[src_outport] = payload_link;
   }
 
-  void connect_input(sprockit::sim_parameters *params,
+  void connectInput(sprockit::sim_parameters *params,
                      int src_outport, int dst_inport,
-                     event_link *credit_link) override {
+                     EventLink *credit_link) override {
     //do nothing
   }
 
-  link_handler* payload_handler(int port) override {
-    return new_link_handler(this, &logp_switch::send_event);
+  LinkHandler* payloadHandler(int port) override {
+    return newLinkHandler(this, &LogPSwitch::sendEvent);
   }
 
-  link_handler* credit_handler(int port) override {
-    return new_link_handler(this, &logp_switch::drop_event);
+  LinkHandler* creditHandler(int port) override {
+    return newLinkHandler(this, &LogPSwitch::dropEvent);
   }
 
-  void connect_output(node_id nid, event_link* link){
+  void connectOutput(NodeId nid, EventLink* link){
     nic_links_[nid] = link;
   }
 
-  void send_event(event* ev);
+  void sendEvent(Event* ev);
 
-  void drop_event(event* ev){}
+  void dropEvent(Event* ev){}
 
-  void send(network_message* msg){
+  void send(NetworkMessage* msg){
     send(now(), msg);
   }
 
-  void send(timestamp start, network_message* msg);
+  void send(Timestamp start, NetworkMessage* msg);
 
-  timestamp send_latency(sprockit::sim_parameters* params) const override {
+  Timestamp sendLatency(sprockit::sim_parameters* params) const override {
     return out_in_lat_;
   }
 
-  timestamp credit_latency(sprockit::sim_parameters* params) const override {
+  Timestamp creditLatency(sprockit::sim_parameters* params) const override {
     return out_in_lat_;
   }
 
  private:
   double inj_bw_inverse_;
 
-  timestamp inj_lat_;
+  Timestamp inj_lat_;
 
-  timestamp out_in_lat_;
+  Timestamp out_in_lat_;
 
   double inverse_bw_;
 
   double inv_min_bw_;
 
-  timestamp hop_latency_;
+  Timestamp hop_latency_;
 
-  topology* top_;
+  Topology* top_;
 
-  std::vector<event_link*> nic_links_;
+  std::vector<EventLink*> nic_links_;
 
   RNG::MWC* rng_;
 
-  contention_model* contention_model_;
+  ContentionModel* contention_model_;
 
-  timestamp random_max_extra_latency_;
+  Timestamp random_max_extra_latency_;
   double random_max_extra_byte_delay_;
   uint32_t random_seed_;
 

@@ -158,7 +158,7 @@ class serializable_factory
     return (*builders_)[cls_id]->sanity(ser);
   }
 
-  static void delete_statics();
+  static void deleteStatics();
 
 };
 

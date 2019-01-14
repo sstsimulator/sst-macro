@@ -67,9 +67,9 @@ namespace hw {
 
 
 
-pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node *nd) :
+PiscesMemoryModel::PiscesMemoryModel(sprockit::sim_parameters *params, Node *nd) :
   arb_(nullptr),
-  memory_model(params, nd)
+  MemoryModel(params, nd)
 {
   nchannels_ = params->get_optional_int_param("nchannels", 8);
   channels_available_.resize(nchannels_);
@@ -85,16 +85,16 @@ pisces_memory_model::pisces_memory_model(sprockit::sim_parameters *params, node 
   max_bw_ = params->get_bandwidth_param("total_bandwidth");
   max_single_bw_ = params->get_optional_bandwidth_param("max_single_bandwidth", max_bw_);
   latency_ = params->get_time_param("latency");
-  arb_ = pisces_bandwidth_arbitrator::factory::get_value("cut_through", params);
+  arb_ = PiscesBandwidthArbitrator::factory::get_value("cut_through", params);
 }
 
-pisces_memory_model::~pisces_memory_model()
+PiscesMemoryModel::~PiscesMemoryModel()
 {
   if (arb_) delete arb_;
 }
 
 void
-pisces_memory_model::access(uint64_t bytes, double max_bw, callback* cb)
+PiscesMemoryModel::access(uint64_t bytes, double max_bw, Callback* cb)
 {
   if (channels_available_.empty()){
     stalled_requests_.emplace_back(bytes, max_bw, cb);
@@ -106,14 +106,14 @@ pisces_memory_model::access(uint64_t bytes, double max_bw, callback* cb)
 }
 
 void
-pisces_memory_model::start(int channel, uint64_t bytes, double max_bw, callback *cb)
+PiscesMemoryModel::start(int channel, uint64_t bytes, double max_bw, Callback *cb)
 {
   debug("Node %d starting access on channnel %d of size %ld with bw %8.4e",
         parent_node_->addr(), channel, bytes, max_single_bw_);
 
   if (bytes <= packet_size_){
-    timestamp t = access(channel, bytes, max_bw, cb);
-    send_self_event_queue(t, new_callback(this, &pisces_memory_model::channel_free, channel));
+    Timestamp t = access(channel, bytes, max_bw, cb);
+    sendExecutionEvent(t, newCallback(this, &PiscesMemoryModel::channel_free, channel));
   } else {
     request& req = channel_requests_[channel];
     req.bytes_arrived = 0;
@@ -121,13 +121,13 @@ pisces_memory_model::start(int channel, uint64_t bytes, double max_bw, callback 
     req.cb = cb;
     req.max_bw = max_bw;
     access(channel, packet_size_, max_bw,
-           new_callback(this, &pisces_memory_model::data_arrived, channel, packet_size_));
+           newCallback(this, &PiscesMemoryModel::data_arrived, channel, packet_size_));
   }
 
 }
 
 void
-pisces_memory_model::channel_free(int channel)
+PiscesMemoryModel::channel_free(int channel)
 {
   if (!stalled_requests_.empty()){
     request& req = stalled_requests_.front();
@@ -139,7 +139,7 @@ pisces_memory_model::channel_free(int channel)
 }
 
 void
-pisces_memory_model::data_arrived(int channel, uint32_t bytes)
+PiscesMemoryModel::data_arrived(int channel, uint32_t bytes)
 {
   request& ch = channel_requests_[channel];
   ch.bytes_arrived += bytes;
@@ -153,12 +153,12 @@ pisces_memory_model::data_arrived(int channel, uint32_t bytes)
     uint32_t next_bytes = std::min(uint32_t(packet_size_),
                                    uint32_t(ch.bytes_total - ch.bytes_arrived));
     access(channel, next_bytes, ch.max_bw,
-           new_callback(this, &pisces_memory_model::data_arrived, channel, next_bytes));
+           newCallback(this, &PiscesMemoryModel::data_arrived, channel, next_bytes));
   }
 }
 
 void
-pisces_memory_model::access(pisces_packet* pkt, double max_bw, callback* cb)
+PiscesMemoryModel::access(PiscesPacket* pkt, double max_bw, Callback* cb)
 {
   if (channels_available_.empty()){
     stalled_requests_.emplace_back(max_bw, cb, pkt);
@@ -169,34 +169,34 @@ pisces_memory_model::access(pisces_packet* pkt, double max_bw, callback* cb)
   }
 }
 
-timestamp
-pisces_memory_model::access(int channel, pisces_packet* pkt, double max_bw, callback* cb)
+Timestamp
+PiscesMemoryModel::access(int channel, PiscesPacket* pkt, double max_bw, Callback* cb)
 {
-  pkt->set_inport(channel);
+  pkt->setInport(channel);
 
   //set the bandwidth to the max single bw
-  pkt->init_bw(max_bw);
-  pkt->set_arrival(now().sec());
+  pkt->initBw(max_bw);
+  pkt->setArrival(now().sec());
   pkt_arbitration_t st;
   st.pkt = pkt;
   st.now = now();
   arb_->arbitrate(st);
 
   debug("Node %d memory packet %s leaving on channel %d at t=%8.4e",
-    addr(), pkt->to_string().c_str(), channel, st.tail_leaves.sec());
+    addr(), pkt->toString().c_str(), channel, st.tail_leaves.sec());
 
   //here we do not optimistically send credits = only when the packet leaves
-  send_self_event_queue(st.tail_leaves, cb);
+  sendExecutionEvent(st.tail_leaves, cb);
 
   return st.tail_leaves;
 }
 
-timestamp
-pisces_memory_model::access(int channel, uint32_t bytes, double max_bw, callback* cb)
+Timestamp
+PiscesMemoryModel::access(int channel, uint32_t bytes, double max_bw, Callback* cb)
 {
-  pisces_packet pkt(nullptr, bytes, -1, false, //doesn't matter
-                    sstmac::node_id(), sstmac::node_id());
-  timestamp t = access(channel, &pkt, max_bw, cb);
+  PiscesPacket pkt(nullptr, bytes, -1, false, //doesn't matter
+                    sstmac::NodeId(), sstmac::NodeId());
+  Timestamp t = access(channel, &pkt, max_bw, cb);
   return t;
 }
 

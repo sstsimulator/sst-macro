@@ -72,32 +72,32 @@ class Builder
 template <class> struct wrap { typedef void type; };
 
 /**
- * @class call_finalize_init
- * finalize_init is not a required method for any of the classes.
- * This uses SFINAE tricks to call finalize_init on classes that implement
+ * @class call_finalizeInit
+ * finalizeInit is not a required method for any of the classes.
+ * This uses SFINAE tricks to call finalizeInit on classes that implement
  * the method or avoid calling it on classes that don't implement it
  */
 template<typename T, class Enable=void>
-struct call_finalize_init : public std::false_type {
+struct call_finalizeInit : public std::false_type {
  public:
   void operator()(T* t, sprockit::sim_parameters* params){
-    //if we compile here, class T does not have a finalize_init
+    //if we compile here, class T does not have a finalizeInit
     //do nothing
   }
 };
 
 template<typename T>
-struct call_finalize_init<T,
+struct call_finalizeInit<T,
   typename wrap<
-    decltype(std::declval<T>().finalize_init(nullptr))
+    decltype(std::declval<T>().finalizeInit(nullptr))
    >::type
 > : public std::true_type
 {
  public:
   void operator()(T* t, sprockit::sim_parameters* params){
-    //if we compile here, class T does have a finalize_init
+    //if we compile here, class T does have a finalizeInit
     //call that function
-    t->finalize_init(params);
+    t->finalizeInit(params);
   }
 };
 
@@ -304,7 +304,7 @@ class Factory
                        valname.c_str(), name_);
     }
     T* p = builder->build(params, args...);
-    call_finalize_init<T>()(p, params);
+    call_finalizeInit<T>()(p, params);
     return p;
   }
 

@@ -8,7 +8,7 @@ ALLOCTESTS = \
   test_allocation_cart \
   test_allocation_coordinate \
   test_allocation_greedy_dfly \
-  test_allocation_node_id
+  test_allocation_NodeId
 else
 ALLOCTESTS = 
 endif

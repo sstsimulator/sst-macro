@@ -50,54 +50,54 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class hypercube :
-  public torus
+class Hypercube :
+  public Torus
 {
-  FactoryRegister("hypercube", topology, hypercube,
+  FactoryRegister("hypercube", Topology, Hypercube,
               "hypercube implements a high-dimension torus with an arbitrary number of dimensions")
  public:
-  hypercube(sprockit::sim_parameters* params);
+  Hypercube(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "torus topology";
   }
 
-  virtual ~hypercube() {}
+  virtual ~Hypercube() {}
 
-  void minimal_route_to_switch(
-    switch_id src,
-    switch_id dst,
-    packet::header* hdr) const;
+  void minimalRouteToSwitch(
+    SwitchId src,
+    SwitchId dst,
+    Packet::header* hdr) const;
 
-  bool uniform_switch_ports() const override {
+  bool uniformSwitchPorts() const override {
     return false;
   }
 
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     int sum = 0;
     for (int size : dimensions_) sum += size;
     return sum + concentration();
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swaddr,
+  void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
          std::vector<injection_port>& nodes) const override;
 
-  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
-  void configure_individual_port_params(switch_id src,
+  void configureIndividualPortParams(SwitchId src,
            sprockit::sim_parameters *switch_params) const override;
 
-  inline int convert_to_port(int dim, int dir) const {
+  inline int convertToPort(int dim, int dir) const {
     return dim_to_outport_[dim] + dir;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const;
+  int minimalDistance(SwitchId src, SwitchId dst) const;
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
-    return minimal_distance(src/concentration_, dst/concentration_);
+  int numHopsToNode(NodeId src, NodeId dst) const override {
+    return minimalDistance(src/concentration_, dst/concentration_);
   }
 
-  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+  vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
 
  protected:
   int radix_;

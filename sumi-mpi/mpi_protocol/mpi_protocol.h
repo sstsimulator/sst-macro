@@ -58,7 +58,7 @@ namespace sumi {
 /**
  * @brief The mpi_protocol class
  */
-class mpi_protocol : public sprockit::printable {
+class MpiProtocol : public sprockit::printable {
 
  public:
   enum PROTOCOL_ID {
@@ -69,21 +69,21 @@ class mpi_protocol : public sprockit::printable {
   };
 
  public:
-  virtual void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid, int count, mpi_type* typeobj,
-                     int tag, MPI_Comm comm, int seq_id, mpi_request* req) = 0;
+  virtual void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* typeobj,
+                     int tag, MPI_Comm comm, int seq_id, MpiRequest* req) = 0;
 
-  virtual void incoming(mpi_message* msg) = 0;
+  virtual void incoming(MpiMessage* msg) = 0;
 
-  virtual void incoming(mpi_message *msg, mpi_queue_recv_request* req) = 0;
+  virtual void incoming(MpiMessage *msg, MpiQueueRecvRequest* req) = 0;
 
  protected:
-  mpi_protocol(mpi_queue* queue);
+  MpiProtocol(MpiQueue* queue);
 
-  mpi_queue* queue_;
+  MpiQueue* queue_;
 
-  mpi_api* mpi_;
+  MpiApi* mpi_;
 
-  void* fill_send_buffer(int count, void *buffer, mpi_type *typeobj);
+  void* fillSendBuffer(int count, void *buffer, MpiType *typeobj);
 };
 
 /**
@@ -92,24 +92,24 @@ class mpi_protocol : public sprockit::printable {
  * MPI_Send completes immediately. Assumes dest has allocated "mailbox"
  * temp buffers to receive unexpected messages.
  */
-class eager0 final : public mpi_protocol
+class Eager0 final : public MpiProtocol
 {
  public:
-  eager0(sprockit::sim_parameters* params, mpi_queue* queue) :
-    mpi_protocol(queue){}
+  Eager0(sprockit::sim_parameters* params, MpiQueue* queue) :
+    MpiProtocol(queue){}
 
-  ~eager0(){}
+  ~Eager0(){}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "eager0";
   }
 
-  void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid, int count, mpi_type* typeobj,
-             int tag, MPI_Comm comm, int seq_id, mpi_request* req) override;
+  void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* typeobj,
+             int tag, MPI_Comm comm, int seq_id, MpiRequest* req) override;
 
-  void incoming(mpi_message *msg) override;
+  void incoming(MpiMessage *msg) override;
 
-  void incoming(mpi_message *msg, mpi_queue_recv_request* req) override;
+  void incoming(MpiMessage *msg, MpiQueueRecvRequest* req) override;
 
  private:
   std::map<uint64_t,void*> send_flows_;
@@ -127,42 +127,42 @@ class eager0 final : public mpi_protocol
  * from temp buf into temp buf.  On MPI_Recv (or completion of transfer),
  * the final result is copied from temp into recv buf and temp bufs are freed.
  */
-class eager1 final : public mpi_protocol
+class Eager1 final : public MpiProtocol
 {
  public:
-  eager1(sprockit::sim_parameters* params, mpi_queue* queue)
-    : mpi_protocol(queue) {}
+  Eager1(sprockit::sim_parameters* params, MpiQueue* queue)
+    : MpiProtocol(queue) {}
 
-  virtual ~eager1(){}
+  virtual ~Eager1(){}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "eager1";
   }
 
-  void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid, int count, mpi_type* typeobj,
-             int tag, MPI_Comm comm, int seq_id, mpi_request* req) override;
+  void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* typeobj,
+             int tag, MPI_Comm comm, int seq_id, MpiRequest* req) override;
 
-  void incoming(mpi_message *msg) override;
+  void incoming(MpiMessage *msg) override;
 
-  void incoming(mpi_message *msg, mpi_queue_recv_request* req) override;
+  void incoming(MpiMessage *msg, MpiQueueRecvRequest* req) override;
 
  private:
-  void incoming_ack(mpi_message* msg);
-  void incoming_header(mpi_message* msg);
-  void incoming_payload(mpi_message* msg);
+  void incomingAck(MpiMessage* msg);
+  void incomingHeader(MpiMessage* msg);
+  void incomingPayload(MpiMessage* msg);
 
 };
 
-class rendezvous_protocol : public mpi_protocol
+class RendezvousProtocol : public MpiProtocol
 {
  public:
-  rendezvous_protocol(sprockit::sim_parameters* params, mpi_queue* queue);
+  RendezvousProtocol(sprockit::sim_parameters* params, MpiQueue* queue);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "rendezvous";
   }
 
-  virtual ~rendezvous_protocol(){}
+  virtual ~RendezvousProtocol(){}
 
  protected:
   bool software_ack_;
@@ -177,42 +177,42 @@ class rendezvous_protocol : public mpi_protocol
  * to the destination. On MPI_Recv, the destination then posts an RDMA get.
  * Hardware acks arrive at both dest/source signaling done.
  */
-class rendezvous_get final : public rendezvous_protocol
+class RendezvousGet final : public RendezvousProtocol
 {
  public:
-  rendezvous_get(sprockit::sim_parameters* params, mpi_queue* queue) :
-    rendezvous_protocol(params, queue)
+  RendezvousGet(sprockit::sim_parameters* params, MpiQueue* queue) :
+    RendezvousProtocol(params, queue)
   {
   }
 
-  ~rendezvous_get();
+  ~RendezvousGet();
 
-  void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid, int count, mpi_type* type,
-             int tag, MPI_Comm comm, int seq_id, mpi_request* req) override;
+  void start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* type,
+             int tag, MPI_Comm comm, int seq_id, MpiRequest* req) override;
 
-  void incoming(mpi_message *msg) override;
+  void incoming(MpiMessage *msg) override;
 
-  void incoming(mpi_message *msg, mpi_queue_recv_request* req) override;
+  void incoming(MpiMessage *msg, MpiQueueRecvRequest* req) override;
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "rendezvous protocol rdma";
   }
 
  private:
   struct send {
-    mpi_request* req;
+    MpiRequest* req;
     void* original;
     void* temporary;
-    send(mpi_request* r, void* o, void* t) :
+    send(MpiRequest* r, void* o, void* t) :
       req(r), original(0), temporary(t){}
   };
 
-  void incoming_ack(mpi_message* msg);
-  void incoming_header(mpi_message* msg);
-  void incoming_payload(mpi_message* msg);
-  void* configure_send_buffer(int count, void* buffer, mpi_type* obj);
+  void incoming_ack(MpiMessage* msg);
+  void incoming_header(MpiMessage* msg);
+  void incoming_payload(MpiMessage* msg);
+  void* configure_send_buffer(int count, void* buffer, MpiType* obj);
 
-  std::map<uint64_t,mpi_queue_recv_request*> recv_flows_;
+  std::map<uint64_t,MpiQueueRecvRequest*> recv_flows_;
 
   std::map<uint64_t,send> send_flows_;
 };

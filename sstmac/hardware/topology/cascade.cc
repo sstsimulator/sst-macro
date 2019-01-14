@@ -62,8 +62,8 @@ namespace hw {
 
 static const double PI = 3.141592653589793238462;
 
-cascade::cascade(sprockit::sim_parameters* params) :
-  cartesian_topology(params)
+Cascade::Cascade(sprockit::sim_parameters* params) :
+  CartesianTopology(params)
 {
   x_ = dimensions_[0];
   y_ = dimensions_[1];
@@ -81,7 +81,7 @@ cascade::cascade(sprockit::sim_parameters* params) :
 }
 
 void
-cascade::endpoints_connected_to_injection_switch(switch_id swaddr,
+Cascade::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
   nodes.resize(concentration_);
@@ -94,7 +94,7 @@ cascade::endpoints_connected_to_injection_switch(switch_id swaddr,
 }
 
 bool
-cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
+Cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 {
   int gstride = std::max(1, g_ / group_con_);
   int gconns = 0;
@@ -110,10 +110,10 @@ cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 }
 
 bool
-cascade::find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY,
-                              packet::header* hdr) const
+Cascade::find_y_path_to_group(Router* rtr, int myX, int myG, int dstG, int& dstY,
+                              Packet::header* hdr) const
 {
-  int ystart = rtr->random_number(y_,0,42);
+  int ystart = rtr->randomNumber(y_,0,42);
   for (int yy = 0; yy < y_; ++yy) {
     dstY = (ystart + yy) % y_;
     if (xy_connected_to_group(myX, dstY, myG, dstG)) {
@@ -125,10 +125,10 @@ cascade::find_y_path_to_group(router* rtr, int myX, int myG, int dstG, int& dstY
 }
 
 bool
-cascade::find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX,
-                              packet::header* hdr) const
+Cascade::find_x_path_to_group(Router* rtr, int myY, int myG, int dstG, int& dstX,
+                              Packet::header* hdr) const
 {
-  int xstart = rtr->random_number(x_,0,42);
+  int xstart = rtr->randomNumber(x_,0,42);
   for (int xx = 0; xx < x_; ++xx) {
     dstX = (xstart + xx) % x_;
     if (xy_connected_to_group(dstX, myY, myG, dstG)) {
@@ -140,9 +140,9 @@ cascade::find_x_path_to_group(router* rtr, int myY, int myG, int dstG, int& dstX
 }
 
 void
-cascade::find_path_to_group(router* rtr, int myX, int myY, int myG,
+Cascade::find_path_to_group(Router* rtr, int myX, int myY, int myG,
                             int dstG, int& dstX, int& dstY,
-                            packet::header* hdr) const
+                            Packet::header* hdr) const
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
@@ -178,9 +178,9 @@ cascade::find_path_to_group(router* rtr, int myX, int myY, int myG,
 
 
 void
-cascade::minimal_route_to_switch(
-  router* rtr, switch_id src,
-  switch_id dst, packet::header* hdr) const
+Cascade::minimalRouteToSwitch(
+  Router* rtr, SwitchId src,
+  SwitchId dst, Packet::header* hdr) const
 {
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
   int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
@@ -205,7 +205,7 @@ cascade::minimal_route_to_switch(
 }
 
 int
-cascade::minimal_distance(switch_id src, switch_id dst) const
+Cascade::minimalDistance(SwitchId src, SwitchId dst) const
 {
   int dist = 0;
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
@@ -234,7 +234,7 @@ cascade::minimal_distance(switch_id src, switch_id dst) const
 
 
 void
-cascade::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsize) const
+Cascade::setupPortParams(sprockit::sim_parameters* params, int dim, int dimsize) const
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
@@ -244,15 +244,15 @@ cascade::setup_port_params(sprockit::sim_parameters* params, int dim, int dimsiz
   int credits = bufsize * red_[dim];
 
   for (int i=0; i < dimsize; ++i){
-    int port = convert_to_port(dim, i);
+    int port = convertToPort(dim, i);
   //std::cout << "setting port " << port << " to " << port_bw << " " << credits << std::endl;
-    sprockit::sim_parameters* port_params = topology
-        ::setup_port_params(port, credits, port_bw, link_params, params);
+    sprockit::sim_parameters* port_params = Topology
+        ::setupPortParams(port, credits, port_bw, link_params, params);
   }
 }
 
 void
-cascade::connected_outports(switch_id src, std::vector<connection>& conns) const
+Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   int max_num_conns = (x_ - 1) + (y_ - 1) + group_con_;
   conns.resize(max_num_conns);
@@ -266,7 +266,7 @@ cascade::connected_outports(switch_id src, std::vector<connection>& conns) const
 
   for (int x = 0; x < x_; x++) {
     if (x != myx) {
-      switch_id dst(get_uid(x, myy, myg));
+      SwitchId dst(get_uid(x, myy, myg));
       connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = dst;
@@ -278,7 +278,7 @@ cascade::connected_outports(switch_id src, std::vector<connection>& conns) const
 
   for (int y = 0; y < y_; y++) {
     if (y != myy) {
-      switch_id dst(get_uid(myx, y, myg));
+      SwitchId dst(get_uid(myx, y, myg));
       connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = dst;
@@ -292,7 +292,7 @@ cascade::connected_outports(switch_id src, std::vector<connection>& conns) const
     int dstg = xyg_dir_to_group(myx,myy,myg,g);
     if (dstg == myg) continue;
 
-    switch_id dst(get_uid(myx, myy, dstg));
+    SwitchId dst(get_uid(myx, myy, dstg));
     connection& conn = conns[cidx];
     conn.src = src;
     conn.dst = dst;
@@ -305,16 +305,16 @@ cascade::connected_outports(switch_id src, std::vector<connection>& conns) const
 }
 
 void
-cascade::configure_individual_port_params(switch_id src,
+Cascade::configureIndividualPortParams(SwitchId src,
                                             sprockit::sim_parameters *switch_params) const
 {
-  setup_port_params(switch_params, x_dimension, x_);
-  setup_port_params(switch_params, y_dimension, y_);
-  setup_port_params(switch_params, g_dimension, g_);
+  setupPortParams(switch_params, x_dimension, x_);
+  setupPortParams(switch_params, y_dimension, y_);
+  setupPortParams(switch_params, g_dimension, g_);
 }
 
 int
-cascade::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
+Cascade::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
 {
   int gspace = std::max(1, g_ / group_con_);
   int myid = myX + myY * x_;
@@ -323,15 +323,15 @@ cascade::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
 }
 
 coordinates
-cascade::switch_coords(switch_id uid) const
+Cascade::switchCoords(SwitchId uid) const
 {
   coordinates coords(3);
   get_coords(uid, coords[0], coords[1], coords[2]);
   return coords;
 }
 
-switch_id
-cascade::switch_addr(const coordinates &coords) const
+SwitchId
+Cascade::switchAddr(const coordinates &coords) const
 {
   return get_uid(coords[0], coords[1], coords[2]);
 }

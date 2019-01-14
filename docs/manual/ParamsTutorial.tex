@@ -17,7 +17,7 @@ node {
   launch_cmd = aprun -n8 -N1
   name = sstmac_mpi_testall
   argv =
-  sendrecv_message_size = 128
+  sendrecvMessage_size = 128
  }
  ncores = 1
  memory {
@@ -129,7 +129,7 @@ node {
   name = user_mpiapp_cxx
   argv = 
   # Application parameters
-  sendrecv_message_size = 128
+  sendrecvMessage_size = 128
  }
 }
 
@@ -157,10 +157,10 @@ topology_geometry = 4,4
 # Node parameters
 node_cores = 1
 node_name = null
-node_memory_model = null
+node_MemoryModel = null
 nic_name = null
 # Application parameters
-sendrecv_message_size = 128
+sendrecvMessage_size = 128
 \end{ViFile}
 
 All of these are special keywords in the global namespace that get expanded into parameters in a specific namespace. We really, really do not recommend using these deprecated parameters anymore.

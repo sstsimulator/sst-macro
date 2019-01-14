@@ -55,19 +55,19 @@ namespace hw {
 /**
  * A very simple processor model
  */
-class simple_processor :
-  public processor
+class SimpleProcessor :
+  public Processor
 {
-  FactoryRegister("simple", processor, simple_processor,
+  FactoryRegister("simple", Processor, SimpleProcessor,
               "Basic processor that only does timed_message computes")
  public:
-  simple_processor(sprockit::sim_parameters* params,
-                   memory_model* mem, node* nd) :
-    processor(params, mem, nd) {}
+  SimpleProcessor(sprockit::sim_parameters* params,
+                   MemoryModel* mem, Node* nd) :
+    Processor(params, mem, nd) {}
 
-  virtual ~simple_processor() {}
+  virtual ~SimpleProcessor() {}
 
-  void compute(event* ev, callback* cb) override;
+  void compute(Event* ev, ExecutionEvent* cb) override;
 
 };
 

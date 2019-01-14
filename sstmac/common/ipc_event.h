@@ -7,19 +7,20 @@
 
 namespace sstmac {
 
-struct ipc_event_base {
+struct IpcEventBase {
   uint32_t ser_size;
   uint32_t dst;
-  timestamp t;
+  Timestamp t;
   uint32_t src;
+  uint32_t link;
   uint32_t seqnum;
   int port;
   int rank;
   bool credit;
 };
 
-struct ipc_event_t : public ipc_event_base {
-  event* ev;
+struct IpcEvent : public IpcEventBase {
+  Event* ev;
 };
 
 }

@@ -58,19 +58,19 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class mpi_message final :
-  public sumi::protocol_message,
-  public sprockit::thread_safe_new<mpi_message>
+class MpiMessage final :
+  public sumi::ProtocolMessage,
+  public sprockit::thread_safe_new<MpiMessage>
 {
-  ImplementSerializable(mpi_message)
+  ImplementSerializable(MpiMessage)
 
  public:
   template <class... Args>
-  mpi_message(int src_rank, int dst_rank,
+  MpiMessage(int src_rank, int dst_rank,
               MPI_Datatype type, int tag, MPI_Comm commid, int seqnum,
               int count, int type_size, void* partner_buf, int protocol,
               Args&&... args) :
-    sumi::protocol_message(count, type_size, partner_buf, protocol,
+    sumi::ProtocolMessage(count, type_size, partner_buf, protocol,
                            std::forward<Args>(args)...),
     src_rank_(src_rank),
     dst_rank_(dst_rank),
@@ -81,18 +81,18 @@ class mpi_message final :
   {
   }
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
-  ~mpi_message() throw ();
+  ~MpiMessage() throw ();
 
-  sumi::mpi_message* clone_me() const {
-    mpi_message* cln = new mpi_message(*this);
+  sumi::MpiMessage* clone_me() const {
+    MpiMessage* cln = new MpiMessage(*this);
     return cln;
   }
 
-  sstmac::hw::network_message* clone_injection_ack() const override {
+  sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
     auto* msg = clone_me();
-    msg->convert_to_ack();
+    msg->convertToAck();
     return msg;
   }
 
@@ -114,21 +114,21 @@ class mpi_message final :
     return seqnum_;
   }
 
-  int src_rank() const {
+  int srcRank() const {
     return src_rank_;
   }
 
-  int dst_rank() const {
+  int dstRank() const {
     return dst_rank_;
   }
 
-  void build_status(MPI_Status* stat) const;
+  void buildStatus(MPI_Status* stat) const;
 
  protected:
   //void clone_into(mpi_message* cln) const;
 
  private:
-  mpi_message(){} //for serialization
+  MpiMessage(){} //for serialization
 
   int src_rank_;
   int dst_rank_;

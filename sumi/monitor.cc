@@ -53,14 +53,14 @@ RegisterDebugSlot(sumi_failure,
 namespace sumi {
 
 void
-function_set::timeout_all_listeners(int dst)
+FunctionSet::timeoutAllListeners(int dst)
 {
   //we have failed! loop through the functions and time them out
-  std::list<timeout_function*> tmp = listeners_;
-  std::list<timeout_function*>::iterator it, end = tmp.end();
+  std::list<TimeoutFunction*> tmp = listeners_;
+  std::list<TimeoutFunction*>::iterator it, end = tmp.end();
   int idx = 0;
   for (it=tmp.begin(); it != end; ++it, ++idx){
-    timeout_function* func = *it;
+    TimeoutFunction* func = *it;
     debug_printf(sprockit::dbg::sumi_ping,
      "\ttiming out ping %p to %d",
       func, dst);
@@ -69,18 +69,18 @@ function_set::timeout_all_listeners(int dst)
 }
 
 int
-function_set::erase(timeout_function* func)
+FunctionSet::erase(TimeoutFunction* func)
 {
   debug_printf(sprockit::dbg::sumi_ping,
    "\terasing ping %p", func);
 
-  std::list<timeout_function*>::iterator tmp,
+  std::list<TimeoutFunction*>::iterator tmp,
     it = listeners_.begin(),
     end = listeners_.end();
   bool found = false;
   while(it != end){
     tmp = it++;
-    timeout_function* test = *tmp;
+    TimeoutFunction* test = *tmp;
     if (test == func){
       listeners_.erase(tmp);
       found = true;

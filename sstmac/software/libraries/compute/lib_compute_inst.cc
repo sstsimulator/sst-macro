@@ -64,30 +64,30 @@ RegisterKeywords(
  { "lib_compute_access_width", "the size of each memory access access in bits" }
 );
 
-lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
-                                   const std::string& libname, software_id id,
-                                   operating_system* os)
-  : lib_compute_time(params, libname, id, os)
+LibComputeInst::LibComputeInst(sprockit::sim_parameters* params,
+                                   const std::string& libname, SoftwareId id,
+                                   OperatingSystem* os)
+  : LibComputeTime(params, libname, id, os)
 {
   init(params);
 }
 
-lib_compute_inst::lib_compute_inst(sprockit::sim_parameters* params,
-                                   software_id sid, operating_system* os) :
-  lib_compute_time(params, "computelibinstr%s", sid, os)
+LibComputeInst::LibComputeInst(sprockit::sim_parameters* params,
+                                   SoftwareId sid, OperatingSystem* os) :
+  LibComputeTime(params, "computelibinstr%s", sid, os)
 {
   init(params);
 }
 
 void
-lib_compute_inst::compute_detailed(
+LibComputeInst::computeDetailed(
   uint64_t flops,
   uint64_t nintops,
   uint64_t bytes,
   int nthread)
 {
   /** Configure the compute request */
-  auto cmsg = new compute_event_impl<basic_instructions_st>;
+  auto cmsg = new ComputeEvent_impl<basic_instructions_st>;
   basic_instructions_st& st = cmsg->data();
   st.flops = flops;
   st.intops = nintops;
@@ -95,16 +95,16 @@ lib_compute_inst::compute_detailed(
   st.nthread = nthread;
 
   // Do not overwrite an existing tag
-  const auto& cur_tag = os_->active_thread()->tag();
-  ftq_scope scope(os_->active_thread(),
-      cur_tag.id() == ftq_tag::null.id() ? ftq_tag::compute : cur_tag);
+  const auto& cur_tag = os_->activeThread()->tag();
+  FTQScope scope(os_->activeThread(),
+      cur_tag.id() == FTQTag::null.id() ? FTQTag::compute : cur_tag);
 
-  compute_inst(cmsg, nthread);
+  computeInst(cmsg, nthread);
   delete cmsg;
 }
 
 void
-lib_compute_inst::compute_loop(uint64_t num_loops,
+LibComputeInst::computeLoop(uint64_t num_loops,
   uint32_t flops_per_loop,
   uint32_t nintops_per_loop,
   uint32_t bytes_per_loop)
@@ -112,14 +112,14 @@ lib_compute_inst::compute_loop(uint64_t num_loops,
   /** Configure the compute request */
   uint64_t loop_control_ops = 2 * num_loops * loop_overhead_;
   uint64_t num_intops = loop_control_ops + nintops_per_loop*num_loops;
-  compute_detailed(
+  computeDetailed(
     flops_per_loop*num_loops,
     num_intops,
     bytes_per_loop*num_loops);
 }
 
 void
-lib_compute_inst::init(sprockit::sim_parameters* params)
+LibComputeInst::init(sprockit::sim_parameters* params)
 {
   if (params->has_param("lib_compute_unroll_loops")){
     double loop_unroll = params->deprecated_double_param("lib_compute_unroll_loops");
@@ -130,7 +130,7 @@ lib_compute_inst::init(sprockit::sim_parameters* params)
 }
 
 void
-lib_compute_inst::compute_inst(compute_event* cmsg, int nthr)
+LibComputeInst::computeInst(ComputeEvent* cmsg, int nthr)
 {
   SSTMACBacktrace(ComputeInstructions);
   os_->execute(ami::COMP_INSTR, cmsg, nthr);

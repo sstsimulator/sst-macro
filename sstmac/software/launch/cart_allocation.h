@@ -52,19 +52,19 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class cart_allocation :
-  public node_allocator
+class CartAllocation :
+  public NodeAllocator
 {
-  FactoryRegister("cart | cartesian", node_allocator, cart_allocation,
+  FactoryRegister("cart | cartesian", NodeAllocator, CartAllocation,
               "Allocate a regular, cartesian volume of nodes."
               "This is meant mostly for torus topologies, "
               "but is also meaningful for dragonfly, cascade, and hypercube")
  public:
-  cart_allocation(sprockit::sim_parameters* params);
+  CartAllocation(sprockit::sim_parameters* params);
 
-  virtual ~cart_allocation() throw () {}
+  virtual ~CartAllocation() throw () {}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "cart allocation";
   }
 
@@ -88,7 +88,7 @@ class cart_allocation :
    * @return Whether the insertion succeeded based on the available nodes
    */
   void insert(
-    hw::cartesian_topology* regtop,
+    hw::CartesianTopology* regtop,
     const std::vector<int>& coords,
     const ordered_node_set& available,
     ordered_node_set& allocation) const;
@@ -102,8 +102,8 @@ class cart_allocation :
    * @param allocation
    * @return Whether the allocation succeeded based on the available nodes
    */
-  void allocate_dim(
-   hw::cartesian_topology* regtop,
+  void allocateDim(
+   hw::CartesianTopology* regtop,
    int dim,
    std::vector<int>& vec,
    const ordered_node_set& available,

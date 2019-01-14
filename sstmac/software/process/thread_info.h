@@ -56,14 +56,14 @@ extern "C" int sstmac_global_stacksize;
 
 namespace sstmac {
 
-class thread_info {
+class ThreadInfo {
  public:
-  static void register_user_space_virtual_thread(int phys_thread_id, void* stack,
+  static void registerUserSpaceVirtualThread(int phys_thread_id, void* stack,
                                                  void* globalsMap, void* tlsMap);
 
-  static void deregister_user_space_virtual_thread(void* stack);
+  static void deregisterUserSpaceVirtualThread(void* stack);
 
-  static inline int current_physical_thread_id(){
+  static inline int currentPhysicalThreadid(){
     uintptr_t localStorage = get_sstmac_tls();
     int* tls = (int*) (localStorage + SSTMAC_TLS_THREAD_ID);
     return *tls;

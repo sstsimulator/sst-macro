@@ -69,9 +69,9 @@ RegisterNamespaces("os", "memory", "proc", "node");
 RegisterKeywords(
 { "nsockets", "the number of sockets/processors in a node" },
 { "node_name", "DEPRECATED: the type of node on each endpoint" },
-{ "node_memory_model", "DEPRECATED: the type of memory model on each node" },
+{ "node_MemoryModel", "DEPRECATED: the type of memory model on each node" },
 { "node_sockets", "DEPRECATED: the number of sockets/processors in a node" },
-{ "job_launcher", "the type of launcher for scheduling jobs on the system - equivalent to MOAB or SLURM" },
+{ "JobLauncher", "the type of launcher for scheduling jobs on the system - equivalent to MOAB or SLURM" },
 );
 
 namespace sstmac {
@@ -79,9 +79,8 @@ namespace hw {
 
 using namespace sstmac::sw;
 
-node::node(sprockit::sim_parameters* params,
-  uint32_t id, event_manager* mgr)
-  : connectable_component(params, id, mgr),
+Node::Node(sprockit::sim_parameters* params, uint32_t id)
+  : ConnectableComponent(params, id),
   params_(params),
   app_refcount_(0),
   job_launcher_(nullptr)
@@ -98,79 +97,70 @@ node::node(sprockit::sim_parameters* params,
   }
 #endif
   my_addr_ = params->get_int_param("id");
-  next_outgoing_id_.set_src_node(my_addr_);
+  next_outgoing_id_.setSrcNode(my_addr_);
 
   sprockit::sim_parameters* nic_params = params->get_namespace("nic");
   nic_params->add_param_override("id", int(my_addr_));
-  nic_ = nic::factory::get_param("name", nic_params, this);
+  nic_ = NIC::factory::get_param("name", nic_params, this);
   nic_params->remove_param("id");
 
   sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
-  mem_model_ = memory_model::factory::get_optional_param("name", "logp", mem_params, this);
+  mem_model_ = MemoryModel::factory::get_optional_param("name", "logp", mem_params, this);
 
   sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
-  proc_ = processor::factory::get_optional_param("processor", "instruction",
+  proc_ = Processor::factory::get_optional_param("processor", "instruction",
           proc_params,
           mem_model_, this);
 
   nsocket_ = params->get_optional_int_param("nsockets", 1);
 
   sprockit::sim_parameters* os_params = params->get_optional_namespace("os");
-  os_ = new sw::operating_system(os_params, this);
+  os_ = new sw::OperatingSystem(os_params, this);
 
-  app_launcher_ = new app_launcher(os_);
+  app_launcher_ = new AppLauncher(os_);
 
-  launch_root_ = params->get_optional_int_param("launch_root", 0);
-  if (my_addr_ == launch_root_){
-    job_launcher_ =   job_launcher::factory::get_optional_param(
-          "job_launcher", "default", params, os_);
+  launchRoot_ = params->get_optional_int_param("launchRoot", 0);
+  if (my_addr_ == launchRoot_){
+    job_launcher_ =   JobLauncher::factory::get_optional_param(
+          "JobLauncher", "default", params, os_);
   }
 }
 
-link_handler*
-node::credit_handler(int port)
+LinkHandler*
+Node::creditHandler(int port)
 {
-  return nic_->credit_handler(port);
+  return nic_->creditHandler(port);
 }
 
-link_handler*
-node::payload_handler(int port)
+LinkHandler*
+Node::payloadHandler(int port)
 {
-  return nic_->payload_handler(port);
-}
-
-void
-node::deadlock_check()
-{
-  nic_->deadlock_check();
+  return nic_->payloadHandler(port);
 }
 
 void
-node::deadlock_check(event* ev)
+Node::setup()
 {
-  //do nothing
-}
-
-void
-node::setup()
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  event_component::setup();
-#endif
+  Component::setup();
+  mem_model_->setup();
+  os_->setup();
+  nic_->setup();
   if (job_launcher_)
-    job_launcher_->schedule_launch_requests();
+    job_launcher_->scheduleLaunchRequests();
 }
 
 void
-node::init(unsigned int phase)
+Node::init(unsigned int phase)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  event_component::init(phase);
+  Component::init(phase);
 #endif
   nic_->init(phase);
+  os_->init(phase);
+  mem_model_->init(phase);
 }
 
-node::~node()
+Node::~Node()
 {
   if (job_launcher_) delete job_launcher_;
   if (app_launcher_) delete app_launcher_;
@@ -178,55 +168,55 @@ node::~node()
   if (proc_) delete proc_;
   if (os_) delete os_;
   if (nic_) delete nic_;
-  //if (job_launcher_) delete job_launcher_;
+  //if (JobLauncher_) delete JobLauncher_;
 }
 
 void
-node::connect_output(sprockit::sim_parameters* params,
+Node::connectOutput(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  event_link* link)
+  EventLink* link)
 {
   //forward connection to nic
-  nic_->connect_output(params, src_outport, dst_inport, link);
+  nic_->connectOutput(params, src_outport, dst_inport, link);
 }
 
 void
-node::connect_input(sprockit::sim_parameters* params,
+Node::connectInput(sprockit::sim_parameters* params,
   int src_outport, int dst_inport,
-  event_link* link)
+  EventLink* link)
 {
   //forward connection to nic
-  nic_->connect_input(params/*->get_namespace("nic")*/, src_outport, dst_inport, link);
+  nic_->connectInput(params/*->get_namespace("nic")*/, src_outport, dst_inport, link);
 }
 
-timestamp
-node::send_latency(sprockit::sim_parameters *params) const
+Timestamp
+Node::sendLatency(sprockit::sim_parameters *params) const
 {
-  return nic_->send_latency(params->get_namespace("nic"));
+  return nic_->sendLatency(params->get_namespace("nic"));
 }
 
-timestamp
-node::credit_latency(sprockit::sim_parameters *params) const
+Timestamp
+Node::creditLatency(sprockit::sim_parameters *params) const
 {
-  return nic_->credit_latency(params->get_namespace("nic"));
+  return nic_->creditLatency(params->get_namespace("nic"));
 }
 
 void
-node::execute(ami::SERVICE_FUNC func, event* data)
+Node::execute(ami::SERVICE_FUNC func, Event* data)
 {
   sprockit::abort("node does not implement asynchronous services - choose new node model");
 }
 
 std::string
-node::to_string() const
+Node::toString() const
 {
   return sprockit::printf("node(%d)", int(my_addr_));
 }
 
 void
-node::increment_app_refcount()
+Node::incrementAppRefcount()
 {
-#if SSTMAC_INTEGRATED_SST_CORE
+#if ACTUAL_INTEGRATED_SST_CORE
   if (app_refcount_ == 0){
     primaryComponentDoNotEndSim();
   }
@@ -235,11 +225,11 @@ node::increment_app_refcount()
 }
 
 void
-node::decrement_app_refcount()
+Node::decrementAppRefcount()
 {
   app_refcount_--;
 
-#if SSTMAC_INTEGRATED_SST_CORE
+#if ACTUAL_INTEGRATED_SST_CORE
   if (app_refcount_ == 0){
     primaryComponentOKToEndSim();
   }
@@ -247,22 +237,9 @@ node::decrement_app_refcount()
 }
 
 void
-node::handle(event* ev)
+Node::handle(Event* ev)
 {
-  if (failed()){
-    //do nothing - I failed
-  } else {
-    node_debug("forwarding event %s to OS",
-               sprockit::to_string(ev).c_str());
-    os_->handle_event(ev);
-  }
-}
-
-void
-node::fail_stop()
-{
-  fail();
-  cancel_all_messages();
+  os_->handleEvent(ev);
 }
 
 }

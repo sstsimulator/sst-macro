@@ -210,19 +210,19 @@ namespace lblxml {
 
     if (params_->has_namespace("effective_bandwidths")){
       sprockit::sim_parameters* stat_params = params_->get_namespace("effective_bandwidths");
-      hist_eff_bw_ = test_cast(stat_histogram, stat_collector::factory::get_optional_param("type", "histogram", stat_params));
+      hist_eff_bw_ = test_cast(StatHistogram, StatCollector::factory::get_optional_param("type", "histogram", stat_params));
 
       if (!hist_eff_bw_)
         spkt_throw_printf(sprockit::value_error,
           "Effective bandwidth tracker must be histogram, %s given",
           stat_params->get_param("type").c_str());
       else
-        event_manager::global->register_stat(hist_eff_bw_, nullptr);
+        EventManager::global->registerStat(hist_eff_bw_, nullptr);
     }
 
     if (params_->has_namespace("polling_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("polling_time");
-      idle_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
+      idle_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
@@ -231,7 +231,7 @@ namespace lblxml {
     }
     if (params_->has_namespace("barrier_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("barrier_time");
-      barrier_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
+      barrier_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
@@ -240,7 +240,7 @@ namespace lblxml {
     }
     if (params_->has_namespace("compute_time")) {
       sprockit::sim_parameters* stat_params = params_->get_namespace("compute_time");
-      compute_time_ = test_cast(stat_local_double, stat_collector::factory::get_optional_param("type", "local_double", stat_params));
+      compute_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
@@ -271,7 +271,7 @@ namespace lblxml {
 
   std::map<int, std::vector<bool> > g_reduce_to_box_running;
 
-  std::map<int,sstmac::timestamp> g_message_begin_;
+  std::map<int,sstmac::Timestamp> g_message_begin_;
 
   double g_total_idle_time = 0;
   double g_total_barrier_time = 0;
@@ -281,16 +281,16 @@ namespace lblxml {
 
 #ifdef BOXML_HAVE_TEST
   int
-  boxml::skeleton_main() {
-    my_skeleton_main();
+  boxml::skeletonMain() {
+    my_skeletonMain();
   }
 
   Task*
-  boxml::my_skeleton_main()
+  boxml::my_skeletonMain()
   {
 #else
   int
-  boxml::skeleton_main()
+  boxml::skeletonMain()
   {
 #endif
 
@@ -366,9 +366,9 @@ namespace lblxml {
     if (debug_ > 0) {
       checker_.rank = &rank_;
       checker_.epoch = &current_epoch_;
-      sstmac::runtime::add_deadlock_check( sstmac::new_deadlock_check(&checker_, &epoch_check::print_epoch));
+      sstmac::Runtime::addDeadlockCheck( sstmac::new_deadlock_check(&checker_, &epoch_check::print_epoch));
     }
-    if (rank_ == 0) runtime::enter_deadlock_region();
+    if (rank_ == 0) Runtime::enterDeadlockRegion();
     barrier();
     barrier();
     if (rank_ == 0) {
@@ -388,7 +388,7 @@ namespace lblxml {
     }
     barrier();
 
-    runtime::exit_deadlock_region();
+    Runtime::exitDeadlockRegion();
     finalize();
     
     if (rank_==0) {
@@ -420,8 +420,8 @@ namespace lblxml {
     comm_init();
 
     tport_ = sumi::sumi_api();
-    runtime::add_deadlock_check(
-      new_deadlock_check(tport_, &sumi::transport::deadlock_check));
+    Runtime::addDeadlockCheck(
+      new_deadlock_check(tport_, &sumi::Transport::deadlock_check));
 
     rank_ = comm_rank();
     commsize_ = comm_nproc();
@@ -431,7 +431,7 @@ namespace lblxml {
 
     if (idle_time_) {
       idle_time_->set_id(rank_);
-      event_manager::global->register_stat(idle_time_, nullptr);
+      EventManager::global->registerStat(idle_time_, nullptr);
     }
   }
 
@@ -445,11 +445,11 @@ namespace lblxml {
   void
   boxml::barrier()
   {
-    sstmac::timestamp start = now();
+    sstmac::Timestamp start = now();
     if (debug_ > 1) printf("rank %d starting barrier %d\n",rank_,barrier_tag_);
     comm_barrier(barrier_tag_);
     comm_collective_block(sumi::collective::barrier, barrier_tag_);
-    sstmac::timestamp end = now();
+    sstmac::Timestamp end = now();
     double time = (end - start).sec();
     g_total_barrier_time += time;
     ++barrier_tag_;
@@ -480,7 +480,7 @@ boxml_standalone(int argc, char** argv)
   Task* root;
   if (sch->rank() == 0) {
     lblxml::boxml* me = new lblxml::boxml();
-    root = me->my_skeleton_main();
+    root = me->my_skeletonMain();
     std::cout << "Task graph complete, calling run on scheduler\n";
     sch->run(root);
   }

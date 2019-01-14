@@ -55,18 +55,18 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-std::unordered_map<std::string,int>* ftq_tag::category_name_to_id_ = nullptr;
-std::unordered_map<int,std::string>* ftq_tag::category_id_to_name_ = nullptr;
-ftq_tag ftq_tag::null("Null");
-ftq_tag ftq_tag::compute("Compute");
+std::unordered_map<std::string,int>* FTQTag::category_name_to_id_ = nullptr;
+std::unordered_map<int,std::string>* FTQTag::category_id_to_name_ = nullptr;
+FTQTag FTQTag::null("Null");
+FTQTag FTQTag::compute("Compute");
 
-ftq_tag::ftq_tag(const char *name)
+FTQTag::FTQTag(const char *name)
 {
   id_ = allocate_category_id(name);
 }
 
 int
-ftq_tag::allocate_category_id(const std::string &name)
+FTQTag::allocate_category_id(const std::string &name)
 {
   if (!category_name_to_id_) {
     category_name_to_id_ = new std::unordered_map<std::string,int>;
@@ -79,7 +79,7 @@ ftq_tag::allocate_category_id(const std::string &name)
 }
 
 int
-ftq_tag::event_typeid(const std::string& name)
+FTQTag::event_typeid(const std::string& name)
 {
   auto it = category_name_to_id_->find(name);
   if (it == category_name_to_id_->end()){

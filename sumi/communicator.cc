@@ -49,15 +49,15 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-communicator::rank_resolved(int global_rank, int comm_rank)
+Communicator::rank_resolved(int global_rank, int comm_rank)
 {
   for (rank_callback* cback : rank_callbacks_){
-    cback->rank_resolved(global_rank, comm_rank);
+    cback->rankResolved(global_rank, comm_rank);
   }
 }
 
-global_communicator::global_communicator(transport *tport) :
-  transport_(tport), communicator(tport->rank())
+global_communicator::global_communicator(Transport *tport) :
+  transport_(tport), Communicator(tport->rank())
 {
 }
 
@@ -68,19 +68,19 @@ global_communicator::nproc() const
 }
 
 int
-global_communicator::comm_to_global_rank(int comm_rank) const
+global_communicator::commToGlobalRank(int comm_rank) const
 {
   return comm_rank;
 }
 
 int
-global_communicator::global_to_comm_rank(int global_rank) const
+global_communicator::globalToCommRank(int global_rank) const
 {
   return global_rank;
 }
 
 int
-index_communicator::global_to_comm_rank(int global_rank) const
+index_communicator::globalToCommRank(int global_rank) const
 {
   sprockit::abort("index_domain::global_to_comm_rank: this should only be involved in failures");
   return 0;

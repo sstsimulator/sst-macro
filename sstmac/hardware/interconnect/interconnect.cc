@@ -68,22 +68,22 @@ RegisterDebugSlot(interconnect);
 namespace sstmac {
 namespace hw {
 
-interconnect* interconnect::static_interconnect_ = nullptr;
+Interconnect* Interconnect::static_interconnect_ = nullptr;
 
-interconnect*
-interconnect::static_interconnect(sprockit::sim_parameters* params, event_manager* mgr)
+Interconnect*
+Interconnect::staticInterconnect(sprockit::sim_parameters* params, EventManager* mgr)
 {
   if (!static_interconnect_){
-    parallel_runtime* rt = parallel_runtime::static_runtime(params);
-    partition* part = rt ? rt->topology_partition() : nullptr;
-    static_interconnect_ = interconnect::factory::get_value("switch", params,
+    ParallelRuntime* rt = ParallelRuntime::staticRuntime(params);
+    Partition* part = rt ? rt->topologyPartition() : nullptr;
+    static_interconnect_ = Interconnect::factory::get_value("switch", params,
       mgr, part, rt);
   }
   return static_interconnect_;
 }
 
-interconnect*
-interconnect::static_interconnect()
+Interconnect*
+Interconnect::staticInterconnect()
 {
   if (!static_interconnect_){
     spkt_abort_printf("interconnect not initialized");
@@ -92,7 +92,7 @@ interconnect::static_interconnect()
 }
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-interconnect::~interconnect()
+Interconnect::~Interconnect()
 {
   sprockit::delete_vector(nodes_);
   sprockit::delete_vector(logp_switches_);
@@ -100,18 +100,18 @@ interconnect::~interconnect()
 }
 #endif
 
-interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
-                           partition *part, parallel_runtime *rt)
+Interconnect::Interconnect(sprockit::sim_parameters *params, EventManager *mgr,
+                           Partition *part, ParallelRuntime *rt)
 {
   if (!static_interconnect_) static_interconnect_ = this;
-  topology_ = topology::static_topology(params);
-  num_nodes_ = topology_->num_nodes();
-  num_switches_ = topology_->num_switches();
-  num_leaf_switches_ = topology_->num_leaf_switches();
-  runtime::set_topology(topology_);
+  topology_ = Topology::staticTopology(params);
+  num_nodes_ = topology_->numNodes();
+  num_switches_ = topology_->numSwitches();
+  num_leaf_switches_ = topology_->numLeafSwitches();
+  Runtime::setTopology(topology_);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  components_.resize(topology_->num_nodes() + topology_->num_switches());
+  components_.resize(topology_->numNodes() + topology_->numSwitches());
 
   partition_ = part;
   rt_ = rt;
@@ -125,7 +125,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
   sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
 
-  topology* top = topology_;
+  Topology* top = topology_;
 
   std::string switch_model = switch_params->get_lowercase_param("name");
   bool logp_model = switch_model == "logp" || switch_model == "simple" || switch_model == "macrels";
@@ -137,41 +137,42 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
   if (logp_model){
     switch_params->combine_into(&logp_params);
   } else {
-    logp_param_expander expander;
-    expander.expand_into(&logp_params, params, switch_params);
+    LogPParamExpander expander;
+    expander.expandInto(&logp_params, params, switch_params);
   }
 
   logp_switches_.resize(rt_->nthread());
-  uint32_t my_offset = rt_->me() * rt_->nthread() + top->num_nodes() + top->num_switches();
+  uint32_t my_offset = rt_->me() * rt_->nthread() + top->numNodes() + top->numSwitches();
   for (int i=0; i < rt_->nthread(); ++i){
     uint32_t id = my_offset + i;
-    logp_switches_[i] = new logp_switch(&logp_params, id, mgr->thread_manager(i));
+    logp_switches_[i] = new LogPSwitch(&logp_params, id);
   }
 
 
 
   interconn_debug("Interconnect building endpoints");
-  build_endpoints(node_params, nic_params, mgr);
+  buildEndpoints(node_params, nic_params, mgr);
+  connectLogP(mgr, node_params, nic_params);
   if (!logp_model){
     interconn_debug("Interconnect building switches");
-    build_switches(switch_params, mgr);
+    buildSwitches(switch_params, mgr);
     interconn_debug("Interconnect connecting switches");
-    connect_switches(mgr, switch_params);
+    connectSwitches(mgr, switch_params);
     interconn_debug("Interconnect connecting endpoints");
-    connect_endpoints(mgr, inj_params, inj_params, ej_params);
-    configure_interconnect_lookahead(params);
+    connectEndpoints(mgr, inj_params, inj_params, ej_params);
+    configureInterconnectLookahead(params);
   } else {
     //lookahead is actually higher
-    logp_switch* lsw = logp_switches_[0];
-    lookahead_ = lsw->send_latency(nullptr);
+    LogPSwitch* lsw = logp_switches_[0];
+    lookahead_ = lsw->sendLatency(nullptr);
   }
 
-  timestamp lookahead_check = lookahead_;
-  if (event_link::min_remote_latency().ticks() > 0){
-    lookahead_check = event_link::min_remote_latency();
+  Timestamp lookahead_check = lookahead_;
+  if (EventLink::minRemoteLatency().ticks() > 0){
+    lookahead_check = EventLink::minRemoteLatency();
   }
-  if (event_link::min_thread_latency().ticks() > 0){
-    lookahead_check = std::min(lookahead_check, event_link::min_thread_latency());
+  if (EventLink::minThreadLatency().ticks() > 0){
+    lookahead_check = std::min(lookahead_check, EventLink::minThreadLatency());
   }
 
   if (lookahead_check < lookahead_){
@@ -184,7 +185,7 @@ interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-interconnect::configure_interconnect_lookahead(sprockit::sim_parameters* params)
+Interconnect::configureInterconnectLookahead(sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters* switch_params = params->get_namespace("switch");
   sprockit::sim_parameters* inj_params = params->get_namespace("node")
@@ -192,19 +193,19 @@ interconnect::configure_interconnect_lookahead(sprockit::sim_parameters* params)
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
 
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  timestamp hop_latency;
-  if (link_params->has_param("send_latency")){
-    hop_latency = link_params->get_time_param("send_latency");
+  Timestamp hop_latency;
+  if (link_params->has_param("sendLatency")){
+    hop_latency = link_params->get_time_param("sendLatency");
   } else {
     hop_latency = link_params->get_time_param("latency");
   }
-  timestamp injection_latency = inj_params->get_time_param("latency");
+  Timestamp injection_latency = inj_params->get_time_param("latency");
 
-  timestamp ejection_latency = injection_latency;
+  Timestamp ejection_latency = injection_latency;
   if (ej_params->has_param("latency")){
     ejection_latency = ej_params->get_time_param("latency");
-  } else if (ej_params->has_param("send_latency")){
-    ejection_latency = ej_params->get_time_param("send_latency");
+  } else if (ej_params->has_param("sendLatency")){
+    ejection_latency = ej_params->get_time_param("sendLatency");
   }
 
   lookahead_ = std::min(injection_latency, hop_latency);
@@ -212,285 +213,307 @@ interconnect::configure_interconnect_lookahead(sprockit::sim_parameters* params)
 }
 #endif
 
-switch_id
-interconnect::node_to_logp_switch(node_id nid) const
+SwitchId
+Interconnect::nodeToLogpSwitch(NodeId nid) const
 {
-#if SSTMAC_INTEGRATED_SST_CORE
-  return topology_->node_to_logp_switch(nid);
+#if ACTUAL_INTEGRATED_SST_CORE
+  return topology_->nodeToLogpSwitch(nid);
 #else
-  switch_id real_sw_id = topology_->endpoint_to_switch(nid);
-  int target_rank = partition_->lpid_for_switch(real_sw_id);
+  SwitchId real_sw_id = topology_->endpointToSwitch(nid);
+  int target_rank = partition_->lpidForSwitch(real_sw_id);
   return target_rank;
 #endif
 }
 
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-event_link*
-interconnect::allocate_local_link(event_scheduler* src, event_scheduler* dst,
-                                  event_handler* handler, timestamp latency)
+#if !ACTUAL_INTEGRATED_SST_CORE
+
+#if 0
+EventLink*
+Interconnect::allocateIntraProcLink(Timestamp latency, EventManager* mgr, EventHandler* handler,
+                                EventScheduler* src, EventScheduler* dst)
 {
-  bool threads_equal = src && dst ? src->thread() == dst->thread() : false;
-  event_manager* mgr = src ? src->event_mgr() : dst->event_mgr();
-  if (mgr->nthread() == 1 || threads_equal){
-    return new local_link(latency,src,dst,handler);
+  return new LocalLink(latency,mgr,handler, src->componentId(), dst->componentId());
+  if (src->threadId() == dst->threadId()){
+
   } else {
-    return new multithread_link(handler,latency,src,dst);
+    return new MultithreadLink(handler,latency,mgr,dst,
+                               src->componentId(), dst->componentId());
   }
 }
+#endif
 
 void
-interconnect::connect_endpoints(event_manager* mgr,
+Interconnect::connectEndpoints(EventManager* mgr,
                                 sprockit::sim_parameters* ep_inj_params,
                                 sprockit::sim_parameters* ep_ej_params,
                                 sprockit::sim_parameters* sw_ej_params)
 {
-  int num_nodes = topology_->num_nodes();
-  int num_switches = topology_->num_switches();
+  int num_nodes = topology_->numNodes();
+  int num_switches = topology_->numSwitches();
   int me = rt_->me();
-  std::vector<topology::injection_port> ports;
+  std::vector<Topology::injection_port> ports;
   for (int i=0; i < num_switches; ++i){
     //parallel - I don't own this
-    int target_rank = partition_->lpid_for_switch(i);
-    if (target_rank != me) continue;
+    int target_rank = partition_->lpidForSwitch(i);
+    int target_thread = partition_->threadForSwitch(i);
+    if (target_rank != me && target_thread != mgr->thread()){
+      continue;
+    }
 
-    network_switch* injsw = switches_[i];
-    network_switch* ejsw = switches_[i];
+    NetworkSwitch* injsw = switches_[i];
+    NetworkSwitch* ejsw = switches_[i];
 
-
-    topology_->endpoints_connected_to_injection_switch(i, ports);
-    for (topology::injection_port& p : ports){
-      node* ep = nodes_[p.nid];
+    topology_->endpointsConnectedToInjectionSwitch(i, ports);
+    for (Topology::injection_port& p : ports){
+      Node* ep = nodes_[p.nid];
 
       interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
           i, injsw, p.nid, ep, p.switch_port, p.ep_port);
 
-      auto credit_link = allocate_local_link(injsw, ep, ep->credit_handler(p.ep_port),
-                                             injsw->credit_latency(sw_ej_params));
-      injsw->connect_input(sw_ej_params, p.ep_port, p.switch_port, credit_link);
-      auto payload_link = allocate_local_link(ep, injsw, injsw->payload_handler(p.switch_port),
-                                              ep->send_latency(ep_inj_params));
-      ep->connect_output(ep_inj_params, p.ep_port, p.switch_port, payload_link);
+      auto credit_link = new LocalLink(injsw->creditLatency(sw_ej_params), mgr,
+                                       ep->creditHandler(p.ep_port));
+
+      injsw->connectInput(sw_ej_params, p.ep_port, p.switch_port, credit_link);
+      auto payload_link = new LocalLink(ep->sendLatency(ep_inj_params), mgr,
+                                        injsw->payloadHandler(p.switch_port));
+      ep->connectOutput(ep_inj_params, p.ep_port, p.switch_port, payload_link);
     }
 
-    topology_->endpoints_connected_to_ejection_switch(i, ports);
-    for (topology::injection_port& p : ports){
-      node* ep = nodes_[p.nid];
+    topology_->endpointsConnectedToEjectionSwitch(i, ports);
+    for (Topology::injection_port& p : ports){
+      Node* ep = nodes_[p.nid];
 
       interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
           int(i), ejsw, p.nid, ep, p.switch_port, p.ep_port);
 
-      auto payload_link = allocate_local_link(ejsw, ep, ep->payload_handler(p.ep_port),
-                                              ejsw->send_latency(sw_ej_params));
-      ejsw->connect_output(sw_ej_params, p.switch_port, p.ep_port, payload_link);
-      auto credit_link = allocate_local_link(ep, ejsw, ejsw->credit_handler(p.switch_port),
-                                             ep->credit_latency(ep_ej_params));
-      ep->connect_input(ep_ej_params, p.switch_port, p.ep_port, credit_link);
+      auto payload_link = new LocalLink(ejsw->sendLatency(sw_ej_params), mgr, ep->payloadHandler(p.ep_port));
+      ejsw->connectOutput(sw_ej_params, p.switch_port, p.ep_port, payload_link);
+
+      auto credit_link = new LocalLink(ep->creditLatency(ep_ej_params), mgr, ejsw->creditHandler(p.switch_port));
+      ep->connectInput(ep_ej_params, p.switch_port, p.ep_port, credit_link);
     }
   }
 
 }
 
 void
-interconnect::setup()
+Interconnect::setup()
 {
-  for (node* nd : nodes_){
-    if (nd){
-      nd->init(0); //emulate SST core
-      nd->setup();
+  for (Node* node : nodes_){
+    if (node){
+      node->init(0);
+      node->setup();
+    }
+  }
+
+  for (NetworkSwitch* sw : switches_){
+    if (sw){
+      sw->init(0);
+      sw->setup();
+    }
+  }
+
+  for (LogPSwitch* sw : logp_switches_){
+    if (sw){
+      sw->init(0);
+      sw->setup();
     }
   }
 }
 
 void
-interconnect::build_endpoints(sprockit::sim_parameters* node_params,
-                  sprockit::sim_parameters* nic_params,
-                  event_manager* mgr)
+Interconnect::connectLogP(EventManager* mgr,
+  sprockit::sim_parameters* node_params,
+  sprockit::sim_parameters* nic_params)
 {
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
 
   int my_rank = rt_->me();
+  int my_thread = mgr->thread();
 
+  LogPSwitch* local_logp_switch = logp_switches_[my_thread];
   for (int i=0; i < num_switches_; ++i){
-    switch_id sid(i);
-    std::vector<topology::injection_port> nodes;
-    topology_->endpoints_connected_to_injection_switch(sid, nodes);
-    if( !nodes.size() )
+    SwitchId sid(i);
+    std::vector<Topology::injection_port> nodes;
+    topology_->endpointsConnectedToInjectionSwitch(sid, nodes);
+    if (nodes.empty())
       continue;
-    int thread = partition_->thread_for_switch(i);
-    int target_rank = partition_->lpid_for_switch(sid);
-    interconn_debug("switch %d maps to target rank %d", i, target_rank);
 
-    for (int n=0; n < nodes.size(); ++n){
-      node_id nid = nodes[n].nid;
-      int ep_port = nodes[n].ep_port;
-      int sw_port = nodes[n].switch_port;
-      logp_switch* local_logp_switch = logp_switches_[thread];
-      interconn_debug("building node %d on leaf switch %d", nid, i);
+    int target_thread = partition_->threadForSwitch(i);
+    int target_rank = partition_->lpidForSwitch(sid);
 
-      if (my_rank == target_rank){
-        //local node - actually build it
-        node_params->add_param_override("id", int(nid));
-        uint32_t comp_id = nid;
-        event_manager* node_mgr = mgr->thread_manager(thread);
-        node* nd = node::factory::get_optional_param("name", "simple", node_params,
-                                                     comp_id, node_mgr);
-        node_params->remove_param("id"); //you don't have to let it linger
-        nic* the_nic = nd->get_nic();
-
+    for (Topology::injection_port& conn : nodes){
+      Node* nd = nodes_[conn.nid];
+      if (my_rank == target_rank && my_thread == target_thread){
         //nic sends to only its specific logp switch
-        event_link* logp_link = allocate_local_link(nd, local_logp_switch,
-                                                    local_logp_switch->payload_handler(sw_port),
-                                                    timestamp(0));
-        the_nic->connect_output(inj_params, nic::LogP, sw_port, logp_link);
+        EventLink* logp_link = new LocalLink(Timestamp(0), mgr,
+            local_logp_switch->payloadHandler(conn.switch_port));
+        nd->nic()->connectOutput(inj_params, NIC::LogP, conn.switch_port, logp_link);
 
-        nodes_[nid] = nd;
-        components_[nid] = nd;
-
-        for (int i=0; i < rt_->nthread(); ++i){
-          event_link* out_link = allocate_local_link(nullptr, nd, nd->payload_handler(nic::LogP),
-                                                     local_logp_switch->send_latency(nullptr));
-          logp_switches_[i]->connect_output(nid, out_link);
-        }
+        EventLink* out_link = new LocalLink(local_logp_switch->sendLatency(nullptr), mgr, nd->payloadHandler(NIC::LogP));
+        local_logp_switch->connectOutput(conn.nid, out_link);
+      } else if (my_rank == target_rank){
+        EventLink* out_link = new MultithreadLink(local_logp_switch->sendLatency(nullptr),
+            mgr, EventManager::global->threadManager(target_thread), nd->payloadHandler(NIC::LogP));
+        local_logp_switch->connectOutput(conn.nid, out_link);
       } else {
-        for (int i=0; i < rt_->nthread(); ++i){
-          event_link* link = new ipc_link(local_logp_switch->send_latency(nullptr),
-                                          target_rank, nullptr,
-                                          nid, nic::LogP, false);
-          logp_switches_[i]->connect_output(nid, link);
-        }
+        EventLink* out_link = new IpcLink(local_logp_switch->sendLatency(nullptr), target_rank, mgr,
+                                          local_logp_switch->componentId(), nodeComponentId(conn.nid), NIC::LogP, false);
+        local_logp_switch->connectOutput(conn.nid, out_link);
       }
     }
   }
 }
 
 void
-interconnect::build_switches(sprockit::sim_parameters* switch_params,
-                             event_manager* mgr)
+Interconnect::buildEndpoints(sprockit::sim_parameters* node_params,
+                  sprockit::sim_parameters* nic_params,
+                  EventManager* mgr)
+{
+  int my_rank = rt_->me();
+  int my_thread = mgr->thread();
+
+  for (int i=0; i < num_switches_; ++i){
+    SwitchId sid(i);
+    std::vector<Topology::injection_port> nodes;
+    topology_->endpointsConnectedToInjectionSwitch(sid, nodes);
+    if (nodes.empty())
+      continue;
+    int target_thread = partition_->threadForSwitch(i);
+    int target_rank = partition_->lpidForSwitch(sid);
+    interconn_debug("switch %d maps to target rank %d", i, target_rank);
+
+    for (int n=0; n < nodes.size(); ++n){
+      NodeId nid = nodes[n].nid;
+      int ep_port = nodes[n].ep_port;
+      int sw_port = nodes[n].switch_port;
+      interconn_debug("building node %d on leaf switch %d", nid, i);
+
+      if (my_rank == target_rank || my_thread == target_thread){
+        //local node - actually build it
+        node_params->add_param_override("id", int(nid));
+        uint32_t comp_id = nid;
+        Node* nd = Node::factory::get_optional_param("name", "simple", node_params, comp_id);
+        node_params->remove_param("id"); //you don't have to let it linger
+        nodes_[nid] = nd;
+        components_[nid] = nd;
+      }
+    }
+  }
+}
+
+void
+Interconnect::buildSwitches(sprockit::sim_parameters* switch_params,
+                             EventManager* mgr)
 {
   bool simple_model = switch_params->get_param("name") == "simple";
   if (simple_model) return; //nothing to do
 
   int my_rank = rt_->me();
-  bool all_switches_same = topology_->uniform_switches();
-  int id_offset = topology_->num_nodes();
-  for (switch_id i=0; i < num_switches_; ++i){
+  bool all_switches_same = topology_->uniformSwitches();
+  int id_offset = topology_->numNodes();
+  for (SwitchId i=0; i < num_switches_; ++i){
     switch_params->add_param_override("id", int(i));
-    if (partition_->lpid_for_switch(i) == my_rank){
+    if (partition_->lpidForSwitch(i) == my_rank){
       if (!all_switches_same)
-        topology_->configure_nonuniform_switch_params(i, switch_params);
-      int thread = partition_->thread_for_switch(i);
-      uint32_t comp_id = i + topology_->num_nodes();
-      switches_[i] = network_switch::factory::get_param("name",
-                      switch_params, comp_id, mgr->thread_manager(thread));
+        topology_->configureNonuniformSwitchParams(i, switch_params);
+      int thread = partition_->threadForSwitch(i);
+      uint32_t comp_id = switchComponentId(i);
+      switches_[i] = NetworkSwitch::factory::get_param("name", switch_params, comp_id);
     } else {
       switches_[i] = nullptr;
     }
     switch_params->remove_param("id");
     components_[i+id_offset] = switches_[i];
   }
-
-  for (network_switch* netsw : switches_){
-    if (netsw) netsw->compatibility_check();
-  }
 }
 
 uint32_t
-interconnect::switch_component_id(switch_id sid) const
+Interconnect::switchComponentId(SwitchId sid) const
 {
-  return topology_->num_nodes() + sid;
+  return topology_->numNodes() + sid;
 }
 
 void
-interconnect::connect_switches(event_manager* mgr, sprockit::sim_parameters* switch_params)
+Interconnect::connectSwitches(EventManager* mgr, sprockit::sim_parameters* switch_params)
 {
   bool simple_model = switch_params->get_param("name") == "simple";
   if (simple_model) return; //nothing to do
 
-  std::vector<topology::connection> outports(64); //allocate 64 spaces optimistically
+  std::vector<Topology::connection> outports(64); //allocate 64 spaces optimistically
+
+  int my_rank = rt_->me();
+  int my_thread = mgr->thread();
 
   //might be super uniform in which all ports are the same
   //or it might be mostly uniform in which all the switches are the same
   //even if the individual ports on each switch are different
-  bool all_ports_same = topology_->uniform_switch_ports();
-  bool all_switches_same = topology_->uniform_switches();
+  bool all_ports_same = topology_->uniformSwitchPorts();
+  bool all_switches_same = topology_->uniformSwitches();
 
   sprockit::sim_parameters* port_params;
   if (all_ports_same){
     port_params = switch_params->get_namespace("link");
   } else if (all_switches_same && !all_ports_same){
-    topology_->configure_individual_port_params(switch_id(0), switch_params);
+    topology_->configureIndividualPortParams(SwitchId(0), switch_params);
   }
 
   for (int i=0; i < num_switches_; ++i){
     interconn_debug("interconnect: connecting switch %i", i);
-    switch_id src(i);
-    int thread = partition_->thread_for_switch(i);
-    topology_->connected_outports(src, outports);
-    network_switch* src_sw = switches_[src];
-    if (!all_switches_same && !all_ports_same){
-      topology_->configure_individual_port_params(src, switch_params);
-    }
-    interconn_debug("interconnect: num intranetwork ports: %i", outports.size());
-    for (topology::connection& conn : outports){
+    SwitchId src(i);
+    int src_rank = partition_->lpidForSwitch(i);
+    int src_thread = partition_->threadForSwitch(i);
+    topology_->connectedOutports(src, outports);
+
+    for (Topology::connection& conn : outports){
+      int dst_rank = partition_->lpidForSwitch(conn.dst);
+      int dst_thread = partition_->threadForSwitch(conn.dst);
+
       if (!all_ports_same){
-        std::string port_ns = topology::get_port_namespace(conn.src_outport);
-        port_params = switch_params->get_namespace(port_ns);
+        port_params = switch_params->get_namespace(Topology::getPortNamespace(conn.src_outport));
       }
 
       interconn_debug("%s connecting to %s on ports %d:%d",
-                topology_->switch_label(src).c_str(),
-                topology_->switch_label(conn.dst).c_str(),
+                topology_->switchLabel(src).c_str(),
+                topology_->switchLabel(conn.dst).c_str(),
                 conn.src_outport, conn.dst_inport);
-      network_switch* dst_sw = switches_[conn.dst];
 
-      if (src_sw){
-        event_link* payload_link = nullptr;
-        if (dst_sw){
-          payload_link = allocate_local_link(src_sw, dst_sw, dst_sw->payload_handler(conn.dst_inport),
-                                             src_sw->send_latency(port_params));
+      if (src_rank == my_rank && src_thread == my_thread){
+        EventLink* payload_link = nullptr;
+        Timestamp sendLatency = switches_[src]->sendLatency(port_params);
+        if (dst_rank == my_rank && dst_thread == my_thread){
+          payload_link = new LocalLink(sendLatency, mgr, switches_[conn.dst]->payloadHandler(conn.dst_inport));
+        } else if (dst_rank == my_rank){
+          payload_link = new MultithreadLink(sendLatency, mgr, EventManager::global->threadManager(dst_thread),
+               switches_[conn.dst]->payloadHandler(conn.dst_inport));
         } else {
-          int dst_rank = partition_->lpid_for_switch(conn.dst);
-          uint32_t dst = switch_component_id(conn.dst);
-          payload_link = new ipc_link(src_sw->send_latency(port_params),
-                                      dst_rank, src_sw,
-                                      dst, conn.dst_inport, false);
+          payload_link = new IpcLink(sendLatency, dst_rank, mgr,
+                                     switchComponentId(src), switchComponentId(conn.dst),
+                                     conn.dst_inport, false);
         }
-        src_sw->connect_output(port_params,
-                               conn.src_outport,
-                               conn.dst_inport,
-                               payload_link);
+        switches_[src]->connectOutput(port_params, conn.src_outport, conn.dst_inport,
+                                      payload_link);
+
       }
 
-      if (dst_sw){
-        event_link* credit_link = nullptr;
-        if (src_sw){
-          credit_link = allocate_local_link(dst_sw, src_sw, src_sw->credit_handler(conn.src_outport),
-                                            dst_sw->credit_latency(port_params));
+      if (dst_rank == my_rank && dst_thread == my_thread){
+        EventLink* credit_link = nullptr;
+        Timestamp creditLatency = switches_[conn.dst]->creditLatency(port_params);
+        if (src_rank == my_rank && src_thread == my_thread){
+          credit_link = new LocalLink(creditLatency, mgr, switches_[src]->creditHandler(conn.src_outport));
+        } else if (src_rank == my_rank) {
+          credit_link = new MultithreadLink(creditLatency, mgr, EventManager::global->threadManager(src_thread),
+               switches_[src]->creditHandler(conn.src_outport));
         } else {
-          int src_rank = partition_->lpid_for_switch(conn.src);
-          uint32_t src = switch_component_id(conn.src);
-          credit_link = new ipc_link(dst_sw->credit_latency(port_params),
-                                     src_rank, dst_sw, src, conn.src_outport, true);
+          credit_link = new IpcLink(creditLatency, src_rank, mgr,
+                                    switchComponentId(conn.dst), switchComponentId(src),
+                                    conn.src_outport, true);
         }
-        dst_sw->connect_input(port_params,
-                              conn.src_outport,
-                              conn.dst_inport,
-                              credit_link);
+        switches_[conn.dst]->connectInput(port_params,
+                                 conn.src_outport, conn.dst_inport, credit_link);
       }
     }
-  }
-}
-
-void
-interconnect::deadlock_check()
-{
-  for (network_switch* netsw : switches_){
-    if (netsw)
-      netsw->deadlock_check();
-  }
-  for (node* nd: nodes_){
-    if (nd) nd->deadlock_check();
   }
 }
 #endif

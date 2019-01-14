@@ -53,37 +53,37 @@ namespace hw {
 #define DEBUG_CQ 0
 
 void
-recv_cq::print()
+RecvCQ::print()
 {
   coutn << "Completion Queue" << std::endl;
   for (auto& pair : bytes_recved_){
-    incoming_msg& incoming = pair.second;
+    incomingMsg& incoming = pair.second;
     coutn << "Message " << pair.first << " has "
         << incoming.bytes_arrived << " bytes arrived "
         << " out of " << incoming.bytes_total << "\n";
   }
 }
 
-flow*
-recv_cq::recv(uint64_t unique_id, uint32_t bytes, flow* orig)
+Flow*
+RecvCQ::recv(uint64_t unique_id, uint32_t bytes, Flow* orig)
 {
-  incoming_msg& incoming  = bytes_recved_[unique_id];
+  incomingMsg& incoming  = bytes_recved_[unique_id];
 #if SSTMAC_SANITY_CHECK
   if (incoming.msg && orig){
     spkt_abort_printf(
-        "recv_cq::recv: only one message chunk should carry the parent payload for %lu: %s",
-        unique_id, incoming.msg->to_string().c_str());
+        "RecvCQ::recv: only one message chunk should carry the parent payload for %lu: %s",
+        unique_id, incoming.msg->toString().c_str());
   }
 #endif
   if (orig){
     //this guy is actually carrying the payload
     incoming.msg = orig;
-    incoming.bytes_total = orig->byte_length();
+    incoming.bytes_total = orig->byteLength();
   }
   incoming.bytes_arrived += bytes;
 
   if (incoming.bytes_arrived == incoming.bytes_total){
-    flow* ret = incoming.msg;
+    Flow* ret = incoming.msg;
     bytes_recved_.erase(unique_id);
     return ret;
   } else {
@@ -91,11 +91,11 @@ recv_cq::recv(uint64_t unique_id, uint32_t bytes, flow* orig)
   }
 }
 
-flow*
-recv_cq::recv(packet* pkt)
+Flow*
+RecvCQ::recv(Packet* pkt)
 {
-  flow* payload = dynamic_cast<flow*>(pkt->orig());
-  return recv(pkt->flow_id(), pkt->byte_length(), payload);
+  Flow* payload = dynamic_cast<Flow*>(pkt->orig());
+  return recv(pkt->flowId(), pkt->byteLength(), payload);
 }
 
 }

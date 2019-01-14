@@ -111,8 +111,8 @@ class Interconnect:
   def latency(self, params):
     if params.has_key("latency"):
       return params["latency"]
-    elif params.has_key("send_latency"):
-      return params["send_latency"]
+    elif params.has_key("sendLatency"):
+      return params["sendLatency"]
     else:
       import sys
       sys.exit("need link latency in parameters")
@@ -269,8 +269,8 @@ def setupDeprecatedParams(params, debugList=[]):
     "parsedumpi",
     "sstmac_mpi_testall",
     "traffic_matrix",
-    "user_app_cxx_empty_main",
-    "user_app_cxx_full_main",
+    "UserAppCxxEmptyMain",
+    "UserAppCxxFullMain",
   ]
 
   for i in range(10):

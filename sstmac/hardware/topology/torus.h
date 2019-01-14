@@ -55,10 +55,9 @@ namespace hw {
  * Implements a high dimensional torus network.
  */
 
-class torus :
-  public cartesian_topology
+class Torus : public CartesianTopology
 {
-  FactoryRegister("torus | torus", topology, torus,
+  FactoryRegister("torus", Topology, Torus,
               "torus implements a high-dimension torus with an arbitrary number of dimensions")
  public:
   typedef enum {
@@ -71,28 +70,28 @@ class torus :
     char crossed_timeline : 1;
   };
 
-  torus(sprockit::sim_parameters* params);
+  Torus(sprockit::sim_parameters* params);
 
   typedef enum {
     pos = 0,
     neg = 1
   } direction_t;
 
-  virtual std::string to_string() const override {
+  virtual std::string toString() const override {
     return "torus";
   }
 
-  virtual ~torus() {}
+  virtual ~Torus() {}
 
   int diameter() const override {
     return diameter_;
   }
 
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     return 2*dimensions_.size() + concentration();
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swaddr,
+  void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
          std::vector<injection_port>& nodes) const override;
 
   /// Returns the vector giving each dimension of the torus.
@@ -100,53 +99,52 @@ class torus :
     return dimensions_;
   }
 
-  coordinates neighbor_at_port(switch_id sid, int port);
+  coordinates neighborAtPort(SwitchId sid, int port);
 
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return num_switches_;
   }
 
-  switch_id num_leaf_switches() const override {
-    return num_switches();
+  SwitchId numLeafSwitches() const override {
+    return numSwitches();
   }
 
-  bool uniform_switch_ports() const override {
+  bool uniformSwitchPorts() const override {
     return false;
   }
 
-  bool uniform_switches() const override {
+  bool uniformSwitches() const override {
     return true;
   }
 
-  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
-  void configure_individual_port_params(switch_id src,
+  void configureIndividualPortParams(SwitchId src,
             sprockit::sim_parameters *switch_params) const override;
 
-  int minimal_distance(switch_id sid, switch_id dst) const;
+  int minimalDistance(SwitchId sid, SwitchId dst) const;
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
-    return minimal_distance(src / concentration_, dst / concentration_);
+  int numHopsToNode(NodeId src, NodeId dst) const override {
+    return minimalDistance(src / concentration_, dst / concentration_);
   }
 
-  coordinates switch_coords(switch_id) const override;
+  coordinates switchCoords(SwitchId) const override;
 
-  switch_id switch_addr(const coordinates &coords) const override;
+  SwitchId switchAddr(const coordinates &coords) const override;
 
-  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+  vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
 
-  int convert_to_port(int dim, int dir) const {
+  int convertToPort(int dim, int dir) const {
     return 2*dim + dir;
   }
 
-  int shortest_distance(int dim, int src, int dst) const;
+  int shortestDistance(int dim, int src, int dst) const;
 
-  bool shortest_path_positive(
-    int dim, int src, int dst) const;
+  bool shortestPathPositive(int dim, int src, int dst) const;
 
  protected: //must be visible to hypercube
   int diameter_;
-  switch_id num_switches_;
+  SwitchId num_switches_;
 
 };
 

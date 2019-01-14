@@ -66,10 +66,10 @@ mapping of index to X,Y,Z coordinates.  A butterfly or fat tree
 also has a well-defined coordinate system, but is slightly less intuitive.
 @class structured_topology
 */
-class structured_topology : public topology
+class StructuredTopology : public Topology
 {
  public:
-  virtual ~structured_topology() {}
+  virtual ~StructuredTopology() {}
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
@@ -80,36 +80,36 @@ class structured_topology : public topology
      For indirect, num_leaf_switches < num_switches.
      @return The number of leaf switches directly connected to compute nodes
   */
-  virtual switch_id num_leaf_switches() const override = 0;
+  virtual SwitchId numLeafSwitches() const override = 0;
 
-  virtual void endpoints_connected_to_ejection_switch(switch_id swid,
+  virtual void endpointsConnectedToEjectionSwitch(SwitchId swid,
                        std::vector<injection_port>& nodes) const override;
 
   int concentration() const {
     return concentration_;
   }
 
-  node_id num_nodes() const override {
-    return concentration_ * num_leaf_switches();
+  NodeId numNodes() const override {
+    return concentration_ * numLeafSwitches();
   }
 
-  switch_id endpoint_to_switch(node_id nid) const override {
+  SwitchId endpointToSwitch(NodeId nid) const override {
     return nid / concentration_;
   }
 
-  switch_id max_switch_id() const override {
-    return num_switches();
+  SwitchId maxSwitchId() const override {
+    return numSwitches();
   }
 
-  node_id max_node_id() const override {
-    return num_nodes();
+  NodeId maxNodeId() const override {
+    return numNodes();
   }
 
   virtual int diameter() const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
 
  protected:
-  structured_topology(sprockit::sim_parameters* params);
+  StructuredTopology(sprockit::sim_parameters* params);
 
  protected:
   int concentration_;

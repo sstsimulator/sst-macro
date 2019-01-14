@@ -49,20 +49,20 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-using sstmac::sw::app_id;
+using sstmac::sw::AppId;
 
-class mpi_comm_cart : public mpi_comm
+class MpiCommCart : public MpiComm
 {
  public:
-  mpi_comm_cart(
+  MpiCommCart(
     MPI_Comm id,
-    int rank, mpi_group* peers,
-    app_id aid, int ndims,
+    int rank, MpiGroup* peers,
+    AppId aid, int ndims,
     const int *dims,
     const int *periods,
     int reorder);
 
-  virtual ~mpi_comm_cart() {}
+  virtual ~MpiCommCart() {}
 
   int dim(int i) const {
     if (i > dims_.size()) {

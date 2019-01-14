@@ -77,13 +77,13 @@ namespace sw {
 int graph_viz_registration::id_count = 0;
 std::map<int,const char*>* graph_viz_registration::names = nullptr;
 
-static sprockit::need_delete_statics<graph_viz> del_statics;
+static sprockit::need_deleteStatics<GraphViz> del_statics;
 
 graph_viz_increment_stack::graph_viz_increment_stack(int id)
 {
-  thread* thr = operating_system::current_thread();
+  Thread* thr = OperatingSystem::currentThread();
   if (thr) {
-    thr->append_backtrace(id);
+    thr->appendBacktrace(id);
   } else {
    spkt_abort_printf("graphviz: operating system has no current thread");
   }
@@ -91,14 +91,14 @@ graph_viz_increment_stack::graph_viz_increment_stack(int id)
 
 graph_viz_increment_stack::~graph_viz_increment_stack()
 {
-  thread* thr = operating_system::current_thread();
+  Thread* thr = OperatingSystem::currentThread();
   if (thr) {
-    thr->pop_backtrace();
+    thr->popBacktrace();
   }
 }
 
 bool
-graph_viz::trace::include() const
+GraphViz::trace::include() const
 {
   int ncalls = graph_viz_registration::numIds();
   for (int id=0; id < ncalls; ++id){
@@ -110,7 +110,7 @@ graph_viz::trace::include() const
 }
 
 std::string
-graph_viz::trace::summary(const char* fxn) const
+GraphViz::trace::summary(const char* fxn) const
 {
   std::stringstream sstr;
   int ncalls = graph_viz_registration::numIds();
@@ -136,8 +136,8 @@ graph_viz_registration::graph_viz_registration(const char* name, int id)
   (*names)[id] = name;
 }
 
-graph_viz::graph_viz(sprockit::sim_parameters* params) :
-  stat_collector(params)
+GraphViz::GraphViz(sprockit::sim_parameters* params) :
+  StatCollector(params)
 {
   int nfxns = graph_viz_registration::numIds();
   auto trace_size = 1 + 2*nfxns;
@@ -153,7 +153,7 @@ graph_viz::graph_viz(sprockit::sim_parameters* params) :
 }
 
 void
-graph_viz::global_reduce(parallel_runtime *rt)
+GraphViz::globalReduce(ParallelRuntime *rt)
 {
   if (rt->nproc() == 1){
     return;
@@ -171,7 +171,7 @@ graph_viz::global_reduce(parallel_runtime *rt)
 }
 
 void
-graph_viz::dump_summary(std::ostream& os)
+GraphViz::dumpSummary(std::ostream& os)
 {
   os << "Call Graph Summary\n";
   int nfxns = graph_viz_registration::numIds();
@@ -207,21 +207,21 @@ graph_viz::dump_summary(std::ostream& os)
 }
 
 void
-graph_viz::dump_local_data()
+GraphViz::dumpLocalData()
 {
   char fname[128];
   sprintf(fname, "%s.calls.%d.out", fileroot_.c_str(), id());
   std::ofstream ofs(fname);
-  dump_summary(ofs);
+  dumpSummary(ofs);
   ofs.close();
 }
 
 void
-graph_viz::dump_global_data()
+GraphViz::dumpGlobalData()
 {
   std::fstream myfile;
   std::string fname = sprockit::printf("%s.callgrind.out", fileroot_.c_str());
-  check_open(myfile, fname.c_str());
+  checkOpen(myfile, fname.c_str());
 
   myfile << "events: Instructions\n\n";
 
@@ -236,11 +236,11 @@ graph_viz::dump_global_data()
   }
   myfile.close();
 
-  dump_summary(std::cout);
+  dumpSummary(std::cout);
 }
 
 void
-graph_viz::add_call(
+GraphViz::add_call(
   int ncalls,
   uint64_t count,
   int fxnId,
@@ -252,18 +252,18 @@ graph_viz::add_call(
 }
 
 void
-graph_viz::delete_statics()
+GraphViz::deleteStatics()
 {
 }
 
-graph_viz::~graph_viz()
+GraphViz::~GraphViz()
 {
 }
 
 void
-graph_viz::reduce(stat_collector *coll)
+GraphViz::reduce(StatCollector *coll)
 {
-  graph_viz* other = dynamic_cast<graph_viz*>(coll);
+  GraphViz* other = dynamic_cast<GraphViz*>(coll);
   int nfxns = graph_viz_registration::numIds();
   auto trace_size = 1 + 2*nfxns;
   auto total_size = trace_size * nfxns;
@@ -273,18 +273,18 @@ graph_viz::reduce(stat_collector *coll)
 }
 
 void
-graph_viz::clear()
+GraphViz::clear()
 {
 }
 
 void
-graph_viz::add_self(int fxnId, uint64_t count)
+GraphViz::add_self(int fxnId, uint64_t count)
 {
   traces_[fxnId]->add_self(count);
 }
 
 void
-graph_viz::count_trace(uint64_t count, thread* thr)
+GraphViz::countTrace(uint64_t count, Thread* thr)
 {
 #if !SSTMAC_HAVE_GRAPHVIZ
   return; //nothing to do here
@@ -297,12 +297,12 @@ graph_viz::count_trace(uint64_t count, thread* thr)
   //this stack is actually backwards - oldest call is index 0
   //most recent call is at the end of the list
 
-  int last_collect_nfxn = thr->last_backtrace_nfxn();
-  int nfxn_total = thr->backtrace_nfxn();
+  int last_collect_nfxn = thr->lastBacktraceNumFxn();
+  int nfxn_total = thr->backtraceNumFxn();
   if (nfxn_total == 0){
     spkt_abort_printf("graphviz thread %d has no backtrace to collect"
      " - ensure that at least main exists with SSTMACBacktrace",
-     thr->thread_id());
+     thr->threadId());
   }
 
   int stack_end = nfxn_total - 1;
@@ -322,15 +322,15 @@ graph_viz::count_trace(uint64_t count, thread* thr)
   int fxn = stack[stack_end];
   add_self(fxn, count);
 
-  thr->collect_backtrace(nfxn_total);
+  thr->collectBacktrace(nfxn_total);
 #endif
 }
 
 void
-graph_viz::reassign(int fxnId, uint64_t count, thread* thr)
+GraphViz::reassign(int fxnId, uint64_t count, Thread* thr)
 {
 #if SSTMAC_HAVE_GRAPHVIZ
-  int nfxn_total = thr->backtrace_nfxn();
+  int nfxn_total = thr->backtraceNumFxn();
   int stack_end = nfxn_total - 1;
   int fxn = thr->backtrace()[stack_end];
   traces_[fxn]->reassign_self(fxnId, count);

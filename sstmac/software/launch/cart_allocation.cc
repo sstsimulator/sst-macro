@@ -65,8 +65,8 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-cart_allocation::cart_allocation(sprockit::sim_parameters* params) :
-  node_allocator(params)
+CartAllocation::CartAllocation(sprockit::sim_parameters* params) :
+  NodeAllocator(params)
 {
   if (params->has_param("cart_sizes")){
     params->get_vector_param("cart_sizes", sizes_);
@@ -88,13 +88,13 @@ cart_allocation::cart_allocation(sprockit::sim_parameters* params) :
 }
 
 void
-cart_allocation::insert(
-  hw::cartesian_topology* regtop,
+CartAllocation::insert(
+  hw::CartesianTopology* regtop,
   const std::vector<int>& coords,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
 {
-  node_id nid = regtop->node_addr(coords);
+  NodeId nid = regtop->node_addr(coords);
   debug_printf(sprockit::dbg::allocation,
       "adding node %d : %s to allocation",
       int(nid), stl_string(coords).c_str());
@@ -103,8 +103,8 @@ cart_allocation::insert(
 
 
 void
-cart_allocation::allocate_dim(
-  hw::cartesian_topology* regtop,
+CartAllocation::allocateDim(
+  hw::CartesianTopology* regtop,
   int dim,
   std::vector<int>& vec,
   const ordered_node_set& available,
@@ -119,17 +119,17 @@ cart_allocation::allocate_dim(
   int dim_offset = offsets_[dim];
   for (int i = 0; i < dim_size; ++i) {
     vec[dim] = dim_offset + i;
-    allocate_dim(regtop, dim + 1, vec, available, allocation);
+    allocateDim(regtop, dim + 1, vec, available, allocation);
   }
 }
 
 bool
-cart_allocation::allocate(
+CartAllocation::allocate(
   int nnode,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
 {
-  hw::cartesian_topology* regtop = topology_->cart_topology();
+  hw::CartesianTopology* regtop = topology_->cartTopology();
 
   int ndims = regtop->ndimensions();
   //add extra dimension for concentration
@@ -155,7 +155,7 @@ cart_allocation::allocate(
     }
   } else {
     std::vector<int> vec(sizes_.size(), 0);
-    allocate_dim(regtop, 0, vec, available, allocation);
+    allocateDim(regtop, 0, vec, available, allocation);
   }
 
   return true;

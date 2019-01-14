@@ -48,15 +48,15 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class api;
+class API;
 
-api*
-static_get_api(const char* name);
+API*
+staticGetAPI(const char* name);
 
 template <class T>
 T*
 get_api(){
-  return dynamic_cast<T*>(static_get_api(T::api_name));
+  return dynamic_cast<T*>(staticGetAPI(T::api_name));
 }
 
 } }

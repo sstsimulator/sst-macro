@@ -48,21 +48,21 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-collective_op_base::collective_op_base(mpi_comm* cm) :
+CollectiveOpBase::CollectiveOpBase(MpiComm* cm) :
   comm(cm), packed_send(false), packed_recv(false),
-  tag(cm->next_collective_tag()), complete(false)
+  tag(cm->nextCollectiveTag()), complete(false)
 {
 }
 
-collective_op::collective_op(int scnt, int rcnt, mpi_comm *cm) :
-    collective_op_base(cm)
+CollectiveOp::CollectiveOp(int scnt, int rcnt, MpiComm *cm) :
+    CollectiveOpBase(cm)
 {
   sendcnt = scnt;
   recvcnt = rcnt;
 }
 
-collectivev_op::collectivev_op(int scnt, int* recvcnts, int* rd, mpi_comm* cm) :
-    collective_op_base(cm),
+CollectivevOp::CollectivevOp(int scnt, int* recvcnts, int* rd, MpiComm* cm) :
+    CollectiveOpBase(cm),
     recvcounts(recvcnts),
     sendcounts(0), rdisps(rd)
 {
@@ -70,8 +70,8 @@ collectivev_op::collectivev_op(int scnt, int* recvcnts, int* rd, mpi_comm* cm) :
   recvcnt = 0;
 }
 
-collectivev_op::collectivev_op(int* sendcnts, int* sd, int rcnt, mpi_comm* cm) :
-    collective_op_base(cm),
+CollectivevOp::CollectivevOp(int* sendcnts, int* sd, int rcnt, MpiComm* cm) :
+    CollectiveOpBase(cm),
     sendcounts(sendcnts),
     sdisps(sd)
 {
@@ -79,9 +79,9 @@ collectivev_op::collectivev_op(int* sendcnts, int* sd, int rcnt, mpi_comm* cm) :
   recvcnt = rcnt;
 }
 
-collectivev_op::collectivev_op(int* sendcnts, int* sd,
-                               int* recvcnts, int *rd, mpi_comm* cm) :
-  collective_op_base(cm),
+CollectivevOp::CollectivevOp(int* sendcnts, int* sd,
+                               int* recvcnts, int *rd, MpiComm* cm) :
+  CollectiveOpBase(cm),
   recvcounts(recvcnts), sendcounts(sendcnts),
   sdisps(sd), rdisps(rd)
 {
@@ -89,14 +89,14 @@ collectivev_op::collectivev_op(int* sendcnts, int* sd,
   recvcnt = 0;
 }
 
-collective_op::collective_op(int count, mpi_comm* cm) :
-  collective_op_base(cm)
+CollectiveOp::CollectiveOp(int count, MpiComm* cm) :
+  CollectiveOpBase(cm)
 {
   sendcnt = count;
   recvcnt = count;
 }
 
-mpi_request::~mpi_request()
+MpiRequest::~MpiRequest()
 {
   if (persistent_op_) delete persistent_op_;
   //do not delete - deleted elsewhere
@@ -104,20 +104,20 @@ mpi_request::~mpi_request()
 }
 
 void
-mpi_request::complete(mpi_message* msg)
+MpiRequest::complete(MpiMessage* msg)
 {
   if (!cancelled_) {
-    msg->build_status(&stat_);
+    msg->buildStatus(&stat_);
   }
   complete();
 }
 
 std::string
-mpi_request::type_str() const 
+MpiRequest::typeStr() const
 {
-  if (is_persistent()){
+  if (isPersistent()){
     return "persistent";
-  } else if (is_collective()){
+  } else if (isCollective()){
     return "collective";
   } else {
     return "regular";

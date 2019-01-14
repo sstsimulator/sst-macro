@@ -137,7 +137,7 @@ class vector {
 
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;
-extern sprockit::sim_parameters* get_params();
+extern sprockit::sim_parameters* getParams();
 //end C++
 #else
 //need for C
@@ -153,11 +153,11 @@ static void* nullptr = 0;
 #define USER_MAIN(...) \
  fxn_that_nobody_ever_uses_to_make_magic_happen(); \
  typedef int (*this_file_main_fxn)(__VA_ARGS__); \
- int user_skeleton_main_init_fxn(const char* name, this_file_main_fxn fxn); \
- static int user_skeleton_main(__VA_ARGS__); \
+ int userSkeletonMainInitFxn(const char* name, this_file_main_fxn fxn); \
+ static int userSkeletonMain(__VA_ARGS__); \
  static int dont_ignore_this = \
-  user_skeleton_main_init_fxn(SST_APP_NAME_QUOTED, user_skeleton_main); \
- static int user_skeleton_main(__VA_ARGS__)
+  userSkeletonMainInitFxn(SST_APP_NAME_QUOTED, userSkeletonMain); \
+ static int userSkeletonMain(__VA_ARGS__)
 #else
 #define main sstmac_ignore_for_app_name(); static const char* sstmac_appname_str = SST_APP_NAME_QUOTED; int main
 #endif

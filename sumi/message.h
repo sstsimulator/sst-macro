@@ -58,9 +58,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class message : public sstmac::hw::network_message
+class Message : public sstmac::hw::NetworkMessage
 {
- ImplementSerializable(message)
+ ImplementSerializable(Message)
 
  public:
   static void* offset_ptr(void* in, int offset){
@@ -87,9 +87,9 @@ class message : public sstmac::hw::network_message
   static const int header_size;
 
   template <class... Args>
-  message(int sender, int recver, int send_cq, int recv_cq, class_t cls,
+  Message(int sender, int recver, int send_cq, int recv_cq, class_t cls,
           Args&&... args) :
-   sstmac::hw::network_message(std::forward<Args>(args)...),
+   sstmac::hw::NetworkMessage(std::forward<Args>(args)...),
 #if SSTMAC_COMM_SYNC_STATS
     sent_(-1),
     header_arrived_(-1),
@@ -104,36 +104,36 @@ class message : public sstmac::hw::network_message
   {
   }
 
-  virtual ~message();
+  virtual ~Message();
 
   static const char* tostr(class_t ty);
 
-  virtual std::string to_string() const override;
+  virtual std::string toString() const override;
 
   virtual void serialize_order(sstmac::serializer &ser) override;
 
-  void serialize_buffers(sstmac::serializer& ser);
+  void serializeBuffers(sstmac::serializer& ser);
 
-  static bool needs_ack(sstmac::hw::network_message::type_t ty,
-                        int send_cq, int recv_cq);
+  static bool needsAck(sstmac::hw::NetworkMessage::type_t ty,
+                        int sendCQ, int recvCQ);
 
-  virtual sstmac::hw::network_message* clone_injection_ack() const override {
-    auto* cln = new message(*this);
-    cln->convert_to_ack();
+  virtual sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
+    auto* cln = new Message(*this);
+    cln->convertToAck();
     return cln;
   }
 
-  void convert_to_ack(){
-    sstmac::hw::network_message::convert_to_ack();
+  void convertToAck(){
+    sstmac::hw::NetworkMessage::convertToAck();
   }
 
-  virtual void write_sync_value(){}
+  virtual void writeSyncValue(){}
 
-  class_t class_type() const {
+  class_t classType() const {
     return class_;
   }
 
-  void set_class_type(class_t cls) {
+  void setClassType(class_t cls) {
     class_ = cls;
   }
 
@@ -145,44 +145,44 @@ class message : public sstmac::hw::network_message
     return sender_;
   }
 
-  int send_cq() const {
+  int sendCQ() const {
     return send_cq_;
   }
 
-  int recv_cq() const {
+  int recvCQ() const {
     return recv_cq_;
   }
 
-  int target_rank() const {
-    switch (network_message::type()){
-     case network_message::payload:
-     case network_message::rdma_get_payload:
-     case network_message::rdma_put_payload:
-     case network_message::rdma_get_nack:
+  int targetRank() const {
+    switch (NetworkMessage::type()){
+     case NetworkMessage::payload:
+     case NetworkMessage::rdma_get_payload:
+     case NetworkMessage::rdma_put_payload:
+     case NetworkMessage::rdma_get_nack:
       return recver_;
-     case network_message::payload_sent_ack:
-     case network_message::rdma_get_sent_ack:
-     case network_message::rdma_put_sent_ack:
+     case NetworkMessage::payload_sent_ack:
+     case NetworkMessage::rdma_get_sent_ack:
+     case NetworkMessage::rdma_put_sent_ack:
       return sender_;
      default:
-      spkt_abort_printf("Bad payload type %d to CQ id", network_message::type());
+      spkt_abort_printf("Bad payload type %d to CQ id", NetworkMessage::type());
       return -1;
     }
   }
 
-  int cq_id() const {
-    switch (network_message::type()){
-     case network_message::payload:
-     case network_message::rdma_get_payload:
-     case network_message::rdma_put_payload:
-     case network_message::rdma_get_nack:
+  int cqId() const {
+    switch (NetworkMessage::type()){
+     case NetworkMessage::payload:
+     case NetworkMessage::rdma_get_payload:
+     case NetworkMessage::rdma_put_payload:
+     case NetworkMessage::rdma_get_nack:
       return recv_cq_;
-     case network_message::payload_sent_ack:
-     case network_message::rdma_get_sent_ack:
-     case network_message::rdma_put_sent_ack:
+     case NetworkMessage::payload_sent_ack:
+     case NetworkMessage::rdma_get_sent_ack:
+     case NetworkMessage::rdma_put_sent_ack:
       return send_cq_;
      default:
-      spkt_abort_printf("Bad payload type %d to CQ id", network_message::type());
+      spkt_abort_printf("Bad payload type %d to CQ id", NetworkMessage::type());
       return -1;
     }
   }
@@ -191,26 +191,26 @@ class message : public sstmac::hw::network_message
     std::swap(sender_, recver_);
   }
 
-  bool needs_send_ack() const {
+  bool needsSendAck() const {
     return send_cq_ >= 0;
   }
 
-  void set_send_cq(int cq){
+  void setSendCq(int cq){
     send_cq_ = cq;
-    set_needs_ack(cq != message::no_ack);
+    setNeedsAck(cq != Message::no_ack);
   }
 
-  bool needs_recv_ack() const {
+  bool needsRecvAck() const {
     return recv_cq_ >= 0;
   }
 
-  void set_recv_cq(int cq) {
+  void setRecvCQ(int cq) {
     recv_cq_ = cq;
   }
 
  protected:
   //void clone_into(message* cln) const;
-  message(){} //for serialization only
+  Message(){} //for serialization only
 
  private:
   class_t class_;
@@ -222,30 +222,30 @@ class message : public sstmac::hw::network_message
 
 #if SSTMAC_COMM_SYNC_STATS
  public:
-  double time_sent() const {
+  double timeSent() const {
     return sent_;
   }
 
-  double time_header_arrived() const {
+  double timeHeaderArrived() const {
     return header_arrived_;
   }
 
-  double time_payload_arrived() const {
+  double timePayloadArrived() const {
     return payload_arrived_;
   }
 
-  double time_synced() const {
+  double timeSynced() const {
     return synced_;
   }
 
-  void set_time_sent(double now){
+  void setTimeSent(double now){
     if (sent_ < 0){
       //if already set, don't overwrite
       sent_ = now;
     }
   }
 
-  void set_time_arrived(double now){
+  void setTimeArrived(double now){
     if (header_arrived_ < 0){
       header_arrived_ = now;
     } else {
@@ -253,7 +253,7 @@ class message : public sstmac::hw::network_message
     }
   }
 
-  void set_time_synced(double now){
+  void setTimeSynced(double now){
     synced_ = now;
   }
 
@@ -268,21 +268,21 @@ class message : public sstmac::hw::network_message
 #endif
 };
 
-class protocol_message : public message {
+class ProtocolMessage : public Message {
  public:
   uint64_t count() const {
     return count_;
   }
 
-  int type_size() const {
+  int typeSize() const {
     return type_size_;
   }
 
-  void* partner_buffer() const {
+  void* partnerBuffer() const {
     return partner_buffer_;
   }
 
-  uint64_t payload_size() const {
+  uint64_t payloadSize() const {
     return count_ * type_size_;
   }
 
@@ -294,15 +294,15 @@ class protocol_message : public message {
     return stage_;
   }
 
-  void advance_stage() {
+  void advanceStage() {
     stage_++;
   }
 
  protected:
   template <class... Args>
-  protocol_message(uint64_t count, int type_size, void* partner_buffer, int protocol,
+  ProtocolMessage(uint64_t count, int type_size, void* partner_buffer, int protocol,
                    Args&&... args) :
-    message(std::forward<Args>(args)...),
+    Message(std::forward<Args>(args)...),
     count_(count), type_size_(type_size),
     partner_buffer_(partner_buffer),
     stage_(0),
@@ -316,11 +316,11 @@ class protocol_message : public message {
     ser & count_;
     ser & type_size_;
     ser.primitive(partner_buffer_);
-    message::serialize_order(ser);
+    Message::serialize_order(ser);
   }
 
  protected:
-  protocol_message(){}
+  ProtocolMessage(){}
 
  private:
   uint64_t count_;

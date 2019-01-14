@@ -56,26 +56,26 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-gaussian_noise_model::~gaussian_noise_model()
+GaussianNoiseModel::~GaussianNoiseModel()
 {
   if (rng_) delete rng_;
 }
 
 double
-gaussian_noise_model::value()
+GaussianNoiseModel::value()
 {
   return rng_->value();
 }
 
-gaussian_noise_model::gaussian_noise_model(double mean, double stdev,
+GaussianNoiseModel::GaussianNoiseModel(double mean, double stdev,
                                            double maxz, int seed)
   : rng_(nullptr)
 {
   rng_ = new RNG::NormalDistribution(mean, stdev, maxz, seed);
 }
 
-gaussian_noise_model::gaussian_noise_model(sprockit::sim_parameters *params)
-  : noise_model(params)
+GaussianNoiseModel::GaussianNoiseModel(sprockit::sim_parameters *params)
+  : NoiseModel(params)
 {
   double mean = params->get_quantity("mean");
   double stdev = params->get_quantity("stdev");

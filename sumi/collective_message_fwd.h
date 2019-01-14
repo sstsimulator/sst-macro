@@ -51,7 +51,7 @@ namespace sumi {
 
 class collective_work_message;
 
-class collective_done_message;
+class CollectiveDoneMessage;
 
 }
 

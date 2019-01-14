@@ -52,47 +52,43 @@ namespace sstmac {
 namespace hw {
 
 
-class pisces_buffer :
-  public pisces_sender
+class PiscesBuffer :
+  public PiscesSender
 {
 
  public:
-  virtual ~pisces_buffer();
+  virtual ~PiscesBuffer();
 
-  void set_output(sprockit::sim_parameters* params,
+  void setOutput(sprockit::sim_parameters* params,
     int this_outport, int dst_inport,
-    event_link* link) override;
+    EventLink* link) override;
 
-  void set_input(
+  void setInput(
     sprockit::sim_parameters* params,
     int this_inport, int src_outport,
-    event_link* link) override;
+    EventLink* link) override;
 
-  void handle_credit(event* ev) override;
+  void handleCredit(Event* ev) override;
 
-  void handle_payload(event* ev) override;
+  void handlePayload(Event* ev) override;
 
-  timestamp send_payload(pisces_packet* pkt);
+  Timestamp sendPayload(PiscesPacket* pkt);
 
-  bool space_to_send(int vc, int bytes){
+  bool spaceToSend(int vc, int bytes){
     return credits_[vc] >= bytes;
   }
 
-  int num_credit(int vc) const {
+  int numCredit(int vc) const {
     return credits_[vc];
   }
 
-  std::string pisces_name() const override {
+  std::string piscesName() const override {
     return input_.link ? "buffer" : "injection";
   }
 
-  int queue_length() const;
+  int queueLength() const;
 
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
-
-  pisces_buffer(sprockit::sim_parameters* params, event_scheduler* parent, int num_vc);
+  PiscesBuffer(sprockit::sim_parameters* params, SST::Component* parent, int num_vc);
 
  private:
   input input_;
@@ -106,11 +102,9 @@ class pisces_buffer :
   std::vector<int> initial_credits_;
 #endif
 
-  void build_blocked_messages();
-
-  pisces_bandwidth_arbitrator* arb_;
+  PiscesBandwidthArbitrator* arb_;
   std::set<int> deadlocked_channels_;
-  std::map<int, std::list<pisces_packet*> > blocked_messages_;
+  std::map<int, std::list<PiscesPacket*> > blocked_messages_;
   int packet_size_;
 
 };

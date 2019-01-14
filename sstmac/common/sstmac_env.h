@@ -53,11 +53,11 @@ namespace sstmac {
 /**
  * This class holds some global information about the simulation
  */
-class env
+class Env
 {
  public:
   static sprockit::sim_parameters* params;
-  static parallel_runtime* rt;
+  static ParallelRuntime* rt;
 };
 
 }

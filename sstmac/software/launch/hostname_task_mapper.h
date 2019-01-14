@@ -51,22 +51,22 @@ namespace sstmac {
 namespace sw {
 
 
-class hostname_task_mapper : public task_mapper
+class HostnameTaskMapper : public TaskMapper
 {
-  FactoryRegister("hostname", task_mapper, hostname_task_mapper,
+  FactoryRegister("hostname", TaskMapper, HostnameTaskMapper,
               "assigns tasks to nodes based on hostname map of topology and hostname list in file")
  public:
-  hostname_task_mapper(sprockit::sim_parameters *params);
+  HostnameTaskMapper(sprockit::sim_parameters *params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "hostname task mapper";
   }
 
-  virtual ~hostname_task_mapper() throw() {}
+  virtual ~HostnameTaskMapper() throw() {}
 
-  void map_ranks(const ordered_node_set& nodes,
+  void mapRanks(const ordered_node_set& nodes,
                 int ppn,
-                std::vector<node_id> &result,
+                std::vector<NodeId> &result,
                 int nproc) override;
  protected:
   std::string listfile_;

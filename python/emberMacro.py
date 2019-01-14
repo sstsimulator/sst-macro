@@ -36,13 +36,13 @@ macroParams = {
    "bandwidth" : "10GB/s",
  },
  "link" : {
-   "send_latency" : "100ns",
-   "credit_latency" : "1ns",
+   "sendLatency" : "100ns",
+   "creditLatency" : "1ns",
    "bandwidth" : "10GB/s",
  },
  "xbar" : {
-   "send_latency" : "1ns",
-   "credit_latency" : "100ns",
+   "sendLatency" : "1ns",
+   "creditLatency" : "100ns",
    "bandwidth" : "10GB/s",
   },
 },

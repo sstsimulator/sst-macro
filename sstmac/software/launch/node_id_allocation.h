@@ -51,27 +51,27 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class node_id_allocation :
-  public node_allocator
+class NodeIdAllocation :
+  public NodeAllocator
 {
-  FactoryRegister("node_id", node_allocator, node_id_allocation)
+  FactoryRegister("NodeId", NodeAllocator, NodeIdAllocation)
 
  public:
-  node_id_allocation(sprockit::sim_parameters* params);
+  NodeIdAllocation(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "node id allocation";
   }
 
-  virtual ~node_id_allocation() throw() {}
+  virtual ~NodeIdAllocation() throw() {}
 
   bool allocate(int nnode_requested,
     const ordered_node_set& available,
     ordered_node_set &allocation) const override;
 
-  static void read_coordinate_file(const std::string& file,
-    std::vector<node_id>& node_list,
-    hw::topology* top);
+  static void readCoordinateFile(const std::string& file,
+    std::vector<NodeId>& node_list,
+    hw::Topology* top);
 
  protected:
   std::string coord_file_;

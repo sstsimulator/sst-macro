@@ -56,14 +56,14 @@ RegisterDebugSlot(allocation);
 namespace sstmac {
 namespace sw {
 
-node_allocator::~node_allocator() throw ()
+NodeAllocator::~NodeAllocator() throw ()
 {
 }
 
-node_allocator::node_allocator(sprockit::sim_parameters* params)
+NodeAllocator::NodeAllocator(sprockit::sim_parameters* params)
 {
-  rt_ = parallel_runtime::static_runtime(params);
-  topology_ = sstmac::hw::topology::static_topology(params);
+  rt_ = ParallelRuntime::staticRuntime(params);
+  topology_ = sstmac::hw::Topology::staticTopology(params);
 }
 
 }

@@ -70,42 +70,42 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class mpi_queue
+class MpiQueue
 {
 
   /** temporary fix until I figure out a better way to do this */
-  friend class mpi_protocol;
-  friend class eager0;
-  friend class eager1;
-  friend class rendezvous_get;
-  friend class mpi_queue_recv_request;
+  friend class MpiProtocol;
+  friend class Eager0;
+  friend class Eager1;
+  friend class RendezvousGet;
+  friend class MpiQueueRecvRequest;
 
-  using progress_queue = sstmac::sw::multi_progress_queue<message>;
+  using progress_queue = sstmac::sw::MultiProgressQueue<Message>;
 
  public:
-  mpi_queue(sprockit::sim_parameters* params, int task_id,
-            mpi_api* api, collective_engine* engine);
+  MpiQueue(sprockit::sim_parameters* params, int TaskId,
+            MpiApi* api, CollectiveEngine* engine);
 
-  ~mpi_queue() throw ();
+  ~MpiQueue() throw ();
 
   void init();
 
-  static void delete_statics();
+  static void deleteStatics();
 
-  void send(mpi_request* key, int count, MPI_Datatype type,
-       int dest, int tag, mpi_comm* comm,
+  void send(MpiRequest* key, int count, MPI_Datatype type,
+       int dest, int tag, MpiComm* comm,
        void* buffer);
 
-  void recv(mpi_request* key, int count, MPI_Datatype type,
-       int source, int tag, mpi_comm* comm,
+  void recv(MpiRequest* key, int count, MPI_Datatype type,
+       int source, int tag, MpiComm* comm,
        void* buffer = 0);
 
-  void probe(mpi_request* key, mpi_comm* comm,
+  void probe(MpiRequest* key, MpiComm* comm,
         int source, int tag);
 
-  bool iprobe(mpi_comm* comm, int source, int tag, MPI_Status* stat);
+  bool iprobe(MpiComm* comm, int source, int tag, MPI_Status* stat);
 
-  mpi_api* api() const {
+  MpiApi* api() const {
     return api_;
   }
 
@@ -113,97 +113,97 @@ class mpi_queue
 
   double now() const;
 
-  void finalize_recv(mpi_message* msg,
-                mpi_queue_recv_request* req);
+  void finalize_recv(MpiMessage* msg,
+                MpiQueueRecvRequest* req);
 
-  sstmac::timestamp progress_loop(mpi_request* req);
+  sstmac::Timestamp progress_loop(MpiRequest* req);
 
-  void nonblocking_progress();
+  void nonblockingProgress();
 
-  void start_progress_loop(const std::vector<mpi_request*>& req);
+  void startProgressLoop(const std::vector<MpiRequest*>& req);
 
-  void start_progress_loop(const std::vector<mpi_request*>& req,
-                      sstmac::timestamp timeout);
+  void startProgressLoop(const std::vector<MpiRequest*>& req,
+                      sstmac::Timestamp timeout);
 
-  void finish_progress_loop(const std::vector<mpi_request*>& req);
+  void finishProgressLoop(const std::vector<MpiRequest*>& req);
 
-  void forward_progress(double timeout);
+  void forwardProgress(double timeout);
 
-  void buffer_unexpected(mpi_message* msg);
+  void bufferUnexpected(MpiMessage* msg);
 
-  void post_rdma(mpi_message* msg,
+  void postRdma(MpiMessage* msg,
     bool needs_send_ack,
     bool needs_recv_ack);
 
-  void incoming_new_message(mpi_message* message);
+  void incomingNewMessage(MpiMessage* Message);
 
-  int pt2pt_cq_id() const{
+  int pt2ptCqId() const{
     return pt2pt_cq_;
   }
 
-  int coll_cq_id() const {
+  int collCqId() const {
     return coll_cq_;
   }
 
  private:
   struct sortbyseqnum {
-    bool operator()(mpi_message* a, mpi_message*b) const;
+    bool operator()(MpiMessage* a, MpiMessage*b) const;
   };
 
-  typedef std::set<mpi_message*, sortbyseqnum> hold_list_t;
+  typedef std::set<MpiMessage*, sortbyseqnum> hold_list_t;
 
  private:
   /**
    * @brief incoming_pt2pt_message Message might be held up due to sequencing constraints
    * @param msg
    */
-  void incoming_pt2pt_message(sumi::message* msg);
+  void incomingPt2ptMessage(sumi::Message* msg);
 
   /**
    * @brief handle_pt2pt_message Message is guaranteed to satisfy sequencing constraints
    * @param msg
    */
-  void handle_pt2pt_message(mpi_message* msg);
+  void handlePt2ptMessage(MpiMessage* msg);
 
-  void incoming_collective_message(sumi::message* message);
+  void incomingCollectiveMessage(sumi::Message* Message);
 
-  void incoming_message(sumi::message* message);
+  void incomingMessage(sumi::Message* Message);
 
-  void notify_probes(mpi_message* message);
+  void notifyProbes(MpiMessage* Message);
 
-  mpi_message* find_matching_recv(mpi_queue_recv_request* req);
-  mpi_queue_recv_request* find_matching_recv(mpi_message* msg);
+  MpiMessage* findMatchingRecv(MpiQueueRecvRequest* req);
+  MpiQueueRecvRequest* findMatchingRecv(MpiMessage* msg);
 
-  void clear_pending();
+  void clearPending();
 
-  bool at_least_one_complete(const std::vector<mpi_request*>& req);
+  bool atLeastOneComplete(const std::vector<MpiRequest*>& req);
 
  private:
   /// The sequence number for our next outbound transmission.
-  std::unordered_map<task_id, int> next_outbound_;
+  std::unordered_map<TaskId, int> next_outbound_;
 
   /// The sequence number expected for our next inbound transmission.
-  std::unordered_map<task_id, int> next_inbound_;
+  std::unordered_map<TaskId, int> next_inbound_;
 
   /// Hold messages that arrived out of order.
-  std::unordered_map<task_id, hold_list_t> held_;
+  std::unordered_map<TaskId, hold_list_t> held_;
 
   /// Inbound messages waiting for a matching receive request.
-  std::list<mpi_message*> need_recv_match_;
-  std::list<mpi_queue_recv_request*> need_send_match_;
+  std::list<MpiMessage*> need_recv_match_;
+  std::list<MpiQueueRecvRequest*> need_send_match_;
 
-  std::vector<mpi_protocol*> protocols_;
+  std::vector<MpiProtocol*> protocols_;
 
   /// Probe requests watching
   std::list<mpi_queue_probe_request*> probelist_;
 
   progress_queue queue_;
 
-  task_id taskid_;
+  TaskId taskid_;
 
-  app_id appid_;
+  AppId appid_;
 
-  mpi_api* api_;
+  MpiApi* api_;
 
   int max_vshort_msg_size_;
   int max_eager_msg_size_;

@@ -59,11 +59,11 @@ RegisterKeywords(
 
 namespace sstmac {
 
-stat_histogram::stat_histogram(sprockit::sim_parameters* params) :
+StatHistogram::StatHistogram(sprockit::sim_parameters* params) :
     bin_size_(0),
     max_bin_(-1),
     is_log_(false),
-  stat_collector(params)
+  StatCollector(params)
 {
   bin_size_ = params->get_quantity("bin_size");
   int num_bins_guess = params->get_optional_int_param("num_bins", 20);
@@ -72,22 +72,22 @@ stat_histogram::stat_histogram(sprockit::sim_parameters* params) :
 }
 
 void
-stat_histogram::global_reduce(parallel_runtime *rt)
+StatHistogram::globalReduce(ParallelRuntime *rt)
 {
   if (rt->nproc() == 1)
     return;
 
   int root = 0;
   int my_num_bins = counts_.size();
-  int num_bins = rt->global_max(my_num_bins);
+  int num_bins = rt->globalMax(my_num_bins);
   counts_.resize(num_bins);
-  rt->global_sum(&counts_[0], num_bins, root);
+  rt->globalSum(&counts_[0], num_bins, root);
 }
 
 void
-stat_histogram::reduce(stat_collector *coll)
+StatHistogram::reduce(StatCollector *coll)
 {
-  stat_histogram* other = safe_cast(stat_histogram, coll);
+  StatHistogram* other = safe_cast(StatHistogram, coll);
 
   int max_num = std::max(counts_.size(), other->counts_.size());
   if (max_num > counts_.size()){
@@ -101,11 +101,11 @@ stat_histogram::reduce(stat_collector *coll)
 }
 
 void
-stat_histogram::dump(const std::string& froot)
+StatHistogram::dump(const std::string& froot)
 {
   std::string data_file = froot + ".dat";
   std::fstream data_str;
-  check_open(data_str, data_file);
+  checkOpen(data_str, data_file);
   data_str << "Bin Count\n";
   for (int i=0; i < counts_.size(); ++i){
     double size  = (i+0.5) * bin_size_;
@@ -115,7 +115,7 @@ stat_histogram::dump(const std::string& froot)
 
   std::string gnuplot_file = froot + ".p";
   std::fstream gnuplot_str;
-  check_open(gnuplot_str, gnuplot_file);
+  checkOpen(gnuplot_str, gnuplot_file);
 
   gnuplot_str << "reset\n";
   gnuplot_str << "set term png truecolor\n";
@@ -129,31 +129,31 @@ stat_histogram::dump(const std::string& froot)
 }
 
 void
-stat_histogram::dump_global_data()
+StatHistogram::dumpGlobalData()
 {
   dump(fileroot_);
 }
 
 void
-stat_histogram::dump_local_data()
+StatHistogram::dumpLocalData()
 {
   std::string fname = sprockit::printf("%s.%d", fileroot_.c_str(), id_);
   dump(fname);
 }
 
 void
-stat_histogram::clear()
+StatHistogram::clear()
 {
 }
 
 void
-stat_histogram::collect(double value)
+StatHistogram::collect(double value)
 {
   collect(value, 1);
 }
 
 void
-stat_histogram::collect(double value, int64_t count)
+StatHistogram::collect(double value, int64_t count)
 {
   value = is_log_ ? log10(value) : value;
   long bin = value / bin_size_;
@@ -170,9 +170,9 @@ stat_histogram::collect(double value, int64_t count)
 }
 
 void
-stat_time_histogram::record(timestamp t, int64_t num)
+StatTimeHistogram::record(Timestamp t, int64_t num)
 {
-  stat_histogram::collect(t.sec(), num);
+  StatHistogram::collect(t.sec(), num);
 }
 
 

@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-btree_scatterv_actor::init_tree()
+BtreeScattervActor::initTree()
 {
   log2nproc_ = 0;
   midpoint_ = 1;
@@ -63,7 +63,7 @@ btree_scatterv_actor::init_tree()
 }
 
 void
-btree_scatterv_actor::init_buffers()
+BtreeScattervActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
@@ -77,20 +77,20 @@ btree_scatterv_actor::init_buffers()
   int max_recv_buf_size = midpoint_*recvcnt_*type_size_;
   if (me == root_){
     int buf_size = nproc * recvcnt_ * type_size_;
-    send_buffer_ = my_api_->make_public_buffer(src, buf_size);
+    send_buffer_ = my_api_->makePublicBuffer(src, buf_size);
     if (root_ != 0){
-      recv_buffer_ = my_api_->allocate_public_buffer(max_recv_buf_size);
-      result_buffer_ = my_api_->make_public_buffer(dst, result_size);
+      recv_buffer_ = my_api_->allocatePublicBuffer(max_recv_buf_size);
+      result_buffer_ = my_api_->makePublicBuffer(dst, result_size);
     } else {
       ::memcpy(dst, src, result_size);
       recv_buffer_ = result_buffer_; //won't ever actually be used
       result_buffer_ = dst;
     }
   } else {
-    recv_buffer_ = my_api_->allocate_public_buffer(max_recv_buf_size);
+    recv_buffer_ = my_api_->allocatePublicBuffer(max_recv_buf_size);
     send_buffer_ = recv_buffer_;
     if (me  % 2 == 1){ //I receive into my final buffer
-      result_buffer_ = my_api_->make_public_buffer(dst, result_size);
+      result_buffer_ = my_api_->makePublicBuffer(dst, result_size);
     } else {
       result_buffer_ = dst;
     }
@@ -98,18 +98,18 @@ btree_scatterv_actor::init_buffers()
 }
 
 void
-btree_scatterv_actor::finalize_buffers()
+BtreeScattervActor::finalizeBuffers()
 {
 }
 
 void
-btree_scatterv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action *ac)
+BtreeScattervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-btree_scatterv_actor::init_dag()
+BtreeScattervActor::initDag()
 {
   int me = comm_->my_comm_rank();
   int nproc = comm_->nproc();

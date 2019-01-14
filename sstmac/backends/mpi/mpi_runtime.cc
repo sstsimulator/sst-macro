@@ -56,7 +56,7 @@ namespace sstmac {
 namespace mpi {
 
 void
-mpi_runtime::vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
+MpiRuntime::voteReduceFunction(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
 {
   send_recv_vote* in = (send_recv_vote*) invec;
   send_recv_vote* out = (send_recv_vote*) inoutvec;
@@ -69,7 +69,7 @@ mpi_runtime::vote_reduce_function(void *invec, void *inoutvec, int *len, MPI_Dat
 }
 
 int64_t
-mpi_runtime::allreduce_min(int64_t my_time)
+MpiRuntime::allreduceMin(int64_t my_time)
 {
   if (nproc_ == 1)
     return my_time;
@@ -81,7 +81,7 @@ mpi_runtime::allreduce_min(int64_t my_time)
 }
 
 int64_t
-mpi_runtime::allreduce_max(int64_t my_time)
+MpiRuntime::allreduceMax(int64_t my_time)
 {
   if (nproc_ == 1)
     return my_time;
@@ -93,7 +93,7 @@ mpi_runtime::allreduce_max(int64_t my_time)
 }
 
 void
-mpi_runtime::do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root)
+MpiRuntime::do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int root)
 {
   if (root == global_root){
     MPI_Allreduce(MPI_IN_PLACE, data, nelems, ty, op, MPI_COMM_WORLD);
@@ -105,7 +105,7 @@ mpi_runtime::do_reduce(void* data, int nelems, MPI_Datatype ty, MPI_Op op, int r
 }
 
 void
-mpi_runtime::global_max(long *data, int nelems, int root)
+MpiRuntime::globalMax(long *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
@@ -114,7 +114,7 @@ mpi_runtime::global_max(long *data, int nelems, int root)
 }
 
 void
-mpi_runtime::global_max(int *data, int nelems, int root)
+MpiRuntime::globalMax(int *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
@@ -123,7 +123,7 @@ mpi_runtime::global_max(int *data, int nelems, int root)
 }
 
 void
-mpi_runtime::global_sum(int* data, int nelems, int root)
+MpiRuntime::globalSum(int* data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
@@ -133,7 +133,7 @@ mpi_runtime::global_sum(int* data, int nelems, int root)
 
 
 void
-mpi_runtime::global_sum(long long *data, int nelems, int root)
+MpiRuntime::globalSum(long long *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
@@ -142,7 +142,7 @@ mpi_runtime::global_sum(long long *data, int nelems, int root)
 }
 
 void
-mpi_runtime::global_sum(long *data, int nelems, int root)
+MpiRuntime::globalSum(long *data, int nelems, int root)
 {
   if (nproc_ == 1)
     return;
@@ -151,21 +151,21 @@ mpi_runtime::global_sum(long *data, int nelems, int root)
 }
 
 void
-mpi_runtime::init_runtime_params(sprockit::sim_parameters* params)
+MpiRuntime::initRuntimeParams(sprockit::sim_parameters* params)
 {
   requests_.resize(2*nproc_);
   statuses_.resize(2*nproc_);
   votes_.resize(nproc_);
-  parallel_runtime::init_runtime_params(params);
+  ParallelRuntime::initRuntimeParams(params);
 }
 
-mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
-  parallel_runtime(params,
-  init_rank(params),
-  init_size(params))
+MpiRuntime::MpiRuntime(sprockit::sim_parameters* params) :
+  ParallelRuntime(params,
+  initRank(params),
+  initSize(params))
 {
   epoch_ = 0;
-  int rc = MPI_Op_create(&vote_reduce_function, 1, &vote_op_);
+  int rc = MPI_Op_create(&voteReduceFunction, 1, &vote_op_);
   if (rc != MPI_SUCCESS){
     sprockit::abort("failed making vote MPI op");
   }
@@ -179,7 +179,7 @@ mpi_runtime::mpi_runtime(sprockit::sim_parameters* params) :
 }
 
 int
-mpi_runtime::init_size(sprockit::sim_parameters* params)
+MpiRuntime::initSize(sprockit::sim_parameters* params)
 {
   int inited;
   MPI_Initialized(&inited);
@@ -196,7 +196,7 @@ mpi_runtime::init_size(sprockit::sim_parameters* params)
 }
 
 int
-mpi_runtime::init_rank(sprockit::sim_parameters* params)
+MpiRuntime::initRank(sprockit::sim_parameters* params)
 {
   int inited;
   MPI_Initialized(&inited);
@@ -213,7 +213,7 @@ mpi_runtime::init_rank(sprockit::sim_parameters* params)
 }
 
 void
-mpi_runtime::bcast(void *buffer, int bytes, int root)
+MpiRuntime::bcast(void *buffer, int bytes, int root)
 {
   if (bytes < 0 || bytes > 1e9){
     spkt_throw_printf(
@@ -224,8 +224,8 @@ mpi_runtime::bcast(void *buffer, int bytes, int root)
   MPI_Bcast(buffer, bytes, MPI_BYTE, root, MPI_COMM_WORLD);
 }
 
-timestamp
-mpi_runtime::send_recv_messages(timestamp vote)
+Timestamp
+MpiRuntime::sendRecvMessages(Timestamp vote)
 {
   //okay - it's possible that we have pending events
   //that aren't serialized yet because we overran the buffers
@@ -269,7 +269,7 @@ mpi_runtime::send_recv_messages(timestamp vote)
                  me_, incoming.max_bytes, i);
     MPI_Irecv(comm.buffer(), incoming.max_bytes, MPI_INT, MPI_ANY_SOURCE,
               payload_tag, MPI_COMM_WORLD, &requests_[reqIdx++]);
-    ++num_recvs_done_;
+    ++numRecvsDone_;
   }
 
   int num_pending_requests = reqIdx;
@@ -287,37 +287,37 @@ mpi_runtime::send_recv_messages(timestamp vote)
 
   std::swap(payload_tag, next_payload_tag);
   ++epoch_;
-  return timestamp(incoming.time_vote, timestamp::exact);
+  return Timestamp(incoming.time_vote, Timestamp::exact);
 }
 
 void
-mpi_runtime::send(int dst, void *buffer, int buffer_size)
+MpiRuntime::send(int dst, void *buffer, int buffer_size)
 {
   int tag = me_; //the source of the message is the tag
   MPI_Send(buffer, buffer_size, MPI_BYTE, dst, tag, MPI_COMM_WORLD);
 }
 
 void
-mpi_runtime::recv(int src, void *buffer, int buffer_size)
+MpiRuntime::recv(int src, void *buffer, int buffer_size)
 {
   int tag = src;
   MPI_Recv(buffer, buffer_size, MPI_BYTE, src, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
 void
-mpi_runtime::gather(void *send_buffer, int num_bytes, void *recv_buffer, int root)
+MpiRuntime::gather(void *send_buffer, int num_bytes, void *recv_buffer, int root)
 {
   MPI_Gather(send_buffer, num_bytes, MPI_BYTE, recv_buffer, num_bytes, MPI_BYTE, root, MPI_COMM_WORLD);
 }
 
 void
-mpi_runtime::allgather(void *send_buffer, int num_bytes, void *recv_buffer)
+MpiRuntime::allgather(void *send_buffer, int num_bytes, void *recv_buffer)
 {
   MPI_Allgather(send_buffer, num_bytes, MPI_BYTE, recv_buffer, num_bytes, MPI_BYTE, MPI_COMM_WORLD);
 }
 
 void
-mpi_runtime::finalize()
+MpiRuntime::finalize()
 {
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();

@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 
 static inline sprockit::sim_parameters* get_local_params() {
-  return sstmac::sw::operating_system::current_thread()->parent_app()->params();
+  return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }
 
 union param_val {

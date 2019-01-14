@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi/alltoall.h>
-#include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
 #include <sumi/communicator.h>
 #include <sprockit/output.h>
@@ -63,12 +62,12 @@ using namespace sprockit::dbg;
 namespace sumi {
 
 void
-bruck_alltoall_actor::init_buffers()
+BruckAlltoallActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
   int log2nproc, num_rounds, nprocs_extra_round;
-  compute_tree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
+  computeTree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
 
   if (src){
     //put everything into the dst buffer to begin
@@ -82,26 +81,26 @@ bruck_alltoall_actor::init_buffers()
     std::memcpy(dstPtr + copySize, srcPtr, offset);
 
     int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
-    result_buffer_ = my_api_->make_public_buffer(dst, total_size);
-    send_buffer_ = my_api_->allocate_public_buffer(tmp_buffer_size);
-    recv_buffer_ = my_api_->allocate_public_buffer(tmp_buffer_size);
+    result_buffer_ = my_api_->makePublicBuffer(dst, total_size);
+    send_buffer_ = my_api_->allocatePublicBuffer(tmp_buffer_size);
+    recv_buffer_ = my_api_->allocatePublicBuffer(tmp_buffer_size);
   }
 }
 
 void
-bruck_alltoall_actor::finalize_buffers()
+BruckAlltoallActor::finalizeBuffers()
 {
   if (send_buffer_){
     int buffer_size = nelems_ * type_size_ * comm_->nproc();
     int tmp_buffer_size = nelems_ * type_size_ * midpoint_;
-    my_api_->unmake_public_buffer(result_buffer_, buffer_size);
-    my_api_->free_public_buffer(recv_buffer_, tmp_buffer_size);
-    my_api_->free_public_buffer(send_buffer_, tmp_buffer_size);
+    my_api_->unmakePublicBuffer(result_buffer_, buffer_size);
+    my_api_->freePublicBuffer(recv_buffer_, tmp_buffer_size);
+    my_api_->freePublicBuffer(send_buffer_, tmp_buffer_size);
   }
 }
 
 void
-bruck_alltoall_actor::shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp)
+BruckAlltoallActor::shuffle(Action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp)
 {
   int nproc = dom_nproc_;
   char* tmp_buffer = (char*) tmpBuf;
@@ -124,7 +123,7 @@ bruck_alltoall_actor::shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copy
 }
 
 void
-bruck_alltoall_actor::start_shuffle(action *ac)
+BruckAlltoallActor::startShuffle(Action *ac)
 {
   if (result_buffer_ == nullptr) return;
 
@@ -139,15 +138,15 @@ bruck_alltoall_actor::start_shuffle(action *ac)
 }
 
 void
-bruck_alltoall_actor::init_dag()
+BruckAlltoallActor::initDag()
 {
   int log2nproc, num_rounds, nprocs_extra_round;
-  compute_tree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
+  computeTree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
 
   int partnerGap = 1;
   int me = dom_me_;
   int nproc = dom_nproc_;
-  action* prev_shuffle = nullptr;
+  Action* prev_shuffle = nullptr;
   if (nprocs_extra_round) ++num_rounds;
 
   //similar to the allgather - makes no sense to run this on unpacked ata
@@ -167,11 +166,11 @@ bruck_alltoall_actor::init_dag()
     int extraSendBlocks = std::min(intervalSendSize, remainder);
     numSendBlocks += extraSendBlocks;
 
-    action* send_shuffle = new shuffle_action(round, SEND_SHUFFLE);
-    action* recv_shuffle = new shuffle_action(round, RECV_SHUFFLE);
-    action* send = new send_action(round, up_partner, send_action::temp_send);
+    Action* send_shuffle = new ShuffleAction(round, SEND_SHUFFLE);
+    Action* recv_shuffle = new ShuffleAction(round, RECV_SHUFFLE);
+    Action* send = new SendAction(round, up_partner, SendAction::temp_send);
     //always recv into a temp buf - and leave it packed, do not unpack
-    action* recv = new recv_action(round, down_partner, recv_action::packed_temp_buf);
+    Action* recv = new RecvAction(round, down_partner, RecvAction::packed_temp_buf);
 
     int nelemsRound = numSendBlocks * nelems_;
 
@@ -186,14 +185,14 @@ bruck_alltoall_actor::init_dag()
     send_shuffle->nelems = nelemsRound;
     recv_shuffle->nelems = nelemsRound;
 
-    add_dependency(prev_shuffle, send_shuffle);
-    add_dependency(prev_shuffle, send_shuffle);
+    addDependency(prev_shuffle, send_shuffle);
+    addDependency(prev_shuffle, send_shuffle);
 
-    add_dependency(send_shuffle, send);
-    add_dependency(send_shuffle, recv);
+    addDependency(send_shuffle, send);
+    addDependency(send_shuffle, recv);
 
-    add_dependency(send, recv_shuffle);
-    add_dependency(recv, recv_shuffle);
+    addDependency(send, recv_shuffle);
+    addDependency(recv, recv_shuffle);
 
     prev_shuffle = recv_shuffle;
     partnerGap *= 2;
@@ -201,13 +200,13 @@ bruck_alltoall_actor::init_dag()
 }
 
 void
-bruck_alltoall_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+BruckAlltoallActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-bruck_alltoall_actor::finalize()
+BruckAlltoallActor::finalize()
 {
   if (result_buffer_ == 0){
     return;

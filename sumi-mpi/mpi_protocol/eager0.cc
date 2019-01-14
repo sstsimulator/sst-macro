@@ -52,18 +52,18 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid, int count, mpi_type* typeobj,
-              int tag, MPI_Comm comm, int seq_id, mpi_request* req)
+Eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* typeobj,
+              int tag, MPI_Comm comm, int seq_id, MpiRequest* req)
 {
   SSTMACBacktrace(MPIEager0Protocol_Send_Header);
   void* temp_buf = nullptr;
   if (isNonNullBuffer(buffer)){
-    temp_buf = fill_send_buffer(count, buffer, typeobj);
+    temp_buf = fillSendBuffer(count, buffer, typeobj);
   }
   uint64_t payload_bytes = count*typeobj->packed_size();
   queue_->memcopy(payload_bytes);
-  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, payload_bytes, temp_buf,
-                              queue_->pt2pt_cq_id(), queue_->pt2pt_cq_id(), sumi::message::pt2pt,
+  uint64_t flow_id = mpi_->smsgSend<MpiMessage>(tid, payload_bytes, temp_buf,
+                              queue_->pt2ptCqId(), queue_->pt2ptCqId(), sumi::Message::pt2pt,
                               src_rank, dst_rank, typeobj->id,  tag, comm, seq_id,
                               count, typeobj->packed_size(), nullptr, EAGER0);
   send_flows_[flow_id] = temp_buf;
@@ -71,42 +71,42 @@ eager0::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid,
 }
 
 void
-eager0::incoming(mpi_message *msg, mpi_queue_recv_request *req)
+Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 {
   if (req->recv_buffer_){
 #if SSTMAC_SANITY_CHECK
     if (!msg->smsg_buffer()){
-      spkt_abort_printf("have receive buffer, but no send buffer on %s", msg->to_string().c_str());
+      spkt_abort_printf("have receive buffer, but no send buffer on %s", msg->toString().c_str());
     }
 #endif
-    ::memcpy(req->recv_buffer_, msg->smsg_buffer(), msg->byte_length());
+    ::memcpy(req->recv_buffer_, msg->smsgBuffer(), msg->byteLength());
   }
 #if SSTMAC_COMM_SYNC_STATS
-  msg->set_time_synced(queue->now());
+  msg->setTimeSynced(queue->now());
 #endif
-  queue_->notify_probes(msg);
-  queue_->memcopy(msg->payload_bytes());
+  queue_->notifyProbes(msg);
+  queue_->memcopy(msg->payloadBytes());
   queue_->finalize_recv(msg, req);
   delete msg;
 }
 
 void
-eager0::incoming(mpi_message* msg)
+Eager0::incoming(MpiMessage* msg)
 {
   SSTMACBacktrace(MPIEager0Protocol_Handle_Header);
-  if (msg->sstmac::hw::network_message::type() == mpi_message::payload_sent_ack){
-    char* temp_buf = (char*) msg->smsg_buffer();
+  if (msg->sstmac::hw::NetworkMessage::type() == MpiMessage::payload_sent_ack){
+    char* temp_buf = (char*) msg->smsgBuffer();
     if (temp_buf) delete[] temp_buf;
     delete msg;
   } else {
     //I recv this
-    mpi_queue_recv_request* req = queue_->find_matching_recv(msg);
+    MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
     if (req){
       incoming(msg, req);
     } else {
-      queue_->buffer_unexpected(msg);
+      queue_->bufferUnexpected(msg);
     }
-    queue_->notify_probes(msg);
+    queue_->notifyProbes(msg);
   }
 }
 

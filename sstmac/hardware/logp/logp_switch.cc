@@ -82,11 +82,11 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_manager* mgr) :
-  connectable_component(params, cid, mgr),
+LogPSwitch::LogPSwitch(sprockit::sim_parameters *params, uint32_t cid) :
+  ConnectableComponent(params, cid),
   rng_(nullptr), contention_model_(nullptr)
 {
-  top_ = topology::static_topology(nullptr);
+  top_ = Topology::staticTopology(nullptr);
 
   double net_bw = params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
@@ -109,34 +109,34 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint32_t cid, event_m
 
   if (params->has_namespace("contention")){
     std::cout << "Have contention model!" << std::endl;
-    contention_model_ = contention_model::factory::get_extra_param("model",
+    contention_model_ = ContentionModel::factory::get_extra_param("model",
            params->get_namespace("contention"));
   }
 
 
-  nic_links_.resize(top_->num_nodes());
+  nic_links_.resize(top_->numNodes());
 
-  init_links(params);
+  initLinks(params);
 }
 
-logp_switch::~logp_switch()
+LogPSwitch::~LogPSwitch()
 {
   if (rng_) delete rng_;
-  for (event_link* link : nic_links_){
+  for (EventLink* link : nic_links_){
     delete link;
   }
 }
 
 void
-logp_switch::send_event(event *ev)
+LogPSwitch::sendEvent(Event *ev)
 {
-  send(now(), dynamic_cast<network_message*>(ev));
+  send(now(), dynamic_cast<NetworkMessage*>(ev));
 }
 
 void
-logp_switch::send(timestamp start, network_message* msg)
+LogPSwitch::send(Timestamp start, NetworkMessage* msg)
 {
-  timestamp delay;
+  Timestamp delay;
   if (rng_){
     uint64_t t = start.ticks();
     t = ((t*random_seed_) << 5) + random_seed_;
@@ -146,33 +146,33 @@ logp_switch::send(timestamp start, network_message* msg)
     double lat_inc = rng_->realvalue();
     delay += lat_inc * random_max_extra_latency_;
     double bw_inc = rng_->realvalue();
-    delay += msg->byte_length() * bw_inc * random_max_extra_byte_delay_;
+    delay += msg->byteLength() * bw_inc * random_max_extra_byte_delay_;
   } else if (contention_model_) {
     double contention = contention_model_->value();
-    delay += msg->byte_length() * inv_min_bw_ * contention;
+    delay += msg->byteLength() * inv_min_bw_ * contention;
   }
 
-  node_id dst = msg->toaddr();
-  delay += inv_min_bw_ * msg->byte_length(); //bw term
-  int num_hops = top_->num_hops_to_node(msg->fromaddr(), dst);
+  NodeId dst = msg->toaddr();
+  delay += inv_min_bw_ * msg->byteLength(); //bw term
+  int num_hops = top_->numHopsToNode(msg->fromaddr(), dst);
   delay += num_hops * hop_latency_;
   debug_printf(sprockit::dbg::logp,
                "sending message over %d hops with extra delay %12.8e and inj lat %12.8e for inv_bw %12.8e on size %d: %s",
                num_hops, delay.sec(), out_in_lat_.sec(),
-               inv_min_bw_, msg->byte_length(), msg->to_string().c_str());
+               inv_min_bw_, msg->byteLength(), msg->toString().c_str());
 
-  timestamp extra_delay = start - now() + delay;
+  Timestamp extra_delay = start - now() + delay;
 
-  event_link* lnk = nic_links_[dst];
-  lnk->multi_send_extra_delay(extra_delay, msg, this);
+  EventLink* lnk = nic_links_[dst];
+  lnk->send(extra_delay, msg);
 }
 
-struct sliding_contention_model : public logp_switch::contention_model
+struct SlidingContentionModel : public LogPSwitch::ContentionModel
 {
  public:
-  FactoryRegister("sliding", logp_switch::contention_model, sliding_contention_model)
+  FactoryRegister("sliding", LogPSwitch::ContentionModel, SlidingContentionModel)
 
-  sliding_contention_model(sprockit::sim_parameters* params)
+  SlidingContentionModel(sprockit::sim_parameters* params)
   {
     range_ = params->get_optional_int_param("range", 100);
     if (params->has_param("cutoffs")){

@@ -57,29 +57,29 @@ using namespace SST::Partition;
 
 namespace sstmac {
 
-class dummy_runtime : public parallel_runtime
+class dummy_runtime : public ParallelRuntime
 {
  public:
   dummy_runtime(sprockit::sim_parameters* params,
                    int me, int nproc, int nthread) :
-    parallel_runtime(params, me, nproc)
+    ParallelRuntime(params, me, nproc)
   {
     nthread_ = nthread;
   }
 
-  int64_t allreduce_min(int64_t mintime) override { return 0; }
+  int64_t allreduceMin(int64_t mintime) override { return 0; }
 
-  int64_t allreduce_max(int64_t maxtime) override { return 0; }
+  int64_t allreduceMax(int64_t maxtime) override { return 0; }
 
-  void global_sum(int* data, int nelems, int root) override {}
+  void globalSum(int* data, int nelems, int root) override {}
 
-  void global_sum(long *data, int nelems, int root) override {}
+  void globalSum(long *data, int nelems, int root) override {}
 
-  void global_sum(long long *data, int nelems, int root) override {}
+  void globalSum(long long *data, int nelems, int root) override {}
 
-  void global_max(int *data, int nelems, int root) override {}
+  void globalMax(int *data, int nelems, int root) override {}
 
-  void global_max(long *data, int nelems, int root) override {}
+  void globalMax(long *data, int nelems, int root) override {}
 
   void gather(void *send_buffer, int num_bytes, void *recv_buffer, int root) override {}
 
@@ -98,7 +98,7 @@ class dummy_runtime : public parallel_runtime
    * @param buffer The buffer containing a serialized message
    * @param size The size of the buffer being sent
    */
-  void send_event(timestamp t, switch_id sid, event* ev) {}
+  void sendEvent(Timestamp t, SwitchId sid, Event* ev) {}
 
 
 };
@@ -154,11 +154,11 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
   int nthread = world_size.thread;
   int nproc = world_size.rank;
   dummy_runtime rt(&part_params, me.rank, nproc, nthread);
-  block_partition part(&part_params, &rt);
-  part.finalize_init(nullptr);
-  hw::topology* top = part.top();
-  int num_switches = is_logp ? 0 : top->num_switches();
-  int num_nodes = top->num_nodes();
+  BlockPartition part(&part_params, &rt);
+  part.finalizeInit(nullptr);
+  hw::Topology* top = part.top();
+  int num_switches = is_logp ? 0 : top->numSwitches();
+  int num_nodes = top->numNodes();
   int node_cutoff = num_switches;
   int logp_cutoff = num_switches + num_nodes;
 
@@ -172,15 +172,15 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
       comp.rank.thread = thread;
     } else if (id >= node_cutoff){
       int node_offset = id - node_cutoff;
-      int logp_id = top->node_to_logp_switch(node_offset);
+      int logp_id = top->nodeToLogpSwitch(node_offset);
       int rank = logp_id / nthread;
       int thread = logp_id % nthread;
       comp.rank.rank = rank;
       comp.rank.thread = thread;
     } else {
       int sw_id = id;
-      int rank = part.lpid_for_switch(sw_id);
-      int thread = part.thread_for_switch(sw_id);
+      int rank = part.lpidForSwitch(sw_id);
+      int thread = part.threadForSwitch(sw_id);
       comp.rank.rank = rank;
       comp.rank.thread = thread;
     }

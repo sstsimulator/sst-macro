@@ -52,29 +52,29 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class halving_reduce_scatter_actor :
-  public dag_collective_actor
+class HalvingReduceScatterActor :
+  public DagCollectiveActor
 {
 
  public:
-  halving_reduce_scatter_actor(collective_engine* engine, void* dst, void* src,
-                        int nelems, int type_size, int tag,  reduce_fxn fxn, int cq_id, communicator* comm) :
-    dag_collective_actor(collective::reduce_scatter, engine, dst, src, type_size, tag, cq_id, comm, fxn),
+  HalvingReduceScatterActor(CollectiveEngine* engine, void* dst, void* src,
+                        int nelems, int type_size, int tag,  reduce_fxn fxn, int cq_id, Communicator* comm) :
+    DagCollectiveActor(collective::reduce_scatter, engine, dst, src, type_size, tag, cq_id, comm, fxn),
     fxn_(fxn), nelems_(nelems)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "virtual all reduce actor";
   }
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
-  bool is_lower_partner(int virtual_me, int partner_gap);
-  void finalize_buffers() override;
-  void init_buffers() override;
-  void init_dag() override;
+  bool isLowerPartner(int virtual_me, int partner_gap);
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
 
  private:
   reduce_fxn fxn_;
@@ -87,23 +87,23 @@ class halving_reduce_scatter_actor :
 
 };
 
-class halving_reduce_scatter :
-  public dag_collective
+class HalvingReduceScatter :
+  public DagCollective
 {
  public:
-  halving_reduce_scatter(collective_engine* engine, void* dst, void* src,
-                          int nelems, int type_size, int tag, reduce_fxn fxn, int cq_id, communicator* comm)
-    : dag_collective(reduce_scatter, engine, dst, src, type_size, tag, cq_id, comm),
+  HalvingReduceScatter(CollectiveEngine* engine, void* dst, void* src,
+                          int nelems, int type_size, int tag, reduce_fxn fxn, int cq_id, Communicator* comm)
+    : DagCollective(reduce_scatter, engine, dst, src, type_size, tag, cq_id, comm),
       fxn_(fxn), nelems_(nelems)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "sumi allreduce";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new halving_reduce_scatter_actor(engine_, dst_buffer_, src_buffer_,
+  DagCollectiveActor* newActor() const override {
+    return new HalvingReduceScatterActor(engine_, dst_buffer_, src_buffer_,
                                      nelems_, type_size_, tag_, fxn_, cq_id_, comm_);
   }
 

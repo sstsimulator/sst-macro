@@ -49,8 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-typedef uint32_t switch_id;
-typedef uint32_t node_id;
+typedef uint32_t SwitchId;
+typedef uint32_t NodeId;
 
 
 } // end namespace sstmac

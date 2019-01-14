@@ -53,22 +53,22 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
-                                         software_id id, operating_system* os) :
-  lib_compute_memmove(params, "libmemmove", id, os)
+LibComputeMemmove::LibComputeMemmove(sprockit::sim_parameters* params,
+                                     SoftwareId id, OperatingSystem* os) :
+  LibComputeMemmove(params, "libmemmove", id, os)
 {
 }
 
-lib_compute_memmove::lib_compute_memmove(sprockit::sim_parameters* params,
-                                         const char* prefix, software_id sid,
-                                         operating_system* os) :
-  lib_compute_inst(params, prefix, sid, os)
+LibComputeMemmove::LibComputeMemmove(sprockit::sim_parameters* params,
+                                     const char* prefix, SoftwareId sid,
+                                     OperatingSystem* os) :
+  LibComputeInst(params, prefix, sid, os)
 {
   access_width_bytes_ = params->get_optional_int_param("lib_compute_access_width", 64) / 8;
 }
 
 void
-lib_compute_memmove::do_access(uint64_t bytes)
+LibComputeMemmove::doAccess(uint64_t bytes)
 {
   //if (bytes == 0){
   //  return;
@@ -76,28 +76,28 @@ lib_compute_memmove::do_access(uint64_t bytes)
   uint64_t num_loops = bytes / access_width_bytes_;
   int nflops = 0;
   int nintops = 1; //memmove instruction
-  compute_loop(num_loops, nflops, nintops, access_width_bytes_);
+  computeLoop(num_loops, nflops, nintops, access_width_bytes_);
 }
 
 void
-lib_compute_memmove::read(uint64_t bytes)
+LibComputeMemmove::read(uint64_t bytes)
 {
   SSTMACBacktrace(memread);
-  do_access(bytes);
+  doAccess(bytes);
 }
 
 void
-lib_compute_memmove::write(uint64_t bytes)
+LibComputeMemmove::write(uint64_t bytes)
 {
   SSTMACBacktrace(memwrite);
-  do_access(bytes);
+  doAccess(bytes);
 }
 
 void
-lib_compute_memmove::copy(uint64_t bytes)
+LibComputeMemmove::copy(uint64_t bytes)
 {
   SSTMACBacktrace(memcopy);
-  do_access(bytes);
+  doAccess(bytes);
 }
 
 

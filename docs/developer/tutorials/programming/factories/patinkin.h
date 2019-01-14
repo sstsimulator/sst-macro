@@ -11,7 +11,7 @@ class mandy_patinkin :
  public:
   mandy_patinkin(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "inigo montoya";
   }
 

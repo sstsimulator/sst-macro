@@ -55,46 +55,46 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class pisces_memory_model : public memory_model
+class PiscesMemoryModel : public MemoryModel
 {
-  FactoryRegister("pisces", memory_model, pisces_memory_model)
+  FactoryRegister("pisces", MemoryModel, PiscesMemoryModel)
  public:
-  pisces_memory_model(sprockit::sim_parameters* params, node* nd);
+  PiscesMemoryModel(sprockit::sim_parameters* params, Node* nd);
 
-  virtual ~pisces_memory_model();
+  virtual ~PiscesMemoryModel();
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "packet flow memory model";
   }
 
-  void access(uint64_t bytes, double max_bw, callback* cb) override;
+  void access(uint64_t bytes, double max_bw, Callback* cb) override;
 
-  double max_single_bw() const override {
+  double maxSingleBw() const override {
     return max_single_bw_;
   }
 
  private:
-  void start(int channel, uint64_t size, double max_bw, callback* cb);
+  void start(int channel, uint64_t size, double max_bw, Callback* cb);
   void channel_free(int channel);
   void data_arrived(int channel, uint32_t bytes);
-  timestamp access(int channel, uint32_t bytes, double max_bw, callback* cb);
-  timestamp access(int channel, pisces_packet* pkt, double max_bw, callback* cb);
-  void access(pisces_packet* pkt, double max_bw, callback* cb);
+  Timestamp access(int channel, uint32_t bytes, double max_bw, Callback* cb);
+  Timestamp access(int channel, PiscesPacket* pkt, double max_bw, Callback* cb);
+  void access(PiscesPacket* pkt, double max_bw, Callback* cb);
 
  private:
   struct request {
     uint64_t bytes_total;
     uint64_t bytes_arrived;
     double max_bw;
-    callback* cb;
-    pisces_packet* pkt;
+    ExecutionEvent* cb;
+    PiscesPacket* pkt;
 
-    request(uint64_t bytes, double bw, callback* c) :
+    request(uint64_t bytes, double bw, Callback* c) :
       bytes_total(bytes), bytes_arrived(0), max_bw(bw), cb(c), pkt(nullptr)
     {
     }
 
-    request(double bw, callback* c, pisces_packet* p) :
+    request(double bw, Callback* c, PiscesPacket* p) :
       max_bw(bw), cb(c), pkt(p)
     {
     }
@@ -108,8 +108,8 @@ class pisces_memory_model : public memory_model
   int nchannels_;
   double max_bw_;
   double max_single_bw_;
-  timestamp latency_;
-  pisces_bandwidth_arbitrator* arb_;
+  Timestamp latency_;
+  PiscesBandwidthArbitrator* arb_;
   int packet_size_;
 
 };

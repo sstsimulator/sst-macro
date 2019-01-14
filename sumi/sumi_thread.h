@@ -49,8 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class sumi_thread :
-  public sstmac::sw::thread
+class SumiThread :
+  public sstmac::sw::Thread
 {
  private:
   static uint64_t num_threads_;
@@ -58,10 +58,10 @@ class sumi_thread :
   virtual void run() = 0;
 
  public:
-  sumi_thread(sprockit::sim_parameters* params, sw::software_id sid,
-              sw::operating_system* os);
+  SumiThread(sprockit::sim_parameters* params, sw::SoftwareId sid,
+              sw::OperatingSystem* os);
 
-  virtual ~sumi_thread(){}
+  virtual ~SumiThread(){}
 
   void start();
 

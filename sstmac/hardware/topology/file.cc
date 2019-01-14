@@ -53,8 +53,8 @@ using namespace std;
 namespace sstmac {
 namespace hw {
 
-file::file(sprockit::sim_parameters* params) :
-  topology(params)
+FileTopology::FileTopology(sprockit::sim_parameters* params) :
+  Topology(params)
 {
   std::string fname = params->get_param("filename");
   std::ifstream in(fname);
@@ -86,7 +86,7 @@ file::file(sprockit::sim_parameters* params) :
 
   // loop through and analyze switch ports
   std::set<int> leafs;
-  max_num_ports_ = 0;
+  maxNumPorts_ = 0;
   int max_node_ports = 0;
   for (auto it = switches_.begin(); it != switches_.end(); ++it) {
 
@@ -104,8 +104,8 @@ file::file(sprockit::sim_parameters* params) :
 
       // update max switch ports
       if( switch_name_map_.find(prt->at("destination")) != switch_name_map_.end() ) {
-        max_num_ports_ = max(max_num_ports_,stoi(prt.key()));
-        max_num_ports_ = max(max_num_ports_,int(prt->at("inport")));
+        maxNumPorts_ = max(maxNumPorts_,stoi(prt.key()));
+        maxNumPorts_ = max(maxNumPorts_,int(prt->at("inport")));
       }
     }
 
@@ -116,17 +116,17 @@ file::file(sprockit::sim_parameters* params) :
 
   // compute max number of ports (switch ports + node ports)
   // +2 because we start indexing at zero
-  max_num_ports_ += max_node_ports + 2;
+  maxNumPorts_ += max_node_ports + 2;
 }
 
 void
-file::init_hostname_map(sprockit::sim_parameters* params)
+FileTopology::initHostnameMap(sprockit::sim_parameters* params)
 {
   //this is done in the constructor
 }
 
 void
-file::connected_outports(switch_id src, std::vector<connection>& conns) const
+FileTopology::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   conns.clear();
 
@@ -155,7 +155,7 @@ file::connected_outports(switch_id src, std::vector<connection>& conns) const
 }
 
 void
-file::endpoints_connected_to_injection_switch(switch_id swaddr,
+FileTopology::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
   nodes.clear();
@@ -183,10 +183,10 @@ file::endpoints_connected_to_injection_switch(switch_id swaddr,
 }
 
 void
-file::configure_individual_port_params(
-    switch_id src, sprockit::sim_parameters *switch_params) const
+FileTopology::configureIndividualPortParams(
+    SwitchId src, sprockit::sim_parameters *switch_params) const
 {
-  spkt_abort_printf("configure_individual_port_params() not implemented");
+  spkt_abort_printf("configureIndividualPortParams() not implemented");
 }
 
 }

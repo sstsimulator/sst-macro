@@ -50,22 +50,22 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class lib_compute_memmove :
-  public lib_compute_inst
+class LibComputeMemmove :
+  public LibComputeInst
 {
 
  public:
-  virtual ~lib_compute_memmove() {}
+  virtual ~LibComputeMemmove() {}
 
-  lib_compute_memmove(sprockit::sim_parameters* params, software_id id,
-                      operating_system* os);
+  LibComputeMemmove(sprockit::sim_parameters* params, SoftwareId id,
+                      OperatingSystem* os);
 
-  lib_compute_memmove(sprockit::sim_parameters* params, const char* prefix, software_id id,
-                      operating_system* os);
+  LibComputeMemmove(sprockit::sim_parameters* params, const char* prefix, SoftwareId id,
+                      OperatingSystem* os);
 
-  void incoming_event(event *ev){
+  void incomingEvent(Event *ev){
     //forward to parent, which throws
-    library::incoming_event(ev);
+    Library::incomingEvent(ev);
   }
 
   void read(uint64_t bytes);
@@ -78,7 +78,7 @@ class lib_compute_memmove :
   static const long unlimited_page_size = -1;
   static const long default_page_size = unlimited_page_size;
 
-  void do_access(uint64_t bytes);
+  void doAccess(uint64_t bytes);
 
  protected:
   int access_width_bytes_;

@@ -52,55 +52,55 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class bruck_alltoall_actor :
-  public bruck_actor
+class BruckAlltoallActor :
+  public BruckActor
 {
  public:
-  bruck_alltoall_actor(collective_engine* engine, void* dst, void* src,
-                       int nelems, int type_size, int tag, int cq_id, communicator* comm)
-    : bruck_actor(collective::alltoall, engine, dst, src, type_size, tag, cq_id, comm),
+  BruckAlltoallActor(CollectiveEngine* engine, void* dst, void* src,
+                       int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+    : BruckActor(collective::alltoall, engine, dst, src, type_size, tag, cq_id, comm),
       nelems_(nelems)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "bruck all-to-all actor";
   }
 
  protected:
   void finalize() override;
 
-  void finalize_buffers() override;
-  void init_buffers() override;
-  void init_dag() override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
-  void start_shuffle(action* ac) override;
+  void startShuffle(Action* ac) override;
 
-  void shuffle(action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp);
+  void shuffle(Action *ac, void* tmpBuf, void* mainBuf, bool copyToTemp);
 
   int midpoint_;
   int nelems_;
 };
 
-class bruck_alltoall_collective :
-  public dag_collective
+class BruckAlltoallCollective :
+  public DagCollective
 {
  public:
-  bruck_alltoall_collective(collective_engine* engine, void* dst, void* src,
-                            int nelems, int type_size, int tag, int cq_id, communicator* comm)
-    : dag_collective(alltoall, engine, dst, src, type_size, tag, cq_id, comm),
+  BruckAlltoallCollective(CollectiveEngine* engine, void* dst, void* src,
+                            int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+    : DagCollective(alltoall, engine, dst, src, type_size, tag, cq_id, comm),
       nelems_(nelems)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "all-to-all";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new bruck_alltoall_actor(engine_, dst_buffer_, src_buffer_, nelems_, type_size_, tag_, cq_id_, comm_);
+  DagCollectiveActor* newActor() const override {
+    return new BruckAlltoallActor(engine_, dst_buffer_, src_buffer_, nelems_, type_size_, tag_, cq_id_, comm_);
   }
  private:
   int nelems_;

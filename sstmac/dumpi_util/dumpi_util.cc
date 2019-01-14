@@ -51,7 +51,7 @@ namespace sstmac {
 namespace sw {
 
 std::string
-dumpi_file_name(int rank, std::string fileroot_)
+dumpiFileName(int rank, std::string fileroot_)
 {
   // Figure out our input file name.
   // Try fileroot-"%01d", fileroot-"%02d", ... up to some reasonable length
@@ -86,7 +86,7 @@ dumpi_file_name(int rank, std::string fileroot_)
 }
 
 int
-getnumprocs(dumpi_meta* dmeta_)
+getnumprocs(DumpiMeta* dmeta_)
 {
   if (dmeta_) {
     return dmeta_->getnumprocs();
@@ -94,7 +94,7 @@ getnumprocs(dumpi_meta* dmeta_)
   int nrank = 0;
   try {
     while (true) {
-      std::string fname = dumpi_file_name(nrank,
+      std::string fname = dumpiFileName(nrank,
                                 dmeta_->dirplusfileprefix_);
       nrank++;
     }

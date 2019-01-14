@@ -64,14 +64,14 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-static sprockit::need_delete_statics<processor> del_statics;
+static sprockit::need_deleteStatics<Processor> del_statics;
 
 
-processor::~processor()
+Processor::~Processor()
 {
 }
 
-processor::processor(sprockit::sim_parameters* params, memory_model* mem, node* nd) :
+Processor::Processor(sprockit::sim_parameters* params, MemoryModel* mem, Node* nd) :
   mem_(mem), node_(nd)
 {
   freq_ = params->get_freq_param("frequency");
@@ -80,7 +80,7 @@ processor::processor(sprockit::sim_parameters* params, memory_model* mem, node* 
 }
 
 void
-processor::delete_statics()
+Processor::deleteStatics()
 {
 }
 

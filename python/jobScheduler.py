@@ -74,7 +74,7 @@ nodeParams = {
 }
 
 jobParams = {
-  "job_launcher" : "exclusive",
+  "JobLauncher" : "exclusive",
   "app1" : app1Params,
   "app2" : app2Params,
 }

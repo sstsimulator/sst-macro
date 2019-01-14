@@ -196,12 +196,12 @@ set_debug_flags(PyObject* self, PyObject* args)
 static PyObject*
 load_extern_so_file(PyObject* self, PyObject* args)
 {
-  std::string pathStr = load_extern_path_str();
+  std::string pathStr = loadExternPathStr();
   Py_ssize_t size = PyTuple_Size(args);
   for (int i=0; i < size; ++i){
     PyObject* obj = PyTuple_GetItem(args,i);
     const char* str = PyString_AsString(obj);
-    load_extern_library(str, pathStr);
+    loadExternLibrary(str, pathStr);
   }
   Py_RETURN_NONE;
 }
@@ -219,7 +219,7 @@ read_params(PyObject* self, PyObject* args)
   }
 
   sprockit::sim_parameters params;
-  sstmac::try_main(&params, argc, argv, true/*only params*/);
+  sstmac::tryMain(&params, argc, argv, true/*only params*/);
 
   PyObject* dict = PyDict_New();
   sstmac::py_add_params(dict, &params);
@@ -296,10 +296,10 @@ static void* gen_sst_macro_integrated_pymodule(void)
   Py_DECREF(nproc_fxn);
   Py_DECREF(mainModule);
   //for now, the topology will not distinguish nthread from nproc
-  hw::topology::nproc = nproc*nthread;
+  hw::Topology::nproc = nproc*nthread;
 
   PyModule_AddIntConstant(module, "SwitchLogPInjectionPort", 0);
-  PyModule_AddIntConstant(module, "NICLogPInjectionPort", hw::nic::LogP);
+  PyModule_AddIntConstant(module, "NICLogPInjectionPort", hw::NIC::LogP);
 
   sstmac::py_init_system(module);
   sprockit::output::init_out0(&std::cout);

@@ -50,7 +50,7 @@ namespace sstmac {
 namespace sw {
 
 bool
-cpuset_compute_scheduler::allocate_cores(int ncores_needed, thread* thr)
+CpusetComputeScheduler::allocateCores(int ncores_needed, Thread* thr)
 {
   int ncores_found = 0;
   uint64_t valid_cores = thr->cpumask() & available_cores_;
@@ -58,53 +58,53 @@ cpuset_compute_scheduler::allocate_cores(int ncores_needed, thread* thr)
     uint64_t mask = valid_cores & (1<<i);
     if (mask != 0){
       ++ncores_found;
-      thr->add_active_core(i);
+      thr->addActiveCore(i);
       debug_printf(sprockit::dbg::compute_scheduler,
           "Core %d matches from available set %X intersecting thread cpumask %X for thread %ld",
-          i, available_cores_, thr->cpumask(), thr->thread_id());
+          i, available_cores_, thr->cpumask(), thr->threadId());
     }
   }
 
   if (ncores_found < ncores_needed){
     for (int i=0; i < ncores_found; ++i){
-      thr->pop_active_core();
+      thr->popActiveCore();
     }
     return false;
   } else {
-    uint64_t mask = thr->active_core_mask();
+    uint64_t mask = thr->activeCoreMask();
     available_cores_ = available_cores_ & ~mask;
     debug_printf(sprockit::dbg::compute_scheduler,
         "Available mask is %X after subtracting %X",
-        available_cores_, thr->active_core_mask());
+        available_cores_, thr->activeCoreMask());
     return true;
   }
 }
 
 void
-cpuset_compute_scheduler::reserve_cores(int ncores, thread *thr)
+CpusetComputeScheduler::reserveCores(int ncores, Thread *thr)
 {
-  bool succ = allocate_cores(ncores, thr);
+  bool succ = allocateCores(ncores, thr);
   if (succ){
     //pass - do nothing
   } else {
     //this is guaranteed not to unblock until valid core received
     debug_printf(sprockit::dbg::compute_scheduler,
         "Failed to find %d cores for thread %u matching cpuset %X against available %X",
-        ncores, thr->thread_id(), thr->cpumask(), available_cores_);
+        ncores, thr->threadId(), thr->cpumask(), available_cores_);
     pending_threads_.emplace_back(ncores, thr);
     os_->block();
   }
 }
 
 void
-cpuset_compute_scheduler::release_cores(int ncores, thread *thr)
+CpusetComputeScheduler::releaseCores(int ncores, Thread *thr)
 {  
   for (int i=0; i < ncores; ++i){
-    int core = thr->pop_active_core();
-    thread::add_core(core, available_cores_);
+    int core = thr->popActiveCore();
+    Thread::addCore(core, available_cores_);
     debug_printf(sprockit::dbg::compute_scheduler,
         "Releasing core %d for thread %u yields cpuset %X",
-        core, thr->thread_id(), available_cores_);
+        core, thr->threadId(), available_cores_);
   }
 
 
@@ -113,14 +113,14 @@ cpuset_compute_scheduler::release_cores(int ncores, thread *thr)
   for (auto it = pending_threads_.begin(); it != end; ){
     auto tmp = it++;
     auto pair = *tmp;
-    bool succ = allocate_cores(pair.first, pair.second);
+    bool succ = allocateCores(pair.first, pair.second);
     if (succ){
       pending_threads_.erase(tmp);
       os_->unblock(pair.second);
     } else {
       debug_printf(sprockit::dbg::compute_scheduler,
           "Failed to find %d cores for thread %u matching cpuset %X against available %X",
-          ncores, pair.second->thread_id(), pair.second->cpumask(), available_cores_);
+          ncores, pair.second->threadId(), pair.second->cpumask(), available_cores_);
     }
   }
 }

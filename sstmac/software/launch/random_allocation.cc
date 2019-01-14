@@ -56,12 +56,12 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-random_allocation::~random_allocation() throw ()
+RandomAllocation::~RandomAllocation() throw ()
 {
 }
 
-random_allocation::random_allocation(sprockit::sim_parameters *params) :
-  node_allocator(params)
+RandomAllocation::RandomAllocation(sprockit::sim_parameters *params) :
+  NodeAllocator(params)
 {
   int seed = params->get_optional_int_param("random_allocation_seed", -1);
   if (seed == -1){
@@ -71,7 +71,7 @@ random_allocation::random_allocation(sprockit::sim_parameters *params) :
 }
 
 bool
-random_allocation::allocate(
+RandomAllocation::allocate(
   int nnode_requested,
   const ordered_node_set& available,
   ordered_node_set& allocation) const
@@ -80,12 +80,12 @@ random_allocation::allocate(
     return false;
   }
 
-  std::vector<node_id> availvec(available.size());
+  std::vector<NodeId> availvec(available.size());
   std::copy(available.begin(), available.end(), availvec.begin());
   RNG::UniformInteger_functor rngf(rng_);
   std::random_shuffle(availvec.begin(), availvec.end(), rngf);
   for (int i = 0; i < nnode_requested; i++) {
-    node_id node = availvec[i];
+    NodeId node = availvec[i];
     allocation.insert(node);
   }
 

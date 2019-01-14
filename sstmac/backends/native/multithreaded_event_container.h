@@ -52,17 +52,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <pthread.h>
 #include <stdlib.h>
 
-DeclareDebugSlot(multithread_event_manager);
+DeclareDebugSlot(multithread_EventManager);
 DeclareDebugSlot(cpu_affinity);
 
 namespace sstmac {
 namespace native {
 
-class multithreaded_event_container;
+class MultithreadedEventContainer;
 
-struct thread_queue
+struct threadQueue
 {
-  thread_queue() :
+  threadQueue() :
     mgr(nullptr),
     child1(nullptr),
     child2(nullptr)
@@ -77,31 +77,31 @@ struct thread_queue
   }
 
   volatile int64_t* delta_t;
-  timestamp min_time;
-  event_manager* mgr;
-  thread_queue* child1;
-  thread_queue* child2;
+  Timestamp min_time;
+  EventManager* mgr;
+  threadQueue* child1;
+  threadQueue* child2;
 
 };
 
 
-class multithreaded_event_container :
-  public clock_cycle_event_map
+class MultithreadedEventContainer :
+  public ClockCycleEventMap
 {
-  FactoryRegister("multithread | multithreaded", event_manager, multithreaded_event_container,
+  FactoryRegister("multithread | multithreaded", EventManager, MultithreadedEventContainer,
     "Implements a parallel event queue with support for SMP-aware multithreading")
  public:
-  multithreaded_event_container(sprockit::sim_parameters* params, parallel_runtime* rt);
+  MultithreadedEventContainer(sprockit::sim_parameters* params, ParallelRuntime* rt);
 
-  ~multithreaded_event_container() throw () {}
+  ~MultithreadedEventContainer() throw () {}
 
   virtual void run() override;
 
-  void schedule_stop(timestamp until) override;
+  void scheduleStop(Timestamp until) override;
 
-  event_manager* thread_manager(int thr) const override {
+  EventManager* threadManager(int thr) const override {
     if (thr == num_subthreads_) {
-      return const_cast<multithreaded_event_container*>(this);
+      return const_cast<MultithreadedEventContainer*>(this);
     } else {
       return thread_managers_[thr];
     }
@@ -110,11 +110,11 @@ class multithreaded_event_container :
  private:
   int num_subthreads_;
 
-  std::vector<event_manager*> thread_managers_;
+  std::vector<EventManager*> thread_managers_;
 
   void run_work();
 
-  std::vector<thread_queue> queues_;
+  std::vector<threadQueue> queues_;
   std::vector<int> cpu_affinity_;
   std::vector<pthread_t> pthreads_;
   std::vector<pthread_attr_t> pthread_attrs_;

@@ -71,7 +71,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstdlib>
 
 RegisterKeywords(
-{ "event_manager", "the type of event manager for scheduling/managing events" },
+{ "EventManager", "the type of event manager for scheduling/managing events" },
 { "sst_rank", "my logical process within a parallel SST run" },
 { "sst_nproc", "the total number of logical processes within an SST run" },
 { "timestamp_print_units", "the units of time to print on debug statements" },
@@ -88,7 +88,7 @@ class timestamp_prefix_fxn :
   public sprockit::debug_prefix_fxn
 {
  public:
-  timestamp_prefix_fxn(sprockit::sim_parameters* params, event_manager* mgr) :
+  timestamp_prefix_fxn(sprockit::sim_parameters* params, EventManager* mgr) :
     mgr_(mgr)
   {
     units_ = params->get_optional_param("timestamp_print_units", "s");
@@ -111,7 +111,7 @@ class timestamp_prefix_fxn :
   }
 
  private:
-  event_manager* mgr_;
+  EventManager* mgr_;
   std::string units_;
   double mult_;
 
@@ -159,7 +159,7 @@ static int recursive_count_files_from_suffix(const std::string& suffix)
 }
 
 int
-manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
+Manager::computeMaxNprocForApp(sprockit::sim_parameters* app_params)
 {
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
@@ -179,8 +179,8 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
       } else {
         dumpi_meta_filename = app_params->get_param(dmeta);
       }
-      sw::dumpi_meta* meta = new sw::dumpi_meta(dumpi_meta_filename);
-      nproc = meta->num_procs();
+      sw::DumpiMeta* meta = new sw::DumpiMeta(dumpi_meta_filename);
+      nproc = meta->numProcs();
       delete meta;
     } else if (app_params->get_param("name") == "parseotf2"){
       std::string otf2_meta_filename;
@@ -204,13 +204,13 @@ manager::compute_max_nproc_for_app(sprockit::sim_parameters* app_params)
 
   int nproc, procs_per_node;
   std::vector<int> ignore;
-  app_launch_request::parse_launch_cmd(app_params, nproc,
+  AppLaunchRequest::parseLaunchCmd(app_params, nproc,
     procs_per_node, ignore);
   return std::max(nproc, max_nproc);
 }
 
 int
-manager::compute_max_nproc(sprockit::sim_parameters* params)
+Manager::computeMaxNproc(sprockit::sim_parameters* params)
 {
   int appnum = 1;
   int max_nproc = 0;
@@ -221,7 +221,7 @@ manager::compute_max_nproc(sprockit::sim_parameters* params)
     found_app = node_params->has_namespace(app_namespace);
     if (found_app){
       sprockit::sim_parameters* app_params = node_params->get_namespace(app_namespace);
-      int nproc = compute_max_nproc_for_app(app_params);
+      int nproc = computeMaxNprocForApp(app_params);
       max_nproc = std::max(nproc, max_nproc);
     }
     ++appnum;
@@ -235,7 +235,7 @@ manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt){}
 //
 // Default constructor.
 //
-manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
+Manager::Manager(sprockit::sim_parameters* params, ParallelRuntime* rt) :
   next_ppid_(0),
   interconnect_(nullptr),
   rt_(rt)
@@ -249,11 +249,11 @@ manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
   } else if (rt_->nproc() > 1){
     event_man = "clock_cycle_parallel";
   }
-  event_manager_ = event_manager::factory::get_optional_param("event_manager", event_man, params, rt_);
-  event_manager::global = event_manager_;
+  EventManager_ = EventManager::factory::get_optional_param("EventManager", event_man, params, rt_);
+  EventManager::global = EventManager_;
 
   if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
-    sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(params, event_manager_);
+    sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(params, EventManager_);
     sprockit::debug::prefix_fxn = fxn;
   }
 
@@ -262,12 +262,12 @@ manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt) :
     sprockit::debug::turn_off();
   }
 
-  interconnect_ = hw::interconnect::static_interconnect(params, event_manager_);
+  interconnect_ = hw::Interconnect::staticInterconnect(params, EventManager_);
 
-  event_manager_->set_interconnect(interconnect_);
+  EventManager_->setInterconnect(interconnect_);
 }
 
-manager::~manager() throw ()
+Manager::~Manager() throw ()
 {
   if (sprockit::debug::prefix_fxn) 
     delete sprockit::debug::prefix_fxn;
@@ -276,57 +276,57 @@ manager::~manager() throw ()
     cerrn << "FATAL:  manager going out of scope while still running.\n";
     abort();
   }
-  if (event_manager_) delete event_manager_;
-  //hw::interconnect::clear_static_interconnect();
+  if (EventManager_) delete EventManager_;
+  //hw::interconnect::clear_staticInterconnect();
 }
 
 void
-manager::start()
+Manager::start()
 {
 }
 
-static void run_manager(void* args){
-  event_manager* mgr = (event_manager*) args;
+static void runManager(void* args){
+  EventManager* mgr = (EventManager*) args;
   mgr->run();
 }
 
-timestamp
-manager::run(timestamp until)
+Timestamp
+Manager::run(Timestamp until)
 {
   start();
 
   running_ = true;
 
   if (until.ticks_int64() > 0) {
-    event_manager_->schedule_stop(until);
+    EventManager_->scheduleStop(until);
   }
 
   //this is a little convoluted here, but necessary
   //to make multithreading easier
-  event_manager_->spin_up(run_manager, event_manager_);
+  EventManager_->spinUp(runManager, EventManager_);
 
   running_ = false;
   // Now call done routine to end simulation and print Stats.
   stop();
 
 
-  return event_manager_->final_time();
+  return EventManager_->finalTime();
 }
 
 void
-manager::stop()
+Manager::stop()
 {
-  event_manager::global = nullptr;
-  runtime::finish();
+  EventManager::global = nullptr;
+  Runtime::finish();
 }
 
 
 void
-manager::finish()
+Manager::finish()
 {
   //interconnect_->deadlock_check();
-  event_manager_->finish_stats();
-  event_manager::global = nullptr;
+  EventManager_->finishStats();
+  EventManager::global = nullptr;
 }
 
 

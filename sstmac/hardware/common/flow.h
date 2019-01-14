@@ -54,8 +54,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class flow :
-  public event,
+class Flow :
+  public Event,
   public sprockit::printable
 {
  public:
@@ -64,17 +64,17 @@ class flow :
    * if they want any size tracked / modeled.
    * @return Zero size, meant to be implemented by children.
    */
-  uint64_t byte_length() const {
+  uint64_t byteLength() const {
     return byte_length_;
   }
 
-  virtual ~flow(){}
+  virtual ~Flow(){}
 
-  void set_flow_id(uint64_t id) {
+  void setFlowId(uint64_t id) {
     flow_id_ = id;
   }
 
-  uint64_t flow_id() const {
+  uint64_t flowId() const {
     return flow_id_;
   }
 
@@ -82,7 +82,7 @@ class flow :
     return libname_;
   }
 
-  void set_flow_size(uint64_t sz) {
+  void setFlowSize(uint64_t sz) {
     byte_length_ = sz;
   }
 
@@ -90,11 +90,11 @@ class flow :
     ser & flow_id_;
     ser & byte_length_;
     ser & libname_;
-    event::serialize_order(ser);
+    Event::serialize_order(ser);
   }
 
  protected:
-  flow(uint64_t id, uint64_t size, const std::string& libname = "") :
+  Flow(uint64_t id, uint64_t size, const std::string& libname = "") :
     flow_id_(id), byte_length_(size), libname_(libname)
   {
   }

@@ -69,7 +69,7 @@ void debug_print(const char* info, const std::string& rank_str,
             int partner, int round, int offset,
             int nelems, int type_size, const void* buffer);
 
-struct action
+struct Action
 {
   typedef enum { send=0, recv=1, shuffle=2, unroll=3, resolve=4, join=5 } type_t;
   type_t type;
@@ -97,11 +97,11 @@ struct action
     }
   }
 
-  std::string to_string() const;
+  std::string toString() const;
 
   static const uint32_t max_round = 500;
 
-  static uint32_t message_id(type_t ty, int r, int p){
+  static uint32_t messageId(type_t ty, int r, int p){
     //factor of two is for send or receive
     const int num_enums = 6;
     return p*max_round*num_enums + r*num_enums + ty;
@@ -119,16 +119,16 @@ struct action
     ty = (type_t) remainder;
   }
 
-  action(type_t ty, int r, int p) :
+  Action(type_t ty, int r, int p) :
     type(ty), round(r),
     partner(p),
     join_counter(0)
   {
-    id = message_id(ty, r, p);
+    id = messageId(ty, r, p);
   }
 };
 
-struct recv_action : public action
+struct RecvAction : public Action
 {
   typedef enum {
     in_place=0,
@@ -164,14 +164,14 @@ struct recv_action : public action
     return recv_type_t(ty + shift);
   }
 
-  recv_action(int round, int partner, buf_type_t bty) :
-    action(recv, round, partner),
+  RecvAction(int round, int partner, buf_type_t bty) :
+    Action(recv, round, partner),
     buf_type(bty)
   {
   }
 };
 
-struct send_action : public action
+struct SendAction : public Action
 {
   typedef enum {
     in_place=0,
@@ -189,18 +189,18 @@ struct send_action : public action
     }
   }
 
-  send_action(int round, int partner, buf_type_t ty) :
-    action(send, round, partner),
+  SendAction(int round, int partner, buf_type_t ty) :
+    Action(send, round, partner),
     buf_type(ty)
   {
   }
 
 };
 
-struct shuffle_action : public action
+struct ShuffleAction : public Action
 {
-  shuffle_action(int round, int partner) :
-    action(shuffle, round, partner)
+  ShuffleAction(int round, int partner) :
+    Action(shuffle, round, partner)
   {
   }
 };
@@ -214,12 +214,12 @@ struct shuffle_action : public action
  * to run an algorith with a virtual number of ranks different from
  * the actual physical number.
  */
-class collective_actor
+class CollectiveActor
 {
  public:
-  virtual std::string to_string() const = 0;
+  virtual std::string toString() const = 0;
 
-  virtual ~collective_actor();
+  virtual ~CollectiveActor();
 
   bool complete() const {
     return complete_;
@@ -229,25 +229,25 @@ class collective_actor
     return tag_;
   }
 
-  std::string rank_str() const;
+  std::string rankStr() const;
 
   virtual void init() = 0;
 
  protected:
-  collective_actor(collective_engine* engine, int tag, int cq_id, communicator* comm);
+  CollectiveActor(CollectiveEngine* engine, int tag, int cq_id, Communicator* comm);
 
-  int global_rank(int dom_rank) const;
+  int globalRank(int dom_rank) const;
 
-  int dom_to_global_dst(int dom_dst);
+  int domToGlobalDst(int dom_dst);
 
-  std::string rank_str(int dom_rank) const;
+  std::string rankStr(int dom_rank) const;
 
   virtual void finalize(){}
 
  protected:
-  transport* my_api_;
+  Transport* my_api_;
 
-  collective_engine* engine_;
+  CollectiveEngine* engine_;
 
   int dom_me_;
 
@@ -255,7 +255,7 @@ class collective_actor
 
   int tag_;
 
-  communicator* comm_;
+  Communicator* comm_;
 
   int cq_id_;
 
@@ -263,7 +263,7 @@ class collective_actor
 
 };
 
-class slicer {
+class Slicer {
  public:
   static reduce_fxn null_reduce_fxn;
 
@@ -275,33 +275,33 @@ class slicer {
    * @param nelems
    * @return
    */
-  virtual size_t pack_send_buf(void* packedBuf, void* unpackedObj,
+  virtual size_t packsendBuf(void* packedBuf, void* unpackedObj,
                 int offset, int nelems) const = 0;
 
-  virtual void unpack_recv_buf(void* packedBuf, void* unpackedObj,
+  virtual void unpackRecvBuf(void* packedBuf, void* unpackedObj,
                   int offset, int nelems) const = 0;
 
-  virtual void memcpy_packed_bufs(void* dst, void* src, int nelems) const = 0;
+  virtual void memcpyPackedBufs(void* dst, void* src, int nelems) const = 0;
 
-  virtual void unpack_reduce(void* packedBuf, void* unpackedObj,
+  virtual void unpackReduce(void* packedBuf, void* unpackedObj,
             int offset, int nelems) const {
     sprockit::abort("slicer for collective does not implement a reduce op");
   }
 
   virtual bool contiguous() const = 0;
 
-  virtual int element_packed_size() const = 0;
+  virtual int elementPackedSize() const = 0;
 };
 
-class default_slicer :
- public slicer
+class DefaultSlicer :
+ public Slicer
 {
 
  public:
-  default_slicer(int ty_size, reduce_fxn f = null_reduce_fxn) :
+  DefaultSlicer(int ty_size, reduce_fxn f = null_reduce_fxn) :
     type_size(ty_size), fxn(f){}
 
-  size_t pack_send_buf(void* packedBuf, void* unpackedObj, 
+  size_t packsendBuf(void* packedBuf, void* unpackedObj,
             int offset, int nelems) const {
     char* dstptr = (char*) packedBuf;
     char* srcptr = (char*) unpackedObj + offset*type_size;
@@ -309,24 +309,24 @@ class default_slicer :
     return nelems*type_size;
   }
 
-  void unpack_recv_buf(void* packedBuf, void* unpackedObj, 
+  void unpackRecvBuf(void* packedBuf, void* unpackedObj,
             int offset, int nelems) const {
     char* dstptr = (char*) unpackedObj + offset*type_size;
     char* srcptr = (char*) packedBuf;
     ::memcpy(dstptr, srcptr, nelems*type_size);
   }
 
-  virtual void memcpy_packed_bufs(void *dst, void *src, int nelems) const {
+  virtual void memcpyPackedBufs(void *dst, void *src, int nelems) const {
     ::memcpy(dst, src, nelems*type_size);
   }
 
-  virtual void unpack_reduce(void *packedBuf, void *unpackedObj, 
+  virtual void unpackReduce(void *packedBuf, void *unpackedObj,
                   int offset, int nelems) const {
     char* dstptr = (char*) unpackedObj + offset*type_size;
     (fxn)(dstptr, packedBuf, nelems);
   }
 
-  int element_packed_size() const {
+  int elementPackedSize() const {
     return type_size;
   }
 
@@ -347,14 +347,14 @@ class default_slicer :
  * to run an algorith with a virtual number of ranks different from
  * the actual physical number.
  */
-class dag_collective_actor :
- public collective_actor,
- public communicator::rank_callback
+class DagCollectiveActor :
+ public CollectiveActor,
+ public Communicator::rank_callback
 {
  public:
-  virtual std::string to_string() const override = 0;
+  virtual std::string toString() const override = 0;
 
-  virtual ~dag_collective_actor();
+  virtual ~DagCollectiveActor();
 
   virtual void recv(collective_work_message* msg);
 
@@ -365,34 +365,34 @@ class dag_collective_actor :
     put_protocol,
     get_protocol } protocol_t;
 
-  protocol_t protocol_for_action(action* ac) const;
+  protocol_t protocolForAction(Action* ac) const;
 
-  void deadlock_check() const;
+  void deadlockCheck() const;
 
-  collective_done_message* done_msg() const;
+  CollectiveDoneMessage* doneMsg() const;
 
   void init() override {
-    init_tree();
-    init_dag();
-    init_buffers();
+    initTree();
+    initDag();
+    initBuffers();
   }
 
  private:
   template <class T, class U> using alloc = sprockit::thread_safe_allocator<std::pair<const T,U>>;
-  typedef std::map<uint32_t, action*, std::less<uint32_t>,
-                   alloc<uint32_t,action*>> active_map;
-  typedef std::multimap<uint32_t, action*, std::less<uint32_t>,
-                   alloc<uint32_t,action*>> pending_map;
+  typedef std::map<uint32_t, Action*, std::less<uint32_t>,
+                   alloc<uint32_t,Action*>> active_map;
+  typedef std::multimap<uint32_t, Action*, std::less<uint32_t>,
+                   alloc<uint32_t,Action*>> pending_map;
   typedef std::multimap<uint32_t, collective_work_message*, std::less<uint32_t>,
                    alloc<uint32_t,collective_work_message*>> pending_msg_map;
 
  protected:
-  dag_collective_actor(collective::type_t ty, collective_engine* engine, void* dst, void * src,
-                       int type_size, int tag, int cq_id, communicator* comm,
-                       reduce_fxn fxn = slicer::null_reduce_fxn) :
-    collective_actor(engine, tag, cq_id, comm),
+  DagCollectiveActor(collective::type_t ty, CollectiveEngine* engine, void* dst, void * src,
+                       int type_size, int tag, int cq_id, Communicator* comm,
+                       reduce_fxn fxn = Slicer::null_reduce_fxn) :
+    CollectiveActor(engine, tag, cq_id, comm),
     type_(ty),
-    slicer_(new default_slicer(type_size, fxn)),
+    slicer_(new DefaultSlicer(type_size, fxn)),
     type_size_(type_size),
     result_buffer_(dst),
     recv_buffer_(nullptr),
@@ -400,12 +400,12 @@ class dag_collective_actor :
   {
   }
 
-  void add_dependency(action* precursor, action* ac);
-  void add_action(action* ac);
+  void addDependency(Action* precursor, Action* ac);
+  void addAction(Action* ac);
 
-  void compute_tree(int& log2nproc, int& midpoint, int& nproc) const;
+  void computeTree(int& log2nproc, int& midpoint, int& nproc) const;
 
-  static bool is_shared_role(int role, int num_roles, int* my_roles){
+  static bool isSharedRole(int role, int num_roles, int* my_roles){
     for (int r=0; r < num_roles; ++r){
       if (role == my_roles[r]){
         return true;
@@ -415,48 +415,48 @@ class dag_collective_actor :
   }
 
  private:
-  virtual void init_tree(){}
-  virtual void init_dag() = 0;
-  virtual void init_buffers() = 0;
-  virtual void finalize_buffers() = 0;
+  virtual void initTree(){}
+  virtual void initDag() = 0;
+  virtual void initBuffers() = 0;
+  virtual void finalizeBuffers() = 0;
 
 
-  void add_comm_dependency(action* precursor, action* ac);
-  void add_dependency_to_map(uint32_t id, action* ac);
-  void rank_resolved(int global_rank, int comm_rank) override;
+  void addCommDependency(Action* precursor, Action* ac);
+  void addDependencyToMap(uint32_t id, Action* ac);
+  void rankResolved(int globalRank, int comm_rank) override;
 
-  void check_collective_done();
+  void checkCollectiveDone();
 
-  void put_done_notification();
+  void putDoneNotification();
 
-  void start_send(action* ac);
-  void start_recv(action* ac);
-  void do_send(action* ac);
-  void do_recv(action* ac);
+  void startSend(Action* ac);
+  void startRecv(Action* ac);
+  void doSend(Action* ac);
+  void doRecv(Action* ac);
 
-  void start_action(action* ac);
+  void startAction(Action* ac);
 
-  void send_eager_message(action* ac);
-  void send_rdma_put_header(action* ac);
-  void send_rdma_get_header(action* ac);
+  void sendEagerMessage(Action* ac);
+  void sendRdmaPutHeader(Action* ac);
+  void sendRdmaGetHeader(Action* ac);
 
-  void next_round_ready_to_put(action* ac,
+  void nextRoundReadyToPut(Action* ac,
     collective_work_message* header);
 
-  void next_round_ready_to_get(action* ac,
+  void nextRoundReadyToGet(Action* ac,
     collective_work_message* header);
 
-  void incoming_header(collective_work_message* msg);
+  void incomingHeader(collective_work_message* msg);
 
-  void data_recved(collective_work_message* msg, void* recvd_buffer);
+  void dataRecved(collective_work_message* msg, void* recvd_buffer);
 
-  void data_recved(action* ac, collective_work_message* msg, void *recvd_buffer);
+  void dataRecved(Action* ac, collective_work_message* msg, void *recvd_buffer);
 
-  void data_sent(collective_work_message* msg);
+  void dataSent(collective_work_message* msg);
 
-  virtual void buffer_action(void* dst_buffer, void* msg_buffer, action* ac) = 0;
+  virtual void bufferAction(void* dst_buffer, void* msg_buffer, Action* ac) = 0;
 
-  void* message_buffer(void* buffer, int offset);
+  void* messageBuffer(void* buffer, int offset);
 
   /**
    * @brief set_send_buffer
@@ -464,15 +464,15 @@ class dag_collective_actor :
    * @param buf in/out parameter that will hold the correct buffer
    * @return The size of the buffer in bytes
    */
-  void* get_send_buffer(action* ac, uint64_t& nbytes);
+  void* getSendBuffer(Action* ac, uint64_t& nbytes);
 
-  void* get_recv_buffer(action* ac);
+  void* getRecvbuffer(Action* ac);
 
-  virtual void start_shuffle(action* ac);
+  virtual void startShuffle(Action* ac);
 
-  void erase_pending(uint32_t id, pending_msg_map& m);
+  void erasePending(uint32_t id, pending_msg_map& m);
 
-  void reput_pending(uint32_t id, pending_msg_map& m);
+  void reputPending(uint32_t id, pending_msg_map& m);
 
   /**
    * @brief Satisfy dependencies for any pending comms,
@@ -481,7 +481,7 @@ class dag_collective_actor :
    *        Should only be called for actions that became active
    * @param ac
    */
-  void comm_action_done(action* ac);
+  void commActionDone(Action* ac);
 
   /**
    * @brief Satisfy dependences and check if done.
@@ -490,11 +490,11 @@ class dag_collective_actor :
    * @param ac
    * @param m
    */
-  void clear_action(action* ac);
+  void clearAction(Action* ac);
 
-  void clear_dependencies(action* ac);
+  void clearDependencies(Action* ac);
 
-  action* comm_action_done(action::type_t ty, int round, int partner);
+  Action* commActionDone(Action::type_t ty, int round, int partner);
 
  protected:
   int type_size_;
@@ -514,40 +514,40 @@ class dag_collective_actor :
 
   collective::type_t type_;
 
-  default_slicer* slicer_;
+  DefaultSlicer* slicer_;
 
  private:
   active_map active_comms_;
   pending_map pending_comms_;
-  std::list<action*> completed_actions_;
-  std::list<action*> ready_actions_;
+  std::list<Action*> completed_actions_;
+  std::list<Action*> ready_actions_;
 
   pending_msg_map pending_send_headers_;
   pending_msg_map pending_recv_headers_;
 
   struct action_compare {
-    bool operator()(action* l, action* r) const {
+    bool operator()(Action* l, Action* r) const {
       return l->id < r->id;
     }
   };
 
-  std::set<action*, action_compare> initial_actions_;
+  std::set<Action*, action_compare> initial_actions_;
 
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   void dense_partner_ping_failed(int dense_rank);
 #endif
 };
 
-class bruck_actor : public dag_collective_actor
+class BruckActor : public DagCollectiveActor
 {
  protected:
-  bruck_actor(collective::type_t ty, collective_engine* engine, void* dst, void* src,
-              int type_size, int tag, int cq_id, communicator* comm) :
-    dag_collective_actor(ty, engine, dst, src, type_size, tag, cq_id, comm)
+  BruckActor(collective::type_t ty, CollectiveEngine* engine, void* dst, void* src,
+              int type_size, int tag, int cq_id, Communicator* comm) :
+    DagCollectiveActor(ty, engine, dst, src, type_size, tag, cq_id, comm)
   {
   }
 
-  void compute_tree(int& log2nproc, int& midpoint,
+  void computeTree(int& log2nproc, int& midpoint,
                int& num_rounds, int& nprocs_extra_round) const;
 
 };
@@ -560,10 +560,10 @@ class bruck_actor : public dag_collective_actor
  * want to run a virtual collective with 8 ranks
  * so you have a nice, neat power of 2
  */
-class virtual_rank_map
+class VirtualRankMap
 {
  public:
-  int virtual_to_real(int rank) const;
+  int virtualToReal(int rank) const;
 
   /**
    * @brief real_to_virtual
@@ -571,9 +571,9 @@ class virtual_rank_map
    * @param virtual_ranks An array large enough to hold the number of ranks
    * @return The number of virtual ranks
    */
-  int real_to_virtual(int rank, int* virtual_ranks) const;
+  int realToVirtual(int rank, int* virtual_ranks) const;
 
-  int virtual_nproc() const {
+  int virtualNproc() const {
     return virtual_nproc_;
   }
 
@@ -586,12 +586,12 @@ class virtual_rank_map
     virtual_nproc_ = virtual_nproc;
   }
 
-  virtual_rank_map(int nproc, int virtual_nproc) :
+  VirtualRankMap(int nproc, int virtual_nproc) :
     nproc_(nproc), virtual_nproc_(virtual_nproc)
   {
   }
 
-  virtual_rank_map() : nproc_(-1), virtual_nproc_(-1)
+  VirtualRankMap() : nproc_(-1), virtual_nproc_(-1)
   {
   }
 

@@ -95,15 +95,15 @@ void* run_warp(void* args)
   thread_cfg* tc = (thread_cfg*) args;
   cfg* c = tc->c;
   tc->instrCount = 0;
-  auto* thr = sstmac::sw::thread::current();
+  auto* thr = sstmac::sw::Thread::current();
 
-  thr->zero_affinity();
-  thr->add_affinity(0);
+  thr->zeroAffinity();
+  thr->addAffinity(0);
   uint64_t comp_mask = thr->cpumask();
 
-  thr->zero_affinity();
+  thr->zeroAffinity();
   for (int i=1; i <= c->nwarp; ++i){
-    thr->add_affinity(i);
+    thr->addAffinity(i);
   }
   uint64_t comm_mask = thr->cpumask();
 
@@ -114,11 +114,11 @@ void* run_warp(void* args)
     //       tc->id, compCycles, idleCycles, i, uint64_t(sstmac_now()/cycle_time));
     //fflush(stdout);
     if (compCycles){
-      thr->set_cpumask(comp_mask);
+      thr->setCpumask(comp_mask);
       sstmac_compute(compCycles*cycle_time);
     }
     if (idleCycles){
-      thr->set_cpumask(comm_mask);
+      thr->setCpumask(comm_mask);
       if (c->nicCycles) sstmac_compute(c->nicCycles*cycle_time);
       sstmac_sleep_precise(idleCycles*cycle_time);
     }

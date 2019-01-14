@@ -61,7 +61,7 @@ int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem);
 
 double sstmac_virtual_time();
 
-double sstmac_wall_time();
+double sstmacWallTime();
 
 #ifdef __cplusplus
 }

@@ -64,11 +64,11 @@ namespace sw {
  * Base class for strategies regarding how to sequentially number nodes
  * in a parallel simulation.
  */
-class task_mapper : public sprockit::printable
+class TaskMapper : public sprockit::printable
 {
-  DeclareFactory(task_mapper)
+  DeclareFactory(TaskMapper)
  public:
-  virtual ~task_mapper() throw ();
+  virtual ~TaskMapper() throw ();
 
   /** Assign processes to nodes.
    @param aid The application ID for the application whose processes are being indexed
@@ -80,20 +80,20 @@ class task_mapper : public sprockit::printable
    @throw value_error if ppn <= 0
    @throw value_error if nodes.size()*ppn < nproc
   */
-  virtual void map_ranks(
+  virtual void mapRanks(
     const ordered_node_set& allocation,
     int ppn,
-    std::vector<node_id>& result,
+    std::vector<NodeId>& result,
     int nproc) = 0;
 
  protected:
-  task_mapper(sprockit::sim_parameters* params);
+  TaskMapper(sprockit::sim_parameters* params);
 
-  int validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;
+  int validateNproc(int ppn, int num_nodes, int nproc, const char* name) const;
 
  protected:
-  hw::topology* topology_;
-  parallel_runtime* rt_;
+  hw::Topology* topology_;
+  ParallelRuntime* rt_;
 
 };
 

@@ -64,7 +64,7 @@ public:
     cell_offsets_ = std::move(switch_cell_offsets);
   }
 
-  void SetGeometries(std::vector<topology::vtk_switch_geometry>&& vec){
+  void SetGeometries(std::vector<Topology::vtk_switch_geometry>&& vec){
     geoms_ = std::move(vec);
   }
 
@@ -115,7 +115,7 @@ protected:
   vtkSmartPointer<vtkCellArray> Lines;
   std::vector<int> CellTypes;
   std::vector<int> cell_offsets_;
-  std::vector<topology::vtk_switch_geometry> geoms_;
+  std::vector<Topology::vtk_switch_geometry> geoms_;
   int num_switches_;
   int num_links_;
   int link_index_offset_;

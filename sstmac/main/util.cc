@@ -53,17 +53,17 @@ typedef int (*empty_main_fxn)();
 
 extern "C" double
 sstmac_now(){
-  return sstmac::sw::operating_system::current_os()->now().sec();
+  return sstmac::sw::OperatingSystem::currentOs()->now().sec();
 }
 
 extern "C" void
 sstmac_sleep_precise(double secs){
-  sstmac::sw::operating_system::current_os()->sleep(secs);
+  sstmac::sw::OperatingSystem::currentOs()->sleep(secs);
 }
 
 sprockit::sim_parameters*
-get_params(){
-  return sstmac::sw::operating_system::current_thread()->parent_app()->params();
+getParams(){
+  return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }
 
 extern "C"
@@ -74,8 +74,8 @@ void* sstmac_memset(void* ptr, int value, unsigned long sz){
   if (isNonNullBuffer(ptr)) std::memset(ptr,value,sz);
   if (sz > 128){
     //model this as a delay
-    sstmac::sw::operating_system::current_thread()->parent_app()
-        ->compute_block_write(sz);
+    sstmac::sw::OperatingSystem::currentThread()->parentApp()
+        ->computeBlockWrite(sz);
   }
   return ptr;
 }
@@ -88,8 +88,8 @@ void* sstmac_memcpy(void* dst, const void* src, unsigned long sz){
   if (isNonNullBuffer(dst) && isNonNullBuffer(src)) memcpy(dst,src,sz);
   if (sz >= 128){
     //model this as a delay
-    sstmac::sw::operating_system::current_thread()->parent_app()
-        ->compute_block_memcpy(sz);
+    sstmac::sw::OperatingSystem::currentThread()->parentApp()
+        ->computeBlockMemcpy(sz);
   }
   return dst;
 }
@@ -115,7 +115,7 @@ void sstmac_free(void* ptr){
 
 extern "C" void sstmac_exit(int code)
 {
-  sstmac::sw::operating_system::current_thread()->kill(code);
+  sstmac::sw::OperatingSystem::currentThread()->kill(code);
 }
 
 extern "C" unsigned int sstmac_alarm(unsigned int delay)
@@ -140,7 +140,7 @@ extern "C" int sstmac_atexit(void (*fxn)(void))
 extern "C"
 int sstmac_gethostname(char* name, size_t len)
 {
-  int addr = sstmac::sw::operating_system::current_os()->addr();
+  int addr = sstmac::sw::OperatingSystem::currentOs()->addr();
   std::string sst_name = sprockit::printf("nid%d", addr);
   if (sst_name.size() > len){
     return -1;
@@ -163,10 +163,10 @@ void sstmac_free(void* ptr){
 extern "C"
 void sstmac_advance_time(const char* param_name)
 {
-  sstmac::sw::thread* thr = sstmac::sw::operating_system::current_thread();
-  sstmac::sw::app* parent = thr->parent_app();
-  using ValueCache = std::unordered_map<void*,sstmac::timestamp>;
-  static std::map<sstmac::sw::app_id,ValueCache> cache;
+  sstmac::sw::Thread* thr = sstmac::sw::OperatingSystem::currentThread();
+  sstmac::sw::App* parent = thr->parentApp();
+  using ValueCache = std::unordered_map<void*,sstmac::Timestamp>;
+  static std::map<sstmac::sw::AppId,ValueCache> cache;
   auto& subMap = cache[parent->aid()];
   auto iter = subMap.find((void*)param_name);
   if (iter == subMap.end()){
@@ -177,39 +177,39 @@ void sstmac_advance_time(const char* param_name)
 }
 
 int
-user_skeleton_main_init_fxn(const char* name, main_fxn fxn)
+userSkeletonMainInitFxn(const char* name, main_fxn fxn)
 {
-  sstmac::sw::user_app_cxx_full_main::register_main_fxn(name, fxn);
+  sstmac::sw::UserAppCxxFullMain::registerMainFxn(name, fxn);
   return 42;
 }
 
 static empty_main_fxn empty_skeleton_main;
 
 int
-user_skeleton_main_init_fxn(const char* name, empty_main_fxn fxn)
+userSkeletonMainInitFxn(const char* name, empty_main_fxn fxn)
 {
-  sstmac::sw::user_app_cxx_empty_main::register_main_fxn(name, fxn);
+  sstmac::sw::UserAppCxxEmptyMain::registerMainFxn(name, fxn);
   return 42;
 }
 
 extern "C"
 char* sstmac_getenv(const char* name)
 {
-  sstmac::sw::app* a = sstmac::sw::operating_system::current_thread()->parent_app();
+  sstmac::sw::App* a = sstmac::sw::OperatingSystem::currentThread()->parentApp();
   return a->getenv(name);
 }
 
 extern "C"
 int sstmac_setenv(const char* name, const char* value, int overwrite)
 {
-  sstmac::sw::app* a = sstmac::sw::operating_system::current_thread()->parent_app();
+  sstmac::sw::App* a = sstmac::sw::OperatingSystem::currentThread()->parentApp();
   return a->setenv(name, value, overwrite);
 }
 
 extern "C"
 int sstmac_putenv(char* input)
 {
-  sstmac::sw::app* a = sstmac::sw::operating_system::current_thread()->parent_app();
+  sstmac::sw::App* a = sstmac::sw::OperatingSystem::currentThread()->parentApp();
   return a->putenv(input);
 }
 

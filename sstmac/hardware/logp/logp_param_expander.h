@@ -51,35 +51,35 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class logp_param_expander :
-  public param_expander
+class LogPParamExpander :
+  public ParamExpander
 {
-  FactoryRegister("logP | simple | LogP | logp | macrels", sstmac::param_expander, logp_param_expander)
+  FactoryRegister("logP | simple | LogP | logp | macrels", sstmac::ParamExpander, LogPParamExpander)
  public:
   virtual void expand(sprockit::sim_parameters* params);
 
-  void expand_into(sprockit::sim_parameters* dst_params,
+  void expandInto(sprockit::sim_parameters* dst_params,
     sprockit::sim_parameters* params,
     sprockit::sim_parameters* switch_params);
 
  protected:
-  void expand_amm1_nic(sprockit::sim_parameters* params,
+  void expandAmm1Nic(sprockit::sim_parameters* params,
     sprockit::sim_parameters* nic_params,
     sprockit::sim_parameters* switch_params);
 
-  void expand_amm1_network(sprockit::sim_parameters* params,
+  void expandAmm1Network(sprockit::sim_parameters* params,
     sprockit::sim_parameters* switch_params);
 
-  void expand_amm1_memory(sprockit::sim_parameters* params,
+  void expandAmm1Memory(sprockit::sim_parameters* params,
     sprockit::sim_parameters* mem_params);
 
-  void expand_amm2_memory(sprockit::sim_parameters* params,
+  void expandAmm2Memory(sprockit::sim_parameters* params,
       sprockit::sim_parameters* mem_params);
 
-  void expand_amm3_network(sprockit::sim_parameters* params,
+  void expandAmm3Network(sprockit::sim_parameters* params,
     sprockit::sim_parameters* switch_params);
 
-  void expand_amm4_nic(sprockit::sim_parameters* params,
+  void expandAmm4Nic(sprockit::sim_parameters* params,
     sprockit::sim_parameters* nic_params,
     sprockit::sim_parameters* switch_params);
 };

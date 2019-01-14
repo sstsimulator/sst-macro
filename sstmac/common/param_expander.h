@@ -50,11 +50,11 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class param_expander
+class ParamExpander
 {
-  DeclareFactory(param_expander)
+  DeclareFactory(ParamExpander)
  public:
-  virtual ~param_expander(){}
+  virtual ~ParamExpander(){}
 
   virtual void expand(sprockit::sim_parameters* params) = 0;
 

@@ -42,8 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sstmac_hardware_nic_pisces_nic_H
-#define sstmac_hardware_nic_pisces_nic_H
+#ifndef sstmac_hardware_nic_PiscesNIC_H
+#define sstmac_hardware_nic_PiscesNIC_H
 
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
@@ -55,17 +55,17 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class pisces_nic
+ @class PiscesNIC
  Network interface compatible with sending pisces packets
  */
-class pisces_nic : public nic
+class PiscesNIC : public NIC
 {
-  FactoryRegister("pisces", nic, pisces_nic,
+  FactoryRegister("pisces", NIC, PiscesNIC,
               "implements a nic that models messages as a packet flow")
  public:
-  pisces_nic(sprockit::sim_parameters* params, node* parent);
+  PiscesNIC(sprockit::sim_parameters* params, Node* parent);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return sprockit::printf("packet flow nic(%d)", int(addr()));
   }
 
@@ -73,49 +73,45 @@ class pisces_nic : public nic
 
   void setup() override;
 
-  virtual ~pisces_nic() throw ();
+  virtual ~PiscesNIC() throw ();
 
-  virtual void connect_output(
+  virtual void connectOutput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) override;
+    EventLink* link) override;
 
-  virtual void connect_input(
+  virtual void connectInput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) override;
+    EventLink* link) override;
 
-  link_handler* credit_handler(int port) override;
+  LinkHandler* creditHandler(int port) override;
 
-  link_handler* payload_handler(int port) override;
+  LinkHandler* payloadHandler(int port) override;
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
 
-  void packet_sent(event* ev);
+  void packetSent(Event* ev);
 
-  void incoming_packet(event* ev);
-
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
+  void incomingPacket(Event* ev);
 
  private:
-  void packet_arrived(pisces_packet* pkt);
+  void packetArrived(PiscesPacket* pkt);
 
-  void do_send(network_message* payload) override;
+  void doSend(NetworkMessage* payload) override;
 
-  uint64_t inject(int vn, uint64_t offset, network_message* msg);
+  uint64_t inject(int vn, uint64_t offset, NetworkMessage* msg);
 
   struct pending {
     uint64_t bytes_sent;
     uint64_t bytes_total;
-    network_message* msg;
+    NetworkMessage* msg;
 
-    pending(uint64_t offset, uint64_t size, network_message* m) :
+    pending(uint64_t offset, uint64_t size, NetworkMessage* m) :
       bytes_sent(offset), bytes_total(size), msg(m)
     {
     }
@@ -124,23 +120,24 @@ class pisces_nic : public nic
 
   std::vector<std::queue<pending>> pending_inject_;
 
-  event_link* self_mtl_link_;
-  pisces_buffer* inj_buffer_;
+  PiscesBuffer* inj_buffer_;
 
-  recv_cq completion_queue_;
+  RecvCQ completion_queue_;
 
-  timestamp credit_lat_;
+  Timestamp credit_lat_;
 
-  event_link* credit_link_;
+  EventLink* credit_link_;
+  EventLink* self_mtl_link_;
 
-  node_id my_addr_;
+  NodeId my_addr_;
 
   uint32_t packet_size_;
 
   bool cut_through_;
 
-  packet_stats_callback* inj_stats_;
-  packet_stats_callback* ej_stats_;
+  PacketStatsCallback* inj_stats_;
+  PacketStatsCallback* ej_stats_;
+
 
 };
 
@@ -149,4 +146,4 @@ class pisces_nic : public nic
 } // end of namespace sstmac
 
 
-#endif // pisces_nic_H
+#endif // PiscesNIC_H

@@ -51,7 +51,7 @@ namespace sstmac {
 namespace hw {
 
 
-pisces_buffer::~pisces_buffer()
+PiscesBuffer::~PiscesBuffer()
 {
   if (input_.link) delete input_.link;
   if (output_.link) delete output_.link;
@@ -59,30 +59,28 @@ pisces_buffer::~pisces_buffer()
 }
 
 void
-pisces_buffer::set_input(
+PiscesBuffer::setInput(
   sprockit::sim_parameters* params,
   int this_inport, int src_outport,
-  event_link* link)
+  EventLink* link)
 {
   input_.link = link;
   input_.port_to_credit = src_outport;
-  link->validate_latency(credit_lat_);
 }
 
 void
-pisces_buffer::set_output(sprockit::sim_parameters* params,
+PiscesBuffer::setOutput(sprockit::sim_parameters* params,
                          int this_outport, int dst_inport,
-                         event_link* link)
+                         EventLink* link)
 {
-  link->validate_latency(send_lat_);
   output_.link = link;
   output_.arrival_port = dst_inport;
 }
 
-pisces_buffer::pisces_buffer(
+PiscesBuffer::PiscesBuffer(
   sprockit::sim_parameters* params,
-  event_scheduler* parent, int num_vc)
-  : pisces_sender(params, parent, false/*buffers do not update vc*/),
+  SST::Component* parent, int num_vc)
+  : PiscesSender(params, parent, false/*buffers do not update vc*/),
     bytes_delayed_(0),
     num_vc_(num_vc),
     queues_(num_vc),
@@ -100,48 +98,48 @@ pisces_buffer::pisces_buffer(
     initial_credits_[i] = num_credits_per_vc;
 #endif
   }
-  arb_ = pisces_bandwidth_arbitrator::factory::
+  arb_ = PiscesBandwidthArbitrator::factory::
           get_param("arbitrator", params);
 }
 
 void
-pisces_buffer::handle_credit(event* ev)
+PiscesBuffer::handleCredit(Event* ev)
 {
-  pisces_credit* credit = static_cast<pisces_credit*>(ev);
+  PiscesCredit* credit = static_cast<PiscesCredit*>(ev);
   int vc = credit->vc();
 #if SSTMAC_SANITY_CHECK
   if (vc >= credits_.size()) {
-    spkt_abort_printf("pisces_buffer::handle_credit: on %s, port %d, invalid vc %d",
-                     to_string().c_str(), credit->port(), vc);
+    spkt_abort_printf("pisces_buffer::handleCredit: on %s, port %d, invalid vc %d",
+                     toString().c_str(), credit->port(), vc);
   }
 #endif
   int& num_credits = credits_[vc];
-  num_credits += credit->num_credits();
+  num_credits += credit->numCredits();
   //we've cleared out some of the delay
-  bytes_delayed_ -= credit->num_credits();
+  bytes_delayed_ -= credit->numCredits();
 
   pisces_debug(
     "On %s with %d credits, handling credit {%s} for vc:%d -> byte delay now %d",
-     to_string().c_str(),
+     toString().c_str(),
      num_credits,
-     credit->to_string().c_str(),
+     credit->toString().c_str(),
      vc, bytes_delayed_);
 
 #if SSTMAC_SANITY_CHECK
   if (credit->port() != 0){
-    spkt_abort_printf("pisces_buffer::handle_credit: got nonzero port");
+    spkt_abort_printf("pisces_buffer::handleCredit: got nonzero port");
   }
 
   if (num_credits > initial_credits_[vc]){
     spkt_abort_printf("initial credits exceeded on %s",
-                      to_string().c_str());
+                      toString().c_str());
   }
 #endif
 
   /** while we have sendable payloads, do it */
-  pisces_packet* payload = queues_[vc].pop(num_credits);
+  PiscesPacket* payload = queues_[vc].pop(num_credits);
   while (payload) {
-    num_credits -= payload->num_bytes();
+    num_credits -= payload->numBytes();
     //this actually doesn't create any new delay
     //this message was already queued so num_bytes
     //was already added to bytes_delayed
@@ -153,30 +151,30 @@ pisces_buffer::handle_credit(event* ev)
 }
 
 void
-pisces_buffer::handle_payload(event* ev)
+PiscesBuffer::handlePayload(Event* ev)
 {
-  auto pkt = static_cast<pisces_packet*>(ev);
-  pkt->set_arrival(now());
+  auto pkt = static_cast<PiscesPacket*>(ev);
+  pkt->setArrival(now());
   int dst_vc = pkt->vc();
 
 #if SSTMAC_SANITY_CHECK
   if (dst_vc >= credits_.size()) {
-    spkt_abort_printf("pisces_buffer::handle_payload: on %s, port %d, invalid vc %d",
-                     to_string().c_str(), pkt->edge_outport(), dst_vc);
+    spkt_abort_printf("pisces_buffer::handlePayload: on %s, port %d, invalid vc %d",
+                     toString().c_str(), pkt->edge_outport(), dst_vc);
   }
 #endif
 
   int& num_credits = credits_[dst_vc];
   pisces_debug(
     "On %s with %d credits, handling payload {%s} for vc:%d",
-    to_string().c_str(), num_credits,
-    pkt->to_string().c_str(), dst_vc);
+    toString().c_str(), num_credits,
+    pkt->toString().c_str(), dst_vc);
 
   // it either gets queued or gets sent
   // either way there's a delay accumulating for other messages
-  bytes_delayed_ += pkt->num_bytes();
-  if (num_credits >= pkt->num_bytes()) {
-    num_credits -= pkt->num_bytes();
+  bytes_delayed_ += pkt->numBytes();
+  if (num_credits >= pkt->numBytes()) {
+    num_credits -= pkt->numBytes();
     send(arb_, pkt, input_, output_);
   } else {
 #if SSTMAC_SANITY_CHECK
@@ -188,102 +186,28 @@ pisces_buffer::handle_payload(event* ev)
   }
 }
 
-timestamp
-pisces_buffer::send_payload(pisces_packet *pkt)
+Timestamp
+PiscesBuffer::sendPayload(PiscesPacket *pkt)
 {
-  pkt->set_arrival(now());
+  pkt->setArrival(now());
   int dst_vc = pkt->vc();
   int& num_credits = credits_[dst_vc];
   // it either gets queued or gets sent
   // either way there's a delay accumulating for other messages
-  bytes_delayed_ += pkt->num_bytes();
-  num_credits -= pkt->num_bytes();
+  bytes_delayed_ += pkt->numBytes();
+  num_credits -= pkt->numBytes();
   return send(arb_, pkt, input_, output_);
 }
 
-void
-pisces_buffer::deadlock_check()
-{
-#if !SSTMAC_INTEGRATED_SST_CORE
-  for (int i=0; i < queues_.size(); ++i){
-    payload_queue& queue = queues_[i];
-    pisces_packet* pkt = queue.front();
-    if (pkt){
-      int vc = pkt->next_vc();
-      deadlocked_channels_.insert(vc);
-      vc = update_vc_ ? pkt->next_vc() : pkt->vc();
-      std::cerr << "Starting deadlock check on " << to_string() << " on queue " << i
-        << " going to " << output_.link->to_string()
-        << " outport=" << pkt->edge_outport()
-        << " vc=" << vc
-        << std::endl;
-      output_.link->deadlock_check(pkt);
-    }
-  }
-#endif
-}
-
-void
-pisces_buffer::build_blocked_messages()
-{
-  //std::cerr << "\tbuild blocked messages on " << to_string() << std::endl;
-  for (int i=0; i < queues_.size(); ++i){
-    payload_queue& queue = queues_[i];
-    pisces_packet* pkt = queue.pop(1000000);
-    while (pkt){
-      blocked_messages_[pkt->vc()].push_back(pkt);
-      //std::cerr << "\t\t" << "into port=" << msg->inport() << " vc=" << msg->vc()
-      //  << " out on port=" << msg->port() << " vc=" << msg->routable_message::vc() << std::endl;
-      pkt = queue.pop(10000000);
-    }
-  }
-}
-
-void
-pisces_buffer::deadlock_check(event* ev)
-{
-#if !SSTMAC_INTEGRATED_SST_CORE
-  if (blocked_messages_.empty()){
-    build_blocked_messages();
-  }
-
-  pisces_packet* payload = safe_cast(pisces_packet, ev);
-  int vc = update_vc_ ? payload->next_vc() : payload->vc();
-  if (deadlocked_channels_.find(vc) != deadlocked_channels_.end()){
-    spkt_throw_printf(sprockit::value_error,
-      "found deadlock:\n%s", to_string().c_str());
-  }
-
-  deadlocked_channels_.insert(vc);
-
-  std::list<pisces_packet*>& blocked = blocked_messages_[vc];
-  if (blocked.empty()){
-    int outport = payload->next_local_outport();
-    int inport = payload->next_local_inport();
-    spkt_abort_printf("channel is NOT blocked on deadlock check on outport=%d inport=%d vc=%d",
-      outport, inport, vc);
-  } else {
-    pisces_packet* next = blocked.front();
-    std::cerr << to_string() << " going to "
-      << output_.link->to_string()
-      << " outport=" << next->edge_outport()
-      << " vc=" << next->next_vc()
-      << " : " << next->to_string()
-      << std::endl;
-    output_.link->deadlock_check(next);
-  }
-#endif
-}
-
 int
-pisces_buffer::queue_length() const
+PiscesBuffer::queueLength() const
 {
-  uint32_t bytes_sending = arb_->bytes_sending(now());
+  uint32_t bytes_sending = arb_->bytesSending(now());
   uint32_t total_bytes_pending = bytes_sending + bytes_delayed_;
   int queue_length = total_bytes_pending / packet_size_;
   debug_printf(sprockit::dbg::pisces | sprockit::dbg::pisces_queue,
     "On %s, %u bytes delayed, %u bytes sending, %d total pending, %d packets in queue",
-     to_string().c_str(),
+     toString().c_str(),
      bytes_delayed_,
      bytes_sending,
      total_bytes_pending, queue_length);

@@ -54,13 +54,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class mutex_thread_lock
+class MutexThreadLock
 {
 
  public:
-  mutex_thread_lock();
+  MutexThreadLock();
 
-  ~mutex_thread_lock();
+  ~MutexThreadLock();
 
   void lock();
 
@@ -80,12 +80,12 @@ class mutex_thread_lock
 };
 
 #if SSTMAC_USE_SPINLOCK
-class spin_thread_lock
+class SpinThreadLock
 {
  public:
-  spin_thread_lock();
+  SpinThreadLock();
 
-  ~spin_thread_lock();
+  ~SpinThreadLock();
 
   void lock();
 
@@ -105,12 +105,12 @@ class spin_thread_lock
 #endif
 
 #if SSTMAC_USE_SPINLOCK
-typedef spin_thread_lock thread_lock;
+typedef SpinThreadLock thread_lock;
 #else
-typedef mutex_thread_lock thread_lock;
+typedef MutexThreadLock thread_lock;
 #endif
 
-class lockable {
+class Lockable {
  public:
   void lock(){
 #if SSTMAC_USE_MULTITHREAD

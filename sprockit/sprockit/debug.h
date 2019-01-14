@@ -93,7 +93,7 @@ class debug_int
       return fields;
     }
 
-    std::string to_string() const;
+    std::string toString() const;
 
     uint64_t fields;
 };
@@ -137,7 +137,7 @@ class debug
   static std::map<std::string, std::string>* docstrings_;
   static debug_prefix_fxn* prefix_fxn;
 
-  static void delete_statics();
+  static void deleteStatics();
 
   /** The bitmask corresponding to all slots that were active at the beginning */
   static debug_int start_bitmask_;

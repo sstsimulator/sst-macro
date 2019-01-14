@@ -58,7 +58,7 @@ void
 start_allreduce()
 {
   int tag = 12;
-  comm_allreduce<int,Add>(0, 0, 256, tag, message::default_cq);
+  comm_allreduce<int,Add>(0, 0, 256, tag, Message::default_cq);
 }
 
 void
@@ -66,7 +66,7 @@ start_barrier()
 {
   int tag = 20;
   //then execute barrier
-  comm_barrier(tag, message::default_cq);
+  comm_barrier(tag, Message::default_cq);
 }
 
 int
@@ -74,7 +74,7 @@ main(int argc, char **argv)
 {
   comm_init();
 
-  sumi::transport* tport = sumi_api();
+  sumi::Transport* tport = sumi_api();
 
   int me = comm_rank();
 
@@ -82,7 +82,7 @@ main(int argc, char **argv)
     start_barrier();
     start_allreduce();
   }
-  message* msg = comm_poll();
+  Message* msg = comm_poll();
   msg = comm_poll();
 
   comm_finalize();

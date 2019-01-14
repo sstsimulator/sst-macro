@@ -62,8 +62,8 @@ equals(const std::vector<int>& coords, int x, int y, int z)
   return coords[0] == x && coords[1] == y && coords[2] == z;
 }
 
-torus::torus(sprockit::sim_parameters* params) :
-  cartesian_topology(params)
+Torus::Torus(sprockit::sim_parameters* params) :
+  CartesianTopology(params)
 {
   num_switches_ = 1;
   diameter_ = 0;
@@ -74,7 +74,7 @@ torus::torus(sprockit::sim_parameters* params) :
 }
 
 void
-torus::endpoints_connected_to_injection_switch(switch_id swaddr,
+Torus::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
   int total_ports = dimensions_.size() * 2;
@@ -89,7 +89,7 @@ torus::endpoints_connected_to_injection_switch(switch_id swaddr,
 }
 
 int
-torus::shortest_distance(int dim, int src, int dst) const
+Torus::shortestDistance(int dim, int src, int dst) const
 {
   int up_distance, down_distance;
   if (dst > src) {
@@ -110,9 +110,9 @@ torus::shortest_distance(int dim, int src, int dst) const
 }
 
 int
-torus::minimal_distance(
-  switch_id src,
-  switch_id dst) const
+Torus::minimalDistance(
+  SwitchId src,
+  SwitchId dst) const
 {
   int div = 1;
   int ndim = dimensions_.size();
@@ -120,7 +120,7 @@ torus::minimal_distance(
   for (int i=0; i < ndim; ++i){
     int srcX = (src / div) % dimensions_[i];
     int dstX = (dst / div) % dimensions_[i];
-    dist = shortest_distance(i, srcX, dstX);
+    dist = shortestDistance(i, srcX, dstX);
     div *= dimensions_[i];
   }
 
@@ -128,7 +128,7 @@ torus::minimal_distance(
 }
 
 bool
-torus::shortest_path_positive(
+Torus::shortestPathPositive(
   int dim, int src, int dst) const
 {
   int up_distance, down_distance;
@@ -143,7 +143,7 @@ torus::shortest_path_positive(
 }
 
 void
-torus::configure_individual_port_params(switch_id src,
+Torus::configureIndividualPortParams(SwitchId src,
                                           sprockit::sim_parameters *switch_params) const
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
@@ -155,14 +155,14 @@ torus::configure_individual_port_params(switch_id src,
     double port_bw = bw * red_[i];
     int credits = bufsize * red_[i];
     for (int dir=0; dir < 2; ++dir){
-      int port = convert_to_port(i, dir);
-      setup_port_params(port, credits, port_bw, link_params, switch_params);
+      int port = convertToPort(i, dir);
+      setupPortParams(port, credits, port_bw, link_params, switch_params);
     }
   }
 }
 
 void
-torus::connected_outports(switch_id src, std::vector<connection>& conns) const
+Torus::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   int ndims = dimensions_.size();
   int dim_stride = 1;
@@ -181,11 +181,11 @@ torus::connected_outports(switch_id src, std::vector<connection>& conns) const
       minus_jump = last_row;
     }
 
-    switch_id plus_partner = src + plus_jump * dim_stride;
-    int plus_port = convert_to_port(i, pos);
+    SwitchId plus_partner = src + plus_jump * dim_stride;
+    int plus_port = convertToPort(i, pos);
 
-    switch_id minus_partner = src + minus_jump * dim_stride;
-    int minus_port = convert_to_port(i, neg);
+    SwitchId minus_partner = src + minus_jump * dim_stride;
+    int minus_port = convertToPort(i, neg);
 
     conns[cidx].src = src;
     conns[cidx].dst = plus_partner;
@@ -204,7 +204,7 @@ torus::connected_outports(switch_id src, std::vector<connection>& conns) const
 }
 
 coordinates
-torus::switch_coords(switch_id uid) const
+Torus::switchCoords(SwitchId uid) const
 {
   int div = 1;
   int ndim = dimensions_.size();
@@ -216,8 +216,8 @@ torus::switch_coords(switch_id uid) const
   return coords;
 }
 
-switch_id
-torus::switch_addr(const coordinates& coords) const
+SwitchId
+Torus::switchAddr(const coordinates& coords) const
 {
   int ret = 0;
   int mult = 1;
@@ -225,14 +225,14 @@ torus::switch_addr(const coordinates& coords) const
     ret += coords[i] * mult;
     mult *= dimensions_[i];
   }
-  return switch_id(ret);
+  return SwitchId(ret);
 }
 
 
-topology::vtk_switch_geometry
-torus::get_vtk_geometry(switch_id sid) const
+Topology::vtk_switch_geometry
+Torus::getVtkGeometry(SwitchId sid) const
 {
-  coordinates coords = switch_coords(sid);
+  coordinates coords = switchCoords(sid);
   int ndims = dimensions_.size();
   if (ndims > 3 || ndims < 2){
     spkt_abort_printf("cannot generate xyz coordinates for topologies with ndims=%d - only 2D or 3D torus allowed",
@@ -252,12 +252,12 @@ torus::get_vtk_geometry(switch_id sid) const
 
   std::vector<vtk_switch_geometry::port_geometry> ports(6);
   /**
-  faces[convert_to_port(0,0)] = plusXface;
-  faces[convert_to_port(0,1)] = minusXface;
-  faces[convert_to_port(1,0)] = plusYface;
-  faces[convert_to_port(1,1)] = minusYface;
-  faces[convert_to_port(2,0)] = plusZface;
-  faces[convert_to_port(2,1)] = minusZface;
+  faces[convertToPort(0,0)] = plusXface;
+  faces[convertToPort(0,1)] = minusXface;
+  faces[convertToPort(1,0)] = plusYface;
+  faces[convertToPort(1,1)] = minusYface;
+  faces[convertToPort(2,0)] = plusZface;
+  faces[convertToPort(2,1)] = minusZface;
   */
 
   vtk_switch_geometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,

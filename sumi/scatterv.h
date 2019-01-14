@@ -52,28 +52,28 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class btree_scatterv_actor :
-  public dag_collective_actor
+class BtreeScattervActor :
+  public DagCollectiveActor
 {
 
  public:
-  std::string to_string() const override {
+  std::string toString() const override {
     return "btree scatterv actor";
   }
 
-  btree_scatterv_actor(collective_engine* engine, int root, void *dst, void *src,
+  BtreeScattervActor(CollectiveEngine* engine, int root, void *dst, void *src,
                        int* send_counts, int recvcnt, int type_size, int tag,
-                       int cq_id, communicator* comm) :
-    dag_collective_actor(collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
+                       int cq_id, Communicator* comm) :
+    DagCollectiveActor(collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
     root_(root), send_counts_(send_counts), recvcnt_(recvcnt) {}
 
  protected:
-  void finalize_buffers() override;
-  void init_buffers() override;
-  void init_dag() override;
-  void init_tree() override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void initTree() override;
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
   int root_;
@@ -84,23 +84,23 @@ class btree_scatterv_actor :
 
 };
 
-class btree_scatterv :
-  public dag_collective
+class BtreeScatterv :
+  public DagCollective
 {
 
  public:
-  btree_scatterv(collective_engine* engine, int root, void *dst, void *src,
+  BtreeScatterv(CollectiveEngine* engine, int root, void *dst, void *src,
                  int* send_counts, int recvcnt, int type_size, int tag,
-                 int cq_id, communicator* comm)
-    : dag_collective(scatterv, engine, dst, src,type_size, tag, cq_id, comm),
+                 int cq_id, Communicator* comm)
+    : DagCollective(scatterv, engine, dst, src,type_size, tag, cq_id, comm),
     root_(root), send_counts_(send_counts), recvcnt_(recvcnt) {}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "btree scatterv";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new btree_scatterv_actor(engine_, root_, dst_buffer_, src_buffer_,
+  DagCollectiveActor* newActor() const override {
+    return new BtreeScattervActor(engine_, root_, dst_buffer_, src_buffer_,
                                     send_counts_, recvcnt_, type_size_, tag_, cq_id_, comm_);
   }
 

@@ -12,7 +12,7 @@
 
 namespace std {
 
-using mutex = sstmac::sw::std_mutex;
+using mutex = sstmac::sw::stdMutex;
 
 struct once_flag {
   constexpr once_flag() noexcept : called(false) {}

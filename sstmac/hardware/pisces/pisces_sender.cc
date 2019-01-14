@@ -59,13 +59,13 @@ static int num_credits = 0;
 namespace sstmac {
 namespace hw {
 
-pisces_packet*
+PiscesPacket*
 payload_queue::pop(int num_credits)
 {
   auto it = queue.begin(), end = queue.end();
   for (; it != end; ++it){
-    pisces_packet* pkt = *it;
-    if (pkt->num_bytes() <= num_credits){
+    PiscesPacket* pkt = *it;
+    if (pkt->numBytes() <= num_credits){
       queue.erase(it);
       return pkt;
     }
@@ -73,52 +73,52 @@ payload_queue::pop(int num_credits)
   return nullptr;
 }
 
-pisces_sender::pisces_sender(
+PiscesSender::PiscesSender(
   sprockit::sim_parameters* params,
-  event_scheduler* parent,
+  SST::Component* parent,
   bool update_vc) :
-  event_subcomponent(parent), //no self handlers
+  SubComponent(parent), //no self handlers
   stat_collector_(nullptr),
   update_vc_(update_vc)
 {
-  send_lat_ = params->get_time_param("send_latency");
-  credit_lat_ = params->get_time_param("credit_latency");
+  send_lat_ = params->get_time_param("sendLatency");
+  credit_lat_ = params->get_time_param("creditLatency");
 }
 
 void
-pisces_sender::configure_payload_port_latency(sprockit::sim_parameters* params)
+PiscesSender::configurePayloadPortLatency(sprockit::sim_parameters* params)
 {
-  if (!params->has_param("send_latency")){
-    params->add_param_override("send_latency", params->get_param("latency"));
+  if (!params->has_param("sendLatency")){
+    params->add_param_override("sendLatency", params->get_param("latency"));
   }
-  if (!params->has_param("credit_latency")){
-    params->add_param_override("credit_latency", "0ns");
+  if (!params->has_param("creditLatency")){
+    params->add_param_override("creditLatency", "0ns");
   }
 }
 
 void
-pisces_sender::configure_credit_port_latency(sprockit::sim_parameters* params)
+PiscesSender::configureCreditPortLatency(sprockit::sim_parameters* params)
 {
-  if (!params->has_param("send_latency")){
-    params->add_param_override("send_latency", "0ns");
+  if (!params->has_param("sendLatency")){
+    params->add_param_override("sendLatency", "0ns");
   }
-  if (!params->has_param("credit_latency")){
-    params->add_param_override("credit_latency", params->get_param("latency"));
+  if (!params->has_param("creditLatency")){
+    params->add_param_override("creditLatency", params->get_param("latency"));
   }
 }
 
 void
-pisces_sender::send_credit(
-  input& inp, pisces_packet* payload,
-  timestamp credits_ready)
+PiscesSender::sendCredit(
+  input& inp, PiscesPacket* payload,
+  Timestamp credits_ready)
 {
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
-  pisces_credit* credit = new pisces_credit(inp.port_to_credit,
-                                            src_vc, payload->num_bytes());
+  PiscesCredit* credit = new PiscesCredit(inp.port_to_credit,
+                                            src_vc, payload->numBytes());
 
-  timestamp credit_departure_delay = credits_ready - now();
+  Timestamp credit_departure_delay = credits_ready - now();
   if (credit_departure_delay < credit_lat_){
-    credit_departure_delay = timestamp();
+    credit_departure_delay = Timestamp();
   } else {
     //assume credits pipeline to arrive exactly when ready
     credit_departure_delay -= credit_lat_;
@@ -126,30 +126,29 @@ pisces_sender::send_credit(
   pisces_debug(
       "On %s:%p on inport %d, crediting %s:%p port:%d:%d vc:%d {%s}"
       "after delay %9.5e after latency %9.5e with %p",
-      to_string().c_str(), this, int(payload->next_local_inport()),
-      inp.link->to_string().c_str(), inp.link,
-      payload->edge_outport(), payload->next_local_outport(), src_vc,
-      payload->to_string().c_str(),
+      toString().c_str(), this, int(payload->nextLocalInport()),
+      inp.link->toString().c_str(), inp.link,
+      payload->edgeOutport(), payload->nextLocalOutport(), src_vc,
+      payload->toString().c_str(),
       credit_departure_delay.sec(), credit_lat_.sec(),
       credit);
   //simulate more realistic pipelining of credits
-  inp.link->validate_latency(credit_lat_);
-  inp.link->send_extra_delay(credit_departure_delay, credit);
+  inp.link->send(credit_departure_delay, credit);
 }
 
-timestamp
-pisces_sender::send(
-  pisces_bandwidth_arbitrator* arb,
-  pisces_packet* pkt,
+Timestamp
+PiscesSender::send(
+  PiscesBandwidthArbitrator* arb,
+  PiscesPacket* pkt,
   input& to_credit, output& to_send)
 {
-  timestamp now_ = now();
+  Timestamp now_ = now();
   pkt_arbitration_t st;
   st.incoming_bw = pkt->bw();
   st.now = now_;
   st.pkt = pkt;
-  st.src_outport = pkt->next_local_inport();
-  st.dst_inport = pkt->next_local_inport();
+  st.src_outport = pkt->nextLocalInport();
+  st.dst_inport = pkt->nextLocalInport();
 
   if (arb) {
     arb->arbitrate(st);
@@ -157,53 +156,52 @@ pisces_sender::send(
     st.head_leaves = st.tail_leaves = st.credit_leaves = now_;
   }
 
-  if (stat_collector_) stat_collector_->collect_single_event(st);
+  if (stat_collector_) stat_collector_->collectSingleEvent(st);
 
 #if SSTMAC_SANITY_CHECK
-  if (pkt->bw() <= 0 && pkt->bw() != pisces_packet::uninitialized_bw) {
+  if (pkt->bw() <= 0 && pkt->bw() != PiscesPacket::uninitialized_bw) {
     spkt_throw_printf(sprockit::value_error,
                      "On %s, got negative bandwidth for msg %s",
-                     to_string().c_str(),
-                     pkt->to_string().c_str());
+                     toString().c_str(),
+                     pkt->toString().c_str());
   }
 #endif
 
   if (to_credit.link) {
-    send_credit(to_credit, pkt, st.credit_leaves);
+    sendCredit(to_credit, pkt, st.credit_leaves);
   } else {
     pisces_debug("On %s:%p no link to credit for port:%d vc:%d -> %s",
-                 to_string().c_str(), this, pkt->next_local_inport(), pkt->next_vc(),
-                 pkt->to_string().c_str());
+                 toString().c_str(), this, pkt->nextLocalInport(), pkt->nextVC(),
+                 pkt->toString().c_str());
   }
 
   pisces_debug(
     "On %s:%p, sending on local port:%d vc:%d {%s} to handler %s:%p on inport %d",
-    to_string().c_str(), this,
-    pkt->next_local_outport(), pkt->next_vc(),
-    pkt->to_string().c_str(),
-    to_send.link->to_string().c_str(), to_send.link,
-    pkt->next_local_inport());
+    toString().c_str(), this,
+    pkt->nextLocalOutport(), pkt->nextVC(),
+    pkt->toString().c_str(),
+    to_send.link->toString().c_str(), to_send.link,
+    pkt->nextLocalInport());
 
-  if (pkt->next_vc() < 0){
+  if (pkt->nextVC() < 0){
     spkt_abort_printf("packet VC did not get set before sending: %s",
-                      pkt->to_string().c_str());
+                      pkt->toString().c_str());
   }
 
   //weird hack to update vc from routing
-  if (update_vc_) pkt->update_vc();
-  pkt->advance_stage();
+  if (update_vc_) pkt->updateVC();
+  pkt->advanceStage();
 
-  timestamp departure_delay = st.head_leaves - now_;
-  to_send.link->validate_latency(send_lat_);
-  to_send.link->send_extra_delay(departure_delay, pkt);
+  Timestamp departure_delay = st.head_leaves - now_;
+  to_send.link->send(departure_delay, pkt);
 
   return st.tail_leaves;
 }
 
 std::string
-pisces_sender::to_string() const
+PiscesSender::toString() const
 {
-  return pisces_name() + topology::global()->label(component_id());
+  return piscesName() + Topology::global()->label(componentId());
 }
 
 }

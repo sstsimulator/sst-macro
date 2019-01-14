@@ -61,17 +61,17 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-using sstmac::sw::app_id;
-using sstmac::sw::software_id;
-using sstmac::node_id;
+using sstmac::sw::AppId;
+using sstmac::sw::SoftwareId;
+using sstmac::NodeId;
 
 /**
  * An MPI communicator handle.
  */
-class mpi_comm : public communicator
+class MpiComm : public Communicator
 {
  public:
-  friend class mpi_api;
+  friend class MpiApi;
 
   enum topotypes {
     TOPO_NONE, TOPO_GRAPH, TOPO_CART
@@ -80,19 +80,19 @@ class mpi_comm : public communicator
   static const int proc_null = -1;
 
  public:
-  mpi_comm();
+  MpiComm();
 
-  mpi_comm(
+  MpiComm(
     MPI_Comm id,
     int rank,
-    mpi_group* peers,
-    app_id aid,
+    MpiGroup* peers,
+    AppId aid,
     bool del_grp = false,
     topotypes ty = TOPO_NONE);
 
-  virtual ~mpi_comm();
+  virtual ~MpiComm();
 
-  void set_name(std::string name) {
+  void setName(std::string name) {
     name_ = name;
   }
 
@@ -100,25 +100,25 @@ class mpi_comm : public communicator
     return name_;
   }
 
-  static void delete_statics();
+  static void deleteStatics();
 
-  topotypes topo_type() const {
+  topotypes topoType() const {
     return topotype_;
   }
 
-  mpi_group* group() {
+  MpiGroup* group() {
     return group_;
   }
 
-  bool delete_group() const {
+  bool deleteGroup() const {
     return del_grp_;
   }
 
-  void dup_keyvals(mpi_comm* m);
+  void dupKeyvals(MpiComm* m);
 
-  static mpi_comm* comm_null;
+  static MpiComm* comm_null;
 
-  std::string to_string() const;
+  std::string toString() const;
 
   int rank() const {
     return rank_;
@@ -130,43 +130,43 @@ class mpi_comm : public communicator
     return id_;
   }
 
-  void set_keyval(keyval* k, void* val);
+  void setKeyval(keyval* k, void* val);
 
-  void get_keyval(keyval* k, void* val, int* flag);
+  void getKeyval(keyval* k, void* val, int* flag);
 
-  app_id app() const {
+  AppId app() const {
     return aid_;
   }
 
-  int comm_to_global_rank(int comm_rank) const {
-    return int(peer_task(comm_rank));
+  int commToGlobalRank(int comm_rank) const {
+    return int(peerTask(comm_rank));
   }
 
-  int global_to_comm_rank(int global_rank) const;
+  int globalToCommRank(int global_rank) const;
 
   int nproc() const {
     return size();
   }
 
-  int next_collective_tag();
+  int nextCollectiveTag();
 
-  task_id my_task() const;
+  TaskId myTask() const;
 
-  task_id peer_task(int rank) const;
+  TaskId peerTask(int rank) const;
 
-  inline bool operator==(mpi_comm* other) const {
+  inline bool operator==(MpiComm* other) const {
     return ((rank_ == other->rank_) && (id_ == other->id_));
   }
 
-  inline bool operator!=(mpi_comm* other) const {
+  inline bool operator!=(MpiComm* other) const {
     return !this->operator==(other);
   }
 
-  void add_request(int tag, mpi_request* req){
+  void addRequest(int tag, MpiRequest* req){
     ireqs_[tag] = req;
   }
 
-  mpi_request* get_request(int tag) const {
+  MpiRequest* getRequest(int tag) const {
     auto it = ireqs_.find(tag);
     if (it == ireqs_.end()){
       spkt_throw_printf(sprockit::value_error,
@@ -177,20 +177,20 @@ class mpi_comm : public communicator
   }
 
  private:
-  friend class mpi_comm_factory;
+  friend class MpiCommFactory;
 
-  void set_id(MPI_Comm id){
+  void setId(MPI_Comm id){
     id_ = id;
   }
 
   /// The tasks participating in this communicator.  This is only used for an mpicomm* which is NOT WORLD_COMM.
-  mpi_group* group_;
+  MpiGroup* group_;
 
   uint16_t next_collective_tag_;
 
   std::unordered_map<int, keyval*> keyvals_;
 
-  app_id aid_;
+  AppId aid_;
 
   bool del_grp_;
 
@@ -198,7 +198,7 @@ class mpi_comm : public communicator
 
   std::string name_;
 
-  std::map<int, mpi_request*> ireqs_;
+  std::map<int, MpiRequest*> ireqs_;
 
   MPI_Comm id_;
 

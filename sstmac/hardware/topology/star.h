@@ -55,60 +55,60 @@ namespace hw {
  *  The star topology generates a network which connects
     each node a central hub.
  */
-class star : public structured_topology
+class Star : public StructuredTopology
 {
-  FactoryRegister("star | crossbar", topology, star)
+  FactoryRegister("star | crossbar", Topology, Star)
  public:
-  std::string to_string() const override {
+  std::string toString() const override {
     return "star topology";
   }
 
-  virtual ~star() {}
+  virtual ~Star() {}
 
-  star(sprockit::sim_parameters* params);
+  Star(sprockit::sim_parameters* params);
 
   int diameter() const override {
     return 1;
   }
 
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     return concentration();
   }
 
-  switch_id num_leaf_switches() const override {
+  SwitchId numLeafSwitches() const override {
     return 1;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const {
+  int minimalDistance(SwitchId src, SwitchId dst) const {
     return 1;
   }
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
+  int numHopsToNode(NodeId src, NodeId dst) const override {
     return 1;
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swaddr,
+  void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                std::vector<injection_port>& nodes) const override;
 
-  bool uniform_switch_ports() const override {
+  bool uniformSwitchPorts() const override {
     return true;
   }
 
-  bool uniform_switches() const override {
+  bool uniformSwitches() const override {
     return true;
   }
 
-  void configure_individual_port_params(switch_id src,
+  void configureIndividualPortParams(SwitchId src,
         sprockit::sim_parameters *switch_params) const override;
 
-  void connected_outports(switch_id src,
+  void connectedOutports(SwitchId src,
        std::vector<connection>& conns) const override;
 
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return 1;
   }
 
-  node_id num_nodes() const override {
+  NodeId numNodes() const override {
     return concentration_;
   }
 

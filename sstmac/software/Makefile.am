@@ -93,7 +93,7 @@ nobase_library_include_HEADERS = \
   process/key.h \
   process/host_timer.h \
   process/operating_system.h \
-  process/operating_system_fwd.h \
+  process/operating_system.h \
   process/software_id.h \
   process/task_id.h \
   process/memoize.h \
@@ -155,7 +155,7 @@ nobase_library_include_HEADERS = \
 
 if HAVE_UCONTEXT
   libsstmac_sw_la_SOURCES += \
-     threading/threading_ucontext.cc 
+     threading/ThreadingUContext.cc 
 endif
 
 if HAVE_PTH

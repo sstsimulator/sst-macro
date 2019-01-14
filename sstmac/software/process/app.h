@@ -67,8 +67,8 @@ namespace sw {
 class mutex_t  {
  public:
   /** Blocking keys for those threads waiting on the mutex */
-  std::list<thread*> waiters;
-  std::list<thread*> conditionals;
+  std::list<Thread*> waiters;
+  std::list<Thread*> conditionals;
   bool locked;
 
   mutex_t() : locked(false)
@@ -84,45 +84,45 @@ typedef std::map<long, mutex_t*> condition_t;
  * Messaging models are supported through an api class,
  * which are stored by the app
  */
-class app : public thread
+class App : public Thread
 {
-  DeclareFactory(app, software_id, operating_system*)
+  DeclareFactory(App, SoftwareId, OperatingSystem*)
  public:
   typedef void (*destructor_fxn)(void*);
 
   typedef int (*main_fxn)(int argc, char** argv);
   typedef int (*empty_main_fxn)();
 
-  int allocate_tls_key(destructor_fxn fnx);
+  int allocateTlsKey(destructor_fxn fnx);
 
-  static sprockit::sim_parameters* get_params();
+  static sprockit::sim_parameters* getParams();
 
-  app* parent_app() const override {
-    return const_cast<app*>(this);
+  App* parentApp() const override {
+    return const_cast<App*>(this);
   }
 
-  static void delete_statics();
+  static void deleteStatics();
 
-  void sleep(timestamp time);
+  void sleep(Timestamp time);
 
-  void compute(timestamp time);
+  void compute(Timestamp time);
 
-  void compute_inst(compute_event* cmsg);
+  void computeInst(ComputeEvent* cmsg);
 
-  void compute_loop(uint64_t num_loops,
+  void computeLoop(uint64_t num_loops,
     int nflops_per_loop,
     int nintops_per_loop,
     int bytes_per_loop);
 
-  void compute_block_read(uint64_t bytes);
+  void computeBlockRead(uint64_t bytes);
 
-  void compute_block_write(uint64_t bytes);
+  void computeBlockWrite(uint64_t bytes);
 
-  void compute_block_memcpy(uint64_t bytes);
+  void computeBlockMemcpy(uint64_t bytes);
 
-  lib_compute_memmove* compute_lib();
+  LibComputeMemmove* computeLib();
 
-  virtual ~app();
+  virtual ~App();
 
   void cleanup() override;
 
@@ -130,7 +130,7 @@ class app : public thread
    * @brief skeleton_main
    * @return The return code that would be returned by a main
    */
-  virtual int skeleton_main() = 0;
+  virtual int skeletonMain() = 0;
 
   void run() override;
 
@@ -154,94 +154,94 @@ class app : public thread
    * Can be called from a constructor. This method does NOT throw.
    * @param thr
    */
-  void add_subthread(thread* thr);
+  void addSubthread(Thread* thr);
 
   /**
    * Let a parent application know a subthread has finished.
    * This completely erases the thread. There will be no record of this thread after calling this function.
    * @param thr A thread with initialized ID
    */
-  void remove_subthread(thread* thr);
+  void removeSubthread(Thread* thr);
 
-  void remove_subthread(uint32_t thr_id);
+  void removeSubthread(uint32_t thr_id);
 
   /**
    * @brief get_subthread
    * @param id
    * @return
    */
-  thread* get_subthread(uint32_t id);
+  Thread* getSubthread(uint32_t id);
 
   /**
    * Allocate a unique ID for a mutex variable
    * @return The unique ID
    */
-  int allocate_mutex();
+  int allocateMutex();
 
   /**
    * Allocate a unique ID for a condition variable
    * @return The unique ID
    */
-  int allocate_condition();
+  int allocateCondition();
 
   /**
    * Fetch a mutex object corresponding to their ID
    * @param id
    * @return The mutex object corresponding to the ID. Return NULL if no mutex is found.
    */
-  mutex_t* get_mutex(int id);
+  mutex_t* getMutex(int id);
 
   /**
    * Fetch a condition object corresponding to the ID
    * @param id
    * @return The condition object corresponding to the ID. Return NULL if not condition is found.
    */
-  condition_t* get_condition(int id);
+  condition_t* getCondition(int id);
 
-  bool erase_condition(int id);
+  bool eraseCondition(int id);
 
-  bool erase_mutex(int id);
+  bool eraseMutex(int id);
 
-  void* globals_storage() const {
+  void* globalsStorage() const {
     return globals_storage_;
   }
 
-  void* new_tls_storage() {
-    return allocate_data_segment(true);
+  void* newTlsStorage() {
+    return allocateDataSegment(true);
   }
 
-  const std::string& unique_name() const {
+  const std::string& uniqueName() const {
     return unique_name_;
   }
 
-  void set_unique_name(const std::string& name) {
+  void setUniqueName(const std::string& name) {
     unique_name_ = name;
   }
 
-  static void check_dlopen(int aid, sprockit::sim_parameters* params);
+  static void dlopenCheck(int aid, sprockit::sim_parameters* params);
 
-  static void check_dlclose(int aid);
+  static void dlcloseCheck(int aid);
 
  protected:
-  friend class thread;
+  friend class Thread;
 
-  app(sprockit::sim_parameters *params, software_id sid,
-      operating_system* os);
+  App(sprockit::sim_parameters *params, SoftwareId sid,
+      OperatingSystem* os);
 
-  api* _get_api(const char* name) override;
+  API* _get_api(const char* name) override;
 
   sprockit::sim_parameters* params_;
 
  private:
-  void check_dlclose(){
-    check_dlclose(aid());
+  void dlcloseCheck(){
+    dlcloseCheck(aid());
   }
 
-  char* allocate_data_segment(bool tls);
+  char* allocateDataSegment(bool tls);
 
-  void compute_detailed(uint64_t flops, uint64_t intops, uint64_t bytes, int nthread);
+  void computeDetailed(uint64_t flops, uint64_t intops, uint64_t bytes, int nthread);
 
-  lib_compute_memmove* compute_lib_;
+  LibComputeMemmove* compute_lib_;
   std::string unique_name_;
 
   int next_tls_key_;
@@ -249,11 +249,11 @@ class app : public thread
   int next_mutex_;
   uint64_t min_op_cutoff_;
 
-  std::map<long, thread*> subthreads_;
+  std::map<long, Thread*> subthreads_;
   std::map<int, mutex_t> mutexes_;
   std::map<int, condition_t> conditions_;
   std::map<int, destructor_fxn> tls_key_fxns_;
-  std::map<std::string, api*> apis_;
+  std::map<std::string, API*> apis_;
   std::map<std::string,std::string> env_;
 
   char env_string_[64];
@@ -275,18 +275,18 @@ class app : public thread
 
 };
 
-class user_app_cxx_full_main : public app
+class UserAppCxxFullMain : public App
 {
-  FactoryRegister("user_app_cxx_full_main", app, user_app_cxx_full_main)
+  FactoryRegister("UserAppCxxFullMain", App, UserAppCxxFullMain)
  public:
-  user_app_cxx_full_main(sprockit::sim_parameters* params, software_id sid,
-                         operating_system* os);
+  UserAppCxxFullMain(sprockit::sim_parameters* params, SoftwareId sid,
+                         OperatingSystem* os);
 
-  static void register_main_fxn(const char* name, app::main_fxn fxn);
+  static void registerMainFxn(const char* name, App::main_fxn fxn);
 
-  int skeleton_main() override;
+  int skeletonMain() override;
 
-  static void delete_statics();
+  static void deleteStatics();
 
   struct argv_entry {
     char** argv;
@@ -295,33 +295,33 @@ class user_app_cxx_full_main : public app
   };
 
  private:
-  void init_argv(argv_entry& entry);
+  void initArgv(argv_entry& entry);
 
-  static std::map<std::string, app::main_fxn>* main_fxns_;
-  static std::map<app_id, argv_entry> argv_map_;
-  app::main_fxn fxn_;
+  static std::map<std::string, App::main_fxn>* main_fxns_;
+  static std::map<AppId, argv_entry> argv_map_;
+  App::main_fxn fxn_;
 
 };
 
-class user_app_cxx_empty_main : public app
+class UserAppCxxEmptyMain : public App
 {
-  FactoryRegister("user_app_cxx_empty_main", app, user_app_cxx_empty_main)
+  FactoryRegister("UserAppCxxEmptyMain", App, UserAppCxxEmptyMain)
  public:
-  user_app_cxx_empty_main(sprockit::sim_parameters* params, software_id sid,
-                          operating_system* os);
+  UserAppCxxEmptyMain(sprockit::sim_parameters* params, SoftwareId sid,
+                          OperatingSystem* os);
 
-  static void register_main_fxn(const char* name, app::empty_main_fxn fxn);
+  static void registerMainFxn(const char* name, App::empty_main_fxn fxn);
 
-  int skeleton_main() override;
+  int skeletonMain() override;
 
  private:
-  static std::map<std::string, app::empty_main_fxn>* empty_main_fxns_;
-  app::empty_main_fxn fxn_;
+  static std::map<std::string, App::empty_main_fxn>* empty_main_fxns_;
+  App::empty_main_fxn fxn_;
 
 };
 
 /** utility function for computing stuff */
-void compute_time(double tsec);
+void computeTime(double tsec);
 
 }
 } // end of namespace sstmac.

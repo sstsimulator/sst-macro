@@ -155,7 +155,7 @@ otf2_writer::assign_global_comm_ids(mpi_api* mpi)
 }
 
 void
-otf2_writer::global_reduce(sstmac::parallel_runtime* rt)
+otf2_writer::globalReduce(sstmac::parallel_runtime* rt)
 {
   if (rt->nproc() == 1) return;
 
@@ -168,7 +168,7 @@ otf2_writer::clear()
 }
 
 void
-otf2_writer::dump_local_data()
+otf2_writer::dumpLocalData()
 {
   writer_.write_local_def_file();
   if (rank_ != 0){
@@ -178,10 +178,10 @@ otf2_writer::dump_local_data()
 }
 
 void
-otf2_writer::dump_global_data()
+otf2_writer::dumpGlobalData()
 {
   if (rank_ != 0){
-    spkt_abort_printf("main otf2_writer::dump_global_data() called on rank %d != 0", rank_);
+    spkt_abort_printf("main otf2_writer::dumpGlobalData() called on rank %d != 0", rank_);
   }
   writer_.write_global_def_file(event_counts_, all_comms_, min_time_, max_time_);
   writer_.close_archive();

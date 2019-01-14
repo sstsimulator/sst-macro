@@ -63,8 +63,8 @@ namespace hw {
 
 static const double PI = 3.141592653589793238462;
 
-dragonfly::dragonfly(sprockit::sim_parameters* params) :
-  cartesian_topology(params)
+Dragonfly::Dragonfly(sprockit::sim_parameters* params) :
+  CartesianTopology(params)
 {
   if (dimensions_.size() != 2){
     spkt_abort_printf("dragonfly topology geometry should have 2 entries: routers per group, num groups");
@@ -95,7 +95,7 @@ dragonfly::dragonfly(sprockit::sim_parameters* params) :
 }
 
 void
-dragonfly::endpoints_connected_to_injection_switch(switch_id swaddr,
+Dragonfly::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
   nodes.resize(concentration_);
@@ -108,7 +108,7 @@ dragonfly::endpoints_connected_to_injection_switch(switch_id swaddr,
 }
 
 int
-dragonfly::minimal_distance(switch_id src, switch_id dst) const
+Dragonfly::minimalDistance(SwitchId src, SwitchId dst) const
 {
   int srcA, srcG; get_coords(src, srcA, srcG);
   int dstA, dstG; get_coords(dst, dstA, dstG);
@@ -135,7 +135,7 @@ dragonfly::minimal_distance(switch_id src, switch_id dst) const
 
 
 void
-dragonfly::setup_port_params(sprockit::sim_parameters* params, int red, int port_offset, int num_ports) const
+Dragonfly::setupPortParams(sprockit::sim_parameters* params, int red, int port_offset, int num_ports) const
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
@@ -146,13 +146,13 @@ dragonfly::setup_port_params(sprockit::sim_parameters* params, int red, int port
 
   for (int i=0; i < num_ports; ++i){
     int port = port_offset + i;
-    sprockit::sim_parameters* port_params = topology
-        ::setup_port_params(port, credits, port_bw, link_params, params);
+    sprockit::sim_parameters* port_params = Topology
+        ::setupPortParams(port, credits, port_bw, link_params, params);
   }
 }
 
 void
-dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) const
+Dragonfly::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   int max_num_conns = (a_ - 1) + h_;
   conns.resize(max_num_conns);
@@ -165,7 +165,7 @@ dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) con
 
   for (int a = 0; a < a_; a++){
     if (a != myA){
-      switch_id dst = get_uid(a, myG);
+      SwitchId dst = get_uid(a, myG);
       connection& conn = conns[cidx++];
       conn.src = src;
       conn.dst = dst;
@@ -177,7 +177,7 @@ dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) con
   std::vector<int> groupConnections;
   group_wiring_->connected_routers(myA, myG, groupConnections);
   for (int h = 0; h < groupConnections.size(); ++h){
-    switch_id dst = groupConnections[h];
+    SwitchId dst = groupConnections[h];
     int dstG = computeG(dst);
     if (dstG != myG){
       connection& conn = conns[cidx++];
@@ -185,7 +185,7 @@ dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) con
       conn.dst = dst;
       conn.src_outport = h + a_;
       int dstA = computeA(dst);
-      conn.dst_inport = group_wiring_->input_group_port(myA, myG, h, dstA, dstG) + a_;
+      conn.dst_inport = group_wiring_->input_groupPort(myA, myG, h, dstA, dstG) + a_;
 
       top_debug("dragonfly (%d,%d:%d)->(%d,%d:%d)",
          myA, myG, conn.src_outport, dstA, dstG, conn.dst_inport);
@@ -196,14 +196,14 @@ dragonfly::connected_outports(switch_id src, std::vector<connection>& conns) con
 }
 
 void
-dragonfly::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
+Dragonfly::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters *switch_params) const
 {
-  setup_port_params(switch_params, red_[0], 0, a_);
-  setup_port_params(switch_params, red_[1], a_, h_);
+  setupPortParams(switch_params, red_[0], 0, a_);
+  setupPortParams(switch_params, red_[1], a_, h_);
 }
 
 bool
-dragonfly::is_curved_vtk_link(switch_id sid, int port) const
+Dragonfly::isCurvedVtkLink(SwitchId sid, int port) const
 {
   if (port >= a_){
     return false; //global link - these are straight lines
@@ -212,8 +212,8 @@ dragonfly::is_curved_vtk_link(switch_id sid, int port) const
   }
 }
 
-topology::vtk_switch_geometry
-dragonfly::get_vtk_geometry(switch_id sid) const
+Topology::vtk_switch_geometry
+Dragonfly::getVtkGeometry(SwitchId sid) const
 {
   /**
    * The switches are arranged in circle. The faces
@@ -293,27 +293,27 @@ inter_group_wiring::inter_group_wiring(sprockit::sim_parameters *params, int a, 
 {
 }
 
-switch_id
-inter_group_wiring::random_intermediate(router* rtr, switch_id current_sw, switch_id dest_sw, uint32_t seed)
+SwitchId
+inter_group_wiring::randomIntermediate(Router* rtr, SwitchId current_sw, SwitchId dest_sw, uint32_t seed)
 {
   int srcA = current_sw % g_;
   int srcG = current_sw / g_;
   int dstA = dest_sw % g_;
   int dstG = dest_sw / g_;
-  switch_id sid = current_sw;
+  SwitchId sid = current_sw;
   uint32_t attempt = 0;
   if (srcG == dstG){
     int interA = srcA;
     while (interA == srcA || interA == dstA){
-      interA = rtr->random_number(a_, attempt, seed);
+      interA = rtr->randomNumber(a_, attempt, seed);
       ++attempt;
     }
     return srcG*a_ + interA;
   } else {
-    int interA = rtr->random_number(a_, attempt, seed);
+    int interA = rtr->randomNumber(a_, attempt, seed);
     int interG = srcG;
     while (interG == srcG || interG == dstG){
-      interG = rtr->random_number(g_, attempt, seed);
+      interG = rtr->randomNumber(g_, attempt, seed);
       ++attempt;
     }
     return interG*a_ + interA;
@@ -337,7 +337,7 @@ class single_link_group_wiring : public inter_group_wiring
     }
   }
 
-  int input_group_port(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
+  int input_groupPort(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
     if (srcH != 0){
       spkt_abort_printf("h must be 1 for single link inter-group pattern");
     }
@@ -362,7 +362,7 @@ class single_link_group_wiring : public inter_group_wiring
     connected.resize(1);
     int dstG = (srcG+g_+deltaG)%g_;
     int dstA = (srcA+a_+deltaA)%a_;
-    switch_id dst = dstG*a_ + dstA;
+    SwitchId dst = dstG*a_ + dstA;
     connected[0] = dst;
   }
 
@@ -401,7 +401,7 @@ class circulant_group_wiring : public inter_group_wiring
     }
   }
 
-  int input_group_port(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
+  int input_groupPort(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
     if (srcH % 2 == 0){
       return srcH + 1;
     } else {
@@ -423,12 +423,12 @@ class circulant_group_wiring : public inter_group_wiring
     for (int h=1; h <= half; ++h){
       int plusG = mod(srcG + srcA*half + h, g_);
       if (plusG != srcG){
-        switch_id dst = plusG*a_ + dstA;
+        SwitchId dst = plusG*a_ + dstA;
         connected.push_back(dst); //full switch ID
       }
       int minusG = mod(srcG - srcA*half - h, g_);
       if (minusG != srcG){
-        switch_id dst = minusG*a_ + dstA;
+        SwitchId dst = minusG*a_ + dstA;
         connected.push_back(dst); //full switch ID
       }
     }
@@ -481,7 +481,7 @@ class alltoall_group_wiring : public inter_group_wiring
     if (a_ % covering_) spkt_abort_printf("dragonfly covering=%d must evenly divide group_size=%d", covering_, a_);
   }
 
-  int input_group_port(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
+  int input_groupPort(int srcA, int srcG, int srcH, int dstA, int dstG) const override {
     int deltaA = (srcA + a_ - dstA) % a_; //mod arithmetic in case srcA < dstA
     int offset = deltaA / stride_;
     if (srcG < dstG){
@@ -510,21 +510,21 @@ class alltoall_group_wiring : public inter_group_wiring
     }
   }
 
-  switch_id random_intermediate(router* rtr, switch_id current_sw, switch_id dest_sw, uint32_t seed) override
+  SwitchId randomIntermediate(Router* rtr, SwitchId current_sw, SwitchId dest_sw, uint32_t seed) override
   {
     int srcG = current_sw / a_;
     int dstG = dest_sw / a_;
     uint32_t attempt = 0;
     if (srcG == dstG){
-      return inter_group_wiring::random_intermediate(rtr, current_sw, dest_sw, seed);
+      return inter_group_wiring::randomIntermediate(rtr, current_sw, dest_sw, seed);
     } else {
       int srcA = current_sw % a_;
-      int interG = rtr->random_number(g_, attempt, seed);
+      int interG = rtr->randomNumber(g_, attempt, seed);
       while (interG == srcG || interG == dstG){
-        interG = rtr->random_number(g_, attempt, seed);
+        interG = rtr->randomNumber(g_, attempt, seed);
       }
       //go to a router directly connected to srcA
-      int srcH = rtr->random_number(h_, attempt, seed);
+      int srcH = rtr->randomNumber(h_, attempt, seed);
       int interA = (srcH * stride_ + srcA) % a_;
       return interG*a_ + interA;
     }

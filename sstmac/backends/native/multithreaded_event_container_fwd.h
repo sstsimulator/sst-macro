@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace native {
 
-class multithreaded_event_container;
+class MultithreadedEventContainer;
 
 }
 }

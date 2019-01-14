@@ -64,8 +64,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 namespace sw {
-void api_lock();
-void api_unlock();
+void apiLock();
+void apiUnlock();
 }
 }
 
@@ -75,7 +75,7 @@ namespace sumi {
 //
 // Build comm_world using information retrieved from the environment.
 //
-mpi_comm_factory::mpi_comm_factory(software_id sid, mpi_api* parent) :
+MpiCommFactory::MpiCommFactory(SoftwareId sid, MpiApi* parent) :
   parent_(parent),
   aid_(sid.app_),
   next_id_(1),
@@ -84,7 +84,7 @@ mpi_comm_factory::mpi_comm_factory(software_id sid, mpi_api* parent) :
 {
 }
 
-mpi_comm_factory::~mpi_comm_factory()
+MpiCommFactory::~MpiCommFactory()
 {
   //these will get deleted by loop over comm map
   //in ~mpi_api()
@@ -93,76 +93,76 @@ mpi_comm_factory::~mpi_comm_factory()
 }
 
 void
-mpi_comm_factory::init(int rank, int nproc)
+MpiCommFactory::init(int rank, int nproc)
 {
   next_id_ = 2;
 
-  mpi_group* g = new mpi_group(nproc);
+  MpiGroup* g = new MpiGroup(nproc);
   g->set_id(MPI_GROUP_WORLD);
-  worldcomm_ = new mpi_comm(MPI_COMM_WORLD, rank, g, aid_);
+  worldcomm_ = new MpiComm(MPI_COMM_WORLD, rank, g, aid_);
 
-  std::vector<task_id> selfp;
-  selfp.push_back(task_id(rank));
-  mpi_group* g2 = new mpi_group(selfp);
+  std::vector<TaskId> selfp;
+  selfp.push_back(TaskId(rank));
+  MpiGroup* g2 = new MpiGroup(selfp);
   g2->set_id(MPI_GROUP_SELF);
-  selfcomm_ = new mpi_comm(MPI_COMM_SELF, int(0), g2, aid_);
+  selfcomm_ = new MpiComm(MPI_COMM_SELF, int(0), g2, aid_);
 }
 
-mpi_comm*
-mpi_comm_factory::comm_dup(mpi_comm* caller)
+MpiComm*
+MpiCommFactory::comm_dup(MpiComm* caller)
 {
-  mpi_comm* ret = this->comm_create(caller, caller->group_);
-  ret->dup_keyvals(caller);
+  MpiComm* ret = this->commCreate(caller, caller->group_);
+  ret->dupKeyvals(caller);
   return ret;
 }
 
 
 MPI_Comm
-mpi_comm_factory::comm_new_id_agree(mpi_comm* commPtr)
+MpiCommFactory::commNewIdAgree(MpiComm* commPtr)
 {
   int inputID = next_id_;
   int outputID = 0;
-  collective_op_base* op = parent_->start_allreduce(commPtr, 1, MPI_INT, MPI_MAX, &inputID, &outputID);
-  parent_->wait_collective(op);
+  CollectiveOpBase* op = parent_->startAllreduce(commPtr, 1, MPI_INT, MPI_MAX, &inputID, &outputID);
+  parent_->waitCollective(op);
 
   next_id_ = outputID + 1;
   return outputID;
 }
 
-mpi_comm*
-mpi_comm_factory::comm_create_group(mpi_comm* caller, mpi_group* group)
+MpiComm*
+MpiCommFactory::commCreateGroup(MpiComm* caller, MpiGroup* group)
 {
   //now find my rank
-  int newrank = group->rank_of_task(caller->my_task());
+  int newrank = group->rankOfTask(caller->myTask());
   if (newrank >= 0) {
     //okay... this is a little wonky
     //I need to create the new communicator on a reserved ID first
     MPI_Comm tmpId = caller->id() * 1000 + 100000;
-    mpi_comm* newComm = new mpi_comm(tmpId, newrank, group, aid_);
-    MPI_Comm cid = comm_new_id_agree(newComm);
-    newComm->set_id(cid);
+    MpiComm* newComm = new MpiComm(tmpId, newrank, group, aid_);
+    MPI_Comm cid = commNewIdAgree(newComm);
+    newComm->setId(cid);
     return newComm;
   } else {
     //there is no guarantee that an MPI rank in the comm, but not in the group
     //will actually make this call
     //all ranks in the comm but not the group should return immediately
     //and not participate in the collective
-    return mpi_comm::comm_null;
+    return MpiComm::comm_null;
   }
 }
 
-mpi_comm*
-mpi_comm_factory::comm_create(mpi_comm* caller, mpi_group* group)
+MpiComm*
+MpiCommFactory::commCreate(MpiComm* caller, MpiGroup* group)
 {
-  MPI_Comm cid = comm_new_id_agree(caller);
+  MPI_Comm cid = commNewIdAgree(caller);
 
   //now find my rank
-  int newrank = group->rank_of_task(caller->my_task());
+  int newrank = group->rankOfTask(caller->myTask());
 
   if (newrank >= 0) {
-    return new mpi_comm(cid, newrank, group, aid_);
+    return new MpiComm(cid, newrank, group, aid_);
   } else {
-    return mpi_comm::comm_null;
+    return MpiComm::comm_null;
   }
 
 }
@@ -192,8 +192,8 @@ static std::map<int, //app ID
 //
 // MPI_Comm_split.
 //
-mpi_comm*
-mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
+MpiComm*
+MpiCommFactory::commSplit(MpiComm* caller, int my_color, int my_key)
 {
   key_to_ranks_map key_map;
   int mydata[3];
@@ -201,7 +201,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   mydata[1] = my_color;
   mydata[2] = my_key;
 
-  app_id aid = parent_->sid().app_;
+  AppId aid = parent_->sid().app_;
 
   //printf("Rank %d = {%d %d %d}\n",
   //       caller->rank(), next_id_, my_color, my_key);
@@ -212,9 +212,9 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
                      result, 3, MPI_INT,
                      caller->id());
 #else
-  sstmac::sw::api_lock();
-  int root = caller->peer_task(int(0));
-  int tag = caller->next_collective_tag();
+  sstmac::sw::apiLock();
+  int root = caller->peerTask(int(0));
+  int tag = caller->nextCollectiveTag();
   comm_split_entry& entry = comm_split_entries[aid][int(caller->id())][root][tag];
   char fname[256];
   size_t len = 3*caller->size()*sizeof(int);
@@ -248,20 +248,20 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   mybuf[0] = mydata[0];
   mybuf[1] = mydata[1];
   mybuf[2] = mydata[2];
-  sstmac::sw::api_unlock();
+  sstmac::sw::apiUnlock();
 
   //just model the allgather
 
-  auto* op = parent_->start_allgather("MPI_Comm_split_allgather", caller->id(),
+  auto* op = parent_->startAllgather("MPI_Comm_split_allgather", caller->id(),
                                                 3, MPI_INT,
                                                 3, MPI_INT,
                                                 nullptr, nullptr);
-  parent_->wait_collective(op);
+  parent_->waitCollective(op);
 #endif
 
-  mpi_comm* ret;
+  MpiComm* ret;
   if (my_color < 0){ //I'm not part of this!
-    ret = mpi_comm::comm_null;
+    ret = MpiComm::comm_null;
   } else {
     int cid = -1;
     int ninput_ranks = caller->size();
@@ -287,7 +287,7 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
     //the next id I use needs to be greater than this
     next_id_ = cid + 1;
 
-    std::vector<task_id> task_list(new_comm_size);
+    std::vector<TaskId> task_list(new_comm_size);
 
     key_to_ranks_map::iterator it, end = key_map.end();
     //iterate map in sorted order
@@ -299,15 +299,15 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
       std::list<int>::iterator rit, rend = ranks.end();
       for (rit=ranks.begin(); rit != rend; ++rit, ++next_rank){
         int comm_rank = *rit;
-        task_id tid = caller->peer_task(int(comm_rank));
+        TaskId tid = caller->peerTask(int(comm_rank));
         task_list[next_rank] = tid;
         if (comm_rank == caller->rank()){
           my_new_rank = next_rank;
         }
       }
     }
-    mpi_group* grp = new mpi_group(std::move(task_list));
-    ret = new mpi_comm(cid, my_new_rank, grp, aid_, true/*delete this group*/);
+    MpiGroup* grp = new MpiGroup(std::move(task_list));
+    ret = new MpiComm(cid, my_new_rank, grp, aid_, true/*delete this group*/);
   }
 
 #if !SSTMAC_DISTRIBUTED_MEMORY || SSTMAC_MMAP_COLLECTIVES
@@ -325,20 +325,20 @@ mpi_comm_factory::comm_split(mpi_comm* caller, int my_color, int my_key)
   return ret;
 }
 
-mpi_comm*
-mpi_comm_factory::create_cart(mpi_comm* caller, int ndims,
+MpiComm*
+MpiCommFactory::createCart(MpiComm* caller, int ndims,
                               const int *dims, const int *periods, int reorder)
 {
-  MPI_Comm cid = comm_new_id_agree(caller);
+  MPI_Comm cid = commNewIdAgree(caller);
 
   //now find my rank
-  int newrank = caller->group_->rank_of_task(caller->my_task());
+  int newrank = caller->group_->rankOfTask(caller->myTask());
 
   if (newrank >= 0) {
-    return new mpi_comm_cart(cid, newrank, caller->group_,
+    return new MpiCommCart(cid, newrank, caller->group_,
                      aid_, ndims, dims, periods, reorder);
   } else {
-    return mpi_comm::comm_null;
+    return MpiComm::comm_null;
   }
 }
 

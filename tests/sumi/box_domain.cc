@@ -60,7 +60,7 @@ using namespace sumi;
 
 
 void
-run_test(communicator* dom, int todie, int nproc_live, int context, int tag)
+run_test(Communicator* dom, int todie, int nproc_live, int context, int tag)
 {
 }
 
@@ -77,12 +77,12 @@ main(int argc, char **argv)
   int stop = start + nsubrange;
 
   if (rank >= start && rank < stop){
-    communicator* dom = new subrange_communicator(rank, start, nsubrange);
+    Communicator* dom = new subrange_communicator(rank, start, nsubrange);
     //test_allgather(dom, 0);
     //test_allreduce(dom, 1);
   }
 
-  communicator* dom = new rotate_communicator(rank, nproc, 3);
+  Communicator* dom = new rotate_communicator(rank, nproc, 3);
   //test_allgather(dom, 2);
   //test_allreduce(dom, 3);
 

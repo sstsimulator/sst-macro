@@ -62,30 +62,30 @@ namespace hw {
 /**
  * An interface for processor models
  */
-class processor
+class Processor
 {
-  DeclareFactory(processor, memory_model*, node*)
+  DeclareFactory(Processor, MemoryModel*, Node*)
  public:
-  virtual ~processor();
+  virtual ~Processor();
 
-  static void delete_statics();
+  static void deleteStatics();
 
-  virtual void compute(event* cev, callback* cb) = 0;
+  virtual void compute(Event* cev, ExecutionEvent* cb) = 0;
 
   int ncores() const {
     return ncores_;
   }
 
  protected:
-  processor(sprockit::sim_parameters* params, memory_model* mem, node* nd);
+  Processor(sprockit::sim_parameters* params, MemoryModel* mem, Node* nd);
 
  protected:
   double freq_;
   double mem_freq_;
   int ncores_;
 
-  memory_model* mem_;
-  node* node_;
+  MemoryModel* mem_;
+  Node* node_;
 
 };
 

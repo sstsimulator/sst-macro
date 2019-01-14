@@ -70,11 +70,11 @@ test_tiny_allreduce()
   int tag = 14;
   comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag);
 
-  message* msg = comm_poll(); //wait on allreduce
-  if (msg->class_type() != message::collective_done){
+  Message* msg = comm_poll(); //wait on allreduce
+  if (msg->classType() != Message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+      Message::tostr(msg->classType()));
   }
 
   if (rank == 0){
@@ -102,11 +102,11 @@ test_allreduce_payload()
   int tag = 13;
   comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag);
 
-  message* msg = comm_poll(); //wait on allreduce
-  if (msg->class_type() != message::collective_done){
+  Message* msg = comm_poll(); //wait on allreduce
+  if (msg->classType() != Message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+      Message::tostr(msg->classType()));
   }
 
   if (rank == 0){
@@ -132,11 +132,11 @@ test_allgather_payload(int nelems)
   int tag = 14 + nelems;
   comm_allgather(dst_buffer, src_buffer, nelems, sizeof(int), tag);
 
-  message* msg = comm_poll(); //wait on allgather
-  if (msg->class_type() != message::collective_done){
+  Message* msg = comm_poll(); //wait on allgather
+  if (msg->classType() != Message::collective_done){
     spkt_throw_printf(sprockit::value_error,
       "allreduce test: expected collective message, but got %s",
-      message::tostr(msg->class_type()));
+      Message::tostr(msg->classType()));
   }
 
   if (rank == 0){
@@ -163,8 +163,8 @@ test_allreduce()
   int tag = 12;
   comm_allreduce<int,Add>(0, 0, 256, tag);
 
- message* msg = comm_poll();
-  std::cout << "Allreduce got " << msg->to_string() << std::endl;
+ Message* msg = comm_poll();
+  std::cout << "Allreduce got " << msg->toString() << std::endl;
 }
 
 void
@@ -177,8 +177,8 @@ test_barrier()
   //then execute barrier
   comm_barrier(tag);
 
-  message* msg = comm_poll();
-  auto dmsg = dynamic_cast<collective_done_message*>(msg);
+  Message* msg = comm_poll();
+  auto dmsg = dynamic_cast<CollectiveDoneMessage*>(msg);
   if (dmsg->tag() != 20 || dmsg->type() != collective::barrier){
     sprockit::abort("barrier got invalid completion message");
   }
@@ -196,8 +196,8 @@ test_dynamic_tree_vote()
   int answer = (comm_nproc()-1) * 2;
   comm_vote<Max>(vote, tag);
 
-  message* msg = comm_poll();
-  auto dmsg = dynamic_cast<collective_done_message*>(msg);
+  Message* msg = comm_poll();
+  auto dmsg = dynamic_cast<CollectiveDoneMessage*>(msg);
   if (dmsg->tag() != tag || dmsg->type() != collective::dynamic_tree_vote){
     sprockit::abort("vote got invalid completion message");
   }

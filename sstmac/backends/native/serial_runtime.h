@@ -50,26 +50,32 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace native {
 
-class serial_runtime :
-  public parallel_runtime
+class SerialRuntime :
+  public ParallelRuntime
 {
-  FactoryRegister("serial", parallel_runtime, serial_runtime)
+  FactoryRegister("serial", ParallelRuntime, SerialRuntime)
  public:
-  serial_runtime(sprockit::sim_parameters* params);
+  SerialRuntime(sprockit::sim_parameters* params);
 
-  int64_t allreduce_min(int64_t mintime) override;
+  int64_t allreduceMin(int64_t mintime) override;
 
-  int64_t allreduce_max(int64_t maxtime) override;
+  int64_t allreduceMax(int64_t maxtime) override;
 
-  void global_sum(int *data, int nelems, int root) override;
+  void globalSum(int32_t* data, int nelems, int root) override;
 
-  void global_sum(long *data, int nelems, int root) override;
+  void globalSum(uint32_t* data, int nelems, int root) override;
 
-  void global_sum(long long *data, int nelems, int root) override;
+  void globalSum(int64_t* data, int nelems, int root) override;
 
-  void global_max(int *data, int nelems, int root) override;
+  void globalSum(uint64_t* data, int nelems, int root) override;
 
-  void global_max(long *data, int nelems, int root) override;
+  void globalMax(int32_t* data, int nelems, int root) override;
+
+  void globalMax(uint32_t* data, int nelems, int root) override;
+
+  void globalMax(int64_t* data, int nelems, int root) override;
+
+  void globalMax(uint64_t* data, int nelems, int root) override;
 
   void gather(void *send_buffer, int num_bytes, void *recv_buffer, int root) override;
 

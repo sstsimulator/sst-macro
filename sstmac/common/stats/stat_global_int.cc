@@ -52,13 +52,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-stat_global_int::stat_global_int(sprockit::sim_parameters* params) :
-    stat_value<int>(params)
+StatGlobalInt::StatGlobalInt(sprockit::sim_parameters* params) :
+    StatValue<int>(params)
 {
 }
 
 void
-stat_global_int::global_reduce(parallel_runtime *rt)
+StatGlobalInt::globalReduce(ParallelRuntime *rt)
 {
   if (rt->nproc() == 1)
     return;
@@ -66,18 +66,18 @@ stat_global_int::global_reduce(parallel_runtime *rt)
 }
 
 void
-stat_global_int::reduce(stat_collector *coll)
+StatGlobalInt::reduce(StatCollector *coll)
 {
-  stat_global_int* other = safe_cast(stat_global_int, coll);
+  StatGlobalInt* other = safe_cast(StatGlobalInt, coll);
   value_ += other->value_;
 }
 
 void
-stat_global_int::dump(const std::string& froot)
+StatGlobalInt::dump(const std::string& froot)
 {
   //std::string data_file = froot + ".dat";
   //std::fstream data_str;
-  //check_open(data_str, data_file);
+  //checkOpen(data_str, data_file);
   //data_str << "Value\n";
   //data_str << sprockit::printf("%i\n", value_);
   //data_str.close();
@@ -85,20 +85,20 @@ stat_global_int::dump(const std::string& froot)
 }
 
 void
-stat_global_int::dump_global_data()
+StatGlobalInt::dumpGlobalData()
 {
   dump(fileroot_);
 }
 
 void
-stat_global_int::dump_local_data()
+StatGlobalInt::dumpLocalData()
 {
   std::string fname = sprockit::printf("%s.%d", fileroot_.c_str(), id_);
   dump(fname);
 }
 
 void
-stat_global_int::clear()
+StatGlobalInt::clear()
 {
 }
 

@@ -52,7 +52,7 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    sstmac::hw::topology* macro_topology;
+    sstmac::hw::Topology* macro_topology;
     sprockit::sim_parameters* params;
 } SystemPy_t;
 
@@ -83,7 +83,7 @@ static PyObject*
 sys_get_ejection_connections(SystemPy_t* self, PyObject* idx);
 
 static PyObject*
-sys_node_to_logp_switch(SystemPy_t* self, PyObject* idx);
+sys_nodeToLogpSwitch(SystemPy_t* self, PyObject* idx);
 
 static PyObject*
 sys_is_logp(SystemPy_t* self, PyObject* null);
@@ -93,7 +93,7 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs);
 
 static PyMethodDef system_methods[] = {
   { "nodeToLogPSwitch",
-    (PyCFunction)sys_node_to_logp_switch, METH_O,
+    (PyCFunction)sys_nodeToLogpSwitch, METH_O,
       "map a node id to its corresponding LogP switch" },
   { "isLogP",
     (PyCFunction)sys_is_logp, METH_NOARGS,
@@ -195,11 +195,11 @@ void py_init_system(PyObject*  module)
 }
 
 static PyObject*
-sys_convert_to_list(const std::vector<sstmac::hw::topology::injection_port>& ports)
+sys_convert_to_list(const std::vector<sstmac::hw::Topology::injection_port>& ports)
 {
   PyObject* tuple = PyTuple_New(ports.size());
   for (int i=0; i < ports.size(); ++i){
-    const sstmac::hw::topology::injection_port& port = ports[i];
+    const sstmac::hw::Topology::injection_port& port = ports[i];
     PyObject* portTuple = PyTuple_New(3);
     PyObject* nodeIdx = PyInt_FromLong(port.nid);
     PyTuple_SetItem(portTuple, 0, nodeIdx);
@@ -216,8 +216,8 @@ static PyObject*
 sys_get_injection_connections(SystemPy_t* self, PyObject* swIdx)
 {
   int sid = PyInt_AsLong(swIdx);
-  std::vector<sstmac::hw::topology::injection_port> ports;
-  self->macro_topology->endpoints_connected_to_injection_switch(sid, ports);
+  std::vector<sstmac::hw::Topology::injection_port> ports;
+  self->macro_topology->endpointsConnectedToInjectionSwitch(sid, ports);
   return sys_convert_to_list(ports);
 }
 
@@ -227,8 +227,8 @@ sys_get_switch_params(SystemPy_t* self, PyObject* idx)
   int swIdx = PyInt_AsLong(idx);
   sprockit::sim_parameters* switch_params
       = self->params->get_namespace("switch");
-  if (!self->macro_topology->uniform_switches()){
-    self->macro_topology->configure_nonuniform_switch_params(swIdx, switch_params);
+  if (!self->macro_topology->uniformSwitches()){
+    self->macro_topology->configureNonuniformSwitchParams(swIdx, switch_params);
   }
   return sstmac::py_dict_from_params(switch_params);
 }
@@ -237,11 +237,11 @@ static PyObject*
 sys_get_switch_connections(SystemPy_t* self, PyObject* idx)
 {
   int swIdx = PyInt_AsLong(idx);
-  std::vector<sstmac::hw::topology::connection> conns;
-  self->macro_topology->connected_outports(swIdx, conns);
+  std::vector<sstmac::hw::Topology::connection> conns;
+  self->macro_topology->connectedOutports(swIdx, conns);
   PyObject* tuple = PyTuple_New(conns.size());
   for (int i=0; i < conns.size(); ++i){
-    sstmac::hw::topology::connection& conn = conns[i];
+    sstmac::hw::Topology::connection& conn = conns[i];
     PyObject* connTuple = PyTuple_New(4);
     PyObject* srcIdx = PyInt_FromLong(conn.src);
     PyTuple_SetItem(connTuple, 0, srcIdx);
@@ -257,10 +257,10 @@ sys_get_switch_connections(SystemPy_t* self, PyObject* idx)
 }
 
 static PyObject*
-sys_node_to_logp_switch(SystemPy_t* self, PyObject* idx)
+sys_nodeToLogpSwitch(SystemPy_t* self, PyObject* idx)
 {
   int nid = PyInt_AsLong(idx);
-  int sid = self->macro_topology->node_to_logp_switch(nid);
+  int sid = self->macro_topology->nodeToLogpSwitch(nid);
   return PyInt_FromLong(sid);
 }
 
@@ -268,8 +268,8 @@ static PyObject*
 sys_get_ejection_connections(SystemPy_t* self, PyObject* swIdx)
 {
   int sid = PyInt_AsLong(swIdx);
-  std::vector<sstmac::hw::topology::injection_port> ports;
-  self->macro_topology->endpoints_connected_to_ejection_switch(sid, ports);
+  std::vector<sstmac::hw::Topology::injection_port> ports;
+  self->macro_topology->endpointsConnectedToEjectionSwitch(sid, ports);
   return sys_convert_to_list(ports);
 }
 
@@ -307,13 +307,13 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
     sstmac::py_extract_params(kwargs, self->params);
   }
 
-  self->macro_topology = sstmac::hw::topology::static_topology(self->params);
+  self->macro_topology = sstmac::hw::Topology::staticTopology(self->params);
 
   sprockit::sim_parameters* switch_params = self->params->get_namespace("switch");
   if (is_logp(self)){
     //I guess we don't do anything?
   } else {
-    self->macro_topology->configure_individual_port_params(sstmac::switch_id(0), switch_params);
+    self->macro_topology->configureIndividualPortParams(sstmac::SwitchId(0), switch_params);
   }
 
   return 0;
@@ -333,11 +333,11 @@ sys_dealloc(SystemPy_t* self)
 static PyObject*
 sys_num_switches(SystemPy_t* self, PyObject* null)
 {
-  return PyInt_FromLong(self->macro_topology->num_switches());
+  return PyInt_FromLong(self->macro_topology->numSwitches());
 }
 
 static PyObject*
 sys_num_nodes(SystemPy_t* self, PyObject* null)
 {
-  return PyInt_FromLong(self->macro_topology->num_nodes());
+  return PyInt_FromLong(self->macro_topology->numNodes());
 }

@@ -63,31 +63,31 @@ MakeDebugSlot(traffic_matrix)
 MakeDebugSlot(traffic_matrix_results)
 
 
-static const int send_cq = sumi::message::no_ack;
-static const int recv_cq = 0;
+static const int send_cq = sumi::Message::no_ack;
+static const int RecvCQ = 0;
 
 class sumi_param_bcaster : public sprockit::param_bcaster
 {
  public:
-  sumi_param_bcaster(sumi::collective_engine* engine) : engine_(engine), tag_(12345) {}
+  sumi_param_bcaster(sumi::CollectiveEngine* engine) : engine_(engine), tag_(12345) {}
 
   void bcast(void *buf, int size, int me, int root){
-    engine_->bcast(root, buf, size, sizeof(char), tag_, sumi::message::default_cq);
-    sumi::collective_done_message* msg = nullptr;
-    auto* dmsg = engine_->block_until_next(sumi::message::default_cq);
+    engine_->bcast(root, buf, size, sizeof(char), tag_, sumi::Message::default_cq);
+    sumi::CollectiveDoneMessage* msg = nullptr;
+    auto* dmsg = engine_->blockUntilNext(sumi::Message::default_cq);
     delete dmsg;
     ++tag_;
   }
 
  private:
   int tag_;
-  sumi::collective_engine* engine_;
+  sumi::CollectiveEngine* engine_;
 };
 
 static const int window_bytes = 262144;
 
 
-class config_message : public sumi::message
+class config_message : public sumi::Message
 {
   ImplementSerializable(config_message)
 
@@ -96,7 +96,7 @@ class config_message : public sumi::message
 
   template <class... Args>
   config_message(void* recv_buf, Args&&... args) :
-    sumi::message(std::forward<Args>(args)...), recv_buf_(recv_buf)
+    sumi::Message(std::forward<Args>(args)...), recv_buf_(recv_buf)
   {}
 
   void* recv_buf() const {
@@ -105,7 +105,7 @@ class config_message : public sumi::message
 
   virtual void serialize_order(sstmac::serializer &ser) override {
     ser.primitive(recv_buf_);
-    sumi::message::serialize_order(ser);
+    sumi::Message::serialize_order(ser);
   }
 
  private:
@@ -113,7 +113,7 @@ class config_message : public sumi::message
 };
 
 class rdma_message :
-  public sumi::message
+  public sumi::Message
 {
  ImplementSerializable(rdma_message)
 
@@ -122,7 +122,7 @@ class rdma_message :
 
  template <class... Args>
   rdma_message(int iter, double start_time, Args&&... args) :
-   sumi::message(std::forward<Args>(args)...),
+   sumi::Message(std::forward<Args>(args)...),
    iter_(iter), start_(start_time)
   {
   }
@@ -131,12 +131,12 @@ class rdma_message :
     ser & iter_;
     ser & start_;
     ser & finish_;
-    sumi::message::serialize_order(ser);
+    sumi::Message::serialize_order(ser);
   }
 
-  network_message* clone_injection_ack() const override {
+  NetworkMessage* cloneInjectionAck() const override {
     auto* cln = new rdma_message(*this);
-    cln->convert_to_ack();;
+    cln->convertToAck();;
     return cln;
   }
 
@@ -159,17 +159,17 @@ std::vector<std::map<int, std::map<int, rdma_message*>>> results;
 static int num_done = 0;
 
 void
-progress_loop(sumi::transport* tport, double timeout,
+progress_loop(sumi::Transport* tport, double timeout,
               std::list<rdma_message*>& done)
 {
-  double now = tport->wall_time();
+  double now = tport->wallTime();
   double stop = now + timeout;
   debug_printf(sprockit::dbg::traffic_matrix,
     "Rank %d entering progress loop at t=%10.6e - stop=%10.6e, timeout=%10.6e",
     tport->rank(), now, stop, timeout);
   while (timeout > 0){
     rdma_message* msg = dynamic_cast<rdma_message*>(tport->poll(false, timeout));
-    now = tport->wall_time();
+    now = tport->wallTime();
     if (msg){ //need if statement, if timed out then no message
       timeout = stop - now; //timeout shrinks
       msg->set_finish(now);
@@ -191,7 +191,7 @@ progress_loop(sumi::transport* tport, double timeout,
 
 void do_all_sends(
   int iteration,
-  sumi::transport* tport,
+  sumi::Transport* tport,
   int chunk_size,
   const std::vector<int>& send_partners,
   const std::vector<void*>& send_chunks,
@@ -207,18 +207,18 @@ void do_all_sends(
       tport->rank(), send_partners[i], 
       iteration, chunk_size,
       ((void*)send_chunks[i]), ((void*)recv_chunks[i]));
-    tport->rdma_put<rdma_message>(send_partners[i], chunk_size, send_chunks[i], recv_chunks[i],
-                    send_cq, recv_cq, sumi::message::pt2pt, iteration, tport->wall_time());
+    tport->rdmaPut<rdma_message>(send_partners[i], chunk_size, send_chunks[i], recv_chunks[i],
+                    send_cq, RecvCQ, sumi::Message::pt2pt, iteration, tport->wallTime());
     //stagger the sends, try to make progress on pendind messages
     progress_loop(tport, local_timeout, done);
   }
   debug_printf(sprockit::dbg::traffic_matrix,
     "Finished sending on iteration %d on rank %d at t=%10.6e",
-    iteration, tport->rank(), tport->wall_time());
+    iteration, tport->rank(), tport->wallTime());
 }
 
 void
-quiesce(sumi::transport* tport,
+quiesce(sumi::Transport* tport,
   int npartners, int niterations,
   std::list<rdma_message*>& done)
 {
@@ -228,7 +228,7 @@ quiesce(sumi::transport* tport,
     tport->rank(), ntotal, done.size(), npartners, niterations);
   while (done.size() < ntotal){
     rdma_message* msg = dynamic_cast<rdma_message*>(tport->poll(true));
-    double now = tport->wall_time();
+    double now = tport->wallTime();
     msg->set_finish(now);
     done.push_back(msg);
     debug_printf(sprockit::dbg::traffic_matrix,
@@ -241,8 +241,8 @@ quiesce(sumi::transport* tport,
 
 int USER_MAIN(int argc, char** argv)
 {
-  sumi::transport* tport = sstmac::sw::operating_system::current_thread()
-      ->get_api<sumi::transport>();
+  sumi::Transport* tport = sstmac::sw::OperatingSystem::currentThread()
+      ->get_api<sumi::Transport>();
 
   tport->init();
 
@@ -250,7 +250,7 @@ int USER_MAIN(int argc, char** argv)
     "Rank %d entering initial param bcast",
     tport->rank());
 
-  sprockit::sim_parameters* params = sstmac::sw::app::get_params();
+  sprockit::sim_parameters* params = sstmac::sw::App::getParams();
 
   /** This configures the compute intensity as a function of baseline bandwidth
    *  Messages are sent in windows of size 100 us
@@ -310,8 +310,8 @@ int USER_MAIN(int argc, char** argv)
   void* recv_buf = nullptr;// = tport->allocate_public_buffer(window_bytes);
   int chunk_size = window_bytes / mixing;
   for (int i=0; i < npartners; ++i){
-    send_chunks[i] = sumi::message::offset_ptr(send_buf, chunk_size*i);
-    recv_chunks[i] = sumi::message::offset_ptr(recv_buf, chunk_size*i);
+    send_chunks[i] = sumi::Message::offset_ptr(send_buf, chunk_size*i);
+    recv_chunks[i] = sumi::Message::offset_ptr(recv_buf, chunk_size*i);
   }
 
   //send all my config messages
@@ -319,9 +319,9 @@ int USER_MAIN(int argc, char** argv)
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d sending config message to partner %d",
       tport->rank(), recv_partners[i]);
-    tport->smsg_send<config_message>(recv_partners[i], 0, nullptr,
-                                     sumi::message::no_ack, sumi::message::default_cq,
-                                     sumi::message::pt2pt, recv_chunks[i]);
+    tport->smsgSend<config_message>(recv_partners[i], 0, nullptr,
+                                     sumi::Message::no_ack, sumi::Message::default_cq,
+                                     sumi::Message::pt2pt, recv_chunks[i]);
   }
 
   int configs_recved = 0;
@@ -331,10 +331,10 @@ int USER_MAIN(int argc, char** argv)
     "Rank %d waiting on %d config messages from recv partners",
     tport->rank(), npartners);
   while (configs_recved < npartners){
-    sumi::message* smsg = tport->poll(true, sumi::message::default_cq);
+    sumi::Message* smsg = tport->poll(true, sumi::Message::default_cq);
     config_message* msg = dynamic_cast<config_message*>(smsg);
     if (!msg){
-      spkt_abort_printf("Expected config message - got %s", smsg->to_string().c_str());
+      spkt_abort_printf("Expected config message - got %s", smsg->toString().c_str());
     }
     debug_printf(sprockit::dbg::traffic_matrix,
       "Rank %d received config message from %d",
@@ -346,10 +346,10 @@ int USER_MAIN(int argc, char** argv)
 
   int tag = 42;
 
-  auto* engine = new sumi::collective_engine(params, tport);
-  int coll_cq = engine->tport()->allocate_default_cq();
+  auto* engine = new sumi::CollectiveEngine(params, tport);
+  int coll_cq = engine->tport()->allocateDefaultCq();
   engine->barrier(tag, coll_cq);
-  engine->block_until_next(coll_cq);
+  engine->blockUntilNext(coll_cq);
 
   std::list<rdma_message*> done;
 
@@ -380,7 +380,7 @@ int USER_MAIN(int argc, char** argv)
         for (it = done.begin(); it != end; ++it, ++result_idx){
           rdma_message* msg = it->second;
           double delta_t = msg->finish() - msg->start();
-          double throughput_gbs = msg->byte_length() / delta_t / 1e9;
+          double throughput_gbs = msg->byteLength() / delta_t / 1e9;
           resultsArr[result_idx] = throughput_gbs;
           debug_printf(sprockit::dbg::traffic_matrix_results,
             "Message iter=%3d source=%5d dest=%d throughput=%10.4fGB/s start=%8.4ems stop=%8.4ems",

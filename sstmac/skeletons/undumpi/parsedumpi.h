@@ -57,30 +57,30 @@ namespace sumi {
  * A dumpi parser to read the binary-format dumpi trace files.  
  *
  */
-class parsedumpi : public sstmac::sw::app
+class ParseDumpi : public sstmac::sw::App
 {
   friend class parsedumpi_unit_test;
   friend class parsedumpi_callbacks;
 
-  FactoryRegister("parsedumpi | dumpi", sstmac::sw::app, parsedumpi,
+  FactoryRegister("parsedumpi | dumpi", sstmac::sw::App, ParseDumpi,
               "application for parsing and simulating dumpi traces")
 
  public:
-  parsedumpi(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
-             sstmac::sw::operating_system* os);
+  ParseDumpi(sprockit::sim_parameters* params, sstmac::sw::SoftwareId sid,
+             sstmac::sw::OperatingSystem* os);
 
   struct early_termination : public std::runtime_error {
    public:
     early_termination() : std::runtime_error("DUMPI early termination") {}
   };
 
-  virtual ~parsedumpi() throw ();
+  virtual ~ParseDumpi() throw ();
 
-  mpi_api* mpi() {
+  MpiApi* mpi() {
     return mpi_;
   }
 
-  int skeleton_main() override;
+  int skeletonMain() override;
 
   uint64_t early_terminate_count() const {
     return early_terminate_count_;
@@ -95,7 +95,7 @@ class parsedumpi : public sstmac::sw::app
 
   uint64_t early_terminate_count_;
 
-  mpi_api* mpi_;
+  MpiApi* mpi_;
 
   bool print_progress_;
 

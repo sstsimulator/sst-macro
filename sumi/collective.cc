@@ -94,7 +94,7 @@ collective::tostr(type_t ty)
       "collective::tostr: unknown type %d", ty);
 }
 
-collective::collective(type_t ty, collective_engine* engine, int tag, int cq_id, communicator* comm) :
+collective::collective(type_t ty, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
   type_(ty), engine_(engine), my_api_(engine->tport()), tag_(tag),
   dom_nproc_(comm->nproc()), dom_me_(comm->my_comm_rank()),
   complete_(false), comm_(comm), cq_id_(cq_id)
@@ -104,7 +104,7 @@ collective::collective(type_t ty, collective_engine* engine, int tag, int cq_id,
     my_api_->rank(), comm_->my_comm_rank(), comm_->nproc(), dom_me_, tag);
 }
 
-collective_done_message*
+CollectiveDoneMessage*
 collective::add_actors(collective *coll)
 {
   sprockit::abort("collective:add_actors: collective should not dynamically add actors");
@@ -129,7 +129,7 @@ collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collec
   }
 }
 
-collective_done_message*
+CollectiveDoneMessage*
 collective::recv(collective_work_message* msg)
 {
   return recv(msg->dom_target_rank(), msg);
@@ -139,7 +139,7 @@ collective::~collective()
 {
 }
 
-dag_collective::~dag_collective()
+DagCollective::~DagCollective()
 {
   actor_map::iterator it, end = my_actors_.end();
   for (it=my_actors_.begin(); it != end; ++it){
@@ -148,16 +148,16 @@ dag_collective::~dag_collective()
 }
 
 void
-dag_collective::init_actors()
+DagCollective::init_actors()
 {
-  dag_collective_actor* actor = new_actor();
+  DagCollectiveActor* actor = newActor();
   actor->init();
   my_actors_[dom_me_] = actor;
   refcounts_[dom_me_] = my_actors_.size();
 }
 
-collective_done_message*
-dag_collective::recv(int target, collective_work_message* msg)
+CollectiveDoneMessage*
+DagCollective::recv(int target, collective_work_message* msg)
 {
   debug_printf(sumi_collective | sprockit::dbg::sumi,
     "Rank %d=%d %s got from %d on tag=%d for target %d",
@@ -165,18 +165,18 @@ dag_collective::recv(int target, collective_work_message* msg)
     collective::tostr(type_),
     msg->sender(), tag_, target);
 
-  dag_collective_actor* vr = my_actors_[target];
+  DagCollectiveActor* vr = my_actors_[target];
   if (!vr){
     //data-centric collective - this actor does not exist
     pending_.push_back(msg);
       debug_printf(sumi_collective | sprockit::dbg::sumi,
                   "dag actor %d does not yet exit - queueing %s",
-                  target, msg->to_string().c_str())
+                  target, msg->toString().c_str())
     return nullptr;
   } else {
     vr->recv(msg);
     if (vr->complete()){
-      return vr->done_msg();
+      return vr->doneMsg();
     } else {
       return nullptr;
     }
@@ -184,26 +184,26 @@ dag_collective::recv(int target, collective_work_message* msg)
 }
 
 void
-dag_collective::start()
+DagCollective::start()
 {
   actor_map::iterator it, end = my_actors_.end();
   for (it = my_actors_.begin(); it != end; ++it){
-    dag_collective_actor* actor = it->second;
+    DagCollectiveActor* actor = it->second;
     actor->start();
   }
 }
 
 void
-dag_collective::deadlock_check()
+DagCollective::deadlock_check()
 {
   std::cout << sprockit::printf("%s collective deadlocked on rank %d, tag %d",
                   tostr(type_), my_api_->rank(), tag_) << std::endl;
 
   actor_map::iterator it, end = my_actors_.end();
   for (it=my_actors_.begin(); it != end; ++it){
-    dag_collective_actor* actor = it->second;
+    DagCollectiveActor* actor = it->second;
     if (actor) {
-      actor->deadlock_check();
+      actor->deadlockCheck();
    } else {
       spkt_abort_printf("%s collective deadlocked on rank %d, tag %d, with NULL actor %d",
               tostr(type_), my_api_->rank(), tag_, it->first);
@@ -211,11 +211,11 @@ dag_collective::deadlock_check()
   }
 }
 
-collective_done_message*
-dag_collective::add_actors(collective* coll)
+CollectiveDoneMessage*
+DagCollective::add_actors(collective* coll)
 {
-  dag_collective* ar = static_cast<dag_collective*>(coll);
-  { std::map<int, dag_collective_actor*>::iterator it, end = ar->my_actors_.end();
+  DagCollective* ar = static_cast<DagCollective*>(coll);
+  { std::map<int, DagCollectiveActor*>::iterator it, end = ar->my_actors_.end();
   for (it=ar->my_actors_.begin(); it != end; ++it){
     my_actors_[it->first] = it->second;
   } }
@@ -224,7 +224,7 @@ dag_collective::add_actors(collective* coll)
 
   std::list<collective_work_message*> pending = pending_;
   pending_.clear();
-  collective_done_message* msg = nullptr;
+  CollectiveDoneMessage* msg = nullptr;
   { std::list<collective_work_message*>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
     msg = collective::recv(*it);

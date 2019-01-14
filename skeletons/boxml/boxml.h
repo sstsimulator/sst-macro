@@ -107,13 +107,13 @@ namespace lblxml {
   typedef std::map<index_box_pair_t,box_domain*> domain_map_t;
   typedef std::queue<index_box_pair_t> allreduce_queue_t;
 
-  class pt2pt_message : public sumi::message
+  class pt2pt_message : public sumi::Message
   {
   private:
     int event_index_;
   public:
     pt2pt_message(int index, long num_bytes) : event_index_(index),
-      sumi::message(num_bytes)
+      sumi::Message(num_bytes)
     { }
 
     ~pt2pt_message() { }
@@ -121,7 +121,7 @@ namespace lblxml {
     int event_index() { return event_index_; }
   };
 
-  class box_domain : public sumi::communicator
+  class box_domain : public sumi::Communicator
   {
   private:
     const int* boxes_;
@@ -130,10 +130,10 @@ namespace lblxml {
 
   public:
 
-    box_domain() : communicator(-1) { }
+    box_domain() : Communicator(-1) { }
 
     box_domain (int comm_rank, int nboxes, const int* boxes, const int* map) :
-      map_(map), boxes_(boxes), size_(nboxes), communicator( comm_rank )
+      map_(map), boxes_(boxes), size_(nboxes), Communicator( comm_rank )
     { }
 
     ~box_domain() { }
@@ -144,13 +144,13 @@ namespace lblxml {
       return boxes_[my_comm_rank()];
     }
 
-    int comm_to_global_rank(int comm_rank) const {
+    int commToGlobalRank(int comm_rank) const {
       int box = boxes_[comm_rank];
       int grank =  map_[box];
       return grank;
     }
 
-    int global_to_comm_rank(int global_rank) const {
+    int globalToCommRank(int global_rank) const {
       std::cerr << "global_to_comm_rank() aborting\n";
       abort();
     }
@@ -183,9 +183,9 @@ namespace lblxml {
   extern std::vector<Task*> g_task_map;
 #endif
 
-  extern std::map<int,sstmac::timestamp> g_message_begin_;
+  extern std::map<int,sstmac::Timestamp> g_message_begin_;
 
-  class boxml : public sstmac::sw::app
+  class boxml : public sstmac::sw::App
   {
    FactoryRegister("boxml", sstmac::sw::app, boxml, "amr simulator")
   public:
@@ -218,11 +218,11 @@ namespace lblxml {
     static bool have_output_bin_;
     static bool checked_bin_;
     bool xml_read_only_;
-    sumi::transport* tport_;
-    sstmac::stat_histogram* hist_eff_bw_;
-    sstmac::stat_local_double* idle_time_;
-    sstmac::stat_local_double* barrier_time_;
-    sstmac::stat_local_double* compute_time_;
+    sumi::Transport* tport_;
+    sstmac::StatHistogram* hist_eff_bw_;
+    sstmac::StatLocalDouble* idle_time_;
+    sstmac::StatLocalDouble* barrier_time_;
+    sstmac::StatLocalDouble* compute_time_;
     sprockit::sim_parameters* params_;
     std::set<int> task_processed_;
 
@@ -248,7 +248,7 @@ namespace lblxml {
 
 #ifdef BOXML_HAVE_TEST
   public:
-    Task* my_skeleton_main();
+    Task* my_skeletonMain();
 
   private:
     Task* get_task(int id);
@@ -312,15 +312,15 @@ namespace lblxml {
     /// Destructor.
     virtual ~boxml() throw () {}
 
-    boxml(sprockit::sim_parameters* params, sstmac::sw::software_id sid,
-          sstmac::sw::operating_system* os) :
+    boxml(sprockit::sim_parameters* params, sstmac::sw::SoftwareId sid,
+          sstmac::sw::OperatingSystem* os) :
       params_(params), barrier_tag_(0), hist_eff_bw_(0), idle_time_(0),
       ncomm_(0), ncomp_(0), current_epoch_(1),
-      current_epoch_events_done_(0), sstmac::sw::app(params, sid, os)
+      current_epoch_events_done_(0), sstmac::sw::App(params, sid, os)
     {}
 
     /// Go.
-    int skeleton_main() override;
+    int skeletonMain() override;
 
   };
 
@@ -338,7 +338,7 @@ get_real_time()
   //timeval t_st;
   //gettimeofday(&t_st, 0);
   //double t = t_st.tv_sec + 1e-6 * t_st.tv_usec;
-  return sstmac_wall_time();
+  return sstmacWallTime();
 }
 
 #endif

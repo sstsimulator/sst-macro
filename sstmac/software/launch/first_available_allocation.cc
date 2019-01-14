@@ -48,12 +48,12 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-first_available_allocation::~first_available_allocation() throw ()
+FirstAvailableAllocation::~FirstAvailableAllocation() throw ()
 {
 }
 
 bool
-first_available_allocation::allocate(
+FirstAvailableAllocation::allocate(
   int nnode_requested,
   const ordered_node_set& available,
   ordered_node_set& allocation) const

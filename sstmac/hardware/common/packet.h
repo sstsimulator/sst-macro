@@ -56,8 +56,8 @@ namespace hw {
 #define MAX_CONTROL_BYTES 8
 #define MAX_NIC_BYTES 8
 #define MAX_STAT_BYTES 8
-class packet :
-  public event,
+class Packet :
+  public Event,
   public sprockit::printable
 {
 
@@ -72,83 +72,83 @@ class packet :
     return payload_;
   }
 
-  virtual std::string to_string() const override {
+  virtual std::string toString() const override {
     return "packet";
   }
 
   template <class T>
-  T* rtr_header() {
+  T* rtrHeader() {
     static_assert(sizeof(T) <= sizeof(rtr_metadata_),
                   "given header type too big");
     return (T*) (&rtr_metadata_);
   }
 
   template <class T>
-  const T* rtr_header() const {
+  const T* rtrHeader() const {
     static_assert(sizeof(T) <= sizeof(rtr_metadata_),
                   "given header type too big");
     return (T*) (&rtr_metadata_);
   }
 
-  node_id toaddr() const {
+  NodeId toaddr() const {
     return toaddr_;
   }
 
-  node_id fromaddr() const {
+  NodeId fromaddr() const {
     return fromaddr_;
   }
 
-  void set_toaddr(node_id to) {
+  void setToaddr(NodeId to) {
     toaddr_ = to;
   }
 
-  void set_fromaddr(node_id from) {
+  void setFromaddr(NodeId from) {
     fromaddr_ = from;
   }
 
-  int deadlock_vc() const {
-    auto hdr = rtr_header<header>();
+  int deadlockVC() const {
+    auto hdr = rtrHeader<header>();
     return hdr->deadlock_vc;
   }
 
-  void set_edge_outport(const int port) {
-    auto hdr = rtr_header<header>();
+  void setEdgeOutport(const int port) {
+    auto hdr = rtrHeader<header>();
     hdr->edge_port = port;
   }
 
-  void set_deadlock_vc(const int vc) {
-    auto hdr = rtr_header<header>();
+  void setDeadlockVC(const int vc) {
+    auto hdr = rtrHeader<header>();
     hdr->deadlock_vc = vc;
   }
 
-  int edge_outport() const {
-    auto hdr = rtr_header<header>();
+  int edgeOutport() const {
+    auto hdr = rtrHeader<header>();
     return hdr->edge_port;
   }
 
   virtual void serialize_order(serializer& ser) override;
 
-  bool is_tail() const {
-    auto hdr = rtr_header<header>();
+  bool isTail() const {
+    auto hdr = rtrHeader<header>();
     return hdr->is_tail;
   }
 
-  uint32_t byte_length() const {
+  uint32_t byteLength() const {
     return num_bytes_;
   }
 
-  uint32_t num_bytes() const {
+  uint32_t numBytes() const {
     return num_bytes_;
   }
 
-  uint64_t flow_id() const {
+  uint64_t flowId() const {
     return flow_id_;
   }
 
  private:
-  node_id toaddr_;
+  NodeId toaddr_;
 
-  node_id fromaddr_;
+  NodeId fromaddr_;
 
   uint64_t flow_id_;
 
@@ -163,14 +163,14 @@ class packet :
   char stats_metadata_[MAX_STAT_BYTES];
 
  protected:
-  packet() : packet(nullptr, 0, 0, false, 0, 0) {}
+  Packet() : Packet(nullptr, 0, 0, false, 0, 0) {}
 
-  packet(serializable* payload,
-    uint32_t num_bytes,
-    uint64_t flow_id,
-    bool is_tail,
-    node_id fromaddr,
-    node_id toadadr);
+  Packet(serializable* payload,
+    uint32_t numBytes,
+    uint64_t flowId,
+    bool isTail,
+    NodeId fromaddr,
+    NodeId toadadr);
 
 };
 

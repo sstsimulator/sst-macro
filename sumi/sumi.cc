@@ -60,25 +60,25 @@ using namespace sstmac::sw;
 
 namespace sumi {
 
-static transport* current_transport()
+static Transport* current_transport()
 {
-  thread* t = thread::current();
-  return t->get_api<transport>();
+  Thread* t = Thread::current();
+  return t->get_api<Transport>();
 }
 
-static collective_engine* current_engine()
+static CollectiveEngine* current_engine()
 {
   auto* tport = current_transport();
-  tport->make_engine();
+  tport->makeEngine();
   return tport->engine();
 }
 
-transport* sumi_api()
+Transport* sumi_api()
 {
   return current_transport();
 }
 
-collective_engine* sumi_engine()
+CollectiveEngine* sumi_engine()
 {
   return current_engine();
 }
@@ -94,9 +94,9 @@ void comm_kill_process()
   sprockit::abort("unimplemented: comm kill process");
 }
 
-void comm_kill_node()
+void comm_killNode()
 {
-  sstmac::sw::operating_system::current_os()->kill_node();
+  sstmac::sw::OperatingSystem::currentOs()->killNode();
   throw terminate_exception();
 }
 
@@ -107,55 +107,55 @@ void comm_finalize()
 
 void
 comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
-               int cq_id, communicator* comm)
+               int cq_id, Communicator* comm)
 {
   current_engine()->allreduce(dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
 void comm_scan(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
-               int cq_id, communicator* comm)
+               int cq_id, Communicator* comm)
 {
   current_engine()->scan(dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
 void
 comm_reduce(int root, void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
-            int cq_id, communicator* comm)
+            int cq_id, Communicator* comm)
 {
   current_engine()->reduce(root, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
-void comm_alltoall(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, communicator* comm)
+void comm_alltoall(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
   current_engine()->alltoall(dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_allgather(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, communicator* comm)
+void comm_allgather(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
   current_engine()->allgather(dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, int cq_id, communicator* comm)
+void comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, int cq_id, Communicator* comm)
 {
   current_engine()->allgatherv(dst, src, recv_counts, type_size, tag, cq_id, comm);
 }
 
-void comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, communicator* comm)
+void comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
   current_engine()->gather(root, dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, communicator* comm)
+void comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
   current_engine()->scatter(root, dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_bcast(int root, void *buffer, int nelems, int type_size, int tag, int cq_id, communicator* comm)
+void comm_bcast(int root, void *buffer, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
   current_engine()->bcast(root, buffer, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_barrier(int tag, int cq_id, communicator* comm)
+void comm_barrier(int tag, int cq_id, Communicator* comm)
 {
   current_engine()->barrier(tag, cq_id, comm);
 }
@@ -170,36 +170,36 @@ int comm_nproc()
   return current_transport()->nproc();
 }
 
-message* comm_poll()
+Message* comm_poll()
 {
-  return current_transport()->blocking_poll(message::default_cq);
+  return current_transport()->blockingPoll(Message::default_cq);
 }
 
 double wall_time()
 {
-  return operating_system::current_os()->now().sec();
+  return OperatingSystem::currentOs()->now().sec();
 }
 
-void sleep_until(double sec)
+void sleepUntil(double sec)
 {
-  thread* thr = thread::current();
-  app* my_app = thr->parent_app();
+  Thread* thr = Thread::current();
+  App* my_app = thr->parentApp();
   double time = sec - my_app->now().sec();
-  my_app->sleep(timestamp(time));
+  my_app->sleep(Timestamp(time));
 }
 
 void sleep(double sec)
 {
-  thread* thr = thread::current();
-  app* my_app = thr->parent_app();
-  my_app->sleep(timestamp(sec));
+  Thread* thr = Thread::current();
+  App* my_app = thr->parentApp();
+  my_app->sleep(Timestamp(sec));
 }
 
 void compute(double sec)
 {
-  thread* thr = thread::current();
-  app* my_app = thr->parent_app();
-  my_app->compute(timestamp(sec));
+  Thread* thr = Thread::current();
+  App* my_app = thr->parentApp();
+  my_app->compute(Timestamp(sec));
 }
 
 }

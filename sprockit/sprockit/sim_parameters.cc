@@ -1002,7 +1002,7 @@ sim_parameters::parse_line(const std::string& line,
 }
 
 void
-param_bcaster::bcast_string(std::string& str, int me, int root)
+param_bcaster::bcastString(std::string& str, int me, int root)
 {
   if (me == root){
     int size = str.size();
@@ -1041,11 +1041,11 @@ sim_parameters::parallel_build_params(sprockit::sim_parameters* params,
         std::stringstream sstr;
         params->reproduce_params(sstr);
         std::string all_text = sstr.str();
-        bcaster->bcast_string(all_text, me, root);
+        bcaster->bcastString(all_text, me, root);
       }
     } else {
       std::string param_text;
-      bcaster->bcast_string(param_text, me, root);
+      bcaster->bcastString(param_text, me, root);
       std::stringstream sstr(param_text);
       params->parse_stream(sstr, fail_on_existing, overwrite_existing);
     }

@@ -78,8 +78,8 @@ static constexpr double row_gap = 4.0;
   abstract_fat_tree
   ----------------------------------------------------------------------------*/
 
-abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params) :
-  structured_topology(params)
+AbstractFatTree::AbstractFatTree(sprockit::sim_parameters *params) :
+  StructuredTopology(params)
 {
   num_core_switches_ =
       params->get_int_param("num_core_switches");
@@ -100,7 +100,7 @@ abstract_fat_tree::abstract_fat_tree(sprockit::sim_parameters *params) :
 }
 
 void
-abstract_fat_tree::write_bw_params(
+AbstractFatTree::writeBwParams(
     sprockit::sim_parameters *switch_params,
     double multiplier) const
 {
@@ -121,8 +121,8 @@ abstract_fat_tree::write_bw_params(
   fat_tree
   ----------------------------------------------------------------------------*/
 
-fat_tree::fat_tree(sprockit::sim_parameters* params) :
-  abstract_fat_tree(params)
+FatTree::FatTree(sprockit::sim_parameters* params) :
+  AbstractFatTree(params)
 {
   up_ports_per_leaf_switch_ =
       params->get_int_param("up_ports_per_leaf_switch");
@@ -141,8 +141,8 @@ fat_tree::fat_tree(sprockit::sim_parameters* params) :
   check_input();
 }
 
-topology::vtk_switch_geometry
-fat_tree::get_vtk_geometry(switch_id sid) const
+Topology::vtk_switch_geometry
+FatTree::getVtkGeometry(SwitchId sid) const
 {
   int core_row_cutoff = num_leaf_switches_ + num_agg_switches_;
   int agg_row_cutoff = num_leaf_switches_;
@@ -219,7 +219,7 @@ fat_tree::get_vtk_geometry(switch_id sid) const
 }
 
 void
-fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) const
+FatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   conns.clear();
 
@@ -327,7 +327,7 @@ fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) cons
 }
 
 void
-fat_tree::configure_nonuniform_switch_params(switch_id src,
+FatTree::configureNonuniformSwitchParams(SwitchId src,
                            sprockit::sim_parameters *switch_params) const
 {
   int my_level = level(src);
@@ -357,11 +357,11 @@ fat_tree::configure_nonuniform_switch_params(switch_id src,
     multiplier = switch_params->get_double_param("core_bandwidth_multiplier");
 
   top_debug("fat_tree: scaling switch %i by %lf",src,multiplier);
-  write_bw_params(switch_params, multiplier);
+  writeBwParams(switch_params, multiplier);
 }
 
 void
-fat_tree::check_input() const
+FatTree::check_input() const
 {
   int val;
 
@@ -431,7 +431,7 @@ fat_tree::check_input() const
 }
 
 void
-fat_tree::endpoints_connected_to_injection_switch(switch_id swaddr,
+FatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
   if (level(swaddr) > 0){
@@ -452,20 +452,20 @@ fat_tree::endpoints_connected_to_injection_switch(switch_id swaddr,
   tapered_fat_tree
   ----------------------------------------------------------------------------*/
 
-tapered_fat_tree::tapered_fat_tree(sprockit::sim_parameters *params) :
-  abstract_fat_tree(params)
+TaperedFatTree::TaperedFatTree(sprockit::sim_parameters *params) :
+  AbstractFatTree(params)
 {
   agg_bw_multiplier_ = agg_switches_per_subtree_;
 }
 
 void
-tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& conns) const
+TaperedFatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   int myRow = level(src);
   if (myRow == 2){
     //core switch
     conns.resize(num_agg_subtrees_);
-    int inport = up_port(1);
+    int inport = upPort(1);
     for (int s=0; s < num_agg_subtrees_; ++s){
       connection& conn = conns[s];
       conn.src = src;
@@ -475,10 +475,10 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
     }
   } else if (myRow == 1){
     //agg switch
-    int myTree = agg_subtree(src);
+    int myTree = aggSubtree(src);
     int myOffset = myTree * leaf_switches_per_subtree_;
     conns.resize(leaf_switches_per_subtree_ + 1);
-    int inport = up_port(0);
+    int inport = upPort(0);
     for (int s=0; s < leaf_switches_per_subtree_; ++s){
       connection& conn = conns[s];
       conn.src = src;
@@ -488,15 +488,15 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
     }
     connection& upconn = conns[leaf_switches_per_subtree_];
     upconn.src = src;
-    upconn.dst = core_switch_id();
-    upconn.src_outport = up_port(1);
+    upconn.dst = coreSwitchId();
+    upconn.src_outport = upPort(1);
     upconn.dst_inport = myTree;
   } else {
     //inj switch
-    int myTree = inj_subtree(src);
+    int myTree = injSubtree(src);
     int myOffset = src % leaf_switches_per_subtree_;
     conns.resize(1);
-    int outport = up_port(0);
+    int outport = upPort(0);
     connection& conn = conns[0];
     conn.src = src;
     conn.dst = num_leaf_switches_ + myTree;
@@ -506,7 +506,7 @@ tapered_fat_tree::connected_outports(switch_id src, std::vector<connection>& con
 }
 
 void
-tapered_fat_tree::configure_individual_port_params(switch_id src,
+TaperedFatTree::configureIndividualPortParams(SwitchId src,
                                   sprockit::sim_parameters *switch_params) const
 {
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
@@ -519,16 +519,16 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
 
   if (myLevel == 0){
     //inj switch
-    int outport = up_port(0);
-    setup_port_params(outport,
+    int outport = upPort(0);
+    setupPortParams(outport,
                       buffer_size,
                       bw,
                       link_params, switch_params);
   } else if (myLevel == 1){
     //I have up and down links
     //My up link is tapered
-    int outport = up_port(1);
-    setup_port_params(outport,
+    int outport = upPort(1);
+    setupPortParams(outport,
                       taperedBufSize,
                       taperedBw,
                       link_params, switch_params);
@@ -536,7 +536,7 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
     //My down links are not
     for (int s=0; s < leaf_switches_per_subtree_; s++){
       int outport = s;
-      setup_port_params(outport,
+      setupPortParams(outport,
                         buffer_size,
                         bw,
                         link_params,
@@ -546,7 +546,7 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
     //I have only down links
     for (int s=0; s < num_agg_subtrees_; ++s){
       int outport = s;
-      setup_port_params(outport,
+      setupPortParams(outport,
                         taperedBufSize,
                         taperedBw,
                         link_params, switch_params);
@@ -555,7 +555,7 @@ tapered_fat_tree::configure_individual_port_params(switch_id src,
 }
 
 void
-tapered_fat_tree::configure_nonuniform_switch_params(switch_id src,
+TaperedFatTree::configureNonuniformSwitchParams(SwitchId src,
                            sprockit::sim_parameters *switch_params) const
 {
   int myLevel = level(src);
@@ -571,11 +571,11 @@ tapered_fat_tree::configure_nonuniform_switch_params(switch_id src,
   }
 
   top_debug("abstract_fat_tree: scaling switch %i by %lf",src,multiplier);
-  write_bw_params(switch_params,multiplier);
+  writeBwParams(switch_params,multiplier);
 }
 
 void
-tapered_fat_tree::endpoints_connected_to_injection_switch(switch_id swaddr,
+TaperedFatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
   if (level(swaddr) > 0){
@@ -594,7 +594,7 @@ tapered_fat_tree::endpoints_connected_to_injection_switch(switch_id swaddr,
 
 
 void
-tapered_fat_tree::create_partition(
+TaperedFatTree::createPartition(
   int *switch_to_lp,
   int *switch_to_thread,
   int me,
@@ -602,7 +602,7 @@ tapered_fat_tree::create_partition(
   int nthread,
   int noccupied) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "tapered_fat_tree::create_partition");
+  spkt_throw_printf(sprockit::unimplemented_error, "tapered_fat_tree::createPartition");
 /**
   int nworkers = nproc * nthread;
 
@@ -610,12 +610,12 @@ tapered_fat_tree::create_partition(
   int sw_per_worker = noccupied / nworkers;
   if (noccupied % sw_per_worker) ++sw_per_worker;
 
-  int switches_at_level = num_leaf_switches();
+  int switches_at_level = numLeafSwitches();
   int occ_at_level = noccupied;
   int swIdx = 0;
   int localIdx = 0;
   top_debug("simple fat tree k=%d l=%d partitioning %d switches onto %d procs x %d threads",
-    k_, l_, num_switches(), nproc, nthread);
+    k_, l_, numSwitches(), nproc, nthread);
   for (int l=0; l < l_; ++l){
     top_debug("simple fat tree partitioning %d switches, %d occupied on level %d onto %d procs x %d threads",
       switches_at_level, occ_at_level, l, nproc, nthread);

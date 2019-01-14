@@ -48,8 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class launch_event;
-class job_stop_event;
+class LaunchEvent;
+class JobStopEvent;
 class app_start_event;
 
 }

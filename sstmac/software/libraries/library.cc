@@ -50,30 +50,30 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-library::library(const std::string& libname, software_id sid, operating_system* os) :
+Library::Library(const std::string& libname, SoftwareId sid, OperatingSystem* os) :
   sid_(sid), libname_(libname), os_(os),
   addr_(os->addr())
 {
-  os_->register_lib(this);
+  os_->registerLib(this);
 }
 
 uint32_t
-library::component_id() const
+Library::componentId() const
 {
-  return os_->component_id();
+  return os_->componentId();
 }
 
-library::~library()
+Library::~Library()
 {
-  os_->unregister_lib(this);
+  os_->unregisterLib(this);
 }
 
 void
-library::incoming_event(event* ev)
+Library::incomingEvent(Event* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "%s::incoming_event: this library should only block, never receive incoming",
-     to_string().c_str());
+     toString().c_str());
 }
 
 }

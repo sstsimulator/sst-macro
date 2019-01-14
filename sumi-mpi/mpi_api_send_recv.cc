@@ -52,8 +52,8 @@ Questions? Contact sst-macro-help@sandia.gov
   start_mpi_call(fxn); \
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt, \
    "%s(%d,%s,%s,%s,%s)", #fxn, \
-   count, type_str(type).c_str(), src_str(partner).c_str(), \
-   tag_str(tag).c_str(), comm_str(comm).c_str());
+   count, typeStr(type).c_str(), srcStr(partner).c_str(), \
+   tagStr(tag).c_str(), commStr(comm).c_str());
 
 #define start_Ipt2pt_call(fxn,count,type,partner,tag,comm,reqPtr) \
   start_mpi_call(fxn)
@@ -62,13 +62,13 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 int
-mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+MpiApi::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {  
   auto start_clock = trace_clock();
 
   start_pt2pt_call(MPI_Send,count,datatype,dest,tag,comm);
-  mpi_comm* commPtr = get_comm(comm);
-  mpi_request* req = mpi_request::construct(mpi_request::Send);
+  MpiComm* commPtr = getComm(comm);
+  MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   queue_->progress_loop(req);
   delete req;
@@ -85,7 +85,7 @@ mpi_api::send(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 }
 
 int
-mpi_api::sendrecv(const void *sendbuf, int sendcount,
+MpiApi::sendrecv(const void *sendbuf, int sendcount,
  MPI_Datatype sendtype, int dest, int sendtag,
  void *recvbuf, int recvcount,
  MPI_Datatype recvtype, int source, int recvtag,
@@ -94,8 +94,8 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
   auto start_clock = trace_clock();
 
   start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
-  mpi_request* req = do_isend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
-  do_recv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
+  MpiRequest* req = doIsend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
+  doRecv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
   queue_->progress_loop(req);
   delete req;
   finish_mpi_call(MPI_Sendrecv);
@@ -110,17 +110,17 @@ mpi_api::sendrecv(const void *sendbuf, int sendcount,
 }
 
 int
-mpi_api::request_free(MPI_Request *req)
+MpiApi::request_free(MPI_Request *req)
 {
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Request_free(REQ=%d)", *req);
 
   auto start_clock = trace_clock();
 
-  mpi_request* reqPtr = get_request(*req);
+  MpiRequest* reqPtr = getRequest(*req);
   if (reqPtr){
-    if (reqPtr->is_complete()){
-      erase_request_ptr(*req);
+    if (reqPtr->isComplete()){
+      eraseRequestPtr(*req);
     } else {
       //you freed an active - request
       //that was silly
@@ -140,18 +140,18 @@ mpi_api::request_free(MPI_Request *req)
 }
 
 void
-mpi_api::do_start(MPI_Request req)
+MpiApi::doStart(MPI_Request req)
 {
-  mpi_request* reqPtr = get_request(req);
-  persistent_op* op = reqPtr->persistent_data();
+  MpiRequest* reqPtr = getRequest(req);
+  PersistentOp* op = reqPtr->persistentData();
   if (op == nullptr){
     spkt_throw_printf(sprockit::value_error,
                       "Starting MPI_Request that is not persistent");
   }
 
-  reqPtr->set_complete(false);
-  mpi_comm* commPtr = get_comm(op->comm);
-  if (reqPtr->optype() == mpi_request::Send){
+  reqPtr->setComplete(false);
+  MpiComm* commPtr = getComm(op->comm);
+  if (reqPtr->optype() == MpiRequest::Send){
     queue_->send(reqPtr, op->count, op->datatype, op->partner, op->tag, commPtr, op->content);
   } else {
     queue_->recv(reqPtr, op->count, op->datatype, op->partner, op->tag, commPtr, op->content);
@@ -159,13 +159,13 @@ mpi_api::do_start(MPI_Request req)
 }
 
 int
-mpi_api::start(MPI_Request* req)
+MpiApi::start(MPI_Request* req)
 {
   auto start_clock = trace_clock();
 
   _start_mpi_call_(MPI_Start);
-  do_start(*req);
-  end_api_call();
+  doStart(*req);
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
   if(otf2_writer_) {
@@ -176,15 +176,15 @@ mpi_api::start(MPI_Request* req)
 }
 
 int
-mpi_api::startall(int count, MPI_Request* req)
+MpiApi::startall(int count, MPI_Request* req)
 {
   auto call_start_time = (uint64_t)os_->now().usec();
 
   _start_mpi_call_(MPI_Startall);
   for (int i=0; i < count; ++i){
-    do_start(req[i]);
+    doStart(req[i]);
   }
-  end_api_call();
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_) {
@@ -196,7 +196,7 @@ mpi_api::startall(int count, MPI_Request* req)
 }
 
 int
-mpi_api::send_init(const void *buf, int count,
+MpiApi::sendInit(const void *buf, int count,
                    MPI_Datatype datatype, int dest, int tag,
                    MPI_Comm comm, MPI_Request *request)
 {
@@ -204,17 +204,17 @@ mpi_api::send_init(const void *buf, int count,
 
   _start_mpi_call_(MPI_Send_init);
 
-  mpi_request* req = mpi_request::construct(mpi_request::Send);
-  add_request_ptr(req, request);
+  MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
+  addRequestPtr(req, request);
 
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Send_init(%d,%s,%d:%d,%s,%s;REQ=%d)",
-    count, type_str(datatype).c_str(), int(dest),
-    int(get_comm(comm)->peer_task(dest)),
-    tag_str(tag).c_str(), comm_str(comm).c_str(),
+    count, typeStr(datatype).c_str(), int(dest),
+    int(getComm(comm)->peerTask(dest)),
+    tagStr(tag).c_str(), commStr(comm).c_str(),
     *request);
 
-  persistent_op* op = new persistent_op;
+  PersistentOp* op = new PersistentOp;
   op->content = const_cast<void*>(buf);
   op->count = count;
   op->datatype = datatype;
@@ -222,8 +222,8 @@ mpi_api::send_init(const void *buf, int count,
   op->tag = tag;
   op->comm = comm;
 
-  req->set_persistent(op);
-  end_api_call();
+  req->setPersistent(op);
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
@@ -234,30 +234,30 @@ mpi_api::send_init(const void *buf, int count,
   return MPI_SUCCESS;
 }
 
-mpi_request*
-mpi_api::do_isend(const void *buf, int count, MPI_Datatype datatype, int dest,
+MpiRequest*
+MpiApi::doIsend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm)
 {
-  mpi_comm* commPtr = get_comm(comm);
-  mpi_request* req = mpi_request::construct(mpi_request::Send);
+  MpiComm* commPtr = getComm(comm);
+  MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
   return req;
 }
 
 int
-mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
+MpiApi::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
   auto start_clock = trace_clock();
 
   start_Ipt2pt_call(MPI_Isend,count,datatype,dest,tag,comm,request);
-  mpi_request* req = do_isend(buf, count, datatype, dest, tag, comm);
-  add_request_ptr(req, request);
+  MpiRequest* req = doIsend(buf, count, datatype, dest, tag, comm);
+  addRequestPtr(req, request);
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Isend(%d,%s,%d,%s,%s;REQ=%d)",
-    count, type_str(datatype).c_str(), int(dest),
-    tag_str(tag).c_str(), comm_str(comm).c_str(), *request);
-  queue_->nonblocking_progress();
+    count, typeStr(datatype).c_str(), int(dest),
+    tagStr(tag).c_str(), commStr(comm).c_str(), *request);
+  queue_->nonblockingProgress();
   finish_mpi_call(MPI_Isend);
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -271,13 +271,13 @@ mpi_api::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
 }
 
 int
-mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source,
+MpiApi::recv(void *buf, int count, MPI_Datatype datatype, int source,
               int tag, MPI_Comm comm, MPI_Status *status)
 {
   auto start_clock = trace_clock();
 
   start_pt2pt_call(MPI_Recv,count,datatype,source,tag,comm);
-  int rc = do_recv(buf,count,datatype,source,tag,comm,status);
+  int rc = doRecv(buf,count,datatype,source,tag,comm,status);
   finish_mpi_call(MPI_Recv);
 
 #ifdef SSTMAC_OTF2_ENABLED
@@ -291,11 +291,11 @@ mpi_api::recv(void *buf, int count, MPI_Datatype datatype, int source,
 }
 
 int
-mpi_api::do_recv(void *buf, int count, MPI_Datatype datatype, int source,
+MpiApi::doRecv(void *buf, int count, MPI_Datatype datatype, int source,
               int tag, MPI_Comm comm, MPI_Status *status)
 {
-  mpi_request* req = mpi_request::construct(mpi_request::Recv);
-  mpi_comm* commPtr = get_comm(comm);
+  MpiRequest* req = MpiRequest::construct(MpiRequest::Recv);
+  MpiComm* commPtr = getComm(comm);
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
   queue_->progress_loop(req);
   if (status != MPI_STATUS_IGNORE){
@@ -306,21 +306,21 @@ mpi_api::do_recv(void *buf, int count, MPI_Datatype datatype, int source,
 }
 
 int
-mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
+MpiApi::recvInit(void *buf, int count, MPI_Datatype datatype, int source,
                    int tag, MPI_Comm comm, MPI_Request *request)
 {
   _start_mpi_call_(MPI_Recv_init);
 
-  mpi_request* req = mpi_request::construct(mpi_request::Recv);
-  add_request_ptr(req, request);
+  MpiRequest* req = MpiRequest::construct(MpiRequest::Recv);
+  addRequestPtr(req, request);
 
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_pt2pt,
     "MPI_Recv_init(%d,%s,%s,%s,%s;REQ=%d)",
-    count, type_str(datatype).c_str(),
-    src_str(source).c_str(), tag_str(tag).c_str(),
-    comm_str(comm).c_str(), *request);
+    count, typeStr(datatype).c_str(),
+    srcStr(source).c_str(), tagStr(tag).c_str(),
+    commStr(comm).c_str(), *request);
 
-  persistent_op* op = new persistent_op;
+  PersistentOp* op = new PersistentOp;
   op->content = buf;
   op->count = count;
   op->datatype = datatype;
@@ -334,13 +334,13 @@ mpi_api::recv_init(void *buf, int count, MPI_Datatype datatype, int source,
   }
 #endif
 
-  req->set_persistent(op);
-  end_api_call();
+  req->setPersistent(op);
+  endAPICall();
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
+MpiApi::irecv(void *buf, int count, MPI_Datatype datatype, int source,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
   auto start_clock = trace_clock();
@@ -348,19 +348,19 @@ mpi_api::irecv(void *buf, int count, MPI_Datatype datatype, int source,
   start_Ipt2pt_call(MPI_Irecv,count,datatype,dest,tag,comm,request);
 
   using namespace sprockit;
-  mpi_comm* commPtr = get_comm(comm);
+  MpiComm* commPtr = getComm(comm);
 
-  mpi_request* req = mpi_request::construct(mpi_request::Recv);
-  add_request_ptr(req, request);
+  MpiRequest* req = MpiRequest::construct(MpiRequest::Recv);
+  addRequestPtr(req, request);
 
   mpi_api_debug(dbg::mpi | dbg::mpi_request | dbg::mpi_pt2pt,
       "MPI_Irecv(%d,%s,%s,%s,%s;REQ=%d)",
-      count, type_str(datatype).c_str(),
-      src_str(commPtr, source).c_str(), tag_str(tag).c_str(),
-      comm_str(comm).c_str(), *request);
+      count, typeStr(datatype).c_str(),
+      srcStr(commPtr, source).c_str(), tagStr(tag).c_str(),
+      commStr(comm).c_str(), *request);
 
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
-  queue_->nonblocking_progress();
+  queue_->nonblockingProgress();
   finish_mpi_call(MPI_Irecv);
 
 #ifdef SSTMAC_OTF2_ENABLED

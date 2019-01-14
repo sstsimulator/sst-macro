@@ -14,7 +14,7 @@ T& thread_stack_size(){
   return stacksize;
 }
 
-static int inline current_thread_id() {
+static int inline current_threadId() {
   int stacksize = thread_stack_size<int>();
   if (stacksize == 0){
     return 0;
@@ -79,7 +79,7 @@ class thread_safe_new {
       spkt_abort_printf("allocating mismatched sizes: %d != %d",
                         sz, sizeof(T));
     }
-    int thread = current_thread_id();
+    int thread = current_threadId();
     return allocate(thread);
   }
 
@@ -88,7 +88,7 @@ class thread_safe_new {
   }
 
   static void operator delete(void* ptr){
-    int thread = current_thread_id();
+    int thread = current_threadId();
     alloc_.available[thread].push_back(ptr);
   }
 #endif

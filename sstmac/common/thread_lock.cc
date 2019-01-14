@@ -51,14 +51,14 @@ namespace sstmac {
 
 class mutex_sim_thread_lock :
   public sim_thread_lock,
-  public mutex_thread_lock
+  public MutexThreadLock
 {
   void lock(){
-    mutex_thread_lock::lock();
+    MutexThreadLock::lock();
   }
 
   void unlock(){
-    mutex_thread_lock::unlock();
+    MutexThreadLock::unlock();
   }
 };
 
@@ -68,7 +68,7 @@ sim_thread_lock::construct()
   return new mutex_sim_thread_lock;
 }
 
-mutex_thread_lock::mutex_thread_lock()
+MutexThreadLock::MutexThreadLock()
 {
   int signal = pthread_mutex_init(&mutex_, NULL);
   if (signal != 0) {
@@ -77,7 +77,7 @@ mutex_thread_lock::mutex_thread_lock()
   }
 }
 
-mutex_thread_lock::~mutex_thread_lock()
+MutexThreadLock::~MutexThreadLock()
 {
   /** Ignore the signal for now since whatever person wrote
     some of the pthread implementations doesn't know how turn off
@@ -86,7 +86,7 @@ mutex_thread_lock::~mutex_thread_lock()
 }
 
 void
-mutex_thread_lock::lock()
+MutexThreadLock::lock()
 {
   int signal = pthread_mutex_lock(&mutex_);
   if (signal != 0) {
@@ -98,7 +98,7 @@ mutex_thread_lock::lock()
 }
 
 bool
-mutex_thread_lock::trylock()
+MutexThreadLock::trylock()
 {
   int signal = pthread_mutex_trylock(&mutex_);
   bool locked = signal == 0;
@@ -109,7 +109,7 @@ mutex_thread_lock::trylock()
 }
 
 void
-mutex_thread_lock::unlock()
+MutexThreadLock::unlock()
 {
   locked_ = false;
   int signal = pthread_mutex_unlock(&mutex_);
@@ -120,7 +120,7 @@ mutex_thread_lock::unlock()
 }
 
 #if SSTMAC_USE_SPINLOCK
-spin_thread_lock::spin_thread_lock()
+SpinThreadLock::SpinThreadLock()
 {
   int signal = pthread_spin_init(&lock_, PTHREAD_PROCESS_PRIVATE);
   if (signal != 0) {
@@ -129,7 +129,7 @@ spin_thread_lock::spin_thread_lock()
   }
 }
 
-spin_thread_lock::~spin_thread_lock()
+SpinThreadLock::~SpinThreadLock()
 {
   /** Ignore the signal for now since whatever person wrote
     some of the pthread implementations doesn't know how turn off
@@ -138,7 +138,7 @@ spin_thread_lock::~spin_thread_lock()
 }
 
 void
-spin_thread_lock::lock()
+SpinThreadLock::lock()
 {
   int signal = pthread_spin_lock(&lock_);
   if (signal != 0) {
@@ -150,7 +150,7 @@ spin_thread_lock::lock()
 }
 
 bool
-spin_thread_lock::trylock()
+SpinThreadLock::trylock()
 {
   int signal = pthread_spin_trylock(&lock_);
   bool locked = signal == 0;
@@ -161,7 +161,7 @@ spin_thread_lock::trylock()
 }
 
 void
-spin_thread_lock::unlock()
+SpinThreadLock::unlock()
 {
   locked_ = false;
   int signal = pthread_spin_unlock(&lock_);

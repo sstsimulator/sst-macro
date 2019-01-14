@@ -64,8 +64,8 @@ namespace hw {
 
 static const double PI = 3.141592653589793238462;
 
-dragonfly_plus::dragonfly_plus(sprockit::sim_parameters* params) :
-  dragonfly(params)
+DragonflyPlus::DragonflyPlus(sprockit::sim_parameters* params) :
+  Dragonfly(params)
 {
   if (h_ % (g_-1)){
     spkt_abort_printf("dragonfly+ currently requires an all-to-all group connectivity");
@@ -77,7 +77,7 @@ dragonfly_plus::dragonfly_plus(sprockit::sim_parameters* params) :
 }
 
 void
-dragonfly_plus::endpoints_connected_to_injection_switch(switch_id swaddr,
+DragonflyPlus::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
   int row = computeRow(swaddr);
@@ -96,7 +96,7 @@ dragonfly_plus::endpoints_connected_to_injection_switch(switch_id swaddr,
 }
 
 int
-dragonfly_plus::minimal_distance(switch_id src, switch_id dst) const
+DragonflyPlus::minimalDistance(SwitchId src, SwitchId dst) const
 {
   int srcRow = computeRow(src);
   int dstRow = computeRow(dst);
@@ -112,7 +112,7 @@ dragonfly_plus::minimal_distance(switch_id src, switch_id dst) const
 }
 
 void
-dragonfly_plus::connected_outports(switch_id src, std::vector<connection>& conns) const
+DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   conns.clear();
 
@@ -156,7 +156,7 @@ dragonfly_plus::connected_outports(switch_id src, std::vector<connection>& conns
       next.dst = relDst + a_*g_; //num leaf switches
       int dstA = relDst % a_;
       int dstG = relDst / a_;
-      next.dst_inport =  a_ + group_wiring_->input_group_port(myA, myG, p, dstA, dstG);
+      next.dst_inport =  a_ + group_wiring_->input_groupPort(myA, myG, p, dstA, dstG);
       conns.push_back(next);
       top_debug("(%d=%d,%d:%d)->(%d=%d,%d:%d)",
                 src, myA, myG, next.src_outport,
@@ -166,19 +166,19 @@ dragonfly_plus::connected_outports(switch_id src, std::vector<connection>& conns
 }
 
 void
-dragonfly_plus::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
+DragonflyPlus::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters *switch_params) const
 {
-  int row = src / num_leaf_switches();
+  int row = src / numLeafSwitches();
   if (row == 0){
-    dragonfly::setup_port_params(switch_params, red_[0], 0, a_);
+    Dragonfly::setupPortParams(switch_params, red_[0], 0, a_);
   } else {
-    dragonfly::setup_port_params(switch_params, red_[0], 0, a_);
-    dragonfly::setup_port_params(switch_params, red_[1], a_, h_);
+    Dragonfly::setupPortParams(switch_params, red_[0], 0, a_);
+    Dragonfly::setupPortParams(switch_params, red_[1], a_, h_);
   }
 }
 
-topology::vtk_switch_geometry
-dragonfly_plus::get_vtk_geometry(switch_id sid) const
+Topology::vtk_switch_geometry
+DragonflyPlus::getVtkGeometry(SwitchId sid) const
 {
   int myRow;
   int myA;

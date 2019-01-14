@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 
 void
-activate_debugs(const std::string& debug_list)
+activateDebugs(const std::string& debug_list)
 {
   std::deque<std::string> tok;
   std::string space = ",";
@@ -77,13 +77,13 @@ operator<<(std::ostream &os, const opts &oo)
 }
 
 void
-machine_already_configured(){
+machineAlreadyConfigured(){
   spkt_abort_printf("conflicting machine declarations: cannot combine"
     "--inf, --auto/-a, --debug/-d, --pisces, or --macrels flags");
 }
 
 int
-parse_opts(int argc, char **argv, opts &oo)
+parseOpts(int argc, char **argv, opts &oo)
 {
   int no_congestion = 0;
   int pisces_debug = 0;
@@ -98,7 +98,7 @@ parse_opts(int argc, char **argv, opts &oo)
   int lowrestimer = 0;
   int run_ping_all = 0;
   int infinite_network = 0;
-  int output_xyz = 0;
+  int outputXYZ = 0;
   bool need_config_file = true;
   bool machine_configured = false;
   option gopt[] = {
@@ -155,10 +155,10 @@ parse_opts(int argc, char **argv, opts &oo)
         need_config_file = false;
         break;
       case 'g':
-        oo.output_graphviz = optarg;
+        oo.outputGraphviz = optarg;
         break;
       case 'd':
-        activate_debugs(optarg);
+        activateDebugs(optarg);
         break;
       case 'n' :
         oo.params->add_param_override("node.app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
@@ -177,7 +177,7 @@ parse_opts(int argc, char **argv, opts &oo)
         oo.got_config_file = true;
         break;
       case 'x':
-        oo.output_xyz = optarg;
+        oo.outputXYZ = optarg;
         break;
       case 'a': {
         need_config_file = false;
@@ -226,7 +226,7 @@ parse_opts(int argc, char **argv, opts &oo)
     params.combine_into(oo.params);
     need_config_file = false;
     if (machine_configured){
-      machine_already_configured();
+      machineAlreadyConfigured();
     }
     machine_configured = true;
   }
@@ -253,10 +253,10 @@ parse_opts(int argc, char **argv, opts &oo)
     if (pos!= std::string::npos){
       exe_name = exe_name.substr(pos+1);
     }
-    bool is_stand_alone = sstmac::sw::app::factory::is_valid_name("sstmac_app_name");
+    bool is_stand_alone = sstmac::sw::App::factory::is_valid_name("sstmac_app_name");
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (is_stand_alone){
-      int rc = sstmac::run_standalone(argc,argv);
+      int rc = sstmac::runStandalone(argc,argv);
       if (rc == 0){
         return PARSE_OPT_EXIT_SUCCESS;
       } else {
@@ -281,14 +281,14 @@ parse_opts(int argc, char **argv, opts &oo)
 
   if (pisces_debug) {
     if (machine_configured){
-      machine_already_configured();
+      machineAlreadyConfigured();
     }
     oo.configfile = "pisces.ini";
   }
 
   if (macrels_debug) {
     if (machine_configured){
-      machine_already_configured();
+      machineAlreadyConfigured();
     }
     oo.configfile = "macrels.ini";
   }

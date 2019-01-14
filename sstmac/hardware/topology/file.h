@@ -56,97 +56,97 @@ namespace hw {
  *  @class file
  *  The file topology generates a network by reading from a file.
  */
-class file : public topology
+class FileTopology : public Topology
 {
-  FactoryRegister("file", topology, file)
+  FactoryRegister("file", Topology, FileTopology)
  public:
-  std::string to_string() const override {
+  std::string toString() const override {
     return "file topology";
   }
 
-  virtual ~file() {}
+  virtual ~FileTopology() {}
 
-  file(sprockit::sim_parameters* params);
+  FileTopology(sprockit::sim_parameters* params);
 
-  int max_num_ports() const override {
-    return max_num_ports_;
+  int maxNumPorts() const override {
+    return maxNumPorts_;
   }
 
-  switch_id max_switch_id() const override {
+  SwitchId maxSwitchId() const override {
     return num_switches_ - 1;
   }
 
-  node_id max_node_id() const override {
+  NodeId maxNodeId() const override {
     return num_nodes_ - 1;
   }
 
-  switch_id endpoint_to_switch(node_id) const override {
-    spkt_abort_printf("endpoint_to_switch() not implemented");
-    return switch_id(0);
+  SwitchId endpointToSwitch(NodeId) const override {
+    spkt_abort_printf("endpointToSwitch() not implemented");
+    return SwitchId(0);
   }
 
-  switch_id num_leaf_switches() const override {
+  SwitchId numLeafSwitches() const override {
     return num_leaf_switches_;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const {
-    spkt_abort_printf("minimal_distance() not implemented");
+  int minimalDistance(SwitchId src, SwitchId dst) const {
+    spkt_abort_printf("minimalDistance() not implemented");
     return 0;
   }
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
+  int numHopsToNode(NodeId src, NodeId dst) const override {
     // extremely approximate
     return num_hops_;
   }
 
-  void endpoints_connected_to_ejection_switch(
-      switch_id swaddr,
+  void endpointsConnectedToEjectionSwitch(
+      SwitchId swaddr,
       std::vector<injection_port>& nodes) const override {
-    endpoints_connected_to_injection_switch(swaddr,nodes);
+    endpointsConnectedToInjectionSwitch(swaddr,nodes);
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swaddr,
+  void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                std::vector<injection_port>& nodes) const override;
 
-  bool uniform_switch_ports() const override {
+  bool uniformSwitchPorts() const override {
     return true;
   }
 
-  bool uniform_switches() const override {
+  bool uniformSwitches() const override {
     return true;
   }
 
-  void configure_individual_port_params(switch_id src,
+  void configureIndividualPortParams(SwitchId src,
         sprockit::sim_parameters *switch_params) const override;
 
-  void connected_outports(switch_id src,
+  void connectedOutports(SwitchId src,
        std::vector<connection>& conns) const override;
 
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return num_switches_;
   }
 
-  node_id num_nodes() const override {
+  NodeId numNodes() const override {
     return num_nodes_;
   }
 
-//  node_id node_name_to_id(std::string name) const override {
+//  NodeId nodeNameToId(std::string name) const override {
 //    auto it = node_name_map_.find(name);
 //    if( it == node_name_map_.end())
 //      spkt_throw_printf(sprockit::input_error,
 //        "file topology: can't find node id for %s", name.c_str());
-//    return node_id(it->second);
+//    return NodeId(it->second);
 //  }
 
-  switch_id switch_name_to_id(std::string name) const override {
+  SwitchId switchNameToId(std::string name) const override {
     auto it = switch_name_map_.find(name);
     if( it == switch_name_map_.end())
       spkt_throw_printf(sprockit::input_error,
         "file topology: can't find switch id for %s", name.c_str());
-    return switch_id(it->second);
+    return SwitchId(it->second);
   }
 
-//  std::string node_id_to_name(node_id id) const override {
+//  std::string nodeIdToName(NodeId id) const override {
 //    // find switch name
 //    std::string key;
 //    for (auto &i : node_name_map_) {
@@ -158,7 +158,7 @@ class file : public topology
 //    return key;
 //  }
 
-  std::string switch_id_to_name(switch_id id) const override {
+  std::string switchIdToName(SwitchId id) const override {
     // find switch name
     std::string key;
     for (auto &i : switch_name_map_) {
@@ -171,12 +171,12 @@ class file : public topology
   }
 
  private:
-  void init_hostname_map(sprockit::sim_parameters* params) override;
+  void initHostnameMap(sprockit::sim_parameters* params) override;
 
   int num_nodes_;
   int num_switches_;
   int num_leaf_switches_;
-  int max_num_ports_;
+  int maxNumPorts_;
   int num_hops_;
   nlohmann::json json_;
   nlohmann::json switches_;

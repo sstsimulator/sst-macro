@@ -107,41 +107,41 @@ class graph_viz_increment_stack
 
 };
 
-class graph_viz :
-  public stat_collector
+class GraphViz :
+  public StatCollector
 {
-  FactoryRegister("graph_viz | call_graph", stat_collector, graph_viz)
+  FactoryRegister("graph_viz | callGraph", StatCollector, GraphViz)
  public:
-  graph_viz(sprockit::sim_parameters* params);
+  GraphViz(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "grahpviz";
   }
 
-  virtual ~graph_viz();
+  virtual ~GraphViz();
 
   void clear() override;
 
-  void reduce(stat_collector *coll) override;
+  void reduce(StatCollector *coll) override;
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
-  void global_reduce(parallel_runtime *rt) override;
+  void globalReduce(ParallelRuntime *rt) override;
 
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new graph_viz(params);
+  StatCollector* doClone(sprockit::sim_parameters* params) const override {
+    return new GraphViz(params);
   }
 
-  void count_trace(uint64_t count, sw::thread* thr);
+  void countTrace(uint64_t count, sw::Thread* thr);
 
-  void reassign(int fxnId, uint64_t count, thread* thr);
+  void reassign(int fxnId, uint64_t count, Thread* thr);
 
-  static void delete_statics();
+  static void deleteStatics();
 
  private:
-  void dump_summary(std::ostream& os);
+  void dumpSummary(std::ostream& os);
 
   struct graphviz_call {
     uint64_t ncalls;
@@ -149,7 +149,7 @@ class graph_viz :
   };
 
   class trace  {
-   friend class graph_viz;
+   friend class GraphViz;
    private:
     graphviz_call calls_[0];
 

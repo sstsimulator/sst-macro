@@ -52,27 +52,27 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class btree_gather_actor :
-  public dag_collective_actor
+class BtreeGatherActor :
+  public DagCollectiveActor
 {
 
  public:
-  btree_gather_actor(collective_engine* engine, int root, void* dst, void* src,
-                     int nelems, int type_size, int tag, int cq_id, communicator* comm)
-    : dag_collective_actor(collective::gather, engine, dst, src, type_size, tag, cq_id, comm),
+  BtreeGatherActor(CollectiveEngine* engine, int root, void* dst, void* src,
+                     int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+    : DagCollectiveActor(collective::gather, engine, dst, src, type_size, tag, cq_id, comm),
       root_(root), nelems_(nelems) {}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "btree gather actor";
   }
 
  protected:
-  void finalize_buffers() override;
-  void init_buffers() override;
-  void init_dag() override;
-  void init_tree() override;
-  void start_shuffle(action *ac) override;
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void initTree() override;
+  void startShuffle(Action *ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
   int root_;
@@ -82,20 +82,20 @@ class btree_gather_actor :
 
 };
 
-class btree_gather : public dag_collective
+class BtreeGather : public DagCollective
 {
  public:
-  btree_gather(collective_engine* engine, int root, void* dst, void* src,
-               int nelems, int type_size, int tag, int cq_id, communicator* comm)
-   : dag_collective(gather, engine, dst, src, type_size, tag, cq_id, comm),
+  BtreeGather(CollectiveEngine* engine, int root, void* dst, void* src,
+               int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+   : DagCollective(gather, engine, dst, src, type_size, tag, cq_id, comm),
      root_(root), nelems_(nelems) {}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "btree gather";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new btree_gather_actor(engine_, root_, dst_buffer_, src_buffer_, nelems_, type_size_,
+  DagCollectiveActor* newActor() const override {
+    return new BtreeGatherActor(engine_, root_, dst_buffer_, src_buffer_, nelems_, type_size_,
                                   tag_, cq_id_, comm_);
   }
 

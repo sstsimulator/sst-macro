@@ -7,7 +7,7 @@ To understand the memoization pragmas, we first introduce how models get constru
 Source-to-source transformations based on the pragmas causes the following hooks to get inserted:
 
 \begin{CppCode}
-int sstmac_start_memoize(const char* token, const char* model);
+int sstmac_startMemoize(const char* token, const char* model);
 void sstmac_finish_memoize0(int tag, const char* token);
 void sstmac_finish_memoize1(int tag, const char* token, double p1);
 void sstmac_finish_memoize2(int tag, const char* token, double p1, double p2);
@@ -33,14 +33,14 @@ that function is invoked with the given parameters to estimate a time or perform
 Memoization models are implemented by inheriting from a standard class
 
 \begin{CppCode}
-struct regression_model {
+struct RegressionModel {
 ...
-virtual double compute(int n_params, const double params[], implicit_state* state) = 0;
-virtual int start_collection() = 0;
-virtual void finish_collection(int n_params, const double params[], implicit_state* state) = 0;
+virtual double compute(int n_params, const double params[], ImplicitState* state) = 0;
+virtual int StartCollection() = 0;
+virtual void finishCollection(int n_params, const double params[], ImplicitState* state) = 0;
 ...
 \end{CppCode}
-A call to \inlinecode{sstmac_finish_memoize2} causes \inlinecode{finish_collection(2,..)} to get invoked on the model.
+A call to \inlinecode{sstmac_finish_memoize2} causes \inlinecode{finishCollection(2,..)} to get invoked on the model.
 The \inlinecode{states} object is discussed more later in \ref{subsec:implicitStates}.
 For now, \inlinecode{compute} only returns a double (total time).
 Generalized performance models are planned for future versions.
@@ -49,7 +49,7 @@ If wanting to add a least-squares model, factory register as:
 
 \begin{CppCode}
 struct least_squares : public regression model {
- FactoryRegister("least_squares", operating_system::regression_model, least_squares)
+ FactoryRegister("least_squares", OperatingSystem::RegressionModel, least_squares)
 \end{CppCode}
 
 \subsection{pragma sst memoize [skeletonize(...)] [model(...)] [inputs(...)] [name(...)]}
@@ -69,19 +69,19 @@ void dgemm(int ncol, int nlink, int nrow, double* left, double* right);
 When running the memoization pass, the memoization hooks get invoked as:
 
 \begin{CppCode}
-int tag = sstmac_start_memoize("dgemm", "least_squares");
+int tag = sstmac_startMemoize("dgemm", "least_squares");
 dgemm(....);
 sstmac_finish_memoize3(tag, "dgemm", ncol, nlink, nrow);
 \end{CppCode}
 With \inlinecode{skeletonize} set to true, the skeleton app would be:
 
 \begin{CppCode}
-sstmac_compute_memoize("dgemm", ncol, nlink, nrow);
+sstmac_computeMemoize("dgemm", ncol, nlink, nrow);
 \end{CppCode}
 With skeletonize set to false:
 
 \begin{CppCode}
-sstmac_compute_memoize("dgemm", ncol, nlink, nrow);
+sstmac_computeMemoize("dgemm", ncol, nlink, nrow);
 dgemm(...);
 \end{CppCode}
 Both the memoization function and the original function would both get invoked.
@@ -97,22 +97,22 @@ The implicit state lasts for the scope of the statement:
  //all statements here have that state
 }
 
-#pragma sst implicit_state ...
+#pragma sst ImplicitState ...
 fxn(...) //implicit state lasts the entire function
 \end{CppCode}
 
 The arguments to the pragma are best understood by example:
 
 \begin{CppCode}
-#pragma sst implicit_state dvfs(1) cache(hot)
+#pragma sst ImplicitState dvfs(1) cache(hot)
 fxn(...)
 \end{CppCode}
 This causes a source code transformation to:
 
 \begin{CppCode}
-sstmac_set_implicit_state2(dvfs,1,cache,hot);
+sstmac_set_ImplicitState2(dvfs,1,cache,hot);
 fxn(...);
-sstmac_unset_implicit_state2(dvfs,cache);
+sstmac_unset_ImplicitState2(dvfs,cache);
 \end{CppCode}
 For now, the functions take integer arguments (this may get relaxed to arbitrary strings).
 Thus, e.g. enums must be available or compilation will fail:
@@ -129,7 +129,7 @@ enum cache_states {
 \end{CppCode}
 
 If a \inlinecode{sstmac_finish_memoize} function got invoked, the states could be read.
-The class \inlinecode{implicit_state} is a base class only and carries no data by default.
+The class \inlinecode{ImplicitState} is a base class only and carries no data by default.
 Specific memoization models are intended to be used only with known implicit state classes.
 As such, the memoization model \inlinecode{collect}, etc, functions must dynamic cast to an expected type.
 A library of standard implicit state implementations is planned for future releases.

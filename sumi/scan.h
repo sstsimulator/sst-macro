@@ -52,28 +52,28 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class simultaneous_btree_scan_actor :
-  public dag_collective_actor
+class SimultaneousBtreeScanActor :
+  public DagCollectiveActor
 {
 
  public:
-  simultaneous_btree_scan_actor(collective_engine* engine, void* dst, void* src, int nelems, int type_size,
-                                int tag, reduce_fxn fxn, int cq_id, communicator* comm) :
-    dag_collective_actor(collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
+  SimultaneousBtreeScanActor(CollectiveEngine* engine, void* dst, void* src, int nelems, int type_size,
+                                int tag, reduce_fxn fxn, int cq_id, Communicator* comm) :
+    DagCollectiveActor(collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
     nelems_(nelems), fxn_(fxn)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "simultaneous btree scan";
   }
 
  private:
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
-  void finalize_buffers() override;
-  void init_buffers() override;
-  void init_dag() override;
-  void start_shuffle(action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void startShuffle(Action* ac) override;
 
  private:
   int nelems_;
@@ -86,24 +86,24 @@ class simultaneous_btree_scan_actor :
 
 };
 
-class simultaneous_btree_scan :
-  public dag_collective
+class SimultaneousBtreeScan :
+  public DagCollective
 {
  public:
-  simultaneous_btree_scan(collective_engine* engine, void* dst, void* src, int nelems,
-                          int type_size, int tag, reduce_fxn fxn, int cq_id, communicator* comm) :
-    dag_collective(collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
+  SimultaneousBtreeScan(CollectiveEngine* engine, void* dst, void* src, int nelems,
+                          int type_size, int tag, reduce_fxn fxn, int cq_id, Communicator* comm) :
+    DagCollective(collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
     nelems_(nelems), fxn_(fxn)
   {
   }
 
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "simultaneous btree scan";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new simultaneous_btree_scan_actor(engine_, dst_buffer_, src_buffer_,
+  DagCollectiveActor* newActor() const override {
+    return new SimultaneousBtreeScanActor(engine_, dst_buffer_, src_buffer_,
                                              nelems_, type_size_, tag_, fxn_, cq_id_, comm_);
   }
 

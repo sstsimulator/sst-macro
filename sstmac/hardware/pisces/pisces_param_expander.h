@@ -50,10 +50,10 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class pisces_param_expander :
-  public param_expander
+class PiscesParamExpander :
+  public ParamExpander
 {
- FactoryRegister("pisces", sstmac::param_expander, pisces_param_expander)
+ FactoryRegister("pisces", sstmac::ParamExpander, PiscesParamExpander)
  public:
   void expand(sprockit::sim_parameters* params) override;
 
@@ -83,27 +83,27 @@ class pisces_param_expander :
                            sprockit::sim_parameters* nic_params);
 
 private:
-  double switch_bandwidth_multiplier(sprockit::sim_parameters *params) const override {
+  double switchBandwidthMultiplier(sprockit::sim_parameters *params) const override {
     if (tiled_switch_){
       return 1.0;
     } else {
-      return param_expander::switch_bandwidth_multiplier(params);
+      return ParamExpander::switchBandwidthMultiplier(params);
     }
   }
 
-  int switch_buffer_multiplier(sprockit::sim_parameters *params) const override {
+  int switchBufferMultiplier(sprockit::sim_parameters *params) const override {
     if (tiled_switch_){
       return 1;
     } else {
-      return param_expander::switch_buffer_multiplier(params);
+      return ParamExpander::switchBufferMultiplier(params);
     }
   }
 
-  double network_bandwidth_multiplier(sprockit::sim_parameters *params) const override {
+  double networkBandwidthMultiplier(sprockit::sim_parameters *params) const override {
     if (tiled_switch_){
       return 1.0;
     } else {
-      return param_expander::network_bandwidth_multiplier(params);
+      return ParamExpander::networkBandwidthMultiplier(params);
     }
   }
 

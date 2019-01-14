@@ -67,12 +67,12 @@ namespace sw {
  * Strategy type for assigning processes to nodes in a parallel run.
  *
  */
-class node_allocator :
+class NodeAllocator :
   public sprockit::printable
 {
-  DeclareFactory(node_allocator)
+  DeclareFactory(NodeAllocator)
  public:
-  virtual ~node_allocator() throw ();
+  virtual ~NodeAllocator() throw ();
 
   /** Get nodes.
     @param nnode number of nodes requested
@@ -85,11 +85,11 @@ class node_allocator :
    ordered_node_set& allocation) const = 0;
 
  protected:
-  node_allocator(sprockit::sim_parameters* params);
+  NodeAllocator(sprockit::sim_parameters* params);
 
  protected:
-  hw::topology* topology_;
-  parallel_runtime* rt_;
+  hw::Topology* topology_;
+  ParallelRuntime* rt_;
 
 };
 

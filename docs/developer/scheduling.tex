@@ -42,7 +42,7 @@ Events are stored in a queue (sorted by time)
 \begin{CppCode}
 namespace sstmac {
 
-class event_queue_entry
+class ExecutionEvent
 {
  public:
   virtual void execute() = 0;
@@ -77,14 +77,14 @@ In most cases, events are created by calling the function
 
 \begin{CppCode}
 void schedule(timestamp t,
-  event_handler* handler,
+  EventHandler* handler,
   event* ev);
 \end{CppCode}
 
-This then creates a class of type \inlinecode{event_queue_entry}, for which the execute function is
+This then creates a class of type \inlinecode{ExecutionEvent}, for which the execute function is
 
 \begin{CppCode}
-void handler_event_queue_entry::execute()
+void HandlerExecutionEvent::execute()
 {
   if (!canceled_) {
     handler_->handle(ev_to_deliver_);
@@ -94,12 +94,12 @@ void handler_event_queue_entry::execute()
 
 Handler are created by on-the-fly creation through C++ templates.
 The interface does not actually expose C++ templates.
-The function \inlinecode{new_handler} defined in \inlineshell{event_callback.h} has the prototype:
+The function \inlinecode{newHandler} defined in \inlineshell{event_callback.h} has the prototype:
 
 \begin{CppCode}
 template<class Cls, typename Fxn, class... Args>
-event_handler* 
-new_handler(Cls* cls, Fxn fxn, const Args&... args);
+EventHandler* 
+newHandler(Cls* cls, Fxn fxn, const Args&... args);
 \end{CppCode}
 
 Here \inlinecode{Fxn} is a member function pointer.
@@ -118,7 +118,7 @@ we can create an event handler
 
 \begin{CppCode}
 actor* a = ....;
-event_handler* handler = new_handler(a, &actor::act, 42);
+EventHandler* handler = newHandler(a, &actor::act, 42);
 ...
 event* ev = ....;
 schedule(time, handler, ev);
@@ -143,7 +143,7 @@ For most cases, the number and length of events is such that the min-heap is fin
 The simulation is partitioned into objects that are capable of scheduling events.
 Common examples of \evscheduler objects are nodes, NICs, memory systems, or the operating system.
 In serial runs, an event scheduler is essentially just a wrapper for the \evmgr and the class is not strictly necessary.
-There are two types of event scheduler: \inlinecode{event_component} and \inlinecode{event_subcomponent}.
+There are two types of event scheduler: \inlinecode{Component} and \inlinecode{SubComponent}.
 In parallel simulation, though, the simulation must be partitioned into different scheduling units.
 Scheduling units are then distributed amongst the parallel processes.
 Components are the basic unit.  Currently only nodes and network switches are components.

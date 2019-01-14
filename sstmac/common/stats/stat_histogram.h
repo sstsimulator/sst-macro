@@ -48,17 +48,16 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_collector.h>
 #include <vector>
 
-namespace sstmac
-{
+namespace sstmac {
 
-class stat_histogram :
-  public stat_collector
+class StatHistogram :
+  public StatCollector
 {
-  FactoryRegister("histogram", stat_collector, stat_histogram)
+  FactoryRegister("histogram", StatCollector, StatHistogram)
  public:
-  stat_histogram(sprockit::sim_parameters* params);
+  StatHistogram(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "stat histogram";
   }
 
@@ -66,18 +65,18 @@ class stat_histogram :
 
   void collect(double value, int64_t num);
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
-  void global_reduce(parallel_runtime *rt) override;
+  void globalReduce(ParallelRuntime *rt) override;
 
   void clear() override;
 
-  void reduce(stat_collector* coll) override;
+  void reduce(StatCollector* coll) override;
 
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new stat_histogram(params);
+  StatCollector* doClone(sprockit::sim_parameters* params) const override {
+    return new StatHistogram(params);
   }
 
  protected:
@@ -94,17 +93,16 @@ class stat_histogram :
 
 };
 
-class stat_time_histogram :
-  public stat_histogram
+class StatTimeHistogram : public StatHistogram
 {
-  FactoryRegister("time_histogram", stat_collector, stat_time_histogram)
+  FactoryRegister("time_histogram", StatHistogram, StatTimeHistogram)
  public:
-  stat_time_histogram(sprockit::sim_parameters* params) :
-    stat_histogram(params)
+  StatTimeHistogram(sprockit::sim_parameters* params) :
+    StatHistogram(params)
   {
   }
 
-  void record(timestamp t, int64_t num);
+  void record(Timestamp t, int64_t num);
 };
 
 }

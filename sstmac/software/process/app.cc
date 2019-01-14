@@ -71,7 +71,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/api/api.h>
 #include <sstmac/main/sstmac.h>
 
-static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
+static sprockit::need_deleteStatics<sstmac::sw::UserAppCxxFullMain> del_app_statics;
 
 RegisterKeywords(
  { "host_compute_timer", "whether to use the time elapsed on the host machine in compute modeling" },
@@ -89,16 +89,16 @@ void sstmac_app_loaded(int aid){}
 namespace sstmac {
 namespace sw {
 
-std::map<std::string, app::main_fxn>*
-  user_app_cxx_full_main::main_fxns_ = nullptr;
-std::map<std::string, app::empty_main_fxn>*
-  user_app_cxx_empty_main::empty_main_fxns_ = nullptr;
-std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
+std::map<std::string, App::main_fxn>*
+  UserAppCxxFullMain::main_fxns_ = nullptr;
+std::map<std::string, App::empty_main_fxn>*
+  UserAppCxxEmptyMain::empty_main_fxns_ = nullptr;
+std::map<AppId, UserAppCxxFullMain::argv_entry> UserAppCxxFullMain::argv_map_;
 
-std::map<int, app::dlopen_entry> app::dlopens_;
+std::map<int, App::dlopen_entry> App::dlopens_;
 
 int
-app::allocate_tls_key(destructor_fxn fxn)
+App::allocateTlsKey(destructor_fxn fxn)
 {
   int next = next_tls_key_;
   tls_key_fxns_[next] = fxn;
@@ -129,7 +129,7 @@ static char* get_data_segment(sprockit::sim_parameters* params,
 static thread_lock dlopen_lock;
 
 void
-app::check_dlopen(int aid, sprockit::sim_parameters* params)
+App::dlopenCheck(int aid, sprockit::sim_parameters* params)
 {
   if (params->has_param("exe")){
     dlopen_lock.lock();
@@ -137,7 +137,7 @@ app::check_dlopen(int aid, sprockit::sim_parameters* params)
     dlopen_entry& entry = dlopens_[aid];
     entry.name = libname;
     if (entry.refcount == 0){
-      entry.handle = load_extern_library(libname, load_extern_path_str());
+      entry.handle = loadExternLibrary(libname, loadExternPathStr());
     }
     void* name = dlsym(entry.handle, "exe_main_name");
     if (name){
@@ -159,7 +159,7 @@ app::check_dlopen(int aid, sprockit::sim_parameters* params)
 
 
 void
-app::check_dlclose(int aid)
+App::dlcloseCheck(int aid)
 {
   dlopen_lock.lock();
   auto iter = dlopens_.find(aid);
@@ -168,7 +168,7 @@ app::check_dlclose(int aid)
     --entry.refcount;
     if (entry.refcount == 0){
       std::cerr << "Unloading library " << entry.name << std::endl;
-      unload_extern_library(entry.handle);
+      unloadExternLibrary(entry.handle);
       dlopens_.erase(iter);
     }
   }
@@ -176,7 +176,7 @@ app::check_dlclose(int aid)
 }
 
 char*
-app::allocate_data_segment(bool tls)
+App::allocateDataSegment(bool tls)
 {
   if (tls){
     return get_data_segment(params_, "tls_size", GlobalVariable::tlsCtx);
@@ -185,9 +185,9 @@ app::allocate_data_segment(bool tls)
   }
 }
 
-app::app(sprockit::sim_parameters *params, software_id sid,
-         operating_system* os) :
-  thread(params, sid, os),
+App::App(sprockit::sim_parameters *params, SoftwareId sid,
+         OperatingSystem* os) :
+  Thread(params, sid, os),
   compute_lib_(nullptr),
   params_(params),
   next_tls_key_(0),
@@ -198,7 +198,7 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   globals_storage_(nullptr),
   rc_(0)
 {
-  globals_storage_ = allocate_data_segment(false); //not tls
+  globals_storage_ = allocateDataSegment(false); //not tls
   min_op_cutoff_ = params->get_optional_long_param("min_op_cutoff", 1e3);
   bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
   if (host_compute){
@@ -228,7 +228,7 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   }
 }
 
-app::~app()
+App::~App()
 {
   /** These get deleted by unregister */
   //sprockit::delete_vals(apis_);
@@ -239,7 +239,7 @@ app::~app()
 }
 
 int
-app::putenv(char* input)
+App::putenv(char* input)
 {
   spkt_abort_printf("app::putenv: not implemented - cannot put %d",
                     input);
@@ -247,7 +247,7 @@ app::putenv(char* input)
 }
 
 int
-app::setenv(const std::string &name, const std::string &value, int overwrite)
+App::setenv(const std::string &name, const std::string &value, int overwrite)
 {
   if (overwrite){
     env_[name] = value;
@@ -261,7 +261,7 @@ app::setenv(const std::string &name, const std::string &value, int overwrite)
 }
 
 char*
-app::getenv(const std::string &name) const
+App::getenv(const std::string &name) const
 {
   char* my_buf = const_cast<char*>(env_string_);
   auto iter = env_.find(name);
@@ -279,22 +279,22 @@ app::getenv(const std::string &name) const
   return my_buf;
 }
 
-lib_compute_memmove*
-app::compute_lib()
+LibComputeMemmove*
+App::computeLib()
 {
   if(!compute_lib_) {
-    compute_lib_ = new lib_compute_memmove(params_, sid_, os_);
+    compute_lib_ = new LibComputeMemmove(params_, sid_, os_);
   }
   return compute_lib_;
 }
 
 void
-app::delete_statics()
+App::deleteStatics()
 {
 }
 
 void
-app::cleanup()
+App::cleanup()
 {
   //okay, the app is dying
   //it may be that we have subthreads that are still active
@@ -304,39 +304,39 @@ app::cleanup()
   }
   subthreads_.clear();
 
-  thread::cleanup();
+  Thread::cleanup();
 }
 
 void
-app::sleep(timestamp time)
+App::sleep(Timestamp time)
 {
-  compute_lib()->sleep(time);
+  computeLib()->sleep(time);
 }
 
 void
-app::compute(timestamp time)
+App::compute(Timestamp time)
 {
-  compute_lib()->compute(time);
+  computeLib()->compute(time);
 }
 
 void
-app::compute_inst(compute_event* cmsg)
+App::computeInst(ComputeEvent* cmsg)
 {
-  compute_lib()->compute_inst(cmsg);
+  computeLib()->computeInst(cmsg);
 }
 
 void
-app::compute_loop(uint64_t num_loops,
+App::computeLoop(uint64_t num_loops,
   int nflops_per_loop,
   int nintops_per_loop,
   int bytes_per_loop)
 {
-  compute_lib()->lib_compute_inst::compute_loop(
+  computeLib()->LibComputeInst::computeLoop(
           num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
 
 void
-app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthread)
+App::computeDetailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthread)
 {
   static const uint64_t overflow = 18006744072479883520ull;
   if (flops > overflow || bytes > overflow){
@@ -350,41 +350,41 @@ app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthr
                "Rank %d for app %d: detailed compute for flops=%" PRIu64 " intops=%" PRIu64 " bytes=%" PRIu64,
                sid_.task_, sid_.app_, flops, nintops, bytes);
 
-  compute_lib()->compute_detailed(flops, nintops, bytes, nthread);
+  computeLib()->computeDetailed(flops, nintops, bytes, nthread);
 }
 
 void
-app::compute_block_read(uint64_t bytes)
+App::computeBlockRead(uint64_t bytes)
 {
-  compute_lib()->read(bytes);
+  computeLib()->read(bytes);
 }
 
 void
-app::compute_block_write(uint64_t bytes)
+App::computeBlockWrite(uint64_t bytes)
 {
-  compute_lib()->write(bytes);
+  computeLib()->write(bytes);
 }
 
 sprockit::sim_parameters*
-app::get_params()
+App::getParams()
 {
-  return operating_system::current_thread()->parent_app()->params();
+  return OperatingSystem::currentThread()->parentApp()->params();
 }
 
 void
-app::compute_block_memcpy(uint64_t bytes)
+App::computeBlockMemcpy(uint64_t bytes)
 {
-  compute_lib()->copy(bytes);
+  computeLib()->copy(bytes);
 }
 
-api*
-app::_get_api(const char* name)
+API*
+App::_get_api(const char* name)
 {
   // an underlying thread may have built this
-  api* my_api = apis_[name];
+  API* my_api = apis_[name];
   if (!my_api) {
     sprockit::sim_parameters* api_params = params_->get_optional_namespace(name);
-    api* new_api = api::factory::get_value(name, api_params, sid_, os_);
+    API* new_api = API::factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
   } else {
@@ -393,45 +393,45 @@ app::_get_api(const char* name)
 }
 
 void
-app::run()
+App::run()
 {
   SSTMACBacktrace(main);
-  os_->increment_app_refcount();
-  end_api_call(); //this initializes things, "fake" api call at beginning
-  rc_ = skeleton_main();
+  os_->incrementAppRefcount();
+  endAPICall(); //this initializes things, "fake" api call at beginning
+  rc_ = skeletonMain();
   //we are ending but perform the equivalent
   //to a start api call to flush any compute
-  start_api_call();
+  startAPICall();
   for (auto& pair : apis_){
     delete pair.second;
   }
   apis_.clear();
 
   //now we have to send a message to the job launcher to let it know we are done
-  os_->decrement_app_refcount();
+  os_->decrementAppRefcount();
   //for now assume that the application has finished with a barrier - which is true of like everything
   if (sid_.task_ == 0 && notify_){
-    int launch_root = os_->node()->launch_root();
-    job_stop_event* lev = new job_stop_event(os_->node()->allocate_unique_id(),
-                                             sid_.app_, unique_name_, launch_root, os_->addr());
-    os_->nic_ctrl_ioctl()(lev);
+    int launchRoot = os_->node()->launchRoot();
+    JobStopEvent* lev = new JobStopEvent(os_->node()->allocateUniqueId(),
+                                             sid_.app_, unique_name_, launchRoot, os_->addr());
+    os_->nicCtrlIoctl()(lev);
   }
-  task_mapping::remove_global_mapping(sid_.app_, unique_name_);
-  thread_info::deregister_user_space_virtual_thread(stack_);
-  check_dlclose();
+  TaskMapping::removeGlobalMapping(sid_.app_, unique_name_);
+  ThreadInfo::deregisterUserSpaceVirtualThread(stack_);
+  dlcloseCheck();
 }
 
 void
-app::add_subthread(thread *thr)
+App::addSubthread(Thread *thr)
 {
-  if (thr->thread_id() == thread::main_thread){
-    thr->init_id();
+  if (thr->threadId() == Thread::main_thread){
+    thr->initId();
   }
-  subthreads_[thr->thread_id()] = thr;
+  subthreads_[thr->threadId()] = thr;
 }
 
-thread*
-app::get_subthread(uint32_t id)
+Thread*
+App::getSubthread(uint32_t id)
 {
   auto it = subthreads_.find(id);
   if (it==subthreads_.end()){
@@ -443,19 +443,19 @@ app::get_subthread(uint32_t id)
 }
 
 void
-app::remove_subthread(uint32_t id)
+App::removeSubthread(uint32_t id)
 {
   subthreads_.erase(id);
 }
 
 void
-app::remove_subthread(thread *thr)
+App::removeSubthread(Thread *thr)
 {
-  subthreads_.erase(thr->thread_id());
+  subthreads_.erase(thr->threadId());
 }
 
 bool
-app::erase_mutex(int id)
+App::eraseMutex(int id)
 {
   std::map<int,mutex_t>::iterator it = mutexes_.find(id);
   if (it == mutexes_.end()){
@@ -467,7 +467,7 @@ app::erase_mutex(int id)
 }
 
 bool
-app::erase_condition(int id)
+App::eraseCondition(int id)
 {
   std::map<int,condition_t>::iterator it = conditions_.find(id);
   if (it == conditions_.end()){
@@ -479,7 +479,7 @@ app::erase_condition(int id)
 }
 
 mutex_t*
-app::get_mutex(int id)
+App::getMutex(int id)
 {
   std::map<int,mutex_t>::iterator it = mutexes_.find(id);
   if (it==mutexes_.end()){
@@ -490,7 +490,7 @@ app::get_mutex(int id)
 }
 
 int
-app::allocate_mutex()
+App::allocateMutex()
 {
   int id = next_mutex_++;
   mutexes_[id]; //implicit make
@@ -498,7 +498,7 @@ app::allocate_mutex()
 }
 
 int
-app::allocate_condition()
+App::allocateCondition()
 {
   int id = next_condition_++;
   conditions_[id]; //implicit make
@@ -506,7 +506,7 @@ app::allocate_condition()
 }
 
 condition_t*
-app::get_condition(int id)
+App::getCondition(int id)
 {
   std::map<int,condition_t>::iterator it = conditions_.find(id);
   if (it==conditions_.end()){
@@ -517,7 +517,7 @@ app::get_condition(int id)
 }
 
 void
-user_app_cxx_full_main::delete_statics()
+UserAppCxxFullMain::deleteStatics()
 {
   for (auto& pair : argv_map_){
     argv_entry& entry = pair.second;
@@ -530,9 +530,9 @@ user_app_cxx_full_main::delete_statics()
   main_fxns_ = nullptr;
 }
 
-user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params, software_id sid,
-                                               operating_system* os) :
-  app(params, sid, os)
+UserAppCxxFullMain::UserAppCxxFullMain(sprockit::sim_parameters *params, SoftwareId sid,
+                                               OperatingSystem* os) :
+  App(params, sid, os)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
@@ -547,16 +547,16 @@ user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params,
 }
 
 void
-user_app_cxx_full_main::register_main_fxn(const char *name, app::main_fxn fxn)
+UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
   (*main_fxns_)[name] = fxn;
-  app::factory::register_alias("user_app_cxx_full_main", name);
+  App::factory::register_alias("UserAppCxxFullMain", name);
 }
 
 void
-user_app_cxx_full_main::init_argv(argv_entry& entry)
+UserAppCxxFullMain::initArgv(argv_entry& entry)
 {
   std::string appname = params_->get_param("name");
   std::vector<std::string> argv_param_vec;
@@ -581,21 +581,21 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
 }
 
 int
-user_app_cxx_full_main::skeleton_main()
+UserAppCxxFullMain::skeletonMain()
 {
   static thread_lock argv_lock;
   argv_lock.lock();
   argv_entry& entry = argv_map_[sid_.app_];
   if (entry.argv == 0){
-    init_argv(entry);
+    initArgv(entry);
   }
   argv_lock.unlock();
   return (*fxn_)(entry.argc, entry.argv);
 }
 
-user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *params, software_id sid,
-                                                 operating_system* os) :
-  app(params, sid, os)
+UserAppCxxEmptyMain::UserAppCxxEmptyMain(sprockit::sim_parameters *params, SoftwareId sid,
+                                                 OperatingSystem* os) :
+  App(params, sid, os)
 {
   if (!empty_main_fxns_)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
@@ -611,27 +611,27 @@ user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *param
 }
 
 void
-user_app_cxx_empty_main::register_main_fxn(const char *name, app::empty_main_fxn fxn)
+UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
 {
   if (!empty_main_fxns_)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
 
   (*empty_main_fxns_)[name] = fxn;
-  app::factory::register_alias("user_app_cxx_empty_main", name);
+  App::factory::register_alias("UserAppCxxEmptyMain", name);
 }
 
 int
-user_app_cxx_empty_main::skeleton_main()
+UserAppCxxEmptyMain::skeletonMain()
 {
   return (*fxn_)();
 }
 
-void compute_time(double tsec)
+void computeTime(double tsec)
 {
-  thread* t = operating_system::current_thread();
-  app* a = safe_cast(app, t,
+  Thread* t = OperatingSystem::currentThread();
+  App* a = safe_cast(App, t,
      "cannot cast current thread to app in compute_time function");
-  a->compute(timestamp(tsec));
+  a->compute(Timestamp(tsec));
 }
 
 }

@@ -47,9 +47,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class event_component;
-class event_subcomponent;
-class event_scheduler;
+class Component;
+class SubComponent;
+class EventScheduler;
+class EventLink;
 
 }
 

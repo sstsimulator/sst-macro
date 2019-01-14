@@ -77,16 +77,16 @@ namespace sw {
  * Not to be confused with thread_context, which just manages the details
  * of context-switching between user space threads.
  */
-class thread
+class Thread
 {
  public:
   class kill_exception : public std::exception {};
   class clean_exit_exception: public std::exception {};
 
-  friend class operating_system;
-  friend class app;
-  friend class delete_thread_event;
-  friend class ftq_scope;
+  friend class OperatingSystem;
+  friend class App;
+  friend class DeleteThreadEvent;
+  friend class FTQScope;
 
   enum detach_t {
     JOINABLE=0,
@@ -104,11 +104,11 @@ class thread
     DONE=6
   };
 
-  static thread* current();
+  static Thread* current();
 
   template <class T>
   T* get_api() {
-    api* a = _get_api(T::factory_string());
+    API* a = _get_api(T::factory_string());
     T* casted = dynamic_cast<T*>(a);
     if (!casted) {
       spkt_abort_printf("Failed to cast API to correct type for %s: got %s",
@@ -117,7 +117,7 @@ class thread
     return casted;
   }
 
-  virtual app* parent_app() const {
+  virtual App* parentApp() const {
     return parent_app_;
   }
 
@@ -126,46 +126,46 @@ class thread
   static constexpr uint32_t main_thread = -1;
   static constexpr uint32_t nic_thread = -2;
   static constexpr uint32_t rdma_thread = -3;
-  static constexpr app_id main_thread_aid = -1;
-  static constexpr task_id main_thread_tid = -1;
+  static constexpr AppId main_thread_aid = -1;
+  static constexpr TaskId main_thread_tid = -1;
   static constexpr int use_omp_num_threads = -1;
 
  public:
-  virtual ~thread();
+  virtual ~Thread();
 
-  detach_t detach_state() const {
+  detach_t detachState() const {
     return detach_state_;
   }
 
-  void set_detach_state(detach_t d) {
+  void setDetachState(detach_t d) {
     detach_state_= d;
   }
 
-  state get_state() const {
+  state getState() const {
     return state_;
   }
 
-  app_id aid() const {
+  AppId aid() const {
     return sid_.app_;
   }
 
-  task_id tid() const {
+  TaskId tid() const {
     return sid_.task_;
   }
 
-  software_id sid() const {
+  SoftwareId sid() const {
     return sid_;
   }
 
-  thread_context* context() const {
+  ThreadContext* context() const {
     return context_;
   }
 
-  void spawn(thread* thr);
+  void spawn(Thread* thr);
 
-  uint32_t init_id();
+  uint32_t initId();
 
-  uint32_t thread_id() const {
+  uint32_t threadId() const {
     return thread_id_;
   }
 
@@ -179,15 +179,15 @@ class thread
     state_ = CANCELED;
   }
 
-  bool is_canceled() const {
+  bool isCanceled() const {
     return state_ == CANCELED;
   }
 
-  void set_pthread_concurrency(int lvl){
+  void setPthreadConcurrency(int lvl){
     pthread_concurrency_ = lvl;
   }
 
-  int pthread_concurrency() const {
+  int pthreadConcurrency() const {
     return pthread_concurrency_;
   }
 
@@ -203,7 +203,7 @@ class thread
     }
   }
 
-  operating_system* os() const {
+  OperatingSystem* os() const {
     return os_;
   }
 
@@ -214,40 +214,40 @@ class thread
 #endif
 
 
-  int last_backtrace_nfxn() const {
+  int lastBacktraceNumFxn() const {
     return last_bt_collect_nfxn_;
   }
 
-  int backtrace_nfxn() const {
+  int backtraceNumFxn() const {
     return bt_nfxn_;
   }
 
-  bool timed_out() const {
+  bool timedOut() const {
     return timed_out_;
   }
 
-  void set_timed_out(bool flag){
+  void setTimedOut(bool flag){
     timed_out_ = flag;
   }
 
-  uint64_t block_counter() const {
+  uint64_t blockCounter() const {
     return block_counter_;
   }
 
-  void increment_block_counter() {
+  void incrementBlockCounter() {
     ++block_counter_;
   }
 
-  void append_backtrace(int fxnId);
+  void appendBacktrace(int fxnId);
 
-  void pop_backtrace();
+  void popBacktrace();
 
-  uint32_t component_id() const;
+  uint32_t componentId() const;
 
-  void collect_backtrace(int nfxn);
+  void collectBacktrace(int nfxn);
 
-  void init_thread(sprockit::sim_parameters* params, int phyiscal_thread_id,
-    thread_context* tocopy, void *stack, int stacksize,
+  void initThread(sprockit::sim_parameters* params, int phyiscal_thread_id,
+    ThreadContext* tocopy, void *stack, int stacksize,
     void* globals_storage, void* tls_storage);
 
   virtual void run() = 0;
@@ -255,135 +255,135 @@ class thread
   /** A convenience request to start a new thread.
   *  The current thread has to be initialized for this to work.
   */
-  void start_thread(thread* thr);
+  void startThread(Thread* thr);
 
-  void set_thread_id(int thr);
+  void setThreadId(int thr);
 
   void join();
 
-  process_context get_process_context() const {
+  ProcessContext getProcessContext() const {
     return p_txt_;
   }
 
-  bool is_initialized() const {
+  bool isInitialized() const {
     return state_ >= INITIALIZED;
   }
 
-  void set_affinity(int core){
-    zero_affinity();
-    add_affinity(core);
+  void setAffinity(int core){
+    zeroAffinity();
+    addAffinity(core);
   }
   
-  void add_affinity(int core){
+  void addAffinity(int core){
     cpumask_ = cpumask_ | (1<<core);
   }
   
-  void zero_affinity(){
+  void zeroAffinity(){
     cpumask_ = 0;
   }
 
-  void set_cpumask(uint64_t cpumask);
+  void setCpumask(uint64_t cpumask);
   
   uint64_t cpumask() const {
     return cpumask_;
   }
   
-  uint64_t active_core_mask() const {
+  uint64_t activeCoreMask() const {
     return active_core_mask_;
   }
 
-  static inline void add_core(int core, uint64_t& mask){
+  static inline void addCore(int core, uint64_t& mask){
     mask = mask | (1<<core);
   }
 
-  static inline void remove_core(int core, uint64_t& mask){
+  static inline void removeCore(int core, uint64_t& mask){
     mask = mask & ~(1<<core);
   }
 
-  void add_active_core(int core){
+  void addActiveCore(int core){
     active_cores_.push_back(core);
-    add_core(core, active_core_mask_);
+    addCore(core, active_core_mask_);
   }
 
-  int pop_active_core() {
+  int popActiveCore() {
     int core = active_cores_.back();
     active_cores_.pop_back();
-    remove_core(core, active_core_mask_);
+    removeCore(core, active_core_mask_);
     return core;
   }
 
-  int num_active_cores() const {
+  int numActiveCcores() const {
     return active_cores_.size();
   }
 
-  void compute_detailed(uint64_t flops, uint64_t intops,
+  void computeDetailed(uint64_t flops, uint64_t intops,
                         uint64_t bytes, int nthread=use_omp_num_threads);
 
-  int omp_get_thread_num() const {
+  int ompGetThreadNum() const {
     auto& active = omp_contexts_.back();
     return active.id;
   }
 
-  int omp_get_num_threads() const {
+  int ompGetNumThreads() const {
     auto& active = omp_contexts_.back();
     return active.num_threads;
   }
 
-  int omp_get_max_threads() const {
+  int ompGetMaxThreads() const {
     auto& active = omp_contexts_.back();
     return active.max_num_subthreads;
   }
 
-  int omp_get_ancestor_thread_num() const {
+  int ompGetAncestorThreadNum() const {
     auto& active = omp_contexts_.back();
     return active.parent_id;
   }
 
-  void omp_set_num_threads(int thr) {
+  void ompSetNumThreads(int thr) {
     auto& active = omp_contexts_.back();
     active.requested_num_subthreads = thr;
   }
 
-  int omp_get_level() const {
+  int ompGetLevel() const {
     auto& active = omp_contexts_.back();
     return active.level;
   }
 
-  int omp_in_parallel() {
+  int ompInParallel() {
     auto& active = omp_contexts_.back();
     bool parallel = active.level > 0;
     return parallel ? 1 : 0;
   }
 
-  void* get_tls_value(long thekey) const;
+  void* getTlsValue(long thekey) const;
 
-  void set_tls_value(long thekey, void* ptr);
+  void setTlsValue(long thekey, void* ptr);
 
-  timestamp now();
+  Timestamp now();
 
-  void start_api_call();
+  void startAPICall();
 
-  void end_api_call();
+  void endAPICall();
 
-  void set_tag(ftq_tag t){
+  void setTag(FTQTag t){
     if (!protect_tag)
         ftag_ = t;
   }
 
-  ftq_tag tag() const {
+  FTQTag tag() const {
     return ftag_;
   }
 
-  void spawn_omp_parallel();
+  void spawnOmpParallel();
 
  protected:
   friend class core_allocate_guard;
 
-  thread(sprockit::sim_parameters* params, software_id sid, operating_system* os);
+  Thread(sprockit::sim_parameters* params, SoftwareId sid, OperatingSystem* os);
 
-  friend api* static_get_api(const char *name);
+  friend API* staticGetAPI(const char *name);
 
-  virtual api* _get_api(const char* name);
+  virtual API* _get_api(const char* name);
 
  private:
   struct omp_context {
@@ -394,7 +394,7 @@ class thread
     int num_threads;
     int requested_num_subthreads;
     int max_num_subthreads;
-    std::vector<thread*> subthreads;
+    std::vector<Thread*> subthreads;
     omp_context() :
       parent(nullptr), id(0), parent_id(-1),
       num_threads(1), max_num_subthreads(1)
@@ -403,9 +403,9 @@ class thread
 
   /// Run routine that defines the initial context for this task.
   /// This routine calls the virtual thread::run method.
-  static void run_routine(void* threadptr);
+  static void runRoutine(void* threadptr);
 
-  void set_omp_parent_context(int id, const omp_context& parent);
+  void setOmpParentContext(int id, const omp_context& parent);
 
   /**
    * This should only ever be invoked by the delete thread event.
@@ -417,19 +417,19 @@ class thread
  protected:
   state state_;
 
-  operating_system* os_;
+  OperatingSystem* os_;
 
-  std::queue<thread*> joiners_;
+  std::queue<Thread*> joiners_;
 
-  app* parent_app_; // who created this one. null if launch/os.
+  App* parent_app_; // who created this one. null if launch/os.
 
-  process_context p_txt_;
+  ProcessContext p_txt_;
 
-  ftq_tag ftag_;
+  FTQTag ftag_;
 
   bool protect_tag;
 
-  software_id sid_;
+  SoftwareId sid_;
 
   HostTimer* host_timer_;
 
@@ -456,7 +456,7 @@ class thread
   
   uint32_t thread_id_;
 
-  thread_context* context_;
+  ThreadContext* context_;
   
   uint64_t cpumask_;
   

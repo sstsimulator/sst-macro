@@ -64,15 +64,15 @@ main(int argc, char **argv)
   int partner = (rank + 1) % comm_nproc();
   long bytes = 8192;
   for (int i=0; i < 10; i++){
-    comm_rdma_get(partner, std::make_shared<message>(bytes));
+    comm_rdma_get(partner, std::make_shared<Message>(bytes));
     sstmac_usleep(1);
   }
 
   for (int i=0; i < 10; i++){
-    message* next = comm_poll();
+    Message* next = comm_poll();
     double now = sstmac_now() * 1e3;
     coutn << sprockit::printf("Rank(%d): At t=%12.8f ms got message of type %s\n",
-        rank, now, sumi::message::tostr(next->payload_type()));
+        rank, now, sumi::Message::tostr(next->payload_type()));
   }
 
   comm_finalize();

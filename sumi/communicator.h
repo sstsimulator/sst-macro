@@ -50,11 +50,11 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class communicator {
+class Communicator {
  public:
   class rank_callback {
    public:
-    virtual void rank_resolved(int global_rank, int comm_rank) = 0;
+    virtual void rankResolved(int global_rank, int comm_rank) = 0;
   };
 
   virtual int nproc() const = 0;
@@ -63,7 +63,7 @@ class communicator {
     return my_comm_rank_;
   }
 
-  virtual ~communicator(){}
+  virtual ~Communicator(){}
 
   /**
    * @brief comm_to_global_rank
@@ -73,9 +73,9 @@ class communicator {
    * @param comm_rank
    * @return The physical rank in the global communicator.
   */
-  virtual int comm_to_global_rank(int comm_rank) const = 0;
+  virtual int commToGlobalRank(int comm_rank) const = 0;
 
-  virtual int global_to_comm_rank(int global_rank) const = 0;
+  virtual int globalToCommRank(int global_rank) const = 0;
 
   static const int unresolved_rank = -1;
 
@@ -88,7 +88,7 @@ class communicator {
   }
 
  protected:
-  communicator(int comm_rank) : my_comm_rank_(comm_rank){}
+  Communicator(int comm_rank) : my_comm_rank_(comm_rank){}
 
   void rank_resolved(int global_rank, int comm_rank);
 
@@ -104,27 +104,27 @@ class communicator {
 };
 
 class global_communicator :
-  public communicator
+  public Communicator
 {
  public:
-  global_communicator(transport* tport);
+  global_communicator(Transport* tport);
 
   int nproc() const override;
 
-  int comm_to_global_rank(int comm_rank) const override;
+  int commToGlobalRank(int comm_rank) const override;
 
-  int global_to_comm_rank(int global_rank) const override;
+  int globalToCommRank(int global_rank) const override;
 
  private:
-  transport* transport_;
+  Transport* transport_;
 };
 
 class shifted_communicator :
-  public communicator
+  public Communicator
 {
  public:
-  shifted_communicator(communicator* dom, int left_shift) :
-    communicator((dom->my_comm_rank() - left_shift + dom->nproc()) % dom->nproc()),
+  shifted_communicator(Communicator* dom, int left_shift) :
+    Communicator((dom->my_comm_rank() - left_shift + dom->nproc()) % dom->nproc()),
     dom_(dom),
     nproc_(dom->nproc()),
     shift_(left_shift)
@@ -134,26 +134,26 @@ class shifted_communicator :
     return dom_->nproc();
   }
 
-  int comm_to_global_rank(int comm_rank) const override {
+  int commToGlobalRank(int comm_rank) const override {
     int shifted_rank = (comm_rank + shift_) % nproc_;
-    return dom_->comm_to_global_rank(shifted_rank);
+    return dom_->commToGlobalRank(shifted_rank);
   }
 
-  int global_to_comm_rank(int global_rank) const override {
-    int comm_rank = dom_->global_to_comm_rank(global_rank);
+  int globalToCommRank(int global_rank) const override {
+    int comm_rank = dom_->globalToCommRank(global_rank);
     int shifted_rank = (comm_rank - shift_ + nproc_) % nproc_;
     return shifted_rank;
   }
 
  private:
-  communicator* dom_;
+  Communicator* dom_;
   int nproc_;
   int shift_;
 
 };
 
 class index_communicator :
-  public communicator
+  public Communicator
 {
  public:
   /**
@@ -162,7 +162,7 @@ class index_communicator :
    * @param proc_list
    */
   index_communicator(int comm_rank, int nproc, int* proc_list) :
-    communicator(comm_rank),
+    Communicator(comm_rank),
     proc_list_(proc_list), nproc_(nproc)
   {
   }
@@ -171,11 +171,11 @@ class index_communicator :
     return nproc_;
   }
 
-  int comm_to_global_rank(int comm_rank) const {
+  int commToGlobalRank(int comm_rank) const {
     return proc_list_[comm_rank];
   }
 
-  int global_to_comm_rank(int global_rank) const;
+  int globalToCommRank(int global_rank) const;
 
  private:
   int* proc_list_;
@@ -184,7 +184,7 @@ class index_communicator :
 };
 
 class rotate_communicator :
-  public communicator
+  public Communicator
 {
  public:
   /**
@@ -194,7 +194,7 @@ class rotate_communicator :
    * @param me
    */
   rotate_communicator(int my_global_rank, int nproc, int shift) :
-    communicator(global_to_comm_rank(my_global_rank)),
+    Communicator(globalToCommRank(my_global_rank)),
     nproc_(nproc), shift_(shift)
   {
   }
@@ -203,11 +203,11 @@ class rotate_communicator :
     return nproc_;
   }
 
-  int comm_to_global_rank(int comm_rank) const {
+  int commToGlobalRank(int comm_rank) const {
     return (comm_rank + shift_) %  nproc_;
   }
 
-  int global_to_comm_rank(int global_rank) const {
+  int globalToCommRank(int global_rank) const {
     return (global_rank + nproc_ - shift_) % nproc_;
   }
 
@@ -218,11 +218,11 @@ class rotate_communicator :
 };
 
 class subrange_communicator :
-  public communicator
+  public Communicator
 {
  public:
   subrange_communicator(int my_global_rank, int start, int nproc) :
-    communicator(global_to_comm_rank(my_global_rank)),
+    Communicator(globalToCommRank(my_global_rank)),
     nproc_(nproc), start_(start)
   {
   }
@@ -231,11 +231,11 @@ class subrange_communicator :
     return nproc_;
   }
 
-  int comm_to_global_rank(int comm_rank) const override {
+  int commToGlobalRank(int comm_rank) const override {
     return comm_rank + start_;
   }
 
-  int global_to_comm_rank(int global_rank) const override {
+  int globalToCommRank(int global_rank) const override {
     return global_rank - start_;
   }
 

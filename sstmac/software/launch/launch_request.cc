@@ -74,7 +74,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-software_launch_request::software_launch_request(sprockit::sim_parameters *params) :
+SoftwareLaunchRequest::SoftwareLaunchRequest(sprockit::sim_parameters *params) :
   indexed_(false),
   num_finished_(0)
 {
@@ -85,38 +85,38 @@ software_launch_request::software_launch_request(sprockit::sim_parameters *param
   time_ = params->get_optional_time_param("start", 0);
 
   if (params->has_param("launch_cmd")){
-    parse_launch_cmd(params);
+    parseLaunchCmd(params);
   } else if (params->has_param("dumpi_metaname")){
     std::string metafile = params->get_param("dumpi_metaname");
-    sw::dumpi_meta dm(metafile);
-    nproc_ = dm.num_procs();
+    sw::DumpiMeta dm(metafile);
+    nproc_ = dm.numProcs();
     procs_per_node_ = 1;
   } else {
     nproc_ = params->get_int_param("size");
     procs_per_node_ = params->get_optional_int_param("tasks_per_node", 1);
   }
 
-  allocator_ = sw::node_allocator::factory
+  allocator_ = sw::NodeAllocator::factory
                 ::get_optional_param("allocation", "first_available", params);
 
-  indexer_ = sw::task_mapper::factory
+  indexer_ = sw::TaskMapper::factory
                 ::get_optional_param("indexing", "block", params);
 }
 
-software_launch_request::~software_launch_request()
+SoftwareLaunchRequest::~SoftwareLaunchRequest()
 {
   delete allocator_;
   delete indexer_;
 }
 
-app_launch_request::~app_launch_request()
+AppLaunchRequest::~AppLaunchRequest()
 {
 }
 
-app_launch_request::app_launch_request(sprockit::sim_parameters* params,
-                       app_id aid,
+AppLaunchRequest::AppLaunchRequest(sprockit::sim_parameters* params,
+                       AppId aid,
                        const std::string& app_namespace) :
-  software_launch_request(params),
+  SoftwareLaunchRequest(params),
   aid_(aid),
   app_namespace_(app_namespace),
   app_params_(params)
@@ -124,13 +124,13 @@ app_launch_request::app_launch_request(sprockit::sim_parameters* params,
 }
 
 void
-software_launch_request::index_allocation(
-  hw::topology* top,
+SoftwareLaunchRequest::indexAllocation(
+  hw::Topology* top,
   const ordered_node_set& allocation,
-  std::vector<node_id>& rank_to_node_indexing,
+  std::vector<NodeId>& rank_to_node_indexing,
   std::vector<std::list<int>>& node_to_rank_indexing)
 {
-  indexer_->map_ranks(allocation,
+  indexer_->mapRanks(allocation,
                procs_per_node_,
                rank_to_node_indexing,
                nproc_);
@@ -140,11 +140,11 @@ software_launch_request::index_allocation(
                 rank_to_node_indexing.size());
     int num_nodes = rank_to_node_indexing.size();
 
-    hw::cartesian_topology* regtop =
-        test_cast(hw::cartesian_topology, top);
+    hw::CartesianTopology* regtop =
+        test_cast(hw::CartesianTopology, top);
 
     for (int i=0; i < num_nodes; ++i){
-      node_id nid = rank_to_node_indexing[i];
+      NodeId nid = rank_to_node_indexing[i];
       if (regtop){
         hw::coordinates coords = regtop->node_coords(nid);
         cout0 << sprockit::printf("Rank %d -> nid%d %s\n",
@@ -156,11 +156,11 @@ software_launch_request::index_allocation(
 
   }
 
-  int num_nodes = top->num_nodes();
+  int num_nodes = top->numNodes();
   node_to_rank_indexing.resize(num_nodes);
   int num_ranks = rank_to_node_indexing.size();
   for (int i=0; i < num_ranks; ++i){
-    node_id nid = rank_to_node_indexing[i];
+    NodeId nid = rank_to_node_indexing[i];
     node_to_rank_indexing[nid].push_back(i);
   }
 
@@ -168,7 +168,7 @@ software_launch_request::index_allocation(
 }
 
 bool
-software_launch_request::request_allocation(
+SoftwareLaunchRequest::requestAllocation(
   const sw::ordered_node_set& available,
   sw::ordered_node_set& allocation)
 {
@@ -181,7 +181,7 @@ software_launch_request::request_allocation(
 }
 
 void
-software_launch_request::parse_launch_cmd(
+SoftwareLaunchRequest::parseLaunchCmd(
   sprockit::sim_parameters* params,
   int& nproc,
   int& procs_per_node,
@@ -199,7 +199,7 @@ software_launch_request::parse_launch_cmd(
     }
 
     if (launcher == "aprun") {
-      parse_aprun(launch_cmd, nproc, procs_per_node, affinities);
+      parseAprun(launch_cmd, nproc, procs_per_node, affinities);
       if (procs_per_node == -1) { //nothing given
         int ncores = params->get_optional_int_param("node_cores", 1);
         procs_per_node = ncores > nproc ? nproc : ncores;
@@ -221,13 +221,13 @@ software_launch_request::parse_launch_cmd(
 }
 
 void
-software_launch_request::parse_launch_cmd(sprockit::sim_parameters* params)
+SoftwareLaunchRequest::parseLaunchCmd(sprockit::sim_parameters* params)
 {
-  parse_launch_cmd(params, nproc_, procs_per_node_, core_affinities_);
+  parseLaunchCmd(params, nproc_, procs_per_node_, core_affinities_);
 }
 
 void
-software_launch_request::parse_aprun(
+SoftwareLaunchRequest::parseAprun(
   const std::string &cmd,
   int &nproc, int &nproc_per_node,
   std::vector<int>& core_affinities)

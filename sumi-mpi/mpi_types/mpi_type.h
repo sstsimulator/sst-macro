@@ -75,25 +75,25 @@ using sumi::Min;
 using sumi::Max;
 
 /// MPI datatypes.
-class mpi_type
+class MpiType
 {
  public:
   enum TYPE_TYPE {
     PRIM, PAIR, VEC, IND, NONE
   };
 
-  mpi_type();
+  MpiType();
 
   void init_primitive(const char* label, const int sizeit);
 
-  void init_primitive(const char* label, mpi_type* b1, mpi_type* b2, int size);
+  void init_primitive(const char* label, MpiType* b1, MpiType* b2, int size);
 
   void init_primitive(const std::string& labelit, const int sizeit, int align);
 
   //pair of primitives datatype
-  void init_primitive(const std::string& labelit, mpi_type* b1, mpi_type* b2, int size);
+  void init_primitive(const std::string& labelit, MpiType* b1, MpiType* b2, int size);
 
-  void init_vector(const std::string &labelit, mpi_type*base, int count,
+  void init_vector(const std::string &labelit, MpiType*base, int count,
                    int block, MPI_Aint byte_stride);
 
   void init_indexed(const std::string &labelit,
@@ -103,14 +103,14 @@ class mpi_type
   MPI_Datatype id;
   std::string label;
 
-  static void delete_statics();
+  static void deleteStatics();
 
  public:
   operator MPI_Datatype() const {
     return id;
   }
 
-  ~mpi_type();
+  ~MpiType();
 
   bool builtin() const {
     return builtin_;
@@ -128,7 +128,7 @@ class mpi_type
     return size_;
   }
 
-  void pack_send(void* srcbuf, void* dstbuf, int sendcnt);
+  void packSend(void* srcbuf, void* dstbuf, int sendcnt);
 
   void unpack_recv(void* srcbuf, void* dstbuf, int recvcnt);
 
@@ -169,11 +169,11 @@ class mpi_type
     init_ops<data_t>();
   }
 
-  void init_op(MPI_Op op, sumi::reduce_fxn fxn){
+  void initOp(MPI_Op op, sumi::reduce_fxn fxn){
     fxns_[op] = fxn;
   }
 
-  void init_no_ops(const char* name, int size){
+  void initNoOps(const char* name, int size){
     init_primitive(name, size);
   }
 
@@ -198,71 +198,71 @@ class mpi_type
 
   sumi::reduce_fxn op(MPI_Op theOp) const;
 
-  std::string to_string() const;
+  std::string toString() const;
 
   // some implementations have other built-in types
   // DUMPI stores them by size
   // this just creates a list of types by size
   // this is a hack since these types cannot be operated on by a reduce
-  static std::map<int, mpi_type> builtins;
-  static mpi_type* mpi_null;
-  static mpi_type* mpi_char;
-  static mpi_type* mpi_unsigned_char;
-  static mpi_type* mpi_signed_char;
-  static mpi_type* mpi_wchar;
-  static mpi_type* mpi_unsigned_long_long;
-  static mpi_type* mpi_lb;
-  static mpi_type* mpi_ub;
-  static mpi_type* mpi_byte;
-  static mpi_type* mpi_short;
-  static mpi_type* mpi_unsigned_short;
-  static mpi_type* mpi_int;
-  static mpi_type* mpi_unsigned;
-  static mpi_type* mpi_long;
-  static mpi_type* mpi_unsigned_long;
-  static mpi_type* mpi_float;
-  static mpi_type* mpi_double;
-  static mpi_type* mpi_long_double;
-  static mpi_type* mpi_long_long_int;
-  static mpi_type* mpi_long_long;
-  static mpi_type* mpi_packed;
-  static mpi_type* mpi_float_int;
-  static mpi_type* mpi_double_int;
-  static mpi_type* mpi_long_int;
-  static mpi_type* mpi_short_int;
-  static mpi_type* mpi_2int;
-  static mpi_type* mpi_long_double_int;
-  static mpi_type* mpi_complex;
-  static mpi_type* mpi_complex8;
-  static mpi_type* mpi_complex16;
-  static mpi_type* mpi_complex32;
-  static mpi_type* mpi_double_complex;
-  static mpi_type* mpi_logical;
-  static mpi_type* mpi_real;
-  static mpi_type* mpi_real4;
-  static mpi_type* mpi_real8;
-  static mpi_type* mpi_real16;
-  static mpi_type* mpi_double_precision;
-  static mpi_type* mpi_integer;
-  static mpi_type* mpi_integer1;
-  static mpi_type* mpi_integer2;
-  static mpi_type* mpi_integer4;
-  static mpi_type* mpi_integer8;
-  static mpi_type* mpi_2integer;
-  static mpi_type* mpi_2complex;
-  static mpi_type* mpi_2double_complex;
-  static mpi_type* mpi_2real;
-  static mpi_type* mpi_2double_precision;
-  static mpi_type* mpi_character;
-  static mpi_type* mpi_int8_t;
-  static mpi_type* mpi_int16_t;
-  static mpi_type* mpi_int32_t;
-  static mpi_type* mpi_int64_t;
-  static mpi_type* mpi_uint8_t;
-  static mpi_type* mpi_uint16_t;
-  static mpi_type* mpi_uint32_t;
-  static mpi_type* mpi_uint64_t;
-  static mpi_type* mpi_cxx_bool;
+  static std::map<int, MpiType> builtins;
+  static MpiType* mpi_null;
+  static MpiType* mpi_char;
+  static MpiType* mpi_unsigned_char;
+  static MpiType* mpi_signed_char;
+  static MpiType* mpi_wchar;
+  static MpiType* mpi_unsigned_long_long;
+  static MpiType* mpi_lb;
+  static MpiType* mpi_ub;
+  static MpiType* mpi_byte;
+  static MpiType* mpi_short;
+  static MpiType* mpi_unsigned_short;
+  static MpiType* mpi_int;
+  static MpiType* mpi_unsigned;
+  static MpiType* mpi_long;
+  static MpiType* mpi_unsigned_long;
+  static MpiType* mpi_float;
+  static MpiType* mpi_double;
+  static MpiType* mpi_long_double;
+  static MpiType* mpi_long_long_int;
+  static MpiType* mpi_long_long;
+  static MpiType* mpi_packed;
+  static MpiType* mpi_float_int;
+  static MpiType* mpi_double_int;
+  static MpiType* mpi_long_int;
+  static MpiType* mpi_short_int;
+  static MpiType* mpi_2int;
+  static MpiType* mpi_long_double_int;
+  static MpiType* mpi_complex;
+  static MpiType* mpi_complex8;
+  static MpiType* mpi_complex16;
+  static MpiType* mpi_complex32;
+  static MpiType* mpi_double_complex;
+  static MpiType* mpi_logical;
+  static MpiType* mpi_real;
+  static MpiType* mpi_real4;
+  static MpiType* mpi_real8;
+  static MpiType* mpi_real16;
+  static MpiType* mpi_double_precision;
+  static MpiType* mpi_integer;
+  static MpiType* mpi_integer1;
+  static MpiType* mpi_integer2;
+  static MpiType* mpi_integer4;
+  static MpiType* mpi_integer8;
+  static MpiType* mpi_2integer;
+  static MpiType* mpi_2complex;
+  static MpiType* mpi_2double_complex;
+  static MpiType* mpi_2real;
+  static MpiType* mpi_2double_precision;
+  static MpiType* mpi_character;
+  static MpiType* mpi_int8_t;
+  static MpiType* mpi_int16_t;
+  static MpiType* mpi_int32_t;
+  static MpiType* mpi_int64_t;
+  static MpiType* mpi_uint8_t;
+  static MpiType* mpi_uint16_t;
+  static MpiType* mpi_uint32_t;
+  static MpiType* mpi_uint64_t;
+  static MpiType* mpi_cxx_bool;
 
  private:
   void pack_action(void* packed_buf, void* unpacked_buf, bool pack) const;
@@ -295,13 +295,13 @@ class mpi_type
 
 struct pairdata
 {
-  mpi_type* base1;
-  mpi_type* base2;
+  MpiType* base1;
+  MpiType* base2;
 };
 
 struct vecdata
 {
-  mpi_type* base;
+  MpiType* base;
   int count;
   int blocklen;
   int byte_stride; //always in bytes!!!!
@@ -309,7 +309,7 @@ struct vecdata
 };
 
 struct ind_block {
-  mpi_type* base;
+  MpiType* base;
   int byte_disp; ///always in bytes!!!!
   int num;
 };
@@ -319,7 +319,7 @@ struct inddata {
 };
 
 std::ostream&
-operator<<(std::ostream &os, mpi_type* type);
+operator<<(std::ostream &os, MpiType* type);
 
 }
 

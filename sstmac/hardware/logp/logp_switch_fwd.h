@@ -4,7 +4,7 @@
 namespace sstmac {
 namespace hw {
 
-class logp_switch;
+class LogPSwitch;
 
 }
 }

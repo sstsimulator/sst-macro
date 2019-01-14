@@ -3,7 +3,7 @@
 void memoFxn(int niter);
 
 void memoFxn(int n){
-  int sstmac_thr_tag6 = sstmac_start_memoize("memoFxn","linear"); for (int i=0; i < n; ++i);
+  int sstmac_thr_tag6 = sstmac_startMemoize("memoFxn","linear"); for (int i=0; i < n; ++i);
 ; sstmac_finish_memoize1(sstmac_thr_tag6,"memoFxn",n);}
 
 int fxn()
@@ -13,7 +13,7 @@ int fxn()
   double* x = new double[10];
   int* idx = new int[5];
 
- int sstmac_thr_tag16 = sstmac_start_memoize("forloop","linear"); for (i=0; i < 5; ++i){
+ int sstmac_thr_tag16 = sstmac_startMemoize("forloop","linear"); for (i=0; i < 5; ++i){
     mul *= i;
     for (int j=0; j < 10; ++j){
       mul += (j-1);
@@ -41,8 +41,8 @@ extern "C" int sstmac_user_main_pragma_test_memoize(){
 
 static sstmac::Memoization memoize_forloop("forloop","linear");
 static sstmac::Memoization memoize_memoFxn("memoFxn","linear");
-int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));
+int userSkeletonMainInitFxn(const char* name, int (*foo)(int,char**));
 extern "C" int sstmac_user_main_pragma_test_memoize(int argc, char** argv);
-int pragma_test_memoize_sstmac_initer = user_skeleton_main_init_fxn("pragma_test_memoize",sstmac_user_main_pragma_test_memoize);
+int pragma_test_memoize_sstmac_initer = userSkeletonMainInitFxn("pragma_test_memoize",sstmac_user_main_pragma_test_memoize);
 
 extern "C" const char exe_main_name[] = "pragma_test_memoize";

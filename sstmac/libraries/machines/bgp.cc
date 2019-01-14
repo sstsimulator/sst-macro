@@ -53,10 +53,10 @@ extern "C"
 void
 Kernel_GetPersonality(_BGP_Personality_t *p, int size)
 {
-  sstmac::node_id nid = sstmac::runtime::current_node();
-  sstmac::hw::topology* top = sstmac::hw::topology::static_topology(nullptr);
+  sstmac::NodeId nid = sstmac::Runtime::current_node();
+  sstmac::hw::Topology* top = sstmac::hw::Topology::staticTopology(nullptr);
 
-  sstmac::hw::torus* torus = test_cast(sstmac::hw::torus, top);
+  sstmac::hw::Torus* torus = test_cast(sstmac::hw::Torus, top);
   if (!torus || torus->ndimensions() != 3){
     sprockit::abort("Kernel_GetPersonality for BGP being called, but topology is not a 3D torus");
   }

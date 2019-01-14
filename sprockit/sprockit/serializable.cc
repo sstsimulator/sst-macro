@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-static need_delete_statics<serializable_factory> del_statics;
+static need_deleteStatics<serializable_factory> del_statics;
 serializable_factory::builder_map* serializable_factory::builders_ = nullptr;
 
 uint32_t
@@ -88,7 +88,7 @@ serializable_factory::add_builder(serializable_builder* builder, const char* nam
 }
 
 void
-serializable_factory::delete_statics()
+serializable_factory::deleteStatics()
 {
   delete_vals(*builders_);
   delete builders_;

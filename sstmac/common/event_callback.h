@@ -52,20 +52,19 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 template <class Cls, typename Fxn, class ...Args>
-class member_fxn_callback :
-  public callback,
-  public sprockit::thread_safe_new<member_fxn_callback<Cls,Fxn,Args...>>
+class MemberFxnCallback :
+  public ExecutionEvent,
+  public sprockit::thread_safe_new<MemberFxnCallback<Cls,Fxn,Args...>>
 {
 
  public:
-  virtual ~member_fxn_callback(){}
+  virtual ~MemberFxnCallback(){}
 
   void execute() {
     dispatch(typename gens<sizeof...(Args)>::type());
   }
 
-  member_fxn_callback(uint32_t comp_id, Cls* obj, Fxn fxn, const Args&... args) :
-    callback(comp_id),
+  MemberFxnCallback(Cls* obj, Fxn fxn, const Args&... args) :
     params_(args...),
     obj_(obj),
     fxn_(fxn)
@@ -84,31 +83,26 @@ class member_fxn_callback :
 };
 
 template<class Cls, typename Fxn, class ...Args>
-callback*
-new_callback(Cls* cls, Fxn fxn, const Args&... args)
+ExecutionEvent* newCallback(Cls* cls, Fxn fxn, const Args&... args)
 {
-  return new member_fxn_callback<Cls, Fxn, Args...>(
-        cls->component_id(), cls, fxn, args...);
+  return new MemberFxnCallback<Cls, Fxn, Args...>(cls, fxn, args...);
 }
 
 template<class Cls, typename Fxn, class ...Args>
-callback*
-new_callback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
+ExecutionEvent* newCallback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
 {
-  return new member_fxn_callback<Cls, Fxn, Args...>(
-        comp_id, cls, fxn, args...);
+  return new MemberFxnCallback<Cls, Fxn, Args...>(cls, fxn, args...);
 }
 
 /**
  * This bypasses any custom operators
  */
 template<class Cls, typename Fxn, class ...Args>
-callback*
-placement_new_callback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
+ExecutionEvent* placementNewCallback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
 {
-  size_t sz = sizeof(member_fxn_callback<Cls, Fxn, Args...>);
+  size_t sz = sizeof(MemberFxnCallback<Cls, Fxn, Args...>);
   char* space = new char[sz];
-  return new (space) member_fxn_callback<Cls, Fxn, Args...>(
+  return new (space) MemberFxnCallback<Cls, Fxn, Args...>(
         comp_id, cls, fxn, args...);
 }
 

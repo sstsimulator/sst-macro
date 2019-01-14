@@ -16,7 +16,7 @@ using namespace SST;
 namespace sstmac {
 namespace hw {
 
-class topology;
+class Topology;
 
 struct traffic_event {
   uint64_t time_; // progress time
@@ -105,7 +105,7 @@ struct vtk_port {
   }
 };
 
-class stat_vtk : public stat_collector
+class stat_vtk : public StatCollector
 {
   FactoryRegister("vtk", stat_collector, stat_vtk)
  public:
@@ -125,32 +125,32 @@ class stat_vtk : public stat_collector
 
   stat_vtk(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "VTK stats";
   }
 
   static void outputExodus(const std::string& fileroot,
       std::multimap<uint64_t, traffic_event>&& traffMap,
       const display_config& cfg,
-      topology *topo =nullptr);
+      Topology *topo =nullptr);
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
-  void global_reduce(parallel_runtime *rt) override;
+  void globalReduce(ParallelRuntime *rt) override;
 
   void clear() override;
 
-  void collect_new_intensity(timestamp time, int port, double intens);
+  void collect_new_intensity(Timestamp time, int port, double intens);
 
-  void collect_new_color(timestamp time, int port, double color);
+  void collect_new_color(Timestamp time, int port, double color);
 
-  void reduce(stat_collector *coll) override;
+  void reduce(StatCollector *coll) override;
 
-  void finalize(timestamp t) override;
+  void finalize(Timestamp t) override;
 
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
+  StatCollector* doClone(sprockit::sim_parameters* params) const override {
     return new stat_vtk(params);
   }
 
@@ -158,7 +158,7 @@ class stat_vtk : public stat_collector
     return id_;
   }
 
-  void configure(switch_id sid, hw::topology* top);
+  void configure(SwitchId sid, hw::Topology* top);
 
  private:
   /**
@@ -175,13 +175,13 @@ class stat_vtk : public stat_collector
   struct port_state {
     int active_ports;
     int congested_ports;
-    timestamp last_collection;
-    timestamp pending_collection_start;
+    Timestamp last_collection;
+    Timestamp pending_collection_start;
     int current_level;
     double accumulated_color;
     double current_color;
     double active_vtk_color;
-    timestamp last_wait_finished;
+    Timestamp last_wait_finished;
     port_state() :
       accumulated_color(0.),
       current_level(0)
@@ -199,7 +199,7 @@ class stat_vtk : public stat_collector
 
   std::vector<int> intensity_levels_;
   std::vector<port_state> port_states_;
-  timestamp min_interval_;
+  Timestamp min_interval_;
   int id_;
 
   std::vector<std::pair<int,int>> filters_;
@@ -209,7 +209,7 @@ class stat_vtk : public stat_collector
   std::set<traffic_event, compare_events> sorted_event_list_;
 
   std::multimap<uint64_t, traffic_event> traffic_event_map_;
-  hw::topology* top_;
+  hw::Topology* top_;
 
   bool active_;
   bool flicker_;

@@ -68,7 +68,7 @@ MakeDebugSlot(driver)
 
 namespace sstmac {
 
-static sprockit::need_delete_statics<SimulationQueue> del_statics;
+static sprockit::need_deleteStatics<SimulationQueue> del_statics;
 
 double* SimulationQueue::results_ = nullptr;
 int SimulationQueue::num_results_ = 0;
@@ -163,7 +163,7 @@ SimulationQueue::SimulationQueue() :
 }
 
 void
-SimulationQueue::delete_statics()
+SimulationQueue::deleteStatics()
 {
   if (results_) delete[] results_;
 }
@@ -344,7 +344,7 @@ void
 SimulationQueue::run(sprockit::sim_parameters* params, sim_stats& stats)
 {
   template_params_.combine_into(params, false, false/*no overwrite*/, true);
-  sstmac::remap_params(params, false /* not verbose */);
+  sstmac::remapParams(params, false /* not verbose */);
   ::sstmac::run(template_opts_, rt_, params, stats);
 }
 
@@ -417,8 +417,8 @@ SimulationQueue::init(int argc, char** argv)
   sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
   sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
   rt_ = ::sstmac::init();
-  init_opts(template_opts_, argc, argv);
-  init_params(rt_, template_opts_, &template_params_, true);
+  initOpts(template_opts_, argc, argv);
+  initParams(rt_, template_opts_, &template_params_, true);
   if (sprockit::debug::slot_active(sprockit::dbg::driver)){
     template_params_.print_params();
   }
@@ -545,14 +545,14 @@ SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
 void
 SimulationQueue::rerun(sprockit::sim_parameters* params, sim_stats& stats)
 {
-  sstmac::remap_params(params, false /*not verbose*/);
-  sstmac::env::params = params;
+  sstmac::remapParams(params, false /*not verbose*/);
+  sstmac::Env::params = params;
   if (first_run_){
-    ::sstmac::init_first_run(rt_, params);
+    ::sstmac::initFirstRun(rt_, params);
     first_run_ = false;
   }
   opts oo; //just pass in empty, default options
-  ::sstmac::run_params(oo, rt_, params, stats);
+  ::sstmac::runParams(oo, rt_, params, stats);
   stats.numResults = num_results_;
 }
 

@@ -99,22 +99,22 @@ param_remap remap_list[] = {
   pr("node_name", "node.name"),
   pr("node_mem_latency", "node.memory.latency"),
   pr("node_mem_bandwidth", "node.memory.bandwidth"),
-  pr("nic_negligible_size", "node.nic.negligible_size"),
+  pr("nic_negligibleSize", "node.nic.negligibleSize"),
   pr("nic_name", "node.nic.name"),
-  pr("node_memory_model", "node.memory.name"),
+  pr("node_MemoryModel", "node.memory.name"),
   pr("node_frequency", "node.proc.frequency"),
   pr("router", "switch.router.name"),
   pr("router_seed", "switch.router.seed"),
   pr("network_bandwidth", "switch.link.bandwidth", false),
   pr("network_bandwidth", "switch.xbar.bandwidth"),
-  pr("network_switch_bandwidth", "switch.xbar.bandwidth"),
+  pr("NetworkSwitch_bandwidth", "switch.xbar.bandwidth"),
   pr("network_latency", "switch.link.latency"),
   pr("network_hop_latency", "switch.link.latency"),
-  pr("network_switch_type", "switch.name"),
+  pr("NetworkSwitch_type", "switch.name"),
   pr("pisces_injection_bandwidth", "switch.ejection_bandwidth", false),
   pr("pisces_injection_bandwidth", "node.nic.injection.bandwidth"),
   pr("pisces_injection_latency", "node.nic.injection.latency"),
-  pr("pisces_switch_crossbar_latency", "switch.xbar.latency"),
+  pr("PiscesSwitch_crossbar_latency", "switch.xbar.latency"),
   pr("node_cores", "node.proc.ncores"),
   pr("node_sockets", "node.nsockets"),
   pr("node_pipeline_speedup", "node.proc.parallelism"),
@@ -128,7 +128,7 @@ param_remap remap_list[] = {
   pr("network_spyplot", "node.nic.traffic_matrix.fileroot"),
   pr("ftq", "node.os.ftq.fileroot"),
   pr("ftq_epoch", "node.os.ftq.epoch"),
-  pr("call_graph", "node.os.call_graph.fileroot"),
+  pr("callGraph", "node.os.callGraph.fileroot"),
   pr("stack_size", "node.os.stack_size"),
   pr("stack_chunk_size", "node.os.stack_chunk_size"),
   pr("injection_redundant", "node.nic.injection.redundant", false),
@@ -149,20 +149,20 @@ param_remap remap_list[] = {
   pr("launch_app1_size", "node.app1.size"),
   pr("launch_dumpi_metaname", "node.app1.dumpi_metaname"),
   pr("launch_dumpi_mapname", "node.app1.dumpi_mapname"),
-  pr("launch_node_id_file", "node.app1.node_id_file"),
+  pr("launch_NodeId_file", "node.app1.NodeId_file"),
   pr("launch_coordinate_file", "node.app1.coordinate_file"),
   pr("launch_dumpi_mapname", "node.app1.dumpi_mapname"),
   pr("launch_hostname_list", "node.app1.hostname_list"),
   pr("cart_launch_sizes", "node.app1.cart_sizes"),
   pr("cart_launch_offsets", "node.app1.cart_offsets"),
-  pr("launch_node_id_file", "node.app1.node_id_file"),
-  pr("launch_node_id_allocation_file", "node.app1.node_id_allocation_file"),
-  pr("launch_node_id_mapper_file", "node.app1.node_id_indexing_file"),
-  pr("launch_node_id_indexing_file", "node.app1.node_id_indexing_file"),
+  pr("launch_NodeId_file", "node.app1.NodeId_file"),
+  pr("launch_NodeId_allocation_file", "node.app1.NodeId_allocation_file"),
+  pr("launch_NodeId_mapper_file", "node.app1.NodeId_indexing_file"),
+  pr("launch_NodeId_indexing_file", "node.app1.NodeId_indexing_file"),
 };
 
 void
-remap_deprecated_params(sprockit::sim_parameters* params)
+remapDeprecatedParams(sprockit::sim_parameters* params)
 {
   int num_remap = sizeof(remap_list) / sizeof(param_remap);
   for (int i=0; i < num_remap; ++i){
@@ -187,19 +187,19 @@ remap_latency_params(sprockit::sim_parameters* params)
 }
 
 void
-remap_params(sprockit::sim_parameters* params, bool verbose)
+remapParams(sprockit::sim_parameters* params, bool verbose)
 {
   double timescale = params->get_optional_time_param("timestamp_resolution", 1e-12);
   int ps_per_tick = round(timescale/1e-12) + 0.02;
-  timestamp::init_stamps(ps_per_tick);
+  Timestamp::initStamps(ps_per_tick);
 
-  remap_deprecated_params(params);
+  remapDeprecatedParams(params);
   remap_latency_params(params);
 
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   bool auto_top = top_params->get_optional_bool_param("auto", false);
   if (auto_top){
-    int max_nproc = native::manager::compute_max_nproc(params);
+    int max_nproc = native::Manager::computeMaxNproc(params);
     if (max_nproc == 0){
       params->print_scoped_params(std::cerr);
       spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
@@ -221,7 +221,7 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
   }
 
   if (has_cong_model && has_amm_model){
-    sstmac::param_expander* hw_expander = sstmac::param_expander::factory::get_param("congestion_model", params);
+    sstmac::ParamExpander* hw_expander = sstmac::ParamExpander::factory::get_param("congestion_model", params);
     hw_expander->expand(params);
     delete hw_expander;
   }
@@ -239,8 +239,8 @@ remap_params(sprockit::sim_parameters* params, bool verbose)
   /** If more than one thread, make sure event manager is multithreaded */
   if (params->has_param("sst_nthread")){
     int nthr = params->get_int_param("sst_nthread");
-    if (nthr > 1 && !params->has_param("event_manager")){
-      params->add_param_override("event_manager", "multithread");
+    if (nthr > 1 && !params->has_param("EventManager")){
+      params->add_param_override("EventManager", "multithread");
     }
   }
 

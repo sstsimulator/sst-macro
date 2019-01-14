@@ -63,10 +63,10 @@ class statics {
 };
 
 template <class T>
-class need_delete_statics {
+class need_deleteStatics {
  public:
-  need_delete_statics(){
-    statics::register_finish(&T::delete_statics);
+  need_deleteStatics(){
+    statics::register_finish(&T::deleteStatics);
   }
 };
 

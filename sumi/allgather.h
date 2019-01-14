@@ -53,50 +53,50 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class bruck_allgather_actor :
-  public bruck_actor
+class BruckAllgatherActor :
+  public BruckActor
 {
 
  public:
-  bruck_allgather_actor(collective::type_t ty, collective_engine* engine, void* dst, void* src,
-                        int nelems, int type_size, int tag, int cq_id, communicator* comm)
-    : bruck_actor(ty, engine, dst, src, type_size, tag, cq_id, comm),
+  BruckAllgatherActor(collective::type_t ty, CollectiveEngine* engine, void* dst, void* src,
+                        int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+    : BruckActor(ty, engine, dst, src, type_size, tag, cq_id, comm),
       nelems_(nelems)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "bruck allgather actor";
   }
 
  private:
   void finalize() override;
-  void finalize_buffers() override;
-  void init_buffers() override;
-  void init_dag() override;
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
   int nelems_;
 
 };
 
-class bruck_allgather_collective :
-  public dag_collective
+class BruckAllgatherCollective :
+  public DagCollective
 {
  public:
-  bruck_allgather_collective(type_t ty, collective_engine* engine, void* dst, void* src,
-                             int nelems, int type_size, int tag, int cq_id, communicator* comm)
-   : dag_collective(ty, engine, dst, src, type_size, tag, cq_id, comm),
+  BruckAllgatherCollective(type_t ty, CollectiveEngine* engine, void* dst, void* src,
+                             int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+   : DagCollective(ty, engine, dst, src, type_size, tag, cq_id, comm),
      nelems_(nelems)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "bruck allgather";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new bruck_allgather_actor(type_, engine_, dst_buffer_, src_buffer_, nelems_, type_size_,
+  DagCollectiveActor* newActor() const override {
+    return new BruckAllgatherActor(type_, engine_, dst_buffer_, src_buffer_, nelems_, type_size_,
                                      tag_, cq_id_, comm_);
   }
 

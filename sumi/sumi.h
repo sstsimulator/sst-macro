@@ -55,9 +55,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-sumi::transport* sumi_api();
+sumi::Transport* sumi_api();
 
-sumi::collective_engine* sumi_engine();
+sumi::CollectiveEngine* sumi_engine();
 
 void comm_init();
 
@@ -71,8 +71,8 @@ template <class T, class... Args>
 void rdma_get(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
               int local_cq, int remote_cq, Args&&... args){
 
-  sumi_api()->rdma_get(remote_proc, byte_length, local_buffer, remote_buffer,
-                       local_cq, remote_cq, sumi::message::pt2pt,
+  sumi_api()->rdmaGet(remote_proc, byte_length, local_buffer, remote_buffer,
+                       local_cq, remote_cq, sumi::Message::pt2pt,
                        std::forward<Args>(args)...);
 }
 
@@ -80,8 +80,8 @@ template <class T, class... Args>
 void rdma_put(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
                   int local_cq, int remote_cq, Args&&... args){
 
-  sumi_api()->rdma_put(remote_proc, byte_length, local_buffer, remote_buffer,
-                       local_cq, remote_cq, sumi::message::pt2pt,
+  sumi_api()->rdmaPut(remote_proc, byte_length, local_buffer, remote_buffer,
+                       local_cq, remote_cq, sumi::Message::pt2pt,
                        std::forward<Args>(args)...);
 }
 
@@ -89,28 +89,28 @@ template <class T, class... Args>
 void smsg_send(int remote_proc, uint64_t byte_length, void* buffer,
                    int local_cq, int remote_cq, Args&&... args){
 
-  sumi_api()->smsg_send(remote_proc, byte_length, buffer,
-                        local_cq, remote_cq, sumi::message::pt2pt,
+  sumi_api()->smsgSend(remote_proc, byte_length, buffer,
+                        local_cq, remote_cq, sumi::Message::pt2pt,
                         std::forward<Args>(args)...);
 }
 
 void comm_alltoall(void* dst, void* src, int nelems, int type_size, int tag,
-                   int cq_id, communicator* comm = nullptr);
+                   int cq_id, Communicator* comm = nullptr);
 
 void comm_allgather(void* dst, void* src, int nelems, int type_size, int tag,
-                   int cq_id, communicator* comm = nullptr);
+                   int cq_id, Communicator* comm = nullptr);
 
 void comm_allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
-                   int cq_id, communicator* comm = nullptr);
+                   int cq_id, Communicator* comm = nullptr);
 
 void comm_gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
-                 int cq_id, communicator* comm = nullptr);
+                 int cq_id, Communicator* comm = nullptr);
 
 void comm_scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
-                  int cq_id, communicator* comm = nullptr);
+                  int cq_id, Communicator* comm = nullptr);
 
 void comm_bcast(int root, void* buffer, int nelems, int type_size, int tag,
-                int cq_id, communicator* comm = nullptr);
+                int cq_id, Communicator* comm = nullptr);
 
 /**
 * The total size of the input/result buffer in bytes is nelems*type_size
@@ -124,41 +124,41 @@ void comm_bcast(int root, void* buffer, int nelems, int type_size, int tag,
 * @param context The context (i.e. initial set of failed procs)
 */
 void comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                    int cq_id, communicator* comm = nullptr);
+                    int cq_id, Communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_allreduce(void* dst, void* src, int nelems, int tag, int cq_id, communicator* comm = nullptr){
+void comm_allreduce(void* dst, void* src, int nelems, int tag, int cq_id, Communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
 void comm_scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-               int cq_id, communicator* comm = nullptr);
+               int cq_id, Communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_scan(void* dst, void* src, int nelems, int tag,int cq_id, communicator* comm = nullptr){
+void comm_scan(void* dst, void* src, int nelems, int tag,int cq_id, Communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
 void comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                 int cq_id, communicator* comm = nullptr);
+                 int cq_id, Communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_reduce(int root, void* dst, void* src, int nelems, int tag,int cq_id, communicator* comm = nullptr){
+void comm_reduce(int root, void* dst, void* src, int nelems, int tag,int cq_id, Communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
   comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
-void comm_barrier(int tag, int cq_id, communicator* comm = nullptr);
+void comm_barrier(int tag, int cq_id, Communicator* comm = nullptr);
 
-message* comm_poll();
+Message* comm_poll();
 
 void compute(double sec);
 
 void sleep_hires(double sec);
 
-void sleep_until(double sec);
+void sleepUntil(double sec);
 
 /**
  * Every node has exactly the same notion of time - universal, global clock.

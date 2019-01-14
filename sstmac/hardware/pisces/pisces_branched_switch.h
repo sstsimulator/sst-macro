@@ -55,73 +55,69 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class pisces_branched_switch
+ @class PiscesBranchedSwitch
  A branched/hierarchical switch in the network that arbitrates/routes
  packets to the next link in the network
  */
-class pisces_branched_switch :
-  public pisces_abstract_switch
+class PiscesBranchedSwitch :
+  public PiscesAbstractSwitch
 {
-  RegisterComponent("pisces_branched", network_switch, pisces_branched_switch,
+  RegisterComponent("pisces_branched", NetworkSwitch, PiscesBranchedSwitch,
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A branched/hierarchical network switch implementing the packet flow congestion model")
  public:
-  pisces_branched_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
+  PiscesBranchedSwitch(sprockit::sim_parameters* params, uint32_t id);
 
-  int queue_length(int port) const override;
+  int queueLength(int port) const override;
 
-  virtual void connect_output(sprockit::sim_parameters* params,
+  virtual void connectOutput(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 event_link* link) override;
+                 EventLink* link) override;
 
-  virtual void connect_input(sprockit::sim_parameters* params,
+  virtual void connectInput(sprockit::sim_parameters* params,
                 int src_outport, int dst_inport,
-                event_link* link) override;
+                EventLink* link) override;
 
-  link_handler* credit_handler(int port) override;
+  LinkHandler* creditHandler(int port) override;
 
-  link_handler* payload_handler(int port) override;
+  LinkHandler* payloadHandler(int port) override;
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
 
-  virtual std::string to_string() const override;
+  virtual std::string toString() const override;
 
-  virtual ~pisces_branched_switch();
-
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
+  virtual ~PiscesBranchedSwitch();
 
  private:
   int n_local_xbars_;
   int n_local_ports_;
 
-  pisces_crossbar* xbar_;
+  PiscesCrossbar* xbar_;
 
   struct input_port {
-    pisces_branched_switch* parent;
-    pisces_muxer* mux;
+    PiscesBranchedSwitch* parent;
+    PiscesMuxer* mux;
 
-    int component_id() const {
+    int componentId() const {
       return parent->addr();
     }
 
-    void handle(event* ev);
+    void handle(Event* ev);
 
-    std::string to_string() const {
-      return parent->to_string();
+    std::string toString() const {
+      return parent->toString();
     }
   };
 
   std::vector<input_port> input_muxers_;
-  std::vector<pisces_demuxer*> output_demuxers_;
+  std::vector<PiscesDemuxer*> output_demuxers_;
 
  private:
-  void resize_buffers();
+  void resizeBuffers();
 
-  void init_components(sprockit::sim_parameters* params);
+  void initComponents(sprockit::sim_parameters* params);
 };
 
 }

@@ -129,7 +129,7 @@ HPCG_Init(int * argc_p, char ** *argv_p, HPCG_Params & params) {
   params.numThreads = 1;
 #else
   #pragma omp parallel
-  params.numThreads = omp_get_num_threads();
+  params.numThreads = ompGetNumThreads();
 #endif
 
   time ( &rawtime );

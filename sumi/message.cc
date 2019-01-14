@@ -47,15 +47,15 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-const int message::ack_size = 16;
-const int message::header_size = 64;
+const int Message::ack_size = 16;
+const int Message::header_size = 64;
 
-message::~message()
+Message::~Message()
 {
 }
 
 std::string
-message::to_string() const
+Message::toString() const
 {
   return sprockit::printf("message %s %d->%d",
             tostr(class_), sender_, recver_);
@@ -64,7 +64,7 @@ message::to_string() const
 #define enumcase(x) case x: return #x
 
 const char*
-message::tostr(class_t ty)
+Message::tostr(class_t ty)
 {
   switch(ty)
   {
@@ -91,7 +91,7 @@ message::clone_into(message* cln) const
   cln->sender_ = sender_;
   cln->recver_ = recver_;
   cln->send_cq_ = send_cq_;
-  cln->recv_cq_ = recv_cq_;
+  cln->RecvCQ_ = RecvCQ_;
   cln->num_bytes_ = num_bytes_;
 #if SSTMAC_COMM_SYNC_STATS
   cln->sent_ = sent_;
@@ -103,7 +103,7 @@ message::clone_into(message* cln) const
 #endif
 
 void
-message::serialize_order(sstmac::serializer &ser)
+Message::serialize_order(sstmac::serializer &ser)
 {
 #if SSTMAC_COMM_SYNC_STATS
   ser & sent_;
@@ -116,7 +116,7 @@ message::serialize_order(sstmac::serializer &ser)
   ser & class_;
   ser & send_cq_;
   ser & recv_cq_;
-  network_message::serialize_order(ser);
+  NetworkMessage::serialize_order(ser);
 }
 
 /**
@@ -129,7 +129,7 @@ transport_message::clone_into(transport_message* cln) const
   cln->dest_app_ = dest_app_;
   cln->src_ = src_;
   cln->dest_ = dest_;
-  network_message::clone_into(cln);
+  NetworkMessage::clone_into(cln);
   library_interface::clone_into(cln);
 }
 

@@ -50,21 +50,21 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class default_dgemv :
-  public blas_kernel
+class DefaultDGEMV :
+  public BlasKernel
 {
-  FactoryRegister("default_dgemv", blas_kernel, default_dgemv)
+  FactoryRegister("default_dgemv", BlasKernel, DefaultDGEMV)
  public:
-  default_dgemv(sprockit::sim_parameters* params){
+  DefaultDGEMV(sprockit::sim_parameters* params){
     loop_unroll_ = params->get_optional_double_param("dgemv_loop_unroll", 4);
     pipeline_ = params->get_optional_double_param("dgemv_pipeline_efficiency", 2);
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "default dgemv";
   }
 
-  compute_event* op_2d(int m, int n) override;
+  ComputeEvent* op_2d(int m, int n) override;
 
  protected:
   double loop_unroll_;
@@ -72,10 +72,10 @@ class default_dgemv :
 
 };
 
-compute_event*
-default_dgemv::op_2d(int m, int n)
+ComputeEvent*
+DefaultDGEMV::op_2d(int m, int n)
 {
-  basic_compute_event* msg = new basic_compute_event;
+  BasicComputeEvent* msg = new BasicComputeEvent;
   basic_instructions_st& st = msg->data();
 
   long nops = long(m) * long(n);

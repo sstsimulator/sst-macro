@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 class thread_safe_int_base :
-  public lockable
+  public Lockable
 {
 };
 

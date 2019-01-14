@@ -53,13 +53,13 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-stack_alloc::chunk_set stack_alloc::chunks_;
-size_t stack_alloc::suggested_chunk_ = 0;
-size_t stack_alloc::stacksize_ = 0;
-bool stack_alloc::protect_stacks_ = false;
+StackAlloc::chunk_set StackAlloc::chunks_;
+size_t StackAlloc::suggested_chunk_ = 0;
+size_t StackAlloc::stacksize_ = 0;
+bool StackAlloc::protect_stacks_ = false;
 
 void
-stack_alloc::init(sprockit::sim_parameters *params)
+StackAlloc::init(sprockit::sim_parameters *params)
 {
   if (stacksize_ != 0){
     return; //we are good
@@ -79,7 +79,7 @@ stack_alloc::init(sprockit::sim_parameters *params)
 }
 
 void
-stack_alloc::chunk_set::clear()
+StackAlloc::chunk_set::clear()
 {
   for (chunk* ch : allocations){
     delete ch;
@@ -92,7 +92,7 @@ stack_alloc::chunk_set::clear()
 // Get a stack memory region.
 //
 void*
-stack_alloc::alloc()
+StackAlloc::alloc()
 {
   static thread_lock lock;
   lock.lock();
@@ -104,10 +104,10 @@ stack_alloc::alloc()
     // grab a new chunk.
     chunk* new_chunk = new chunk(stacksize_, suggested_chunk_, protect_stacks_);
     chunks_.allocations.push_back(new_chunk);
-    void* buf = new_chunk->get_next_stack();
+    void* buf = new_chunk->getNextStack();
     while (buf != nullptr){
       chunks_.available.push_back(buf);
-      buf = new_chunk->get_next_stack();
+      buf = new_chunk->getNextStack();
     }
   }
   void *buf = chunks_.available.back();
@@ -119,7 +119,7 @@ stack_alloc::alloc()
 //
 // Return the given memory region.
 //
-void stack_alloc::free(void* buf)
+void StackAlloc::free(void* buf)
 {
   static thread_lock lock; 
   lock.lock();

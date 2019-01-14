@@ -61,14 +61,14 @@ std::unordered_set<std::string>* KeywordRegistration::removed_ = nullptr;
 bool KeywordRegistration::inited_ = false;
 bool KeywordRegistration::do_validation_ = true;
 
-static need_delete_statics<KeywordRegistration> del_statics;
+static need_deleteStatics<KeywordRegistration> del_statics;
 
 static const char* removed_keywords[] = {
   "launch_name"
 };
 
 void
-KeywordRegistration::delete_statics()
+KeywordRegistration::deleteStatics()
 {
   if (valid_keywords_) delete valid_keywords_;
   if (removed_) delete removed_;

@@ -110,7 +110,7 @@ void new_error_handler()
         info.dli_fbase ? info.dli_fbase : "");
     }
   }
-  std::set_new_handler(nullptr);
+  std::set_newHandler(nullptr);
 }
 #endif
 
@@ -119,7 +119,7 @@ int
 main(int argc, char **argv)
 {
 #if CUSTOM_NEW_HANDLER
-  std::set_new_handler(new_error_handler);
+  std::set_newHandler(new_error_handler);
 #endif
 
   int rc;
@@ -127,7 +127,7 @@ main(int argc, char **argv)
     sprockit::sim_parameters params;
     params.set_public_scope(false); //do not expose top-level params to subspaces
     bool params_only = false;
-    rc = sstmac::try_main(&params, argc, argv, params_only);
+    rc = sstmac::tryMain(&params, argc, argv, params_only);
   } catch (const std::exception &e) {
     std::cout.flush();
     std::cerr.flush();

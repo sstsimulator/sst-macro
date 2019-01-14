@@ -50,15 +50,15 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class cpuset_compute_scheduler : public compute_scheduler
+class CpusetComputeScheduler : public ComputeScheduler
 {
-  FactoryRegister("cpuset", compute_scheduler, cpuset_compute_scheduler,
+  FactoryRegister("cpuset", ComputeScheduler, CpusetComputeScheduler,
               "Compute scheduler that assigns threads to specific cores based on CPU_SET")
  public:  
-  cpuset_compute_scheduler(sprockit::sim_parameters* params,
-                           operating_system* os, int ncore, int nsockets) :
+  CpusetComputeScheduler(sprockit::sim_parameters* params,
+                           OperatingSystem* os, int ncore, int nsockets) :
     available_cores_(0),
-    compute_scheduler(params, os, ncore, nsockets)
+    ComputeScheduler(params, os, ncore, nsockets)
   {
     //all cores greater than ncore should be removed from bitmask
     for (int i=0; i < ncore; ++i){
@@ -66,18 +66,18 @@ class cpuset_compute_scheduler : public compute_scheduler
     }
   }
   
-  void reserve_cores(int ncore, thread *thr) override;
+  void reserveCores(int ncore, Thread *thr) override;
   
-  void release_cores(int ncore, thread *thr) override;
+  void releaseCores(int ncore, Thread *thr) override;
   
  private:  
-  inline uint64_t allocated_cores() const {
+  inline uint64_t allocatedCores() const {
     return ~available_cores_;
   }
 
  private:
   uint64_t available_cores_;
-  std::list<std::pair<int,thread*>> pending_threads_;
+  std::list<std::pair<int,Thread*>> pending_threads_;
 
 
   /**
@@ -86,7 +86,7 @@ class cpuset_compute_scheduler : public compute_scheduler
    * @param thr The thread requesting the cores
    * @return Whether the allocation succeeded
    */
-  bool allocate_cores(int ncores, thread* thr);
+  bool allocateCores(int ncores, Thread* thr);
 
 
 };

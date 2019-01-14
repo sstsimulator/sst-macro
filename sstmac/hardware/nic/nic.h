@@ -77,28 +77,28 @@ namespace hw {
  * This object helps ornament network operations with information about
  * the process (ppid) involved.
  */
-class nic : public connectable_subcomponent
+class NIC : public ConnectableSubcomponent
 {
-  DeclareFactory(nic,node*)
+  DeclareFactory(NIC,Node*)
  public:
   typedef enum {
     Injection,
     LogP
   } Port;
 
-  virtual std::string to_string() const override = 0;
+  virtual std::string toString() const override = 0;
 
-  virtual ~nic();
+  virtual ~NIC();
 
   /**
    * @return A unique ID for the NIC positions. Opaque typedef to an int.
    */
-  node_id addr() const {
+  NodeId addr() const {
     return my_addr_;
   }
 
   /**
-   * @brief inject_send Perform an operation on the NIC.
+   * @brief injectSend Perform an operation on the NIC.
    *  This assumes an exlcusive model of NIC use. If NIC is busy,
    *  operation may complete far in the future. If wishing to query for how busy the NIC is,
    *  use #next_free. Calls to hardware taking an OS parameter
@@ -107,33 +107,33 @@ class nic : public connectable_subcomponent
    * @param netmsg The message being injected
    * @param os     The OS to use form software compute delays
    */
-  void inject_send(network_message* netmsg);
+  void injectSend(NetworkMessage* netmsg);
 
-  event_handler* mtl_handler() const;
+  EventHandler* mtlHandler() const;
 
-  virtual void mtl_handle(event* ev);
+  virtual void mtlHandle(Event* ev);
 
   /**
    * Delete all static variables associated with this class.
-   * This should be registered with the runtime system via need_delete_statics
+   * This should be registered with the runtime system via need_deleteStatics
    */
-  static void delete_statics();
+  static void deleteStatics();
 
   /**
     Perform the set of operations standard to all NICs.
-    This then passes control off to a model-specific #do_send
+    This then passes control off to a model-specific #doSend
     function to actually carry out the send
     @param payload The network message to send
   */
-  void internode_send(network_message* payload);
+  void internodeSend(NetworkMessage* payload);
 
   /**
     Perform the set of operations standard to all NICs
     for transfers within a node. This function is model-independent,
-    unlike #internode_send which must pass control to #do_send.
+    unlike #internodeSend which must pass control to #doSend.
    * @param payload
    */
-  void intranode_send(network_message* payload);
+  void intranodeSend(NetworkMessage* payload);
 
   /**
    The NIC can either receive an entire message (bypass the byte-transfer layer)
@@ -141,22 +141,22 @@ class nic : public connectable_subcomponent
    it gets routed here. Unlike #recv_chunk, this has a default implementation and does not throw.
    @param chunk
    */
-  void recv_message(network_message* msg);
+  void recvMessage(NetworkMessage* msg);
 
-  void send_to_node(network_message* netmsg);
+  void sendToNode(NetworkMessage* netmsg);
 
-  event_link* logp_link() const {
+  EventLink* logPLink() const {
     return logp_link_;
   }
 
-  virtual std::function<void(network_message*)> ctrl_ioctl();
+  virtual std::function<void(NetworkMessage*)> ctrlIoctl();
 
-  virtual std::function<void(network_message*)> data_ioctl();
+  virtual std::function<void(NetworkMessage*)> dataIoctl();
 
  protected:
-  nic(sprockit::sim_parameters* params, node* parent);
+  NIC(sprockit::sim_parameters* params, Node* parent);
 
-  node* parent() const {
+  Node* parent() const {
     return parent_;
   }
 
@@ -165,32 +165,32 @@ class nic : public connectable_subcomponent
     This performs all model-specific work
     @param payload The network message to send
   */
-  virtual void do_send(network_message* payload) = 0;
+  virtual void doSend(NetworkMessage* payload) = 0;
 
-  bool negligible_size(int bytes) const {
-    return bytes <= negligible_size_;
+  bool negligibleSize(int bytes) const {
+    return bytes <= negligibleSize_;
   }
 
  protected:
-  node_id my_addr_;
+  NodeId my_addr_;
 
-  int negligible_size_;
+  int negligibleSize_;
 
-  node* parent_;
+  Node* parent_;
 
  protected:
-  event_link* logp_link_;
+  EventLink* logp_link_;
 
  private:
-  stat_spyplot* spy_num_messages_;
-  stat_spyplot* spy_bytes_;
-  stat_histogram* hist_msg_size_;
-  stat_local_int* local_bytes_sent_;
-  stat_global_int* global_bytes_sent_;
-  sw::single_progress_queue<network_message> queue_;
+  StatSpyplot* spy_num_messages_;
+  StatSpyplot* spy_bytes_;
+  StatHistogram* hist_msg_size_;
+  StatLocalInt* local_bytes_sent_;
+  StatGlobalInt* global_bytes_sent_;
+  sw::SingleProgressQueue<NetworkMessage> queue_;
 
  protected:
-  sw::operating_system* os_;
+  sw::OperatingSystem* os_;
 
  private:
   /**
@@ -198,41 +198,41 @@ class nic : public connectable_subcomponent
    has injected into the interconnect.  Create an ack and
    send it up to the parent node.
    */
-  void ack_send(network_message* payload);
+  void ackSend(NetworkMessage* payload);
 
-  void record_message(network_message* msg);
+  void recordMessage(NetworkMessage* msg);
 
-  void finish_memcpy(network_message* msg);
+  void finishMemcpy(NetworkMessage* msg);
 
 };
 
-class null_nic : public nic
+class NullNIC : public NIC
 {
  public:
-  FactoryRegister("null", nic, null_nic, "implements a nic that models nothing - stand-in only")
+  FactoryRegister("null", NIC, NullNIC, "implements a nic that models nothing - stand-in only")
 
-  null_nic(sprockit::sim_parameters* params, node* parent) :
-    nic(params, parent)
+  NullNIC(sprockit::sim_parameters* params, Node* parent) :
+    NIC(params, parent)
   {
   }
 
-  std::string to_string() const override { return "null nic"; }
+  std::string toString() const override { return "null nic"; }
 
-  void do_send(network_message* msg) override {}
+  void doSend(NetworkMessage* msg) override {}
 
-  void connect_output(sprockit::sim_parameters *params, int src_outport, int dst_inport,
-                      event_link *payload_link) override {}
+  void connectOutput(sprockit::sim_parameters *params, int src_outport, int dst_inport,
+                      EventLink *payload_link) override {}
 
-  void connect_input(sprockit::sim_parameters *params, int src_outport, int dst_inport,
-                     event_link *credit_link) override {}
+  void connectInput(sprockit::sim_parameters *params, int src_outport, int dst_inport,
+                     EventLink *credit_link) override {}
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override { return timestamp(); }
+  Timestamp sendLatency(sprockit::sim_parameters *params) const override { return Timestamp(); }
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override { return timestamp(); }
+  Timestamp creditLatency(sprockit::sim_parameters *params) const override { return Timestamp(); }
 
-  link_handler* payload_handler(int port) override { return nullptr; }
+  LinkHandler* payloadHandler(int port) override { return nullptr; }
 
-  link_handler* credit_handler(int port) override { return nullptr; }
+  LinkHandler* creditHandler(int port) override { return nullptr; }
 };
 
 }

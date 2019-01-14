@@ -50,58 +50,58 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class location_trace :
-  public stat_collector
+class LocationTrace :
+  public StatCollector
 {
-  FactoryRegister("location_trace", stat_collector, location_trace)
+  FactoryRegister("location_trace", StatCollector, LocationTrace)
  public:
-  location_trace(sprockit::sim_parameters* params) :
-    stat_collector(params)
+  LocationTrace(sprockit::sim_parameters* params) :
+    StatCollector(params)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "location trace";
   }
 
-  void collect(timestamp created,
+  void collect(Timestamp created,
           uint32_t creator,
-          timestamp scheduled,
+          Timestamp scheduled,
           uint32_t runner);
 
   bool read(std::istream& myfile,
-       timestamp& created,
+       Timestamp& created,
        uint32_t& creator,
-       timestamp& scheduled,
+       Timestamp& scheduled,
        uint32_t& runner);
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
-  void global_reduce(parallel_runtime *rt) override;
+  void globalReduce(ParallelRuntime *rt) override;
 
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new location_trace(params);
+  StatCollector* doClone(sprockit::sim_parameters* params) const override {
+    return new LocationTrace(params);
   }
 
-  void reduce(stat_collector* coll) override;
+  void reduce(StatCollector* coll) override;
 
   void clear() override;
 
-  virtual ~location_trace() {}
+  virtual ~LocationTrace() {}
 
  private:
   struct event {
-    timestamp created;
+    Timestamp created;
     uint32_t creator;
-    timestamp scheduled;
+    Timestamp scheduled;
     uint32_t runner;
   };
 
   std::list<event> local_events_;
 
-  std::map<timestamp, event> global_events_;
+  std::map<Timestamp, event> global_events_;
 
 };
 

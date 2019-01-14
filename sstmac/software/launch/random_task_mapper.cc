@@ -51,8 +51,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-random_task_mapper::random_task_mapper(sprockit::sim_parameters *params) :
-  task_mapper(params)
+RandomTaskMapper::RandomTaskMapper(sprockit::sim_parameters *params) :
+  TaskMapper(params)
 {
   if(params->has_param("random_indexer_seed")) {
     long seed = params->get_long_param("random_indexer_seed");
@@ -62,18 +62,18 @@ random_task_mapper::random_task_mapper(sprockit::sim_parameters *params) :
   }
 }
 
-random_task_mapper::~random_task_mapper() throw ()
+RandomTaskMapper::~RandomTaskMapper() throw ()
 {
 }
 
 void
-random_task_mapper::map_ranks(
+RandomTaskMapper::mapRanks(
   const ordered_node_set& nodes,
   int ppn,
-  std::vector<node_id> &result,
+  std::vector<NodeId> &result,
   int nproc)
 {
-  nproc = validate_nproc(ppn, nodes.size(), nproc, "randomindexing");
+  nproc = validateNproc(ppn, nodes.size(), nproc, "randomindexing");
 
   ordered_node_set::iterator iter = nodes.begin();
   for(long i = 0; i < nproc / ppn; i++) {

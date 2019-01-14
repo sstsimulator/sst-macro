@@ -53,33 +53,33 @@ MakeDebugSlot(simple_network)
 namespace sstmac {
 namespace hw {
 
-pisces_simple_network::pisces_simple_network(sprockit::sim_parameters *params, SST::Component *comp) :
+PiscesSimpleNetwork::PiscesSimpleNetwork(sprockit::sim_parameters *params, SST::Component *comp) :
   SST::Interfaces::SimpleNetwork(comp),
   recv_functor_(nullptr),
   send_functor_(nullptr),
   credit_link_(nullptr),
   logp_link_(nullptr),
-  event_scheduler(params->get_int_param("id")),
+  EventScheduler(params->get_int_param("id")),
   inj_buffer_(nullptr)
 {
   //we need a self link
-  event_scheduler::init_self_link(comp);
+  EventScheduler::initSelfLink(comp);
 
-  init_links(params);
+  initLinks(params);
 
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
-  pisces_sender::configure_payload_port_latency(inj_params);
-  inj_buffer_ = new pisces_buffer(inj_params, this, 1);
+  PiscesSender::configurePayloadPortLatency(inj_params);
+  inj_buffer_ = new PiscesBuffer(inj_params, this, 1);
 
-  event_handler* handler = new_handler(this, &pisces_simple_network::credit_arrived);
-  inj_buffer_->set_input(inj_params, 0, 0, new event_link(self_link(), comp));
+  EventHandler* handler = newHandler(this, &PiscesSimpleNetwork::creditArrived);
+  inj_buffer_->setInput(inj_params, 0, 0, new EventLink(self_link(), comp));
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
-  arb_ = pisces_bandwidth_arbitrator::factory::get_param("arbitrator", params);
+  arb_ = PiscesBandwidthArbitrator::factory::get_param("arbitrator", params);
 }
 
 void
-pisces_simple_network::init_links(sprockit::sim_parameters* params)
+PiscesSimpleNetwork::initLinks(sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters* inj_params = params->get_optional_namespace("injection");
   SST::LinkMap* link_map = SST::Simulation::getSimulation()->getComponentLinkMap(comp()->getId());
@@ -93,50 +93,50 @@ pisces_simple_network::init_links(sprockit::sim_parameters* params)
     istr >> src_outport;
     istr >> dst_inport;
     if (port_type == "input"){
-      configureLink(pair.first, new_link_handler(this, &pisces_simple_network::packet_head_arrived));
+      configureLink(pair.first, newLinkHandler(this, &PiscesSimpleNetwork::packetHeadArrived));
       credit_link_ = link;
     } else if (port_type == "output"){
-      inj_buffer_->set_output(inj_params, src_outport, dst_inport, new event_link(link, comp()));
-      configureLink(pair.first, new_link_handler(inj_buffer_, &pisces_buffer::handle_credit));
+      inj_buffer_->setOutput(inj_params, src_outport, dst_inport, new EventLink(link, comp()));
+      configureLink(pair.first, newLinkHandler(inj_buffer_, &PiscesBuffer::handleCredit));
     } else if (port_type == "in-out"){
       logp_link_ = link;
-      configureLink(pair.first, new_link_handler(this, &pisces_simple_network::ctrl_msg_arrived));
+      configureLink(pair.first, newLinkHandler(this, &PiscesSimpleNetwork::ctrlMsgArrived));
     }
   }
 }
 
 void
-pisces_simple_network::sendInitData(SST::Interfaces::SimpleNetwork::Request* req)
+PiscesSimpleNetwork::sendInitData(SST::Interfaces::SimpleNetwork::Request* req)
 {
   spkt_abort_printf("pisces simple network cannot send init data");
 }
 
 SST::Interfaces::SimpleNetwork::Request*
-pisces_simple_network::recvInitData()
+PiscesSimpleNetwork::recvInitData()
 {
   spkt_abort_printf("pisces simple network cannot recv init data");
   return nullptr;
 }
 
 bool
-pisces_simple_network::send_pisces_network(Request* req, int vn)
+PiscesSimpleNetwork::sendPiscesNetwork(Request* req, int vn)
 {
   int bytes = req->size_in_bits / 8;
-  if (!inj_buffer_->space_to_send(vn, bytes))
+  if (!inj_buffer_->spaceToSend(vn, bytes))
     return false;
 
   uint64_t ignore_flow_id = 0;
 
-  simple_network_packet* pkt = new simple_network_packet(req, bytes, req->tail,
+  SimpleNetworkPacket* pkt = new SimpleNetworkPacket(req, bytes, req->tail,
                                                     req->dest, nid_, vn);
-  inj_buffer_->handle_payload(pkt);
+  inj_buffer_->handlePayload(pkt);
   return true;
 }
 
 bool
-pisces_simple_network::send_logp_network(SST::Interfaces::SimpleNetwork::Request *req, int vn)
+PiscesSimpleNetwork::sendLogpNetwork(SST::Interfaces::SimpleNetwork::Request *req, int vn)
 {
-  simple_network_message* msg = new simple_network_message(
+  SimpleNetworkmessage* msg = new SimpleNetworkmessage(
         req, req->dest, nid_, req->size_in_bits/8);
   //control network
   logp_link_->send(0, time_converter_, msg);
@@ -145,13 +145,13 @@ pisces_simple_network::send_logp_network(SST::Interfaces::SimpleNetwork::Request
 }
 
 bool
-pisces_simple_network::send(Request *req, int vn)
+PiscesSimpleNetwork::send(Request *req, int vn)
 {
   debug("sending request of size %ld bits on vn %d", req->size_in_bits, vn);
   if (vn == 0){
-    return send_pisces_network(req, vn);
+    return sendPiscesNetwork(req, vn);
   } else if (vn == 1){
-    return send_logp_network(req, vn);
+    return sendLogpNetwork(req, vn);
   } else {
     spkt_abort_printf("PISCES cannot handle vn's other than 0 and 1");
     return true;
@@ -159,7 +159,7 @@ pisces_simple_network::send(Request *req, int vn)
 }
 
 void
-pisces_simple_network::packet_tail_arrived(simple_network_packet* pkt)
+PiscesSimpleNetwork::packetTailArrived(SimpleNetworkPacket* pkt)
 {
   vn0_pkts_.push_back(pkt);
   if (recv_functor_) {
@@ -169,47 +169,47 @@ pisces_simple_network::packet_tail_arrived(simple_network_packet* pkt)
 }
 
 void
-pisces_simple_network::packet_head_arrived(event* ev)
+PiscesSimpleNetwork::packetHeadArrived(Event* ev)
 {
-  simple_network_packet* pkt = safe_cast(simple_network_packet, ev);
-  timestamp delay = arb_->head_tail_delay(pkt);
-  send_delayed_self_event_queue(delay, new_callback(this, &pisces_simple_network::packet_tail_arrived, pkt));
+  SimpleNetworkPacket* pkt = safe_cast(SimpleNetworkPacket, ev);
+  Timestamp delay = arb_->headTailDelay(pkt);
+  sendDelayedExecutionEvent(delay, newCallback(this, &PiscesSimpleNetwork::packetTailArrived, pkt));
 }
 
 void
-pisces_simple_network::credit_arrived(event *ev)
+PiscesSimpleNetwork::creditArrived(Event *ev)
 {
-  pisces_credit* credit = safe_cast(pisces_credit,ev);
-  num_injection_credits_ += credit->num_credits();
+  PiscesCredit* credit = safe_cast(PiscesCredit,ev);
+  num_injection_credits_ += credit->numCredits();
   //this means we sent on vn 0
   if (send_functor_) (*send_functor_)(0);
   delete credit;
 }
 
 void
-pisces_simple_network::ctrl_msg_arrived(event* ev)
+PiscesSimpleNetwork::ctrlMsgArrived(Event* ev)
 {
-  simple_network_message* msg = safe_cast(simple_network_message, ev);
+  SimpleNetworkmessage* msg = safe_cast(SimpleNetworkmessage, ev);
   vn1_msgs_.push_back(msg);
   if (recv_functor_) (*recv_functor_)(1);
 }
 
 SST::Interfaces::SimpleNetwork::Request*
-pisces_simple_network::recv(int vn)
+PiscesSimpleNetwork::recv(int vn)
 {
   if (vn == 0){
     if (vn0_pkts_.empty()) return nullptr;
-    simple_network_packet* pkt = vn0_pkts_.front();
+    SimpleNetworkPacket* pkt = vn0_pkts_.front();
     vn0_pkts_.pop_front();
-    int num_bytes = pkt->byte_length();
-    pisces_credit* credit = new pisces_credit(pkt->edge_outport(), pkt->pisces_packet::vc(), num_bytes);
+    int num_bytes = pkt->byteLength();
+    PiscesCredit* credit = new PiscesCredit(pkt->edgeOutport(), pkt->PiscesPacket::vc(), num_bytes);
     credit_link_->send(0, time_converter_, credit);
     auto req = pkt->request();
     delete pkt;
     return req;
   } else {
     if (vn1_msgs_.empty()) return nullptr;
-    simple_network_message* msg = vn1_msgs_.front();
+    SimpleNetworkmessage* msg = vn1_msgs_.front();
     vn1_msgs_.pop_front();
     auto req = msg->req();
     delete msg;
@@ -218,7 +218,7 @@ pisces_simple_network::recv(int vn)
 }
 
 bool
-pisces_simple_network::requestToReceive(int vn)
+PiscesSimpleNetwork::requestToReceive(int vn)
 {
   if (vn == 0){
     debug("requesting to receive on main network - %d pending", vn0_pkts_.size());
@@ -230,7 +230,7 @@ pisces_simple_network::requestToReceive(int vn)
 }
 
 bool
-pisces_simple_network::spaceToSend(int vn, int num_bits)
+PiscesSimpleNetwork::spaceToSend(int vn, int num_bits)
 {
   debug("checking for space to send %d bits on vn %d", vn, num_bits);
   if (vn == 0){
@@ -243,7 +243,7 @@ pisces_simple_network::spaceToSend(int vn, int num_bits)
 }
 
 bool
-pisces_simple_network::initialize(const std::string &portName,
+PiscesSimpleNetwork::initialize(const std::string &portName,
                               const SST::UnitAlgebra &link_bw, int vns,
                               const SST::UnitAlgebra &in_buf_size,
                               const SST::UnitAlgebra &out_buf_size)

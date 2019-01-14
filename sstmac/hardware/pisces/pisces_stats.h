@@ -62,33 +62,33 @@ namespace hw {
 struct pkt_arbitration_t
 {
   double incoming_bw;
-  timestamp now;
-  timestamp head_leaves;
-  timestamp tail_leaves;
-  timestamp credit_leaves;
-  pisces_packet* pkt;
+  Timestamp now;
+  Timestamp head_leaves;
+  Timestamp tail_leaves;
+  Timestamp credit_leaves;
+  PiscesPacket* pkt;
   int src_outport;
   int dst_inport;
 };
 
 /**
- * @brief The packet_stats_callback class is an optional callback
- * that can be registered with pisces_sender objects or packetizer
+ * @brief The PacketStatsCallback class is an optional callback
+ * that can be registered with PiscesSender objects or packetizer
  * objects to log events ocurring on particular packets
  */
-class packet_stats_callback
+class PacketStatsCallback
 {
-  DeclareFactory(packet_stats_callback, event_scheduler*)
+  DeclareFactory(PacketStatsCallback, EventScheduler*)
  public:
-  virtual ~packet_stats_callback(){}
+  virtual ~PacketStatsCallback(){}
 
   /**
    * @brief collect_single_event Collect stats associated with a single
-   *            packet aribtration event. This is invokved by pisces_sender
+   *            packet aribtration event. This is invokved by PiscesSender
    *            objects.
    * @param st All the details of the last arbitration of a given packet
    */
-  virtual void collect_single_event(const pkt_arbitration_t& st);
+  virtual void collectSingleEvent(const pkt_arbitration_t& st);
 
   /**
    * @brief collect_final_event Collects stats associated with flow-level
@@ -97,7 +97,7 @@ class packet_stats_callback
    *          attached to a packet at the end of the path
    * @param pkt
    */
-  virtual void collect_final_event(pisces_packet* pkt);
+  virtual void collect_final_event(PiscesPacket* pkt);
 
   /**
    * @brief id
@@ -109,8 +109,8 @@ class packet_stats_callback
   }
 
  protected:
-  packet_stats_callback(sprockit::sim_parameters* params,
-                        event_scheduler* parent);
+  PacketStatsCallback(sprockit::sim_parameters* params,
+                        EventScheduler* parent);
 
  private:
   int id_;
@@ -118,159 +118,159 @@ class packet_stats_callback
 };
 
 class congestion_spyplot :
- virtual public packet_stats_callback
+ virtual public PacketStatsCallback
 {
-  FactoryRegister("congestion_spyplot", packet_stats_callback, congestion_spyplot)
+  FactoryRegister("congestion_spyplot", PacketStatsCallback, congestion_spyplot)
  public:
-  congestion_spyplot(sprockit::sim_parameters* params, event_scheduler* parent);
+  congestion_spyplot(sprockit::sim_parameters* params, EventScheduler* parent);
 
   virtual ~congestion_spyplot();
 
-  virtual void collect_single_event(const pkt_arbitration_t& st);
+  virtual void collectSingleEvent(const pkt_arbitration_t& st);
 
-  virtual void collect_final_event(pisces_packet* pkt);
+  virtual void collect_final_event(PiscesPacket* pkt);
 
  protected:
-  void collect(double delay_us, pisces_packet* pkt);
+  void collect(double delay_us, PiscesPacket* pkt);
 
  private:
-  stat_spyplot* congestion_spyplot_;
+  StatSpyplot* congestion_spyplot_;
 };
 
 
 class delay_histogram :
-  virtual public packet_stats_callback
+  virtual public PacketStatsCallback
 {
-  FactoryRegister("delay_histogram", packet_stats_callback, delay_histogram)
+  FactoryRegister("delay_histogram", PacketStatsCallback, delay_histogram)
  public:
-  delay_histogram(sprockit::sim_parameters* params, event_scheduler* parent);
+  delay_histogram(sprockit::sim_parameters* params, EventScheduler* parent);
 
   virtual ~delay_histogram();
 
-  virtual void collect_final_event(pisces_packet* pkt);
+  virtual void collect_final_event(PiscesPacket* pkt);
 
-  virtual void collect_single_event(const pkt_arbitration_t& st);
+  virtual void collectSingleEvent(const pkt_arbitration_t& st);
 
  private:
-  stat_histogram* congestion_hist_;
+  StatHistogram* congestion_hist_;
 };
 
 class packet_delay_stats :
- virtual public packet_stats_callback
+ virtual public PacketStatsCallback
 {
-  FactoryRegister("congestion_delay", packet_stats_callback, packet_delay_stats)
+  FactoryRegister("congestion_delay", PacketStatsCallback, packet_delay_stats)
  public:
-  packet_delay_stats(sprockit::sim_parameters* params, event_scheduler* parent) :
-    packet_stats_callback(params, parent)
+  packet_delay_stats(sprockit::sim_parameters* params, EventScheduler* parent) :
+    PacketStatsCallback(params, parent)
   {
   }
 
-  virtual void collect_single_event(const pkt_arbitration_t &st);
+  virtual void collectSingleEvent(const pkt_arbitration_t &st);
 
 };
 
-class null_stats : public packet_stats_callback
+class null_stats : public PacketStatsCallback
 {
-  FactoryRegister("null", packet_stats_callback, null_stats)
+  FactoryRegister("null", PacketStatsCallback, null_stats)
  public:
-  null_stats(sprockit::sim_parameters* params, event_scheduler* parent) :
-    packet_stats_callback(params, parent)
+  null_stats(sprockit::sim_parameters* params, EventScheduler* parent) :
+    PacketStatsCallback(params, parent)
   {
   }
 
-  virtual void collect_single_event(const pkt_arbitration_t &st){}
+  virtual void collectSingleEvent(const pkt_arbitration_t &st){}
 
-  virtual void collect_final_event(pisces_packet *pkt){}
+  virtual void collect_final_event(PiscesPacket *pkt){}
 };
 
-class multi_stats : public packet_stats_callback
+class multi_stats : public PacketStatsCallback
 {
-  FactoryRegister("multi", packet_stats_callback, multi_stats)
+  FactoryRegister("multi", PacketStatsCallback, multi_stats)
  public:
-  multi_stats(sprockit::sim_parameters* params, event_scheduler* parent);
+  multi_stats(sprockit::sim_parameters* params, EventScheduler* parent);
 
-  void collect_single_event(const pkt_arbitration_t &st);
+  void collectSingleEvent(const pkt_arbitration_t &st);
 
-  void collect_final_event(pisces_packet *pkt);
+  void collect_final_event(PiscesPacket *pkt);
 
  private:
-  std::vector<packet_stats_callback*> cbacks_;
+  std::vector<PacketStatsCallback*> cbacks_;
 
 };
 
 class byte_hop_collector :
- virtual public packet_stats_callback
+ virtual public PacketStatsCallback
 {
-  FactoryRegister("byte_hops", packet_stats_callback, byte_hop_collector)
+  FactoryRegister("byte_hops", PacketStatsCallback, byte_hop_collector)
  public:
-  byte_hop_collector(sprockit::sim_parameters* params, event_scheduler* parent);
+  byte_hop_collector(sprockit::sim_parameters* params, EventScheduler* parent);
 
   virtual ~byte_hop_collector();
 
-  virtual void collect_single_event(const pkt_arbitration_t& st);
+  virtual void collectSingleEvent(const pkt_arbitration_t& st);
 
  private:
-  stat_global_int* byte_hops_;
+  StatGlobalInt* byte_hops_;
 };
 
-class stat_bytes_sent :
-  public stat_collector
+class StatBytesSent :
+  public StatCollector
 {
   FRIEND_SERIALIZATION;
-  FactoryRegister("bytes_sent", stat_collector, stat_bytes_sent)
+  FactoryRegister("bytes_sent", StatCollector, StatBytesSent)
  public:
-  stat_bytes_sent(sprockit::sim_parameters* params);
+  StatBytesSent(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "stat bytes sent";
   }
 
-  virtual ~stat_bytes_sent();
+  virtual ~StatBytesSent();
 
   void record(int port, long bytes){
     port_map_[port] += bytes;
   }
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
-  void global_reduce(parallel_runtime *rt) override;
+  void globalReduce(ParallelRuntime *rt) override;
 
-  void reduce(stat_collector *coll) override;
+  void reduce(StatCollector *coll) override;
 
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new stat_bytes_sent(params);
+  StatCollector* doClone(sprockit::sim_parameters* params) const override {
+    return new StatBytesSent(params);
   }
 
   void clear() override {}
 
  private:
-  void global_reduce_non_root(parallel_runtime* rt, int root, char* buffer, int buffer_size);
+  void globalReduceNonRoot(ParallelRuntime* rt, int root, char* buffer, int buffer_size);
 
-  void collect_buffer_at_root(char* buffer, int buffer_size);
+  void collectbufferAtRoot(char* buffer, int buffer_size);
 
-  void output_switch(int sid, std::fstream& data_str);
+  void outputSwitch(int sid, std::fstream& data_str);
 
   struct global_gather_stats_t {
     int buffer_size;
   };
 
-  void collect_counts_at_root(parallel_runtime* rt, int src, global_gather_stats_t stats);
+  void collectCountsAtRoot(ParallelRuntime* rt, int src, global_gather_stats_t stats);
 
-  void global_reduce_root(parallel_runtime* rt, global_gather_stats_t* stats,
+  void globalReduceRoot(ParallelRuntime* rt, global_gather_stats_t* stats,
                           char* my_buffer, int my_buffer_size);
 
 
  private:
-  topology* top_;
+  Topology* top_;
 
   typedef std::map<int, long> port_map;
   port_map port_map_;
 
   class aggregation
   {
-    friend class stat_bytes_sent;
+    friend class StatBytesSent;
    public:
     struct entry
     {
@@ -327,33 +327,33 @@ class stat_bytes_sent :
 
 };
 
-class bytes_sent_collector :
- virtual public packet_stats_callback
+class BytesSentCollector :
+ virtual public PacketStatsCallback
 {
-  FactoryRegister("bytes_sent", packet_stats_callback, bytes_sent_collector)
+  FactoryRegister("bytes_sent", PacketStatsCallback, BytesSentCollector)
  public:
-  bytes_sent_collector(sprockit::sim_parameters* params, event_scheduler* parent);
+  BytesSentCollector(sprockit::sim_parameters* params, EventScheduler* parent);
 
-  virtual ~bytes_sent_collector();
+  virtual ~BytesSentCollector();
 
-  virtual void collect_single_event(const pkt_arbitration_t &st);
+  virtual void collectSingleEvent(const pkt_arbitration_t &st);
 
  private:
-  stat_bytes_sent* bytes_sent_;
+  StatBytesSent* bytes_sent_;
 };
 
 }
 }
 
-SER_NAMESPACE_OPEN
+START_SERIALIZATION_NAMESPACE
 template <>
-class serialize<sstmac::hw::stat_bytes_sent::aggregation::entry> {
+class serialize<sstmac::hw::StatBytesSent::aggregation::entry> {
  public:
-  void operator()(sstmac::hw::stat_bytes_sent::aggregation::entry& e, sstmac::serializer& ser){
+  void operator()(sstmac::hw::StatBytesSent::aggregation::entry& e, sstmac::serializer& ser){
     e.serialize_order(ser);
   }
 };
-SER_NAMESPACE_CLOSE
+END_SERIALIZATION_NAMESPACE
 
 
 #endif // pisces_STATS_H

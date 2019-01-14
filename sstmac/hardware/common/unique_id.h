@@ -54,15 +54,15 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-struct unique_event_id {
+struct UniqueEventId {
   uint32_t src_node;
   uint32_t msg_num;
 
-  unique_event_id(uint32_t src, uint32_t num) :
+  UniqueEventId(uint32_t src, uint32_t num) :
     src_node(src), msg_num(num) {
   }
 
-  unique_event_id() :
+  UniqueEventId() :
     src_node(-1), msg_num(0) {
   }
 
@@ -78,27 +78,27 @@ struct unique_event_id {
     node = (id>>32); //high 32
   }
 
-  std::string to_string() const {
+  std::string toString() const {
     std::stringstream sstr;
     sstr << "unique_id(" << src_node << "," << msg_num << ")";
     return sstr.str();
   }
 
-  void set_src_node(uint32_t src) {
+  void setSrcNode(uint32_t src) {
     src_node = src;
   }
 
-  void set_seed(uint32_t seed) {
+  void setSeed(uint32_t seed) {
     msg_num = seed;
   }
 
-  unique_event_id& operator++() {
+  UniqueEventId& operator++() {
     ++msg_num;
     return *this;
   }
 
-  unique_event_id operator++(int) {
-    unique_event_id other(*this);
+  UniqueEventId operator++(int) {
+    UniqueEventId other(*this);
     ++msg_num;
     return other;
   }
@@ -110,11 +110,11 @@ struct unique_event_id {
 
 START_SERIALIZATION_NAMESPACE
 template <>
-class serialize<sstmac::hw::unique_event_id>
+class serialize<sstmac::hw::UniqueEventId>
 {
  public:
   void
-  operator()(sstmac::hw::unique_event_id& id, serializer& ser){
+  operator()(sstmac::hw::UniqueEventId& id, serializer& ser){
     ser.primitive(id);
   }
 };
@@ -123,7 +123,7 @@ END_SERIALIZATION_NAMESPACE
 
 namespace std {
 template <>
-struct hash<sstmac::hw::unique_event_id>
+struct hash<sstmac::hw::UniqueEventId>
   : public std::hash<uint64_t>
 { };
 }

@@ -50,10 +50,10 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class job_launcher;
-class task_mapping;
+class JobLauncher;
+class TaskMapping;
 
-typedef std::shared_ptr<task_mapping> task_mapping_ptr;
+typedef std::shared_ptr<TaskMapping> task_mapping_ptr;
 
 }
 }

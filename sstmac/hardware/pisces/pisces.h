@@ -64,27 +64,27 @@ namespace hw {
  same path between endpoints.  This is usually one fraction of
  a larger message.
  */
-class pisces_packet :
-  public packet,
-  public sprockit::thread_safe_new<pisces_packet>
+class PiscesPacket :
+  public Packet,
+  public sprockit::thread_safe_new<PiscesPacket>
 {
  public:
-  ImplementSerializable(pisces_packet)
+  ImplementSerializable(PiscesPacket)
 
   static const double uninitialized_bw;
 
  public:
-  pisces_packet(
+  PiscesPacket(
     serializable* msg,
-    uint32_t num_bytes,
-    uint64_t flow_id,
-    bool is_tail,
-    node_id fromaddr,
-    node_id toaddr);
+    uint32_t numBytes,
+    uint64_t flowId,
+    bool isTail,
+    NodeId fromaddr,
+    NodeId toaddr);
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
-  virtual ~pisces_packet() {}
+  virtual ~PiscesPacket() {}
 
   /**
     Needed because of routable_message ambiguity
@@ -97,22 +97,22 @@ class pisces_packet :
    * @brief reset_stages Configure the internal ports to traverse on a switch
    * @param port0
    */
-  void reset_stages(uint8_t port0){
+  void resetStages(uint8_t port0){
     stage_ = 0;
     outports_[0] = port0;
   }
 
-  void reset_stages(uint8_t port0, uint8_t port1){
-    reset_stages(port0);
+  void resetStages(uint8_t port0, uint8_t port1){
+    resetStages(port0);
     outports_[1] = port1;
   }
 
-  void reset_stages(uint8_t port0, uint8_t port1, uint8_t port2){
-    reset_stages(port0, port1);
+  void resetStages(uint8_t port0, uint8_t port1, uint8_t port2){
+    resetStages(port0, port1);
     outports_[2] = port2;
   }
 
-  void advance_stage(){
+  void advanceStage(){
     inport_ = outports_[stage_];
     ++stage_;
   }
@@ -121,40 +121,40 @@ class pisces_packet :
     return stage_;
   }
 
-  int next_local_outport() const {
+  int nextLocalOutport() const {
     return outports_[stage_];
   }
 
-  int next_local_inport() const {
+  int nextLocalInport() const {
     return inport_;
   }
 
-  int next_vc() const {
-    return rtr_header<packet::header>()->deadlock_vc;
+  int nextVC() const {
+    return rtrHeader<Packet::header>()->deadlock_vc;
   }
 
-  void update_vc() {
-    current_vc_ = next_vc();
+  void updateVC() {
+    current_vc_ = nextVC();
   }
 
-  void set_inport(int port) {
+  void setInport(int port) {
     inport_ = port;
   }
 
-  timestamp arrival() const {
+  Timestamp arrival() const {
     return arrival_;
   }
 
-  void set_arrival(timestamp time) {
+  void setArrival(Timestamp time) {
     arrival_ = time;
   }
 
-  void init_bw(double bw) {
+  void initBw(double bw) {
     bw_ = bw_ == uninitialized_bw ? bw : bw_;
   }
 
-  void set_max_bw(double bw){
-    init_bw(bw);
+  void setMaxBw(double bw){
+    initBw(bw);
     bw_ = std::min(bw_, bw);
   }
 
@@ -168,7 +168,7 @@ class pisces_packet :
   /**
    @param The bandwidth in number of bytes per second
    */
-  void set_bw(double bw) {
+  void setBw(double bw) {
     bw_ = bw;
   }
 
@@ -177,28 +177,28 @@ class pisces_packet :
    *        could have on its current component (always > #bw())
    * @return
    */
-  double max_incoming_bw() const {
+  double maxIncomingBw() const {
     return max_in_bw_;
   }
 
-  void set_max_incoming_bw(double bw) {
+  void setMaxIncomingBw(double bw) {
     max_in_bw_ = bw;
   }
 
-  double ser_delay() const {
-    return byte_length() / bw_;
+  double serDelay() const {
+    return byteLength() / bw_;
   }
 
   void serialize_order(serializer& ser) override;
 
  private:
-  pisces_packet(){} //for serialization
+  PiscesPacket(){} //for serialization
 
   double bw_;
 
   double max_in_bw_;
 
-  timestamp arrival_;
+  Timestamp arrival_;
 
   int current_vc_;
 
@@ -210,19 +210,19 @@ class pisces_packet :
 
 };
 
-class pisces_credit :
-  public event,
+class PiscesCredit :
+  public Event,
   public sprockit::printable,
-  public sprockit::thread_safe_new<pisces_credit>
+  public sprockit::thread_safe_new<PiscesCredit>
 {
 
  public:
-  ImplementSerializable(pisces_credit)
+  ImplementSerializable(PiscesCredit)
 
  public:
-  pisces_credit(){} //for serialization
+  PiscesCredit(){} //for serialization
 
-  pisces_credit(
+  PiscesCredit(
     int port,
     int vc,
     int num_credits)
@@ -240,11 +240,11 @@ class pisces_credit :
     return port_;
   }
 
-  int num_credits() const {
+  int numCredits() const {
     return num_credits_;
   }
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
   void serialize_order(serializer& ser) override;
 

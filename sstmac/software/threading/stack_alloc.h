@@ -61,7 +61,7 @@ namespace sw {
  * This allocator does not return memory to the system until it is
  * deleted, but regions can be allocated and free-d repeatedly.
  */
-class stack_alloc
+class StackAlloc
 {
  public:
   class chunk;
@@ -87,7 +87,7 @@ class stack_alloc
     return stacksize_;
   }
 
-  ~stack_alloc(){
+  ~StackAlloc(){
     clear();
   }
 

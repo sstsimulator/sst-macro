@@ -61,22 +61,22 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class node_id_task_mapper : public task_mapper
+class NodeIdTaskMapper : public TaskMapper
 {
-  FactoryRegister("node_id", task_mapper, node_id_task_mapper,
+  FactoryRegister("NodeId", TaskMapper, NodeIdTaskMapper,
               "assigns tasks to nodes based on list of nodes ids in file")
  public:
-  node_id_task_mapper(sprockit::sim_parameters* params);
+  NodeIdTaskMapper(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "node id task mapper";
   }
 
-  virtual ~node_id_task_mapper() throw() {}
+  virtual ~NodeIdTaskMapper() throw() {}
 
-  void map_ranks(const ordered_node_set& nodes,
+  void mapRanks(const ordered_node_set& nodes,
                 int ppn,
-                std::vector<node_id>& result,
+                std::vector<NodeId>& result,
                 int nproc) override;
 
  protected:

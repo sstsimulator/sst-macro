@@ -51,29 +51,29 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac
 {
 
-class stat_local_double :
-  public stat_value<double>
+class StatLocalDouble :
+  public StatValue<double>
 {
-  FactoryRegister("local_double", stat_collector, stat_local_double)
+  FactoryRegister("local_double", StatCollector, StatLocalDouble)
  public:
-  stat_local_double(sprockit::sim_parameters* params);
+  StatLocalDouble(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "stat local double";
   }
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
-  void global_reduce(parallel_runtime *rt) override;
+  void globalReduce(ParallelRuntime *rt) override;
 
   void clear() override;
 
-  void reduce(stat_collector *coll) override;
+  void reduce(StatCollector *coll) override;
 
-  stat_collector* do_clone(sprockit::sim_parameters* params) const override {
-    return new stat_local_double(params);
+  StatCollector* doClone(sprockit::sim_parameters* params) const override {
+    return new StatLocalDouble(params);
   }
 
  protected:

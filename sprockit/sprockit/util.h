@@ -62,7 +62,7 @@ Out* __safe_cast__(const char* objname,
   if (!out) {
     spkt_abort_printf("%s: failed to cast object at %s:%d\n%s",
                      error_msg, file, line,
-                     in ? to_string(in).c_str() : "null");
+                     in ? toString(in).c_str() : "null");
   }
   return out;
 }

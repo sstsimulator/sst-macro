@@ -60,19 +60,19 @@ namespace hw {
  * through the detailed modeling PISCSES network.  The serializable* payload
  * should always be an SST::Request object
  */
-class simple_network_packet : public pisces_packet
+class SimpleNetworkPacket : public PiscesPacket
 {
   NotSerializable(simple_network_packet)
 
  public:
-  simple_network_packet(
+  SimpleNetworkPacket(
     serializable* msg,
     uint32_t num_bytes,
     bool is_tail,
-    node_id toaddr,
-    node_id fromaddr,
+    NodeId toaddr,
+    NodeId fromaddr,
     int vn) :
-   pisces_packet(msg, num_bytes, is_tail, 0,/*flow id ignored*/
+   PiscesPacket(msg, num_bytes, is_tail, 0,/*flow id ignored*/
                   toaddr, fromaddr),
    vn_(vn)
   {
@@ -92,31 +92,31 @@ class simple_network_packet : public pisces_packet
 };
 
 /**
- * @brief The simple_network_message class MTL message (flow)
+ * @brief The simple_NetworkMessage class MTL message (flow)
  * that carries a request directly between nodes via the LogP overlay network.
  * This does not hop through PISCES switches and skips detailed congestion modeling.
  * Usually used for basic control messages.
  */
-class simple_network_message : public network_message
+class SimpleNetworkmessage : public NetworkMessage
 {
   NotSerializable(simple_network_packet)
 
  public:
-  simple_network_message(SST::Interfaces::SimpleNetwork::Request* req,
-                         node_id to, node_id from, int bytes) :
-    network_message(uint64_t(-1), //flow_id irrelevant
+  SimpleNetworkmessage(SST::Interfaces::SimpleNetwork::Request* req,
+                         NodeId to, NodeId from, int bytes) :
+    NetworkMessage(uint64_t(-1), //flow_id irrelevant
                     "", //libname irrelevant
                     0, //aid irrelevant,
                     to, from, bytes,
                     false, //no ack
                     nullptr, //no buffer
-                    network_message::header{}),
+                    NetworkMessage::header{}),
     req_(req)
   {
   }
 
-  network_message* clone_injection_ack() const override {
-    return new simple_network_message(req_, toaddr(), fromaddr(), byte_length());
+  NetworkMessage* cloneInjectionAck() const override {
+    return new SimpleNetworkmessage(req_, toaddr(), fromaddr(), byteLength());
   }
 
   SST::Interfaces::SimpleNetwork::Request* req() const {
@@ -131,14 +131,14 @@ class simple_network_message : public network_message
  * @brief The pisces_simple_network class  Implements the SimpleNetwork
  *  subcomponent interface for plugging into other SST elements.
  */
-class pisces_simple_network :
+class PiscesSimpleNetwork :
   public SST::Interfaces::SimpleNetwork,
-  public event_scheduler
+  public EventScheduler
 {
  public:
-  pisces_simple_network(sprockit::sim_parameters *params, SST::Component* comp);
+  PiscesSimpleNetwork(sprockit::sim_parameters *params, SST::Component* comp);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "PISCES simple network";
   }
 
@@ -147,33 +147,33 @@ class pisces_simple_network :
    *        setup connections to PISCES switches
    * @param parmas
    */
-  void init_links(sprockit::sim_parameters* params);
+  void initLinks(sprockit::sim_parameters* params);
 
   /**
-   * @brief packet_arrived Callback when first flit from packet arrives off the network
+   * @brief packetArrived Callback when first flit from packet arrives off the network
    * @param ev
    */
-  void packet_head_arrived(event* ev);
+  void packetHeadArrived(Event* ev);
 
   /**
    * @brief packet_tail_arrived Callback when all flits from the packet arrives off the network
    * @param pkt
    */
-  void packet_tail_arrived(simple_network_packet* pkt);
+  void packetTailArrived(SimpleNetworkPacket* pkt);
 
   /**
    * @brief credit_arrived Callback when credit arrives from injection switch allowing
    *      more packets to be injected
    * @param ev
    */
-  void credit_arrived(event* ev);
+  void creditArrived(Event* ev);
 
   /**
-   * @brief ctrl_msg_arrived Callback invoked when simple_network_message arrives
+   * @brief ctrl_msg_arrived Callback invoked when simple_NetworkMessage arrives
    *  from LogP overlay network with control data (usually RDMA get request or similar)
    * @param ev
    */
-  void ctrl_msg_arrived(event* ev);
+  void ctrlMsgArrived(Event* ev);
 
   /**
    * @brief send Push a request onto the NIC to send a request to a destination node.
@@ -229,17 +229,17 @@ class pisces_simple_network :
   virtual Request* recvInitData() override;
 
  private:
-  bool send_pisces_network(Request* req, int vn);
+  bool sendPiscesNetwork(Request* req, int vn);
 
-  bool send_logp_network(Request* req, int vn);
+  bool sendLogpNetwork(Request* req, int vn);
 
   nid_t nid_;
 
-  std::list<simple_network_packet*> vn0_pkts_;
-  std::list<simple_network_message*> vn1_msgs_;
+  std::list<SimpleNetworkPacket*> vn0_pkts_;
+  std::list<SimpleNetworkmessage*> vn1_msgs_;
 
-  pisces_buffer* inj_buffer_;
-  pisces_bandwidth_arbitrator* arb_;  //arbitrator for computing message delays
+  PiscesBuffer* inj_buffer_;
+  PiscesBandwidthArbitrator* arb_;  //arbitrator for computing message delays
   SST::Link* logp_link_;   //used for sending control messages to LogP overlay network
   SST::Link* credit_link_; //used for returning credits to ejection switch
   int num_injection_credits_; //buffer space available on NIC

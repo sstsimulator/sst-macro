@@ -704,10 +704,10 @@ namespace lblxml
     if (g_rank_to_epoch_count[rank_][epoch] ==
         g_rank_to_epoch_done[rank_][epoch]) {
       if (synch_mode_ == full_synch) {
-        sstmac::timestamp start_bar = now();
+        sstmac::Timestamp start_bar = now();
         comm_barrier(barrier_tag_);
         comm_collective_block(sumi::collective::barrier, barrier_tag_);
-        sstmac::timestamp end_bar = now();
+        sstmac::Timestamp end_bar = now();
         double bar_time = (end_bar - start_bar).sec();
         g_total_barrier_time += bar_time;
         ++barrier_tag_;
@@ -740,10 +740,10 @@ namespace lblxml
         printf("rank %d no count found for epoch %d, advancing epoch\n", rank_, current_epoch_);
       if (synch_mode_ == full_synch) {
         comm_barrier(barrier_tag_);
-        sstmac::timestamp start_bar = now();
+        sstmac::Timestamp start_bar = now();
         comm_collective_block(sumi::collective::barrier, barrier_tag_);
         //printf("rank %d finished full_synch block\n", rank_);
-        sstmac::timestamp end_bar = now();
+        sstmac::Timestamp end_bar = now();
         double bar_time = (end_bar - start_bar).sec();
         g_total_barrier_time += bar_time;
         ++barrier_tag_;

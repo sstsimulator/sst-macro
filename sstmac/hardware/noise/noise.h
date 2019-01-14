@@ -51,36 +51,36 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
   namespace hw {
 
-class noise_model
+class NoiseModel
 {
-  DeclareFactory(noise_model)
+  DeclareFactory(NoiseModel)
  public:
-  virtual ~noise_model(){}
+  virtual ~NoiseModel(){}
 
   virtual double value() = 0;
 
  protected:
-  noise_model(sprockit::sim_parameters* params){}
-  noise_model(){}
+  NoiseModel(sprockit::sim_parameters* params){}
+  NoiseModel(){}
 
 };
 
-class gaussian_noise_model :
-  public noise_model
+class GaussianNoiseModel :
+  public NoiseModel
 {
-  FactoryRegister("gaussian", noise_model, gaussian_noise_model,
+  FactoryRegister("gaussian", NoiseModel, GaussianNoiseModel,
       "implements a normally distributed noise model with mean, stdev "
       "and optional max parameter defining cutoff")
  public:
-  gaussian_noise_model(
+  GaussianNoiseModel(
     double mean,
     double stdev,
     double maxz,
     int seed);
 
-  gaussian_noise_model(sprockit::sim_parameters* params);
+  GaussianNoiseModel(sprockit::sim_parameters* params);
 
-  ~gaussian_noise_model();
+  ~GaussianNoiseModel();
 
   double value();
 

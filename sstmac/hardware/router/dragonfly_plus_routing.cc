@@ -56,21 +56,21 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class dragonfly_plus_alltoall_minimal_router : public router {
+class DragonflyPlusAlltoallMinimalRouter : public Router {
  public:
-  struct header : public packet::header {
+  struct header : public Packet::header {
 
   };
 
   FactoryRegister("dragonfly_plus_alltoall_minimal",
-              router, dragonfly_plus_alltoall_minimal_router,
+              Router, DragonflyPlusAlltoallMinimalRouter,
               "router implementing minimal routing for dragonfly+")
 
-  dragonfly_plus_alltoall_minimal_router(sprockit::sim_parameters* params, topology *top,
-                         network_switch *netsw)
-    : router(params, top, netsw)
+  DragonflyPlusAlltoallMinimalRouter(sprockit::sim_parameters* params, Topology *top,
+                         NetworkSwitch *netsw)
+    : Router(params, top, netsw)
   {
-    dfly_ = safe_cast(dragonfly_plus, top);
+    dfly_ = safe_cast(DragonflyPlus, top);
     num_leaf_switches_ = dfly_->g() * dfly_->a();
     //stagger by switch id
     rotater_ = (my_addr_) % dfly_->a();
@@ -98,7 +98,7 @@ class dragonfly_plus_alltoall_minimal_router : public router {
 
     std::vector<int> connected;
     int my_a = dfly_->computeA(my_addr_);
-    dfly_->group_wiring()->connected_routers(my_a, my_g_, connected);
+    dfly_->groupWiring()->connected_routers(my_a, my_g_, connected);
     for (int p=0; p < connected.size(); ++p){
       int my_expected_g = p / covering_;
       if (my_expected_g >= my_g_){
@@ -115,17 +115,17 @@ class dragonfly_plus_alltoall_minimal_router : public router {
     static_route_ = params->get_optional_bool_param("static", false);
   }
 
-  int num_vc() const override {
+  int numVC() const override {
     return 1;
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "dragonfly+ minimal circulant router";
   }
 
-  void route(packet *pkt) override {
-    auto* hdr = pkt->rtr_header<header>();
-    switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
+  void route(Packet *pkt) override {
+    auto* hdr = pkt->rtrHeader<header>();
+    SwitchId ej_addr = pkt->toaddr() / dfly_->concentration();
     if (ej_addr == my_addr_){
       hdr->edge_port = pkt->toaddr() % dfly_->concentration() + dfly_->a();
       hdr->deadlock_vc = 0;
@@ -165,12 +165,12 @@ class dragonfly_plus_alltoall_minimal_router : public router {
   int my_row_;
   std::vector<int> grp_rotaters_;
   int covering_;
-  dragonfly_plus* dfly_;
+  DragonflyPlus* dfly_;
   bool static_route_;
 };
 
-class dragonfly_plus_par_router : public dragonfly_plus_alltoall_minimal_router {
-  struct header : public dragonfly_plus_alltoall_minimal_router::header {
+class DragonflyPlusParRouter : public DragonflyPlusAlltoallMinimalRouter {
+  struct header : public DragonflyPlusAlltoallMinimalRouter::header {
     uint8_t stage_number : 4;
   };
  public:
@@ -179,32 +179,32 @@ class dragonfly_plus_par_router : public dragonfly_plus_alltoall_minimal_router 
   static const char final_stage = 2;
 
   FactoryRegister("dragonfly_plus_par",
-              router, dragonfly_plus_par_router,
+              Router, DragonflyPlusParRouter,
               "router implementing PAR for dragonfly+")
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "dragonfly+ PAR router";
   }
 
-  dragonfly_plus_par_router(sprockit::sim_parameters* params, topology *top,
-                       network_switch *netsw)
-    : dragonfly_plus_alltoall_minimal_router(params, top, netsw)
+  DragonflyPlusParRouter(sprockit::sim_parameters* params, Topology *top,
+                       NetworkSwitch *netsw)
+    : DragonflyPlusAlltoallMinimalRouter(params, top, netsw)
   {
-    dfly_ = safe_cast(dragonfly_plus, top);
-    my_row_ = my_addr_ / dfly_->num_leaf_switches();
-    my_g_ = (my_addr_ % dfly_->num_leaf_switches()) / dfly_->a();
+    dfly_ = safe_cast(DragonflyPlus, top);
+    my_row_ = my_addr_ / dfly_->numLeafSwitches();
+    my_g_ = (my_addr_ % dfly_->numLeafSwitches()) / dfly_->a();
     covering_ = dfly_->h() / (dfly_->g() - 1);
     grp_rotaters_.resize(dfly_->g());
     for (int i=0; i < dfly_->g(); ++i){
       grp_rotaters_[i] = 0;
     }
     up_rotater_ = 0;
-    num_leaf_switches_ = dfly_->num_leaf_switches();
+    num_leaf_switches_ = dfly_->numLeafSwitches();
   }
 
-  void route(packet *pkt) override {
-    switch_id ej_addr = pkt->toaddr() / dfly_->concentration();
-    auto hdr = pkt->rtr_header<header>();
+  void route(Packet *pkt) override {
+    SwitchId ej_addr = pkt->toaddr() / dfly_->concentration();
+    auto hdr = pkt->rtrHeader<header>();
     if (my_row_ == 0){
       if (ej_addr == my_addr_){
         hdr->edge_port = pkt->toaddr() % dfly_->concentration() + dfly_->a();
@@ -239,7 +239,7 @@ class dragonfly_plus_par_router : public dragonfly_plus_alltoall_minimal_router 
         uint32_t seed = netsw_->now().ticks();
         int numTestPorts = covering_ * dfly_->g();
         while (interG == my_g_ || interG == dstG){
-          valiantPort = random_number(numTestPorts, attempt, seed);
+          valiantPort = randomNumber(numTestPorts, attempt, seed);
           ++attempt;
           interG = valiantPort / covering_;
           //a little weird - we skip ports to ourselves
@@ -250,8 +250,8 @@ class dragonfly_plus_par_router : public dragonfly_plus_alltoall_minimal_router 
             + ((my_g_ < dstG ? (dstG - 1) : dstG)*covering_);
 
 
-        int valiantMetric = 2*netsw_->queue_length(valiantPort);
-        int minimalMetric = netsw_->queue_length(minimalPort);
+        int valiantMetric = 2*netsw_->queueLength(valiantPort);
+        int minimalMetric = netsw_->queueLength(minimalPort);
 
         rter_debug("comparing minimal(%d) %d against non-minimal(%d) %d",
                    minimalPort, minimalMetric, valiantPort, valiantMetric);
@@ -269,12 +269,12 @@ class dragonfly_plus_par_router : public dragonfly_plus_alltoall_minimal_router 
     }
   }
 
-  int num_vc() const override {
+  int numVC() const override {
     return 2;
   }
 
  private:
-  dragonfly_plus* dfly_;
+  DragonflyPlus* dfly_;
   int my_row_;
   int my_g_;
   int up_rotater_;

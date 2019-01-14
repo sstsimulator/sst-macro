@@ -50,21 +50,21 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class default_daxpy :
-  public blas_kernel
+class DefaultDAXPY :
+  public BlasKernel
 {
-  FactoryRegister("default_daxpy", blas_kernel, default_daxpy)
+  FactoryRegister("default_daxpy", BlasKernel, DefaultDAXPY)
  public:
-  default_daxpy(sprockit::sim_parameters* params){
+  DefaultDAXPY(sprockit::sim_parameters* params){
     loop_unroll_ = params->get_optional_double_param("daxpy_loop_unroll", 4);
     pipeline_ = params->get_optional_double_param("daxpy_pipeline_efficiency", 2);
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "default daxpy";
   }
 
-  compute_event* op_1d(int n) override;
+  ComputeEvent* op_1d(int n) override;
 
  protected:
   double loop_unroll_;
@@ -72,10 +72,10 @@ class default_daxpy :
 
 };
 
-compute_event*
-default_daxpy::op_1d(int n)
+ComputeEvent*
+DefaultDAXPY::op_1d(int n)
 {
-  basic_compute_event* ev = new basic_compute_event;
+  BasicComputeEvent* ev = new BasicComputeEvent;
   basic_instructions_st& st = ev->data();
   int nops = n;
   st.flops = nops / long(pipeline_);

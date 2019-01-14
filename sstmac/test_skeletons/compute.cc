@@ -62,11 +62,11 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  int nloop = get_params()->get_optional_int_param("nloop", 100);
+  int nloop = getParams()->get_optional_int_param("nloop", 100);
 
   double t_start = MPI_Wtime();
 
-  sstmac_compute_loop(nloop,10,12,48);
+  sstmac_computeLoop(nloop,10,12,48);
   sstmac_compute_loop2(nloop,nloop,2,2,20);
   sstmac_compute_loop3(10,10,nloop,2,1,20);
   sstmac_compute_loop4(3,4,8,nloop,2,7,10);

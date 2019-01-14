@@ -56,13 +56,13 @@ namespace sstmac {
 namespace hw {
 
 /**
- * @brief The pisces_bandwidth_arbitrator class  This arbitrates the available bandwidth
+ * @brief The PiscesBandwidthArbitrator class  This arbitrates the available bandwidth
  *        amongst incoming packets. This can either occur on discrete packets or it can
  *        attempt to simulate flits.
  */
-class pisces_bandwidth_arbitrator
+class PiscesBandwidthArbitrator
 {
-  DeclareFactory(pisces_bandwidth_arbitrator)
+  DeclareFactory(PiscesBandwidthArbitrator)
  public:
   /**
       Assign bandwidth to payload.
@@ -70,36 +70,36 @@ class pisces_bandwidth_arbitrator
   */
   virtual void arbitrate(pkt_arbitration_t& st) = 0;
 
-  virtual timestamp head_tail_delay(pisces_packet* pkt) = 0;
+  virtual Timestamp headTailDelay(PiscesPacket* pkt) = 0;
 
-  virtual std::string to_string() const = 0;
+  virtual std::string toString() const = 0;
 
-  virtual ~pisces_bandwidth_arbitrator(){}
+  virtual ~PiscesBandwidthArbitrator(){}
 
   double outgoing_bw() const {
     return out_bw_;
   }
 
-  static inline timestamp
+  static inline Timestamp
   credit_delay(double max_in_bw, double out_bw, long bytes){
     double credit_delta = 1.0/out_bw - 1.0/max_in_bw;
     credit_delta = std::max(0., credit_delta);
-    return timestamp(bytes * credit_delta);
+    return Timestamp(bytes * credit_delta);
   }
 
-  virtual void init_noise_model(noise_model* noise);
+  virtual void initNoiseModel(NoiseModel* noise);
 
   /**
    * @brief partition Partition the arbitrator time windows into a series of randomly sized chunks
    * @param noise  The noise model that randomly selects time values
    * @param num_intervals
    */
-  virtual void partition(noise_model* noise, int num_intervals);
+  virtual void partition(NoiseModel* noise, int num_intervals);
 
-  virtual uint32_t bytes_sending(timestamp now) const = 0;
+  virtual uint32_t bytesSending(Timestamp now) const = 0;
 
  protected:
-  pisces_bandwidth_arbitrator(sprockit::sim_parameters* params);
+  PiscesBandwidthArbitrator(sprockit::sim_parameters* params);
 
  protected:
   double out_bw_;
@@ -111,23 +111,23 @@ class pisces_bandwidth_arbitrator
  * @brief The pisces_null_arbitrator class  The performs no congestion modeling.
  *        This assumes packets can always receive full bandwidth regardless of traffic.
  */
-class pisces_null_arbitrator :
-  public pisces_bandwidth_arbitrator
+class PiscesNullArbitrator :
+  public PiscesBandwidthArbitrator
 {
-  FactoryRegister("null", pisces_bandwidth_arbitrator, pisces_null_arbitrator,
+  FactoryRegister("null", PiscesBandwidthArbitrator, PiscesNullArbitrator,
               "Simple bandwidth arbitrator that models zero congestion on a link")
  public:
-  pisces_null_arbitrator(sprockit::sim_parameters* params);
+  PiscesNullArbitrator(sprockit::sim_parameters* params);
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "pisces null arbitrator";
   }
 
-  timestamp head_tail_delay(pisces_packet *pkt) override;
+  Timestamp headTailDelay(PiscesPacket *pkt) override;
 
-  uint32_t bytes_sending(timestamp now) const override;
+  uint32_t bytesSending(Timestamp now) const override;
 
 };
 
@@ -138,9 +138,9 @@ class pisces_null_arbitrator :
  * unrealistic delays since packets cannot pipeline across network stages.
  */
 class pisces_simple_arbitrator :
-  public pisces_bandwidth_arbitrator
+  public PiscesBandwidthArbitrator
 {
-  FactoryRegister("simple", pisces_bandwidth_arbitrator, pisces_simple_arbitrator,
+  FactoryRegister("simple", PiscesBandwidthArbitrator, pisces_simple_arbitrator,
               "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
               "This corresponds to store-and-forward, which can be inaccurate for large packet sizes")
  public:
@@ -148,19 +148,19 @@ class pisces_simple_arbitrator :
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "pisces simple arbitrator";
   }
 
-  timestamp head_tail_delay(pisces_packet *pkt) override {
+  Timestamp headTailDelay(PiscesPacket *pkt) override {
     //no delay
-    return timestamp();
+    return Timestamp();
   }
 
-  uint32_t bytes_sending(timestamp now) const override;
+  uint32_t bytesSending(Timestamp now) const override;
 
  protected:
-  timestamp next_free_;
+  Timestamp next_free_;
 
 };
 
@@ -170,10 +170,10 @@ class pisces_simple_arbitrator :
  * flits from different packets in this scheme.  For larger packet sizes, this can lead to
  * unrealistic delays since packets cannot pipeline across network stages.
  */
-class pisces_cut_through_arbitrator :
-  public pisces_bandwidth_arbitrator
+class PiscesCutThroughArbitrator :
+  public PiscesBandwidthArbitrator
 {
-  FactoryRegister("cut_through", pisces_bandwidth_arbitrator, pisces_cut_through_arbitrator,
+  FactoryRegister("cut_through", PiscesBandwidthArbitrator, PiscesCutThroughArbitrator,
               "Bandwidth arbitrator that forwards packets as soon as they arrive and enough credits are received"
               "This is a much better approximation to wormhole or virtual cut_through routing")
  private:
@@ -181,29 +181,29 @@ class pisces_cut_through_arbitrator :
   typedef double bw_t;
 
  public:
-  pisces_cut_through_arbitrator(sprockit::sim_parameters* params);
+  PiscesCutThroughArbitrator(sprockit::sim_parameters* params);
 
-  ~pisces_cut_through_arbitrator();
+  ~PiscesCutThroughArbitrator();
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
-  uint32_t bytes_sending(timestamp now) const override;
+  uint32_t bytesSending(Timestamp now) const override;
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "cut through arbitrator";
   }
 
-  void partition(noise_model* model,
+  void partition(NoiseModel* model,
     int num_intervals) override;
 
-  void init_noise_model(noise_model* noise) override;
+  void initNoiseModel(NoiseModel* noise) override;
 
-  timestamp head_tail_delay(pisces_packet *pkt) override;
+  Timestamp headTailDelay(PiscesPacket *pkt) override;
 
  private:
-  void clean_up(ticks_t now);
+  void cleanUp(ticks_t now);
 
-  void do_arbitrate(pkt_arbitration_t& st);
+  void doArbitrate(pkt_arbitration_t& st);
 
   struct bandwidth_epoch : public sprockit::thread_safe_new<bandwidth_epoch> {
     bw_t bw_available; //bandwidth is bytes per timestamp tick
@@ -218,7 +218,7 @@ class pisces_cut_through_arbitrator :
     ~bandwidth_epoch(){
     }
 
-    void truncate_after(ticks_t delta_t);
+    void truncateAfter(ticks_t delta_t);
 
     void split(ticks_t delta_t);
   };

@@ -52,16 +52,16 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-eager1::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid, int count,
-              mpi_type* typeobj, int tag, MPI_Comm comm, int seq_id, mpi_request* key)
+Eager1::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count,
+              MpiType* typeobj, int tag, MPI_Comm comm, int seq_id, MpiRequest* key)
 {
   void* eager_buf = nullptr;
   if (isNonNullBuffer(buffer)){
-    eager_buf = fill_send_buffer(count, buffer, typeobj);
+    eager_buf = fillSendBuffer(count, buffer, typeobj);
   }
 
-  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, 64/*metadata size - use fixed to avoid sizeof*/,
-                                     nullptr, sumi::message::no_ack, queue_->pt2pt_cq_id(), sumi::message::pt2pt,
+  uint64_t flow_id = mpi_->smsgSend<MpiMessage>(tid, 64/*metadata size - use fixed to avoid sizeof*/,
+                                     nullptr, sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
                                      src_rank, dst_rank, typeobj->id, tag, comm, seq_id,
                                      count, typeobj->packed_size(), eager_buf, EAGER1);
 
@@ -69,70 +69,70 @@ eager1::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid,
 }
 
 void
-eager1::incoming_header(mpi_message* msg)
+Eager1::incomingHeader(MpiMessage* msg)
 {
-  char* send_buf = (char*) msg->partner_buffer();
+  char* send_buf = (char*) msg->partnerBuffer();
   char* recv_buf = nullptr;
   if (send_buf){
-    recv_buf = new char[msg->payload_size()];
+    recv_buf = new char[msg->payloadSize()];
   }
-  msg->advance_stage();
-  mpi_->rdma_get_request_response(msg, msg->payload_size(), recv_buf, send_buf,
-                                  queue_->pt2pt_cq_id(), queue_->pt2pt_cq_id());
+  msg->advanceStage();
+  mpi_->rdmaGetRequestResponse(msg, msg->payloadSize(), recv_buf, send_buf,
+                                  queue_->pt2ptCqId(), queue_->pt2ptCqId());
 }
 
 void
-eager1::incoming_payload(mpi_message* msg)
+Eager1::incomingPayload(MpiMessage* msg)
 {
   SSTMACBacktrace(MPIEager1Protocol_Handle_RDMA_Payload);
-  mpi_queue_recv_request* req = queue_->find_matching_recv(msg);
+  MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
   if (req) incoming(msg, req);
 }
 
 void
-eager1::incoming(mpi_message *msg, mpi_queue_recv_request* req)
+Eager1::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 {
   if (req->recv_buffer_){
-    char* temp_recv_buf = (char*) msg->local_buffer();
+    char* temp_recv_buf = (char*) msg->localBuffer();
 #if SSTMAC_SANITY_CHECK
     if (!temp_recv_buf){
-      spkt_abort_printf("have receiver buffer but no local buffer on %s", msg->to_string().c_str());
+      spkt_abort_printf("have receiver buffer but no local buffer on %s", msg->toString().c_str());
     }
 #endif
-    ::memcpy(req->recv_buffer_, temp_recv_buf, msg->payload_bytes());
+    ::memcpy(req->recv_buffer_, temp_recv_buf, msg->payloadBytes());
     delete[] temp_recv_buf;
   }
-  queue_->memcopy(msg->payload_bytes());
+  queue_->memcopy(msg->payloadBytes());
   queue_->finalize_recv(msg, req);
   delete msg;
 }
 
 void
-eager1::incoming_ack(mpi_message *msg)
+Eager1::incomingAck(MpiMessage *msg)
 {
-  if (msg->remote_buffer()){
-    char* temp_send_buf = (char*) msg->remote_buffer();
+  if (msg->remoteBuffer()){
+    char* temp_send_buf = (char*) msg->remoteBuffer();
     delete[] temp_send_buf;
   }
   delete msg;
 }
 
 void
-eager1::incoming(mpi_message* msg)
+Eager1::incoming(MpiMessage* msg)
 {
-  switch(msg->network_message::type()){
-  case sstmac::hw::network_message::payload:
-    incoming_header(msg);
+  switch(msg->NetworkMessage::type()){
+  case sstmac::hw::NetworkMessage::payload:
+    incomingHeader(msg);
     break;
-  case sstmac::hw::network_message::rdma_get_sent_ack:
-    incoming_ack(msg);
+  case sstmac::hw::NetworkMessage::rdma_get_sent_ack:
+    incomingAck(msg);
     break;
-  case sstmac::hw::network_message::rdma_get_payload:
-    incoming_payload(msg);
+  case sstmac::hw::NetworkMessage::rdma_get_payload:
+    incomingPayload(msg);
     break;
   default:
     spkt_abort_printf("Got bad message type %s for eager1::incoming",
-                      sstmac::hw::network_message::tostr(msg->network_message::type()));
+                      sstmac::hw::NetworkMessage::tostr(msg->NetworkMessage::type()));
   }
 }
 

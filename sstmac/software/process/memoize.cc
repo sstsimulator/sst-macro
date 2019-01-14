@@ -6,7 +6,7 @@ namespace sstmac {
 
 Memoization::Memoization(const char* name, const char* model)
 {
-  sstmac::sw::operating_system::add_memoization(name, model);
+  sstmac::sw::OperatingSystem::addMemoization(name, model);
 }
 
 }

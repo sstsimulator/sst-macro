@@ -42,8 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sculpin_switch_h
-#define sculpin_switch_h
+#ifndef SculpinSwitch_h
+#define SculpinSwitch_h
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/sculpin/sculpin.h>
@@ -62,14 +62,14 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class sculpin_switch
+ @class SculpinSwitch
  A switch in the network that arbitrates/routes
  to the next link in the network
  */
-class sculpin_switch :
-  public network_switch
+class SculpinSwitch :
+  public NetworkSwitch
 {
-  RegisterSSTComponent("sculpin", network_switch, sculpin_switch,
+  RegisterSSTComponent("sculpin", NetworkSwitch, SculpinSwitch,
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A network switch implementing the sculpin model")
 
@@ -78,53 +78,41 @@ class sculpin_switch :
   )
 
  public:
-  sculpin_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
+  SculpinSwitch(sprockit::sim_parameters* params, uint32_t id);
 
-  virtual ~sculpin_switch();
+  virtual ~SculpinSwitch();
 
-  int queue_length(int port) const override;
+  int queueLength(int port) const override;
 
-  router* rter() const override {
+  Router* router() const override {
     return router_;
   }
 
-  void connect_output(
+  void connectOutput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) override;
+    EventLink* link) override;
 
-  void connect_input(
+  void connectInput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) override;
+    EventLink* link) override;
 
-  link_handler* credit_handler(int port) override;
+  LinkHandler* creditHandler(int port) override;
 
-  link_handler* payload_handler(int port) override;
+  LinkHandler* payloadHandler(int port) override;
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
 
-  void handle_credit(event* ev);
+  void handleCredit(Event* ev);
 
-  void handle_payload(event* ev);
+  void handlePayload(Event* ev);
 
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
-
-  /**
-   * @brief compatibility_check
-   * Perform a self-consistency check (before sim starts) on all components.
-   * This usually involves checking dynamic types that cannot be verified at compile-time
-   * and are difficult to detect directly from the parameters (hence would otherwise fail in ctor).
-   */
-  void compatibility_check() const override;
-
-  std::string to_string() const override;
+  std::string toString() const override;
 
  private:
   struct priority_compare {
@@ -145,16 +133,16 @@ class sculpin_switch :
   struct port {
     int id;
     int dst_port;
-    timestamp next_free;
+    Timestamp next_free;
     double inv_bw;
     uint32_t seqnum;
     std::set<sculpin_packet*, priority_compare> priority_queue;
-    event_link* link;
+    EventLink* link;
     port() : link(nullptr){}
   };
   std::vector<port> ports_;
 
-  router* router_;
+  Router* router_;
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -166,30 +154,30 @@ class sculpin_switch :
 
   bool congestion_;
 
-  stat_histogram* delay_hist_;
+  StatHistogram* delay_hist_;
 
-  std::set<node_id> src_stat_filter_;
-  std::set<node_id> dst_stat_filter_;
-  std::set<node_id> src_stat_highlight_;
-  std::set<node_id> dst_stat_highlight_;
+  std::set<NodeId> src_stat_filter_;
+  std::set<NodeId> dst_stat_filter_;
+  std::set<NodeId> src_stat_highlight_;
+  std::set<NodeId> dst_stat_highlight_;
 
   double highlight_scale_;
   bool vtk_flicker_;
 
 
  private:
-  void send(port& p, sculpin_packet* pkt, timestamp now);
+  void send(port& p, sculpin_packet* pkt, Timestamp now);
 
-  void try_to_send_packet(sculpin_packet* pkt);
+  void tryToSendPacket(sculpin_packet* pkt);
 
-  void pull_next(int portnum);
+  void pullNext(int portnum);
 
   /**
    * @brief do_not_filter_packet
    * @param pkt
    * @return >0 scale factor for packet if allowed, <0 if packet should be filtered
    */
-  double do_not_filter_packet(sculpin_packet* pkt);
+  double doNotFilterPacket(sculpin_packet* pkt);
 
 };
 

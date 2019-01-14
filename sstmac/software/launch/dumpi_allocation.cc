@@ -61,22 +61,22 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-dumpi_allocation::dumpi_allocation(sprockit::sim_parameters* params)
- : node_allocator(params)
+DumpiAllocation::DumpiAllocation(sprockit::sim_parameters* params)
+ : NodeAllocator(params)
 {
   metafile_ = params->get_param("dumpi_metaname");
 }
 
 bool
-dumpi_allocation::allocate(
+DumpiAllocation::allocate(
   int nnode_requested,
    const ordered_node_set& available,
    ordered_node_set& allocation) const
 {
-  dumpi_meta* meta = new dumpi_meta(metafile_);
-  int nrank = meta->num_procs();
+  DumpiMeta* meta = new DumpiMeta(metafile_);
+  int nrank = meta->numProcs();
   for (int i = 0; i < nrank; i++) {
-    std::string fname = dumpi_file_name(i, meta->dirplusfileprefix_);
+    std::string fname = dumpiFileName(i, meta->dirplusfileprefix_);
     dumpi_profile *profile = undumpi_open(fname.c_str());
     if (profile == NULL) {
       spkt_abort_printf("dumpi_allocation::allocate: unable to open %s", fname.c_str());
@@ -92,15 +92,15 @@ dumpi_allocation::allocate(
 
     if (header->meshdim == 0) {
       //there better be a topology initialized that maps hostnames
-      node_id nid = topology_->node_name_to_id(header->hostname);
+      NodeId nid = topology_->nodeNameToId(header->hostname);
       allocation.insert(nid);
     } else { //read mesh coords directly
-      hw::cartesian_topology* regtop = safe_cast(hw::cartesian_topology, topology_);
+      hw::CartesianTopology* regtop = safe_cast(hw::CartesianTopology, topology_);
       hw::coordinates coord_vec(header->meshdim);
       for (int i=0; i < header->meshdim; ++i) {
         coord_vec[i] = header->meshcrd[i];
       }
-      node_id nid = regtop->node_addr(coord_vec);
+      NodeId nid = regtop->node_addr(coord_vec);
       allocation.insert(nid);
       //spkt_throw_printf(sprockit::input_error,
       //                 "dumpi_allocation::allocate: trace file %s contains no mesh info. No mesh coordinates found.\n"

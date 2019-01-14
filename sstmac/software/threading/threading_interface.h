@@ -58,18 +58,18 @@ namespace sw {
 /**
  * @brief The thread_context class
  */
-class thread_context
+class ThreadContext
 {
  public:
-  DeclareFactory(thread_context)
+  DeclareFactory(ThreadContext)
 
-  virtual ~thread_context() {}
+  virtual ~ThreadContext() {}
 
-  virtual thread_context* copy() const = 0;
+  virtual ThreadContext* copy() const = 0;
 
-  virtual void init_context() = 0;
+  virtual void initContext() = 0;
 
-  virtual void destroy_context() = 0;
+  virtual void destroyContext() = 0;
 
   /**
    * @brief start_context
@@ -80,13 +80,13 @@ class thread_context
    * @param globals_storage
    * @param from
    */
-  virtual void start_context(void *stack, size_t stacksize,
+  virtual void startContext(void *stack, size_t stacksize,
                 void (*func)(void*), void *args,
-                thread_context* from) = 0;
+                ThreadContext* from) = 0;
 
-  virtual void resume_context(thread_context* from) = 0;
+  virtual void resumeContext(ThreadContext* from) = 0;
 
-  virtual void pause_context(thread_context* to) = 0;
+  virtual void pauseContext(ThreadContext* to) = 0;
 
   /**
    * @brief jump_context
@@ -94,20 +94,20 @@ class thread_context
    * This bypasses the safety of the start/pause/resume pattern
    * @param to
    */
-  virtual void jump_context(thread_context* to){
-    to->resume_context(this);
+  virtual void jumpContext(ThreadContext* to){
+    to->resumeContext(this);
   }
 
   /**
    * @brief complete_context Perform all cleanup operations to end this context
    * @param to
    */
-  virtual void complete_context(thread_context* to) = 0;
+  virtual void completeContext(ThreadContext* to) = 0;
 
-  static std::string default_threading();
+  static std::string defaultThreading();
 
  protected:
-  thread_context() {}
+  ThreadContext() {}
 
 };
 }

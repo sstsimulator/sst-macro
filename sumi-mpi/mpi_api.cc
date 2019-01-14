@@ -100,22 +100,22 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
 namespace sumi {
 
-static sprockit::need_delete_statics<mpi_api> del_statics;
-sstmac::sw::ftq_tag mpi_api::mpi_tag("MPI");
+static sprockit::need_deleteStatics<MpiApi> del_statics;
+sstmac::sw::FTQTag MpiApi::mpi_tag("MPI");
 
-mpi_api* sstmac_mpi()
+MpiApi* sstmac_mpi()
 {
-  sstmac::sw::thread* t = operating_system::current_thread();
-  return t->get_api<mpi_api> ();
+  sstmac::sw::Thread* t = OperatingSystem::currentThread();
+  return t->get_api<MpiApi> ();
 }
 
 //
 // Build a new mpiapi.
 //
-mpi_api::mpi_api(sprockit::sim_parameters* params,
-                 sstmac::sw::software_id sid,
-                 sstmac::sw::operating_system* os) :
-  sumi::transport(params, "mpi", sid, os),
+MpiApi::MpiApi(sprockit::sim_parameters* params,
+                 sstmac::sw::SoftwareId sid,
+                 sstmac::sw::OperatingSystem* os) :
+  sumi::Transport(params, "mpi", sid, os),
   status_(is_fresh),
 #if SSTMAC_COMM_SYNC_STATS
   last_collection_(0),
@@ -136,8 +136,8 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
   comm_factory_(sid, this)
 {
   sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
-  engine_ = new collective_engine(queue_params, this);
-  queue_ = new mpi_queue(queue_params, sid.task_, this, engine_);
+  engine_ = new CollectiveEngine(queue_params, this);
+  queue_ = new MpiQueue(queue_params, sid.task_, this, engine_);
 
   double probe_delay_s = params->get_optional_time_param("iprobe_delay", 0);
   iprobe_delay_us_ = probe_delay_s * 1e6;
@@ -152,23 +152,23 @@ mpi_api::mpi_api(sprockit::sim_parameters* params,
 
 #ifdef SSTMAC_OTF2_ENABLED
   sstmac::stat_descr_t otf2_cfg; otf2_cfg.dump_all = true;
-  otf2_writer_ = sstmac::optional_stats<otf2_writer>(os_->node(), params,
+  otf2_writer_ = sstmac::optionalStats<otf2_writer>(os_->node(), params,
                                               "otf2", "otf2", &otf2_cfg);
 #endif
 }
 
 uint64_t
-mpi_api::trace_clock() const
+MpiApi::trace_clock() const
 {
   return os_->now().ticks();
 }
 
 void
-mpi_api::delete_statics()
+MpiApi::deleteStatics()
 {
 }
 
-mpi_api::~mpi_api()
+MpiApi::~MpiApi()
 {
   //MUST DELETE HERE
   //cannot delete in finalize
@@ -179,7 +179,7 @@ mpi_api::~mpi_api()
 
   //these are often not cleaned up correctly by app
   for (auto& pair : grp_map_){
-    mpi_group* grp = pair.second;
+    MpiGroup* grp = pair.second;
     delete grp;
   }
 
@@ -187,20 +187,20 @@ mpi_api::~mpi_api()
   //do not delete this one
   comm_map_.erase(MPI_COMM_NULL);
   for (auto& pair : comm_map_){
-    mpi_comm* comm = pair.second;
+    MpiComm* comm = pair.second;
     delete comm;
   }
 
   //people can be sloppy cleaning up requests
   //clean up for them
   for (auto& pair : req_map_){
-    mpi_request* req = pair.second;
+    MpiRequest* req = pair.second;
     delete req;
   }
 }
 
 int
-mpi_api::abort(MPI_Comm comm, int errcode)
+MpiApi::abort(MPI_Comm comm, int errcode)
 {
 
   spkt_throw_printf(sprockit::value_error,
@@ -209,14 +209,14 @@ mpi_api::abort(MPI_Comm comm, int errcode)
 }
 
 int
-mpi_api::comm_rank(MPI_Comm comm, int *rank)
+MpiApi::commRank(MPI_Comm comm, int *rank)
 {
-  *rank = get_comm(comm)->rank();
+  *rank = getComm(comm)->rank();
   return MPI_SUCCESS;
 }
 
 int
-mpi_api::init(int* argc, char*** argv)
+MpiApi::init(int* argc, char*** argv)
 {
   auto start_clock = trace_clock();
 
@@ -226,7 +226,7 @@ mpi_api::init(int* argc, char*** argv)
 
   start_mpi_call(MPI_Init);
 
-  sumi::transport::init();
+  sumi::Transport::init();
 
   if (!os_) {
     sprockit::abort("mpiapi::init: os has not been initialized yet");
@@ -244,14 +244,14 @@ mpi_api::init(int* argc, char*** argv)
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Init()");
 
   /** Make sure all the default types are known */
-  commit_builtin_types();
+  commitBuiltinTypes();
 
   status_ = is_initialized;
 
   queue_->init();
 
   crossed_comm_world_barrier_ = false;
-  end_api_call();
+  endAPICall();
 
 #ifdef SSTMAC_OTF2_ENABLED
   if (otf2_writer_){
@@ -263,7 +263,7 @@ mpi_api::init(int* argc, char*** argv)
 }
 
 void
-mpi_api::check_init()
+MpiApi::checkInit()
 {
   if (status_ != is_initialized){
     spkt_abort_printf("MPI Rank %d calling functions before calling MPI_Init", rank_);
@@ -274,14 +274,14 @@ mpi_api::check_init()
 // Finalize MPI.
 //
 int
-mpi_api::finalize()
+MpiApi::finalize()
 {
   auto start_clock = trace_clock();
 
   start_mpi_call(MPI_Finalize);
 
-  collective_op_base* op = start_barrier("MPI_Finalize", MPI_COMM_WORLD);
-  wait_collective(op);
+  CollectiveOpBase* op = startBarrier("MPI_Finalize", MPI_COMM_WORLD);
+  waitCollective(op);
 
   mpi_api_debug(sprockit::dbg::mpi, "MPI_Finalize()");
 
@@ -294,18 +294,18 @@ mpi_api::finalize()
 
   status_ = is_finalized;
 
-  int rank = comm_world()->rank();
+  int rank = commWorld()->rank();
   if (rank == 0) {
     debug_printf(sprockit::dbg::mpi_check,
       "MPI application with ID %s passed barrier in finalize on Rank 0\n"
       "at simulation time %10.6e seconds. This generally validates the \n"
       "simulation meaning everyhing has cleanly terminated\n",
-      sid().to_string().c_str(),
+      sid().toString().c_str(),
       os_->now().sec());
   }
 
   engine_->clean_up();
-  transport::finish();
+  Transport::finish();
 
 #if SSTMAC_COMM_SYNC_STATS
   if (dump_comm_times_){
@@ -322,7 +322,7 @@ mpi_api::finalize()
   }
 #endif
 
-  end_api_call();
+  endAPICall();
 
   return MPI_SUCCESS;
 }
@@ -331,7 +331,7 @@ mpi_api::finalize()
 // Get current time.
 //
 double
-mpi_api::wtime()
+MpiApi::wtime()
 {
   auto call_start_time = (uint64_t)os_->now().usec();
   start_mpi_call(MPI_Wtime);
@@ -339,7 +339,7 @@ mpi_api::wtime()
 }
 
 int
-mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
+MpiApi::getCount(const MPI_Status *status, MPI_Datatype datatype, int *count)
 {
   auto call_start_time = (uint64_t)os_->now().usec();
   *count = status->count;
@@ -347,7 +347,7 @@ mpi_api::get_count(const MPI_Status *status, MPI_Datatype datatype, int *count)
 }
 
 const char*
-mpi_api::op_str(MPI_Op op)
+MpiApi::opStr(MPI_Op op)
 {
 #define op_case(x) case x: return #x;
  switch(op)
@@ -371,20 +371,20 @@ mpi_api::op_str(MPI_Op op)
 }
 
 std::string
-mpi_api::type_str(MPI_Datatype mid)
+MpiApi::typeStr(MPI_Datatype mid)
 {
-  mpi_type* ty = type_from_id(mid);
+  MpiType* ty = typeFromId(mid);
   switch(ty->type())
   {
-    case mpi_type::PRIM:
+    case MpiType::PRIM:
       return sprockit::printf("%s=%d", ty->label.c_str(), mid);
-    case mpi_type::PAIR:
+    case MpiType::PAIR:
       return sprockit::printf("PAIR=%d", mid);
-    case mpi_type::VEC:
+    case MpiType::VEC:
       return sprockit::printf("VEC=%d", mid);
-    case mpi_type::IND:
+    case MpiType::IND:
       return sprockit::printf("IND=%d", mid);
-    case mpi_type::NONE:
+    case MpiType::NONE:
       return sprockit::printf("NONE=%d", mid);
     default:
       return "UNKNOWN TYPE";
@@ -392,13 +392,13 @@ mpi_api::type_str(MPI_Datatype mid)
 }
 
 std::string
-mpi_api::comm_str(MPI_Comm comm)
+MpiApi::commStr(MPI_Comm comm)
 {
-  if (comm == comm_world()->id()){
+  if (comm == commWorld()->id()){
     return "MPI_COMM_WORLD";
-  } else if (comm == comm_self()->id()){
+  } else if (comm == commSelf()->id()){
     return "MPI_COMM_SELF";
-  } else if (comm == mpi_comm::comm_null->id()){
+  } else if (comm == MpiComm::comm_null->id()){
     return "MPI_COMM_NULL";
   } else {
     return sprockit::printf("COMM=%d", int(comm));
@@ -406,13 +406,13 @@ mpi_api::comm_str(MPI_Comm comm)
 }
 
 std::string
-mpi_api::comm_str(mpi_comm* comm)
+MpiApi::commStr(MpiComm* comm)
 {
-  if (comm == comm_world()){
+  if (comm == commWorld()){
     return "MPI_COMM_WORLD";
-  } else if (comm == comm_self()){
+  } else if (comm == commSelf()){
     return "MPI_COMM_SELF";
-  } else if (comm == mpi_comm::comm_null){
+  } else if (comm == MpiComm::comm_null){
     return "MPI_COMM_NULL";
   } else {
     return sprockit::printf("COMM=%d", int(comm->id()));
@@ -420,7 +420,7 @@ mpi_api::comm_str(mpi_comm* comm)
 }
 
 std::string
-mpi_api::tag_str(int tag)
+MpiApi::tagStr(int tag)
 {
   if (tag==MPI_ANY_TAG){
     return "int_ANY";
@@ -430,7 +430,7 @@ mpi_api::tag_str(int tag)
 }
 
 std::string
-mpi_api::src_str(int id)
+MpiApi::srcStr(int id)
 {
   if (id == MPI_ANY_SOURCE){
     return "MPI_SOURCE_ANY";
@@ -440,17 +440,17 @@ mpi_api::src_str(int id)
 }
 
 std::string
-mpi_api::src_str(mpi_comm* comm, int id)
+MpiApi::srcStr(MpiComm* comm, int id)
 {
   if (id == MPI_ANY_SOURCE){
     return "MPI_SOURCE_ANY";
   } else {
-    return sprockit::printf("%d:%d", int(id), int(comm->peer_task(id)));
+    return sprockit::printf("%d:%d", int(id), int(comm->peerTask(id)));
   }
 }
 
-mpi_comm*
-mpi_api::get_comm(MPI_Comm comm)
+MpiComm*
+MpiApi::getComm(MPI_Comm comm)
 {
   auto it = comm_map_.find(comm);
   if (it == comm_map_.end()) {
@@ -465,8 +465,8 @@ mpi_api::get_comm(MPI_Comm comm)
   return it->second;
 }
 
-mpi_group*
-mpi_api::get_group(MPI_Group grp)
+MpiGroup*
+MpiApi::getGroup(MPI_Group grp)
 {
   auto it = grp_map_.find(grp);
   if (it == grp_map_.end()) {
@@ -477,20 +477,20 @@ mpi_api::get_group(MPI_Group grp)
 }
 
 void
-mpi_api::add_keyval(int key, keyval* keyval)
+MpiApi::addKeyval(int key, keyval* keyval)
 {
   keyvals_[key] = keyval;
 }
 
 keyval*
-mpi_api::get_keyval(int key)
+MpiApi::getKeyval(int key)
 {
-  check_key(key);
+  checkKey(key);
   return keyvals_[key];
 }
 
-mpi_request*
-mpi_api::get_request(MPI_Request req)
+MpiRequest*
+MpiApi::getRequest(MPI_Request req)
 {
   if (req == MPI_REQUEST_NULL){
     return nullptr;
@@ -506,18 +506,18 @@ mpi_api::get_request(MPI_Request req)
 }
 
 void
-mpi_api::add_comm_ptr(mpi_comm* ptr, MPI_Comm* comm)
+MpiApi::addCommPtr(MpiComm* ptr, MPI_Comm* comm)
 {
   if (generate_ids_){
     *comm = ptr->id();
   } else {
-    ptr->set_id(*comm);
+    ptr->setId(*comm);
   }
   comm_map_[*comm] = ptr;
 }
 
 void
-mpi_api::erase_comm_ptr(MPI_Comm comm)
+MpiApi::eraseCommPtr(MPI_Comm comm)
 {
   if (comm != MPI_COMM_WORLD && comm != MPI_COMM_SELF && comm != MPI_COMM_NULL) {
     comm_ptr_map::iterator it = comm_map_.find(comm);
@@ -531,13 +531,13 @@ mpi_api::erase_comm_ptr(MPI_Comm comm)
 }
 
 void
-mpi_api::add_group_ptr(MPI_Group grp, mpi_group* ptr)
+MpiApi::addGroupPtr(MPI_Group grp, MpiGroup* ptr)
 {
   grp_map_[grp] = ptr;
 }
 
 void
-mpi_api::add_group_ptr(mpi_group* ptr, MPI_Group* grp)
+MpiApi::addGroupPtr(MpiGroup* ptr, MPI_Group* grp)
 {
   if (generate_ids_) *grp = group_counter_++;
   grp_map_[*grp] = ptr;
@@ -545,7 +545,7 @@ mpi_api::add_group_ptr(mpi_group* ptr, MPI_Group* grp)
 }
 
 void
-mpi_api::erase_group_ptr(MPI_Group grp)
+MpiApi::eraseGroupPtr(MPI_Group grp)
 {
   if (grp != MPI_GROUP_EMPTY
       && grp != MPI_GROUP_WORLD
@@ -561,14 +561,14 @@ mpi_api::erase_group_ptr(MPI_Group grp)
 }
 
 void
-mpi_api::add_request_ptr(mpi_request* ptr, MPI_Request* req)
+MpiApi::addRequestPtr(MpiRequest* ptr, MPI_Request* req)
 {
   if (generate_ids_) *req = req_counter_++;
   req_map_[*req] = ptr;
 }
 
 void
-mpi_api::erase_request_ptr(MPI_Request req)
+MpiApi::eraseRequestPtr(MPI_Request req)
 {
   req_ptr_map::iterator it = req_map_.find(req);
   if (it == req_map_.end()) {
@@ -581,7 +581,7 @@ mpi_api::erase_request_ptr(MPI_Request req)
 }
 
 void
-mpi_api::check_key(int key)
+MpiApi::checkKey(int key)
 {
   if (keyvals_.find(key) == keyvals_.end()) {
     spkt_abort_printf("mpi_api::check_key: could not find keyval %d in key_map", key);
@@ -590,7 +590,7 @@ mpi_api::check_key(int key)
 
 
 int
-mpi_api::error_string(int errorcode, char *str, int *resultlen)
+MpiApi::errorString(int errorcode, char *str, int *resultlen)
 {
   static const char* errorstr = "mpi error";
   *resultlen = ::strlen(errorstr);
@@ -600,7 +600,7 @@ mpi_api::error_string(int errorcode, char *str, int *resultlen)
 
 #if SSTMAC_COMM_SYNC_STATS
 void
-mpi_api::start_collective_sync_delays()
+mpi_api::startCollectiveSyncDelays()
 {
   last_collection_ = now().sec();
 }
@@ -608,7 +608,7 @@ mpi_api::start_collective_sync_delays()
 GraphVizCreateTag(sync);
 
 void
-mpi_api::collect_sync_delays(double wait_start, message* msg)
+mpi_api::collectSyncDelays(double wait_start, message* msg)
 {
   //there are two possible sync delays
   //#1: For sender, synced - header_arrived
@@ -616,32 +616,32 @@ mpi_api::collect_sync_delays(double wait_start, message* msg)
 
   double sync_delay = 0;
   double start = std::max(last_collection_, wait_start);
-  if (start < msg->time_sent()){
-    sync_delay += msg->time_sent() - start;
+  if (start < msg->timeSent()){
+    sync_delay += msg->timeSent() - start;
   }
 
-  double header_arrived = std::max(start, msg->time_header_arrived());
-  if (header_arrived < msg->time_synced()){
-    sync_delay += msg->time_synced() - header_arrived;
+  double header_arrived = std::max(start, msg->timeHeaderArrived());
+  if (header_arrived < msg->timeSynced()){
+    sync_delay += msg->timeSynced() - header_arrived;
   }
 
   mpi_api_debug(sprockit::dbg::mpi_sync,
      "wait=%8.6e,last=%8.6e,sent=%8.6e,header=%8.6e,payload=%10.7e,sync=%10.7e,total=%10.7e",
-     wait_start, last_collection_, msg->time_sent(),
-     msg->time_header_arrived(), msg->time_payload_arrived(),
-     msg->time_synced(), sync_delay);
+     wait_start, last_collection_, msg->timeSent(),
+     msg->timeHeaderArrived(), msg->timePayloadArrived(),
+     msg->timeSynced(), sync_delay);
 
   sstmac::timestamp sync = sstmac::timestamp(sync_delay);
   current_call_.sync += sync;
   last_collection_ = now().sec();
 
-  if (os_->call_graph()){
-    os_->call_graph()->reassign(GraphVizTag(sync), sync.ticks(), os_->active_thread());
+  if (os_->callGraph()){
+    os_->callGraph()->reassign(GraphVizTag(sync), sync.ticks(), os_->activeThread());
   }
 }
 
 void
-mpi_api::finish_last_mpi_call(MPI_function func, bool dumpThis)
+mpi_api::finishLastMpiCall(MPI_function func, bool dumpThis)
 {
   if (dumpThis && dump_comm_times_ && crossed_comm_world_barrier()){
     sstmac::timestamp total = now() - current_call_.start;

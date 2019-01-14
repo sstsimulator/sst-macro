@@ -50,95 +50,80 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/common/event_location.h>
-#if SSTMAC_INTEGRATED_SST_CORE
+#if ACTUAL_INTEGRATED_SST_CORE
 #include <sst/core/event.h>
 #endif
 
 namespace sstmac {
 
 
-#if SSTMAC_INTEGRATED_SST_CORE
-typedef SST::Event event;
+#if ACTUAL_INTEGRATED_SST_CORE
+using event = SST::Event;
 #else
-class event :
- public serializable
+class Event : public serializable
 {
  public:
   void serialize_order(serializer& ser){}
 };
 #endif
 
-class event_queue_entry : public event
+class ExecutionEvent : public Event
 {
-  NotSerializable(event_queue_entry)
+  NotSerializable(ExecutionEvent)
  public:
-  virtual ~event_queue_entry() {}
+  virtual ~ExecutionEvent() {}
 
-#if SSTMAC_INTEGRATED_SST_CORE
+#if ACTUAL_INTEGRATED_SST_CORE
   virtual void execute() override = 0;
 
-  event_queue_entry(uint32_t dst, uint32_t src)
+  ExecutionEvent(uint32_t dst, uint32_t src)
   {
     //simply ignore parameters - not needed
   }
 #else
-  event_queue_entry(uint32_t dst_id,
-    uint32_t src_id) :
-    dst_loc_(dst_id),
-    src_loc_(src_id),
+  ExecutionEvent() :
+    linkId_(-1),
     seqnum_(-1)
   {
   }
 
   virtual void execute() = 0;
 
-  timestamp time() const {
+  Timestamp time() const {
     return time_;
   }
 
-  void set_time(const timestamp& t) {
+  void setTime(const Timestamp& t) {
     time_ = t;
   }
 
-  void set_seqnum(uint32_t seqnum) {
+  void setSeqnum(uint32_t seqnum) {
     seqnum_ = seqnum;
+  }
+
+  void setLink(uint32_t id){
+    linkId_ = id;
   }
 
   uint32_t seqnum() const {
     return seqnum_;
   }
 
-  uint32_t component_id() const {
-    return dst_loc_;
-  }
-
-  uint32_t src_component_id() const {
-    return src_loc_;
+  uint32_t linkId() const {
+    return linkId_;
   }
 
  protected:
-  timestamp time_;
-  uint32_t dst_loc_;
-  uint32_t src_loc_;
+  Timestamp time_;
+  uint32_t linkId_;
   /** A unique sequence number from the source */
   uint32_t seqnum_;
 #endif
 
 };
 
-class callback :
-  public event_queue_entry
-{
- public:
-  virtual ~callback(){}
+using Callback = ExecutionEvent;
 
- protected:
-  callback(uint32_t local) :
-    event_queue_entry(local, local)
-  {
-  }
-
-};
 
 
 } // end of namespace sstmac

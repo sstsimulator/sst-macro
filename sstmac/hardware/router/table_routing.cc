@@ -64,15 +64,15 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-class table_router : public router {
+class TableRouter : public Router {
  public:
   FactoryRegister("table",
-              router, table_router,
+              Router, TableRouter,
               "router implementing table-based routing")
 
-  table_router(sprockit::sim_parameters* params, topology* top, network_switch* sw) :
-    router(params, top, sw),
-    table_(top->num_nodes(), -1)
+  TableRouter(sprockit::sim_parameters* params, Topology* top, NetworkSwitch* sw) :
+    Router(params, top, sw),
+    table_(top->numNodes(), -1)
   {
     std::string fname = params->get_param("filename");
     std::ifstream in(fname);
@@ -80,10 +80,10 @@ class table_router : public router {
     in >> jsn;
 
     nlohmann::json routes =
-        jsn.at("switches").at( top->switch_id_to_name(my_addr_) ).at("routes");
+        jsn.at("switches").at( top->switchIdToName(my_addr_) ).at("routes");
     int size = table_.size();
     for (auto it = routes.begin(); it != routes.end(); ++it)
-      table_[top->node_name_to_id(it.key())] = it.value();
+      table_[top->nodeNameToId(it.key())] = it.value();
 
     for (int i=0; i < table_.size(); ++i){
       if (table_[i] == -1){
@@ -94,19 +94,19 @@ class table_router : public router {
 
   }
 
-  int num_vc() const override {
+  int numVC() const override {
     return 1;
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "table-based router";
   }
 
-  void route(packet *pkt) override {
+  void route(Packet *pkt) override {
     int port = table_[pkt->toaddr()];
-    pkt->set_edge_outport(port);
+    pkt->setEdgeOutport(port);
     //for now only valid on topologies with minimal/no vcs
-    pkt->set_deadlock_vc(0);
+    pkt->setDeadlockVC(0);
     rter_debug("packet to %d sent to port %d", pkt->toaddr(), port);
   }
 

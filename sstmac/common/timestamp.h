@@ -60,19 +60,19 @@ namespace sstmac {
  *
  * Intended to be reasonably compatible with ns3::HighPrecision time.
  */
-class timestamp
+class Timestamp
 {
  public:
   /// The type that holds a timestamp.
   typedef uint64_t tick_t;
 
   static tick_t PSEC_PER_TICK;
-  static const timestamp::tick_t zero = 0;
-  static timestamp::tick_t nanoseconds;
-  static timestamp::tick_t microseconds;
-  static timestamp::tick_t milliseconds;
-  static timestamp::tick_t seconds;
-  static timestamp::tick_t minutes;
+  static const Timestamp::tick_t zero = 0;
+  static Timestamp::tick_t nanoseconds;
+  static Timestamp::tick_t microseconds;
+  static Timestamp::tick_t milliseconds;
+  static Timestamp::tick_t seconds;
+  static Timestamp::tick_t minutes;
 
  private:
   tick_t ticks_;
@@ -86,27 +86,33 @@ class timestamp
   static double psec_per_tick_;
 
  public:
-  static void init_stamps(tick_t tick_spacing);
+  static void initStamps(tick_t tick_spacing);
 
   typedef enum { exact } timestamp_param_type_t;
 
-  timestamp(double t_seconds){
+  Timestamp(double t_seconds){
     ticks_ = uint64_t(t_seconds * ticks_per_second_); // * ( 1e12 / (PSEC_PER_TICK)));
-    if (t_seconds > max_time() || (t_seconds < min_time())) {
+    if (t_seconds > maxTime() || (t_seconds < minTime())) {
       spkt_abort_printf("timestamp(): Time value %e out of bounds %e...%e",
-                        t_seconds, min_time(), max_time());
+                        t_seconds, minTime(), maxTime());
     }
   }
 
-  explicit timestamp(tick_t ticks, timestamp_param_type_t ty) : ticks_(ticks) {}
+  explicit Timestamp(tick_t ticks, timestamp_param_type_t ty) : ticks_(ticks) {}
 
-  explicit timestamp(uint64_t num_units, tick_t ticks_per_unit) : ticks_(num_units*ticks_per_unit) {}
+  explicit Timestamp(uint64_t num_units, tick_t ticks_per_unit) : ticks_(num_units*ticks_per_unit) {}
 
-  explicit timestamp() : ticks_(0) {}
+  explicit Timestamp() : ticks_(0) {}
 
   uint64_t ticks_int64() const {
     return ticks_;
   }
+
+#if ACTUAL_INTEGRATED_SST_CORE
+  operator SST::SimTime_t() const {
+    return ticks_;
+  }
+#endif
 
   double sec() const;
 
@@ -118,24 +124,24 @@ class timestamp
 
   double psec() const;
 
-  void correct_round_off(const timestamp& now);
+  void correctRoundOff(const Timestamp& now);
 
  public:
   inline tick_t ticks() const {
     return ticks_;
   }
 
-  static tick_t tick_interval();
+  static tick_t tickInterval();
 
-  static const std::string & tick_interval_string();
+  static const std::string & tickIntervalString();
 
   static tick_t frequency();
 
-  static double max_time(){
+  static double maxTime(){
     return max_time_;
   }
 
-  static double min_time(){
+  static double minTime(){
     return min_time_;
   }
 
@@ -143,60 +149,60 @@ class timestamp
   /// This is a template function to ensure that we do proper range checking
   /// on input values.
   template<typename T>
-  static timestamp exact_ticks(T val) {
-    timestamp ts;
+  static Timestamp exact_ticks(T val) {
+    Timestamp ts;
     ts.ticks_ = tick_t(val);
     return ts;
   }
 
-  inline bool operator==(const timestamp &other) const {
+  inline bool operator==(const Timestamp &other) const {
     return (ticks_ == other.ticks_);
   }
 
-  inline bool operator!=(const timestamp &other) const {
+  inline bool operator!=(const Timestamp &other) const {
     return (ticks_ != other.ticks_);
   }
 
-  inline bool operator<(const timestamp &other) const {
+  inline bool operator<(const Timestamp &other) const {
     return (ticks_ < other.ticks_);
   }
 
-  inline bool operator<=(const timestamp &other) const {
+  inline bool operator<=(const Timestamp &other) const {
     return (ticks_ <= other.ticks_);
   }
 
-  inline bool operator>(const timestamp &other) const {
+  inline bool operator>(const Timestamp &other) const {
     return (ticks_ > other.ticks_);
   }
 
-  inline bool operator>=(const timestamp &other) const {
+  inline bool operator>=(const Timestamp &other) const {
     return (ticks_ >= other.ticks_);
   }
 
-  timestamp& operator+=(const timestamp &other);
-  timestamp& operator-=(const timestamp &other);
-  timestamp& operator*=(double scale);
-  timestamp& operator/=(double scale);
+  Timestamp& operator+=(const Timestamp &other);
+  Timestamp& operator-=(const Timestamp &other);
+  Timestamp& operator*=(double scale);
+  Timestamp& operator/=(double scale);
 };
 
-timestamp operator+(const timestamp &a, const timestamp &b);
-timestamp operator-(const timestamp &a, const timestamp &b);
-timestamp operator*(const timestamp &t, double scaling);
-timestamp operator*(double scaling, const timestamp &t);
-timestamp operator/(const timestamp &t, double scaling);
+Timestamp operator+(const Timestamp &a, const Timestamp &b);
+Timestamp operator-(const Timestamp &a, const Timestamp &b);
+Timestamp operator*(const Timestamp &t, double scaling);
+Timestamp operator*(double scaling, const Timestamp &t);
+Timestamp operator/(const Timestamp &t, double scaling);
 
-std::ostream& operator<<(std::ostream &os, const timestamp &t);
+std::ostream& operator<<(std::ostream &os, const Timestamp &t);
 
-std::string to_printf_type(timestamp t);
+std::string to_printf_type(Timestamp t);
 
 
 } // end of namespace sstmac
 
 START_SERIALIZATION_NAMESPACE
-template <> class serialize<sstmac::timestamp>
+template <> class serialize<sstmac::Timestamp>
 {
  public:
-  void operator()(sstmac::timestamp& t, serializer& ser){
+  void operator()(sstmac::Timestamp& t, serializer& ser){
     ser.primitive(t);
   }
 };

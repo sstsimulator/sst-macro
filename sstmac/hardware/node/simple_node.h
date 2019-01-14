@@ -56,22 +56,21 @@ namespace hw {
  * A stand-in node.  This node type passes all requests directly to
  * the simulator and has no resource contention (infinite processors),
  */
-class simple_node :
-  public node
+class SimpleNode :
+  public Node
 {
-  RegisterComponent("simple",node,simple_node,
+  RegisterComponent("simple",Node,SimpleNode,
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A basic endpoint node running SST/macro software stacks")
 
 
  public:
-  simple_node(sprockit::sim_parameters* params,
-    uint32_t id, event_manager* mgr);
+  SimpleNode(sprockit::sim_parameters* params, uint32_t id);
 
-  virtual ~simple_node();
+  virtual ~SimpleNode();
 
   virtual void execute(ami::COMP_FUNC func,
-         event* data, callback* cb);
+         Event* data, ExecutionEvent* cb);
 
 
 };

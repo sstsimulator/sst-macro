@@ -56,41 +56,40 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class api :
-  public library
+class API : public Library
 {
-  DeclareFactory(api,software_id,operating_system*)
+  DeclareFactory(API,SoftwareId,OperatingSystem*)
  public:
-  api(sprockit::sim_parameters *params,
+  API(sprockit::sim_parameters *params,
       const std::string& libname,
-      software_id sid,
-      operating_system *os) :
-    library(libname, sid, os),
+      SoftwareId sid,
+      OperatingSystem *os) :
+    Library(libname, sid, os),
     host_timer_(nullptr),
     compute_(nullptr)
   {
     init(params);
   }
 
-  api(sprockit::sim_parameters* params,
+  API(sprockit::sim_parameters* params,
       const char* prefix,
-      software_id sid,
-      operating_system* os) :
-    api(params, standard_lib_name(prefix, sid), sid, os)
+      SoftwareId sid,
+      OperatingSystem* os) :
+    API(params, standardLibname(prefix, sid), sid, os)
   {
   }
 
-  virtual ~api();
+  virtual ~API();
 
   virtual void init(){}
 
   virtual void finish(){}
 
-  timestamp now() const;
+  Timestamp now() const;
 
-  void schedule(timestamp t, event_queue_entry* ev);
+  void schedule(Timestamp t, ExecutionEvent* ev);
 
-  void schedule_delay(timestamp t, event_queue_entry* ev);
+  void scheduleDelay(Timestamp t, ExecutionEvent* ev);
 
   /**
    * @brief start_api_call
@@ -98,7 +97,7 @@ class api :
    * collected since the last API call can then advance time or
    * increment statistics.
    */
-  void start_api_call();
+  void startAPICall();
 
   /**
    * @brief end_api_call
@@ -106,7 +105,7 @@ class api :
    * collected since the last API call can then clear counters for
    * the next time window.
    */
-  void end_api_call();
+  void endAPICall();
 
   sprockit::sim_parameters* params() const {
     return params_;
@@ -114,20 +113,20 @@ class api :
 
  protected:
   HostTimer* host_timer_;
-  lib_compute_time* compute_;
+  LibComputeTime* compute_;
   sprockit::sim_parameters* params_;
 
  private:
   void init(sprockit::sim_parameters *params);
 };
 
-void api_lock();
-void api_unlock();
+void apiLock();
+void apiUnlock();
 
 #define NamespaceRegister(name, child_cls)
 
 #define RegisterAPI(name, child_cls) \
-  FactoryRegister(name, sstmac::sw::api, child_cls) \
+  FactoryRegister(name, sstmac::sw::API, child_cls) \
   NamespaceRegister(name, child_cls)
 
 }

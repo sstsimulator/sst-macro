@@ -70,8 +70,8 @@ test_allreduce(int cm_rank)
   src_buffer[cm_rank] = rank;
   int* dst_buffer = new int[nelems];
   int tag = 13;
-  communicator* dom = new index_communicator(cm_rank, ndomain, indices);
-  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, message::default_cq);
+  Communicator* dom = new index_communicator(cm_rank, ndomain, indices);
+  comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, Message::default_cq);
 }
 
 
@@ -81,7 +81,7 @@ wait_allreduce(int cm_rank)
   printf("Waiting on allreduce collective for domain rank %d, physical rank %d\n",
     cm_rank, comm_rank());
 
-  auto* dmsg = sumi_engine()->block_until_next(message::default_cq);
+  auto* dmsg = sumi_engine()->blockUntilNext(Message::default_cq);
 
   int* dst_buffer = (int*) dmsg->result();
   int nelems = 2*comm_nproc();
@@ -108,7 +108,7 @@ main(int argc, char **argv)
 
   for (int i=0; i < ndomain; ++i){
     if (indices[i] == me){
-      sumi_engine()->block_until_next(message::default_cq);
+      sumi_engine()->blockUntilNext(Message::default_cq);
     }
   }
 

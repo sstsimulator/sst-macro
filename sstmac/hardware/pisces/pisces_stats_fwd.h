@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class stat_bytes_sent;
+class StatBytesSent;
 
 }
 }

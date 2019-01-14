@@ -46,12 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-mpi_comm_cart::mpi_comm_cart(
+MpiCommCart::MpiCommCart(
   MPI_Comm id,
-  int rank, mpi_group* peers,
-  app_id aid, int ndims,
+  int rank, MpiGroup* peers,
+  AppId aid, int ndims,
   const int *dims, const int *periods, int reorder) :
-  mpi_comm(id, rank, peers, aid, TOPO_CART),
+  MpiComm(id, rank, peers, aid, TOPO_CART),
   ndims_(ndims), reorder_(reorder)
 {
   for (int i = 0; i < ndims; i++) {
@@ -61,7 +61,7 @@ mpi_comm_cart::mpi_comm_cart(
 }
 
 void
-mpi_comm_cart::set_coords(int rank, int* coords)
+MpiCommCart::set_coords(int rank, int* coords)
 {
   int prev = 1;
   for (int i = 0; i < dims_.size(); i++) {
@@ -73,7 +73,7 @@ mpi_comm_cart::set_coords(int rank, int* coords)
 }
 
 int
-mpi_comm_cart::rank(const int* coords)
+MpiCommCart::rank(const int* coords)
 {
   int rank = 0;
   int prev = 1;
@@ -85,7 +85,7 @@ mpi_comm_cart::rank(const int* coords)
 }
 
 int
-mpi_comm_cart::shift(int dir, int dis)
+MpiCommCart::shift(int dir, int dis)
 {
 
   if (dir >= (int) dims_.size()) {
@@ -102,14 +102,14 @@ mpi_comm_cart::shift(int dir, int dis)
       coords[dir] = coords[dir] % dims_[dir];
       return rank(coords);
     } else {
-      return mpi_comm::proc_null;
+      return MpiComm::proc_null;
     }
   } else if (coords[dir] < 0) {
     if (periods_[dir]) {
       coords[dir] = (dims_[dir] + coords[dir]) % dims_[dir];
       return rank(coords);
     } else {
-      return mpi_comm::proc_null;
+      return MpiComm::proc_null;
     }
   } else {
     return rank(coords);

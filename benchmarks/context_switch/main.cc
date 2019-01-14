@@ -12,8 +12,8 @@ RegisterKeywords(
 );
 
 struct subthread_args {
-  sstmac::sw::thread_context* subthread;
-  sstmac::sw::thread_context* main_thread;
+  sstmac::sw::ThreadContext* subthread;
+  sstmac::sw::ThreadContext* main_thread;
 };
 
 class context_switch_benchmark : public sstmac::benchmark
@@ -22,18 +22,18 @@ class context_switch_benchmark : public sstmac::benchmark
   FactoryRegister("context_switch", sstmac::benchmark, context_switch_benchmark);
 
   context_switch_benchmark(sprockit::sim_parameters* params){
-    main_thread_ = sstmac::sw::thread_context::factory
+    main_thread_ = sstmac::sw::ThreadContext::factory
                     ::get_param("context", params);
     nthread_ = params->get_int_param("nthread");
     niter_ = params->get_int_param("niter");
-    sstmac::sw::stack_alloc::init(params);
+    sstmac::sw::StackAlloc::init(params);
   }
 
   void run() override;
 
  private:
   std::vector<subthread_args> subthreads_;
-  sstmac::sw::thread_context* main_thread_;
+  sstmac::sw::ThreadContext* main_thread_;
   int nthread_;
   int niter_;
 };
@@ -43,29 +43,29 @@ static void run_subthread(void* args){
   auto subthread = sargs->subthread;
   auto main_thread = sargs->main_thread;
   while (1){
-    subthread->pause_context(main_thread);
+    subthread->pauseContext(main_thread);
   }
 }
 
 void context_switch_benchmark::run()
 {
-  main_thread_->init_context();
+  main_thread_->initContext();
   subthreads_.resize(nthread_);
   for (int i=0; i < nthread_; ++i){
     auto& args = subthreads_[i];
     auto thr = main_thread_->copy();
     args.subthread = thr;
     args.main_thread = main_thread_;
-    thr->start_context(0, sstmac::sw::stack_alloc::alloc(),
-             sstmac::sw::stack_alloc::stacksize(),
+    thr->startContext(0, sstmac::sw::StackAlloc::alloc(),
+             sstmac::sw::StackAlloc::stacksize(),
              run_subthread, &args, nullptr, nullptr, main_thread_);
   }
 
   double start = now();
   for (int i=0; i < niter_; ++i){
     for (int j=0; j < nthread_; ++j){
-      sstmac::sw::thread_context* subthread = subthreads_[j].subthread;
-      subthread->resume_context(main_thread_);
+      sstmac::sw::ThreadContext* subthread = subthreads_[j].subthread;
+      subthread->resumeContext(main_thread_);
     }
   }
   double stop = now();

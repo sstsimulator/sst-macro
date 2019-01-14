@@ -51,44 +51,43 @@ namespace sstmac {
 namespace hw {
 
 /**
- * @brief The logp_memory_model class implements memory operations using
+ * @brief The LogPMemoryModel class implements memory operations using
  *        a very basic LogGP model for simulating delays.
  */
-class logp_memory_model : public memory_model
+class LogPMemoryModel : public MemoryModel
 {
-  FactoryRegister("logP | simple | LogP | logp", memory_model,logp_memory_model,
+  FactoryRegister("logP | simple | LogP | logp", MemoryModel,LogPMemoryModel,
               "Implements a simple memory model that is just a single link")
  public:
-  logp_memory_model(sprockit::sim_parameters* params, node* nd);
+  LogPMemoryModel(sprockit::sim_parameters* params, Node* nd);
 
-  virtual ~logp_memory_model();
+  virtual ~LogPMemoryModel();
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "logGP memory model";
   }
 
-  void access(uint64_t bytes, double max_bw, callback* cb) override;
+  void access(uint64_t bytes, double max_bw, Callback* cb) override;
 
-  double max_single_bw() const override {
+  double maxSingleBw() const override {
     return bw_;
   }
 
  protected:
   class link  {
    public:
-    link(double bw, timestamp lat) :
+    link(double bw, Timestamp lat) :
       bw_(bw), lat_(lat), last_access_(0) {
     }
 
     ~link() { }
 
-    timestamp
-    new_access(timestamp now, long size, double max_bw);
+    Timestamp newAccess(Timestamp now, uint64_t size, double max_bw);
 
    protected:
     double bw_;
-    timestamp lat_;
-    timestamp last_access_;
+    Timestamp lat_;
+    Timestamp last_access_;
 
   };
 
@@ -97,7 +96,7 @@ class logp_memory_model : public memory_model
 
   double bw_;
 
-  timestamp lat_;
+  Timestamp lat_;
 
 };
 

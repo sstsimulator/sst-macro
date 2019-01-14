@@ -52,30 +52,30 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class lib_compute_time :
-  public lib_compute
+class LibComputeTime :
+  public LibCompute
 {
  public:
-  lib_compute_time(sprockit::sim_parameters* params, software_id id,
-                   operating_system* os);
+  LibComputeTime(sprockit::sim_parameters* params, SoftwareId id,
+                   OperatingSystem* os);
 
-  lib_compute_time(sprockit::sim_parameters* params,
-                   const char* prefix, software_id id,
-                   operating_system* os);
+  LibComputeTime(sprockit::sim_parameters* params,
+                   const char* prefix, SoftwareId id,
+                   OperatingSystem* os);
 
-  lib_compute_time(sprockit::sim_parameters* params,
-                   const std::string& name, software_id id,
-                   operating_system* os);
+  LibComputeTime(sprockit::sim_parameters* params,
+                   const std::string& name, SoftwareId id,
+                   OperatingSystem* os);
 
-  virtual ~lib_compute_time();
+  virtual ~LibComputeTime();
 
-  void incoming_event(event *ev){
-    library::incoming_event(ev);
+  void incomingEvent(Event *ev){
+    Library::incomingEvent(ev);
   }
 
-  void compute(timestamp time);
+  void compute(Timestamp time);
 
-  void sleep(timestamp time);
+  void sleep(Timestamp time);
 
 };
 

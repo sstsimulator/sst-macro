@@ -58,17 +58,17 @@ DeclareDebugSlot(compute_scheduler)
 namespace sstmac {
 namespace sw {
 
-class compute_scheduler
+class ComputeScheduler
 {
-  DeclareFactory(compute_scheduler, sw::operating_system*, int/*ncores*/, int/*nsockets*/)
+  DeclareFactory(ComputeScheduler, sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
  public:
-  compute_scheduler(sprockit::sim_parameters* params, sw::operating_system* os,
+  ComputeScheduler(sprockit::sim_parameters* params, sw::OperatingSystem* os,
                     int ncores, int nsockets) :
     os_(os), ncores_(ncores), nsocket_(nsockets)
   {
   }
 
-  virtual ~compute_scheduler() {}
+  virtual ~ComputeScheduler() {}
 
 
   int ncores() const {
@@ -83,16 +83,16 @@ class compute_scheduler
    * @brief reserve_core
    * @param thr   The physical thread requesting to compute
    */
-  virtual void reserve_cores(int ncore, thread* thr) = 0;
+  virtual void reserveCores(int ncore, Thread* thr) = 0;
   
-  virtual void release_cores(int ncore, thread* thr) = 0;
+  virtual void releaseCores(int ncore, Thread* thr) = 0;
 
 
  protected:
   int ncores_;
   int nsocket_;
   int cores_per_socket_;
-  sw::operating_system* os_;
+  sw::OperatingSystem* os_;
 
 };
 

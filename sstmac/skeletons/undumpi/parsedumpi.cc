@@ -72,9 +72,9 @@ namespace sumi{
 using namespace sstmac::hw;
 
 
-parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
-                       sstmac::sw::operating_system* os) :
-  app(params, sid, os),
+ParseDumpi::ParseDumpi(sprockit::sim_parameters* params, SoftwareId sid,
+                       sstmac::sw::OperatingSystem* os) :
+  App(params, sid, os),
   mpi_(nullptr)
 {
   fileroot_ = params->reread_param("dumpi_metaname");
@@ -86,25 +86,25 @@ parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
   early_terminate_count_ = params->get_optional_int_param("parsedumpi_terminate_count", -1);
 }
 
-parsedumpi::~parsedumpi() throw()
+ParseDumpi::~ParseDumpi() throw()
 {
 }
 
-int parsedumpi::skeleton_main()
+int ParseDumpi::skeletonMain()
 {
   int rank = this->tid();
-  mpi_ = get_api<mpi_api>();
+  mpi_ = get_api<MpiApi>();
 
-  sstmac::sw::dumpi_meta* meta = new   sstmac::sw::dumpi_meta(fileroot_);
+  sstmac::sw::DumpiMeta* meta = new   sstmac::sw::DumpiMeta(fileroot_);
   parsedumpi_callbacks cbacks(this);
-  std::string fname = sstmac::sw::dumpi_file_name(rank, meta->dirplusfileprefix_);
+  std::string fname = sstmac::sw::dumpiFileName(rank, meta->dirplusfileprefix_);
   // Ready to go.
   //only rank 0 should print progress
   bool print_my_progress = rank == 0 && print_progress_;
 
   try {
     cbacks.parse_stream(fname.c_str(), print_my_progress);
-  } catch (parsedumpi::early_termination& e) {
+  } catch (ParseDumpi::early_termination& e) {
     //do nothing - happily move on and finalize
     mpi_->finalize();
   }

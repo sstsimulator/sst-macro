@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class launch_event : public hw::network_message
+class LaunchEvent : public hw::NetworkMessage
 {
  public:
   typedef enum {
@@ -63,22 +63,22 @@ class launch_event : public hw::network_message
     Stop
   } type_t;
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return sprockit::printf("launch event app=%d task=%d node=%d",
                             aid(), tid_, toaddr());
   }
 
   void serialize_order(serializer& ser) override {
-    hw::network_message::serialize_order(ser);
+    hw::NetworkMessage::serialize_order(ser);
     ser & ty_;
     ser & tid_;
   }
 
-  task_id tid() const {
+  TaskId tid() const {
     return tid_;
   }
 
-  std::string unique_name() const {
+  std::string uniqueName() const {
     return unique_name_;
   }
 
@@ -86,45 +86,45 @@ class launch_event : public hw::network_message
     return ty_;
   }
 
-  network_message* clone_injection_ack() const override;
+  NetworkMessage* cloneInjectionAck() const override;
 
  protected:
-  launch_event(uint64_t flow_id,
-               type_t ty, app_id aid, task_id tid,
+  LaunchEvent(uint64_t flow_id,
+               type_t ty, AppId aid, TaskId tid,
                const std::string& unique_name,
-               node_id to, node_id from,
+               NodeId to, NodeId from,
                const std::string& libname) :
     ty_(ty), tid_(tid),
     unique_name_(unique_name),
-    network_message(flow_id, libname, aid, to, from,
+    NetworkMessage(flow_id, libname, aid, to, from,
                     256, //use rough fixed size to avoid platform-dependent sizeof(...)
                     false, nullptr, header{})
   {
   }
 
-  launch_event(){} //for serialization
+  LaunchEvent(){} //for serialization
 
  private:
-  task_id tid_;
+  TaskId tid_;
   std::string unique_name_;
   type_t ty_;
 
 };
 
-class start_app_event :
-  public launch_event,
-  public sprockit::thread_safe_new<start_app_event>
+class StartAppEvent :
+  public LaunchEvent,
+  public sprockit::thread_safe_new<StartAppEvent>
 {
-  ImplementSerializable(start_app_event)
+  ImplementSerializable(StartAppEvent)
  public:
-  start_app_event(uint64_t flow_id, app_id aid,
+  StartAppEvent(uint64_t flow_id, AppId aid,
      const std::string& unique_name,
-     task_mapping::ptr mapping,
-     task_id tid,
-     node_id to,
-     node_id from,
+     TaskMapping::ptr mapping,
+     TaskId tid,
+     NodeId to,
+     NodeId from,
      const sprockit::sim_parameters* app_params) :
-    launch_event(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
+    LaunchEvent(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
     app_params_(app_params)
   {
@@ -132,9 +132,9 @@ class start_app_event :
 
   int core_affinity(int intranode_rank) const;
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
-  start_app_event() {} //for serialization
+  StartAppEvent() {} //for serialization
 
   void serialize_order(serializer& ser) override;
 
@@ -142,32 +142,32 @@ class start_app_event :
     return app_params_;
   }
 
-  task_mapping::ptr mapping() const {
+  TaskMapping::ptr mapping() const {
     return mapping_;
   }
 
  private:
   std::string unique_name_;
-  task_mapping::ptr mapping_;
+  TaskMapping::ptr mapping_;
   sprockit::sim_parameters app_params_;
 
 };
 
-class job_stop_event : public launch_event
+class JobStopEvent : public LaunchEvent
 {
-  ImplementSerializable(job_stop_event)
+  ImplementSerializable(JobStopEvent)
  public:
-  job_stop_event(uint64_t flow_id, app_id aid,
+  JobStopEvent(uint64_t flow_id, AppId aid,
      const std::string& unique_name,
-     node_id to,
-     node_id from) :
-    launch_event(flow_id, Stop, aid, 0, unique_name, to, from, "job_launcher")
+     NodeId to,
+     NodeId from) :
+    LaunchEvent(flow_id, Stop, aid, 0, unique_name, to, from, "JobLauncher")
   {
   }
 
-  job_stop_event(){} //for serialization
+  JobStopEvent(){} //for serialization
 
-  std::string to_string() const override;
+  std::string toString() const override;
 };
 
 }

@@ -93,18 +93,18 @@ RegisterKeywords(
 
 namespace sstmac {
 
-class runtime_param_bcaster :
+class RuntimeParamBcaster :
   public sprockit::param_bcaster
 {
  public:
-  runtime_param_bcaster(parallel_runtime* rt) : rt_(rt) {}
+  RuntimeParamBcaster(ParallelRuntime* rt) : rt_(rt) {}
 
   void bcast(void *buf, int size, int me, int root){
     rt_->bcast(buf, size, root);
   }
 
  private:
-  parallel_runtime* rt_;
+  ParallelRuntime* rt_;
 };
 
 static void
@@ -118,7 +118,7 @@ print_finish(std::ostream& os, double wall_time)
   os << sprockit::printf("SST/macro ran for %12.4f seconds\n", wall_time);
 }
 
-parallel_runtime* init()
+ParallelRuntime* init()
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("parallel_runtime* init: should not be called in integrated core");
@@ -143,25 +143,25 @@ parallel_runtime* init()
     fake_build = atoi(env_str);
   }
 
-  parallel_runtime* rt = parallel_runtime::static_runtime(&cmdline_params);
+  ParallelRuntime* rt = ParallelRuntime::staticRuntime(&cmdline_params);
   return rt;
 #endif
 }
 
 void
-finalize(parallel_runtime* rt)
+finalize(ParallelRuntime* rt)
 {
   rt->finalize();
-  sstmac::sw::operating_system::simulation_done();
+  sstmac::sw::OperatingSystem::simulationDone();
   sprockit::statics::finish();
   sprockit::sprockit_finalize_cxx_heap();
   delete rt;
 }
 
 void
-init_opts(opts& oo, int argc, char** argv)
+initOpts(opts& oo, int argc, char** argv)
 {
-  int parse_status = parse_opts(argc, argv, oo);
+  int parse_status = parseOpts(argc, argv, oo);
   if (parse_status == PARSE_OPT_EXIT_SUCCESS) {
     exit(0);
   } else if (parse_status == PARSE_OPT_SUCCESS){
@@ -176,7 +176,7 @@ init_opts(opts& oo, int argc, char** argv)
  * @param params  An already allocated parameter object
  */
 void
-init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel)
+initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel)
 {
   //use the config file to set up file search paths
   size_t pos = oo.configfile.find_last_of('/');
@@ -187,7 +187,7 @@ init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bo
 
   if (oo.got_config_file){
     if (parallel){
-      runtime_param_bcaster bcaster(rt);
+      RuntimeParamBcaster bcaster(rt);
       sprockit::sim_parameters::parallel_build_params(params, rt->me(), rt->nproc(),
                                                       oo.configfile, &bcaster, true);
     } else {
@@ -222,36 +222,36 @@ init_params(parallel_runtime* rt, opts& oo, sprockit::sim_parameters* params, bo
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-init_first_run(parallel_runtime* rt, sprockit::sim_parameters* params)
+initFirstRun(ParallelRuntime* rt, sprockit::sim_parameters* params)
 {
 }
 
 void
-run_params(opts& oo,
-           parallel_runtime* rt,
+runParams(opts& oo,
+           ParallelRuntime* rt,
            sprockit::sim_parameters* params,
            sim_stats& stats)
 {
   //we didn't have all the runtime params available when we first built this
-  rt->init_runtime_params(params);
+  rt->initRuntimeParams(params);
 
-  rt->init_partition_params(params);
+  rt->initPartitionParams(params);
 
-  native::manager* mgr = new native::manager(params, rt);
+  native::Manager* mgr = new native::Manager(params, rt);
 
   //dumping the output graph can be activated either on the command line
   //or activated by a parameter inside the topology
   //it is safe to call this function event if output_grapvhiz is empty
   //the topology will check and not dump if neither command line
   //nor parameter file has activated it
-  mgr->interconn()->topol()->output_graphviz(oo.output_graphviz);
+  mgr->interconnect()->topology()->outputGraphviz(oo.outputGraphviz);
 
   //same story applies for xyz file
-  mgr->interconn()->topol()->output_xyz(oo.output_xyz);
+  mgr->interconnect()->topology()->outputXYZ(oo.outputXYZ);
 
-  double start = sstmac_wall_time();
-  timestamp stop_time = params->get_optional_time_param("stop_time", 0);
-  timestamp runtime;
+  double start = sstmacWallTime();
+  Timestamp stop_time = params->get_optional_time_param("stop_time", 0);
+  Timestamp runtime;
   try {
     runtime = mgr->run(stop_time);
 
@@ -261,12 +261,12 @@ run_params(opts& oo,
     fflush(stderr);
 
     //don't do this here anymore - interconn deleted by manager
-    //mgr->interconn()->deadlock_check();
-    runtime::check_deadlock();
+    //mgr->interconnect()->deadlock_check();
+    Runtime::checkDeadlock();
 
     mgr->finish();
 
-    sstmac::env::params = nullptr;
+    sstmac::Env::params = nullptr;
 
     delete mgr;
   } catch (const std::exception& e) {
@@ -287,27 +287,27 @@ run_params(opts& oo,
 
   // now that we finished running, print the parameters that we used
 
-  double stop = sstmac_wall_time();
+  double stop = sstmacWallTime();
   stats.wallTime = stop - start;
   stats.simulatedTime = runtime.sec();
 
-  sstmac::runtime::delete_statics();
+  sstmac::Runtime::deleteStatics();
 }
 
 #endif
 
 void
 run(opts& oo,
-  parallel_runtime* rt,
+  ParallelRuntime* rt,
   sprockit::sim_parameters* params,
   sim_stats& stats)
 {
 
-  sstmac::env::params = params;
-  sstmac::env::rt = rt;
+  sstmac::Env::params = params;
+  sstmac::Env::rt = rt;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
-  run_params(oo, rt, params, stats);
+  runParams(oo, rt, params, stats);
 #endif
 }
 
@@ -320,7 +320,7 @@ static void tokenize(const std::string& in, std::set<std::string>& tokens){
 }
 
 int
-run_standalone(int argc, char** argv)
+runStandalone(int argc, char** argv)
 {
   std::cerr << "WARNING: running standalone executable as-is. This usually happens\n"
             << "WARNING: when running configure scripts. I hope this is what you want"
@@ -328,7 +328,7 @@ run_standalone(int argc, char** argv)
   //oh, hmm, we are running inside configure
   //this means we actually just want to run a compiled program
   //and get the hell out of dodge
-  sstmac::timestamp::init_stamps(1);
+  sstmac::Timestamp::initStamps(1);
   sprockit::sim_parameters null_params;
 
   sprockit::sim_parameters* nic_params = null_params.get_optional_namespace("nic");
@@ -343,15 +343,15 @@ run_standalone(int argc, char** argv)
 
   null_params.add_param_override("id", 1);
   null_params.add_param_override("name", "sstmac_app_name");
-  sstmac::sw::software_id id(0,0);
-  sstmac::native::serial_runtime rt(&null_params);
+  sstmac::sw::SoftwareId id(0,0);
+  sstmac::native::SerialRuntime rt(&null_params);
 #if SSTMAC_INTEGRATED_SST_CORE
-  sstmac::event_manager mgr(uint32_t(0));
+  sstmac::EventManager mgr(uint32_t(0));
 #else
-  sstmac::event_manager mgr(&null_params, &rt);
+  sstmac::EventManager mgr(&null_params, &rt);
 #endif
-  sstmac::hw::simple_node node(&null_params, 1, &mgr);
-  sstmac::sw::operating_system os(&null_params, &node);
+  sstmac::hw::SimpleNode node(&null_params, 1);
+  sstmac::sw::OperatingSystem os(&null_params, &node);
 
   std::stringstream argv_sstr;
   for (int i=1; i < argc; ++i){
@@ -360,21 +360,21 @@ run_standalone(int argc, char** argv)
   null_params.add_param("argv", argv_sstr.str());
 
   null_params.add_param_override("notify", "false");
-  sstmac::sw::app* a = sstmac::sw::app::factory::get_value(
+  sstmac::sw::App* a = sstmac::sw::App::factory::get_value(
         "sstmac_app_name", &null_params, id, &os);
-  os.start_app(a, "");
+  os.startApp(a, "");
   return a->rc();
 }
 
 int
-try_main(sprockit::sim_parameters* params,
+tryMain(sprockit::sim_parameters* params,
          int argc, char **argv, bool params_only)
 {
   //set up the search path
   sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
   sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
 
-  sstmac::parallel_runtime* rt;
+  sstmac::ParallelRuntime* rt;
   if (params_only){
     rt = nullptr;
   } else {
@@ -394,16 +394,16 @@ try_main(sprockit::sim_parameters* params,
     }
     if (tokens.find(appName) != tokens.end()){
       //this executable is whitelisted
-      return run_standalone(argc, argv);
+      return runStandalone(argc, argv);
     }
   }
 
   opts oo;
   sim_stats stats;
-  sstmac::init_opts(oo, argc, argv);
+  sstmac::initOpts(oo, argc, argv);
 
   bool parallel = rt && rt->nproc() > 1;
-  sstmac::init_params(rt, oo, params, parallel);
+  sstmac::initParams(rt, oo, params, parallel);
 
   if (!oo.benchmark.empty()){
     benchmark* bm = benchmark::factory::get_value(oo.benchmark, params);
@@ -412,14 +412,14 @@ try_main(sprockit::sim_parameters* params,
   }
 
   //do some cleanup and processing of params
-  sstmac::remap_params(params);
+  sstmac::remapParams(params);
 
   if (params->has_param("external_libs")){
-    std::string pathStr = load_extern_path_str();
+    std::string pathStr = loadExternPathStr();
     std::vector<std::string> libraries;
     params->get_vector_param("external_libs", libraries);
     for (auto&& lib : libraries){
-      load_extern_library(lib, pathStr);
+      loadExternLibrary(lib, pathStr);
     }
   }
 

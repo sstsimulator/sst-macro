@@ -48,8 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class network_switch;
-class logp_switch;
+class NetworkSwitch;
+class LogPSwitch;
 
 }
 }

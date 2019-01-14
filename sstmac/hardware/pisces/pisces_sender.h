@@ -60,13 +60,13 @@ namespace hw {
 
 struct payload_queue {
 
-  std::list<pisces_packet*> queue;
+  std::list<PiscesPacket*> queue;
 
-  typedef std::list<pisces_packet*>::iterator iterator;
+  typedef std::list<PiscesPacket*>::iterator iterator;
 
-  pisces_packet* pop(int num_credits);
+  PiscesPacket* pop(int num_credits);
 
-  pisces_packet* front(){
+  PiscesPacket* front(){
     if (queue.empty()){
       return nullptr;
     }
@@ -78,80 +78,79 @@ struct payload_queue {
     return queue.size();
   }
 
-  void push_back(pisces_packet* payload){
+  void push_back(PiscesPacket* payload){
     queue.push_back(payload);
   }
 
 };
 
-class pisces_sender :
-  public event_subcomponent
+class PiscesSender : public SubComponent
 {
-  DeclareFactory(pisces_sender, event_component*)
+  DeclareFactory(PiscesSender, Component*)
  public:
   struct input {
     int port_to_credit;
-    event_link* link;
+    EventLink* link;
     input() : link(nullptr){}
   };
 
   struct output {
     int arrival_port;
-    event_link* link;
+    EventLink* link;
     output() : link(nullptr){}
   };
 
-  virtual ~pisces_sender() {}
+  virtual ~PiscesSender() {}
 
-  virtual void set_input(sprockit::sim_parameters* params,
+  virtual void setInput(sprockit::sim_parameters* params,
      int my_inport, int dst_outport,
-     event_link* link) = 0;
+     EventLink* link) = 0;
 
-  virtual void set_output(sprockit::sim_parameters* params,
+  virtual void setOutput(sprockit::sim_parameters* params,
     int my_outport, int dst_inport,
-    event_link* link) = 0;
+    EventLink* link) = 0;
 
-  virtual void handle_payload(event* ev) = 0;
+  virtual void handlePayload(Event* ev) = 0;
 
-  virtual void handle_credit(event* ev) = 0;
+  virtual void handleCredit(Event* ev) = 0;
 
-  static void configure_credit_port_latency(sprockit::sim_parameters* params);
+  static void configureCreditPortLatency(sprockit::sim_parameters* params);
 
-  static void configure_payload_port_latency(sprockit::sim_parameters* params);
+  static void configurePayloadPortLatency(sprockit::sim_parameters* params);
 
-  void set_stat_collector(packet_stats_callback* c){
+  void setStatCollector(PacketStatsCallback* c){
     stat_collector_ = c;
   }
 
-  virtual std::string pisces_name() const = 0;
+  virtual std::string piscesName() const = 0;
 
-  std::string to_string() const override;
+  std::string toString() const override;
 
-  timestamp send_latency() const {
+  Timestamp sendLatency() const {
     return send_lat_;
   }
 
-  timestamp credit_latency() const {
+  Timestamp creditLatency() const {
     return credit_lat_;
   }
 
  protected:
-  pisces_sender(sprockit::sim_parameters* params,
-                event_scheduler* parent,
-                bool update_vc);
+  PiscesSender(sprockit::sim_parameters* params,
+               SST::Component* parent,
+               bool update_vc);
 
-  void send_credit(input& inp, pisces_packet* payload,
-          timestamp packet_tail_leaves);
+  void sendCredit(input& inp, PiscesPacket* payload,
+          Timestamp packet_tail_leaves);
 
-  timestamp send(pisces_bandwidth_arbitrator* arb,
-       pisces_packet* pkt, input& to_credit, output& to_send);
+  Timestamp send(PiscesBandwidthArbitrator* arb,
+       PiscesPacket* pkt, input& to_credit, output& to_send);
 
  protected:
-  packet_stats_callback* stat_collector_;
+  PacketStatsCallback* stat_collector_;
 
-  timestamp send_lat_;
+  Timestamp send_lat_;
 
-  timestamp credit_lat_;
+  Timestamp credit_lat_;
 
   bool update_vc_;
 

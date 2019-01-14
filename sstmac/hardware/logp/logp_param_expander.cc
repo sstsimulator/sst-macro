@@ -50,7 +50,7 @@ namespace sstmac {
 namespace hw {
 
 void
-logp_param_expander::expand(sprockit::sim_parameters* params)
+LogPParamExpander::expand(sprockit::sim_parameters* params)
 {
   sprockit::sim_parameters* node_params = params->get_optional_namespace("node");
   sprockit::sim_parameters* nic_params = node_params->get_optional_namespace("nic");
@@ -71,19 +71,19 @@ logp_param_expander::expand(sprockit::sim_parameters* params)
 
   std::string amm_type = params->get_param("amm_model");
   if (amm_type == "amm1"){
-    expand_amm1_memory(params, mem_params);
-    expand_amm1_network(params, switch_params);
-    expand_amm1_nic(params, nic_params, switch_params);
+    expandAmm1Memory(params, mem_params);
+    expandAmm1Network(params, switch_params);
+    expandAmm1Nic(params, nic_params, switch_params);
   } else if (amm_type == "amm2"){
-    expand_amm2_memory(params, mem_params);
-    expand_amm1_network(params, switch_params);
-    expand_amm1_nic(params, nic_params, switch_params);
+    expandAmm2Memory(params, mem_params);
+    expandAmm1Network(params, switch_params);
+    expandAmm1Nic(params, nic_params, switch_params);
   } else if (amm_type == "amm3"){
-    expand_amm2_memory(params, mem_params);
-    expand_amm3_network(params, switch_params);
-    expand_amm1_nic(params, nic_params, switch_params);
+    expandAmm2Memory(params, mem_params);
+    expandAmm3Network(params, switch_params);
+    expandAmm1Nic(params, nic_params, switch_params);
   } else if (amm_type == "amm4"){
-    expand_amm4_nic(params, nic_params, switch_params);
+    expandAmm4Nic(params, nic_params, switch_params);
   } else {
     spkt_throw_printf(sprockit::input_error, "invalid hardware model %s given",
         amm_type.c_str());
@@ -91,7 +91,7 @@ logp_param_expander::expand(sprockit::sim_parameters* params)
 }
 
 void
-logp_param_expander::expand_amm1_memory(
+LogPParamExpander::expandAmm1Memory(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* mem_params)
 {
@@ -106,15 +106,15 @@ logp_param_expander::expand_amm1_memory(
 }
 
 void
-logp_param_expander::expand_amm1_network(
+LogPParamExpander::expandAmm1Network(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
 {
-  expand_into(switch_params, params, switch_params);
+  expandInto(switch_params, params, switch_params);
 }
 
 void
-logp_param_expander::expand_into(
+LogPParamExpander::expandInto(
   sprockit::sim_parameters* dst_params,
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
@@ -122,7 +122,7 @@ logp_param_expander::expand_into(
   if (!switch_params->has_param("bandwidth")){
     sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
     double link_bw = link_params->get_bandwidth_param("bandwidth");
-    double gbs = link_bw *param_expander::network_bandwidth_multiplier(params) / 1e9;
+    double gbs = link_bw *ParamExpander::networkBandwidthMultiplier(params) / 1e9;
     std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
 
     dst_params->add_param_override("bandwidth", net_bw_str);
@@ -132,8 +132,8 @@ logp_param_expander::expand_into(
 
   if (!switch_params->has_param("hop_latency")){
     sprockit::sim_parameters* link_params = switch_params->get_optional_namespace("link");
-    if (link_params->has_param("send_latency")){
-      dst_params->add_param_override("hop_latency", link_params->get_time_param("send_latency"));
+    if (link_params->has_param("sendLatency")){
+      dst_params->add_param_override("hop_latency", link_params->get_time_param("sendLatency"));
     } else {
       dst_params->add_param_override("hop_latency", link_params->get_time_param("latency"));
     }
@@ -147,16 +147,16 @@ logp_param_expander::expand_into(
 
     sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
 
-    timestamp inj_lat = inj_params->get_time_param("latency");
-    timestamp ej_lat = inj_lat;
+    Timestamp inj_lat = inj_params->get_time_param("latency");
+    Timestamp ej_lat = inj_lat;
 
-    if (ej_params->has_param("send_latency")){
-      ej_lat = ej_params->get_time_param("send_latency");
+    if (ej_params->has_param("sendLatency")){
+      ej_lat = ej_params->get_time_param("sendLatency");
     } else if (ej_params->has_param("latency")){
       ej_lat = ej_params->get_time_param("latency");
     }
 
-    timestamp total_lat = inj_lat + ej_lat;
+    Timestamp total_lat = inj_lat + ej_lat;
     dst_params->add_param_override("out_in_latency", sprockit::printf("%12.8fus", total_lat.usec()));
   } else {
     dst_params->add_param_override("out_in_latency", switch_params->get_param("out_in_latency"));
@@ -165,7 +165,7 @@ logp_param_expander::expand_into(
 }
 
 void
-logp_param_expander::expand_amm1_nic(
+LogPParamExpander::expandAmm1Nic(
  sprockit::sim_parameters* params,
  sprockit::sim_parameters* nic_params,
  sprockit::sim_parameters* switch_params)
@@ -173,24 +173,24 @@ logp_param_expander::expand_amm1_nic(
 }
 
 void
-logp_param_expander::expand_amm2_memory(
+LogPParamExpander::expandAmm2Memory(
  sprockit::sim_parameters* params,
  sprockit::sim_parameters* mem_params)
 {
-  expand_amm1_memory(params, mem_params);
+  expandAmm1Memory(params, mem_params);
 }
 
 void
-logp_param_expander::expand_amm3_network(
+LogPParamExpander::expandAmm3Network(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* switch_params)
 {
-  expand_amm1_network(params, switch_params);
+  expandAmm1Network(params, switch_params);
 
   sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
   sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
   double link_bw = link_params->get_bandwidth_param("bandwidth");
-  double sw_multiplier = param_expander::switch_bandwidth_multiplier(params);
+  double sw_multiplier = ParamExpander::switchBandwidthMultiplier(params);
   double sw_bw = xbar_params->get_bandwidth_param("bandwidth") * sw_multiplier;
   //the network bandwidth is the min of link/sw bandwidth
   double net_bw = std::min(link_bw, sw_bw);
@@ -200,7 +200,7 @@ logp_param_expander::expand_amm3_network(
 }
 
 void
-logp_param_expander::expand_amm4_nic(
+LogPParamExpander::expandAmm4Nic(
   sprockit::sim_parameters* params,
   sprockit::sim_parameters* nic_params,
   sprockit::sim_parameters* switch_params)

@@ -59,51 +59,50 @@ DeclareDebugSlot(memory)
 namespace sstmac {
 namespace hw {
 
-class memory_model :
-  public event_subcomponent
+class MemoryModel : public SubComponent
 {
-  DeclareFactory(memory_model,node*)
+  DeclareFactory(MemoryModel,Node*)
  public:
-  memory_model(sprockit::sim_parameters* params,
-               node* node);
+  MemoryModel(sprockit::sim_parameters* params,
+               Node* Node);
 
-  static void delete_statics();
+  static void deleteStatics();
 
-  virtual ~memory_model();
+  virtual ~MemoryModel();
 
-  virtual void access(uint64_t bytes, double max_bw, callback* cb) = 0;
+  virtual void access(uint64_t bytes, double max_bw, Callback* cb) = 0;
 
-  virtual std::string to_string() const = 0;
+  virtual std::string toString() const = 0;
 
-  virtual double max_single_bw() const = 0;
+  virtual double maxSingleBw() const = 0;
 
-  node_id addr() const;
-
- protected:
-  memory_model();
+  NodeId addr() const;
 
  protected:
-  node_id nodeid_;
-  node* parent_node_;
-  event_handler* done_;
+  MemoryModel();
+
+ protected:
+  NodeId nodeid_;
+  Node* parent_node_;
+  EventHandler* done_;
 
 };
 
-class null_memory_model : public memory_model
+class NullMemoryModel : public MemoryModel
 {
  public:
-  FactoryRegister("null", memory_model, null_memory_model)
+  FactoryRegister("null", MemoryModel, NullMemoryModel)
 
-  null_memory_model(sprockit::sim_parameters* params, node* nd) :
-    memory_model(params, nd)
+  NullMemoryModel(sprockit::sim_parameters* params, Node* nd) :
+    MemoryModel(params, nd)
   {
   }
 
-  std::string to_string() const override { return "null memory"; }
+  std::string toString() const override { return "null memory"; }
 
-  double max_single_bw() const override { return 1e9; }
+  double maxSingleBw() const override { return 1e9; }
 
-  void access(uint64_t bytes, double max_bw, callback *cb) override {}
+  void access(uint64_t bytes, double max_bw, Callback *cb) override {}
 };
 
 }

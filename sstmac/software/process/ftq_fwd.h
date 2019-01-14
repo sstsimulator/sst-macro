@@ -48,9 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class ftq_calendar;
-class ftq_tag;
-class ftq_scope;
+class FTQCalendar;
+class FTQTag;
+class FTQScope;
 
 }
 }

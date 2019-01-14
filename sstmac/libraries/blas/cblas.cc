@@ -50,11 +50,11 @@ Questions? Contact sst-macro-help@sandia.gov
 using namespace sstmac;
 using namespace sstmac::sw;
 
-static blas_api*
+static BlasAPI*
 get_lib_blas()
 {
-  thread* t = operating_system::current_thread();
-  return t->get_api<blas_api>();
+  Thread* t = OperatingSystem::currentThread();
+  return t->get_api<BlasAPI>();
 }
 
 extern "C" void

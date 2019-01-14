@@ -61,18 +61,18 @@ namespace sw {
  * A descriptor for labeling the type of computation currently being done.
  * Needed by FTQ for knowing how to label (tag) elapsed time.
  */
-class ftq_tag {
+class FTQTag {
 
  private:
   friend class library;
-  friend class thread;
+  friend class Thread;
 
-  ftq_tag() : id_(0) {} //default initialization for thread
+  FTQTag() : id_(0) {} //default initialization for thread
 
   int id_;
 
  public:
-  ftq_tag(const char* name);
+  FTQTag(const char* name);
 
   int id() const {
    return id_;
@@ -91,8 +91,8 @@ class ftq_tag {
     return category_name_to_id_->size();
   }
 
-  static ftq_tag null;
-  static ftq_tag compute;
+  static FTQTag null;
+  static FTQTag compute;
 
  private:
   static std::unordered_map<std::string, int>* category_name_to_id_;

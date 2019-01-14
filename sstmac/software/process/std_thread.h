@@ -7,17 +7,17 @@
 namespace sstmac {
 namespace sw {
 
-class std_thread_base : public thread {
+class stdThreadBase : public Thread {
  protected:
-  std_thread_base(thread* current_thr);
+  stdThreadBase(Thread* current_thr);
 };
 
-class std_thread_ctor_wrapper : public std_thread_base {
+class stdThreadCtorWrapper : public stdThreadBase {
  protected:
-  std_thread_ctor_wrapper();
+  stdThreadCtorWrapper();
 };
 
-void start_std_thread(thread* thr);
+void start_std_thread(Thread* thr);
 
 namespace threads {
 
@@ -32,7 +32,7 @@ struct build_indices<0, Is...> : indices<Is...> {};
 }
 
 template <class Function, class... Args>
-class std_thread : public std_thread_ctor_wrapper {
+class std_thread : public stdThreadCtorWrapper {
   template <class T>
   typename std::decay<T>::type decay_copy(T&& v) { return std::forward<T>(v); }
 
@@ -80,7 +80,7 @@ class std_thread_standin {
   }
 
  private:
-  thread* thr_;
+  Thread* thr_;
 
 };
 

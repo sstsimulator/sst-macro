@@ -52,32 +52,32 @@ namespace sstmac {
 namespace sw {
 
 
-class dumpi_task_mapper : public task_mapper
+class DumpiTaskMapper : public TaskMapper
 {
-  FactoryRegister("dumpi", task_mapper, dumpi_task_mapper,
+  FactoryRegister("dumpi", TaskMapper, DumpiTaskMapper,
               "indexes nodes based on hostname map file and hostname list in dumpi trace")
  public:
-  dumpi_task_mapper(sprockit::sim_parameters *params);
+  DumpiTaskMapper(sprockit::sim_parameters *params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "dumpi task mapper";
   }
 
-  virtual ~dumpi_task_mapper() throw() {}
+  virtual ~DumpiTaskMapper() throw() {}
 
-  void map_ranks(const ordered_node_set& nodes,
+  void mapRanks(const ordered_node_set& nodes,
                 int ppn,
-                std::vector<node_id> &result,
+                std::vector<NodeId> &result,
                 int nproc) override;
  protected:
-  node_id node_id_from_hostname(const std::string& hostname);
+  NodeId nodeIdFromHostname(const std::string& hostname);
 
-  node_id node_id_from_coordinates(int ncoord, int* coordinates);
+  NodeId nodeIdFromCoordinates(int ncoord, int* coordinates);
 
  protected:
   std::string metaname_;
 
-  hw::cartesian_topology* regtop_;
+  hw::CartesianTopology* regtop_;
 
 };
 

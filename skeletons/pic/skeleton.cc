@@ -45,7 +45,7 @@ void skeletonInitOutgoing(int step, Patch& p)
 
 void skeletonInitOverdecomposition(Patch& p, int ppc){
 
-  auto params = get_params();
+  auto params = getParams();
 
   p.od[0] = params->get_optional_int_param("odx", 1);
   p.od[1] = params->get_optional_int_param("ody", 1);

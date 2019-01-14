@@ -9,9 +9,9 @@ void sst_gdb_print_rank();
 
 void sst_gdb_select_rank(int rank);
 
-void sst_gdb_reset();
+void sst_gdbReset();
 
-void sst_gdb_set_active(int flag);
+void sst_gdbSetActive(int flag);
 
 #ifdef __cplusplus
 }

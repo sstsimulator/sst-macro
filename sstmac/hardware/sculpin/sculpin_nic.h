@@ -42,8 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sculpin_nic_h
-#define sculpin_nic_h
+#ifndef SculpinNIC_h
+#define SculpinNIC_h
 
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
@@ -55,18 +55,18 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class sculpin_nic
+ @class SculpinNIC
  Network interface compatible with sculpin network model
  */
-class sculpin_nic :
-  public nic
+class SculpinNIC :
+  public NIC
 {
-  FactoryRegister("sculpin", nic, sculpin_nic,
+  FactoryRegister("sculpin", NIC, SculpinNIC,
               "implements a nic that models messages as a packet flow")
  public:
-  sculpin_nic(sprockit::sim_parameters* params, node* parent);
+  SculpinNIC(sprockit::sim_parameters* params, Node* parent);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return sprockit::printf("sculpin nic(%d)", int(addr()));
   }
 
@@ -74,57 +74,53 @@ class sculpin_nic :
 
   void setup() override;
 
-  virtual ~sculpin_nic() throw ();
+  virtual ~SculpinNIC() throw ();
 
-  void handle_payload(event* ev);
+  void handlePayload(Event* ev);
 
-  void handle_credit(event* ev);
+  void handleCredit(Event* ev);
 
-  void connect_output(
+  void connectOutput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) override;
+    EventLink* link) override;
 
-  void connect_input(
+  void connectInput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) override;
+    EventLink* link) override;
 
-  link_handler* credit_handler(int port) override;
+  LinkHandler* creditHandler(int port) override;
 
-  link_handler* payload_handler(int port) override;
+  LinkHandler* payloadHandler(int port) override;
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
-
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
+  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
 
  private:
-  void do_send(network_message* payload) override;
+  void doSend(NetworkMessage* payload) override;
 
-  void cq_handle(sculpin_packet* pkt);
+  void cqHandle(sculpin_packet* pkt);
 
   void eject(sculpin_packet* pkt);
 
  private:
-  timestamp inj_next_free_;
-  event_link* inj_link_;
+  Timestamp inj_next_free_;
+  EventLink* inj_link_;
 
   double inj_inv_bw_;
 
   uint32_t packet_size_;
 
-  timestamp ej_next_free_;
-  recv_cq cq_;
+  Timestamp ej_next_free_;
+  RecvCQ cq_;
 };
 
 }
 } // end of namespace sstmac
 
 
-#endif // pisces_nic_H
+#endif // PiscesNIC_H

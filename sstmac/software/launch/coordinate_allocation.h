@@ -51,16 +51,16 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class coordinate_allocation :
-  public node_allocator
+class CoordinateAllocation :
+  public NodeAllocator
 {
-  FactoryRegister("coordinate", node_allocator, coordinate_allocation)
+  FactoryRegister("coordinate", NodeAllocator, CoordinateAllocation)
  public:
-  coordinate_allocation(sprockit::sim_parameters* params);
+  CoordinateAllocation(sprockit::sim_parameters* params);
 
-  virtual ~coordinate_allocation() throw() {}
+  virtual ~CoordinateAllocation() throw() {}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "coordinate allocation";
   }
 
@@ -68,8 +68,8 @@ class coordinate_allocation :
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;
 
-  static void read_coordinate_file(
-    parallel_runtime* rt,
+  static void readCoordinateFile(
+    ParallelRuntime* rt,
     const std::string& file,
     std::vector<hw::coordinates>& node_list);
 

@@ -56,31 +56,30 @@ DeclareDebugSlot(blas);
 namespace sstmac {
 namespace sw {
 
-class blas_kernel
+class BlasKernel
 {
-  DeclareFactory(blas_kernel)
+  DeclareFactory(BlasKernel)
  public:
-  virtual std::string to_string() const = 0;
+  virtual std::string toString() const = 0;
 
-  virtual compute_event* op_3d(int m, int k, int n);
+  virtual ComputeEvent* op_3d(int m, int k, int n);
 
-  virtual compute_event* op_2d(int m, int n);
+  virtual ComputeEvent* op_2d(int m, int n);
 
-  virtual compute_event* op_1d(int n);
+  virtual ComputeEvent* op_1d(int n);
 
 };
 
-class blas_api :
-  public api
+class BlasAPI :
+  public API
 {
-  RegisterAPI("blas", blas_api)
+  RegisterAPI("blas", BlasAPI)
 
  public:
-  blas_api(sprockit::sim_parameters* params,
-           software_id sid,
-           operating_system* os);
+  BlasAPI(sprockit::sim_parameters* params,
+           SoftwareId sid, OperatingSystem* os);
 
-  virtual ~blas_api();
+  virtual ~BlasAPI();
 
   /**
    A(m,n) * B(n,k) = C(m,k)
@@ -96,22 +95,22 @@ class blas_api :
 
   void ddot(int n);
 
-  void incoming_event(event *ev){
-    library::incoming_event(ev);
+  void incomingEvent(Event *ev){
+    Library::incomingEvent(ev);
   }
 
  protected:
-  void init_kernels(sprockit::sim_parameters* params);
+  void initKernels(sprockit::sim_parameters* params);
 
  protected:
-  lib_compute_inst* lib_compute_;
+  LibComputeInst* lib_compute_;
 
-  software_id id_;
+  SoftwareId id_;
 
-  static blas_kernel* ddot_kernel_;
-  static blas_kernel* dgemm_kernel_;
-  static blas_kernel* dgemv_kernel_;
-  static blas_kernel* daxpy_kernel_;
+  static BlasKernel* ddot_kernel_;
+  static BlasKernel* dgemm_kernel_;
+  static BlasKernel* dgemv_kernel_;
+  static BlasKernel* daxpy_kernel_;
 
 };
 

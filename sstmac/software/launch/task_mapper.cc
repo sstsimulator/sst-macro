@@ -52,19 +52,19 @@ RegisterDebugSlot(indexing);
 namespace sstmac {
 namespace sw {
 
-task_mapper::~task_mapper() throw()
+TaskMapper::~TaskMapper() throw()
 {
 }
 
-task_mapper::task_mapper(sprockit::sim_parameters* params) :
+TaskMapper::TaskMapper(sprockit::sim_parameters* params) :
   rt_(nullptr), topology_(nullptr)
 {
-  rt_ = parallel_runtime::static_runtime(params);
-  topology_ = sstmac::hw::topology::static_topology(params);
+  rt_ = ParallelRuntime::staticRuntime(params);
+  topology_ = sstmac::hw::Topology::staticTopology(params);
 }
 
 int
-task_mapper::validate_nproc(int ppn, int num_nodes, int nproc,
+TaskMapper::validateNproc(int ppn, int num_nodes, int nproc,
                                const char *name) const
 {
   if(nproc < 0) {

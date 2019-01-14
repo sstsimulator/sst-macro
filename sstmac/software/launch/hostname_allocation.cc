@@ -61,15 +61,15 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-hostname_allocation::hostname_allocation(sprockit::sim_parameters* params) :
-  node_allocator(params)
+HostnameAllocation::HostnameAllocation(sprockit::sim_parameters* params) :
+  NodeAllocator(params)
 {
   hostfile_ = params->get_param("hostfile");
 }
 
 void
-hostname_allocation::read_host_file(
-  parallel_runtime* rt,
+HostnameAllocation::readHostFile(
+  ParallelRuntime* rt,
   const char* here,
   const std::string &hostfile,
   std::vector<std::string>& hosts)
@@ -79,7 +79,7 @@ hostname_allocation::read_host_file(
      hostfile.c_str());
 
   hosts.clear();
-  std::istream* instr = rt->bcast_file_stream(hostfile);
+  std::istream* instr = rt->bcastFileStream(hostfile);
   std::istream& in = *instr;
   std::string name;
   while(in >> name)
@@ -87,19 +87,19 @@ hostname_allocation::read_host_file(
 }
 
 bool
-hostname_allocation::allocate(int nnode_requested,
+HostnameAllocation::allocate(int nnode_requested,
  const ordered_node_set& available,
  ordered_node_set &allocation) const
 {
   std::vector< std::string > hosts;
-  read_host_file(rt_, "hostname_allocation::allocate", hostfile_, hosts);
+  readHostFile(rt_, "hostname_allocation::allocate", hostfile_, hosts);
 
   if (!topology_) {
     spkt_throw_printf(sprockit::value_error, "hostname_allocation::allocate: null topology");
   }
 
   for (auto& str : hosts){
-    allocation.insert(topology_->node_name_to_id(str));
+    allocation.insert(topology_->nodeNameToId(str));
   }
 
   return true;

@@ -81,7 +81,7 @@ class collective
     scatterv
   } type_t;
 
-  virtual std::string to_string() const = 0;
+  virtual std::string toString() const = 0;
 
   virtual ~collective();
 
@@ -97,13 +97,13 @@ class collective
 
   static const char* tostr(type_t ty);
 
-  virtual collective_done_message* recv(int target, collective_work_message* msg) = 0;
+  virtual CollectiveDoneMessage* recv(int target, collective_work_message* msg) = 0;
 
-  collective_done_message* recv(collective_work_message* msg);
+  CollectiveDoneMessage* recv(collective_work_message* msg);
 
   virtual void start() = 0;
 
-  communicator* comm() const {
+  Communicator* comm() const {
     return comm_;
   }
 
@@ -125,7 +125,7 @@ class collective
 
   void actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_event);
 
-  virtual collective_done_message* add_actors(collective* coll);
+  virtual CollectiveDoneMessage* add_actors(collective* coll);
 
   static const int default_nproc = -1;
 
@@ -134,13 +134,13 @@ class collective
   virtual void init_actors(){}
 
  protected:
-  collective(type_t type, collective_engine* engine, int tag, int cq_id, communicator* comm);
+  collective(type_t type, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm);
 
  protected:
-  transport* my_api_;
-  collective_engine* engine_;
+  Transport* my_api_;
+  CollectiveEngine* engine_;
   int cq_id_;
-  communicator* comm_;
+  Communicator* comm_;
   int dom_me_;
   int dom_nproc_;
   bool complete_;
@@ -151,11 +151,11 @@ class collective
 
 };
 
-class dag_collective :
+class DagCollective :
   public collective
 {
  public:
-  collective_done_message* recv(int target, collective_work_message* msg) override;
+  CollectiveDoneMessage* recv(int target, collective_work_message* msg) override;
 
   void start() override;
 
@@ -163,22 +163,22 @@ class dag_collective :
 
   void init_actors() override;
 
-  virtual ~dag_collective();
+  virtual ~DagCollective();
 
  protected:
-  virtual dag_collective_actor* new_actor() const = 0;
+  virtual DagCollectiveActor* newActor() const = 0;
 
-  collective_done_message* add_actors(collective *coll) override;
+  CollectiveDoneMessage* add_actors(collective *coll) override;
 
  protected:
-  dag_collective(collective::type_t ty, collective_engine* engine, void *dst, void *src,
-                 int type_size, int tag, int cq_id, communicator* comm) :
+  DagCollective(collective::type_t ty, CollectiveEngine* engine, void *dst, void *src,
+                 int type_size, int tag, int cq_id, Communicator* comm) :
     collective(ty, engine, tag, cq_id, comm),
     src_buffer_(src), dst_buffer_(dst), type_size_(type_size), fault_aware_(false)
   {
   }
 
-  typedef std::map<int, dag_collective_actor*> actor_map;
+  typedef std::map<int, DagCollectiveActor*> actor_map;
   actor_map my_actors_;
 
   void* src_buffer_;

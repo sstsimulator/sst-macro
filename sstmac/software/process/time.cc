@@ -45,37 +45,37 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/time.h>
 
-using sstmac::sw::operating_system;
-using sstmac::timestamp;
+using sstmac::sw::OperatingSystem;
+using sstmac::Timestamp;
 
 extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
 {
-  operating_system* os = operating_system::current_os();
-  timestamp t = os->now();
+  OperatingSystem* os = OperatingSystem::currentOs();
+  Timestamp t = os->now();
   uint64_t ticks = t.ticks_int64();
-  tv->tv_sec = ticks / timestamp::seconds;
-  tv->tv_usec = (ticks%timestamp::seconds) / timestamp::microseconds;
+  tv->tv_sec = ticks / Timestamp::seconds;
+  tv->tv_usec = (ticks%Timestamp::seconds) / Timestamp::microseconds;
   return 0;
 }
 
 extern "C" int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem)
 {
-  uint64_t ticks = req->tv_sec * timestamp::seconds; 
-  ticks += req->tv_nsec * timestamp::nanoseconds;
-  operating_system* os = operating_system::current_os();
-  os->sleep(timestamp(ticks, timestamp::exact));
+  uint64_t ticks = req->tv_sec * Timestamp::seconds; 
+  ticks += req->tv_nsec * Timestamp::nanoseconds;
+  OperatingSystem* os = OperatingSystem::currentOs();
+  os->sleep(Timestamp(ticks, Timestamp::exact));
   return 0;
 }
 
 extern "C" double sstmac_virtual_time()
 {
-  operating_system* os = operating_system::current_os();
+  OperatingSystem* os = OperatingSystem::currentOs();
   return os->now().sec();
 }
 
 //make sure this doesn't get overwritten
 #undef gettimeofday
-extern "C" double sstmac_wall_time()
+extern "C" double sstmacWallTime()
 {
   timeval t_st;
   gettimeofday(&t_st, 0);

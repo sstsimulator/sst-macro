@@ -51,32 +51,32 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-lib_compute_time::lib_compute_time(sprockit::sim_parameters* params, software_id id,
-                                   operating_system* os) :
-  lib_compute_time(params, "libcomputetime", id, os)
+LibComputeTime::LibComputeTime(sprockit::sim_parameters* params, SoftwareId id,
+                               OperatingSystem* os) :
+  LibComputeTime(params, "libcomputetime", id, os)
 {
 }
 
-lib_compute_time::lib_compute_time(sprockit::sim_parameters* params,
-                                   const char* prefix, software_id id,
-                                   operating_system* os) :
-  lib_compute(params, prefix, id, os)
+LibComputeTime::LibComputeTime(sprockit::sim_parameters* params,
+                                   const char* prefix, SoftwareId id,
+                                   OperatingSystem* os) :
+  LibCompute(params, prefix, id, os)
 {
 }
 
-lib_compute_time::lib_compute_time(sprockit::sim_parameters* params,
-                                   const std::string& name, software_id id,
-                                   operating_system* os) :
-  lib_compute(params, name, id, os)
+LibComputeTime::LibComputeTime(sprockit::sim_parameters* params,
+                                   const std::string& name, SoftwareId id,
+                                   OperatingSystem* os) :
+  LibCompute(params, name, id, os)
 {
 }
 
-lib_compute_time::~lib_compute_time()
+LibComputeTime::~LibComputeTime()
 {
 }
 
 void
-lib_compute_time::compute(timestamp time)
+LibComputeTime::compute(Timestamp time)
 {
   SSTMACBacktrace(ComputeTime);
   if (time.sec() < 0) {
@@ -86,7 +86,7 @@ lib_compute_time::compute(timestamp time)
 }
 
 void
-lib_compute_time::sleep(timestamp time)
+LibComputeTime::sleep(Timestamp time)
 {
   SSTMACBacktrace(Sleep);
   os_->sleep(time);

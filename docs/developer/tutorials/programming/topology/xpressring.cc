@@ -48,14 +48,14 @@ namespace sstmac {
 namespace hw {
 
 xpress_ring::xpress_ring(sprockit::sim_parameters* params)
-  : structured_topology(params)
+  : StructuredTopology(params)
 {
   ring_size_ = params->get_int_param("xpress_ring_size");
   jump_size_ = params->get_int_param("xpress_jump_size");
 }
 
 void
-xpress_ring::connected_outports(switch_id src, std::vector<connection>& conns) const
+xpress_ring::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   conns.resize(4); //+1/-1 conns, +jump,-jump conns
   conns[0].src = src;
@@ -80,7 +80,7 @@ xpress_ring::connected_outports(switch_id src, std::vector<connection>& conns) c
 }
 
 void
-xpress_ring::endpoints_connected_to_injection_switch(switch_id swid,
+xpress_ring::endpointsConnectedToInjectionSwitch(SwitchId swid,
                                                      std::vector<injection_port> &nodes) const
 {
   nodes.resize(concentration());
@@ -93,16 +93,16 @@ xpress_ring::endpoints_connected_to_injection_switch(switch_id swid,
 }
 
 void
-xpress_ring::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
+xpress_ring::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters *switch_params) const
 {
-  topology::configure_individual_port_params(0, 4, switch_params);
+  Topology::configureIndividualPortParams(0, 4, switch_params);
 }
 
 int
-xpress_ring::num_hops_to_node(node_id src_node, node_id dest_node) const
+xpress_ring::numHopsToNode(NodeId src_node, NodeId dest_node) const
 {
-  switch_id src = src_node / concentration_;
-  switch_id dest = dest_node / concentration_;
+  SwitchId src = src_node / concentration_;
+  SwitchId dest = dest_node / concentration_;
 
   int up_distance = abs(dest - src);
   int down_distance = abs(src + ring_size_ - dest);

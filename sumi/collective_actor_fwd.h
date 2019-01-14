@@ -47,8 +47,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class collective_actor;
-class dag_collective_actor;
+class CollectiveActor;
+class DagCollectiveActor;
 
 }
 

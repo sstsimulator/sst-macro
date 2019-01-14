@@ -59,23 +59,23 @@ namespace sw {
 static thread_lock the_api_lock;
 
 void
-api_lock() {
+apiLock() {
   the_api_lock.lock();
 }
 
 void
-api_unlock() {
+apiUnlock() {
   the_api_lock.unlock();
 }
 
-api*
-static_get_api(const char *name)
+API*
+staticGetAPI(const char *name)
 {
-  api* a = operating_system::current_thread()->_get_api(name);
+  API* a = OperatingSystem::currentThread()->_get_api(name);
   return a;
 }
 
-api::~api()
+API::~API()
 {
   if (host_timer_) {
     delete host_timer_;
@@ -83,50 +83,50 @@ api::~api()
 }
 
 void
-api::init(sprockit::sim_parameters* params)
+API::init(sprockit::sim_parameters* params)
 {
   bool host_compute_local = params->get_optional_bool_param("host_api_timer", false);
   if (host_compute_local) {
     host_timer_ = new HostTimer();
-    compute_ = operating_system::current_thread()->parent_app()->compute_lib();
+    compute_ = OperatingSystem::currentThread()->parentApp()->computeLib();
   }
   params_ = params;
 }
 
 void
-api::start_api_call()
+API::startAPICall()
 {
   if (host_timer_){
     host_timer_->start();
   }
-  os_->active_thread()->start_api_call();
+  os_->activeThread()->startAPICall();
 }
 void
-api::end_api_call()
+API::endAPICall()
 {
   if (host_timer_) {
     double time = host_timer_->stamp();
-    compute_->compute(timestamp(time));
+    compute_->compute(Timestamp(time));
   }
-  os_->active_thread()->end_api_call();
+  os_->activeThread()->endAPICall();
 }
 
-timestamp
-api::now() const 
+Timestamp
+API::now() const 
 {
   return os()->now();
 }
 
 void
-api::schedule(timestamp t, event_queue_entry* ev)
+API::schedule(Timestamp t, ExecutionEvent* ev)
 {
-  os()->send_self_event_queue(t, ev);
+  os()->sendExecutionEvent(t, ev);
 }
 
 void
-api::schedule_delay(timestamp t, event_queue_entry* ev)
+API::scheduleDelay(Timestamp t, ExecutionEvent* ev)
 {
-  os()->send_delayed_self_event_queue(t, ev);
+  os()->sendDelayedExecutionEvent(t, ev);
 }
 
 }

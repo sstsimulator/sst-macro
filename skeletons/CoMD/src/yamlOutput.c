@@ -64,7 +64,7 @@ void yamlBegin(void)
 void yamlAppInfo(FILE* file)
 {
 
-   int numThreads = omp_get_max_threads();
+   int numThreads = ompGetMaxThreads();
    if (! printRank())
       return;
    printSeparator(file);

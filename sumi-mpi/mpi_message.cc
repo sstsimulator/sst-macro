@@ -56,9 +56,9 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sumi {
 
 void
-mpi_message::serialize_order(sstmac::serializer& ser)
+MpiMessage::serialize_order(sstmac::serializer& ser)
 {
-  protocol_message::serialize_order(ser);
+  ProtocolMessage::serialize_order(ser);
   ser & (src_rank_);
   ser & (dst_rank_);
   ser & type_;
@@ -68,26 +68,26 @@ mpi_message::serialize_order(sstmac::serializer& ser)
 }
 
 
-mpi_message::~mpi_message() throw ()
+MpiMessage::~MpiMessage() throw ()
 {
 }
 
 void
-mpi_message::build_status(MPI_Status* stat) const
+MpiMessage::buildStatus(MPI_Status* stat) const
 {
   stat->MPI_SOURCE = src_rank_;
   stat->MPI_TAG = tag_;
   stat->count = count();
-  stat->bytes_received = payload_size();
+  stat->bytes_received = payloadSize();
 }
 
 std::string
-mpi_message::to_string() const
+MpiMessage::toString() const
 {
   std::stringstream ss;
   ss << "mpimessage("
-     << (void*) local_buffer()
-     << "," << (void*) remote_buffer()
+     << (void*) localBuffer()
+     << "," << (void*) remoteBuffer()
      << ", count=" << count()
      << ", type=" << type_
      << ", src=" << src_rank_
@@ -96,7 +96,7 @@ mpi_message::to_string() const
      << ", seq=" << seqnum_
      << ", stage=" << stage()
      << ", protocol=" << protocol()
-     << ", type=" << sstmac::hw::network_message::type_str();
+     << ", type=" << sstmac::hw::NetworkMessage::typeStr();
 
   return ss.str();
 }

@@ -54,25 +54,25 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class service :
-  public library
+class Service :
+  public Library
 {
 
  public:
   virtual void start() {}
 
-  virtual void incoming_event(event* ev) override = 0;
+  virtual void incomingEvent(Event* ev) override = 0;
 
  protected:
-  service(const std::string& libname, software_id sid, operating_system* os) :
-    library(libname, sid, os)
+  Service(const std::string& libname, SoftwareId sid, OperatingSystem* os) :
+    Library(libname, sid, os)
   {}
 
-  service(const char* prefix, software_id sid, operating_system* os) :
-    library(prefix, sid, os)
+  Service(const char* prefix, SoftwareId sid, OperatingSystem* os) :
+    Library(prefix, sid, os)
   {}
 
-  virtual ~service(){}
+  virtual ~Service(){}
 
 
 };

@@ -55,7 +55,7 @@ RegisterDebugSlot(timestamp, "turns on timestamps on all debug statements");
 
 namespace sprockit {
 
-static need_delete_statics<debug> del_statics;
+static need_deleteStatics<debug> del_statics;
 
 
 debug_prefix_fxn* debug::prefix_fxn = nullptr;
@@ -78,7 +78,7 @@ debug_indent::debug_indent() : level(0)
 #endif
 
 void
-debug::delete_statics()
+debug::deleteStatics()
 {
   free_static_ptr(debug_ints_);
   free_static_ptr(docstrings_);
@@ -104,7 +104,7 @@ debug::print_debug_string(const std::string &str, std::ostream& os)
 }
 
 std::string
-debug_int::to_string() const {
+debug_int::toString() const {
   std::stringstream sstr;
   sstr << fields  << " ";
   std::stringstream actives;

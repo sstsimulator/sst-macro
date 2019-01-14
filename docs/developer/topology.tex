@@ -26,7 +26,7 @@ In general, sending data across the network (as in, e.g.., MPI), requires the fo
 \item Network topology: handled by \inlinecode{topology} class. Defines the geometry of the network, determining how nodes are connected to switches and how switches are interconnected. It also defines which ports are used for each connection.
 \item Fabric management (not yet implemented in SST)
 \item Routing: handled by \inlinecode{router} class. Using the defined topology, compute the path that should be taken by a packet. The path is defined by the port numbers that should be taken.
-\item Flow control and congestion: handled by \inlinecode{network_switch} class. Once a path is defined by the router, arbitrate packets (flits) when they contend for bandwidth.
+\item Flow control and congestion: handled by \inlinecode{NetworkSwitch} class. Once a path is defined by the router, arbitrate packets (flits) when they contend for bandwidth.
 \end{itemize}
 As much as possible, these components try to be independent. However, there are inter-dependencies, as shown in Figure \ref{fig:dependencies}.
 The router requires topology information to compute paths. For adaptive routing decisions, the router also requires contention information from the network switch.
@@ -89,11 +89,11 @@ struct routing_header  {
 };
 \end{CppCode}
 The 54 bits here store the information needed by a router to implement progressive adaptive routing (PAR). 
-For flow control on a particular type of switch, e.g. PISCES (see User's manual), we have a type \inlinecode{pisces_packet}
+For flow control on a particular type of switch, e.g. PISCES (see User's manual), we have a type \inlinecode{PiscesPacket}
 that inherits from \inlinecode{packet} and adds the following fields:
 
 \begin{CppCode}
-class pisces_packet : public packet {
+class PiscesPacket : public packet {
 ....
 uint8_t stage;
 uint8_t outports[3];
@@ -119,8 +119,8 @@ which returns the raw bytes cast to the correct C++ bitset type.
 There is some universal information needed by all packets, which is not stored in the bitset:
 
 \begin{CppCode}
-node_id toaddr_;
-node_id fromaddr_;
+NodeId toaddr_;
+NodeId fromaddr_;
 uint64_t flow_id_;
 uint32_t num_bytes_;
 serializable* payload_;
@@ -144,31 +144,31 @@ Flow control & Subclass of \inlinecode{packet} & Dynamic cast \inlinecode{packet
 
 
 \section{Connectables}
-\label{sec:connectables}
+\label{sec:Connectables}
 With a basic overview of how the simulation proceeds, we can now look at the actual SST/macro class types.
 While in common usage, \sstmacro follows a well-defined machine model (see below),
 it generally allows any set of components to be connected. 
 As discussed in Chapter \ref{chapter:des}, the simulation proceeds by having event components exchange events,
 each scheduled to arrive at a specific time.
 \sstmacro provides a generic interface for any set of hardware components to be linked together.
-Any hardware component that connects to other components and exchanges events must inherit from the \inlinecode{connectable} class.
-The \inlinecode{connectable} class presents a standard virtual interface
+Any hardware component that connects to other components and exchanges events must inherit from the \inlinecode{Connectable} class.
+The \inlinecode{Connectable} class presents a standard virtual interface
 
 \begin{CppCode}
-class connectable
+class Connectable
 {
  public:
-  virtual void connect_output(
+  virtual void connectOutput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) = 0;
+    EventLink* link) = 0;
 
-  virtual void connect_input(
+  virtual void connectInput(
     sprockit::sim_parameters* params,
     int src_outport,
     int dst_inport,
-    event_link* link) = 0;
+    EventLink* link) = 0;
 };
 \end{CppCode}
 
@@ -178,16 +178,16 @@ The connection must be configured at both source and destination.
 The function is called twice for each side of the connection. If we have a source and destination:
 
 \begin{CppCode}
-connectable* src = ...
-connectable* dst = ...
+Connectable* src = ...
+Connectable* dst = ...
 sprockit::sim_parameters* params = ...
-src->connect_output(params, inport, outport, Output, dst);
-dst->connect_input(params, inport, outport, Input, src);
+src->connectOutput(params, inport, outport, Output, dst);
+dst->connectInput(params, inport, outport, Input, src);
 \end{CppCode}
 
-A certain style and set of rules is recommended for all connectables.
+A certain style and set of rules is recommended for all Connectables.
 If these rules are ignored, setting up connections can quicky become confusing and produce difficult to maintain code.
-The first and most important rule is that \inlinecode{connectables} never make their own connections.
+The first and most important rule is that \inlinecode{Connectables} never make their own connections.
 Some ``meta''-object should create connections between objects.
 In general, this work is left to a \inlinecode{interconnect} object.
 An object should never be responsible for knowing about the ``world'' outside itself.
@@ -201,8 +201,8 @@ If you need a bidirectional link (A $\rightarrow$ B, B $\rightarrow$ A),
 two separate function calls should be made
 
 \begin{CppCode}
-A->connect_output(B);
-B->connect_input(A);
+A->connectOutput(B);
+B->connectInput(A);
 \end{CppCode}
 
 rather than having, e.g. A create a bidirectional link.
@@ -211,7 +211,7 @@ The first two rules should be considered rigorous.
 A third recommended rule is that all port numbers should be non-negative, and, in most cases, should start numbering from zero.
 
 
-Combining the factory system for polymorphic types and the connectable system for building arbitrary machine links and topologies,
+Combining the factory system for polymorphic types and the Connectable system for building arbitrary machine links and topologies,
 \sstmacro provides flexibility for building essentially any machine model you want.
 However, \sstmacro provides a recommended machine structure to guide constructing machine models.
 
@@ -237,42 +237,42 @@ virtual bool uniform_network_ports() const = 0;
 
 virtual bool uniform_switches_non_uniform_network_ports() const = 0;
 
-virtual bool uniform_switches() const = 0;
+virtual bool uniformSwitches() const = 0;
 
-virtual void connected_outports(switch_id src, std::vector<topology::connection>& conns) const = 0;
+virtual void connectedOutports(SwitchId src, std::vector<topology::connection>& conns) const = 0;
 
-virtual void configure_individual_port_params(switch_id src,
+virtual void configureIndividualPortParams(SwitchId src,
       sprockit::sim_parameters* switch_params) const = 0;
 
-virtual in num_switches() const = 0;
+virtual in numSwitches() const = 0;
 
-virtual int num_nodes() const = 0;
+virtual int numNodes() const = 0;
 
 virtual int num_endpoints() const = 0;
 
-virtual int max_num_ports() const = 0;
+virtual int maxNumPorts() const = 0;
 
-virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
+virtual int numHopsToNode(NodeId src, NodeId dst) const = 0;
 
-virtual void endpoints_connected_to_injection_switch(switch_id swid,
+virtual void endpointsConnectedToInjectionSwitch(SwitchId swid,
                       std::vector<injection_port>& nodes) const = 0;
 
-virtual void endpoints_connected_to_ejection_switch(switch_id swid,
+virtual void endpointsConnectedToEjectionSwitch(SwitchId swid,
                       std::vector<injection_port>& nodes) const = 0;
 \end{CppCode}
 
 These functions are documented in the \inlineshell{topology.h} header file.
 The first few functions just give the number of switches, number of nodes, and finally which nodes are connected to a given switch.
 Each compute node will be connected to an injector switch and an ejector switch (often the same switch).
-The most important functions are \inlinecode{endpoints_connected_to_injection_switch} - which nodes are connected to which switches and which ports make the links -
+The most important functions are \inlinecode{endpointsConnectedToInjectionSwitch} - which nodes are connected to which switches and which ports make the links -
 and also \inlinecode{connected_outports} - which switches are connected to which switches and which ports make the links.
 
 The \inlinecode{connection} struct is:
 
 \begin{CppCode}
 struct connection {
-    switch_id src;
-    switch_id dst;
+    SwitchId src;
+    SwitchId dst;
     int src_outport;
     int dst_inport;
 };
@@ -282,7 +282,7 @@ Similarly, the struct \inlinecode{injection_port} is:
 
 \begin{CppCode}
 struct injection_port {
-  node_id nid;
+  NodeId nid;
   int switch_port;
   int ep_port;
 };
@@ -312,7 +312,7 @@ For adaptive routing, a bit more work is done.
 Each router is connect to a switch object which holds all the information about queue lengths, e.g.
 
 \begin{CppCode}
-int test_length = get_switch()->queue_length(paths[i].outport);
+int test_length = get_switch()->queueLength(paths[i].outport);
 \end{CppCode}
 allowing the router to select an alternate path if the congestion is too high. 
 
@@ -334,24 +334,24 @@ Congestion is modeled via flow control - choosing which packets or flits move ac
 The basic scheme for most switches follows the code below for the \inlinecode{pisces} model.
 
 \begin{CppCode}
-void pisces_switch::handle_credit(event *ev)
+void PiscesSwitch::handleCredit(event *ev)
 {
   pisces_credit* credit = static_cast<pisces_credit*>(ev);
-  out_buffers_[credit->port()]->handle_credit(credit);
+  out_buffers_[credit->port()]->handleCredit(credit);
 }
 
-void pisces_switch::handle_payload(event *ev)
+void PiscesSwitch::handlePayload(event *ev)
 {
   pisces_payload* payload = static_cast<pisces_payload*>(ev);
   router_->route(payload);
-  xbar_->handle_payload(payload);
+  xbar_->handlePayload(payload);
 }
 \end{CppCode}
 The arriving event is sent to either a credit handler or a payload handler,
 which is configured during simulation setup.
 If a payload packet (rather than a credit), the router object selects the next destination (port).
 The packet is then passed to the crossbar for arbitration.
-A switch inherits from \inlinecode{connectable}, requiring it to implement the \inlinecode{connect_output/connect_input} and \inlinecode{payload_handler/credit_handler} functions.
+A switch inherits from \inlinecode{Connectable}, requiring it to implement the \inlinecode{connectOutput/connectInput} and \inlinecode{payloadHandler/creditHandler} functions.
 
 \section{Interconnect: Putting it all together}\label{sec:topInterconnect}
 For all standard runs, the entire hardware model is driven by the interconnect object.
@@ -364,13 +364,13 @@ To illustrate, here is the code for the interconnect that creates the node objec
 The interconnect is itself a factory object, configured from a parameter file.
 
 \begin{CppCode}
-interconnect::interconnect(sprockit::sim_parameters* params, event_manager* mgr, 
+interconnect::interconnect(sprockit::sim_parameters* params, EventManager* mgr, 
 	partition* part, parallel_runtime* rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
   topology_ = topology_factory::get_param("name", top_params);
-  num_nodes_ = topology_->num_nodes();
-  num_switches_ = topology_->num_switches();
+  num_nodes_ = topology_->numNodes();
+  num_switches_ = topology_->numSwitches();
   
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
@@ -382,36 +382,36 @@ interconnect::interconnect(sprockit::sim_parameters* params, event_manager* mgr,
   sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
   sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection"); 
   
-  build_endpoints(node_params, nic_params, mgr);
-  build_switches(switch_params, mgr);
-  connect_endpoints(inj_params, ej_params);
-  connect_switches(switch_params); 
+  buildEndpoints(node_params, nic_params, mgr);
+  buildSwitches(switch_params, mgr);
+  connectEndpoints(inj_params, ej_params);
+  connectSwitches(switch_params); 
 }
 \end{CppCode}
 
 For full details of the functions that build/connect endpoints and switches, consult the source code.
-In general, the \inlinecode{interconnect} object uses the connectable interface to setup all the connections.
+In general, the \inlinecode{interconnect} object uses the Connectable interface to setup all the connections.
 It uses the topology interface to determine which connections are required, e.g.
 
 \begin{CppCode}
-switch_id src = ...
+SwitchId src = ...
 std::vector<topology::connection> outports;
-topology_->connected_outports(src, outports);
+topology_->connectedOutports(src, outports);
 for (auto& conn : outports){
-  network_switch* dst_sw = switches_[conn.dst];
-  src_sw->connect_output(params, conn.src_outport, conn.dst_inport,
-  					 dst_sw->payload_handler(conn.dst_inport));
-  dst_sw->connect_input(params, conn.src_outport, conn.dst_inport,
-  				       src_sw->credit_handler(conn.src_outport));
+  NetworkSwitch* dst_sw = switches_[conn.dst];
+  src_sw->connectOutput(params, conn.src_outport, conn.dst_inport,
+  					 dst_sw->payloadHandler(conn.dst_inport));
+  dst_sw->connectInput(params, conn.src_outport, conn.dst_inport,
+  				       src_sw->creditHandler(conn.src_outport));
 }
 \end{CppCode}
 The \inlinecode{connected_outports} function takes a given source switch and returns all the connections that the
-switch is supposed to make.  Each switch must provide \inlinecode{payload_handler} and \inlinecode{ack_handler} functions to return
-the \inlinecode{event_handler} that should receive either new packets (payload) or credits (ack) for the connections.
+switch is supposed to make.  Each switch must provide \inlinecode{payloadHandler} and \inlinecode{ack_handler} functions to return
+the \inlinecode{EventHandler} that should receive either new packets (payload) or credits (ack) for the connections.
 
 \section{Node}\label{sec:node}
 Although the \nodecls can be implemented as a very complex model, it fundamentally only requires a single set of functions to meet the public interface.
-The \nodecls must provide \inlinecode{execute_kernel} functions that are invoked by the \inlinecode{operating_system} or other other software objects.
+The \nodecls must provide \inlinecode{execute_kernel} functions that are invoked by the \inlinecode{OperatingSystem} or other other software objects.
 The prototypes for these are:
 
 \begin{CppCode}
@@ -437,16 +437,16 @@ The network interface can implement many services, but the basic public interfac
 For sending messages, the NIC must implement
 
 \begin{CppCode}
-  virtual void do_send(network_message* payload);
+  virtual void doSend(NetworkMessage* payload);
 \end{CppCode}
 A non-virtual, top-level \inlinecode{send} function performs operations standard to all NICs.
-Once these operations are complete, the NIC invokes \inlinecode{do_send} to perform model-specific send operations.
-The NIC should only ever send \inlinecode{network_message} types.
+Once these operations are complete, the NIC invokes \inlinecode{doSend} to perform model-specific send operations.
+The NIC should only ever send \inlinecode{NetworkMessage} types.
 
-For the bare-bones class \inlinecode{logp_nic}, the function is
+For the bare-bones class \inlinecode{LogPNIC}, the function is
 
 \begin{CppCode}
-void logp_nic::do_send(network_message* msg)
+void LogPNIC::doSend(NetworkMessage* msg)
 {
   long num_bytes = msg->byte_length();
   timestamp now_ = now();
@@ -458,7 +458,7 @@ void logp_nic::do_send(network_message* msg)
   next_free_ = start_send + time_to_inject;
   if (msg->needs_ack()) {
     //do whatever you need to do so that this msg decouples all pointers
-    network_message* acker = msg->clone_injection_ack();
+    NetworkMessage* acker = msg->clone_injection_ack();
     schedule(next_free_, parent_->self_handler(), acker); //send to node
   }
 }

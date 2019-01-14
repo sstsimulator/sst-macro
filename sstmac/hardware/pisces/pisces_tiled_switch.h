@@ -55,65 +55,61 @@ namespace sstmac {
 namespace hw {
 
 /**
- @class pisces_switch
+ @class PiscesSwitch
  A switch in the network that arbitrates/routes packets
  to the next link in the network
  */
-class pisces_tiled_switch :
-  public pisces_abstract_switch
+class PiscesTiledSwitch :
+  public PiscesAbstractSwitch
 {
-  RegisterComponent("pisces_tiled", network_switch, pisces_tiled_switch,
+  RegisterComponent("pisces_tiled", NetworkSwitch, PiscesTiledSwitch,
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A tiled network switch implementing the packet flow congestion model")
  public:
-  struct header : public pisces_packet::header {
+  struct header : public PiscesPacket::header {
     uint16_t arrival_port;
   };
 
-  pisces_tiled_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr);
+  PiscesTiledSwitch(sprockit::sim_parameters* params, uint32_t id);
 
-  int queue_length(int port) const override;
+  int queueLength(int port) const override;
 
-  void connect_output(sprockit::sim_parameters* params,
+  void connectOutput(sprockit::sim_parameters* params,
                  int src_outport, int dst_inport,
-                 event_link* link) override;
+                 EventLink* link) override;
 
-  void connect_input(sprockit::sim_parameters* params,
+  void connectInput(sprockit::sim_parameters* params,
                 int src_outport, int dst_inport,
-                event_link* link) override;
+                EventLink* link) override;
 
-  link_handler* credit_handler(int port) override;
+  LinkHandler* creditHandler(int port) override;
 
-  link_handler* payload_handler(int port) override;
+  LinkHandler* payloadHandler(int port) override;
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
 
-  void handle_credit(event* ev);
+  void handleCredit(Event* ev);
 
-  void handle_payload(event* ev);
+  void handlePayload(Event* ev);
 
-  virtual std::string to_string() const override;
+  virtual std::string toString() const override;
 
-  virtual ~pisces_tiled_switch();
+  virtual ~PiscesTiledSwitch();
 
-  void deadlock_check() override;
-
-  void deadlock_check(event* ev) override;
-
-  int get_row(int tile) const {
+  int getRow(int tile) const {
     return tile / ncols_;
   }
 
-  int get_col(int tile) const {
+  int getCol(int tile) const {
     return tile / nrows_;
   }
 
  protected:
-  std::vector<pisces_demuxer*> row_input_demuxers_;
-  std::vector<pisces_crossbar*> xbar_tiles_;
-  std::vector<pisces_muxer*> col_output_muxers_;
+  std::vector<PiscesDemuxer*> row_input_demuxers_;
+  std::vector<PiscesCrossbar*> xbar_tiles_;
+  std::vector<PiscesMuxer*> col_output_muxers_;
   std::vector<int> dst_inports_;
 
   int nrows_;
@@ -123,11 +119,11 @@ class pisces_tiled_switch :
   int row_buffer_num_bytes_;
 
  private:
-  int row_col_to_tile(int row, int col);
+  int rowColToTile(int row, int col);
 
-  void tile_to_row_col(int tile, int& row, int& col);
+  void tileToRowCol(int tile, int& row, int& col);
 
-  void init_components(sprockit::sim_parameters* params);
+  void initComponents(sprockit::sim_parameters* params);
 
 
 };

@@ -47,24 +47,24 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-uint64_t sumi_thread::num_threads_ = 0;
+uint64_t SumiThread::num_threads_ = 0;
 
-sumi_thread::sumi_thread(sprockit::sim_parameters* params, sw::software_id sid,
-                         sw::operating_system* os) :
-  thread(params, sid, os)
+SumiThread::SumiThread(sprockit::sim_parameters* params, sw::SoftwareId sid,
+                         sw::OperatingSystem* os) :
+  Thread(params, sid, os)
 {
 }
 
 void
-sumi_thread::start()
+SumiThread::start()
 {
-  sstmac::sw::operating_system::current_thread()->spawn(this);
+  sstmac::sw::OperatingSystem::currentThread()->spawn(this);
 }
 
 void
-sumi_thread::compute(double sec)
+SumiThread::compute(double sec)
 {
-  parent_app_->compute(timestamp(sec));
+  parent_app_->compute(Timestamp(sec));
 }
 
 }

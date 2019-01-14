@@ -51,14 +51,14 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class dumpi_allocation : public node_allocator
+class DumpiAllocation : public NodeAllocator
 {
-  FactoryRegister("dumpi", node_allocator, dumpi_allocation,
+  FactoryRegister("dumpi", NodeAllocator, DumpiAllocation,
               "Allocate nodes directly from the trace files themselves")
  public:
-  dumpi_allocation(sprockit::sim_parameters* params);
+  DumpiAllocation(sprockit::sim_parameters* params);
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "dumpi allocation";
   }
 
@@ -66,7 +66,7 @@ class dumpi_allocation : public node_allocator
     const ordered_node_set& available,
     ordered_node_set& allocation) const override;
 
-  virtual ~dumpi_allocation() throw () {}
+  virtual ~DumpiAllocation() throw () {}
 
  protected:
   std::string metafile_;

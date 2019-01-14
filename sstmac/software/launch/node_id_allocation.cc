@@ -59,8 +59,8 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-node_id_allocation::node_id_allocation(sprockit::sim_parameters* params) :
-  node_allocator(params)
+NodeIdAllocation::NodeIdAllocation(sprockit::sim_parameters* params) :
+  NodeAllocator(params)
 {
   if (params->has_param("node_id_file")){
     coord_file_ = params->get_param("node_id_file");
@@ -70,52 +70,52 @@ node_id_allocation::node_id_allocation(sprockit::sim_parameters* params) :
 }
 
 void
-node_id_allocation::read_coordinate_file(
+NodeIdAllocation::readCoordinateFile(
   const std::string &file,
-  std::vector<node_id> &node_list,
-  hw::topology* top)
+  std::vector<NodeId> &node_list,
+  hw::Topology* top)
 {
   std::ifstream in;
   sprockit::SpktFileIO::open_file(in, file);
 
   if (!in.is_open()) {
     spkt_throw_printf(sprockit::input_error,
-     "node_id_allocation: could not find node id file %s in current folder or configuration include path",
+     "NodeId_allocation: could not find node id file %s in current folder or configuration include path",
      file.c_str());
   }
 
   int num_nodes;
   in >> num_nodes;
 
-  int max_node_id = top->num_nodes();
+  int maxNodeId = top->numNodes();
 
   node_list.resize(num_nodes);
   for (int nid=0; nid < num_nodes; ++nid){
     int next;
     in >> next;
-    if (next >= max_node_id){
+    if (next >= maxNodeId){
       spkt_throw_printf(sprockit::value_error,
-        "node_id_allocation: invalid node id %d in file %s - max id is %d",
-        next, file.c_str(), max_node_id);
+        "NodeId_allocation: invalid node id %d in file %s - max id is %d",
+        next, file.c_str(), maxNodeId);
     }
-    node_list[nid] = node_id(next);
+    node_list[nid] = NodeId(next);
   }
 }
 
 bool
-node_id_allocation::allocate(int nnode_requested,
+NodeIdAllocation::allocate(int nnode_requested,
   const ordered_node_set& available,
   ordered_node_set &allocation) const
 {
-  std::vector<node_id> node_list;
-  read_coordinate_file(coord_file_, node_list, topology_);
+  std::vector<NodeId> node_list;
+  readCoordinateFile(coord_file_, node_list, topology_);
 
   if (node_list.size() < nnode_requested){
     return false;
   }
 
   for (int i=0; i < nnode_requested; ++i){
-    node_id nid = node_list[i];
+    NodeId nid = node_list[i];
     debug_printf(sprockit::dbg::allocation,
         "adding node %d to allocation",
         int(nid));

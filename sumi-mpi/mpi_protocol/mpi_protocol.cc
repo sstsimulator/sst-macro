@@ -47,20 +47,20 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-mpi_protocol::mpi_protocol(mpi_queue *queue) :
+MpiProtocol::MpiProtocol(MpiQueue *queue) :
   queue_(queue), mpi_(queue_->api())
 {
 }
 
 void*
-mpi_protocol::fill_send_buffer(int count, void* buffer, mpi_type* typeobj)
+MpiProtocol::fillSendBuffer(int count, void* buffer, MpiType* typeobj)
 {
   uint64_t length = count * typeobj->packed_size();
   void* eager_buf = new char[length];
   if (typeobj->contiguous()){
     ::memcpy(eager_buf, buffer, length);
   } else {
-    typeobj->pack_send(buffer, eager_buf, count);
+    typeobj->packSend(buffer, eager_buf, count);
   }
   return eager_buf;
 }

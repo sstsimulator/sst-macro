@@ -65,7 +65,7 @@ static const int tls_sanity_check = 42042042;
 static thread_lock globals_lock;
 
 void
-thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
+ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
                                                 void* globalsMap, void* tlsMap)
 {
   size_t stack_mod = ((size_t)stack) % sstmac_global_stacksize;
@@ -109,7 +109,7 @@ thread_info::register_user_space_virtual_thread(int phys_thread_id, void *stack,
 }
 
 void
-thread_info::deregister_user_space_virtual_thread(void* stack)
+ThreadInfo::deregisterUserSpaceVirtualThread(void* stack)
 {
   globals_lock.lock();
   char* tls = (char*) stack;

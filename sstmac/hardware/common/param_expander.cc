@@ -49,7 +49,7 @@ namespace sstmac {
 namespace hw {
 
 double
-param_expander::network_bandwidth_multiplier(sprockit::sim_parameters *params) const
+ParamExpander::networkBandwidthMultiplier(sprockit::sim_parameters *params) const
 {
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
   if (top_params->has_param("redundant")){
@@ -66,7 +66,7 @@ param_expander::network_bandwidth_multiplier(sprockit::sim_parameters *params) c
 }
 
 double
-param_expander::switch_bandwidth_multiplier(sprockit::sim_parameters *params) const
+ParamExpander::switchBandwidthMultiplier(sprockit::sim_parameters *params) const
 {
   sprockit::sim_parameters* sw_params = params->get_optional_namespace("switch");
   if (sw_params->has_param("geometry")){
@@ -83,7 +83,7 @@ param_expander::switch_bandwidth_multiplier(sprockit::sim_parameters *params) co
 }
 
 int
-param_expander::switch_buffer_multiplier(sprockit::sim_parameters *params) const
+ParamExpander::switchBufferMultiplier(sprockit::sim_parameters *params) const
 {
   sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
   if (top_params->has_param("redundant")){

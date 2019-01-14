@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 
-DeclareDebugSlot(event_manager_time_vote);
+DeclareDebugSlot(EventManager_time_vote);
 
 namespace sstmac {
 namespace native {
@@ -69,17 +69,17 @@ static inline uint64_t rdtsc(void)
   return uint64_t( (uint64_t)lo | (uint64_t)hi<<32);
 }
 
-class clock_cycle_event_map :
-  public event_manager
+class ClockCycleEventMap :
+  public EventManager
 {
-  FactoryRegister("clock_cycle_parallel", event_manager, clock_cycle_event_map,
+  FactoryRegister("clock_cycle_parallel", EventManager, ClockCycleEventMap,
       "Implements a parallel event queue with synchronization on regular clock cycles")
  public:
-  clock_cycle_event_map(sprockit::sim_parameters* params, parallel_runtime* rt);
+  ClockCycleEventMap(sprockit::sim_parameters* params, ParallelRuntime* rt);
 
-  virtual ~clock_cycle_event_map() throw() {}
+  virtual ~ClockCycleEventMap() throw() {}
 
-  void renew_scheduler(int thread, timestamp t, event_scheduler* es);
+  void renewScheduler(int thread, Timestamp t, EventScheduler* es);
 
  protected:
   /**
@@ -87,16 +87,16 @@ class clock_cycle_event_map :
    * @param vote The minimum event time I have
    * @return The minimum event time across all LPs
    */
-  timestamp receive_incoming_events(timestamp vote) override;
+  Timestamp receiveIncomingEvents(Timestamp vote) override;
 
-  void compute_final_time(timestamp vote);
+  void computeFinalTime(Timestamp vote);
 
   int num_profile_loops_;
 
  private:
   void run() override;
 
-  int handle_incoming(char* buf);
+  int handleIncoming(char* buf);
 
  private:
   int epoch_;

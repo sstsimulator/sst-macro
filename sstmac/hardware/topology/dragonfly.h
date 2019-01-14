@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class dragonfly;
+class Dragonfly;
 
 class inter_group_wiring {
  public:
@@ -68,7 +68,7 @@ class inter_group_wiring {
    * @param dstG
    * @return The port on which router (srcA, srcG) connects to group dstG
    */
-  virtual int input_group_port(int srcA, int srcG, int srcH, int dstA, int dstG) const = 0;
+  virtual int input_groupPort(int srcA, int srcG, int srcH, int dstA, int dstG) const = 0;
 
   /**
    * @brief connected_routers
@@ -89,7 +89,7 @@ class inter_group_wiring {
    */
   virtual void connected_to_group(int srcG, int dstG, std::vector<std::pair<int,int>>& connected) const = 0;
 
-  virtual switch_id random_intermediate(router* rtr, switch_id current_sw, switch_id dest_sw, uint32_t seed);
+  virtual SwitchId randomIntermediate(Router* rtr, SwitchId current_sw, SwitchId dest_sw, uint32_t seed);
 
  protected:
   /**
@@ -115,43 +115,43 @@ class inter_group_wiring {
  * A canonical dragonfly with notation/structure matching the Dally paper
  * Technology-Driven, Highly-Scalable Dragonfly Topology
  */
-class dragonfly : public cartesian_topology
+class Dragonfly : public CartesianTopology
 {
-  FactoryRegister("dragonfly", topology, dragonfly)
+  FactoryRegister("dragonfly", Topology, Dragonfly)
  public:
-  dragonfly(sprockit::sim_parameters* params);
+  Dragonfly(sprockit::sim_parameters* params);
 
  public:
-  std::string to_string() const override {
+  std::string toString() const override {
     return "dragonfly";
   }
 
-  bool uniform_switch_ports() const override {
+  bool uniformSwitchPorts() const override {
     return false;
   }
 
-  bool is_global_port(int port) const {
+  bool isGlobalPort(int port) const {
     return port >= a_;
   }
 
-  int max_num_ports() const override {
+  int maxNumPorts() const override {
     return a_ + h_ + concentration();
   }
 
-  bool uniform_switches() const override {
+  bool uniformSwitches() const override {
     return true;
   }
 
-  vtk_switch_geometry get_vtk_geometry(switch_id sid) const override;
+  vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
 
-  bool is_curved_vtk_link(switch_id sid, int port) const override;
+  bool isCurvedVtkLink(SwitchId sid, int port) const override;
 
-  void connected_outports(switch_id src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
-  void configure_individual_port_params(switch_id src,
+  void configureIndividualPortParams(SwitchId src,
         sprockit::sim_parameters *switch_params) const override;
 
-  virtual ~dragonfly() {}
+  virtual ~Dragonfly() {}
 
   int ndimensions() const {
     return 2;
@@ -187,7 +187,7 @@ class dragonfly : public cartesian_topology
    * @param a
    * @param g
    */
-  inline void get_coords(switch_id sid, int& a, int& g) const {
+  inline void get_coords(SwitchId sid, int& a, int& g) const {
     a = computeA(sid);
     g = computeG(sid);
   }
@@ -196,52 +196,52 @@ class dragonfly : public cartesian_topology
     return a + g * a_;
   }
 
-  inline int computeA(switch_id sid) const {
+  inline int computeA(SwitchId sid) const {
     return sid % a_;
   }
 
-  inline int computeG(switch_id sid) const {
+  inline int computeG(SwitchId sid) const {
     return sid / a_;
   }
 
-  switch_id num_switches() const override {
+  SwitchId numSwitches() const override {
     return a_ * g_;
   }
 
-  switch_id num_leaf_switches() const override {
+  SwitchId numLeafSwitches() const override {
     return a_ * g_;
   }
 
-  int minimal_distance(switch_id src, switch_id dst) const;
+  int minimalDistance(SwitchId src, SwitchId dst) const;
 
-  int num_hops_to_node(node_id src, node_id dst) const override {
-    return minimal_distance(src / concentration_, dst / concentration_);
+  int numHopsToNode(NodeId src, NodeId dst) const override {
+    return minimalDistance(src / concentration_, dst / concentration_);
   }
 
   int diameter() const override {
     return 3;
   }
 
-  void endpoints_connected_to_injection_switch(switch_id swaddr,
+  void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
          std::vector<injection_port>& nodes) const override;
 
-  coordinates switch_coords(switch_id sid) const override {
+  coordinates switchCoords(SwitchId sid) const override {
     coordinates c(2);
     c[0] = computeA(sid);
     c[1] = computeG(sid);
     return c;
   }
 
-  switch_id switch_addr(const coordinates &coords) const override {
+  SwitchId switchAddr(const coordinates &coords) const override {
     return get_uid(coords[0], coords[1]);
   }
 
-  inter_group_wiring* group_wiring() const {
+  inter_group_wiring* groupWiring() const {
     return group_wiring_;
   }
 
-  switch_id random_intermediate(router* rtr, switch_id current, switch_id dest, uint32_t seed){
-    return group_wiring_->random_intermediate(rtr,current,dest,seed);
+  SwitchId randomIntermediate(Router* rtr, SwitchId current, SwitchId dest, uint32_t seed){
+    return group_wiring_->randomIntermediate(rtr,current,dest,seed);
   }
 
  protected:
@@ -257,7 +257,7 @@ class dragonfly : public cartesian_topology
 
   inter_group_wiring* group_wiring_;
 
-  void setup_port_params(sprockit::sim_parameters* params,
+  void setupPortParams(sprockit::sim_parameters* params,
                     int red, int port_offset, int num_ports) const;
 
 };

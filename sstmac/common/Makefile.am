@@ -48,7 +48,7 @@ nobase_library_include_HEADERS = \
   ipc_event.h \
   event_callback.h \
   event_handler.h \
-	handler_event_queue_entry.h \
+  handler_event_queue_entry.h \
   event_handler_fwd.h \
   event_location.h \
   event_scheduler.h \
@@ -84,10 +84,10 @@ nobase_library_include_HEADERS = \
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \
-  event_manager.h 
+  event_manager.h
 
 libsstmac_common_la_SOURCES += \
-  event_manager.cc 
+  event_manager.cc
 
 endif
 

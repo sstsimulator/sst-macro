@@ -98,7 +98,7 @@ class KeywordRegistration
 
   static void validate_keyword(const std::string& name, const std::string& val);
 
-  static void delete_statics();
+  static void deleteStatics();
 
   static bool do_validation_;
 

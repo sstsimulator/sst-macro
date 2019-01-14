@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class stat_local_int;
+class StatLocalInt;
 
 }
 

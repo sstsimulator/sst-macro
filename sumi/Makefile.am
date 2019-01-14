@@ -49,8 +49,6 @@ library_include_HEADERS = \
  message_fwd.h \
  monitor.h \
  options.h \
- partner_timeout.h \
- ping.h \
  timeout.h \
  transport.h \
  transport_fwd.h 
@@ -78,8 +76,6 @@ libsumi_la_SOURCES = \
  dense_rank_map.cc \
  communicator.cc \
  message.cc \
- monitor.cc \
- partner_timeout.cc \
- ping.cc 
+ monitor.cc 
 
 

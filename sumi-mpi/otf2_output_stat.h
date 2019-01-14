@@ -21,11 +21,11 @@ class otf2_writer : public sstmac::stat_collector
     return writer_;
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "OTF2 trace writer";
   }
 
-  sstmac::stat_collector* do_clone(sprockit::sim_parameters *params) const override {
+  sstmac::stat_collector* doClone(sprockit::sim_parameters *params) const override {
     spkt_abort_printf("otf2_writer should not be cloned");
     return nullptr;
     //otf2_writer* writer = new otf2_writer(params);
@@ -33,15 +33,15 @@ class otf2_writer : public sstmac::stat_collector
     //return writer;
   }
 
-  bool is_main() const override {
+  bool isMain() const override {
     return rank_ == 0;
   }
 
-  void dump_local_data() override;
+  void dumpLocalData() override;
 
-  void dump_global_data() override;
+  void dumpGlobalData() override;
 
-  void global_reduce(sstmac::parallel_runtime* rt) override;
+  void globalReduce(sstmac::parallel_runtime* rt) override;
 
   void reduce(sstmac::stat_collector* stat) override;
 

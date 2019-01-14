@@ -65,8 +65,8 @@ namespace sstmac {
 namespace sw {
 
 class lib_hybrid_compute :
-  public lib_compute_inst,
-  public lib_compute_memmove
+  public LibComputeInst,
+  public libComputeMemmove
 {
 
  public:
@@ -76,7 +76,7 @@ class lib_hybrid_compute :
   }
 
  protected:
-  lib_hybrid_compute(software_id id);
+  lib_hybrid_compute(SoftwareId id);
 
   lib_hybrid_compute(const std::string& id);
 

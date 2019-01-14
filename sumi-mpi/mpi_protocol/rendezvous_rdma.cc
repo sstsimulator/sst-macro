@@ -53,27 +53,27 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-rendezvous_protocol::rendezvous_protocol(sprockit::sim_parameters* params, mpi_queue* queue) :
-  mpi_protocol(queue)
+RendezvousProtocol::RendezvousProtocol(sprockit::sim_parameters* params, MpiQueue* queue) :
+  MpiProtocol(queue)
 {
   software_ack_ = params->get_optional_bool_param("software_ack", true);
 }
 
-rendezvous_get::~rendezvous_get()
+RendezvousGet::~RendezvousGet()
 {
 }
 
 void*
-rendezvous_get::configure_send_buffer(int count, void *buffer, mpi_type* type)
+RendezvousGet::configure_send_buffer(int count, void *buffer, MpiType* type)
 {
   SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Configure_Buffer);
-  mpi_->pin_rdma(count*type->packed_size());
+  mpi_->pinRdma(count*type->packed_size());
 
   if (isNonNullBuffer(buffer)){
     if (type->contiguous()){
       return buffer;
     } else {
-      void* eager_buf = fill_send_buffer(count, buffer, type);
+      void* eager_buf = fillSendBuffer(count, buffer, type);
       return eager_buf;
     }
   }//
@@ -81,12 +81,12 @@ rendezvous_get::configure_send_buffer(int count, void *buffer, mpi_type* type)
 }
 
 void
-rendezvous_get::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task_id tid, int count, mpi_type* type,
-                      int tag, MPI_Comm comm, int seq_id, mpi_request* req)
+RendezvousGet::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::TaskId tid, int count, MpiType* type,
+                      int tag, MPI_Comm comm, int seq_id, MpiRequest* req)
 {
   void* send_buf = configure_send_buffer(count, buffer, type);
-  uint64_t flow_id = mpi_->smsg_send<mpi_message>(tid, 64/*fixed size, not sizeof()*/, nullptr,
-                             sumi::message::no_ack, queue_->pt2pt_cq_id(), sumi::message::pt2pt,
+  uint64_t flow_id = mpi_->smsgSend<MpiMessage>(tid, 64/*fixed size, not sizeof()*/, nullptr,
+                             sumi::Message::no_ack, queue_->pt2ptCqId(), sumi::Message::pt2pt,
                              src_rank, dst_rank, type->id,  tag, comm, seq_id,
                              count, type->packed_size(), send_buf, RENDEZVOUS_GET);
   send_flows_.emplace(std::piecewise_construct,
@@ -95,12 +95,12 @@ rendezvous_get::start(void* buffer, int src_rank, int dst_rank, sstmac::sw::task
 }
 
 void
-rendezvous_get::incoming_ack(mpi_message *msg)
+RendezvousGet::incoming_ack(MpiMessage *msg)
 {
-  mpi_queue_protocol_debug("RDMA get incoming ack %s", msg->to_string().c_str());
-  auto iter = send_flows_.find(msg->flow_id());
+  mpi_queue_protocol_debug("RDMA get incoming ack %s", msg->toString().c_str());
+  auto iter = send_flows_.find(msg->flowId());
   if (iter == send_flows_.end()){
-    spkt_abort_printf("could not find matching ack for %s", msg->to_string().c_str());
+    spkt_abort_printf("could not find matching ack for %s", msg->toString().c_str());
     incoming_header(msg);
   }
 
@@ -114,11 +114,11 @@ rendezvous_get::incoming_ack(mpi_message *msg)
 }
 
 void
-rendezvous_get::incoming(mpi_message* msg)
+RendezvousGet::incoming(MpiMessage* msg)
 {
-  mpi_queue_protocol_debug("RDMA get incoming %s", msg->to_string().c_str());
-  switch(msg->sstmac::hw::network_message::type()){
-  case sstmac::hw::network_message::payload: {
+  mpi_queue_protocol_debug("RDMA get incoming %s", msg->toString().c_str());
+  switch(msg->sstmac::hw::NetworkMessage::type()){
+  case sstmac::hw::NetworkMessage::payload: {
     if (msg->stage() == 0){
       incoming_header(msg);
     } else {
@@ -126,67 +126,67 @@ rendezvous_get::incoming(mpi_message* msg)
     }
     break;
   }
-  case sstmac::hw::network_message::rdma_get_payload:
+  case sstmac::hw::NetworkMessage::rdma_get_payload:
     incoming_payload(msg);
     break;
-  case sstmac::hw::network_message::rdma_get_sent_ack: {
+  case sstmac::hw::NetworkMessage::rdma_get_sent_ack: {
     incoming_ack(msg);
     break;
   }
   default:
     spkt_abort_printf("Invalid message type %s to rendezvous protocol",
-                      sstmac::hw::network_message::tostr(msg->sstmac::hw::network_message::type()));
+                      sstmac::hw::NetworkMessage::tostr(msg->sstmac::hw::NetworkMessage::type()));
   }
 }
 
 void
-rendezvous_get::incoming_header(mpi_message* msg)
+RendezvousGet::incoming_header(MpiMessage* msg)
 {
-  mpi_queue_protocol_debug("RDMA get incoming header %s", msg->to_string().c_str());
+  mpi_queue_protocol_debug("RDMA get incoming header %s", msg->toString().c_str());
   SSTMACBacktrace(MPIRendezvousProtocol_RDMA_Handle_Header);
-  mpi_queue_recv_request* req = queue_->find_matching_recv(msg);
+  MpiQueueRecvRequest* req = queue_->findMatchingRecv(msg);
   if (req) incoming(msg, req);
 
-  queue_->notify_probes(msg);
+  queue_->notifyProbes(msg);
 }
 
 void
-rendezvous_get::incoming(mpi_message *msg, mpi_queue_recv_request* req)
+RendezvousGet::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
 {
-  mpi_queue_protocol_debug("RDMA get matched payload %s", msg->to_string().c_str());
+  mpi_queue_protocol_debug("RDMA get matched payload %s", msg->toString().c_str());
 #if SSTMAC_COMM_SYNC_STATS
   //this is a bit of a hack
-  msg->set_time_synced(queue->now());
+  msg->setTimeSynced(queue->now());
 #endif
-  mpi_->pin_rdma(msg->payload_bytes());
+  mpi_->pinRdma(msg->payloadBytes());
   mpi_queue_action_debug(
-    queue_->api()->comm_world()->rank(),
+    queue_->api()->commWorld()->rank(),
     "found matching request for %s",
-    msg->to_string().c_str());
+    msg->toString().c_str());
 
-  recv_flows_[msg->flow_id()] = req;
-  msg->advance_stage();
-  mpi_->rdma_get_request_response(msg, msg->payload_size(), req->recv_buffer_, msg->partner_buffer(),
-                   queue_->pt2pt_cq_id(), software_ack_ ? sumi::message::no_ack : queue_->pt2pt_cq_id());
+  recv_flows_[msg->flowId()] = req;
+  msg->advanceStage();
+  mpi_->rdmaGetRequestResponse(msg, msg->payloadSize(), req->recv_buffer_, msg->partnerBuffer(),
+                   queue_->pt2ptCqId(), software_ack_ ? sumi::Message::no_ack : queue_->pt2ptCqId());
 
 }
 
 void
-rendezvous_get::incoming_payload(mpi_message* msg)
+RendezvousGet::incoming_payload(MpiMessage* msg)
 {
-  auto iter = recv_flows_.find(msg->flow_id());
+  auto iter = recv_flows_.find(msg->flowId());
   if (iter == recv_flows_.end()){
-    spkt_abort_printf("RDMA get protocol has no matching receive for %s", msg->to_string().c_str());
+    spkt_abort_printf("RDMA get protocol has no matching receive for %s", msg->toString().c_str());
   }
 
-  mpi_queue_recv_request* req = iter->second;
+  MpiQueueRecvRequest* req = iter->second;
   recv_flows_.erase(iter);
 
   queue_->finalize_recv(msg, req);
   if (software_ack_){
-    msg->advance_stage();
-    mpi_->smsg_send_response(msg, 64/*more sizeof(...) fixes*/, nullptr,
-                             sumi::message::no_ack, queue_->pt2pt_cq_id());
+    msg->advanceStage();
+    mpi_->smsgSendResponse(msg, 64/*more sizeof(...) fixes*/, nullptr,
+                             sumi::Message::no_ack, queue_->pt2ptCqId());
   } else {
     delete msg;
   }
