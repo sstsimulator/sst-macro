@@ -152,7 +152,7 @@ class SSTIntegratedComponent
    */
   virtual SST::Event::HandlerBase* creditHandler(int port) = 0;
 
-  void init_links(sprockit::sim_parameters* params);
+  void initLinks(sprockit::sim_parameters* params);
 
  protected:
   SSTIntegratedComponent(sprockit::sim_parameters* params, uint32_t id);

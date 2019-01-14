@@ -75,7 +75,7 @@ run_test(Communicator* dom, int todie, int nproc_live, int context, int tag)
   int dst[nproc_live];
   comm_allgather(dst, src, 1, sizeof(int), tag, true, context, dom);
 
-  dmsg = comm_collective_block(collective::allgather, tag);
+  dmsg = comm_collective_block(Collective::allgather, tag);
   if (!dmsg->succeeded()){
     spkt_throw_printf(sprockit::illformed_error,
         "allgather collective failed with failures %s, should always succeed",
@@ -105,7 +105,7 @@ void
 test_allreduce(Communicator* dom, int tag)
 {
   //now do a collective with payloads
-  int rank = dom->my_comm_rank();
+  int rank = dom->myCommRank();
   int nproc = dom->nproc();
   int nelems = 2*nproc;
   int numfill = 2*rank + 1;
@@ -137,7 +137,7 @@ test_allgather(Communicator* dom, int tag)
 {
   int nelems = 10;
 
-  int rank = dom->my_comm_rank();
+  int rank = dom->myCommRank();
   int nproc = dom->nproc();
 
   int* src_buffer = new int[nelems];
@@ -195,12 +195,12 @@ main(int argc, char **argv)
   int stop = start + nsubrange;
 
   if (rank >= start && rank < stop){
-    Communicator* dom = new subrange_communicator(rank, start, nsubrange);
+    Communicator* dom = new SubrangeCommunicator(rank, start, nsubrange);
     //test_allgather(dom, 0);
     //test_allreduce(dom, 1);
   }
 
-  Communicator* dom = new rotate_communicator(rank, nproc, 3);
+  Communicator* dom = new RotateCommunicator(rank, nproc, 3);
   //test_allgather(dom, 2);
   //test_allreduce(dom, 3);
 

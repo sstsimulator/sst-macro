@@ -424,7 +424,7 @@ void IntegrateStressForElems( Domain &domain,
                               Real_t *determ, Index_t numElem, Index_t numNode)
 {
 #if _OPENMP
-   Index_t numthreads = ompGetMaxThreads();
+   Index_t numthreads = omp_get_max_threads();
 #else
    Index_t numthreads = 1;
 #endif
@@ -647,7 +647,7 @@ void CalcFBHourglassForceForElems( Domain &domain,
 {
 
 #if _OPENMP
-   Index_t numthreads = ompGetMaxThreads();
+   Index_t numthreads = omp_get_max_threads();
 #else
    Index_t numthreads = 1;
 #endif
@@ -2329,7 +2329,7 @@ void CalcCourantConstraintForElems(Domain &domain, Index_t length,
                                    Real_t qqc, Real_t& dtcourant)
 {
 #if _OPENMP   
-   Index_t threads = ompGetMaxThreads();
+   Index_t threads = omp_get_max_threads();
    static Index_t *courant_elem_per_thread;
    static Real_t *dtcourant_per_thread;
    static bool first = true;
@@ -2405,7 +2405,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
                                  Index_t *regElemlist, Real_t dvovmax, Real_t& dthydro)
 {
 #if _OPENMP   
-   Index_t threads = ompGetMaxThreads();
+   Index_t threads = omp_get_max_threads();
    static Index_t *hydro_elem_per_thread;
    static Real_t *dthydro_per_thread;
    static bool first = true;
@@ -2577,7 +2577,7 @@ int main(int argc, char *argv[])
       printf("Running problem size %d^3 per domain until completion\n", opts.nx);
       printf("Num processors: %d\n", numRanks);
 #if _OPENMP
-      printf("Num threads: %d\n", ompGetMaxThreads());
+      printf("Num threads: %d\n", omp_get_max_threads());
 #endif
       printf("Total number of elements: %lld\n\n", (long long int)(numRanks*opts.nx*opts.nx*opts.nx));
       printf("To run other sizes, use -s <integer>.\n");

@@ -65,15 +65,15 @@ int main(int argc, char** argv)
   engine->tport()->init();
   int rank = engine->tport()->rank();
   *xGlobal.x = rank;
-  engine->wait_barrier(0);
+  engine->waitBarrier(0);
   printf("Rank %d is %d\n", rank, x);
 
   *xGlobalArr[0].x *= 10;
-  engine->wait_barrier(1);
+  engine->waitBarrier(1);
   printf("Rank %d is %d\n", rank, *xGlobal.x);
 
   x *= 10;
-  engine->wait_barrier(2);
+  engine->waitBarrier(2);
   printf("Rank %d is %d\n", rank, *xGlobalArr[0].x);
 
   engine->tport()->finish();

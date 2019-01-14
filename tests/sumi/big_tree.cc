@@ -179,7 +179,7 @@ test_barrier()
 
   Message* msg = comm_poll();
   auto dmsg = dynamic_cast<CollectiveDoneMessage*>(msg);
-  if (dmsg->tag() != 20 || dmsg->type() != collective::barrier){
+  if (dmsg->tag() != 20 || dmsg->type() != Collective::barrier){
     sprockit::abort("barrier got invalid completion message");
   }
 
@@ -198,7 +198,7 @@ test_dynamic_tree_vote()
 
   Message* msg = comm_poll();
   auto dmsg = dynamic_cast<CollectiveDoneMessage*>(msg);
-  if (dmsg->tag() != tag || dmsg->type() != collective::dynamic_tree_vote){
+  if (dmsg->tag() != tag || dmsg->type() != Collective::dynamic_tree_vote){
     sprockit::abort("vote got invalid completion message");
   }
 
@@ -227,7 +227,7 @@ test_bcast_payload()
 
   int root = 0;
   comm_bcast(root, buffer, nelems, sizeof(int), tag);
-  comm_collective_block(collective::bcast, tag);
+  comm_collective_block(Collective::bcast, tag);
 
 
   bool failed = false;
@@ -255,7 +255,7 @@ test_bcast()
 
   int root = 0;
   comm_bcast(root, null, nelems, sizeof(int), tag);
-  comm_collective_block(collective::bcast, tag);
+  comm_collective_block(Collective::bcast, tag);
 
   std::cout << "t=" << sstmac_now() << ": passed bcast on rank "
       << rank << std::endl;

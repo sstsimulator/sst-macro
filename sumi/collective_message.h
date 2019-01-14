@@ -61,7 +61,7 @@ class CollectiveDoneMessage :
 {
 
  public:
-  CollectiveDoneMessage(int tag, collective::type_t ty, Communicator* dom, uint8_t cq_id) :
+  CollectiveDoneMessage(int tag, Collective::type_t ty, Communicator* dom, uint8_t cq_id) :
     tag_(tag), result_(0), vote_(0), type_(ty), dom_(dom)
   {
   }
@@ -70,7 +70,7 @@ class CollectiveDoneMessage :
     return tag_;
   }
 
-  collective::type_t type() const {
+  Collective::type_t type() const {
     return type_;
   }
 
@@ -78,7 +78,7 @@ class CollectiveDoneMessage :
     return dom_;
   }
 
-  void set_type(collective::type_t ty) {
+  void set_type(Collective::type_t ty) {
     type_ = ty;
   }
 
@@ -110,7 +110,7 @@ class CollectiveDoneMessage :
   int tag_;
   void* result_;
   int vote_;
-  collective::type_t type_;
+  Collective::type_t type_;
   int comm_rank_;
   Communicator* dom_;
 };
@@ -119,10 +119,10 @@ class CollectiveDoneMessage :
  * @class collective_work_message
  * Main message type used by collectives
  */
-class collective_work_message :
+class CollectiveWorkMessage :
   public ProtocolMessage
 {
-  ImplementSerializable(collective_work_message)
+  ImplementSerializable(CollectiveWorkMessage)
  public:
   typedef enum {
     eager, get, put
@@ -130,8 +130,8 @@ class collective_work_message :
 
  public:
   template <class... Args>
-  collective_work_message(
-    collective::type_t type,
+  CollectiveWorkMessage(
+    Collective::type_t type,
     int dom_sender, int dom_recver,
     int tag, int round,
     int nelems, int type_size, void* buffer, protocol_t p,
@@ -163,15 +163,15 @@ class collective_work_message :
     return tag_;
   }
 
-  int dom_sender() const {
+  int domSender() const {
     return dom_sender_;
   }
 
-  int dom_recver() const {
+  int domRecver() const {
     return dom_recver_;
   }
 
-  int dom_target_rank() const {
+  int domTargetRank() const {
     switch (NetworkMessage::type()){
      case NetworkMessage::payload:
      case NetworkMessage::rdma_get_payload:
@@ -192,23 +192,23 @@ class collective_work_message :
     return round_;
   }
 
-  collective::type_t type() const {
+  Collective::type_t type() const {
     return type_;
   }
 
   sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
-    collective_work_message* cln = new collective_work_message(*this);
+    CollectiveWorkMessage* cln = new CollectiveWorkMessage(*this);
     cln->convertToAck();
     return cln;
   }
 
  protected:
-  collective_work_message(){} //for serialization
+  CollectiveWorkMessage(){} //for serialization
 
  private:
   int tag_;
 
-  collective::type_t type_;
+  Collective::type_t type_;
 
   int round_;
 

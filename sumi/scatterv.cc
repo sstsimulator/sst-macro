@@ -71,7 +71,7 @@ BtreeScattervActor::initBuffers()
   if (!dst)
     return;
 
-  int me = comm_->my_comm_rank();
+  int me = comm_->myCommRank();
   int nproc = comm_->nproc();
   int result_size = recvcnt_ * type_size_;
   int max_recv_buf_size = midpoint_*recvcnt_*type_size_;
@@ -111,7 +111,7 @@ BtreeScattervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 void
 BtreeScattervActor::initDag()
 {
-  int me = comm_->my_comm_rank();
+  int me = comm_->myCommRank();
   int nproc = comm_->nproc();
   int round = 0;
 

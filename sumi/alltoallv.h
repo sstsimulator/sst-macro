@@ -58,7 +58,7 @@ class DirectAlltoallvActor :
  public:
   DirectAlltoallvActor(CollectiveEngine* engine, void *dst, void *src, int* send_counts, int* recv_counts,
                          int type_size, int tag, int cq_id, Communicator* comm) :
-    DagCollectiveActor(collective::alltoallv, engine, dst, src, type_size, tag, cq_id, comm),
+    DagCollectiveActor(Collective::alltoallv, engine, dst, src, type_size, tag, cq_id, comm),
     send_counts_(send_counts), recv_counts_(recv_counts)
   {}
 
@@ -96,7 +96,7 @@ class DirectAlltoallvCollective :
  public:
     DirectAlltoallvCollective(CollectiveEngine* engine, void *dst, void *src, int* send_counts, int* recv_counts,
                            int type_size, int tag, int cq_id, Communicator* comm) :
-      DagCollective(collective::alltoallv, engine, dst, src, type_size, tag, cq_id, comm),
+      DagCollective(Collective::alltoallv, engine, dst, src, type_size, tag, cq_id, comm),
       send_counts_(send_counts), recv_counts_(recv_counts)
     {}
 

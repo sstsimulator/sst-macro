@@ -77,12 +77,12 @@ main(int argc, char **argv)
   int stop = start + nsubrange;
 
   if (rank >= start && rank < stop){
-    Communicator* dom = new subrange_communicator(rank, start, nsubrange);
+    Communicator* dom = new SubrangeCommunicator(rank, start, nsubrange);
     //test_allgather(dom, 0);
     //test_allreduce(dom, 1);
   }
 
-  Communicator* dom = new rotate_communicator(rank, nproc, 3);
+  Communicator* dom = new RotateCommunicator(rank, nproc, 3);
   //test_allgather(dom, 2);
   //test_allreduce(dom, 3);
 

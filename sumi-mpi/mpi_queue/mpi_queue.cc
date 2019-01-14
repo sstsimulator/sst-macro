@@ -130,7 +130,7 @@ MpiQueue::init()
   init.pt2pt_cq_id = pt2pt_cq_;
   init.all_equal = true;
   auto cmsg = api_->engine()->allreduce(&init, &init, 1, sizeof(init_struct), 0, init_fxn,
-                            Message::default_cq);\
+                            Message::default_cq);
   if (cmsg == nullptr){
     cmsg = api_->engine()->blockUntilNext(Message::default_cq);
   }
@@ -333,7 +333,7 @@ MpiQueue::findMatchingRecv(MpiMessage* message)
 void
 MpiQueue::incomingCollectiveMessage(sumi::Message* m)
 {
-  collective_work_message* msg = safe_cast(collective_work_message, m);
+  CollectiveWorkMessage* msg = safe_cast(CollectiveWorkMessage, m);
   CollectiveDoneMessage* cmsg = api_->engine()->incoming(msg);
   if (cmsg){
     MpiComm* comm = safe_cast(MpiComm, cmsg->dom());

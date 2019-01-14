@@ -52,9 +52,9 @@ class TestModule : public SSTElementPythonModule {
  * in this case, we create a factory type test_component from which all
  * test components will inherit
  */
-class test_component : public ConnectableComponent {
+class TestComponent : public ConnectableComponent {
  public:
-  DeclareFactory(test_component,uint64_t,EventManager*)
+  DeclareFactory(TestComponent,uint64_t)
 
   /**
    * @brief test_component Standard constructor for all components
@@ -63,25 +63,25 @@ class test_component : public ConnectableComponent {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  test_component(sprockit::sim_parameters* params, uint32_t id, EventManager* mgr) :
-    ConnectableComponent(params,id,mgr)
+  TestComponent(sprockit::sim_parameters* params, uint32_t id) :
+    ConnectableComponent(params,id)
  {
  }
 };
 
-class test_event : public Event {
+class TestEvent : public Event {
  public:
   //Make sure to satisfy the serializable interface
-  ImplementSerializable(test_event)
+  ImplementSerializable(TestEvent)
 };
 
 /**
  * @brief The dummy_switch class
  * This is a basic instance of a test component that will generate events
  */
-class dummy_switch : public test_component {
+class DummySwitch : public TestComponent {
  public:
-  RegisterComponent("dummy", test_component, dummy_switch,
+  RegisterComponent("dummy", TestComponent, DummySwitch,
            "test", COMPONENT_CATEGORY_NETWORK,
            "A dummy switch for teaching")
 
@@ -92,13 +92,13 @@ class dummy_switch : public test_component {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  dummy_switch(sprockit::sim_parameters* params, uint32_t id, EventManager* mgr) :
-   test_component(params,id,mgr), id_(id)
+  DummySwitch(sprockit::sim_parameters* params, uint32_t id) :
+   TestComponent(params,id), id_(id)
   {
     //make sure this function gets called
     //unfortunately, due to virtual function initialization order
     //this has to be called in the base child class
-    init_links(params);
+    initLinks(params);
     //init params
     num_ping_pongs_ = params->get_optional_int_param("num_ping_pongs", 2);
     latency_ = params->get_time_param("latency");
@@ -106,19 +106,19 @@ class dummy_switch : public test_component {
 
   std::string toString() const override { return "dummy";}
 
-  void recv_payload(Event* ev){
+  void recvPayload(Event* ev){
     std::cout << "Oh, hey, component " << id_ << " got a payload!" << std::endl;
-    test_event* tev = dynamic_cast<test_event*>(ev);
+    TestEvent* tev = dynamic_cast<TestEvent*>(ev);
     if (tev == nullptr){
       std::cerr << "received wrong event type" << std::endl;
       abort();
     }
     if (num_ping_pongs_ > 0){
-      send_ping_message();
+      sendPingMessage();
     }
   }
 
-  void recv_credit(Event* ev){
+  void recvCredit(Event* ev){
     //ignore for now, we won't do anything with credits
   }
 
@@ -148,24 +148,24 @@ class dummy_switch : public test_component {
   void setup() override {
     std::cout << "Setting up " << id_ << std::endl;
     //make sure to call parent setup method
-    test_component::setup();
+    TestComponent::setup();
     //send an initial test message
-    send_ping_message();
+    sendPingMessage();
   }
 
   void init(unsigned int phase) override {
     std::cout << "Initializing " << id_
               << " on phase " << phase << std::endl;
     //make sure to call parent init method
-    test_component::init(phase);
+    TestComponent::init(phase);
   }
 
   LinkHandler* creditHandler(int port) override {
-    return newLinkHandler(this, &dummy_switch::recv_credit);
+    return newLinkHandler(this, &DummySwitch::recvCredit);
   }
 
   LinkHandler* payloadHandler(int port) override {
-    return newLinkHandler(this, &dummy_switch::recv_payload);
+    return newLinkHandler(this, &DummySwitch::recvPayload);
   }
 
   Timestamp sendLatency(sprockit::sim_parameters *params) const override {
@@ -177,8 +177,8 @@ class dummy_switch : public test_component {
   }
 
  private:
-  void send_ping_message(){
-    partner_->send(new test_event);
+  void sendPingMessage(){
+    partner_->send(new TestEvent);
     --num_ping_pongs_;
   }
 

@@ -52,7 +52,7 @@ RegisterKeywords(
 { "network_bandwidth", "" },
 { "network_accuracy_parameter", "" },
 { "network_hop_latency", "latency of a single hop through a router in the network" },
-{ "NetworkSwitch_bandwidth", "the total bandwidth through a switch xbar" },
+{ "network_switch_bandwidth", "the total bandwidth through a switch xbar" },
 { "injection_bandwidth", "" },
 { "injection_latency", "" },
 { "injection_redundant", "the number of different injection paths on a NIC" },

@@ -71,7 +71,7 @@ namespace sumi {
 #define enumcase(x) case x: return #x
 
 const char*
-collective::tostr(type_t ty)
+Collective::tostr(type_t ty)
 {
   switch (ty)
   {
@@ -94,25 +94,25 @@ collective::tostr(type_t ty)
       "collective::tostr: unknown type %d", ty);
 }
 
-collective::collective(type_t ty, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
+Collective::Collective(type_t ty, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
   type_(ty), engine_(engine), my_api_(engine->tport()), tag_(tag),
-  dom_nproc_(comm->nproc()), dom_me_(comm->my_comm_rank()),
+  dom_nproc_(comm->nproc()), dom_me_(comm->myCommRank()),
   complete_(false), comm_(comm), cq_id_(cq_id)
 {
   debug_printf(sumi_collective | sumi_vote,
     "Rank %d=%d built collective of size %d in role=%d, tag=%d",
-    my_api_->rank(), comm_->my_comm_rank(), comm_->nproc(), dom_me_, tag);
+    my_api_->rank(), comm_->myCommRank(), comm_->nproc(), dom_me_, tag);
 }
 
 CollectiveDoneMessage*
-collective::add_actors(collective *coll)
+Collective::addActors(Collective *coll)
 {
   sprockit::abort("collective:add_actors: collective should not dynamically add actors");
   return nullptr;
 }
 
 void
-collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collective)
+Collective::actorDone(int comm_rank, bool& generate_cq_msg, bool& delete_collective)
 {
   generate_cq_msg = false;
   delete_collective = false;
@@ -130,12 +130,12 @@ collective::actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_collec
 }
 
 CollectiveDoneMessage*
-collective::recv(collective_work_message* msg)
+Collective::recv(CollectiveWorkMessage* msg)
 {
-  return recv(msg->dom_target_rank(), msg);
+  return recv(msg->domTargetRank(), msg);
 }
 
-collective::~collective()
+Collective::~Collective()
 {
 }
 
@@ -148,7 +148,7 @@ DagCollective::~DagCollective()
 }
 
 void
-DagCollective::init_actors()
+DagCollective::initActors()
 {
   DagCollectiveActor* actor = newActor();
   actor->init();
@@ -157,12 +157,12 @@ DagCollective::init_actors()
 }
 
 CollectiveDoneMessage*
-DagCollective::recv(int target, collective_work_message* msg)
+DagCollective::recv(int target, CollectiveWorkMessage* msg)
 {
   debug_printf(sumi_collective | sprockit::dbg::sumi,
     "Rank %d=%d %s got from %d on tag=%d for target %d",
     my_api_->rank(), dom_me_,
-    collective::tostr(type_),
+    Collective::tostr(type_),
     msg->sender(), tag_, target);
 
   DagCollectiveActor* vr = my_actors_[target];
@@ -194,7 +194,7 @@ DagCollective::start()
 }
 
 void
-DagCollective::deadlock_check()
+DagCollective::deadlockCheck()
 {
   std::cout << sprockit::printf("%s collective deadlocked on rank %d, tag %d",
                   tostr(type_), my_api_->rank(), tag_) << std::endl;
@@ -212,7 +212,7 @@ DagCollective::deadlock_check()
 }
 
 CollectiveDoneMessage*
-DagCollective::add_actors(collective* coll)
+DagCollective::addActors(Collective* coll)
 {
   DagCollective* ar = static_cast<DagCollective*>(coll);
   { std::map<int, DagCollectiveActor*>::iterator it, end = ar->my_actors_.end();
@@ -220,14 +220,14 @@ DagCollective::add_actors(collective* coll)
     my_actors_[it->first] = it->second;
   } }
 
-  refcounts_[coll->comm()->my_comm_rank()] = ar->my_actors_.size();
+  refcounts_[coll->comm()->myCommRank()] = ar->my_actors_.size();
 
-  std::list<collective_work_message*> pending = pending_;
+  std::list<CollectiveWorkMessage*> pending = pending_;
   pending_.clear();
   CollectiveDoneMessage* msg = nullptr;
-  { std::list<collective_work_message*>::iterator it, end = pending.end();
+  { std::list<CollectiveWorkMessage*>::iterator it, end = pending.end();
   for (it=pending.begin(); it != end; ++it){
-    msg = collective::recv(*it);
+    msg = Collective::recv(*it);
   } }
 
   ar->my_actors_.clear();

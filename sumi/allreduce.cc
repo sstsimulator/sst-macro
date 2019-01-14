@@ -139,7 +139,7 @@ WilkeAllreduceActor::initDag()
     for (int i=0; i < num_doubling_rounds; ++i){
       //again, see comment above about weirndess of round numberings
       int rnd = (i == 0 || i_am_even) ? i : i + round_offset;
-      bool i_am_low = is_lower_partner(virtual_me, partner_gap);
+      bool i_am_low = isLowerPartner(virtual_me, partner_gap);
       int virtual_partner, send_nelems, recv_nelems, send_offset, recv_offset;
       if (i_am_low){
         virtual_partner = virtual_me + partner_gap;
@@ -232,7 +232,7 @@ WilkeAllreduceActor::initDag()
 }
 
 bool
-WilkeAllreduceActor::is_lower_partner(int virtual_me, int partner_gap)
+WilkeAllreduceActor::isLowerPartner(int virtual_me, int partner_gap)
 {
   int my_role = (virtual_me / partner_gap) % 2;
   return my_role == 0;

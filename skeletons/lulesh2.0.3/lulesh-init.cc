@@ -308,7 +308,7 @@ void
 Domain::SetupThreadSupportStructures()
 {
 #if _OPENMP
-   Index_t numthreads = ompGetMaxThreads();
+   Index_t numthreads = omp_get_max_threads();
 #else
    Index_t numthreads = 1;
 #endif

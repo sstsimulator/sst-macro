@@ -63,7 +63,7 @@ namespace sw {
 
 class NodeIdTaskMapper : public TaskMapper
 {
-  FactoryRegister("NodeId", TaskMapper, NodeIdTaskMapper,
+  FactoryRegister("node_id", TaskMapper, NodeIdTaskMapper,
               "assigns tasks to nodes based on list of nodes ids in file")
  public:
   NodeIdTaskMapper(sprockit::sim_parameters* params);

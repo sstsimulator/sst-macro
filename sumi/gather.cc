@@ -70,7 +70,7 @@ BtreeGatherActor::initBuffers()
   if (!src)
     return;
 
-  int me = comm_->my_comm_rank();
+  int me = comm_->myCommRank();
   int nproc = comm_->nproc();
 
   if (me == root_){
@@ -95,7 +95,7 @@ BtreeGatherActor::finalizeBuffers()
     return;
 
   int nproc = comm_->nproc();
-  int me = comm_->my_comm_rank();
+  int me = comm_->myCommRank();
   if (me == root_){
     int buf_size = nproc * nelems_ * type_size_;
     my_api_->unmakePublicBuffer(result_buffer_, buf_size);
@@ -127,7 +127,7 @@ BtreeGatherActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 void
 BtreeGatherActor::initDag()
 {
-  int me = comm_->my_comm_rank();
+  int me = comm_->myCommRank();
   int nproc = comm_->nproc();
   int round = 0;
 

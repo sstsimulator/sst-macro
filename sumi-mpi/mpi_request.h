@@ -83,7 +83,7 @@ struct CollectiveOpBase
   MPI_Op op;
   MpiType* sendtype;
   MpiType* recvtype;
-  collective::type_t ty;
+  Collective::type_t ty;
   MpiComm* comm;
   int sendcnt;
   int recvcnt;

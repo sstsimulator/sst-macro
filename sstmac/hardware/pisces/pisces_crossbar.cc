@@ -158,11 +158,11 @@ void
 PiscesNtoMQueue::sendPayload(PiscesPacket* pkt)
 {
 #if SSTMAC_SANITY_CHECK
-  int port = pkt->next_local_outport();
+  int port = pkt->nextLocalOutport();
   if (port >= outputs_.size() || outputs_[port].link == nullptr){
     spkt_abort_printf("got bad outport %d on stage %d", port, int(pkt->stage()));
   }
-  port = pkt->next_local_inport();
+  port = pkt->nextLocalInport();
   if (port >= inputs_.size() || inputs_[port].link == nullptr){
     spkt_abort_printf("got bad inport %d on stage %d", port, int(pkt->stage()));
   }

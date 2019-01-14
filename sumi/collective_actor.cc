@@ -107,7 +107,7 @@ CollectiveActor::CollectiveActor(CollectiveEngine* engine, int tag, int cq_id, C
   complete_(false),
   my_api_(engine->tport()),
   dom_nproc_(comm->nproc()),
-  dom_me_(comm->my_comm_rank())
+  dom_me_(comm->myCommRank())
 {
 }
 
@@ -221,7 +221,7 @@ DagCollectiveActor::startShuffle(Action *ac)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "collective %s does not shuffle data - invalid DAG",
-    collective::tostr(type_));
+    Collective::tostr(type_));
 }
 
 void
@@ -282,11 +282,11 @@ DagCollectiveActor::sendEagerMessage(Action* ac)
 {
   uint64_t num_bytes;
   void* buf = getSendBuffer(ac, num_bytes);
-  my_api_->smsgSend<collective_work_message>(ac->phys_partner, num_bytes, buf,
+  my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, num_bytes, buf,
                                               cq_id_, cq_id_, Message::collective,
                                               type_, dom_me_, ac->partner,
                                               tag_, ac->round, ac->nelems, type_size_,
-                                              nullptr, collective_work_message::eager);
+                                              nullptr, CollectiveWorkMessage::eager);
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
    "Rank %s, collective %s(%p) sending eager message to %d on tag=%d offset=%d",
@@ -298,11 +298,11 @@ void
 DagCollectiveActor::sendRdmaPutHeader(Action* ac)
 {
   void* buf = getRecvbuffer(ac);
-  my_api_->smsgSend<collective_work_message>(ac->phys_partner, 0, buf,
+  my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, 0, buf,
                                               Message::no_ack, cq_id_, Message::collective,
                                               type_, dom_me_, ac->partner,
                                               tag_, ac->round,
-                                              ac->nelems, type_size_, buf, collective_work_message::put);
+                                              ac->nelems, type_size_, buf, CollectiveWorkMessage::put);
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
    "Rank %s, collective %s(%p) sending put header to %s on round=%d tag=%d offset=%d",
@@ -316,11 +316,11 @@ DagCollectiveActor::sendRdmaGetHeader(Action* ac)
 {
   uint64_t num_bytes;
   void* buf = getSendBuffer(ac, num_bytes);
-  my_api_->smsgSend<collective_work_message>(ac->phys_partner, 64, //use platform-independent size
+  my_api_->smsgSend<CollectiveWorkMessage>(ac->phys_partner, 64, //use platform-independent size
                                               buf, Message::no_ack, cq_id_, Message::collective,
                                               type_, dom_me_, ac->partner,
                                               tag_, ac->round,
-                                              ac->nelems, type_size_, buf, collective_work_message::get); //do not ack the send
+                                              ac->nelems, type_size_, buf, CollectiveWorkMessage::get); //do not ack the send
 
   debug_printf(sumi_collective | sprockit::dbg::sumi,
    "Rank %s, collective %s(%p) sending RDMA get header to %d on tag=%d offset=%d",
@@ -342,7 +342,7 @@ DagCollectiveActor::addDependencyToMap(uint32_t id, Action* ac)
   initial_actions_.erase(ac);
   debug_printf(sumi_collective | sumi_collective_init,
    "Rank %s, collective %s adding dependency %u to %s tag=%d",
-   rankStr().c_str(), collective::tostr(type_),
+   rankStr().c_str(), Collective::tostr(type_),
    id, ac->toString().c_str(), tag_);
   pending_comms_.insert(std::make_pair(id, ac));
   ac->join_counter++;
@@ -356,7 +356,7 @@ DagCollectiveActor::addCommDependency(Action* precursor, Action *ac)
   if (physical_rank == Communicator::unresolved_rank){
     //uh oh - need to wait on this
     uint32_t resolve_id = Action::messageId(Action::resolve, 0, ac->partner);
-     comm_->register_rank_callback(this);
+     comm_->registerRankCallback(this);
     addDependencyToMap(resolve_id, ac);
     if (precursor) addDependencyToMap(precursor->id, ac);
   } else {
@@ -366,7 +366,7 @@ DagCollectiveActor::addCommDependency(Action* precursor, Action *ac)
     } else if (ac->join_counter == 0){
       debug_printf(sumi_collective | sumi_collective_init,
        "Rank %s, collective %s adding initial %s on tag=%d",
-       rankStr().c_str(), collective::tostr(type_),
+       rankStr().c_str(), Collective::tostr(type_),
        ac->toString().c_str(), tag_);
       initial_actions_.insert(ac);
     } else {
@@ -523,19 +523,19 @@ DagCollectiveActor::deadlockCheck() const
 void
 DagCollectiveActor::reputPending(uint32_t id, pending_msg_map& pending)
 {
-  std::list<collective_work_message*> tmp;
+  std::list<CollectiveWorkMessage*> tmp;
 
   {pending_msg_map::iterator it = pending.find(id);
   while (it != pending.end()){
-    collective_work_message* msg = it->second;
+    CollectiveWorkMessage* msg = it->second;
     tmp.push_back(msg);
     pending.erase(it);
     it = pending.find(id);
   }}
 
-  {std::list<collective_work_message*>::iterator it, end = tmp.end();
+  {std::list<CollectiveWorkMessage*>::iterator it, end = tmp.end();
   for (it=tmp.begin(); it != end; ++it){
-    collective_work_message* msg = *it;
+    CollectiveWorkMessage* msg = *it;
     recv(msg);
   }}
 }
@@ -571,16 +571,16 @@ DagCollectiveActor::commActionDone(Action::type_t ty, int round, int partner)
 }
 
 void
-DagCollectiveActor::dataSent(collective_work_message* msg)
+DagCollectiveActor::dataSent(CollectiveWorkMessage* msg)
 {
-  Action* ac = commActionDone(Action::send, msg->round(), msg->dom_recver());
+  Action* ac = commActionDone(Action::send, msg->round(), msg->domRecver());
 #if SSTMAC_COMM_SYNC_STATS
   my_api_->collectSyncDelays(0,msg); //the zero doesn't matter here
 #endif
 }
 
 void
-DagCollectiveActor::dataRecved(Action* ac_, collective_work_message* msg, void *recvd_buffer)
+DagCollectiveActor::dataRecved(Action* ac_, CollectiveWorkMessage* msg, void *recvd_buffer)
 {
 #if SSTMAC_COMM_SYNC_STATS
   my_api_->collectSyncDelays(0,msg);
@@ -591,10 +591,10 @@ DagCollectiveActor::dataRecved(Action* ac_, collective_work_message* msg, void *
   //without actually passing around large payloads or doing memcpy's
   //if we end up here, we have a real buffer
   if (recv_buffer_){
-    int my_comm_rank =  comm_->my_comm_rank();
-    int sender_comm_rank = msg->dom_sender();
+    int my_comm_rank =  comm_->myCommRank();
+    int sender_comm_rank = msg->domSender();
     if (my_comm_rank == sender_comm_rank){
-      do_sumi_debug_print("ignoring", rankStr().c_str(), msg->dom_sender(),
+      do_sumi_debug_print("ignoring", rankStr().c_str(), msg->domSender(),
         ac->round, 0, nelems_, type_size_, recv_buffer_);
     } else {
 
@@ -612,7 +612,7 @@ DagCollectiveActor::dataRecved(Action* ac_, collective_work_message* msg, void *
         */
 
       RecvAction::recv_type_t recv_ty = RecvAction::recv_type(
-            msg->protocol() == collective_work_message::eager, ac->buf_type);
+            msg->protocol() == CollectiveWorkMessage::eager, ac->buf_type);
 
       //printf("%d %d -> %d\n",
       //       msg->payload_type() == message::eager_payload,
@@ -655,7 +655,7 @@ DagCollectiveActor::dataRecved(Action* ac_, collective_work_message* msg, void *
 
 void
 DagCollectiveActor::dataRecved(
-  collective_work_message* msg,
+  CollectiveWorkMessage* msg,
   void* recvd_buffer)
 {
   debug_printf(sumi_collective | sprockit::dbg::sumi,
@@ -664,12 +664,12 @@ DagCollectiveActor::dataRecved(
     this, msg->round(), tag_,
     (void*) recv_buffer_, msg);
 
-  uint32_t id = Action::messageId(Action::recv, msg->round(), msg->dom_sender());
+  uint32_t id = Action::messageId(Action::recv, msg->round(), msg->domSender());
   Action* ac = active_comms_[id];
   if (ac == nullptr){
     spkt_throw_printf(sprockit::value_error,
       "on %d, received data for unknown receive %u from %d on round %d",
-      dom_me_, id, msg->dom_sender(), msg->round());
+      dom_me_, id, msg->domSender(), msg->round());
   }
 
   dataRecved(ac, msg, recvd_buffer);
@@ -713,13 +713,13 @@ DagCollectiveActor::getSendBuffer(Action* ac_, uint64_t& nbytes)
 
 void
 DagCollectiveActor::nextRoundReadyToPut(
-  Action* ac, collective_work_message* header)
+  Action* ac, CollectiveWorkMessage* header)
 {
   debug_printf(sumi_collective | sprockit::dbg::sumi,
     "Rank %s, collective %s ready to put for round=%d tag=%d from rank %d",
     rankStr().c_str(), toString().c_str(),
     header, header->round(), tag_,
-    header->dom_sender());
+    header->domSender());
 
   header->reverse();
 
@@ -731,19 +731,19 @@ DagCollectiveActor::nextRoundReadyToPut(
     "Rank %s, collective %s(%p) starting put %d elems at offset %d to %d for round=%d tag=%d msg %p",
     rankStr().c_str(), toString().c_str(), this,
     ac->nelems, ac->offset,
-    header->dom_sender(),
+    header->domSender(),
     ac->round, tag_, header);
 }
 
 void
 DagCollectiveActor::nextRoundReadyToGet(
   Action* ac,
-  collective_work_message* header)
+  CollectiveWorkMessage* header)
 {
   debug_printf(sumi_collective | sprockit::dbg::sumi,
     "Rank %s, collective %s received get header %p for round=%d tag=%d from rank %d",
     rankStr().c_str(), toString().c_str(),
-    header, header->round(), tag_, header->dom_sender());
+    header, header->round(), tag_, header->domSender());
 
   my_api_->rdmaGetRequestResponse(header, ac->nelems*type_size_,
                                      getRecvbuffer(ac), header->partnerBuffer(),
@@ -753,7 +753,7 @@ DagCollectiveActor::nextRoundReadyToGet(
       "Rank %s, collective %s(%p) starting get %d elems at offset %d from %d for round=%d tag=%d msg %p",
       rankStr().c_str(), toString().c_str(), this,
       ac->nelems, ac->offset,
-      header->dom_sender(), header->round(), tag_, header);
+      header->domSender(), header->round(), tag_, header);
 
 #if SSTMAC_COMM_SYNC_STATS
     header->setTimeSynced(my_api_->wall_time());
@@ -762,16 +762,16 @@ DagCollectiveActor::nextRoundReadyToGet(
 }
 
 void
-DagCollectiveActor::incomingHeader(collective_work_message* msg)
+DagCollectiveActor::incomingHeader(CollectiveWorkMessage* msg)
 {
   switch(msg->protocol()){
-    case collective_work_message::eager: {
-      uint32_t mid = Action::messageId(Action::recv, msg->round(), msg->dom_sender());
+    case CollectiveWorkMessage::eager: {
+      uint32_t mid = Action::messageId(Action::recv, msg->round(), msg->domSender());
       active_map::iterator it = active_comms_.find(mid);
       if (it == active_comms_.end()){
         debug_printf(sumi_collective,
            "Rank %s not yet ready for recv message from %s on round %d tag %d",
-           rankStr().c_str(), rankStr(msg->dom_sender()).c_str(), msg->round(), msg->tag());
+           rankStr().c_str(), rankStr(msg->domSender()).c_str(), msg->round(), msg->tag());
         pending_recv_headers_.insert(std::make_pair(mid, msg));
       } else {
         //data recved will clear the actions
@@ -780,13 +780,13 @@ DagCollectiveActor::incomingHeader(collective_work_message* msg)
       }
       break;
     }
-    case collective_work_message::get: {
-      uint32_t mid = Action::messageId(Action::recv, msg->round(), msg->dom_sender());
+    case CollectiveWorkMessage::get: {
+      uint32_t mid = Action::messageId(Action::recv, msg->round(), msg->domSender());
       auto it = active_comms_.find(mid);
       if (it == active_comms_.end()){
         debug_printf(sumi_collective,
            "Rank %s not yet ready for recv message from %s on round %d",
-           rankStr().c_str(), rankStr(msg->dom_sender()).c_str(), msg->round());
+           rankStr().c_str(), rankStr(msg->domSender()).c_str(), msg->round());
         pending_recv_headers_.insert(std::make_pair(mid, msg));
       } else {
         Action* ac = it->second;
@@ -794,8 +794,8 @@ DagCollectiveActor::incomingHeader(collective_work_message* msg)
       }
       break;
     }
-    case collective_work_message::put: {
-      uint32_t mid = Action::messageId(Action::send, msg->round(), msg->dom_sender());
+    case CollectiveWorkMessage::put: {
+      uint32_t mid = Action::messageId(Action::send, msg->round(), msg->domSender());
       auto it = active_comms_.find(mid);
       if (it == active_comms_.end()){
         pending_send_headers_.insert(std::make_pair(mid, msg));
@@ -814,7 +814,7 @@ CollectiveDoneMessage*
 DagCollectiveActor::doneMsg() const
 {
   auto msg = new CollectiveDoneMessage(tag_, type_, comm_, cq_id_);
-  msg->set_comm_rank(comm_->my_comm_rank());
+  msg->set_comm_rank(comm_->myCommRank());
   msg->set_result(result_buffer_);
 #ifdef FEATURE_TAG_SUMI_RESILIENCE
   auto end = failed_ranks_.start_iteration();
@@ -844,14 +844,14 @@ DagCollectiveActor::putDoneNotification()
 }
 
 void
-DagCollectiveActor::recv(collective_work_message* msg)
+DagCollectiveActor::recv(CollectiveWorkMessage* msg)
 {
   debug_printf(sumi_collective | sprockit::dbg::sumi,
     "Rank %s on incoming message with protocol %s type %s from %d on round=%d tag=%d ",
     rankStr().c_str(),
-    collective_work_message::tostr(msg->protocol()),
+    CollectiveWorkMessage::tostr(msg->protocol()),
     msg->sstmac::hw::NetworkMessage::typeStr(),
-    msg->dom_sender(), msg->round(), tag_);
+    msg->domSender(), msg->round(), tag_);
 
   auto ty = msg->sstmac::hw::NetworkMessage::type();
   switch (ty)

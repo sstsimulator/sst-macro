@@ -706,7 +706,7 @@ namespace lblxml
       if (synch_mode_ == full_synch) {
         sstmac::Timestamp start_bar = now();
         comm_barrier(barrier_tag_);
-        comm_collective_block(sumi::collective::barrier, barrier_tag_);
+        comm_collective_block(sumi::Collective::barrier, barrier_tag_);
         sstmac::Timestamp end_bar = now();
         double bar_time = (end_bar - start_bar).sec();
         g_total_barrier_time += bar_time;
@@ -741,7 +741,7 @@ namespace lblxml
       if (synch_mode_ == full_synch) {
         comm_barrier(barrier_tag_);
         sstmac::Timestamp start_bar = now();
-        comm_collective_block(sumi::collective::barrier, barrier_tag_);
+        comm_collective_block(sumi::Collective::barrier, barrier_tag_);
         //printf("rank %d finished full_synch block\n", rank_);
         sstmac::Timestamp end_bar = now();
         double bar_time = (end_bar - start_bar).sec();

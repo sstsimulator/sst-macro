@@ -59,7 +59,7 @@ class SimultaneousBtreeScanActor :
  public:
   SimultaneousBtreeScanActor(CollectiveEngine* engine, void* dst, void* src, int nelems, int type_size,
                                 int tag, reduce_fxn fxn, int cq_id, Communicator* comm) :
-    DagCollectiveActor(collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
+    DagCollectiveActor(Collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
     nelems_(nelems), fxn_(fxn)
   {
   }
@@ -92,7 +92,7 @@ class SimultaneousBtreeScan :
  public:
   SimultaneousBtreeScan(CollectiveEngine* engine, void* dst, void* src, int nelems,
                           int type_size, int tag, reduce_fxn fxn, int cq_id, Communicator* comm) :
-    DagCollective(collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
+    DagCollective(Collective::scan, engine, dst, src, type_size, tag, cq_id, comm),
     nelems_(nelems), fxn_(fxn)
   {
   }

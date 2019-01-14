@@ -54,12 +54,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
-{ "launch_NodeId_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
-{ "launch_NodeId_mapper_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
-{ "launch_NodeId_indexing_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
-{ "NodeId_indexing_file", "a file containing line-by-line list of nodes for each rank" },
-{ "NodeId_file", "a file containing line-by-line list of nodes for each rank" },
-{ "NodeId_mapper_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
+{ "launch_node_id_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
+{ "launch_node_id_mapper_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
+{ "launch_node_id_indexing_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
+{ "node_id_indexing_file", "a file containing line-by-line list of nodes for each rank" },
+{ "node_id_file", "a file containing line-by-line list of nodes for each rank" },
+{ "node_id_mapper_file", "DEPRECATED: a file containing line-by-line list of nodes for each rank" },
 );
 
 namespace sstmac {
@@ -68,10 +68,10 @@ namespace sw {
 NodeIdTaskMapper::NodeIdTaskMapper(sprockit::sim_parameters* params) :
   TaskMapper(params)
 {
-  if (params->has_param("NodeId_file")){
-    listfile_ = params->get_param("NodeId_file" );
+  if (params->has_param("node_id_file")){
+    listfile_ = params->get_param("node_id_file" );
   } else {
-    listfile_ = params->get_param("NodeId_indexing_file");
+    listfile_ = params->get_param("node_id_indexing_file");
   }
 }
 

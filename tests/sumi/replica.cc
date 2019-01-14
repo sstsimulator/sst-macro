@@ -70,7 +70,7 @@ test_allreduce(int cm_rank)
   src_buffer[cm_rank] = rank;
   int* dst_buffer = new int[nelems];
   int tag = 13;
-  Communicator* dom = new index_communicator(cm_rank, ndomain, indices);
+  Communicator* dom = new IndexCommunicator(cm_rank, ndomain, indices);
   comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, Message::default_cq);
 }
 

@@ -219,6 +219,7 @@ PiscesSwitch::setup()
     if (buf) buf->setup();
   }
   xbar_->setup();
+  PiscesAbstractSwitch::setup();
 }
 
 void

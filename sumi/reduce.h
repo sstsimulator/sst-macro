@@ -65,7 +65,7 @@ class WilkeReduceActor :
 
   WilkeReduceActor(CollectiveEngine* engine, int root, void* dst, void* src,
                      int nelems, int type_size, int tag, reduce_fxn fxn, int cq_id, Communicator* comm) :
-    DagCollectiveActor(collective::reduce, engine, dst, src, type_size, tag, cq_id, comm, fxn),
+    DagCollectiveActor(Collective::reduce, engine, dst, src, type_size, tag, cq_id, comm, fxn),
     fxn_(fxn), nelems_(nelems), root_(root)
   {
   }

@@ -58,7 +58,7 @@ class BinaryTreeBcastActor :
  public:
   BinaryTreeBcastActor(CollectiveEngine* engine, int root, void *buf, int nelems,
                           int type_size, int tag, int cq_id, Communicator* comm)
-    : DagCollectiveActor(collective::bcast, engine, buf, buf, type_size, tag, cq_id, comm),
+    : DagCollectiveActor(Collective::bcast, engine, buf, buf, type_size, tag, cq_id, comm),
       root_(root), nelems_(nelems)
   {}
 
@@ -88,7 +88,7 @@ class BinaryTreeBcastCollective :
  public:
   BinaryTreeBcastCollective(CollectiveEngine* engine, int root, void* buf,
                                int nelems, int type_size, int tag, int cq_id, Communicator* comm)
-    : DagCollective(collective::bcast, engine, buf, buf, type_size, tag, cq_id, comm),
+    : DagCollective(Collective::bcast, engine, buf, buf, type_size, tag, cq_id, comm),
       root_(root), nelems_(nelems) {}
 
   std::string toString() const override {

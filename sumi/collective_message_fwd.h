@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class collective_work_message;
+class CollectiveWorkMessage;
 
 class CollectiveDoneMessage;
 

@@ -17,20 +17,20 @@ STATSTESTS = \
   output_graph_dragonfly 
 
 if BUILD_SUMI_MPI
-STATSTESTS += \
-  test_stats_msg_size_histogram \
-  test_stats_spyplot \
-  test_stats_spyplot_collectives \
-  test_stats_bytes_sent_torus \
-  test_stats_bytes_sent_fattree \
-  histogram.p \
-  histogram.dat \
-  spyplot.bytes.csv \
-  spyplot.num_messages.csv \
-  spyplot_collectives.bytes.csv \
-  spyplot_collectives.num_messages.csv \
-  bytes_sent_torus.dat \
-  bytes_sent_fattree.dat 
+#STATSTESTS += \
+#  test_stats_msg_size_histogram \
+#  test_stats_spyplot \
+#  test_stats_spyplot_collectives \
+#  test_stats_bytes_sent_torus \
+#  test_stats_bytes_sent_fattree \
+#  histogram.p \
+#  histogram.dat \
+#  spyplot.bytes.csv \
+#  spyplot.num_messages.csv \
+#  spyplot_collectives.bytes.csv \
+#  spyplot_collectives.num_messages.csv \
+#  bytes_sent_torus.dat \
+#  bytes_sent_fattree.dat 
 
 #  test_stats_ftq 
 #  ftq_app1.p 

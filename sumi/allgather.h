@@ -58,7 +58,7 @@ class BruckAllgatherActor :
 {
 
  public:
-  BruckAllgatherActor(collective::type_t ty, CollectiveEngine* engine, void* dst, void* src,
+  BruckAllgatherActor(Collective::type_t ty, CollectiveEngine* engine, void* dst, void* src,
                         int nelems, int type_size, int tag, int cq_id, Communicator* comm)
     : BruckActor(ty, engine, dst, src, type_size, tag, cq_id, comm),
       nelems_(nelems)

@@ -92,7 +92,7 @@ class Transport : public sstmac::sw::API {
  public:
   RegisterAPI("sumi_transport", Transport)
 
-  using default_progress_queue = sstmac::sw::MultiProgressQueue<Message>;
+  using DefaultProgressQueue = sstmac::sw::MultiProgressQueue<Message>;
 
   Transport(sprockit::sim_parameters* params,
             sstmac::sw::SoftwareId sid,
@@ -275,7 +275,7 @@ class Transport : public sstmac::sw::API {
 
   int allocateDefaultCq(){
     int id = allocateCqId();
-    allocateCq(id, std::bind(&default_progress_queue::incoming,
+    allocateCq(id, std::bind(&DefaultProgressQueue::incoming,
                           &default_progress_queue_,
                           id, std::placeholders::_1));
     return id;
@@ -372,7 +372,7 @@ class Transport : public sstmac::sw::API {
 
   sstmac::sw::TaskMapping::ptr rank_mapper_;
 
-  default_progress_queue default_progress_queue_;
+  DefaultProgressQueue default_progress_queue_;
 
   std::function<void(sstmac::hw::NetworkMessage*)> nic_ioctl_;
 
@@ -408,7 +408,7 @@ class CollectiveEngine
     return eager_cutoff_;
   }
 
-  void notifyCollectiveDone(int rank, collective::type_t ty, int tag);
+  void notifyCollectiveDone(int rank, Collective::type_t ty, int tag);
 
   bool useEagerProtocol(uint64_t byte_length) const {
     return byte_length < eager_cutoff_;
@@ -543,7 +543,7 @@ class CollectiveEngine
   CollectiveDoneMessage* scatterv(int root, void* dst, void* src, int* send_counts, int recvcnt, int type_size, int tag,
                                     int cq_id, Communicator* comm = nullptr);
 
-  void wait_barrier(int tag);
+  void waitBarrier(int tag);
 
   /**
    * Essentially just executes a zero-byte allgather.
@@ -555,24 +555,24 @@ class CollectiveEngine
   CollectiveDoneMessage* bcast(int root, void* buf, int nelems, int type_size, int tag,
                                  int cq_id, Communicator* comm = nullptr);
 
-  void clean_up();
+  void cleanUp();
 
-  void deadlock_check();
+  void deadlockCheck();
 
  private:
-  CollectiveDoneMessage* skip_collective(collective::type_t ty,
+  CollectiveDoneMessage* skipCollective(Collective::type_t ty,
                         int cq_id, Communicator* comm,
                         void* dst, void *src,
                         int nelems, int type_size,
                         int tag);
 
-  void finishCollective(collective* coll, int rank, collective::type_t ty, int tag);
+  void finishCollective(Collective* coll, int rank, Collective::type_t ty, int tag);
 
-  CollectiveDoneMessage* startCollective(collective* coll);
+  CollectiveDoneMessage* startCollective(Collective* coll);
 
-  void validateCollective(collective::type_t ty, int tag);
+  void validateCollective(Collective::type_t ty, int tag);
 
-  CollectiveDoneMessage* deliverPending(collective* coll, int tag, collective::type_t ty);
+  CollectiveDoneMessage* deliverPending(Collective* coll, int tag, Collective::type_t ty);
 
  private:
   Transport* tport_;
@@ -582,15 +582,15 @@ class CollectiveEngine
   template <typename Key, typename Value>
   using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
 
-  typedef std::unordered_map<int,collective*> tag_to_collective_map;
-  typedef spkt_enum_map<collective::type_t, tag_to_collective_map> collective_map;
+  typedef std::unordered_map<int,Collective*> tag_to_collective_map;
+  typedef spkt_enum_map<Collective::type_t, tag_to_collective_map> collective_map;
   collective_map collectives_;
 
-  typedef std::unordered_map<int,std::list<collective_work_message*>> tag_to_pending_map;
-  typedef spkt_enum_map<collective::type_t, tag_to_pending_map> pending_map;
+  typedef std::unordered_map<int,std::list<CollectiveWorkMessage*>> tag_to_pending_map;
+  typedef spkt_enum_map<Collective::type_t, tag_to_pending_map> pending_map;
   pending_map pending_collective_msgs_;
 
-  std::list<collective*> todel_;
+  std::list<Collective*> todel_;
 
   Communicator* global_domain_;
 

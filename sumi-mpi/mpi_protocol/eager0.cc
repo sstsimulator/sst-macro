@@ -75,7 +75,7 @@ Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 {
   if (req->recv_buffer_){
 #if SSTMAC_SANITY_CHECK
-    if (!msg->smsg_buffer()){
+    if (!msg->smsgBuffer()){
       spkt_abort_printf("have receive buffer, but no send buffer on %s", msg->toString().c_str());
     }
 #endif

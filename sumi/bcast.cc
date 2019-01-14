@@ -146,7 +146,7 @@ BinaryTreeBcastActor::initDag()
 {
   int roundNproc = 1;
   int nproc = comm_->nproc();
-  int me = comm_->my_comm_rank();
+  int me = comm_->myCommRank();
   while (roundNproc < nproc){
     roundNproc *= 2;
   }

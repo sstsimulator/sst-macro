@@ -59,7 +59,7 @@ class BtreeGatherActor :
  public:
   BtreeGatherActor(CollectiveEngine* engine, int root, void* dst, void* src,
                      int nelems, int type_size, int tag, int cq_id, Communicator* comm)
-    : DagCollectiveActor(collective::gather, engine, dst, src, type_size, tag, cq_id, comm),
+    : DagCollectiveActor(Collective::gather, engine, dst, src, type_size, tag, cq_id, comm),
       root_(root), nelems_(nelems) {}
 
   std::string toString() const override {

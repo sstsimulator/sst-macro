@@ -650,7 +650,7 @@ class MpiApi : public sumi::Transport
        MpiType* old_type, MPI_Datatype* outtype);
 
   void startMpiCollective(
-      collective::type_t ty,
+      Collective::type_t ty,
       const void* sendbuf, void* recvbuf,
       MPI_Datatype sendtype, MPI_Datatype recvtype,
       CollectiveOpBase* op);

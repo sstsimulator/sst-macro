@@ -141,7 +141,7 @@ namespace lblxml {
     int nproc() const { return size_; }
 
     int my_box_number() const {
-      return boxes_[my_comm_rank()];
+      return boxes_[myCommRank()];
     }
 
     int commToGlobalRank(int comm_rank) const {

@@ -59,7 +59,7 @@ class BruckAllgathervActor :
  public:
   BruckAllgathervActor(CollectiveEngine* engine, void *dst, void *src, int* recv_counts,
                          int type_size, int tag, int cq_id, Communicator* comm) :
-    BruckActor(collective::allgatherv, engine, dst, src, type_size, tag, cq_id, comm),
+    BruckActor(Collective::allgatherv, engine, dst, src, type_size, tag, cq_id, comm),
     recv_counts_(recv_counts)
   {
     total_nelems_ = 0;

@@ -60,7 +60,7 @@ class WilkeAllreduceActor :
   WilkeAllreduceActor(CollectiveEngine* engine, void* dst, void* src,
                         int nelems, int type_size, int tag, reduce_fxn fxn,
                         int cq_id, Communicator* comm) :
-    DagCollectiveActor(collective::allreduce, engine, dst, src, type_size, tag, cq_id, comm, fxn),
+    DagCollectiveActor(Collective::allreduce, engine, dst, src, type_size, tag, cq_id, comm, fxn),
     fxn_(fxn), nelems_(nelems)
   {
   }
@@ -72,7 +72,7 @@ class WilkeAllreduceActor :
   void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
-  bool is_lower_partner(int virtual_me, int partner_gap);
+  bool isLowerPartner(int virtual_me, int partner_gap);
   void finalizeBuffers() override;
   void initBuffers() override;
   void initDag() override;

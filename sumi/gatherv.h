@@ -63,7 +63,7 @@ class BtreeGathervActor :
 
   BtreeGathervActor(CollectiveEngine* engine, int root, void *dst, void *src,
                       int sendcnt, int *recv_counts, int type_size, int tag, int cq_id, Communicator* comm) :
-    DagCollectiveActor(collective::gatherv, engine, dst, src, type_size, tag, cq_id, comm),
+    DagCollectiveActor(Collective::gatherv, engine, dst, src, type_size, tag, cq_id, comm),
     root_(root), sendcnt_(sendcnt), recv_counts_(recv_counts) {}
 
  protected:

@@ -448,7 +448,7 @@ namespace lblxml {
     sstmac::Timestamp start = now();
     if (debug_ > 1) printf("rank %d starting barrier %d\n",rank_,barrier_tag_);
     comm_barrier(barrier_tag_);
-    comm_collective_block(sumi::collective::barrier, barrier_tag_);
+    comm_collective_block(sumi::Collective::barrier, barrier_tag_);
     sstmac::Timestamp end = now();
     double time = (end - start).sec();
     g_total_barrier_time += time;

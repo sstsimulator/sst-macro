@@ -58,7 +58,7 @@ class BruckAlltoallActor :
  public:
   BruckAlltoallActor(CollectiveEngine* engine, void* dst, void* src,
                        int nelems, int type_size, int tag, int cq_id, Communicator* comm)
-    : BruckActor(collective::alltoall, engine, dst, src, type_size, tag, cq_id, comm),
+    : BruckActor(Collective::alltoall, engine, dst, src, type_size, tag, cq_id, comm),
       nelems_(nelems)
   {
   }

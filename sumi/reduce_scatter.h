@@ -59,7 +59,7 @@ class HalvingReduceScatterActor :
  public:
   HalvingReduceScatterActor(CollectiveEngine* engine, void* dst, void* src,
                         int nelems, int type_size, int tag,  reduce_fxn fxn, int cq_id, Communicator* comm) :
-    DagCollectiveActor(collective::reduce_scatter, engine, dst, src, type_size, tag, cq_id, comm, fxn),
+    DagCollectiveActor(Collective::reduce_scatter, engine, dst, src, type_size, tag, cq_id, comm, fxn),
     fxn_(fxn), nelems_(nelems)
   {
   }

@@ -52,14 +52,14 @@ namespace sumi {
 
 class Communicator {
  public:
-  class rank_callback {
+  class RankCallback {
    public:
     virtual void rankResolved(int global_rank, int comm_rank) = 0;
   };
 
   virtual int nproc() const = 0;
 
-  int my_comm_rank() const {
+  int myCommRank() const {
     return my_comm_rank_;
   }
 
@@ -79,18 +79,18 @@ class Communicator {
 
   static const int unresolved_rank = -1;
 
-  void register_rank_callback(rank_callback* cback){
+  void registerRankCallback(RankCallback* cback){
     rank_callbacks_.insert(cback);
   }
 
-  void erase_rank_callback(rank_callback* cback){
+  void eraseRankCallback(RankCallback* cback){
     rank_callbacks_.erase(cback);
   }
 
  protected:
   Communicator(int comm_rank) : my_comm_rank_(comm_rank){}
 
-  void rank_resolved(int global_rank, int comm_rank);
+  void rankResolved(int global_rank, int comm_rank);
 
  private:
   int my_comm_rank_;
@@ -99,15 +99,15 @@ class Communicator {
    * Domain ranks do not need immediate resolution to physical ranks
    * If there is a delay in resolution, allow callbacks to be registered
   */
-  std::set<rank_callback*> rank_callbacks_;
+  std::set<RankCallback*> rank_callbacks_;
 
 };
 
-class global_communicator :
+class GlobalCommunicator :
   public Communicator
 {
  public:
-  global_communicator(Transport* tport);
+  GlobalCommunicator(Transport* tport);
 
   int nproc() const override;
 
@@ -119,12 +119,12 @@ class global_communicator :
   Transport* transport_;
 };
 
-class shifted_communicator :
+class ShiftedCommunicator :
   public Communicator
 {
  public:
-  shifted_communicator(Communicator* dom, int left_shift) :
-    Communicator((dom->my_comm_rank() - left_shift + dom->nproc()) % dom->nproc()),
+  ShiftedCommunicator(Communicator* dom, int left_shift) :
+    Communicator((dom->myCommRank() - left_shift + dom->nproc()) % dom->nproc()),
     dom_(dom),
     nproc_(dom->nproc()),
     shift_(left_shift)
@@ -152,7 +152,7 @@ class shifted_communicator :
 
 };
 
-class index_communicator :
+class IndexCommunicator :
   public Communicator
 {
  public:
@@ -161,7 +161,7 @@ class index_communicator :
    * @param nproc
    * @param proc_list
    */
-  index_communicator(int comm_rank, int nproc, int* proc_list) :
+  IndexCommunicator(int comm_rank, int nproc, int* proc_list) :
     Communicator(comm_rank),
     proc_list_(proc_list), nproc_(nproc)
   {
@@ -183,7 +183,7 @@ class index_communicator :
 
 };
 
-class rotate_communicator :
+class RotateCommunicator :
   public Communicator
 {
  public:
@@ -193,7 +193,7 @@ class rotate_communicator :
    * @param shift
    * @param me
    */
-  rotate_communicator(int my_global_rank, int nproc, int shift) :
+  RotateCommunicator(int my_global_rank, int nproc, int shift) :
     Communicator(globalToCommRank(my_global_rank)),
     nproc_(nproc), shift_(shift)
   {
@@ -217,11 +217,11 @@ class rotate_communicator :
 
 };
 
-class subrange_communicator :
+class SubrangeCommunicator :
   public Communicator
 {
  public:
-  subrange_communicator(int my_global_rank, int start, int nproc) :
+  SubrangeCommunicator(int my_global_rank, int start, int nproc) :
     Communicator(globalToCommRank(my_global_rank)),
     nproc_(nproc), start_(start)
   {

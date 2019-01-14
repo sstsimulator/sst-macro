@@ -80,7 +80,7 @@ NodeIdAllocation::readCoordinateFile(
 
   if (!in.is_open()) {
     spkt_throw_printf(sprockit::input_error,
-     "NodeId_allocation: could not find node id file %s in current folder or configuration include path",
+     "NodeIdAllocation: could not find node id file %s in current folder or configuration include path",
      file.c_str());
   }
 
@@ -95,7 +95,7 @@ NodeIdAllocation::readCoordinateFile(
     in >> next;
     if (next >= maxNodeId){
       spkt_throw_printf(sprockit::value_error,
-        "NodeId_allocation: invalid node id %d in file %s - max id is %d",
+        "NodeIdAllocation: invalid node id %d in file %s - max id is %d",
         next, file.c_str(), maxNodeId);
     }
     node_list[nid] = NodeId(next);

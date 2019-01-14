@@ -79,7 +79,67 @@ namespace sstmac {
 
 namespace sstmac {
 
-class EventLink;
+class EventLink {
+ public:
+  virtual ~EventLink(){}
+
+  virtual std::string toString() const = 0;
+
+  virtual void send(Timestamp delay, Event *ev) = 0;
+
+  void send(Event* ev){
+    send(Timestamp(), ev);
+  }
+
+  static Timestamp minThreadLatency() {
+    return minThreadLatency_;
+  }
+
+  static Timestamp minRemoteLatency() {
+    return minRemoteLatency_;
+  }
+
+  static uint32_t allocateLinkId() {
+    return linkIdCounter_++;
+  }
+
+ protected:
+  EventLink(Timestamp latency) :
+    latency_(latency), seqnum_(0)
+  {
+    linkId_ = allocateLinkId();
+  }
+
+  static void setMinThreadLatency(Timestamp t){
+    if (t.ticks() == 0){
+      spkt_abort_printf("setting link latency to zero across threads!");
+    }
+    if (minThreadLatency_.ticks() == 0){
+      minThreadLatency_ = t;
+    } else {
+      minThreadLatency_ = std::min(minThreadLatency_, t);
+    }
+  }
+
+  static void setMinRemoteLatency(Timestamp t){
+    if (t.ticks() == 0){
+      spkt_abort_printf("setting link latency to zero across threads!");
+    }
+    if (minRemoteLatency_.ticks() == 0){
+      minRemoteLatency_ = t;
+    } else {
+      minRemoteLatency_ = std::min(minRemoteLatency_, t);
+    }
+  }
+
+  uint32_t seqnum_;
+  uint32_t linkId_;
+  Timestamp latency_;
+  static Timestamp minThreadLatency_;
+  static Timestamp minRemoteLatency_;
+  static uint32_t linkIdCounter_;
+
+};
 
 class EventScheduler : public sprockit::printable
 {
@@ -158,7 +218,8 @@ class EventScheduler : public sprockit::printable
 
   template <class Base = void>
   EventScheduler(uint32_t id, Base* base = nullptr) :
-    id_(id), seqnum_(0), mgr_(nullptr)
+    id_(id), seqnum_(0), mgr_(nullptr),
+    selfLinkId_(EventLink::allocateLinkId())
   {
 #if ACTUAL_INTEGRATED_SST_CORE
     if (!time_converter_){
@@ -177,6 +238,7 @@ class EventScheduler : public sprockit::printable
 #else
   EventManager* mgr_;
   uint32_t seqnum_;
+  uint32_t selfLinkId_;
   int thread_id_;
   int nthread_;
   const Timestamp* now_;
@@ -253,64 +315,6 @@ SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn, Args&&... args){
   return new MemberFxnHandler<T, Fxn, Args...>(
         const_cast<T*>(t), fxn, std::forward<Args>(args)...);
 }
-
-class EventLink {
- public:
-  virtual ~EventLink(){}
-
-  virtual std::string toString() const = 0;
-
-  virtual void send(Timestamp delay, Event *ev) = 0;
-
-  void send(Event* ev){
-    send(Timestamp(), ev);
-  }
-
-  static Timestamp minThreadLatency() {
-    return minThreadLatency_;
-  }
-
-  static Timestamp minRemoteLatency() {
-    return minRemoteLatency_;
-  }
-
- protected:
-  EventLink(Timestamp latency) :
-    latency_(latency), seqnum_(0)
-  {
-    static uint32_t linkId = 0;
-    linkId_ = linkId++;
-  }
-
-  static void setMinThreadLatency(Timestamp t){
-    if (t.ticks() == 0){
-      spkt_abort_printf("setting link latency to zero across threads!");
-    }
-    if (minThreadLatency_.ticks() == 0){
-      minThreadLatency_ = t;
-    } else {
-      minThreadLatency_ = std::min(minThreadLatency_, t);
-    }
-  }
-
-  static void setMinRemoteLatency(Timestamp t){
-    if (t.ticks() == 0){
-      spkt_abort_printf("setting link latency to zero across threads!");
-    }
-    if (minRemoteLatency_.ticks() == 0){
-      minRemoteLatency_ = t;
-    } else {
-      minRemoteLatency_ = std::min(minRemoteLatency_, t);
-    }
-  }
-
-  uint32_t seqnum_;
-  uint32_t linkId_;
-  Timestamp latency_;
-  static Timestamp minThreadLatency_;
-  static Timestamp minRemoteLatency_;
-
-};
 
 class LocalLink : public EventLink {
  public:

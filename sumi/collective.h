@@ -61,7 +61,7 @@ DeclareDebugSlot(sumi_collective_init)
 
 namespace sumi {
 
-class collective
+class Collective
 {
  public:
   typedef enum {
@@ -83,7 +83,7 @@ class collective
 
   virtual std::string toString() const = 0;
 
-  virtual ~collective();
+  virtual ~Collective();
 
   /**
    * @brief persistent
@@ -97,9 +97,9 @@ class collective
 
   static const char* tostr(type_t ty);
 
-  virtual CollectiveDoneMessage* recv(int target, collective_work_message* msg) = 0;
+  virtual CollectiveDoneMessage* recv(int target, CollectiveWorkMessage* msg) = 0;
 
-  CollectiveDoneMessage* recv(collective_work_message* msg);
+  CollectiveDoneMessage* recv(CollectiveWorkMessage* msg);
 
   virtual void start() = 0;
 
@@ -111,7 +111,7 @@ class collective
     return complete_;
   }
 
-  void set_complete() {
+  void setComplete() {
     complete_ = true;
   }
 
@@ -123,18 +123,18 @@ class collective
     return type_;
   }
 
-  void actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_event);
+  void actorDone(int comm_rank, bool& generate_cq_msg, bool& delete_event);
 
-  virtual CollectiveDoneMessage* add_actors(collective* coll);
+  virtual CollectiveDoneMessage* addActors(Collective* coll);
 
   static const int default_nproc = -1;
 
-  virtual void deadlock_check(){}
+  virtual void deadlockCheck(){}
 
-  virtual void init_actors(){}
+  virtual void initActors(){}
 
  protected:
-  collective(type_t type, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm);
+  Collective(type_t type, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm);
 
  protected:
   Transport* my_api_;
@@ -147,33 +147,33 @@ class collective
   int tag_;
 
   std::map<int, int> refcounts_;
-  collective::type_t type_;
+  Collective::type_t type_;
 
 };
 
 class DagCollective :
-  public collective
+  public Collective
 {
  public:
-  CollectiveDoneMessage* recv(int target, collective_work_message* msg) override;
+  CollectiveDoneMessage* recv(int target, CollectiveWorkMessage* msg) override;
 
   void start() override;
 
-  void deadlock_check() override;
+  void deadlockCheck() override;
 
-  void init_actors() override;
+  void initActors() override;
 
   virtual ~DagCollective();
 
  protected:
   virtual DagCollectiveActor* newActor() const = 0;
 
-  CollectiveDoneMessage* add_actors(collective *coll) override;
+  CollectiveDoneMessage* addActors(Collective *coll) override;
 
  protected:
-  DagCollective(collective::type_t ty, CollectiveEngine* engine, void *dst, void *src,
+  DagCollective(Collective::type_t ty, CollectiveEngine* engine, void *dst, void *src,
                  int type_size, int tag, int cq_id, Communicator* comm) :
-    collective(ty, engine, tag, cq_id, comm),
+    Collective(ty, engine, tag, cq_id, comm),
     src_buffer_(src), dst_buffer_(dst), type_size_(type_size), fault_aware_(false)
   {
   }
@@ -189,7 +189,7 @@ class DagCollective :
 
   bool fault_aware_;
 
-  std::list<collective_work_message*> pending_;
+  std::list<CollectiveWorkMessage*> pending_;
 };
 
 }

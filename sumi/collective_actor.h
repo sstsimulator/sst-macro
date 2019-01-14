@@ -349,14 +349,14 @@ class DefaultSlicer :
  */
 class DagCollectiveActor :
  public CollectiveActor,
- public Communicator::rank_callback
+ public Communicator::RankCallback
 {
  public:
   virtual std::string toString() const override = 0;
 
   virtual ~DagCollectiveActor();
 
-  virtual void recv(collective_work_message* msg);
+  virtual void recv(CollectiveWorkMessage* msg);
 
   virtual void start();
 
@@ -383,11 +383,11 @@ class DagCollectiveActor :
                    alloc<uint32_t,Action*>> active_map;
   typedef std::multimap<uint32_t, Action*, std::less<uint32_t>,
                    alloc<uint32_t,Action*>> pending_map;
-  typedef std::multimap<uint32_t, collective_work_message*, std::less<uint32_t>,
-                   alloc<uint32_t,collective_work_message*>> pending_msg_map;
+  typedef std::multimap<uint32_t, CollectiveWorkMessage*, std::less<uint32_t>,
+                   alloc<uint32_t,CollectiveWorkMessage*>> pending_msg_map;
 
  protected:
-  DagCollectiveActor(collective::type_t ty, CollectiveEngine* engine, void* dst, void * src,
+  DagCollectiveActor(Collective::type_t ty, CollectiveEngine* engine, void* dst, void * src,
                        int type_size, int tag, int cq_id, Communicator* comm,
                        reduce_fxn fxn = Slicer::null_reduce_fxn) :
     CollectiveActor(engine, tag, cq_id, comm),
@@ -441,18 +441,18 @@ class DagCollectiveActor :
   void sendRdmaGetHeader(Action* ac);
 
   void nextRoundReadyToPut(Action* ac,
-    collective_work_message* header);
+    CollectiveWorkMessage* header);
 
   void nextRoundReadyToGet(Action* ac,
-    collective_work_message* header);
+    CollectiveWorkMessage* header);
 
-  void incomingHeader(collective_work_message* msg);
+  void incomingHeader(CollectiveWorkMessage* msg);
 
-  void dataRecved(collective_work_message* msg, void* recvd_buffer);
+  void dataRecved(CollectiveWorkMessage* msg, void* recvd_buffer);
 
-  void dataRecved(Action* ac, collective_work_message* msg, void *recvd_buffer);
+  void dataRecved(Action* ac, CollectiveWorkMessage* msg, void *recvd_buffer);
 
-  void dataSent(collective_work_message* msg);
+  void dataSent(CollectiveWorkMessage* msg);
 
   virtual void bufferAction(void* dst_buffer, void* msg_buffer, Action* ac) = 0;
 
@@ -512,7 +512,7 @@ class DagCollectiveActor :
   */
   void* result_buffer_;
 
-  collective::type_t type_;
+  Collective::type_t type_;
 
   DefaultSlicer* slicer_;
 
@@ -541,7 +541,7 @@ class DagCollectiveActor :
 class BruckActor : public DagCollectiveActor
 {
  protected:
-  BruckActor(collective::type_t ty, CollectiveEngine* engine, void* dst, void* src,
+  BruckActor(Collective::type_t ty, CollectiveEngine* engine, void* dst, void* src,
               int type_size, int tag, int cq_id, Communicator* comm) :
     DagCollectiveActor(ty, engine, dst, src, type_size, tag, cq_id, comm)
   {

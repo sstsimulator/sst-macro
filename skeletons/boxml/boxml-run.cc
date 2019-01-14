@@ -149,7 +149,7 @@ namespace lblxml
           printf("rank %d starting allreduce %s for box %d\n",
                  rank_, ev->id().c_str(), box_number);
         sumi::comm_allreduce<double,sumi::Add>(NULL, NULL, count, index,
-                                               sumi::collective::config().comm(dom));
+                                               sumi::Collective::config().comm(dom));
         valid_allreduces_.pop();
         ++n_allreduce;
       }

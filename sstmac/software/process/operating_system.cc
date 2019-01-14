@@ -520,7 +520,7 @@ OperatingSystem::compute(Timestamp t)
   // guard the ftq tag in this function
   const auto& cur_tag = active_thread_->tag();
   FTQScope scope(active_thread_,
-      cur_tag.id() == FTQTag::null.id()?FTQTag::compute:cur_tag);
+      cur_tag.id() == FTQTag::null.id() ? FTQTag::compute:cur_tag);
 
   sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
   sendDelayedExecutionEvent(t, ev);
@@ -1012,6 +1012,9 @@ OperatingSystem::handleLibraryEvent(const std::string& name, Event* ev)
     os_debug("delivering message to lib %s:%p\n%s",
         name.c_str(), lib, sprockit::toString(ev).c_str());
     lib->incomingEvent(ev);
+  } else {
+    os_debug("unable to deliver message to lib %s\n%s",
+        name.c_str(), sprockit::toString(ev).c_str());
   }
   return found;
 }

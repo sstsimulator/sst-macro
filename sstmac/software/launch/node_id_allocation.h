@@ -54,7 +54,7 @@ namespace sw {
 class NodeIdAllocation :
   public NodeAllocator
 {
-  FactoryRegister("NodeId", NodeAllocator, NodeIdAllocation)
+  FactoryRegister("node_id", NodeAllocator, NodeIdAllocation)
 
  public:
   NodeIdAllocation(sprockit::sim_parameters* params);

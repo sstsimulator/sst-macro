@@ -72,6 +72,7 @@ EventScheduler::sendExecutionEvent(Timestamp arrival, ExecutionEvent *ev)
 {
   ev->setTime(arrival);
   ev->setSeqnum(seqnum_++);
+  ev->setLink(selfLinkId_);
   mgr_->schedule(ev);
 }
 
@@ -84,6 +85,7 @@ EventScheduler::setManager(EventManager *mgr)
 
 Timestamp EventLink::minRemoteLatency_;
 Timestamp EventLink::minThreadLatency_;
+uint32_t EventLink::linkIdCounter_{0};
 
 void
 EventScheduler::registerStat(StatCollector *coll, stat_descr_t* descr)

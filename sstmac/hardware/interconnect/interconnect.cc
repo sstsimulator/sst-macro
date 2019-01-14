@@ -466,6 +466,9 @@ Interconnect::connectSwitches(EventManager* mgr, sprockit::sim_parameters* switc
     int src_thread = partition_->threadForSwitch(i);
     topology_->connectedOutports(src, outports);
 
+    if (!all_switches_same && !all_ports_same){
+      topology_->configureIndividualPortParams(src, switch_params);
+    }
     for (Topology::connection& conn : outports){
       int dst_rank = partition_->lpidForSwitch(conn.dst);
       int dst_thread = partition_->threadForSwitch(conn.dst);

@@ -69,12 +69,12 @@ MpiApi::finishVcollectiveOp(CollectiveOpBase* op_)
   if (op->packed_recv){
     spkt_throw_printf(sprockit::unimplemented_error,
                "cannot handle non-contiguous types in collective %s",
-               collective::tostr(op->ty));
+               Collective::tostr(op->ty));
   }
   if (op->packed_send){
     spkt_throw_printf(sprockit::unimplemented_error,
                "cannot handle non-contiguous types in collective %s",
-               collective::tostr(op->ty));
+               Collective::tostr(op->ty));
   }
 }
 
@@ -100,7 +100,7 @@ MpiApi::startAllgatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Data
 
   CollectivevOp* op = new CollectivevOp(sendcount, const_cast<int*>(recvcounts),
                                           const_cast<int*>(displs), getComm(comm));
-  startMpiCollective(collective::allgatherv, sendbuf, recvbuf, sendtype, recvtype, op);
+  startMpiCollective(Collective::allgatherv, sendbuf, recvbuf, sendtype, recvtype, op);
   auto* msg = startAllgatherv(op);
   if (msg){
     op->complete = true;
@@ -178,7 +178,7 @@ MpiApi::startAlltoallv(const char* name, MPI_Comm comm,
     CollectivevOp* op = new CollectivevOp(const_cast<int*>(sendcounts), const_cast<int*>(sdispls),
                                               const_cast<int*>(recvcounts), const_cast<int*>(rdispls),
                                               getComm(comm));
-    startMpiCollective(collective::alltoallv, sendbuf, recvbuf, sendtype, recvtype, op);
+    startMpiCollective(Collective::alltoallv, sendbuf, recvbuf, sendtype, recvtype, op);
     auto* msg = startAlltoallv(op);
     if (msg){
       op->complete = true;
@@ -300,7 +300,7 @@ MpiApi::startGatherv(const char* name, MPI_Comm comm, int sendcount, MPI_Datatyp
       recvbuf = nullptr;
     }
 
-    startMpiCollective(collective::gatherv, sendbuf, recvbuf, sendtype, recvtype, op);
+    startMpiCollective(Collective::gatherv, sendbuf, recvbuf, sendtype, recvtype, op);
     auto* msg = startGatherv(op);
     if (msg){
       op->complete = true;
@@ -404,7 +404,7 @@ MpiApi::startScatterv(const char* name, MPI_Comm comm, const int *sendcounts, MP
       sendbuf = nullptr;
     }
 
-    startMpiCollective(collective::scatterv, sendbuf, recvbuf, sendtype, recvtype, op);
+    startMpiCollective(Collective::scatterv, sendbuf, recvbuf, sendtype, recvtype, op);
     auto* msg = startScatterv(op);
     if (msg){
       op->complete = true;

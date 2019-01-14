@@ -25,5 +25,5 @@ IntegrateStressForElems             =   0.00702200s
 CalcHourglassControlForElems        =   0.02755000s
 CalcVelocityForNodes                =   0.00010400s
 CalcPositionForNodes                =   0.00005400s
-Total time =   0.05145700s
+Total time =   0.05145800s
 Estimated total runtime of           0.05149279 seconds

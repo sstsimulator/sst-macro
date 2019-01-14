@@ -49,7 +49,7 @@ namespace sumi {
 
 #define enumcase(x) case x: return #x;
 const char*
-collective_work_message::tostr(int p)
+CollectiveWorkMessage::tostr(int p)
 {
   switch(p)
   {
@@ -63,7 +63,7 @@ collective_work_message::tostr(int p)
 }
 
 void
-collective_work_message::serialize_order(sstmac::serializer &ser)
+CollectiveWorkMessage::serialize_order(sstmac::serializer &ser)
 {
   ProtocolMessage::serialize_order(ser);
   //ser & action_;
@@ -74,11 +74,11 @@ collective_work_message::serialize_order(sstmac::serializer &ser)
 }
 
 std::string
-collective_work_message::toString() const
+CollectiveWorkMessage::toString() const
 {
   return sprockit::printf(
     "message for collective %s recver=%d sender=%d nbytes=%d round=%d tag=%d %s %d->%d",
-     collective::tostr(type_), recver(), sender(), payloadBytes(), round_, tag_,
+     Collective::tostr(type_), recver(), sender(), payloadBytes(), round_, tag_,
      sstmac::hw::NetworkMessage::typeStr(), toaddr(), fromaddr());
 }
 

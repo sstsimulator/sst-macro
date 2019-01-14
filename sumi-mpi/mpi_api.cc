@@ -304,7 +304,7 @@ MpiApi::finalize()
       os_->now().sec());
   }
 
-  engine_->clean_up();
+  engine_->cleanUp();
   Transport::finish();
 
 #if SSTMAC_COMM_SYNC_STATS

@@ -88,7 +88,7 @@ BtreeGathervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
 void
 BtreeGathervActor::initDag()
 {
-  int me = comm_->my_comm_rank();
+  int me = comm_->myCommRank();
   int nproc = comm_->nproc();
   int round = 0;
 

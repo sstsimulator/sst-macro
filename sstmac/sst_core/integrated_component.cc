@@ -69,7 +69,7 @@ SSTIntegratedComponent::SSTIntegratedComponent(
 }
 
 void
-SSTIntegratedComponent::init_links(sprockit::sim_parameters *params)
+SSTIntegratedComponent::initLinks(sprockit::sim_parameters *params)
 {
   //loop all the links in our map and determine what we need to do with them
   for (auto& pair : link_map_->getLinkMap()){

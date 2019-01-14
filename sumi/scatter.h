@@ -63,7 +63,7 @@ class BtreeScatterActor :
 
   BtreeScatterActor(CollectiveEngine* engine,int root, void *dst, void *src, int nelems,
                       int type_size, int tag, int cq_id, Communicator* comm)
-    : DagCollectiveActor(collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
+    : DagCollectiveActor(Collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
       root_(root), nelems_(nelems) {}
 
  protected:

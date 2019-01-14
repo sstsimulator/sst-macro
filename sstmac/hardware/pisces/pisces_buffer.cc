@@ -160,7 +160,7 @@ PiscesBuffer::handlePayload(Event* ev)
 #if SSTMAC_SANITY_CHECK
   if (dst_vc >= credits_.size()) {
     spkt_abort_printf("pisces_buffer::handlePayload: on %s, port %d, invalid vc %d",
-                     toString().c_str(), pkt->edge_outport(), dst_vc);
+                     toString().c_str(), pkt->edgeOutport(), dst_vc);
   }
 #endif
 

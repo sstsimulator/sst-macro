@@ -78,11 +78,11 @@ main(int argc, char **argv)
   int failure_num = 0;
   while (nfailed < 6){
     auto dmsg = std::dynamic_pointer_cast<CollectiveDoneMessage>(comm_poll());
-    if (dmsg->type() != collective::heartbeat){
+    if (dmsg->type() != Collective::heartbeat){
       spkt_throw_printf(sprockit::value_error,
         "got non-heartbeat message %s of type %s",
         dmsg->toString().c_str(),
-        sumi::collective::tostr(dmsg->type()));
+        sumi::Collective::tostr(dmsg->type()));
     }
 
     auto& failed = dmsg->failed_procs();
