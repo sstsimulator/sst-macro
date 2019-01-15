@@ -56,7 +56,7 @@ class RandomAllocation : public NodeAllocator
               "Allocate a random set of nodes from the list of available nodes."
               "This will give a non-contiguous allocation")
  public:
-  RandomAllocation(sprockit::sim_parameters *params);
+  RandomAllocation(sprockit::sim_parameters::ptr params);
 
   std::string toString() const override {
     return "random allocation";

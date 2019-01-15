@@ -75,16 +75,16 @@ AppLauncher::incomingEvent(Event* ev)
 
     //if necessary, bcast this to whomever else needs it
     os_->outcastAppStart(lev->tid(), lev->aid(), lev->uniqueName(),
-                         lev->mapping(), &lev->app_params());
+                         lev->mapping(), lev->appParams());
 
     SoftwareId sid(lev->aid(), lev->tid());
-    sprockit::sim_parameters* app_params = new sprockit::sim_parameters(&lev->app_params());
+    sprockit::sim_parameters::ptr app_params = lev->appParams();
 
     App::dlopenCheck(lev->aid(), app_params);
     App* theapp = App::factory::get_param("name", app_params, sid, os_);
     theapp->setUniqueName(lev->uniqueName());
     int intranode_rank = num_apps_launched_[lev->aid()]++;
-    int core_affinity = lev->core_affinity(intranode_rank);
+    int core_affinity = lev->coreAffinity(intranode_rank);
     if (core_affinity != Thread::no_core_affinity){
       theapp->setAffinity(core_affinity);
     }
@@ -112,7 +112,7 @@ LaunchEvent::cloneInjectionAck() const
 }
 
 int
-StartAppEvent::core_affinity(int intranode_rank) const
+StartAppEvent::coreAffinity(int intranode_rank) const
 {
   return Thread::no_core_affinity;
 }
@@ -126,10 +126,11 @@ StartAppEvent::serialize_order(serializer &ser)
     std::string paramStr;
     ser & paramStr;
     std::stringstream sstr(paramStr);
-    app_params_.parse_stream(sstr, false, true);
+    app_params_ = std::make_shared<sprockit::sim_parameters>();
+    app_params_->parse_stream(sstr, false, true);
   } else {
     std::stringstream sstr;
-    app_params_.reproduce_params(sstr);
+    app_params_->reproduce_params(sstr);
     std::string paramStr = sstr.str();
     ser & paramStr;
   }

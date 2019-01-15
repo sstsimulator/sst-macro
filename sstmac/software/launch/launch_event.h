@@ -123,14 +123,14 @@ class StartAppEvent :
      TaskId tid,
      NodeId to,
      NodeId from,
-     const sprockit::sim_parameters* app_params) :
+     const sprockit::sim_parameters::ptr& app_params) :
     LaunchEvent(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
     app_params_(app_params)
   {
   }
 
-  int core_affinity(int intranode_rank) const;
+  int coreAffinity(int intranode_rank) const;
 
   std::string toString() const override;
 
@@ -138,7 +138,7 @@ class StartAppEvent :
 
   void serialize_order(serializer& ser) override;
 
-  sprockit::sim_parameters& app_params() {
+  const sprockit::sim_parameters::ptr& appParams() const {
     return app_params_;
   }
 
@@ -149,7 +149,7 @@ class StartAppEvent :
  private:
   std::string unique_name_;
   TaskMapping::ptr mapping_;
-  sprockit::sim_parameters app_params_;
+  sprockit::sim_parameters::ptr app_params_;
 
 };
 

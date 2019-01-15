@@ -50,44 +50,24 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class LocationTrace :
-  public StatCollector
+class LocationTrace : public MultiStatistic<Timestamp,uint32_t,Timestamp,uint32_t>
 {
-  FactoryRegister("location_trace", StatCollector, LocationTrace)
+  using Parent = MultiStatistic<Timestamp,uint32_t,Timestamp,uint32_t>;
+  FactoryRegister("location_trace", Parent, LocationTrace)
  public:
-  LocationTrace(sprockit::sim_parameters* params) :
-    StatCollector(params)
+  LocationTrace(sprockit::sim_parameters::ptr params) :
+    Parent(params)
   {
   }
 
-  std::string toString() const override {
-    return "location trace";
-  }
-
-  void collect(Timestamp created,
-          uint32_t creator,
-          Timestamp scheduled,
-          uint32_t runner);
+  void addData_impl(Timestamp created, uint32_t creator,
+          Timestamp scheduled, uint32_t runner) override;
 
   bool read(std::istream& myfile,
        Timestamp& created,
        uint32_t& creator,
        Timestamp& scheduled,
        uint32_t& runner);
-
-  void dumpLocalData() override;
-
-  void dumpGlobalData() override;
-
-  void globalReduce(ParallelRuntime *rt) override;
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new LocationTrace(params);
-  }
-
-  void reduce(StatCollector* coll) override;
-
-  void clear() override;
 
   virtual ~LocationTrace() {}
 

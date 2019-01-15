@@ -74,7 +74,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-SoftwareLaunchRequest::SoftwareLaunchRequest(sprockit::sim_parameters *params) :
+SoftwareLaunchRequest::SoftwareLaunchRequest(sprockit::sim_parameters::ptr& params) :
   indexed_(false),
   num_finished_(0)
 {
@@ -113,7 +113,7 @@ AppLaunchRequest::~AppLaunchRequest()
 {
 }
 
-AppLaunchRequest::AppLaunchRequest(sprockit::sim_parameters* params,
+AppLaunchRequest::AppLaunchRequest(sprockit::sim_parameters::ptr& params,
                        AppId aid,
                        const std::string& app_namespace) :
   SoftwareLaunchRequest(params),
@@ -121,6 +121,9 @@ AppLaunchRequest::AppLaunchRequest(sprockit::sim_parameters* params,
   app_namespace_(app_namespace),
   app_params_(params)
 {
+  if (!app_params_){
+    spkt_abort_printf("got null app params");
+  }
 }
 
 void
@@ -182,7 +185,7 @@ SoftwareLaunchRequest::requestAllocation(
 
 void
 SoftwareLaunchRequest::parseLaunchCmd(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int& nproc,
   int& procs_per_node,
   std::vector<int>& affinities)
@@ -221,7 +224,7 @@ SoftwareLaunchRequest::parseLaunchCmd(
 }
 
 void
-SoftwareLaunchRequest::parseLaunchCmd(sprockit::sim_parameters* params)
+SoftwareLaunchRequest::parseLaunchCmd(sprockit::sim_parameters::ptr& params)
 {
   parseLaunchCmd(params, nproc_, procs_per_node_, core_affinities_);
 }

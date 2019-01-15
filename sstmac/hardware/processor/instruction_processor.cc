@@ -70,7 +70,7 @@ InstructionProcessor::~InstructionProcessor()
 }
 
 InstructionProcessor::
-InstructionProcessor(sprockit::sim_parameters* params,
+InstructionProcessor(sprockit::sim_parameters::ptr& params,
                       MemoryModel* mem, Node* nd) :
   SimpleProcessor(params, mem, nd)
 {

@@ -71,7 +71,7 @@ namespace hw {
 Interconnect* Interconnect::static_interconnect_ = nullptr;
 
 Interconnect*
-Interconnect::staticInterconnect(sprockit::sim_parameters* params, EventManager* mgr)
+Interconnect::staticInterconnect(sprockit::sim_parameters::ptr& params, EventManager* mgr)
 {
   if (!static_interconnect_){
     ParallelRuntime* rt = ParallelRuntime::staticRuntime(params);
@@ -100,7 +100,7 @@ Interconnect::~Interconnect()
 }
 #endif
 
-Interconnect::Interconnect(sprockit::sim_parameters *params, EventManager *mgr,
+Interconnect::Interconnect(sprockit::sim_parameters::ptr& params, EventManager *mgr,
                            Partition *part, ParallelRuntime *rt)
 {
   if (!static_interconnect_) static_interconnect_ = this;
@@ -119,11 +119,12 @@ Interconnect::Interconnect(sprockit::sim_parameters *params, EventManager *mgr,
   num_speedy_switches_with_extra_node_ = num_nodes_ % nproc;
   num_nodes_per_speedy_switch_ = num_nodes_ / nproc;
 
-  sprockit::sim_parameters* node_params = params->get_namespace("node");
-  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
-  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
-  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
-  sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
+  sprockit::sim_parameters::ptr empty{};
+  sprockit::sim_parameters::ptr node_params = params->get_namespace("node");
+  sprockit::sim_parameters::ptr nic_params = node_params->get_namespace("nic");
+  sprockit::sim_parameters::ptr inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters::ptr switch_params = params->get_namespace("switch");
+  sprockit::sim_parameters::ptr ej_params = switch_params->get_optional_namespace("ejection");
 
   Topology* top = topology_;
 
@@ -133,19 +134,19 @@ Interconnect::Interconnect(sprockit::sim_parameters *params, EventManager *mgr,
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
 
-  sprockit::sim_parameters logp_params;
+  sprockit::sim_parameters::ptr logp_params = std::make_shared<sprockit::sim_parameters>();
   if (logp_model){
-    switch_params->combine_into(&logp_params);
+    switch_params->combine_into(logp_params);
   } else {
     LogPParamExpander expander;
-    expander.expandInto(&logp_params, params, switch_params);
+    expander.expandInto(logp_params, params, switch_params);
   }
 
   logp_switches_.resize(rt_->nthread());
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->numNodes() + top->numSwitches();
   for (int i=0; i < rt_->nthread(); ++i){
     uint32_t id = my_offset + i;
-    logp_switches_[i] = new LogPSwitch(&logp_params, id);
+    logp_switches_[i] = new LogPSwitch(logp_params, id);
   }
 
 
@@ -164,7 +165,7 @@ Interconnect::Interconnect(sprockit::sim_parameters *params, EventManager *mgr,
   } else {
     //lookahead is actually higher
     LogPSwitch* lsw = logp_switches_[0];
-    lookahead_ = lsw->sendLatency(nullptr);
+    lookahead_ = lsw->sendLatency(empty);
   }
 
   Timestamp lookahead_check = lookahead_;
@@ -185,14 +186,14 @@ Interconnect::Interconnect(sprockit::sim_parameters *params, EventManager *mgr,
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-Interconnect::configureInterconnectLookahead(sprockit::sim_parameters* params)
+Interconnect::configureInterconnectLookahead(sprockit::sim_parameters::ptr& params)
 {
-  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
-  sprockit::sim_parameters* inj_params = params->get_namespace("node")
+  sprockit::sim_parameters::ptr switch_params = params->get_namespace("switch");
+  sprockit::sim_parameters::ptr inj_params = params->get_namespace("node")
       ->get_namespace("nic")->get_namespace("injection");
-  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+  sprockit::sim_parameters::ptr ej_params = params->get_optional_namespace("ejection");
 
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  sprockit::sim_parameters::ptr link_params = switch_params->get_namespace("link");
   Timestamp hop_latency;
   if (link_params->has_param("sendLatency")){
     hop_latency = link_params->get_time_param("sendLatency");
@@ -245,9 +246,9 @@ Interconnect::allocateIntraProcLink(Timestamp latency, EventManager* mgr, EventH
 
 void
 Interconnect::connectEndpoints(EventManager* mgr,
-                                sprockit::sim_parameters* ep_inj_params,
-                                sprockit::sim_parameters* ep_ej_params,
-                                sprockit::sim_parameters* sw_ej_params)
+                               sprockit::sim_parameters::ptr& ep_inj_params,
+                               sprockit::sim_parameters::ptr& ep_ej_params,
+                               sprockit::sim_parameters::ptr& sw_ej_params)
 {
   int num_nodes = topology_->numNodes();
   int num_switches = topology_->numSwitches();
@@ -324,10 +325,11 @@ Interconnect::setup()
 
 void
 Interconnect::connectLogP(EventManager* mgr,
-  sprockit::sim_parameters* node_params,
-  sprockit::sim_parameters* nic_params)
+  sprockit::sim_parameters::ptr& node_params,
+  sprockit::sim_parameters::ptr& nic_params)
 {
-  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters::ptr inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters::ptr empty{};
 
   int my_rank = rt_->me();
   int my_thread = mgr->thread();
@@ -351,14 +353,14 @@ Interconnect::connectLogP(EventManager* mgr,
             local_logp_switch->payloadHandler(conn.switch_port));
         nd->nic()->connectOutput(inj_params, NIC::LogP, conn.switch_port, logp_link);
 
-        EventLink* out_link = new LocalLink(local_logp_switch->sendLatency(nullptr), mgr, nd->payloadHandler(NIC::LogP));
+        EventLink* out_link = new LocalLink(local_logp_switch->sendLatency(empty), mgr, nd->payloadHandler(NIC::LogP));
         local_logp_switch->connectOutput(conn.nid, out_link);
       } else if (my_rank == target_rank){
-        EventLink* out_link = new MultithreadLink(local_logp_switch->sendLatency(nullptr),
+        EventLink* out_link = new MultithreadLink(local_logp_switch->sendLatency(empty),
             mgr, EventManager::global->threadManager(target_thread), nd->payloadHandler(NIC::LogP));
         local_logp_switch->connectOutput(conn.nid, out_link);
       } else {
-        EventLink* out_link = new IpcLink(local_logp_switch->sendLatency(nullptr), target_rank, mgr,
+        EventLink* out_link = new IpcLink(local_logp_switch->sendLatency(empty), target_rank, mgr,
                                           local_logp_switch->componentId(), nodeComponentId(conn.nid), NIC::LogP, false);
         local_logp_switch->connectOutput(conn.nid, out_link);
       }
@@ -367,8 +369,8 @@ Interconnect::connectLogP(EventManager* mgr,
 }
 
 void
-Interconnect::buildEndpoints(sprockit::sim_parameters* node_params,
-                  sprockit::sim_parameters* nic_params,
+Interconnect::buildEndpoints(sprockit::sim_parameters::ptr& node_params,
+                  sprockit::sim_parameters::ptr& nic_params,
                   EventManager* mgr)
 {
   int my_rank = rt_->me();
@@ -404,8 +406,8 @@ Interconnect::buildEndpoints(sprockit::sim_parameters* node_params,
 }
 
 void
-Interconnect::buildSwitches(sprockit::sim_parameters* switch_params,
-                             EventManager* mgr)
+Interconnect::buildSwitches(sprockit::sim_parameters::ptr& switch_params,
+                            EventManager* mgr)
 {
   bool simple_model = switch_params->get_param("name") == "simple";
   if (simple_model) return; //nothing to do
@@ -436,7 +438,7 @@ Interconnect::switchComponentId(SwitchId sid) const
 }
 
 void
-Interconnect::connectSwitches(EventManager* mgr, sprockit::sim_parameters* switch_params)
+Interconnect::connectSwitches(EventManager* mgr, sprockit::sim_parameters::ptr& switch_params)
 {
   bool simple_model = switch_params->get_param("name") == "simple";
   if (simple_model) return; //nothing to do
@@ -452,7 +454,7 @@ Interconnect::connectSwitches(EventManager* mgr, sprockit::sim_parameters* switc
   bool all_ports_same = topology_->uniformSwitchPorts();
   bool all_switches_same = topology_->uniformSwitches();
 
-  sprockit::sim_parameters* port_params;
+  sprockit::sim_parameters::ptr port_params;
   if (all_ports_same){
     port_params = switch_params->get_namespace("link");
   } else if (all_switches_same && !all_ports_same){

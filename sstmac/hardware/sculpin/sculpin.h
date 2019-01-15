@@ -63,14 +63,14 @@ namespace hw {
  same path between endpoints.  This is usually one fraction of
  a larger message.
  */
-class sculpin_packet :
+class SculpinPacket :
   public Packet,
-  public sprockit::thread_safe_new<sculpin_packet>
+  public sprockit::thread_safe_new<SculpinPacket>
 {
-  ImplementSerializable(sculpin_packet)
+  ImplementSerializable(SculpinPacket)
 
  public:
-  sculpin_packet(
+  SculpinPacket(
     Flow* msg,
     uint32_t numBytes,
     bool isTail,
@@ -78,13 +78,13 @@ class sculpin_packet :
     NodeId toaddr,
     NodeId fromaddr);
 
-  sculpin_packet(){} //for serialization
+  SculpinPacket(){} //for serialization
 
   std::string toString() const override;
 
-  virtual ~sculpin_packet() {}
+  virtual ~SculpinPacket() {}
 
-  int next_port() const {
+  int nextPort() const {
     return rtrHeader<header>()->edge_port;
   }
 
@@ -96,11 +96,11 @@ class sculpin_packet :
     arrival_ = time;
   }
 
-  Timestamp time_to_send() const {
+  Timestamp timeToSend() const {
     return time_to_send_;
   }
 
-  void setTime_to_send(Timestamp time) {
+  void setTimeToSend(Timestamp time) {
     time_to_send_ = time;
   }
 
@@ -108,7 +108,7 @@ class sculpin_packet :
     return priority_;
   }
 
-  void set_priority(int p) {
+  void setPriority(int p) {
     priority_ = p;
   }
 

@@ -359,7 +359,7 @@ stat_vtk::outputExodus(const std::string& fileroot,
 }
 
 
-stat_vtk::stat_vtk(sprockit::sim_parameters *params) :
+stat_vtk::stat_vtk(sprockit::sim_parameters::ptr params) :
   StatCollector(params), active_(true)
 {
   min_interval_ = params->get_optional_time_param("min_interval", 1e-6);

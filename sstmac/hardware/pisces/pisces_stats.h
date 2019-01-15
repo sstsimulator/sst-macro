@@ -97,7 +97,7 @@ class PacketStatsCallback
    *          attached to a packet at the end of the path
    * @param pkt
    */
-  virtual void collect_final_event(PiscesPacket* pkt);
+  virtual void collectFinalEvent(PiscesPacket* pkt);
 
   /**
    * @brief id
@@ -109,7 +109,7 @@ class PacketStatsCallback
   }
 
  protected:
-  PacketStatsCallback(sprockit::sim_parameters* params,
+  PacketStatsCallback(sprockit::sim_parameters::ptr& params,
                         EventScheduler* parent);
 
  private:
@@ -117,18 +117,18 @@ class PacketStatsCallback
 
 };
 
-class congestion_spyplot :
+class CongestionSpyplot :
  virtual public PacketStatsCallback
 {
-  FactoryRegister("congestion_spyplot", PacketStatsCallback, congestion_spyplot)
+  FactoryRegister("congestion_spyplot", PacketStatsCallback, CongestionSpyplot)
  public:
-  congestion_spyplot(sprockit::sim_parameters* params, EventScheduler* parent);
+  CongestionSpyplot(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
 
-  virtual ~congestion_spyplot();
+  virtual ~CongestionSpyplot();
 
   virtual void collectSingleEvent(const pkt_arbitration_t& st);
 
-  virtual void collect_final_event(PiscesPacket* pkt);
+  virtual void collectFinalEvent(PiscesPacket* pkt);
 
  protected:
   void collect(double delay_us, PiscesPacket* pkt);
@@ -138,16 +138,16 @@ class congestion_spyplot :
 };
 
 
-class delay_histogram :
+class DelayHistogram :
   virtual public PacketStatsCallback
 {
-  FactoryRegister("delay_histogram", PacketStatsCallback, delay_histogram)
+  FactoryRegister("delay_histogram", PacketStatsCallback, DelayHistogram)
  public:
-  delay_histogram(sprockit::sim_parameters* params, EventScheduler* parent);
+  DelayHistogram(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
 
-  virtual ~delay_histogram();
+  virtual ~DelayHistogram();
 
-  virtual void collect_final_event(PiscesPacket* pkt);
+  virtual void collectFinalEvent(PiscesPacket* pkt);
 
   virtual void collectSingleEvent(const pkt_arbitration_t& st);
 
@@ -155,12 +155,12 @@ class delay_histogram :
   StatHistogram* congestion_hist_;
 };
 
-class packet_delay_stats :
+class PacketDelayStats :
  virtual public PacketStatsCallback
 {
-  FactoryRegister("congestion_delay", PacketStatsCallback, packet_delay_stats)
+  FactoryRegister("congestion_delay", PacketStatsCallback, PacketDelayStats)
  public:
-  packet_delay_stats(sprockit::sim_parameters* params, EventScheduler* parent) :
+  PacketDelayStats(sprockit::sim_parameters::ptr& params, EventScheduler* parent) :
     PacketStatsCallback(params, parent)
   {
   }
@@ -173,39 +173,39 @@ class null_stats : public PacketStatsCallback
 {
   FactoryRegister("null", PacketStatsCallback, null_stats)
  public:
-  null_stats(sprockit::sim_parameters* params, EventScheduler* parent) :
+  null_stats(sprockit::sim_parameters::ptr& params, EventScheduler* parent) :
     PacketStatsCallback(params, parent)
   {
   }
 
   virtual void collectSingleEvent(const pkt_arbitration_t &st){}
 
-  virtual void collect_final_event(PiscesPacket *pkt){}
+  virtual void collectFinalEvent(PiscesPacket *pkt){}
 };
 
-class multi_stats : public PacketStatsCallback
+class MultiStats : public PacketStatsCallback
 {
-  FactoryRegister("multi", PacketStatsCallback, multi_stats)
+  FactoryRegister("multi", PacketStatsCallback, MultiStats)
  public:
-  multi_stats(sprockit::sim_parameters* params, EventScheduler* parent);
+  MultiStats(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
 
   void collectSingleEvent(const pkt_arbitration_t &st);
 
-  void collect_final_event(PiscesPacket *pkt);
+  void collectFinalEvent(PiscesPacket *pkt);
 
  private:
   std::vector<PacketStatsCallback*> cbacks_;
 
 };
 
-class byte_hop_collector :
+class ByteHopCollector :
  virtual public PacketStatsCallback
 {
-  FactoryRegister("byte_hops", PacketStatsCallback, byte_hop_collector)
+  FactoryRegister("byte_hops", PacketStatsCallback, ByteHopCollector)
  public:
-  byte_hop_collector(sprockit::sim_parameters* params, EventScheduler* parent);
+  ByteHopCollector(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
 
-  virtual ~byte_hop_collector();
+  virtual ~ByteHopCollector();
 
   virtual void collectSingleEvent(const pkt_arbitration_t& st);
 
@@ -213,37 +213,19 @@ class byte_hop_collector :
   StatGlobalInt* byte_hops_;
 };
 
-class StatBytesSent :
-  public StatCollector
+class StatBytesSent : public MultiStatistic<int, uint32_t>
 {
+  using Parent = MultiStatistic<int,uint32_t>;
   FRIEND_SERIALIZATION;
-  FactoryRegister("bytes_sent", StatCollector, StatBytesSent)
+  FactoryRegister("bytes_sent", Parent, StatBytesSent)
  public:
-  StatBytesSent(sprockit::sim_parameters* params);
-
-  std::string toString() const override {
-    return "stat bytes sent";
-  }
+  StatBytesSent(sprockit::sim_parameters::ptr& params);
 
   virtual ~StatBytesSent();
 
-  void record(int port, long bytes){
+  void addData_impl(int port, uint32_t bytes){
     port_map_[port] += bytes;
   }
-
-  void dumpLocalData() override;
-
-  void dumpGlobalData() override;
-
-  void globalReduce(ParallelRuntime *rt) override;
-
-  void reduce(StatCollector *coll) override;
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new StatBytesSent(params);
-  }
-
-  void clear() override {}
 
  private:
   void globalReduceNonRoot(ParallelRuntime* rt, int root, char* buffer, int buffer_size);
@@ -332,7 +314,7 @@ class BytesSentCollector :
 {
   FactoryRegister("bytes_sent", PacketStatsCallback, BytesSentCollector)
  public:
-  BytesSentCollector(sprockit::sim_parameters* params, EventScheduler* parent);
+  BytesSentCollector(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
 
   virtual ~BytesSentCollector();
 

@@ -83,7 +83,7 @@ class AbstractFatTree :
   }
 
  protected:
-  AbstractFatTree(sprockit::sim_parameters* params);
+  AbstractFatTree(sprockit::sim_parameters::ptr& params);
 
   virtual int aggSubtree(const SwitchId sid) const {
     return (sid - num_leaf_switches_) / agg_switches_per_subtree_;
@@ -93,7 +93,7 @@ class AbstractFatTree :
   virtual int upPort(int level) const = 0;
   virtual int downPort(int dst_tree) const = 0;
 
-  void writeBwParams(sprockit::sim_parameters *switch_params,
+  void writeBwParams(sprockit::sim_parameters::ptr& switch_params,
                        double multiplier) const;
 
   int num_leaf_switches_;
@@ -107,7 +107,7 @@ class AbstractFatTree :
 
  private:
   sprockit::sim_parameters*
-  override_params(sprockit::sim_parameters* params);
+  override_params(sprockit::sim_parameters::ptr& params);
 };
 
 
@@ -126,7 +126,7 @@ class FatTree :
     "Flexible fat-tree topology with 3 levels.")
 
  public:
-  FatTree(sprockit::sim_parameters* params);
+  FatTree(sprockit::sim_parameters::ptr& params);
 
   virtual std::string toString() const override {
     return "fat tree topology";
@@ -257,11 +257,11 @@ class FatTree :
 
   void configureNonuniformSwitchParams(
       SwitchId src,
-      sprockit::sim_parameters *switch_params) const override;
+      sprockit::sim_parameters::ptr& switch_params) const override;
 
   void configureIndividualPortParams(
       SwitchId src,
-      sprockit::sim_parameters *switch_params) const override { }
+      sprockit::sim_parameters::ptr& switch_params) const override { }
 
  protected:
   // used for minimal_fat_tree routing
@@ -300,7 +300,7 @@ class TaperedFatTree : public AbstractFatTree
 {
   FactoryRegister("tapered_fat_tree", Topology, TaperedFatTree)
  public:
-  TaperedFatTree(sprockit::sim_parameters* params);
+  TaperedFatTree(sprockit::sim_parameters::ptr& params);
 
   virtual std::string toString() const override {
     return "tapered fat-tree topology";
@@ -396,10 +396,10 @@ class TaperedFatTree : public AbstractFatTree
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
   void configureIndividualPortParams(SwitchId src,
-      sprockit::sim_parameters *switch_params) const override;
+      sprockit::sim_parameters::ptr& switch_params) const override;
 
   void configureNonuniformSwitchParams(SwitchId src,
-        sprockit::sim_parameters* switch_params) const override;
+        sprockit::sim_parameters::ptr& switch_params) const override;
 
  protected:
   virtual void createPartition(

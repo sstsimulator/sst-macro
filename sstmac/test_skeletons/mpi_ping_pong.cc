@@ -23,7 +23,7 @@ void ping(int rank, int src, int dst, int msize) {
 int main(int argc, char** argv)
 {
   int sizes[18] = {1,2,4,8,16,32,128,256,512,1024,2048,5096,10192,20384,40768,81536,163072,326144};
-  sprockit::sim_parameters* params = getParams();
+  sprockit::sim_parameters::ptr params = getParams();
   //params->parse_file(, false, true);
  
   std::vector<int> src;

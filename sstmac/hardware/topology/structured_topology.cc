@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-StructuredTopology::StructuredTopology(sprockit::sim_parameters* params) :
+StructuredTopology::StructuredTopology(sprockit::sim_parameters::ptr& params) :
   Topology(params)
 {
   concentration_ = params->get_optional_int_param("concentration",1);

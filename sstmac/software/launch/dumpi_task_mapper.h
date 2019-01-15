@@ -57,7 +57,7 @@ class DumpiTaskMapper : public TaskMapper
   FactoryRegister("dumpi", TaskMapper, DumpiTaskMapper,
               "indexes nodes based on hostname map file and hostname list in dumpi trace")
  public:
-  DumpiTaskMapper(sprockit::sim_parameters *params);
+  DumpiTaskMapper(sprockit::sim_parameters::ptr params);
 
   std::string toString() const override {
     return "dumpi task mapper";

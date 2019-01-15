@@ -88,7 +88,7 @@ class MpiApi : public sumi::Transport
   friend class otf2_writer;
 
  public:
-  MpiApi(sprockit::sim_parameters* params,
+  MpiApi(sprockit::sim_parameters::ptr& params,
           sstmac::sw::SoftwareId sid,
           sstmac::sw::OperatingSystem* os);
 

@@ -65,7 +65,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-CartAllocation::CartAllocation(sprockit::sim_parameters* params) :
+CartAllocation::CartAllocation(sprockit::sim_parameters::ptr& params) :
   NodeAllocator(params)
 {
   if (params->has_param("cart_sizes")){
@@ -142,7 +142,7 @@ CartAllocation::allocate(
 
   if (auto_allocate_){
     std::vector<int> coords; coords.resize(3);
-    int nx, ny, nz; gen_cart_grid(nnode, nx, ny, nz);
+    int nx, ny, nz; genCartGrid(nnode, nx, ny, nz);
     for (int x=0; x < nx; ++x){
       coords[0] = x;
       for (int y=0; y < ny; ++y){

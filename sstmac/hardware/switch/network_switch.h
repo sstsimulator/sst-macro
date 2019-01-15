@@ -102,7 +102,7 @@ class NetworkSwitch :
   virtual int queueLength(int port) const = 0;
 
  protected:
-  NetworkSwitch(sprockit::sim_parameters* params, uint32_t id);
+  NetworkSwitch(sprockit::sim_parameters::ptr& params, uint32_t id);
 
   SwitchId my_addr_;
   Topology* top_;

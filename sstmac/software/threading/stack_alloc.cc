@@ -59,7 +59,7 @@ size_t StackAlloc::stacksize_ = 0;
 bool StackAlloc::protect_stacks_ = false;
 
 void
-StackAlloc::init(sprockit::sim_parameters *params)
+StackAlloc::init(sprockit::sim_parameters::ptr& params)
 {
   if (stacksize_ != 0){
     return; //we are good

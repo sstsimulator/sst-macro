@@ -88,7 +88,7 @@ class timestamp_prefix_fxn :
   public sprockit::debug_prefix_fxn
 {
  public:
-  timestamp_prefix_fxn(sprockit::sim_parameters* params, EventManager* mgr) :
+  timestamp_prefix_fxn(sprockit::sim_parameters::ptr& params, EventManager* mgr) :
     mgr_(mgr)
   {
     units_ = params->get_optional_param("timestamp_print_units", "s");
@@ -159,7 +159,7 @@ static int recursive_count_files_from_suffix(const std::string& suffix)
 }
 
 int
-Manager::computeMaxNprocForApp(sprockit::sim_parameters* app_params)
+Manager::computeMaxNprocForApp(sprockit::sim_parameters::ptr& app_params)
 {
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
@@ -210,17 +210,17 @@ Manager::computeMaxNprocForApp(sprockit::sim_parameters* app_params)
 }
 
 int
-Manager::computeMaxNproc(sprockit::sim_parameters* params)
+Manager::computeMaxNproc(sprockit::sim_parameters::ptr& params)
 {
   int appnum = 1;
   int max_nproc = 0;
   bool found_app = true;
-  sprockit::sim_parameters* node_params = params->get_namespace("node");
+  sprockit::sim_parameters::ptr node_params = params->get_namespace("node");
   while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
     found_app = node_params->has_namespace(app_namespace);
     if (found_app){
-      sprockit::sim_parameters* app_params = node_params->get_namespace(app_namespace);
+      sprockit::sim_parameters::ptr app_params = node_params->get_namespace(app_namespace);
       int nproc = computeMaxNprocForApp(app_params);
       max_nproc = std::max(nproc, max_nproc);
     }
@@ -230,12 +230,12 @@ Manager::computeMaxNproc(sprockit::sim_parameters* params)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-manager::manager(sprockit::sim_parameters* params, parallel_runtime* rt){}
+manager::manager(sprockit::sim_parameters::ptr& params, parallel_runtime* rt){}
 #else
 //
 // Default constructor.
 //
-Manager::Manager(sprockit::sim_parameters* params, ParallelRuntime* rt) :
+Manager::Manager(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt) :
   next_ppid_(0),
   interconnect_(nullptr),
   rt_(rt)

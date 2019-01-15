@@ -56,7 +56,7 @@ RegisterKeywords(
 namespace sstmac {
   namespace hw {
 
-CartesianTopology::CartesianTopology(sprockit::sim_parameters *params) :
+CartesianTopology::CartesianTopology(sprockit::sim_parameters::ptr& params) :
   StructuredTopology(params)
 {
   params->get_vector_param("geometry", dimensions_);
@@ -83,17 +83,17 @@ CartesianTopology::CartesianTopology(sprockit::sim_parameters *params) :
 }
 
 void
-CartesianTopology::initHostnameMap(sprockit::sim_parameters* params)
+CartesianTopology::initHostnameMap(sprockit::sim_parameters::ptr& params)
 {
   if (params->has_param("hostname_map")){
-    read_coord_file(params->get_param("hostname_map"));
+    readCoordFile(params->get_param("hostname_map"));
   } else {
     Topology::initHostnameMap(params);
   }
 }
 
 void
-CartesianTopology::read_coord_file(const std::string& fname)
+CartesianTopology::readCoordFile(const std::string& fname)
 {
   std::ifstream in(fname.c_str());
 

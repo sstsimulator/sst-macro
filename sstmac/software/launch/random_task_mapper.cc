@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-RandomTaskMapper::RandomTaskMapper(sprockit::sim_parameters *params) :
+RandomTaskMapper::RandomTaskMapper(sprockit::sim_parameters::ptr& params) :
   TaskMapper(params)
 {
   if(params->has_param("random_indexer_seed")) {

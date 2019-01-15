@@ -63,19 +63,19 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-PiscesNIC::PiscesNIC(sprockit::sim_parameters* params, Node* parent) :
+PiscesNIC::PiscesNIC(sprockit::sim_parameters::ptr& params, Node* parent) :
   NIC(params, parent),
   pending_inject_(1)
 {
-  sprockit::sim_parameters* inj_params = params->get_namespace("injection");
-  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+  sprockit::sim_parameters::ptr inj_params = params->get_namespace("injection");
+  sprockit::sim_parameters::ptr ej_params = params->get_optional_namespace("ejection");
 
   self_mtl_link_ = allocateSubLink(Timestamp(), parent,
                                     newHandler(this, &NIC::mtlHandle));
 
   //make port 0 a copy of the injection params
   //this looks pointless, but is needed for integrated core (I think)
-  sprockit::sim_parameters* port0_params = params->get_optional_namespace("port0");
+  sprockit::sim_parameters::ptr port0_params = params->get_optional_namespace("port0");
   inj_params->combine_into(port0_params);
 
   PiscesSender::configurePayloadPortLatency(inj_params);
@@ -93,13 +93,13 @@ PiscesNIC::PiscesNIC(sprockit::sim_parameters* params, Node* parent) :
 }
 
 Timestamp
-PiscesNIC::sendLatency(sprockit::sim_parameters *params) const
+PiscesNIC::sendLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("injection")->get_time_param("latency");
 }
 
 Timestamp
-PiscesNIC::creditLatency(sprockit::sim_parameters *params) const
+PiscesNIC::creditLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("injection")->get_time_param("latency");
 }
@@ -142,7 +142,7 @@ PiscesNIC::creditHandler(int port)
 
 void
 PiscesNIC::connectOutput(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -158,7 +158,7 @@ PiscesNIC::connectOutput(
 
 void
 PiscesNIC::connectInput(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -217,7 +217,7 @@ PiscesNIC::doSend(NetworkMessage* netmsg)
 void
 PiscesNIC::packetArrived(PiscesPacket* pkt)
 {
-  ej_stats_->collect_final_event(pkt);
+  ej_stats_->collectFinalEvent(pkt);
   auto* msg = completion_queue_.recv(pkt);
   if (msg){
     recvMessage(static_cast<NetworkMessage*>(msg));

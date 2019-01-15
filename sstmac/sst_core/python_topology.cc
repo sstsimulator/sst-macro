@@ -53,7 +53,7 @@ extern "C" {
 typedef struct {
     PyObject_HEAD
     sstmac::hw::Topology* macro_topology;
-    sprockit::sim_parameters* params;
+    sprockit::sim_parameters::ptr& params;
 } SystemPy_t;
 
 } // end extern "C"

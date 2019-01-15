@@ -132,24 +132,24 @@ class DeleteThreadEvent :
   Thread* thr_;
 };
 
-struct null_ImplicitState : public OperatingSystem::ImplicitState
+struct NullImplicitState : public OperatingSystem::ImplicitState
 {
-  FactoryRegister("null", OperatingSystem::ImplicitState, null_ImplicitState)
+  FactoryRegister("null", OperatingSystem::ImplicitState, NullImplicitState)
 
-  null_ImplicitState(sprockit::sim_parameters* params) :
+  NullImplicitState(sprockit::sim_parameters::ptr& params) :
     OperatingSystem::ImplicitState(params){}
 
-  void set_state(int type, int value) override {}
-  void unset_state(int type) override {}
+  void setState(int type, int value) override {}
+  void unsetState(int type) override {}
 };
 
-struct null_regression : public OperatingSystem::ThreadSafeTimerModel<double>
+struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
 {
-  FactoryRegister("null", OperatingSystem::RegressionModel, null_regression)
+  FactoryRegister("null", OperatingSystem::RegressionModel, NullRegression)
 
   using parent = OperatingSystem::ThreadSafeTimerModel<double>;
 
-  null_regression(sprockit::sim_parameters* params,
+  NullRegression(sprockit::sim_parameters::ptr& params,
                   const std::string& key)
     : parent(params, key), computed_(false) {}
 
@@ -157,12 +157,12 @@ struct null_regression : public OperatingSystem::ThreadSafeTimerModel<double>
                  OperatingSystem::ImplicitState* state) override {
     if (!computed_){
       computed_ = true;
-      compute_mean();
+      computeMean();
     }
     return mean_;
   }
 
-  int StartCollection() override {
+  int startCollection() override {
     return parent::start();
   }
 
@@ -171,6 +171,7 @@ struct null_regression : public OperatingSystem::ThreadSafeTimerModel<double>
     parent::finish(thr_tag);
   }
 
+  /**
   void finalize(sstmac::Timestamp t) override {
     compute_mean();
     std::string file = key() + ".memo";
@@ -179,27 +180,10 @@ struct null_regression : public OperatingSystem::ThreadSafeTimerModel<double>
         << "\n" << mean_;
     ofs.close();
   }
-
-  void dumpGlobalData() override {}
-
-  void dumpLocalData() override {}
-
-  std::string toString() const override {
-    return "mean";
-  }
-
-  void clear() override {}
-
-  void reduce(StatCollector* coll) override {}
-
-  void globalReduce(sstmac::ParallelRuntime* rt) override {}
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new null_regression(params, key());
-  }
+  */
 
  private:
-  void compute_mean(){
+  void computeMean(){
     double total = 0;
     for (double d : samples_){
       total += d;
@@ -212,11 +196,11 @@ struct null_regression : public OperatingSystem::ThreadSafeTimerModel<double>
 
 };
 
-struct linear_regression : public OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>
+struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>
 {
-  FactoryRegister("linear", OperatingSystem::RegressionModel, linear_regression)
+  FactoryRegister("linear", OperatingSystem::RegressionModel, LinearRegression)
   using parent = OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>;
-  linear_regression(sprockit::sim_parameters* params,
+  LinearRegression(sprockit::sim_parameters::ptr& params,
                     const std::string& key)
     : parent(params, key), computed_(false) {}
 
@@ -226,7 +210,7 @@ struct linear_regression : public OperatingSystem::ThreadSafeTimerModel<std::pai
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
     if (!computed_){
-      compute_regression();
+      computeRegression();
       computed_ = true;
     }
     double val = m_*params[0] + b_;
@@ -234,38 +218,21 @@ struct linear_regression : public OperatingSystem::ThreadSafeTimerModel<std::pai
     return val;
   }
 
-  int StartCollection() override {
+  int startCollection() override {
     return parent::start();
   }
 
-  void dumpGlobalData() override {}
-
-  void dumpLocalData() override {}
-
-  std::string toString() const override {
-    return "linear";
-  }
-
-  void clear() override {}
-
-  void reduce(StatCollector* coll) override {}
-
-  void globalReduce(sstmac::ParallelRuntime* rt) override {}
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new null_regression(params, key());
-  }
-
   void finishCollection(int thr_tag, int n_params, const double params[],
-                         OperatingSystem::ImplicitState* state) override {
+                        OperatingSystem::ImplicitState* state) override {
     if (n_params != 1){
       spkt_abort_printf("linear regression can only take one parameter - got %d", n_params);
     }
     parent::finish(thr_tag, params[0]);
   }
 
+  /**
   void finalize(sstmac::Timestamp t) override {
-    compute_regression();
+    computeRegression();
     std::string file = key() + ".memo";
     std::ofstream ofs(file);
     ofs << key()
@@ -273,9 +240,10 @@ struct linear_regression : public OperatingSystem::ThreadSafeTimerModel<std::pai
         << "\n" << b_;
     ofs.close();
   }
+  */
 
  private:
-  void compute_regression(){
+  void computeRegression(){
     double meanX = 0;
     double meanY = 0;
     for (auto& pair : samples_){
@@ -321,7 +289,7 @@ bool OperatingSystem::gdb_active_ = false;
 std::map<std::string,OperatingSystem::RegressionModel*> OperatingSystem::memoize_models_;
 std::map<std::string,std::string>* OperatingSystem::memoize_init_ = nullptr;
 
-OperatingSystem::OperatingSystem(sprockit::sim_parameters* params, hw::Node* parent) :
+OperatingSystem::OperatingSystem(sprockit::sim_parameters::ptr& params, hw::Node* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
   nthread_(1),
   thread_id_(0),
@@ -339,6 +307,9 @@ OperatingSystem::OperatingSystem(sprockit::sim_parameters* params, hw::Node* par
   SubComponent(parent),
   params_(params)
 {
+  if (!params_){
+    spkt_abort_printf("OS got null params");
+  }
   my_addr_ = node_ ? node_->addr() : 0;
 
   compute_sched_ = ComputeScheduler::factory::get_optional_param(
@@ -358,13 +329,13 @@ OperatingSystem::OperatingSystem(sprockit::sim_parameters* params, hw::Node* par
   }
 #endif
 
-  ftq_trace_ = optionalStats<FTQCalendar>(parent, params, "ftq", "ftq");
+  //ftq_trace_ = optionalStats<FTQCalendar>(parent, params, "ftq", "ftq");
 
   StackAlloc::init(params);
 
   rebuildMemoizations();
 
-  sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
+  sprockit::sim_parameters::ptr env_params = params->get_optional_namespace("env");
   for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
     env_[iter->first] = iter->second.value;
   }
@@ -379,11 +350,11 @@ OperatingSystem::rebuildMemoizations()
     auto iter = memoize_models_.find(pair.first);
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (iter == memoize_models_.end()){
-      sprockit::sim_parameters* memo_params = params_->get_optional_namespace(pair.first);
+      sprockit::sim_parameters::ptr memo_params = params_->get_optional_namespace(pair.first);
       memo_params->add_param_override("fileroot", pair.first);
       auto* model = RegressionModel::factory::get_value(pair.second, memo_params, pair.first);
       memoize_models_[pair.first] = model;
-      EventManager::global->registerStat(model, nullptr);
+      //EventManager::global->registerStat(model, nullptr);
     }
 #else
     spkt_abort_printf("do not yet support memoization in integrated core - failed memoizing %s",
@@ -453,7 +424,7 @@ OperatingSystem::~OperatingSystem()
 }
 
 void
-OperatingSystem::initThreading(sprockit::sim_parameters* params)
+OperatingSystem::initThreading(sprockit::sim_parameters::ptr& params)
 {
   if (des_context_){
     return; //already done
@@ -632,7 +603,7 @@ OperatingSystem::startMemoize(const char *token, const char* model_name)
   }
 
   RegressionModel* model = iter->second;
-  return model->StartCollection();
+  return model->startCollection();
 }
 
 static thread_local sstmac::sw::OperatingSystem::ImplicitState* implicit_memo_state_ = nullptr;
@@ -719,12 +690,12 @@ OperatingSystem::block()
   Timestamp elapsed = after - before;
 
   if (callGraph_ && callGraph_active_) {
-    callGraph_->countTrace(elapsed.ticks(), active_thread_);
+    callGraph_->addData(elapsed.ticks(), active_thread_);
   }
 
   if (ftq_trace_){
     FTQTag tag = active_thread_->tag();
-    ftq_trace_->collect(tag.id(),
+    ftq_trace_->addData(tag.id(),
       active_thread_->aid(), active_thread_->tid(),
       before.ticks(), elapsed.ticks());
     active_thread_->setTag(FTQTag::null);
@@ -868,8 +839,9 @@ OperatingSystem::lib(const std::string& name) const
 
 void
 OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns,
-                                  TaskMapping::ptr mapping,  sprockit::sim_parameters* app_params,
-                                  bool include_root)
+                                 TaskMapping::ptr mapping,
+                                 const sprockit::sim_parameters::ptr& app_params,
+                                 bool include_root)
 {
   int num_ranks = mapping->numRanks();
   //job launcher needs to add this - might need it later
@@ -882,6 +854,10 @@ OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns
     ranks[0] = my_rank;
   } else {
     num_to_send = iter.forward_to(ranks);
+  }
+
+  if (!app_params){
+    spkt_abort_printf("got null app params");
   }
 
   for (int r=0; r < num_to_send; ++r){
@@ -988,6 +964,10 @@ OperatingSystem::startThread(Thread* t)
 void
 OperatingSystem::startApp(App* theapp, const std::string& unique_name)
 {
+  if (!params_){
+    spkt_abort_printf("got null params in OperatinSystem::startApp");
+  }
+
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), threadId());
   //this should be called from the actual thread running it

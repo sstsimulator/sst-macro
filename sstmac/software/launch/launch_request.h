@@ -72,7 +72,7 @@ class SoftwareLaunchRequest
 {
 
  public:
-  SoftwareLaunchRequest(sprockit::sim_parameters* params);
+  SoftwareLaunchRequest(sprockit::sim_parameters::ptr& params);
 
   virtual ~SoftwareLaunchRequest();
 
@@ -118,7 +118,7 @@ class SoftwareLaunchRequest
               std::vector<int>& coreAffinities);
 
   static void parseLaunchCmd(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int& nproc,
     int& procs_per_node,
     std::vector<int>& affinities);
@@ -143,7 +143,7 @@ class SoftwareLaunchRequest
 
   int num_finished_;
 
-  void parseLaunchCmd(sprockit::sim_parameters* params);
+  void parseLaunchCmd(sprockit::sim_parameters::ptr& params);
 
  private:
   void initLaunchInfo();
@@ -153,7 +153,7 @@ class SoftwareLaunchRequest
 class AppLaunchRequest : public SoftwareLaunchRequest
 {
  public:
-  AppLaunchRequest(sprockit::sim_parameters* params,
+  AppLaunchRequest(sprockit::sim_parameters::ptr& params,
              AppId aid,
              const std::string& appNamespace);
 
@@ -163,7 +163,7 @@ class AppLaunchRequest : public SoftwareLaunchRequest
     return app_namespace_;
   }
 
-  sprockit::sim_parameters* appParams() const {
+  const sprockit::sim_parameters::ptr& appParams() const {
     return app_params_;
   }
 
@@ -176,7 +176,7 @@ class AppLaunchRequest : public SoftwareLaunchRequest
 
   std::string app_namespace_;
 
-  sprockit::sim_parameters* app_params_;
+  sprockit::sim_parameters::ptr app_params_;
 
 };
 

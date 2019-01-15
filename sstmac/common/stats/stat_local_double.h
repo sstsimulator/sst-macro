@@ -54,26 +54,12 @@ namespace sstmac
 class StatLocalDouble :
   public StatValue<double>
 {
-  FactoryRegister("local_double", StatCollector, StatLocalDouble)
+  FactoryRegister("local_double", Statistic<double>, StatLocalDouble)
  public:
-  StatLocalDouble(sprockit::sim_parameters* params);
+  StatLocalDouble(sprockit::sim_parameters::ptr& params);
 
-  std::string toString() const override {
-    return "stat local double";
-  }
-
-  void dumpLocalData() override;
-
-  void dumpGlobalData() override;
-
-  void globalReduce(ParallelRuntime *rt) override;
-
-  void clear() override;
-
-  void reduce(StatCollector *coll) override;
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new StatLocalDouble(params);
+  void addData_impl(double val){
+    values_.push_back(val);
   }
 
  protected:

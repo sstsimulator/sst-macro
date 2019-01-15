@@ -60,7 +60,7 @@ namespace sstmac {
 class dummy_runtime : public ParallelRuntime
 {
  public:
-  dummy_runtime(sprockit::sim_parameters* params,
+  dummy_runtime(sprockit::sim_parameters::ptr& params,
                    int me, int nproc, int nthread) :
     ParallelRuntime(params, me, nproc)
   {
@@ -138,7 +138,7 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
   //I need to figure out the topology
   ConfigComponent& front = *compMap.begin();
 
-  sprockit::sim_parameters* params = make_spkt_params_from_sst_params(front.params);
+  sprockit::sim_parameters::ptr& params = make_spkt_params_from_sst_params(front.params);
   if (params->has_namespace("interconnect")){
     params->get_namespace("interconnect")
         ->get_namespace("topology")->combine_into(top_subparams);

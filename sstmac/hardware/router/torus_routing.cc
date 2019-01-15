@@ -67,7 +67,7 @@ class TorusMinimalRouter : public Router {
   FactoryRegister("torus_minimal", Router, TorusMinimalRouter,
               "a routing algorithm for minimal routing on the torus")
 
-  TorusMinimalRouter(sprockit::sim_parameters* params,
+  TorusMinimalRouter(sprockit::sim_parameters::ptr& params,
                      Topology* top, NetworkSwitch* netsw)
     : Router(params, top, netsw)
   {
@@ -173,7 +173,7 @@ class TorusValiantRouter : public TorusMinimalRouter {
               Router, TorusValiantRouter,
               "router implementing valint routing for torus")
 
-  TorusValiantRouter(sprockit::sim_parameters* params, Topology *top,
+  TorusValiantRouter(sprockit::sim_parameters::ptr& params, Topology *top,
                            NetworkSwitch *netsw)
     : TorusMinimalRouter(params, top, netsw)
   {
@@ -255,7 +255,7 @@ class TorusUGALRouter : public TorusValiantRouter {
               Router, TorusUGALRouter,
               "router implementing valint routing for torus")
 
-  TorusUGALRouter(sprockit::sim_parameters* params, Topology *top,
+  TorusUGALRouter(sprockit::sim_parameters::ptr& params, Topology *top,
                            NetworkSwitch *netsw)
     : TorusValiantRouter(params, top, netsw)
   {

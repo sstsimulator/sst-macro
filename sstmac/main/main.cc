@@ -124,10 +124,10 @@ main(int argc, char **argv)
 
   int rc;
   try {
-    sprockit::sim_parameters params;
-    params.set_public_scope(false); //do not expose top-level params to subspaces
+    sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
+    params->set_public_scope(false); //do not expose top-level params to subspaces
     bool params_only = false;
-    rc = sstmac::tryMain(&params, argc, argv, params_only);
+    rc = sstmac::tryMain(params, argc, argv, params_only);
   } catch (const std::exception &e) {
     std::cout.flush();
     std::cerr.flush();

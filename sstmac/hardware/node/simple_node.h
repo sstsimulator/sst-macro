@@ -65,7 +65,7 @@ class SimpleNode :
 
 
  public:
-  SimpleNode(sprockit::sim_parameters* params, uint32_t id);
+  SimpleNode(sprockit::sim_parameters::ptr& params, uint32_t id);
 
   virtual ~SimpleNode();
 

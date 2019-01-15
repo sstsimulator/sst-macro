@@ -79,7 +79,7 @@ namespace hw {
 
 using namespace sstmac::sw;
 
-Node::Node(sprockit::sim_parameters* params, uint32_t id)
+Node::Node(sprockit::sim_parameters::ptr& params, uint32_t id)
   : ConnectableComponent(params, id),
   params_(params),
   app_refcount_(0),
@@ -99,22 +99,22 @@ Node::Node(sprockit::sim_parameters* params, uint32_t id)
   my_addr_ = params->get_int_param("id");
   next_outgoing_id_.setSrcNode(my_addr_);
 
-  sprockit::sim_parameters* nic_params = params->get_namespace("nic");
+  sprockit::sim_parameters::ptr nic_params = params->get_namespace("nic");
   nic_params->add_param_override("id", int(my_addr_));
   nic_ = NIC::factory::get_param("name", nic_params, this);
   nic_params->remove_param("id");
 
-  sprockit::sim_parameters* mem_params = params->get_optional_namespace("memory");
+  sprockit::sim_parameters::ptr mem_params = params->get_optional_namespace("memory");
   mem_model_ = MemoryModel::factory::get_optional_param("name", "logp", mem_params, this);
 
-  sprockit::sim_parameters* proc_params = params->get_optional_namespace("proc");
+  sprockit::sim_parameters::ptr proc_params = params->get_optional_namespace("proc");
   proc_ = Processor::factory::get_optional_param("processor", "instruction",
           proc_params,
           mem_model_, this);
 
   nsocket_ = params->get_optional_int_param("nsockets", 1);
 
-  sprockit::sim_parameters* os_params = params->get_optional_namespace("os");
+  sprockit::sim_parameters::ptr os_params = params->get_optional_namespace("os");
   os_ = new sw::OperatingSystem(os_params, this);
 
   app_launcher_ = new AppLauncher(os_);
@@ -172,7 +172,7 @@ Node::~Node()
 }
 
 void
-Node::connectOutput(sprockit::sim_parameters* params,
+Node::connectOutput(sprockit::sim_parameters::ptr& params,
   int src_outport, int dst_inport,
   EventLink* link)
 {
@@ -181,7 +181,7 @@ Node::connectOutput(sprockit::sim_parameters* params,
 }
 
 void
-Node::connectInput(sprockit::sim_parameters* params,
+Node::connectInput(sprockit::sim_parameters::ptr& params,
   int src_outport, int dst_inport,
   EventLink* link)
 {
@@ -190,15 +190,17 @@ Node::connectInput(sprockit::sim_parameters* params,
 }
 
 Timestamp
-Node::sendLatency(sprockit::sim_parameters *params) const
+Node::sendLatency(sprockit::sim_parameters::ptr& params) const
 {
-  return nic_->sendLatency(params->get_namespace("nic"));
+  auto nic_params = params->get_namespace("nic");
+  return nic_->sendLatency(nic_params);
 }
 
 Timestamp
-Node::creditLatency(sprockit::sim_parameters *params) const
+Node::creditLatency(sprockit::sim_parameters::ptr& params) const
 {
-  return nic_->creditLatency(params->get_namespace("nic"));
+  auto nic_params = params->get_namespace("nic");
+  return nic_->creditLatency(nic_params);
 }
 
 void

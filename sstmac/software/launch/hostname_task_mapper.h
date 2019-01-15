@@ -56,7 +56,7 @@ class HostnameTaskMapper : public TaskMapper
   FactoryRegister("hostname", TaskMapper, HostnameTaskMapper,
               "assigns tasks to nodes based on hostname map of topology and hostname list in file")
  public:
-  HostnameTaskMapper(sprockit::sim_parameters *params);
+  HostnameTaskMapper(sprockit::sim_parameters::ptr params);
 
   std::string toString() const override {
     return "hostname task mapper";

@@ -80,19 +80,19 @@ extern "C" int
 sstmac_uq_sim_nproc(void* queue)
 {
   SimulationQueue* q = (SimulationQueue*) queue;
-  sprockit::sim_parameters* src_params = q->template_params();
-  sprockit::sim_parameters* src_app_params = src_params->get_optional_namespace("app1");
-  sprockit::sim_parameters params;
-  src_app_params->combine_into(&params);
+  sprockit::sim_parameters::ptr src_params = q->template_params();
+  sprockit::sim_parameters::ptr src_app_params = src_params->get_optional_namespace("app1");
+  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
+  src_app_params->combine_into(params);
   if (src_params->has_param("launch_cmd_app1")){
-    params["launch_cmd"] = src_params->get_param("launch_cmd_app1");
+    (*params)["launch_cmd"] = src_params->get_param("launch_cmd_app1");
   } 
   if (src_params->has_param("launch_app1_size")){
-    params["size"] = src_params->get_param("launch_app1_size");
+    (*params)["size"] = src_params->get_param("launch_app1_size");
   }
   int nproc, procs_per_node;
   std::vector<int> affinities;
-  sstmac::sw::AppLaunchRequest::parseLaunchCmd(&params, nproc, procs_per_node, affinities);
+  sstmac::sw::AppLaunchRequest::parseLaunchCmd(params, nproc, procs_per_node, affinities);
   return nproc;
 }
 
@@ -204,27 +204,27 @@ wait_sims(Simulation** sims, int nsims, double** results, int nresults, uq_spawn
 }
 
 static const std::string&
-set_param(sprockit::sim_parameters& params, const char* name, uq_param_t& p)
+set_param(sprockit::sim_parameters::ptr& params, const char* name, uq_param_t& p)
 {
   switch(p.type){
    case ByteLength:
-    return params[name].setByteLength(p.value, p.units);
+    return (*params)[name].setByteLength(p.value, p.units);
     break;
    case Bandwidth:
-    return params[name].setBandwidth(p.value, p.units);
+    return (*params)[name].setBandwidth(p.value, p.units);
     break;
    case Frequency:
-    return params[name].setFrequency(p.value, p.units);
+    return (*params)[name].setFrequency(p.value, p.units);
     break;
    case Latency:
    case Time:
-    return params[name].setTime(p.value, p.units);
+    return (*params)[name].setTime(p.value, p.units);
     break;
    case String:
-    return params[name].set(p.cstr);
+    return (*params)[name].set(p.cstr);
     break;
    case ValueWithUnits:
-    return params[name].setValue(p.value, p.units);
+    return (*params)[name].setValue(p.value, p.units);
     break;
    default: {
     spkt_abort_printf("invalid paramter type - make sure param.type is initialized");
@@ -255,7 +255,7 @@ sstmac_uq_run_units(void* queue,
 
 static Simulation*
 send_scan_point(SimulationQueue* q,
-  sprockit::sim_parameters& params,
+  sprockit::sim_parameters::ptr& params,
   char* bufferPtr,
   int nparams,
   double* resultPtr,
@@ -317,7 +317,7 @@ sstmac_uq_run(void* queue,
 
   q->buildUp();
 
-  sprockit::sim_parameters params;
+  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
 
 
   for (int j=0; j < njobs; ++j){

@@ -55,88 +55,19 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 void
-StatSpyplot::add_one(int source, int dest)
+StatSpyplot::addOne(int source, int dest)
 {
-  add(source, dest, 1);
+  addData(source, dest, 1);
 }
 
 void
-StatSpyplot::add(int source, int dest, long num)
+StatSpyplot::addData_impl(int source, int dest, uint64_t num)
 {
   vals_[source][dest] += num;
   max_dest_ = std::max(max_dest_, dest);
 }
 
-void
-StatSpyplot::reduce(StatCollector* coll)
-{
-  StatSpyplot* other = safe_cast(StatSpyplot, coll);
-  for (auto& map_pair : other->vals_){
-    int source = map_pair.first;
-    auto& my_map = vals_[source];
-    for (auto& val_pair : map_pair.second){
-      int dest = val_pair.first;
-      auto count = val_pair.second;
-      max_dest_ = std::max(max_dest_, dest);
-      my_map[dest] += count;
-    }
-  }
-}
-
-void
-StatSpyplot::globalReduce(ParallelRuntime* rt)
-{
-  if (rt->nproc() == 1)
-    return;
-
-  int num_rows = max_dest_ + 1;
-  num_rows = rt->globalMax(num_rows);
-  int num_vals = num_rows * num_rows;
-  uint64_t* vals = new uint64_t[num_vals];
-  ::memset(vals, 0, num_vals*sizeof(uint64_t));
-
-  for (auto& map_pair : vals_){
-    int source = map_pair.first;
-    for (auto& val_pair : map_pair.second){
-      int dest = val_pair.first;
-      auto idx = source * num_rows + dest;
-      auto count = val_pair.second;
-      vals[idx] = count;
-    }
-  }
-
-  int root = 0;
-  rt->globalSum(vals, num_vals, root);
-
-  uint64_t* bufptr = vals;
-  for (int i=0; i < num_rows; ++i){
-    auto& my_map = vals_[i];
-    for (int j=0; j < num_rows; ++j, ++bufptr){
-      my_map[j] = *bufptr;
-    }
-  }
-
-  delete[] vals;
-}
-
-void
-StatSpyplot::clear()
-{
-  vals_.clear();
-}
-
-void
-StatSpyplot::dumpLocalData()
-{
-  sprockit::abort("stat_spyplot::dump_local_data: not implemented");
-}
-
-void
-StatSpyplot::dumpGlobalData()
-{
-  dumpToFile(fileroot_);
-}
-
+/**
 void
 StatSpyplot::dumpToFile(const std::string& froot)
 {
@@ -169,6 +100,7 @@ StatSpyplot::dumpToFile(const std::string& froot)
     myfile.close();
   }
 }
+*/
 
 
 } //end namespace

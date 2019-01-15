@@ -53,13 +53,13 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-LibComputeMemmove::LibComputeMemmove(sprockit::sim_parameters* params,
+LibComputeMemmove::LibComputeMemmove(sprockit::sim_parameters::ptr& params,
                                      SoftwareId id, OperatingSystem* os) :
   LibComputeMemmove(params, "libmemmove", id, os)
 {
 }
 
-LibComputeMemmove::LibComputeMemmove(sprockit::sim_parameters* params,
+LibComputeMemmove::LibComputeMemmove(sprockit::sim_parameters::ptr& params,
                                      const char* prefix, SoftwareId sid,
                                      OperatingSystem* os) :
   LibComputeInst(params, prefix, sid, os)

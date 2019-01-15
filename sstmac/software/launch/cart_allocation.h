@@ -60,7 +60,7 @@ class CartAllocation :
               "This is meant mostly for torus topologies, "
               "but is also meaningful for dragonfly, cascade, and hypercube")
  public:
-  CartAllocation(sprockit::sim_parameters* params);
+  CartAllocation(sprockit::sim_parameters::ptr& params);
 
   virtual ~CartAllocation() throw () {}
 

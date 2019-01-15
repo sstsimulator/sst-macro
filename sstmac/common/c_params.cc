@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 
-static inline sprockit::sim_parameters* get_local_params() {
+static inline sprockit::sim_parameters::ptr get_local_params() {
   return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }
 

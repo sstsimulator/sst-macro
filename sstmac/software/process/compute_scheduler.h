@@ -62,7 +62,7 @@ class ComputeScheduler
 {
   DeclareFactory(ComputeScheduler, sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
  public:
-  ComputeScheduler(sprockit::sim_parameters* params, sw::OperatingSystem* os,
+  ComputeScheduler(sprockit::sim_parameters::ptr& params, sw::OperatingSystem* os,
                     int ncores, int nsockets) :
     os_(os), ncores_(ncores), nsocket_(nsockets)
   {

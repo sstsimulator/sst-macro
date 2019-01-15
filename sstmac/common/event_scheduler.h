@@ -200,7 +200,6 @@ class EventScheduler : public sprockit::printable
     return time_converter_;
   }
 #else
-  void registerStat(StatCollector* coll, stat_descr_t* descr);
 
   const Timestamp* nowPtr() const {
     return now_;
@@ -266,13 +265,13 @@ class Component :
   virtual void init(unsigned int phase); //needed for SST core compatibility
 
  protected:
-  Component(sprockit::sim_parameters* params, uint32_t cid) :
+  Component(sprockit::sim_parameters::ptr& params, uint32_t cid) :
    EventScheduler(cid)
   {
   }
 
 #if !ACTUAL_INTEGRATED_SST_CORE
-  void initLinks(sprockit::sim_parameters* params){} //need for SST core compatibility
+  void initLinks(sprockit::sim_parameters::ptr& params){} //need for SST core compatibility
 #endif
 
 };

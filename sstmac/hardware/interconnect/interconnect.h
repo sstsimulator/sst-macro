@@ -78,7 +78,7 @@ class Interconnect
   DeclareFactory(Interconnect, EventManager*, Partition*, ParallelRuntime*)
   FactoryRegister("switch | simple", Interconnect, Interconnect)
  public:
-  static Interconnect* staticInterconnect(sprockit::sim_parameters* params, EventManager* mgr);
+  static Interconnect* staticInterconnect(sprockit::sim_parameters::ptr& params, EventManager* mgr);
 
   /**
    * @brief static_interconnect Must already exist
@@ -91,7 +91,7 @@ class Interconnect
     static_interconnect_ = nullptr;
   }
 
-  Interconnect(sprockit::sim_parameters* params, EventManager* mgr,
+  Interconnect(sprockit::sim_parameters::ptr& params, EventManager* mgr,
                     Partition* part, ParallelRuntime* rt);
 
   int numNodes() const {
@@ -172,24 +172,24 @@ class Interconnect
   uint32_t logpComponentId(SwitchId sid) const;
 
   void connectLogP(EventManager* mgr,
-        sprockit::sim_parameters* node_params,
-        sprockit::sim_parameters* nic_params);
+        sprockit::sim_parameters::ptr& node_params,
+        sprockit::sim_parameters::ptr& nic_params);
 
-  void connectSwitches(EventManager* mgr, sprockit::sim_parameters* switch_params);
+  void connectSwitches(EventManager* mgr, sprockit::sim_parameters::ptr& switch_params);
 
-  void configureInterconnectLookahead(sprockit::sim_parameters* params);
+  void configureInterconnectLookahead(sprockit::sim_parameters::ptr& params);
 
-  void buildEndpoints(sprockit::sim_parameters* node_params,
-                    sprockit::sim_parameters* nic_params,
+  void buildEndpoints(sprockit::sim_parameters::ptr& node_params,
+                    sprockit::sim_parameters::ptr& nic_params,
                     EventManager* mgr);
 
-  void buildSwitches(sprockit::sim_parameters* switch_params,
+  void buildSwitches(sprockit::sim_parameters::ptr& switch_params,
                       EventManager* mgr);
 
   void connectEndpoints(EventManager* mgr,
-                  sprockit::sim_parameters* ep_inj_params,
-                  sprockit::sim_parameters* ep_ej_params,
-                  sprockit::sim_parameters* sw_ej_params);
+                  sprockit::sim_parameters::ptr& ep_inj_params,
+                  sprockit::sim_parameters::ptr& ep_ej_params,
+                  sprockit::sim_parameters::ptr& sw_ej_params);
 
 
   switch_map switches_;

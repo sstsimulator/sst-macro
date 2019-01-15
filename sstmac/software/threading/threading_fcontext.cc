@@ -48,11 +48,11 @@ class ThreadingFContext : public ThreadContext
 
   virtual ~ThreadingFContext() {}
 
-  ThreadingFContext(sprockit::sim_parameters* params){}
+  ThreadingFContext(sprockit::sim_parameters::ptr& params){}
 
   ThreadContext* copy() const override {
     //parameters never actually used
-    return new ThreadingFContext(nullptr);
+    return new ThreadingFContext;
   }
 
   void initContext() override {}
@@ -89,6 +89,8 @@ class ThreadingFContext : public ThreadContext
   }
 
  private:
+  ThreadingFContext(){}
+
   fcontext_t ctx_;
   void* args_;
   void (*fxn_)(void*);

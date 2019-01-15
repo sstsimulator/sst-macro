@@ -60,7 +60,7 @@ class NoiseModel
   virtual double value() = 0;
 
  protected:
-  NoiseModel(sprockit::sim_parameters* params){}
+  NoiseModel(sprockit::sim_parameters::ptr& params){}
   NoiseModel(){}
 
 };
@@ -78,7 +78,7 @@ class GaussianNoiseModel :
     double maxz,
     int seed);
 
-  GaussianNoiseModel(sprockit::sim_parameters* params);
+  GaussianNoiseModel(sprockit::sim_parameters::ptr& params);
 
   ~GaussianNoiseModel();
 

@@ -223,7 +223,7 @@ namespace lblxml {
     sstmac::StatLocalDouble* idle_time_;
     sstmac::StatLocalDouble* barrier_time_;
     sstmac::StatLocalDouble* compute_time_;
-    sprockit::sim_parameters* params_;
+    sprockit::sim_parameters::ptr params_;
     std::set<int> task_processed_;
 
     void init();
@@ -312,7 +312,7 @@ namespace lblxml {
     /// Destructor.
     virtual ~boxml() throw () {}
 
-    boxml(sprockit::sim_parameters* params, sstmac::sw::SoftwareId sid,
+    boxml(sprockit::sim_parameters::ptr& params, sstmac::sw::SoftwareId sid,
           sstmac::sw::OperatingSystem* os) :
       params_(params), barrier_tag_(0), hist_eff_bw_(0), idle_time_(0),
       ncomm_(0), ncomp_(0), current_epoch_(1),

@@ -101,7 +101,7 @@ void runEventmanagerThread(void* argPtr)
   cfg->mgr->spinDown();
 }
 
-EventManager::EventManager(sprockit::sim_parameters *params, ParallelRuntime *rt) :
+EventManager::EventManager(sprockit::sim_parameters::ptr& params, ParallelRuntime *rt) :
   rt_(rt),
   nthread_(rt->nthread()),
   me_(rt->me()),
@@ -118,7 +118,7 @@ EventManager::EventManager(sprockit::sim_parameters *params, ParallelRuntime *rt
   if (nthread_ == 0){
     sprockit::abort("Have zero worker threads! Cannot do any work");
   }
-  sprockit::sim_parameters* os_params = params->get_optional_namespace("node")->get_optional_namespace("os");
+  sprockit::sim_parameters::ptr os_params = params->get_optional_namespace("node")->get_optional_namespace("os");
   sw::StackAlloc::init(os_params);
 
   des_context_ = sw::ThreadContext::factory::get_optional_param(
@@ -307,8 +307,7 @@ EventManager::topologyPartition() const
   return rt_->topologyPartition();
 }
 
-static stat_descr_t default_descr;
-
+/**
 void
 EventManager::registerStat(
   StatCollector* stat,
@@ -351,11 +350,13 @@ EventManager::finishUniqueStat(int unique_tag, stats_entry& entry)
   if (rt_->me() == 0) entry.main_collector->dumpGlobalData();
   delete entry.main_collector;
 }
+*/
 
 
 void
 EventManager::finishStats()
 {
+/**
   std::map<std::string, stats_entry>::iterator it, end = stats_.end();
   for (it = stats_.begin(); it != end; ++it){
     std::string name = it->first;
@@ -405,6 +406,7 @@ EventManager::finishStats()
   for (auto& pair : unique_stats_){
     finishUniqueStat(pair.first, pair.second);
   }
+*/
 }
 
 }

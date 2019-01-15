@@ -85,7 +85,7 @@ namespace sstmac {
 namespace native {
 
 ClockCycleEventMap::ClockCycleEventMap(
-  sprockit::sim_parameters* params, ParallelRuntime* rt) :
+  sprockit::sim_parameters::ptr& params, ParallelRuntime* rt) :
   EventManager(params, rt),
   epoch_(0)
 {

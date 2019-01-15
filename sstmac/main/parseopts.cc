@@ -136,7 +136,7 @@ parseOpts(int argc, char **argv, opts &oo)
   int ch;
   bool errorflag = false;
   std::list<std::pair<std::string, std::string> > paramlist;
-  oo.params = new sprockit::sim_parameters;
+  oo.params = std::make_shared<sprockit::sim_parameters>();
   optind = 1;
   while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:b:V:g:D:o:e:", gopt, NULL))
          != -1) {

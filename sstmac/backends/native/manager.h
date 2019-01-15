@@ -67,24 +67,22 @@ namespace native {
 class Manager {
 
  public:
-  Manager(sprockit::sim_parameters* params, ParallelRuntime* rt);
+  Manager(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
 
-  static int computeMaxNproc(sprockit::sim_parameters *params);
+  static int computeMaxNproc(sprockit::sim_parameters::ptr& params);
 
-  static int computeMaxNprocForApp(sprockit::sim_parameters* app_params);
+  static int computeMaxNprocForApp(sprockit::sim_parameters::ptr& app_params);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   ~Manager() throw ();
 
-  Timestamp
-  run(Timestamp until);
+  Timestamp run(Timestamp until);
 
   void stop();
 
   void finish();
 
-  sstmac::hw::Interconnect*
-  interconnect() const {
+  sstmac::hw::Interconnect* interconnect() const {
     return interconnect_;
   }
 

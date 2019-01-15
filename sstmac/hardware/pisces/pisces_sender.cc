@@ -74,7 +74,7 @@ payload_queue::pop(int num_credits)
 }
 
 PiscesSender::PiscesSender(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   SST::Component* parent,
   bool update_vc) :
   SubComponent(parent), //no self handlers
@@ -86,7 +86,7 @@ PiscesSender::PiscesSender(
 }
 
 void
-PiscesSender::configurePayloadPortLatency(sprockit::sim_parameters* params)
+PiscesSender::configurePayloadPortLatency(sprockit::sim_parameters::ptr& params)
 {
   if (!params->has_param("sendLatency")){
     params->add_param_override("sendLatency", params->get_param("latency"));
@@ -97,7 +97,7 @@ PiscesSender::configurePayloadPortLatency(sprockit::sim_parameters* params)
 }
 
 void
-PiscesSender::configureCreditPortLatency(sprockit::sim_parameters* params)
+PiscesSender::configureCreditPortLatency(sprockit::sim_parameters::ptr& params)
 {
   if (!params->has_param("sendLatency")){
     params->add_param_override("sendLatency", "0ns");

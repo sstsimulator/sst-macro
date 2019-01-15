@@ -56,7 +56,7 @@ class DumpiAllocation : public NodeAllocator
   FactoryRegister("dumpi", NodeAllocator, DumpiAllocation,
               "Allocate nodes directly from the trace files themselves")
  public:
-  DumpiAllocation(sprockit::sim_parameters* params);
+  DumpiAllocation(sprockit::sim_parameters::ptr& params);
 
   std::string toString() const override {
     return "dumpi allocation";

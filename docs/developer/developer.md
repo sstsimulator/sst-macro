@@ -362,7 +362,7 @@ We now define the public interface for the actor class
 
 ````
 public:
-  actor(sprockit::sim_parameters* params);
+  actor(sprockit::sim_parameters::ptr& params);
 
   virtual void act() = 0;
 
@@ -392,7 +392,7 @@ Moving to the `actor.cc` file, we see the implementation
 namespace sstmac {
     namespace tutorial {
 
-actor::actor(sprockit::sim_parameters* params)
+actor::actor(sprockit::sim_parameters::ptr& params)
 {
   biggest_fan_ = params->get_param("biggest_fan");
 }
@@ -420,7 +420,7 @@ class mandy_patinkin :
     public actor
 {
  public:
-  mandy_patinkin(sprockit::sim_parameters* params);
+  mandy_patinkin(sprockit::sim_parameters::ptr& params);
 
   FactoryRegister("patinkin", actor, mandy_patinkin,
     "He's on one of those shows now... NCIS? CSI?");
@@ -437,7 +437,7 @@ This is a complete type that can be instantiated.
 To create the class we will need the constructor:
 
 ````
-mandy_patinkin(sprockit::sim_parameters* params);
+mandy_patinkin(sprockit::sim_parameters::ptr& params);
 ````
 
 And finally, to satisfy the `actor` public interface, we need
@@ -455,7 +455,7 @@ Finally, a documentation string should be given with a brief description.
 We can now implement the constructor:
 
 ````
-mandy_patinkin::mandy_patinkin(sprockit::sim_parameters* params) :
+mandy_patinkin::mandy_patinkin(sprockit::sim_parameters::ptr& params) :
   actor(params)
 {
   sword_hand_ = params->get_param("sword_hand");
@@ -512,7 +512,7 @@ There are four critical abstract functions in the virtual interface. First:
 
 ````
 virtual void connectOutput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* payloadHandler) = 0;
@@ -528,7 +528,7 @@ Parameter namespaces are covered in the user's manual.
 The next connection function is:
 ````
 virtual void connectInput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* creditHandler) = 0;
@@ -1539,13 +1539,13 @@ class Connectable
 {
  public:
   virtual void connectOutput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
 
   virtual void connectInput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
@@ -1560,7 +1560,7 @@ The function is called twice for each side of the connection. If we have a sourc
 ````
 Connectable* src = ...
 Connectable* dst = ...
-sprockit::sim_parameters* params = ...
+sprockit::sim_parameters::ptr& params = ...
 src->connectOutput(params, inport, outport, Output, dst);
 dst->connectInput(params, inport, outport, Input, src);
 ````
@@ -1751,7 +1751,7 @@ To illustrate, here is the code for the interconnect that creates the node objec
 The interconnect is itself a factory object, configured from a parameter file.
 
 ````
-interconnect::interconnect(sprockit::sim_parameters* params, EventManager* mgr, 
+interconnect::interconnect(sprockit::sim_parameters::ptr& params, EventManager* mgr, 
 	partition* part, parallel_runtime* rt)
 {
   sprockit::sim_parameters* top_params = params->get_namespace("topology");
@@ -1942,7 +1942,7 @@ We got some functions for free by inheriting from `structured_topology`.
 We start with
 
 ````
-xpress_ring::xpress_ring(sprockit::sim_parameters* params) :
+xpress_ring::xpress_ring(sprockit::sim_parameters::ptr& params) :
   structured_topology(params)
 {
   ring_size_ = params->get_int_param("xpress_ring_size");

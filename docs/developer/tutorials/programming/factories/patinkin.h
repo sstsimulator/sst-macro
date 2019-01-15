@@ -9,7 +9,7 @@ class mandy_patinkin :
   FactoryRegister("patinkin", actor, mandy_patinkin,
               "He's on one of those shows now... NCIS? CSI?")
  public:
-  mandy_patinkin(sprockit::sim_parameters* params);
+  mandy_patinkin(sprockit::sim_parameters::ptr& params);
 
   std::string toString() const override {
     return "inigo montoya";

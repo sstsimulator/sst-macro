@@ -71,7 +71,7 @@ class PiscesAbstractSwitch :
   }
 
  protected:
-  PiscesAbstractSwitch(sprockit::sim_parameters* params, uint32_t id);
+  PiscesAbstractSwitch(sprockit::sim_parameters::ptr& params, uint32_t id);
 
   virtual ~PiscesAbstractSwitch();
 
@@ -92,20 +92,20 @@ class PiscesSwitch :
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A network switch implementing the packet flow congestion model")
  public:
-  PiscesSwitch(sprockit::sim_parameters* params, uint32_t id);
+  PiscesSwitch(sprockit::sim_parameters::ptr& params, uint32_t id);
 
   virtual ~PiscesSwitch();
 
   int queueLength(int port) const override;
 
   virtual void connectOutput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
 
   virtual void connectInput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
@@ -114,9 +114,9 @@ class PiscesSwitch :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
+  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
 
   void setup() override;
 

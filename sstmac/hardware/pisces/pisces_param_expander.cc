@@ -56,7 +56,7 @@ namespace sstmac {
 namespace hw {
 
 void
-PiscesParamExpander::expand(sprockit::sim_parameters* params)
+PiscesParamExpander::expand(sprockit::sim_parameters::ptr& params)
 {
   std::string amm_type = params->get_param("amm_model");
   if (amm_type == "amm4"){
@@ -65,13 +65,13 @@ PiscesParamExpander::expand(sprockit::sim_parameters* params)
     tiled_switch_ = false;
   } 
 
-  sprockit::sim_parameters* node_params = params->get_optional_namespace("node");
-  sprockit::sim_parameters* nic_params = node_params->get_optional_namespace("nic");
-  sprockit::sim_parameters* inj_params = nic_params->get_optional_namespace("injection");
-  sprockit::sim_parameters* mem_params = node_params->get_optional_namespace("memory");
-  sprockit::sim_parameters* switch_params = params->get_optional_namespace("switch");
-  sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
-  sprockit::sim_parameters* proc_params = node_params->get_optional_namespace("proc");
+  sprockit::sim_parameters::ptr node_params = params->get_optional_namespace("node");
+  sprockit::sim_parameters::ptr nic_params = node_params->get_optional_namespace("nic");
+  sprockit::sim_parameters::ptr inj_params = nic_params->get_optional_namespace("injection");
+  sprockit::sim_parameters::ptr mem_params = node_params->get_optional_namespace("memory");
+  sprockit::sim_parameters::ptr switch_params = params->get_optional_namespace("switch");
+  sprockit::sim_parameters::ptr top_params = params->get_optional_namespace("topology");
+  sprockit::sim_parameters::ptr proc_params = node_params->get_optional_namespace("proc");
 
 
   nic_params->add_param_override("name", "pisces");
@@ -106,21 +106,21 @@ PiscesParamExpander::expand(sprockit::sim_parameters* params)
   }
 
   if (amm_type == "amm1"){
-    expand_amm1_memory(params, mem_params);
-    expand_amm1_network(params, switch_params, true/*set xbar*/);
-    expand_amm1_nic(params, nic_params);
+    expandAmm1Memory(params, mem_params);
+    expandAmm1Network(params, switch_params, true/*set xbar*/);
+    expandAmm1Nic(params, nic_params);
   } else if (amm_type == "amm2"){
-    expand_amm2_memory(params, mem_params);
-    expand_amm1_network(params, switch_params, true/*set xbar*/);
-    expand_amm1_nic(params, nic_params);
+    expandAmm2Memory(params, mem_params);
+    expandAmm1Network(params, switch_params, true/*set xbar*/);
+    expandAmm1Nic(params, nic_params);
   } else if (amm_type == "amm3"){
-    expand_amm2_memory(params, mem_params);
-    expand_amm3_network(params, switch_params);
-    expand_amm1_nic(params, nic_params);
+    expandAmm2Memory(params, mem_params);
+    expandAmm3Network(params, switch_params);
+    expandAmm1Nic(params, nic_params);
   } else if (amm_type == "amm4"){
-    expand_amm2_memory(params, mem_params);
-    expand_amm4_network(params, top_params, switch_params);
-    expand_amm4_nic(params, top_params, nic_params);
+    expandAmm2Memory(params, mem_params);
+    expandAmm4Network(params, top_params, switch_params);
+    expandAmm4Nic(params, top_params, nic_params);
   } else {
     spkt_throw_printf(sprockit::input_error, "invalid hardware model %s given",
         amm_type.c_str());
@@ -128,8 +128,8 @@ PiscesParamExpander::expand(sprockit::sim_parameters* params)
 }
 
 void
-PiscesParamExpander::expand_amm1_memory(sprockit::sim_parameters* params,
-                                          sprockit::sim_parameters* mem_params)
+PiscesParamExpander::expandAmm1Memory(sprockit::sim_parameters::ptr& params,
+                                      sprockit::sim_parameters::ptr& mem_params)
 {
   if (mem_params->get_scoped_param("name") != "null"){
     mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
@@ -137,8 +137,8 @@ PiscesParamExpander::expand_amm1_memory(sprockit::sim_parameters* params,
 }
 
 void
-PiscesParamExpander::expand_amm1_network(sprockit::sim_parameters* params,
-                                           sprockit::sim_parameters* switch_params,
+PiscesParamExpander::expandAmm1Network(sprockit::sim_parameters::ptr& params,
+                                           sprockit::sim_parameters::ptr& switch_params,
                                            bool set_xbar)
 {
 
@@ -152,12 +152,12 @@ PiscesParamExpander::expand_amm1_network(sprockit::sim_parameters* params,
   //  switch_params->add_param_override("link_bandwidth", link_bw);
   //}
 
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
-  sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
-  sprockit::sim_parameters* node_params = params->get_namespace("node");
-  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
-  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters::ptr link_params = switch_params->get_namespace("link");
+  sprockit::sim_parameters::ptr xbar_params = switch_params->get_namespace("xbar");
+  sprockit::sim_parameters::ptr ej_params = switch_params->get_optional_namespace("ejection");
+  sprockit::sim_parameters::ptr node_params = params->get_namespace("node");
+  sprockit::sim_parameters::ptr nic_params = node_params->get_namespace("nic");
+  sprockit::sim_parameters::ptr inj_params = nic_params->get_namespace("injection");
 
   std::string link_lat = link_params->get_either_or_param("sendLatency","latency");
   std::string xbar_lat = xbar_params->get_optional_param("latency", "0ns");
@@ -221,11 +221,11 @@ PiscesParamExpander::expand_amm1_network(sprockit::sim_parameters* params,
 }
 
 void
-PiscesParamExpander::expand_amm1_nic(sprockit::sim_parameters* params,
-                                       sprockit::sim_parameters* nic_params)
+PiscesParamExpander::expandAmm1Nic(sprockit::sim_parameters::ptr& params,
+                                   sprockit::sim_parameters::ptr& nic_params)
 {
-  sprockit::sim_parameters* xbar_params = params->get_namespace("switch")->get_namespace("xbar");
-  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters::ptr xbar_params = params->get_namespace("switch")->get_namespace("xbar");
+  sprockit::sim_parameters::ptr inj_params = nic_params->get_namespace("injection");
   if (!inj_params->has_param("arbitrator")){
     inj_params->add_param("arbitrator", "cut_through");
   }
@@ -237,10 +237,10 @@ PiscesParamExpander::expand_amm1_nic(sprockit::sim_parameters* params,
 }
 
 void
-PiscesParamExpander::expand_amm2_memory(sprockit::sim_parameters* params,
-                                          sprockit::sim_parameters* mem_params)
+PiscesParamExpander::expandAmm2Memory(sprockit::sim_parameters::ptr& params,
+                                      sprockit::sim_parameters::ptr& mem_params)
 {
-  expand_amm1_memory(params, mem_params);
+  expandAmm1Memory(params, mem_params);
   if (mem_params->get_scoped_param("name") != "null"){
     //mem_params->add_param_override("max_single_bandwidth",
     //                               params->get_param("max_memory_bandwidth"));
@@ -248,11 +248,11 @@ PiscesParamExpander::expand_amm2_memory(sprockit::sim_parameters* params,
 }
 
 void
-PiscesParamExpander::expand_amm3_network(sprockit::sim_parameters* params,
-                                                sprockit::sim_parameters* switch_params)
+PiscesParamExpander::expandAmm3Network(sprockit::sim_parameters::ptr& params,
+                                       sprockit::sim_parameters::ptr& switch_params)
 {
-  expand_amm1_network(params, switch_params, false);
-  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
+  expandAmm1Network(params, switch_params, false);
+  sprockit::sim_parameters::ptr xbar_params = switch_params->get_namespace("xbar");
   double sw_bw = xbar_params->get_bandwidth_param("bandwidth");
   double bw_multiplier = switchBandwidthMultiplier(params);
   if (bw_multiplier > 1.0001){
@@ -262,9 +262,9 @@ PiscesParamExpander::expand_amm3_network(sprockit::sim_parameters* params,
 }
 
 void
-PiscesParamExpander::expand_amm4_network(sprockit::sim_parameters* params,
-  sprockit::sim_parameters* top_params,
-  sprockit::sim_parameters* switch_params)
+PiscesParamExpander::expandAmm4Network(sprockit::sim_parameters::ptr& params,
+  sprockit::sim_parameters::ptr& top_params,
+  sprockit::sim_parameters::ptr& switch_params)
 {
   tiled_switch_ = true;
   std::string top = top_params->get_param("name");
@@ -282,7 +282,7 @@ PiscesParamExpander::expand_amm4_network(sprockit::sim_parameters* params,
 
   switch_params->add_param_override("name", "pisces_tiled");
 
-  sprockit::sim_parameters* rtr_params = switch_params->get_optional_namespace("router");
+  sprockit::sim_parameters::ptr rtr_params = switch_params->get_optional_namespace("router");
   if (rtr_params->has_param("name")) {
     std::string router = rtr_params->get_param("name");
     std::string new_router = top + "_" + router + "_multipath";
@@ -307,13 +307,13 @@ PiscesParamExpander::expand_amm4_network(sprockit::sim_parameters* params,
   }
 
   // expand amm1 network params
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
-  sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
-  sprockit::sim_parameters* demux_params = switch_params->get_optional_namespace("input");
-  sprockit::sim_parameters* ej_params = switch_params->get_optional_namespace("ejection");
-  sprockit::sim_parameters* node_params = params->get_namespace("node");
-  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
-  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
+  sprockit::sim_parameters::ptr link_params = switch_params->get_namespace("link");
+  sprockit::sim_parameters::ptr xbar_params = switch_params->get_namespace("xbar");
+  sprockit::sim_parameters::ptr demux_params = switch_params->get_optional_namespace("input");
+  sprockit::sim_parameters::ptr ej_params = switch_params->get_optional_namespace("ejection");
+  sprockit::sim_parameters::ptr node_params = params->get_namespace("node");
+  sprockit::sim_parameters::ptr nic_params = node_params->get_namespace("nic");
+  sprockit::sim_parameters::ptr inj_params = nic_params->get_namespace("injection");
 
   std::string link_lat = link_params->get_optional_param("latency","");
 
@@ -374,12 +374,12 @@ PiscesParamExpander::expand_amm4_network(sprockit::sim_parameters* params,
 }
 
 void
-PiscesParamExpander::expand_amm4_nic(sprockit::sim_parameters* params,
-                                            sprockit::sim_parameters* top_params,
-                                            sprockit::sim_parameters* nic_params)
+PiscesParamExpander::expandAmm4Nic(sprockit::sim_parameters::ptr& params,
+                                   sprockit::sim_parameters::ptr& top_params,
+                                   sprockit::sim_parameters::ptr& nic_params)
 {
   // set arb and number of credits on nic
-  expand_amm1_nic(params, nic_params);
+  expandAmm1Nic(params, nic_params);
 }
 
 }

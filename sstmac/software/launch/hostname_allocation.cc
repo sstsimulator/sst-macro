@@ -61,7 +61,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-HostnameAllocation::HostnameAllocation(sprockit::sim_parameters* params) :
+HostnameAllocation::HostnameAllocation(sprockit::sim_parameters::ptr& params) :
   NodeAllocator(params)
 {
   hostfile_ = params->get_param("hostfile");

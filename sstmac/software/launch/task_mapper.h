@@ -87,7 +87,7 @@ class TaskMapper : public sprockit::printable
     int nproc) = 0;
 
  protected:
-  TaskMapper(sprockit::sim_parameters* params);
+  TaskMapper(sprockit::sim_parameters::ptr& params);
 
   int validateNproc(int ppn, int num_nodes, int nproc, const char* name) const;
 

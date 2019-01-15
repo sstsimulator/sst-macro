@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 int USER_MAIN(int argc, char** argv)
 {
-  sprockit::sim_parameters* params = getParams();
+  sprockit::sim_parameters::ptr params = getParams();
   std::string message = params->get_param("message");
   sstmac_compute(1e-6);
   std::cout <<"t=" << sstmac_now() << " " << message << std::endl;

@@ -95,7 +95,7 @@ class App : public Thread
 
   int allocateTlsKey(destructor_fxn fnx);
 
-  static sprockit::sim_parameters* getParams();
+  static sprockit::sim_parameters::ptr getParams();
 
   App* parentApp() const override {
     return const_cast<App*>(this);
@@ -138,7 +138,7 @@ class App : public Thread
     return rc_;
   }
 
-  sprockit::sim_parameters* params() const {
+  const sprockit::sim_parameters::ptr& params() const {
     return params_;
   }
 
@@ -218,19 +218,19 @@ class App : public Thread
     unique_name_ = name;
   }
 
-  static void dlopenCheck(int aid, sprockit::sim_parameters* params);
+  static void dlopenCheck(int aid, sprockit::sim_parameters::ptr& params);
 
   static void dlcloseCheck(int aid);
 
  protected:
   friend class Thread;
 
-  App(sprockit::sim_parameters *params, SoftwareId sid,
+  App(sprockit::sim_parameters::ptr& params, SoftwareId sid,
       OperatingSystem* os);
 
   API* _get_api(const char* name) override;
 
-  sprockit::sim_parameters* params_;
+  sprockit::sim_parameters::ptr params_;
 
  private:
   void dlcloseCheck(){
@@ -279,7 +279,7 @@ class UserAppCxxFullMain : public App
 {
   FactoryRegister("UserAppCxxFullMain", App, UserAppCxxFullMain)
  public:
-  UserAppCxxFullMain(sprockit::sim_parameters* params, SoftwareId sid,
+  UserAppCxxFullMain(sprockit::sim_parameters::ptr& params, SoftwareId sid,
                          OperatingSystem* os);
 
   static void registerMainFxn(const char* name, App::main_fxn fxn);
@@ -307,7 +307,7 @@ class UserAppCxxEmptyMain : public App
 {
   FactoryRegister("UserAppCxxEmptyMain", App, UserAppCxxEmptyMain)
  public:
-  UserAppCxxEmptyMain(sprockit::sim_parameters* params, SoftwareId sid,
+  UserAppCxxEmptyMain(sprockit::sim_parameters::ptr& params, SoftwareId sid,
                           OperatingSystem* os);
 
   static void registerMainFxn(const char* name, App::empty_main_fxn fxn);

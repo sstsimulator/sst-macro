@@ -82,9 +82,9 @@ static int terminate_tag = 45;
   debug_printf(sprockit::dbg::driver, __VA_ARGS__)
 
 void
-Simulation::setParameters(sprockit::sim_parameters *params)
+Simulation::setParameters(sprockit::sim_parameters::ptr& params)
 {
-  params->combine_into(&params_);
+  params->combine_into(params_);
 }
 
 Simulation::~Simulation()
@@ -341,17 +341,17 @@ SimulationQueue::clear(Simulation *sim)
 }
 
 void
-SimulationQueue::run(sprockit::sim_parameters* params, sim_stats& stats)
+SimulationQueue::run(sprockit::sim_parameters::ptr& params, sim_stats& stats)
 {
-  template_params_.combine_into(params, false, false/*no overwrite*/, true);
+  template_params_->combine_into(params, false, false/*no overwrite*/, true);
   sstmac::remapParams(params, false /* not verbose */);
   ::sstmac::run(template_opts_, rt_, params, stats);
 }
 
 Simulation*
-SimulationQueue::fork(sprockit::sim_parameters* params, int nresults, double* resultPtr)
+SimulationQueue::fork(sprockit::sim_parameters::ptr& params, int nresults, double* resultPtr)
 {
-  template_params_.combine_into(params, false, false, true);
+  template_params_->combine_into(params, false, false, true);
   pipe_t pfd;
   if (pipe(pfd) == -1){
     fprintf(stderr, "failed opening pipe\n");
@@ -418,9 +418,9 @@ SimulationQueue::init(int argc, char** argv)
   sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
   rt_ = ::sstmac::init();
   initOpts(template_opts_, argc, argv);
-  initParams(rt_, template_opts_, &template_params_, true);
+  initParams(rt_, template_opts_, template_params_, true);
   if (sprockit::debug::slot_active(sprockit::dbg::driver)){
-    template_params_.print_params();
+    template_params_->print_params();
   }
 }
 
@@ -543,7 +543,7 @@ SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
 }
 
 void
-SimulationQueue::rerun(sprockit::sim_parameters* params, sim_stats& stats)
+SimulationQueue::rerun(sprockit::sim_parameters::ptr& params, sim_stats& stats)
 {
   sstmac::remapParams(params, false /*not verbose*/);
   sstmac::Env::params = params;

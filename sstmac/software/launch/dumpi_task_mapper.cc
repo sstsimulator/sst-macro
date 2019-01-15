@@ -103,7 +103,7 @@ DumpiTaskMapper::nodeIdFromCoordinates(int ncoord, int *coords)
   return regtop_->node_addr(coord_vec);
 }
 
-DumpiTaskMapper::DumpiTaskMapper(sprockit::sim_parameters *params) :
+DumpiTaskMapper::DumpiTaskMapper(sprockit::sim_parameters::ptr params) :
   TaskMapper(params)
 {
   metaname_ = params->get_param("dumpi_metaname");

@@ -88,18 +88,19 @@ class OperatingSystem : public SubComponent
   struct ImplicitState {
     DeclareFactory(ImplicitState)
 
-    ImplicitState(sprockit::sim_parameters* params){}
+    ImplicitState(sprockit::sim_parameters::ptr& params){}
 
-    virtual void set_state(int type, int value) = 0;
-    virtual void unset_state(int type) = 0;
+    virtual void setState(int type, int value) = 0;
+    virtual void unsetState(int type) = 0;
   };
 
-  struct RegressionModel : public StatCollector {
+  struct RegressionModel : public MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*> {
+    using Parent = MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>;
     DeclareFactory(RegressionModel, const std::string&)
 
-    RegressionModel(sprockit::sim_parameters* params,
+    RegressionModel(sprockit::sim_parameters::ptr& params,
                      const std::string& key)
-     : StatCollector(params), key_(key) { }
+     : Parent(params), key_(key) { }
 
     const std::string& key() const {
       return key_;
@@ -119,11 +120,15 @@ class OperatingSystem : public SubComponent
      * @brief start_collection
      * @return A tag for matching thread-local storage later
      */
-    virtual int StartCollection() = 0;
+    virtual int startCollection() = 0;
 
     virtual void finishCollection(int thr_tag, int n_params, const double params[],
                                    OperatingSystem::ImplicitState* state) = 0;
 
+    void addData_impl(int tag, int n, const double params[],
+                      OperatingSystem::ImplicitState* state) override {
+      finishCollection(tag, n, params, state);
+    }
 
    private:
     std::string key_;
@@ -132,7 +137,7 @@ class OperatingSystem : public SubComponent
   template <class Sample>
   struct ThreadSafeTimerModel : public RegressionModel
   {
-    ThreadSafeTimerModel(sprockit::sim_parameters* params,
+    ThreadSafeTimerModel(sprockit::sim_parameters::ptr& params,
                             const std::string& key) :
       RegressionModel(params, key), free_slots_(100), timers_(100)
     {
@@ -140,7 +145,7 @@ class OperatingSystem : public SubComponent
     }
 
     int start(){
-      int slot = allocate_slot();
+      int slot = allocateSlot();
       timers_[slot] = sstmacWallTime();
       return slot;
     }
@@ -151,7 +156,7 @@ class OperatingSystem : public SubComponent
       double t_total = timer - timers_[thr_tag];
       lock();
       samples_.emplace_back(std::forward<Args>(args)..., t_total);
-      free_slot_no_lock(thr_tag);
+      freeSlotNoLock(thr_tag);
       unlock();
     }
 
@@ -167,7 +172,7 @@ class OperatingSystem : public SubComponent
     }
 
    private:
-    int allocate_slot(){
+    int allocateSlot(){
       lock_.lock();
       int slot = free_slots_.back();
       free_slots_.pop_back();;
@@ -175,13 +180,13 @@ class OperatingSystem : public SubComponent
       return slot;
     }
 
-    void free_slot(int slot) {
+    void freeSlot(int slot) {
       lock_.lock();
       free_slots_.push_back(slot);
       lock_.unlock();
     }
 
-    void free_slot_no_lock(int slot){
+    void freeSlotNoLock(int slot){
       free_slots_.push_back(slot);
     }
 
@@ -190,7 +195,7 @@ class OperatingSystem : public SubComponent
     std::vector<int> free_slots_;
   };
 
-  OperatingSystem(sprockit::sim_parameters* params, hw::Node* parent);
+  OperatingSystem(sprockit::sim_parameters::ptr& params, hw::Node* parent);
 
   virtual ~OperatingSystem();
 
@@ -284,7 +289,8 @@ class OperatingSystem : public SubComponent
   Timestamp unblock(Thread* thr);
 
   void outcastAppStart(int my_rank, int aid, const std::string& app_ns,
-                      task_mapping_ptr mapping, sprockit::sim_parameters* app_params,
+                      task_mapping_ptr mapping,
+                      const sprockit::sim_parameters::ptr& app_params,
                       bool include_root = false);
 
   /**
@@ -355,7 +361,7 @@ class OperatingSystem : public SubComponent
 
   static void simulationDone();
 
-  sprockit::sim_parameters* params() const {
+  sprockit::sim_parameters::ptr& params() {
     return params_;
   }
 
@@ -422,7 +428,7 @@ class OperatingSystem : public SubComponent
 
   void switchToThread(Thread* tothread);
 
-  void initThreading(sprockit::sim_parameters* params);
+  void initThreading(sprockit::sim_parameters::ptr& params);
 
   friend class Library;
 
@@ -472,7 +478,7 @@ class OperatingSystem : public SubComponent
   /// to this context on every context switch.
   ThreadContext *des_context_;
 
-  sprockit::sim_parameters* params_;
+  sprockit::sim_parameters::ptr params_;
 
   ComputeScheduler* compute_sched_;
 

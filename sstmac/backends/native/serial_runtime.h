@@ -55,7 +55,7 @@ class SerialRuntime :
 {
   FactoryRegister("serial", ParallelRuntime, SerialRuntime)
  public:
-  SerialRuntime(sprockit::sim_parameters* params);
+  SerialRuntime(sprockit::sim_parameters::ptr& params);
 
   int64_t allreduceMin(int64_t mintime) override;
 

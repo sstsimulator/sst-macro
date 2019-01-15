@@ -70,7 +70,7 @@ RegisterNamespaces("bytes_sent", "congestion_spyplot", "congestion_delay",
                    "bytes_sent", "byte_hops", "delay_histogram");
 
 static inline double
-congestion_delay(const pkt_arbitration_t& st)
+congestionDelay(const pkt_arbitration_t& st)
 {
   Timestamp delta_t = st.tail_leaves - st.pkt->arrival();
   double min_delta_t = st.pkt->byteLength() / st.incoming_bw;
@@ -83,13 +83,13 @@ congestion_delay(const pkt_arbitration_t& st)
   return congestion_delay;
 }
 
-PacketStatsCallback::PacketStatsCallback(sprockit::sim_parameters *params, EventScheduler* parent)
+PacketStatsCallback::PacketStatsCallback(sprockit::sim_parameters::ptr& params, EventScheduler* parent)
 {
   id_ = params->get_int_param("id");
 }
 
 void
-PacketStatsCallback::collect_final_event(PiscesPacket *pkt)
+PacketStatsCallback::collectFinalEvent(PiscesPacket *pkt)
 {
   sprockit::abort("stats object does not support collecting final events");
 }
@@ -100,21 +100,21 @@ PacketStatsCallback::collectSingleEvent(const pkt_arbitration_t &st)
   sprockit::abort("stats object does not support collecting single events");
 }
 
-congestion_spyplot::congestion_spyplot(sprockit::sim_parameters* params, EventScheduler* parent)
+CongestionSpyplot::CongestionSpyplot(sprockit::sim_parameters::ptr& params, EventScheduler* parent)
   : PacketStatsCallback(params, parent)
 {
-  congestion_spyplot_ = requiredStats<StatSpyplot>(parent, params,
-                                               "congestion_spyplot", "ascii");
+  //congestion_spyplot_ = requiredStats<StatSpyplot>(parent, params,
+  //                                             "congestion_spyplot", "ascii");
 }
 
-congestion_spyplot::~congestion_spyplot()
+CongestionSpyplot::~CongestionSpyplot()
 {
   //these get delete by stats system
   //if (congestion_spyplot_) delete congestion_spyplot_;
 }
 
 void
-congestion_spyplot::collect_final_event(PiscesPacket* pkt)
+CongestionSpyplot::collectFinalEvent(PiscesPacket* pkt)
 {
   sprockit::abort("unimplemented: congestion_spyplot::collect_final_event");
   //double delay_ns = pkt->congestion_delay()*1e9;
@@ -122,40 +122,40 @@ congestion_spyplot::collect_final_event(PiscesPacket* pkt)
 }
 
 void
-congestion_spyplot::collectSingleEvent(const pkt_arbitration_t &st)
+CongestionSpyplot::collectSingleEvent(const pkt_arbitration_t &st)
 {
-  double delay = congestion_delay(st);
+  double delay = congestionDelay(st);
   collect(delay, st.pkt);
 }
 
 void
-congestion_spyplot::collect(double congestion_delay, PiscesPacket* pkt)
+CongestionSpyplot::collect(double congestion_delay, PiscesPacket* pkt)
 {
-  congestion_spyplot_->add(pkt->fromaddr(), pkt->toaddr(), congestion_delay);
+  congestion_spyplot_->addData(pkt->fromaddr(), pkt->toaddr(), congestion_delay);
 }
 
-delay_histogram::delay_histogram(sprockit::sim_parameters *params, EventScheduler* parent) :
+DelayHistogram::DelayHistogram(sprockit::sim_parameters::ptr& params, EventScheduler* parent) :
   PacketStatsCallback(params, parent)
 {
-  congestion_hist_ = requiredStats<StatHistogram>(parent, params,
-                                        "delay_histogram", "histogram");
+  //congestion_hist_ = requiredStats<StatHistogram>(parent, params,
+  //                                      "delay_histogram", "histogram");
 }
 
-delay_histogram::~delay_histogram()
+DelayHistogram::~DelayHistogram()
 {
   //these get deleted by stats systems
   //if (congestion_hist_) delete congestion_hist_;
 }
 
 void
-delay_histogram::collectSingleEvent(const pkt_arbitration_t& st)
+DelayHistogram::collectSingleEvent(const pkt_arbitration_t& st)
 {
-  double delay_us = congestion_delay(st);
-  congestion_hist_->collect(delay_us);
+  double delay_us = congestionDelay(st);
+  congestion_hist_->addData(delay_us);
 }
 
 void
-delay_histogram::collect_final_event(PiscesPacket* pkt)
+DelayHistogram::collectFinalEvent(PiscesPacket* pkt)
 {
   sprockit::abort("unimplemented: delay_histogram::collect_final_event");
   //auto dpkt = safe_cast(pisces_delay_stats_packet, pkt);
@@ -166,7 +166,7 @@ delay_histogram::collect_final_event(PiscesPacket* pkt)
 
 
 void
-packet_delay_stats::collectSingleEvent(const pkt_arbitration_t& st)
+PacketDelayStats::collectSingleEvent(const pkt_arbitration_t& st)
 {
   sprockit::abort("unimplemented: delay_histogram::collect_single_event");
   //double delay = congestion_delay(st);
@@ -174,7 +174,7 @@ packet_delay_stats::collectSingleEvent(const pkt_arbitration_t& st)
   //dpkt->accumulate_delay(delay);
 }
 
-multi_stats::multi_stats(sprockit::sim_parameters *params, EventScheduler *parent) :
+MultiStats::MultiStats(sprockit::sim_parameters::ptr& params, EventScheduler *parent) :
   PacketStatsCallback(params, parent)
 {
   std::vector<std::string> stats_list;
@@ -187,15 +187,15 @@ multi_stats::multi_stats(sprockit::sim_parameters *params, EventScheduler *paren
 }
 
 void
-multi_stats::collect_final_event(PiscesPacket *pkt)
+MultiStats::collectFinalEvent(PiscesPacket *pkt)
 {
   for (auto cb : cbacks_){
-    cb->collect_final_event(pkt);
+    cb->collectFinalEvent(pkt);
   }
 }
 
 void
-multi_stats::collectSingleEvent(const pkt_arbitration_t &st)
+MultiStats::collectSingleEvent(const pkt_arbitration_t &st)
 {
   for (auto cb : cbacks_){
     cb->collectSingleEvent(st);
@@ -207,37 +207,43 @@ BytesSentCollector::~BytesSentCollector()
   //if (bytes_sent_) delete bytes_sent_;
 }
 
-BytesSentCollector::BytesSentCollector(sprockit::sim_parameters *params,
-                                           EventScheduler* parent) :
+BytesSentCollector::BytesSentCollector(sprockit::sim_parameters::ptr& params,
+                                       EventScheduler* parent) :
   PacketStatsCallback(params, parent)
 {
+  /** TODO stats
   bytes_sent_ = requiredStats<StatBytesSent>(parent, params,
                                         "bytes_sent", "bytes_sent");
+  */
 }
 
 void
 BytesSentCollector::collectSingleEvent(const pkt_arbitration_t& st)
 {
-  bytes_sent_->record(st.pkt->edgeOutport(), st.pkt->byteLength());
+  bytes_sent_->addData(st.pkt->edgeOutport(), st.pkt->byteLength());
 }
 
-byte_hop_collector::~byte_hop_collector()
+ByteHopCollector::~ByteHopCollector()
 {
   //delete byte_hops_;
 }
 
-byte_hop_collector::byte_hop_collector(sprockit::sim_parameters *params, EventScheduler* parent)
+ByteHopCollector::ByteHopCollector(sprockit::sim_parameters::ptr& params, EventScheduler* parent)
   : PacketStatsCallback(params, parent)
 {
+  /** TODO stats
   byte_hops_ = requiredStats<StatGlobalInt>(parent, params,
                                         "byte_hops", "global_int");
   byte_hops_->setLabel("Byte Hops");
+  */
 }
 
 void
-byte_hop_collector::collectSingleEvent(const pkt_arbitration_t& st)
+ByteHopCollector::collectSingleEvent(const pkt_arbitration_t& st)
 {
+  /** TODO stats
   byte_hops_->collect(st.pkt->byteLength());
+  */
 }
 
 void
@@ -253,26 +259,6 @@ StatBytesSent::outputSwitch(int sid, std::fstream& data_str)
     //coordinates neighbor_coords = top->neighborAtPort(SwitchId(sid), port);
     data_str << sprockit::printf("\t%3d %12ld\n", port, bytes);
   }
-}
-
-void
-StatBytesSent::dumpLocalData()
-{
-  sprockit::abort("stat_bytes_sent::dump_local_data: makes no sense to dump local data");
-}
-
-void
-StatBytesSent::dumpGlobalData()
-{
-  int num_switches = top_->numSwitches();
-  std::string data_file = fileroot_ + ".dat";
-  std::fstream data_str;
-  checkOpen(data_str, data_file);
-  for (int i=0; i < num_switches; ++i){
-    data_str << sprockit::printf("Switch %d\n", i);
-    outputSwitch(i, data_str);
-  }
-  data_str.close();
 }
 
 void
@@ -328,10 +314,10 @@ StatBytesSent::aggregation::entry::serialize_order(serializer& ser)
   ser & sid;
 }
 
-StatBytesSent::StatBytesSent(sprockit::sim_parameters* params) :
+StatBytesSent::StatBytesSent(sprockit::sim_parameters::ptr& params) :
     top_(nullptr),
     local_aggregation_(nullptr),
-    StatCollector(params)
+    Parent(params)
 {
   top_ = sstmac::hw::Topology::staticTopology(params);
 }
@@ -341,6 +327,7 @@ StatBytesSent::~StatBytesSent()
   if (local_aggregation_) delete local_aggregation_;
 }
 
+/** TODO stats
 void
 StatBytesSent::globalReduce(ParallelRuntime *rt)
 {
@@ -393,6 +380,7 @@ StatBytesSent::reduce(StatCollector *coll)
   }
   local_aggregation_->append(input->id(), input->port_map_);
 }
+*/
 
 }
 }

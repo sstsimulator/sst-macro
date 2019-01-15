@@ -184,7 +184,7 @@ main(int argc, char** argv)
 {
   comm_init();
 
-  sprockit::sim_parameters* params = sstmac::sw::App::getParams();
+  sprockit::sim_parameters::ptr& params = sstmac::sw::App::getParams();
 
   std::string pattern = params->get_param("traffic_pattern");
   traffic_pattern::type_t ty;

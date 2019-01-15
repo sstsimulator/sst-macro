@@ -111,6 +111,9 @@ class param_bcaster {
 class sim_parameters  {
 
  public:
+  using ptr = std::shared_ptr<sim_parameters>;
+  using const_ptr = std::shared_ptr<const sim_parameters>;
+
   struct parameter_entry
   {
     parameter_entry() : read(false) {}
@@ -128,7 +131,7 @@ class sim_parameters  {
 
   sim_parameters(const std::string& filename);
 
-  sim_parameters(const sprockit::sim_parameters* params); //deep copy
+  sim_parameters(sprockit::sim_parameters::const_ptr params); //deep copy
 
   /**
    * In a parallel environment (abstracted through a param_bcaster object),
@@ -140,7 +143,7 @@ class sim_parameters  {
    * @param bcaster
    */
   static void
-  parallel_build_params(sprockit::sim_parameters* params,
+  parallel_build_params(sprockit::sim_parameters::ptr& params,
                         int me, int nproc,
                         const std::string& filename,
                         param_bcaster* bcaster,
@@ -172,7 +175,7 @@ class sim_parameters  {
 
   std::string get_scoped_param(const std::string& key, bool throw_on_error = true);
 
-  sim_parameters* get_optional_local_namespace(const std::string& ns);
+  sim_parameters::ptr get_optional_local_namespace(const std::string& ns);
 
   std::string reread_param(const std::string& key) {
     return get_param(key);
@@ -226,7 +229,7 @@ class sim_parameters  {
 
   void add_param_override_recursive(const std::string& key, const std::string& val);
 
-  void combine_into(sim_parameters* sp,
+  void combine_into(sim_parameters::ptr sp,
                bool fail_on_existing = false,
                bool override_existing = true,
                bool mark_as_read = true);
@@ -376,11 +379,15 @@ class sim_parameters  {
 
   void get_optional_vector_param(const std::string& key, std::vector<double>& vals);
 
-  sim_parameters* get_namespace(const std::string& ns);
+  sim_parameters::ptr get_namespace(const std::string& ns);
 
-  sim_parameters* get_optional_namespace(const std::string& ns);
+  sim_parameters::ptr get_optional_namespace(const std::string& ns);
 
-  void set_namespace(const std::string& ns, sim_parameters* params){
+  static sim_parameters::ptr& empty() {
+    return empty_ns_params_;
+  }
+
+  void set_namespace(const std::string& ns, sim_parameters::ptr params){
     subspaces_[ns] = params;
   }
 
@@ -426,15 +433,15 @@ class sim_parameters  {
   key_value_map::iterator end() { return params_.end(); }
   key_value_map::const_iterator end() const { return params_.end(); }
 
-  typedef std::map<std::string, sim_parameters*>::iterator namespace_iterator;
-  typedef std::map<std::string, sim_parameters*>::const_iterator const_namespace_iterator;
+  using namespace_iterator = std::map<std::string, sim_parameters::ptr>::iterator ;
+  using const_namespace_iterator = std::map<std::string, sim_parameters::ptr>::const_iterator;
   namespace_iterator ns_begin() { return subspaces_.begin(); }
   const_namespace_iterator ns_begin() const { return subspaces_.begin(); }
   namespace_iterator ns_end() { return subspaces_.end(); }
   const_namespace_iterator ns_end() const { return subspaces_.end(); }
 
  private:
-  std::map<std::string, sim_parameters*> subspaces_;
+  std::map<std::string, sim_parameters::ptr> subspaces_;
   std::map<std::string, std::string> variables_;
 
   /**
@@ -453,7 +460,7 @@ class sim_parameters  {
   void* _extra_data() const;
   void* extra_data_;
 
-  static sim_parameters* empty_ns_params_;
+  static sim_parameters::ptr empty_ns_params_;
 
   std::string namespace_;
 
@@ -469,9 +476,9 @@ class sim_parameters  {
    * @param ns The namespace to get
    * @return The set of all parameters in a given param namespace
    */
-  sim_parameters* _get_namespace(const std::string &ns);
+  sim_parameters::ptr _get_namespace(const std::string &ns);
 
-  sim_parameters* build_local_namespace(const std::string& ns);
+  sim_parameters::ptr build_local_namespace(const std::string& ns);
 
   void throw_key_error(const std::string& key) const;
 
@@ -512,8 +519,6 @@ class sim_parameters  {
 };
 
 }
-
-
 
 
 #endif

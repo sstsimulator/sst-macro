@@ -72,7 +72,7 @@ NetworkSwitch::~NetworkSwitch()
 }
 
 
-NetworkSwitch::NetworkSwitch(sprockit::sim_parameters *params, uint32_t id)
+NetworkSwitch::NetworkSwitch(sprockit::sim_parameters::ptr& params, uint32_t id)
  : ConnectableComponent(params, id) //no self messages for a switch
 {
   my_addr_ = params->get_int_param("id");

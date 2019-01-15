@@ -54,11 +54,11 @@ class ParamExpander : public sstmac::ParamExpander
 {
 
  protected:
-  virtual double networkBandwidthMultiplier(sprockit::sim_parameters* params) const;
+  virtual double networkBandwidthMultiplier(sprockit::sim_parameters::ptr& params) const;
 
-  virtual double switchBandwidthMultiplier(sprockit::sim_parameters* params) const;
+  virtual double switchBandwidthMultiplier(sprockit::sim_parameters::ptr& params) const;
 
-  virtual int switchBufferMultiplier(sprockit::sim_parameters* params) const;
+  virtual int switchBufferMultiplier(sprockit::sim_parameters::ptr& params) const;
 
 };
 

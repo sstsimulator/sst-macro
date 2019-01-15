@@ -58,40 +58,20 @@ namespace sstmac {
 /**
  * this stat_collector class keeps a spy plot
  */
-class StatSpyplot :
-  public StatCollector
+class StatSpyplot : public MultiStatistic<int,int,uint64_t>
 {
-  FactoryRegister("ascii", StatCollector, StatSpyplot)
+  using Parent = MultiStatistic<int,int,uint64_t>;
+  FactoryRegister("ascii", Parent, StatSpyplot)
  public:
-  virtual std::string toString() const override {
-    return "stat_spyplot";
-  }
-
-  virtual void dumpToFile(const std::string& froot);
-
-  virtual void dumpLocalData() override;
-
-  virtual void dumpGlobalData() override;
-
-  virtual void reduce(StatCollector *coll) override;
-
-  virtual void globalReduce(ParallelRuntime *rt) override;
-
-  virtual void clear() override;
-
   virtual ~StatSpyplot() {}
 
-  virtual void add_one(int source, int dest);
+  void addOne(int source, int dest);
 
-  virtual void add(int source, int dest, long num);
+  void addData_impl(int source, int dest, uint64_t num) override;
 
-  virtual StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new StatSpyplot(params);
-  }
-
-  StatSpyplot(sprockit::sim_parameters* params) :
+  StatSpyplot(sprockit::sim_parameters::ptr& params) :
     max_dest_(0),
-    StatCollector(params)
+    Parent(params)
   {
   }
 

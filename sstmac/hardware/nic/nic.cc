@@ -78,7 +78,7 @@ namespace hw {
 
 static sprockit::need_deleteStatics<NIC> del_statics;
 
-NIC::NIC(sprockit::sim_parameters* params, Node* parent) :
+NIC::NIC(sprockit::sim_parameters::ptr& params, Node* parent) :
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   hist_msg_size_(nullptr),
@@ -93,6 +93,7 @@ NIC::NIC(sprockit::sim_parameters* params, Node* parent) :
 {
   negligibleSize_ = params->get_optional_int_param("negligibleSize", DEFAULT_NEGLIGIBLE_SIZE);
 
+  /** TODO stats
   spy_num_messages_ = optionalStats<StatSpyplot>(parent,
         params, "traffic_matrix", "ascii", "num_messages");
   spy_bytes_ = optionalStats<StatSpyplot>(parent,
@@ -104,6 +105,7 @@ NIC::NIC(sprockit::sim_parameters* params, Node* parent) :
   //global_bytes_sent_->setLabel("NIC Total Bytes Sent");
   hist_msg_size_ = optionalStats<StatHistogram>(parent,
         params, "message_size_histogram", "histogram");
+  */
 }
 
 NIC::~NIC()
@@ -275,25 +277,23 @@ NIC::recordMessage(NetworkMessage* netmsg)
   }
 
   if (spy_num_messages_) {
-    spy_num_messages_->add_one(netmsg->fromaddr(),
-                  netmsg->toaddr());
+    spy_num_messages_->addData(netmsg->fromaddr(), netmsg->toaddr(), 1);
   }
 
   if (spy_bytes_) {
-    spy_bytes_->add(netmsg->fromaddr(),
-                    netmsg->toaddr(), netmsg->byteLength());
+    spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
   }
 
   if (hist_msg_size_) {
-    hist_msg_size_->collect(netmsg->byteLength());
+    hist_msg_size_->addData(netmsg->byteLength());
   }
 
   if (local_bytes_sent_) {
-    local_bytes_sent_->collect(netmsg->byteLength());
+    local_bytes_sent_->addData(netmsg->byteLength());
   }
 
   if (global_bytes_sent_) {
-    global_bytes_sent_->collect(netmsg->byteLength());
+    global_bytes_sent_->addData(netmsg->byteLength());
   }
 }
 

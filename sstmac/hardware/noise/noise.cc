@@ -74,7 +74,7 @@ GaussianNoiseModel::GaussianNoiseModel(double mean, double stdev,
   rng_ = new RNG::NormalDistribution(mean, stdev, maxz, seed);
 }
 
-GaussianNoiseModel::GaussianNoiseModel(sprockit::sim_parameters *params)
+GaussianNoiseModel::GaussianNoiseModel(sprockit::sim_parameters::ptr& params)
   : NoiseModel(params)
 {
   double mean = params->get_quantity("mean");

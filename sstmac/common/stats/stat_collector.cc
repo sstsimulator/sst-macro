@@ -56,28 +56,8 @@ RegisterKeywords(
 
 namespace sstmac {
 
-int StatCollector::unique_tag_counter_ = 0;
-
-StatCollector::~StatCollector()
-{
-  if (params_) delete params_;
-}
-
-bool
-StatCollector::checkOpen(std::fstream& myfile, const std::string& fname, std::ios::openmode ios_flags)
-{
-  if (!myfile.is_open()) {
-    myfile.open(fname.c_str(), ios_flags);
-    if (!myfile.is_open()) {
-      spkt_throw_printf(sprockit::io_error,
-                       "stat_collector: cannot open file %s for writing",
-                       fname.c_str());
-    }
-  }
-  return true;
-}
-
-StatCollector::StatCollector(sprockit::sim_parameters* params) :
+/**
+StatCollector::StatCollector(sprockit::sim_parameters::ptr& params) :
   registered_(false),
   id_(-1),
   params_(new sprockit::sim_parameters(params))
@@ -90,7 +70,7 @@ StatCollector::StatCollector(sprockit::sim_parameters* params) :
 }
 
 StatCollector*
-StatCollector::requiredBuild(sprockit::sim_parameters* params,
+StatCollector::requiredBuild(sprockit::sim_parameters::ptr& params,
                       const std::string& ns,
                       const std::string& deflt,
                       stat_descr_t* descr)
@@ -103,7 +83,7 @@ StatCollector::requiredBuild(sprockit::sim_parameters* params,
 }
 
 void
-StatCollector::statsError(sprockit::sim_parameters *params,
+StatCollector::statsError(sprockit::sim_parameters::ptr params,
                             const std::string &ns,
                             const std::string &deflt)
 {
@@ -122,7 +102,7 @@ StatCollector::statsError(sprockit::sim_parameters *params,
 }
 
 StatCollector*
-StatCollector::optionalBuild(sprockit::sim_parameters* params,
+StatCollector::optionalBuild(sprockit::sim_parameters::ptr& params,
                       const std::string& ns,
                       const std::string& deflt,
                       stat_descr_t* descr)
@@ -160,12 +140,13 @@ StatCollector::registerOptionalStat(EventScheduler* parent, StatCollector *coll,
 #endif
 }
 
-StatValueBase::StatValueBase(sprockit::sim_parameters *params) :
+StatValueBase::StatValueBase(sprockit::sim_parameters::ptr params) :
   StatCollector(params)
 {
   id_ = params->get_int_param("id");
 }
 
+*/
 
 
 } // end of namespace sstmac

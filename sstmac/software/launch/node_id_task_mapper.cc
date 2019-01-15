@@ -65,7 +65,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-NodeIdTaskMapper::NodeIdTaskMapper(sprockit::sim_parameters* params) :
+NodeIdTaskMapper::NodeIdTaskMapper(sprockit::sim_parameters::ptr& params) :
   TaskMapper(params)
 {
   if (params->has_param("node_id_file")){

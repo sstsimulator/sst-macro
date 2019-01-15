@@ -50,29 +50,15 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class StatLocalInt : public StatValue<int>
+class StatLocalInt : public Statistic<int>
 {
-  FactoryRegister("local_int", StatCollector, StatLocalInt)
+  FactoryRegister("local_int", Statistic<int>, StatLocalInt)
  public:
-  StatLocalInt(sprockit::sim_parameters* params);
+  StatLocalInt(sprockit::sim_parameters::ptr& params);
 
-  std::string toString() const override {
-    return "stat local int";
+  void addData_impl(int val){
+    values_.push_back(val);
   }
-
-  void dumpLocalData() override;
-
-  void dumpGlobalData() override;
-
-  void globalReduce(ParallelRuntime *rt) override;
-
-  void clear() override;
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new StatLocalInt(params);
-  }
-
-  void reduce(StatCollector *coll) override;
 
  protected:
   void dump(const std::string& froot);

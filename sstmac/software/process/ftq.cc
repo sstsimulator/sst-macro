@@ -62,9 +62,9 @@ namespace sw {
 std::unordered_map<int, AppFTQCalendar*> FTQCalendar::calendars_;
 const uint64_t AppFTQCalendar::allocation_num_epochs = 10000;
 
-FTQCalendar::FTQCalendar(sprockit::sim_parameters* params) :
+FTQCalendar::FTQCalendar(sprockit::sim_parameters::ptr& params) :
   num_ticks_epoch_(0),
-  StatCollector(params)
+  Parent(params)
 {
   num_ticks_epoch_ = Timestamp(params->get_time_param("epoch")).ticks_int64();
 }
@@ -93,11 +93,7 @@ FTQCalendar::registerApp(int aid, const std::string& appname)
   lock.unlock();
 }
 
-void
-FTQCalendar::clear()
-{
-}
-
+/**
 void
 AppFTQCalendar::globalReduce(ParallelRuntime* rt)
 {
@@ -156,6 +152,7 @@ FTQCalendar::globalReduce(ParallelRuntime *rt)
     cal->globalReduce(rt);
   }
 }
+*/
 
 void
 AppFTQCalendar::reduce(AppFTQCalendar* cal)
@@ -180,6 +177,7 @@ AppFTQCalendar::reduce(AppFTQCalendar* cal)
   */
 }
 
+#if 0
 void
 FTQCalendar::reduce(StatCollector* coll)
 {
@@ -207,9 +205,10 @@ FTQCalendar::dumpGlobalData()
     it->second->dump(fileroot_);
   }
 }
+#endif
 
 void
-FTQCalendar::collect(int event_typeid, int aid, int tid, uint64_t ticks_begin,
+FTQCalendar::addData_impl(int event_typeid, int aid, int tid, uint64_t ticks_begin,
                      uint64_t num_ticks)
 {
   static thread_lock lock;
@@ -219,7 +218,7 @@ FTQCalendar::collect(int event_typeid, int aid, int tid, uint64_t ticks_begin,
 }
 
 AppFTQCalendar*
-FTQCalendar::get_calendar(int aid) const
+FTQCalendar::getCalendar(int aid) const
 {
   auto it = calendars_.find(aid);
   if (it == calendars_.end()) {

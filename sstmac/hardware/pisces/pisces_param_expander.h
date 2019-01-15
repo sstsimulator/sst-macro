@@ -55,35 +55,35 @@ class PiscesParamExpander :
 {
  FactoryRegister("pisces", sstmac::ParamExpander, PiscesParamExpander)
  public:
-  void expand(sprockit::sim_parameters* params) override;
+  void expand(sprockit::sim_parameters::ptr& params) override;
 
  private:
-  void expand_amm1_nic(sprockit::sim_parameters* params,
-                       sprockit::sim_parameters* nic_params);
+  void expandAmm1Nic(sprockit::sim_parameters::ptr& params,
+                     sprockit::sim_parameters::ptr& nic_params);
 
-  void expand_amm1_network(sprockit::sim_parameters* params,
-                           sprockit::sim_parameters* switch_params,
+  void expandAmm1Network(sprockit::sim_parameters::ptr& params,
+                         sprockit::sim_parameters::ptr& switch_params,
                            bool set_xbar);
 
-  void expand_amm1_memory(sprockit::sim_parameters* params,
-                          sprockit::sim_parameters* mem_params);
+  void expandAmm1Memory(sprockit::sim_parameters::ptr& params,
+                        sprockit::sim_parameters::ptr& mem_params);
 
-  void expand_amm2_memory(sprockit::sim_parameters* params,
-                          sprockit::sim_parameters* mem_params);
+  void expandAmm2Memory(sprockit::sim_parameters::ptr& params,
+                        sprockit::sim_parameters::ptr& mem_params);
 
-  void expand_amm3_network(sprockit::sim_parameters* params,
-                           sprockit::sim_parameters* switch_params);
+  void expandAmm3Network(sprockit::sim_parameters::ptr& params,
+                         sprockit::sim_parameters::ptr& switch_params);
 
-  void expand_amm4_nic(sprockit::sim_parameters* params,
-                       sprockit::sim_parameters* top_params,
-                       sprockit::sim_parameters* nic_params);
+  void expandAmm4Nic(sprockit::sim_parameters::ptr& params,
+                     sprockit::sim_parameters::ptr& top_params,
+                     sprockit::sim_parameters::ptr& nic_params);
 
-  void expand_amm4_network(sprockit::sim_parameters* params,
-                           sprockit::sim_parameters* top_params,
-                           sprockit::sim_parameters* nic_params);
+  void expandAmm4Network(sprockit::sim_parameters::ptr& params,
+                         sprockit::sim_parameters::ptr& top_params,
+                         sprockit::sim_parameters::ptr& nic_params);
 
 private:
-  double switchBandwidthMultiplier(sprockit::sim_parameters *params) const override {
+  double switchBandwidthMultiplier(sprockit::sim_parameters::ptr& params) const override {
     if (tiled_switch_){
       return 1.0;
     } else {
@@ -91,7 +91,7 @@ private:
     }
   }
 
-  int switchBufferMultiplier(sprockit::sim_parameters *params) const override {
+  int switchBufferMultiplier(sprockit::sim_parameters::ptr& params) const override {
     if (tiled_switch_){
       return 1;
     } else {
@@ -99,7 +99,7 @@ private:
     }
   }
 
-  double networkBandwidthMultiplier(sprockit::sim_parameters *params) const override {
+  double networkBandwidthMultiplier(sprockit::sim_parameters::ptr& params) const override {
     if (tiled_switch_){
       return 1.0;
     } else {

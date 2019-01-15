@@ -63,7 +63,7 @@ class MemoryModel : public SubComponent
 {
   DeclareFactory(MemoryModel,Node*)
  public:
-  MemoryModel(sprockit::sim_parameters* params,
+  MemoryModel(sprockit::sim_parameters::ptr& params,
                Node* Node);
 
   static void deleteStatics();
@@ -93,7 +93,7 @@ class NullMemoryModel : public MemoryModel
  public:
   FactoryRegister("null", MemoryModel, NullMemoryModel)
 
-  NullMemoryModel(sprockit::sim_parameters* params, Node* nd) :
+  NullMemoryModel(sprockit::sim_parameters::ptr& params, Node* nd) :
     MemoryModel(params, nd)
   {
   }

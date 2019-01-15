@@ -56,32 +56,32 @@ class LogPParamExpander :
 {
   FactoryRegister("logP | simple | LogP | logp | macrels", sstmac::ParamExpander, LogPParamExpander)
  public:
-  virtual void expand(sprockit::sim_parameters* params);
+  virtual void expand(sprockit::sim_parameters::ptr& params);
 
-  void expandInto(sprockit::sim_parameters* dst_params,
-    sprockit::sim_parameters* params,
-    sprockit::sim_parameters* switch_params);
+  void expandInto(sprockit::sim_parameters::ptr& dst_params,
+    sprockit::sim_parameters::ptr& params,
+    sprockit::sim_parameters::ptr& switch_params);
 
  protected:
-  void expandAmm1Nic(sprockit::sim_parameters* params,
-    sprockit::sim_parameters* nic_params,
-    sprockit::sim_parameters* switch_params);
+  void expandAmm1Nic(sprockit::sim_parameters::ptr& params,
+    sprockit::sim_parameters::ptr& nic_params,
+    sprockit::sim_parameters::ptr& switch_params);
 
-  void expandAmm1Network(sprockit::sim_parameters* params,
-    sprockit::sim_parameters* switch_params);
+  void expandAmm1Network(sprockit::sim_parameters::ptr& params,
+    sprockit::sim_parameters::ptr& switch_params);
 
-  void expandAmm1Memory(sprockit::sim_parameters* params,
-    sprockit::sim_parameters* mem_params);
+  void expandAmm1Memory(sprockit::sim_parameters::ptr& params,
+    sprockit::sim_parameters::ptr& mem_params);
 
-  void expandAmm2Memory(sprockit::sim_parameters* params,
-      sprockit::sim_parameters* mem_params);
+  void expandAmm2Memory(sprockit::sim_parameters::ptr& params,
+      sprockit::sim_parameters::ptr& mem_params);
 
-  void expandAmm3Network(sprockit::sim_parameters* params,
-    sprockit::sim_parameters* switch_params);
+  void expandAmm3Network(sprockit::sim_parameters::ptr& params,
+    sprockit::sim_parameters::ptr& switch_params);
 
-  void expandAmm4Nic(sprockit::sim_parameters* params,
-    sprockit::sim_parameters* nic_params,
-    sprockit::sim_parameters* switch_params);
+  void expandAmm4Nic(sprockit::sim_parameters::ptr& params,
+    sprockit::sim_parameters::ptr& nic_params,
+    sprockit::sim_parameters::ptr& switch_params);
 };
 
 }

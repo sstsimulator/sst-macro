@@ -99,7 +99,7 @@ class PiscesBandwidthArbitrator
   virtual uint32_t bytesSending(Timestamp now) const = 0;
 
  protected:
-  PiscesBandwidthArbitrator(sprockit::sim_parameters* params);
+  PiscesBandwidthArbitrator(sprockit::sim_parameters::ptr& params);
 
  protected:
   double out_bw_;
@@ -117,7 +117,7 @@ class PiscesNullArbitrator :
   FactoryRegister("null", PiscesBandwidthArbitrator, PiscesNullArbitrator,
               "Simple bandwidth arbitrator that models zero congestion on a link")
  public:
-  PiscesNullArbitrator(sprockit::sim_parameters* params);
+  PiscesNullArbitrator(sprockit::sim_parameters::ptr& params);
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
@@ -144,7 +144,7 @@ class pisces_simple_arbitrator :
               "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
               "This corresponds to store-and-forward, which can be inaccurate for large packet sizes")
  public:
-  pisces_simple_arbitrator(sprockit::sim_parameters* params);
+  pisces_simple_arbitrator(sprockit::sim_parameters::ptr& params);
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
@@ -181,7 +181,7 @@ class PiscesCutThroughArbitrator :
   typedef double bw_t;
 
  public:
-  PiscesCutThroughArbitrator(sprockit::sim_parameters* params);
+  PiscesCutThroughArbitrator(sprockit::sim_parameters::ptr& params);
 
   ~PiscesCutThroughArbitrator();
 

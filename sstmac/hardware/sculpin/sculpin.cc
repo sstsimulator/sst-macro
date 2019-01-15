@@ -55,7 +55,7 @@ RegisterDebugSlot(sculpin, "print all the details of the sculpin model")
 namespace sstmac {
 namespace hw {
 
-sculpin_packet::sculpin_packet(
+SculpinPacket::SculpinPacket(
   Flow* msg,
   uint32_t num_bytes,
   bool is_tail,
@@ -68,7 +68,7 @@ sculpin_packet::sculpin_packet(
 }
 
 std::string
-sculpin_packet::toString() const
+SculpinPacket::toString() const
 {
   return sprockit::printf("pkt bytes=%" PRIu32 " flow %" PRIu64 ": %s",
                           numBytes(), flowId(), orig()
@@ -78,7 +78,7 @@ sculpin_packet::toString() const
 }
 
 void
-sculpin_packet::serialize_order(serializer& ser)
+SculpinPacket::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
   Packet::serialize_order(ser);

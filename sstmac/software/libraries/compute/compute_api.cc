@@ -294,7 +294,7 @@ get_implicit_compute_state(){
   uintptr_t localStorage = get_sstmac_tls();
   auto* statePtr = (sstmac::sw::OperatingSystem::ImplicitState**)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
   if (*statePtr == nullptr){
-      sprockit::sim_parameters* params = sstmac::sw::OperatingSystem::currentOs()->params();
+      sprockit::sim_parameters::ptr& params = sstmac::sw::OperatingSystem::currentOs()->params();
       *statePtr = sstmac::sw::OperatingSystem::ImplicitState::factory
                     ::get_optional_param("ImplicitState", "null", params);
   }
@@ -309,85 +309,85 @@ get_implicit_memoize_state(){
 extern "C" void sstmac_set_implicit_compute_state1(int type0, int state0)
 {
   auto* state = get_implicit_compute_state();
-  state->set_state(type0, state0);
+  state->setState(type0, state0);
 }
 
 extern "C" void sstmac_set_implicit_compute_state2(int type0, int state0, int type1, int state1)
 {
   auto* state = get_implicit_compute_state();
-  state->set_state(type0, state0);
-  state->set_state(type1, state1);
+  state->setState(type0, state0);
+  state->setState(type1, state1);
 }
 
 extern "C" void sstmac_set_implicit_compute_state3(int type0, int state0, int type1, int state1,
                                             int type2, int state2)
 {
   auto* state = get_implicit_compute_state();
-  state->set_state(type0, state0);
-  state->set_state(type1, state1);
-  state->set_state(type2, state2);
+  state->setState(type0, state0);
+  state->setState(type1, state1);
+  state->setState(type2, state2);
 }
 
 extern "C" void sstmac_unset_implicit_compute_state1(int type0)
 {
   auto* state = get_implicit_compute_state();
-  state->unset_state(type0);
+  state->unsetState(type0);
 }
 
 extern "C" void sstmac_unset_implicit_compute_state2(int type0, int type1)
 {
   auto* state = get_implicit_compute_state();
-  state->unset_state(type0);
-  state->unset_state(type1);
+  state->unsetState(type0);
+  state->unsetState(type1);
 }
 
 extern "C" void sstmac_unset_implicit_compute_state3(int type0, int type1, int type2)
 {
   auto* state = get_implicit_compute_state();
-  state->unset_state(type0);
-  state->unset_state(type1);
-  state->unset_state(type2);
+  state->unsetState(type0);
+  state->unsetState(type1);
+  state->unsetState(type2);
 }
 
 extern "C" void sstmac_set_implicit_memoize_state1(int type0, int state0)
 {
   auto* state = get_implicit_memoize_state();
-  state->set_state(type0, state0);
+  state->setState(type0, state0);
 }
 
 extern "C" void sstmac_set_implicit_memoize_state2(int type0, int state0, int type1, int state1)
 {
   auto* state = get_implicit_memoize_state();
-  state->set_state(type0, state0);
-  state->set_state(type1, state1);
+  state->setState(type0, state0);
+  state->setState(type1, state1);
 }
 
 extern "C" void sstmac_set_implicit_memoize_state3(int type0, int state0, int type1, int state1,
                                             int type2, int state2)
 {
   auto* state = get_implicit_memoize_state();
-  state->set_state(type0, state0);
-  state->set_state(type1, state1);
-  state->set_state(type2, state2);
+  state->setState(type0, state0);
+  state->setState(type1, state1);
+  state->setState(type2, state2);
 }
 
 extern "C" void sstmac_unset_implicit_memoize_state1(int type0)
 {
   auto* state = get_implicit_memoize_state();
-  state->unset_state(type0);
+  state->unsetState(type0);
 }
 
 extern "C" void sstmac_unset_implicit_memoize_state2(int type0, int type1)
 {
   auto* state = get_implicit_memoize_state();
-  state->unset_state(type0);
-  state->unset_state(type1);
+  state->unsetState(type0);
+  state->unsetState(type1);
 }
 
 extern "C" void sstmac_unset_implicit_memoize_state3(int type0, int type1, int type2)
 {
   auto* state = get_implicit_memoize_state();
-  state->unset_state(type0);
-  state->unset_state(type1);
-  state->unset_state(type2);
+  state->unsetState(type0);
+  state->unsetState(type1);
+  state->unsetState(type2);
 }

@@ -76,7 +76,7 @@ class BlasAPI :
   RegisterAPI("blas", BlasAPI)
 
  public:
-  BlasAPI(sprockit::sim_parameters* params,
+  BlasAPI(sprockit::sim_parameters::ptr& params,
            SoftwareId sid, OperatingSystem* os);
 
   virtual ~BlasAPI();
@@ -100,7 +100,7 @@ class BlasAPI :
   }
 
  protected:
-  void initKernels(sprockit::sim_parameters* params);
+  void initKernels(sprockit::sim_parameters::ptr& params);
 
  protected:
   LibComputeInst* lib_compute_;

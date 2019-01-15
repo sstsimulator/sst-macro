@@ -154,7 +154,7 @@ class NIC : public ConnectableSubcomponent
   virtual std::function<void(NetworkMessage*)> dataIoctl();
 
  protected:
-  NIC(sprockit::sim_parameters* params, Node* parent);
+  NIC(sprockit::sim_parameters::ptr& params, Node* parent);
 
   Node* parent() const {
     return parent_;
@@ -211,7 +211,7 @@ class NullNIC : public NIC
  public:
   FactoryRegister("null", NIC, NullNIC, "implements a nic that models nothing - stand-in only")
 
-  NullNIC(sprockit::sim_parameters* params, Node* parent) :
+  NullNIC(sprockit::sim_parameters::ptr& params, Node* parent) :
     NIC(params, parent)
   {
   }
@@ -220,15 +220,15 @@ class NullNIC : public NIC
 
   void doSend(NetworkMessage* msg) override {}
 
-  void connectOutput(sprockit::sim_parameters *params, int src_outport, int dst_inport,
+  void connectOutput(sprockit::sim_parameters::ptr& params, int src_outport, int dst_inport,
                       EventLink *payload_link) override {}
 
-  void connectInput(sprockit::sim_parameters *params, int src_outport, int dst_inport,
+  void connectInput(sprockit::sim_parameters::ptr& params, int src_outport, int dst_inport,
                      EventLink *credit_link) override {}
 
-  Timestamp sendLatency(sprockit::sim_parameters *params) const override { return Timestamp(); }
+  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override { return Timestamp(); }
 
-  Timestamp creditLatency(sprockit::sim_parameters *params) const override { return Timestamp(); }
+  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override { return Timestamp(); }
 
   LinkHandler* payloadHandler(int port) override { return nullptr; }
 

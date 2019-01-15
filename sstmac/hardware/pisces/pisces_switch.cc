@@ -70,25 +70,25 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-PiscesAbstractSwitch::PiscesAbstractSwitch(sprockit::sim_parameters *params, uint32_t id) :
+PiscesAbstractSwitch::PiscesAbstractSwitch(sprockit::sim_parameters::ptr& params, uint32_t id) :
   buf_stats_(nullptr),
   xbar_stats_(nullptr),
   router_(nullptr),
   NetworkSwitch(params, id)
 {
-  sprockit::sim_parameters* xbar_params = params->get_optional_namespace("xbar");
+  sprockit::sim_parameters::ptr xbar_params = params->get_optional_namespace("xbar");
   xbar_stats_ = PacketStatsCallback::factory::get_optional_param("stats", "null",
                                              xbar_params, this);
 
-  sprockit::sim_parameters* buf_params = params->get_optional_namespace("output_buffer");
+  sprockit::sim_parameters::ptr buf_params = params->get_optional_namespace("output_buffer");
   buf_stats_ = PacketStatsCallback::factory::get_optional_param("stats", "null",
                                              buf_params, this);
 
-  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
+  sprockit::sim_parameters::ptr rtr_params = params->get_optional_namespace("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
   router_ = Router::factory::get_param("name", rtr_params, top_, this);
 
-  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+  sprockit::sim_parameters::ptr ej_params = params->get_optional_namespace("ejection");
   std::vector<Topology::injection_port> conns;
   top_->endpointsConnectedToEjectionSwitch(my_addr_, conns);
   if (!ej_params->has_param("credits")){
@@ -100,7 +100,7 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(sprockit::sim_parameters *params, uin
 
   for (Topology::injection_port& conn : conns){
     auto port_ns = Topology::getPortNamespace(conn.switch_port);
-    sprockit::sim_parameters* port_params = params->get_optional_namespace(port_ns);
+    sprockit::sim_parameters::ptr port_params = params->get_optional_namespace(port_ns);
     ej_params->combine_into(port_params);
   }
 }
@@ -113,11 +113,11 @@ PiscesAbstractSwitch::~PiscesAbstractSwitch()
   if (router_) delete router_;
 }
 
-PiscesSwitch::PiscesSwitch(sprockit::sim_parameters* params, uint32_t id)
+PiscesSwitch::PiscesSwitch(sprockit::sim_parameters::ptr& params, uint32_t id)
 : PiscesAbstractSwitch(params, id),
   xbar_(nullptr)
 {
-  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
+  sprockit::sim_parameters::ptr xbar_params = params->get_namespace("xbar");
   xbar_params->add_param_override("num_vc", router_->numVC());
   xbar_ = new PiscesCrossbar(xbar_params, this,
                               top_->maxNumPorts(), top_->maxNumPorts(),
@@ -146,7 +146,7 @@ PiscesSwitch::~PiscesSwitch()
 
 void
 PiscesSwitch::connectOutput(
-  sprockit::sim_parameters* port_params,
+  sprockit::sim_parameters::ptr& port_params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -178,7 +178,7 @@ PiscesSwitch::input_port::handle(Event *ev)
 
 void
 PiscesSwitch::connectInput(
-  sprockit::sim_parameters* port_params,
+  sprockit::sim_parameters::ptr& port_params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -188,13 +188,13 @@ PiscesSwitch::connectInput(
 }
 
 Timestamp
-PiscesSwitch::sendLatency(sprockit::sim_parameters *params) const
+PiscesSwitch::sendLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_time_param("sendLatency");
 }
 
 Timestamp
-PiscesSwitch::creditLatency(sprockit::sim_parameters *params) const
+PiscesSwitch::creditLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("xbar")->get_time_param("creditLatency");
 }

@@ -49,9 +49,9 @@ namespace sstmac {
 namespace hw {
 
 double
-ParamExpander::networkBandwidthMultiplier(sprockit::sim_parameters *params) const
+ParamExpander::networkBandwidthMultiplier(sprockit::sim_parameters::ptr& params) const
 {
-  sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
+  sprockit::sim_parameters::ptr top_params = params->get_optional_namespace("topology");
   if (top_params->has_param("redundant")){
     std::vector<int> red;
     top_params->get_vector_param("redundant", red);
@@ -66,9 +66,9 @@ ParamExpander::networkBandwidthMultiplier(sprockit::sim_parameters *params) cons
 }
 
 double
-ParamExpander::switchBandwidthMultiplier(sprockit::sim_parameters *params) const
+ParamExpander::switchBandwidthMultiplier(sprockit::sim_parameters::ptr& params) const
 {
-  sprockit::sim_parameters* sw_params = params->get_optional_namespace("switch");
+  sprockit::sim_parameters::ptr sw_params = params->get_optional_namespace("switch");
   if (sw_params->has_param("geometry")){
     std::vector<int> geom;
     sw_params->get_vector_param("geometry", geom);
@@ -83,9 +83,9 @@ ParamExpander::switchBandwidthMultiplier(sprockit::sim_parameters *params) const
 }
 
 int
-ParamExpander::switchBufferMultiplier(sprockit::sim_parameters *params) const
+ParamExpander::switchBufferMultiplier(sprockit::sim_parameters::ptr& params) const
 {
-  sprockit::sim_parameters* top_params = params->get_optional_namespace("topology");
+  sprockit::sim_parameters::ptr top_params = params->get_optional_namespace("topology");
   if (top_params->has_param("redundant")){
     std::vector<int> red;
     top_params->get_vector_param("redundant", red);

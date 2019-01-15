@@ -59,7 +59,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-NodeIdAllocation::NodeIdAllocation(sprockit::sim_parameters* params) :
+NodeIdAllocation::NodeIdAllocation(sprockit::sim_parameters::ptr& params) :
   NodeAllocator(params)
 {
   if (params->has_param("node_id_file")){

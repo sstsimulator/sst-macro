@@ -160,9 +160,9 @@ class Simulation
     return pfd_[1];
   }
 
-  void setParameters(sprockit::sim_parameters* params);
+  void setParameters(sprockit::sim_parameters::ptr& params);
 
-  sprockit::sim_parameters params_;
+  sprockit::sim_parameters::ptr params_;
   sim_stats stats_;
   char label_[256];
   int label_offset_;
@@ -205,12 +205,6 @@ class SimulationQueue
 
   ~SimulationQueue();
 
-  Simulation* fork(sprockit::sim_parameters& params,
-    int nresults = 0, 
-    double* resultPtr = nullptr){
-    return fork(&params, nresults, resultPtr);
-  }
-
   bool runJobsOnMaster() const {
     return nproc_ <= 4;
   }
@@ -234,7 +228,7 @@ class SimulationQueue
 
   void finalize();
 
-  Simulation* fork(sprockit::sim_parameters* params,
+  Simulation* fork(sprockit::sim_parameters::ptr& params,
     int nresults = 0, 
     double* resultPtr = nullptr);
 
@@ -242,7 +236,7 @@ class SimulationQueue
 
   void clear(Simulation* sim);
 
-  void run(sprockit::sim_parameters* params, sim_stats& stats);
+  void run(sprockit::sim_parameters::ptr& params, sim_stats& stats);
 
   static double* allocateResults(int nresults);
 
@@ -253,11 +247,11 @@ class SimulationQueue
   Simulation* sendScanPoint(int bufferSize, char* bufferPtr,
                             int nresults, double* resultPtr = nullptr);
 
-  sprockit::sim_parameters* template_params() {
-    return &template_params_;
+  sprockit::sim_parameters::ptr template_params() {
+    return template_params_;
   }
 
-  void rerun(sprockit::sim_parameters* params, sim_stats& stats);
+  void rerun(sprockit::sim_parameters::ptr& params, sim_stats& stats);
 
   void busyLoopMPI();
 
@@ -282,7 +276,7 @@ class SimulationQueue
   bool built_up_;
   std::list<Simulation*> pending_;
   ParallelRuntime* rt_;
-  sprockit::sim_parameters template_params_;
+  sprockit::sim_parameters::ptr template_params_;
   opts template_opts_;
   static double* results_;
   static int num_results_;

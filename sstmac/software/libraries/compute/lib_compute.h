@@ -59,13 +59,13 @@ class LibCompute :
 {  
   
  protected:
-  LibCompute(sprockit::sim_parameters* params,
+  LibCompute(sprockit::sim_parameters::ptr& params,
               const std::string& libname, SoftwareId sid,
               OperatingSystem* os)
     : Library(libname, sid, os) {
   }
 
-  LibCompute(sprockit::sim_parameters* params,
+  LibCompute(sprockit::sim_parameters::ptr& params,
               const char* name, SoftwareId sid,
               OperatingSystem* os)
     : Library(name, sid, os)

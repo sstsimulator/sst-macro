@@ -55,7 +55,7 @@ class DefaultDAXPY :
 {
   FactoryRegister("default_daxpy", BlasKernel, DefaultDAXPY)
  public:
-  DefaultDAXPY(sprockit::sim_parameters* params){
+  DefaultDAXPY(sprockit::sim_parameters::ptr& params){
     loop_unroll_ = params->get_optional_double_param("daxpy_loop_unroll", 4);
     pipeline_ = params->get_optional_double_param("daxpy_pipeline_efficiency", 2);
   }

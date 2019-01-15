@@ -155,7 +155,7 @@ print_backtrace(int sig)
 }
 
 MultithreadedEventContainer::MultithreadedEventContainer(
-  sprockit::sim_parameters* params, ParallelRuntime* rt) :
+  sprockit::sim_parameters::ptr& params, ParallelRuntime* rt) :
   ClockCycleEventMap(params, rt)
 {
   //set the signal handler

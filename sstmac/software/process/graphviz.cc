@@ -136,8 +136,8 @@ graph_viz_registration::graph_viz_registration(const char* name, int id)
   (*names)[id] = name;
 }
 
-GraphViz::GraphViz(sprockit::sim_parameters* params) :
-  StatCollector(params)
+GraphViz::GraphViz(sprockit::sim_parameters::ptr& params) :
+  Parent(params)
 {
   int nfxns = graph_viz_registration::numIds();
   auto trace_size = 1 + 2*nfxns;
@@ -153,94 +153,7 @@ GraphViz::GraphViz(sprockit::sim_parameters* params) :
 }
 
 void
-GraphViz::globalReduce(ParallelRuntime *rt)
-{
-  if (rt->nproc() == 1){
-    return;
-  }
-
-  int nfxns = graph_viz_registration::numIds();
-  auto trace_size = 1 + 2*nfxns;
-  auto total_size = trace_size * nfxns;
-
-#if SSTMAC_HAVE_VALID_MPI
-  MPI_Allreduce(MPI_IN_PLACE, data_block_, total_size, MPI_UINT64_T, MPI_SUM, MPI_COMM_WORLD);
-#else
-  sprockit::abort("cannot support global reduce with MPI");
-#endif
-}
-
-void
-GraphViz::dumpSummary(std::ostream& os)
-{
-  os << "Call Graph Summary\n";
-  int nfxns = graph_viz_registration::numIds();
-  for (int i=0; i < nfxns; ++i){
-    trace* tr = traces_[i];
-    if (tr->include()){
-      const char* name = graph_viz_registration::name(i);
-      int len = ::strlen(name);
-      os << name;
-      for (int i=0; i < (50 - len); ++i){
-        os << " ";
-      }
-      uint64_t total = tr->self_;
-      for (int i=0; i < nfxns; ++i){
-        total += tr->calls_[i].counts;
-      }
-      os << sprockit::printf("%-16" PRIu64 " %-16" PRIu64 "\n", total, tr->self_);
-      for (int i=0; i < nfxns; ++i){
-        graphviz_call& call = tr->calls_[i];
-        if (call.counts){
-          const char* name = graph_viz_registration::name(i);
-          os << "     ";
-          int len = ::strlen(name);
-          os << name;
-          for (int i=0; i < (45 - len); ++i){
-            os << " ";
-          }
-          os << call.counts << "\n";
-        }
-      }
-    }
-  }
-}
-
-void
-GraphViz::dumpLocalData()
-{
-  char fname[128];
-  sprintf(fname, "%s.calls.%d.out", fileroot_.c_str(), id());
-  std::ofstream ofs(fname);
-  dumpSummary(ofs);
-  ofs.close();
-}
-
-void
-GraphViz::dumpGlobalData()
-{
-  std::fstream myfile;
-  std::string fname = sprockit::printf("%s.callgrind.out", fileroot_.c_str());
-  checkOpen(myfile, fname.c_str());
-
-  myfile << "events: Instructions\n\n";
-
-  int nfxns = graph_viz_registration::numIds();
-  for (int i=0; i < nfxns; ++i){
-    trace* tr = traces_[i];
-    if (tr->include()){
-      const char* fxn = graph_viz_registration::name(i);
-      myfile << tr->summary(fxn);
-      myfile << "\n";
-    }
-  }
-  myfile.close();
-
-  dumpSummary(std::cout);
-}
-
-void
-GraphViz::add_call(
+GraphViz::addCall(
   int ncalls,
   uint64_t count,
   int fxnId,
@@ -261,30 +174,13 @@ GraphViz::~GraphViz()
 }
 
 void
-GraphViz::reduce(StatCollector *coll)
-{
-  GraphViz* other = dynamic_cast<GraphViz*>(coll);
-  int nfxns = graph_viz_registration::numIds();
-  auto trace_size = 1 + 2*nfxns;
-  auto total_size = trace_size * nfxns;
-  for (int i=0; i < total_size; ++i){
-    data_block_[i] += other->data_block_[i];
-  }
-}
-
-void
-GraphViz::clear()
-{
-}
-
-void
-GraphViz::add_self(int fxnId, uint64_t count)
+GraphViz::addSelf(int fxnId, uint64_t count)
 {
   traces_[fxnId]->add_self(count);
 }
 
 void
-GraphViz::countTrace(uint64_t count, Thread* thr)
+GraphViz::addData_impl(uint64_t count, Thread* thr)
 {
 #if !SSTMAC_HAVE_GRAPHVIZ
   return; //nothing to do here

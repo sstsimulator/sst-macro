@@ -66,7 +66,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-PiscesBranchedSwitch::PiscesBranchedSwitch(sprockit::sim_parameters* params, uint32_t id)
+PiscesBranchedSwitch::PiscesBranchedSwitch(sprockit::sim_parameters::ptr& params, uint32_t id)
   : PiscesAbstractSwitch(params, id)
 {
   std::vector<int> args;
@@ -78,13 +78,13 @@ PiscesBranchedSwitch::PiscesBranchedSwitch(sprockit::sim_parameters* params, uin
 }
 
 Timestamp
-PiscesBranchedSwitch::sendLatency(sprockit::sim_parameters *params) const
+PiscesBranchedSwitch::sendLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("output")->get_time_param("sendLatency");
 }
 
 Timestamp
-PiscesBranchedSwitch::creditLatency(sprockit::sim_parameters *params) const
+PiscesBranchedSwitch::creditLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("input")->get_time_param("creditLatency");
 }
@@ -99,18 +99,18 @@ PiscesBranchedSwitch::~PiscesBranchedSwitch()
 }
 
 void
-PiscesBranchedSwitch::initComponents(sprockit::sim_parameters* params)
+PiscesBranchedSwitch::initComponents(sprockit::sim_parameters::ptr& params)
 {
   // [muxer -> xbar -> demuxer -> output_buffer] -> [muxer...]
 
   if (!input_muxers_.empty())
     return;
 
-  sprockit::sim_parameters* input_params = params->get_namespace("input");
+  sprockit::sim_parameters::ptr input_params = params->get_namespace("input");
 
-  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
+  sprockit::sim_parameters::ptr xbar_params = params->get_namespace("xbar");
 
-  sprockit::sim_parameters* output_params = params->get_namespace("output");
+  sprockit::sim_parameters::ptr output_params = params->get_namespace("output");
 
 
   // construct the elements
@@ -151,7 +151,7 @@ PiscesBranchedSwitch::initComponents(sprockit::sim_parameters* params)
 
 void
 PiscesBranchedSwitch::connectOutput(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -163,7 +163,7 @@ PiscesBranchedSwitch::connectOutput(
 
 void
 PiscesBranchedSwitch::connectInput(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int src_outport,
   int dst_inport,
   EventLink* link)

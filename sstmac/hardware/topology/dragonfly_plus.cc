@@ -64,7 +64,7 @@ namespace hw {
 
 static const double PI = 3.141592653589793238462;
 
-DragonflyPlus::DragonflyPlus(sprockit::sim_parameters* params) :
+DragonflyPlus::DragonflyPlus(sprockit::sim_parameters::ptr& params) :
   Dragonfly(params)
 {
   if (h_ % (g_-1)){
@@ -119,14 +119,14 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
   int myRow;
   int myA;
   int myG;
-  get_coords(src, myRow, myA, myG);
+  getCoords(src, myRow, myA, myG);
 
   if (myRow == 0){
     for (int a=0; a < a_; ++a){
       connection next;
       next.src = src;
       next.src_outport = a;
-      next.dst = get_uid(1, a, myG);
+      next.dst = getUid(1, a, myG);
       next.dst_inport = myA;
       top_debug("(%d=%d,%d:%d)->(%d=%d,%d:%d)",
                 src, myA, myG, next.src_outport,
@@ -138,7 +138,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
       connection next;
       next.src = src;
       next.src_outport = a;
-      next.dst = get_uid(0, a, myG);
+      next.dst = getUid(0, a, myG);
       next.dst_inport = myA;
       top_debug("(%d=%d,%d:%d)->(%d=%d,%d:%d)",
                 src, myA, myG, next.src_outport,
@@ -147,7 +147,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
     }
 
     std::vector<int> newConns;
-    group_wiring_->connected_routers(myA, myG, newConns);
+    group_wiring_->connectedRouters(myA, myG, newConns);
     for (int p=0; p < newConns.size(); ++p){
       int relDst = newConns[p];
       connection next;
@@ -156,7 +156,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
       next.dst = relDst + a_*g_; //num leaf switches
       int dstA = relDst % a_;
       int dstG = relDst / a_;
-      next.dst_inport =  a_ + group_wiring_->input_groupPort(myA, myG, p, dstA, dstG);
+      next.dst_inport =  a_ + group_wiring_->inputGroupPort(myA, myG, p, dstA, dstG);
       conns.push_back(next);
       top_debug("(%d=%d,%d:%d)->(%d=%d,%d:%d)",
                 src, myA, myG, next.src_outport,
@@ -166,7 +166,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
 }
 
 void
-DragonflyPlus::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters *switch_params) const
+DragonflyPlus::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters::ptr& switch_params) const
 {
   int row = src / numLeafSwitches();
   if (row == 0){
@@ -183,7 +183,7 @@ DragonflyPlus::getVtkGeometry(SwitchId sid) const
   int myRow;
   int myA;
   int myG;
-  get_coords(sid, myRow, myA, myG);
+  getCoords(sid, myRow, myA, myG);
 
   //we need to figure out the radian offset of the group
   double inter_group_offset = vtk_group_radians_ * myG;

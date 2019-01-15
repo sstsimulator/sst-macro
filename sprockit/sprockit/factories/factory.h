@@ -63,7 +63,7 @@ template <class T, typename... Args>
 class Builder
 {
  public:
-  virtual T* build(sprockit::sim_parameters* params, const Args&... args) = 0;
+  virtual T* build(sprockit::sim_parameters::ptr& params, const Args&... args) = 0;
 
 };
 
@@ -80,7 +80,7 @@ template <class> struct wrap { typedef void type; };
 template<typename T, class Enable=void>
 struct call_finalizeInit : public std::false_type {
  public:
-  void operator()(T* t, sprockit::sim_parameters* params){
+  void operator()(T* t, sprockit::sim_parameters::ptr& params){
     //if we compile here, class T does not have a finalizeInit
     //do nothing
   }
@@ -89,12 +89,12 @@ struct call_finalizeInit : public std::false_type {
 template<typename T>
 struct call_finalizeInit<T,
   typename wrap<
-    decltype(std::declval<T>().finalizeInit(nullptr))
+    decltype(std::declval<T>().finalizeInit(sprockit::sim_parameters::empty()))
    >::type
 > : public std::true_type
 {
  public:
-  void operator()(T* t, sprockit::sim_parameters* params){
+  void operator()(T* t, sprockit::sim_parameters::ptr& params){
     //if we compile here, class T does have a finalizeInit
     //call that function
     t->finalizeInit(params);
@@ -133,7 +133,7 @@ struct call_constructor_impl<T,
     typename std::enable_if<constructible_from<T,Args...>::type::value>::type,
     Args...>
 {
-  T* operator()(sprockit::sim_parameters* params, const Args&... args){
+  T* operator()(sprockit::sim_parameters::ptr& params, const Args&... args){
     return new T(args...);
   }
 };
@@ -148,7 +148,7 @@ struct call_constructor_impl<T,
     typename std::enable_if<!constructible_from<T,Args...>::type::value>::type,
     Args...>
 {
-  T* operator()(sprockit::sim_parameters* params, const Args&... args){
+  T* operator()(sprockit::sim_parameters::ptr& params, const Args&... args){
     return new T(params, args...);
   }
 };
@@ -280,7 +280,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   static T* _get_value(const std::string& valname,
-             sprockit::sim_parameters* params,
+             sprockit::sim_parameters::ptr& params,
              const Args&... args) {
     if (!builder_map_) {
       spkt_abort_printf(
@@ -309,7 +309,7 @@ class Factory
   }
 
  public:
-  static bool valid_param(const std::string& name, sprockit::sim_parameters* params) {
+  static bool valid_param(const std::string& name, sprockit::sim_parameters::ptr& params) {
     std::string value = params->get_param(name);
     return builder_map_->find(value) != builder_map_->end();
   }
@@ -329,7 +329,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   static T* get_value(const std::string& valname,
-            sim_parameters* params,
+            sim_parameters::ptr& params,
             const Args&... args) {
     return _get_value(valname, params, args...);
   }
@@ -355,7 +355,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   static T* get_param(const std::string& param_name,
-            sim_parameters* params,
+            sim_parameters::ptr& params,
             const Args&... args) {
     return _get_value(params->get_param(param_name),
                       params, args...);
@@ -373,7 +373,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   static T* get_extra_param(const std::string& param_name,
-                  sim_parameters* params,
+                  sim_parameters::ptr& params,
                   const Args&... args) {
     if (params->has_param(param_name)) {
       return get_param(param_name,params);
@@ -383,7 +383,7 @@ class Factory
   }
 
   static T* get_extra_value(const std::string& param_value,
-                  sim_parameters* params,
+                  const sim_parameters::ptr& params,
                   const Args&... args){
     if (!builder_map_)
       return nullptr;
@@ -410,7 +410,7 @@ class Factory
    */
   static T* get_optional_param(const std::string& param_name,
                      const std::string& defval,
-                     sim_parameters* params,
+                     sim_parameters::ptr& params,
                      const Args&... args) {
     return _get_value(params->get_optional_param(param_name, defval),
                       params, args...);
@@ -435,7 +435,7 @@ class BuilderImpl : public Builder<Parent, Args...>
     registered_ = true;
   }
 
-  Parent* build(sprockit::sim_parameters* params, const Args&... args) {
+  Parent* build(sprockit::sim_parameters::ptr& params, const Args&... args) {
     return call_constructor<Child,Args...>()(params, args...);
   }
 
@@ -472,7 +472,7 @@ template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Arg
 #define FirstArgFactoryName(X, ...) X##_factory
 
 #define FactoryRegister(cls_str, parent_cls, child_cls, ...) \
-  friend class ::sprockit::BuilderImpl<child_cls,parent_cls::factory>; \
+  friend class ::sprockit::BuilderImpl<child_cls,typename parent_cls::factory>; \
   public: \
    static const char* factory_string() { \
      return cls_str; \

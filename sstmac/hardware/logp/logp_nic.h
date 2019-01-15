@@ -61,20 +61,20 @@ class LogPNIC :
   FactoryRegister("logP | simple | LogP | logp | macrels", NIC, LogPNIC,
               "implements a nic that models messages via a simple latency/bandwidth injection delay")
  public:
-  LogPNIC(sprockit::sim_parameters* params, Node* parent);
+  LogPNIC(sprockit::sim_parameters::ptr& params, Node* parent);
 
   virtual ~LogPNIC();
 
   void handle(Event *ev);
 
   virtual void connectOutput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
 
   virtual void connectInput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
@@ -93,9 +93,9 @@ class LogPNIC :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
+  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
 
  protected:
   /**

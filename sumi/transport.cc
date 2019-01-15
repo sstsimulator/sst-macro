@@ -172,13 +172,13 @@ class SumiServer :
 
 };
 
-Transport::Transport(sprockit::sim_parameters* params, sstmac::sw::SoftwareId sid,
+Transport::Transport(sprockit::sim_parameters::ptr& params, sstmac::sw::SoftwareId sid,
                      sstmac::sw::OperatingSystem* os) :
   Transport(params, "sumi", sid, os)
 {
 }
 
-Transport::Transport(sprockit::sim_parameters* params,
+Transport::Transport(sprockit::sim_parameters::ptr& params,
                const char* prefix,
                sstmac::sw::SoftwareId sid,
                sstmac::sw::OperatingSystem* os) :
@@ -186,7 +186,7 @@ Transport::Transport(sprockit::sim_parameters* params,
 {
 }
 
-Transport::Transport(sprockit::sim_parameters* params,
+Transport::Transport(sprockit::sim_parameters::ptr& params,
                sstmac::sw::SoftwareId sid,
                sstmac::sw::OperatingSystem* os,
                const std::string& prefix,
@@ -195,7 +195,7 @@ Transport::Transport(sprockit::sim_parameters* params,
 {
 }
 
-Transport::Transport(sprockit::sim_parameters* params,
+Transport::Transport(sprockit::sim_parameters::ptr& params,
                      const std::string& libname,
                      sstmac::sw::SoftwareId sid,
                      sstmac::sw::OperatingSystem* os,
@@ -244,10 +244,12 @@ Transport::Transport(sprockit::sim_parameters* params,
 
   server->registerProc(rank_, this);
 
+  /** TODO - stats
   spy_num_messages_ = sstmac::optionalStats<sstmac::StatSpyplot>(desScheduler(),
         params, "traffic_matrix", "ascii", "num_messages");
   spy_bytes_ = sstmac::optionalStats<sstmac::StatSpyplot>(desScheduler(),
         params, "traffic_matrix", "ascii", "bytes");
+  */
 }
 
 void
@@ -364,15 +366,15 @@ Transport::send(Message* m)
 #if SSTMAC_COMM_SYNC_STATS
   msg->setTimeSent(wall_time());
 #endif
-  if (spy_num_messages_) spy_num_messages_->add_one(m->sender(), m->recver());
+  if (spy_num_messages_) spy_num_messages_->addOne(m->sender(), m->recver());
   if (spy_bytes_){
     switch(m->sstmac::hw::NetworkMessage::type()){
     case sstmac::hw::NetworkMessage::payload:
-      spy_bytes_->add(m->sender(), m->recver(), m->byteLength());
+      spy_bytes_->addData(m->sender(), m->recver(), m->byteLength());
       break;
     case sstmac::hw::NetworkMessage::rdma_get_request:
     case sstmac::hw::NetworkMessage::rdma_put_payload:
-      spy_bytes_->add(m->sender(), m->recver(), m->payloadBytes());
+      spy_bytes_->addData(m->sender(), m->recver(), m->payloadBytes());
       break;
     default:
       break;
@@ -490,7 +492,7 @@ Transport::incomingMessage(Message *msg)
   }
 }
 
-CollectiveEngine::CollectiveEngine(sprockit::sim_parameters *params, Transport *tport) :
+CollectiveEngine::CollectiveEngine(sprockit::sim_parameters::ptr& params, Transport *tport) :
   system_collective_tag_(-1), //negative tags reserved for special system work
   eager_cutoff_(512),
   use_put_protocol_(false),

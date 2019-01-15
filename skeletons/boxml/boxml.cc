@@ -117,7 +117,7 @@ namespace lblxml {
   void
   boxml::get_params_standalone()
   {
-    sprockit::sim_parameters* params = new sprockit::sim_parameters();
+    sprockit::sim_parameters::ptr& params = new sprockit::sim_parameters();
     params->parse_file("./parameters.ini", false, true);
     params_ = params;
   }
@@ -209,7 +209,7 @@ namespace lblxml {
     xml_read_only_ = params_->get_optional_bool_param("boxml_xml_only", false);
 
     if (params_->has_namespace("effective_bandwidths")){
-      sprockit::sim_parameters* stat_params = params_->get_namespace("effective_bandwidths");
+      sprockit::sim_parameters::ptr stat_params = params_->get_namespace("effective_bandwidths");
       hist_eff_bw_ = test_cast(StatHistogram, StatCollector::factory::get_optional_param("type", "histogram", stat_params));
 
       if (!hist_eff_bw_)
@@ -221,7 +221,7 @@ namespace lblxml {
     }
 
     if (params_->has_namespace("polling_time")) {
-      sprockit::sim_parameters* stat_params = params_->get_namespace("polling_time");
+      sprockit::sim_parameters::ptr stat_params = params_->get_namespace("polling_time");
       idle_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
@@ -230,7 +230,7 @@ namespace lblxml {
           stat_params->get_param("type").c_str());
     }
     if (params_->has_namespace("barrier_time")) {
-      sprockit::sim_parameters* stat_params = params_->get_namespace("barrier_time");
+      sprockit::sim_parameters::ptr stat_params = params_->get_namespace("barrier_time");
       barrier_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
@@ -239,7 +239,7 @@ namespace lblxml {
           stat_params->get_param("type").c_str());
     }
     if (params_->has_namespace("compute_time")) {
-      sprockit::sim_parameters* stat_params = params_->get_namespace("compute_time");
+      sprockit::sim_parameters::ptr stat_params = params_->get_namespace("compute_time");
       compute_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)

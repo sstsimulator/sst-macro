@@ -78,7 +78,7 @@ class SculpinSwitch :
   )
 
  public:
-  SculpinSwitch(sprockit::sim_parameters* params, uint32_t id);
+  SculpinSwitch(sprockit::sim_parameters::ptr& params, uint32_t id);
 
   virtual ~SculpinSwitch();
 
@@ -89,13 +89,13 @@ class SculpinSwitch :
   }
 
   void connectOutput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
 
   void connectInput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
@@ -104,9 +104,9 @@ class SculpinSwitch :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
+  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
 
   void handleCredit(Event* ev);
 
@@ -116,7 +116,7 @@ class SculpinSwitch :
 
  private:
   struct priority_compare {
-    bool operator()(sculpin_packet* l, sculpin_packet* r) const {
+    bool operator()(SculpinPacket* l, SculpinPacket* r) const {
       if (l->priority() == r->priority()){
         if (l->arrival() == r->arrival()){
           return l->seqnum() < r->seqnum();
@@ -136,7 +136,7 @@ class SculpinSwitch :
     Timestamp next_free;
     double inv_bw;
     uint32_t seqnum;
-    std::set<sculpin_packet*, priority_compare> priority_queue;
+    std::set<SculpinPacket*, priority_compare> priority_queue;
     EventLink* link;
     port() : link(nullptr){}
   };
@@ -166,9 +166,9 @@ class SculpinSwitch :
 
 
  private:
-  void send(port& p, sculpin_packet* pkt, Timestamp now);
+  void send(port& p, SculpinPacket* pkt, Timestamp now);
 
-  void tryToSendPacket(sculpin_packet* pkt);
+  void tryToSendPacket(SculpinPacket* pkt);
 
   void pullNext(int portnum);
 
@@ -177,7 +177,7 @@ class SculpinSwitch :
    * @param pkt
    * @return >0 scale factor for packet if allowed, <0 if packet should be filtered
    */
-  double doNotFilterPacket(sculpin_packet* pkt);
+  double doNotFilterPacket(SculpinPacket* pkt);
 
 };
 

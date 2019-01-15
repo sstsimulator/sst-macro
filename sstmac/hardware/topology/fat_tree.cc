@@ -78,7 +78,7 @@ static constexpr double row_gap = 4.0;
   abstract_fat_tree
   ----------------------------------------------------------------------------*/
 
-AbstractFatTree::AbstractFatTree(sprockit::sim_parameters *params) :
+AbstractFatTree::AbstractFatTree(sprockit::sim_parameters::ptr& params) :
   StructuredTopology(params)
 {
   num_core_switches_ =
@@ -101,11 +101,11 @@ AbstractFatTree::AbstractFatTree(sprockit::sim_parameters *params) :
 
 void
 AbstractFatTree::writeBwParams(
-    sprockit::sim_parameters *switch_params,
+    sprockit::sim_parameters::ptr& switch_params,
     double multiplier) const
 {
   if (switch_params->has_namespace("xbar")){
-    sprockit::sim_parameters* xbar_params = switch_params->get_namespace("xbar");
+    sprockit::sim_parameters::ptr xbar_params = switch_params->get_namespace("xbar");
     double bw = xbar_params->get_bandwidth_param("bandwidth");
     // we are overwriting params -
     // we have to make sure that the original baseline bandwidth is preserved
@@ -121,7 +121,7 @@ AbstractFatTree::writeBwParams(
   fat_tree
   ----------------------------------------------------------------------------*/
 
-FatTree::FatTree(sprockit::sim_parameters* params) :
+FatTree::FatTree(sprockit::sim_parameters::ptr& params) :
   AbstractFatTree(params)
 {
   up_ports_per_leaf_switch_ =
@@ -328,7 +328,7 @@ FatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 
 void
 FatTree::configureNonuniformSwitchParams(SwitchId src,
-                           sprockit::sim_parameters *switch_params) const
+                           sprockit::sim_parameters::ptr& switch_params) const
 {
   int my_level = level(src);
 
@@ -452,7 +452,7 @@ FatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
   tapered_fat_tree
   ----------------------------------------------------------------------------*/
 
-TaperedFatTree::TaperedFatTree(sprockit::sim_parameters *params) :
+TaperedFatTree::TaperedFatTree(sprockit::sim_parameters::ptr& params) :
   AbstractFatTree(params)
 {
   agg_bw_multiplier_ = agg_switches_per_subtree_;
@@ -507,9 +507,9 @@ TaperedFatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) 
 
 void
 TaperedFatTree::configureIndividualPortParams(SwitchId src,
-                                  sprockit::sim_parameters *switch_params) const
+                                  sprockit::sim_parameters::ptr& switch_params) const
 {
-  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+  sprockit::sim_parameters::ptr link_params = switch_params->get_namespace("link");
   int buffer_size = link_params->get_optional_byte_length_param("buffer_size", 0);
   double bw = link_params->get_bandwidth_param("bandwidth");
   double taper = link_params->get_optional_double_param("core_taper",1.0);
@@ -556,7 +556,7 @@ TaperedFatTree::configureIndividualPortParams(SwitchId src,
 
 void
 TaperedFatTree::configureNonuniformSwitchParams(SwitchId src,
-                           sprockit::sim_parameters *switch_params) const
+                           sprockit::sim_parameters::ptr& switch_params) const
 {
   int myLevel = level(src);
   double multiplier = 1.0;

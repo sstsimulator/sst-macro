@@ -63,28 +63,28 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-SculpinNIC::SculpinNIC(sprockit::sim_parameters* params, Node* parent) :
+SculpinNIC::SculpinNIC(sprockit::sim_parameters::ptr& params, Node* parent) :
   NIC(params, parent)
 {
-  sprockit::sim_parameters* inj_params = params->get_namespace("injection");
+  sprockit::sim_parameters::ptr inj_params = params->get_namespace("injection");
 
   packet_size_ = inj_params->get_byte_length_param("mtu");
   double inj_bw = inj_params->get_bandwidth_param("bandwidth");
   inj_inv_bw_ = 1.0/inj_bw;
 
   //make port 0 a copy of the injection params
-  sprockit::sim_parameters* port0_params = params->get_optional_namespace("port0");
+  sprockit::sim_parameters::ptr port0_params = params->get_optional_namespace("port0");
   inj_params->combine_into(port0_params);
 }
 
 Timestamp
-SculpinNIC::sendLatency(sprockit::sim_parameters *params) const
+SculpinNIC::sendLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("injection")->get_time_param("sendLatency");
 }
 
 Timestamp
-SculpinNIC::creditLatency(sprockit::sim_parameters *params) const
+SculpinNIC::creditLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("injection")->get_time_param("sendLatency");
 }
@@ -123,7 +123,7 @@ SculpinNIC::creditHandler(int port)
 
 void
 SculpinNIC::connectOutput(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -139,7 +139,7 @@ SculpinNIC::connectOutput(
 
 void
 SculpinNIC::connectInput(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -170,14 +170,14 @@ SculpinNIC::doSend(NetworkMessage* payload)
     bytes_left -= pkt_size;
     bool is_tail = bytes_left == 0;
     byte_offset += pkt_size;
-    sculpin_packet* pkt = new sculpin_packet(is_tail ? payload : nullptr, pkt_size, is_tail,
+    SculpinPacket* pkt = new SculpinPacket(is_tail ? payload : nullptr, pkt_size, is_tail,
                                              fid, to, from);
     Timestamp extra_delay = inj_next_free_ - now_;
     Timestamp time_to_send = pkt_size * inj_inv_bw_;
     inj_next_free_ += time_to_send;
     pkt_debug("packet injecting at t=%8.4e: %s",
               inj_next_free_.sec(), pkt->toString().c_str());
-    pkt->setTime_to_send(time_to_send);
+    pkt->setTimeToSend(time_to_send);
     inj_link_->send(extra_delay, pkt);
   }
 
@@ -189,7 +189,7 @@ SculpinNIC::doSend(NetworkMessage* payload)
 }
 
 void
-SculpinNIC::cqHandle(sculpin_packet* pkt)
+SculpinNIC::cqHandle(SculpinPacket* pkt)
 {
   Flow* msg = cq_.recv(pkt);
   if (msg){
@@ -199,7 +199,7 @@ SculpinNIC::cqHandle(sculpin_packet* pkt)
 }
 
 void
-SculpinNIC::eject(sculpin_packet* pkt)
+SculpinNIC::eject(SculpinPacket* pkt)
 {
   Timestamp now_ = now();
   if (now_ > ej_next_free_){
@@ -216,13 +216,13 @@ SculpinNIC::eject(sculpin_packet* pkt)
 void
 SculpinNIC::handlePayload(Event *ev)
 {
-  sculpin_packet* pkt = static_cast<sculpin_packet*>(ev);
+  SculpinPacket* pkt = static_cast<SculpinPacket*>(ev);
 
   Timestamp time_to_send = pkt->byteLength() * inj_inv_bw_;
-  if (time_to_send < pkt->time_to_send()){
+  if (time_to_send < pkt->timeToSend()){
     //tail flit cannot arrive here before it leaves the prev switch
     auto ev = newCallback(this, &SculpinNIC::eject, pkt);
-    Timestamp delta_t = pkt->time_to_send() - time_to_send;
+    Timestamp delta_t = pkt->timeToSend() - time_to_send;
     sendDelayedExecutionEvent(delta_t, ev);
   } else {
     eject(pkt);

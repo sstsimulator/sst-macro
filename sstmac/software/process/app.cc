@@ -106,7 +106,7 @@ App::allocateTlsKey(destructor_fxn fxn)
   return next;
 }
 
-static char* get_data_segment(sprockit::sim_parameters* params,
+static char* get_data_segment(sprockit::sim_parameters::ptr& params,
                               const char* param_name, GlobalVariableContext& ctx)
 {
   int allocSize = ctx.allocSize();
@@ -129,7 +129,7 @@ static char* get_data_segment(sprockit::sim_parameters* params,
 static thread_lock dlopen_lock;
 
 void
-App::dlopenCheck(int aid, sprockit::sim_parameters* params)
+App::dlopenCheck(int aid, sprockit::sim_parameters::ptr& params)
 {
   if (params->has_param("exe")){
     dlopen_lock.lock();
@@ -185,7 +185,7 @@ App::allocateDataSegment(bool tls)
   }
 }
 
-App::App(sprockit::sim_parameters *params, SoftwareId sid,
+App::App(sprockit::sim_parameters::ptr& params, SoftwareId sid,
          OperatingSystem* os) :
   Thread(params, sid, os),
   compute_lib_(nullptr),
@@ -198,6 +198,10 @@ App::App(sprockit::sim_parameters *params, SoftwareId sid,
   globals_storage_(nullptr),
   rc_(0)
 {
+  if (!params_){
+    spkt_abort_printf("app got null parameters");
+  }
+
   globals_storage_ = allocateDataSegment(false); //not tls
   min_op_cutoff_ = params->get_optional_long_param("min_op_cutoff", 1e3);
   bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
@@ -207,7 +211,7 @@ App::App(sprockit::sim_parameters *params, SoftwareId sid,
 
   notify_ = params->get_optional_bool_param("notify", true);
 
-  sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
+  sprockit::sim_parameters::ptr env_params = params->get_optional_namespace("env");
   omp_contexts_.emplace_back();
   omp_context& active = omp_contexts_.back();
   active.max_num_subthreads = active.requested_num_subthreads =
@@ -234,8 +238,6 @@ App::~App()
   //sprockit::delete_vals(apis_);
   if (compute_lib_) delete compute_lib_;
   if (globals_storage_) delete[] globals_storage_;
-  //we own a unique copy
-  if (params_) delete params_;
 }
 
 int
@@ -365,7 +367,7 @@ App::computeBlockWrite(uint64_t bytes)
   computeLib()->write(bytes);
 }
 
-sprockit::sim_parameters*
+sprockit::sim_parameters::ptr
 App::getParams()
 {
   return OperatingSystem::currentThread()->parentApp()->params();
@@ -383,7 +385,7 @@ App::_get_api(const char* name)
   // an underlying thread may have built this
   API* my_api = apis_[name];
   if (!my_api) {
-    sprockit::sim_parameters* api_params = params_->get_optional_namespace(name);
+    sprockit::sim_parameters::ptr api_params = params_->get_optional_namespace(name);
     API* new_api = API::factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
@@ -530,8 +532,8 @@ UserAppCxxFullMain::deleteStatics()
   main_fxns_ = nullptr;
 }
 
-UserAppCxxFullMain::UserAppCxxFullMain(sprockit::sim_parameters *params, SoftwareId sid,
-                                               OperatingSystem* os) :
+UserAppCxxFullMain::UserAppCxxFullMain(sprockit::sim_parameters::ptr& params, SoftwareId sid,
+                                       OperatingSystem* os) :
   App(params, sid, os)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
@@ -593,8 +595,8 @@ UserAppCxxFullMain::skeletonMain()
   return (*fxn_)(entry.argc, entry.argv);
 }
 
-UserAppCxxEmptyMain::UserAppCxxEmptyMain(sprockit::sim_parameters *params, SoftwareId sid,
-                                                 OperatingSystem* os) :
+UserAppCxxEmptyMain::UserAppCxxEmptyMain(sprockit::sim_parameters::ptr& params, SoftwareId sid,
+                                         OperatingSystem* os) :
   App(params, sid, os)
 {
   if (!empty_main_fxns_)

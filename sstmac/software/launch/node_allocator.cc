@@ -60,7 +60,7 @@ NodeAllocator::~NodeAllocator() throw ()
 {
 }
 
-NodeAllocator::NodeAllocator(sprockit::sim_parameters* params)
+NodeAllocator::NodeAllocator(sprockit::sim_parameters::ptr& params)
 {
   rt_ = ParallelRuntime::staticRuntime(params);
   topology_ = sstmac::hw::Topology::staticTopology(params);

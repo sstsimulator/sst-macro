@@ -94,7 +94,7 @@ class Transport : public sstmac::sw::API {
 
   using DefaultProgressQueue = sstmac::sw::MultiProgressQueue<Message>;
 
-  Transport(sprockit::sim_parameters* params,
+  Transport(sprockit::sim_parameters::ptr& params,
             sstmac::sw::SoftwareId sid,
             sstmac::sw::OperatingSystem* os);
 
@@ -298,12 +298,12 @@ class Transport : public sstmac::sw::API {
   void makeEngine();
 
  protected:
-  Transport(sprockit::sim_parameters* params,
+  Transport(sprockit::sim_parameters::ptr& params,
            const char* prefix,
            sstmac::sw::SoftwareId sid,
            sstmac::sw::OperatingSystem* os);
 
-  Transport(sprockit::sim_parameters* params,
+  Transport(sprockit::sim_parameters::ptr& params,
            sstmac::sw::SoftwareId sid,
            sstmac::sw::OperatingSystem* os,
            const std::string& prefix,
@@ -317,14 +317,14 @@ class Transport : public sstmac::sw::API {
    * @param sid
    * @param os
    */
-  Transport(sprockit::sim_parameters* params,
+  Transport(sprockit::sim_parameters::ptr& params,
            const std::string& libname,
            sstmac::sw::SoftwareId sid,
            sstmac::sw::OperatingSystem* os,
            const std::string& server_name = std::string("sumi_server"));
 
  private:    
-  Transport(sprockit::sim_parameters* params);
+  Transport(sprockit::sim_parameters::ptr& params);
   
   void validateApi();
 
@@ -381,7 +381,7 @@ class Transport : public sstmac::sw::API {
 class CollectiveEngine
 {
  public:
-  CollectiveEngine(sprockit::sim_parameters* params,
+  CollectiveEngine(sprockit::sim_parameters::ptr& params,
                     Transport* tport);
 
   ~CollectiveEngine();

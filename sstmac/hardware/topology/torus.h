@@ -70,7 +70,7 @@ class Torus : public CartesianTopology
     char crossed_timeline : 1;
   };
 
-  Torus(sprockit::sim_parameters* params);
+  Torus(sprockit::sim_parameters::ptr& params);
 
   typedef enum {
     pos = 0,
@@ -120,7 +120,7 @@ class Torus : public CartesianTopology
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
   void configureIndividualPortParams(SwitchId src,
-            sprockit::sim_parameters *switch_params) const override;
+            sprockit::sim_parameters::ptr& switch_params) const override;
 
   int minimalDistance(SwitchId sid, SwitchId dst) const;
 

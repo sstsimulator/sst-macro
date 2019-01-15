@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-RendezvousProtocol::RendezvousProtocol(sprockit::sim_parameters* params, MpiQueue* queue) :
+RendezvousProtocol::RendezvousProtocol(sprockit::sim_parameters::ptr& params, MpiQueue* queue) :
   MpiProtocol(queue)
 {
   software_ack_ = params->get_optional_bool_param("software_ack", true);

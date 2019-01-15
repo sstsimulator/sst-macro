@@ -136,7 +136,7 @@ class PiscesSimpleNetwork :
   public EventScheduler
 {
  public:
-  PiscesSimpleNetwork(sprockit::sim_parameters *params, SST::Component* comp);
+  PiscesSimpleNetwork(sprockit::sim_parameters::ptr params, SST::Component* comp);
 
   std::string toString() const override {
     return "PISCES simple network";
@@ -147,7 +147,7 @@ class PiscesSimpleNetwork :
    *        setup connections to PISCES switches
    * @param parmas
    */
-  void initLinks(sprockit::sim_parameters* params);
+  void initLinks(sprockit::sim_parameters::ptr& params);
 
   /**
    * @brief packetArrived Callback when first flit from packet arrives off the network

@@ -107,34 +107,17 @@ class graph_viz_increment_stack
 
 };
 
-class GraphViz :
-  public StatCollector
+class GraphViz : public MultiStatistic<uint64_t,sw::Thread*>
 {
-  FactoryRegister("graph_viz | callGraph", StatCollector, GraphViz)
- public:
-  GraphViz(sprockit::sim_parameters* params);
+  using Parent=MultiStatistic<uint64_t,sw::Thread*>;
+  FactoryRegister("graph_viz | call_graph", Parent, GraphViz)
 
-  std::string toString() const override {
-    return "grahpviz";
-  }
+ public:
+  GraphViz(sprockit::sim_parameters::ptr& params);
 
   virtual ~GraphViz();
 
-  void clear() override;
-
-  void reduce(StatCollector *coll) override;
-
-  void dumpLocalData() override;
-
-  void dumpGlobalData() override;
-
-  void globalReduce(ParallelRuntime *rt) override;
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new GraphViz(params);
-  }
-
-  void countTrace(uint64_t count, sw::Thread* thr);
+  void addData_impl(uint64_t count, sw::Thread* thr) override;
 
   void reassign(int fxnId, uint64_t count, Thread* thr);
 
@@ -185,9 +168,9 @@ class GraphViz :
 
   };
 
-  void add_call(int ncalls, uint64_t count, int fxnId, int callFxnId);
+  void addCall(int ncalls, uint64_t count, int fxnId, int callFxnId);
 
-  void add_self(int fxnId, uint64_t count);
+  void addSelf(int fxnId, uint64_t count);
 
   trace** traces_;
 

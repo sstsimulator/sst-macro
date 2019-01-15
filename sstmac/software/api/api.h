@@ -60,7 +60,7 @@ class API : public Library
 {
   DeclareFactory(API,SoftwareId,OperatingSystem*)
  public:
-  API(sprockit::sim_parameters *params,
+  API(sprockit::sim_parameters::ptr params,
       const std::string& libname,
       SoftwareId sid,
       OperatingSystem *os) :
@@ -71,7 +71,7 @@ class API : public Library
     init(params);
   }
 
-  API(sprockit::sim_parameters* params,
+  API(sprockit::sim_parameters::ptr& params,
       const char* prefix,
       SoftwareId sid,
       OperatingSystem* os) :
@@ -107,17 +107,17 @@ class API : public Library
    */
   void endAPICall();
 
-  sprockit::sim_parameters* params() const {
+  sprockit::sim_parameters::ptr& params() {
     return params_;
   }
 
  protected:
   HostTimer* host_timer_;
   LibComputeTime* compute_;
-  sprockit::sim_parameters* params_;
+  sprockit::sim_parameters::ptr params_;
 
  private:
-  void init(sprockit::sim_parameters *params);
+  void init(sprockit::sim_parameters::ptr& params);
 };
 
 void apiLock();

@@ -85,7 +85,7 @@ class NodeAllocator :
    ordered_node_set& allocation) const = 0;
 
  protected:
-  NodeAllocator(sprockit::sim_parameters* params);
+  NodeAllocator(sprockit::sim_parameters::ptr& params);
 
  protected:
   hw::Topology* topology_;

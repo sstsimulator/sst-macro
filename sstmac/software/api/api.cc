@@ -83,7 +83,7 @@ API::~API()
 }
 
 void
-API::init(sprockit::sim_parameters* params)
+API::init(sprockit::sim_parameters::ptr& params)
 {
   bool host_compute_local = params->get_optional_bool_param("host_api_timer", false);
   if (host_compute_local) {

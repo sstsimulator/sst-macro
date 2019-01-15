@@ -65,7 +65,7 @@ class FullyConnected : public StructuredTopology
 
   virtual ~FullyConnected() {}
 
-  FullyConnected(sprockit::sim_parameters* params);
+  FullyConnected(sprockit::sim_parameters::ptr& params);
 
   int diameter() const override {
     return 1;
@@ -99,7 +99,7 @@ class FullyConnected : public StructuredTopology
   }
 
   void configureIndividualPortParams(SwitchId src,
-        sprockit::sim_parameters *switch_params) const override;
+        sprockit::sim_parameters::ptr& switch_params) const override;
 
   void connectedOutports(SwitchId src,
        std::vector<connection>& conns) const override;

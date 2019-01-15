@@ -61,7 +61,7 @@ class SimpleProcessor :
   FactoryRegister("simple", Processor, SimpleProcessor,
               "Basic processor that only does timed_message computes")
  public:
-  SimpleProcessor(sprockit::sim_parameters* params,
+  SimpleProcessor(sprockit::sim_parameters::ptr& params,
                    MemoryModel* mem, Node* nd) :
     Processor(params, mem, nd) {}
 

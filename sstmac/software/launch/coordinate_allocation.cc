@@ -63,7 +63,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-CoordinateAllocation::CoordinateAllocation(sprockit::sim_parameters* params) :
+CoordinateAllocation::CoordinateAllocation(sprockit::sim_parameters::ptr& params) :
   NodeAllocator(params)
 {
   coord_file_ = params->get_param("coordinate_file");

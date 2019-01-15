@@ -57,7 +57,7 @@ class NodeIdAllocation :
   FactoryRegister("node_id", NodeAllocator, NodeIdAllocation)
 
  public:
-  NodeIdAllocation(sprockit::sim_parameters* params);
+  NodeIdAllocation(sprockit::sim_parameters::ptr& params);
 
   std::string toString() const override {
     return "node id allocation";

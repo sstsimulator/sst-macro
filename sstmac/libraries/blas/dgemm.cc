@@ -56,7 +56,7 @@ class DefaultDGEMM :
 {
   FactoryRegister("default_dgemm", BlasKernel, DefaultDGEMM)
  public:
-  DefaultDGEMM(sprockit::sim_parameters* params){
+  DefaultDGEMM(sprockit::sim_parameters::ptr& params){
     cache_size_bytes_ = params->get_optional_byte_length_param("dgemm_cache_size", 32000);
     loop_unroll_ = params->get_optional_double_param("dgemm_loop_unroll", 4);
     pipeline_ = params->get_optional_double_param("dgemm_pipeline_efficiency", 2);

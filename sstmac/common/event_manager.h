@@ -97,7 +97,7 @@ class EventManager
   friend class native::Manager;
 
  public:
-  EventManager(sprockit::sim_parameters* params, ParallelRuntime* rt);
+  EventManager(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
 
   bool isComplete() {
     return complete_;
@@ -131,6 +131,7 @@ class EventManager
 
   void stop();
 
+  /**
   void registerStat(StatCollector* stat, stat_descr_t* descr);
 
   StatCollector* findUniqueStat(int unique_tag) const {
@@ -141,6 +142,7 @@ class EventManager
       return nullptr;
     }
   }
+  */
 
   Partition* topologyPartition() const;
 
@@ -243,8 +245,6 @@ class EventManager
  protected:
   void registerPending();
 
-  virtual void finishStats(StatCollector* main, const std::string& name);
-
   virtual Timestamp receiveIncomingEvents(Timestamp vote) {
     return vote;
   }
@@ -274,21 +274,6 @@ class EventManager
   Timestamp now_;
 
  private:
-  struct stats_entry {
-    bool reduce_all;
-    bool dump_all;
-    bool dump_main;
-    bool need_delete;
-    StatCollector* main_collector;
-    std::list<StatCollector*> collectors;
-    stats_entry() : main_collector(nullptr), need_delete(false)
-    {}
-  };
-
-  std::map<int, stats_entry> unique_stats_;
-
-  virtual void finishUniqueStat(int unique_tag, stats_entry& entry);
-
 #define MAX_EVENT_MGR_THREADS 128
   std::vector<EventScheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
 
@@ -314,15 +299,12 @@ class EventManager
   typedef std::set<ExecutionEvent*, event_compare,
                    sprockit::allocator<ExecutionEvent*>> queue_t;
   queue_t event_queue_;
-
-  std::map<std::string, stats_entry> stats_;
-
 };
 
 class NullEventManager : public EventManager
 {
  public:
-  NullEventManager(sprockit::sim_parameters* params, ParallelRuntime* rt) :
+  NullEventManager(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt) :
     EventManager(params, rt)
   {
   }

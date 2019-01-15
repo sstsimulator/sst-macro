@@ -147,44 +147,23 @@ class AppFTQCalendar
 
 };
 
-class FTQCalendar :
-  public StatCollector
+class FTQCalendar : public MultiStatistic<int,int,int,uint64_t,uint64_t>
 {
-  FactoryRegister("ftq", StatCollector, FTQCalendar)
+  using Parent = MultiStatistic<int,int,int,uint64_t,uint64_t>;
+  FactoryRegister("ftq", Parent, FTQCalendar)
  public:
-  FTQCalendar(sprockit::sim_parameters* params);
+  FTQCalendar(sprockit::sim_parameters::ptr& params);
 
   void init(long nticks_per_epoch);
 
   virtual ~FTQCalendar();
 
-  void collect(int event_typeid,
-               int aid,
-               int tid,
-               uint64_t ticks_begin,
-               uint64_t num_ticks);
+  void addData_impl(int event_typeid, int aid, int tid,
+          uint64_t ticks_begin, uint64_t num_ticks);
 
-  AppFTQCalendar* get_calendar(int aid) const;
+  AppFTQCalendar* getCalendar(int aid) const;
 
   void registerApp(int aid, const std::string& appname);
-
-  void dumpLocalData() override;
-
-  void dumpGlobalData() override;
-
-  void clear() override;
-
-  void reduce(StatCollector* coll) override;
-
-  void globalReduce(ParallelRuntime *rt) override;
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new FTQCalendar(params);
-  }
-
-  std::string toString() const override {
-    return "FTQCalendar";
-  }
 
  private:
   static std::unordered_map<int, AppFTQCalendar*> calendars_;

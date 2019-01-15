@@ -66,7 +66,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-PiscesTiledSwitch::PiscesTiledSwitch(sprockit::sim_parameters* params, uint32_t id)
+PiscesTiledSwitch::PiscesTiledSwitch(sprockit::sim_parameters::ptr& params, uint32_t id)
   : PiscesAbstractSwitch(params, id)
 {
   nrows_ = params->get_int_param("nrows");
@@ -100,16 +100,16 @@ PiscesTiledSwitch::tileToRowCol(int tile, int& row, int& col){
 }
 
 void
-PiscesTiledSwitch::initComponents(sprockit::sim_parameters* params)
+PiscesTiledSwitch::initComponents(sprockit::sim_parameters::ptr& params)
 {
   if (!xbar_tiles_.empty())
     return;
 
-  sprockit::sim_parameters* demuxer_params = params->get_namespace("input");
+  sprockit::sim_parameters::ptr demuxer_params = params->get_namespace("input");
 
-  sprockit::sim_parameters* xbar_params = params->get_namespace("xbar");
+  sprockit::sim_parameters::ptr xbar_params = params->get_namespace("xbar");
 
-  sprockit::sim_parameters* muxer_params = params->get_namespace("link");
+  sprockit::sim_parameters::ptr muxer_params = params->get_namespace("link");
 
   int ntiles = nrows_ * ncols_;
   dst_inports_.resize(ntiles);
@@ -183,7 +183,7 @@ PiscesTiledSwitch::initComponents(sprockit::sim_parameters* params)
 
 void
 PiscesTiledSwitch::connectOutput(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -196,7 +196,7 @@ PiscesTiledSwitch::connectOutput(
 
 void
 PiscesTiledSwitch::connectInput(
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -207,13 +207,13 @@ PiscesTiledSwitch::connectInput(
 }
 
 Timestamp
-PiscesTiledSwitch::sendLatency(sprockit::sim_parameters *params) const
+PiscesTiledSwitch::sendLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("link")->get_time_param("sendLatency");
 }
 
 Timestamp
-PiscesTiledSwitch::creditLatency(sprockit::sim_parameters *params) const
+PiscesTiledSwitch::creditLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_namespace("input")->get_time_param("creditLatency");
 }

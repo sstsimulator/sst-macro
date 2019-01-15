@@ -55,33 +55,33 @@ class SculpinParamExpander :
 {
   FactoryRegister("sculpin", sstmac::ParamExpander, SculpinParamExpander)
  public:
-  void expand(sprockit::sim_parameters* params) override;
+  void expand(sprockit::sim_parameters::ptr& params) override;
 
  private:
-  void expandAmm1Nic(sprockit::sim_parameters* params,
-                       sprockit::sim_parameters* top_params,
-                       sprockit::sim_parameters* nic_params);
+  void expandAmm1Nic(sprockit::sim_parameters::ptr& params,
+                       sprockit::sim_parameters::ptr& top_params,
+                       sprockit::sim_parameters::ptr& nic_params);
 
-  void expandAmm1Network(sprockit::sim_parameters* params,
-                           sprockit::sim_parameters* switch_params);
+  void expandAmm1Network(sprockit::sim_parameters::ptr& params,
+                           sprockit::sim_parameters::ptr& switch_params);
 
-  void expandAmm1Memory(sprockit::sim_parameters* params,
-                          sprockit::sim_parameters* mem_params);
+  void expandAmm1Memory(sprockit::sim_parameters::ptr& params,
+                          sprockit::sim_parameters::ptr& mem_params);
 
-  void expandAmm4Nic(sprockit::sim_parameters* params,
-                       sprockit::sim_parameters* top_params,
-                       sprockit::sim_parameters* nic_params);
+  void expandAmm4Nic(sprockit::sim_parameters::ptr& params,
+                       sprockit::sim_parameters::ptr& top_params,
+                       sprockit::sim_parameters::ptr& nic_params);
 
-  void expandAmm4Network(sprockit::sim_parameters* params,
-                           sprockit::sim_parameters* top_params,
-                           sprockit::sim_parameters* nic_params);
+  void expandAmm4Network(sprockit::sim_parameters::ptr& params,
+                           sprockit::sim_parameters::ptr& top_params,
+                           sprockit::sim_parameters::ptr& nic_params);
 
  private:
-  void checkLatency(sprockit::sim_parameters* params,
-                     sprockit::sim_parameters* deflt_params = nullptr);
+  void checkLatency(sprockit::sim_parameters::ptr& params,
+                     sprockit::sim_parameters::ptr& deflt_params);
 
-  void checkBandwidth(sprockit::sim_parameters* params,
-                     sprockit::sim_parameters* deflt_params = nullptr);
+  void checkBandwidth(sprockit::sim_parameters::ptr& params,
+                     sprockit::sim_parameters::ptr& deflt_params);
 
 };
 

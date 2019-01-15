@@ -71,7 +71,7 @@ Processor::~Processor()
 {
 }
 
-Processor::Processor(sprockit::sim_parameters* params, MemoryModel* mem, Node* nd) :
+Processor::Processor(sprockit::sim_parameters::ptr& params, MemoryModel* mem, Node* nd) :
   mem_(mem), node_(nd)
 {
   freq_ = params->get_freq_param("frequency");

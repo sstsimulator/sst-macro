@@ -63,9 +63,9 @@ class LibComputeInst :
   public LibComputeTime
 {
  public:
-  LibComputeInst(sprockit::sim_parameters* params, SoftwareId id, OperatingSystem* os);
+  LibComputeInst(sprockit::sim_parameters::ptr& params, SoftwareId id, OperatingSystem* os);
 
-  LibComputeInst(sprockit::sim_parameters* params, const std::string& libname,
+  LibComputeInst(sprockit::sim_parameters::ptr& params, const std::string& libname,
                    SoftwareId id, OperatingSystem* os);
 
   virtual ~LibComputeInst() { }
@@ -90,7 +90,7 @@ class LibComputeInst :
   double loop_overhead_;
 
  private:
-  void init(sprockit::sim_parameters* params);
+  void init(sprockit::sim_parameters::ptr& params);
 
 };
 

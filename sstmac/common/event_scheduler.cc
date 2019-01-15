@@ -86,12 +86,6 @@ EventScheduler::setManager(EventManager *mgr)
 Timestamp EventLink::minRemoteLatency_;
 Timestamp EventLink::minThreadLatency_;
 uint32_t EventLink::linkIdCounter_{0};
-
-void
-EventScheduler::registerStat(StatCollector *coll, stat_descr_t* descr)
-{
-  mgr_->registerStat(coll, descr);
-}
 #endif
 
 void

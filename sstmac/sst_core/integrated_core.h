@@ -80,7 +80,7 @@ void py_init_system(PyObject* module);
  * @param dict    [in]
  * @param params  [out]
  */
-void py_extract_params(PyObject* dict, sprockit::sim_parameters* params);
+void py_extract_params(PyObject* dict, sprockit::sim_parameters::ptr& params);
 
 /**
  * @brief py_get_int_tuple  Convert an integer array into a python tuple oject
@@ -114,7 +114,7 @@ inline PyObject* py_tuple_from_int_vector(const std::vector<int>& vec){
  * @param dict    [out]
  * @param params  [in]
  */
-void py_add_params(PyObject* dict, sprockit::sim_parameters* params);
+void py_add_params(PyObject* dict, sprockit::sim_parameters::ptr& params);
 
 /**
  * @brief py_add_sub_params Take all the key-value parameters in a sprockit params object
@@ -123,7 +123,7 @@ void py_add_params(PyObject* dict, sprockit::sim_parameters* params);
  * @param dict    [out]
  * @param params  [in]
  */
-void py_add_sub_params(PyObject* dict, sprockit::sim_parameters* params);
+void py_add_sub_params(PyObject* dict, sprockit::sim_parameters::ptr& params);
 
 /**
  * @brief py_dict_from_params Wrapper to py_add_params that creates a new Python dictionary
@@ -131,7 +131,7 @@ void py_add_sub_params(PyObject* dict, sprockit::sim_parameters* params);
  * @param params
  * @return A python dictionary (recursive for namespaces)
  */
-PyObject* py_dict_from_params(sprockit::sim_parameters* params);
+PyObject* py_dict_from_params(sprockit::sim_parameters::ptr& params);
 
 } // end namespace sstmac
 

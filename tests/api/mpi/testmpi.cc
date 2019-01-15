@@ -695,7 +695,7 @@ RegisterKeywords(
 
 int USER_MAIN(int argc, char *argv[])
 {
-  sprockit::sim_parameters* params = getParams();
+  sprockit::sim_parameters::ptr params = getParams();
   testmode_ = params->get_int_param("testsuite_testmode");
 
   double t_start = get_time();

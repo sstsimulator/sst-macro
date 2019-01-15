@@ -170,7 +170,7 @@ class JobLauncher : public Service
   virtual ~JobLauncher(){}
 
  protected:
-  JobLauncher(sprockit::sim_parameters* params, OperatingSystem* os);
+  JobLauncher(sprockit::sim_parameters::ptr& params, OperatingSystem* os);
 
  protected:
   /** A topology object for querying about the details of the system */
@@ -180,7 +180,7 @@ class JobLauncher : public Service
   std::list<AppLaunchRequest*> initial_requests_;
 
  private:
-  void addLaunchRequests(sprockit::sim_parameters* params);
+  void addLaunchRequests(sprockit::sim_parameters::ptr& params);
 
   /**
    * @brief cleanup_app Perform all operations to free up resources associated with a job
@@ -233,7 +233,7 @@ class DefaultJoblauncher : public JobLauncher
 {
   FactoryRegister("default", JobLauncher, DefaultJoblauncher)
  public:
-  DefaultJoblauncher(sprockit::sim_parameters* params, OperatingSystem* os) :
+  DefaultJoblauncher(sprockit::sim_parameters::ptr& params, OperatingSystem* os) :
     JobLauncher(params, os)
   {
   }
@@ -256,7 +256,7 @@ class ExclusiveJoblauncher : public DefaultJoblauncher
 {
   FactoryRegister("exclusive", JobLauncher, ExclusiveJoblauncher)
  public:
-  ExclusiveJoblauncher(sprockit::sim_parameters* params, OperatingSystem* os) :
+  ExclusiveJoblauncher(sprockit::sim_parameters::ptr& params, OperatingSystem* os) :
    DefaultJoblauncher(params, os), active_job_(nullptr)
   {
   }

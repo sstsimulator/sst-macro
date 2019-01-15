@@ -73,7 +73,7 @@ static thread_safe_u32 THREAD_ID_CNT(0);
 // Private method that gets called by the scheduler.
 //
 void
-Thread::initThread(sprockit::sim_parameters* params,
+Thread::initThread(const sprockit::sim_parameters::ptr& params,
   int physical_thread_id, ThreadContext* des_thread, void *stack,
   int stacksize, void* globals_storage, void* tls_storage)
 {
@@ -176,7 +176,7 @@ Thread::runRoutine(void* threadptr)
   }
 }
 
-Thread::Thread(sprockit::sim_parameters* params, SoftwareId sid, OperatingSystem* os) :
+Thread::Thread(const sprockit::sim_parameters::ptr& params, SoftwareId sid, OperatingSystem* os) :
   os_(os),
   state_(PENDING),
   isInit(false),
@@ -308,7 +308,7 @@ Thread::spawnOmpParallel()
   omp_context& active = omp_contexts_.back();
   active.subthreads.resize(active.requested_num_subthreads);
   App* parent = parentApp();
-  sprockit::sim_parameters* params = parent->params();
+  sprockit::sim_parameters::ptr params = parent->params();
   for (int i=1; i < active.requested_num_subthreads; ++i){
     //thread* thr = new thread(params, parent->sid(), os_);
     //thr->setOmpParentContext(active);

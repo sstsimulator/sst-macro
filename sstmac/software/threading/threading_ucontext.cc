@@ -59,7 +59,7 @@ class ThreadingUContext : public ThreadContext
  public:
   FactoryRegister("ucontext", ThreadContext, ThreadingUContext)
 
-  ThreadingUContext(sprockit::sim_parameters* params)
+  ThreadingUContext(sprockit::sim_parameters::ptr& params)
   {
   }
 

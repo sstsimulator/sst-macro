@@ -72,7 +72,7 @@ struct DragonflyMinimalRouter : public Router {
   };
 
  public:
-  DragonflyMinimalRouter(sprockit::sim_parameters* params, Topology* top,
+  DragonflyMinimalRouter(sprockit::sim_parameters::ptr& params, Topology* top,
                            NetworkSwitch* netsw) :
     Router(params, top, netsw)
   {
@@ -94,7 +94,7 @@ struct DragonflyMinimalRouter : public Router {
 
     //figure out which groups I have a direct connection to
     std::vector<int> connections;
-    dfly_->groupWiring()->connected_routers(my_a_, my_g_, connections);
+    dfly_->groupWiring()->connectedRouters(my_a_, my_g_, connections);
     for (int c=0; c < connections.size(); ++c){
       SwitchId dst = connections[c];
       int dstG = dfly_->computeG(dst);
@@ -109,7 +109,7 @@ struct DragonflyMinimalRouter : public Router {
       if (g == my_g_) continue;
       if (directGroupConnections.find(g) != directGroupConnections.end()) continue;
 
-      dfly_->groupWiring()->connected_to_group(my_g_, g, groupConnections);
+      dfly_->groupWiring()->connectedToGroup(my_g_, g, groupConnections);
       if (groupConnections.size() == 0){
         spkt_abort_printf("Got zero group connections from %d->%d", my_g_, g);
       }
@@ -203,7 +203,7 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
               Router, DragonflyValiantRouter,
               "router implementing valint routing for dragonfly")
 
-  DragonflyValiantRouter(sprockit::sim_parameters* params, Topology *top,
+  DragonflyValiantRouter(sprockit::sim_parameters::ptr& params, Topology *top,
                          NetworkSwitch *netsw)
     : DragonflyMinimalRouter(params, top, netsw)
   {
@@ -213,7 +213,7 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
     std::vector<int> connected;
     for (int a=0; a < dfly_->a(); ++a){
       if (a != my_a_){
-        dfly_->groupWiring()->connected_routers(a, my_g_, connected);
+        dfly_->groupWiring()->connectedRouters(a, my_g_, connected);
         for (int sid : connected){
           int dst_g = dfly_->computeG(sid);
           group_gateways_[dst_g].emplace_back(a, sid);
@@ -232,11 +232,11 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
             int dest = -1;
             for (int a=0; a < dfly_->a(); ++a){
               int aa = (a+my_a_) % dfly_->a(); //scatter for diff switches
-              dfly_->groupWiring()->connected_routers(aa, inter_g, connected);
+              dfly_->groupWiring()->connectedRouters(aa, inter_g, connected);
               for (int sid : connected){
                 int grp = dfly_->computeG(sid);
                 if (grp == i){
-                  dest = dfly_->get_uid(a, inter_g);
+                  dest = dfly_->getUid(a, inter_g);
                   break;
                 }
               }
@@ -289,7 +289,7 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
 
     auto hdr = pkt->rtrHeader<header>();
     hdr->edge_port = new_a;
-    hdr->dest_switch = dfly_->get_uid(new_a, my_g_);
+    hdr->dest_switch = dfly_->getUid(new_a, my_g_);
     hdr->stage_number = valiant_stage;
   }
 
@@ -346,7 +346,7 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
               Router, DragonflyUGALRouter,
               "router implementing UGAL routing for dragonfly")
 
-  DragonflyUGALRouter(sprockit::sim_parameters* params, Topology *top,
+  DragonflyUGALRouter(sprockit::sim_parameters::ptr& params, Topology *top,
                                  NetworkSwitch *netsw)
     : DragonflyValiantRouter(params, top, netsw)
   {
@@ -386,7 +386,7 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
                  val_dest.first, val_dest.second, pkt, pkt->toString().c_str());
     } else { //minimal
       hdr->edge_port = min_port;
-      hdr->dest_switch = dfly_->get_uid(dst_a,dst_g);
+      hdr->dest_switch = dfly_->getUid(dst_a,dst_g);
       gateway_rotater_[dst_g] = (gateway_rotater_[dst_g] + 1) % group_gateways_[dst_g].size();
       hdr->stage_number = minimal_stage;
       rter_debug("chose inter-grp minimal port %d: pkt=%p:%s",
@@ -409,13 +409,13 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
     bool go_valiant = switchPaths(min_dist, val_dist, dst_a, new_a);
     if (go_valiant){
       hdr->edge_port = new_a;
-      hdr->dest_switch = dfly_->get_uid(new_a, my_g_);
+      hdr->dest_switch = dfly_->getUid(new_a, my_g_);
       hdr->stage_number = valiant_stage;
       rter_debug("chose intra-grp ugal port %d to intermediate %d : pkt=%p:%s",
                  new_a, int(hdr->dest_switch), pkt, pkt->toString().c_str());
     } else { //minimal
       hdr->edge_port = dst_a;
-      hdr->dest_switch = dfly_->get_uid(dst_a, my_g_);
+      hdr->dest_switch = dfly_->getUid(dst_a, my_g_);
       hdr->stage_number = minimal_stage;
       rter_debug("chose intra-grp minimal port %d: pkt=%p:%s",
                  dst_a, pkt, pkt->toString().c_str());
@@ -503,7 +503,7 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
               Router, DragonflyUgalGRouter,
               "router implementing UGAL-G routing for dragonfly")
 
-  DragonflyUgalGRouter(sprockit::sim_parameters *params, Topology *top, NetworkSwitch *netsw)
+  DragonflyUgalGRouter(sprockit::sim_parameters::ptr params, Topology *top, NetworkSwitch *netsw)
     :  DragonflyUGALRouter(params, top, netsw), ic_(nullptr)
   {
   }
@@ -552,7 +552,7 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
         hdr->stage_number = hop_to_exit_stage;
         hdr->edge_port = hdr->entryPort;
         int interGrp = dfly_->computeG(hdr->dest_switch);
-        hdr->dest_switch = dfly_->get_uid(hdr->exitA, interGrp);
+        hdr->dest_switch = dfly_->getUid(hdr->exitA, interGrp);
         break;
       } else {
         hdr->edge_port = hdr->entryA;
@@ -616,10 +616,10 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
     hdr->entryA = dfly_->computeA(firstHalfPath.second);
     hdr->entryPort = firstHalfPath.first;
     if (minInterGrp == -1){ //route minimally to the dest grp
-      inter_sw = dfly_->get_uid(hdr->exitA, my_g_);
+      inter_sw = dfly_->getUid(hdr->exitA, my_g_);
       hdr->stage_number = hop_to_exit_stage;
     } else {
-      inter_sw = dfly_->get_uid(hdr->entryA, my_g_);
+      inter_sw = dfly_->getUid(hdr->entryA, my_g_);
       hdr->stage_number = hop_to_entry_stage;
     }
     hdr->dest_switch = inter_sw;
@@ -635,7 +635,7 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
     std::pair<int,int> toRet;
     for (int p : group_ports_[dstGrp]){
       if (p < dfly_->a()){ //local hop to another gateway switch
-        int sid = dfly_->get_uid(p, my_g_);
+        int sid = dfly_->getUid(p, my_g_);
         NetworkSwitch* nsw = ic_->switchAt(sid);
         DragonflyUgalGRouter* rtr = safe_cast(DragonflyUgalGRouter, nsw->router());
         for (int port : rtr->group_ports_[dstGrp]){
@@ -667,7 +667,7 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
 
   std::pair<int,int> findMinGroupLink(int srcGrp, int dstGrp, int& queueLength){
     if (!ic_) ic_ = EventManager::global->interconnect();
-    NetworkSwitch* nsw = ic_->switchAt(dfly_->get_uid(0, srcGrp));
+    NetworkSwitch* nsw = ic_->switchAt(dfly_->getUid(0, srcGrp));
     DragonflyUgalGRouter* rtr = safe_cast(DragonflyUgalGRouter, nsw->router());
     return rtr->findLocalMinGroupLink(dstGrp, queueLength);
   }
@@ -689,7 +689,7 @@ class DragonflyPARRouter : public DragonflyUGALRouter {
     return "dragonfly PAR router";
   }
 
-  DragonflyPARRouter(sprockit::sim_parameters* params, Topology *top,
+  DragonflyPARRouter(sprockit::sim_parameters::ptr& params, Topology *top,
                        NetworkSwitch *netsw)
     : DragonflyUGALRouter(params, top, netsw)
   {

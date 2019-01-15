@@ -52,56 +52,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-StatLocalInt::StatLocalInt(sprockit::sim_parameters* params) :
-  StatValue<int>(params)
-{
-}
-
-void
-StatLocalInt::globalReduce(ParallelRuntime *rt)
-{
-  if (rt->nproc() == 1)
-    return;
-  sprockit::abort("stat_local_int::global_reduce: not implemented");
-}
-
-void
-StatLocalInt::reduce(StatCollector *coll)
-{
-  StatLocalInt* other = safe_cast(StatLocalInt, coll);
-  if ((other->id_ + 1) > values_.size()) {
-    values_.resize(other->id_ + 1);
-  }
-  values_[other->id_] = other->value_;
-}
-
-void
-StatLocalInt::dump(const std::string& froot)
-{
-  std::string data_file = froot + ".dat";
-  std::fstream data_str;
-  checkOpen(data_str, data_file);
-  data_str << "Id Value\n";
-  for (int i=0; i < values_.size(); ++i)
-    data_str << sprockit::printf("%i %i\n", i, values_[i]);
-  data_str.close();
-}
-
-void
-StatLocalInt::dumpGlobalData()
-{
-  dump(fileroot_);
-}
-
-void
-StatLocalInt::dumpLocalData()
-{
-  std::string fname = sprockit::printf("%s.%d", fileroot_.c_str(), id_);
-  dump(fname);
-}
-
-void
-StatLocalInt::clear()
+StatLocalInt::StatLocalInt(sprockit::sim_parameters::ptr& params) :
+  Statistic<int>(params)
 {
 }
 

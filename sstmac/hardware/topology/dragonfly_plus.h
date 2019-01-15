@@ -60,7 +60,7 @@ class DragonflyPlus : public Dragonfly
   FactoryRegister("dragonfly_plus", Topology, DragonflyPlus)
 
  public:
-  DragonflyPlus(sprockit::sim_parameters* params);
+  DragonflyPlus(sprockit::sim_parameters::ptr& params);
 
  public:
   std::string toString() const override {
@@ -82,7 +82,7 @@ class DragonflyPlus : public Dragonfly
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
   void configureIndividualPortParams(SwitchId src,
-        sprockit::sim_parameters *switch_params) const override;
+        sprockit::sim_parameters::ptr& switch_params) const override;
 
   virtual ~DragonflyPlus() {}
 
@@ -105,13 +105,13 @@ class DragonflyPlus : public Dragonfly
    * @param a
    * @param g
    */
-  inline void get_coords(SwitchId sid, int& row, int& a, int& g) const {
+  inline void getCoords(SwitchId sid, int& row, int& a, int& g) const {
     row = sid / num_leaf_switches_;
     a = sid % a_;
     g = (sid % num_leaf_switches_) / a_;
   }
 
-  int get_uid(int row, int a, int g) const {
+  int getUid(int row, int a, int g) const {
     return row*num_leaf_switches_ + g*a_ + a;
   }
 
@@ -158,7 +158,7 @@ class DragonflyPlus : public Dragonfly
   }
 
   SwitchId switchAddr(const coordinates &coords) const override {
-    return get_uid(coords[0], coords[1], coords[2]);
+    return getUid(coords[0], coords[1], coords[2]);
   }
 
  private:

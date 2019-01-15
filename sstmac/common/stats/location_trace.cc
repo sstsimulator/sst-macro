@@ -50,7 +50,7 @@ namespace sstmac {
 #define cast_bytes(x)  reinterpret_cast<char*>(&x)
 
 void
-LocationTrace::collect(
+LocationTrace::addData_impl(
   Timestamp created,
   uint32_t creator,
   Timestamp scheduled,
@@ -62,59 +62,6 @@ LocationTrace::collect(
   ev.scheduled = scheduled;
   ev.runner = runner;
   local_events_.push_back(ev);
-}
-
-void
-LocationTrace::clear()
-{
-  local_events_.clear();
-}
-
-void
-LocationTrace::reduce(StatCollector *coll)
-{
-  LocationTrace* tr = safe_cast(LocationTrace, coll);
-  std::list<event>::iterator it, end = tr->local_events_.end();
-  for (it=tr->local_events_.begin(); it != end; ++it){
-    event& ev = *it;
-    global_events_[ev.scheduled] = ev;
-  }
-}
-
-void
-LocationTrace::globalReduce(ParallelRuntime *rt)
-{
-  sprockit::abort("location_trace::global_reduce: location trace should not be run in parallel");
-}
-
-void
-LocationTrace::dumpGlobalData()
-{
-  std::string fname = sprockit::printf("%s.events.bin", fileroot_.c_str());
-  std::fstream myfile;
-  StatCollector::checkOpen(myfile, fname, std::ios::out | std::ios::binary);
-
-  std::map<Timestamp, event>::iterator it, end = global_events_.end();
-  for (it=global_events_.begin(); it != end; ++it){
-    event& ev = it->second;
-    myfile.write(cast_bytes(ev), sizeof(event));
-  }
-  myfile.close();
-}
-
-void
-LocationTrace::dumpLocalData()
-{
-  std::string fname = sprockit::printf("%s.%d.events.bin", fileroot_.c_str(), id_);
-  std::fstream myfile;
-  StatCollector::checkOpen(myfile, fname, std::ios::out | std::ios::binary);
-
-  std::list<event>::iterator it, end = local_events_.end();
-  for (it=local_events_.begin(); it != end; ++it){
-    event& ev = *it;
-    myfile.write(cast_bytes(ev), sizeof(event));
-  }
-  myfile.close();
 }
 
 bool

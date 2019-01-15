@@ -61,7 +61,7 @@ class xpress_ring :
   } port_t;
 
  public:
-  xpress_ring(sprockit::sim_parameters* params);
+  xpress_ring(sprockit::sim_parameters::ptr& params);
 
   virtual ~xpress_ring() {}
 

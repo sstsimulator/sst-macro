@@ -62,7 +62,7 @@ class FatTreeRouter : public Router
   using header = Packet::header;
   FactoryRegister("fat_tree", Router, FatTreeRouter)
  public:
-  FatTreeRouter(sprockit::sim_parameters* params, Topology* top, NetworkSwitch* netsw);
+  FatTreeRouter(sprockit::sim_parameters::ptr& params, Topology* top, NetworkSwitch* netsw);
 
   virtual ~FatTreeRouter() {}
 

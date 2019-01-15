@@ -56,7 +56,7 @@ class MpiRuntime :
 {
   FactoryRegister("mpi", ParallelRuntime, MpiRuntime)
  public:
-  MpiRuntime(sprockit::sim_parameters* params);
+  MpiRuntime(sprockit::sim_parameters::ptr& params);
 
   void bcast(void *buffer, int bytes, int root) override;
 
@@ -82,7 +82,7 @@ class MpiRuntime :
 
   void allgather(void *send_buffer, int num_bytes, void *recv_buffer) override;
 
-  void initRuntimeParams(sprockit::sim_parameters* params) override;
+  void initRuntimeParams(sprockit::sim_parameters::ptr& params) override;
 
   Timestamp sendRecvMessages(Timestamp vote) override;
 
@@ -92,8 +92,8 @@ class MpiRuntime :
   void finalize() override;
 
  private:
-  int initRank(sprockit::sim_parameters* params);
-  int initSize(sprockit::sim_parameters* params);
+  int initRank(sprockit::sim_parameters::ptr& params);
+  int initSize(sprockit::sim_parameters::ptr& params);
 
  private:
   struct send_recv_vote {

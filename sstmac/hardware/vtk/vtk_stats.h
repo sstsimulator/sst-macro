@@ -123,7 +123,7 @@ class stat_vtk : public StatCollector
     std::set<int> special_fills;
   };
 
-  stat_vtk(sprockit::sim_parameters* params);
+  stat_vtk(sprockit::sim_parameters::ptr& params);
 
   std::string toString() const override {
     return "VTK stats";
@@ -150,7 +150,7 @@ class stat_vtk : public StatCollector
 
   void finalize(Timestamp t) override;
 
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
+  StatCollector* doClone(sprockit::sim_parameters::ptr& params) const override {
     return new stat_vtk(params);
   }
 

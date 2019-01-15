@@ -57,10 +57,10 @@ class LibComputeMemmove :
  public:
   virtual ~LibComputeMemmove() {}
 
-  LibComputeMemmove(sprockit::sim_parameters* params, SoftwareId id,
+  LibComputeMemmove(sprockit::sim_parameters::ptr& params, SoftwareId id,
                       OperatingSystem* os);
 
-  LibComputeMemmove(sprockit::sim_parameters* params, const char* prefix, SoftwareId id,
+  LibComputeMemmove(sprockit::sim_parameters::ptr& params, const char* prefix, SoftwareId id,
                       OperatingSystem* os);
 
   void incomingEvent(Event *ev){

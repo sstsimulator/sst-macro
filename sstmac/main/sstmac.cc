@@ -127,12 +127,12 @@ ParallelRuntime* init()
   //create a set of parameters from env variables
   //this is best way to piggy-back on process manager to configure things
   //in a parallel environment
-  sprockit::sim_parameters cmdline_params;
+  sprockit::sim_parameters::ptr cmdline_params = std::make_shared<sprockit::sim_parameters>();
   const char* env_str = getenv("SSTMAC_RUNTIME");
   if (env_str){
-    cmdline_params["runtime"] = env_str;
+    (*cmdline_params)["runtime"] = env_str;
   } else {
-    cmdline_params["runtime"] = SSTMAC_DEFAULT_RUNTIME_STRING;
+    (*cmdline_params)["runtime"] = SSTMAC_DEFAULT_RUNTIME_STRING;
   }
 
   //used when using fake sst compilers in configure/test-suite
@@ -143,7 +143,7 @@ ParallelRuntime* init()
     fake_build = atoi(env_str);
   }
 
-  ParallelRuntime* rt = ParallelRuntime::staticRuntime(&cmdline_params);
+  ParallelRuntime* rt = ParallelRuntime::staticRuntime(cmdline_params);
   return rt;
 #endif
 }
@@ -176,7 +176,7 @@ initOpts(opts& oo, int argc, char** argv)
  * @param params  An already allocated parameter object
  */
 void
-initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters* params, bool parallel)
+initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr& params, bool parallel)
 {
   //use the config file to set up file search paths
   size_t pos = oo.configfile.find_last_of('/');
@@ -222,14 +222,14 @@ initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters* params, bool
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-initFirstRun(ParallelRuntime* rt, sprockit::sim_parameters* params)
+initFirstRun(ParallelRuntime* rt, sprockit::sim_parameters::ptr& params)
 {
 }
 
 void
 runParams(opts& oo,
            ParallelRuntime* rt,
-           sprockit::sim_parameters* params,
+           sprockit::sim_parameters::ptr& params,
            sim_stats& stats)
 {
   //we didn't have all the runtime params available when we first built this
@@ -299,7 +299,7 @@ runParams(opts& oo,
 void
 run(opts& oo,
   ParallelRuntime* rt,
-  sprockit::sim_parameters* params,
+  sprockit::sim_parameters::ptr& params,
   sim_stats& stats)
 {
 
@@ -329,46 +329,46 @@ runStandalone(int argc, char** argv)
   //this means we actually just want to run a compiled program
   //and get the hell out of dodge
   sstmac::Timestamp::initStamps(1);
-  sprockit::sim_parameters null_params;
+  sprockit::sim_parameters::ptr null_params = std::make_shared<sprockit::sim_parameters>();
 
-  sprockit::sim_parameters* nic_params = null_params.get_optional_namespace("nic");
+  sprockit::sim_parameters::ptr nic_params = null_params->get_optional_namespace("nic");
   nic_params->add_param_override("name", "null");
 
-  sprockit::sim_parameters* mem_params = null_params.get_optional_namespace("memory");
+  sprockit::sim_parameters::ptr mem_params = null_params->get_optional_namespace("memory");
   mem_params->add_param_override("name", "null");
 
-  sprockit::sim_parameters* proc_params = null_params.get_optional_namespace("proc");
+  sprockit::sim_parameters::ptr proc_params = null_params->get_optional_namespace("proc");
   proc_params->add_param_override("frequency", "1ghz");
   proc_params->add_param_override("ncores", 1);
 
-  null_params.add_param_override("id", 1);
-  null_params.add_param_override("name", "sstmac_app_name");
+  null_params->add_param_override("id", 1);
+  null_params->add_param_override("name", "sstmac_app_name");
   sstmac::sw::SoftwareId id(0,0);
-  sstmac::native::SerialRuntime rt(&null_params);
+  sstmac::native::SerialRuntime rt(null_params);
 #if SSTMAC_INTEGRATED_SST_CORE
   sstmac::EventManager mgr(uint32_t(0));
 #else
-  sstmac::EventManager mgr(&null_params, &rt);
+  sstmac::EventManager mgr(null_params, &rt);
 #endif
-  sstmac::hw::SimpleNode node(&null_params, 1);
-  sstmac::sw::OperatingSystem os(&null_params, &node);
+  sstmac::hw::SimpleNode node(null_params, 1);
+  sstmac::sw::OperatingSystem os(null_params, &node);
 
   std::stringstream argv_sstr;
   for (int i=1; i < argc; ++i){
     argv_sstr << " " << argv[i];
   }
-  null_params.add_param("argv", argv_sstr.str());
+  null_params->add_param("argv", argv_sstr.str());
 
-  null_params.add_param_override("notify", "false");
+  null_params->add_param_override("notify", "false");
   sstmac::sw::App* a = sstmac::sw::App::factory::get_value(
-        "sstmac_app_name", &null_params, id, &os);
+        "sstmac_app_name", null_params, id, &os);
   os.startApp(a, "");
   return a->rc();
 }
 
 int
-tryMain(sprockit::sim_parameters* params,
-         int argc, char **argv, bool params_only)
+tryMain(sprockit::sim_parameters::ptr& params,
+        int argc, char **argv, bool params_only)
 {
   //set up the search path
   sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
@@ -463,11 +463,6 @@ tryMain(sprockit::sim_parameters* params,
 
 }
 
-
-
-
-
 opts::~opts()
 {
-  if (params) delete params;
 }

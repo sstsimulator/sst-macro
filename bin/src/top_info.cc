@@ -103,7 +103,7 @@ try_top_info_main(int argc, char **argv)
     sprockit::SpktFileIO::add_path(dir);
   }
 
-  sprockit::sim_parameters* params = new sprockit::sim_parameters(oo.configfile);
+  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>(oo.configfile);
   sstmac::Env::params = params;
   if (oo.params) {
     // there were command-line overrides
@@ -126,7 +126,7 @@ try_top_info_main(int argc, char **argv)
 
   params->print_params();
 
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
+  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
   hw::Topology* thetop = hw::Topology::factory::get_param("name", top_params);
   hw::CartesianTopology* top = test_cast(hw::CartesianTopology, thetop);
 
@@ -160,9 +160,6 @@ try_top_info_main(int argc, char **argv)
       }
     }
   }
-
-
-  delete params;
 
   sprockit::statics::finish();
 

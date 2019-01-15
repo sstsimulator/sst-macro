@@ -66,7 +66,7 @@ class DragonflyPlusAlltoallMinimalRouter : public Router {
               Router, DragonflyPlusAlltoallMinimalRouter,
               "router implementing minimal routing for dragonfly+")
 
-  DragonflyPlusAlltoallMinimalRouter(sprockit::sim_parameters* params, Topology *top,
+  DragonflyPlusAlltoallMinimalRouter(sprockit::sim_parameters::ptr& params, Topology *top,
                          NetworkSwitch *netsw)
     : Router(params, top, netsw)
   {
@@ -98,7 +98,7 @@ class DragonflyPlusAlltoallMinimalRouter : public Router {
 
     std::vector<int> connected;
     int my_a = dfly_->computeA(my_addr_);
-    dfly_->groupWiring()->connected_routers(my_a, my_g_, connected);
+    dfly_->groupWiring()->connectedRouters(my_a, my_g_, connected);
     for (int p=0; p < connected.size(); ++p){
       int my_expected_g = p / covering_;
       if (my_expected_g >= my_g_){
@@ -186,7 +186,7 @@ class DragonflyPlusParRouter : public DragonflyPlusAlltoallMinimalRouter {
     return "dragonfly+ PAR router";
   }
 
-  DragonflyPlusParRouter(sprockit::sim_parameters* params, Topology *top,
+  DragonflyPlusParRouter(sprockit::sim_parameters::ptr& params, Topology *top,
                        NetworkSwitch *netsw)
     : DragonflyPlusAlltoallMinimalRouter(params, top, netsw)
   {

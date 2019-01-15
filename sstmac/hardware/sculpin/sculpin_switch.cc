@@ -82,7 +82,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SculpinSwitch::SculpinSwitch(sprockit::sim_parameters *params, uint32_t id) :
+SculpinSwitch::SculpinSwitch(sprockit::sim_parameters::ptr& params, uint32_t id) :
   router_(nullptr),
   congestion_(true),
   #if SSTMAC_VTK_ENABLED && !SSTMAC_INTEGRATED_SST_CORE
@@ -91,7 +91,7 @@ SculpinSwitch::SculpinSwitch(sprockit::sim_parameters *params, uint32_t id) :
   delay_hist_(nullptr),
   NetworkSwitch(params, id)
 {
-  sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
+  sprockit::sim_parameters::ptr rtr_params = params->get_optional_namespace("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
   router_ = Router::factory::get_param("name", rtr_params, top_, this);
 
@@ -106,12 +106,12 @@ SculpinSwitch::SculpinSwitch(sprockit::sim_parameters *params, uint32_t id) :
 //    ej_params->combine_into(port_params);
 //  }
 
-  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+  sprockit::sim_parameters::ptr ej_params = params->get_optional_namespace("ejection");
   std::vector<Topology::injection_port> inj_conns;
   top_->endpointsConnectedToEjectionSwitch(my_addr_, inj_conns);
   for (Topology::injection_port& conn : inj_conns){
     auto port_ns = Topology::getPortNamespace(conn.switch_port);
-    sprockit::sim_parameters* port_params = params->get_optional_namespace(port_ns);
+    sprockit::sim_parameters::ptr port_params = params->get_optional_namespace(port_ns);
     ej_params->combine_into(port_params);
   }
 
@@ -148,7 +148,9 @@ SculpinSwitch::SculpinSwitch(sprockit::sim_parameters *params, uint32_t id) :
 #endif
   }
 
+  /** TODO stats
   delay_hist_ = optionalStats<StatHistogram>(this, params, "delays", "histogram");
+  */
 
   initLinks(params);
 
@@ -187,7 +189,7 @@ SculpinSwitch::~SculpinSwitch()
 
 void
 SculpinSwitch::connectOutput(
-  sprockit::sim_parameters* port_params,
+  sprockit::sim_parameters::ptr& port_params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -201,7 +203,7 @@ SculpinSwitch::connectOutput(
 
 void
 SculpinSwitch::connectInput(
-  sprockit::sim_parameters* port_params,
+  sprockit::sim_parameters::ptr& port_params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -212,13 +214,13 @@ SculpinSwitch::connectInput(
 }
 
 Timestamp
-SculpinSwitch::sendLatency(sprockit::sim_parameters *params) const
+SculpinSwitch::sendLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_time_param("sendLatency");
 }
 
 Timestamp
-SculpinSwitch::creditLatency(sprockit::sim_parameters *params) const
+SculpinSwitch::creditLatency(sprockit::sim_parameters::ptr& params) const
 {
   return params->get_time_param("sendLatency");
 }
@@ -237,7 +239,7 @@ SculpinSwitch::handleCredit(Event *ev)
 }
 
 void
-SculpinSwitch::send(port& p, sculpin_packet* pkt, Timestamp now)
+SculpinSwitch::send(port& p, SculpinPacket* pkt, Timestamp now)
 {
   if (now > p.next_free){
     p.next_free = now;
@@ -246,13 +248,13 @@ SculpinSwitch::send(port& p, sculpin_packet* pkt, Timestamp now)
   Timestamp extra_delay = p.next_free - now;
   Timestamp time_to_send = pkt->numBytes() * p.inv_bw;
   p.next_free += time_to_send;
-  pkt->setTime_to_send(time_to_send);
+  pkt->setTimeToSend(time_to_send);
   p.link->send(extra_delay, pkt);
 
   Timestamp delay = p.next_free - pkt->arrival();
 
   if (delay_hist_){
-    delay_hist_->collect(delay.usec());
+    delay_hist_->addData(delay.usec());
   }
 
 #if SSTMAC_VTK_ENABLED
@@ -305,18 +307,18 @@ SculpinSwitch::pullNext(int portnum)
   }
   pkt_debug("pulling pending packet from port %d with %d queued", portnum, p.priority_queue.size());
   auto iter = p.priority_queue.begin();
-  sculpin_packet* pkt = *iter;
+  SculpinPacket* pkt = *iter;
   p.priority_queue.erase(iter);
   send(p, pkt, now());
 }
 
 void
-SculpinSwitch::tryToSendPacket(sculpin_packet* pkt)
+SculpinSwitch::tryToSendPacket(SculpinPacket* pkt)
 {
   Timestamp now_ = now();
 
   pkt->set_arrival(now_);
-  port& p = ports_[pkt->next_port()];
+  port& p = ports_[pkt->nextPort()];
   pkt->setSeqnum(p.seqnum++);
 
   static int max_queue_depth = 0;
@@ -324,7 +326,7 @@ SculpinSwitch::tryToSendPacket(sculpin_packet* pkt)
   if (!congestion_){
     Timestamp time_to_send = pkt->numBytes() * p.inv_bw;
     p.next_free += time_to_send;
-    pkt->setTime_to_send(time_to_send);
+    pkt->setTimeToSend(time_to_send);
     p.link->send(pkt);
   } else if (p.next_free > now_){
     //oh, well, I have to wait
@@ -349,7 +351,7 @@ SculpinSwitch::tryToSendPacket(sculpin_packet* pkt)
 }
 
 double
-SculpinSwitch::doNotFilterPacket(sculpin_packet* pkt)
+SculpinSwitch::doNotFilterPacket(SculpinPacket* pkt)
 {
   auto iter = src_stat_highlight_.find(pkt->fromaddr());
   if (iter!= src_stat_highlight_.end()){
@@ -371,18 +373,18 @@ SculpinSwitch::doNotFilterPacket(sculpin_packet* pkt)
 void
 SculpinSwitch::handlePayload(Event *ev)
 {
-  sculpin_packet* pkt = safe_cast(sculpin_packet, ev);
+  SculpinPacket* pkt = safe_cast(SculpinPacket, ev);
   switch_debug("handling payload %s", pkt->toString().c_str());
   router_->route(pkt);
-  port& p = ports_[pkt->next_port()];
+  port& p = ports_[pkt->nextPort()];
 
   Timestamp time_to_send = p.inv_bw * pkt->numBytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
    * The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
-  if (pkt->time_to_send() > time_to_send){
+  if (pkt->timeToSend() > time_to_send){
     //delay the packet
     auto ev = newCallback(this, &SculpinSwitch::tryToSendPacket, pkt);
-    Timestamp delta_t = pkt->time_to_send() - time_to_send;
+    Timestamp delta_t = pkt->timeToSend() - time_to_send;
     sendDelayedExecutionEvent(delta_t, ev);
   } else {
     tryToSendPacket(pkt);

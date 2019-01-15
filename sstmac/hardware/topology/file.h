@@ -66,7 +66,7 @@ class FileTopology : public Topology
 
   virtual ~FileTopology() {}
 
-  FileTopology(sprockit::sim_parameters* params);
+  FileTopology(sprockit::sim_parameters::ptr& params);
 
   int maxNumPorts() const override {
     return maxNumPorts_;
@@ -117,7 +117,7 @@ class FileTopology : public Topology
   }
 
   void configureIndividualPortParams(SwitchId src,
-        sprockit::sim_parameters *switch_params) const override;
+        sprockit::sim_parameters::ptr& switch_params) const override;
 
   void connectedOutports(SwitchId src,
        std::vector<connection>& conns) const override;
@@ -171,7 +171,7 @@ class FileTopology : public Topology
   }
 
  private:
-  void initHostnameMap(sprockit::sim_parameters* params) override;
+  void initHostnameMap(sprockit::sim_parameters::ptr& params) override;
 
   int num_nodes_;
   int num_switches_;

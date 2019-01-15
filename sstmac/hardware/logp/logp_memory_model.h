@@ -59,7 +59,7 @@ class LogPMemoryModel : public MemoryModel
   FactoryRegister("logP | simple | LogP | logp", MemoryModel,LogPMemoryModel,
               "Implements a simple memory model that is just a single link")
  public:
-  LogPMemoryModel(sprockit::sim_parameters* params, Node* nd);
+  LogPMemoryModel(sprockit::sim_parameters::ptr& params, Node* nd);
 
   virtual ~LogPMemoryModel();
 

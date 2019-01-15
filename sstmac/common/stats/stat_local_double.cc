@@ -52,62 +52,20 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-StatLocalDouble::StatLocalDouble(sprockit::sim_parameters* params) :
+StatLocalDouble::StatLocalDouble(sprockit::sim_parameters::ptr& params) :
     StatValue<double>(params)
 {
-}
-
-void
-StatLocalDouble::globalReduce(ParallelRuntime *rt)
-{
-  if (rt->nproc() == 1)
-    return;
-  sprockit::abort("stat_local_double::global_reduce: not implemented");
-}
-
-void
-StatLocalDouble::reduce(StatCollector *coll)
-{
-  StatLocalDouble* other = safe_cast(StatLocalDouble, coll);
-  //std::cerr << "id: " << other->id_ << "\n";
-  //if (other->id_ < 0) return;
-  if ((other->id_ + 1) > values_.size()) {
-    values_.resize(other->id_ + 1);
-  }
-  values_[other->id_] = other->value_;
 }
 
 void
 StatLocalDouble::dump(const std::string& froot)
 {
   std::string data_file = froot + ".dat";
-  std::fstream data_str;
-  checkOpen(data_str, data_file);
+  std::fstream data_str(data_file.c_str());
   data_str << "Id Value\n";
   for (int i=0; i < values_.size(); ++i)
     data_str << sprockit::printf("%i %lf\n", i, values_[i]);
   data_str.close();
 }
-
-void
-StatLocalDouble::dumpGlobalData()
-{
-  dump(fileroot_);
-}
-
-void
-StatLocalDouble::dumpLocalData()
-{
-  std::string fname = sprockit::printf("%s.%d", fileroot_.c_str(), id_);
-  dump(fname);
-}
-
-void
-StatLocalDouble::clear()
-{
-}
-
-
-
 
 }

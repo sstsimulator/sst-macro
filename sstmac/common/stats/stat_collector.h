@@ -55,20 +55,188 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-struct stat_descr_t {
-  bool dump_all;
-  bool reduce_all;
-  bool dump_main;
-  bool need_delete;
-  const char* suffix;
+class StatisticBase {
 
-  stat_descr_t() :
-    dump_all(false),
-    reduce_all(true),
-    dump_main(true),
-    need_delete(false),
-    suffix(nullptr)
+};
+
+#if 0
+class StatisticOutput : public Module
+{
+ public:
+  StatisticOutput(Params& outputParameters);
+  ~StatisticOutput();
+
+ public:
+  template<typename T> fieldHandle_t registerField(const char* fieldName){
+    StatisticFieldInfo::fieldType_t FieldType =
+        StatisticFieldInfo::StatisticFieldInfo::getFieldTypeFromTemplate<T>();
+
+    auto res = generateFileHandle(addFieldToLists(fieldName, FieldType));
+    implRegisteredField(res);
+    return res;
+  }
+
+  /** Return the information on a registered field via the field handle.
+   * @param fieldHandle - The handle of the registered field.
+   * @return Pointer to the registered field info.
+   */
+  // Get the Field Information object, NULL is returned if not found
+  StatisticFieldInfo* getRegisteredField(fieldHandle_t fieldHandle);
+
+  /** Return the information on a registered field via known names.
+   * @param componentName - The name of the component.
+   * @param statisticName - The name of the statistic.
+   * @param fieldName - The name of the field .
+   * @return Pointer to the registered field info.
+   */
+  // Get Registered Fields
+  // ONLY SUPPORTED TYPES ARE int32_t, uint32_t, int64_t, uint64_t, float, double
+  template<typename T>
+  StatisticFieldInfo* getRegisteredField(const char* statisticName, const char* fieldName)
   {
+      StatisticFieldInfo*             NewStatFieldInfo;
+      StatisticFieldInfo*             ExistingStatFieldInfo;
+      StatisticFieldInfo::fieldType_t FieldType = StatisticFieldInfo::StatisticFieldInfo::getFieldTypeFromTemplate<T>();
+
+      NewStatFieldInfo = new StatisticFieldInfo(statisticName, fieldName, FieldType);
+
+      // Now search the FieldNameMap_t of type for a matching entry
+      FieldNameMap_t::const_iterator found = m_outputFieldNameMap.find(NewStatFieldInfo->getFieldUniqueName());
+      if (found != m_outputFieldNameMap.end()) {
+          // We found a map entry, now get the StatFieldInfo from the m_outputFieldInfoArray at the index given by the map
+          // and then delete the NewStatFieldInfo to prevent a leak
+          ExistingStatFieldInfo = m_outputFieldInfoArray[found->second];
+          delete NewStatFieldInfo;
+          return ExistingStatFieldInfo;
+      }
+
+      delete NewStatFieldInfo;
+      return NULL;
+  }
+
+  /** Return the array of registered field infos. */
+  FieldInfoArray_t& getFieldInfoArray() {return m_outputFieldInfoArray;}
+
+/////////////////
+  // Methods for Outputting Fields  (Called by Statistic Objects)
+  // Output fields (will call virtual functions of Derived Output classes)
+  // These aren't really part of a generic interface - optimization purposes only
+  /** Output field data.
+   * @param fieldHandle - The handle of the registered field.
+   * @param data - The data to be output.
+   */
+  virtual void outputField(fieldHandle_t fieldHandle, int32_t data);
+  virtual void outputField(fieldHandle_t fieldHandle, uint32_t data);
+  virtual void outputField(fieldHandle_t fieldHandle, int64_t data);
+  virtual void outputField(fieldHandle_t fieldHandle, uint64_t data);
+  virtual void outputField(fieldHandle_t fieldHandle, float data);
+  virtual void outputField(fieldHandle_t fieldHandle, double data);
+
+  /** Output field data.
+   * @param type - The field type to get name of.
+   * @return String name of the field type.
+   */
+  const char* getFieldTypeShortName(fieldType_t type);
+
+ protected:
+  friend class SST::Simulation;
+  friend class SST::Statistics::StatisticProcessingEngine;
+
+  // Routine to have Output Check its options for validity
+  /** Have the Statistic Output check its parameters
+   * @return True if all parameters are ok; False if a parameter is missing or incorrect.
+   */
+  virtual bool checkOutputParameters() = 0;
+
+  /** Have Statistic Object print out its usage and parameter info.
+   *  Called when checkOutputParameters() returns false */
+  virtual void printUsage() = 0;
+
+
+  virtual void implStartRegisterFields(StatisticBase *UNUSED(statistic)) {}
+  virtual void implRegisteredField(fieldHandle_t UNUSED(fieldHandle)) {}
+  virtual void implStopRegisterFields() {}
+
+  // Simulation Events
+  /** Indicate to Statistic Output that simulation has started.
+    * Allows object to perform any setup required. */
+  virtual void startOfSimulation() = 0;
+
+  /** Indicate to Statistic Output that simulation has ended.
+    * Allows object to perform any shutdown required. */
+  virtual void endOfSimulation() = 0;
+
+  // Start / Stop of output
+  /** Indicate to Statistic Output that a statistic is about to send data to be output
+    * Allows object to perform any initialization before output. */
+  virtual void implStartOutputEntries(StatisticBase* statistic) = 0;
+
+  /** Indicate to Statistic Output that a statistic is finished sending data to be output
+    * Allows object to perform any cleanup. */
+  virtual void implStopOutputEntries() = 0;
+
+  virtual void implStartRegisterGroup(StatisticGroup* UNUSED(group)) {}
+  virtual void implStopRegisterGroup() {}
+  virtual void implStartOutputGroup(StatisticGroup* UNUSED(group)) {}
+  virtual void implStopOutputGroup() {}
+
+
+ private:
+  // Start / Stop of register Fields
+  void registerStatistic(StatisticBase *stat);
+
+  void startRegisterFields(StatisticBase *statistic);
+  void stopRegisterFields();
+
+  // Start / Stop of output
+  void outputEntries(StatisticBase* statistic, bool endOfSimFlag);
+  void startOutputEntries(StatisticBase* statistic);
+  void stopOutputEntries();
+
+  // Other support functions
+  StatisticFieldInfo* addFieldToLists(const char* fieldName, fieldType_t fieldType);
+  fieldHandle_t generateFileHandle(StatisticFieldInfo* FieldInfo);
+
+
+ protected:
+  StatisticOutput() {;} // For serialization only
+
+};
+#endif
+
+/**
+ \class StatisticCollector
+ * Base type that creates the virtual addData(...) interface
+ * Used for distinguishing fundamental types (collected by value)
+ * and composite struct types (collected by reference)
+ */
+template <class T, bool F=std::is_fundamental<T>::value>
+struct StatisticCollector { };
+
+template <class T>
+struct StatisticCollector<T,true> {
+ void addData(T t){
+   addData_impl(t);
+ }
+
+ virtual void addData_impl(T data) = 0;
+};
+
+template <class T>
+struct StatisticCollector<T,false>
+{
+ virtual void addData_impl(T&& data) = 0;
+ virtual void addData_impl(const T& data) = 0;
+};
+
+template <class... Args>
+struct StatisticCollector<std::tuple<Args...>, false>
+{
+  virtual void addData_impl(Args... args) = 0;
+
+  template <class... InArgs>
+  void addData(InArgs&&... in){
+    addData_impl(std::forward<InArgs>(in)...);
   }
 };
 
@@ -79,225 +247,43 @@ struct stat_descr_t {
  * because no merging of stat objects takes place, which means
  * you'll get one file for each stat object.
  */
-class StatCollector : public sprockit::printable
+template <class T>
+class Statistic :
+  public StatisticBase,
+  public StatisticCollector<T>
 {
-  DeclareFactory(StatCollector)
+  DeclareFactory(Statistic)
  public:
-  virtual ~StatCollector();
+  virtual ~Statistic(){}
 
-  /** After post-processing, this notifies the collector to dump data to a file
-   *  @param name The root of the filename to dump to */
-  virtual void dumpLocalData() = 0;
+  // Required Virtual Methods:
+  //virtual void registerOutputFields(StatisticOutput* statOutput) = 0;
 
-  /** After post-processing, this notifies the collector to dump data to a file
-   *  @param name The root of the filename to dump to */
-  virtual void dumpGlobalData() = 0;
-
-  virtual void globalReduce(ParallelRuntime* rt) = 0;
-
-  virtual void reduce(StatCollector* coll) = 0;
-
-  virtual void clear() = 0;
-
-  virtual void finalize(Timestamp t){}
-
-  bool registered() const {
-    return registered_;
-  }
-
-  virtual void set_id(int id){
-    id_ = id;
-  }
-
-  int id() const {
-    return id_;
-  }
-
-  void set_registered(bool reg) {
-    registered_ = reg;
-  }
-
-  std::string fileroot() const {
-    return fileroot_;
-  }
-
-  StatCollector* clone() const {
-    return doClone(params_);
-  }
-
-  virtual bool isMain() const {
-    return false;
-  }
-
-  static int allocateUniqueTag(){
-    return unique_tag_counter_++;
-  }
-
-  /**
-   * @brief optional_build Build a stats object with all paramters
-   *                configured in a particular namespace with the exact type
-   *                of stats object determined by the parameter ''type''
-   * @param params  The parameters for building the stats object
-   * @param ns      The parameter namespace
-   * @param deflt   The default parameter value to use if ''type'' is not specified
-   * @param suffix  An optional suffix to apply if the multiple stats objects
-   *                are configured in the same namespace
-   * @return        The corresponding stat_collector object otherwise
-   *                a nullptr if no parameters exist in the given namespace
-   */
-  static StatCollector* optionalBuild(sprockit::sim_parameters* params,
-                const std::string& ns,
-                const std::string& deflt,
-                stat_descr_t* descr);
-  /**
-   * @brief optional_build Build a stats object with all paramters
-   *                configured in a particular namespace with the exact type
-   *                of stats object determined by the parameter ''type''
-   * @param params  The parameters for building the stats object
-   * @param ns      The parameter namespace
-   * @param deflt   The default parameter value to use if ''type'' is not specified
-   * @param suffix  An optional suffix to apply if the multiple stats objects
-   *                are configured in the same namespace
-   * @return        The corresponding stat_collector object, otherwise abort
-   *                if no parameters exist in the given namespace
-   */
-  static StatCollector* requiredBuild(sprockit::sim_parameters* params,
-                const std::string& ns,
-                const std::string& deflt,
-                stat_descr_t* descr);
-
-  static void statsError(sprockit::sim_parameters* params,
-             const std::string& ns,
-             const std::string& deflt);
-
-  static void registerOptionalStat(EventScheduler* parent,
-                                     StatCollector* coll, stat_descr_t* descr);
-
+  //virtual void outputStatisticData(StatisticOutput* statOutput, bool EndOfSimFlag) = 0;
  protected:
-  StatCollector(sprockit::sim_parameters* params);
-
-  /**
-   * Check to see if the file is open.  If not, try and open it and set
-   * the current output stream to it, and throw an sprockit::spkt_error if something goes
-   * wrong.
-   * @return
-   */
-  static bool checkOpen(std::fstream& myfile, const std::string& fname,
-             std::ios::openmode flags = std::ios::out);
-
-  virtual StatCollector* doClone(sprockit::sim_parameters* params) const = 0;
-
-  virtual bool requireFileroot() const {
-    return true;
-  }
-
- protected:
-  int id_;
-  std::string fileroot_;
-
- private:
-  sprockit::sim_parameters* params_;
-  bool registered_;
-  static int unique_tag_counter_;
-
+  Statistic(sprockit::sim_parameters::ptr& params){}
 };
 
-class StatValueBase : public StatCollector
-{
- public:
-  void setLabel(std::string label) {
-    label_ = label;
-  }
-
- protected:
-  StatValueBase(sprockit::sim_parameters* params);
-
-  int id_;
-
-  std::string label_;
-
-};
+template <class... Args>
+using MultiStatistic = Statistic<std::tuple<Args...>>;
 
 template <class T>
-class StatValue : public StatValueBase
+class StatValue : public Statistic<T>
 {
  public:
-  void collect(const T& val){
+  void addData_impl(T val){
     value_ += val;
   }
 
  protected:
-  StatValue(sprockit::sim_parameters* params) :
-    StatValueBase(params)
+  StatValue(sprockit::sim_parameters::ptr& params) :
+    Statistic<T>(params)
   {
   }
 
   T value_;
 };
 
-
-/**
- * See documentation for stat_collector::required_build
- */
-template <class T>
-T* requiredStats(EventScheduler* parent,
-              sprockit::sim_parameters* params,
-              const std::string& ns,
-              const std::string& deflt,
-              stat_descr_t* descr = nullptr){
-  StatCollector* coll = StatCollector::requiredBuild(params,ns,deflt,descr);
-  T* t = dynamic_cast<T*>(coll);
-  if (!t){
-    StatCollector::statsError(params, ns, deflt);
-  }
-  StatCollector::registerOptionalStat(parent, t, descr);
-  return t;
-}
-
-template <class T>
-T* requiredStats(EventScheduler* parent,
-              sprockit::sim_parameters* params,
-              const std::string& ns,
-              const std::string& deflt,
-              const char* suffix){
-  stat_descr_t descr;
-  descr.suffix = suffix;
-  return requiredStats<T>(parent, params, ns, deflt, suffix);
-}
-
-/**
- * See documentation for stat_collector::optional_build
- */
-template <class T>
-T* optionalStats(EventScheduler* parent,
-              sprockit::sim_parameters* params,
-              const std::string& ns,
-              const std::string& deflt,
-              stat_descr_t* descr = nullptr)
-{
-  StatCollector* coll = StatCollector::optionalBuild(params, ns, deflt, descr);
-  if (coll){
-    T* t = dynamic_cast<T*>(coll);
-    if (!t){
-      StatCollector::statsError(params, ns, deflt);
-    }
-    StatCollector::registerOptionalStat(parent, t, descr);
-    return t;
-  }
-  else return nullptr;
-}
-
-template <class T>
-T* optionalStats(EventScheduler* parent,
-              sprockit::sim_parameters* params,
-              const std::string& ns,
-              const std::string& deflt,
-              const char* suffix)
-{
-  stat_descr_t descr;
-  descr.suffix = suffix;
-  return optionalStats<T>(parent, params, ns, deflt, &descr);
-}
 
 
 } // end of namespace sstmac

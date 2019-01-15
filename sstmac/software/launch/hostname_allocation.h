@@ -59,7 +59,7 @@ class HostnameAllocation : public NodeAllocator
               "Given a file containing one hostname/coordinate pair per line, "
               "return a node allocation with all hosts in the file")
  public:
-  HostnameAllocation(sprockit::sim_parameters* params);
+  HostnameAllocation(sprockit::sim_parameters::ptr& params);
 
   std::string toString() const override {
     return "hostname allocation";

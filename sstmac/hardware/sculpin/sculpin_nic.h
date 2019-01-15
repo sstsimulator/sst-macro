@@ -64,7 +64,7 @@ class SculpinNIC :
   FactoryRegister("sculpin", NIC, SculpinNIC,
               "implements a nic that models messages as a packet flow")
  public:
-  SculpinNIC(sprockit::sim_parameters* params, Node* parent);
+  SculpinNIC(sprockit::sim_parameters::ptr& params, Node* parent);
 
   std::string toString() const override {
     return sprockit::printf("sculpin nic(%d)", int(addr()));
@@ -81,13 +81,13 @@ class SculpinNIC :
   void handleCredit(Event* ev);
 
   void connectOutput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
 
   void connectInput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
@@ -96,16 +96,16 @@ class SculpinNIC :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters *params) const override;
+  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters *params) const override;
+  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
 
  private:
   void doSend(NetworkMessage* payload) override;
 
-  void cqHandle(sculpin_packet* pkt);
+  void cqHandle(SculpinPacket* pkt);
 
-  void eject(sculpin_packet* pkt);
+  void eject(SculpinPacket* pkt);
 
  private:
   Timestamp inj_next_free_;

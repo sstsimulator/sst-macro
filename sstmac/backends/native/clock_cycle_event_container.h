@@ -75,7 +75,7 @@ class ClockCycleEventMap :
   FactoryRegister("clock_cycle_parallel", EventManager, ClockCycleEventMap,
       "Implements a parallel event queue with synchronization on regular clock cycles")
  public:
-  ClockCycleEventMap(sprockit::sim_parameters* params, ParallelRuntime* rt);
+  ClockCycleEventMap(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
 
   virtual ~ClockCycleEventMap() throw() {}
 

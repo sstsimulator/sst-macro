@@ -121,7 +121,7 @@ class Router : public sprockit::printable
   uint32_t randomNumber(uint32_t max, uint32_t attempt, uint32_t seed) const;
 
  protected:
-  Router(sprockit::sim_parameters* params, Topology* top, NetworkSwitch* sw);
+  Router(sprockit::sim_parameters::ptr& params, Topology* top, NetworkSwitch* sw);
 
   /**
    * @brief switch_paths Decide which path is 'shortest' based on

@@ -50,39 +50,19 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class StatHistogram :
-  public StatCollector
+class StatHistogram : public Statistic<double>
 {
-  FactoryRegister("histogram", StatCollector, StatHistogram)
+  FactoryRegister("histogram", Statistic<double>, StatHistogram)
  public:
-  StatHistogram(sprockit::sim_parameters* params);
+  StatHistogram(sprockit::sim_parameters::ptr& params);
 
-  std::string toString() const override {
-    return "stat histogram";
-  }
+  void addData_impl(double value) override;
 
-  void collect(double value);
-
-  void collect(double value, int64_t num);
-
-  void dumpLocalData() override;
-
-  void dumpGlobalData() override;
-
-  void globalReduce(ParallelRuntime *rt) override;
-
-  void clear() override;
-
-  void reduce(StatCollector* coll) override;
-
-  StatCollector* doClone(sprockit::sim_parameters* params) const override {
-    return new StatHistogram(params);
-  }
-
- protected:
+ private:
   void dump(const std::string& froot);
 
- protected:
+  void addData_impl(double value, uint64_t count);
+
   std::vector<int64_t> counts_;
 
   double bin_size_;
@@ -91,18 +71,6 @@ class StatHistogram :
 
   bool is_log_;
 
-};
-
-class StatTimeHistogram : public StatHistogram
-{
-  FactoryRegister("time_histogram", StatHistogram, StatTimeHistogram)
- public:
-  StatTimeHistogram(sprockit::sim_parameters* params) :
-    StatHistogram(params)
-  {
-  }
-
-  void record(Timestamp t, int64_t num);
 };
 
 }

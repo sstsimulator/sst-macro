@@ -70,7 +70,7 @@ class TableRouter : public Router {
               Router, TableRouter,
               "router implementing table-based routing")
 
-  TableRouter(sprockit::sim_parameters* params, Topology* top, NetworkSwitch* sw) :
+  TableRouter(sprockit::sim_parameters::ptr& params, Topology* top, NetworkSwitch* sw) :
     Router(params, top, sw),
     table_(top->numNodes(), -1)
   {

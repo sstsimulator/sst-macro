@@ -95,7 +95,7 @@ class MpiProtocol : public sprockit::printable {
 class Eager0 final : public MpiProtocol
 {
  public:
-  Eager0(sprockit::sim_parameters* params, MpiQueue* queue) :
+  Eager0(sprockit::sim_parameters_ptr& params, MpiQueue* queue) :
     MpiProtocol(queue){}
 
   ~Eager0(){}
@@ -130,7 +130,7 @@ class Eager0 final : public MpiProtocol
 class Eager1 final : public MpiProtocol
 {
  public:
-  Eager1(sprockit::sim_parameters* params, MpiQueue* queue)
+  Eager1(sprockit::sim_parameters_ptr& params, MpiQueue* queue)
     : MpiProtocol(queue) {}
 
   virtual ~Eager1(){}
@@ -156,7 +156,7 @@ class Eager1 final : public MpiProtocol
 class RendezvousProtocol : public MpiProtocol
 {
  public:
-  RendezvousProtocol(sprockit::sim_parameters* params, MpiQueue* queue);
+  RendezvousProtocol(sprockit::sim_parameters_ptr& params, MpiQueue* queue);
 
   std::string toString() const override {
     return "rendezvous";
@@ -180,7 +180,7 @@ class RendezvousProtocol : public MpiProtocol
 class RendezvousGet final : public RendezvousProtocol
 {
  public:
-  RendezvousGet(sprockit::sim_parameters* params, MpiQueue* queue) :
+  RendezvousGet(sprockit::sim_parameters_ptr& params, MpiQueue* queue) :
     RendezvousProtocol(params, queue)
   {
   }

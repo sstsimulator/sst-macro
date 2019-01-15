@@ -70,7 +70,7 @@ class CoordinateTaskMapper : public TaskMapper
   FactoryRegister("coordinate", TaskMapper, CoordinateTaskMapper,
               "assigns tasks to nodes based on hostname map of topology and hostname list in file")
  public:
-  CoordinateTaskMapper(sprockit::sim_parameters* params);
+  CoordinateTaskMapper(sprockit::sim_parameters::ptr& params);
 
   std::string toString() const override {
     return "coordinate task mapper";

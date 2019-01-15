@@ -83,7 +83,7 @@ MpiQueue::sortbyseqnum::operator()(MpiMessage* a,
   return (a->seqnum() < b->seqnum());
 }
 
-MpiQueue::MpiQueue(sprockit::sim_parameters* params,
+MpiQueue::MpiQueue(sprockit::sim_parameters::ptr& params,
                      int task_id,
                      MpiApi* api, CollectiveEngine* engine) :
   taskid_(task_id),

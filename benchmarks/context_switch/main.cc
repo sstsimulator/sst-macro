@@ -21,7 +21,7 @@ class context_switch_benchmark : public sstmac::benchmark
  public:
   FactoryRegister("context_switch", sstmac::benchmark, context_switch_benchmark);
 
-  context_switch_benchmark(sprockit::sim_parameters* params){
+  context_switch_benchmark(sprockit::sim_parameters::ptr& params){
     main_thread_ = sstmac::sw::ThreadContext::factory
                     ::get_param("context", params);
     nthread_ = params->get_int_param("nthread");

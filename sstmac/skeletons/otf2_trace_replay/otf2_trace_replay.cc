@@ -118,7 +118,7 @@ static void check_status(OTF2_ErrorCode status, const std::string& description)
   }
 }
 
-OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters* params,
+OTF2TraceReplayApp::OTF2TraceReplayApp(sprockit::sim_parameters::ptr& params,
         sumi::SoftwareId sid, sstmac::sw::OperatingSystem* os) :
   App(params, sid, os), mpi_(nullptr), rank_(sid.task_), call_queue_(this), total_events_(0) {
   timescale_ = params->get_optional_double_param("otf2_timescale", 1.0);

@@ -51,20 +51,20 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-LibComputeTime::LibComputeTime(sprockit::sim_parameters* params, SoftwareId id,
+LibComputeTime::LibComputeTime(sprockit::sim_parameters::ptr& params, SoftwareId id,
                                OperatingSystem* os) :
   LibComputeTime(params, "libcomputetime", id, os)
 {
 }
 
-LibComputeTime::LibComputeTime(sprockit::sim_parameters* params,
+LibComputeTime::LibComputeTime(sprockit::sim_parameters::ptr& params,
                                    const char* prefix, SoftwareId id,
                                    OperatingSystem* os) :
   LibCompute(params, prefix, id, os)
 {
 }
 
-LibComputeTime::LibComputeTime(sprockit::sim_parameters* params,
+LibComputeTime::LibComputeTime(sprockit::sim_parameters::ptr& params,
                                    const std::string& name, SoftwareId id,
                                    OperatingSystem* os) :
   LibCompute(params, name, id, os)

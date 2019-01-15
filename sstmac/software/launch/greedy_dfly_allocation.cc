@@ -71,7 +71,7 @@ class GreedyDflyAllocation :
   FactoryRegister("greedy_dfly", NodeAllocator, GreedyDflyAllocation,
               "Allocate a 'striped' dragonfly allocation scattering across groups")
  public:
-  GreedyDflyAllocation(sprockit::sim_parameters* params) : NodeAllocator(params) {
+  GreedyDflyAllocation(sprockit::sim_parameters::ptr& params) : NodeAllocator(params) {
     num_groups_ = params->get_int_param("num_groups");
   }
 
@@ -106,7 +106,7 @@ class GreedyDflyAllocation :
       int num_left = num_needed;
       std::set<int> nodes_this_group;
       for (int a=0; a < na; ++a){
-        SwitchId sid = dfly->get_uid(a,g);
+        SwitchId sid = dfly->getUid(a,g);
         NodeId nid_offset = sid*conc;
         for (int c=0; c < conc; ++c){
           NodeId nid = nid_offset + c;

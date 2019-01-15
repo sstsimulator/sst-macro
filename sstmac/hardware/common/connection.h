@@ -72,7 +72,7 @@ class Connectable {
    * @param payloadHandler
    */
   virtual void connectOutput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* payload_link) = 0;
@@ -87,14 +87,14 @@ class Connectable {
    * @param creditHandler Can be null, if no credits are ever sent
    */
   virtual void connectInput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* credit_link) = 0;
 
-  virtual Timestamp sendLatency(sprockit::sim_parameters* params) const = 0;
+  virtual Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const = 0;
 
-  virtual Timestamp creditLatency(sprockit::sim_parameters* params) const = 0;
+  virtual Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const = 0;
 
   /**
    * @brief creditHandler
@@ -117,7 +117,7 @@ class ConnectableComponent :
   public Connectable
 {
  protected:
-  ConnectableComponent(sprockit::sim_parameters* params, uint32_t cid);
+  ConnectableComponent(sprockit::sim_parameters::ptr& params, uint32_t cid);
 
 };
 

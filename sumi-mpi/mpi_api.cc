@@ -112,7 +112,7 @@ MpiApi* sstmac_mpi()
 //
 // Build a new mpiapi.
 //
-MpiApi::MpiApi(sprockit::sim_parameters* params,
+MpiApi::MpiApi(sprockit::sim_parameters::ptr& params,
                  sstmac::sw::SoftwareId sid,
                  sstmac::sw::OperatingSystem* os) :
   sumi::Transport(params, "mpi", sid, os),
@@ -135,7 +135,7 @@ MpiApi::MpiApi(sprockit::sim_parameters* params,
   crossed_comm_world_barrier_(false),
   comm_factory_(sid, this)
 {
-  sprockit::sim_parameters* queue_params = params->get_optional_namespace("queue");
+  sprockit::sim_parameters::ptr queue_params = params->get_optional_namespace("queue");
   engine_ = new CollectiveEngine(queue_params, this);
   queue_ = new MpiQueue(queue_params, sid.task_, this, engine_);
 

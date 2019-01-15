@@ -97,7 +97,7 @@ using SST::SST_ELI_getTertiaryNumberFromVersion;
   cls(SST::ComponentId_t id, SST::Params& params) : \
     cls(make_spkt_params_from_sst_params(params), id, nullptr){}
 
-sprockit::sim_parameters* make_spkt_params_from_sst_params(SST::Params& map);
+sprockit::sim_parameters*::ptr make_spkt_params_from_sst_params(SST::Params& map);
 
 namespace sstmac {
 
@@ -119,7 +119,7 @@ class SSTIntegratedComponent
    * @param mod
    */
   virtual void connectInput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
@@ -133,7 +133,7 @@ class SSTIntegratedComponent
    * @param mod
    */
   virtual void connectOutput(
-    sprockit::sim_parameters* params,
+    sprockit::sim_parameters::ptr& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
@@ -152,10 +152,10 @@ class SSTIntegratedComponent
    */
   virtual SST::Event::HandlerBase* creditHandler(int port) = 0;
 
-  void initLinks(sprockit::sim_parameters* params);
+  void initLinks(sprockit::sim_parameters::ptr& params);
 
  protected:
-  SSTIntegratedComponent(sprockit::sim_parameters* params, uint32_t id);
+  SSTIntegratedComponent(sprockit::sim_parameters::ptr& params, uint32_t id);
 
   SST::LinkMap* link_map_;
 

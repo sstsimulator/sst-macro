@@ -109,7 +109,7 @@ class StructuredTopology : public Topology
   /**** END PURE VIRTUAL INTERFACE *****/
 
  protected:
-  StructuredTopology(sprockit::sim_parameters* params);
+  StructuredTopology(sprockit::sim_parameters::ptr& params);
 
  protected:
   int concentration_;

@@ -52,24 +52,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-StatGlobalInt::StatGlobalInt(sprockit::sim_parameters* params) :
+StatGlobalInt::StatGlobalInt(sprockit::sim_parameters::ptr& params) :
     StatValue<int>(params)
 {
-}
-
-void
-StatGlobalInt::globalReduce(ParallelRuntime *rt)
-{
-  if (rt->nproc() == 1)
-    return;
-  sprockit::abort("stat_global_int::global_reduce: not implemented");
-}
-
-void
-StatGlobalInt::reduce(StatCollector *coll)
-{
-  StatGlobalInt* other = safe_cast(StatGlobalInt, coll);
-  value_ += other->value_;
 }
 
 void
@@ -81,25 +66,7 @@ StatGlobalInt::dump(const std::string& froot)
   //data_str << "Value\n";
   //data_str << sprockit::printf("%i\n", value_);
   //data_str.close();
-  cout0 << sprockit::printf("%s: %i\n", label_.c_str(), value_);
-}
-
-void
-StatGlobalInt::dumpGlobalData()
-{
-  dump(fileroot_);
-}
-
-void
-StatGlobalInt::dumpLocalData()
-{
-  std::string fname = sprockit::printf("%s.%d", fileroot_.c_str(), id_);
-  dump(fname);
-}
-
-void
-StatGlobalInt::clear()
-{
+  //cout0 << sprockit::printf("%s: %i\n", label_.c_str(), value_);
 }
 
 
