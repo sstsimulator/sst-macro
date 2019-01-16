@@ -102,11 +102,11 @@ class PiscesSender : public SubComponent
 
   virtual ~PiscesSender() {}
 
-  virtual void setInput(sprockit::sim_parameters::ptr& params,
+  virtual void setInput(SST::Params& params,
      int my_inport, int dst_outport,
      EventLink* link) = 0;
 
-  virtual void setOutput(sprockit::sim_parameters::ptr& params,
+  virtual void setOutput(SST::Params& params,
     int my_outport, int dst_inport,
     EventLink* link) = 0;
 
@@ -114,9 +114,9 @@ class PiscesSender : public SubComponent
 
   virtual void handleCredit(Event* ev) = 0;
 
-  static void configureCreditPortLatency(sprockit::sim_parameters::ptr& params);
+  static void configureCreditPortLatency(SST::Params& params);
 
-  static void configurePayloadPortLatency(sprockit::sim_parameters::ptr& params);
+  static void configurePayloadPortLatency(SST::Params& params);
 
   void setStatCollector(PacketStatsCallback* c){
     stat_collector_ = c;
@@ -135,7 +135,7 @@ class PiscesSender : public SubComponent
   }
 
  protected:
-  PiscesSender(sprockit::sim_parameters::ptr& params,
+  PiscesSender(SST::Params& params,
                SST::Component* parent,
                bool update_vc);
 

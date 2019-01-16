@@ -73,7 +73,7 @@ std::vector<TaskMapping::ptr> TaskMapping::app_ids_launched_(1024);
 std::map<std::string, TaskMapping::ptr> TaskMapping::app_names_launched_;
 std::vector<int> TaskMapping::local_refcounts_(1024);
 
-JobLauncher::JobLauncher(sprockit::sim_parameters::ptr& params,
+JobLauncher::JobLauncher(SST::Params& params,
                            OperatingSystem* os) :
   Service(std::string("JobLauncher"), SoftwareId(0,0,0), os)
 {
@@ -118,17 +118,17 @@ JobLauncher::scheduleLaunchRequests()
 }
 
 void
-JobLauncher::addLaunchRequests(sprockit::sim_parameters::ptr& params)
+JobLauncher::addLaunchRequests(SST::Params& params)
 {
   bool keep_going = true;
   int aid = 1;
   int last_used_aid = 0;
-  sprockit::sim_parameters::ptr all_app_params = params->get_optional_namespace("app");
+  SST::Params all_app_params = params->get_optional_namespace("app");
   while (keep_going || aid < 10){
     std::string name = sprockit::printf("app%d",aid);
     if (params->has_namespace(name)){
-      sprockit::sim_parameters::ptr app_params = params->get_namespace(name);
-      all_app_params->combine_into(app_params);
+      SST::Params app_params = params.get_namespace(name);
+      all_app_params.combine_into(app_params);
       AppLaunchRequest* mgr = new AppLaunchRequest(app_params, AppId(aid), name);
       initial_requests_.push_back(mgr);
       keep_going = true;
@@ -154,7 +154,7 @@ JobLauncher::addLaunchRequests(sprockit::sim_parameters::ptr& params)
   std::vector<std::string> services_to_launch;
   params->get_optional_vector_param("services", services_to_launch);
   for (std::string& str : services_to_launch){
-    sprockit::sim_parameters::ptr srv_params = params->get_namespace(str);
+    SST::Params srv_params = params.get_namespace(str);
     //setup the name for app factory
     srv_params->add_param_override("name", "distributed_service");
     //setup the name for distributed service

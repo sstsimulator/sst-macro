@@ -3,7 +3,7 @@
 namespace sstmac {
 namespace tutorial {
 
-mandy_patinkin::mandy_patinkin(sprockit::sim_parameters::ptr& params)
+mandy_patinkin::mandy_patinkin(SST::Params& params)
  : actor(params)
 {
   sword_hand_ = params->get_param("sword_hand");

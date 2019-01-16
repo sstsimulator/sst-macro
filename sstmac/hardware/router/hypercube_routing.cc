@@ -16,7 +16,7 @@ class HypercubeMinimalRouter : public Router {
               Router, HypercubeMinimalRouter,
               "router implementing minimal routing for hypercube")
 
-  HypercubeMinimalRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  HypercubeMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
     : Router(params, top, netsw)
   {
@@ -78,7 +78,7 @@ class HypercubeParRouter : public HypercubeMinimalRouter {
     return "hypercube PAR router";
   }
 
-  HypercubeParRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  HypercubeParRouter(SST::Params& params, Topology *top,
                        NetworkSwitch *netsw)
     : HypercubeMinimalRouter(params, top, netsw)
   {

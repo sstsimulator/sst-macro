@@ -60,7 +60,7 @@ PiscesBuffer::~PiscesBuffer()
 
 void
 PiscesBuffer::setInput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int this_inport, int src_outport,
   EventLink* link)
 {
@@ -69,7 +69,7 @@ PiscesBuffer::setInput(
 }
 
 void
-PiscesBuffer::setOutput(sprockit::sim_parameters::ptr& params,
+PiscesBuffer::setOutput(SST::Params& params,
                          int this_outport, int dst_inport,
                          EventLink* link)
 {
@@ -78,7 +78,7 @@ PiscesBuffer::setOutput(sprockit::sim_parameters::ptr& params,
 }
 
 PiscesBuffer::PiscesBuffer(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   SST::Component* parent, int num_vc)
   : PiscesSender(params, parent, false/*buffers do not update vc*/),
     bytes_delayed_(0),

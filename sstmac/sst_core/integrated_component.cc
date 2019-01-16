@@ -55,7 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 
 SSTIntegratedComponent::SSTIntegratedComponent(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   uint32_t id) :
   SST::Component(SST::ComponentId_t(id))
 {
@@ -69,7 +69,7 @@ SSTIntegratedComponent::SSTIntegratedComponent(
 }
 
 void
-SSTIntegratedComponent::initLinks(sprockit::sim_parameters::ptr params)
+SSTIntegratedComponent::initLinks(SST::Params& params)
 {
   //loop all the links in our map and determine what we need to do with them
   for (auto& pair : link_map_->getLinkMap()){
@@ -81,7 +81,7 @@ SSTIntegratedComponent::initLinks(sprockit::sim_parameters::ptr params)
     istr >> port_type;
     istr >> src_outport;
     istr >> dst_inport;
-    sprockit::sim_parameters::ptr port_params = hw::Topology::get_port_params(params, src_outport);
+    SST::Params port_params = hw::Topology::get_port_params(params, src_outport);
     EventLink* ev_link = new EventLink(link, this);
 
     if (port_type == "input"){

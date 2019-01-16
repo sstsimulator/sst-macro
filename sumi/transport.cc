@@ -172,13 +172,13 @@ class SumiServer :
 
 };
 
-Transport::Transport(sprockit::sim_parameters::ptr& params, sstmac::sw::SoftwareId sid,
+Transport::Transport(SST::Params& params, sstmac::sw::SoftwareId sid,
                      sstmac::sw::OperatingSystem* os) :
   Transport(params, "sumi", sid, os)
 {
 }
 
-Transport::Transport(sprockit::sim_parameters::ptr& params,
+Transport::Transport(SST::Params& params,
                const char* prefix,
                sstmac::sw::SoftwareId sid,
                sstmac::sw::OperatingSystem* os) :
@@ -186,7 +186,7 @@ Transport::Transport(sprockit::sim_parameters::ptr& params,
 {
 }
 
-Transport::Transport(sprockit::sim_parameters::ptr& params,
+Transport::Transport(SST::Params& params,
                sstmac::sw::SoftwareId sid,
                sstmac::sw::OperatingSystem* os,
                const std::string& prefix,
@@ -195,7 +195,7 @@ Transport::Transport(sprockit::sim_parameters::ptr& params,
 {
 }
 
-Transport::Transport(sprockit::sim_parameters::ptr& params,
+Transport::Transport(SST::Params& params,
                      const std::string& libname,
                      sstmac::sw::SoftwareId sid,
                      sstmac::sw::OperatingSystem* os,
@@ -492,7 +492,7 @@ Transport::incomingMessage(Message *msg)
   }
 }
 
-CollectiveEngine::CollectiveEngine(sprockit::sim_parameters::ptr& params, Transport *tport) :
+CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
   system_collective_tag_(-1), //negative tags reserved for special system work
   eager_cutoff_(512),
   use_put_protocol_(false),

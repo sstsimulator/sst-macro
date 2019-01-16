@@ -61,7 +61,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-HostnameTaskMapper::HostnameTaskMapper(sprockit::sim_parameters::ptr params) :
+HostnameTaskMapper::HostnameTaskMapper(SST::Params& params) :
   TaskMapper(params)
 {
   listfile_ = params->get_param("hostmap");

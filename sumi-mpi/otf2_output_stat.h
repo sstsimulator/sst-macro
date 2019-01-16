@@ -15,7 +15,7 @@ class otf2_writer : public sstmac::stat_collector
 {
   FactoryRegister("otf2", stat_collector, otf2_writer)
  public:
-  otf2_writer(sprockit::sim_parameters::ptr& params);
+  otf2_writer(SST::Params& params);
 
   dumpi::OTF2_Writer& writer(){
     return writer_;
@@ -25,7 +25,7 @@ class otf2_writer : public sstmac::stat_collector
     return "OTF2 trace writer";
   }
 
-  sstmac::stat_collector* doClone(sprockit::sim_parameters::ptr params) const override {
+  sstmac::stat_collector* doClone(SST::Params& params) const override {
     spkt_abort_printf("otf2_writer should not be cloned");
     return nullptr;
     //otf2_writer* writer = new otf2_writer(params);

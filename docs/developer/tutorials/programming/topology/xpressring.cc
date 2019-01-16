@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-xpress_ring::xpress_ring(sprockit::sim_parameters::ptr& params)
+xpress_ring::xpress_ring(SST::Params& params)
   : StructuredTopology(params)
 {
   ring_size_ = params->get_int_param("xpress_ring_size");
@@ -93,7 +93,7 @@ xpress_ring::endpointsConnectedToInjectionSwitch(SwitchId swid,
 }
 
 void
-xpress_ring::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters::ptr& switch_params) const
+xpress_ring::configureIndividualPortParams(SwitchId src, SST::Params& switch_params) const
 {
   Topology::configureIndividualPortParams(0, 4, switch_params);
 }

@@ -63,7 +63,7 @@ SimpleNode::~SimpleNode()
 {
 }
 
-SimpleNode::SimpleNode(sprockit::sim_parameters::ptr& params, uint32_t id)
+SimpleNode::SimpleNode(SST::Params& params, uint32_t id)
   : Node(params, id)
 {
   initLinks(params);

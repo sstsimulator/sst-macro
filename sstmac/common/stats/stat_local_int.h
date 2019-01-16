@@ -54,7 +54,7 @@ class StatLocalInt : public Statistic<int>
 {
   FactoryRegister("local_int", Statistic<int>, StatLocalInt)
  public:
-  StatLocalInt(sprockit::sim_parameters::ptr& params);
+  StatLocalInt(SST::Params& params);
 
   void addData_impl(int val){
     values_.push_back(val);

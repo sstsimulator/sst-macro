@@ -66,7 +66,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-PiscesTiledSwitch::PiscesTiledSwitch(sprockit::sim_parameters::ptr& params, uint32_t id)
+PiscesTiledSwitch::PiscesTiledSwitch(SST::Params& params, uint32_t id)
   : PiscesAbstractSwitch(params, id)
 {
   nrows_ = params->get_int_param("nrows");
@@ -100,16 +100,16 @@ PiscesTiledSwitch::tileToRowCol(int tile, int& row, int& col){
 }
 
 void
-PiscesTiledSwitch::initComponents(sprockit::sim_parameters::ptr& params)
+PiscesTiledSwitch::initComponents(SST::Params& params)
 {
   if (!xbar_tiles_.empty())
     return;
 
-  sprockit::sim_parameters::ptr demuxer_params = params->get_namespace("input");
+  SST::Params demuxer_params = params.get_namespace("input");
 
-  sprockit::sim_parameters::ptr xbar_params = params->get_namespace("xbar");
+  SST::Params xbar_params = params.get_namespace("xbar");
 
-  sprockit::sim_parameters::ptr muxer_params = params->get_namespace("link");
+  SST::Params muxer_params = params.get_namespace("link");
 
   int ntiles = nrows_ * ncols_;
   dst_inports_.resize(ntiles);
@@ -183,7 +183,7 @@ PiscesTiledSwitch::initComponents(sprockit::sim_parameters::ptr& params)
 
 void
 PiscesTiledSwitch::connectOutput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -196,7 +196,7 @@ PiscesTiledSwitch::connectOutput(
 
 void
 PiscesTiledSwitch::connectInput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -207,15 +207,15 @@ PiscesTiledSwitch::connectInput(
 }
 
 Timestamp
-PiscesTiledSwitch::sendLatency(sprockit::sim_parameters::ptr& params) const
+PiscesTiledSwitch::sendLatency(SST::Params& params) const
 {
-  return params->get_namespace("link")->get_time_param("sendLatency");
+  return params.get_namespace("link")->get_time_param("sendLatency");
 }
 
 Timestamp
-PiscesTiledSwitch::creditLatency(sprockit::sim_parameters::ptr& params) const
+PiscesTiledSwitch::creditLatency(SST::Params& params) const
 {
-  return params->get_namespace("input")->get_time_param("creditLatency");
+  return params.get_namespace("input")->get_time_param("creditLatency");
 }
 
 int

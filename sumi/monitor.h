@@ -82,7 +82,7 @@ class ActivityMonitor
 {
   DeclareFactory(ActivityMonitor, Transport*)
  public:
-  ActivityMonitor(sprockit::sim_parameters::ptr& params,
+  ActivityMonitor(SST::Params& params,
                   Transport* t) : api_(t){}
 
   virtual ~ActivityMonitor(){}

@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-StatLocalDouble::StatLocalDouble(sprockit::sim_parameters::ptr& params) :
+StatLocalDouble::StatLocalDouble(SST::Params& params) :
     StatValue<double>(params)
 {
 }

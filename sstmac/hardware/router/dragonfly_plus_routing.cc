@@ -66,7 +66,7 @@ class DragonflyPlusAlltoallMinimalRouter : public Router {
               Router, DragonflyPlusAlltoallMinimalRouter,
               "router implementing minimal routing for dragonfly+")
 
-  DragonflyPlusAlltoallMinimalRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  DragonflyPlusAlltoallMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
     : Router(params, top, netsw)
   {
@@ -186,7 +186,7 @@ class DragonflyPlusParRouter : public DragonflyPlusAlltoallMinimalRouter {
     return "dragonfly+ PAR router";
   }
 
-  DragonflyPlusParRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  DragonflyPlusParRouter(SST::Params& params, Topology *top,
                        NetworkSwitch *netsw)
     : DragonflyPlusAlltoallMinimalRouter(params, top, netsw)
   {

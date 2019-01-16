@@ -633,7 +633,7 @@ void sprockit_finalize_heap(SprockitHeap* heap)
 {
 }
 
-void sprockit_init_cxx_heap(sim_parameters::ptr& params)
+void sprockit_init_cxx_heap(SST::Params& params)
 {
   bool has_heap_size = params->has_param("sprockit_cxx_heap_size_mb");
   bool has_page_size = params->has_param("sprockit_cxx_page_size_mb");
@@ -701,7 +701,7 @@ void sprockit_finalize_cxx_heap()
 #endif
 }
 #else
-void sprockit_init_cxx_heap(sim_parameters::ptr params)
+void sprockit_init_cxx_heap(SST::Params& params)
 {
 }
 

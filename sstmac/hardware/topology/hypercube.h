@@ -56,7 +56,7 @@ class Hypercube :
   FactoryRegister("hypercube", Topology, Hypercube,
               "hypercube implements a high-dimension torus with an arbitrary number of dimensions")
  public:
-  Hypercube(sprockit::sim_parameters::ptr& params);
+  Hypercube(SST::Params& params);
 
   std::string toString() const override {
     return "torus topology";
@@ -85,7 +85,7 @@ class Hypercube :
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
   void configureIndividualPortParams(SwitchId src,
-           sprockit::sim_parameters::ptr& switch_params) const override;
+           SST::Params& switch_params) const override;
 
   inline int convertToPort(int dim, int dir) const {
     return dim_to_outport_[dim] + dir;

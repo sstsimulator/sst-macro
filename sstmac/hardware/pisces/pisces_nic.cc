@@ -63,20 +63,20 @@ RegisterNamespaces("congestion_delays", "congestion_matrix");
 namespace sstmac {
 namespace hw {
 
-PiscesNIC::PiscesNIC(sprockit::sim_parameters::ptr& params, Node* parent) :
+PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   NIC(params, parent),
   pending_inject_(1)
 {
-  sprockit::sim_parameters::ptr inj_params = params->get_namespace("injection");
-  sprockit::sim_parameters::ptr ej_params = params->get_optional_namespace("ejection");
+  SST::Params inj_params = params.get_namespace("injection");
+  SST::Params ej_params = params->get_optional_namespace("ejection");
 
   self_mtl_link_ = allocateSubLink(Timestamp(), parent,
                                     newHandler(this, &NIC::mtlHandle));
 
   //make port 0 a copy of the injection params
   //this looks pointless, but is needed for integrated core (I think)
-  sprockit::sim_parameters::ptr port0_params = params->get_optional_namespace("port0");
-  inj_params->combine_into(port0_params);
+  SST::Params port0_params = params->get_optional_namespace("port0");
+  inj_params.combine_into(port0_params);
 
   PiscesSender::configurePayloadPortLatency(inj_params);
   inj_buffer_ = new PiscesBuffer(inj_params, parent, 1/*single vc for inj*/);
@@ -93,15 +93,15 @@ PiscesNIC::PiscesNIC(sprockit::sim_parameters::ptr& params, Node* parent) :
 }
 
 Timestamp
-PiscesNIC::sendLatency(sprockit::sim_parameters::ptr& params) const
+PiscesNIC::sendLatency(SST::Params& params) const
 {
-  return params->get_namespace("injection")->get_time_param("latency");
+  return params.get_namespace("injection")->get_time_param("latency");
 }
 
 Timestamp
-PiscesNIC::creditLatency(sprockit::sim_parameters::ptr& params) const
+PiscesNIC::creditLatency(SST::Params& params) const
 {
-  return params->get_namespace("injection")->get_time_param("latency");
+  return params.get_namespace("injection")->get_time_param("latency");
 }
 
 void
@@ -142,7 +142,7 @@ PiscesNIC::creditHandler(int port)
 
 void
 PiscesNIC::connectOutput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -158,7 +158,7 @@ PiscesNIC::connectOutput(
 
 void
 PiscesNIC::connectInput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)

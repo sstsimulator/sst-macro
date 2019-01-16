@@ -222,7 +222,7 @@ ParallelRuntime::bcastFileStream(const std::string &fname)
 }
 
 void
-ParallelRuntime::initPartitionParams(sprockit::sim_parameters::ptr& params)
+ParallelRuntime::initPartitionParams(SST::Params& params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("parallel_runtime::init_partition_params: should not be used with integrated core");
@@ -238,7 +238,7 @@ ParallelRuntime::initPartitionParams(sprockit::sim_parameters::ptr& params)
 }
 
 ParallelRuntime*
-ParallelRuntime::staticRuntime(sprockit::sim_parameters::ptr& params)
+ParallelRuntime::staticRuntime(SST::Params& params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   return nullptr;
@@ -254,7 +254,7 @@ ParallelRuntime::staticRuntime(sprockit::sim_parameters::ptr& params)
 }
 
 void
-ParallelRuntime::initRuntimeParams(sprockit::sim_parameters::ptr& params)
+ParallelRuntime::initRuntimeParams(SST::Params& params)
 {
   numRecvsDone_ = 0;
   num_sends_done_ = 0;
@@ -281,7 +281,7 @@ ParallelRuntime::initRuntimeParams(sprockit::sim_parameters::ptr& params)
 #endif
 }
 
-ParallelRuntime::ParallelRuntime(sprockit::sim_parameters::ptr& params,
+ParallelRuntime::ParallelRuntime(SST::Params& params,
                                    int me, int nproc)
   : part_(nullptr),
     me_(me),

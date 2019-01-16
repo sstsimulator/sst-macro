@@ -114,7 +114,7 @@ int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec)
 }
 
 void
-py_extract_params(PyObject* dict, sprockit::sim_parameters::ptr& params)
+py_extract_params(PyObject* dict, SST::Params& params)
 {
 #pragma GCC diagnostic ignored "-Wwrite-strings"
   PyObject* items = PyMapping_Items(dict);
@@ -144,7 +144,7 @@ py_extract_params(PyObject* dict, sprockit::sim_parameters::ptr& params)
 }
 
 void
-py_add_params(PyObject* dict, sprockit::sim_parameters::ptr& params)
+py_add_params(PyObject* dict, SST::Params& params)
 {
   sprockit::sim_parameters::key_value_map::iterator it, end = params->end();
   for (it=params->begin(); it != end; ++it){
@@ -157,7 +157,7 @@ py_add_params(PyObject* dict, sprockit::sim_parameters::ptr& params)
 }
 
 void
-py_add_sub_params(PyObject* dict, sprockit::sim_parameters::ptr& params)
+py_add_sub_params(PyObject* dict, SST::Params& params)
 {
   sprockit::sim_parameters::namespace_iterator it, end = params->ns_end();
   for (it=params->ns_begin(); it != end; ++it){
@@ -171,7 +171,7 @@ py_add_sub_params(PyObject* dict, sprockit::sim_parameters::ptr& params)
 }
 
 PyObject*
-py_dict_from_params(sprockit::sim_parameters::ptr& params)
+py_dict_from_params(SST::Params& params)
 {
   PyObject* dict = PyDict_New();
   sstmac::py_add_params(dict, params);

@@ -57,7 +57,7 @@ RegisterKeywords(
 namespace sstmac {
 
 /**
-StatCollector::StatCollector(sprockit::sim_parameters::ptr& params) :
+StatCollector::StatCollector(SST::Params& params) :
   registered_(false),
   id_(-1),
   params_(new sprockit::sim_parameters(params))
@@ -70,7 +70,7 @@ StatCollector::StatCollector(sprockit::sim_parameters::ptr& params) :
 }
 
 StatCollector*
-StatCollector::requiredBuild(sprockit::sim_parameters::ptr& params,
+StatCollector::requiredBuild(SST::Params& params,
                       const std::string& ns,
                       const std::string& deflt,
                       stat_descr_t* descr)
@@ -83,7 +83,7 @@ StatCollector::requiredBuild(sprockit::sim_parameters::ptr& params,
 }
 
 void
-StatCollector::statsError(sprockit::sim_parameters::ptr params,
+StatCollector::statsError(SST::Params& params,
                             const std::string &ns,
                             const std::string &deflt)
 {
@@ -102,7 +102,7 @@ StatCollector::statsError(sprockit::sim_parameters::ptr params,
 }
 
 StatCollector*
-StatCollector::optionalBuild(sprockit::sim_parameters::ptr& params,
+StatCollector::optionalBuild(SST::Params& params,
                       const std::string& ns,
                       const std::string& deflt,
                       stat_descr_t* descr)
@@ -111,7 +111,7 @@ StatCollector::optionalBuild(sprockit::sim_parameters::ptr& params,
 
   if (ns.size()){
     if (params->has_namespace(ns)){
-      params = params->get_namespace(ns);
+      params = params.get_namespace(ns);
     } else {
       return nullptr;
     }
@@ -121,7 +121,7 @@ StatCollector::optionalBuild(sprockit::sim_parameters::ptr& params,
     sprockit::sim_parameters* old_params = params;
     params = old_params->get_optional_namespace(suffix);
     params->add_param_override("suffix", suffix);
-    old_params->combine_into(params);
+    old_params.combine_into(params);
   }
 
   StatCollector* stats = StatCollector::factory::get_optional_param(
@@ -140,7 +140,7 @@ StatCollector::registerOptionalStat(EventScheduler* parent, StatCollector *coll,
 #endif
 }
 
-StatValueBase::StatValueBase(sprockit::sim_parameters::ptr params) :
+StatValueBase::StatValueBase(SST::Params& params) :
   StatCollector(params)
 {
   id_ = params->get_int_param("id");

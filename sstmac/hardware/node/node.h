@@ -85,17 +85,17 @@ class Node : public ConnectableComponent
 
   virtual ~Node();
 
-  void connectOutput(sprockit::sim_parameters::ptr& params,
+  void connectOutput(SST::Params& params,
                  int src_outport, int dst_inport,
                  EventLink* link) override;
 
-  void connectInput(sprockit::sim_parameters::ptr& params,
+  void connectInput(SST::Params& params,
                  int src_outport, int dst_inport,
                  EventLink* link) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp sendLatency(SST::Params& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp creditLatency(SST::Params& params) const override;
 
   LinkHandler* payloadHandler(int port) override;
 
@@ -181,7 +181,7 @@ class Node : public ConnectableComponent
   void decrementAppRefcount();
 
  protected:
-  Node(sprockit::sim_parameters::ptr& params, uint32_t id);
+  Node(SST::Params& params, uint32_t id);
 
  protected:
   sw::OperatingSystem* os_;
@@ -204,7 +204,7 @@ class Node : public ConnectableComponent
   sw::JobLauncher* job_launcher_;
 
   UniqueEventId next_outgoing_id_;
-  sprockit::sim_parameters::ptr params_;
+  SST::Params params_;
 
 };
 

@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-FullyConnected::FullyConnected(sprockit::sim_parameters::ptr& params) :
+FullyConnected::FullyConnected(SST::Params& params) :
   StructuredTopology(params)
 {
   std::vector<int> args;
@@ -88,7 +88,7 @@ FullyConnected::connectedOutports(SwitchId src, std::vector<connection>& conns) 
 }
 
 void
-FullyConnected::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters::ptr& switch_params) const
+FullyConnected::configureIndividualPortParams(SwitchId src, SST::Params& switch_params) const
 {
   Topology::configureIndividualPortParams(0, numSwitches(), switch_params);
 }

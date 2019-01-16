@@ -82,12 +82,12 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-LogPSwitch::LogPSwitch(sprockit::sim_parameters::ptr& params, uint32_t cid) :
+LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
   ConnectableComponent(params, cid),
   rng_(nullptr), contention_model_(nullptr)
 {
-  std::shared_ptr<sprockit::sim_parameters> empty{};
-  top_ = Topology::staticTopology(empty);
+  SST::Params topParams;
+  top_ = Topology::staticTopology(topParams);
 
   double net_bw = params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
@@ -109,8 +109,7 @@ LogPSwitch::LogPSwitch(sprockit::sim_parameters::ptr& params, uint32_t cid) :
   }
 
   if (params->has_namespace("contention")){
-    std::cout << "Have contention model!" << std::endl;
-    auto model_params = params->get_namespace("contention");
+    auto model_params = params.get_namespace("contention");
     contention_model_ = ContentionModel::factory::get_extra_param("model", model_params);
   }
 
@@ -173,7 +172,7 @@ struct SlidingContentionModel : public LogPSwitch::ContentionModel
  public:
   FactoryRegister("sliding", LogPSwitch::ContentionModel, SlidingContentionModel)
 
-  SlidingContentionModel(sprockit::sim_parameters::ptr& params)
+  SlidingContentionModel(SST::Params& params)
   {
     range_ = params->get_optional_int_param("range", 100);
     if (params->has_param("cutoffs")){

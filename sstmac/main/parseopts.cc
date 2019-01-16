@@ -136,7 +136,6 @@ parseOpts(int argc, char **argv, opts &oo)
   int ch;
   bool errorflag = false;
   std::list<std::pair<std::string, std::string> > paramlist;
-  oo.params = std::make_shared<sprockit::sim_parameters>();
   optind = 1;
   while ((ch = getopt_long(argc, argv, "Phad:f:t:p:m:n:u:i:c:b:V:g:D:o:e:", gopt, NULL))
          != -1) {
@@ -181,13 +180,13 @@ parseOpts(int argc, char **argv, opts &oo)
         break;
       case 'a': {
         need_config_file = false;
-        sprockit::sim_parameters params("debug.ini");
+        SST::Params params("debug.ini");
         params.combine_into(oo.params);
         machine_configured = true;
         break;
       }
       case 'i': {
-        sprockit::sim_parameters params(optarg);
+        SST::Params params(optarg);
         params.combine_into(oo.params);
       }
       break;
@@ -222,7 +221,7 @@ parseOpts(int argc, char **argv, opts &oo)
   }
 
   if (infinite_network) {
-    sprockit::sim_parameters params("infinite.ini");
+    SST::Params params("infinite.ini");
     params.combine_into(oo.params);
     need_config_file = false;
     if (machine_configured){
@@ -233,7 +232,7 @@ parseOpts(int argc, char **argv, opts &oo)
 
   if (dodumpi || dootf2) {
     if (!machine_configured){
-      sprockit::sim_parameters params("debug.ini");
+      SST::Params params("debug.ini");
       //do not overwrite existing parameters
       params.combine_into(oo.params, false, false, true);
       machine_configured = true;

@@ -56,7 +56,7 @@ LogPMemoryModel::~LogPMemoryModel()
   if (link_) delete link_;
 }
 
-LogPMemoryModel::LogPMemoryModel(sprockit::sim_parameters::ptr& params, Node* nd)
+LogPMemoryModel::LogPMemoryModel(SST::Params& params, Node* nd)
   : MemoryModel(params, nd) //no self events
 {
 

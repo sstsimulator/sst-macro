@@ -59,7 +59,7 @@ class RandomTaskMapper : public TaskMapper
   FactoryRegister("random", TaskMapper, RandomTaskMapper,
               "randomly assigns tasks to nodes")
  public:
-  RandomTaskMapper(sprockit::sim_parameters::ptr& params);
+  RandomTaskMapper(SST::Params& params);
 
   std::string toString() const override {
     return "random task mapper";

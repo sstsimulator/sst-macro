@@ -136,7 +136,7 @@ graph_viz_registration::graph_viz_registration(const char* name, int id)
   (*names)[id] = name;
 }
 
-GraphViz::GraphViz(sprockit::sim_parameters::ptr& params) :
+GraphViz::GraphViz(SST::Params& params) :
   Parent(params)
 {
   int nfxns = graph_viz_registration::numIds();

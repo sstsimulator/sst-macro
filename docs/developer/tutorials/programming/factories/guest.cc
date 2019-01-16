@@ -3,7 +3,7 @@
 namespace sstmac {
 namespace tutorial {
 
-christopher_guest::christopher_guest(sprockit::sim_parameters::ptr& params) :
+christopher_guest::christopher_guest(SST::Params& params) :
   actor(params)
 {
   num_fingers_ = params->get_int_param("num_fingers");

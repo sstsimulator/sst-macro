@@ -78,7 +78,7 @@ namespace hw {
 
 static sprockit::need_deleteStatics<NIC> del_statics;
 
-NIC::NIC(sprockit::sim_parameters::ptr& params, Node* parent) :
+NIC::NIC(SST::Params& params, Node* parent) :
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   hist_msg_size_(nullptr),

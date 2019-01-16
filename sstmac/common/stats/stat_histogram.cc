@@ -59,7 +59,7 @@ RegisterKeywords(
 
 namespace sstmac {
 
-StatHistogram::StatHistogram(sprockit::sim_parameters::ptr& params) :
+StatHistogram::StatHistogram(SST::Params& params) :
     bin_size_(0),
     max_bin_(-1),
     is_log_(false),

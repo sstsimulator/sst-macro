@@ -99,7 +99,7 @@ class InterGroupWiring {
    * @param g  The number of groups
    * @param h  The number of group links per router
    */
-  InterGroupWiring(sprockit::sim_parameters::ptr& params, int a, int g, int h);
+  InterGroupWiring(SST::Params& params, int a, int g, int h);
 
  protected:
   /** Number of routers per group */
@@ -119,7 +119,7 @@ class Dragonfly : public CartesianTopology
 {
   FactoryRegister("dragonfly", Topology, Dragonfly)
  public:
-  Dragonfly(sprockit::sim_parameters::ptr& params);
+  Dragonfly(SST::Params& params);
 
  public:
   std::string toString() const override {
@@ -149,7 +149,7 @@ class Dragonfly : public CartesianTopology
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
   void configureIndividualPortParams(SwitchId src,
-        sprockit::sim_parameters::ptr& switch_params) const override;
+        SST::Params& switch_params) const override;
 
   virtual ~Dragonfly() {}
 
@@ -257,7 +257,7 @@ class Dragonfly : public CartesianTopology
 
   InterGroupWiring* group_wiring_;
 
-  void setupPortParams(sprockit::sim_parameters::ptr& params,
+  void setupPortParams(SST::Params& params,
                     int red, int port_offset, int num_ports) const;
 
 };

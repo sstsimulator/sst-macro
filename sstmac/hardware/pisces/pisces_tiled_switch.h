@@ -70,15 +70,15 @@ class PiscesTiledSwitch :
     uint16_t arrival_port;
   };
 
-  PiscesTiledSwitch(sprockit::sim_parameters::ptr& params, uint32_t id);
+  PiscesTiledSwitch(SST::Params& params, uint32_t id);
 
   int queueLength(int port) const override;
 
-  void connectOutput(sprockit::sim_parameters::ptr& params,
+  void connectOutput(SST::Params& params,
                  int src_outport, int dst_inport,
                  EventLink* link) override;
 
-  void connectInput(sprockit::sim_parameters::ptr& params,
+  void connectInput(SST::Params& params,
                 int src_outport, int dst_inport,
                 EventLink* link) override;
 
@@ -86,9 +86,9 @@ class PiscesTiledSwitch :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp sendLatency(SST::Params& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp creditLatency(SST::Params& params) const override;
 
   void handleCredit(Event* ev);
 
@@ -123,7 +123,7 @@ class PiscesTiledSwitch :
 
   void tileToRowCol(int tile, int& row, int& col);
 
-  void initComponents(sprockit::sim_parameters::ptr& params);
+  void initComponents(SST::Params& params);
 
 
 };

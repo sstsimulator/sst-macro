@@ -246,7 +246,7 @@ class Thread
 
   void collectBacktrace(int nfxn);
 
-  void initThread(const sprockit::sim_parameters::ptr& params, int phyiscal_thread_id,
+  void initThread(const SST::Params& params, int phyiscal_thread_id,
     ThreadContext* tocopy, void *stack, int stacksize,
     void* globals_storage, void* tls_storage);
 
@@ -379,7 +379,7 @@ class Thread
  protected:
   friend class core_allocate_guard;
 
-  Thread(const sprockit::sim_parameters::ptr& params,
+  Thread(const SST::Params& params,
          SoftwareId sid, OperatingSystem* os);
 
   friend API* staticGetAPI(const char *name);

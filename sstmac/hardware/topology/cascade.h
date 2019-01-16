@@ -58,7 +58,7 @@ class Cascade : public CartesianTopology
 {
   FactoryRegister("cascade", Topology, Cascade)
  public:
-  Cascade(sprockit::sim_parameters::ptr& params);
+  Cascade(SST::Params& params);
 
   typedef enum {
     x_dimension = 0,
@@ -113,7 +113,7 @@ class Cascade : public CartesianTopology
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
   void configureIndividualPortParams(SwitchId src,
-        sprockit::sim_parameters::ptr& switch_params) const override;
+        SST::Params& switch_params) const override;
 
   virtual ~Cascade() {}
 
@@ -217,7 +217,7 @@ class Cascade : public CartesianTopology
   int g_;
   int group_con_;
 
-  void setupPortParams(sprockit::sim_parameters::ptr& params,
+  void setupPortParams(SST::Params& params,
                     int dim, int dimsize) const;
 
   static std::string set_string(int x, int y, int g)

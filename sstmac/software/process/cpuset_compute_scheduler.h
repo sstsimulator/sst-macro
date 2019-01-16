@@ -55,7 +55,7 @@ class CpusetComputeScheduler : public ComputeScheduler
   FactoryRegister("cpuset", ComputeScheduler, CpusetComputeScheduler,
               "Compute scheduler that assigns threads to specific cores based on CPU_SET")
  public:  
-  CpusetComputeScheduler(sprockit::sim_parameters::ptr& params,
+  CpusetComputeScheduler(SST::Params& params,
                            OperatingSystem* os, int ncore, int nsockets) :
     available_cores_(0),
     ComputeScheduler(params, os, ncore, nsockets)

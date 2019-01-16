@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-StatLocalInt::StatLocalInt(sprockit::sim_parameters::ptr& params) :
+StatLocalInt::StatLocalInt(SST::Params& params) :
   Statistic<int>(params)
 {
 }

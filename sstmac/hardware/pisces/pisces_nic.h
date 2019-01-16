@@ -63,7 +63,7 @@ class PiscesNIC : public NIC
   FactoryRegister("pisces", NIC, PiscesNIC,
               "implements a nic that models messages as a packet flow")
  public:
-  PiscesNIC(sprockit::sim_parameters::ptr& params, Node* parent);
+  PiscesNIC(SST::Params& params, Node* parent);
 
   std::string toString() const override {
     return sprockit::printf("packet flow nic(%d)", int(addr()));
@@ -76,13 +76,13 @@ class PiscesNIC : public NIC
   virtual ~PiscesNIC() throw ();
 
   virtual void connectOutput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
 
   virtual void connectInput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
@@ -91,9 +91,9 @@ class PiscesNIC : public NIC
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp sendLatency(SST::Params& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp creditLatency(SST::Params& params) const override;
 
   void packetSent(Event* ev);
 

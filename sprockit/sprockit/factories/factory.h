@@ -63,11 +63,14 @@ template <class T, typename... Args>
 class Builder
 {
  public:
-  virtual T* build(sprockit::sim_parameters::ptr& params, const Args&... args) = 0;
+  virtual T* build(SST::Params& params, const Args&... args) = 0;
 
 };
 
 #include <type_traits>
+
+template <class T> T& getLValue();
+template <class T> T&& getRValue();
 
 template <class> struct wrap { typedef void type; };
 
@@ -80,21 +83,23 @@ template <class> struct wrap { typedef void type; };
 template<typename T, class Enable=void>
 struct call_finalizeInit : public std::false_type {
  public:
-  void operator()(T* t, sprockit::sim_parameters::ptr& params){
+  void operator()(T* t, SST::Params& params){
     //if we compile here, class T does not have a finalizeInit
     //do nothing
   }
 };
 
+
+
 template<typename T>
 struct call_finalizeInit<T,
   typename wrap<
-    decltype(std::declval<T>().finalizeInit(sprockit::sim_parameters::empty()))
+    decltype(std::declval<T>().finalizeInit(getLValue<SST::Params>()))
    >::type
 > : public std::true_type
 {
  public:
-  void operator()(T* t, sprockit::sim_parameters::ptr& params){
+  void operator()(T* t, SST::Params& params){
     //if we compile here, class T does have a finalizeInit
     //call that function
     t->finalizeInit(params);
@@ -103,7 +108,7 @@ struct call_finalizeInit<T,
 
 /**
  *  Class used to query what type of constructor the class has
- *  Mainly used for determining if the class takes a sim_parameters
+ *  Mainly used for determining if the class takes a params
  *  as the first argument to the constructor
  */
 template <class T, class... Args>
@@ -133,7 +138,7 @@ struct call_constructor_impl<T,
     typename std::enable_if<constructible_from<T,Args...>::type::value>::type,
     Args...>
 {
-  T* operator()(sprockit::sim_parameters::ptr& params, const Args&... args){
+  T* operator()(SST::Params& params, const Args&... args){
     return new T(args...);
   }
 };
@@ -148,7 +153,7 @@ struct call_constructor_impl<T,
     typename std::enable_if<!constructible_from<T,Args...>::type::value>::type,
     Args...>
 {
-  T* operator()(sprockit::sim_parameters::ptr& params, const Args&... args){
+  T* operator()(SST::Params& params, const Args&... args){
     return new T(params, args...);
   }
 };
@@ -171,7 +176,7 @@ class CleanupFactory {
  * Object that provides static methods for mapping string names
  * to particular subclasses of T.  The constructor for each subclass U of T
  * must be either U(Args) or it must be U(params,Args) where params is a
- * sim_parameters object
+ * params object
  */
 template<class T, typename... Args>
 class Factory
@@ -280,7 +285,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   static T* _get_value(const std::string& valname,
-             sprockit::sim_parameters::ptr& params,
+             SST::Params& params,
              const Args&... args) {
     if (!builder_map_) {
       spkt_abort_printf(
@@ -293,7 +298,7 @@ class Factory
     if (it == end) {
       std::cerr << "Valid factories are:" << std::endl;
       print_valid_names(std::cerr);
-      params->print_scoped_params(std::cerr);
+      params.print_all_params(std::cerr);
       spkt_abort_printf("could not find name %s for factory %s",
                        valname.c_str(), name_);
     }
@@ -309,7 +314,7 @@ class Factory
   }
 
  public:
-  static bool valid_param(const std::string& name, sprockit::sim_parameters::ptr& params) {
+  static bool valid_param(const std::string& name, SST::Params& params) {
     std::string value = params->get_param(name);
     return builder_map_->find(value) != builder_map_->end();
   }
@@ -329,7 +334,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   static T* get_value(const std::string& valname,
-            sim_parameters::ptr& params,
+            SST::Params& params,
             const Args&... args) {
     return _get_value(valname, params, args...);
   }
@@ -355,7 +360,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   static T* get_param(const std::string& param_name,
-            sim_parameters::ptr& params,
+            SST::Params& params,
             const Args&... args) {
     return _get_value(params->get_param(param_name),
                       params, args...);
@@ -373,7 +378,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   static T* get_extra_param(const std::string& param_name,
-                  sim_parameters::ptr& params,
+                  SST::Params& params,
                   const Args&... args) {
     if (params->has_param(param_name)) {
       return get_param(param_name,params);
@@ -383,7 +388,7 @@ class Factory
   }
 
   static T* get_extra_value(const std::string& param_value,
-                  const sim_parameters::ptr& params,
+                  SST::Params& params,
                   const Args&... args){
     if (!builder_map_)
       return nullptr;
@@ -410,7 +415,7 @@ class Factory
    */
   static T* get_optional_param(const std::string& param_name,
                      const std::string& defval,
-                     sim_parameters::ptr& params,
+                     SST::Params& params,
                      const Args&... args) {
     return _get_value(params->get_optional_param(param_name, defval),
                       params, args...);
@@ -435,7 +440,7 @@ class BuilderImpl : public Builder<Parent, Args...>
     registered_ = true;
   }
 
-  Parent* build(sprockit::sim_parameters::ptr& params, const Args&... args) {
+  Parent* build(SST::Params& params, const Args&... args) {
     return call_constructor<Child,Args...>()(params, args...);
   }
 

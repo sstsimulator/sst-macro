@@ -82,9 +82,9 @@ static int terminate_tag = 45;
   debug_printf(sprockit::dbg::driver, __VA_ARGS__)
 
 void
-Simulation::setParameters(sprockit::sim_parameters::ptr& params)
+Simulation::setParameters(SST::Params& params)
 {
-  params->combine_into(params_);
+  params.combine_into(params_);
 }
 
 Simulation::~Simulation()
@@ -111,7 +111,7 @@ Simulation::waitFork()
 void
 Simulation::finalize()
 {
-  int bytes = read(readPipe(), &stats_, sizeof(sim_stats));
+  int bytes = read(readPipe(), &stats_, sizeof(SimStats));
   if (bytes <= 0){
     sprockit::abort("failed reading pipe from simulation");
   }
@@ -341,17 +341,17 @@ SimulationQueue::clear(Simulation *sim)
 }
 
 void
-SimulationQueue::run(sprockit::sim_parameters::ptr& params, sim_stats& stats)
+SimulationQueue::run(SST::Params& params, SimStats& stats)
 {
-  template_params_->combine_into(params, false, false/*no overwrite*/, true);
+  template_params_.combine_into(params, false, false/*no overwrite*/, true);
   sstmac::remapParams(params, false /* not verbose */);
   ::sstmac::run(template_opts_, rt_, params, stats);
 }
 
 Simulation*
-SimulationQueue::fork(sprockit::sim_parameters::ptr& params, int nresults, double* resultPtr)
+SimulationQueue::fork(SST::Params& params, int nresults, double* resultPtr)
 {
-  template_params_->combine_into(params, false, false, true);
+  template_params_.combine_into(params, false, false, true);
   pipe_t pfd;
   if (pipe(pfd) == -1){
     fprintf(stderr, "failed opening pipe\n");
@@ -361,11 +361,11 @@ SimulationQueue::fork(sprockit::sim_parameters::ptr& params, int nresults, doubl
   pid_t pid = ::fork();
 
   if (pid == 0){
-    sim_stats stats;
+    SimStats stats;
     run(params, stats);
     stats.numResults = num_results_;
     close(pfd[READ]);
-    write(pfd[WRITE], &stats, sizeof(sim_stats));
+    write(pfd[WRITE], &stats, sizeof(SimStats));
     if (results_)
       write(pfd[WRITE], results_, num_results_*sizeof(double));
     close(pfd[WRITE]);
@@ -516,7 +516,7 @@ SimulationQueue::sendScanPoint(int bufferSize, char *bufferPtr, int nresults, do
 }
 
 void
-SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
+SimulationQueue::runScanPoint(char* buffer, SimStats& stats)
 {
 #if SSTMAC_MPI_DRIVER
   //first char is number of params
@@ -543,7 +543,7 @@ SimulationQueue::runScanPoint(char* buffer, sim_stats& stats)
 }
 
 void
-SimulationQueue::rerun(sprockit::sim_parameters::ptr& params, sim_stats& stats)
+SimulationQueue::rerun(SST::Params& params, SimStats& stats)
 {
   sstmac::remapParams(params, false /*not verbose*/);
   sstmac::Env::params = params;

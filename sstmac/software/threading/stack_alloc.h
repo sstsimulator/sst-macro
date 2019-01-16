@@ -95,7 +95,7 @@ class StackAlloc
     return suggested_chunk_;
   }
 
-  static void init(sprockit::sim_parameters_ptr& params);
+  static void init(SST::Params& params);
 
   static void* alloc();
 

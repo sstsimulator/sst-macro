@@ -62,7 +62,7 @@ class PiscesNtoMQueue :
  public:
   virtual ~PiscesNtoMQueue();
 
-  PiscesNtoMQueue(sprockit::sim_parameters::ptr& params,
+  PiscesNtoMQueue(SST::Params& params,
                   SST::Component* parent,
                   int num_in_ports, int num_out_ports, int num_vc,
                   bool update_vc);
@@ -75,10 +75,10 @@ class PiscesNtoMQueue :
 
   EventHandler* payloadHandler();
 
-  void setInput(sprockit::sim_parameters::ptr& params,
+  void setInput(SST::Params& params,
             int my_inport, int src_outport, EventLink* link) override;
 
-  void setOutput(sprockit::sim_parameters::ptr& params,
+  void setOutput(SST::Params& params,
              int my_outport, int dst_inport, EventLink* link) override;
 
   inline int slot(int port, int vc) const {
@@ -132,7 +132,7 @@ class PiscesDemuxer :
   public PiscesNtoMQueue
 {
  public:
-  PiscesDemuxer(sprockit::sim_parameters::ptr& params,
+  PiscesDemuxer(SST::Params& params,
                  SST::Component* parent,
                  int num_out_ports, int num_vc,
                  bool update_vc);
@@ -148,7 +148,7 @@ class PiscesMuxer :
   public PiscesNtoMQueue
 {
  public:
-  PiscesMuxer(sprockit::sim_parameters::ptr& params,
+  PiscesMuxer(SST::Params& params,
                SST::Component* parent,
                int num_in_ports, int num_vc,
                bool update_vc);
@@ -162,7 +162,7 @@ class PiscesCrossbar :
   public PiscesNtoMQueue
 {
  public:
-  PiscesCrossbar(sprockit::sim_parameters::ptr& params,
+  PiscesCrossbar(SST::Params& params,
                  SST::Component* parent,
                  int num_in_ports, int num_out_ports, int num_vc,
                  bool update_vc);

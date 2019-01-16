@@ -66,7 +66,7 @@ class ParseDumpi : public sstmac::sw::App
               "application for parsing and simulating dumpi traces")
 
  public:
-  ParseDumpi(sprockit::sim_parameters::ptr& params, sstmac::sw::SoftwareId sid,
+  ParseDumpi(SST::Params& params, sstmac::sw::SoftwareId sid,
              sstmac::sw::OperatingSystem* os);
 
   struct early_termination : public std::runtime_error {

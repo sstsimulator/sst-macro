@@ -83,7 +83,7 @@ class MpiQueue
   using progress_queue = sstmac::sw::MultiProgressQueue<Message>;
 
  public:
-  MpiQueue(sprockit::sim_parameters::ptr& params, int TaskId,
+  MpiQueue(SST::Params& params, int TaskId,
             MpiApi* api, CollectiveEngine* engine);
 
   ~MpiQueue() throw ();

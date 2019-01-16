@@ -72,7 +72,7 @@ struct DragonflyMinimalRouter : public Router {
   };
 
  public:
-  DragonflyMinimalRouter(sprockit::sim_parameters::ptr& params, Topology* top,
+  DragonflyMinimalRouter(SST::Params& params, Topology* top,
                            NetworkSwitch* netsw) :
     Router(params, top, netsw)
   {
@@ -203,7 +203,7 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
               Router, DragonflyValiantRouter,
               "router implementing valint routing for dragonfly")
 
-  DragonflyValiantRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  DragonflyValiantRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
     : DragonflyMinimalRouter(params, top, netsw)
   {
@@ -346,7 +346,7 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
               Router, DragonflyUGALRouter,
               "router implementing UGAL routing for dragonfly")
 
-  DragonflyUGALRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  DragonflyUGALRouter(SST::Params& params, Topology *top,
                                  NetworkSwitch *netsw)
     : DragonflyValiantRouter(params, top, netsw)
   {
@@ -503,7 +503,7 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
               Router, DragonflyUgalGRouter,
               "router implementing UGAL-G routing for dragonfly")
 
-  DragonflyUgalGRouter(sprockit::sim_parameters::ptr params, Topology *top, NetworkSwitch *netsw)
+  DragonflyUgalGRouter(SST::Params& params, Topology *top, NetworkSwitch *netsw)
     :  DragonflyUGALRouter(params, top, netsw), ic_(nullptr)
   {
   }
@@ -689,7 +689,7 @@ class DragonflyPARRouter : public DragonflyUGALRouter {
     return "dragonfly PAR router";
   }
 
-  DragonflyPARRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  DragonflyPARRouter(SST::Params& params, Topology *top,
                        NetworkSwitch *netsw)
     : DragonflyUGALRouter(params, top, netsw)
   {

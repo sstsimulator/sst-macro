@@ -265,13 +265,13 @@ class Component :
   virtual void init(unsigned int phase); //needed for SST core compatibility
 
  protected:
-  Component(sprockit::sim_parameters::ptr& params, uint32_t cid) :
+  Component(SST::Params& params, uint32_t cid) :
    EventScheduler(cid)
   {
   }
 
 #if !ACTUAL_INTEGRATED_SST_CORE
-  void initLinks(sprockit::sim_parameters::ptr& params){} //need for SST core compatibility
+  void initLinks(SST::Params& params){} //need for SST core compatibility
 #endif
 
 };

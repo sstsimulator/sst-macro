@@ -67,7 +67,7 @@ namespace hw {
 
 
 
-PiscesMemoryModel::PiscesMemoryModel(sprockit::sim_parameters::ptr& params, Node *nd) :
+PiscesMemoryModel::PiscesMemoryModel(SST::Params& params, Node *nd) :
   arb_(nullptr),
   MemoryModel(params, nd)
 {

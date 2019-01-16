@@ -162,7 +162,7 @@ param_remap remap_list[] = {
 };
 
 void
-remapDeprecatedParams(sprockit::sim_parameters::ptr& params)
+remapDeprecatedParams(SST::Params& params)
 {
   int num_remap = sizeof(remap_list) / sizeof(param_remap);
   for (int i=0; i < num_remap; ++i){
@@ -181,13 +181,13 @@ remapDeprecatedParams(sprockit::sim_parameters::ptr& params)
 }
 
 void
-remapLatencyParams(sprockit::sim_parameters::ptr& params)
+remapLatencyParams(SST::Params& params)
 {
 
 }
 
 void
-remapParams(sprockit::sim_parameters::ptr& params, bool verbose)
+remapParams(SST::Params& params, bool verbose)
 {
   double timescale = params->get_optional_time_param("timestamp_resolution", 1e-12);
   int ps_per_tick = round(timescale/1e-12) + 0.02;
@@ -196,12 +196,12 @@ remapParams(sprockit::sim_parameters::ptr& params, bool verbose)
   remapDeprecatedParams(params);
   remapLatencyParams(params);
 
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  SST::Params top_params = params.get_namespace("topology");
   bool auto_top = top_params->get_optional_bool_param("auto", false);
   if (auto_top){
     int max_nproc = native::Manager::computeMaxNproc(params);
     if (max_nproc == 0){
-      params->print_scoped_params(std::cerr);
+      params.print_all_params(std::cerr);
       spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
     }
     resizeTopology(max_nproc, params, verbose);
@@ -245,8 +245,8 @@ remapParams(sprockit::sim_parameters::ptr& params, bool verbose)
   }
 
   std::string top_name = top_params->get_param("name");
-  sprockit::sim_parameters::ptr sw_params = params->get_optional_namespace("switch");
-  sprockit::sim_parameters::ptr rtr_params = sw_params->get_optional_namespace("router");
+  SST::Params sw_params = params->get_optional_namespace("switch");
+  SST::Params rtr_params = sw_params->get_optional_namespace("router");
   std::string rtr_name = rtr_params->get_optional_param("name","");
   std::string new_rtr_name = top_name + "_" + rtr_name;
   if (rtr_name == "minimal")      rtr_params->add_param_override("name", new_rtr_name);
@@ -259,9 +259,9 @@ remapParams(sprockit::sim_parameters::ptr& params, bool verbose)
 }
 
 void
-resizeTopology(int max_nproc, sprockit::sim_parameters::ptr& params, bool verbose)
+resizeTopology(int max_nproc, SST::Params& params, bool verbose)
 {
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  SST::Params top_params = params.get_namespace("topology");
   if (top_params->has_param("name")){
     spkt_abort_printf("cannot specify topology name with auto topology");
   }
@@ -277,7 +277,7 @@ resizeTopology(int max_nproc, sprockit::sim_parameters::ptr& params, bool verbos
 }
 
 void
-map_env_params(sprockit::sim_parameters::ptr& params)
+map_env_params(SST::Params& params)
 {
   //read environmental variables as potential overrides
   char* param = getenv("MPICH_GNI_MAX_VSHORT_MSG_SIZE");

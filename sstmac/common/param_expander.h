@@ -56,7 +56,7 @@ class ParamExpander
  public:
   virtual ~ParamExpander(){}
 
-  virtual void expand(sprockit::sim_parameters::ptr& params) = 0;
+  virtual void expand(SST::Params& params) = 0;
 
 };
 

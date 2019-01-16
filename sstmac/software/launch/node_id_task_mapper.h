@@ -66,7 +66,7 @@ class NodeIdTaskMapper : public TaskMapper
   FactoryRegister("node_id", TaskMapper, NodeIdTaskMapper,
               "assigns tasks to nodes based on list of nodes ids in file")
  public:
-  NodeIdTaskMapper(sprockit::sim_parameters::ptr& params);
+  NodeIdTaskMapper(SST::Params& params);
 
   std::string toString() const override {
     return "node id task mapper";

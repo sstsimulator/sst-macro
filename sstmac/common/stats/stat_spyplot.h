@@ -69,7 +69,7 @@ class StatSpyplot : public MultiStatistic<int,int,uint64_t>
 
   void addData_impl(int source, int dest, uint64_t num) override;
 
-  StatSpyplot(sprockit::sim_parameters::ptr& params) :
+  StatSpyplot(SST::Params& params) :
     max_dest_(0),
     Parent(params)
   {

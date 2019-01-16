@@ -119,7 +119,7 @@ class SSTIntegratedComponent
    * @param mod
    */
   virtual void connectInput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
@@ -133,7 +133,7 @@ class SSTIntegratedComponent
    * @param mod
    */
   virtual void connectOutput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
@@ -152,10 +152,10 @@ class SSTIntegratedComponent
    */
   virtual SST::Event::HandlerBase* creditHandler(int port) = 0;
 
-  void initLinks(sprockit::sim_parameters::ptr& params);
+  void initLinks(SST::Params& params);
 
  protected:
-  SSTIntegratedComponent(sprockit::sim_parameters::ptr& params, uint32_t id);
+  SSTIntegratedComponent(SST::Params& params, uint32_t id);
 
   SST::LinkMap* link_map_;
 

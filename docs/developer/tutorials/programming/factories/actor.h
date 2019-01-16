@@ -8,7 +8,7 @@ class actor : public sprockit::printable
 {
 
  public:
-  actor(sprockit::sim_parameters::ptr& params);
+  actor(SST::Params& params);
 
   virtual void act() = 0;
 

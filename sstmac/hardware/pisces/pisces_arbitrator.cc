@@ -89,7 +89,7 @@ validate_bw(double test_bw)
 }
 
 PiscesBandwidthArbitrator::
-PiscesBandwidthArbitrator(sprockit::sim_parameters::ptr& params)
+PiscesBandwidthArbitrator(SST::Params& params)
 {
   out_bw_ = params->get_bandwidth_param("bandwidth");
   if (out_bw_ < 1){
@@ -99,7 +99,7 @@ PiscesBandwidthArbitrator(sprockit::sim_parameters::ptr& params)
   inv_out_bw_ = 1.0 / out_bw_;
 }
 
-pisces_simple_arbitrator::pisces_simple_arbitrator(sprockit::sim_parameters::ptr& params) :
+pisces_simple_arbitrator::pisces_simple_arbitrator(SST::Params& params) :
   next_free_(0),
   PiscesBandwidthArbitrator(params)
 {
@@ -145,7 +145,7 @@ pisces_simple_arbitrator::bytesSending(Timestamp now) const
   return bytes_sending;
 }
 
-PiscesNullArbitrator::PiscesNullArbitrator(sprockit::sim_parameters::ptr& params) :
+PiscesNullArbitrator::PiscesNullArbitrator(SST::Params& params) :
   PiscesBandwidthArbitrator(params)
 {
 }
@@ -177,7 +177,7 @@ PiscesNullArbitrator::bytesSending(Timestamp now) const
 }
 
 PiscesCutThroughArbitrator::
-PiscesCutThroughArbitrator(sprockit::sim_parameters::ptr& params)
+PiscesCutThroughArbitrator(SST::Params& params)
   : head_(nullptr),
     PiscesBandwidthArbitrator(params)
 {

@@ -250,7 +250,7 @@ int USER_MAIN(int argc, char** argv)
     "Rank %d entering initial param bcast",
     tport->rank());
 
-  sprockit::sim_parameters::ptr params = sstmac::sw::App::getParams();
+  SST::Params params = sstmac::sw::App::getParams();
 
   /** This configures the compute intensity as a function of baseline bandwidth
    *  Messages are sent in windows of size 100 us

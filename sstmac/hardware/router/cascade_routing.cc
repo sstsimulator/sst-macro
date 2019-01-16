@@ -67,7 +67,7 @@ class CascadeMinimalRouter : public Router {
               Router, CascadeMinimalRouter,
               "router implementing minimal routing for cascade")
 
-  CascadeMinimalRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  CascadeMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
     : Router(params, top, netsw)
   {
@@ -126,7 +126,7 @@ class cascade_valiant_router : public CascadeMinimalRouter {
               router, cascade_valiant_router,
               "router implementing valint routing for dragonfly")
 
-  cascade_valiant_router(sprockit::sim_parameters::ptr& params, topology *top,
+  cascade_valiant_router(SST::Params& params, topology *top,
                            NetworkSwitch *netsw)
     : CascadeMinimalRouter(params, top, netsw)
   {
@@ -308,7 +308,7 @@ class cascade_ugal_router : public DragonflyValiantRouter {
               router, DragonflyUGALRouter,
               "router implementing UGAL routing for dragonfly")
 
-  DragonflyUGALRouter(sprockit::sim_parameters::ptr& params, topology *top,
+  DragonflyUGALRouter(SST::Params& params, topology *top,
                                  NetworkSwitch *netsw)
     : DragonflyValiantRouter(params, top, netsw)
   {

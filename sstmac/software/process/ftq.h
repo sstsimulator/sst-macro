@@ -152,7 +152,7 @@ class FTQCalendar : public MultiStatistic<int,int,int,uint64_t,uint64_t>
   using Parent = MultiStatistic<int,int,int,uint64_t,uint64_t>;
   FactoryRegister("ftq", Parent, FTQCalendar)
  public:
-  FTQCalendar(sprockit::sim_parameters::ptr& params);
+  FTQCalendar(SST::Params& params);
 
   void init(long nticks_per_epoch);
 

@@ -56,7 +56,7 @@ class StatLocalDouble :
 {
   FactoryRegister("local_double", Statistic<double>, StatLocalDouble)
  public:
-  StatLocalDouble(sprockit::sim_parameters::ptr& params);
+  StatLocalDouble(SST::Params& params);
 
   void addData_impl(double val){
     values_.push_back(val);

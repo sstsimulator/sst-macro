@@ -77,7 +77,7 @@ class Processor
   }
 
  protected:
-  Processor(sprockit::sim_parameters::ptr& params, MemoryModel* mem, Node* nd);
+  Processor(SST::Params& params, MemoryModel* mem, Node* nd);
 
  protected:
   double freq_;

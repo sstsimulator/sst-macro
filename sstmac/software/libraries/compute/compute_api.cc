@@ -294,7 +294,7 @@ get_implicit_compute_state(){
   uintptr_t localStorage = get_sstmac_tls();
   auto* statePtr = (sstmac::sw::OperatingSystem::ImplicitState**)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
   if (*statePtr == nullptr){
-      sprockit::sim_parameters::ptr& params = sstmac::sw::OperatingSystem::currentOs()->params();
+      SST::Params& params = sstmac::sw::OperatingSystem::currentOs()->params();
       *statePtr = sstmac::sw::OperatingSystem::ImplicitState::factory
                     ::get_optional_param("ImplicitState", "null", params);
   }

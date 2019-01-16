@@ -55,7 +55,7 @@ class LocationTrace : public MultiStatistic<Timestamp,uint32_t,Timestamp,uint32_
   using Parent = MultiStatistic<Timestamp,uint32_t,Timestamp,uint32_t>;
   FactoryRegister("location_trace", Parent, LocationTrace)
  public:
-  LocationTrace(sprockit::sim_parameters::ptr params) :
+  LocationTrace(SST::Params& params) :
     Parent(params)
   {
   }

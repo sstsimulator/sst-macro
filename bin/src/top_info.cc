@@ -103,11 +103,11 @@ try_top_info_main(int argc, char **argv)
     sprockit::SpktFileIO::add_path(dir);
   }
 
-  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>(oo.configfile);
+  SST::Params params(oo.configfile);
   sstmac::Env::params = params;
   if (oo.params) {
     // there were command-line overrides
-    oo.params->combine_into(params);
+    oo.params.combine_into(params);
   }
 
   /** DO NOT CHANGE THE ORDER OF THE INIT FUNCTIONS BELOW - JJW
@@ -126,7 +126,7 @@ try_top_info_main(int argc, char **argv)
 
   params->print_params();
 
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  SST::Params top_params = params.get_namespace("topology");
   hw::Topology* thetop = hw::Topology::factory::get_param("name", top_params);
   hw::CartesianTopology* top = test_cast(hw::CartesianTopology, thetop);
 

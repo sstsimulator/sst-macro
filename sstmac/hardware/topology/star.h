@@ -65,7 +65,7 @@ class Star : public StructuredTopology
 
   virtual ~Star() {}
 
-  Star(sprockit::sim_parameters::ptr& params);
+  Star(SST::Params& params);
 
   int diameter() const override {
     return 1;
@@ -99,7 +99,7 @@ class Star : public StructuredTopology
   }
 
   void configureIndividualPortParams(SwitchId src,
-        sprockit::sim_parameters::ptr& switch_params) const override;
+        SST::Params& switch_params) const override;
 
   void connectedOutports(SwitchId src,
        std::vector<connection>& conns) const override;

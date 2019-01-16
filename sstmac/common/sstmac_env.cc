@@ -46,6 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 
 namespace sstmac {
-sprockit::sim_parameters::ptr sstmac::Env::params;
+SST::Params sstmac::Env::params;
 ParallelRuntime* sstmac::Env::rt = nullptr;
 }

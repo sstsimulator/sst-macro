@@ -102,7 +102,7 @@ topology::nodeToLogpSwitch(NodeId nid) const
 }
 #endif
 
-Topology::Topology(sprockit::sim_parameters::ptr& params)
+Topology::Topology(SST::Params& params)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
 #if SSTMAC_HAVE_VALID_MPI
@@ -122,29 +122,29 @@ Topology::~Topology()
 }
 
 Topology*
-Topology::staticTopology(sprockit::sim_parameters::ptr& params)
+Topology::staticTopology(SST::Params& params)
 {
   if (!staticTopology_){
     if (!params){
       spkt_abort_printf("topology should have already been initialized");
     }
-    sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+    SST::Params top_params = params.get_namespace("topology");
     staticTopology_ = Topology::factory::get_param("name", top_params);
   }
   return staticTopology_;
 }
 
-sprockit::sim_parameters::ptr
+SST::Params
 Topology::setupPortParams(int port, int credits, double bw,
-                          sprockit::sim_parameters::ptr& link_params,
-                          sprockit::sim_parameters::ptr& params)
+                          SST::Params& link_params,
+                          SST::Params& params)
 {
   std::string port_name = sprockit::printf("port%d", port);
-  sprockit::sim_parameters::ptr port_params = params->get_optional_namespace(port_name);
+  SST::Params port_params = params->get_optional_namespace(port_name);
   //for max lookahead, no credit latency
   //put all of the credits on sending, none on credits
-  (*port_params)["bandwidth"].setBandwidth(bw/1e9, "GB/s");
-  (*port_params)["credits"].setByteLength(credits, "B");
+  port_params["bandwidth"].setBandwidth(bw/1e9, "GB/s");
+  port_params["credits"].setByteLength(credits, "B");
   port_params->add_param_override("sendLatency", link_params->get_param("sendLatency"));
   port_params->add_param_override("creditLatency", link_params->get_param("creditLatency"));
   if (link_params->has_param("arbitrator")){
@@ -260,15 +260,15 @@ Topology::createPartition(
 void
 Topology::configureIndividualPortParams(
     int port_start, int nports,
-    sprockit::sim_parameters::ptr& switch_params) const
+    SST::Params& switch_params) const
 {
-  sprockit::sim_parameters::ptr link_params =
-      switch_params->get_namespace("link");
+  SST::Params link_params =
+      switch_params.get_namespace("link");
   for (int i=0; i < nports; ++i){
     int port = port_start + i;
     std::string port_ns = getPortNamespace(port);
-    sprockit::sim_parameters::ptr port_params = switch_params->get_namespace(port_ns);
-    link_params->combine_into(port_params);
+    SST::Params port_params = switch_params.get_namespace(port_ns);
+    link_params.combine_into(port_params);
   }
 }
 
@@ -331,7 +331,7 @@ Topology::nodeNameToId(const std::string& hostname) const
 }
 
 void
-Topology::initHostnameMap(sprockit::sim_parameters::ptr& params)
+Topology::initHostnameMap(SST::Params& params)
 {
   if (!idmap_.empty() || !hostmap_.empty()){
     spkt_abort_printf("topology::initHostnameMap: maps not empty");
@@ -350,7 +350,7 @@ Topology::initHostnameMap(sprockit::sim_parameters::ptr& params)
 class MerlinTopology : public Topology {
   FactoryRegister("merlin", Topology, MerlinTopology)
  public:
-  MerlinTopology(sprockit::sim_parameters::ptr& params)
+  MerlinTopology(SST::Params& params)
     : Topology(params)
   {
     num_nodes_ = params->get_int_param("num_nodes");
@@ -389,7 +389,7 @@ class MerlinTopology : public Topology {
   }
 
   void configureIndividualPortParams(SwitchId src,
-          sprockit::sim_parameters::ptr& switch_params) const override {
+          SST::Params& switch_params) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 

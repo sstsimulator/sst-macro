@@ -127,12 +127,12 @@ ParallelRuntime* init()
   //create a set of parameters from env variables
   //this is best way to piggy-back on process manager to configure things
   //in a parallel environment
-  sprockit::sim_parameters::ptr cmdline_params = std::make_shared<sprockit::sim_parameters>();
+  SST::Params cmdline_params;
   const char* env_str = getenv("SSTMAC_RUNTIME");
   if (env_str){
-    (*cmdline_params)["runtime"] = env_str;
+    cmdline_params["runtime"] = env_str;
   } else {
-    (*cmdline_params)["runtime"] = SSTMAC_DEFAULT_RUNTIME_STRING;
+    cmdline_params["runtime"] = SSTMAC_DEFAULT_RUNTIME_STRING;
   }
 
   //used when using fake sst compilers in configure/test-suite
@@ -176,7 +176,7 @@ initOpts(opts& oo, int argc, char** argv)
  * @param params  An already allocated parameter object
  */
 void
-initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr& params, bool parallel)
+initParams(ParallelRuntime* rt, opts& oo, SST::Params& params, bool parallel)
 {
   //use the config file to set up file search paths
   size_t pos = oo.configfile.find_last_of('/');
@@ -188,8 +188,10 @@ initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr& params,
   if (oo.got_config_file){
     if (parallel){
       RuntimeParamBcaster bcaster(rt);
-      sprockit::sim_parameters::parallel_build_params(params, rt->me(), rt->nproc(),
+      sprockit::sim_parameters::ptr tmp_params;
+      sprockit::sim_parameters::parallel_build_params(tmp_params, rt->me(), rt->nproc(),
                                                       oo.configfile, &bcaster, true);
+      params = SST::Params(tmp_params);
     } else {
       if (oo.got_config_file) params->parse_file(oo.configfile, false, true);
     }
@@ -198,7 +200,7 @@ initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr& params,
 
   if (oo.params) {
     // there were command-line overrides
-    oo.params->combine_into(params);
+    oo.params.combine_into(params);
   }
 
   /** DO NOT CHANGE THE ORDER OF THE INIT FUNCTIONS BELOW - JJW
@@ -222,15 +224,15 @@ initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr& params,
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-initFirstRun(ParallelRuntime* rt, sprockit::sim_parameters::ptr& params)
+initFirstRun(ParallelRuntime* rt, SST::Params& params)
 {
 }
 
 void
 runParams(opts& oo,
            ParallelRuntime* rt,
-           sprockit::sim_parameters::ptr& params,
-           sim_stats& stats)
+           SST::Params& params,
+           SimStats& stats)
 {
   //we didn't have all the runtime params available when we first built this
   rt->initRuntimeParams(params);
@@ -266,8 +268,6 @@ runParams(opts& oo,
 
     mgr->finish();
 
-    sstmac::Env::params = nullptr;
-
     delete mgr;
   } catch (const std::exception& e) {
     if (mgr) {
@@ -299,8 +299,8 @@ runParams(opts& oo,
 void
 run(opts& oo,
   ParallelRuntime* rt,
-  sprockit::sim_parameters::ptr& params,
-  sim_stats& stats)
+  SST::Params& params,
+  SimStats& stats)
 {
 
   sstmac::Env::params = params;
@@ -329,15 +329,15 @@ runStandalone(int argc, char** argv)
   //this means we actually just want to run a compiled program
   //and get the hell out of dodge
   sstmac::Timestamp::initStamps(1);
-  sprockit::sim_parameters::ptr null_params = std::make_shared<sprockit::sim_parameters>();
+  SST::Params null_params = std::make_shared<sprockit::sim_parameters>();
 
-  sprockit::sim_parameters::ptr nic_params = null_params->get_optional_namespace("nic");
+  SST::Params nic_params = null_params->get_optional_namespace("nic");
   nic_params->add_param_override("name", "null");
 
-  sprockit::sim_parameters::ptr mem_params = null_params->get_optional_namespace("memory");
+  SST::Params mem_params = null_params->get_optional_namespace("memory");
   mem_params->add_param_override("name", "null");
 
-  sprockit::sim_parameters::ptr proc_params = null_params->get_optional_namespace("proc");
+  SST::Params proc_params = null_params->get_optional_namespace("proc");
   proc_params->add_param_override("frequency", "1ghz");
   proc_params->add_param_override("ncores", 1);
 
@@ -367,7 +367,7 @@ runStandalone(int argc, char** argv)
 }
 
 int
-tryMain(sprockit::sim_parameters::ptr& params,
+tryMain(SST::Params& params,
         int argc, char **argv, bool params_only)
 {
   //set up the search path
@@ -399,7 +399,7 @@ tryMain(sprockit::sim_parameters::ptr& params,
   }
 
   opts oo;
-  sim_stats stats;
+  SimStats stats;
   sstmac::initOpts(oo, argc, argv);
 
   bool parallel = rt && rt->nproc() > 1;

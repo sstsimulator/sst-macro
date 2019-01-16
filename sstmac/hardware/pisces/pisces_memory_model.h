@@ -59,7 +59,7 @@ class PiscesMemoryModel : public MemoryModel
 {
   FactoryRegister("pisces", MemoryModel, PiscesMemoryModel)
  public:
-  PiscesMemoryModel(sprockit::sim_parameters::ptr& params, Node* nd);
+  PiscesMemoryModel(SST::Params& params, Node* nd);
 
   virtual ~PiscesMemoryModel();
 

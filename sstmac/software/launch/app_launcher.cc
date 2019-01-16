@@ -78,7 +78,7 @@ AppLauncher::incomingEvent(Event* ev)
                          lev->mapping(), lev->appParams());
 
     SoftwareId sid(lev->aid(), lev->tid());
-    sprockit::sim_parameters::ptr app_params = lev->appParams();
+    SST::Params app_params = lev->appParams();
 
     App::dlopenCheck(lev->aid(), app_params);
     App* theapp = App::factory::get_param("name", app_params, sid, os_);
@@ -126,7 +126,6 @@ StartAppEvent::serialize_order(serializer &ser)
     std::string paramStr;
     ser & paramStr;
     std::stringstream sstr(paramStr);
-    app_params_ = std::make_shared<sprockit::sim_parameters>();
     app_params_->parse_stream(sstr, false, true);
   } else {
     std::stringstream sstr;

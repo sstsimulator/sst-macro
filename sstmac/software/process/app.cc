@@ -106,7 +106,7 @@ App::allocateTlsKey(destructor_fxn fxn)
   return next;
 }
 
-static char* get_data_segment(sprockit::sim_parameters::ptr& params,
+static char* get_data_segment(SST::Params& params,
                               const char* param_name, GlobalVariableContext& ctx)
 {
   int allocSize = ctx.allocSize();
@@ -129,7 +129,7 @@ static char* get_data_segment(sprockit::sim_parameters::ptr& params,
 static thread_lock dlopen_lock;
 
 void
-App::dlopenCheck(int aid, sprockit::sim_parameters::ptr& params)
+App::dlopenCheck(int aid, SST::Params& params)
 {
   if (params->has_param("exe")){
     dlopen_lock.lock();
@@ -185,7 +185,7 @@ App::allocateDataSegment(bool tls)
   }
 }
 
-App::App(sprockit::sim_parameters::ptr& params, SoftwareId sid,
+App::App(SST::Params& params, SoftwareId sid,
          OperatingSystem* os) :
   Thread(params, sid, os),
   compute_lib_(nullptr),
@@ -211,7 +211,7 @@ App::App(sprockit::sim_parameters::ptr& params, SoftwareId sid,
 
   notify_ = params->get_optional_bool_param("notify", true);
 
-  sprockit::sim_parameters::ptr env_params = params->get_optional_namespace("env");
+  SST::Params env_params = params->get_optional_namespace("env");
   omp_contexts_.emplace_back();
   omp_context& active = omp_contexts_.back();
   active.max_num_subthreads = active.requested_num_subthreads =
@@ -367,7 +367,7 @@ App::computeBlockWrite(uint64_t bytes)
   computeLib()->write(bytes);
 }
 
-sprockit::sim_parameters::ptr
+SST::Params
 App::getParams()
 {
   return OperatingSystem::currentThread()->parentApp()->params();
@@ -385,7 +385,7 @@ App::_get_api(const char* name)
   // an underlying thread may have built this
   API* my_api = apis_[name];
   if (!my_api) {
-    sprockit::sim_parameters::ptr api_params = params_->get_optional_namespace(name);
+    SST::Params api_params = params_->get_optional_namespace(name);
     API* new_api = API::factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
@@ -532,7 +532,7 @@ UserAppCxxFullMain::deleteStatics()
   main_fxns_ = nullptr;
 }
 
-UserAppCxxFullMain::UserAppCxxFullMain(sprockit::sim_parameters::ptr& params, SoftwareId sid,
+UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
                                        OperatingSystem* os) :
   App(params, sid, os)
 {
@@ -595,7 +595,7 @@ UserAppCxxFullMain::skeletonMain()
   return (*fxn_)(entry.argc, entry.argv);
 }
 
-UserAppCxxEmptyMain::UserAppCxxEmptyMain(sprockit::sim_parameters::ptr& params, SoftwareId sid,
+UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
                                          OperatingSystem* os) :
   App(params, sid, os)
 {

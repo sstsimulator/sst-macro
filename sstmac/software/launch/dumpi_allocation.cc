@@ -61,7 +61,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-DumpiAllocation::DumpiAllocation(sprockit::sim_parameters::ptr& params)
+DumpiAllocation::DumpiAllocation(SST::Params& params)
  : NodeAllocator(params)
 {
   metafile_ = params->get_param("dumpi_metaname");

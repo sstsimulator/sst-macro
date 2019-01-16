@@ -136,7 +136,7 @@ struct NullImplicitState : public OperatingSystem::ImplicitState
 {
   FactoryRegister("null", OperatingSystem::ImplicitState, NullImplicitState)
 
-  NullImplicitState(sprockit::sim_parameters::ptr& params) :
+  NullImplicitState(SST::Params& params) :
     OperatingSystem::ImplicitState(params){}
 
   void setState(int type, int value) override {}
@@ -149,7 +149,7 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
 
   using parent = OperatingSystem::ThreadSafeTimerModel<double>;
 
-  NullRegression(sprockit::sim_parameters::ptr& params,
+  NullRegression(SST::Params& params,
                   const std::string& key)
     : parent(params, key), computed_(false) {}
 
@@ -200,7 +200,7 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
 {
   FactoryRegister("linear", OperatingSystem::RegressionModel, LinearRegression)
   using parent = OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>;
-  LinearRegression(sprockit::sim_parameters::ptr& params,
+  LinearRegression(SST::Params& params,
                     const std::string& key)
     : parent(params, key), computed_(false) {}
 
@@ -289,7 +289,7 @@ bool OperatingSystem::gdb_active_ = false;
 std::map<std::string,OperatingSystem::RegressionModel*> OperatingSystem::memoize_models_;
 std::map<std::string,std::string>* OperatingSystem::memoize_init_ = nullptr;
 
-OperatingSystem::OperatingSystem(sprockit::sim_parameters::ptr& params, hw::Node* parent) :
+OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
   nthread_(1),
   thread_id_(0),
@@ -307,9 +307,6 @@ OperatingSystem::OperatingSystem(sprockit::sim_parameters::ptr& params, hw::Node
   SubComponent(parent),
   params_(params)
 {
-  if (!params_){
-    spkt_abort_printf("OS got null params");
-  }
   my_addr_ = node_ ? node_->addr() : 0;
 
   compute_sched_ = ComputeScheduler::factory::get_optional_param(
@@ -335,7 +332,7 @@ OperatingSystem::OperatingSystem(sprockit::sim_parameters::ptr& params, hw::Node
 
   rebuildMemoizations();
 
-  sprockit::sim_parameters::ptr env_params = params->get_optional_namespace("env");
+  SST::Params env_params = params->get_optional_namespace("env");
   for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
     env_[iter->first] = iter->second.value;
   }
@@ -350,7 +347,7 @@ OperatingSystem::rebuildMemoizations()
     auto iter = memoize_models_.find(pair.first);
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (iter == memoize_models_.end()){
-      sprockit::sim_parameters::ptr memo_params = params_->get_optional_namespace(pair.first);
+      SST::Params memo_params = params_->get_optional_namespace(pair.first);
       memo_params->add_param_override("fileroot", pair.first);
       auto* model = RegressionModel::factory::get_value(pair.second, memo_params, pair.first);
       memoize_models_[pair.first] = model;
@@ -424,7 +421,7 @@ OperatingSystem::~OperatingSystem()
 }
 
 void
-OperatingSystem::initThreading(sprockit::sim_parameters::ptr& params)
+OperatingSystem::initThreading(SST::Params& params)
 {
   if (des_context_){
     return; //already done
@@ -840,7 +837,7 @@ OperatingSystem::lib(const std::string& name) const
 void
 OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns,
                                  TaskMapping::ptr mapping,
-                                 const sprockit::sim_parameters::ptr& app_params,
+                                 const SST::Params& app_params,
                                  bool include_root)
 {
   int num_ranks = mapping->numRanks();
@@ -854,10 +851,6 @@ OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns
     ranks[0] = my_rank;
   } else {
     num_to_send = iter.forward_to(ranks);
-  }
-
-  if (!app_params){
-    spkt_abort_printf("got null app params");
   }
 
   for (int r=0; r < num_to_send; ++r){

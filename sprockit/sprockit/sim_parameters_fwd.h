@@ -54,4 +54,8 @@ using sim_parameters_ptr = std::shared_ptr<sim_parameters>;
 
 }
 
+namespace SST {
+class Params;
+}
+
 #endif // SIM_PARAMETERS_FWD_H

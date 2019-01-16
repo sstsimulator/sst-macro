@@ -53,7 +53,7 @@ using namespace std;
 namespace sstmac {
 namespace hw {
 
-FileTopology::FileTopology(sprockit::sim_parameters::ptr& params) :
+FileTopology::FileTopology(SST::Params& params) :
   Topology(params)
 {
   std::string fname = params->get_param("filename");
@@ -120,7 +120,7 @@ FileTopology::FileTopology(sprockit::sim_parameters::ptr& params) :
 }
 
 void
-FileTopology::initHostnameMap(sprockit::sim_parameters::ptr& params)
+FileTopology::initHostnameMap(SST::Params& params)
 {
   //this is done in the constructor
 }
@@ -184,7 +184,7 @@ FileTopology::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
 
 void
 FileTopology::configureIndividualPortParams(
-    SwitchId src, sprockit::sim_parameters::ptr& switch_params) const
+    SwitchId src, SST::Params& switch_params) const
 {
   spkt_abort_printf("configureIndividualPortParams() not implemented");
 }

@@ -151,7 +151,7 @@ MpiRuntime::globalSum(long *data, int nelems, int root)
 }
 
 void
-MpiRuntime::initRuntimeParams(sprockit::sim_parameters::ptr& params)
+MpiRuntime::initRuntimeParams(SST::Params& params)
 {
   requests_.resize(2*nproc_);
   statuses_.resize(2*nproc_);
@@ -159,7 +159,7 @@ MpiRuntime::initRuntimeParams(sprockit::sim_parameters::ptr& params)
   ParallelRuntime::initRuntimeParams(params);
 }
 
-MpiRuntime::MpiRuntime(sprockit::sim_parameters::ptr& params) :
+MpiRuntime::MpiRuntime(SST::Params& params) :
   ParallelRuntime(params,
   initRank(params),
   initSize(params))
@@ -179,7 +179,7 @@ MpiRuntime::MpiRuntime(sprockit::sim_parameters::ptr& params) :
 }
 
 int
-MpiRuntime::initSize(sprockit::sim_parameters::ptr& params)
+MpiRuntime::initSize(SST::Params& params)
 {
   int inited;
   MPI_Initialized(&inited);
@@ -196,7 +196,7 @@ MpiRuntime::initSize(sprockit::sim_parameters::ptr& params)
 }
 
 int
-MpiRuntime::initRank(sprockit::sim_parameters::ptr& params)
+MpiRuntime::initRank(SST::Params& params)
 {
   int inited;
   MPI_Initialized(&inited);

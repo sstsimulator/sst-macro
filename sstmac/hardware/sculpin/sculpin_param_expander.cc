@@ -51,17 +51,17 @@ namespace sstmac {
 namespace hw {
 
 void
-SculpinParamExpander::expand(sprockit::sim_parameters::ptr& params)
+SculpinParamExpander::expand(SST::Params& params)
 {
   std::string amm_type = params->get_param("amm_model");
 
-  sprockit::sim_parameters::ptr node_params = params->get_optional_namespace("node");
-  sprockit::sim_parameters::ptr nic_params = node_params->get_optional_namespace("nic");
-  sprockit::sim_parameters::ptr inj_params = nic_params->get_optional_namespace("injection");
-  sprockit::sim_parameters::ptr mem_params = node_params->get_optional_namespace("memory");
-  sprockit::sim_parameters::ptr switch_params = params->get_optional_namespace("switch");
-  sprockit::sim_parameters::ptr top_params = params->get_optional_namespace("topology");
-  sprockit::sim_parameters::ptr proc_params = node_params->get_optional_namespace("proc");
+  SST::Params node_params = params->get_optional_namespace("node");
+  SST::Params nic_params = node_params->get_optional_namespace("nic");
+  SST::Params inj_params = nic_params->get_optional_namespace("injection");
+  SST::Params mem_params = node_params->get_optional_namespace("memory");
+  SST::Params switch_params = params->get_optional_namespace("switch");
+  SST::Params top_params = params->get_optional_namespace("topology");
+  SST::Params proc_params = node_params->get_optional_namespace("proc");
 
 
   nic_params->add_param_override("name", "sculpin");
@@ -102,8 +102,8 @@ SculpinParamExpander::expand(sprockit::sim_parameters::ptr& params)
 }
 
 void
-SculpinParamExpander::expandAmm1Memory(sprockit::sim_parameters::ptr& params,
-                                       sprockit::sim_parameters::ptr& mem_params)
+SculpinParamExpander::expandAmm1Memory(SST::Params& params,
+                                       SST::Params& mem_params)
 {
   if (mem_params->get_scoped_param("name") != "null"){
     mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
@@ -111,23 +111,23 @@ SculpinParamExpander::expandAmm1Memory(sprockit::sim_parameters::ptr& params,
 }
 
 void
-SculpinParamExpander::checkBandwidth(sprockit::sim_parameters::ptr& params,
-                                     sprockit::sim_parameters::ptr& deflt_params)
+SculpinParamExpander::checkBandwidth(SST::Params& params,
+                                     SST::Params& deflt_params)
 {
   if (!params->has_param("bandwidth")){
     if (deflt_params){
       params->add_param_override("bandwidth",
                                  deflt_params->get_param("bandwidth"));
     } else {
-      params->print_scoped_params(std::cerr);
+      params.print_all_params(std::cerr);
       spkt_abort_printf("do not have bandwidth parameter");
     }
   }
 }
 
 void
-SculpinParamExpander::checkLatency(sprockit::sim_parameters::ptr& params,
-                                   sprockit::sim_parameters::ptr& deflt_params)
+SculpinParamExpander::checkLatency(SST::Params& params,
+                                   SST::Params& deflt_params)
 {
   if (!params->has_param("sendLatency")){
     if (params->has_param("latency")){
@@ -136,7 +136,7 @@ SculpinParamExpander::checkLatency(sprockit::sim_parameters::ptr& params,
       params->add_param_override("sendLatency",
                                  deflt_params->get_either_or_param("latency", "sendLatency"));
     } else {
-      params->print_scoped_params(std::cerr);
+      params.print_all_params(std::cerr);
       spkt_abort_printf("do not have sendLatency parameter");
     }
   }
@@ -148,23 +148,23 @@ SculpinParamExpander::checkLatency(sprockit::sim_parameters::ptr& params,
       params->add_param_override("creditLatency",
                        deflt_params->get_either_or_param("latency", "creditLatency"));
     } else {
-      params->print_scoped_params(std::cerr);
+      params.print_all_params(std::cerr);
       spkt_abort_printf("do not have creditLatency parameter");
     }
   }
 }
 
 void
-SculpinParamExpander::expandAmm1Network(sprockit::sim_parameters::ptr& params,
-                                        sprockit::sim_parameters::ptr& switch_params)
+SculpinParamExpander::expandAmm1Network(SST::Params& params,
+                                        SST::Params& switch_params)
 {
-  sprockit::sim_parameters::ptr link_params = switch_params->get_namespace("link");
-  sprockit::sim_parameters::ptr ej_params = switch_params->get_optional_namespace("ejection");
-  sprockit::sim_parameters::ptr node_params = params->get_namespace("node");
-  sprockit::sim_parameters::ptr nic_params = node_params->get_namespace("nic");
-  sprockit::sim_parameters::ptr inj_params = nic_params->get_namespace("injection");
+  SST::Params link_params = switch_params.get_namespace("link");
+  SST::Params ej_params = switch_params->get_optional_namespace("ejection");
+  SST::Params node_params = params.get_namespace("node");
+  SST::Params nic_params = node_params.get_namespace("nic");
+  SST::Params inj_params = nic_params.get_namespace("injection");
 
-  sprockit::sim_parameters::ptr empty{};
+  SST::Params empty{};
 
   checkLatency(link_params, empty);
   checkLatency(ej_params, inj_params);
@@ -174,12 +174,12 @@ SculpinParamExpander::expandAmm1Network(sprockit::sim_parameters::ptr& params,
 }
 
 void
-SculpinParamExpander::expandAmm1Nic(sprockit::sim_parameters::ptr& params,
-                                    sprockit::sim_parameters::ptr& top_params,
-                                    sprockit::sim_parameters::ptr& nic_params)
+SculpinParamExpander::expandAmm1Nic(SST::Params& params,
+                                    SST::Params& top_params,
+                                    SST::Params& nic_params)
 {
-  sprockit::sim_parameters::ptr inj_params = nic_params->get_namespace("injection");
-  sprockit::sim_parameters::ptr empty{};
+  SST::Params inj_params = nic_params.get_namespace("injection");
+  SST::Params empty{};
   checkLatency(inj_params, empty);
   if (!inj_params->has_param("arbitrator")){
     inj_params->add_param("arbitrator", "cut_through");
@@ -189,17 +189,17 @@ SculpinParamExpander::expandAmm1Nic(sprockit::sim_parameters::ptr& params,
 
 
 void
-SculpinParamExpander::expandAmm4Network(sprockit::sim_parameters::ptr& params,
-  sprockit::sim_parameters::ptr& top_params,
-  sprockit::sim_parameters::ptr& switch_params)
+SculpinParamExpander::expandAmm4Network(SST::Params& params,
+  SST::Params& top_params,
+  SST::Params& switch_params)
 {
   spkt_abort_printf("sculpin::does not support amm4");
 }
 
 void
-SculpinParamExpander::expandAmm4Nic(sprockit::sim_parameters::ptr& params,
-                                    sprockit::sim_parameters::ptr& top_params,
-                                    sprockit::sim_parameters::ptr& nic_params)
+SculpinParamExpander::expandAmm4Nic(SST::Params& params,
+                                    SST::Params& top_params,
+                                    SST::Params& nic_params)
 {
   spkt_abort_printf("sculpin::does not support amm4");
 }

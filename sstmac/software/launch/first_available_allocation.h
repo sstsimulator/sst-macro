@@ -57,7 +57,7 @@ class FirstAvailableAllocation : public NodeAllocator
               "In most cases, allocating from the available node list will give "
               "you a regular, contiguous allocation")
  public:
-  FirstAvailableAllocation(sprockit::sim_parameters::ptr& params) :
+  FirstAvailableAllocation(SST::Params& params) :
     NodeAllocator(params)
   {
   }

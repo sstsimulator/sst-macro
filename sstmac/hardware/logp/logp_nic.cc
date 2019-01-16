@@ -55,25 +55,25 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-LogPNIC::LogPNIC(sprockit::sim_parameters::ptr& params, Node* parent) :
+LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
   next_out_free_(0),
   NIC(params, parent)
 {
   ack_handler_ = newHandler(parent, &Node::handle);
-  sprockit::sim_parameters::ptr inj_params = params->get_namespace("injection");
+  SST::Params inj_params = params.get_namespace("injection");
   double inj_bw = inj_params->get_bandwidth_param("bandwidth");
   inj_bw_inverse_ = 1.0/inj_bw;
   inj_lat_ = inj_params->get_time_param("latency");
 }
 
 Timestamp
-LogPNIC::sendLatency(sprockit::sim_parameters::ptr& params) const
+LogPNIC::sendLatency(SST::Params& params) const
 {
   return params->get_time_param("latency");
 }
 
 Timestamp
-LogPNIC::creditLatency(sprockit::sim_parameters::ptr& params) const
+LogPNIC::creditLatency(SST::Params& params) const
 {
   return params->get_time_param("latency");
 }
@@ -127,7 +127,7 @@ LogPNIC::doSend(NetworkMessage* msg)
 
 void
 LogPNIC::connectOutput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -137,7 +137,7 @@ LogPNIC::connectOutput(
 
 void
 LogPNIC::connectInput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)

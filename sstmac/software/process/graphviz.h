@@ -113,7 +113,7 @@ class GraphViz : public MultiStatistic<uint64_t,sw::Thread*>
   FactoryRegister("graph_viz | call_graph", Parent, GraphViz)
 
  public:
-  GraphViz(sprockit::sim_parameters::ptr& params);
+  GraphViz(SST::Params& params);
 
   virtual ~GraphViz();
 

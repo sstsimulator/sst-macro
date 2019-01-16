@@ -77,7 +77,7 @@ BlasKernel* BlasAPI::dgemv_kernel_;
 BlasKernel* BlasAPI::daxpy_kernel_;
 BlasKernel* BlasAPI::ddot_kernel_;
 
-BlasAPI::BlasAPI(sprockit::sim_parameters::ptr& params,
+BlasAPI::BlasAPI(SST::Params& params,
                    SoftwareId sid,
                    OperatingSystem* os)
   : API(params, "blas", sid, os)
@@ -94,7 +94,7 @@ BlasAPI::~BlasAPI()
 }
 
 void
-BlasAPI::initKernels(sprockit::sim_parameters::ptr& params)
+BlasAPI::initKernels(SST::Params& params)
 {
   dgemm_kernel_ = BlasKernel::factory::get_optional_param("dgemm", "default_dgemm", params);
   dgemv_kernel_ = BlasKernel::factory::get_optional_param("dgemv", "default_dgemv", params);

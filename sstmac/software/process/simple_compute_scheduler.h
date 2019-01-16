@@ -55,7 +55,7 @@ class SimpleComputeScheduler : public ComputeScheduler
   FactoryRegister("simple", ComputeScheduler, SimpleComputeScheduler,
               "Compute scheduler that migrates work to any open core")
  public:
-  SimpleComputeScheduler(sprockit::sim_parameters::ptr& params,
+  SimpleComputeScheduler(SST::Params& params,
                            OperatingSystem* os, int ncore, int nsocket)
     : ncore_active_(0), ComputeScheduler(params, os, ncore, nsocket)
   {}

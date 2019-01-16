@@ -159,13 +159,13 @@ class Connectable
 {
  public:
   virtual void connectOutput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
 
   virtual void connectInput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
@@ -180,7 +180,7 @@ The function is called twice for each side of the connection. If we have a sourc
 \begin{CppCode}
 Connectable* src = ...
 Connectable* dst = ...
-sprockit::sim_parameters::ptr& params = ...
+SST::Params& params = ...
 src->connectOutput(params, inport, outport, Output, dst);
 dst->connectInput(params, inport, outport, Input, src);
 \end{CppCode}
@@ -364,10 +364,10 @@ To illustrate, here is the code for the interconnect that creates the node objec
 The interconnect is itself a factory object, configured from a parameter file.
 
 \begin{CppCode}
-interconnect::interconnect(sprockit::sim_parameters::ptr& params, EventManager* mgr, 
+interconnect::interconnect(SST::Params& params, EventManager* mgr, 
 	partition* part, parallel_runtime* rt)
 {
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
+  sprockit::sim_parameters* top_params = params.get_namespace("topology");
   topology_ = topology_factory::get_param("name", top_params);
   num_nodes_ = topology_->numNodes();
   num_switches_ = topology_->numSwitches();
@@ -375,12 +375,12 @@ interconnect::interconnect(sprockit::sim_parameters::ptr& params, EventManager* 
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
 
-  sprockit::sim_parameters* node_params = params->get_namespace("node");
-  sprockit::sim_parameters* switch_params = params->get_namespace("switch");
+  sprockit::sim_parameters* node_params = params.get_namespace("node");
+  sprockit::sim_parameters* switch_params = params.get_namespace("switch");
   
-  sprockit::sim_parameters* nic_params = node_params->get_namespace("nic");
-  sprockit::sim_parameters* inj_params = nic_params->get_namespace("injection");
-  sprockit::sim_parameters* ej_params = switch_params->get_namespace("ejection"); 
+  sprockit::sim_parameters* nic_params = node_params.get_namespace("nic");
+  sprockit::sim_parameters* inj_params = nic_params.get_namespace("injection");
+  sprockit::sim_parameters* ej_params = switch_params.get_namespace("ejection"); 
   
   buildEndpoints(node_params, nic_params, mgr);
   buildSwitches(switch_params, mgr);

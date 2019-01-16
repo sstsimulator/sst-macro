@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/spkt_config.h>
 #include <sprockit/debug.h>
+#include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
 
 #include <iostream>
@@ -58,6 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 DeclareDebugSlot(params)
 DeclareDebugSlot(read_params)
 DeclareDebugSlot(write_params)
+
 
 namespace sprockit {
 
@@ -109,8 +111,9 @@ class param_bcaster {
 };
 
 class sim_parameters  {
-
  public:
+  friend class SST::Params;
+
   using ptr = std::shared_ptr<sim_parameters>;
   using const_ptr = std::shared_ptr<const sim_parameters>;
 
@@ -120,6 +123,11 @@ class sim_parameters  {
     std::string value;
     bool read;
   };
+
+
+  static sim_parameters::ptr& empty() {
+    return empty_ns_params_;
+  }
 
   void reproduce_params(std::ostream& os) const ;
 
@@ -383,10 +391,6 @@ class sim_parameters  {
 
   sim_parameters::ptr get_optional_namespace(const std::string& ns);
 
-  static sim_parameters::ptr& empty() {
-    return empty_ns_params_;
-  }
-
   void set_namespace(const std::string& ns, sim_parameters::ptr params){
     subspaces_[ns] = params;
   }
@@ -516,6 +520,61 @@ class sim_parameters  {
 
 
 
+};
+
+}
+
+namespace SST {
+
+class Params {
+ public:
+  Params() : params_(std::make_shared<sprockit::sim_parameters>())
+  {
+  }
+
+  Params(const std::string& name) : params_(std::make_shared<sprockit::sim_parameters>(name))
+  {
+  }
+
+  operator bool(){
+    return bool(params_);
+  }
+
+  Params(const sprockit::sim_parameters::ptr& params) :
+    params_(params)
+  {
+  }
+
+  void print_all_params(std::ostream& os){
+    params_->print_params(os);
+  }
+
+  sprockit::sim_parameters* operator->(){
+    return params_.get();
+  }
+
+  SST::Params get_namespace(const std::string& name){
+    return params_->get_namespace(name);
+  }
+
+  sprockit::param_assign operator[](const std::string& key){
+    return (*params_)[key];
+  }
+
+  sprockit::param_assign operator[](const char* key){
+    return (*params_)[key];
+  }
+
+  void combine_into(SST::Params& params,
+               bool fail_on_existing = false,
+               bool override_existing = true,
+               bool mark_as_read = true){
+    params_->combine_into(params.params_,
+      fail_on_existing,override_existing,mark_as_read);
+  }
+
+ private:
+  sprockit::sim_parameters::ptr params_;
 };
 
 }

@@ -62,7 +62,7 @@ class OTF2TraceReplayApp : public sstmac::sw::App {
                sstmac::sw::app, OTF2TraceReplayApp,
                "application for parsing and simulating OTF2 traces")
  public:
-  OTF2TraceReplayApp(sprockit::sim_parameters::ptr& params,
+  OTF2TraceReplayApp(SST::Params& params,
                      sstmac::sw::SoftwareId sid,
                      sstmac::sw::OperatingSystem* os);
 

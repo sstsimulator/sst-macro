@@ -62,7 +62,7 @@ equals(const std::vector<int>& coords, int x, int y, int z)
   return coords[0] == x && coords[1] == y && coords[2] == z;
 }
 
-Torus::Torus(sprockit::sim_parameters::ptr& params) :
+Torus::Torus(SST::Params& params) :
   CartesianTopology(params)
 {
   num_switches_ = 1;
@@ -144,9 +144,9 @@ Torus::shortestPathPositive(
 
 void
 Torus::configureIndividualPortParams(SwitchId src,
-                                     sprockit::sim_parameters::ptr& switch_params) const
+                                     SST::Params& switch_params) const
 {
-  sprockit::sim_parameters::ptr link_params = switch_params->get_namespace("link");
+  SST::Params link_params = switch_params.get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
   //if there is a buffer size given, grab it
   int bufsize = link_params->get_optional_byte_length_param("buffer_size", 0);

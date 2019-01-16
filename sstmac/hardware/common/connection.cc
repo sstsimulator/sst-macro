@@ -56,7 +56,7 @@ class timestamp_prefix_fxn :
   public sprockit::debug_prefix_fxn
 {
  public:
-  timestamp_prefix_fxn(sprockit::sim_parameters::ptr& params, EventScheduler* mgr) :
+  timestamp_prefix_fxn(SST::Params& params, EventScheduler* mgr) :
     mgr_(mgr)
   {
     units_ = params->get_optional_param("timestamp_print_units", "s");
@@ -85,7 +85,7 @@ class timestamp_prefix_fxn :
 
 };
 
-ConnectableComponent::ConnectableComponent(sprockit::sim_parameters::ptr& params, uint32_t cid)
+ConnectableComponent::ConnectableComponent(SST::Params& params, uint32_t cid)
   : Component(params, cid)
 {
   if (!checked_prefix_fxn){

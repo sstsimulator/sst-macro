@@ -90,10 +90,10 @@ class Partition
     return switch_to_thread_[id];
   }
 
-  virtual void finalizeInit(sprockit::sim_parameters::ptr& params){}
+  virtual void finalizeInit(SST::Params& params){}
 
  protected:
-  Partition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
+  Partition(SST::Params& params, ParallelRuntime* rt);
 
  protected:
   int* switch_to_lpid_;
@@ -117,7 +117,7 @@ class SerialPartition :
 {
   FactoryRegister("serial", Partition, SerialPartition)
  public:
-  SerialPartition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
+  SerialPartition(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~SerialPartition();
 
@@ -129,7 +129,7 @@ class TopologyPartition :
   FactoryRegister("topology", Partition, TopologyPartition)
 
  public:
-  TopologyPartition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
+  TopologyPartition(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~TopologyPartition();
 
@@ -145,11 +145,11 @@ class BlockPartition :
 {
   FactoryRegister("block", Partition, BlockPartition)
  public:
-  BlockPartition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
+  BlockPartition(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~BlockPartition();
 
-  void finalizeInit(sprockit::sim_parameters::ptr& params);
+  void finalizeInit(SST::Params& params);
 
   virtual void partitionSwitches();
 
@@ -167,7 +167,7 @@ class OccupiedBlockPartition :
 {
   FactoryRegister("occupied_block", Partition, OccupiedBlockPartition)
  public:
-  OccupiedBlockPartition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
+  OccupiedBlockPartition(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~OccupiedBlockPartition();
 

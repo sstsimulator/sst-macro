@@ -54,7 +54,7 @@ class StatGlobalInt : public StatValue<int>
 {
   FactoryRegister("global_int", Statistic<int>, StatGlobalInt)
  public:
-  StatGlobalInt(sprockit::sim_parameters::ptr& params);
+  StatGlobalInt(SST::Params& params);
 
  protected:
   void dump(const std::string& froot);

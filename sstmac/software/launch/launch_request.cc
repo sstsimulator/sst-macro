@@ -74,7 +74,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-SoftwareLaunchRequest::SoftwareLaunchRequest(sprockit::sim_parameters::ptr& params) :
+SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
   indexed_(false),
   num_finished_(0)
 {
@@ -113,7 +113,7 @@ AppLaunchRequest::~AppLaunchRequest()
 {
 }
 
-AppLaunchRequest::AppLaunchRequest(sprockit::sim_parameters::ptr& params,
+AppLaunchRequest::AppLaunchRequest(SST::Params& params,
                        AppId aid,
                        const std::string& app_namespace) :
   SoftwareLaunchRequest(params),
@@ -185,7 +185,7 @@ SoftwareLaunchRequest::requestAllocation(
 
 void
 SoftwareLaunchRequest::parseLaunchCmd(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int& nproc,
   int& procs_per_node,
   std::vector<int>& affinities)
@@ -224,7 +224,7 @@ SoftwareLaunchRequest::parseLaunchCmd(
 }
 
 void
-SoftwareLaunchRequest::parseLaunchCmd(sprockit::sim_parameters::ptr& params)
+SoftwareLaunchRequest::parseLaunchCmd(SST::Params& params)
 {
   parseLaunchCmd(params, nproc_, procs_per_node_, core_affinities_);
 }

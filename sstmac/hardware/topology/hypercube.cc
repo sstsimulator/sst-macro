@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-Hypercube::Hypercube(sprockit::sim_parameters::ptr& params) :
+Hypercube::Hypercube(SST::Params& params) :
   Torus(params)
 {
   ndim_ = dimensions_.size();
@@ -121,9 +121,9 @@ Hypercube::minimalDistance(
 
 void
 Hypercube::configureIndividualPortParams(SwitchId src,
-                                         sprockit::sim_parameters::ptr& switch_params) const
+                                         SST::Params& switch_params) const
 {
-  sprockit::sim_parameters::ptr link_params = switch_params->get_namespace("link");
+  SST::Params link_params = switch_params.get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
   int bufsize = link_params->get_optional_byte_length_param("buffer_size", 0);
   for (int dim=0; dim < dimensions_.size(); ++dim){

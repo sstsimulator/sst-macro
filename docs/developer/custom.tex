@@ -49,7 +49,7 @@ We got some functions for free by inheriting from \inlinecode{structured_topolog
 We start with
 
 \begin{CppCode}
-xpress_ring::xpress_ring(sprockit::sim_parameters::ptr& params) :
+xpress_ring::xpress_ring(SST::Params& params) :
   structured_topology(params)
 {
   ring_size_ = params->get_int_param("xpress_ring_size");

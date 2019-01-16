@@ -55,7 +55,7 @@ class DefaultDGEMV :
 {
   FactoryRegister("default_dgemv", BlasKernel, DefaultDGEMV)
  public:
-  DefaultDGEMV(sprockit::sim_parameters::ptr& params){
+  DefaultDGEMV(SST::Params& params){
     loop_unroll_ = params->get_optional_double_param("dgemv_loop_unroll", 4);
     pipeline_ = params->get_optional_double_param("dgemv_pipeline_efficiency", 2);
   }

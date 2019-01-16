@@ -62,7 +62,7 @@ namespace hw {
 
 static const double PI = 3.141592653589793238462;
 
-Cascade::Cascade(sprockit::sim_parameters::ptr& params) :
+Cascade::Cascade(SST::Params& params) :
   CartesianTopology(params)
 {
   x_ = dimensions_[0];
@@ -234,9 +234,9 @@ Cascade::minimalDistance(SwitchId src, SwitchId dst) const
 
 
 void
-Cascade::setupPortParams(sprockit::sim_parameters::ptr& params, int dim, int dimsize) const
+Cascade::setupPortParams(SST::Params& params, int dim, int dimsize) const
 {
-  sprockit::sim_parameters::ptr link_params = params->get_namespace("link");
+  SST::Params link_params = params.get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
   int bufsize = params->get_optional_byte_length_param("buffer_size", 0);
 
@@ -246,7 +246,7 @@ Cascade::setupPortParams(sprockit::sim_parameters::ptr& params, int dim, int dim
   for (int i=0; i < dimsize; ++i){
     int port = convertToPort(dim, i);
   //std::cout << "setting port " << port << " to " << port_bw << " " << credits << std::endl;
-    sprockit::sim_parameters::ptr port_params = Topology
+    SST::Params port_params = Topology
         ::setupPortParams(port, credits, port_bw, link_params, params);
   }
 }
@@ -306,7 +306,7 @@ Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 
 void
 Cascade::configureIndividualPortParams(SwitchId src,
-                                       sprockit::sim_parameters::ptr& switch_params) const
+                                       SST::Params& switch_params) const
 {
   setupPortParams(switch_params, x_dimension, x_);
   setupPortParams(switch_params, y_dimension, y_);

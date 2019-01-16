@@ -56,7 +56,7 @@ namespace sstmac {
 class Env
 {
  public:
-  static sprockit::sim_parameters_ptr params;
+  static SST::Params params;
   static ParallelRuntime* rt;
 };
 

@@ -72,7 +72,7 @@ namespace sumi{
 using namespace sstmac::hw;
 
 
-ParseDumpi::ParseDumpi(sprockit::sim_parameters::ptr& params, SoftwareId sid,
+ParseDumpi::ParseDumpi(SST::Params& params, SoftwareId sid,
                        sstmac::sw::OperatingSystem* os) :
   App(params, sid, os),
   mpi_(nullptr)

@@ -64,7 +64,7 @@ class SculpinNIC :
   FactoryRegister("sculpin", NIC, SculpinNIC,
               "implements a nic that models messages as a packet flow")
  public:
-  SculpinNIC(sprockit::sim_parameters::ptr& params, Node* parent);
+  SculpinNIC(SST::Params& params, Node* parent);
 
   std::string toString() const override {
     return sprockit::printf("sculpin nic(%d)", int(addr()));
@@ -81,13 +81,13 @@ class SculpinNIC :
   void handleCredit(Event* ev);
 
   void connectOutput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
 
   void connectInput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
@@ -96,9 +96,9 @@ class SculpinNIC :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp sendLatency(SST::Params& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp creditLatency(SST::Params& params) const override;
 
  private:
   void doSend(NetworkMessage* payload) override;

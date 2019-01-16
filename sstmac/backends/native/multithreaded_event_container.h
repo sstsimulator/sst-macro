@@ -91,7 +91,7 @@ class MultithreadedEventContainer :
   FactoryRegister("multithread | multithreaded", EventManager, MultithreadedEventContainer,
     "Implements a parallel event queue with support for SMP-aware multithreading")
  public:
-  MultithreadedEventContainer(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
+  MultithreadedEventContainer(SST::Params& params, ParallelRuntime* rt);
 
   ~MultithreadedEventContainer() throw () {}
 

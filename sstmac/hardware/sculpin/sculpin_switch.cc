@@ -82,7 +82,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SculpinSwitch::SculpinSwitch(sprockit::sim_parameters::ptr& params, uint32_t id) :
+SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
   router_(nullptr),
   congestion_(true),
   #if SSTMAC_VTK_ENABLED && !SSTMAC_INTEGRATED_SST_CORE
@@ -91,7 +91,7 @@ SculpinSwitch::SculpinSwitch(sprockit::sim_parameters::ptr& params, uint32_t id)
   delay_hist_(nullptr),
   NetworkSwitch(params, id)
 {
-  sprockit::sim_parameters::ptr rtr_params = params->get_optional_namespace("router");
+  SST::Params rtr_params = params->get_optional_namespace("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
   router_ = Router::factory::get_param("name", rtr_params, top_, this);
 
@@ -103,16 +103,16 @@ SculpinSwitch::SculpinSwitch(sprockit::sim_parameters::ptr& params, uint32_t id)
 //  top_->endpointsConnectedToEjectionSwitch(my_addr_, inj_conns);
 //  for (topology::injection_port& conn : inj_conns){
 //    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
-//    ej_params->combine_into(port_params);
+//    ej_params.combine_into(port_params);
 //  }
 
-  sprockit::sim_parameters::ptr ej_params = params->get_optional_namespace("ejection");
+  SST::Params ej_params = params->get_optional_namespace("ejection");
   std::vector<Topology::injection_port> inj_conns;
   top_->endpointsConnectedToEjectionSwitch(my_addr_, inj_conns);
   for (Topology::injection_port& conn : inj_conns){
     auto port_ns = Topology::getPortNamespace(conn.switch_port);
-    sprockit::sim_parameters::ptr port_params = params->get_optional_namespace(port_ns);
-    ej_params->combine_into(port_params);
+    SST::Params port_params = params->get_optional_namespace(port_ns);
+    ej_params.combine_into(port_params);
   }
 
   // Ensure topology is set
@@ -189,7 +189,7 @@ SculpinSwitch::~SculpinSwitch()
 
 void
 SculpinSwitch::connectOutput(
-  sprockit::sim_parameters::ptr& port_params,
+  SST::Params& port_params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -203,7 +203,7 @@ SculpinSwitch::connectOutput(
 
 void
 SculpinSwitch::connectInput(
-  sprockit::sim_parameters::ptr& port_params,
+  SST::Params& port_params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -214,13 +214,13 @@ SculpinSwitch::connectInput(
 }
 
 Timestamp
-SculpinSwitch::sendLatency(sprockit::sim_parameters::ptr& params) const
+SculpinSwitch::sendLatency(SST::Params& params) const
 {
   return params->get_time_param("sendLatency");
 }
 
 Timestamp
-SculpinSwitch::creditLatency(sprockit::sim_parameters::ptr& params) const
+SculpinSwitch::creditLatency(SST::Params& params) const
 {
   return params->get_time_param("sendLatency");
 }

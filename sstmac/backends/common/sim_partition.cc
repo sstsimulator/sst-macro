@@ -61,7 +61,7 @@ RegisterDebugSlot(partition);
 
 namespace sstmac {
 
-Partition::Partition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt) :
+Partition::Partition(SST::Params& params, ParallelRuntime* rt) :
   rt_(rt),
   switch_to_lpid_(nullptr),
   switch_to_thread_(nullptr)
@@ -82,10 +82,10 @@ SerialPartition::~SerialPartition()
 }
 
 
-SerialPartition::SerialPartition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt)
+SerialPartition::SerialPartition(SST::Params& params, ParallelRuntime* rt)
  : Partition(params, rt)
 {
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  SST::Params top_params = params.get_namespace("topology");
   hw::Topology* fake_top = hw::Topology::factory::get_param("name", top_params);
   int nswitches = fake_top->numSwitches();
   num_switches_total_ = nswitches;
@@ -104,11 +104,11 @@ TopologyPartition::~TopologyPartition()
 {
 }
 
-TopologyPartition::TopologyPartition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt)
+TopologyPartition::TopologyPartition(SST::Params& params, ParallelRuntime* rt)
   : Partition(params, rt)
 {
   //this will need to be fixed later...
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  SST::Params top_params = params.get_namespace("topology");
   fake_top_ = hw::Topology::factory::get_param("name", top_params);
 
   noccupied_ = params->get_int_param("num_occupied");
@@ -124,10 +124,10 @@ BlockPartition::~BlockPartition()
 {
 }
 
-BlockPartition::BlockPartition(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt)
+BlockPartition::BlockPartition(SST::Params& params, ParallelRuntime* rt)
   : Partition(params, rt)
 {
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  SST::Params top_params = params.get_namespace("topology");
   fake_top_ = hw::Topology::factory::get_param("name", top_params);
   num_switches_total_ = fake_top_->numSwitches();
 
@@ -159,12 +159,12 @@ OccupiedBlockPartition::~OccupiedBlockPartition()
 }
 
 void
-BlockPartition::finalizeInit(sprockit::sim_parameters::ptr& params)
+BlockPartition::finalizeInit(SST::Params& params)
 {
   partitionSwitches();
 }
 
-OccupiedBlockPartition::OccupiedBlockPartition(sprockit::sim_parameters::ptr& params,
+OccupiedBlockPartition::OccupiedBlockPartition(SST::Params& params,
                                                    ParallelRuntime* rt)
   : BlockPartition(params, rt)
 {

@@ -61,7 +61,7 @@ struct opts {
   std::string debug;
   std::string configfile;
   bool got_config_file;
-  sprockit::sim_parameters::ptr params;
+  SST::Params params;
   bool print_walltime;
   bool print_params;
   bool low_res_timer;
@@ -88,11 +88,11 @@ struct opts {
 std::ostream&
 operator<<(std::ostream &os, const opts &oo);
 
-struct sim_stats {
+struct SimStats {
   double wallTime;
   double simulatedTime;
   int numResults;
-  sim_stats() : 
+  SimStats() :
     wallTime(0), 
     simulatedTime(0), 
     numResults(-1) 
@@ -104,9 +104,9 @@ int parseOpts(int argc, char **argv, opts &oo);
 void print_help(int argc, char **argv);
 
 
-void resizeTopology(int max_nproc, sprockit::sim_parameters::ptr& params, bool verbose = true);
+void resizeTopology(int max_nproc, SST::Params& params, bool verbose = true);
 
-void map_env_params(sprockit::sim_parameters::ptr& params);
+void map_env_params(SST::Params& params);
 
 namespace sstmac {
 
@@ -128,11 +128,11 @@ void finalize(ParallelRuntime* rt);
 
 void initOpts(opts& oo, int argc, char** argv);
 
-void initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr& params, bool parallel);
+void initParams(ParallelRuntime* rt, opts& oo, SST::Params& params, bool parallel);
 
-void remapDeprecatedParams(sprockit::sim_parameters::ptr& params);
+void remapDeprecatedParams(SST::Params& params);
 
-void remapParams(sprockit::sim_parameters::ptr& params, bool verbose = true);
+void remapParams(SST::Params& params, bool verbose = true);
 
 void* loadExternLibrary(const std::string& libname, const std::string& searchPath);
 
@@ -144,22 +144,22 @@ std::string loadExternPathStr();
 
 void run(opts& oo,
     sstmac::ParallelRuntime* rt,
-    sprockit::sim_parameters::ptr& params,
-    sim_stats& stats);
+    SST::Params& params,
+    SimStats& stats);
 
 int runStandalone(int argc, char** argv);
 
-int tryMain(sprockit::sim_parameters::ptr& params,
+int tryMain(SST::Params& params,
    int argc, char **argv,
    bool params_only = false);
 
 void runParams(opts& oo,
   ParallelRuntime* rt,
-  sprockit::sim_parameters::ptr& params,
-   sim_stats& stats);
+  SST::Params& params,
+   SimStats& stats);
 
 void initFirstRun(ParallelRuntime* rt,
-    sprockit::sim_parameters::ptr& params);
+    SST::Params& params);
 
 }
 

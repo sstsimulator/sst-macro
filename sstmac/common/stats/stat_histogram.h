@@ -54,7 +54,7 @@ class StatHistogram : public Statistic<double>
 {
   FactoryRegister("histogram", Statistic<double>, StatHistogram)
  public:
-  StatHistogram(sprockit::sim_parameters::ptr& params);
+  StatHistogram(SST::Params& params);
 
   void addData_impl(double value) override;
 

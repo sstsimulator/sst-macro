@@ -67,11 +67,11 @@ namespace native {
 class Manager {
 
  public:
-  Manager(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
+  Manager(SST::Params& params, ParallelRuntime* rt);
 
-  static int computeMaxNproc(sprockit::sim_parameters::ptr& params);
+  static int computeMaxNproc(SST::Params& params);
 
-  static int computeMaxNprocForApp(sprockit::sim_parameters::ptr& app_params);
+  static int computeMaxNprocForApp(SST::Params& app_params);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   ~Manager() throw ();

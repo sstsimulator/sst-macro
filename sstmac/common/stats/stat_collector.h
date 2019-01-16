@@ -261,7 +261,7 @@ class Statistic :
 
   //virtual void outputStatisticData(StatisticOutput* statOutput, bool EndOfSimFlag) = 0;
  protected:
-  Statistic(sprockit::sim_parameters::ptr& params){}
+  Statistic(SST::Params& params){}
 };
 
 template <class... Args>
@@ -276,7 +276,7 @@ class StatValue : public Statistic<T>
   }
 
  protected:
-  StatValue(sprockit::sim_parameters::ptr& params) :
+  StatValue(SST::Params& params) :
     Statistic<T>(params)
   {
   }

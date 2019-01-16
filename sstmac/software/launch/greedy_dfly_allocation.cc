@@ -71,7 +71,7 @@ class GreedyDflyAllocation :
   FactoryRegister("greedy_dfly", NodeAllocator, GreedyDflyAllocation,
               "Allocate a 'striped' dragonfly allocation scattering across groups")
  public:
-  GreedyDflyAllocation(sprockit::sim_parameters::ptr& params) : NodeAllocator(params) {
+  GreedyDflyAllocation(SST::Params& params) : NodeAllocator(params) {
     num_groups_ = params->get_int_param("num_groups");
   }
 

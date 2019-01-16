@@ -64,7 +64,7 @@ namespace hw {
 
 static const double PI = 3.141592653589793238462;
 
-DragonflyPlus::DragonflyPlus(sprockit::sim_parameters::ptr& params) :
+DragonflyPlus::DragonflyPlus(SST::Params& params) :
   Dragonfly(params)
 {
   if (h_ % (g_-1)){
@@ -166,7 +166,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
 }
 
 void
-DragonflyPlus::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters::ptr& switch_params) const
+DragonflyPlus::configureIndividualPortParams(SwitchId src, SST::Params& switch_params) const
 {
   int row = src / numLeafSwitches();
   if (row == 0){

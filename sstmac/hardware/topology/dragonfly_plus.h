@@ -60,7 +60,7 @@ class DragonflyPlus : public Dragonfly
   FactoryRegister("dragonfly_plus", Topology, DragonflyPlus)
 
  public:
-  DragonflyPlus(sprockit::sim_parameters::ptr& params);
+  DragonflyPlus(SST::Params& params);
 
  public:
   std::string toString() const override {
@@ -82,7 +82,7 @@ class DragonflyPlus : public Dragonfly
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
   void configureIndividualPortParams(SwitchId src,
-        sprockit::sim_parameters::ptr& switch_params) const override;
+        SST::Params& switch_params) const override;
 
   virtual ~DragonflyPlus() {}
 

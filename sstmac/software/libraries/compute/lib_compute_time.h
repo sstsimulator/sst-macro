@@ -56,14 +56,14 @@ class LibComputeTime :
   public LibCompute
 {
  public:
-  LibComputeTime(sprockit::sim_parameters::ptr& params, SoftwareId id,
+  LibComputeTime(SST::Params& params, SoftwareId id,
                    OperatingSystem* os);
 
-  LibComputeTime(sprockit::sim_parameters::ptr& params,
+  LibComputeTime(SST::Params& params,
                    const char* prefix, SoftwareId id,
                    OperatingSystem* os);
 
-  LibComputeTime(sprockit::sim_parameters::ptr& params,
+  LibComputeTime(SST::Params& params,
                    const std::string& name, SoftwareId id,
                    OperatingSystem* os);
 

@@ -63,30 +63,30 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-SculpinNIC::SculpinNIC(sprockit::sim_parameters::ptr& params, Node* parent) :
+SculpinNIC::SculpinNIC(SST::Params& params, Node* parent) :
   NIC(params, parent)
 {
-  sprockit::sim_parameters::ptr inj_params = params->get_namespace("injection");
+  SST::Params inj_params = params.get_namespace("injection");
 
   packet_size_ = inj_params->get_byte_length_param("mtu");
   double inj_bw = inj_params->get_bandwidth_param("bandwidth");
   inj_inv_bw_ = 1.0/inj_bw;
 
   //make port 0 a copy of the injection params
-  sprockit::sim_parameters::ptr port0_params = params->get_optional_namespace("port0");
-  inj_params->combine_into(port0_params);
+  SST::Params port0_params = params->get_optional_namespace("port0");
+  inj_params.combine_into(port0_params);
 }
 
 Timestamp
-SculpinNIC::sendLatency(sprockit::sim_parameters::ptr& params) const
+SculpinNIC::sendLatency(SST::Params& params) const
 {
-  return params->get_namespace("injection")->get_time_param("sendLatency");
+  return params.get_namespace("injection")->get_time_param("sendLatency");
 }
 
 Timestamp
-SculpinNIC::creditLatency(sprockit::sim_parameters::ptr& params) const
+SculpinNIC::creditLatency(SST::Params& params) const
 {
-  return params->get_namespace("injection")->get_time_param("sendLatency");
+  return params.get_namespace("injection")->get_time_param("sendLatency");
 }
 
 void
@@ -123,7 +123,7 @@ SculpinNIC::creditHandler(int port)
 
 void
 SculpinNIC::connectOutput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
@@ -139,7 +139,7 @@ SculpinNIC::connectOutput(
 
 void
 SculpinNIC::connectInput(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)

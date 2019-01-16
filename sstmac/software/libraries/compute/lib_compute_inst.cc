@@ -64,7 +64,7 @@ RegisterKeywords(
  { "lib_compute_access_width", "the size of each memory access access in bits" }
 );
 
-LibComputeInst::LibComputeInst(sprockit::sim_parameters::ptr& params,
+LibComputeInst::LibComputeInst(SST::Params& params,
                                    const std::string& libname, SoftwareId id,
                                    OperatingSystem* os)
   : LibComputeTime(params, libname, id, os)
@@ -72,7 +72,7 @@ LibComputeInst::LibComputeInst(sprockit::sim_parameters::ptr& params,
   init(params);
 }
 
-LibComputeInst::LibComputeInst(sprockit::sim_parameters::ptr& params,
+LibComputeInst::LibComputeInst(SST::Params& params,
                                    SoftwareId sid, OperatingSystem* os) :
   LibComputeTime(params, "computelibinstr%s", sid, os)
 {
@@ -119,7 +119,7 @@ LibComputeInst::computeLoop(uint64_t num_loops,
 }
 
 void
-LibComputeInst::init(sprockit::sim_parameters::ptr& params)
+LibComputeInst::init(SST::Params& params)
 {
   if (params->has_param("lib_compute_unroll_loops")){
     double loop_unroll = params->deprecated_double_param("lib_compute_unroll_loops");

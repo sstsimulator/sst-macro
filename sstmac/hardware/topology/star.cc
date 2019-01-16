@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-Star::Star(sprockit::sim_parameters::ptr& params) :
+Star::Star(SST::Params& params) :
   StructuredTopology(params)
 {
 }
@@ -75,7 +75,7 @@ Star::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
 
 void
 Star::configureIndividualPortParams(
-    SwitchId src, sprockit::sim_parameters::ptr& switch_params) const
+    SwitchId src, SST::Params& switch_params) const
 {
   Topology::configureIndividualPortParams(0, numSwitches(), switch_params);
 }

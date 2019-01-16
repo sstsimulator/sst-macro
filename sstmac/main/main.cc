@@ -124,7 +124,7 @@ main(int argc, char **argv)
 
   int rc;
   try {
-    sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
+    SST::Params params;
     params->set_public_scope(false); //do not expose top-level params to subspaces
     bool params_only = false;
     rc = sstmac::tryMain(params, argc, argv, params_only);

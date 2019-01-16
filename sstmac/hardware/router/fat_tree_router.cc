@@ -58,7 +58,7 @@ namespace sstmac {
 namespace hw {
 
 FatTreeRouter::FatTreeRouter(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     Topology *top,
     NetworkSwitch *netsw) :
   Router(params, top, netsw)
@@ -180,7 +180,7 @@ class TaperedFatTreeMinimalRouter : public Router {
 
   struct header : public Packet::header {};
 
-  TaperedFatTreeMinimalRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  TaperedFatTreeMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
     : Router(params, top, netsw)
   {

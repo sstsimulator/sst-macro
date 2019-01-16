@@ -59,7 +59,7 @@ class BlockTaskMapper : public TaskMapper
      "Tries to group consecutive MPI ranks on the same node (i.e. in a block)."
      "Otherwise, indexes in the same order as the allocation list")
  public:
-  BlockTaskMapper(sprockit::sim_parameters::ptr& params) :
+  BlockTaskMapper(SST::Params& params) :
     TaskMapper(params)
   {
   }

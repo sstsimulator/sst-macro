@@ -58,7 +58,7 @@ namespace sstmac {
 namespace hw {
 
 PiscesCrossbar::PiscesCrossbar(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   SST::Component* parent,
   int num_in_ports, int num_out_ports, int num_vc,
   bool update_vc) :
@@ -68,7 +68,7 @@ PiscesCrossbar::PiscesCrossbar(
 }
 
 PiscesDemuxer::PiscesDemuxer(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   SST::Component* parent, int num_out_ports, int num_vc,
   bool update_vc) :
   PiscesNtoMQueue(params, parent, 1, num_out_ports,
@@ -77,7 +77,7 @@ PiscesDemuxer::PiscesDemuxer(
 }
 
 PiscesMuxer::PiscesMuxer(
-  sprockit::sim_parameters::ptr& params,
+  SST::Params& params,
   SST::Component* parent, int num_in_ports, int num_vc,
   bool update_vc) :
   PiscesNtoMQueue(params, parent, num_in_ports, 1,
@@ -86,7 +86,7 @@ PiscesMuxer::PiscesMuxer(
 }
 
 PiscesNtoMQueue::
-PiscesNtoMQueue(sprockit::sim_parameters::ptr& params, SST::Component* parent,
+PiscesNtoMQueue(SST::Params& params, SST::Component* parent,
                   int num_in_ports, int num_out_ports, int num_vc,
                   bool update_vc)
   : PiscesSender(params, parent, update_vc),
@@ -257,7 +257,7 @@ PiscesNtoMQueue::resizeOutports(int num_ports)
 
 void
 PiscesNtoMQueue::setInput(
-  sprockit::sim_parameters::ptr& port_params,
+  SST::Params& port_params,
   int my_inport, int src_outport,
   EventLink* link)
 {
@@ -274,7 +274,7 @@ PiscesNtoMQueue::setInput(
 
 void
 PiscesNtoMQueue::setOutput(
-  sprockit::sim_parameters::ptr& port_params,
+  SST::Params& port_params,
   int my_outport, int dst_inport,
   EventLink* link)
 {

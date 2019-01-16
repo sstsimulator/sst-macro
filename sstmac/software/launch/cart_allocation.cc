@@ -65,7 +65,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-CartAllocation::CartAllocation(sprockit::sim_parameters::ptr& params) :
+CartAllocation::CartAllocation(SST::Params& params) :
   NodeAllocator(params)
 {
   if (params->has_param("cart_sizes")){

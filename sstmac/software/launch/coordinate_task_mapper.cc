@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-CoordinateTaskMapper::CoordinateTaskMapper(sprockit::sim_parameters::ptr& params) :
+CoordinateTaskMapper::CoordinateTaskMapper(SST::Params& params) :
   TaskMapper(params)
 {
   listfile_ = params->get_param("coordinate_file");

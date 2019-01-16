@@ -80,7 +80,7 @@ class CartesianTopology :
   std::string switchLabel(SwitchId sid) const override;
 
  protected:
-  CartesianTopology(sprockit::sim_parameters::ptr& params);
+  CartesianTopology(SST::Params& params);
 
   /**
    * The number of redundant links (ports) comprising a geometric
@@ -92,7 +92,7 @@ class CartesianTopology :
  private:
   void readCoordFile(const std::string& path);
 
-  void initHostnameMap(sprockit::sim_parameters::ptr& params) override;
+  void initHostnameMap(SST::Params& params) override;
 
 };
 

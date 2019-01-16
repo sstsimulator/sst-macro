@@ -109,7 +109,7 @@ class PacketStatsCallback
   }
 
  protected:
-  PacketStatsCallback(sprockit::sim_parameters::ptr& params,
+  PacketStatsCallback(SST::Params& params,
                         EventScheduler* parent);
 
  private:
@@ -122,7 +122,7 @@ class CongestionSpyplot :
 {
   FactoryRegister("congestion_spyplot", PacketStatsCallback, CongestionSpyplot)
  public:
-  CongestionSpyplot(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
+  CongestionSpyplot(SST::Params& params, EventScheduler* parent);
 
   virtual ~CongestionSpyplot();
 
@@ -143,7 +143,7 @@ class DelayHistogram :
 {
   FactoryRegister("delay_histogram", PacketStatsCallback, DelayHistogram)
  public:
-  DelayHistogram(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
+  DelayHistogram(SST::Params& params, EventScheduler* parent);
 
   virtual ~DelayHistogram();
 
@@ -160,7 +160,7 @@ class PacketDelayStats :
 {
   FactoryRegister("congestion_delay", PacketStatsCallback, PacketDelayStats)
  public:
-  PacketDelayStats(sprockit::sim_parameters::ptr& params, EventScheduler* parent) :
+  PacketDelayStats(SST::Params& params, EventScheduler* parent) :
     PacketStatsCallback(params, parent)
   {
   }
@@ -173,7 +173,7 @@ class null_stats : public PacketStatsCallback
 {
   FactoryRegister("null", PacketStatsCallback, null_stats)
  public:
-  null_stats(sprockit::sim_parameters::ptr& params, EventScheduler* parent) :
+  null_stats(SST::Params& params, EventScheduler* parent) :
     PacketStatsCallback(params, parent)
   {
   }
@@ -187,7 +187,7 @@ class MultiStats : public PacketStatsCallback
 {
   FactoryRegister("multi", PacketStatsCallback, MultiStats)
  public:
-  MultiStats(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
+  MultiStats(SST::Params& params, EventScheduler* parent);
 
   void collectSingleEvent(const pkt_arbitration_t &st);
 
@@ -203,7 +203,7 @@ class ByteHopCollector :
 {
   FactoryRegister("byte_hops", PacketStatsCallback, ByteHopCollector)
  public:
-  ByteHopCollector(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
+  ByteHopCollector(SST::Params& params, EventScheduler* parent);
 
   virtual ~ByteHopCollector();
 
@@ -219,7 +219,7 @@ class StatBytesSent : public MultiStatistic<int, uint32_t>
   FRIEND_SERIALIZATION;
   FactoryRegister("bytes_sent", Parent, StatBytesSent)
  public:
-  StatBytesSent(sprockit::sim_parameters::ptr& params);
+  StatBytesSent(SST::Params& params);
 
   virtual ~StatBytesSent();
 
@@ -314,7 +314,7 @@ class BytesSentCollector :
 {
   FactoryRegister("bytes_sent", PacketStatsCallback, BytesSentCollector)
  public:
-  BytesSentCollector(sprockit::sim_parameters::ptr& params, EventScheduler* parent);
+  BytesSentCollector(SST::Params& params, EventScheduler* parent);
 
   virtual ~BytesSentCollector();
 

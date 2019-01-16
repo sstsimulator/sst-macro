@@ -97,7 +97,7 @@ class EventManager
   friend class native::Manager;
 
  public:
-  EventManager(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt);
+  EventManager(SST::Params& params, ParallelRuntime* rt);
 
   bool isComplete() {
     return complete_;
@@ -304,7 +304,7 @@ class EventManager
 class NullEventManager : public EventManager
 {
  public:
-  NullEventManager(sprockit::sim_parameters::ptr& params, ParallelRuntime* rt) :
+  NullEventManager(SST::Params& params, ParallelRuntime* rt) :
     EventManager(params, rt)
   {
   }

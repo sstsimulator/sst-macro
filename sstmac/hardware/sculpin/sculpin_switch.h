@@ -78,7 +78,7 @@ class SculpinSwitch :
   )
 
  public:
-  SculpinSwitch(sprockit::sim_parameters::ptr& params, uint32_t id);
+  SculpinSwitch(SST::Params& params, uint32_t id);
 
   virtual ~SculpinSwitch();
 
@@ -89,13 +89,13 @@ class SculpinSwitch :
   }
 
   void connectOutput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
 
   void connectInput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override;
@@ -104,9 +104,9 @@ class SculpinSwitch :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp sendLatency(SST::Params& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp creditLatency(SST::Params& params) const override;
 
   void handleCredit(Event* ev);
 

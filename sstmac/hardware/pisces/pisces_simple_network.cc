@@ -53,7 +53,7 @@ MakeDebugSlot(simple_network)
 namespace sstmac {
 namespace hw {
 
-PiscesSimpleNetwork::PiscesSimpleNetwork(sprockit::sim_parameters::ptr params, SST::Component *comp) :
+PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *comp) :
   SST::Interfaces::SimpleNetwork(comp),
   recv_functor_(nullptr),
   send_functor_(nullptr),
@@ -67,21 +67,21 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(sprockit::sim_parameters::ptr params, S
 
   initLinks(params);
 
-  sprockit::sim_parameters::ptr inj_params = params->get_optional_namespace("injection");
+  SST::Params inj_params = params->get_optional_namespace("injection");
   PiscesSender::configurePayloadPortLatency(inj_params);
   inj_buffer_ = new PiscesBuffer(inj_params, this, 1);
 
   EventHandler* handler = newHandler(this, &PiscesSimpleNetwork::creditArrived);
   inj_buffer_->setInput(inj_params, 0, 0, new EventLink(self_link(), comp));
 
-  sprockit::sim_parameters::ptr ej_params = params->get_optional_namespace("ejection");
+  SST::Params ej_params = params->get_optional_namespace("ejection");
   arb_ = PiscesBandwidthArbitrator::factory::get_param("arbitrator", params);
 }
 
 void
-PiscesSimpleNetwork::initLinks(sprockit::sim_parameters::ptr& params)
+PiscesSimpleNetwork::initLinks(SST::Params& params)
 {
-  sprockit::sim_parameters::ptr inj_params = params->get_optional_namespace("injection");
+  SST::Params inj_params = params->get_optional_namespace("injection");
   SST::LinkMap* link_map = SST::Simulation::getSimulation()->getComponentLinkMap(comp()->getId());
   for (auto& pair : link_map->getLinkMap()){
     debug("initialized simple network link %s", pair.first.c_str());

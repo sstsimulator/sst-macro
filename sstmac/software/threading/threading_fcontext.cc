@@ -48,7 +48,7 @@ class ThreadingFContext : public ThreadContext
 
   virtual ~ThreadingFContext() {}
 
-  ThreadingFContext(sprockit::sim_parameters::ptr& params){}
+  ThreadingFContext(SST::Params& params){}
 
   ThreadContext* copy() const override {
     //parameters never actually used

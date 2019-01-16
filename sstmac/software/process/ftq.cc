@@ -62,7 +62,7 @@ namespace sw {
 std::unordered_map<int, AppFTQCalendar*> FTQCalendar::calendars_;
 const uint64_t AppFTQCalendar::allocation_num_epochs = 10000;
 
-FTQCalendar::FTQCalendar(sprockit::sim_parameters::ptr& params) :
+FTQCalendar::FTQCalendar(SST::Params& params) :
   num_ticks_epoch_(0),
   Parent(params)
 {

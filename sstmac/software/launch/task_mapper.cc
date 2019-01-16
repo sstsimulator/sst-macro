@@ -56,7 +56,7 @@ TaskMapper::~TaskMapper() throw()
 {
 }
 
-TaskMapper::TaskMapper(sprockit::sim_parameters::ptr& params) :
+TaskMapper::TaskMapper(SST::Params& params) :
   rt_(nullptr), topology_(nullptr)
 {
   rt_ = ParallelRuntime::staticRuntime(params);

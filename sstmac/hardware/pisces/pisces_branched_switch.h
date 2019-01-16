@@ -66,15 +66,15 @@ class PiscesBranchedSwitch :
          "macro", COMPONENT_CATEGORY_NETWORK,
          "A branched/hierarchical network switch implementing the packet flow congestion model")
  public:
-  PiscesBranchedSwitch(sprockit::sim_parameters::ptr& params, uint32_t id);
+  PiscesBranchedSwitch(SST::Params& params, uint32_t id);
 
   int queueLength(int port) const override;
 
-  virtual void connectOutput(sprockit::sim_parameters::ptr& params,
+  virtual void connectOutput(SST::Params& params,
                  int src_outport, int dst_inport,
                  EventLink* link) override;
 
-  virtual void connectInput(sprockit::sim_parameters::ptr& params,
+  virtual void connectInput(SST::Params& params,
                 int src_outport, int dst_inport,
                 EventLink* link) override;
 
@@ -82,9 +82,9 @@ class PiscesBranchedSwitch :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp sendLatency(SST::Params& params) const override;
 
-  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override;
+  Timestamp creditLatency(SST::Params& params) const override;
 
   virtual std::string toString() const override;
 
@@ -117,7 +117,7 @@ class PiscesBranchedSwitch :
  private:
   void resizeBuffers();
 
-  void initComponents(sprockit::sim_parameters::ptr& params);
+  void initComponents(SST::Params& params);
 };
 
 }

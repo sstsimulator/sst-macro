@@ -65,7 +65,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-Router::Router(sprockit::sim_parameters::ptr& params, Topology *top, NetworkSwitch *sw)
+Router::Router(SST::Params& params, Topology *top, NetworkSwitch *sw)
  : top_(top), netsw_(sw), rng_(nullptr)
 {
   my_addr_ = SwitchId(params->get_int_param("id"));
@@ -123,7 +123,7 @@ class FullyConnectedMinimalRouter : public Router {
               Router, FullyConnectedMinimalRouter,
               "router implementing minimal routing for fully connected")
 
-  FullyConnectedMinimalRouter(sprockit::sim_parameters::ptr& params, Topology *top,
+  FullyConnectedMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
     : Router(params, top, netsw)
   {
@@ -158,7 +158,7 @@ class StarMinimalRouter : public Router {
               Router, StarMinimalRouter,
               "router implementing minimal routing for star")
 
-  StarMinimalRouter(sprockit::sim_parameters::ptr& params, Topology *top, NetworkSwitch *netsw)
+  StarMinimalRouter(SST::Params& params, Topology *top, NetworkSwitch *netsw)
     : Router(params, top, netsw)
   {
   }

@@ -212,9 +212,9 @@ class ParallelRuntime :
 
   virtual void finalize() = 0;
 
-  virtual void initRuntimeParams(sprockit::sim_parameters::ptr& params);
+  virtual void initRuntimeParams(SST::Params& params);
 
-  virtual void initPartitionParams(sprockit::sim_parameters::ptr& params);
+  virtual void initPartitionParams(SST::Params& params);
 
   virtual Timestamp sendRecvMessages(Timestamp vote){
     return vote;
@@ -250,7 +250,7 @@ class ParallelRuntime :
     return recv_buffers_[idx];
   }
 
-  static ParallelRuntime* staticRuntime(sprockit::sim_parameters::ptr& params);
+  static ParallelRuntime* staticRuntime(SST::Params& params);
 
   static void clearStaticRuntime(){
     if (static_runtime_) delete static_runtime_;
@@ -258,7 +258,7 @@ class ParallelRuntime :
   }
 
  protected:
-  ParallelRuntime(sprockit::sim_parameters::ptr& params,
+  ParallelRuntime(SST::Params& params,
                    int me, int nproc);
 
  protected:

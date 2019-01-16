@@ -83,7 +83,7 @@ class Simulation
     return stats_.simulatedTime;
   }
 
-  sim_stats* stats() {
+  SimStats* stats() {
     return &stats_;
   }
 
@@ -114,7 +114,7 @@ class Simulation
     stats_.numResults = nresults;
   }
 
-  void setStats(const sim_stats& stats) {
+  void setStats(const SimStats& stats) {
     stats_ = stats;
   }
 
@@ -160,10 +160,10 @@ class Simulation
     return pfd_[1];
   }
 
-  void setParameters(sprockit::sim_parameters::ptr& params);
+  void setParameters(SST::Params& params);
 
-  sprockit::sim_parameters::ptr params_;
-  sim_stats stats_;
+  SST::Params params_;
+  SimStats stats_;
   char label_[256];
   int label_offset_;
   pid_t pid_;
@@ -228,7 +228,7 @@ class SimulationQueue
 
   void finalize();
 
-  Simulation* fork(sprockit::sim_parameters::ptr& params,
+  Simulation* fork(SST::Params& params,
     int nresults = 0, 
     double* resultPtr = nullptr);
 
@@ -236,7 +236,7 @@ class SimulationQueue
 
   void clear(Simulation* sim);
 
-  void run(sprockit::sim_parameters::ptr& params, sim_stats& stats);
+  void run(SST::Params& params, SimStats& stats);
 
   static double* allocateResults(int nresults);
 
@@ -247,15 +247,15 @@ class SimulationQueue
   Simulation* sendScanPoint(int bufferSize, char* bufferPtr,
                             int nresults, double* resultPtr = nullptr);
 
-  sprockit::sim_parameters::ptr template_params() {
+  SST::Params template_params() {
     return template_params_;
   }
 
-  void rerun(sprockit::sim_parameters::ptr& params, sim_stats& stats);
+  void rerun(SST::Params& params, SimStats& stats);
 
   void busyLoopMPI();
 
-  void runScanPoint(char* buffer, sim_stats& stats);
+  void runScanPoint(char* buffer, SimStats& stats);
 
   int workerID() const {
     return me_;
@@ -276,7 +276,7 @@ class SimulationQueue
   bool built_up_;
   std::list<Simulation*> pending_;
   ParallelRuntime* rt_;
-  sprockit::sim_parameters::ptr template_params_;
+  SST::Params template_params_;
   opts template_opts_;
   static double* results_;
   static int num_results_;

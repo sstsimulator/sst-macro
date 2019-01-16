@@ -58,7 +58,7 @@ class SumiThread :
   virtual void run() = 0;
 
  public:
-  SumiThread(sprockit::sim_parameters::ptr& params, sw::SoftwareId sid,
+  SumiThread(SST::Params& params, sw::SoftwareId sid,
               sw::OperatingSystem* os);
 
   virtual ~SumiThread(){}

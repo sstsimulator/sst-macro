@@ -105,7 +105,7 @@ We now define the public interface for the actor class
 
 \begin{CppCode}
  public:
-  actor(sprockit::sim_parameters::ptr& params);
+  actor(SST::Params& params);
   
   virtual void act() = 0;
 
@@ -135,7 +135,7 @@ Moving to the \inlineshell{actor.cc} file, we see the implementation
 namespace sstmac {
     namespace tutorial {
 
-actor::actor(sprockit::sim_parameters::ptr& params)
+actor::actor(SST::Params& params)
 {
   biggest_fan_ = params->get_param("biggest_fan");
 }
@@ -161,7 +161,7 @@ class mandy_patinkin :
     public actor
 {
  public:
-  mandy_patinkin(sprockit::sim_parameters::ptr& params);
+  mandy_patinkin(SST::Params& params);
   
   FactoryRegister("patinkin", actor, mandy_patinkin,
     "He's on one of those shows now... NCIS? CSI?");
@@ -178,7 +178,7 @@ This is a complete type that can be instantiated.
 To create the class we will need the constructor:
 
 \begin{CppCode}
-mandy_patinkin(sprockit::sim_parameters::ptr& params);
+mandy_patinkin(SST::Params& params);
 \end{CppCode}
 
 And finally, to satisfy the \inlinecode{actor} public interface, we need
@@ -196,7 +196,7 @@ Finally, a documentation string should be given with a brief description.
 We can now implement the constructor:
 
 \begin{CppCode}
-mandy_patinkin::mandy_patinkin(sprockit::sim_parameters::ptr& params) :
+mandy_patinkin::mandy_patinkin(SST::Params& params) :
   actor(params)
 {
   sword_hand_ = params->get_param("sword_hand");

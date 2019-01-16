@@ -347,7 +347,7 @@ class Topology : public sprockit::printable
    * @param [inout] switch_params
    */
   virtual void configureIndividualPortParams(SwitchId src,
-          sprockit::sim_parameters::ptr& switch_params) const = 0;
+          SST::Params& switch_params) const = 0;
 
   /**
      For indirect networks, this includes all switches -
@@ -449,7 +449,7 @@ class Topology : public sprockit::printable
                           std::vector<injection_port>& nodes) const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
 
-  void finalizeInit(sprockit::sim_parameters::ptr& params){
+  void finalizeInit(SST::Params& params){
     initHostnameMap(params);
   }
 
@@ -480,7 +480,7 @@ class Topology : public sprockit::printable
    *        Output is non-default unique params.
    */
   virtual void configureNonuniformSwitchParams(SwitchId src,
-        sprockit::sim_parameters::ptr& switch_params) const {}
+        SST::Params& switch_params) const {}
 
   std::string label(uint32_t comp_id) const;
 
@@ -488,7 +488,7 @@ class Topology : public sprockit::printable
 
   virtual std::string nodeLabel(NodeId nid) const;
 
-  static Topology* staticTopology(sprockit::sim_parameters::ptr& params);
+  static Topology* staticTopology(SST::Params& params);
 
   static void setStaticTopology(Topology* top){
     staticTopology_ = top;
@@ -527,17 +527,17 @@ class Topology : public sprockit::printable
   static std::string getPortNamespace(int port);
 
  protected:
-  Topology(sprockit::sim_parameters::ptr& params);
+  Topology(SST::Params& params);
 
-  static sprockit::sim_parameters::ptr setupPortParams(
+  static SST::Params setupPortParams(
         int port, int credits, double bw,
-        sprockit::sim_parameters::ptr& link_params,
-        sprockit::sim_parameters::ptr& params);
+        SST::Params& link_params,
+        SST::Params& params);
 
   void configureIndividualPortParams(int port_offset, int nports,
-           sprockit::sim_parameters::ptr& params) const;
+           SST::Params& params) const;
 
-  virtual void initHostnameMap(sprockit::sim_parameters::ptr& params);
+  virtual void initHostnameMap(SST::Params& params);
 
  protected:
   static Topology* main_top_;

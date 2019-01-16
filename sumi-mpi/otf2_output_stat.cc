@@ -10,7 +10,7 @@
 
 namespace sumi {
 
-otf2_writer::otf2_writer(sprockit::sim_parameters::ptr params) :
+otf2_writer::otf2_writer(SST::Params& params) :
   stat_collector(params),
   min_time_(std::numeric_limits<uint64_t>::max()),
   max_time_(std::numeric_limits<uint64_t>::min())

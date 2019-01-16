@@ -24,7 +24,7 @@ There are four critical abstract functions in the virtual interface. First:
 
 \begin{CppCode}
   virtual void connectOutput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* payloadHandler) = 0;
@@ -40,7 +40,7 @@ Parameter namespaces are covered in the user's manual.
 The next connection function is:
 \begin{CppCode}
   virtual void connectInput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* creditHandler) = 0;

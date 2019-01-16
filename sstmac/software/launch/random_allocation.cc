@@ -60,7 +60,7 @@ RandomAllocation::~RandomAllocation() throw ()
 {
 }
 
-RandomAllocation::RandomAllocation(sprockit::sim_parameters::ptr params) :
+RandomAllocation::RandomAllocation(SST::Params& params) :
   NodeAllocator(params)
 {
   int seed = params->get_optional_int_param("random_allocation_seed", -1);

@@ -61,7 +61,7 @@ sstmac_sleep_precise(double secs){
   sstmac::sw::OperatingSystem::currentOs()->sleep(secs);
 }
 
-sprockit::sim_parameters::ptr
+SST::Params
 getParams(){
   return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }

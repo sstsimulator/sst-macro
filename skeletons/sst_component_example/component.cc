@@ -63,7 +63,7 @@ class TestComponent : public ConnectableComponent {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  TestComponent(sprockit::sim_parameters::ptr& params, uint32_t id) :
+  TestComponent(SST::Params& params, uint32_t id) :
     ConnectableComponent(params,id)
  {
  }
@@ -92,7 +92,7 @@ class DummySwitch : public TestComponent {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  DummySwitch(sprockit::sim_parameters::ptr& params, uint32_t id) :
+  DummySwitch(SST::Params& params, uint32_t id) :
    TestComponent(params,id), id_(id)
   {
     //make sure this function gets called
@@ -123,7 +123,7 @@ class DummySwitch : public TestComponent {
   }
 
   void connectOutput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override {
@@ -135,7 +135,7 @@ class DummySwitch : public TestComponent {
   }
 
   void connectInput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) override {
@@ -168,11 +168,11 @@ class DummySwitch : public TestComponent {
     return newLinkHandler(this, &DummySwitch::recvPayload);
   }
 
-  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override {
+  Timestamp sendLatency(SST::Params& params) const override {
     return latency_;
   }
 
-  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override {
+  Timestamp creditLatency(SST::Params& params) const override {
     return latency_;
   }
 

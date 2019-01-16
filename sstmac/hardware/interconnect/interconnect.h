@@ -78,7 +78,7 @@ class Interconnect
   DeclareFactory(Interconnect, EventManager*, Partition*, ParallelRuntime*)
   FactoryRegister("switch | simple", Interconnect, Interconnect)
  public:
-  static Interconnect* staticInterconnect(sprockit::sim_parameters::ptr& params, EventManager* mgr);
+  static Interconnect* staticInterconnect(SST::Params& params, EventManager* mgr);
 
   /**
    * @brief static_interconnect Must already exist
@@ -91,7 +91,7 @@ class Interconnect
     static_interconnect_ = nullptr;
   }
 
-  Interconnect(sprockit::sim_parameters::ptr& params, EventManager* mgr,
+  Interconnect(SST::Params& params, EventManager* mgr,
                     Partition* part, ParallelRuntime* rt);
 
   int numNodes() const {
@@ -172,24 +172,24 @@ class Interconnect
   uint32_t logpComponentId(SwitchId sid) const;
 
   void connectLogP(EventManager* mgr,
-        sprockit::sim_parameters::ptr& node_params,
-        sprockit::sim_parameters::ptr& nic_params);
+        SST::Params& node_params,
+        SST::Params& nic_params);
 
-  void connectSwitches(EventManager* mgr, sprockit::sim_parameters::ptr& switch_params);
+  void connectSwitches(EventManager* mgr, SST::Params& switch_params);
 
-  void configureInterconnectLookahead(sprockit::sim_parameters::ptr& params);
+  void configureInterconnectLookahead(SST::Params& params);
 
-  void buildEndpoints(sprockit::sim_parameters::ptr& node_params,
-                    sprockit::sim_parameters::ptr& nic_params,
+  void buildEndpoints(SST::Params& node_params,
+                    SST::Params& nic_params,
                     EventManager* mgr);
 
-  void buildSwitches(sprockit::sim_parameters::ptr& switch_params,
+  void buildSwitches(SST::Params& switch_params,
                       EventManager* mgr);
 
   void connectEndpoints(EventManager* mgr,
-                  sprockit::sim_parameters::ptr& ep_inj_params,
-                  sprockit::sim_parameters::ptr& ep_ej_params,
-                  sprockit::sim_parameters::ptr& sw_ej_params);
+                  SST::Params& ep_inj_params,
+                  SST::Params& ep_ej_params,
+                  SST::Params& sw_ej_params);
 
 
   switch_map switches_;

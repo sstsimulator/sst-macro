@@ -56,32 +56,32 @@ class LogPParamExpander :
 {
   FactoryRegister("logP | simple | LogP | logp | macrels", sstmac::ParamExpander, LogPParamExpander)
  public:
-  virtual void expand(sprockit::sim_parameters::ptr& params);
+  virtual void expand(SST::Params& params);
 
-  void expandInto(sprockit::sim_parameters::ptr& dst_params,
-    sprockit::sim_parameters::ptr& params,
-    sprockit::sim_parameters::ptr& switch_params);
+  void expandInto(SST::Params& dst_params,
+    SST::Params& params,
+    SST::Params& switch_params);
 
  protected:
-  void expandAmm1Nic(sprockit::sim_parameters::ptr& params,
-    sprockit::sim_parameters::ptr& nic_params,
-    sprockit::sim_parameters::ptr& switch_params);
+  void expandAmm1Nic(SST::Params& params,
+    SST::Params& nic_params,
+    SST::Params& switch_params);
 
-  void expandAmm1Network(sprockit::sim_parameters::ptr& params,
-    sprockit::sim_parameters::ptr& switch_params);
+  void expandAmm1Network(SST::Params& params,
+    SST::Params& switch_params);
 
-  void expandAmm1Memory(sprockit::sim_parameters::ptr& params,
-    sprockit::sim_parameters::ptr& mem_params);
+  void expandAmm1Memory(SST::Params& params,
+    SST::Params& mem_params);
 
-  void expandAmm2Memory(sprockit::sim_parameters::ptr& params,
-      sprockit::sim_parameters::ptr& mem_params);
+  void expandAmm2Memory(SST::Params& params,
+      SST::Params& mem_params);
 
-  void expandAmm3Network(sprockit::sim_parameters::ptr& params,
-    sprockit::sim_parameters::ptr& switch_params);
+  void expandAmm3Network(SST::Params& params,
+    SST::Params& switch_params);
 
-  void expandAmm4Nic(sprockit::sim_parameters::ptr& params,
-    sprockit::sim_parameters::ptr& nic_params,
-    sprockit::sim_parameters::ptr& switch_params);
+  void expandAmm4Nic(SST::Params& params,
+    SST::Params& nic_params,
+    SST::Params& switch_params);
 };
 
 }

@@ -60,7 +60,7 @@ class InstructionProcessor :
   FactoryRegister("instruction", Processor, InstructionProcessor,
               "Extension of simpleprocessor that estimates compute time of instruction counters")
  public:
-  InstructionProcessor(sprockit::sim_parameters::ptr& params,
+  InstructionProcessor(SST::Params& params,
                         MemoryModel* mem, Node* nd);
 
   virtual ~InstructionProcessor();

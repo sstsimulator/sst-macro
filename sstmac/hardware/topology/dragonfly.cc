@@ -63,7 +63,7 @@ namespace hw {
 
 static const double PI = 3.141592653589793238462;
 
-Dragonfly::Dragonfly(sprockit::sim_parameters::ptr& params) :
+Dragonfly::Dragonfly(SST::Params& params) :
   CartesianTopology(params)
 {
   if (dimensions_.size() != 2){
@@ -135,9 +135,9 @@ Dragonfly::minimalDistance(SwitchId src, SwitchId dst) const
 
 
 void
-Dragonfly::setupPortParams(sprockit::sim_parameters::ptr& params, int red, int port_offset, int num_ports) const
+Dragonfly::setupPortParams(SST::Params& params, int red, int port_offset, int num_ports) const
 {
-  sprockit::sim_parameters::ptr link_params = params->get_namespace("link");
+  SST::Params link_params = params.get_namespace("link");
   double bw = link_params->get_bandwidth_param("bandwidth");
   int bufsize = params->get_optional_byte_length_param("buffer_size", 0);
 
@@ -146,7 +146,7 @@ Dragonfly::setupPortParams(sprockit::sim_parameters::ptr& params, int red, int p
 
   for (int i=0; i < num_ports; ++i){
     int port = port_offset + i;
-    sprockit::sim_parameters::ptr port_params = Topology
+    SST::Params port_params = Topology
         ::setupPortParams(port, credits, port_bw, link_params, params);
   }
 }
@@ -196,7 +196,7 @@ Dragonfly::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 }
 
 void
-Dragonfly::configureIndividualPortParams(SwitchId src, sprockit::sim_parameters::ptr& switch_params) const
+Dragonfly::configureIndividualPortParams(SwitchId src, SST::Params& switch_params) const
 {
   setupPortParams(switch_params, red_[0], 0, a_);
   setupPortParams(switch_params, red_[1], a_, h_);
@@ -288,7 +288,7 @@ Dragonfly::getVtkGeometry(SwitchId sid) const
   return geom;
 }
 
-InterGroupWiring::InterGroupWiring(sprockit::sim_parameters::ptr& params, int a, int g, int h) :
+InterGroupWiring::InterGroupWiring(SST::Params& params, int a, int g, int h) :
   a_(a), g_(g), h_(h)
 {
 }
@@ -329,7 +329,7 @@ class SingleLinkGroupWiring : public InterGroupWiring
 {
   FactoryRegister("single", InterGroupWiring, SingleLinkGroupWiring)
  public:
-  SingleLinkGroupWiring(sprockit::sim_parameters::ptr& params, int a, int g, int h) :
+  SingleLinkGroupWiring(SST::Params& params, int a, int g, int h) :
     InterGroupWiring(params, a, g, h)
   {
     if (h_ != 1){
@@ -393,7 +393,7 @@ class CirculantGroupWiring : public InterGroupWiring
 {
   FactoryRegister("circulant", InterGroupWiring, CirculantGroupWiring)
  public:
-  CirculantGroupWiring(sprockit::sim_parameters::ptr& params, int a, int g, int h) :
+  CirculantGroupWiring(SST::Params& params, int a, int g, int h) :
     InterGroupWiring(params, a, g, h)
   {
     if (h_ % 2){
@@ -464,7 +464,7 @@ class AllToAllGroupWiring : public InterGroupWiring
 {
   FactoryRegister("alltoall", InterGroupWiring, AllToAllGroupWiring)
  public:
-  AllToAllGroupWiring(sprockit::sim_parameters::ptr& params, int a, int g, int h) :
+  AllToAllGroupWiring(SST::Params& params, int a, int g, int h) :
     InterGroupWiring(params, a, g, h)
   {
     covering_ = h_ / (g_-1);

@@ -55,7 +55,7 @@ class DefaultDDOT :
 {
   FactoryRegister("default_ddot", BlasKernel, DefaultDDOT)
  public:
-  DefaultDDOT(sprockit::sim_parameters::ptr& params){
+  DefaultDDOT(SST::Params& params){
     loop_unroll_ = params->get_optional_double_param("ddot_loop_unroll", 4);
     pipeline_ = params->get_optional_double_param("ddot_pipeline_efficiency", 2);
   }

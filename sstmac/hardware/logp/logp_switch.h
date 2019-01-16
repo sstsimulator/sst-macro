@@ -79,7 +79,7 @@ class LogPSwitch : public ConnectableComponent
   };
 
  public:
-  LogPSwitch(sprockit::sim_parameters::ptr& params, uint32_t cid);
+  LogPSwitch(SST::Params& params, uint32_t cid);
 
   virtual ~LogPSwitch();
 
@@ -87,13 +87,13 @@ class LogPSwitch : public ConnectableComponent
     return "LogP switch";
   }
 
-  void connectOutput(sprockit::sim_parameters::ptr& params,
+  void connectOutput(SST::Params& params,
                       int src_outport, int dst_inport,
                       EventLink *payload_link) override {
     nic_links_[src_outport] = payload_link;
   }
 
-  void connectInput(sprockit::sim_parameters::ptr& params,
+  void connectInput(SST::Params& params,
                      int src_outport, int dst_inport,
                      EventLink *credit_link) override {
     //do nothing
@@ -121,11 +121,11 @@ class LogPSwitch : public ConnectableComponent
 
   void send(Timestamp start, NetworkMessage* msg);
 
-  Timestamp sendLatency(sprockit::sim_parameters::ptr& params) const override {
+  Timestamp sendLatency(SST::Params& params) const override {
     return out_in_lat_;
   }
 
-  Timestamp creditLatency(sprockit::sim_parameters::ptr& params) const override {
+  Timestamp creditLatency(SST::Params& params) const override {
     return out_in_lat_;
   }
 

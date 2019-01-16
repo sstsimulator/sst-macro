@@ -56,7 +56,7 @@ class CoordinateAllocation :
 {
   FactoryRegister("coordinate", NodeAllocator, CoordinateAllocation)
  public:
-  CoordinateAllocation(sprockit::sim_parameters::ptr& params);
+  CoordinateAllocation(SST::Params& params);
 
   virtual ~CoordinateAllocation() throw() {}
 

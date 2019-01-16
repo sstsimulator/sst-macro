@@ -117,7 +117,7 @@ namespace lblxml {
   void
   boxml::get_params_standalone()
   {
-    sprockit::sim_parameters::ptr& params = new sprockit::sim_parameters();
+    SST::Params& params = new sprockit::sim_parameters();
     params->parse_file("./parameters.ini", false, true);
     params_ = params;
   }

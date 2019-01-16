@@ -56,7 +56,7 @@ class ThreadingPth : public ThreadContext
   FactoryRegister("pth", thread_context, threading_pth)
 
   /** nothing */
-  ThreadingPth(sprockit::sim_parameters::ptr& params)
+  ThreadingPth(SST::Params& params)
   {
   }
 

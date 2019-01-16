@@ -55,9 +55,9 @@ int main(int argc, char** argv)
   double results[] = {0, 0, 0};
   int nPoints = sizeof(bandwidths) / sizeof(double);
 
-  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
+  SST::Params params;
   for (int i=0; i < nPoints; ++i){
-    (*params)["injection_bandwidth"].setBandwidth(bandwidths[i], "GB/s");
+    params["injection_bandwidth"].setBandwidth(bandwidths[i], "GB/s");
     Simulation* sim = queue.fork(params);
     sim->waitFork();
     results[i] = sim->simulatedTime();

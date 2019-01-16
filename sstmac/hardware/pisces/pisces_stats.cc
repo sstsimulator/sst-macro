@@ -83,7 +83,7 @@ congestionDelay(const pkt_arbitration_t& st)
   return congestion_delay;
 }
 
-PacketStatsCallback::PacketStatsCallback(sprockit::sim_parameters::ptr& params, EventScheduler* parent)
+PacketStatsCallback::PacketStatsCallback(SST::Params& params, EventScheduler* parent)
 {
   id_ = params->get_int_param("id");
 }
@@ -100,7 +100,7 @@ PacketStatsCallback::collectSingleEvent(const pkt_arbitration_t &st)
   sprockit::abort("stats object does not support collecting single events");
 }
 
-CongestionSpyplot::CongestionSpyplot(sprockit::sim_parameters::ptr& params, EventScheduler* parent)
+CongestionSpyplot::CongestionSpyplot(SST::Params& params, EventScheduler* parent)
   : PacketStatsCallback(params, parent)
 {
   //congestion_spyplot_ = requiredStats<StatSpyplot>(parent, params,
@@ -134,7 +134,7 @@ CongestionSpyplot::collect(double congestion_delay, PiscesPacket* pkt)
   congestion_spyplot_->addData(pkt->fromaddr(), pkt->toaddr(), congestion_delay);
 }
 
-DelayHistogram::DelayHistogram(sprockit::sim_parameters::ptr& params, EventScheduler* parent) :
+DelayHistogram::DelayHistogram(SST::Params& params, EventScheduler* parent) :
   PacketStatsCallback(params, parent)
 {
   //congestion_hist_ = requiredStats<StatHistogram>(parent, params,
@@ -174,7 +174,7 @@ PacketDelayStats::collectSingleEvent(const pkt_arbitration_t& st)
   //dpkt->accumulate_delay(delay);
 }
 
-MultiStats::MultiStats(sprockit::sim_parameters::ptr& params, EventScheduler *parent) :
+MultiStats::MultiStats(SST::Params& params, EventScheduler *parent) :
   PacketStatsCallback(params, parent)
 {
   std::vector<std::string> stats_list;
@@ -207,7 +207,7 @@ BytesSentCollector::~BytesSentCollector()
   //if (bytes_sent_) delete bytes_sent_;
 }
 
-BytesSentCollector::BytesSentCollector(sprockit::sim_parameters::ptr& params,
+BytesSentCollector::BytesSentCollector(SST::Params& params,
                                        EventScheduler* parent) :
   PacketStatsCallback(params, parent)
 {
@@ -228,7 +228,7 @@ ByteHopCollector::~ByteHopCollector()
   //delete byte_hops_;
 }
 
-ByteHopCollector::ByteHopCollector(sprockit::sim_parameters::ptr& params, EventScheduler* parent)
+ByteHopCollector::ByteHopCollector(SST::Params& params, EventScheduler* parent)
   : PacketStatsCallback(params, parent)
 {
   /** TODO stats
@@ -314,7 +314,7 @@ StatBytesSent::aggregation::entry::serialize_order(serializer& ser)
   ser & sid;
 }
 
-StatBytesSent::StatBytesSent(sprockit::sim_parameters::ptr& params) :
+StatBytesSent::StatBytesSent(SST::Params& params) :
     top_(nullptr),
     local_aggregation_(nullptr),
     Parent(params)

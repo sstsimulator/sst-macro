@@ -61,7 +61,7 @@ class RoundRobinTaskMapper : public TaskMapper
      "if there is one process per node")
 
  public:
-  RoundRobinTaskMapper(sprockit::sim_parameters::ptr& params) :
+  RoundRobinTaskMapper(SST::Params& params) :
     TaskMapper(params)
   {
   }

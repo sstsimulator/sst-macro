@@ -50,14 +50,14 @@ namespace sstmac {
 namespace hw {
 
 void
-LogPParamExpander::expand(sprockit::sim_parameters::ptr& params)
+LogPParamExpander::expand(SST::Params& params)
 {
-  sprockit::sim_parameters::ptr node_params = params->get_optional_namespace("node");
-  sprockit::sim_parameters::ptr  nic_params = node_params->get_optional_namespace("nic");
-  sprockit::sim_parameters::ptr  mem_params = node_params->get_optional_namespace("memory");
-  sprockit::sim_parameters::ptr  switch_params = params->get_optional_namespace("switch");
-  sprockit::sim_parameters::ptr  top_params = params->get_optional_namespace("topology");
-  sprockit::sim_parameters::ptr  proc_params = node_params->get_optional_namespace("proc");
+  SST::Params node_params = params->get_optional_namespace("node");
+  SST::Params  nic_params = node_params->get_optional_namespace("nic");
+  SST::Params  mem_params = node_params->get_optional_namespace("memory");
+  SST::Params  switch_params = params->get_optional_namespace("switch");
+  SST::Params  top_params = params->get_optional_namespace("topology");
+  SST::Params  proc_params = node_params->get_optional_namespace("proc");
 
   nic_params->add_param_override("name", "logp");
   switch_params->add_param_override("name", "logp");
@@ -92,8 +92,8 @@ LogPParamExpander::expand(sprockit::sim_parameters::ptr& params)
 
 void
 LogPParamExpander::expandAmm1Memory(
-  sprockit::sim_parameters::ptr& params,
-  sprockit::sim_parameters::ptr& mem_params)
+  SST::Params& params,
+  SST::Params& mem_params)
 {
   //now just get the strings
   std::string mem_bw_str = mem_params->get_param("bandwidth");
@@ -107,20 +107,20 @@ LogPParamExpander::expandAmm1Memory(
 
 void
 LogPParamExpander::expandAmm1Network(
-  sprockit::sim_parameters::ptr& params,
-  sprockit::sim_parameters::ptr& switch_params)
+  SST::Params& params,
+  SST::Params& switch_params)
 {
   expandInto(switch_params, params, switch_params);
 }
 
 void
 LogPParamExpander::expandInto(
-  sprockit::sim_parameters::ptr& dst_params,
-  sprockit::sim_parameters::ptr& params,
-  sprockit::sim_parameters::ptr& switch_params)
+  SST::Params& dst_params,
+  SST::Params& params,
+  SST::Params& switch_params)
 {
   if (!switch_params->has_param("bandwidth")){
-    sprockit::sim_parameters::ptr  link_params = switch_params->get_namespace("link");
+    SST::Params  link_params = switch_params.get_namespace("link");
     double link_bw = link_params->get_bandwidth_param("bandwidth");
     double gbs = link_bw *ParamExpander::networkBandwidthMultiplier(params) / 1e9;
     std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
@@ -131,7 +131,7 @@ LogPParamExpander::expandInto(
   }
 
   if (!switch_params->has_param("hop_latency")){
-    sprockit::sim_parameters::ptr  link_params = switch_params->get_optional_namespace("link");
+    SST::Params  link_params = switch_params->get_optional_namespace("link");
     if (link_params->has_param("sendLatency")){
       dst_params->add_param_override("hop_latency", link_params->get_time_param("sendLatency"));
     } else {
@@ -142,10 +142,10 @@ LogPParamExpander::expandInto(
   }
 
   if (!switch_params->has_param("out_in_latency")){
-    sprockit::sim_parameters::ptr  inj_params = params->get_namespace("node")->get_namespace("nic")
+    SST::Params  inj_params = params.get_namespace("node")->get_namespace("nic")
                                                  ->get_namespace("injection");
 
-    sprockit::sim_parameters::ptr  ej_params = switch_params->get_optional_namespace("ejection");
+    SST::Params  ej_params = switch_params->get_optional_namespace("ejection");
 
     Timestamp inj_lat = inj_params->get_time_param("latency");
     Timestamp ej_lat = inj_lat;
@@ -166,29 +166,29 @@ LogPParamExpander::expandInto(
 
 void
 LogPParamExpander::expandAmm1Nic(
- sprockit::sim_parameters::ptr& params,
- sprockit::sim_parameters::ptr& nic_params,
- sprockit::sim_parameters::ptr& switch_params)
+ SST::Params& params,
+ SST::Params& nic_params,
+ SST::Params& switch_params)
 {
 }
 
 void
 LogPParamExpander::expandAmm2Memory(
- sprockit::sim_parameters::ptr& params,
- sprockit::sim_parameters::ptr& mem_params)
+ SST::Params& params,
+ SST::Params& mem_params)
 {
   expandAmm1Memory(params, mem_params);
 }
 
 void
 LogPParamExpander::expandAmm3Network(
-  sprockit::sim_parameters::ptr& params,
-  sprockit::sim_parameters::ptr& switch_params)
+  SST::Params& params,
+  SST::Params& switch_params)
 {
   expandAmm1Network(params, switch_params);
 
-  sprockit::sim_parameters::ptr link_params = switch_params->get_namespace("link");
-  sprockit::sim_parameters::ptr xbar_params = switch_params->get_namespace("xbar");
+  SST::Params link_params = switch_params.get_namespace("link");
+  SST::Params xbar_params = switch_params.get_namespace("xbar");
   double link_bw = link_params->get_bandwidth_param("bandwidth");
   double sw_multiplier = ParamExpander::switchBandwidthMultiplier(params);
   double sw_bw = xbar_params->get_bandwidth_param("bandwidth") * sw_multiplier;
@@ -201,9 +201,9 @@ LogPParamExpander::expandAmm3Network(
 
 void
 LogPParamExpander::expandAmm4Nic(
-  sprockit::sim_parameters::ptr& params,
-  sprockit::sim_parameters::ptr& nic_params,
-  sprockit::sim_parameters::ptr& switch_params)
+  SST::Params& params,
+  SST::Params& nic_params,
+  SST::Params& switch_params)
 {
   sprockit::abort("simple is not currently compatible with NIC model in abstract machine model amm4 -"
     "only a single injection pathway is used on the NIC, not distinct paths for RDMA and UDP sends");

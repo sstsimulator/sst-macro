@@ -59,12 +59,12 @@ class PiscesBuffer :
  public:
   virtual ~PiscesBuffer();
 
-  void setOutput(sprockit::sim_parameters::ptr& params,
+  void setOutput(SST::Params& params,
     int this_outport, int dst_inport,
     EventLink* link) override;
 
   void setInput(
-    sprockit::sim_parameters::ptr& params,
+    SST::Params& params,
     int this_inport, int src_outport,
     EventLink* link) override;
 
@@ -88,7 +88,7 @@ class PiscesBuffer :
 
   int queueLength() const;
 
-  PiscesBuffer(sprockit::sim_parameters::ptr& params, SST::Component* parent, int num_vc);
+  PiscesBuffer(SST::Params& params, SST::Component* parent, int num_vc);
 
  private:
   input input_;

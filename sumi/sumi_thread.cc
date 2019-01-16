@@ -49,7 +49,7 @@ namespace sstmac {
 
 uint64_t SumiThread::num_threads_ = 0;
 
-SumiThread::SumiThread(sprockit::sim_parameters::ptr& params, sw::SoftwareId sid,
+SumiThread::SumiThread(SST::Params& params, sw::SoftwareId sid,
                          sw::OperatingSystem* os) :
   Thread(params, sid, os)
 {
