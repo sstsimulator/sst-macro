@@ -89,11 +89,11 @@ class ExecutionEvent : public Event
 
   virtual void execute() = 0;
 
-  Timestamp time() const {
+  GlobalTimestamp time() const {
     return time_;
   }
 
-  void setTime(const Timestamp& t) {
+  void setTime(const GlobalTimestamp& t) {
     time_ = t;
   }
 
@@ -114,7 +114,7 @@ class ExecutionEvent : public Event
   }
 
  protected:
-  Timestamp time_;
+  GlobalTimestamp time_;
   uint32_t linkId_;
   /** A unique sequence number from the source */
   uint32_t seqnum_;

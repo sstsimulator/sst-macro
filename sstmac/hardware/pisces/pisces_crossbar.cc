@@ -267,7 +267,7 @@ PiscesNtoMQueue::setInput(
     "On %s:%d setting input %s:%d",
     toString().c_str(), my_inport,
     link ? link->toString().c_str() : "null", src_outport);
-  input& inp = inputs_[my_inport];
+  Input& inp = inputs_[my_inport];
   inp.link = link;
   inp.port_to_credit = src_outport;
 }
@@ -295,7 +295,7 @@ PiscesNtoMQueue::setOutput(
                       "PiscesCrossbar: my_outport %i > outputs_.size() %i",
                       my_outport, outputs_.size());
   }
-  output& out = outputs_[my_outport];
+  Output& out = outputs_[my_outport];
   out.link = link;
   out.arrival_port = dst_inport;
 

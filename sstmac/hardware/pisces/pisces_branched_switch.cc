@@ -80,13 +80,13 @@ PiscesBranchedSwitch::PiscesBranchedSwitch(SST::Params& params, uint32_t id)
 Timestamp
 PiscesBranchedSwitch::sendLatency(SST::Params& params) const
 {
-  return params.get_namespace("output")->get_time_param("sendLatency");
+  return Timestamp(params.get_namespace("output")->get_time_param("sendLatency"));
 }
 
 Timestamp
 PiscesBranchedSwitch::creditLatency(SST::Params& params) const
 {
-  return params.get_namespace("input")->get_time_param("creditLatency");
+  return Timestamp(params.get_namespace("input")->get_time_param("creditLatency"));
 }
 
 PiscesBranchedSwitch::~PiscesBranchedSwitch()

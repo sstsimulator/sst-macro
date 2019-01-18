@@ -468,9 +468,9 @@ OperatingSystem::sleep(Timestamp t)
 }
 
 void
-OperatingSystem::sleepUntil(Timestamp t)
+OperatingSystem::sleepUntil(GlobalTimestamp t)
 {
-  Timestamp now_ = now();
+  GlobalTimestamp now_ = now();
   if (t > now_){
     sw::UnblockEvent* ev = new sw::UnblockEvent(this, active_thread_);
     sendExecutionEvent(t, ev);
@@ -661,7 +661,7 @@ OperatingSystem::reassign_cores(Thread *thr)
 void
 OperatingSystem::block()
 {
-  Timestamp before = now();
+  GlobalTimestamp before = now();
   //back to main DES thread
   ThreadContext* old_context = active_thread_->context();
   if (old_context == des_context_){
@@ -683,7 +683,7 @@ OperatingSystem::block()
   active_thread_->incrementBlockCounter();
 
    //collect any statistics associated with the elapsed time
-  Timestamp after = now();
+  GlobalTimestamp after = now();
   Timestamp elapsed = after - before;
 
   if (callGraph_ && callGraph_active_) {
@@ -694,7 +694,7 @@ OperatingSystem::block()
     FTQTag tag = active_thread_->tag();
     ftq_trace_->addData(tag.id(),
       active_thread_->aid(), active_thread_->tid(),
-      before.ticks(), elapsed.ticks());
+      before.time.ticks(), elapsed.ticks());
     active_thread_->setTag(FTQTag::null);
   }
 }
@@ -706,7 +706,7 @@ OperatingSystem::blockTimeout(Timestamp delay)
   block();
 }
 
-Timestamp
+void
 OperatingSystem::unblock(Thread* thr)
 {
   if (thr->isCanceled()){
@@ -716,8 +716,6 @@ OperatingSystem::unblock(Thread* thr)
   } else {
     switchToThread(thr);
   }
-
-  return now();
 }
 
 void

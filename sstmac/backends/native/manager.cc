@@ -290,14 +290,14 @@ static void runManager(void* args){
   mgr->run();
 }
 
-Timestamp
-Manager::run(Timestamp until)
+GlobalTimestamp
+Manager::run(GlobalTimestamp until)
 {
   start();
 
   running_ = true;
 
-  if (until.ticks_int64() > 0) {
+  if (until.time.ticks() > 0) {
     EventManager_->scheduleStop(until);
   }
 

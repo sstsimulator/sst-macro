@@ -147,13 +147,13 @@ LogPParamExpander::expandInto(
 
     SST::Params  ej_params = switch_params->get_optional_namespace("ejection");
 
-    Timestamp inj_lat = inj_params->get_time_param("latency");
+    Timestamp inj_lat(inj_params->get_time_param("latency"));
     Timestamp ej_lat = inj_lat;
 
     if (ej_params->has_param("sendLatency")){
-      ej_lat = ej_params->get_time_param("sendLatency");
+      ej_lat = Timestamp(ej_params->get_time_param("sendLatency"));
     } else if (ej_params->has_param("latency")){
-      ej_lat = ej_params->get_time_param("latency");
+      ej_lat = Timestamp(ej_params->get_time_param("latency"));
     }
 
     Timestamp total_lat = inj_lat + ej_lat;

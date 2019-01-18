@@ -182,7 +182,7 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
 SculpinSwitch::~SculpinSwitch()
 {
   if (router_) delete router_;
-  for (port& p : ports_){
+  for (Port& p : ports_){
     if (p.link) delete p.link;
   }
 }
@@ -195,9 +195,9 @@ SculpinSwitch::connectOutput(
   EventLink* link)
 {
   double bw = port_params->get_bandwidth_param("bandwidth");
-  port& p = ports_[src_outport];
+  Port& p = ports_[src_outport];
   p.link = link;
-  p.inv_bw = 1.0/bw;
+  p.byte_delay = Timestamp(1.0/bw);
   p.dst_port = dst_inport;
 }
 
@@ -216,13 +216,13 @@ SculpinSwitch::connectInput(
 Timestamp
 SculpinSwitch::sendLatency(SST::Params& params) const
 {
-  return params->get_time_param("sendLatency");
+  return Timestamp(params->get_time_param("sendLatency"));
 }
 
 Timestamp
 SculpinSwitch::creditLatency(SST::Params& params) const
 {
-  return params->get_time_param("sendLatency");
+  return Timestamp(params->get_time_param("sendLatency"));
 }
 
 int
@@ -239,14 +239,14 @@ SculpinSwitch::handleCredit(Event *ev)
 }
 
 void
-SculpinSwitch::send(port& p, SculpinPacket* pkt, Timestamp now)
+SculpinSwitch::send(Port& p, SculpinPacket* pkt, GlobalTimestamp now)
 {
   if (now > p.next_free){
     p.next_free = now;
   }
 
   Timestamp extra_delay = p.next_free - now;
-  Timestamp time_to_send = pkt->numBytes() * p.inv_bw;
+  Timestamp time_to_send = pkt->numBytes() * p.byte_delay;
   p.next_free += time_to_send;
   pkt->setTimeToSend(time_to_send);
   p.link->send(extra_delay, pkt);
@@ -300,7 +300,7 @@ SculpinSwitch::send(port& p, SculpinPacket* pkt, Timestamp now)
 void
 SculpinSwitch::pullNext(int portnum)
 {
-  port& p = ports_[portnum];
+  Port& p = ports_[portnum];
   if (p.priority_queue.empty()){
     spkt_abort_printf("SculpinSwitch::pull_next: incorrectly scheduled pull on switch %d from empty port %d",
                       int(addr()), p.id);
@@ -315,16 +315,16 @@ SculpinSwitch::pullNext(int portnum)
 void
 SculpinSwitch::tryToSendPacket(SculpinPacket* pkt)
 {
-  Timestamp now_ = now();
+  GlobalTimestamp now_ = now();
 
-  pkt->set_arrival(now_);
-  port& p = ports_[pkt->nextPort()];
+  pkt->setArrival(now_);
+  Port& p = ports_[pkt->nextPort()];
   pkt->setSeqnum(p.seqnum++);
 
   static int max_queue_depth = 0;
 
   if (!congestion_){
-    Timestamp time_to_send = pkt->numBytes() * p.inv_bw;
+    Timestamp time_to_send = pkt->numBytes() * p.byte_delay;
     p.next_free += time_to_send;
     pkt->setTimeToSend(time_to_send);
     p.link->send(pkt);
@@ -376,9 +376,9 @@ SculpinSwitch::handlePayload(Event *ev)
   SculpinPacket* pkt = safe_cast(SculpinPacket, ev);
   switch_debug("handling payload %s", pkt->toString().c_str());
   router_->route(pkt);
-  port& p = ports_[pkt->nextPort()];
+  Port& p = ports_[pkt->nextPort()];
 
-  Timestamp time_to_send = p.inv_bw * pkt->numBytes();
+  Timestamp time_to_send = p.byte_delay * pkt->numBytes();
   /** I am processing the head flit - so I assume compatibility with wormhole routing
    * The tail flit cannot leave THIS switch prior to its departure time in the prev switch */
   if (pkt->timeToSend() > time_to_send){

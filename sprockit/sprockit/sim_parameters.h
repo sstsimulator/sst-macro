@@ -63,6 +63,9 @@ DeclareDebugSlot(write_params)
 
 namespace sprockit {
 
+bool get_quantity_with_units(const char *value, double& ret);
+double get_quantity_with_units(const char *value, const char* key);
+
 class param_assign {
  public:
   param_assign(std::string& p, const std::string& k) :
@@ -526,6 +529,15 @@ class sim_parameters  {
 
 namespace SST {
 
+template <class T>
+struct CallGetParam {};
+
+template <> struct CallGetParam<int>  {
+  static int get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
+    return 0;
+  }
+};
+
 class Params {
  public:
   Params() : params_(std::make_shared<sprockit::sim_parameters>())
@@ -557,6 +569,15 @@ class Params {
     return params_->get_namespace(name);
   }
 
+  SST::Params find_prefix_params(const std::string& name){
+    return params_->get_optional_namespace(name);
+  }
+
+  template <class T>
+  T find(const std::string& key) {
+    return CallGetParam<T>::get(key);
+  }
+
   sprockit::param_assign operator[](const std::string& key){
     return (*params_)[key];
   }
@@ -575,6 +596,34 @@ class Params {
 
  private:
   sprockit::sim_parameters::ptr params_;
+};
+
+struct UnitAlgebra
+{
+ public:
+  UnitAlgebra(const std::string& val){
+    double tmp;
+    bool failed = sprockit::get_quantity_with_units(val.c_str(), tmp);
+    if (failed){
+      std::cerr << "Failed to parse value with units from " << val << std::endl;
+      ::abort();
+    }
+    value_ = tmp;
+    inverse_ = 1.0/tmp;
+  }
+
+  int64_t getRoundedValue() const {
+    return value_;
+  }
+
+  int64_t getInvertedValue() const {
+    return inverse_;
+  }
+
+ private:
+  int64_t value_;
+  int64_t inverse_;
+
 };
 
 }

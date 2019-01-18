@@ -96,6 +96,7 @@ RegisterKeywords(
 #include <sprockit/output.h>
 
 using namespace sprockit::dbg;
+using sstmac::Timestamp;
 
 RegisterDebugSlot(sumi);
 
@@ -228,13 +229,13 @@ Transport::Transport(SST::Params& params,
     server = safe_cast(SumiServer, server_lib);
   }
 
-  post_rdma_delay_ = params->get_optional_time_param("post_rdma_delay", 0);
-  post_header_delay_ = params->get_optional_time_param("post_header_delay", 0);
-  poll_delay_ = params->get_optional_time_param("poll_delay", 0);
+  post_rdma_delay_ = Timestamp(params->get_optional_time_param("post_rdma_delay", 0));
+  post_header_delay_ = Timestamp(params->get_optional_time_param("post_header_delay", 0));
+  poll_delay_ = Timestamp(params->get_optional_time_param("poll_delay", 0));
   user_lib_time_ = new sstmac::sw::LibComputeTime(params, "sumi-user-lib-time", sid, os);
 
-  rdma_pin_latency_ = params->get_optional_time_param("rdma_pin_latency", 0);
-  rdma_page_delay_ = params->get_optional_time_param("rdma_page_delay", 0);
+  rdma_pin_latency_ = Timestamp(params->get_optional_time_param("rdma_pin_latency", 0));
+  rdma_page_delay_ = Timestamp(params->get_optional_time_param("rdma_page_delay", 0));
   pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
   page_size_ = params->get_optional_byte_length_param("rdma_page_size", 4096);
 
@@ -398,7 +399,7 @@ Transport::send(Message* m)
           //  sstmac::newCallback(os_->componentId(), this, &transport::incoming_message, static_cast<message*>(ack)));
         }
       } else {
-        if (post_header_delay_.ticks_int64()) {
+        if (post_header_delay_.ticks()) {
           user_lib_time_->compute(post_header_delay_);
         }
         nic_ioctl_(m);
@@ -406,7 +407,7 @@ Transport::send(Message* m)
       break;
     case sstmac::hw::NetworkMessage::rdma_get_request:
     case sstmac::hw::NetworkMessage::rdma_put_payload:
-      if (post_rdma_delay_.ticks_int64()) {
+      if (post_rdma_delay_.ticks()) {
         user_lib_time_->compute(post_rdma_delay_);
       }
       nic_ioctl_(m);

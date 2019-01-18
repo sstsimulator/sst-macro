@@ -67,34 +67,41 @@ class LogPMemoryModel : public MemoryModel
     return "logGP memory model";
   }
 
-  void access(uint64_t bytes, double max_bw, Callback* cb) override;
+  void access(uint64_t bytes, Timestamp byte_delay, Callback* cb) override;
 
-  double maxSingleBw() const override {
-    return bw_;
+  Timestamp minFlowByteDelay() const override {
+    return min_byte_delay_;
   }
 
  protected:
-  class link  {
+  class Link  {
    public:
-    link(double bw, Timestamp lat) :
-      bw_(bw), lat_(lat), last_access_(0) {
+    Link(Timestamp byte_delay, Timestamp lat) :
+      byte_delay_(byte_delay), lat_(lat), last_access_() {
     }
 
-    ~link() { }
+    ~Link() { }
 
-    Timestamp newAccess(Timestamp now, uint64_t size, double max_bw);
+    /**
+     * @brief newAccess
+     * @param now
+     * @param size
+     * @param max_bw
+     * @return The deltaT from now the access will finish
+     */
+    Timestamp newAccess(GlobalTimestamp now, uint64_t size, Timestamp min_byte_delay);
 
    protected:
-    double bw_;
+    Timestamp byte_delay_;
     Timestamp lat_;
-    Timestamp last_access_;
+    GlobalTimestamp last_access_;
 
   };
 
  protected:
-  link* link_;
+  Link* link_;
 
-  double bw_;
+  Timestamp min_byte_delay_;
 
   Timestamp lat_;
 

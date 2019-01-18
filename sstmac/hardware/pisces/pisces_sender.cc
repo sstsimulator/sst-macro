@@ -81,8 +81,8 @@ PiscesSender::PiscesSender(
   stat_collector_(nullptr),
   update_vc_(update_vc)
 {
-  send_lat_ = params->get_time_param("sendLatency");
-  credit_lat_ = params->get_time_param("creditLatency");
+  send_lat_ = Timestamp(params->get_time_param("sendLatency"));
+  credit_lat_ = Timestamp(params->get_time_param("creditLatency"));
 }
 
 void
@@ -109,8 +109,8 @@ PiscesSender::configureCreditPortLatency(SST::Params& params)
 
 void
 PiscesSender::sendCredit(
-  input& inp, PiscesPacket* payload,
-  Timestamp credits_ready)
+  Input& inp, PiscesPacket* payload,
+  GlobalTimestamp credits_ready)
 {
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
   PiscesCredit* credit = new PiscesCredit(inp.port_to_credit,
@@ -136,15 +136,15 @@ PiscesSender::sendCredit(
   inp.link->send(credit_departure_delay, credit);
 }
 
-Timestamp
+GlobalTimestamp
 PiscesSender::send(
   PiscesBandwidthArbitrator* arb,
   PiscesPacket* pkt,
-  input& to_credit, output& to_send)
+  Input& to_credit, Output& to_send)
 {
-  Timestamp now_ = now();
+  GlobalTimestamp now_ = now();
   pkt_arbitration_t st;
-  st.incoming_bw = pkt->bw();
+  st.incoming_byte_delay = pkt->byteDelay();
   st.now = now_;
   st.pkt = pkt;
   st.src_outport = pkt->nextLocalInport();
@@ -157,15 +157,6 @@ PiscesSender::send(
   }
 
   if (stat_collector_) stat_collector_->collectSingleEvent(st);
-
-#if SSTMAC_SANITY_CHECK
-  if (pkt->bw() <= 0 && pkt->bw() != PiscesPacket::uninitialized_bw) {
-    spkt_throw_printf(sprockit::value_error,
-                     "On %s, got negative bandwidth for msg %s",
-                     toString().c_str(),
-                     pkt->toString().c_str());
-  }
-#endif
 
   if (to_credit.link) {
     sendCredit(to_credit, pkt, st.credit_leaves);

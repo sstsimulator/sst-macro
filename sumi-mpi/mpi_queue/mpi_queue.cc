@@ -251,7 +251,7 @@ MpiQueue::recv(MpiRequest* key, int count,
 }
 
 void
-MpiQueue::finalize_recv(MpiMessage* msg,
+MpiQueue::finalizeRecv(MpiMessage* msg,
                          MpiQueueRecvRequest* req)
 {
   req->key_->complete(msg);
@@ -448,8 +448,8 @@ MpiQueue::nonblockingProgress()
   }
 }
 
-sstmac::Timestamp
-MpiQueue::progress_loop(MpiRequest* req)
+sstmac::GlobalTimestamp
+MpiQueue::progressLoop(MpiRequest* req)
 {
   if (!req || req->isComplete()) {
     return api_->now();
@@ -458,7 +458,7 @@ MpiQueue::progress_loop(MpiRequest* req)
   mpi_queue_debug("entering progress loop");
 
   //SSTMACBacktrace(MPIQueuePoll);
-  sstmac::Timestamp wait_start = api_->now();
+  sstmac::GlobalTimestamp wait_start = api_->now();
   while (!req->isComplete()) {
     mpi_queue_debug("blocking on progress loop");
     sumi::Message* msg = queue_.find_any();

@@ -83,7 +83,7 @@ InstructionProcessor(SST::Params& params,
   tintop_ = tflop_;
   tmemseq_ = Timestamp(1.0 / mem_freq_);
   tmemrnd_ = tmemseq_;
-  max_single_mem_inv_bw_ = Timestamp(1.0 / mem_->maxSingleBw());
+  min_flow_byte_delay_ = mem_->minFlowByteDelay();
 }
 
 
@@ -91,7 +91,7 @@ Timestamp
 InstructionProcessor::instructionTime(sw::BasicComputeEvent* cmsg)
 {
   sw::basic_instructions_st& st = cmsg->data();
-  Timestamp tsec = 0;
+  Timestamp tsec;
   tsec += st.flops*tflop_;
   tsec += st.intops*tintop_;
   return tsec;
@@ -108,13 +108,13 @@ InstructionProcessor::compute(Event* ev, ExecutionEvent* cb)
   // now count the number of bytes
   uint64_t bytes = st.mem_sequential;
   // max_single_mem_bw is the bandwidth achievable if ZERO instructions are executed
-  Timestamp best_possible_time = instr_time + bytes * max_single_mem_inv_bw_;
+  Timestamp best_possible_time = instr_time + bytes * min_flow_byte_delay_;
   if (bytes <= negligible_bytes_) {
     node_->sendDelayedExecutionEvent(instr_time, cb);
   } else {
     //do the full memory modeling
-    double best_possible_bw = bytes / best_possible_time.sec();
-    mem_->access(bytes, best_possible_bw, cb);
+    Timestamp best_possible_byte_delay = best_possible_time / bytes;
+    mem_->access(bytes, best_possible_byte_delay, cb);
   }
 }
 

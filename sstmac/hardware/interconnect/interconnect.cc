@@ -196,17 +196,17 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
   SST::Params link_params = switch_params.get_namespace("link");
   Timestamp hop_latency;
   if (link_params->has_param("sendLatency")){
-    hop_latency = link_params->get_time_param("sendLatency");
+    hop_latency = Timestamp(link_params->get_time_param("sendLatency"));
   } else {
-    hop_latency = link_params->get_time_param("latency");
+    hop_latency = Timestamp(link_params->get_time_param("latency"));
   }
-  Timestamp injection_latency = inj_params->get_time_param("latency");
+  Timestamp injection_latency = Timestamp(inj_params->get_time_param("latency"));
 
   Timestamp ejection_latency = injection_latency;
   if (ej_params->has_param("latency")){
-    ejection_latency = ej_params->get_time_param("latency");
+    ejection_latency = Timestamp(ej_params->get_time_param("latency"));
   } else if (ej_params->has_param("sendLatency")){
-    ejection_latency = ej_params->get_time_param("sendLatency");
+    ejection_latency = Timestamp(ej_params->get_time_param("sendLatency"));
   }
 
   lookahead_ = std::min(injection_latency, hop_latency);
@@ -396,7 +396,8 @@ Interconnect::buildEndpoints(SST::Params& node_params,
         //local node - actually build it
         node_params->add_param_override("id", int(nid));
         uint32_t comp_id = nid;
-        Node* nd = Node::factory::get_optional_param("name", "simple", node_params, comp_id);
+        Node* nd = Node::factory::get_optional_param("name", "simple",
+                                                     node_params, comp_id);
         node_params->remove_param("id"); //you don't have to let it linger
         nodes_[nid] = nd;
         components_[nid] = nd;

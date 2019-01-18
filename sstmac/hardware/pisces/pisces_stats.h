@@ -61,11 +61,11 @@ namespace hw {
 
 struct pkt_arbitration_t
 {
-  double incoming_bw;
-  Timestamp now;
-  Timestamp head_leaves;
-  Timestamp tail_leaves;
-  Timestamp credit_leaves;
+  Timestamp incoming_byte_delay;
+  GlobalTimestamp now;
+  GlobalTimestamp head_leaves;
+  GlobalTimestamp tail_leaves;
+  GlobalTimestamp credit_leaves;
   PiscesPacket* pkt;
   int src_outport;
   int dst_inport;

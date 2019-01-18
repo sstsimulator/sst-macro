@@ -111,14 +111,14 @@ API::endAPICall()
   os_->activeThread()->endAPICall();
 }
 
-Timestamp
+GlobalTimestamp
 API::now() const 
 {
   return os()->now();
 }
 
 void
-API::schedule(Timestamp t, ExecutionEvent* ev)
+API::schedule(GlobalTimestamp t, ExecutionEvent* ev)
 {
   os()->sendExecutionEvent(t, ev);
 }

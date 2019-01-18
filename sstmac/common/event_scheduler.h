@@ -166,7 +166,7 @@ class EventScheduler : public sprockit::printable
     sendExecutionEvent(now(), ev);
   }
 
-  void sendExecutionEvent(Timestamp arrival, ExecutionEvent* ev);
+  void sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent* ev);
 #endif
 
   uint32_t componentId() const {
@@ -186,7 +186,7 @@ class EventScheduler : public sprockit::printable
     return 0;
   }
 
-  Timestamp now() const {
+  GlobalTimestamp now() const {
 #if ACTUAL_INTEGRATED_SST_CORE
     SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
     return timestamp(nowTicks, timestamp::exact);
@@ -201,7 +201,7 @@ class EventScheduler : public sprockit::printable
   }
 #else
 
-  const Timestamp* nowPtr() const {
+  const GlobalTimestamp* nowPtr() const {
     return now_;
   }
 #endif
@@ -240,7 +240,7 @@ class EventScheduler : public sprockit::printable
   uint32_t selfLinkId_;
   int thread_id_;
   int nthread_;
-  const Timestamp* now_;
+  const GlobalTimestamp* now_;
 
  protected:
   void setManager(EventManager* mgr);

@@ -8,7 +8,7 @@ void
 ProgressQueue::block(std::queue<Thread*>& q, double timeout){
   q.push(os->activeThread());
   if (timeout > 0){
-    os->blockTimeout(timeout);
+    os->blockTimeout(Timestamp(timeout));
   } else {
     os->block();
   }

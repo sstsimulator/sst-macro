@@ -64,13 +64,13 @@ namespace sumi {
 int
 MpiApi::send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 {  
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   start_pt2pt_call(MPI_Send,count,datatype,dest,tag,comm);
   MpiComm* commPtr = getComm(comm);
   MpiRequest* req = MpiRequest::construct(MpiRequest::Send);
   queue_->send(req, count, datatype, dest, tag, commPtr, const_cast<void*>(buf));
-  queue_->progress_loop(req);
+  queue_->progressLoop(req);
   delete req;
   finish_mpi_call(MPI_Send);
 
@@ -91,12 +91,12 @@ MpiApi::sendrecv(const void *sendbuf, int sendcount,
  MPI_Datatype recvtype, int source, int recvtag,
  MPI_Comm comm, MPI_Status *status)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   start_pt2pt_call(MPI_Sendrecv,sendcount,sendtype,source,recvtag,comm);
   MpiRequest* req = doIsend(sendbuf, sendcount, sendtype, dest, sendtag, comm);
   doRecv(recvbuf, recvcount, recvtype, source, recvtag, comm, status);
-  queue_->progress_loop(req);
+  queue_->progressLoop(req);
   delete req;
   finish_mpi_call(MPI_Sendrecv);
 
@@ -115,7 +115,7 @@ MpiApi::request_free(MPI_Request *req)
   mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request | sprockit::dbg::mpi_pt2pt,
     "MPI_Request_free(REQ=%d)", *req);
 
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   MpiRequest* reqPtr = getRequest(*req);
   if (reqPtr){
@@ -161,7 +161,7 @@ MpiApi::doStart(MPI_Request req)
 int
 MpiApi::start(MPI_Request* req)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   _start_mpi_call_(MPI_Start);
   doStart(*req);
@@ -248,7 +248,7 @@ int
 MpiApi::isend(const void *buf, int count, MPI_Datatype datatype, int dest,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   start_Ipt2pt_call(MPI_Isend,count,datatype,dest,tag,comm,request);
   MpiRequest* req = doIsend(buf, count, datatype, dest, tag, comm);
@@ -274,7 +274,7 @@ int
 MpiApi::recv(void *buf, int count, MPI_Datatype datatype, int source,
               int tag, MPI_Comm comm, MPI_Status *status)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   start_pt2pt_call(MPI_Recv,count,datatype,source,tag,comm);
   int rc = doRecv(buf,count,datatype,source,tag,comm,status);
@@ -297,7 +297,7 @@ MpiApi::doRecv(void *buf, int count, MPI_Datatype datatype, int source,
   MpiRequest* req = MpiRequest::construct(MpiRequest::Recv);
   MpiComm* commPtr = getComm(comm);
   queue_->recv(req, count, datatype, source, tag, commPtr, buf);
-  queue_->progress_loop(req);
+  queue_->progressLoop(req);
   if (status != MPI_STATUS_IGNORE){
     *status = req->status();
   }
@@ -343,7 +343,7 @@ int
 MpiApi::irecv(void *buf, int count, MPI_Datatype datatype, int source,
                int tag, MPI_Comm comm, MPI_Request *request)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   start_Ipt2pt_call(MPI_Irecv,count,datatype,dest,tag,comm,request);
 

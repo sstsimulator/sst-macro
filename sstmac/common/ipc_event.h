@@ -10,7 +10,7 @@ namespace sstmac {
 struct IpcEventBase {
   uint32_t ser_size;
   uint32_t dst;
-  Timestamp t;
+  GlobalTimestamp t;
   uint32_t src;
   uint32_t link;
   uint32_t seqnum;

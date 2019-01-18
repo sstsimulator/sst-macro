@@ -144,7 +144,7 @@ class HypercubeParRouter : public HypercubeMinimalRouter {
     }
     case minimal_stage: {
      //have to decide if we want to route valiantly
-       uint32_t seed = netsw_->now().ticks();
+       uint32_t seed = netsw_->now().time.ticks();
        int minimalPort;
        int valiantPort;
        coordinates coords(3);

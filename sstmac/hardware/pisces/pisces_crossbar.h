@@ -88,8 +88,8 @@ class PiscesNtoMQueue :
  protected:
   PiscesBandwidthArbitrator* arb_;
 
-  std::vector<input> inputs_;
-  std::vector<output> outputs_;
+  std::vector<Input> inputs_;
+  std::vector<Output> outputs_;
   //indexed by slot number = (port,vc)
   std::vector<int> credits_;
   //indexed by slot number = (port,vc)

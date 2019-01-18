@@ -82,7 +82,7 @@ int
 MpiApi::test(MPI_Request *request, int *flag, MPI_Status *status)
 {
   MPI_Request req_cpy = *request;
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   int tag, source;
   _start_mpi_call_(MPI_Test);
   if (test(request, status, tag, source)){

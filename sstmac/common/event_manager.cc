@@ -63,7 +63,8 @@ RegisterDebugSlot(EventManager);
 
 namespace sstmac {
 
-const Timestamp EventManager::no_events_left_time(std::numeric_limits<int64_t>::max() - 100, Timestamp::exact);
+const GlobalTimestamp EventManager::no_events_left_time(
+  std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max());
 
 class StopEvent : public ExecutionEvent
 {
@@ -146,8 +147,8 @@ EventManager::stop()
   stopped_ = true;
 }
 
-Timestamp
-EventManager::runEvents(Timestamp event_horizon)
+GlobalTimestamp
+EventManager::runEvents(GlobalTimestamp event_horizon)
 {
   registerPending();
   min_ipc_time_ = no_events_left_time;
@@ -156,12 +157,11 @@ EventManager::runEvents(Timestamp event_horizon)
     ExecutionEvent* ev = *iter;
 
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards on thread %d: %lu < %lu",
-                        thread_id_, ev->time().ticks(), now_.ticks());
+      spkt_abort_printf("Time went backwards on thread %d", thread_id_);
     }
 
     if (ev->time() >= event_horizon){
-      Timestamp ret = std::min(min_ipc_time_, ev->time());
+      GlobalTimestamp ret = std::min(min_ipc_time_, ev->time());
       return ret;
     } else {
       now_ = ev->time();
@@ -227,8 +227,7 @@ EventManager::registerPending()
   for (auto& pendingVec : pending_events_[pendingSlot_]){
     for (ExecutionEvent* ev : pendingVec){
       if (ev->time() < now_){
-        spkt_abort_printf("Thread %d scheduling event on thread %d in the past: %lu < %lu",
-                          idx, thread_id_, ev->time().ticks(), now_.ticks());
+        spkt_abort_printf("Thread %d scheduling event on thread %d", idx, thread_id_);
       }
       schedule(ev);
     }
@@ -293,7 +292,7 @@ EventManager::ipcSchedule(IpcEvent* iev)
 }
 
 void
-EventManager::scheduleStop(Timestamp until)
+EventManager::scheduleStop(GlobalTimestamp until)
 {
   StopEvent* ev = new StopEvent(this);
   ev->setTime(until);

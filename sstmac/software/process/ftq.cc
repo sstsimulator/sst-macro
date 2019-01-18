@@ -66,7 +66,7 @@ FTQCalendar::FTQCalendar(SST::Params& params) :
   num_ticks_epoch_(0),
   Parent(params)
 {
-  num_ticks_epoch_ = Timestamp(params->get_time_param("epoch")).ticks_int64();
+  num_ticks_epoch_ = Timestamp(params->get_time_param("epoch")).ticks();
 }
 
 FTQCalendar::~FTQCalendar()
@@ -401,7 +401,7 @@ AppFTQCalendar::dump(const std::string& fileroot)
   std::stringstream sstr;
   sstr << "\n";
   Timestamp one_ms(1e-3);
-  int64_t ticks_ms = one_ms.ticks_int64();
+  int64_t ticks_ms = one_ms.ticks();
   for (int ep=0; ep < max_epoch_; ++ep) {
     //figure out how many us
     double num_ms = double(ep * num_ticks_epoch_) / (double) ticks_ms;
@@ -421,8 +421,8 @@ AppFTQCalendar::dump(const std::string& fileroot)
 
   dumpMatplotlibHistogram(fileroot);
 
-  Timestamp stamp_sec(1, Timestamp::seconds);
-  int64_t ticks_s = stamp_sec.ticks_int64();
+  Timestamp stamp_sec(1.0);
+  int64_t ticks_s = stamp_sec.ticks();
   std::cout << sprockit::printf("Average time stats for application %s: \n",
                                      appname_.c_str());
   /** print the stat totals */

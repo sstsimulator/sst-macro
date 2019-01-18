@@ -188,7 +188,7 @@ class TorusValiantRouter : public TorusMinimalRouter {
   }
 
   SwitchId getIntermediate(Packet* pkt, SwitchId ej_addr){
-    uint32_t seed = netsw_->now().ticks();
+    uint32_t seed = netsw_->now().time.ticks();
     uint32_t attempt = 0;
     SwitchId new_sw = ej_addr;
     while (new_sw == ej_addr || new_sw == my_addr_){

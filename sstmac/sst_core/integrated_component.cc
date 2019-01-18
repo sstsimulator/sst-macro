@@ -65,7 +65,7 @@ SSTIntegratedComponent::SSTIntegratedComponent(
   sprockit::output::init_errn(&std::cerr);
 
   link_map_ = SST::Simulation::getSimulation()->getComponentLinkMap(id);
-  Timestamp::initStamps(1);
+  Timestamp::initStamps(100); //100 as per tick
 }
 
 void

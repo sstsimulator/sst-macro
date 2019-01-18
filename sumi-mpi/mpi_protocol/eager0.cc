@@ -86,7 +86,7 @@ Eager0::incoming(MpiMessage *msg, MpiQueueRecvRequest *req)
 #endif
   queue_->notifyProbes(msg);
   queue_->memcopy(msg->payloadBytes());
-  queue_->finalize_recv(msg, req);
+  queue_->finalizeRecv(msg, req);
   delete msg;
 }
 

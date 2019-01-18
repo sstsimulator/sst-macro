@@ -286,7 +286,7 @@ class OperatingSystem : public SubComponent
    *                  a block(req) call
    * @return
    */
-  Timestamp unblock(Thread* thr);
+  void unblock(Thread* thr);
 
   void outcastAppStart(int my_rank, int aid, const std::string& app_ns,
                       task_mapping_ptr mapping,
@@ -385,7 +385,7 @@ class OperatingSystem : public SubComponent
    *          return immediately. Otherwise block until the time arrives.
    * @param t The time to sleep until
    */
-  void sleepUntil(Timestamp t);
+  void sleepUntil(GlobalTimestamp t);
 
   /**
    * @brief compute Compute for a specified time period. This requires
@@ -440,14 +440,14 @@ class OperatingSystem : public SubComponent
 
   bool handleLibraryEvent(const std::string& name, Event* ev);
 
-  struct core_allocate_guard {
-    core_allocate_guard(OperatingSystem* os, Thread* thr) :
+  struct CoreAllocateGuard {
+    CoreAllocateGuard(OperatingSystem* os, Thread* thr) :
       thr_(thr), os_(os)
     {
       os->allocateCore(thr);
     }
 
-    ~core_allocate_guard(){
+    ~CoreAllocateGuard(){
       os_->deallocateCore(thr_);
     }
 
@@ -457,7 +457,7 @@ class OperatingSystem : public SubComponent
 
 
  private:
-  friend class core_allocate_guard;
+  friend class CoreAllocateGuard;
   void allocateCore(Thread* thr);
   void deallocateCore(Thread* thr);
 

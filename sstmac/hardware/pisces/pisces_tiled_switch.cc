@@ -209,13 +209,13 @@ PiscesTiledSwitch::connectInput(
 Timestamp
 PiscesTiledSwitch::sendLatency(SST::Params& params) const
 {
-  return params.get_namespace("link")->get_time_param("sendLatency");
+  return Timestamp(params.get_namespace("link")->get_time_param("sendLatency"));
 }
 
 Timestamp
 PiscesTiledSwitch::creditLatency(SST::Params& params) const
 {
-  return params.get_namespace("input")->get_time_param("creditLatency");
+  return Timestamp(params.get_namespace("input")->get_time_param("creditLatency"));
 }
 
 int

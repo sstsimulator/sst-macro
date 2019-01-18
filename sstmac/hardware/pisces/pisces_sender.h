@@ -88,16 +88,16 @@ class PiscesSender : public SubComponent
 {
   DeclareFactory(PiscesSender, Component*)
  public:
-  struct input {
+  struct Input {
     int port_to_credit;
     EventLink* link;
-    input() : link(nullptr){}
+    Input() : link(nullptr){}
   };
 
-  struct output {
+  struct Output {
     int arrival_port;
     EventLink* link;
-    output() : link(nullptr){}
+    Output() : link(nullptr){}
   };
 
   virtual ~PiscesSender() {}
@@ -139,11 +139,11 @@ class PiscesSender : public SubComponent
                SST::Component* parent,
                bool update_vc);
 
-  void sendCredit(input& inp, PiscesPacket* payload,
-          Timestamp packet_tail_leaves);
+  void sendCredit(Input& inp, PiscesPacket* payload,
+          GlobalTimestamp packet_tail_leaves);
 
-  Timestamp send(PiscesBandwidthArbitrator* arb,
-       PiscesPacket* pkt, input& to_credit, output& to_send);
+  GlobalTimestamp send(PiscesBandwidthArbitrator* arb,
+       PiscesPacket* pkt, Input& to_credit, Output& to_send);
 
  protected:
   PacketStatsCallback* stat_collector_;

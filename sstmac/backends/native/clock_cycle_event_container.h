@@ -87,9 +87,9 @@ class ClockCycleEventMap :
    * @param vote The minimum event time I have
    * @return The minimum event time across all LPs
    */
-  Timestamp receiveIncomingEvents(Timestamp vote) override;
+  GlobalTimestamp receiveIncomingEvents(GlobalTimestamp vote) override;
 
-  void computeFinalTime(Timestamp vote);
+  void computeFinalTime(GlobalTimestamp vote);
 
   int num_profile_loops_;
 

@@ -158,9 +158,9 @@ MpiApi::MpiApi(SST::Params& params,
 }
 
 uint64_t
-MpiApi::trace_clock() const
+MpiApi::traceClock() const
 {
-  return os_->now().ticks();
+  return os_->now().time.ticks();
 }
 
 void
@@ -218,7 +218,7 @@ MpiApi::commRank(MPI_Comm comm, int *rank)
 int
 MpiApi::init(int* argc, char*** argv)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   if (status_ == is_initialized){
     sprockit::abort("MPI_Init cannot be called twice");
@@ -276,7 +276,7 @@ MpiApi::checkInit()
 int
 MpiApi::finalize()
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   start_mpi_call(MPI_Finalize);
 

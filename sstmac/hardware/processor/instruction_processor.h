@@ -79,7 +79,7 @@ class InstructionProcessor :
   Timestamp tintop_;
   Timestamp tmemseq_;
   Timestamp tmemrnd_;
-  Timestamp max_single_mem_inv_bw_; //in sec/byte
+  Timestamp min_flow_byte_delay_;//in sec/byte
 
   uint64_t negligible_bytes_;
 

@@ -189,9 +189,9 @@ remapLatencyParams(SST::Params& params)
 void
 remapParams(SST::Params& params, bool verbose)
 {
-  double timescale = params->get_optional_time_param("timestamp_resolution", 1e-12);
-  int ps_per_tick = round(timescale/1e-12) + 0.02;
-  Timestamp::initStamps(ps_per_tick);
+  double timescale = params->get_optional_time_param("timestamp_resolution", 100e-18);
+  int as_per_tick = round(timescale/1e-18) + 0.02;
+  Timestamp::initStamps(as_per_tick);
 
   remapDeprecatedParams(params);
   remapLatencyParams(params);

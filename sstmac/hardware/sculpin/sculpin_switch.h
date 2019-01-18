@@ -82,7 +82,7 @@ class SculpinSwitch :
 
   virtual ~SculpinSwitch();
 
-  int queueLength(int port) const override;
+  int queueLength(int Port) const override;
 
   Router* router() const override {
     return router_;
@@ -100,9 +100,9 @@ class SculpinSwitch :
     int dst_inport,
     EventLink* link) override;
 
-  LinkHandler* creditHandler(int port) override;
+  LinkHandler* creditHandler(int Port) override;
 
-  LinkHandler* payloadHandler(int port) override;
+  LinkHandler* payloadHandler(int Port) override;
 
   Timestamp sendLatency(SST::Params& params) const override;
 
@@ -130,17 +130,17 @@ class SculpinSwitch :
     }
   };
 
-  struct port {
+  struct Port {
     int id;
     int dst_port;
-    Timestamp next_free;
-    double inv_bw;
+    GlobalTimestamp next_free;
+    Timestamp byte_delay;
     uint32_t seqnum;
     std::set<SculpinPacket*, priority_compare> priority_queue;
     EventLink* link;
-    port() : link(nullptr){}
+    Port() : link(nullptr){}
   };
-  std::vector<port> ports_;
+  std::vector<Port> ports_;
 
   Router* router_;
 
@@ -166,7 +166,7 @@ class SculpinSwitch :
 
 
  private:
-  void send(port& p, SculpinPacket* pkt, Timestamp now);
+  void send(Port& p, SculpinPacket* pkt, GlobalTimestamp now);
 
   void tryToSendPacket(SculpinPacket* pkt);
 

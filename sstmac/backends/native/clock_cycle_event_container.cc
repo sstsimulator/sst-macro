@@ -114,17 +114,19 @@ ClockCycleEventMap::handleIncoming(char* buf)
 #endif
 }
 
-Timestamp
-ClockCycleEventMap::receiveIncomingEvents(Timestamp vote)
+GlobalTimestamp
+ClockCycleEventMap::receiveIncomingEvents(GlobalTimestamp vote)
 {
   if (nproc_ == 1) return vote;
 
-  Timestamp min_time = no_events_left_time;
+  GlobalTimestamp min_time = no_events_left_time;
   if (!stopped_){
-    event_debug("voting for minimum time %lu on epoch %d", vote.ticks(), epoch_);
+    event_debug("voting for minimum time %lu:%lu on epoch %d",
+                vote.epochs, vote.time.ticks(), epoch_);
     min_time = rt_->sendRecvMessages(vote);
 
-    event_debug("got back minimum time %lu", min_time.ticks());
+    event_debug("got back minimum time %lu:%lu",
+                min_time.epochs, min_time.time.ticks());
 
     int num_recvs = rt_->numRecvsDone();
     for (int i=0; i < num_recvs; ++i){
@@ -149,7 +151,7 @@ ClockCycleEventMap::run()
 {
   interconn_->setup();
 
-  Timestamp lower_bound;
+  GlobalTimestamp lower_bound;
   int num_loops_left = num_profile_loops_;
   if (num_loops_left && rt_->me() == 0){
     printf("Running %d profile loops\n", num_loops_left);
@@ -163,9 +165,9 @@ ClockCycleEventMap::run()
   }
   uint64_t epoch = 0;
   while (lower_bound != no_events_left_time || num_loops_left > 0){
-    Timestamp horizon = lower_bound + lookahead_;
+    GlobalTimestamp horizon = lower_bound + lookahead_;
     auto t_start = rdtsc();
-    Timestamp min_time = runEvents(horizon);
+    GlobalTimestamp min_time = runEvents(horizon);
     auto t_run = rdtsc();
     lower_bound = receiveIncomingEvents(min_time);
     auto t_stop = rdtsc();
@@ -176,7 +178,7 @@ ClockCycleEventMap::run()
     if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
       printf("Epoch %13" PRIu64 " ran %13" PRIu64 ", %13" PRIu64 " cumulative %13" PRIu64
              ", %13" PRIu64 " until horizon %13" PRIu64 "\n",
-             epoch, event, barrier, event_cycles, barrier_cycles, horizon.ticks());
+             epoch, event, barrier, event_cycles, barrier_cycles, horizon.time.ticks());
     }
     if (num_loops_left > 0){
       --num_loops_left;
@@ -188,13 +190,20 @@ ClockCycleEventMap::run()
 }
 
 void
-ClockCycleEventMap::computeFinalTime(Timestamp vote)
+ClockCycleEventMap::computeFinalTime(GlobalTimestamp vote)
 {
   if (nproc_ == 1){
     final_time_ = vote;
   } else {
-    uint64_t final_ticks = vote.ticks();
-    final_time_ = Timestamp(rt_->allreduceMax(final_ticks), Timestamp::exact);
+    uint64_t final_epochs = vote.epochs;
+    rt_->allreduceMax(final_epochs);
+    uint64_t final_ticks = vote.time.ticks();
+    if (final_epochs != vote.epochs){
+      //don't vote
+      final_ticks = 0;
+    }
+    rt_->allreduceMax(final_ticks);
+    final_time_ = GlobalTimestamp(final_epochs, final_ticks);
   }
 }
 

@@ -119,7 +119,7 @@ class LogPSwitch : public ConnectableComponent
     send(now(), msg);
   }
 
-  void send(Timestamp start, NetworkMessage* msg);
+  void send(GlobalTimestamp start, NetworkMessage* msg);
 
   Timestamp sendLatency(SST::Params& params) const override {
     return out_in_lat_;
@@ -130,15 +130,12 @@ class LogPSwitch : public ConnectableComponent
   }
 
  private:
-  double inj_bw_inverse_;
-
   Timestamp inj_lat_;
-
   Timestamp out_in_lat_;
 
-  double inverse_bw_;
-
-  double inv_min_bw_;
+  Timestamp inj_byte_delay_;
+  Timestamp net_byte_delay_;
+  Timestamp max_byte_delay_;
 
   Timestamp hop_latency_;
 
@@ -151,7 +148,7 @@ class LogPSwitch : public ConnectableComponent
   ContentionModel* contention_model_;
 
   Timestamp random_max_extra_latency_;
-  double random_max_extra_byte_delay_;
+  Timestamp random_max_extra_byte_delay_;
   uint32_t random_seed_;
 
 };

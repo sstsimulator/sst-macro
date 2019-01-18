@@ -265,7 +265,7 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
 
   void check_valiant_inter_group(Packet* pkt, int dst_g)
   {
-    uint32_t seed = netsw_->now().ticks();
+    uint32_t seed = netsw_->now().time.ticks();
     uint32_t attempt = 0;
     int new_g = dst_g;
     while (new_g == my_g_ || new_g == dst_g){
@@ -280,7 +280,7 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
   }
 
   void checkValiantIntraGroup(Packet* pkt, int dst_a){
-    uint32_t seed = netsw_->now().ticks();
+    uint32_t seed = netsw_->now().time.ticks();
     uint32_t attempt = 0;
     int new_a = dst_a;
     while (new_a == my_a_ || new_a == dst_a){
@@ -363,7 +363,7 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
 
   void checkUGALInterGroup(Packet* pkt, int dst_a, int dst_g, char minimal_stage)
   {
-    uint32_t seed = netsw_->now().ticks();
+    uint32_t seed = netsw_->now().time.ticks();
     uint32_t attempt = 0;
     int new_g = dst_g;
     while (new_g == my_g_ || new_g == dst_g){
@@ -396,7 +396,7 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
   }
 
   void checkUGALIntraGroup(Packet* pkt, int dst_a, char minimal_stage){
-    uint32_t seed = netsw_->now().ticks();
+    uint32_t seed = netsw_->now().time.ticks();
     uint32_t attempt = 0;
     int new_a = dst_a;
     while (new_a == my_a_ || new_a == dst_a){

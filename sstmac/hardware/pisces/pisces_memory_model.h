@@ -67,47 +67,47 @@ class PiscesMemoryModel : public MemoryModel
     return "packet flow memory model";
   }
 
-  void access(uint64_t bytes, double max_bw, Callback* cb) override;
+  void access(uint64_t bytes, Timestamp min_byte_delay, Callback* cb) override;
 
-  double maxSingleBw() const override {
-    return max_single_bw_;
+  Timestamp minFlowByteDelay() const override {
+    return min_flow_byte_delay_;
   }
 
  private:
-  void start(int channel, uint64_t size, double max_bw, Callback* cb);
-  void channel_free(int channel);
-  void data_arrived(int channel, uint32_t bytes);
-  Timestamp access(int channel, uint32_t bytes, double max_bw, Callback* cb);
-  Timestamp access(int channel, PiscesPacket* pkt, double max_bw, Callback* cb);
-  void access(PiscesPacket* pkt, double max_bw, Callback* cb);
+  void start(int channel, uint64_t size, Timestamp byte_delay, Callback* cb);
+  void channelFree(int channel);
+  void dataArrived(int channel, uint32_t bytes);
+  GlobalTimestamp access(int channel, uint32_t bytes, Timestamp byte_delay, Callback* cb);
+  GlobalTimestamp access(int channel, PiscesPacket* pkt, Timestamp byte_delay, Callback* cb);
+  void access(PiscesPacket* pkt, Timestamp byte_delay, Callback* cb);
 
  private:
-  struct request {
+  struct Request {
     uint64_t bytes_total;
     uint64_t bytes_arrived;
-    double max_bw;
+    Timestamp byte_delay;
     ExecutionEvent* cb;
     PiscesPacket* pkt;
 
-    request(uint64_t bytes, double bw, Callback* c) :
-      bytes_total(bytes), bytes_arrived(0), max_bw(bw), cb(c), pkt(nullptr)
+    Request(uint64_t bytes, Timestamp byt_delay, Callback* c) :
+      bytes_total(bytes), bytes_arrived(0), byte_delay(byt_delay), cb(c), pkt(nullptr)
     {
     }
 
-    request(double bw, Callback* c, PiscesPacket* p) :
-      max_bw(bw), cb(c), pkt(p)
+    Request(Timestamp byt_delay, Callback* c, PiscesPacket* p) :
+      byte_delay(byt_delay), cb(c), pkt(p)
     {
     }
 
   };
 
   std::vector<int> channels_available_;
-  std::vector<request> channel_requests_;
-  std::list<request, sprockit::thread_safe_allocator<request>> stalled_requests_;
+  std::vector<Request> channel_requests_;
+  std::list<Request, sprockit::thread_safe_allocator<Request>> stalled_requests_;
 
   int nchannels_;
-  double max_bw_;
-  double max_single_bw_;
+  Timestamp min_agg_byte_delay_;
+  Timestamp min_flow_byte_delay_;
   Timestamp latency_;
   PiscesBandwidthArbitrator* arb_;
   int packet_size_;

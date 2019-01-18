@@ -142,7 +142,7 @@ Thread::runRoutine(void* threadptr)
     self->state_ = ACTIVE;
     bool success = false;
     try {
-      sstmac::sw::OperatingSystem::core_allocate_guard guard(self->os(), self);
+      sstmac::sw::OperatingSystem::CoreAllocateGuard guard(self->os(), self);
       self->run();
       success = true;
       //this doesn't so much kill the thread as context switch it out
@@ -284,7 +284,7 @@ Thread::spawn(Thread* thr)
   os_->startThread(thr);
 }
 
-Timestamp
+GlobalTimestamp
 Thread::now()
 {
   return os_->now();

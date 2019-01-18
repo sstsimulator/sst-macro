@@ -58,7 +58,7 @@ sstmac_now(){
 
 extern "C" void
 sstmac_sleep_precise(double secs){
-  sstmac::sw::OperatingSystem::currentOs()->sleep(secs);
+  sstmac::sw::OperatingSystem::currentOs()->sleep(sstmac::Timestamp(secs));
 }
 
 SST::Params
@@ -170,7 +170,7 @@ void sstmac_advance_time(const char* param_name)
   auto& subMap = cache[parent->aid()];
   auto iter = subMap.find((void*)param_name);
   if (iter == subMap.end()){
-    subMap[(void*)param_name] = parent->params()->get_time_param(param_name);
+    subMap[(void*)param_name] = sstmac::Timestamp(parent->params()->get_time_param(param_name));
     iter = subMap.find((void*)param_name);
   }
   parent->compute(iter->second);

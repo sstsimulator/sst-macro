@@ -72,7 +72,7 @@ class PiscesBuffer :
 
   void handlePayload(Event* ev) override;
 
-  Timestamp sendPayload(PiscesPacket* pkt);
+  GlobalTimestamp sendPayload(PiscesPacket* pkt);
 
   bool spaceToSend(int vc, int bytes){
     return credits_[vc] >= bytes;
@@ -91,8 +91,8 @@ class PiscesBuffer :
   PiscesBuffer(SST::Params& params, SST::Component* parent, int num_vc);
 
  private:
-  input input_;
-  output output_;
+  Input input_;
+  Output output_;
   uint32_t bytes_delayed_;
 
   int num_vc_;

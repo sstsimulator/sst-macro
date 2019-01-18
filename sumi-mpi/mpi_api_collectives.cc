@@ -216,7 +216,7 @@ MpiApi::waitCollective(CollectiveOpBase* op)
     MpiRequest req(MpiRequest::Collective);
     req.setCollective(op);
     op->comm->addRequest(op->tag, &req);
-    queue_->progress_loop(&req);
+    queue_->progressLoop(&req);
   }
 
   if (is_comm_world){
@@ -270,7 +270,7 @@ int
 MpiApi::allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(Allgather, MPI_Allgather, comm,
           sendcount, sendtype, recvcount, recvtype,
@@ -340,7 +340,7 @@ MpiApi::alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype,
                   MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(Alltoall, MPI_Alltoall, comm,
          sendcount, sendtype,
@@ -431,7 +431,7 @@ int
 MpiApi::allreduce(const void *src, void *dst, int count,
                    MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(Allreduce, MPI_Allreduce, comm,
            count, type, mop, src, dst);
@@ -493,7 +493,7 @@ MpiApi::startBarrier(const char* name, MPI_Comm comm)
 int
 MpiApi::barrier(MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   start_mpi_call(MPI_Barrier);
   CollectiveOpBase* op = startBarrier("MPI_Barrier", comm);
   waitCollective(op);
@@ -563,7 +563,7 @@ MpiApi::startBcast(const char* name, MPI_Comm comm, int count, MPI_Datatype data
 int
 MpiApi::bcast(void* buffer, int count, MPI_Datatype type, int root, MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(Bcast, MPI_Bcast, comm,
            count, type, root, buffer);
@@ -653,7 +653,7 @@ int
 MpiApi::gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(Gather, MPI_Gather, comm, sendcount, sendtype, root,
           recvcount, recvtype, sendbuf, recvbuf);
@@ -764,7 +764,7 @@ int
 MpiApi::reduce(const void *src, void *dst, int count,
                 MPI_Datatype type, MPI_Op mop, int root, MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(Reduce, MPI_Reduce, comm, count,
           type, root, mop, src, dst);
@@ -836,7 +836,7 @@ int
 MpiApi::reduceScatter(const void *src, void *dst, const int *recvcnts,
                         MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(ReduceScatter, MPI_Reduce_scatter,
           comm, recvcnts, type, mop, src, dst);
@@ -960,7 +960,7 @@ MpiApi::startScan(const char* name, MPI_Comm comm, int count, MPI_Datatype type,
 int
 MpiApi::scan(const void *src, void *dst, int count, MPI_Datatype type, MPI_Op mop, MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(Scan, MPI_Scan, comm, count, type, mop, src, dst);
 
@@ -1036,7 +1036,7 @@ MpiApi::scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
                  MPI_Comm comm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   do_coll(Scatter, MPI_Scatter, comm, sendcount, sendtype, root,
           recvcount, recvtype, sendbuf, recvbuf);

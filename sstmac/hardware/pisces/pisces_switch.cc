@@ -190,13 +190,13 @@ PiscesSwitch::connectInput(
 Timestamp
 PiscesSwitch::sendLatency(SST::Params& params) const
 {
-  return params->get_time_param("sendLatency");
+  return Timestamp(params->get_time_param("sendLatency"));
 }
 
 Timestamp
 PiscesSwitch::creditLatency(SST::Params& params) const
 {
-  return params.get_namespace("xbar")->get_time_param("creditLatency");
+  return Timestamp(params.get_namespace("xbar")->get_time_param("creditLatency"));
 }
 
 int

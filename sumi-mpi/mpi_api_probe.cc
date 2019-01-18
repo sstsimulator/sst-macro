@@ -63,7 +63,7 @@ MpiApi::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 
   MpiRequest* req = MpiRequest::construct(MpiRequest::Probe);
   queue_->probe(req, commPtr, source, tag);
-  queue_->progress_loop(req);
+  queue_->progressLoop(req);
 
   if (status != MPI_STATUS_IGNORE){
     *status = req->status();

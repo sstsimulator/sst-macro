@@ -56,26 +56,26 @@ namespace sstmac {
 namespace hw {
 
 LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
-  next_out_free_(0),
+  next_out_free_(),
   NIC(params, parent)
 {
   ack_handler_ = newHandler(parent, &Node::handle);
   SST::Params inj_params = params.get_namespace("injection");
   double inj_bw = inj_params->get_bandwidth_param("bandwidth");
-  inj_bw_inverse_ = 1.0/inj_bw;
-  inj_lat_ = inj_params->get_time_param("latency");
+  inj_byte_delay_ = Timestamp(1.0/inj_bw);
+  inj_lat_ = Timestamp(inj_params->get_time_param("latency"));
 }
 
 Timestamp
 LogPNIC::sendLatency(SST::Params& params) const
 {
-  return params->get_time_param("latency");
+  return Timestamp(params->get_time_param("latency"));
 }
 
 Timestamp
 LogPNIC::creditLatency(SST::Params& params) const
 {
-  return params->get_time_param("latency");
+  return Timestamp(params->get_time_param("latency"));
 }
 
 LogPNIC::~LogPNIC()
@@ -86,13 +86,13 @@ LogPNIC::~LogPNIC()
 void
 LogPNIC::mtlHandle(Event *ev)
 {
-  Timestamp now_ = now();
+  GlobalTimestamp now_ = now();
   NetworkMessage* msg = static_cast<NetworkMessage*>(ev);
   if (msg->byteLength() < negligibleSize_){
     recvMessage(msg);
   } else {
-    Timestamp time_to_recv = inj_bw_inverse_*msg->byteLength();
-    Timestamp recv_start = now_ - time_to_recv;
+    Timestamp time_to_recv = inj_byte_delay_*msg->byteLength();
+    GlobalTimestamp recv_start = now_ - time_to_recv;
     if (recv_start > next_in_free_){
       next_in_free_ = now_;
       recvMessage(msg);
@@ -107,12 +107,12 @@ void
 LogPNIC::doSend(NetworkMessage* msg)
 {
   uint64_t num_bytes = msg->byteLength();
-  Timestamp now_ = now();
-  Timestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
+  GlobalTimestamp now_ = now();
+  GlobalTimestamp start_send = now_ > next_out_free_ ? now_ : next_out_free_;
   nic_debug("logp injection queued at %8.4e, sending at %8.4e for %s",
             now_.sec(), start_send.sec(), msg->toString().c_str());
 
-  Timestamp time_to_inject = inj_lat_ + Timestamp(inj_bw_inverse_ * num_bytes);
+  Timestamp time_to_inject = inj_lat_ + inj_byte_delay_ * num_bytes;
   next_out_free_ = start_send + time_to_inject;
 
   if (msg->needsAck()){

@@ -67,27 +67,37 @@ RegisterDebugSlot(write_params,
 
 namespace sprockit {
 
-double 
-get_quantity_with_units(const char* value, const char* key)
+bool
+get_quantity_with_units(const char *value, double& ret)
 {
   bool error;
-  double t = get_timestamp(value, error);
-  if (!error) return t;
-  double bw = get_bandwidth(value, error);
-  if (!error) return bw;
-  double freq = get_frequency(value, error);
-  if (!error) return freq;
-  double bytes = byte_length(value, error);
-  if (!error) return bytes;
+  ret = get_timestamp(value, error);
+  if (!error) return false;
+  ret= get_bandwidth(value, error);
+  if (!error) return false;
+  ret = get_frequency(value, error);
+  if (!error) return false;
+  ret = byte_length(value, error);
+  if (!error) return false;
 
 
   const char* begin = value;
   char* end = const_cast<char*>(begin);
-  double ret = ::strtod(begin, &end);
+  ret = ::strtod(begin, &end);
 
   while (*end==' ') ++end;
   int size = (int)((size_t)end - (size_t)begin);
-  if (begin == end || size != ::strlen(value)) {
+
+  bool failed = begin == end || size != ::strlen(value);
+  return failed;
+}
+
+double 
+get_quantity_with_units(const char* value, const char* key)
+{
+  double ret;
+  bool failed = get_quantity_with_units(value, ret);
+  if (failed) {
     spkt_abort_printf("sim_parameters::get_quantity: param %s with value %s"
         " is not formatted as a double with units (Hz,GB/s,ns,KB)",
         key, value);

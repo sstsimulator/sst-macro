@@ -182,7 +182,7 @@ RendezvousGet::incoming_payload(MpiMessage* msg)
   MpiQueueRecvRequest* req = iter->second;
   recv_flows_.erase(iter);
 
-  queue_->finalize_recv(msg, req);
+  queue_->finalizeRecv(msg, req);
   if (software_ack_){
     msg->advanceStage();
     mpi_->smsgSendResponse(msg, 64/*more sizeof(...) fixes*/, nullptr,

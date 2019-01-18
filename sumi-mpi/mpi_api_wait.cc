@@ -90,7 +90,7 @@ MpiApi::doWait(MPI_Request *request, MPI_Status *status, int& tag, int& source)
 
   MpiRequest* reqPtr = getRequest(req);
   if (!reqPtr->isComplete()){
-   queue_->progress_loop(reqPtr);
+   queue_->progressLoop(reqPtr);
   }
 
   tag = reqPtr->status().MPI_TAG;
@@ -160,7 +160,7 @@ int
 MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
                  MPI_Status *status)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
 
   // for caching the request in an upper scope before it is destroyed
   MPI_Request req_val = -1;

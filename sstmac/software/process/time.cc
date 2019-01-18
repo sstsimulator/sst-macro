@@ -47,21 +47,22 @@ Questions? Contact sst-macro-help@sandia.gov
 
 using sstmac::sw::OperatingSystem;
 using sstmac::Timestamp;
+using sstmac::GlobalTimestamp;
 
 extern "C" int SSTMAC_gettimeofday(struct timeval* tv, struct timezone* tz)
 {
   OperatingSystem* os = OperatingSystem::currentOs();
-  Timestamp t = os->now();
-  uint64_t ticks = t.ticks_int64();
-  tv->tv_sec = ticks / Timestamp::seconds;
-  tv->tv_usec = (ticks%Timestamp::seconds) / Timestamp::microseconds;
+  GlobalTimestamp t = os->now();
+  uint64_t usecs = os->now().usecRounded();
+  tv->tv_sec =  usecs / 1000000;
+  tv->tv_usec = usecs % 1000000;
   return 0;
 }
 
 extern "C" int sstmac_ts_nanosleep(const struct timespec *req, struct timespec *rem)
 {
-  uint64_t ticks = req->tv_sec * Timestamp::seconds; 
-  ticks += req->tv_nsec * Timestamp::nanoseconds;
+  uint64_t ticks = req->tv_sec * Timestamp::one_second;
+  ticks += req->tv_nsec * Timestamp::one_nanosecond;
   OperatingSystem* os = OperatingSystem::currentOs();
   os->sleep(Timestamp(ticks, Timestamp::exact));
   return 0;

@@ -103,11 +103,11 @@ class EventManager
     return complete_;
   }
 
-  static const Timestamp* myClock() {
+  static const GlobalTimestamp* myClock() {
     return global->nowPtr();
   }
 
-  static const Timestamp no_events_left_time;
+  static const GlobalTimestamp no_events_left_time;
 
   static EventManager* global;
 
@@ -152,7 +152,7 @@ class EventManager
 
   void finishStats();
 
-  Timestamp finalTime() const {
+  GlobalTimestamp finalTime() const {
     return final_time_;
   }
 
@@ -203,8 +203,7 @@ class EventManager
 
   void schedule(ExecutionEvent* ev){
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards on thread %d: %llu < %llu", 
-                        thread_id_, ev->time().ticks(), now_.ticks());
+      spkt_abort_printf("Time went backwards on thread %d", thread_id_);
     }
     event_queue_.insert(ev);
   }
@@ -215,28 +214,28 @@ class EventManager
     return interconn_;
   }
 
-  virtual void scheduleStop(Timestamp until);
+  virtual void scheduleStop(GlobalTimestamp until);
 
   /**
    * @brief run_events
    * @param event_horizon
    * @return Whether no more events or just hit event horizon
    */
-  Timestamp runEvents(Timestamp event_horizon);
+  GlobalTimestamp runEvents(GlobalTimestamp event_horizon);
 
-  Timestamp now() const {
+  GlobalTimestamp now() const {
     return now_;
   }
 
-  const Timestamp* nowPtr() const {
+  const GlobalTimestamp* nowPtr() const {
     return &now_;
   }
 
-  void setMinIpcTime(Timestamp t){
+  void setMinIpcTime(GlobalTimestamp t){
     min_ipc_time_ = std::min(t,min_ipc_time_);
   }
 
-  Timestamp minEventTime() const {
+  GlobalTimestamp minEventTime() const {
     return event_queue_.empty()
           ? no_events_left_time
           : (*event_queue_.begin())->time();
@@ -245,7 +244,7 @@ class EventManager
  protected:
   void registerPending();
 
-  virtual Timestamp receiveIncomingEvents(Timestamp vote) {
+  virtual GlobalTimestamp receiveIncomingEvents(GlobalTimestamp vote) {
     return vote;
   }
 
@@ -256,7 +255,7 @@ class EventManager
 
  protected:
   bool complete_;
-  Timestamp final_time_;
+  GlobalTimestamp final_time_;
   ParallelRuntime* rt_;
   hw::Interconnect* interconn_;
   sw::ThreadContext* des_context_;
@@ -271,14 +270,14 @@ class EventManager
   uint16_t thread_id_;
 
   Timestamp lookahead_;
-  Timestamp now_;
+  GlobalTimestamp now_;
 
  private:
 #define MAX_EVENT_MGR_THREADS 128
   std::vector<EventScheduler*> pending_registration_[MAX_EVENT_MGR_THREADS];
 
  protected:
-  Timestamp min_ipc_time_;
+  GlobalTimestamp min_ipc_time_;
 
   void scheduleIncoming(IpcEvent* iev);
 

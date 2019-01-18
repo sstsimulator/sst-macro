@@ -839,7 +839,7 @@ class MpiApi : public sumi::Transport
 
   bool generate_ids_;
 
-  uint64_t trace_clock() const;
+  uint64_t traceClock() const;
 
 #ifdef SSTMAC_OTF2_ENABLED
   otf2_writer* otf2_writer_;

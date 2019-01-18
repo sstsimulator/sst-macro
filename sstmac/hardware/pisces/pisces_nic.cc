@@ -84,7 +84,7 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
                 get_optional_param("stats", "null", params, parent);
   inj_buffer_->setStatCollector(inj_stats_);
 
-  credit_lat_ = inj_params->get_time_param("sendLatency");
+  credit_lat_ = Timestamp(inj_params->get_time_param("sendLatency"));
   ej_stats_ = PacketStatsCallback::factory::
                         get_optional_param("stats", "null", ej_params, parent);
 
@@ -95,13 +95,13 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
 Timestamp
 PiscesNIC::sendLatency(SST::Params& params) const
 {
-  return params.get_namespace("injection")->get_time_param("latency");
+  return Timestamp(params.get_namespace("injection")->get_time_param("latency"));
 }
 
 Timestamp
 PiscesNIC::creditLatency(SST::Params& params) const
 {
-  return params.get_namespace("injection")->get_time_param("latency");
+  return Timestamp(params.get_namespace("injection")->get_time_param("latency"));
 }
 
 void
@@ -183,7 +183,7 @@ PiscesNIC::inject(int vn, uint64_t offset, NetworkMessage* netmsg)
     payload->updateVC();
     payload->resetStages(0);
     payload->setInport(0);
-    Timestamp t = inj_buffer_->sendPayload(payload);
+    GlobalTimestamp t = inj_buffer_->sendPayload(payload);
 
     pisces_debug("On %s, injecting from %lu->%lu on %s",
                  toString().c_str(), offset, offset + bytes, netmsg->toString().c_str());
@@ -253,7 +253,7 @@ PiscesNIC::incomingPacket(Event* ev)
   PiscesPacket* pkt = safe_cast(PiscesPacket, ev);
   if (cut_through_){
     //these are pipelined
-    double delay = pkt->byteLength() / pkt->bw();
+    Timestamp delay = pkt->byteLength() * pkt->byteDelay();
     sendDelayedExecutionEvent(delay, newCallback(this, &PiscesNIC::packetArrived, pkt));
   } else {
     packetArrived(pkt);

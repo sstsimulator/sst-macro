@@ -113,10 +113,10 @@ class MpiQueue
 
   double now() const;
 
-  void finalize_recv(MpiMessage* msg,
+  void finalizeRecv(MpiMessage* msg,
                 MpiQueueRecvRequest* req);
 
-  sstmac::Timestamp progress_loop(MpiRequest* req);
+  sstmac::GlobalTimestamp progressLoop(MpiRequest* req);
 
   void nonblockingProgress();
 

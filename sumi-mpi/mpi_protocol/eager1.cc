@@ -103,7 +103,7 @@ Eager1::incoming(MpiMessage *msg, MpiQueueRecvRequest* req)
     delete[] temp_recv_buf;
   }
   queue_->memcopy(msg->payloadBytes());
-  queue_->finalize_recv(msg, req);
+  queue_->finalizeRecv(msg, req);
   delete msg;
 }
 

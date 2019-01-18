@@ -66,9 +66,7 @@ PiscesPacket::PiscesPacket(
   bool is_tail,
   NodeId fromaddr,
   NodeId toaddr) :
-  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr),
-  bw_(uninitialized_bw),
-  max_in_bw_(1.0)
+  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
 {
 }
 
@@ -77,8 +75,6 @@ PiscesPacket::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
   Packet::serialize_order(ser);
-  ser & bw_;
-  ser & max_in_bw_;
   ser & arrival_;
   ser & current_vc_;
 }
@@ -86,11 +82,11 @@ PiscesPacket::serialize_order(serializer& ser)
 std::string
 PiscesPacket::toString() const
 {
-  return sprockit::printf("flow %16lu%s, %d bytes bw=%8.4e %d->%d %s",
+  return sprockit::printf("flow %16lu%s, %d bytes delay=%8.4e %d->%d %s",
                    uint64_t(flowId()),
                    isTail() ? " tail" : "",
-                   byteLength(), bw_,
-                   int(fromaddr()), int(toaddr()), bw_,
+                   byteLength(), byte_delay_.sec(),
+                   int(fromaddr()), int(toaddr()),
                    orig() ? "with payload" : "no payload");
 }
 

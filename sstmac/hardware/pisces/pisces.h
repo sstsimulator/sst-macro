@@ -141,52 +141,35 @@ class PiscesPacket :
     inport_ = port;
   }
 
-  Timestamp arrival() const {
+  GlobalTimestamp arrival() const {
     return arrival_;
   }
 
-  void setArrival(Timestamp time) {
+  void setArrival(GlobalTimestamp time) {
     arrival_ = time;
   }
 
-  void initBw(double bw) {
-    bw_ = bw_ == uninitialized_bw ? bw : bw_;
+  void initByteDelay(Timestamp delay){
+    if (byte_delay_.ticks() == 0){
+      byte_delay_ = delay;
+    }
   }
 
-  void setMaxBw(double bw){
-    initBw(bw);
-    bw_ = std::min(bw_, bw);
+  Timestamp byteDelay() const {
+    return byte_delay_;
   }
 
-  /**
-   @return The bandwidth in number of bytes per second
-   */
-  double bw() const {
-    return bw_;
+  void setByteDelay(Timestamp delay){
+    byte_delay_ = delay;
   }
 
-  /**
-   @param The bandwidth in number of bytes per second
-   */
-  void setBw(double bw) {
-    bw_ = bw;
+  void setMinByteDelay(Timestamp delay){
+    initByteDelay(delay);
+    byte_delay_ = std::max(delay, byte_delay_);
   }
 
-  /**
-   * @brief max_incoming_bw The maximum bandwidth a packet
-   *        could have on its current component (always > #bw())
-   * @return
-   */
-  double maxIncomingBw() const {
-    return max_in_bw_;
-  }
-
-  void setMaxIncomingBw(double bw) {
-    max_in_bw_ = bw;
-  }
-
-  double serDelay() const {
-    return byteLength() / bw_;
+  Timestamp minByteDelay() const {
+    return byte_delay_ * numBytes();
   }
 
   void serialize_order(serializer& ser) override;
@@ -194,11 +177,9 @@ class PiscesPacket :
  private:
   PiscesPacket(){} //for serialization
 
-  double bw_;
+  Timestamp byte_delay_;
 
-  double max_in_bw_;
-
-  Timestamp arrival_;
+  GlobalTimestamp arrival_;
 
   int current_vc_;
 

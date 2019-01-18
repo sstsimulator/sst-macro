@@ -252,8 +252,8 @@ runParams(opts& oo,
   mgr->interconnect()->topology()->outputXYZ(oo.outputXYZ);
 
   double start = sstmacWallTime();
-  Timestamp stop_time = params->get_optional_time_param("stop_time", 0);
-  Timestamp runtime;
+  GlobalTimestamp stop_time(params->get_optional_time_param("stop_time", 0));
+  GlobalTimestamp runtime;
   try {
     runtime = mgr->run(stop_time);
 
@@ -328,7 +328,7 @@ runStandalone(int argc, char** argv)
   //oh, hmm, we are running inside configure
   //this means we actually just want to run a compiled program
   //and get the hell out of dodge
-  sstmac::Timestamp::initStamps(1);
+  sstmac::Timestamp::initStamps(100); //100 attoseconds per tick
   SST::Params null_params = std::make_shared<sprockit::sim_parameters>();
 
   SST::Params nic_params = null_params->get_optional_namespace("nic");

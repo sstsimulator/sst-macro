@@ -359,7 +359,7 @@ class Thread
 
   void setTlsValue(long thekey, void* ptr);
 
-  Timestamp now();
+  GlobalTimestamp now();
 
   void startAPICall();
 

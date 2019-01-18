@@ -80,7 +80,7 @@ class SoftwareLaunchRequest
     return nproc_;
   }
 
-  Timestamp time() const {
+  GlobalTimestamp time() const {
     return time_;
   }
 
@@ -135,7 +135,7 @@ class SoftwareLaunchRequest
 
   bool indexed_;
 
-  Timestamp time_;
+  GlobalTimestamp time_;
 
   int nproc_;
 

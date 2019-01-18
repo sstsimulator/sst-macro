@@ -52,30 +52,31 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 using sstmac::Timestamp;
+using sstmac::GlobalTimestamp;
 using os = sstmac::sw::OperatingSystem;
 
 extern "C" unsigned int sstmac_sleep(unsigned int secs){
-  os::currentOs()->sleep(Timestamp(secs, Timestamp::seconds));
+  os::currentOs()->sleep(Timestamp(secs, Timestamp::one_second));
   return 0;
 }
 
 extern "C" unsigned sstmac_sleepUntil(double t){
-  os::currentOs()->sleepUntil(Timestamp(t));
+  os::currentOs()->sleepUntil(GlobalTimestamp(t));
   return 0;
 }
 
 extern "C" int sstmac_usleep(unsigned int usecs){
-  os::currentOs()->sleep(Timestamp(usecs, Timestamp::microseconds));
+  os::currentOs()->sleep(Timestamp(usecs, Timestamp::one_microsecond));
   return 0;
 }
 
 extern "C" int sstmac_nanosleep(unsigned int nanosecs){
-  os::currentOs()->sleep(Timestamp(nanosecs, Timestamp::nanoseconds));
+  os::currentOs()->sleep(Timestamp(nanosecs, Timestamp::one_nanosecond));
   return 0;
 }
 
 extern "C" int sstmac_msleep(unsigned int msecs){
-  os::currentOs()->sleep(Timestamp(msecs, Timestamp::milliseconds));
+  os::currentOs()->sleep(Timestamp(msecs, Timestamp::one_millisecond));
   return 0;
 }
 
@@ -85,7 +86,7 @@ extern "C" int sstmac_fsleep(double secs){
 }
 
 extern "C" void sstmac_compute(double secs){
-  sstmac::sw::OperatingSystem::currentOs()->compute(secs);
+  sstmac::sw::OperatingSystem::currentOs()->compute(Timestamp(secs));
 }
 
 extern "C" void sstmac_memread(uint64_t bytes){

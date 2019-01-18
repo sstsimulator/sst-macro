@@ -68,7 +68,7 @@ namespace sstmac {
 SST::TimeConverter* EventScheduler::time_converter_ = nullptr;
 #else
 void
-EventScheduler::sendExecutionEvent(Timestamp arrival, ExecutionEvent *ev)
+EventScheduler::sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent *ev)
 {
   ev->setTime(arrival);
   ev->setSeqnum(seqnum_++);
@@ -126,7 +126,7 @@ SubComponent::setup()
 void
 LocalLink::send(Timestamp delay, Event *ev)
 {
-  Timestamp arrival = mgr_->now() + delay + latency_;
+  GlobalTimestamp arrival = mgr_->now() + delay + latency_;
   ExecutionEvent* qev = new HandlerExecutionEvent(ev, handler_);
   qev->setSeqnum(seqnum_++);
   qev->setTime(arrival);
@@ -137,7 +137,7 @@ LocalLink::send(Timestamp delay, Event *ev)
 void
 IpcLink::send(Timestamp delay, Event *ev)
 {
-  Timestamp arrival = mgr_->now() + delay + latency_;
+  GlobalTimestamp arrival = mgr_->now() + delay + latency_;
   mgr_->setMinIpcTime(arrival);
   IpcEvent iev;
   iev.src = srcId_;
@@ -158,7 +158,7 @@ void
 MultithreadLink::send(Timestamp delay, Event* ev)
 {
   ExecutionEvent* qev = new HandlerExecutionEvent(ev, handler_);
-  Timestamp arrival = mgr_->now() + delay + latency_;
+  GlobalTimestamp arrival = mgr_->now() + delay + latency_;
   mgr_->setMinIpcTime(arrival);
   qev->setTime(arrival);
   qev->setSeqnum(seqnum_++);

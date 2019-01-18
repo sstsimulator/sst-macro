@@ -70,11 +70,11 @@ class MemoryModel : public SubComponent
 
   virtual ~MemoryModel();
 
-  virtual void access(uint64_t bytes, double max_bw, Callback* cb) = 0;
+  virtual void access(uint64_t bytes, Timestamp byte_delay, Callback* cb) = 0;
 
   virtual std::string toString() const = 0;
 
-  virtual double maxSingleBw() const = 0;
+  virtual Timestamp minFlowByteDelay() const = 0;
 
   NodeId addr() const;
 
@@ -100,9 +100,9 @@ class NullMemoryModel : public MemoryModel
 
   std::string toString() const override { return "null memory"; }
 
-  double maxSingleBw() const override { return 1e9; }
+  Timestamp minFlowByteDelay() const override { return Timestamp(1e-9); } //use 1 ns
 
-  void access(uint64_t bytes, double max_bw, Callback *cb) override {}
+  void access(uint64_t bytes, Timestamp byte_delay, Callback *cb) override {}
 };
 
 }

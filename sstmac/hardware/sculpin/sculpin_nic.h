@@ -92,9 +92,9 @@ class SculpinNIC :
     int dst_inport,
     EventLink* link) override;
 
-  LinkHandler* creditHandler(int port) override;
+  LinkHandler* creditHandler(int Port) override;
 
-  LinkHandler* payloadHandler(int port) override;
+  LinkHandler* payloadHandler(int Port) override;
 
   Timestamp sendLatency(SST::Params& params) const override;
 
@@ -108,14 +108,14 @@ class SculpinNIC :
   void eject(SculpinPacket* pkt);
 
  private:
-  Timestamp inj_next_free_;
+  GlobalTimestamp inj_next_free_;
   EventLink* inj_link_;
 
-  double inj_inv_bw_;
+  Timestamp inj_byte_delay_;
 
   uint32_t packet_size_;
 
-  Timestamp ej_next_free_;
+  GlobalTimestamp ej_next_free_;
   RecvCQ cq_;
 };
 

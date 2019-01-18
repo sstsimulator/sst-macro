@@ -186,7 +186,7 @@ PiscesBuffer::handlePayload(Event* ev)
   }
 }
 
-Timestamp
+GlobalTimestamp
 PiscesBuffer::sendPayload(PiscesPacket *pkt)
 {
   pkt->setArrival(now());

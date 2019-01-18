@@ -236,7 +236,7 @@ class DragonflyPlusParRouter : public DragonflyPlusAlltoallMinimalRouter {
         int interG = my_g_;
         int valiantPort;
         uint32_t attempt = 0;
-        uint32_t seed = netsw_->now().ticks();
+        uint32_t seed = netsw_->now().time.ticks();
         int numTestPorts = covering_ * dfly_->g();
         while (interG == my_g_ || interG == dstG){
           valiantPort = randomNumber(numTestPorts, attempt, seed);

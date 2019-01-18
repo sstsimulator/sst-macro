@@ -77,7 +77,7 @@ struct threadQueue
   }
 
   volatile int64_t* delta_t;
-  Timestamp min_time;
+  GlobalTimestamp min_time;
   EventManager* mgr;
   threadQueue* child1;
   threadQueue* child2;
@@ -97,7 +97,7 @@ class MultithreadedEventContainer :
 
   virtual void run() override;
 
-  void scheduleStop(Timestamp until) override;
+  void scheduleStop(GlobalTimestamp until) override;
 
   EventManager* threadManager(int thr) const override {
     if (thr == num_subthreads_) {

@@ -81,9 +81,9 @@ class API : public Library
 
   virtual void finish(){}
 
-  Timestamp now() const;
+  GlobalTimestamp now() const;
 
-  void schedule(Timestamp t, ExecutionEvent* ev);
+  void schedule(GlobalTimestamp t, ExecutionEvent* ev);
 
   void scheduleDelay(Timestamp t, ExecutionEvent* ev);
 

@@ -69,18 +69,13 @@ namespace hw {
 RegisterNamespaces("bytes_sent", "congestion_spyplot", "congestion_delay",
                    "bytes_sent", "byte_hops", "delay_histogram");
 
-static inline double
+static inline Timestamp
 congestionDelay(const pkt_arbitration_t& st)
 {
   Timestamp delta_t = st.tail_leaves - st.pkt->arrival();
-  double min_delta_t = st.pkt->byteLength() / st.incoming_bw;
-  double congestion_delay = std::max(0., delta_t.sec() - min_delta_t);
-  debug("Computed congestion delay of %12.6e for message with %ld "
-       "bytes delta_t %12.6e and incoming bandwidth of %12.6e with "
-       "min delta_t %12.6e",
-       congestion_delay, st.pkt->byteLength(),
-       delta_t, st.incoming_bw, min_delta_t);
-  return congestion_delay;
+  Timestamp min_delta_t = st.incoming_byte_delay * st.pkt->byteLength();
+  if (delta_t > min_delta_t) return (delta_t - min_delta_t);
+  else return Timestamp();
 }
 
 PacketStatsCallback::PacketStatsCallback(SST::Params& params, EventScheduler* parent)
@@ -124,8 +119,8 @@ CongestionSpyplot::collectFinalEvent(PiscesPacket* pkt)
 void
 CongestionSpyplot::collectSingleEvent(const pkt_arbitration_t &st)
 {
-  double delay = congestionDelay(st);
-  collect(delay, st.pkt);
+  Timestamp delay = congestionDelay(st);
+  collect(delay.sec(), st.pkt);
 }
 
 void
@@ -150,8 +145,8 @@ DelayHistogram::~DelayHistogram()
 void
 DelayHistogram::collectSingleEvent(const pkt_arbitration_t& st)
 {
-  double delay_us = congestionDelay(st);
-  congestion_hist_->addData(delay_us);
+  Timestamp delay = congestionDelay(st);
+  congestion_hist_->addData(delay.usec());
 }
 
 void

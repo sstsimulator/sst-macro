@@ -90,22 +90,24 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
   top_ = Topology::staticTopology(topParams);
 
   double net_bw = params->get_bandwidth_param("bandwidth");
-  inverse_bw_ = 1.0/net_bw;
+  net_byte_delay_ = Timestamp(1.0/net_bw);
 
   double inj_bw = params->get_optional_namespace("ejection")->get_optional_bandwidth_param("bandwidth", net_bw);
-  inj_bw_inverse_ = 1.0/inj_bw;
+  inj_byte_delay_ = Timestamp(1.0/inj_bw);
 
-  inv_min_bw_ = std::max(inverse_bw_, inj_bw_inverse_);
+  max_byte_delay_ = std::max(net_byte_delay_, inj_byte_delay_);
 
-  hop_latency_ = params->get_time_param("hop_latency");
+  hop_latency_ = Timestamp(params->get_time_param("hop_latency"));
 
-  out_in_lat_ = params->get_time_param("out_in_latency");
+  out_in_lat_ = Timestamp(params->get_time_param("out_in_latency"));
+
+  if (net_byte_delay_.ticks() == 0) abort();
 
   if (params->has_param("random_seed")){
     random_seed_ = params->get_int_param("random_seed");
     rng_ = RNG::MWC::construct();
-    random_max_extra_latency_ = params->get_time_param("random_max_extra_latency");
-    random_max_extra_byte_delay_ = params->get_time_param("random_max_extra_byte_delay");
+    random_max_extra_latency_ = Timestamp(params->get_time_param("random_max_extra_latency"));
+    random_max_extra_byte_delay_ = Timestamp(params->get_time_param("random_max_extra_byte_delay"));
   }
 
   if (params->has_namespace("contention")){
@@ -134,11 +136,11 @@ LogPSwitch::sendEvent(Event *ev)
 }
 
 void
-LogPSwitch::send(Timestamp start, NetworkMessage* msg)
+LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
 {
   Timestamp delay;
   if (rng_){
-    uint64_t t = start.ticks();
+    uint64_t t = start.time.ticks();
     t = ((t*random_seed_) << 5) + random_seed_;
     uint32_t z = (uint32_t)((t & 0xFFFFFFFF00000000LL) >> 32);
     uint32_t w = (uint32_t)(t & 0xFFFFFFFFLL);
@@ -149,17 +151,17 @@ LogPSwitch::send(Timestamp start, NetworkMessage* msg)
     delay += msg->byteLength() * bw_inc * random_max_extra_byte_delay_;
   } else if (contention_model_) {
     double contention = contention_model_->value();
-    delay += msg->byteLength() * inv_min_bw_ * contention;
+    delay += msg->byteLength() * max_byte_delay_ * contention;
   }
 
   NodeId dst = msg->toaddr();
-  delay += inv_min_bw_ * msg->byteLength(); //bw term
+  delay += max_byte_delay_ * msg->byteLength(); //bw term
   int num_hops = top_->numHopsToNode(msg->fromaddr(), dst);
   delay += num_hops * hop_latency_;
   debug_printf(sprockit::dbg::logp,
                "sending message over %d hops with extra delay %12.8e and inj lat %12.8e for inv_bw %12.8e on size %d: %s",
                num_hops, delay.sec(), out_in_lat_.sec(),
-               inv_min_bw_, msg->byteLength(), msg->toString().c_str());
+               max_byte_delay_.sec(), msg->byteLength(), msg->toString().c_str());
 
   Timestamp extra_delay = start - now() + delay;
 

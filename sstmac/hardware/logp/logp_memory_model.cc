@@ -60,27 +60,28 @@ LogPMemoryModel::LogPMemoryModel(SST::Params& params, Node* nd)
   : MemoryModel(params, nd) //no self events
 {
 
-  lat_ = params->get_time_param("latency");
-  bw_ = params->get_bandwidth_param("bandwidth");
-  link_ = new link(bw_, lat_);
+  lat_ = Timestamp(params->get_time_param("latency"));
+  double bw = params->get_bandwidth_param("bandwidth");
+  min_byte_delay_ = Timestamp(1.0/bw);
+  link_ = new Link(min_byte_delay_, lat_);
 }
 
 void
-LogPMemoryModel::access(uint64_t bytes, double max_bw, Callback* cb)
+LogPMemoryModel::access(uint64_t bytes, Timestamp byte_delay, Callback* cb)
 {
   mem_debug("simple model: doing access of %ld bytes", bytes);
 
-  Timestamp delta_t = link_->newAccess(now(), bytes, max_bw);
+  Timestamp delta_t = link_->newAccess(now(), bytes, byte_delay);
   parent_node_->sendDelayedExecutionEvent(delta_t, cb);
 }
 
 Timestamp
-LogPMemoryModel::link::newAccess(Timestamp now, uint64_t size, double max_bw)
+LogPMemoryModel::Link::newAccess(GlobalTimestamp now, uint64_t size, Timestamp byte_delay)
 {
-  max_bw = std::min(max_bw, bw_);
-  Timestamp n(std::max(now.ticks(), last_access_.ticks()), Timestamp::exact);
-  Timestamp access = lat_ + Timestamp((double) size / max_bw);
-  last_access_ = n + access;
+  Timestamp actual_byte_delay = std::max(byte_delay, byte_delay_);
+  GlobalTimestamp base = std::max(now, last_access_);
+  Timestamp access = lat_ + actual_byte_delay * size;
+  last_access_ = base + access;
   Timestamp delta = last_access_ - now;
   return delta;
 }

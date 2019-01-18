@@ -245,7 +245,7 @@ NIC::intranodeSend(NetworkMessage* payload)
   uint64_t byte_length = payload->byteLength();
   if (byte_length > 64){
     mem->access(payload->byteLength(),
-                mem->maxSingleBw(),
+                mem->minFlowByteDelay(),
                 newCallback(this, &NIC::finishMemcpy, payload));
   } else {
     finishMemcpy(payload);

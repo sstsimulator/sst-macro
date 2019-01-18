@@ -207,7 +207,7 @@ inline sstmac::Timestamp deltat(const dumpi_clock &left, const dumpi_clock &righ
 {
   static const int64_t billion(1e9);
   uint64_t nsec = billion*(left.sec-right.sec) + (left.nsec - right.nsec);
-  return sstmac::Timestamp(nsec, sstmac::Timestamp::nanoseconds);
+  return sstmac::Timestamp(nsec, sstmac::Timestamp::one_nanosecond);
 }
 
 /// Indicate that we are starting an MPI call.

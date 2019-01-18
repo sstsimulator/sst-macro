@@ -65,7 +65,7 @@ int
 MpiApi::commDup(MPI_Comm input, MPI_Comm *output)
 {
   checkInit();
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   start_comm_call(MPI_Comm_dup,input);
   MpiComm* inputPtr = getComm(input);
   MpiComm* outputPtr = comm_factory_.comm_dup(inputPtr);
@@ -118,7 +118,7 @@ MpiApi::commSize(MPI_Comm comm, int *size)
 int
 MpiApi::commCreate(MPI_Comm input, MPI_Group group, MPI_Comm *output)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   start_comm_call(MPI_Comm_create,input);
   MpiComm* inputPtr = getComm(input);
   MpiGroup* groupPtr = getGroup(group);
@@ -266,7 +266,7 @@ MpiApi::cartCoords(MPI_Comm comm, int rank, int maxdims, int coords[])
 int
 MpiApi::commSplit(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 {
-  auto start_clock = trace_clock();
+  auto start_clock = traceClock();
   start_comm_call(MPI_Comm_split,incomm);
   MpiComm* incommPtr = getComm(incomm);
   MpiComm* outcommPtr = comm_factory_.commSplit(incommPtr, color, key);

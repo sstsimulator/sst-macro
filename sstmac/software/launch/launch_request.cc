@@ -82,7 +82,7 @@ SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
     params->get_vector_param("core_affinities", core_affinities_);
   }
 
-  time_ = params->get_optional_time_param("start", 0);
+  time_ = GlobalTimestamp(params->get_optional_time_param("start", 0));
 
   if (params->has_param("launch_cmd")){
     parseLaunchCmd(params);
