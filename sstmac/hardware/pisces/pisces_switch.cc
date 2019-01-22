@@ -200,10 +200,10 @@ PiscesSwitch::creditLatency(SST::Params& params) const
 }
 
 int
-PiscesSwitch::queueLength(int port) const
+PiscesSwitch::queueLength(int port, int vc) const
 {
   PiscesBuffer* buf = static_cast<PiscesBuffer*>(out_buffers_[port]);
-  return buf->queueLength();
+  return buf->queueLength(vc);
 }
 
 std::string

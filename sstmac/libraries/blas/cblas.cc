@@ -54,7 +54,7 @@ static BlasAPI*
 get_lib_blas()
 {
   Thread* t = OperatingSystem::currentThread();
-  return t->get_api<BlasAPI>();
+  return t->getApi<BlasAPI>();
 }
 
 extern "C" void

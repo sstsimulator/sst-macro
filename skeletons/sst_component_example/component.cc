@@ -101,7 +101,7 @@ class DummySwitch : public TestComponent {
     initLinks(params);
     //init params
     num_ping_pongs_ = params->get_optional_int_param("num_ping_pongs", 2);
-    latency_ = params->get_time_param("latency");
+    latency_ = Timestamp(params->get_time_param("latency"));
   }
 
   std::string toString() const override { return "dummy";}

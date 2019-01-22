@@ -168,10 +168,6 @@ class PiscesPacket :
     byte_delay_ = std::max(delay, byte_delay_);
   }
 
-  Timestamp minByteDelay() const {
-    return byte_delay_ * numBytes();
-  }
-
   void serialize_order(serializer& ser) override;
 
  private:
@@ -188,6 +184,8 @@ class PiscesPacket :
   uint8_t outports_[3];
 
   uint16_t inport_;
+
+
 
 };
 

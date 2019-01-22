@@ -133,8 +133,6 @@ class PiscesNIC : public NIC
 
   uint32_t packet_size_;
 
-  bool cut_through_;
-
   PacketStatsCallback* inj_stats_;
   PacketStatsCallback* ej_stats_;
 

@@ -117,12 +117,13 @@ PiscesSender::sendCredit(
                                             src_vc, payload->numBytes());
 
   Timestamp credit_departure_delay = credits_ready - now();
-  if (credit_departure_delay < credit_lat_){
+  if (credit_departure_delay <= credit_lat_){
     credit_departure_delay = Timestamp();
   } else {
     //assume credits pipeline to arrive exactly when ready
     credit_departure_delay -= credit_lat_;
   }
+
   pisces_debug(
       "On %s:%p on inport %d, crediting %s:%p port:%d:%d vc:%d {%s}"
       "after delay %9.5e after latency %9.5e with %p",

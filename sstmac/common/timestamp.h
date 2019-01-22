@@ -108,6 +108,16 @@ class Timestamp
 
   explicit Timestamp() : ticks_(0) {}
 
+  static uint32_t divideUp(Timestamp num, Timestamp denom){
+    //optimize for architectures that generate remainder bit
+    //this should optimize
+    uint32_t x = num.ticks();
+    uint32_t y = denom.ticks();
+    uint32_t xy = x/y;
+    uint32_t res = (x % y) ? xy + 1 : xy;
+    return res;
+  }
+
 #if ACTUAL_INTEGRATED_SST_CORE
   operator SST::SimTime_t() const {
     return ticks_;

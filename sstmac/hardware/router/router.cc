@@ -89,8 +89,8 @@ Router::switchPaths(
   int orig_port,
   int new_port) const
 {
-  int orig_queue_length = netsw_->queueLength(orig_port);
-  int new_queue_length = netsw_->queueLength(new_port);
+  int orig_queue_length = netsw_->queueLength(orig_port, all_vcs);
+  int new_queue_length = netsw_->queueLength(new_port, all_vcs);
   int orig_weight = orig_queue_length * orig_distance;
   int valiant_weight = new_queue_length * new_distance;
   rter_debug("comparing minimal(%d) %d=%dx%d against non-minimal(%d) %d=%dx%d",

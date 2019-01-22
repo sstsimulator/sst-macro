@@ -85,12 +85,12 @@ class MpiApi : public sumi::Transport
 {
   RegisterAPI("mpi", MpiApi)
 
-  friend class otf2_writer;
+  friend class OTF2Writer;
 
  public:
   MpiApi(SST::Params& params,
-          sstmac::sw::SoftwareId sid,
-          sstmac::sw::OperatingSystem* os);
+        sstmac::sw::SoftwareId sid,
+        sstmac::sw::OperatingSystem* os);
 
   static void deleteStatics();
 
@@ -842,7 +842,7 @@ class MpiApi : public sumi::Transport
   uint64_t traceClock() const;
 
 #ifdef SSTMAC_OTF2_ENABLED
-  otf2_writer* otf2_writer_;
+  OTF2Writer* OTF2Writer_;
 #endif
 
 #if SSTMAC_COMM_SYNC_STATS

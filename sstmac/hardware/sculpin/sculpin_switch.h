@@ -82,7 +82,7 @@ class SculpinSwitch :
 
   virtual ~SculpinSwitch();
 
-  int queueLength(int Port) const override;
+  int queueLength(int port, int vc) const override;
 
   Router* router() const override {
     return router_;

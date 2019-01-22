@@ -106,8 +106,7 @@ class Thread
 
   static Thread* current();
 
-  template <class T>
-  T* get_api() {
+  template <class T> T* getApi() {
     API* a = _get_api(T::factory_string());
     T* casted = dynamic_cast<T*>(a);
     if (!casted) {
@@ -353,6 +352,10 @@ class Thread
     auto& active = omp_contexts_.back();
     bool parallel = active.level > 0;
     return parallel ? 1 : 0;
+  }
+
+  template <class T> static T* getCurrentApi(){
+    return current()->getApi<T>();
   }
 
   void* getTlsValue(long thekey) const;

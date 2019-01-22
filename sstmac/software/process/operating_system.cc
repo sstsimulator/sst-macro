@@ -394,17 +394,17 @@ OperatingSystem::initThreads(int nthread)
 
 OperatingSystem::~OperatingSystem()
 {
-  if (!pending_library_events_.empty()){
-    auto& pair = *pending_library_events_.begin();
-    const std::string& name = pair.first;
-    Event* ev = pair.second.front();
-    cerrn << "Valid libraries on OS " << addr() << ":\n";
-    for  (auto& pair : libs_){
-      cerrn << pair.first << std::endl;
+  for (auto& pair : pending_library_events_){
+    std::string name = pair.first;
+    for (Event* ev : pair.second){
+      cerrn << "Valid libraries on OS " << addr() << ":\n";
+      for  (auto& pair : libs_){
+        cerrn << pair.first << std::endl;
+      }
+      spkt_abort_printf("OperatingSystem:: never registered library %s on os %d for event %s",
+                     name.c_str(), int(addr()),
+                     sprockit::toString(ev).c_str());
     }
-    spkt_abort_printf("OperatingSystem::handle_event: never registered library %s on os %d for event %s",
-                   name.c_str(), int(addr()),
-                   sprockit::toString(ev).c_str());
   }
 
   if (des_context_) {
@@ -793,6 +793,8 @@ OperatingSystem::registerLib(Library* lib)
   if (iter != pending_library_events_.end()){
     const std::list<Event*> events = iter->second;
     for (Event* ev : events){
+      os_debug("delivering delayed event to lib %s: %s",
+               lib->libName().c_str(), sprockit::toString(ev).c_str());
       sendExecutionEventNow(newCallback(componentId(), lib, &Library::incomingEvent, ev));
     }
     pending_library_events_.erase(iter);
@@ -980,11 +982,11 @@ OperatingSystem::handleLibraryEvent(const std::string& name, Event* ev)
   bool found = it != libs_.end();
   if (found){
     Library* lib = it->second;
-    os_debug("delivering message to lib %s:%p\n%s",
+    os_debug("delivering message to lib %s:%p: %s",
         name.c_str(), lib, sprockit::toString(ev).c_str());
     lib->incomingEvent(ev);
   } else {
-    os_debug("unable to deliver message to lib %s\n%s",
+    os_debug("unable to deliver message to lib %s: %s",
         name.c_str(), sprockit::toString(ev).c_str());
   }
   return found;
@@ -1003,6 +1005,8 @@ OperatingSystem::handleEvent(Event* ev)
 
   bool found = handleLibraryEvent(libmsg->libname(), ev);
   if (!found){
+    os_debug("delaying event to lib %s: %s",
+             libmsg->libname().c_str(), libmsg->toString().c_str());
     pending_library_events_[libmsg->libname()].push_back(ev);
   }
 }

@@ -139,7 +139,7 @@ OTF2TraceReplayApp::skeletonMain() {
         << metafile_ << std::endl;
   }
 
-  mpi_ = get_api<sumi::MpiApi>();
+  mpi_ = getApi<sumi::MpiApi>();
   mpi_->set_generate_ids(false);
   mpi_->init(nullptr,nullptr); //force init here
 

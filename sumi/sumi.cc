@@ -63,7 +63,7 @@ namespace sumi {
 static Transport* current_transport()
 {
   Thread* t = Thread::current();
-  return t->get_api<Transport>();
+  return t->getApi<Transport>();
 }
 
 static CollectiveEngine* current_engine()

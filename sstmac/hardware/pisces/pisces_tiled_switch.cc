@@ -219,7 +219,7 @@ PiscesTiledSwitch::creditLatency(SST::Params& params) const
 }
 
 int
-PiscesTiledSwitch::queueLength(int port) const
+PiscesTiledSwitch::queueLength(int port, int vc) const
 {
   spkt_throw_printf(sprockit::unimplemented_error,
     "PiscesTiledSwitch::queue_length");

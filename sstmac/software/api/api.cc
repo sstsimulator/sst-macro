@@ -68,13 +68,6 @@ apiUnlock() {
   the_api_lock.unlock();
 }
 
-API*
-staticGetAPI(const char *name)
-{
-  API* a = OperatingSystem::currentThread()->_get_api(name);
-  return a;
-}
-
 API::~API()
 {
   if (host_timer_) {

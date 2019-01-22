@@ -99,7 +99,7 @@ class NetworkSwitch :
    * @param port The port to check the queue length of
    * @return The queue length as an integer number of packets waiting
    */
-  virtual int queueLength(int port) const = 0;
+  virtual int queueLength(int port, int vc) const = 0;
 
  protected:
   NetworkSwitch(SST::Params& params, uint32_t id);

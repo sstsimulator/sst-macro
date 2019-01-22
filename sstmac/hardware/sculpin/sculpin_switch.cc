@@ -226,9 +226,10 @@ SculpinSwitch::creditLatency(SST::Params& params) const
 }
 
 int
-SculpinSwitch::queueLength(int portnum) const
+SculpinSwitch::queueLength(int port, int vc) const
 {
-  auto& p = ports_[portnum];
+  auto& p = ports_[port];
+  //VC basically ignored, all ports on "same" VC
   return p.priority_queue.size();
 }
 

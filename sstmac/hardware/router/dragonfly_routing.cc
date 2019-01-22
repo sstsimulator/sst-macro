@@ -639,7 +639,7 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
         NetworkSwitch* nsw = ic_->switchAt(sid);
         DragonflyUgalGRouter* rtr = safe_cast(DragonflyUgalGRouter, nsw->router());
         for (int port : rtr->group_ports_[dstGrp]){
-          int testLength = nsw->queueLength(port);
+          int testLength = nsw->queueLength(port, all_vcs);
           if (testLength < queueLength){
             rter_debug("port %d on switch %d has good queue length %d",
                        port, sid, testLength);
@@ -649,7 +649,7 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
           }
         }
       } else {
-        int testLength = netsw_->queueLength(p);
+        int testLength = netsw_->queueLength(p, all_vcs);
         if (testLength < queueLength){
           rter_debug("port %d on switch %d has good queue length %d",
                      p, my_addr_, testLength);

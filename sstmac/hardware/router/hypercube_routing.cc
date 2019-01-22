@@ -166,8 +166,8 @@ class HypercubeParRouter : public HypercubeMinimalRouter {
          hdr->deadlock_vc = 0;
          return;
        }
-      int minLength = netsw_->queueLength(minimalPort);
-      int valLength = netsw_->queueLength(valiantPort) * 2;
+      int minLength = netsw_->queueLength(minimalPort, all_vcs);
+      int valLength = netsw_->queueLength(valiantPort, all_vcs) * 2;
       if (minLength <= valLength){
         hdr->edge_port = minimalPort;
       } else {

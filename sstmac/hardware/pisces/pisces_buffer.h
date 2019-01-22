@@ -86,7 +86,7 @@ class PiscesBuffer :
     return input_.link ? "buffer" : "injection";
   }
 
-  int queueLength() const;
+  int queueLength(int vc) const;
 
   PiscesBuffer(SST::Params& params, SST::Component* parent, int num_vc);
 
@@ -98,9 +98,7 @@ class PiscesBuffer :
   int num_vc_;
   std::vector<payload_queue> queues_;
   std::vector<int> credits_;
-#if SSTMAC_SANITY_CHECK
   std::vector<int> initial_credits_;
-#endif
 
   PiscesBandwidthArbitrator* arb_;
   std::set<int> deadlocked_channels_;

@@ -277,10 +277,10 @@ get_bandwidth(const char *value, bool &errorflag, bool print_errors)
     for (unsigned i = 0; i < lcunits.size(); ++i) {
       lcunits[i] = tolower(lcunits[i]);
     }
-    if (abbrname.find(units) != abbrname.end()) {
+    if (abbrname.find(units) != abbrname.end()) { //abbr ARE case-sensitive
       multiplier = abbrname[units];
     } else if (fullname.find(lcunits) != fullname.end()) {
-      multiplier = fullname[units];
+      multiplier = fullname[lcunits];
     } else {
       errorflag = true;
       if (print_errors) cerr0 << "No match for the bandwidth units " << units << "\n";

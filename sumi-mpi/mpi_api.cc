@@ -106,7 +106,7 @@ sstmac::sw::FTQTag MpiApi::mpi_tag("MPI");
 MpiApi* sstmac_mpi()
 {
   sstmac::sw::Thread* t = OperatingSystem::currentThread();
-  return t->get_api<MpiApi> ();
+  return t->getApi<MpiApi> ();
 }
 
 //

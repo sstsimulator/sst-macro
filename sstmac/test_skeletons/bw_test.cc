@@ -42,17 +42,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef _sstmac_software_api_fwd_h
-#define _sstmac_software_api_fwd_h
+#include <sstmac/replacements/mpi.h>
+#include <sstmac/compute.h>
+#include <sprockit/keyword_registration.h>
+#include <sstmac/software/process/backtrace.h>
+#include <sumi/transport.h>
+#include <sstmac/software/process/thread.h>
 
-namespace sstmac {
-namespace sw {
+#define sstmac_app_name bw_test
 
-class API;
+int USER_MAIN(int argc, char** argv)
+{
+  SSTMACBacktrace(main);
+  sumi::Transport* tport = sstmac::sw::Thread::getCurrentApi<sumi::Transport>();
+  std::cout << "Rank " << tport->rank() << " starting at " <<
+               tport->now().sec() << std::endl;
+  tport->init();
 
-API* staticGetAPI(const char* name);
+  uint32_t size = 64000;
+  double t_start = tport->now().sec();
 
+  int partner = (tport->rank() + 1) % 2;
+  tport->rdmaPut<sumi::Message>(partner, 64000, nullptr, nullptr,
+                 sumi::Message::default_cq, sumi::Message::default_cq,
+                 sumi::Message::pt2pt);
 
-} }
+  //wait for send AND recv ack
+  auto msg = tport->blockingPoll(sumi::Message::default_cq);
+  msg = tport->blockingPoll(sumi::Message::default_cq);
 
-#endif
+  double t_stop = tport->now().sec();
+
+  double bw = size / (t_stop - t_start);
+  std::cout << "Rank " << tport->rank() << " saw BW of " << bw << std::endl;
+
+  tport->finish();
+  return 0;
+}
+

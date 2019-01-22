@@ -84,6 +84,10 @@ PiscesMemoryModel::PiscesMemoryModel(SST::Params& params, Node *nd) :
   packet_size_ = params->get_optional_byte_length_param("mtu", 100e9);
   double max_bw = params->get_bandwidth_param("total_bandwidth");
   double max_single_bw = params->get_optional_bandwidth_param("max_single_bandwidth", max_bw);
+  if (max_bw == 0){
+    params->print_params();
+    spkt_abort_printf("Bad bandwidth to memory model");
+  }
   min_agg_byte_delay_ = Timestamp(1.0/max_bw);
   min_flow_byte_delay_ = Timestamp(1.0/max_single_bw);
   latency_ = Timestamp(params->get_time_param("latency"));

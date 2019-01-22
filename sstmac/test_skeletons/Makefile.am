@@ -23,6 +23,7 @@ endif
 libsstmac_test_skeletons_la_LDFLAGS = 
 
 libsstmac_test_skeletons_la_SOURCES = \
+  bw_test.cc \
   host_compute.cc \
   app_hello_world.cc 
 

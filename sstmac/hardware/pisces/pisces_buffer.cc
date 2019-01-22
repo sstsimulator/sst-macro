@@ -85,18 +85,14 @@ PiscesBuffer::PiscesBuffer(
     num_vc_(num_vc),
     queues_(num_vc),
     credits_(num_vc, 0),
- #if SSTMAC_SANITY_CHECK
     initial_credits_(num_vc,0),
- #endif
     packet_size_(params->get_byte_length_param("mtu"))
 {
   int credits = params->get_byte_length_param("credits");
   int num_credits_per_vc = credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;
-#if SSTMAC_SANITY_CHECK
     initial_credits_[i] = num_credits_per_vc;
-#endif
   }
   arb_ = PiscesBandwidthArbitrator::factory::
           get_param("arbitrator", params);
@@ -200,18 +196,18 @@ PiscesBuffer::sendPayload(PiscesPacket *pkt)
 }
 
 int
-PiscesBuffer::queueLength() const
+PiscesBuffer::queueLength(int vc) const
 {
-  uint32_t bytes_sending = arb_->bytesSending(now());
-  uint32_t total_bytes_pending = bytes_sending + bytes_delayed_;
-  int queue_length = total_bytes_pending / packet_size_;
-  debug_printf(sprockit::dbg::pisces | sprockit::dbg::pisces_queue,
-    "On %s, %u bytes delayed, %u bytes sending, %d total pending, %d packets in queue",
-     toString().c_str(),
-     bytes_delayed_,
-     bytes_sending,
-     total_bytes_pending, queue_length);
-  return std::max(0, queue_length);
+  if (vc >= 0){
+    int busyBytes = initial_credits_[vc] - credits_[vc];
+    return busyBytes / packet_size_;
+  } else { //ah, okay, check all VCs
+    int busyBytes = 0;
+    for (int i=0; i < credits_.size(); ++i){
+      busyBytes += initial_credits_[i] - credits_[i];
+    }
+    return busyBytes / packet_size_;
+  }
 }
 
 }

@@ -56,8 +56,9 @@ static int max_all_count = 4096;
 static void test_pt2pt(MPI_Comm comm);
 static void test_allgather(MPI_Comm comm);
 
+
 #define finish_test() \
-  if (rank==0) printf("Rank %d on MPI_Comm %ld passed test: %8.2e\n", rank, comm, MPI_Wtime());
+   if (rank==0) printf("Rank %d on MPI_Comm %ld passed test: %8.2e\n", rank, comm, MPI_Wtime());
 
 int USER_MAIN(int argc, char** argv)
 {

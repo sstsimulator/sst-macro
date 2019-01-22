@@ -104,9 +104,18 @@ AbstractFatTree::writeBwParams(
     SST::Params& switch_params,
     double multiplier) const
 {
+  switch_params->print_params();
   if (switch_params->has_namespace("xbar")){
     SST::Params xbar_params = switch_params.get_namespace("xbar");
     double bw = xbar_params->get_bandwidth_param("bandwidth");
+    if (bw == 0){
+      xbar_params->print_params();;
+      spkt_abort_printf("got zero bandwidth for xbar");
+    }
+    if (multiplier == 0){
+      switch_params->print_params();
+      spkt_abort_printf("got zero bandwidth multiplier for fat tree");
+    }
     // we are overwriting params -
     // we have to make sure that the original baseline bandwidth is preserved
     double baseline_bw =

@@ -242,7 +242,7 @@ quiesce(sumi::Transport* tport,
 int USER_MAIN(int argc, char** argv)
 {
   sumi::Transport* tport = sstmac::sw::OperatingSystem::currentThread()
-      ->get_api<sumi::Transport>();
+      ->getApi<sumi::Transport>();
 
   tport->init();
 

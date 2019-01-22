@@ -3,7 +3,7 @@
 
 namespace sumi {
 
-class otf2_writer;
+class OTF2Writer;
 
 }
 

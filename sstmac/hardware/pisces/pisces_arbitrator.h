@@ -86,8 +86,6 @@ class PiscesBandwidthArbitrator
     return std::max(Timestamp(), credit_delta);
   }
 
-  virtual uint32_t bytesSending(GlobalTimestamp now) const = 0;
-
  protected:
   PiscesBandwidthArbitrator(SST::Params& params);
 
@@ -115,8 +113,6 @@ class PiscesNullArbitrator :
   }
 
   Timestamp headTailDelay(PiscesPacket *pkt) override;
-
-  uint32_t bytesSending(GlobalTimestamp now) const override;
 
 };
 
@@ -146,8 +142,6 @@ class PiscesSimpleArbitrator :
     return Timestamp();
   }
 
-  uint32_t bytesSending(GlobalTimestamp now) const override;
-
  protected:
   GlobalTimestamp next_free_;
 
@@ -165,9 +159,6 @@ class PiscesCutThroughArbitrator :
   FactoryRegister("cut_through", PiscesBandwidthArbitrator, PiscesCutThroughArbitrator,
               "Bandwidth arbitrator that forwards packets as soon as they arrive and enough credits are received"
               "This is a much better approximation to wormhole or virtual cut_through routing")
- private:
-  typedef uint64_t ticks_t;
-  typedef double bw_t;
 
  public:
   PiscesCutThroughArbitrator(SST::Params& params);
@@ -176,8 +167,6 @@ class PiscesCutThroughArbitrator :
 
   void arbitrate(pkt_arbitration_t& st) override;
 
-  uint32_t bytesSending(GlobalTimestamp now) const override;
-
   std::string toString() const override {
     return "cut through arbitrator";
   }
@@ -185,26 +174,19 @@ class PiscesCutThroughArbitrator :
   Timestamp headTailDelay(PiscesPacket *pkt) override;
 
  private:
-  struct BandwidthEpoch : public sprockit::thread_safe_new<BandwidthEpoch> {
-    uint32_t numCycles;
-    Timestamp cycleLength;
+  struct Epoch : public sprockit::thread_safe_new<Epoch> {
     GlobalTimestamp start;
-    Timestamp length;
-    BandwidthEpoch* next;
-
-    BandwidthEpoch() :
-      next(nullptr) {
-    }
-    
-    ~BandwidthEpoch(){}
+    uint32_t numCycles;
+    Epoch* next;
   };
 
-  BandwidthEpoch* addEpoch(GlobalTimestamp start, BandwidthEpoch* prev);
-  BandwidthEpoch* advance(BandwidthEpoch* prev);
+  Epoch* advance(Epoch* epoch, Epoch* prev);
 
-  BandwidthEpoch* head_;
-  Timestamp init_epoch_length_;
-  uint32_t init_num_cycles_;
+  void clearOut(GlobalTimestamp now);
+
+  Epoch* head_;
+  Timestamp cycleLength_;
+  GlobalTimestamp lastEpochEnd_;
 
 };
 

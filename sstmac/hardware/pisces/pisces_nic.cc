@@ -251,9 +251,11 @@ void
 PiscesNIC::incomingPacket(Event* ev)
 {
   PiscesPacket* pkt = safe_cast(PiscesPacket, ev);
-  if (cut_through_){
+//depending on arbitration, this might only by the head flit
+  if (pkt->byteDelay().ticks() != 0){
     //these are pipelined
     Timestamp delay = pkt->byteLength() * pkt->byteDelay();
+    nic_debug("delaying packet arrival of size %u for %9.5e secs", pkt->byteLength(), delay.sec());
     sendDelayedExecutionEvent(delay, newCallback(this, &PiscesNIC::packetArrived, pkt));
   } else {
     packetArrived(pkt);

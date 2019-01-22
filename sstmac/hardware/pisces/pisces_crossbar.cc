@@ -263,7 +263,7 @@ PiscesNtoMQueue::setInput(
 {
   // ports are local for local links and global otherwise
 
-  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
+  debug_printf(sprockit::dbg::pisces_config,
     "On %s:%d setting input %s:%d",
     toString().c_str(), my_inport,
     link ? link->toString().c_str() : "null", src_outport);
@@ -284,7 +284,7 @@ PiscesNtoMQueue::setOutput(
 
   // dst_inport is local for local links and global otherwise
 
-  debug_printf(sprockit::dbg::pisces_config | sprockit::dbg::pisces,
+  debug_printf(sprockit::dbg::pisces_config,
     "On %s setting output %s:%d for local port %d of %d",
     toString().c_str(),
     link->toString().c_str(), dst_inport,

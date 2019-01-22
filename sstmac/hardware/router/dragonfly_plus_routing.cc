@@ -250,8 +250,8 @@ class DragonflyPlusParRouter : public DragonflyPlusAlltoallMinimalRouter {
             + ((my_g_ < dstG ? (dstG - 1) : dstG)*covering_);
 
 
-        int valiantMetric = 2*netsw_->queueLength(valiantPort);
-        int minimalMetric = netsw_->queueLength(minimalPort);
+        int valiantMetric = 2*netsw_->queueLength(valiantPort, all_vcs);
+        int minimalMetric = netsw_->queueLength(minimalPort, all_vcs);
 
         rter_debug("comparing minimal(%d) %d against non-minimal(%d) %d",
                    minimalPort, minimalMetric, valiantPort, valiantMetric);

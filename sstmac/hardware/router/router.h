@@ -136,6 +136,8 @@ class Router : public sprockit::printable
           int orig_port, int new_port) const;
 
  protected:
+  static constexpr int all_vcs = -1;
+
   SwitchId my_addr_;
 
   Topology* top_;

@@ -68,7 +68,7 @@ class PiscesBranchedSwitch :
  public:
   PiscesBranchedSwitch(SST::Params& params, uint32_t id);
 
-  int queueLength(int port) const override;
+  int queueLength(int port, int vc) const override;
 
   virtual void connectOutput(SST::Params& params,
                  int src_outport, int dst_inport,

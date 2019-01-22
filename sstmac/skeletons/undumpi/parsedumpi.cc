@@ -93,7 +93,7 @@ ParseDumpi::~ParseDumpi() throw()
 int ParseDumpi::skeletonMain()
 {
   int rank = this->tid();
-  mpi_ = get_api<MpiApi>();
+  mpi_ = getApi<MpiApi>();
 
   sstmac::sw::DumpiMeta* meta = new   sstmac::sw::DumpiMeta(fileroot_);
   parsedumpi_callbacks cbacks(this);

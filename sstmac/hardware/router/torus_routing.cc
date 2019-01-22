@@ -283,8 +283,8 @@ class TorusUGALRouter : public TorusValiantRouter {
         int ugal_dist = torus_->minimalDistance(my_addr_, inter) +
                         torus_->minimalDistance(inter, ej_addr);
 
-        int ugal_metric = netsw_->queueLength(ugal.edge_port) * ugal_dist;
-        int min_metric = netsw_->queueLength(min.edge_port) * min_dist;
+        int ugal_metric = netsw_->queueLength(ugal.edge_port, all_vcs) * ugal_dist;
+        int min_metric = netsw_->queueLength(min.edge_port, all_vcs) * min_dist;
 
         if (ugal_metric < min_metric){
           hdr->dest_switch = inter;

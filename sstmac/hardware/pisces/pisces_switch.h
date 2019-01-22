@@ -96,7 +96,7 @@ class PiscesSwitch :
 
   virtual ~PiscesSwitch();
 
-  int queueLength(int port) const override;
+  int queueLength(int port, int vc) const override;
 
   virtual void connectOutput(
     SST::Params& params,

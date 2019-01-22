@@ -159,9 +159,10 @@ LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
   int num_hops = top_->numHopsToNode(msg->fromaddr(), dst);
   delay += num_hops * hop_latency_;
   debug_printf(sprockit::dbg::logp,
-               "sending message over %d hops with extra delay %12.8e and inj lat %12.8e for inv_bw %12.8e on size %d: %s",
+               "sending message over %d hops with extra delay %12.8e and inj lat %12.8e for byte delay %12.8e/bw %12.8e on size %d: %s",
                num_hops, delay.sec(), out_in_lat_.sec(),
-               max_byte_delay_.sec(), msg->byteLength(), msg->toString().c_str());
+               max_byte_delay_.sec(), 1.0/max_byte_delay_.sec(),
+               msg->byteLength(), msg->toString().c_str());
 
   Timestamp extra_delay = start - now() + delay;
 
