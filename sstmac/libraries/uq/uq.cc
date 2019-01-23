@@ -59,14 +59,14 @@ extern "C" int
 sstmac_uq_int_param(void* queue, const char* param)
 {
   SimulationQueue* q = (SimulationQueue*) queue;
-  return q->template_params()->get_int_param(param);
+  return q->template_params().find<int>(param);
 }
 
 extern "C" int
 sstmac_uq_double_param(void* queue, const char* param)
 {
   SimulationQueue* q = (SimulationQueue*) queue;
-  return q->template_params()->get_double_param(param);
+  return q->template_params().find<double>(param);
 }
 
 extern "C" int
@@ -81,14 +81,14 @@ sstmac_uq_sim_nproc(void* queue)
 {
   SimulationQueue* q = (SimulationQueue*) queue;
   SST::Params src_params = q->template_params();
-  SST::Params src_app_params = src_params->get_optional_namespace("app1");
+  SST::Params src_app_params = src_params.find_prefix_params("app1");
   SST::Params params;
   src_app_params.combine_into(params);
   if (src_params->has_param("launch_cmd_app1")){
-    params["launch_cmd"] = src_params->get_param("launch_cmd_app1");
+    params["launch_cmd"] = src_params.find<std::string>("launch_cmd_app1");
   } 
   if (src_params->has_param("launch_app1_size")){
-    params["size"] = src_params->get_param("launch_app1_size");
+    params["size"] = src_params.find<std::string>("launch_app1_size");
   }
   int nproc, procs_per_node;
   std::vector<int> affinities;

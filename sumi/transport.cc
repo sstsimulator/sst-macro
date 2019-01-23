@@ -229,15 +229,15 @@ Transport::Transport(SST::Params& params,
     server = safe_cast(SumiServer, server_lib);
   }
 
-  post_rdma_delay_ = Timestamp(params->get_optional_time_param("post_rdma_delay", 0));
-  post_header_delay_ = Timestamp(params->get_optional_time_param("post_header_delay", 0));
-  poll_delay_ = Timestamp(params->get_optional_time_param("poll_delay", 0));
+  post_rdma_delay_ = Timestamp(params.findUnits("post_rdma_delay", "0s").toDouble());
+  post_header_delay_ = Timestamp(params.findUnits("post_header_delay", "0s").toDouble());
+  poll_delay_ = Timestamp(params.findUnits("poll_delay", "0s").toDouble());
   user_lib_time_ = new sstmac::sw::LibComputeTime(params, "sumi-user-lib-time", sid, os);
 
-  rdma_pin_latency_ = Timestamp(params->get_optional_time_param("rdma_pin_latency", 0));
-  rdma_page_delay_ = Timestamp(params->get_optional_time_param("rdma_page_delay", 0));
+  rdma_pin_latency_ = Timestamp(params.findUnits("rdma_pin_latency", "0s").toDouble());
+  rdma_page_delay_ = Timestamp(params.findUnits("rdma_page_delay", "0s").toDouble());
   pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
-  page_size_ = params->get_optional_byte_length_param("rdma_page_size", 4096);
+  page_size_ = params.findUnits("rdma_page_size", "4096").getRoundedValue();
 
   rank_mapper_ = sstmac::sw::TaskMapping::globalMapping(sid.app_);
   nproc_ = rank_mapper_->nproc();
@@ -501,8 +501,8 @@ CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
   tport_(tport)
 {
   global_domain_ = new GlobalCommunicator(tport);
-  eager_cutoff_ = params->get_optional_int_param("eager_cutoff", 512);
-  use_put_protocol_ = params->get_optional_bool_param("use_put_protocol", false);
+  eager_cutoff_ = params.find<int>("eager_cutoff", 512);
+  use_put_protocol_ = params.find<bool>("use_put_protocol", false);
 }
 
 CollectiveEngine::~CollectiveEngine()

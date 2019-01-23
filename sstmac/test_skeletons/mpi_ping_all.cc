@@ -73,8 +73,8 @@ int USER_MAIN(int argc, char** argv)
   //send/recv from all the other procs
   void* null_buffer = nullptr;
   SST::Params params = getParams();
-  int count = params->get_optional_byte_length_param("message_size", 100);
-  bool print_times = params->get_optional_bool_param("print_times", true);
+  int count = params.findUnits("message_size", "100B").getRoundedValue();
+  bool print_times = params.find<bool>("print_times", true);
   int tag = 42;
   //one for each send, one for each recv
   MPI_Request* reqs = new MPI_Request[2*nproc];
@@ -95,7 +95,7 @@ int USER_MAIN(int argc, char** argv)
   int quarter_size =  num_requests / 4;
   int remainder = num_requests % 4;
 
-  double sleep_length = params->get_optional_time_param("sleep_time", 1);
+  double sleep_length = params.findUnits("sleep_time", "1s").toDouble();
 
   reqptr = reqs;
   for (int q=0; q < 4; ++q) {

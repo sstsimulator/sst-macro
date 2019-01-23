@@ -105,7 +105,7 @@ test_skeleton_boxml.$(CHKSUF): boxml
     $(SSTMACEXEC) --exe=./skeletons/boxml/runboxml \
     -f $(top_srcdir)/skeletons/boxml/example/parameters.ini \
     -p node.app1.boxml_boxfile=$(top_srcdir)/skeletons/boxml/example/ks.4.new.boxes.xml \
-    -p node.app1.boxml_eventfiles=$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml 
+    -p node.app1.boxml_eventfiles=[$(top_srcdir)/skeletons/boxml/example/test-mlmg-4-4.xml]
 
 test_skeleton_memoize.$(CHKSUF): memoize
 	SST_LIB_PATH=skeletons/memoize \

@@ -59,7 +59,7 @@ class timestamp_prefix_fxn :
   timestamp_prefix_fxn(SST::Params& params, EventScheduler* mgr) :
     mgr_(mgr)
   {
-    units_ = params->get_optional_param("timestamp_print_units", "s");
+    units_ = params.find<std::string>("timestamp_print_units", "s");
     if (units_ == "ns"){
       mult_ = 1e9;
     } else if (units_ == "us"){

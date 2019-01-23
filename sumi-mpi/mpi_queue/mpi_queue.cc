@@ -90,8 +90,8 @@ MpiQueue::MpiQueue(SST::Params& params,
   api_(api),
   queue_(api->os())
 {
-  max_vshort_msg_size_ = params->get_optional_byte_length_param("max_vshort_msg_size", 512);
-  max_eager_msg_size_ = params->get_optional_byte_length_param("max_eager_msg_size", 8192);
+  max_vshort_msg_size_ = params.findUnits("max_vshort_msg_size", "512B").getRoundedValue();
+  max_eager_msg_size_ = params.findUnits("max_eager_msg_size", "8192B").getRoundedValue();
 
   protocols_.resize(MpiProtocol::NUM_PROTOCOLS);
   protocols_[MpiProtocol::EAGER0] = new Eager0(params, this);

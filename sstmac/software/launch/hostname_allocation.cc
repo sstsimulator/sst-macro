@@ -64,7 +64,7 @@ namespace sw {
 HostnameAllocation::HostnameAllocation(SST::Params& params) :
   NodeAllocator(params)
 {
-  hostfile_ = params->get_param("hostfile");
+  hostfile_ = params.find<std::string>("hostfile");
 }
 
 void

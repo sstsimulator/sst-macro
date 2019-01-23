@@ -6,7 +6,7 @@ namespace tutorial {
 mandy_patinkin::mandy_patinkin(SST::Params& params)
  : actor(params)
 {
-  sword_hand_ = params->get_param("sword_hand");
+  sword_hand_ = params.find<std::string>("sword_hand");
 
   if (sword_hand_ == "left") {
     sprockit::abort("I am not left handed!");

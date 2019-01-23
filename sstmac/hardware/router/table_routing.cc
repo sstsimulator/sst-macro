@@ -74,7 +74,7 @@ class TableRouter : public Router {
     Router(params, top, sw),
     table_(top->numNodes(), -1)
   {
-    std::string fname = params->get_param("filename");
+    std::string fname = params.find<std::string>("filename");
     std::ifstream in(fname);
     nlohmann::json jsn;
     in >> jsn;

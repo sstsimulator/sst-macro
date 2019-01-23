@@ -123,7 +123,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
   bool keep_going = true;
   int aid = 1;
   int last_used_aid = 0;
-  SST::Params all_app_params = params->get_optional_namespace("app");
+  SST::Params all_app_params = params.find_prefix_params("app");
   while (keep_going || aid < 10){
     std::string name = sprockit::printf("app%d",aid);
     if (params->has_namespace(name)){
@@ -138,7 +138,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
 
       //if (app_params->has_param("exe")){
       //  //load and unload the library to bring statics in
-      //  std::string libname = app_params->get_param("exe");
+      //  std::string libname = app_params.find<std::string>("exe");
       //  void* handle = load_extern_library(libname, load_extern_path_str());
       //  unload_extern_library(handle);
       //}
@@ -152,7 +152,9 @@ JobLauncher::addLaunchRequests(SST::Params& params)
   aid = last_used_aid+1;
 
   std::vector<std::string> services_to_launch;
-  params->get_optional_vector_param("services", services_to_launch);
+  if (params.contains("services")){
+    params.find_array("services", services_to_launch);
+  }
   for (std::string& str : services_to_launch){
     SST::Params srv_params = params.get_namespace(str);
     //setup the name for app factory

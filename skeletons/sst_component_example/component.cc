@@ -100,8 +100,8 @@ class DummySwitch : public TestComponent {
     //this has to be called in the base child class
     initLinks(params);
     //init params
-    num_ping_pongs_ = params->get_optional_int_param("num_ping_pongs", 2);
-    latency_ = Timestamp(params->get_time_param("latency"));
+    num_ping_pongs_ = params.find<int>("num_ping_pongs", 2);
+    latency_ = Timestamp(params.findUnits("latency").toDouble());
   }
 
   std::string toString() const override { return "dummy";}

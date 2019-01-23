@@ -20,10 +20,10 @@ UpdateVolumesForElems               =   0.00002800s
 ApplyMaterialPropertiesForElems     =   0.00495400s
 CalcTimeConstraintsForElems         =   0.00007400s
 CalcAccelerationForNodes            =   0.00005300s
-InitStressTermsForElems             =   0.00005400s
-IntegrateStressForElems             =   0.00702400s
+InitStressTermsForElems             =   0.00005300s
+IntegrateStressForElems             =   0.00702500s
 CalcHourglassControlForElems        =   0.02756000s
 CalcVelocityForNodes                =   0.00010600s
 CalcPositionForNodes                =   0.00005300s
 Total time =   0.05147500s
-Estimated total runtime of           0.05151031 seconds
+Estimated total runtime of           0.05151017 seconds

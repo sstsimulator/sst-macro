@@ -63,7 +63,7 @@ RandomAllocation::~RandomAllocation() throw ()
 RandomAllocation::RandomAllocation(SST::Params& params) :
   NodeAllocator(params)
 {
-  int seed = params->get_optional_int_param("random_allocation_seed", -1);
+  int seed = params.find<int>("random_allocation_seed", -1);
   if (seed == -1){
     seed = time(NULL);
   }

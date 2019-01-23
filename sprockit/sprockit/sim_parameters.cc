@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/spkt_config.h>
 #include <sprockit/spkt_string.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/units.h>
 #include <sprockit/driver_util.h>
 #include <sprockit/errors.h>
@@ -377,45 +376,6 @@ sim_parameters::add_param_override_recursive(const std::string &key, const std::
   add_param_override(key,val);
   for (auto& pair : subspaces_){
     pair.second->add_param_override_recursive(key,val);
-  }
-}
-
-void
-sim_parameters::get_optional_vector_param(const std::string &key, std::vector<std::string>& vals)
-{
-  if (has_param(key)){
-    get_vector_param(key, vals);
-  }
-}
-
-void
-sim_parameters::get_optional_vector_param(const std::string &key, std::vector<int>& vals)
-{
-  if (has_param(key)){
-    get_vector_param(key, vals);
-  }
-}
-
-void
-sim_parameters::get_optional_vector_param(const std::string &key, std::vector<double>& vals)
-{
-  if (has_param(key)){
-    get_vector_param(key, vals);
-  }
-}
-
-void
-sim_parameters::get_vector_param(const std::string& key,
-                                 std::vector<std::string>& vals)
-{
-  std::deque<std::string> tok;
-  std::string space = " ";
-  std::string param_value_str = get_param(key);
-  pst::BasicStringTokenizer::tokenize(param_value_str, tok, space);
-  for (auto& item : tok){
-    if (item.size() > 0) {
-      vals.push_back(item);
-    }
   }
 }
 
@@ -793,33 +753,21 @@ sim_parameters::get_bool_param(const std::string &key)
   return false;
 }
 
-void
-sim_parameters::get_vector_param(const std::string& key, std::vector<double>& vals)
+std::deque<std::string>
+sim_parameters::get_tokenizer(const std::string& key)
 {
   std::deque<std::string> tok;
-  std::string space = " ";
+  std::string space =  ",";
   std::string param_value_str = get_param(key);
+  auto start_pos = param_value_str.find("[");
+  auto end_pos = param_value_str.find("]");
+  if (start_pos == std::string::npos || end_pos == std::string::npos){
+    spkt_abort_printf("mis-formatted vector %s=%s - must be [a,b,c]",
+                      key.c_str(), param_value_str.c_str());
+  }
+  param_value_str = param_value_str.substr(start_pos+1, end_pos-1);
   pst::BasicStringTokenizer::tokenize(param_value_str, tok, space);
-  for (auto& item : tok){
-    if (item.size() > 0) {
-      std::stringstream sstr(item);
-      double val;
-      sstr >> val;
-      vals.push_back(val);
-    }
-  }
-}
-
-void
-sim_parameters::get_vector_param(const std::string& key, std::vector<int>& vals)
-{
-  bool errorflag = false;
-  std::string param_value_str = get_param(key);
-  get_intvec(param_value_str.c_str(), errorflag, vals);
-  if (errorflag) {
-    spkt_abort_printf("improperly formatted integer vector (%s) for parameter %s",
-                     param_value_str.c_str(), key.c_str());
-  }
+  return tok;
 }
 
 double

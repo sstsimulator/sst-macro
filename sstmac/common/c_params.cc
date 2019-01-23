@@ -65,19 +65,19 @@ static std::map<int,LookupMap> cache;
 extern "C" int
 sstmac_get_int_param(const char* str)
 {
-  return get_local_params()->get_int_param(str);
+  return get_local_params().find<int>(str);
 }
 
 extern "C" int
 sstmac_get_optional_int_param(const char* str, int val)
 {
-  return get_local_params()->get_optional_int_param(str, val);
+  return get_local_params().find<int>(str, val);
 }
 
 extern "C" long
 sstmac_get_long_param(const char* str)
 {
-  return get_local_params()->get_long_param(str);
+  return get_local_params().find<long>(str);
 }
 
 extern "C" long
@@ -89,25 +89,25 @@ sstmac_get_optional_long_param(char* str, long val)
 extern "C" double
 sstmac_get_double_param(const char* str)
 {
-  return get_local_params()->get_double_param(str);
+  return get_local_params().find<double>(str);
 }
 
 extern "C" double
 sstmac_get_optional_double_param(const char* str, double val)
 {
-  return get_local_params()->get_optional_double_param(str, val);
+  return get_local_params().find<double>(str, val);
 }
 
 extern "C" const char*
 sstmac_get_param(const char* str)
 {
-  return get_local_params()->get_param(str).c_str();
+  return get_local_params().find<std::string>(str).c_str();
 }
 
 extern "C" const char*
 sstmac_get_optional_param(const char* str, const char* val)
 {
-  return get_local_params()->get_optional_param(str, val).c_str();
+  return get_local_params().find<std::string>(str, val).c_str();
 }
 
 extern "C" double

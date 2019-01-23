@@ -56,7 +56,7 @@ namespace hw {
 FileTopology::FileTopology(SST::Params& params) :
   Topology(params)
 {
-  std::string fname = params->get_param("filename");
+  std::string fname = params.find<std::string>("filename");
   std::ifstream in(fname);
   if( in.fail() )
     spkt_throw_printf(sprockit::input_error,

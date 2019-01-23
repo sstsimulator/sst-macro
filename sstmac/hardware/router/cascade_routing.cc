@@ -312,7 +312,7 @@ class cascade_ugal_router : public DragonflyValiantRouter {
                                  NetworkSwitch *netsw)
     : DragonflyValiantRouter(params, top, netsw)
   {
-    val_threshold_ = params->get_optional_int_param("val_threshold", 0);
+    val_threshold_ = params.find<int>("val_threshold", 0);
   }
 
   std::string toString() const override {

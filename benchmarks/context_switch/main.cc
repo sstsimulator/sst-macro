@@ -24,8 +24,8 @@ class context_switch_benchmark : public sstmac::benchmark
   context_switch_benchmark(SST::Params& params){
     main_thread_ = sstmac::sw::ThreadContext::factory
                     ::get_param("context", params);
-    nthread_ = params->get_int_param("nthread");
-    niter_ = params->get_int_param("niter");
+    nthread_ = params.find<int>("nthread");
+    niter_ = params.find<int>("niter");
     sstmac::sw::StackAlloc::init(params);
   }
 

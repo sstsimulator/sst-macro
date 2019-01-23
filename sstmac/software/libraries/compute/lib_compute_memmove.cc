@@ -64,7 +64,7 @@ LibComputeMemmove::LibComputeMemmove(SST::Params& params,
                                      OperatingSystem* os) :
   LibComputeInst(params, prefix, sid, os)
 {
-  access_width_bytes_ = params->get_optional_int_param("lib_compute_access_width", 64) / 8;
+  access_width_bytes_ = params.find<int>("lib_compute_access_width", 64) / 8;
 }
 
 void

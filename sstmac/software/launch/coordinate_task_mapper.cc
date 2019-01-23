@@ -61,7 +61,7 @@ namespace sw {
 CoordinateTaskMapper::CoordinateTaskMapper(SST::Params& params) :
   TaskMapper(params)
 {
-  listfile_ = params->get_param("coordinate_file");
+  listfile_ = params.find<std::string>("coordinate_file");
 }
 
 void

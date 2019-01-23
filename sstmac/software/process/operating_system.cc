@@ -332,7 +332,7 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 
   rebuildMemoizations();
 
-  SST::Params env_params = params->get_optional_namespace("env");
+  SST::Params env_params = params.find_prefix_params("env");
   for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
     env_[iter->first] = iter->second.value;
   }
@@ -347,7 +347,7 @@ OperatingSystem::rebuildMemoizations()
     auto iter = memoize_models_.find(pair.first);
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (iter == memoize_models_.end()){
-      SST::Params memo_params = params_->get_optional_namespace(pair.first);
+      SST::Params memo_params = params_.find_prefix_params(pair.first);
       memo_params->add_param_override("fileroot", pair.first);
       auto* model = RegressionModel::factory::get_value(pair.second, memo_params, pair.first);
       memoize_models_[pair.first] = model;
@@ -966,7 +966,7 @@ OperatingSystem::startApp(App* theapp, const std::string& unique_name)
   //this should be called from the actual thread running it
   initThreading(params_);
   if (params_->has_param("context")){
-    theapp->params()->add_param("context", params_->get_param("context"));
+    theapp->params()->add_param("context", params_.find<std::string>("context"));
   }
   if (ftq_trace_){
     ftq_trace_->registerApp(theapp->aid(), sprockit::printf("app%d", int(theapp->aid())));

@@ -79,11 +79,11 @@ ParseDumpi::ParseDumpi(SST::Params& params, SoftwareId sid,
 {
   fileroot_ = params->reread_param("dumpi_metaname");
 
-  timescaling_ = params->get_optional_double_param("parsedumpi_timescale", 1);
+  timescaling_ = params.find<double>("parsedumpi_timescale", 1);
 
-  print_progress_ = params->get_optional_bool_param("parsedumpi_print_progress", true);
+  print_progress_ = params.find<bool>("parsedumpi_print_progress", true);
 
-  early_terminate_count_ = params->get_optional_int_param("parsedumpi_terminate_count", -1);
+  early_terminate_count_ = params.find<int>("parsedumpi_terminate_count", -1);
 }
 
 ParseDumpi::~ParseDumpi() throw()

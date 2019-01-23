@@ -76,19 +76,19 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(SST::Params& params, uint32_t id) :
   router_(nullptr),
   NetworkSwitch(params, id)
 {
-  SST::Params xbar_params = params->get_optional_namespace("xbar");
+  SST::Params xbar_params = params.find_prefix_params("xbar");
   xbar_stats_ = PacketStatsCallback::factory::get_optional_param("stats", "null",
                                              xbar_params, this);
 
-  SST::Params buf_params = params->get_optional_namespace("output_buffer");
+  SST::Params buf_params = params.find_prefix_params("output_buffer");
   buf_stats_ = PacketStatsCallback::factory::get_optional_param("stats", "null",
                                              buf_params, this);
 
-  SST::Params rtr_params = params->get_optional_namespace("router");
+  SST::Params rtr_params = params.find_prefix_params("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
   router_ = Router::factory::get_param("name", rtr_params, top_, this);
 
-  SST::Params ej_params = params->get_optional_namespace("ejection");
+  SST::Params ej_params = params.find_prefix_params("ejection");
   std::vector<Topology::injection_port> conns;
   top_->endpointsConnectedToEjectionSwitch(my_addr_, conns);
   if (!ej_params->has_param("credits")){
@@ -100,7 +100,7 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(SST::Params& params, uint32_t id) :
 
   for (Topology::injection_port& conn : conns){
     auto port_ns = Topology::getPortNamespace(conn.switch_port);
-    SST::Params port_params = params->get_optional_namespace(port_ns);
+    SST::Params port_params = params.find_prefix_params(port_ns);
     ej_params.combine_into(port_params);
   }
 }
@@ -190,7 +190,7 @@ PiscesSwitch::connectInput(
 Timestamp
 PiscesSwitch::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params->get_time_param("sendLatency"));
+  return Timestamp(params.findUnits("sendLatency").toDouble());
 }
 
 Timestamp

@@ -71,7 +71,7 @@ PiscesMemoryModel::PiscesMemoryModel(SST::Params& params, Node *nd) :
   arb_(nullptr),
   MemoryModel(params, nd)
 {
-  nchannels_ = params->get_optional_int_param("nchannels", 8);
+  nchannels_ = params.find<int>("nchannels", 8);
   channels_available_.resize(nchannels_);
   for (int i=0; i < nchannels_; ++i){
     channels_available_[i] = i;
@@ -81,16 +81,13 @@ PiscesMemoryModel::PiscesMemoryModel(SST::Params& params, Node *nd) :
     channel_requests_.emplace_back(0,Timestamp(),nullptr);
   }
 
-  packet_size_ = params->get_optional_byte_length_param("mtu", 100e9);
-  double max_bw = params->get_bandwidth_param("total_bandwidth");
-  double max_single_bw = params->get_optional_bandwidth_param("max_single_bandwidth", max_bw);
-  if (max_bw == 0){
-    params->print_params();
-    spkt_abort_printf("Bad bandwidth to memory model");
-  }
-  min_agg_byte_delay_ = Timestamp(1.0/max_bw);
-  min_flow_byte_delay_ = Timestamp(1.0/max_single_bw);
-  latency_ = Timestamp(params->get_time_param("latency"));
+  packet_size_ = params.findUnits("mtu", "100GB").getRoundedValue();
+
+  std::string max_bw_param = params.find<std::string>("total_bandwidth");
+  min_agg_byte_delay_ = Timestamp(SST::UnitAlgebra(max_bw_param).inverse().toDouble());
+  min_flow_byte_delay_ =
+      Timestamp(params.findUnits("max_single_bandwidth", max_bw_param).inverse().toDouble());
+  latency_ = Timestamp(params.findUnits("latency").toDouble());
   arb_ = PiscesBandwidthArbitrator::factory::get_value("cut_through", params);
 }
 

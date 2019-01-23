@@ -69,8 +69,8 @@ namespace hw {
 PiscesTiledSwitch::PiscesTiledSwitch(SST::Params& params, uint32_t id)
   : PiscesAbstractSwitch(params, id)
 {
-  nrows_ = params->get_int_param("nrows");
-  ncols_ = params->get_int_param("ncols");
+  nrows_ = params.find<int>("nrows");
+  ncols_ = params.find<int>("ncols");
 
   initComponents(params);
 }

@@ -51,10 +51,10 @@ namespace hw {
 double
 ParamExpander::networkBandwidthMultiplier(SST::Params& params) const
 {
-  SST::Params top_params = params->get_optional_namespace("topology");
+  SST::Params top_params = params.find_prefix_params("topology");
   if (top_params->has_param("redundant")){
     std::vector<int> red;
-    top_params->get_vector_param("redundant", red);
+    top_params.find_array("redundant", red);
     int sum = 0;
     for (int i=0; i < red.size(); ++i){
       sum += red[i];
@@ -68,10 +68,10 @@ ParamExpander::networkBandwidthMultiplier(SST::Params& params) const
 double
 ParamExpander::switchBandwidthMultiplier(SST::Params& params) const
 {
-  SST::Params sw_params = params->get_optional_namespace("switch");
+  SST::Params sw_params = params.find_prefix_params("switch");
   if (sw_params->has_param("geometry")){
     std::vector<int> geom;
-    sw_params->get_vector_param("geometry", geom);
+    sw_params.find_array("geometry", geom);
     int prod = 1;
     for (int i=0; i < geom.size(); ++i){
       prod *= geom[i];
@@ -85,10 +85,10 @@ ParamExpander::switchBandwidthMultiplier(SST::Params& params) const
 int
 ParamExpander::switchBufferMultiplier(SST::Params& params) const
 {
-  SST::Params top_params = params->get_optional_namespace("topology");
+  SST::Params top_params = params.find_prefix_params("topology");
   if (top_params->has_param("redundant")){
     std::vector<int> red;
-    top_params->get_vector_param("redundant", red);
+    top_params.find_array("redundant", red);
     int sum = 0;
     for (int i=0; i < red.size(); ++i){
       sum += red[i];

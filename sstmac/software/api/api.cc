@@ -78,7 +78,7 @@ API::~API()
 void
 API::init(SST::Params& params)
 {
-  bool host_compute_local = params->get_optional_bool_param("host_api_timer", false);
+  bool host_compute_local = params.find<bool>("host_api_timer", false);
   if (host_compute_local) {
     host_timer_ = new HostTimer();
     compute_ = OperatingSystem::currentThread()->parentApp()->computeLib();

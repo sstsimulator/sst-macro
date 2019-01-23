@@ -50,11 +50,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
 
+#include <sstream>
 #include <iostream>
 #include <list>
 #include <vector>
 #include <set>
 
+#include <sprockit/basic_string_tokenizer.h>
 
 DeclareDebugSlot(params)
 DeclareDebugSlot(read_params)
@@ -378,17 +380,17 @@ class sim_parameters  {
 
   double deprecated_time_param(const std::string& key);
 
-  void get_vector_param(const std::string& key, std::vector<int>& vals);
-
-  void get_vector_param(const std::string& key, std::vector<double>& vals);
-
-  void get_vector_param(const std::string& key, std::vector<std::string>& vals);
-
-  void get_optional_vector_param(const std::string& key, std::vector<std::string>& vals);
-
-  void get_optional_vector_param(const std::string& key, std::vector<int>& vals);
-
-  void get_optional_vector_param(const std::string& key, std::vector<double>& vals);
+  template <class T> void get_vector_param(const std::string& key, std::vector<T>& vals){
+    std::deque<std::string> toks = get_tokenizer(key);
+    for (auto& item : toks){
+      if (item.size() > 0) {
+        std::stringstream sstr(item);
+        T val;
+        sstr >> val;
+        vals.push_back(val);
+      }
+    }
+  }
 
   sim_parameters::ptr get_namespace(const std::string& ns);
 
@@ -520,8 +522,7 @@ class sim_parameters  {
 
   bool get_scoped_param(std::string& inout, const std::string& key);
 
-
-
+  std::deque<std::string> get_tokenizer(const std::string& key);
 
 };
 
@@ -532,10 +533,93 @@ namespace SST {
 template <class T>
 struct CallGetParam {};
 
+template <> struct CallGetParam<long>  {
+  static double get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
+    return ptr->get_long_param(key);
+  }
+  static double getOptional(sprockit::sim_parameters::ptr &ptr, const std::string& key, long def){
+    return ptr->get_optional_long_param(key, def);
+  }
+};
+
+template <> struct CallGetParam<double>  {
+  static double get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
+    return ptr->get_double_param(key);
+  }
+  static double getOptional(sprockit::sim_parameters::ptr &ptr, const std::string& key, double def){
+    return ptr->get_optional_double_param(key, def);
+  }
+};
+
 template <> struct CallGetParam<int>  {
   static int get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
-    return 0;
+    return ptr->get_int_param(key);
   }
+  static int getOptional(sprockit::sim_parameters::ptr &ptr, const std::string& key, int def){
+    return ptr->get_optional_int_param(key, def);
+  }
+};
+
+template <> struct CallGetParam<bool>  {
+  static int get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
+    return ptr->get_bool_param(key);
+  }
+  static int getOptional(sprockit::sim_parameters::ptr &ptr, const std::string& key, bool def){
+    return ptr->get_optional_bool_param(key, def);
+  }
+};
+
+template <> struct CallGetParam<std::string> {
+  static std::string get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
+    return ptr->get_param(key);
+  }
+
+  static std::string getOptional(sprockit::sim_parameters::ptr& ptr,
+                                 const std::string& key, std::string&& def){
+    return ptr->get_optional_param(key, def);
+  }
+
+  static std::string getOptional(sprockit::sim_parameters::ptr& ptr,
+                                 const std::string& key, const std::string& def){
+    return ptr->get_optional_param(key, def);
+  }
+
+};
+
+struct UnitAlgebra
+{
+ public:
+  UnitAlgebra(const std::string& val){
+    double tmp;
+    bool failed = sprockit::get_quantity_with_units(val.c_str(), tmp);
+    if (failed){
+      std::cerr << "Failed to parse value with units from " << val << std::endl;
+      ::abort();
+    }
+    value_ = tmp;
+  }
+
+  UnitAlgebra inverse(){
+    return UnitAlgebra(1.0/value_);
+  }
+
+  int64_t getRoundedValue() const {
+    return value_;
+  }
+
+  const UnitAlgebra& getValue() const {
+    return *this;
+  }
+
+  double toDouble() const {
+    return value_;
+  }
+
+ private:
+  UnitAlgebra(double v) : value_(v){}
+
+  double value_;
+
 };
 
 class Params {
@@ -557,6 +641,14 @@ class Params {
   {
   }
 
+  template <class T> void find_array(const std::string& key, std::vector<T>& vec){
+    return params_->get_vector_param(key, vec);
+  }
+
+  bool contains(const std::string& k) const {
+    return params_->has_param(k);
+  }
+
   void print_all_params(std::ostream& os){
     params_->print_params(os);
   }
@@ -573,9 +665,20 @@ class Params {
     return params_->get_optional_namespace(name);
   }
 
-  template <class T>
-  T find(const std::string& key) {
-    return CallGetParam<T>::get(key);
+  UnitAlgebra findUnits(const std::string& key){
+    return UnitAlgebra(params_->get_param(key));
+  }
+
+  UnitAlgebra findUnits(const std::string& key, const std::string& def){
+    return UnitAlgebra(params_->get_optional_param(key, def));
+  }
+
+  template <class T> T find(const std::string& key) {
+    return CallGetParam<T>::get(params_, key);
+  }
+
+  template <class T, class U> T find(const std::string& key, U&& def) {
+    return CallGetParam<T>::getOptional(params_, key, std::forward<U>(def));
   }
 
   sprockit::param_assign operator[](const std::string& key){
@@ -596,34 +699,6 @@ class Params {
 
  private:
   sprockit::sim_parameters::ptr params_;
-};
-
-struct UnitAlgebra
-{
- public:
-  UnitAlgebra(const std::string& val){
-    double tmp;
-    bool failed = sprockit::get_quantity_with_units(val.c_str(), tmp);
-    if (failed){
-      std::cerr << "Failed to parse value with units from " << val << std::endl;
-      ::abort();
-    }
-    value_ = tmp;
-    inverse_ = 1.0/tmp;
-  }
-
-  int64_t getRoundedValue() const {
-    return value_;
-  }
-
-  int64_t getInvertedValue() const {
-    return inverse_;
-  }
-
- private:
-  int64_t value_;
-  int64_t inverse_;
-
 };
 
 }

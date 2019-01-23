@@ -201,7 +201,7 @@ void StatisticOutputEXODUS::implStopOutputGroup()
        std::cout<<std::endl;
      }
 
-  stat_vtk::outputExodus(m_FilePath, traffic_progress_map_, Topology::global());
+  StatVTK::outputExodus(m_FilePath, traffic_progress_map_, Topology::global());
 }
 
 } //namespace Statistics

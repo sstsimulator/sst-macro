@@ -66,7 +66,7 @@ FTQCalendar::FTQCalendar(SST::Params& params) :
   num_ticks_epoch_(0),
   Parent(params)
 {
-  num_ticks_epoch_ = Timestamp(params->get_time_param("epoch")).ticks();
+  num_ticks_epoch_ = Timestamp(params.findUnits("epoch").toDouble()).ticks();
 }
 
 FTQCalendar::~FTQCalendar()

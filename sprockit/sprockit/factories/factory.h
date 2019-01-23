@@ -315,7 +315,7 @@ class Factory
 
  public:
   static bool valid_param(const std::string& name, SST::Params& params) {
-    std::string value = params->get_param(name);
+    std::string value = params.find<std::string>(name);
     return builder_map_->find(value) != builder_map_->end();
   }
 
@@ -352,8 +352,8 @@ class Factory
   /**
    * @brief get_param Return a constructed child class corresponding
    *                  to a given string name. The string name is not given directly,
-   *                  instead being found by params->get_param(param_name)
-   * @param param_name   The name of the parameter such that params->get_param(param_name)
+   *                  instead being found by params.find<std::string>(param_name)
+   * @param param_name   The name of the parameter such that params.find<std::string>(param_name)
    *                     returns the string that will map to the child class
    * @param params    The parameters potentially used in the constructor
    * @param args      The required arguments for the constructor
@@ -362,16 +362,16 @@ class Factory
   static T* get_param(const std::string& param_name,
             SST::Params& params,
             const Args&... args) {
-    return _get_value(params->get_param(param_name),
+    return _get_value(params.find<std::string>(param_name),
                       params, args...);
   }
 
   /**
    * @brief get_extra param Return a constructed child class corresponding
    *          to a given string name. The string name is not given directly,
-   *          instead being found by params->get_param(param_name).  If no parameter
+   *          instead being found by params.find<std::string>(param_name).  If no parameter
    *          corresponding to param_name exists, return a nullptr
-   * @param param_name   The name of the parameter such that params->get_param(param_name)
+   * @param param_name   The name of the parameter such that params.find<std::string>(param_name)
    *                     returns the string that will map to the child class
    * @param params    The parameters potentially used in the constructor
    * @param args      The required arguments for the constructor
@@ -404,9 +404,9 @@ class Factory
   /**
    * @brief get_extra param Return a constructed child class corresponding
    *          to a given string name. The string name is not given directly,
-   *          instead being found by params->get_param(param_name).  If no parameter
+   *          instead being found by params.find<std::string>(param_name).  If no parameter
    *          corresponding to param_name exists, return get_value(defval)
-   * @param param_name   The name of the parameter such that params->get_param(param_name)
+   * @param param_name   The name of the parameter such that params.find<std::string>(param_name)
    *                     returns the string that will map to the child class
    * @param defval    The default value to use in case the parameter has not been specified
    * @param params    The parameters potentially used in the constructor
@@ -417,7 +417,7 @@ class Factory
                      const std::string& defval,
                      SST::Params& params,
                      const Args&... args) {
-    return _get_value(params->get_optional_param(param_name, defval),
+    return _get_value(params.find<std::string>(param_name, defval),
                       params, args...);
   }
 

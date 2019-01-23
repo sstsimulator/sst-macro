@@ -50,8 +50,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/logp/logp_param_expander.h>
 #include <sstmac/hardware/logp/logp_switch.h>
+#include <sstmac/hardware/logp/logp_param_expander.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/common/runtime.h>
@@ -124,7 +124,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   SST::Params nic_params = node_params.get_namespace("nic");
   SST::Params inj_params = nic_params.get_namespace("injection");
   SST::Params switch_params = params.get_namespace("switch");
-  SST::Params ej_params = switch_params->get_optional_namespace("ejection");
+  SST::Params ej_params = switch_params.find_prefix_params("ejection");
 
   Topology* top = topology_;
 
@@ -190,8 +190,8 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
 {
   SST::Params switch_params = params.get_namespace("switch");
   SST::Params inj_params = params.get_namespace("node")
-      ->get_namespace("nic")->get_namespace("injection");
-  SST::Params ej_params = params->get_optional_namespace("ejection");
+      .find_prefix_params("nic").find_prefix_params("injection");
+  SST::Params ej_params = params.find_prefix_params("ejection");
 
   SST::Params link_params = switch_params.get_namespace("link");
   Timestamp hop_latency;
@@ -410,7 +410,7 @@ void
 Interconnect::buildSwitches(SST::Params& switch_params,
                             EventManager* mgr)
 {
-  bool simple_model = switch_params->get_param("name") == "simple";
+  bool simple_model = switch_params.find<std::string>("name") == "simple";
   if (simple_model) return; //nothing to do
 
   int my_rank = rt_->me();
@@ -441,7 +441,7 @@ Interconnect::switchComponentId(SwitchId sid) const
 void
 Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
 {
-  bool simple_model = switch_params->get_param("name") == "simple";
+  bool simple_model = switch_params.find<std::string>("name") == "simple";
   if (simple_model) return; //nothing to do
 
   std::vector<Topology::connection> outports(64); //allocate 64 spaces optimistically

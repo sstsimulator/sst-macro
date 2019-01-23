@@ -299,7 +299,7 @@ PiscesNtoMQueue::setOutput(
   out.link = link;
   out.arrival_port = dst_inport;
 
-  int num_credits = port_params->get_byte_length_param("credits");
+  int num_credits = port_params.findUnits("credits").getRoundedValue();
   int num_credits_per_vc = num_credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     debug_printf(sprockit::dbg::pisces_config,

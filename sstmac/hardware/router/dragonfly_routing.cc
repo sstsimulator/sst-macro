@@ -81,7 +81,7 @@ struct DragonflyMinimalRouter : public Router {
       spkt_abort_printf("dragonfly router can only be used with dragonfly topology");
     }
 
-    static_route_ = params->get_optional_bool_param("static", false);
+    static_route_ = params.find<bool>("static", false);
 
     my_a_ = dfly_->computeA(my_addr_);
     my_g_ = dfly_->computeG(my_addr_);
@@ -350,7 +350,7 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
                                  NetworkSwitch *netsw)
     : DragonflyValiantRouter(params, top, netsw)
   {
-    val_threshold_ = params->get_optional_int_param("val_threshold", 0);
+    val_threshold_ = params.find<int>("val_threshold", 0);
   }
 
   std::string toString() const override {

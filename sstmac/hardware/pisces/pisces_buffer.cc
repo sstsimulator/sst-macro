@@ -86,9 +86,9 @@ PiscesBuffer::PiscesBuffer(
     queues_(num_vc),
     credits_(num_vc, 0),
     initial_credits_(num_vc,0),
-    packet_size_(params->get_byte_length_param("mtu"))
+    packet_size_(params.findUnits("mtu").getRoundedValue())
 {
-  int credits = params->get_byte_length_param("credits");
+  int credits = params.findUnits("credits").getRoundedValue();
   int num_credits_per_vc = credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;

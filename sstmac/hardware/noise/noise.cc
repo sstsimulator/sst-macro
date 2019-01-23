@@ -77,10 +77,10 @@ GaussianNoiseModel::GaussianNoiseModel(double mean, double stdev,
 GaussianNoiseModel::GaussianNoiseModel(SST::Params& params)
   : NoiseModel(params)
 {
-  double mean = params->get_quantity("mean");
-  double stdev = params->get_quantity("stdev");
-  int seed = params->get_optional_int_param("seed", 0);
-  double maxz = params->get_optional_double_param("maxz", 100);
+  double mean = params.findUnits("mean").toDouble();
+  double stdev = params.findUnits("stdev").toDouble();
+  int seed = params.find<int>("seed", 0);
+  double maxz = params.find<double>("maxz", 100);
   rng_ = new RNG::NormalDistribution(mean, stdev, maxz, seed);
 }
 

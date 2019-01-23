@@ -59,7 +59,7 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
   send_functor_(nullptr),
   credit_link_(nullptr),
   logp_link_(nullptr),
-  EventScheduler(params->get_int_param("id")),
+  EventScheduler(params.find<int>("id")),
   inj_buffer_(nullptr)
 {
   //we need a self link
@@ -67,21 +67,21 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
 
   initLinks(params);
 
-  SST::Params inj_params = params->get_optional_namespace("injection");
+  SST::Params inj_params = params.find_prefix_params("injection");
   PiscesSender::configurePayloadPortLatency(inj_params);
   inj_buffer_ = new PiscesBuffer(inj_params, this, 1);
 
   EventHandler* handler = newHandler(this, &PiscesSimpleNetwork::creditArrived);
   inj_buffer_->setInput(inj_params, 0, 0, new EventLink(self_link(), comp));
 
-  SST::Params ej_params = params->get_optional_namespace("ejection");
+  SST::Params ej_params = params.find_prefix_params("ejection");
   arb_ = PiscesBandwidthArbitrator::factory::get_param("arbitrator", params);
 }
 
 void
 PiscesSimpleNetwork::initLinks(SST::Params& params)
 {
-  SST::Params inj_params = params->get_optional_namespace("injection");
+  SST::Params inj_params = params.find_prefix_params("injection");
   SST::LinkMap* link_map = SST::Simulation::getSimulation()->getComponentLinkMap(comp()->getId());
   for (auto& pair : link_map->getLinkMap()){
     debug("initialized simple network link %s", pair.first.c_str());

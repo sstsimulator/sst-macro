@@ -89,14 +89,16 @@ Node::Node(SST::Params& params, uint32_t id)
   static bool init_debug = false;
   if (!init_debug){
     std::vector<std::string> debug_params;
-    params->get_optional_vector_param("debug", debug_params);
+    if (params.contains("debug")){
+      params.find_array("debug", debug_params);
+    }
     for (auto& str : debug_params){
       sprockit::debug::turn_on(str);
     }
     init_debug = true;
   }
 #endif
-  my_addr_ = params->get_int_param("id");
+  my_addr_ = params.find<int>("id");
   next_outgoing_id_.setSrcNode(my_addr_);
 
   SST::Params nic_params = params.get_namespace("nic");
@@ -104,22 +106,22 @@ Node::Node(SST::Params& params, uint32_t id)
   nic_ = NIC::factory::get_param("name", nic_params, this);
   nic_params->remove_param("id");
 
-  SST::Params mem_params = params->get_optional_namespace("memory");
+  SST::Params mem_params = params.find_prefix_params("memory");
   mem_model_ = MemoryModel::factory::get_optional_param("name", "logp", mem_params, this);
 
-  SST::Params proc_params = params->get_optional_namespace("proc");
+  SST::Params proc_params = params.find_prefix_params("proc");
   proc_ = Processor::factory::get_optional_param("processor", "instruction",
           proc_params,
           mem_model_, this);
 
-  nsocket_ = params->get_optional_int_param("nsockets", 1);
+  nsocket_ = params.find<int>("nsockets", 1);
 
-  SST::Params os_params = params->get_optional_namespace("os");
+  SST::Params os_params = params.find_prefix_params("os");
   os_ = new sw::OperatingSystem(os_params, this);
 
   app_launcher_ = new AppLauncher(os_);
 
-  launchRoot_ = params->get_optional_int_param("launchRoot", 0);
+  launchRoot_ = params.find<int>("launchRoot", 0);
   if (my_addr_ == launchRoot_){
     job_launcher_ =   JobLauncher::factory::get_optional_param(
           "JobLauncher", "default", params, os_);
@@ -186,7 +188,7 @@ Node::connectInput(SST::Params& params,
   EventLink* link)
 {
   //forward connection to nic
-  nic_->connectInput(params/*->get_namespace("nic")*/, src_outport, dst_inport, link);
+  nic_->connectInput(params/*.find_prefix_params("nic")*/, src_outport, dst_inport, link);
 }
 
 Timestamp

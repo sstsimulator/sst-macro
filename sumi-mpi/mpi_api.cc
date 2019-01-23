@@ -135,18 +135,18 @@ MpiApi::MpiApi(SST::Params& params,
   crossed_comm_world_barrier_(false),
   comm_factory_(sid, this)
 {
-  SST::Params queue_params = params->get_optional_namespace("queue");
+  SST::Params queue_params = params.find_prefix_params("queue");
   engine_ = new CollectiveEngine(queue_params, this);
   queue_ = new MpiQueue(queue_params, sid.task_, this, engine_);
 
-  double probe_delay_s = params->get_optional_time_param("iprobe_delay", 0);
+  double probe_delay_s = params.findUnits("iprobe_delay", "0s").toDouble();
   iprobe_delay_us_ = probe_delay_s * 1e6;
 
-  double test_delay_s = params->get_optional_time_param("test_delay", 0);
+  double test_delay_s = params.findUnits("test_delay", "0s").toDouble();
   test_delay_us_ = test_delay_s * 1e6;
 
 #if SSTMAC_COMM_SYNC_STATS
-  dump_comm_times_ = params->get_optional_bool_param("dump_comm_times", false);
+  dump_comm_times_ = params.find<bool>("dump_comm_times", false);
 #endif
 
 

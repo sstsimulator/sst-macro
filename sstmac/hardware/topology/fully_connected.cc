@@ -53,7 +53,7 @@ FullyConnected::FullyConnected(SST::Params& params) :
   StructuredTopology(params)
 {
   std::vector<int> args;
-  params->get_vector_param("geometry", args);
+  params.find_array("geometry", args);
   size_ = args[0];
 }
 

@@ -394,7 +394,7 @@ namespace sstmac {
 
 actor::actor(SST::Params& params)
 {
-  biggest_fan_ = params->get_param("biggest_fan");
+  biggest_fan_ = params.find<std::string>("biggest_fan");
 }
 ````
 We initialize the member variable from the parameter object.  We additionally need a macro
@@ -458,7 +458,7 @@ We can now implement the constructor:
 mandy_patinkin::mandy_patinkin(SST::Params& params) :
   actor(params)
 {
-  sword_hand_ = params->get_param("sword_hand");
+  sword_hand_ = params.find<std::string>("sword_hand");
 
   if (sword_hand_ == "left"){
     sprockit::abort("I am not left handed!");
@@ -1945,8 +1945,8 @@ We start with
 xpress_ring::xpress_ring(SST::Params& params) :
   structured_topology(params)
 {
-  ring_size_ = params->get_int_param("xpress_ring_size");
-  jump_size_ = params->get_int_param("xpress_jump_size");
+  ring_size_ = params.find<int>("xpress_ring_size");
+  jump_size_ = params.find<int>("xpress_jump_size");
 }
 ````
 determining how many switches are in the ring and how big a "jump" link is.
@@ -2266,7 +2266,7 @@ The histogram constructor initializes a few parameters internally.
 
 ````
 bin_size_ = params->get_quantity("bin_size");
-is_log_ = params->get_optional_bool_param("logarithmic", false);
+is_log_ = params.find<bool>("logarithmic", false);
 ````
 defining how large histogram bins are, whether the scale is logarithmic, and finally defining a file root for dumping results later.
 Internally in the event manager, all objects with the same file root are grouped together.

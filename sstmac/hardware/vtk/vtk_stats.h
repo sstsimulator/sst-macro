@@ -105,7 +105,7 @@ struct vtk_port {
   }
 };
 
-class stat_vtk : public StatCollector
+class StatVTK : public StatCollector
 {
   FactoryRegister("vtk", stat_collector, stat_vtk)
  public:
@@ -123,7 +123,7 @@ class stat_vtk : public StatCollector
     std::set<int> special_fills;
   };
 
-  stat_vtk(SST::Params& params);
+  StatVTK(SST::Params& params);
 
   std::string toString() const override {
     return "VTK stats";
@@ -151,7 +151,7 @@ class stat_vtk : public StatCollector
   void finalize(Timestamp t) override;
 
   StatCollector* doClone(SST::Params& params) const override {
-    return new stat_vtk(params);
+    return new StatVTK(params);
   }
 
   int id() const {

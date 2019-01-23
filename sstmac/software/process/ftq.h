@@ -104,9 +104,6 @@ class AppFTQCalendar
   virtual ~AppFTQCalendar();
 
   /**
-    Resolution of the ticks is set by timestamp_resolution parameter.
-    timestamp_resolution gives the number of ps per tick
-    timestamp_resolution=100 -> 100ps = 1 tick
     @param event_typeid The type of event (MPI,Compute,Sleep,etc)
     @param tid The task id (essentially MPI Rank)
     @param ticks_begin The time the event started

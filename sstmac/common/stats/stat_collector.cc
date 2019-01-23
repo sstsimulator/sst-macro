@@ -62,11 +62,11 @@ StatCollector::StatCollector(SST::Params& params) :
   id_(-1),
   params_(new sprockit::sim_parameters(params))
 {
-  fileroot_ = params->get_param("fileroot");
+  fileroot_ = params.find<std::string>("fileroot");
   if (params->has_param("suffix")){
-    fileroot_ = fileroot_ + "." + params->get_param("suffix");
+    fileroot_ = fileroot_ + "." + params.find<std::string>("suffix");
   }
-  id_ = params->get_optional_int_param("id", -1);
+  id_ = params.find<int>("id", -1);
 }
 
 StatCollector*
@@ -93,7 +93,7 @@ StatCollector::statsError(SST::Params& params,
     const char* ns_str = ns.size() ?  " in namespace " : "";
     spkt_abort_printf("Received invalid stats type %s%s%s- "
                       " a valid value would have been %s",
-                      params->get_param("type").c_str(),
+                      params.find<std::string>("type").c_str(),
                       ns_str, ns.c_str());
   } else {
     spkt_abort_printf("Received invalid stats type %s",
@@ -119,7 +119,7 @@ StatCollector::optionalBuild(SST::Params& params,
 
   if (suffix){
     sprockit::sim_parameters* old_params = params;
-    params = old_params->get_optional_namespace(suffix);
+    params = old_params.find_prefix_params(suffix);
     params->add_param_override("suffix", suffix);
     old_params.combine_into(params);
   }
@@ -143,7 +143,7 @@ StatCollector::registerOptionalStat(EventScheduler* parent, StatCollector *coll,
 StatValueBase::StatValueBase(SST::Params& params) :
   StatCollector(params)
 {
-  id_ = params->get_int_param("id");
+  id_ = params.find<int>("id");
 }
 
 */

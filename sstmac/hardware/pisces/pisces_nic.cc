@@ -68,14 +68,14 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   pending_inject_(1)
 {
   SST::Params inj_params = params.get_namespace("injection");
-  SST::Params ej_params = params->get_optional_namespace("ejection");
+  SST::Params ej_params = params.find_prefix_params("ejection");
 
   self_mtl_link_ = allocateSubLink(Timestamp(), parent,
                                     newHandler(this, &NIC::mtlHandle));
 
   //make port 0 a copy of the injection params
   //this looks pointless, but is needed for integrated core (I think)
-  SST::Params port0_params = params->get_optional_namespace("port0");
+  SST::Params port0_params = params.find_prefix_params("port0");
   inj_params.combine_into(port0_params);
 
   PiscesSender::configurePayloadPortLatency(inj_params);
@@ -84,11 +84,11 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
                 get_optional_param("stats", "null", params, parent);
   inj_buffer_->setStatCollector(inj_stats_);
 
-  credit_lat_ = Timestamp(inj_params->get_time_param("sendLatency"));
+  credit_lat_ = Timestamp(inj_params.findUnits("sendLatency").toDouble());
   ej_stats_ = PacketStatsCallback::factory::
                         get_optional_param("stats", "null", ej_params, parent);
 
-  packet_size_ = inj_params->get_byte_length_param("mtu");
+  packet_size_ = inj_params.findUnits("mtu").getRoundedValue();
 
 }
 

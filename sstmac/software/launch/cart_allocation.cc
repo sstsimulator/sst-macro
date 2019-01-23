@@ -69,7 +69,7 @@ CartAllocation::CartAllocation(SST::Params& params) :
   NodeAllocator(params)
 {
   if (params->has_param("cart_sizes")){
-    params->get_vector_param("cart_sizes", sizes_);
+    params.find_array("cart_sizes", sizes_);
     auto_allocate_ = false;
   } else {
     sizes_.resize(3, -1);
@@ -77,7 +77,7 @@ CartAllocation::CartAllocation(SST::Params& params) :
   }
 
   if (params->has_param("cart_offsets")){
-    params->get_vector_param("cart_offsets", offsets_);
+    params.find_array("cart_offsets", offsets_);
     if (sizes_.size() != offsets_.size()) {
       spkt_throw_printf(sprockit::value_error,
                      "cartesian allocator: offsets and sizes have different dimensions");

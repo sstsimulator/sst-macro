@@ -42,9 +42,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/hardware/logp/logp_param_expander.h>
 #include <sstmac/common/timestamp.h>
 #include <sprockit/sim_parameters.h>
+#include <sstmac/hardware/logp/logp_param_expander.h>
 
 namespace sstmac {
 namespace hw {
@@ -52,24 +52,24 @@ namespace hw {
 void
 LogPParamExpander::expand(SST::Params& params)
 {
-  SST::Params node_params = params->get_optional_namespace("node");
-  SST::Params  nic_params = node_params->get_optional_namespace("nic");
-  SST::Params  mem_params = node_params->get_optional_namespace("memory");
-  SST::Params  switch_params = params->get_optional_namespace("switch");
-  SST::Params  top_params = params->get_optional_namespace("topology");
-  SST::Params  proc_params = node_params->get_optional_namespace("proc");
+  SST::Params node_params = params.find_prefix_params("node");
+  SST::Params  nic_params = node_params.find_prefix_params("nic");
+  SST::Params  mem_params = node_params.find_prefix_params("memory");
+  SST::Params  switch_params = params.find_prefix_params("switch");
+  SST::Params  top_params = params.find_prefix_params("topology");
+  SST::Params  proc_params = node_params.find_prefix_params("proc");
 
   nic_params->add_param_override("name", "logp");
   switch_params->add_param_override("name", "logp");
   mem_params->add_param_override("name", "pisces");
 
-  int packet_size = params->get_optional_int_param("accurary_parameter", 4096000);
-  int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", packet_size);
+  int packet_size = params.find<int>("accurary_parameter", 4096000);
+  int mem_packet_size = params.find<int>("memory_accuracy_parameter", packet_size);
   if (!mem_params->has_param("mtu")){
     mem_params->add_param_override("mtu", mem_packet_size);
   }
 
-  std::string amm_type = params->get_param("amm_model");
+  std::string amm_type = params.find<std::string>("amm_model");
   if (amm_type == "amm1"){
     expandAmm1Memory(params, mem_params);
     expandAmm1Network(params, switch_params);
@@ -96,7 +96,7 @@ LogPParamExpander::expandAmm1Memory(
   SST::Params& mem_params)
 {
   //now just get the strings
-  std::string mem_bw_str = mem_params->get_param("bandwidth");
+  std::string mem_bw_str = mem_params.find<std::string>("bandwidth");
   if (!mem_params->has_param("max_single_bandwidth")){
     mem_params->add_param_override("max_single_bandwidth", mem_bw_str);
   } 
@@ -121,45 +121,45 @@ LogPParamExpander::expandInto(
 {
   if (!switch_params->has_param("bandwidth")){
     SST::Params  link_params = switch_params.get_namespace("link");
-    double link_bw = link_params->get_bandwidth_param("bandwidth");
+    double link_bw = link_params.findUnits("bandwidth").toDouble();
     double gbs = link_bw *ParamExpander::networkBandwidthMultiplier(params) / 1e9;
     std::string net_bw_str = sprockit::printf("%12.8fGB/s", gbs);
 
     dst_params->add_param_override("bandwidth", net_bw_str);
   } else {
-    dst_params->add_param_override("bandwidth", switch_params->get_param("bandwidth"));
+    dst_params->add_param_override("bandwidth", switch_params.find<std::string>("bandwidth"));
   }
 
   if (!switch_params->has_param("hop_latency")){
-    SST::Params  link_params = switch_params->get_optional_namespace("link");
+    SST::Params  link_params = switch_params.find_prefix_params("link");
     if (link_params->has_param("sendLatency")){
-      dst_params->add_param_override("hop_latency", link_params->get_time_param("sendLatency"));
+      dst_params->add_param_override("hop_latency", link_params.find<std::string>("sendLatency"));
     } else {
-      dst_params->add_param_override("hop_latency", link_params->get_time_param("latency"));
+      dst_params->add_param_override("hop_latency", link_params.find<std::string>("latency"));
     }
   } else {
-    dst_params->add_param_override("hop_latency", switch_params->get_param("hop_latency"));
+    dst_params->add_param_override("hop_latency", switch_params.find<std::string>("hop_latency"));
   }
 
   if (!switch_params->has_param("out_in_latency")){
-    SST::Params  inj_params = params.get_namespace("node")->get_namespace("nic")
-                                                 ->get_namespace("injection");
+    SST::Params  inj_params = params.get_namespace("node").find_prefix_params("nic")
+                                                 .find_prefix_params("injection");
 
-    SST::Params  ej_params = switch_params->get_optional_namespace("ejection");
+    SST::Params  ej_params = switch_params.find_prefix_params("ejection");
 
-    Timestamp inj_lat(inj_params->get_time_param("latency"));
+    Timestamp inj_lat(inj_params.findUnits("latency").toDouble());
     Timestamp ej_lat = inj_lat;
 
     if (ej_params->has_param("sendLatency")){
-      ej_lat = Timestamp(ej_params->get_time_param("sendLatency"));
+      ej_lat = Timestamp(ej_params.findUnits("sendLatency").toDouble());
     } else if (ej_params->has_param("latency")){
-      ej_lat = Timestamp(ej_params->get_time_param("latency"));
+      ej_lat = Timestamp(ej_params.findUnits("latency").toDouble());
     }
 
     Timestamp total_lat = inj_lat + ej_lat;
     dst_params->add_param_override("out_in_latency", sprockit::printf("%12.8fus", total_lat.usec()));
   } else {
-    dst_params->add_param_override("out_in_latency", switch_params->get_param("out_in_latency"));
+    dst_params->add_param_override("out_in_latency", switch_params.find<std::string>("out_in_latency"));
   }
 
 }
@@ -189,9 +189,9 @@ LogPParamExpander::expandAmm3Network(
 
   SST::Params link_params = switch_params.get_namespace("link");
   SST::Params xbar_params = switch_params.get_namespace("xbar");
-  double link_bw = link_params->get_bandwidth_param("bandwidth");
+  double link_bw = link_params.findUnits("bandwidth").toDouble();
   double sw_multiplier = ParamExpander::switchBandwidthMultiplier(params);
-  double sw_bw = xbar_params->get_bandwidth_param("bandwidth") * sw_multiplier;
+  double sw_bw = xbar_params.findUnits("bandwidth").toDouble() * sw_multiplier;
   //the network bandwidth is the min of link/sw bandwidth
   double net_bw = std::min(link_bw, sw_bw);
   double gbs = net_bw / 1e9;

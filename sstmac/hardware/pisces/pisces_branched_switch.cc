@@ -70,7 +70,7 @@ PiscesBranchedSwitch::PiscesBranchedSwitch(SST::Params& params, uint32_t id)
   : PiscesAbstractSwitch(params, id)
 {
   std::vector<int> args;
-  params->get_vector_param("geometry", args);
+  params.find_array("geometry", args);
   n_local_ports_ = args[0];
   n_local_xbars_ = args[1];
 

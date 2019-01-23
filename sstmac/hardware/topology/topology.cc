@@ -113,8 +113,8 @@ Topology::Topology(SST::Params& params)
 #endif
   main_top_ = this;
 
-  dot_file_ = params->get_optional_param("output_graph", "");
-  xyz_file_ = params->get_optional_param("outputXYZ", "");
+  dot_file_ = params.find<std::string>("output_graph", "");
+  xyz_file_ = params.find<std::string>("outputXYZ", "");
 }
 
 Topology::~Topology()
@@ -140,15 +140,15 @@ Topology::setupPortParams(int port, int credits, double bw,
                           SST::Params& params)
 {
   std::string port_name = sprockit::printf("port%d", port);
-  SST::Params port_params = params->get_optional_namespace(port_name);
+  SST::Params port_params = params.find_prefix_params(port_name);
   //for max lookahead, no credit latency
   //put all of the credits on sending, none on credits
   port_params["bandwidth"].setBandwidth(bw/1e9, "GB/s");
   port_params["credits"].setByteLength(credits, "B");
-  port_params->add_param_override("sendLatency", link_params->get_param("sendLatency"));
-  port_params->add_param_override("creditLatency", link_params->get_param("creditLatency"));
+  port_params->add_param_override("sendLatency", link_params.find<std::string>("sendLatency"));
+  port_params->add_param_override("creditLatency", link_params.find<std::string>("creditLatency"));
   if (link_params->has_param("arbitrator")){
-    port_params->add_param_override("arbitrator", link_params->get_param("arbitrator"));
+    port_params->add_param_override("arbitrator", link_params.find<std::string>("arbitrator"));
   }
   return port_params;
 }
@@ -353,8 +353,8 @@ class MerlinTopology : public Topology {
   MerlinTopology(SST::Params& params)
     : Topology(params)
   {
-    num_nodes_ = params->get_int_param("num_nodes");
-    num_switches_ = params->get_int_param("num_switches");
+    num_nodes_ = params.find<int>("num_nodes");
+    num_switches_ = params.find<int>("num_switches");
   }
 
   std::string toString() const override {

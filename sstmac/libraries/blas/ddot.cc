@@ -56,8 +56,8 @@ class DefaultDDOT :
   FactoryRegister("default_ddot", BlasKernel, DefaultDDOT)
  public:
   DefaultDDOT(SST::Params& params){
-    loop_unroll_ = params->get_optional_double_param("ddot_loop_unroll", 4);
-    pipeline_ = params->get_optional_double_param("ddot_pipeline_efficiency", 2);
+    loop_unroll_ = params.find<double>("ddot_loop_unroll", 4);
+    pipeline_ = params.find<double>("ddot_pipeline_efficiency", 2);
   }
 
   std::string toString() const override {

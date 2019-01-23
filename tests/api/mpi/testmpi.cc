@@ -696,7 +696,7 @@ RegisterKeywords(
 int USER_MAIN(int argc, char *argv[])
 {
   SST::Params params = getParams();
-  testmode_ = params->get_int_param("testsuite_testmode");
+  testmode_ = params.find<int>("testsuite_testmode");
 
   double t_start = get_time();
 

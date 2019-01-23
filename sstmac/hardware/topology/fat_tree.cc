@@ -82,13 +82,13 @@ AbstractFatTree::AbstractFatTree(SST::Params& params) :
   StructuredTopology(params)
 {
   num_core_switches_ =
-      params->get_int_param("num_core_switches");
+      params.find<int>("num_core_switches");
   num_agg_subtrees_ =
-      params->get_int_param("num_agg_subtrees");
+      params.find<int>("num_agg_subtrees");
   leaf_switches_per_subtree_ =
-      params->get_int_param("leaf_switches_per_subtree");
+      params.find<int>("leaf_switches_per_subtree");
   agg_switches_per_subtree_ =
-      params->get_int_param("agg_switches_per_subtree");
+      params.find<int>("agg_switches_per_subtree");
 
   num_leaf_switches_ = leaf_switches_per_subtree_ * num_agg_subtrees_;
   num_agg_switches_ = agg_switches_per_subtree_ * num_agg_subtrees_;
@@ -101,13 +101,13 @@ AbstractFatTree::AbstractFatTree(SST::Params& params) :
 
 void
 AbstractFatTree::writeBwParams(
-    SST::Params& switch_params,
-    double multiplier) const
+  SST::Params& switch_params,
+  double multiplier) const
 {
   switch_params->print_params();
   if (switch_params->has_namespace("xbar")){
     SST::Params xbar_params = switch_params.get_namespace("xbar");
-    double bw = xbar_params->get_bandwidth_param("bandwidth");
+    double bw = xbar_params.findUnits("bandwidth").toDouble();
     if (bw == 0){
       xbar_params->print_params();;
       spkt_abort_printf("got zero bandwidth for xbar");
@@ -134,13 +134,13 @@ FatTree::FatTree(SST::Params& params) :
   AbstractFatTree(params)
 {
   up_ports_per_leaf_switch_ =
-      params->get_int_param("up_ports_per_leaf_switch");
+      params.find<int>("up_ports_per_leaf_switch");
   down_ports_per_agg_switch_ =
-      params->get_int_param("down_ports_per_agg_switch");
+      params.find<int>("down_ports_per_agg_switch");
   up_ports_per_agg_switch_ =
-      params->get_int_param("up_ports_per_agg_switch");
+      params.find<int>("up_ports_per_agg_switch");
   down_ports_per_core_switch_ =
-      params->get_int_param("down_ports_per_core_switch");
+      params.find<int>("down_ports_per_core_switch");
 
   int leaf_ports = concentration() + up_ports_per_leaf_switch_;
   int agg_ports = down_ports_per_agg_switch_ +  up_ports_per_agg_switch_;
@@ -357,13 +357,13 @@ FatTree::configureNonuniformSwitchParams(SwitchId src,
 
   if ( my_level == 0 &&
        switch_params->has_param("leaf_bandwidth_multiplier"))
-    multiplier = switch_params->get_double_param("leaf_bandwidth_multiplier");
+    multiplier = switch_params.find<double>("leaf_bandwidth_multiplier");
   else if ( my_level == 1 &&
             switch_params->has_param("agg_bandwidth_multiplier"))
-    multiplier = switch_params->get_double_param("agg_bandwidth_multiplier");
+    multiplier = switch_params.find<double>("agg_bandwidth_multiplier");
   else if ( my_level == 2 &&
             switch_params->has_param("core_bandwidth_multiplier"))
-    multiplier = switch_params->get_double_param("core_bandwidth_multiplier");
+    multiplier = switch_params.find<double>("core_bandwidth_multiplier");
 
   top_debug("fat_tree: scaling switch %i by %lf",src,multiplier);
   writeBwParams(switch_params, multiplier);
@@ -520,8 +520,8 @@ TaperedFatTree::configureIndividualPortParams(SwitchId src,
 {
   SST::Params link_params = switch_params.get_namespace("link");
   int buffer_size = link_params->get_optional_byte_length_param("buffer_size", 0);
-  double bw = link_params->get_bandwidth_param("bandwidth");
-  double taper = link_params->get_optional_double_param("core_taper",1.0);
+  double bw = link_params.findUnits("bandwidth").toDouble();
+  double taper = link_params.find<double>("core_taper",1.0);
   int taperedBufSize = buffer_size * agg_bw_multiplier_ * taper;
   double taperedBw = bw * agg_bw_multiplier_ * taper;
   int myLevel = level(src);

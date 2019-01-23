@@ -64,7 +64,7 @@ namespace sw {
 DumpiAllocation::DumpiAllocation(SST::Params& params)
  : NodeAllocator(params)
 {
-  metafile_ = params->get_param("dumpi_metaname");
+  metafile_ = params.find<std::string>("dumpi_metaname");
 }
 
 bool

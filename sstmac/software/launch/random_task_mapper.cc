@@ -55,7 +55,7 @@ RandomTaskMapper::RandomTaskMapper(SST::Params& params) :
   TaskMapper(params)
 {
   if(params->has_param("random_indexer_seed")) {
-    long seed = params->get_long_param("random_indexer_seed");
+    long seed = params.find<long>("random_indexer_seed");
     rng_ = RNG::SimpleCombo::construct(seed);
   } else {
     rng_ = RNG::SimpleCombo::construct();

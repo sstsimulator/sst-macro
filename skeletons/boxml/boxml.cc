@@ -126,49 +126,49 @@ namespace lblxml {
   boxml::process_params()
   {
     if (eventfiles_.empty())
-      params_->get_vector_param ("boxml_eventfiles", eventfiles_);
+      params_.find_array("boxml_eventfiles", eventfiles_);
     boxfile_ =
-        params_->get_param("boxml_boxfile");
+        params_.find<std::string>("boxml_boxfile");
     message_factor_ =
-        params_->get_int_param("boxml_message_factor");
+        params_.find<int>("boxml_message_factor");
     compute_scale_ =
-        params_->get_optional_double_param("boxml_compute_scale", 1.0);
+        params_.find<double>("boxml_compute_scale", 1.0);
     do_compute_ =
-        params_->get_bool_param("boxml_do_compute");
+        params_.find<bool>("boxml_do_compute");
     debug_ =
-        params_->get_optional_int_param("boxml_debug",0);
+        params_.find<int>("boxml_debug",0);
     randomize_events_ =
-        params_->get_bool_param("boxml_randomize_events");
+        params_.find<bool>("boxml_randomize_events");
     detailed_progress_ =
-        params_->get_optional_bool_param("boxml_detailed_progress",false);
+        params_.find<bool>("boxml_detailed_progress",false);
     nevents_ = 
-        params_->get_int_param("boxml_events");
+        params_.find<int>("boxml_events");
     round_robin_ =
-        params_->get_optional_bool_param("boxml_round_robin",false);
+        params_.find<bool>("boxml_round_robin",false);
     minimize_locks_ = 
-        params_->get_optional_bool_param("boxml_minimize_locks",false);
+        params_.find<bool>("boxml_minimize_locks",false);
     partitioning_ =
-        params_->get_optional_param("boxml_partitioning", "xml");
+        params_.find<std::string>("boxml_partitioning", "xml");
     placement_ =
-        params_->get_optional_param("boxml_placement", "xml");
+        params_.find<std::string>("boxml_placement", "xml");
     repartition_size_ =
-        params_->get_optional_int_param("boxml_repartition_size",-1);
+        params_.find<int>("boxml_repartition_size",-1);
     vertex_scale_ =
         params_->get_optional_long_param("boxml_vertex_scale",1000);
     rank_remap_ =
-        params_->get_optional_bool_param("boxml_rank_remap",false);
+        params_.find<bool>("boxml_rank_remap",false);
     load_balance_tolerance_ =
-        params_->get_optional_double_param("boxml_load_balance_tolerance",1.05);
+        params_.find<double>("boxml_load_balance_tolerance",1.05);
     fixed_vertex_ =
         params_->get_optional_long_param("boxml_fixed_vertex",0);
     zero_edge_weight_ =
-        params_->get_optional_bool_param("boxml_zero_edge_weight",false);
+        params_.find<bool>("boxml_zero_edge_weight",false);
     build_graph_only_ =
-        params_->get_optional_bool_param("boxml_build_graph_only",false);
+        params_.find<bool>("boxml_build_graph_only",false);
 
     if (params_->has_param("boxml_synchronization")) {
       string mode =
-          params_->get_param("boxml_synchronization");
+          params_.find<std::string>("boxml_synchronization");
       if (mode == "fully_synchronous")
         synch_mode_ = full_synch;
       else if (mode == "rank_synchronous")
@@ -192,7 +192,7 @@ namespace lblxml {
 
     if (!checked_bin_){
       if (params_->has_param("boxml_binary_file")){
-        std::string bin_file = params_->get_param("boxml_binary_file");
+        std::string bin_file = params_.find<std::string>("boxml_binary_file");
         ifstream test(bin_file.c_str());
         if (test.good()){
           test.close();
@@ -206,46 +206,46 @@ namespace lblxml {
       checked_bin_ = true;
     }
 
-    xml_read_only_ = params_->get_optional_bool_param("boxml_xml_only", false);
+    xml_read_only_ = params_.find<bool>("boxml_xml_only", false);
 
     if (params_->has_namespace("effective_bandwidths")){
-      sprockit::sim_parameters::ptr stat_params = params_->get_namespace("effective_bandwidths");
+      sprockit::sim_parameters::ptr stat_params = params_.find_prefix_params("effective_bandwidths");
       hist_eff_bw_ = test_cast(StatHistogram, StatCollector::factory::get_optional_param("type", "histogram", stat_params));
 
       if (!hist_eff_bw_)
         spkt_throw_printf(sprockit::value_error,
           "Effective bandwidth tracker must be histogram, %s given",
-          stat_params->get_param("type").c_str());
+          stat_params.find<std::string>("type").c_str());
       else
         EventManager::global->registerStat(hist_eff_bw_, nullptr);
     }
 
     if (params_->has_namespace("polling_time")) {
-      sprockit::sim_parameters::ptr stat_params = params_->get_namespace("polling_time");
+      sprockit::sim_parameters::ptr stat_params = params_.find_prefix_params("polling_time");
       idle_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
           "Idle time tracker type must be stat_local_double, %s given",
-          stat_params->get_param("type").c_str());
+          stat_params.find<std::string>("type").c_str());
     }
     if (params_->has_namespace("barrier_time")) {
-      sprockit::sim_parameters::ptr stat_params = params_->get_namespace("barrier_time");
+      sprockit::sim_parameters::ptr stat_params = params_.find_prefix_params("barrier_time");
       barrier_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
           "Barrier time tracker type must be stat_local_double, %s given",
-          stat_params->get_param("type").c_str());
+          stat_params.find<std::string>("type").c_str());
     }
     if (params_->has_namespace("compute_time")) {
-      sprockit::sim_parameters::ptr stat_params = params_->get_namespace("compute_time");
+      sprockit::sim_parameters::ptr stat_params = params_.find_prefix_params("compute_time");
       compute_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
 
       if (!idle_time_)
         spkt_throw_printf(sprockit::value_error,
           "Compute time tracker type must be stat_local_double, %s given",
-          stat_params->get_param("type").c_str());
+          stat_params.find<std::string>("type").c_str());
     }
 
   }

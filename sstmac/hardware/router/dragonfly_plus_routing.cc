@@ -112,7 +112,7 @@ class DragonflyPlusAlltoallMinimalRouter : public Router {
       }
     }
 
-    static_route_ = params->get_optional_bool_param("static", false);
+    static_route_ = params.find<bool>("static", false);
   }
 
   int numVC() const override {

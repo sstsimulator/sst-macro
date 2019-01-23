@@ -68,11 +68,11 @@ namespace hw {
 Router::Router(SST::Params& params, Topology *top, NetworkSwitch *sw)
  : top_(top), netsw_(sw), rng_(nullptr)
 {
-  my_addr_ = SwitchId(params->get_int_param("id"));
+  my_addr_ = SwitchId(params.find<int>("id"));
   std::vector<RNG::rngint_t> seeds(2);
   seeds[0] = 42;
   if (params->has_param("seed")) {
-    seed_ = params->get_long_param("seed");
+    seed_ = params.find<long>("seed");
     seeds[1] = seed_;
     debug_seed_ = true;
   } else {

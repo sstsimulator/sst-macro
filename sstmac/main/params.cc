@@ -169,7 +169,7 @@ remapDeprecatedParams(SST::Params& params)
     param_remap& p = remap_list[i];
     if (params->has_param(p.deprecated)){
       params->parse_keyval(p.updated,
-         params->get_param(p.deprecated),
+         params.find<std::string>(p.deprecated),
          false/*fail on existing*/,
          false/*do not overwrite anything*/,
          false/*do not mark anything as read*/);
@@ -191,13 +191,13 @@ remapParams(SST::Params& params, bool verbose)
 {
   double timescale = params->get_optional_time_param("timestamp_resolution", 100e-18);
   int as_per_tick = round(timescale/1e-18) + 0.02;
-  Timestamp::initStamps(as_per_tick);
+  Timestamp::initStamps(100);
 
   remapDeprecatedParams(params);
   remapLatencyParams(params);
 
   SST::Params top_params = params.get_namespace("topology");
-  bool auto_top = top_params->get_optional_bool_param("auto", false);
+  bool auto_top = top_params.find<bool>("auto", false);
   if (auto_top){
     int max_nproc = native::Manager::computeMaxNproc(params);
     if (max_nproc == 0){
@@ -229,7 +229,7 @@ remapParams(SST::Params& params, bool verbose)
   //here is where we want to read debug params and active debug printing for stuff, maybe
   std::vector<std::string> debug_flags;
   if (params->has_param("debug")){
-    params->get_vector_param("debug", debug_flags);
+    params.find_array("debug", debug_flags);
   }
 
   for (int i=0; i < debug_flags.size(); ++i){
@@ -244,10 +244,10 @@ remapParams(SST::Params& params, bool verbose)
     }
   }
 
-  std::string top_name = top_params->get_param("name");
-  SST::Params sw_params = params->get_optional_namespace("switch");
-  SST::Params rtr_params = sw_params->get_optional_namespace("router");
-  std::string rtr_name = rtr_params->get_optional_param("name","");
+  std::string top_name = top_params.find<std::string>("name");
+  SST::Params sw_params = params.find_prefix_params("switch");
+  SST::Params rtr_params = sw_params.find_prefix_params("router");
+  std::string rtr_name = rtr_params.find<std::string>("name","");
   std::string new_rtr_name = top_name + "_" + rtr_name;
   if (rtr_name == "minimal")      rtr_params->add_param_override("name", new_rtr_name);
   else if (rtr_name == "valiant") rtr_params->add_param_override("name", new_rtr_name);
@@ -270,7 +270,7 @@ resizeTopology(int max_nproc, SST::Params& params, bool verbose)
   //create a topology matching nproc
   int x, y, z;
   genCartGrid(max_nproc, x, y, z);
-  std::string paramval = sprockit::printf("%d %d %d", x, y, z);
+  std::string paramval = sprockit::printf("[%d,%d,%d]", x, y, z);
   params->add_param("topology.geometry", paramval);
   if (verbose)
     cerr0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);

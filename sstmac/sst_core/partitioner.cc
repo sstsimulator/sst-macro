@@ -141,7 +141,7 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
   SST::Params& params = make_spkt_params_from_sst_params(front.params);
   if (params->has_namespace("interconnect")){
     params.get_namespace("interconnect")
-        ->get_namespace("topology").combine_into(top_subparams);
+        .find_prefix_params("topology").combine_into(top_subparams);
   } else {
     params.get_namespace("topology").combine_into(top_subparams);
   }

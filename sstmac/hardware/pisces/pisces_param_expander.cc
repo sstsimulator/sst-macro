@@ -58,20 +58,20 @@ namespace hw {
 void
 PiscesParamExpander::expand(SST::Params& params)
 {
-  std::string amm_type = params->get_param("amm_model");
+  std::string amm_type = params.find<std::string>("amm_model");
   if (amm_type == "amm4"){
     tiled_switch_ = true;
   } else {
     tiled_switch_ = false;
   } 
 
-  SST::Params node_params = params->get_optional_namespace("node");
-  SST::Params nic_params = node_params->get_optional_namespace("nic");
-  SST::Params inj_params = nic_params->get_optional_namespace("injection");
-  SST::Params mem_params = node_params->get_optional_namespace("memory");
-  SST::Params switch_params = params->get_optional_namespace("switch");
-  SST::Params top_params = params->get_optional_namespace("topology");
-  SST::Params proc_params = node_params->get_optional_namespace("proc");
+  SST::Params node_params = params.find_prefix_params("node");
+  SST::Params nic_params = node_params.find_prefix_params("nic");
+  SST::Params inj_params = nic_params.find_prefix_params("injection");
+  SST::Params mem_params = node_params.find_prefix_params("memory");
+  SST::Params switch_params = params.find_prefix_params("switch");
+  SST::Params top_params = params.find_prefix_params("topology");
+  SST::Params proc_params = node_params.find_prefix_params("proc");
 
 
   nic_params->add_param_override("name", "pisces");
@@ -80,10 +80,10 @@ PiscesParamExpander::expand(SST::Params& params)
     mem_params->add_param_override("name", "pisces");
   }
 
-  buffer_depth_ = params->get_optional_int_param("network_buffer_depth", 8);
+  buffer_depth_ = params.find<int>("network_buffer_depth", 8);
   //by default, quite coarse-grained
 
-  std::string arb = params->get_optional_param("arbitrator", "cut_through");
+  std::string arb = params.find<std::string>("arbitrator", "cut_through");
   if (!switch_params->has_param("arbitrator")){
     switch_params->add_param("arbitrator", arb);
   }
@@ -92,12 +92,12 @@ PiscesParamExpander::expand(SST::Params& params)
   }
 
   if (!mem_params->has_param("mtu")){
-    int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", 4096000);
+    int mem_packet_size = params.find<int>("memory_accuracy_parameter", 4096000);
     mem_params->add_param_override("mtu", mem_packet_size);
   }
 
-  int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
-  int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
+  int packet_size = params.find<int>("accuracy_parameter", 4096);
+  int net_packet_size = params.find<int>("network_accuracy_parameter", packet_size);
   if (!switch_params->has_param("mtu")){
     switch_params->add_param_override("mtu", net_packet_size);
   }
@@ -132,7 +132,7 @@ PiscesParamExpander::expandAmm1Memory(SST::Params& params,
                                       SST::Params& mem_params)
 {
   if (mem_params->get_scoped_param("name") != "null"){
-    mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
+    mem_params->add_param_override("total_bandwidth", mem_params.find<std::string>("bandwidth"));
   }
 }
 
@@ -141,26 +141,15 @@ PiscesParamExpander::expandAmm1Network(SST::Params& params,
                                            SST::Params& switch_params,
                                            bool set_xbar)
 {
-
-  //JJW - no, don't do this
-  //The link bandwidths will get multiplied during the connect
-  //if redundant links, appropriately multiply the bandwidth
-  //double bw_multiplier = network_bandwidth_multiplier(params);
-  //double link_bw = switch_params->get_bandwidth_param("link_bandwidth");
-  //if (bw_multiplier > 1.0001){
-  //  link_bw *= bw_multiplier;
-  //  switch_params->add_param_override("link_bandwidth", link_bw);
-  //}
-
   SST::Params link_params = switch_params.get_namespace("link");
   SST::Params xbar_params = switch_params.get_namespace("xbar");
-  SST::Params ej_params = switch_params->get_optional_namespace("ejection");
+  SST::Params ej_params = switch_params.find_prefix_params("ejection");
   SST::Params node_params = params.get_namespace("node");
   SST::Params nic_params = node_params.get_namespace("nic");
   SST::Params inj_params = nic_params.get_namespace("injection");
 
   std::string link_lat = link_params->get_either_or_param("sendLatency","latency");
-  std::string xbar_lat = xbar_params->get_optional_param("latency", "0ns");
+  std::string xbar_lat = xbar_params.find<std::string>("latency", "0ns");
 
   if (!link_params->has_param("sendLatency")){
     if (link_lat.size() == 0){
@@ -169,7 +158,7 @@ PiscesParamExpander::expandAmm1Network(SST::Params& params,
     link_params->add_param_override("sendLatency", link_lat);
   }
   if (!link_params->has_param("creditLatency")){
-    link_params->add_param_override("creditLatency", link_params->get_param("sendLatency"));
+    link_params->add_param_override("creditLatency", link_params.find<std::string>("sendLatency"));
   }
 
   if (!xbar_params->has_param("sendLatency")){
@@ -181,7 +170,7 @@ PiscesParamExpander::expandAmm1Network(SST::Params& params,
 
   //make the xbar much faster than links
   if (set_xbar){
-    double link_bw = link_params->get_bandwidth_param("bandwidth");
+    double link_bw = link_params.findUnits("bandwidth").toDouble();
     double xbar_bw = link_bw * buffer_depth_;
     xbar_params->add_param_override("bandwidth", xbar_bw);
     xbar_params->add_param_override("arbitrator", "null");
@@ -192,7 +181,7 @@ PiscesParamExpander::expandAmm1Network(SST::Params& params,
     buffer_size = switch_params->get_byte_length_param("buffer_size");
   } else {
     int size_multiplier = switchBufferMultiplier(params);
-    int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
+    int packet_size = params.find<int>("accuracy_parameter", 4096);
     buffer_size = buffer_depth_ * packet_size * size_multiplier;
     switch_params->add_param_override("buffer_size", buffer_size);
   }
@@ -201,15 +190,15 @@ PiscesParamExpander::expandAmm1Network(SST::Params& params,
 
   if (!ej_params->has_param("sendLatency")){
     if (!ej_params->has_param("latency")){
-      ej_params->add_param_override("sendLatency", inj_params->get_param("latency"));
+      ej_params->add_param_override("sendLatency", inj_params.find<std::string>("latency"));
     } else {
       ej_params->add_param_override("sendLatency",
-                                    ej_params->get_param("latency"));
+                                    ej_params.find<std::string>("latency"));
     }
   }
   if (!ej_params->has_param("bandwidth")){
     ej_params->add_param_override("bandwidth",
-                 inj_params->get_param("bandwidth"));
+                 inj_params.find<std::string>("bandwidth"));
   }
 
   ej_params["credits"].setByteLength(100, "GB");
@@ -225,13 +214,13 @@ void
 PiscesParamExpander::expandAmm1Nic(SST::Params& params,
                                    SST::Params& nic_params)
 {
-  SST::Params xbar_params = params.get_namespace("switch")->get_namespace("xbar");
+  SST::Params xbar_params = params.get_namespace("switch").find_prefix_params("xbar");
   SST::Params inj_params = nic_params.get_namespace("injection");
   if (!inj_params->has_param("arbitrator")){
     inj_params->add_param("arbitrator", "cut_through");
   }
 
-  int inj_red = inj_params->get_optional_int_param("redundant",1);
+  int inj_red = inj_params.find<int>("redundant",1);
   int buf_size = xbar_params->get_byte_length_param("buffer_size");
   int inj_credits = buf_size * inj_red;
   inj_params["credits"].setByteLength(inj_credits, "B");
@@ -244,7 +233,7 @@ PiscesParamExpander::expandAmm2Memory(SST::Params& params,
   expandAmm1Memory(params, mem_params);
   if (mem_params->get_scoped_param("name") != "null"){
     //mem_params->add_param_override("max_single_bandwidth",
-    //                               params->get_param("max_memory_bandwidth"));
+    //                               params.find<std::string>("max_memory_bandwidth"));
   }
 }
 
@@ -254,7 +243,7 @@ PiscesParamExpander::expandAmm3Network(SST::Params& params,
 {
   expandAmm1Network(params, switch_params, false);
   SST::Params xbar_params = switch_params.get_namespace("xbar");
-  double sw_bw = xbar_params->get_bandwidth_param("bandwidth");
+  double sw_bw = xbar_params.findUnits("bandwidth").toDouble();
   double bw_multiplier = switchBandwidthMultiplier(params);
   if (bw_multiplier > 1.0001){
     double xbar_bw = sw_bw * bw_multiplier;
@@ -268,9 +257,9 @@ PiscesParamExpander::expandAmm4Network(SST::Params& params,
   SST::Params& switch_params)
 {
   tiled_switch_ = true;
-  std::string top = top_params->get_param("name");
+  std::string top = top_params.find<std::string>("name");
   std::string newtop = std::string("tiled_") + top;
-  std::vector<int> switch_geom; switch_params->get_vector_param("geometry", switch_geom);
+  std::vector<int> switch_geom; switch_params.find_array("geometry", switch_geom);
   if (switch_geom.size() != 2){
     sprockit::abort("AMM4: need switch geometry vector with 2 params:\n"
       "tiles-per-row, tiles-per-col");
@@ -283,9 +272,9 @@ PiscesParamExpander::expandAmm4Network(SST::Params& params,
 
   switch_params->add_param_override("name", "pisces_tiled");
 
-  SST::Params rtr_params = switch_params->get_optional_namespace("router");
+  SST::Params rtr_params = switch_params.find_prefix_params("router");
   if (rtr_params->has_param("name")) {
-    std::string router = rtr_params->get_param("name");
+    std::string router = rtr_params.find<std::string>("name");
     std::string new_router = top + "_" + router + "_multipath";
     rtr_params->add_param_override("name", new_router);
   } else {
@@ -302,7 +291,7 @@ PiscesParamExpander::expandAmm4Network(SST::Params& params,
     buffer_size = switch_params->get_byte_length_param("buffer_size");
   } else {
     int size_multiplier = switchBufferMultiplier(params);
-    int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
+    int packet_size = params.find<int>("accuracy_parameter", 4096);
     buffer_size = buffer_depth_ * packet_size * size_multiplier;
     switch_params->add_param_override("buffer_size", buffer_size);
   }
@@ -310,13 +299,13 @@ PiscesParamExpander::expandAmm4Network(SST::Params& params,
   // expand amm1 network params
   SST::Params link_params = switch_params.get_namespace("link");
   SST::Params xbar_params = switch_params.get_namespace("xbar");
-  SST::Params demux_params = switch_params->get_optional_namespace("input");
-  SST::Params ej_params = switch_params->get_optional_namespace("ejection");
+  SST::Params demux_params = switch_params.find_prefix_params("input");
+  SST::Params ej_params = switch_params.find_prefix_params("ejection");
   SST::Params node_params = params.get_namespace("node");
   SST::Params nic_params = node_params.get_namespace("nic");
   SST::Params inj_params = nic_params.get_namespace("injection");
 
-  std::string link_lat = link_params->get_optional_param("latency","");
+  std::string link_lat = link_params.find<std::string>("latency","");
 
   // [demuxer -> xbar -> muxer] -> [demuxer...]
 
@@ -327,7 +316,7 @@ PiscesParamExpander::expandAmm4Network(SST::Params& params,
     link_params->add_param_override("sendLatency", link_lat);
   }
   if (!link_params->has_param("creditLatency")){
-    link_params->add_param_override("creditLatency", link_params->get_param("sendLatency"));
+    link_params->add_param_override("creditLatency", link_params.find<std::string>("sendLatency"));
   }
 
   if (!xbar_params->has_param("sendLatency"))
@@ -338,15 +327,15 @@ PiscesParamExpander::expandAmm4Network(SST::Params& params,
   if (!demux_params->has_param("sendLatency"))
     demux_params->add_param_override("sendLatency", "0ns");
   if (!demux_params->has_param("creditLatency"))
-    demux_params->add_param_override("creditLatency", link_params->get_param("sendLatency"));
+    demux_params->add_param_override("creditLatency", link_params.find<std::string>("sendLatency"));
 
   if (!demux_params->has_param("bandwidth"))
-    demux_params->add_param_override("bandwidth", xbar_params->get_param("bandwidth"));
+    demux_params->add_param_override("bandwidth", xbar_params.find<std::string>("bandwidth"));
 
   // link params get passed to output muxer by interconnect setup routines
   // but xbar and input demuxer need to be configured directly here
   buffer_size = xbar_params->get_byte_length_param("buffer_size");
-  std::string arb = params->get_optional_param("arbitrator", "cut_through");
+  std::string arb = params.find<std::string>("arbitrator", "cut_through");
   link_params->add_param_override("credits", buffer_size);
   xbar_params->add_param_override("credits", buffer_size);
   xbar_params->add_param("arbitrator",arb);
@@ -356,15 +345,14 @@ PiscesParamExpander::expandAmm4Network(SST::Params& params,
   if (!ej_params->has_param("sendLatency")){
     if (!ej_params->has_param("latency")){
       ej_params->add_param_override("sendLatency",
-                                    link_params->get_param("sendLatency"));
+                                    link_params.find<std::string>("sendLatency"));
     } else {
       ej_params->add_param_override("sendLatency",
-                                    ej_params->get_param("latency"));
+                                    ej_params.find<std::string>("latency"));
     }
   }
   if (!ej_params->has_param("bandwidth")){
-    ej_params->add_param_override("bandwidth",
-                                  link_params->get_bandwidth_param("bandwidth"));
+    ej_params->add_param_override("bandwidth", link_params.find<std::string>("bandwidth"));
   }
 
   ej_params["credits"].setByteLength(100, "GB");

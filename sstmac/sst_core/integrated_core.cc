@@ -127,7 +127,7 @@ py_extract_params(PyObject* dict, SST::Params& params)
     const char* key_c_str = PyString_AsString(key_str_obj);
     if (PyMapping_Check(val)){
       sprockit::sim_parameters* sub_params =
-          params->get_optional_namespace(key_c_str);
+          params.find_prefix_params(key_c_str);
       sstmac::py_extract_params(val, sub_params);
     } else {
       PyObject* val_str_obj = PyObject_Str(val);

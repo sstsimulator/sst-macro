@@ -64,7 +64,7 @@ namespace sw {
 HostnameTaskMapper::HostnameTaskMapper(SST::Params& params) :
   TaskMapper(params)
 {
-  listfile_ = params->get_param("hostmap");
+  listfile_ = params.find<std::string>("hostmap");
 }
 
 void

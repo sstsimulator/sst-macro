@@ -89,8 +89,8 @@ ClockCycleEventMap::ClockCycleEventMap(
   EventManager(params, rt),
   epoch_(0)
 {
-  num_profile_loops_ = params->get_optional_int_param("num_profile_loops", 0);
-  epoch_print_interval = params->get_optional_int_param("epoch_print_interval", epoch_print_interval); 
+  num_profile_loops_ = params.find<int>("num_profile_loops", 0);
+  epoch_print_interval = params.find<int>("epoch_print_interval", epoch_print_interval);
 }
 
 int

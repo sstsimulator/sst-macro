@@ -1623,8 +1623,8 @@ To give more structure to the allocation, a Cartesian allocator can be used (Fig
 ````
 app1 {
  allocation = cartesian
- cart_sizes = 2 2
- cart_offsets = 0 0
+ cart_sizes = [2,2]
+ cart_offsets = [0,0]
 }
 ````
 
@@ -2552,8 +2552,8 @@ node {
   launch_cmd = aprun -n 8
   indexing = block
   allocation = cartesian
-  cart_sizes = 2 2 2
-  cart_offsets = 0 0 0
+  cart_sizes = [2,2,2]
+  cart_offsets = [0,0,0]
  }
 }
 ````
@@ -2582,8 +2582,8 @@ app1 {
  launch_cmd = aprun -n 8
  indexing = block
  allocation = cartesian
- cart_sizes = 2 2 1 2
- cart_offsets = 0 0 0 0
+ cart_sizes = [2,2,1,2]
+ cart_offsets = [0,0,0,0]
 }
 ````
 

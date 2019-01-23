@@ -111,7 +111,7 @@ TopologyPartition::TopologyPartition(SST::Params& params, ParallelRuntime* rt)
   SST::Params top_params = params.get_namespace("topology");
   fake_top_ = hw::Topology::factory::get_param("name", top_params);
 
-  noccupied_ = params->get_int_param("num_occupied");
+  noccupied_ = params.find<int>("num_occupied");
 
   num_switches_total_ = fake_top_->numSwitches();
   switch_to_lpid_ = new int[num_switches_total_];
@@ -168,7 +168,7 @@ OccupiedBlockPartition::OccupiedBlockPartition(SST::Params& params,
                                                    ParallelRuntime* rt)
   : BlockPartition(params, rt)
 {
-  occupied_switches_ = params->get_int_param("occupied_switches");
+  occupied_switches_ = params.find<int>("occupied_switches");
   num_switches_total_ = fake_top_->numSwitches();
   unoccupied_switches_ = num_switches_total_ - occupied_switches_;
 

@@ -137,7 +137,7 @@ class vector {
 
 /** Automatically inherit runtime types */
 using sprockit::sim_parameters;
-extern SST::Params getParams();
+extern SST::Params& getParams();
 //end C++
 #else
 //need for C

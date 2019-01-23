@@ -56,7 +56,7 @@ namespace sumi {
 RendezvousProtocol::RendezvousProtocol(SST::Params& params, MpiQueue* queue) :
   MpiProtocol(queue)
 {
-  software_ack_ = params->get_optional_bool_param("software_ack", true);
+  software_ack_ = params.find<bool>("software_ack", true);
 }
 
 RendezvousGet::~RendezvousGet()

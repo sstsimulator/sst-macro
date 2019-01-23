@@ -61,21 +61,20 @@ LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
 {
   ack_handler_ = newHandler(parent, &Node::handle);
   SST::Params inj_params = params.get_namespace("injection");
-  double inj_bw = inj_params->get_bandwidth_param("bandwidth");
-  inj_byte_delay_ = Timestamp(1.0/inj_bw);
-  inj_lat_ = Timestamp(inj_params->get_time_param("latency"));
+  inj_byte_delay_ = Timestamp(inj_params.findUnits("bandwidth").inverse().toDouble());
+  inj_lat_ = Timestamp(inj_params.findUnits("latency").toDouble());
 }
 
 Timestamp
 LogPNIC::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params->get_time_param("latency"));
+  return Timestamp(params.findUnits("latency").toDouble());
 }
 
 Timestamp
 LogPNIC::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params->get_time_param("latency"));
+  return Timestamp(params.findUnits("latency").toDouble());
 }
 
 LogPNIC::~LogPNIC()

@@ -168,11 +168,11 @@ MultithreadedEventContainer::MultithreadedEventContainer(
   me_ = rt_->me();
   nproc_ = rt_->nproc();
   if (params->has_param("cpu_affinity")) {
-    params->get_vector_param("cpu_affinity", cpu_affinity_);
+    params.find_array("cpu_affinity", cpu_affinity_);
     //it would be nice to check that size of cpu_offsets matches task per node
   }
 
-  busy_loop_count = params->get_optional_int_param("busy_loop_count", busy_loop_count);
+  busy_loop_count = params.find<int>("busy_loop_count", busy_loop_count);
 
   num_subthreads_ = rt->nthread() - 1;
 

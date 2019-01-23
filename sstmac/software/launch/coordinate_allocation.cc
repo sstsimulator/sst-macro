@@ -66,7 +66,7 @@ namespace sw {
 CoordinateAllocation::CoordinateAllocation(SST::Params& params) :
   NodeAllocator(params)
 {
-  coord_file_ = params->get_param("coordinate_file");
+  coord_file_ = params.find<std::string>("coordinate_file");
 }
 
 void

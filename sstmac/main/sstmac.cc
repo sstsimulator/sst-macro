@@ -252,7 +252,7 @@ runParams(opts& oo,
   mgr->interconnect()->topology()->outputXYZ(oo.outputXYZ);
 
   double start = sstmacWallTime();
-  GlobalTimestamp stop_time(params->get_optional_time_param("stop_time", 0));
+  GlobalTimestamp stop_time(params.findUnits("stop_time", "0s").toDouble());
   GlobalTimestamp runtime;
   try {
     runtime = mgr->run(stop_time);
@@ -278,7 +278,7 @@ runParams(opts& oo,
     throw;
   } // catch
 
-  bool strict_params_test = params->get_optional_bool_param("strict_params", false);
+  bool strict_params_test = params.find<bool>("strict_params", false);
   if (strict_params_test){
     bool unread_params = params->print_unread_params();
     if (unread_params)
@@ -331,13 +331,13 @@ runStandalone(int argc, char** argv)
   sstmac::Timestamp::initStamps(100); //100 attoseconds per tick
   SST::Params null_params = std::make_shared<sprockit::sim_parameters>();
 
-  SST::Params nic_params = null_params->get_optional_namespace("nic");
+  SST::Params nic_params = null_params.find_prefix_params("nic");
   nic_params->add_param_override("name", "null");
 
-  SST::Params mem_params = null_params->get_optional_namespace("memory");
+  SST::Params mem_params = null_params.find_prefix_params("memory");
   mem_params->add_param_override("name", "null");
 
-  SST::Params proc_params = null_params->get_optional_namespace("proc");
+  SST::Params proc_params = null_params.find_prefix_params("proc");
   proc_params->add_param_override("frequency", "1ghz");
   proc_params->add_param_override("ncores", 1);
 
@@ -417,7 +417,7 @@ tryMain(SST::Params& params,
   if (params->has_param("external_libs")){
     std::string pathStr = loadExternPathStr();
     std::vector<std::string> libraries;
-    params->get_vector_param("external_libs", libraries);
+    params.find_array("external_libs", libraries);
     for (auto&& lib : libraries){
       loadExternLibrary(lib, pathStr);
     }

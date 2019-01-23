@@ -56,9 +56,9 @@ namespace hw {
 StructuredTopology::StructuredTopology(SST::Params& params) :
   Topology(params)
 {
-  concentration_ = params->get_optional_int_param("concentration",1);
+  concentration_ = params.find<int>("concentration",1);
 
-  injection_redundancy_ = params->get_optional_int_param("injection_redundant", 1);
+  injection_redundancy_ = params.find<int>("injection_redundant", 1);
 }
 
 void

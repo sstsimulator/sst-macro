@@ -119,7 +119,7 @@ EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
   if (nthread_ == 0){
     sprockit::abort("Have zero worker threads! Cannot do any work");
   }
-  SST::Params os_params = params->get_optional_namespace("node")->get_optional_namespace("os");
+  SST::Params os_params = params.find_prefix_params("node").find_prefix_params("os");
   sw::StackAlloc::init(os_params);
 
   des_context_ = sw::ThreadContext::factory::get_optional_param(

@@ -59,13 +59,13 @@ namespace sstmac {
 CartesianTopology::CartesianTopology(SST::Params& params) :
   StructuredTopology(params)
 {
-  params->get_vector_param("geometry", dimensions_);
+  params.find_array("geometry", dimensions_);
   if (dimensions_.size() == 0) {
     spkt_throw_printf(sprockit::value_error, "empty topology vector for cartesian topology");
   }
 
   if (params->has_param("redundant")) {
-    params->get_vector_param("redundant", red_);
+    params.find_array("redundant", red_);
     if (red_.size() != dimensions_.size()) {
       spkt_throw_printf(sprockit::input_error,
                        "topology::init: wrong number of dimensions in topology_redundant, "
@@ -86,7 +86,7 @@ void
 CartesianTopology::initHostnameMap(SST::Params& params)
 {
   if (params->has_param("hostname_map")){
-    readCoordFile(params->get_param("hostname_map"));
+    readCoordFile(params.find<std::string>("hostname_map"));
   } else {
     Topology::initHostnameMap(params);
   }

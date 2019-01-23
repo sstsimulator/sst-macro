@@ -256,21 +256,21 @@ int USER_MAIN(int argc, char** argv)
    *  Messages are sent in windows of size 100 us
    *  The default chunk size is 256 KB for an intensity of 1.0
    *  This means an intensity of 1.0 requires 2.56GB/s to keep up */
-  double intensity = params->get_double_param("intensity");
+  double intensity = params.find<double>("intensity");
 
   /** This configures the number of partners each rank sends to
    *  For mixing=4 and intensity=1.0, every 100 us
    *  Each rank would send 256/4 = 64KB to every partner
    */
-  int mixing = params->get_int_param("mixing");
+  int mixing = params.find<int>("mixing");
 
-  int num_iterations = params->get_int_param("niterations");
+  int num_iterations = params.find<int>("niterations");
 
   /** This configures how local the traffic pattern is
    *  For scatter=1, rank N sends to N+1,N+2,etc
    *  For scatter=2, rank N sends to N+2,N+4,etc
    */
-  int scatter = params->get_int_param("scatter");
+  int scatter = params.find<int>("scatter");
 
   //allocate 256 replicas of the 256 KB chunk
   int npartners = mixing;

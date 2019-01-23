@@ -28,8 +28,8 @@ int main(int argc, char** argv)
  
   std::vector<int> src;
   std::vector<int> dst;
-  params->get_vector_param("sources", src);
-  params->get_vector_param("destinations", dst);
+  params.find_array("sources", src);
+  params.find_array("destinations", dst);
 
   MPI_Init(&argc, &argv);
   int rank, size;

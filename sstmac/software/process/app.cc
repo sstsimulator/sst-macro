@@ -111,7 +111,7 @@ static char* get_data_segment(SST::Params& params,
 {
   int allocSize = ctx.allocSize();
   if (params->has_param(param_name)){
-    allocSize = params->get_int_param(param_name);
+    allocSize = params.find<int>(param_name);
     if (ctx.allocSize() != allocSize){
       ctx.setAllocSize(allocSize);
     }
@@ -133,7 +133,7 @@ App::dlopenCheck(int aid, SST::Params& params)
 {
   if (params->has_param("exe")){
     dlopen_lock.lock();
-    std::string libname = params->get_param("exe");
+    std::string libname = params.find<std::string>("exe");
     dlopen_entry& entry = dlopens_[aid];
     entry.name = libname;
     if (entry.refcount == 0){
@@ -143,9 +143,9 @@ App::dlopenCheck(int aid, SST::Params& params)
     if (name){
       const char* str_name = (const char*) name;
       if (params->has_param("name")){
-        if (params->get_param("name") != std::string(str_name)){
+        if (params.find<std::string>("name") != std::string(str_name)){
           spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
-                            "%s != %s", aid, str_name, params->get_param("name").c_str());
+                            "%s != %s", aid, str_name, params.find<std::string>("name").c_str());
         }
       } else {
         params->add_param("name", str_name);
@@ -203,19 +203,19 @@ App::App(SST::Params& params, SoftwareId sid,
   }
 
   globals_storage_ = allocateDataSegment(false); //not tls
-  min_op_cutoff_ = params->get_optional_long_param("min_op_cutoff", 1e3);
-  bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
+  min_op_cutoff_ = params.find<long>("min_op_cutoff", 1000);
+  bool host_compute = params.find<bool>("host_compute_timer", false);
   if (host_compute){
     host_timer_ = new HostTimer;
   }
 
-  notify_ = params->get_optional_bool_param("notify", true);
+  notify_ = params.find<bool>("notify", true);
 
-  SST::Params env_params = params->get_optional_namespace("env");
+  SST::Params env_params = params.find_prefix_params("env");
   omp_contexts_.emplace_back();
   omp_context& active = omp_contexts_.back();
   active.max_num_subthreads = active.requested_num_subthreads =
-    env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
+    env_params.find<int>("OMP_NUM_THREADS", 1);
   active.level = 0;
   active.num_threads = 1;
 
@@ -385,7 +385,7 @@ App::_get_api(const char* name)
   // an underlying thread may have built this
   API* my_api = apis_[name];
   if (!my_api) {
-    SST::Params api_params = params_->get_optional_namespace(name);
+    SST::Params api_params = params_.find_prefix_params(name);
     API* new_api = API::factory::get_value(name, api_params, sid_, os_);
     apis_[name] = new_api;
     return new_api;
@@ -538,7 +538,7 @@ UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
-  std::string name = params->get_param("name");
+  std::string name = params.find<std::string>("name");
   std::map<std::string, main_fxn>::iterator it = main_fxns_->find(name);
   if (it == main_fxns_->end()){
     spkt_throw_printf(sprockit::value_error,
@@ -560,22 +560,23 @@ UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
 void
 UserAppCxxFullMain::initArgv(argv_entry& entry)
 {
-  std::string appname = params_->get_param("name");
-  std::vector<std::string> argv_param_vec;
-  argv_param_vec.push_back(appname);
-  if (params_->has_param("argv")) {
-    params_->get_vector_param("argv", argv_param_vec);
-  }
-  int argc = argv_param_vec.size();
+  std::string appname = params_.find<std::string>("name");
+  std::string argv_str = params_->get_optional_param("argv", "");
+  std::deque<std::string> argv_param_dq;
+  pst::BasicStringTokenizer::tokenize(argv_str, argv_param_dq, std::string(" "));
+  int argc = argv_param_dq.size() + 1;
   char* argv_buffer = new char[256 * argc];
   char* argv_buffer_ptr = argv_buffer;
   char** argv = new char*[argc+1];
-  for (int i = 0; i < argc; ++i) {
-    const std::string& src_str = argv_param_vec[i];
+  argv[0] = argv_buffer;
+  ::strcpy(argv_buffer, appname.c_str());
+  int i=1;
+  for (auto& src_str : argv_param_dq){
     ::strcpy(argv_buffer_ptr, src_str.c_str());
     argv[i] = argv_buffer_ptr;
     //increment pointer for next strcpy
     argv_buffer_ptr += src_str.size() + 1; //+1 for null terminator
+    ++i;
   }
   argv[argc] = nullptr; //missing nullptr - Issue #269
   entry.argc = argc;
@@ -602,7 +603,7 @@ UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
   if (!empty_main_fxns_)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
 
-  std::string name = params->get_param("name");
+  std::string name = params.find<std::string>("name");
   std::map<std::string, empty_main_fxn>::iterator it = empty_main_fxns_->find(name);
   if (it == empty_main_fxns_->end()){
     spkt_throw_printf(sprockit::value_error,

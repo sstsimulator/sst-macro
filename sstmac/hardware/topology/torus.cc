@@ -147,9 +147,9 @@ Torus::configureIndividualPortParams(SwitchId src,
                                      SST::Params& switch_params) const
 {
   SST::Params link_params = switch_params.get_namespace("link");
-  double bw = link_params->get_bandwidth_param("bandwidth");
+  double bw = link_params.findUnits("bandwidth").toDouble();
   //if there is a buffer size given, grab it
-  int bufsize = link_params->get_optional_byte_length_param("buffer_size", 0);
+  int bufsize = link_params.findUnits("buffer_size", "0B").getRoundedValue();
   int ndims = dimensions_.size();
   for (int i=0; i < ndims; ++i){
     double port_bw = bw * red_[i];

@@ -50,8 +50,8 @@ namespace hw {
 xpress_ring::xpress_ring(SST::Params& params)
   : StructuredTopology(params)
 {
-  ring_size_ = params->get_int_param("xpress_ring_size");
-  jump_size_ = params->get_int_param("xpress_jump_size");
+  ring_size_ = params.find<int>("xpress_ring_size");
+  jump_size_ = params.find<int>("xpress_jump_size");
 }
 
 void

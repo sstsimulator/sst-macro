@@ -106,7 +106,7 @@ DumpiTaskMapper::nodeIdFromCoordinates(int ncoord, int *coords)
 DumpiTaskMapper::DumpiTaskMapper(SST::Params& params) :
   TaskMapper(params)
 {
-  metaname_ = params->get_param("dumpi_metaname");
+  metaname_ = params.find<std::string>("dumpi_metaname");
   regtop_ = safe_cast(hw::CartesianTopology, topology_);
 }
 

@@ -74,10 +74,9 @@ InstructionProcessor(SST::Params& params,
                       MemoryModel* mem, Node* nd) :
   SimpleProcessor(params, mem, nd)
 {
-  negligible_bytes_ = params->get_optional_byte_length_param(
-        "negligible_compute_bytes", 64);
+  negligible_bytes_ = params.findUnits("negligible_compute_bytes", "64B").getRoundedValue();
 
-  double parallelism = params->get_optional_double_param("parallelism", 1.0);
+  double parallelism = params.find<double>("parallelism", 1.0);
 
   tflop_ = Timestamp(1.0 / freq_ / parallelism);
   tintop_ = tflop_;

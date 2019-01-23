@@ -61,8 +61,7 @@ sstmac_sleep_precise(double secs){
   sstmac::sw::OperatingSystem::currentOs()->sleep(sstmac::Timestamp(secs));
 }
 
-SST::Params
-getParams(){
+SST::Params& getParams(){
   return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }
 

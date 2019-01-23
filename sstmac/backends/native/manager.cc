@@ -91,7 +91,7 @@ class timestamp_prefix_fxn :
   timestamp_prefix_fxn(SST::Params& params, EventManager* mgr) :
     mgr_(mgr)
   {
-    units_ = params->get_optional_param("timestamp_print_units", "s");
+    units_ = params.find<std::string>("timestamp_print_units", "s");
     if (units_ == "ns"){
       mult_ = 1e9;
     } else if (units_ == "us"){
@@ -167,7 +167,7 @@ Manager::computeMaxNprocForApp(SST::Params& app_params)
   static const std::string ometa = "otf2_metafile";
   if (!app_params->has_param("launch_cmd")){
     int nproc = 0;
-    if (app_params->get_param("name") == "parsedumpi"){
+    if (app_params.find<std::string>("name") == "parsedumpi"){
       std::string dumpi_meta_filename;
       if (!app_params->has_param(dmeta)){
         dumpi_meta_filename = get_file_from_suffix("meta");
@@ -177,12 +177,12 @@ Manager::computeMaxNprocForApp(SST::Params& app_params)
           app_params->add_param(dmeta, dumpi_meta_filename);
         }
       } else {
-        dumpi_meta_filename = app_params->get_param(dmeta);
+        dumpi_meta_filename = app_params.find<std::string>(dmeta);
       }
       sw::DumpiMeta* meta = new sw::DumpiMeta(dumpi_meta_filename);
       nproc = meta->numProcs();
       delete meta;
-    } else if (app_params->get_param("name") == "parseotf2"){
+    } else if (app_params.find<std::string>("name") == "parseotf2"){
       std::string otf2_meta_filename;
       if (!app_params->has_param(ometa)){
         otf2_meta_filename = find_file_from_suffix("otf2");
@@ -257,7 +257,7 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
     sprockit::debug::prefix_fxn = fxn;
   }
 
-  bool debug_startup = params->get_optional_bool_param("debug_startup", true);
+  bool debug_startup = params.find<bool>("debug_startup", true);
   if (!debug_startup){
     sprockit::debug::turn_off();
   }

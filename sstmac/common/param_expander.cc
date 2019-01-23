@@ -42,7 +42,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/common/param_expander.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 

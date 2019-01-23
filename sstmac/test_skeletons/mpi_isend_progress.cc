@@ -66,7 +66,7 @@ int USER_MAIN(int argc, char** argv)
 
   int send_size = getParams()->get_byte_length_param("send_size");
   double send_delay = getParams()->get_time_param("send_delay");
-  int num_sends = getParams()->get_int_param("num_sends");
+  int num_sends = getParams().find<int>("num_sends");
   int send_to = (me + 1) % nproc;
   int recv_from = (me - 1 + nproc) % nproc;
   MPI_Request send_reqs[10];

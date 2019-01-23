@@ -137,7 +137,7 @@ namespace sstmac {
 
 actor::actor(SST::Params& params)
 {
-  biggest_fan_ = params->get_param("biggest_fan");
+  biggest_fan_ = params.find<std::string>("biggest_fan");
 }
 \end{CppCode}
 We initialize the member variable from the parameter object.  We additionally need a macro
@@ -199,7 +199,7 @@ We can now implement the constructor:
 mandy_patinkin::mandy_patinkin(SST::Params& params) :
   actor(params)
 {
-  sword_hand_ = params->get_param("sword_hand");
+  sword_hand_ = params.find<std::string>("sword_hand");
 
   if (sword_hand_ == "left"){
     sprockit::abort("I am not left handed!");

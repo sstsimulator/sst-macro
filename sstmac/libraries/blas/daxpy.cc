@@ -56,8 +56,8 @@ class DefaultDAXPY :
   FactoryRegister("default_daxpy", BlasKernel, DefaultDAXPY)
  public:
   DefaultDAXPY(SST::Params& params){
-    loop_unroll_ = params->get_optional_double_param("daxpy_loop_unroll", 4);
-    pipeline_ = params->get_optional_double_param("daxpy_pipeline_efficiency", 2);
+    loop_unroll_ = params.find<double>("daxpy_loop_unroll", 4);
+    pipeline_ = params.find<double>("daxpy_pipeline_efficiency", 2);
   }
 
   std::string toString() const override {

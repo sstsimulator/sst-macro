@@ -186,7 +186,7 @@ main(int argc, char** argv)
 
   SST::Params& params = sstmac::sw::App::getParams();
 
-  std::string pattern = params->get_param("traffic_pattern");
+  std::string pattern = params.find<std::string>("traffic_pattern");
   traffic_pattern::type_t ty;
   if (pattern == "NN" || pattern == "nearest_neighbor") {
     ty = traffic_pattern::nearest_neighbor;
@@ -203,21 +203,21 @@ main(int argc, char** argv)
   double offered_load_bw = 0;
 
   if (params->has_param("pisces_injection_bandwidth")) {
-    offered_load_bw = params->get_bandwidth_param("pisces_injection_bandwidth");
+    offered_load_bw = params.findUnits("pisces_injection_bandwidth").toDouble();
   } else if (params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
-    offered_load_bw = params->get_bandwidth_param("cycle_accurate_switch_bandwidth_n2r");
+    offered_load_bw = params.findUnits("cycle_accurate_switch_bandwidth_n2r").toDouble();
   } else if (params->has_param("network_injector_capacity_bw")) {
-    offered_load_bw = params->get_bandwidth_param("network_injector_capacity_bw");
+    offered_load_bw = params.findUnits("network_injector_capacity_bw").toDouble();
   } else if (params->has_param("packet_switch_bandwidth_n2r")) {
-    offered_load_bw = params->get_bandwidth_param("packet_switch_bandwidth_n2r");
+    offered_load_bw = params.findUnits("packet_switch_bandwidth_n2r").toDouble();
   } else if (params->has_param("network_train_injection_bw")) {
-    offered_load_bw = params->get_bandwidth_param("network_train_injection_bw");
+    offered_load_bw = params.findUnits("network_train_injection_bw").toDouble();
   } else {
     spkt_throw_printf(sprockit::input_error,
                      "throughput application did not find injection bandwidth");
   }
 
-  Timestamp inject_time = params->get_time_param("inject_time");
+  Timestamp inject_time = params.findUnits("inject_time");
   long inject_length = offered_load_bw * inject_time.sec();
 
   run_test(ty, inject_length, offered_load_bw);

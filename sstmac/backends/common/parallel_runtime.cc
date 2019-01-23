@@ -261,7 +261,7 @@ ParallelRuntime::initRuntimeParams(SST::Params& params)
   sends_done_.resize(nproc_);
 
   //turn the number of procs and my rank into keywords
-  nthread_ = params->get_optional_int_param("sst_nthread", 1);
+  nthread_ = params.find<int>("sst_nthread", 1);
 
   buf_size_ = params->get_optional_byte_length_param("serialization_buffer_size", 16384);
 

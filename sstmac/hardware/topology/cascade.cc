@@ -69,7 +69,7 @@ Cascade::Cascade(SST::Params& params) :
   y_ = dimensions_[1];
   g_ = dimensions_[2];
 
-  group_con_ = params->get_int_param("group_connections");
+  group_con_ = params.find<int>("group_connections");
 
   //can never have more group connections than groups
   if (group_con_ >= g_){
@@ -237,8 +237,8 @@ void
 Cascade::setupPortParams(SST::Params& params, int dim, int dimsize) const
 {
   SST::Params link_params = params.get_namespace("link");
-  double bw = link_params->get_bandwidth_param("bandwidth");
-  int bufsize = params->get_optional_byte_length_param("buffer_size", 0);
+  double bw = link_params.findUnits("bandwidth").toDouble();
+  int bufsize = params.findUnits("buffer_size", "0B").getRoundedValue();
 
   double port_bw = bw * red_[dim];
   int credits = bufsize * red_[dim];

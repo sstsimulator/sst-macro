@@ -124,8 +124,8 @@ Hypercube::configureIndividualPortParams(SwitchId src,
                                          SST::Params& switch_params) const
 {
   SST::Params link_params = switch_params.get_namespace("link");
-  double bw = link_params->get_bandwidth_param("bandwidth");
-  int bufsize = link_params->get_optional_byte_length_param("buffer_size", 0);
+  double bw = link_params.findUnits("bandwidth").toDouble();
+  int bufsize = link_params.findUnits("buffer_size", "0B").getRoundedValue();
   for (int dim=0; dim < dimensions_.size(); ++dim){
     double port_bw = bw * red_[dim];
     int credits = bufsize * red_[dim];

@@ -73,7 +73,7 @@ DragonflyPlus::DragonflyPlus(SST::Params& params) :
 
   num_leaf_switches_ = a_*g_;
 
-  vtk_row_spacing_ = params->get_optional_double_param("vtk_row_spacing", 2.0);
+  vtk_row_spacing_ = params.find<double>("vtk_row_spacing", 2.0);
 }
 
 void

@@ -81,15 +81,15 @@ PiscesSender::PiscesSender(
   stat_collector_(nullptr),
   update_vc_(update_vc)
 {
-  send_lat_ = Timestamp(params->get_time_param("sendLatency"));
-  credit_lat_ = Timestamp(params->get_time_param("creditLatency"));
+  send_lat_ = Timestamp(params.findUnits("sendLatency").toDouble());
+  credit_lat_ = Timestamp(params.findUnits("creditLatency").toDouble());
 }
 
 void
 PiscesSender::configurePayloadPortLatency(SST::Params& params)
 {
   if (!params->has_param("sendLatency")){
-    params->add_param_override("sendLatency", params->get_param("latency"));
+    params->add_param_override("sendLatency", params.find<std::string>("latency"));
   }
   if (!params->has_param("creditLatency")){
     params->add_param_override("creditLatency", "0ns");
@@ -103,7 +103,7 @@ PiscesSender::configureCreditPortLatency(SST::Params& params)
     params->add_param_override("sendLatency", "0ns");
   }
   if (!params->has_param("creditLatency")){
-    params->add_param_override("creditLatency", params->get_param("latency"));
+    params->add_param_override("creditLatency", params.find<std::string>("latency"));
   }
 }
 

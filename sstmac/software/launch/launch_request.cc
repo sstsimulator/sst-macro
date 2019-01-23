@@ -79,21 +79,21 @@ SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
   num_finished_(0)
 {
   if (params->has_param("core_affinities")) {
-    params->get_vector_param("core_affinities", core_affinities_);
+    params.find_array("core_affinities", core_affinities_);
   }
 
-  time_ = GlobalTimestamp(params->get_optional_time_param("start", 0));
+  time_ = GlobalTimestamp(params.findUnits("start", "0s").toDouble());
 
   if (params->has_param("launch_cmd")){
     parseLaunchCmd(params);
   } else if (params->has_param("dumpi_metaname")){
-    std::string metafile = params->get_param("dumpi_metaname");
+    std::string metafile = params.find<std::string>("dumpi_metaname");
     sw::DumpiMeta dm(metafile);
     nproc_ = dm.numProcs();
     procs_per_node_ = 1;
   } else {
-    nproc_ = params->get_int_param("size");
-    procs_per_node_ = params->get_optional_int_param("tasks_per_node", 1);
+    nproc_ = params.find<int>("size");
+    procs_per_node_ = params.find<int>("tasks_per_node", 1);
   }
 
   allocator_ = sw::NodeAllocator::factory
@@ -192,7 +192,7 @@ SoftwareLaunchRequest::parseLaunchCmd(
 {
   if (params->has_param("launch_cmd")) {
     /** Check for an aprun launch */
-    std::string launch_cmd = params->get_param("launch_cmd");
+    std::string launch_cmd = params.find<std::string>("launch_cmd");
     size_t pos = launch_cmd.find_first_of(' ');
     std::string launcher;
     if (pos != std::string::npos) {
@@ -204,7 +204,7 @@ SoftwareLaunchRequest::parseLaunchCmd(
     if (launcher == "aprun") {
       parseAprun(launch_cmd, nproc, procs_per_node, affinities);
       if (procs_per_node == -1) { //nothing given
-        int ncores = params->get_optional_int_param("node_cores", 1);
+        int ncores = params.find<int>("node_cores", 1);
         procs_per_node = ncores > nproc ? nproc : ncores;
       }
     } else {
@@ -213,8 +213,8 @@ SoftwareLaunchRequest::parseLaunchCmd(
     }
   } else { //standard launch
     try {
-      nproc = params->get_long_param("size");
-      procs_per_node = params->get_optional_long_param("concentration", 1);
+      nproc = params.find<long>("size");
+      procs_per_node = params.find<int>("concentration", 1);
     } catch (sprockit::input_error& e) {
       cerr0 << "Problem reading app size parameter in app_launch_request.\n"
                "If this is a DUMPI trace, set app name to dumpi.\n";

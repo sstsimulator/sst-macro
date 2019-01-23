@@ -125,7 +125,7 @@ LibComputeInst::init(SST::Params& params)
     double loop_unroll = params->deprecated_double_param("lib_compute_unroll_loops");
     loop_overhead_ = 1.0 / loop_unroll;
   } else {
-    loop_overhead_ = params->get_optional_double_param("lib_compute_loop_overhead", 1.0);
+    loop_overhead_ = params.find<double>("lib_compute_loop_overhead", 1.0);
   }
 }
 

@@ -89,25 +89,25 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
   SST::Params topParams;
   top_ = Topology::staticTopology(topParams);
 
-  double net_bw = params->get_bandwidth_param("bandwidth");
-  net_byte_delay_ = Timestamp(1.0/net_bw);
+  std::string net_bw = params.find<std::string>("bandwidth");
+  net_byte_delay_ = Timestamp(SST::UnitAlgebra(net_bw).inverse().toDouble());
 
-  double inj_bw = params->get_optional_namespace("ejection")->get_optional_bandwidth_param("bandwidth", net_bw);
-  inj_byte_delay_ = Timestamp(1.0/inj_bw);
+  std::string inj_bw = params.find_prefix_params("ejection")->get_optional_param("bandwidth", net_bw);
+  inj_byte_delay_ = Timestamp(SST::UnitAlgebra(inj_bw).inverse().toDouble());
 
   max_byte_delay_ = std::max(net_byte_delay_, inj_byte_delay_);
 
-  hop_latency_ = Timestamp(params->get_time_param("hop_latency"));
+  hop_latency_ = Timestamp(params.findUnits("hop_latency").toDouble());
 
-  out_in_lat_ = Timestamp(params->get_time_param("out_in_latency"));
+  out_in_lat_ = Timestamp(params.findUnits("out_in_latency").toDouble());
 
   if (net_byte_delay_.ticks() == 0) abort();
 
   if (params->has_param("random_seed")){
-    random_seed_ = params->get_int_param("random_seed");
+    random_seed_ = params.find<int>("random_seed");
     rng_ = RNG::MWC::construct();
-    random_max_extra_latency_ = Timestamp(params->get_time_param("random_max_extra_latency"));
-    random_max_extra_byte_delay_ = Timestamp(params->get_time_param("random_max_extra_byte_delay"));
+    random_max_extra_latency_ = Timestamp(params.findUnits("random_max_extra_latency").toDouble());
+    random_max_extra_byte_delay_ = Timestamp(params.findUnits("random_max_extra_byte_delay").toDouble());
   }
 
   if (params->has_namespace("contention")){
@@ -177,9 +177,9 @@ struct SlidingContentionModel : public LogPSwitch::ContentionModel
 
   SlidingContentionModel(SST::Params& params)
   {
-    range_ = params->get_optional_int_param("range", 100);
+    range_ = params.find<int>("range", 100);
     if (params->has_param("cutoffs")){
-      params->get_vector_param("cutoffs", cutoffs_);
+      params.find_array("cutoffs", cutoffs_);
     } else {
       cutoffs_.resize(2);
       cutoffs_[0] = 60;

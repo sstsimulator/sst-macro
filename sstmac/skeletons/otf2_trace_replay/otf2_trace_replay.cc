@@ -121,15 +121,15 @@ static void check_status(OTF2_ErrorCode status, const std::string& description)
 OTF2TraceReplayApp::OTF2TraceReplayApp(SST::Params& params,
         sumi::SoftwareId sid, sstmac::sw::OperatingSystem* os) :
   App(params, sid, os), mpi_(nullptr), rank_(sid.task_), call_queue_(this), total_events_(0) {
-  timescale_ = params->get_optional_double_param("otf2_timescale", 1.0);
-  terminate_percent_ = params->get_optional_double_param("otf2_terminate_percent", 1);
-  print_progress_ = params->get_optional_bool_param("otf2_print_progress", true);
-  metafile_ = params->get_param("otf2_metafile");
+  timescale_ = params.find<double>("otf2_timescale", 1.0);
+  terminate_percent_ = params.find<double>("otf2_terminate_percent", 1);
+  print_progress_ = params.find<bool>("otf2_print_progress", true);
+  metafile_ = params.find<std::string>("otf2_metafile");
 
-  print_mpi_calls_ = params->get_optional_bool_param("otf2_print_mpi_calls", false);
-  print_trace_events_ = params->get_optional_bool_param("otf2_print_trace_events", false);
-  print_time_deltas_ = params->get_optional_bool_param("otf2_print_time_deltas", false);
-  print_unknown_callback_ = params->get_optional_bool_param("otf2_print_unknown_callback", false);
+  print_mpi_calls_ = params.find<bool>("otf2_print_mpi_calls", false);
+  print_trace_events_ = params.find<bool>("otf2_print_trace_events", false);
+  print_time_deltas_ = params.find<bool>("otf2_print_time_deltas", false);
+  print_unknown_callback_ = params.find<bool>("otf2_print_unknown_callback", false);
 }
 
 int

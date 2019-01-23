@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 int USER_MAIN(int argc, char** argv)
 {
   SST::Params params = getParams();
-  std::string message = params->get_param("message");
+  std::string message = params.find<std::string>("message");
   sstmac_compute(1e-6);
   std::cout <<"t=" << sstmac_now() << " " << message << std::endl;
   return 0;

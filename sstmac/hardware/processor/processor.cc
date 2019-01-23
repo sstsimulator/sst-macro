@@ -74,9 +74,9 @@ Processor::~Processor()
 Processor::Processor(SST::Params& params, MemoryModel* mem, Node* nd) :
   mem_(mem), node_(nd)
 {
-  freq_ = params->get_freq_param("frequency");
+  freq_ = params.findUnits("frequency").toDouble();
   mem_freq_ = freq_;
-  ncores_ = params->get_int_param("ncores");
+  ncores_ = params.find<int>("ncores");
 }
 
 void

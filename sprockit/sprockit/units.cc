@@ -286,11 +286,12 @@ get_bandwidth(const char *value, bool &errorflag, bool print_errors)
       if (print_errors) cerr0 << "No match for the bandwidth units " << units << "\n";
       return -1;
     }
+    val *= multiplier;
+    //the names are populated based on bits/s - but we return bytes/sec
+    val /= 8;
+  } else {
+    //no units - assume bytes/sec
   }
-
-  val *= multiplier;
-  val /= 8.0; // because the simulator works in bytes/sec.
-
   return val;
 }
 

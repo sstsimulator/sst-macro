@@ -65,9 +65,9 @@ StatHistogram::StatHistogram(SST::Params& params) :
     is_log_(false),
   Statistic<double>(params)
 {
-  bin_size_ = params->get_quantity("bin_size");
-  int num_bins_guess = params->get_optional_int_param("num_bins", 20);
-  is_log_ = params->get_optional_bool_param("logarithmic", false);
+  bin_size_ = params.findUnits("bin_size").toDouble();
+  int num_bins_guess = params.find<int>("num_bins", 20);
+  is_log_ = params.find<bool>("logarithmic", false);
   counts_.reserve(num_bins_guess);
 }
 

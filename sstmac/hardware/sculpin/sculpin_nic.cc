@@ -68,12 +68,11 @@ SculpinNIC::SculpinNIC(SST::Params& params, Node* parent) :
 {
   SST::Params inj_params = params.get_namespace("injection");
 
-  packet_size_ = inj_params->get_byte_length_param("mtu");
-  double inj_bw = inj_params->get_bandwidth_param("bandwidth");
-  inj_byte_delay_ = Timestamp(1.0/inj_bw);
+  packet_size_ = inj_params.findUnits("mtu").getRoundedValue();
+  inj_byte_delay_ = Timestamp(inj_params.findUnits("bandwidth").inverse().toDouble());
 
   //make port 0 a copy of the injection params
-  SST::Params port0_params = params->get_optional_namespace("port0");
+  SST::Params port0_params = params.find_prefix_params("port0");
   inj_params.combine_into(port0_params);
 }
 

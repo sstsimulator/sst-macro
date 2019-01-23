@@ -60,7 +60,7 @@ static constexpr double link_midpoint_shift = 2.0;
 void
 outputExodusWithSharedMap(const std::string& fileroot,
    std::multimap<uint64_t, traffic_event>&& trafficMap,
-   stat_vtk::display_config display_cfg,
+   StatVTK::display_config display_cfg,
    Topology *topo)
 {
 
@@ -349,7 +349,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
 }
 
 void
-stat_vtk::outputExodus(const std::string& fileroot,
+StatVTK::outputExodus(const std::string& fileroot,
     std::multimap<uint64_t, traffic_event>&& traffMap,
     const display_config& cfg,
     Topology *topo)
@@ -359,26 +359,29 @@ stat_vtk::outputExodus(const std::string& fileroot,
 }
 
 
-stat_vtk::stat_vtk(SST::Params& params) :
+StatVTK::StatVTK(SST::Params& params) :
   StatCollector(params), active_(true)
 {
-  min_interval_ = params->get_optional_time_param("min_interval", 1e-6);
-  display_cfg_.bidirectional_shift = params->get_optional_double_param("bidirectional_shift", 0.02);
-  display_cfg_.highlight_link_color = params->get_optional_double_param("highlight_link_color", 1.0);
-  display_cfg_.highlight_switch_color = params->get_optional_double_param("highlight_switch_color", 1.0);
-  display_cfg_.idle_link_color = params->get_optional_double_param("idle_link_color", 0);
-  display_cfg_.idle_switch_color = params->get_optional_double_param("idle_switch_color", 0.01);
-  display_cfg_.min_face_color = params->get_optional_double_param("min_face_color", 0);
-  display_cfg_.active_face_width = params->get_optional_double_param("active_face_width", 0.4);
-  display_cfg_.max_face_color_sum = params->get_optional_double_param("max_face_color_sum", 1e9);
-  display_cfg_.scale_face_color_sum = params->get_optional_double_param("scale_face_color_sum", 1.0);
-  display_cfg_.name = params->get_optional_param("field_name", "Traffic");
-  params->get_optional_vector_param("intensity_levels", intensity_levels_);
-  flicker_ = params->get_optional_bool_param("flicker", true);
+  min_interval_ = sstmac::Timestamp(params.findUnits("min_interval", "1us").toDouble());
+  display_cfg_.bidirectional_shift = params.find<double>("bidirectional_shift", 0.02);
+  display_cfg_.highlight_link_color = params.find<double>("highlight_link_color", 1.0);
+  display_cfg_.highlight_switch_color = params.find<double>("highlight_switch_color", 1.0);
+  display_cfg_.idle_link_color = params.find<double>("idle_link_color", 0);
+  display_cfg_.idle_switch_color = params.find<double>("idle_switch_color", 0.01);
+  display_cfg_.min_face_color = params.find<double>("min_face_color", 0);
+  display_cfg_.active_face_width = params.find<double>("active_face_width", 0.4);
+  display_cfg_.max_face_color_sum = params.find<double>("max_face_color_sum", 1e9);
+  display_cfg_.scale_face_color_sum = params.find<double>("scale_face_color_sum", 1.0);
+  display_cfg_.name = params.find<std::string>("field_name", "Traffic");
+  if (params.contains("intensity_levels")){
+    params.find_array("intensity_levels", intensity_levels_);
+  }
+
+  flicker_ = params.find<bool>("flicker", true);
 
   if (params->has_param("filter")){
     std::vector<int> filters;
-    params->get_vector_param("filter", filters);
+    params.find_array("filter", filters);
     for (int i=0; i < filters.size(); i += 2){
       int start = filters[i];
       int stop = filters[i+1];
@@ -388,15 +391,15 @@ stat_vtk::stat_vtk(SST::Params& params) :
 
   if (params->has_param("highlight")){
     std::vector<int> fills;
-    params->get_vector_param("highlight", fills);
+    params.find_array("highlight", fills);
     for (int f : fills) display_cfg_.special_fills.insert(f);
   }
 }
 
 void
-stat_vtk::reduce(StatCollector* element)
+StatVTK::reduce(StatCollector* element)
 {
-  stat_vtk* contribution = safe_cast(stat_vtk, element);
+  StatVTK* contribution = safe_cast(StatVTK, element);
 
   for (const traffic_event& e : contribution->sorted_event_list_){
     traffic_event_map_.emplace(e.time_, e);
@@ -405,7 +408,7 @@ stat_vtk::reduce(StatCollector* element)
 }
 
 void
-stat_vtk::finalize(Timestamp t)
+StatVTK::finalize(Timestamp t)
 {
   if (!active_) return;
 
@@ -429,25 +432,25 @@ stat_vtk::finalize(Timestamp t)
 }
 
 void
-stat_vtk::dumpGlobalData()
+StatVTK::dumpGlobalData()
 {
   outputExodusWithSharedMap(fileroot_, std::move(traffic_event_map_),
                             display_cfg_, Topology::global());
 }
 
 void
-stat_vtk::dumpLocalData()
+StatVTK::dumpLocalData()
 {
   //if I want a file per node/switch
 }
 
 void
-stat_vtk::clear()
+StatVTK::clear()
 {
 }
 
 void
-stat_vtk::configure(SwitchId sid, Topology *top)
+StatVTK::configure(SwitchId sid, Topology *top)
 {
   top_ = top;
   auto geom = top_->getVtkGeometry(sid);
@@ -466,7 +469,7 @@ stat_vtk::configure(SwitchId sid, Topology *top)
 }
 
 void
-stat_vtk::collect_new_color(Timestamp time, int port, double color)
+StatVTK::collect_new_color(Timestamp time, int port, double color)
 {
   if (!active_ || port >= port_states_.size()) return;
 
@@ -514,7 +517,7 @@ stat_vtk::collect_new_color(Timestamp time, int port, double color)
 }
 
 void
-stat_vtk::collect_new_intensity(Timestamp time, int port, double intensity)
+StatVTK::collect_new_intensity(Timestamp time, int port, double intensity)
 {
   if (!active_ || port >= port_states_.size()) return;
 
@@ -535,7 +538,7 @@ stat_vtk::collect_new_intensity(Timestamp time, int port, double intensity)
 
 
 void
-stat_vtk::globalReduce(ParallelRuntime *rt)
+StatVTK::globalReduce(ParallelRuntime *rt)
 {
   if (rt->nproc() > 1){
     sprockit::abort("stat_vtk::global_reduce for MPI parallel");

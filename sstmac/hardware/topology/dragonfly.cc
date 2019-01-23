@@ -71,7 +71,7 @@ Dragonfly::Dragonfly(SST::Params& params) :
   }
 
   static const double TWO_PI = 6.283185307179586;
-  vtk_edge_size_ = params->get_optional_double_param("vtk_edge_size", 0.25);
+  vtk_edge_size_ = params.find<double>("vtk_edge_size", 0.25);
 
   a_ = dimensions_[0];
   g_ = dimensions_[1];
@@ -85,9 +85,9 @@ Dragonfly::Dragonfly(SST::Params& params) :
   vtk_switch_radians_ = vtk_group_radians_ / a_ / 1.5;
 
   if (params->has_param("group_connections")){
-    h_ = params->get_int_param("group_connections");
+    h_ = params.find<int>("group_connections");
   } else {
-    h_ = params->get_int_param("h");
+    h_ = params.find<int>("h");
   }
 
   group_wiring_ = InterGroupWiring::factory::get_optional_param("inter_group", "circulant", params,
@@ -138,8 +138,8 @@ void
 Dragonfly::setupPortParams(SST::Params& params, int red, int port_offset, int num_ports) const
 {
   SST::Params link_params = params.get_namespace("link");
-  double bw = link_params->get_bandwidth_param("bandwidth");
-  int bufsize = params->get_optional_byte_length_param("buffer_size", 0);
+  double bw = link_params.findUnits("bandwidth").toDouble();
+  int bufsize = params.findUnits("buffer_size", "0B").getRoundedValue();
 
   double port_bw = bw * red;
   int credits = bufsize * red;

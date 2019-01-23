@@ -53,15 +53,15 @@ namespace hw {
 void
 SculpinParamExpander::expand(SST::Params& params)
 {
-  std::string amm_type = params->get_param("amm_model");
+  std::string amm_type = params.find<std::string>("amm_model");
 
-  SST::Params node_params = params->get_optional_namespace("node");
-  SST::Params nic_params = node_params->get_optional_namespace("nic");
-  SST::Params inj_params = nic_params->get_optional_namespace("injection");
-  SST::Params mem_params = node_params->get_optional_namespace("memory");
-  SST::Params switch_params = params->get_optional_namespace("switch");
-  SST::Params top_params = params->get_optional_namespace("topology");
-  SST::Params proc_params = node_params->get_optional_namespace("proc");
+  SST::Params node_params = params.find_prefix_params("node");
+  SST::Params nic_params = node_params.find_prefix_params("nic");
+  SST::Params inj_params = nic_params.find_prefix_params("injection");
+  SST::Params mem_params = node_params.find_prefix_params("memory");
+  SST::Params switch_params = params.find_prefix_params("switch");
+  SST::Params top_params = params.find_prefix_params("topology");
+  SST::Params proc_params = node_params.find_prefix_params("proc");
 
 
   nic_params->add_param_override("name", "sculpin");
@@ -71,12 +71,12 @@ SculpinParamExpander::expand(SST::Params& params)
   }
 
   if (!mem_params->has_param("mtu")){
-    int mem_packet_size = params->get_optional_int_param("memory_accuracy_parameter", 4096000);
+    int mem_packet_size = params.find<int>("memory_accuracy_parameter", 4096000);
     mem_params->add_param_override("mtu", mem_packet_size);
   }
 
-  int packet_size = params->get_optional_int_param("accuracy_parameter", 4096);
-  int net_packet_size = params->get_optional_int_param("network_accuracy_parameter", packet_size);
+  int packet_size = params.find<int>("accuracy_parameter", 4096);
+  int net_packet_size = params.find<int>("network_accuracy_parameter", packet_size);
   if (!switch_params->has_param("mtu")){
     switch_params->add_param_override("mtu", net_packet_size);
   }
@@ -106,7 +106,7 @@ SculpinParamExpander::expandAmm1Memory(SST::Params& params,
                                        SST::Params& mem_params)
 {
   if (mem_params->get_scoped_param("name") != "null"){
-    mem_params->add_param_override("total_bandwidth", mem_params->get_param("bandwidth"));
+    mem_params->add_param_override("total_bandwidth", mem_params.find<std::string>("bandwidth"));
   }
 }
 
@@ -117,7 +117,7 @@ SculpinParamExpander::checkBandwidth(SST::Params& params,
   if (!params->has_param("bandwidth")){
     if (deflt_params){
       params->add_param_override("bandwidth",
-                                 deflt_params->get_param("bandwidth"));
+                                 deflt_params.find<std::string>("bandwidth"));
     } else {
       params.print_all_params(std::cerr);
       spkt_abort_printf("do not have bandwidth parameter");
@@ -131,7 +131,7 @@ SculpinParamExpander::checkLatency(SST::Params& params,
 {
   if (!params->has_param("sendLatency")){
     if (params->has_param("latency")){
-      params->add_param_override("sendLatency", params->get_param("latency"));
+      params->add_param_override("sendLatency", params.find<std::string>("latency"));
     } else if (deflt_params){
       params->add_param_override("sendLatency",
                                  deflt_params->get_either_or_param("latency", "sendLatency"));
@@ -143,7 +143,7 @@ SculpinParamExpander::checkLatency(SST::Params& params,
 
   if (!params->has_param("creditLatency")){
     if (params->has_param("latency")){
-      params->add_param_override("creditLatency", params->get_param("latency"));
+      params->add_param_override("creditLatency", params.find<std::string>("latency"));
     } else if (deflt_params){
       params->add_param_override("creditLatency",
                        deflt_params->get_either_or_param("latency", "creditLatency"));
@@ -159,7 +159,7 @@ SculpinParamExpander::expandAmm1Network(SST::Params& params,
                                         SST::Params& switch_params)
 {
   SST::Params link_params = switch_params.get_namespace("link");
-  SST::Params ej_params = switch_params->get_optional_namespace("ejection");
+  SST::Params ej_params = switch_params.find_prefix_params("ejection");
   SST::Params node_params = params.get_namespace("node");
   SST::Params nic_params = node_params.get_namespace("nic");
   SST::Params inj_params = nic_params.get_namespace("injection");

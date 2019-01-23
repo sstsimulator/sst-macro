@@ -80,7 +80,7 @@ congestionDelay(const pkt_arbitration_t& st)
 
 PacketStatsCallback::PacketStatsCallback(SST::Params& params, EventScheduler* parent)
 {
-  id_ = params->get_int_param("id");
+  id_ = params.find<int>("id");
 }
 
 void
@@ -173,7 +173,7 @@ MultiStats::MultiStats(SST::Params& params, EventScheduler *parent) :
   PacketStatsCallback(params, parent)
 {
   std::vector<std::string> stats_list;
-  params->get_vector_param("callbacks", stats_list);
+  params.find_array("callbacks", stats_list);
   cbacks_.reserve(stats_list.size());
   for (const std::string& str : stats_list){
     PacketStatsCallback* cb = PacketStatsCallback::factory::get_value(str, params, parent);

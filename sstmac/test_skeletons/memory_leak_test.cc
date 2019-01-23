@@ -68,8 +68,8 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   SST::Params params = getParams();
-  max_pt2pt_count = params->get_optional_int_param("max_pt2pt_count", max_pt2pt_count);
-  max_all_count = params->get_optional_int_param("max_all_count", max_all_count);
+  max_pt2pt_count = params.find<int>("max_pt2pt_count", max_pt2pt_count);
+  max_all_count = params.find<int>("max_all_count", max_all_count);
 
   test_pt2pt(MPI_COMM_WORLD);
   test_allgather(MPI_COMM_WORLD);

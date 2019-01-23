@@ -72,7 +72,7 @@ class GreedyDflyAllocation :
               "Allocate a 'striped' dragonfly allocation scattering across groups")
  public:
   GreedyDflyAllocation(SST::Params& params) : NodeAllocator(params) {
-    num_groups_ = params->get_int_param("num_groups");
+    num_groups_ = params.find<int>("num_groups");
   }
 
   virtual ~GreedyDflyAllocation() throw () {}

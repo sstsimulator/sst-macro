@@ -53,7 +53,7 @@ The histogram constructor initializes a few parameters internally.
 
 \begin{CppCode}
 bin_size_ = params->get_quantity("bin_size");
-is_log_ = params->get_optional_bool_param("logarithmic", false);
+is_log_ = params.find<bool>("logarithmic", false);
 \end{CppCode}
 defining how large histogram bins are, whether the scale is logarithmic, and finally defining a file root for dumping results later.
 Internally in the event manager, all objects with the same file root are grouped together.

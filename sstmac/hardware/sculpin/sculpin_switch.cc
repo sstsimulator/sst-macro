@@ -91,14 +91,14 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
   delay_hist_(nullptr),
   NetworkSwitch(params, id)
 {
-  SST::Params rtr_params = params->get_optional_namespace("router");
+  SST::Params rtr_params = params.find_prefix_params("router");
   rtr_params->add_param_override_recursive("id", int(my_addr_));
   router_ = Router::factory::get_param("name", rtr_params, top_, this);
 
-  congestion_ = params->get_optional_bool_param("congestion", true);
-  vtk_flicker_ = params->get_optional_bool_param("vtk_flicker", true);
+  congestion_ = params.find<bool>("congestion", true);
+  vtk_flicker_ = params.find<bool>("vtk_flicker", true);
 
-//  sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
+//  sprockit::sim_parameters* ej_params = params.find_prefix_params("ejection");
 //  std::vector<topology::injection_port> inj_conns;
 //  top_->endpointsConnectedToEjectionSwitch(my_addr_, inj_conns);
 //  for (topology::injection_port& conn : inj_conns){
@@ -106,12 +106,12 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
 //    ej_params.combine_into(port_params);
 //  }
 
-  SST::Params ej_params = params->get_optional_namespace("ejection");
+  SST::Params ej_params = params.find_prefix_params("ejection");
   std::vector<Topology::injection_port> inj_conns;
   top_->endpointsConnectedToEjectionSwitch(my_addr_, inj_conns);
   for (Topology::injection_port& conn : inj_conns){
     auto port_ns = Topology::getPortNamespace(conn.switch_port);
-    SST::Params port_params = params->get_optional_namespace(port_ns);
+    SST::Params port_params = params.find_prefix_params(port_ns);
     ej_params.combine_into(port_params);
   }
 
@@ -156,7 +156,7 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
 
   if (params->has_param("filter_stat_source")){
     std::vector<int> filter;
-    params->get_vector_param("filter_stat_source", filter);
+    params.find_array("filter_stat_source", filter);
     for (int src : filter){
       src_stat_filter_.insert(src);
     }
@@ -164,18 +164,18 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
 
   if (params->has_param("filter_stat_destination")){
     std::vector<int> filter;
-    params->get_vector_param("filter_stat_destination", filter);
+    params.find_array("filter_stat_destination", filter);
     for (int dst : filter) dst_stat_filter_.insert(dst);
   }
 
   if (params->has_param("highlight_stat_source")){
     std::vector<int> filter;
-    params->get_vector_param("highlight_stat_source", filter);
+    params.find_array("highlight_stat_source", filter);
     for (int src : filter) src_stat_highlight_.insert(src);
   }
 
-  highlight_scale_ = params->get_optional_double_param("highlight_scale", 1000.);
-  vtk_flicker_ = params->get_optional_bool_param("vtk_flicker", true);
+  highlight_scale_ = params.find<double>("highlight_scale", 1000.);
+  vtk_flicker_ = params.find<bool>("vtk_flicker", true);
 
 }
 
@@ -194,10 +194,9 @@ SculpinSwitch::connectOutput(
   int dst_inport,
   EventLink* link)
 {
-  double bw = port_params->get_bandwidth_param("bandwidth");
   Port& p = ports_[src_outport];
   p.link = link;
-  p.byte_delay = Timestamp(1.0/bw);
+  p.byte_delay = Timestamp(port_params.findUnits("bandwidth").inverse().toDouble());
   p.dst_port = dst_inport;
 }
 
@@ -216,13 +215,13 @@ SculpinSwitch::connectInput(
 Timestamp
 SculpinSwitch::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params->get_time_param("sendLatency"));
+  return Timestamp(params.findUnits("sendLatency").toDouble());
 }
 
 Timestamp
 SculpinSwitch::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params->get_time_param("sendLatency"));
+  return Timestamp(params.findUnits("sendLatency").toDouble());
 }
 
 int

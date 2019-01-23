@@ -56,8 +56,8 @@ class DefaultDGEMV :
   FactoryRegister("default_dgemv", BlasKernel, DefaultDGEMV)
  public:
   DefaultDGEMV(SST::Params& params){
-    loop_unroll_ = params->get_optional_double_param("dgemv_loop_unroll", 4);
-    pipeline_ = params->get_optional_double_param("dgemv_pipeline_efficiency", 2);
+    loop_unroll_ = params.find<double>("dgemv_loop_unroll", 4);
+    pipeline_ = params.find<double>("dgemv_pipeline_efficiency", 2);
   }
 
   std::string toString() const override {
