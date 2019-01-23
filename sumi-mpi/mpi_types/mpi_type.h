@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/comm_functions.h>
 #include <sumi-mpi/mpi_integers.h>
 #include <sumi-mpi/mpi_types.h>
-#include <sprockit/spkt_config.h>
 #include <unordered_map>
 #include <vector>
 #include <string>

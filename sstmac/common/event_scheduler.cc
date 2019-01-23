@@ -64,7 +64,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 SST::TimeConverter* EventScheduler::time_converter_ = nullptr;
 #else
 void
@@ -99,7 +99,7 @@ Component::init(unsigned int phase)
 void
 Component::setup()
 {
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   SSTIntegratedComponent::setup();
 #else
   setManager(EventManager::global);
@@ -121,7 +121,7 @@ SubComponent::setup()
 #endif
 }
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #else
 void
 LocalLink::send(Timestamp delay, Event *ev)

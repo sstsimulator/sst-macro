@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 namespace SST {
 class Event;
 }

@@ -56,7 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/sim_parameters_fwd.h>
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/params.h>
 #include <sst/core/link.h>
 extern int run_standalone(int, char**);
@@ -144,7 +144,7 @@ class EventLink {
 class EventScheduler : public sprockit::printable
 {
  public:
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   void sendDelayedExecutionEvent(timestamp delay, ExecutionEvent* ev){
     self_link_->send(delay, time_converter_, ev);
   }
@@ -187,7 +187,7 @@ class EventScheduler : public sprockit::printable
   }
 
   GlobalTimestamp now() const {
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
     SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
     return timestamp(nowTicks, timestamp::exact);
 #else
@@ -195,7 +195,7 @@ class EventScheduler : public sprockit::printable
 #endif
   }
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   static SST::TimeConverter* time_converter() {
     return time_converter_;
   }
@@ -220,7 +220,7 @@ class EventScheduler : public sprockit::printable
     id_(id), seqnum_(0), mgr_(nullptr),
     selfLinkId_(EventLink::allocateLinkId())
   {
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
     if (!time_converter_){
       time_converter_ = base->getTimeConverter(timestamp::tick_interval_string());
     }
@@ -231,7 +231,7 @@ class EventScheduler : public sprockit::printable
 
  private:
   uint32_t id_;
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   SST::Link* self_link_;
   static SST::TimeConverter* time_converter_;
 #else
@@ -252,7 +252,7 @@ class EventScheduler : public sprockit::printable
  * The interface for something that can schedule messages
  */
 class Component :
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   public SSTIntegratedComponent,
 #endif
   public EventScheduler
@@ -270,7 +270,7 @@ class Component :
   {
   }
 
-#if !ACTUAL_INTEGRATED_SST_CORE
+#if !SSTMAC_INTEGRATED_SST_CORE
   void initLinks(SST::Params& params){} //need for SST core compatibility
 #endif
 
@@ -279,7 +279,7 @@ class Component :
 
 
 class SubComponent :
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   public SST::SubComponent,
 #endif
   public EventScheduler
@@ -294,7 +294,7 @@ class SubComponent :
 
  protected:
   SubComponent(SST::Component* parent) :
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
     SST::SubComponent(parent),
 #endif
     EventScheduler(parent->componentId())
@@ -303,7 +303,7 @@ class SubComponent :
 
 };
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 template <class T, class Fxn>
 SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);

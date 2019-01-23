@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/hardware/common/connection_fwd.h>
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
 #include <sst/core/linkMap.h>
 #include <sst/core/params.h>

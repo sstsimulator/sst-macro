@@ -51,7 +51,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/basic_string_tokenizer.h>
-#include <sprockit/spkt_config.h>
 #include <map>
 
 namespace sprockit {

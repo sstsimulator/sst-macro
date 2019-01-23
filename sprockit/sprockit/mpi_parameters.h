@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sprockit {
 
 class mpi_param_bcaster:
-  public param_bcaster
+  public ParamBcaster
 {
  public:
    void bcast(void *buf, int size, int me, int root){

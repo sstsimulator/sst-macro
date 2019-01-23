@@ -101,7 +101,6 @@ class serialize<std::set<T> > {
   }
 };
 
-#if !SPKT_ENABLE_ORDERED_MAP
 template <class T>
 class serialize<std::unordered_set<T> > {
   typedef std::unordered_set<T> Set;
@@ -110,7 +109,6 @@ class serialize<std::unordered_set<T> > {
     pvt::serialize_set<Set,T>(v,ser);
   }
 };
-#endif
 
 }
 

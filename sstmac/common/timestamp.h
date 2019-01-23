@@ -118,7 +118,7 @@ class Timestamp
     return res;
   }
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   operator SST::SimTime_t() const {
     return ticks_;
   }

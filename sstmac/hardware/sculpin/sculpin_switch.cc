@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/common/event_callback.h>
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/factory.h>
 #endif
 RegisterNamespaces("switch", "router", "xbar", "link");

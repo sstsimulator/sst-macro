@@ -42,11 +42,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef SPKT_STRING_H
-#define SPKT_STRING_H
+#ifndef sprockit_STRING_H
+#define sprockit_STRING_H
 
 #include <sstream>
-#include <sprockit/spkt_config.h>
 #include <sprockit/spkt_printf.h>
 #include <cctype>
 #include <algorithm>
@@ -89,4 +88,4 @@ void trim(SequenceT& input)
 }
 
 
-#endif // SPKT_STRING_H
+#endif

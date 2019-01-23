@@ -42,14 +42,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sprockit/spkt_config.h>
 #include <sprockit/spkt_string.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/units.h>
 #include <sprockit/driver_util.h>
 #include <sprockit/errors.h>
 #include <sprockit/keyword_registration.h>
-#include <sprockit/regexp.h>
 #include <sprockit/fileio.h>
 #include <sprockit/output.h>
 #include <cstring>
@@ -150,93 +148,93 @@ get_bandwidth_from_str(const char* val, const char* key)
   return ret;
 }
 
-param_assign::operator int() const
+ParamAssign::operator int() const
 {
   return get_quantity_with_units(param_.c_str(), key_.c_str());
 }
 
-param_assign::operator double() const
+ParamAssign::operator double() const
 {
   return get_quantity_with_units(param_.c_str(), key_.c_str());
 }
 
 void
-param_assign::operator=(int x)
+ParamAssign::operator=(int x)
 {
   param_ = sprockit::printf("%d", x); 
 }
 
 void
-param_assign::operator=(double x)
+ParamAssign::operator=(double x)
 {
   param_ = sprockit::printf("%f", x); 
 }
 
 double
-param_assign::getBandwidth() const 
+ParamAssign::getBandwidth() const
 {
   return get_bandwidth_from_str(param_.c_str(), key_.c_str()); 
 }
 
 double
-param_assign::getFrequency() const 
+ParamAssign::getFrequency() const
 {
   return get_freq_from_str(param_.c_str(), key_.c_str()); 
 }
 
 long
-param_assign::getByteLength() const
+ParamAssign::getByteLength() const
 {
   return get_byte_length_from_str(param_.c_str(), key_.c_str());
 }
 
 double
-param_assign::getTime() const 
+ParamAssign::getTime() const
 {
   return get_time_from_str(param_.c_str(), key_.c_str());
 }
 
 const std::string&
-param_assign::set(const char* str)
+ParamAssign::set(const char* str)
 {
   param_ = str;
   return param_;
 }
 
 const std::string&
-param_assign::set(const std::string& str)
+ParamAssign::set(const std::string& str)
 {
   param_ = str;
   return param_;
 }
 
 const std::string&
-param_assign::setValue(double x, const char* units)
+ParamAssign::setValue(double x, const char* units)
 {
   param_ = sprockit::printf("%f%s", x, units);
   return param_;
 }
 
 const std::string&
-param_assign::setTime(double x, const char* units)
+ParamAssign::setTime(double x, const char* units)
 {
   return setValue(x, units);
 }
 
 const std::string&
-param_assign::setBandwidth(double x, const char* units) 
+ParamAssign::setBandwidth(double x, const char* units)
 {
   return setValue(x, units);
 }
 
 const std::string&
-param_assign::setFrequency(double x, const char* units) 
+ParamAssign::setFrequency(double x, const char* units)
 {
   return setValue(x, units);
 }
 
 const std::string&
-param_assign::setByteLength(long x, const char* units)
+ParamAssign::setByteLength(long x, const char* units)
 {
   param_ = sprockit::printf("%ld%s", x, units);
   return param_;
@@ -957,7 +955,7 @@ sim_parameters::parse_line(const std::string& line,
 }
 
 void
-param_bcaster::bcastString(std::string& str, int me, int root)
+ParamBcaster::bcastString(std::string& str, int me, int root)
 {
   if (me == root){
     int size = str.size();
@@ -977,7 +975,7 @@ void
 sim_parameters::parallel_build_params(sprockit::sim_parameters::ptr& params,
                                       int me, int nproc,
                                       const std::string& filename,
-                                      param_bcaster *bcaster,
+                                      ParamBcaster *bcaster,
                                       bool fail_if_not_found)
 {
   bool fail_on_existing = false;
@@ -1258,12 +1256,12 @@ sim_parameters::do_add_param(
   }
 }
 
-param_assign
+ParamAssign
 sim_parameters::operator[](const std::string& key)
 {
   std::string final_key;
   sim_parameters* scope = get_scope_and_key(key, final_key);
-  return param_assign(scope->params_[final_key].value, key);
+  return ParamAssign(scope->params_[final_key].value, key);
 }
 
 void

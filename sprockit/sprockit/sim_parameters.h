@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SPROCKIT_COMMON_SIM_PARAMETERS_H_INCLUDED
 #define SPROCKIT_COMMON_SIM_PARAMETERS_H_INCLUDED
 
-#include <sprockit/spkt_config.h>
 #include <sprockit/debug.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
@@ -68,9 +67,9 @@ namespace sprockit {
 bool get_quantity_with_units(const char *value, double& ret);
 double get_quantity_with_units(const char *value, const char* key);
 
-class param_assign {
+class ParamAssign {
  public:
-  param_assign(std::string& p, const std::string& k) :
+  ParamAssign(std::string& p, const std::string& k) :
     param_(p), key_(k)
   {
   }
@@ -108,7 +107,7 @@ class param_assign {
 
 };
 
-class param_bcaster {
+class ParamBcaster {
  public:
   virtual void bcast(void* buf, int size, int me, int root) = 0;
 
@@ -159,7 +158,7 @@ class sim_parameters  {
   parallel_build_params(sprockit::sim_parameters::ptr& params,
                         int me, int nproc,
                         const std::string& filename,
-                        param_bcaster* bcaster,
+                        ParamBcaster* bcaster,
                         bool fail_if_not_found = true);
 
   virtual ~sim_parameters();
@@ -434,7 +433,7 @@ class sim_parameters  {
     return static_cast<T*>(ptr);
   }
 
-  param_assign operator[](const std::string& key);
+  ParamAssign operator[](const std::string& key);
 
   key_value_map::iterator begin() { return params_.begin(); }
   key_value_map::const_iterator begin() const { return params_.begin(); }
@@ -681,11 +680,11 @@ class Params {
     return CallGetParam<T>::getOptional(params_, key, std::forward<U>(def));
   }
 
-  sprockit::param_assign operator[](const std::string& key){
+  sprockit::ParamAssign operator[](const std::string& key){
     return (*params_)[key];
   }
 
-  sprockit::param_assign operator[](const char* key){
+  sprockit::ParamAssign operator[](const char* key){
     return (*params_)[key];
   }
 

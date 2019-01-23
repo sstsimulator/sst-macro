@@ -45,8 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SOFTWARE_PROCESS_APPID_H_INCLUDED
 #define SSTMAC_SOFTWARE_PROCESS_APPID_H_INCLUDED
 
-#include <sprockit/spkt_config.h>
-
 namespace sstmac {
 namespace sw {
 

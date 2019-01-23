@@ -46,8 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <string>
 #include <cstdarg>
 
-#include <sprockit/spkt_config.h>
-
 namespace sprockit {
 
 std::string printf(const char *fmt, ...)

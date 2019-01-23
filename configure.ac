@@ -34,7 +34,7 @@ dnl AC_PREREQ([2.68]) avoid this if possible
 AC_INIT([sstmacro], [SSTMAC_ACVERSION_TAG], [sst-macro-help@sandia.gov])
 AC_CONFIG_MACRO_DIR([acinclude])
 AC_CONFIG_AUX_DIR(bin)
-AC_CONFIG_HEADER(sstmac/common/config.h)
+AC_CONFIG_HEADERS(sstmac/common/config.h)
 AX_PREFIX_CONFIG_H(sstmac/common/sstmac_config.h, SSTMAC)
 AC_CANONICAL_TARGET
 
@@ -204,11 +204,6 @@ CHECK_CLANG_LIBTOOLING()
 # Configure subdirs
 #-------------------------------------------------
 
-ac_configure_args="$ac_configure_args --enable-sst --enable-sst-subrepo"
-
-# Configure sprockit
-AC_CONFIG_SUBDIRS([sprockit])
-
 # Configure dumpi.
 AC_CONFIG_SUBDIRS([sst-dumpi])
 
@@ -249,6 +244,9 @@ AC_CONFIG_FILES([
  sstmac/common/Makefile
  sstmac/replacements/Makefile
  sstmac/clang_replacements/Makefile
+ sprockit/Makefile
+ sprockit/sprockit/Makefile
+ sprockit/test/Makefile
  bin/Makefile
  python/Makefile
  configurations/Makefile

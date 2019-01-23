@@ -42,9 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sprockit/spkt_config.h>
 #include <sprockit/keyword_registration.h>
-#include <sprockit/regexp.h>
 #include <sprockit/errors.h>
 #include <sprockit/output.h>
 #include <sprockit/statics.h>

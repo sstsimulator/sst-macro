@@ -66,7 +66,7 @@ MakeDebugSlot(traffic_matrix_results)
 static const int send_cq = sumi::Message::no_ack;
 static const int RecvCQ = 0;
 
-class sumi_param_bcaster : public sprockit::param_bcaster
+class sumi_param_bcaster : public sprockit::ParamBcaster
 {
  public:
   sumi_param_bcaster(sumi::CollectiveEngine* engine) : engine_(engine), tag_(12345) {}

@@ -75,7 +75,7 @@ DeclareDebugSlot(EventManager);
 
 namespace sstmac {
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #else
 /**
  * Base type for implementations of an engine that

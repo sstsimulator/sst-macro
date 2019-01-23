@@ -49,8 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/timestamp.h>
 #include <sstmac/hardware/common/flow_fwd.h>
 
-#include <sprockit/spkt_config.h>
-
 namespace sstmac {
 namespace ami {
 

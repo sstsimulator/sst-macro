@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/printable.h>
 #include <tuple>
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
 #endif
 

@@ -47,8 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstream>
 #include <stdint.h>
-
-#include <sprockit/spkt_config.h>
 #include <sstmac/common/serializable.h>
 
 namespace sstmac {

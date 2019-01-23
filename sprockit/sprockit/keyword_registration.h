@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sprockit_keyword_registration_H
 #define sprockit_keyword_registration_H
 
-#include <sprockit/spkt_config.h>
 #include <unordered_map>
 #include <unordered_set>
 

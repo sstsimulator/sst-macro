@@ -2,7 +2,6 @@
 #define THREAD_SAFE_NEW_H
 
 #include <vector>
-#include <sprockit/spkt_config.h>
 
 #define SPKT_TLS_OFFSET 64
 

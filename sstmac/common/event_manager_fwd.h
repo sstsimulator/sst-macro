@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 class EventScheduler;
 typedef EventScheduler EventManager;
 #else

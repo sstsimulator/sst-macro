@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sprockit_common_util_h
 #define sprockit_common_util_h
 
-#include <sprockit/spkt_config.h>
 #include <sprockit/errors.h>
 #include <sprockit/printable.h>
 

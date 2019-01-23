@@ -72,7 +72,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sprockit/keyword_registration.h>
-#include <sprockit/sprockit/spkt_config.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/backends/native/serial_runtime.h>
 #include <sstmac/software/process/app.h>
@@ -83,10 +82,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac_repo.h>
 #endif
 
-#if SPKT_REPO_BUILD
-#include <sprockit/sprockit_repo.h>
-#endif
-
 RegisterKeywords(
  { "external_libs", "a list of external .so files to load" },
 );
@@ -94,7 +89,7 @@ RegisterKeywords(
 namespace sstmac {
 
 class RuntimeParamBcaster :
-  public sprockit::param_bcaster
+  public sprockit::ParamBcaster
 {
  public:
   RuntimeParamBcaster(ParallelRuntime* rt) : rt_(rt) {}

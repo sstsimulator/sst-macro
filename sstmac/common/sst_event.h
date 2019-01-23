@@ -50,14 +50,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/common/event_location.h>
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/event.h>
 #endif
 
 namespace sstmac {
 
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 using event = SST::Event;
 #else
 class Event : public serializable
@@ -73,7 +73,7 @@ class ExecutionEvent : public Event
  public:
   virtual ~ExecutionEvent() {}
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   virtual void execute() override = 0;
 
   ExecutionEvent(uint32_t dst, uint32_t src)

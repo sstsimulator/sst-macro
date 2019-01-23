@@ -111,7 +111,7 @@ class Interconnect
 
   Interconnect(){}
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #else
  public:
   const std::vector<ConnectableComponent*>& components() const {

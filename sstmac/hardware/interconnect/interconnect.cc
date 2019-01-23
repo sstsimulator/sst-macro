@@ -217,7 +217,7 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
 SwitchId
 Interconnect::nodeToLogpSwitch(NodeId nid) const
 {
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   return topology_->nodeToLogpSwitch(nid);
 #else
   SwitchId real_sw_id = topology_->endpointToSwitch(nid);
@@ -227,7 +227,7 @@ Interconnect::nodeToLogpSwitch(NodeId nid) const
 }
 
 
-#if !ACTUAL_INTEGRATED_SST_CORE
+#if !SSTMAC_INTEGRATED_SST_CORE
 
 #if 0
 EventLink*

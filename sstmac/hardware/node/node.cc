@@ -220,7 +220,7 @@ Node::toString() const
 void
 Node::incrementAppRefcount()
 {
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   if (app_refcount_ == 0){
     primaryComponentDoNotEndSim();
   }
@@ -233,7 +233,7 @@ Node::decrementAppRefcount()
 {
   app_refcount_--;
 
-#if ACTUAL_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
   if (app_refcount_ == 0){
     primaryComponentOKToEndSim();
   }
