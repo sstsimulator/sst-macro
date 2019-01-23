@@ -34,7 +34,6 @@ test_tls.$(CHKSUF): test_tls
 	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
     ./test_tls --no-wall-time -f $(srcdir)/test_configs/tls.ini 
 
-if BUILD_SUMI_MPI
 #SINGLETESTS += test_uq
 
 if HAVE_OTF2
@@ -99,9 +98,6 @@ test_otf2_write.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) $@ True \
     $(SSTMACEXEC) -f $(srcdir)/test_configs/test_otf2_write.ini \
           --no-wall-time
-
-endif 
-### SUMI MPI
 
 endif
 #### not integrated core

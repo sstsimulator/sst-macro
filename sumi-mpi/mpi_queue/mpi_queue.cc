@@ -187,12 +187,6 @@ MpiQueue::send(MpiRequest *key, int count, MPI_Datatype type,
   prot->start(buffer, comm->rank(), dest, dst_tid, count, typeobj,
               tag, comm->id(), next_outbound_[dst_tid]++, key);
 
-#if !SSTMAC_ALLOW_LARGE_PAYLOADS
-  if (isNonNullBuffer(buffer) && mess->byte_length() > 64){
-    spkt_abort_printf("mpi queue sending large message with real payload:\n%s",
-      mess->toString().c_str());
-  }
-#endif
 }
 
 MpiMessage*
@@ -234,12 +228,6 @@ MpiQueue::recv(MpiRequest* key, int count,
   mpi_queue_debug("starting recv count=%d, type=%s, src=%s, tag=%s, comm=%s, buffer=%p",
         count, api_->typeStr(type).c_str(), api_->srcStr(source).c_str(),
         api_->tagStr(tag).c_str(), api_->commStr(comm).c_str(), buffer);
-
-#if !SSTMAC_ALLOW_LARGE_PAYLOADS
-  if (isNonNullBuffer(buffer) && count > 16){
-    spkt_abort_printf("mpi queue recving large message with real payload");
-  }
-#endif
 
   MpiQueueRecvRequest* req = new MpiQueueRecvRequest(key, this,
                             count, type, source, tag, comm->id(), buffer);

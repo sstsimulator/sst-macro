@@ -7,11 +7,10 @@ SKELETONCASES=
 
 if INTEGRATED_SST_CORE
 if HAVE_CLANG
-if BUILD_SUMI_MPI
 SKELETONCASES += liblulesh libhpcg libcomd libpic
 endif
-endif
 else
+#else no integrated core
 if HAVE_CLANG
 SKELETONCASES += \
   memoize \
@@ -24,16 +23,15 @@ SKELETONCASES += \
   unique_ptr_test \
   template_global_test 
 endif
+#end cpp14
 
-if BUILD_SUMI_MPI
 SKELETONCASES += lulesh2.0.3 hpcg-3.0 CoMD pic
 endif
-endif
+#end have clang
 
 #SKELETONCASES += \
 #  boxml 
 
-if BUILD_SUMI_MPI
 SKELETONCASES += \
   sst_component_example \
   traffic \
@@ -43,10 +41,8 @@ SKELETONCASES += \
 if !HAVE_UBUNTU
 SKELETONCASES +=  matmul 
 endif
-endif
 
-endif 
-#### SUMI MPI
+endif #Integrated core
 
 SKELETONTESTS = $(SKELETONCASES:%=test_skeleton_%)
 
@@ -133,4 +129,5 @@ test_skeleton_sst_component_example.$(CHKSUF): sst_component_example $(SSTMACEXE
 
 
 endif
+#end integrated core check
 

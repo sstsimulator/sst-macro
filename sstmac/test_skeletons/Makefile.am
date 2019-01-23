@@ -25,10 +25,7 @@ libsstmac_test_skeletons_la_LDFLAGS =
 libsstmac_test_skeletons_la_SOURCES = \
   bw_test.cc \
   host_compute.cc \
-  app_hello_world.cc 
-
-if BUILD_SUMI_MPI
-libsstmac_test_skeletons_la_SOURCES += \
+  app_hello_world.cc \
   compute.cc \
   global_test.cc \
   mpi_coverage_test.cc \
@@ -39,7 +36,6 @@ libsstmac_test_skeletons_la_SOURCES += \
   mpi_isend_progress.cc \
   memory_leak_test.cc \
   sstmac_mpi_test_all.cc 
-endif
 
 
 

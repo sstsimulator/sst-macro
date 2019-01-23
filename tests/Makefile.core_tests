@@ -3,14 +3,8 @@
 #------------------------------------------------------------------------------------------#
 
 
-CORETESTS +=  test_sumi_collective 
-
-test_sumi_%.$(CHKSUF): sumi/sst_%
-	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time 
-
-if BUILD_SUMI_MPI
-
 CORETESTS+= \
+  test_sumi_collective \
   test_core_apps_ping_all_dragonfly_par \
   test_core_apps_ping_all_dragonfly_par_alltoall \
   test_core_apps_ping_all_dragonfly_par_single \
@@ -40,6 +34,9 @@ CORETESTS+= \
   test_core_apps_ping_all_fattree_tapered
 
 #  test_core_apps_distributed_service 
+
+test_sumi_%.$(CHKSUF): sumi/sst_%
+	$(PYRUNTEST) 5 $(top_srcdir) $@ Exact sumi/sst_$* -f $(srcdir)/sumi/ini/test_sst_$*.ini --no-wall-time
 
 test_core_apps_compute.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 6 $(top_srcdir) $@ Exact \
@@ -84,6 +81,4 @@ test_core_apps_ping_pong_amm4_slow.$(CHKSUF): $(SSTMACEXEC)
 test_core_apps_%.$(CHKSUF): $(CORE_TEST_DEPS)
 	$(PYRUNTEST) 10 $(top_srcdir) $@ Exact \
     $(MPI_LAUNCHER) $(SSTMACEXEC) -f $(srcdir)/test_configs/test_$*.ini --no-wall-time $(THREAD_ARGS)
-
-endif
 

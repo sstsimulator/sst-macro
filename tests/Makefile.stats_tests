@@ -16,7 +16,6 @@ STATSTESTS = \
   output_graph_torus \
   output_graph_dragonfly 
 
-if BUILD_SUMI_MPI
 #STATSTESTS += \
 #  test_stats_msg_size_histogram \
 #  test_stats_spyplot \
@@ -47,8 +46,6 @@ endif
 SINGLETESTS += test_sync_stats
 endif
 
-endif
-### SUMI MPI
 
 test_output_graph_%.$(CHKSUF): $(SSTMACEXEC)
 	$(PYRUNTEST) 5 $(top_srcdir) tmp_$@ notime \
