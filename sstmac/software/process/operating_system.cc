@@ -348,7 +348,7 @@ OperatingSystem::rebuildMemoizations()
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (iter == memoize_models_.end()){
       SST::Params memo_params = params_.find_prefix_params(pair.first);
-      memo_params->add_param_override("fileroot", pair.first);
+      memo_params.insert("fileroot", pair.first);
       auto* model = RegressionModel::factory::get_value(pair.second, memo_params, pair.first);
       memoize_models_[pair.first] = model;
       //EventManager::global->registerStat(model, nullptr);
@@ -795,7 +795,7 @@ OperatingSystem::registerLib(Library* lib)
     for (Event* ev : events){
       os_debug("delivering delayed event to lib %s: %s",
                lib->libName().c_str(), sprockit::toString(ev).c_str());
-      sendExecutionEventNow(newCallback(componentId(), lib, &Library::incomingEvent, ev));
+      sendExecutionEventNow(newCallback(lib, &Library::incomingEvent, ev));
     }
     pending_library_events_.erase(iter);
   }
@@ -965,9 +965,6 @@ OperatingSystem::startApp(App* theapp, const std::string& unique_name)
     int(theapp->tid()), int(theapp->aid()), threadId());
   //this should be called from the actual thread running it
   initThreading(params_);
-  if (params_->has_param("context")){
-    theapp->params()->add_param("context", params_.find<std::string>("context"));
-  }
   if (ftq_trace_){
     ftq_trace_->registerApp(theapp->aid(), sprockit::printf("app%d", int(theapp->aid())));
   }

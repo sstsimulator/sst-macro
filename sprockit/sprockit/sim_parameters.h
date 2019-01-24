@@ -55,6 +55,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <vector>
 #include <set>
 
+#include <sstmac/common/sstmac_config.h>
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/params.h>
+#endif
+
 #include <sprockit/basic_string_tokenizer.h>
 
 DeclareDebugSlot(params)
@@ -527,6 +532,7 @@ class sim_parameters  {
 
 }
 
+#if !SSTMAC_INTEGRATED_SST_CORE
 namespace SST {
 
 template <class T>
@@ -664,6 +670,18 @@ class Params {
     return params_->get_optional_namespace(name);
   }
 
+  void insert(const std::string& key, const std::string& value, bool overwrite=true){
+    if (overwrite){
+      params_->add_param_override(key, value);
+    } else {
+      params_->add_param(key, value);
+    }
+  }
+
+  void insert(const SST::Params& params){
+    params_->combine_into(params.params_);
+  }
+
   UnitAlgebra findUnits(const std::string& key){
     return UnitAlgebra(params_->get_param(key));
   }
@@ -701,6 +719,9 @@ class Params {
 };
 
 }
+
+#endif
+//end if not integrated core
 
 
 #endif

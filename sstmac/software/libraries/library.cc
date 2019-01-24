@@ -57,12 +57,6 @@ Library::Library(const std::string& libname, SoftwareId sid, OperatingSystem* os
   os_->registerLib(this);
 }
 
-uint32_t
-Library::componentId() const
-{
-  return os_->componentId();
-}
-
 Library::~Library()
 {
   os_->unregisterLib(this);

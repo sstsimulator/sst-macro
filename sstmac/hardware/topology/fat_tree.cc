@@ -106,7 +106,7 @@ AbstractFatTree::writeBwParams(
 {
   switch_params->print_params();
   if (switch_params->has_namespace("xbar")){
-    SST::Params xbar_params = switch_params.get_namespace("xbar");
+    SST::Params xbar_params = switch_params.find_prefix_params("xbar");
     double bw = xbar_params.findUnits("bandwidth").toDouble();
     if (bw == 0){
       xbar_params->print_params();;
@@ -356,13 +356,13 @@ FatTree::configureNonuniformSwitchParams(SwitchId src,
     multiplier *= double(n_core_port) / double(min_port);
 
   if ( my_level == 0 &&
-       switch_params->has_param("leaf_bandwidth_multiplier"))
+       switch_params.contains("leaf_bandwidth_multiplier"))
     multiplier = switch_params.find<double>("leaf_bandwidth_multiplier");
   else if ( my_level == 1 &&
-            switch_params->has_param("agg_bandwidth_multiplier"))
+            switch_params.contains("agg_bandwidth_multiplier"))
     multiplier = switch_params.find<double>("agg_bandwidth_multiplier");
   else if ( my_level == 2 &&
-            switch_params->has_param("core_bandwidth_multiplier"))
+            switch_params.contains("core_bandwidth_multiplier"))
     multiplier = switch_params.find<double>("core_bandwidth_multiplier");
 
   top_debug("fat_tree: scaling switch %i by %lf",src,multiplier);
@@ -518,7 +518,7 @@ void
 TaperedFatTree::configureIndividualPortParams(SwitchId src,
                                   SST::Params& switch_params) const
 {
-  SST::Params link_params = switch_params.get_namespace("link");
+  SST::Params link_params = switch_params.find_prefix_params("link");
   int buffer_size = link_params->get_optional_byte_length_param("buffer_size", 0);
   double bw = link_params.findUnits("bandwidth").toDouble();
   double taper = link_params.find<double>("core_taper",1.0);

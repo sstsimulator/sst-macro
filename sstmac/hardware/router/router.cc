@@ -71,7 +71,7 @@ Router::Router(SST::Params& params, Topology *top, NetworkSwitch *sw)
   my_addr_ = SwitchId(params.find<int>("id"));
   std::vector<RNG::rngint_t> seeds(2);
   seeds[0] = 42;
-  if (params->has_param("seed")) {
+  if (params.contains("seed")) {
     seed_ = params.find<long>("seed");
     seeds[1] = seed_;
     debug_seed_ = true;

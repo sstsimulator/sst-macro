@@ -60,7 +60,7 @@ LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
   NIC(params, parent)
 {
   ack_handler_ = newHandler(parent, &Node::handle);
-  SST::Params inj_params = params.get_namespace("injection");
+  SST::Params inj_params = params.find_prefix_params("injection");
   inj_byte_delay_ = Timestamp(inj_params.findUnits("bandwidth").inverse().toDouble());
   inj_lat_ = Timestamp(inj_params.findUnits("latency").toDouble());
 }

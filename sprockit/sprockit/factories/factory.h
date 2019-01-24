@@ -379,7 +379,7 @@ class Factory
   static T* get_extra_param(const std::string& param_name,
                   SST::Params& params,
                   const Args&... args) {
-    if (params->has_param(param_name)) {
+    if (params.contains(param_name)) {
       return get_param(param_name,params);
     } else {
       return nullptr;

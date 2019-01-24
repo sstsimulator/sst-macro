@@ -67,7 +67,7 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   NIC(params, parent),
   pending_inject_(1)
 {
-  SST::Params inj_params = params.get_namespace("injection");
+  SST::Params inj_params = params.find_prefix_params("injection");
   SST::Params ej_params = params.find_prefix_params("ejection");
 
   self_mtl_link_ = allocateSubLink(Timestamp(), parent,
@@ -95,13 +95,13 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
 Timestamp
 PiscesNIC::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("injection")->get_time_param("latency"));
+  return Timestamp(params.find_prefix_params("injection")->get_time_param("latency"));
 }
 
 Timestamp
 PiscesNIC::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("injection")->get_time_param("latency"));
+  return Timestamp(params.find_prefix_params("injection")->get_time_param("latency"));
 }
 
 void

@@ -131,13 +131,9 @@ class PiscesSwitch :
  private:
   void get_buffer(int outport);
 
-  struct input_port {
+  struct InputPort {
     PiscesSwitch* parent;
     int port;
-
-    int componentId() const {
-      return parent->addr();
-    }
 
     void handle(Event* ev);
 
@@ -147,7 +143,7 @@ class PiscesSwitch :
   };
 
   std::vector<PiscesSender*> out_buffers_;
-  std::vector<input_port> inports_;
+  std::vector<InputPort> inports_;
 
   PiscesCrossbar* xbar_;
 

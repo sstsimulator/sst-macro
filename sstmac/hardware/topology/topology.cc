@@ -82,10 +82,10 @@ Topology* Topology::staticTopology_ = nullptr;
 Topology* Topology::main_top_ = nullptr;
 
 #if SSTMAC_INTEGRATED_SST_CORE
-int topology::nproc = 0;
+int Topology::nproc = 0;
 
 SwitchId
-topology::nodeToLogpSwitch(NodeId nid) const
+Topology::nodeToLogpSwitch(NodeId nid) const
 {
   int n_nodes = numNodes();
   int nodes_per_switch = n_nodes / nproc;
@@ -125,10 +125,7 @@ Topology*
 Topology::staticTopology(SST::Params& params)
 {
   if (!staticTopology_){
-    if (!params){
-      spkt_abort_printf("topology should have already been initialized");
-    }
-    SST::Params top_params = params.get_namespace("topology");
+    SST::Params top_params = params.find_prefix_params("topology");
     staticTopology_ = Topology::factory::get_param("name", top_params);
   }
   return staticTopology_;
@@ -145,10 +142,10 @@ Topology::setupPortParams(int port, int credits, double bw,
   //put all of the credits on sending, none on credits
   port_params["bandwidth"].setBandwidth(bw/1e9, "GB/s");
   port_params["credits"].setByteLength(credits, "B");
-  port_params->add_param_override("sendLatency", link_params.find<std::string>("sendLatency"));
-  port_params->add_param_override("creditLatency", link_params.find<std::string>("creditLatency"));
-  if (link_params->has_param("arbitrator")){
-    port_params->add_param_override("arbitrator", link_params.find<std::string>("arbitrator"));
+  port_params.insert("sendLatency", link_params.find<std::string>("sendLatency"));
+  port_params.insert("creditLatency", link_params.find<std::string>("creditLatency"));
+  if (link_params.contains("arbitrator")){
+    port_params.insert("arbitrator", link_params.find<std::string>("arbitrator"));
   }
   return port_params;
 }
@@ -263,11 +260,11 @@ Topology::configureIndividualPortParams(
     SST::Params& switch_params) const
 {
   SST::Params link_params =
-      switch_params.get_namespace("link");
+      switch_params.find_prefix_params("link");
   for (int i=0; i < nports; ++i){
     int port = port_start + i;
     std::string port_ns = getPortNamespace(port);
-    SST::Params port_params = switch_params.get_namespace(port_ns);
+    SST::Params port_params = switch_params.find_prefix_params(port_ns);
     link_params.combine_into(port_params);
   }
 }

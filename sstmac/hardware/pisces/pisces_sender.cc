@@ -88,22 +88,22 @@ PiscesSender::PiscesSender(
 void
 PiscesSender::configurePayloadPortLatency(SST::Params& params)
 {
-  if (!params->has_param("sendLatency")){
-    params->add_param_override("sendLatency", params.find<std::string>("latency"));
+  if (!params.contains("sendLatency")){
+    params.insert("sendLatency", params.find<std::string>("latency"));
   }
-  if (!params->has_param("creditLatency")){
-    params->add_param_override("creditLatency", "0ns");
+  if (!params.contains("creditLatency")){
+    params.insert("creditLatency", "0ns");
   }
 }
 
 void
 PiscesSender::configureCreditPortLatency(SST::Params& params)
 {
-  if (!params->has_param("sendLatency")){
-    params->add_param_override("sendLatency", "0ns");
+  if (!params.contains("sendLatency")){
+    params.insert("sendLatency", "0ns");
   }
-  if (!params->has_param("creditLatency")){
-    params->add_param_override("creditLatency", params.find<std::string>("latency"));
+  if (!params.contains("creditLatency")){
+    params.insert("creditLatency", params.find<std::string>("latency"));
   }
 }
 
@@ -193,7 +193,11 @@ PiscesSender::send(
 std::string
 PiscesSender::toString() const
 {
+#if SSTMAC_INTEGRATED_SST_CORE
+  return piscesName();
+#else
   return piscesName() + Topology::global()->label(componentId());
+#endif
 }
 
 }

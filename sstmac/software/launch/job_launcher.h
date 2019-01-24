@@ -165,8 +165,6 @@ class JobLauncher : public Service
 
   void scheduleLaunchRequests();
 
-  uint32_t componentId() const;
-
   virtual ~JobLauncher(){}
 
  protected:

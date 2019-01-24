@@ -159,8 +159,7 @@ class MemberFxnHandler : public EventHandler
 };
 
 template<class Cls, typename Fxn, class ...Args>
-EventHandler*
-newHandler(Cls* cls, Fxn fxn, const Args&... args)
+EventHandler* newHandler(Cls* cls, Fxn fxn, const Args&... args)
 {
   return new MemberFxnHandler<Cls, Fxn, Args...>(
         cls, fxn, args...);

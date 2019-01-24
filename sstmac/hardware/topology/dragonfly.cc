@@ -84,7 +84,7 @@ Dragonfly::Dragonfly(SST::Params& params) :
   vtk_group_radians_ = TWO_PI / g_;
   vtk_switch_radians_ = vtk_group_radians_ / a_ / 1.5;
 
-  if (params->has_param("group_connections")){
+  if (params.contains("group_connections")){
     h_ = params.find<int>("group_connections");
   } else {
     h_ = params.find<int>("h");
@@ -137,7 +137,7 @@ Dragonfly::minimalDistance(SwitchId src, SwitchId dst) const
 void
 Dragonfly::setupPortParams(SST::Params& params, int red, int port_offset, int num_ports) const
 {
-  SST::Params link_params = params.get_namespace("link");
+  SST::Params link_params = params.find_prefix_params("link");
   double bw = link_params.findUnits("bandwidth").toDouble();
   int bufsize = params.findUnits("buffer_size", "0B").getRoundedValue();
 

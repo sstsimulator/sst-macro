@@ -84,10 +84,10 @@ sstmac_uq_sim_nproc(void* queue)
   SST::Params src_app_params = src_params.find_prefix_params("app1");
   SST::Params params;
   src_app_params.combine_into(params);
-  if (src_params->has_param("launch_cmd_app1")){
+  if (src_params.contains("launch_cmd_app1")){
     params["launch_cmd"] = src_params.find<std::string>("launch_cmd_app1");
   } 
-  if (src_params->has_param("launch_app1_size")){
+  if (src_params.contains("launch_app1_size")){
     params["size"] = src_params.find<std::string>("launch_app1_size");
   }
   int nproc, procs_per_node;

@@ -88,8 +88,6 @@ class Library
     return addr_;
   }
 
-  uint32_t componentId() const;
-
   virtual ~Library();
 
  protected:

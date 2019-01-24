@@ -111,7 +111,7 @@ StatCollector::optionalBuild(SST::Params& params,
 
   if (ns.size()){
     if (params->has_namespace(ns)){
-      params = params.get_namespace(ns);
+      params = params.find_prefix_params(ns);
     } else {
       return nullptr;
     }

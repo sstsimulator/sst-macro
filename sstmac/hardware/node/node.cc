@@ -101,8 +101,7 @@ Node::Node(SST::Params& params, uint32_t id)
   my_addr_ = params.find<int>("id");
   next_outgoing_id_.setSrcNode(my_addr_);
 
-  SST::Params nic_params = params.get_namespace("nic");
-  nic_params->add_param_override("id", int(my_addr_));
+  SST::Params nic_params = params.find_prefix_params("nic");
   nic_ = NIC::factory::get_param("name", nic_params, this);
   nic_params->remove_param("id");
 
@@ -194,14 +193,14 @@ Node::connectInput(SST::Params& params,
 Timestamp
 Node::sendLatency(SST::Params& params) const
 {
-  auto nic_params = params.get_namespace("nic");
+  auto nic_params = params.find_prefix_params("nic");
   return nic_->sendLatency(nic_params);
 }
 
 Timestamp
 Node::creditLatency(SST::Params& params) const
 {
-  auto nic_params = params.get_namespace("nic");
+  auto nic_params = params.find_prefix_params("nic");
   return nic_->creditLatency(nic_params);
 }
 

@@ -66,7 +66,7 @@ namespace hw {
 SculpinNIC::SculpinNIC(SST::Params& params, Node* parent) :
   NIC(params, parent)
 {
-  SST::Params inj_params = params.get_namespace("injection");
+  SST::Params inj_params = params.find_prefix_params("injection");
 
   packet_size_ = inj_params.findUnits("mtu").getRoundedValue();
   inj_byte_delay_ = Timestamp(inj_params.findUnits("bandwidth").inverse().toDouble());
@@ -79,13 +79,13 @@ SculpinNIC::SculpinNIC(SST::Params& params, Node* parent) :
 Timestamp
 SculpinNIC::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("injection")->get_time_param("sendLatency"));
+  return Timestamp(params.find_prefix_params("injection")->get_time_param("sendLatency"));
 }
 
 Timestamp
 SculpinNIC::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("injection")->get_time_param("sendLatency"));
+  return Timestamp(params.find_prefix_params("injection")->get_time_param("sendLatency"));
 }
 
 void

@@ -132,7 +132,7 @@ py_extract_params(PyObject* dict, SST::Params& params)
     } else {
       PyObject* val_str_obj = PyObject_Str(val);
       const char* val_c_str = PyString_AsString(val_str_obj);
-      params->add_param_override(key_c_str, val_c_str);
+      params.insert(key_c_str, val_c_str);
       Py_DECREF(val_str_obj);
     }
     Py_DECREF(key_str_obj);

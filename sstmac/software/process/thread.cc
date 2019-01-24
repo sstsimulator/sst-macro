@@ -94,12 +94,6 @@ Thread::initThread(const SST::Params& params,
                           des_thread);
 }
 
-uint32_t
-Thread::componentId() const
-{
-  return os_->componentId();
-}
-
 Thread*
 Thread::current()
 {

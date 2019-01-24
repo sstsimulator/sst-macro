@@ -635,8 +635,8 @@ void sprockit_finalize_heap(SprockitHeap* heap)
 
 void sprockit_init_cxx_heap(SST::Params& params)
 {
-  bool has_heap_size = params->has_param("sprockit_cxx_heap_size_mb");
-  bool has_page_size = params->has_param("sprockit_cxx_page_size_mb");
+  bool has_heap_size = params.contains("sprockit_cxx_heap_size_mb");
+  bool has_page_size = params.contains("sprockit_cxx_page_size_mb");
   if (has_heap_size && !has_page_size) {
     cerrn <<
               "Sprockit has heap size parameter, but not page size parameter.  Both must be given to use custom allocated."

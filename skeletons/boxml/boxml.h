@@ -223,7 +223,7 @@ namespace lblxml {
     sstmac::StatLocalDouble* idle_time_;
     sstmac::StatLocalDouble* barrier_time_;
     sstmac::StatLocalDouble* compute_time_;
-    sprockit::sim_parameters::ptr params_;
+    SST::Params params_;
     std::set<int> task_processed_;
 
     void init();

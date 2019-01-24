@@ -409,7 +409,7 @@ tryMain(SST::Params& params,
   //do some cleanup and processing of params
   sstmac::remapParams(params);
 
-  if (params->has_param("external_libs")){
+  if (params.contains("external_libs")){
     std::string pathStr = loadExternPathStr();
     std::vector<std::string> libraries;
     params.find_array("external_libs", libraries);

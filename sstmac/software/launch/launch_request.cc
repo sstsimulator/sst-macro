@@ -78,15 +78,15 @@ SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
   indexed_(false),
   num_finished_(0)
 {
-  if (params->has_param("core_affinities")) {
+  if (params.contains("core_affinities")) {
     params.find_array("core_affinities", core_affinities_);
   }
 
   time_ = GlobalTimestamp(params.findUnits("start", "0s").toDouble());
 
-  if (params->has_param("launch_cmd")){
+  if (params.contains("launch_cmd")){
     parseLaunchCmd(params);
-  } else if (params->has_param("dumpi_metaname")){
+  } else if (params.contains("dumpi_metaname")){
     std::string metafile = params.find<std::string>("dumpi_metaname");
     sw::DumpiMeta dm(metafile);
     nproc_ = dm.numProcs();
@@ -190,7 +190,7 @@ SoftwareLaunchRequest::parseLaunchCmd(
   int& procs_per_node,
   std::vector<int>& affinities)
 {
-  if (params->has_param("launch_cmd")) {
+  if (params.contains("launch_cmd")) {
     /** Check for an aprun launch */
     std::string launch_cmd = params.find<std::string>("launch_cmd");
     size_t pos = launch_cmd.find_first_of(' ');

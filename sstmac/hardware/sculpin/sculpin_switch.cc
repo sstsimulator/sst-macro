@@ -92,7 +92,7 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
   NetworkSwitch(params, id)
 {
   SST::Params rtr_params = params.find_prefix_params("router");
-  rtr_params->add_param_override_recursive("id", int(my_addr_));
+  rtr_params.insert("id", std::to_string(my_addr_));
   router_ = Router::factory::get_param("name", rtr_params, top_, this);
 
   congestion_ = params.find<bool>("congestion", true);
@@ -154,7 +154,7 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
 
   initLinks(params);
 
-  if (params->has_param("filter_stat_source")){
+  if (params.contains("filter_stat_source")){
     std::vector<int> filter;
     params.find_array("filter_stat_source", filter);
     for (int src : filter){
@@ -162,13 +162,13 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
     }
   }
 
-  if (params->has_param("filter_stat_destination")){
+  if (params.contains("filter_stat_destination")){
     std::vector<int> filter;
     params.find_array("filter_stat_destination", filter);
     for (int dst : filter) dst_stat_filter_.insert(dst);
   }
 
-  if (params->has_param("highlight_stat_source")){
+  if (params.contains("highlight_stat_source")){
     std::vector<int> filter;
     params.find_array("highlight_stat_source", filter);
     for (int src : filter) src_stat_highlight_.insert(src);

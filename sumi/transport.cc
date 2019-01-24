@@ -241,7 +241,6 @@ Transport::Transport(SST::Params& params,
 
   rank_mapper_ = sstmac::sw::TaskMapping::globalMapping(sid.app_);
   nproc_ = rank_mapper_->nproc();
-  componentId_ = os_->componentId();
 
   server->registerProc(rank_, this);
 
@@ -390,13 +389,10 @@ Transport::send(Message* m)
           "Rank %d SUMI sending self message", rank_);
         if (m->needsRecvAck()){
           completion_queues_[m->recvCQ()](m);
-          //os_->sendExecutionEventNow(sstmac::newCallback(os_->componentId(), this, &transport::incoming_message, m));
         }
         if (m->needsSendAck()){
           auto* ack = m->cloneInjectionAck();
           completion_queues_[m->sendCQ()](static_cast<Message*>(ack));
-          //os_->sendExecutionEventNow(
-          //  sstmac::newCallback(os_->componentId(), this, &transport::incoming_message, static_cast<message*>(ack)));
         }
       } else {
         if (post_header_delay_.ticks()) {

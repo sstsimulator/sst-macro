@@ -64,7 +64,7 @@ CartesianTopology::CartesianTopology(SST::Params& params) :
     spkt_throw_printf(sprockit::value_error, "empty topology vector for cartesian topology");
   }
 
-  if (params->has_param("redundant")) {
+  if (params.contains("redundant")) {
     params.find_array("redundant", red_);
     if (red_.size() != dimensions_.size()) {
       spkt_throw_printf(sprockit::input_error,
@@ -85,7 +85,7 @@ CartesianTopology::CartesianTopology(SST::Params& params) :
 void
 CartesianTopology::initHostnameMap(SST::Params& params)
 {
-  if (params->has_param("hostname_map")){
+  if (params.contains("hostname_map")){
     readCoordFile(params.find<std::string>("hostname_map"));
   } else {
     Topology::initHostnameMap(params);

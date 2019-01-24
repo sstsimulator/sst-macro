@@ -62,7 +62,7 @@ namespace sw {
 NodeIdAllocation::NodeIdAllocation(SST::Params& params) :
   NodeAllocator(params)
 {
-  if (params->has_param("node_id_file")){
+  if (params.contains("node_id_file")){
     coord_file_ = params.find<std::string>("node_id_file");
   } else {
     coord_file_ = params.find<std::string>("node_id_allocation_file");

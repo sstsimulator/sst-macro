@@ -241,8 +241,6 @@ class Thread
 
   void popBacktrace();
 
-  uint32_t componentId() const;
-
   void collectBacktrace(int nfxn);
 
   void initThread(const SST::Params& params, int phyiscal_thread_id,

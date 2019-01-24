@@ -236,7 +236,7 @@ Cascade::minimalDistance(SwitchId src, SwitchId dst) const
 void
 Cascade::setupPortParams(SST::Params& params, int dim, int dimsize) const
 {
-  SST::Params link_params = params.get_namespace("link");
+  SST::Params link_params = params.find_prefix_params("link");
   double bw = link_params.findUnits("bandwidth").toDouble();
   int bufsize = params.findUnits("buffer_size", "0B").getRoundedValue();
 

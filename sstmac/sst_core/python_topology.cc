@@ -226,7 +226,7 @@ sys_get_switch_params(SystemPy_t* self, PyObject* idx)
 {
   int swIdx = PyInt_AsLong(idx);
   sprockit::sim_parameters* switch_params
-      = self->params.get_namespace("switch");
+      = self->params.find_prefix_params("switch");
   if (!self->macro_topology->uniformSwitches()){
     self->macro_topology->configureNonuniformSwitchParams(swIdx, switch_params);
   }
@@ -275,7 +275,7 @@ sys_get_ejection_connections(SystemPy_t* self, PyObject* swIdx)
 
 static bool is_logp(SystemPy_t* self)
 {
-  sprockit::sim_parameters* switch_params = self->params.get_namespace("switch");
+  sprockit::sim_parameters* switch_params = self->params.find_prefix_params("switch");
   return switch_params->get_lowercase_param("name") == "logp";
 }
 
@@ -309,7 +309,7 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
 
   self->macro_topology = sstmac::hw::Topology::staticTopology(self->params);
 
-  sprockit::sim_parameters* switch_params = self->params.get_namespace("switch");
+  sprockit::sim_parameters* switch_params = self->params.find_prefix_params("switch");
   if (is_logp(self)){
     //I guess we don't do anything?
   } else {

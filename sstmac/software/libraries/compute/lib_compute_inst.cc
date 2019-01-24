@@ -121,7 +121,7 @@ LibComputeInst::computeLoop(uint64_t num_loops,
 void
 LibComputeInst::init(SST::Params& params)
 {
-  if (params->has_param("lib_compute_unroll_loops")){
+  if (params.contains("lib_compute_unroll_loops")){
     double loop_unroll = params->deprecated_double_param("lib_compute_unroll_loops");
     loop_overhead_ = 1.0 / loop_unroll;
   } else {

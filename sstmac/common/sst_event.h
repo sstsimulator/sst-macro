@@ -58,7 +58,7 @@ namespace sstmac {
 
 
 #if SSTMAC_INTEGRATED_SST_CORE
-using event = SST::Event;
+using Event = SST::Event;
 #else
 class Event : public serializable
 {
@@ -75,19 +75,14 @@ class ExecutionEvent : public Event
 
 #if SSTMAC_INTEGRATED_SST_CORE
   virtual void execute() override = 0;
-
-  ExecutionEvent(uint32_t dst, uint32_t src)
-  {
-    //simply ignore parameters - not needed
-  }
 #else
+  virtual void execute() = 0;
+#endif
   ExecutionEvent() :
     linkId_(-1),
     seqnum_(-1)
   {
   }
-
-  virtual void execute() = 0;
 
   GlobalTimestamp time() const {
     return time_;
@@ -118,7 +113,6 @@ class ExecutionEvent : public Event
   uint32_t linkId_;
   /** A unique sequence number from the source */
   uint32_t seqnum_;
-#endif
 
 };
 

@@ -379,7 +379,7 @@ StatVTK::StatVTK(SST::Params& params) :
 
   flicker_ = params.find<bool>("flicker", true);
 
-  if (params->has_param("filter")){
+  if (params.contains("filter")){
     std::vector<int> filters;
     params.find_array("filter", filters);
     for (int i=0; i < filters.size(); i += 2){
@@ -389,7 +389,7 @@ StatVTK::StatVTK(SST::Params& params) :
     }
   }
 
-  if (params->has_param("highlight")){
+  if (params.contains("highlight")){
     std::vector<int> fills;
     params.find_array("highlight", fills);
     for (int f : fills) display_cfg_.special_fills.insert(f);

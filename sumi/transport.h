@@ -334,8 +334,6 @@ class Transport : public sstmac::sw::API {
 
   std::vector<std::function<void(Message*)>> completion_queues_;
 
-  uint32_t componentId_;
-
   sstmac::Timestamp post_rdma_delay_;
 
   sstmac::Timestamp post_header_delay_;

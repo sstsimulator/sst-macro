@@ -111,8 +111,7 @@ JobLauncher::scheduleLaunchRequests()
 {
   for (AppLaunchRequest* req : initial_requests_){
     os_->incrementAppRefcount();
-    auto ev = newCallback(os_->componentId(), this,
-                           &JobLauncher::incomingLaunchRequest, req);
+    auto ev = newCallback(this, &JobLauncher::incomingLaunchRequest, req);
     os_->sendExecutionEvent(req->time(), ev);
   }
 }
@@ -127,7 +126,7 @@ JobLauncher::addLaunchRequests(SST::Params& params)
   while (keep_going || aid < 10){
     std::string name = sprockit::printf("app%d",aid);
     if (params->has_namespace(name)){
-      SST::Params app_params = params.get_namespace(name);
+      SST::Params app_params = params.find_prefix_params(name);
       all_app_params.combine_into(app_params);
       AppLaunchRequest* mgr = new AppLaunchRequest(app_params, AppId(aid), name);
       initial_requests_.push_back(mgr);
@@ -156,11 +155,11 @@ JobLauncher::addLaunchRequests(SST::Params& params)
     params.find_array("services", services_to_launch);
   }
   for (std::string& str : services_to_launch){
-    SST::Params srv_params = params.get_namespace(str);
+    SST::Params srv_params = params.find_prefix_params(str);
     //setup the name for app factory
-    srv_params->add_param_override("name", "distributed_service");
+    srv_params.insert("name", "distributed_service");
     //setup the name for distributed service
-    srv_params->add_param_override("libname", str);
+    srv_params.insert("libname", str);
     AppLaunchRequest* mgr = new AppLaunchRequest(srv_params, AppId(aid), str);
     node_debug("adding distributed service %s", str.c_str());
     initial_requests_.push_back(mgr);
@@ -169,12 +168,6 @@ JobLauncher::addLaunchRequests(SST::Params& params)
 
   //just in case any memoizations were loaded
   os_->rebuildMemoizations();
-}
-
-uint32_t
-JobLauncher::componentId() const
-{
-  return os_->componentId();
 }
 
 void

@@ -110,7 +110,7 @@ static char* get_data_segment(SST::Params& params,
                               const char* param_name, GlobalVariableContext& ctx)
 {
   int allocSize = ctx.allocSize();
-  if (params->has_param(param_name)){
+  if (params.contains(param_name)){
     allocSize = params.find<int>(param_name);
     if (ctx.allocSize() != allocSize){
       ctx.setAllocSize(allocSize);
@@ -131,7 +131,7 @@ static thread_lock dlopen_lock;
 void
 App::dlopenCheck(int aid, SST::Params& params)
 {
-  if (params->has_param("exe")){
+  if (params.contains("exe")){
     dlopen_lock.lock();
     std::string libname = params.find<std::string>("exe");
     dlopen_entry& entry = dlopens_[aid];
@@ -142,13 +142,13 @@ App::dlopenCheck(int aid, SST::Params& params)
     void* name = dlsym(entry.handle, "exe_main_name");
     if (name){
       const char* str_name = (const char*) name;
-      if (params->has_param("name")){
+      if (params.contains("name")){
         if (params.find<std::string>("name") != std::string(str_name)){
           spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
                             "%s != %s", aid, str_name, params.find<std::string>("name").c_str());
         }
       } else {
-        params->add_param("name", str_name);
+        params.insert("name", str_name);
       }
     }
     ++entry.refcount;

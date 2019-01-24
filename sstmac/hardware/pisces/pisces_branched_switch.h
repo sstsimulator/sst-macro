@@ -96,13 +96,9 @@ class PiscesBranchedSwitch :
 
   PiscesCrossbar* xbar_;
 
-  struct input_port {
+  struct InputPort {
     PiscesBranchedSwitch* parent;
     PiscesMuxer* mux;
-
-    int componentId() const {
-      return parent->addr();
-    }
 
     void handle(Event* ev);
 
@@ -111,7 +107,7 @@ class PiscesBranchedSwitch :
     }
   };
 
-  std::vector<input_port> input_muxers_;
+  std::vector<InputPort> input_muxers_;
   std::vector<PiscesDemuxer*> output_demuxers_;
 
  private:

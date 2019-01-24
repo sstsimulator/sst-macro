@@ -202,15 +202,15 @@ main(int argc, char** argv)
 
   double offered_load_bw = 0;
 
-  if (params->has_param("pisces_injection_bandwidth")) {
+  if (params.contains("pisces_injection_bandwidth")) {
     offered_load_bw = params.findUnits("pisces_injection_bandwidth").toDouble();
-  } else if (params->has_param("cycle_accurate_switch_bandwidth_n2r")) {
+  } else if (params.contains("cycle_accurate_switch_bandwidth_n2r")) {
     offered_load_bw = params.findUnits("cycle_accurate_switch_bandwidth_n2r").toDouble();
-  } else if (params->has_param("network_injector_capacity_bw")) {
+  } else if (params.contains("network_injector_capacity_bw")) {
     offered_load_bw = params.findUnits("network_injector_capacity_bw").toDouble();
-  } else if (params->has_param("packet_switch_bandwidth_n2r")) {
+  } else if (params.contains("packet_switch_bandwidth_n2r")) {
     offered_load_bw = params.findUnits("packet_switch_bandwidth_n2r").toDouble();
-  } else if (params->has_param("network_train_injection_bw")) {
+  } else if (params.contains("network_train_injection_bw")) {
     offered_load_bw = params.findUnits("network_train_injection_bw").toDouble();
   } else {
     spkt_throw_printf(sprockit::input_error,

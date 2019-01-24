@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 
-#if ACTUAL_INTEGRATED_CORE //SSTMAC_INTEGRATED_SST_CORE
+#if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/serialization/serializer_fwd.h>
 #include <sst/core/serialization/serializable.h>
 #include <sst/core/serialization/serialize_serializable.h>
@@ -58,6 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #define FRIEND_SERIALIZATION   template <class T, class Enable> friend class sstmac::serialize
 
+/**
 namespace sstmac {
 using SST::Core::Serialization::serializable;
 using SST::Core::Serialization::serializable_type;
@@ -66,6 +67,7 @@ using SST::Core::Serialization::serializer;
 using SST::Core::Serialization::array;
 using SST::Core::Serialization::raw_ptr;
 }
+*/
 
 #define SER_NAMESPACE_OPEN \
    namespace SST { namespace Core { namespace Serialization {
@@ -96,7 +98,6 @@ using serializer = sprockit::serializer;
 #define START_SERIALIZATION_NAMESPACE namespace sprockit {
 #define END_SERIALIZATION_NAMESPACE }
 #define FRIEND_SERIALIZATION   template <class T> friend class sprockit::serialize
-
 #endif
 
 namespace sstmac {
@@ -107,5 +108,6 @@ using serializable = SST::Core::Serialization::serializable;
 using SST::Core::Serialization::array;
 using SST::Core::Serialization::raw_ptr;
 }
+
 
 #endif

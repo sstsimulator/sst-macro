@@ -105,11 +105,11 @@ PiscesTiledSwitch::initComponents(SST::Params& params)
   if (!xbar_tiles_.empty())
     return;
 
-  SST::Params demuxer_params = params.get_namespace("input");
+  SST::Params demuxer_params = params.find_prefix_params("input");
 
-  SST::Params xbar_params = params.get_namespace("xbar");
+  SST::Params xbar_params = params.find_prefix_params("xbar");
 
-  SST::Params muxer_params = params.get_namespace("link");
+  SST::Params muxer_params = params.find_prefix_params("link");
 
   int ntiles = nrows_ * ncols_;
   dst_inports_.resize(ntiles);
@@ -188,7 +188,6 @@ PiscesTiledSwitch::connectOutput(
   int dst_inport,
   EventLink* link)
 {
-  params->add_param_override("num_vc", router_->numVC());
   PiscesSender* muxer = col_output_muxers_[src_outport];
   muxer->setOutput(params, 0, dst_inport, link);
   dst_inports_[src_outport] = dst_inport;
@@ -209,13 +208,13 @@ PiscesTiledSwitch::connectInput(
 Timestamp
 PiscesTiledSwitch::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("link")->get_time_param("sendLatency"));
+  return Timestamp(params.find_prefix_params("link")->get_time_param("sendLatency"));
 }
 
 Timestamp
 PiscesTiledSwitch::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("input")->get_time_param("creditLatency"));
+  return Timestamp(params.find_prefix_params("input")->get_time_param("creditLatency"));
 }
 
 int

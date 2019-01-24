@@ -52,7 +52,7 @@ namespace SST {
 class Event;
 }
 namespace sstmac {
-typedef SST::Event event;
+using Event=SST::Event;
 }
 #else
 namespace sstmac {

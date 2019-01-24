@@ -85,15 +85,15 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(SST::Params& params, uint32_t id) :
                                              buf_params, this);
 
   SST::Params rtr_params = params.find_prefix_params("router");
-  rtr_params->add_param_override_recursive("id", int(my_addr_));
+  rtr_params.insert("id", std::to_string(my_addr_));
   router_ = Router::factory::get_param("name", rtr_params, top_, this);
 
   SST::Params ej_params = params.find_prefix_params("ejection");
   std::vector<Topology::injection_port> conns;
   top_->endpointsConnectedToEjectionSwitch(my_addr_, conns);
-  if (!ej_params->has_param("credits")){
+  if (!ej_params.contains("credits")){
     //never be limited by credits
-    ej_params->add_param_override("credits", "1GB");
+    ej_params.insert("credits", "1GB");
   }
 
   PiscesSender::configurePayloadPortLatency(ej_params);
@@ -117,8 +117,7 @@ PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
 : PiscesAbstractSwitch(params, id),
   xbar_(nullptr)
 {
-  SST::Params xbar_params = params.get_namespace("xbar");
-  xbar_params->add_param_override("num_vc", router_->numVC());
+  SST::Params xbar_params = params.find_prefix_params("xbar");
   xbar_ = new PiscesCrossbar(xbar_params, this,
                               top_->maxNumPorts(), top_->maxNumPorts(),
                               router_->numVC(), true/*yes, update vc*/);
@@ -126,7 +125,7 @@ PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
   out_buffers_.resize(top_->maxNumPorts());
   inports_.resize(top_->maxNumPorts());
   for (int i=0; i < inports_.size(); ++i){
-    input_port& inp = inports_[i];
+    InputPort& inp = inports_[i];
     inp.port = i;
     inp.parent = this;
   }
@@ -167,7 +166,7 @@ PiscesSwitch::connectOutput(
 }
 
 void
-PiscesSwitch::input_port::handle(Event *ev)
+PiscesSwitch::InputPort::handle(Event *ev)
 {
   PiscesPacket* payload = static_cast<PiscesPacket*>(ev);
   parent->router()->route(payload);
@@ -196,7 +195,7 @@ PiscesSwitch::sendLatency(SST::Params& params) const
 Timestamp
 PiscesSwitch::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("xbar")->get_time_param("creditLatency"));
+  return Timestamp(params.find_prefix_params("xbar")->get_time_param("creditLatency"));
 }
 
 int
@@ -244,8 +243,8 @@ PiscesSwitch::creditHandler(int port)
 LinkHandler*
 PiscesSwitch::payloadHandler(int port)
 {
-  input_port* inp = &inports_[port];
-  return newLinkHandler(inp, &input_port::handle);
+  InputPort* inp = &inports_[port];
+  return newLinkHandler(inp, &InputPort::handle);
 }
 
 }

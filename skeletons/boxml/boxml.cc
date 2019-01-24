@@ -166,7 +166,7 @@ namespace lblxml {
     build_graph_only_ =
         params_.find<bool>("boxml_build_graph_only",false);
 
-    if (params_->has_param("boxml_synchronization")) {
+    if (params_.contains("boxml_synchronization")) {
       string mode =
           params_.find<std::string>("boxml_synchronization");
       if (mode == "fully_synchronous")
@@ -191,7 +191,7 @@ namespace lblxml {
 #endif
 
     if (!checked_bin_){
-      if (params_->has_param("boxml_binary_file")){
+      if (params_.contains("boxml_binary_file")){
         std::string bin_file = params_.find<std::string>("boxml_binary_file");
         ifstream test(bin_file.c_str());
         if (test.good()){

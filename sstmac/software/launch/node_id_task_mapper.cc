@@ -68,7 +68,7 @@ namespace sw {
 NodeIdTaskMapper::NodeIdTaskMapper(SST::Params& params) :
   TaskMapper(params)
 {
-  if (params->has_param("node_id_file")){
+  if (params.contains("node_id_file")){
     listfile_ = params.find<std::string>("node_id_file" );
   } else {
     listfile_ = params.find<std::string>("node_id_indexing_file");

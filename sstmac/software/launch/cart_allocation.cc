@@ -68,7 +68,7 @@ namespace sw {
 CartAllocation::CartAllocation(SST::Params& params) :
   NodeAllocator(params)
 {
-  if (params->has_param("cart_sizes")){
+  if (params.contains("cart_sizes")){
     params.find_array("cart_sizes", sizes_);
     auto_allocate_ = false;
   } else {
@@ -76,7 +76,7 @@ CartAllocation::CartAllocation(SST::Params& params) :
     auto_allocate_ = true;
   }
 
-  if (params->has_param("cart_offsets")){
+  if (params.contains("cart_offsets")){
     params.find_array("cart_offsets", offsets_);
     if (sizes_.size() != offsets_.size()) {
       spkt_throw_printf(sprockit::value_error,

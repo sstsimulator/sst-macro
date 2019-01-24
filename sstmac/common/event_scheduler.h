@@ -145,16 +145,18 @@ class EventScheduler : public sprockit::printable
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  void sendDelayedExecutionEvent(timestamp delay, ExecutionEvent* ev){
-    self_link_->send(delay, time_converter_, ev);
+  SST::SimTime_t getCurrentSimTime(SST::TimeConverter* tc) const;
+
+  void sendDelayedExecutionEvent(Timestamp delay, ExecutionEvent* ev){
+    self_link_->send(SST::SimTime_t(delay), time_converter_, ev);
   }
 
   void sendExecutionEventNow(ExecutionEvent* ev){
     self_link_->send(ev);
   }
 
-  void sendExecutionEvent(timestamp arrival, ExecutionEvent* ev){
-    SST::SimTime delay = getCurrentSimTime(time_converter_) - arrival.ticks();
+  void sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent* ev){
+    SST::SimTime_t delay = getCurrentSimTime(time_converter_) - arrival.time.ticks();
     self_link_->send(delay, time_converter_, ev);
   }
 #else
@@ -167,11 +169,11 @@ class EventScheduler : public sprockit::printable
   }
 
   void sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent* ev);
-#endif
 
   uint32_t componentId() const {
     return id_;
   }
+#endif
 
  public:
   std::string toString() const {
@@ -189,7 +191,7 @@ class EventScheduler : public sprockit::printable
   GlobalTimestamp now() const {
 #if SSTMAC_INTEGRATED_SST_CORE
     SST::SimTime_t nowTicks = getCurrentSimTime(time_converter_);
-    return timestamp(nowTicks, timestamp::exact);
+    return GlobalTimestamp(uint64_t(0), uint64_t(nowTicks));
 #else
     return *now_;
 #endif
@@ -216,30 +218,32 @@ class EventScheduler : public sprockit::printable
   //friend int ::sstmac::run_standalone(int, char**);
 
   template <class Base = void>
-  EventScheduler(uint32_t id, Base* base = nullptr) :
-    id_(id), seqnum_(0), mgr_(nullptr),
-    selfLinkId_(EventLink::allocateLinkId())
+  EventScheduler(uint32_t id, Base* base = nullptr)
+#if !SSTMAC_INTEGRATED_SST_CORE
+    : seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateLinkId()), id_(id)
+#endif
   {
 #if SSTMAC_INTEGRATED_SST_CORE
     if (!time_converter_){
-      time_converter_ = base->getTimeConverter(timestamp::tick_interval_string());
+      time_converter_ = base->getTimeConverter(Timestamp::tickIntervalString());
     }
     self_link_ = base->configureSelfLink("self", time_converter_,
-      newLinkHandler(this, &EventScheduler::handleExecutionEvent));
+          new SST::Event::Handler<EventScheduler>(this, &EventScheduler::handleExecutionEvent));
 #endif
   }
 
  private:
-  uint32_t id_;
 #if SSTMAC_INTEGRATED_SST_CORE
   SST::Link* self_link_;
   static SST::TimeConverter* time_converter_;
 #else
+  uint32_t id_;
   EventManager* mgr_;
   uint32_t seqnum_;
   uint32_t selfLinkId_;
   int thread_id_;
   int nthread_;
+
   const GlobalTimestamp* now_;
 
  protected:
@@ -266,7 +270,12 @@ class Component :
 
  protected:
   Component(SST::Params& params, uint32_t cid) :
+#if SSTMAC_INTEGRATED_SST_CORE
+   SSTIntegratedComponent(params, cid),
+   EventScheduler(cid, this)
+#else
    EventScheduler(cid)
+#endif
   {
   }
 
@@ -296,8 +305,10 @@ class SubComponent :
   SubComponent(SST::Component* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
     SST::SubComponent(parent),
-#endif
+    EventScheduler(0, this)
+#else
     EventScheduler(parent->componentId())
+#endif
   {
   }
 

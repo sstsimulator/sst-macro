@@ -51,6 +51,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/serializable.h>
 #include <sprockit/errors.h>
 
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/sst_types.h>
+#endif
+
 namespace sstmac {
 
 /**
@@ -119,7 +123,7 @@ class Timestamp
   }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  operator SST::SimTime_t() const {
+  explicit operator SST::SimTime_t() const {
     return ticks_;
   }
 #endif

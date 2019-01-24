@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 
-static inline SST::Params get_local_params() {
+static inline SST::Params& get_local_params() {
   return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }
 
@@ -83,7 +83,7 @@ sstmac_get_long_param(const char* str)
 extern "C" long
 sstmac_get_optional_long_param(char* str, long val)
 {
-  return get_local_params()->get_optional_long_param(str, val);
+  return get_local_params().find<long>(str, val);
 }
 
 extern "C" double
@@ -113,5 +113,5 @@ sstmac_get_optional_param(const char* str, const char* val)
 extern "C" double
 sstmac_get_time_param(const char *str)
 {
-  return get_local_params()->get_time_param(str);
+  return get_local_params().findUnits(str).toDouble();
 }

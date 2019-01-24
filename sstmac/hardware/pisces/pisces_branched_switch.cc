@@ -80,13 +80,13 @@ PiscesBranchedSwitch::PiscesBranchedSwitch(SST::Params& params, uint32_t id)
 Timestamp
 PiscesBranchedSwitch::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("output")->get_time_param("sendLatency"));
+  return Timestamp(params.find_prefix_params("output")->get_time_param("sendLatency"));
 }
 
 Timestamp
 PiscesBranchedSwitch::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.get_namespace("input")->get_time_param("creditLatency"));
+  return Timestamp(params.find_prefix_params("input")->get_time_param("creditLatency"));
 }
 
 PiscesBranchedSwitch::~PiscesBranchedSwitch()
@@ -106,11 +106,11 @@ PiscesBranchedSwitch::initComponents(SST::Params& params)
   if (!input_muxers_.empty())
     return;
 
-  SST::Params input_params = params.get_namespace("input");
+  SST::Params input_params = params.find_prefix_params("input");
 
-  SST::Params xbar_params = params.get_namespace("xbar");
+  SST::Params xbar_params = params.find_prefix_params("xbar");
 
-  SST::Params output_params = params.get_namespace("output");
+  SST::Params output_params = params.find_prefix_params("output");
 
 
   // construct the elements
@@ -121,7 +121,7 @@ PiscesBranchedSwitch::initComponents(SST::Params& params)
   for (int i=0; i < n_local_xbars_; ++i) {
     PiscesMuxer* mux = new PiscesMuxer(input_params, this, n_local_ports_, router_->numVC(),
                                          false/*no vc update here*/);
-    input_port& input = input_muxers_[i];
+    InputPort& input = input_muxers_[i];
     input.mux = mux;
     input.parent = this;
 
@@ -156,7 +156,6 @@ PiscesBranchedSwitch::connectOutput(
   int dst_inport,
   EventLink* link)
 {
-  params->add_param_override("num_vc", router_->numVC());
   PiscesDemuxer* demux = output_demuxers_[src_outport/n_local_ports_];
   demux->setOutput(params, src_outport % n_local_ports_, dst_inport, link);
 }
@@ -193,7 +192,7 @@ PiscesBranchedSwitch::creditHandler(int port)
 }
 
 void
-PiscesBranchedSwitch::input_port::handle(Event *ev)
+PiscesBranchedSwitch::InputPort::handle(Event *ev)
 {
   PiscesPacket* pkt = static_cast<PiscesPacket*>(ev);
   debug_printf(sprockit::dbg::pisces,
@@ -218,8 +217,8 @@ PiscesBranchedSwitch::input_port::handle(Event *ev)
 LinkHandler*
 PiscesBranchedSwitch::payloadHandler(int port)
 {
-  input_port* mux = const_cast<input_port*>(&input_muxers_[port]);
-  return newLinkHandler(mux, &input_port::handle);
+  InputPort* mux = const_cast<InputPort*>(&input_muxers_[port]);
+  return newLinkHandler(mux, &InputPort::handle);
 }
 
 }

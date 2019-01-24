@@ -195,18 +195,18 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
 
   SST::Params link_params = switch_params.get_namespace("link");
   Timestamp hop_latency;
-  if (link_params->has_param("sendLatency")){
-    hop_latency = Timestamp(link_params->get_time_param("sendLatency"));
+  if (link_params.contains("sendLatency")){
+    hop_latency = Timestamp(link_params.findUnits("sendLatency").toDouble());
   } else {
-    hop_latency = Timestamp(link_params->get_time_param("latency"));
+    hop_latency = Timestamp(link_params.findUnits("latency").toDouble());
   }
-  Timestamp injection_latency = Timestamp(inj_params->get_time_param("latency"));
+  Timestamp injection_latency = Timestamp(inj_params.findUnits("latency").toDouble());
 
   Timestamp ejection_latency = injection_latency;
-  if (ej_params->has_param("latency")){
-    ejection_latency = Timestamp(ej_params->get_time_param("latency"));
-  } else if (ej_params->has_param("sendLatency")){
-    ejection_latency = Timestamp(ej_params->get_time_param("sendLatency"));
+  if (ej_params.contains("latency")){
+    ejection_latency = Timestamp(ej_params.findUnits("latency").toDouble());
+  } else if (ej_params.contains("sendLatency")){
+    ejection_latency = Timestamp(ej_params.findUnits("sendLatency").toDouble());
   }
 
   lookahead_ = std::min(injection_latency, hop_latency);

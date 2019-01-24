@@ -88,22 +88,16 @@ ExecutionEvent* newCallback(Cls* cls, Fxn fxn, const Args&... args)
   return new MemberFxnCallback<Cls, Fxn, Args...>(cls, fxn, args...);
 }
 
-template<class Cls, typename Fxn, class ...Args>
-ExecutionEvent* newCallback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
-{
-  return new MemberFxnCallback<Cls, Fxn, Args...>(cls, fxn, args...);
-}
-
 /**
  * This bypasses any custom operators
  */
 template<class Cls, typename Fxn, class ...Args>
-ExecutionEvent* placementNewCallback(uint32_t comp_id, Cls* cls, Fxn fxn, const Args&... args)
+ExecutionEvent* placementNewCallback(Cls* cls, Fxn fxn, const Args&... args)
 {
   size_t sz = sizeof(MemberFxnCallback<Cls, Fxn, Args...>);
   char* space = new char[sz];
   return new (space) MemberFxnCallback<Cls, Fxn, Args...>(
-        comp_id, cls, fxn, args...);
+        cls, fxn, args...);
 }
 
 } // end of namespace sstmac

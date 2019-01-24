@@ -57,10 +57,10 @@ using namespace SST::Partition;
 
 namespace sstmac {
 
-class dummy_runtime : public ParallelRuntime
+class DummyRuntine : public ParallelRuntime
 {
  public:
-  dummy_runtime(SST::Params& params,
+  DummyRuntine(SST::Params& params,
                    int me, int nproc, int nthread) :
     ParallelRuntime(params, me, nproc)
   {
@@ -130,31 +130,38 @@ class SSTMacroPartition : public SSTPartitioner
 void
 SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
 {
+  //TODO
+#if 0
   SST::ConfigComponentMap_t& compMap = graph->getComponentMap();
   if (compMap.size() == 0)
     return;
   sprockit::sim_parameters part_params;
-  sprockit::sim_parameters* top_subparams = part_params.get_optional_namespace("topology");
+  SST::Params top_subparams = part_params.find_prefix_params("topology");
   //I need to figure out the topology
   ConfigComponent& front = *compMap.begin();
 
+
+  SST::Params top_params = front.params.find_prefix_params("interconnect").find_prefix_params("topology");
+
+
   SST::Params& params = make_spkt_params_from_sst_params(front.params);
   if (params->has_namespace("interconnect")){
-    params.get_namespace("interconnect")
+
+    params.find_prefix_params("interconnect")
         .find_prefix_params("topology").combine_into(top_subparams);
   } else {
-    params.get_namespace("topology").combine_into(top_subparams);
+    params.find_prefix_params("topology").combine_into(top_subparams);
   }
 
   //if we have no switches, logp network only
   bool is_logp = front.name.substr(0,4) == "Node";
 
   delete params;
-  part_params.add_param_override("name", "block");
+  part_params.insert("name", "block");
   int nthread = world_size.thread;
   int nproc = world_size.rank;
-  dummy_runtime rt(&part_params, me.rank, nproc, nthread);
-  BlockPartition part(&part_params, &rt);
+  DummyRuntine rt(part_params, me.rank, nproc, nthread);
+  BlockPartition part(part_params, &rt);
   part.finalizeInit(nullptr);
   hw::Topology* top = part.top();
   int num_switches = is_logp ? 0 : top->numSwitches();
@@ -185,6 +192,7 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
       comp.rank.thread = thread;
     }
   }
+#endif
 }
 
 }

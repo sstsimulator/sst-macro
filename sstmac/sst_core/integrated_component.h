@@ -60,6 +60,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/element.h>
 #include <sst/core/elementinfo.h>
 #include <sst/core/component.h>
+#include <sst/core/subcomponent.h>
 
 using SST::ComponentId_t;
 using SST::Params;
@@ -84,7 +85,7 @@ using SST::SST_ELI_getTertiaryNumberFromVersion;
   SST_ELI_DOCUMENT_PARAMS() \
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
   cls(SST::ComponentId_t id, SST::Params& params) : \
-    cls(make_spkt_params_from_sst_params(params), id, nullptr){}
+    cls(params, id){}
 
 #define RegisterComponent(name,parent,cls,lib,cat,desc) \
   RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
@@ -95,9 +96,7 @@ using SST::SST_ELI_getTertiaryNumberFromVersion;
   SST_ELI_REGISTER_SUBCOMPONENT(cls,lib,#cls,desc,interfaceStr) \
   protected: \
   cls(SST::ComponentId_t id, SST::Params& params) : \
-    cls(make_spkt_params_from_sst_params(params), id, nullptr){}
-
-sprockit::sim_parameters*::ptr make_spkt_params_from_sst_params(SST::Params& map);
+    cls(params, id){}
 
 namespace sstmac {
 

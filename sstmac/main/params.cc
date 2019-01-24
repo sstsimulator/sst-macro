@@ -167,7 +167,7 @@ remapDeprecatedParams(SST::Params& params)
   int num_remap = sizeof(remap_list) / sizeof(param_remap);
   for (int i=0; i < num_remap; ++i){
     param_remap& p = remap_list[i];
-    if (params->has_param(p.deprecated)){
+    if (params.contains(p.deprecated)){
       params->parse_keyval(p.updated,
          params.find<std::string>(p.deprecated),
          false/*fail on existing*/,

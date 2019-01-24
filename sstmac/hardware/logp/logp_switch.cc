@@ -103,7 +103,7 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
 
   if (net_byte_delay_.ticks() == 0) abort();
 
-  if (params->has_param("random_seed")){
+  if (params.contains("random_seed")){
     random_seed_ = params.find<int>("random_seed");
     rng_ = RNG::MWC::construct();
     random_max_extra_latency_ = Timestamp(params.findUnits("random_max_extra_latency").toDouble());
@@ -111,7 +111,7 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
   }
 
   if (params->has_namespace("contention")){
-    auto model_params = params.get_namespace("contention");
+    auto model_params = params.find_prefix_params("contention");
     contention_model_ = ContentionModel::factory::get_extra_param("model", model_params);
   }
 
@@ -178,7 +178,7 @@ struct SlidingContentionModel : public LogPSwitch::ContentionModel
   SlidingContentionModel(SST::Params& params)
   {
     range_ = params.find<int>("range", 100);
-    if (params->has_param("cutoffs")){
+    if (params.contains("cutoffs")){
       params.find_array("cutoffs", cutoffs_);
     } else {
       cutoffs_.resize(2);
