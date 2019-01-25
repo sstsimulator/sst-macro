@@ -90,17 +90,6 @@ class Star : public StructuredTopology
   void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                std::vector<injection_port>& nodes) const override;
 
-  bool uniformSwitchPorts() const override {
-    return true;
-  }
-
-  bool uniformSwitches() const override {
-    return true;
-  }
-
-  void configureIndividualPortParams(SwitchId src,
-        SST::Params& switch_params) const override;
-
   void connectedOutports(SwitchId src,
        std::vector<connection>& conns) const override;
 

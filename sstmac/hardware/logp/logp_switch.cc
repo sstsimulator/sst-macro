@@ -112,7 +112,9 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
 
   if (params->has_namespace("contention")){
     auto model_params = params.find_prefix_params("contention");
-    contention_model_ = ContentionModel::factory::get_extra_param("model", model_params);
+    if (model_params.contains("model")){
+      contention_model_ = ContentionModel::factory::get_param("model", model_params);
+    }
   }
 
 
@@ -175,7 +177,7 @@ struct SlidingContentionModel : public LogPSwitch::ContentionModel
  public:
   FactoryRegister("sliding", LogPSwitch::ContentionModel, SlidingContentionModel)
 
-  SlidingContentionModel(SST::Params& params)
+  SlidingContentionModel(SST::Params& params) : LogPSwitch::ContentionModel(params)
   {
     range_ = params.find<int>("range", 100);
     if (params.contains("cutoffs")){

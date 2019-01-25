@@ -53,9 +53,11 @@ namespace hw {
 class PiscesParamExpander :
   public ParamExpander
 {
- FactoryRegister("pisces", sstmac::ParamExpander, PiscesParamExpander)
+  FactoryRegister("pisces", sstmac::ParamExpander, PiscesParamExpander)
  public:
   void expand(SST::Params& params) override;
+
+  PiscesParamExpander(SST::Params& params) : ParamExpander(params) {}
 
  private:
   void expandAmm1Nic(SST::Params& params,

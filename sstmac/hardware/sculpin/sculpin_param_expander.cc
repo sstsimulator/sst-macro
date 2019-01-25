@@ -141,6 +141,8 @@ SculpinParamExpander::checkLatency(SST::Params& params,
     }
   }
 
+  params->add_param_override("latency", params->get_param("sendLatency"));
+
   if (!params->has_param("creditLatency")){
     if (params->has_param("latency")){
       params->add_param_override("creditLatency", params.find<std::string>("latency"));

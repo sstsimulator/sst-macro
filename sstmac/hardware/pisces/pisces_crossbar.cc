@@ -58,38 +58,38 @@ namespace sstmac {
 namespace hw {
 
 PiscesCrossbar::PiscesCrossbar(
-  SST::Params& params,
+  const std::string& arb, double bw,
   SST::Component* parent,
   int num_in_ports, int num_out_ports, int num_vc,
   bool update_vc) :
-  PiscesNtoMQueue(params, parent, num_in_ports, num_out_ports,
+  PiscesNtoMQueue(arb, bw, parent, num_in_ports, num_out_ports,
                     num_vc, update_vc)
 {
 }
 
 PiscesDemuxer::PiscesDemuxer(
-  SST::Params& params,
+  const std::string& arb, double bw,
   SST::Component* parent, int num_out_ports, int num_vc,
   bool update_vc) :
-  PiscesNtoMQueue(params, parent, 1, num_out_ports,
+  PiscesNtoMQueue(arb, bw, parent, 1, num_out_ports,
                     num_vc, update_vc)
 {
 }
 
 PiscesMuxer::PiscesMuxer(
-  SST::Params& params,
+  const std::string& arb, double bw,
   SST::Component* parent, int num_in_ports, int num_vc,
   bool update_vc) :
-  PiscesNtoMQueue(params, parent, num_in_ports, 1,
+  PiscesNtoMQueue(arb, bw, parent, num_in_ports, 1,
                     num_vc, update_vc)
 {
 }
 
 PiscesNtoMQueue::
-PiscesNtoMQueue(SST::Params& params, SST::Component* parent,
-                  int num_in_ports, int num_out_ports, int num_vc,
-                  bool update_vc)
-  : PiscesSender(params, parent, update_vc),
+PiscesNtoMQueue(const std::string& arb, double bw, SST::Component* parent,
+                int num_in_ports, int num_out_ports, int num_vc,
+                bool update_vc)
+  : PiscesSender(parent, update_vc),
     num_vc_(num_vc),
     creditHandler_(nullptr),
     payloadHandler_(nullptr),
@@ -102,7 +102,7 @@ PiscesNtoMQueue(SST::Params& params, SST::Component* parent,
     outputs_(num_out_ports)
 
 {
-  arb_ = PiscesBandwidthArbitrator::factory::get_param("arbitrator", params);
+  arb_ = PiscesBandwidthArbitrator::factory::get_value(arb, bw);
 }
 
 EventHandler*
@@ -257,7 +257,6 @@ PiscesNtoMQueue::resizeOutports(int num_ports)
 
 void
 PiscesNtoMQueue::setInput(
-  SST::Params& port_params,
   int my_inport, int src_outport,
   EventLink* link)
 {
@@ -273,10 +272,7 @@ PiscesNtoMQueue::setInput(
 }
 
 void
-PiscesNtoMQueue::setOutput(
-  SST::Params& port_params,
-  int my_outport, int dst_inport,
-  EventLink* link)
+PiscesNtoMQueue::setOutput(int my_outport, int dst_inport, EventLink* link, int num_credits)
 {
   // must be called with local my_outport (if there's a difference)
   // global port numbers aren't unique for individual elements of
@@ -299,7 +295,6 @@ PiscesNtoMQueue::setOutput(
   out.link = link;
   out.arrival_port = dst_inport;
 
-  int num_credits = port_params.findUnits("credits").getRoundedValue();
   int num_credits_per_vc = num_credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     debug_printf(sprockit::dbg::pisces_config,

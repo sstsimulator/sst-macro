@@ -165,18 +165,6 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
   }
 }
 
-void
-DragonflyPlus::configureIndividualPortParams(SwitchId src, SST::Params& switch_params) const
-{
-  int row = src / numLeafSwitches();
-  if (row == 0){
-    Dragonfly::setupPortParams(switch_params, red_[0], 0, a_);
-  } else {
-    Dragonfly::setupPortParams(switch_params, red_[0], 0, a_);
-    Dragonfly::setupPortParams(switch_params, red_[1], a_, h_);
-  }
-}
-
 Topology::vtk_switch_geometry
 DragonflyPlus::getVtkGeometry(SwitchId sid) const
 {

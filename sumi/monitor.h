@@ -80,7 +80,7 @@ class FunctionSet {
 
 class ActivityMonitor
 {
-  DeclareFactory(ActivityMonitor, Transport*)
+  DeclareFactoryArgs(ActivityMonitor, Transport*)
  public:
   ActivityMonitor(SST::Params& params,
                   Transport* t) : api_(t){}

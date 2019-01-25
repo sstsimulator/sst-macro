@@ -54,7 +54,7 @@ class TestModule : public SSTElementPythonModule {
  */
 class TestComponent : public ConnectableComponent {
  public:
-  DeclareFactory(TestComponent,uint64_t)
+  DeclareFactoryArgs(TestComponent,uint64_t)
 
   /**
    * @brief test_component Standard constructor for all components
@@ -122,11 +122,7 @@ class DummySwitch : public TestComponent {
     //ignore for now, we won't do anything with credits
   }
 
-  void connectOutput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* link) override {
+  void connectOutput(int src_outport, int dst_inport, EventLink* link) override {
     //register handler on port
     partner_ = link;
     std::cout << "Connecting output "
@@ -134,11 +130,7 @@ class DummySwitch : public TestComponent {
               << " on component " << id_ << std::endl;
   }
 
-  void connectInput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* link) override {
+  void connectInput(int src_outport, int dst_inport, EventLink* link) override {
     //we won't do anything with credits, but print for tutorial
     std::cout << "Connecting input "
               << src_outport << "-> " << dst_inport

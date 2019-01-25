@@ -67,17 +67,9 @@ class LogPNIC :
 
   void handle(Event *ev);
 
-  virtual void connectOutput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* link) override;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
 
-  virtual void connectInput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* link) override;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink* link) override;
 
   void mtlHandle(Event* ev) override;
 

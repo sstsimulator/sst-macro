@@ -59,14 +59,9 @@ class PiscesBuffer :
  public:
   virtual ~PiscesBuffer();
 
-  void setOutput(SST::Params& params,
-    int this_outport, int dst_inport,
-    EventLink* link) override;
+  void setOutput(int this_outport, int dst_inport, EventLink* link, int credits) override;
 
-  void setInput(
-    SST::Params& params,
-    int this_inport, int src_outport,
-    EventLink* link) override;
+  void setInput(int this_inport, int src_outport, EventLink* link) override;
 
   void handleCredit(Event* ev) override;
 
@@ -88,7 +83,8 @@ class PiscesBuffer :
 
   int queueLength(int vc) const;
 
-  PiscesBuffer(SST::Params& params, SST::Component* parent, int num_vc);
+  PiscesBuffer(const std::string& arb, double bw, int packet_size,
+               SST::Component* parent, int numVC);
 
  private:
   Input input_;

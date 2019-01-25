@@ -74,37 +74,12 @@ payload_queue::pop(int num_credits)
 }
 
 PiscesSender::PiscesSender(
-  SST::Params& params,
   SST::Component* parent,
   bool update_vc) :
   SubComponent(parent), //no self handlers
   stat_collector_(nullptr),
   update_vc_(update_vc)
 {
-  send_lat_ = Timestamp(params.findUnits("sendLatency").toDouble());
-  credit_lat_ = Timestamp(params.findUnits("creditLatency").toDouble());
-}
-
-void
-PiscesSender::configurePayloadPortLatency(SST::Params& params)
-{
-  if (!params.contains("sendLatency")){
-    params.insert("sendLatency", params.find<std::string>("latency"));
-  }
-  if (!params.contains("creditLatency")){
-    params.insert("creditLatency", "0ns");
-  }
-}
-
-void
-PiscesSender::configureCreditPortLatency(SST::Params& params)
-{
-  if (!params.contains("sendLatency")){
-    params.insert("sendLatency", "0ns");
-  }
-  if (!params.contains("creditLatency")){
-    params.insert("creditLatency", params.find<std::string>("latency"));
-  }
 }
 
 void
@@ -114,15 +89,9 @@ PiscesSender::sendCredit(
 {
   int src_vc = payload->vc(); //we have not updated to the new virtual channel
   PiscesCredit* credit = new PiscesCredit(inp.port_to_credit,
-                                            src_vc, payload->numBytes());
+                                         src_vc, payload->numBytes());
 
   Timestamp credit_departure_delay = credits_ready - now();
-  if (credit_departure_delay <= credit_lat_){
-    credit_departure_delay = Timestamp();
-  } else {
-    //assume credits pipeline to arrive exactly when ready
-    credit_departure_delay -= credit_lat_;
-  }
 
   pisces_debug(
       "On %s:%p on inport %d, crediting %s:%p port:%d:%d vc:%d {%s}"
@@ -154,13 +123,13 @@ PiscesSender::send(
   if (arb) {
     arb->arbitrate(st);
   } else {
-    st.head_leaves = st.tail_leaves = st.credit_leaves = now_;
+    st.head_leaves = st.tail_leaves = now_;
   }
 
   if (stat_collector_) stat_collector_->collectSingleEvent(st);
 
   if (to_credit.link) {
-    sendCredit(to_credit, pkt, st.credit_leaves);
+    sendCredit(to_credit, pkt, st.head_leaves);
   } else {
     pisces_debug("On %s:%p no link to credit for port:%d vc:%d -> %s",
                  toString().c_str(), this, pkt->nextLocalInport(), pkt->nextVC(),

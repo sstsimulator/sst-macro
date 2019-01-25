@@ -230,27 +230,6 @@ Cascade::minimalDistance(SwitchId src, SwitchId dst) const
   return dist;
 }
 
-
-
-
-void
-Cascade::setupPortParams(SST::Params& params, int dim, int dimsize) const
-{
-  SST::Params link_params = params.find_prefix_params("link");
-  double bw = link_params.findUnits("bandwidth").toDouble();
-  int bufsize = params.findUnits("buffer_size", "0B").getRoundedValue();
-
-  double port_bw = bw * red_[dim];
-  int credits = bufsize * red_[dim];
-
-  for (int i=0; i < dimsize; ++i){
-    int port = convertToPort(dim, i);
-  //std::cout << "setting port " << port << " to " << port_bw << " " << credits << std::endl;
-    SST::Params port_params = Topology
-        ::setupPortParams(port, credits, port_bw, link_params, params);
-  }
-}
-
 void
 Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
@@ -289,7 +268,7 @@ Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
   }
 
   for (int g=0; g < group_con_; ++g){
-    int dstg = xyg_dir_to_group(myx,myy,myg,g);
+    int dstg = xygDirToGroup(myx,myy,myg,g);
     if (dstg == myg) continue;
 
     SwitchId dst(get_uid(myx, myy, dstg));
@@ -304,17 +283,21 @@ Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
   conns.resize(cidx);
 }
 
-void
-Cascade::configureIndividualPortParams(SwitchId src,
-                                       SST::Params& switch_params) const
+double
+Cascade::portScaleFactor(uint32_t addr, int port) const
 {
-  setupPortParams(switch_params, x_dimension, x_);
-  setupPortParams(switch_params, y_dimension, y_);
-  setupPortParams(switch_params, g_dimension, g_);
+  if (port >= (x_+y_)){
+    //group port
+    return red_[2];
+  } else if (port >= x_){
+    return red_[1];
+  } else {
+    return red_[0];
+  }
 }
 
 int
-Cascade::xyg_dir_to_group(int myX, int myY, int myG, int dir) const
+Cascade::xygDirToGroup(int myX, int myY, int myG, int dir) const
 {
   int gspace = std::max(1, g_ / group_con_);
   int myid = myX + myY * x_;

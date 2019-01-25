@@ -64,7 +64,7 @@ namespace hw {
  */
 class Processor
 {
-  DeclareFactory(Processor, MemoryModel*, Node*)
+  DeclareFactoryArgs(Processor, MemoryModel*, Node*)
  public:
   virtual ~Processor();
 

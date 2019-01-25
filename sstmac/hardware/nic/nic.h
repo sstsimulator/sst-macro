@@ -79,7 +79,7 @@ namespace hw {
  */
 class NIC : public ConnectableSubcomponent
 {
-  DeclareFactory(NIC,Node*)
+  DeclareFactoryArgs(NIC,Node*)
  public:
   typedef enum {
     Injection,
@@ -220,11 +220,9 @@ class NullNIC : public NIC
 
   void doSend(NetworkMessage* msg) override {}
 
-  void connectOutput(SST::Params& params, int src_outport, int dst_inport,
-                      EventLink *payload_link) override {}
+  void connectOutput(int src_outport, int dst_inport, EventLink *payload_link) override {}
 
-  void connectInput(SST::Params& params, int src_outport, int dst_inport,
-                     EventLink *credit_link) override {}
+  void connectInput(int src_outport, int dst_inport, EventLink *credit_link) override {}
 
   Timestamp sendLatency(SST::Params& params) const override { return Timestamp(); }
 

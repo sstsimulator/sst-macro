@@ -67,22 +67,11 @@ class DragonflyPlus : public Dragonfly
     return "dragonfly+";
   }
 
-  bool uniformSwitchPorts() const override {
-    return false;
-  }
-
   bool isGlobalPort(int port) const {
     return port >= 2*a_;
   }
 
-  bool uniformSwitches() const override {
-    return false;
-  }
-
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
-
-  void configureIndividualPortParams(SwitchId src,
-        SST::Params& switch_params) const override;
 
   virtual ~DragonflyPlus() {}
 

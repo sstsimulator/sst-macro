@@ -99,7 +99,7 @@ param_remap remap_list[] = {
   pr("node_name", "node.name"),
   pr("node_mem_latency", "node.memory.latency"),
   pr("node_mem_bandwidth", "node.memory.bandwidth"),
-  pr("nic_negligibleSize", "node.nic.negligibleSize"),
+  pr("nic_negligible_size", "node.nic.negligible_size"),
   pr("nic_name", "node.nic.name"),
   pr("node_MemoryModel", "node.memory.name"),
   pr("node_frequency", "node.proc.frequency"),

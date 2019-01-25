@@ -86,7 +86,7 @@ typedef std::map<long, mutex_t*> condition_t;
  */
 class App : public Thread
 {
-  DeclareFactory(App, SoftwareId, OperatingSystem*)
+  DeclareFactoryArgs(App, SoftwareId, OperatingSystem*)
  public:
   typedef void (*destructor_fxn)(void*);
 

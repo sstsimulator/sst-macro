@@ -87,11 +87,5 @@ FullyConnected::connectedOutports(SwitchId src, std::vector<connection>& conns) 
   }
 }
 
-void
-FullyConnected::configureIndividualPortParams(SwitchId src, SST::Params& switch_params) const
-{
-  Topology::configureIndividualPortParams(0, numSwitches(), switch_params);
-}
-
 }
 } //end of namespace sstmac

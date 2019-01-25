@@ -131,25 +131,6 @@ Topology::staticTopology(SST::Params& params)
   return staticTopology_;
 }
 
-SST::Params
-Topology::setupPortParams(int port, int credits, double bw,
-                          SST::Params& link_params,
-                          SST::Params& params)
-{
-  std::string port_name = sprockit::printf("port%d", port);
-  SST::Params port_params = params.find_prefix_params(port_name);
-  //for max lookahead, no credit latency
-  //put all of the credits on sending, none on credits
-  port_params["bandwidth"].setBandwidth(bw/1e9, "GB/s");
-  port_params["credits"].setByteLength(credits, "B");
-  port_params.insert("sendLatency", link_params.find<std::string>("sendLatency"));
-  port_params.insert("creditLatency", link_params.find<std::string>("creditLatency"));
-  if (link_params.contains("arbitrator")){
-    port_params.insert("arbitrator", link_params.find<std::string>("arbitrator"));
-  }
-  return port_params;
-}
-
 std::string
 Topology::getPortNamespace(int port)
 {
@@ -254,21 +235,6 @@ Topology::createPartition(
     toString().c_str());
 }
 
-void
-Topology::configureIndividualPortParams(
-    int port_start, int nports,
-    SST::Params& switch_params) const
-{
-  SST::Params link_params =
-      switch_params.find_prefix_params("link");
-  for (int i=0; i < nports; ++i){
-    int port = port_start + i;
-    std::string port_ns = getPortNamespace(port);
-    SST::Params port_params = switch_params.find_prefix_params(port_ns);
-    link_params.combine_into(port_params);
-  }
-}
-
 CartesianTopology*
 Topology::cartTopology() const
 {
@@ -366,27 +332,12 @@ class MerlinTopology : public Topology {
     return num_nodes_;
   }
 
-  bool uniformSwitchPorts() const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-    return false;
-  }
-
-  bool uniformSwitches() const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-    return false;
-  }
-
   SwitchId endpointToSwitch(NodeId) const override {
     spkt_abort_printf("merlin topology functions should never be called");
     return 0;
   }
 
   void connectedOutports(SwitchId src, std::vector<Topology::connection>& conns) const override {
-    spkt_abort_printf("merlin topology functions should never be called");
-  }
-
-  void configureIndividualPortParams(SwitchId src,
-          SST::Params& switch_params) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 

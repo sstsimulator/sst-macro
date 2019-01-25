@@ -68,7 +68,7 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
   initLinks(params);
 
   SST::Params inj_params = params.find_prefix_params("injection");
-  PiscesSender::configurePayloadPortLatency(inj_params);
+  //PiscesSender::configurePayloadPortLatency(inj_params);
   inj_buffer_ = new PiscesBuffer(inj_params, this, 1);
 
   EventHandler* handler = newHandler(this, &PiscesSimpleNetwork::creditArrived);

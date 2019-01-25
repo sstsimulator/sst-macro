@@ -120,23 +120,6 @@ Hypercube::minimalDistance(
 }
 
 void
-Hypercube::configureIndividualPortParams(SwitchId src,
-                                         SST::Params& switch_params) const
-{
-  SST::Params link_params = switch_params.find_prefix_params("link");
-  double bw = link_params.findUnits("bandwidth").toDouble();
-  int bufsize = link_params.findUnits("buffer_size", "0B").getRoundedValue();
-  for (int dim=0; dim < dimensions_.size(); ++dim){
-    double port_bw = bw * red_[dim];
-    int credits = bufsize * red_[dim];
-    for (int dir=0; dir < dimensions_[dim]; ++dir){
-      int port = convertToPort(dim, dir);
-      setupPortParams(port, credits, port_bw, link_params, switch_params);
-    }
-  }
-}
-
-void
 Hypercube::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
   int nconns = 0;

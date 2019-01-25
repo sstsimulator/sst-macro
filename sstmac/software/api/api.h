@@ -58,7 +58,7 @@ namespace sw {
 
 class API : public Library
 {
-  DeclareFactory(API,SoftwareId,OperatingSystem*)
+  DeclareFactoryArgs(API,SoftwareId,OperatingSystem*)
  public:
   API(SST::Params& params, const std::string& libname,
       SoftwareId sid, OperatingSystem *os) :

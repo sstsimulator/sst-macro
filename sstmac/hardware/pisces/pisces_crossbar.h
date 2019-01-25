@@ -62,7 +62,7 @@ class PiscesNtoMQueue :
  public:
   virtual ~PiscesNtoMQueue();
 
-  PiscesNtoMQueue(SST::Params& params,
+  PiscesNtoMQueue(const std::string& arb, double bw,
                   SST::Component* parent,
                   int num_in_ports, int num_out_ports, int num_vc,
                   bool update_vc);
@@ -75,11 +75,9 @@ class PiscesNtoMQueue :
 
   EventHandler* payloadHandler();
 
-  void setInput(SST::Params& params,
-            int my_inport, int src_outport, EventLink* link) override;
+  void setInput(int my_inport, int src_outport, EventLink* link) override;
 
-  void setOutput(SST::Params& params,
-             int my_outport, int dst_inport, EventLink* link) override;
+  void setOutput(int my_outport, int dst_inport, EventLink* link, int credits) override;
 
   inline int slot(int port, int vc) const {
     return port * num_vc_ + vc;
@@ -132,7 +130,7 @@ class PiscesDemuxer :
   public PiscesNtoMQueue
 {
  public:
-  PiscesDemuxer(SST::Params& params,
+  PiscesDemuxer(const std::string& arb, double bw,
                  SST::Component* parent,
                  int num_out_ports, int num_vc,
                  bool update_vc);
@@ -148,7 +146,7 @@ class PiscesMuxer :
   public PiscesNtoMQueue
 {
  public:
-  PiscesMuxer(SST::Params& params,
+  PiscesMuxer(const std::string& arb, double bw,
                SST::Component* parent,
                int num_in_ports, int num_vc,
                bool update_vc);
@@ -162,7 +160,7 @@ class PiscesCrossbar :
   public PiscesNtoMQueue
 {
  public:
-  PiscesCrossbar(SST::Params& params,
+  PiscesCrossbar(const std::string& arb, double bw,
                  SST::Component* parent,
                  int num_in_ports, int num_out_ports, int num_vc,
                  bool update_vc);

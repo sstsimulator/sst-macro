@@ -86,7 +86,6 @@ struct payload_queue {
 
 class PiscesSender : public SubComponent
 {
-  DeclareFactory(PiscesSender, Component*)
  public:
   struct Input {
     int port_to_credit;
@@ -102,21 +101,13 @@ class PiscesSender : public SubComponent
 
   virtual ~PiscesSender() {}
 
-  virtual void setInput(SST::Params& params,
-     int my_inport, int dst_outport,
-     EventLink* link) = 0;
+  virtual void setInput(int my_inport, int dst_outport, EventLink* link) = 0;
 
-  virtual void setOutput(SST::Params& params,
-    int my_outport, int dst_inport,
-    EventLink* link) = 0;
+  virtual void setOutput(int my_outport, int dst_inport, EventLink* link, int credits) = 0;
 
   virtual void handlePayload(Event* ev) = 0;
 
   virtual void handleCredit(Event* ev) = 0;
-
-  static void configureCreditPortLatency(SST::Params& params);
-
-  static void configurePayloadPortLatency(SST::Params& params);
 
   void setStatCollector(PacketStatsCallback* c){
     stat_collector_ = c;
@@ -126,18 +117,8 @@ class PiscesSender : public SubComponent
 
   std::string toString() const override;
 
-  Timestamp sendLatency() const {
-    return send_lat_;
-  }
-
-  Timestamp creditLatency() const {
-    return credit_lat_;
-  }
-
  protected:
-  PiscesSender(SST::Params& params,
-               SST::Component* parent,
-               bool update_vc);
+  PiscesSender(SST::Component* parent, bool update_vc);
 
   void sendCredit(Input& inp, PiscesPacket* payload,
           GlobalTimestamp packet_tail_leaves);

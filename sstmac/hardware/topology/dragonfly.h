@@ -54,7 +54,7 @@ class Dragonfly;
 
 class InterGroupWiring {
  public:
-  DeclareFactory(InterGroupWiring,
+  DeclareFactoryArgs(InterGroupWiring,
     int, /* a=num switches per group */
     int, /* g=num groups */
     int /* h=num group links per switch */
@@ -126,10 +126,6 @@ class Dragonfly : public CartesianTopology
     return "dragonfly";
   }
 
-  bool uniformSwitchPorts() const override {
-    return false;
-  }
-
   bool isGlobalPort(int port) const {
     return port >= a_;
   }
@@ -138,18 +134,11 @@ class Dragonfly : public CartesianTopology
     return a_ + h_ + concentration();
   }
 
-  bool uniformSwitches() const override {
-    return true;
-  }
-
   vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
 
   bool isCurvedVtkLink(SwitchId sid, int port) const override;
 
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
-
-  void configureIndividualPortParams(SwitchId src,
-        SST::Params& switch_params) const override;
 
   virtual ~Dragonfly() {}
 
@@ -256,9 +245,6 @@ class Dragonfly : public CartesianTopology
   double vtk_switch_radians_;
 
   InterGroupWiring* group_wiring_;
-
-  void setupPortParams(SST::Params& params,
-                    int red, int port_offset, int num_ports) const;
 
 };
 

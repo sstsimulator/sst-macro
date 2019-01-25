@@ -102,6 +102,8 @@ PiscesTiledSwitch::tileToRowCol(int tile, int& row, int& col){
 void
 PiscesTiledSwitch::initComponents(SST::Params& params)
 {
+  //TODO
+#if 0
   if (!xbar_tiles_.empty())
     return;
 
@@ -121,7 +123,7 @@ PiscesTiledSwitch::initComponents(SST::Params& params)
     for (int c=0; c < ncols_; ++c){
       int tile = rowColToTile(r, c);
       PiscesDemuxer* dm = new PiscesDemuxer(demuxer_params, this, ncols_,
-                                              router_->numVC(), false/*no vc update*/);
+                                            router_->numVC(), false/*no vc update*/);
       row_input_demuxers_[tile] = dm;
 
       // divide by num columns to get row for output muxer
@@ -172,49 +174,49 @@ PiscesTiledSwitch::initComponents(SST::Params& params)
          "Connecting %s:%p local port %d to %s:%p local port %d",
           xbar->toString().c_str(), xbar, rm,
           muxer->toString().c_str(), muxer, rx);
-        auto out_link = allocateSubLink(xbar->sendLatency(), this, muxer->payloadHandler());
+        //don't put latency on internal links
+        auto out_link = allocateSubLink(Timestamp(), this, muxer->payloadHandler());
         xbar->setOutput(xbar_params, rm, rx, out_link);
-        auto in_link = allocateSubLink(muxer->creditLatency(), this, xbar->creditHandler());
+        auto in_link = allocateSubLink(Timestamp(), this, xbar->creditHandler());
         muxer->setInput(muxer_params, rx, rm, in_link);
       }
     }
   }
+#endif
 }
 
 void
-PiscesTiledSwitch::connectOutput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+PiscesTiledSwitch::connectOutput(int src_outport, int dst_inport, EventLink* link)
 {
+  //TODO
+#if 0
   PiscesSender* muxer = col_output_muxers_[src_outport];
-  muxer->setOutput(params, 0, dst_inport, link);
+  muxer->setOutput(0, dst_inport, link);
   dst_inports_[src_outport] = dst_inport;
+#endif
 }
 
 void
-PiscesTiledSwitch::connectInput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+PiscesTiledSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
+  //TODO
+#if 0
   int row = dst_inport % nrows_;
   PiscesSender* demuxer = row_input_demuxers_[row];
   demuxer->setInput(params, row, src_outport, link);
+#endif
 }
 
 Timestamp
 PiscesTiledSwitch::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("link")->get_time_param("sendLatency"));
+  return Timestamp(params.find_prefix_params("link").findUnits("latency").toDouble());
 }
 
 Timestamp
 PiscesTiledSwitch::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("input")->get_time_param("creditLatency"));
+  return Timestamp(params.find_prefix_params("input").findUnits("latency").toDouble());
 }
 
 int

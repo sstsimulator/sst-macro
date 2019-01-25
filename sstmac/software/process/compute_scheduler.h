@@ -60,7 +60,7 @@ namespace sw {
 
 class ComputeScheduler
 {
-  DeclareFactory(ComputeScheduler, sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
+  DeclareFactoryArgs(ComputeScheduler, sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
  public:
   ComputeScheduler(SST::Params& params, sw::OperatingSystem* os,
                     int ncores, int nsockets) :

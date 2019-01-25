@@ -85,7 +85,7 @@ namespace sstmac {
 
 class EventManager
 {
-  DeclareFactory(EventManager, ParallelRuntime*)
+  DeclareFactoryArgs(EventManager, ParallelRuntime*)
 
   FactoryRegister("map", EventManager, EventManager,
       "Implements a basic event manager running in serial")

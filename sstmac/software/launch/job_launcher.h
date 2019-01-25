@@ -153,7 +153,7 @@ class TaskMapping {
  */
 class JobLauncher : public Service
 {
-  DeclareFactory(JobLauncher, OperatingSystem*)
+  DeclareFactoryArgs(JobLauncher, OperatingSystem*)
  public:
   /**
    * @brief incoming_event Handle an event sent from one of the nodes

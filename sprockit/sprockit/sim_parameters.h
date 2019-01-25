@@ -637,7 +637,7 @@ class Params {
   {
   }
 
-  operator bool(){
+  explicit operator bool(){
     return bool(params_);
   }
 

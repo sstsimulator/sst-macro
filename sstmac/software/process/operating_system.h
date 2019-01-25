@@ -96,7 +96,7 @@ class OperatingSystem : public SubComponent
 
   struct RegressionModel : public MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*> {
     using Parent = MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>;
-    DeclareFactory(RegressionModel, const std::string&)
+    DeclareFactoryArgs(RegressionModel, const std::string&)
 
     RegressionModel(SST::Params& params,
                      const std::string& key)

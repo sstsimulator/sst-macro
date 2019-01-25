@@ -173,21 +173,17 @@ Node::~Node()
 }
 
 void
-Node::connectOutput(SST::Params& params,
-  int src_outport, int dst_inport,
-  EventLink* link)
+Node::connectOutput(int src_outport, int dst_inport, EventLink* link)
 {
   //forward connection to nic
-  nic_->connectOutput(params, src_outport, dst_inport, link);
+  nic_->connectOutput(src_outport, dst_inport, link);
 }
 
 void
-Node::connectInput(SST::Params& params,
-  int src_outport, int dst_inport,
-  EventLink* link)
+Node::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
   //forward connection to nic
-  nic_->connectInput(params/*.find_prefix_params("nic")*/, src_outport, dst_inport, link);
+  nic_->connectInput(src_outport, dst_inport, link);
 }
 
 Timestamp

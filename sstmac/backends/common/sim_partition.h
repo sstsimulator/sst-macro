@@ -67,7 +67,7 @@ namespace sstmac {
  */
 class Partition
 {
-  DeclareFactory(Partition, ParallelRuntime*)
+  DeclareFactoryArgs(Partition, ParallelRuntime*)
  public:
   virtual ~Partition();
 

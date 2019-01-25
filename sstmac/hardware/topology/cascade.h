@@ -102,18 +102,7 @@ class Cascade : public CartesianTopology
      return port >= (x_ + y_);
   }
 
-  bool uniformSwitchPorts() const override {
-    return false;
-  }
-
-  bool uniformSwitches() const override {
-    return true;
-  }
-
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
-
-  void configureIndividualPortParams(SwitchId src,
-        SST::Params& switch_params) const override;
 
   virtual ~Cascade() {}
 
@@ -179,6 +168,8 @@ class Cascade : public CartesianTopology
     return x_ * y_ * g_;
   }
 
+  double portScaleFactor(uint32_t addr, int port) const override;
+
   void minimalRouteToSwitch(
       Router* rtr,
       SwitchId current_sw_addr,
@@ -217,9 +208,6 @@ class Cascade : public CartesianTopology
   int g_;
   int group_con_;
 
-  void setupPortParams(SST::Params& params,
-                    int dim, int dimsize) const;
-
   static std::string set_string(int x, int y, int g)
   {
     return sprockit::printf("{ %d %d %d }", x, y, g);
@@ -233,7 +221,7 @@ class Cascade : public CartesianTopology
     else return -1;
   }
 
-  int xyg_dir_to_group(int myX, int myY, int myG, int dir) const;
+  int xygDirToGroup(int myX, int myY, int myG, int dir) const;
 
 };
 

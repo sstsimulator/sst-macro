@@ -77,7 +77,7 @@ namespace hw {
 class NetworkSwitch :
   public ConnectableComponent
 {
-  DeclareFactory(NetworkSwitch,uint32_t)
+  DeclareFactoryArgs(NetworkSwitch,uint32_t)
  public:
   virtual void init(unsigned int phase);
 

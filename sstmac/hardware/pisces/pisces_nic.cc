@@ -78,30 +78,33 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   SST::Params port0_params = params.find_prefix_params("port0");
   inj_params.combine_into(port0_params);
 
-  PiscesSender::configurePayloadPortLatency(inj_params);
-  inj_buffer_ = new PiscesBuffer(inj_params, parent, 1/*single vc for inj*/);
+  inj_credits_ = inj_params.findUnits("credits").getRoundedValue();
+  auto arb = inj_params.find<std::string>("arbitrator");
+  double inj_bw = inj_params.findUnits("bandwidth").toDouble();
+  packet_size_ = inj_params.findUnits("mtu").getRoundedValue();
+
+  //PiscesSender::configurePayloadPortLatency(inj_params);
+  inj_buffer_ = new PiscesBuffer(arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
   inj_stats_ = PacketStatsCallback::factory::
                 get_optional_param("stats", "null", params, parent);
   inj_buffer_->setStatCollector(inj_stats_);
 
-  credit_lat_ = Timestamp(inj_params.findUnits("sendLatency").toDouble());
   ej_stats_ = PacketStatsCallback::factory::
                         get_optional_param("stats", "null", ej_params, parent);
-
-  packet_size_ = inj_params.findUnits("mtu").getRoundedValue();
 
 }
 
 Timestamp
 PiscesNIC::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("injection")->get_time_param("latency"));
+  auto link_params = params.find_prefix_params("injection");
+  return Timestamp(link_params.findUnits("latency").toDouble());
 }
 
 Timestamp
 PiscesNIC::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("injection")->get_time_param("latency"));
+  return sendLatency(params);
 }
 
 void
@@ -141,14 +144,10 @@ PiscesNIC::creditHandler(int port)
 }
 
 void
-PiscesNIC::connectOutput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+PiscesNIC::connectOutput(int src_outport, int dst_inport, EventLink* link)
 {
   if (src_outport == Injection){
-    inj_buffer_->setOutput(params, src_outport, dst_inport, link);
+    inj_buffer_->setOutput(src_outport, dst_inport, link, inj_credits_);
   } else if (src_outport == LogP) {
     logp_link_ = link;
   } else {
@@ -157,11 +156,7 @@ PiscesNIC::connectOutput(
 }
 
 void
-PiscesNIC::connectInput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+PiscesNIC::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
   credit_link_ = link;
 }

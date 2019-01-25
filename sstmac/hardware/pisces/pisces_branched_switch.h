@@ -70,13 +70,9 @@ class PiscesBranchedSwitch :
 
   int queueLength(int port, int vc) const override;
 
-  virtual void connectOutput(SST::Params& params,
-                 int src_outport, int dst_inport,
-                 EventLink* link) override;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
 
-  virtual void connectInput(SST::Params& params,
-                int src_outport, int dst_inport,
-                EventLink* link) override;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink* link) override;
 
   LinkHandler* creditHandler(int port) override;
 
@@ -114,6 +110,14 @@ class PiscesBranchedSwitch :
   void resizeBuffers();
 
   void initComponents(SST::Params& params);
+
+  int input_credits_;
+  int xbar_credits_;
+  int output_credits_;
+
+  double input_bw_;
+  double xbar_bw_;
+  double output_bw_;
 };
 
 }

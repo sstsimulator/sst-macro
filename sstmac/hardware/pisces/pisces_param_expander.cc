@@ -132,7 +132,9 @@ PiscesParamExpander::expandAmm1Memory(SST::Params& params,
                                       SST::Params& mem_params)
 {
   if (mem_params->get_scoped_param("name") != "null"){
-    mem_params->add_param_override("total_bandwidth", mem_params.find<std::string>("bandwidth"));
+    if (!mem_params.contains("total_bandwidth")){
+      mem_params->add_param_override("total_bandwidth", mem_params.find<std::string>("bandwidth"));
+    }
   }
 }
 

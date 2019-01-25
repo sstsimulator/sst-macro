@@ -62,7 +62,7 @@ template <class T, typename... Args>
 class Builder
 {
  public:
-  virtual T* build(SST::Params& params, const Args&... args) = 0;
+  virtual T* build(Args... args) = 0;
 
 };
 
@@ -105,61 +105,17 @@ struct call_finalizeInit<T,
   }
 };
 
-/**
- *  Class used to query what type of constructor the class has
- *  Mainly used for determining if the class takes a params
- *  as the first argument to the constructor
- */
-template <class T, class... Args>
-struct constructible_from
-{
-  template <class C>
-  static C arg();
-
-  template <typename U>
-  static std::true_type test(U*,decltype(U(arg<Args>()...))* = nullptr);
-
-  static std::false_type test(...);
-
-  typedef decltype(test(static_cast<T*>(nullptr))) type;
+template <typename T, class... Args>
+struct start_call_finalizeInit {
+  void operator()(T* t, Args&&...args){}
 };
 
-template <typename T, typename Enable, typename... Args>
-struct call_constructor_impl { };
-
-/**
- *  Class used to call particular constructors.  This will get invoked via SFINAE
- *  if the class T does not take a params object as the first parameter in the
- *  constructor
- */
-template <typename T, typename... Args>
-struct call_constructor_impl<T,
-    typename std::enable_if<constructible_from<T,Args...>::type::value>::type,
-    Args...>
-{
-  T* operator()(SST::Params& params, const Args&... args){
-    return new T(args...);
+template <typename T, class... Args>
+struct start_call_finalizeInit<T,SST::Params&,Args...> {
+  void operator()(T* t, SST::Params& params, Args&&... args){
+    call_finalizeInit<T>()(t, params);
   }
 };
-
-/**
- *  Class used to call particular constructors.  This will get invoked via SFINAE
- *  if the class T takes a params object as the first parameter in the
- *  constructor
- */
-template <typename T, typename... Args>
-struct call_constructor_impl<T,
-    typename std::enable_if<!constructible_from<T,Args...>::type::value>::type,
-    Args...>
-{
-  T* operator()(SST::Params& params, const Args&... args){
-    return new T(params, args...);
-  }
-};
-
-
-template <typename T, typename... Args>
-class call_constructor : public call_constructor_impl<T, void, Args...> {};
 
 
 template <class Factory>
@@ -283,9 +239,9 @@ class Factory
    * @param args        The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
+  template <class... InArgs>
   static T* _get_value(const std::string& valname,
-             SST::Params& params,
-             const Args&... args) {
+             InArgs&&... args) {
     if (!builder_map_) {
       spkt_abort_printf(
            "could not find name %s for factory %s. no classes are registered",
@@ -297,7 +253,6 @@ class Factory
     if (it == end) {
       std::cerr << "Valid factories are:" << std::endl;
       print_valid_names(std::cerr);
-      params.print_all_params(std::cerr);
       spkt_abort_printf("could not find name %s for factory %s",
                        valname.c_str(), name_);
     }
@@ -307,8 +262,8 @@ class Factory
       spkt_abort_printf("initialized name %s with null builder for factory %s",
                        valname.c_str(), name_);
     }
-    T* p = builder->build(params, args...);
-    call_finalizeInit<T>()(p, params);
+    T* p = builder->build(std::forward<InArgs>(args)...);
+    start_call_finalizeInit<T,InArgs...>()(p, std::forward<InArgs>(args)...);
     return p;
   }
 
@@ -332,10 +287,10 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
+  template <class... InArgs>
   static T* get_value(const std::string& valname,
-            SST::Params& params,
-            const Args&... args) {
-    return _get_value(valname, params, args...);
+            InArgs&&... args) {
+    return _get_value(valname, std::forward<InArgs>(args)...);
   }
 
   static void print_valid_names(std::ostream& os){
@@ -358,47 +313,13 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
+  template <class... InArgs>
   static T* get_param(const std::string& param_name,
-            SST::Params& params,
-            const Args&... args) {
+                      SST::Params& params, InArgs&&... args) {
     return _get_value(params.find<std::string>(param_name),
-                      params, args...);
+                      params, std::forward<InArgs>(args)...);
   }
 
-  /**
-   * @brief get_extra param Return a constructed child class corresponding
-   *          to a given string name. The string name is not given directly,
-   *          instead being found by params.find<std::string>(param_name).  If no parameter
-   *          corresponding to param_name exists, return a nullptr
-   * @param param_name   The name of the parameter such that params.find<std::string>(param_name)
-   *                     returns the string that will map to the child class
-   * @param params    The parameters potentially used in the constructor
-   * @param args      The required arguments for the constructor
-   * @return  A constructed child class corresponding to a given string name
-   */
-  static T* get_extra_param(const std::string& param_name,
-                  SST::Params& params,
-                  const Args&... args) {
-    if (params.contains(param_name)) {
-      return get_param(param_name,params);
-    } else {
-      return nullptr;
-    }
-  }
-
-  static T* get_extra_value(const std::string& param_value,
-                  SST::Params& params,
-                  const Args&... args){
-    if (!builder_map_)
-      return nullptr;
-
-    auto it = builder_map_->find(param_value);
-    if (it == builder_map_->end()){
-      return nullptr;
-    } else {
-      return _get_value(param_value, params, args...);
-    }
-  }
 
   /**
    * @brief get_extra param Return a constructed child class corresponding
@@ -412,12 +333,12 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
+  template <class... InArgs>
   static T* get_optional_param(const std::string& param_name,
                      const std::string& defval,
-                     SST::Params& params,
-                     const Args&... args) {
+                      SST::Params& params, InArgs&&... args) {
     return _get_value(params.find<std::string>(param_name, defval),
-                      params, args...);
+                      params, std::forward<InArgs>(args)...);
   }
 
 };
@@ -439,8 +360,8 @@ class BuilderImpl : public Builder<Parent, Args...>
     registered_ = true;
   }
 
-  Parent* build(SST::Params& params, const Args&... args) {
-    return call_constructor<Child,Args...>()(params, args...);
+  Parent* build(Args... args) {
+    return new Child(std::forward<Args>(args)...);
   }
 
   static bool is_registered() {
@@ -472,8 +393,8 @@ template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Arg
 
 }
 
-#define FirstArgStr(X, ...) #X
-#define FirstArgFactoryName(X, ...) X##_factory
+#define ArgStr(X) #X
+#define ArgFactoryName(X) X##_factory
 
 #define FactoryRegister(cls_str, parent_cls, child_cls, ...) \
   friend class ::sprockit::BuilderImpl<child_cls,typename parent_cls::factory>; \
@@ -485,15 +406,37 @@ template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Arg
      return ::sprockit::BuilderRegistration<child_cls,parent_cls::factory>::builder_registered(); \
    }
 
-#define DeclareFactory(...) \
+#define DeclareFactoryArgs(T, ...) \
   public: \
-   friend class ::sprockit::Factory<__VA_ARGS__>; \
-    typedef ::sprockit::Factory<__VA_ARGS__> factory; \
+   friend class ::sprockit::Factory<T,SST::Params&,__VA_ARGS__>; \
+    using factory = ::sprockit::Factory<T,SST::Params&,__VA_ARGS__>; \
     static const char* class_name(){ \
       return factory::name(); \
     } \
     static const char* factory_name(){ \
-      return FirstArgStr(__VA_ARGS__); \
+      return ArgStr(T); \
+    }
+
+#define DeclareFactory(T) \
+  public: \
+   friend class ::sprockit::Factory<T,SST::Params&>; \
+    using factory = ::sprockit::Factory<T,SST::Params&>; \
+    static const char* class_name(){ \
+      return factory::name(); \
+    } \
+    static const char* factory_name(){ \
+      return ArgStr(T); \
+    }
+
+#define DeclareSimpleFactory(T,...) \
+  public: \
+   friend class ::sprockit::Factory<T,__VA_ARGS__>; \
+    using factory = ::sprockit::Factory<T,__VA_ARGS__>; \
+    static const char* class_name(){ \
+      return factory::name(); \
+    } \
+    static const char* factory_name(){ \
+      return ArgStr(T); \
     }
 
 #endif

@@ -75,7 +75,7 @@ namespace hw {
  */
 class Interconnect
 {
-  DeclareFactory(Interconnect, EventManager*, Partition*, ParallelRuntime*)
+  DeclareFactoryArgs(Interconnect, EventManager*, Partition*, ParallelRuntime*)
   FactoryRegister("switch | simple", Interconnect, Interconnect)
  public:
   static Interconnect* staticInterconnect(SST::Params& params, EventManager* mgr);

@@ -57,6 +57,8 @@ class SculpinParamExpander :
  public:
   void expand(SST::Params& params) override;
 
+  SculpinParamExpander(SST::Params& params) : ParamExpander(params) {}
+
  private:
   void expandAmm1Nic(SST::Params& params,
                        SST::Params& top_params,

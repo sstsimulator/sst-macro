@@ -75,6 +75,7 @@ class PiscesAbstractSwitch :
 
   virtual ~PiscesAbstractSwitch();
 
+  std::string arbType_;
   PacketStatsCallback* xbar_stats_;
   PacketStatsCallback* buf_stats_;
   Router* router_;
@@ -98,17 +99,9 @@ class PiscesSwitch :
 
   int queueLength(int port, int vc) const override;
 
-  virtual void connectOutput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* link) override;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
 
-  virtual void connectInput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* link) override;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink* link) override;
 
   LinkHandler* creditHandler(int port) override;
 
@@ -147,6 +140,10 @@ class PiscesSwitch :
 
   PiscesCrossbar* xbar_;
 
+  int xbar_credits_;
+  double link_bw_;
+  int link_credits_;
+  int mtu_;
 
 };
 

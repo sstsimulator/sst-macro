@@ -79,13 +79,14 @@ SculpinNIC::SculpinNIC(SST::Params& params, Node* parent) :
 Timestamp
 SculpinNIC::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("injection")->get_time_param("sendLatency"));
+  auto link_params = params.find_prefix_params("injection");
+  return Timestamp(link_params.findUnits("latency").toDouble());
 }
 
 Timestamp
 SculpinNIC::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("injection")->get_time_param("sendLatency"));
+  return sendLatency(params);
 }
 
 void
@@ -121,11 +122,7 @@ SculpinNIC::creditHandler(int port)
 }
 
 void
-SculpinNIC::connectOutput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+SculpinNIC::connectOutput(int src_outport, int dst_inport, EventLink* link)
 {
   if (src_outport == Injection){
     inj_link_ = link;
@@ -137,11 +134,7 @@ SculpinNIC::connectOutput(
 }
 
 void
-SculpinNIC::connectInput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+SculpinNIC::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
   //nothing to do
   //but we own the link now so have to delete it

@@ -190,14 +190,6 @@ class FatTree :
     return -1;
   }
 
-  bool uniformSwitchPorts() const override {
-    return true;
-  }
-
-  bool uniformSwitches() const override {
-    return false;
-  }
-
   bool isCurvedVtkLink(SwitchId sid, int port) const override {
     return false;
   }
@@ -238,6 +230,8 @@ class FatTree :
 
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
 
+  double portScaleFactor(uint32_t addr, int port) const override;
+
   int minimalDistance(SwitchId src, SwitchId dst) const {
     if (src == dst){
       return 0;
@@ -254,14 +248,6 @@ class FatTree :
   int numHopsToNode(NodeId src, NodeId dst) const override {
     return minimalDistance(src/concentration_, dst/concentration_);
   }
-
-  void configureNonuniformSwitchParams(
-      SwitchId src,
-      SST::Params& switch_params) const override;
-
-  void configureIndividualPortParams(
-      SwitchId src,
-      SST::Params& switch_params) const override { }
 
  protected:
   // used for minimal_fat_tree routing
@@ -288,7 +274,7 @@ class FatTree :
   double leaf_agg_bw_;
   double agg_core_bw_;
 
-  void check_input() const;
+  void checkInput() const;
 };
 
 
@@ -355,22 +341,12 @@ class TaperedFatTree : public AbstractFatTree
   }
 
   void endpointsConnectedToInjectionSwitch(
-      SwitchId swaddr,
-      std::vector<injection_port>& nodes) const override;
+      SwitchId swaddr, std::vector<injection_port>& nodes) const override;
 
   int maxNumPorts() const override {
     int first_max = std::max(concentration() + 1, leaf_switches_per_subtree_ + 1);
     return std::max(first_max, num_agg_subtrees_);
   }
-
-  bool uniformSwitchPorts() const override {
-    return false;
-  }
-
-  bool uniformSwitches() const override {
-    return false;
-  }
-
 
   inline int upPort(int level) const override {
     if (level == 0){
@@ -393,13 +369,9 @@ class TaperedFatTree : public AbstractFatTree
     return (sid - num_leaf_switches_);
   }
 
+  double portScaleFactor(uint32_t addr, int port) const override;
+
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
-
-  void configureIndividualPortParams(SwitchId src,
-      SST::Params& switch_params) const override;
-
-  void configureNonuniformSwitchParams(SwitchId src,
-        SST::Params& switch_params) const override;
 
  protected:
   virtual void createPartition(

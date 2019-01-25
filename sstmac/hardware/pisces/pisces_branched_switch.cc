@@ -80,13 +80,14 @@ PiscesBranchedSwitch::PiscesBranchedSwitch(SST::Params& params, uint32_t id)
 Timestamp
 PiscesBranchedSwitch::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("output")->get_time_param("sendLatency"));
+  auto link_params = params.find_prefix_params("link");
+  return Timestamp(link_params.findUnits("latency").toDouble());
 }
 
 Timestamp
 PiscesBranchedSwitch::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("input")->get_time_param("creditLatency"));
+  return sendLatency(params);
 }
 
 PiscesBranchedSwitch::~PiscesBranchedSwitch()
@@ -101,74 +102,82 @@ PiscesBranchedSwitch::~PiscesBranchedSwitch()
 void
 PiscesBranchedSwitch::initComponents(SST::Params& params)
 {
+#if 0
   // [muxer -> xbar -> demuxer -> output_buffer] -> [muxer...]
 
   if (!input_muxers_.empty())
     return;
 
   SST::Params input_params = params.find_prefix_params("input");
-
   SST::Params xbar_params = params.find_prefix_params("xbar");
-
   SST::Params output_params = params.find_prefix_params("output");
 
+  xbar_bw_ = xbar_params.findUnits("bandwidth").toDouble();
+  input_bw_ = input_params.findUnits("bandwidth").toDouble();
+  output_bw_ = output_params.findUnits("bandwidth").toDouble();
+
+  std::string xbar_arb = xbar_params.find<std::string>("arbitrator");
+  std::string input_arb = input_params.find<std::string>("arbitrator");
+  std::string output_arb = input_params.find<std::string>("arbitrator");
+
+
+  input_credits_ = input_params.find<int>("credits");
+  output_credits_ = output_params.find<int>("credits");
+  xbar_credits_ = xbar_params.find<int>("credits");
 
   // construct the elements
-  xbar_ = new PiscesCrossbar(xbar_params, this, n_local_xbars_, n_local_xbars_,
+  xbar_ = new PiscesCrossbar(xbar_arb, xbar_bw_, this, n_local_xbars_, n_local_xbars_,
                               router_->numVC(), true/*yes, update vc*/);
   input_muxers_.resize(n_local_xbars_);
   output_demuxers_.resize(n_local_xbars_);
   for (int i=0; i < n_local_xbars_; ++i) {
-    PiscesMuxer* mux = new PiscesMuxer(input_params, this, n_local_ports_, router_->numVC(),
-                                         false/*no vc update here*/);
+    PiscesMuxer* mux = new PiscesMuxer(input_arb, input_bw_, this, n_local_ports_, router_->numVC(),
+                                       false/*no vc update here*/);
     InputPort& input = input_muxers_[i];
     input.mux = mux;
     input.parent = this;
 
-    PiscesDemuxer* demux = new PiscesDemuxer(output_params, this, n_local_ports_, router_->numVC(),
-                                               false/*no vc update here*/);
+    PiscesDemuxer* demux = new PiscesDemuxer(output_arb, output_bw_, this, n_local_ports_, router_->numVC(),
+                                             false/*no vc update here*/);
     output_demuxers_[i] = demux;
   }
 
   // connect input muxers to central xbar
+  // don't put latency on internal links
   for (int i=0; i < n_local_xbars_; ++i) {
     PiscesMuxer* mux = input_muxers_[i].mux;
-    auto out_lnk = allocateSubLink(mux->sendLatency(), this, xbar_->payloadHandler());
-    mux->setOutput(input_params,0,i,out_lnk);
-    auto in_lnk = allocateSubLink(xbar_->creditLatency(), this, mux->creditHandler());
+    auto out_lnk = allocateSubLink(Timestamp(), this, xbar_->payloadHandler());
+    mux->setOutput(input_params,0,i,out_lnk,input_credits_);
+    auto in_lnk = allocateSubLink(Timestamp(), this, mux->creditHandler());
     xbar_->setInput(xbar_params,i,0,in_lnk);
   }
 
   // connect output demuxers to central xbar
   for (int i=0; i < n_local_xbars_; ++i) {
     PiscesDemuxer* demux = output_demuxers_[i];
-    auto out_link = allocateSubLink(xbar_->sendLatency(), this, demux->payloadHandler());
-    xbar_->setOutput(xbar_params,i,0,out_link);
-    auto in_link = allocateSubLink(demux->creditLatency(), this, xbar_->creditHandler());
+    auto out_link = allocateSubLink(Timestamp(), this, demux->payloadHandler());
+    xbar_->setOutput(xbar_params,i,0,out_link,xbar_credits_);
+    auto in_link = allocateSubLink(Timestamp(), this, xbar_->creditHandler());
     demux->setInput(output_params,0,i,in_link);
   }
+#endif
 }
 
 void
 PiscesBranchedSwitch::connectOutput(
-  SST::Params& params,
   int src_outport,
   int dst_inport,
   EventLink* link)
 {
   PiscesDemuxer* demux = output_demuxers_[src_outport/n_local_ports_];
-  demux->setOutput(params, src_outport % n_local_ports_, dst_inport, link);
+  demux->setOutput(src_outport % n_local_ports_, dst_inport, link, output_credits_);
 }
 
 void
-PiscesBranchedSwitch::connectInput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+PiscesBranchedSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
   PiscesMuxer* muxer = input_muxers_[dst_inport/n_local_ports_].mux;
-  muxer->setInput(params, dst_inport % n_local_ports_, src_outport, link);
+  muxer->setInput(dst_inport % n_local_ports_, src_outport, link);
 }
 
 int

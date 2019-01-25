@@ -58,6 +58,8 @@ class ParamExpander
 
   virtual void expand(SST::Params& params) = 0;
 
+  ParamExpander(SST::Params& params) {}
+
 };
 
 }

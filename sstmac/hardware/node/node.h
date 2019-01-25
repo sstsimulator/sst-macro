@@ -77,7 +77,7 @@ namespace hw {
 
 class Node : public ConnectableComponent
 {
-  DeclareFactory(Node,uint32_t)
+  DeclareFactoryArgs(Node,uint32_t)
  public:
   void setup() override;
 
@@ -85,13 +85,9 @@ class Node : public ConnectableComponent
 
   virtual ~Node();
 
-  void connectOutput(SST::Params& params,
-                 int src_outport, int dst_inport,
-                 EventLink* link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
 
-  void connectInput(SST::Params& params,
-                 int src_outport, int dst_inport,
-                 EventLink* link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink* link) override;
 
   Timestamp sendLatency(SST::Params& params) const override;
 

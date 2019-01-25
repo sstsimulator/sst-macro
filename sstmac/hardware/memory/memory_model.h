@@ -61,7 +61,7 @@ namespace hw {
 
 class MemoryModel : public SubComponent
 {
-  DeclareFactory(MemoryModel,Node*)
+  DeclareFactoryArgs(MemoryModel,Node*)
  public:
   MemoryModel(SST::Params& params,
                Node* Node);

@@ -182,12 +182,5 @@ FileTopology::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
   }
 }
 
-void
-FileTopology::configureIndividualPortParams(
-    SwitchId src, SST::Params& switch_params) const
-{
-  spkt_abort_printf("configureIndividualPortParams() not implemented");
-}
-
 }
 } //end of namespace sstmac

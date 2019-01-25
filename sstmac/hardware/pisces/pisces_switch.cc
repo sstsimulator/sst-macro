@@ -60,8 +60,6 @@ RegisterNamespaces("switch", "router", "congestion_stats", "xbar", "link",
 RegisterKeywords(
 { "stats", "specify the statistics collection to be performed on this switch" },
 { "latency", "latency to traverse a portion of the switch - sets both credit/send" },
-{ "sendLatency", "latency to send data to the next stage" },
-{ "creditLatency", "latency to send credit to the previous stage" },
 { "credits", "the number of initial credits available to switch component" },
 { "num_vc", "the number of virtual channels a switch must allow" },
 );
@@ -96,7 +94,7 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(SST::Params& params, uint32_t id) :
     ej_params.insert("credits", "1GB");
   }
 
-  PiscesSender::configurePayloadPortLatency(ej_params);
+  //PiscesSender::configurePayloadPortLatency(ej_params);
 
   for (Topology::injection_port& conn : conns){
     auto port_ns = Topology::getPortNamespace(conn.switch_port);
@@ -118,9 +116,30 @@ PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
   xbar_(nullptr)
 {
   SST::Params xbar_params = params.find_prefix_params("xbar");
-  xbar_ = new PiscesCrossbar(xbar_params, this,
-                              top_->maxNumPorts(), top_->maxNumPorts(),
-                              router_->numVC(), true/*yes, update vc*/);
+
+  double xbar_bw = xbar_params.findUnits("bandwidth").toDouble();
+  std::string xbar_arb = xbar_params.find<std::string>("arbitrator");
+
+  SST::Params link_params = params.find_prefix_params("link");
+  link_bw_ = link_params.findUnits("bandwidth").toDouble();
+  arbType_ = link_params.find<std::string>("arbitrator");
+  if (link_params.contains("credits")){
+    link_credits_ = link_params.findUnits("credits").getRoundedValue();
+  } else {
+    double lat_s = link_params.findUnits("latency").toDouble();
+    //use RTT as buffer size
+    link_credits_ = 2*link_credits_*lat_s;
+  }
+
+  if (xbar_params.contains("credits")){
+    xbar_credits_ = xbar_params.findUnits("credits").getRoundedValue();
+  } else {
+    xbar_credits_ = link_credits_;
+  }
+
+  xbar_ = new PiscesCrossbar(xbar_arb, xbar_bw, this,
+                             top_->maxNumPorts(), top_->maxNumPorts(),
+                             router_->numVC(), true/*yes, update vc*/);
   xbar_->setStatCollector(xbar_stats_);
   out_buffers_.resize(top_->maxNumPorts());
   inports_.resize(top_->maxNumPorts());
@@ -129,6 +148,8 @@ PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
     inp.port = i;
     inp.parent = this;
   }
+
+  mtu_ = link_params.findUnits("mtu").getRoundedValue();
 
   initLinks(params);
 }
@@ -145,23 +166,24 @@ PiscesSwitch::~PiscesSwitch()
 
 void
 PiscesSwitch::connectOutput(
-  SST::Params& port_params,
   int src_outport,
   int dst_inport,
   EventLink* link)
 {
-  PiscesBuffer* out_buffer = new PiscesBuffer(port_params, this, router_->numVC());
+  double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
+
+  PiscesBuffer* out_buffer = new PiscesBuffer(arbType_, link_bw_ * scale_factor, mtu_,
+                                              this, router_->numVC());
   out_buffer->setStatCollector(buf_stats_);
   int buffer_inport = 0;
-  auto out_link = allocateSubLink(xbar_->sendLatency(), this,
+  auto out_link = allocateSubLink(Timestamp(), this, //don't put latency on xbar
                 newHandler(out_buffer, &PiscesBuffer::handlePayload));
-  xbar_->setOutput(port_params, src_outport, buffer_inport, out_link);
-  auto in_link = allocateSubLink(out_buffer->creditLatency(), this, xbar_->creditHandler());
-  out_buffer->setInput(port_params, buffer_inport, src_outport, in_link);
+  xbar_->setOutput(src_outport, buffer_inport, out_link, link_credits_ * scale_factor);
+  auto in_link = allocateSubLink(Timestamp(), this, xbar_->creditHandler()); //don't put latency on internal credits
+  out_buffer->setInput(buffer_inport, src_outport, in_link);
   out_buffers_[src_outport] = out_buffer;
 
-
-  out_buffer->setOutput(port_params, src_outport, dst_inport, link);
+  out_buffer->setOutput(src_outport, dst_inport, link, link_credits_ * scale_factor);
   out_buffers_[src_outport] = out_buffer;
 }
 
@@ -176,26 +198,23 @@ PiscesSwitch::InputPort::handle(Event *ev)
 }
 
 void
-PiscesSwitch::connectInput(
-  SST::Params& port_params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+PiscesSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
   int buffer_port = 0;
-  xbar_->setInput(port_params, dst_inport, buffer_port, link);
+  xbar_->setInput(dst_inport, buffer_port, link);
 }
 
 Timestamp
 PiscesSwitch::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.findUnits("sendLatency").toDouble());
+  auto link_params = params.find_prefix_params("link");
+  return Timestamp(link_params.findUnits("latency").toDouble());
 }
 
 Timestamp
 PiscesSwitch::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.find_prefix_params("xbar")->get_time_param("creditLatency"));
+  return sendLatency(params);
 }
 
 int

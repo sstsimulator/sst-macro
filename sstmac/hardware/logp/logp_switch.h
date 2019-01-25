@@ -66,7 +66,7 @@ namespace hw {
  */
 class LogPSwitch : public ConnectableComponent
 {
-  DeclareFactory(LogPSwitch,uint32_t)
+  DeclareFactoryArgs(LogPSwitch,uint32_t)
 
  public:
   RegisterComponent("logP | simple | LogP | logp", LogPSwitch, LogPSwitch,
@@ -76,6 +76,8 @@ class LogPSwitch : public ConnectableComponent
   struct ContentionModel {
     DeclareFactory(ContentionModel)
     virtual double value() = 0;
+
+    ContentionModel(SST::Params& params){}
   };
 
  public:
@@ -87,15 +89,11 @@ class LogPSwitch : public ConnectableComponent
     return "LogP switch";
   }
 
-  void connectOutput(SST::Params& params,
-                      int src_outport, int dst_inport,
-                      EventLink *payload_link) override {
+  void connectOutput(int src_outport, int dst_inport, EventLink *payload_link) override {
     nic_links_[src_outport] = payload_link;
   }
 
-  void connectInput(SST::Params& params,
-                     int src_outport, int dst_inport,
-                     EventLink *credit_link) override {
+  void connectInput(int src_outport, int dst_inport, EventLink *credit_link) override {
     //do nothing
   }
 

@@ -98,6 +98,9 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
   congestion_ = params.find<bool>("congestion", true);
   vtk_flicker_ = params.find<bool>("vtk_flicker", true);
 
+  SST::Params link_params = params.find_prefix_params("link");
+  link_bw_ = link_params.findUnits("bandwidth").toDouble();
+
 //  sprockit::sim_parameters* ej_params = params.find_prefix_params("ejection");
 //  std::vector<topology::injection_port> inj_conns;
 //  top_->endpointsConnectedToEjectionSwitch(my_addr_, inj_conns);
@@ -188,24 +191,18 @@ SculpinSwitch::~SculpinSwitch()
 }
 
 void
-SculpinSwitch::connectOutput(
-  SST::Params& port_params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+SculpinSwitch::connectOutput(int src_outport, int dst_inport, EventLink* link)
 {
+  double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
+  double port_bw = scale_factor * link_bw_;
   Port& p = ports_[src_outport];
   p.link = link;
-  p.byte_delay = Timestamp(port_params.findUnits("bandwidth").inverse().toDouble());
+  p.byte_delay = Timestamp(1.0/port_bw);
   p.dst_port = dst_inport;
 }
 
 void
-SculpinSwitch::connectInput(
-  SST::Params& port_params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
   //no-op
   //but we have to delete the link because we own it
@@ -215,13 +212,13 @@ SculpinSwitch::connectInput(
 Timestamp
 SculpinSwitch::sendLatency(SST::Params& params) const
 {
-  return Timestamp(params.findUnits("sendLatency").toDouble());
+  return Timestamp(params.findUnits("latency").toDouble());
 }
 
 Timestamp
 SculpinSwitch::creditLatency(SST::Params& params) const
 {
-  return Timestamp(params.findUnits("sendLatency").toDouble());
+  return Timestamp(params.findUnits("latency").toDouble());
 }
 
 int

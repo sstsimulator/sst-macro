@@ -73,12 +73,5 @@ Star::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
   }
 }
 
-void
-Star::configureIndividualPortParams(
-    SwitchId src, SST::Params& switch_params) const
-{
-  Topology::configureIndividualPortParams(0, numSwitches(), switch_params);
-}
-
 }
 } //end of namespace sstmac

@@ -69,10 +69,6 @@ class Hypercube :
     SwitchId dst,
     Packet::header* hdr) const;
 
-  bool uniformSwitchPorts() const override {
-    return false;
-  }
-
   int maxNumPorts() const override {
     int sum = 0;
     for (int size : dimensions_) sum += size;
@@ -83,9 +79,6 @@ class Hypercube :
          std::vector<injection_port>& nodes) const override;
 
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
-
-  void configureIndividualPortParams(SwitchId src,
-           SST::Params& switch_params) const override;
 
   inline int convertToPort(int dim, int dir) const {
     return dim_to_outport_[dim] + dir;

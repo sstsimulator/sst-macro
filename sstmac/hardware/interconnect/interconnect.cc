@@ -138,7 +138,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   if (logp_model){
     switch_params.combine_into(logp_params);
   } else {
-    LogPParamExpander expander;
+    LogPParamExpander expander(logp_params);
     expander.expandInto(logp_params, params, switch_params);
   }
 
@@ -275,10 +275,10 @@ Interconnect::connectEndpoints(EventManager* mgr,
       auto credit_link = new LocalLink(injsw->creditLatency(sw_ej_params), mgr,
                                        ep->creditHandler(p.ep_port));
 
-      injsw->connectInput(sw_ej_params, p.ep_port, p.switch_port, credit_link);
+      injsw->connectInput(p.ep_port, p.switch_port, credit_link);
       auto payload_link = new LocalLink(ep->sendLatency(ep_inj_params), mgr,
                                         injsw->payloadHandler(p.switch_port));
-      ep->connectOutput(ep_inj_params, p.ep_port, p.switch_port, payload_link);
+      ep->connectOutput(p.ep_port, p.switch_port, payload_link);
     }
 
     topology_->endpointsConnectedToEjectionSwitch(i, ports);
@@ -289,10 +289,10 @@ Interconnect::connectEndpoints(EventManager* mgr,
           int(i), ejsw, p.nid, ep, p.switch_port, p.ep_port);
 
       auto payload_link = new LocalLink(ejsw->sendLatency(sw_ej_params), mgr, ep->payloadHandler(p.ep_port));
-      ejsw->connectOutput(sw_ej_params, p.switch_port, p.ep_port, payload_link);
+      ejsw->connectOutput(p.switch_port, p.ep_port, payload_link);
 
       auto credit_link = new LocalLink(ep->creditLatency(ep_ej_params), mgr, ejsw->creditHandler(p.switch_port));
-      ep->connectInput(ep_ej_params, p.switch_port, p.ep_port, credit_link);
+      ep->connectInput(p.switch_port, p.ep_port, credit_link);
     }
   }
 
@@ -351,7 +351,7 @@ Interconnect::connectLogP(EventManager* mgr,
         //nic sends to only its specific logp switch
         EventLink* logp_link = new LocalLink(Timestamp(0), mgr,
             local_logp_switch->payloadHandler(conn.switch_port));
-        nd->nic()->connectOutput(inj_params, NIC::LogP, conn.switch_port, logp_link);
+        nd->nic()->connectOutput(NIC::LogP, conn.switch_port, logp_link);
 
         EventLink* out_link = new LocalLink(local_logp_switch->sendLatency(empty), mgr, nd->payloadHandler(NIC::LogP));
         local_logp_switch->connectOutput(conn.nid, out_link);
@@ -414,13 +414,10 @@ Interconnect::buildSwitches(SST::Params& switch_params,
   if (simple_model) return; //nothing to do
 
   int my_rank = rt_->me();
-  bool all_switches_same = topology_->uniformSwitches();
   int id_offset = topology_->numNodes();
   for (SwitchId i=0; i < num_switches_; ++i){
     switch_params->add_param_override("id", int(i));
     if (partition_->lpidForSwitch(i) == my_rank){
-      if (!all_switches_same)
-        topology_->configureNonuniformSwitchParams(i, switch_params);
       int thread = partition_->threadForSwitch(i);
       uint32_t comp_id = switchComponentId(i);
       switches_[i] = NetworkSwitch::factory::get_param("name", switch_params, comp_id);
@@ -449,18 +446,7 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
   int my_rank = rt_->me();
   int my_thread = mgr->thread();
 
-  //might be super uniform in which all ports are the same
-  //or it might be mostly uniform in which all the switches are the same
-  //even if the individual ports on each switch are different
-  bool all_ports_same = topology_->uniformSwitchPorts();
-  bool all_switches_same = topology_->uniformSwitches();
-
-  SST::Params port_params;
-  if (all_ports_same){
-    port_params = switch_params.get_namespace("link");
-  } else if (all_switches_same && !all_ports_same){
-    topology_->configureIndividualPortParams(SwitchId(0), switch_params);
-  }
+  SST::Params port_params = switch_params.get_namespace("link");
 
   for (int i=0; i < num_switches_; ++i){
     interconn_debug("interconnect: connecting switch %i", i);
@@ -468,17 +454,9 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
     int src_rank = partition_->lpidForSwitch(i);
     int src_thread = partition_->threadForSwitch(i);
     topology_->connectedOutports(src, outports);
-
-    if (!all_switches_same && !all_ports_same){
-      topology_->configureIndividualPortParams(src, switch_params);
-    }
     for (Topology::connection& conn : outports){
       int dst_rank = partition_->lpidForSwitch(conn.dst);
       int dst_thread = partition_->threadForSwitch(conn.dst);
-
-      if (!all_ports_same){
-        port_params = switch_params.get_namespace(Topology::getPortNamespace(conn.src_outport));
-      }
 
       interconn_debug("%s connecting to %s on ports %d:%d",
                 topology_->switchLabel(src).c_str(),
@@ -498,8 +476,7 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
                                      switchComponentId(src), switchComponentId(conn.dst),
                                      conn.dst_inport, false);
         }
-        switches_[src]->connectOutput(port_params, conn.src_outport, conn.dst_inport,
-                                      payload_link);
+        switches_[src]->connectOutput(conn.src_outport, conn.dst_inport, payload_link);
 
       }
 
@@ -516,8 +493,7 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
                                     switchComponentId(conn.dst), switchComponentId(src),
                                     conn.src_outport, true);
         }
-        switches_[conn.dst]->connectInput(port_params,
-                                 conn.src_outport, conn.dst_inport, credit_link);
+        switches_[conn.dst]->connectInput(conn.src_outport, conn.dst_inport, credit_link);
       }
     }
   }

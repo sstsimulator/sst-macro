@@ -88,17 +88,9 @@ class SculpinSwitch :
     return router_;
   }
 
-  void connectOutput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
 
-  void connectInput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink* link) override;
 
   LinkHandler* creditHandler(int Port) override;
 
@@ -164,6 +156,7 @@ class SculpinSwitch :
   double highlight_scale_;
   bool vtk_flicker_;
 
+  double link_bw_;
 
  private:
   void send(Port& p, SculpinPacket* pkt, GlobalTimestamp now);

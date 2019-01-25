@@ -147,7 +147,7 @@ FatTree::FatTree(SST::Params& params) :
   int la_ports = std::max(leaf_ports,agg_ports);
 
   // check for errors
-  check_input();
+  checkInput();
 }
 
 Topology::vtk_switch_geometry
@@ -335,11 +335,10 @@ FatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
   }
 }
 
-void
-FatTree::configureNonuniformSwitchParams(SwitchId src,
-                           SST::Params& switch_params) const
+double
+FatTree::portScaleFactor(uint32_t addr, int port) const
 {
-  int my_level = level(src);
+  int my_level = level(addr);
 
   int n_leaf_port = up_ports_per_leaf_switch_ + concentration();
   int n_agg_port = up_ports_per_agg_switch_ + down_ports_per_agg_switch_;
@@ -355,6 +354,18 @@ FatTree::configureNonuniformSwitchParams(SwitchId src,
   else if (my_level == 2 && n_core_port > min_port)
     multiplier *= double(n_core_port) / double(min_port);
 
+  return multiplier;
+}
+
+#if 0
+void
+FatTree::configureNonuniformSwitchParams(SwitchId src,
+                           SST::Params& switch_params) const
+{
+
+
+
+
   if ( my_level == 0 &&
        switch_params.contains("leaf_bandwidth_multiplier"))
     multiplier = switch_params.find<double>("leaf_bandwidth_multiplier");
@@ -368,9 +379,10 @@ FatTree::configureNonuniformSwitchParams(SwitchId src,
   top_debug("fat_tree: scaling switch %i by %lf",src,multiplier);
   writeBwParams(switch_params, multiplier);
 }
+#endif
 
 void
-FatTree::check_input() const
+FatTree::checkInput() const
 {
   int val;
 
@@ -515,75 +527,6 @@ TaperedFatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) 
 }
 
 void
-TaperedFatTree::configureIndividualPortParams(SwitchId src,
-                                  SST::Params& switch_params) const
-{
-  SST::Params link_params = switch_params.find_prefix_params("link");
-  int buffer_size = link_params->get_optional_byte_length_param("buffer_size", 0);
-  double bw = link_params.findUnits("bandwidth").toDouble();
-  double taper = link_params.find<double>("core_taper",1.0);
-  int taperedBufSize = buffer_size * agg_bw_multiplier_ * taper;
-  double taperedBw = bw * agg_bw_multiplier_ * taper;
-  int myLevel = level(src);
-
-  if (myLevel == 0){
-    //inj switch
-    int outport = upPort(0);
-    setupPortParams(outport,
-                      buffer_size,
-                      bw,
-                      link_params, switch_params);
-  } else if (myLevel == 1){
-    //I have up and down links
-    //My up link is tapered
-    int outport = upPort(1);
-    setupPortParams(outport,
-                      taperedBufSize,
-                      taperedBw,
-                      link_params, switch_params);
-
-    //My down links are not
-    for (int s=0; s < leaf_switches_per_subtree_; s++){
-      int outport = s;
-      setupPortParams(outport,
-                        buffer_size,
-                        bw,
-                        link_params,
-                        switch_params);
-    }
-  } else {
-    //I have only down links
-    for (int s=0; s < num_agg_subtrees_; ++s){
-      int outport = s;
-      setupPortParams(outport,
-                        taperedBufSize,
-                        taperedBw,
-                        link_params, switch_params);
-    }
-  }
-}
-
-void
-TaperedFatTree::configureNonuniformSwitchParams(SwitchId src,
-                           SST::Params& switch_params) const
-{
-  int myLevel = level(src);
-  double multiplier = 1.0;
-  if (myLevel == 0){
-    //okay - nothing doing - normal switches
-  } else if (myLevel == 1){
-    //this switch is modeling the functionaliy of X commodity switches
-    multiplier = agg_switches_per_subtree_;
-  } else {
-    //this switch is modeling the functionality of X commodity switches
-    multiplier = num_core_switches_;
-  }
-
-  top_debug("abstract_fat_tree: scaling switch %i by %lf",src,multiplier);
-  writeBwParams(switch_params,multiplier);
-}
-
-void
 TaperedFatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
                                    std::vector<injection_port>& nodes) const
 {
@@ -669,6 +612,12 @@ TaperedFatTree::createPartition(
 
   local_num_switches  = localIdx;
 */
+}
+
+double
+TaperedFatTree::portScaleFactor(uint32_t addr, int port) const
+{
+  return 1.0;
 }
 
 }

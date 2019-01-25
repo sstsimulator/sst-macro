@@ -100,14 +100,14 @@ validate_bw(double test_bw)
 }
 
 PiscesBandwidthArbitrator::
-PiscesBandwidthArbitrator(SST::Params& params)
+PiscesBandwidthArbitrator(double bw)
 {
-  byteDelay_ = Timestamp(params.findUnits("bandwidth").inverse().toDouble());
+  byteDelay_ = Timestamp(1.0/bw);
 }
 
-PiscesSimpleArbitrator::PiscesSimpleArbitrator(SST::Params& params) :
+PiscesSimpleArbitrator::PiscesSimpleArbitrator(double bw) :
   next_free_(),
-  PiscesBandwidthArbitrator(params)
+  PiscesBandwidthArbitrator(bw)
 {
 }
 
@@ -126,15 +126,13 @@ PiscesSimpleArbitrator::arbitrate(pkt_arbitration_t &st)
   //store and forward
   //head/tail are linked and go "at same time"
   st.head_leaves = st.tail_leaves = next_free_;
-  //we can send the credit a bit ahead of time
-  st.credit_leaves = st.head_leaves + creditDelay;
   //head and tail arrive at same time - there is no delay
   //for additional bytes to arrive
   st.pkt->setByteDelay(Timestamp());
 }
 
-PiscesNullArbitrator::PiscesNullArbitrator(SST::Params& params) :
-  PiscesBandwidthArbitrator(params)
+PiscesNullArbitrator::PiscesNullArbitrator(double bw) :
+  PiscesBandwidthArbitrator(bw)
 {
 }
 
@@ -162,8 +160,6 @@ PiscesNullArbitrator::arbitrate(pkt_arbitration_t &st)
 #endif
   st.head_leaves = st.now;
   st.tail_leaves = st.now + actual_delay;
-  //we can send the credit a bit ahead of the tail
-  st.credit_leaves = st.head_leaves + (actual_delay - min_delay);
   st.pkt->setByteDelay(byteDelay);
 
   pflow_arb_debug_printf_l0("Null: packet %p:%llu of size %u leaves with effective bandwidth=%9.5e with epoch max=%9.5e",
@@ -171,11 +167,13 @@ PiscesNullArbitrator::arbitrate(pkt_arbitration_t &st)
 }
 
 PiscesCutThroughArbitrator::
-PiscesCutThroughArbitrator(SST::Params& params)
+PiscesCutThroughArbitrator(double bw)
   : head_(nullptr),
-    PiscesBandwidthArbitrator(params)
+    PiscesBandwidthArbitrator(bw)
 {
   cycleLength_ = byteDelay_;
+  if (cycleLength_.sec() > 0.1) abort();
+  if (cycleLength_.ticks() == 0) abort();
   head_ = Epoch::allocate_at_beginning();
   head_->numCycles = std::numeric_limits<uint32_t>::max();
 }
@@ -350,8 +348,6 @@ PiscesCutThroughArbitrator::arbitrate(pkt_arbitration_t &st)
       }
     }
   }
-
-  st.credit_leaves = st.head_leaves;
 
   Timestamp newByteDelay = (st.tail_leaves - st.head_leaves) / st.pkt->numBytes();
   st.pkt->setByteDelay(newByteDelay);

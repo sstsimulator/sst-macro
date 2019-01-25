@@ -65,7 +65,6 @@ struct pkt_arbitration_t
   GlobalTimestamp now;
   GlobalTimestamp head_leaves;
   GlobalTimestamp tail_leaves;
-  GlobalTimestamp credit_leaves;
   PiscesPacket* pkt;
   int src_outport;
   int dst_inport;
@@ -78,7 +77,7 @@ struct pkt_arbitration_t
  */
 class PacketStatsCallback
 {
-  DeclareFactory(PacketStatsCallback, EventScheduler*)
+  DeclareFactoryArgs(PacketStatsCallback, EventScheduler*)
  public:
   virtual ~PacketStatsCallback(){}
 

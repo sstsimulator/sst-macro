@@ -142,22 +142,15 @@ Torus::shortestPathPositive(
   return up_distance <= down_distance;
 }
 
-void
-Torus::configureIndividualPortParams(SwitchId src,
-                                     SST::Params& switch_params) const
+double
+Torus::portScaleFactor(uint32_t addr, int port) const
 {
-  SST::Params link_params = switch_params.find_prefix_params("link");
-  double bw = link_params.findUnits("bandwidth").toDouble();
-  //if there is a buffer size given, grab it
-  int bufsize = link_params.findUnits("buffer_size", "0B").getRoundedValue();
-  int ndims = dimensions_.size();
-  for (int i=0; i < ndims; ++i){
-    double port_bw = bw * red_[i];
-    int credits = bufsize * red_[i];
-    for (int dir=0; dir < 2; ++dir){
-      int port = convertToPort(i, dir);
-      setupPortParams(port, credits, port_bw, link_params, switch_params);
-    }
+  if (port >= 2*dimensions_.size()){
+    //ejection port
+    return injection_redundancy_;
+  } else {
+    int dim = port / 2;
+    return red_[dim];
   }
 }
 

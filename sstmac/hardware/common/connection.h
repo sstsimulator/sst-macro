@@ -66,31 +66,21 @@ class Connectable {
    * @brief connectOutput
    * Invoked by interconnect setup routine to notify device
    * that all payloads sent out on given port should be sent to given payload handler
-   * @param params
    * @param src_outport
    * @param dst_inport
    * @param payloadHandler
    */
-  virtual void connectOutput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* payload_link) = 0;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink* payload_link) = 0;
 
   /**
    * @brief connectInput
    * Invoked by interconnect setup routine to notify device
    * that all credits sent back to a given port should be sent to given credit handler
-   * @param params
    * @param src_outport
    * @param dst_inport
    * @param creditHandler Can be null, if no credits are ever sent
    */
-  virtual void connectInput(
-    SST::Params& params,
-    int src_outport,
-    int dst_inport,
-    EventLink* credit_link) = 0;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink* credit_link) = 0;
 
   virtual Timestamp sendLatency(SST::Params& params) const = 0;
 

@@ -59,43 +59,35 @@ PiscesBuffer::~PiscesBuffer()
 }
 
 void
-PiscesBuffer::setInput(
-  SST::Params& params,
-  int this_inport, int src_outport,
-  EventLink* link)
+PiscesBuffer::setInput(int this_inport, int src_outport, EventLink* link)
 {
   input_.link = link;
   input_.port_to_credit = src_outport;
 }
 
 void
-PiscesBuffer::setOutput(SST::Params& params,
-                         int this_outport, int dst_inport,
-                         EventLink* link)
+PiscesBuffer::setOutput(int this_outport, int dst_inport, EventLink* link, int credits)
 {
   output_.link = link;
   output_.arrival_port = dst_inport;
-}
-
-PiscesBuffer::PiscesBuffer(
-  SST::Params& params,
-  SST::Component* parent, int num_vc)
-  : PiscesSender(params, parent, false/*buffers do not update vc*/),
-    bytes_delayed_(0),
-    num_vc_(num_vc),
-    queues_(num_vc),
-    credits_(num_vc, 0),
-    initial_credits_(num_vc,0),
-    packet_size_(params.findUnits("mtu").getRoundedValue())
-{
-  int credits = params.findUnits("credits").getRoundedValue();
   int num_credits_per_vc = credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {
     credits_[i] = num_credits_per_vc;
     initial_credits_[i] = num_credits_per_vc;
   }
-  arb_ = PiscesBandwidthArbitrator::factory::
-          get_param("arbitrator", params);
+}
+
+PiscesBuffer::PiscesBuffer(const std::string& arb, double bw, int packet_size,
+                           SST::Component* parent, int num_vc)
+  : PiscesSender(parent, false/*buffers do not update vc*/),
+    bytes_delayed_(0),
+    num_vc_(num_vc),
+    queues_(num_vc),
+    credits_(num_vc, 0),
+    initial_credits_(num_vc,0),
+    packet_size_(packet_size)
+{
+  arb_ = PiscesBandwidthArbitrator::factory::get_value(arb, bw);
 }
 
 void

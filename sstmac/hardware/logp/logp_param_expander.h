@@ -62,6 +62,8 @@ class LogPParamExpander :
     SST::Params& params,
     SST::Params& switch_params);
 
+  LogPParamExpander(SST::Params& params) : ParamExpander(params) {}
+
  protected:
   void expandAmm1Nic(SST::Params& params,
     SST::Params& nic_params,
@@ -82,6 +84,8 @@ class LogPParamExpander :
   void expandAmm4Nic(SST::Params& params,
     SST::Params& nic_params,
     SST::Params& switch_params);
+
+
 };
 
 }

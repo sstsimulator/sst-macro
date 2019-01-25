@@ -60,7 +60,7 @@ namespace sw {
 
 class Library
 {
-  DeclareFactory(Library, SoftwareId, OperatingSystem*)
+  DeclareFactoryArgs(Library, SoftwareId, OperatingSystem*)
  public:
   std::string toString() const {
     return libname_;

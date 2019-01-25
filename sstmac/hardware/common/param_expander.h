@@ -60,6 +60,8 @@ class ParamExpander : public sstmac::ParamExpander
 
   virtual int switchBufferMultiplier(SST::Params& params) const;
 
+  ParamExpander(SST::Params& params) : sstmac::ParamExpander(params) {}
+
 };
 
 }

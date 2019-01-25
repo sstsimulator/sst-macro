@@ -62,7 +62,7 @@ namespace hw {
  */
 class PiscesBandwidthArbitrator
 {
-  DeclareFactory(PiscesBandwidthArbitrator)
+  DeclareSimpleFactory(PiscesBandwidthArbitrator,double)
  public:
   /**
       Assign bandwidth to payload.
@@ -80,14 +80,8 @@ class PiscesBandwidthArbitrator
     return byteDelay_;
   }
 
-  static inline Timestamp
-  creditDelay(Timestamp minByteDelay, Timestamp actualByteDelay, uint32_t bytes){
-    Timestamp credit_delta = bytes * (actualByteDelay - minByteDelay);
-    return std::max(Timestamp(), credit_delta);
-  }
-
  protected:
-  PiscesBandwidthArbitrator(SST::Params& params);
+  PiscesBandwidthArbitrator(double bw);
 
  protected:
   Timestamp byteDelay_;
@@ -104,7 +98,7 @@ class PiscesNullArbitrator :
   FactoryRegister("null", PiscesBandwidthArbitrator, PiscesNullArbitrator,
               "Simple bandwidth arbitrator that models zero congestion on a link")
  public:
-  PiscesNullArbitrator(SST::Params& params);
+  PiscesNullArbitrator(double bw);
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
@@ -129,7 +123,7 @@ class PiscesSimpleArbitrator :
               "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
               "This corresponds to store-and-forward, which can be inaccurate for large packet sizes")
  public:
-  PiscesSimpleArbitrator(SST::Params& params);
+  PiscesSimpleArbitrator(double bw);
 
   virtual void arbitrate(pkt_arbitration_t& st) override;
 
@@ -161,7 +155,7 @@ class PiscesCutThroughArbitrator :
               "This is a much better approximation to wormhole or virtual cut_through routing")
 
  public:
-  PiscesCutThroughArbitrator(SST::Params& params);
+  PiscesCutThroughArbitrator(double bw);
 
   ~PiscesCutThroughArbitrator();
 

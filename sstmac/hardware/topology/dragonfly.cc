@@ -133,24 +133,6 @@ Dragonfly::minimalDistance(SwitchId src, SwitchId dst) const
   }
 }
 
-
-void
-Dragonfly::setupPortParams(SST::Params& params, int red, int port_offset, int num_ports) const
-{
-  SST::Params link_params = params.find_prefix_params("link");
-  double bw = link_params.findUnits("bandwidth").toDouble();
-  int bufsize = params.findUnits("buffer_size", "0B").getRoundedValue();
-
-  double port_bw = bw * red;
-  int credits = bufsize * red;
-
-  for (int i=0; i < num_ports; ++i){
-    int port = port_offset + i;
-    SST::Params port_params = Topology
-        ::setupPortParams(port, credits, port_bw, link_params, params);
-  }
-}
-
 void
 Dragonfly::connectedOutports(SwitchId src, std::vector<connection>& conns) const
 {
@@ -193,13 +175,6 @@ Dragonfly::connectedOutports(SwitchId src, std::vector<connection>& conns) const
     }
   }
   conns.resize(cidx);
-}
-
-void
-Dragonfly::configureIndividualPortParams(SwitchId src, SST::Params& switch_params) const
-{
-  setupPortParams(switch_params, red_[0], 0, a_);
-  setupPortParams(switch_params, red_[1], a_, h_);
 }
 
 bool

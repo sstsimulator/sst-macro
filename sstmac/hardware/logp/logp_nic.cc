@@ -125,21 +125,13 @@ LogPNIC::doSend(NetworkMessage* msg)
 }
 
 void
-LogPNIC::connectOutput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+LogPNIC::connectOutput(int src_outport, int dst_inport, EventLink* link)
 {
   logp_link_ = link;
 }
 
 void
-LogPNIC::connectInput(
-  SST::Params& params,
-  int src_outport,
-  int dst_inport,
-  EventLink* link)
+LogPNIC::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
   //nothing needed
 }

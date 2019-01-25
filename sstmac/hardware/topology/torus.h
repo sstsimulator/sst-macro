@@ -101,6 +101,8 @@ class Torus : public CartesianTopology
 
   coordinates neighborAtPort(SwitchId sid, int port);
 
+  double portScaleFactor(uint32_t addr, int port) const override;
+
   SwitchId numSwitches() const override {
     return num_switches_;
   }
@@ -109,18 +111,7 @@ class Torus : public CartesianTopology
     return numSwitches();
   }
 
-  bool uniformSwitchPorts() const override {
-    return false;
-  }
-
-  bool uniformSwitches() const override {
-    return true;
-  }
-
   void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
-
-  void configureIndividualPortParams(SwitchId src,
-            SST::Params& switch_params) const override;
 
   int minimalDistance(SwitchId sid, SwitchId dst) const;
 

@@ -77,7 +77,7 @@ namespace hw {
 */
 class Router : public sprockit::printable
 {
-  DeclareFactory(Router, Topology*, NetworkSwitch*)
+  DeclareFactoryArgs(Router, Topology*, NetworkSwitch*)
  public:
   /**
    * @brief route Makes a routing decision for the packet.

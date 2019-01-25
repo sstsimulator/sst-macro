@@ -111,8 +111,6 @@ class Interconnect:
   def latency(self, params):
     if params.has_key("latency"):
       return params["latency"]
-    elif params.has_key("sendLatency"):
-      return params["sendLatency"]
     else:
       import sys
       sys.exit("need link latency in parameters")

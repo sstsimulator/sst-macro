@@ -313,21 +313,9 @@ class Topology : public sprockit::printable
  public:
   virtual ~Topology();
 
-  /**** BEGIN PURE VIRTUAL INTERFACE *****/
-  /**
-   * @brief Whether all network ports are uniform on all switches,
-   *        having exactly the same latency/bandwidth parameters.
-   *        If a 3D torus, e.g., has X,Y,Z directions exactly the same,
-   *        this returns true.
-   * @return
-   */
-  virtual bool uniformSwitchPorts() const = 0;
-
-  /**
-   * @brief Whether all switches are the same
-   * @return
-   */
-  virtual bool uniformSwitches() const = 0;
+  virtual double portScaleFactor(uint32_t addr, int port) const {
+    return 1.0;
+  }
 
   /**
    * @brief connected_outports
@@ -340,14 +328,6 @@ class Topology : public sprockit::printable
   virtual void connectedOutports(SwitchId src,
                      std::vector<Topology::connection>& conns) const = 0;
 
-  /**
-   * @brief configureIndividualPortParams.  The port-specific parameters
-   *        will be stored in new namespaces "portX" where X is the port number
-   * @param src
-   * @param [inout] switch_params
-   */
-  virtual void configureIndividualPortParams(SwitchId src,
-          SST::Params& switch_params) const = 0;
 
   /**
      For indirect networks, this includes all switches -
@@ -472,16 +452,6 @@ class Topology : public sprockit::printable
     return main_top_;
   }
 
-  /**
-   * @brief configure_switch_params By default, almost all topologies
-   *        have uniform switch parameters.
-   * @param src
-   * @param switch_params In/out parameter. Input is default set of params.
-   *        Output is non-default unique params.
-   */
-  virtual void configureNonuniformSwitchParams(SwitchId src,
-        SST::Params& switch_params) const {}
-
   std::string label(uint32_t comp_id) const;
 
   virtual std::string switchLabel(SwitchId sid) const;
@@ -528,14 +498,6 @@ class Topology : public sprockit::printable
 
  protected:
   Topology(SST::Params& params);
-
-  static SST::Params setupPortParams(
-        int port, int credits, double bw,
-        SST::Params& link_params,
-        SST::Params& params);
-
-  void configureIndividualPortParams(int port_offset, int nports,
-           SST::Params& params) const;
 
   virtual void initHostnameMap(SST::Params& params);
 

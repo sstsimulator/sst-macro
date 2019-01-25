@@ -84,11 +84,12 @@ PiscesMemoryModel::PiscesMemoryModel(SST::Params& params, Node *nd) :
   packet_size_ = params.findUnits("mtu", "100GB").getRoundedValue();
 
   std::string max_bw_param = params.find<std::string>("total_bandwidth");
-  min_agg_byte_delay_ = Timestamp(SST::UnitAlgebra(max_bw_param).inverse().toDouble());
+  SST::UnitAlgebra max_bw(max_bw_param);
+  min_agg_byte_delay_ = Timestamp(max_bw.inverse().toDouble());
   min_flow_byte_delay_ =
       Timestamp(params.findUnits("max_single_bandwidth", max_bw_param).inverse().toDouble());
   latency_ = Timestamp(params.findUnits("latency").toDouble());
-  arb_ = PiscesBandwidthArbitrator::factory::get_value("cut_through", params);
+  arb_ = PiscesBandwidthArbitrator::factory::get_value("cut_through", max_bw.toDouble());
 }
 
 PiscesMemoryModel::~PiscesMemoryModel()

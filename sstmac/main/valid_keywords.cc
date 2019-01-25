@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 RegisterKeywords(
   { "id", "" },
-  { "negligibleSize", "the minimum message size before detailed modeling is performed" },
+  { "negligible_size", "the minimum message size before detailed modeling is performed" },
   { "name", ""},
   { "mtu", "" },
   { "type", "" },

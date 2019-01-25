@@ -91,7 +91,7 @@ NIC::NIC(SST::Params& params, Node* parent) :
   queue_(parent->os()),
   ConnectableSubcomponent(parent) //no self events with NIC
 {
-  negligibleSize_ = params.find<int>("negligibleSize", DEFAULT_NEGLIGIBLE_SIZE);
+  negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
   /** TODO stats
   spy_num_messages_ = optionalStats<StatSpyplot>(parent,
