@@ -176,8 +176,10 @@ DagCollective::recv(int target, CollectiveWorkMessage* msg)
   } else {
     vr->recv(msg);
     if (vr->complete()){
+      debug_printf(sumi_collective, "Rank %d=%d returning completion", my_api_->rank(), dom_me_);
       return vr->doneMsg();
     } else {
+      debug_printf(sumi_collective, "Rank %d=%d not yet complete", my_api_->rank(), dom_me_);
       return nullptr;
     }
   }

@@ -788,8 +788,8 @@ CollectiveEngine::finishCollective(Collective* coll, int rank, Collective::type_
   bool deliver_cq_msg; bool delete_collective;
   coll->actorDone(rank, deliver_cq_msg, delete_collective);
   debug_printf(sprockit::dbg::sumi,
-    "Rank %d finishing collective of type %s tag %d",
-    tport_->rank(), Collective::tostr(ty), tag);
+    "Rank %d finishing collective of type %s tag %d - deliver=%d",
+    tport_->rank(), Collective::tostr(ty), tag, deliver_cq_msg);
 
   if (!deliver_cq_msg)
     return;
@@ -857,9 +857,15 @@ CollectiveEngine::blockUntilNext(int cq_id)
 {
   CollectiveDoneMessage* dmsg = nullptr;
   while (dmsg == nullptr){
+    debug_printf(sprockit::dbg::sumi_collective,
+      "Rank %d, blocking collective until next message arrives on CQ %d", tport_->rank(), cq_id);
     auto* msg = tport_->blockingPoll(cq_id);
+    debug_printf(sprockit::dbg::sumi_collective,
+      "Rank %d, unblocking collective on CQ %d", tport_->rank(), cq_id);
     dmsg = incoming(msg);
   }
+  debug_printf(sprockit::dbg::sumi_collective,
+    "Rank %d, exiting collective progress on CQ %d", tport_->rank(), cq_id);
   return dmsg;
 }
 

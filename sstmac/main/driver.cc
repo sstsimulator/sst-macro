@@ -344,7 +344,7 @@ void
 SimulationQueue::run(SST::Params& params, SimStats& stats)
 {
   template_params_.combine_into(params, false, false/*no overwrite*/, true);
-  sstmac::remapParams(params, false /* not verbose */);
+  //sstmac::remapParams(params, false /* not verbose */);
   ::sstmac::run(template_opts_, rt_, params, stats);
 }
 
@@ -545,7 +545,7 @@ SimulationQueue::runScanPoint(char* buffer, SimStats& stats)
 void
 SimulationQueue::rerun(SST::Params& params, SimStats& stats)
 {
-  sstmac::remapParams(params, false /*not verbose*/);
+  //sstmac::remapParams(params, false /*not verbose*/);
   sstmac::Env::params = params;
   if (first_run_){
     ::sstmac::initFirstRun(rt_, params);

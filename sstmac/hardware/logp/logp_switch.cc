@@ -90,18 +90,11 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
   top_ = Topology::staticTopology(topParams);
 
   std::string net_bw = params.find<std::string>("bandwidth");
-  net_byte_delay_ = Timestamp(SST::UnitAlgebra(net_bw).inverse().toDouble());
-
-  std::string inj_bw = params.find_prefix_params("ejection")->get_optional_param("bandwidth", net_bw);
-  inj_byte_delay_ = Timestamp(SST::UnitAlgebra(inj_bw).inverse().toDouble());
-
-  max_byte_delay_ = std::max(net_byte_delay_, inj_byte_delay_);
+  byte_delay_ = Timestamp(SST::UnitAlgebra(net_bw).inverse().toDouble());
 
   hop_latency_ = Timestamp(params.findUnits("hop_latency").toDouble());
 
   out_in_lat_ = Timestamp(params.findUnits("out_in_latency").toDouble());
-
-  if (net_byte_delay_.ticks() == 0) abort();
 
   if (params.contains("random_seed")){
     random_seed_ = params.find<int>("random_seed");
@@ -153,17 +146,17 @@ LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
     delay += msg->byteLength() * bw_inc * random_max_extra_byte_delay_;
   } else if (contention_model_) {
     double contention = contention_model_->value();
-    delay += msg->byteLength() * max_byte_delay_ * contention;
+    delay += msg->byteLength() * byte_delay_ * contention;
   }
 
   NodeId dst = msg->toaddr();
-  delay += max_byte_delay_ * msg->byteLength(); //bw term
+  delay += byte_delay_ * msg->byteLength(); //bw term
   int num_hops = top_->numHopsToNode(msg->fromaddr(), dst);
   delay += num_hops * hop_latency_;
   debug_printf(sprockit::dbg::logp,
                "sending message over %d hops with extra delay %12.8e and inj lat %12.8e for byte delay %12.8e/bw %12.8e on size %d: %s",
                num_hops, delay.sec(), out_in_lat_.sec(),
-               max_byte_delay_.sec(), 1.0/max_byte_delay_.sec(),
+               byte_delay_.sec(), 1.0/byte_delay_.sec(),
                msg->byteLength(), msg->toString().c_str());
 
   Timestamp extra_delay = start - now() + delay;

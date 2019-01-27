@@ -105,59 +105,59 @@ void comm_finalize()
   current_transport()->finish();
 }
 
-void
+CollectiveDoneMessage*
 comm_allreduce(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
                int cq_id, Communicator* comm)
 {
-  current_engine()->allreduce(dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+  return current_engine()->allreduce(dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
-void comm_scan(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
+CollectiveDoneMessage* comm_scan(void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
                int cq_id, Communicator* comm)
 {
-  current_engine()->scan(dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+  return current_engine()->scan(dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
-void
+CollectiveDoneMessage*
 comm_reduce(int root, void *dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
             int cq_id, Communicator* comm)
 {
-  current_engine()->reduce(root, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+  return current_engine()->reduce(root, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
 }
 
-void comm_alltoall(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+CollectiveDoneMessage* comm_alltoall(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
-  current_engine()->alltoall(dst, src, nelems, type_size, tag, cq_id, comm);
+  return current_engine()->alltoall(dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_allgather(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+CollectiveDoneMessage* comm_allgather(void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
-  current_engine()->allgather(dst, src, nelems, type_size, tag, cq_id, comm);
+  return current_engine()->allgather(dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, int cq_id, Communicator* comm)
+CollectiveDoneMessage* comm_allgatherv(void *dst, void *src, int* recv_counts, int type_size, int tag, int cq_id, Communicator* comm)
 {
-  current_engine()->allgatherv(dst, src, recv_counts, type_size, tag, cq_id, comm);
+  return current_engine()->allgatherv(dst, src, recv_counts, type_size, tag, cq_id, comm);
 }
 
-void comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+CollectiveDoneMessage* comm_gather(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
-  current_engine()->gather(root, dst, src, nelems, type_size, tag, cq_id, comm);
+  return current_engine()->gather(root, dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+CollectiveDoneMessage* comm_scatter(int root, void *dst, void *src, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
-  current_engine()->scatter(root, dst, src, nelems, type_size, tag, cq_id, comm);
+  return current_engine()->scatter(root, dst, src, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_bcast(int root, void *buffer, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+CollectiveDoneMessage* comm_bcast(int root, void *buffer, int nelems, int type_size, int tag, int cq_id, Communicator* comm)
 {
-  current_engine()->bcast(root, buffer, nelems, type_size, tag, cq_id, comm);
+  return current_engine()->bcast(root, buffer, nelems, type_size, tag, cq_id, comm);
 }
 
-void comm_barrier(int tag, int cq_id, Communicator* comm)
+CollectiveDoneMessage* comm_barrier(int tag, int cq_id, Communicator* comm)
 {
-  current_engine()->barrier(tag, cq_id, comm);
+  return current_engine()->barrier(tag, cq_id, comm);
 }
 
 int comm_rank()

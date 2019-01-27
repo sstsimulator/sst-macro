@@ -131,9 +131,7 @@ class LogPSwitch : public ConnectableComponent
   Timestamp inj_lat_;
   Timestamp out_in_lat_;
 
-  Timestamp inj_byte_delay_;
-  Timestamp net_byte_delay_;
-  Timestamp max_byte_delay_;
+  Timestamp byte_delay_;
 
   Timestamp hop_latency_;
 

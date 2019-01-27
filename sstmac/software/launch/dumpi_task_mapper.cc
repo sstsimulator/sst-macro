@@ -62,31 +62,6 @@ namespace sw {
 NodeId
 DumpiTaskMapper::nodeIdFromHostname(const std::string& hostname)
 {
-//  auto aptr_it = hostname_allocation::hostnamemap_.find(hostname);
-//  auto end = hostname_allocation::hostnamemap_.end();
-
-//  if (aptr_it == end) {
-//    std::stringstream sstr;
-//    sstr << hostname << " from dumpi file does not exist in node map.";
-
-//    auto it = hostname_allocation::hostnamemap_.begin();
-
-//    if (it == end) {
-//      sstr << " No hostnames are registered with the allocator."
-//           " DUMPI traces do not contain topology information."
-//           " You must use launch_allocation=hostname and provide a hostname map.";
-//    } else {
-//      sstr << std::endl << "Valid hostnames are: ";
-//      for ( ; it != end; ++it) {
-//        sstr << std::endl << it->first;
-//      }
-//      sstr << std::endl << std::endl
-//           << "Are you sure the dumpi file and node map"
-//           " are from the same machine?";
-//    }
-//    sprockit::abort(sstr.str());
-//  }
-//  return aptr_it->second;
   if (!topology_) {
     spkt_throw_printf(sprockit::value_error, "dumpi_task_mapper: null topology");
   }

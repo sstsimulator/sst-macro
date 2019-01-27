@@ -452,6 +452,12 @@ sim_parameters::get_either_or_time_param(const std::string& key1,
 std::string
 sim_parameters::get_optional_param(const std::string &key, const std::string &def)
 {
+  if (has_param(key)){
+    return get_param(key);
+  } else {
+    return def;
+  }
+  /**
   if (has_param(key)) {
     return get_param(key);
   } else if (parent_){
@@ -459,6 +465,7 @@ sim_parameters::get_optional_param(const std::string &key, const std::string &de
   } else {
    return def;
   }
+  */
 }
 
 sim_parameters::ptr
@@ -1131,13 +1138,15 @@ sim_parameters::get_scoped_param(std::string& inout,
 bool
 sim_parameters::get_param(std::string& inout, const std::string& key)
 {
-  bool found = get_scoped_param(inout, key);
+  return get_scoped_param(inout, key);
+  /** don't do scoped params
   if (!found && parent_ && parent_->public_scope()){
     //never return anything from the top-level global namespace - no, don't
     return parent_->get_param(inout, key);
   } else {
     return found;
   }
+  */
 }
 
 std::string
@@ -1184,6 +1193,8 @@ sim_parameters::has_scoped_param(const std::string& key) const
 bool
 sim_parameters::has_param(const std::string& key) const
 {
+  return has_scoped_param(key);
+  /**
   bool has_here = has_scoped_param(key);
   if (!has_here && parent_ && parent_->public_scope()){
     //never return anything from the top-level global namespace - no, don't
@@ -1191,6 +1202,7 @@ sim_parameters::has_param(const std::string& key) const
   } else {
     return has_here;
   }
+  */
 }
 
 std::string

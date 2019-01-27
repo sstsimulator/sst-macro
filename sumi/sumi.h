@@ -94,22 +94,22 @@ void smsg_send(int remote_proc, uint64_t byte_length, void* buffer,
                         std::forward<Args>(args)...);
 }
 
-void comm_alltoall(void* dst, void* src, int nelems, int type_size, int tag,
+CollectiveDoneMessage* comm_alltoall(void* dst, void* src, int nelems, int type_size, int tag,
                    int cq_id, Communicator* comm = nullptr);
 
-void comm_allgather(void* dst, void* src, int nelems, int type_size, int tag,
+CollectiveDoneMessage* comm_allgather(void* dst, void* src, int nelems, int type_size, int tag,
                    int cq_id, Communicator* comm = nullptr);
 
-void comm_allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
+CollectiveDoneMessage* comm_allgatherv(void* dst, void* src, int* recv_counts, int type_size, int tag,
                    int cq_id, Communicator* comm = nullptr);
 
-void comm_gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
+CollectiveDoneMessage* comm_gather(int root, void* dst, void* src, int nelems, int type_size, int tag,
                  int cq_id, Communicator* comm = nullptr);
 
-void comm_scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
+CollectiveDoneMessage* comm_scatter(int root, void* dst, void* src, int nelems, int type_size, int tag,
                   int cq_id, Communicator* comm = nullptr);
 
-void comm_bcast(int root, void* buffer, int nelems, int type_size, int tag,
+CollectiveDoneMessage* comm_bcast(int root, void* buffer, int nelems, int type_size, int tag,
                 int cq_id, Communicator* comm = nullptr);
 
 /**
@@ -123,34 +123,34 @@ void comm_bcast(int root, void* buffer, int nelems, int type_size, int tag,
 * @param fault_aware Whether to execute in a fault-aware fashion to detect failures
 * @param context The context (i.e. initial set of failed procs)
 */
-void comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+CollectiveDoneMessage* comm_allreduce(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
                     int cq_id, Communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_allreduce(void* dst, void* src, int nelems, int tag, int cq_id, Communicator* comm = nullptr){
+CollectiveDoneMessage* comm_allreduce(void* dst, void* src, int nelems, int tag, int cq_id, Communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
+  return comm_allreduce(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
-void comm_scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+CollectiveDoneMessage* comm_scan(void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
                int cq_id, Communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_scan(void* dst, void* src, int nelems, int tag,int cq_id, Communicator* comm = nullptr){
+CollectiveDoneMessage* comm_scan(void* dst, void* src, int nelems, int tag,int cq_id, Communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
+  return comm_scan(dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
-void comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
+CollectiveDoneMessage* comm_reduce(int root, void* dst, void* src, int nelems, int type_size, int tag, reduce_fxn fxn,
                  int cq_id, Communicator* comm = nullptr);
 
 template <typename data_t, template <typename> class Op>
-void comm_reduce(int root, void* dst, void* src, int nelems, int tag,int cq_id, Communicator* comm = nullptr){
+CollectiveDoneMessage* comm_reduce(int root, void* dst, void* src, int nelems, int tag,int cq_id, Communicator* comm = nullptr){
   typedef ReduceOp<Op, data_t> op_class_type;
-  comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
+  return comm_reduce(root, dst, src, nelems, sizeof(data_t), tag, &op_class_type::op, cq_id, comm);
 }
 
-void comm_barrier(int tag, int cq_id, Communicator* comm = nullptr);
+CollectiveDoneMessage* comm_barrier(int tag, int cq_id, Communicator* comm = nullptr);
 
 Message* comm_poll();
 

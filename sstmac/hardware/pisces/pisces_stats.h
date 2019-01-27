@@ -98,21 +98,8 @@ class PacketStatsCallback
    */
   virtual void collectFinalEvent(PiscesPacket* pkt);
 
-  /**
-   * @brief id
-   * Either a node or switch id, depending on the device
-   * @return
-   */
-  int id() const {
-    return id_;
-  }
-
  protected:
-  PacketStatsCallback(SST::Params& params,
-                        EventScheduler* parent);
-
- private:
-  int id_;
+  PacketStatsCallback(SST::Params& params, EventScheduler* parent);
 
 };
 

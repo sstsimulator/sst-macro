@@ -26,7 +26,6 @@ libsstmac_common_la_SOURCES = \
   c_params.cc \
   sst_event.cc \
   lodepng.cc \
-  param_expander.cc \
   sstmac_env.cc \
   thread_lock.cc \
   stats/stat_collector.cc \
@@ -63,7 +62,6 @@ nobase_library_include_HEADERS = \
   sst_event_fwd.h \
   lodepng.h \
   sstmac_env.h \
-  param_expander.h \
   thread_safe_int.h \
   thread_lock.h \
   sim_thread_lock.h \

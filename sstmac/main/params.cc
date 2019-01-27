@@ -66,7 +66,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/spkt_new.h>
 #include <sprockit/output.h>
 #include <sprockit/basic_string_tokenizer.h>
-#include <sstmac/common/param_expander.h>
 
 namespace sstmac {
 
@@ -193,7 +192,7 @@ remapParams(SST::Params& params, bool verbose)
   int as_per_tick = round(timescale/1e-18) + 0.02;
   Timestamp::initStamps(100);
 
-  remapDeprecatedParams(params);
+  //remapDeprecatedParams(params);
   remapLatencyParams(params);
 
   SST::Params top_params = params.get_namespace("topology");
@@ -207,23 +206,6 @@ remapParams(SST::Params& params, bool verbose)
     resizeTopology(max_nproc, params, verbose);
     //clear the auto keyword to keep params self-consistent
     top_params->remove_param("auto");
-  }
-
-  //here is where we might need to build supplemental params
-  bool has_cong_model = params->has_param("congestion_model");
-  bool has_amm_model = params->has_param("amm_model");
-  if (has_cong_model && !has_amm_model){
-    spkt_abort_printf("If specying congestion_model, must also specify amm_model");
-  }
-  if (has_amm_model && !has_cong_model){
-    spkt_abort_printf("If specifiyng amm_model, must also specify congestion_model");
-
-  }
-
-  if (has_cong_model && has_amm_model){
-    sstmac::ParamExpander* hw_expander = sstmac::ParamExpander::factory::get_param("congestion_model", params);
-    hw_expander->expand(params);
-    delete hw_expander;
   }
 
   //here is where we want to read debug params and active debug printing for stuff, maybe

@@ -87,39 +87,11 @@ HostnameTaskMapper::mapRanks(
 
     sstr << hostname << "\n";
 
-//    auto nid_it = hostname_allocation::hostnamemap_.find(hostname);
-//    auto end = hostname_allocation::hostnamemap_.end();
-
     NodeId nid;
     if (!topology_) {
       spkt_throw_printf(sprockit::value_error, "hostname_task_mapper: null topology");
     }
     nid = topology_->nodeNameToId(hostname);
-
-//    if (nid_it == end) {
-//      std::stringstream sstr;
-//      sstr << hostname << " from file " << listfile_ <<
-//           " does not exist in node map.";
-
-//      auto it = hostname_allocation::hostnamemap_.begin();
-
-//      if (it == end) {
-//        sstr << " No hostnames are registered with hostname_allocation."
-//             << " This is perhaps not surprising then."
-//             << " Maybe check that launch_allocation is set to hostname.";
-//      } else {
-//        sstr << std::endl << "Valid hostnames are: ";
-//        for ( ; it != end; ++it) {
-//          sstr << std::endl << it->first;
-//        }
-//        sstr << std::endl << std::endl
-//             << "Are you sure the hostname file and node map"
-//             " are from the same machine?";
-//      }
-//      sprockit::abort(sstr.str());
-//    }
-
-//    NodeId nid = nid_it->second;
 
     debug_printf(sprockit::dbg::indexing,
         "hostname_task_mapper: rank %d is on hostname %s at nid=%d",

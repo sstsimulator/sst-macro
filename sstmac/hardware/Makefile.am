@@ -48,7 +48,6 @@ nobase_library_include_HEADERS += \
   logp/logp_nic.h \
   logp/logp_switch.h \
   logp/logp_switch_fwd.h \
-  logp/logp_param_expander.h \
   logp/logp_memory_model.h \
   processor/processor.h \
   processor/processor_fwd.h \
@@ -70,14 +69,12 @@ nobase_library_include_HEADERS += \
   common/failable.h \
   common/packet.h \
   common/packet_fwd.h \
-  common/param_expander.h \
   common/recv_cq.h \
   common/unique_id.h \
   pisces/pisces.h \
   pisces/pisces_fwd.h \
   pisces/pisces_stats.h \
   pisces/pisces_stats_fwd.h \
-  pisces/pisces_param_expander.h \
   pisces/pisces_arbitrator.h \
   pisces/pisces_buffer.h \
   pisces/pisces_branched_switch.h \
@@ -89,7 +86,6 @@ nobase_library_include_HEADERS += \
   pisces/pisces_memory_model.h \
   sculpin/sculpin_nic.h \
   sculpin/sculpin_switch.h \
-  sculpin/sculpin_param_expander.h \
   sculpin/sculpin.h \
   network/network_id.h \
   network/network_message.h \
@@ -121,14 +117,12 @@ nobase_library_include_HEADERS += \
 libsstmac_hw_la_SOURCES +=  \
   logp/logp_nic.cc \
   logp/logp_switch.cc \
-  logp/logp_param_expander.cc \
   logp/logp_memory_model.cc \
   processor/processor.cc \
   processor/simple_processor.cc \
   processor/instruction_processor.cc \
   common/connection.cc \
   common/packet.cc \
-  common/param_expander.cc \
   common/recv_cq.cc \
   memory/memory_model.cc \
   nic/nic.cc \
@@ -142,14 +136,12 @@ libsstmac_hw_la_SOURCES +=  \
   pisces/pisces_branched_switch.cc \
   pisces/pisces_crossbar.cc \
   pisces/pisces_nic.cc \
-  pisces/pisces_param_expander.cc \
   pisces/pisces_sender.cc \
   pisces/pisces_switch.cc \
   pisces/pisces_tiled_switch.cc \
   pisces/pisces_memory_model.cc \
   sculpin/sculpin_nic.cc \
   sculpin/sculpin_switch.cc \
-  sculpin/sculpin_param_expander.cc \
   sculpin/sculpin.cc \
   network/network_message.cc \
   interconnect/interconnect.cc \

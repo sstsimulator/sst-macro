@@ -116,19 +116,25 @@ PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
   xbar_(nullptr)
 {
   SST::Params xbar_params = params.find_prefix_params("xbar");
+  SST::Params link_params = params.find_prefix_params("link");
+
+  if (params.contains("arbitrator")){
+    arbType_ = params.find<std::string>("arbitrator");
+  } else {
+    arbType_ = link_params.find<std::string>("arbitrator");
+  }
 
   double xbar_bw = xbar_params.findUnits("bandwidth").toDouble();
-  std::string xbar_arb = xbar_params.find<std::string>("arbitrator");
 
-  SST::Params link_params = params.find_prefix_params("link");
+  std::string xbar_arb = xbar_params.find<std::string>("arbitrator", arbType_);
+
   link_bw_ = link_params.findUnits("bandwidth").toDouble();
-  arbType_ = link_params.find<std::string>("arbitrator");
   if (link_params.contains("credits")){
     link_credits_ = link_params.findUnits("credits").getRoundedValue();
   } else {
     double lat_s = link_params.findUnits("latency").toDouble();
-    //use RTT as buffer size
-    link_credits_ = 2*link_credits_*lat_s;
+    //use 4*RTT as buffer size
+    link_credits_ = 8*link_bw_*lat_s;
   }
 
   if (xbar_params.contains("credits")){
@@ -149,7 +155,11 @@ PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
     inp.parent = this;
   }
 
-  mtu_ = link_params.findUnits("mtu").getRoundedValue();
+  mtu_ = params.findUnits("mtu").getRoundedValue();
+
+  if (link_credits_ < mtu_){
+    spkt_abort_printf("MTU %d is larger than credits %d", mtu_, link_credits_);
+  }
 
   initLinks(params);
 }

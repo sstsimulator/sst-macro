@@ -51,7 +51,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/logp/logp_switch.h>
-#include <sstmac/hardware/logp/logp_param_expander.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/common/runtime.h>
@@ -138,8 +137,11 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   if (logp_model){
     switch_params.combine_into(logp_params);
   } else {
-    LogPParamExpander expander(logp_params);
-    expander.expandInto(logp_params, params, switch_params);
+    auto link_params = switch_params->get_namespace("link");
+    logp_params->add_param_override("bandwidth", link_params->get_param("bandwidth"));
+    logp_params->add_param_override("hop_latency", link_params->get_param("latency"));
+    Timestamp injLat(inj_params->get_time_param("latency"));
+    logp_params->add_param_override("out_in_latency", sprockit::printf("%12.8fus", injLat.usec()));
   }
 
   logp_switches_.resize(rt_->nthread());

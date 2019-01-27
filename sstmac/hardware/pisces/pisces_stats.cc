@@ -80,7 +80,6 @@ congestionDelay(const pkt_arbitration_t& st)
 
 PacketStatsCallback::PacketStatsCallback(SST::Params& params, EventScheduler* parent)
 {
-  id_ = params.find<int>("id");
 }
 
 void

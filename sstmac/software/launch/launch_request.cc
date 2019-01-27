@@ -67,8 +67,6 @@ RegisterKeywords(
 { "indexing", "the strategy for indexing ranks to nodes within a job" },
 { "start", "the time to issue a job start request" },
 { "size", "the number of tasks (ranks) within a job" },
-{ "launch_allocation", "DEPRECATED: the strategy for allocating nodes to a job" },
-{ "launch_indexing", "DEPRECATED: the strategy for indexing ranks to nodes within a job" },
 );
 
 namespace sstmac {

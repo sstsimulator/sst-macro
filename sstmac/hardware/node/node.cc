@@ -106,7 +106,7 @@ Node::Node(SST::Params& params, uint32_t id)
   nic_params->remove_param("id");
 
   SST::Params mem_params = params.find_prefix_params("memory");
-  mem_model_ = MemoryModel::factory::get_optional_param("name", "logp", mem_params, this);
+  mem_model_ = MemoryModel::factory::get_param("name", mem_params, this);
 
   SST::Params proc_params = params.find_prefix_params("proc");
   proc_ = Processor::factory::get_optional_param("processor", "instruction",
