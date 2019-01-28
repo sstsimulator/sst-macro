@@ -13,6 +13,7 @@ include $(top_srcdir)/Makefile.common
 
 AM_CPPFLAGS += ${LLVM_CPPFLAGS}
 AM_CXXFLAGS += -fno-rtti
+CXX = clang++
 
 #this contains instrumentation functions usable by LLVM
 if HAVE_CLANG

@@ -211,7 +211,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
       if "=" in sarg:
         passStr = sarg.split("=")[1]
         addLlvmPasses(llvmPasses, passStr, prefix)
-      forwardedClangArgs.append(sarg)
+      #make sure if given twice only forwarded once
+      if not skeletonizing:
+        forwardedClangArgs.append(sarg)
       skeletonizing = True
     elif sarg == "--keep-exe":
       keepExe = True
@@ -221,7 +223,8 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
         passStr = sarg.split("=")[1]
         addLlvmPasses(llvmPasses, passStr)
       eatArg = True
-      forwardedClangArgs.append(sarg)
+      if not memoizing: #in case given twice
+        forwardedClangArgs.append(sarg)
       memoizing = True
     elif sarg.startswith("-Wl"):
       linkerArgs.append(sarg)

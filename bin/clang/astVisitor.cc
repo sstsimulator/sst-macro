@@ -1896,6 +1896,7 @@ SkeletonASTVisitor::doTraverseLambda(LambdaExpr* expr)
       for (auto iter = expr->explicit_capture_begin();
         iter != expr->explicit_capture_end(); ++iter){
         const LambdaCapture& cap = *iter;
+
         if (cap.getCaptureKind() == LCK_ByRef){
           //reference doesn't cause any headaches
           continue;
@@ -1934,6 +1935,11 @@ SkeletonASTVisitor::doTraverseLambda(LambdaExpr* expr)
             case Stmt::CXXDependentScopeMemberExprClass: {
               CXXDependentScopeMemberExpr* next = cast<CXXDependentScopeMemberExpr>(needed);
               needed = next->getBase();
+              break;
+            }
+            case Stmt::CXXNewExprClass: {
+              //not a global variable - this got operator newed
+              cont = false;
               break;
             }
             case Stmt::CallExprClass:
