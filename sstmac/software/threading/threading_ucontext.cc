@@ -72,7 +72,7 @@ class ThreadingUContext : public ThreadContext
   }
 
   ThreadContext* copy() const override {
-    return new ThreadingUContext(nullptr);
+    return new ThreadingUContext;
   }
 
 
@@ -86,7 +86,7 @@ class ThreadingUContext : public ThreadContext
     voidptr voidp(args);
     context_.uc_stack.ss_sp = stack;
     context_.uc_stack.ss_size = stacksize;
-    init_context();
+    initContext();
 
     ThreadingUContext* fromctx = static_cast<ThreadingUContext*>(from);
     context_.uc_link = NULL;
@@ -111,6 +111,8 @@ class ThreadingUContext : public ThreadContext
   }
 
  private:
+  ThreadingUContext(){}
+
   static void swapContext(ThreadContext* from, ThreadContext* to) {
     ThreadingUContext* fromctx = static_cast<ThreadingUContext*>(from);
     ThreadingUContext* toctx = static_cast<ThreadingUContext*>(to);

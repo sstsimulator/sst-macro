@@ -434,6 +434,12 @@ Interconnect::switchComponentId(SwitchId sid) const
   return topology_->numNodes() + sid;
 }
 
+uint32_t
+Interconnect::nodeComponentId(NodeId nid) const
+{
+  return nid;
+}
+
 void
 Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
 {

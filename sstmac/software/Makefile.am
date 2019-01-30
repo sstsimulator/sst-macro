@@ -155,7 +155,7 @@ nobase_library_include_HEADERS = \
 
 if HAVE_UCONTEXT
   libsstmac_sw_la_SOURCES += \
-     threading/ThreadingUContext.cc 
+     threading/threading_ucontext.cc 
 endif
 
 if HAVE_PTH
