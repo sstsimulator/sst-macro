@@ -85,10 +85,6 @@ class LogPNIC :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(SST::Params& params) const override;
-
-  Timestamp creditLatency(SST::Params& params) const override;
-
  protected:
   /**
     Start the message sending and inject it into the network

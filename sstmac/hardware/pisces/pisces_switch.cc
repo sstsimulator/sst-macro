@@ -214,19 +214,6 @@ PiscesSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
   xbar_->setInput(dst_inport, buffer_port, link);
 }
 
-Timestamp
-PiscesSwitch::sendLatency(SST::Params& params) const
-{
-  auto link_params = params.find_prefix_params("link");
-  return Timestamp(link_params.findUnits("latency").toDouble());
-}
-
-Timestamp
-PiscesSwitch::creditLatency(SST::Params& params) const
-{
-  return sendLatency(params);
-}
-
 int
 PiscesSwitch::queueLength(int port, int vc) const
 {

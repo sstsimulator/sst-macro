@@ -96,10 +96,6 @@ class SculpinSwitch :
 
   LinkHandler* payloadHandler(int Port) override;
 
-  Timestamp sendLatency(SST::Params& params) const override;
-
-  Timestamp creditLatency(SST::Params& params) const override;
-
   void handleCredit(Event* ev);
 
   void handlePayload(Event* ev);

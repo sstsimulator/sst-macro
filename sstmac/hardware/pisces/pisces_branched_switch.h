@@ -78,10 +78,6 @@ class PiscesBranchedSwitch :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(SST::Params& params) const override;
-
-  Timestamp creditLatency(SST::Params& params) const override;
-
   virtual std::string toString() const override;
 
   virtual ~PiscesBranchedSwitch();

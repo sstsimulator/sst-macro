@@ -209,18 +209,6 @@ SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
   delete link;
 }
 
-Timestamp
-SculpinSwitch::sendLatency(SST::Params& params) const
-{
-  return Timestamp(params.findUnits("latency").toDouble());
-}
-
-Timestamp
-SculpinSwitch::creditLatency(SST::Params& params) const
-{
-  return Timestamp(params.findUnits("latency").toDouble());
-}
-
 int
 SculpinSwitch::queueLength(int port, int vc) const
 {

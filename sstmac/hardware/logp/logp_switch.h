@@ -119,11 +119,7 @@ class LogPSwitch : public ConnectableComponent
 
   void send(GlobalTimestamp start, NetworkMessage* msg);
 
-  Timestamp sendLatency(SST::Params& params) const override {
-    return out_in_lat_;
-  }
-
-  Timestamp creditLatency(SST::Params& params) const override {
+  Timestamp out_in_latency() const {
     return out_in_lat_;
   }
 

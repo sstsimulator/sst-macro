@@ -186,20 +186,6 @@ Node::connectInput(int src_outport, int dst_inport, EventLink* link)
   nic_->connectInput(src_outport, dst_inport, link);
 }
 
-Timestamp
-Node::sendLatency(SST::Params& params) const
-{
-  auto nic_params = params.find_prefix_params("nic");
-  return nic_->sendLatency(nic_params);
-}
-
-Timestamp
-Node::creditLatency(SST::Params& params) const
-{
-  auto nic_params = params.find_prefix_params("nic");
-  return nic_->creditLatency(nic_params);
-}
-
 void
 Node::execute(ami::SERVICE_FUNC func, Event* data)
 {

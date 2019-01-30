@@ -89,10 +89,6 @@ class Node : public ConnectableComponent
 
   void connectInput(int src_outport, int dst_inport, EventLink* link) override;
 
-  Timestamp sendLatency(SST::Params& params) const override;
-
-  Timestamp creditLatency(SST::Params& params) const override;
-
   LinkHandler* payloadHandler(int port) override;
 
   LinkHandler* creditHandler(int port) override;

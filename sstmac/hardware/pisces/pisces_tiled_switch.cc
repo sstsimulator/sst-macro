@@ -207,18 +207,6 @@ PiscesTiledSwitch::connectInput(int src_outport, int dst_inport, EventLink* link
 #endif
 }
 
-Timestamp
-PiscesTiledSwitch::sendLatency(SST::Params& params) const
-{
-  return Timestamp(params.find_prefix_params("link").findUnits("latency").toDouble());
-}
-
-Timestamp
-PiscesTiledSwitch::creditLatency(SST::Params& params) const
-{
-  return Timestamp(params.find_prefix_params("input").findUnits("latency").toDouble());
-}
-
 int
 PiscesTiledSwitch::queueLength(int port, int vc) const
 {

@@ -76,19 +76,6 @@ SculpinNIC::SculpinNIC(SST::Params& params, Node* parent) :
   inj_params.combine_into(port0_params);
 }
 
-Timestamp
-SculpinNIC::sendLatency(SST::Params& params) const
-{
-  auto link_params = params.find_prefix_params("injection");
-  return Timestamp(link_params.findUnits("latency").toDouble());
-}
-
-Timestamp
-SculpinNIC::creditLatency(SST::Params& params) const
-{
-  return sendLatency(params);
-}
-
 void
 SculpinNIC::init(unsigned int phase)
 {

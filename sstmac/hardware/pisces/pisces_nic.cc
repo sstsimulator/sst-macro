@@ -94,19 +94,6 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
 
 }
 
-Timestamp
-PiscesNIC::sendLatency(SST::Params& params) const
-{
-  auto link_params = params.find_prefix_params("injection");
-  return Timestamp(link_params.findUnits("latency").toDouble());
-}
-
-Timestamp
-PiscesNIC::creditLatency(SST::Params& params) const
-{
-  return sendLatency(params);
-}
-
 void
 PiscesNIC::init(unsigned int phase)
 {

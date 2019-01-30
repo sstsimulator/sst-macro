@@ -83,10 +83,6 @@ class PiscesNIC : public NIC
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(SST::Params& params) const override;
-
-  Timestamp creditLatency(SST::Params& params) const override;
-
   void packetSent(Event* ev);
 
   void incomingPacket(Event* ev);

@@ -224,10 +224,6 @@ class NullNIC : public NIC
 
   void connectInput(int src_outport, int dst_inport, EventLink *credit_link) override {}
 
-  Timestamp sendLatency(SST::Params& params) const override { return Timestamp(); }
-
-  Timestamp creditLatency(SST::Params& params) const override { return Timestamp(); }
-
   LinkHandler* payloadHandler(int port) override { return nullptr; }
 
   LinkHandler* creditHandler(int port) override { return nullptr; }

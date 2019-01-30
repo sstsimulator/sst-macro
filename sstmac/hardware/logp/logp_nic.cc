@@ -65,18 +65,6 @@ LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
   inj_lat_ = Timestamp(inj_params.findUnits("latency").toDouble());
 }
 
-Timestamp
-LogPNIC::sendLatency(SST::Params& params) const
-{
-  return Timestamp(params.findUnits("latency").toDouble());
-}
-
-Timestamp
-LogPNIC::creditLatency(SST::Params& params) const
-{
-  return Timestamp(params.findUnits("latency").toDouble());
-}
-
 LogPNIC::~LogPNIC()
 {
   if (ack_handler_) delete ack_handler_;

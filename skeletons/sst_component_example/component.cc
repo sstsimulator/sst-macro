@@ -160,14 +160,6 @@ class DummySwitch : public TestComponent {
     return newLinkHandler(this, &DummySwitch::recvPayload);
   }
 
-  Timestamp sendLatency(SST::Params& params) const override {
-    return latency_;
-  }
-
-  Timestamp creditLatency(SST::Params& params) const override {
-    return latency_;
-  }
-
  private:
   void sendPingMessage(){
     partner_->send(new TestEvent);

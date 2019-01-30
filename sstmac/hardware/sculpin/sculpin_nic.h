@@ -88,10 +88,6 @@ class SculpinNIC :
 
   LinkHandler* payloadHandler(int Port) override;
 
-  Timestamp sendLatency(SST::Params& params) const override;
-
-  Timestamp creditLatency(SST::Params& params) const override;
-
  private:
   void doSend(NetworkMessage* payload) override;
 

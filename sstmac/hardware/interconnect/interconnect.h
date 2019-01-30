@@ -187,9 +187,8 @@ class Interconnect
                       EventManager* mgr);
 
   void connectEndpoints(EventManager* mgr,
-                  SST::Params& ep_inj_params,
-                  SST::Params& ep_ej_params,
-                  SST::Params& sw_ej_params);
+                  SST::Params& ep_params,
+                  SST::Params& sw_params);
 
 
   switch_map switches_;

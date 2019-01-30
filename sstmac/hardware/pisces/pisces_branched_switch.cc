@@ -77,19 +77,6 @@ PiscesBranchedSwitch::PiscesBranchedSwitch(SST::Params& params, uint32_t id)
   initComponents(params);
 }
 
-Timestamp
-PiscesBranchedSwitch::sendLatency(SST::Params& params) const
-{
-  auto link_params = params.find_prefix_params("link");
-  return Timestamp(link_params.findUnits("latency").toDouble());
-}
-
-Timestamp
-PiscesBranchedSwitch::creditLatency(SST::Params& params) const
-{
-  return sendLatency(params);
-}
-
 PiscesBranchedSwitch::~PiscesBranchedSwitch()
 {
   delete xbar_;

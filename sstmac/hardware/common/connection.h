@@ -82,10 +82,6 @@ class Connectable {
    */
   virtual void connectInput(int src_outport, int dst_inport, EventLink* credit_link) = 0;
 
-  virtual Timestamp sendLatency(SST::Params& params) const = 0;
-
-  virtual Timestamp creditLatency(SST::Params& params) const = 0;
-
   /**
    * @brief creditHandler
    * @param port

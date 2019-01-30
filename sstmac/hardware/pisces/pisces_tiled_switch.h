@@ -82,10 +82,6 @@ class PiscesTiledSwitch :
 
   LinkHandler* payloadHandler(int port) override;
 
-  Timestamp sendLatency(SST::Params& params) const override;
-
-  Timestamp creditLatency(SST::Params& params) const override;
-
   void handleCredit(Event* ev);
 
   void handlePayload(Event* ev);
