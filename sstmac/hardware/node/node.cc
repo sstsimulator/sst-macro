@@ -81,7 +81,6 @@ using namespace sstmac::sw;
 
 Node::Node(SST::Params& params, uint32_t id)
   : ConnectableComponent(params, id),
-  params_(params),
   app_refcount_(0),
   job_launcher_(nullptr)
 {
@@ -103,7 +102,6 @@ Node::Node(SST::Params& params, uint32_t id)
 
   SST::Params nic_params = params.find_prefix_params("nic");
   nic_ = NIC::factory::get_param("name", nic_params, this);
-  nic_params->remove_param("id");
 
   SST::Params mem_params = params.find_prefix_params("memory");
   mem_model_ = MemoryModel::factory::get_param("name", mem_params, this);
@@ -222,9 +220,9 @@ Node::decrementAppRefcount()
 }
 
 void
-Node::handle(Event* ev)
+Node::handle(Request* req)
 {
-  os_->handleEvent(ev);
+  os_->handleRequest(req);
 }
 
 }

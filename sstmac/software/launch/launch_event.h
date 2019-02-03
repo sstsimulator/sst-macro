@@ -47,15 +47,16 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/network/network_message.h>
 #include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/task_mapping.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/app_id.h>
-#include <sprockit/sim_parameters_fwd.h>
+#include <sprockit/sim_parameters.h>
 #include <sprockit/thread_safe_new.h>
 
 namespace sstmac {
 namespace sw {
 
-class LaunchEvent : public hw::NetworkMessage
+class LaunchRequest : public hw::NetworkMessage
 {
  public:
   typedef enum {
@@ -89,7 +90,7 @@ class LaunchEvent : public hw::NetworkMessage
   NetworkMessage* cloneInjectionAck() const override;
 
  protected:
-  LaunchEvent(uint64_t flow_id,
+  LaunchRequest(uint64_t flow_id,
                type_t ty, AppId aid, TaskId tid,
                const std::string& unique_name,
                NodeId to, NodeId from,
@@ -102,7 +103,7 @@ class LaunchEvent : public hw::NetworkMessage
   {
   }
 
-  LaunchEvent(){} //for serialization
+  LaunchRequest(){} //for serialization
 
  private:
   TaskId tid_;
@@ -111,20 +112,20 @@ class LaunchEvent : public hw::NetworkMessage
 
 };
 
-class StartAppEvent :
-  public LaunchEvent,
-  public sprockit::thread_safe_new<StartAppEvent>
+class StartAppRequest :
+  public LaunchRequest,
+  public sprockit::thread_safe_new<StartAppRequest>
 {
-  ImplementSerializable(StartAppEvent)
+  ImplementSerializable(StartAppRequest)
  public:
-  StartAppEvent(uint64_t flow_id, AppId aid,
+  StartAppRequest(uint64_t flow_id, AppId aid,
      const std::string& unique_name,
      TaskMapping::ptr mapping,
      TaskId tid,
      NodeId to,
      NodeId from,
      const SST::Params& app_params) :
-    LaunchEvent(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
+    LaunchRequest(flow_id, Start, aid, tid, unique_name, to, from, "launcher"),
     mapping_(mapping),
     app_params_(app_params)
   {
@@ -134,7 +135,7 @@ class StartAppEvent :
 
   std::string toString() const override;
 
-  StartAppEvent() {} //for serialization
+  StartAppRequest() {} //for serialization
 
   void serialize_order(serializer& ser) override;
 
@@ -153,19 +154,19 @@ class StartAppEvent :
 
 };
 
-class JobStopEvent : public LaunchEvent
+class JobStopRequest : public LaunchRequest
 {
-  ImplementSerializable(JobStopEvent)
+  ImplementSerializable(JobStopRequest)
  public:
-  JobStopEvent(uint64_t flow_id, AppId aid,
+  JobStopRequest(uint64_t flow_id, AppId aid,
      const std::string& unique_name,
      NodeId to,
      NodeId from) :
-    LaunchEvent(flow_id, Stop, aid, 0, unique_name, to, from, "JobLauncher")
+    LaunchRequest(flow_id, Stop, aid, 0, unique_name, to, from, "JobLauncher")
   {
   }
 
-  JobStopEvent(){} //for serialization
+  JobStopRequest(){} //for serialization
 
   std::string toString() const override;
 };

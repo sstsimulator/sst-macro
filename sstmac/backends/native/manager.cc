@@ -159,7 +159,7 @@ static int recursive_count_files_from_suffix(const std::string& suffix)
 }
 
 int
-Manager::computeMaxNprocForApp(SST::Params& app_params)
+Manager::computeMaxNprocForApp(sprockit::sim_parameters::ptr& app_params)
 {
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
@@ -167,29 +167,29 @@ Manager::computeMaxNprocForApp(SST::Params& app_params)
   static const std::string ometa = "otf2_metafile";
   if (!app_params->has_param("launch_cmd")){
     int nproc = 0;
-    if (app_params.find<std::string>("name") == "parsedumpi"){
+    if (app_params->get_param("name") == "parsedumpi"){
       std::string dumpi_meta_filename;
       if (!app_params->has_param(dmeta)){
         dumpi_meta_filename = get_file_from_suffix("meta");
         if (dumpi_meta_filename.empty()){
           sprockit::abort("no dumpi file found in folder or specified with dumpi_metaname");
         } else {
-          app_params->add_param(dmeta, dumpi_meta_filename);
+          app_params->add_param_override(dmeta, dumpi_meta_filename);
         }
       } else {
-        dumpi_meta_filename = app_params.find<std::string>(dmeta);
+        dumpi_meta_filename = app_params->get_param(dmeta);
       }
       sw::DumpiMeta* meta = new sw::DumpiMeta(dumpi_meta_filename);
       nproc = meta->numProcs();
       delete meta;
-    } else if (app_params.find<std::string>("name") == "parseotf2"){
+    } else if (app_params->get_param("name") == "parseotf2"){
       std::string otf2_meta_filename;
       if (!app_params->has_param(ometa)){
         otf2_meta_filename = find_file_from_suffix("otf2");
         if (otf2_meta_filename.empty()){
           sprockit::abort("no OTF2 file found in folder or specified with otf2_metafile");
         } else {
-          app_params->add_param(ometa, otf2_meta_filename);
+          app_params->add_param_override(ometa, otf2_meta_filename);
         }
       } else {
         otf2_meta_filename = ometa;
@@ -199,30 +199,43 @@ Manager::computeMaxNprocForApp(SST::Params& app_params)
     }
     max_nproc = std::max(max_nproc, nproc);
     std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
-    app_params->add_param("launch_cmd", cmd);
+    app_params->add_param_override("launch_cmd", cmd);
   }
+
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST::Params sst_params;
+  if (app_params->has_param("launch_cmd"))
+    sst_params.insert("launch_cmd", app_params->get_param("launch_cmd"));
+  else if (app_params->has_param("size"))
+    sst_params.insert("size", app_params->get_param("size"));
+  else if (app_params->has_param("concentration"))
+    sst_params.insert("concentration", app_params->get_param("concentration"));
+
+#else
+  SST::Params sst_params(app_params);
+#endif
 
   int nproc, procs_per_node;
   std::vector<int> ignore;
-  AppLaunchRequest::parseLaunchCmd(app_params, nproc,
-    procs_per_node, ignore);
+  AppLaunchRequest::parseLaunchCmd(sst_params, nproc, procs_per_node, ignore);
   return std::max(nproc, max_nproc);
 }
 
 int
-Manager::computeMaxNproc(SST::Params& params)
+Manager::computeMaxNproc(sprockit::sim_parameters::ptr& params)
 {
   int appnum = 1;
   int max_nproc = 0;
   bool found_app = true;
-  SST::Params node_params = params.get_namespace("node");
+  sprockit::sim_parameters::ptr node_params = params->get_namespace("node");
   while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
-    found_app = node_params->has_namespace(app_namespace);
-    if (found_app){
-      SST::Params app_params = node_params.get_namespace(app_namespace);
+    if (node_params->has_namespace(app_namespace)){
+      auto app_params = node_params->get_namespace(app_namespace);
       int nproc = computeMaxNprocForApp(app_params);
       max_nproc = std::max(nproc, max_nproc);
+    } else {
+      found_app = false;
     }
     ++appnum;
   }
@@ -230,7 +243,7 @@ Manager::computeMaxNproc(SST::Params& params)
 }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-manager::manager(SST::Params& params, parallel_runtime* rt){}
+Manager::Manager(SST::Params& params, ParallelRuntime* rt){}
 #else
 //
 // Default constructor.

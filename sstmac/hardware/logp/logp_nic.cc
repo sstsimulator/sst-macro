@@ -59,7 +59,6 @@ LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
   next_out_free_(),
   NIC(params, parent)
 {
-  ack_handler_ = newHandler(parent, &Node::handle);
   SST::Params inj_params = params.find_prefix_params("injection");
   inj_byte_delay_ = Timestamp(inj_params.findUnits("bandwidth").inverse().toDouble());
   inj_lat_ = Timestamp(inj_params.findUnits("latency").toDouble());
@@ -67,14 +66,15 @@ LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
 
 LogPNIC::~LogPNIC()
 {
-  if (ack_handler_) delete ack_handler_;
 }
 
 void
 LogPNIC::mtlHandle(Event *ev)
 {
   GlobalTimestamp now_ = now();
-  NetworkMessage* msg = static_cast<NetworkMessage*>(ev);
+  NicEvent* nev = static_cast<NicEvent*>(ev);
+  NetworkMessage* msg = nev->msg();
+  delete nev;
   if (msg->byteLength() < negligibleSize_){
     recvMessage(msg);
   } else {
@@ -109,7 +109,7 @@ LogPNIC::doSend(NetworkMessage* msg)
   }
 
   Timestamp extra_delay = start_send - now_;
-  logp_link_->send(extra_delay, msg);
+  logp_link_->send(extra_delay, new NicEvent(msg));
 }
 
 void

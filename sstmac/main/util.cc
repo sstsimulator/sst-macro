@@ -61,9 +61,39 @@ sstmac_sleep_precise(double secs){
   sstmac::sw::OperatingSystem::currentOs()->sleep(sstmac::Timestamp(secs));
 }
 
-SST::Params& getParams(){
+namespace sstmac {
+
+static SST::Params& appParams(){
   return sstmac::sw::OperatingSystem::currentThread()->parentApp()->params();
 }
+
+std::string getAppParam(const std::string& name){
+  return appParams().find<std::string>(name);
+}
+
+bool appHasParam(const std::string& name){
+  return appParams().contains(name);
+}
+
+void getAppUnitParam(const std::string& name, int& val){
+  val = appParams().findUnits(name).getRoundedValue();
+}
+
+void getAppUnitParam(const std::string& name, const std::string& def, int& val){
+  val = appParams().findUnits(name, def).getRoundedValue();
+}
+
+void getAppUnitParam(const std::string& name, const std::string& def, double& val){
+  val = appParams().findUnits(name, def).getRoundedValue();
+}
+
+void getAppArrayParam(const std::string& name, std::vector<int>& vec){
+  appParams().find_array(name, vec);
+}
+
+}
+
+
 
 extern "C"
 void* sstmac_memset(void* ptr, int value, unsigned long sz){
@@ -169,7 +199,7 @@ void sstmac_advance_time(const char* param_name)
   auto& subMap = cache[parent->aid()];
   auto iter = subMap.find((void*)param_name);
   if (iter == subMap.end()){
-    subMap[(void*)param_name] = sstmac::Timestamp(parent->params()->get_time_param(param_name));
+    subMap[(void*)param_name] = sstmac::Timestamp(parent->params().findUnits(param_name).toDouble());
     iter = subMap.find((void*)param_name);
   }
   parent->compute(iter->second);

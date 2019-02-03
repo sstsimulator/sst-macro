@@ -23,6 +23,9 @@ class stdMutex {
   App* parent_app_;
 };
 
+class stdRecursiveMutex {
+};
+
 }
 }
 

@@ -77,7 +77,7 @@ ParseDumpi::ParseDumpi(SST::Params& params, SoftwareId sid,
   App(params, sid, os),
   mpi_(nullptr)
 {
-  fileroot_ = params->reread_param("dumpi_metaname");
+  fileroot_ = params.find<std::string>("dumpi_metaname");
 
   timescaling_ = params.find<double>("parsedumpi_timescale", 1);
 
@@ -93,7 +93,7 @@ ParseDumpi::~ParseDumpi() throw()
 int ParseDumpi::skeletonMain()
 {
   int rank = this->tid();
-  mpi_ = getApi<MpiApi>();
+  mpi_ = getApi<MpiApi>("mpi");
 
   sstmac::sw::DumpiMeta* meta = new   sstmac::sw::DumpiMeta(fileroot_);
   parsedumpi_callbacks cbacks(this);

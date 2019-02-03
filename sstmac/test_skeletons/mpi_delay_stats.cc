@@ -79,11 +79,11 @@ int USER_MAIN(int argc, char** argv)
     spkt_abort_printf("Test must run with at least 2 ranks, total even");
   }
 
-  double send_delay = getParams()->get_time_param("send_delay");
-  double send_compute = getParams()->get_time_param("send_compute");
-  double recv_delay = getParams()->get_time_param("recv_delay");
-  double recv_compute = getParams()->get_time_param("recv_compute");
-  int send_size = getParams()->get_byte_length_param("message_size");
+  double send_delay = sstmac::getUnitParam<double>("send_delay");
+  double send_compute = sstmac::getUnitParam<double>("send_compute");
+  double recv_delay = sstmac::getUnitParam<double>("recv_delay");
+  double recv_compute = sstmac::getUnitParam<double>("recv_compute");
+  int send_size = sstmac::getUnitParam<int>("message_size");
 
 
   int send_to = (me + 1) % nproc;

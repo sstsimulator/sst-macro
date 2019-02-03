@@ -3,6 +3,7 @@
 #include <mpi.h>
 #include <sys/time.h>
 #include <cstring>
+#include <iostream>
 #include "pic.h"
 
 void backfill(Patch& patch)

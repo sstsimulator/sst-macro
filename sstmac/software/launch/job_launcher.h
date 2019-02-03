@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <unordered_map>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
+#include <sstmac/common/request_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/software/launch/node_set.h>
 #include <sstmac/software/process/task_id.h>
@@ -73,74 +74,6 @@ struct JobAllocation
   int nproc_completed;
 };
 
-class TaskMapping {
- public:
-  TaskMapping(AppId aid) : aid_(aid) {}
-
-  typedef std::shared_ptr<TaskMapping> ptr;
-
-  NodeId rankToNode(int rank) const {
-    return rank_to_node_indexing_[rank];
-  }
-
-  const std::list<int>& nodeToRanks(int node) const {
-    return node_to_rank_indexing_[node];
-  }
-
-  AppId aid() const {
-    return aid_;
-  }
-
-  static TaskMapping::ptr serialize_order(AppId aid, serializer& ser);
-
-  int numRanks() const {
-    return rank_to_node_indexing_.size();
-  }
-
-  int nproc() const {
-    return rank_to_node_indexing_.size();
-  }
-
-  const std::vector<NodeId>& rankToNode() const {
-    return rank_to_node_indexing_;
-  }
-
-  std::vector<NodeId>& rankToNode() {
-    return rank_to_node_indexing_;
-  }
-
-  const std::vector<std::list<int>>& nodeToRank() const {
-    return node_to_rank_indexing_;
-  }
-
-  std::vector<std::list<int>>& nodeToRank() {
-    return node_to_rank_indexing_;
-  }
-
-  static const TaskMapping::ptr& globalMapping(AppId aid);
-
-  static TaskMapping::ptr globalMapping(const std::string& unique_name);
-
-  static void
-  addGlobalMapping(AppId aid, const std::string& unique_name,
-                     const TaskMapping::ptr& mapping);
-
-  static void
-  removeGlobalMapping(AppId aid, const std::string& name);
-
- private:
-  AppId aid_;
-  std::vector<NodeId> rank_to_node_indexing_;
-  std::vector<std::list<int> > node_to_rank_indexing_;
-  std::vector<int> core_affinities_;
-
-  static std::vector<int>  local_refcounts_;
-  static std::vector<TaskMapping::ptr> app_ids_launched_;
-  static std::map<std::string, TaskMapping::ptr> app_names_launched_;
-
-  static void deleteStatics();
-};
-
 /**
  * @brief The JobLauncher class performs the combined operations a queue scheduler like PBS or MOAB
  * and a job launcher like SLURM (srun) or ALPS (aprun).
@@ -159,7 +92,11 @@ class JobLauncher : public Service
    * @brief incoming_event Handle an event sent from one of the nodes
    * @param ev Must be a job_stop_event
    */
-  void incomingEvent(Event *ev);
+  void incomingRequest(Request* req) override;
+
+  void incomingEvent(Event* ev) override {
+    Service::incomingEvent(ev);
+  }
 
   void incomingLaunchRequest(AppLaunchRequest* request);
 
@@ -184,7 +121,7 @@ class JobLauncher : public Service
    * @brief cleanup_app Perform all operations to free up resources associated with a job
    * @param ev
    */
-  void cleanupApp(JobStopEvent* ev);
+  void cleanupApp(JobStopRequest* ev);
 
   /**
    * @brief satisfy_launch_request Called by subclasses to cause a job to be launched
@@ -216,7 +153,7 @@ class JobLauncher : public Service
    *            for running other jobs that might be queued
    * @param ev  An event describing the job that has finished
    */
-  virtual void stopEventReceived(JobStopEvent* ev) = 0;
+  virtual void stopEventReceived(JobStopRequest* ev) = 0;
 
 
 };
@@ -237,7 +174,7 @@ class DefaultJoblauncher : public JobLauncher
   }
 
  private:
-  void stopEventReceived(JobStopEvent* ev);
+  void stopEventReceived(JobStopRequest* ev);
 
  protected:
   bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation);
@@ -262,7 +199,7 @@ class ExclusiveJoblauncher : public DefaultJoblauncher
  private:
   bool handleLaunchRequest(AppLaunchRequest* request, ordered_node_set& allocation);
 
-  void stopEventReceived(JobStopEvent* ev);
+  void stopEventReceived(JobStopRequest* ev);
 
   std::list<AppLaunchRequest*> pending_requests_;
   AppLaunchRequest* active_job_;

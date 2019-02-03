@@ -50,9 +50,6 @@ namespace sw {
 
 class API;
 
-API* staticGetAPI(const char* name);
-
-
 } }
 
 #endif

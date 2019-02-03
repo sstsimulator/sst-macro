@@ -701,7 +701,7 @@ void sprockit_finalize_cxx_heap()
 #endif
 }
 #else
-void sprockit_init_cxx_heap(SST::Params& params)
+void sprockit_init_cxx_heap(sprockit::sim_parameters::ptr params)
 {
 }
 

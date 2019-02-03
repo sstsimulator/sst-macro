@@ -46,12 +46,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_LIBRARIES_LIBRARY_H_INCLUDED
 
 #include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/request_fwd.h>
 #include <sstmac/common/event_location.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/spkt_printf.h>
 #include <map>
 
 
@@ -60,7 +61,6 @@ namespace sw {
 
 class Library
 {
-  DeclareFactoryArgs(Library, SoftwareId, OperatingSystem*)
  public:
   std::string toString() const {
     return libname_;
@@ -71,6 +71,8 @@ class Library
   }
 
   virtual void incomingEvent(Event* ev) = 0;
+
+  virtual void incomingRequest(Request* req) = 0;
 
   OperatingSystem* os() const {
     return os_;

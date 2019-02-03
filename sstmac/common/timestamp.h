@@ -332,6 +332,14 @@ template <> class serialize<sstmac::Timestamp>
     ser.primitive(t);
   }
 };
+
+template <> class serialize<sstmac::GlobalTimestamp>
+{
+ public:
+  void operator()(sstmac::GlobalTimestamp& t, serializer& ser){
+    ser.primitive(t);
+  }
+};
 END_SERIALIZATION_NAMESPACE
 
 #endif

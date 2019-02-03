@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_libraries_compute_LIBCOMPUTE_H
 
 #include <sstmac/software/libraries/library.h>
-#include <sstmac/software/process/graphviz.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(lib_compute)
@@ -57,7 +56,9 @@ namespace sw {
 class LibCompute :
   public Library
 {  
-  
+ public:
+  virtual ~LibCompute(){}
+
  protected:
   LibCompute(SST::Params& params,
               const std::string& libname, SoftwareId sid,
@@ -70,6 +71,10 @@ class LibCompute :
               OperatingSystem* os)
     : Library(name, sid, os)
   {
+  }
+
+  void incomingRequest(Request* req) override {
+    Library::incomingRequest(req);
   }
 
 };

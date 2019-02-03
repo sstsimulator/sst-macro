@@ -84,7 +84,6 @@ class MemoryModel : public SubComponent
  protected:
   NodeId nodeid_;
   Node* parent_node_;
-  EventHandler* done_;
 
 };
 

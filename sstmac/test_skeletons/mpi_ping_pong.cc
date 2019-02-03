@@ -20,16 +20,12 @@ void ping(int rank, int src, int dst, int msize) {
   }
 }
 
-int main(int argc, char** argv)
+int USER_MAIN(int argc, char** argv)
 {
   int sizes[18] = {1,2,4,8,16,32,128,256,512,1024,2048,5096,10192,20384,40768,81536,163072,326144};
-  SST::Params params = getParams();
-  //params->parse_file(, false, true);
  
-  std::vector<int> src;
-  std::vector<int> dst;
-  params.find_array("sources", src);
-  params.find_array("destinations", dst);
+  std::vector<int> src = sstmac::getArrayParam<int>("sources");
+  std::vector<int> dst = sstmac::getArrayParam<int>("destinations");
 
   MPI_Init(&argc, &argv);
   int rank, size;

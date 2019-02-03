@@ -198,10 +198,6 @@ App::App(SST::Params& params, SoftwareId sid,
   globals_storage_(nullptr),
   rc_(0)
 {
-  if (!params_){
-    spkt_abort_printf("app got null parameters");
-  }
-
   globals_storage_ = allocateDataSegment(false); //not tls
   min_op_cutoff_ = params.find<long>("min_op_cutoff", 1000);
   bool host_compute = params.find<bool>("host_compute_timer", false);
@@ -219,8 +215,9 @@ App::App(SST::Params& params, SoftwareId sid,
   active.level = 0;
   active.num_threads = 1;
 
-  for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
-    env_[iter->first] = iter->second.value;
+  std::set<std::string> keys = env_params.getKeys();
+  for (auto& key : keys){
+    env_[key] = env_params.find<std::string>(key);
   }
 
   for (auto iter=os->env_begin(); iter != os->env_end(); ++iter){
@@ -229,6 +226,35 @@ App::App(SST::Params& params, SoftwareId sid,
       //don't overwrite - app env taks precedence
       env_[iter->first] = iter->second;
     }
+  }
+
+  std::vector<std::string> apis;
+  if (params.contains("apis")){
+    params.find_array("apis", apis);
+  } else {
+    apis.push_back("mpi");
+    apis.push_back("sumi:mpi");
+  }
+
+  for (auto& str : apis){
+    std::string alias;
+    std::string name;
+    auto pos = str.find(":");
+    if (pos == std::string::npos){
+      name = str;
+      alias = str;
+    } else {
+      alias = str.substr(0, pos);
+      name = str.substr(pos + 1);
+    }
+
+    auto iter = apis_.find(name);
+    if (iter == apis_.end()){
+      SST::Params api_params = params.find_prefix_params(name);
+      API* api = API::factory::get_value(name, api_params, this);
+      apis_[name] = api;
+    }
+    apis_[alias] = apis_[name];
   }
 }
 
@@ -380,18 +406,14 @@ App::computeBlockMemcpy(uint64_t bytes)
 }
 
 API*
-App::_get_api(const char* name)
+App::getPrebuiltApi(const std::string &name)
 {
-  // an underlying thread may have built this
-  API* my_api = apis_[name];
-  if (!my_api) {
-    SST::Params api_params = params_.find_prefix_params(name);
-    API* new_api = API::factory::get_value(name, api_params, sid_, os_);
-    apis_[name] = new_api;
-    return new_api;
-  } else {
-    return my_api;
+  auto iter = apis_.find(name);
+  if (iter == apis_.end()){
+    spkt_abort_printf("API %s was not included in launch params for app %d",
+                name.c_str(), aid());
   }
+  return iter->second;
 }
 
 void
@@ -404,17 +426,21 @@ App::run()
   //we are ending but perform the equivalent
   //to a start api call to flush any compute
   startAPICall();
+
+  std::set<API*> unique;
+  //because of aliasing...
   for (auto& pair : apis_){
-    delete pair.second;
+    unique.insert(pair.second);
   }
   apis_.clear();
+  for (API* api : unique) delete api;
 
   //now we have to send a message to the job launcher to let it know we are done
   os_->decrementAppRefcount();
   //for now assume that the application has finished with a barrier - which is true of like everything
   if (sid_.task_ == 0 && notify_){
     int launchRoot = os_->node()->launchRoot();
-    JobStopEvent* lev = new JobStopEvent(os_->node()->allocateUniqueId(),
+    JobStopRequest* lev = new JobStopRequest(os_->node()->allocateUniqueId(),
                                              sid_.app_, unique_name_, launchRoot, os_->addr());
     os_->nicCtrlIoctl()(lev);
   }
@@ -561,7 +587,7 @@ void
 UserAppCxxFullMain::initArgv(argv_entry& entry)
 {
   std::string appname = params_.find<std::string>("name");
-  std::string argv_str = params_->get_optional_param("argv", "");
+  std::string argv_str = params_.find<std::string>("argv", "");
   std::deque<std::string> argv_param_dq;
   pst::BasicStringTokenizer::tokenize(argv_str, argv_param_dq, std::string(" "));
   int argc = argv_param_dq.size() + 1;

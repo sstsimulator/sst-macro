@@ -102,8 +102,6 @@ get_quantity_with_units(const char* value, const char* key)
   return ret;
 }
 
-sim_parameters::ptr sim_parameters::empty_ns_params_ = std::make_shared<sim_parameters>();
-
 double
 get_freq_from_str(const char* val, const char* key)
 {
@@ -242,13 +240,11 @@ ParamAssign::setByteLength(long x, const char* units)
 
 sim_parameters::sim_parameters() :
   parent_(nullptr),
-  extra_data_(nullptr),
   public_scope_(true)
 {
 }
 
 sim_parameters::sim_parameters(sim_parameters::const_ptr params) :
-  extra_data_(nullptr),
   parent_(nullptr),
   public_scope_(true),
   namespace_(params->namespace_)
@@ -263,7 +259,6 @@ sim_parameters::sim_parameters(sim_parameters::const_ptr params) :
 
 sim_parameters::sim_parameters(const key_value_map& p) :
   params_(p),
-  extra_data_(nullptr),
   parent_(nullptr),
   public_scope_(true),
   namespace_("global")
@@ -278,7 +273,6 @@ sim_parameters::moved()
 
 sim_parameters::sim_parameters(const std::string& filename) :
   parent_(nullptr),
-  extra_data_(nullptr),
   public_scope_(true),
   namespace_("global")
 {
@@ -558,19 +552,6 @@ sim_parameters::get_time_param(const std::string& key)
 {
   return get_time_from_str(get_param(key).c_str(), key.c_str());
 
-}
-
-void*
-sim_parameters::_extra_data() const
-{
-  if (extra_data_){
-    return extra_data_;
-  } else if (parent_){
-    return parent_->_extra_data();
-  } else {
-    spkt_abort_printf("sim_parameters has no extra data to fetch");
-    return nullptr;
-  }
 }
 
 double
@@ -941,20 +922,52 @@ sim_parameters::parse_keyval(
 }
 
 void
-sim_parameters::split_line(const std::string& line, std::pair<std::string, std::string>& p)
+sim_parameters::insert_into(SST::Params &params)
 {
+  insert_into("", params);
+}
+
+void
+sim_parameters::insert_into(const std::string& ns, SST::Params &params)
+{
+  std::string prefix;
+  if (ns.empty() && namespace_.empty()){
+    for (auto& pair : params_){
+      params.insert(pair.first, pair.second.value);
+    }
+  } else {
+    if (ns.empty()){
+      prefix = namespace_ + ".";
+    } else if (namespace_.empty()){
+      prefix = ns;
+    } else {
+      prefix = ns + namespace_ + ".";
+    }
+    for (auto& pair : params_){
+      params.insert(prefix + pair.first, pair.second.value);
+    }
+  }
+  for (auto& pair : subspaces_){
+    pair.second->insert_into(prefix, params);
+  }
+}
+
+std::pair<std::string, std::string>
+sim_parameters::split_line(const std::string& line)
+{
+  std::pair<std::string, std::string> p;
   std::string lhs = line.substr(0, line.find("="));
   std::string rhs = line.substr(line.find("=") + 1);
   p.first = sprockit::trim_str(lhs);
   p.second = sprockit::trim_str(rhs);
+  return p;
 }
 
 void
 sim_parameters::parse_line(const std::string& line,
   bool fail_on_existing, bool override_existing)
 {
-  std::pair<std::string, std::string> keyval;
-  sim_parameters::split_line(line, keyval);
+  auto keyval = sim_parameters::split_line(line);
   parse_keyval(keyval.first, keyval.second,
    fail_on_existing,
    override_existing,
@@ -1046,8 +1059,7 @@ sim_parameters::parse_stream(std::istream& in,
       ns_queue.push_back(scope);
     } else if (line.find("set var ") != std::string::npos) {
       line = line.substr(8);
-      std::pair<std::string, std::string> keyval;
-      sim_parameters::split_line(line, keyval);
+      auto keyval = sim_parameters::split_line(line);
       variables_[keyval.first] = keyval.second;
     } else if (line.find("=") != std::string::npos) {
       //an assignment

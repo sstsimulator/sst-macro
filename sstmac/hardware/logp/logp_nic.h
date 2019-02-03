@@ -101,8 +101,6 @@ class LogPNIC :
 
   GlobalTimestamp next_in_free_;
 
-  EventHandler* ack_handler_;
-
 };
 
 }

@@ -93,14 +93,6 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(SST::Params& params, uint32_t id) :
     //never be limited by credits
     ej_params.insert("credits", "1GB");
   }
-
-  //PiscesSender::configurePayloadPortLatency(ej_params);
-
-  for (Topology::injection_port& conn : conns){
-    auto port_ns = Topology::getPortNamespace(conn.switch_port);
-    SST::Params port_params = params.find_prefix_params(port_ns);
-    ej_params.combine_into(port_params);
-  }
 }
 
 
@@ -186,10 +178,13 @@ PiscesSwitch::connectOutput(
                                               this, router_->numVC());
   out_buffer->setStatCollector(buf_stats_);
   int buffer_inport = 0;
-  auto out_link = allocateSubLink(Timestamp(), this, //don't put latency on xbar
-                newHandler(out_buffer, &PiscesBuffer::handlePayload));
+  std::string out_port_name = sprockit::printf("buffer-out%d", src_outport);
+  auto out_link = allocateSubLink(out_port_name, Timestamp(), this, //don't put latency on xbar
+                newLinkHandler(out_buffer, &PiscesBuffer::handlePayload));
   xbar_->setOutput(src_outport, buffer_inport, out_link, link_credits_ * scale_factor);
-  auto in_link = allocateSubLink(Timestamp(), this, xbar_->creditHandler()); //don't put latency on internal credits
+
+  std::string in_port_name = sprockit::printf("xbar-credit%d", src_outport);
+  auto in_link = allocateSubLink(in_port_name, Timestamp(), this, xbar_->creditHandler()); //don't put latency on internal credits
   out_buffer->setInput(buffer_inport, src_outport, in_link);
   out_buffers_[src_outport] = out_buffer;
 

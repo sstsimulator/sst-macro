@@ -50,9 +50,9 @@ namespace sstmac {
 namespace sw {
 
 PthreadRunner::PthreadRunner(SoftwareId id, App* parent,
-                               start_fxn start_routine, void* arg,
-                               OperatingSystem* os,
-                               int detach_state)
+                             start_fxn start_routine, void* arg,
+                             OperatingSystem* os,
+                             int detach_state)
   : Thread(parent->params(), id, os),
     start_routine_(start_routine),
     arg_(arg)

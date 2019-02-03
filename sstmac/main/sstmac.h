@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_SSTMAC_H_INCLUDED
 #define SSTMAC_SSTMAC_H_INCLUDED
 
-#include <sprockit/sim_parameters_fwd.h>
+#include <sprockit/sim_parameters.h>
 #include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <string>
@@ -61,7 +61,7 @@ struct opts {
   std::string debug;
   std::string configfile;
   bool got_config_file;
-  SST::Params params;
+  sprockit::sim_parameters::ptr params;
   bool print_walltime;
   bool print_params;
   bool low_res_timer;
@@ -76,6 +76,7 @@ struct opts {
     debug(""),
     configfile(""),
     got_config_file(false),
+    params(std::make_shared<sprockit::sim_parameters>()),
     low_res_timer(false),
     print_walltime(true),
     print_params(false),
@@ -101,17 +102,14 @@ struct SimStats {
 
 int parseOpts(int argc, char **argv, opts &oo);
 
-void print_help(int argc, char **argv);
+void printHelp(int argc, char **argv);
 
-
-void resizeTopology(int max_nproc, SST::Params& params, bool verbose = true);
-
-void map_env_params(SST::Params& params);
+void resizeTopology(int max_nproc, sprockit::sim_parameters::ptr params, bool verbose = true);
 
 namespace sstmac {
 
-class benchmark {
-  DeclareFactory(benchmark);
+class Benchmark {
+  DeclareFactory(Benchmark);
   virtual void run() = 0;
 
   static double now() {
@@ -128,11 +126,9 @@ void finalize(ParallelRuntime* rt);
 
 void initOpts(opts& oo, int argc, char** argv);
 
-void initParams(ParallelRuntime* rt, opts& oo, SST::Params& params, bool parallel);
+void initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr params, bool parallel);
 
-void remapDeprecatedParams(SST::Params& params);
-
-void remapParams(SST::Params& params, bool verbose = true);
+void remapParams(sprockit::sim_parameters::ptr params, bool verbose = true);
 
 void* loadExternLibrary(const std::string& libname, const std::string& searchPath);
 
@@ -149,7 +145,7 @@ void run(opts& oo,
 
 int runStandalone(int argc, char** argv);
 
-int tryMain(SST::Params& params,
+int tryMain(sprockit::sim_parameters::ptr params,
    int argc, char **argv,
    bool params_only = false);
 

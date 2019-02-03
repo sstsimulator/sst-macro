@@ -64,9 +64,9 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  int send_size = getParams()->get_byte_length_param("send_size");
-  double send_delay = getParams()->get_time_param("send_delay");
-  int num_sends = getParams().find<int>("num_sends");
+  int send_size = sstmac::getUnitParam<int>("send_size");
+  double send_delay = sstmac::getUnitParam<double>("send_delay");
+  int num_sends = sstmac::getUnitParam<int>("num_sends");
   int send_to = (me + 1) % nproc;
   int recv_from = (me - 1 + nproc) % nproc;
   MPI_Request send_reqs[10];

@@ -45,12 +45,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef APPMANAGER_H
 #define APPMANAGER_H
 
-#include <sstmac/software/process/task_id.h>
-#include <sstmac/software/process/app_id.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/timestamp.h>
+#include <sstmac/software/process/task_id.h>
+#include <sstmac/software/process/app_id.h>
 #include <sstmac/software/launch/node_set.h>
 
+#include <sprockit/sim_parameters.h>
 #include <sprockit/factories/factory.h>
 #include <unordered_map>
 

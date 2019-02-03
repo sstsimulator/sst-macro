@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/torus.h>
 #include <sstmac/hardware/node/node.h>
 #include <sprockit/util.h>
+#include <sprockit/sim_parameters.h>
 
 extern "C"
 void

@@ -48,15 +48,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/serializable.h>
 #include <sstmac/common/node_address.h>
-#include <sstmac/common/sst_event.h>
+#include <sstmac/common/request.h>
 #include <sprockit/printable.h>
 
 
 namespace sstmac {
 
-class Flow :
-  public Event,
-  public sprockit::printable
+class Flow : public Request
 {
  public:
   /**
@@ -90,7 +88,6 @@ class Flow :
     ser & flow_id_;
     ser & byte_length_;
     ser & libname_;
-    Event::serialize_order(ser);
   }
 
  protected:

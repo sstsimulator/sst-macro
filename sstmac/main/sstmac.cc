@@ -171,7 +171,7 @@ initOpts(opts& oo, int argc, char** argv)
  * @param params  An already allocated parameter object
  */
 void
-initParams(ParallelRuntime* rt, opts& oo, SST::Params& params, bool parallel)
+initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr params, bool parallel)
 {
   //use the config file to set up file search paths
   size_t pos = oo.configfile.find_last_of('/');
@@ -186,7 +186,7 @@ initParams(ParallelRuntime* rt, opts& oo, SST::Params& params, bool parallel)
       sprockit::sim_parameters::ptr tmp_params;
       sprockit::sim_parameters::parallel_build_params(tmp_params, rt->me(), rt->nproc(),
                                                       oo.configfile, &bcaster, true);
-      params = SST::Params(tmp_params);
+      params = tmp_params;
     } else {
       if (oo.got_config_file) params->parse_file(oo.configfile, false, true);
     }
@@ -195,15 +195,12 @@ initParams(ParallelRuntime* rt, opts& oo, SST::Params& params, bool parallel)
 
   if (oo.params) {
     // there were command-line overrides
-    oo.params.combine_into(params);
+    oo.params->combine_into(params);
   }
 
   /** DO NOT CHANGE THE ORDER OF THE INIT FUNCTIONS BELOW - JJW
    *  they actually depend on each other */
 
-  //if we have environmental variables that we need to map
-  //to SST parameter names
-  map_env_params(params);
 
   //at this point, we have read in parameters - init malloc system
   //set the global parameters object
@@ -317,6 +314,7 @@ static void tokenize(const std::string& in, std::set<std::string>& tokens){
 int
 runStandalone(int argc, char** argv)
 {
+#if !SSTMAC_INTEGRATED_SST_CORE
   std::cerr << "WARNING: running standalone executable as-is. This usually happens\n"
             << "WARNING: when running configure scripts. I hope this is what you want"
             << std::endl;
@@ -359,10 +357,13 @@ runStandalone(int argc, char** argv)
         "sstmac_app_name", null_params, id, &os);
   os.startApp(a, "");
   return a->rc();
+#else
+  return 0;
+#endif
 }
 
 int
-tryMain(SST::Params& params,
+tryMain(sprockit::sim_parameters::ptr params,
         int argc, char **argv, bool params_only)
 {
   //set up the search path
@@ -400,19 +401,13 @@ tryMain(SST::Params& params,
   bool parallel = rt && rt->nproc() > 1;
   sstmac::initParams(rt, oo, params, parallel);
 
-  if (!oo.benchmark.empty()){
-    benchmark* bm = benchmark::factory::get_value(oo.benchmark, params);
-    bm->run();
-    return 0;
-  }
-
   //do some cleanup and processing of params
   sstmac::remapParams(params);
 
-  if (params.contains("external_libs")){
+  if (params->has_param("external_libs")){
     std::string pathStr = loadExternPathStr();
     std::vector<std::string> libraries;
-    params.find_array("external_libs", libraries);
+    params->get_vector_param("external_libs", libraries);
     for (auto&& lib : libraries){
       loadExternLibrary(lib, pathStr);
     }
@@ -421,13 +416,19 @@ tryMain(SST::Params& params,
   if (params_only)
     return 0;
 
-#if !SSTMAC_INTEGRATED_SST_CORE
-    if (rt && rt->me() == 0){
-      cerr0 << std::string(argv[0]) << "\n" << oo << std::endl;
-    }
-#endif
+#if SSTMAC_INTEGRATED_SST_CORE
+#else
+  SST::Params mainParams(params);
+  if (!oo.benchmark.empty()){
+    Benchmark* bm = Benchmark::factory::get_value(oo.benchmark, mainParams);
+    bm->run();
+    return 0;
+  }
 
-  sstmac::run(oo, rt, params, stats);
+  if (rt && rt->me() == 0){
+    cerr0 << std::string(argv[0]) << "\n" << oo << std::endl;
+  }
+  sstmac::run(oo, rt, mainParams, stats);
 
 
   if (oo.low_res_timer){
@@ -451,7 +452,7 @@ tryMain(SST::Params& params,
   }
 
   sstmac::finalize(rt);
-
+#endif
   return 0;
 }
 

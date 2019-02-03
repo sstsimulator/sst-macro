@@ -78,6 +78,13 @@ namespace hw {
 
 static sprockit::need_deleteStatics<NIC> del_statics;
 
+void
+NicEvent::serialize_order(serializer &ser)
+{
+  Event::serialize_order(ser);
+  ser & msg_;
+}
+
 NIC::NIC(SST::Params& params, Node* parent) :
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
@@ -132,7 +139,10 @@ void
 NIC::mtlHandle(Event *ev)
 {
   nic_debug("MTL handle");
-  recvMessage(static_cast<NetworkMessage*>(ev));
+  NicEvent* nev = static_cast<NicEvent*>(ev);
+  NetworkMessage* msg = nev->msg();
+  delete nev;
+  recvMessage(msg);
 }
 
 void
@@ -143,8 +153,10 @@ NIC::deleteStatics()
 std::function<void(NetworkMessage*)>
 NIC::ctrlIoctl()
 {
-  void (EventLink::*sendfxn)(Event*) = &EventLink::send;
-  return std::bind(sendfxn, logp_link_, std::placeholders::_1);
+  auto f = [=](NetworkMessage* msg){
+    logp_link_->send(new NicEvent(msg));
+  };
+  return f;
 }
 
 std::function<void(NetworkMessage*)>
@@ -306,7 +318,7 @@ NIC::internodeSend(NetworkMessage* netmsg)
   //we might not have a logp overlay network
   if (negligibleSize(netmsg->byteLength())){
     ackSend(netmsg);
-    logp_link_->send(netmsg);
+    logp_link_->send(new NicEvent(netmsg));
   } else {
     doSend(netmsg);
   }

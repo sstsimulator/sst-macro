@@ -58,10 +58,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/gatherv.h>
 #include <sumi/scatterv.h>
 #include <sumi/scan.h>
-#include <sstmac/common/event_callback.h>
 #include <sprockit/stl_string.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
+#include <sstmac/common/event_callback.h>
+#include <sstmac/software/api/api.h>
 
 RegisterKeywords(
 { "lazy_watch", "whether failure notifications can be receive without active pinging" },
@@ -112,7 +113,7 @@ class SumiServer :
   SumiServer(Transport* tport)
     : Service(tport->serverLibname(),
        sstmac::sw::SoftwareId(-1, -1), //belongs to no application
-       tport->os())
+       tport->parent()->os())
   {
   }
 
@@ -151,8 +152,12 @@ class SumiServer :
     return procs_.empty();
   }
 
-  void incomingEvent(sstmac::Event *ev){
-    Message* smsg = safe_cast(Message, ev);
+  void incomingEvent(sstmac::Event* ev) override {
+    sstmac::sw::Service::incomingEvent(ev);
+  }
+
+  void incomingRequest(sstmac::Request *req) override {
+    Message* smsg = safe_cast(Message, req);
     debug_printf(sprockit::dbg::sumi,
                  "SumiServer %d: incoming %s",
                  os_->addr(), smsg->toString().c_str());
@@ -173,53 +178,32 @@ class SumiServer :
 
 };
 
-Transport::Transport(SST::Params& params, sstmac::sw::SoftwareId sid,
-                     sstmac::sw::OperatingSystem* os) :
-  Transport(params, "sumi", sid, os)
+
+Transport* Transport::get()
 {
+  return sstmac::sw::OperatingSystem::currentThread()->getApi<sumi::Transport>("sumi");
 }
 
-Transport::Transport(SST::Params& params,
-               const char* prefix,
-               sstmac::sw::SoftwareId sid,
-               sstmac::sw::OperatingSystem* os) :
-   Transport(params, standardLibname(prefix, sid), sid, os)
-{
-}
-
-Transport::Transport(SST::Params& params,
-               sstmac::sw::SoftwareId sid,
-               sstmac::sw::OperatingSystem* os,
-               const std::string& prefix,
-               const std::string& server_name) :
-  Transport(params, standardLibname(prefix.c_str(), sid), sid, os, server_name)
-{
-}
-
-Transport::Transport(SST::Params& params,
-                     const std::string& libname,
-                     sstmac::sw::SoftwareId sid,
-                     sstmac::sw::OperatingSystem* os,
-                     const std::string& server_name) :
+Transport::Transport(SST::Params& params, sstmac::sw::App* parent) :
   //the name of the transport itself should be mapped to a unique name
-  API(params, libname, sid, os),
+  API(params, parent),
   //the server is what takes on the specified libname
   inited_(false),
   engine_(nullptr),
   finalized_(false),
-  server_libname_(server_name),
-  user_lib_time_(nullptr),
+  server_libname_("sumi"),
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   completion_queues_(1),
-  default_progress_queue_(os),
-  nic_ioctl_(os->nicDataIoctl())
+  default_progress_queue_(parent->os()),
+  nic_ioctl_(parent->os()->nicDataIoctl()),
+  node_(parent->os()->node())
 {
   completion_queues_[0] = std::bind(&DefaultProgressQueue::incoming,
                                     &default_progress_queue_, 0, std::placeholders::_1);
 
-  rank_ = sid.task_;
-  auto* server_lib = os_->lib(server_libname_);
+  rank_ = sid().task_;
+  auto* server_lib = parent_->os()->lib(server_libname_);
   SumiServer* server;
   // only do one server per app per node
   if (server_lib == nullptr) {
@@ -232,14 +216,13 @@ Transport::Transport(SST::Params& params,
   post_rdma_delay_ = Timestamp(params.findUnits("post_rdma_delay", "0s").toDouble());
   post_header_delay_ = Timestamp(params.findUnits("post_header_delay", "0s").toDouble());
   poll_delay_ = Timestamp(params.findUnits("poll_delay", "0s").toDouble());
-  user_lib_time_ = new sstmac::sw::LibComputeTime(params, "sumi-user-lib-time", sid, os);
 
   rdma_pin_latency_ = Timestamp(params.findUnits("rdma_pin_latency", "0s").toDouble());
   rdma_page_delay_ = Timestamp(params.findUnits("rdma_page_delay", "0s").toDouble());
   pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
   page_size_ = params.findUnits("rdma_page_size", "4096").getRoundedValue();
 
-  rank_mapper_ = sstmac::sw::TaskMapping::globalMapping(sid.app_);
+  rank_mapper_ = sstmac::sw::TaskMapping::globalMapping(sid().app_);
   nproc_ = rank_mapper_->nproc();
 
   server->registerProc(rank_, this);
@@ -250,12 +233,7 @@ Transport::Transport(SST::Params& params,
   spy_bytes_ = sstmac::optionalStats<sstmac::StatSpyplot>(desScheduler(),
         params, "traffic_matrix", "ascii", "bytes");
   */
-}
-
-void
-Transport::makeEngine()
-{
-  if (!engine_) engine_ = new CollectiveEngine(params_, this);
+  engine_ = new CollectiveEngine(params, this);
 }
 
 void
@@ -301,8 +279,7 @@ Transport::~Transport()
   if (monitor_) delete monitor_;
 #endif
 
-  delete user_lib_time_;
-  SumiServer* server = safe_cast(SumiServer, os_->lib(server_libname_));
+  SumiServer* server = safe_cast(SumiServer, parent_->os()->lib(server_libname_));
   bool del = server->unregisterProc(rank_, this);
   if (del) delete server;
 
@@ -321,16 +298,10 @@ Transport::pinRdma(uint64_t bytes)
   compute(pin_delay);
 }
 
-sstmac::EventScheduler*
-Transport::desScheduler() const
-{
-  return os_->node();
-}
-
 void
 Transport::memcopy(uint64_t bytes)
 {
-  os_->currentThread()->parentApp()->computeBlockMemcpy(bytes);
+  parent_->computeBlockMemcpy(bytes);
 }
 
 void
@@ -351,7 +322,7 @@ Transport::nidlist() const
 void
 Transport::compute(sstmac::Timestamp t)
 {
-  user_lib_time_->compute(t);
+  parent_->compute(t);
 }
 
 double
@@ -396,7 +367,7 @@ Transport::send(Message* m)
         }
       } else {
         if (post_header_delay_.ticks()) {
-          user_lib_time_->compute(post_header_delay_);
+          parent_->compute(post_header_delay_);
         }
         nic_ioctl_(m);
       }
@@ -404,7 +375,7 @@ Transport::send(Message* m)
     case sstmac::hw::NetworkMessage::rdma_get_request:
     case sstmac::hw::NetworkMessage::rdma_put_payload:
       if (post_rdma_delay_.ticks()) {
-        user_lib_time_->compute(post_rdma_delay_);
+        parent_->compute(post_rdma_delay_);
       }
       nic_ioctl_(m);
       break;
@@ -463,7 +434,7 @@ Transport::rdmaPutResponse(Message* m, uint64_t payload_bytes,
 uint64_t
 Transport::allocateFlowId()
 {
-  return os_->node()->allocateUniqueId();
+  return parent_->os()->node()->allocateUniqueId();
 }
 
 void

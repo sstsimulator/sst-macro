@@ -61,6 +61,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
+#include <sstmac/hardware/nic/nic.h>
 #include <sstmac/common/event_manager.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -103,13 +104,10 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
     random_max_extra_byte_delay_ = Timestamp(params.findUnits("random_max_extra_byte_delay").toDouble());
   }
 
-  if (params->has_namespace("contention")){
-    auto model_params = params.find_prefix_params("contention");
-    if (model_params.contains("model")){
-      contention_model_ = ContentionModel::factory::get_param("model", model_params);
-    }
+  SST::Params contention_params = params.find_prefix_params("contention");
+  if (contention_params.contains("model")){
+    contention_model_ = ContentionModel::factory::get_param("model", contention_params);
   }
-
 
   nic_links_.resize(top_->numNodes());
 
@@ -127,7 +125,10 @@ LogPSwitch::~LogPSwitch()
 void
 LogPSwitch::sendEvent(Event *ev)
 {
-  send(now(), dynamic_cast<NetworkMessage*>(ev));
+  NicEvent* nev = dynamic_cast<NicEvent*>(ev);
+  NetworkMessage* msg = nev->msg();
+  delete nev;
+  send(now(), msg);
 }
 
 void
@@ -162,7 +163,7 @@ LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
   Timestamp extra_delay = start - now() + delay;
 
   EventLink* lnk = nic_links_[dst];
-  lnk->send(extra_delay, msg);
+  lnk->send(extra_delay, new NicEvent(msg));
 }
 
 struct SlidingContentionModel : public LogPSwitch::ContentionModel

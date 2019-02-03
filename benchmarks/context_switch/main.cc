@@ -16,7 +16,7 @@ struct subthread_args {
   sstmac::sw::ThreadContext* main_thread;
 };
 
-class context_switch_benchmark : public sstmac::benchmark
+class context_switch_benchmark : public sstmac::Benchmark
 {
  public:
   FactoryRegister("context_switch", sstmac::benchmark, context_switch_benchmark);

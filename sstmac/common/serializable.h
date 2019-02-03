@@ -56,7 +56,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define START_SERIALIZATION_NAMESPACE namespace SST { namespace Core { namespace Serialization {
 #define END_SERIALIZATION_NAMESPACE } } }
 
-#define FRIEND_SERIALIZATION   template <class T, class Enable> friend class sstmac::serialize
+#define FRIEND_SERIALIZATION   template <class T, class Enable> friend class SST::Core::Serialization::serialize
 
 /**
 namespace sstmac {

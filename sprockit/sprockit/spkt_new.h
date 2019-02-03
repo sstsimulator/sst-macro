@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-void sprockit_init_cxx_heap(SST::Params& params);
+void sprockit_init_cxx_heap(sprockit::sim_parameters_ptr);
 
 void sprockit_finalize_cxx_heap();
 

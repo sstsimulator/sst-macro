@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/common/connection.h>
+#include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(timestamp)

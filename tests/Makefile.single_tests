@@ -34,8 +34,6 @@ test_tls.$(CHKSUF): test_tls
 	$(PYRUNTEST) 6 $(top_srcdir) $@ True \
     ./test_tls --no-wall-time -f $(srcdir)/test_configs/tls.ini 
 
-#SINGLETESTS += test_uq
-
 if HAVE_OTF2
 SINGLETESTS += test_otf2 test_otf2_write
 endif
@@ -46,14 +44,6 @@ SINGLETESTS += \
   test_dumpi_terminate \
   test_dumpi_bgp
 endif
-
-test_scan.$(CHKSUF): test_scan
-	$(PYRUNTEST) 20 $(top_srcdir) $@ notime \
-    ./test_scan --no-wall-time -f $(srcdir)/test_configs/test_scan.ini
-
-test_uq.$(CHKSUF): test_uq
-	$(PYRUNTEST) 6 $(top_srcdir) $@ notime \
-    ./test_uq -f $(srcdir)/test_configs/test_uq.ini
 
 
 #------------------------------------------------------------------------------------------#

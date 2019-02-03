@@ -46,36 +46,43 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_software_libraries_API_H
 
 #include <sprockit/factories/factory.h>
-#include <sstmac/software/libraries/library.h>
+#include <sstmac/common/node_address.h>
+#include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/host_timer.h>
+#include <sstmac/software/process/app_fwd.h>
+#include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/timestamp.h>
 #include <sprockit/keyword_registration.h>
-#include <sstmac/software/libraries/compute/lib_compute_time.h>
 #include <sys/time.h>
+
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/subcomponent.h>
+#endif
 
 namespace sstmac {
 namespace sw {
 
-class API : public Library
+class API
+#if SSTMAC_INTEGRATED_SST_CORE
+ : public SST::SubComponent
+#endif
 {
-  DeclareFactoryArgs(API,SoftwareId,OperatingSystem*)
+  DeclareFactoryArgs(API,App*)
  public:
-  API(SST::Params& params, const std::string& libname,
-      SoftwareId sid, OperatingSystem *os) :
-    Library(libname, sid, os),
-    host_timer_(nullptr),
-    compute_(nullptr)
-  {
-    init(params);
-  }
-
-  API(SST::Params& params, const char* prefix,
-      SoftwareId sid, OperatingSystem* os) :
-    API(params, standardLibname(prefix, sid), sid, os)
-  {
-  }
+  API(SST::Params& params, App* parent);
 
   virtual ~API();
+
+  SoftwareId sid() const;
+
+  NodeId addr() const;
+
+  App* parent() const {
+    return parent_;
+  }
+
+  Thread* activeThread();
 
   virtual void init(){}
 
@@ -103,17 +110,10 @@ class API : public Library
    */
   void endAPICall();
 
-  SST::Params& params() {
-    return params_;
-  }
-
  protected:
-  HostTimer* host_timer_;
-  LibComputeTime* compute_;
-  SST::Params params_;
+  std::unique_ptr<HostTimer> host_timer_;
+  App* parent_;
 
- private:
-  void init(SST::Params& params);
 };
 
 void apiLock();
@@ -127,5 +127,11 @@ void apiUnlock();
 
 }
 }
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+namespace SST {
+using SubComponent = sstmac::sw::API;
+}
+#endif
 
 #endif // API_H

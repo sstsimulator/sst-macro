@@ -62,7 +62,34 @@ Questions? Contact sst-macro-help@sandia.gov
 extern int run_standalone(int, char**);
 namespace sstmac {
   using LinkHandler = SST::Event::HandlerBase;
+
+class EventLink {
+ public:
+  EventLink(const std::string& name, Timestamp selflat, SST::Link* link) :
+    name_(name), selflat_(selflat), link_(link)
+  {
+  }
+
+  std::string toString() const {
+    return "self link: " + name_;
+  }
+
+  void send(Timestamp delay, Event* ev){
+    //the link should have a time converter built-in?
+    link_->send(SST::SimTime_t((delay + selflat_).ticks()), ev);
+  }
+
+  void send(Event* ev){
+    send(selflat_, ev);
+  }
+
+ private:
+  SST::Link* link_;
+  Timestamp selflat_;
+  std::string name_;
+};
 }
+
 #else
 namespace SST {
 struct TimeConverter {};
@@ -74,10 +101,6 @@ using Link = sstmac::EventLink;
 }
 namespace sstmac {
   using LinkHandler = EventHandler;
-}
-#endif
-
-namespace sstmac {
 
 class EventLink {
  public:
@@ -141,6 +164,11 @@ class EventLink {
 
 };
 
+}
+#endif
+
+namespace sstmac {
+
 class EventScheduler : public sprockit::printable
 {
  public:
@@ -198,7 +226,7 @@ class EventScheduler : public sprockit::printable
   }
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  static SST::TimeConverter* time_converter() {
+  static SST::TimeConverter* timeConverter() {
     return time_converter_;
   }
 #else
@@ -319,6 +347,16 @@ template <class T, class Fxn>
 SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
 }
+
+static inline EventLink* allocateSubLink(const std::string& name, Timestamp lat, SubComponent* subcomp, LinkHandler* handler){
+  SST::Link* self = subcomp->configureSelfLink(name, subcomp->timeConverter(), handler);
+  return new EventLink(name, lat, self);
+}
+
+static inline EventLink* allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler){
+  SST::Link* self = comp->configureSelfLink(name, comp->timeConverter(), handler);
+  return new EventLink(name, lat, self);
+}
 #else
 template <class T, class Fxn, class... Args>
 SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn, Args&&... args){
@@ -401,8 +439,8 @@ class IpcLink : public EventLink {
 class SubLink : public EventLink
 {
  public:
-  SubLink(Timestamp latency, Component* comp, EventHandler* handler) :
-    EventLink(latency),
+  SubLink(Timestamp lat, Component* comp, EventHandler* handler) :
+    EventLink(lat), //sub links have no latency
     comp_(comp), handler_(handler)
   {
   }
@@ -421,7 +459,7 @@ class SubLink : public EventLink
   EventHandler* handler_;
 };
 
-static inline EventLink* allocateSubLink(Timestamp lat, Component* comp, EventHandler* handler)
+static inline EventLink* allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler)
 {
   return new SubLink(lat, comp, handler);
 }

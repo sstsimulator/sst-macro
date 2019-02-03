@@ -180,25 +180,25 @@ parseOpts(int argc, char **argv, opts &oo)
         break;
       case 'a': {
         need_config_file = false;
-        SST::Params params("debug.ini");
-        params.combine_into(oo.params);
+        sprockit::sim_parameters spkt_params("debug.ini");
+        spkt_params.combine_into(oo.params);
         machine_configured = true;
         break;
       }
       case 'i': {
-        SST::Params params(optarg);
-        params.combine_into(oo.params);
+        sprockit::sim_parameters spkt_params(optarg);
+        spkt_params.combine_into(oo.params);
       }
       break;
       case 'p': {
         //overwrite anything existing
-        oo.params->parse_line(optarg, false, true);
+        auto pair = sprockit::sim_parameters::split_line(optarg);
+        oo.params->add_param_override(pair.first, pair.second);
         break;
       }
       case 'c': {
         //overwrite anything existing
-        std::string param_line = std::string("cpu_affinity = ") + std::string(optarg);
-        oo.params->parse_line(param_line, false, true);
+        oo.params->add_param_override("cpu_affinity", std::string(optarg));
         break;
       }
       default:
@@ -207,7 +207,7 @@ parseOpts(int argc, char **argv, opts &oo)
         break;
     }
     if (oo.help) {
-      print_help(argc, argv);
+      printHelp(argc, argv);
       return PARSE_OPT_EXIT_SUCCESS;
     }
     if (errorflag) {
@@ -221,8 +221,8 @@ parseOpts(int argc, char **argv, opts &oo)
   }
 
   if (infinite_network) {
-    SST::Params params("infinite.ini");
-    params.combine_into(oo.params);
+    sprockit::sim_parameters spkt_params("infinite.ini");
+    spkt_params.combine_into(oo.params);
     need_config_file = false;
     if (machine_configured){
       machineAlreadyConfigured();
@@ -232,16 +232,15 @@ parseOpts(int argc, char **argv, opts &oo)
 
   if (dodumpi || dootf2) {
     if (!machine_configured){
-      SST::Params params("debug.ini");
-      //do not overwrite existing parameters
-      params.combine_into(oo.params, false, false, true);
+      sprockit::sim_parameters spkt_params("debug.ini");
+      spkt_params.combine_into(oo.params, false, false, true);
       machine_configured = true;
     }
     need_config_file = false;
     if (dodumpi){
-      oo.params->add_param("node.app1.name", "parsedumpi");
+      oo.params->add_param_override("node.app1.name", "parsedumpi");
     } else if (dootf2) {
-      oo.params->add_param("node.app1.name", "parseotf2");
+      oo.params->add_param_override("node.app1.name", "parseotf2");
     }
   }
 
@@ -275,7 +274,7 @@ parseOpts(int argc, char **argv, opts &oo)
   }
 
   if (no_congestion) {
-    oo.params->add_param("switch.arbitrator", "null");
+    oo.params->add_param_override("switch.arbitrator", "null");
   }
 
   if (pisces_debug) {
@@ -293,7 +292,7 @@ parseOpts(int argc, char **argv, opts &oo)
   }
 
   if (run_ping_all){
-    oo.params->add_param("node.app1.name", "mpi_ping_all");
+    oo.params->add_param_override("node.app1.name", "mpi_ping_all");
   }
 
   /** check to see if we should do an mpitestall */

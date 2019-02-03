@@ -49,6 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_status.h>
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
 #include <sstmac/software/process/key.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 #include <sprockit/sim_parameters.h>
@@ -77,18 +78,16 @@ namespace sumi {
 static sprockit::need_deleteStatics<MpiQueue> del_statics;
 
 bool
-MpiQueue::sortbyseqnum::operator()(MpiMessage* a,
-                                    MpiMessage*b) const
+MpiQueue::sortbyseqnum::operator()(MpiMessage* a, MpiMessage*b) const
 {
   return (a->seqnum() < b->seqnum());
 }
 
-MpiQueue::MpiQueue(SST::Params& params,
-                     int task_id,
-                     MpiApi* api, CollectiveEngine* engine) :
+MpiQueue::MpiQueue(SST::Params& params, int task_id,
+                   MpiApi* api, CollectiveEngine* engine) :
   taskid_(task_id),
   api_(api),
-  queue_(api->os())
+  queue_(api->parent()->os())
 {
   max_vshort_msg_size_ = params.findUnits("max_vshort_msg_size", "512B").getRoundedValue();
   max_eager_msg_size_ = params.findUnits("max_eager_msg_size", "8192B").getRoundedValue();

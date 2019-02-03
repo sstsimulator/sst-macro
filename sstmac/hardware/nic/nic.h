@@ -57,6 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_local_int_fwd.h>
 #include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/hardware/common/flow_fwd.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/progress_queue.h>
 
@@ -71,6 +72,25 @@ DeclareDebugSlot(nic);
 
 namespace sstmac {
 namespace hw {
+
+class NicEvent :
+  public Event, public sprockit::thread_safe_new<NicEvent>
+{
+  ImplementSerializable(NicEvent)
+ public:
+  NicEvent(NetworkMessage* msg) : msg_(msg) {}
+
+  NetworkMessage* msg() const {
+    return msg_;
+  }
+
+  void serialize_order(serializer& ser) override;
+
+ private:
+  NicEvent(){} //for serialization
+
+  NetworkMessage* msg_;
+};
 
 /**
  * A networkinterface is a delegate between a node and a server module.

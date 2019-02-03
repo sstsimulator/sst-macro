@@ -91,8 +91,6 @@ PiscesNtoMQueue(const std::string& arb, double bw, SST::Component* parent,
                 bool update_vc)
   : PiscesSender(parent, update_vc),
     num_vc_(num_vc),
-    creditHandler_(nullptr),
-    payloadHandler_(nullptr),
 #if SSTMAC_SANITY_CHECK
     initial_credits_(num_vc * num_out_ports),
 #endif
@@ -105,28 +103,21 @@ PiscesNtoMQueue(const std::string& arb, double bw, SST::Component* parent,
   arb_ = PiscesBandwidthArbitrator::factory::get_value(arb, bw);
 }
 
-EventHandler*
+LinkHandler*
 PiscesNtoMQueue::creditHandler()
 {
-  if (!creditHandler_){
-    creditHandler_ = newHandler(this, &PiscesNtoMQueue::handleCredit);
-  }
-  return creditHandler_;
+  return newLinkHandler(this, &PiscesNtoMQueue::handleCredit);
 }
 
-EventHandler*
+LinkHandler*
 PiscesNtoMQueue::payloadHandler()
 {
-  if (!payloadHandler_){
-    payloadHandler_ = newHandler(this, &PiscesNtoMQueue::handlePayload);
-  }
-  return payloadHandler_;
+  return newLinkHandler(this, &PiscesNtoMQueue::handlePayload);
 }
 
 PiscesNtoMQueue::~PiscesNtoMQueue()
 {
   if (arb_) delete arb_;
-  if (creditHandler_) delete creditHandler_;
   for (auto& inp : inputs_){
     if (inp.link) delete inp.link;
   }

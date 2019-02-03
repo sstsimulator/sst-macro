@@ -44,10 +44,12 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/libraries/blas/blas_api.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/process/key.h>
+#include <sstmac/software/process/app.h>
 #include <sstmac/software/libraries/compute/lib_compute_inst.h>
 #include <sstmac/software/libraries/compute/compute_event.h>
 #include <sprockit/keyword_registration.h>
-#include <sstmac/software/process/key.h>
+
 
 RegisterKeywords(
   { "dgemm", "" },
@@ -77,13 +79,11 @@ BlasKernel* BlasAPI::dgemv_kernel_;
 BlasKernel* BlasAPI::daxpy_kernel_;
 BlasKernel* BlasAPI::ddot_kernel_;
 
-BlasAPI::BlasAPI(SST::Params& params,
-                   SoftwareId sid,
-                   OperatingSystem* os)
-  : API(params, "blas", sid, os)
+BlasAPI::BlasAPI(SST::Params& params, App* app)
+  : API(params, app)
 {
-  std::string libname = sprockit::printf("blas-compute%d", sid.toString().c_str());
-  lib_compute_ = new LibComputeInst(params, libname, sid, os);
+  std::string libname = sprockit::printf("blas-compute%d", sid().toString().c_str());
+  lib_compute_ = new LibComputeInst(params, libname, sid(), app->os());
   if (!dgemm_kernel_){
     initKernels(params);
   }

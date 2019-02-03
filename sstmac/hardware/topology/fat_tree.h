@@ -93,9 +93,6 @@ class AbstractFatTree :
   virtual int upPort(int level) const = 0;
   virtual int downPort(int dst_tree) const = 0;
 
-  void writeBwParams(SST::Params& switch_params,
-                       double multiplier) const;
-
   int num_leaf_switches_;
   int num_agg_subtrees_;
   int leaf_switches_per_subtree_;

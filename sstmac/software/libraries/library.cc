@@ -66,7 +66,15 @@ void
 Library::incomingEvent(Event* ev)
 {
   spkt_throw_printf(sprockit::unimplemented_error,
-    "%s::incoming_event: this library should only block, never receive incoming",
+    "%s::incomingEvent: this library should only block, never receive incoming",
+     toString().c_str());
+}
+
+void
+Library::incomingRequest(Request* ev)
+{
+  spkt_throw_printf(sprockit::unimplemented_error,
+    "%s::incomingRequest: this library should only block, never receive incoming",
      toString().c_str());
 }
 

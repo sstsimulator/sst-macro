@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/debug.h>
 #include <sstmac/common/sstmac_env.h>
-#include <sstmac/main/driver.h>
+
 #include <sstmac/software/process/app.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sumi/transport.h>
@@ -241,8 +241,7 @@ quiesce(sumi::Transport* tport,
 
 int USER_MAIN(int argc, char** argv)
 {
-  sumi::Transport* tport = sstmac::sw::OperatingSystem::currentThread()
-      ->getApi<sumi::Transport>();
+  sumi::Transport* tport = sumi::Transport::get();
 
   tport->init();
 
@@ -369,29 +368,6 @@ int USER_MAIN(int argc, char** argv)
   }
   ++num_done;
 
-  int nresults = nproc*num_iterations*npartners;
-  if (num_done == nproc){
-    double* resultsArr = sstmac::SimulationQueue::allocateResults(nresults);
-    int result_idx = 0;
-    for (int p=0; p < nproc; ++p){
-      for (int i=0; i < num_iterations; ++i){
-        std::map<int, rdma_message*>& done = results[p][i];
-        std::map<int, rdma_message*>::iterator it, end = done.end();
-        for (it = done.begin(); it != end; ++it, ++result_idx){
-          rdma_message* msg = it->second;
-          double delta_t = msg->finish() - msg->start();
-          double throughput_gbs = msg->byteLength() / delta_t / 1e9;
-          resultsArr[result_idx] = throughput_gbs;
-          debug_printf(sprockit::dbg::traffic_matrix_results,
-            "Message iter=%3d source=%5d dest=%d throughput=%10.4fGB/s start=%8.4ems stop=%8.4ems",
-            msg->iter(), msg->sender(), msg->recver(), throughput_gbs,
-            msg->start()*1e3, msg->finish()*1e3);
-       }
-     }
-   }
-   sstmac::SimulationQueue::publishResults();
-   num_done = 0;
- }
  tport->finish();
  return 0;
 }

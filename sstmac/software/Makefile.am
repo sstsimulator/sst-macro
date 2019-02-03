@@ -48,6 +48,7 @@ libsstmac_sw_la_SOURCES = \
   libraries/compute/lib_compute_memmove.cc \
   libraries/compute/lib_compute_time.cc \
   libraries/unblock_event.cc \
+  launch/task_mapping.cc \
   launch/launch_request.cc \
   launch/node_allocator.cc \
   launch/cart_allocation.cc \
@@ -126,6 +127,7 @@ nobase_library_include_HEADERS = \
   libraries/unblock_event.h \
   libraries/service.h \
   libraries/service_fwd.h \
+  launch/task_mapping.h \
   launch/launch_request.h \
   launch/launch_request_fwd.h \
   launch/node_allocator.h \

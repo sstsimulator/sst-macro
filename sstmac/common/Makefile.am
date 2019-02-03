@@ -58,6 +58,8 @@ nobase_library_include_HEADERS = \
   runtime.h \
   timestamp.h \
   timestamp_fwd.h \
+  request.h \
+  request_fwd.h \
   sst_event.h \
   sst_event_fwd.h \
   lodepng.h \

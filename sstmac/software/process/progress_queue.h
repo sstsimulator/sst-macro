@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <map>
+#include <sprockit/errors.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 

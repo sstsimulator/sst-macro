@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/ami/ami.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_scheduler.h>
-#include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/request_fwd.h>
 #include <sstmac/hardware/common/unique_id.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/common/failable.h>
@@ -166,7 +166,7 @@ class Node : public ConnectableComponent
    */
   virtual void execute(ami::SERVICE_FUNC func, Event* data);
 
-  void handle(Event* ev);
+  void handle(Request* req);
 
   void incrementAppRefcount();
 
@@ -196,7 +196,6 @@ class Node : public ConnectableComponent
   sw::JobLauncher* job_launcher_;
 
   UniqueEventId next_outgoing_id_;
-  SST::Params params_;
 
 };
 

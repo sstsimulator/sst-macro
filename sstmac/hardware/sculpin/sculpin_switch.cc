@@ -101,23 +101,6 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
   SST::Params link_params = params.find_prefix_params("link");
   link_bw_ = link_params.findUnits("bandwidth").toDouble();
 
-//  sprockit::sim_parameters* ej_params = params.find_prefix_params("ejection");
-//  std::vector<topology::injection_port> inj_conns;
-//  top_->endpointsConnectedToEjectionSwitch(my_addr_, inj_conns);
-//  for (topology::injection_port& conn : inj_conns){
-//    sprockit::sim_parameters* port_params = topology::get_port_params(params, conn.switch_port);
-//    ej_params.combine_into(port_params);
-//  }
-
-  SST::Params ej_params = params.find_prefix_params("ejection");
-  std::vector<Topology::injection_port> inj_conns;
-  top_->endpointsConnectedToEjectionSwitch(my_addr_, inj_conns);
-  for (Topology::injection_port& conn : inj_conns){
-    auto port_ns = Topology::getPortNamespace(conn.switch_port);
-    SST::Params port_params = params.find_prefix_params(port_ns);
-    ej_params.combine_into(port_params);
-  }
-
   // Ensure topology is set
   Topology::staticTopology(params);
 

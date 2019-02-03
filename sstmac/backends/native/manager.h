@@ -69,9 +69,9 @@ class Manager {
  public:
   Manager(SST::Params& params, ParallelRuntime* rt);
 
-  static int computeMaxNproc(SST::Params& params);
+  static int computeMaxNproc(sprockit::sim_parameters_ptr& param);
 
-  static int computeMaxNprocForApp(SST::Params& app_params);
+  static int computeMaxNprocForApp(sprockit::sim_parameters_ptr& app_params);
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   ~Manager() throw ();

@@ -49,7 +49,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <iostream>
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
-#include <sprockit/sim_parameters.h>
+#include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <map>
 
@@ -268,8 +268,9 @@ class Factory
   }
 
  public:
-  static bool valid_param(const std::string& name, SST::Params& params) {
-    std::string value = params.find<std::string>(name);
+  template <class Params>
+  static bool valid_param(const std::string& name, Params& params) {
+    std::string value = params.template find<std::string>(name);
     return builder_map_->find(value) != builder_map_->end();
   }
 
@@ -313,10 +314,10 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  template <class... InArgs>
+  template <class Params, class... InArgs>
   static T* get_param(const std::string& param_name,
-                      SST::Params& params, InArgs&&... args) {
-    return _get_value(params.find<std::string>(param_name),
+                      Params& params, InArgs&&... args) {
+    return _get_value(params.template find<std::string>(param_name),
                       params, std::forward<InArgs>(args)...);
   }
 
@@ -333,11 +334,11 @@ class Factory
    * @param args      The required arguments for the constructor
    * @return  A constructed child class corresponding to a given string name
    */
-  template <class... InArgs>
+  template <class Params, class... InArgs>
   static T* get_optional_param(const std::string& param_name,
                      const std::string& defval,
-                      SST::Params& params, InArgs&&... args) {
-    return _get_value(params.find<std::string>(param_name, defval),
+                     Params& params, InArgs&&... args) {
+    return _get_value(params.template find<std::string>(param_name, defval),
                       params, std::forward<InArgs>(args)...);
   }
 

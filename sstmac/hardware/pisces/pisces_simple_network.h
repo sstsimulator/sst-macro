@@ -62,7 +62,7 @@ namespace hw {
  */
 class SimpleNetworkPacket : public PiscesPacket
 {
-  NotSerializable(simple_network_packet)
+  NotSerializable(SimpleNetworkPacket)
 
  public:
   SimpleNetworkPacket(
@@ -92,17 +92,17 @@ class SimpleNetworkPacket : public PiscesPacket
 };
 
 /**
- * @brief The simple_NetworkMessage class MTL message (flow)
+ * @brief The SimpleNetworkMessage class MTL message (flow)
  * that carries a request directly between nodes via the LogP overlay network.
  * This does not hop through PISCES switches and skips detailed congestion modeling.
  * Usually used for basic control messages.
  */
-class SimpleNetworkmessage : public NetworkMessage
+class SimpleNetworkMessage : public NetworkMessage
 {
-  NotSerializable(simple_network_packet)
+  NotSerializable(SimpleNetworkMessage)
 
  public:
-  SimpleNetworkmessage(SST::Interfaces::SimpleNetwork::Request* req,
+  SimpleNetworkMessage(SST::Interfaces::SimpleNetwork::Request* req,
                          NodeId to, NodeId from, int bytes) :
     NetworkMessage(uint64_t(-1), //flow_id irrelevant
                     "", //libname irrelevant
@@ -116,7 +116,7 @@ class SimpleNetworkmessage : public NetworkMessage
   }
 
   NetworkMessage* cloneInjectionAck() const override {
-    return new SimpleNetworkmessage(req_, toaddr(), fromaddr(), byteLength());
+    return new SimpleNetworkMessage(req_, toaddr(), fromaddr(), byteLength());
   }
 
   SST::Interfaces::SimpleNetwork::Request* req() const {
@@ -236,7 +236,7 @@ class PiscesSimpleNetwork :
   nid_t nid_;
 
   std::list<SimpleNetworkPacket*> vn0_pkts_;
-  std::list<SimpleNetworkmessage*> vn1_msgs_;
+  std::list<SimpleNetworkMessage*> vn1_msgs_;
 
   PiscesBuffer* inj_buffer_;
   PiscesBandwidthArbitrator* arb_;  //arbitrator for computing message delays

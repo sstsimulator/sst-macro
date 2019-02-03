@@ -178,7 +178,7 @@ MpiApi::start(MPI_Request* req)
 int
 MpiApi::startall(int count, MPI_Request* req)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto call_start_time = (uint64_t)now().usec();
 
   _start_mpi_call_(MPI_Startall);
   for (int i=0; i < count; ++i){
@@ -200,7 +200,7 @@ MpiApi::sendInit(const void *buf, int count,
                    MPI_Datatype datatype, int dest, int tag,
                    MPI_Comm comm, MPI_Request *request)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto call_start_time = (uint64_t)now().usec();
 
   _start_mpi_call_(MPI_Send_init);
 

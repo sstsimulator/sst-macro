@@ -69,6 +69,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node_fwd.h>
 #include <unordered_map>
 #include <sprockit/debug.h>
+#include <sprockit/sim_parameters.h>
 #include <stack>
 #include <queue>
 
@@ -335,7 +336,7 @@ class OperatingSystem : public SubComponent
     return staticOsThreadContext()->activeThread();
   }
 
-  void handleEvent(Event* ev);
+  void handleRequest(Request* req);
 
   static void shutdown() {
     currentOs()->localShutdown();
@@ -438,7 +439,7 @@ class OperatingSystem : public SubComponent
 
   void localShutdown();
 
-  bool handleLibraryEvent(const std::string& name, Event* ev);
+  bool handleLibraryRequest(const std::string& name, Request* req);
 
   struct CoreAllocateGuard {
     CoreAllocateGuard(OperatingSystem* os, Thread* thr) :
@@ -467,7 +468,7 @@ class OperatingSystem : public SubComponent
   hw::Node* node_;
   std::unordered_map<std::string, Library*> libs_;
   std::unordered_map<Library*, int> lib_refcounts_;
-  std::map<std::string, std::list<Event*>> pending_library_events_;
+  std::map<std::string, std::list<Request*>> pending_library_request_;
   std::map<std::string, std::string> env_;
 
   Thread* active_thread_;

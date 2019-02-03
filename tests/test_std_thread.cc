@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/replacements/mutex>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
+#include <iostream>
 
 using namespace sstmac;
 using namespace sstmac::sw;

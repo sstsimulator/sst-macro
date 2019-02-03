@@ -106,12 +106,12 @@ class Thread
 
   static Thread* current();
 
-  template <class T> T* getApi() {
-    API* a = _get_api(T::factory_string());
+  template <class T> T* getApi(const std::string& name) {
+    API* a = getAppApi(name);
     T* casted = dynamic_cast<T*>(a);
     if (!casted) {
       spkt_abort_printf("Failed to cast API to correct type for %s: got %s",
-                T::factory_string(), typeid(a).name());
+                        name.c_str(), typeid(a).name());
     }
     return casted;
   }
@@ -378,14 +378,8 @@ class Thread
   void spawnOmpParallel();
 
  protected:
-  friend class core_allocate_guard;
-
   Thread(const SST::Params& params,
          SoftwareId sid, OperatingSystem* os);
-
-  friend API* staticGetAPI(const char *name);
-
-  virtual API* _get_api(const char* name);
 
  private:
   struct omp_context {
@@ -436,7 +430,7 @@ class Thread
   HostTimer* host_timer_;
 
  private:
-  bool isInit;
+  API* getAppApi(const std::string& name) const;
 
 #if SSTMAC_HAVE_GRAPHVIZ
   graphviz_trace backtrace_; //each function is labeled by unique integer

@@ -160,58 +160,31 @@ param_remap remap_list[] = {
   pr("launch_node_id_indexing_file", "node.app1.node_id_indexing_file"),
 };
 
-void
-remapDeprecatedParams(SST::Params& params)
-{
-  int num_remap = sizeof(remap_list) / sizeof(param_remap);
-  for (int i=0; i < num_remap; ++i){
-    param_remap& p = remap_list[i];
-    if (params.contains(p.deprecated)){
-      params->parse_keyval(p.updated,
-         params.find<std::string>(p.deprecated),
-         false/*fail on existing*/,
-         false/*do not overwrite anything*/,
-         false/*do not mark anything as read*/);
-      if (p.del){
-        params->remove_param(p.deprecated);
-      }
-    }
-  }
-}
 
 void
-remapLatencyParams(SST::Params& params)
+remapParams(sprockit::sim_parameters::ptr params, bool verbose)
 {
-
-}
-
-void
-remapParams(SST::Params& params, bool verbose)
-{
-  double timescale = params->get_optional_time_param("timestamp_resolution", 100e-18);
+  double timescale = 100e-18;//params->get_optional_time_param("timestamp_resolution", 100e-18);
   int as_per_tick = round(timescale/1e-18) + 0.02;
   Timestamp::initStamps(100);
 
-  //remapDeprecatedParams(params);
-  remapLatencyParams(params);
-
-  SST::Params top_params = params.get_namespace("topology");
-  bool auto_top = top_params.find<bool>("auto", false);
+  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  bool auto_top = top_params->get_optional_bool_param("auto", false);
   if (auto_top){
     int max_nproc = native::Manager::computeMaxNproc(params);
     if (max_nproc == 0){
-      params.print_all_params(std::cerr);
+      params->print_params(std::cerr);
       spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
     }
     resizeTopology(max_nproc, params, verbose);
     //clear the auto keyword to keep params self-consistent
-    top_params->remove_param("auto");
+    //top_params->remove_param("auto");
   }
 
   //here is where we want to read debug params and active debug printing for stuff, maybe
   std::vector<std::string> debug_flags;
   if (params->has_param("debug")){
-    params.find_array("debug", debug_flags);
+    params->get_vector_param("debug", debug_flags);
   }
 
   for (int i=0; i < debug_flags.size(); ++i){
@@ -221,29 +194,18 @@ remapParams(SST::Params& params, bool verbose)
   /** If more than one thread, make sure event manager is multithreaded */
   if (params->has_param("sst_nthread")){
     int nthr = params->get_int_param("sst_nthread");
-    if (nthr > 1 && !params->has_param("EventManager")){
-      params->add_param_override("EventManager", "multithread");
+    if (nthr > 1 && !params->has_param("event_manager")){
+      params->add_param_override("event_manager", "multithread");
     }
   }
-
-  std::string top_name = top_params.find<std::string>("name");
-  SST::Params sw_params = params.find_prefix_params("switch");
-  SST::Params rtr_params = sw_params.find_prefix_params("router");
-  std::string rtr_name = rtr_params.find<std::string>("name","");
-  std::string new_rtr_name = top_name + "_" + rtr_name;
-  if (rtr_name == "minimal")      rtr_params->add_param_override("name", new_rtr_name);
-  else if (rtr_name == "valiant") rtr_params->add_param_override("name", new_rtr_name);
-  else if (rtr_name == "ugal") rtr_params->add_param_override("name", new_rtr_name);
-  else if (rtr_name == "ugalG") rtr_params->add_param_override("name", new_rtr_name);
-  else if (rtr_name == "par") rtr_params->add_param_override("name", new_rtr_name);
 }
 
 }
 
 void
-resizeTopology(int max_nproc, SST::Params& params, bool verbose)
+resizeTopology(int max_nproc, sprockit::sim_parameters::ptr params, bool verbose)
 {
-  SST::Params top_params = params.get_namespace("topology");
+  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
   if (top_params->has_param("name")){
     spkt_abort_printf("cannot specify topology name with auto topology");
   }
@@ -253,33 +215,35 @@ resizeTopology(int max_nproc, SST::Params& params, bool verbose)
   int x, y, z;
   genCartGrid(max_nproc, x, y, z);
   std::string paramval = sprockit::printf("[%d,%d,%d]", x, y, z);
-  params->add_param("topology.geometry", paramval);
+  top_params->add_param_override("geometry", paramval);
   if (verbose)
     cerr0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
 }
 
+#if 0
 void
 map_env_params(SST::Params& params)
 {
   //read environmental variables as potential overrides
   char* param = getenv("MPICH_GNI_MAX_VSHORT_MSG_SIZE");
   if (param) {
-    params->add_param_override("max_vshort_msg_size", param);
+    params.insert("max_vshort_msg_size", param);
   }
 
   param = getenv("MPICH_GNI_MAX_EAGER_MSG_SIZE");
   if (param) {
-    params->add_param_override("max_eager_msg_size", param);
+    params.insert("max_eager_msg_size", param);
   }
 
   param = getenv("MPICH_SMP_SINGLE_COPY_SIZE");
   if (param) {
-    params->add_param_override("smp_single_copy_size", param);
+    params.insert("smp_single_copy_size", param);
   }
 
   /** set to an absurdly high value - no single copies */
   param = getenv("MPICH_SMP_SINGLE_COPY_OFF");
   if (param) {
-    params->add_param_override("smp_single_copy_size", "99999999999");
+    params.insert("smp_single_copy_size", "99999999999");
   }
 }
+#endif

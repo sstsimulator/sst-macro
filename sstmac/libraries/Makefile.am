@@ -14,8 +14,7 @@ SUBDIRS = \
 machines \
 blas \
 pthread \
-omp \
-uq
+omp 
 
 
 library_includedir=$(includedir)/sstmac/libraries

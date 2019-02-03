@@ -70,13 +70,8 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   SST::Params inj_params = params.find_prefix_params("injection");
   SST::Params ej_params = params.find_prefix_params("ejection");
 
-  self_mtl_link_ = allocateSubLink(Timestamp(), parent,
-                                    newHandler(this, &NIC::mtlHandle));
-
-  //make port 0 a copy of the injection params
-  //this looks pointless, but is needed for integrated core (I think)
-  SST::Params port0_params = params.find_prefix_params("port0");
-  inj_params.combine_into(port0_params);
+  self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent,
+                                    newLinkHandler(this, &NIC::mtlHandle));
 
   inj_credits_ = inj_params.findUnits("credits").getRoundedValue();
   auto arb = inj_params.find<std::string>("arbitrator");
@@ -175,7 +170,7 @@ PiscesNIC::inject(int vn, uint64_t offset, NetworkMessage* netmsg)
     if (offset == netmsg->byteLength()){
       if (netmsg->needsAck()){
         sendExecutionEvent(t, newCallback(this, &NIC::mtlHandle,
-                     netmsg->cloneInjectionAck()));
+                     new NicEvent(netmsg->cloneInjectionAck())));
       }
       return offset;
     }

@@ -46,9 +46,9 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/compute.h>
 #include <sstmac/replacements/mpi.h>
-#include <sprockit/sim_parameters.h>
 #include <sprockit/errors.h>
 #include <math.h>
+#include <vector>
 
 #define heisenbug printf("%s: %d\n", __FILE__, __LINE__); fflush(stdout)
 

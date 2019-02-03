@@ -85,7 +85,7 @@ SerialPartition::~SerialPartition()
 SerialPartition::SerialPartition(SST::Params& params, ParallelRuntime* rt)
  : Partition(params, rt)
 {
-  SST::Params top_params = params.get_namespace("topology");
+  SST::Params top_params = params.find_prefix_params("topology");
   hw::Topology* fake_top = hw::Topology::factory::get_param("name", top_params);
   int nswitches = fake_top->numSwitches();
   num_switches_total_ = nswitches;
@@ -108,7 +108,7 @@ TopologyPartition::TopologyPartition(SST::Params& params, ParallelRuntime* rt)
   : Partition(params, rt)
 {
   //this will need to be fixed later...
-  SST::Params top_params = params.get_namespace("topology");
+  SST::Params top_params = params.find_prefix_params("topology");
   fake_top_ = hw::Topology::factory::get_param("name", top_params);
 
   noccupied_ = params.find<int>("num_occupied");
@@ -127,7 +127,7 @@ BlockPartition::~BlockPartition()
 BlockPartition::BlockPartition(SST::Params& params, ParallelRuntime* rt)
   : Partition(params, rt)
 {
-  SST::Params top_params = params.get_namespace("topology");
+  SST::Params top_params = params.find_prefix_params("topology");
   fake_top_ = hw::Topology::factory::get_param("name", top_params);
   num_switches_total_ = fake_top_->numSwitches();
 

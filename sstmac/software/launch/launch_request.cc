@@ -119,9 +119,6 @@ AppLaunchRequest::AppLaunchRequest(SST::Params& params,
   app_namespace_(app_namespace),
   app_params_(params)
 {
-  if (!app_params_){
-    spkt_abort_printf("got null app params");
-  }
 }
 
 void

@@ -56,6 +56,9 @@ typedef int (*empty_main_fxn)();
 #include <sstmac/software/process/tls.h>
 #ifndef __cplusplus
 #include <stdbool.h>
+#else
+#include <string>
+#include <sstream>
 #endif
 
 #ifdef __cplusplus
@@ -128,16 +131,52 @@ class vector {
   unsigned long  size_;
 };
 
+std::string getAppParam(const std::string& name);
+bool appHasParam(const std::string& name);
+
+void getAppUnitParam(const std::string& name, int& val);
+void getAppUnitParam(const std::string& name, const std::string& def, int& val);
+void getAppUnitParam(const std::string& name, double& val);
+void getAppUnitParam(const std::string& name, const std::string& def, double& val);
+void getAppArrayParam(const std::string& name, std::vector<int>& vec);
+
+template <class T> T getUnitParam(const std::string& name){
+  T t;
+  getAppUnitParam(name, t);
+  return t;
+}
+
+template <class T> T getUnitParam(const std::string& name, const std::string& def){
+  T t;
+  getAppUnitParam(name, def, t);
+  return t;
+}
+
+template <class T> std::vector<T> getArrayParam(const std::string& name){
+  std::vector<T> vec; getAppArrayParam(name, vec);
+  return vec;
+}
+
+template <class T> T getParam(const std::string& name){
+  std::string param = getAppParam(name);
+  std::istringstream sstr(param);
+  T t; sstr >> t;
+  return t;
+}
+
+template <class T, class U> T getParam(const std::string& name, U&& u){
+  if (appHasParam(name)){
+    return getParam<T>(name);
+  } else {
+    return u;
+  }
+}
+
 }
 #endif
 
-#include <sprockit/sim_parameters.h>
 #include <sstmac/software/process/global.h>
 #include <sstmac/software/api/api_fwd.h>
-
-/** Automatically inherit runtime types */
-using sprockit::sim_parameters;
-extern SST::Params& getParams();
 //end C++
 #else
 //need for C

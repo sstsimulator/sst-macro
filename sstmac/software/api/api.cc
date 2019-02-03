@@ -70,20 +70,22 @@ apiUnlock() {
 
 API::~API()
 {
-  if (host_timer_) {
-    delete host_timer_;
-  }
 }
 
-void
-API::init(SST::Params& params)
+sstmac::sw::SoftwareId
+API::sid() const {
+  return parent_->sid();
+}
+
+sstmac::NodeId
+API::addr() const {
+  return parent_->os()->addr();
+}
+
+Thread*
+API::activeThread()
 {
-  bool host_compute_local = params.find<bool>("host_api_timer", false);
-  if (host_compute_local) {
-    host_timer_ = new HostTimer();
-    compute_ = OperatingSystem::currentThread()->parentApp()->computeLib();
-  }
-  params_ = params;
+  return parent_->os()->activeThread();
 }
 
 void
@@ -92,34 +94,41 @@ API::startAPICall()
   if (host_timer_){
     host_timer_->start();
   }
-  os_->activeThread()->startAPICall();
+  activeThread()->startAPICall();
 }
 void
 API::endAPICall()
 {
   if (host_timer_) {
     double time = host_timer_->stamp();
-    compute_->compute(Timestamp(time));
+    parent_->compute(Timestamp(time));
   }
-  os_->activeThread()->endAPICall();
+  activeThread()->endAPICall();
 }
 
 GlobalTimestamp
 API::now() const 
 {
-  return os()->now();
+  return parent_->os()->now();
 }
 
 void
 API::schedule(GlobalTimestamp t, ExecutionEvent* ev)
 {
-  os()->sendExecutionEvent(t, ev);
+  parent_->os()->sendExecutionEvent(t, ev);
 }
 
 void
 API::scheduleDelay(Timestamp t, ExecutionEvent* ev)
 {
-  os()->sendDelayedExecutionEvent(t, ev);
+  parent_->os()->sendDelayedExecutionEvent(t, ev);
+}
+
+API::API(SST::Params &params, App *parent) :
+  parent_(parent),
+  host_timer_(nullptr)
+{
+  //host_timer_(new HostTimer)
 }
 
 }

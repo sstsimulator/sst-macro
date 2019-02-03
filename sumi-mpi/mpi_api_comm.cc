@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread.h>
 
 #define start_comm_call(fxn,comm) \
-  auto call_start_time = (uint64_t)os_->now().usec(); \
+  auto call_start_time = (uint64_t)now().usec(); \
   start_mpi_call(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s) start", #fxn, commStr(comm).c_str())
 
@@ -147,7 +147,7 @@ MpiApi::commCreateWithId(MPI_Comm input, MPI_Group group, MPI_Comm new_comm)
   MpiComm* inputPtr = getComm(input);
   int new_rank = groupPtr->rankOfTask(inputPtr->myTask());
   if (new_rank != -1){ //this is actually part of the group
-    MpiComm* newCommPtr = new MpiComm(new_comm, new_rank, groupPtr, Library::sid_.app_);
+    MpiComm* newCommPtr = new MpiComm(new_comm, new_rank, groupPtr, sid().app_);
     addCommPtr(newCommPtr, &new_comm);
 #ifdef SSTMAC_OTF2_ENABLED
     if (otf2_writer_){

@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 int USER_MAIN(int argc, char** argv)
 {
   SSTMACBacktrace(main);
-  sumi::Transport* tport = sstmac::sw::Thread::getCurrentApi<sumi::Transport>();
+  sumi::Transport* tport = sumi::Transport::get();
   std::cout << "Rank " << tport->rank() << " starting at " <<
                tport->now().sec() << std::endl;
   tport->init();

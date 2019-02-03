@@ -42,32 +42,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/main/driver.h>
+#ifndef sstmac_common_request_fwd_h
+#define sstmac_common_request_fwd_h
 
-using namespace sstmac;
 
-int main(int argc, char** argv)
-{
-  SimulationQueue queue;
-  queue.init(argc, argv);
+namespace sstmac {
 
-  double bandwidths[] = { 0.1, 0.4, 0.8 };
-  double results[] = {0, 0, 0};
-  int nPoints = sizeof(bandwidths) / sizeof(double);
+class Request;
 
-  SST::Params params;
-  for (int i=0; i < nPoints; ++i){
-    params["injection_bandwidth"].setBandwidth(bandwidths[i], "GB/s");
-    Simulation* sim = queue.fork(params);
-    sim->waitFork();
-    results[i] = sim->simulatedTime();
-  }
-
-  for (int i=0; i < nPoints; ++i){
-    printf("BW=%4.2fGB/s T=%8.4fms\n", 
-      bandwidths[i], results[i]*1e3);
-  }
-
-  queue.finalize();
-  return 0;
 }
+
+#endif

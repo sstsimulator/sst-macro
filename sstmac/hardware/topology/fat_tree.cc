@@ -99,12 +99,12 @@ AbstractFatTree::AbstractFatTree(SST::Params& params) :
   vtk_subtree_theta_ = TWO_PI / num_agg_subtrees_;
 }
 
+#if 0
 void
 AbstractFatTree::writeBwParams(
   SST::Params& switch_params,
   double multiplier) const
 {
-  switch_params->print_params();
   if (switch_params->has_namespace("xbar")){
     SST::Params xbar_params = switch_params.find_prefix_params("xbar");
     double bw = xbar_params.findUnits("bandwidth").toDouble();
@@ -125,6 +125,7 @@ AbstractFatTree::writeBwParams(
     xbar_params["baseline_bandwidth"].setBandwidth(baseline_bw/1e9, "GB/s");
   }
 }
+#endif
 
 /*------------------------------------------------------------------------------
   fat_tree

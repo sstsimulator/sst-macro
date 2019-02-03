@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/libraries/compute/lib_compute.h>
 #include <sstmac/software/process/software_id.h>
+#include <sstmac/common/timestamp.h>
 #include <sstmac/common/sstmac_config.h>
 
 namespace sstmac {

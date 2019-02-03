@@ -46,12 +46,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sumi_api_TRANSPORT_H
 
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
-#include <sstmac/software/launch/job_launcher.h>
-#include <sstmac/software/libraries/service.h>
 #include <sstmac/software/api/api.h>
+#include <sstmac/software/launch/task_mapping.h>
+#include <sstmac/software/libraries/service.h>
 #include <sstmac/software/process/key.h>
 #include <sstmac/software/process/progress_queue.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
+#include <sstmac/hardware/node/node_fwd.h>
 
 #include <sumi/message_fwd.h>
 #include <sumi/collective.h>
@@ -88,21 +89,21 @@ struct enum_hash {
 
 
 class Transport : public sstmac::sw::API {
-  DeclareFactory(Transport)
+
  public:
-  RegisterAPI("sumi_transport", Transport)
+  RegisterAPI("sumi", Transport)
 
   using DefaultProgressQueue = sstmac::sw::MultiProgressQueue<Message>;
 
-  Transport(SST::Params& params,
-            sstmac::sw::SoftwareId sid,
-            sstmac::sw::OperatingSystem* os);
+  Transport(SST::Params& params, sstmac::sw::App* parent);
 
   void init();
 
   void finish();
 
   ~Transport();
+
+  static Transport* get();
 
   /**
    * @brief smsg_send_response After receiving a short message m, use that message object to return a response
@@ -200,8 +201,6 @@ class Transport : public sstmac::sw::API {
     return server_libname_;
   }
 
-  sstmac::EventScheduler* desScheduler() const;
-
   void memcopy(uint64_t bytes);
 
   void pinRdma(uint64_t bytes);
@@ -295,37 +294,7 @@ class Transport : public sstmac::sw::API {
     return nproc_;
   }
 
-  void makeEngine();
-
- protected:
-  Transport(SST::Params& params,
-           const char* prefix,
-           sstmac::sw::SoftwareId sid,
-           sstmac::sw::OperatingSystem* os);
-
-  Transport(SST::Params& params,
-           sstmac::sw::SoftwareId sid,
-           sstmac::sw::OperatingSystem* os,
-           const std::string& prefix,
-           const std::string& server_name);
-
-  /**
-   * @brief sumi_transport Ctor with strict library name. We do not create a server here.
-   * Since this has been explicitly named, messages will be directly to a named library.
-   * @param params
-   * @param libname
-   * @param sid
-   * @param os
-   */
-  Transport(SST::Params& params,
-           const std::string& libname,
-           sstmac::sw::SoftwareId sid,
-           sstmac::sw::OperatingSystem* os,
-           const std::string& server_name = std::string("sumi_server"));
-
- private:    
-  Transport(SST::Params& params);
-  
+ private:      
   void validateApi();
 
   void send(Message* m);
@@ -339,8 +308,6 @@ class Transport : public sstmac::sw::API {
   sstmac::Timestamp post_header_delay_;
 
   sstmac::Timestamp poll_delay_;
-
-  sstmac::sw::LibComputeTime* user_lib_time_;
 
   sstmac::StatSpyplot* spy_num_messages_;
 
@@ -365,6 +332,8 @@ class Transport : public sstmac::sw::API {
   std::queue<int> free_cq_ids_;
 
   CollectiveEngine* engine_;
+
+  sstmac::hw::Node* node_;
 
   std::string server_libname_;
 

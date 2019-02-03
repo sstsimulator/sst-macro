@@ -57,11 +57,11 @@ Questions? Contact sst-macro-help@sandia.gov
 using namespace sumi;
 
 void
-run_test(CollectiveEngine* engine, int tag)
+run_test(Transport* tport, int tag)
 {
-  engine->barrier(tag, sumi::Message::default_cq);
-  engine->blockUntilNext(sumi::Message::default_cq);
-  if (engine->tport()->rank() == 0){
+  tport->engine()->barrier(tag, sumi::Message::default_cq);
+  tport->engine()->blockUntilNext(sumi::Message::default_cq);
+  if (tport->rank() == 0){
     printf("Cleared barrier %d\n", tag);
   }
 }
@@ -71,12 +71,9 @@ main(int argc, char **argv)
 {
   Transport* tport = sumi_api();
   tport->init();
-
-  CollectiveEngine* engine = new CollectiveEngine(tport->params(), tport);
-
-  run_test(engine,0);
-  run_test(engine,1);
-  run_test(engine,2);
+  run_test(tport,0);
+  run_test(tport,1);
+  run_test(tport,2);
   tport->finish();
 
   return 0;

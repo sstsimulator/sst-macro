@@ -59,30 +59,33 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
   send_functor_(nullptr),
   credit_link_(nullptr),
   logp_link_(nullptr),
-  EventScheduler(params.find<int>("id")),
+  EventScheduler(params.find<int>("id"), comp),
   inj_buffer_(nullptr)
 {
-  //we need a self link
-  EventScheduler::initSelfLink(comp);
-
   initLinks(params);
 
   SST::Params inj_params = params.find_prefix_params("injection");
+  double bw = inj_params.findUnits("bandwidth").toDouble();
   //PiscesSender::configurePayloadPortLatency(inj_params);
-  inj_buffer_ = new PiscesBuffer(inj_params, this, 1);
+  std::string arb = inj_params.find<std::string>("arbirtrator");
+  inj_buffer_ = new PiscesBuffer(arb, bw, inj_params.findUnits("mtu").getRoundedValue(),
+                                 comp, 1);
 
-  EventHandler* handler = newHandler(this, &PiscesSimpleNetwork::creditArrived);
-  inj_buffer_->setInput(inj_params, 0, 0, new EventLink(self_link(), comp));
+  LinkHandler* handler = newLinkHandler(this, &PiscesSimpleNetwork::creditArrived);
+  SST::Link* selflink = comp->configureSelfLink("simple-inject", timeConverter(), handler);
+  EventLink* sublink = new EventLink("pisces-inject", Timestamp(), selflink);
+  inj_buffer_->setInput(0, 0, sublink);
 
-  SST::Params ej_params = params.find_prefix_params("ejection");
-  arb_ = PiscesBandwidthArbitrator::factory::get_param("arbitrator", params);
+  arb_ = PiscesBandwidthArbitrator::factory::get_value(arb, bw);
 }
 
 void
 PiscesSimpleNetwork::initLinks(SST::Params& params)
 {
   SST::Params inj_params = params.find_prefix_params("injection");
-  SST::LinkMap* link_map = SST::Simulation::getSimulation()->getComponentLinkMap(comp()->getId());
+  int credits = inj_params.findUnits("credits").getRoundedValue();
+  SST::Component* parent = getTrueComponent();
+  SST::LinkMap* link_map = SST::Simulation::getSimulation()->getComponentLinkMap(parent->getId());
   for (auto& pair : link_map->getLinkMap()){
     debug("initialized simple network link %s", pair.first.c_str());
     SST::Link* link = pair.second;
@@ -96,7 +99,7 @@ PiscesSimpleNetwork::initLinks(SST::Params& params)
       configureLink(pair.first, newLinkHandler(this, &PiscesSimpleNetwork::packetHeadArrived));
       credit_link_ = link;
     } else if (port_type == "output"){
-      inj_buffer_->setOutput(inj_params, src_outport, dst_inport, new EventLink(link, comp()));
+      inj_buffer_->setOutput(src_outport, dst_inport, new EventLink(pair.first, Timestamp(), link), credits);
       configureLink(pair.first, newLinkHandler(inj_buffer_, &PiscesBuffer::handleCredit));
     } else if (port_type == "in-out"){
       logp_link_ = link;
@@ -136,10 +139,10 @@ PiscesSimpleNetwork::sendPiscesNetwork(Request* req, int vn)
 bool
 PiscesSimpleNetwork::sendLogpNetwork(SST::Interfaces::SimpleNetwork::Request *req, int vn)
 {
-  SimpleNetworkmessage* msg = new SimpleNetworkmessage(
+  SimpleNetworkMessage* msg = new SimpleNetworkMessage(
         req, req->dest, nid_, req->size_in_bits/8);
   //control network
-  logp_link_->send(0, time_converter_, msg);
+  logp_link_->send(msg);
   if (send_functor_) (*send_functor_)(vn);
   return true;
 }
@@ -189,7 +192,7 @@ PiscesSimpleNetwork::creditArrived(Event *ev)
 void
 PiscesSimpleNetwork::ctrlMsgArrived(Event* ev)
 {
-  SimpleNetworkmessage* msg = safe_cast(SimpleNetworkmessage, ev);
+  SimpleNetworkMessage* msg = safe_cast(SimpleNetworkMessage, ev);
   vn1_msgs_.push_back(msg);
   if (recv_functor_) (*recv_functor_)(1);
 }
@@ -203,13 +206,13 @@ PiscesSimpleNetwork::recv(int vn)
     vn0_pkts_.pop_front();
     int num_bytes = pkt->byteLength();
     PiscesCredit* credit = new PiscesCredit(pkt->edgeOutport(), pkt->PiscesPacket::vc(), num_bytes);
-    credit_link_->send(0, time_converter_, credit);
+    credit_link_->send(credit);
     auto req = pkt->request();
     delete pkt;
     return req;
   } else {
     if (vn1_msgs_.empty()) return nullptr;
-    SimpleNetworkmessage* msg = vn1_msgs_.front();
+    SimpleNetworkMessage* msg = vn1_msgs_.front();
     vn1_msgs_.pop_front();
     auto req = msg->req();
     delete msg;

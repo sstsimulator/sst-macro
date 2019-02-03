@@ -58,6 +58,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/params.h>
+#else
+namespace SST {
+class Params;
+}
+#include <sprockit/serialize.h>
 #endif
 
 #include <sprockit/basic_string_tokenizer.h>
@@ -133,9 +138,8 @@ class sim_parameters  {
     bool read;
   };
 
-
-  static sim_parameters::ptr& empty() {
-    return empty_ns_params_;
+  bool empty() const {
+    return params_.empty();
   }
 
   void reproduce_params(std::ostream& os) const ;
@@ -191,6 +195,8 @@ class sim_parameters  {
   std::string get_lowercase_param(const std::string& key, bool throw_on_error = true);
 
   std::string get_scoped_param(const std::string& key, bool throw_on_error = true);
+
+  void insert_into(SST::Params& params);
 
   sim_parameters::ptr get_optional_local_namespace(const std::string& ns);
 
@@ -404,6 +410,8 @@ class sim_parameters  {
     subspaces_[ns] = params;
   }
 
+  static std::pair<std::string, std::string> split_line(const std::string& line);
+
   bool has_namespace(const std::string& ns) const;
 
   void parse_file(const std::string& fname, bool fail_on_existing,
@@ -424,19 +432,8 @@ class sim_parameters  {
     bool override_existing,
     bool mark_as_read);
 
-  /**
-   * This is a dirty hack to store non-sprockit parameter objects
-   * on this parameter object
-   */
-  void append_extra_data(void* data) {
-    extra_data_ = data;
-  }
 
-  template <class T>
-  T* extra_data() const {
-    void* ptr = _extra_data();
-    return static_cast<T*>(ptr);
-  }
+  void insert_into(const std::string& prefix, SST::Params& params);
 
   ParamAssign operator[](const std::string& key);
 
@@ -470,11 +467,6 @@ class sim_parameters  {
 
   sim_parameters* parent_;
 
-  void* _extra_data() const;
-  void* extra_data_;
-
-  static sim_parameters::ptr empty_ns_params_;
-
   std::string namespace_;
 
   key_value_map params_;
@@ -506,8 +498,6 @@ class sim_parameters  {
   bool local_has_namespace(const std::string& ns) const {
     return subspaces_.find(ns) != subspaces_.end();
   }
-
-  void split_line(const std::string& line, std::pair<std::string, std::string>& p);
 
   void try_to_parse(const std::string& fname, bool fail_on_existing, bool override_existing);
 
@@ -678,8 +668,20 @@ class Params {
     }
   }
 
+  std::set<std::string> getKeys() const {
+    std::set<std::string> keys;
+    for (auto it=params_->begin(); it != params_->end(); ++it){
+      keys.insert(it->first);
+    }
+    return keys;
+  }
+
+  bool empty() const {
+    return params_->empty();
+  }
+
   void insert(const SST::Params& params){
-    params_->combine_into(params.params_);
+    params.params_->combine_into(params_);
   }
 
   UnitAlgebra findUnits(const std::string& key){
@@ -717,6 +719,30 @@ class Params {
  private:
   sprockit::sim_parameters::ptr params_;
 };
+
+}
+
+namespace sprockit {
+
+template <> class serialize<SST::Params>
+{
+ public:
+  void operator()(SST::Params& p, serializer& ser){
+    if (ser.mode() == ser.UNPACK){
+      std::string paramStr;
+      ser & paramStr;
+      std::stringstream sstr(paramStr);
+      p->parse_stream(sstr, false, true);
+    } else {
+      std::stringstream sstr;
+      p->reproduce_params(sstr);
+      std::string paramStr = sstr.str();
+      ser & paramStr;
+    }
+  }
+};
+
+
 
 }
 

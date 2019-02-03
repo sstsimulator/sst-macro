@@ -100,12 +100,6 @@ Thread::current()
   return OperatingSystem::currentThread();
 }
 
-API*
-Thread::_get_api(const char* name)
-{
-  return parent_app_->_get_api(name);
-}
-
 void
 Thread::cleanup()
 {
@@ -173,7 +167,6 @@ Thread::runRoutine(void* threadptr)
 Thread::Thread(const SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   os_(os),
   state_(PENDING),
-  isInit(false),
   bt_nfxn_(0),
   last_bt_collect_nfxn_(0),
   thread_id_(Thread::main_thread),
@@ -226,6 +219,12 @@ Thread::initId()
   if (p_txt_ == ProcessContext::none)
     p_txt_ = thread_id_;
   return thread_id_;
+}
+
+API*
+Thread::getAppApi(const std::string &name) const
+{
+  return parentApp()->getPrebuiltApi(name);
 }
 
 void*
@@ -302,7 +301,6 @@ Thread::spawnOmpParallel()
   omp_context& active = omp_contexts_.back();
   active.subthreads.resize(active.requested_num_subthreads);
   App* parent = parentApp();
-  SST::Params params = parent->params();
   for (int i=1; i < active.requested_num_subthreads; ++i){
     //thread* thr = new thread(params, parent->sid(), os_);
     //thr->setOmpParentContext(active);
@@ -370,27 +368,42 @@ Thread::join()
 namespace sstmac {
 namespace sw {
 
+class stdThread : public Thread {
+ public:
+  stdThread(std_thread_base* base,
+            Thread* parent) :
+    Thread(parent->parentApp()->params(),
+           SoftwareId(parent->aid(), parent->tid(), -1),
+           parent->os()),
+    base_(base)
+  {
+    parent_app_ = parent->parentApp();
+    //std threads need to be joinable
+    setDetachState(JOINABLE);
+  }
 
-stdThreadBase::stdThreadBase(Thread* thr) :
-  Thread(thr->parentApp()->params(),
-         SoftwareId(thr->aid(), thr->tid(), -1),
-         thr->os())
+  void run() override {
+    base_->run();
+  }
 
+ private:
+  std_thread_base* base_;
+};
+
+int start_std_thread(std_thread_base* base)
 {
-  parent_app_ = thr->parentApp();
-  //std threads need to be joinable
-  setDetachState(JOINABLE);
+  Thread* parent = OperatingSystem::currentThread();
+  stdThread* thr = new stdThread(base, parent);
+  base->setOwner(thr);
+  parent->os()->startThread(thr);
+  return thr->threadId();
 }
 
-stdThreadCtorWrapper::stdThreadCtorWrapper() :
-  stdThreadBase(OperatingSystem::currentThread())
+void join_std_thread(std_thread_base *thr)
 {
+  thr->owner()->join();
 }
 
-void start_std_thread(Thread *thr)
-{
-  thr->os()->startThread(thr);
-}
 
 stdMutex::stdMutex()
 {

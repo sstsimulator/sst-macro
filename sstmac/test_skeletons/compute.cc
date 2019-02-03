@@ -62,7 +62,7 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  int nloop = getParams().find<int>("nloop", 100);
+  int nloop = sstmac::getParam<int>("nloop", 100);
 
   double t_start = MPI_Wtime();
 

@@ -134,9 +134,9 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
 
   SST::Params logp_params;
   if (logp_model){
-    switch_params.combine_into(logp_params);
+    logp_params.insert(switch_params);
   }
-  switch_params.find_prefix_params("logp").combine_into(logp_params);
+  logp_params.insert(switch_params.find_prefix_params("logp"));
 
   logp_switches_.resize(rt_->nthread());
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->numNodes() + top->numSwitches();

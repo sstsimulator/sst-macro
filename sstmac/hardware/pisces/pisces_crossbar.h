@@ -71,9 +71,9 @@ class PiscesNtoMQueue :
 
   void handleCredit(Event* ev) override;
 
-  EventHandler* creditHandler();
+  LinkHandler* creditHandler();
 
-  EventHandler* payloadHandler();
+  LinkHandler* payloadHandler();
 
   void setInput(int my_inport, int src_outport, EventLink* link) override;
 
@@ -97,8 +97,6 @@ class PiscesNtoMQueue :
 #endif
 
   int num_vc_;
-  EventHandler* creditHandler_;
-  EventHandler* payloadHandler_;
 
   std::map<int, std::set<int> > deadlocked_channels_;
 

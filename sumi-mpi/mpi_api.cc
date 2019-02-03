@@ -63,6 +63,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/backtrace.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/app.h>
+#include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/job_launcher.h>
 
 #include <sumi-mpi/mpi_protocol/mpi_protocol.h>
@@ -105,17 +107,15 @@ sstmac::sw::FTQTag MpiApi::mpi_tag("MPI");
 
 MpiApi* sstmac_mpi()
 {
-  sstmac::sw::Thread* t = OperatingSystem::currentThread();
-  return t->getApi<MpiApi> ();
+  sstmac::sw::Thread* t = sstmac::sw::OperatingSystem::currentThread();
+  return t->getApi<MpiApi>("mpi");
 }
 
 //
 // Build a new mpiapi.
 //
-MpiApi::MpiApi(SST::Params& params,
-                 sstmac::sw::SoftwareId sid,
-                 sstmac::sw::OperatingSystem* os) :
-  sumi::Transport(params, "mpi", sid, os),
+MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app) :
+  sumi::Transport(params, app),
   status_(is_fresh),
 #if SSTMAC_COMM_SYNC_STATS
   last_collection_(0),
@@ -133,11 +133,11 @@ MpiApi::MpiApi(SST::Params& params,
   otf2_writer_(nullptr),
 #endif
   crossed_comm_world_barrier_(false),
-  comm_factory_(sid, this)
+  comm_factory_(app->sid(), this)
 {
   SST::Params queue_params = params.find_prefix_params("queue");
   engine_ = new CollectiveEngine(queue_params, this);
-  queue_ = new MpiQueue(queue_params, sid.task_, this, engine_);
+  queue_ = new MpiQueue(queue_params, app->sid().task_, this, engine_);
 
   double probe_delay_s = params.findUnits("iprobe_delay", "0s").toDouble();
   iprobe_delay_us_ = probe_delay_s * 1e6;
@@ -160,7 +160,7 @@ MpiApi::MpiApi(SST::Params& params,
 uint64_t
 MpiApi::traceClock() const
 {
-  return os_->now().time.ticks();
+  return now().time.ticks();
 }
 
 void
@@ -227,10 +227,6 @@ MpiApi::init(int* argc, char*** argv)
   start_mpi_call(MPI_Init);
 
   sumi::Transport::init();
-
-  if (!os_) {
-    sprockit::abort("mpiapi::init: os has not been initialized yet");
-  }
 
   comm_factory_.init(rank_, nproc_);
 
@@ -300,8 +296,7 @@ MpiApi::finalize()
       "MPI application with ID %s passed barrier in finalize on Rank 0\n"
       "at simulation time %10.6e seconds. This generally validates the \n"
       "simulation meaning everyhing has cleanly terminated\n",
-      sid().toString().c_str(),
-      os_->now().sec());
+      sid().toString().c_str(), now().sec());
   }
 
   engine_->cleanUp();
@@ -333,15 +328,15 @@ MpiApi::finalize()
 double
 MpiApi::wtime()
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto call_start_time = (uint64_t)now().usec();
   start_mpi_call(MPI_Wtime);
-  return os_->now().sec();
+  return now().sec();
 }
 
 int
 MpiApi::getCount(const MPI_Status *status, MPI_Datatype datatype, int *count)
 {
-  auto call_start_time = (uint64_t)os_->now().usec();
+  auto call_start_time = (uint64_t)now().usec();
   *count = status->count;
   return MPI_SUCCESS;
 }

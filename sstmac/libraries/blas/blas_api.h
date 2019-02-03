@@ -76,8 +76,7 @@ class BlasAPI :
   RegisterAPI("blas", BlasAPI)
 
  public:
-  BlasAPI(SST::Params& params,
-           SoftwareId sid, OperatingSystem* os);
+  BlasAPI(SST::Params& params, App* app);
 
   virtual ~BlasAPI();
 
@@ -94,10 +93,6 @@ class BlasAPI :
   void daxpy(int n);
 
   void ddot(int n);
-
-  void incomingEvent(Event *ev){
-    Library::incomingEvent(ev);
-  }
 
  protected:
   void initKernels(SST::Params& params);

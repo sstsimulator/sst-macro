@@ -42,13 +42,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sstmac/common/runtime.h>
 #include <sprockit/statics.h>
 #include <sprockit/delete.h>
+#include <sstmac/common/runtime.h>
 #include <sstmac/software/process/operating_system.h>
+#include <sstmac/software/launch/job_launcher.h>
+#include <sstmac/software/launch/task_mapping.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/node/node.h>
-#include <sstmac/software/launch/job_launcher.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/backends/common/parallel_runtime.h>
 

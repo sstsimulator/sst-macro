@@ -46,8 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_SERVICES_SERVICE_H_INCLUDED
 
 #include <sstmac/software/libraries/library.h>
-#include <sprockit/factories/factory.h>
-
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 

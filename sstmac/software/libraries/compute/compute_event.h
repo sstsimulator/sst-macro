@@ -45,8 +45,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_HARDWARE_PROCESSOR_EVENTDATA_H_INCLUDED
 #define SSTMAC_HARDWARE_PROCESSOR_EVENTDATA_H_INCLUDED
 
-#include <sstmac/hardware/common/flow.h>
+
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/sst_event.h>
+#include <sstmac/hardware/common/flow.h>
 #include <sstmac/hardware/memory/memory_id.h>
 #include <type_traits>
 #include <sprockit/debug.h>

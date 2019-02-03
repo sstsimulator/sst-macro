@@ -320,10 +320,6 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
   stat_descr.unique_tag = &cg_tag;
   callGraph_ = optionalStats<graph_viz>(parent,
           params, "callGraph", "callGraph", &stat_descr);
-#else
-  if (params->has_namespace("callGraph")){
-    spkt_abort_printf("cannot activate call graph collection - need to configure with --enable-graphviz");
-  }
 #endif
 
   //ftq_trace_ = optionalStats<FTQCalendar>(parent, params, "ftq", "ftq");
@@ -333,9 +329,11 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
   rebuildMemoizations();
 
   SST::Params env_params = params.find_prefix_params("env");
-  for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
-    env_[iter->first] = iter->second.value;
+  std::set<std::string> keys = env_params.getKeys();
+  for (auto& key : keys){
+    env_[key] = env_params.find<std::string>(key);
   }
+
 }
 
 void
@@ -394,16 +392,16 @@ OperatingSystem::initThreads(int nthread)
 
 OperatingSystem::~OperatingSystem()
 {
-  for (auto& pair : pending_library_events_){
+  for (auto& pair : pending_library_request_){
     std::string name = pair.first;
-    for (Event* ev : pair.second){
+    for (Request* req : pair.second){
       cerrn << "Valid libraries on OS " << addr() << ":\n";
       for  (auto& pair : libs_){
         cerrn << pair.first << std::endl;
       }
       spkt_abort_printf("OperatingSystem:: never registered library %s on os %d for event %s",
                      name.c_str(), int(addr()),
-                     sprockit::toString(ev).c_str());
+                     sprockit::toString(req).c_str());
     }
   }
 
@@ -789,15 +787,15 @@ OperatingSystem::registerLib(Library* lib)
                "OS %d should no longer drop events for %s",
                addr(), lib->libName().c_str());
 
-  auto iter = pending_library_events_.find(lib->libName());
-  if (iter != pending_library_events_.end()){
-    const std::list<Event*> events = iter->second;
-    for (Event* ev : events){
+  auto iter = pending_library_request_.find(lib->libName());
+  if (iter != pending_library_request_.end()){
+    const std::list<Request*> reqs = iter->second;
+    for (Request* req : reqs){
       os_debug("delivering delayed event to lib %s: %s",
-               lib->libName().c_str(), sprockit::toString(ev).c_str());
-      sendExecutionEventNow(newCallback(lib, &Library::incomingEvent, ev));
+               lib->libName().c_str(), sprockit::toString(req).c_str());
+      sendExecutionEventNow(newCallback(lib, &Library::incomingRequest, req));
     }
-    pending_library_events_.erase(iter);
+    pending_library_request_.erase(iter);
   }
 }
 
@@ -856,11 +854,11 @@ OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns
   for (int r=0; r < num_to_send; ++r){
     int dst_rank = ranks[r];
     int dst_nid = mapping->rankToNode(dst_rank);
-    sw::StartAppEvent* lev = new StartAppEvent(node_->allocateUniqueId(),
+    sw::StartAppRequest* lev = new StartAppRequest(node_->allocateUniqueId(),
                                      aid, app_ns, mapping, dst_rank, dst_nid,
                                      addr(), app_params);
     os_debug("outcast to %d: %s", dst_rank, lev->toString().c_str());
-    node_->nic()->logPLink()->send(lev);
+    node_->nic()->logPLink()->send(new hw::NicEvent(lev));
   }
 }
 
@@ -957,10 +955,6 @@ OperatingSystem::startThread(Thread* t)
 void
 OperatingSystem::startApp(App* theapp, const std::string& unique_name)
 {
-  if (!params_){
-    spkt_abort_printf("got null params in OperatinSystem::startApp");
-  }
-
   os_debug("starting app %d:%d on thread %d",
     int(theapp->tid()), int(theapp->aid()), threadId());
   //this should be called from the actual thread running it
@@ -973,22 +967,23 @@ OperatingSystem::startApp(App* theapp, const std::string& unique_name)
 }
 
 bool
-OperatingSystem::handleLibraryEvent(const std::string& name, Event* ev)
+OperatingSystem::handleLibraryRequest(const std::string& name, Request* req)
 {
   auto it = libs_.find(name);
   bool found = it != libs_.end();
   if (found){
     Library* lib = it->second;
     os_debug("delivering message to lib %s:%p: %s",
-        name.c_str(), lib, sprockit::toString(ev).c_str());
-    lib->incomingEvent(ev);
+        name.c_str(), lib, sprockit::toString(req).c_str());
+    lib->incomingRequest(req);
   } else {
     os_debug("unable to deliver message to lib %s: %s",
-        name.c_str(), sprockit::toString(ev).c_str());
+        name.c_str(), sprockit::toString(req).c_str());
   }
   return found;
 }
 
+#if 0
 void
 OperatingSystem::handleEvent(Event* ev)
 {  
@@ -1005,6 +1000,26 @@ OperatingSystem::handleEvent(Event* ev)
     os_debug("delaying event to lib %s: %s",
              libmsg->libname().c_str(), libmsg->toString().c_str());
     pending_library_events_[libmsg->libname()].push_back(ev);
+  }
+}
+#endif
+
+void
+OperatingSystem::handleRequest(Request* req)
+{
+  //this better be an incoming event to a library, probably from off node
+  Flow* libmsg = test_cast(Flow, req);
+  if (!libmsg) {
+    spkt_throw_printf(sprockit::illformed_error,
+      "OperatingSystem::handle_event: got event %s instead of library event",
+      sprockit::toString(req).c_str());
+  }
+
+  bool found = handleLibraryRequest(libmsg->libname(), req);
+  if (!found){
+    os_debug("delaying event to lib %s: %s",
+             libmsg->libname().c_str(), libmsg->toString().c_str());
+    pending_library_request_[libmsg->libname()].push_back(req);
   }
 }
 

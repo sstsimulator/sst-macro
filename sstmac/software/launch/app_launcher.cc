@@ -67,31 +67,31 @@ AppLauncher::~AppLauncher() throw()
 }
 
 void
-AppLauncher::incomingEvent(Event* ev)
+AppLauncher::incomingRequest(Request* req)
 {
-  StartAppEvent* lev = safe_cast(StartAppEvent, ev);
-  if (lev->type() == LaunchEvent::Start){
-    TaskMapping::addGlobalMapping(lev->aid(), lev->uniqueName(), lev->mapping());
+  StartAppRequest* lreq = safe_cast(StartAppRequest, req);
+  if (lreq->type() == LaunchRequest::Start){
+    TaskMapping::addGlobalMapping(lreq->aid(), lreq->uniqueName(), lreq->mapping());
 
     //if necessary, bcast this to whomever else needs it
-    os_->outcastAppStart(lev->tid(), lev->aid(), lev->uniqueName(),
-                         lev->mapping(), lev->appParams());
+    os_->outcastAppStart(lreq->tid(), lreq->aid(), lreq->uniqueName(),
+                         lreq->mapping(), lreq->appParams());
 
-    SoftwareId sid(lev->aid(), lev->tid());
-    SST::Params app_params = lev->appParams();
+    SoftwareId sid(lreq->aid(), lreq->tid());
+    SST::Params app_params = lreq->appParams();
 
-    App::dlopenCheck(lev->aid(), app_params);
+    App::dlopenCheck(lreq->aid(), app_params);
     App* theapp = App::factory::get_param("name", app_params, sid, os_);
-    theapp->setUniqueName(lev->uniqueName());
-    int intranode_rank = num_apps_launched_[lev->aid()]++;
-    int core_affinity = lev->coreAffinity(intranode_rank);
+    theapp->setUniqueName(lreq->uniqueName());
+    int intranode_rank = num_apps_launched_[lreq->aid()]++;
+    int core_affinity = lreq->coreAffinity(intranode_rank);
     if (core_affinity != Thread::no_core_affinity){
       theapp->setAffinity(core_affinity);
     }
 
-    os_->startApp(theapp, lev->uniqueName());
+    os_->startApp(theapp, lreq->uniqueName());
   }
-  delete lev;
+  delete lreq;
 }
 
 void
@@ -105,45 +105,35 @@ AppLauncher::start()
 }
 
 hw::NetworkMessage*
-LaunchEvent::cloneInjectionAck() const
+LaunchRequest::cloneInjectionAck() const
 {
   spkt_abort_printf("launch event should never be cloned for injection");
   return nullptr;
 }
 
 int
-StartAppEvent::coreAffinity(int intranode_rank) const
+StartAppRequest::coreAffinity(int intranode_rank) const
 {
   return Thread::no_core_affinity;
 }
 
 void
-StartAppEvent::serialize_order(serializer &ser)
+StartAppRequest::serialize_order(serializer &ser)
 {
-  LaunchEvent::serialize_order(ser);
+  LaunchRequest::serialize_order(ser);
   ser & unique_name_;
-  if (ser.mode() == ser.UNPACK){
-    std::string paramStr;
-    ser & paramStr;
-    std::stringstream sstr(paramStr);
-    app_params_->parse_stream(sstr, false, true);
-  } else {
-    std::stringstream sstr;
-    app_params_->reproduce_params(sstr);
-    std::string paramStr = sstr.str();
-    ser & paramStr;
-  }
+  ser & app_params_;
   mapping_ = TaskMapping::serialize_order(aid(), ser);
 }
 
 std::string
-StartAppEvent::toString() const
+StartAppRequest::toString() const
 {
   return sprockit::printf("start_app_event: app=%d task=%d node=%d", aid(), tid(), toaddr());
 }
 
 std::string
-JobStopEvent::toString() const
+JobStopRequest::toString() const
 {
   return sprockit::printf("job_stop_event: app=%d task=%d node=%d", aid(), tid(), fromaddr());
 }

@@ -47,12 +47,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/libraries/compute/lib_compute_fwd.h>
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
-#include <sprockit/factories/factory.h>
 #include <sstmac/software/process/thread.h>
 
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
-#include <sprockit/sim_parameters_fwd.h>
+
+#include <sprockit/factories/factory.h>
+#include <sprockit/sim_parameters.h>
 
 #ifdef sleep
 #if sleep == sstmac_sleep
@@ -228,11 +229,11 @@ class App : public Thread
   App(SST::Params& params, SoftwareId sid,
       OperatingSystem* os);
 
-  API* _get_api(const char* name) override;
-
   SST::Params params_;
 
  private:
+  API* getPrebuiltApi(const std::string& name);
+
   void dlcloseCheck(){
     dlcloseCheck(aid());
   }

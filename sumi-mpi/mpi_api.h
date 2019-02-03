@@ -78,9 +78,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-using sstmac::sw::SoftwareId;
-using sstmac::sw::OperatingSystem;
-
 class MpiApi : public sumi::Transport
 {
   RegisterAPI("mpi", MpiApi)
@@ -88,9 +85,7 @@ class MpiApi : public sumi::Transport
   friend class OTF2Writer;
 
  public:
-  MpiApi(SST::Params& params,
-        sstmac::sw::SoftwareId sid,
-        sstmac::sw::OperatingSystem* os);
+  MpiApi(SST::Params& params, sstmac::sw::App* app);
 
   static void deleteStatics();
 
@@ -883,7 +878,7 @@ MpiApi* sstmac_mpi();
 
 #define _start_mpi_call_(fxn) \
   SSTMACBacktrace(fxn); \
-  sstmac::sw::FTQScope scope(os_->activeThread(), mpi_tag); \
+  sstmac::sw::FTQScope scope(activeThread(), mpi_tag); \
   startAPICall()
 
 #if SSTMAC_COMM_SYNC_STATS

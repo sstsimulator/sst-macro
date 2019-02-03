@@ -112,13 +112,11 @@ class SSTIntegratedComponent
   /**
    * @brief connectInput All of these classes should implement the
    *        Connectable interface
-   * @param params
    * @param src_outport
    * @param dst_inport
    * @param mod
    */
   virtual void connectInput(
-    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;
@@ -126,13 +124,11 @@ class SSTIntegratedComponent
   /**
    * @brief connectOutput  All of these classes should implement
    *                        the Connectable interface
-   * @param params
    * @param src_outport
    * @param dst_inport
    * @param mod
    */
   virtual void connectOutput(
-    SST::Params& params,
     int src_outport,
     int dst_inport,
     EventLink* link) = 0;

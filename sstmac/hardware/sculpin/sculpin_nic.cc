@@ -70,10 +70,6 @@ SculpinNIC::SculpinNIC(SST::Params& params, Node* parent) :
 
   packet_size_ = inj_params.findUnits("mtu").getRoundedValue();
   inj_byte_delay_ = Timestamp(inj_params.findUnits("bandwidth").inverse().toDouble());
-
-  //make port 0 a copy of the injection params
-  SST::Params port0_params = params.find_prefix_params("port0");
-  inj_params.combine_into(port0_params);
 }
 
 void

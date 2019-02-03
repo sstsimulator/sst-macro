@@ -75,19 +75,6 @@ static char py_sstmacro[] = {
 using namespace sstmac;
 using namespace SST;
 
-sprockit::sim_parameters*
-make_spkt_params_from_sst_params(SST::Params& map)
-{
-  sprockit::sim_parameters* rv = new sprockit::sim_parameters;
-  std::set<std::string> key_names = map.getKeys();
-  for(auto&& key : key_names) {
-    rv->parse_keyval(
-        key, map.find<std::string>(key), false, true, false);
-  }
-  rv->append_extra_data(&map);
-  return rv;
-}
-
 namespace sstmac {
 
 PyObject*
