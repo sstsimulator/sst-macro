@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/network/network_message.h>
+#include <sprockit/errors.h>
 
 #define enumcase(x) case x: return #x;
 

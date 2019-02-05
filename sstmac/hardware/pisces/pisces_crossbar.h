@@ -62,7 +62,8 @@ class PiscesNtoMQueue :
  public:
   virtual ~PiscesNtoMQueue();
 
-  PiscesNtoMQueue(const std::string& arb, double bw,
+  PiscesNtoMQueue(const std::string& selfname,
+                  const std::string& arb, double bw,
                   SST::Component* parent,
                   int num_in_ports, int num_out_ports, int num_vc,
                   bool update_vc);
@@ -128,10 +129,11 @@ class PiscesDemuxer :
   public PiscesNtoMQueue
 {
  public:
-  PiscesDemuxer(const std::string& arb, double bw,
-                 SST::Component* parent,
-                 int num_out_ports, int num_vc,
-                 bool update_vc);
+  PiscesDemuxer(const std::string& selfname,
+                const std::string& arb, double bw,
+                SST::Component* parent,
+                int num_out_ports, int num_vc,
+                bool update_vc);
 
   std::string piscesName() const override {
     return "demuxer";
@@ -144,10 +146,11 @@ class PiscesMuxer :
   public PiscesNtoMQueue
 {
  public:
-  PiscesMuxer(const std::string& arb, double bw,
-               SST::Component* parent,
-               int num_in_ports, int num_vc,
-               bool update_vc);
+  PiscesMuxer(const std::string& selfname,
+              const std::string& arb, double bw,
+              SST::Component* parent,
+              int num_in_ports, int num_vc,
+              bool update_vc);
 
   std::string piscesName() const override {
     return "muxer";
@@ -158,7 +161,8 @@ class PiscesCrossbar :
   public PiscesNtoMQueue
 {
  public:
-  PiscesCrossbar(const std::string& arb, double bw,
+  PiscesCrossbar(const std::string& name,
+                 const std::string& arb, double bw,
                  SST::Component* parent,
                  int num_in_ports, int num_out_ports, int num_vc,
                  bool update_vc);

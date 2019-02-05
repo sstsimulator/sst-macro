@@ -80,7 +80,7 @@ void py_init_system(PyObject* module);
  * @param dict    [in]
  * @param params  [out]
  */
-void py_extract_params(PyObject* dict, SST::Params& params);
+void py_extract_params(PyObject* dict, sprockit::sim_parameters::ptr params);
 
 /**
  * @brief py_get_int_tuple  Convert an integer array into a python tuple oject

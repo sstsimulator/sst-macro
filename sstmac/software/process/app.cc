@@ -251,7 +251,7 @@ App::App(SST::Params& params, SoftwareId sid,
     auto iter = apis_.find(name);
     if (iter == apis_.end()){
       SST::Params api_params = params.find_prefix_params(name);
-      API* api = API::factory::get_value(name, api_params, this);
+      API* api = API::factory::get_value(name, api_params, this, os->node());
       apis_[name] = api;
     }
     apis_[alias] = apis_[name];

@@ -79,7 +79,7 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   packet_size_ = inj_params.findUnits("mtu").getRoundedValue();
 
   //PiscesSender::configurePayloadPortLatency(inj_params);
-  inj_buffer_ = new PiscesBuffer(arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
+  inj_buffer_ = new PiscesBuffer("inj", arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
   inj_stats_ = PacketStatsCallback::factory::
                 get_optional_param("stats", "null", params, parent);
   inj_buffer_->setStatCollector(inj_stats_);

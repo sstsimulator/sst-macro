@@ -72,20 +72,20 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <unordered_map>
 #include <sprockit/factories/factory.h>
 
-#include <sumi/transport.h>
+#include <sumi/sim_transport.h>
 
 #include <sumi-mpi/otf2_output_stat_fwd.h>
 
 namespace sumi {
 
-class MpiApi : public sumi::Transport
+class MpiApi : public sumi::SimTransport
 {
   RegisterAPI("mpi", MpiApi)
 
   friend class OTF2Writer;
 
  public:
-  MpiApi(SST::Params& params, sstmac::sw::App* app);
+  MpiApi(SST::Params& params, sstmac::sw::App* app, SST::Component* comp);
 
   static void deleteStatics();
 
@@ -132,11 +132,11 @@ class MpiApi : public sumi::Transport
     return MPI_SUCCESS;
   }
 
-  int buffer_attach(void* buffer, int size){
+  int bufferAttach(void* buffer, int size){
     return MPI_SUCCESS;
   }
 
-  int buffer_detach(void* buffer, int* size){
+  int bufferDetach(void* buffer, int* size){
     return MPI_SUCCESS;
   }
 
@@ -153,11 +153,11 @@ class MpiApi : public sumi::Transport
 
   double wtime();
 
-  void set_generate_ids(bool flag){
+  void setGenerateIds(bool flag){
     generate_ids_ = flag;
   }
 
-  bool generate_ids() const {
+  bool generateIds() const {
     return generate_ids_;
   }
 

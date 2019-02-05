@@ -114,8 +114,9 @@ MpiApi* sstmac_mpi()
 //
 // Build a new mpiapi.
 //
-MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app) :
-  sumi::Transport(params, app),
+MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
+               SST::Component* comp) :
+  sumi::SimTransport(params, app, comp),
   status_(is_fresh),
 #if SSTMAC_COMM_SYNC_STATS
   last_collection_(0),
@@ -226,7 +227,7 @@ MpiApi::init(int* argc, char*** argv)
 
   start_mpi_call(MPI_Init);
 
-  sumi::Transport::init();
+  sumi::SimTransport::init();
 
   comm_factory_.init(rank_, nproc_);
 
@@ -300,7 +301,7 @@ MpiApi::finalize()
   }
 
   engine_->cleanUp();
-  Transport::finish();
+  SimTransport::finish();
 
 #if SSTMAC_COMM_SYNC_STATS
   if (dump_comm_times_){

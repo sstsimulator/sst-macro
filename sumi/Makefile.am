@@ -51,6 +51,7 @@ library_include_HEADERS = \
  options.h \
  timeout.h \
  transport.h \
+ sim_transport.h \
  transport_fwd.h 
 
 libsumi_la_SOURCES = \
@@ -58,7 +59,7 @@ libsumi_la_SOURCES = \
  sumi_thread.cc \
  alltoall.cc \
  alltoallv.cc \
- transport.cc \
+ sim_transport.cc \
  allgather.cc \
  allgatherv.cc \
  allreduce.cc \

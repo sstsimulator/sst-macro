@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 #include <sstmac/software/process/backtrace.h>
 #include <sumi/transport.h>
-#include <sstmac/software/process/thread.h>
 
 #define sstmac_app_name bw_test
 
@@ -56,11 +55,11 @@ int USER_MAIN(int argc, char** argv)
   SSTMACBacktrace(main);
   sumi::Transport* tport = sumi::Transport::get();
   std::cout << "Rank " << tport->rank() << " starting at " <<
-               tport->now().sec() << std::endl;
+               tport->wallTime() << std::endl;
   tport->init();
 
   uint32_t size = 64000;
-  double t_start = tport->now().sec();
+  double t_start = tport->wallTime();
 
   int partner = (tport->rank() + 1) % 2;
   tport->rdmaPut<sumi::Message>(partner, 64000, nullptr, nullptr,
@@ -71,7 +70,7 @@ int USER_MAIN(int argc, char** argv)
   auto msg = tport->blockingPoll(sumi::Message::default_cq);
   msg = tport->blockingPoll(sumi::Message::default_cq);
 
-  double t_stop = tport->now().sec();
+  double t_stop = tport->wallTime();
 
   double bw = size / (t_stop - t_start);
   std::cout << "Rank " << tport->rank() << " saw BW of " << bw << std::endl;

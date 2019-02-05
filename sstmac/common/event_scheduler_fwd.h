@@ -45,6 +45,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef EVENT_scheduleR_FWD_H
 #define EVENT_scheduleR_FWD_H
 
+#include <sstmac/common/sstmac_config.h>
+
 namespace sstmac {
 
 class Component;
@@ -53,5 +55,16 @@ class EventScheduler;
 class EventLink;
 
 }
+
+
+namespace SST {
+#if SSTMAC_INTEGRATED_SST_CORE
+class Component;
+class SubComponent;
+#else
+using sstmac::Component;
+#endif
+}
+
 
 #endif // EVENT_scheduleR_FWD_H

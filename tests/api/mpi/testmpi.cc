@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/util.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/common/runtime.h>
-#include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
 using namespace sstmac;

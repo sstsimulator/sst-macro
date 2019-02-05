@@ -304,7 +304,7 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
   des_context_(nullptr),
   ftq_trace_(nullptr),
   compute_sched_(nullptr),
-  SubComponent(parent),
+  SubComponent("os", parent),
   params_(params)
 {
   my_addr_ = node_ ? node_->addr() : 0;

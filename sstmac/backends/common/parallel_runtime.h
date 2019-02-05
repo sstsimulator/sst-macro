@@ -159,7 +159,7 @@ class ParallelRuntime :
 #if !SSTMAC_INTEGRATED_SST_CORE
   void sendEvent(IpcEvent* iev);
 
-  static void run_serialize(serializer& ser, IpcEvent* iev);
+  static void runSerialize(serializer& ser, IpcEvent* iev);
 #endif
 
   static const int global_root;

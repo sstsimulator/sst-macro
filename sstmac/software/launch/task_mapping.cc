@@ -1,5 +1,6 @@
 #include <sstmac/software/launch/task_mapping.h>
 #include <sstmac/common/thread_lock.h>
+#include <sprockit/errors.h>
 
 namespace sstmac {
 namespace sw {

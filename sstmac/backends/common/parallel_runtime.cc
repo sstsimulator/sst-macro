@@ -309,7 +309,7 @@ ParallelRuntime::~ParallelRuntime()
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 void
-ParallelRuntime::run_serialize(serializer& ser, IpcEvent* iev)
+ParallelRuntime::runSerialize(serializer& ser, IpcEvent* iev)
 {
   ser & iev->ser_size; //this must be first!!!
   ser & iev->dst;  //this must be first!!!
@@ -341,7 +341,7 @@ void ParallelRuntime::sendEvent(IpcEvent* iev)
   debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",
                iev->ser_size, iev->rank, iev->t.sec(),
                sprockit::toString(iev->ev).c_str());
-  run_serialize(ser, iev);
+  runSerialize(ser, iev);
 }
 #endif
 

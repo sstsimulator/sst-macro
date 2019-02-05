@@ -45,37 +45,23 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_api_TRANSPORT_H
 #define sumi_api_TRANSPORT_H
 
-#include <sstmac/common/stats/stat_spyplot_fwd.h>
-#include <sstmac/software/api/api.h>
-#include <sstmac/software/launch/task_mapping.h>
-#include <sstmac/software/libraries/service.h>
-#include <sstmac/software/process/key.h>
-#include <sstmac/software/process/progress_queue.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
-#include <sstmac/hardware/node/node_fwd.h>
-
+#include <sstmac/software/process/software_id.h>
+#include <sstmac/software/process/app_id.h>
 #include <sumi/message_fwd.h>
 #include <sumi/collective.h>
 #include <sumi/comm_functions.h>
-#include <sumi/transport.h>
 #include <sumi/collective_message.h>
 #include <sumi/collective.h>
 #include <sumi/comm_functions.h>
 #include <sumi/options.h>
 #include <sumi/communicator_fwd.h>
-
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
-#include <sprockit/util.h>
 
 #include <unordered_map>
 #include <queue>
 
 DeclareDebugSlot(sumi);
-
-#define CHECK_IF_I_AM_DEAD(x) if (is_dead_) x
-
-#define print_size(x) printf("%s %d: sizeof(%s)=%d\n", __FILE__, __LINE__, #x, sizeof(x))
 
 namespace sumi {
 
@@ -87,23 +73,44 @@ struct enum_hash {
   }
 };
 
-
-class Transport : public sstmac::sw::API {
+/**
+ * @brief The Transport class
+ * Base class that can be included by an application. std library
+ * replacement headers can be activated with this file. No simulator internals
+ * are referenced assign from integer typedefs.
+ */
+class Transport {
 
  public:
-  RegisterAPI("sumi", Transport)
-
-  using DefaultProgressQueue = sstmac::sw::MultiProgressQueue<Message>;
-
-  Transport(SST::Params& params, sstmac::sw::App* parent);
-
-  void init();
-
-  void finish();
-
-  ~Transport();
-
   static Transport* get();
+
+  sstmac::sw::SoftwareId sid() const {
+    return sid_;
+  }
+
+  sstmac::NodeId addr() const {
+    return nid_;
+  }
+
+  int rank() const {
+    return rank_;
+  }
+
+  int nproc() const {
+    return nproc_;
+  }
+
+  std::string serverLibname() const {
+    return server_libname_;
+  }
+
+  virtual void init() = 0;
+
+  virtual void finish() = 0;
+
+  virtual ~Transport();
+
+  virtual sstmac::NodeId rankToNode(int rank) const = 0;
 
   /**
    * @brief smsg_send_response After receiving a short message m, use that message object to return a response
@@ -114,7 +121,7 @@ class Transport : public sstmac::sw::API {
    * @param remote_cq
    * @return
    */
-  void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq);
+  virtual void smsgSendResponse(Message* m, uint64_t sz, void* loc_buffer, int local_cq, int remote_cq) = 0;
 
   /**
    * @brief rdma_get_response After receiving a short message payload coordinating an RDMA get,
@@ -126,10 +133,10 @@ class Transport : public sstmac::sw::API {
    * @param remote_cq
    * @return
    */
-  void rdmaGetRequestResponse(Message* m, uint64_t sz, void* loc_buffer, void* remote_buffer,
-                                 int local_cq, int remote_cq);
+  virtual void rdmaGetRequestResponse(Message* m, uint64_t sz, void* loc_buffer, void* remote_buffer,
+                                      int local_cq, int remote_cq) = 0;
 
-  void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq);
+  virtual void rdmaGetResponse(Message* m, uint64_t sz, int local_cq, int remote_cq) = 0;
 
   /**
    * @brief rdma_put_response
@@ -140,8 +147,8 @@ class Transport : public sstmac::sw::API {
    * @param remote_cq
    * @return
    */
-  void rdmaPutResponse(Message* m, uint64_t payload_bytes,
-                         void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq);
+  virtual void rdmaPutResponse(Message* m, uint64_t payload_bytes,
+                         void* loc_buffer, void* remote_buffer, int local_cq, int remote_cq) = 0;
 
   template <class T, class... Args>
   uint64_t rdmaGet(int remote_proc, uint64_t byte_length, void* local_buffer, void* remote_buffer,
@@ -151,7 +158,7 @@ class Transport : public sstmac::sw::API {
     T* t = new T(std::forward<Args>(args)...,
                  rank_, remote_proc, remote_cq, local_cq, cls,
                  flow_id, serverLibname(), sid().app_,
-                 rank_mapper_->rankToNode(remote_proc), addr(),
+                 rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_get{});
     send(t);
     return flow_id;
@@ -165,7 +172,7 @@ class Transport : public sstmac::sw::API {
     T* t = new T(std::forward<Args>(args)...,
                  rank_, remote_proc, local_cq, remote_cq, cls,
                  flow_id, serverLibname(), sid().app_,
-                 rank_mapper_->rankToNode(remote_proc), addr(),
+                 rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, local_buffer, remote_buffer, Message::rdma_put{});
     send(t);
     return flow_id;
@@ -179,48 +186,25 @@ class Transport : public sstmac::sw::API {
     T* t = new T(std::forward<Args>(args)...,
                  rank_, remote_proc, local_cq, remote_cq, cls,
                  flow_id, serverLibname(), sid().app_,
-                 rank_mapper_->rankToNode(remote_proc), addr(),
+                 rankToNode(remote_proc), addr(),
                  byte_length, needs_ack, buffer, Message::header{});
     send(t);
     return flow_id;
   }
 
-  void incomingEvent(sstmac::Event *ev);
+  virtual void memcopy(uint64_t bytes) = 0;
 
-  void compute(sstmac::Timestamp t);
+  virtual double wallTime() const = 0;
 
-  double wallTime() const;
+  virtual void* allocatePublicBuffer(uint64_t size) = 0;
 
-  sumi::Message* pollPendingMessages(bool blocking, double timeout = -1);
+  virtual void* makePublicBuffer(void* buffer, uint64_t size) = 0;
 
-  void incomingMessage(Message* msg);
+  virtual void unmakePublicBuffer(void* buf, uint64_t size){}
 
-  void shutdownServer(int dest_rank, sstmac::NodeId dest_node, int dest_app);
+  virtual void freePublicBuffer(void* buf, uint64_t size) = 0;
 
-  std::string serverLibname() const {
-    return server_libname_;
-  }
-
-  void memcopy(uint64_t bytes);
-
-  void pinRdma(uint64_t bytes);
-
-  void* allocatePublicBuffer(uint64_t size) {
-    return ::malloc(size);
-  }
-
-  void* makePublicBuffer(void* buffer, uint64_t size) {
-    pinRdma(size);
-    return buffer;
-  }
-
-  void unmakePublicBuffer(void* buf, uint64_t size) {}
-
-  void freePublicBuffer(void* buf, uint64_t size) {
-    ::free(buf);
-  }
-
-  int* nidlist() const;
+  virtual int* nidlist() const = 0;
   
   /**
    Check if a message has been received on a specific completion queue.
@@ -231,9 +215,7 @@ class Transport : public sstmac::sw::API {
    @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  Message* poll(bool blocking, int cq_id, double timeout = -1){
-    return default_progress_queue_.find(cq_id, blocking, timeout);
-  }
+  virtual Message* poll(bool blocking, int cq_id, double timeout = -1) = 0;
 
   /**
    Check all completion queues if a message has been received.
@@ -243,9 +225,7 @@ class Transport : public sstmac::sw::API {
    @param timeout  An optional timeout - only valid with blocking
    @return    The next message to be received, null if no messages
   */
-  Message* poll(bool blocking, double timeout = -1){
-    return default_progress_queue_.find_any(blocking, timeout);
-  }
+  virtual Message* poll(bool blocking, double timeout = -1) = 0;
 
   /**
    Block until a message is received.
@@ -256,93 +236,44 @@ class Transport : public sstmac::sw::API {
    @param timeout   Timeout in seconds
    @return          The next message to be received. Message is NULL on timeout
   */
-  Message* blockingPoll(int cq_id, double timeout = -1){
-    return poll(true, cq_id, timeout);
-  }
+  virtual Message* blockingPoll(int cq_id, double timeout = -1) = 0;
 
-  int allocateCqId(){
-    if (free_cq_ids_.empty()){
-      int id = completion_queues_.size();
-      completion_queues_.emplace_back();
-      return id;
-    } else {
-      int id = free_cq_ids_.front();
-      free_cq_ids_.pop();
-      return id;
-    }
-  }
+  virtual uint64_t allocateFlowId() = 0;
 
-  int allocateDefaultCq(){
-    int id = allocateCqId();
-    allocateCq(id, std::bind(&DefaultProgressQueue::incoming,
-                          &default_progress_queue_,
-                          id, std::placeholders::_1));
-    return id;
-  }
+  virtual int allocateCqId() = 0;
 
-  void allocateCq(int id, std::function<void(Message*)>&& f);
+  virtual int allocateDefaultCq() = 0;
 
   CollectiveEngine* engine() const {
     return engine_;
   }
 
-  int rank() const {
-    return rank_;
-  }
-
-  int nproc() const {
-    return nproc_;
-  }
-
  private:      
-  void validateApi();
-
-  void send(Message* m);
-
-  uint64_t allocateFlowId();
-
-  std::vector<std::function<void(Message*)>> completion_queues_;
-
-  sstmac::Timestamp post_rdma_delay_;
-
-  sstmac::Timestamp post_header_delay_;
-
-  sstmac::Timestamp poll_delay_;
-
-  sstmac::StatSpyplot* spy_num_messages_;
-
-  sstmac::StatSpyplot* spy_bytes_;
-
-  sstmac::Timestamp rdma_pin_latency_;
-  sstmac::Timestamp rdma_page_delay_;
-  int page_size_;
-  bool pin_delay_;
+  virtual void send(Message* m) = 0;
 
  protected:
-  bool inited_;
+  Transport(const std::string& server_name,
+            sstmac::sw::SoftwareId sid,
+            sstmac::NodeId nid) :
+    server_libname_(server_name),
+    sid_(sid),
+    nid_(nid),
+    rank_(sid.task_),
+    nproc_(-1)
+  {
+  }
 
-  bool finalized_;
+  std::string server_libname_;
+
+  sstmac::sw::SoftwareId sid_;
+
+  sstmac::NodeId nid_;
 
   int rank_;
 
   int nproc_;
 
-  std::map<int,std::list<Message*>> held_;
-
-  std::queue<int> free_cq_ids_;
-
   CollectiveEngine* engine_;
-
-  sstmac::hw::Node* node_;
-
-  std::string server_libname_;
-
-  sstmac::sw::TaskMapping::ptr rank_mapper_;
-
-  DefaultProgressQueue default_progress_queue_;
-
-  std::function<void(sstmac::hw::NetworkMessage*)> nic_ioctl_;
-
 };
 
 class CollectiveEngine
@@ -543,8 +474,6 @@ class CollectiveEngine
 
  private:
   Transport* tport_;
-  static sstmac::sw::FTQTag sumi_transport_tag;
-  static sstmac::sw::FTQTag poll_delay_tag;
 
   template <typename Key, typename Value>
   using spkt_enum_map = std::unordered_map<Key, Value, enum_hash>;
@@ -569,12 +498,6 @@ class CollectiveEngine
 
 };
 
-
-
-class terminate_exception : public std::exception
-{
-};
-
 static void* sumi_null_ptr = ((void*)0x123);
 
 static inline bool isNonNull(void* buf){
@@ -584,7 +507,6 @@ static inline bool isNonNull(void* buf){
 static inline bool isNull(void* buf){
   return !(sumi::isNonNull(buf));
 }
-
 
 }
 

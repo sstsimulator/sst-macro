@@ -193,7 +193,7 @@ EventManager::serializeSchedule(char* buf)
   uint32_t bigSize = 1 << 30;
   ser.start_unpacking(buf, bigSize); //just pass in a huge number
   IpcEvent iev;
-  ParallelRuntime::run_serialize(ser, &iev);
+  ParallelRuntime::runSerialize(ser, &iev);
   scheduleIncoming(&iev);
   size_t size = ser.unpacker().size();
   align64(size);

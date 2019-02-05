@@ -51,8 +51,8 @@ extern "C" int sstmac_comm_size(MPI_Comm comm, int* size){ return sumi::sstmac_m
 extern "C" int sstmac_type_size(MPI_Datatype type, int* size){ return sumi::sstmac_mpi()->typeSize(type,size); }
 extern "C" int sstmac_initialized(int* flag){ return sumi::sstmac_mpi()->initialized(flag); }
 extern "C" int sstmac_finalized(int* flag){ return sumi::sstmac_mpi()->finalized(flag); }
-extern "C" int sstmac_buffer_attach(void* buffer, int size){ return sumi::sstmac_mpi()->buffer_attach(buffer,size); }
-extern "C" int sstmac_buffer_detach(void* buffer, int* size){ return sumi::sstmac_mpi()->buffer_detach(buffer,size); }
+extern "C" int sstmac_buffer_attach(void* buffer, int size){ return sumi::sstmac_mpi()->bufferAttach(buffer,size); }
+extern "C" int sstmac_buffer_detach(void* buffer, int* size){ return sumi::sstmac_mpi()->bufferDetach(buffer,size); }
 extern "C" int sstmac_init_thread(int* argc, char*** argv, int required, int* provided){ return sumi::sstmac_mpi()->initThread(argc,argv,required,provided); }
 extern "C" int sstmac_errhandler_set(MPI_Comm comm, MPI_Errhandler handler){ return sumi::sstmac_mpi()->errhandlerSet(comm,handler); }
 extern "C" int sstmac_error_class(int errorcode, int* errorclass){ return sumi::sstmac_mpi()->errorClass(errorcode,errorclass); }

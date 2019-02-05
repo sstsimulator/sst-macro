@@ -135,7 +135,7 @@ PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
     xbar_credits_ = link_credits_;
   }
 
-  xbar_ = new PiscesCrossbar(xbar_arb, xbar_bw, this,
+  xbar_ = new PiscesCrossbar("xbar", xbar_arb, xbar_bw, this,
                              top_->maxNumPorts(), top_->maxNumPorts(),
                              router_->numVC(), true/*yes, update vc*/);
   xbar_->setStatCollector(xbar_stats_);
@@ -174,7 +174,8 @@ PiscesSwitch::connectOutput(
 {
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
 
-  PiscesBuffer* out_buffer = new PiscesBuffer(arbType_, link_bw_ * scale_factor, mtu_,
+  PiscesBuffer* out_buffer = new PiscesBuffer(sprockit::printf("buffer%d", src_outport),
+                                              arbType_, link_bw_ * scale_factor, mtu_,
                                               this, router_->numVC());
   out_buffer->setStatCollector(buf_stats_);
   int buffer_inport = 0;

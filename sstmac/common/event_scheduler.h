@@ -173,7 +173,9 @@ class EventScheduler : public sprockit::printable
 {
  public:
 #if SSTMAC_INTEGRATED_SST_CORE
-  SST::SimTime_t getCurrentSimTime(SST::TimeConverter* tc) const;
+  SST::SimTime_t getCurrentSimTime(SST::TimeConverter* tc) const {
+    return comp_->getCurrentSimTime(tc);
+  }
 
   void sendDelayedExecutionEvent(Timestamp delay, ExecutionEvent* ev){
     self_link_->send(SST::SimTime_t(delay), time_converter_, ev);
@@ -245,19 +247,24 @@ class EventScheduler : public sprockit::printable
  protected:
   //friend int ::sstmac::run_standalone(int, char**);
 
-  template <class Base = void>
-  EventScheduler(uint32_t id, Base* base = nullptr)
+  EventScheduler(const std::string& selfname, uint32_t id, SST::Component* base) :
 #if !SSTMAC_INTEGRATED_SST_CORE
-    : seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateLinkId()), id_(id)
+   seqnum_(0), mgr_(nullptr), now_(nullptr), selfLinkId_(EventLink::allocateLinkId()), id_(id),
 #endif
+   comp_(base)
   {
 #if SSTMAC_INTEGRATED_SST_CORE
     if (!time_converter_){
       time_converter_ = base->getTimeConverter(Timestamp::tickIntervalString());
     }
-    self_link_ = base->configureSelfLink("self", time_converter_,
+    self_link_ = base->configureSelfLink(selfname, time_converter_,
           new SST::Event::Handler<EventScheduler>(this, &EventScheduler::handleExecutionEvent));
 #endif
+  }
+
+  EventScheduler(uint32_t id, SST::Component* base)
+    : EventScheduler("self", id, base)
+  {
   }
 
  private:
@@ -271,12 +278,14 @@ class EventScheduler : public sprockit::printable
   uint32_t selfLinkId_;
   int thread_id_;
   int nthread_;
-
   const GlobalTimestamp* now_;
 
  protected:
   void setManager(EventManager* mgr);
 #endif
+
+ private:
+  SST::Component* comp_;
 
 };
 
@@ -302,7 +311,7 @@ class Component :
    SSTIntegratedComponent(params, cid),
    EventScheduler(cid, this)
 #else
-   EventScheduler(cid)
+   EventScheduler(cid, nullptr)
 #endif
   {
   }
@@ -330,12 +339,12 @@ class SubComponent :
   virtual std::string toString() const = 0;
 
  protected:
-  SubComponent(SST::Component* parent) :
+  SubComponent(const std::string& selfname, SST::Component* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
     SST::SubComponent(parent),
-    EventScheduler(0, this)
+    EventScheduler(selfname, 0, parent)
 #else
-    EventScheduler(parent->componentId())
+    EventScheduler(selfname, parent->componentId(), nullptr)
 #endif
   {
   }

@@ -124,7 +124,10 @@ API::scheduleDelay(Timestamp t, ExecutionEvent* ev)
   parent_->os()->sendDelayedExecutionEvent(t, ev);
 }
 
-API::API(SST::Params &params, App *parent) :
+API::API(SST::Params &params, App *parent, SST::Component* comp) :
+#if SSTMAC_INTEGRATED_SST_CORE
+  SST::SubComponent(comp),
+#endif
   parent_(parent),
   host_timer_(nullptr)
 {

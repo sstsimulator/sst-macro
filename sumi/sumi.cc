@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sprockit/util.h>
 #include <sumi/transport.h>
+#include <sumi/sim_transport.h>
 
 using namespace sstmac;
 using namespace sstmac::sw;
@@ -60,10 +61,10 @@ using namespace sstmac::sw;
 
 namespace sumi {
 
-static Transport* current_transport()
+static SimTransport* current_transport()
 {
   Thread* t = Thread::current();
-  return t->getApi<Transport>("sumi");
+  return t->getApi<SimTransport>("sumi");
 }
 
 static CollectiveEngine* current_engine()
@@ -96,7 +97,7 @@ void comm_kill_process()
 void comm_killNode()
 {
   sstmac::sw::OperatingSystem::currentOs()->killNode();
-  throw terminate_exception();
+  throw TerminateException();
 }
 
 void comm_finalize()

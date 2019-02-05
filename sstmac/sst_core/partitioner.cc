@@ -71,15 +71,21 @@ class DummyRuntine : public ParallelRuntime
 
   int64_t allreduceMax(int64_t maxtime) override { return 0; }
 
-  void globalSum(int* data, int nelems, int root) override {}
+  void globalSum(int32_t* data, int nelems, int root) override;
 
-  void globalSum(long *data, int nelems, int root) override {}
+  void globalSum(uint32_t* data, int nelems, int root) override;
 
-  void globalSum(long long *data, int nelems, int root) override {}
+  void globalSum(int64_t* data, int nelems, int root) override;
 
-  void globalMax(int *data, int nelems, int root) override {}
+  void globalSum(uint64_t* data, int nelems, int root) override;
 
-  void globalMax(long *data, int nelems, int root) override {}
+  void globalMax(int32_t* data, int nelems, int root) override;
+
+  void globalMax(uint32_t* data, int nelems, int root) override;
+
+  void globalMax(int64_t* data, int nelems, int root) override;
+
+  void globalMax(uint64_t* data, int nelems, int root) override;
 
   void gather(void *send_buffer, int num_bytes, void *recv_buffer, int root) override {}
 

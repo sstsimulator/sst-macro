@@ -138,7 +138,7 @@ parsedumpi_callbacks(ParseDumpi *parent) :
   init_maps();
   memset(&datatype_sizes_, 0, sizeof(dumpi_sizeof));
   sstmac::sw::apiUnlock();
-  parent->mpi()->set_generate_ids(false);
+  parent->mpi()->setGenerateIds(false);
 }
 
 parsedumpi_callbacks::~parsedumpi_callbacks()

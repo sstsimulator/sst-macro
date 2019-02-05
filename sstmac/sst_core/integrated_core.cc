@@ -101,7 +101,7 @@ int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec)
 }
 
 void
-py_extract_params(PyObject* dict, SST::Params& params)
+py_extract_params(PyObject* dict, sprockit::sim_parameters::ptr params)
 {
 #pragma GCC diagnostic ignored "-Wwrite-strings"
   PyObject* items = PyMapping_Items(dict);
@@ -113,13 +113,12 @@ py_extract_params(PyObject* dict, SST::Params& params)
     PyObject* key_str_obj = PyObject_Str(key);
     const char* key_c_str = PyString_AsString(key_str_obj);
     if (PyMapping_Check(val)){
-      sprockit::sim_parameters* sub_params =
-          params.find_prefix_params(key_c_str);
+      sprockit::sim_parameters::ptr sub_params = params->get_optional_namespace(key_c_str);
       sstmac::py_extract_params(val, sub_params);
     } else {
       PyObject* val_str_obj = PyObject_Str(val);
       const char* val_c_str = PyString_AsString(val_str_obj);
-      params.insert(key_c_str, val_c_str);
+      params->add_param_override(key_c_str, val_c_str);
       Py_DECREF(val_str_obj);
     }
     Py_DECREF(key_str_obj);
@@ -131,7 +130,7 @@ py_extract_params(PyObject* dict, SST::Params& params)
 }
 
 void
-py_add_params(PyObject* dict, SST::Params& params)
+py_add_params(PyObject* dict, sprockit::sim_parameters::ptr params)
 {
   sprockit::sim_parameters::key_value_map::iterator it, end = params->end();
   for (it=params->begin(); it != end; ++it){
@@ -144,11 +143,11 @@ py_add_params(PyObject* dict, SST::Params& params)
 }
 
 void
-py_add_sub_params(PyObject* dict, SST::Params& params)
+py_add_sub_params(PyObject* dict, sprockit::sim_parameters::ptr params)
 {
   sprockit::sim_parameters::namespace_iterator it, end = params->ns_end();
   for (it=params->ns_begin(); it != end; ++it){
-    sprockit::sim_parameters* subparams = it->second;
+    sprockit::sim_parameters::ptr subparams = it->second;
     PyObject* subdict = PyDict_New();
     const char* key = it->first.c_str();
     PyDict_SetItemString(dict, key, subdict);
@@ -205,12 +204,12 @@ read_params(PyObject* self, PyObject* args)
     argv[i] = const_cast<char*>(str);
   }
 
-  sprockit::sim_parameters params;
-  sstmac::tryMain(&params, argc, argv, true/*only params*/);
+  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
+  sstmac::tryMain(params, argc, argv, true/*only params*/);
 
   PyObject* dict = PyDict_New();
-  sstmac::py_add_params(dict, &params);
-  sstmac::py_add_sub_params(dict, &params);
+  sstmac::py_add_params(dict, params);
+  sstmac::py_add_sub_params(dict, params);
 
   delete[] argv;
 

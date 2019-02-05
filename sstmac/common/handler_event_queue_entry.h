@@ -11,8 +11,9 @@ class HandlerExecutionEvent :
   public ExecutionEvent,
   public sprockit::thread_safe_new<HandlerExecutionEvent>
 {
-
  public:
+  using sprockit::thread_safe_new<HandlerExecutionEvent>::operator delete;
+
   virtual ~HandlerExecutionEvent() {}
 
   HandlerExecutionEvent(Event* ev, EventHandler* hand) :

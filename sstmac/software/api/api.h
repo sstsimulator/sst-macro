@@ -46,13 +46,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #define sstmac_software_libraries_API_H
 
 #include <sprockit/factories/factory.h>
-#include <sstmac/common/node_address.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/host_timer.h>
 #include <sstmac/software/process/app_fwd.h>
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/timestamp.h>
+#include <sstmac/common/node_address.h>
+#include <sstmac/common/event_scheduler_fwd.h>
 #include <sprockit/keyword_registration.h>
 #include <sys/time.h>
 
@@ -68,9 +69,9 @@ class API
  : public SST::SubComponent
 #endif
 {
-  DeclareFactoryArgs(API,App*)
+  DeclareFactoryArgs(API,App*,SST::Component*)
  public:
-  API(SST::Params& params, App* parent);
+  API(SST::Params& params, App* parent, SST::Component* comp);
 
   virtual ~API();
 

@@ -53,7 +53,7 @@ extern "C" {
 typedef struct {
     PyObject_HEAD
     sstmac::hw::Topology* macro_topology;
-    SST::Params& params;
+    bool logp;
 } SystemPy_t;
 
 } // end extern "C"
@@ -72,9 +72,6 @@ sys_dealloc(SystemPy_t* self);
 
 static PyObject*
 sys_get_injection_connections(SystemPy_t* self, PyObject* idx);
-
-static PyObject*
-sys_get_switch_params(SystemPy_t* self, PyObject* idx);
 
 static PyObject*
 sys_get_switch_connections(SystemPy_t* self, PyObject* idx);
@@ -107,9 +104,6 @@ static PyMethodDef system_methods[] = {
   { "switchConnections",
     (PyCFunction)sys_get_switch_connections, METH_O,
       "get the switches and associated ports for a sw-sw connection"},
-  { "switchParams",
-    (PyCFunction)sys_get_switch_params, METH_O,
-    "get params unique to a given switch" },
   { "numNodes",
     (PyCFunction)sys_num_nodes, METH_NOARGS,
     "return the number of nodes in the topology"
@@ -222,18 +216,6 @@ sys_get_injection_connections(SystemPy_t* self, PyObject* swIdx)
 }
 
 static PyObject*
-sys_get_switch_params(SystemPy_t* self, PyObject* idx)
-{
-  int swIdx = PyInt_AsLong(idx);
-  sprockit::sim_parameters* switch_params
-      = self->params.find_prefix_params("switch");
-  if (!self->macro_topology->uniformSwitches()){
-    self->macro_topology->configureNonuniformSwitchParams(swIdx, switch_params);
-  }
-  return sstmac::py_dict_from_params(switch_params);
-}
-
-static PyObject*
 sys_get_switch_connections(SystemPy_t* self, PyObject* idx)
 {
   int swIdx = PyInt_AsLong(idx);
@@ -273,48 +255,44 @@ sys_get_ejection_connections(SystemPy_t* self, PyObject* swIdx)
   return sys_convert_to_list(ports);
 }
 
-static bool is_logp(SystemPy_t* self)
-{
-  sprockit::sim_parameters* switch_params = self->params.find_prefix_params("switch");
-  return switch_params->get_lowercase_param("name") == "logp";
-}
-
 static PyObject*
 sys_is_logp(SystemPy_t *self, PyObject *null)
 {
-  bool test = is_logp(self);
-  PyObject* theBool = PyBool_FromLong(test);
+  PyObject* theBool = PyBool_FromLong(self->logp);
   return theBool;
 }
 
 static int
 sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
 {
-  self->params = new sprockit::sim_parameters;
-
+  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
   PyObject* params_dict = NULL;
   PyArg_ParseTuple(args, "|O", &params_dict);
-  if(params_dict != NULL) {
+  if (params_dict != NULL) {
     if(PyMapping_Check(params_dict) != 1) {
       // TODO figure out how to correctly raise an exception here @integrated_core
       std::cerr << "Positional argument to Topology constructor, if given, must be a mapping" << std::endl;
       return -1;
     }
   }
-  sstmac::py_extract_params(params_dict, self->params);
+  sstmac::py_extract_params(params_dict, params);
 
   if (PyMapping_Check(kwargs)){
-    sstmac::py_extract_params(kwargs, self->params);
+    sstmac::py_extract_params(kwargs, params);
   }
 
-  self->macro_topology = sstmac::hw::Topology::staticTopology(self->params);
+  sprockit::sim_parameters::ptr sw_params = params->get_namespace("switch");
+  std::string model_name = sw_params->get_param("name");
+  std::transform(model_name.begin(), model_name.end(), model_name.begin(), ::tolower);
+  self->logp = model_name == "logp";
 
-  sprockit::sim_parameters* switch_params = self->params.find_prefix_params("switch");
-  if (is_logp(self)){
-    //I guess we don't do anything?
-  } else {
-    self->macro_topology->configureIndividualPortParams(sstmac::SwitchId(0), switch_params);
+  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  SST::Params sst_params;
+  for (auto it=top_params->begin(); it != top_params->end(); ++it){
+    sst_params.insert("topology." + it->first, it->second.value);
   }
+
+  self->macro_topology = sstmac::hw::Topology::staticTopology(sst_params);
 
   return 0;
 }
@@ -326,7 +304,6 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
 static void
 sys_dealloc(SystemPy_t* self)
 {
-  if(self->params) delete self->params;
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 

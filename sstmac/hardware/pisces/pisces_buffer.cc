@@ -77,9 +77,10 @@ PiscesBuffer::setOutput(int this_outport, int dst_inport, EventLink* link, int c
   }
 }
 
-PiscesBuffer::PiscesBuffer(const std::string& arb, double bw, int packet_size,
+PiscesBuffer::PiscesBuffer(const std::string& selfname,
+                           const std::string& arb, double bw, int packet_size,
                            SST::Component* parent, int num_vc)
-  : PiscesSender(parent, false/*buffers do not update vc*/),
+  : PiscesSender(selfname, parent, false/*buffers do not update vc*/),
     bytes_delayed_(0),
     num_vc_(num_vc),
     queues_(num_vc),

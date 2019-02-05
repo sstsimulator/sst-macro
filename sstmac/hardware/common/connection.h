@@ -112,8 +112,8 @@ class ConnectableSubcomponent :
   public Connectable
 {
  protected:
-  ConnectableSubcomponent(SST::Component* parent)
-    : SubComponent(parent)
+  ConnectableSubcomponent(const std::string& selfname, SST::Component* parent)
+    : SubComponent(selfname, parent)
   {
   }
 

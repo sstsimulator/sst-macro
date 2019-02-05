@@ -79,8 +79,8 @@ BlasKernel* BlasAPI::dgemv_kernel_;
 BlasKernel* BlasAPI::daxpy_kernel_;
 BlasKernel* BlasAPI::ddot_kernel_;
 
-BlasAPI::BlasAPI(SST::Params& params, App* app)
-  : API(params, app)
+BlasAPI::BlasAPI(SST::Params& params, App* app, SST::Component* comp)
+  : API(params, app, comp)
 {
   std::string libname = sprockit::printf("blas-compute%d", sid().toString().c_str());
   lib_compute_ = new LibComputeInst(params, libname, sid(), app->os());

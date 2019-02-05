@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/operating_system_fwd.h>
+#include <sprockit/debug.h>
 
 DeclareDebugSlot(blas);
 
@@ -76,7 +77,7 @@ class BlasAPI :
   RegisterAPI("blas", BlasAPI)
 
  public:
-  BlasAPI(SST::Params& params, App* app);
+  BlasAPI(SST::Params& params, App* app, SST::Component* comp);
 
   virtual ~BlasAPI();
 

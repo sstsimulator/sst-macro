@@ -14,16 +14,16 @@ Run completed:
    Problem size        =  20 
    MPI tasks           =  8 
    Iteration count     =  2 
-CalcLagrangeElements                =   0.00835000s
-CalcQForElems                       =   0.00242600s
+CalcLagrangeElements                =   0.00835200s
+CalcQForElems                       =   0.00241200s
 UpdateVolumesForElems               =   0.00002800s
-ApplyMaterialPropertiesForElems     =   0.00495300s
-CalcTimeConstraintsForElems         =   0.00007300s
+ApplyMaterialPropertiesForElems     =   0.00496700s
+CalcTimeConstraintsForElems         =   0.00007500s
 CalcAccelerationForNodes            =   0.00005400s
 InitStressTermsForElems             =   0.00005400s
-IntegrateStressForElems             =   0.00702200s
-CalcHourglassControlForElems        =   0.02755000s
-CalcVelocityForNodes                =   0.00010400s
-CalcPositionForNodes                =   0.00005400s
-Total time =   0.05145800s
-Simulation is complete, simulated time: 51.4928 ms
+IntegrateStressForElems             =   0.00702400s
+CalcHourglassControlForElems        =   0.02756000s
+CalcVelocityForNodes                =   0.00010600s
+CalcPositionForNodes                =   0.00005200s
+Total time =   0.05140700s
+Simulation is complete, simulated time: 51.4268 ms

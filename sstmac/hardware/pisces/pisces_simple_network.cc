@@ -68,7 +68,7 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
   double bw = inj_params.findUnits("bandwidth").toDouble();
   //PiscesSender::configurePayloadPortLatency(inj_params);
   std::string arb = inj_params.find<std::string>("arbirtrator");
-  inj_buffer_ = new PiscesBuffer(arb, bw, inj_params.findUnits("mtu").getRoundedValue(),
+  inj_buffer_ = new PiscesBuffer("merlin-inj", arb, bw, inj_params.findUnits("mtu").getRoundedValue(),
                                  comp, 1);
 
   LinkHandler* handler = newLinkHandler(this, &PiscesSimpleNetwork::creditArrived);
@@ -89,6 +89,7 @@ PiscesSimpleNetwork::initLinks(SST::Params& params)
   for (auto& pair : link_map->getLinkMap()){
     debug("initialized simple network link %s", pair.first.c_str());
     SST::Link* link = pair.second;
+    link->setDefaultTimeBase(timeConverter());
     std::istringstream istr(pair.first);
     std::string port_type;
     int src_outport, dst_inport;
@@ -142,7 +143,7 @@ PiscesSimpleNetwork::sendLogpNetwork(SST::Interfaces::SimpleNetwork::Request *re
   SimpleNetworkMessage* msg = new SimpleNetworkMessage(
         req, req->dest, nid_, req->size_in_bits/8);
   //control network
-  logp_link_->send(msg);
+  logp_link_->send(new NicEvent(msg));
   if (send_functor_) (*send_functor_)(vn);
   return true;
 }
@@ -192,7 +193,9 @@ PiscesSimpleNetwork::creditArrived(Event *ev)
 void
 PiscesSimpleNetwork::ctrlMsgArrived(Event* ev)
 {
-  SimpleNetworkMessage* msg = safe_cast(SimpleNetworkMessage, ev);
+  NicEvent* nev = static_cast<NicEvent*>(ev);
+  SimpleNetworkMessage* msg = static_cast<SimpleNetworkMessage*>(nev->msg());
+  delete nev;
   vn1_msgs_.push_back(msg);
   if (recv_functor_) (*recv_functor_)(1);
 }

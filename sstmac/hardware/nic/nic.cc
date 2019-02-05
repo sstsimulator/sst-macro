@@ -96,7 +96,7 @@ NIC::NIC(SST::Params& params, Node* parent) :
   logp_link_(nullptr),
   os_(parent->os()),
   queue_(parent->os()),
-  ConnectableSubcomponent(parent) //no self events with NIC
+  ConnectableSubcomponent("nic", parent) //no self events with NIC
 {
   negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
 
