@@ -313,8 +313,8 @@ void
 NIC::internodeSend(NetworkMessage* netmsg)
 {
   recordMessage(netmsg);
-  nic_debug("internode send payload of size %d %s",
-    int(netmsg->byteLength()), netmsg->toString().c_str());
+  nic_debug("internode send payload %llu of size %d %s",
+    netmsg->flowId(), int(netmsg->byteLength()), netmsg->toString().c_str());
   //we might not have a logp overlay network
   if (negligibleSize(netmsg->byteLength())){
     ackSend(netmsg);

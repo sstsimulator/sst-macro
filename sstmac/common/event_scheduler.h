@@ -186,7 +186,7 @@ class EventScheduler : public sprockit::printable
   }
 
   void sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent* ev){
-    SST::SimTime_t delay = getCurrentSimTime(time_converter_) - arrival.time.ticks();
+    SST::SimTime_t delay = arrival.time.ticks() - getCurrentSimTime(time_converter_);
     self_link_->send(delay, time_converter_, ev);
   }
 #else

@@ -140,14 +140,17 @@ PiscesNIC::connectOutput(int src_outport, int dst_inport, EventLink* link)
 void
 PiscesNIC::connectInput(int src_outport, int dst_inport, EventLink* link)
 {
-  credit_link_ = link;
+  if (dst_inport == Injection){ //the logp port is not for credits!
+    credit_link_ = link;
+  }
 }
 
 uint64_t
 PiscesNIC::inject(int vn, uint64_t offset, NetworkMessage* netmsg)
 {
-  pisces_debug("On %s, trying to inject %s",
-               toString().c_str(), netmsg->toString().c_str());
+  pisces_debug("On %s, trying to inject %s: %d credits available",
+               toString().c_str(), netmsg->toString().c_str(),
+               inj_buffer_->numCredit(vn));
   while (inj_buffer_->spaceToSend(vn, packet_size_)){
     uint64_t bytes = std::min(uint64_t(packet_size_), netmsg->byteLength() - offset);
     bool is_tail = (offset + bytes) == netmsg->byteLength();
