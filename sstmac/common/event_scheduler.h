@@ -233,6 +233,10 @@ class EventScheduler : public sprockit::printable
   }
 #else
 
+  EventManager* mgr() const {
+    return mgr_;
+  }
+
   const GlobalTimestamp* nowPtr() const {
     return now_;
   }

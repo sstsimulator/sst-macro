@@ -206,7 +206,7 @@ class OperatingSystem : public SubComponent
 
   static inline OperatingSystem*& staticOsThreadContext(){
   #if SSTMAC_USE_MULTITHREAD
-    int thr = thread_info::current_physical_threadId();
+    int thr = ThreadInfo::currentPhysicalThreadId();
     return active_os_[thr];
   #else
     return active_os_;

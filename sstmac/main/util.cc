@@ -75,6 +75,10 @@ bool appHasParam(const std::string& name){
   return appParams().contains(name);
 }
 
+void getAppUnitParam(const std::string& name, double& val){
+  val = appParams().findUnits(name).toDouble();
+}
+
 void getAppUnitParam(const std::string& name, int& val){
   val = appParams().findUnits(name).getRoundedValue();
 }

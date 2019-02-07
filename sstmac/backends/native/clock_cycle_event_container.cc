@@ -106,7 +106,7 @@ ClockCycleEventMap::handleIncoming(char* buf)
   if (sz == 0){
     sprockit::abort("got zero size for incoming buffer");
   }
-  EventManager* mgr = interconn_->component(dst)->event_mgr();
+  EventManager* mgr = interconn_->component(dst)->mgr();
   mgr->schedulePendingSerialization(buf);
   return sz;
 #else

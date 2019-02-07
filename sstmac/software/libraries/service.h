@@ -59,8 +59,6 @@ class Service :
  public:
   virtual void start() {}
 
-  virtual void incomingEvent(Event* ev) override = 0;
-
  protected:
   Service(const std::string& libname, SoftwareId sid, OperatingSystem* os) :
     Library(libname, sid, os)

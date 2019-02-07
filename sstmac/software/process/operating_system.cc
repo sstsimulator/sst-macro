@@ -427,7 +427,7 @@ OperatingSystem::initThreading(SST::Params& params)
 
 #if SSTMAC_USE_MULTITHREAD
   static thread_lock lock;
-  sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
+  sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
   lock.lock();
   if (active_os_.size() == 0){
     active_os_.resize(nthread());

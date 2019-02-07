@@ -63,7 +63,7 @@ class ThreadInfo {
 
   static void deregisterUserSpaceVirtualThread(void* stack);
 
-  static inline int currentPhysicalThreadid(){
+  static inline int currentPhysicalThreadId(){
     uintptr_t localStorage = get_sstmac_tls();
     int* tls = (int*) (localStorage + SSTMAC_TLS_THREAD_ID);
     return *tls;

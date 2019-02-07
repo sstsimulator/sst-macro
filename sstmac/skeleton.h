@@ -59,6 +59,7 @@ typedef int (*empty_main_fxn)();
 #else
 #include <string>
 #include <sstream>
+#include <vector>
 #endif
 
 #ifdef __cplusplus
