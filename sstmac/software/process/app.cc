@@ -597,6 +597,7 @@ UserAppCxxFullMain::initArgv(argv_entry& entry)
   argv[0] = argv_buffer;
   ::strcpy(argv_buffer, appname.c_str());
   int i=1;
+  argv_buffer_ptr += appname.size() + 1;
   for (auto& src_str : argv_param_dq){
     ::strcpy(argv_buffer_ptr, src_str.c_str());
     argv[i] = argv_buffer_ptr;
