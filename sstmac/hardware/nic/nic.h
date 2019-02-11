@@ -64,6 +64,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/debug.h>
 #include <sprockit/factories/factory.h>
 
+#include <functional>
+
 DeclareDebugSlot(nic);
 
 #define nic_debug(...) \
