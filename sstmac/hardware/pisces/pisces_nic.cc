@@ -81,11 +81,11 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   //PiscesSender::configurePayloadPortLatency(inj_params);
   inj_buffer_ = new PiscesBuffer("inj", arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
   inj_stats_ = PacketStatsCallback::factory::
-                get_optional_param("stats", "null", params, parent);
+                getOptionalParam("stats", "null", params, parent);
   inj_buffer_->setStatCollector(inj_stats_);
 
   ej_stats_ = PacketStatsCallback::factory::
-                        get_optional_param("stats", "null", ej_params, parent);
+                        getOptionalParam("stats", "null", ej_params, parent);
 
 }
 

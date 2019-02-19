@@ -84,7 +84,7 @@ NodeIdTaskMapper::mapRanks(
 {
   NodeIdAllocation::readCoordinateFile(listfile_, result, topology_);
   if (result.size() != nproc){
-    spkt_throw_printf(sprockit::unimplemented_error,
+    spkt_throw_printf(sprockit::UnimplementedError,
       "need %d nodes - only indexed %d", nproc, nodes.size());
   }
 }

@@ -153,11 +153,11 @@ parsedumpi_callbacks::parse_stream(
 {
   static const std::string here("parsedumpi_callbacks::parse_stream");
   if(parent_ == NULL) {
-    throw sprockit::null_error(here + ":  NULL parent pointer.");
+    throw sprockit::NullError(here + ":  NULL parent pointer.");
   }
   dumpi_profile *profile = undumpi_open(fname.c_str());
   if(profile == NULL) {
-    throw sprockit::io_error(here + ":  Unable to open \"" + fname + "\" for reading.");
+    throw sprockit::IOError(here + ":  Unable to open \"" + fname + "\" for reading.");
   }
   datatype_sizes_ = undumpi_read_datatype_sizes(profile);
   int retval = undumpi_read_stream_full(fname.c_str(), profile, cbacks_, this, print_progress);
@@ -293,7 +293,7 @@ void parsedumpi_callbacks::
 add_mpitype(dumpi_datatype id, MPI_Datatype mpit)
 {
   if(id < DUMPI_FIRST_USER_DATATYPE){
-    spkt_throw_printf(sprockit::value_error, 
+    spkt_throw_printf(sprockit::ValueError, 
        "parsedumpi_callbacks::add_mpitype: %d trying to redefine built-in datatype index",
        int(id));
   }
@@ -682,7 +682,7 @@ on_MPI_Send(const dumpi_send *prm, uint16_t thread,
 #if ENABLE_MPI_SEND
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw_printf(sprockit::null_error,
+    spkt_throw_printf(sprockit::NullError,
       "MPI_Send: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
@@ -702,7 +702,7 @@ on_MPI_Recv(const dumpi_recv *prm, uint16_t thread,
 #if ENABLE_MPI_RECV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw_printf(sprockit::null_error,
+    spkt_throw_printf(sprockit::NullError,
       "MPI_Recv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
@@ -1107,7 +1107,7 @@ on_MPI_Recv_init(const dumpi_recv_init *prm, uint16_t thread,
 {
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-  spkt_throw_printf(sprockit::null_error,
+  spkt_throw_printf(sprockit::NullError,
   "MPI_Recv_init: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
@@ -1162,7 +1162,7 @@ on_MPI_Sendrecv(const dumpi_sendrecv *prm, uint16_t thread,
 #if ENABLE_MPI_SENDRECV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw_printf(sprockit::null_error,
+    spkt_throw_printf(sprockit::NullError,
     "MPI_Sendrecv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);
@@ -1184,7 +1184,7 @@ on_MPI_Sendrecv_replace(const dumpi_sendrecv_replace *prm, uint16_t thread,
 #if ENABLE_MPI_SENDRECV
   parsedumpi_callbacks *cb = reinterpret_cast<parsedumpi_callbacks*>(uarg);
   if(cb == NULL) {
-    spkt_throw_printf(sprockit::null_error,
+    spkt_throw_printf(sprockit::NullError,
     "MPI_Sendrecv: null callback pointer");
   }
   cb->start_mpi(cpu, wall, perf);

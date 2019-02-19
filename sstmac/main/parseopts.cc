@@ -61,7 +61,7 @@ activateDebugs(const std::string& debug_list)
   std::string space = ",";
   pst::BasicStringTokenizer::tokenize(debug_list, tok, space);
   for (auto& item : tok){
-    sprockit::debug::turn_on(item);
+    sprockit::Debug::turnOn(item);
   }
 }
 
@@ -144,7 +144,7 @@ parseOpts(int argc, char **argv, opts &oo)
         //this set an input flag
         break;
       case 'e':
-        oo.params->add_param_override("node.app1.exe", optarg);
+        oo.params->addParamOverride("node.app1.exe", optarg);
         break;
       case 'h':
         oo.help = 1;
@@ -160,13 +160,13 @@ parseOpts(int argc, char **argv, opts &oo)
         activateDebugs(optarg);
         break;
       case 'n' :
-        oo.params->add_param_override("node.app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
+        oo.params->addParamOverride("node.app1.launch_cmd", sprockit::printf("aprun -n %s -N 1", optarg));
         break;
       case 'A' :
-        oo.params->add_param_override("node.app1.name", optarg);
+        oo.params->addParamOverride("node.app1.name", optarg);
         break;
       case 'V' :
-        oo.params->add_param_override("node.app1.argv", optarg);
+        oo.params->addParamOverride("node.app1.argv", optarg);
         break;
       case 'D':
         oo.params_dump_file = optarg;
@@ -180,25 +180,25 @@ parseOpts(int argc, char **argv, opts &oo)
         break;
       case 'a': {
         need_config_file = false;
-        sprockit::sim_parameters spkt_params("debug.ini");
-        spkt_params.combine_into(oo.params);
+        sprockit::SimParameters spkt_params("debug.ini");
+        spkt_params.combineInto(oo.params);
         machine_configured = true;
         break;
       }
       case 'i': {
-        sprockit::sim_parameters spkt_params(optarg);
-        spkt_params.combine_into(oo.params);
+        sprockit::SimParameters spkt_params(optarg);
+        spkt_params.combineInto(oo.params);
       }
       break;
       case 'p': {
         //overwrite anything existing
-        auto pair = sprockit::sim_parameters::split_line(optarg);
-        oo.params->add_param_override(pair.first, pair.second);
+        auto pair = sprockit::SimParameters::split_line(optarg);
+        oo.params->addParamOverride(pair.first, pair.second);
         break;
       }
       case 'c': {
         //overwrite anything existing
-        oo.params->add_param_override("cpu_affinity", std::string(optarg));
+        oo.params->addParamOverride("cpu_affinity", std::string(optarg));
         break;
       }
       default:
@@ -216,13 +216,13 @@ parseOpts(int argc, char **argv, opts &oo)
   }
 
   if (debugflags){
-    sprockit::debug::print_all_debug_slots(std::cout);
+    sprockit::Debug::printAllDebugSlots(std::cout);
     return PARSE_OPT_EXIT_SUCCESS;
   }
 
   if (infinite_network) {
-    sprockit::sim_parameters spkt_params("infinite.ini");
-    spkt_params.combine_into(oo.params);
+    sprockit::SimParameters spkt_params("infinite.ini");
+    spkt_params.combineInto(oo.params);
     need_config_file = false;
     if (machine_configured){
       machineAlreadyConfigured();
@@ -232,15 +232,15 @@ parseOpts(int argc, char **argv, opts &oo)
 
   if (dodumpi || dootf2) {
     if (!machine_configured){
-      sprockit::sim_parameters spkt_params("debug.ini");
-      spkt_params.combine_into(oo.params, false, false, true);
+      sprockit::SimParameters spkt_params("debug.ini");
+      spkt_params.combineInto(oo.params, false, false, true);
       machine_configured = true;
     }
     need_config_file = false;
     if (dodumpi){
-      oo.params->add_param_override("node.app1.name", "parsedumpi");
+      oo.params->addParamOverride("node.app1.name", "parsedumpi");
     } else if (dootf2) {
-      oo.params->add_param_override("node.app1.name", "parseotf2");
+      oo.params->addParamOverride("node.app1.name", "parseotf2");
     }
   }
 
@@ -251,7 +251,7 @@ parseOpts(int argc, char **argv, opts &oo)
     if (pos!= std::string::npos){
       exe_name = exe_name.substr(pos+1);
     }
-    bool is_stand_alone = sstmac::sw::App::factory::is_valid_name("sstmac_app_name");
+    bool is_stand_alone = sstmac::sw::App::factory::isValidName("sstmac_app_name");
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (is_stand_alone){
       int rc = sstmac::runStandalone(argc,argv);
@@ -274,7 +274,7 @@ parseOpts(int argc, char **argv, opts &oo)
   }
 
   if (no_congestion) {
-    oo.params->add_param_override("switch.arbitrator", "null");
+    oo.params->addParamOverride("switch.arbitrator", "null");
   }
 
   if (pisces_debug) {
@@ -292,7 +292,7 @@ parseOpts(int argc, char **argv, opts &oo)
   }
 
   if (run_ping_all){
-    oo.params->add_param_override("node.app1.name", "mpi_ping_all");
+    oo.params->addParamOverride("node.app1.name", "mpi_ping_all");
   }
 
   /** check to see if we should do an mpitestall */
@@ -304,7 +304,7 @@ parseOpts(int argc, char **argv, opts &oo)
     oo.configfile = "mpi_test_all.ini";
   }
   if (printnodes) {
-    oo.params->add_param_override("node.app1.name", "mpi_printnodes");
+    oo.params->addParamOverride("node.app1.name", "mpi_printnodes");
   }
 
   if (lowrestimer){

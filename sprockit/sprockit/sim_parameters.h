@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SPROCKIT_COMMON_SIM_PARAMETERS_H_INCLUDED
 
 #include <sprockit/debug.h>
+
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
 
@@ -71,11 +72,10 @@ DeclareDebugSlot(params)
 DeclareDebugSlot(read_params)
 DeclareDebugSlot(write_params)
 
-
 namespace sprockit {
 
-bool get_quantity_with_units(const char *value, double& ret);
-double get_quantity_with_units(const char *value, const char* key);
+bool getQuantityWithUnits(const char *value, double& ret);
+double getQuantityWithUnits(const char *value, const char* key);
 
 class ParamAssign {
  public:
@@ -124,12 +124,12 @@ class ParamBcaster {
   void bcastString(std::string& str, int me, int root);
 };
 
-class sim_parameters  {
+class SimParameters  {
  public:
   friend class SST::Params;
 
-  using ptr = std::shared_ptr<sim_parameters>;
-  using const_ptr = std::shared_ptr<const sim_parameters>;
+  using ptr = std::shared_ptr<SimParameters>;
+  using const_ptr = std::shared_ptr<const SimParameters>;
 
   struct parameter_entry
   {
@@ -142,17 +142,17 @@ class sim_parameters  {
     return params_.empty();
   }
 
-  void reproduce_params(std::ostream& os) const ;
+  void reproduceParams(std::ostream& os) const ;
 
   typedef std::unordered_map<std::string, parameter_entry> key_value_map;
 
-  sim_parameters();
+  SimParameters();
 
-  sim_parameters(const key_value_map& p);
+  SimParameters(const key_value_map& p);
 
-  sim_parameters(const std::string& filename);
+  SimParameters(const std::string& filename);
 
-  sim_parameters(sprockit::sim_parameters::const_ptr params); //deep copy
+  SimParameters(sprockit::SimParameters::const_ptr params); //deep copy
 
   /**
    * In a parallel environment (abstracted through a param_bcaster object),
@@ -164,21 +164,13 @@ class sim_parameters  {
    * @param bcaster
    */
   static void
-  parallel_build_params(sprockit::sim_parameters::ptr& params,
+  parallelBuildParams(sprockit::SimParameters::ptr& params,
                         int me, int nproc,
                         const std::string& filename,
                         ParamBcaster* bcaster,
                         bool fail_if_not_found = true);
 
-  virtual ~sim_parameters();
-
-  bool public_scope() const {
-    return public_scope_;
-  }
-
-  void set_public_scope(bool flag){
-    public_scope_ = flag;
-  }
+  virtual ~SimParameters();
 
   /**
    * Needed in conjunction with moved constructors to clear map
@@ -186,127 +178,80 @@ class sim_parameters  {
    */
   void moved();
 
-  void remove_param(const std::string &key);
+  void removeParam(const std::string &key);
 
-  std::string get_variable(const std::string& str);
+  std::string getVariable(const std::string& str);
 
-  std::string get_param(const std::string& key, bool throw_on_error = true);
+  std::string getParam(const std::string& key, bool throw_on_error = true);
 
-  std::string get_lowercase_param(const std::string& key, bool throw_on_error = true);
+  std::string getLowercaseParam(const std::string& key, bool throw_on_error = true);
 
-  std::string get_scoped_param(const std::string& key, bool throw_on_error = true);
+  std::string getScopedParam(const std::string& key, bool throw_on_error = true);
 
-  void insert_into(SST::Params& params);
+  void insertInto(SST::Params& params);
 
-  sim_parameters::ptr get_optional_local_namespace(const std::string& ns);
-
-  std::string reread_param(const std::string& key) {
-    return get_param(key);
-  }
-
-  std::string reread_optional_param(const std::string& key, const std::string& def) {
-    return get_optional_param(key, def);
-  }
+  SimParameters::ptr getOptionalLocalNamespace(const std::string& ns);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  std::string get_optional_param(const std::string &key, const std::string &def);
+  std::string getOptionalParam(const std::string &key, const std::string &def);
 
-  std::string deprecated_optional_param(const std::string &key, const std::string &def);
+  void addParam(const std::string& key, const std::string& val);
 
-  std::string deprecated_param(const std::string& key);
+  void copyParam(const std::string& oldname, const std::string& newname);
 
-  /**
-   * @brief get_either_or_param Return a parameter which can have one of two names.
-   *        If both names are found, results in error.
-   * @param key1
-   * @param key2
-   * @return The parameter value for key1 or key2
-   */
-  std::string get_either_or_param(const std::string& key1, const std::string& key2);
+  void copyOptionalParam(const std::string& oldname, const std::string& newname);
 
-  int get_either_or_int_param(const std::string& key1, const std::string& key2);
+  void addParamOverride(const std::string& key, const std::string& val);
 
-  double get_either_or_time_param(const std::string& key1, const std::string& key2);
+  void addParamOverride(const std::string &key, double val);
 
-  double get_either_or_bandwidth_param(const std::string& key1, const std::string& key2);
+  void addParamOverride(const std::string& key, double val, const char* units);
 
-  void add_param(const std::string& key, const std::string& val);
+  void addParamOverride(const std::string& key, int val);
 
-  void copy_param(const std::string& oldname, const std::string& newname);
+  void addParamOverrideRecursive(const std::string& key, int val);
 
-  void copy_optional_param(const std::string& oldname, const std::string& newname);
+  void addParamOverrideRecursive(const std::string& key, const std::string& val);
 
-  void add_param_override(const std::string& key, const std::string& val);
-
-  void add_param_override(const std::string &key, double val);
-
-  void add_param_override(const std::string& key, double val, const char* units);
-
-  void add_param_override(const std::string& key, int val);
-
-  void add_param_override_recursive(const std::string& key, int val);
-
-  void add_param_override_recursive(const std::string& key, const std::string& val);
-
-  void combine_into(sim_parameters::ptr sp,
+  void combineInto(SimParameters::ptr sp,
                bool fail_on_existing = false,
                bool override_existing = true,
                bool mark_as_read = true);
 
-  std::string print_scoped_params(std::ostream& os) const;
+  std::string printScopedParams(std::ostream& os) const;
 
   std::string print_scopes(std::ostream& os);
 
-  void print_local_params(std::ostream& os, const std::string& prefix) const;
+  void printLocalParams(std::ostream& os, const std::string& prefix) const;
 
-  void print_params(std::ostream& os = std::cerr, const std::string& prefix = "") const;
+  void printParams(std::ostream& os = std::cerr, const std::string& prefix = "") const;
 
-  bool print_unread_params(std::ostream& os = std::cerr) const;
+  bool hasParam(const std::string& key) const;
 
-  bool has_param(const std::string& key) const;
-
-  bool has_scoped_param(const std::string& key) const;
-
-  int get_int_param(const std::string& key);
-
-  int deprecated_int_param(const std::string& key);
-
-  int deprecated_optional_int_param(const std::string &key, int def);
-
-  int reread_int_param(const std::string& key);
-
-  int reread_optional_int_param(const std::string& key, int def);
+  int getIntParam(const std::string& key);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  int get_optional_int_param(const std::string &key, int def);
+  int getOptionalIntParam(const std::string &key, int def);
 
   /// Returns the value of the key as a boolean.
-  bool get_bool_param(const std::string &key);
-
-  bool reread_bool_param(const std::string& key);
-
-  bool deprecated_bool_param(const std::string& key);
-
-  bool deprecated_optional_bool_param(const std::string& key, bool def);
-
-  bool reread_optional_bool_param(const std::string& key, bool def);
+  bool getBoolParam(const std::string &key);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  bool get_optional_bool_param(const std::string &key, bool def);
+  bool getOptionalBoolParam(const std::string &key, bool def);
 
-  double get_bandwidth_param(const std::string& key);
+  double getBandwidthParam(const std::string& key);
 
   /**
    @param key The parameter name
@@ -314,84 +259,48 @@ class sim_parameters  {
            to return any value that can have units. Everything is normalized to baseslines
            of B/s, s, Hz, etc
   */
-  double get_quantity(const std::string& key);
+  double getQuantity(const std::string& key);
 
-  double get_optional_quantity(const std::string& key, double def);
+  double getOptionalQuantity(const std::string& key, double def);
 
-  double deprecated_bandwidth_param(const std::string& key);
+  double getOptionalBandwidthParam(const std::string &key, double def);
 
-  double reread_bandwidth_param(const std::string& key);
-
-  double reread_optional_bandwidth_param(const std::string& key, double def);
-
-  double deprecated_optional_bandwidth_param(const std::string& key, double def);
-
-  double get_optional_bandwidth_param(const std::string &key, double def);
-
-  double get_optional_bandwidth_param(
+  double getOptionalBandwidthParam(
     const std::string& key,
     const std::string& def);
 
-  long get_byte_length_param(const std::string& key);
+  long getByteLengthParam(const std::string& key);
 
-  long get_optional_byte_length_param(const std::string& key, long def);
+  long getOptionalByteLengthParam(const std::string& key, long def);
 
-  long deprecated_byte_length_param(const std::string& key);
+  double getOptionalFreqParam(const std::string& key, double def);
 
-  long deprecated_optional_byte_length_param(const std::string& key, long def);
-
-  double get_optional_freq_param(const std::string& key, double def);
-
-  double get_freq_param(const std::string& key);
-
-  double deprecated_freq_param(const std::string& key);
-
-  double deprecated_optional_freq_param(const std::string& key, double def);
+  double getFreqParam(const std::string& key);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  long get_optional_long_param(const std::string &key, long def);
+  long getOptionalLongParam(const std::string &key, long def);
 
-  long get_long_param(const std::string& key);
+  long getLongParam(const std::string& key);
 
-  long deprecated_long_param(const std::string& key);
-
-  long deprecated_optional_long_param(const std::string& key, long def);
-
-  long reread_long_param(const std::string& key);
-
-  void reread_optional_long_param(const std::string& key);
-
-  double get_double_param(const std::string& key);
+  double getDoubleParam(const std::string& key);
 
   /// Return the value of the keyword if it exists. Otherwise return
   /// a default value.
   /// @param key gives the keyword
   /// @param def gives the default value (used if has_param(key) is false)
   /// @return the value if it exists, otherwise the default
-  double get_optional_double_param(const std::string &key, double def);
+  double getOptionalDoubleParam(const std::string &key, double def);
 
-  double reread_double_param(const std::string& key);
+  double getTimeParam(const std::string& key);
 
-  double reread_optional_double_param(const std::string &key, double def);
+  double getOptionalTimeParam(const std::string &key, double def);
 
-  double deprecated_double_param(const std::string& key);
-
-  double deprecated_optional_double_param(const std::string& key, double def);
-
-  double get_time_param(const std::string& key);
-
-  double get_optional_time_param(const std::string &key, double def);
-
-  double deprecated_optional_time_param(const std::string &key, double def);
-
-  double deprecated_time_param(const std::string& key);
-
-  template <class T> void get_vector_param(const std::string& key, std::vector<T>& vals){
-    std::deque<std::string> toks = get_tokenizer(key);
+  template <class T> void getVectorParam(const std::string& key, std::vector<T>& vals){
+    std::deque<std::string> toks = getTokenizer(key);
     for (auto& item : toks){
       if (item.size() > 0) {
         std::stringstream sstr(item);
@@ -402,38 +311,38 @@ class sim_parameters  {
     }
   }
 
-  sim_parameters::ptr get_namespace(const std::string& ns);
+  SimParameters::ptr getNamespace(const std::string& ns);
 
-  sim_parameters::ptr get_optional_namespace(const std::string& ns);
+  SimParameters::ptr getOptionalNamespace(const std::string& ns);
 
-  void set_namespace(const std::string& ns, sim_parameters::ptr params){
+  void setNamespace(const std::string& ns, SimParameters::ptr params){
     subspaces_[ns] = params;
   }
 
   static std::pair<std::string, std::string> split_line(const std::string& line);
 
-  bool has_namespace(const std::string& ns) const;
+  bool hasNamespace(const std::string& ns) const;
 
-  void parse_file(const std::string& fname, bool fail_on_existing,
+  void parseFile(const std::string& fname, bool fail_on_existing,
              bool override_existing, bool fail_if_not_found = true);
 
-  void parse_stream(std::istream& in, bool fail_on_existing, bool override_existing);
+  void parseStream(std::istream& in, bool fail_on_existing, bool override_existing);
 
-  void parse_line(const std::string& line, bool fail_on_existing, bool override_existing);
+  void parseLine(const std::string& line, bool fail_on_existing, bool override_existing);
 
   /**
     @param key
     @param value
     @param fail_on_existing Fail if the parameter named by key already exists
   */
-  void parse_keyval(const std::string& key,
+  void parseKeyval(const std::string& key,
     const std::string& value,
     bool fail_on_existing,
     bool override_existing,
     bool mark_as_read);
 
 
-  void insert_into(const std::string& prefix, SST::Params& params);
+  void insertInto(const std::string& prefix, SST::Params& params);
 
   ParamAssign operator[](const std::string& key);
 
@@ -443,29 +352,18 @@ class sim_parameters  {
   key_value_map::iterator end() { return params_.end(); }
   key_value_map::const_iterator end() const { return params_.end(); }
 
-  using namespace_iterator = std::map<std::string, sim_parameters::ptr>::iterator ;
-  using const_namespace_iterator = std::map<std::string, sim_parameters::ptr>::const_iterator;
-  namespace_iterator ns_begin() { return subspaces_.begin(); }
-  const_namespace_iterator ns_begin() const { return subspaces_.begin(); }
-  namespace_iterator ns_end() { return subspaces_.end(); }
-  const_namespace_iterator ns_end() const { return subspaces_.end(); }
+  using namespace_iterator = std::map<std::string, SimParameters::ptr>::iterator ;
+  using const_namespace_iterator = std::map<std::string, SimParameters::ptr>::const_iterator;
+  namespace_iterator nsBegin() { return subspaces_.begin(); }
+  const_namespace_iterator nsBegin() const { return subspaces_.begin(); }
+  namespace_iterator nsEnd() { return subspaces_.end(); }
+  const_namespace_iterator nsEnd() const { return subspaces_.end(); }
 
  private:
-  std::map<std::string, sim_parameters::ptr> subspaces_;
+  std::map<std::string, SimParameters::ptr> subspaces_;
   std::map<std::string, std::string> variables_;
 
-  /**
-   * @brief check_either_or Determine whether the parameters are valid for either/or
-   *        parameters. If both keys are given or neither are given, abort.
-   *        There should only be a single key specified.
-   * @param key1
-   * @param key2
-   * @return True if key1 is available, False if key2 is available.
-   */
-  bool check_either_or(const std::string& key1,
-                       const std::string& key2);
-
-  sim_parameters* parent_;
+  SimParameters* parent_;
 
   std::string namespace_;
 
@@ -473,50 +371,48 @@ class sim_parameters  {
 
   uint64_t current_id_;
 
-  bool public_scope_;
-
   /**
    * @brief _get_namespace Get a parameter namespace. If the namespace does not exist in the current scope locally,
    *  search through any parent namespaces. This follow C++ scoping rules as if you had requested ns::variable.
    * @param ns The namespace to get
    * @return The set of all parameters in a given param namespace
    */
-  sim_parameters::ptr _get_namespace(const std::string &ns);
+  SimParameters::ptr _get_namespace(const std::string &ns);
 
-  sim_parameters::ptr build_local_namespace(const std::string& ns);
+  SimParameters::ptr buildLocalNamespace(const std::string& ns);
 
-  void throw_key_error(const std::string& key) const;
+  void throwKeyError(const std::string& key) const;
 
-  void set_parent(sim_parameters* p) {
+  void setParent(SimParameters* p) {
     parent_ = p;
   }
 
-  void set_namespace(const std::string& str) {
+  void setNamespace(const std::string& str) {
     namespace_ = str;
   }
 
-  bool local_has_namespace(const std::string& ns) const {
+  bool localHasNamespace(const std::string& ns) const {
     return subspaces_.find(ns) != subspaces_.end();
   }
 
-  void try_to_parse(const std::string& fname, bool fail_on_existing, bool override_existing);
+  void tryToParse(const std::string& fname, bool fail_on_existing, bool override_existing);
 
-  void print_params(const key_value_map& pmap, std::ostream& os, bool pretty_print, std::list<std::string>& ns) const;
+  void printParams(const key_value_map& pmap, std::ostream& os, bool pretty_print, std::list<std::string>& ns) const;
 
-  void do_add_param(const std::string& key,
+  void doAddParam(const std::string& key,
     const std::string& val,
     bool fail_on_existing,
     bool override_existing,
     bool mark_as_read);
 
 
-  sim_parameters* get_scope_and_key(const std::string& key, std::string& final_key);
+  SimParameters* getScopeAndKey(const std::string& key, std::string& final_key);
 
-  bool get_param(std::string& inout, const std::string& key);
+  bool getParam(std::string& inout, const std::string& key);
 
-  bool get_scoped_param(std::string& inout, const std::string& key);
+  bool getScopedParam(std::string& inout, const std::string& key);
 
-  std::deque<std::string> get_tokenizer(const std::string& key);
+  std::deque<std::string> getTokenizer(const std::string& key);
 
 };
 
@@ -529,54 +425,54 @@ template <class T>
 struct CallGetParam {};
 
 template <> struct CallGetParam<long>  {
-  static double get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
-    return ptr->get_long_param(key);
+  static double get(sprockit::SimParameters::ptr& ptr, const std::string& key){
+    return ptr->getLongParam(key);
   }
-  static double getOptional(sprockit::sim_parameters::ptr &ptr, const std::string& key, long def){
-    return ptr->get_optional_long_param(key, def);
+  static double getOptional(sprockit::SimParameters::ptr &ptr, const std::string& key, long def){
+    return ptr->getOptionalLongParam(key, def);
   }
 };
 
 template <> struct CallGetParam<double>  {
-  static double get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
-    return ptr->get_double_param(key);
+  static double get(sprockit::SimParameters::ptr& ptr, const std::string& key){
+    return ptr->getDoubleParam(key);
   }
-  static double getOptional(sprockit::sim_parameters::ptr &ptr, const std::string& key, double def){
-    return ptr->get_optional_double_param(key, def);
+  static double getOptional(sprockit::SimParameters::ptr &ptr, const std::string& key, double def){
+    return ptr->getOptionalDoubleParam(key, def);
   }
 };
 
 template <> struct CallGetParam<int>  {
-  static int get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
-    return ptr->get_int_param(key);
+  static int get(sprockit::SimParameters::ptr& ptr, const std::string& key){
+    return ptr->getIntParam(key);
   }
-  static int getOptional(sprockit::sim_parameters::ptr &ptr, const std::string& key, int def){
-    return ptr->get_optional_int_param(key, def);
+  static int getOptional(sprockit::SimParameters::ptr &ptr, const std::string& key, int def){
+    return ptr->getOptionalIntParam(key, def);
   }
 };
 
 template <> struct CallGetParam<bool>  {
-  static int get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
-    return ptr->get_bool_param(key);
+  static int get(sprockit::SimParameters::ptr& ptr, const std::string& key){
+    return ptr->getBoolParam(key);
   }
-  static int getOptional(sprockit::sim_parameters::ptr &ptr, const std::string& key, bool def){
-    return ptr->get_optional_bool_param(key, def);
+  static int getOptional(sprockit::SimParameters::ptr &ptr, const std::string& key, bool def){
+    return ptr->getOptionalBoolParam(key, def);
   }
 };
 
 template <> struct CallGetParam<std::string> {
-  static std::string get(sprockit::sim_parameters::ptr& ptr, const std::string& key){
-    return ptr->get_param(key);
+  static std::string get(sprockit::SimParameters::ptr& ptr, const std::string& key){
+    return ptr->getParam(key);
   }
 
-  static std::string getOptional(sprockit::sim_parameters::ptr& ptr,
+  static std::string getOptional(sprockit::SimParameters::ptr& ptr,
                                  const std::string& key, std::string&& def){
-    return ptr->get_optional_param(key, def);
+    return ptr->getOptionalParam(key, def);
   }
 
-  static std::string getOptional(sprockit::sim_parameters::ptr& ptr,
+  static std::string getOptional(sprockit::SimParameters::ptr& ptr,
                                  const std::string& key, const std::string& def){
-    return ptr->get_optional_param(key, def);
+    return ptr->getOptionalParam(key, def);
   }
 
 };
@@ -586,7 +482,7 @@ struct UnitAlgebra
  public:
   UnitAlgebra(const std::string& val){
     double tmp;
-    bool failed = sprockit::get_quantity_with_units(val.c_str(), tmp);
+    bool failed = sprockit::getQuantityWithUnits(val.c_str(), tmp);
     if (failed){
       std::cerr << "Failed to parse value with units from " << val << std::endl;
       ::abort();
@@ -619,11 +515,11 @@ struct UnitAlgebra
 
 class Params {
  public:
-  Params() : params_(std::make_shared<sprockit::sim_parameters>())
+  Params() : params_(std::make_shared<sprockit::SimParameters>())
   {
   }
 
-  Params(const std::string& name) : params_(std::make_shared<sprockit::sim_parameters>(name))
+  Params(const std::string& name) : params_(std::make_shared<sprockit::SimParameters>(name))
   {
   }
 
@@ -631,40 +527,40 @@ class Params {
     return bool(params_);
   }
 
-  Params(const sprockit::sim_parameters::ptr& params) :
+  Params(const sprockit::SimParameters::ptr& params) :
     params_(params)
   {
   }
 
   template <class T> void find_array(const std::string& key, std::vector<T>& vec){
-    return params_->get_vector_param(key, vec);
+    return params_->getVectorParam(key, vec);
   }
 
   bool contains(const std::string& k) const {
-    return params_->has_param(k);
+    return params_->hasParam(k);
   }
 
   void print_all_params(std::ostream& os){
-    params_->print_params(os);
+    params_->printParams(os);
   }
 
-  sprockit::sim_parameters* operator->(){
+  sprockit::SimParameters* operator->(){
     return params_.get();
   }
 
   SST::Params get_namespace(const std::string& name){
-    return params_->get_namespace(name);
+    return params_->getNamespace(name);
   }
 
   SST::Params find_prefix_params(const std::string& name){
-    return params_->get_optional_namespace(name);
+    return params_->getOptionalNamespace(name);
   }
 
   void insert(const std::string& key, const std::string& value, bool overwrite=true){
     if (overwrite){
-      params_->add_param_override(key, value);
+      params_->addParamOverride(key, value);
     } else {
-      params_->add_param(key, value);
+      params_->addParam(key, value);
     }
   }
 
@@ -681,15 +577,15 @@ class Params {
   }
 
   void insert(const SST::Params& params){
-    params.params_->combine_into(params_);
+    params.params_->combineInto(params_);
   }
 
   UnitAlgebra findUnits(const std::string& key){
-    return UnitAlgebra(params_->get_param(key));
+    return UnitAlgebra(params_->getParam(key));
   }
 
   UnitAlgebra findUnits(const std::string& key, const std::string& def){
-    return UnitAlgebra(params_->get_optional_param(key, def));
+    return UnitAlgebra(params_->getOptionalParam(key, def));
   }
 
   template <class T> T find(const std::string& key) {
@@ -712,12 +608,12 @@ class Params {
                bool fail_on_existing = false,
                bool override_existing = true,
                bool mark_as_read = true){
-    params_->combine_into(params.params_,
+    params_->combineInto(params.params_,
       fail_on_existing,override_existing,mark_as_read);
   }
 
  private:
-  sprockit::sim_parameters::ptr params_;
+  sprockit::SimParameters::ptr params_;
 };
 
 }
@@ -732,10 +628,10 @@ template <> class serialize<SST::Params>
       std::string paramStr;
       ser & paramStr;
       std::stringstream sstr(paramStr);
-      p->parse_stream(sstr, false, true);
+      p->parseStream(sstr, false, true);
     } else {
       std::stringstream sstr;
-      p->reproduce_params(sstr);
+      p->reproduceParams(sstr);
       std::string paramStr = sstr.str();
       ser & paramStr;
     }

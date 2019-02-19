@@ -219,7 +219,7 @@ DagCollectiveActor::startAction(Action* ac)
 void
 DagCollectiveActor::startShuffle(Action *ac)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "collective %s does not shuffle data - invalid DAG",
     Collective::tostr(type_));
 }
@@ -561,7 +561,7 @@ DagCollectiveActor::commActionDone(Action::type_t ty, int round, int partner)
       std::cerr << "have action id " << it->first
         << " to partner " << it->second->partner << std::endl;
     }
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
      "invalid action %s for round %d, partner %d",
      Action::tostr(ty), round, partner);
   }
@@ -667,7 +667,7 @@ DagCollectiveActor::dataRecved(
   uint32_t id = Action::messageId(Action::recv, msg->round(), msg->domSender());
   Action* ac = active_comms_[id];
   if (ac == nullptr){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "on %d, received data for unknown receive %u from %d on round %d",
       dom_me_, id, msg->domSender(), msg->round());
   }

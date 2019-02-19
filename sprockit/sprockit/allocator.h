@@ -86,10 +86,10 @@ class allocator
 };
 
 #if SPKT_VALGRIND_MODE
-template <class T> using thread_safe_allocator = std::allocator<T>;
+template <class T> using threadSafeAllocator = std::allocator<T>;
 #else
 template <class T>
-class thread_safe_allocator
+class threadSafeAllocator
 {
  public:
   typedef size_t    size_type;
@@ -101,7 +101,7 @@ class thread_safe_allocator
   typedef T         value_type;
 
   template <class U>
-  struct rebind { typedef thread_safe_allocator<U> other; };
+  struct rebind { typedef threadSafeAllocator<U> other; };
 
   void destroy(pointer p) { p->~T(); }
 

@@ -119,7 +119,7 @@ throughput_thread::run()
       average_latency_ms = latency_total / num_messages_counted;
       return;
     } else {
-      spkt_throw_printf(sprockit::illformed_error,
+      spkt_throw_printf(sprockit::IllformedError,
                        "got unexpected message %s",
                        sumi::Message::tostr(msg->payload_type()));
     }
@@ -195,7 +195,7 @@ main(int argc, char** argv)
   } else if (pattern == "TOR" || pattern == "tornado") {
     ty = traffic_pattern::tornado;
   } else {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
                      "invalid traffic pattern %s",
                      pattern.c_str());
   }
@@ -213,7 +213,7 @@ main(int argc, char** argv)
   } else if (params.contains("network_train_injection_bw")) {
     offered_load_bw = params.findUnits("network_train_injection_bw").toDouble();
   } else {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
                      "throughput application did not find injection bandwidth");
   }
 

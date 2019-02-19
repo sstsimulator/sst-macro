@@ -75,7 +75,7 @@ using namespace std::placeholders;
 
 namespace sumi {
 
-static sprockit::need_deleteStatics<MpiQueue> del_statics;
+static sprockit::NeedDeletestatics<MpiQueue> del_statics;
 
 bool
 MpiQueue::sortbyseqnum::operator()(MpiMessage* a, MpiMessage*b) const
@@ -162,7 +162,7 @@ MpiQueue::send(MpiRequest *key, int count, MPI_Datatype type,
 {
   MpiType* typeobj = api_->typeFromId(type);
   if (typeobj->packed_size() < 0){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "MPI_Datatype %s has negative size %ld",
       api_->typeStr(type).c_str(), typeobj->packed_size());
   }

@@ -54,8 +54,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/logp/logp_switch_fwd.h>
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/common/stats/stat_histogram_fwd.h>
-#include <sstmac/common/stats/stat_local_int_fwd.h>
-#include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
@@ -205,8 +203,6 @@ class NIC : public ConnectableSubcomponent
   StatSpyplot* spy_num_messages_;
   StatSpyplot* spy_bytes_;
   StatHistogram* hist_msg_size_;
-  StatLocalInt* local_bytes_sent_;
-  StatGlobalInt* global_bytes_sent_;
   sw::SingleProgressQueue<NetworkMessage> queue_;
 
  protected:

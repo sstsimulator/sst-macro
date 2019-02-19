@@ -64,18 +64,18 @@ namespace sprockit {
  *  internal bitmask.  If the bitwise AND is zero, no active debug slots match
  *  and nothing is printed.
  */
-class debug_int
+class DebugInt
 {
   public:
-    debug_int(int slot){
+    DebugInt(int slot){
       init(slot);
     }
 
-    debug_int(){
+    DebugInt(){
       fields = 0;
     }
 
-    debug_int& operator~(){
+    DebugInt& operator~(){
       fields = ~fields;
       return *this;
     }
@@ -84,7 +84,7 @@ class debug_int
       fields = (1ull) << slot;
     }
 
-    debug_int& operator=(const debug_int& rhs){
+    DebugInt& operator=(const DebugInt& rhs){
       fields = rhs.fields;
       return *this;
     }
@@ -98,18 +98,18 @@ class debug_int
     uint64_t fields;
 };
 
-inline debug_int
-operator|(const debug_int& lhs, const debug_int& rhs)
+inline DebugInt
+operator|(const DebugInt& lhs, const DebugInt& rhs)
 {
-  debug_int ret;
+  DebugInt ret;
   ret.fields = lhs.fields | rhs.fields;
   return ret;
 }
 
-inline debug_int
-operator&(const debug_int& lhs, const debug_int& rhs)
+inline DebugInt
+operator&(const DebugInt& lhs, const DebugInt& rhs)
 {
-  debug_int ret;
+  DebugInt ret;
   ret.fields = lhs.fields & rhs.fields;
   return ret;
 }
@@ -121,53 +121,53 @@ operator&(const debug_int& lhs, const debug_int& rhs)
  * extra metadata to each debug print. An example usage
  * would be to print timestamps in front of each debug string.
  */
-class debug_prefix_fxn {
+class DebugPrefixFxn {
 
 public:
   virtual std::string str() = 0;
-  virtual ~debug_prefix_fxn() = 0;
+  virtual ~DebugPrefixFxn() = 0;
 
 };
 
 
-class debug
+class Debug
 {
  public:
-  static std::map<std::string, debug_int*>* debug_ints_;
+  static std::map<std::string, DebugInt*>* debug_ints_;
   static std::map<std::string, std::string>* docstrings_;
-  static debug_prefix_fxn* prefix_fxn;
+  static DebugPrefixFxn* prefix_fxn;
 
   static void deleteStatics();
 
   /** The bitmask corresponding to all slots that were active at the beginning */
-  static debug_int start_bitmask_;
+  static DebugInt start_bitmask_;
   /** <= start_bitmask_ - some debug slots may have been selectively deactivated */
-  static debug_int current_bitmask_;
+  static DebugInt current_bitmask_;
   /** The number of debug slots that have been assigned unique indices */
   static int num_bits_assigned;
 
   /**
    * @brief turn_off Turn off all debug printing for all flags
    */
-  static void turn_off();
+  static void turnOff();
 
   /**
    * @brief turn_on All debug flags that have been registered or
    * previously turned on are reactivated
    */
-  static void turn_on();
+  static void turnOn();
 
   /**
    * @brief turn_off Turn off a specific type of debug output
    * @param di The identifier for the debug printing to deactivate
    */
-  static void turn_off(debug_int& di);
+  static void turnOff(DebugInt& di);
 
   /**
    * @brief turn_on Turn on a specific type of debug output
    * @param di The identifier for the debug printing to activate
    */
-  static void turn_on(debug_int& di);
+  static void turnOn(DebugInt& di);
 
   /**
    * @brief register_debug_slot Register a new debug slot that can be
@@ -179,8 +179,8 @@ class debug
    * @param docstring An docstring describing the output produced by the debug
    *                  when the debug slot is active
    */
-  static void register_debug_slot(const std::string& str,
-                      debug_int* dint_ptr,
+  static void registerDebugSlot(const std::string& str,
+                      DebugInt* dint_ptr,
                       const std::string& docstring);
 
   /**
@@ -189,7 +189,7 @@ class debug
    *                 the associated string name
    * @param str      The string name associated with a debug slot
    */
-  static void turn_on(const std::string& str);
+  static void turnOn(const std::string& str);
 
 
   /**
@@ -200,7 +200,7 @@ class debug
    * @param str The string to print after prefix metadata
    * @param os  The stream to print to
    */
-  static void print_debug_string(const std::string& str, std::ostream& os = std::cout);
+  static void printDebugString(const std::string& str, std::ostream& os = std::cout);
 
   /**
    * @brief slot_active Determine whether a debug slot is active. This is usually
@@ -211,14 +211,14 @@ class debug
    * @return            Whether the slots in the input parameter match
    *                    any of the active debug slots
    */
-  static bool slot_active(const debug_int& allowed);
+  static bool slotActive(const DebugInt& allowed);
 
   /**
    * @brief print_all_debug_slots Print all of the possible debug slots
    *  registered with the debug system and any associated doc strings
    * @param os  The stream to print to
    */
-  static void print_all_debug_slots(std::ostream& os = std::cout);
+  static void printAllDebugSlots(std::ostream& os = std::cout);
 
  private:
   /**
@@ -227,7 +227,7 @@ class debug
    *  are active. This method should never be called by external code
    * @param dint  A reference to the integer that must be assigned a value
    */
-  static void assign_slot(debug_int& dint);
+  static void assignSlot(DebugInt& dint);
 
 };
 
@@ -235,7 +235,7 @@ class debug
 /**
  * @brief The debug_register_slot class
  */
-class debug_register_slot {
+class DebugRegisterSlot {
  public:
   /**
    * @param str       The unique string identifying the slot
@@ -245,10 +245,10 @@ class debug_register_slot {
    * @param docstring An docstring describing the output produced by the debug
    *                  when the debug slot is active
    */
-  debug_register_slot(const std::string& str,
-                      debug_int* dint_ptr,
+  DebugRegisterSlot(const std::string& str,
+                      DebugInt* dint_ptr,
                       const std::string& docstring){
-    debug::register_debug_slot(str, dint_ptr, docstring);
+    Debug::registerDebugSlot(str, dint_ptr, docstring);
   }
 };
 
@@ -262,7 +262,7 @@ class debug_register_slot {
  */
 #define DeclareDebugSlot(name) \
   namespace sprockit { namespace dbg { \
-  extern debug_int name; \
+  extern DebugInt name; \
   } }
 
 
@@ -275,8 +275,8 @@ class debug_register_slot {
 #define RegisterDebugSlot(name, ...) \
   namespace sprockit { \
   namespace dbg { \
-    debug_int name; \
-    debug_register_slot name##_debug_registerer(#name, &name, "" __VA_ARGS__); \
+    DebugInt name; \
+    DebugRegisterSlot name##_debug_registerer(#name, &name, "" __VA_ARGS__); \
   } }
 
 /**
@@ -294,13 +294,13 @@ class debug_register_slot {
 //This has to be a macro, not a function otherwise we lose the string literal
 //GCC then complains about format string vulnerabilities
 #define debug_printf(slot_bitmask, ...) \
-  if (::sprockit::debug::slot_active(slot_bitmask)){ \
-    ::sprockit::debug::print_debug_string(::sprockit::printf(__VA_ARGS__)); \
+  if (::sprockit::Debug::slotActive(slot_bitmask)){ \
+    ::sprockit::Debug::printDebugString(::sprockit::printf(__VA_ARGS__)); \
   }
 
 #define conditional_debug_printf(slot_bitmask, cond, ...) \
-  if (::sprockit::debug::slot_active(slot_bitmask && (cond))){ \
-    ::sprockit::debug::print_debug_string(::sprockit::printf(__VA_ARGS__)); \
+  if (::sprockit::Debug::slotActive(slot_bitmask && (cond))){ \
+    ::sprockit::Debug::printDebugString(::sprockit::printf(__VA_ARGS__)); \
   }
 
 #endif

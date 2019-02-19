@@ -171,7 +171,7 @@ Cascade::find_path_to_group(Router* rtr, int myX, int myY, int myG,
     }
   }
 
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
     "cascade::route: unable to find path from group %d to group %d",
     myG, dstG);
 }

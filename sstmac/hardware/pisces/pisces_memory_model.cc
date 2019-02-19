@@ -89,7 +89,7 @@ PiscesMemoryModel::PiscesMemoryModel(SST::Params& params, Node *nd) :
   min_flow_byte_delay_ =
       Timestamp(params.findUnits("max_single_bandwidth", max_bw_param).inverse().toDouble());
   latency_ = Timestamp(params.findUnits("latency").toDouble());
-  arb_ = PiscesBandwidthArbitrator::factory::get_value("cut_through", max_bw.toDouble());
+  arb_ = PiscesBandwidthArbitrator::factory::getValue("cut_through", max_bw.toDouble());
 }
 
 PiscesMemoryModel::~PiscesMemoryModel()

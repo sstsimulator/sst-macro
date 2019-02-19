@@ -81,7 +81,7 @@ AppLauncher::incomingRequest(Request* req)
     SST::Params app_params = lreq->appParams();
 
     App::dlopenCheck(lreq->aid(), app_params);
-    App* theapp = App::factory::get_param("name", app_params, sid, os_);
+    App* theapp = App::factory::getParam("name", app_params, sid, os_);
     theapp->setUniqueName(lreq->uniqueName());
     int intranode_rank = num_apps_launched_[lreq->aid()]++;
     int core_affinity = lreq->coreAffinity(intranode_rank);
@@ -99,7 +99,7 @@ AppLauncher::start()
 {
   Service::start();
   if (!os_) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "AppLauncher::start: OS hasn't been registered yet");
   }
 }

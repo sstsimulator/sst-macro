@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/sst_event.h>
+#include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/common/parallel_runtime.h>
@@ -113,6 +114,7 @@ EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
   stopped_(false),
   interconn_(nullptr)
 {
+  active_stat_group_.push("default");
   for (int i=0; i < num_pendingSlots; ++i){
     pending_events_[i].resize(nthread_);
   }
@@ -122,7 +124,7 @@ EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
   SST::Params os_params = params.find_prefix_params("node").find_prefix_params("os");
   sw::StackAlloc::init(os_params);
 
-  des_context_ = sw::ThreadContext::factory::get_optional_param(
+  des_context_ = sw::ThreadContext::factory::getOptionalParam(
                   "context", sw::ThreadContext::defaultThreading(), os_params);
 
   sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
@@ -198,6 +200,43 @@ EventManager::serializeSchedule(char* buf)
   size_t size = ser.unpacker().size();
   align64(size);
   return size;
+}
+
+void
+EventManager::registerStatisticCore(StatisticBase* base)
+{
+  StatGroup& grp = stat_groups_[active_stat_group_.back()];
+  grp.stats.push_back(base);
+}
+
+void
+EventManager::finalizeStatsInit()
+{
+  for (auto& pair : stat_groups_){
+    StatGroup& grp = pair.second;
+    grp.output->startRegisterGroup(pair.first);
+    for (auto* stat : grp.stats){
+      grp.output->startRegisterFields(stat);
+      stat->registerOutputFields(grp.output);
+      grp.output->stopRegisterFields();
+    }
+    grp.output->stopRegisterGroup();
+  }
+}
+
+void
+EventManager::finalizeStatsOutput()
+{
+  for (auto& pair : stat_groups_){
+    StatGroup& grp = pair.second;
+    grp.output->startOutputGroup(pair.first);
+    for (auto* stat : grp.stats){
+      grp.output->startOutputEntries(stat);
+      stat->outputStatisticData(grp.output, true/*only ever end of sim*/);
+      grp.output->stopOutputEntries();
+    }
+    grp.output->stopOutputGroup();
+  }
 }
 
 void
@@ -278,11 +317,16 @@ void
 EventManager::run()
 {
   interconn_->setup();
+
+  finalizeStatsInit();
+
   registerPending();
 
   runEvents(no_events_left_time);
 
   final_time_ = now_;
+
+  finalizeStatsOutput();
 }
 
 void

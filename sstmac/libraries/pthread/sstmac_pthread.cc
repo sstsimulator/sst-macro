@@ -504,7 +504,7 @@ extern "C" int
 SSTMAC_pthread_cond_broadcast(sstmac_pthread_cond_t * cond)
 {
   pthread_debug("pthread_cond_broadcast");  
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
                    "pthread::pthread_cond_broadcast not implemented");
 }
 
@@ -638,7 +638,7 @@ extern "C" int
 SSTMAC_pthread_attr_getstacksize(sstmac_pthread_attr_t *attr,
                                  size_t * stacksize)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
                    "pthread::pthread_attr_getstacksize not implemented");
 }
 
@@ -646,7 +646,7 @@ extern "C" int
 SSTMAC_pthread_attr_setstacksize(sstmac_pthread_attr_t *attr, size_t stacksize)
 {
   return EPERM;
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
                    "pthread::pthread_attr_setstacksize not implemented");
 }
 

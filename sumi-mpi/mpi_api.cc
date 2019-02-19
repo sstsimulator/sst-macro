@@ -102,7 +102,7 @@ sprockit::StaticNamespaceRegister queue_ns_reg("queue");
 
 namespace sumi {
 
-static sprockit::need_deleteStatics<MpiApi> del_statics;
+static sprockit::NeedDeletestatics<MpiApi> del_statics;
 sstmac::sw::FTQTag MpiApi::mpi_tag("MPI");
 
 MpiApi* sstmac_mpi()
@@ -204,7 +204,7 @@ int
 MpiApi::abort(MPI_Comm comm, int errcode)
 {
 
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
     "MPI rank %d exited with code %d", rank_, errcode);
   return MPI_SUCCESS;
 }
@@ -454,7 +454,7 @@ MpiApi::getComm(MPI_Comm comm)
       cerrn << "Could not find MPI_COMM_WORLD! "
             << "Are you sure you called MPI_Init" << std::endl;
     }
-    spkt_throw_printf(sprockit::spkt_error,
+    spkt_throw_printf(sprockit::SpktError,
         "could not find mpi communicator %d for rank %d",
         comm, int(rank_));
   }
@@ -494,7 +494,7 @@ MpiApi::getRequest(MPI_Request req)
 
   auto it = req_map_.find(req);
   if (it == req_map_.end()) {
-    spkt_throw_printf(sprockit::spkt_error,
+    spkt_throw_printf(sprockit::SpktError,
         "could not find mpi request %d for rank %d",
         req, int(rank_));
   }
@@ -518,7 +518,7 @@ MpiApi::eraseCommPtr(MPI_Comm comm)
   if (comm != MPI_COMM_WORLD && comm != MPI_COMM_SELF && comm != MPI_COMM_NULL) {
     comm_ptr_map::iterator it = comm_map_.find(comm);
     if (it == comm_map_.end()) {
-      spkt_throw_printf(sprockit::spkt_error,
+      spkt_throw_printf(sprockit::SpktError,
         "could not find mpi communicator %d for rank %d",
         comm, int(rank_));
     }
@@ -548,7 +548,7 @@ MpiApi::eraseGroupPtr(MPI_Group grp)
       && grp != MPI_GROUP_SELF) {
     group_ptr_map::iterator it = grp_map_.find(grp);
     if (it == grp_map_.end()) {
-      spkt_throw_printf(sprockit::spkt_error,
+      spkt_throw_printf(sprockit::SpktError,
         "could not find mpi group %d for rank %d",
         grp, int(rank_));
     }
@@ -568,7 +568,7 @@ MpiApi::eraseRequestPtr(MPI_Request req)
 {
   req_ptr_map::iterator it = req_map_.find(req);
   if (it == req_map_.end()) {
-    spkt_throw_printf(sprockit::spkt_error,
+    spkt_throw_printf(sprockit::SpktError,
         "could not find mpi request %d for rank %d",
         req, int(rank_));
   }

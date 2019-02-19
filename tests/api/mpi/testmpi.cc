@@ -1550,7 +1550,7 @@ int USER_MAIN(int argc, char *argv[])
     break; */
 
   default:
-    spkt_throw_printf(sprockit::spkt_error, "testmpi: unknown test mode %d", testmode_);
+    spkt_throw_printf(sprockit::SpktError, "testmpi: unknown test mode %d", testmode_);
     return 1;
   }
 

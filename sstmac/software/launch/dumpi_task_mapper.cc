@@ -63,7 +63,7 @@ NodeId
 DumpiTaskMapper::nodeIdFromHostname(const std::string& hostname)
 {
   if (!topology_) {
-    spkt_throw_printf(sprockit::value_error, "dumpi_task_mapper: null topology");
+    spkt_throw_printf(sprockit::ValueError, "dumpi_task_mapper: null topology");
   }
   return topology_->nodeNameToId(hostname);
 }

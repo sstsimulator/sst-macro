@@ -289,7 +289,7 @@ From here it should be apparent that we defined a new application with name `rob
 Inside the main function, we create an object of type `actor`.
 
 ````
-actor* the_guy = actor_factory::get_param("actor_name", getParams());
+actor* the_guy = actor_factory::getParam("actor_name", getParams());
 the_guy->act();
 return 0;
 ````
@@ -1755,7 +1755,7 @@ interconnect::interconnect(SST::Params& params, EventManager* mgr,
 	partition* part, parallel_runtime* rt)
 {
   sprockit::sim_parameters* top_params = params.find_prefix_params("topology");
-  topology_ = topology_factory::get_param("name", top_params);
+  topology_ = topology_factory::getParam("name", top_params);
   num_nodes_ = topology_->numNodes();
   num_switches_ = topology_->numSwitches();
 

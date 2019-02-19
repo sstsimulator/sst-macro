@@ -150,7 +150,7 @@ DenseRankMap::treeFindRank(
     } else if (sparse_rank < failed_array[0]){
       return sparse_rank - offset;
     } else {
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "dense_rank_map::trying to get dense rank for failed process %d",
         sparse_rank);
     }
@@ -165,7 +165,7 @@ DenseRankMap::treeFindRank(
         num_failed - middle_index, 
         failed_array + middle_index);
   } else {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "dense_rank_map::trying to get dense rank for failed process %d",
       sparse_rank);
   }

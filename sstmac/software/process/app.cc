@@ -64,14 +64,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/hardware/node/node.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/main/sstmac.h>
 
-static sprockit::need_deleteStatics<sstmac::sw::UserAppCxxFullMain> del_app_statics;
+static sprockit::NeedDeletestatics<sstmac::sw::UserAppCxxFullMain> del_app_statics;
 
 RegisterKeywords(
  { "host_compute_timer", "whether to use the time elapsed on the host machine in compute modeling" },
@@ -251,7 +250,7 @@ App::App(SST::Params& params, SoftwareId sid,
     auto iter = apis_.find(name);
     if (iter == apis_.end()){
       SST::Params api_params = params.find_prefix_params(name);
-      API* api = API::factory::get_value(name, api_params, this, os->node());
+      API* api = API::factory::getValue(name, api_params, this, os->node());
       apis_[name] = api;
     }
     apis_[alias] = apis_[name];
@@ -463,7 +462,7 @@ App::getSubthread(uint32_t id)
 {
   auto it = subthreads_.find(id);
   if (it==subthreads_.end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "unknown thread id %u",
       id);
   }
@@ -567,7 +566,7 @@ UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
   std::string name = params.find<std::string>("name");
   std::map<std::string, main_fxn>::iterator it = main_fxns_->find(name);
   if (it == main_fxns_->end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "no user app with the name %s registered",
                      name.c_str());
   }
@@ -580,7 +579,7 @@ UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
   (*main_fxns_)[name] = fxn;
-  App::factory::register_alias("UserAppCxxFullMain", name);
+  App::factory::registerAlias("UserAppCxxFullMain", name);
 }
 
 void
@@ -633,7 +632,7 @@ UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
   std::string name = params.find<std::string>("name");
   std::map<std::string, empty_main_fxn>::iterator it = empty_main_fxns_->find(name);
   if (it == empty_main_fxns_->end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "no user app with the name %s registered",
                      name.c_str());
   }
@@ -647,7 +646,7 @@ UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
 
   (*empty_main_fxns_)[name] = fxn;
-  App::factory::register_alias("UserAppCxxEmptyMain", name);
+  App::factory::registerAlias("UserAppCxxEmptyMain", name);
 }
 
 int

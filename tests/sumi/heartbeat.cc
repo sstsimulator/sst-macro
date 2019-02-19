@@ -79,7 +79,7 @@ main(int argc, char **argv)
   while (nfailed < 6){
     auto dmsg = std::dynamic_pointer_cast<CollectiveDoneMessage>(comm_poll());
     if (dmsg->type() != Collective::heartbeat){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "got non-heartbeat message %s of type %s",
         dmsg->toString().c_str(),
         sumi::Collective::tostr(dmsg->type()));
@@ -93,7 +93,7 @@ main(int argc, char **argv)
     int idx = 0;
     int* correct_failures = failures[failure_num];
     if (nfailures[failure_num] != (int)(failed.size())){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "Got %d failures, but supposed to be %d failures",
         failed.size(), nfailures[failure_num]);
     }
@@ -102,7 +102,7 @@ main(int argc, char **argv)
       int failed_rank = *it;
       if (correct_failures[idx] != failed_rank){
         failed.end_iteration();
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
             "Got failure %d, but failure %d was supposed to be rank %d",
             failed_rank, idx, correct_failures[idx]);
       }

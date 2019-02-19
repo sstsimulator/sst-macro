@@ -46,6 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 #include <sstream>
+#include <fstream>
 
 RegisterKeywords(
 { "launch_dumpi_mapname", "DEPRECATED: a file containing a line-by-line list of hostnames and their coordintes" },
@@ -61,13 +62,13 @@ CartesianTopology::CartesianTopology(SST::Params& params) :
 {
   params.find_array("geometry", dimensions_);
   if (dimensions_.size() == 0) {
-    spkt_throw_printf(sprockit::value_error, "empty topology vector for cartesian topology");
+    spkt_throw_printf(sprockit::ValueError, "empty topology vector for cartesian topology");
   }
 
   if (params.contains("redundant")) {
     params.find_array("redundant", red_);
     if (red_.size() != dimensions_.size()) {
-      spkt_throw_printf(sprockit::input_error,
+      spkt_throw_printf(sprockit::InputError,
                        "topology::init: wrong number of dimensions in topology_redundant, "
                        "should be %d, got %d\n",
                        dimensions_.size(),

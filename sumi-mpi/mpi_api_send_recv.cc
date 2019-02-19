@@ -145,7 +145,7 @@ MpiApi::doStart(MPI_Request req)
   MpiRequest* reqPtr = getRequest(req);
   PersistentOp* op = reqPtr->persistentData();
   if (op == nullptr){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                       "Starting MPI_Request that is not persistent");
   }
 

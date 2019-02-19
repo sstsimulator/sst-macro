@@ -77,7 +77,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sstmac/software/api/api.h>
@@ -147,11 +146,11 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
 {
   FactoryRegister("null", OperatingSystem::RegressionModel, NullRegression)
 
-  using parent = OperatingSystem::ThreadSafeTimerModel<double>;
+  using Parent = OperatingSystem::ThreadSafeTimerModel<double>;
 
-  NullRegression(SST::Params& params,
-                  const std::string& key)
-    : parent(params, key), computed_(false) {}
+  NullRegression(SST::Params& params, SST::BaseComponent* comp,
+                 const std::string& key)
+    : Parent(params, comp, key, ""), computed_(false) {}
 
   double compute(int n_params, const double params[],
                  OperatingSystem::ImplicitState* state) override {
@@ -162,13 +161,21 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
     return mean_;
   }
 
+  void outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag) override {
+    sprockit::abort("unimplemented: NullRegression::outputStatisticData");
+  }
+
+  void registerOutputFields(StatisticOutput *statOutput) override {
+    sprockit::abort("unimplemented: NullRegression::registerOutputFields");
+  }
+
   int startCollection() override {
-    return parent::start();
+    return Parent::start();
   }
 
   void finishCollection(int thr_tag, int n_params, const double params[],
                          OperatingSystem::ImplicitState* state) override {
-    parent::finish(thr_tag);
+    Parent::finish(thr_tag);
   }
 
   /**
@@ -200,9 +207,9 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
 {
   FactoryRegister("linear", OperatingSystem::RegressionModel, LinearRegression)
   using parent = OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>;
-  LinearRegression(SST::Params& params,
-                    const std::string& key)
-    : parent(params, key), computed_(false) {}
+  LinearRegression(SST::Params& params, SST::BaseComponent* comp,
+                  const std::string& key)
+    : parent(params, comp, key, ""), computed_(false) {}
 
   double compute(int n_params, const double params[],
                  OperatingSystem::ImplicitState* state) override {
@@ -216,6 +223,14 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
     double val = m_*params[0] + b_;
     //std::cout << "Computed " << key() << "->f(" << params[0] << ") = " << val << std::endl;
     return val;
+  }
+
+  void outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag) override {
+    sprockit::abort("unimplemented: LinearRegression::outputStatisticData");
+  }
+
+  void registerOutputFields(StatisticOutput *statOutput) override {
+    sprockit::abort("unimplemented: LinearRegression::registerOutputFields");
   }
 
   int startCollection() override {
@@ -272,7 +287,7 @@ struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair
   bool computed_;
 };
 
-static sprockit::need_deleteStatics<OperatingSystem> del_statics;
+static sprockit::NeedDeletestatics<OperatingSystem> del_statics;
 
 #if SSTMAC_USE_MULTITHREAD
 std::vector<OperatingSystem*> OperatingSystem::active_os_;
@@ -309,7 +324,7 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 {
   my_addr_ = node_ ? node_->addr() : 0;
 
-  compute_sched_ = ComputeScheduler::factory::get_optional_param(
+  compute_sched_ = ComputeScheduler::factory::getOptionalParam(
                      "compute_scheduler", "simple", params, this,
                       node_ ? node_->proc()->ncores() : 1,
                       node_ ? node_->nsocket() : 1);
@@ -347,7 +362,7 @@ OperatingSystem::rebuildMemoizations()
     if (iter == memoize_models_.end()){
       SST::Params memo_params = params_.find_prefix_params(pair.first);
       memo_params.insert("fileroot", pair.first);
-      auto* model = RegressionModel::factory::get_value(pair.second, memo_params, pair.first);
+      auto* model = RegressionModel::factory::getValue(pair.second, memo_params, node(), pair.first);
       memoize_models_[pair.first] = model;
       //EventManager::global->registerStat(model, nullptr);
     }
@@ -435,7 +450,7 @@ OperatingSystem::initThreading(SST::Params& params)
   lock.unlock();
 #endif
 
-  des_context_ = ThreadContext::factory::get_optional_param(
+  des_context_ = ThreadContext::factory::getOptionalParam(
         "context", ThreadContext::defaultThreading(), params);
 
   des_context_->initContext();
@@ -526,7 +541,7 @@ OperatingSystem::execute(ami::COMP_FUNC func, Event *data, int nthr)
       break;
     }
     default:
-      spkt_throw_printf(sprockit::spkt_error,
+      spkt_throw_printf(sprockit::SpktError,
             "simplenode: cannot process kernel %s",
             ami::tostr(func));
   }
@@ -608,7 +623,7 @@ OperatingSystem::getImplicitState()
 {
   if (!implicit_memo_state_){
       implicit_memo_state_ = sstmac::sw::OperatingSystem::ImplicitState::factory
-                    ::get_optional_param("ImplicitState", "null", params_);
+                    ::getOptionalParam("ImplicitState", "null", params_);
   }
   return implicit_memo_state_;
 }
@@ -1010,7 +1025,7 @@ OperatingSystem::handleRequest(Request* req)
   //this better be an incoming event to a library, probably from off node
   Flow* libmsg = test_cast(Flow, req);
   if (!libmsg) {
-    spkt_throw_printf(sprockit::illformed_error,
+    spkt_throw_printf(sprockit::IllformedError,
       "OperatingSystem::handle_event: got event %s instead of library event",
       sprockit::toString(req).c_str());
   }

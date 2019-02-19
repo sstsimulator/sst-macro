@@ -50,8 +50,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/common/stats/stat_spyplot.h>
 #include <sstmac/common/stats/stat_histogram.h>
-#include <sstmac/common/stats/stat_local_int.h>
-#include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/hardware/memory/memory_model.h>
@@ -76,7 +74,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-static sprockit::need_deleteStatics<NIC> del_statics;
+static sprockit::NeedDeletestatics<NIC> del_statics;
 
 void
 NicEvent::serialize_order(serializer &ser)
@@ -89,8 +87,6 @@ NIC::NIC(SST::Params& params, Node* parent) :
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
   hist_msg_size_(nullptr),
-  local_bytes_sent_(nullptr),
-  global_bytes_sent_(nullptr),
   parent_(parent),
   my_addr_(parent->addr()),
   logp_link_(nullptr),
@@ -217,7 +213,7 @@ NIC::recvMessage(NetworkMessage* netmsg)
       break;
     }
     default: {
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "nic::handle: invalid message type %s: %s",
         NetworkMessage::tostr(netmsg->type()), netmsg->toString().c_str());
     }
@@ -297,15 +293,7 @@ NIC::recordMessage(NetworkMessage* netmsg)
   }
 
   if (hist_msg_size_) {
-    hist_msg_size_->addData(netmsg->byteLength());
-  }
-
-  if (local_bytes_sent_) {
-    local_bytes_sent_->addData(netmsg->byteLength());
-  }
-
-  if (global_bytes_sent_) {
-    global_bytes_sent_->addData(netmsg->byteLength());
+    hist_msg_size_->addData(netmsg->byteLength(), 1);
   }
 }
 

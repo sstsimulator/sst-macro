@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstream>
 #include <cstring>
 
-sprockit::need_deleteStatics<sumi::MpiType> delete_static_types;
+sprockit::NeedDeletestatics<sumi::MpiType> delete_static_types;
 
 namespace sumi {
 
@@ -172,7 +172,7 @@ MpiType::op(MPI_Op theOp) const
 {
   auto it = fxns_.find(theOp);
   if (it == fxns_.end()){
-    spkt_throw_printf(sprockit::value_error, "type %s has no operator %d",
+    spkt_throw_printf(sprockit::ValueError, "type %s has no operator %d",
            toString().c_str(), theOp);
   }
   return it->second;
@@ -183,7 +183,7 @@ MpiType::init_vector(const std::string &labelit, MpiType* base,
                    int count, int block, MPI_Aint byte_stride)
 {
   if (base->id == MPI_Datatype(-1)){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
         "mpi_type::init_vector: unitialized base type %s",
         base->label.c_str());
   }
@@ -293,7 +293,7 @@ MpiType::bytes_to_elements(size_t bytes) const
 
     return ret;
   }
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
                    "mpitype::bytes_to_elements: invalid type %d",
                    type_);
   return 0;

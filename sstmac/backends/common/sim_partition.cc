@@ -86,7 +86,7 @@ SerialPartition::SerialPartition(SST::Params& params, ParallelRuntime* rt)
  : Partition(params, rt)
 {
   SST::Params top_params = params.find_prefix_params("topology");
-  hw::Topology* fake_top = hw::Topology::factory::get_param("name", top_params);
+  hw::Topology* fake_top = hw::Topology::factory::getParam("name", top_params);
   int nswitches = fake_top->numSwitches();
   num_switches_total_ = nswitches;
   switch_to_lpid_ = new int[nswitches];
@@ -109,7 +109,7 @@ TopologyPartition::TopologyPartition(SST::Params& params, ParallelRuntime* rt)
 {
   //this will need to be fixed later...
   SST::Params top_params = params.find_prefix_params("topology");
-  fake_top_ = hw::Topology::factory::get_param("name", top_params);
+  fake_top_ = hw::Topology::factory::getParam("name", top_params);
 
   noccupied_ = params.find<int>("num_occupied");
 
@@ -128,7 +128,7 @@ BlockPartition::BlockPartition(SST::Params& params, ParallelRuntime* rt)
   : Partition(params, rt)
 {
   SST::Params top_params = params.find_prefix_params("topology");
-  fake_top_ = hw::Topology::factory::get_param("name", top_params);
+  fake_top_ = hw::Topology::factory::getParam("name", top_params);
   num_switches_total_ = fake_top_->numSwitches();
 
   num_switches_total_ = fake_top_->numSwitches();
@@ -173,10 +173,10 @@ OccupiedBlockPartition::OccupiedBlockPartition(SST::Params& params,
   unoccupied_switches_ = num_switches_total_ - occupied_switches_;
 
   if( occupied_switches_ < nproc_ )
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
       "number of logical processes exceeds number of full switches");
   if( occupied_switches_ > num_switches_total_ )
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
       "occupied_switches=%d exceeds number of switches=%d",
       occupied_switches_, num_switches_total_ );
 }

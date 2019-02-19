@@ -89,7 +89,7 @@ MpiCommCart::shift(int dir, int dis)
 {
 
   if (dir >= (int) dims_.size()) {
-    spkt_throw_printf(sprockit::spkt_error,
+    spkt_throw_printf(sprockit::SpktError,
                      "mpicomm_cart::shift: dir %d is too big for dims %d",
                      dir, dims_.size());
   }

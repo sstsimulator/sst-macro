@@ -90,7 +90,7 @@ Dragonfly::Dragonfly(SST::Params& params) :
     h_ = params.find<int>("h");
   }
 
-  group_wiring_ = InterGroupWiring::factory::get_optional_param("inter_group", "circulant", params,
+  group_wiring_ = InterGroupWiring::factory::getOptionalParam("inter_group", "circulant", params,
     a_, g_, h_);
 }
 

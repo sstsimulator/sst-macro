@@ -93,7 +93,7 @@ SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
 {
   SST::Params rtr_params = params.find_prefix_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
-  router_ = Router::factory::get_param("name", rtr_params, top_, this);
+  router_ = Router::factory::getParam("name", rtr_params, top_, this);
 
   congestion_ = params.find<bool>("congestion", true);
   vtk_flicker_ = params.find<bool>("vtk_flicker", true);
@@ -221,9 +221,8 @@ SculpinSwitch::send(Port& p, SculpinPacket* pkt, GlobalTimestamp now)
 
   Timestamp delay = p.next_free - pkt->arrival();
 
-  if (delay_hist_){
-    delay_hist_->addData(delay.usec());
-  }
+  if (delay_hist_) delay_hist_->addData(delay.usec(), pkt->numBytes());
+  //if (xmit_delay_) xmit_delay_->addData(p.id, delay.usec());
 
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE

@@ -50,7 +50,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/software/process/graphviz.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <sprockit/basic_string_tokenizer.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/software/process/operating_system.h>
@@ -77,9 +76,9 @@ namespace sw {
 int graph_viz_registration::id_count = 0;
 std::map<int,const char*>* graph_viz_registration::names = nullptr;
 
-static sprockit::need_deleteStatics<GraphViz> del_statics;
+static sprockit::NeedDeletestatics<GraphViz> del_statics;
 
-graph_viz_increment_stack::graph_viz_increment_stack(int id)
+GraphVizIncrementStack::GraphVizIncrementStack(int id)
 {
   Thread* thr = OperatingSystem::currentThread();
   if (thr) {
@@ -89,7 +88,7 @@ graph_viz_increment_stack::graph_viz_increment_stack(int id)
   }
 }
 
-graph_viz_increment_stack::~graph_viz_increment_stack()
+GraphVizIncrementStack::~GraphVizIncrementStack()
 {
   Thread* thr = OperatingSystem::currentThread();
   if (thr) {
@@ -98,7 +97,7 @@ graph_viz_increment_stack::~graph_viz_increment_stack()
 }
 
 bool
-GraphViz::trace::include() const
+GraphViz::Trace::include() const
 {
   int ncalls = graph_viz_registration::numIds();
   for (int id=0; id < ncalls; ++id){
@@ -109,8 +108,20 @@ GraphViz::trace::include() const
   return self_;
 }
 
+void
+GraphViz::registerOutputFields(StatisticOutput *statOutput)
+{
+  sprockit::abort("unimplemented: GraphViz::registerOutputFields");
+}
+
+void
+GraphViz::outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag)
+{
+  sprockit::abort("unimplemented: GraphViz::outputStatisticData");
+}
+
 std::string
-GraphViz::trace::summary(const char* fxn) const
+GraphViz::Trace::summary(const char* fxn) const
 {
   std::stringstream sstr;
   int ncalls = graph_viz_registration::numIds();
@@ -136,8 +147,9 @@ graph_viz_registration::graph_viz_registration(const char* name, int id)
   (*names)[id] = name;
 }
 
-GraphViz::GraphViz(SST::Params& params) :
-  Parent(params)
+GraphViz::GraphViz(SST::Params &params, SST::BaseComponent *comp,
+                   const std::string &name, const std::string &subName)
+  : Parent(comp, name, subName, params)
 {
   int nfxns = graph_viz_registration::numIds();
   auto trace_size = 1 + 2*nfxns;
@@ -145,9 +157,9 @@ GraphViz::GraphViz(SST::Params& params) :
   data_block_ = new uint64_t[total_size];
   ::memset(data_block_, 0, total_size*sizeof(uint64_t));
   uint64_t* ptr = data_block_;
-  traces_ = new trace*[nfxns];
+  traces_ = new Trace*[nfxns];
   for (int i=0; i < nfxns; ++i, ptr += trace_size){
-    trace* tr = new (ptr) trace;
+    Trace* tr = new (ptr) Trace;
     traces_[i] = tr;
   }
 }
@@ -160,8 +172,8 @@ GraphViz::addCall(
   int callFxnId
 )
 {
-  trace* tr = traces_[fxnId];
-  tr->add_call(callFxnId, ncalls, count);
+  Trace* tr = traces_[fxnId];
+  tr->addCall(callFxnId, ncalls, count);
 }
 
 void
@@ -176,7 +188,7 @@ GraphViz::~GraphViz()
 void
 GraphViz::addSelf(int fxnId, uint64_t count)
 {
-  traces_[fxnId]->add_self(count);
+  traces_[fxnId]->addSelf(count);
 }
 
 void

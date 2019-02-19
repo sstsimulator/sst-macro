@@ -378,7 +378,7 @@ class DagCollectiveActor :
   }
 
  private:
-  template <class T, class U> using alloc = sprockit::thread_safe_allocator<std::pair<const T,U>>;
+  template <class T, class U> using alloc = sprockit::threadSafeAllocator<std::pair<const T,U>>;
   typedef std::map<uint32_t, Action*, std::less<uint32_t>,
                    alloc<uint32_t,Action*>> active_map;
   typedef std::multimap<uint32_t, Action*, std::less<uint32_t>,

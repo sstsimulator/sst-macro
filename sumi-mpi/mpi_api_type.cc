@@ -298,7 +298,7 @@ int
 MpiApi::opCreate(MPI_User_function *user_fn, int commute, MPI_Op *op)
 {
   if (!commute){
-    spkt_throw_printf(sprockit::unimplemented_error,
+    spkt_throw_printf(sprockit::UnimplementedError,
                       "mpi_api::op_create: non-commutative operations");
   }
   *op = next_op_id_++;
@@ -475,7 +475,7 @@ void
 MpiApi::commitBuiltinType(MpiType* type, MPI_Datatype id)
 {
   if (known_types_.find(id) != known_types_.end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "mpi_api::precommit_type: %d already exists", id);
   }
   type->id = id;
@@ -637,7 +637,7 @@ MpiApi::typeFromId(MPI_Datatype id)
 {
   type_map::iterator it = known_types_.find(id);
   if (it == known_types_.end()){
-    spkt_throw_printf(sprockit::invalid_key_error,
+    spkt_throw_printf(sprockit::InvalidKeyError,
         "mpi_api: unknown type id %d",
         int(id));
   }

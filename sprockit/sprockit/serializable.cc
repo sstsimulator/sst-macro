@@ -44,14 +44,13 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/serializable.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <sprockit/errors.h>
 #include <cstring>
 #include <iostream>
 
 namespace sprockit {
 
-static need_deleteStatics<serializable_factory> del_statics;
+static NeedDeletestatics<serializable_factory> del_statics;
 serializable_factory::builder_map* serializable_factory::builders_ = nullptr;
 
 uint32_t
@@ -90,7 +89,9 @@ serializable_factory::add_builder(serializable_builder* builder, const char* nam
 void
 serializable_factory::deleteStatics()
 {
-  delete_vals(*builders_);
+  for (auto& pair : *builders_){
+    if (pair.second) delete pair.second;
+  }
   delete builders_;
 }
 

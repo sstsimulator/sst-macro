@@ -79,7 +79,7 @@ CartAllocation::CartAllocation(SST::Params& params) :
   if (params.contains("cart_offsets")){
     params.find_array("cart_offsets", offsets_);
     if (sizes_.size() != offsets_.size()) {
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
                      "cartesian allocator: offsets and sizes have different dimensions");
     }
   } else {
@@ -97,7 +97,7 @@ CartAllocation::insert(
   NodeId nid = regtop->node_addr(coords);
   debug_printf(sprockit::dbg::allocation,
       "adding node %d : %s to allocation",
-      int(nid), stl_string(coords).c_str());
+      int(nid), stlString(coords).c_str());
   allocation.insert(nid);
 }
 
@@ -135,7 +135,7 @@ CartAllocation::allocate(
   //add extra dimension for concentration
   if (regtop->concentration() > 1) ++ndims;
   if (sizes_.size() != ndims){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
        "topology ndims does not match cart_allocation: %d != %d",
        sizes_.size(), ndims);
   }

@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology.h>
 //#include <sstmac/hardware/topology/multipath_topology.h>
 #include <sprockit/util.h>
-#include <sprockit/delete.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 #include <sstmac/hardware/topology/fat_tree.h>

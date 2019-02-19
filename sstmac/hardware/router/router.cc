@@ -45,12 +45,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sprockit/util.h>
-#include <sprockit/delete.h>
-#include <sprockit/sim_parameters.h>
-#include <sprockit/keyword_registration.h>
 #include <sstmac/hardware/topology/fat_tree.h>
 #include <sstmac/hardware/topology/fully_connected.h>
+#include <sprockit/util.h>
+#include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+
 
 RegisterDebugSlot(router);
 RegisterDebugSlot(routing);

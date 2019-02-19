@@ -82,7 +82,7 @@ class xpress_ring :
   }
 
   void configureIndividualPortParams(SwitchId src,
-              sprockit::sim_parameters* switch_params) const override;
+              sprockit::SimParameters* switch_params) const override;
 
   void connectedOutports(SwitchId src,
         std::vector<Topology::connection>& conns) const override;

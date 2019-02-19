@@ -54,6 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic_fwd.h>
 #include <sstmac/hardware/switch/network_switch_fwd.h>
 
+#include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 
 #include <sprockit/debug.h>

@@ -70,7 +70,7 @@ ThreadInfo::registerUserSpaceVirtualThread(int phys_thread_id, void *stack,
 {
   size_t stack_mod = ((size_t)stack) % sstmac_global_stacksize;
   if (stack_mod != 0){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
         "user space thread stack is not aligned on %llu bytes",
         sstmac_global_stacksize);
   }

@@ -68,7 +68,7 @@ class ThreadingPth : public ThreadContext
 
   void initContext() override {
     if (pth_uctx_create(&context_) != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
+      spkt_throw_printf(sprockit::OSError,
           "threading_pth::init_context: %s",
           ::strerror(errno));
     }
@@ -76,7 +76,7 @@ class ThreadingPth : public ThreadContext
 
   void destroyContext() override {
     if (pth_uctx_destroy(context_) != TRUE) {
-        spkt_throw_printf(sprockit::os_error,
+        spkt_throw_printf(sprockit::OSError,
           "threading_pth::destroy_context: %s",
           ::strerror(errno));
     }
@@ -90,7 +90,7 @@ class ThreadingPth : public ThreadContext
     initContext();
     int retval = pth_uctx_make(context_, (char*) stack, stacksize, NULL, func, args, NULL);
     if (retval != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
+      spkt_throw_printf(sprockit::OSError,
           "threading_pth::start_context: %s",
           ::strerror(errno));
     }
@@ -100,7 +100,7 @@ class ThreadingPth : public ThreadContext
   void resumeContext(ThreadContext* from) override {
     ThreadingPth* frompth = static_cast<ThreadingPth*>(from);
     if (pth_uctx_switch(frompth->context_, context_) != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
+      spkt_throw_printf(sprockit::OSError,
         "threading_pth::swap_context: %s",
         strerror(errno));
     }
@@ -109,7 +109,7 @@ class ThreadingPth : public ThreadContext
   void pauseContext(ThreadContext *to) override {
     ThreadingPth* topth = static_cast<ThreadingPth*>(to);
     if (pth_uctx_switch(context_, topth->context_) != TRUE) {
-      spkt_throw_printf(sprockit::os_error,
+      spkt_throw_printf(sprockit::OSError,
         "threading_pth::swap_context: %s",
         strerror(errno));
     }

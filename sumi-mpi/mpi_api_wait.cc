@@ -234,7 +234,7 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
   }
 
   if(!call_completed){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                     "MPI_Waitany finished, but had no completed requests");
   }
 

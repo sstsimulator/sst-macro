@@ -72,7 +72,7 @@ test_tiny_allreduce()
 
   Message* msg = comm_poll(); //wait on allreduce
   if (msg->classType() != Message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "allreduce test: expected collective message, but got %s",
       Message::tostr(msg->classType()));
   }
@@ -104,7 +104,7 @@ test_allreduce_payload()
 
   Message* msg = comm_poll(); //wait on allreduce
   if (msg->classType() != Message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "allreduce test: expected collective message, but got %s",
       Message::tostr(msg->classType()));
   }
@@ -134,7 +134,7 @@ test_allgather_payload(int nelems)
 
   Message* msg = comm_poll(); //wait on allgather
   if (msg->classType() != Message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "allreduce test: expected collective message, but got %s",
       Message::tostr(msg->classType()));
   }

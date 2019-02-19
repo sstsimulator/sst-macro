@@ -265,7 +265,7 @@ sys_is_logp(SystemPy_t *self, PyObject *null)
 static int
 sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
 {
-  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
+  sprockit::SimParameters::ptr params = std::make_shared<sprockit::SimParameters>();
   PyObject* params_dict = NULL;
   PyArg_ParseTuple(args, "|O", &params_dict);
   if (params_dict != NULL) {
@@ -281,12 +281,12 @@ sys_init(SystemPy_t* self, PyObject* args, PyObject* kwargs)
     sstmac::py_extract_params(kwargs, params);
   }
 
-  sprockit::sim_parameters::ptr sw_params = params->get_namespace("switch");
-  std::string model_name = sw_params->get_param("name");
+  sprockit::SimParameters::ptr sw_params = params->getNamespace("switch");
+  std::string model_name = sw_params->getParam("name");
   std::transform(model_name.begin(), model_name.end(), model_name.begin(), ::tolower);
   self->logp = model_name == "logp";
 
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
+  sprockit::SimParameters::ptr top_params = params->getNamespace("topology");
   SST::Params sst_params;
   for (auto it=top_params->begin(); it != top_params->end(); ++it){
     sst_params.insert("topology." + it->first, it->second.value);

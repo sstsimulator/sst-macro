@@ -54,7 +54,7 @@ namespace hw {
 static bool checked_prefix_fxn = false;
 
 class timestamp_prefix_fxn :
-  public sprockit::debug_prefix_fxn
+  public sprockit::DebugPrefixFxn
 {
  public:
   timestamp_prefix_fxn(SST::Params& params, EventScheduler* mgr) :
@@ -90,9 +90,9 @@ ConnectableComponent::ConnectableComponent(SST::Params& params, uint32_t cid)
   : Component(params, cid)
 {
   if (!checked_prefix_fxn){
-    if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
-      sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(params, this);
-      sprockit::debug::prefix_fxn = fxn;
+    if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){
+      sprockit::DebugPrefixFxn* fxn = new timestamp_prefix_fxn(params, this);
+      sprockit::Debug::prefix_fxn = fxn;
     }
     checked_prefix_fxn = true;
   }

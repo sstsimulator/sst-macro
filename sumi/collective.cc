@@ -90,7 +90,7 @@ Collective::tostr(type_t ty)
     enumcase(barrier);
     enumcase(bcast);
   }
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
       "collective::tostr: unknown type %d", ty);
 }
 

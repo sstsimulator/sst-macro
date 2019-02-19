@@ -283,7 +283,7 @@ int USER_MAIN(int argc, char** argv)
   //because of weirdness with page boundaries,
   //only allow certain mixing numbers
   if (window_bytes % mixing != 0){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "invalid mixing fraction %d - mixing number must divide %d",
       mixing, window_bytes);
   }

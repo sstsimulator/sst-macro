@@ -11,7 +11,7 @@ mandy_patinkin::mandy_patinkin(SST::Params& params)
   if (sword_hand_ == "left") {
     sprockit::abort("I am not left handed!");
   } else if (sword_hand_ != "right") {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "Invalid hand specified: %s",
                      sword_hand_.c_str());
   }

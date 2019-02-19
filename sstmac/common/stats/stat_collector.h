@@ -47,162 +47,186 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <iostream>
 #include <fstream>
+#include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_scheduler_fwd.h>
+#include <sstmac/common/stats/stat_collector_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/printable.h>
 
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/statapi/statbase.h>
+#include <sst/core/statapi/statoutput.h>
+#define StatRegister(name,parent,cls,desc) \
+  SST_ELI_REGISTER_STATISTIC(cls,parent::Datum,"macro",name,SST_ELI_ELEMENT_VERSION(1,0,0),desc,"SST::Statistic<T>") \
+  cls(SST::BaseComponent* comp, const std::string& statName, \
+      const std::string& statSubName, SST::Params& params) \
+    : cls(params, comp, statName, statSubName) {}
+#else
+#define StatRegister(name,parent,cls,desc) \
+  FactoryRegister(name,parent,cls,desc)
+#endif
+
+#if !SSTMAC_INTEGRATED_SST_CORE
 namespace sstmac {
 
 class StatisticBase {
+ public:
+  virtual void registerOutputFields(StatisticOutput* statOutput) = 0;
 
+  virtual void outputStatisticData(StatisticOutput* output, bool endOfSimFlag) = 0;
+
+  std::string name() const {
+    return name_;
+  }
+
+ protected:
+  StatisticBase(EventScheduler* parent,
+                const std::string& name, const std::string& subName,
+                SST::Params& params) :
+    name_(name)
+  {
+  }
+
+ private:
+  std::string name_;
 };
 
-#if 0
-class StatisticOutput : public Module
+class StatisticOutput
 {
  public:
-  StatisticOutput(Params& outputParameters);
+  StatisticOutput(SST::Params& params);
   ~StatisticOutput();
 
  public:
+  using fieldHandle_t = int;
+
   template<typename T> fieldHandle_t registerField(const char* fieldName){
-    StatisticFieldInfo::fieldType_t FieldType =
-        StatisticFieldInfo::StatisticFieldInfo::getFieldTypeFromTemplate<T>();
-
-    auto res = generateFileHandle(addFieldToLists(fieldName, FieldType));
-    implRegisteredField(res);
-    return res;
+    return implRegisterField(fieldName);
   }
 
-  /** Return the information on a registered field via the field handle.
-   * @param fieldHandle - The handle of the registered field.
-   * @return Pointer to the registered field info.
-   */
-  // Get the Field Information object, NULL is returned if not found
-  StatisticFieldInfo* getRegisteredField(fieldHandle_t fieldHandle);
+  virtual void outputField(fieldHandle_t fieldHandle, int32_t data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, uint32_t data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, int64_t data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, uint64_t data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, float data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, double data) = 0;
 
-  /** Return the information on a registered field via known names.
-   * @param componentName - The name of the component.
-   * @param statisticName - The name of the statistic.
-   * @param fieldName - The name of the field .
-   * @return Pointer to the registered field info.
-   */
-  // Get Registered Fields
-  // ONLY SUPPORTED TYPES ARE int32_t, uint32_t, int64_t, uint64_t, float, double
-  template<typename T>
-  StatisticFieldInfo* getRegisteredField(const char* statisticName, const char* fieldName)
-  {
-      StatisticFieldInfo*             NewStatFieldInfo;
-      StatisticFieldInfo*             ExistingStatFieldInfo;
-      StatisticFieldInfo::fieldType_t FieldType = StatisticFieldInfo::StatisticFieldInfo::getFieldTypeFromTemplate<T>();
-
-      NewStatFieldInfo = new StatisticFieldInfo(statisticName, fieldName, FieldType);
-
-      // Now search the FieldNameMap_t of type for a matching entry
-      FieldNameMap_t::const_iterator found = m_outputFieldNameMap.find(NewStatFieldInfo->getFieldUniqueName());
-      if (found != m_outputFieldNameMap.end()) {
-          // We found a map entry, now get the StatFieldInfo from the m_outputFieldInfoArray at the index given by the map
-          // and then delete the NewStatFieldInfo to prevent a leak
-          ExistingStatFieldInfo = m_outputFieldInfoArray[found->second];
-          delete NewStatFieldInfo;
-          return ExistingStatFieldInfo;
-      }
-
-      delete NewStatFieldInfo;
-      return NULL;
+  void outputEntries(StatisticBase* stat, bool endOfSimFlag) {
+    startOutputEntries(stat);
+    stat->outputStatisticData(this, endOfSimFlag);
+    stopOutputEntries();
   }
 
-  /** Return the array of registered field infos. */
-  FieldInfoArray_t& getFieldInfoArray() {return m_outputFieldInfoArray;}
+  void startRegisterGroup(const std::string& name){
+    groups_.emplace(name, Group());
+    active_group_ = &groups_[name];
+  }
 
-/////////////////
-  // Methods for Outputting Fields  (Called by Statistic Objects)
-  // Output fields (will call virtual functions of Derived Output classes)
-  // These aren't really part of a generic interface - optimization purposes only
-  /** Output field data.
-   * @param fieldHandle - The handle of the registered field.
-   * @param data - The data to be output.
-   */
-  virtual void outputField(fieldHandle_t fieldHandle, int32_t data);
-  virtual void outputField(fieldHandle_t fieldHandle, uint32_t data);
-  virtual void outputField(fieldHandle_t fieldHandle, int64_t data);
-  virtual void outputField(fieldHandle_t fieldHandle, uint64_t data);
-  virtual void outputField(fieldHandle_t fieldHandle, float data);
-  virtual void outputField(fieldHandle_t fieldHandle, double data);
+  void stopRegisterGroup(){
+    active_group_ = nullptr;
+  }
 
-  /** Output field data.
-   * @param type - The field type to get name of.
-   * @return String name of the field type.
-   */
-  const char* getFieldTypeShortName(fieldType_t type);
+  void startRegisterFields(StatisticBase *statistic) {
+    active_stat_ = statistic;
+  }
+
+  void stopRegisterFields() {
+    active_stat_ = nullptr;
+  }
+
+  virtual void startOutputGroup(const std::string& name) = 0;
+  virtual void stopOutputGroup() = 0;
+
+  virtual void startOutputEntries(StatisticBase* statistic) = 0;
+  virtual void stopOutputEntries() = 0;
 
  protected:
-  friend class SST::Simulation;
-  friend class SST::Statistics::StatisticProcessingEngine;
-
-  // Routine to have Output Check its options for validity
-  /** Have the Statistic Output check its parameters
-   * @return True if all parameters are ok; False if a parameter is missing or incorrect.
-   */
-  virtual bool checkOutputParameters() = 0;
-
-  /** Have Statistic Object print out its usage and parameter info.
-   *  Called when checkOutputParameters() returns false */
-  virtual void printUsage() = 0;
-
-
-  virtual void implStartRegisterFields(StatisticBase *UNUSED(statistic)) {}
-  virtual void implRegisteredField(fieldHandle_t UNUSED(fieldHandle)) {}
-  virtual void implStopRegisterFields() {}
-
-  // Simulation Events
-  /** Indicate to Statistic Output that simulation has started.
-    * Allows object to perform any setup required. */
-  virtual void startOfSimulation() = 0;
-
-  /** Indicate to Statistic Output that simulation has ended.
-    * Allows object to perform any shutdown required. */
-  virtual void endOfSimulation() = 0;
-
-  // Start / Stop of output
-  /** Indicate to Statistic Output that a statistic is about to send data to be output
-    * Allows object to perform any initialization before output. */
-  virtual void implStartOutputEntries(StatisticBase* statistic) = 0;
-
-  /** Indicate to Statistic Output that a statistic is finished sending data to be output
-    * Allows object to perform any cleanup. */
-  virtual void implStopOutputEntries() = 0;
-
-  virtual void implStartRegisterGroup(StatisticGroup* UNUSED(group)) {}
-  virtual void implStopRegisterGroup() {}
-  virtual void implStartOutputGroup(StatisticGroup* UNUSED(group)) {}
-  virtual void implStopOutputGroup() {}
-
+  struct Group {
+    std::map<std::string, int> columns;
+  };
 
  private:
-  // Start / Stop of register Fields
-  void registerStatistic(StatisticBase *stat);
+  fieldHandle_t implRegisterField(const char* fieldName){
+    Group* grp = active_group_ ? active_group_ : &default_group_;
+    std::string fullName = active_stat_->name() + "." + fieldName;
+    auto iter = grp->columns.find(fieldName);
+    if (iter == grp->columns.end()){
+      int idx = grp->columns.size();
+      grp->columns[fullName] = idx;
+      return idx;
+    } else {
+      return iter->second;
+    }
+  }
 
-  void startRegisterFields(StatisticBase *statistic);
-  void stopRegisterFields();
+  std::map<std::string, Group> groups_;
 
-  // Start / Stop of output
-  void outputEntries(StatisticBase* statistic, bool endOfSimFlag);
-  void startOutputEntries(StatisticBase* statistic);
-  void stopOutputEntries();
+  StatisticBase* active_stat_;
 
-  // Other support functions
-  StatisticFieldInfo* addFieldToLists(const char* fieldName, fieldType_t fieldType);
-  fieldHandle_t generateFileHandle(StatisticFieldInfo* FieldInfo);
+  Group* active_group_;
 
-
- protected:
-  StatisticOutput() {;} // For serialization only
+  Group default_group_;
 
 };
-#endif
+
+class StatOutputCSV : public StatisticOutput {
+ public:
+  void outputField(fieldHandle_t fieldHandle, int32_t data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, uint32_t data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, int64_t data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, uint64_t data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, float data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, double data) override {
+    output(fieldHandle, data);
+  }
+
+  void startOutputGroup(const std::string& name) override {
+    csv_out_.open(name.c_str());
+  }
+
+  void startOutputEntries(StatisticBase *stat) override {
+    nextField_ = 0;
+  }
+
+  void stopOutputEntries() override {}
+
+  void stopOutputGroup() override {
+    csv_out_.close();
+  }
+
+ private:
+  template <class T> void output(fieldHandle_t handle, T&& data){
+    if (handle != 0) csv_out_ << ",";
+    if (handle != nextField_){
+      std::cout << "Fields not output in order" << std::endl;
+      abort();
+    }
+    csv_out_ << data;
+    ++nextField_;
+  }
+
+  std::ofstream csv_out_;
+  int nextField_;
+
+};
+
 
 /**
  \class StatisticCollector
@@ -213,8 +237,7 @@ class StatisticOutput : public Module
 template <class T, bool F=std::is_fundamental<T>::value>
 struct StatisticCollector { };
 
-template <class T>
-struct StatisticCollector<T,true> {
+template <class T> struct StatisticCollector<T,true> {
  void addData(T t){
    addData_impl(t);
  }
@@ -247,44 +270,42 @@ struct StatisticCollector<std::tuple<Args...>, false>
  * because no merging of stat objects takes place, which means
  * you'll get one file for each stat object.
  */
-template <class T>
+template <class T, class... Args>
 class Statistic :
   public StatisticBase,
   public StatisticCollector<T>
 {
-  DeclareFactory(Statistic)
+  DeclareFactoryArgs(Statistic, SST::BaseComponent*, const std::string&, const std::string&,
+                     Args...);
+
  public:
   virtual ~Statistic(){}
 
-  // Required Virtual Methods:
-  //virtual void registerOutputFields(StatisticOutput* statOutput) = 0;
-
-  //virtual void outputStatisticData(StatisticOutput* statOutput, bool EndOfSimFlag) = 0;
  protected:
-  Statistic(SST::Params& params){}
+  Statistic(EventScheduler* parent,
+            const std::string& name, const std::string& subName,
+            SST::Params& params) :
+    StatisticBase(parent, name, subName, params)
+  {
+  }
+};
+
+} // end of namespace sstmac
+
+namespace SST {
+namespace Statistics {
+
+template <class... CtorArgs>
+struct MultiCtor {
+  template <class... StatArgs> using Statistic =
+    ::SST::Statistics::Statistic<std::tuple<StatArgs...>, CtorArgs...>;
 };
 
 template <class... Args>
 using MultiStatistic = Statistic<std::tuple<Args...>>;
 
-template <class T>
-class StatValue : public Statistic<T>
-{
- public:
-  void addData_impl(T val){
-    value_ += val;
-  }
+}
+}
 
- protected:
-  StatValue(SST::Params& params) :
-    Statistic<T>(params)
-  {
-  }
-
-  T value_;
-};
-
-
-
-} // end of namespace sstmac
+#endif
 #endif

@@ -92,9 +92,9 @@ class SculpinSwitch :
 
   void connectInput(int src_outport, int dst_inport, EventLink* link) override;
 
-  LinkHandler* creditHandler(int Port) override;
+  LinkHandler* creditHandler(int port) override;
 
-  LinkHandler* payloadHandler(int Port) override;
+  LinkHandler* payloadHandler(int port) override;
 
   void handleCredit(Event* ev);
 

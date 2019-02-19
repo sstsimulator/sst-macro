@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstream>
 #include <algorithm>
+#include <fstream>
 #include <sstmac/hardware/topology/file.h>
 #include <sprockit/sim_parameters.h>
 
@@ -59,7 +60,7 @@ FileTopology::FileTopology(SST::Params& params) :
   std::string fname = params.find<std::string>("filename");
   std::ifstream in(fname);
   if( in.fail() )
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
       "file topology: failed to open file %s", fname.c_str());
   in >> json_;
 

@@ -210,7 +210,7 @@ PiscesTiledSwitch::connectInput(int src_outport, int dst_inport, EventLink* link
 int
 PiscesTiledSwitch::queueLength(int port, int vc) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "PiscesTiledSwitch::queue_length");
 }
 

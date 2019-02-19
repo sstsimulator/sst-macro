@@ -80,8 +80,8 @@ try_top_info_main(int argc, char **argv)
   sprockit::output::init_errn(&std::cerr);
 
   //set up the search path
-  sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
-  sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
+  sprockit::SpktFileIO::addPath(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
+  sprockit::SpktFileIO::addPath(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
 
   opts oo;
   int parse_status = parseOpts(argc, argv, oo);
@@ -100,14 +100,14 @@ try_top_info_main(int argc, char **argv)
   size_t pos = oo.configfile.find_last_of('/');
   if (pos != std::string::npos) {
     std::string dir = oo.configfile.substr(0, pos + 1);
-    sprockit::SpktFileIO::add_path(dir);
+    sprockit::SpktFileIO::addPath(dir);
   }
 
-  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>(oo.configfile);
+  sprockit::SimParameters::ptr params = std::make_shared<sprockit::SimParameters>(oo.configfile);
   sstmac::Env::params = params;
   if (oo.params) {
     // there were command-line overrides
-    oo.params->combine_into(params);
+    oo.params->combineInto(params);
   }
 
   /** DO NOT CHANGE THE ORDER OF THE INIT FUNCTIONS BELOW - JJW
@@ -118,10 +118,10 @@ try_top_info_main(int argc, char **argv)
   //set the global parameters object
   sprockit::sprockit_init_cxx_heap(params);
 
-  params->print_params();
+  params->printParams();
 
-  SST::Params top_params = params->get_namespace("topology");
-  hw::Topology* thetop = hw::Topology::factory::get_param("name", top_params);
+  SST::Params top_params = params->getNamespace("topology");
+  hw::Topology* thetop = hw::Topology::factory::getParam("name", top_params);
   hw::CartesianTopology* top = test_cast(hw::CartesianTopology, thetop);
 
   std::cout << "Number of nodes:         " << top->numNodes() << std::endl;
@@ -155,7 +155,7 @@ try_top_info_main(int argc, char **argv)
     }
   }
 
-  sprockit::statics::finish();
+  sprockit::Statics::finish();
 
   sprockit::sprockit_finalize_cxx_heap();
 

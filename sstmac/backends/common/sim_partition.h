@@ -78,7 +78,7 @@ class Partition
   int lpidForSwitch(int id) const {
 #if SSTMAC_SANITY_CHECK
     if (id >= num_switches_total_){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
           "partition::lpid_for_switch: invalid switch %d",
           id);
     }

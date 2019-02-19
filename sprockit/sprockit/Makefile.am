@@ -41,11 +41,9 @@ nobase_library_include_HEADERS = \
   basic_string_tokenizer.h \
 	allocator.h \
   debug.h \
-  delete.h \
   errors.h \
   fileio.h \
   driver_util.h \
-  metadata_bits.h \
   output.h \
   mpi_parameters.h \
   sim_parameters.h \

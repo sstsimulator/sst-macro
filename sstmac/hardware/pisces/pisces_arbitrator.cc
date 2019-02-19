@@ -93,7 +93,7 @@ static void
 validate_bw(double test_bw)
 {
   if (test_bw < 0 || (test_bw != test_bw)){ //i.e. NAN
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
         "Payload has invalid bandwidth %12.8e",
         test_bw);
   }
@@ -174,7 +174,7 @@ PiscesCutThroughArbitrator(double bw)
   cycleLength_ = byteDelay_;
   if (cycleLength_.sec() > 0.1) abort();
   if (cycleLength_.ticks() == 0) abort();
-  head_ = Epoch::allocate_at_beginning();
+  head_ = Epoch::allocateAtBeginning();
   head_->numCycles = std::numeric_limits<uint32_t>::max();
 }
 

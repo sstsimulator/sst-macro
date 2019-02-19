@@ -288,7 +288,7 @@ namespace lblxml
         }
       }
       else {
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
                           "invalid boxml_assignment value");
       }
     }
@@ -353,7 +353,7 @@ namespace lblxml
               coll->add_listener(box_number,i);
             }
             else
-              spkt_throw_printf(sprockit::value_error,
+              spkt_throw_printf(sprockit::ValueError,
                 "adding ? listener %d to allreduce %d",
                 child_ev->index(), parent_ev->index());
             break;
@@ -379,7 +379,7 @@ namespace lblxml
       if (debug_ > 1) rank_to_boxes[rnk].insert(ind);
       g_boxindex_to_rank[ind] = rnk;
       if (rnk >= commsize_ && partitioning_ != "metis"){
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
           "box %d maps to rank %d, which is greater than given number of ranks %d - check launch_app params",
           ind, rnk, commsize_);
       }

@@ -95,7 +95,7 @@ HostnameAllocation::allocate(int nnode_requested,
   readHostFile(rt_, "hostname_allocation::allocate", hostfile_, hosts);
 
   if (!topology_) {
-    spkt_throw_printf(sprockit::value_error, "hostname_allocation::allocate: null topology");
+    spkt_throw_printf(sprockit::ValueError, "hostname_allocation::allocate: null topology");
   }
 
   for (auto& str : hosts){

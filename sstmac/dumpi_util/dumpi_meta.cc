@@ -64,7 +64,7 @@ DumpiMeta::DumpiMeta(const std::string &filename)
   parsemeta();
 
   if(!numprocscheck_ && !fileprefixcheck_) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "The input dumpi metafile %s does not appear valid",
                      metafile_.c_str());
   }
@@ -139,7 +139,7 @@ bool DumpiMeta::openfile()
   infile_.open(metafile_.c_str());
 
   if(!infile_) {
-    spkt_throw_printf(sprockit::io_error,
+    spkt_throw_printf(sprockit::IOError,
                      "dumpimeta::openfile: failed to open %s: error=%s",
                      metafile_.c_str(),
                      ::strerror(errno));

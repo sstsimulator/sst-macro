@@ -97,7 +97,7 @@ StackAlloc::alloc()
   static thread_lock lock;
   lock.lock();
   if (stacksize_ == 0) {
-    spkt_throw_printf(sprockit::value_error, "stackalloc::stacksize was not initialized");
+    spkt_throw_printf(sprockit::ValueError, "stackalloc::stacksize was not initialized");
   }
 
   if(chunks_.available.empty()){

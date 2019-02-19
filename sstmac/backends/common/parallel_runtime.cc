@@ -190,10 +190,10 @@ ParallelRuntime::bcastFileStream(const std::string &fname)
 
   if (me_ == 0){
     std::ifstream* fstr = new std::ifstream;
-    sprockit::SpktFileIO::open_file(*fstr, fname);
+    sprockit::SpktFileIO::openFile(*fstr, fname);
 
     if (!fstr->is_open()) {
-      spkt_throw_printf(sprockit::input_error,
+      spkt_throw_printf(sprockit::InputError,
        "could not find file %s in current folder or configuration include path",
        fname.c_str());
     }
@@ -233,7 +233,7 @@ ParallelRuntime::initPartitionParams(SST::Params& params)
   if (nthread_ == 1 && nproc_ == 1){
     deflt = "serial";
   }
-  part_ = Partition::factory::get_optional_param("partition", deflt, params, this);
+  part_ = Partition::factory::getOptionalParam("partition", deflt, params, this);
 #endif
 }
 
@@ -246,7 +246,7 @@ ParallelRuntime::staticRuntime(SST::Params& params)
   static thread_lock rt_lock;
   rt_lock.lock();
   if (!static_runtime_){
-    static_runtime_ = ParallelRuntime::factory::get_param("runtime", params);
+    static_runtime_ = ParallelRuntime::factory::getParam("runtime", params);
   }
   rt_lock.unlock();
   return static_runtime_;

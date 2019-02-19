@@ -458,7 +458,7 @@ namespace lblxml
     int domain_rank(int box_number) const {
       box_to_domain_rank_map::const_iterator it = team_map_.find(box_number);
       if (it == team_map_.end()){
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
           "invalid box number %d to allreduce id %d", box_number, index());
       }
       return it->second;

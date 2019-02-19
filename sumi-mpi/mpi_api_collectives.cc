@@ -700,7 +700,7 @@ MpiApi::getCollectiveFunction(CollectiveOpBase* op)
   if (op->op >= first_custom_op_id){
     auto iter = custom_ops_.find(op->op);
     if (iter == custom_ops_.end()){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
                         "Got invalid MPI_Op %d",
                         op->op);
    }

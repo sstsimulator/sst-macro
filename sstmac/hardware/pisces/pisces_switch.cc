@@ -48,7 +48,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/stats/stat_spyplot.h>
-#include <sstmac/common/stats/stat_global_int.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -75,16 +74,16 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(SST::Params& params, uint32_t id) :
   NetworkSwitch(params, id)
 {
   SST::Params xbar_params = params.find_prefix_params("xbar");
-  xbar_stats_ = PacketStatsCallback::factory::get_optional_param("stats", "null",
+  xbar_stats_ = PacketStatsCallback::factory::getOptionalParam("stats", "null",
                                              xbar_params, this);
 
   SST::Params buf_params = params.find_prefix_params("output_buffer");
-  buf_stats_ = PacketStatsCallback::factory::get_optional_param("stats", "null",
+  buf_stats_ = PacketStatsCallback::factory::getOptionalParam("stats", "null",
                                              buf_params, this);
 
   SST::Params rtr_params = params.find_prefix_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
-  router_ = Router::factory::get_param("name", rtr_params, top_, this);
+  router_ = Router::factory::getParam("name", rtr_params, top_, this);
 
   SST::Params ej_params = params.find_prefix_params("ejection");
   std::vector<Topology::injection_port> conns;

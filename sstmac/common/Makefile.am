@@ -30,11 +30,7 @@ libsstmac_common_la_SOURCES = \
   thread_lock.cc \
   stats/stat_collector.cc \
   stats/stat_spyplot.cc \
-  stats/stat_histogram.cc \
-  stats/location_trace.cc \
-  stats/stat_local_int.cc \
-  stats/stat_local_double.cc \
-  stats/stat_global_int.cc
+  stats/stat_histogram.cc 
 
 nodist_library_include_HEADERS = sstmac_config.h config.h
 
@@ -73,14 +69,7 @@ nobase_library_include_HEADERS = \
   stats/stat_collector.h \
   stats/stat_collector_fwd.h \
   stats/stat_histogram.h \
-  stats/stat_histogram_fwd.h \
-  stats/location_trace.h \
-  stats/stat_local_int.h \
-  stats/stat_local_int_fwd.h \
-  stats/stat_local_double.h \
-  stats/stat_local_double_fwd.h \
-  stats/stat_global_int.h \
-  stats/stat_global_int_fwd.h
+  stats/stat_histogram_fwd.h 
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \

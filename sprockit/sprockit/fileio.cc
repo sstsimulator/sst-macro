@@ -52,13 +52,13 @@ namespace sprockit {
 std::list<std::string> SpktFileIO::file_paths_;
 
 void
-SpktFileIO::add_path(const std::string& path)
+SpktFileIO::addPath(const std::string& path)
 {
   file_paths_.push_front(path);
 }
 
 void
-SpktFileIO::open_file(std::ifstream& in, const std::string& filename)
+SpktFileIO::openFile(std::ifstream& in, const std::string& filename)
 {
   //check to see if it is in the current folder
   in.open(filename.c_str());
@@ -76,7 +76,7 @@ SpktFileIO::open_file(std::ifstream& in, const std::string& filename)
 }
 
 void
-SpktFileIO::not_found(const std::string& filename)
+SpktFileIO::notFound(const std::string& filename)
 {
   std::stringstream ss;
   ss << "File not found: " << filename << ".  Search path is: \n";

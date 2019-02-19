@@ -112,7 +112,7 @@ CoordinateAllocation::allocate(
   int nps = regtop->concentration();
   if (nps > 1) ++top_ndim;
   if (top_ndim != num_coords){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
         "coordinate_allocation::read_coordinate_file: mismatch between topology ndim=%d and file ncoords=%d, concentration=%d",
          top_ndim, num_coords, nps);
   }
@@ -127,7 +127,7 @@ CoordinateAllocation::allocate(
     NodeId nid = regtop->node_addr(coords);
     debug_printf(sprockit::dbg::allocation,
         "adding node %d : %s to allocation",
-        int(nid), stl_string(coords).c_str());
+        int(nid), stlString(coords).c_str());
     allocation.insert(nid);
   }
 

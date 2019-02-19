@@ -130,7 +130,7 @@ class FileTopology : public Topology
   SwitchId switchNameToId(std::string name) const override {
     auto it = switch_name_map_.find(name);
     if( it == switch_name_map_.end())
-      spkt_throw_printf(sprockit::input_error,
+      spkt_throw_printf(sprockit::InputError,
         "file topology: can't find switch id for %s", name.c_str());
     return SwitchId(it->second);
   }

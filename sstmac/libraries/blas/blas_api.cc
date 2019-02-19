@@ -96,10 +96,10 @@ BlasAPI::~BlasAPI()
 void
 BlasAPI::initKernels(SST::Params& params)
 {
-  dgemm_kernel_ = BlasKernel::factory::get_optional_param("dgemm", "default_dgemm", params);
-  dgemv_kernel_ = BlasKernel::factory::get_optional_param("dgemv", "default_dgemv", params);
-  daxpy_kernel_ = BlasKernel::factory::get_optional_param("daxpy", "default_daxpy", params);
-  ddot_kernel_ = BlasKernel::factory::get_optional_param("ddot", "default_ddot", params);
+  dgemm_kernel_ = BlasKernel::factory::getOptionalParam("dgemm", "default_dgemm", params);
+  dgemv_kernel_ = BlasKernel::factory::getOptionalParam("dgemv", "default_dgemv", params);
+  daxpy_kernel_ = BlasKernel::factory::getOptionalParam("daxpy", "default_daxpy", params);
+  ddot_kernel_ = BlasKernel::factory::getOptionalParam("ddot", "default_ddot", params);
 }
 
 void
@@ -138,7 +138,7 @@ BlasAPI::daxpy(int n)
 ComputeEvent*
 BlasKernel::op_3d(int m, int k, int n)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 3D ops",
     toString().c_str());
 }
@@ -146,7 +146,7 @@ BlasKernel::op_3d(int m, int k, int n)
 ComputeEvent*
 BlasKernel::op_2d(int m, int n)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 2D ops",
     toString().c_str());
 }
@@ -154,7 +154,7 @@ BlasKernel::op_2d(int m, int n)
 ComputeEvent*
 BlasKernel::op_1d(int n)
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "blas_kernel::mult_op: %s does not implement 1D ops",
     toString().c_str());
 }

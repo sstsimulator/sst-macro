@@ -471,14 +471,14 @@ class Topology : public sprockit::printable
   virtual SwitchId switchNameToId(std::string name) const {
     std::size_t pos = name.find("switch");
     if (pos != 0)
-      throw sprockit::input_error("topology: switch name should be switch<n>");
+      throw sprockit::InputError("topology: switch name should be switch<n>");
     std::string number(name,6);
     SwitchId id;
     try {
       id = stoi(number);
     }
     catch(...) {
-      throw sprockit::input_error("topology: switch name should be switch<n>");
+      throw sprockit::InputError("topology: switch name should be switch<n>");
     }
     return id;
   }

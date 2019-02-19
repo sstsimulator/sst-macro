@@ -95,7 +95,7 @@ class RecvCQ
       Value is the number of bytes receved.
   */
   using pair_type = std::pair<const uint64_t, incomingMsg>;
-  using alloc = sprockit::thread_safe_allocator<pair_type>;
+  using alloc = sprockit::threadSafeAllocator<pair_type>;
   using received_map = std::map<uint64_t, incomingMsg, std::less<uint64_t>, alloc>;
   received_map bytes_recved_;
 };

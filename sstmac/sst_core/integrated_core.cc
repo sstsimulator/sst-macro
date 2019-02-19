@@ -101,7 +101,7 @@ int_vector_from_py_array(PyObject* tuple, std::vector<int>& vec)
 }
 
 void
-py_extract_params(PyObject* dict, sprockit::sim_parameters::ptr params)
+py_extract_params(PyObject* dict, sprockit::SimParameters::ptr params)
 {
 #pragma GCC diagnostic ignored "-Wwrite-strings"
   PyObject* items = PyMapping_Items(dict);
@@ -113,12 +113,12 @@ py_extract_params(PyObject* dict, sprockit::sim_parameters::ptr params)
     PyObject* key_str_obj = PyObject_Str(key);
     const char* key_c_str = PyString_AsString(key_str_obj);
     if (PyMapping_Check(val)){
-      sprockit::sim_parameters::ptr sub_params = params->get_optional_namespace(key_c_str);
+      sprockit::SimParameters::ptr sub_params = params->getOptionalNamespace(key_c_str);
       sstmac::py_extract_params(val, sub_params);
     } else {
       PyObject* val_str_obj = PyObject_Str(val);
       const char* val_c_str = PyString_AsString(val_str_obj);
-      params->add_param_override(key_c_str, val_c_str);
+      params->addParamOverride(key_c_str, val_c_str);
       Py_DECREF(val_str_obj);
     }
     Py_DECREF(key_str_obj);
@@ -130,9 +130,9 @@ py_extract_params(PyObject* dict, sprockit::sim_parameters::ptr params)
 }
 
 void
-py_add_params(PyObject* dict, sprockit::sim_parameters::ptr params)
+py_add_params(PyObject* dict, sprockit::SimParameters::ptr params)
 {
-  sprockit::sim_parameters::key_value_map::iterator it, end = params->end();
+  sprockit::SimParameters::key_value_map::iterator it, end = params->end();
   for (it=params->begin(); it != end; ++it){
     const std::string& key_name = it->first;
     const std::string& key_value = it->second.value;
@@ -143,11 +143,11 @@ py_add_params(PyObject* dict, sprockit::sim_parameters::ptr params)
 }
 
 void
-py_add_sub_params(PyObject* dict, sprockit::sim_parameters::ptr params)
+py_add_sub_params(PyObject* dict, sprockit::SimParameters::ptr params)
 {
-  sprockit::sim_parameters::namespace_iterator it, end = params->ns_end();
-  for (it=params->ns_begin(); it != end; ++it){
-    sprockit::sim_parameters::ptr subparams = it->second;
+  sprockit::SimParameters::namespace_iterator it, end = params->nsEnd();
+  for (it=params->nsBegin(); it != end; ++it){
+    sprockit::SimParameters::ptr subparams = it->second;
     PyObject* subdict = PyDict_New();
     const char* key = it->first.c_str();
     PyDict_SetItemString(dict, key, subdict);
@@ -174,7 +174,7 @@ set_debug_flags(PyObject* self, PyObject* args)
   for (int i=0; i < size; ++i){
     PyObject* obj = PyTuple_GetItem(args,i);
     const char* str = PyString_AsString(obj);
-    sprockit::debug::turn_on(str);
+    sprockit::Debug::turnOn(str);
   }
   Py_RETURN_NONE;
 }
@@ -204,7 +204,7 @@ read_params(PyObject* self, PyObject* args)
     argv[i] = const_cast<char*>(str);
   }
 
-  sprockit::sim_parameters::ptr params = std::make_shared<sprockit::sim_parameters>();
+  sprockit::SimParameters::ptr params = std::make_shared<sprockit::SimParameters>();
   sstmac::tryMain(params, argc, argv, true/*only params*/);
 
   PyObject* dict = PyDict_New();

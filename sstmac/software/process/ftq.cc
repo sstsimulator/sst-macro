@@ -43,10 +43,10 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/software/process/ftq.h>
-#include <sstmac/common/thread_lock.h>
 #include <sstmac/software/process/thread.h>
 #include <sstmac/backends/common/parallel_runtime.h>
-#include <sprockit/delete.h>
+#include <sstmac/common/thread_lock.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <sprockit/keyword_registration.h>
@@ -62,23 +62,38 @@ namespace sw {
 std::unordered_map<int, AppFTQCalendar*> FTQCalendar::calendars_;
 const uint64_t AppFTQCalendar::allocation_num_epochs = 10000;
 
-FTQCalendar::FTQCalendar(SST::Params& params) :
+FTQCalendar::FTQCalendar(SST::Params& params, SST::BaseComponent* comp,
+                         const std::string& name, const std::string& statName) :
   num_ticks_epoch_(0),
-  Parent(params)
+  Parent(comp, name, statName, params)
 {
   num_ticks_epoch_ = Timestamp(params.findUnits("epoch").toDouble()).ticks();
 }
 
 FTQCalendar::~FTQCalendar()
 {
-  sprockit::delete_vals(calendars_);
+  for (auto& pair : calendars_){
+    if (pair.second) delete pair.second;
+  }
   calendars_.clear();
 }
 
 void
-FTQCalendar::init(long nticks_per_epoch)
+FTQCalendar::init(uint64_t nticks_per_epoch)
 {
   num_ticks_epoch_ = nticks_per_epoch;
+}
+
+void
+FTQCalendar::registerOutputFields(StatisticOutput *statOutput)
+{
+  spkt_abort_printf("unimpelemented: FTQCalendar::registerOutputFields");
+}
+
+void
+FTQCalendar::outputStatisticData(StatisticOutput *statOutput, bool EndOfSimFlag)
+{
+  spkt_abort_printf("unimplemented: FTQCalendar::outputStatisticData");
 }
 
 void
@@ -222,7 +237,7 @@ FTQCalendar::getCalendar(int aid) const
 {
   auto it = calendars_.find(aid);
   if (it == calendars_.end()) {
-    spkt_throw_printf(sprockit::value_error, "no FTQ calendar found for app %d", aid);
+    spkt_throw_printf(sprockit::ValueError, "no FTQ calendar found for app %d", aid);
   }
   return it->second;
 }
@@ -246,7 +261,7 @@ AppFTQCalendar::AppFTQCalendar(int aid, const std::string& appname,
 
 AppFTQCalendar::~AppFTQCalendar()
 {
-  sprockit::delete_all(buffers_);
+  for (auto* buf : buffers_) if (buf) delete buf;
   delete aggregate_.totals_;
 }
 

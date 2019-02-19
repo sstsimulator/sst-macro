@@ -76,7 +76,7 @@ Message::tostr(class_t ty)
     enumcase(no_class);
     enumcase(fake);
   }
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
     "message::tostr: invalid message type %d", ty);
 }
 

@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sprockit {
 
 template<typename WritableRangeT>
-void to_upper(WritableRangeT& input)
+void toUpper(WritableRangeT& input)
 {
   for(char& ch : input) {
     ch = (char)std::toupper(ch);
@@ -61,7 +61,7 @@ void to_upper(WritableRangeT& input)
 }
 
 template<typename WritableRangeT>
-void to_lower(WritableRangeT& input)
+void toLower(WritableRangeT& input)
 {
   for(char& ch : input) {
     ch = (char)std::tolower(ch);

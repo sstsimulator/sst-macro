@@ -389,12 +389,12 @@ FatTree::checkInput() const
 
   // check that there are enough down ports
   if (down_ports_per_core_switch_ < num_agg_subtrees_) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "down_ports_per_core_switch (%d) must be >= num_agg_subtrees (%d)",
           down_ports_per_core_switch_,num_agg_subtrees_);
   }
   if (down_ports_per_agg_switch_ < leaf_switches_per_subtree_) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "down_ports_per_agg_switch (%d) must be >= leaf_switches_per_subtree (%d)",
           down_ports_per_agg_switch_,leaf_switches_per_subtree_);
   }
@@ -402,25 +402,25 @@ FatTree::checkInput() const
   // check that down ports mod subtrees/switches is zero
   val = down_ports_per_core_switch_ % num_agg_subtrees_;
   if (val != 0) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "down_ports_per_core_switch mod total num_agg_subtrees must equal zero (%d mod %d = %d)",
           down_ports_per_core_switch_,num_agg_subtrees_,val);
   }
   val = down_ports_per_agg_switch_ % leaf_switches_per_subtree_;
   if (val != 0) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "down_ports_per_agg_switch mod leaf_switches_per_subtree must be zero (%d mod %d = %d)",
           down_ports_per_agg_switch_,leaf_switches_per_subtree_,val);
   }
 
   // check that there are enough up ports
   if (up_ports_per_agg_switch_ * agg_switches_per_subtree_ < num_core_switches_) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "up_ports_per_agg_switch * agg_switches_per_subtree (%d*%d) must be >= num_core_switches (%d)",
           up_ports_per_agg_switch_,agg_switches_per_subtree_,num_core_switches_);
   }
   if (up_ports_per_leaf_switch_ < agg_switches_per_subtree_) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "up_ports_per_leaf_switch (%d) must be >= agg_switches_per_subtree (%d)",
           up_ports_per_leaf_switch_,agg_switches_per_subtree_);
   }
@@ -428,7 +428,7 @@ FatTree::checkInput() const
   // check that up ports mod switches is zero
   val = up_ports_per_leaf_switch_ % agg_switches_per_subtree_;
   if (val != 0) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "up_ports_per_leaf_switch mod agg_switches_per_subtree must be zero (%d mod %d = %d)",
           up_ports_per_leaf_switch_,agg_switches_per_subtree_,val);
   }
@@ -437,7 +437,7 @@ FatTree::checkInput() const
   int ndown = num_core_switches_ * down_ports_per_core_switch_;
   int nup = num_agg_switches_ * up_ports_per_agg_switch_;
   if (ndown != nup) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "num_core_switches * down_ports_per_core_switch must equal total number of aggregation switches * up_ports_per_agg_switch (%d != %d)",
           ndown,nup);
   }
@@ -446,7 +446,7 @@ FatTree::checkInput() const
   ndown = agg_switches_per_subtree_ * down_ports_per_agg_switch_;
   nup = leaf_switches_per_subtree_ * up_ports_per_leaf_switch_;
   if (ndown != nup) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
           "agg_switches_per_subtree * down_ports_per_agg_switch must equal leaf_switches_per_subtree * up_ports_per_leaf_switch (%d != %d)",
           ndown,nup);
   }
@@ -555,7 +555,7 @@ TaperedFatTree::createPartition(
   int nthread,
   int noccupied) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error, "tapered_fat_tree::createPartition");
+  spkt_throw_printf(sprockit::UnimplementedError, "tapered_fat_tree::createPartition");
 /**
   int nworkers = nproc * nthread;
 

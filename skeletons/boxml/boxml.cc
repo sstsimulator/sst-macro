@@ -117,8 +117,8 @@ namespace lblxml {
   void
   boxml::get_params_standalone()
   {
-    SST::Params& params = new sprockit::sim_parameters();
-    params->parse_file("./parameters.ini", false, true);
+    SST::Params& params = new sprockit::SimParameters();
+    params->parseFile("./parameters.ini", false, true);
     params_ = params;
   }
 
@@ -154,13 +154,13 @@ namespace lblxml {
     repartition_size_ =
         params_.find<int>("boxml_repartition_size",-1);
     vertex_scale_ =
-        params_->get_optional_long_param("boxml_vertex_scale",1000);
+        params_->getOptionalLongParam("boxml_vertex_scale",1000);
     rank_remap_ =
         params_.find<bool>("boxml_rank_remap",false);
     load_balance_tolerance_ =
         params_.find<double>("boxml_load_balance_tolerance",1.05);
     fixed_vertex_ =
-        params_->get_optional_long_param("boxml_fixed_vertex",0);
+        params_->getOptionalLongParam("boxml_fixed_vertex",0);
     zero_edge_weight_ =
         params_.find<bool>("boxml_zero_edge_weight",false);
     build_graph_only_ =
@@ -178,7 +178,7 @@ namespace lblxml {
       else if (mode == "fully_asynchronous")
         synch_mode_ = full_asynch;
       else
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
           "Unrecognized option for boxml_synchronization\n");
     }
     else
@@ -186,7 +186,7 @@ namespace lblxml {
 
 #ifndef BOXML_HAVE_METIS
     if (partitioning_ == "metis" || placement_ == "metis")
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "Not compiled with metis, can't repartition/place\n");
 #endif
 
@@ -208,42 +208,42 @@ namespace lblxml {
 
     xml_read_only_ = params_.find<bool>("boxml_xml_only", false);
 
-    if (params_->has_namespace("effective_bandwidths")){
-      sprockit::sim_parameters::ptr stat_params = params_.find_prefix_params("effective_bandwidths");
-      hist_eff_bw_ = test_cast(StatHistogram, StatCollector::factory::get_optional_param("type", "histogram", stat_params));
+    if (params_->hasNamespace("effective_bandwidths")){
+      sprockit::SimParameters::ptr stat_params = params_.find_prefix_params("effective_bandwidths");
+      hist_eff_bw_ = test_cast(StatHistogram, StatCollector::factory::getOptionalParam("type", "histogram", stat_params));
 
       if (!hist_eff_bw_)
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
           "Effective bandwidth tracker must be histogram, %s given",
           stat_params.find<std::string>("type").c_str());
       else
         EventManager::global->registerStat(hist_eff_bw_, nullptr);
     }
 
-    if (params_->has_namespace("polling_time")) {
-      sprockit::sim_parameters::ptr stat_params = params_.find_prefix_params("polling_time");
-      idle_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
+    if (params_->hasNamespace("polling_time")) {
+      sprockit::SimParameters::ptr stat_params = params_.find_prefix_params("polling_time");
+      idle_time_ = test_cast(StatLocalDouble, StatCollector::factory::getOptionalParam("type", "local_double", stat_params));
 
       if (!idle_time_)
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
           "Idle time tracker type must be stat_local_double, %s given",
           stat_params.find<std::string>("type").c_str());
     }
-    if (params_->has_namespace("barrier_time")) {
-      sprockit::sim_parameters::ptr stat_params = params_.find_prefix_params("barrier_time");
-      barrier_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
+    if (params_->hasNamespace("barrier_time")) {
+      sprockit::SimParameters::ptr stat_params = params_.find_prefix_params("barrier_time");
+      barrier_time_ = test_cast(StatLocalDouble, StatCollector::factory::getOptionalParam("type", "local_double", stat_params));
 
       if (!idle_time_)
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
           "Barrier time tracker type must be stat_local_double, %s given",
           stat_params.find<std::string>("type").c_str());
     }
-    if (params_->has_namespace("compute_time")) {
-      sprockit::sim_parameters::ptr stat_params = params_.find_prefix_params("compute_time");
-      compute_time_ = test_cast(StatLocalDouble, StatCollector::factory::get_optional_param("type", "local_double", stat_params));
+    if (params_->hasNamespace("compute_time")) {
+      sprockit::SimParameters::ptr stat_params = params_.find_prefix_params("compute_time");
+      compute_time_ = test_cast(StatLocalDouble, StatCollector::factory::getOptionalParam("type", "local_double", stat_params));
 
       if (!idle_time_)
-        spkt_throw_printf(sprockit::value_error,
+        spkt_throw_printf(sprockit::ValueError,
           "Compute time tracker type must be stat_local_double, %s given",
           stat_params.find<std::string>("type").c_str());
     }

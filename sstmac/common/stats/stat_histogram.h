@@ -50,26 +50,31 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-class StatHistogram : public Statistic<double>
+class StatHistogram : public SST::Statistics::MultiStatistic<double,uint64_t>
 {
-  FactoryRegister("histogram", Statistic<double>, StatHistogram)
+  using Parent=SST::Statistics::MultiStatistic<double,uint64_t>;
  public:
-  StatHistogram(SST::Params& params);
+  StatRegister("histogram", Parent, StatHistogram,
+               "a histogram with flexible counting")
 
-  void addData_impl(double value) override;
+  StatHistogram(SST::Params& params, SST::BaseComponent* comp,
+                const std::string& name, const std::string& subName);
+
+  void addData_impl(double value, uint64_t) override;
+
+  void registerOutputFields(SST::Statistics::StatisticOutput* statOutput) override;
+
+  void outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag) override;
 
  private:
-  void dump(const std::string& froot);
-
-  void addData_impl(double value, uint64_t count);
-
-  std::vector<int64_t> counts_;
-
+  std::vector<uint64_t> counts_;
+  double min_val_;
+  double max_val_;
   double bin_size_;
-
-  int64_t max_bin_;
-
+  double increment_;
   bool is_log_;
+
+  std::vector<SST::Statistics::StatisticOutput::fieldHandle_t> fields_;
 
 };
 

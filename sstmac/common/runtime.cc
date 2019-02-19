@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/launch/job_launcher.h>

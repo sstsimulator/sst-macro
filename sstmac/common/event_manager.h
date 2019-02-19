@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/sst_event_fwd.h>
-#include <sstmac/common/stats/stat_collector.h>
+#include <sstmac/common/stats/stat_collector_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
@@ -67,6 +67,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/threading/threading_interface_fwd.h>
 
 #include <vector>
+#include <queue>
 #include <cstdint>
 #include <cstddef>
 
@@ -93,7 +94,6 @@ class EventManager
   friend class Component;
   friend class SubComponent;
   friend class EventScheduler;
-  friend class centralized_link;
   friend class native::Manager;
 
  public:
@@ -130,19 +130,6 @@ class EventManager
   virtual void run();
 
   void stop();
-
-  /**
-  void registerStat(StatCollector* stat, stat_descr_t* descr);
-
-  StatCollector* findUniqueStat(int unique_tag) const {
-    auto iter = unique_stats_.find(unique_tag);
-    if (iter != unique_stats_.end()){
-      return iter->second.main_collector;
-    } else {
-      return nullptr;
-    }
-  }
-  */
 
   Partition* topologyPartition() const;
 
@@ -183,6 +170,8 @@ class EventManager
     return nthread_;
   }
 
+  void registerStatisticCore(StatisticBase* base);
+
   virtual EventManager* threadManager(int thr) const {
     return const_cast<EventManager*>(this);
   }
@@ -212,6 +201,14 @@ class EventManager
 
   hw::Interconnect* interconnect() const {
     return interconn_;
+  }
+
+  void startStatGroup(const std::string& name){
+    active_stat_group_.push(name);
+  }
+
+  void stopStatGroup(){
+    active_stat_group_.pop();
   }
 
   virtual void scheduleStop(GlobalTimestamp until);
@@ -279,11 +276,15 @@ class EventManager
  protected:
   GlobalTimestamp min_ipc_time_;
 
+  void finalizeStatsOutput();
+
+  void finalizeStatsInit();
+
   void scheduleIncoming(IpcEvent* iev);
 
   int serializeSchedule(char* buf);
 
-  struct event_compare {
+  struct EventCompare {
     bool operator()(ExecutionEvent* lhs, ExecutionEvent* rhs) const {
       bool neq = lhs->time() != rhs->time();
       if (neq) return lhs->time() < rhs->time();
@@ -295,9 +296,21 @@ class EventManager
       }
     }
   };
-  typedef std::set<ExecutionEvent*, event_compare,
-                   sprockit::allocator<ExecutionEvent*>> queue_t;
+  using queue_t = std::set<ExecutionEvent*, EventCompare,
+                    sprockit::allocator<ExecutionEvent*>> ;
   queue_t event_queue_;
+
+  struct StatGroup {
+    std::list<StatisticBase*> stats;
+    StatisticOutput* output;
+  };
+
+  StatisticOutput* dflt_stat_output_;
+
+  std::queue<std::string> active_stat_group_;
+
+  std::map<std::string, StatGroup> stat_groups_;
+
 };
 
 class NullEventManager : public EventManager

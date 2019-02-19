@@ -103,7 +103,7 @@ class PiscesMemoryModel : public MemoryModel
 
   std::vector<int> channels_available_;
   std::vector<Request> channel_requests_;
-  std::list<Request, sprockit::thread_safe_allocator<Request>> stalled_requests_;
+  std::list<Request, sprockit::threadSafeAllocator<Request>> stalled_requests_;
 
   int nchannels_;
   Timestamp min_agg_byte_delay_;

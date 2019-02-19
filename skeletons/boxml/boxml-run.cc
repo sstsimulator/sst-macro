@@ -275,7 +275,7 @@ namespace lblxml
         }
         default:
         {
-          spkt_throw_printf(sprockit::value_error,
+          spkt_throw_printf(sprockit::ValueError,
             "got invalid message type %s",
             sumi::Message::tostr(dmess->classType()));
         }

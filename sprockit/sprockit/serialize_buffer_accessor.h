@@ -50,10 +50,10 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-class ser_buffer_overrun : public spkt_error {
+class ser_buffer_overrun : public SpktError {
  public:
   ser_buffer_overrun(int maxsize) :
-    spkt_error(sprockit::printf("serialization overrun buffer of size %d", maxsize))
+    SpktError(sprockit::printf("serialization overrun buffer of size %d", maxsize))
   {
   }
 };

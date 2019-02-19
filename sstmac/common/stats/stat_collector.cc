@@ -124,7 +124,7 @@ StatCollector::optionalBuild(SST::Params& params,
     old_params.combine_into(params);
   }
 
-  StatCollector* stats = StatCollector::factory::get_optional_param(
+  StatCollector* stats = StatCollector::factory::getOptionalParam(
         "type", deflt, params);
 
   return stats;

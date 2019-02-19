@@ -144,19 +144,26 @@ class AppFTQCalendar
 
 };
 
-class FTQCalendar : public MultiStatistic<int,int,int,uint64_t,uint64_t>
+class FTQCalendar : public SST::Statistics::MultiStatistic<int,int,int,uint64_t,uint64_t>
 {
-  using Parent = MultiStatistic<int,int,int,uint64_t,uint64_t>;
-  FactoryRegister("ftq", Parent, FTQCalendar)
+  using Parent = SST::Statistics::MultiStatistic<int,int,int,uint64_t,uint64_t>;
  public:
-  FTQCalendar(SST::Params& params);
+  StatRegister("ftq", Parent, FTQCalendar,
+           "fixed-time quanta activity of individual processes")
 
-  void init(long nticks_per_epoch);
+  FTQCalendar(SST::Params& params, SST::BaseComponent* comp,
+              const std::string& name, const std::string& subName);
+
+  void init(uint64_t nticks_per_epoch);
 
   virtual ~FTQCalendar();
 
+  void registerOutputFields(SST::Statistics::StatisticOutput *statOutput) override;
+
+  void outputStatisticData(SST::Statistics::StatisticOutput *statOutput, bool EndOfSimFlag) override;
+
   void addData_impl(int event_typeid, int aid, int tid,
-          uint64_t ticks_begin, uint64_t num_ticks);
+          uint64_t ticks_begin, uint64_t num_ticks) override;
 
   AppFTQCalendar* getCalendar(int aid) const;
 
@@ -171,20 +178,20 @@ class FTQCalendar : public MultiStatistic<int,int,int,uint64_t,uint64_t>
 
 // Ensures an ftq_tag is used for the life of this object
 class FTQScope {
-public:
-    FTQScope(Thread*, FTQTag);
-    FTQScope(Thread*);
-    ~FTQScope();
+ public:
+  FTQScope(Thread*, FTQTag);
+  FTQScope(Thread*);
+  ~FTQScope();
 
-private:
-    // We don't want dynamic allocations.
-    // This class is intended to use scoping for construction/deconstruction
-    void* operator new(size_t size) throw();
+ private:
+  // We don't want dynamic allocations.
+  // This class is intended to use scoping for construction/deconstruction
+  void* operator new(size_t size) throw();
 
-    // private members
-    bool _tag_previously_protected;
-    FTQTag _previous_tag;
-    Thread* _thread;
+  // private members
+  bool _tag_previously_protected;
+  FTQTag _previous_tag;
+  Thread* _thread;
 };
 
 }

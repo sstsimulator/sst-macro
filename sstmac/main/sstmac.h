@@ -61,7 +61,7 @@ struct opts {
   std::string debug;
   std::string configfile;
   bool got_config_file;
-  sprockit::sim_parameters::ptr params;
+  sprockit::SimParameters::ptr params;
   bool print_walltime;
   bool print_params;
   bool low_res_timer;
@@ -76,7 +76,7 @@ struct opts {
     debug(""),
     configfile(""),
     got_config_file(false),
-    params(std::make_shared<sprockit::sim_parameters>()),
+    params(std::make_shared<sprockit::SimParameters>()),
     low_res_timer(false),
     print_walltime(true),
     print_params(false),
@@ -104,7 +104,7 @@ int parseOpts(int argc, char **argv, opts &oo);
 
 void printHelp(int argc, char **argv);
 
-void resizeTopology(int max_nproc, sprockit::sim_parameters::ptr params, bool verbose = true);
+void resizeTopology(int max_nproc, sprockit::SimParameters::ptr params, bool verbose = true);
 
 namespace sstmac {
 
@@ -126,9 +126,9 @@ void finalize(ParallelRuntime* rt);
 
 void initOpts(opts& oo, int argc, char** argv);
 
-void initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr params, bool parallel);
+void initParams(ParallelRuntime* rt, opts& oo, sprockit::SimParameters::ptr params, bool parallel);
 
-void remapParams(sprockit::sim_parameters::ptr params, bool verbose = true);
+void remapParams(sprockit::SimParameters::ptr params, bool verbose = true);
 
 void* loadExternLibrary(const std::string& libname, const std::string& searchPath);
 
@@ -145,7 +145,7 @@ void run(opts& oo,
 
 int runStandalone(int argc, char** argv);
 
-int tryMain(sprockit::sim_parameters::ptr params,
+int tryMain(sprockit::SimParameters::ptr params,
    int argc, char **argv,
    bool params_only = false);
 

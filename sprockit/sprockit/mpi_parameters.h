@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-class mpi_param_bcaster:
+class MpiParamBcaster:
   public ParamBcaster
 {
  public:
@@ -59,14 +59,14 @@ class mpi_param_bcaster:
    }
 };
 
-static inline sim_parameters*
+static inline SimParameters*
 MPI_Bcast_params(const std::string& fname)
 {
   int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   int nproc; MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-  mpi_param_bcaster bc;
-  SST::Params& params = new sprockit::sim_parameters;
-  sim_parameters::parallel_build_params(params, rank, nproc, fname, &bc);
+  MpiParamBcaster bc;
+  SST::Params& params = new sprockit::SimParameters;
+  SimParameters::parallelBuildParams(params, rank, nproc, fname, &bc);
   return params;
 }
 

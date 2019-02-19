@@ -89,7 +89,7 @@ HostnameTaskMapper::mapRanks(
 
     NodeId nid;
     if (!topology_) {
-      spkt_throw_printf(sprockit::value_error, "hostname_task_mapper: null topology");
+      spkt_throw_printf(sprockit::ValueError, "hostname_task_mapper: null topology");
     }
     nid = topology_->nodeNameToId(hostname);
 

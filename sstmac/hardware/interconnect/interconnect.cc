@@ -57,7 +57,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_manager.h>
 #include <sprockit/keyword_registration.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <sprockit/output.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
@@ -75,7 +74,7 @@ Interconnect::staticInterconnect(SST::Params& params, EventManager* mgr)
   if (!static_interconnect_){
     ParallelRuntime* rt = ParallelRuntime::staticRuntime(params);
     Partition* part = rt ? rt->topologyPartition() : nullptr;
-    static_interconnect_ = Interconnect::factory::get_value("switch", params,
+    static_interconnect_ = Interconnect::factory::getValue("switch", params,
       mgr, part, rt);
   }
   return static_interconnect_;
@@ -93,9 +92,9 @@ Interconnect::staticInterconnect()
 #if !SSTMAC_INTEGRATED_SST_CORE
 Interconnect::~Interconnect()
 {
-  sprockit::delete_vector(nodes_);
-  sprockit::delete_vector(logp_switches_);
-  sprockit::delete_vector(switches_);
+  for (auto* nd : nodes_) if (nd) delete nd;
+  for (auto* sw : logp_switches_) if (sw) delete sw;
+  for (auto* sw : switches_) if (sw) delete sw;
 }
 #endif
 
@@ -126,7 +125,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
 
   Topology* top = topology_;
 
-  std::string switch_model = switch_params->get_lowercase_param("name");
+  std::string switch_model = switch_params->getLowercaseParam("name");
   bool logp_model = switch_model == "logp" || switch_model == "simple" || switch_model == "macrels";
 
   switches_.resize(num_switches_);
@@ -145,14 +144,18 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
     logp_switches_[i] = new LogPSwitch(logp_params, id);
   }
 
-
-
   interconn_debug("Interconnect building endpoints");
+
+  mgr->startStatGroup("node");
   buildEndpoints(node_params, nic_params, mgr);
+  mgr->stopStatGroup();
+
   connectLogP(mgr, node_params, nic_params);
   if (!logp_model){
     interconn_debug("Interconnect building switches");
+    mgr->startStatGroup("switch");
     buildSwitches(switch_params, mgr);
+    mgr->stopStatGroup();
     interconn_debug("Interconnect connecting switches");
     connectSwitches(mgr, switch_params);
     interconn_debug("Interconnect connecting endpoints");
@@ -174,7 +177,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
 
   if (lookahead_check < lookahead_){
     spkt_abort_printf("invalid lookahead compute: computed lookahead to be %8.4e, "
-                      "but have link with lookahead %8.4e", lookahead_.sec(), lookahead_check.sec());
+        "but have link with lookahead %8.4e", lookahead_.sec(), lookahead_check.sec());
   }
 
 #endif
@@ -393,11 +396,11 @@ Interconnect::buildEndpoints(SST::Params& node_params,
 
       if (my_rank == target_rank || my_thread == target_thread){
         //local node - actually build it
-        node_params->add_param_override("id", int(nid));
+        node_params->addParamOverride("id", int(nid));
         uint32_t comp_id = nid;
-        Node* nd = Node::factory::get_optional_param("name", "simple",
+        Node* nd = Node::factory::getOptionalParam("name", "simple",
                                                      node_params, comp_id);
-        node_params->remove_param("id"); //you don't have to let it linger
+        node_params->removeParam("id"); //you don't have to let it linger
         nodes_[nid] = nd;
         components_[nid] = nd;
       }
@@ -415,15 +418,15 @@ Interconnect::buildSwitches(SST::Params& switch_params,
   int my_rank = rt_->me();
   int id_offset = topology_->numNodes();
   for (SwitchId i=0; i < num_switches_; ++i){
-    switch_params->add_param_override("id", int(i));
+    switch_params->addParamOverride("id", int(i));
     if (partition_->lpidForSwitch(i) == my_rank){
       int thread = partition_->threadForSwitch(i);
       uint32_t comp_id = switchComponentId(i);
-      switches_[i] = NetworkSwitch::factory::get_param("name", switch_params, comp_id);
+      switches_[i] = NetworkSwitch::factory::getParam("name", switch_params, comp_id);
     } else {
       switches_[i] = nullptr;
     }
-    switch_params->remove_param("id");
+    switch_params->removeParam("id");
     components_[i+id_offset] = switches_[i];
   }
 }

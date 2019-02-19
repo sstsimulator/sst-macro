@@ -45,6 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SSTMAC_COMMON_STATS_STATS_COMMON_H_INCLUDED
 #define SSTMAC_COMMON_STATS_STATS_COMMON_H_INCLUDED
 
+#include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/common/timestamp.h>
 #include <iostream>
@@ -54,30 +55,44 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
+using StatSpyplotParent =
+  SST::Statistics::MultiCtor<int,int,int>::Statistic<int,int,uint64_t>;
 
 /**
  * this stat_collector class keeps a spy plot
  */
-class StatSpyplot : public MultiStatistic<int,int,uint64_t>
+class StatSpyplot : public StatSpyplotParent
 {
-  using Parent = MultiStatistic<int,int,uint64_t>;
-  FactoryRegister("ascii", Parent, StatSpyplot)
  public:
-  virtual ~StatSpyplot() {}
+  StatRegister("spyplot", StatSpyplotParent, StatSpyplot,
+               "a spyplot showing traffic patterns")
 
-  void addOne(int source, int dest);
-
-  void addData_impl(int source, int dest, uint64_t num) override;
-
-  StatSpyplot(SST::Params& params) :
-    max_dest_(0),
-    Parent(params)
+  StatSpyplot(SST::Params& params, SST::BaseComponent* comp,
+              const std::string& name, const std::string& statName,
+              int id, int nSrc, int nDst) :
+    vals_(nDst),
+    my_id_(id),
+    n_src_(nSrc),
+    n_dst_(nDst),
+    fields_(nDst),
+    StatSpyplotParent(comp, name, statName, params)
   {
   }
 
+  virtual ~StatSpyplot() {}
+
+  void addData_impl(int source, int dest, uint64_t num) override;
+
+  void registerOutputFields(SST::Statistics::StatisticOutput* output) override;
+
+  void outputStatisticData(SST::Statistics::StatisticOutput* output, bool endOfSim) override;
+
  protected:
-  std::unordered_map<int,std::unordered_map<int,uint64_t>> vals_;
-  int max_dest_;
+  std::vector<uint64_t> vals_;
+  int n_src_;
+  int n_dst_;
+  int my_id_;
+  std::vector<SST::Statistics::StatisticOutput::fieldHandle_t> fields_;
 
 };
 

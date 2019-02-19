@@ -215,7 +215,7 @@ NetworkMessage::tostr(nic_event_t mut)
       enumcase(RDMA_GET_FAILED);
       enumcase(NVRAM_GET_REQ_TO_RSP);
   }
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
        "NetworkMessage: invalid nic event %d", mut);
 }
 
@@ -238,7 +238,7 @@ NetworkMessage::tostr(type_t ty)
       enumcase(nvram_get_payload);
       enumcase(failure_notification);
   }
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
     "NetworkMessage::tostr: unknown type_t %d",
     ty);
 }

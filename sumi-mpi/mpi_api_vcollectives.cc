@@ -67,12 +67,12 @@ MpiApi::finishVcollectiveOp(CollectiveOpBase* op_)
 {
   CollectivevOp* op = static_cast<CollectivevOp*>(op_);
   if (op->packed_recv){
-    spkt_throw_printf(sprockit::unimplemented_error,
+    spkt_throw_printf(sprockit::UnimplementedError,
                "cannot handle non-contiguous types in collective %s",
                Collective::tostr(op->ty));
   }
   if (op->packed_send){
-    spkt_throw_printf(sprockit::unimplemented_error,
+    spkt_throw_printf(sprockit::UnimplementedError,
                "cannot handle non-contiguous types in collective %s",
                Collective::tostr(op->ty));
   }

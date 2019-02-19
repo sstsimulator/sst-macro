@@ -72,13 +72,13 @@ TaskMapper::validateNproc(int ppn, int num_nodes, int nproc,
   }
 
   if(num_nodes == 0) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "%s::allocate:  empty node vector",
                      name);
   }
 
   if(ppn <= 0) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "%s::allocate:  ppn must be > 0. "
                      "If you're running DUMPI or another tracer, launch_indexing parameter "
                      "needs to be hostname or dumpi. Alternatively you can specify a app1.launch_cmd.",
@@ -87,7 +87,7 @@ TaskMapper::validateNproc(int ppn, int num_nodes, int nproc,
 
   int max_nproc = ppn * num_nodes;
   if (max_nproc < nproc) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "%s::allocate: require ppn * num_nodes >= nproc: ppn=%d num_nodes=%d nproc=%d",
                      name, ppn, num_nodes, nproc);
   }

@@ -73,14 +73,14 @@ dumpiFileName(int rank, std::string fileroot_)
     } else {
       if (errno !=
           ENOENT) { //if the error is anything else than a no such file or directory, crash
-        spkt_throw_printf(sprockit::io_error,
+        spkt_throw_printf(sprockit::IOError,
             "dumpi_file_name: error opening file %s: %s",
             fname, ::strerror(errno));
       }
     }
   }
   // If we get here, then no file was found.
-  spkt_throw_printf(sprockit::io_error,
+  spkt_throw_printf(sprockit::IOError,
     "failed to a find a dumpi file for rank %d starting from the fileroot %s",
     rank, fileroot_.c_str());
 }
@@ -99,7 +99,7 @@ getnumprocs(DumpiMeta* dmeta_)
       nrank++;
     }
   }
-  catch (sprockit::io_error&) {
+  catch (sprockit::IOError&) {
     //ioerror is thrown when no more trace files can be found
   }
   return nrank;

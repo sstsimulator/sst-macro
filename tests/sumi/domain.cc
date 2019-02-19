@@ -77,7 +77,7 @@ run_test(Communicator* dom, int todie, int nproc_live, int context, int tag)
 
   dmsg = comm_collective_block(Collective::allgather, tag);
   if (!dmsg->succeeded()){
-    spkt_throw_printf(sprockit::illformed_error,
+    spkt_throw_printf(sprockit::IllformedError,
         "allgather collective failed with failures %s, should always succeed",
         dmsg->failed_procs().toString().c_str());
   }
@@ -91,7 +91,7 @@ run_test(Communicator* dom, int todie, int nproc_live, int context, int tag)
       for (int j=0; j < nproc_live; ++j){
         std::cerr << sprockit::printf("A[%d] = %d\n", j, dst[j]);
       }
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "Rank %d A[%d] = %d != %d for global rank %d, sparse rank %d on test nproc=%d,tag=%d",
         me, i, dst[i], correct, global_rank, sparse_rank, nproc_live, tag);
     }
@@ -119,7 +119,7 @@ test_allreduce(Communicator* dom, int tag)
 
   Message* msg = comm_poll(); //wait on allreduce
   if (msg->classType() != Message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "allreduce test: expected collective message, but got %s",
       Message::tostr(msg->classType()));
   }
@@ -153,7 +153,7 @@ test_allgather(Communicator* dom, int tag)
 
   Message* msg = comm_poll(); //wait on allgather
   if (msg->classType() != Message::collective_done){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "allreduce test: expected collective message, but got %s",
       Message::tostr(msg->classType()));
   }

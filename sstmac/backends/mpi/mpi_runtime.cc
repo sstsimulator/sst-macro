@@ -217,7 +217,7 @@ MpiRuntime::bcast(void *buffer, int bytes, int root)
 {
   if (bytes < 0 || bytes > 1e9){
     spkt_throw_printf(
-        sprockit::value_error,
+        sprockit::ValueError,
         "Illegbal number of bytes %d in broadcast\n",
         bytes);
   }

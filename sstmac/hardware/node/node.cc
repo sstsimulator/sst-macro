@@ -101,13 +101,13 @@ Node::Node(SST::Params& params, uint32_t id)
   next_outgoing_id_.setSrcNode(my_addr_);
 
   SST::Params nic_params = params.find_prefix_params("nic");
-  nic_ = NIC::factory::get_param("name", nic_params, this);
+  nic_ = NIC::factory::getParam("name", nic_params, this);
 
   SST::Params mem_params = params.find_prefix_params("memory");
-  mem_model_ = MemoryModel::factory::get_param("name", mem_params, this);
+  mem_model_ = MemoryModel::factory::getParam("name", mem_params, this);
 
   SST::Params proc_params = params.find_prefix_params("proc");
-  proc_ = Processor::factory::get_optional_param("processor", "instruction",
+  proc_ = Processor::factory::getOptionalParam("processor", "instruction",
           proc_params,
           mem_model_, this);
 
@@ -120,7 +120,7 @@ Node::Node(SST::Params& params, uint32_t id)
 
   launchRoot_ = params.find<int>("launchRoot", 0);
   if (my_addr_ == launchRoot_){
-    job_launcher_ =   JobLauncher::factory::get_optional_param(
+    job_launcher_ =   JobLauncher::factory::getOptionalParam(
           "JobLauncher", "default", params, os_);
   }
 }

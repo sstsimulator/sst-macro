@@ -103,7 +103,7 @@ class AbstractFatTree :
   double vtk_subtree_theta_;
 
  private:
-  sprockit::sim_parameters*
+  sprockit::SimParameters*
   override_params(SST::Params& params);
 };
 
@@ -182,7 +182,7 @@ class FatTree :
       return down_ports_per_agg_switch_;
     }
     // else core (lvl==2)
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                       "requested first up port on core switch");
     return -1;
   }

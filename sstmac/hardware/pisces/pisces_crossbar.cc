@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
 #include <sstmac/hardware/topology/structured_topology.h>
-#include <sstmac/common/stats/stat_global_int.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/common/runtime.h>
 #include <iomanip>
@@ -104,7 +103,7 @@ PiscesNtoMQueue(const std::string& selfname,
     outputs_(num_out_ports)
 
 {
-  arb_ = PiscesBandwidthArbitrator::factory::get_value(arb, bw);
+  arb_ = PiscesBandwidthArbitrator::factory::getValue(arb, bw);
 }
 
 LinkHandler*
@@ -282,7 +281,7 @@ PiscesNtoMQueue::setOutput(int my_outport, int dst_inport, EventLink* link, int 
     outputs_.size());
 
   if (my_outport > outputs_.size()) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                       "PiscesCrossbar: my_outport %i > outputs_.size() %i",
                       my_outport, outputs_.size());
   }

@@ -84,7 +84,7 @@ SimpleNode::execute(ami::COMP_FUNC func, Event* data, ExecutionEvent* cb)
       break;
     }
     default:
-      spkt_throw_printf(sprockit::spkt_error,
+      spkt_throw_printf(sprockit::SpktError,
             "simplenode: cannot process kernel %s",
             ami::tostr(func));
   }

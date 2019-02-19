@@ -64,7 +64,7 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-static sprockit::need_deleteStatics<Processor> del_statics;
+static sprockit::NeedDeletestatics<Processor> del_statics;
 
 
 Processor::~Processor()

@@ -106,7 +106,7 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
 
   SST::Params contention_params = params.find_prefix_params("contention");
   if (contention_params.contains("model")){
-    contention_model_ = ContentionModel::factory::get_param("model", contention_params);
+    contention_model_ = ContentionModel::factory::getParam("model", contention_params);
   }
 
   nic_links_.resize(top_->numNodes());

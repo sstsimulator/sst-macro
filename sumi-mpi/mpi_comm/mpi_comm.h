@@ -169,7 +169,7 @@ class MpiComm : public Communicator
   MpiRequest* getRequest(int tag) const {
     auto it = ireqs_.find(tag);
     if (it == ireqs_.end()){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
           "cannot find tag %d on comm %d for returning collective MPI_Request",
           tag, id_);
     }

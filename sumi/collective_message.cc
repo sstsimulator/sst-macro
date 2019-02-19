@@ -57,7 +57,7 @@ CollectiveWorkMessage::tostr(int p)
     enumcase(get);
     enumcase(put);
   }
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
     "collective_work_message::invalid action %d",
     p);
 }

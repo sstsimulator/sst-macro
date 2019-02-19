@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
 
-static sprockit::need_deleteStatics<sumi::MpiComm> cleanup_comm;
+static sprockit::NeedDeletestatics<sumi::MpiComm> cleanup_comm;
 
 namespace sumi {
 
@@ -86,7 +86,7 @@ MpiComm::MpiComm(
   topotype_(ty)
 {
   if (peers->size() == 0) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
          "trying to build communicator of size 0");
   }
 

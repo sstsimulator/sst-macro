@@ -162,18 +162,18 @@ param_remap remap_list[] = {
 
 
 void
-remapParams(sprockit::sim_parameters::ptr params, bool verbose)
+remapParams(sprockit::SimParameters::ptr params, bool verbose)
 {
   double timescale = 100e-18;//params->get_optional_time_param("timestamp_resolution", 100e-18);
   int as_per_tick = round(timescale/1e-18) + 0.02;
   Timestamp::initStamps(100);
 
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
-  bool auto_top = top_params->get_optional_bool_param("auto", false);
+  sprockit::SimParameters::ptr top_params = params->getNamespace("topology");
+  bool auto_top = top_params->getOptionalBoolParam("auto", false);
   if (auto_top){
     int max_nproc = native::Manager::computeMaxNproc(params);
     if (max_nproc == 0){
-      params->print_params(std::cerr);
+      params->printParams(std::cerr);
       spkt_abort_printf("computed max nproc=0 from parameters - need app1.launch_cmd or app1.size");
     }
     resizeTopology(max_nproc, params, verbose);
@@ -183,19 +183,19 @@ remapParams(sprockit::sim_parameters::ptr params, bool verbose)
 
   //here is where we want to read debug params and active debug printing for stuff, maybe
   std::vector<std::string> debug_flags;
-  if (params->has_param("debug")){
-    params->get_vector_param("debug", debug_flags);
+  if (params->hasParam("debug")){
+    params->getVectorParam("debug", debug_flags);
   }
 
   for (int i=0; i < debug_flags.size(); ++i){
-    sprockit::debug::turn_on(debug_flags[i]);
+    sprockit::Debug::turnOn(debug_flags[i]);
   }
 
   /** If more than one thread, make sure event manager is multithreaded */
-  if (params->has_param("sst_nthread")){
-    int nthr = params->get_int_param("sst_nthread");
-    if (nthr > 1 && !params->has_param("event_manager")){
-      params->add_param_override("event_manager", "multithread");
+  if (params->hasParam("sst_nthread")){
+    int nthr = params->getIntParam("sst_nthread");
+    if (nthr > 1 && !params->hasParam("event_manager")){
+      params->addParamOverride("event_manager", "multithread");
     }
   }
 }
@@ -203,19 +203,19 @@ remapParams(sprockit::sim_parameters::ptr params, bool verbose)
 }
 
 void
-resizeTopology(int max_nproc, sprockit::sim_parameters::ptr params, bool verbose)
+resizeTopology(int max_nproc, sprockit::SimParameters::ptr params, bool verbose)
 {
-  sprockit::sim_parameters::ptr top_params = params->get_namespace("topology");
-  if (top_params->has_param("name")){
+  sprockit::SimParameters::ptr top_params = params->getNamespace("topology");
+  if (top_params->hasParam("name")){
     spkt_abort_printf("cannot specify topology name with auto topology");
   }
-  top_params->add_param_override("name", "torus");
+  top_params->addParamOverride("name", "torus");
 
   //create a topology matching nproc
   int x, y, z;
   genCartGrid(max_nproc, x, y, z);
   std::string paramval = sprockit::printf("[%d,%d,%d]", x, y, z);
-  top_params->add_param_override("geometry", paramval);
+  top_params->addParamOverride("geometry", paramval);
   if (verbose)
     cerr0 << sprockit::printf("Using auto-generated geometry [%d %d %d] for nproc=%d\n", x, y, z, max_nproc);
 }

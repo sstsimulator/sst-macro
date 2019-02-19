@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
+#include <fstream>
 
 #if SSTMAC_INTEGRATED_SST_CORE && SSTMAC_HAVE_VALID_MPI
 #include <mpi.h>
@@ -126,7 +127,7 @@ Topology::staticTopology(SST::Params& params)
 {
   if (!staticTopology_){
     SST::Params top_params = params.find_prefix_params("topology");
-    staticTopology_ = Topology::factory::get_param("name", top_params);
+    staticTopology_ = Topology::factory::getParam("name", top_params);
   }
   return staticTopology_;
 }
@@ -230,7 +231,7 @@ Topology::createPartition(
   int nthread,
   int noccupied) const
 {
-  spkt_throw_printf(sprockit::unimplemented_error,
+  spkt_throw_printf(sprockit::UnimplementedError,
     "topology::partition: not valid for %s",
     toString().c_str());
 }

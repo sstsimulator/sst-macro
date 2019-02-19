@@ -297,7 +297,7 @@ get_implicit_compute_state(){
   if (*statePtr == nullptr){
       SST::Params& params = sstmac::sw::OperatingSystem::currentOs()->params();
       *statePtr = sstmac::sw::OperatingSystem::ImplicitState::factory
-                    ::get_optional_param("ImplicitState", "null", params);
+                    ::getOptionalParam("ImplicitState", "null", params);
   }
   return *statePtr;
 }

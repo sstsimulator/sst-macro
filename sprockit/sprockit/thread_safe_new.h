@@ -13,7 +13,7 @@ T& thread_stack_size(){
   return stacksize;
 }
 
-static int inline current_threadId() {
+static int inline currentThreadid() {
   int stacksize = thread_stack_size<int>();
   if (stacksize == 0){
     return 0;
@@ -27,11 +27,11 @@ static int inline current_threadId() {
   }
 }
 
-struct thread_allocator_set {
+struct ThreadAllocatorSet {
 #define MAX_NUM_NEW_SAFE_THREADS 128
   std::vector<char*> allocations[MAX_NUM_NEW_SAFE_THREADS];
   std::vector<void*> available[MAX_NUM_NEW_SAFE_THREADS];
-  ~thread_allocator_set(){
+  ~ThreadAllocatorSet(){
     for (int i=0; i < MAX_NUM_NEW_SAFE_THREADS; ++i){
       auto& vec = allocations[i];
       for (char* ptr : vec){
@@ -46,20 +46,20 @@ class thread_safe_new {
  public:
 #if SPKT_VALGRIND_MODE
   template <class... Args>
-  static T* allocate_at_beginning(Args&&... args){
+  static T* allocateAtBeginning(Args&&... args){
     return new T(std::forward<Args>(args)...);
   }
 
-  static void free_at_end(T* ptr){
+  static void freeAtEnd(T* ptr){
     delete ptr;
   }
 #else
-  static void free_at_end(T* ptr){
+  static void freeAtEnd(T* ptr){
     //do nothing - the allocation is getting cleaned up
   }
 
   template <class... Args>
-  static T* allocate_at_beginning(Args&&... args){
+  static T* allocateAtBeginning(Args&&... args){
     void* ptr = allocate(0);
     return new (ptr) T(std::forward<Args>(args)...);
   }
@@ -78,7 +78,7 @@ class thread_safe_new {
       spkt_abort_printf("allocating mismatched sizes: %d != %d",
                         sz, sizeof(T));
     }
-    int thread = current_threadId();
+    int thread = currentThreadid();
     return allocate(thread);
   }
 
@@ -87,7 +87,7 @@ class thread_safe_new {
   }
 
   static void operator delete(void* ptr){
-    int thread = current_threadId();
+    int thread = currentThreadid();
     alloc_.available[thread].push_back(ptr);
   }
 #endif
@@ -114,12 +114,12 @@ class thread_safe_new {
   }
 
  private:
-  static thread_allocator_set alloc_;
+  static ThreadAllocatorSet alloc_;
   static int constexpr increment = 512;
 
 };
 
-template <class T> thread_allocator_set thread_safe_new<T>::alloc_;
+template <class T> ThreadAllocatorSet thread_safe_new<T>::alloc_;
 
 }
 

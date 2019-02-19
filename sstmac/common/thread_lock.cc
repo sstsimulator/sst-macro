@@ -72,7 +72,7 @@ MutexThreadLock::MutexThreadLock()
 {
   int signal = pthread_mutex_init(&mutex_, NULL);
   if (signal != 0) {
-    spkt_throw_printf(sprockit::spkt_error,
+    spkt_throw_printf(sprockit::SpktError,
         "mutex init error: %d", signal);
   }
 }
@@ -90,7 +90,7 @@ MutexThreadLock::lock()
 {
   int signal = pthread_mutex_lock(&mutex_);
   if (signal != 0) {
-    spkt_throw_printf(sprockit::spkt_error,
+    spkt_throw_printf(sprockit::SpktError,
         "pthread_lock::lock: mutex lock error %d:%s",
         signal, ::strerror(signal));
   }

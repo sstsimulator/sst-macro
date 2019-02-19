@@ -59,6 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/common/stats/stat_collector.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
@@ -95,13 +96,15 @@ class OperatingSystem : public SubComponent
     virtual void unsetState(int type) = 0;
   };
 
-  struct RegressionModel : public MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*> {
-    using Parent = MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>;
-    DeclareFactoryArgs(RegressionModel, const std::string&)
+  struct RegressionModel :
+      public SST::Statistics::MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>
+  {
+    using Parent = SST::Statistics::MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>;
+    DeclareFactoryArgs(RegressionModel, SST::BaseComponent*, const std::string&)
 
-    RegressionModel(SST::Params& params,
-                     const std::string& key)
-     : Parent(params), key_(key) { }
+    RegressionModel(SST::BaseComponent* comp, const std::string& name,
+                    const std::string& subName, SST::Params& params)
+     : Parent(comp, name, subName, params), key_(name) { }
 
     const std::string& key() const {
       return key_;
@@ -138,9 +141,10 @@ class OperatingSystem : public SubComponent
   template <class Sample>
   struct ThreadSafeTimerModel : public RegressionModel
   {
-    ThreadSafeTimerModel(SST::Params& params,
-                            const std::string& key) :
-      RegressionModel(params, key), free_slots_(100), timers_(100)
+    ThreadSafeTimerModel(SST::Params& params, SST::BaseComponent* comp,
+                         const std::string& name, const std::string& subName) :
+      RegressionModel(comp, name, subName, params),
+      free_slots_(100), timers_(100)
     {
       for (int i=0; i < free_slots_.size(); ++i) free_slots_[i] = i;
     }

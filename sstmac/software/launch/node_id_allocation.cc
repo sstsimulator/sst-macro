@@ -76,10 +76,10 @@ NodeIdAllocation::readCoordinateFile(
   hw::Topology* top)
 {
   std::ifstream in;
-  sprockit::SpktFileIO::open_file(in, file);
+  sprockit::SpktFileIO::openFile(in, file);
 
   if (!in.is_open()) {
-    spkt_throw_printf(sprockit::input_error,
+    spkt_throw_printf(sprockit::InputError,
      "NodeIdAllocation: could not find node id file %s in current folder or configuration include path",
      file.c_str());
   }
@@ -94,7 +94,7 @@ NodeIdAllocation::readCoordinateFile(
     int next;
     in >> next;
     if (next >= maxNodeId){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
         "NodeIdAllocation: invalid node id %d in file %s - max id is %d",
         next, file.c_str(), maxNodeId);
     }

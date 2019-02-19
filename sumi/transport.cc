@@ -482,7 +482,7 @@ CollectiveEngine::notifyCollectiveDone(int rank, Collective::type_t ty, int tag)
 {
   Collective* coll = collectives_[ty][tag];
   if (!coll){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "transport::notify_collective_done: invalid collective of type %s, tag %d",
        Collective::tostr(ty), tag);
   }
@@ -719,7 +719,7 @@ CollectiveEngine::validateCollective(Collective::type_t ty, int tag)
 
   Collective* coll = it->second;
   if (!coll){
-   spkt_throw_printf(sprockit::illformed_error,
+   spkt_throw_printf(sprockit::IllformedError,
     "sumi_api::validate_collective: lingering null collective of type %s with tag %d",
     Collective::tostr(ty), tag);
   }
@@ -728,7 +728,7 @@ CollectiveEngine::validateCollective(Collective::type_t ty, int tag)
     return; // all good
   }
 
-  spkt_throw_printf(sprockit::illformed_error,
+  spkt_throw_printf(sprockit::IllformedError,
     "sumi_api::validate_collective: cannot overwrite collective of type %s with tag %d",
     Collective::tostr(ty), tag);
 }

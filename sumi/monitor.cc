@@ -89,7 +89,7 @@ FunctionSet::erase(TimeoutFunction* func)
   }
 
   if (!found){
-    spkt_throw_printf(sprockit::illformed_error,
+    spkt_throw_printf(sprockit::IllformedError,
         "pinger::cancel: unknown pinger %p",
         func);
   }

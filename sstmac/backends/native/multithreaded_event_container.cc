@@ -167,7 +167,7 @@ MultithreadedEventContainer::MultithreadedEventContainer(
 
   me_ = rt_->me();
   nproc_ = rt_->nproc();
-  if (params->has_param("cpu_affinity")) {
+  if (params->hasParam("cpu_affinity")) {
     params.find_array("cpu_affinity", cpu_affinity_);
     //it would be nice to check that size of cpu_offsets matches task per node
   }

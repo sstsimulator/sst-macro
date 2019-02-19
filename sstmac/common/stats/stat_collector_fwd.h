@@ -42,11 +42,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef STAT_COLLECTOR_FWD_H
-#define STAT_COLLECTOR_FWD_H
+#ifndef sstmac_common_STAT_COLLECTOR_FWD_H
+#define sstmac_common_STAT_COLLECTOR_FWD_H
 
-namespace sstmac {
-class StatCollector;
+#include <sstmac/common/sstmac_config.h>
+
+
+#if SSTMAC_INTEGRATED_SST_CORE
+namespace SST {
+namespace Statistics {
+class StatisticOutput;
+class StatisticBase;
 }
+}
+#else
+namespace sstmac {
+class StatisticOutput;
+class StatisticBase;
+template <class T, class... Args> class Statistic;
+}
+namespace SST {
+namespace Statistics {
+using sstmac::StatisticOutput;
+using sstmac::StatisticBase;
+using sstmac::Statistic;
+}
+}
+#endif
 
 #endif // STAT_COLLECTOR_FWD_H

@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/pisces/pisces_sender.h>
 #include <sstmac/hardware/pisces/pisces_stats_fwd.h>
-#include <sstmac/common/stats/stat_global_int_fwd.h>
 #include <sstmac/hardware/router/router.h>
 #include <sprockit/keyword_registration.h>
 

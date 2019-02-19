@@ -46,11 +46,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_COMMON_EventScheduler_H_INCLUDED
 
 #include <sstmac/common/timestamp.h>
-#include <sstmac/common/stats/location_trace.h>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/handler_event_queue_entry.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/stats/stat_collector_fwd.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/sst_core/integrated_component.h>
@@ -97,6 +97,7 @@ namespace Event {
 using HandlerBase = sstmac::EventHandler;
 }
 using sstmac::Component;
+using BaseComponent = sstmac::Component;
 using Link = sstmac::EventLink;
 }
 namespace sstmac {
@@ -190,6 +191,14 @@ class EventScheduler : public sprockit::printable
     self_link_->send(delay, time_converter_, ev);
   }
 #else
+  template <class Params, class T> T* registerStatistic(Params& params, SST::BaseComponent* comp, const std::string& name){
+    auto stat_params = params.find_prefix_params(name);
+    Statistic<T>* stat = Statistic<T>::factory::getOptionalParam("type", "null",
+                                                                   stat_params, comp, name);
+    registerStatisticCore(stat);
+    return stat;
+  }
+
   void sendDelayedExecutionEvent(Timestamp delay, ExecutionEvent* ev){
     sendExecutionEvent(delay + now(), ev);
   }
@@ -276,6 +285,9 @@ class EventScheduler : public sprockit::printable
   SST::Link* self_link_;
   static SST::TimeConverter* time_converter_;
 #else
+
+  StatisticBase* registerStatisticCore(SST::Params& params, const std::string& name);
+
   uint32_t id_;
   EventManager* mgr_;
   uint32_t seqnum_;

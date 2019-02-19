@@ -95,10 +95,10 @@ SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
   }
 
   allocator_ = sw::NodeAllocator::factory
-                ::get_optional_param("allocation", "first_available", params);
+                ::getOptionalParam("allocation", "first_available", params);
 
   indexer_ = sw::TaskMapper::factory
-                ::get_optional_param("indexing", "block", params);
+                ::getOptionalParam("indexing", "block", params);
 }
 
 SoftwareLaunchRequest::~SoftwareLaunchRequest()
@@ -133,7 +133,7 @@ SoftwareLaunchRequest::indexAllocation(
                rank_to_node_indexing,
                nproc_);
 
-  if (sprockit::debug::slot_active(sprockit::dbg::indexing)){
+  if (sprockit::Debug::slotActive(sprockit::dbg::indexing)){
     cout0 << sprockit::printf("Allocated and indexed %d nodes\n",
                 rank_to_node_indexing.size());
     int num_nodes = rank_to_node_indexing.size();
@@ -146,7 +146,7 @@ SoftwareLaunchRequest::indexAllocation(
       if (regtop){
         hw::coordinates coords = regtop->node_coords(nid);
         cout0 << sprockit::printf("Rank %d -> nid%d %s\n",
-            i, int(nid), stl_string(coords).c_str());
+            i, int(nid), stlString(coords).c_str());
       } else {
          cout0 << sprockit::printf("Rank %d -> nid%d\n", i, int(nid));
       }
@@ -203,14 +203,14 @@ SoftwareLaunchRequest::parseLaunchCmd(
         procs_per_node = ncores > nproc ? nproc : ncores;
       }
     } else {
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
                         "invalid launcher %s given", launcher.c_str());
     }
   } else { //standard launch
     try {
       nproc = params.find<long>("size");
       procs_per_node = params.find<int>("concentration", 1);
-    } catch (sprockit::input_error& e) {
+    } catch (sprockit::InputError& e) {
       cerr0 << "Problem reading app size parameter in app_launch_request.\n"
                "If this is a DUMPI trace, set app name to dumpi.\n";
       throw e;
@@ -280,18 +280,18 @@ SoftwareLaunchRequest::parseAprun(
     }
   }
   if (_nproc <= 0)
-    throw sprockit::input_error(
+    throw sprockit::InputError(
       "aprun allocator did not receive a valid -n specification");
 
   if (_nproc_per_node == 0 || _nproc_per_node > _nproc)
-    throw sprockit::input_error(
+    throw sprockit::InputError(
       "aprun allocator did not receive a valid -N specification");
 
 
 
   if (core_aff_str.size() > 0) { //we got a core affinity spec
     if (!core_affinities.empty()) {
-      spkt_throw_printf(sprockit::illformed_error,
+      spkt_throw_printf(sprockit::IllformedError,
                        "app_launch_request::parse_aprun: core affinities already assigned, cannot use -cc option");
     }
 

@@ -83,11 +83,11 @@ inline void abort(const std::string& str){
 /**
  * General errors, or base class for more specific errors.
  */
-struct spkt_error : public std::exception {
-  spkt_error(const std::string &msg) :
+struct SpktError : public std::exception {
+  SpktError(const std::string &msg) :
     message(msg) {
   }
-  virtual ~spkt_error() throw () {}
+  virtual ~SpktError() throw () {}
 
   virtual const char* what() const throw () {
     return message.c_str();
@@ -99,94 +99,94 @@ struct spkt_error : public std::exception {
 /**
  * Error indicating something was null and shouldn't have been
  */
-struct null_error : public spkt_error {
-  null_error(const std::string &msg) :
-    spkt_error(msg) {
+struct NullError : public SpktError {
+  NullError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~null_error() throw () {}
+  virtual ~NullError() throw () {}
 };
 
 /**
  * Error indicating some internal value was unexpected.
  */
-struct value_error : public spkt_error {
-  value_error(const std::string &msg) :
-    spkt_error(msg) {
+struct ValueError : public SpktError {
+  ValueError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~value_error() throw () {}
+  virtual ~ValueError() throw () {}
 };
 
 /**
  * A general error somewhere from a library
  */
-struct library_error : public spkt_error {
-  library_error(const std::string &msg) :
-    spkt_error(msg) {
+struct LibraryError : public SpktError {
+  LibraryError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~library_error() throw () {}
+  virtual ~LibraryError() throw () {}
 };
 
 /**
  * An error indicating something to do with the advancement of simulation time
  */
-struct time_error : public spkt_error {
-  time_error(const std::string &msg) :
-    spkt_error(msg) {
+struct TimeError : public SpktError {
+  TimeError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~time_error() throw () {}
+  virtual ~TimeError() throw () {}
 };
 
 /**
  * File open, read, or write error
  */
-struct io_error : public spkt_error {
-  io_error(const std::string &msg) :
-    spkt_error(msg) {
+struct IOError : public SpktError {
+  IOError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~io_error() throw () {}
+  virtual ~IOError() throw () {}
 };
 
 /**
  * An error indicating some format was not correct
  */
-struct illformed_error : public spkt_error {
-  illformed_error(const std::string &msg) :
-    spkt_error(msg) {
+struct IllformedError : public SpktError {
+  IllformedError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~illformed_error() throw () {}
+  virtual ~IllformedError() throw () {}
 };
 
 /**
  * An error having to do with an operating system
  */
-struct os_error : public spkt_error {
-  os_error(const std::string &msg) :
-    spkt_error(msg) {
+struct OSError : public SpktError {
+  OSError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~os_error() throw () {}
+  virtual ~OSError() throw () {}
 };
 
 /**
  * Something happened when allocating, deallocating, or mapping
  * a memory region.
  */
-struct memory_error : public spkt_error {
-  memory_error(const std::string &msg) :
-    spkt_error(msg) {
+struct MemoryError : public SpktError {
+  MemoryError(const std::string &msg) :
+    SpktError(msg) {
   }
 
-  virtual ~memory_error() throw () {}
+  virtual ~MemoryError() throw () {}
 };
 
 /**
  * Something happened when iterating over a collection
  */
-struct iterator_error : public spkt_error {
-  iterator_error(const std::string &msg) :
-    spkt_error(msg) {
+struct IteratorError : public SpktError {
+  IteratorError(const std::string &msg) :
+    SpktError(msg) {
   }
 
-  virtual ~iterator_error() throw () {}
+  virtual ~IteratorError() throw () {}
 
 };
 
@@ -194,53 +194,53 @@ struct iterator_error : public spkt_error {
  * A function was intentionally unimplemented because it doesn't make sense,
  * or it is ongoing work
  */
-struct unimplemented_error : public spkt_error {
-  unimplemented_error(const std::string &msg) :
-    spkt_error(msg) {
+struct UnimplementedError : public SpktError {
+  UnimplementedError(const std::string &msg) :
+    SpktError(msg) {
   }
 
-  virtual ~unimplemented_error() throw () {}
+  virtual ~UnimplementedError() throw () {}
 };
 
 /**
  * Exception indicating that chosen path is not yet ported to new framework.
  * Default to older framework.
 */
-struct not_ported_error : public spkt_error {
-  not_ported_error(const std::string& msg) :
-    spkt_error(msg) {
+struct NotPortedError : public SpktError {
+  NotPortedError(const std::string& msg) :
+    SpktError(msg) {
   }
-  virtual ~not_ported_error() throw() {}
+  virtual ~NotPortedError() throw() {}
 };
 
 /**
  * Key to a map was not in the map
  */
-struct invalid_key_error : public spkt_error {
-  invalid_key_error(const std::string &msg) :
-    spkt_error(msg) {
+struct InvalidKeyError : public SpktError {
+  InvalidKeyError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~invalid_key_error() throw () {}
+  virtual ~InvalidKeyError() throw () {}
 };
 
 /**
  * An index was out of range in a collection.
  */
-struct range_error : public spkt_error {
-  range_error(const std::string &msg) :
-    spkt_error(msg) {
+struct RangeError : public SpktError {
+  RangeError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~range_error() throw () {}
+  virtual ~RangeError() throw () {}
 };
 
 /**
  * Invalid user input
  */
-struct input_error : public spkt_error {
-  input_error(const std::string &msg) :
-    spkt_error(msg) {
+struct InputError : public SpktError {
+  InputError(const std::string &msg) :
+    SpktError(msg) {
   }
-  virtual ~input_error() throw () {}
+  virtual ~InputError() throw () {}
 };
 
 } // end of namespace sprockit

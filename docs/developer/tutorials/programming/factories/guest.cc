@@ -8,7 +8,7 @@ christopher_guest::christopher_guest(SST::Params& params) :
 {
   num_fingers_ = params.find<int>("num_fingers");
   if (num_fingers_ != 6) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "invalid number of fingers %d - must be 6");
   }
 }

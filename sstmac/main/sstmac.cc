@@ -148,7 +148,7 @@ finalize(ParallelRuntime* rt)
 {
   rt->finalize();
   sstmac::sw::OperatingSystem::simulationDone();
-  sprockit::statics::finish();
+  sprockit::Statics::finish();
   sprockit::sprockit_finalize_cxx_heap();
   delete rt;
 }
@@ -171,31 +171,31 @@ initOpts(opts& oo, int argc, char** argv)
  * @param params  An already allocated parameter object
  */
 void
-initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr params, bool parallel)
+initParams(ParallelRuntime* rt, opts& oo, sprockit::SimParameters::ptr params, bool parallel)
 {
   //use the config file to set up file search paths
   size_t pos = oo.configfile.find_last_of('/');
   if (pos != std::string::npos) {
     std::string dir = oo.configfile.substr(0, pos + 1);
-    sprockit::SpktFileIO::add_path(dir);
+    sprockit::SpktFileIO::addPath(dir);
   }
 
   if (oo.got_config_file){
     if (parallel){
       RuntimeParamBcaster bcaster(rt);
-      sprockit::sim_parameters::ptr tmp_params;
-      sprockit::sim_parameters::parallel_build_params(tmp_params, rt->me(), rt->nproc(),
+      sprockit::SimParameters::ptr tmp_params;
+      sprockit::SimParameters::parallelBuildParams(tmp_params, rt->me(), rt->nproc(),
                                                       oo.configfile, &bcaster, true);
       params = tmp_params;
     } else {
-      if (oo.got_config_file) params->parse_file(oo.configfile, false, true);
+      if (oo.got_config_file) params->parseFile(oo.configfile, false, true);
     }
   }
 
 
   if (oo.params) {
     // there were command-line overrides
-    oo.params->combine_into(params);
+    oo.params->combineInto(params);
   }
 
   /** DO NOT CHANGE THE ORDER OF THE INIT FUNCTIONS BELOW - JJW
@@ -209,8 +209,8 @@ initParams(ParallelRuntime* rt, opts& oo, sprockit::sim_parameters::ptr params, 
 #if !SSTMAC_INTEGRATED_SST_CORE
   std::string rank = sprockit::printf("%d", rt->me());
   std::string nproc = sprockit::printf("%d", rt->nproc());
-  params->add_param_override("sst_rank", rank);
-  params->add_param_override("sst_nproc", nproc);
+  params->addParamOverride("sst_rank", rank);
+  params->addParamOverride("sst_nproc", nproc);
 #endif
 }
 
@@ -270,15 +270,6 @@ runParams(opts& oo,
     throw;
   } // catch
 
-  bool strict_params_test = params.find<bool>("strict_params", false);
-  if (strict_params_test){
-    bool unread_params = params->print_unread_params();
-    if (unread_params)
-      sprockit::abort("simulation finished with unread parameters - abort");
-  }
-
-  // now that we finished running, print the parameters that we used
-
   double stop = sstmacWallTime();
   stats.wallTime = stop - start;
   stats.simulatedTime = runtime.sec();
@@ -322,20 +313,20 @@ runStandalone(int argc, char** argv)
   //this means we actually just want to run a compiled program
   //and get the hell out of dodge
   sstmac::Timestamp::initStamps(100); //100 attoseconds per tick
-  SST::Params null_params = std::make_shared<sprockit::sim_parameters>();
+  SST::Params null_params = std::make_shared<sprockit::SimParameters>();
 
   SST::Params nic_params = null_params.find_prefix_params("nic");
-  nic_params->add_param_override("name", "null");
+  nic_params->addParamOverride("name", "null");
 
   SST::Params mem_params = null_params.find_prefix_params("memory");
-  mem_params->add_param_override("name", "null");
+  mem_params->addParamOverride("name", "null");
 
   SST::Params proc_params = null_params.find_prefix_params("proc");
-  proc_params->add_param_override("frequency", "1ghz");
-  proc_params->add_param_override("ncores", 1);
+  proc_params->addParamOverride("frequency", "1ghz");
+  proc_params->addParamOverride("ncores", 1);
 
-  null_params->add_param_override("id", 1);
-  null_params->add_param_override("name", "sstmac_app_name");
+  null_params->addParamOverride("id", 1);
+  null_params->addParamOverride("name", "sstmac_app_name");
   sstmac::sw::SoftwareId id(0,0);
   sstmac::native::SerialRuntime rt(null_params);
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -350,10 +341,10 @@ runStandalone(int argc, char** argv)
   for (int i=1; i < argc; ++i){
     argv_sstr << " " << argv[i];
   }
-  null_params->add_param("argv", argv_sstr.str());
+  null_params->addParam("argv", argv_sstr.str());
 
-  null_params->add_param_override("notify", "false");
-  sstmac::sw::App* a = sstmac::sw::App::factory::get_value(
+  null_params->addParamOverride("notify", "false");
+  sstmac::sw::App* a = sstmac::sw::App::factory::getValue(
         "sstmac_app_name", null_params, id, &os);
   os.startApp(a, "");
   return a->rc();
@@ -363,12 +354,12 @@ runStandalone(int argc, char** argv)
 }
 
 int
-tryMain(sprockit::sim_parameters::ptr params,
+tryMain(sprockit::SimParameters::ptr params,
         int argc, char **argv, bool params_only)
 {
   //set up the search path
-  sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
-  sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
+  sprockit::SpktFileIO::addPath(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
+  sprockit::SpktFileIO::addPath(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
 
   sstmac::ParallelRuntime* rt;
   if (params_only){
@@ -404,10 +395,10 @@ tryMain(sprockit::sim_parameters::ptr params,
   //do some cleanup and processing of params
   sstmac::remapParams(params);
 
-  if (params->has_param("external_libs")){
+  if (params->hasParam("external_libs")){
     std::string pathStr = loadExternPathStr();
     std::vector<std::string> libraries;
-    params->get_vector_param("external_libs", libraries);
+    params->getVectorParam("external_libs", libraries);
     for (auto&& lib : libraries){
       loadExternLibrary(lib, pathStr);
     }
@@ -420,7 +411,7 @@ tryMain(sprockit::sim_parameters::ptr params,
 #else
   SST::Params mainParams(params);
   if (!oo.benchmark.empty()){
-    Benchmark* bm = Benchmark::factory::get_value(oo.benchmark, mainParams);
+    Benchmark* bm = Benchmark::factory::getValue(oo.benchmark, mainParams);
     bm->run();
     return 0;
   }
@@ -438,7 +429,7 @@ tryMain(sprockit::sim_parameters::ptr params,
   }
 
   if (oo.print_params) {
-    params->print_params();
+    params->printParams();
   }
 
   if (oo.print_walltime) {
@@ -447,7 +438,7 @@ tryMain(sprockit::sim_parameters::ptr params,
 
   if (!oo.params_dump_file.empty()) {
     std::ofstream ofs(oo.params_dump_file.c_str());
-    params->print_params(ofs);
+    params->printParams(ofs);
     ofs.close();
   }
 

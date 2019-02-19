@@ -49,8 +49,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sprockit {
 
-class sim_parameters;
-using sim_parameters_ptr = std::shared_ptr<sim_parameters>;
+class SimParameters;
+using SimParametersPtr = std::shared_ptr<SimParameters>;
 
 }
 

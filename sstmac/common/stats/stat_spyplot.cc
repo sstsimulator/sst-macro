@@ -54,18 +54,36 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-void
-StatSpyplot::addOne(int source, int dest)
-{
-  addData(source, dest, 1);
-}
 
 void
 StatSpyplot::addData_impl(int source, int dest, uint64_t num)
 {
-  vals_[source][dest] += num;
-  max_dest_ = std::max(max_dest_, dest);
+#if SSTMAC_SANITY_CHECK
+  if (source != my_id_){
+    spkt_abort_printf("source %d does not match spylot %d",
+                      source, my_id_);
+  }
+#endif
+  vals_[dest] += num;
 }
+
+void
+StatSpyplot::registerOutputFields(StatisticOutput *output)
+{
+  for (int i=0; i < n_dst_; ++i){
+    auto str = sprockit::printf("spy%d-%d", my_id_, i);
+    fields_[i] = output->registerField<uint64_t>(str.c_str());
+  }
+}
+
+void
+StatSpyplot::outputStatisticData(StatisticOutput *output, bool endOfSim)
+{
+  for (int i=0; i < n_dst_; ++i){
+    output->outputField(fields_[i], vals_[i]);
+  }
+}
+
 
 /**
 void

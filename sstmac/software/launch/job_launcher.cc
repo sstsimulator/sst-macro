@@ -209,7 +209,7 @@ DefaultJoblauncher::handleLaunchRequest(AppLaunchRequest* request,
 
   for (const NodeId& nid : allocation){
     if (available_.find(nid) == available_.end()){
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
                         "allocation requested node %d, but it's not available",
                         int(nid));
     }

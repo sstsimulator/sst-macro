@@ -80,7 +80,7 @@ template <class> struct wrap { typedef void type; };
  * the method or avoid calling it on classes that don't implement it
  */
 template<typename T, class Enable=void>
-struct call_finalizeInit : public std::false_type {
+struct callFinalizeInit : public std::false_type {
  public:
   void operator()(T* t, SST::Params& params){
     //if we compile here, class T does not have a finalizeInit
@@ -91,7 +91,7 @@ struct call_finalizeInit : public std::false_type {
 
 
 template<typename T>
-struct call_finalizeInit<T,
+struct callFinalizeInit<T,
   typename wrap<
     decltype(std::declval<T>().finalizeInit(getLValue<SST::Params>()))
    >::type
@@ -106,14 +106,14 @@ struct call_finalizeInit<T,
 };
 
 template <typename T, class... Args>
-struct start_call_finalizeInit {
+struct startCallFinalizeInit {
   void operator()(T* t, Args&&...args){}
 };
 
 template <typename T, class... Args>
-struct start_call_finalizeInit<T,SST::Params&,Args...> {
+struct startCallFinalizeInit<T,SST::Params&,Args...> {
   void operator()(T* t, SST::Params& params, Args&&... args){
-    call_finalizeInit<T>()(t, params);
+    callFinalizeInit<T>()(t, params);
   }
 };
 
@@ -122,7 +122,7 @@ template <class Factory>
 class CleanupFactory {
  public:
   ~CleanupFactory(){
-    Factory::clean_up();
+    Factory::cleanUp();
   }
 };
 
@@ -158,7 +158,7 @@ class Factory
    *                depending on static init order
    * @param newname The new name that can be used for accessing child type
    */
-  static void register_alias(const std::string& oldname, const std::string& newname){
+  static void registerAlias(const std::string& oldname, const std::string& newname){
     if (!builder_map_) {
       builder_map_ = new builder_map;
     }
@@ -174,7 +174,7 @@ class Factory
     }
   }
 
-  static void clean_up(){
+  static void cleanUp(){
     //do not iterate the builder map and delete entry
     //each builder_t is a static objec that gets cleaned up automatically
 
@@ -191,14 +191,14 @@ class Factory
    * @param builder The builder object whose virtual functio returns
    *                the correct child type
    */
-  static void register_name(const std::string& name, builder_t* builder) {
+  static void registerName(const std::string& name, builder_t* builder) {
     if (!builder_map_) {
       builder_map_ = new builder_map;
     }
     if (!alias_map_){
       alias_map_ = new alias_map;
     }
-    add_to_map(name, builder, builder_map_, alias_map_);
+    addToMap(name, builder, builder_map_, alias_map_);
   }
 
  private:
@@ -209,7 +209,7 @@ class Factory
    * @param descr_map
    * @param alias_map
    */
-  static void add_to_map(const std::string& namestr, builder_t* desc,
+  static void addToMap(const std::string& namestr, builder_t* desc,
             std::map<std::string, builder_t*>* builder_map,
             std::map<std::string, std::list<std::string> >* alias_map) {
     // The namestr can be a | separate list of valid names, e.g.
@@ -252,7 +252,7 @@ class Factory
     auto it = builder_map_->find(valname), end = builder_map_->end();
     if (it == end) {
       std::cerr << "Valid factories are:" << std::endl;
-      print_valid_names(std::cerr);
+      printValidNames(std::cerr);
       spkt_abort_printf("could not find name %s for factory %s",
                        valname.c_str(), name_);
     }
@@ -263,18 +263,18 @@ class Factory
                        valname.c_str(), name_);
     }
     T* p = builder->build(std::forward<InArgs>(args)...);
-    start_call_finalizeInit<T,InArgs...>()(p, std::forward<InArgs>(args)...);
+    startCallFinalizeInit<T,InArgs...>()(p, std::forward<InArgs>(args)...);
     return p;
   }
 
  public:
   template <class Params>
-  static bool valid_param(const std::string& name, Params& params) {
+  static bool isValidParam(const std::string& name, Params& params) {
     std::string value = params.template find<std::string>(name);
     return builder_map_->find(value) != builder_map_->end();
   }
 
-  static bool valid_value(const std::string& value) {
+  static bool isValidValue(const std::string& value) {
     return builder_map_->find(value) != builder_map_->end();
   }
 
@@ -289,18 +289,18 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   template <class... InArgs>
-  static T* get_value(const std::string& valname,
+  static T* getValue(const std::string& valname,
             InArgs&&... args) {
     return _get_value(valname, std::forward<InArgs>(args)...);
   }
 
-  static void print_valid_names(std::ostream& os){
+  static void printValidNames(std::ostream& os){
     for (auto& pair : *builder_map_){
       os << pair.first << "\n";
     }
   }
 
-  static bool is_valid_name(const std::string& name){
+  static bool isValidName(const std::string& name){
     return builder_map_->find(name) != builder_map_->end();
   }
 
@@ -315,7 +315,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   template <class Params, class... InArgs>
-  static T* get_param(const std::string& param_name,
+  static T* getParam(const std::string& param_name,
                       Params& params, InArgs&&... args) {
     return _get_value(params.template find<std::string>(param_name),
                       params, std::forward<InArgs>(args)...);
@@ -335,7 +335,7 @@ class Factory
    * @return  A constructed child class corresponding to a given string name
    */
   template <class Params, class... InArgs>
-  static T* get_optional_param(const std::string& param_name,
+  static T* getOptionalParam(const std::string& param_name,
                      const std::string& defval,
                      Params& params, InArgs&&... args) {
     return _get_value(params.template find<std::string>(param_name, defval),
@@ -344,7 +344,7 @@ class Factory
 
 };
 
-template<class T, typename... Args> const char* Factory<T,Args...>::name_ = T::factory_name();
+template<class T, typename... Args> const char* Factory<T,Args...>::name_ = T::factoryName();
 template<class T, typename... Args> std::map<std::string, typename Factory<T,Args...>::builder_t*>*
    Factory<T,Args...>::builder_map_ = nullptr;
 template<class T, typename... Args> std::map<std::string, std::list<std::string>>*
@@ -357,7 +357,7 @@ class BuilderImpl : public Builder<Parent, Args...>
 {
  public:
   BuilderImpl(const char *name){
-    Factory<Parent, Args...>::register_name(name, this);
+    Factory<Parent, Args...>::registerName(name, this);
     registered_ = true;
   }
 
@@ -365,7 +365,7 @@ class BuilderImpl : public Builder<Parent, Args...>
     return new Child(std::forward<Args>(args)...);
   }
 
-  static bool is_registered() {
+  static bool isRegistered() {
     return registered_;
   }
 
@@ -383,14 +383,14 @@ template <class Child, class Parent, class... Args>
 class BuilderRegistration<Child, Factory<Parent,Args...>>
 {
  public:
-  static bool builder_registered(){ return builder_.is_registered(); }
+  static bool builderRegistered(){ return builder_.isRegistered(); }
 
  private:
   static BuilderImpl<Child,Parent,Args...> builder_;
 };
 
 template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Args...>
-  BuilderRegistration<Child,Factory<Parent,Args...>>::builder_(Child::factory_string());
+  BuilderRegistration<Child,Factory<Parent,Args...>>::builder_(Child::factoryString());
 
 }
 
@@ -400,21 +400,21 @@ template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Arg
 #define FactoryRegister(cls_str, parent_cls, child_cls, ...) \
   friend class ::sprockit::BuilderImpl<child_cls,typename parent_cls::factory>; \
   public: \
-   static const char* factory_string() { \
+   static const char* factoryString() { \
      return cls_str; \
    } \
-   static bool factory_registered() { \
-     return ::sprockit::BuilderRegistration<child_cls,parent_cls::factory>::builder_registered(); \
+   static bool factoryRegistered() { \
+     return ::sprockit::BuilderRegistration<child_cls,parent_cls::factory>::builderRegistered(); \
    }
 
 #define DeclareFactoryArgs(T, ...) \
   public: \
    friend class ::sprockit::Factory<T,SST::Params&,__VA_ARGS__>; \
     using factory = ::sprockit::Factory<T,SST::Params&,__VA_ARGS__>; \
-    static const char* class_name(){ \
+    static const char* className(){ \
       return factory::name(); \
     } \
-    static const char* factory_name(){ \
+    static const char* factoryName(){ \
       return ArgStr(T); \
     }
 
@@ -422,10 +422,10 @@ template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Arg
   public: \
    friend class ::sprockit::Factory<T,SST::Params&>; \
     using factory = ::sprockit::Factory<T,SST::Params&>; \
-    static const char* class_name(){ \
+    static const char* className(){ \
       return factory::name(); \
     } \
-    static const char* factory_name(){ \
+    static const char* factoryName(){ \
       return ArgStr(T); \
     }
 
@@ -433,10 +433,10 @@ template <class Child, class Parent, class... Args> BuilderImpl<Child,Parent,Arg
   public: \
    friend class ::sprockit::Factory<T,__VA_ARGS__>; \
     using factory = ::sprockit::Factory<T,__VA_ARGS__>; \
-    static const char* class_name(){ \
+    static const char* className(){ \
       return factory::name(); \
     } \
-    static const char* factory_name(){ \
+    static const char* factoryName(){ \
       return ArgStr(T); \
     }
 

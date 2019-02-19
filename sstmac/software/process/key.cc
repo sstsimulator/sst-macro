@@ -83,7 +83,7 @@ FTQTag::event_typeid(const std::string& name)
 {
   auto it = category_name_to_id_->find(name);
   if (it == category_name_to_id_->end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "key::event_typeid: unknown event name %s",
       name.c_str());
   }

@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/backends/common/parallel_runtime.h>
 #include <sstmac/common/stats/stat_histogram.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sprockit/spkt_string.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/output.h>
@@ -59,64 +60,58 @@ RegisterKeywords(
 
 namespace sstmac {
 
-StatHistogram::StatHistogram(SST::Params& params) :
+StatHistogram::StatHistogram(SST::Params& params, SST::BaseComponent* comp,
+                             const std::string& name, const std::string& subName) :
     bin_size_(0),
-    max_bin_(-1),
     is_log_(false),
-  Statistic<double>(params)
+  SST::Statistics::MultiStatistic<double,uint64_t>(comp, name, subName, params)
 {
+  min_val_ = params.findUnits("min_value").toDouble();
+  max_val_ = params.findUnits("max_value").toDouble();
   bin_size_ = params.findUnits("bin_size").toDouble();
-  int num_bins_guess = params.find<int>("num_bins", 20);
+  int num_bins = params.find<int>("num_bins", 20);
   is_log_ = params.find<bool>("logarithmic", false);
-  counts_.reserve(num_bins_guess);
-}
-
-void
-StatHistogram::dump(const std::string& froot)
-{
-  std::string data_file = froot + ".dat";
-  std::fstream data_str(data_file.c_str());
-  data_str << "Bin Count\n";
-  for (int i=0; i < counts_.size(); ++i){
-    double size  = (i+0.5) * bin_size_;
-    data_str << sprockit::printf("%12.8f", size) << " " << counts_[i] << "\n";
+  if (is_log_){
+    min_val_ = log10(min_val_);
+    max_val_ = log10(min_val_);
   }
-  data_str.close();
-
-  std::string gnuplot_file = froot + ".p";
-  std::fstream gnuplot_str(gnuplot_file.c_str());
-
-  gnuplot_str << "reset\n";
-  gnuplot_str << "set term png truecolor\n";
-  gnuplot_str << "set output \"" << froot << ".png\"\n";
-  gnuplot_str << "set xlabel \"" << (is_log_ ? "log(Size)" : "Size") << "\"\n";
-  gnuplot_str << "set ylabel \"Count\"\n";
-  gnuplot_str << "set boxwidth 0.95 relative\n";
-  gnuplot_str << "set style fill transparent solid 0.5 noborder\n";
-  gnuplot_str << "plot \"" << data_file << "\"" << " u 1:2 w boxes notitle\n";
-  gnuplot_str.close();
+  increment_ = (max_val_ - min_val_) / num_bins;
+  counts_.resize(num_bins);
+  fields_.reserve(num_bins + 2);
 }
 
 void
-StatHistogram::addData_impl(double value)
+StatHistogram::outputStatisticData(SST::Statistics::StatisticOutput* statOutput, bool EndOfSimFlag)
 {
-  addData_impl(value, 1);
+  int fid = 0;
+  statOutput->outputField(fields_[fid++], int(counts_.size()));
+  statOutput->outputField(fields_[fid++], bin_size_);
+  for (auto cnt : counts_){
+    statOutput->outputField(fields_[fid++], cnt);
+  }
+}
+
+void
+StatHistogram::registerOutputFields(SST::Statistics::StatisticOutput *statOutput)
+{
+  fields_.push_back(statOutput->registerField<int>("numBins"));
+  fields_.push_back(statOutput->registerField<double>("binSize"));
+  for (int i=0; i < counts_.size(); ++i){
+    std::string name = sprockit::printf("bin%d", i);
+    fields_.push_back(statOutput->registerField<uint64_t>(name.c_str()));
+  }
 }
 
 void
 StatHistogram::addData_impl(double value, uint64_t count)
 {
   value = is_log_ ? log10(value) : value;
-  long bin = value / bin_size_;
-  if (bin > max_bin_){
-    max_bin_ = bin;
-    if (max_bin_ > 1e6){
-      spkt_abort_printf("Too many histogram bins. Collected value %12.6e is much larger"
-                        " than the bin size of %12.6e",
-                        value, bin_size_);
-    }
-    counts_.resize(max_bin_+1);
-  }
+
+  if (value > max_val_) return; //drop
+  if (value < min_val_) return; //drop
+
+  double delta = value - max_val_;
+  int bin = delta / increment_;
   counts_[bin] += count;
 }
 

@@ -85,7 +85,7 @@ using namespace sstmac::sw;
 using namespace sstmac::hw;
 
 class timestamp_prefix_fxn :
-  public sprockit::debug_prefix_fxn
+  public sprockit::DebugPrefixFxn
 {
  public:
   timestamp_prefix_fxn(SST::Params& params, EventManager* mgr) :
@@ -159,37 +159,37 @@ static int recursive_count_files_from_suffix(const std::string& suffix)
 }
 
 int
-Manager::computeMaxNprocForApp(sprockit::sim_parameters::ptr& app_params)
+Manager::computeMaxNprocForApp(sprockit::SimParameters::ptr& app_params)
 {
   int max_nproc = 0;
   /** Do a bunch of dumpi stuff */
   static const std::string dmeta = "dumpi_metaname";
   static const std::string ometa = "otf2_metafile";
-  if (!app_params->has_param("launch_cmd")){
+  if (!app_params->hasParam("launch_cmd")){
     int nproc = 0;
-    if (app_params->get_param("name") == "parsedumpi"){
+    if (app_params->getParam("name") == "parsedumpi"){
       std::string dumpi_meta_filename;
-      if (!app_params->has_param(dmeta)){
+      if (!app_params->hasParam(dmeta)){
         dumpi_meta_filename = get_file_from_suffix("meta");
         if (dumpi_meta_filename.empty()){
           sprockit::abort("no dumpi file found in folder or specified with dumpi_metaname");
         } else {
-          app_params->add_param_override(dmeta, dumpi_meta_filename);
+          app_params->addParamOverride(dmeta, dumpi_meta_filename);
         }
       } else {
-        dumpi_meta_filename = app_params->get_param(dmeta);
+        dumpi_meta_filename = app_params->getParam(dmeta);
       }
       sw::DumpiMeta* meta = new sw::DumpiMeta(dumpi_meta_filename);
       nproc = meta->numProcs();
       delete meta;
-    } else if (app_params->get_param("name") == "parseotf2"){
+    } else if (app_params->getParam("name") == "parseotf2"){
       std::string otf2_meta_filename;
-      if (!app_params->has_param(ometa)){
+      if (!app_params->hasParam(ometa)){
         otf2_meta_filename = find_file_from_suffix("otf2");
         if (otf2_meta_filename.empty()){
           sprockit::abort("no OTF2 file found in folder or specified with otf2_metafile");
         } else {
-          app_params->add_param_override(ometa, otf2_meta_filename);
+          app_params->addParamOverride(ometa, otf2_meta_filename);
         }
       } else {
         otf2_meta_filename = ometa;
@@ -199,7 +199,7 @@ Manager::computeMaxNprocForApp(sprockit::sim_parameters::ptr& app_params)
     }
     max_nproc = std::max(max_nproc, nproc);
     std::string cmd = sprockit::printf("aprun -n %d -N 1", nproc);
-    app_params->add_param_override("launch_cmd", cmd);
+    app_params->addParamOverride("launch_cmd", cmd);
   }
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -222,16 +222,16 @@ Manager::computeMaxNprocForApp(sprockit::sim_parameters::ptr& app_params)
 }
 
 int
-Manager::computeMaxNproc(sprockit::sim_parameters::ptr& params)
+Manager::computeMaxNproc(sprockit::SimParameters::ptr& params)
 {
   int appnum = 1;
   int max_nproc = 0;
   bool found_app = true;
-  sprockit::sim_parameters::ptr node_params = params->get_namespace("node");
+  sprockit::SimParameters::ptr node_params = params->getNamespace("node");
   while (found_app || appnum < 10) {
     std::string app_namespace = sprockit::printf("app%d", appnum);
-    if (node_params->has_namespace(app_namespace)){
-      auto app_params = node_params->get_namespace(app_namespace);
+    if (node_params->hasNamespace(app_namespace)){
+      auto app_params = node_params->getNamespace(app_namespace);
       int nproc = computeMaxNprocForApp(app_params);
       max_nproc = std::max(nproc, max_nproc);
     } else {
@@ -262,17 +262,17 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
   } else if (rt_->nproc() > 1){
     event_man = "clock_cycle_parallel";
   }
-  EventManager_ = EventManager::factory::get_optional_param("EventManager", event_man, params, rt_);
+  EventManager_ = EventManager::factory::getOptionalParam("EventManager", event_man, params, rt_);
   EventManager::global = EventManager_;
 
-  if (sprockit::debug::slot_active(sprockit::dbg::timestamp)){
-    sprockit::debug_prefix_fxn* fxn = new timestamp_prefix_fxn(params, EventManager_);
-    sprockit::debug::prefix_fxn = fxn;
+  if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){
+    sprockit::DebugPrefixFxn* fxn = new timestamp_prefix_fxn(params, EventManager_);
+    sprockit::Debug::prefix_fxn = fxn;
   }
 
   bool debug_startup = params.find<bool>("debug_startup", true);
   if (!debug_startup){
-    sprockit::debug::turn_off();
+    sprockit::Debug::turnOff();
   }
 
   interconnect_ = hw::Interconnect::staticInterconnect(params, EventManager_);
@@ -282,9 +282,9 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
 
 Manager::~Manager() throw ()
 {
-  if (sprockit::debug::prefix_fxn) 
-    delete sprockit::debug::prefix_fxn;
-  sprockit::debug::prefix_fxn = nullptr;
+  if (sprockit::Debug::prefix_fxn) 
+    delete sprockit::Debug::prefix_fxn;
+  sprockit::Debug::prefix_fxn = nullptr;
   if (this->running_){
     cerrn << "FATAL:  manager going out of scope while still running.\n";
     abort();
