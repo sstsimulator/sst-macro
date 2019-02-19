@@ -73,6 +73,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <stack>
 #include <queue>
+#include <functional>
 
 DeclareDebugSlot(os);
 
