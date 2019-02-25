@@ -53,9 +53,15 @@ namespace hw {
 class Hypercube :
   public Torus
 {
-  FactoryRegister("hypercube", Topology, Hypercube,
-              "hypercube implements a high-dimension torus with an arbitrary number of dimensions")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    Hypercube,
+    "macro",
+    "hypercube",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "hypercube implements a high-dimension torus with an arbitrary number of dimensions with full dim connectivity")
+
   Hypercube(SST::Params& params);
 
   std::string toString() const override {
@@ -67,7 +73,7 @@ class Hypercube :
   void minimalRouteToSwitch(
     SwitchId src,
     SwitchId dst,
-    Packet::header* hdr) const;
+    Packet::Header* hdr) const;
 
   int maxNumPorts() const override {
     int sum = 0;
@@ -76,9 +82,9 @@ class Hypercube :
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-         std::vector<injection_port>& nodes) const override;
+         std::vector<InjectionPort>& nodes) const override;
 
-  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
   inline int convertToPort(int dim, int dir) const {
     return dim_to_outport_[dim] + dir;
@@ -90,7 +96,7 @@ class Hypercube :
     return minimalDistance(src/concentration_, dst/concentration_);
   }
 
-  vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
+  VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
  protected:
   int radix_;

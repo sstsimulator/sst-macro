@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_spyplot_fwd.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/common/event_scheduler.h>
 
 #define pisces_debug(...) \
@@ -58,7 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-struct payload_queue {
+struct PayloadQueue {
 
   std::list<PiscesPacket*> queue;
 
@@ -109,10 +108,6 @@ class PiscesSender : public SubComponent
 
   virtual void handleCredit(Event* ev) = 0;
 
-  void setStatCollector(PacketStatsCallback* c){
-    stat_collector_ = c;
-  }
-
   virtual std::string piscesName() const = 0;
 
   std::string toString() const override;
@@ -127,8 +122,6 @@ class PiscesSender : public SubComponent
        PiscesPacket* pkt, Input& to_credit, Output& to_send);
 
  protected:
-  PacketStatsCallback* stat_collector_;
-
   Timestamp send_lat_;
 
   Timestamp credit_lat_;

@@ -55,11 +55,15 @@ namespace sw {
 class CartAllocation :
   public NodeAllocator
 {
-  FactoryRegister("cart | cartesian", NodeAllocator, CartAllocation,
-              "Allocate a regular, cartesian volume of nodes."
-              "This is meant mostly for torus topologies, "
-              "but is also meaningful for dragonfly, cascade, and hypercube")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    CartAllocation,
+    "macro",
+    "cart",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate a regular, cartesian volume of nodes")
+
   CartAllocation(SST::Params& params);
 
   virtual ~CartAllocation() throw () {}

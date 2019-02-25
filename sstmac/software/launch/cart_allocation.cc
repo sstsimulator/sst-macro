@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/cartgrid.h>
 
 #include <sprockit/errors.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>

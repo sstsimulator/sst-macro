@@ -53,8 +53,15 @@ namespace sw {
 class DefaultDGEMV :
   public BlasKernel
 {
-  FactoryRegister("default_dgemv", BlasKernel, DefaultDGEMV)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    BlasKernel,
+    DefaultDGEMV,
+    "macro",
+    "default_dgemv",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "defaut DGEMV kernel")
+
   DefaultDGEMV(SST::Params& params){
     loop_unroll_ = params.find<double>("dgemv_loop_unroll", 4);
     pipeline_ = params.find<double>("dgemv_pipeline_efficiency", 2);

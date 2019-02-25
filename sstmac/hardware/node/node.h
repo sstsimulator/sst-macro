@@ -65,7 +65,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/memory/memory_model_fwd.h>
 #include <sstmac/hardware/processor/processor_fwd.h>
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(node);
@@ -77,8 +77,10 @@ namespace hw {
 
 class Node : public ConnectableComponent
 {
-  DeclareFactoryArgs(Node,uint32_t)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(Node)
+  SST_ELI_REGISTER_CTOR(uint32_t, SST::Params&)
+
   void setup() override;
 
   void init(unsigned int phase) override;
@@ -173,7 +175,7 @@ class Node : public ConnectableComponent
   void decrementAppRefcount();
 
  protected:
-  Node(SST::Params& params, uint32_t id);
+  Node(uint32_t id, SST::Params& params);
 
  protected:
   sw::OperatingSystem* os_;

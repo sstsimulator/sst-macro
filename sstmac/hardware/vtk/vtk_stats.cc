@@ -74,14 +74,14 @@ outputExodusWithSharedMap(const std::string& fileroot,
   // The switch traffic value itself needs to be recomputed using the mean of all current traffic values of the ports of the switch.
 
   int num_switches = topo->numSwitches();
-  std::vector<Topology::vtk_switch_geometry> geoms; geoms.reserve(num_switches);
+  std::vector<Topology::VTKSwitchGeometry> geoms; geoms.reserve(num_switches);
 
 
   std::unordered_map<uint32_t,uint64_t> outport_to_link;
   for (int i=0; i < num_switches; ++i){
-    std::vector<Topology::connection> conns;
+    std::vector<Topology::Connection> conns;
     topo->connectedOutports(i, conns);
-    for (Topology::connection& conn : conns){
+    for (Topology::Connection& conn : conns){
       uint16_t id1 = conn.src;
       uint16_t id2 = conn.dst;
       uint16_t port1 = conn.src_outport;
@@ -175,7 +175,7 @@ outputExodusWithSharedMap(const std::string& fileroot,
   std::vector<int> cell_offsets; cell_offsets.reserve(num_switches + 1);
 
   int num_boxes = 0;
-  auto addBox = [&](Topology::vtk_box_geometry& box_geom){
+  auto addBox = [&](Topology::VTKBoxGeometry& box_geom){
     //auto v0 = box_geom.vertex(0); // corner (minus_x, minus_y, minus_z)
     //auto v1 = box_geom.vertex(1); // corner (minus_x, plus_y, minus_z)
     //auto v2 = box_geom.vertex(2); // corner (minus_x, minus_y, plus_z)
@@ -245,10 +245,10 @@ outputExodusWithSharedMap(const std::string& fileroot,
     vtk_port vp = vtk_port::construct(port_hash_id);
     uint64_t link_hash_id = outport_to_link[port_hash_id];
     vtk_link link = vtk_link::construct(link_hash_id);
-    Topology::vtk_switch_geometry switch1 = topo->getVtkGeometry(link.id1);//geoms[link.id1];
-    Topology::vtk_switch_geometry switch2 = topo->getVtkGeometry(link.id2);//geoms[link.id2];
-    Topology::vtk_box_geometry port1 = switch1.get_port_geometry(link.port1);
-    Topology::vtk_box_geometry port2 = switch2.get_port_geometry(link.port2);
+    Topology::VTKSwitchGeometry switch1 = topo->getVtkGeometry(link.id1);//geoms[link.id1];
+    Topology::VTKSwitchGeometry switch2 = topo->getVtkGeometry(link.id2);//geoms[link.id2];
+    Topology::VTKBoxGeometry port1 = switch1.get_port_geometry(link.port1);
+    Topology::VTKBoxGeometry port2 = switch2.get_port_geometry(link.port2);
 
     int offset = num_boxes*NUM_POINTS_PER_BOX + link_id * NUM_POINTS_PER_LINK;
     auto c1 = port1.x_anchor();

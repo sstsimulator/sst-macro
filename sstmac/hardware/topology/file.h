@@ -58,8 +58,15 @@ namespace hw {
  */
 class FileTopology : public Topology
 {
-  FactoryRegister("file", Topology, FileTopology)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    FileTopology,
+    "macro",
+    "file",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "topology based on JSON description")
+
   std::string toString() const override {
     return "file topology";
   }
@@ -101,15 +108,15 @@ class FileTopology : public Topology
 
   void endpointsConnectedToEjectionSwitch(
       SwitchId swaddr,
-      std::vector<injection_port>& nodes) const override {
+      std::vector<InjectionPort>& nodes) const override {
     endpointsConnectedToInjectionSwitch(swaddr,nodes);
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-               std::vector<injection_port>& nodes) const override;
+               std::vector<InjectionPort>& nodes) const override;
 
   void connectedOutports(SwitchId src,
-       std::vector<connection>& conns) const override;
+       std::vector<Connection>& conns) const override;
 
   SwitchId numSwitches() const override {
     return num_switches_;

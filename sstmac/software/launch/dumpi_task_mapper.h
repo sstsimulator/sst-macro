@@ -54,9 +54,15 @@ namespace sw {
 
 class DumpiTaskMapper : public TaskMapper
 {
-  FactoryRegister("dumpi", TaskMapper, DumpiTaskMapper,
-              "indexes nodes based on hostname map file and hostname list in dumpi trace")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    DumpiTaskMapper,
+    "macro",
+    "dumpi",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "indexes nodes based on hostname map file and hostname list in dumpi trace")
+
   DumpiTaskMapper(SST::Params& params);
 
   std::string toString() const override {

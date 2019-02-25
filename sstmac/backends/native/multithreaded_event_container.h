@@ -88,9 +88,15 @@ struct threadQueue
 class MultithreadedEventContainer :
   public ClockCycleEventMap
 {
-  FactoryRegister("multithread | multithreaded", EventManager, MultithreadedEventContainer,
-    "Implements a parallel event queue with support for SMP-aware multithreading")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    EventManager,
+    MultithreadedEventContainer,
+    "macro",
+    "multithread",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Implements a parallel event queue with support for SMP-aware multithreading")
+
   MultithreadedEventContainer(SST::Params& params, ParallelRuntime* rt);
 
   ~MultithreadedEventContainer() throw () {}

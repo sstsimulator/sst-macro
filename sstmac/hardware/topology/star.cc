@@ -55,18 +55,18 @@ Star::Star(SST::Params& params) :
 }
 
 void
-Star::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+Star::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   conns.resize(0);
 }
 
 void
 Star::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = i;
     port.ep_port = 0;

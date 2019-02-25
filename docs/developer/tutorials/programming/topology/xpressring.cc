@@ -55,7 +55,7 @@ xpress_ring::xpress_ring(SST::Params& params)
 }
 
 void
-xpress_ring::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+xpress_ring::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   conns.resize(4); //+1/-1 conns, +jump,-jump conns
   conns[0].src = src;
@@ -81,11 +81,11 @@ xpress_ring::connectedOutports(SwitchId src, std::vector<connection>& conns) con
 
 void
 xpress_ring::endpointsConnectedToInjectionSwitch(SwitchId swid,
-                                                     std::vector<injection_port> &nodes) const
+                                                     std::vector<InjectionPort> &nodes) const
 {
   nodes.resize(concentration());
   for (int i=0; i < concentration(); ++i){
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.ep_port = 0;
     port.switch_port = 4 + i;
     port.nid = concentration() * swid + i;

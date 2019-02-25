@@ -148,11 +148,16 @@ class FTQCalendar : public SST::Statistics::MultiStatistic<int,int,int,uint64_t,
 {
   using Parent = SST::Statistics::MultiStatistic<int,int,int,uint64_t,uint64_t>;
  public:
-  StatRegister("ftq", Parent, FTQCalendar,
-           "fixed-time quanta activity of individual processes")
+  SST_ELI_REGISTER_CUSTOM_STATISTIC(
+      Parent,
+      FTQCalendar,
+      "macro",
+      "ftq",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "fixed-time quanta activity of individual processes")
 
-  FTQCalendar(SST::Params& params, SST::BaseComponent* comp,
-              const std::string& name, const std::string& subName);
+  FTQCalendar(SST::BaseComponent* comp, const std::string& name,
+              const std::string& subName, SST::Params& params);
 
   void init(uint64_t nticks_per_epoch);
 

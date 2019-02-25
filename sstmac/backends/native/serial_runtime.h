@@ -53,8 +53,15 @@ namespace native {
 class SerialRuntime :
   public ParallelRuntime
 {
-  FactoryRegister("serial", ParallelRuntime, SerialRuntime)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    ParallelRuntime,
+    SerialRuntime,
+    "macro",
+    "serial",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "provides a parallel runtime")
+
   SerialRuntime(SST::Params& params);
 
   int64_t allreduceMin(int64_t mintime) override;

@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_buffer.h>
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
-#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
 
 namespace sstmac {
 namespace hw {
@@ -62,15 +61,21 @@ namespace hw {
 class PiscesTiledSwitch :
   public PiscesAbstractSwitch
 {
-  RegisterComponent("pisces_tiled", NetworkSwitch, PiscesTiledSwitch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A tiled network switch implementing the packet flow congestion model")
  public:
-  struct header : public PiscesPacket::header {
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    NetworkSwitch,
+    PiscesTiledSwitch,
+    "macro",
+    "pisces_tiled",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A tiled network switch implementing the packet flow congestion model",
+    COMPONENT_CATEGORY_NETWORK)
+
+  struct Header : public PiscesPacket::Header {
     uint16_t arrival_port;
   };
 
-  PiscesTiledSwitch(SST::Params& params, uint32_t id);
+  PiscesTiledSwitch(uint32_t id, SST::Params& params);
 
   int queueLength(int port, int vc) const override;
 

@@ -49,8 +49,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_id.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/printable.h>
 #include <vector>
 #include <sstmac/software/launch/node_set.h>
@@ -66,8 +67,10 @@ namespace sw {
  */
 class TaskMapper : public sprockit::printable
 {
-  DeclareFactory(TaskMapper)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(TaskMapper)
+  SST_ELI_REGISTER_CTOR(SST::Params&)
+
   virtual ~TaskMapper() throw ();
 
   /** Assign processes to nodes.

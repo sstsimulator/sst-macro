@@ -54,11 +54,16 @@ class StatHistogram : public SST::Statistics::MultiStatistic<double,uint64_t>
 {
   using Parent=SST::Statistics::MultiStatistic<double,uint64_t>;
  public:
-  StatRegister("histogram", Parent, StatHistogram,
-               "a histogram with flexible counting")
+  SST_ELI_REGISTER_CUSTOM_STATISTIC(
+      Parent,
+      StatHistogram,
+      "macro",
+      "histogram",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "a histogram with flexible counting")
 
-  StatHistogram(SST::Params& params, SST::BaseComponent* comp,
-                const std::string& name, const std::string& subName);
+  StatHistogram(SST::BaseComponent* comp, const std::string& name,
+                const std::string& subName, SST::Params& params);
 
   void addData_impl(double value, uint64_t) override;
 

@@ -46,10 +46,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_THREADING_THREADING_INTERFACE_H_INCLUDED
 
 #include <sstmac/common/sstmac_config.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <errno.h>
 #include <cstring>
 #include <iostream>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 namespace sstmac {
 namespace sw {
@@ -61,7 +62,8 @@ namespace sw {
 class ThreadContext
 {
  public:
-  DeclareFactory(ThreadContext)
+  SST_ELI_REGISTER_BASE_DEFAULT(ThreadContext)
+  SST_ELI_REGISTER_DEFAULT_CTOR()
 
   virtual ~ThreadContext() {}
 

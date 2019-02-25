@@ -64,11 +64,16 @@ using StatSpyplotParent =
 class StatSpyplot : public StatSpyplotParent
 {
  public:
-  StatRegister("spyplot", StatSpyplotParent, StatSpyplot,
-               "a spyplot showing traffic patterns")
+  SST_ELI_REGISTER_CUSTOM_STATISTIC(
+    StatSpyplotParent,
+    StatSpyplot,
+    "macro",
+    "spyplot",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "spyplot showing traffic matrics")
 
-  StatSpyplot(SST::Params& params, SST::BaseComponent* comp,
-              const std::string& name, const std::string& statName,
+  StatSpyplot(SST::BaseComponent* comp, const std::string& name,
+              const std::string& statName, SST::Params& params,
               int id, int nSrc, int nDst) :
     vals_(nDst),
     my_id_(id),

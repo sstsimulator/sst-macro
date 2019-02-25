@@ -151,7 +151,7 @@ FatTree::FatTree(SST::Params& params) :
   checkInput();
 }
 
-Topology::vtk_switch_geometry
+Topology::VTKSwitchGeometry
 FatTree::getVtkGeometry(SwitchId sid) const
 {
   int core_row_cutoff = num_leaf_switches_ + num_agg_switches_;
@@ -161,7 +161,7 @@ FatTree::getVtkGeometry(SwitchId sid) const
   int slot = 0;
   int subtree = 0;
   double midpoint = 0;
-  std::vector<vtk_switch_geometry::port_geometry> ports;
+  std::vector<VTKSwitchGeometry::port_geometry> ports;
   /**
   if (sid >= core_row_cutoff){
     row = 2;
@@ -221,7 +221,7 @@ FatTree::getVtkGeometry(SwitchId sid) const
     theta = subtree * vtk_subtree_theta_;
   }
 
-  vtk_switch_geometry geom(xSize, ySize, zSize,
+  VTKSwitchGeometry geom(xSize, ySize, zSize,
                            xCorner, yCorner, zCorner, theta,
                            std::move(ports));
 
@@ -229,7 +229,7 @@ FatTree::getVtkGeometry(SwitchId sid) const
 }
 
 void
-FatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+FatTree::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   conns.clear();
 
@@ -258,7 +258,7 @@ FatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
           num_leaf_switches_
           + my_subtree * agg_switches_per_subtree_
           + agg_partner_spot;
-      connection next;
+      Connection next;
       next.dst = agg_partner_switch;
       next.dst_inport = agg_partner_port;
       next.src = src;
@@ -285,7 +285,7 @@ FatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
       int core_partner_switch =
           num_leaf_switches_ + num_agg_switches_
           + core_partner_spot;
-      connection next;
+      Connection next;
       next.dst = core_partner_switch;
       next.dst_inport = core_partner_port;
       next.src = src;
@@ -303,7 +303,7 @@ FatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
           leaf_switches_per_subtree_;
       int leaf_partner_switch =
           my_subtree * leaf_switches_per_subtree_ + leaf_spot;
-      connection next;
+      Connection next;
       next.dst = leaf_partner_switch;
       next.dst_inport = leaf_port;
       next.src = src;
@@ -324,7 +324,7 @@ FatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
       int agg_port = global_core_port / num_agg_switches_;
       int agg_partner_switch = num_leaf_switches_
           + agg_subtree * agg_switches_per_subtree_ + agg_subtree_spot;
-      connection next;
+      Connection next;
       next.dst = agg_partner_switch;
       next.dst_inport = agg_port + down_ports_per_agg_switch_;
       next.src = src;
@@ -454,7 +454,7 @@ FatTree::checkInput() const
 
 void
 FatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   if (level(swaddr) > 0){
     nodes.clear();
@@ -463,7 +463,7 @@ FatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
 
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = up_ports_per_leaf_switch_ + i;
     port.ep_port = 0;
@@ -481,7 +481,7 @@ TaperedFatTree::TaperedFatTree(SST::Params& params) :
 }
 
 void
-TaperedFatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+TaperedFatTree::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   int myRow = level(src);
   if (myRow == 2){
@@ -489,7 +489,7 @@ TaperedFatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) 
     conns.resize(num_agg_subtrees_);
     int inport = upPort(1);
     for (int s=0; s < num_agg_subtrees_; ++s){
-      connection& conn = conns[s];
+      Connection& conn = conns[s];
       conn.src = src;
       conn.dst = num_leaf_switches_ + s;
       conn.src_outport = s;
@@ -502,13 +502,13 @@ TaperedFatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) 
     conns.resize(leaf_switches_per_subtree_ + 1);
     int inport = upPort(0);
     for (int s=0; s < leaf_switches_per_subtree_; ++s){
-      connection& conn = conns[s];
+      Connection& conn = conns[s];
       conn.src = src;
       conn.dst = myOffset + s;
       conn.src_outport = s;
       conn.dst_inport = inport;
     }
-    connection& upconn = conns[leaf_switches_per_subtree_];
+    Connection& upconn = conns[leaf_switches_per_subtree_];
     upconn.src = src;
     upconn.dst = coreSwitchId();
     upconn.src_outport = upPort(1);
@@ -519,7 +519,7 @@ TaperedFatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) 
     int myOffset = src % leaf_switches_per_subtree_;
     conns.resize(1);
     int outport = upPort(0);
-    connection& conn = conns[0];
+    Connection& conn = conns[0];
     conn.src = src;
     conn.dst = num_leaf_switches_ + myTree;
     conn.src_outport = outport;
@@ -529,7 +529,7 @@ TaperedFatTree::connectedOutports(SwitchId src, std::vector<connection>& conns) 
 
 void
 TaperedFatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   if (level(swaddr) > 0){
     nodes.clear();
@@ -538,7 +538,7 @@ TaperedFatTree::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
 
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = i;
     port.ep_port = 0;

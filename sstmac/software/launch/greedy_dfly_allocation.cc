@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/cartgrid.h>
 
 #include <sprockit/errors.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -68,9 +68,15 @@ namespace sw {
 class GreedyDflyAllocation :
   public NodeAllocator
 {
-  FactoryRegister("greedy_dfly", NodeAllocator, GreedyDflyAllocation,
-              "Allocate a 'striped' dragonfly allocation scattering across groups")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    GreedyDflyAllocation,
+    "macro",
+    "greedy_dfly",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate a 'striped' dragonfly allocation scattering across groups")
+
   GreedyDflyAllocation(SST::Params& params) : NodeAllocator(params) {
     num_groups_ = params.find<int>("num_groups");
   }

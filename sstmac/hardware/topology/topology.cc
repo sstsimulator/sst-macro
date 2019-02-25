@@ -127,7 +127,7 @@ Topology::staticTopology(SST::Params& params)
 {
   if (!staticTopology_){
     SST::Params top_params = params.find_prefix_params("topology");
-    staticTopology_ = Topology::factory::getParam("name", top_params);
+    staticTopology_ = Topology::create("macro", top_params.find<std::string>("name"), top_params);
   }
   return staticTopology_;
 }
@@ -161,13 +161,13 @@ Topology::outputGraphviz(const std::string& path)
                 << lbl << "\"];\n";
   }
 
-  std::vector<connection> conns;
+  std::vector<Connection> conns;
   std::map<int, int> weighted_conns;
   out << "\nedge[];\n";
   for (int s=0; s < nsw; ++s){
     connectedOutports(s, conns);
     weighted_conns.clear();
-    for (connection& c : conns){
+    for (Connection& c : conns){
       weighted_conns[c.dst] += 1;
     }
     for (auto& pair : weighted_conns){
@@ -185,7 +185,7 @@ Topology::outputGraphviz(const std::string& path)
 
 void
 Topology::outputBox(std::ostream& os,
-                     const Topology::vtk_box_geometry& box)
+                     const Topology::VTKBoxGeometry& box)
 {
   os << box.vertex(0);
   for (int i=1; i < 8; ++i){
@@ -195,7 +195,7 @@ Topology::outputBox(std::ostream& os,
 
 void
 Topology::outputBox(std::ostream& os,
-                     const Topology::vtk_box_geometry& box,
+                     const Topology::VTKBoxGeometry& box,
                      const std::string& color,
                      const std::string& alpha)
 {
@@ -215,7 +215,7 @@ Topology::outputXYZ(const std::string& path)
   std::ofstream out(output);
 
   for (int sid=0; sid < nsw; ++sid){
-    vtk_switch_geometry geom = getVtkGeometry(sid);
+    VTKSwitchGeometry geom = getVtkGeometry(sid);
     outputBox(out, geom.box, "gray", "0.1"); //very transparent
     out << "\n";
   }
@@ -266,12 +266,12 @@ Topology::label(uint32_t comp_id) const
   }
 }
 
-Topology::vtk_switch_geometry
+Topology::VTKSwitchGeometry
 Topology::getVtkGeometry(SwitchId sid) const
 {
   spkt_abort_printf("unimplemented: topology::getVtkGeometry for %s",
                     toString().c_str());
-  return vtk_switch_geometry(0,0,0,0,0,0,0,std::vector<vtk_switch_geometry::port_geometry>());
+  return VTKSwitchGeometry(0,0,0,0,0,0,0,std::vector<VTKSwitchGeometry::port_geometry>());
 }
 
 std::string
@@ -312,8 +312,16 @@ Topology::initHostnameMap(SST::Params& params)
 }
 
 class MerlinTopology : public Topology {
-  FactoryRegister("merlin", Topology, MerlinTopology)
+
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    MerlinTopology,
+    "macro",
+    "merlin",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a dummy topology for running with Merlin")
+
   MerlinTopology(SST::Params& params)
     : Topology(params)
   {
@@ -338,7 +346,7 @@ class MerlinTopology : public Topology {
     return 0;
   }
 
-  void connectedOutports(SwitchId src, std::vector<Topology::connection>& conns) const override {
+  void connectedOutports(SwitchId src, std::vector<Topology::Connection>& conns) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
@@ -353,12 +361,12 @@ class MerlinTopology : public Topology {
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swid,
-                          std::vector<injection_port>& nodes) const override {
+                          std::vector<InjectionPort>& nodes) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 
   void endpointsConnectedToEjectionSwitch(SwitchId swid,
-                          std::vector<injection_port>& nodes) const override {
+                          std::vector<InjectionPort>& nodes) const override {
     spkt_abort_printf("merlin topology functions should never be called");
   }
 

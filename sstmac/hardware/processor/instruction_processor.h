@@ -57,9 +57,15 @@ namespace hw {
 class InstructionProcessor :
   public SimpleProcessor
 {
-  FactoryRegister("instruction", Processor, InstructionProcessor,
-              "Extension of simpleprocessor that estimates compute time of instruction counters")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Processor,
+    InstructionProcessor,
+    "macro",
+    "instruction",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Extension of simpleprocessor that estimates compute time of instruction counters")
+
   InstructionProcessor(SST::Params& params,
                         MemoryModel* mem, Node* nd);
 

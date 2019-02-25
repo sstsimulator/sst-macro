@@ -56,8 +56,15 @@ namespace hw {
  */
 class Cascade : public CartesianTopology
 {
-  FactoryRegister("cascade", Topology, Cascade)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    Cascade,
+    "macro",
+    "cascade",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a cascade topology - dragonfly with 2D groups")
+
   Cascade(SST::Params& params);
 
   typedef enum {
@@ -82,7 +89,7 @@ class Cascade : public CartesianTopology
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-          std::vector<injection_port>& nodes) const override;
+          std::vector<InjectionPort>& nodes) const override;
 
   dimension_t dimForPort(int port){
     if (port >= (x_ + y_)){
@@ -102,7 +109,7 @@ class Cascade : public CartesianTopology
      return port >= (x_ + y_);
   }
 
-  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
   virtual ~Cascade() {}
 
@@ -174,7 +181,7 @@ class Cascade : public CartesianTopology
       Router* rtr,
       SwitchId current_sw_addr,
       SwitchId dest_sw_addr,
-      Packet::header* hdr) const;
+      Packet::Header* hdr) const;
 
   int minimalDistance(SwitchId src, SwitchId dst) const;
 
@@ -192,13 +199,13 @@ class Cascade : public CartesianTopology
 
  protected:
   void find_path_to_group(Router* rtr, int myX, int myY, int myG, int dstG,
-                     int& dstX, int& dstY, Packet::header* hdr) const;
+                     int& dstX, int& dstY, Packet::Header* hdr) const;
 
   bool find_y_path_to_group(Router* rtr, int myX, int myG, int dstG, int& dstY,
-                       Packet::header* hdr) const;
+                       Packet::Header* hdr) const;
 
   bool find_x_path_to_group(Router* rtr, int myY, int myG, int dstG, int& dstX,
-                       Packet::header* hdr) const;
+                       Packet::Header* hdr) const;
 
   bool xy_connected_to_group(int myX, int myY, int myG, int dstG) const;
 

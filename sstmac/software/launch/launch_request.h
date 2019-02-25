@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/launch/node_set.h>
 
 #include <sprockit/sim_parameters.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <unordered_map>
 
 #include <sstmac/software/process/app_fwd.h>

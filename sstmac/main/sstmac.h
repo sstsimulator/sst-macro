@@ -48,8 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sstmac/backends/native/manager_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <string>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sys/time.h>
 
 #define PARSE_OPT_SUCCESS 0
@@ -108,8 +109,10 @@ void resizeTopology(int max_nproc, sprockit::SimParameters::ptr params, bool ver
 
 namespace sstmac {
 
-class Benchmark {
-  DeclareFactory(Benchmark);
+struct Benchmark {
+  SST_ELI_REGISTER_BASE_DEFAULT(Benchmark)
+  SST_ELI_REGISTER_DEFAULT_CTOR()
+
   virtual void run() = 0;
 
   static double now() {

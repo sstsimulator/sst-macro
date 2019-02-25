@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/common/event_callback.h>
@@ -103,7 +102,7 @@ PiscesNtoMQueue(const std::string& selfname,
     outputs_(num_out_ports)
 
 {
-  arb_ = PiscesBandwidthArbitrator::factory::getValue(arb, bw);
+  arb_ = PiscesBandwidthArbitrator::create("macro", arb, bw);
 }
 
 LinkHandler*

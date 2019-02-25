@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <string>
 
 #include <sstmac/hardware/pisces/pisces_tiled_switch.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/nic/nic.h>
@@ -66,8 +65,8 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-PiscesTiledSwitch::PiscesTiledSwitch(SST::Params& params, uint32_t id)
-  : PiscesAbstractSwitch(params, id)
+PiscesTiledSwitch::PiscesTiledSwitch(uint32_t id, SST::Params& params)
+  : PiscesAbstractSwitch(id, params)
 {
   nrows_ = params.find<int>("nrows");
   ncols_ = params.find<int>("ncols");

@@ -57,8 +57,15 @@ namespace hw {
  */
 class Star : public StructuredTopology
 {
-  FactoryRegister("star | crossbar", Topology, Star)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    Star,
+    "macro",
+    "star",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "stat topology with every switch connected to central router")
+
   std::string toString() const override {
     return "star topology";
   }
@@ -88,10 +95,10 @@ class Star : public StructuredTopology
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-               std::vector<injection_port>& nodes) const override;
+               std::vector<InjectionPort>& nodes) const override;
 
   void connectedOutports(SwitchId src,
-       std::vector<connection>& conns) const override;
+       std::vector<Connection>& conns) const override;
 
   SwitchId numSwitches() const override {
     return 1;

@@ -52,11 +52,17 @@ namespace sw {
 
 class SimpleComputeScheduler : public ComputeScheduler
 {
-  FactoryRegister("simple", ComputeScheduler, SimpleComputeScheduler,
-              "Compute scheduler that migrates work to any open core")
  public:
-  SimpleComputeScheduler(SST::Params& params,
-                           OperatingSystem* os, int ncore, int nsocket)
+  SST_ELI_REGISTER_DERIVED(
+    ComputeScheduler,
+    SimpleComputeScheduler,
+    "macro",
+    "simple",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Compute scheduler that migrates work to any open core")
+
+  SimpleComputeScheduler(SST::Params& params, OperatingSystem* os,
+                         int ncore, int nsocket)
     : ncore_active_(0), ComputeScheduler(params, os, ncore, nsocket)
   {}
   

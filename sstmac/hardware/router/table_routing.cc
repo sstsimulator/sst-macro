@@ -65,9 +65,13 @@ namespace hw {
 
 class TableRouter : public Router {
  public:
-  FactoryRegister("table",
-              Router, TableRouter,
-              "router implementing table-based routing")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    TableRouter,
+    "macro",
+    "table",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing table-based routing")
 
   TableRouter(SST::Params& params, Topology* top, NetworkSwitch* sw) :
     Router(params, top, sw),

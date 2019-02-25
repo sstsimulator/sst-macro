@@ -54,11 +54,12 @@ class Dragonfly;
 
 class InterGroupWiring {
  public:
-  DeclareFactoryArgs(InterGroupWiring,
+  SST_ELI_REGISTER_BASE_DEFAULT(InterGroupWiring)
+  SST_ELI_REGISTER_CTOR(
+    SST::Params&,
     int, /* a=num switches per group */
     int, /* g=num groups */
-    int /* h=num group links per switch */
-  )
+    int /* h=num group links per switch */)
                 
 
   /**
@@ -117,8 +118,15 @@ class InterGroupWiring {
  */
 class Dragonfly : public CartesianTopology
 {
-  FactoryRegister("dragonfly", Topology, Dragonfly)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    Dragonfly,
+    "macro",
+    "dragonfly",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A canonical dragonfly topology")
+
   Dragonfly(SST::Params& params);
 
  public:
@@ -134,11 +142,11 @@ class Dragonfly : public CartesianTopology
     return a_ + h_ + concentration();
   }
 
-  vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
+  VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
   bool isCurvedVtkLink(SwitchId sid, int port) const override;
 
-  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
   virtual ~Dragonfly() {}
 
@@ -212,7 +220,7 @@ class Dragonfly : public CartesianTopology
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-         std::vector<injection_port>& nodes) const override;
+         std::vector<InjectionPort>& nodes) const override;
 
   coordinates switchCoords(SwitchId sid) const override {
     coordinates c(2);

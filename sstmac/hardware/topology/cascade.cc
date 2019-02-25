@@ -82,11 +82,11 @@ Cascade::Cascade(SST::Params& params) :
 
 void
 Cascade::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = x_ + y_ + g_ + i;
     port.ep_port = 0;
@@ -111,7 +111,7 @@ Cascade::xy_connected_to_group(int myX, int myY, int myG, int dstg) const
 
 bool
 Cascade::find_y_path_to_group(Router* rtr, int myX, int myG, int dstG, int& dstY,
-                              Packet::header* hdr) const
+                              Packet::Header* hdr) const
 {
   int ystart = rtr->randomNumber(y_,0,42);
   for (int yy = 0; yy < y_; ++yy) {
@@ -126,7 +126,7 @@ Cascade::find_y_path_to_group(Router* rtr, int myX, int myG, int dstG, int& dstY
 
 bool
 Cascade::find_x_path_to_group(Router* rtr, int myY, int myG, int dstG, int& dstX,
-                              Packet::header* hdr) const
+                              Packet::Header* hdr) const
 {
   int xstart = rtr->randomNumber(x_,0,42);
   for (int xx = 0; xx < x_; ++xx) {
@@ -142,7 +142,7 @@ Cascade::find_x_path_to_group(Router* rtr, int myY, int myG, int dstG, int& dstX
 void
 Cascade::find_path_to_group(Router* rtr, int myX, int myY, int myG,
                             int dstG, int& dstX, int& dstY,
-                            Packet::header* hdr) const
+                            Packet::Header* hdr) const
 {
   //see if we can go directly to the group
   if (xy_connected_to_group(myX, myY, myG, dstG)){
@@ -180,7 +180,7 @@ Cascade::find_path_to_group(Router* rtr, int myX, int myY, int myG,
 void
 Cascade::minimalRouteToSwitch(
   Router* rtr, SwitchId src,
-  SwitchId dst, Packet::header* hdr) const
+  SwitchId dst, Packet::Header* hdr) const
 {
   int srcX, srcY, srcG; get_coords(src, srcX, srcY, srcG);
   int dstX, dstY, dstG; get_coords(dst, dstX, dstY, dstG);
@@ -231,7 +231,7 @@ Cascade::minimalDistance(SwitchId src, SwitchId dst) const
 }
 
 void
-Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+Cascade::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   int max_num_conns = (x_ - 1) + (y_ - 1) + group_con_;
   conns.resize(max_num_conns);
@@ -246,7 +246,7 @@ Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
   for (int x = 0; x < x_; x++) {
     if (x != myx) {
       SwitchId dst(get_uid(x, myy, myg));
-      connection& conn = conns[cidx];
+      Connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = dst;
       conn.src_outport = x_port(x);
@@ -258,7 +258,7 @@ Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
   for (int y = 0; y < y_; y++) {
     if (y != myy) {
       SwitchId dst(get_uid(myx, y, myg));
-      connection& conn = conns[cidx];
+      Connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = dst;
       conn.src_outport = y_port(y);
@@ -272,7 +272,7 @@ Cascade::connectedOutports(SwitchId src, std::vector<connection>& conns) const
     if (dstg == myg) continue;
 
     SwitchId dst(get_uid(myx, myy, dstg));
-    connection& conn = conns[cidx];
+    Connection& conn = conns[cidx];
     conn.src = src;
     conn.dst = dst;
     conn.src_outport = g_port(dstg);

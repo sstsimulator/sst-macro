@@ -78,7 +78,7 @@ DragonflyPlus::DragonflyPlus(SST::Params& params) :
 
 void
 DragonflyPlus::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   int row = computeRow(swaddr);
   if (row > 0){
@@ -88,7 +88,7 @@ DragonflyPlus::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
 
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = i + a_;
     port.ep_port = 0;
@@ -112,7 +112,7 @@ DragonflyPlus::minimalDistance(SwitchId src, SwitchId dst) const
 }
 
 void
-DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+DragonflyPlus::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   conns.clear();
 
@@ -123,7 +123,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
 
   if (myRow == 0){
     for (int a=0; a < a_; ++a){
-      connection next;
+      Connection next;
       next.src = src;
       next.src_outport = a;
       next.dst = getUid(1, a, myG);
@@ -135,7 +135,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
     }
   } else {
     for (int a=0; a < a_; ++a){ //down to leaf
-      connection next;
+      Connection next;
       next.src = src;
       next.src_outport = a;
       next.dst = getUid(0, a, myG);
@@ -150,7 +150,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
     group_wiring_->connectedRouters(myA, myG, newConns);
     for (int p=0; p < newConns.size(); ++p){
       int relDst = newConns[p];
-      connection next;
+      Connection next;
       next.src = src;
       next.src_outport = p + a_;
       next.dst = relDst + a_*g_; //num leaf switches
@@ -165,7 +165,7 @@ DragonflyPlus::connectedOutports(SwitchId src, std::vector<connection>& conns) c
   }
 }
 
-Topology::vtk_switch_geometry
+Topology::VTKSwitchGeometry
 DragonflyPlus::getVtkGeometry(SwitchId sid) const
 {
   int myRow;
@@ -195,13 +195,13 @@ DragonflyPlus::getVtkGeometry(SwitchId sid) const
   double zSize = 0.25;
 
   int num_ports = myRow == 0 ? a_ + concentration() : a_ + h_;
-  std::vector<vtk_switch_geometry::port_geometry> ports(num_ports);
+  std::vector<VTKSwitchGeometry::port_geometry> ports(num_ports);
   double y_fraction_a = 1.0 / double(a_);
   double y_fraction_h = 1.0 / double(h_);
   double y_fraction_c = 1.0 / double(concentration());
   if (myRow == 0){
     for (int a=0; a < a_; ++a){
-      vtk_switch_geometry::port_geometry& geom = ports[a];
+      VTKSwitchGeometry::port_geometry& geom = ports[a];
       geom.x_offset = 0;
       geom.x_size = 0.3;
       geom.y_offset = a * y_fraction_a;
@@ -210,7 +210,7 @@ DragonflyPlus::getVtkGeometry(SwitchId sid) const
       geom.z_size = 1.0;
     }
     for (int c=0; c < concentration(); ++c){
-      vtk_switch_geometry::port_geometry& geom = ports[a_ + c];
+      VTKSwitchGeometry::port_geometry& geom = ports[a_ + c];
       geom.x_offset = 1;
       geom.x_size = 0.3;
       geom.y_offset = c * y_fraction_c;
@@ -220,7 +220,7 @@ DragonflyPlus::getVtkGeometry(SwitchId sid) const
     }
   } else {
     for (int a=0; a < a_; ++a){
-      vtk_switch_geometry::port_geometry& geom = ports[a];
+      VTKSwitchGeometry::port_geometry& geom = ports[a];
       geom.x_offset = 1;
       geom.x_size = -0.3;
       geom.y_offset = a * y_fraction_a;
@@ -229,7 +229,7 @@ DragonflyPlus::getVtkGeometry(SwitchId sid) const
       geom.z_size = 1.0;
     }
     for (int h=0; h < h_; ++h){
-      vtk_switch_geometry::port_geometry& geom = ports[a_ + h];
+      VTKSwitchGeometry::port_geometry& geom = ports[a_ + h];
       geom.x_offset = 0;
       geom.x_size = 0.3;
       geom.y_offset = h * y_fraction_h;
@@ -239,7 +239,7 @@ DragonflyPlus::getVtkGeometry(SwitchId sid) const
     }
   }
 
-  vtk_switch_geometry geom(xSize, ySize, zSize,
+  VTKSwitchGeometry geom(xSize, ySize, zSize,
                            xCorner, yCorner, zCorner, theta,
                            std::move(ports));
 

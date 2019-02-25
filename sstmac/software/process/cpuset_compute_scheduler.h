@@ -52,9 +52,15 @@ namespace sw {
 
 class CpusetComputeScheduler : public ComputeScheduler
 {
-  FactoryRegister("cpuset", ComputeScheduler, CpusetComputeScheduler,
-              "Compute scheduler that assigns threads to specific cores based on CPU_SET")
- public:  
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    ComputeScheduler,
+    CpusetComputeScheduler,
+    "macro",
+    "cpuset",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Compute scheduler that assigns threads to specific cores based on CPU_SET")
+
   CpusetComputeScheduler(SST::Params& params,
                            OperatingSystem* os, int ncore, int nsockets) :
     available_cores_(0),

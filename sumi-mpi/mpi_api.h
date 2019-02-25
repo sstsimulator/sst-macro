@@ -70,7 +70,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 #include <sumi/sim_transport.h>
 
@@ -80,11 +80,16 @@ namespace sumi {
 
 class MpiApi : public sumi::SimTransport
 {
-  RegisterAPI("mpi", MpiApi)
-
   friend class OTF2Writer;
-
  public:
+  SST_ELI_REGISTER_DERIVED(
+    API,
+    MpiApi,
+    "macro",
+    "mpi",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "provides the MPI transport API")
+
   MpiApi(SST::Params& params, sstmac::sw::App* app, SST::Component* comp);
 
   static void deleteStatics();

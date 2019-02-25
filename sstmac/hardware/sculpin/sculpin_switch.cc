@@ -82,18 +82,19 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-SculpinSwitch::SculpinSwitch(SST::Params& params, uint32_t id) :
+SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
   congestion_(true),
   #if SSTMAC_VTK_ENABLED && !SSTMAC_INTEGRATED_SST_CORE
     vtk_(nullptr),
   #endif
   delay_hist_(nullptr),
-  NetworkSwitch(params, id)
+  NetworkSwitch(id, params)
 {
   SST::Params rtr_params = params.find_prefix_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
-  router_ = Router::factory::getParam("name", rtr_params, top_, this);
+  router_ = Router::create("macro", rtr_params.find<std::string>("name"),
+                           rtr_params, top_, this);
 
   congestion_ = params.find<bool>("congestion", true);
   vtk_flicker_ = params.find<bool>("vtk_flicker", true);

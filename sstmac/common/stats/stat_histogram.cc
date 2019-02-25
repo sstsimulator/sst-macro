@@ -60,8 +60,8 @@ RegisterKeywords(
 
 namespace sstmac {
 
-StatHistogram::StatHistogram(SST::Params& params, SST::BaseComponent* comp,
-                             const std::string& name, const std::string& subName) :
+StatHistogram::StatHistogram(SST::BaseComponent* comp, const std::string& name,
+                             const std::string& subName, SST::Params& params) :
     bin_size_(0),
     is_log_(false),
   SST::Statistics::MultiStatistic<double,uint64_t>(comp, name, subName, params)

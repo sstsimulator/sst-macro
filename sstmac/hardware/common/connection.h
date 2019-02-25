@@ -103,7 +103,7 @@ class ConnectableComponent :
   public Connectable
 {
  protected:
-  ConnectableComponent(SST::Params& params, uint32_t cid);
+  ConnectableComponent(uint32_t cid, SST::Params& params);
 
 };
 

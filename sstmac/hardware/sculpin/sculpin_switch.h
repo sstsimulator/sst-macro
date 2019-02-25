@@ -69,16 +69,21 @@ namespace hw {
 class SculpinSwitch :
   public NetworkSwitch
 {
-  RegisterSSTComponent("sculpin", NetworkSwitch, SculpinSwitch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A network switch implementing the sculpin model")
-
   SST_ELI_DOCUMENT_STATISTICS(
     { "traffic_intensity",    "Count the traffic on a port", "unit of traffic", 1}
   )
 
  public:
-  SculpinSwitch(SST::Params& params, uint32_t id);
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    NetworkSwitch,
+    SculpinSwitch ,
+    "macro",
+    "sculpin",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A network switch implementing the sculpin model",
+    COMPONENT_CATEGORY_NETWORK)
+
+  SculpinSwitch(uint32_t id, SST::Params& params);
 
   virtual ~SculpinSwitch();
 

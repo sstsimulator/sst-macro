@@ -86,8 +86,8 @@ class timestamp_prefix_fxn :
 
 };
 
-ConnectableComponent::ConnectableComponent(SST::Params& params, uint32_t cid)
-  : Component(params, cid)
+ConnectableComponent::ConnectableComponent(uint32_t cid, SST::Params& params)
+  : Component(cid, params)
 {
   if (!checked_prefix_fxn){
     if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){

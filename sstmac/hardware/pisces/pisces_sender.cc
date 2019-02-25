@@ -60,7 +60,7 @@ namespace sstmac {
 namespace hw {
 
 PiscesPacket*
-payload_queue::pop(int num_credits)
+PayloadQueue::pop(int num_credits)
 {
   auto it = queue.begin(), end = queue.end();
   for (; it != end; ++it){
@@ -78,7 +78,6 @@ PiscesSender::PiscesSender(
   SST::Component* parent,
   bool update_vc) :
   SubComponent(selfname, parent), //no self handlers
-  stat_collector_(nullptr),
   update_vc_(update_vc)
 {
 }
@@ -114,7 +113,7 @@ PiscesSender::send(
   Input& to_credit, Output& to_send)
 {
   GlobalTimestamp now_ = now();
-  pkt_arbitration_t st;
+  PiscesBandwidthArbitrator::IncomingPacket st;
   st.incoming_byte_delay = pkt->byteDelay();
   st.now = now_;
   st.pkt = pkt;
@@ -126,8 +125,6 @@ PiscesSender::send(
   } else {
     st.head_leaves = st.tail_leaves = now_;
   }
-
-  if (stat_collector_) stat_collector_->collectSingleEvent(st);
 
   if (to_credit.link) {
     sendCredit(to_credit, pkt, st.head_leaves);

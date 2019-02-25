@@ -72,9 +72,15 @@ static inline uint64_t rdtsc(void)
 class ClockCycleEventMap :
   public EventManager
 {
-  FactoryRegister("clock_cycle_parallel", EventManager, ClockCycleEventMap,
-      "Implements a parallel event queue with synchronization on regular clock cycles")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    EventManager,
+    ClockCycleEventMap,
+    "macro",
+    "clock_cycle_parallel",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Implements a parallel event queue with synchronization on regular clock cycles")
+
   ClockCycleEventMap(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~ClockCycleEventMap() throw() {}

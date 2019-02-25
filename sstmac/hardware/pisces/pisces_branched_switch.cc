@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <string>
 
 #include <sstmac/hardware/pisces/pisces_branched_switch.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/pisces/pisces_nic.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/hardware/nic/nic.h>
@@ -66,8 +65,8 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-PiscesBranchedSwitch::PiscesBranchedSwitch(SST::Params& params, uint32_t id)
-  : PiscesAbstractSwitch(params, id)
+PiscesBranchedSwitch::PiscesBranchedSwitch(uint32_t id, SST::Params& params)
+  : PiscesAbstractSwitch(id, params)
 {
   std::vector<int> args;
   params.find_array("geometry", args);

@@ -56,9 +56,15 @@ namespace sw {
  */
 class RandomTaskMapper : public TaskMapper
 {
-  FactoryRegister("random", TaskMapper, RandomTaskMapper,
-              "randomly assigns tasks to nodes")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    RandomTaskMapper,
+    "macro",
+    "random",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "randomly assigns tasks to nodes")
+
   RandomTaskMapper(SST::Params& params);
 
   std::string toString() const override {

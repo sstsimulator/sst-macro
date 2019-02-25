@@ -74,8 +74,7 @@ Interconnect::staticInterconnect(SST::Params& params, EventManager* mgr)
   if (!static_interconnect_){
     ParallelRuntime* rt = ParallelRuntime::staticRuntime(params);
     Partition* part = rt ? rt->topologyPartition() : nullptr;
-    static_interconnect_ = Interconnect::factory::getValue("switch", params,
-      mgr, part, rt);
+    static_interconnect_ = new Interconnect(params, mgr, part, rt);
   }
   return static_interconnect_;
 }
@@ -141,7 +140,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->numNodes() + top->numSwitches();
   for (int i=0; i < rt_->nthread(); ++i){
     uint32_t id = my_offset + i;
-    logp_switches_[i] = new LogPSwitch(logp_params, id);
+    logp_switches_[i] = new LogPSwitch(id, logp_params);
   }
 
   interconn_debug("Interconnect building endpoints");
@@ -244,7 +243,7 @@ Interconnect::connectEndpoints(EventManager* mgr,
   int num_nodes = topology_->numNodes();
   int num_switches = topology_->numSwitches();
   int me = rt_->me();
-  std::vector<Topology::injection_port> ports;
+  std::vector<Topology::InjectionPort> ports;
   SST::Params inj_params = ep_params.find_prefix_params("injection");
   SST::Params ej_params = sw_params.find_prefix_params("ejection");
   SST::Params link_params= sw_params.find_prefix_params("link");
@@ -269,7 +268,7 @@ Interconnect::connectEndpoints(EventManager* mgr,
     NetworkSwitch* ejsw = switches_[i];
 
     topology_->endpointsConnectedToInjectionSwitch(i, ports);
-    for (Topology::injection_port& p : ports){
+    for (Topology::InjectionPort& p : ports){
       Node* ep = nodes_[p.nid];
 
       interconn_debug("connecting switch %d:%p to injector %d:%p on ports %d:%d",
@@ -283,7 +282,7 @@ Interconnect::connectEndpoints(EventManager* mgr,
     }
 
     topology_->endpointsConnectedToEjectionSwitch(i, ports);
-    for (Topology::injection_port& p : ports){
+    for (Topology::InjectionPort& p : ports){
       Node* ep = nodes_[p.nid];
 
       interconn_debug("connecting switch %d:%p to ejector %d:%p on ports %d:%d",
@@ -339,7 +338,7 @@ Interconnect::connectLogP(EventManager* mgr,
   Timestamp logp_link_latency = local_logp_switch->out_in_latency();
   for (int i=0; i < num_switches_; ++i){
     SwitchId sid(i);
-    std::vector<Topology::injection_port> nodes;
+    std::vector<Topology::InjectionPort> nodes;
     topology_->endpointsConnectedToInjectionSwitch(sid, nodes);
     if (nodes.empty())
       continue;
@@ -347,7 +346,7 @@ Interconnect::connectLogP(EventManager* mgr,
     int target_thread = partition_->threadForSwitch(i);
     int target_rank = partition_->lpidForSwitch(sid);
 
-    for (Topology::injection_port& conn : nodes){
+    for (Topology::InjectionPort& conn : nodes){
       Node* nd = nodes_[conn.nid];
       if (my_rank == target_rank && my_thread == target_thread){
         //nic sends to only its specific logp switch
@@ -380,7 +379,7 @@ Interconnect::buildEndpoints(SST::Params& node_params,
 
   for (int i=0; i < num_switches_; ++i){
     SwitchId sid(i);
-    std::vector<Topology::injection_port> nodes;
+    std::vector<Topology::InjectionPort> nodes;
     topology_->endpointsConnectedToInjectionSwitch(sid, nodes);
     if (nodes.empty())
       continue;
@@ -398,8 +397,8 @@ Interconnect::buildEndpoints(SST::Params& node_params,
         //local node - actually build it
         node_params->addParamOverride("id", int(nid));
         uint32_t comp_id = nid;
-        Node* nd = Node::factory::getOptionalParam("name", "simple",
-                                                     node_params, comp_id);
+        auto nodeType = node_params.find<std::string>("name", "simple");
+        Node* nd = Node::create("macro", nodeType, comp_id, node_params);
         node_params->removeParam("id"); //you don't have to let it linger
         nodes_[nid] = nd;
         components_[nid] = nd;
@@ -422,7 +421,8 @@ Interconnect::buildSwitches(SST::Params& switch_params,
     if (partition_->lpidForSwitch(i) == my_rank){
       int thread = partition_->threadForSwitch(i);
       uint32_t comp_id = switchComponentId(i);
-      switches_[i] = NetworkSwitch::factory::getParam("name", switch_params, comp_id);
+      auto swType = switch_params.find<std::string>("name");
+      switches_[i] = NetworkSwitch::create("macro", swType, comp_id, switch_params);
     } else {
       switches_[i] = nullptr;
     }
@@ -449,7 +449,7 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
   bool simple_model = switch_params.find<std::string>("name") == "simple";
   if (simple_model) return; //nothing to do
 
-  std::vector<Topology::connection> outports(64); //allocate 64 spaces optimistically
+  std::vector<Topology::Connection> outports(64); //allocate 64 spaces optimistically
 
   int my_rank = rt_->me();
   int my_thread = mgr->thread();
@@ -463,7 +463,7 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
     int src_rank = partition_->lpidForSwitch(i);
     int src_thread = partition_->threadForSwitch(i);
     topology_->connectedOutports(src, outports);
-    for (Topology::connection& conn : outports){
+    for (Topology::Connection& conn : outports){
       int dst_rank = partition_->lpidForSwitch(conn.dst);
       int dst_thread = partition_->threadForSwitch(conn.dst);
 

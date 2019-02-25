@@ -67,9 +67,15 @@ namespace sw {
 
 class CoordinateTaskMapper : public TaskMapper
 {
-  FactoryRegister("coordinate", TaskMapper, CoordinateTaskMapper,
-              "assigns tasks to nodes based on hostname map of topology and hostname list in file")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    CoordinateTaskMapper,
+    "macro",
+    "coordinate",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "assigns tasks to nodes based on hostname map of topology and hostname list in file")
+
   CoordinateTaskMapper(SST::Params& params);
 
   std::string toString() const override {

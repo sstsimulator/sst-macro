@@ -45,16 +45,19 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_hardware_noise_NOISE_H
 #define sstmac_hardware_noise_NOISE_H
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sstmac/common/rng.h>
+#include <sstmac/sst_core/integrated_component.h>
 
 namespace sstmac {
   namespace hw {
 
 class NoiseModel
 {
-  DeclareFactory(NoiseModel)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(NoiseModel)
+  SST_ELI_REGISTER_CTOR(SST::Params&)
+
   virtual ~NoiseModel(){}
 
   virtual double value() = 0;
@@ -68,10 +71,16 @@ class NoiseModel
 class GaussianNoiseModel :
   public NoiseModel
 {
-  FactoryRegister("gaussian", NoiseModel, GaussianNoiseModel,
-      "implements a normally distributed noise model with mean, stdev "
-      "and optional max parameter defining cutoff")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NoiseModel,
+    GaussianNoiseModel,
+    "macro",
+    "gaussian",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a normally distributed noise model with mean, stdev "
+    "and optional max parameter defining cutoff")
+
   GaussianNoiseModel(
     double mean,
     double stdev,

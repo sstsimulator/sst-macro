@@ -189,11 +189,11 @@ void py_init_system(PyObject*  module)
 }
 
 static PyObject*
-sys_convert_to_list(const std::vector<sstmac::hw::Topology::injection_port>& ports)
+sys_convert_to_list(const std::vector<sstmac::hw::Topology::InjectionPort>& ports)
 {
   PyObject* tuple = PyTuple_New(ports.size());
   for (int i=0; i < ports.size(); ++i){
-    const sstmac::hw::Topology::injection_port& port = ports[i];
+    const sstmac::hw::Topology::InjectionPort& port = ports[i];
     PyObject* portTuple = PyTuple_New(3);
     PyObject* nodeIdx = PyInt_FromLong(port.nid);
     PyTuple_SetItem(portTuple, 0, nodeIdx);
@@ -210,7 +210,7 @@ static PyObject*
 sys_get_injection_connections(SystemPy_t* self, PyObject* swIdx)
 {
   int sid = PyInt_AsLong(swIdx);
-  std::vector<sstmac::hw::Topology::injection_port> ports;
+  std::vector<sstmac::hw::Topology::InjectionPort> ports;
   self->macro_topology->endpointsConnectedToInjectionSwitch(sid, ports);
   return sys_convert_to_list(ports);
 }
@@ -219,11 +219,11 @@ static PyObject*
 sys_get_switch_connections(SystemPy_t* self, PyObject* idx)
 {
   int swIdx = PyInt_AsLong(idx);
-  std::vector<sstmac::hw::Topology::connection> conns;
+  std::vector<sstmac::hw::Topology::Connection> conns;
   self->macro_topology->connectedOutports(swIdx, conns);
   PyObject* tuple = PyTuple_New(conns.size());
   for (int i=0; i < conns.size(); ++i){
-    sstmac::hw::Topology::connection& conn = conns[i];
+    sstmac::hw::Topology::Connection& conn = conns[i];
     PyObject* connTuple = PyTuple_New(4);
     PyObject* srcIdx = PyInt_FromLong(conn.src);
     PyTuple_SetItem(connTuple, 0, srcIdx);
@@ -250,7 +250,7 @@ static PyObject*
 sys_get_ejection_connections(SystemPy_t* self, PyObject* swIdx)
 {
   int sid = PyInt_AsLong(swIdx);
-  std::vector<sstmac::hw::Topology::injection_port> ports;
+  std::vector<sstmac::hw::Topology::InjectionPort> ports;
   self->macro_topology->endpointsConnectedToEjectionSwitch(sid, ports);
   return sys_convert_to_list(ports);
 }

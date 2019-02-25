@@ -251,8 +251,9 @@ parseOpts(int argc, char **argv, opts &oo)
     if (pos!= std::string::npos){
       exe_name = exe_name.substr(pos+1);
     }
-    bool is_stand_alone = sstmac::sw::App::factory::isValidName("sstmac_app_name");
 #if !SSTMAC_INTEGRATED_SST_CORE
+    //TODO - a better to have standalone execution
+    bool is_stand_alone = false; //sstmac::sw::App::factory::isValidName("sstmac_app_name");
     if (is_stand_alone){
       int rc = sstmac::runStandalone(argc,argv);
       if (rc == 0){

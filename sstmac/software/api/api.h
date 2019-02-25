@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_software_libraries_API_H
 #define sstmac_software_libraries_API_H
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/host_timer.h>
 #include <sstmac/software/process/app_fwd.h>
@@ -54,6 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_scheduler_fwd.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/keyword_registration.h>
 #include <sys/time.h>
 
@@ -69,9 +70,9 @@ class API
  : public SST::SubComponent
 #endif
 {
-  DeclareFactoryArgs(API,App*,SST::Component*)
  public:
-  API(SST::Params& params, App* parent, SST::Component* comp);
+  SST_ELI_REGISTER_BASE_DEFAULT(API)
+  SST_ELI_REGISTER_CTOR(SST::Params&,App*,SST::Component*)
 
   virtual ~API();
 
@@ -112,6 +113,8 @@ class API
   void endAPICall();
 
  protected:
+  API(SST::Params& params, App* parent, SST::Component* comp);
+
   std::unique_ptr<HostTimer> host_timer_;
   App* parent_;
 
@@ -119,12 +122,6 @@ class API
 
 void apiLock();
 void apiUnlock();
-
-#define NamespaceRegister(name, child_cls)
-
-#define RegisterAPI(name, child_cls) \
-  FactoryRegister(name, sstmac::sw::API, child_cls) \
-  NamespaceRegister(name, child_cls)
 
 }
 }

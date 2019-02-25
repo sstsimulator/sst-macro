@@ -58,9 +58,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/progress_queue.h>
+#include <sstmac/sst_core/integrated_component.h>
 
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 #include <functional>
 
@@ -99,8 +100,10 @@ class NicEvent :
  */
 class NIC : public ConnectableSubcomponent
 {
-  DeclareFactoryArgs(NIC,Node*)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(NIC)
+  SST_ELI_REGISTER_CTOR(SST::Params&,Node*)
+
   typedef enum {
     Injection,
     LogP
@@ -227,7 +230,13 @@ class NIC : public ConnectableSubcomponent
 class NullNIC : public NIC
 {
  public:
-  FactoryRegister("null", NIC, NullNIC, "implements a nic that models nothing - stand-in only")
+  SST_ELI_REGISTER_DERIVED(
+    NIC,
+    NullNIC,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a nic that models nothing - stand-in only")
 
   NullNIC(SST::Params& params, Node* parent) :
     NIC(params, parent)

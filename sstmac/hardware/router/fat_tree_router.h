@@ -59,9 +59,16 @@ namespace hw {
  */
 class FatTreeRouter : public Router
 {
-  using header = Packet::header;
-  FactoryRegister("fat_tree", Router, FatTreeRouter)
+  using header = Packet::Header;
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    FatTreeRouter,
+    "macro",
+    "fat_tree",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing fat tree routing")
+
   FatTreeRouter(SST::Params& params, Topology* top, NetworkSwitch* netsw);
 
   virtual ~FatTreeRouter() {}

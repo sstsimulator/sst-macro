@@ -44,11 +44,17 @@ class ThreadingFContext : public ThreadContext
   }
 
  public:
-  FactoryRegister("fcontext", ThreadContext, ThreadingFContext)
+  SST_ELI_REGISTER_DERIVED(
+    ThreadContext,
+    ThreadingFContext,
+    "macro",
+    "fcontext",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "uses fcontext for fast context switching")
 
   virtual ~ThreadingFContext() {}
 
-  ThreadingFContext(SST::Params& params){}
+  ThreadingFContext(){}
 
   ThreadContext* copy() const override {
     //parameters never actually used
@@ -89,8 +95,6 @@ class ThreadingFContext : public ThreadContext
   }
 
  private:
-  ThreadingFContext(){}
-
   fcontext_t ctx_;
   void* args_;
   void (*fxn_)(void*);

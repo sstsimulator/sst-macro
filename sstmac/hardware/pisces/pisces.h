@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/hardware/common/flow.h>
 #include <sprockit/thread_safe_new.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(pisces)
@@ -130,7 +130,7 @@ class PiscesPacket :
   }
 
   int nextVC() const {
-    return rtrHeader<Packet::header>()->deadlock_vc;
+    return rtrHeader<Packet::Header>()->deadlock_vc;
   }
 
   void updateVC() {

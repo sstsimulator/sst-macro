@@ -46,11 +46,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #define MEMORYMODEL_H_
 
 #include <sstmac/hardware/common/connection.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/memory/memory_id.h>
+#include <sstmac/sst_core/integrated_component.h>
 
 DeclareDebugSlot(memory)
 #define mem_debug(...) \
@@ -61,8 +62,10 @@ namespace hw {
 
 class MemoryModel : public SubComponent
 {
-  DeclareFactoryArgs(MemoryModel,Node*)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(MemoryModel)
+  SST_ELI_REGISTER_CTOR(SST::Params&,Node*)
+
   MemoryModel(SST::Params& params,
                Node* Node);
 
@@ -90,7 +93,13 @@ class MemoryModel : public SubComponent
 class NullMemoryModel : public MemoryModel
 {
  public:
-  FactoryRegister("null", MemoryModel, NullMemoryModel)
+  SST_ELI_REGISTER_DERIVED(
+    MemoryModel,
+    NullMemoryModel,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a memory model that models nothing")
 
   NullMemoryModel(SST::Params& params, Node* nd) :
     MemoryModel(params, nd)

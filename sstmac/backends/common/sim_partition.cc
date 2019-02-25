@@ -86,7 +86,7 @@ SerialPartition::SerialPartition(SST::Params& params, ParallelRuntime* rt)
  : Partition(params, rt)
 {
   SST::Params top_params = params.find_prefix_params("topology");
-  hw::Topology* fake_top = hw::Topology::factory::getParam("name", top_params);
+  hw::Topology* fake_top = hw::Topology::create("macro", top_params.find<std::string>("name"), top_params);
   int nswitches = fake_top->numSwitches();
   num_switches_total_ = nswitches;
   switch_to_lpid_ = new int[nswitches];
@@ -109,7 +109,8 @@ TopologyPartition::TopologyPartition(SST::Params& params, ParallelRuntime* rt)
 {
   //this will need to be fixed later...
   SST::Params top_params = params.find_prefix_params("topology");
-  fake_top_ = hw::Topology::factory::getParam("name", top_params);
+  fake_top_ = hw::Topology::create("macro", top_params.find<std::string>("name"),
+                                   top_params);
 
   noccupied_ = params.find<int>("num_occupied");
 
@@ -128,7 +129,8 @@ BlockPartition::BlockPartition(SST::Params& params, ParallelRuntime* rt)
   : Partition(params, rt)
 {
   SST::Params top_params = params.find_prefix_params("topology");
-  fake_top_ = hw::Topology::factory::getParam("name", top_params);
+  fake_top_ = hw::Topology::create("macro", top_params.find<std::string>("name"),
+                                   top_params);
   num_switches_total_ = fake_top_->numSwitches();
 
   num_switches_total_ = fake_top_->numSwitches();

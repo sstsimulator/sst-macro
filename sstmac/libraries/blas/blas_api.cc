@@ -96,10 +96,10 @@ BlasAPI::~BlasAPI()
 void
 BlasAPI::initKernels(SST::Params& params)
 {
-  dgemm_kernel_ = BlasKernel::factory::getOptionalParam("dgemm", "default_dgemm", params);
-  dgemv_kernel_ = BlasKernel::factory::getOptionalParam("dgemv", "default_dgemv", params);
-  daxpy_kernel_ = BlasKernel::factory::getOptionalParam("daxpy", "default_daxpy", params);
-  ddot_kernel_ = BlasKernel::factory::getOptionalParam("ddot", "default_ddot", params);
+  dgemm_kernel_ = BlasKernel::create("macro", params.find<std::string>("dgemm", "default_dgemm"), params);
+  dgemv_kernel_ = BlasKernel::create("macro", params.find<std::string>("dgemv", "default_dgemv"), params);
+  daxpy_kernel_ = BlasKernel::create("macro", params.find<std::string>("daxpy", "default_daxpy"), params);
+  ddot_kernel_ = BlasKernel::create("macro", params.find<std::string>("ddot", "default_ddot"), params);
 }
 
 void

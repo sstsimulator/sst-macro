@@ -44,7 +44,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/stats/stat_spyplot.h>
@@ -67,26 +66,21 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-PiscesAbstractSwitch::PiscesAbstractSwitch(SST::Params& params, uint32_t id) :
-  buf_stats_(nullptr),
-  xbar_stats_(nullptr),
+PiscesAbstractSwitch::PiscesAbstractSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
-  NetworkSwitch(params, id)
+  NetworkSwitch(id, params)
 {
   SST::Params xbar_params = params.find_prefix_params("xbar");
-  xbar_stats_ = PacketStatsCallback::factory::getOptionalParam("stats", "null",
-                                             xbar_params, this);
 
   SST::Params buf_params = params.find_prefix_params("output_buffer");
-  buf_stats_ = PacketStatsCallback::factory::getOptionalParam("stats", "null",
-                                             buf_params, this);
 
   SST::Params rtr_params = params.find_prefix_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
-  router_ = Router::factory::getParam("name", rtr_params, top_, this);
+  router_ = Router::create("macro", rtr_params.find<std::string>("name"),
+                           rtr_params, top_, this);
 
   SST::Params ej_params = params.find_prefix_params("ejection");
-  std::vector<Topology::injection_port> conns;
+  std::vector<Topology::InjectionPort> conns;
   top_->endpointsConnectedToEjectionSwitch(my_addr_, conns);
   if (!ej_params.contains("credits")){
     //never be limited by credits
@@ -97,13 +91,11 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(SST::Params& params, uint32_t id) :
 
 PiscesAbstractSwitch::~PiscesAbstractSwitch()
 {
-  if (buf_stats_) delete buf_stats_;
-  if (xbar_stats_) delete xbar_stats_;
   if (router_) delete router_;
 }
 
-PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
-: PiscesAbstractSwitch(params, id),
+PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
+: PiscesAbstractSwitch(id, params),
   xbar_(nullptr)
 {
   SST::Params xbar_params = params.find_prefix_params("xbar");
@@ -137,7 +129,6 @@ PiscesSwitch::PiscesSwitch(SST::Params& params, uint32_t id)
   xbar_ = new PiscesCrossbar("xbar", xbar_arb, xbar_bw, this,
                              top_->maxNumPorts(), top_->maxNumPorts(),
                              router_->numVC(), true/*yes, update vc*/);
-  xbar_->setStatCollector(xbar_stats_);
   out_buffers_.resize(top_->maxNumPorts());
   inports_.resize(top_->maxNumPorts());
   for (int i=0; i < inports_.size(); ++i){
@@ -176,7 +167,6 @@ PiscesSwitch::connectOutput(
   PiscesBuffer* out_buffer = new PiscesBuffer(sprockit::printf("buffer%d", src_outport),
                                               arbType_, link_bw_ * scale_factor, mtu_,
                                               this, router_->numVC());
-  out_buffer->setStatCollector(buf_stats_);
   int buffer_inport = 0;
   std::string out_port_name = sprockit::printf("buffer-out%d", src_outport);
   auto out_link = allocateSubLink(out_port_name, Timestamp(), this, //don't put latency on xbar

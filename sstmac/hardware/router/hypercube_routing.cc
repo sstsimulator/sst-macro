@@ -12,9 +12,13 @@ namespace hw {
 
 class HypercubeMinimalRouter : public Router {
  public:
-  FactoryRegister("hypercube_minimal",
-              Router, HypercubeMinimalRouter,
-              "router implementing minimal routing for hypercube")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    HypercubeMinimalRouter,
+    "macro",
+    "hypercube_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing minimal routing for hypercube")
 
   HypercubeMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
@@ -36,7 +40,7 @@ class HypercubeMinimalRouter : public Router {
   }
 
   void route(Packet *pkt) override {
-    auto* hdr = pkt->rtrHeader<Packet::header>();
+    auto* hdr = pkt->rtrHeader<Packet::Header>();
     SwitchId ej_addr = pkt->toaddr() / cube_->concentration();
     if (ej_addr == my_addr_){
       hdr->edge_port = pkt->toaddr() % cube_->concentration() + inj_offset_;
@@ -54,7 +58,7 @@ class HypercubeMinimalRouter : public Router {
 };
 
 class HypercubeParRouter : public HypercubeMinimalRouter {
-  struct header : public Packet::header {
+  struct header : public Packet::Header {
     uint8_t stage_number : 3;
     uint8_t nhops : 3;
     uint8_t dstX : 6;
@@ -70,9 +74,13 @@ class HypercubeParRouter : public HypercubeMinimalRouter {
   static const char valiant_stage = 2;
   static const char final_stage = 3;
 
-  FactoryRegister("hypercube_par",
-              Router, HypercubeParRouter,
-              "router implementing PAR for hypercube/hyperX")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    HypercubeParRouter,
+    "macro",
+    "hypercube_par",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing PAR for hypercube")
 
   std::string toString() const override {
     return "hypercube PAR router";

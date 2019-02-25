@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/progress_queue.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 #include <sstmac/common/event_manager_fwd.h>
 
@@ -64,6 +64,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request_fwd.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_probe_request_fwd.h>
+
+#include <sprockit/sim_parameters_fwd.h>
 
 #include <queue>
 #include <sstmac/common/timestamp.h>

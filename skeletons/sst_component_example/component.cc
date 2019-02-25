@@ -55,8 +55,8 @@ class TestModule : public SSTElementPythonModule {
  */
 class TestComponent : public ConnectableComponent {
  public:
-  DeclareFactoryArgs(TestComponent,uint64_t)
-
+  SST_ELI_REGISTER_BASE_DEFAULT(TestComponent)
+  SST_ELI_REGISTER_CTOR(uint32_t,SST::Params&)
   /**
    * @brief test_component Standard constructor for all components
    *  with 3 basic parameters
@@ -64,8 +64,8 @@ class TestComponent : public ConnectableComponent {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  TestComponent(SST::Params& params, uint32_t id) :
-    ConnectableComponent(params,id)
+  TestComponent(uint32_t id, SST::Params& params) :
+    ConnectableComponent(id, params)
  {
  }
 };
@@ -82,9 +82,14 @@ class TestEvent : public Event {
  */
 class DummySwitch : public TestComponent {
  public:
-  RegisterComponent("dummy", TestComponent, DummySwitch,
-           "test", COMPONENT_CATEGORY_NETWORK,
-           "A dummy switch for teaching")
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    TestComponent,
+    DummySwitch,
+    "macro",
+    "dummy",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A dummy switch",
+    COMPONENT_CATEGORY_NETWORK)
 
   /**
    * @brief dummy_switch Standard constructor for all components
@@ -93,8 +98,8 @@ class DummySwitch : public TestComponent {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  DummySwitch(SST::Params& params, uint32_t id) :
-   TestComponent(params,id), id_(id)
+  DummySwitch(uint32_t id, SST::Params& params) :
+   TestComponent(id,params), id_(id)
   {
     //make sure this function gets called
     //unfortunately, due to virtual function initialization order

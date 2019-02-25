@@ -88,7 +88,7 @@ PiscesBuffer::PiscesBuffer(const std::string& selfname,
     initial_credits_(num_vc,0),
     packet_size_(packet_size)
 {
-  arb_ = PiscesBandwidthArbitrator::factory::getValue(arb, bw);
+  arb_ = PiscesBandwidthArbitrator::create("macro", arb, bw);
 }
 
 void

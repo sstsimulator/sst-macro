@@ -60,9 +60,15 @@ namespace hw {
  */
 class PiscesNIC : public NIC
 {
-  FactoryRegister("pisces", NIC, PiscesNIC,
-              "implements a nic that models messages as a packet flow")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NIC,
+    PiscesNIC,
+    "macro",
+    "pisces",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a nic that models messages as a packet flow")
+
   PiscesNIC(SST::Params& params, Node* parent);
 
   std::string toString() const override {
@@ -94,19 +100,19 @@ class PiscesNIC : public NIC
 
   uint64_t inject(int vn, uint64_t offset, NetworkMessage* msg);
 
-  struct pending {
+  struct Pending {
     uint64_t bytes_sent;
     uint64_t bytes_total;
     NetworkMessage* msg;
 
-    pending(uint64_t offset, uint64_t size, NetworkMessage* m) :
+    Pending(uint64_t offset, uint64_t size, NetworkMessage* m) :
       bytes_sent(offset), bytes_total(size), msg(m)
     {
     }
 
   };
 
-  std::vector<std::queue<pending>> pending_inject_;
+  std::vector<std::queue<Pending>> pending_inject_;
 
   PiscesBuffer* inj_buffer_;
 
@@ -119,10 +125,6 @@ class PiscesNIC : public NIC
 
   uint32_t packet_size_;
   uint32_t inj_credits_;
-
-  PacketStatsCallback* inj_stats_;
-  PacketStatsCallback* ej_stats_;
-
 
 };
 

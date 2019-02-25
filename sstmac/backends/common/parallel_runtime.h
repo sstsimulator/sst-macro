@@ -54,7 +54,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sstmac/sst_core/integrated_component.h>
+#include <sprockit/factory.h>
 #include <sprockit/sim_parameters.h>
 #include <list>
 
@@ -80,27 +81,29 @@ namespace sstmac {
 class ParallelRuntime :
   public Lockable
 {
-  DeclareFactory(ParallelRuntime)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(ParallelRuntime)
+  SST_ELI_REGISTER_CTOR(SST::Params&)
+
   virtual ~ParallelRuntime();
 
-  struct comm_buffer : public Lockable {
+  struct CommBuffer : public Lockable {
     int64_t bytesAllocated;
     int64_t allocSize;
     int64_t filledSize;
     char* allocation;
     char* storage;
 
-    struct backup_buffer {
+    struct BackupBuffer {
       uint64_t maxSize;
       uint64_t filledSize;
       char* buffer;
     };
 
-    comm_buffer() : storage(nullptr), allocation(nullptr),
+    CommBuffer() : storage(nullptr), allocation(nullptr),
       filledSize(0), bytesAllocated(0) {}
 
-    ~comm_buffer(){
+    ~CommBuffer(){
       if (allocation) delete[] allocation;
     }
 
@@ -152,7 +155,7 @@ class ParallelRuntime :
 
     char* allocateSpace(size_t size, IpcEvent* ev);
 
-    std::vector<backup_buffer> backups;
+    std::vector<BackupBuffer> backups;
 
   };
 
@@ -246,7 +249,7 @@ class ParallelRuntime :
     return numRecvsDone_;
   }
 
-  const comm_buffer& recvBuffer(int idx) const {
+  const CommBuffer& recvBuffer(int idx) const {
     return recv_buffers_[idx];
   }
 
@@ -265,8 +268,8 @@ class ParallelRuntime :
    int nproc_;
    int nthread_;
    int me_;
-   std::vector<comm_buffer> send_buffers_;
-   std::vector<comm_buffer> recv_buffers_;
+   std::vector<CommBuffer> send_buffers_;
+   std::vector<CommBuffer> recv_buffers_;
    std::vector<int> sends_done_;
    int num_sends_done_;
    int numRecvsDone_;

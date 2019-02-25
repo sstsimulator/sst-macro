@@ -127,7 +127,7 @@ FileTopology::initHostnameMap(SST::Params& params)
 }
 
 void
-FileTopology::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+FileTopology::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   conns.clear();
 
@@ -144,7 +144,7 @@ FileTopology::connectedOutports(SwitchId src, std::vector<connection>& conns) co
   for (auto prt = outports.begin(); prt != outports.end(); ++prt) {
     auto it = switch_name_map_.find(prt->at("destination"));
     if( it != switch_name_map_.end()  ) {
-      connection c;
+      Connection c;
       c.src = src;
       c.src_outport = stoi(prt.key());
       int dst_id = it->second;
@@ -157,7 +157,7 @@ FileTopology::connectedOutports(SwitchId src, std::vector<connection>& conns) co
 
 void
 FileTopology::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   nodes.clear();
 
@@ -174,7 +174,7 @@ FileTopology::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
   for (auto prt = outports.begin(); prt != outports.end(); ++prt) {
     auto it = idmap_.find(prt->at("destination"));
     if( it != idmap_.end() ) {
-      injection_port ip;
+      InjectionPort ip;
       ip.nid = it->second;
       ip.ep_port = prt->at("inport");
       ip.switch_port = stoi(prt.key());

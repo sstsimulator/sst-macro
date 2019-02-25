@@ -64,9 +64,15 @@ namespace sstmac {
 namespace hw {
 
 struct DragonflyMinimalRouter : public Router {
-  FactoryRegister("dragonfly_minimal", Router, DragonflyMinimalRouter)
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyMinimalRouter,
+    "macro",
+    "dragonfly_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing minimal dragonfly")
 
-  struct header : public Packet::header {
+  struct header : public Packet::Header {
     uint8_t num_group_hops : 2;
     uint8_t num_hops : 4;
   };
@@ -190,6 +196,14 @@ struct DragonflyMinimalRouter : public Router {
 
 class DragonflyValiantRouter : public DragonflyMinimalRouter {
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyValiantRouter,
+    "macro",
+    "dragonfly_valiant",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing valiant dragonfly")
+
   static const char initial_stage = 0;
   static const char valiant_stage = 1;
   static const char final_stage = 2;
@@ -198,10 +212,6 @@ class DragonflyValiantRouter : public DragonflyMinimalRouter {
     uint8_t stage_number : 3;
     uint32_t dest_switch : 24;
   };
-
-  FactoryRegister("dragonfly_valiant",
-              Router, DragonflyValiantRouter,
-              "router implementing valint routing for dragonfly")
 
   DragonflyValiantRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
@@ -342,9 +352,14 @@ class DragonflyUGALRouter : public DragonflyValiantRouter {
 
  public:
   static const char minimal_only_stage = final_stage + 1;
-  FactoryRegister("dragonfly_ugal",
-              Router, DragonflyUGALRouter,
-              "router implementing UGAL routing for dragonfly")
+
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyUGALRouter,
+    "macro",
+    "dragonfly_ugal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing UGAL dragonfly")
 
   DragonflyUGALRouter(SST::Params& params, Topology *top,
                                  NetworkSwitch *netsw)
@@ -499,9 +514,13 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
   };
 
  public:
-  FactoryRegister("dragonfly_ugalG",
-              Router, DragonflyUgalGRouter,
-              "router implementing UGAL-G routing for dragonfly")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyUgalGRouter,
+    "macro",
+    "dragonfly_ugalG",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing UGAL-G dragonfly")
 
   DragonflyUgalGRouter(SST::Params& params, Topology *top, NetworkSwitch *netsw)
     :  DragonflyUGALRouter(params, top, netsw), ic_(nullptr)
@@ -681,9 +700,13 @@ class DragonflyUgalGRouter : public DragonflyUGALRouter {
 
 class DragonflyPARRouter : public DragonflyUGALRouter {
  public:
-  FactoryRegister("dragonfly_par",
-              Router, DragonflyPARRouter,
-              "router implementing PAR for dragonfly")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyPARRouter,
+    "macro",
+    "dragonfly_par",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing PAR dragonfly")
 
   std::string toString() const override {
     return "dragonfly PAR router";

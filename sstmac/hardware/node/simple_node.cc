@@ -63,8 +63,8 @@ SimpleNode::~SimpleNode()
 {
 }
 
-SimpleNode::SimpleNode(SST::Params& params, uint32_t id)
-  : Node(params, id)
+SimpleNode::SimpleNode(uint32_t id, SST::Params& params)
+  : Node(id, params)
 {
   initLinks(params);
 }

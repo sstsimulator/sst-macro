@@ -133,7 +133,13 @@ class DeleteThreadEvent :
 
 struct NullImplicitState : public OperatingSystem::ImplicitState
 {
-  FactoryRegister("null", OperatingSystem::ImplicitState, NullImplicitState)
+  SST_ELI_REGISTER_DERIVED(
+    OperatingSystem::ImplicitState,
+    NullImplicitState,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "an implicit that holds nothing")
 
   NullImplicitState(SST::Params& params) :
     OperatingSystem::ImplicitState(params){}
@@ -144,12 +150,19 @@ struct NullImplicitState : public OperatingSystem::ImplicitState
 
 struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
 {
-  FactoryRegister("null", OperatingSystem::RegressionModel, NullRegression)
+
+  SST_ELI_REGISTER_DERIVED(
+    OperatingSystem::RegressionModel,
+    NullRegression,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a regression model that does nothing")
 
   using Parent = OperatingSystem::ThreadSafeTimerModel<double>;
 
-  NullRegression(SST::Params& params, SST::BaseComponent* comp,
-                 const std::string& key)
+  NullRegression(SST::BaseComponent* comp, const std::string& key,
+                 const std::string& subName, SST::Params& params)
     : Parent(params, comp, key, ""), computed_(false) {}
 
   double compute(int n_params, const double params[],
@@ -205,10 +218,17 @@ struct NullRegression : public OperatingSystem::ThreadSafeTimerModel<double>
 
 struct LinearRegression : public OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>
 {
-  FactoryRegister("linear", OperatingSystem::RegressionModel, LinearRegression)
+  SST_ELI_REGISTER_DERIVED(
+    OperatingSystem::RegressionModel,
+    LinearRegression,
+    "macro",
+    "linear",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a simple linear regression model")
+
   using parent = OperatingSystem::ThreadSafeTimerModel<std::pair<double,double>>;
-  LinearRegression(SST::Params& params, SST::BaseComponent* comp,
-                  const std::string& key)
+  LinearRegression(SST::BaseComponent* comp, const std::string& key,
+                   const std::string& subName, SST::Params& params)
     : parent(params, comp, key, ""), computed_(false) {}
 
   double compute(int n_params, const double params[],
@@ -324,8 +344,10 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 {
   my_addr_ = node_ ? node_->addr() : 0;
 
-  compute_sched_ = ComputeScheduler::factory::getOptionalParam(
-                     "compute_scheduler", "simple", params, this,
+  //assume macro for now
+  compute_sched_ = ComputeScheduler::create(
+                      "macro", params.find<std::string>("compute_scheduler", "simple"),
+                      params, this,
                       node_ ? node_->proc()->ncores() : 1,
                       node_ ? node_->nsocket() : 1);
 
@@ -362,7 +384,8 @@ OperatingSystem::rebuildMemoizations()
     if (iter == memoize_models_.end()){
       SST::Params memo_params = params_.find_prefix_params(pair.first);
       memo_params.insert("fileroot", pair.first);
-      auto* model = RegressionModel::factory::getValue(pair.second, memo_params, node(), pair.first);
+      auto* model = RegressionModel::create("macro", pair.second,
+                                            node(), pair.first, "", memo_params);
       memoize_models_[pair.first] = model;
       //EventManager::global->registerStat(model, nullptr);
     }
@@ -450,8 +473,8 @@ OperatingSystem::initThreading(SST::Params& params)
   lock.unlock();
 #endif
 
-  des_context_ = ThreadContext::factory::getOptionalParam(
-        "context", ThreadContext::defaultThreading(), params);
+  des_context_ = ThreadContext::create(
+    "macro", params.find<std::string>("content", ThreadContext::defaultThreading()));
 
   des_context_->initContext();
 
@@ -622,8 +645,8 @@ OperatingSystem::ImplicitState*
 OperatingSystem::getImplicitState()
 {
   if (!implicit_memo_state_){
-      implicit_memo_state_ = sstmac::sw::OperatingSystem::ImplicitState::factory
-                    ::getOptionalParam("ImplicitState", "null", params_);
+      implicit_memo_state_ = sstmac::sw::OperatingSystem::ImplicitState::create(
+         "macro", params_.find<std::string>("implicit_state", "null"), params_);
   }
   return implicit_memo_state_;
 }
@@ -855,7 +878,7 @@ OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns
 {
   int num_ranks = mapping->numRanks();
   //job launcher needs to add this - might need it later
-  outcast_iterator iter(my_rank, num_ranks);
+  OutcastIterator iter(my_rank, num_ranks);
   int ranks[64];
   int num_to_send = 0;
   if (include_root){

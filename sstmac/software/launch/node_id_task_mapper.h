@@ -63,9 +63,15 @@ namespace sw {
 
 class NodeIdTaskMapper : public TaskMapper
 {
-  FactoryRegister("node_id", TaskMapper, NodeIdTaskMapper,
-              "assigns tasks to nodes based on list of nodes ids in file")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    NodeIdTaskMapper,
+    "macro",
+    "node_id",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "assigns tasks to nodes based on list of nodes ids in file")
+
   NodeIdTaskMapper(SST::Params& params);
 
   std::string toString() const override {

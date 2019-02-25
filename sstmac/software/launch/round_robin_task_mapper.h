@@ -55,12 +55,18 @@ namespace sw {
  */
 class RoundRobinTaskMapper : public TaskMapper
 {
-  FactoryRegister("round | round_robin", TaskMapper, RoundRobinTaskMapper,
-     "Tries to spread out ranks across the nodes. Ranks 0,1,2,3 are on different nodes."
-     "Ranks 0,4,8 are on the same node. Round robin and block indexing are equivalent "
-     "if there is one process per node")
 
  public:
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    RoundRobinTaskMapper,
+    "macro",
+    "round",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Tries to spread out ranks across the nodes. Ranks 0,1,2,3 are on different nodes."
+    "Ranks 0,4,8 are on the same node. Round robin and block indexing are equivalent "
+    "if there is one process per node")
+
   RoundRobinTaskMapper(SST::Params& params) :
     TaskMapper(params)
   {

@@ -53,8 +53,15 @@ namespace sw {
 class DefaultDDOT :
   public BlasKernel
 {
-  FactoryRegister("default_ddot", BlasKernel, DefaultDDOT)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    BlasKernel,
+    DefaultDDOT,
+    "macro",
+    "default_ddot",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "defaut DDOT kernel")
+
   DefaultDDOT(SST::Params& params){
     loop_unroll_ = params.find<double>("ddot_loop_unroll", 4);
     pipeline_ = params.find<double>("ddot_pipeline_efficiency", 2);

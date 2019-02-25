@@ -83,7 +83,7 @@ class StructuredTopology : public Topology
   virtual SwitchId numLeafSwitches() const override = 0;
 
   virtual void endpointsConnectedToEjectionSwitch(SwitchId swid,
-                       std::vector<injection_port>& nodes) const override;
+                       std::vector<InjectionPort>& nodes) const override;
 
   int concentration() const {
     return concentration_;

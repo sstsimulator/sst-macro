@@ -46,12 +46,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_BACKENDS_NATIVE_SIM_PARTITION_H_INCLUDED
 
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
+
+#include <sstmac/sst_core/integrated_component.h>
 
 #include <vector>
 
@@ -67,8 +69,10 @@ namespace sstmac {
  */
 class Partition
 {
-  DeclareFactoryArgs(Partition, ParallelRuntime*)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(Partition)
+  SST_ELI_REGISTER_CTOR(SST::Params&, ParallelRuntime*)
+
   virtual ~Partition();
 
   int numSwitchesTotal() const {
@@ -115,8 +119,15 @@ class Partition
 class SerialPartition :
   public Partition
 {
-  FactoryRegister("serial", Partition, SerialPartition)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Partition,
+    SerialPartition,
+    "macro",
+    "serial",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "partition for single rank/single thread runs")
+
   SerialPartition(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~SerialPartition();
@@ -126,9 +137,16 @@ class SerialPartition :
 class TopologyPartition :
   public Partition
 {
-  FactoryRegister("topology", Partition, TopologyPartition)
 
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Partition,
+    TopologyPartition,
+    "macro",
+    "topology",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "partition derived from the topology")
+
   TopologyPartition(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~TopologyPartition();
@@ -143,8 +161,15 @@ class TopologyPartition :
 class BlockPartition :
   public Partition
 {
-  FactoryRegister("block", Partition, BlockPartition)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Partition,
+    BlockPartition,
+    "macro",
+    "block",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "partition based on simple contiguous blocks")
+
   BlockPartition(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~BlockPartition();
@@ -165,8 +190,15 @@ class BlockPartition :
 class OccupiedBlockPartition :
   public BlockPartition
 {
-  FactoryRegister("occupied_block", Partition, OccupiedBlockPartition)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Partition,
+    OccupiedBlockPartition,
+    "macro",
+    "occupied_block",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "partition based on simple contiguous blocks of nodes with active procs")
+
   OccupiedBlockPartition(SST::Params& params, ParallelRuntime* rt);
 
   virtual ~OccupiedBlockPartition();

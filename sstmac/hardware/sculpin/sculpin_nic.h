@@ -61,9 +61,15 @@ namespace hw {
 class SculpinNIC :
   public NIC
 {
-  FactoryRegister("sculpin", NIC, SculpinNIC,
-              "implements a nic that models messages as a packet flow")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NIC,
+    SculpinNIC ,
+    "macro",
+    "sculpin",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A NIC implementing the sculpin model")
+
   SculpinNIC(SST::Params& params, Node* parent);
 
   std::string toString() const override {

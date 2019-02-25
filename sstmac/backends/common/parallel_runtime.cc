@@ -74,7 +74,7 @@ ParallelRuntime* ParallelRuntime::static_runtime_ = nullptr;
 static int backupSize = 10e6;
 
 char*
-ParallelRuntime::comm_buffer::allocateSpace(size_t size, IpcEvent *ev)
+ParallelRuntime::CommBuffer::allocateSpace(size_t size, IpcEvent *ev)
 {
   uint64_t newOffset = add_int64_atomic(size, &bytesAllocated);
   uint64_t myStartPos = newOffset - size;
@@ -86,7 +86,7 @@ ParallelRuntime::comm_buffer::allocateSpace(size_t size, IpcEvent *ev)
     }
 
     //find me a backup buffer meeting my requirements
-    for (backup_buffer& b : backups){
+    for (BackupBuffer& b : backups){
       if (newOffset < b.maxSize){
         //great - this is my backup buffer
         b.filledSize = std::max(newOffset, b.filledSize);
@@ -102,7 +102,7 @@ ParallelRuntime::comm_buffer::allocateSpace(size_t size, IpcEvent *ev)
 
     //create a new larger backup buffer big enough to hold
     char* buf = new char[nextBackupSize];
-    backup_buffer b;
+    BackupBuffer b;
     b.buffer = buf;
     b.maxSize = nextBackupSize;
     b.filledSize = newOffset;
@@ -117,7 +117,7 @@ ParallelRuntime::comm_buffer::allocateSpace(size_t size, IpcEvent *ev)
 }
 
 void
-ParallelRuntime::comm_buffer::copyToBackup()
+ParallelRuntime::CommBuffer::copyToBackup()
 {
   if (backups.empty()) return;
 
@@ -125,7 +125,7 @@ ParallelRuntime::comm_buffer::copyToBackup()
   size_t fillMark = filledSize;
   char* finalBuf = backups.back().buffer;
   char* nextBuf = storage;
-  for (backup_buffer& buf : backups){
+  for (BackupBuffer& buf : backups){
     size_t bytesToFill = fillMark - lastFill;
     ::memcpy(finalBuf + lastFill, nextBuf + lastFill, bytesToFill);
     lastFill += bytesToFill;
@@ -135,7 +135,7 @@ ParallelRuntime::comm_buffer::copyToBackup()
 }
 
 void
-ParallelRuntime::comm_buffer::reset()
+ParallelRuntime::CommBuffer::reset()
 {
   if (!backups.empty()){
     int growRatio = bytesAllocated / allocSize;
@@ -152,7 +152,7 @@ ParallelRuntime::comm_buffer::reset()
 }
 
 void
-ParallelRuntime::comm_buffer::realloc(size_t size)
+ParallelRuntime::CommBuffer::realloc(size_t size)
 {
   char* oldAlloc = allocation;
   allocSize = size;
@@ -233,7 +233,8 @@ ParallelRuntime::initPartitionParams(SST::Params& params)
   if (nthread_ == 1 && nproc_ == 1){
     deflt = "serial";
   }
-  part_ = Partition::factory::getOptionalParam("partition", deflt, params, this);
+  auto type = params.find<std::string>("partition", deflt);
+  part_ = Partition::create("macro", type, params, this);
 #endif
 }
 
@@ -246,7 +247,8 @@ ParallelRuntime::staticRuntime(SST::Params& params)
   static thread_lock rt_lock;
   rt_lock.lock();
   if (!static_runtime_){
-    static_runtime_ = ParallelRuntime::factory::getParam("runtime", params);
+    auto type = params.find<std::string>("runtime");
+    static_runtime_ = ParallelRuntime::create("macro", type, params);
   }
   rt_lock.unlock();
   return static_runtime_;
@@ -335,7 +337,7 @@ void ParallelRuntime::sendEvent(IpcEvent* iev)
   ser & iev->ev;
   iev->ser_size = overhead + ser.size();
   align64(iev->ser_size);
-  comm_buffer& buff = send_buffers_[iev->rank];
+  CommBuffer& buff = send_buffers_[iev->rank];
   char* ptr = buff.allocateSpace(iev->ser_size, iev);
   ser.start_packing(ptr, iev->ser_size);
   debug_printf(sprockit::dbg::parallel, "sending event of size %lu to LP %d at t=%10.6e: %s",

@@ -112,11 +112,16 @@ class GraphViz :
 {
   using Parent=SST::Statistics::MultiStatistic<uint64_t,sw::Thread*>;
  public:
-  StatRegister("graph_viz", Parent, GraphViz,
-               "collect graphviz statistics")
+  SST_ELI_REGISTER_CUSTOM_STATISTIC(
+      Parent,
+      GraphViz,
+      "macro",
+      "graph_viz",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "collect graphviz call trace")
 
-  GraphViz(SST::Params& params, SST::BaseComponent* comp,
-           const std::string& name, const std::string& subName);
+  GraphViz(SST::BaseComponent* comp, const std::string& name,
+           const std::string& subName, SST::Params& params);
 
   virtual ~GraphViz();
 

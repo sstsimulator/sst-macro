@@ -63,7 +63,7 @@ StructuredTopology::StructuredTopology(SST::Params& params) :
 
 void
 StructuredTopology::endpointsConnectedToEjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   endpointsConnectedToInjectionSwitch(swaddr, nodes);
 }

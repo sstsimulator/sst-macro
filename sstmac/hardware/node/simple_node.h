@@ -59,13 +59,17 @@ namespace hw {
 class SimpleNode :
   public Node
 {
-  RegisterComponent("simple",Node,SimpleNode,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A basic endpoint node running SST/macro software stacks")
-
-
  public:
-  SimpleNode(SST::Params& params, uint32_t id);
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    Node,
+    SimpleNode,
+    "macro",
+    "simple",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Basic processor that only does timed_message computes",
+    COMPONENT_CATEGORY_NETWORK)
+
+  SimpleNode(uint32_t id, SST::Params& params);
 
   virtual ~SimpleNode();
 

@@ -48,9 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/common/timestamp.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sstmac/hardware/noise/noise.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 
 namespace sstmac {
 namespace hw {
@@ -62,13 +61,27 @@ namespace hw {
  */
 class PiscesBandwidthArbitrator
 {
-  DeclareSimpleFactory(PiscesBandwidthArbitrator,double)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(PiscesBandwidthArbitrator)
+  SST_ELI_REGISTER_CTOR(double)
+
+  struct IncomingPacket
+  {
+    Timestamp incoming_byte_delay;
+    GlobalTimestamp now;
+    GlobalTimestamp head_leaves;
+    GlobalTimestamp tail_leaves;
+    GlobalTimestamp credit_leaves;
+    PiscesPacket* pkt;
+    int src_outport;
+    int dst_inport;
+  };
+
   /**
       Assign bandwidth to payload.
       @return The time at which the packet can be forwarded to the next switch/node/etc.
   */
-  virtual void arbitrate(pkt_arbitration_t& st) = 0;
+  virtual void arbitrate(IncomingPacket& st) = 0;
 
   virtual Timestamp headTailDelay(PiscesPacket* pkt) = 0;
 
@@ -95,12 +108,18 @@ class PiscesBandwidthArbitrator
 class PiscesNullArbitrator :
   public PiscesBandwidthArbitrator
 {
-  FactoryRegister("null", PiscesBandwidthArbitrator, PiscesNullArbitrator,
-              "Simple bandwidth arbitrator that models zero congestion on a link")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    PiscesBandwidthArbitrator,
+    PiscesNullArbitrator,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Simple bandwidth arbitrator that models zero congestion on a link")
+
   PiscesNullArbitrator(double bw);
 
-  virtual void arbitrate(pkt_arbitration_t& st) override;
+  virtual void arbitrate(IncomingPacket& st) override;
 
   std::string toString() const override {
     return "pisces null arbitrator";
@@ -119,13 +138,19 @@ class PiscesNullArbitrator :
 class PiscesSimpleArbitrator :
   public PiscesBandwidthArbitrator
 {
-  FactoryRegister("simple", PiscesBandwidthArbitrator, PiscesSimpleArbitrator,
-              "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
-              "This corresponds to store-and-forward, which can be inaccurate for large packet sizes")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    PiscesBandwidthArbitrator,
+    PiscesSimpleArbitrator,
+    "macro",
+    "simple",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
+    "This corresponds to store-and-forward, which can be inaccurate for large packet sizes")
+
   PiscesSimpleArbitrator(double bw);
 
-  virtual void arbitrate(pkt_arbitration_t& st) override;
+  virtual void arbitrate(IncomingPacket& st) override;
 
   std::string toString() const override {
     return "pisces simple arbitrator";
@@ -150,16 +175,22 @@ class PiscesSimpleArbitrator :
 class PiscesCutThroughArbitrator :
   public PiscesBandwidthArbitrator
 {
-  FactoryRegister("cut_through", PiscesBandwidthArbitrator, PiscesCutThroughArbitrator,
-              "Bandwidth arbitrator that forwards packets as soon as they arrive and enough credits are received"
-              "This is a much better approximation to wormhole or virtual cut_through routing")
 
  public:
+  SST_ELI_REGISTER_DERIVED(
+    PiscesBandwidthArbitrator,
+    PiscesCutThroughArbitrator,
+    "macro",
+    "cut_through",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Bandwidth arbitrator that forwards packets as soon as they arrive and enough credits are received"
+    "This is a much better approximation to wormhole or virtual cut_through routing")
+
   PiscesCutThroughArbitrator(double bw);
 
   ~PiscesCutThroughArbitrator();
 
-  void arbitrate(pkt_arbitration_t& st) override;
+  void arbitrate(IncomingPacket& st) override;
 
   std::string toString() const override {
     return "cut through arbitrator";

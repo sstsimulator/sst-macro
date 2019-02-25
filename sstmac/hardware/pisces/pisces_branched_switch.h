@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_buffer.h>
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
-#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
 
 namespace sstmac {
 namespace hw {
@@ -62,11 +61,17 @@ namespace hw {
 class PiscesBranchedSwitch :
   public PiscesAbstractSwitch
 {
-  RegisterComponent("pisces_branched", NetworkSwitch, PiscesBranchedSwitch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A branched/hierarchical network switch implementing the packet flow congestion model")
  public:
-  PiscesBranchedSwitch(SST::Params& params, uint32_t id);
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    NetworkSwitch,
+    PiscesBranchedSwitch,
+    "macro",
+    "pisces_branched",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A branched/hierarchical network switch implementing the packet flow congestion model",
+    COMPONENT_CATEGORY_NETWORK)
+
+  PiscesBranchedSwitch(uint32_t id, SST::Params& params);
 
   int queueLength(int port, int vc) const override;
 

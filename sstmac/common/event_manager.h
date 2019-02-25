@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/stats/stat_collector_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 #include <sprockit/allocator.h>
 
@@ -86,17 +86,23 @@ namespace sstmac {
 
 class EventManager
 {
-  DeclareFactoryArgs(EventManager, ParallelRuntime*)
+ public:
+  SST_ELI_REGISTER_BASE_DEFAULT(EventManager)
+  SST_ELI_REGISTER_CTOR(SST::Params&, ParallelRuntime*)
 
-  FactoryRegister("map", EventManager, EventManager,
-      "Implements a basic event manager running in serial")
+  SST_ELI_REGISTER_DERIVED(
+    EventManager,
+    EventManager,
+    "macro",
+    "map",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Implements a basic event manager running in serial")
 
   friend class Component;
   friend class SubComponent;
   friend class EventScheduler;
   friend class native::Manager;
 
- public:
   EventManager(SST::Params& params, ParallelRuntime* rt);
 
   bool isComplete() {

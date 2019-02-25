@@ -75,13 +75,13 @@ Torus::Torus(SST::Params& params) :
 
 void
 Torus::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   int total_ports = dimensions_.size() * 2;
 
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = total_ports + i;
     port.ep_port = 0;
@@ -155,7 +155,7 @@ Torus::portScaleFactor(uint32_t addr, int port) const
 }
 
 void
-Torus::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+Torus::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   int ndims = dimensions_.size();
   int dim_stride = 1;
@@ -222,7 +222,7 @@ Torus::switchAddr(const coordinates& coords) const
 }
 
 
-Topology::vtk_switch_geometry
+Topology::VTKSwitchGeometry
 Torus::getVtkGeometry(SwitchId sid) const
 {
   coordinates coords = switchCoords(sid);
@@ -243,7 +243,7 @@ Torus::getVtkGeometry(SwitchId sid) const
   double zSize = 1.0;
   double theta = 0.0;
 
-  std::vector<vtk_switch_geometry::port_geometry> ports(6);
+  std::vector<VTKSwitchGeometry::port_geometry> ports(6);
   /**
   faces[convertToPort(0,0)] = plusXface;
   faces[convertToPort(0,1)] = minusXface;
@@ -253,7 +253,7 @@ Torus::getVtkGeometry(SwitchId sid) const
   faces[convertToPort(2,1)] = minusZface;
   */
 
-  vtk_switch_geometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,
+  VTKSwitchGeometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,
                            std::move(ports));
 
   return geom;

@@ -46,7 +46,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #define PACKETFLOW_CROSSBAR_H
 
 #include <sstmac/hardware/pisces/pisces_sender.h>
-#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
 #include <sstmac/hardware/router/router.h>
 #include <sprockit/keyword_registration.h>
 
@@ -91,7 +90,7 @@ class PiscesNtoMQueue :
   //indexed by slot number = (port,vc)
   std::vector<int> credits_;
   //indexed by slot number = (port,vc)
-  std::vector<payload_queue> queues_;
+  std::vector<PayloadQueue> queues_;
 #if SSTMAC_SANITY_CHECK
   std::vector<int> initial_credits_;
 #endif
@@ -112,7 +111,7 @@ class PiscesNtoMQueue :
 
   void resizeOutports(int num_ports);
 
-  inline payload_queue& queue(int port, int vc){
+  inline PayloadQueue& queue(int port, int vc){
     return queues_[slot(port, vc)];
   }
 

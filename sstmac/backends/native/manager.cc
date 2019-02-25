@@ -204,13 +204,12 @@ Manager::computeMaxNprocForApp(sprockit::SimParameters::ptr& app_params)
 
 #if SSTMAC_INTEGRATED_SST_CORE
   SST::Params sst_params;
-  if (app_params->has_param("launch_cmd"))
-    sst_params.insert("launch_cmd", app_params->get_param("launch_cmd"));
-  else if (app_params->has_param("size"))
-    sst_params.insert("size", app_params->get_param("size"));
-  else if (app_params->has_param("concentration"))
-    sst_params.insert("concentration", app_params->get_param("concentration"));
-
+  if (app_params->hasParam("launch_cmd"))
+    sst_params.insert("launch_cmd", app_params->getParam("launch_cmd"));
+  else if (app_params->hasParam("size"))
+    sst_params.insert("size", app_params->getParam("size"));
+  else if (app_params->hasParam("concentration"))
+    sst_params.insert("concentration", app_params->getParam("concentration"));
 #else
   SST::Params sst_params(app_params);
 #endif
@@ -262,7 +261,8 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
   } else if (rt_->nproc() > 1){
     event_man = "clock_cycle_parallel";
   }
-  EventManager_ = EventManager::factory::getOptionalParam("EventManager", event_man, params, rt_);
+  auto type = params.find<std::string>("event_manager", event_man);
+  EventManager_ = EventManager::create("macro", type, params, rt_);
   EventManager::global = EventManager_;
 
   if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){

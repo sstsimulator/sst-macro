@@ -90,17 +90,17 @@ Dragonfly::Dragonfly(SST::Params& params) :
     h_ = params.find<int>("h");
   }
 
-  group_wiring_ = InterGroupWiring::factory::getOptionalParam("inter_group", "circulant", params,
-    a_, g_, h_);
+  group_wiring_ = InterGroupWiring::create("macro", params.find<std::string>("inter_group", "circulant"),
+                                           params, a_, g_, h_);
 }
 
 void
 Dragonfly::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = a_ + h_ + i;
     port.ep_port = 0;
@@ -134,7 +134,7 @@ Dragonfly::minimalDistance(SwitchId src, SwitchId dst) const
 }
 
 void
-Dragonfly::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+Dragonfly::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   int max_num_conns = (a_ - 1) + h_;
   conns.resize(max_num_conns);
@@ -148,7 +148,7 @@ Dragonfly::connectedOutports(SwitchId src, std::vector<connection>& conns) const
   for (int a = 0; a < a_; a++){
     if (a != myA){
       SwitchId dst = getUid(a, myG);
-      connection& conn = conns[cidx++];
+      Connection& conn = conns[cidx++];
       conn.src = src;
       conn.dst = dst;
       conn.src_outport = a;
@@ -162,7 +162,7 @@ Dragonfly::connectedOutports(SwitchId src, std::vector<connection>& conns) const
     SwitchId dst = groupConnections[h];
     int dstG = computeG(dst);
     if (dstG != myG){
-      connection& conn = conns[cidx++];
+      Connection& conn = conns[cidx++];
       conn.src = src;
       conn.dst = dst;
       conn.src_outport = h + a_;
@@ -187,7 +187,7 @@ Dragonfly::isCurvedVtkLink(SwitchId sid, int port) const
   }
 }
 
-Topology::vtk_switch_geometry
+Topology::VTKSwitchGeometry
 Dragonfly::getVtkGeometry(SwitchId sid) const
 {
   /**
@@ -220,13 +220,13 @@ Dragonfly::getVtkGeometry(SwitchId sid) const
   double ySize = 0.25; //this is the face pointing "into" the circle
   double zSize = 0.25;
 
-  std::vector<vtk_switch_geometry::port_geometry> ports(a_ + h_ + concentration());
+  std::vector<VTKSwitchGeometry::port_geometry> ports(a_ + h_ + concentration());
   double port_fraction_a = 1.0 / a_;
   double port_fraction_h = 1.0 / h_;
   double port_fraction_c = 1.0 / concentration();
 
   for (int a=0; a < a_; ++a){
-    vtk_switch_geometry::port_geometry& p = ports[a];
+    VTKSwitchGeometry::port_geometry& p = ports[a];
     p.x_offset = 1.0;
     p.x_size = -0.3;
     p.y_offset = a * port_fraction_a;
@@ -236,7 +236,7 @@ Dragonfly::getVtkGeometry(SwitchId sid) const
   }
 
   for (int h=0; h < h_; ++h){
-    vtk_switch_geometry::port_geometry& p = ports[a_ + h];
+    VTKSwitchGeometry::port_geometry& p = ports[a_ + h];
     p.x_offset = 0;
     p.x_size = 0.3;
     p.y_offset = h * port_fraction_h;
@@ -247,7 +247,7 @@ Dragonfly::getVtkGeometry(SwitchId sid) const
 
 
   for (int c=0; c < concentration(); ++c){
-    vtk_switch_geometry::port_geometry& p = ports[a_ + h_ + c];
+    VTKSwitchGeometry::port_geometry& p = ports[a_ + h_ + c];
     p.x_offset = 0.35;
     p.x_size = 0.35;
     p.y_offset = c * port_fraction_c;
@@ -256,7 +256,7 @@ Dragonfly::getVtkGeometry(SwitchId sid) const
     p.z_size = 1.0;
   }
 
-  vtk_switch_geometry geom(xSize, ySize, zSize,
+  VTKSwitchGeometry geom(xSize, ySize, zSize,
                            xCorner, yCorner, zCorner, theta,
                            std::move(ports));
 
@@ -302,8 +302,15 @@ static inline int mod(int a, int b){
 
 class SingleLinkGroupWiring : public InterGroupWiring
 {
-  FactoryRegister("single", InterGroupWiring, SingleLinkGroupWiring)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    InterGroupWiring,
+    SingleLinkGroupWiring,
+    "macro",
+    "single",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "wiring with only one group link on each switch")
+
   SingleLinkGroupWiring(SST::Params& params, int a, int g, int h) :
     InterGroupWiring(params, a, g, h)
   {
@@ -366,8 +373,15 @@ class SingleLinkGroupWiring : public InterGroupWiring
 
 class CirculantGroupWiring : public InterGroupWiring
 {
-  FactoryRegister("circulant", InterGroupWiring, CirculantGroupWiring)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    InterGroupWiring,
+    CirculantGroupWiring,
+    "macro",
+    "circulant",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "wiring with circulant pattern")
+
   CirculantGroupWiring(SST::Params& params, int a, int g, int h) :
     InterGroupWiring(params, a, g, h)
   {
@@ -437,8 +451,15 @@ class CirculantGroupWiring : public InterGroupWiring
 
 class AllToAllGroupWiring : public InterGroupWiring
 {
-  FactoryRegister("alltoall", InterGroupWiring, AllToAllGroupWiring)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    InterGroupWiring,
+    AllToAllGroupWiring,
+    "macro",
+    "alltoall",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "wiring with every switch having connection to every group")
+
   AllToAllGroupWiring(SST::Params& params, int a, int g, int h) :
     InterGroupWiring(params, a, g, h)
   {

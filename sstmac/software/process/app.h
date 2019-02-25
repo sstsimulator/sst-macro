@@ -48,11 +48,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/lib_compute_fwd.h>
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/software/process/thread.h>
-
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 
-#include <sprockit/factories/factory.h>
+#include <sstmac/sst_core/integrated_component.h>
+
+#include <sprockit/factory.h>
 #include <sprockit/sim_parameters.h>
 
 #ifdef sleep
@@ -87,8 +88,10 @@ typedef std::map<long, mutex_t*> condition_t;
  */
 class App : public Thread
 {
-  DeclareFactoryArgs(App, SoftwareId, OperatingSystem*)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(App)
+  SST_ELI_REGISTER_CTOR(SST::Params&,SoftwareId, OperatingSystem*)
+
   typedef void (*destructor_fxn)(void*);
 
   typedef int (*main_fxn)(int argc, char** argv);
@@ -278,10 +281,16 @@ class App : public Thread
 
 class UserAppCxxFullMain : public App
 {
-  FactoryRegister("UserAppCxxFullMain", App, UserAppCxxFullMain)
  public:
+  SST_ELI_REGISTER_DERIVED(App,
+    UserAppCxxFullMain,
+    "macro",
+    "UserAppCxxFullMain",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "an app that runs main(argc,argv)")
+
   UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
-                         OperatingSystem* os);
+                     OperatingSystem* os);
 
   static void registerMainFxn(const char* name, App::main_fxn fxn);
 
@@ -306,8 +315,14 @@ class UserAppCxxFullMain : public App
 
 class UserAppCxxEmptyMain : public App
 {
-  FactoryRegister("UserAppCxxEmptyMain", App, UserAppCxxEmptyMain)
  public:
+  SST_ELI_REGISTER_DERIVED(App,
+    UserAppCxxFullMain,
+    "macro",
+    "UserAppCxxFullMain",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "an app that runs main()")
+
   UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
                           OperatingSystem* os);
 

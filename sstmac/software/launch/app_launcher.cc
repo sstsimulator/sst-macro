@@ -81,7 +81,8 @@ AppLauncher::incomingRequest(Request* req)
     SST::Params app_params = lreq->appParams();
 
     App::dlopenCheck(lreq->aid(), app_params);
-    App* theapp = App::factory::getParam("name", app_params, sid, os_);
+    App* theapp = App::create("macro",
+        app_params.find<std::string>("name"), app_params, sid, os_);
     theapp->setUniqueName(lreq->uniqueName());
     int intranode_rank = num_apps_launched_[lreq->aid()]++;
     int core_affinity = lreq->coreAffinity(intranode_rank);

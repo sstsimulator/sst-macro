@@ -80,13 +80,6 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
 
   //PiscesSender::configurePayloadPortLatency(inj_params);
   inj_buffer_ = new PiscesBuffer("inj", arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
-  inj_stats_ = PacketStatsCallback::factory::
-                getOptionalParam("stats", "null", params, parent);
-  inj_buffer_->setStatCollector(inj_stats_);
-
-  ej_stats_ = PacketStatsCallback::factory::
-                        getOptionalParam("stats", "null", ej_params, parent);
-
 }
 
 void
@@ -105,8 +98,6 @@ PiscesNIC::setup()
 PiscesNIC::~PiscesNIC() throw ()
 {
   if (inj_buffer_) delete inj_buffer_;
-  if (inj_stats_) delete inj_stats_;
-  if (ej_stats_) delete ej_stats_;
 }
 
 LinkHandler*
@@ -197,7 +188,6 @@ PiscesNIC::doSend(NetworkMessage* netmsg)
 void
 PiscesNIC::packetArrived(PiscesPacket* pkt)
 {
-  ej_stats_->collectFinalEvent(pkt);
   auto* msg = completion_queue_.recv(pkt);
   if (msg){
     recvMessage(static_cast<NetworkMessage*>(msg));

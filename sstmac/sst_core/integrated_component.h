@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_handler_fwd.h>
@@ -64,7 +64,6 @@ Questions? Contact sst-macro-help@sandia.gov
 
 using SST::ComponentId_t;
 using SST::Params;
-using SST::ComponentDoc;
 using SST::ElementInfoParam;
 using SST::ElementInfoPort2;
 using SST::ElementInfoStatistic;
@@ -77,6 +76,9 @@ using SST::SST_ELI_getTertiaryNumberFromVersion;
    {"output %(out)d %(in)d", "Will receive new acks(credits) here", {}}, \
    {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
    {"rtr",                   "Special link to Merlin router",       {}}
+
+#define SST_ELI_REGISTER_DERIVED_COMPONENT(ase,cls,lib,name,version,desc,cat) \
+  SST_ELI_REGISTER_COMPONENT(cls,lib,name,ELI_FORWARD_AS_ONE(version),desc,cat)
 
 #define RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
   FactoryRegister(name,parent,cls,desc) \
@@ -159,16 +161,28 @@ class SSTIntegratedComponent
 } /* end namespace sstmac */
 
 #else
-#define RegisterComponent(name,parent,cls,lib,cat,desc) \
-  FactoryRegister(name,parent,cls,desc)
 
-#define RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
-  FactoryRegister(name,parent,cls,desc)
+#define SST_ELI_REGISTER_BASE_DEFAULT(x) \
+  SPKT_REGISTER_BASE(x)
+
+#define SST_ELI_REGISTER_CTOR(...) \
+  SPKT_REGISTER_CTOR(__VA_ARGS__)
+
+#define SST_ELI_REGISTER_DEFAULT_CTOR(...) \
+  SPKT_REGISTER_DEFAULT_CTOR(__VA_ARGS__)
 
 #define SST_ELI_DOCUMENT_STATISTICS(...)
 
-#define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
-  FactoryRegister(name,parent,cls,desc)
+#define SST_ELI_ELEMENT_VERSION(...)
+
+//if this macro is used, then this is ONLY registered for core
+#define SST_ELI_REGISTER_COMPONENT(cls,lib,name,version,desc,cat)
+
+#define SST_ELI_REGISTER_DERIVED_COMPONENT(base,cls,lib,name,version,desc,cat) \
+  SPKT_REGISTER_DERIVED(base,cls,lib,name,SPKT_FORWARD_AS_ONE(version),desc)
+
+#define SST_ELI_REGISTER_DERIVED(base,cls,lib,name,version,desc) \
+  SPKT_REGISTER_DERIVED(base,cls,lib,name,SPKT_FORWARD_AS_ONE(version),desc)
 
 #define COMPONENT_CATEGORY_UNCATEGORIZED  0x00
 #define COMPONENT_CATEGORY_PROCESSOR      0x01

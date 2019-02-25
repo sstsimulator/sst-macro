@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 DeclareDebugSlot(timestamp);
 

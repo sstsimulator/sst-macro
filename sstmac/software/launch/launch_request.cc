@@ -94,11 +94,11 @@ SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
     procs_per_node_ = params.find<int>("tasks_per_node", 1);
   }
 
-  allocator_ = sw::NodeAllocator::factory
-                ::getOptionalParam("allocation", "first_available", params);
+  allocator_ = sw::NodeAllocator::create("macro",
+     params.find<std::string>("allocation", "first_available"), params);
 
-  indexer_ = sw::TaskMapper::factory
-                ::getOptionalParam("indexing", "block", params);
+  indexer_ = sw::TaskMapper::create("macro",
+     params.find<std::string>("indexing", "block"), params);
 }
 
 SoftwareLaunchRequest::~SoftwareLaunchRequest()

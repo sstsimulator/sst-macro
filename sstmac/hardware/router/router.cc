@@ -119,9 +119,13 @@ Router::~Router()
 
 class FullyConnectedMinimalRouter : public Router {
  public:
-  FactoryRegister("fully_connected_minimal",
-              Router, FullyConnectedMinimalRouter,
-              "router implementing minimal routing for fully connected")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    FullyConnectedMinimalRouter,
+    "macro",
+    "fully_connected_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing minimal routing for fully connected")
 
   FullyConnectedMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
@@ -154,9 +158,13 @@ class FullyConnectedMinimalRouter : public Router {
 
 class StarMinimalRouter : public Router {
  public:
-  FactoryRegister("star_minimal",
-              Router, StarMinimalRouter,
-              "router implementing minimal routing for star")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    StarMinimalRouter,
+    "macro",
+    "star_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing minimal routing for star")
 
   StarMinimalRouter(SST::Params& params, Topology *top, NetworkSwitch *netsw)
     : Router(params, top, netsw)

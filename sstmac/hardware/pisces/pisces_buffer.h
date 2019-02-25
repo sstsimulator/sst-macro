@@ -93,7 +93,7 @@ class PiscesBuffer :
   uint32_t bytes_delayed_;
 
   int num_vc_;
-  std::vector<payload_queue> queues_;
+  std::vector<PayloadQueue> queues_;
   std::vector<int> credits_;
   std::vector<int> initial_credits_;
 

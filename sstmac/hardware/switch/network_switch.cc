@@ -72,8 +72,8 @@ NetworkSwitch::~NetworkSwitch()
 }
 
 
-NetworkSwitch::NetworkSwitch(SST::Params& params, uint32_t id)
- : ConnectableComponent(params, id) //no self messages for a switch
+NetworkSwitch::NetworkSwitch(uint32_t id, SST::Params& params)
+ : ConnectableComponent(id, params) //no self messages for a switch
 {
   my_addr_ = params.find<int>("id");
   top_ = Topology::staticTopology(params);

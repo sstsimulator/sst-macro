@@ -52,11 +52,17 @@ namespace sw {
 
 class FirstAvailableAllocation : public NodeAllocator
 {
-  FactoryRegister("first_available | first", NodeAllocator, FirstAvailableAllocation,
-              "Allocate the first set of nodes from the list of available nodes."
-              "In most cases, allocating from the available node list will give "
-              "you a regular, contiguous allocation")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    FirstAvailableAllocation,
+    "macro",
+    "first_available",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate the first set of nodes from the list of available nodes."
+    "In most cases, allocating from the available node list will give "
+    "you a regular, contiguous allocation")
+
   FirstAvailableAllocation(SST::Params& params) :
     NodeAllocator(params)
   {

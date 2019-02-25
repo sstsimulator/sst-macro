@@ -66,7 +66,7 @@ Packet::Packet(
   ::memset(rtr_metadata_, 0, sizeof(rtr_metadata_));
   ::memset(stats_metadata_, 0, sizeof(stats_metadata_));
   ::memset(nic_metadata_, 0, sizeof(nic_metadata_));
-  auto hdr = rtrHeader<header>();
+  auto hdr = rtrHeader<Header>();
   hdr->is_tail = is_tail;
 }
 

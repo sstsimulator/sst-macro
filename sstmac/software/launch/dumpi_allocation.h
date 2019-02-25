@@ -53,9 +53,15 @@ namespace sw {
 
 class DumpiAllocation : public NodeAllocator
 {
-  FactoryRegister("dumpi", NodeAllocator, DumpiAllocation,
-              "Allocate nodes directly from the trace files themselves")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    DumpiAllocation,
+    "macro",
+    "dumpi",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate nodes directly from the trace files themselves")
+
   DumpiAllocation(SST::Params& params);
 
   std::string toString() const override {

@@ -55,10 +55,16 @@ namespace sw {
 
 class HostnameAllocation : public NodeAllocator
 {
-  FactoryRegister("hostname", NodeAllocator, HostnameAllocation,
-              "Given a file containing one hostname/coordinate pair per line, "
-              "return a node allocation with all hosts in the file")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    HostnameAllocation,
+    "macro",
+    "hostname",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Given a file containing one hostname/coordinate pair per line, "
+    "return a node allocation with all hosts in the file")
+
   HostnameAllocation(SST::Params& params);
 
   std::string toString() const override {

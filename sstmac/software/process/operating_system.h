@@ -89,7 +89,8 @@ class OperatingSystem : public SubComponent
 
  public:
   struct ImplicitState {
-    DeclareFactory(ImplicitState)
+    SST_ELI_REGISTER_BASE_DEFAULT(ImplicitState)
+    SST_ELI_REGISTER_CTOR(SST::Params&)
 
     ImplicitState(SST::Params& params){}
 
@@ -101,7 +102,9 @@ class OperatingSystem : public SubComponent
       public SST::Statistics::MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>
   {
     using Parent = SST::Statistics::MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>;
-    DeclareFactoryArgs(RegressionModel, SST::BaseComponent*, const std::string&)
+    SST_ELI_REGISTER_BASE_DEFAULT(RegressionModel)
+    SST_ELI_REGISTER_CTOR(SST::BaseComponent*, const std::string&,
+                          const std::string&, SST::Params&)
 
     RegressionModel(SST::BaseComponent* comp, const std::string& name,
                     const std::string& subName, SST::Params& params)

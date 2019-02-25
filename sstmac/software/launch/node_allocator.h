@@ -51,8 +51,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/software/launch/node_set.h>
+#include <sstmac/sst_core/integrated_component.h>
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <unordered_map>
@@ -70,8 +71,10 @@ namespace sw {
 class NodeAllocator :
   public sprockit::printable
 {
-  DeclareFactory(NodeAllocator)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(NodeAllocator)
+  SST_ELI_REGISTER_CTOR(SST::Params&)
+
   virtual ~NodeAllocator() throw ();
 
   /** Get nodes.

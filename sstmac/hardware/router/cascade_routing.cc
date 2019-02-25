@@ -58,14 +58,18 @@ namespace sstmac {
 namespace hw {
 
 class CascadeMinimalRouter : public Router {
-  struct header : public Packet::header {
+  struct header : public Packet::Header {
      char num_hops : 3;
      char num_group_hops : 2;
   };
  public:
-  FactoryRegister("cascade_minimal",
-              Router, CascadeMinimalRouter,
-              "router implementing minimal routing for cascade")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    CascadeMinimalRouter,
+    "macro",
+    "cascade_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing minimal routing for cascade")
 
   CascadeMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)

@@ -76,7 +76,7 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
   EventLink* sublink = new EventLink("pisces-inject", Timestamp(), selflink);
   inj_buffer_->setInput(0, 0, sublink);
 
-  arb_ = PiscesBandwidthArbitrator::factory::getValue(arb, bw);
+  arb_ = PiscesBandwidthArbitrator::create("macro", arb, bw);
 }
 
 void

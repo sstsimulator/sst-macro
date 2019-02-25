@@ -59,8 +59,10 @@ namespace sw {
 
 class BlasKernel
 {
-  DeclareFactory(BlasKernel)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(BlasKernel)
+  SST_ELI_REGISTER_CTOR(SST::Params&)
+
   virtual std::string toString() const = 0;
 
   virtual ComputeEvent* op_3d(int m, int k, int n);
@@ -74,9 +76,15 @@ class BlasKernel
 class BlasAPI :
   public API
 {
-  RegisterAPI("blas", BlasAPI)
-
  public:
+  SST_ELI_REGISTER_DERIVED(
+    API,
+    BlasAPI,
+    "macro",
+    "blas",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "an api for BLAS calls")
+
   BlasAPI(SST::Params& params, App* app, SST::Component* comp);
 
   virtual ~BlasAPI();

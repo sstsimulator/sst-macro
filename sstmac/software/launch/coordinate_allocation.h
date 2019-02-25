@@ -54,8 +54,15 @@ namespace sw {
 class CoordinateAllocation :
   public NodeAllocator
 {
-  FactoryRegister("coordinate", NodeAllocator, CoordinateAllocation)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    CoordinateAllocation,
+    "macro",
+    "coordinate",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate a cartesian geometry of nodes")
+
   CoordinateAllocation(SST::Params& params);
 
   virtual ~CoordinateAllocation() throw() {}

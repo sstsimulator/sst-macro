@@ -250,7 +250,7 @@ App::App(SST::Params& params, SoftwareId sid,
     auto iter = apis_.find(name);
     if (iter == apis_.end()){
       SST::Params api_params = params.find_prefix_params(name);
-      API* api = API::factory::getValue(name, api_params, this, os->node());
+      API* api = API::create("macro", name, api_params, this, os->node());
       apis_[name] = api;
     }
     apis_[alias] = apis_[name];
@@ -579,7 +579,8 @@ UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
   (*main_fxns_)[name] = fxn;
-  App::factory::registerAlias("UserAppCxxFullMain", name);
+  auto* lib = App::getFactoryLibrary("macro");
+  lib->addFactory(name, lib->getFactory("UserAppCxxFullMain"));
 }
 
 void
@@ -646,7 +647,8 @@ UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
 
   (*empty_main_fxns_)[name] = fxn;
-  App::factory::registerAlias("UserAppCxxEmptyMain", name);
+  auto* lib = App::getFactoryLibrary("macro");
+  lib->addFactory(name, lib->getFactory("UserAppCxxEmptyMain"));
 }
 
 int

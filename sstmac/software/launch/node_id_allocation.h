@@ -54,9 +54,16 @@ namespace sw {
 class NodeIdAllocation :
   public NodeAllocator
 {
-  FactoryRegister("node_id", NodeAllocator, NodeIdAllocation)
 
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    NodeIdAllocation,
+    "macro",
+    "node_id",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A node allocator from a list of node ids")
+
   NodeIdAllocation(SST::Params& params);
 
   std::string toString() const override {

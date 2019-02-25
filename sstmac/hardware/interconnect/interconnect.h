@@ -58,7 +58,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/backends/common/sim_partition_fwd.h>
 
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <unordered_map>
 
 #include <set>
@@ -76,8 +76,6 @@ namespace hw {
  */
 class Interconnect
 {
-  DeclareFactoryArgs(Interconnect, EventManager*, Partition*, ParallelRuntime*)
-  FactoryRegister("switch | simple", Interconnect, Interconnect)
  public:
   static Interconnect* staticInterconnect(SST::Params& params, EventManager* mgr);
 

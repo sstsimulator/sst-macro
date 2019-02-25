@@ -62,10 +62,15 @@ class ParseDumpi : public sstmac::sw::App
   friend class parsedumpi_unit_test;
   friend class parsedumpi_callbacks;
 
-  FactoryRegister("parsedumpi | dumpi", sstmac::sw::App, ParseDumpi,
-              "application for parsing and simulating dumpi traces")
-
  public:
+  SST_ELI_REGISTER_DERIVED(
+    sstmac::sw::App,
+    ParseDumpi,
+    "macro",
+    "parsedumpi",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "application for parsing and simulating dumpi traces")
+
   ParseDumpi(SST::Params& params, sstmac::sw::SoftwareId sid,
              sstmac::sw::OperatingSystem* os);
 

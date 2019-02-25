@@ -45,8 +45,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sumi_api_MONITOR_H
 #define sumi_api_MONITOR_H
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
+#include <sprockit/sim_parameters_fwd.h>
 #include <sumi/message.h>
 #include <sumi/timeout.h>
 #include <sumi/transport_fwd.h>
@@ -80,7 +81,6 @@ class FunctionSet {
 
 class ActivityMonitor
 {
-  DeclareFactoryArgs(ActivityMonitor, Transport*)
  public:
   ActivityMonitor(SST::Params& params,
                   Transport* t) : api_(t){}

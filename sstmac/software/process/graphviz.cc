@@ -147,8 +147,8 @@ graph_viz_registration::graph_viz_registration(const char* name, int id)
   (*names)[id] = name;
 }
 
-GraphViz::GraphViz(SST::Params &params, SST::BaseComponent *comp,
-                   const std::string &name, const std::string &subName)
+GraphViz::GraphViz(SST::BaseComponent *comp, const std::string &name,
+                   const std::string &subName, SST::Params& params)
   : Parent(comp, name, subName, params)
 {
   int nfxns = graph_viz_registration::numIds();

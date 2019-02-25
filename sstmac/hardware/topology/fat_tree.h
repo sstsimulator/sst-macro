@@ -119,10 +119,16 @@ class AbstractFatTree :
 class FatTree :
   public AbstractFatTree
 {
-  FactoryRegister("fat_tree", Topology, FatTree,
-    "Flexible fat-tree topology with 3 levels.")
 
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    FatTree,
+    "macro",
+    "fat_tree",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a fat-tree, with possible tapering")
+
   FatTree(SST::Params& params);
 
   virtual std::string toString() const override {
@@ -193,7 +199,7 @@ class FatTree :
 
   void endpointsConnectedToInjectionSwitch(
       SwitchId swaddr,
-      std::vector<injection_port>& nodes) const override;
+      std::vector<InjectionPort>& nodes) const override;
 
   int numAggSubtrees() const {
     return num_agg_subtrees_;
@@ -223,9 +229,9 @@ class FatTree :
     return up_ports_per_leaf_switch_;
   }
 
-  vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
+  VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
-  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
   double portScaleFactor(uint32_t addr, int port) const override;
 
@@ -281,8 +287,15 @@ class FatTree :
 
 class TaperedFatTree : public AbstractFatTree
 {
-  FactoryRegister("tapered_fat_tree", Topology, TaperedFatTree)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    TaperedFatTree,
+    "macro",
+    "tapered_fat_tree",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a fat-tree with simple tapering models")
+
   TaperedFatTree(SST::Params& params);
 
   virtual std::string toString() const override {
@@ -338,7 +351,7 @@ class TaperedFatTree : public AbstractFatTree
   }
 
   void endpointsConnectedToInjectionSwitch(
-      SwitchId swaddr, std::vector<injection_port>& nodes) const override;
+      SwitchId swaddr, std::vector<InjectionPort>& nodes) const override;
 
   int maxNumPorts() const override {
     int first_max = std::max(concentration() + 1, leaf_switches_per_subtree_ + 1);
@@ -368,7 +381,7 @@ class TaperedFatTree : public AbstractFatTree
 
   double portScaleFactor(uint32_t addr, int port) const override;
 
-  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
  protected:
   virtual void createPartition(

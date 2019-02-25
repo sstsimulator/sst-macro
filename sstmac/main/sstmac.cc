@@ -334,7 +334,7 @@ runStandalone(int argc, char** argv)
 #else
   sstmac::EventManager mgr(null_params, &rt);
 #endif
-  sstmac::hw::SimpleNode node(null_params, 1);
+  sstmac::hw::SimpleNode node(1, null_params);
   sstmac::sw::OperatingSystem os(null_params, &node);
 
   std::stringstream argv_sstr;
@@ -344,8 +344,7 @@ runStandalone(int argc, char** argv)
   null_params->addParam("argv", argv_sstr.str());
 
   null_params->addParamOverride("notify", "false");
-  sstmac::sw::App* a = sstmac::sw::App::factory::getValue(
-        "sstmac_app_name", null_params, id, &os);
+  sstmac::sw::App* a = sstmac::sw::App::create("macro", "sstmac_app_name", null_params, id, &os);
   os.startApp(a, "");
   return a->rc();
 #else
@@ -411,7 +410,7 @@ tryMain(sprockit::SimParameters::ptr params,
 #else
   SST::Params mainParams(params);
   if (!oo.benchmark.empty()){
-    Benchmark* bm = Benchmark::factory::getValue(oo.benchmark, mainParams);
+    Benchmark* bm = Benchmark::create("macro", oo.benchmark);
     bm->run();
     return 0;
   }

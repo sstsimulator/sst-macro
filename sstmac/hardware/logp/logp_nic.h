@@ -58,9 +58,15 @@ namespace hw {
 class LogPNIC :
   public NIC
 {
-  FactoryRegister("logP | simple | LogP | logp | macrels", NIC, LogPNIC,
-              "implements a nic that models messages via a simple latency/bandwidth injection delay")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NIC,
+    LogPNIC,
+    "macro",
+    "logp",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a nic that models messages via a simple latency/bandwidth injection delay")
+
   LogPNIC(SST::Params& params, Node* parent);
 
   virtual ~LogPNIC();

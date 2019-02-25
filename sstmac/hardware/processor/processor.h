@@ -51,7 +51,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/memory/memory_model_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sstmac/sst_core/integrated_component.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(processor);
@@ -64,8 +65,9 @@ namespace hw {
  */
 class Processor
 {
-  DeclareFactoryArgs(Processor, MemoryModel*, Node*)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(Processor)
+  SST_ELI_REGISTER_CTOR(SST::Params&, MemoryModel*,Node*)
   virtual ~Processor();
 
   static void deleteStatics();

@@ -57,6 +57,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/options.h>
 #include <sumi/communicator_fwd.h>
 #include <sprockit/debug.h>
+#include <sprockit/sim_parameters_fwd.h>
 
 #include <unordered_map>
 #include <queue>

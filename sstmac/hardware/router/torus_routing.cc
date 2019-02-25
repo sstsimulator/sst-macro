@@ -60,12 +60,17 @@ namespace hw {
 
 class TorusMinimalRouter : public Router {
  public:
-  struct header : public Packet::header {
+  struct header : public Packet::Header {
      char crossed_timeline : 1;
   };
 
-  FactoryRegister("torus_minimal", Router, TorusMinimalRouter,
-              "a routing algorithm for minimal routing on the torus")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    TorusMinimalRouter,
+    "macro",
+    "torus_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a routing algorithm for minimal routing on the torus")
 
   TorusMinimalRouter(SST::Params& params,
                      Topology* top, NetworkSwitch* netsw)
@@ -169,9 +174,13 @@ class TorusValiantRouter : public TorusMinimalRouter {
     uint32_t dest_switch : 24;
   };
 
-  FactoryRegister("torus_valiant",
-              Router, TorusValiantRouter,
-              "router implementing valint routing for torus")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    TorusValiantRouter,
+    "macro",
+    "torus_valiant",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a routing algorithm for Valiant routing on the torus")
 
   TorusValiantRouter(SST::Params& params, Topology *top,
                            NetworkSwitch *netsw)
@@ -251,9 +260,13 @@ class TorusUGALRouter : public TorusValiantRouter {
  public:
   static const char minimal_only_stage = 3;
 
-  FactoryRegister("torus_ugal",
-              Router, TorusUGALRouter,
-              "router implementing valint routing for torus")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    TorusUGALRouter,
+    "macro",
+    "torus_ugal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a routing algorithm for UGAL routing on the torus")
 
   TorusUGALRouter(SST::Params& params, Topology *top,
                            NetworkSwitch *netsw)

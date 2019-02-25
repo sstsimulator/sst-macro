@@ -52,21 +52,16 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_scheduler_fwd.h>
 #include <sstmac/common/stats/stat_collector_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
-#include <sprockit/factories/factory.h>
 #include <sprockit/printable.h>
+#include <sprockit/sim_parameters_fwd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/statapi/statbase.h>
 #include <sst/core/statapi/statoutput.h>
-#define StatRegister(name,parent,cls,desc) \
-  SST_ELI_REGISTER_STATISTIC(cls,parent::Datum,"macro",name,SST_ELI_ELEMENT_VERSION(1,0,0),desc,"SST::Statistic<T>") \
-  cls(SST::BaseComponent* comp, const std::string& statName, \
-      const std::string& statSubName, SST::Params& params) \
-    : cls(params, comp, statName, statSubName) {}
 #else
-#define StatRegister(name,parent,cls,desc) \
-  FactoryRegister(name,parent,cls,desc)
+#include <sprockit/factory.h>
 #endif
+#include <sstmac/sst_core/integrated_component.h>
 
 #if !SSTMAC_INTEGRATED_SST_CORE
 namespace sstmac {
@@ -275,10 +270,10 @@ class Statistic :
   public StatisticBase,
   public StatisticCollector<T>
 {
-  DeclareFactoryArgs(Statistic, SST::BaseComponent*, const std::string&, const std::string&,
-                     Args...);
 
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(Statistic)
+  SST_ELI_REGISTER_CTOR(SST::BaseComponent*, const std::string&, const std::string&, SST::Params&, Args...)
   virtual ~Statistic(){}
 
  protected:
@@ -295,17 +290,22 @@ class Statistic :
 namespace SST {
 namespace Statistics {
 
+template <class... Args>
+using MultiStatistic = Statistic<std::tuple<Args...>>;
+
+
 template <class... CtorArgs>
 struct MultiCtor {
   template <class... StatArgs> using Statistic =
     ::SST::Statistics::Statistic<std::tuple<StatArgs...>, CtorArgs...>;
 };
 
-template <class... Args>
-using MultiStatistic = Statistic<std::tuple<Args...>>;
 
 }
 }
+
+#define SST_ELI_REGISTER_CUSTOM_STATISTIC(parent,cls,lib,name,version,desc) \
+  SPKT_REGISTER_DERIVED(parent,cls,lib,name,SPKT_FORWARD_AS_ONE(version),desc)
 
 #endif
 #endif

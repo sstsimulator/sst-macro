@@ -73,8 +73,6 @@ nobase_library_include_HEADERS += \
   common/unique_id.h \
   pisces/pisces.h \
   pisces/pisces_fwd.h \
-  pisces/pisces_stats.h \
-  pisces/pisces_stats_fwd.h \
   pisces/pisces_arbitrator.h \
   pisces/pisces_buffer.h \
   pisces/pisces_branched_switch.h \
@@ -130,7 +128,6 @@ libsstmac_hw_la_SOURCES +=  \
   node/node.cc \
   node/simple_node.cc \
   pisces/pisces.cc \
-  pisces/pisces_stats.cc \
   pisces/pisces_arbitrator.cc \
   pisces/pisces_buffer.cc \
   pisces/pisces_branched_switch.cc \

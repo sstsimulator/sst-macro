@@ -58,13 +58,15 @@ namespace hw {
 
 class DragonflyPlusAlltoallMinimalRouter : public Router {
  public:
-  struct header : public Packet::header {
+  struct header : public Packet::Header {};
 
-  };
-
-  FactoryRegister("dragonfly_plus_alltoall_minimal",
-              Router, DragonflyPlusAlltoallMinimalRouter,
-              "router implementing minimal routing for dragonfly+")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyPlusAlltoallMinimalRouter,
+    "macro",
+    "dragonfly_plus_alltoall_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing minimal routing for dragonfly+")
 
   DragonflyPlusAlltoallMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
@@ -174,13 +176,17 @@ class DragonflyPlusParRouter : public DragonflyPlusAlltoallMinimalRouter {
     uint8_t stage_number : 4;
   };
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    DragonflyPlusParRouter,
+    "macro",
+    "dragonfly_plus_par",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing PAR for dragonfly+")
+
   static const char initial_stage = 0;
   static const char valiant_stage = 1;
   static const char final_stage = 2;
-
-  FactoryRegister("dragonfly_plus_par",
-              Router, DragonflyPlusParRouter,
-              "router implementing PAR for dragonfly+")
 
   std::string toString() const override {
     return "dragonfly+ PAR router";

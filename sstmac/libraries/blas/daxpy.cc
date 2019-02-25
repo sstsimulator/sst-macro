@@ -53,8 +53,15 @@ namespace sw {
 class DefaultDAXPY :
   public BlasKernel
 {
-  FactoryRegister("default_daxpy", BlasKernel, DefaultDAXPY)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    BlasKernel,
+    DefaultDAXPY,
+    "macro",
+    "default_daxpy",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "defaut DAXPY kernel")
+
   DefaultDAXPY(SST::Params& params){
     loop_unroll_ = params.find<double>("daxpy_loop_unroll", 4);
     pipeline_ = params.find<double>("daxpy_pipeline_efficiency", 2);

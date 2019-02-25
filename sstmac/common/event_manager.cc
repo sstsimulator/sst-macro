@@ -124,8 +124,8 @@ EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
   SST::Params os_params = params.find_prefix_params("node").find_prefix_params("os");
   sw::StackAlloc::init(os_params);
 
-  des_context_ = sw::ThreadContext::factory::getOptionalParam(
-                  "context", sw::ThreadContext::defaultThreading(), os_params);
+  auto threading = os_params.find<std::string>("context", sw::ThreadContext::defaultThreading());
+  des_context_ = sw::ThreadContext::create("macro", threading);
 
   sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
 

@@ -112,7 +112,7 @@ PiscesSimpleArbitrator::PiscesSimpleArbitrator(double bw) :
 }
 
 void
-PiscesSimpleArbitrator::arbitrate(pkt_arbitration_t &st)
+PiscesSimpleArbitrator::arbitrate(IncomingPacket &st)
 {
   GlobalTimestamp start_send = next_free_ < st.now ? st.now : next_free_;
   Timestamp arrive_delay = st.pkt->byteLength() * st.pkt->byteDelay();
@@ -143,7 +143,7 @@ PiscesNullArbitrator::headTailDelay(PiscesPacket *pkt)
 }
 
 void
-PiscesNullArbitrator::arbitrate(pkt_arbitration_t &st)
+PiscesNullArbitrator::arbitrate(IncomingPacket &st)
 {
   PiscesPacket* payload = st.pkt;
   pflow_arb_debug_printf_l0("Null: starting packet %p:%llu of size %u with byte_delay=%9.5e epoch_delay=%9.5e: %s",
@@ -236,7 +236,7 @@ PiscesCutThroughArbitrator::advance(Epoch* epoch, Epoch* prev)
 }
 
 void
-PiscesCutThroughArbitrator::arbitrate(pkt_arbitration_t &st)
+PiscesCutThroughArbitrator::arbitrate(IncomingPacket &st)
 {
   pflow_arb_debug_printf_l0("Cut-through: arbitrator %p starting packet %p:%llu of size %u with byte_delay=%9.5e epoch_delay=%9.5e start=%9.5e: %s",
                           this, st.pkt, st.pkt->flowId(), st.pkt->numBytes(), st.pkt->byteDelay().sec(),

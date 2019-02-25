@@ -322,7 +322,7 @@ class Component :
   virtual void init(unsigned int phase); //needed for SST core compatibility
 
  protected:
-  Component(SST::Params& params, uint32_t cid) :
+  Component(uint32_t cid, SST::Params& params) :
 #if SSTMAC_INTEGRATED_SST_CORE
    SSTIntegratedComponent(params, cid),
    EventScheduler(cid, this)

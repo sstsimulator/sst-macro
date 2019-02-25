@@ -55,10 +55,16 @@ namespace sw {
  */
 class BlockTaskMapper : public TaskMapper
 {
-  FactoryRegister("block", TaskMapper, BlockTaskMapper,
-     "Tries to group consecutive MPI ranks on the same node (i.e. in a block)."
-     "Otherwise, indexes in the same order as the allocation list")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    BlockTaskMapper,
+    "macro",
+    "block",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Tries to group consecutive MPI ranks on the same node (i.e. in a block)."
+    "Otherwise, indexes in the same order as the allocation list")
+
   BlockTaskMapper(SST::Params& params) :
     TaskMapper(params)
   {

@@ -57,8 +57,15 @@ namespace hw {
  */
 class FullyConnected : public StructuredTopology
 {
-  FactoryRegister("fully_connected | full", Topology, FullyConnected)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    FullyConnected,
+    "macro",
+    "fully_connected",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a topology with all nodes connected to a single switch")
+
   std::string toString() const override {
     return "fully_connected topology";
   }
@@ -88,10 +95,10 @@ class FullyConnected : public StructuredTopology
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swid,
-                          std::vector<injection_port>& nodes) const override;
+                          std::vector<InjectionPort>& nodes) const override;
 
   void connectedOutports(SwitchId src,
-       std::vector<connection>& conns) const override;
+       std::vector<Connection>& conns) const override;
 
   SwitchId numSwitches() const override {
     return size_;

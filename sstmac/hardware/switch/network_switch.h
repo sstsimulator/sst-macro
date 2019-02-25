@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 #include <sstmac/hardware/common/connection.h>
@@ -77,8 +77,10 @@ namespace hw {
 class NetworkSwitch :
   public ConnectableComponent
 {
-  DeclareFactoryArgs(NetworkSwitch,uint32_t)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(NetworkSwitch)
+  SST_ELI_REGISTER_CTOR(uint32_t,SST::Params&)
+
   virtual void init(unsigned int phase);
 
   virtual ~NetworkSwitch();
@@ -102,7 +104,7 @@ class NetworkSwitch :
   virtual int queueLength(int port, int vc) const = 0;
 
  protected:
-  NetworkSwitch(SST::Params& params, uint32_t id);
+  NetworkSwitch(uint32_t id, SST::Params& params);
 
   SwitchId my_addr_;
   Topology* top_;

@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/rng.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
@@ -66,22 +67,27 @@ namespace hw {
  */
 class LogPSwitch : public ConnectableComponent
 {
-  DeclareFactoryArgs(LogPSwitch,uint32_t)
 
  public:
-  RegisterComponent("logP | simple | LogP | logp", LogPSwitch, LogPSwitch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A switch that implements a basic delay model with no congestion modeling")
+  SST_ELI_REGISTER_COMPONENT(
+    LogPSwitch,
+    "macro",
+    "logp_switch",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A switch that implements a basic delay model with no congestion modeling",
+    COMPONENT_CATEGORY_NETWORK)
 
   struct ContentionModel {
-    DeclareFactory(ContentionModel)
+    SST_ELI_REGISTER_BASE_DEFAULT(ContentionModel)
+    SST_ELI_REGISTER_CTOR(SST::Params&)
+
     virtual double value() = 0;
 
     ContentionModel(SST::Params& params){}
   };
 
  public:
-  LogPSwitch(SST::Params& params, uint32_t cid);
+  LogPSwitch(uint32_t cid, SST::Params& params);
 
   virtual ~LogPSwitch();
 

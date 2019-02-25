@@ -52,10 +52,15 @@ namespace sw {
 
 class RandomAllocation : public NodeAllocator
 {
-  FactoryRegister("random", NodeAllocator, RandomAllocation,
-              "Allocate a random set of nodes from the list of available nodes."
-              "This will give a non-contiguous allocation")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    RandomAllocation,
+    "macro",
+    "random",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate a random set of nodes from the list of available nodes")
+
   RandomAllocation(SST::Params& params);
 
   std::string toString() const override {

@@ -45,7 +45,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_software_process_JOB_LAUNCHER_H
 #define sstmac_software_process_JOB_LAUNCHER_H
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <unordered_map>
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
@@ -86,8 +86,9 @@ struct JobAllocation
  */
 class JobLauncher : public Service
 {
-  DeclareFactoryArgs(JobLauncher, OperatingSystem*)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(JobLauncher)
+  SST_ELI_REGISTER_CTOR(SST::Params&, OperatingSystem*)
   /**
    * @brief incoming_event Handle an event sent from one of the nodes
    * @param ev Must be a job_stop_event
@@ -166,8 +167,15 @@ class JobLauncher : public Service
  */
 class DefaultJoblauncher : public JobLauncher
 {
-  FactoryRegister("default", JobLauncher, DefaultJoblauncher)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    JobLauncher,
+    DefaultJoblauncher,
+    "macro",
+    "default",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "the default job launcher")
+
   DefaultJoblauncher(SST::Params& params, OperatingSystem* os) :
     JobLauncher(params, os)
   {
@@ -189,8 +197,15 @@ class DefaultJoblauncher : public JobLauncher
  */
 class ExclusiveJoblauncher : public DefaultJoblauncher
 {
-  FactoryRegister("exclusive", JobLauncher, ExclusiveJoblauncher)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    JobLauncher,
+    ExclusiveJoblauncher,
+    "macro",
+    "exclusive",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a job launcher that only allows one at a time (exclusive)")
+
   ExclusiveJoblauncher(SST::Params& params, OperatingSystem* os) :
    DefaultJoblauncher(params, os), active_job_(nullptr)
   {
@@ -206,9 +221,9 @@ class ExclusiveJoblauncher : public DefaultJoblauncher
 
 };
 
-struct outcast_iterator {
+struct OutcastIterator {
 
-  outcast_iterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
+  OutcastIterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
 
   int forward_to(int ranks[]){
     int power2_size = 1;
@@ -244,9 +259,9 @@ struct outcast_iterator {
 
 };
 
-struct incast_iterator {
+struct IncastIterator {
 
-  incast_iterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
+  IncastIterator(int my_rank, int nranks) : my_rank_(my_rank), nranks_(nranks){}
 
   /**
    * @brief config

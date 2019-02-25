@@ -52,8 +52,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/collective_actor_fwd.h>
 #include <sumi/comm_functions.h>
 #include <sumi/options.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
+#include <list>
 
 DeclareDebugSlot(sumi_collective)
 DeclareDebugSlot(sumi_vote)

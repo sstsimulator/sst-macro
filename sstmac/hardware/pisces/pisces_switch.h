@@ -49,7 +49,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_buffer.h>
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
 #include <sstmac/hardware/pisces/pisces_arbitrator.h>
-#include <sstmac/hardware/pisces/pisces_stats_fwd.h>
 
 namespace sstmac {
 namespace hw {
@@ -58,26 +57,16 @@ class PiscesAbstractSwitch :
   public NetworkSwitch
 {
  public:
-  PacketStatsCallback* xbarStats() const {
-    return xbar_stats_;
-  }
-
-  PacketStatsCallback* bufStats() const {
-    return buf_stats_;
-  }
-
   Router* router() const override {
     return router_;
   }
 
  protected:
-  PiscesAbstractSwitch(SST::Params& params, uint32_t id);
+  PiscesAbstractSwitch(uint32_t id, SST::Params& params);
 
   virtual ~PiscesAbstractSwitch();
 
   std::string arbType_;
-  PacketStatsCallback* xbar_stats_;
-  PacketStatsCallback* buf_stats_;
   Router* router_;
 };
 
@@ -89,11 +78,17 @@ class PiscesAbstractSwitch :
 class PiscesSwitch :
   public PiscesAbstractSwitch
 {
-  RegisterComponent("pisces", NetworkSwitch, PiscesSwitch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A network switch implementing the packet flow congestion model")
  public:
-  PiscesSwitch(SST::Params& params, uint32_t id);
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    NetworkSwitch,
+    PiscesSwitch,
+    "macro",
+    "pisces",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A network switch implementing the packet flow congestion model",
+    COMPONENT_CATEGORY_NETWORK)
+
+  PiscesSwitch(uint32_t id, SST::Params& params);
 
   virtual ~PiscesSwitch();
 

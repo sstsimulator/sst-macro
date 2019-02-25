@@ -53,9 +53,15 @@ namespace sw {
 
 class HostnameTaskMapper : public TaskMapper
 {
-  FactoryRegister("hostname", TaskMapper, HostnameTaskMapper,
-              "assigns tasks to nodes based on hostname map of topology and hostname list in file")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    TaskMapper,
+    HostnameTaskMapper,
+    "macro",
+    "hostname",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "assigns tasks to nodes based on hostname map of topology and hostname list in file")
+
   HostnameTaskMapper(SST::Params& params);
 
   std::string toString() const override {

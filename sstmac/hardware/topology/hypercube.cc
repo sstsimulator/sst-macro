@@ -64,7 +64,7 @@ Hypercube::Hypercube(SST::Params& params) :
 
 void
 Hypercube::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   int total_ports = 0;
   for (int size : dimensions_){
@@ -73,7 +73,7 @@ Hypercube::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
 
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = total_ports + i;
     port.ep_port = 0;
@@ -84,7 +84,7 @@ void
 Hypercube::minimalRouteToSwitch(
   SwitchId src,
   SwitchId dst,
-  Packet::header* hdr) const
+  Packet::Header* hdr) const
 {
   int ndim = dimensions_.size();
   int div = 1;
@@ -120,7 +120,7 @@ Hypercube::minimalDistance(
 }
 
 void
-Hypercube::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+Hypercube::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   int nconns = 0;
   for (int dim=0; dim < dimensions_.size(); ++dim){
@@ -142,7 +142,7 @@ Hypercube::connectedOutports(SwitchId src, std::vector<connection>& conns) const
       int outport = convertToPort(dim, dstX);
       int inport = convertToPort(dim, srcX);
 
-      connection& conn = conns[cidx];
+      Connection& conn = conns[cidx];
       conn.src = src;
       conn.dst = dst;
       conn.src_outport = outport;
@@ -154,7 +154,7 @@ Hypercube::connectedOutports(SwitchId src, std::vector<connection>& conns) const
   }
 }
 
-Topology::vtk_switch_geometry
+Topology::VTKSwitchGeometry
 Hypercube::getVtkGeometry(SwitchId sid) const
 {
   coordinates coords = switchCoords(sid);
@@ -182,7 +182,7 @@ Hypercube::getVtkGeometry(SwitchId sid) const
 
   //vtk_face_t dim_to_face[] = { plusXface, plusYface, plusZface };
 
-  std::vector<vtk_switch_geometry::port_geometry> ports(num_ports);
+  std::vector<VTKSwitchGeometry::port_geometry> ports(num_ports);
   /**
   for (int d=0; d < ndims; ++d){
     int port_offset = dim_to_outport_[d];
@@ -192,7 +192,7 @@ Hypercube::getVtkGeometry(SwitchId sid) const
   }
   */
 
-  vtk_switch_geometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,
+  VTKSwitchGeometry geom(xSize,ySize,zSize,xCorner,yCorner,zCorner,theta,
                            std::move(ports));
 
   return geom;

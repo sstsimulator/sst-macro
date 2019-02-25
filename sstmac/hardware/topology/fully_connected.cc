@@ -59,11 +59,11 @@ FullyConnected::FullyConnected(SST::Params& params) :
 
 void
 FullyConnected::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-                                   std::vector<injection_port>& nodes) const
+                                   std::vector<InjectionPort>& nodes) const
 {
   nodes.resize(concentration_);
   for (int i = 0; i < concentration_; i++) {
-    injection_port& port = nodes[i];
+    InjectionPort& port = nodes[i];
     port.nid = swaddr*concentration_ + i;
     port.switch_port = numSwitches() + i;
     port.ep_port = 0;
@@ -71,7 +71,7 @@ FullyConnected::endpointsConnectedToInjectionSwitch(SwitchId swaddr,
 }
 
 void
-FullyConnected::connectedOutports(SwitchId src, std::vector<connection>& conns) const
+FullyConnected::connectedOutports(SwitchId src, std::vector<Connection>& conns) const
 {
   int n_switches = numSwitches();
   conns.resize(n_switches - 1);

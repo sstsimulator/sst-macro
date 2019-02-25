@@ -62,7 +62,7 @@ class Packet :
 {
 
  public:
-  struct header {
+  struct Header {
     char is_tail : 1; //whether this is the last packet in a flow
     uint16_t edge_port; //the outport number on the edge (not an internal port)
     uint8_t deadlock_vc : 4; //the vc needed for routing deadlock (without QoS)
@@ -107,29 +107,29 @@ class Packet :
   }
 
   int deadlockVC() const {
-    auto hdr = rtrHeader<header>();
+    auto hdr = rtrHeader<Header>();
     return hdr->deadlock_vc;
   }
 
   void setEdgeOutport(const int port) {
-    auto hdr = rtrHeader<header>();
+    auto hdr = rtrHeader<Header>();
     hdr->edge_port = port;
   }
 
   void setDeadlockVC(const int vc) {
-    auto hdr = rtrHeader<header>();
+    auto hdr = rtrHeader<Header>();
     hdr->deadlock_vc = vc;
   }
 
   int edgeOutport() const {
-    auto hdr = rtrHeader<header>();
+    auto hdr = rtrHeader<Header>();
     return hdr->edge_port;
   }
 
   virtual void serialize_order(serializer& ser) override;
 
   bool isTail() const {
-    auto hdr = rtrHeader<header>();
+    auto hdr = rtrHeader<Header>();
     return hdr->is_tail;
   }
 

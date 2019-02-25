@@ -57,12 +57,17 @@ namespace hw {
  */
 class DragonflyPlus : public Dragonfly
 {
-  FactoryRegister("dragonfly_plus", Topology, DragonflyPlus)
-
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    DragonflyPlus,
+    "macro",
+    "dragonfly_plus",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a Dragonfly+ with fat-tree groups")
+
   DragonflyPlus(SST::Params& params);
 
- public:
   std::string toString() const override {
     return "dragonfly+";
   }
@@ -71,18 +76,18 @@ class DragonflyPlus : public Dragonfly
     return port >= 2*a_;
   }
 
-  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
   virtual ~DragonflyPlus() {}
 
-  vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
+  VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
   int ndimensions() const {
     return 3;
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-         std::vector<injection_port>& nodes) const override;
+         std::vector<InjectionPort>& nodes) const override;
 
   int maxNumPorts() const override {
     return std::max(a_ + h_, a_ + concentration());

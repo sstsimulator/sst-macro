@@ -58,9 +58,15 @@ namespace hw {
 class SimpleProcessor :
   public Processor
 {
-  FactoryRegister("simple", Processor, SimpleProcessor,
-              "Basic processor that only does timed_message computes")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Processor,
+    SimpleProcessor,
+    "macro",
+    "simple",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Basic processor that only does timed_message computes")
+
   SimpleProcessor(SST::Params& params,
                    MemoryModel* mem, Node* nd) :
     Processor(params, mem, nd) {}

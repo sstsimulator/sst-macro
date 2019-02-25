@@ -83,8 +83,8 @@ RegisterKeywords(
 namespace sstmac {
 namespace hw {
 
-LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
-  ConnectableComponent(params, cid),
+LogPSwitch::LogPSwitch(uint32_t cid, SST::Params& params) :
+  ConnectableComponent(cid, params),
   rng_(nullptr), contention_model_(nullptr)
 {
   SST::Params topParams;
@@ -106,7 +106,8 @@ LogPSwitch::LogPSwitch(SST::Params& params, uint32_t cid) :
 
   SST::Params contention_params = params.find_prefix_params("contention");
   if (contention_params.contains("model")){
-    contention_model_ = ContentionModel::factory::getParam("model", contention_params);
+    contention_model_ = ContentionModel::create("macro",
+      contention_params.find<std::string>("model"), contention_params);
   }
 
   nic_links_.resize(top_->numNodes());
@@ -169,7 +170,13 @@ LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
 struct SlidingContentionModel : public LogPSwitch::ContentionModel
 {
  public:
-  FactoryRegister("sliding", LogPSwitch::ContentionModel, SlidingContentionModel)
+  SST_ELI_REGISTER_DERIVED(
+    LogPSwitch::ContentionModel,
+    SlidingContentionModel,
+    "macro",
+    "sliding",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "")
 
   SlidingContentionModel(SST::Params& params) : LogPSwitch::ContentionModel(params)
   {

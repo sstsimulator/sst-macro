@@ -56,9 +56,15 @@ namespace hw {
  */
 class LogPMemoryModel : public MemoryModel
 {
-  FactoryRegister("logP | simple | LogP | logp", MemoryModel,LogPMemoryModel,
-              "Implements a simple memory model that is just a single link")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    MemoryModel,
+    LogPMemoryModel,
+    "macro",
+    "logp",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Implements a simple memory model that is just a single link")
+
   LogPMemoryModel(SST::Params& params, Node* nd);
 
   virtual ~LogPMemoryModel();

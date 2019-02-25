@@ -85,10 +85,10 @@ class xpress_ring :
               sprockit::SimParameters* switch_params) const override;
 
   void connectedOutports(SwitchId src,
-        std::vector<Topology::connection>& conns) const override;
+        std::vector<Topology::Connection>& conns) const override;
 
   void endpointsConnectedToInjectionSwitch(SwitchId swid,
-               std::vector<injection_port> &nodes) const override;
+               std::vector<InjectionPort> &nodes) const override;
 
   int numHopsToNode(NodeId src, NodeId dest) const override;
 

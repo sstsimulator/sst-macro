@@ -57,9 +57,15 @@ namespace hw {
 
 class Torus : public CartesianTopology
 {
-  FactoryRegister("torus", Topology, Torus,
-              "torus implements a high-dimension torus with an arbitrary number of dimensions")
  public:
+  SST_ELI_REGISTER_DERIVED(
+    Topology,
+    Torus,
+    "macro",
+    "torus",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "torus implements a high-dimension torus with an arbitrary number of dimensions")
+
   typedef enum {
     same_path,
     wrapped_around,
@@ -92,7 +98,7 @@ class Torus : public CartesianTopology
   }
 
   void endpointsConnectedToInjectionSwitch(SwitchId swaddr,
-         std::vector<injection_port>& nodes) const override;
+         std::vector<InjectionPort>& nodes) const override;
 
   /// Returns the vector giving each dimension of the torus.
   const std::vector<int>& dimensions() const {
@@ -111,7 +117,7 @@ class Torus : public CartesianTopology
     return numSwitches();
   }
 
-  void connectedOutports(SwitchId src, std::vector<connection>& conns) const override;
+  void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
   int minimalDistance(SwitchId sid, SwitchId dst) const;
 
@@ -123,7 +129,7 @@ class Torus : public CartesianTopology
 
   SwitchId switchAddr(const coordinates &coords) const override;
 
-  vtk_switch_geometry getVtkGeometry(SwitchId sid) const override;
+  VTKSwitchGeometry getVtkGeometry(SwitchId sid) const override;
 
   int convertToPort(int dim, int dir) const {
     return 2*dim + dir;

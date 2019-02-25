@@ -53,7 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system.h>
 #include <sstmac/software/process/thread.h>
 #include <sprockit/sim_parameters.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>

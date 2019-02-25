@@ -54,8 +54,15 @@ namespace sw {
 class DefaultDGEMM :
   public BlasKernel
 {
-  FactoryRegister("default_dgemm", BlasKernel, DefaultDGEMM)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    BlasKernel,
+    DefaultDGEMM,
+    "macro",
+    "default_dgemm",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "defaut DGEMM kernel")
+
   DefaultDGEMM(SST::Params& params){
     cache_size_bytes_ = params.findUnits("dgemm_cache_size", "32KB").getRoundedValue();
     loop_unroll_ = params.find<double>("dgemm_loop_unroll", 4);

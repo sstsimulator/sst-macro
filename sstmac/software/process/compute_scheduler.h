@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
 
 DeclareDebugSlot(compute_scheduler)
@@ -60,8 +60,10 @@ namespace sw {
 
 class ComputeScheduler
 {
-  DeclareFactoryArgs(ComputeScheduler, sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
  public:
+  SST_ELI_REGISTER_BASE_DEFAULT(ComputeScheduler)
+  SST_ELI_REGISTER_CTOR(SST::Params&,sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
+
   ComputeScheduler(SST::Params& params, sw::OperatingSystem* os,
                     int ncores, int nsockets) :
     os_(os), ncores_(ncores), nsocket_(nsockets)

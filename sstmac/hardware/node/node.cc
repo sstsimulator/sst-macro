@@ -79,8 +79,8 @@ namespace hw {
 
 using namespace sstmac::sw;
 
-Node::Node(SST::Params& params, uint32_t id)
-  : ConnectableComponent(params, id),
+Node::Node(uint32_t id, SST::Params& params)
+  : ConnectableComponent(id, params),
   app_refcount_(0),
   job_launcher_(nullptr)
 {
@@ -92,7 +92,7 @@ Node::Node(SST::Params& params, uint32_t id)
       params.find_array("debug", debug_params);
     }
     for (auto& str : debug_params){
-      sprockit::debug::turn_on(str);
+      sprockit::Debug::turnOn(str);
     }
     init_debug = true;
   }
@@ -101,15 +101,16 @@ Node::Node(SST::Params& params, uint32_t id)
   next_outgoing_id_.setSrcNode(my_addr_);
 
   SST::Params nic_params = params.find_prefix_params("nic");
-  nic_ = NIC::factory::getParam("name", nic_params, this);
+  nic_ = NIC::create("macro", nic_params.find<std::string>("name"),
+                      nic_params, this);
 
   SST::Params mem_params = params.find_prefix_params("memory");
-  mem_model_ = MemoryModel::factory::getParam("name", mem_params, this);
+  mem_model_ = MemoryModel::create("macro", mem_params.find<std::string>("name"),
+                                   mem_params, this);
 
   SST::Params proc_params = params.find_prefix_params("proc");
-  proc_ = Processor::factory::getOptionalParam("processor", "instruction",
-          proc_params,
-          mem_model_, this);
+  proc_ = Processor::create("macro", proc_params.find<std::string>("processor", "instruction"),
+                             proc_params, mem_model_, this);
 
   nsocket_ = params.find<int>("nsockets", 1);
 
@@ -120,8 +121,8 @@ Node::Node(SST::Params& params, uint32_t id)
 
   launchRoot_ = params.find<int>("launchRoot", 0);
   if (my_addr_ == launchRoot_){
-    job_launcher_ =   JobLauncher::factory::getOptionalParam(
-          "JobLauncher", "default", params, os_);
+    job_launcher_ =   JobLauncher::create("macro", params.find<std::string>("job_launcher", "default"),
+                                          params, os_);
   }
 }
 

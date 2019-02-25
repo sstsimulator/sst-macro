@@ -49,9 +49,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/node_address.h>
 #include <sstmac/common/event_manager_fwd.h>
 #include <sstmac/hardware/common/packet.h>
+#include <sstmac/sst_core/integrated_component.h>
 
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/switch/network_switch_fwd.h>
@@ -77,8 +78,10 @@ namespace hw {
 */
 class Router : public sprockit::printable
 {
-  DeclareFactoryArgs(Router, Topology*, NetworkSwitch*)
  public:
+   SST_ELI_REGISTER_BASE_DEFAULT(Router)
+   SST_ELI_REGISTER_CTOR(SST::Params&,Topology*,NetworkSwitch*)
+
   /**
    * @brief route Makes a routing decision for the packet.
    * All routing decisions should be stored on the packet object itself.

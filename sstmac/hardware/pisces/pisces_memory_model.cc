@@ -89,7 +89,7 @@ PiscesMemoryModel::PiscesMemoryModel(SST::Params& params, Node *nd) :
   min_flow_byte_delay_ =
       Timestamp(params.findUnits("max_single_bandwidth", max_bw_param).inverse().toDouble());
   latency_ = Timestamp(params.findUnits("latency").toDouble());
-  arb_ = PiscesBandwidthArbitrator::factory::getValue("cut_through", max_bw.toDouble());
+  arb_ = PiscesBandwidthArbitrator::create("macro", "cut_through", max_bw.toDouble());
 }
 
 PiscesMemoryModel::~PiscesMemoryModel()
@@ -181,7 +181,7 @@ PiscesMemoryModel::access(int channel, PiscesPacket* pkt, Timestamp byte_delay, 
   //set the bandwidth to the max single bw
   pkt->initByteDelay(byte_delay);
   pkt->setArrival(now());
-  pkt_arbitration_t st;
+  PiscesBandwidthArbitrator::IncomingPacket st;
   st.pkt = pkt;
   st.now = now();
   arb_->arbitrate(st);

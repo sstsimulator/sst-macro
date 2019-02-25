@@ -234,7 +234,7 @@ MpiRuntime::sendRecvMessages(Timestamp vote)
   static int payload_tag = 42;
   static int next_payload_tag = 43;
   for (int i=0; i < nproc_; ++i){
-    comm_buffer& comm = send_buffers_[i];
+    CommBuffer& comm = send_buffers_[i];
     int commSize = comm.totalBytes();
     if (commSize){
       char* buffer = comm.buffer();
@@ -263,7 +263,7 @@ MpiRuntime::sendRecvMessages(Timestamp vote)
   debug_printf(sprockit::dbg::parallel, "LP %d receiving %d messages from partners",
                me_, incoming.num_sent);
   for (int i=0; i < incoming.num_sent; ++i){
-    comm_buffer& comm = recv_buffers_[i];
+    CommBuffer& comm = recv_buffers_[i];
     comm.ensureSpace(incoming.max_bytes);
     debug_printf(sprockit::dbg::parallel, "LP %d receiving maximum %lu bytes from sender %d",
                  me_, incoming.max_bytes, i);

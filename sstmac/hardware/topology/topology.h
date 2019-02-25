@@ -54,7 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/errors.h>
 #include <unordered_map>
 #include <cmath>
@@ -69,10 +69,11 @@ namespace hw {
 
 class Topology : public sprockit::printable
 {
-  DeclareFactory(Topology)
-
  public:
-  struct connection {
+  SST_ELI_REGISTER_BASE_DEFAULT(Topology)
+  SST_ELI_REGISTER_CTOR(SST::Params&)
+
+  struct Connection {
     SwitchId src;
     SwitchId dst;
     int src_outport;
@@ -88,13 +89,13 @@ class Topology : public sprockit::printable
     minusZface = 5
   } vtk_face_t;
 
-  struct injection_port {
+  struct InjectionPort {
     NodeId nid;
     int switch_port;
     int ep_port;
   };
 
-  struct rotation {
+  struct Rotation {
     double x[3];
     double y[3];
     double z[3];
@@ -106,7 +107,7 @@ class Topology : public sprockit::printable
      * @param uz  The z component of the rotation axis
      * @param theta The angle of rotation
      */
-    rotation(double ux, double uy, double uz, double theta){
+    Rotation(double ux, double uy, double uz, double theta){
       double cosTh = cos(theta);
       double oneMinCosth = 1.0 - cosTh;
       double sinTh = sin(theta);
@@ -127,7 +128,7 @@ class Topology : public sprockit::printable
      * @brief rotation Initialize as a 2D rotation around Z-axis
      * @param theta The angle of rotation
      */
-    rotation(double theta){
+    Rotation(double theta){
       double cosTh = cos(theta);
       double sinTh = sin(theta);
       x[0] = cosTh;
@@ -168,7 +169,7 @@ class Topology : public sprockit::printable
       return xyz(x+r.x, y+r.y, z+r.z);
     }
 
-    xyz rotate(const rotation& r) const {
+    xyz rotate(const Rotation& r) const {
       xyz ret;
       ret.x += r.x[0]*x + r.x[1]*y + r.x[2]*z;
       ret.y += r.y[0]*x + r.y[1]*y + r.y[2]*z;
@@ -177,10 +178,10 @@ class Topology : public sprockit::printable
     }
   };
 
-  struct vtk_box_geometry {
+  struct VTKBoxGeometry {
     xyz size;
     xyz corner;
-    rotation rot;
+    Rotation rot;
 
     xyz vertex(int id) const {
       switch(id){
@@ -205,39 +206,39 @@ class Topology : public sprockit::printable
       return xyz();
     }
 
-    vtk_box_geometry(double xLength, double yLength, double zLength,
+    VTKBoxGeometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner,
                  double xAxis, double yAxis, double zAxis, double theta) :
       size(xLength,yLength,zLength),
       corner(xCorner, yCorner, zCorner),
       rot(xAxis, yAxis, zAxis, theta) {}
 
-    vtk_box_geometry(double xLength, double yLength, double zLength,
+    VTKBoxGeometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner,
                  double theta) :
       size(xLength,yLength,zLength),
       corner(xCorner, yCorner, zCorner),
       rot(theta) {}
 
-    vtk_box_geometry(double xLength, double yLength, double zLength,
+    VTKBoxGeometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner) :
-      vtk_box_geometry(xLength, yLength, zLength, xCorner, yCorner, zCorner, 0.0)
+      VTKBoxGeometry(xLength, yLength, zLength, xCorner, yCorner, zCorner, 0.0)
    {}
 
-    vtk_box_geometry(double xLength, double yLength, double zLength,
+    VTKBoxGeometry(double xLength, double yLength, double zLength,
                      double xCorner, double yCorner, double zCorner,
-                     const rotation& rot) :
+                     const Rotation& rot) :
       size(xLength,yLength,zLength),
       corner(xCorner,yCorner,zCorner),
       rot(rot)
     {
     }
 
-    vtk_box_geometry get_sub_geometry(double x_start, double x_span,
+    VTKBoxGeometry get_sub_geometry(double x_start, double x_span,
                                       double y_start, double y_span,
                                       double z_start, double z_span) const {
 
-      return vtk_box_geometry(size.x * x_span, size.y * y_span, size.z * z_span,
+      return VTKBoxGeometry(size.x * x_span, size.y * y_span, size.z * z_span,
                               corner.x + size.x * x_start,
                               corner.y + size.y * y_start,
                               corner.z + size.z * z_start, rot);
@@ -278,8 +279,8 @@ class Topology : public sprockit::printable
 
   };
 
-  struct vtk_switch_geometry {
-    vtk_box_geometry box;
+  struct VTKSwitchGeometry {
+    VTKBoxGeometry box;
     struct port_geometry {
       double x_size;
       double y_size;
@@ -290,14 +291,14 @@ class Topology : public sprockit::printable
     };
     std::vector<port_geometry> ports;
 
-    vtk_box_geometry get_port_geometry(int port) const {
+    VTKBoxGeometry get_port_geometry(int port) const {
       auto& cfg = ports[port];
       return box.get_sub_geometry(cfg.x_offset, cfg.x_size,
                                   cfg.y_offset, cfg.y_size,
                                   cfg.z_offset, cfg.z_size);
     }
 
-    vtk_switch_geometry(double xLength, double yLength, double zLength,
+    VTKSwitchGeometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner,
                  double theta, std::vector<port_geometry>&& ps) :
       box(xLength, yLength, zLength,xCorner,yCorner,zCorner,theta),
@@ -326,7 +327,7 @@ class Topology : public sprockit::printable
    *              and the port numbers for each connection
    */
   virtual void connectedOutports(SwitchId src,
-                     std::vector<Topology::connection>& conns) const = 0;
+                     std::vector<Topology::Connection>& conns) const = 0;
 
 
   /**
@@ -362,7 +363,7 @@ class Topology : public sprockit::printable
    * @param sid
    * @return The geometry (box size, rotation, port-face mapping)
    */
-  virtual vtk_switch_geometry getVtkGeometry(SwitchId sid) const;
+  virtual VTKSwitchGeometry getVtkGeometry(SwitchId sid) const;
 
   virtual bool isCurvedVtkLink(SwitchId sid, int port) const {
     return false;
@@ -403,12 +404,12 @@ class Topology : public sprockit::printable
   void outputXYZ(const std::string& file = "");
 
   static void outputBox(std::ostream& os,
-                       const Topology::vtk_box_geometry& box,
+                       const Topology::VTKBoxGeometry& box,
                        const std::string& color,
                        const std::string& alpha);
 
   static void outputBox(std::ostream& os,
-                       const Topology::vtk_box_geometry& box);
+                       const Topology::VTKBoxGeometry& box);
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -417,7 +418,7 @@ class Topology : public sprockit::printable
      @return The nodes connected to switch for injection
   */
   virtual void endpointsConnectedToInjectionSwitch(SwitchId swid,
-                          std::vector<injection_port>& nodes) const = 0;
+                          std::vector<InjectionPort>& nodes) const = 0;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -426,7 +427,7 @@ class Topology : public sprockit::printable
      @return The nodes connected to switch for ejection
   */
   virtual void endpointsConnectedToEjectionSwitch(SwitchId swid,
-                          std::vector<injection_port>& nodes) const = 0;
+                          std::vector<InjectionPort>& nodes) const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
 
   void finalizeInit(SST::Params& params){

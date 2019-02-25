@@ -57,8 +57,15 @@ namespace hw {
 
 class PiscesMemoryModel : public MemoryModel
 {
-  FactoryRegister("pisces", MemoryModel, PiscesMemoryModel)
  public:
+  SST_ELI_REGISTER_DERIVED(
+    MemoryModel,
+    PiscesMemoryModel,
+    "macro",
+    "pisces",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "a memory model using pisces packet flow for contention")
+
   PiscesMemoryModel(SST::Params& params, Node* nd);
 
   virtual ~PiscesMemoryModel();

@@ -66,7 +66,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/communicator_fwd.h>
 
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/util.h>
 
 #include <unordered_map>
@@ -77,7 +77,13 @@ namespace sumi {
 class SimTransport : public Transport, public sstmac::sw::API {
 
  public:
-  RegisterAPI("sumi", SimTransport)
+  SST_ELI_REGISTER_DERIVED(
+    API,
+    SimTransport,
+    "macro",
+    "sumi",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "provides the SUMI transport API")
 
   using DefaultProgressQueue = sstmac::sw::MultiProgressQueue<Message>;
 

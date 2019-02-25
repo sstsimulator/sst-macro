@@ -83,17 +83,17 @@ FatTreeRouter::FatTreeRouter(
 
   if (my_row_ == 2){
     down_routes_.resize(ft_->numAggSubtrees());
-    std::vector<Topology::connection> conns;
+    std::vector<Topology::Connection> conns;
     ft_->connectedOutports(my_addr_, conns);
-    for (Topology::connection& conn : conns){
+    for (Topology::Connection& conn : conns){
       int subtree = (conn.dst - ft_->numLeafSwitches()) / ft_->aggSwitchesPerSubtree();
       down_routes_[subtree].push_back(conn.src_outport);
     }
   } else if (my_row_ == 1){
     down_routes_.resize(ft_->leafSwitchesPerSubtree());
-    std::vector<Topology::connection> conns;
+    std::vector<Topology::Connection> conns;
     ft_->connectedOutports(my_addr_, conns);
-    for (Topology::connection& conn : conns){
+    for (Topology::Connection& conn : conns){
       if (conn.dst < my_addr_){
         int leaf = conn.dst % ft_->leafSwitchesPerSubtree();
         down_routes_[leaf].push_back(conn.src_outport);
@@ -174,11 +174,15 @@ FatTreeRouter::getDownPort(int path)
 
 class TaperedFatTreeMinimalRouter : public Router {
  public:
-  FactoryRegister("tapered_fat_tree_minimal",
-              Router, TaperedFatTreeMinimalRouter,
-              "router implementing minimal routing for cascade")
+  SST_ELI_REGISTER_DERIVED(
+    Router,
+    TaperedFatTreeMinimalRouter,
+    "macro",
+    "tapered_fat_tree_minimal",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "router implementing fat tree routing")
 
-  struct header : public Packet::header {};
+  struct header : public Packet::Header {};
 
   TaperedFatTreeMinimalRouter(SST::Params& params, Topology *top,
                          NetworkSwitch *netsw)
@@ -195,7 +199,7 @@ class TaperedFatTreeMinimalRouter : public Router {
     return 1;
   }
 
-  void minimalRoute(SwitchId dst, Packet::header* hdr){
+  void minimalRoute(SwitchId dst, Packet::Header* hdr){
     int src_level = tree_->level(my_addr_);
     int dst_level = tree_->level(dst);
     //question is whether I go up or down

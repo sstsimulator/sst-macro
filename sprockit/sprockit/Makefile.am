@@ -60,7 +60,7 @@ nobase_library_include_HEADERS = \
   typedefs.h \
   util.h \
   units.h \
-  factories/factory.h \
+  factory.h \
   test/assert.h \
   test/test.h \
   test/equality.h \
