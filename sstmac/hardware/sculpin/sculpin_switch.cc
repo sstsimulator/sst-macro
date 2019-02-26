@@ -85,10 +85,8 @@ namespace hw {
 SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
   congestion_(true),
-  #if SSTMAC_VTK_ENABLED && !SSTMAC_INTEGRATED_SST_CORE
-    vtk_(nullptr),
-  #endif
-  delay_hist_(nullptr),
+  vtk_(nullptr),
+  xmit_wait_(nullptr),
   NetworkSwitch(id, params)
 {
   SST::Params rtr_params = params.find_prefix_params("router");
@@ -105,40 +103,16 @@ SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
   // Ensure topology is set
   Topology::staticTopology(params);
 
-#if SSTMAC_VTK_ENABLED
-#if SSTMAC_INTEGRATED_SST_CORE
-  //traffic_intensity = registerStatistic<traffic_event>("traffic_intensity", getName());
+  xmit_wait_ = registerMultiStatistic<double,uint32_t>(params, "xmit_wait");
 
-//  std::function<void (const std::multimap<uint64_t, traffic_event> &, int, int)> f =
-//      &stat_vtk::outputExodus;
-
-  //SST::Factory::getFactory()->registerOptionnalCallback("statOutputEXODUS", f);
-#else
-  vtk_ = optionalStats<stat_vtk>(this,
-        params,
-        "vtk", /* The parameter namespace in the ini file */
-        "vtk" /* The object's factory name */
-   );
-  if (vtk_) vtk_->configure(my_addr_, top_);
-#endif
-#endif
+  //vtk_ = registerStatistic<uint64_t,int,double,int>("traffic_intensity", getName());
+  //if (vtk_) vtk_->configure(my_addr_, top_);
 
   ports_.resize(top_->maxNumPorts());
   for (int i=0; i < ports_.size(); ++i){
     ports_[i].id = i;
     ports_[i].seqnum = 0;
-#if SSTMAC_VTK_ENABLED
-#if SSTMAC_INTEGRATED_SST_CORE
-    traffic_intensity.push_back(registerStatistic<traffic_event>(
-              "traffic_intensity", getName() + std::to_string(ports_[i].id)));
-#endif
-#endif
   }
-
-  /** TODO stats
-  delay_hist_ = optionalStats<StatHistogram>(this, params, "delays", "histogram");
-  */
-
   initLinks(params);
 
   if (params.contains("filter_stat_source")){
@@ -222,7 +196,6 @@ SculpinSwitch::send(Port& p, SculpinPacket* pkt, GlobalTimestamp now)
 
   Timestamp delay = p.next_free - pkt->arrival();
 
-  if (delay_hist_) delay_hist_->addData(delay.usec(), pkt->numBytes());
   //if (xmit_delay_) xmit_delay_->addData(p.id, delay.usec());
 
 #if SSTMAC_VTK_ENABLED

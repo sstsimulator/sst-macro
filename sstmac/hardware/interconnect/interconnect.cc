@@ -137,11 +137,13 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   logp_params.insert(switch_params.find_prefix_params("logp"));
 
   logp_switches_.resize(rt_->nthread());
+  mgr->startStatGroup("logp");
   uint32_t my_offset = rt_->me() * rt_->nthread() + top->numNodes() + top->numSwitches();
   for (int i=0; i < rt_->nthread(); ++i){
     uint32_t id = my_offset + i;
     logp_switches_[i] = new LogPSwitch(id, logp_params);
   }
+  mgr->stopStatGroup();
 
   interconn_debug("Interconnect building endpoints");
 
@@ -377,6 +379,7 @@ Interconnect::buildEndpoints(SST::Params& node_params,
   int my_rank = rt_->me();
   int my_thread = mgr->thread();
 
+  mgr->startStatGroup("nodes");
   for (int i=0; i < num_switches_; ++i){
     SwitchId sid(i);
     std::vector<Topology::InjectionPort> nodes;
@@ -398,6 +401,10 @@ Interconnect::buildEndpoints(SST::Params& node_params,
         node_params->addParamOverride("id", int(nid));
         uint32_t comp_id = nid;
         auto nodeType = node_params.find<std::string>("name", "simple");
+        auto pos = nodeType.find("_node"); //append the node prefix if missing
+        if (pos == std::string::npos){
+          nodeType = nodeType + "_node";
+        }
         Node* nd = Node::create("macro", nodeType, comp_id, node_params);
         node_params->removeParam("id"); //you don't have to let it linger
         nodes_[nid] = nd;
@@ -405,6 +412,7 @@ Interconnect::buildEndpoints(SST::Params& node_params,
       }
     }
   }
+  mgr->stopStatGroup();
 }
 
 void
@@ -414,6 +422,7 @@ Interconnect::buildSwitches(SST::Params& switch_params,
   bool simple_model = switch_params.find<std::string>("name") == "simple";
   if (simple_model) return; //nothing to do
 
+  mgr->startStatGroup("switches");
   int my_rank = rt_->me();
   int id_offset = topology_->numNodes();
   for (SwitchId i=0; i < num_switches_; ++i){
@@ -422,6 +431,10 @@ Interconnect::buildSwitches(SST::Params& switch_params,
       int thread = partition_->threadForSwitch(i);
       uint32_t comp_id = switchComponentId(i);
       auto swType = switch_params.find<std::string>("name");
+      auto pos = swType.find("_switch"); //append the switch prefix if missing
+      if (pos == std::string::npos){
+        swType = swType + "_switch";
+      }
       switches_[i] = NetworkSwitch::create("macro", swType, comp_id, switch_params);
     } else {
       switches_[i] = nullptr;
@@ -429,6 +442,7 @@ Interconnect::buildSwitches(SST::Params& switch_params,
     switch_params->removeParam("id");
     components_[i+id_offset] = switches_[i];
   }
+  mgr->stopStatGroup();
 }
 
 uint32_t

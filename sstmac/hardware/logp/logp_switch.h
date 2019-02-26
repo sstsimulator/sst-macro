@@ -77,6 +77,8 @@ class LogPSwitch : public ConnectableComponent
     "A switch that implements a basic delay model with no congestion modeling",
     COMPONENT_CATEGORY_NETWORK)
 
+  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
+
   struct ContentionModel {
     SST_ELI_REGISTER_BASE_DEFAULT(ContentionModel)
     SST_ELI_REGISTER_CTOR(SST::Params&)

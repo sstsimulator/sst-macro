@@ -59,7 +59,7 @@ class StatisticBase;
 namespace sstmac {
 class StatisticOutput;
 class StatisticBase;
-template <class T, class... Args> class Statistic;
+template <class T> class Statistic;
 }
 namespace SST {
 namespace Statistics {

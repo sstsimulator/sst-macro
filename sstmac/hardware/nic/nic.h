@@ -207,7 +207,7 @@ class NIC : public ConnectableSubcomponent
  private:
   StatSpyplot* spy_num_messages_;
   StatSpyplot* spy_bytes_;
-  StatHistogram* hist_msg_size_;
+  Statistic<uint64_t>* msg_sizes_;
   sw::SingleProgressQueue<NetworkMessage> queue_;
 
  protected:

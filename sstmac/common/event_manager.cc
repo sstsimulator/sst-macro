@@ -205,8 +205,15 @@ EventManager::serializeSchedule(char* buf)
 void
 EventManager::registerStatisticCore(StatisticBase* base)
 {
-  StatGroup& grp = stat_groups_[active_stat_group_.back()];
-  grp.stats.push_back(base);
+  if (base->specialOutput()){
+    std::string grpName = active_stat_group_.back() + "." + base->name();
+    StatGroup& grp = stat_groups_[grpName];
+    grp.stats.push_back(base);
+    grp.outputName = base->name();
+  } else {
+    StatGroup& grp = stat_groups_[active_stat_group_.back()];
+    grp.stats.push_back(base);
+  }
 }
 
 void
@@ -214,6 +221,11 @@ EventManager::finalizeStatsInit()
 {
   for (auto& pair : stat_groups_){
     StatGroup& grp = pair.second;
+    if (!grp.output){
+      SST::Params myParams;
+      myParams.insert("name", pair.first);
+      grp.output = StatisticOutput::create("macro", grp.outputName, myParams);
+    }
     grp.output->startRegisterGroup(pair.first);
     for (auto* stat : grp.stats){
       grp.output->startRegisterFields(stat);

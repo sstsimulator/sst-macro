@@ -83,10 +83,12 @@ class PiscesSwitch :
     NetworkSwitch,
     PiscesSwitch,
     "macro",
-    "pisces",
+    "pisces_switch",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "A network switch implementing the packet flow congestion model",
     COMPONENT_CATEGORY_NETWORK)
+
+  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
 
   PiscesSwitch(uint32_t id, SST::Params& params);
 

@@ -86,7 +86,7 @@ NicEvent::serialize_order(serializer &ser)
 NIC::NIC(SST::Params& params, Node* parent) :
   spy_num_messages_(nullptr),
   spy_bytes_(nullptr),
-  hist_msg_size_(nullptr),
+  msg_sizes_(nullptr),
   parent_(parent),
   my_addr_(parent->addr()),
   logp_link_(nullptr),
@@ -292,8 +292,8 @@ NIC::recordMessage(NetworkMessage* netmsg)
     spy_bytes_->addData(netmsg->fromaddr(), netmsg->toaddr(), netmsg->byteLength());
   }
 
-  if (hist_msg_size_) {
-    hist_msg_size_->addData(netmsg->byteLength(), 1);
+  if (msg_sizes_) {
+    msg_sizes_->addData(netmsg->byteLength());
   }
 }
 

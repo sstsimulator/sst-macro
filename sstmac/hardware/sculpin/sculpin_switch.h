@@ -78,10 +78,12 @@ class SculpinSwitch :
     NetworkSwitch,
     SculpinSwitch ,
     "macro",
-    "sculpin",
+    "sculpin_switch",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "A network switch implementing the sculpin model",
     COMPONENT_CATEGORY_NETWORK)
+
+  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
 
   SculpinSwitch(uint32_t id, SST::Params& params);
 
@@ -137,6 +139,8 @@ class SculpinSwitch :
 
   Router* router_;
 
+  SST::Statistics::MultiStatistic<uint64_t/*time*/,int/*port*/,double/*color*/,int/*id*/>* vtk_;
+
 #if SSTMAC_VTK_ENABLED
 #if SSTMAC_INTEGRATED_SST_CORE
   std::vector<Statistic<traffic_event>* > traffic_intensity;
@@ -147,7 +151,7 @@ class SculpinSwitch :
 
   bool congestion_;
 
-  StatHistogram* delay_hist_;
+  SST::Statistics::MultiStatistic<double,uint32_t>* xmit_wait_;
 
   std::set<NodeId> src_stat_filter_;
   std::set<NodeId> dst_stat_filter_;

@@ -55,8 +55,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
-using StatSpyplotParent =
-  SST::Statistics::MultiCtor<int,int,int>::Statistic<int,int,uint64_t>;
+using StatSpyplotParent = SST::Statistics::MultiStatistic<int,int,uint64_t>;
 
 /**
  * this stat_collector class keeps a spy plot
@@ -73,16 +72,7 @@ class StatSpyplot : public StatSpyplotParent
     "spyplot showing traffic matrics")
 
   StatSpyplot(SST::BaseComponent* comp, const std::string& name,
-              const std::string& statName, SST::Params& params,
-              int id, int nSrc, int nDst) :
-    vals_(nDst),
-    my_id_(id),
-    n_src_(nSrc),
-    n_dst_(nDst),
-    fields_(nDst),
-    StatSpyplotParent(comp, name, statName, params)
-  {
-  }
+              const std::string& statName, SST::Params& params);
 
   virtual ~StatSpyplot() {}
 

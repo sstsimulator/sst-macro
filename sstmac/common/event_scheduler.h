@@ -97,7 +97,7 @@ namespace Event {
 using HandlerBase = sstmac::EventHandler;
 }
 using sstmac::Component;
-using BaseComponent = sstmac::Component;
+using BaseComponent = sstmac::EventScheduler;
 using Link = sstmac::EventLink;
 }
 namespace sstmac {
@@ -191,10 +191,21 @@ class EventScheduler : public sprockit::printable
     self_link_->send(delay, time_converter_, ev);
   }
 #else
-  template <class Params, class T> T* registerStatistic(Params& params, SST::BaseComponent* comp, const std::string& name){
-    auto stat_params = params.find_prefix_params(name);
-    Statistic<T>* stat = Statistic<T>::factory::getOptionalParam("type", "null",
-                                                                   stat_params, comp, name);
+  template <class T> Statistic<T>*
+  registerStatistic(SST::Params& params, const std::string& name){
+    return registerStatisticType<SST::Params,Statistic<T>>(params,name);
+  }
+
+  template <class... Args> SST::Statistics::Statistic<std::tuple<Args...>>*
+  registerMultiStatistic(SST::Params& params, const std::string& name){
+    return registerStatisticType<SST::Params,SST::Statistics::Statistic<std::tuple<Args...>>>(params,name);
+  }
+
+  template <class Params, class Stat> Stat*
+  registerStatisticType(Params& params, const std::string& name){
+    auto scoped_params = params.find_prefix_params(name);
+    auto type = scoped_params.template find<std::string>("type", "null");
+    Stat* stat = Stat::create("macro", type, this, name, "", scoped_params);
     registerStatisticCore(stat);
     return stat;
   }
@@ -272,6 +283,8 @@ class EventScheduler : public sprockit::printable
     }
     self_link_ = base->configureSelfLink(selfname, time_converter_,
           new SST::Event::Handler<EventScheduler>(this, &EventScheduler::handleExecutionEvent));
+#else
+    setManager();
 #endif
   }
 
@@ -286,7 +299,7 @@ class EventScheduler : public sprockit::printable
   static SST::TimeConverter* time_converter_;
 #else
 
-  StatisticBase* registerStatisticCore(SST::Params& params, const std::string& name);
+  void registerStatisticCore(StatisticBase* base);
 
   uint32_t id_;
   EventManager* mgr_;
@@ -297,7 +310,7 @@ class EventScheduler : public sprockit::printable
   const GlobalTimestamp* now_;
 
  protected:
-  void setManager(EventManager* mgr);
+  void setManager();
 #endif
 
  private:

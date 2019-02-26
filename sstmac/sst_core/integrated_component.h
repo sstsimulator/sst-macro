@@ -53,6 +53,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/hardware/common/connection_fwd.h>
 
+#define SSTMAC_VALID_PORTS \
+   {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
+   {"output %(out)d %(in)d", "Will receive new acks(credits) here", {}}, \
+   {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
+   {"rtr",                   "Special link to Merlin router",       {}}
+
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
 #include <sst/core/linkMap.h>
@@ -71,34 +77,8 @@ using SST::SST_ELI_getMajorNumberFromVersion;
 using SST::SST_ELI_getMinorNumberFromVersion;
 using SST::SST_ELI_getTertiaryNumberFromVersion;
 
-#define SSTMAC_VALID_PORTS \
-   {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
-   {"output %(out)d %(in)d", "Will receive new acks(credits) here", {}}, \
-   {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
-   {"rtr",                   "Special link to Merlin router",       {}}
-
 #define SST_ELI_REGISTER_DERIVED_COMPONENT(ase,cls,lib,name,version,desc,cat) \
   SST_ELI_REGISTER_COMPONENT(cls,lib,name,ELI_FORWARD_AS_ONE(version),desc,cat)
-
-#define RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
-  FactoryRegister(name,parent,cls,desc) \
-  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS() \
-  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,SST_ELI_ELEMENT_VERSION(8,0,0),desc,cat) \
-  SST_ELI_DOCUMENT_PARAMS() \
-  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
-  cls(SST::ComponentId_t id, SST::Params& params) : \
-    cls(params, id){}
-
-#define RegisterComponent(name,parent,cls,lib,cat,desc) \
-  RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
-  SST_ELI_DOCUMENT_STATISTICS()
-
-#define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
-  FactoryRegister(name,parent,cls,desc) \
-  SST_ELI_REGISTER_SUBCOMPONENT(cls,lib,#cls,desc,interfaceStr) \
-  protected: \
-  cls(SST::ComponentId_t id, SST::Params& params) : \
-    cls(params, id){}
 
 namespace sstmac {
 
@@ -174,6 +154,8 @@ class SSTIntegratedComponent
 #define SST_ELI_DOCUMENT_STATISTICS(...)
 
 #define SST_ELI_ELEMENT_VERSION(...)
+
+#define SST_ELI_DOCUMENT_PORTS(...)
 
 //if this macro is used, then this is ONLY registered for core
 #define SST_ELI_REGISTER_COMPONENT(cls,lib,name,version,desc,cat)

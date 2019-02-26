@@ -77,10 +77,16 @@ EventScheduler::sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent *ev)
 }
 
 void
-EventScheduler::setManager(EventManager *mgr)
+EventScheduler::registerStatisticCore(StatisticBase *base)
 {
-  mgr_ = mgr;
-  now_ = mgr->nowPtr();
+  mgr_->registerStatisticCore(base);
+}
+
+void
+EventScheduler::setManager()
+{
+  mgr_ = EventManager::global;
+  now_ = mgr_->nowPtr();
 }
 
 Timestamp EventLink::minRemoteLatency_;
@@ -101,8 +107,6 @@ Component::setup()
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   SSTIntegratedComponent::setup();
-#else
-  setManager(EventManager::global);
 #endif
 }
 
@@ -116,8 +120,6 @@ SubComponent::setup()
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   SST::SubComponent::setup();
-#else
-  setManager(EventManager::global);
 #endif
 }
 

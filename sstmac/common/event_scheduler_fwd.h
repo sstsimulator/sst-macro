@@ -63,7 +63,7 @@ class Component;
 class SubComponent;
 #else
 using sstmac::Component;
-using BaseComponent = sstmac::Component;
+using BaseComponent = sstmac::EventScheduler;
 #endif
 }
 

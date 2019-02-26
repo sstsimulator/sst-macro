@@ -54,6 +54,16 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
+StatSpyplot::StatSpyplot(SST::BaseComponent* comp, const std::string& name,
+            const std::string& statName, SST::Params& params) :
+  StatSpyplotParent(comp, name, statName, params)
+{
+  my_id_ = params.find<int>("id");
+  n_src_ = params.find<int>("nrows");
+  n_dst_ = params.find<int>("ncols");
+  vals_.resize(n_dst_);
+  fields_.resize(n_dst_);
+}
 
 void
 StatSpyplot::addData_impl(int source, int dest, uint64_t num)
@@ -71,7 +81,7 @@ void
 StatSpyplot::registerOutputFields(StatisticOutput *output)
 {
   for (int i=0; i < n_dst_; ++i){
-    auto str = sprockit::printf("spy%d-%d", my_id_, i);
+    auto str = sprockit::printf("spy%d", i);
     fields_[i] = output->registerField<uint64_t>(str.c_str());
   }
 }

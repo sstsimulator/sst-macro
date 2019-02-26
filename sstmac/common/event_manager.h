@@ -309,6 +309,8 @@ class EventManager
   struct StatGroup {
     std::list<StatisticBase*> stats;
     StatisticOutput* output;
+    std::string outputName;
+    StatGroup() : output(nullptr), outputName("csv") {}
   };
 
   StatisticOutput* dflt_stat_output_;

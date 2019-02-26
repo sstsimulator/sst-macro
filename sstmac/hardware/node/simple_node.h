@@ -64,10 +64,12 @@ class SimpleNode :
     Node,
     SimpleNode,
     "macro",
-    "simple",
+    "simple_node",
     SST_ELI_ELEMENT_VERSION(1,0,0),
     "Basic processor that only does timed_message computes",
     COMPONENT_CATEGORY_NETWORK)
+
+  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
 
   SimpleNode(uint32_t id, SST::Params& params);
 
