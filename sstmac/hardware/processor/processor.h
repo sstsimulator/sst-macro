@@ -66,8 +66,9 @@ namespace hw {
 class Processor
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(Processor)
-  SST_ELI_REGISTER_CTOR(SST::Params&, MemoryModel*,Node*)
+  SST_ELI_DECLARE_BASE(Processor)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&, MemoryModel*,Node*)
   virtual ~Processor();
 
   static void deleteStatics();

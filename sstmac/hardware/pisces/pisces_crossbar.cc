@@ -102,7 +102,7 @@ PiscesNtoMQueue(const std::string& selfname,
     outputs_(num_out_ports)
 
 {
-  arb_ = PiscesBandwidthArbitrator::create("macro", arb, bw);
+  arb_ = sprockit::create<PiscesBandwidthArbitrator>("macro", arb, bw);
 }
 
 LinkHandler*

@@ -58,7 +58,7 @@ namespace hw {
 class Star : public StructuredTopology
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     Star,
     "macro",

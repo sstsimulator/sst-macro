@@ -107,7 +107,7 @@ AbstractFatTree::writeBwParams(
 {
   if (switch_params->has_namespace("xbar")){
     SST::Params xbar_params = switch_params.find_prefix_params("xbar");
-    double bw = xbar_params.findUnits("bandwidth").toDouble();
+    double bw = xbar_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
     if (bw == 0){
       xbar_params->print_params();;
       spkt_abort_printf("got zero bandwidth for xbar");

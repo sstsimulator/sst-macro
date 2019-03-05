@@ -76,19 +76,19 @@ bool appHasParam(const std::string& name){
 }
 
 void getAppUnitParam(const std::string& name, double& val){
-  val = appParams().findUnits(name).toDouble();
+  val = appParams().find<SST::UnitAlgebra>(name).getValue().toDouble();
 }
 
 void getAppUnitParam(const std::string& name, int& val){
-  val = appParams().findUnits(name).getRoundedValue();
+  val = appParams().find<SST::UnitAlgebra>(name).getRoundedValue();
 }
 
 void getAppUnitParam(const std::string& name, const std::string& def, int& val){
-  val = appParams().findUnits(name, def).getRoundedValue();
+  val = appParams().find<SST::UnitAlgebra>(name, def).getRoundedValue();
 }
 
 void getAppUnitParam(const std::string& name, const std::string& def, double& val){
-  val = appParams().findUnits(name, def).getRoundedValue();
+  val = appParams().find<SST::UnitAlgebra>(name, def).getRoundedValue();
 }
 
 void getAppArrayParam(const std::string& name, std::vector<int>& vec){
@@ -203,7 +203,8 @@ void sstmac_advance_time(const char* param_name)
   auto& subMap = cache[parent->aid()];
   auto iter = subMap.find((void*)param_name);
   if (iter == subMap.end()){
-    subMap[(void*)param_name] = sstmac::Timestamp(parent->params().findUnits(param_name).toDouble());
+    subMap[(void*)param_name] =
+        sstmac::Timestamp(parent->params().find<SST::UnitAlgebra>(param_name).getValue().toDouble());
     iter = subMap.find((void*)param_name);
   }
   parent->compute(iter->second);

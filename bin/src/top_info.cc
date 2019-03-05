@@ -122,7 +122,8 @@ try_top_info_main(int argc, char **argv)
 
   SST::Params top_params = params->getNamespace("topology");
   auto top_name = top_params.find<std::string>("name");
-  hw::Topology* thetop = hw::Topology::create("macro", top_name, top_params);
+  hw::Topology* thetop = hw::Topology::getBuilderLibrary("macro")
+      ->getBuilder(top_name)->create(top_params);
   hw::CartesianTopology* top = test_cast(hw::CartesianTopology, thetop);
 
   std::cout << "Number of nodes:         " << top->numNodes() << std::endl;

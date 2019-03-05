@@ -154,6 +154,8 @@ App::dlopenCheck(int aid, SST::Params& params)
     sstmac_app_loaded(aid);
     dlopen_lock.unlock();
   }
+  UserAppCxxEmptyMain::aliasMains();
+  UserAppCxxFullMain::aliasMains();
 }
 
 
@@ -250,7 +252,8 @@ App::App(SST::Params& params, SoftwareId sid,
     auto iter = apis_.find(name);
     if (iter == apis_.end()){
       SST::Params api_params = params.find_prefix_params(name);
-      API* api = API::create("macro", name, api_params, this, os->node());
+      API* api = sprockit::create<API>(
+          "macro", name, api_params, this, os->node());
       apis_[name] = api;
     }
     apis_[alias] = apis_[name];
@@ -574,13 +577,35 @@ UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
 }
 
 void
+UserAppCxxFullMain::aliasMains()
+{
+  auto* lib = App::getBuilderLibrary("macro");
+  auto* builder = lib->getBuilder("UserAppCxxFullMain");
+  if (main_fxns_){
+    for (auto& pair : *main_fxns_){
+      lib->addBuilder(pair.first, builder);
+    }
+  }
+}
+
+void
 UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
 {
   if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
 
   (*main_fxns_)[name] = fxn;
-  auto* lib = App::getFactoryLibrary("macro");
-  lib->addFactory(name, lib->getFactory("UserAppCxxFullMain"));
+}
+
+void
+UserAppCxxEmptyMain::aliasMains()
+{
+  auto* lib = App::getBuilderLibrary("macro");
+  auto* builder = lib->getBuilder("UserAppCxxEmptyMain");
+  if (empty_main_fxns_){
+    for (auto& pair : *empty_main_fxns_){
+      lib->addBuilder(pair.first, builder);
+    }
+  }
 }
 
 void
@@ -647,8 +672,8 @@ UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
     empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
 
   (*empty_main_fxns_)[name] = fxn;
-  auto* lib = App::getFactoryLibrary("macro");
-  lib->addFactory(name, lib->getFactory("UserAppCxxEmptyMain"));
+  auto* lib = App::getBuilderLibrary("macro");
+  lib->addBuilder(name, lib->getBuilder("UserAppCxxEmptyMain"));
 }
 
 int

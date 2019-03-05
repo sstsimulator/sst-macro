@@ -172,7 +172,8 @@ libsstmac_hw_la_SOURCES +=  \
 
 if INTEGRATED_SST_CORE
 libsstmac_hw_la_SOURCES +=  \
-  pisces/pisces_simple_network.cc
+  pisces/pisces_simple_network.cc \
+  merlin/merlin_nic.cc
 
 nobase_library_include_HEADERS += \
   pisces/pisces_simple_network.h

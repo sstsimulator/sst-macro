@@ -54,7 +54,7 @@ class Hypercube :
   public Torus
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     Hypercube,
     "macro",

@@ -59,7 +59,7 @@ namespace hw {
 class FileTopology : public Topology
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     FileTopology,
     "macro",

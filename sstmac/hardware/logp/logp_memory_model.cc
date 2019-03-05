@@ -60,8 +60,8 @@ LogPMemoryModel::LogPMemoryModel(SST::Params& params, Node* nd)
   : MemoryModel(params, nd) //no self events
 {
 
-  lat_ = Timestamp(params.findUnits("latency").toDouble());
-  min_byte_delay_ = Timestamp(params.findUnits("bandwidth").inverse().toDouble());
+  lat_ = Timestamp(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+  min_byte_delay_ = Timestamp(params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
   link_ = new Link(min_byte_delay_, lat_);
 }
 

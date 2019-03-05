@@ -121,7 +121,7 @@ class FatTree :
 {
 
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     FatTree,
     "macro",
@@ -288,7 +288,7 @@ class FatTree :
 class TaperedFatTree : public AbstractFatTree
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     TaperedFatTree,
     "macro",

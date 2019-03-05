@@ -71,8 +71,9 @@ class API
 #endif
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(API)
-  SST_ELI_REGISTER_CTOR(SST::Params&,App*,SST::Component*)
+  SST_ELI_DECLARE_BASE(API)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&,App*,SST::Component*)
 
   virtual ~API();
 

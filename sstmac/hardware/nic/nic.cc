@@ -150,7 +150,7 @@ std::function<void(NetworkMessage*)>
 NIC::ctrlIoctl()
 {
   auto f = [=](NetworkMessage* msg){
-    logp_link_->send(new NicEvent(msg));
+    this->sendManagerMsg(msg);
   };
   return f;
 }
@@ -306,7 +306,7 @@ NIC::internodeSend(NetworkMessage* netmsg)
   //we might not have a logp overlay network
   if (negligibleSize(netmsg->byteLength())){
     ackSend(netmsg);
-    logp_link_->send(new NicEvent(netmsg));
+    sendManagerMsg(netmsg);
   } else {
     doSend(netmsg);
   }

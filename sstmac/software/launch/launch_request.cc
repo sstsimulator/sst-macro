@@ -80,7 +80,7 @@ SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
     params.find_array("core_affinities", core_affinities_);
   }
 
-  time_ = GlobalTimestamp(params.findUnits("start", "0s").toDouble());
+  time_ = GlobalTimestamp(params.find<SST::UnitAlgebra>("start", "0s").getValue().toDouble());
 
   if (params.contains("launch_cmd")){
     parseLaunchCmd(params);
@@ -94,11 +94,11 @@ SoftwareLaunchRequest::SoftwareLaunchRequest(SST::Params& params) :
     procs_per_node_ = params.find<int>("tasks_per_node", 1);
   }
 
-  allocator_ = sw::NodeAllocator::create("macro",
-     params.find<std::string>("allocation", "first_available"), params);
+  allocator_ = sprockit::create<sw::NodeAllocator>(
+     "macro", params.find<std::string>("allocation", "first_available"), params);
 
-  indexer_ = sw::TaskMapper::create("macro",
-     params.find<std::string>("indexing", "block"), params);
+  indexer_ = sprockit::create<sw::TaskMapper>(
+     "macro", params.find<std::string>("indexing", "block"), params);
 }
 
 SoftwareLaunchRequest::~SoftwareLaunchRequest()

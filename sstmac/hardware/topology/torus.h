@@ -58,7 +58,7 @@ namespace hw {
 class Torus : public CartesianTopology
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     Torus,
     "macro",

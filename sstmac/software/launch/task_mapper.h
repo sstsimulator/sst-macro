@@ -68,8 +68,9 @@ namespace sw {
 class TaskMapper : public sprockit::printable
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(TaskMapper)
-  SST_ELI_REGISTER_CTOR(SST::Params&)
+  SST_ELI_DECLARE_BASE(TaskMapper)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 
   virtual ~TaskMapper() throw ();
 

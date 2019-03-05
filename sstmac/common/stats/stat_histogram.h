@@ -56,7 +56,7 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
 {
   using Parent=SST::Statistics::MultiStatistic<double,uint64_t>;
  public:
-  SST_ELI_REGISTER_STATISTIC_TEMPLATE(
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
       StatHistogram,
       "macro",
       "histogram",
@@ -70,9 +70,9 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
       is_log_(false),
       SST::Statistics::MultiStatistic<BinType,CountType>(comp, name, subName, params)
   {
-    min_val_ = params.findUnits("min_value").toDouble();
-    max_val_ = params.findUnits("max_value").toDouble();
-    bin_size_ = params.findUnits("bin_size").toDouble();
+    min_val_ = params.find<SST::UnitAlgebra>("min_value").getValue().toDouble();
+    max_val_ = params.find<SST::UnitAlgebra>("max_value").getValue().toDouble();
+    bin_size_ = params.find<SST::UnitAlgebra>("bin_size").getValue().toDouble();
     int num_bins = params.find<int>("num_bins", 20);
     is_log_ = params.find<bool>("logarithmic", false);
     if (is_log_){
@@ -128,7 +128,7 @@ class StatHistogram : public SST::Statistics::MultiStatistic<BinType,CountType>
 template <class BinType>
 class SimpleStatHistogram : public Statistic<BinType> {
  public:
-  SST_ELI_REGISTER_STATISTIC_TEMPLATE(
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
       SimpleStatHistogram,
       "macro",
       "simple_histogram",
@@ -159,12 +159,6 @@ class SimpleStatHistogram : public Statistic<BinType> {
  private:
   StatHistogram<BinType,uint64_t> hist_;
 };
-
-SST_ELI_INSTANTIATE_MULTI_STATISTIC(StatHistogram, double, uint64_t)
-SST_ELI_INSTANTIATE_MULTI_STATISTIC(StatHistogram, double, uint32_t)
-SST_ELI_INSTANTIATE_STATISTIC(SimpleStatHistogram, double, double)
-SST_ELI_INSTANTIATE_STATISTIC(SimpleStatHistogram, uint32_t, u32)
-SST_ELI_INSTANTIATE_STATISTIC(SimpleStatHistogram, uint64_t, u64)
 
 }
 

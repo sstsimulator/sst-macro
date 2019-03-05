@@ -62,8 +62,9 @@ namespace sw {
 class ThreadContext
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(ThreadContext)
-  SST_ELI_REGISTER_DEFAULT_CTOR()
+  SST_ELI_DECLARE_BASE(ThreadContext)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_DEFAULT_CTOR()
 
   virtual ~ThreadContext() {}
 

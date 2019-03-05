@@ -93,8 +93,8 @@ class StatisticBase {
 class StatisticOutput
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(StatisticOutput)
-  SST_ELI_REGISTER_CTOR(SST::Params&)
+  SST_ELI_DECLARE_BASE(StatisticOutput)
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 
   StatisticOutput(SST::Params& params){}
   ~StatisticOutput(){}
@@ -287,8 +287,8 @@ class Statistic :
 {
 
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(Statistic)
-  SST_ELI_REGISTER_CTOR(EventScheduler*, const std::string&, const std::string&, SST::Params&)
+  SST_ELI_DECLARE_BASE(Statistic)
+  SST_ELI_DECLARE_CTOR(EventScheduler*, const std::string&, const std::string&, SST::Params&)
   virtual ~Statistic(){}
 
  protected:
@@ -300,7 +300,7 @@ class Statistic :
   }
 };
 
-#define SST_ELI_REGISTER_STATISTIC_TEMPLATE(cls,lib,name,version,desc,interface) \
+#define SST_ELI_DECLARE_STATISTIC_TEMPLATE(cls,lib,name,version,desc,interface) \
   static const char* SPKT_getLibrary(){ \
     return lib; \
   } \
@@ -318,7 +318,7 @@ template <class T>
 class NullStatisticBase<T,false> : public Statistic<T>
 {
  public:
-  SST_ELI_REGISTER_STATISTIC_TEMPLATE(
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
      NullStatistic,
      "macro",
      "null",
@@ -344,7 +344,7 @@ class NullStatisticBase<std::tuple<Args...>,false> :
     public Statistic<std::tuple<Args...>>
 {
  public:
-  SST_ELI_REGISTER_STATISTIC_TEMPLATE(
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
      NullStatistic,
      "macro",
      "null",
@@ -366,7 +366,7 @@ class NullStatisticBase<std::tuple<Args...>,false> :
 template <class T>
 class NullStatisticBase<T,true> : public Statistic<T> {
  public:
-  SST_ELI_REGISTER_STATISTIC_TEMPLATE(
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
      NullStatistic,
      "macro",
      "null",
@@ -428,10 +428,10 @@ using MultiStatistic = Statistic<std::tuple<Args...>>;
            const std::string& si, SST::Params& p) : \
       cls<field>(bc,sn,si,p) {} \
     bool SPKT_isLoaded() const { \
-     return sprockit::Instantiate< \
+     return sprockit::InstantiateBuilder< \
          SST::Statistics::Statistic<field>, \
          cls##_##field##_##shortName>::isLoaded() \
-        && sprockit::Instantiate< \
+        && sprockit::InstantiateBuilder< \
          SST::Statistics::Statistic<field>, \
          sstmac::NullStatistic<field>>::isLoaded(); \
     } \
@@ -461,8 +461,8 @@ using MultiStatistic = Statistic<std::tuple<Args...>>;
          const std::string& si, SST::Params& p) : \
       cls<__VA_ARGS__>(bc,sn,si,p) {} \
     bool SPKT_isLoaded() const { \
-        return sprockit::Instantiate<SST::Statistics::Statistic<tuple>,name>::isLoaded() \
-        && sprockit::Instantiate<SST::Statistics::Statistic<tuple>,sstmac::NullStatistic<tuple>>::isLoaded(); \
+        return sprockit::InstantiateBuilder<SST::Statistics::Statistic<tuple>,name>::isLoaded() \
+        && sprockit::InstantiateBuilder<SST::Statistics::Statistic<tuple>,sstmac::NullStatistic<tuple>>::isLoaded(); \
     } \
     static const char* SPKT_fieldName(){ return #tuple; } \
     static const char* SPKT_fieldShortName(){ return #tuple; } \

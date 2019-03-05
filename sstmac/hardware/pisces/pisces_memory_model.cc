@@ -81,15 +81,16 @@ PiscesMemoryModel::PiscesMemoryModel(SST::Params& params, Node *nd) :
     channel_requests_.emplace_back(0,Timestamp(),nullptr);
   }
 
-  packet_size_ = params.findUnits("mtu", "100GB").getRoundedValue();
+  packet_size_ = params.find<SST::UnitAlgebra>("mtu", "100GB").getRoundedValue();
 
   std::string max_bw_param = params.find<std::string>("total_bandwidth");
   SST::UnitAlgebra max_bw(max_bw_param);
-  min_agg_byte_delay_ = Timestamp(max_bw.inverse().toDouble());
+  min_agg_byte_delay_ = Timestamp(max_bw.getValue().inverse().toDouble());
   min_flow_byte_delay_ =
-      Timestamp(params.findUnits("max_single_bandwidth", max_bw_param).inverse().toDouble());
-  latency_ = Timestamp(params.findUnits("latency").toDouble());
-  arb_ = PiscesBandwidthArbitrator::create("macro", "cut_through", max_bw.toDouble());
+      Timestamp(params.find<SST::UnitAlgebra>("max_single_bandwidth", max_bw_param).getValue().inverse().toDouble());
+  latency_ = Timestamp(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+  arb_ = sprockit::create<PiscesBandwidthArbitrator>("macro", "cut_through", max_bw.getValue().toDouble());
+
 }
 
 PiscesMemoryModel::~PiscesMemoryModel()

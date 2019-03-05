@@ -57,7 +57,7 @@ namespace hw {
 class Cascade : public CartesianTopology
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     Cascade,
     "macro",

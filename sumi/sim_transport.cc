@@ -215,14 +215,14 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
     server = safe_cast(SumiServer, server_lib);
   }
 
-  post_rdma_delay_ = Timestamp(params.findUnits("post_rdma_delay", "0s").toDouble());
-  post_header_delay_ = Timestamp(params.findUnits("post_header_delay", "0s").toDouble());
-  poll_delay_ = Timestamp(params.findUnits("poll_delay", "0s").toDouble());
+  post_rdma_delay_ = Timestamp(params.find<SST::UnitAlgebra>("post_rdma_delay", "0s").getValue().toDouble());
+  post_header_delay_ = Timestamp(params.find<SST::UnitAlgebra>("post_header_delay", "0s").getValue().toDouble());
+  poll_delay_ = Timestamp(params.find<SST::UnitAlgebra>("poll_delay", "0s").getValue().toDouble());
 
-  rdma_pin_latency_ = Timestamp(params.findUnits("rdma_pin_latency", "0s").toDouble());
-  rdma_page_delay_ = Timestamp(params.findUnits("rdma_page_delay", "0s").toDouble());
+  rdma_pin_latency_ = Timestamp(params.find<SST::UnitAlgebra>("rdma_pin_latency", "0s").getValue().toDouble());
+  rdma_page_delay_ = Timestamp(params.find<SST::UnitAlgebra>("rdma_page_delay", "0s").getValue().toDouble());
   pin_delay_ = rdma_pin_latency_.ticks() || rdma_page_delay_.ticks();
-  page_size_ = params.findUnits("rdma_page_size", "4096").getRoundedValue();
+  page_size_ = params.find<SST::UnitAlgebra>("rdma_page_size", "4096").getRoundedValue();
 
   rank_mapper_ = sstmac::sw::TaskMapping::globalMapping(sid().app_);
   nproc_ = rank_mapper_->nproc();

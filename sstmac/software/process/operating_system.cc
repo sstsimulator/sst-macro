@@ -345,11 +345,9 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
   my_addr_ = node_ ? node_->addr() : 0;
 
   //assume macro for now
-  compute_sched_ = ComputeScheduler::create(
-                      "macro", params.find<std::string>("compute_scheduler", "simple"),
-                      params, this,
-                      node_ ? node_->proc()->ncores() : 1,
-                      node_ ? node_->nsocket() : 1);
+  compute_sched_ = sprockit::create<ComputeScheduler>(
+    "macro", params.find<std::string>("compute_scheduler", "simple"),
+    params, this, node_ ? node_->proc()->ncores() : 1, node_ ? node_->nsocket() : 1);
 
 #if SSTMAC_HAVE_GRAPHVIZ
   stat_descr_t stat_descr;
@@ -384,8 +382,8 @@ OperatingSystem::rebuildMemoizations()
     if (iter == memoize_models_.end()){
       SST::Params memo_params = params_.find_prefix_params(pair.first);
       memo_params.insert("fileroot", pair.first);
-      auto* model = RegressionModel::create("macro", pair.second,
-                                            node(), pair.first, "", memo_params);
+      auto* model = sprockit::create<RegressionModel>(
+        "macro", pair.second, node(), pair.first, "", memo_params);
       memoize_models_[pair.first] = model;
       //EventManager::global->registerStat(model, nullptr);
     }
@@ -473,8 +471,8 @@ OperatingSystem::initThreading(SST::Params& params)
   lock.unlock();
 #endif
 
-  des_context_ = ThreadContext::create(
-    "macro", params.find<std::string>("content", ThreadContext::defaultThreading()));
+  des_context_ = sprockit::create<ThreadContext>(
+     "macro", params.find<std::string>("content", ThreadContext::defaultThreading()));
 
   des_context_->initContext();
 
@@ -645,8 +643,8 @@ OperatingSystem::ImplicitState*
 OperatingSystem::getImplicitState()
 {
   if (!implicit_memo_state_){
-      implicit_memo_state_ = sstmac::sw::OperatingSystem::ImplicitState::create(
-         "macro", params_.find<std::string>("implicit_state", "null"), params_);
+    implicit_memo_state_ = sprockit::create<sstmac::sw::OperatingSystem::ImplicitState>(
+        "macro", params_.find<std::string>("implicit_state", "null"), params_);
   }
   return implicit_memo_state_;
 }
@@ -896,7 +894,7 @@ OperatingSystem::outcastAppStart(int my_rank, int aid, const std::string& app_ns
                                      aid, app_ns, mapping, dst_rank, dst_nid,
                                      addr(), app_params);
     os_debug("outcast to %d: %s", dst_rank, lev->toString().c_str());
-    node_->nic()->logPLink()->send(new hw::NicEvent(lev));
+    node_->nic()->sendManagerMsg(lev);
   }
 }
 

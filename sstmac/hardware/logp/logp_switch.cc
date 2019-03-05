@@ -91,23 +91,23 @@ LogPSwitch::LogPSwitch(uint32_t cid, SST::Params& params) :
   top_ = Topology::staticTopology(topParams);
 
   std::string net_bw = params.find<std::string>("bandwidth");
-  byte_delay_ = Timestamp(SST::UnitAlgebra(net_bw).inverse().toDouble());
+  byte_delay_ = Timestamp(SST::UnitAlgebra(net_bw).getValue().inverse().toDouble());
 
-  hop_latency_ = Timestamp(params.findUnits("hop_latency").toDouble());
+  hop_latency_ = Timestamp(params.find<SST::UnitAlgebra>("hop_latency").getValue().toDouble());
 
-  out_in_lat_ = Timestamp(params.findUnits("out_in_latency").toDouble());
+  out_in_lat_ = Timestamp(params.find<SST::UnitAlgebra>("out_in_latency").getValue().toDouble());
 
   if (params.contains("random_seed")){
     random_seed_ = params.find<int>("random_seed");
     rng_ = RNG::MWC::construct();
-    random_max_extra_latency_ = Timestamp(params.findUnits("random_max_extra_latency").toDouble());
-    random_max_extra_byte_delay_ = Timestamp(params.findUnits("random_max_extra_byte_delay").toDouble());
+    random_max_extra_latency_ = Timestamp(params.find<SST::UnitAlgebra>("random_max_extra_latency").getValue().toDouble());
+    random_max_extra_byte_delay_ = Timestamp(params.find<SST::UnitAlgebra>("random_max_extra_byte_delay").getValue().toDouble());
   }
 
   SST::Params contention_params = params.find_prefix_params("contention");
   if (contention_params.contains("model")){
-    contention_model_ = ContentionModel::create("macro",
-      contention_params.find<std::string>("model"), contention_params);
+    contention_model_ = sprockit::create<ContentionModel>(
+      "macro", contention_params.find<std::string>("model"), contention_params);
   }
 
   nic_links_.resize(top_->numNodes());

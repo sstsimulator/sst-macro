@@ -58,7 +58,7 @@ namespace hw {
 class DragonflyPlus : public Dragonfly
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     DragonflyPlus,
     "macro",

@@ -234,7 +234,7 @@ ParallelRuntime::initPartitionParams(SST::Params& params)
     deflt = "serial";
   }
   auto type = params.find<std::string>("partition", deflt);
-  part_ = Partition::create("macro", type, params, this);
+  part_ = sprockit::create<Partition>("macro", type, params, this);
 #endif
 }
 
@@ -248,7 +248,7 @@ ParallelRuntime::staticRuntime(SST::Params& params)
   rt_lock.lock();
   if (!static_runtime_){
     auto type = params.find<std::string>("runtime");
-    static_runtime_ = ParallelRuntime::create("macro", type, params);
+    static_runtime_ = sprockit::create<ParallelRuntime>("macro", type, params);
   }
   rt_lock.unlock();
   return static_runtime_;
@@ -267,9 +267,9 @@ ParallelRuntime::initRuntimeParams(SST::Params& params)
 
 
 
-  buf_size_ = params.findUnits("serialization_buffer_size", "16KB").getRoundedValue();
+  buf_size_ = params.find<SST::UnitAlgebra>("serialization_buffer_size", "16KB").getRoundedValue();
 
-  backupSize = params.findUnits("backup_buffer_size", "1MB").getRoundedValue();
+  backupSize = params.find<SST::UnitAlgebra>("backup_buffer_size", "1MB").getRoundedValue();
 
   send_buffers_.resize(nproc_);
   recv_buffers_.resize(nproc_);

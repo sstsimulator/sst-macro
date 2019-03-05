@@ -91,14 +91,14 @@ SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
 {
   SST::Params rtr_params = params.find_prefix_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
-  router_ = Router::create("macro", rtr_params.find<std::string>("name"),
-                           rtr_params, top_, this);
+  router_ = sprockit::create<Router>(
+   "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
 
   congestion_ = params.find<bool>("congestion", true);
   vtk_flicker_ = params.find<bool>("vtk_flicker", true);
 
   SST::Params link_params = params.find_prefix_params("link");
-  link_bw_ = link_params.findUnits("bandwidth").toDouble();
+  link_bw_ = link_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
 
   // Ensure topology is set
   Topology::staticTopology(params);

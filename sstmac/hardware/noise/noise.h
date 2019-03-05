@@ -55,8 +55,9 @@ namespace sstmac {
 class NoiseModel
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(NoiseModel)
-  SST_ELI_REGISTER_CTOR(SST::Params&)
+  SST_ELI_DECLARE_BASE(NoiseModel)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 
   virtual ~NoiseModel(){}
 

@@ -60,8 +60,8 @@ LogPNIC::LogPNIC(SST::Params& params, Node* parent) :
   NIC(params, parent)
 {
   SST::Params inj_params = params.find_prefix_params("injection");
-  inj_byte_delay_ = Timestamp(inj_params.findUnits("bandwidth").inverse().toDouble());
-  inj_lat_ = Timestamp(inj_params.findUnits("latency").toDouble());
+  inj_byte_delay_ = Timestamp(inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().inverse().toDouble());
+  inj_lat_ = Timestamp(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 }
 
 LogPNIC::~LogPNIC()

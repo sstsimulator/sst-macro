@@ -63,11 +63,11 @@ namespace hw {
 class MemoryModel : public SubComponent
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(MemoryModel)
-  SST_ELI_REGISTER_CTOR(SST::Params&,Node*)
+  SST_ELI_DECLARE_BASE(MemoryModel)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&,Node*)
 
-  MemoryModel(SST::Params& params,
-               Node* Node);
+  MemoryModel(SST::Params& params, Node* Node);
 
   static void deleteStatics();
 

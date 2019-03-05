@@ -101,8 +101,9 @@ class NicEvent :
 class NIC : public ConnectableSubcomponent
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(NIC)
-  SST_ELI_REGISTER_CTOR(SST::Params&,Node*)
+  SST_ELI_DECLARE_BASE(NIC)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&,Node*)
 
   typedef enum {
     Injection,
@@ -168,8 +169,8 @@ class NIC : public ConnectableSubcomponent
 
   void sendToNode(NetworkMessage* netmsg);
 
-  EventLink* logPLink() const {
-    return logp_link_;
+  virtual void sendManagerMsg(NetworkMessage* msg){
+    logp_link_->send(new NicEvent(msg));
   }
 
   virtual std::function<void(NetworkMessage*)> ctrlIoctl();

@@ -110,8 +110,9 @@ void resizeTopology(int max_nproc, sprockit::SimParameters::ptr params, bool ver
 namespace sstmac {
 
 struct Benchmark {
-  SST_ELI_REGISTER_BASE_DEFAULT(Benchmark)
-  SST_ELI_REGISTER_DEFAULT_CTOR()
+  SST_ELI_DECLARE_BASE(Benchmark)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_DEFAULT_CTOR()
 
   virtual void run() = 0;
 

@@ -60,6 +60,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 #include <sprockit/output.h>
+#include <thread>
 
 #include <sstmac/sst_core/integrated_component.h>
 #include <sstmac/sst_core/connectable_wrapper.h>
@@ -101,16 +102,17 @@ Node::Node(uint32_t id, SST::Params& params)
   next_outgoing_id_.setSrcNode(my_addr_);
 
   SST::Params nic_params = params.find_prefix_params("nic");
-  nic_ = NIC::create("macro", nic_params.find<std::string>("name"),
-                      nic_params, this);
+  nic_ = sprockit::create<NIC>(
+        "macro", nic_params.find<std::string>("name"), nic_params, this);
 
   SST::Params mem_params = params.find_prefix_params("memory");
-  mem_model_ = MemoryModel::create("macro", mem_params.find<std::string>("name"),
-                                   mem_params, this);
+  mem_model_ = sprockit::create<MemoryModel>(
+        "macro", mem_params.find<std::string>("name"), mem_params, this);
 
   SST::Params proc_params = params.find_prefix_params("proc");
-  proc_ = Processor::create("macro", proc_params.find<std::string>("processor", "instruction"),
-                             proc_params, mem_model_, this);
+  proc_ = sprockit::create<Processor>(
+     "macro", proc_params.find<std::string>("processor", "instruction"),
+      proc_params, mem_model_, this);
 
   nsocket_ = params.find<int>("nsockets", 1);
 
@@ -121,8 +123,8 @@ Node::Node(uint32_t id, SST::Params& params)
 
   launchRoot_ = params.find<int>("launchRoot", 0);
   if (my_addr_ == launchRoot_){
-    job_launcher_ =   JobLauncher::create("macro", params.find<std::string>("job_launcher", "default"),
-                                          params, os_);
+    job_launcher_ = sprockit::create<JobLauncher>(
+      "macro", params.find<std::string>("job_launcher", "default"), params, os_);
   }
 }
 

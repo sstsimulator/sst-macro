@@ -64,7 +64,7 @@ class DefaultDGEMM :
     "defaut DGEMM kernel")
 
   DefaultDGEMM(SST::Params& params){
-    cache_size_bytes_ = params.findUnits("dgemm_cache_size", "32KB").getRoundedValue();
+    cache_size_bytes_ = params.find<SST::UnitAlgebra>("dgemm_cache_size", "32KB").getRoundedValue();
     loop_unroll_ = params.find<double>("dgemm_loop_unroll", 4);
     pipeline_ = params.find<double>("dgemm_pipeline_efficiency", 2);
   }

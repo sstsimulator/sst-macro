@@ -54,8 +54,8 @@ class Dragonfly;
 
 class InterGroupWiring {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(InterGroupWiring)
-  SST_ELI_REGISTER_CTOR(
+  SPKT_DECLARE_BASE(InterGroupWiring)
+  SPKT_DECLARE_CTOR(
     SST::Params&,
     int, /* a=num switches per group */
     int, /* g=num groups */
@@ -119,7 +119,7 @@ class InterGroupWiring {
 class Dragonfly : public CartesianTopology
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     Dragonfly,
     "macro",

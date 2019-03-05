@@ -65,25 +65,24 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
   initLinks(params);
 
   SST::Params inj_params = params.find_prefix_params("injection");
-  double bw = inj_params.findUnits("bandwidth").toDouble();
+  double bw = inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
   //PiscesSender::configurePayloadPortLatency(inj_params);
   std::string arb = inj_params.find<std::string>("arbirtrator");
-  inj_buffer_ = new PiscesBuffer("merlin-inj", arb, bw, inj_params.findUnits("mtu").getRoundedValue(),
+  inj_buffer_ = new PiscesBuffer("merlin-inj", arb, bw, inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue(),
                                  comp, 1);
 
   LinkHandler* handler = newLinkHandler(this, &PiscesSimpleNetwork::creditArrived);
   SST::Link* selflink = comp->configureSelfLink("simple-inject", timeConverter(), handler);
   EventLink* sublink = new EventLink("pisces-inject", Timestamp(), selflink);
   inj_buffer_->setInput(0, 0, sublink);
-
-  arb_ = PiscesBandwidthArbitrator::create("macro", arb, bw);
+  arb_ = sprockit::create<PiscesBandwidthArbitrator>("macro", arb, bw);
 }
 
 void
 PiscesSimpleNetwork::initLinks(SST::Params& params)
 {
   SST::Params inj_params = params.find_prefix_params("injection");
-  int credits = inj_params.findUnits("credits").getRoundedValue();
+  int credits = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
   SST::Component* parent = getTrueComponent();
   SST::LinkMap* link_map = SST::Simulation::getSimulation()->getComponentLinkMap(parent->getId());
   for (auto& pair : link_map->getLinkMap()){

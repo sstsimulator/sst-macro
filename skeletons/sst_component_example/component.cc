@@ -55,8 +55,9 @@ class TestModule : public SSTElementPythonModule {
  */
 class TestComponent : public ConnectableComponent {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(TestComponent)
-  SST_ELI_REGISTER_CTOR(uint32_t,SST::Params&)
+  SST_ELI_DECLARE_BASE(TestComponent)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(uint32_t,SST::Params&)
   /**
    * @brief test_component Standard constructor for all components
    *  with 3 basic parameters
@@ -107,7 +108,7 @@ class DummySwitch : public TestComponent {
     initLinks(params);
     //init params
     num_ping_pongs_ = params.find<int>("num_ping_pongs", 2);
-    latency_ = Timestamp(params.findUnits("latency").toDouble());
+    latency_ = Timestamp(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   }
 
   std::string toString() const override { return "dummy";}

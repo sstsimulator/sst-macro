@@ -89,8 +89,9 @@ typedef std::map<long, mutex_t*> condition_t;
 class App : public Thread
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(App)
-  SST_ELI_REGISTER_CTOR(SST::Params&,SoftwareId, OperatingSystem*)
+  SST_ELI_DECLARE_BASE(App)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&,SoftwareId,OperatingSystem*)
 
   typedef void (*destructor_fxn)(void*);
 
@@ -298,6 +299,8 @@ class UserAppCxxFullMain : public App
 
   static void deleteStatics();
 
+  static void aliasMains();
+
   struct argv_entry {
     char** argv;
     int argc;
@@ -327,6 +330,8 @@ class UserAppCxxEmptyMain : public App
                           OperatingSystem* os);
 
   static void registerMainFxn(const char* name, App::empty_main_fxn fxn);
+
+  static void aliasMains();
 
   int skeletonMain() override;
 

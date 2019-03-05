@@ -79,8 +79,9 @@ namespace hw {
 class Router : public sprockit::printable
 {
  public:
-   SST_ELI_REGISTER_BASE_DEFAULT(Router)
-   SST_ELI_REGISTER_CTOR(SST::Params&,Topology*,NetworkSwitch*)
+   SST_ELI_DECLARE_BASE(Router)
+   SST_ELI_DECLARE_DEFAULT_INFO()
+   SST_ELI_DECLARE_CTOR(SST::Params&,Topology*,NetworkSwitch*)
 
   /**
    * @brief route Makes a routing decision for the packet.

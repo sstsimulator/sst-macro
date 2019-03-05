@@ -52,3 +52,12 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <math.h>
 #include <sprockit/keyword_registration.h>
 
+namespace sstmac {
+
+SST_ELI_INSTANTIATE_MULTI_STATISTIC(StatHistogram, double, uint64_t)
+SST_ELI_INSTANTIATE_MULTI_STATISTIC(StatHistogram, double, uint32_t)
+SST_ELI_INSTANTIATE_STATISTIC(SimpleStatHistogram, double, double)
+SST_ELI_INSTANTIATE_STATISTIC(SimpleStatHistogram, uint32_t, u32)
+SST_ELI_INSTANTIATE_STATISTIC(SimpleStatHistogram, uint64_t, u64)
+
+}

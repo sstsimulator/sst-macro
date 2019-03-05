@@ -194,12 +194,12 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
   SST::Params ej_params = params.find_prefix_params("ejection");
 
   SST::Params link_params = switch_params.get_namespace("link");
-  Timestamp hop_latency(link_params.findUnits("latency").toDouble());
-  Timestamp injection_latency = Timestamp(inj_params.findUnits("latency").toDouble());
+  Timestamp hop_latency(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
+  Timestamp injection_latency = Timestamp(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 
   Timestamp ejection_latency = injection_latency;
   if (ej_params.contains("latency")){
-    ejection_latency = Timestamp(ej_params.findUnits("latency").toDouble());
+    ejection_latency = Timestamp(ej_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   }
 
   lookahead_ = std::min(injection_latency, hop_latency);
@@ -251,11 +251,11 @@ Interconnect::connectEndpoints(EventManager* mgr,
   SST::Params link_params= sw_params.find_prefix_params("link");
   Timestamp ej_latency;
   if (ej_params.contains("latency")){
-    ej_latency = Timestamp(ej_params.findUnits("latency").toDouble());
+    ej_latency = Timestamp(ej_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   } else {
-    ej_latency = Timestamp(link_params.findUnits("latency").toDouble());
+    ej_latency = Timestamp(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   }
-  Timestamp inj_latency(inj_params.findUnits("latency").toDouble());
+  Timestamp inj_latency(inj_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 
 
   for (int i=0; i < num_switches; ++i){
@@ -405,7 +405,8 @@ Interconnect::buildEndpoints(SST::Params& node_params,
         if (pos == std::string::npos){
           nodeType = nodeType + "_node";
         }
-        Node* nd = Node::create("macro", nodeType, comp_id, node_params);
+        Node* nd = sprockit::create<Node>(
+             "macro", nodeType, comp_id, node_params);
         node_params->removeParam("id"); //you don't have to let it linger
         nodes_[nid] = nd;
         components_[nid] = nd;
@@ -435,7 +436,8 @@ Interconnect::buildSwitches(SST::Params& switch_params,
       if (pos == std::string::npos){
         swType = swType + "_switch";
       }
-      switches_[i] = NetworkSwitch::create("macro", swType, comp_id, switch_params);
+      switches_[i] = sprockit::create<NetworkSwitch>(
+         "macro", swType, comp_id, switch_params);
     } else {
       switches_[i] = nullptr;
     }
@@ -469,7 +471,7 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
   int my_thread = mgr->thread();
 
   SST::Params port_params = switch_params.get_namespace("link");
-  Timestamp linkLatency(port_params.findUnits("latency").toDouble());
+  Timestamp linkLatency(port_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
 
   for (int i=0; i < num_switches_; ++i){
     interconn_debug("interconnect: connecting switch %i", i);

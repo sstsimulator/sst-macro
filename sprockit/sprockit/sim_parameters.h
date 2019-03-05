@@ -59,6 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/sstmac_config.h>
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/params.h>
+#include <sst/core/unitAlgebra.h>
 #else
 namespace SST {
 class Params;
@@ -506,11 +507,24 @@ struct UnitAlgebra
     return value_;
   }
 
+  UnitAlgebra& getValue(){
+    return *this;
+  }
+
  private:
   UnitAlgebra(double v) : value_(v){}
 
   double value_;
 
+};
+
+template <> struct CallGetParam<UnitAlgebra>  {
+  static UnitAlgebra get(sprockit::SimParameters::ptr& ptr, const std::string& key){
+    return UnitAlgebra(ptr->getParam(key));
+  }
+  static UnitAlgebra getOptional(sprockit::SimParameters::ptr &ptr, const std::string& key, const std::string& def){
+    return UnitAlgebra(ptr->getOptionalParam(key,def));
+  }
 };
 
 class Params {
@@ -578,14 +592,6 @@ class Params {
 
   void insert(const SST::Params& params){
     params.params_->combineInto(params_);
-  }
-
-  UnitAlgebra findUnits(const std::string& key){
-    return UnitAlgebra(params_->getParam(key));
-  }
-
-  UnitAlgebra findUnits(const std::string& key, const std::string& def){
-    return UnitAlgebra(params_->getOptionalParam(key, def));
   }
 
   template <class T> T find(const std::string& key) {

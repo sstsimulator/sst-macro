@@ -78,8 +78,9 @@ class NetworkSwitch :
   public ConnectableComponent
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(NetworkSwitch)
-  SST_ELI_REGISTER_CTOR(uint32_t,SST::Params&)
+  SST_ELI_DECLARE_BASE(NetworkSwitch)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(uint32_t,SST::Params&)
 
   virtual void init(unsigned int phase);
 

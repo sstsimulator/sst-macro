@@ -74,7 +74,7 @@ InstructionProcessor(SST::Params& params,
                       MemoryModel* mem, Node* nd) :
   SimpleProcessor(params, mem, nd)
 {
-  negligible_bytes_ = params.findUnits("negligible_compute_bytes", "64B").getRoundedValue();
+  negligible_bytes_ = params.find<SST::UnitAlgebra>("negligible_compute_bytes", "64B").getRoundedValue();
 
   double parallelism = params.find<double>("parallelism", 1.0);
 

@@ -62,8 +62,9 @@ namespace hw {
 class PiscesBandwidthArbitrator
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(PiscesBandwidthArbitrator)
-  SST_ELI_REGISTER_CTOR(double)
+  SST_ELI_DECLARE_BASE(PiscesBandwidthArbitrator)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(double)
 
   struct IncomingPacket
   {

@@ -244,7 +244,7 @@ runParams(opts& oo,
   mgr->interconnect()->topology()->outputXYZ(oo.outputXYZ);
 
   double start = sstmacWallTime();
-  GlobalTimestamp stop_time(params.findUnits("stop_time", "0s").toDouble());
+  GlobalTimestamp stop_time(params.find<SST::UnitAlgebra>("stop_time", "0s").getValue().toDouble());
   GlobalTimestamp runtime;
   try {
     runtime = mgr->run(stop_time);
@@ -344,7 +344,8 @@ runStandalone(int argc, char** argv)
   null_params->addParam("argv", argv_sstr.str());
 
   null_params->addParamOverride("notify", "false");
-  sstmac::sw::App* a = sstmac::sw::App::create("macro", "sstmac_app_name", null_params, id, &os);
+  sstmac::sw::App* a = sstmac::sw::App::getBuilderLibrary("macro")
+      ->getBuilder("sstmac_app_name")->create(null_params, id, &os);
   os.startApp(a, "");
   return a->rc();
 #else
@@ -410,7 +411,8 @@ tryMain(sprockit::SimParameters::ptr params,
 #else
   SST::Params mainParams(params);
   if (!oo.benchmark.empty()){
-    Benchmark* bm = Benchmark::create("macro", oo.benchmark);
+    Benchmark* bm = Benchmark::getBuilderLibrary("macro")
+        ->getBuilder(oo.benchmark)->create();
     bm->run();
     return 0;
   }

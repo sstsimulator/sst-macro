@@ -72,8 +72,9 @@ class NodeAllocator :
   public sprockit::printable
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(NodeAllocator)
-  SST_ELI_REGISTER_CTOR(SST::Params&)
+  SST_ELI_DECLARE_BASE(NodeAllocator)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 
   virtual ~NodeAllocator() throw ();
 

@@ -90,8 +90,8 @@ Dragonfly::Dragonfly(SST::Params& params) :
     h_ = params.find<int>("h");
   }
 
-  group_wiring_ = InterGroupWiring::create("macro", params.find<std::string>("inter_group", "circulant"),
-                                           params, a_, g_, h_);
+  group_wiring_ = sprockit::create<InterGroupWiring>(
+   "macro", params.find<std::string>("inter_group", "circulant"), params, a_, g_, h_);
 }
 
 void
@@ -303,7 +303,7 @@ static inline int mod(int a, int b){
 class SingleLinkGroupWiring : public InterGroupWiring
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     InterGroupWiring,
     SingleLinkGroupWiring,
     "macro",
@@ -374,7 +374,7 @@ class SingleLinkGroupWiring : public InterGroupWiring
 class CirculantGroupWiring : public InterGroupWiring
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     InterGroupWiring,
     CirculantGroupWiring,
     "macro",
@@ -452,7 +452,7 @@ class CirculantGroupWiring : public InterGroupWiring
 class AllToAllGroupWiring : public InterGroupWiring
 {
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     InterGroupWiring,
     AllToAllGroupWiring,
     "macro",

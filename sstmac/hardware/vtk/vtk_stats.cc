@@ -362,7 +362,7 @@ StatVTK::outputExodus(const std::string& fileroot,
 StatVTK::StatVTK(SST::Params& params) :
   StatCollector(params), active_(true)
 {
-  min_interval_ = sstmac::Timestamp(params.findUnits("min_interval", "1us").toDouble());
+  min_interval_ = sstmac::Timestamp(params.find<SST::UnitAlgebra>("min_interval", "1us").getValue().toDouble());
   display_cfg_.bidirectional_shift = params.find<double>("bidirectional_shift", 0.02);
   display_cfg_.highlight_link_color = params.find<double>("highlight_link_color", 1.0);
   display_cfg_.highlight_switch_color = params.find<double>("highlight_switch_color", 1.0);

@@ -203,21 +203,21 @@ main(int argc, char** argv)
   double offered_load_bw = 0;
 
   if (params.contains("pisces_injection_bandwidth")) {
-    offered_load_bw = params.findUnits("pisces_injection_bandwidth").toDouble();
+    offered_load_bw = params.find<SST::UnitAlgebra>("pisces_injection_bandwidth").getValue().toDouble();
   } else if (params.contains("cycle_accurate_switch_bandwidth_n2r")) {
-    offered_load_bw = params.findUnits("cycle_accurate_switch_bandwidth_n2r").toDouble();
+    offered_load_bw = params.find<SST::UnitAlgebra>("cycle_accurate_switch_bandwidth_n2r").getValue().toDouble();
   } else if (params.contains("network_injector_capacity_bw")) {
-    offered_load_bw = params.findUnits("network_injector_capacity_bw").toDouble();
+    offered_load_bw = params.find<SST::UnitAlgebra>("network_injector_capacity_bw").getValue().toDouble();
   } else if (params.contains("packet_switch_bandwidth_n2r")) {
-    offered_load_bw = params.findUnits("packet_switch_bandwidth_n2r").toDouble();
+    offered_load_bw = params.find<SST::UnitAlgebra>("packet_switch_bandwidth_n2r").getValue().toDouble();
   } else if (params.contains("network_train_injection_bw")) {
-    offered_load_bw = params.findUnits("network_train_injection_bw").toDouble();
+    offered_load_bw = params.find<SST::UnitAlgebra>("network_train_injection_bw").getValue().toDouble();
   } else {
     spkt_throw_printf(sprockit::InputError,
                      "throughput application did not find injection bandwidth");
   }
 
-  Timestamp inject_time = params.findUnits("inject_time");
+  Timestamp inject_time = params.find<SST::UnitAlgebra>("inject_time");
   long inject_length = offered_load_bw * inject_time.sec();
 
   run_test(ty, inject_length, offered_load_bw);

@@ -60,8 +60,9 @@ namespace sw {
 class BlasKernel
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(BlasKernel)
-  SST_ELI_REGISTER_CTOR(SST::Params&)
+  SST_ELI_DECLARE_BASE(BlasKernel)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 
   virtual std::string toString() const = 0;
 

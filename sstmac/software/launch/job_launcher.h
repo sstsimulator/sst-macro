@@ -87,8 +87,9 @@ struct JobAllocation
 class JobLauncher : public Service
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(JobLauncher)
-  SST_ELI_REGISTER_CTOR(SST::Params&, OperatingSystem*)
+  SST_ELI_DECLARE_BASE(JobLauncher)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&, OperatingSystem*)
   /**
    * @brief incoming_event Handle an event sent from one of the nodes
    * @param ev Must be a job_stop_event

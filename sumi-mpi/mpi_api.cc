@@ -140,10 +140,10 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   engine_ = new CollectiveEngine(queue_params, this);
   queue_ = new MpiQueue(queue_params, app->sid().task_, this, engine_);
 
-  double probe_delay_s = params.findUnits("iprobe_delay", "0s").toDouble();
+  double probe_delay_s = params.find<SST::UnitAlgebra>("iprobe_delay", "0s").getValue().toDouble();
   iprobe_delay_us_ = probe_delay_s * 1e6;
 
-  double test_delay_s = params.findUnits("test_delay", "0s").toDouble();
+  double test_delay_s = params.find<SST::UnitAlgebra>("test_delay", "0s").getValue().toDouble();
   test_delay_us_ = test_delay_s * 1e6;
 
 #if SSTMAC_COMM_SYNC_STATS

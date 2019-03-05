@@ -98,9 +98,9 @@ PiscesBranchedSwitch::initComponents(SST::Params& params)
   SST::Params xbar_params = params.find_prefix_params("xbar");
   SST::Params output_params = params.find_prefix_params("output");
 
-  xbar_bw_ = xbar_params.findUnits("bandwidth").toDouble();
-  input_bw_ = input_params.findUnits("bandwidth").toDouble();
-  output_bw_ = output_params.findUnits("bandwidth").toDouble();
+  xbar_bw_ = xbar_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
+  input_bw_ = input_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
+  output_bw_ = output_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
 
   std::string xbar_arb = xbar_params.find<std::string>("arbitrator");
   std::string input_arb = input_params.find<std::string>("arbitrator");

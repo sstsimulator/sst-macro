@@ -113,5 +113,5 @@ sstmac_get_optional_param(const char* str, const char* val)
 extern "C" double
 sstmac_get_time_param(const char *str)
 {
-  return get_local_params().findUnits(str).toDouble();
+  return get_local_params().find<SST::UnitAlgebra>(str).getValue().toDouble();
 }

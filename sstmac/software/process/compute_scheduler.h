@@ -61,8 +61,9 @@ namespace sw {
 class ComputeScheduler
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(ComputeScheduler)
-  SST_ELI_REGISTER_CTOR(SST::Params&,sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
+  SST_ELI_DECLARE_BASE(ComputeScheduler)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&,sw::OperatingSystem*, int/*ncores*/, int/*nsockets*/)
 
   ComputeScheduler(SST::Params& params, sw::OperatingSystem* os,
                     int ncores, int nsockets) :

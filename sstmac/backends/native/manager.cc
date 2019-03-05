@@ -262,7 +262,7 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
     event_man = "clock_cycle_parallel";
   }
   auto type = params.find<std::string>("event_manager", event_man);
-  EventManager_ = EventManager::create("macro", type, params, rt_);
+  EventManager_ = sprockit::create<EventManager>("macro",type,params,rt_);
   EventManager::global = EventManager_;
 
   if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){

@@ -87,8 +87,8 @@ namespace sstmac {
 class EventManager
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(EventManager)
-  SST_ELI_REGISTER_CTOR(SST::Params&, ParallelRuntime*)
+  SST_ELI_DECLARE_BASE(EventManager)
+  SST_ELI_DECLARE_CTOR(SST::Params&, ParallelRuntime*)
 
   SST_ELI_REGISTER_DERIVED(
     EventManager,

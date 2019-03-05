@@ -70,8 +70,9 @@ namespace sstmac {
 class Partition
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(Partition)
-  SST_ELI_REGISTER_CTOR(SST::Params&, ParallelRuntime*)
+  SST_ELI_DECLARE_BASE(Partition)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&, ParallelRuntime*)
 
   virtual ~Partition();
 

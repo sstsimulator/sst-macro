@@ -205,7 +205,8 @@ class EventScheduler : public sprockit::printable
   registerStatisticType(Params& params, const std::string& name){
     auto scoped_params = params.find_prefix_params(name);
     auto type = scoped_params.template find<std::string>("type", "null");
-    Stat* stat = Stat::create("macro", type, this, name, "", scoped_params);
+    Stat* stat = Stat::getBuilderLibrary("macro")
+        ->getBuilder(type)->create(this, name, "", scoped_params);
     registerStatisticCore(stat);
     return stat;
   }
@@ -261,6 +262,11 @@ class EventScheduler : public sprockit::printable
     return now_;
   }
 #endif
+  template <class Base, class... Args> Base* loadDerived(const std::string& name, Args&&... args){
+    return Base::getBuilderLibrary("macro")->getBuilder(name)
+                  ->create(std::forward<Args>(args)...);
+  }
+
 
   void handleExecutionEvent(Event* ev){
     ExecutionEvent* sev = dynamic_cast<ExecutionEvent*>(ev);

@@ -125,7 +125,7 @@ EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
   sw::StackAlloc::init(os_params);
 
   auto threading = os_params.find<std::string>("context", sw::ThreadContext::defaultThreading());
-  des_context_ = sw::ThreadContext::create("macro", threading);
+  des_context_ = sprockit::create<sw::ThreadContext>("macro", threading);
 
   sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
 
@@ -224,7 +224,7 @@ EventManager::finalizeStatsInit()
     if (!grp.output){
       SST::Params myParams;
       myParams.insert("name", pair.first);
-      grp.output = StatisticOutput::create("macro", grp.outputName, myParams);
+      grp.output = sprockit::create<StatisticOutput>("macro", grp.outputName,myParams);
     }
     grp.output->startRegisterGroup(pair.first);
     for (auto* stat : grp.stats){

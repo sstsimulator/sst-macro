@@ -65,14 +65,14 @@ StackAlloc::init(SST::Params& params)
     return; //we are good
   }
 
-  sstmac_global_stacksize = params.findUnits("stack_size", "131072B").getRoundedValue();
+  sstmac_global_stacksize = params.find<SST::UnitAlgebra>("stack_size", "131072B").getRoundedValue();
   //must be a multiple of 4096
   int stack_rem = sstmac_global_stacksize % 4096;
   if (stack_rem != 0){
     sstmac_global_stacksize += (4096 - stack_rem);
   }
   std::string chunk = sprockit::printf("%dB", 8*sstmac_global_stacksize);
-  suggested_chunk_ = params.findUnits("stack_chunk_size", chunk).getRoundedValue();
+  suggested_chunk_ = params.find<SST::UnitAlgebra>("stack_chunk_size", chunk).getRoundedValue();
   stacksize_ = sstmac_global_stacksize;
 
   protect_stacks_ = params.find<bool>("protect_stacks", false);

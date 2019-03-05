@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
+#include <sstmac/common/sstmac_config.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
 #include <sprockit/factory.h>
@@ -70,8 +71,8 @@ namespace hw {
 class Topology : public sprockit::printable
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(Topology)
-  SST_ELI_REGISTER_CTOR(SST::Params&)
+  SPKT_DECLARE_BASE(Topology)
+  SPKT_DECLARE_CTOR(SST::Params&)
 
   struct Connection {
     SwitchId src;

@@ -127,7 +127,8 @@ Topology::staticTopology(SST::Params& params)
 {
   if (!staticTopology_){
     SST::Params top_params = params.find_prefix_params("topology");
-    staticTopology_ = Topology::create("macro", top_params.find<std::string>("name"), top_params);
+    staticTopology_ = sprockit::create<Topology>(
+      "macro", top_params.find<std::string>("name"), top_params);
   }
   return staticTopology_;
 }
@@ -314,7 +315,7 @@ Topology::initHostnameMap(SST::Params& params)
 class MerlinTopology : public Topology {
 
  public:
-  SST_ELI_REGISTER_DERIVED(
+  SPKT_REGISTER_DERIVED(
     Topology,
     MerlinTopology,
     "macro",

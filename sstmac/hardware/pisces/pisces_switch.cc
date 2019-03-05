@@ -76,8 +76,8 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(uint32_t id, SST::Params& params) :
 
   SST::Params rtr_params = params.find_prefix_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
-  router_ = Router::create("macro", rtr_params.find<std::string>("name"),
-                           rtr_params, top_, this);
+  router_ = sprockit::create<Router>(
+     "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
 
   SST::Params ej_params = params.find_prefix_params("ejection");
   std::vector<Topology::InjectionPort> conns;
@@ -107,21 +107,21 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
     arbType_ = link_params.find<std::string>("arbitrator");
   }
 
-  double xbar_bw = xbar_params.findUnits("bandwidth").toDouble();
+  double xbar_bw = xbar_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
 
   std::string xbar_arb = xbar_params.find<std::string>("arbitrator", arbType_);
 
-  link_bw_ = link_params.findUnits("bandwidth").toDouble();
+  link_bw_ = link_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
   if (link_params.contains("credits")){
-    link_credits_ = link_params.findUnits("credits").getRoundedValue();
+    link_credits_ = link_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
   } else {
-    double lat_s = link_params.findUnits("latency").toDouble();
+    double lat_s = link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble();
     //use 4*RTT as buffer size
     link_credits_ = 8*link_bw_*lat_s;
   }
 
   if (xbar_params.contains("credits")){
-    xbar_credits_ = xbar_params.findUnits("credits").getRoundedValue();
+    xbar_credits_ = xbar_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
   } else {
     xbar_credits_ = link_credits_;
   }
@@ -137,7 +137,7 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
     inp.parent = this;
   }
 
-  mtu_ = params.findUnits("mtu").getRoundedValue();
+  mtu_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
   if (link_credits_ < mtu_){
     spkt_abort_printf("MTU %d is larger than credits %d", mtu_, link_credits_);

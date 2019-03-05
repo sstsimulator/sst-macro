@@ -67,7 +67,7 @@ FTQCalendar::FTQCalendar(SST::BaseComponent* comp, const std::string& name,
   num_ticks_epoch_(0),
   Parent(comp, name, statName, params)
 {
-  num_ticks_epoch_ = Timestamp(params.findUnits("epoch").toDouble()).ticks();
+  num_ticks_epoch_ = Timestamp(params.find<SST::UnitAlgebra>("epoch").getValue().toDouble()).ticks();
 }
 
 FTQCalendar::~FTQCalendar()

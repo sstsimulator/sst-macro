@@ -80,8 +80,9 @@ class LogPSwitch : public ConnectableComponent
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
 
   struct ContentionModel {
-    SST_ELI_REGISTER_BASE_DEFAULT(ContentionModel)
-    SST_ELI_REGISTER_CTOR(SST::Params&)
+    SST_ELI_DECLARE_BASE(ContentionModel)
+    SST_ELI_DECLARE_DEFAULT_INFO()
+    SST_ELI_DECLARE_CTOR(SST::Params&)
 
     virtual double value() = 0;
 

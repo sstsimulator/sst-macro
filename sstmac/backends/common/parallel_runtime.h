@@ -82,8 +82,9 @@ class ParallelRuntime :
   public Lockable
 {
  public:
-  SST_ELI_REGISTER_BASE_DEFAULT(ParallelRuntime)
-  SST_ELI_REGISTER_CTOR(SST::Params&)
+  SST_ELI_DECLARE_BASE(ParallelRuntime)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 
   virtual ~ParallelRuntime();
 

@@ -73,10 +73,10 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent,
                                     newLinkHandler(this, &NIC::mtlHandle));
 
-  inj_credits_ = inj_params.findUnits("credits").getRoundedValue();
+  inj_credits_ = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
   auto arb = inj_params.find<std::string>("arbitrator");
-  double inj_bw = inj_params.findUnits("bandwidth").toDouble();
-  packet_size_ = inj_params.findUnits("mtu").getRoundedValue();
+  double inj_bw = inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
+  packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
   //PiscesSender::configurePayloadPortLatency(inj_params);
   inj_buffer_ = new PiscesBuffer("inj", arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
