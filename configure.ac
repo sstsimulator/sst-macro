@@ -15,8 +15,8 @@ dnl
 #-------------------------------------------------
 
 # Version info, used both in library versioning and inside sstmacro.
-m4_define([SSTMAC_VERSION_TAG], 8)
-m4_define([SSTMAC_SUBVERSION_TAG], 1)
+m4_define([SSTMAC_VERSION_TAG], 9)
+m4_define([SSTMAC_SUBVERSION_TAG], 0)
 m4_define([SSTMAC_SUBSUBVERSION_TAG], 0)
 
 dnl Enable this for releases
@@ -64,8 +64,8 @@ dnl For new releases the following procedure is used to determine the new versio
 dnl If incompatible changes are made: CURRENT++, REVISION=0, AGE=0
 dnl else if interfaces are added: CURRENT++, REVISION=0, AGE++
 dnl else (no interface changes): REVISION++
-m4_define([SSTMAC_CURRENT_LIBVERS],  8)
-m4_define([SSTMAC_REVISION_LIBVERS], 1)
+m4_define([SSTMAC_CURRENT_LIBVERS],  9)
+m4_define([SSTMAC_REVISION_LIBVERS], 0)
 m4_define([SSTMAC_AGE_LIBVERS],      0)
 m4_define([SSTMAC_LIBVERSION_TAG],
           [SSTMAC_CURRENT_LIBVERS:SSTMAC_REVISION_LIBVERS:SSTMAC_AGE_LIBVERS])
@@ -225,7 +225,6 @@ AC_CONFIG_FILES([
  sstmac/libraries/pthread/Makefile
  sstmac/libraries/omp/Makefile
  sstmac/libraries/machines/Makefile
- sstmac/libraries/uq/Makefile
  sstmac/libraries/Makefile
  sstmac/skeletons/Makefile
  sstmac/test_skeletons/Makefile
