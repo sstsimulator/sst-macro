@@ -124,8 +124,7 @@ SpinThreadLock::SpinThreadLock()
 {
   int signal = pthread_spin_init(&lock_, PTHREAD_PROCESS_PRIVATE);
   if (signal != 0) {
-    spkt_throw_printf(sprockit::spkt_error,
-        "mutex init error: %d", signal);
+    spkt_abort_printf("mutex init error: %d", signal);
   }
 }
 
@@ -142,8 +141,7 @@ SpinThreadLock::lock()
 {
   int signal = pthread_spin_lock(&lock_);
   if (signal != 0) {
-    spkt_throw_printf(sprockit::spkt_error,
-        "pthread_lock::lock: mutex lock error %d:%s",
+    spkt_abort_printf("pthread_lock::lock: mutex lock error %d:%s",
         signal, ::strerror(signal));
   }
   locked_ = true;

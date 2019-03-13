@@ -48,6 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/stats/stat_collector.h>
 #include <sprockit/sim_parameters.h>
 #include <vector>
+#include <cmath>
 
 namespace sstmac {
 

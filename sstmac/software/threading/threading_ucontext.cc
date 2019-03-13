@@ -57,16 +57,19 @@ namespace sw {
 class ThreadingUContext : public ThreadContext
 {
  public:
-  FactoryRegister("ucontext", ThreadContext, ThreadingUContext)
+  SST_ELI_REGISTER_DERIVED(
+    ThreadContext,
+    ThreadingUContext,
+    "macro",
+    "ucontext",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "uses ucontext for portable linux context switching")
 
-  ThreadingUContext(SST::Params& params)
-  {
-  }
+  ThreadingUContext(){}
 
   void initContext() override {
     if (getcontext(&context_) != 0) {
-      spkt_throw_printf(sprockit::os_error,
-        "ThreadingUContext::init_context: %s",
+      spkt_abort_printf("ThreadingUContext::init_context: %s",
         ::strerror(errno));
     }
   }
@@ -111,14 +114,11 @@ class ThreadingUContext : public ThreadContext
   }
 
  private:
-  ThreadingUContext(){}
-
   static void swapContext(ThreadContext* from, ThreadContext* to) {
     ThreadingUContext* fromctx = static_cast<ThreadingUContext*>(from);
     ThreadingUContext* toctx = static_cast<ThreadingUContext*>(to);
     if (swapcontext(&fromctx->context_, &toctx->context_) == -1) {
-      spkt_throw_printf(sprockit::os_error,
-         "ThreadingUContext::swapContext: %s",
+      spkt_abort_printf("ThreadingUContext::swapContext: %s",
          strerror(errno));
     }
   }
