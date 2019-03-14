@@ -64,7 +64,7 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
 {
   initLinks(params);
 
-  SST::Params inj_params = params.find_prefix_params("injection");
+  SST::Params inj_params = params.find_scoped_params("injection");
   double bw = inj_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
   //PiscesSender::configurePayloadPortLatency(inj_params);
   std::string arb = inj_params.find<std::string>("arbirtrator");
@@ -81,7 +81,7 @@ PiscesSimpleNetwork::PiscesSimpleNetwork(SST::Params& params, SST::Component *co
 void
 PiscesSimpleNetwork::initLinks(SST::Params& params)
 {
-  SST::Params inj_params = params.find_prefix_params("injection");
+  SST::Params inj_params = params.find_scoped_params("injection");
   int credits = inj_params.find<SST::UnitAlgebra>("credits").getRoundedValue();
   SST::Component* parent = getTrueComponent();
   SST::LinkMap* link_map = SST::Simulation::getSimulation()->getComponentLinkMap(parent->getId());

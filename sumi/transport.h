@@ -264,6 +264,8 @@ class Transport {
   {
   }
 
+  std::set<int> smp_neighbors_;
+
   std::string server_libname_;
 
   sstmac::sw::SoftwareId sid_;
@@ -286,6 +288,8 @@ class CollectiveEngine
   ~CollectiveEngine();
 
   CollectiveDoneMessage* incoming(Message* m);
+
+  void initSmp(const std::set<int>& neighbors);
 
   int allocateGlobalCollectiveTag(){
     system_collective_tag_--;
@@ -497,6 +501,7 @@ class CollectiveEngine
 
   int system_collective_tag_;
 
+  std::string alltoall_type_;
 };
 
 static void* sumi_null_ptr = ((void*)0x123);

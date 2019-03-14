@@ -63,7 +63,6 @@ class DragonflyPlus : public Dragonfly
     DragonflyPlus,
     "macro",
     "dragonfly_plus",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a Dragonfly+ with fat-tree groups")
 
   DragonflyPlus(SST::Params& params);

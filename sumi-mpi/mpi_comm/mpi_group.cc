@@ -79,7 +79,7 @@ MpiGroup::at(int rank)
 }
 
 void
-MpiGroup::translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, MpiGroup* other_grp){
+MpiGroup::translateRanks(int n_ranks, const int* my_ranks, int* other_ranks, MpiGroup* other_grp){
   for (int i=0; i < n_ranks; ++i){
     int input_rank = my_ranks[i];
     if (input_rank == MPI_PROC_NULL){

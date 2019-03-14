@@ -163,10 +163,10 @@ class SSTIntegratedComponent
 #define SST_ELI_REGISTER_COMPONENT(cls,lib,name,version,desc,cat)
 
 #define SST_ELI_REGISTER_DERIVED_COMPONENT(base,cls,lib,name,version,desc,cat) \
-  SPKT_REGISTER_DERIVED(base,cls,lib,name,SPKT_FORWARD_AS_ONE(version),desc)
+  SPKT_REGISTER_DERIVED(base,cls,lib,name,desc)
 
 #define SST_ELI_REGISTER_DERIVED(base,cls,lib,name,version,desc) \
-  SPKT_REGISTER_DERIVED(base,cls,lib,name,SPKT_FORWARD_AS_ONE(version),desc)
+  SPKT_REGISTER_DERIVED(base,cls,lib,name,desc)
 
 #define COMPONENT_CATEGORY_UNCATEGORIZED  0x00
 #define COMPONENT_CATEGORY_PROCESSOR      0x01

@@ -32,6 +32,7 @@ libsstmac_test_skeletons_la_SOURCES = \
   mpi_ping_all.cc \
   mpi_ping_pong.cc \
   mpi_all_collectives.cc \
+  mpi_smp_collectives.cc \
   mpi_delay_stats.cc \
   mpi_isend_progress.cc \
   memory_leak_test.cc \

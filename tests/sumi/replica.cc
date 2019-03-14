@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 using namespace sumi;
 
 int indices[] = { 0,1,0,1,2,1 };
+int n_index = sizeof(indices) / sizeof(int);
 int ndomain = 6;
 
 void
@@ -70,7 +71,8 @@ test_allreduce(int cm_rank)
   src_buffer[cm_rank] = rank;
   int* dst_buffer = new int[nelems];
   int tag = 13;
-  Communicator* dom = new IndexCommunicator(cm_rank, ndomain, indices);
+
+  Communicator* dom = new IndexCommunicator(cm_rank, ndomain, std::vector<int>(indices,indices+n_index));
   comm_allreduce<int,Add>(dst_buffer, src_buffer, nelems, tag, Message::default_cq);
 }
 

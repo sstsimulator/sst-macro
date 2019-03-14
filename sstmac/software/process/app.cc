@@ -208,7 +208,7 @@ App::App(SST::Params& params, SoftwareId sid,
 
   notify_ = params.find<bool>("notify", true);
 
-  SST::Params env_params = params.find_prefix_params("env");
+  SST::Params env_params = params.find_scoped_params("env");
   omp_contexts_.emplace_back();
   omp_context& active = omp_contexts_.back();
   active.max_num_subthreads = active.requested_num_subthreads =
@@ -251,7 +251,7 @@ App::App(SST::Params& params, SoftwareId sid,
 
     auto iter = apis_.find(name);
     if (iter == apis_.end()){
-      SST::Params api_params = params.find_prefix_params(name);
+      SST::Params api_params = params.find_scoped_params(name);
       API* api = sprockit::create<API>(
           "macro", name, api_params, this, os->node());
       apis_[name] = api;

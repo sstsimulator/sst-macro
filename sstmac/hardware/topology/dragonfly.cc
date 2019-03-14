@@ -308,7 +308,6 @@ class SingleLinkGroupWiring : public InterGroupWiring
     SingleLinkGroupWiring,
     "macro",
     "single",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "wiring with only one group link on each switch")
 
   SingleLinkGroupWiring(SST::Params& params, int a, int g, int h) :
@@ -379,7 +378,6 @@ class CirculantGroupWiring : public InterGroupWiring
     CirculantGroupWiring,
     "macro",
     "circulant",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "wiring with circulant pattern")
 
   CirculantGroupWiring(SST::Params& params, int a, int g, int h) :
@@ -457,7 +455,6 @@ class AllToAllGroupWiring : public InterGroupWiring
     AllToAllGroupWiring,
     "macro",
     "alltoall",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "wiring with every switch having connection to every group")
 
   AllToAllGroupWiring(SST::Params& params, int a, int g, int h) :

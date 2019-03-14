@@ -203,7 +203,7 @@ class EventScheduler : public sprockit::printable
 
   template <class Params, class Stat> Stat*
   registerStatisticType(Params& params, const std::string& name){
-    auto scoped_params = params.find_prefix_params(name);
+    auto scoped_params = params.find_scoped_params(name);
     auto type = scoped_params.template find<std::string>("type", "null");
     Stat* stat = Stat::getBuilderLibrary("macro")
         ->getBuilder(type)->create(this, name, "", scoped_params);

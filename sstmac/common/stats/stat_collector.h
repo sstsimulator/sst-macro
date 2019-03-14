@@ -420,7 +420,7 @@ using MultiStatistic = Statistic<std::tuple<Args...>>;
 }
 
 #define SST_ELI_REGISTER_CUSTOM_STATISTIC(parent,cls,lib,name,version,desc) \
-  SPKT_REGISTER_DERIVED(parent,cls,lib,name,SPKT_FORWARD_AS_ONE(version),desc)
+  SPKT_REGISTER_DERIVED(parent,cls,lib,name,desc)
 
 #define SST_ELI_INSTANTIATE_STATISTIC(cls,field,shortName) \
   struct cls##_##field##_##shortName : public cls<field> { \

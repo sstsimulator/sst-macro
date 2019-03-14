@@ -172,6 +172,14 @@ class SumiServer :
     }
   }
 
+  const std::map<int,SimTransport*>& getProcs(int aid) const {
+    auto iter = procs_.find(aid);
+    if (iter == procs_.end()){
+      spkt_abort_printf("SumiServer got bad app id %d", aid);
+    }
+    return iter->second;
+  }
+
  private:
   std::map<int, std::map<int, SimTransport*>> procs_;
   std::list<Message*> pending_;
@@ -236,6 +244,8 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
         params, "traffic_matrix", "ascii", "bytes");
   */
   engine_ = new CollectiveEngine(params, this);
+
+  smp_optimize_ = params.find<bool>("smp_optimize", false);
 }
 
 void
@@ -255,7 +265,18 @@ SimTransport::allocateCq(int id, std::function<void(Message*)>&& f)
 void
 SimTransport::init()
 {
-  //THIS SHOULD ONLY BE CALLED AFTER RANK and NPROC are known
+  if (smp_optimize_){
+    engine_->barrier(-1, Message::default_cq);
+    engine_->blockUntilNext(Message::default_cq);
+
+    SumiServer* server = safe_cast(SumiServer, parent_->os()->lib(server_libname_));
+    auto& map = server->getProcs(sid().app_);
+    if (map.size() > 1){ //enable smp optimizations
+      for (auto& pair : map){
+        smp_neighbors_.insert(pair.first);
+      }
+    }
+  }
 }
 
 void
@@ -453,6 +474,7 @@ CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
   global_domain_ = new GlobalCommunicator(tport);
   eager_cutoff_ = params.find<int>("eager_cutoff", 512);
   use_put_protocol_ = params.find<bool>("use_put_protocol", false);
+  alltoall_type_ = params.find<std::string>("alltoall", "bruck");
 }
 
 CollectiveEngine::~CollectiveEngine()
@@ -470,6 +492,11 @@ CollectiveEngine::notifyCollectiveDone(int rank, Collective::type_t ty, int tag)
        Collective::tostr(ty), tag);
   }
   finishCollective(coll, rank, ty, tag);
+}
+
+void
+CollectiveEngine::initSmp(const std::set<int>& neighbors)
+{
 }
 
 void
@@ -508,13 +535,47 @@ CollectiveEngine::skipCollective(Collective::type_t ty,
 
 CollectiveDoneMessage*
 CollectiveEngine::allreduce(void* dst, void *src, int nelems, int type_size, int tag, reduce_fxn fxn,
-                             int cq_id, Communicator* comm)
+                            int cq_id, Communicator* comm)
 {
- auto* msg = skipCollective(Collective::allreduce, cq_id, comm, dst, src, nelems, type_size, tag);
- if (msg) return msg;
+  auto* msg = skipCollective(Collective::allreduce, cq_id, comm, dst, src, nelems, type_size, tag);
+  if (msg) return msg;
 
   if (!comm) comm = global_domain_;
-  DagCollective* coll = new WilkeHalvingAllreduce(this, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+
+  Collective* coll = nullptr;
+  if (comm->smpComm()){
+    //tags are restricted to 28 bits - the front 4 bits are mine for various internal operations
+    int intra_reduce_tag = 1<<28 | tag;
+    auto* intra_reduce = new WilkeHalvingAllreduce(this, dst, src, nelems,
+                                   type_size, intra_reduce_tag, fxn, cq_id, comm->smpComm());
+
+    int root = comm->smpComm()->commToGlobalRank(0);
+    Collective* prev;
+    if (comm->myCommRank() == root){
+      if (!comm->ownerComm()){
+        spkt_abort_printf("Bad owner comm configuration - rank 0 in SMP comm should 'own' node");
+      }
+      //I am the owner!
+      int inter_reduce_tag = 2<<28 | tag;
+      auto* inter_reduce = new WilkeHalvingAllreduce(this, dst, dst, nelems,
+                                     type_size, inter_reduce_tag, fxn, cq_id, comm->ownerComm());
+
+
+      intra_reduce->setSubsequent(inter_reduce);
+      prev = inter_reduce;
+    } else {
+      prev = intra_reduce;
+    }
+    auto* intra_bcast = new BinaryTreeBcastCollective(this, root, dst, nelems, type_size, tag,
+                                                      cq_id, comm->smpComm());
+    prev->setSubsequent(intra_bcast);
+    //this should report back as done on the original communicator!
+    coll = new DoNothingCollective(this, tag, cq_id, comm);
+    intra_bcast->setSubsequent(coll);
+  } else {
+    coll = new WilkeHalvingAllreduce(this, dst, src, nelems, type_size, tag, fxn, cq_id, comm);
+  }
+
   return startCollective(coll);
 }
 
@@ -626,7 +687,9 @@ CollectiveEngine::alltoall(void *dst, void *src, int nelems, int type_size, int 
   if (msg) return msg;
 
   if (!comm) comm = global_domain_;
-  DagCollective* coll = new BruckAlltoallCollective(this, dst, src, nelems, type_size, tag, cq_id, comm);
+
+  DagCollective* coll = AllToAllCollective::getBuilderLibrary("macro")->getBuilder(alltoall_type_)
+                          ->create(this, dst, src, nelems, type_size, tag, cq_id, comm);
   return startCollective(coll);
 }
 
@@ -719,21 +782,34 @@ CollectiveEngine::validateCollective(Collective::type_t ty, int tag)
 CollectiveDoneMessage*
 CollectiveEngine::startCollective(Collective* coll)
 {
+  if (coll->type() == Collective::donothing){
+    todel_.push_back(coll);
+    return new CollectiveDoneMessage(coll->tag(), coll->type(), coll->comm(), coll->cqId());
+  }
+
   coll->initActors();
   int tag = coll->tag();
   Collective::type_t ty = coll->type();
   //validate_collective(ty, tag);
   Collective*& existing = collectives_[ty][tag];
+  CollectiveDoneMessage* dmsg;
   if (existing){
     coll->start();
-    auto* msg = existing->addActors(coll);
+    dmsg = existing->addActors(coll);
     delete coll;
-    return msg;
   } else {
     existing = coll;
     coll->start();
-    return deliverPending(coll, tag, ty);
+    dmsg = deliverPending(coll, tag, ty);
   }
+
+  while (dmsg && existing->hasSubsequent()){
+    delete dmsg;
+    existing = existing->popSubsequent();
+    dmsg = startCollective(existing);
+  }
+
+  return dmsg;
 }
 
 void
@@ -802,6 +878,11 @@ CollectiveEngine::incoming(Message* msg)
   } else {
     Collective* coll = it->second;
     auto* dmsg = coll->recv(cmsg);
+    while (dmsg && coll->hasSubsequent()){
+      delete dmsg;
+      coll = coll->popSubsequent();
+      dmsg = startCollective(coll);
+    }
     return dmsg;
   }
 }

@@ -90,6 +90,7 @@ PiscesBuffer::PiscesBuffer(const std::string& selfname,
 {
   arb_ = sprockit::create<PiscesBandwidthArbitrator>(
         "macro", arb, bw);
+
 }
 
 void
@@ -128,6 +129,7 @@ PiscesBuffer::handleCredit(Event* ev)
 
   /** while we have sendable payloads, do it */
   PiscesPacket* payload = queues_[vc].pop(num_credits);
+
   while (payload) {
     num_credits -= payload->numBytes();
     //this actually doesn't create any new delay

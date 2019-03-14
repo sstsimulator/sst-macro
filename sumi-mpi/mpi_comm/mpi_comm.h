@@ -114,6 +114,12 @@ class MpiComm : public Communicator
     return del_grp_;
   }
 
+  bool supportsSmp() const override {
+    return true;
+  }
+
+  std::set<int> globalRankSetIntersection(const std::set<int>& neighbors) const override;
+
   void dupKeyvals(MpiComm* m);
 
   static MpiComm* comm_null;
@@ -138,13 +144,13 @@ class MpiComm : public Communicator
     return aid_;
   }
 
-  int commToGlobalRank(int comm_rank) const {
+  int commToGlobalRank(int comm_rank) const override {
     return int(peerTask(comm_rank));
   }
 
-  int globalToCommRank(int global_rank) const;
+  int globalToCommRank(int global_rank) const override;
 
-  int nproc() const {
+  int nproc() const override {
     return size();
   }
 

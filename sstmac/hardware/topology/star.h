@@ -63,7 +63,6 @@ class Star : public StructuredTopology
     Star,
     "macro",
     "star",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "stat topology with every switch connected to central router")
 
   std::string toString() const override {

@@ -255,6 +255,8 @@ class SimTransport : public Transport, public sstmac::sw::API {
   bool pin_delay_;
 
  protected:
+  bool smp_optimize_;
+
   std::map<int,std::list<Message*>> held_;
 
   std::queue<int> free_cq_ids_;

@@ -75,6 +75,7 @@ Collective::tostr(type_t ty)
 {
   switch (ty)
   {
+    enumcase(donothing);
     enumcase(alltoall);
     enumcase(alltoallv);
     enumcase(allreduce);
@@ -97,7 +98,8 @@ Collective::tostr(type_t ty)
 Collective::Collective(type_t ty, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
   type_(ty), engine_(engine), my_api_(engine->tport()), tag_(tag),
   dom_nproc_(comm->nproc()), dom_me_(comm->myCommRank()),
-  complete_(false), comm_(comm), cq_id_(cq_id)
+  complete_(false), comm_(comm), cq_id_(cq_id),
+  subsequent_(nullptr)
 {
   debug_printf(sumi_collective | sumi_vote,
     "Rank %d=%d built collective of size %d in role=%d, tag=%d",

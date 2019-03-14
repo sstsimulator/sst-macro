@@ -49,8 +49,27 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/collective_actor.h>
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
+#include <sprockit/factory.h>
 
 namespace sumi {
+
+class AllToAllCollective : public DagCollective {
+ public:
+  SPKT_DECLARE_BASE(AllToAllCollective)
+  SPKT_DECLARE_CTOR(CollectiveEngine*, void*, void*,
+                    int, int, int, int, Communicator*)
+
+  AllToAllCollective(CollectiveEngine* engine, void* dst, void* src,
+                     int nelems, int type_size, int tag, int cq_id,
+                     Communicator* comm) :
+    DagCollective(alltoall, engine, dst, src, type_size, tag, cq_id, comm),
+    nelems_(nelems)
+  {
+  }
+
+ protected:
+  int nelems_;
+};
 
 class BruckAlltoallActor :
   public BruckActor
@@ -64,7 +83,7 @@ class BruckAlltoallActor :
   }
 
   std::string toString() const override {
-    return "bruck all-to-all actor";
+    return "Bruck all-to-all actor";
   }
 
  protected:
@@ -85,25 +104,95 @@ class BruckAlltoallActor :
 };
 
 class BruckAlltoallCollective :
-  public DagCollective
+  public AllToAllCollective
 {
  public:
+  SPKT_REGISTER_DERIVED(
+    AllToAllCollective,
+    BruckAlltoallCollective,
+    "macro",
+    "bruck",
+    "Bruck log(N) all-to-all collective")
+
   BruckAlltoallCollective(CollectiveEngine* engine, void* dst, void* src,
                             int nelems, int type_size, int tag, int cq_id, Communicator* comm)
-    : DagCollective(alltoall, engine, dst, src, type_size, tag, cq_id, comm),
-      nelems_(nelems)
+    : AllToAllCollective(engine, dst, src, nelems, type_size, tag, cq_id, comm)
   {
   }
 
   std::string toString() const override {
-    return "all-to-all";
+    return "Bruck all-to-all";
   }
 
   DagCollectiveActor* newActor() const override {
-    return new BruckAlltoallActor(engine_, dst_buffer_, src_buffer_, nelems_, type_size_, tag_, cq_id_, comm_);
+    return new BruckAlltoallActor(engine_, dst_buffer_, src_buffer_,
+                                  nelems_, type_size_, tag_, cq_id_, comm_);
   }
+
+};
+
+class DirectAlltoallActor :
+  public DagCollectiveActor
+{
+ public:
+  DirectAlltoallActor(CollectiveEngine* engine, void *dst, void *src, int nelems,
+                         int type_size, int tag, int cq_id, Communicator* comm) :
+    DagCollectiveActor(Collective::alltoall, engine, dst, src, type_size, tag, cq_id, comm),
+    nelems_(nelems)
+  {}
+
+  std::string toString() const override {
+    return "direct all-to-all actor";
+  }
+
+ protected:
+  void finalize() override;
+
+  void finalizeBuffers() override;
+
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
+
+  void initBuffers() override;
+
+  void initDag() override;
+
  private:
+  void addAction(
+    const std::vector<Action*>& actions,
+    int stride_direction,
+    int num_initial,
+    int stride);
+
   int nelems_;
+  int total_recv_size_;
+  int total_send_size_;
+};
+
+class DirectAlltoallCollective :
+  public AllToAllCollective
+{
+ public:
+  SPKT_REGISTER_DERIVED(
+    AllToAllCollective,
+    DirectAlltoallCollective,
+    "macro",
+    "direct",
+    "direct all-to-all collective")
+
+    DirectAlltoallCollective(CollectiveEngine* engine, void *dst, void *src, int nelems,
+                              int type_size, int tag, int cq_id, Communicator* comm) :
+      AllToAllCollective(engine, dst, src, nelems, type_size, tag, cq_id, comm)
+  {}
+
+  std::string toString() const override {
+    return "direct all-to-all";
+  }
+
+  DagCollectiveActor* newActor() const override {
+    return new DirectAlltoallActor(engine_, dst_buffer_, src_buffer_, nelems_,
+                                    type_size_, tag_, cq_id_, comm_);
+  }
+
 };
 
 }

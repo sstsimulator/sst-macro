@@ -209,7 +209,7 @@ namespace lblxml {
     xml_read_only_ = params_.find<bool>("boxml_xml_only", false);
 
     if (params_->hasNamespace("effective_bandwidths")){
-      sprockit::SimParameters::ptr stat_params = params_.find_prefix_params("effective_bandwidths");
+      sprockit::SimParameters::ptr stat_params = params_.find_scoped_params("effective_bandwidths");
       hist_eff_bw_ = test_cast(StatHistogram, StatCollector::factory::getOptionalParam("type", "histogram", stat_params));
 
       if (!hist_eff_bw_)
@@ -221,7 +221,7 @@ namespace lblxml {
     }
 
     if (params_->hasNamespace("polling_time")) {
-      sprockit::SimParameters::ptr stat_params = params_.find_prefix_params("polling_time");
+      sprockit::SimParameters::ptr stat_params = params_.find_scoped_params("polling_time");
       idle_time_ = test_cast(StatLocalDouble, StatCollector::factory::getOptionalParam("type", "local_double", stat_params));
 
       if (!idle_time_)
@@ -230,7 +230,7 @@ namespace lblxml {
           stat_params.find<std::string>("type").c_str());
     }
     if (params_->hasNamespace("barrier_time")) {
-      sprockit::SimParameters::ptr stat_params = params_.find_prefix_params("barrier_time");
+      sprockit::SimParameters::ptr stat_params = params_.find_scoped_params("barrier_time");
       barrier_time_ = test_cast(StatLocalDouble, StatCollector::factory::getOptionalParam("type", "local_double", stat_params));
 
       if (!idle_time_)
@@ -239,7 +239,7 @@ namespace lblxml {
           stat_params.find<std::string>("type").c_str());
     }
     if (params_->hasNamespace("compute_time")) {
-      sprockit::SimParameters::ptr stat_params = params_.find_prefix_params("compute_time");
+      sprockit::SimParameters::ptr stat_params = params_.find_scoped_params("compute_time");
       compute_time_ = test_cast(StatLocalDouble, StatCollector::factory::getOptionalParam("type", "local_double", stat_params));
 
       if (!idle_time_)

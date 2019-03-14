@@ -106,7 +106,7 @@ AbstractFatTree::writeBwParams(
   double multiplier) const
 {
   if (switch_params->has_namespace("xbar")){
-    SST::Params xbar_params = switch_params.find_prefix_params("xbar");
+    SST::Params xbar_params = switch_params.find_scoped_params("xbar");
     double bw = xbar_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
     if (bw == 0){
       xbar_params->print_params();;

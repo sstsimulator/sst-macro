@@ -101,22 +101,22 @@ Node::Node(uint32_t id, SST::Params& params)
   my_addr_ = params.find<int>("id");
   next_outgoing_id_.setSrcNode(my_addr_);
 
-  SST::Params nic_params = params.find_prefix_params("nic");
+  SST::Params nic_params = params.find_scoped_params("nic");
   nic_ = sprockit::create<NIC>(
         "macro", nic_params.find<std::string>("name"), nic_params, this);
 
-  SST::Params mem_params = params.find_prefix_params("memory");
+  SST::Params mem_params = params.find_scoped_params("memory");
   mem_model_ = sprockit::create<MemoryModel>(
         "macro", mem_params.find<std::string>("name"), mem_params, this);
 
-  SST::Params proc_params = params.find_prefix_params("proc");
+  SST::Params proc_params = params.find_scoped_params("proc");
   proc_ = sprockit::create<Processor>(
      "macro", proc_params.find<std::string>("processor", "instruction"),
       proc_params, mem_model_, this);
 
   nsocket_ = params.find<int>("nsockets", 1);
 
-  SST::Params os_params = params.find_prefix_params("os");
+  SST::Params os_params = params.find_scoped_params("os");
   os_ = new sw::OperatingSystem(os_params, this);
 
   app_launcher_ = new AppLauncher(os_);

@@ -120,7 +120,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   SST::Params nic_params = node_params.get_namespace("nic");
   SST::Params inj_params = nic_params.get_namespace("injection");
   SST::Params switch_params = params.get_namespace("switch");
-  SST::Params ej_params = switch_params.find_prefix_params("ejection");
+  SST::Params ej_params = switch_params.find_scoped_params("ejection");
 
   Topology* top = topology_;
 
@@ -134,7 +134,7 @@ Interconnect::Interconnect(SST::Params& params, EventManager *mgr,
   if (logp_model){
     logp_params.insert(switch_params);
   }
-  logp_params.insert(switch_params.find_prefix_params("logp"));
+  logp_params.insert(switch_params.find_scoped_params("logp"));
 
   logp_switches_.resize(rt_->nthread());
   mgr->startStatGroup("logp");
@@ -190,8 +190,8 @@ Interconnect::configureInterconnectLookahead(SST::Params& params)
 {
   SST::Params switch_params = params.get_namespace("switch");
   SST::Params inj_params = params.get_namespace("node")
-      .find_prefix_params("nic").find_prefix_params("injection");
-  SST::Params ej_params = params.find_prefix_params("ejection");
+      .find_scoped_params("nic").find_scoped_params("injection");
+  SST::Params ej_params = params.find_scoped_params("ejection");
 
   SST::Params link_params = switch_params.get_namespace("link");
   Timestamp hop_latency(link_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
@@ -246,9 +246,9 @@ Interconnect::connectEndpoints(EventManager* mgr,
   int num_switches = topology_->numSwitches();
   int me = rt_->me();
   std::vector<Topology::InjectionPort> ports;
-  SST::Params inj_params = ep_params.find_prefix_params("injection");
-  SST::Params ej_params = sw_params.find_prefix_params("ejection");
-  SST::Params link_params= sw_params.find_prefix_params("link");
+  SST::Params inj_params = ep_params.find_scoped_params("injection");
+  SST::Params ej_params = sw_params.find_scoped_params("ejection");
+  SST::Params link_params= sw_params.find_scoped_params("link");
   Timestamp ej_latency;
   if (ej_params.contains("latency")){
     ej_latency = Timestamp(ej_params.find<SST::UnitAlgebra>("latency").getValue().toDouble());

@@ -363,7 +363,7 @@ OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 
   rebuildMemoizations();
 
-  SST::Params env_params = params.find_prefix_params("env");
+  SST::Params env_params = params.find_scoped_params("env");
   std::set<std::string> keys = env_params.getKeys();
   for (auto& key : keys){
     env_[key] = env_params.find<std::string>(key);
@@ -380,7 +380,7 @@ OperatingSystem::rebuildMemoizations()
     auto iter = memoize_models_.find(pair.first);
 #if !SSTMAC_INTEGRATED_SST_CORE
     if (iter == memoize_models_.end()){
-      SST::Params memo_params = params_.find_prefix_params(pair.first);
+      SST::Params memo_params = params_.find_scoped_params(pair.first);
       memo_params.insert("fileroot", pair.first);
       auto* model = sprockit::create<RegressionModel>(
         "macro", pair.second, node(), pair.first, "", memo_params);

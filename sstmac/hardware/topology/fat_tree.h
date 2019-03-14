@@ -126,7 +126,6 @@ class FatTree :
     FatTree,
     "macro",
     "fat_tree",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a fat-tree, with possible tapering")
 
   FatTree(SST::Params& params);
@@ -293,7 +292,6 @@ class TaperedFatTree : public AbstractFatTree
     TaperedFatTree,
     "macro",
     "tapered_fat_tree",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a fat-tree with simple tapering models")
 
   TaperedFatTree(SST::Params& params);

@@ -118,6 +118,15 @@ class PiscesSender : public SubComponent
   void sendCredit(Input& inp, PiscesPacket* payload,
           GlobalTimestamp packet_tail_leaves);
 
+  /**
+   * @brief send Invoked to send/bandwidth arbitrator a packet.
+   * Only called when there are enough credits to hold packet on other side.
+   * @param arb
+   * @param pkt
+   * @param to_credit
+   * @param to_send
+   * @return
+   */
   GlobalTimestamp send(PiscesBandwidthArbitrator* arb,
        PiscesPacket* pkt, Input& to_credit, Output& to_send);
 

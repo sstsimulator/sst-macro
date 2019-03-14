@@ -63,7 +63,6 @@ class Torus : public CartesianTopology
     Torus,
     "macro",
     "torus",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "torus implements a high-dimension torus with an arbitrary number of dimensions")
 
   typedef enum {

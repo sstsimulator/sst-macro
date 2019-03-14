@@ -98,13 +98,13 @@ MpiCommFactory::init(int rank, int nproc)
   next_id_ = 2;
 
   MpiGroup* g = new MpiGroup(nproc);
-  g->set_id(MPI_GROUP_WORLD);
+  g->setId(MPI_GROUP_WORLD);
   worldcomm_ = new MpiComm(MPI_COMM_WORLD, rank, g, aid_);
 
   std::vector<TaskId> selfp;
   selfp.push_back(TaskId(rank));
   MpiGroup* g2 = new MpiGroup(selfp);
-  g2->set_id(MPI_GROUP_SELF);
+  g2->setId(MPI_GROUP_SELF);
   selfcomm_ = new MpiComm(MPI_COMM_SELF, int(0), g2, aid_);
 }
 
@@ -253,9 +253,7 @@ MpiCommFactory::commSplit(MpiComm* caller, int my_color, int my_key)
   //just model the allgather
 
   auto* op = parent_->startAllgather("MPI_Comm_split_allgather", caller->id(),
-                                                3, MPI_INT,
-                                                3, MPI_INT,
-                                                nullptr, nullptr);
+                                      3, MPI_INT, 3, MPI_INT, nullptr, nullptr);
   parent_->waitCollective(op);
 #endif
 

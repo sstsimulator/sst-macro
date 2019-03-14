@@ -104,7 +104,7 @@ LogPSwitch::LogPSwitch(uint32_t cid, SST::Params& params) :
     random_max_extra_byte_delay_ = Timestamp(params.find<SST::UnitAlgebra>("random_max_extra_byte_delay").getValue().toDouble());
   }
 
-  SST::Params contention_params = params.find_prefix_params("contention");
+  SST::Params contention_params = params.find_scoped_params("contention");
   if (contention_params.contains("model")){
     contention_model_ = sprockit::create<ContentionModel>(
       "macro", contention_params.find<std::string>("model"), contention_params);

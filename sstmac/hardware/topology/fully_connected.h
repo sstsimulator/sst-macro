@@ -63,7 +63,6 @@ class FullyConnected : public StructuredTopology
     FullyConnected,
     "macro",
     "fully_connected",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a topology with all nodes connected to a single switch")
 
   std::string toString() const override {

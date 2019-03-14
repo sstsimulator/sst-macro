@@ -59,8 +59,8 @@ class Hypercube :
     Hypercube,
     "macro",
     "hypercube",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
-    "hypercube implements a high-dimension torus with an arbitrary number of dimensions with full dim connectivity")
+    "hypercube implements a high-dimension torus with an "
+     "arbitrary number of dimensions with full dim connectivity")
 
   Hypercube(SST::Params& params);
 

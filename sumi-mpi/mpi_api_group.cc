@@ -149,7 +149,7 @@ MpiApi::groupTranslateRanks(MPI_Group grp1, int n, const int *ranks1, MPI_Group 
 {
   MpiGroup* grp1ptr = getGroup(grp1);
   MpiGroup* grp2ptr = getGroup(grp2);
-  grp1ptr->translate_ranks(n, ranks1, ranks2, grp2ptr);
+  grp1ptr->translateRanks(n, ranks1, ranks2, grp2ptr);
 
 
   return MPI_SUCCESS;

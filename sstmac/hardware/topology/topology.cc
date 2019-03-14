@@ -126,7 +126,7 @@ Topology*
 Topology::staticTopology(SST::Params& params)
 {
   if (!staticTopology_){
-    SST::Params top_params = params.find_prefix_params("topology");
+    SST::Params top_params = params.find_scoped_params("topology");
     staticTopology_ = sprockit::create<Topology>(
       "macro", top_params.find<std::string>("name"), top_params);
   }
@@ -320,7 +320,6 @@ class MerlinTopology : public Topology {
     MerlinTopology,
     "macro",
     "merlin",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "a dummy topology for running with Merlin")
 
   MerlinTopology(SST::Params& params)

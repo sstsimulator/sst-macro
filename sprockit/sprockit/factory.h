@@ -335,7 +335,7 @@ Base* create(const std::string& elemlib, const std::string& elem, Args&&... args
   static BuilderLibrary* getBuilderLibrary(const std::string& name); \
   static bool addBuilder(const std::string& elemlib, const std::string& elem, BaseBuilder* builder);
 
-#define SPKT_REGISTER_DERIVED(base,cls,lib,name,version,desc) \
+#define SPKT_REGISTER_DERIVED(base,cls,lib,name,desc) \
   bool ELI_isLoaded() { \
     return sprockit::InstantiateBuilder<base,cls>::isLoaded(); \
   } \

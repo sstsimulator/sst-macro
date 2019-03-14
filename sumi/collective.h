@@ -79,7 +79,8 @@ class Collective
     reduce_scatter,
     scan,
     scatter,
-    scatterv
+    scatterv,
+    donothing
   } type_t;
 
   virtual std::string toString() const = 0;
@@ -120,6 +121,10 @@ class Collective
     return tag_;
   }
 
+  int cqId() const {
+    return cq_id_;
+  }
+
   type_t type() const {
     return type_;
   }
@@ -134,10 +139,23 @@ class Collective
 
   virtual void initActors(){}
 
+  bool hasSubsequent() const {
+    return subsequent_;
+  }
+
+  void setSubsequent(Collective* coll){
+    subsequent_ = coll;
+  }
+
+  Collective* popSubsequent(){
+    auto* ret = subsequent_;
+    subsequent_ = nullptr;
+    return ret;
+  }
+
  protected:
   Collective(type_t type, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm);
 
- protected:
   Transport* my_api_;
   CollectiveEngine* engine_;
   int cq_id_;
@@ -149,6 +167,26 @@ class Collective
 
   std::map<int, int> refcounts_;
   Collective::type_t type_;
+
+  Collective* subsequent_;
+
+};
+
+class DoNothingCollective : public Collective
+{
+ public:
+  DoNothingCollective(CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
+    Collective(donothing, engine, tag, cq_id, comm)
+  {
+  }
+
+  std::string toString() const override {
+    return "DoNothing collective";
+  }
+
+  CollectiveDoneMessage* recv(int target, CollectiveWorkMessage* msg) override { return nullptr; }
+
+  void start() override {}
 
 };
 

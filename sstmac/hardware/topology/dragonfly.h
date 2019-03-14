@@ -124,7 +124,6 @@ class Dragonfly : public CartesianTopology
     Dragonfly,
     "macro",
     "dragonfly",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "A canonical dragonfly topology")
 
   Dragonfly(SST::Params& params);

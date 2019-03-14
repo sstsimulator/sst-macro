@@ -111,7 +111,7 @@ StatCollector::optionalBuild(SST::Params& params,
 
   if (ns.size()){
     if (params->has_namespace(ns)){
-      params = params.find_prefix_params(ns);
+      params = params.find_scoped_params(ns);
     } else {
       return nullptr;
     }
@@ -119,7 +119,7 @@ StatCollector::optionalBuild(SST::Params& params,
 
   if (suffix){
     sprockit::sim_parameters* old_params = params;
-    params = old_params.find_prefix_params(suffix);
+    params = old_params.find_scoped_params(suffix);
     params->add_param_override("suffix", suffix);
     old_params.combine_into(params);
   }

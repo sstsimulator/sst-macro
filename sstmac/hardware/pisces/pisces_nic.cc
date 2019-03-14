@@ -67,8 +67,8 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   NIC(params, parent),
   pending_inject_(1)
 {
-  SST::Params inj_params = params.find_prefix_params("injection");
-  SST::Params ej_params = params.find_prefix_params("ejection");
+  SST::Params inj_params = params.find_scoped_params("injection");
+  SST::Params ej_params = params.find_scoped_params("ejection");
 
   self_mtl_link_ = allocateSubLink("mtl", Timestamp(), parent,
                                     newLinkHandler(this, &NIC::mtlHandle));

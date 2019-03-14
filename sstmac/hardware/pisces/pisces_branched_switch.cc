@@ -94,9 +94,9 @@ PiscesBranchedSwitch::initComponents(SST::Params& params)
   if (!input_muxers_.empty())
     return;
 
-  SST::Params input_params = params.find_prefix_params("input");
-  SST::Params xbar_params = params.find_prefix_params("xbar");
-  SST::Params output_params = params.find_prefix_params("output");
+  SST::Params input_params = params.find_scoped_params("input");
+  SST::Params xbar_params = params.find_scoped_params("xbar");
+  SST::Params output_params = params.find_scoped_params("output");
 
   xbar_bw_ = xbar_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();
   input_bw_ = input_params.find<SST::UnitAlgebra>("bandwidth").getValue().toDouble();

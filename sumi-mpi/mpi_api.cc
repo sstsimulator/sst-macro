@@ -136,8 +136,9 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   crossed_comm_world_barrier_(false),
   comm_factory_(app->sid(), this)
 {
-  SST::Params queue_params = params.find_prefix_params("queue");
-  engine_ = new CollectiveEngine(queue_params, this);
+  engine_ = new CollectiveEngine(params, this);
+
+  SST::Params queue_params = params.find_scoped_params("queue");
   queue_ = new MpiQueue(queue_params, app->sid().task_, this, engine_);
 
   double probe_delay_s = params.find<SST::UnitAlgebra>("iprobe_delay", "0s").getValue().toDouble();
@@ -232,6 +233,10 @@ MpiApi::init(int* argc, char*** argv)
   comm_factory_.init(rank_, nproc_);
 
   worldcomm_ = comm_factory_.world();
+  if (smp_optimize_){
+    worldcomm_->createSmpCommunicator(smp_neighbors_, engine(), Message::default_cq);
+  }
+
   selfcomm_ = comm_factory_.self();
   comm_map_[MPI_COMM_WORLD] = worldcomm_;
   comm_map_[MPI_COMM_SELF] = selfcomm_;
@@ -537,7 +542,7 @@ MpiApi::addGroupPtr(MpiGroup* ptr, MPI_Group* grp)
 {
   if (generate_ids_) *grp = group_counter_++;
   grp_map_[*grp] = ptr;
-  ptr->set_id(*grp);
+  ptr->setId(*grp);
 }
 
 void

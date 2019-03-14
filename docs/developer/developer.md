@@ -1754,7 +1754,7 @@ The interconnect is itself a factory object, configured from a parameter file.
 interconnect::interconnect(SST::Params& params, EventManager* mgr, 
 	partition* part, parallel_runtime* rt)
 {
-  sprockit::sim_parameters* top_params = params.find_prefix_params("topology");
+  sprockit::sim_parameters* top_params = params.find_scoped_params("topology");
   topology_ = topology_factory::getParam("name", top_params);
   num_nodes_ = topology_->numNodes();
   num_switches_ = topology_->numSwitches();
@@ -1762,12 +1762,12 @@ interconnect::interconnect(SST::Params& params, EventManager* mgr,
   switches_.resize(num_switches_);
   nodes_.resize(num_nodes_);
 
-  sprockit::sim_parameters* node_params = params.find_prefix_params("node");
-  sprockit::sim_parameters* switch_params = params.find_prefix_params("switch");
+  sprockit::sim_parameters* node_params = params.find_scoped_params("node");
+  sprockit::sim_parameters* switch_params = params.find_scoped_params("switch");
 
-  sprockit::sim_parameters* nic_params = node_params.find_prefix_params("nic");
-  sprockit::sim_parameters* inj_params = nic_params.find_prefix_params("injection");
-  sprockit::sim_parameters* ej_params = switch_params.find_prefix_params("ejection"); 
+  sprockit::sim_parameters* nic_params = node_params.find_scoped_params("nic");
+  sprockit::sim_parameters* inj_params = nic_params.find_scoped_params("injection");
+  sprockit::sim_parameters* ej_params = switch_params.find_scoped_params("ejection"); 
 
   buildEndpoints(node_params, nic_params, mgr);
   buildSwitches(switch_params, mgr);

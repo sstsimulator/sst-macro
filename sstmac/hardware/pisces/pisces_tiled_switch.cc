@@ -106,11 +106,11 @@ PiscesTiledSwitch::initComponents(SST::Params& params)
   if (!xbar_tiles_.empty())
     return;
 
-  SST::Params demuxer_params = params.find_prefix_params("input");
+  SST::Params demuxer_params = params.find_scoped_params("input");
 
-  SST::Params xbar_params = params.find_prefix_params("xbar");
+  SST::Params xbar_params = params.find_scoped_params("xbar");
 
-  SST::Params muxer_params = params.find_prefix_params("link");
+  SST::Params muxer_params = params.find_scoped_params("link");
 
   int ntiles = nrows_ * ncols_;
   dst_inports_.resize(ntiles);

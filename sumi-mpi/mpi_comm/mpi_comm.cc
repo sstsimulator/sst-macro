@@ -95,6 +95,22 @@ MpiComm::MpiComm(
   }
 }
 
+std::set<int>
+MpiComm::globalRankSetIntersection(const std::set<int> &neighbors) const
+{
+  if (group_->isCommWorld()){
+    return neighbors;
+  } else {
+    std::set<int> intersc;
+    for (int entry : group_->worldRanks()){
+      if (neighbors.find(entry) != neighbors.end()){
+        intersc.insert(entry);
+      }
+    }
+    return intersc;
+  }
+}
+
 void
 MpiComm::deleteStatics()
 {

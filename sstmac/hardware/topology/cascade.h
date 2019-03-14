@@ -62,7 +62,6 @@ class Cascade : public CartesianTopology
     Cascade,
     "macro",
     "cascade",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "implements a cascade topology - dragonfly with 2D groups")
 
   Cascade(SST::Params& params);

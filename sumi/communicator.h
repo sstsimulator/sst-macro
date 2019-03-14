@@ -47,6 +47,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sumi/transport_fwd.h>
 #include <set>
+#include <map>
+#include <vector>
 
 namespace sumi {
 
@@ -77,7 +79,28 @@ class Communicator {
 
   virtual int globalToCommRank(int global_rank) const = 0;
 
+  virtual std::set<int> globalRankSetIntersection(const std::set<int>& neighbors) const = 0;
+
+  virtual bool supportsSmp() const {
+    return false;
+  }
+
+  bool smpBalanced() const {
+    return smp_balanced_;
+  }
+
   static const int unresolved_rank = -1;
+
+  void createSmpCommunicator(const std::set<int>& neighbors,
+                             CollectiveEngine* engine, int cq_id);
+
+  Communicator* smpComm() const {
+    return smp_comm_;
+  }
+
+  Communicator* ownerComm() const {
+    return owner_comm_;
+  }
 
   void registerRankCallback(RankCallback* cback){
     rank_callbacks_.insert(cback);
@@ -88,7 +111,12 @@ class Communicator {
   }
 
  protected:
-  Communicator(int comm_rank) : my_comm_rank_(comm_rank){}
+  Communicator(int comm_rank) :
+    my_comm_rank_(comm_rank),
+    smp_comm_(nullptr),
+    owner_comm_(nullptr),
+    smp_balanced_(false)
+  {}
 
   void rankResolved(int global_rank, int comm_rank);
 
@@ -101,6 +129,10 @@ class Communicator {
   */
   std::set<RankCallback*> rank_callbacks_;
 
+  Communicator* smp_comm_;
+  Communicator* owner_comm_;
+  bool smp_balanced_;
+
 };
 
 class GlobalCommunicator :
@@ -111,12 +143,42 @@ class GlobalCommunicator :
 
   int nproc() const override;
 
+  bool supportsSmp() const override {
+    return true;
+  }
+
   int commToGlobalRank(int comm_rank) const override;
 
   int globalToCommRank(int global_rank) const override;
 
+  std::set<int> globalRankSetIntersection(const std::set<int>& neighbors) const override {
+    return neighbors;
+  }
+
  private:
   Transport* transport_;
+};
+
+class MapCommunicator :
+  public Communicator
+{
+ public:
+  MapCommunicator(int rank, std::vector<int>&& local_to_global);
+
+  int nproc() const override {
+    return global_to_local_.size();
+  }
+
+  int commToGlobalRank(int comm_rank) const override;
+
+  int globalToCommRank(int global_rank) const override;
+
+  std::set<int> globalRankSetIntersection(const std::set<int> &neighbors) const override;
+
+ private:
+  std::map<int, int> global_to_local_;
+  std::vector<int> local_to_global_;
+  int rank_;
 };
 
 class ShiftedCommunicator :
@@ -161,24 +223,26 @@ class IndexCommunicator :
    * @param nproc
    * @param proc_list
    */
-  IndexCommunicator(int comm_rank, int nproc, int* proc_list) :
+  IndexCommunicator(int comm_rank, int nproc, std::vector<int>&& proc_list) :
     Communicator(comm_rank),
-    proc_list_(proc_list), nproc_(nproc)
+    proc_list_(std::move(proc_list)), nproc_(nproc)
   {
   }
 
-  int nproc() const {
+  int nproc() const override {
     return nproc_;
   }
 
-  int commToGlobalRank(int comm_rank) const {
+  int commToGlobalRank(int comm_rank) const override {
     return proc_list_[comm_rank];
   }
 
-  int globalToCommRank(int global_rank) const;
+  int globalToCommRank(int global_rank) const override;
+
+  std::set<int> globalRankSetIntersection(const std::set<int> &neighbors) const override;
 
  private:
-  int* proc_list_;
+  std::vector<int> proc_list_;
   int nproc_;
 
 };
@@ -199,17 +263,23 @@ class RotateCommunicator :
   {
   }
 
-  int nproc() const {
+  int nproc() const override {
     return nproc_;
   }
 
-  int commToGlobalRank(int comm_rank) const {
+  int commToGlobalRank(int comm_rank) const override {
     return (comm_rank + shift_) %  nproc_;
   }
 
-  int globalToCommRank(int global_rank) const {
+  int globalToCommRank(int global_rank) const override {
     return (global_rank + nproc_ - shift_) % nproc_;
   }
+
+  bool supportsSmp() const override {
+    return false;
+  }
+
+  std::set<int> globalRankSetIntersection(const std::set<int> &neighbors) const override;
 
  private:
   int nproc_;
@@ -238,6 +308,12 @@ class SubrangeCommunicator :
   int globalToCommRank(int global_rank) const override {
     return global_rank - start_;
   }
+
+  bool supportsSmp() const override {
+    return true;
+  }
+
+  std::set<int> globalRankSetIntersection(const std::set<int>& neighbors) const override;
 
  private:
   int nproc_;

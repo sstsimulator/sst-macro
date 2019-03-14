@@ -64,7 +64,6 @@ class FileTopology : public Topology
     FileTopology,
     "macro",
     "file",
-    SST_ELI_ELEMENT_VERSION(1,0,0),
     "topology based on JSON description")
 
   std::string toString() const override {

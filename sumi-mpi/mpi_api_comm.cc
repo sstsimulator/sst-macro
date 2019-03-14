@@ -277,7 +277,7 @@ MpiApi::commSplit(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
 
   //but also assign an id to the underlying group
   if (outcommPtr->id() != MPI_COMM_NULL){
-    outcommPtr->group()->set_id(group_counter_++);
+    outcommPtr->group()->setId(group_counter_++);
   }
 
   endAPICall();

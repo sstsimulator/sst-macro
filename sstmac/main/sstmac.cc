@@ -315,13 +315,13 @@ runStandalone(int argc, char** argv)
   sstmac::Timestamp::initStamps(100); //100 attoseconds per tick
   SST::Params null_params = std::make_shared<sprockit::SimParameters>();
 
-  SST::Params nic_params = null_params.find_prefix_params("nic");
+  SST::Params nic_params = null_params.find_scoped_params("nic");
   nic_params->addParamOverride("name", "null");
 
-  SST::Params mem_params = null_params.find_prefix_params("memory");
+  SST::Params mem_params = null_params.find_scoped_params("memory");
   mem_params->addParamOverride("name", "null");
 
-  SST::Params proc_params = null_params.find_prefix_params("proc");
+  SST::Params proc_params = null_params.find_scoped_params("proc");
   proc_params->addParamOverride("frequency", "1ghz");
   proc_params->addParamOverride("ncores", 1);
 

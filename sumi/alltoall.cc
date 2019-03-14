@@ -235,5 +235,91 @@ BruckAlltoallActor::finalize()
   delete[] tmp;
 }
 
+void
+DirectAlltoallActor::initBuffers()
+{
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
+  if (src){
+    total_send_size_ = nelems_ * type_size_;
+    total_recv_size_ = nelems_ * type_size_;
+    result_buffer_ = my_api_->makePublicBuffer(dst, total_recv_size_);
+    send_buffer_ = my_api_->makePublicBuffer(src, total_send_size_);
+    recv_buffer_ = result_buffer_;
+  }
+}
+
+void
+DirectAlltoallActor::finalizeBuffers()
+{
+  if (result_buffer_){
+    my_api_->unmakePublicBuffer(result_buffer_, total_recv_size_);
+    my_api_->unmakePublicBuffer(send_buffer_, total_send_size_);
+  }
+}
+
+void
+DirectAlltoallActor::addAction(
+  const std::vector<Action*>& actions,
+  int stride_direction,
+  int num_initial,
+  int stride)
+{
+  int partner = (dom_me_ + dom_nproc_ + stride*stride_direction) % dom_nproc_;
+  Action* ac = actions[partner];
+  if (stride < num_initial){
+    DagCollectiveActor::addAction(ac);
+  } else {
+    int prev_partner = (partner + dom_nproc_ - num_initial*stride_direction) % dom_nproc_;
+    Action* prev = actions[prev_partner];
+    addDependency(prev, ac);
+  }
+}
+
+void
+DirectAlltoallActor::initDag()
+{
+  std::vector<Action*> recvs(dom_nproc_);
+  std::vector<Action*> sends(dom_nproc_);
+
+  RecvAction::buf_type_t recv_ty = slicer_->contiguous() ?
+        RecvAction::in_place : RecvAction::unpack_temp_buf;
+
+  int send_offset = 0;
+  int recv_offset = 0;
+  int round = 0;
+  for (int i=0; i < dom_nproc_; ++i){
+    Action* recv = new RecvAction(round, i, recv_ty);
+    Action* send = new SendAction(round, i, SendAction::in_place);
+    send->offset = send_offset;
+    send->nelems = nelems_ * i;
+    recv->offset = recv_offset;
+    recv->nelems = nelems_ * i;
+
+    sends[i] = send;
+    recvs[i] = recv;
+  }
+
+  int num_initial = 3;
+  for (int i=0; i < dom_nproc_; ++i){
+    //move down for recvs
+    addAction(recvs, -1, num_initial, i);
+    //move up for sends
+    addAction(sends, 1, num_initial, i);
+  }
+
+}
+
+void
+DirectAlltoallActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
+{
+  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+}
+
+void
+DirectAlltoallActor::finalize()
+{
+}
+
 
 }

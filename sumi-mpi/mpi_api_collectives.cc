@@ -184,6 +184,8 @@ void
 MpiApi::finishCollective(CollectiveOpBase* op)
 {
   switch(op->ty){
+    case Collective::donothing:
+      spkt_abort_printf("do nothing collective should not call finishCollective");
     case Collective::reduce:
     case Collective::alltoall:
     case Collective::gather:

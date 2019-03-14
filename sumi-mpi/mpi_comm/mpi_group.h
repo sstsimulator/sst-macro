@@ -73,15 +73,15 @@ class MpiGroup  {
     return id_;
   }
 
-  void set_id(MPI_Group grp){
+  void setId(MPI_Group grp){
     id_ = grp;
   }
 
-  bool is_comm_world() const {
+  bool isCommWorld() const {
     return is_comm_world_;
   }
 
-  const std::vector<TaskId>& world_ranks() const {
+  const std::vector<TaskId>& worldRanks() const {
     return local_to_world_map_;
   }
 
@@ -94,7 +94,7 @@ class MpiGroup  {
    */
   int rankOfTask(TaskId t) const;
 
-  void translate_ranks(int n_ranks, const int* my_ranks, int* other_ranks, MpiGroup* other_grp);
+  void translateRanks(int n_ranks, const int* my_ranks, int* other_ranks, MpiGroup* other_grp);
 
  protected:
   //map the local gorup rank to the world rank

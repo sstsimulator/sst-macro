@@ -1,18 +1,18 @@
 /**
-Copyright 2009-2018 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
+Copyright 2009-2018 National Technology and Engineering Solutions of Sandia,
+LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government
 retains certain rights in this software.
 
 Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
+by National Technology and Engineering Solutions of Sandia, LLC., a wholly
+owned subsidiary of Honeywell International, Inc., for the U.S. Department of
 Energy's National Nuclear Security Administration under contract DE-NA0003525.
 
 Copyright (c) 2009-2018, NTESS
 
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright
@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 #include <mpi.h>
 
-#define sstmac_app_name mpi_all_collectives
+#define sstmac_app_name mpi_smp_collectives
 
 int USER_MAIN(int argc, char** argv)
 {
@@ -62,9 +62,10 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-  MPI_Alltoall(nullptr, 100, MPI_INT, nullptr, 100, MPI_INT, MPI_COMM_WORLD);
-  //MPI_Allgather(nullptr, 1000, MPI_DOUBLE, nullptr, 1000, MPI_DOUBLE, MPI_COMM_WORLD);
-  //MPI_Allreduce(nullptr, nullptr, 400, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  int nrepeat = 3;
+  for (int r=0; r < nrepeat; ++r){
+    MPI_Allreduce(nullptr, nullptr, 1000, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  }
 
   MPI_Finalize();
   return 0;

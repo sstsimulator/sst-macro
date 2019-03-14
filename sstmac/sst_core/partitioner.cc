@@ -142,21 +142,21 @@ SSTMacroPartition::performPartition(SST::ConfigGraph *graph)
   if (compMap.size() == 0)
     return;
   sprockit::sim_parameters part_params;
-  SST::Params top_subparams = part_params.find_prefix_params("topology");
+  SST::Params top_subparams = part_params.find_scoped_params("topology");
   //I need to figure out the topology
   ConfigComponent& front = *compMap.begin();
 
 
-  SST::Params top_params = front.params.find_prefix_params("interconnect").find_prefix_params("topology");
+  SST::Params top_params = front.params.find_scoped_params("interconnect").find_scoped_params("topology");
 
 
   SST::Params& params = make_spkt_params_from_sst_params(front.params);
   if (params->has_namespace("interconnect")){
 
-    params.find_prefix_params("interconnect")
-        .find_prefix_params("topology").combine_into(top_subparams);
+    params.find_scoped_params("interconnect")
+        .find_scoped_params("topology").combine_into(top_subparams);
   } else {
-    params.find_prefix_params("topology").combine_into(top_subparams);
+    params.find_scoped_params("topology").combine_into(top_subparams);
   }
 
   //if we have no switches, logp network only

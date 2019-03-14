@@ -70,16 +70,16 @@ PiscesAbstractSwitch::PiscesAbstractSwitch(uint32_t id, SST::Params& params) :
   router_(nullptr),
   NetworkSwitch(id, params)
 {
-  SST::Params xbar_params = params.find_prefix_params("xbar");
+  SST::Params xbar_params = params.find_scoped_params("xbar");
 
-  SST::Params buf_params = params.find_prefix_params("output_buffer");
+  SST::Params buf_params = params.find_scoped_params("output_buffer");
 
-  SST::Params rtr_params = params.find_prefix_params("router");
+  SST::Params rtr_params = params.find_scoped_params("router");
   rtr_params.insert("id", std::to_string(my_addr_));
   router_ = sprockit::create<Router>(
      "macro", rtr_params.find<std::string>("name"), rtr_params, top_, this);
 
-  SST::Params ej_params = params.find_prefix_params("ejection");
+  SST::Params ej_params = params.find_scoped_params("ejection");
   std::vector<Topology::InjectionPort> conns;
   top_->endpointsConnectedToEjectionSwitch(my_addr_, conns);
   if (!ej_params.contains("credits")){
@@ -98,8 +98,8 @@ PiscesSwitch::PiscesSwitch(uint32_t id, SST::Params& params)
 : PiscesAbstractSwitch(id, params),
   xbar_(nullptr)
 {
-  SST::Params xbar_params = params.find_prefix_params("xbar");
-  SST::Params link_params = params.find_prefix_params("link");
+  SST::Params xbar_params = params.find_scoped_params("xbar");
+  SST::Params link_params = params.find_scoped_params("link");
 
   if (params.contains("arbitrator")){
     arbType_ = params.find<std::string>("arbitrator");
