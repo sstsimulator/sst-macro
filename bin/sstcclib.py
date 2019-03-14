@@ -543,18 +543,6 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
 
     if not keepExe: #turn exe into a library
       libTarget = ldTarget
-      #libTargetName = os.path.split(ldTarget)[-1]
-      #splitter = libTargetName.split(".")
-      #if not "so" in splitter[1:]:
-      #  libTarget += ".so"
-      #  libTargetName += ".so"
-      #if not libTargetName.startswith("lib"):
-      #  splitter = os.path.split(libTarget)
-      #  newNameArr = []
-      #  newNameArr.extend(splitter)
-      #  newNameArr[-1] = "lib" + libTargetName
-      #  libTarget = os.path.join(*newNameArr)
-
       arCmdArr = [
         ld,
         soFlagsStr,
