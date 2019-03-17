@@ -169,9 +169,7 @@ class NIC : public ConnectableSubcomponent
 
   void sendToNode(NetworkMessage* netmsg);
 
-  virtual void sendManagerMsg(NetworkMessage* msg){
-    logp_link_->send(new NicEvent(msg));
-  }
+  virtual void sendManagerMsg(NetworkMessage* msg);
 
   virtual std::function<void(NetworkMessage*)> ctrlIoctl();
 

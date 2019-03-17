@@ -66,6 +66,8 @@ Questions? Contact sst-macro-help@sandia.gov
   debug_printf(sprockit::dbg::sculpin, "sculpin NIC %d: %s", \
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
+#define MERLIN_DEBUG_PACKET 0
+
 namespace sstmac {
 namespace hw {
 
@@ -78,6 +80,7 @@ class MerlinNIC :
 {
   struct MyRequest : public SST::Interfaces::SimpleNetwork::Request {
     uint64_t flow_id;
+    GlobalTimestamp start;
   };
 
   struct MessageEvent : public Event {
@@ -106,6 +109,7 @@ class MerlinNIC :
 
   MerlinNIC(SST::Params& params, Node* parent) :
     NIC(params, parent),
+    test_size_(0),
     vns_(2)
   {
     auto* link_ctrl = parent->loadSubComponent(params.find<std::string>("module"), parent, params);
@@ -115,16 +119,21 @@ class MerlinNIC :
     }
 
     pending_.resize(vns_);
+    ack_queue_.resize(vns_);
     mtu_ = params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
     auto recv_notify = new SST::Interfaces::SimpleNetwork::Handler<MerlinNIC>(this,&MerlinNIC::incomingPacket);
     auto send_notify = new SST::Interfaces::SimpleNetwork::Handler<MerlinNIC>(this,&MerlinNIC::incomingCredit);
 
+    if (params.contains("test_size")){
+      test_size_ = params.find<SST::UnitAlgebra>("test_size").getRoundedValue();
+    }
+
     link_control_->setNotifyOnReceive(recv_notify);
     link_control_->setNotifyOnSend(send_notify);
 
-    SST::UnitAlgebra bw("10GB/s");
-    SST::UnitAlgebra buf_size("64KB");
+    SST::UnitAlgebra bw = params.find<SST::UnitAlgebra>("bandwidth");
+    SST::UnitAlgebra buf_size = params.find<SST::UnitAlgebra>("buffer");
     link_control_->initialize("rtr", bw, 2, buf_size, buf_size);
   }
 
@@ -142,6 +151,20 @@ class MerlinNIC :
 
   void setup() override {
     link_control_->setup();
+#if MERLIN_DEBUG_PACKET
+    if (test_size_ != 0 && addr() == 0){
+      std::cout << "Injecting test messsage of size " << test_size_ << std::endl;
+      auto* req = new MyRequest;
+      req->size_in_bits = test_size_ * 8;
+      req->tail = true;
+      req->head = true;
+      req->flow_id = -1;
+      req->src = 0;
+      req->dest = 1;
+      link_control_->send(req,0);
+      ack_queue_[0].push(nullptr);
+    }
+#endif
   }
 
   void complete(unsigned int phase) override {
@@ -155,6 +178,11 @@ class MerlinNIC :
   virtual ~MerlinNIC() throw () {}
 
   bool incomingCredit(int vn){
+    auto* ack = ack_queue_[vn].front();
+    ack_queue_[vn].pop();
+    if (ack){
+      sendToNode(ack);
+    }
     sendWhatYouCan(vn);
     return true; //keep me
   }
@@ -163,16 +191,24 @@ class MerlinNIC :
     auto* req = link_control_->recv(vn);
     while (req){
       MyRequest* myreq = static_cast<MyRequest*>(req);
+#if MERLIN_DEBUG_PACKET
+      if (myreq->flow_id == -1){
+        std::cout << "Got packet of size " << (req->size_in_bits/8) << " at t=" << now().sec() << std::endl;
+      }
+#endif
+      auto bytes = myreq->size_in_bits/8;
       auto* payload = myreq->takePayload();
       MessageEvent* ev = payload ? static_cast<MessageEvent*>(payload) : nullptr;
-      nic_debug("receiving packet of size %d on vn %d", (myreq->size_in_bits/8), vn);
-      Flow* flow = cq_.recv(myreq->flow_id, myreq->size_in_bits/8,
-                            ev ? ev->msg() : nullptr);
+      Flow* flow = cq_.recv(myreq->flow_id, bytes, ev ? ev->msg() : nullptr);
+      nic_debug("receiving packet of size %d for flow %lu on vn %d: %s", 
+               (myreq->size_in_bits/8), myreq->flow_id, vn, (flow ? flow->toString().c_str() : "no flow"));
       if (flow){
         auto* msg = static_cast<NetworkMessage*>(flow);
         nic_debug("fully received message %s", msg->toString().c_str());
         recvMessage(msg);
       }
+      delete myreq;
+      if (ev) delete ev;
       req = link_control_->recv(vn);
     }
     return true; //keep me active
@@ -237,13 +273,21 @@ class MerlinNIC :
     uint64_t next_bytes = std::min(uint64_t(mtu_), p.bytesLeft);
     uint32_t next_bits = next_bytes * 8; //this is fine for 32-bits
     while (link_control_->spaceToSend(vn, next_bits)){
-      auto* req = new SST::Interfaces::SimpleNetwork::Request;
+      auto* req = new MyRequest;
       req->head = p.bytesLeft == p.payload->byteLength();
       p.bytesLeft -= next_bytes;
       req->tail = p.bytesLeft == 0;
+      req->flow_id = p.payload->flowId();
+      req->start = now();
       if (req->tail){
+        if (p.payload->needsAck()){
+          ack_queue_[vn].push(p.payload->cloneInjectionAck());
+        } else {
+          ack_queue_[vn].push(nullptr);
+        }
         req->givePayload(new MessageEvent(p.payload));
       } else {
+        ack_queue_[vn].push(nullptr);
         req->givePayload(nullptr);
       }
       req->src = p.payload->fromaddr();
@@ -251,6 +295,9 @@ class MerlinNIC :
       req->size_in_bits = next_bits;
       req->vn = 0;
 
+      nic_debug("injecting request of size %d on vn %d: head? %d tail? %d -> %s", 
+                 next_bytes, vn, req->head, req->tail, 
+                 p.payload->toString().c_str());
       link_control_->send(req, vn);
 
       next_bytes = std::min(uint64_t(mtu_), p.bytesLeft);
@@ -263,9 +310,11 @@ class MerlinNIC :
  private:
   SST::Interfaces::SimpleNetwork* link_control_;
   std::vector<std::queue<Pending>> pending_;
+  std::vector<std::queue<NetworkMessage*>> ack_queue_;
   uint32_t mtu_;
   RecvCQ cq_;
   int vns_;
+  int test_size_;
 };
 
 

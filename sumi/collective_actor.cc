@@ -558,12 +558,11 @@ DagCollectiveActor::commActionDone(Action::type_t ty, int round, int partner)
   active_map::iterator it = active_comms_.find(id);
   if (it == active_comms_.end()){
     for (it=active_comms_.begin(); it != active_comms_.end(); ++it){
-      std::cerr << "have action id " << it->first
+      std::cerr << "Have action id " << it->first
         << " to partner " << it->second->partner << std::endl;
     }
-    spkt_throw_printf(sprockit::ValueError,
-     "invalid action %s for round %d, partner %d",
-     Action::tostr(ty), round, partner);
+    spkt_abort_printf("Rank %d=%d invalid action %s for round %d, partner %d",
+     my_api_->rank(), dom_me_, Action::tostr(ty), round, partner);
   }
   Action* ac = it->second;
   commActionDone(ac);

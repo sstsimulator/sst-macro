@@ -68,5 +68,9 @@ libmacro_la_LIBADD = \
 
 libmacro_la_LDFLAGS = -module -shared -version-info @SSTMAC_LIBVERSION@
 
+install-exec-hook:
+	@sst_prefix@/bin/sst-register SST_MACRO SST_MACRO_LIBDIR=@libdir@
+
+
 endif
 

@@ -166,7 +166,7 @@ MpiApi::waitany(int count, MPI_Request array_of_requests[], int *indx,
   MPI_Request req_val = -1;
 
   start_mpi_call(MPI_Waitany);
-  mpi_api_debug(sprockit::dbg::mpi | sprockit::dbg::mpi_request, "MPI_Waitany(...)");
+  mpi_api_debug(sprockit::dbg::mpi, "MPI_Waitany(...)");
   *indx = MPI_UNDEFINED;
   std::vector<MpiRequest*> reqPtrs(count);
   int numNonnull = 0;

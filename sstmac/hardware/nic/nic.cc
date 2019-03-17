@@ -305,11 +305,17 @@ NIC::internodeSend(NetworkMessage* netmsg)
     netmsg->flowId(), int(netmsg->byteLength()), netmsg->toString().c_str());
   //we might not have a logp overlay network
   if (negligibleSize(netmsg->byteLength())){
-    ackSend(netmsg);
     sendManagerMsg(netmsg);
   } else {
     doSend(netmsg);
   }
+}
+
+void 
+NIC::sendManagerMsg(NetworkMessage* msg)
+{
+  logp_link_->send(new NicEvent(msg));
+  ackSend(msg);
 }
 
 void

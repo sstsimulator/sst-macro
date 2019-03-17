@@ -891,12 +891,15 @@ MpiApi* sstmac_mpi();
     _start_mpi_call_(fxn); \
     setNewMpiCall(Call_ID_##fxn)
   #define finish_mpi_call(fxn) \
+    mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
     finishLastMpiCall(Call_ID_##fxn); \
     endAPICall()
 #else
   #define start_mpi_call(fxn) _start_mpi_call_(fxn)
   #define start_wait_call(fxn,...) _start_mpi_call_(fxn)
-  #define finish_mpi_call(fxn) endAPICall()
+  #define finish_mpi_call(fxn) \
+    mpi_api_debug(sprockit::dbg::mpi, #fxn " finished"); \
+    endAPICall()
   #define finish_Impi_call(fxn) endAPICall()
 #endif
 

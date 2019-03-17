@@ -69,9 +69,6 @@ namespace hw {
 class SculpinSwitch :
   public NetworkSwitch
 {
-  SST_ELI_DOCUMENT_STATISTICS(
-    { "traffic_intensity",    "Count the traffic on a port", "unit of traffic", 1}
-  )
 
  public:
   SST_ELI_REGISTER_DERIVED_COMPONENT(
@@ -84,6 +81,11 @@ class SculpinSwitch :
     COMPONENT_CATEGORY_NETWORK)
 
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
+
+  SST_ELI_DOCUMENT_STATISTICS(
+    { "traffic_intensity",    "Count the traffic on a port", "unit of traffic", 1},
+    {"xmit_wait", "congestion statistic", "cycles", 1}, // Name, Desc, Units, Enable Level
+  )
 
   SculpinSwitch(uint32_t id, SST::Params& params);
 

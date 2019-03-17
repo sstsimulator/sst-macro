@@ -69,8 +69,7 @@ class ThreadingUContext : public ThreadContext
 
   void initContext() override {
     if (getcontext(&context_) != 0) {
-      spkt_abort_printf("ThreadingUContext::init_context: %s",
-        ::strerror(errno));
+      spkt_abort_printf("ThreadingUContext::init_context: %s", ::strerror(errno));
     }
   }
 
@@ -118,8 +117,7 @@ class ThreadingUContext : public ThreadContext
     ThreadingUContext* fromctx = static_cast<ThreadingUContext*>(from);
     ThreadingUContext* toctx = static_cast<ThreadingUContext*>(to);
     if (swapcontext(&fromctx->context_, &toctx->context_) == -1) {
-      spkt_abort_printf("ThreadingUContext::swapContext: %s",
-         strerror(errno));
+      spkt_abort_printf("ThreadingUContext::swapContext: %s", strerror(errno));
     }
   }
 

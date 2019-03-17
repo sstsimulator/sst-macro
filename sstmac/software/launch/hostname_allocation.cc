@@ -79,8 +79,7 @@ HostnameAllocation::readHostFile(
      hostfile.c_str());
 
   hosts.clear();
-  std::istream* instr = rt->bcastFileStream(hostfile);
-  std::istream& in = *instr;
+  std::ifstream in(hostfile.c_str());
   std::string name;
   while(in >> name)
     hosts.push_back(name);
