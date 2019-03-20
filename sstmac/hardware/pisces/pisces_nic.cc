@@ -79,7 +79,8 @@ PiscesNIC::PiscesNIC(SST::Params& params, Node* parent) :
   packet_size_ = inj_params.find<SST::UnitAlgebra>("mtu").getRoundedValue();
 
   //PiscesSender::configurePayloadPortLatency(inj_params);
-  inj_buffer_ = new PiscesBuffer("inj", arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
+  auto buf_name = sprockit::printf("injection%d",parent->addr());
+  inj_buffer_ = new PiscesBuffer(buf_name, arb, inj_bw, packet_size_, parent, 1/*single vc for inj*/);
 }
 
 void

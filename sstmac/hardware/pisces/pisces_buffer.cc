@@ -91,6 +91,7 @@ PiscesBuffer::PiscesBuffer(const std::string& selfname,
   arb_ = sprockit::create<PiscesBandwidthArbitrator>(
         "macro", arb, bw);
 
+  xmit_wait_ = getTrueComponent()->registerStatistic<double>("xmit_wait", selfname);
 }
 
 void
@@ -131,11 +132,16 @@ PiscesBuffer::handleCredit(Event* ev)
   PiscesPacket* payload = queues_[vc].pop(num_credits);
 
   while (payload) {
+    GlobalTimestamp time_now = now();
+    if (time_now > last_tail_left_){
+      Timestamp time_waiting = time_now - last_tail_left_;
+      xmit_wait_->addData(time_waiting.sec());
+    }
     num_credits -= payload->numBytes();
     //this actually doesn't create any new delay
     //this message was already queued so num_bytes
     //was already added to bytes_delayed
-    send(arb_, payload, input_, output_);
+    last_tail_left_ = send(arb_, payload, input_, output_);
     payload = queues_[vc].pop(num_credits);
   }
 
