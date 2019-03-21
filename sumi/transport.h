@@ -502,6 +502,7 @@ class CollectiveEngine
   int system_collective_tag_;
 
   std::string alltoall_type_;
+  std::string allgather_type_;
 };
 
 static void* sumi_null_ptr = ((void*)0x123);

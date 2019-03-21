@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi/alltoall.h>
+#include <sumi/allgather.h>
 #include <sumi/transport.h>
 #include <sumi/communicator.h>
 #include <sprockit/output.h>
@@ -67,7 +68,7 @@ BruckAlltoallActor::initBuffers()
   void* dst = result_buffer_;
   void* src = send_buffer_;
   int log2nproc, num_rounds, nprocs_extra_round;
-  computeTree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
+  BruckTree::computeTree(dom_nproc_, log2nproc, midpoint_, num_rounds, nprocs_extra_round);
 
   if (src){
     //put everything into the dst buffer to begin
@@ -141,7 +142,7 @@ void
 BruckAlltoallActor::initDag()
 {
   int log2nproc, num_rounds, nprocs_extra_round;
-  computeTree(log2nproc, midpoint_, num_rounds, nprocs_extra_round);
+  BruckTree::computeTree(dom_nproc_, log2nproc, midpoint_, num_rounds, nprocs_extra_round);
 
   int partnerGap = 1;
   int me = dom_me_;

@@ -94,7 +94,7 @@ SimultaneousBtreeScanActor::initDag()
   slicer_->fxn = fxn_;
 
   int log2nproc, midpoint, virtual_nproc;
-  computeTree(log2nproc, midpoint, virtual_nproc);
+  RecursiveDoubling::computeTree(dom_nproc_, log2nproc, midpoint, virtual_nproc);
 
   int nproc = dom_nproc_;
   int me = dom_me_;

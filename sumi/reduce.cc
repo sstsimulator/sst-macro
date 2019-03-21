@@ -111,7 +111,7 @@ WilkeReduceActor::initDag()
   slicer_->fxn = fxn_;
 
   int log2nproc, midpoint, virtual_nproc;
-  computeTree(log2nproc, midpoint, virtual_nproc);
+  RecursiveDoubling::computeTree(dom_nproc_, log2nproc, midpoint, virtual_nproc);
 
   VirtualRankMap rank_map(dom_nproc_, virtual_nproc);
   int my_roles[2];

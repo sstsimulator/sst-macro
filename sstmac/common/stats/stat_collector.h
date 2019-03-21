@@ -422,7 +422,7 @@ using MultiStatistic = Statistic<std::tuple<Args...>>;
 #define SST_ELI_REGISTER_CUSTOM_STATISTIC(parent,cls,lib,name,version,desc) \
   SPKT_REGISTER_DERIVED(parent,cls,lib,name,desc)
 
-#define SST_ELI_INSTANTIATE_STATISTIC(cls,field,shortName) \
+#define SST_ELI_INSTANTIATE_STATISTIC(cls,field) \
   struct cls##_##field##_##shortName : public cls<field> { \
     cls##_##field##_##shortName(SST::BaseComponent* bc, const std::string& sn, \
            const std::string& si, SST::Params& p) : \
@@ -435,8 +435,6 @@ using MultiStatistic = Statistic<std::tuple<Args...>>;
          SST::Statistics::Statistic<field>, \
          sstmac::NullStatistic<field>>::isLoaded(); \
     } \
-    static const char* SPKT_fieldName(){ return #field; } \
-    static const char* SPKT_fieldShortName(){ return #shortName; } \
   };
 
 #define PP_NARG(...) PP_NARG_(__VA_ARGS__, PP_NSEQ())

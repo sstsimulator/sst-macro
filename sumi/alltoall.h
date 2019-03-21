@@ -71,13 +71,12 @@ class AllToAllCollective : public DagCollective {
   int nelems_;
 };
 
-class BruckAlltoallActor :
-  public BruckActor
+class BruckAlltoallActor : public DagCollectiveActor
 {
  public:
   BruckAlltoallActor(CollectiveEngine* engine, void* dst, void* src,
                        int nelems, int type_size, int tag, int cq_id, Communicator* comm)
-    : BruckActor(Collective::alltoall, engine, dst, src, type_size, tag, cq_id, comm),
+    : DagCollectiveActor(Collective::alltoall, engine, dst, src, type_size, tag, cq_id, comm),
       nelems_(nelems)
   {
   }

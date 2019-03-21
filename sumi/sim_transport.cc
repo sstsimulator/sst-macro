@@ -475,6 +475,7 @@ CollectiveEngine::CollectiveEngine(SST::Params& params, Transport *tport) :
   eager_cutoff_ = params.find<int>("eager_cutoff", 512);
   use_put_protocol_ = params.find<bool>("use_put_protocol", false);
   alltoall_type_ = params.find<std::string>("alltoall", "bruck");
+  allgather_type_ = params.find<std::string>("allgather", "bruck");
 }
 
 CollectiveEngine::~CollectiveEngine()
@@ -713,9 +714,37 @@ CollectiveEngine::allgather(void *dst, void *src, int nelems, int type_size, int
  if (msg) return msg;
 
   if (!comm) comm = global_domain_;
-  DagCollective* coll = new BruckAllgatherCollective(
-        Collective::allgather, this, dst, src, nelems, type_size, tag, cq_id, comm);
-  return startCollective(coll);
+
+  if (comm->smpComm() && comm->smpBalanced()){
+    int smpSize = comm->smpComm()->nproc();
+    void* intraDst = dst ? new char[nelems*type_size*smpSize] : nullptr;
+
+    int intra_tag = 1<<28 | tag;
+    AllgatherCollective* intra = AllgatherCollective::getBuilderLibrary("macro")->getBuilder(allgather_type_)
+                            ->create(this, intraDst, src, nelems, type_size, intra_tag, cq_id, comm->smpComm());
+
+    DagCollective* prev;
+    if (comm->ownerComm()){
+      int inter_tag = 2<<28 | tag;
+      AllgatherCollective* inter = AllgatherCollective::getBuilderLibrary("macro")->getBuilder(allgather_type_)
+                              ->create(this, dst, intraDst, smpSize*nelems, type_size, inter_tag, cq_id, comm->ownerComm());
+      intra->setSubsequent(inter);
+      prev = inter;
+    } else {
+      prev = intra;
+    }
+    int bcast_tag = 3<<28 | tag;
+    auto* bcast = new BinaryTreeBcastCollective(this, 0, dst, comm->nproc()*nelems,
+                                                type_size, bcast_tag, cq_id, comm->smpComm());
+    prev->setSubsequent(bcast);
+    auto* final = new DoNothingCollective(this, tag, cq_id, comm);
+    bcast->setSubsequent(final);
+    return startCollective(intra);
+  } else {
+    AllgatherCollective* coll = AllgatherCollective::getBuilderLibrary("macro")->getBuilder(allgather_type_)
+                            ->create(this, dst, src, nelems, type_size, tag, cq_id, comm);
+    return startCollective(coll);
+  }
 }
 
 CollectiveDoneMessage*
@@ -739,7 +768,7 @@ CollectiveEngine::barrier(int tag, int cq_id, Communicator* comm)
   if (msg) return msg;
 
   if (!comm) comm = global_domain_;
-  DagCollective* coll = new BruckAllgatherCollective(Collective::barrier, this, nullptr, nullptr, 0, 0, tag, cq_id, comm);
+  DagCollective* coll = new BruckBarrierCollective(this, nullptr, nullptr, tag, cq_id, comm);
   return startCollective(coll);
 }
 

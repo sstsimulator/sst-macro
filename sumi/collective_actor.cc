@@ -888,30 +888,16 @@ DagCollectiveActor::recv(CollectiveWorkMessage* msg)
 }
 
 void
-DagCollectiveActor::computeTree(int &log2nproc, int &midpoint, int &nproc) const
+RecursiveDoubling::computeTree(int nproc, int &log2nproc, int &midpoint, int &pow2nproc)
 {
-  nproc = 1;
+  pow2nproc = 1;
   log2nproc = 0;
-  while (nproc < dom_nproc_)
+  while (pow2nproc < nproc)
   {
     ++log2nproc;
-    nproc *= 2;
+    pow2nproc *= 2;
   }
-  midpoint = nproc / 2;
-}
-
-void
-BruckActor::computeTree(int &log2nproc, int &midpoint, int &num_rounds, int &nprocs_extra_round) const
-{
-  int virtual_nproc;
-  DagCollectiveActor::computeTree(log2nproc, midpoint, virtual_nproc);
-  nprocs_extra_round = 0;
-  num_rounds = log2nproc;
-  if (dom_nproc_ != virtual_nproc){
-    --num_rounds;
-    //we will have to do an extra exchange in the last round
-    nprocs_extra_round = dom_nproc_ - midpoint;
-  }
+  midpoint = pow2nproc / 2;
 }
 
 int
