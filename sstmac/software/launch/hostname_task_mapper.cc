@@ -77,8 +77,7 @@ HostnameTaskMapper::mapRanks(
   int nrank = nproc;
   result.resize(nrank);
 
-  std::istream* nodelistptr = rt_->bcastFileStream(listfile_);
-  std::istream& nodelist = *nodelistptr;
+  std::ifstream nodelist(listfile_);
 
   std::stringstream sstr;
   for (int i = 0; i < nrank; i++) {
@@ -101,7 +100,6 @@ HostnameTaskMapper::mapRanks(
 
   }
 
-  delete nodelistptr;
 }
 }
 }

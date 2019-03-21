@@ -90,6 +90,10 @@ class PiscesSwitch :
 
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
 
+  SST_ELI_DOCUMENT_STATISTICS(
+    {"xmit_wait", "stalled cycles with data but no credits", "nanoseconds",1}
+  )
+
   PiscesSwitch(uint32_t id, SST::Params& params);
 
   virtual ~PiscesSwitch();
@@ -137,7 +141,6 @@ class PiscesSwitch :
   double link_bw_;
   int link_credits_;
   int mtu_;
-
 };
 
 }

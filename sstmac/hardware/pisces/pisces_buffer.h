@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/pisces/pisces_crossbar.h>
 #include <sstmac/hardware/pisces/pisces_sender.h>
+#include <sstmac/common/timestamp.h>
 
 namespace sstmac {
 namespace hw {
@@ -55,8 +56,8 @@ namespace hw {
 class PiscesBuffer :
   public PiscesSender
 {
-
  public:
+
   virtual ~PiscesBuffer();
 
   void setOutput(int this_outport, int dst_inport, EventLink* link, int credits) override;
@@ -101,6 +102,8 @@ class PiscesBuffer :
   std::set<int> deadlocked_channels_;
   std::map<int, std::list<PiscesPacket*> > blocked_messages_;
   int packet_size_;
+  GlobalTimestamp last_tail_left_;
+  Statistic<double>* xmit_wait_;
 
 };
 
