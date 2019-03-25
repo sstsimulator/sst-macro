@@ -390,7 +390,7 @@ class SubComponent :
     SST::SubComponent(parent),
     EventScheduler(selfname, 0, parent)
 #else
-    EventScheduler(selfname, parent->componentId(), nullptr)
+    EventScheduler(selfname, parent->componentId(), parent)
 #endif
   {
   }

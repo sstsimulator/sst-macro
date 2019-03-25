@@ -76,6 +76,13 @@ EventScheduler::sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent *ev)
   mgr_->schedule(ev);
 }
 
+SST::Params&
+EventScheduler::getEmptyParams()
+{
+  static SST::Params params{};
+  return params;
+}
+
 void
 EventScheduler::registerStatisticCore(StatisticBase *base)
 {
