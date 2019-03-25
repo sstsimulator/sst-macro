@@ -191,18 +191,27 @@ class EventScheduler : public sprockit::printable
     self_link_->send(delay, time_converter_, ev);
   }
 #else
+  Component* getTrueComponent() const {
+    return comp_;
+  }
+
   template <class T> Statistic<T>*
-  registerStatistic(SST::Params& params, const std::string& name){
-    return registerStatisticType<SST::Params,Statistic<T>>(params,name);
+  registerStatistic(SST::Params& params, const std::string& name, const std::string& subId = ""){
+    return registerStatisticType<SST::Params,Statistic<T>>(params,name,subId);
+  }
+
+  template <class T> Statistic<T>*
+  registerStatistic(const std::string& name, const std::string& subId = ""){
+    return registerStatisticType<SST::Params,Statistic<T>>(getEmptyParams(),name,subId);
   }
 
   template <class... Args> SST::Statistics::Statistic<std::tuple<Args...>>*
-  registerMultiStatistic(SST::Params& params, const std::string& name){
-    return registerStatisticType<SST::Params,SST::Statistics::Statistic<std::tuple<Args...>>>(params,name);
+  registerMultiStatistic(SST::Params& params, const std::string& name, const std::string& subId = ""){
+    return registerStatisticType<SST::Params,SST::Statistics::Statistic<std::tuple<Args...>>>(params,name,subId);
   }
 
   template <class Params, class Stat> Stat*
-  registerStatisticType(Params& params, const std::string& name){
+  registerStatisticType(Params& params, const std::string& name, const std::string& subId){
     auto scoped_params = params.find_scoped_params(name);
     auto type = scoped_params.template find<std::string>("type", "null");
     Stat* stat = Stat::getBuilderLibrary("macro")
@@ -320,6 +329,8 @@ class EventScheduler : public sprockit::printable
 #endif
 
  private:
+  static SST::Params& getEmptyParams();
+
   SST::Component* comp_;
 
 };
