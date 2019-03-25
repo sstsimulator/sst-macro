@@ -45,6 +45,8 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces_buffer.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <sstmac/common/runtime.h>
+#include <sstmac/common/stats/stat_collector.h>
+#include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
 namespace sstmac {
