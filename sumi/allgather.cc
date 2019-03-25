@@ -60,7 +60,22 @@ using namespace sprockit::dbg;
 namespace sumi {
 
 void
-BruckAllgatherActor::initBuffers()
+BruckTree::computeTree(int nproc, int &log2nproc, int &midpoint,
+                        int &num_rounds, int &nprocs_extra_round)
+{
+  int virtual_nproc;
+  RecursiveDoubling::computeTree(nproc, log2nproc, midpoint, virtual_nproc);
+  nprocs_extra_round = 0;
+  num_rounds = log2nproc;
+  if (nproc != virtual_nproc){
+    --num_rounds;
+    //we will have to do an extra exchange in the last round
+    nprocs_extra_round = nproc - midpoint;
+  }
+}
+
+void
+BruckActor::initBuffers()
 {
   void* dst = result_buffer_;
   void* src = send_buffer_;
@@ -85,7 +100,7 @@ BruckAllgatherActor::initBuffers()
 }
 
 void
-BruckAllgatherActor::finalizeBuffers()
+BruckActor::finalizeBuffers()
 {
   if (result_buffer_){
     uint64_t buffer_size = nelems_ * type_size_ * comm_->nproc();
@@ -94,10 +109,10 @@ BruckAllgatherActor::finalizeBuffers()
 }
 
 void
-BruckAllgatherActor::initDag()
+BruckActor::initDag()
 {
   int log2nproc, midpoint, nprocs_extra_round, num_rounds;
-  computeTree(log2nproc, midpoint, num_rounds, nprocs_extra_round);
+  BruckTree::computeTree(dom_nproc_, log2nproc, midpoint, num_rounds, nprocs_extra_round);
 
   debug_printf(sumi_collective,
     "Bruck %s: configured for %d rounds with an extra round exchanging %d proc segments on tag=%d ",
@@ -157,13 +172,13 @@ BruckAllgatherActor::initDag()
 }
 
 void
-BruckAllgatherActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
+BruckActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-BruckAllgatherActor::finalize()
+BruckActor::finalize()
 {
   // rank 0 need not reorder
   // or no buffers
@@ -196,6 +211,75 @@ BruckAllgatherActor::finalize()
 
   delete[] tmp;
 }
+
+void
+RingAllgatherActor::initBuffers()
+{
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
+  if (src){
+    auto total_send_size = nelems_ * type_size_;
+    auto total_recv_size = nelems_ * type_size_;
+    result_buffer_ = my_api_->makePublicBuffer(dst, total_recv_size);
+    send_buffer_ = my_api_->makePublicBuffer(src, total_send_size);
+    recv_buffer_ = result_buffer_;
+  }
+}
+
+void
+RingAllgatherActor::finalizeBuffers()
+{
+  if (result_buffer_){
+    auto total_send_size = nelems_ * type_size_;
+    auto total_recv_size = nelems_ * type_size_;
+    my_api_->unmakePublicBuffer(result_buffer_, total_recv_size);
+    my_api_->unmakePublicBuffer(send_buffer_, total_send_size);
+  }
+}
+
+void
+RingAllgatherActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
+{
+  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+}
+
+void
+RingAllgatherActor::initDag()
+{
+  int send_partner = (dom_me_ + 1) % dom_nproc_;
+  int recv_partner = (dom_me_ + dom_nproc_ - 1) % dom_nproc_;
+  Action *prev_send = nullptr, *prev_recv = nullptr;
+  int last_recved = dom_me_;
+  for (int i=1; i < dom_nproc_; ++i){
+    //the chunk rotates in a ring
+    /**
+     * 0->1->2->3->0
+     * Rank 1 would exchange the following "segments"
+     * receive 0, send 1
+     * receive 3, send 0
+     * receive 2, send 3
+     */
+    int recv_chunk = (last_recved - 1 + dom_nproc_) % dom_nproc_;
+    int send_chunk  = last_recved;
+
+    Action* send_ac = new SendAction(i, send_partner, SendAction::in_place);
+    send_ac->offset = send_chunk * nelems_;
+    send_ac->nelems = nelems_;
+    Action* recv_ac = new RecvAction(i, recv_partner, RecvAction::in_place);
+    recv_ac->offset = recv_chunk * nelems_;
+    recv_ac->nelems = nelems_;
+
+    addDependency(prev_send, send_ac);
+    addDependency(prev_send, recv_ac);
+    addDependency(prev_recv, send_ac);
+    addDependency(prev_recv, recv_ac);
+
+    last_recved = recv_chunk;
+    prev_send = send_ac;
+    prev_recv = recv_ac;
+  }
+}
+
 
 
 }

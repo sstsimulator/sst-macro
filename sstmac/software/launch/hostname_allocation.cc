@@ -79,7 +79,7 @@ HostnameAllocation::readHostFile(
      hostfile.c_str());
 
   hosts.clear();
-  std::ifstream in(hostfile.c_str());
+  std::ifstream in(hostfile);
   std::string name;
   while(in >> name)
     hosts.push_back(name);

@@ -63,7 +63,7 @@ int USER_MAIN(int argc, char** argv)
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
   MPI_Alltoall(nullptr, 100, MPI_INT, nullptr, 100, MPI_INT, MPI_COMM_WORLD);
-  //MPI_Allgather(nullptr, 1000, MPI_DOUBLE, nullptr, 1000, MPI_DOUBLE, MPI_COMM_WORLD);
+  MPI_Allgather(nullptr, 1000, MPI_DOUBLE, nullptr, 1000, MPI_DOUBLE, MPI_COMM_WORLD);
   //MPI_Allreduce(nullptr, nullptr, 400, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
   MPI_Finalize();

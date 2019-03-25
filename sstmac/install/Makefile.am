@@ -56,6 +56,8 @@ DIST_SUBDIRS = $(STD_SUBDIRS)
 
 
 
+
+
 if INTEGRATED_SST_CORE
 lib_LTLIBRARIES = libmacro.la
 libsstmac_la_LIBADD += ../sst_core/libsstmac_sst_core.la
@@ -68,9 +70,10 @@ libmacro_la_LIBADD = \
 
 libmacro_la_LDFLAGS = -module -shared -version-info @SSTMAC_LIBVERSION@
 
-install-exec-hook:
-	@sst_prefix@/bin/sst-register SST_MACRO SST_MACRO_LIBDIR=@libdir@
+SST_REGISTER_TOOL=@sst_prefix@/bin/sst-register
 
+register:
+	  $(SST_REGISTER_TOOL) SST_MACRO SST_MACRO_LIBDIR=@libdir@
 
 endif
 

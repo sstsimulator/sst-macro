@@ -77,7 +77,7 @@ HostnameTaskMapper::mapRanks(
   int nrank = nproc;
   result.resize(nrank);
 
-  std::ifstream nodelist(listfile_.c_str());
+  std::ifstream nodelist(listfile_);
 
   std::stringstream sstr;
   for (int i = 0; i < nrank; i++) {

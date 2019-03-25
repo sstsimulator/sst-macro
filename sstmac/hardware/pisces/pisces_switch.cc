@@ -164,7 +164,7 @@ PiscesSwitch::connectOutput(
 {
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
 
-  PiscesBuffer* out_buffer = new PiscesBuffer(sprockit::printf("buffer%d", src_outport),
+  PiscesBuffer* out_buffer = new PiscesBuffer(sprockit::printf("switch%d:buffer%d",my_addr_, src_outport),
                                               arbType_, link_bw_ * scale_factor, mtu_,
                                               this, router_->numVC());
   int buffer_inport = 0;

@@ -403,8 +403,6 @@ class DagCollectiveActor :
   void addDependency(Action* precursor, Action* ac);
   void addAction(Action* ac);
 
-  void computeTree(int& log2nproc, int& midpoint, int& nproc) const;
-
   static bool isSharedRole(int role, int num_roles, int* my_roles){
     for (int r=0; r < num_roles; ++r){
       if (role == my_roles[r]){
@@ -538,18 +536,8 @@ class DagCollectiveActor :
 #endif
 };
 
-class BruckActor : public DagCollectiveActor
-{
- protected:
-  BruckActor(Collective::type_t ty, CollectiveEngine* engine, void* dst, void* src,
-              int type_size, int tag, int cq_id, Communicator* comm) :
-    DagCollectiveActor(ty, engine, dst, src, type_size, tag, cq_id, comm)
-  {
-  }
-
-  void computeTree(int& log2nproc, int& midpoint,
-               int& num_rounds, int& nprocs_extra_round) const;
-
+struct RecursiveDoubling {
+  static void computeTree(int nproc, int &log2nproc, int &midpoint, int &pow2nproc);
 };
 
 /**

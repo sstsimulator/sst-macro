@@ -71,6 +71,10 @@ class SimpleNode :
 
   SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
 
+  SST_ELI_DOCUMENT_STATISTICS(
+    {"xmit_wait", "stalled cycles with data but no credits", "nanoseconds",1}
+  )
+
   SimpleNode(uint32_t id, SST::Params& params);
 
   virtual ~SimpleNode();

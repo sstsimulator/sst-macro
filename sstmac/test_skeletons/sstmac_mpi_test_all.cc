@@ -525,7 +525,7 @@ test_comms(MPI_Comm comm)
   MPI_Comm_size(new_comm, &new_size);
 
   if (new_size != size/2 && new_size != (size/2 + 1))
-    spkt_abort_printf("MPI comm size missmatch, check MPI_Comm_split");
+    spkt_abort_printf("MPI comm size mismatch, check MPI_Comm_split");
 }
 
 void

@@ -52,7 +52,7 @@ void
 BtreeScatterActor::initTree()
 {
   int nproc;
-  computeTree(log2nproc_, midpoint_, nproc);
+  RecursiveDoubling::computeTree(dom_nproc_, log2nproc_, midpoint_, nproc);
 }
 
 void
