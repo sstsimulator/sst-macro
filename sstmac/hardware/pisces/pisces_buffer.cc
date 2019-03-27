@@ -181,7 +181,7 @@ PiscesBuffer::handlePayload(Event* ev)
   bytes_delayed_ += pkt->numBytes();
   if (num_credits >= pkt->numBytes()) {
     num_credits -= pkt->numBytes();
-    send(arb_, pkt, input_, output_);
+    last_tail_left_ = send(arb_, pkt, input_, output_);
   } else {
 #if SSTMAC_SANITY_CHECK
     if (dst_vc >= queues_.size()){
@@ -202,7 +202,8 @@ PiscesBuffer::sendPayload(PiscesPacket *pkt)
   // either way there's a delay accumulating for other messages
   bytes_delayed_ += pkt->numBytes();
   num_credits -= pkt->numBytes();
-  return send(arb_, pkt, input_, output_);
+  last_tail_left_ = send(arb_, pkt, input_, output_);
+  return last_tail_left_;
 }
 
 int

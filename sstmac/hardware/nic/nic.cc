@@ -53,6 +53,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/event_callback.h>
 #include <sstmac/hardware/memory/memory_model.h>
+#include <sstmac/hardware/topology/topology.h>
 #include <sprockit/statics.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
@@ -95,6 +96,7 @@ NIC::NIC(SST::Params& params, Node* parent) :
   ConnectableSubcomponent("nic", parent) //no self events with NIC
 {
   negligibleSize_ = params.find<int>("negligible_size", DEFAULT_NEGLIGIBLE_SIZE);
+  top_ = Topology::staticTopology(params);
 
   /** TODO stats
   spy_num_messages_ = optionalStats<StatSpyplot>(parent,
