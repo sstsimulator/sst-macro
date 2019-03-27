@@ -715,19 +715,31 @@ CollectiveEngine::allgather(void *dst, void *src, int nelems, int type_size, int
 
   if (!comm) comm = global_domain_;
 
+  auto* fact = AllgatherCollective::getBuilderLibrary("macro");
+  if (!fact){
+    spkt_abort_printf("No allgather collective algorithms registered!");
+  }
+
+  auto* builder = fact->getBuilder(allgather_type_);
+  if (!builder){
+    spkt_abort_printf("invalid allgather type requested: %s", allgather_type_.c_str());
+  }
+
   if (comm->smpComm() && comm->smpBalanced()){
     int smpSize = comm->smpComm()->nproc();
     void* intraDst = dst ? new char[nelems*type_size*smpSize] : nullptr;
 
     int intra_tag = 1<<28 | tag;
-    AllgatherCollective* intra = AllgatherCollective::getBuilderLibrary("macro")->getBuilder(allgather_type_)
-                            ->create(this, intraDst, src, nelems, type_size, intra_tag, cq_id, comm->smpComm());
+
+
+    AllgatherCollective* intra = builder->create(this, intraDst, src, nelems,
+                                                 type_size, intra_tag, cq_id, comm->smpComm());
 
     DagCollective* prev;
     if (comm->ownerComm()){
       int inter_tag = 2<<28 | tag;
-      AllgatherCollective* inter = AllgatherCollective::getBuilderLibrary("macro")->getBuilder(allgather_type_)
-                              ->create(this, dst, intraDst, smpSize*nelems, type_size, inter_tag, cq_id, comm->ownerComm());
+      AllgatherCollective* inter = builder->create(this, dst, intraDst, smpSize*nelems, type_size,
+                                                   inter_tag, cq_id, comm->ownerComm());
       intra->setSubsequent(inter);
       prev = inter;
     } else {
@@ -741,8 +753,7 @@ CollectiveEngine::allgather(void *dst, void *src, int nelems, int type_size, int
     bcast->setSubsequent(final);
     return startCollective(intra);
   } else {
-    AllgatherCollective* coll = AllgatherCollective::getBuilderLibrary("macro")->getBuilder(allgather_type_)
-                            ->create(this, dst, src, nelems, type_size, tag, cq_id, comm);
+    AllgatherCollective* coll = builder->create(this, dst, src, nelems, type_size, tag, cq_id, comm);
     return startCollective(coll);
   }
 }

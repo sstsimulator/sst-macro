@@ -208,6 +208,7 @@ PiscesNIC::packetSent(Event* ev)
   inj_buffer_->handleCredit(ev);
   while (!pending_inject_[vc].empty()){
     auto& pending = pending_inject_[vc].front();
+    inj_buffer_->collectIdleTicks();
     pending.bytes_sent = inject(vc, pending.bytes_sent, pending.msg);
     if (pending.bytes_sent == pending.msg->byteLength()){
       pending_inject_[vc].pop();

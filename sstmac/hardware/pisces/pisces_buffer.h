@@ -70,6 +70,8 @@ class PiscesBuffer :
 
   GlobalTimestamp sendPayload(PiscesPacket* pkt);
 
+  void collectIdleTicks();
+
   bool spaceToSend(int vc, int bytes){
     return credits_[vc] >= bytes;
   }

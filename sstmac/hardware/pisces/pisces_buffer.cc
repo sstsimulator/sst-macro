@@ -97,6 +97,16 @@ PiscesBuffer::PiscesBuffer(const std::string& selfname,
 }
 
 void
+PiscesBuffer::collectIdleTicks()
+{
+  GlobalTimestamp time_now = now();
+  if (time_now > last_tail_left_){
+    Timestamp time_waiting = time_now - last_tail_left_;
+    xmit_wait_->addData(time_waiting.sec());
+  }
+}
+
+void
 PiscesBuffer::handleCredit(Event* ev)
 {
   PiscesCredit* credit = static_cast<PiscesCredit*>(ev);
@@ -134,11 +144,7 @@ PiscesBuffer::handleCredit(Event* ev)
   PiscesPacket* payload = queues_[vc].pop(num_credits);
 
   while (payload) {
-    GlobalTimestamp time_now = now();
-    if (time_now > last_tail_left_){
-      Timestamp time_waiting = time_now - last_tail_left_;
-      xmit_wait_->addData(time_waiting.sec());
-    }
+    collectIdleTicks();
     num_credits -= payload->numBytes();
     //this actually doesn't create any new delay
     //this message was already queued so num_bytes
