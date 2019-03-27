@@ -59,6 +59,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/process/progress_queue.h>
 #include <sstmac/sst_core/integrated_component.h>
+#include <sstmac/hardware/topology/topology_fwd.h>
 
 #include <sprockit/debug.h>
 #include <sprockit/factory.h>
@@ -193,15 +194,11 @@ class NIC : public ConnectableSubcomponent
     return bytes <= negligibleSize_;
   }
 
- protected:
   NodeId my_addr_;
-
   int negligibleSize_;
-
   Node* parent_;
-
- protected:
   EventLink* logp_link_;
+  Topology* top_;
 
  private:
   StatSpyplot* spy_num_messages_;
