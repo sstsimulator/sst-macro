@@ -270,6 +270,7 @@ MpiApi::commSplit(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
   start_comm_call(MPI_Comm_split,incomm);
   MpiComm* incommPtr = getComm(incomm);
   MpiComm* outcommPtr = comm_factory_.commSplit(incommPtr, color, key);
+
   addCommPtr(outcommPtr, outcomm);
   mpi_api_debug(sprockit::dbg::mpi,
       "MPI_Comm_split(%s,%d,%d,*%s) exit",
@@ -278,7 +279,12 @@ MpiApi::commSplit(MPI_Comm incomm, int color, int key, MPI_Comm *outcomm)
   //but also assign an id to the underlying group
   if (outcommPtr->id() != MPI_COMM_NULL){
     outcommPtr->group()->setId(group_counter_++);
+    if (smp_optimize_){
+      outcommPtr->createSmpCommunicator(smp_neighbors_, engine(), Message::default_cq);
+    }
   }
+
+
 
   endAPICall();
 #ifdef SSTMAC_OTF2_ENABLED

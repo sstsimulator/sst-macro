@@ -66,6 +66,14 @@ int USER_MAIN(int argc, char** argv)
   for (int r=0; r < nrepeat; ++r){
     MPI_Allreduce(nullptr, nullptr, 1000, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   }
+  MPI_Alltoall(nullptr, 1000, MPI_INT, nullptr, 1000, MPI_INT, MPI_COMM_WORLD);
+  MPI_Allgather(nullptr, 1000, MPI_INT, nullptr, 1000, MPI_INT, MPI_COMM_WORLD);
+
+  MPI_Comm subComm;
+  MPI_Comm_split(MPI_COMM_WORLD, me % 2, me, &subComm);
+  MPI_Alltoall(nullptr, 1000, MPI_INT, nullptr, 1000, MPI_INT, subComm);
+
+  MPI_Comm_free(&subComm);
 
   MPI_Finalize();
   return 0;

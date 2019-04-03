@@ -689,9 +689,40 @@ CollectiveEngine::alltoall(void *dst, void *src, int nelems, int type_size, int 
 
   if (!comm) comm = global_domain_;
 
-  DagCollective* coll = AllToAllCollective::getBuilderLibrary("macro")->getBuilder(alltoall_type_)
-                          ->create(this, dst, src, nelems, type_size, tag, cq_id, comm);
-  return startCollective(coll);
+  auto* fact = AllToAllCollective::getBuilderLibrary("macro");
+  auto* builder = fact->getBuilder(alltoall_type_);
+  if (!builder){
+    spkt_abort_printf("invalid alltoall type requested: %s", allgather_type_.c_str());
+  }
+
+  if (comm->smpComm() && comm->smpBalanced()){
+    int smpSize = comm->smpComm()->nproc();
+    void* intraDst = dst ? new char[nelems*type_size*smpSize] : nullptr;
+    int intra_tag = 1<<28 | tag;
+
+    BtreeGather* intra = new BtreeGather(this, 0, intraDst, src, smpSize*nelems,
+                                         type_size, intra_tag, cq_id, comm->smpComm());
+    DagCollective* prev;
+    if (comm->ownerComm()){
+      int inter_tag = 2<<28 | tag;
+      AllToAllCollective* inter = builder->create(this, dst, intraDst, smpSize*nelems,
+                                                  type_size, inter_tag, cq_id, comm->ownerComm());
+      intra->setSubsequent(inter);
+      prev = inter;
+    } else {
+      prev = intra;
+    }
+    int bcast_tag = 3<<28 | tag;
+    auto* bcast = new BinaryTreeBcastCollective(this, 0, dst, comm->nproc()*nelems,
+                                                type_size, bcast_tag, cq_id, comm->smpComm());
+    prev->setSubsequent(bcast);
+    auto* final = new DoNothingCollective(this, tag, cq_id, comm);
+    bcast->setSubsequent(final);
+    return startCollective(intra);
+  } else {
+    AllToAllCollective* coll = builder->create(this, dst, src, nelems, type_size, tag, cq_id, comm);
+    return startCollective(coll);
+  }
 }
 
 CollectiveDoneMessage*
@@ -732,12 +763,14 @@ CollectiveEngine::allgather(void *dst, void *src, int nelems, int type_size, int
     int intra_tag = 1<<28 | tag;
 
 
+
     AllgatherCollective* intra = builder->create(this, intraDst, src, nelems,
                                                  type_size, intra_tag, cq_id, comm->smpComm());
 
     DagCollective* prev;
     if (comm->ownerComm()){
       int inter_tag = 2<<28 | tag;
+
       AllgatherCollective* inter = builder->create(this, dst, intraDst, smpSize*nelems, type_size,
                                                    inter_tag, cq_id, comm->ownerComm());
       intra->setSubsequent(inter);

@@ -148,6 +148,8 @@ class MpiComm : public Communicator
     return int(peerTask(comm_rank));
   }
 
+  std::set<int> commNeighbors(const std::set<int>& commWorldNeighbors) const;
+
   int globalToCommRank(int global_rank) const override;
 
   int nproc() const override {

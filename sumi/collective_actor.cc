@@ -667,8 +667,9 @@ DagCollectiveActor::dataRecved(
   Action* ac = active_comms_[id];
   if (ac == nullptr){
     spkt_throw_printf(sprockit::ValueError,
-      "on %d, received data for unknown receive %u from %d on round %d",
-      dom_me_, id, msg->domSender(), msg->round());
+      "on %d, received data for unknown receive %u from %d on round %d\n%s",
+      dom_me_, id, msg->domSender(), msg->round(),
+      msg->toString().c_str());
   }
 
   dataRecved(ac, msg, recvd_buffer);

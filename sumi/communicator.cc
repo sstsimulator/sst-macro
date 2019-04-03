@@ -67,17 +67,22 @@ Communicator::createSmpCommunicator(const std::set<int>& neighbors, CollectiveEn
   auto neighbors_subset = globalRankSetIntersection(neighbors);
   if (neighbors_subset.size() == 1) return; //no smp parallelism
 
+
+  int myGlobalRank = commToGlobalRank(my_comm_rank_);
   if (neighbors_subset.size() > 1){ //there is smp parallelism to be had here
     int idx = 0;
     int my_smp_rank = 0;
     std::vector<int> local_to_global(neighbors_subset.size());
-    for (int rank : neighbors_subset){
-      local_to_global[idx] = rank;
-      if (rank == this->myCommRank()){
+    for (int glblRank : neighbors_subset){
+      local_to_global[idx] = glblRank;
+      if (glblRank == myGlobalRank){
         my_smp_rank = idx;
       }
       idx++;
     }
+
+
+
     smp_comm_ = new MapCommunicator(my_smp_rank, std::move(local_to_global));
     if (smp_comm_->nproc() == 0){
       spkt_abort_printf("Created SMP communicator of size 0!"
@@ -86,19 +91,20 @@ Communicator::createSmpCommunicator(const std::set<int>& neighbors, CollectiveEn
     }
 
     std::vector<int> smp_ranks(this->nproc());
-    engine->allgather(smp_ranks.data(), &my_smp_rank, 1, sizeof(int), -2, cq_id);
+    int tag = -2;
+    engine->allgather(smp_ranks.data(), &my_smp_rank, 1, sizeof(int), tag, cq_id, this);
     engine->blockUntilNext(cq_id);
 
     std::map<int,int> rank_counts;
+    int my_owner_rank = -1;
     if (my_smp_rank == 0){
-      int my_owner_rank = -1;
       std::vector<int> owner_to_global;
       idx = 0;
       for (int rank=0; rank < this->nproc(); ++rank){
         int local_smp_rank = smp_ranks[rank];
         rank_counts[local_smp_rank]++;
         if (local_smp_rank == 0){
-          owner_to_global.push_back(rank);
+          owner_to_global.push_back(commToGlobalRank(rank));
           if (rank == this->myCommRank()){
             my_owner_rank = idx;
           }

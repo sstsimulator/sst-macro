@@ -111,6 +111,20 @@ MpiComm::globalRankSetIntersection(const std::set<int> &neighbors) const
   }
 }
 
+std::set<int>
+MpiComm::commNeighbors(const std::set<int>& commWorldNeighbors) const
+{
+  std::set<int> ret;
+  for (int i=0; i < nproc(); ++i){
+    int glbl = peerTask(i);
+    auto iter = commWorldNeighbors.find(glbl);
+    if (iter != commWorldNeighbors.end()){
+      ret.insert(i);
+    }
+  }
+  return ret;
+}
+
 void
 MpiComm::deleteStatics()
 {

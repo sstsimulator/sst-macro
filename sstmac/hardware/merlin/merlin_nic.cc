@@ -191,6 +191,8 @@ class MerlinNIC :
     auto* req = link_control_->recv(vn);
     while (req){
       MyRequest* myreq = static_cast<MyRequest*>(req);
+      uint64_t size = req->size_in_bits/8;
+      Timestamp delay = size / link_control_->bw
 #if MERLIN_DEBUG_PACKET
       if (myreq->flow_id == -1){
         std::cout << "Got packet of size " << (req->size_in_bits/8) << " at t=" << now().sec() << std::endl;
