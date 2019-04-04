@@ -863,23 +863,24 @@ CollectiveEngine::startCollective(Collective* coll)
   coll->initActors();
   int tag = coll->tag();
   Collective::type_t ty = coll->type();
-  //validate_collective(ty, tag);
-  Collective*& existing = collectives_[ty][tag];
-  CollectiveDoneMessage* dmsg;
-  if (existing){
+  Collective*& map_entry = collectives_[ty][tag];
+  Collective* active = nullptr;
+  CollectiveDoneMessage* dmsg=nullptr;
+  if (map_entry){
+    active = map_entry;
     coll->start();
-    dmsg = existing->addActors(coll);
+    dmsg = active->addActors(coll);
     delete coll;
   } else {
-    existing = coll;
+    map_entry = active = coll;
     coll->start();
     dmsg = deliverPending(coll, tag, ty);
   }
 
-  while (dmsg && existing->hasSubsequent()){
+  while (dmsg && active->hasSubsequent()){
     delete dmsg;
-    existing = existing->popSubsequent();
-    dmsg = startCollective(existing);
+    active = active->popSubsequent();
+    dmsg = startCollective(active);
   }
 
   return dmsg;

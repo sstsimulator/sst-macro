@@ -381,7 +381,7 @@ test_bcast(MPI_Comm comm)
     pay = 1234;
   }
 
-  MPI_Bcast(&pay, count, MPI_DOUBLE, root, comm);
+  MPI_Bcast(&pay, count, MPI_INT, root, comm);
   int recvdata = pay;
 
   if (recvdata != (1234)) {
