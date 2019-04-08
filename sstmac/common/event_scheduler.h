@@ -70,6 +70,8 @@ class EventLink {
   {
   }
 
+  virtual ~EventLink()
+
   std::string toString() const {
     return "self link: " + name_;
   }
@@ -426,6 +428,10 @@ class LocalLink : public EventLink {
     handler_(hand),
     mgr_(mgr)
   {
+  }
+
+  virtual ~LocalLink() override {
+    delete handler_;
   }
 
   std::string toString() const override {

@@ -47,6 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/node_address.h>
+#include <sstmac/common/event_scheduler.h>
 
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/node/node_fwd.h>
@@ -122,7 +123,8 @@ class Interconnect
   typedef std::vector<Connectable*> endpoint_map;
   typedef std::vector<Node*> node_map;
   typedef std::vector<NIC*> nic_map;
-
+  typedef std::vector<EventLink*> link_map;
+ 
   ~Interconnect();
 
   Topology* topology() const {
@@ -191,8 +193,8 @@ class Interconnect
 
 
   switch_map switches_;
-
   node_map nodes_;
+  link_map links_;
 
   std::vector<ConnectableComponent*> components_;
 

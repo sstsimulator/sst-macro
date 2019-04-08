@@ -94,6 +94,7 @@ Interconnect::~Interconnect()
   for (auto* nd : nodes_) if (nd) delete nd;
   for (auto* sw : logp_switches_) if (sw) delete sw;
   for (auto* sw : switches_) if (sw) delete sw;
+  for (auto* ln : links_) if (ln) delete ln;
 }
 #endif
 
@@ -227,13 +228,15 @@ EventLink*
 Interconnect::allocateIntraProcLink(Timestamp latency, EventManager* mgr, EventHandler* handler,
                                 EventScheduler* src, EventScheduler* dst)
 {
-  return new LocalLink(latency,mgr,handler, src->componentId(), dst->componentId());
+  EventLink* iplink;
   if (src->threadId() == dst->threadId()){
-
+    iplink = new LocalLink(latency,mgr,handler, src->componentId(), dst->componentId());
   } else {
-    return new MultithreadLink(handler,latency,mgr,dst,
+    iplink = new MultithreadLink(handler,latency,mgr,dst,
                                src->componentId(), dst->componentId());
   }
+  links_.push_back(iplink);
+  return iplink;
 }
 #endif
 
@@ -277,9 +280,11 @@ Interconnect::connectEndpoints(EventManager* mgr,
           i, injsw, p.nid, ep, p.switch_port, p.ep_port);
 
       auto credit_link = new LocalLink(inj_latency, mgr, ep->creditHandler(p.ep_port));
+      links_.push_back(credit_link);
 
       injsw->connectInput(p.ep_port, p.switch_port, credit_link);
       auto payload_link = new LocalLink(inj_latency, mgr, injsw->payloadHandler(p.switch_port));
+      links_.push_back(payload_link);
       ep->connectOutput(p.ep_port, p.switch_port, payload_link);
     }
 
@@ -291,9 +296,11 @@ Interconnect::connectEndpoints(EventManager* mgr,
           int(i), ejsw, p.nid, ep, p.switch_port, p.ep_port);
 
       auto payload_link = new LocalLink(ej_latency, mgr, ep->payloadHandler(p.ep_port));
+      links_.push_back(payload_link);
       ejsw->connectOutput(p.switch_port, p.ep_port, payload_link);
 
       auto credit_link = new LocalLink(ej_latency, mgr, ejsw->creditHandler(p.switch_port));
+      links_.push_back(credit_link);
       ep->connectInput(p.switch_port, p.ep_port, credit_link);
     }
   }
@@ -354,17 +361,21 @@ Interconnect::connectLogP(EventManager* mgr,
         //nic sends to only its specific logp switch
         EventLink* logp_link = new LocalLink(Timestamp(0), mgr,
             local_logp_switch->payloadHandler(conn.switch_port));
+        links_.push_back(logp_link);
         nd->nic()->connectOutput(NIC::LogP, conn.switch_port, logp_link);
 
         EventLink* out_link = new LocalLink(logp_link_latency, mgr, nd->payloadHandler(NIC::LogP));
+        links_.push_back(out_link);
         local_logp_switch->connectOutput(conn.nid, out_link);
       } else if (my_rank == target_rank){
         EventLink* out_link = new MultithreadLink(logp_link_latency,
             mgr, EventManager::global->threadManager(target_thread), nd->payloadHandler(NIC::LogP));
+        links_.push_back(out_link);
         local_logp_switch->connectOutput(conn.nid, out_link);
       } else {
         EventLink* out_link = new IpcLink(logp_link_latency, target_rank, mgr,
                                           local_logp_switch->componentId(), nodeComponentId(conn.nid), NIC::LogP, false);
+        links_.push_back(out_link);
         local_logp_switch->connectOutput(conn.nid, out_link);
       }
     }
@@ -492,13 +503,16 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
         EventLink* payload_link = nullptr;
         if (dst_rank == my_rank && dst_thread == my_thread){
           payload_link = new LocalLink(linkLatency, mgr, switches_[conn.dst]->payloadHandler(conn.dst_inport));
+          links_.push_back(payload_link);
         } else if (dst_rank == my_rank){
           payload_link = new MultithreadLink(linkLatency, mgr, EventManager::global->threadManager(dst_thread),
                switches_[conn.dst]->payloadHandler(conn.dst_inport));
+          links_.push_back(payload_link);
         } else {
           payload_link = new IpcLink(linkLatency, dst_rank, mgr,
                                      switchComponentId(src), switchComponentId(conn.dst),
                                      conn.dst_inport, false);
+          links_.push_back(payload_link);
         }
         switches_[src]->connectOutput(conn.src_outport, conn.dst_inport, payload_link);
 
@@ -508,13 +522,16 @@ Interconnect::connectSwitches(EventManager* mgr, SST::Params& switch_params)
         EventLink* credit_link = nullptr;
         if (src_rank == my_rank && src_thread == my_thread){
           credit_link = new LocalLink(linkLatency, mgr, switches_[src]->creditHandler(conn.src_outport));
+          links_.push_back(credit_link);
         } else if (src_rank == my_rank) {
           credit_link = new MultithreadLink(linkLatency, mgr, EventManager::global->threadManager(src_thread),
                switches_[src]->creditHandler(conn.src_outport));
+          links_.push_back(credit_link);
         } else {
           credit_link = new IpcLink(linkLatency, src_rank, mgr,
                                     switchComponentId(conn.dst), switchComponentId(src),
                                     conn.src_outport, true);
+          links_.push_back(credit_link);
         }
         switches_[conn.dst]->connectInput(conn.src_outport, conn.dst_inport, credit_link);
       }
