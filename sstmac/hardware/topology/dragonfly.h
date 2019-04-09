@@ -60,7 +60,8 @@ class InterGroupWiring {
     int, /* a=num switches per group */
     int, /* g=num groups */
     int /* h=num group links per switch */)
-                
+
+  virtual ~InterGroupWiring() {}
 
   /**
    * @brief group_port
@@ -147,7 +148,9 @@ class Dragonfly : public CartesianTopology
 
   void connectedOutports(SwitchId src, std::vector<Connection>& conns) const override;
 
-  virtual ~Dragonfly() {}
+  virtual ~Dragonfly() {
+    delete group_wiring_;
+  }
 
   int ndimensions() const {
     return 2;
