@@ -123,7 +123,6 @@ class Interconnect
   typedef std::vector<Connectable*> endpoint_map;
   typedef std::vector<Node*> node_map;
   typedef std::vector<NIC*> nic_map;
-  typedef std::vector<EventLink*> link_map;
  
   ~Interconnect();
 

@@ -142,21 +142,21 @@ MpiApi::commitBuiltinTypes()
 
 #define int_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_integer<datatype>(#id); \
-  commitBuiltinType(typeObj, id)
+  commitBuiltinType(typeObj.get(), id)
 
 #define op_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->init_with_ops<datatype>(#id); \
-  commitBuiltinType(typeObj, id)
+  commitBuiltinType(typeObj.get(), id)
 
 #define noop_precommit_type(size, typeObj, id) \
   if (need_init) typeObj->initNoOps(#id, size); \
-  commitBuiltinType(typeObj, id)
+  commitBuiltinType(typeObj.get(), id)
 
 #define index_precommit_type(datatype, typeObj, id) \
   if (need_init) typeObj->initNoOps(#id, sizeof(datatype)); \
   if (need_init) typeObj->initOp(MPI_MAXLOC, &ReduceOp<MaxLocPair,datatype>::op); \
   if (need_init) typeObj->initOp(MPI_MINLOC, &ReduceOp<MinLocPair,datatype>::op); \
-  commitBuiltinType(typeObj, id);
+  commitBuiltinType(typeObj.get(), id);
 
 #define precommit_builtin(size) \
   if (need_init) MpiType::builtins[size].initNoOps("builtin-" #size, size); \
@@ -253,7 +253,7 @@ MpiApi::commitBuiltinTypes()
 int
 MpiApi::packSize(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
 {
-  type_map::iterator it = known_types_.find(datatype);
+  auto it = known_types_.find(datatype);
   if (it == known_types_.end()){
       return MPI_ERR_TYPE;
   }
@@ -268,7 +268,7 @@ MpiApi::typeSetName(MPI_Datatype id, const char* name)
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_set_name(%s,%s)",
                 typeStr(id).c_str(), name);
-  type_map::iterator it = known_types_.find(id);
+  auto it = known_types_.find(id);
   if (it == known_types_.end()){
       return MPI_ERR_TYPE;
   }
@@ -283,7 +283,7 @@ MpiApi::typeGetName(MPI_Datatype id, char* name, int* resultlen)
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_get_name(%s)",
                 typeStr(id).c_str());
-  type_map::iterator it = known_types_.find(id);
+  auto it = known_types_.find(id);
   if (it == known_types_.end()){
       return MPI_ERR_TYPE;
   }
@@ -330,6 +330,8 @@ MpiApi::doTypeHvector(int count, int blocklength, MPI_Aint stride,
                 "MPI_Type_vector(%d,%d,%d,%s,*%s)",
                 count, blocklength, stride,
                 typeStr(old->id).c_str(), typeStr(*new_type).c_str());
+
+  allocatedTypes_[new_type_obj->id] = MpiType::ptr(new_type_obj);
 
   return MPI_SUCCESS;
 }
@@ -405,6 +407,8 @@ MpiApi::doTypeHindexed(int count, const int lens[],
                 "MPI_Type_indexed(%d,<...>,<...>,%s,*%s)",
                 count, typeStr(in_type_obj->id).c_str(), typeStr(*outtype).c_str());
 
+  allocatedTypes_[out_type_obj->id] = MpiType::ptr(out_type_obj);
+
   return MPI_SUCCESS;
 }
 
@@ -463,7 +467,8 @@ MpiApi::typeCommit(MPI_Datatype* type)
 void
 MpiApi::allocateTypeId(MpiType* type)
 {
-  type_map::iterator it, end = known_types_.end();
+  auto end = known_types_.end();
+  auto it = end;
   while ((it = known_types_.find(next_type_id_)) != end){
     ++next_type_id_;
   }
@@ -512,6 +517,8 @@ MpiApi::typeContiguous(int count, MPI_Datatype old_type,
     otf2_writer_->writer().register_type(*new_type, count*old_type_obj->packed_size());
   }
 #endif
+
+  allocatedTypes_[*new_type] = MpiType::ptr(new_type_obj);
 
   return MPI_SUCCESS;
 }
@@ -581,6 +588,8 @@ MpiApi::typeCreateStruct(const int count, const int* blocklens,
   }
 #endif
 
+  allocatedTypes_[new_type_obj->id] = MpiType::ptr(new_type_obj);
+
   return MPI_SUCCESS;
 }
 
@@ -620,12 +629,12 @@ MpiApi::typeFree(MPI_Datatype* type)
   mpi_api_debug(sprockit::dbg::mpi,
                 "MPI_Type_free(%s)",
                 typeStr(*type).c_str());
-  auto iter = known_types_.find(*type);
-  if (iter != known_types_.end()){
-    MpiType* obj = iter->second;
-    known_types_.erase(iter);
-    delete obj;
-  }
+
+  //these maps are separated because all known types
+  //are not necessarily allocated by this rank
+  known_types_.erase(*type);
+  allocatedTypes_.erase(*type);
+
   return MPI_SUCCESS;
 }
 
@@ -635,7 +644,7 @@ MpiApi::typeFree(MPI_Datatype* type)
 MpiType*
 MpiApi::typeFromId(MPI_Datatype id)
 {
-  type_map::iterator it = known_types_.find(id);
+  auto it = known_types_.find(id);
   if (it == known_types_.end()){
     spkt_throw_printf(sprockit::InvalidKeyError,
         "mpi_api: unknown type id %d",

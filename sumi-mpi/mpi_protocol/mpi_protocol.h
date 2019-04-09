@@ -76,6 +76,8 @@ class MpiProtocol : public sprockit::printable {
 
   virtual void incoming(MpiMessage *msg, MpiQueueRecvRequest* req) = 0;
 
+  virtual ~MpiProtocol(){}
+
  protected:
   MpiProtocol(MpiQueue* queue);
 

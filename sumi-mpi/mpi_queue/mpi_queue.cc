@@ -154,6 +154,9 @@ MpiQueue::now() const {
 
 MpiQueue::~MpiQueue() throw ()
 {
+  for (auto* prot : protocols_){
+    if (prot) delete prot;
+  }
 }
 
 void

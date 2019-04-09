@@ -83,7 +83,7 @@ class FTQTag {
     return (*category_id_to_name_)[keyname_id];
   }
 
-  static int allocate_category_id(const std::string& name);
+  static int allocateCategoryId(const std::string& name);
 
   static int event_typeid(const std::string& event_name);
 
@@ -95,8 +95,8 @@ class FTQTag {
   static FTQTag compute;
 
  private:
-  static std::unordered_map<std::string, int>* category_name_to_id_;
-  static std::unordered_map<int, std::string>* category_id_to_name_;
+  static std::unique_ptr<std::unordered_map<std::string, int>> category_name_to_id_;
+  static std::unique_ptr<std::unordered_map<int, std::string>> category_id_to_name_;
 
 };
 

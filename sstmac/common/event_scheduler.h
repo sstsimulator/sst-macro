@@ -107,7 +107,7 @@ namespace sstmac {
 
 class EventLink {
  public:
-  virtual ~EventLink(){}
+  virtual ~EventLink();
 
   using ptr = std::unique_ptr<EventLink>;
 
@@ -127,9 +127,7 @@ class EventLink {
     return minRemoteLatency_;
   }
 
-  static uint32_t allocateLinkId() {
-    return linkIdCounter_++;
-  }
+  static uint32_t allocateLinkId();
 
  protected:
   EventLink(Timestamp latency) :
@@ -433,7 +431,7 @@ class LocalLink : public EventLink {
   }
 
   virtual ~LocalLink() override {
-    delete handler_;
+    if (handler_) delete handler_;
   }
 
   std::string toString() const override {
@@ -506,6 +504,10 @@ class SubLink : public EventLink
     EventLink(lat), //sub links have no latency
     comp_(comp), handler_(handler)
   {
+  }
+
+  ~SubLink(){
+    if (handler_) delete handler_;
   }
 
   std::string toString() const override {

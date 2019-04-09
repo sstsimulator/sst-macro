@@ -353,18 +353,18 @@ Interconnect::connectLogP(EventManager* mgr,
       Node* nd = nodes_[conn.nid];
       if (my_rank == target_rank && my_thread == target_thread){
         //nic sends to only its specific logp switch
-        EventLink* logp_link = new LocalLink(Timestamp(0), mgr,
+        auto* logp_link = new LocalLink(Timestamp(0), mgr,
             local_logp_switch->payloadHandler(conn.switch_port));
         nd->nic()->connectOutput(NIC::LogP, conn.switch_port, EventLink::ptr(logp_link));
 
-        EventLink* out_link = new LocalLink(logp_link_latency, mgr, nd->payloadHandler(NIC::LogP));
+        auto* out_link = new LocalLink(logp_link_latency, mgr, nd->payloadHandler(NIC::LogP));
         local_logp_switch->connectOutput(conn.nid, EventLink::ptr(out_link));
       } else if (my_rank == target_rank){
-        EventLink* out_link = new MultithreadLink(logp_link_latency,
+        auto* out_link = new MultithreadLink(logp_link_latency,
             mgr, EventManager::global->threadManager(target_thread), nd->payloadHandler(NIC::LogP));
         local_logp_switch->connectOutput(conn.nid, EventLink::ptr(out_link));
       } else {
-        EventLink* out_link = new IpcLink(logp_link_latency, target_rank, mgr,
+        auto* out_link = new IpcLink(logp_link_latency, target_rank, mgr,
                                           local_logp_switch->componentId(), nodeComponentId(conn.nid), NIC::LogP, false);
         local_logp_switch->connectOutput(conn.nid, EventLink::ptr(out_link));
       }

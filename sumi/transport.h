@@ -260,7 +260,8 @@ class Transport {
     sid_(sid),
     nid_(nid),
     rank_(sid.task_),
-    nproc_(-1)
+    nproc_(-1),
+    engine_(nullptr)
   {
   }
 

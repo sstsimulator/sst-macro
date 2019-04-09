@@ -243,7 +243,7 @@ SimTransport::SimTransport(SST::Params& params, sstmac::sw::App* parent, SST::Co
   spy_bytes_ = sstmac::optionalStats<sstmac::StatSpyplot>(desScheduler(),
         params, "traffic_matrix", "ascii", "bytes");
   */
-  engine_ = new CollectiveEngine(params, this);
+  if (!engine_) engine_ = new CollectiveEngine(params, this);
 
   smp_optimize_ = params.find<bool>("smp_optimize", false);
 }
@@ -291,6 +291,8 @@ SimTransport::~SimTransport()
   SumiServer* server = safe_cast(SumiServer, parent_->os()->lib(server_libname_));
   bool del = server->unregisterProc(rank_, this);
   if (del) delete server;
+
+  //if (engine_) delete engine_;
 
   //if (spy_bytes_) delete spy_bytes_;
   //if (spy_num_messages_) delete spy_num_messages_;

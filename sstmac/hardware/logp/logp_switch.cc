@@ -119,7 +119,7 @@ LogPSwitch::~LogPSwitch()
 {
   if (rng_) delete rng_;
   // JJW 4/10/19 these are now owned by the interconnect
-  //for (EventLink* link : nic_links_){
+  //for (auto* link : nic_links_){
   //  delete link;
   //}
 }

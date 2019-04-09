@@ -71,6 +71,7 @@ MpiType::MpiType() :
 void
 MpiType::deleteStatics()
 {
+  /** JJW make unique_ptr for cleanup
   free_static_ptr(mpi_null);
   free_static_ptr(mpi_char);
   free_static_ptr(mpi_unsigned_char);
@@ -128,6 +129,7 @@ MpiType::deleteStatics()
   free_static_ptr(mpi_uint16_t);
   free_static_ptr(mpi_uint32_t);
   free_static_ptr(mpi_uint64_t);
+  */
 }
 
 void
@@ -475,74 +477,71 @@ operator<<(std::ostream &os, MpiType* type)
 //
 // The data types defined by the MPI standard.
 //
-MpiType* MpiType::mpi_null = new MpiType;
-MpiType* MpiType::mpi_char = new MpiType;
-MpiType* MpiType::mpi_signed_char = new MpiType;
-MpiType* MpiType::mpi_wchar = new MpiType;
-MpiType* MpiType::mpi_unsigned_long_long = new MpiType;
-MpiType* MpiType::mpi_lb = new MpiType;
-MpiType* MpiType::mpi_ub = new MpiType;
-MpiType* MpiType::mpi_unsigned_char = new MpiType;
-MpiType* MpiType::mpi_byte = new MpiType;
-MpiType* MpiType::mpi_short = new MpiType;
-MpiType* MpiType::mpi_unsigned_short = new MpiType;
-MpiType* MpiType::mpi_int = new MpiType;
-MpiType* MpiType::mpi_unsigned = new MpiType;
-MpiType* MpiType::mpi_long = new MpiType;
-MpiType* MpiType::mpi_unsigned_long = new MpiType;
-MpiType* MpiType::mpi_float = new MpiType;
-MpiType* MpiType::mpi_double = new MpiType;
-MpiType* MpiType::mpi_long_double = new MpiType;
-MpiType* MpiType::mpi_long_long_int = new MpiType;
-MpiType* MpiType::mpi_long_long = new MpiType;
-MpiType* MpiType::mpi_packed = new MpiType;
+MpiType::ptr MpiType::mpi_null = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_char = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_signed_char = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_wchar = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_unsigned_long_long = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_lb = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_ub = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_unsigned_char = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_byte = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_short = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_unsigned_short = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_int = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_unsigned = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_long = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_unsigned_long = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_float = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_double = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_long_double = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_long_long_int = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_long_long = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_packed = std::unique_ptr<MpiType>(new MpiType);
 
-//pair types
-MpiType* MpiType::mpi_float_int = new MpiType;
-MpiType* MpiType::mpi_double_int = new MpiType;
-MpiType* MpiType::mpi_long_int = new MpiType;
-MpiType* MpiType::mpi_short_int = new MpiType;
-MpiType* MpiType::mpi_2int = new MpiType;
-MpiType* MpiType::mpi_long_double_int = new MpiType;
+MpiType::ptr MpiType::mpi_float_int = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_double_int = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_long_int = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_short_int = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_2int = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_long_double_int = std::unique_ptr<MpiType>(new MpiType);
 
-//fortran nonsense
-MpiType* MpiType::mpi_complex = new MpiType;
-MpiType* MpiType::mpi_double_complex = new MpiType;
-MpiType* MpiType::mpi_logical = new MpiType;
-MpiType* MpiType::mpi_real = new MpiType;
-MpiType* MpiType::mpi_double_precision = new MpiType;
-MpiType* MpiType::mpi_integer = new MpiType;
-MpiType* MpiType::mpi_cxx_bool = new MpiType;
+MpiType::ptr MpiType::mpi_complex = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_double_complex = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_logical = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_real = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_double_precision = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_integer = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_cxx_bool = std::unique_ptr<MpiType>(new MpiType);
 
-MpiType* MpiType::mpi_integer1 = new MpiType;
-MpiType* MpiType::mpi_integer2 = new MpiType;
-MpiType* MpiType::mpi_integer4 = new MpiType;
-MpiType* MpiType::mpi_integer8 = new MpiType;
-MpiType* MpiType::mpi_real4 = new MpiType;
-MpiType* MpiType::mpi_real8 = new MpiType;
-MpiType* MpiType::mpi_real16 = new MpiType;
+MpiType::ptr MpiType::mpi_integer1 = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_integer2 = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_integer4 = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_integer8 = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_real4 = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_real8 = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_real16 = std::unique_ptr<MpiType>(new MpiType);
 
-MpiType* MpiType::mpi_complex8 = new MpiType;
-MpiType* MpiType::mpi_complex16 = new MpiType;
-MpiType* MpiType::mpi_complex32 = new MpiType;
+MpiType::ptr MpiType::mpi_complex8 = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_complex16 = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_complex32 = std::unique_ptr<MpiType>(new MpiType);
 
-MpiType* MpiType::mpi_int8_t = new MpiType;
-MpiType* MpiType::mpi_int16_t = new MpiType;
-MpiType* MpiType::mpi_int32_t = new MpiType;
-MpiType* MpiType::mpi_int64_t = new MpiType;
+MpiType::ptr MpiType::mpi_int8_t = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_int16_t = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_int32_t = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_int64_t = std::unique_ptr<MpiType>(new MpiType);
 
-MpiType* MpiType::mpi_uint8_t = new MpiType;
-MpiType* MpiType::mpi_uint16_t = new MpiType;
-MpiType* MpiType::mpi_uint32_t = new MpiType;
-MpiType* MpiType::mpi_uint64_t = new MpiType;
+MpiType::ptr MpiType::mpi_uint8_t = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_uint16_t = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_uint32_t = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_uint64_t = std::unique_ptr<MpiType>(new MpiType);
 
-//fortran pairs
-MpiType* MpiType::mpi_2integer = new MpiType;
-MpiType* MpiType::mpi_2complex = new MpiType;
-MpiType* MpiType::mpi_2double_complex = new MpiType;
-MpiType* MpiType::mpi_2real = new MpiType;
-MpiType* MpiType::mpi_2double_precision = new MpiType;
-MpiType* MpiType::mpi_character = new MpiType;
+MpiType::ptr MpiType::mpi_2integer = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_2complex = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_2double_complex = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_2real = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_2double_precision = std::unique_ptr<MpiType>(new MpiType);
+MpiType::ptr MpiType::mpi_character = std::unique_ptr<MpiType>(new MpiType);
 
 std::map<int, MpiType> MpiType::builtins;
 

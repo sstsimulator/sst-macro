@@ -64,6 +64,17 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sstmac {
 
+EventLink::~EventLink()
+{
+}
+
+uint32_t
+EventLink::allocateLinkId()
+{
+  auto ret =  linkIdCounter_++;
+  return ret;
+}
+
 #if SSTMAC_INTEGRATED_SST_CORE
 SST::TimeConverter* EventScheduler::time_converter_ = nullptr;
 #else

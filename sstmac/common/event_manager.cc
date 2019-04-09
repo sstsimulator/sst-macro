@@ -136,6 +136,12 @@ EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
 EventManager::~EventManager()
 {
   if (des_context_) delete des_context_;
+  for (auto& pair : stat_groups_){
+    StatGroup& grp = pair.second;
+    for (auto* stat : grp.stats){
+      if (stat) delete stat;
+    }
+  }
 }
 
 void

@@ -136,7 +136,7 @@ MpiApi::MpiApi(SST::Params& params, sstmac::sw::App* app,
   crossed_comm_world_barrier_(false),
   comm_factory_(app->sid(), this)
 {
-  engine_ = new CollectiveEngine(params, this);
+  if (!engine_) engine_ = new CollectiveEngine(params, this);
 
   SST::Params queue_params = params.find_scoped_params("queue");
   queue_ = new MpiQueue(queue_params, app->sid().task_, this, engine_);

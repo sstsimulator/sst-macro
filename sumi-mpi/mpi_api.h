@@ -819,8 +819,8 @@ class MpiApi : public sumi::SimTransport
   MpiComm* worldcomm_;
   MpiComm* selfcomm_;
 
-  typedef std::map<MPI_Datatype, MpiType*> type_map;
-  type_map known_types_;
+  std::map<MPI_Datatype, MpiType*> known_types_;
+  std::map<MPI_Datatype, MpiType::ptr> allocatedTypes_;
 
   typedef std::unordered_map<MPI_Op, MPI_User_function*> op_map;
   op_map custom_ops_;

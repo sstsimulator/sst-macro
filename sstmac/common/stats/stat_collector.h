@@ -78,6 +78,8 @@ class StatisticBase {
     return name_;
   }
 
+  virtual ~StatisticBase(){}
+
  protected:
   StatisticBase(EventScheduler* parent,
                 const std::string& name, const std::string& subName,
@@ -97,7 +99,7 @@ class StatisticOutput
   SST_ELI_DECLARE_CTOR(SST::Params&)
 
   StatisticOutput(SST::Params& params){}
-  ~StatisticOutput(){}
+  virtual ~StatisticOutput(){}
 
  public:
   using fieldHandle_t = int;

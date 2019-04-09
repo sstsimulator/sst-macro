@@ -258,6 +258,7 @@ class App : public Thread
   std::map<int, mutex_t> mutexes_;
   std::map<int, condition_t> conditions_;
   std::map<int, destructor_fxn> tls_key_fxns_;
+  //these can alias - so I can't use unique_ptr
   std::map<std::string, API*> apis_;
   std::map<std::string,std::string> env_;
 
