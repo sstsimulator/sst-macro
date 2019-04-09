@@ -120,25 +120,18 @@ PiscesNtoMQueue::payloadHandler()
 PiscesNtoMQueue::~PiscesNtoMQueue()
 {
   if (arb_) delete arb_;
-  for (auto& inp : inputs_){
-    if (inp.link) delete inp.link;
-  }
-  for (auto& out : outputs_){
-    if (out.link) delete out.link;
-  }
 }
 
 std::string
 PiscesNtoMQueue::inputName(PiscesPacket* pkt)
 {
-  EventLink* link = inputs_[pkt->nextLocalInport()].link;
-  return link->toString();
+  return inputs_[pkt->nextLocalInport()].link->toString();
 }
 
 EventLink*
 PiscesNtoMQueue::outputLink(PiscesPacket* pkt)
 {
-  return outputs_[pkt->nextLocalOutport()].link;
+  return outputs_[pkt->nextLocalOutport()].link.get();
 }
 
 std::string
@@ -251,7 +244,7 @@ PiscesNtoMQueue::resizeOutports(int num_ports)
 void
 PiscesNtoMQueue::setInput(
   int my_inport, int src_outport,
-  EventLink* link)
+  EventLink::ptr&& link)
 {
   // ports are local for local links and global otherwise
 
@@ -260,12 +253,12 @@ PiscesNtoMQueue::setInput(
     toString().c_str(), my_inport,
     link ? link->toString().c_str() : "null", src_outport);
   Input& inp = inputs_[my_inport];
-  inp.link = link;
+  inp.link = std::move(link);
   inp.port_to_credit = src_outport;
 }
 
 void
-PiscesNtoMQueue::setOutput(int my_outport, int dst_inport, EventLink* link, int num_credits)
+PiscesNtoMQueue::setOutput(int my_outport, int dst_inport, EventLink::ptr&& link, int num_credits)
 {
   // must be called with local my_outport (if there's a difference)
   // global port numbers aren't unique for individual elements of
@@ -285,7 +278,7 @@ PiscesNtoMQueue::setOutput(int my_outport, int dst_inport, EventLink* link, int 
                       my_outport, outputs_.size());
   }
   Output& out = outputs_[my_outport];
-  out.link = link;
+  out.link = std::move(link);
   out.arrival_port = dst_inport;
 
   int num_credits_per_vc = num_credits / num_vc_;

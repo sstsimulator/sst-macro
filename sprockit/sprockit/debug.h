@@ -133,9 +133,9 @@ public:
 class Debug
 {
  public:
-  static std::map<std::string, DebugInt*>* debug_ints_;
-  static std::map<std::string, std::string>* docstrings_;
-  static DebugPrefixFxn* prefix_fxn;
+  static std::unique_ptr<std::map<std::string, DebugInt*>> debug_ints_;
+  static std::unique_ptr<std::map<std::string, std::string>> docstrings_;
+  static std::unique_ptr<DebugPrefixFxn> prefix_fxn;
 
   static void deleteStatics();
 
@@ -179,8 +179,7 @@ class Debug
    * @param docstring An docstring describing the output produced by the debug
    *                  when the debug slot is active
    */
-  static void registerDebugSlot(const std::string& str,
-                      DebugInt* dint_ptr,
+  static void registerDebugSlot(const std::string& str, DebugInt* dint,
                       const std::string& docstring);
 
   /**
@@ -245,10 +244,8 @@ class DebugRegisterSlot {
    * @param docstring An docstring describing the output produced by the debug
    *                  when the debug slot is active
    */
-  DebugRegisterSlot(const std::string& str,
-                      DebugInt* dint_ptr,
-                      const std::string& docstring){
-    Debug::registerDebugSlot(str, dint_ptr, docstring);
+  DebugRegisterSlot(const std::string& str, DebugInt* dint, const std::string& docstring){
+    Debug::registerDebugSlot(str, dint, docstring);
   }
 };
 

@@ -88,21 +88,21 @@ class PiscesSender : public SubComponent
  public:
   struct Input {
     int port_to_credit;
-    EventLink* link;
+    EventLink::ptr link;
     Input() : link(nullptr){}
   };
 
   struct Output {
     int arrival_port;
-    EventLink* link;
+    EventLink::ptr link;
     Output() : link(nullptr){}
   };
 
   virtual ~PiscesSender() {}
 
-  virtual void setInput(int my_inport, int dst_outport, EventLink* link) = 0;
+  virtual void setInput(int my_inport, int dst_outport, EventLink::ptr&& link) = 0;
 
-  virtual void setOutput(int my_outport, int dst_inport, EventLink* link, int credits) = 0;
+  virtual void setOutput(int my_outport, int dst_inport, EventLink::ptr&& link, int credits) = 0;
 
   virtual void handlePayload(Event* ev) = 0;
 

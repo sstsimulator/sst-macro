@@ -97,9 +97,9 @@ class SculpinSwitch :
     return router_;
   }
 
-  void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  void connectInput(int src_outport, int dst_inport, EventLink* link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* creditHandler(int port) override;
 
@@ -134,7 +134,7 @@ class SculpinSwitch :
     Timestamp byte_delay;
     uint32_t seqnum;
     std::set<SculpinPacket*, priority_compare> priority_queue;
-    EventLink* link;
+    EventLink::ptr link;
     Port() : link(nullptr){}
   };
   std::vector<Port> ports_;

@@ -98,11 +98,11 @@ class LogPSwitch : public ConnectableComponent
     return "LogP switch";
   }
 
-  void connectOutput(int src_outport, int dst_inport, EventLink *payload_link) override {
-    nic_links_[src_outport] = payload_link;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& payload_link) override {
+    nic_links_[src_outport] = std::move(payload_link);
   }
 
-  void connectInput(int src_outport, int dst_inport, EventLink *credit_link) override {
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& credit_link) override {
     //do nothing
   }
 
@@ -114,8 +114,8 @@ class LogPSwitch : public ConnectableComponent
     return newLinkHandler(this, &LogPSwitch::dropEvent);
   }
 
-  void connectOutput(NodeId nid, EventLink* link){
-    nic_links_[nid] = link;
+  void connectOutput(NodeId nid, EventLink::ptr&& link) {
+    nic_links_[nid] = std::move(link);
   }
 
   void sendEvent(Event* ev);
@@ -142,7 +142,7 @@ class LogPSwitch : public ConnectableComponent
 
   Topology* top_;
 
-  std::vector<EventLink*> nic_links_;
+  std::vector<EventLink::ptr> nic_links_;
 
   RNG::MWC* rng_;
 

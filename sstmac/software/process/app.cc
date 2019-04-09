@@ -88,10 +88,8 @@ void sstmac_app_loaded(int aid){}
 namespace sstmac {
 namespace sw {
 
-std::map<std::string, App::main_fxn>*
-  UserAppCxxFullMain::main_fxns_ = nullptr;
-std::map<std::string, App::empty_main_fxn>*
-  UserAppCxxEmptyMain::empty_main_fxns_ = nullptr;
+std::unique_ptr<std::map<std::string, App::main_fxn>> UserAppCxxFullMain::main_fxns_;
+std::unique_ptr<std::map<std::string, App::empty_main_fxn>> UserAppCxxEmptyMain::empty_main_fxns_;
 std::map<AppId, UserAppCxxFullMain::argv_entry> UserAppCxxFullMain::argv_map_;
 
 std::map<int, App::dlopen_entry> App::dlopens_;
@@ -556,7 +554,6 @@ UserAppCxxFullMain::deleteStatics()
     delete[] entry.argv;
   }
   argv_map_.clear();
-  if (main_fxns_) delete main_fxns_;
   main_fxns_ = nullptr;
 }
 
@@ -564,7 +561,9 @@ UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
                                        OperatingSystem* os) :
   App(params, sid, os)
 {
-  if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
+  if (!main_fxns_){
+    main_fxns_ = std::unique_ptr<std::map<std::string, main_fxn>>(new std::map<std::string, main_fxn>);
+  }
 
   std::string name = params.find<std::string>("name");
   std::map<std::string, main_fxn>::iterator it = main_fxns_->find(name);
@@ -580,10 +579,10 @@ void
 UserAppCxxFullMain::aliasMains()
 {
   auto* lib = App::getBuilderLibrary("macro");
-  auto* builder = lib->getBuilder("UserAppCxxFullMain");
+  using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
   if (main_fxns_){
     for (auto& pair : *main_fxns_){
-      lib->addBuilder(pair.first, builder);
+      lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
     }
   }
 }
@@ -591,8 +590,9 @@ UserAppCxxFullMain::aliasMains()
 void
 UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
 {
-  if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
-
+  if (!main_fxns_){
+    main_fxns_ = std::unique_ptr<std::map<std::string, main_fxn>>(new std::map<std::string, main_fxn>);
+  }
   (*main_fxns_)[name] = fxn;
 }
 
@@ -600,10 +600,10 @@ void
 UserAppCxxEmptyMain::aliasMains()
 {
   auto* lib = App::getBuilderLibrary("macro");
-  auto* builder = lib->getBuilder("UserAppCxxEmptyMain");
+  using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
   if (empty_main_fxns_){
     for (auto& pair : *empty_main_fxns_){
-      lib->addBuilder(pair.first, builder);
+      lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
     }
   }
 }
@@ -652,8 +652,9 @@ UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
                                          OperatingSystem* os) :
   App(params, sid, os)
 {
-  if (!empty_main_fxns_)
-    empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
+  if (!empty_main_fxns_){
+    empty_main_fxns_ = std::unique_ptr<std::map<std::string, empty_main_fxn>>(new std::map<std::string, empty_main_fxn>);
+  }
 
   std::string name = params.find<std::string>("name");
   std::map<std::string, empty_main_fxn>::iterator it = empty_main_fxns_->find(name);
@@ -668,12 +669,14 @@ UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
 void
 UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
 {
-  if (!empty_main_fxns_)
-    empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
+  if (!empty_main_fxns_){
+    empty_main_fxns_ = std::unique_ptr<std::map<std::string, empty_main_fxn>>(new std::map<std::string, empty_main_fxn>);
+  }
 
   (*empty_main_fxns_)[name] = fxn;
   auto* lib = App::getBuilderLibrary("macro");
-  lib->addBuilder(name, lib->getBuilder("UserAppCxxEmptyMain"));
+  using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+  lib->addBuilder(name, std::unique_ptr<builder_t>(new builder_t));
 }
 
 int

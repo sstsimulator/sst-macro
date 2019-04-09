@@ -81,9 +81,9 @@ class PiscesNIC : public NIC
 
   virtual ~PiscesNIC() throw ();
 
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connectInput(int src_outport, int dst_inport, EventLink* link) override;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* creditHandler(int port) override;
 
@@ -118,8 +118,8 @@ class PiscesNIC : public NIC
 
   RecvCQ completion_queue_;
 
-  EventLink* credit_link_;
-  EventLink* self_mtl_link_;
+  EventLink::ptr credit_link_;
+  EventLink::ptr self_mtl_link_;
 
   NodeId my_addr_;
 

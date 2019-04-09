@@ -95,6 +95,8 @@ class OperatingSystem : public SubComponent
 
     ImplicitState(SST::Params& params){}
 
+    virtual ~ImplicitState(){}
+
     virtual void setState(int type, int value) = 0;
     virtual void unsetState(int type) = 0;
   };
@@ -499,8 +501,8 @@ class OperatingSystem : public SubComponent
 
   bool callGraph_active_;
 
-  static std::map<std::string, RegressionModel*> memoize_models_;
-  static std::map<std::string, std::string>* memoize_init_;
+  static std::map<std::string, std::unique_ptr<RegressionModel>> memoize_models_;
+  static std::unique_ptr<std::map<std::string, std::string>> memoize_init_;
 
   static std::unordered_map<uint32_t, Thread*> all_threads_;
   static bool hold_for_gdb_;

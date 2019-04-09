@@ -113,13 +113,13 @@ LogPNIC::doSend(NetworkMessage* msg)
 }
 
 void
-LogPNIC::connectOutput(int src_outport, int dst_inport, EventLink* link)
+LogPNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
-  logp_link_ = link;
+  logp_link_ = std::move(link);
 }
 
 void
-LogPNIC::connectInput(int src_outport, int dst_inport, EventLink* link)
+LogPNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //nothing needed
 }

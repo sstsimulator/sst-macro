@@ -88,9 +88,9 @@ class Node : public ConnectableComponent
 
   virtual ~Node();
 
-  void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  void connectInput(int src_outport, int dst_inport, EventLink* link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* payloadHandler(int port) override;
 

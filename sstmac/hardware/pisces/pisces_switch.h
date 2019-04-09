@@ -100,9 +100,9 @@ class PiscesSwitch :
 
   int queueLength(int port, int vc) const override;
 
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connectInput(int src_outport, int dst_inport, EventLink* link) override;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* creditHandler(int port) override;
 

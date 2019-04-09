@@ -74,9 +74,9 @@ class PiscesNtoMQueue :
 
   LinkHandler* payloadHandler();
 
-  void setInput(int my_inport, int src_outport, EventLink* link) override;
+  void setInput(int my_inport, int src_outport, EventLink::ptr&& link) override;
 
-  void setOutput(int my_outport, int dst_inport, EventLink* link, int credits) override;
+  void setOutput(int my_outport, int dst_inport, EventLink::ptr&& link, int credits) override;
 
   inline int slot(int port, int vc) const {
     return port * num_vc_ + vc;

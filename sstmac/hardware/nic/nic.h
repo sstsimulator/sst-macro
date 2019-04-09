@@ -197,7 +197,7 @@ class NIC : public ConnectableSubcomponent
   NodeId my_addr_;
   int negligibleSize_;
   Node* parent_;
-  EventLink* logp_link_;
+  EventLink::ptr logp_link_;
   Topology* top_;
 
  private:
@@ -243,9 +243,9 @@ class NullNIC : public NIC
 
   void doSend(NetworkMessage* msg) override {}
 
-  void connectOutput(int src_outport, int dst_inport, EventLink *payload_link) override {}
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& payload_link) override {}
 
-  void connectInput(int src_outport, int dst_inport, EventLink *credit_link) override {}
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& credit_link) override {}
 
   LinkHandler* payloadHandler(int port) override { return nullptr; }
 

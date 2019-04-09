@@ -143,28 +143,23 @@ SculpinSwitch::SculpinSwitch(uint32_t id, SST::Params& params) :
 SculpinSwitch::~SculpinSwitch()
 {
   if (router_) delete router_;
-  for (Port& p : ports_){
-    if (p.link) delete p.link;
-  }
 }
 
 void
-SculpinSwitch::connectOutput(int src_outport, int dst_inport, EventLink* link)
+SculpinSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
   double port_bw = scale_factor * link_bw_;
   Port& p = ports_[src_outport];
-  p.link = link;
+  p.link = std::move(link);
   p.byte_delay = Timestamp(1.0/port_bw);
   p.dst_port = dst_inport;
 }
 
 void
-SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
+SculpinSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //no-op
-  //but we have to delete the link because we own it
-  delete link;
 }
 
 int

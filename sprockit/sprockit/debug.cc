@@ -57,11 +57,11 @@ namespace sprockit {
 static NeedDeletestatics<Debug> del_statics;
 
 
-DebugPrefixFxn* Debug::prefix_fxn = nullptr;
+std::unique_ptr<DebugPrefixFxn> Debug::prefix_fxn;
 DebugInt Debug::current_bitmask_;
 DebugInt Debug::start_bitmask_;
-std::map<std::string, DebugInt*>* Debug::debug_ints_ = nullptr;
-std::map<std::string, std::string>* Debug::docstrings_ = nullptr;
+std::unique_ptr<std::map<std::string, DebugInt*>> Debug::debug_ints_;
+std::unique_ptr<std::map<std::string, std::string>> Debug::docstrings_;
 int Debug::num_bits_assigned = 1; //the zeroth bit is reserved empty
 
 #if SPROCKIT_ENABLE_DEBUG
@@ -79,9 +79,6 @@ debug_indent::debug_indent() : level(0)
 void
 Debug::deleteStatics()
 {
-  free_static_ptr(debug_ints_);
-  free_static_ptr(docstrings_);
-  if (prefix_fxn) delete prefix_fxn;
 }
 
 void
@@ -160,25 +157,25 @@ Debug::assignSlot(DebugInt& dint)
 
 void
 Debug::turnOn(const std::string& str){
-  std::map<std::string, DebugInt*>::iterator it = debug_ints_->find(str);
+  auto it = debug_ints_->find(str);
   if (it == debug_ints_->end()){
     spkt_throw_printf(InputError,
         "debug::turn_on: unknown debug flag %s",
         str.c_str());
   }
-  DebugInt& dint = *(it->second);
-  turnOn(dint);
+  turnOn(*it->second);
 }
 
 void
-Debug::registerDebugSlot(const std::string& str,
-                           DebugInt* dint_ptr,
-                           const std::string& docstring){
+Debug::registerDebugSlot(const std::string& str, DebugInt* dint,
+                         const std::string& docstring){
   if (!debug_ints_){
-    debug_ints_ = new std::map<std::string, DebugInt*>;
-    docstrings_ = new std::map<std::string, std::string>;
+    debug_ints_ = std::unique_ptr<std::map<std::string, DebugInt*>>(
+                      new std::map<std::string, DebugInt*>);
+    docstrings_ = std::unique_ptr<std::map<std::string, std::string>>(
+                      new std::map<std::string, std::string>);
   }
-  (*debug_ints_)[str] = dint_ptr;
+  (*debug_ints_)[str] = dint;
   (*docstrings_)[str] = docstring;
 }
 

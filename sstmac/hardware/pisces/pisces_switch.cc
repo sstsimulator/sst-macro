@@ -160,7 +160,7 @@ void
 PiscesSwitch::connectOutput(
   int src_outport,
   int dst_inport,
-  EventLink* link)
+  EventLink::ptr&& link)
 {
   double scale_factor = top_->portScaleFactor(my_addr_, src_outport);
 
@@ -171,14 +171,14 @@ PiscesSwitch::connectOutput(
   std::string out_port_name = sprockit::printf("buffer-out%d", src_outport);
   auto out_link = allocateSubLink(out_port_name, Timestamp(), this, //don't put latency on xbar
                 newLinkHandler(out_buffer, &PiscesBuffer::handlePayload));
-  xbar_->setOutput(src_outport, buffer_inport, out_link, link_credits_ * scale_factor);
+  xbar_->setOutput(src_outport, buffer_inport, std::move(out_link), link_credits_ * scale_factor);
 
   std::string in_port_name = sprockit::printf("xbar-credit%d", src_outport);
   auto in_link = allocateSubLink(in_port_name, Timestamp(), this, xbar_->creditHandler()); //don't put latency on internal credits
-  out_buffer->setInput(buffer_inport, src_outport, in_link);
+  out_buffer->setInput(buffer_inport, src_outport, std::move(in_link));
   out_buffers_[src_outport] = out_buffer;
 
-  out_buffer->setOutput(src_outport, dst_inport, link, link_credits_ * scale_factor);
+  out_buffer->setOutput(src_outport, dst_inport, std::move(link), link_credits_ * scale_factor);
   out_buffers_[src_outport] = out_buffer;
 }
 
@@ -193,10 +193,10 @@ PiscesSwitch::InputPort::handle(Event *ev)
 }
 
 void
-PiscesSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
+PiscesSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   int buffer_port = 0;
-  xbar_->setInput(dst_inport, buffer_port, link);
+  xbar_->setInput(dst_inport, buffer_port, std::move(link));
 }
 
 int

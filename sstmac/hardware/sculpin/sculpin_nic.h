@@ -86,9 +86,9 @@ class SculpinNIC :
 
   void handleCredit(Event* ev);
 
-  void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  void connectInput(int src_outport, int dst_inport, EventLink* link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* creditHandler(int Port) override;
 
@@ -103,7 +103,7 @@ class SculpinNIC :
 
  private:
   GlobalTimestamp inj_next_free_;
-  EventLink* inj_link_;
+  EventLink::ptr inj_link_;
 
   Timestamp inj_byte_delay_;
 

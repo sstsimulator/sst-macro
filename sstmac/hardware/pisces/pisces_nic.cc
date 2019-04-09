@@ -118,22 +118,22 @@ PiscesNIC::creditHandler(int port)
 }
 
 void
-PiscesNIC::connectOutput(int src_outport, int dst_inport, EventLink* link)
+PiscesNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   if (src_outport == Injection){
-    inj_buffer_->setOutput(src_outport, dst_inport, link, inj_credits_);
+    inj_buffer_->setOutput(src_outport, dst_inport, std::move(link), inj_credits_);
   } else if (src_outport == LogP) {
-    logp_link_ = link;
+    logp_link_ = std::move(link);
   } else {
     spkt_abort_printf("Invalid port %d in PiscesNIC::connectOutput", src_outport);
   }
 }
 
 void
-PiscesNIC::connectInput(int src_outport, int dst_inport, EventLink* link)
+PiscesNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   if (dst_inport == Injection){ //the logp port is not for credits!
-    credit_link_ = link;
+    credit_link_ = std::move(link);
   }
 }
 

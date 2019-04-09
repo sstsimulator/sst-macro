@@ -78,7 +78,7 @@ struct graph_viz_registration {
   static int id_count;
 
  private:
-  static std::map<int,const char*>* names;
+  static std::unique_ptr<std::map<int,const char*>> names;
 };
 
 

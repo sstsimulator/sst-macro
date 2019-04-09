@@ -319,7 +319,7 @@ EventManager::spinDown()
   if (nactive_threads == 0){
     //delete here while we are still on a user-space thread
     //annoying but necessary
-    hw::Interconnect::clear_staticInterconnect();
+    hw::Interconnect::clearStaticInterconnect();
   }
   active_lock.unlock();
   des_context_->completeContext(main_thread_);

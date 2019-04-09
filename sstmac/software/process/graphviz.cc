@@ -74,7 +74,7 @@ namespace sstmac {
 namespace sw {
 
 int graph_viz_registration::id_count = 0;
-std::map<int,const char*>* graph_viz_registration::names = nullptr;
+std::unique_ptr<std::map<int,const char*>> graph_viz_registration::names;
 
 static sprockit::NeedDeletestatics<GraphViz> del_statics;
 
@@ -141,7 +141,7 @@ GraphViz::Trace::summary(const char* fxn) const
 graph_viz_registration::graph_viz_registration(const char* name, int id)
 {
   if (!names){
-    names = new std::map<int,const char*>;
+    names = std::unique_ptr<std::map<int,const char*>>(new std::map<int,const char*>);
   }
   //*id = id_count++;
   (*names)[id] = name;

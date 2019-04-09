@@ -85,7 +85,6 @@ SculpinNIC::setup()
 
 SculpinNIC::~SculpinNIC() throw ()
 {
-  if (inj_link_) delete inj_link_;  
 }
 
 LinkHandler*
@@ -105,23 +104,21 @@ SculpinNIC::creditHandler(int port)
 }
 
 void
-SculpinNIC::connectOutput(int src_outport, int dst_inport, EventLink* link)
+SculpinNIC::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   if (src_outport == Injection){
-    inj_link_ = link;
+    inj_link_ = std::move(link);
   } else if (src_outport == LogP) {
-    logp_link_ = link;
+    logp_link_ = std::move(link);
   } else {
     spkt_abort_printf("Invalid switch port %d in PiscesNIC::connectOutput", src_outport);
   }
 }
 
 void
-SculpinNIC::connectInput(int src_outport, int dst_inport, EventLink* link)
+SculpinNIC::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //nothing to do
-  //but we own the link now so have to delete it
-  delete link;
 }
 
 void

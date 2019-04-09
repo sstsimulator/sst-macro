@@ -91,8 +91,7 @@ ConnectableComponent::ConnectableComponent(uint32_t cid, SST::Params& params)
 {
   if (!checked_prefix_fxn){
     if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){
-      sprockit::DebugPrefixFxn* fxn = new timestamp_prefix_fxn(params, this);
-      sprockit::Debug::prefix_fxn = fxn;
+      sprockit::Debug::prefix_fxn = std::unique_ptr<sprockit::DebugPrefixFxn>(new timestamp_prefix_fxn(params, this));
     }
     checked_prefix_fxn = true;
   }

@@ -118,9 +118,10 @@ LogPSwitch::LogPSwitch(uint32_t cid, SST::Params& params) :
 LogPSwitch::~LogPSwitch()
 {
   if (rng_) delete rng_;
-  for (EventLink* link : nic_links_){
-    delete link;
-  }
+  // JJW 4/10/19 these are now owned by the interconnect
+  //for (EventLink* link : nic_links_){
+  //  delete link;
+  //}
 }
 
 void
@@ -163,8 +164,7 @@ LogPSwitch::send(GlobalTimestamp start, NetworkMessage* msg)
 
   Timestamp extra_delay = start - now() + delay;
 
-  EventLink* lnk = nic_links_[dst];
-  lnk->send(extra_delay, new NicEvent(msg));
+  nic_links_[dst]->send(extra_delay, new NicEvent(msg));
 }
 
 struct SlidingContentionModel : public LogPSwitch::ContentionModel

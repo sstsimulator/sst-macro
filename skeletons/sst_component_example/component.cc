@@ -129,15 +129,15 @@ class DummySwitch : public TestComponent {
     //ignore for now, we won't do anything with credits
   }
 
-  void connectOutput(int src_outport, int dst_inport, EventLink* link) override {
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override {
     //register handler on port
-    partner_ = link;
+    partner_ = std::move(link);
     std::cout << "Connecting output "
               << src_outport << "-> " << dst_inport
               << " on component " << id_ << std::endl;
   }
 
-  void connectInput(int src_outport, int dst_inport, EventLink* link) override {
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override {
     //we won't do anything with credits, but print for tutorial
     std::cout << "Connecting input "
               << src_outport << "-> " << dst_inport
@@ -174,7 +174,7 @@ class DummySwitch : public TestComponent {
   }
 
  private:
-  EventLink* partner_;
+  EventLink::ptr partner_;
   Timestamp latency_;
   int num_ping_pongs_;
   uint32_t id_;

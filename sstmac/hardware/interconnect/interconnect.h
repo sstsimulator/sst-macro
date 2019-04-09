@@ -86,7 +86,7 @@ class Interconnect
    */
   static Interconnect* staticInterconnect();
 
-  static void clear_staticInterconnect(){
+  static void clearStaticInterconnect(){
     if (static_interconnect_) delete static_interconnect_;
     static_interconnect_ = nullptr;
   }
@@ -194,7 +194,6 @@ class Interconnect
 
   switch_map switches_;
   node_map nodes_;
-  link_map links_;
 
   std::vector<ConnectableComponent*> components_;
 

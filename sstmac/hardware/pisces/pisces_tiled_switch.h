@@ -79,9 +79,9 @@ class PiscesTiledSwitch :
 
   int queueLength(int port, int vc) const override;
 
-  void connectOutput(int src_outport, int dst_inport, EventLink* link) override;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  void connectInput(int src_outport, int dst_inport, EventLink* link) override;
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
   LinkHandler* creditHandler(int port) override;
 

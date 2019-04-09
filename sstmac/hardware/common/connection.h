@@ -70,7 +70,7 @@ class Connectable {
    * @param dst_inport
    * @param payloadHandler
    */
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink* payload_link) = 0;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& payload_link) = 0;
 
   /**
    * @brief connectInput
@@ -80,7 +80,7 @@ class Connectable {
    * @param dst_inport
    * @param creditHandler Can be null, if no credits are ever sent
    */
-  virtual void connectInput(int src_outport, int dst_inport, EventLink* credit_link) = 0;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& credit_link) = 0;
 
   /**
    * @brief creditHandler

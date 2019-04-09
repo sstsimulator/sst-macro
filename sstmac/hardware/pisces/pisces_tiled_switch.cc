@@ -185,7 +185,7 @@ PiscesTiledSwitch::initComponents(SST::Params& params)
 }
 
 void
-PiscesTiledSwitch::connectOutput(int src_outport, int dst_inport, EventLink* link)
+PiscesTiledSwitch::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //TODO
 #if 0
@@ -196,7 +196,7 @@ PiscesTiledSwitch::connectOutput(int src_outport, int dst_inport, EventLink* lin
 }
 
 void
-PiscesTiledSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
+PiscesTiledSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //TODO
 #if 0

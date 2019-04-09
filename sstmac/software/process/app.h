@@ -310,7 +310,7 @@ class UserAppCxxFullMain : public App
  private:
   void initArgv(argv_entry& entry);
 
-  static std::map<std::string, App::main_fxn>* main_fxns_;
+  static std::unique_ptr<std::map<std::string, App::main_fxn>> main_fxns_;
   static std::map<AppId, argv_entry> argv_map_;
   App::main_fxn fxn_;
 
@@ -336,7 +336,7 @@ class UserAppCxxEmptyMain : public App
   int skeletonMain() override;
 
  private:
-  static std::map<std::string, App::empty_main_fxn>* empty_main_fxns_;
+  static std::unique_ptr<std::map<std::string, App::empty_main_fxn>> empty_main_fxns_;
   App::empty_main_fxn fxn_;
 
 };

@@ -55,22 +55,24 @@ namespace hw {
 
 PiscesBuffer::~PiscesBuffer()
 {
-  if (input_.link) delete input_.link;
-  if (output_.link) delete output_.link;
+  //JJW 04/10/19 links are now owned by the interconnect
+  //or at the component top-level
+  //if (input_.link) delete input_.link;
+  //if (output_.link) delete output_.link;
   if (arb_) delete arb_;
 }
 
 void
-PiscesBuffer::setInput(int this_inport, int src_outport, EventLink* link)
+PiscesBuffer::setInput(int this_inport, int src_outport, EventLink::ptr&& link)
 {
-  input_.link = link;
+  input_.link = std::move(link);
   input_.port_to_credit = src_outport;
 }
 
 void
-PiscesBuffer::setOutput(int this_outport, int dst_inport, EventLink* link, int credits)
+PiscesBuffer::setOutput(int this_outport, int dst_inport, EventLink::ptr&& link, int credits)
 {
-  output_.link = link;
+  output_.link = std::move(link);
   output_.arrival_port = dst_inport;
   int num_credits_per_vc = credits / num_vc_;
   for (int i=0; i < num_vc_; ++i) {

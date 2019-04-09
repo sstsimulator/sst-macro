@@ -174,17 +174,17 @@ Node::~Node()
 }
 
 void
-Node::connectOutput(int src_outport, int dst_inport, EventLink* link)
+Node::connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //forward connection to nic
-  nic_->connectOutput(src_outport, dst_inport, link);
+  nic_->connectOutput(src_outport, dst_inport, std::move(link));
 }
 
 void
-Node::connectInput(int src_outport, int dst_inport, EventLink* link)
+Node::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   //forward connection to nic
-  nic_->connectInput(src_outport, dst_inport, link);
+  nic_->connectInput(src_outport, dst_inport, std::move(link));
 }
 
 void

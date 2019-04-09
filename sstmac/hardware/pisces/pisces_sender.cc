@@ -97,7 +97,7 @@ PiscesSender::sendCredit(
       "On %s:%p on inport %d, crediting %s:%p port:%d:%d vc:%d {%s}"
       "after delay %9.5e after latency %9.5e with %p",
       toString().c_str(), this, int(payload->nextLocalInport()),
-      inp.link->toString().c_str(), inp.link,
+      inp.link->toString().c_str(), inp.link.get(),
       payload->edgeOutport(), payload->nextLocalOutport(), src_vc,
       payload->toString().c_str(),
       credit_departure_delay.sec(), credit_lat_.sec(),
@@ -139,7 +139,7 @@ PiscesSender::send(
     toString().c_str(), this,
     pkt->nextLocalOutport(), pkt->nextVC(),
     pkt->toString().c_str(),
-    to_send.link->toString().c_str(), to_send.link,
+    to_send.link->toString().c_str(), to_send.link.get(),
     pkt->nextLocalInport());
 
   if (pkt->nextVC() < 0){

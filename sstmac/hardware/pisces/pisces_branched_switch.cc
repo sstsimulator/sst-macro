@@ -153,17 +153,17 @@ void
 PiscesBranchedSwitch::connectOutput(
   int src_outport,
   int dst_inport,
-  EventLink* link)
+  EventLink::ptr&& link)
 {
   PiscesDemuxer* demux = output_demuxers_[src_outport/n_local_ports_];
-  demux->setOutput(src_outport % n_local_ports_, dst_inport, link, output_credits_);
+  demux->setOutput(src_outport % n_local_ports_, dst_inport, std::move(link), output_credits_);
 }
 
 void
-PiscesBranchedSwitch::connectInput(int src_outport, int dst_inport, EventLink* link)
+PiscesBranchedSwitch::connectInput(int src_outport, int dst_inport, EventLink::ptr&& link)
 {
   PiscesMuxer* muxer = input_muxers_[dst_inport/n_local_ports_].mux;
-  muxer->setInput(dst_inport % n_local_ports_, src_outport, link);
+  muxer->setInput(dst_inport % n_local_ports_, src_outport, std::move(link));
 }
 
 int

@@ -98,10 +98,7 @@ class SSTIntegratedComponent
    * @param dst_inport
    * @param mod
    */
-  virtual void connectInput(
-    int src_outport,
-    int dst_inport,
-    EventLink* link) = 0;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) = 0;
 
   /**
    * @brief connectOutput  All of these classes should implement
@@ -110,10 +107,7 @@ class SSTIntegratedComponent
    * @param dst_inport
    * @param mod
    */
-  virtual void connectOutput(
-    int src_outport,
-    int dst_inport,
-    EventLink* link) = 0;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) = 0;
 
   /**
    * @brief payloadHandler

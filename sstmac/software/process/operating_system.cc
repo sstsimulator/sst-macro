@@ -321,8 +321,8 @@ ThreadContext* OperatingSystem::gdb_original_context_ = nullptr;
 ThreadContext* OperatingSystem::gdb_des_context_ = nullptr;
 std::unordered_map<uint32_t,Thread*> OperatingSystem::all_threads_;
 bool OperatingSystem::gdb_active_ = false;
-std::map<std::string,OperatingSystem::RegressionModel*> OperatingSystem::memoize_models_;
-std::map<std::string,std::string>* OperatingSystem::memoize_init_ = nullptr;
+std::map<std::string,std::unique_ptr<OperatingSystem::RegressionModel>> OperatingSystem::memoize_models_;
+std::unique_ptr<std::map<std::string,std::string>> OperatingSystem::memoize_init_ = nullptr;
 
 OperatingSystem::OperatingSystem(SST::Params& params, hw::Node* parent) :
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -384,7 +384,7 @@ OperatingSystem::rebuildMemoizations()
       memo_params.insert("fileroot", pair.first);
       auto* model = sprockit::create<RegressionModel>(
         "macro", pair.second, node(), pair.first, "", memo_params);
-      memoize_models_[pair.first] = model;
+      memoize_models_[pair.first] = std::unique_ptr<RegressionModel>(model);
       //EventManager::global->registerStat(model, nullptr);
     }
 #else
@@ -398,7 +398,7 @@ void
 OperatingSystem::addMemoization(const std::string& name, const std::string& model)
 {
   if (!memoize_init_){
-    memoize_init_ = new std::map<std::string,std::string>;
+    memoize_init_ = std::unique_ptr<std::map<std::string,std::string>>(new std::map<std::string,std::string>);
   }
   (*memoize_init_)[name] = model;
 
@@ -632,21 +632,20 @@ OperatingSystem::startMemoize(const char *token, const char* model_name)
     spkt_abort_printf("memoization %s for model %s was not registered - likely a compiler wrapper error",
                       token, model_name);
   }
-
-  RegressionModel* model = iter->second;
-  return model->startCollection();
+  return iter->second->startCollection();
 }
 
-static thread_local sstmac::sw::OperatingSystem::ImplicitState* implicit_memo_state_ = nullptr;
+static thread_local std::unique_ptr<sstmac::sw::OperatingSystem::ImplicitState> implicit_memo_state_;
 
 OperatingSystem::ImplicitState*
 OperatingSystem::getImplicitState()
 {
   if (!implicit_memo_state_){
-    implicit_memo_state_ = sprockit::create<sstmac::sw::OperatingSystem::ImplicitState>(
-        "macro", params_.find<std::string>("implicit_state", "null"), params_);
+    implicit_memo_state_ = std::unique_ptr<sstmac::sw::OperatingSystem::ImplicitState>(
+          sprockit::create<sstmac::sw::OperatingSystem::ImplicitState>(
+        "macro", params_.find<std::string>("implicit_state", "null"), params_));
   }
-  return implicit_memo_state_;
+  return implicit_memo_state_.get();
 }
 
 void
@@ -660,8 +659,7 @@ OperatingSystem::stopMemoize(int thr_tag, const char *token, int n_params, doubl
 
   uintptr_t localStorage = get_sstmac_tls();
   auto* states = (ImplicitState*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  RegressionModel* model = iter->second;
-  model->finishCollection(thr_tag, n_params, params, states);
+  iter->second->finishCollection(thr_tag, n_params, params, states);
 }
 
 void
@@ -673,11 +671,9 @@ OperatingSystem::computeMemoize(const char *token, int n_params, double params[]
                       token);
   }
 
-  RegressionModel* model = iter->second;
-
   uintptr_t localStorage = get_sstmac_tls();
   auto* states = (ImplicitState*)(localStorage + SSTMAC_TLS_IMPLICIT_STATE);
-  double time = model->compute(n_params, params, states);
+  double time = iter->second->compute(n_params, params, states);
   currentOs()->compute(Timestamp(time));
 }
 

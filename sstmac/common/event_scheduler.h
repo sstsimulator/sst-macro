@@ -109,6 +109,8 @@ class EventLink {
  public:
   virtual ~EventLink(){}
 
+  using ptr = std::unique_ptr<EventLink>;
+
   virtual std::string toString() const = 0;
 
   virtual void send(Timestamp delay, Event *ev) = 0;
@@ -405,14 +407,14 @@ SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
 }
 
-static inline EventLink* allocateSubLink(const std::string& name, Timestamp lat, SubComponent* subcomp, LinkHandler* handler){
+static inline EventLink::ptr allocateSubLink(const std::string& name, Timestamp lat, SubComponent* subcomp, LinkHandler* handler){
   SST::Link* self = subcomp->configureSelfLink(name, subcomp->timeConverter(), handler);
-  return new EventLink(name, lat, self);
+  return EventLink::ptr(new EventLink(name, lat, self));
 }
 
-static inline EventLink* allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler){
+static inline EventLink::ptr allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler){
   SST::Link* self = comp->configureSelfLink(name, comp->timeConverter(), handler);
-  return new EventLink(name, lat, self);
+  return EventLink::ptr(new EventLink(name, lat, self));
 }
 #else
 template <class T, class Fxn, class... Args>
@@ -520,9 +522,9 @@ class SubLink : public EventLink
   EventHandler* handler_;
 };
 
-static inline EventLink* allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler)
+static inline EventLink::ptr allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler)
 {
-  return new SubLink(lat, comp, handler);
+  return EventLink::ptr(new SubLink(lat, comp, handler));
 }
 #endif
 

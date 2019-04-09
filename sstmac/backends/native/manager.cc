@@ -266,8 +266,8 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
   EventManager::global = EventManager_;
 
   if (sprockit::Debug::slotActive(sprockit::dbg::timestamp)){
-    sprockit::DebugPrefixFxn* fxn = new timestamp_prefix_fxn(params, EventManager_);
-    sprockit::Debug::prefix_fxn = fxn;
+    sprockit::Debug::prefix_fxn = std::unique_ptr<sprockit::DebugPrefixFxn>(
+          new timestamp_prefix_fxn(params, EventManager_));
   }
 
   bool debug_startup = params.find<bool>("debug_startup", true);
@@ -282,15 +282,12 @@ Manager::Manager(SST::Params& params, ParallelRuntime* rt) :
 
 Manager::~Manager() throw ()
 {
-  if (sprockit::Debug::prefix_fxn) 
-    delete sprockit::Debug::prefix_fxn;
   sprockit::Debug::prefix_fxn = nullptr;
   if (this->running_){
     cerrn << "FATAL:  manager going out of scope while still running.\n";
     abort();
   }
   if (EventManager_) delete EventManager_;
-  //hw::interconnect::clear_staticInterconnect();
 }
 
 void

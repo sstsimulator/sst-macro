@@ -60,9 +60,9 @@ class PiscesBuffer :
 
   virtual ~PiscesBuffer();
 
-  void setOutput(int this_outport, int dst_inport, EventLink* link, int credits) override;
+  void setOutput(int this_outport, int dst_inport, EventLink::ptr&& link, int credits) override;
 
-  void setInput(int this_inport, int src_outport, EventLink* link) override;
+  void setInput(int this_inport, int src_outport, EventLink::ptr&& link) override;
 
   void handleCredit(Event* ev) override;
 
