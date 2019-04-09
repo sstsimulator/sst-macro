@@ -4897,8 +4897,8 @@ int errcode(int argc, char **argv)
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_info_set %I %s %s" );
     }
     /** src/util/procmap/local_proc.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**dynamic_node_ids", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**dynamic_node_ids" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**dynamic_NodeIds", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**dynamic_NodeIds" );
     /** src/util/procmap/local_proc.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nomem2", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**nomem2" );

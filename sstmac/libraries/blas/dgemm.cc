@@ -51,22 +51,29 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class default_dgemm :
-  public blas_kernel
+class DefaultDGEMM :
+  public BlasKernel
 {
-  FactoryRegister("default_dgemm", blas_kernel, default_dgemm)
  public:
-  default_dgemm(sprockit::sim_parameters* params){
-    cache_size_bytes_ = params->get_optional_byte_length_param("dgemm_cache_size", 32000);
-    loop_unroll_ = params->get_optional_double_param("dgemm_loop_unroll", 4);
-    pipeline_ = params->get_optional_double_param("dgemm_pipeline_efficiency", 2);
+  SST_ELI_REGISTER_DERIVED(
+    BlasKernel,
+    DefaultDGEMM,
+    "macro",
+    "default_dgemm",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "defaut DGEMM kernel")
+
+  DefaultDGEMM(SST::Params& params){
+    cache_size_bytes_ = params.find<SST::UnitAlgebra>("dgemm_cache_size", "32KB").getRoundedValue();
+    loop_unroll_ = params.find<double>("dgemm_loop_unroll", 4);
+    pipeline_ = params.find<double>("dgemm_pipeline_efficiency", 2);
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "default dgemm";
   }
 
-  compute_event* op_3d(int m, int k, int n) override;
+  ComputeEvent* op_3d(int m, int k, int n) override;
 
  protected:
   double loop_unroll_;
@@ -75,8 +82,8 @@ class default_dgemm :
 
 };
 
-compute_event*
-default_dgemm::op_3d(int mm, int nn, int kk)
+ComputeEvent*
+DefaultDGEMM::op_3d(int mm, int nn, int kk)
 {
   int sizes[3];
   sizes[0] = mm;
@@ -102,7 +109,7 @@ default_dgemm::op_3d(int mm, int nn, int kk)
     nblocks=npartitions*npartitions;
   }
 
-  basic_compute_event* ev = new basic_compute_event;
+  BasicComputeEvent* ev = new BasicComputeEvent;
   basic_instructions_st& st = ev->data();
 
   // a single block costs..

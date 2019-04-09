@@ -47,9 +47,8 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class transport;
-class resilient_transport;
-class collective_transport;
+class Transport;
+class CollectiveEngine;
 
 }
 

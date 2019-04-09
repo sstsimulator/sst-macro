@@ -51,7 +51,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-typedef std::set<node_id> ordered_node_set;
+typedef std::set<NodeId> ordered_node_set;
 
 }
 }

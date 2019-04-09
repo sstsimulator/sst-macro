@@ -47,11 +47,17 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sstmac/common/sst_event_fwd.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_handler_fwd.h>
 #include <sstmac/hardware/common/connection_fwd.h>
+
+#define SSTMAC_VALID_PORTS \
+   {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
+   {"output %(out)d %(in)d", "Will receive new acks(credits) here", {}}, \
+   {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
+   {"rtr",                   "Special link to Merlin router",       {}}
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sst/core/link.h>
@@ -60,6 +66,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/element.h>
 #include <sst/core/elementinfo.h>
 #include <sst/core/component.h>
+#include <sst/core/subcomponent.h>
 
 #define SSTMAC_VALID_PORTS \
    {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
@@ -93,7 +100,7 @@ namespace sstmac {
 
 /**
  * @brief The SSTIntegratedComponent class  Provides common functionality
- * for converting an sst/macro standalone event_component into a
+ * for converting an sst/macro standalone Component into a
  * a SST::Component compatible with integration
  */
 class SSTIntegratedComponent
@@ -101,51 +108,41 @@ class SSTIntegratedComponent
 {
  public:
   /**
-   * @brief connect_input All of these classes should implement the
-   *        connectable interface
-   * @param params
+   * @brief connectInput All of these classes should implement the
+   *        Connectable interface
    * @param src_outport
    * @param dst_inport
    * @param mod
    */
-  virtual void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) = 0;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) = 0;
 
   /**
-   * @brief connect_output  All of these classes should implement
-   *                        the connectable interface
-   * @param params
+   * @brief connectOutput  All of these classes should implement
+   *                        the Connectable interface
    * @param src_outport
    * @param dst_inport
    * @param mod
    */
-  virtual void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) = 0;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) = 0;
 
   /**
-   * @brief payload_handler
+   * @brief payloadHandler
    * @param port
    * @return The handler that will receive payloads from an SST link
    */
-  virtual SST::Event::HandlerBase* payload_handler(int port) = 0;
+  virtual SST::Event::HandlerBase* payloadHandler(int port) = 0;
 
   /**
-   * @brief credit_handler
+   * @brief creditHandler
    * @param port
    * @return The handler that will receive credits from an SST link
    */
-  virtual SST::Event::HandlerBase* credit_handler(int port) = 0;
+  virtual SST::Event::HandlerBase* creditHandler(int port) = 0;
 
-  void init_links(sprockit::sim_parameters* params);
+  void initLinks(SST::Params& params);
 
  protected:
-  SSTIntegratedComponent(sprockit::sim_parameters* params, uint32_t id);
+  SSTIntegratedComponent(SST::Params& params, uint32_t id);
 
   SST::LinkMap* link_map_;
 
@@ -154,16 +151,32 @@ class SSTIntegratedComponent
 } /* end namespace sstmac */
 
 #else
-#define RegisterComponent(name,parent,cls,lib,cat,desc) \
-  FactoryRegister(name,parent,cls,desc)
 
-#define RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
-  FactoryRegister(name,parent,cls,desc)
+#define SST_ELI_DECLARE_BASE(x) \
+  SPKT_DECLARE_BASE(x)
+
+#define SST_ELI_DECLARE_CTOR(...) \
+  SPKT_DECLARE_CTOR(SPKT_FORWARD_AS_ONE(__VA_ARGS__))
+
+#define SST_ELI_DECLARE_DEFAULT_CTOR() \
+  SPKT_DECLARE_DEFAULT_CTOR()
+
+#define SST_ELI_DECLARE_DEFAULT_INFO()
 
 #define SST_ELI_DOCUMENT_STATISTICS(...)
 
-#define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
-  FactoryRegister(name,parent,cls,desc)
+#define SST_ELI_ELEMENT_VERSION(...)
+
+#define SST_ELI_DOCUMENT_PORTS(...)
+
+//if this macro is used, then this is ONLY registered for core
+#define SST_ELI_REGISTER_COMPONENT(cls,lib,name,version,desc,cat)
+
+#define SST_ELI_REGISTER_DERIVED_COMPONENT(base,cls,lib,name,version,desc,cat) \
+  SPKT_REGISTER_DERIVED(base,cls,lib,name,desc)
+
+#define SST_ELI_REGISTER_DERIVED(base,cls,lib,name,version,desc) \
+  SPKT_REGISTER_DERIVED(base,cls,lib,name,desc)
 
 #define COMPONENT_CATEGORY_UNCATEGORIZED  0x00
 #define COMPONENT_CATEGORY_PROCESSOR      0x01

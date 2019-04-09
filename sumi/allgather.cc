@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi/allgather.h>
-#include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
 #include <sumi/communicator.h>
 #include <sprockit/output.h>
@@ -61,14 +60,31 @@ using namespace sprockit::dbg;
 namespace sumi {
 
 void
-bruck_allgather_actor::init_buffers(void* dst, void* src)
+BruckTree::computeTree(int nproc, int &log2nproc, int &midpoint,
+                        int &num_rounds, int &nprocs_extra_round)
 {
+  int virtual_nproc;
+  RecursiveDoubling::computeTree(nproc, log2nproc, midpoint, virtual_nproc);
+  nprocs_extra_round = 0;
+  num_rounds = log2nproc;
+  if (nproc != virtual_nproc){
+    --num_rounds;
+    //we will have to do an extra exchange in the last round
+    nprocs_extra_round = nproc - midpoint;
+  }
+}
+
+void
+BruckActor::initBuffers()
+{
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   bool in_place = dst == src;
   if (src){
     int block_size = nelems_ * type_size_;
     if (in_place){
-      if (dense_me_ != 0){
-        int inPlaceOffset = dense_me_* block_size;
+      if (dom_me_ != 0){
+        int inPlaceOffset = dom_me_* block_size;
         void* inPlaceSrc = ((char*)src + inPlaceOffset);
         std::memcpy(dst, inPlaceSrc, block_size);
       }
@@ -76,31 +92,31 @@ bruck_allgather_actor::init_buffers(void* dst, void* src)
       //put everything into the dst buffer to begin
       std::memcpy(dst, src, block_size);
     }
-    long buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
-    result_buffer_ = my_api_->make_public_buffer(dst, buffer_size);
+    uint64_t buffer_size = nelems_ * type_size_ * comm_->nproc();
+    result_buffer_ = my_api_->makePublicBuffer(dst, buffer_size);
     send_buffer_ = result_buffer_;
     recv_buffer_ = result_buffer_;
   }
 }
 
 void
-bruck_allgather_actor::finalize_buffers()
+BruckActor::finalizeBuffers()
 {
   if (result_buffer_){
-    long buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
-    my_api_->unmake_public_buffer(send_buffer_, buffer_size);
+    uint64_t buffer_size = nelems_ * type_size_ * comm_->nproc();
+    my_api_->unmakePublicBuffer(send_buffer_, buffer_size);
   }
 }
 
 void
-bruck_allgather_actor::init_dag()
+BruckActor::initDag()
 {
   int log2nproc, midpoint, nprocs_extra_round, num_rounds;
-  compute_tree(log2nproc, midpoint, num_rounds, nprocs_extra_round);
+  BruckTree::computeTree(dom_nproc_, log2nproc, midpoint, num_rounds, nprocs_extra_round);
 
   debug_printf(sumi_collective,
     "Bruck %s: configured for %d rounds with an extra round exchanging %d proc segments on tag=%d ",
-    rank_str().c_str(), log2nproc, nprocs_extra_round, tag_);
+    rankStr().c_str(), log2nproc, nprocs_extra_round, tag_);
 
   //in the last round, we send half of total data to nearest neighbor
   //in the penultimate round, we send 1/4 data to neighbor at distance=2
@@ -114,22 +130,22 @@ bruck_allgather_actor::init_dag()
 
   int partner_gap = 1;
   int round_nelems = nelems_;
-  int nproc = dense_nproc_;
-  action *prev_send = 0, *prev_recv = 0;
+  int nproc = dom_nproc_;
+  Action *prev_send = 0, *prev_recv = 0;
   for (int i=0; i < num_rounds; ++i){
-    int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
-    int recv_partner = (dense_me_ + partner_gap) % nproc;
-    action* send_ac = new send_action(i, send_partner, send_action::in_place);
-    action* recv_ac = new recv_action(i, recv_partner, recv_action::in_place);
+    int send_partner = (dom_me_ + nproc - partner_gap) % nproc;
+    int recv_partner = (dom_me_ + partner_gap) % nproc;
+    Action* send_ac = new SendAction(i, send_partner, SendAction::in_place);
+    Action* recv_ac = new RecvAction(i, recv_partner, RecvAction::in_place);
     send_ac->offset = 0;
     recv_ac->offset = round_nelems;
     send_ac->nelems = round_nelems;
     recv_ac->nelems = round_nelems;
 
-    add_dependency(prev_send, send_ac);
-    add_dependency(prev_recv, send_ac);
-    add_dependency(prev_send, recv_ac);
-    add_dependency(prev_recv, recv_ac);
+    addDependency(prev_send, send_ac);
+    addDependency(prev_recv, send_ac);
+    addDependency(prev_send, recv_ac);
+    addDependency(prev_recv, recv_ac);
 
     partner_gap *= 2;
     round_nelems *= 2;
@@ -139,46 +155,46 @@ bruck_allgather_actor::init_dag()
 
   if (nprocs_extra_round){
     int nelems_extra_round = nprocs_extra_round * nelems_;
-    int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
-    int recv_partner = (dense_me_ + partner_gap) % nproc;
-    action* send_ac = new send_action(num_rounds+1,send_partner, send_action::in_place);
-    action* recv_ac = new recv_action(num_rounds+1,recv_partner, recv_action::in_place);
+    int send_partner = (dom_me_ + nproc - partner_gap) % nproc;
+    int recv_partner = (dom_me_ + partner_gap) % nproc;
+    Action* send_ac = new SendAction(num_rounds+1,send_partner, SendAction::in_place);
+    Action* recv_ac = new RecvAction(num_rounds+1,recv_partner, RecvAction::in_place);
     send_ac->offset = 0;
     recv_ac->offset = round_nelems;
     send_ac->nelems = nelems_extra_round;
     recv_ac->nelems = nelems_extra_round;
 
-    add_dependency(prev_send, send_ac);
-    add_dependency(prev_recv, send_ac);
-    add_dependency(prev_send, recv_ac);
-    add_dependency(prev_recv, recv_ac);
+    addDependency(prev_send, send_ac);
+    addDependency(prev_recv, send_ac);
+    addDependency(prev_send, recv_ac);
+    addDependency(prev_recv, recv_ac);
   }
 }
 
 void
-bruck_allgather_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+BruckActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-bruck_allgather_actor::finalize()
+BruckActor::finalize()
 {
   // rank 0 need not reorder
   // or no buffers
-  if (dense_me_ == 0 || result_buffer_ == 0){
+  if (dom_me_ == 0 || result_buffer_ == 0){
     return;
   }
 
   //we need to reorder things a bit
   //first, copy everything out
-  int total_nelems = nelems_* dense_nproc_;
+  int total_nelems = nelems_* dom_nproc_;
   int total_size = total_nelems * type_size_;
   char* tmp = new char[total_size];
   std::memcpy(tmp, result_buffer_, total_size);
 
 
-  int my_offset = nelems_ * dense_me_;
+  int my_offset = nelems_ * dom_me_;
 
   int copy_size = (total_nelems - my_offset) * type_size_;
   int copy_offset = my_offset * type_size_;
@@ -195,6 +211,75 @@ bruck_allgather_actor::finalize()
 
   delete[] tmp;
 }
+
+void
+RingAllgatherActor::initBuffers()
+{
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
+  if (src){
+    auto total_send_size = nelems_ * type_size_;
+    auto total_recv_size = nelems_ * type_size_;
+    result_buffer_ = my_api_->makePublicBuffer(dst, total_recv_size);
+    send_buffer_ = my_api_->makePublicBuffer(src, total_send_size);
+    recv_buffer_ = result_buffer_;
+  }
+}
+
+void
+RingAllgatherActor::finalizeBuffers()
+{
+  if (result_buffer_){
+    auto total_send_size = nelems_ * type_size_;
+    auto total_recv_size = nelems_ * type_size_;
+    my_api_->unmakePublicBuffer(result_buffer_, total_recv_size);
+    my_api_->unmakePublicBuffer(send_buffer_, total_send_size);
+  }
+}
+
+void
+RingAllgatherActor::bufferAction(void *dst_buffer, void *msg_buffer, Action *ac)
+{
+  std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
+}
+
+void
+RingAllgatherActor::initDag()
+{
+  int send_partner = (dom_me_ + 1) % dom_nproc_;
+  int recv_partner = (dom_me_ + dom_nproc_ - 1) % dom_nproc_;
+  Action *prev_send = nullptr, *prev_recv = nullptr;
+  int last_recved = dom_me_;
+  for (int i=1; i < dom_nproc_; ++i){
+    //the chunk rotates in a ring
+    /**
+     * 0->1->2->3->0
+     * Rank 1 would exchange the following "segments"
+     * receive 0, send 1
+     * receive 3, send 0
+     * receive 2, send 3
+     */
+    int recv_chunk = (last_recved - 1 + dom_nproc_) % dom_nproc_;
+    int send_chunk  = last_recved;
+
+    Action* send_ac = new SendAction(i, send_partner, SendAction::in_place);
+    send_ac->offset = send_chunk * nelems_;
+    send_ac->nelems = nelems_;
+    Action* recv_ac = new RecvAction(i, recv_partner, RecvAction::in_place);
+    recv_ac->offset = recv_chunk * nelems_;
+    recv_ac->nelems = nelems_;
+
+    addDependency(prev_send, send_ac);
+    addDependency(prev_send, recv_ac);
+    addDependency(prev_recv, send_ac);
+    addDependency(prev_recv, recv_ac);
+
+    last_recved = recv_chunk;
+    prev_send = send_ac;
+    prev_recv = recv_ac;
+  }
+}
+
 
 
 }

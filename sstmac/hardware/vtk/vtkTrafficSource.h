@@ -45,7 +45,7 @@ public:
   vtkTypeMacro(vtkTrafficSource,vtkUnstructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  void SetDisplayParameters(const stat_vtk::display_config& cfg){
+  void SetDisplayParameters(const StatVTK::display_config& cfg){
     display_cfg_ = cfg;
   }
 
@@ -64,7 +64,7 @@ public:
     cell_offsets_ = std::move(switch_cell_offsets);
   }
 
-  void SetGeometries(std::vector<topology::vtk_switch_geometry>&& vec){
+  void SetGeometries(std::vector<Topology::VTKSwitchGeometry>&& vec){
     geoms_ = std::move(vec);
   }
 
@@ -115,11 +115,11 @@ protected:
   vtkSmartPointer<vtkCellArray> Lines;
   std::vector<int> CellTypes;
   std::vector<int> cell_offsets_;
-  std::vector<topology::vtk_switch_geometry> geoms_;
+  std::vector<Topology::VTKSwitchGeometry> geoms_;
   int num_switches_;
   int num_links_;
   int link_index_offset_;
-  stat_vtk::display_config display_cfg_;
+  StatVTK::display_config display_cfg_;
 
 
 private:

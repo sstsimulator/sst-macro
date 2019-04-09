@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sprockit_keyword_registration_H
 #define sprockit_keyword_registration_H
 
-#include <sprockit/spkt_config.h>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -86,19 +85,19 @@ class KeywordRegistration
   }
 
  public:
-  static void register_namespace(const std::string& ns);
+  static void registerNamespace(const std::string& ns);
 
-  static void register_keyword(const std::string& name, bool is_numeric);
+  static void registerKeyword(const std::string& name, bool is_numeric);
 
-  static bool is_valid_keyword(const std::string& name);
+  static bool isValidKeyword(const std::string& name);
 
-  static bool is_valid_namespace(const std::string& ns);
+  static bool isValidNamespace(const std::string& ns);
 
-  static void validate_namespace(const std::string& ns);
+  static void validateNamespace(const std::string& ns);
 
-  static void validate_keyword(const std::string& name, const std::string& val);
+  static void validateKeyword(const std::string& name, const std::string& val);
 
-  static void delete_statics();
+  static void deleteStatics();
 
   static bool do_validation_;
 

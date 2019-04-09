@@ -45,10 +45,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef SIM_PARAMETERS_FWD_H
 #define SIM_PARAMETERS_FWD_H
 
+#include <memory>
+
 namespace sprockit {
 
-class sim_parameters;
+class SimParameters;
+using SimParametersPtr = std::shared_ptr<SimParameters>;
 
+}
+
+namespace SST {
+class Params;
 }
 
 #endif // SIM_PARAMETERS_FWD_H

@@ -55,32 +55,32 @@ namespace hw {
  * Encapsulates a topology like torus that can be naturally mapped onto
  * an n-dimensional Cartesian (integer) coordinate system
  */
-class cartesian_topology :
-  public structured_topology
+class CartesianTopology :
+  public StructuredTopology
 {
  public:
-  node_id node_addr(const coordinates& coords) const;
+  NodeId node_addr(const coordinates& coords) const;
 
-  virtual switch_id switch_addr(const coordinates& coords) const = 0;
+  virtual SwitchId switchAddr(const coordinates& coords) const = 0;
 
-  coordinates node_coords(node_id nid) const;
+  coordinates node_coords(NodeId nid) const;
 
-  virtual coordinates switch_coords(switch_id) const = 0;
+  virtual coordinates switchCoords(SwitchId) const = 0;
 
   int ndimensions() const {
     return dimensions_.size();
   }
 
-  cartesian_topology* cart_topology() const override {
-    return const_cast<cartesian_topology*>(this);
+  CartesianTopology* cartTopology() const override {
+    return const_cast<CartesianTopology*>(this);
   }
 
-  std::string node_label(node_id nid) const override;
+  std::string nodeLabel(NodeId nid) const override;
 
-  std::string switch_label(switch_id sid) const override;
+  std::string switchLabel(SwitchId sid) const override;
 
  protected:
-  cartesian_topology(sprockit::sim_parameters* params);
+  CartesianTopology(SST::Params& params);
 
   /**
    * The number of redundant links (ports) comprising a geometric
@@ -88,6 +88,11 @@ class cartesian_topology :
    */
   std::vector<int> red_;
   std::vector<int> dimensions_;
+
+ private:
+  void readCoordFile(const std::string& path);
+
+  void initHostnameMap(SST::Params& params) override;
 
 };
 

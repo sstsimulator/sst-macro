@@ -44,6 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/event_manager.h>
 #include <sstmac/common/sst_event.h>
+#include <sstmac/common/stats/stat_collector.h>
 #include <sstmac/hardware/interconnect/interconnect.h>
 #include <sstmac/backends/common/sim_partition.h>
 #include <sstmac/backends/common/parallel_runtime.h>
@@ -56,90 +57,97 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/thread_safe_new.h>
 #include <limits>
 
-RegisterDebugSlot(event_manager);
+RegisterDebugSlot(EventManager);
 
 #define prll_debug(...) \
   debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
 
 namespace sstmac {
 
-const timestamp event_manager::no_events_left_time(std::numeric_limits<int64_t>::max() - 100, timestamp::exact);
+const GlobalTimestamp EventManager::no_events_left_time(
+  std::numeric_limits<uint64_t>::max(), std::numeric_limits<uint64_t>::max());
 
-class stop_event : public event_queue_entry
+class StopEvent : public ExecutionEvent
 {
  public:
-  virtual ~stop_event() {}
+  virtual ~StopEvent() {}
 
   void execute(){
     cout0 << "--- STOP event -----" << std::endl;
     man_->stop();
   }
 
-  stop_event(event_manager* man) :
-    man_(man),
-    event_queue_entry(-1, -1)
+  StopEvent(EventManager* man) :
+    man_(man)
   {
   }
 
  protected:
-  event_manager* man_;
+  EventManager* man_;
 
 };
 
 
-event_manager* event_manager::global = nullptr;
+EventManager* EventManager::global = nullptr;
 
 struct spin_up_config {
-  event_manager* mgr;
+  EventManager* mgr;
   void* args;
   void(*fxn)(void*);
 };
 
-void run_event_manager_thread(void* argPtr)
+void runEventmanagerThread(void* argPtr)
 {
   auto cfg = (spin_up_config*) argPtr;
   (*cfg->fxn)(cfg->args);
-  cfg->mgr->spin_down();
+  cfg->mgr->spinDown();
 }
 
-event_manager::event_manager(sprockit::sim_parameters *params, parallel_runtime *rt) :
+EventManager::EventManager(SST::Params& params, ParallelRuntime *rt) :
   rt_(rt),
   nthread_(rt->nthread()),
   me_(rt->me()),
   nproc_(rt->nproc()),
-  pending_slot_(0),
+  pendingSlot_(0),
   complete_(false),
   thread_id_(0),
   stopped_(false),
   interconn_(nullptr)
 {
-  for (int i=0; i < num_pending_slots; ++i){
+  active_stat_group_.push("default");
+  for (int i=0; i < num_pendingSlots; ++i){
     pending_events_[i].resize(nthread_);
   }
   if (nthread_ == 0){
     sprockit::abort("Have zero worker threads! Cannot do any work");
   }
-  sprockit::sim_parameters* os_params = params->get_optional_namespace("node")->get_optional_namespace("os");
-  sw::stack_alloc::init(os_params);
+  SST::Params os_params = params.find_scoped_params("node").find_scoped_params("os");
+  sw::StackAlloc::init(os_params);
 
-  des_context_ = sw::thread_context::factory::get_optional_param(
-                  "context", sw::thread_context::default_threading(), os_params);
+  auto threading = os_params.find<std::string>("context", sw::ThreadContext::defaultThreading());
+  des_context_ = sprockit::create<sw::ThreadContext>("macro", threading);
 
-  sprockit::thread_stack_size<int>() = sw::stack_alloc::stacksize();
+  sprockit::thread_stack_size<int>() = sw::StackAlloc::stacksize();
 
   //make sure there's a good bit of space
   pending_serialization_.reserve(1024);
 }
 
-event_manager::~event_manager()
+EventManager::~EventManager()
 {
   if (des_context_) delete des_context_;
+  for (auto& pair : stat_groups_){
+    StatGroup& grp = pair.second;
+    for (auto* stat : grp.stats){
+      if (stat) delete stat;
+    }
+  }
 }
 
 void
-event_manager::stop()
+EventManager::stop()
 {
-  for (event_queue_entry* ev : event_queue_){
+  for (ExecutionEvent* ev : event_queue_){
     delete ev;
   }
   event_queue_.clear();
@@ -147,22 +155,21 @@ event_manager::stop()
   stopped_ = true;
 }
 
-timestamp
-event_manager::run_events(timestamp event_horizon)
+GlobalTimestamp
+EventManager::runEvents(GlobalTimestamp event_horizon)
 {
-  register_pending();
+  registerPending();
   min_ipc_time_ = no_events_left_time;
   while (!event_queue_.empty()){
     auto iter = event_queue_.begin();
-    event_queue_entry* ev = *iter;
+    ExecutionEvent* ev = *iter;
 
     if (ev->time() < now_){
-      spkt_abort_printf("Time went backwards on thread %d: %lu < %lu",
-                        thread_id_, ev->time().ticks(), now_.ticks());
+      spkt_abort_printf("Time went backwards on thread %d", thread_id_);
     }
 
     if (ev->time() >= event_horizon){
-      timestamp ret = std::min(min_ipc_time_, ev->time());
+      GlobalTimestamp ret = std::min(min_ipc_time_, ev->time());
       return ret;
     } else {
       now_ = ev->time();
@@ -174,151 +181,197 @@ event_manager::run_events(timestamp event_horizon)
   return min_ipc_time_;
 }
 
-sw::thread_context*
-event_manager::clone_thread() const
+sw::ThreadContext*
+EventManager::cloneThread() const
 {
   return des_context_->copy();
 }
 
 void
-event_manager::cancel_all_messages(uint32_t component_id)
-{
-  sprockit::abort("canceling messages not currently supported");
-}
-
-void
-event_manager::set_interconnect(hw::interconnect* interconn)
+EventManager::setInterconnect(hw::Interconnect* interconn)
 {
   lookahead_ = interconn->lookahead();
   interconn_ = interconn;
 }
 
 int
-event_manager::serialize_schedule(char* buf)
+EventManager::serializeSchedule(char* buf)
 {
   serializer ser;
   uint32_t bigSize = 1 << 30;
   ser.start_unpacking(buf, bigSize); //just pass in a huge number
-  ipc_event_t iev;
-  parallel_runtime::run_serialize(ser, &iev);
-  schedule_incoming(&iev);
+  IpcEvent iev;
+  ParallelRuntime::runSerialize(ser, &iev);
+  scheduleIncoming(&iev);
   size_t size = ser.unpacker().size();
   align64(size);
   return size;
 }
 
 void
-event_manager::schedule_incoming(ipc_event_t* iev)
+EventManager::registerStatisticCore(StatisticBase* base)
+{
+  if (base->specialOutput()){
+    std::string grpName = active_stat_group_.back() + "." + base->name();
+    StatGroup& grp = stat_groups_[grpName];
+    grp.stats.push_back(base);
+    grp.outputName = base->name();
+  } else {
+    StatGroup& grp = stat_groups_[active_stat_group_.back()];
+    grp.stats.push_back(base);
+  }
+}
+
+void
+EventManager::finalizeStatsInit()
+{
+  for (auto& pair : stat_groups_){
+    StatGroup& grp = pair.second;
+    if (!grp.output){
+      SST::Params myParams;
+      myParams.insert("name", pair.first);
+      grp.output = sprockit::create<StatisticOutput>("macro", grp.outputName,myParams);
+    }
+    grp.output->startRegisterGroup(pair.first);
+    for (auto* stat : grp.stats){
+      grp.output->startRegisterFields(stat);
+      stat->registerOutputFields(grp.output);
+      grp.output->stopRegisterFields();
+    }
+    grp.output->stopRegisterGroup();
+  }
+}
+
+void
+EventManager::finalizeStatsOutput()
+{
+  for (auto& pair : stat_groups_){
+    StatGroup& grp = pair.second;
+    grp.output->startOutputGroup(pair.first);
+    for (auto* stat : grp.stats){
+      grp.output->startOutputEntries(stat);
+      stat->outputStatisticData(grp.output, true/*only ever end of sim*/);
+      grp.output->stopOutputEntries();
+    }
+    grp.output->stopOutputGroup();
+  }
+}
+
+void
+EventManager::scheduleIncoming(IpcEvent* iev)
 {
   auto comp = interconn_->component(iev->dst);
-  event_handler* dst_handler = iev->credit ? comp->credit_handler(iev->port) : comp->payload_handler(iev->port);
-  prll_debug("thread %d scheduling incoming event at %12.8e to device %d:%s, payload? %d:   %s",
-    thread_id_, iev->t.sec(), iev->dst, dst_handler->to_string().c_str(),
-    iev->ev->is_payload(), sprockit::to_string(iev->ev).c_str());
-  auto qev = new handler_event_queue_entry(iev->ev, dst_handler, iev->src);
-  qev->set_seqnum(iev->seqnum);
-  qev->set_time(iev->t);
+  EventHandler* dst_handler = iev->credit ? comp->creditHandler(iev->port) : comp->payloadHandler(iev->port);
+  prll_debug("thread %d scheduling incoming event at %12.8e to device %d:%s, %s",
+    thread_id_, iev->t.sec(), iev->dst, dst_handler->toString().c_str(),
+    sprockit::toString(iev->ev).c_str());
+  auto qev = new HandlerExecutionEvent(iev->ev, dst_handler);
+  qev->setSeqnum(iev->seqnum);
+  qev->setTime(iev->t);
+  qev->setLink(iev->link);
   schedule(qev);
 }
 
 void
-event_manager::register_pending()
+EventManager::registerPending()
 {
   for (char* buf : pending_serialization_){
-    serialize_schedule(buf);
+    serializeSchedule(buf);
   }
   pending_serialization_.clear();
 
   int idx = 0;
-  for (auto& pendingVec : pending_events_[pending_slot_]){
-    for (event_queue_entry* ev : pendingVec){
+  for (auto& pendingVec : pending_events_[pendingSlot_]){
+    for (ExecutionEvent* ev : pendingVec){
       if (ev->time() < now_){
-        spkt_abort_printf("Thread %d scheduling event on thread %d in the past: %lu < %lu",
-                          idx, thread_id_, ev->time().ticks(), now_.ticks());
+        spkt_abort_printf("Thread %d scheduling event on thread %d", idx, thread_id_);
       }
       schedule(ev);
     }
     pendingVec.clear();
     ++idx;
   }
-  pending_slot_ = (pending_slot_+1) % num_pending_slots;
+  pendingSlot_ = (pendingSlot_+1) % num_pendingSlots;
 }
 
 static int nactive_threads = 0;
 static thread_lock active_lock;
 
 void
-event_manager::spin_up(void(*fxn)(void*), void* args)
+EventManager::spinUp(void(*fxn)(void*), void* args)
 {
   active_lock.lock();
   ++nactive_threads;
   active_lock.unlock();
   
-  void* stack = sw::stack_alloc::alloc();
-  sstmac::thread_info::register_user_space_virtual_thread(thread_id_, stack, nullptr, nullptr);
+  void* stack = sw::StackAlloc::alloc();
+  sstmac::ThreadInfo::registerUserSpaceVirtualThread(thread_id_, stack, nullptr, nullptr);
   main_thread_ = des_context_->copy();
-  main_thread_->init_context();
+  main_thread_->initContext();
   spin_up_config cfg;
   cfg.mgr = this;
   cfg.fxn = fxn;
   cfg.args = args;
-  des_context_->start_context(stack, sw::stack_alloc::stacksize(),
-                              &run_event_manager_thread, &cfg, main_thread_);
+  des_context_->startContext(stack, sw::StackAlloc::stacksize(),
+                              &runEventmanagerThread, &cfg, main_thread_);
   delete main_thread_;
 }
 
 void
-event_manager::spin_down()
+EventManager::spinDown()
 {
   active_lock.lock();
   --nactive_threads;
   if (nactive_threads == 0){
     //delete here while we are still on a user-space thread
     //annoying but necessary
-    interconn_->deadlock_check();
-    hw::interconnect::clear_static_interconnect();
+    hw::Interconnect::clearStaticInterconnect();
   }
   active_lock.unlock();
-  des_context_->complete_context(main_thread_);
+  des_context_->completeContext(main_thread_);
 }
 
 void
-event_manager::run()
+EventManager::run()
 {
   interconn_->setup();
-  register_pending();
 
-  run_events(no_events_left_time);
+  finalizeStatsInit();
+
+  registerPending();
+
+  runEvents(no_events_left_time);
 
   final_time_ = now_;
+
+  finalizeStatsOutput();
 }
 
 void
-event_manager::ipc_schedule(ipc_event_t* iev)
+EventManager::ipcSchedule(IpcEvent* iev)
 {
-  rt_->send_event(iev);
+  rt_->sendEvent(iev);
 }
 
 void
-event_manager::schedule_stop(timestamp until)
+EventManager::scheduleStop(GlobalTimestamp until)
 {
-  stop_event* ev = new stop_event(this);
-  ev->set_time(until);
-  ev->set_seqnum(0);
+  StopEvent* ev = new StopEvent(this);
+  ev->setTime(until);
+  ev->setSeqnum(0);
   event_queue_.insert(ev);
 }
 
-partition*
-event_manager::topology_partition() const
+Partition*
+EventManager::topologyPartition() const
 {
-  return rt_->topology_partition();
+  return rt_->topologyPartition();
 }
 
-static stat_descr_t default_descr;
-
+/**
 void
-event_manager::register_stat(
-  stat_collector* stat,
+EventManager::registerStat(
+  StatCollector* stat,
   stat_descr_t* descr)
 {
   if (stat->registered())
@@ -336,13 +389,13 @@ event_manager::register_stat(
 }
 
 void
-event_manager::finish_stats(stat_collector* main, const std::string& name)
+EventManager::finishStats(StatCollector* main, const std::string& name)
 {
   stats_entry& entry = stats_[name];
-  for (stat_collector* next : entry.collectors){
+  for (StatCollector* next : entry.collectors){
     next->finalize(now_);
     if (entry.dump_all)
-      next->dump_local_data();
+      next->dumpLocalData();
 
     if (entry.reduce_all)
       main->reduce(next);
@@ -352,33 +405,19 @@ event_manager::finish_stats(stat_collector* main, const std::string& name)
 }
 
 void
-event_manager::register_unique_stat(stat_collector* stat, stat_descr_t* descr)
+EventManager::finishUniqueStat(int unique_tag, stats_entry& entry)
 {
-  stats_entry& entry = unique_stats_[descr->unique_tag->id];
-  if (descr->dump_all){
-    sprockit::abort("unique stat should not specify dump all");
-  }
-  if (!descr->reduce_all){
-    sprockit::abort("unique stat should always specify reduce all");
-  }
-  entry.dump_all = false;
-  entry.dump_main = descr->dump_main;
-  entry.reduce_all = true;
-  entry.main_collector = stat;
-}
-
-void
-event_manager::finish_unique_stat(int unique_tag, stats_entry& entry)
-{
-  entry.main_collector->global_reduce(rt_);
-  if (rt_->me() == 0) entry.main_collector->dump_global_data();
+  entry.main_collector->globalReduce(rt_);
+  if (rt_->me() == 0) entry.main_collector->dumpGlobalData();
   delete entry.main_collector;
 }
+*/
 
 
 void
-event_manager::finish_stats()
+EventManager::finishStats()
 {
+/**
   std::map<std::string, stats_entry>::iterator it, end = stats_.end();
   for (it = stats_.begin(); it != end; ++it){
     std::string name = it->first;
@@ -396,38 +435,39 @@ event_manager::finish_stats()
         entry.collectors.clear();
       } else {
         //see if any of the existing ones should be the main
-        for (stat_collector* stat : entry.collectors){
-          if (stat->is_main()){
+        for (StatCollector* stat : entry.collectors){
+          if (stat->isMain()){
             entry.main_collector = stat;
             break;
           }
         }
         if (!entry.main_collector){
-          stat_collector* first = entry.collectors.front();
+          StatCollector* first = entry.collectors.front();
           entry.main_collector = first->clone();
           main_allocated = true;
         }
       }
     }
 
-    finish_stats(entry.main_collector, name);
+    finishStats(entry.main_collector, name);
 
     if (entry.reduce_all){
-      entry.main_collector->global_reduce(rt_);
+      entry.main_collector->globalReduce(rt_);
       if (rt_->me() == 0){
-        entry.main_collector->dump_global_data();
+        entry.main_collector->dumpGlobalData();
       }
     }
 
     if (main_allocated) delete entry.main_collector;
-    for (stat_collector* coll : entry.collectors){
+    for (StatCollector* coll : entry.collectors){
       delete coll;
     }
   }
 
   for (auto& pair : unique_stats_){
-    finish_unique_stat(pair.first, pair.second);
+    finishUniqueStat(pair.first, pair.second);
   }
+*/
 }
 
 }

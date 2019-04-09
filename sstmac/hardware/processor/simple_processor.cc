@@ -55,10 +55,10 @@ namespace sstmac {
 namespace hw {
 
 void
-simple_processor::compute(event* ev, callback* cb)
+SimpleProcessor::compute(Event* ev, ExecutionEvent* cb)
 {
-  sw::timed_compute_event* tev = safe_cast(sw::timed_compute_event, ev);
-  node_->send_delayed_self_event_queue(tev->data(), cb);
+  sw::TimedComputeEvent* tev = safe_cast(sw::TimedComputeEvent, ev);
+  node_->sendDelayedExecutionEvent(tev->data(), cb);
 }
 
 

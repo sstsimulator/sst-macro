@@ -42,32 +42,36 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#ifndef sstmac_hardware_nic_pisces_nic_H
-#define sstmac_hardware_nic_pisces_nic_H
+#ifndef sstmac_hardware_nic_PiscesNIC_H
+#define sstmac_hardware_nic_PiscesNIC_H
 
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sstmac/hardware/pisces/pisces_switch.h>
-#include <sstmac/hardware/pisces/pisces_packetizer.h>
+#include <sstmac/hardware/common/recv_cq.h>
 #include <sstmac/common/stats/stat_histogram.h>
 
 namespace sstmac {
 namespace hw {
 
 /**
- @class pisces_nic
+ @class PiscesNIC
  Network interface compatible with sending pisces packets
  */
-class pisces_nic :
-  public nic,
-  public packetizer_callback
+class PiscesNIC : public NIC
 {
-  FactoryRegister("pisces", nic, pisces_nic,
-              "implements a nic that models messages as a packet flow")
  public:
-  pisces_nic(sprockit::sim_parameters* params, node* parent);
+  SST_ELI_REGISTER_DERIVED(
+    NIC,
+    PiscesNIC,
+    "macro",
+    "pisces",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "implements a nic that models messages as a packet flow")
 
-  std::string to_string() const override {
+  PiscesNIC(SST::Params& params, Node* parent);
+
+  std::string toString() const override {
     return sprockit::printf("packet flow nic(%d)", int(addr()));
   }
 
@@ -75,43 +79,53 @@ class pisces_nic :
 
   void setup() override;
 
-  virtual ~pisces_nic() throw ();
+  virtual ~PiscesNIC() throw ();
 
-  void notify(int vn, message* msg) override {
-    recv_message(msg);
-  }
+  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override;
+  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override;
 
-  virtual void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override;
+  LinkHandler* creditHandler(int port) override;
 
-  link_handler* credit_handler(int port) override;
+  LinkHandler* payloadHandler(int port) override;
 
-  link_handler* payload_handler(int port) override;
+  void packetSent(Event* ev);
 
-  timestamp send_latency(sprockit::sim_parameters *params) const override;
+  void incomingPacket(Event* ev);
 
-  timestamp credit_latency(sprockit::sim_parameters *params) const override;
+ private:
+  void packetArrived(PiscesPacket* pkt);
 
-  void deadlock_check() override;
+  void doSend(NetworkMessage* payload) override;
 
- protected:
-  virtual void do_send(network_message* payload) override;
+  uint64_t inject(int vn, uint64_t offset, NetworkMessage* msg);
 
- protected:
-  packetizer* packetizer_;
-#if !SSTMAC_INTEGRATED_SST_CORE
-  link_handler* payload_handler_;
-  link_handler* ack_handler_;
-#endif
+  struct Pending {
+    uint64_t bytes_sent;
+    uint64_t bytes_total;
+    NetworkMessage* msg;
+
+    Pending(uint64_t offset, uint64_t size, NetworkMessage* m) :
+      bytes_sent(offset), bytes_total(size), msg(m)
+    {
+    }
+
+  };
+
+  std::vector<std::queue<Pending>> pending_inject_;
+
+  PiscesBuffer* inj_buffer_;
+
+  RecvCQ completion_queue_;
+
+  EventLink::ptr credit_link_;
+  EventLink::ptr self_mtl_link_;
+
+  NodeId my_addr_;
+
+  uint32_t packet_size_;
+  uint32_t inj_credits_;
+
 };
 
 
@@ -119,4 +133,4 @@ class pisces_nic :
 } // end of namespace sstmac
 
 
-#endif // pisces_nic_H
+#endif // PiscesNIC_H

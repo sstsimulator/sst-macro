@@ -53,31 +53,27 @@ RegisterDebugSlot(memory, "debug info related to memory accesses");
 namespace sstmac {
 namespace hw {
 
-static sprockit::need_delete_statics<memory_model> need_del;
+static sprockit::NeedDeletestatics<MemoryModel> need_del;
 
-memory_model::memory_model(sprockit::sim_parameters* params,
-                           node* parent_node) :
-  event_subcomponent(parent_node),
-  done_(nullptr)
+MemoryModel::MemoryModel(SST::Params& params, Node* parent_node) :
+  SubComponent("mem", parent_node)
 {
   parent_node_ = parent_node;
   nodeid_ = parent_node->addr();
-  done_ = new_handler(parent_node, &node::handle);
 }
 
-node_id
-memory_model::addr() const {
+NodeId
+MemoryModel::addr() const {
   return parent_node_->addr();
 }
 
 void
-memory_model::delete_statics()
+MemoryModel::deleteStatics()
 {
 }
 
-memory_model::~memory_model()
+MemoryModel::~MemoryModel()
 {
-  if (done_) delete done_;
 }
 
 }

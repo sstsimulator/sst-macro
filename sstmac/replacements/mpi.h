@@ -44,12 +44,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/common/sstmac_config.h>
 
-#if SSTMAC_NO_SUMI_MPI
-#include <sstmac/replacements/change_mpi_symbols.h>
-#include_next <mpi.h>
-#else
-#include <sumi-mpi/mpi_wrapper.h>
-#endif
 
+#include <sumi-mpi/mpi_wrapper.h>
 #include <sstmac/compute.h>
 #include <sstmac/skeleton.h>

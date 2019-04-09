@@ -80,11 +80,11 @@ try_top_info_main(int argc, char **argv)
   sprockit::output::init_errn(&std::cerr);
 
   //set up the search path
-  sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
-  sprockit::SpktFileIO::add_path(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
+  sprockit::SpktFileIO::addPath(SSTMAC_CONFIG_SRC_INCLUDE_PATH);
+  sprockit::SpktFileIO::addPath(SSTMAC_CONFIG_INSTALL_INCLUDE_PATH);
 
   opts oo;
-  int parse_status = parse_opts(argc, argv, oo);
+  int parse_status = parseOpts(argc, argv, oo);
   if (parse_status == PARSE_OPT_EXIT_SUCCESS) {
     return 0;
   } else if (parse_status == PARSE_OPT_EXIT_FAIL) {
@@ -100,38 +100,34 @@ try_top_info_main(int argc, char **argv)
   size_t pos = oo.configfile.find_last_of('/');
   if (pos != std::string::npos) {
     std::string dir = oo.configfile.substr(0, pos + 1);
-    sprockit::SpktFileIO::add_path(dir);
+    sprockit::SpktFileIO::addPath(dir);
   }
 
-  sprockit::sim_parameters* params = new sprockit::sim_parameters(oo.configfile);
-  sstmac::env::params = params;
+  sprockit::SimParameters::ptr params = std::make_shared<sprockit::SimParameters>(oo.configfile);
+  sstmac::Env::params = params;
   if (oo.params) {
     // there were command-line overrides
-    oo.params->combine_into(params);
+    oo.params->combineInto(params);
   }
 
   /** DO NOT CHANGE THE ORDER OF THE INIT FUNCTIONS BELOW - JJW
    *  they actually depend on each other */
 
-  //if we have environmental variables that we need to map
-  //to SST parameter names
-  map_env_params(params);
-
-  //do some cleanup and processing of params
-  remap_params(params);
 
   //at this point, we have read in parameters - init malloc system
   //set the global parameters object
   sprockit::sprockit_init_cxx_heap(params);
 
-  params->print_params();
+  params->printParams();
 
-  sprockit::sim_parameters* top_params = params->get_namespace("topology");
-  hw::topology* thetop = hw::topology::factory::get_param("name", top_params);
-  hw::cartesian_topology* top = test_cast(hw::cartesian_topology, thetop);
+  SST::Params top_params = params->getNamespace("topology");
+  auto top_name = top_params.find<std::string>("name");
+  hw::Topology* thetop = hw::Topology::getBuilderLibrary("macro")
+      ->getBuilder(top_name)->create(top_params);
+  hw::CartesianTopology* top = test_cast(hw::CartesianTopology, thetop);
 
-  std::cout << "Number of nodes:         " << top->num_nodes() << std::endl;
-  std::cout << "Number of switches:      " << top->num_switches() << std::endl;
+  std::cout << "Number of nodes:         " << top->numNodes() << std::endl;
+  std::cout << "Number of switches:      " << top->numSwitches() << std::endl;
 
   if (top){
     while (1){
@@ -144,16 +140,16 @@ try_top_info_main(int argc, char **argv)
       int nentry = tokens.size();
       if (nentry == 1){
         //this is a switch id - return coordinates
-        switch_id sid(atoi(tokens[0].c_str()));
-        hw::coordinates coords = top->switch_coords(sid);
-        std::cout << "Switch ID maps to coordinates " << coords.to_string() << std::endl;
+        SwitchId sid(atoi(tokens[0].c_str()));
+        hw::coordinates coords = top->switchCoords(sid);
+        std::cout << "Switch ID maps to coordinates " << coords.toString() << std::endl;
       } else if (nentry > 1){
         //these are coordinates, return node id
         hw::coordinates coords(nentry);
         for (int i=0; i < nentry; ++i){
           coords[i] = atoi(tokens[i].c_str());
         }
-        switch_id nid = top->switch_addr(coords);
+        SwitchId nid = top->switchAddr(coords);
         std::cout << "Coordinates map to switch ID " << nid << std::endl;
       } else {
         std::cerr << "Invalid input" << std::endl;
@@ -161,10 +157,7 @@ try_top_info_main(int argc, char **argv)
     }
   }
 
-
-  delete params;
-
-  sprockit::statics::finish();
+  sprockit::Statics::finish();
 
   sprockit::sprockit_finalize_cxx_heap();
 

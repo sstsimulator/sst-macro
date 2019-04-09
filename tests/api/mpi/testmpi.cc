@@ -47,7 +47,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/util.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/common/runtime.h>
-#include <sprockit/sim_parameters.h>
 #include <sprockit/keyword_registration.h>
 
 using namespace sstmac;
@@ -695,12 +694,7 @@ RegisterKeywords(
 
 int USER_MAIN(int argc, char *argv[])
 {
-  sprockit::sim_parameters* params = get_params();
-  testmode_ = params->get_int_param("testsuite_testmode");
-
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(sumi::sstmac_mpi(), &sumi::transport::deadlock_check));
-  sstmac::runtime::enter_deadlock_region();
+  testmode_ = sstmac::getParam<int>("testsuite_testmode");
 
   double t_start = get_time();
 
@@ -1556,16 +1550,17 @@ int USER_MAIN(int argc, char *argv[])
     break; */
 
   default:
-    spkt_throw_printf(sprockit::spkt_error, "testmpi: unknown test mode %d", testmode_);
+    spkt_throw_printf(sprockit::SpktError, "testmpi: unknown test mode %d", testmode_);
     return 1;
   }
 
   double t_stop = get_time();
   double t_total = t_stop - t_start;
-  if (sumi::sstmac_mpi()->rank() == 0)
+  static bool printed = false;
+  if (!printed){
     printf("MPI test ran for %8.4fms\n", t_total*1e3);
-
-  sstmac::runtime::exit_deadlock_region();
+    printed = true;
+  } 
 
   return 0;
 }

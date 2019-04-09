@@ -49,49 +49,40 @@ namespace sumi {
 
 #define enumcase(x) case x: return #x;
 const char*
-collective_work_message::tostr(action_t action)
+CollectiveWorkMessage::tostr(int p)
 {
-  switch(action)
+  switch(p)
   {
-    enumcase(eager_payload);
-    enumcase(nack_eager);
-    enumcase(nack_get_header);
-    enumcase(nack_put_header);
-    enumcase(nack_put_payload);
-    enumcase(nack_get_ack);
-    enumcase(rdma_get_header);
-    enumcase(rdma_put_header);
-    enumcase(get_data);
-    enumcase(put_data);
+    enumcase(eager);
+    enumcase(get);
+    enumcase(put);
   }
-  spkt_throw_printf(sprockit::value_error,
+  spkt_throw_printf(sprockit::ValueError,
     "collective_work_message::invalid action %d",
-    action);
+    p);
 }
 
 void
-collective_work_message::serialize_order(sstmac::serializer &ser)
+CollectiveWorkMessage::serialize_order(sstmac::serializer &ser)
 {
-  message::serialize_order(ser);
-  ser & action_;
+  ProtocolMessage::serialize_order(ser);
+  //ser & action_;
   ser & tag_;
   ser & type_;
   ser & round_;
-  ser & dense_sender_;
-  ser & dense_recver_;
   //ser & failed_procs_;
 }
 
 std::string
-collective_work_message::to_string() const
+CollectiveWorkMessage::toString() const
 {
   return sprockit::printf(
-    "message for collective %s event %s "
-    "recver=%d(%d) sender=%d(%d) nbytes=%d round=%d tag=%d",
-        collective::tostr(type_), message::tostr(message::payload_type()),
-        dense_recver_, recver(), dense_sender_, sender(), byte_length(), round_, tag_);
+    "message for collective %s recver=%d sender=%d nbytes=%d round=%d tag=%d %s %d->%d",
+     Collective::tostr(type_), recver(), sender(), payloadBytes(), round_, tag_,
+     sstmac::hw::NetworkMessage::typeStr(), toaddr(), fromaddr());
 }
 
+/**
 void
 collective_work_message::clone_into(collective_work_message* cln) const
 {
@@ -102,31 +93,7 @@ collective_work_message::clone_into(collective_work_message* cln) const
   cln->dense_sender_ = dense_sender_;
   cln->dense_recver_ = dense_recver_;
 }
+*/
 
-message*
-collective_done_message::clone(payload_type_t ty) const
-{
-  sprockit::abort("collective_done_message::clone unimplemented");
-  return 0;
-}
-
-void
-collective_work_message::reverse()
-{
-  message::reverse();
-  int tmp = dense_recver_;
-  dense_recver_ = dense_sender_;
-  dense_sender_ = tmp;
-}
-
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-void
-collective_work_message::append_failed(const thread_safe_set<int>& failed)
-{
-  thread_safe_set<int>::iterator end = failed.start_iteration();
-  failed_procs_.insert(failed.begin(), end);
-  failed.end_iteration();
-}
-#endif
 
 }

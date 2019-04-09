@@ -243,9 +243,9 @@ ReplaceAction::EndSourceFileAction()
     visitor_.registerNewKeywords(ofs);
     if (visitor_.hasCStyleMain()){
       std::string appname = visitor_.getAppName();
-      ofs << "int user_skeleton_main_init_fxn(const char* name, int (*foo)(int,char**));\n"
+      ofs << "int userSkeletonMainInitFxn(const char* name, int (*foo)(int,char**));\n"
          << "extern \"C\" int sstmac_user_main_" << appname << "(int argc, char** argv);\n"
-         << "int " << appname << "_sstmac_initer = user_skeleton_main_init_fxn("
+         << "int " << appname << "_sstmac_initer = userSkeletonMainInitFxn("
            << "\"" << appname << "\",sstmac_user_main_" << appname << ");\n\n"
            << "extern \"C\" const char exe_main_name[] = \"" << appname << "\";\n";
     }

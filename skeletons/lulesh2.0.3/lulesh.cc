@@ -2352,7 +2352,7 @@ void CalcCourantConstraintForElems(Domain &domain, Index_t length,
       Index_t  courant_elem  = -1 ;
 
 #if _OPENMP
-      Index_t thread_num = omp_get_thread_num();
+      Index_t thread_num = ompGetThreadNum();
 #else
       Index_t thread_num = 0;
 #endif      
@@ -2426,7 +2426,7 @@ void CalcHydroConstraintForElems(Domain &domain, Index_t length,
       Index_t hydro_elem = -1 ;
 
 #if _OPENMP      
-      Index_t thread_num = omp_get_thread_num();
+      Index_t thread_num = ompGetThreadNum();
 #else      
       Index_t thread_num = 0;
 #endif      

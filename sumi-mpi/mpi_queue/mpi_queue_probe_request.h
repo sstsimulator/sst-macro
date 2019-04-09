@@ -57,18 +57,18 @@ namespace sumi {
 class mpi_queue_probe_request  {
 
  public:
-  mpi_queue_probe_request(mpi_request* key, MPI_Comm comm,
+  mpi_queue_probe_request(MpiRequest* key, MPI_Comm comm,
                 int source, int tag);
 
-  bool matches(mpi_message* message) const;
+  bool matches(MpiMessage* Message) const;
 
-  void complete(mpi_message* message);
+  void complete(MpiMessage* Message);
 
  protected:
   MPI_Comm myid_;
   int source_;
   int tag_;
-  mpi_request* key_;
+  MpiRequest* key_;
 
 };
 

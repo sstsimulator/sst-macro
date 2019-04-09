@@ -56,41 +56,29 @@ namespace sumi {
  * The message that is actually delivered when calling #sumi::comm_poll
  * This encapsulates all the information about a collective that has completed in the background
  */
-class collective_done_message :
-  public message,
-  public sprockit::thread_safe_new<collective_done_message>
+class CollectiveDoneMessage :
+  public sprockit::thread_safe_new<CollectiveDoneMessage>
 {
 
  public:
-  std::string to_string() const override {
-    return "collective done message";
-  }
-
-  collective_done_message(int tag, collective::type_t ty, communicator* dom, uint8_t cq_id) :
-    message(collective_done),
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
-    all_ranks_know_failure_(false),
-#endif
-    tag_(tag), result_(0), vote_(0), type_(ty),
-    dom_(dom)
+  CollectiveDoneMessage(int tag, Collective::type_t ty, Communicator* dom, uint8_t cq_id) :
+    tag_(tag), result_(0), vote_(0), type_(ty), dom_(dom)
   {
-    set_send_cq(cq_id);
-    set_recv_cq(cq_id);
   }
 
   int tag() const {
     return tag_;
   }
 
-  collective::type_t type() const {
+  Collective::type_t type() const {
     return type_;
   }
 
-  communicator* dom() const {
+  Communicator* dom() const {
     return dom_;
   }
 
-  void set_type(collective::type_t ty) {
+  void set_type(Collective::type_t ty) {
     type_ = ty;
   }
 
@@ -110,8 +98,6 @@ class collective_done_message :
     return vote_;
   }
 
-  message* clone(payload_type_t ty) const override;
-
   int comm_rank() const {
     return comm_rank_;
   }
@@ -124,178 +110,111 @@ class collective_done_message :
   int tag_;
   void* result_;
   int vote_;
-  collective::type_t type_;
+  Collective::type_t type_;
   int comm_rank_;
-  communicator* dom_;
-
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
- public:
-  bool failed() const {
-    return !failed_procs_.empty();
-  }
-
-  bool succeeded() const {
-    return failed_procs_.empty();
-  }
-
-  void append_failed(int proc) {
-    failed_procs_.insert(proc);
-  }
-
-  void append_failed(const std::set<int>& procs){
-    failed_procs_.insert(procs.begin(), procs.end());
-  }
-
-  const thread_safe_set<int>& failed_procs() const {
-    return failed_procs_;
-  }
-
-  bool all_ranks_know_failure() const {
-    return all_ranks_know_failure_;
-  }
-
-  void set_all_ranks_know_failure(bool flag) {
-    all_ranks_know_failure_ = true;
-  }
- private:
-  thread_safe_set<int> failed_procs_;
-  bool all_ranks_know_failure_;
-#endif
+  Communicator* dom_;
 };
 
 /**
  * @class collective_work_message
  * Main message type used by collectives
  */
-class collective_work_message :
-  public message
+class CollectiveWorkMessage :
+  public ProtocolMessage
 {
-  ImplementSerializable(collective_work_message)
+  ImplementSerializable(CollectiveWorkMessage)
  public:
   typedef enum {
-    get_data, //recver gets data
-    put_data, //sender puts data
-    rdma_get_header, //sender sends a header to recver to configure RDMA get
-    rdma_put_header, //recver sends a header to sender to configure RDMA put
-    eager_payload, //for small messages, no recv header - just send payload
-    nack_get_ack,
-    nack_put_payload,
-    nack_eager,
-    nack_get_header, //collective has failed, send fake message nack instead of real one
-    nack_put_header //collective has failed, send fake message nack instead of real one
-  } action_t;
-
+    eager, get, put
+  } protocol_t;
 
  public:
-  collective_work_message(
-    collective::type_t type,
-    action_t action,
-    size_t nbytes,
+  template <class... Args>
+  CollectiveWorkMessage(
+    Collective::type_t type,
+    int dom_sender, int dom_recver,
     int tag, int round,
-    int src, int dst) :
-    message(nbytes, collective),
+    int nelems, int type_size, void* buffer, protocol_t p,
+    Args&&... args) :
+    ProtocolMessage(nelems, type_size, buffer, p,
+                     std::forward<Args>(args)...),
     tag_(tag),
     type_(type),
     round_(round),
-    dense_sender_(src),
-    dense_recver_(dst),
-    action_(action)
+    dom_sender_(dom_sender),
+    dom_recver_(dom_recver)
   {
+    if (this->classType() != collective){
+      spkt_abort_printf("collective work message is not of type collect");
+    }
   }
 
-  collective_work_message(
-    collective::type_t type,
-    action_t action,
-    int tag, int round,
-    int src, int dst) :
-    message(collective),
-    tag_(tag),
-    type_(type),
-    round_(round),
-    dense_sender_(src),
-    dense_recver_(dst),
-    action_(action)
-  {
+  void reverse(){
+    std::swap(dom_sender_, dom_recver_);
   }
 
-  collective_work_message(){} //for serialization
+  virtual std::string toString() const override;
 
-  virtual std::string to_string() const override;
-
-  static const char* tostr(action_t action);
+  static const char* tostr(int p);
 
   virtual void serialize_order(sstmac::serializer& ser) override;
 
-  action_t action() const {
-    return action_;
-  }
-
-  void set_action(action_t a) {
-    action_ = a;
-  }
-
   int tag() const {
     return tag_;
+  }
+
+  int domSender() const {
+    return dom_sender_;
+  }
+
+  int domRecver() const {
+    return dom_recver_;
+  }
+
+  int domTargetRank() const {
+    switch (NetworkMessage::type()){
+     case NetworkMessage::payload:
+     case NetworkMessage::rdma_get_payload:
+     case NetworkMessage::rdma_put_payload:
+     case NetworkMessage::rdma_get_nack:
+      return dom_recver_;
+     case NetworkMessage::payload_sent_ack:
+     case NetworkMessage::rdma_get_sent_ack:
+     case NetworkMessage::rdma_put_sent_ack:
+      return dom_sender_;
+     default:
+      spkt_abort_printf("Bad payload type %d to CQ id", NetworkMessage::type());
+      return -1;
+    }
   }
 
   int round() const {
     return round_;
   }
 
-  int dense_sender() const {
-    return dense_sender_;
-  }
-
-  int dense_recver() const {
-    return dense_recver_;
-  }
-
-  void reverse() override;
-
-  collective::type_t type() const {
+  Collective::type_t type() const {
     return type_;
   }
 
-  message* clone(payload_type_t ty) const override {
-    collective_work_message* cln = new collective_work_message;
-    clone_into(cln);
+  sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
+    CollectiveWorkMessage* cln = new CollectiveWorkMessage(*this);
+    cln->convertToAck();
     return cln;
   }
 
  protected:
-  void clone_into(collective_work_message* cln) const;
+  CollectiveWorkMessage(){} //for serialization
 
- protected:
+ private:
   int tag_;
 
-  collective::type_t type_;
+  Collective::type_t type_;
 
   int round_;
 
-  int dense_sender_;
+  int dom_sender_;
 
-  int dense_recver_;
-
-  action_t action_;
-
-#ifdef FEATURE_TAG_SUMI_RESILIENCE
- public:
-  bool is_failure_notice() const {
-    return !failed_procs_.empty();
-  }
-
-  void append_failed(int proc) {
-    failed_procs_.insert(proc);
-  }
-
-  void append_failed(const thread_safe_set<int>& failed);
-
-  const std::set<int>& failed_procs() const {
-    return failed_procs_;
-  }
- private:
-  std::set<int> failed_procs_;
-#endif
+  int dom_recver_;
 
 };
 

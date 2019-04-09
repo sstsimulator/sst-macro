@@ -42,13 +42,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Questions? Contact sst-macro-help@sandia.gov
 */
 
-#include <sprockit/spkt_config.h>
 #include <sprockit/keyword_registration.h>
-#include <sprockit/regexp.h>
 #include <sprockit/errors.h>
 #include <sprockit/output.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <unordered_map>
 
 #include <cstdio>
@@ -61,14 +58,14 @@ std::unordered_set<std::string>* KeywordRegistration::removed_ = nullptr;
 bool KeywordRegistration::inited_ = false;
 bool KeywordRegistration::do_validation_ = true;
 
-static need_delete_statics<KeywordRegistration> del_statics;
+static NeedDeletestatics<KeywordRegistration> del_statics;
 
 static const char* removed_keywords[] = {
   "launch_name"
 };
 
 void
-KeywordRegistration::delete_statics()
+KeywordRegistration::deleteStatics()
 {
   if (valid_keywords_) delete valid_keywords_;
   if (removed_) delete removed_;
@@ -76,13 +73,13 @@ KeywordRegistration::delete_statics()
 }
 
 bool
-KeywordRegistration::is_valid_namespace(const std::string& ns)
+KeywordRegistration::isValidNamespace(const std::string& ns)
 {
   return true;
 }
 
 bool
-KeywordRegistration::is_valid_keyword(const std::string& name)
+KeywordRegistration::isValidKeyword(const std::string& name)
 {
   init();
 
@@ -118,14 +115,14 @@ KeywordRegistration::is_valid_keyword(const std::string& name)
 }
 
 void
-KeywordRegistration::register_namespace(const std::string &name)
+KeywordRegistration::registerNamespace(const std::string &name)
 {
   init();
   valid_namespaces_->insert(name);
 }
 
 void
-KeywordRegistration::register_keyword(const std::string &name, bool is_numeric)
+KeywordRegistration::registerKeyword(const std::string &name, bool is_numeric)
 {
   init();
   valid_keywords_->insert(std::make_pair(name,is_numeric));
@@ -152,10 +149,10 @@ KeywordRegistration::init()
 }
 
 void
-KeywordRegistration::validate_namespace(const std::string &ns)
+KeywordRegistration::validateNamespace(const std::string &ns)
 {
   if (do_validation_){
-    bool valid = is_valid_namespace(ns);
+    bool valid = isValidNamespace(ns);
     if (!valid) {
       spkt_abort_printf("namespace %s is not valid - if this is not a type-o ensure that "
                         "namespace was properly registered with RegisterNamespaces(...) macro",
@@ -165,11 +162,11 @@ KeywordRegistration::validate_namespace(const std::string &ns)
 }
 
 void
-KeywordRegistration::validate_keyword(const std::string &name,
+KeywordRegistration::validateKeyword(const std::string &name,
                                       const std::string &val)
 {
   if (do_validation_) {
-    bool valid = is_valid_keyword(name);
+    bool valid = isValidKeyword(name);
     if (!valid) {
       bool removed = removed_->find(name) != removed_->end();
       if (removed) {
@@ -187,14 +184,14 @@ KeywordRegistration::validate_keyword(const std::string &name,
 
 StaticNamespaceRegister::StaticNamespaceRegister(const char *ns)
 {
-  KeywordRegistration::register_namespace(ns);
+  KeywordRegistration::registerNamespace(ns);
 }
 
 StaticNamespaceRegister::StaticNamespaceRegister(int num_ns, const char *namespaces[])
 {
   for (int i=0; i < num_ns; ++i){
     const char* ns = namespaces[i];
-    KeywordRegistration::register_namespace(ns);
+    KeywordRegistration::registerNamespace(ns);
   }
 }
 
@@ -202,7 +199,7 @@ StaticKeywordRegister::StaticKeywordRegister(int num_keywords, SpktKeyword keywo
 {
   for (int i=0; i < num_keywords; ++i) {
     SpktKeyword& kw = keywords[i];
-    KeywordRegistration::register_keyword(kw.name, kw.isNumeric);
+    KeywordRegistration::registerKeyword(kw.name, kw.isNumeric);
   }
 }
 

@@ -52,66 +52,61 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class direct_alltoallv_actor :
-  public bruck_actor
+class DirectAlltoallvActor :
+  public DagCollectiveActor
 {
-
  public:
-  direct_alltoallv_actor(int* send_counts, int* recv_counts) :
-    send_counts_(send_counts), recv_counts_(recv_counts) {}
+  DirectAlltoallvActor(CollectiveEngine* engine, void *dst, void *src, int* send_counts, int* recv_counts,
+                         int type_size, int tag, int cq_id, Communicator* comm) :
+    DagCollectiveActor(Collective::alltoallv, engine, dst, src, type_size, tag, cq_id, comm),
+    send_counts_(send_counts), recv_counts_(recv_counts)
+  {}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "bruck all-to-allv actor";
   }
 
  protected:
   void finalize() override;
 
-  void finalize_buffers() override;
+  void finalizeBuffers() override;
 
-  void init_buffers(void *dst, void *src) override;
+  void initBuffers() override;
 
-  void init_dag() override;
+  void initDag() override;
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
-  void add_action(
-    const std::vector<action*>& actions,
+  void addAction(
+    const std::vector<Action*>& actions,
     int stride_direction,
     int num_initial,
     int stride);
 
-  int midpoint_;
   int* send_counts_;
   int* recv_counts_;
   int total_recv_size_;
   int total_send_size_;
 };
 
-class direct_alltoallv_collective :
-  public dag_collective
+class DirectAlltoallvCollective :
+  public DagCollective
 {
-  FactoryRegister("bruck_alltoall", dag_collective, direct_alltoallv_collective)
  public:
-  std::string to_string() const override {
+    DirectAlltoallvCollective(CollectiveEngine* engine, void *dst, void *src, int* send_counts, int* recv_counts,
+                           int type_size, int tag, int cq_id, Communicator* comm) :
+      DagCollective(Collective::alltoallv, engine, dst, src, type_size, tag, cq_id, comm),
+      send_counts_(send_counts), recv_counts_(recv_counts)
+    {}
+
+  std::string toString() const override {
     return "all-to-all";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new direct_alltoallv_actor(send_counts_, recv_counts_);
-  }
-
-  dag_collective* clone() const override {
-    return new direct_alltoallv_collective;
-  }
-
-  void init_send_counts(int* nelems) override {
-    send_counts_ = nelems;
-  }
-
-  void init_recv_counts(int* nelems) override {
-    recv_counts_ = nelems;
+  DagCollectiveActor* newActor() const override {
+    return new DirectAlltoallvActor(engine_, dst_buffer_, src_buffer_, send_counts_, recv_counts_,
+                                      type_size_, tag_, cq_id_, comm_);
   }
 
  private:

@@ -60,128 +60,121 @@ namespace sstmac {
 //
 // Static variables.
 //
-timestamp::tick_t timestamp::PSEC_PER_TICK = 1;
-timestamp::tick_t timestamp::nanoseconds = 1000;
-timestamp::tick_t timestamp::microseconds = 1000 * nanoseconds;
-timestamp::tick_t timestamp::milliseconds = 1000 * microseconds;
-timestamp::tick_t timestamp::seconds = 1000 * milliseconds; //default is 1 tick per ps
-timestamp::tick_t timestamp::minutes = seconds * 60;
-double timestamp::ticks_per_second_;
-double timestamp::seconds_per_tick_;
-double timestamp::msec_per_tick_;
-double timestamp::usec_per_tick_;
-double timestamp::nsec_per_tick_;
-double timestamp::psec_per_tick_;
-double timestamp::max_time_;
-double timestamp::min_time_;
+Timestamp::tick_t Timestamp::ASEC_PER_TICK = 100;
+Timestamp::tick_t Timestamp::one_femtosecond = 1000/Timestamp::ASEC_PER_TICK;
+Timestamp::tick_t Timestamp::one_picosecond = Timestamp::one_femtosecond * 1000;
+Timestamp::tick_t Timestamp::one_nanosecond = Timestamp::one_picosecond * 1000;
+Timestamp::tick_t Timestamp::one_microsecond = 1000 * Timestamp::one_nanosecond;
+Timestamp::tick_t Timestamp::one_millisecond = 1000 * Timestamp::one_microsecond;
+Timestamp::tick_t Timestamp::one_second = 1000 * Timestamp::one_millisecond; //default is 1 tick per ps
+Timestamp::tick_t Timestamp::one_minute = Timestamp::one_second * 60;
+double Timestamp::s_per_tick  = 1.0/Timestamp::one_second;
+double Timestamp::ms_per_tick = 1.0/Timestamp::one_millisecond;
+double Timestamp::us_per_tick = 1.0/Timestamp::one_microsecond;
+double Timestamp::ns_per_tick = 1.0/Timestamp::one_nanosecond;
+double Timestamp::ps_per_tick = 1.0/Timestamp::one_picosecond;
+double Timestamp::fs_per_tick = 1.0/Timestamp::one_femtosecond;
+double Timestamp::max_time_;
 
-static std::string _tick_spacing_string_("1 ps");
+static std::string _tick_spacing_string_("100as");
 
 
-void timestamp::init_stamps(tick_t tick_spacing)
+void Timestamp::initStamps(tick_t tick_spacing)
 {
   static bool inited_ = false;
   if (inited_) return;
 
   //psec_tick_spacing_ = new tick_t(tick_spacing);
-  PSEC_PER_TICK = tick_spacing;
-  seconds_per_tick_ = 1e-12 * tick_spacing;
-  msec_per_tick_ = 1e-9 * tick_spacing;
-  usec_per_tick_ = 1e-6 * tick_spacing;
-  nsec_per_tick_ = 1e-3 * tick_spacing;
-  psec_per_tick_ = tick_spacing;
-  ticks_per_second_ = 1e12 / double(tick_spacing);
+  ASEC_PER_TICK = tick_spacing;
   std::stringstream ss;
-  ss << tick_spacing << " ps";
+  ss << tick_spacing << " as";
   _tick_spacing_string_ = ss.str();
-  nanoseconds = 1000 / PSEC_PER_TICK;
-  microseconds = (1000 * 1000) / PSEC_PER_TICK;
-  milliseconds = (1000 * 1000 * 1000) / PSEC_PER_TICK;
-  seconds = (tick_t(1000) * 1000 * 1000 * 1000) / PSEC_PER_TICK;
-  minutes = 60 * seconds;
-
-  max_time_ = std::numeric_limits<tick_t>::max() / seconds;
-  min_time_ = std::numeric_limits<tick_t>::min() / seconds;
+  one_femtosecond = 1000/ASEC_PER_TICK;
+  one_picosecond = 1000*one_femtosecond;
+  one_nanosecond = 1000 * one_picosecond;
+  one_microsecond = 1000 * one_nanosecond;
+  one_millisecond = 1000 * one_microsecond;
+  one_second = 1000 * one_millisecond;
+  one_minute = 60 * one_second;
+  s_per_tick = 1.0/one_second;
+  ms_per_tick = 1.0/one_millisecond;
+  us_per_tick = 1.0/one_microsecond;
+  ns_per_tick = 1.0/one_nanosecond;
+  ps_per_tick = 1.0/one_picosecond;
+  fs_per_tick = 1.0/one_femtosecond;
+  max_time_ = std::numeric_limits<tick_t>::max() / one_second;
 }
 
 //
 // Return the current time in seconds.
 //
-double timestamp::sec() const
+double Timestamp::sec() const
 {
-  return ticks_ * seconds_per_tick_;
+  return ticks_ * s_per_tick;
 }
 
 //
 // Return the current time in milliseconds.
 //
-double timestamp::msec() const
+double Timestamp::msec() const
 {
-  return ticks_ * msec_per_tick_;
+  return ticks_ * ms_per_tick;
 }
 
 //
 // Return the current time in microseconds.
 //
-double timestamp::usec() const
+double Timestamp::usec() const
 {
-  return ticks_ * usec_per_tick_;
+  return ticks_ * us_per_tick;
 }
 
 //
 // Return the current time in nanoseconds.
 //
-double timestamp::nsec() const
+double Timestamp::nsec() const
 {
-  return ticks_ * nsec_per_tick_;
+  return ticks_ * ns_per_tick;
 }
 
 //
 // Return the current time in picoseconds.
 //
-double timestamp::psec() const
+double Timestamp::psec() const
 {
-  return ticks_ * psec_per_tick_;
+  return ticks_ * ps_per_tick;
 }
 
-void
-timestamp::correct_round_off(const timestamp &now)
+GlobalTimestamp& GlobalTimestamp::operator+=(const Timestamp& t)
 {
-#ifndef SSTMAC_USE_GMPXX
-  if (ticks_ == (now.ticks_ - 1)) {
-    ticks_ = now.ticks_;
-  }
-#endif
+  uint64_t sum = time.ticks() + t.ticks();
+  uint64_t carry = (sum & GlobalTimestamp::carry_bits_mask) << GlobalTimestamp::carry_bits_shift;
+  uint64_t rem = sum & GlobalTimestamp::remainder_bits_mask;
+  epochs += carry;
+  time.ticks_ = rem;
+  return *this;
 }
 
 //
 // static:  Get the tick interval.
 //
-timestamp::tick_t timestamp::tick_interval()
+Timestamp::tick_t Timestamp::tickInterval()
 {
-  return PSEC_PER_TICK;
+  return ASEC_PER_TICK;
 }
 
 //
 // Get the tick interval in std::string form (for example, "1ps").
 //
-const std::string& timestamp::tick_interval_string()
+const std::string& Timestamp::tickIntervalString()
 {
   return _tick_spacing_string_;
 }
 
 //
-// static:  Get the number of ticks per second (1/tick_interval()).
-//
-timestamp::tick_t timestamp::frequency()
-{
-  return (tick_t(1e12) / PSEC_PER_TICK);
-}
-
-//
 // Add.
 //
-timestamp& timestamp::operator+=(const timestamp &other)
+Timestamp& Timestamp::operator+=(const Timestamp &other)
 {
   ticks_ += other.ticks_;
   return *this;
@@ -190,7 +183,7 @@ timestamp& timestamp::operator+=(const timestamp &other)
 //
 // Subtract.
 //
-timestamp& timestamp::operator-=(const timestamp &other)
+Timestamp& Timestamp::operator-=(const Timestamp &other)
 {
   ticks_ -= other.ticks_;
   return *this;
@@ -199,7 +192,7 @@ timestamp& timestamp::operator-=(const timestamp &other)
 //
 // Multiply.
 //
-timestamp& timestamp::operator*=(double scale)
+Timestamp& Timestamp::operator*=(double scale)
 {
   ticks_ *= scale;
   return *this;
@@ -208,46 +201,46 @@ timestamp& timestamp::operator*=(double scale)
 //
 // Divide.
 //
-timestamp& timestamp::operator/=(double scale)
+Timestamp& Timestamp::operator/=(double scale)
 {
   ticks_ /= scale;
   return *this;
 }
 
-timestamp operator+(const timestamp &a, const timestamp &b)
+Timestamp operator+(const Timestamp &a, const Timestamp &b)
 {
-  timestamp rv(a);
+  Timestamp rv(a);
   rv += b;
   return rv;
 }
 
-timestamp operator-(const timestamp &a, const timestamp &b)
+Timestamp operator-(const Timestamp &a, const Timestamp &b)
 {
-  timestamp rv(a);
+  Timestamp rv(a);
   rv -= b;
   return rv;
 }
 
-timestamp operator*(const timestamp &t, double scaling)
+Timestamp operator*(const Timestamp &t, double scaling)
 {
-  timestamp rv(t);
+  Timestamp rv(t);
   rv *= scaling;
   return rv;
 }
 
-timestamp operator*(double scaling, const timestamp &t)
+Timestamp operator*(double scaling, const Timestamp &t)
 {
   return (t * scaling);
 }
 
-timestamp operator/(const timestamp &t, double scaling)
+Timestamp operator/(const Timestamp &t, double scaling)
 {
-  timestamp rv(t);
+  Timestamp rv(t);
   rv /= scaling;
   return rv;
 }
 
-std::ostream& operator<<(std::ostream &os, const timestamp &t)
+std::ostream& operator<<(std::ostream &os, const Timestamp &t)
 {
   /*  timestamp::tick_t psec = t.ticks() / t.tick_interval();
     timestamp::tick_t frac = psec % timestamp::tick_t(1e12);
@@ -260,7 +253,7 @@ std::ostream& operator<<(std::ostream &os, const timestamp &t)
 }
 
 std::string
-to_printf_type(timestamp t)
+to_printf_type(Timestamp t)
 {
   return sprockit::printf("%8.4e msec", t.msec());
 }

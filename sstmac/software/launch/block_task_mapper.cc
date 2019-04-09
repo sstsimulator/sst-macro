@@ -53,13 +53,13 @@ namespace sstmac  {
 namespace sw {
 
 void
-block_task_mapper::map_ranks(
+BlockTaskMapper::mapRanks(
   const ordered_node_set& nodes,
   int ppn,
-  std::vector<node_id> &result,
+  std::vector<NodeId> &result,
   int nproc)
 {
-  nproc = validate_nproc(ppn, nodes.size(), nproc, "block mapper");
+  nproc = validateNproc(ppn, nodes.size(), nproc, "block mapper");
 
   result.clear();
 
@@ -68,7 +68,7 @@ block_task_mapper::map_ranks(
   if (nproc % ppn){
     ++num_physical_nodes;
   }
-  for(node_id addr : nodes){
+  for(NodeId addr : nodes){
     debug_printf(sprockit::dbg::indexing,
         "block indexing: considering nodeaddr[%d]=%d",
         i, int(addr));

@@ -74,7 +74,7 @@ static void fill_valid_threading_contexts(std::vector<std::pair<std::string,bool
 }
 
 std::string
-thread_context::default_threading()
+ThreadContext::defaultThreading()
 {
   static thread_lock fill_lock;
   fill_lock.lock();
@@ -93,7 +93,7 @@ thread_context::default_threading()
   }
   if (default_threading.size() == 0){
     //this did not get updated - so we don't have any multithreading-compatible thread interfaces
-    sprockit::abort("operating_system: there are no threading frameworks compatible "
+    sprockit::abort("OperatingSystem: there are no threading frameworks compatible "
                     "with multithreaded SST - must have ucontext or Boost::context");
   }
 #else

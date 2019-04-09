@@ -49,8 +49,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/app_id.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/printable.h>
 #include <vector>
 #include <sstmac/software/launch/node_set.h>
@@ -64,11 +65,14 @@ namespace sw {
  * Base class for strategies regarding how to sequentially number nodes
  * in a parallel simulation.
  */
-class task_mapper : public sprockit::printable
+class TaskMapper : public sprockit::printable
 {
-  DeclareFactory(task_mapper)
  public:
-  virtual ~task_mapper() throw ();
+  SST_ELI_DECLARE_BASE(TaskMapper)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
+
+  virtual ~TaskMapper() throw ();
 
   /** Assign processes to nodes.
    @param aid The application ID for the application whose processes are being indexed
@@ -80,20 +84,20 @@ class task_mapper : public sprockit::printable
    @throw value_error if ppn <= 0
    @throw value_error if nodes.size()*ppn < nproc
   */
-  virtual void map_ranks(
+  virtual void mapRanks(
     const ordered_node_set& allocation,
     int ppn,
-    std::vector<node_id>& result,
+    std::vector<NodeId>& result,
     int nproc) = 0;
 
  protected:
-  task_mapper(sprockit::sim_parameters* params);
+  TaskMapper(SST::Params& params);
 
-  int validate_nproc(int ppn, int num_nodes, int nproc, const char* name) const;
+  int validateNproc(int ppn, int num_nodes, int nproc, const char* name) const;
 
  protected:
-  hw::topology* topology_;
-  parallel_runtime* rt_;
+  hw::Topology* topology_;
+  ParallelRuntime* rt_;
 
 };
 

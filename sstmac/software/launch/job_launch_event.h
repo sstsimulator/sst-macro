@@ -52,23 +52,23 @@ namespace sstmac {
 namespace sw {
 
 class job_launch_event :
-  public event
+  public Event
 {
   NotSerializable(job_launch_event)
 
  public:
-  job_launch_event(app_launch_request* appman) :
+  job_launch_event(AppLaunchRequest* appman) :
     appman_(appman)
   {
   }
 
-  app_launch_request* appman() const {
+  AppLaunchRequest* appman() const {
     return appman_;
   }
 
  private:
   int appnum_;
-  app_launch_request* appman_;
+  AppLaunchRequest* appman_;
 };
 
 }

@@ -50,68 +50,50 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class cpuset_compute_scheduler : public compute_scheduler
+class CpusetComputeScheduler : public ComputeScheduler
 {
-  FactoryRegister("cpuset", compute_scheduler, cpuset_compute_scheduler,
-              "Compute scheduler that assigns threads to specific cores based on CPU_SET")
- public:  
-  cpuset_compute_scheduler(sprockit::sim_parameters* params,
-                           operating_system* os) :
-    available_cores_(0),
-    compute_scheduler(params, os)
-  {
-  }
+ public:
+  SST_ELI_REGISTER_DERIVED(
+    ComputeScheduler,
+    CpusetComputeScheduler,
+    "macro",
+    "cpuset",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Compute scheduler that assigns threads to specific cores based on CPU_SET")
 
-  void configure(int ncore, int nsocket) override;
+  CpusetComputeScheduler(SST::Params& params,
+                           OperatingSystem* os, int ncore, int nsockets) :
+    available_cores_(0),
+    ComputeScheduler(params, os, ncore, nsockets)
+  {
+    //all cores greater than ncore should be removed from bitmask
+    for (int i=0; i < ncore; ++i){
+      available_cores_ = available_cores_ | (1<<i);
+    }
+  }
   
-  void reserve_core(thread *thr) override;
+  void reserveCores(int ncore, Thread *thr) override;
   
-  void release_core(thread *thr) override;
+  void releaseCores(int ncore, Thread *thr) override;
   
  private:  
-  static inline void remove_core(int core, uint64_t& mask){
-    mask = mask & ~(1<<core);
-  }
-
-  static inline void remove_cores(uint64_t cores, uint64_t& mask){
-    mask = mask & ~(cores);
-  }
-  
-  static inline void add_core(int core, uint64_t& mask){
-    mask = mask | (1<<core);
-  }
-
-  static inline void add_cores(uint64_t cores, uint64_t &mask){
-    mask = mask | cores;
-  }
-
-  inline uint64_t allocated_cores() const {
+  inline uint64_t allocatedCores() const {
     return ~available_cores_;
   }
-  
+
  private:
   uint64_t available_cores_;
-  std::list<thread*> pending_threads_;
+  std::list<std::pair<int,Thread*>> pending_threads_;
 
 
   /**
    * @brief allocate_cores
    * @param ncores  The number of cores to allocate from the mask valid_cores
-   * @param valid_cores The mask specifiying all valid cores as 1s
-   * @param cores_allocated in-out for the cores allocated from valid_cores
-   *                        on return 'false', result undefined
    * @param thr The thread requesting the cores
    * @return Whether the allocation succeeded
    */
-  bool allocate_cores(int ncores, uint64_t valid_cores,
-                      uint64_t& cores_allocated, thread* thr);
+  bool allocateCores(int ncores, Thread* thr);
 
-  /**
-   * @brief try_reserve_core
-   * @param thr     The thread requesting a certain number of cores
-   * @return Whether the allocation succeeded
-   */
-  bool try_reserve_core(thread* thr);
 
 };
 

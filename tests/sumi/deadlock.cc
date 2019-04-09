@@ -47,9 +47,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/util.h>
 #include <sstmac/compute.h>
 #include <sstmac/common/runtime.h>
-#include <sumi/transport.h>
-#include <sstmac/libraries/sumi/sumi.h>
 #include <sstmac/skeleton.h>
+#include <sumi/transport.h>
+#include <sumi/sumi.h>
+
 #define sstmac_app_name user_app_cxx
 using namespace sumi;
 
@@ -57,7 +58,7 @@ void
 start_allreduce()
 {
   int tag = 12;
-  comm_allreduce<int,Add>(0, 0, 256, tag);
+  comm_allreduce<int,Add>(0, 0, 256, tag, Message::default_cq);
 }
 
 void
@@ -65,7 +66,7 @@ start_barrier()
 {
   int tag = 20;
   //then execute barrier
-  comm_barrier(tag);
+  comm_barrier(tag, Message::default_cq);
 }
 
 int
@@ -73,23 +74,18 @@ main(int argc, char **argv)
 {
   comm_init();
 
-  sumi::transport* tport = sumi_api();
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(tport, &sumi::transport::deadlock_check));
+  sumi::Transport* tport = sumi_api();
 
   int me = comm_rank();
-  if (me == 0) sstmac::runtime::enter_deadlock_region();
 
   if (me != 5){
     start_barrier();
     start_allreduce();
   }
-  message* msg = comm_poll();
+  Message* msg = comm_poll();
   msg = comm_poll();
 
   comm_finalize();
-
-  if (me == 0) sstmac::runtime::exit_deadlock_region();
 
   return 0;
 }

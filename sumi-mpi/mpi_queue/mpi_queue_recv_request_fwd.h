@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class mpi_queue_recv_request;
+class MpiQueueRecvRequest;
 
 }
 

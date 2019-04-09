@@ -45,7 +45,6 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef MEMORY_ID_H
 #define MEMORY_ID_H
 
-
 #include <sstream>
 #include <stdint.h>
 #include <sstmac/hardware/common/unique_id.h>
@@ -53,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-typedef unique_event_id memory_access_id;
+using MemoryAccessId = UniqueEventId;
 
 }
 }

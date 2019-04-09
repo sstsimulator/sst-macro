@@ -52,17 +52,16 @@ namespace SST {
 class Event;
 }
 namespace sstmac {
-typedef SST::Event event;
+using Event=SST::Event;
 }
 #else
 namespace sstmac {
-class event;
+class Event;
 }
 #endif
 
 namespace sstmac {
-class event_queue_entry;
-class callback;
+class ExecutionEvent;
 }
 
 #endif 

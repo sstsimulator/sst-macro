@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi/allgatherv.h>
-#include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
 #include <sumi/communicator.h>
 #include <sprockit/output.h>
@@ -59,62 +58,52 @@ using namespace sprockit::dbg;
 
 namespace sumi {
 
-bruck_allgatherv_actor::bruck_allgatherv_actor(int* counts) : recv_counts_(counts)
-{
-}
-
 void
-bruck_allgatherv_actor::init_buffers(void* dst, void* src)
+BruckAllgathervActor::initBuffers()
 {
-  total_nelems_ = 0;
-  for (int i=0; i < dense_nproc_; ++i){
-    if (i == dense_me_)
-      my_offset_ = total_nelems_;
-    total_nelems_ += recv_counts_[i];
-  }
-
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   bool in_place = dst == src;
   if (dst){ //src can be null
     //put everything into the dst buffer to begin
     if (in_place){
-      if (dense_me_ != 0){
+      if (dom_me_ != 0){
         int inPlaceOffset = my_offset_ * type_size_;
         void* inPlaceSrc = ((char*)src + inPlaceOffset);
-        std::memcpy(dst, inPlaceSrc, recv_counts_[dense_me_]*type_size_);
+        std::memcpy(dst, inPlaceSrc, recv_counts_[dom_me_]*type_size_);
       }
     } else {
-      std::memcpy(dst, src, recv_counts_[dense_me_] * type_size_);
+      std::memcpy(dst, src, recv_counts_[dom_me_] * type_size_);
     }
     long buffer_size = total_nelems_ * type_size_;
-    send_buffer_ = my_api_->make_public_buffer(dst, buffer_size);
+    send_buffer_ = my_api_->makePublicBuffer(dst, buffer_size);
     recv_buffer_ = send_buffer_;
     result_buffer_ = send_buffer_;
   }
 }
 
 void
-bruck_allgatherv_actor::finalize_buffers()
+BruckAllgathervActor::finalizeBuffers()
 {
-  long buffer_size = nelems_ * type_size_ * cfg_.dom->nproc();
-  my_api_->unmake_public_buffer(send_buffer_, buffer_size);
+  uint64_t buffer_size = total_nelems_ * type_size_ * comm_->nproc();
+  my_api_->unmakePublicBuffer(send_buffer_, buffer_size);
 }
 
 int
-bruck_allgatherv_actor::nelems_to_recv(int partner, int partner_gap)
+BruckAllgathervActor::nelems_to_recv(int partner, int partner_gap)
 {
   int nelems_to_recv = 0;
   for (int p=0; p < partner_gap; ++p){
-    int actual_partner = (partner + p) % dense_nproc_;
+    int actual_partner = (partner + p) % dom_nproc_;
     nelems_to_recv += recv_counts_[actual_partner];
   }
   return nelems_to_recv;
 }
 
 void
-bruck_allgatherv_actor::init_dag()
+BruckAllgathervActor::initDag()
 {
-
-  int virtual_nproc = dense_nproc_;
+  int virtual_nproc = dom_nproc_;
 
   /** let's go bruck algorithm for now */
   int nproc = 1;
@@ -137,12 +126,12 @@ bruck_allgatherv_actor::init_dag()
 
   debug_printf(sumi_collective,
     "Bruckv %s: configured for %d rounds with an extra round exchanging %d proc segments on tag=%d ",
-    rank_str().c_str(), log2nproc, num_extra_procs, tag_);
+    rankStr().c_str(), log2nproc, num_extra_procs, tag_);
 
   //in the last round, we send half of total data to nearest neighbor
   //in the penultimate round, we send 1/4 data to neighbor at distance=2
   //and so on...
-  nproc = dense_nproc_;
+  nproc = dom_nproc_;
 
   //as with the allgather, it makes absolutely no sense to run this collective on
   //unpacked data - everyone should immediately pack their data and then run the collective
@@ -150,14 +139,14 @@ bruck_allgatherv_actor::init_dag()
 
 
   int partner_gap = 1;
-  action *prev_send = nullptr, *prev_recv = nullptr;
-  int nelems_recvd = recv_counts_[dense_me_];
+  Action *prev_send = nullptr, *prev_recv = nullptr;
+  int nelems_recvd = recv_counts_[dom_me_];
   for (int i=0; i < num_rounds; ++i){
-    int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
-    int recv_partner = (dense_me_ + partner_gap) % nproc;
+    int send_partner = (dom_me_ + nproc - partner_gap) % nproc;
+    int recv_partner = (dom_me_ + partner_gap) % nproc;
 
-    action* send_ac = new send_action(i, send_partner, send_action::in_place);
-    action* recv_ac = new recv_action(i, recv_partner, recv_action::in_place);
+    Action* send_ac = new SendAction(i, send_partner, SendAction::in_place);
+    Action* recv_ac = new RecvAction(i, recv_partner, RecvAction::in_place);
 
     send_ac->offset = 0;
     recv_ac->offset = nelems_recvd;
@@ -168,10 +157,10 @@ bruck_allgatherv_actor::init_dag()
     nelems_recvd += recv_ac->nelems;
 
 
-    add_dependency(prev_send, send_ac);
-    add_dependency(prev_recv, send_ac);
-    add_dependency(prev_send, recv_ac);
-    add_dependency(prev_recv, recv_ac);
+    addDependency(prev_send, send_ac);
+    addDependency(prev_recv, send_ac);
+    addDependency(prev_send, recv_ac);
+    addDependency(prev_recv, recv_ac);
 
     prev_send = send_ac;
     prev_recv = recv_ac;
@@ -179,36 +168,36 @@ bruck_allgatherv_actor::init_dag()
 
   if (nprocs_extra_round){
     int nelems_extra_round = total_nelems_ - nelems_recvd;
-    int send_partner = (dense_me_ + nproc - partner_gap) % nproc;
-    int recv_partner = (dense_me_ + partner_gap) % nproc;
-    action* send_ac = new send_action(num_rounds,send_partner,send_action::in_place);
+    int send_partner = (dom_me_ + nproc - partner_gap) % nproc;
+    int recv_partner = (dom_me_ + partner_gap) % nproc;
+    Action* send_ac = new SendAction(num_rounds,send_partner,SendAction::in_place);
     send_ac->offset = 0;
     //nelems_to_recv gives me the total number of elements the partner has
     //he needs the remainder to get up to total_nelems
     send_ac->nelems = total_nelems_ - nelems_to_recv(send_partner, partner_gap);
-    action* recv_ac = new recv_action(num_rounds,recv_partner,recv_action::in_place);
+    Action* recv_ac = new RecvAction(num_rounds,recv_partner,RecvAction::in_place);
     recv_ac->offset = nelems_recvd;
     recv_ac->nelems = nelems_extra_round;
 
-    add_dependency(prev_send, send_ac);
-    add_dependency(prev_recv, send_ac);
-    add_dependency(prev_send, recv_ac);
-    add_dependency(prev_recv, recv_ac);
+    addDependency(prev_send, send_ac);
+    addDependency(prev_recv, send_ac);
+    addDependency(prev_send, recv_ac);
+    addDependency(prev_recv, recv_ac);
   }
 }
 
 void
-bruck_allgatherv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+BruckAllgathervActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-bruck_allgatherv_actor::finalize()
+BruckAllgathervActor::finalize()
 {
   // rank 0 need not reorder
   // or no buffers
-  if (dense_me_ == 0 || result_buffer_ == 0){
+  if (dom_me_ == 0 || result_buffer_ == 0){
     return;
   }
 

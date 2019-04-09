@@ -51,9 +51,10 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_comm/mpi_comm.h>
 #include <sumi-mpi/mpi_types/mpi_type.h>
 
+#include <sstmac/software/process/progress_queue.h>
 #include <sstmac/common/event_scheduler_fwd.h>
 
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 
 #include <sstmac/common/event_manager_fwd.h>
 
@@ -62,53 +63,51 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi-mpi/mpi_protocol/mpi_protocol_fwd.h>
 
 #include <sumi-mpi/mpi_queue/mpi_queue_recv_request_fwd.h>
-#include <sumi-mpi/mpi_queue/mpi_queue_send_request_fwd.h>
 #include <sumi-mpi/mpi_queue/mpi_queue_probe_request_fwd.h>
+
+#include <sprockit/sim_parameters_fwd.h>
 
 #include <queue>
 #include <sstmac/common/timestamp.h>
 
 namespace sumi {
 
-class mpi_queue
+class MpiQueue
 {
 
   /** temporary fix until I figure out a better way to do this */
-  friend class mpi_protocol;
-  friend class eager0;
-  friend class eager1;
-  friend class eager1_singlecpy;
-  friend class eager1_doublecpy;
-  friend class rendezvous_protocol;
-  friend class rendezvous_get;
-  friend class mpi_queue_send_request;
-  friend class mpi_queue_recv_request;
+  friend class MpiProtocol;
+  friend class Eager0;
+  friend class Eager1;
+  friend class RendezvousGet;
+  friend class MpiQueueRecvRequest;
+
+  using progress_queue = sstmac::sw::MultiProgressQueue<Message>;
 
  public:
-  mpi_queue(sprockit::sim_parameters* params, int task_id, mpi_api* api);
+  MpiQueue(SST::Params& params, int TaskId,
+            MpiApi* api, CollectiveEngine* engine);
 
-  ~mpi_queue() throw ();
+  ~MpiQueue() throw ();
 
-  static void delete_statics();
+  void init();
 
-  void send(mpi_request* key, int count, MPI_Datatype type,
-       int dest, int tag, mpi_comm* comm,
+  static void deleteStatics();
+
+  void send(MpiRequest* key, int count, MPI_Datatype type,
+       int dest, int tag, MpiComm* comm,
        void* buffer);
 
-  void recv(mpi_request* key, int count, MPI_Datatype type,
-       int source, int tag, mpi_comm* comm,
+  void recv(MpiRequest* key, int count, MPI_Datatype type,
+       int source, int tag, MpiComm* comm,
        void* buffer = 0);
 
-  void probe(mpi_request* key, mpi_comm* comm,
+  void probe(MpiRequest* key, MpiComm* comm,
         int source, int tag);
 
-  bool iprobe(mpi_comm* comm, int source, int tag, MPI_Status* stat);
+  bool iprobe(MpiComm* comm, int source, int tag, MPI_Status* stat);
 
-  void incoming_progress_loop_message(mpi_message* message);
-
-  mpi_protocol* protocol(long bytes) const;
-
-  mpi_api* api() const {
+  MpiApi* api() const {
     return api_;
   }
 
@@ -116,136 +115,103 @@ class mpi_queue
 
   double now() const;
 
-  void finalize_recv(mpi_message* msg,
-                mpi_queue_recv_request* req);
+  void finalizeRecv(MpiMessage* msg,
+                MpiQueueRecvRequest* req);
 
-  sstmac::timestamp progress_loop(mpi_request* req);
+  sstmac::GlobalTimestamp progressLoop(MpiRequest* req);
 
-  void nonblocking_progress();
+  void nonblockingProgress();
 
-  void start_progress_loop(const std::vector<mpi_request*>& req);
+  void startProgressLoop(const std::vector<MpiRequest*>& req);
 
-  void start_progress_loop(const std::vector<mpi_request*>& req,
-                      sstmac::timestamp timeout);
+  void startProgressLoop(const std::vector<MpiRequest*>& req,
+                      sstmac::Timestamp timeout);
 
-  void finish_progress_loop(const std::vector<mpi_request*>& req);
+  void finishProgressLoop(const std::vector<MpiRequest*>& req);
 
-  void forward_progress(double timeout);
+  void forwardProgress(double timeout);
 
-  void buffer_unexpected(mpi_message* msg);
+  void bufferUnexpected(MpiMessage* msg);
 
-  void post_rdma(mpi_message* msg,
+  void postRdma(MpiMessage* msg,
     bool needs_send_ack,
     bool needs_recv_ack);
 
-  void post_header(mpi_message* msg, sumi::message::payload_type_t ty, bool needs_ack);
+  void incomingNewMessage(MpiMessage* Message);
+
+  int pt2ptCqId() const{
+    return pt2pt_cq_;
+  }
+
+  int collCqId() const {
+    return coll_cq_;
+  }
 
  private:
   struct sortbyseqnum {
-    bool operator()(mpi_message* a, mpi_message*b) const;
+    bool operator()(MpiMessage* a, MpiMessage*b) const;
   };
 
-  typedef std::set<mpi_message*, sortbyseqnum> hold_list_t;
-
-  typedef std::list<mpi_queue_recv_request*> pending_message_t;
-
-  typedef std::list<mpi_message*> need_recv_t;
-
-  typedef std::list<mpi_queue_send_request*> send_needs_ack_t;
-
-  typedef std::unordered_map<int, mpi_message*> reorderlist_t;
-
-  typedef std::map<mpi_message::id, mpi_queue_send_request*> ack_needed_t;
-
-  typedef std::map<mpi_message::id, mpi_queue_recv_request*> pending_req_map;
-
-  typedef std::list<mpi_queue_probe_request*> probelist_t;
+  typedef std::set<MpiMessage*, sortbyseqnum> hold_list_t;
 
  private:
-  void handle_poll_msg(sumi::message* msg);
-
-  void handle_collective_done(sumi::message* msg);
-
-  void incoming_completion_ack(mpi_message* message);
-
-  void incoming_new_message(mpi_message* message);
-
-  void handle_nic_ack(mpi_message* message);
-
-  void handle_new_message(mpi_message* message);
-
-  void notify_probes(mpi_message* message);
-
-  mpi_queue_recv_request*
-  pop_matching_request(pending_message_t& pending, mpi_message* message);
-
-  mpi_queue_recv_request*
-  pop_pending_request(mpi_message* message,
-                       bool set_need_recv = true);
-
-  mpi_queue_recv_request* pop_waiting_request(mpi_message* message);
-
-  mpi_message* find_matching_recv(mpi_queue_recv_request* req);
-
-  void send_completion_ack(mpi_message* message);
-
-  mpi_message* send_message(void* buffer, int count, MPI_Datatype type,
-                int dst_rank, int tag, mpi_comm* comm);
+  /**
+   * @brief incoming_pt2pt_message Message might be held up due to sequencing constraints
+   * @param msg
+   */
+  void incomingPt2ptMessage(sumi::Message* msg);
 
   /**
-   * @brief configure_send_request
-   * @param mess
-   * @param req
-   * @return Whether a nic send ack is required for this send
+   * @brief handle_pt2pt_message Message is guaranteed to satisfy sequencing constraints
+   * @param msg
    */
-  bool configure_send_request(mpi_message* mess, mpi_request* req);
+  void handlePt2ptMessage(MpiMessage* msg);
 
-  void clear_pending();
+  void incomingCollectiveMessage(sumi::Message* Message);
 
-  bool at_least_one_complete(const std::vector<mpi_request*>& req);
+  void incomingMessage(sumi::Message* Message);
+
+  void notifyProbes(MpiMessage* Message);
+
+  MpiMessage* findMatchingRecv(MpiQueueRecvRequest* req);
+  MpiQueueRecvRequest* findMatchingRecv(MpiMessage* msg);
+
+  void clearPending();
+
+  bool atLeastOneComplete(const std::vector<MpiRequest*>& req);
 
  private:
   /// The sequence number for our next outbound transmission.
-  std::unordered_map<task_id, int> next_outbound_;
+  std::unordered_map<TaskId, int> next_outbound_;
 
   /// The sequence number expected for our next inbound transmission.
-  std::unordered_map<task_id, int> next_inbound_;
+  std::unordered_map<TaskId, int> next_inbound_;
 
   /// Hold messages that arrived out of order.
-  std::unordered_map<task_id, hold_list_t> held_;
-
-  /// The (locally unique) id that will be given to the next message.
-  mpi_message::id next_id_;
-
-  pending_message_t pending_message_;
-
-  pending_message_t waiting_message_;
-
-  std::map<mpi_message::id,mpi_queue_recv_request*> in_flight_messages_;
+  std::unordered_map<TaskId, hold_list_t> held_;
 
   /// Inbound messages waiting for a matching receive request.
-  need_recv_t need_recv_;
+  std::list<MpiMessage*> need_recv_match_;
+  std::list<MpiQueueRecvRequest*> need_send_match_;
 
-  /// Save all sends so we can match up the nic acks that come back
-  send_needs_ack_t send_needs_nic_ack_;
-  send_needs_ack_t send_needs_eager_ack_;
-
-  ack_needed_t send_needs_completion_ack_;
-
-  /// Requests that sent an ack and are waiting for the rest of their data.
-  pending_req_map recv_needs_payload_;
+  std::vector<MpiProtocol*> protocols_;
 
   /// Probe requests watching
-  probelist_t probelist_;
+  std::list<mpi_queue_probe_request*> probelist_;
 
-  task_id taskid_;
+  progress_queue queue_;
 
-  app_id appid_;
+  TaskId taskid_;
 
-  mpi_api* api_;
+  AppId appid_;
+
+  MpiApi* api_;
 
   int max_vshort_msg_size_;
   int max_eager_msg_size_;
+
+  int pt2pt_cq_;
+  int coll_cq_;
 
 };
 
@@ -258,6 +224,9 @@ class mpi_queue
 //for local use in mpi queue object
 #define mpi_queue_debug(...) \
   mpi_queue_action_debug(int(taskid_), __VA_ARGS__)
+
+#define mpi_queue_protocol_debug(...) \
+  mpi_queue_action_debug(mpi_->rank(), __VA_ARGS__)
 
 
 #endif

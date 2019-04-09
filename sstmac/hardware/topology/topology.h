@@ -52,9 +52,11 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/common/packet.h>
 #include <sstmac/backends/common/sim_partition_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
+#include <sstmac/common/sstmac_config.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
+#include <sprockit/errors.h>
 #include <unordered_map>
 #include <cmath>
 
@@ -66,14 +68,15 @@ DeclareDebugSlot(topology)
 namespace sstmac {
 namespace hw {
 
-class topology : public sprockit::printable
+class Topology : public sprockit::printable
 {
-  DeclareFactory(topology)
-
  public:
-  struct connection {
-    switch_id src;
-    switch_id dst;
+  SPKT_DECLARE_BASE(Topology)
+  SPKT_DECLARE_CTOR(SST::Params&)
+
+  struct Connection {
+    SwitchId src;
+    SwitchId dst;
     int src_outport;
     int dst_inport;
   };
@@ -87,13 +90,13 @@ class topology : public sprockit::printable
     minusZface = 5
   } vtk_face_t;
 
-  struct injection_port {
-    node_id nid;
+  struct InjectionPort {
+    NodeId nid;
     int switch_port;
     int ep_port;
   };
 
-  struct rotation {
+  struct Rotation {
     double x[3];
     double y[3];
     double z[3];
@@ -105,7 +108,7 @@ class topology : public sprockit::printable
      * @param uz  The z component of the rotation axis
      * @param theta The angle of rotation
      */
-    rotation(double ux, double uy, double uz, double theta){
+    Rotation(double ux, double uy, double uz, double theta){
       double cosTh = cos(theta);
       double oneMinCosth = 1.0 - cosTh;
       double sinTh = sin(theta);
@@ -126,7 +129,7 @@ class topology : public sprockit::printable
      * @brief rotation Initialize as a 2D rotation around Z-axis
      * @param theta The angle of rotation
      */
-    rotation(double theta){
+    Rotation(double theta){
       double cosTh = cos(theta);
       double sinTh = sin(theta);
       x[0] = cosTh;
@@ -167,7 +170,7 @@ class topology : public sprockit::printable
       return xyz(x+r.x, y+r.y, z+r.z);
     }
 
-    xyz rotate(const rotation& r) const {
+    xyz rotate(const Rotation& r) const {
       xyz ret;
       ret.x += r.x[0]*x + r.x[1]*y + r.x[2]*z;
       ret.y += r.y[0]*x + r.y[1]*y + r.y[2]*z;
@@ -176,10 +179,10 @@ class topology : public sprockit::printable
     }
   };
 
-  struct vtk_box_geometry {
+  struct VTKBoxGeometry {
     xyz size;
     xyz corner;
-    rotation rot;
+    Rotation rot;
 
     xyz vertex(int id) const {
       switch(id){
@@ -204,39 +207,39 @@ class topology : public sprockit::printable
       return xyz();
     }
 
-    vtk_box_geometry(double xLength, double yLength, double zLength,
+    VTKBoxGeometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner,
                  double xAxis, double yAxis, double zAxis, double theta) :
       size(xLength,yLength,zLength),
       corner(xCorner, yCorner, zCorner),
       rot(xAxis, yAxis, zAxis, theta) {}
 
-    vtk_box_geometry(double xLength, double yLength, double zLength,
+    VTKBoxGeometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner,
                  double theta) :
       size(xLength,yLength,zLength),
       corner(xCorner, yCorner, zCorner),
       rot(theta) {}
 
-    vtk_box_geometry(double xLength, double yLength, double zLength,
+    VTKBoxGeometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner) :
-      vtk_box_geometry(xLength, yLength, zLength, xCorner, yCorner, zCorner, 0.0)
+      VTKBoxGeometry(xLength, yLength, zLength, xCorner, yCorner, zCorner, 0.0)
    {}
 
-    vtk_box_geometry(double xLength, double yLength, double zLength,
+    VTKBoxGeometry(double xLength, double yLength, double zLength,
                      double xCorner, double yCorner, double zCorner,
-                     const rotation& rot) :
+                     const Rotation& rot) :
       size(xLength,yLength,zLength),
       corner(xCorner,yCorner,zCorner),
       rot(rot)
     {
     }
 
-    vtk_box_geometry get_sub_geometry(double x_start, double x_span,
+    VTKBoxGeometry get_sub_geometry(double x_start, double x_span,
                                       double y_start, double y_span,
                                       double z_start, double z_span) const {
 
-      return vtk_box_geometry(size.x * x_span, size.y * y_span, size.z * z_span,
+      return VTKBoxGeometry(size.x * x_span, size.y * y_span, size.z * z_span,
                               corner.x + size.x * x_start,
                               corner.y + size.y * y_start,
                               corner.z + size.z * z_start, rot);
@@ -277,8 +280,8 @@ class topology : public sprockit::printable
 
   };
 
-  struct vtk_switch_geometry {
-    vtk_box_geometry box;
+  struct VTKSwitchGeometry {
+    VTKBoxGeometry box;
     struct port_geometry {
       double x_size;
       double y_size;
@@ -289,14 +292,14 @@ class topology : public sprockit::printable
     };
     std::vector<port_geometry> ports;
 
-    vtk_box_geometry get_port_geometry(int port) const {
+    VTKBoxGeometry get_port_geometry(int port) const {
       auto& cfg = ports[port];
       return box.get_sub_geometry(cfg.x_offset, cfg.x_size,
                                   cfg.y_offset, cfg.y_size,
                                   cfg.z_offset, cfg.z_size);
     }
 
-    vtk_switch_geometry(double xLength, double yLength, double zLength,
+    VTKSwitchGeometry(double xLength, double yLength, double zLength,
                  double xCorner, double yCorner, double zCorner,
                  double theta, std::vector<port_geometry>&& ps) :
       box(xLength, yLength, zLength,xCorner,yCorner,zCorner,theta),
@@ -306,55 +309,27 @@ class topology : public sprockit::printable
   };
 
  public:
-  typedef std::unordered_map<switch_id, connectable*> internal_connectable_map;
-  typedef std::unordered_map<node_id, connectable*> end_point_connectable_map;
+  typedef std::unordered_map<SwitchId, Connectable*> internal_Connectable_map;
+  typedef std::unordered_map<NodeId, Connectable*> end_point_Connectable_map;
 
  public:
-  virtual ~topology();
+  virtual ~Topology();
 
-  /**** BEGIN PURE VIRTUAL INTERFACE *****/
-  /**
-   * @brief Whether all network ports are uniform on all switches,
-   *        having exactly the same latency/bandwidth parameters.
-   *        If a 3D torus, e.g., has X,Y,Z directions exactly the same,
-   *        this returns true.
-   * @return
-   */
-  virtual bool uniform_network_ports() const = 0;
-
-  /**
-   * @brief Whether all switches are the same, albeit with each port on the switch
-   *        having slightly different latency/bandwidth configurations
-   * @return
-   */
-  virtual bool uniform_switches_non_uniform_network_ports() const = 0;
-
-  /**
-   * @brief Whether all switches are the same and all ports on those switches
-   *        have exactly the same configuration
-   * @return
-   */
-  virtual bool uniform_switches() const = 0;
+  virtual double portScaleFactor(uint32_t addr, int port) const {
+    return 1.0;
+  }
 
   /**
    * @brief connected_outports
    *        Given a 3D torus e.g., the connection vector would contain
    *        6 entries, a +/-1 for each of 3 dimensions.
    * @param src   Get the source switch in the connection
-   * @param conns The set of output connections with dst switch_id
+   * @param conns The set of output connections with dst SwitchId
    *              and the port numbers for each connection
    */
-  virtual void connected_outports(switch_id src,
-                     std::vector<topology::connection>& conns) const = 0;
+  virtual void connectedOutports(SwitchId src,
+                     std::vector<Topology::Connection>& conns) const = 0;
 
-  /**
-   * @brief configure_individual_port_params.  The port-specific parameters
-   *        will be stored in new namespaces "portX" where X is the port number
-   * @param src
-   * @param [inout] switch_params
-   */
-  virtual void configure_individual_port_params(switch_id src,
-          sprockit::sim_parameters* switch_params) const = 0;
 
   /**
      For indirect networks, this includes all switches -
@@ -362,36 +337,36 @@ class topology : public sprockit::printable
      switches that are only a part of the network
      @return The total number of switches
   */
-  virtual switch_id num_switches() const = 0;
+  virtual SwitchId numSwitches() const = 0;
 
-  virtual switch_id num_leaf_switches() const {
-    return num_switches();
+  virtual SwitchId numLeafSwitches() const {
+    return numSwitches();
   }
 
   /**
-   * @brief max_switch_id Depending on the node indexing scheme, the maximum switch id
+   * @brief maxSwitchId Depending on the node indexing scheme, the maximum switch id
    *  might be larger than the actual number of switches.
    * @return The max switch id
    */
-  virtual switch_id max_switch_id() const = 0;
+  virtual SwitchId maxSwitchId() const = 0;
 
-  virtual node_id num_nodes() const = 0;
+  virtual NodeId numNodes() const = 0;
 
   /**
-   * @brief max_node_id Depending on the node indexing scheme, the maximum node id
+   * @brief maxNodeId Depending on the node indexing scheme, the maximum node id
    *  might be larger than the actual number of nodes.
    * @return The max node id
    */
-  virtual node_id max_node_id() const = 0;
+  virtual NodeId maxNodeId() const = 0;
 
   /**
-   * @brief get_vtk_geometry
+   * @brief getVtkGeometry
    * @param sid
    * @return The geometry (box size, rotation, port-face mapping)
    */
-  virtual vtk_switch_geometry get_vtk_geometry(switch_id sid) const;
+  virtual VTKSwitchGeometry getVtkGeometry(SwitchId sid) const;
 
-  virtual bool is_curved_vtk_link(switch_id sid, int port) const {
+  virtual bool isCurvedVtkLink(SwitchId sid, int port) const {
     return false;
   }
 
@@ -399,7 +374,7 @@ class topology : public sprockit::printable
    * @brief Return the maximum number of ports on any switch in the network
    * @return
    */
-  virtual int max_num_ports() const = 0;
+  virtual int maxNumPorts() const = 0;
 
   /**
     This gives the minimal distance counting the number of hops between switches.
@@ -407,35 +382,35 @@ class topology : public sprockit::printable
     @param dest. The destination node.
     @return The number of hops to final destination
   */
-  virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
+  virtual int numHopsToNode(NodeId src, NodeId dst) const = 0;
 
-  virtual switch_id endpoint_to_switch(node_id) const = 0;
+  virtual SwitchId endpointToSwitch(NodeId) const = 0;
 
   /**
-   * @brief output_graphviz
+   * @brief outputGraphviz
    * Request to output graphviz. If file is given, output will be written there.
    * If no file is given, topology will use default path from input file.
    * If not default was given in input file, nothing will be output
    * @param file An optional file
    */
-  void output_graphviz(const std::string& file = "");
+  void outputGraphviz(const std::string& file = "");
 
   /**
-   * @brief output_xyz
+   * @brief outputXYZ
    * Request to output graphviz. If file is given, output will be written there.
    * If no file is given, topology will use default path from input file.
    * If not default was given in input file, nothing will be output
    * @param file An optional file
    */
-  void output_xyz(const std::string& file = "");
+  void outputXYZ(const std::string& file = "");
 
-  static void output_box(std::ostream& os,
-                       const topology::vtk_box_geometry& box,
+  static void outputBox(std::ostream& os,
+                       const Topology::VTKBoxGeometry& box,
                        const std::string& color,
                        const std::string& alpha);
 
-  static void output_box(std::ostream& os,
-                       const topology::vtk_box_geometry& box);
+  static void outputBox(std::ostream& os,
+                       const Topology::VTKBoxGeometry& box);
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -443,8 +418,8 @@ class topology : public sprockit::printable
      switch is an internal switch not connected to any nodes
      @return The nodes connected to switch for injection
   */
-  virtual void endpoints_connected_to_injection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const = 0;
+  virtual void endpointsConnectedToInjectionSwitch(SwitchId swid,
+                          std::vector<InjectionPort>& nodes) const = 0;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -452,11 +427,15 @@ class topology : public sprockit::printable
      switch is an internal switch not connected to any nodes
      @return The nodes connected to switch for ejection
   */
-  virtual void endpoints_connected_to_ejection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const = 0;
+  virtual void endpointsConnectedToEjectionSwitch(SwitchId swid,
+                          std::vector<InjectionPort>& nodes) const = 0;
   /**** END PURE VIRTUAL INTERFACE *****/
 
-  virtual void create_partition(
+  void finalizeInit(SST::Params& params){
+    initHostnameMap(params);
+  }
+
+  virtual void createPartition(
     int* switch_to_lp,
     int* switch_to_thread,
     int me,
@@ -465,72 +444,77 @@ class topology : public sprockit::printable
     int noccupied) const;
 
 #if SSTMAC_INTEGRATED_SST_CORE
-  switch_id node_to_logp_switch(node_id nid) const;
+  SwitchId nodeToLogpSwitch(NodeId nid) const;
 
   static int nproc;
 #endif
 
 
-  static topology* global() {
+  static Topology* global() {
     return main_top_;
-  }
-
-  /**
-   * @brief configure_switch_params By default, almost all topologies
-   *        have uniform switch parameters.
-   * @param src
-   * @param switch_params In/out parameter. Input is default set of params.
-   *        Output is non-default unique params.
-   */
-  virtual void configure_nonuniform_switch_params(switch_id src,
-        sprockit::sim_parameters* switch_params) const
-  {
   }
 
   std::string label(uint32_t comp_id) const;
 
-  virtual std::string switch_label(switch_id sid) const;
+  virtual std::string switchLabel(SwitchId sid) const;
 
-  virtual std::string node_label(node_id nid) const;
+  virtual std::string nodeLabel(NodeId nid) const;
 
-  static topology* static_topology(sprockit::sim_parameters* params);
+  static Topology* staticTopology(SST::Params& params);
 
-  static void set_static_topology(topology* top){
-    static_topology_ = top;
+  static void setStaticTopology(Topology* top){
+    staticTopology_ = top;
   }
 
-  virtual cartesian_topology* cart_topology() const;
+  virtual CartesianTopology* cartTopology() const;
 
-  static void clear_static_topology(){
-    if (static_topology_) delete static_topology_;
-    static_topology_ = nullptr;
+  NodeId nodeNameToId(const std::string& name) const;
+
+  virtual SwitchId switchNameToId(std::string name) const {
+    std::size_t pos = name.find("switch");
+    if (pos != 0)
+      throw sprockit::InputError("topology: switch name should be switch<n>");
+    std::string number(name,6);
+    SwitchId id;
+    try {
+      id = stoi(number);
+    }
+    catch(...) {
+      throw sprockit::InputError("topology: switch name should be switch<n>");
+    }
+    return id;
   }
 
-  static sprockit::sim_parameters* get_port_params(sprockit::sim_parameters* params, int port);
+  virtual std::string nodeIdToName(NodeId id);
+
+  virtual std::string switchIdToName(SwitchId id) const {
+    return std::string("switch") + std::to_string(id);
+  }
+
+  static void clearStaticTopology(){
+    if (staticTopology_) delete staticTopology_;
+    staticTopology_ = nullptr;
+  }
+
+  static std::string getPortNamespace(int port);
 
  protected:
-  topology(sprockit::sim_parameters* params);
+  Topology(SST::Params& params);
 
-  static sprockit::sim_parameters* setup_port_params(
-        int port, int credits, double bw,
-        sprockit::sim_parameters* link_params,
-        sprockit::sim_parameters* params);
-
-  void configure_individual_port_params(int port_offset, int nports,
-           sprockit::sim_parameters* params) const;
+  virtual void initHostnameMap(SST::Params& params);
 
  protected:
-  std::string name_;
-
-  static topology* main_top_;
+  static Topology* main_top_;
+  std::unordered_map<std::string,NodeId> idmap_;
+  std::vector<std::string> hostmap_;
 
  private:
-  static topology* static_topology_;
+  static Topology* staticTopology_;
   std::string dot_file_;
   std::string xyz_file_;
 };
 
-static inline std::ostream& operator<<(std::ostream& os, const topology::xyz& v) {
+static inline std::ostream& operator<<(std::ostream& os, const Topology::xyz& v) {
   os << v.x << "," << v.y << "," << v.z;
   return os;
 }

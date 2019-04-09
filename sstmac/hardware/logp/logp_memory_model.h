@@ -51,53 +51,65 @@ namespace sstmac {
 namespace hw {
 
 /**
- * @brief The logp_memory_model class implements memory operations using
+ * @brief The LogPMemoryModel class implements memory operations using
  *        a very basic LogGP model for simulating delays.
  */
-class logp_memory_model : public memory_model
+class LogPMemoryModel : public MemoryModel
 {
-  FactoryRegister("logP | simple | LogP | logp", memory_model,logp_memory_model,
-              "Implements a simple memory model that is just a single link")
  public:
-  logp_memory_model(sprockit::sim_parameters* params, node* nd);
+  SST_ELI_REGISTER_DERIVED(
+    MemoryModel,
+    LogPMemoryModel,
+    "macro",
+    "logp",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Implements a simple memory model that is just a single link")
 
-  virtual ~logp_memory_model();
+  LogPMemoryModel(SST::Params& params, Node* nd);
 
-  std::string to_string() const override {
+  virtual ~LogPMemoryModel();
+
+  std::string toString() const override {
     return "logGP memory model";
   }
 
-  void access(long bytes, double max_bw, callback* cb) override;
+  void access(uint64_t bytes, Timestamp byte_delay, Callback* cb) override;
 
-  double max_single_bw() const override {
-    return bw_;
+  Timestamp minFlowByteDelay() const override {
+    return min_byte_delay_;
   }
 
  protected:
-  class link  {
+  class Link  {
    public:
-    link(double bw, timestamp lat) :
-      bw_(bw), lat_(lat), last_access_(0) {
+    Link(Timestamp byte_delay, Timestamp lat) :
+      byte_delay_(byte_delay), lat_(lat), last_access_() {
     }
 
-    ~link() { }
+    ~Link() { }
 
-    timestamp
-    new_access(timestamp now, long size, double max_bw);
+    /**
+     * @brief newAccess
+     * @param now
+     * @param size
+     * @param max_bw
+     * @return The deltaT from now the access will finish
+     */
+    Timestamp newAccess(GlobalTimestamp now, uint64_t size, Timestamp min_byte_delay);
 
    protected:
-    double bw_;
-    timestamp lat_;
-    timestamp last_access_;
+    Timestamp byte_delay_;
+    Timestamp lat_;
+    GlobalTimestamp last_access_;
 
   };
 
  protected:
-  link* link_;
+  Link* link_;
 
-  double bw_;
+  Timestamp min_byte_delay_;
 
-  timestamp lat_;
+  Timestamp lat_;
 
 };
 

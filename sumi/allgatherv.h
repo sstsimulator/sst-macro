@@ -49,58 +49,66 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/collective_actor.h>
 #include <sumi/collective_message.h>
 #include <sumi/comm_functions.h>
+#include <sumi/allgather.h>
 
 namespace sumi {
 
-class bruck_allgatherv_actor :
-  public bruck_actor
+class BruckAllgathervActor : public DagCollectiveActor
 {
 
  public:
-  std::string to_string() const override {
+  BruckAllgathervActor(CollectiveEngine* engine, void *dst, void *src, int* recv_counts,
+                         int type_size, int tag, int cq_id, Communicator* comm) :
+    DagCollectiveActor(Collective::allgatherv, engine, dst, src, type_size, tag, cq_id, comm),
+    recv_counts_(recv_counts)
+  {
+    total_nelems_ = 0;
+    for (int i=0; i < dom_nproc_; ++i){
+      if (i == dom_me_)
+        my_offset_ = total_nelems_;
+      total_nelems_ += recv_counts_[i];
+    }
+  }
+
+  std::string toString() const override {
     return "bruck allgatherv actor";
   }
 
-  bruck_allgatherv_actor(int* recv_counts);
-
- protected:
+ private:
   void finalize() override;
 
-  void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
-  void init_dag() override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
 
-  void buffer_action(void *dst_buffer, void *msg_buffer, action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
   int nelems_to_recv(int partner, int partner_gap);
 
- private:
   int* recv_counts_;
   int total_nelems_;
   int my_offset_;
 
 };
 
-class bruck_allgatherv_collective :
-  public dag_collective
+class BruckAllgathervCollective :
+  public DagCollective
 {
-  FactoryRegister("bruck_allgatherv", dag_collective, bruck_allgatherv_collective)
-
  public:
-  std::string to_string() const override {
+  BruckAllgathervCollective(CollectiveEngine* engine, void *dst, void *src, int* recv_counts,
+                              int type_size, int tag, int cq_id, Communicator* comm) :
+    DagCollective(allgatherv, engine, dst, src, type_size, tag, cq_id, comm),
+    recv_counts_(recv_counts)
+  {
+  }
+
+  std::string toString() const override {
     return "bruck allgatherv";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new bruck_allgatherv_actor(recv_counts_);
-  }
-
-  dag_collective* clone() const override {
-    return new bruck_allgatherv_collective;
-  }
-
-  void init_recv_counts(int* counts) override {
-    recv_counts_ = counts;
+  DagCollectiveActor* newActor() const override {
+    return new BruckAllgathervActor(engine_, dst_buffer_, src_buffer_, recv_counts_, type_size_,
+                                    tag_, cq_id_, comm_);
   }
 
  private:

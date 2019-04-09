@@ -49,15 +49,18 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/util.h>
 #include <sprockit/printable.h>
 #include <sstmac/common/serializable.h>
+#include <sstmac/hardware/network/network_message.h>
+#include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/common/sstmac_config.h>
+#include <sumi/message.h>
+#include <sprockit/thread_safe_new.h>
+
 
 namespace sumi {
 
-class message :
-  public sprockit::printable,
-  public sstmac::serializable
+class Message : public sstmac::hw::NetworkMessage
 {
- ImplementSerializable(message)
+ ImplementSerializable(Message)
 
  public:
   static void* offset_ptr(void* in, int offset){
@@ -66,25 +69,8 @@ class message :
   }
 
  public:
-  virtual std::string to_string() const override;
-
   static const int no_ack = -1;
   static const int default_cq = 0;
-
-  typedef enum {
-    header,
-    eager_payload,
-    eager_payload_ack,
-    software_ack,
-    nvram_get,
-    rdma_put,
-    rdma_put_ack,
-    rdma_get,
-    rdma_get_ack,
-    rdma_get_nack,
-    failure,
-    none
-  } payload_type_t;
 
  typedef enum {
     ping,
@@ -92,7 +78,6 @@ class message :
     pt2pt,
     bcast,
     collective,
-    collective_done,
     no_class,
     fake
  } class_t;
@@ -101,115 +86,54 @@ class message :
   static const int ack_size;
   static const int header_size;
 
-  message() :
-    message(sizeof(message))
-  {
-  }
-
-  message(uint64_t num_bytes) :
-    message(-1,-1,num_bytes)
-  {
-  }
-
-  message(class_t cls) :
-    message(-1,-1,sizeof(message),cls,none)
-  {
-  }
-
-  message(uint64_t num_bytes, class_t cls) :
-    message(-1,-1,num_bytes,cls,none)
-  {
-  }
-
-  message(int sender,
-          int recver,
-          uint64_t num_bytes) :
-    message(sender, recver, num_bytes, pt2pt, none)
-  {
-  }
-
-  message(int sender,
-          int recver,
-          uint64_t num_bytes,
-          class_t cls,
-          payload_type_t pty) :
-    local_buffer_(nullptr),
-    remote_buffer_(nullptr),
-    num_bytes_(num_bytes),
-    payload_type_(pty),
+  template <class... Args>
+  Message(int sender, int recver, int send_cq, int recv_cq, class_t cls,
+          Args&&... args) :
+   sstmac::hw::NetworkMessage(std::forward<Args>(args)...),
+#if SSTMAC_COMM_SYNC_STATS
+    sent_(-1),
+    header_arrived_(-1),
+    payload_arrived_(-1),
+    synced_(-1),
+#endif
     class_(cls),
     sender_(sender),
     recver_(recver),
-    send_cq_(-1),
-    recv_cq_(-1),
-    owns_local_buffer_(false),
-    owns_remote_buffer_(false)
-  #if SSTMAC_COMM_SYNC_STATS
-    ,sent_(-1),
-    header_arrived_(-1),
-    payload_arrived_(-1),
-    synced_(-1)
-#endif
+    send_cq_(send_cq),
+    recv_cq_(recv_cq)
   {
   }
 
-  virtual ~message();
-
-  static const char* tostr(payload_type_t ty);
+  virtual ~Message();
 
   static const char* tostr(class_t ty);
 
-  payload_type_t payload_type() const {
-    return payload_type_;
-  }
-
-  bool is_nic_ack() const;
+  virtual std::string toString() const override;
 
   virtual void serialize_order(sstmac::serializer &ser) override;
 
-  void serialize_buffers(sstmac::serializer& ser);
+  void serializeBuffers(sstmac::serializer& ser);
 
-  void set_payload_type(payload_type_t ty) {
-    payload_type_ = ty;
+  static bool needsAck(sstmac::hw::NetworkMessage::type_t ty,
+                        int sendCQ, int recvCQ);
+
+  virtual sstmac::hw::NetworkMessage* cloneInjectionAck() const override {
+    auto* cln = new Message(*this);
+    cln->convertToAck();
+    return cln;
   }
 
-  void set_byte_length(uint64_t bytes) {
-    num_bytes_ = bytes;
+  void convertToAck(){
+    sstmac::hw::NetworkMessage::convertToAck();
   }
 
-  virtual message* clone(payload_type_t ty) const;
+  virtual void writeSyncValue(){}
 
-  message* clone_ack() const;
-
-  virtual void write_sync_value(){}
-
-  void set_owns_local_buffer(bool flag){
-    owns_local_buffer_ = flag;
-  }
-
-  void set_owns_remote_buffer(bool flag){
-    owns_remote_buffer_ = flag;
-  }
-
-  /**
-   * Update the remote buffer to simulate injecting packets
-   * such that the original remote buffer is free to use again
-   * in the application
-   */
-  virtual void put_remote_on_wire();
-
-  /**
-   * Update the local buffer to simulate injecting packets
-   * such that the original local buffer is free to use again
-   * in the application
-   */
-  virtual void put_local_on_wire();
-
-  class_t class_type() const {
+  class_t classType() const {
     return class_;
   }
 
-  void set_class_type(class_t cls) {
+  void setClassType(class_t cls) {
     class_ = cls;
   }
 
@@ -217,160 +141,111 @@ class message :
     return recver_;
   }
 
-  void set_recver(int dst) {
-    recver_ = dst;
-  }
-
   int sender() const {
     return sender_;
   }
 
-  void set_sender(int src) {
-    sender_ = src;
-  }
-
-  int send_cq() const {
+  int sendCQ() const {
     return send_cq_;
   }
 
-  int recv_cq() const {
+  int recvCQ() const {
     return recv_cq_;
   }
 
-  uint64_t byte_length() const {
-    return num_bytes_;
-  }
-
-  int cq_id() const {
-    switch (payload_type_){
-     case header:
-     case eager_payload:
-     case software_ack:
-     case rdma_get:
-     case rdma_put:
-     case nvram_get:
-     case failure:
-     case rdma_get_nack:
-     case none: //annoying for now - this is collectives
-      return recv_cq_;
-     case eager_payload_ack:
-     case rdma_put_ack:
-     case rdma_get_ack:
-      return send_cq_;
+  int targetRank() const {
+    switch (NetworkMessage::type()){
+     case NetworkMessage::payload:
+     case NetworkMessage::rdma_get_payload:
+     case NetworkMessage::rdma_put_payload:
+     case NetworkMessage::rdma_get_nack:
+      return recver_;
+     case NetworkMessage::payload_sent_ack:
+     case NetworkMessage::rdma_get_sent_ack:
+     case NetworkMessage::rdma_put_sent_ack:
+      return sender_;
      default:
-      spkt_abort_printf("Bad payload type %d to CQ id", payload_type_);
+      spkt_abort_printf("Bad payload type %d to CQ id", NetworkMessage::type());
       return -1;
     }
   }
 
-  void set_local_buffer(void* buf) {
-    local_buffer_ = buf;
+  int cqId() const {
+    switch (NetworkMessage::type()){
+     case NetworkMessage::payload:
+     case NetworkMessage::rdma_get_payload:
+     case NetworkMessage::rdma_put_payload:
+     case NetworkMessage::rdma_get_nack:
+      return recv_cq_;
+     case NetworkMessage::payload_sent_ack:
+     case NetworkMessage::rdma_get_sent_ack:
+     case NetworkMessage::rdma_put_sent_ack:
+      return send_cq_;
+     default:
+      spkt_abort_printf("Bad payload type %d to CQ id", NetworkMessage::type());
+      return -1;
+    }
   }
 
-  void set_remote_buffer(void* buf) {
-    remote_buffer_ = buf;
+  void reverse() {
+    std::swap(sender_, recver_);
   }
 
-  virtual void reverse();
-
-  bool needs_send_ack() const {
+  bool needsSendAck() const {
     return send_cq_ >= 0;
   }
 
-  void set_send_cq(int cq){
+  void setSendCq(int cq){
     send_cq_ = cq;
+    setNeedsAck(cq != Message::no_ack);
   }
 
-  bool needs_recv_ack() const {
+  bool needsRecvAck() const {
     return recv_cq_ >= 0;
   }
 
-  void set_recv_cq(int cq) {
+  void setRecvCQ(int cq) {
     recv_cq_ = cq;
   }
 
-  bool has_payload() const {
-    return local_buffer_ || remote_buffer_;
-  }
-
-  /**
-   * @brief inject_remote_to_local
-   * Coming off the NIC, copy data into the waiting buffer to
-   * complete a get operation: remote->local
-   */
-  void inject_remote_to_local();
-
-  /**
-   * @brief inject_local_to_remote
-   * Comming off the NIC, copy data into the waiting buffer to
-   * complete a put operation: local->remote
-   */
-  void inject_local_to_remote();
-
-  void memmove_remote_to_local();
-
-  void memmove_local_to_remote();
-
-  void* local_buffer() const { return local_buffer_; }
-  void* remote_buffer() const { return remote_buffer_; }
-
  protected:
-  void clone_into(message* cln) const;
-
-  /**
-   * @brief buffer
-   * @param src
-   * @param num_bytes
-   * @return A new buffer containing the contents of the input buffer
-   */
-  static void* buffer(void* src, uint64_t num_bytes);
-
- protected:
-  void* local_buffer_;
-  void* remote_buffer_;
-  uint64_t num_bytes_;
+  //void clone_into(message* cln) const;
+  Message(){} //for serialization only
 
  private:
-  payload_type_t payload_type_;
-
   class_t class_;
   int sender_;
-
   int recver_;
 
   int send_cq_;
-
   int recv_cq_;
-
-  bool owns_local_buffer_;
-  bool owns_remote_buffer_;
 
 #if SSTMAC_COMM_SYNC_STATS
  public:
-  double time_sent() const {
+  double timeSent() const {
     return sent_;
   }
 
-  double time_header_arrived() const {
+  double timeHeaderArrived() const {
     return header_arrived_;
   }
 
-  double time_payload_arrived() const {
+  double timePayloadArrived() const {
     return payload_arrived_;
   }
 
-  double time_synced() const {
+  double timeSynced() const {
     return synced_;
   }
 
-  void set_time_sent(double now){
+  void setTimeSent(double now){
     if (sent_ < 0){
       //if already set, don't overwrite
       sent_ = now;
     }
   }
 
-  void set_time_arrived(double now){
+  void setTimeArrived(double now){
     if (header_arrived_ < 0){
       header_arrived_ = now;
     } else {
@@ -378,7 +253,7 @@ class message :
     }
   }
 
-  void set_time_synced(double now){
+  void setTimeSynced(double now){
     synced_ = now;
   }
 
@@ -393,61 +268,67 @@ class message :
 #endif
 };
 
-class system_bcast_message : public message
-{
-  ImplementSerializable(system_bcast_message)
+class ProtocolMessage : public Message {
  public:
-  typedef enum {
-    shutdown
-  } action_t;
-
-  system_bcast_message(action_t action, int root) :
-    message(bcast),
-    root_(root),
-    action_(action)
-  {
+  uint64_t count() const {
+    return count_;
   }
 
-  system_bcast_message(){} //serialization
-
-  int root() const {
-    return root_;
+  int typeSize() const {
+    return type_size_;
   }
 
-  void serialize_order(sstmac::serializer& ser) override;
-
-  action_t action() const {
-    return action_;
+  void* partnerBuffer() const {
+    return partner_buffer_;
   }
 
- private:
-  int root_;
-  action_t action_;
-};
-
-/**
-* @brief The transport_message class
-* Base class for anything that carries a sumi message as a payload
-*/
-class transport_message {
- public:
-  sumi::message* take_payload() {
-    auto ret = payload_;
-    payload_ = nullptr;
-    return ret;
+  uint64_t payloadSize() const {
+    return count_ * type_size_;
   }
 
-  virtual ~transport_message(){
-    if (payload_) delete payload_;
+  int protocol() const {
+    return protocol_;
+  }
+
+  int stage() const {
+    return stage_;
+  }
+
+  void advanceStage() {
+    stage_++;
   }
 
  protected:
-  transport_message(sumi::message* pload) :
-    payload_(pload) {}
+  template <class... Args>
+  ProtocolMessage(uint64_t count, int type_size, void* partner_buffer, int protocol,
+                   Args&&... args) :
+    Message(std::forward<Args>(args)...),
+    count_(count), type_size_(type_size),
+    partner_buffer_(partner_buffer),
+    stage_(0),
+    protocol_(protocol)
+  {
+  }
 
-  transport_message(){} //for serialization
+  virtual void serialize_order(sstmac::serializer& ser){
+    ser & stage_;
+    ser & protocol_;
+    ser & count_;
+    ser & type_size_;
+    ser.primitive(partner_buffer_);
+    Message::serialize_order(ser);
+  }
 
-  sumi::message* payload_;
+ protected:
+  ProtocolMessage(){}
+
+ private:
+  uint64_t count_;
+  int type_size_;
+  void* partner_buffer_;
+  int stage_;
+  int protocol_;
+
 };
 
 }

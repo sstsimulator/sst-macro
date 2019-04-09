@@ -26,19 +26,11 @@ libsstmac_common_la_SOURCES = \
   c_params.cc \
   sst_event.cc \
   lodepng.cc \
-  param_expander.cc \
   sstmac_env.cc \
   thread_lock.cc \
-  messages/message_buffer_cache.cc \
-  messages/library_message.cc \
-  messages/timed_event.cc \
   stats/stat_collector.cc \
   stats/stat_spyplot.cc \
-  stats/stat_histogram.cc \
-  stats/location_trace.cc \
-  stats/stat_local_int.cc \
-  stats/stat_local_double.cc \
-  stats/stat_global_int.cc
+  stats/stat_histogram.cc 
 
 nodist_library_include_HEADERS = sstmac_config.h config.h
 
@@ -51,7 +43,7 @@ nobase_library_include_HEADERS = \
   ipc_event.h \
   event_callback.h \
   event_handler.h \
-	handler_event_queue_entry.h \
+  handler_event_queue_entry.h \
   event_handler_fwd.h \
   event_location.h \
   event_scheduler.h \
@@ -62,41 +54,29 @@ nobase_library_include_HEADERS = \
   runtime.h \
   timestamp.h \
   timestamp_fwd.h \
+  request.h \
+  request_fwd.h \
   sst_event.h \
   sst_event_fwd.h \
   lodepng.h \
   sstmac_env.h \
-  param_expander.h \
   thread_safe_int.h \
   thread_lock.h \
   sim_thread_lock.h \
   serializable.h \
-  messages/library_message.h \
-  messages/message_buffer_cache.h \
-  messages/sleep_event.h \
-  messages/sst_message.h \
-  messages/sst_message_fwd.h \
-  messages/timed_event.h \
   stats/stat_spyplot.h \
   stats/stat_spyplot_fwd.h \
   stats/stat_collector.h \
   stats/stat_collector_fwd.h \
   stats/stat_histogram.h \
-  stats/stat_histogram_fwd.h \
-  stats/location_trace.h \
-  stats/stat_local_int.h \
-  stats/stat_local_int_fwd.h \
-  stats/stat_local_double.h \
-  stats/stat_local_double_fwd.h \
-  stats/stat_global_int.h \
-  stats/stat_global_int_fwd.h
+  stats/stat_histogram_fwd.h 
 
 if !INTEGRATED_SST_CORE
 nobase_library_include_HEADERS += \
-  event_manager.h 
+  event_manager.h
 
 libsstmac_common_la_SOURCES += \
-  event_manager.cc 
+  event_manager.cc
 
 endif
 

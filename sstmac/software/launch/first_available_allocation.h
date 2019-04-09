@@ -50,23 +50,29 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class first_available_allocation : public node_allocator
+class FirstAvailableAllocation : public NodeAllocator
 {
-  FactoryRegister("first_available | first", node_allocator, first_available_allocation,
-              "Allocate the first set of nodes from the list of available nodes."
-              "In most cases, allocating from the available node list will give "
-              "you a regular, contiguous allocation")
  public:
-  first_available_allocation(sprockit::sim_parameters* params) :
-    node_allocator(params)
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    FirstAvailableAllocation,
+    "macro",
+    "first_available",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate the first set of nodes from the list of available nodes."
+    "In most cases, allocating from the available node list will give "
+    "you a regular, contiguous allocation")
+
+  FirstAvailableAllocation(SST::Params& params) :
+    NodeAllocator(params)
   {
   }
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "first available allocator";
   }
 
-  virtual ~first_available_allocation() throw ();
+  virtual ~FirstAvailableAllocation() throw ();
 
   bool allocate(
     int nnode_requested,

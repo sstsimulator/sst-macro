@@ -44,22 +44,31 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <sstmac/hardware/topology/cartesian_topology.h>
 #include <sprockit/sim_parameters.h>
+#include <sprockit/keyword_registration.h>
+#include <sstream>
+#include <fstream>
+
+RegisterKeywords(
+{ "launch_dumpi_mapname", "DEPRECATED: a file containing a line-by-line list of hostnames and their coordintes" },
+{ "launch_hostname_map", "DEPRECATED: a file containing a line-by-line list of hostnames and their coordinates" },
+{ "hostname_map", "a file containing a line-by-line list of hostnames and their coordintes" },
+);
 
 namespace sstmac {
   namespace hw {
 
-cartesian_topology::cartesian_topology(sprockit::sim_parameters *params) :
-  structured_topology(params)
+CartesianTopology::CartesianTopology(SST::Params& params) :
+  StructuredTopology(params)
 {
-  params->get_vector_param("geometry", dimensions_);
+  params.find_array("geometry", dimensions_);
   if (dimensions_.size() == 0) {
-    spkt_throw_printf(sprockit::value_error, "empty topology vector for cartesian topology");
+    spkt_throw_printf(sprockit::ValueError, "empty topology vector for cartesian topology");
   }
 
-  if (params->has_param("redundant")) {
-    params->get_vector_param("redundant", red_);
+  if (params.contains("redundant")) {
+    params.find_array("redundant", red_);
     if (red_.size() != dimensions_.size()) {
-      spkt_throw_printf(sprockit::input_error,
+      spkt_throw_printf(sprockit::InputError,
                        "topology::init: wrong number of dimensions in topology_redundant, "
                        "should be %d, got %d\n",
                        dimensions_.size(),
@@ -74,22 +83,96 @@ cartesian_topology::cartesian_topology(sprockit::sim_parameters *params) :
   }
 }
 
+void
+CartesianTopology::initHostnameMap(SST::Params& params)
+{
+  if (params.contains("hostname_map")){
+    readCoordFile(params.find<std::string>("hostname_map"));
+  } else {
+    Topology::initHostnameMap(params);
+  }
+}
+
+void
+CartesianTopology::readCoordFile(const std::string& fname)
+{
+  std::ifstream in(fname.c_str());
+
+  int nnode = -1;
+  in >> nnode;
+  if (nnode <= 0) {
+    spkt_abort_printf("topology::read_coord_file: bad num nodes, %d, in node map file", nnode);
+  }
+
+  hostmap_.resize(numNodes());
+
+  if (nnode < numNodes()){
+    std::cerr << "WARNING: only provided "  << nnode << " hostnames, but topology has "
+              << numNodes() << " nodes" << std::endl;
+  } else if (nnode > numNodes()){
+    spkt_abort_printf("gave %d hostnames in %s, but only have %d nodes",
+                      nnode, fname.c_str(), numNodes());
+  }
+
+
+
+  int ncoor = -1;
+  in >> ncoor;
+  if (ncoor <= 0) {
+    spkt_abort_printf("bad num coords, %d, in node map file", ncoor);
+  }
+
+  for (int i = 0; i < nnode; i++) {
+
+    std::string hostname;
+    in >> hostname;
+
+    if (hostname.size() == 0) {
+      spkt_abort_printf("bad hostname in map file");
+    }
+    std::vector<int> coor(ncoor);
+    for (int j = 0; j < ncoor; j++) {
+      coor[j] = -1;
+      in >> coor[j];
+      if (coor[j] < 0) {
+        std::stringstream sstr;
+        sstr << "[";
+        for (int k=0; k < ncoor; k++) {
+          sstr << " " << coor[k];
+        }
+        sstr << " ]";
+
+        spkt_abort_printf("bad coordinates %s in map file", sstr.str().c_str());
+      }
+    }
+
+    NodeId nid = node_addr(coor);
+    if (nid >= hostmap_.size()){
+      spkt_abort_printf("bad node number %d - max is %d in file %s",
+                        nid, hostmap_.size() -1, fname.c_str());
+    }
+    hostmap_[nid] = hostname;
+    idmap_[hostname] = nid;
+  }
+
+}
+
 coordinates
-cartesian_topology::node_coords(node_id uid) const
+CartesianTopology::node_coords(NodeId uid) const
 {
   if (concentration_ == 1) {
-    return switch_coords((switch_id)uid);
+    return switchCoords((SwitchId)uid);
   } else {
-    switch_id swid(uid / concentration_);
+    SwitchId swid(uid / concentration_);
     int lastidx = uid % concentration_;
-    coordinates coords = switch_coords(swid);
+    coordinates coords = switchCoords(swid);
     coords.push_back(lastidx);
     return coords;
   }
 }
 
-node_id
-cartesian_topology::node_addr(const coordinates& coords) const
+NodeId
+CartesianTopology::node_addr(const coordinates& coords) const
 {
 
   int offset = 0;
@@ -98,21 +181,21 @@ cartesian_topology::node_addr(const coordinates& coords) const
     offset = coords[ndimensions()];
   }
 
-  int swid = switch_addr(coords);
-  node_id nid = swid * concentration_ + offset;
+  int swid = switchAddr(coords);
+  NodeId nid = swid * concentration_ + offset;
   return nid;
 }
 
 std::string
-cartesian_topology::node_label(node_id nid) const
+CartesianTopology::nodeLabel(NodeId nid) const
 {
-  return node_coords(nid).to_string();
+  return node_coords(nid).toString();
 }
 
 std::string
-cartesian_topology::switch_label(switch_id sid) const
+CartesianTopology::switchLabel(SwitchId sid) const
 {
-  return switch_coords(sid).to_string();
+  return switchCoords(sid).toString();
 }
 
   }

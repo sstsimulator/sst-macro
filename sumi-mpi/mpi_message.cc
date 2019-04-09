@@ -55,155 +55,50 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-
-mpi_message::mpi_message(int src, int dst, int count,
-   MPI_Datatype type, int type_packed_size,
-   int tag,
-   MPI_Comm commid, int seqnum, mpi_message::id msgid,
-   mpi_protocol* protocol) :
-  src_rank_(src),
-  dst_rank_(dst),
-  count_(count),
-  type_(type), type_packed_size_(type_packed_size),
-  tag_(tag), commid_(commid),
-  seqnum_(seqnum), msgid_(msgid),
-  content_type_(null_content),
-  in_flight_(false),
-  protocol_(protocol->get_prot_id())
-{
-}
-
 void
-mpi_message::recompute_bytes()
+MpiMessage::serialize_order(sstmac::serializer& ser)
 {
-  switch (content_type_)
-  {
-  case eager_payload:
-  case data: {
-    num_bytes_ = count_ * type_packed_size_;
-    break;
-  }
-  case header:
-  case completion_ack:
-  case fake:
-    num_bytes_ = 32; //just hard code this for now
-    break;
-  default:
-    spkt_throw_printf(sprockit::value_error,
-        "mpi_message::recompute_bytes: invalid type %s",
-        str(content_type_));
-  }
-}
-
-void
-mpi_message::serialize_order(sstmac::serializer& ser)
-{
-  message::serialize_order(ser);
+  ProtocolMessage::serialize_order(ser);
   ser & (src_rank_);
   ser & (dst_rank_);
-  ser & (count_);
   ser & type_;
-  ser & type_packed_size_;
   ser & (tag_);
   ser & (commid_);
   ser & (seqnum_);
-  ser & (msgid_);
-  ser & (content_type_);
-  ser & (in_flight_);
-  ser & (protocol_);
 }
 
-void
-mpi_message::clone_into(mpi_message* cln) const
-{
-  sumi::message::clone_into(cln);
-  cln->count_ = count_;
-  cln->type_ = type_;
-  cln->tag_ = tag_;
-  cln->commid_ = commid_;
-  cln->seqnum_ = seqnum_;
-  cln->msgid_ = msgid_;
-  cln->src_rank_ = src_rank_;
-  cln->dst_rank_ = dst_rank_;
-  cln->content_type_ = content_type_;
-  cln->protocol_ = protocol_;
-  cln->in_flight_ = in_flight_;
-  cln->type_packed_size_ = type_packed_size_;
-}
 
-mpi_message::~mpi_message() throw ()
+MpiMessage::~MpiMessage() throw ()
 {
 }
 
 void
-mpi_message::build_status(MPI_Status* stat) const
+MpiMessage::buildStatus(MPI_Status* stat) const
 {
   stat->MPI_SOURCE = src_rank_;
   stat->MPI_TAG = tag_;
-  stat->count = count_;
-  stat->bytes_received = count_ * type_packed_size_;
-}
-
-const char*
-mpi_message::str(content_type_t content_type)
-{
-  switch (content_type) {
-      enumcase(null_content);
-      enumcase(data);
-      enumcase(eager_payload);
-      enumcase(header);
-      enumcase(completion_ack);
-      enumcase(fake);
-  }
-  spkt_throw_printf(sprockit::value_error,
-      "unknown mpi content type %d", content_type);
+  stat->count = count();
+  stat->bytes_received = payloadSize();
 }
 
 std::string
-mpi_message::to_string() const
+MpiMessage::toString() const
 {
   std::stringstream ss;
   ss << "mpimessage("
-     << (void*) local_buffer_
-     << "," << (void*) remote_buffer_
-     << ", count=" << count_
+     << (void*) localBuffer()
+     << "," << (void*) remoteBuffer()
+     << ", count=" << count()
      << ", type=" << type_
      << ", src=" << src_rank_
      << ", dst=" << dst_rank_
      << ", tag=" << tag_
-     << ", msgid=" << msgid_ 
-     << ", commid" << commid_;
-
-  if (in_flight_) {
-    ss << ", seq=" << seqnum_ << "(ignored)";
-  } else {
-    ss << ", seq=" << seqnum_;
-  }
-  ss   << ", content=" << str(content_type_)
-     << ", protocol=" << protocol()->to_string();
+     << ", seq=" << seqnum_
+     << ", stage=" << stage()
+     << ", protocol=" << protocol()
+     << ", type=" << sstmac::hw::NetworkMessage::typeStr();
 
   return ss.str();
 }
-
-void
-mpi_message::payload_to_completion_ack()
-{
-  reverse();
-  content_type_ = mpi_message::completion_ack;
-  recompute_bytes();
-}
-
-mpi_protocol*
-mpi_message::protocol() const
-{
-  return mpi_protocol::get_protocol_object((mpi_protocol::PROTOCOL_ID)protocol_);
-}
-
-void
-mpi_message::set_protocol(mpi_protocol* protocol)
-{
-  protocol_ = protocol->get_prot_id();
-}
-
 
 }

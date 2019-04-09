@@ -52,18 +52,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sumi/collective_actor_fwd.h>
 #include <sumi/comm_functions.h>
 #include <sumi/options.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/debug.h>
+#include <list>
 
 DeclareDebugSlot(sumi_collective)
 DeclareDebugSlot(sumi_vote)
-DeclareDebugSlot(sumi_collective_sendrecv)
 DeclareDebugSlot(sumi_collective_init)
-DeclareDebugSlot(sumi_collective_round)
 
 namespace sumi {
 
-class collective
+class Collective
 {
  public:
   typedef enum {
@@ -81,39 +80,12 @@ class collective
     scan,
     scatter,
     scatterv,
-    dynamic_tree_vote,
-    heartbeat
+    donothing
   } type_t;
 
-  struct config {
-    bool fault_aware = false;
-    int context = options::initial_context;
-    communicator* dom = nullptr;
-    uint8_t cq_id = 0;
+  virtual std::string toString() const = 0;
 
-    config& cqId(uint8_t id){
-      cq_id = id;
-      return *this;
-    }
-
-    config& comm(communicator* d){
-      dom = d;
-      return *this;
-    }
-
-    config& resilient(bool flag){
-      fault_aware = flag;
-      return *this;
-    }
-  };
-
-  static config cfg(){
-    return config();
-  }
-
-  virtual std::string to_string() const = 0;
-
-  virtual ~collective();
+  virtual ~Collective();
 
   /**
    * @brief persistent
@@ -125,27 +97,23 @@ class collective
     return false;
   }
 
-  int context() const {
-    return cfg_.context;
-  }
-
   static const char* tostr(type_t ty);
 
-  virtual void recv(int target, collective_work_message* msg) = 0;
+  virtual CollectiveDoneMessage* recv(int target, CollectiveWorkMessage* msg) = 0;
 
-  void recv(collective_work_message* msg);
+  CollectiveDoneMessage* recv(CollectiveWorkMessage* msg);
 
   virtual void start() = 0;
 
-  communicator* comm() const {
-    return cfg_.dom;
+  Communicator* comm() const {
+    return comm_;
   }
 
   bool complete() const {
     return complete_;
   }
 
-  void set_complete() {
+  void setComplete() {
     complete_ = true;
   }
 
@@ -153,104 +121,115 @@ class collective
     return tag_;
   }
 
+  int cqId() const {
+    return cq_id_;
+  }
+
   type_t type() const {
     return type_;
   }
 
-  void actor_done(int comm_rank, bool& generate_cq_msg, bool& delete_event);
+  void actorDone(int comm_rank, bool& generate_cq_msg, bool& delete_event);
 
-  virtual void add_actors(collective* coll);
+  virtual CollectiveDoneMessage* addActors(Collective* coll);
 
   static const int default_nproc = -1;
 
-  virtual void deadlock_check(){}
+  virtual void deadlockCheck(){}
 
-  void init(type_t type, transport* api, int tag, const config& cfg);
+  virtual void initActors(){}
 
-  virtual void init_actors(){}
+  bool hasSubsequent() const {
+    return subsequent_;
+  }
+
+  void setSubsequent(Collective* coll){
+    subsequent_ = coll;
+  }
+
+  Collective* popSubsequent(){
+    auto* ret = subsequent_;
+    subsequent_ = nullptr;
+    return ret;
+  }
 
  protected:
-  collective(type_t type, transport* api, int tag, const config& cfg);
+  Collective(type_t type, CollectiveEngine* engine, int tag, int cq_id, Communicator* comm);
 
-  collective(){} //to be initialized later
-
- protected:
-  transport* my_api_;
-  config cfg_;
-  int dense_me_;
-  int dense_nproc_;
+  Transport* my_api_;
+  CollectiveEngine* engine_;
+  int cq_id_;
+  Communicator* comm_;
+  int dom_me_;
+  int dom_nproc_;
   bool complete_;
   int tag_;
 
   std::map<int, int> refcounts_;
-  collective::type_t type_;
+  Collective::type_t type_;
+
+  Collective* subsequent_;
 
 };
 
-class dag_collective :
-  public collective
+class DoNothingCollective : public Collective
 {
-  DeclareFactory(dag_collective)
-
  public:
-  void recv(int target, collective_work_message* msg) override;
+  DoNothingCollective(CollectiveEngine* engine, int tag, int cq_id, Communicator* comm) :
+    Collective(donothing, engine, tag, cq_id, comm)
+  {
+  }
+
+  std::string toString() const override {
+    return "DoNothing collective";
+  }
+
+  CollectiveDoneMessage* recv(int target, CollectiveWorkMessage* msg) override { return nullptr; }
+
+  void start() override {}
+
+};
+
+class DagCollective :
+  public Collective
+{
+ public:
+  CollectiveDoneMessage* recv(int target, CollectiveWorkMessage* msg) override;
 
   void start() override;
 
-  void init(type_t type, transport *my_api,
-    void *dst, void *src,
-    int nelems, int type_size,
-    int tag, const config& cfg);
+  void deadlockCheck() override;
 
-  void init_actors() override;
+  void initActors() override;
 
-  virtual dag_collective* clone() const = 0;
-
-  virtual void init_reduce(reduce_fxn fxn){}
-
-  virtual void init_root(int root){}
-
-  virtual void init_recv_counts(int* nelems){}
-
-  virtual void init_send_counts(int* nelems){}
-
-  void deadlock_check() override;
-
-  virtual ~dag_collective();
-
-  static dag_collective* construct(const std::string& name,  sprockit::sim_parameters* params, reduce_fxn fxn);
-
-  static dag_collective* construct(const std::string& name,  sprockit::sim_parameters *params);
+  virtual ~DagCollective();
 
  protected:
-  virtual dag_collective_actor* new_actor() const = 0;
+  virtual DagCollectiveActor* newActor() const = 0;
 
-  void add_actors(collective *coll) override;
+  CollectiveDoneMessage* addActors(Collective *coll) override;
 
  protected:
-  typedef std::map<int, dag_collective_actor*> actor_map;
+  DagCollective(Collective::type_t ty, CollectiveEngine* engine, void *dst, void *src,
+                 int type_size, int tag, int cq_id, Communicator* comm) :
+    Collective(ty, engine, tag, cq_id, comm),
+    src_buffer_(src), dst_buffer_(dst), type_size_(type_size), fault_aware_(false)
+  {
+  }
+
+  typedef std::map<int, DagCollectiveActor*> actor_map;
   actor_map my_actors_;
 
   void* src_buffer_;
 
   void* dst_buffer_;
 
-  int nelems_;
-
   int type_size_;
 
   bool fault_aware_;
 
-  std::list<collective_work_message*> pending_;
+  std::list<CollectiveWorkMessage*> pending_;
 };
-
-class collective_algorithm_selector
-{
- public:
-  virtual dag_collective* select(int nproc, int nelems) = 0;
-  virtual dag_collective* select(int nproc, int* counts) = 0;
-};
-
 
 }
 

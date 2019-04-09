@@ -43,7 +43,7 @@ SOFTWARE.
 #include <iosfwd> // istream, ostream
 #include <iterator> // iterator_traits, random_access_iterator_tag
 #include <numeric> // accumulate
-#include <string> // string, stoi, to_string
+#include <string> // string, stoi, toString
 #include <utility> // declval, forward, move, pair, swap
 
 // #include <nlohmann/json_fwd.hpp>
@@ -615,7 +615,7 @@ struct is_compatible_type
 
 #include <exception> // exception
 #include <stdexcept> // runtime_error
-#include <string> // to_string
+#include <string> // toString
 
 namespace nlohmann
 {
@@ -1418,7 +1418,7 @@ constexpr const auto& from_json = detail::static_const<detail::from_json_fn>::va
 
 
 #include <cstddef> // size_t
-#include <string> // string, to_string
+#include <string> // string, toString
 #include <iterator> // input_iterator_tag
 
 // #include <nlohmann/detail/value_t.hpp>
@@ -10465,17 +10465,17 @@ class json_pointer
 
     @invariant For each JSON pointer `ptr`, it holds:
     @code {.cpp}
-    ptr == json_pointer(ptr.to_string());
+    ptr == json_pointer(ptr.toString());
     @endcode
 
     @return a string representation of the JSON pointer
 
-    @liveexample{The example shows the result of `to_string`.,
-    json_pointer__to_string}
+    @liveexample{The example shows the result of `toString`.,
+    json_pointer__toString}
 
     @since version 2.0.0
     */
-    std::string to_string() const noexcept
+    std::string toString() const noexcept
     {
         return std::accumulate(reference_tokens.begin(), reference_tokens.end(),
                                std::string{},
@@ -10485,10 +10485,10 @@ class json_pointer
         });
     }
 
-    /// @copydoc to_string()
+    /// @copydoc toString()
     operator std::string() const
     {
-        return to_string();
+        return toString();
     }
 
     /*!

@@ -64,14 +64,13 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/dumpi_util/dumpi_meta.h>
 #include <sstmac/hardware/node/node.h>
 #include <sprockit/statics.h>
-#include <sprockit/delete.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
 #include <sstmac/software/api/api.h>
 #include <sstmac/main/sstmac.h>
 
-static sprockit::need_delete_statics<sstmac::sw::user_app_cxx_full_main> del_app_statics;
+static sprockit::NeedDeletestatics<sstmac::sw::UserAppCxxFullMain> del_app_statics;
 
 RegisterKeywords(
  { "host_compute_timer", "whether to use the time elapsed on the host machine in compute modeling" },
@@ -89,16 +88,14 @@ void sstmac_app_loaded(int aid){}
 namespace sstmac {
 namespace sw {
 
-std::map<std::string, app::main_fxn>*
-  user_app_cxx_full_main::main_fxns_ = nullptr;
-std::map<std::string, app::empty_main_fxn>*
-  user_app_cxx_empty_main::empty_main_fxns_ = nullptr;
-std::map<app_id, user_app_cxx_full_main::argv_entry> user_app_cxx_full_main::argv_map_;
+std::unique_ptr<std::map<std::string, App::main_fxn>> UserAppCxxFullMain::main_fxns_;
+std::unique_ptr<std::map<std::string, App::empty_main_fxn>> UserAppCxxEmptyMain::empty_main_fxns_;
+std::map<AppId, UserAppCxxFullMain::argv_entry> UserAppCxxFullMain::argv_map_;
 
-std::map<int, app::dlopen_entry> app::dlopens_;
+std::map<int, App::dlopen_entry> App::dlopens_;
 
 int
-app::allocate_tls_key(destructor_fxn fxn)
+App::allocateTlsKey(destructor_fxn fxn)
 {
   int next = next_tls_key_;
   tls_key_fxns_[next] = fxn;
@@ -106,12 +103,12 @@ app::allocate_tls_key(destructor_fxn fxn)
   return next;
 }
 
-static char* get_data_segment(sprockit::sim_parameters* params,
+static char* get_data_segment(SST::Params& params,
                               const char* param_name, GlobalVariableContext& ctx)
 {
   int allocSize = ctx.allocSize();
-  if (params->has_param(param_name)){
-    allocSize = params->get_int_param(param_name);
+  if (params.contains(param_name)){
+    allocSize = params.find<int>(param_name);
     if (ctx.allocSize() != allocSize){
       ctx.setAllocSize(allocSize);
     }
@@ -129,45 +126,48 @@ static char* get_data_segment(sprockit::sim_parameters* params,
 static thread_lock dlopen_lock;
 
 void
-app::check_dlopen(int aid, sprockit::sim_parameters* params)
+App::dlopenCheck(int aid, SST::Params& params)
 {
-  if (params->has_param("exe")){
+  if (params.contains("exe")){
     dlopen_lock.lock();
-    std::string libname = params->get_param("exe");
+    std::string libname = params.find<std::string>("exe");
     dlopen_entry& entry = dlopens_[aid];
     entry.name = libname;
     if (entry.refcount == 0){
-      entry.handle = load_extern_library(libname, load_extern_path_str());
+      entry.handle = loadExternLibrary(libname, loadExternPathStr());
     }
     void* name = dlsym(entry.handle, "exe_main_name");
     if (name){
       const char* str_name = (const char*) name;
-      if (params->has_param("name")){
-        if (params->get_param("name") != std::string(str_name)){
+      if (params.contains("name")){
+        if (params.find<std::string>("name") != std::string(str_name)){
           spkt_abort_printf("if given both exe= and name= parameters for app%d, they must agree\n"
-                            "%s != %s", aid, str_name, params->get_param("name").c_str());
+                            "%s != %s", aid, str_name, params.find<std::string>("name").c_str());
         }
       } else {
-        params->add_param("name", str_name);
+        params.insert("name", str_name);
       }
     }
     ++entry.refcount;
     sstmac_app_loaded(aid);
     dlopen_lock.unlock();
   }
+  UserAppCxxEmptyMain::aliasMains();
+  UserAppCxxFullMain::aliasMains();
 }
 
+
 void
-app::check_dlclose()
+App::dlcloseCheck(int aid)
 {
   dlopen_lock.lock();
-  auto iter = dlopens_.find(aid());
+  auto iter = dlopens_.find(aid);
   if (iter != dlopens_.end()){
     dlopen_entry& entry = iter->second;
     --entry.refcount;
     if (entry.refcount == 0){
       std::cerr << "Unloading library " << entry.name << std::endl;
-      unload_extern_library(entry.handle);
+      unloadExternLibrary(entry.handle);
       dlopens_.erase(iter);
     }
   }
@@ -175,7 +175,7 @@ app::check_dlclose()
 }
 
 char*
-app::allocate_data_segment(bool tls)
+App::allocateDataSegment(bool tls)
 {
   if (tls){
     return get_data_segment(params_, "tls_size", GlobalVariable::tlsCtx);
@@ -184,9 +184,9 @@ app::allocate_data_segment(bool tls)
   }
 }
 
-app::app(sprockit::sim_parameters *params, software_id sid,
-         operating_system* os) :
-  thread(params, sid, os),
+App::App(SST::Params& params, SoftwareId sid,
+         OperatingSystem* os) :
+  Thread(params, sid, os),
   compute_lib_(nullptr),
   params_(params),
   next_tls_key_(0),
@@ -197,25 +197,26 @@ app::app(sprockit::sim_parameters *params, software_id sid,
   globals_storage_(nullptr),
   rc_(0)
 {
-  globals_storage_ = allocate_data_segment(false); //not tls
-  min_op_cutoff_ = params->get_optional_long_param("min_op_cutoff", 1e3);
-  bool host_compute = params->get_optional_bool_param("host_compute_timer", false);
+  globals_storage_ = allocateDataSegment(false); //not tls
+  min_op_cutoff_ = params.find<long>("min_op_cutoff", 1000);
+  bool host_compute = params.find<bool>("host_compute_timer", false);
   if (host_compute){
     host_timer_ = new HostTimer;
   }
 
-  notify_ = params->get_optional_bool_param("notify", true);
+  notify_ = params.find<bool>("notify", true);
 
-  sprockit::sim_parameters* env_params = params->get_optional_namespace("env");
+  SST::Params env_params = params.find_scoped_params("env");
   omp_contexts_.emplace_back();
   omp_context& active = omp_contexts_.back();
   active.max_num_subthreads = active.requested_num_subthreads =
-    env_params->get_optional_int_param("OMP_NUM_THREADS", 1);
+    env_params.find<int>("OMP_NUM_THREADS", 1);
   active.level = 0;
   active.num_threads = 1;
 
-  for (auto iter=env_params->begin(); iter != env_params->end(); ++iter){
-    env_[iter->first] = iter->second.value;
+  std::set<std::string> keys = env_params.getKeys();
+  for (auto& key : keys){
+    env_[key] = env_params.find<std::string>(key);
   }
 
   for (auto iter=os->env_begin(); iter != os->env_end(); ++iter){
@@ -225,20 +226,48 @@ app::app(sprockit::sim_parameters *params, software_id sid,
       env_[iter->first] = iter->second;
     }
   }
+
+  std::vector<std::string> apis;
+  if (params.contains("apis")){
+    params.find_array("apis", apis);
+  } else {
+    apis.push_back("mpi");
+    apis.push_back("sumi:mpi");
+  }
+
+  for (auto& str : apis){
+    std::string alias;
+    std::string name;
+    auto pos = str.find(":");
+    if (pos == std::string::npos){
+      name = str;
+      alias = str;
+    } else {
+      alias = str.substr(0, pos);
+      name = str.substr(pos + 1);
+    }
+
+    auto iter = apis_.find(name);
+    if (iter == apis_.end()){
+      SST::Params api_params = params.find_scoped_params(name);
+      API* api = sprockit::create<API>(
+          "macro", name, api_params, this, os->node());
+      apis_[name] = api;
+    }
+    apis_[alias] = apis_[name];
+  }
 }
 
-app::~app()
+App::~App()
 {
   /** These get deleted by unregister */
   //sprockit::delete_vals(apis_);
   if (compute_lib_) delete compute_lib_;
   if (globals_storage_) delete[] globals_storage_;
-  //we own a unique copy
-  if (params_) delete params_;
 }
 
 int
-app::putenv(char* input)
+App::putenv(char* input)
 {
   spkt_abort_printf("app::putenv: not implemented - cannot put %d",
                     input);
@@ -246,7 +275,7 @@ app::putenv(char* input)
 }
 
 int
-app::setenv(const std::string &name, const std::string &value, int overwrite)
+App::setenv(const std::string &name, const std::string &value, int overwrite)
 {
   if (overwrite){
     env_[name] = value;
@@ -260,7 +289,7 @@ app::setenv(const std::string &name, const std::string &value, int overwrite)
 }
 
 char*
-app::getenv(const std::string &name) const
+App::getenv(const std::string &name) const
 {
   char* my_buf = const_cast<char*>(env_string_);
   auto iter = env_.find(name);
@@ -278,22 +307,22 @@ app::getenv(const std::string &name) const
   return my_buf;
 }
 
-lib_compute_memmove*
-app::compute_lib()
+LibComputeMemmove*
+App::computeLib()
 {
   if(!compute_lib_) {
-    compute_lib_ = new lib_compute_memmove(params_, sid_, os_);
+    compute_lib_ = new LibComputeMemmove(params_, sid_, os_);
   }
   return compute_lib_;
 }
 
 void
-app::delete_statics()
+App::deleteStatics()
 {
 }
 
 void
-app::cleanup()
+App::cleanup()
 {
   //okay, the app is dying
   //it may be that we have subthreads that are still active
@@ -303,39 +332,39 @@ app::cleanup()
   }
   subthreads_.clear();
 
-  thread::cleanup();
+  Thread::cleanup();
 }
 
 void
-app::sleep(timestamp time)
+App::sleep(Timestamp time)
 {
-  compute_lib()->sleep(time);
+  computeLib()->sleep(time);
 }
 
 void
-app::compute(timestamp time)
+App::compute(Timestamp time)
 {
-  compute_lib()->compute(time);
+  computeLib()->compute(time);
 }
 
 void
-app::compute_inst(compute_event* cmsg)
+App::computeInst(ComputeEvent* cmsg)
 {
-  compute_lib()->compute_inst(cmsg);
+  computeLib()->computeInst(cmsg);
 }
 
 void
-app::compute_loop(uint64_t num_loops,
+App::computeLoop(uint64_t num_loops,
   int nflops_per_loop,
   int nintops_per_loop,
   int bytes_per_loop)
 {
-  compute_lib()->lib_compute_inst::compute_loop(
+  computeLib()->LibComputeInst::computeLoop(
           num_loops, nflops_per_loop, nintops_per_loop, bytes_per_loop);
 }
 
 void
-app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthread)
+App::computeDetailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthread)
 {
   static const uint64_t overflow = 18006744072479883520ull;
   if (flops > overflow || bytes > overflow){
@@ -349,91 +378,92 @@ app::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthr
                "Rank %d for app %d: detailed compute for flops=%" PRIu64 " intops=%" PRIu64 " bytes=%" PRIu64,
                sid_.task_, sid_.app_, flops, nintops, bytes);
 
-  compute_lib()->compute_detailed(flops, nintops, bytes, nthread);
+  computeLib()->computeDetailed(flops, nintops, bytes, nthread);
 }
 
 void
-app::compute_block_read(uint64_t bytes)
+App::computeBlockRead(uint64_t bytes)
 {
-  compute_lib()->read(bytes);
+  computeLib()->read(bytes);
 }
 
 void
-app::compute_block_write(uint64_t bytes)
+App::computeBlockWrite(uint64_t bytes)
 {
-  compute_lib()->write(bytes);
+  computeLib()->write(bytes);
 }
 
-sprockit::sim_parameters*
-app::get_params()
+SST::Params
+App::getParams()
 {
-  return operating_system::current_thread()->parent_app()->params();
+  return OperatingSystem::currentThread()->parentApp()->params();
 }
 
 void
-app::compute_block_memcpy(uint64_t bytes)
+App::computeBlockMemcpy(uint64_t bytes)
 {
-  compute_lib()->copy(bytes);
+  computeLib()->copy(bytes);
 }
 
-api*
-app::_get_api(const char* name)
+API*
+App::getPrebuiltApi(const std::string &name)
 {
-  // an underlying thread may have built this
-  api* my_api = apis_[name];
-  if (!my_api) {
-    sprockit::sim_parameters* api_params = params_->get_optional_namespace(name);
-    api* new_api = api::factory::get_value(name, api_params, sid_, os_);
-    apis_[name] = new_api;
-    return new_api;
-  } else {
-    return my_api;
+  auto iter = apis_.find(name);
+  if (iter == apis_.end()){
+    spkt_abort_printf("API %s was not included in launch params for app %d",
+                name.c_str(), aid());
   }
+  return iter->second;
 }
 
 void
-app::run()
+App::run()
 {
   SSTMACBacktrace(main);
-  os_->increment_app_refcount();
-  end_api_call(); //this initializes things, "fake" api call at beginning
-  rc_ = skeleton_main();
+  os_->incrementAppRefcount();
+  endAPICall(); //this initializes things, "fake" api call at beginning
+  rc_ = skeletonMain();
   //we are ending but perform the equivalent
   //to a start api call to flush any compute
-  start_api_call();
+  startAPICall();
+
+  std::set<API*> unique;
+  //because of aliasing...
   for (auto& pair : apis_){
-    delete pair.second;
+    unique.insert(pair.second);
   }
   apis_.clear();
+  for (API* api : unique) delete api;
 
   //now we have to send a message to the job launcher to let it know we are done
-  os_->decrement_app_refcount();
+  os_->decrementAppRefcount();
   //for now assume that the application has finished with a barrier - which is true of like everything
   if (sid_.task_ == 0 && notify_){
-    int launch_root = os_->node()->launch_root();
-    job_stop_event* lev = new job_stop_event(sid_.app_, unique_name_, launch_root, os_->addr());
-    os_->execute_kernel(ami::COMM_PMI_SEND, lev);
+    int launchRoot = os_->node()->launchRoot();
+    JobStopRequest* lev = new JobStopRequest(os_->node()->allocateUniqueId(),
+                                             sid_.app_, unique_name_, launchRoot, os_->addr());
+    os_->nicCtrlIoctl()(lev);
   }
-  task_mapping::remove_global_mapping(sid_.app_, unique_name_);
-  thread_info::deregister_user_space_virtual_thread(stack_);
-  check_dlclose();
+  TaskMapping::removeGlobalMapping(sid_.app_, unique_name_);
+  ThreadInfo::deregisterUserSpaceVirtualThread(stack_);
+  dlcloseCheck();
 }
 
 void
-app::add_subthread(thread *thr)
+App::addSubthread(Thread *thr)
 {
-  if (thr->thread_id() == thread::main_thread){
-    thr->init_id();
+  if (thr->threadId() == Thread::main_thread){
+    thr->initId();
   }
-  subthreads_[thr->thread_id()] = thr;
+  subthreads_[thr->threadId()] = thr;
 }
 
-thread*
-app::get_subthread(uint32_t id)
+Thread*
+App::getSubthread(uint32_t id)
 {
   auto it = subthreads_.find(id);
   if (it==subthreads_.end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
       "unknown thread id %u",
       id);
   }
@@ -441,19 +471,19 @@ app::get_subthread(uint32_t id)
 }
 
 void
-app::remove_subthread(uint32_t id)
+App::removeSubthread(uint32_t id)
 {
   subthreads_.erase(id);
 }
 
 void
-app::remove_subthread(thread *thr)
+App::removeSubthread(Thread *thr)
 {
-  subthreads_.erase(thr->thread_id());
+  subthreads_.erase(thr->threadId());
 }
 
 bool
-app::erase_mutex(int id)
+App::eraseMutex(int id)
 {
   std::map<int,mutex_t>::iterator it = mutexes_.find(id);
   if (it == mutexes_.end()){
@@ -465,7 +495,7 @@ app::erase_mutex(int id)
 }
 
 bool
-app::erase_condition(int id)
+App::eraseCondition(int id)
 {
   std::map<int,condition_t>::iterator it = conditions_.find(id);
   if (it == conditions_.end()){
@@ -477,7 +507,7 @@ app::erase_condition(int id)
 }
 
 mutex_t*
-app::get_mutex(int id)
+App::getMutex(int id)
 {
   std::map<int,mutex_t>::iterator it = mutexes_.find(id);
   if (it==mutexes_.end()){
@@ -488,7 +518,7 @@ app::get_mutex(int id)
 }
 
 int
-app::allocate_mutex()
+App::allocateMutex()
 {
   int id = next_mutex_++;
   mutexes_[id]; //implicit make
@@ -496,7 +526,7 @@ app::allocate_mutex()
 }
 
 int
-app::allocate_condition()
+App::allocateCondition()
 {
   int id = next_condition_++;
   conditions_[id]; //implicit make
@@ -504,7 +534,7 @@ app::allocate_condition()
 }
 
 condition_t*
-app::get_condition(int id)
+App::getCondition(int id)
 {
   std::map<int,condition_t>::iterator it = conditions_.find(id);
   if (it==conditions_.end()){
@@ -515,7 +545,7 @@ app::get_condition(int id)
 }
 
 void
-user_app_cxx_full_main::delete_statics()
+UserAppCxxFullMain::deleteStatics()
 {
   for (auto& pair : argv_map_){
     argv_entry& entry = pair.second;
@@ -524,20 +554,21 @@ user_app_cxx_full_main::delete_statics()
     delete[] entry.argv;
   }
   argv_map_.clear();
-  if (main_fxns_) delete main_fxns_;
   main_fxns_ = nullptr;
 }
 
-user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params, software_id sid,
-                                               operating_system* os) :
-  app(params, sid, os)
+UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
+                                       OperatingSystem* os) :
+  App(params, sid, os)
 {
-  if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
+  if (!main_fxns_){
+    main_fxns_ = std::unique_ptr<std::map<std::string, main_fxn>>(new std::map<std::string, main_fxn>);
+  }
 
-  std::string name = params->get_param("name");
+  std::string name = params.find<std::string>("name");
   std::map<std::string, main_fxn>::iterator it = main_fxns_->find(name);
   if (it == main_fxns_->end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "no user app with the name %s registered",
                      name.c_str());
   }
@@ -545,33 +576,59 @@ user_app_cxx_full_main::user_app_cxx_full_main(sprockit::sim_parameters *params,
 }
 
 void
-user_app_cxx_full_main::register_main_fxn(const char *name, app::main_fxn fxn)
+UserAppCxxFullMain::aliasMains()
 {
-  if (!main_fxns_) main_fxns_ = new std::map<std::string, main_fxn>;
-
-  (*main_fxns_)[name] = fxn;
-  app::factory::register_alias("user_app_cxx_full_main", name);
+  auto* lib = App::getBuilderLibrary("macro");
+  using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+  if (main_fxns_){
+    for (auto& pair : *main_fxns_){
+      lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
+    }
+  }
 }
 
 void
-user_app_cxx_full_main::init_argv(argv_entry& entry)
+UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
 {
-  std::string appname = params_->get_param("name");
-  std::vector<std::string> argv_param_vec;
-  argv_param_vec.push_back(appname);
-  if (params_->has_param("argv")) {
-    params_->get_vector_param("argv", argv_param_vec);
+  if (!main_fxns_){
+    main_fxns_ = std::unique_ptr<std::map<std::string, main_fxn>>(new std::map<std::string, main_fxn>);
   }
-  int argc = argv_param_vec.size();
+  (*main_fxns_)[name] = fxn;
+}
+
+void
+UserAppCxxEmptyMain::aliasMains()
+{
+  auto* lib = App::getBuilderLibrary("macro");
+  using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+  if (empty_main_fxns_){
+    for (auto& pair : *empty_main_fxns_){
+      lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
+    }
+  }
+}
+
+void
+UserAppCxxFullMain::initArgv(argv_entry& entry)
+{
+  std::string appname = params_.find<std::string>("name");
+  std::string argv_str = params_.find<std::string>("argv", "");
+  std::deque<std::string> argv_param_dq;
+  pst::BasicStringTokenizer::tokenize(argv_str, argv_param_dq, std::string(" "));
+  int argc = argv_param_dq.size() + 1;
   char* argv_buffer = new char[256 * argc];
   char* argv_buffer_ptr = argv_buffer;
   char** argv = new char*[argc+1];
-  for (int i = 0; i < argc; ++i) {
-    const std::string& src_str = argv_param_vec[i];
+  argv[0] = argv_buffer;
+  ::strcpy(argv_buffer, appname.c_str());
+  int i=1;
+  argv_buffer_ptr += appname.size() + 1;
+  for (auto& src_str : argv_param_dq){
     ::strcpy(argv_buffer_ptr, src_str.c_str());
     argv[i] = argv_buffer_ptr;
     //increment pointer for next strcpy
     argv_buffer_ptr += src_str.size() + 1; //+1 for null terminator
+    ++i;
   }
   argv[argc] = nullptr; //missing nullptr - Issue #269
   entry.argc = argc;
@@ -579,29 +636,30 @@ user_app_cxx_full_main::init_argv(argv_entry& entry)
 }
 
 int
-user_app_cxx_full_main::skeleton_main()
+UserAppCxxFullMain::skeletonMain()
 {
   static thread_lock argv_lock;
   argv_lock.lock();
   argv_entry& entry = argv_map_[sid_.app_];
   if (entry.argv == 0){
-    init_argv(entry);
+    initArgv(entry);
   }
   argv_lock.unlock();
   return (*fxn_)(entry.argc, entry.argv);
 }
 
-user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *params, software_id sid,
-                                                 operating_system* os) :
-  app(params, sid, os)
+UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
+                                         OperatingSystem* os) :
+  App(params, sid, os)
 {
-  if (!empty_main_fxns_)
-    empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
+  if (!empty_main_fxns_){
+    empty_main_fxns_ = std::unique_ptr<std::map<std::string, empty_main_fxn>>(new std::map<std::string, empty_main_fxn>);
+  }
 
-  std::string name = params->get_param("name");
+  std::string name = params.find<std::string>("name");
   std::map<std::string, empty_main_fxn>::iterator it = empty_main_fxns_->find(name);
   if (it == empty_main_fxns_->end()){
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
                      "no user app with the name %s registered",
                      name.c_str());
   }
@@ -609,27 +667,30 @@ user_app_cxx_empty_main::user_app_cxx_empty_main(sprockit::sim_parameters *param
 }
 
 void
-user_app_cxx_empty_main::register_main_fxn(const char *name, app::empty_main_fxn fxn)
+UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
 {
-  if (!empty_main_fxns_)
-    empty_main_fxns_ = new std::map<std::string, empty_main_fxn>;
+  if (!empty_main_fxns_){
+    empty_main_fxns_ = std::unique_ptr<std::map<std::string, empty_main_fxn>>(new std::map<std::string, empty_main_fxn>);
+  }
 
   (*empty_main_fxns_)[name] = fxn;
-  app::factory::register_alias("user_app_cxx_empty_main", name);
+  auto* lib = App::getBuilderLibrary("macro");
+  using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+  lib->addBuilder(name, std::unique_ptr<builder_t>(new builder_t));
 }
 
 int
-user_app_cxx_empty_main::skeleton_main()
+UserAppCxxEmptyMain::skeletonMain()
 {
   return (*fxn_)();
 }
 
-void compute_time(double tsec)
+void computeTime(double tsec)
 {
-  thread* t = operating_system::current_thread();
-  app* a = safe_cast(app, t,
+  Thread* t = OperatingSystem::currentThread();
+  App* a = safe_cast(App, t,
      "cannot cast current thread to app in compute_time function");
-  a->compute(timestamp(tsec));
+  a->compute(Timestamp(tsec));
 }
 
 }

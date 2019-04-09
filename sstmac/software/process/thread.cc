@@ -73,15 +73,15 @@ static thread_safe_u32 THREAD_ID_CNT(0);
 // Private method that gets called by the scheduler.
 //
 void
-thread::init_thread(sprockit::sim_parameters* params,
-  int physical_thread_id, thread_context* des_thread, void *stack,
+Thread::initThread(const SST::Params& params,
+  int physical_thread_id, ThreadContext* des_thread, void *stack,
   int stacksize, void* globals_storage, void* tls_storage)
 {
-  thread_info::register_user_space_virtual_thread(physical_thread_id, stack,
-                                                  globals_storage, tls_storage);
+  ThreadInfo::registerUserSpaceVirtualThread(physical_thread_id, stack,
+                                             globals_storage, tls_storage);
   stack_ = stack;
 
-  init_id();
+  initId();
 
   state_ = INITIALIZED;
 
@@ -89,60 +89,48 @@ thread::init_thread(sprockit::sim_parameters* params,
 
   tls_storage_ = (char*) tls_storage;
 
-  context_->start_context(stack, stacksize,
-                          run_routine, this,
+  context_->startContext(stack, stacksize,
+                          runRoutine, this,
                           des_thread);
 }
 
-uint32_t
-thread::component_id() const
+Thread*
+Thread::current()
 {
-  return os_->component_id();
-}
-
-thread*
-thread::current()
-{
-  return operating_system::current_thread();
-}
-
-api*
-thread::_get_api(const char* name)
-{
-  return parent_app_->_get_api(name);
+  return OperatingSystem::currentThread();
 }
 
 void
-thread::cleanup()
+Thread::cleanup()
 {
   if (parent_app_){
     if (detach_state_ == DETACHED && state_ != CANCELED){
-      parent_app_->remove_subthread(this);
-      os_->schedule_thread_deletion(this);
+      parent_app_->removeSubthread(this);
+      os_->scheduleThreadDeletion(this);
     } else; //parent will join and then delete this
   } else {
     //no matter what, I have to delete myself
-    os_->schedule_thread_deletion(this);
+    os_->scheduleThreadDeletion(this);
   }
   // We are done, ask the scheduler to remove this task from the
   state_ = DONE;
 
-  os_->complete_active_thread();
+  os_->completeActiveThread();
 }
 
 //
 // Run routine that defines the initial context for this task.
 //
 void
-thread::run_routine(void* threadptr)
+Thread::runRoutine(void* threadptr)
 {
-  thread* self = (thread*) threadptr;
-
+  Thread* self = (Thread*) threadptr;
   // Go.
-  if (self->is_initialized()) {
+  if (self->isInitialized()) {
     self->state_ = ACTIVE;
     bool success = false;
     try {
+      sstmac::sw::OperatingSystem::CoreAllocateGuard guard(self->os(), self);
       self->run();
       success = true;
       //this doesn't so much kill the thread as context switch it out
@@ -176,14 +164,13 @@ thread::run_routine(void* threadptr)
   }
 }
 
-thread::thread(sprockit::sim_parameters* params, software_id sid, operating_system* os) :
+Thread::Thread(const SST::Params& params, SoftwareId sid, OperatingSystem* os) :
   os_(os),
   state_(PENDING),
-  isInit(false),
   bt_nfxn_(0),
   last_bt_collect_nfxn_(0),
-  thread_id_(thread::main_thread),
-  p_txt_(process_context::none),
+  thread_id_(Thread::main_thread),
+  p_txt_(ProcessContext::none),
   context_(nullptr),
   cpumask_(0),
   host_timer_(nullptr),
@@ -192,11 +179,10 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
   block_counter_(0),
   pthread_concurrency_(0),
   sid_(sid),
-  ftag_(ftq_tag::null),
+  ftag_(FTQTag::null),
   protect_tag(false),
   tls_storage_(nullptr),
   detach_state_(DETACHED),
-  num_active_cores_(1), //start with 1
   active_core_mask_(0)
 {
   //make all cores possible active
@@ -204,18 +190,18 @@ thread::thread(sprockit::sim_parameters* params, software_id sid, operating_syst
 }
 
 void
-thread::start_api_call()
+Thread::startAPICall()
 {
   if (host_timer_){
     double duration = host_timer_->stamp();
     debug_printf(sprockit::dbg::host_compute,
                  "host compute for %12.8es", duration);
-    parent_app()->compute(timestamp(duration));
+    parentApp()->compute(Timestamp(duration));
   }
 }
 
 void
-thread::end_api_call()
+Thread::endAPICall()
 {
   if (host_timer_){
     host_timer_->start();
@@ -223,20 +209,26 @@ thread::end_api_call()
 }
 
 uint32_t
-thread::init_id()
+Thread::initId()
 {
   //thread id not yet initialized
-  if (thread_id_ == thread::main_thread)
+  if (thread_id_ == Thread::main_thread)
     thread_id_ = THREAD_ID_CNT++;
   //I have not yet been assigned a process context (address space)
   //make my own, for now
-  if (p_txt_ == process_context::none)
+  if (p_txt_ == ProcessContext::none)
     p_txt_ = thread_id_;
   return thread_id_;
 }
 
+API*
+Thread::getAppApi(const std::string &name) const
+{
+  return parentApp()->getPrebuiltApi(name);
+}
+
 void*
-thread::get_tls_value(long thekey) const
+Thread::getTlsValue(long thekey) const
 {
   auto it = tls_values_.find(thekey);
   if (it == tls_values_.end())
@@ -245,13 +237,13 @@ thread::get_tls_value(long thekey) const
 }
 
 void
-thread::set_tls_value(long thekey, void *ptr)
+Thread::setTlsValue(long thekey, void *ptr)
 {
   tls_values_[thekey] = ptr;
 }
 
 void
-thread::append_backtrace(int id)
+Thread::appendBacktrace(int id)
 {
 #if SSTMAC_HAVE_GRAPHVIZ
   backtrace_[bt_nfxn_] = id;
@@ -262,40 +254,40 @@ thread::append_backtrace(int id)
 }
 
 void
-thread::pop_backtrace()
+Thread::popBacktrace()
 {
   --bt_nfxn_;
   last_bt_collect_nfxn_ = std::min(last_bt_collect_nfxn_, bt_nfxn_);
 }
 
 void
-thread::collect_backtrace(int nfxn)
+Thread::collectBacktrace(int nfxn)
 {
   last_bt_collect_nfxn_ = nfxn;
 }
 
 void
-thread::spawn(thread* thr)
+Thread::spawn(Thread* thr)
 {
-  thr->parent_app_ = parent_app();
+  thr->parent_app_ = parentApp();
   if (host_timer_){
     thr->host_timer_ = new HostTimer;
     thr->host_timer_->start();
   }
-  os_->start_thread(thr);
+  os_->startThread(thr);
 }
 
-timestamp
-thread::now()
+GlobalTimestamp
+Thread::now()
 {
   return os_->now();
 }
 
-thread::~thread()
+Thread::~Thread()
 {
-  if (stack_) stack_alloc::free(stack_);
+  if (stack_) StackAlloc::free(stack_);
   if (context_) {
-    context_->destroy_context();
+    context_->destroyContext();
     delete context_;
   }
   if (tls_storage_) delete[] tls_storage_;
@@ -303,25 +295,24 @@ thread::~thread()
 }
 
 void
-thread::spawn_omp_parallel()
+Thread::spawnOmpParallel()
 {
   spkt_abort_printf("unimplemented: spawn_omp_parallel");
   omp_context& active = omp_contexts_.back();
   active.subthreads.resize(active.requested_num_subthreads);
-  app* parent = parent_app();
-  sprockit::sim_parameters* params = parent->params();
+  App* parent = parentApp();
   for (int i=1; i < active.requested_num_subthreads; ++i){
     //thread* thr = new thread(params, parent->sid(), os_);
-    //thr->set_omp_parent_context(active);
-    //start_thread(thr);
+    //thr->setOmpParentContext(active);
+    //startThread(thr);
     //active.subthreads[i] = thr;
   }
   //and finally have this thread enter the region as thread 0
-  set_omp_parent_context(0, active);
+  setOmpParentContext(0, active);
 }
 
 void
-thread::set_omp_parent_context(int id, const omp_context& context)
+Thread::setOmpParentContext(int id, const omp_context& context)
 {
   omp_contexts_.emplace_back();
   omp_context& active = omp_contexts_.back();
@@ -334,32 +325,39 @@ thread::set_omp_parent_context(int id, const omp_context& context)
 }
 
 void
-thread::compute_detailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthread)
+Thread::computeDetailed(uint64_t flops, uint64_t nintops, uint64_t bytes, int nthread)
 {
   omp_context& active = omp_contexts_.back();
   int used_nthread = nthread == use_omp_num_threads ? active.num_threads : nthread;
-  parent_app()->compute_detailed(flops, nintops, bytes, used_nthread);
+  parentApp()->computeDetailed(flops, nintops, bytes, used_nthread);
 }
 
 void
-thread::start_thread(thread* thr)
+Thread::startThread(Thread* thr)
 {
   thr->p_txt_ = p_txt_;
-  os_->start_thread(thr);
+  os_->startThread(thr);
 }
 
 void
-thread::join()
+Thread::setCpumask(uint64_t cpumask)
+{
+  cpumask_ = cpumask;
+  os_->reassign_cores(this);
+}
+
+void
+Thread::join()
 {
   //JJW 03/08/2018 It can now happen with std::thread wrappers
   //that you trying joining a thread before it has even initialized
   //I don't think this is actually an error
-  //if (!this->is_initialized()) {
+  //if (!this->isInitialized()) {
     // We can't context switch the caller out without first being initialized
   //  spkt_throw_printf(sprockit::illformed_error,
   //                   "thread::join: target thread has not been initialized.");
   //}
-  os_->join_thread(this);
+  os_->joinThread(this);
 }
 
 } }
@@ -370,59 +368,74 @@ thread::join()
 namespace sstmac {
 namespace sw {
 
+class stdThread : public Thread {
+ public:
+  stdThread(std_thread_base* base,
+            Thread* parent) :
+    Thread(parent->parentApp()->params(),
+           SoftwareId(parent->aid(), parent->tid(), -1),
+           parent->os()),
+    base_(base)
+  {
+    parent_app_ = parent->parentApp();
+    //std threads need to be joinable
+    setDetachState(JOINABLE);
+  }
 
-std_thread_base::std_thread_base(thread* thr) :
-  thread(thr->parent_app()->params(),
-         software_id(thr->aid(), thr->tid(), -1),
-         thr->os())
+  void run() override {
+    base_->run();
+  }
 
+ private:
+  std_thread_base* base_;
+};
+
+int start_std_thread(std_thread_base* base)
 {
-  parent_app_ = thr->parent_app();
-  //std threads need to be joinable
-  set_detach_state(JOINABLE);
+  Thread* parent = OperatingSystem::currentThread();
+  stdThread* thr = new stdThread(base, parent);
+  base->setOwner(thr);
+  parent->os()->startThread(thr);
+  return thr->threadId();
 }
 
-std_thread_ctor_wrapper::std_thread_ctor_wrapper() :
-  std_thread_base(operating_system::current_thread())
+void join_std_thread(std_thread_base *thr)
 {
+  thr->owner()->join();
 }
 
-void start_std_thread(thread *thr)
+
+stdMutex::stdMutex()
 {
-  thr->os()->start_thread(thr);
+  parent_app_ = OperatingSystem::currentThread()->parentApp();
+  id_ = parent_app_->allocateMutex();
 }
 
-std_mutex::std_mutex()
+void stdMutex::lock()
 {
-  parent_app_ = operating_system::current_thread()->parent_app();
-  id_ = parent_app_->allocate_mutex();
-}
-
-void std_mutex::lock()
-{
-  mutex_t* mut = parent_app_->get_mutex(id_);
+  mutex_t* mut = parent_app_->getMutex(id_);
   if (mut == nullptr){
     spkt_abort_printf("error: bad mutex id for std::mutex: %d", id_);
   } else if (mut->locked) {
-    mut->waiters.push_back(operating_system::current_thread());
+    mut->waiters.push_back(OperatingSystem::currentThread());
     parent_app_->os()->block();
   } else {
     mut->locked = true;
   }
 }
 
-std_mutex::~std_mutex()
+stdMutex::~stdMutex()
 {
-  parent_app_->erase_mutex(id_);
+  parent_app_->eraseMutex(id_);
 }
 
-void std_mutex::unlock()
+void stdMutex::unlock()
 {
-  mutex_t* mut = parent_app_->get_mutex(id_);
+  mutex_t* mut = parent_app_->getMutex(id_);
   if (mut == nullptr || !mut->locked){
     return;
   } else if (!mut->waiters.empty()){
-    thread* blocker = mut->waiters.front();
+    Thread* blocker = mut->waiters.front();
     mut->waiters.pop_front();
     parent_app_->os()->unblock(blocker);
   } else {
@@ -430,9 +443,9 @@ void std_mutex::unlock()
   }
 }
 
-bool std_mutex::try_lock()
+bool stdMutex::try_lock()
 {
-  mutex_t* mut = parent_app_->get_mutex(id_);
+  mutex_t* mut = parent_app_->getMutex(id_);
   if (mut == nullptr){
     return false;
   } else if (mut->locked){

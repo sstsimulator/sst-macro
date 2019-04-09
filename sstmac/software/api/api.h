@@ -45,52 +45,57 @@ Questions? Contact sst-macro-help@sandia.gov
 #ifndef sstmac_software_libraries_API_H
 #define sstmac_software_libraries_API_H
 
-#include <sprockit/factories/factory.h>
-#include <sstmac/software/libraries/library.h>
+#include <sprockit/factory.h>
+#include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/host_timer.h>
+#include <sstmac/software/process/app_fwd.h>
+#include <sstmac/software/process/thread_fwd.h>
 #include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/timestamp.h>
+#include <sstmac/common/node_address.h>
+#include <sstmac/common/event_scheduler_fwd.h>
+#include <sstmac/sst_core/integrated_component.h>
 #include <sprockit/keyword_registration.h>
-#include <sstmac/software/libraries/compute/lib_compute_time.h>
 #include <sys/time.h>
+
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/subcomponent.h>
+#endif
 
 namespace sstmac {
 namespace sw {
 
-class api :
-  public library
+class API
+#if SSTMAC_INTEGRATED_SST_CORE
+ : public SST::SubComponent
+#endif
 {
-  DeclareFactory(api,software_id,operating_system*)
  public:
-  api(sprockit::sim_parameters *params,
-      const std::string& libname,
-      software_id sid,
-      operating_system *os) :
-    library(libname, sid, os),
-    host_timer_(nullptr),
-    compute_(nullptr)
-  {
-    init(params);
+  SST_ELI_DECLARE_BASE(API)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&,App*,SST::Component*)
+
+  virtual ~API();
+
+  SoftwareId sid() const;
+
+  NodeId addr() const;
+
+  App* parent() const {
+    return parent_;
   }
 
-  api(sprockit::sim_parameters* params,
-      const char* prefix,
-      software_id sid,
-      operating_system* os) :
-    api(params, standard_lib_name(prefix, sid), sid, os)
-  {
-  }
-
-  virtual ~api();
+  Thread* activeThread();
 
   virtual void init(){}
 
   virtual void finish(){}
 
-  timestamp now() const;
+  GlobalTimestamp now() const;
 
-  void schedule(timestamp t, event_queue_entry* ev);
+  void schedule(GlobalTimestamp t, ExecutionEvent* ev);
 
-  void schedule_delay(timestamp t, event_queue_entry* ev);
+  void scheduleDelay(Timestamp t, ExecutionEvent* ev);
 
   /**
    * @brief start_api_call
@@ -98,7 +103,7 @@ class api :
    * collected since the last API call can then advance time or
    * increment statistics.
    */
-  void start_api_call();
+  void startAPICall();
 
   /**
    * @brief end_api_call
@@ -106,26 +111,26 @@ class api :
    * collected since the last API call can then clear counters for
    * the next time window.
    */
-  void end_api_call();
+  void endAPICall();
 
  protected:
-  HostTimer* host_timer_;
-  lib_compute_time* compute_;
+  API(SST::Params& params, App* parent, SST::Component* comp);
 
- private:
-  void init(sprockit::sim_parameters *params);
+  std::unique_ptr<HostTimer> host_timer_;
+  App* parent_;
+
 };
 
-void api_lock();
-void api_unlock();
-
-#define NamespaceRegister(name, child_cls)
-
-#define RegisterAPI(name, child_cls) \
-  FactoryRegister(name, sstmac::sw::api, child_cls) \
-  NamespaceRegister(name, child_cls)
+void apiLock();
+void apiUnlock();
 
 }
 }
+
+#if !SSTMAC_INTEGRATED_SST_CORE
+namespace SST {
+using SubComponent = sstmac::sw::API;
+}
+#endif
 
 #endif // API_H

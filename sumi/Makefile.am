@@ -21,6 +21,8 @@ library_includedir=$(includedir)/sumi
 nodist_library_include_HEADERS = 
 
 library_include_HEADERS = \
+ sumi.h \
+ sumi_thread.h \
  alltoall.h \
  alltoallv.h \
  allgather.h \
@@ -43,21 +45,21 @@ library_include_HEADERS = \
  dense_rank_map.h \
  communicator.h \
  communicator_fwd.h \
- dynamic_tree_vote.h \
  message.h \
  message_fwd.h \
  monitor.h \
  options.h \
- partner_timeout.h \
- ping.h \
  timeout.h \
  transport.h \
+ sim_transport.h \
  transport_fwd.h 
 
 libsumi_la_SOURCES = \
+ sumi.cc \
+ sumi_thread.cc \
  alltoall.cc \
  alltoallv.cc \
- transport.cc \
+ sim_transport.cc \
  allgather.cc \
  allgatherv.cc \
  allreduce.cc \
@@ -74,10 +76,7 @@ libsumi_la_SOURCES = \
  collective_message.cc \
  dense_rank_map.cc \
  communicator.cc \
- dynamic_tree_vote.cc \
  message.cc \
- monitor.cc \
- partner_timeout.cc \
- ping.cc 
+ monitor.cc 
 
 

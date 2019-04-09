@@ -1,6 +1,6 @@
 % !TEX root = developer.tex
 
-\chapter{\sstmacro Connectable Interface}\label{chapter:connectables}
+\chapter{\sstmacro Connectable Interface}\label{chapter:Connectables}
 
 \section{Required Functions}
 
@@ -19,15 +19,15 @@ In SST core, ports are labeled by strings.
 Similarly, payload and credit handlers are not automatically set up in SST core.
 \sstmacro forces links and handlers to be set up automatically.
 
-Every hardware component in \sstmacro should inherit from \inlinecode{connectable_component} in \inlinecode{connection.h}
+Every hardware component in \sstmacro should inherit from \inlinecode{ConnectableComponent} in \inlinecode{connection.h}
 There are four critical abstract functions in the virtual interface. First:
 
 \begin{CppCode}
-  virtual void connect_output(
-    sprockit::sim_parameters* params,
+  virtual void connectOutput(
+    SST::Params& params,
     int src_outport,
     int dst_inport,
-    event_link* payload_handler) = 0;
+    EventLink* payloadHandler) = 0;
 \end{CppCode}
 This is invoked on the source component of a link giving the port numbers on either end of the link.
 It gives the source component the payload handler that will be invoked on the destination component.
@@ -39,13 +39,13 @@ Parameter namespaces are covered in the user's manual.
 
 The next connection function is:
 \begin{CppCode}
-  virtual void connect_input(
-    sprockit::sim_parameters* params,
+  virtual void connectInput(
+    SST::Params& params,
     int src_outport,
     int dst_inport,
-    event_link* credit_handler) = 0;
+    EventLink* creditHandler) = 0;
 \end{CppCode}
-Similar to \inlinecode{connect_output}, this is invoked on the destination component of a link.
+Similar to \inlinecode{connectOutput}, this is invoked on the destination component of a link.
 Instead of giving a payload handler to receive new events,
 it receives a credit handler that the destination should send acks and credits to.
 The parameters work the same way as the output parameters.
@@ -53,34 +53,34 @@ The parameters work the same way as the output parameters.
 But where do the handlers come from? Connectable objects must implement:
 
 \begin{CppCode}
-virtual link_handler* credit_handler(int port) = 0;
+virtual LinkHandler* creditHandler(int port) = 0;
 
-virtual link_handler* payload_handler(int port) = 0;
+virtual LinkHandler* payloadHandler(int port) = 0;
 \end{CppCode}
 
-These \inlinecode{link_handler} objects are a special instance of \inlinecode{event_handler}.
+These \inlinecode{LinkHandler} objects are a special instance of \inlinecode{EventHandler}.
 Each class must return the correct payload and credit handlers for each valid port.
-The handler and port will then be passed to the corresponding \inlinecode{connect_output} or \inlinecode{connect_input} function.
+The handler and port will then be passed to the corresponding \inlinecode{connectOutput} or \inlinecode{connectInput} function.
 
-\inlinecode{link_handler} objects are created as functors for particular member functions of a class.
+\inlinecode{LinkHandler} objects are created as functors for particular member functions of a class.
 They are created through the helper function:
 
 \begin{CppCode}
 template <class T, class Fxn>
-link_handler* new_link_handler(const T* t, Fxn fxn){
-  return new_handler<T,Fxn>(const_cast<T*>(t), fxn);
+LinkHandler* newLinkHandler(const T* t, Fxn fxn){
+  return newHandler<T,Fxn>(const_cast<T*>(t), fxn);
 }
 \end{CppCode}
 Given a class \inlinecode{Test} with a member function
 
 \begin{CppCode}
-void Test::handle_payload(event* ev)
+void Test::handlePayload(event* ev)
 \end{CppCode}
-we could create the appropriate \inlinecode{link_handler} as
+we could create the appropriate \inlinecode{LinkHandler} as
 
 \begin{CppCode}
-link_handler* Test::payload_handler(int port) const {
-  return new_link_handler(this, &Test::handle);
+LinkHandler* Test::payloadHandler(int port) const {
+  return newLinkHandler(this, &Test::handle);
 }
 \end{CppCode}
 
@@ -151,7 +151,7 @@ makeBiNetworkLink(comp1,comp1Id,port,
                   comp2,comp2Id,port,
                   latency)
 \end{CppCode}
-The code in the Python script causes \inlinecode{connect_output} and \inlinecode{connect_input} to be invoked on port 0 for each of the components.
+The code in the Python script causes \inlinecode{connectOutput} and \inlinecode{connectInput} to be invoked on port 0 for each of the components.
 
 \subsection{Makefile}
 The Makefile uses compiler wrappers installed with \sstmacro.

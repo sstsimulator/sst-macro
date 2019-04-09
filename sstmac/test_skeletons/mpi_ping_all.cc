@@ -47,7 +47,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/replacements/mpi.h>
 #include <sstmac/common/runtime.h>
 #include <sstmac/software/process/backtrace.h>
-#include <sumi-mpi/mpi_api.h>
+#include <sstmac/replacements/mpi.h>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
 #include <sprockit/keyword_registration.h>
@@ -64,10 +64,6 @@ int USER_MAIN(int argc, char** argv)
 {
   MPI_Init(&argc, &argv);
 
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(sumi::sstmac_mpi(), &sumi::transport::deadlock_check));
-  sstmac::runtime::enter_deadlock_region();
-
   double t_start = MPI_Wtime();
 
   int me, nproc;
@@ -76,9 +72,8 @@ int USER_MAIN(int argc, char** argv)
 
   //send/recv from all the other procs
   void* null_buffer = nullptr;
-  sprockit::sim_parameters* params = get_params();
-  int count = params->get_optional_byte_length_param("message_size", 100);
-  bool print_times = params->get_optional_bool_param("print_times", true);
+  int count = sstmac::getUnitParam<int>("message_size", "100B");
+  bool print_times = sstmac::getParam<bool>("print_times", true);
   int tag = 42;
   //one for each send, one for each recv
   MPI_Request* reqs = new MPI_Request[2*nproc];
@@ -99,7 +94,7 @@ int USER_MAIN(int argc, char** argv)
   int quarter_size =  num_requests / 4;
   int remainder = num_requests % 4;
 
-  double sleep_length = params->get_optional_time_param("sleep_time", 1);
+  double sleep_length = sstmac::getUnitParam<double>("sleep_time", "1s");
 
   reqptr = reqs;
   for (int q=0; q < 4; ++q) {
@@ -120,6 +115,6 @@ int USER_MAIN(int argc, char** argv)
   delete[] reqs;
 
   MPI_Finalize();
-  sstmac::runtime::exit_deadlock_region();
+
   return 0;
 }

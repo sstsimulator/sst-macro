@@ -46,7 +46,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstring>
 
 void
-print_help(int argc, char **argv)
+printHelp(int argc, char **argv)
 {
   char *name = argv[0];
   char *tail = name + strlen(name);

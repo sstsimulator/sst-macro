@@ -46,13 +46,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/replacements/mutex>
 #include <sstmac/skeleton.h>
 #include <sstmac/compute.h>
+#include <iostream>
 
 using namespace sstmac;
 using namespace sstmac::sw;
 
 extern "C" int ubuntu_cant_name_mangle() { return 0; }
 
-void fxn1(const char* arg){
+void fxn1(const std::string& arg){
   std::cout << arg << std::endl;
 }
 
@@ -80,8 +81,10 @@ void thrash(std::mutex* mtx)
 
 int USER_MAIN(int argc, char** argv)
 {
-  std::thread t1(fxn1, "I got my head checked");
-  std::thread t2(fxn2, "By a jumbo jet");
+  std::string str1("I got my head checked");
+  std::thread t1(fxn1, str1);
+  std::string str2("By a jumbo jet");
+  std::thread t2(fxn2, str2);
   t1.join();
   std::thread t3(fxn3, 3, 5);
   t2.join();

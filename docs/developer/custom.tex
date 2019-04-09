@@ -49,11 +49,11 @@ We got some functions for free by inheriting from \inlinecode{structured_topolog
 We start with
 
 \begin{CppCode}
-xpress_ring::xpress_ring(sprockit::sim_parameters* params) :
+xpress_ring::xpress_ring(SST::Params& params) :
   structured_topology(params)
 {
-  ring_size_ = params->get_int_param("xpress_ring_size");
-  jump_size_ = params->get_int_param("xpress_jump_size");
+  ring_size_ = params.find<int>("xpress_ring_size");
+  jump_size_ = params.find<int>("xpress_jump_size");
 }
 \end{CppCode}
 determining how many switches are in the ring and how big a ``jump'' link is.
@@ -61,7 +61,7 @@ determining how many switches are in the ring and how big a ``jump'' link is.
 The topology then needs to tell objects how to connect
 
 \begin{CppCode}
-void xpress_ring::connected_outports(switch_id src, std::vector<connection>& conns)
+void xpress_ring::connectedOutports(SwitchId src, std::vector<connection>& conns)
 {
   conns.resize(4); //every switch has 4 connections
   auto& plusConn = conns[0];
@@ -109,7 +109,7 @@ int xpress_ring::num_hops(int total_distance) const
 }
 
 int
-xpress_ring::minimal_distance(
+xpress_ring::minimalDistance(
   const coordinates& src_coords,
   const coordinates& dest_coords) const
 {

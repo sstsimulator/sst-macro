@@ -72,41 +72,39 @@ namespace sumi{
 using namespace sstmac::hw;
 
 
-parsedumpi::parsedumpi(sprockit::sim_parameters* params, software_id sid,
-                       sstmac::sw::operating_system* os) :
-  app(params, sid, os),
+ParseDumpi::ParseDumpi(SST::Params& params, SoftwareId sid,
+                       sstmac::sw::OperatingSystem* os) :
+  App(params, sid, os),
   mpi_(nullptr)
 {
-  fileroot_ = params->reread_param("dumpi_metaname");
+  fileroot_ = params.find<std::string>("dumpi_metaname");
 
-  timescaling_ = params->get_optional_double_param("parsedumpi_timescale", 1);
+  timescaling_ = params.find<double>("parsedumpi_timescale", 1);
 
-  print_progress_ = params->get_optional_bool_param("parsedumpi_print_progress", true);
+  print_progress_ = params.find<bool>("parsedumpi_print_progress", true);
 
-  early_terminate_count_ = params->get_optional_int_param("parsedumpi_terminate_count", -1);
+  early_terminate_count_ = params.find<int>("parsedumpi_terminate_count", -1);
 }
 
-parsedumpi::~parsedumpi() throw()
+ParseDumpi::~ParseDumpi() throw()
 {
 }
 
-int parsedumpi::skeleton_main()
+int ParseDumpi::skeletonMain()
 {
   int rank = this->tid();
-  mpi_ = get_api<mpi_api>();
+  mpi_ = getApi<MpiApi>("mpi");
 
-  sstmac::sw::dumpi_meta* meta = new   sstmac::sw::dumpi_meta(fileroot_);
+  sstmac::sw::DumpiMeta* meta = new   sstmac::sw::DumpiMeta(fileroot_);
   parsedumpi_callbacks cbacks(this);
-  std::string fname = sstmac::sw::dumpi_file_name(rank, meta->dirplusfileprefix_);
+  std::string fname = sstmac::sw::dumpiFileName(rank, meta->dirplusfileprefix_);
   // Ready to go.
   //only rank 0 should print progress
   bool print_my_progress = rank == 0 && print_progress_;
-  sstmac::runtime::add_deadlock_check(
-    sstmac::new_deadlock_check(mpi(), &sumi::transport::deadlock_check));
-  sstmac::runtime::enter_deadlock_region();
+
   try {
     cbacks.parse_stream(fname.c_str(), print_my_progress);
-  } catch (parsedumpi::early_termination& e) {
+  } catch (ParseDumpi::early_termination& e) {
     //do nothing - happily move on and finalize
     mpi_->finalize();
   }
@@ -115,8 +113,6 @@ int parsedumpi::skeleton_main()
     std::cout << "Parsedumpi finalized on rank 0 - trace "
       << fileroot_ << " successful!" << std::endl;
   }
-
-  sstmac::runtime::exit_deadlock_region();
 
   return 0;
 

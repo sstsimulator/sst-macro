@@ -55,51 +55,64 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/process/thread_info.h>
 #include <sstmac/software/api/api_fwd.h>
 #include <sstmac/software/launch/job_launcher_fwd.h>
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/hardware/common/flow_fwd.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/thread_lock.h>
+#include <sstmac/common/stats/stat_collector.h>
 
 #include <sstmac/software/libraries/service_fwd.h>
 #include <sstmac/software/process/ftq_fwd.h>
 #include <sstmac/software/process/graphviz_fwd.h>
 #include <sstmac/software/process/compute_scheduler_fwd.h>
 #include <sstmac/software/process/global.h>
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/hardware/common/flow_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <unordered_map>
 #include <sprockit/debug.h>
+#include <sprockit/sim_parameters.h>
 #include <stack>
 #include <queue>
+#include <functional>
 
 DeclareDebugSlot(os);
 
-extern "C" double sstmac_wall_time();
+extern "C" double sstmacWallTime();
 
 namespace sstmac {
 namespace sw {
 
-class operating_system :
-  public event_subcomponent
+class OperatingSystem : public SubComponent
 {
-  friend class service;
-  friend class thread;
+  friend class Service;
+  friend class Thread;
 
  public:
-  struct implicit_state {
-    DeclareFactory(implicit_state)
+  struct ImplicitState {
+    SST_ELI_DECLARE_BASE(ImplicitState)
+    SST_ELI_DECLARE_DEFAULT_INFO()
+    SST_ELI_DECLARE_CTOR(SST::Params&)
 
-    implicit_state(sprockit::sim_parameters* params){}
+    ImplicitState(SST::Params& params){}
 
-    virtual void set_state(int type, int value) = 0;
-    virtual void unset_state(int type) = 0;
+    virtual ~ImplicitState(){}
+
+    virtual void setState(int type, int value) = 0;
+    virtual void unsetState(int type) = 0;
   };
 
-  struct regression_model : public stat_collector {
-    DeclareFactory(regression_model, const std::string&)
+  struct RegressionModel :
+      public SST::Statistics::MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>
+  {
+    using Parent = SST::Statistics::MultiStatistic<int,int,const double[],OperatingSystem::ImplicitState*>;
+    SST_ELI_DECLARE_BASE(RegressionModel)
+    SST_ELI_DECLARE_DEFAULT_INFO()
+    SST_ELI_DECLARE_CTOR(SST::BaseComponent*, const std::string&,
+                          const std::string&, SST::Params&)
 
-    regression_model(sprockit::sim_parameters* params,
-                     const std::string& key)
-     : stat_collector(params), key_(key) { }
+    RegressionModel(SST::BaseComponent* comp, const std::string& name,
+                    const std::string& subName, SST::Params& params)
+     : Parent(comp, name, subName, params), key_(name) { }
 
     const std::string& key() const {
       return key_;
@@ -113,45 +126,50 @@ class operating_system :
      * @return The time to compute
      */
     virtual double compute(int n_params, const double params[],
-                           operating_system::implicit_state* state) = 0;
+                           OperatingSystem::ImplicitState* state) = 0;
 
     /**
      * @brief start_collection
      * @return A tag for matching thread-local storage later
      */
-    virtual int start_collection() = 0;
+    virtual int startCollection() = 0;
 
-    virtual void finish_collection(int thr_tag, int n_params, const double params[],
-                                   operating_system::implicit_state* state) = 0;
+    virtual void finishCollection(int thr_tag, int n_params, const double params[],
+                                   OperatingSystem::ImplicitState* state) = 0;
 
+    void addData_impl(int tag, int n, const double params[],
+                      OperatingSystem::ImplicitState* state) override {
+      finishCollection(tag, n, params, state);
+    }
 
    private:
     std::string key_;
   };
 
   template <class Sample>
-  struct thread_safe_timer_model : public regression_model
+  struct ThreadSafeTimerModel : public RegressionModel
   {
-    thread_safe_timer_model(sprockit::sim_parameters* params,
-                            const std::string& key) :
-      regression_model(params, key), free_slots_(100), timers_(100)
+    ThreadSafeTimerModel(SST::Params& params, SST::BaseComponent* comp,
+                         const std::string& name, const std::string& subName) :
+      RegressionModel(comp, name, subName, params),
+      free_slots_(100), timers_(100)
     {
       for (int i=0; i < free_slots_.size(); ++i) free_slots_[i] = i;
     }
 
     int start(){
-      int slot = allocate_slot();
-      timers_[slot] = sstmac_wall_time();
+      int slot = allocateSlot();
+      timers_[slot] = sstmacWallTime();
       return slot;
     }
 
     template <class... Args>
     void finish(int thr_tag, Args&&... args){
-      double timer = sstmac_wall_time();
+      double timer = sstmacWallTime();
       double t_total = timer - timers_[thr_tag];
       lock();
       samples_.emplace_back(std::forward<Args>(args)..., t_total);
-      free_slot_no_lock(thr_tag);
+      freeSlotNoLock(thr_tag);
       unlock();
     }
 
@@ -167,7 +185,7 @@ class operating_system :
     }
 
    private:
-    int allocate_slot(){
+    int allocateSlot(){
       lock_.lock();
       int slot = free_slots_.back();
       free_slots_.pop_back();;
@@ -175,13 +193,13 @@ class operating_system :
       return slot;
     }
 
-    void free_slot(int slot) {
+    void freeSlot(int slot) {
       lock_.lock();
       free_slots_.push_back(slot);
       lock_.unlock();
     }
 
-    void free_slot_no_lock(int slot){
+    void freeSlotNoLock(int slot){
       free_slots_.push_back(slot);
     }
 
@@ -190,24 +208,24 @@ class operating_system :
     std::vector<int> free_slots_;
   };
 
-  operating_system(sprockit::sim_parameters* params, hw::node* parent);
+  OperatingSystem(SST::Params& params, hw::Node* parent);
 
-  virtual ~operating_system();
+  virtual ~OperatingSystem();
 
-  std::string to_string() const {
+  std::string toString() const {
     return "operating system";
   }
 
-  static inline operating_system*& static_os_thread_context(){
+  static inline OperatingSystem*& staticOsThreadContext(){
   #if SSTMAC_USE_MULTITHREAD
-    int thr = thread_info::current_physical_thread_id();
+    int thr = ThreadInfo::currentPhysicalThreadId();
     return active_os_[thr];
   #else
     return active_os_;
   #endif
   }
 
-  inline operating_system*& active_os() {
+  inline OperatingSystem*& activeOs() {
 #if SSTMAC_USE_MULTITHREAD
   return active_os_[thread_id_];
 #else
@@ -215,11 +233,11 @@ class operating_system :
 #endif
   }
 
-  thread* active_thread() const {
+  Thread* activeThread() const {
     return active_thread_;
   }
 
-  int thread_id() const {
+  int threadId() const {
     return thread_id_;
   }
 
@@ -227,23 +245,25 @@ class operating_system :
     return nthread_;
   }
 
-  static void delete_statics();
+  void reassign_cores(Thread* thr);
 
-  static operating_system* current_os(){
-    return static_os_thread_context();
+  static void deleteStatics();
+
+  static OperatingSystem* currentOs(){
+    return staticOsThreadContext();
   }
 
-  static library* current_library(const std::string& name);
+  static Library* currentLibrary(const std::string& name);
 
-  static node_id current_node_id() {
-    return static_os_thread_context()->addr();
+  static NodeId currentNodeId() {
+    return staticOsThreadContext()->addr();
   }
 
-  static void set_gdb_hold(bool flag){
+  static void setGdbHold(bool flag){
     hold_for_gdb_ = flag;
   }
 
-  static void add_memoization(const std::string& model, const std::string& name);
+  static void addMemoization(const std::string& model, const std::string& name);
 
   /**
    * @brief execute Execute a compute function.
@@ -255,42 +275,11 @@ class operating_system :
    * @param data  Event carrying all the data describing the compute
    * @param nthr  The number of threads that need to execute
    */
-  void execute(ami::COMP_FUNC, event* data, int nthr = 1);
+  void execute(ami::COMP_FUNC, Event* data, int nthr = 1);
 
-  /**
-   * @brief execute Execute a communication function.
-   * This function MUST begin on a user-space thread
-   * since it may block and context switch until completion.
-   * To invoke compute operations for the main DES thread,
-   * use execute_kernel
-   * @param data  Event carrying all the data describing the compute
-   */
-  void execute(ami::COMM_FUNC func, message* data){
-    return execute_kernel(func, data);
-  }
+  std::function<void(hw::NetworkMessage*)> nicDataIoctl();
 
-  /**
-   * @brief execute Execute a compute function.
-   * This function takes place in "kernel" land
-   * and will never block and context switch.
-   * This function can therefore run on the main DES thread
-   * @param func  The function to perform
-   * @param data  Event carrying all the data describing the compute
-   * @return A return code specifying success or failure
-   */
-  void execute_kernel(ami::COMM_FUNC func, message* data);
-
-  /**
-   * @brief execute Enqueue an operation to perform
-   * This function takes place in "kernel" land
-   * and will never block and context switch.
-   * This function can therefore run on the main DES thread.
-   * The function must run asynchronously and immediately return
-   * with no virtual time advancing.
-   * @param func  The function to perform
-   * @param data  Event carrying all the data describing the compute
-   */
-  void async_kernel(ami::SERVICE_FUNC func, event* data);
+  std::function<void(hw::NetworkMessage*)> nicCtrlIoctl();
   
   /**
    * @brief block Block the currently running thread context.
@@ -301,7 +290,7 @@ class operating_system :
    */
   void block();
 
-  void block_timeout(timestamp delay);
+  void blockTimeout(Timestamp delay);
 
   /**
    * @brief unblock Unblock the thread context associated with the key
@@ -310,17 +299,18 @@ class operating_system :
    *                  a block(req) call
    * @return
    */
-  timestamp unblock(thread* thr);
+  void unblock(Thread* thr);
 
-  void outcast_app_start(int my_rank, int aid, const std::string& app_ns,
-                      task_mapping_ptr mapping, sprockit::sim_parameters* app_params,
+  void outcastAppStart(int my_rank, int aid, const std::string& app_ns,
+                      task_mapping_ptr mapping,
+                      const SST::Params& app_params,
                       bool include_root = false);
 
   /**
    * @brief start_thread Start a thread object and schedule the context switch to it
    * @param t The thread to start
    */
-  void start_thread(thread* t);
+  void startThread(Thread* t);
 
   /**
    * @brief join_thread If this thread created a subthread, join with the given subthread.
@@ -328,18 +318,18 @@ class operating_system :
    *                    NOT the DES thread
    * @param subthread The spawned subthread to join
    */
-  void join_thread(thread* subthread);
+  void joinThread(Thread* subthread);
 
   /**
    * @brief complete_active_thread Must be called from a currently running application thread, not the DES thread.
    *                               This returns from the currently running context, closes it out,
    *                               and schedules resources associated with it (stack, etc) to be cleaned up.
    */
-  void complete_active_thread();
+  void completeActiveThread();
 
-  void schedule_thread_deletion(thread* thr);
+  void scheduleThreadDeletion(Thread* thr);
 
-  void rebuild_memoizations();
+  void rebuildMemoizations();
 
   /**
    * @brief start_app
@@ -348,43 +338,43 @@ class operating_system :
    * @param a The application to start
    * @param unique_name A known name for identifying the process across multiple nodes
    */
-  void start_app(app* a, const std::string& unique_name);
+  void startApp(App* a, const std::string& unique_name);
 
   static size_t stacksize(){
     return sstmac_global_stacksize;
   }
 
-  static thread* current_thread(){
-    return static_os_thread_context()->active_thread();
+  static Thread* currentThread(){
+    return staticOsThreadContext()->activeThread();
   }
 
-  void handle_event(event* ev);
+  void handleRequest(Request* req);
 
   static void shutdown() {
-    current_os()->local_shutdown();
+    currentOs()->localShutdown();
   }
 
-  library* lib(const std::string& name) const;
+  Library* lib(const std::string& name) const;
 
-  void print_libs(std::ostream& os = std::cout) const;
+  void printLibs(std::ostream& os = std::cout) const;
 
-  implicit_state* get_implicit_state();
+  ImplicitState* getImplicitState();
 
-  hw::node* node() const {
+  hw::Node* node() const {
     return node_;
   }
 
-  node_id addr() const {
+  NodeId addr() const {
     return my_addr_;
   }
 
-  graph_viz* call_graph() const {
-    return call_graph_;
+  GraphViz* callGraph() const {
+    return callGraph_;
   }
 
-  static void simulation_done();
+  static void simulationDone();
 
-  sprockit::sim_parameters* params() const {
+  SST::Params& params() {
     return params_;
   }
 
@@ -401,14 +391,14 @@ class operating_system :
    *        core reservation, unlike #compute. Sleeps always begin immediately.
    * @param sleep_delay The length of time to sleep (delta T)
    */
-  void sleep(timestamp sleep_delay);
+  void sleep(Timestamp sleep_delay);
 
   /**
    * @brief sleep_until Sleep until a specified time. If that time has already been reached
    *          return immediately. Otherwise block until the time arrives.
    * @param t The time to sleep until
    */
-  void sleep_until(timestamp t);
+  void sleepUntil(GlobalTimestamp t);
 
   /**
    * @brief compute Compute for a specified time period. This requires
@@ -416,94 +406,115 @@ class operating_system :
    *        block until a core becomes available.
    * @param t The length of time to compute (delta T)
    */
-  void compute(timestamp t);
+  void compute(Timestamp t);
 
-  static void init_threads(int nthread);
+  static void initThreads(int nthread);
 
-  void kill_node();
+  void killNode();
 
-  void decrement_app_refcount();
+  void decrementAppRefcount();
 
-  void increment_app_refcount();
+  void incrementAppRefcount();
 
-  void set_call_graph_active(bool flag){
-    call_graph_active_ = flag;
+  void setCallGraphActive(bool flag){
+    callGraph_active_ = flag;
   }
 
-  bool call_graph_active() const {
-    return call_graph_active_;
+  bool callGraphActive() const {
+    return callGraph_active_;
   }
 
-  static void gdb_switch_to_thread(uint32_t thr_id);
+  static void gdbSwitchToThread(uint32_t thr_id);
 
-  static void gdb_set_active(int flag){
+  static void gdbSetActive(int flag){
     gdb_active_ = flag;
   }
 
-  static void gdb_reset();
+  static void gdbReset();
 
-  static int start_memoize(const char* token, const char* model);
-  static void compute_memoize(const char* token, int n_params, double params[]);
-  static void stop_memoize(int thr_tag, const char* token, int n_params, double params[]);
-
- private:
-  thread_context* active_context();
-
-  void switch_to_thread(thread* tothread);
-
-  void init_threading(sprockit::sim_parameters* params);
-
-  friend class library;
-
-  void register_lib(library* lib);
-
-  void unregister_lib(library* lib);
-
-  void local_shutdown();
-
-  bool handle_library_event(const std::string& name, event* ev);
+  static int startMemoize(const char* token, const char* model);
+  static void computeMemoize(const char* token, int n_params, double params[]);
+  static void stopMemoize(int thr_tag, const char* token, int n_params, double params[]);
 
  private:
+  ThreadContext* activeContext();
+
+  void switchToThread(Thread* tothread);
+
+  void initThreading(SST::Params& params);
+
+  friend class Library;
+
+  void registerLib(Library* lib);
+
+  void unregisterLib(Library* lib);
+
+  void localShutdown();
+
+  bool handleLibraryRequest(const std::string& name, Request* req);
+
+  struct CoreAllocateGuard {
+    CoreAllocateGuard(OperatingSystem* os, Thread* thr) :
+      thr_(thr), os_(os)
+    {
+      os->allocateCore(thr);
+    }
+
+    ~CoreAllocateGuard(){
+      os_->deallocateCore(thr_);
+    }
+
+    OperatingSystem* os_;
+    Thread* thr_;
+  };
+
+
+ private:
+  friend class CoreAllocateGuard;
+  void allocateCore(Thread* thr);
+  void deallocateCore(Thread* thr);
+
+
   int thread_id_;
   int nthread_;
-  hw::node* node_;
-  std::unordered_map<std::string, library*> libs_;
-  std::unordered_map<library*, int> lib_refcounts_;
-  std::map<std::string, std::list<event*>> pending_library_events_;
+  hw::Node* node_;
+  std::unordered_map<std::string, Library*> libs_;
+  std::unordered_map<Library*, int> lib_refcounts_;
+  std::map<std::string, std::list<Request*>> pending_library_request_;
   std::map<std::string, std::string> env_;
 
-  thread* active_thread_;
+  Thread* active_thread_;
 
-  node_id my_addr_;
+  NodeId my_addr_;
 
   /// The caller context (main DES thread).  We go back
   /// to this context on every context switch.
-  thread_context *des_context_;
+  ThreadContext *des_context_;
 
-  sprockit::sim_parameters* params_;
+  SST::Params params_;
 
-  compute_scheduler* compute_sched_;
+  ComputeScheduler* compute_sched_;
 
-  graph_viz* call_graph_;
+  GraphViz* callGraph_;
 
-  ftq_calendar* ftq_trace_;
+  FTQCalendar* ftq_trace_;
 
-  bool call_graph_active_;
+  bool callGraph_active_;
 
-  static std::map<std::string, regression_model*> memoize_models_;
-  static std::map<std::string, std::string>* memoize_init_;
+  static std::map<std::string, std::unique_ptr<RegressionModel>> memoize_models_;
+  static std::unique_ptr<std::map<std::string, std::string>> memoize_init_;
 
-  static std::unordered_map<uint32_t, thread*> all_threads_;
+  static std::unordered_map<uint32_t, Thread*> all_threads_;
   static bool hold_for_gdb_;
-  static thread_context* gdb_context_;
-  static thread_context* gdb_original_context_;
-  static thread_context* gdb_des_context_;
+  static ThreadContext* gdb_context_;
+  static ThreadContext* gdb_original_context_;
+  static ThreadContext* gdb_des_context_;
   static bool gdb_active_;
 
 #if SSTMAC_USE_MULTITHREAD
-  static std::vector<operating_system*> active_os_;
+  static std::vector<OperatingSystem*> active_os_;
 #else
-  static operating_system* active_os_;
+  static OperatingSystem* active_os_;
 #endif
 
 };

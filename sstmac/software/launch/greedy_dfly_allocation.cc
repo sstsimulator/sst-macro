@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/cartgrid.h>
 
 #include <sprockit/errors.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/output.h>
 #include <sprockit/util.h>
 #include <sprockit/sim_parameters.h>
@@ -65,19 +65,25 @@ RegisterKeywords(
 namespace sstmac {
 namespace sw {
 
-class greedy_dfly_allocation :
-  public node_allocator
+class GreedyDflyAllocation :
+  public NodeAllocator
 {
-  FactoryRegister("greedy_dfly", node_allocator, greedy_dfly_allocation,
-              "Allocate a 'striped' dragonfly allocation scattering across groups")
  public:
-  greedy_dfly_allocation(sprockit::sim_parameters* params) : node_allocator(params) {
-    num_groups_ = params->get_int_param("num_groups");
+  SST_ELI_REGISTER_DERIVED(
+    NodeAllocator,
+    GreedyDflyAllocation,
+    "macro",
+    "greedy_dfly",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Allocate a 'striped' dragonfly allocation scattering across groups")
+
+  GreedyDflyAllocation(SST::Params& params) : NodeAllocator(params) {
+    num_groups_ = params.find<int>("num_groups");
   }
 
-  virtual ~greedy_dfly_allocation() throw () {}
+  virtual ~GreedyDflyAllocation() throw () {}
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "greedy dfly allocation";
   }
 
@@ -96,7 +102,7 @@ class greedy_dfly_allocation :
       num_per_group++;
     }
 
-    hw::dragonfly* dfly = safe_cast(hw::dragonfly, topology_);
+    hw::Dragonfly* dfly = safe_cast(hw::Dragonfly, topology_);
     int ng = dfly->g();
     int na = dfly->a();
     int conc = dfly->concentration();
@@ -106,10 +112,10 @@ class greedy_dfly_allocation :
       int num_left = num_needed;
       std::set<int> nodes_this_group;
       for (int a=0; a < na; ++a){
-        switch_id sid = dfly->get_uid(a,g);
-        node_id nid_offset = sid*conc;
+        SwitchId sid = dfly->getUid(a,g);
+        NodeId nid_offset = sid*conc;
         for (int c=0; c < conc; ++c){
-          node_id nid = nid_offset + c;
+          NodeId nid = nid_offset + c;
           //consider this node for addition to the allocation
           if (available.find(nid) != available.end()){
             num_left--;

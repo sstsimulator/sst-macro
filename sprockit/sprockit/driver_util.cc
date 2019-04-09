@@ -52,7 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sprockit {
 
 double
-get_positive_float(const char *value, bool &errorflag)
+getPositiveFloat(const char *value, bool &errorflag)
 {
   char *endptr = NULL;
   double val = strtod(value, &endptr);
@@ -74,7 +74,7 @@ get_positive_float(const char *value, bool &errorflag)
 }
 
 int
-get_int(const char *value, bool &errorflag)
+getInt(const char *value, bool &errorflag)
 {
   char *endptr;
   errno = 0;
@@ -96,9 +96,9 @@ get_int(const char *value, bool &errorflag)
 }
 
 int
-get_positive_int(const char *value, bool &errorflag)
+getPositiveInt(const char *value, bool &errorflag)
 {
-  int v = get_int(value, errorflag);
+  int v = getInt(value, errorflag);
   if ((!errorflag) && v <= 0) {
     errorflag = true;
     cerr0 << "Not a positive non-zero integer value: " << value << "\n";
@@ -107,14 +107,14 @@ get_positive_int(const char *value, bool &errorflag)
 }
 
 void
-get_intvec(const char *value, bool &errorflag, std::vector<int>& retval)
+getIntvec(const char *value, bool &errorflag, std::vector<int>& retval)
 {
   char *brkt;
   char *val = strdup(value);
   const char *sep = " ,;_-";
   for (char *word = strtok_r(val, sep, &brkt); word != NULL; word = strtok_r(
          NULL, sep, &brkt)) {
-    retval.push_back(get_int(word, errorflag));
+    retval.push_back(getInt(word, errorflag));
     if (errorflag) {
       break;
     }
@@ -123,10 +123,10 @@ get_intvec(const char *value, bool &errorflag, std::vector<int>& retval)
 }
 
 std::vector<int>
-get_intvec(const char *value, bool &errorflag)
+getIntvec(const char *value, bool &errorflag)
 {
   std::vector<int> retval;
-  get_intvec(value, errorflag, retval);
+  getIntvec(value, errorflag, retval);
   return retval;
 }
 

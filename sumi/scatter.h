@@ -52,64 +52,58 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class btree_scatter_actor :
-  public dag_collective_actor
+class BtreeScatterActor :
+  public DagCollectiveActor
 {
 
  public:
-  std::string
-  to_string() const override {
+  std::string toString() const override {
     return "btree scatter actor";
   }
 
-  btree_scatter_actor(int root) : root_(root) {}
+  BtreeScatterActor(CollectiveEngine* engine,int root, void *dst, void *src, int nelems,
+                      int type_size, int tag, int cq_id, Communicator* comm)
+    : DagCollectiveActor(Collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems) {}
 
  protected:
-  void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
-  void init_dag() override;
-  void init_tree() override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void initTree() override;
 
-  void buffer_action(void *dst_buffer,
-                     void *msg_buffer, action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
   int root_;
+  int nelems_;
   int midpoint_;
   int log2nproc_;
 
 };
 
-class btree_scatter :
-  public dag_collective
+class BtreeScatter :
+  public DagCollective
 {
 
  public:
-  btree_scatter(int root) : root_(root){}
+  BtreeScatter(CollectiveEngine* engine, int root, void *dst, void *src, int nelems,
+                int type_size, int tag, int cq_id, Communicator* comm)
+    : DagCollective(scatter, engine, dst, src, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems) {}
 
-  btree_scatter() : root_(-1){}
-
-  std::string
-  to_string() const override {
+  std::string toString() const override {
     return "btree scatter";
   }
 
-  dag_collective_actor*
-  new_actor() const override {
-    return new btree_scatter_actor(root_);
-  }
-
-  dag_collective*
-  clone() const override {
-    return new btree_scatter(root_);
-  }
-
-  void init_root(int root) override {
-    root_ = root;
+  DagCollectiveActor* newActor() const override {
+    return new BtreeScatterActor(engine_, root_, dst_buffer_, src_buffer_,
+                                   nelems_, type_size_, tag_, cq_id_, comm_);
   }
 
  private:
   int root_;
+  int nelems_;
 
 };
 

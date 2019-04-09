@@ -52,68 +52,62 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class btree_scatterv_actor :
-  public dag_collective_actor
+class BtreeScattervActor :
+  public DagCollectiveActor
 {
 
  public:
-  std::string to_string() const override {
+  std::string toString() const override {
     return "btree scatterv actor";
   }
 
-  btree_scatterv_actor(int root, int* send_counts) :
-    root_(root), send_counts_(send_counts) {}
+  BtreeScattervActor(CollectiveEngine* engine, int root, void *dst, void *src,
+                       int* send_counts, int recvcnt, int type_size, int tag,
+                       int cq_id, Communicator* comm) :
+    DagCollectiveActor(Collective::scatter, engine, dst, src, type_size, tag, cq_id, comm),
+    root_(root), send_counts_(send_counts), recvcnt_(recvcnt) {}
 
  protected:
-  void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
-  void init_dag() override;
-  void init_tree() override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
+  void initTree() override;
 
-  void buffer_action(void *dst_buffer,
-                     void *msg_buffer, action* ac) override;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action* ac) override;
 
  private:
   int root_;
   int midpoint_;
   int log2nproc_;
   int* send_counts_;
+  int recvcnt_;
 
 };
 
-class btree_scatterv :
-  public dag_collective
+class BtreeScatterv :
+  public DagCollective
 {
 
  public:
-  btree_scatterv(int root) :
-    root_(root) {}
+  BtreeScatterv(CollectiveEngine* engine, int root, void *dst, void *src,
+                 int* send_counts, int recvcnt, int type_size, int tag,
+                 int cq_id, Communicator* comm)
+    : DagCollective(scatterv, engine, dst, src,type_size, tag, cq_id, comm),
+    root_(root), send_counts_(send_counts), recvcnt_(recvcnt) {}
 
-  btree_scatterv() : root_(-1){}
-
-  std::string to_string() const override {
+  std::string toString() const override {
     return "btree scatterv";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new btree_scatterv_actor(root_, send_counts_);
-  }
-
-  dag_collective* clone() const override {
-    return new btree_scatterv(root_);
-  }
-
-  void init_root(int root) override {
-    root_ = root;
-  }
-
-  void init_send_counts(int *nelems) override  {
-    send_counts_ = nelems;
+  DagCollectiveActor* newActor() const override {
+    return new BtreeScattervActor(engine_, root_, dst_buffer_, src_buffer_,
+                                    send_counts_, recvcnt_, type_size_, tag_, cq_id_, comm_);
   }
 
  private:
   int root_;
   int* send_counts_;
+  int recvcnt_;
 
 };
 

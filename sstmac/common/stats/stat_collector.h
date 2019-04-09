@@ -47,36 +47,231 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <iostream>
 #include <fstream>
+#include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/timestamp.h>
 #include <sstmac/common/event_scheduler_fwd.h>
+#include <sstmac/common/stats/stat_collector_fwd.h>
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
-#include <sprockit/factories/factory.h>
 #include <sprockit/printable.h>
+#include <sprockit/sim_parameters_fwd.h>
 
+#if SSTMAC_INTEGRATED_SST_CORE
+#include <sst/core/statapi/statbase.h>
+#include <sst/core/statapi/statoutput.h>
+#else
+#include <sprockit/factory.h>
+#endif
+#include <sstmac/sst_core/integrated_component.h>
+
+#if !SSTMAC_INTEGRATED_SST_CORE
 namespace sstmac {
 
-struct stats_unique_tag {
- stats_unique_tag();
- int id;
+class StatisticBase {
+ public:
+  virtual bool specialOutput() const { return false; }
+
+  virtual void registerOutputFields(StatisticOutput* statOutput) = 0;
+
+  virtual void outputStatisticData(StatisticOutput* output, bool endOfSimFlag) = 0;
+
+  std::string name() const {
+    return name_;
+  }
+
+  virtual ~StatisticBase(){}
+
+ protected:
+  StatisticBase(EventScheduler* parent,
+                const std::string& name, const std::string& subName,
+                SST::Params& params) :
+    name_(name)
+  {
+  }
+
+ private:
+  std::string name_;
 };
 
-struct stat_descr_t {
-  bool dump_all;
-  bool reduce_all;
-  bool dump_main;
-  bool need_delete;
-  const char* suffix;
-  stats_unique_tag* unique_tag;
+class StatisticOutput
+{
+ public:
+  SST_ELI_DECLARE_BASE(StatisticOutput)
+  SST_ELI_DECLARE_CTOR(SST::Params&)
+
+  StatisticOutput(SST::Params& params){}
+  virtual ~StatisticOutput(){}
+
+ public:
+  using fieldHandle_t = int;
+
+  template<typename T> fieldHandle_t registerField(const char* fieldName){
+    return implRegisterField(fieldName);
+  }
+
+  virtual void outputField(fieldHandle_t fieldHandle, int32_t data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, uint32_t data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, int64_t data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, uint64_t data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, float data) = 0;
+  virtual void outputField(fieldHandle_t fieldHandle, double data) = 0;
+
+  void outputEntries(StatisticBase* stat, bool endOfSimFlag) {
+    startOutputEntries(stat);
+    stat->outputStatisticData(this, endOfSimFlag);
+    stopOutputEntries();
+  }
+
+  void startRegisterGroup(const std::string& name){
+    groups_.emplace(name, Group());
+    active_group_ = &groups_[name];
+  }
+
+  void stopRegisterGroup(){
+    active_group_ = nullptr;
+  }
+
+  void startRegisterFields(StatisticBase *statistic) {
+    active_stat_ = statistic;
+  }
+
+  void stopRegisterFields() {
+    active_stat_ = nullptr;
+  }
+
+  virtual void startOutputGroup(const std::string& name) = 0;
+  virtual void stopOutputGroup() = 0;
+
+  virtual void startOutputEntries(StatisticBase* statistic) = 0;
+  virtual void stopOutputEntries() = 0;
+
+ protected:
+  struct Group {
+    std::map<std::string, int> columns;
+  };
+
+ private:
+  fieldHandle_t implRegisterField(const char* fieldName){
+    Group* grp = active_group_ ? active_group_ : &default_group_;
+    std::string fullName = active_stat_->name() + "." + fieldName;
+    auto iter = grp->columns.find(fieldName);
+    if (iter == grp->columns.end()){
+      int idx = grp->columns.size();
+      grp->columns[fullName] = idx;
+      return idx;
+    } else {
+      return iter->second;
+    }
+  }
+
+  std::map<std::string, Group> groups_;
+
+  StatisticBase* active_stat_;
+
+  Group* active_group_;
+
+  Group default_group_;
+
+};
+
+class StatOutputCSV : public StatisticOutput {
+ public:
+  SST_ELI_REGISTER_DERIVED(
+      StatisticOutput,
+      StatOutputCSV,
+      "macro",
+      "csv",
+      SST_ELI_ELEMENT_VERSION(1,0,0),
+      "writes csv output")
+
+  StatOutputCSV(SST::Params& params) : StatisticOutput(params) {}
+
+  void outputField(fieldHandle_t fieldHandle, int32_t data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, uint32_t data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, int64_t data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, uint64_t data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, float data) override {
+    output(fieldHandle, data);
+  }
+
+  void outputField(fieldHandle_t fieldHandle, double data) override {
+    output(fieldHandle, data);
+  }
+
+  void startOutputGroup(const std::string& name) override {
+    csv_out_.open(name.c_str());
+  }
+
+  void startOutputEntries(StatisticBase *stat) override {
+    nextField_ = 0;
+  }
+
+  void stopOutputEntries() override {}
+
+  void stopOutputGroup() override {
+    csv_out_.close();
+  }
+
+ private:
+  template <class T> void output(fieldHandle_t handle, T&& data){
+    if (handle != 0) csv_out_ << ",";
+    if (handle != nextField_){
+      std::cout << "Fields not output in order" << std::endl;
+      abort();
+    }
+    csv_out_ << data;
+    ++nextField_;
+  }
+
+  std::ofstream csv_out_;
+  int nextField_;
+
+};
 
 
-  stat_descr_t() :
-    dump_all(false),
-    reduce_all(true),
-    dump_main(true),
-    need_delete(false),
-    suffix(nullptr),
-    unique_tag(nullptr)
-  {
+/**
+ \class StatisticCollector
+ * Base type that creates the virtual addData(...) interface
+ * Used for distinguishing fundamental types (collected by value)
+ * and composite struct types (collected by reference)
+ */
+template <class T, bool F=std::is_fundamental<T>::value>
+struct StatisticCollector { };
+
+template <class T> struct StatisticCollector<T,true> {
+ void addData(T t){
+   addData_impl(t);
+ }
+
+ virtual void addData_impl(T data) = 0;
+};
+
+template <class T>
+struct StatisticCollector<T,false>
+{
+ virtual void addData_impl(T&& data) = 0;
+ virtual void addData_impl(const T& data) = 0;
+};
+
+template <class... Args>
+struct StatisticCollector<std::tuple<Args...>, false>
+{
+  virtual void addData_impl(Args... args) = 0;
+
+  template <class... InArgs>
+  void addData(InArgs&&... in){
+    addData_impl(std::forward<InArgs>(in)...);
   }
 };
 
@@ -87,239 +282,195 @@ struct stat_descr_t {
  * because no merging of stat objects takes place, which means
  * you'll get one file for each stat object.
  */
-class stat_collector : public sprockit::printable
+template <class T>
+class Statistic :
+  public StatisticBase,
+  public StatisticCollector<T>
 {
-  DeclareFactory(stat_collector)
+
  public:
-  virtual ~stat_collector();
-
-  /** After post-processing, this notifies the collector to dump data to a file
-   *  @param name The root of the filename to dump to */
-  virtual void dump_local_data() = 0;
-
-  /** After post-processing, this notifies the collector to dump data to a file
-   *  @param name The root of the filename to dump to */
-  virtual void dump_global_data() = 0;
-
-  virtual void global_reduce(parallel_runtime* rt) = 0;
-
-  virtual void reduce(stat_collector* coll) = 0;
-
-  virtual void clear() = 0;
-
-  virtual void finalize(timestamp t){}
-
-  bool registered() const {
-    return registered_;
-  }
-
-  virtual void set_id(int id){
-    id_ = id;
-  }
-
-  int id() const {
-    return id_;
-  }
-
-  void set_registered(bool reg) {
-    registered_ = reg;
-  }
-
-  std::string fileroot() const {
-    return fileroot_;
-  }
-
-  stat_collector* clone() const {
-    return do_clone(params_);
-  }
-
-  virtual bool is_main() const {
-    return false;
-  }
-
-  static int allocate_unique_tag(){
-    return unique_tag_counter_++;
-  }
-
-  static stat_collector* find_unique_stat(event_scheduler* es, int unique_tag);
-
-  static void register_unique_stat(event_scheduler* es, stat_collector* sc, stat_descr_t* descr);
-
-  /**
-   * @brief optional_build Build a stats object with all paramters
-   *                configured in a particular namespace with the exact type
-   *                of stats object determined by the parameter ''type''
-   * @param params  The parameters for building the stats object
-   * @param ns      The parameter namespace
-   * @param deflt   The default parameter value to use if ''type'' is not specified
-   * @param suffix  An optional suffix to apply if the multiple stats objects
-   *                are configured in the same namespace
-   * @return        The corresponding stat_collector object otherwise
-   *                a nullptr if no parameters exist in the given namespace
-   */
-  static stat_collector* optional_build(sprockit::sim_parameters* params,
-                const std::string& ns,
-                const std::string& deflt,
-                stat_descr_t* descr);
-  /**
-   * @brief optional_build Build a stats object with all paramters
-   *                configured in a particular namespace with the exact type
-   *                of stats object determined by the parameter ''type''
-   * @param params  The parameters for building the stats object
-   * @param ns      The parameter namespace
-   * @param deflt   The default parameter value to use if ''type'' is not specified
-   * @param suffix  An optional suffix to apply if the multiple stats objects
-   *                are configured in the same namespace
-   * @return        The corresponding stat_collector object, otherwise abort
-   *                if no parameters exist in the given namespace
-   */
-  static stat_collector* required_build(sprockit::sim_parameters* params,
-                const std::string& ns,
-                const std::string& deflt,
-                stat_descr_t* descr);
-
-  static void stats_error(sprockit::sim_parameters* params,
-             const std::string& ns,
-             const std::string& deflt);
-
-  static void register_optional_stat(event_scheduler* parent,
-                                     stat_collector* coll, stat_descr_t* descr);
+  SST_ELI_DECLARE_BASE(Statistic)
+  SST_ELI_DECLARE_CTOR(EventScheduler*, const std::string&, const std::string&, SST::Params&)
+  virtual ~Statistic(){}
 
  protected:
-  stat_collector(sprockit::sim_parameters* params);
-
-  /**
-   * Check to see if the file is open.  If not, try and open it and set
-   * the current output stream to it, and throw an sprockit::spkt_error if something goes
-   * wrong.
-   * @return
-   */
-  static bool check_open(std::fstream& myfile, const std::string& fname,
-             std::ios::openmode flags = std::ios::out);
-
-  virtual stat_collector* do_clone(sprockit::sim_parameters* params) const = 0;
-
-  virtual bool require_filroote() const {
-    return true;
+  Statistic(EventScheduler* parent,
+            const std::string& name, const std::string& subName,
+            SST::Params& params) :
+    StatisticBase(parent, name, subName, params)
+  {
   }
-
- protected:
-  int id_;
-  std::string fileroot_;
-
- private:
-  sprockit::sim_parameters* params_;
-  bool registered_;
-  static int unique_tag_counter_;
-
 };
 
-class stat_value_base : public stat_collector
-{
- public:
-  void set_label(std::string label) {
-    label_ = label;
+#define SST_ELI_DECLARE_STATISTIC_TEMPLATE(cls,lib,name,version,desc,interface) \
+  static const char* SPKT_getLibrary(){ \
+    return lib; \
+  } \
+  static const char* SPKT_getName(){ \
+    return name; \
   }
 
- protected:
-  stat_value_base(sprockit::sim_parameters* params);
-
-  int id_;
-
-  std::string label_;
-
+template <class T, bool isFundamental>
+class NullStatisticBase :
+  public Statistic<T>
+{
 };
 
 template <class T>
-class stat_value : public stat_value_base
+class NullStatisticBase<T,false> : public Statistic<T>
 {
  public:
-  void collect(const T& val){
-    value_ += val;
-  }
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+     NullStatistic,
+     "macro",
+     "null",
+     SST_ELI_ELEMENT_VERSION(1,0,0),
+     "a null stat that collects nothing",
+     "Statistic<...>")
 
- protected:
-  stat_value(sprockit::sim_parameters* params) :
-    stat_value_base(params)
+  NullStatisticBase(EventScheduler* parent,
+            const std::string& name, const std::string& subName,
+            SST::Params& params) :
+    Statistic<T>(parent, name, subName, params)
   {
   }
 
-  T value_;
+  void addData_impl(T&& data) override {}
+
+  void addData_impl(const T& data) override {}
+
 };
 
-
-/**
- * See documentation for stat_collector::required_build
- */
-template <class T>
-T* required_stats(event_scheduler* parent,
-              sprockit::sim_parameters* params,
-              const std::string& ns,
-              const std::string& deflt,
-              stat_descr_t* descr = nullptr){
-  stat_collector* coll = stat_collector::required_build(params,ns,deflt,descr);
-  T* t = dynamic_cast<T*>(coll);
-  if (!t){
-    stat_collector::stats_error(params, ns, deflt);
-  }
-  stat_collector::register_optional_stat(parent, t, descr);
-  return t;
-}
-
-template <class T>
-T* required_stats(event_scheduler* parent,
-              sprockit::sim_parameters* params,
-              const std::string& ns,
-              const std::string& deflt,
-              const char* suffix){
-  stat_descr_t descr;
-  descr.suffix = suffix;
-  return required_stats<T>(parent, params, ns, deflt, suffix);
-}
-
-/**
- * See documentation for stat_collector::optional_build
- */
-template <class T>
-T* optional_stats(event_scheduler* parent,
-              sprockit::sim_parameters* params,
-              const std::string& ns,
-              const std::string& deflt,
-              stat_descr_t* descr = nullptr){
-
-  if (descr && descr->unique_tag){
-    stat_collector* coll = stat_collector::find_unique_stat(parent, descr->unique_tag->id);
-    if (coll) return dynamic_cast<T*>(coll);
-  }
-
-  stat_collector* coll = stat_collector::optional_build(params, ns, deflt, descr);
-  if (coll){
-    T* t = dynamic_cast<T*>(coll);
-    if (!t){
-      stat_collector::stats_error(params, ns, deflt);
-    }
-    if (descr && descr->unique_tag){
-      stat_collector::register_unique_stat(parent, t, descr);
-    } else {
-      stat_collector::register_optional_stat(parent, t, descr);
-    }
-    return t;
-  }
-  else return nullptr;
-}
-
-template <class T>
-T* optional_stats(event_scheduler* parent,
-              sprockit::sim_parameters* params,
-              const std::string& ns,
-              const std::string& deflt,
-              const char* suffix)
+template <class... Args>
+class NullStatisticBase<std::tuple<Args...>,false> :
+    public Statistic<std::tuple<Args...>>
 {
-  stat_descr_t descr;
-  descr.suffix = suffix;
-  return optional_stats<T>(parent, params, ns, deflt, &descr);
-}
+ public:
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+     NullStatistic,
+     "macro",
+     "null",
+     SST_ELI_ELEMENT_VERSION(1,0,0),
+     "a null stat that collects nothing",
+     "Statistic<...>")
+
+  NullStatisticBase(EventScheduler* parent,
+            const std::string& name, const std::string& subName,
+            SST::Params& params) :
+    Statistic<std::tuple<Args...>>(parent, name, subName, params)
+  {
+  }
+
+  void addData_impl(Args... data) override {}
+
+};
+
+template <class T>
+class NullStatisticBase<T,true> : public Statistic<T> {
+ public:
+  SST_ELI_DECLARE_STATISTIC_TEMPLATE(
+     NullStatistic,
+     "macro",
+     "null",
+     SST_ELI_ELEMENT_VERSION(1,0,0),
+     "a null stat that collects nothing",
+     "Statistic<...>")
+
+  NullStatisticBase(EventScheduler* parent,
+            const std::string& name, const std::string& subName,
+            SST::Params& params) :
+    Statistic<T>(parent, name, subName, params)
+  {
+  }
+
+  void addData_impl(T data) override {}
+
+};
+
+template <class T, bool isFund=std::is_fundamental<T>::value>
+class NullStatistic : public NullStatisticBase<T,isFund> {
+ public:
+  NullStatistic(EventScheduler* parent, const std::string& name,
+                const std::string& subName, SST::Params& params) :
+    NullStatisticBase<T,isFund>(parent, name, subName, params)
+  {
+  }
+
+  void outputStatisticData(StatisticOutput *output, bool endOfSimFlag) override {}
+
+  void registerOutputFields(StatisticOutput *statOutput) override {}
+
+  static bool isLoaded(){
+    return loaded_;
+  }
+
+ private:
+  static bool loaded_;
+};
+template <class T, bool isFund> bool NullStatistic<T,isFund>::loaded_ = true;
 
 
 } // end of namespace sstmac
+
+namespace SST {
+namespace Statistics {
+
+template <class... Args>
+using MultiStatistic = Statistic<std::tuple<Args...>>;
+
+}
+}
+
+#define SST_ELI_REGISTER_CUSTOM_STATISTIC(parent,cls,lib,name,version,desc) \
+  SPKT_REGISTER_DERIVED(parent,cls,lib,name,desc)
+
+#define SST_ELI_INSTANTIATE_STATISTIC(cls,field) \
+  struct cls##_##field##_##shortName : public cls<field> { \
+    cls##_##field##_##shortName(SST::BaseComponent* bc, const std::string& sn, \
+           const std::string& si, SST::Params& p) : \
+      cls<field>(bc,sn,si,p) {} \
+    bool SPKT_isLoaded() const { \
+     return sprockit::InstantiateBuilder< \
+         SST::Statistics::Statistic<field>, \
+         cls##_##field##_##shortName>::isLoaded() \
+        && sprockit::InstantiateBuilder< \
+         SST::Statistics::Statistic<field>, \
+         sstmac::NullStatistic<field>>::isLoaded(); \
+    } \
+  };
+
+#define PP_NARG(...) PP_NARG_(__VA_ARGS__, PP_NSEQ())
+#define PP_NARG_(...) PP_ARG_N(__VA_ARGS__)
+#define PP_ARG_N(_1,_2,_3,_4,_5,N,...) N
+#define PP_NSEQ() 5,4,3,2,1,0
+
+#define PP_GLUE(X,Y) PP_GLUE_I(X,Y)
+#define PP_GLUE_I(X,Y) X##Y
+
+#define STAT_NAME1(base,a) base##a
+#define STAT_NAME2(base,a,b) base##a##b
+#define STAT_NAME3(base,a,b,c) base##a##b##c
+#define STAT_NAME4(base,a,b,c,d) base##a##b##c##d
+
+#define STAT_GLUE_NAME(base,...) PP_GLUE(STAT_NAME,PP_NARG(__VA_ARGS__))(base,__VA_ARGS__)
+#define STAT_TUPLE(...) std::tuple<__VA_ARGS__>
+
+#define MAKE_MULTI_STATISTIC(cls,name,tuple,...) \
+  struct name : public cls<__VA_ARGS__> { \
+    name(SST::BaseComponent* bc, const std::string& sn, \
+         const std::string& si, SST::Params& p) : \
+      cls<__VA_ARGS__>(bc,sn,si,p) {} \
+    bool SPKT_isLoaded() const { \
+        return sprockit::InstantiateBuilder<SST::Statistics::Statistic<tuple>,name>::isLoaded() \
+        && sprockit::InstantiateBuilder<SST::Statistics::Statistic<tuple>,sstmac::NullStatistic<tuple>>::isLoaded(); \
+    } \
+    static const char* SPKT_fieldName(){ return #tuple; } \
+    static const char* SPKT_fieldShortName(){ return #tuple; } \
+  };
+
+#define SST_ELI_INSTANTIATE_MULTI_STATISTIC(cls,...) \
+  MAKE_MULTI_STATISTIC(cls,STAT_GLUE_NAME(cls,__VA_ARGS__),STAT_TUPLE(__VA_ARGS__),__VA_ARGS__)
+
+
+#endif
 #endif

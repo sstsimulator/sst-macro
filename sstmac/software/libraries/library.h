@@ -46,37 +46,39 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_SOFTWARE_LIBRARIES_LIBRARY_H_INCLUDED
 
 #include <sstmac/common/sst_event_fwd.h>
+#include <sstmac/common/request_fwd.h>
 #include <sstmac/common/event_location.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/operating_system_fwd.h>
 #include <sstmac/software/libraries/library_fwd.h>
 #include <sprockit/sim_parameters_fwd.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/spkt_printf.h>
 #include <map>
 
 
 namespace sstmac {
 namespace sw {
 
-class library
+class Library
 {
-  DeclareFactory(library, software_id, operating_system*)
  public:
-  std::string to_string() const {
+  std::string toString() const {
     return libname_;
   }
 
-  virtual std::string lib_name() const {
+  const std::string& libName() const {
     return libname_;
   }
 
-  virtual void incoming_event(event* ev) = 0;
+  virtual void incomingEvent(Event* ev) = 0;
 
-  operating_system* os() const {
+  virtual void incomingRequest(Request* req) = 0;
+
+  OperatingSystem* os() const {
     return os_;
   }
 
-  software_id sid() const {
+  SoftwareId sid() const {
     return sid_;
   }
 
@@ -84,43 +86,41 @@ class library
     return sid_.app_;
   }
 
-  node_id addr() const {
+  NodeId addr() const {
     return addr_;
   }
 
-  uint32_t component_id() const;
-
-  virtual ~library();
+  virtual ~Library();
 
  protected:
-  library(const std::string& libname, software_id sid, operating_system* os);
+  Library(const std::string& libname, SoftwareId sid, OperatingSystem* os);
 
-  library(const char* prefix, software_id sid, operating_system* os) :
-    library(standard_lib_name(prefix, sid), sid, os)
+  Library(const char* prefix, SoftwareId sid, OperatingSystem* os) :
+    Library(standardLibname(prefix, sid), sid, os)
   {
   }
 
-  static std::string standard_lib_name(const char* prefix, software_id sid){
-    return standard_lib_name(prefix, sid.app_, sid.task_);
+  static std::string standardLibname(const char* prefix, SoftwareId sid){
+    return standardLibname(prefix, sid.app_, sid.task_);
   }
 
-  static std::string standard_lib_name(const char* prefix, app_id aid, task_id tid){
-    std::string app_prefix = standard_app_prefix(prefix, aid);
-    return standard_app_lib_name(app_prefix.c_str(), tid);
+  static std::string standardLibname(const char* prefix, AppId aid, TaskId tid){
+    std::string app_prefix = standardAppPrefix(prefix, aid);
+    return standardAppLibname(app_prefix.c_str(), tid);
   }
 
-  static std::string standard_app_lib_name(const char* prefix, task_id tid){
+  static std::string standardAppLibname(const char* prefix, TaskId tid){
     return sprockit::printf("%s-%d", prefix, tid);
   }
 
-  static std::string standard_app_prefix(const char* prefix, app_id aid){
+  static std::string standardAppPrefix(const char* prefix, AppId aid){
     return sprockit::printf("%s-%d", prefix, aid);
   }
 
  protected:
-  operating_system* os_;
-  software_id sid_;
-  node_id addr_;
+  OperatingSystem* os_;
+  SoftwareId sid_;
+  NodeId addr_;
 
  private:
   std::string libname_;

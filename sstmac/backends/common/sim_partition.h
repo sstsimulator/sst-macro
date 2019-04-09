@@ -46,12 +46,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #define SSTMAC_BACKENDS_NATIVE_SIM_PARTITION_H_INCLUDED
 
 #include <sprockit/debug.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #include <sstmac/backends/common/parallel_runtime_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
+
+#include <sstmac/sst_core/integrated_component.h>
 
 #include <vector>
 
@@ -65,35 +67,38 @@ namespace sstmac {
  * the parent_map_ member variable stores a flat map of switch to
  * partition.
  */
-class partition
+class Partition
 {
-  DeclareFactory(partition, parallel_runtime*)
  public:
-  virtual ~partition();
+  SST_ELI_DECLARE_BASE(Partition)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&, ParallelRuntime*)
 
-  int num_switches_total() const {
+  virtual ~Partition();
+
+  int numSwitchesTotal() const {
     return num_switches_total_;
   }
 
-  int lpid_for_switch(int switch_id) const {
+  int lpidForSwitch(int id) const {
 #if SSTMAC_SANITY_CHECK
-    if (switch_id >= num_switches_total_){
-      spkt_throw_printf(sprockit::value_error,
+    if (id >= num_switches_total_){
+      spkt_throw_printf(sprockit::ValueError,
           "partition::lpid_for_switch: invalid switch %d",
-          switch_id);
+          id);
     }
 #endif
-    return switch_to_lpid_[switch_id];
+    return switch_to_lpid_[id];
   }
 
-  int thread_for_switch(int switch_id) const {
-    return switch_to_thread_[switch_id];
+  int threadForSwitch(int id) const {
+    return switch_to_thread_[id];
   }
 
-  virtual void finalize_init(){}
+  virtual void finalizeInit(SST::Params& params){}
 
  protected:
-  partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  Partition(SST::Params& params, ParallelRuntime* rt);
 
  protected:
   int* switch_to_lpid_;
@@ -108,70 +113,98 @@ class partition
 
   int me_;
 
-  parallel_runtime* rt_;
+  ParallelRuntime* rt_;
 
 };
 
-class serial_partition :
-  public partition
+class SerialPartition :
+  public Partition
 {
-  FactoryRegister("serial", partition, serial_partition)
  public:
-  serial_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  SST_ELI_REGISTER_DERIVED(
+    Partition,
+    SerialPartition,
+    "macro",
+    "serial",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "partition for single rank/single thread runs")
 
-  virtual ~serial_partition();
+  SerialPartition(SST::Params& params, ParallelRuntime* rt);
+
+  virtual ~SerialPartition();
 
 };
 
-class topology_partition :
-  public partition
+class TopologyPartition :
+  public Partition
 {
-  FactoryRegister("topology", partition, topology_partition)
 
  public:
-  topology_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  SST_ELI_REGISTER_DERIVED(
+    Partition,
+    TopologyPartition,
+    "macro",
+    "topology",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "partition derived from the topology")
 
-  virtual ~topology_partition();
+  TopologyPartition(SST::Params& params, ParallelRuntime* rt);
+
+  virtual ~TopologyPartition();
 
  protected:
-   hw::topology* fake_top_;
+   hw::Topology* fake_top_;
 
    int noccupied_;
 
 };
 
-class block_partition :
-  public partition
+class BlockPartition :
+  public Partition
 {
-  FactoryRegister("block", partition, block_partition)
  public:
-  block_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  SST_ELI_REGISTER_DERIVED(
+    Partition,
+    BlockPartition,
+    "macro",
+    "block",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "partition based on simple contiguous blocks")
 
-  virtual ~block_partition();
+  BlockPartition(SST::Params& params, ParallelRuntime* rt);
 
-  void finalize_init();
+  virtual ~BlockPartition();
 
-  virtual void partition_switches();
+  void finalizeInit(SST::Params& params);
 
-  hw::topology* top() const {
+  virtual void partitionSwitches();
+
+  hw::Topology* topology() const {
     return fake_top_;
   }
 
  protected:
-   hw::topology* fake_top_;
+   hw::Topology* fake_top_;
 
 };
 
-class occupied_block_partition :
-  public block_partition
+class OccupiedBlockPartition :
+  public BlockPartition
 {
-  FactoryRegister("occupied_block", partition, occupied_block_partition)
  public:
-  occupied_block_partition(sprockit::sim_parameters* params, parallel_runtime* rt);
+  SST_ELI_REGISTER_DERIVED(
+    Partition,
+    OccupiedBlockPartition,
+    "macro",
+    "occupied_block",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "partition based on simple contiguous blocks of nodes with active procs")
 
-  virtual ~occupied_block_partition();
+  OccupiedBlockPartition(SST::Params& params, ParallelRuntime* rt);
 
-  virtual void partition_switches();
+  virtual ~OccupiedBlockPartition();
+
+  virtual void partitionSwitches();
 
  protected:
   int occupied_switches_;

@@ -52,58 +52,57 @@ Questions? Contact sst-macro-help@sandia.gov
 
 namespace sumi {
 
-class binary_tree_bcast_actor :
-  public dag_collective_actor
+class BinaryTreeBcastActor :
+  public DagCollectiveActor
 {
  public:
-  std::string to_string() const override {
+  BinaryTreeBcastActor(CollectiveEngine* engine, int root, void *buf, int nelems,
+                          int type_size, int tag, int cq_id, Communicator* comm)
+    : DagCollectiveActor(Collective::bcast, engine, buf, buf, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems)
+  {}
+
+  std::string toString() const override {
     return "bcast actor";
   }
 
-  ~binary_tree_bcast_actor(){}
-
-  binary_tree_bcast_actor(int root) : root_(root) {}
+  ~BinaryTreeBcastActor(){}
 
  private:
-  void finalize_buffers() override;
-  void init_buffers(void *dst, void *src) override;
-  void init_dag() override;
+  void finalizeBuffers() override;
+  void initBuffers() override;
+  void initDag() override;
 
   void init_root(int me, int roundNproc, int nproc);
   void init_child(int me, int roundNproc, int nproc);
-  void init_internal(int me, int windowSize, int windowStop, action* recv) ;
-  void buffer_action(void *dst_buffer, void *msg_buffer, action *ac) override;
+  void init_internal(int me, int windowSize, int windowStop, Action* recv) ;
+  void bufferAction(void *dst_buffer, void *msg_buffer, Action *ac) override;
 
   int root_;
+  int nelems_;
 };
 
-class binary_tree_bcast_collective :
-  public dag_collective
+class BinaryTreeBcastCollective :
+  public DagCollective
 {
-  FactoryRegister("wilke", dag_collective, binary_tree_bcast_collective)
  public:
-  std::string to_string() const override {
+  BinaryTreeBcastCollective(CollectiveEngine* engine, int root, void* buf,
+                               int nelems, int type_size, int tag, int cq_id, Communicator* comm)
+    : DagCollective(Collective::bcast, engine, buf, buf, type_size, tag, cq_id, comm),
+      root_(root), nelems_(nelems) {}
+
+  std::string toString() const override {
     return "bcast";
   }
 
-  dag_collective_actor* new_actor() const override {
-    return new binary_tree_bcast_actor(root_);
-  }
-
-  dag_collective* clone() const override {
-    return new binary_tree_bcast_collective(root_);
-  }
-
-  binary_tree_bcast_collective() : root_(-1) {}
-
-  void init_root(int root) override {
-    root_ = root;
+  DagCollectiveActor* newActor() const override {
+    return new BinaryTreeBcastActor(engine_, root_, dst_buffer_, nelems_,
+                                       type_size_, tag_, cq_id_, comm_);
   }
 
  private:
-  binary_tree_bcast_collective(int root) : root_(root) {}
-
   int root_;
+  int nelems_;
 
 };
 

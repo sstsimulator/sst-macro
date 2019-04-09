@@ -1,23 +1,11 @@
 #ifndef _sstmac_software_process_std_thread_h_
 #define _sstmac_software_process_std_thread_h_
 
-#include <sstmac/software/process/thread.h>
+#include <sstmac/software/process/thread_fwd.h>
 #include <tuple>
 
 namespace sstmac {
 namespace sw {
-
-class std_thread_base : public thread {
- protected:
-  std_thread_base(thread* current_thr);
-};
-
-class std_thread_ctor_wrapper : public std_thread_base {
- protected:
-  std_thread_ctor_wrapper();
-};
-
-void start_std_thread(thread* thr);
 
 namespace threads {
 
@@ -29,10 +17,38 @@ struct build_indices
 template <std::size_t... Is>
 struct build_indices<0, Is...> : indices<Is...> {};
 
+void yield();
+
 }
 
+template <class T>
+struct lock_guard_standin {
+};
+
+struct recursive_mutex_standin {
+};
+
+class std_thread_base {
+ public:
+  virtual void run() = 0;
+
+  void setOwner(Thread* t){
+    owner_ = t;
+  }
+
+  Thread* owner() const {
+    return owner_;
+  }
+
+ private:
+  Thread* owner_;
+};
+
+int start_std_thread(std_thread_base* thr);
+void join_std_thread(std_thread_base* thr);
+
 template <class Function, class... Args>
-class std_thread : public std_thread_ctor_wrapper {
+class std_thread : public std_thread_base {
   template <class T>
   typename std::decay<T>::type decay_copy(T&& v) { return std::forward<T>(v); }
 
@@ -72,20 +88,41 @@ class std_thread_standin {
   {
     thr_ = new std_thread<Function,Args...>(
           std::forward<Function>(f), std::forward<Args>(args)...);
-    start_std_thread(thr_);
+    id_.id = start_std_thread(thr_);
   }
 
+  struct id {
+    int id;
+  };
+
+  id get_id() const noexcept {
+    return id_;
+  }
+
+
   void join(){
-    thr_->join();
+    join_std_thread(thr_);
   }
 
  private:
-  thread* thr_;
+  id id_;
+  std_thread_base* thr_;
 
 };
 
 }
 }
+
+namespace std {
+
+template <> struct hash<sstmac::sw::std_thread_standin::id> {
+  std::size_t operator()(sstmac::sw::std_thread_standin::id const& s) const noexcept
+  {
+      return std::hash<int>()(s.id);
+  }
+};
+}
+
 
 
 #endif

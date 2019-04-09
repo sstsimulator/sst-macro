@@ -48,8 +48,8 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class topology;
-class cartesian_topology;
+class Topology;
+class CartesianTopology;
 
 }
 }

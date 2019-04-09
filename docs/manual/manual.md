@@ -1,11 +1,11 @@
 ---
-title: Manual for SST-Macro 8.0.x
+title: Manual for SST-Macro 9.0.x
 published: true
 category: SSTDocumentation
 ---
 
 
-# SST/macro 8.0 User's Manual
+# SST/macro 9.0 User's Manual
 
 ![](https://github.com/sstsimulator/sst-macro/blob/devel/docs/manual/figures/sstlogo.png) 
 
@@ -835,7 +835,7 @@ node {
   launch_cmd = aprun -n8 -N1
   name = sstmac_mpi_testall
   argv =
-  sendrecv_message_size = 128
+  sendrecvMessage_size = 128
  }
  ncores = 1
  memory {
@@ -949,7 +949,7 @@ node {
   name = user_mpiapp_cxx
   argv = 
   # Application parameters
-  sendrecv_message_size = 128
+  sendrecvMessage_size = 128
  }
 }
 ````
@@ -976,10 +976,10 @@ topology_geometry = 4,4
 # Node parameters
 node_cores = 1
 node_name = null
-node_memory_model = null
+node_MemoryModel = null
 nic_name = null
 # Application parameters
-sendrecv_message_size = 128
+sendrecvMessage_size = 128
 ````
 
 All of these are special keywords in the global namespace that get expanded into parameters in a specific namespace. We really, really do not recommend using these deprecated parameters anymore.
@@ -1528,7 +1528,7 @@ int main(int argc, char **argv)
 ````
 The starting point is creating a main routine for the application.
 The simulator itself already provides a `main` routine.
-The SST compiler automatically changes the function name to `user_skeleton_main`,
+The SST compiler automatically changes the function name to `userSkeletonMain`,
 which provides an entry point for the application to actually begin.
 When SST-macro launches, it will invoke this routine and pass in any command line arguments specified via the `app1.argv` parameter.  Upon entering the main routine, 
 the code is now indistinguishable from regular MPI C++ code.  
@@ -1623,8 +1623,8 @@ To give more structure to the allocation, a Cartesian allocator can be used (Fig
 ````
 app1 {
  allocation = cartesian
- cart_sizes = 2 2
- cart_offsets = 0 0
+ cart_sizes = [2,2]
+ cart_offsets = [0,0]
 }
 ````
 
@@ -2166,7 +2166,7 @@ After installing the instrumented version of SST-macro, a call graph must be act
 ````
 node {
   os {
-    call_graph {
+    callGraph {
       fileroot = <fileroot>
     }
   }
@@ -2552,8 +2552,8 @@ node {
   launch_cmd = aprun -n 8
   indexing = block
   allocation = cartesian
-  cart_sizes = 2 2 2
-  cart_offsets = 0 0 0
+  cart_sizes = [2,2,2]
+  cart_offsets = [0,0,0]
  }
 }
 ````
@@ -2582,8 +2582,8 @@ app1 {
  launch_cmd = aprun -n 8
  indexing = block
  allocation = cartesian
- cart_sizes = 2 2 1 2
- cart_offsets = 0 0 0 0
+ cart_sizes = [2,2,1,2]
+ cart_offsets = [0,0,0,0]
 }
 ````
 
@@ -3442,7 +3442,7 @@ To understand the memoization pragmas, we first introduce how models get constru
 Source-to-source transformations based on the pragmas causes the following hooks to get inserted:
 
 ````
-int sstmac_start_memoize(const char* token, const char* model);
+int sstmac_startMemoize(const char* token, const char* model);
 void sstmac_finish_memoize0(int tag, const char* token);
 void sstmac_finish_memoize1(int tag, const char* token, double p1);
 void sstmac_finish_memoize2(int tag, const char* token, double p1, double p2);
@@ -3468,14 +3468,14 @@ that function is invoked with the given parameters to estimate a time or perform
 Memoization models are implemented by inheriting from a standard class
 
 ````
-struct regression_model {
+struct RegressionModel {
 ...
-virtual double compute(int n_params, const double params[], implicit_state* state) = 0;
-virtual int start_collection() = 0;
-virtual void finish_collection(int n_params, const double params[], implicit_state* state) = 0;
+virtual double compute(int n_params, const double params[], ImplicitState* state) = 0;
+virtual int StartCollection() = 0;
+virtual void finishCollection(int n_params, const double params[], ImplicitState* state) = 0;
 ...
 ````
-A call to `sstmac_finish_memoize2` causes `finish_collection(2,..)` to get invoked on the model.
+A call to `sstmac_finish_memoize2` causes `finishCollection(2,..)` to get invoked on the model.
 The `states` object is discussed more later in [6.1.1](#subsec:implicitStates).
 For now, `compute` only returns a double (total time).
 Generalized performance models are planned for future versions.
@@ -3484,7 +3484,7 @@ If wanting to add a least-squares model, factory register as:
 
 ````
 struct least_squares : public regression model {
- FactoryRegister("least_squares", operating_system::regression_model, least_squares)
+ FactoryRegister("least_squares", OperatingSystem::RegressionModel, least_squares)
 ````
 
 \subsection{pragma sst memoize [skeletonize(...)] [model(...)] [inputs(...)] [name(...)]}
@@ -3503,19 +3503,19 @@ void dgemm(int ncol, int nlink, int nrow, double* left, double* right);
 When running the memoization pass, the memoization hooks get invoked as:
 
 ````
-int tag = sstmac_start_memoize("dgemm", "least_squares");
+int tag = sstmac_startMemoize("dgemm", "least_squares");
 dgemm(....);
 sstmac_finish_memoize3(tag, "dgemm", ncol, nlink, nrow);
 ````
 With `skeletonize` set to true, the skeleton app would be:
 
 ````
-sstmac_compute_memoize("dgemm", ncol, nlink, nrow);
+sstmac_computeMemoize("dgemm", ncol, nlink, nrow);
 ````
 With skeletonize set to false:
 
 ````
-sstmac_compute_memoize("dgemm", ncol, nlink, nrow);
+sstmac_computeMemoize("dgemm", ncol, nlink, nrow);
 dgemm(...);
 ````
 Both the memoization function and the original function would both get invoked.
@@ -3533,22 +3533,22 @@ The implicit state lasts for the scope of the statement:
  //all statements here have that state
 }
 
-#pragma sst implicit_state ...
+#pragma sst ImplicitState ...
 fxn(...) //implicit state lasts the entire function
 ````
 
 The arguments to the pragma are best understood by example:
 
 ````
-#pragma sst implicit_state dvfs(1) cache(hot)
+#pragma sst ImplicitState dvfs(1) cache(hot)
 fxn(...)
 ````
 This causes a source code transformation to:
 
 ````
-sstmac_set_implicit_state2(dvfs,1,cache,hot);
+sstmac_set_ImplicitState2(dvfs,1,cache,hot);
 fxn(...);
-sstmac_unset_implicit_state2(dvfs,cache);
+sstmac_unset_ImplicitState2(dvfs,cache);
 ````
 For now, the functions take integer arguments (this may get relaxed to arbitrary strings).
 Thus, e.g. enums must be available or compilation will fail:
@@ -3565,7 +3565,7 @@ enum cache_states {
 ````
 
 If a `sstmac_finish_memoize` function got invoked, the states could be read.
-The class `implicit_state` is a base class only and carries no data by default.
+The class `ImplicitState` is a base class only and carries no data by default.
 Specific memoization models are intended to be used only with known implicit state classes.
 As such, the memoization model `collect`, etc, functions must dynamic cast to an expected type.
 A library of standard implicit state implementations is planned for future releases.

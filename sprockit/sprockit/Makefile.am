@@ -37,18 +37,13 @@ libspkt_temp_la_SOURCES = $(SOURCES)
 
 library_includedir=$(includedir)/sprockit
 
-
-nodist_library_include_HEADERS = spkt_config.h 
-
 nobase_library_include_HEADERS = \
   basic_string_tokenizer.h \
 	allocator.h \
   debug.h \
-  delete.h \
   errors.h \
   fileio.h \
   driver_util.h \
-  metadata_bits.h \
   output.h \
   mpi_parameters.h \
   sim_parameters.h \
@@ -65,7 +60,7 @@ nobase_library_include_HEADERS = \
   typedefs.h \
   util.h \
   units.h \
-  factories/factory.h \
+  factory.h \
   test/assert.h \
   test/test.h \
   test/equality.h \
@@ -73,11 +68,6 @@ nobase_library_include_HEADERS = \
   test/container.h \
   test/output.h \
   keyword_registration.h
-
-if HAVE_REGEXP
-libspkt_temp_la_SOURCES += regexp.cc
-nobase_library_include_HEADERS += regexp.h
-endif
 
 if !INTEGRATED_SST_CORE
 libspkt_temp_la_SOURCES += \

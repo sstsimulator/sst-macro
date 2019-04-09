@@ -48,7 +48,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class compute_scheduler;
+class ComputeScheduler;
 
 }
 }

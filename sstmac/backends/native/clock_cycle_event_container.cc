@@ -61,7 +61,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #define event_debug(...) \
   debug_printf(sprockit::dbg::parallel, "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str())
 
-RegisterDebugSlot(event_manager_time_vote);
+RegisterDebugSlot(EventManager_time_vote);
 
 RegisterKeywords(
   { "num_profile_loops", "the number of loops to execute of the parallel core for profiling parallel overheads" },
@@ -69,7 +69,7 @@ RegisterKeywords(
 );
 
 #define epoch_debug(...) \
-  debug_printf(sprockit::dbg::event_manager_time_vote, \
+  debug_printf(sprockit::dbg::EventManager_time_vote, \
     "LP %d: %s", rt_->me(), sprockit::printf(__VA_ARGS__).c_str()); fflush(stdout)
 
 #if SSTMAC_DEBUG_THREAD_EVENTS
@@ -84,17 +84,17 @@ static uint64_t barrier_cycles = 0;
 namespace sstmac {
 namespace native {
 
-clock_cycle_event_map::clock_cycle_event_map(
-  sprockit::sim_parameters* params, parallel_runtime* rt) :
-  event_manager(params, rt),
+ClockCycleEventMap::ClockCycleEventMap(
+  SST::Params& params, ParallelRuntime* rt) :
+  EventManager(params, rt),
   epoch_(0)
 {
-  num_profile_loops_ = params->get_optional_int_param("num_profile_loops", 0);
-  epoch_print_interval = params->get_optional_int_param("epoch_print_interval", epoch_print_interval); 
+  num_profile_loops_ = params.find<int>("num_profile_loops", 0);
+  epoch_print_interval = params.find<int>("epoch_print_interval", epoch_print_interval);
 }
 
 int
-clock_cycle_event_map::handle_incoming(char* buf)
+ClockCycleEventMap::handleIncoming(char* buf)
 {
 #if SSTMAC_USE_MULTITHREAD
   serializer ser;
@@ -106,50 +106,52 @@ clock_cycle_event_map::handle_incoming(char* buf)
   if (sz == 0){
     sprockit::abort("got zero size for incoming buffer");
   }
-  event_manager* mgr = interconn_->component(dst)->event_mgr();
-  mgr->schedule_pending_serialization(buf);
+  EventManager* mgr = interconn_->component(dst)->mgr();
+  mgr->schedulePendingSerialization(buf);
   return sz;
 #else
-  return serialize_schedule(buf);
+  return serializeSchedule(buf);
 #endif
 }
 
-timestamp
-clock_cycle_event_map::receive_incoming_events(timestamp vote)
+GlobalTimestamp
+ClockCycleEventMap::receiveIncomingEvents(GlobalTimestamp vote)
 {
   if (nproc_ == 1) return vote;
 
-  timestamp min_time = no_events_left_time;
+  GlobalTimestamp min_time = no_events_left_time;
   if (!stopped_){
-    event_debug("voting for minimum time %lu on epoch %d", vote.ticks(), epoch_);
-    min_time = rt_->send_recv_messages(vote);
+    event_debug("voting for minimum time %lu:%lu on epoch %d",
+                vote.epochs, vote.time.ticks(), epoch_);
+    min_time = rt_->sendRecvMessages(vote);
 
-    event_debug("got back minimum time %lu", min_time.ticks());
+    event_debug("got back minimum time %lu:%lu",
+                min_time.epochs, min_time.time.ticks());
 
-    int num_recvs = rt_->num_recvs_done();
+    int num_recvs = rt_->numRecvsDone();
     for (int i=0; i < num_recvs; ++i){
-      auto& buf = rt_->recv_buffer(i);
+      auto& buf = rt_->recvBuffer(i);
       size_t bytesRemaining = buf.totalBytes();
       char* serBuf = buf.buffer();
       while (bytesRemaining > 0){
-        int size = handle_incoming(serBuf);
+        int size = handleIncoming(serBuf);
         bytesRemaining -= size;
         serBuf += size;
       }
     }
   }
-  rt_->reset_send_recv();
+  rt_->resetSendRecv();
   ++epoch_;
   return min_time;
 }
 
 
 void
-clock_cycle_event_map::run()
+ClockCycleEventMap::run()
 {
   interconn_->setup();
 
-  timestamp lower_bound;
+  GlobalTimestamp lower_bound;
   int num_loops_left = num_profile_loops_;
   if (num_loops_left && rt_->me() == 0){
     printf("Running %d profile loops\n", num_loops_left);
@@ -163,11 +165,11 @@ clock_cycle_event_map::run()
   }
   uint64_t epoch = 0;
   while (lower_bound != no_events_left_time || num_loops_left > 0){
-    timestamp horizon = lower_bound + lookahead_;
+    GlobalTimestamp horizon = lower_bound + lookahead_;
     auto t_start = rdtsc();
-    timestamp min_time = run_events(horizon);
+    GlobalTimestamp min_time = runEvents(horizon);
     auto t_run = rdtsc();
-    lower_bound = receive_incoming_events(min_time);
+    lower_bound = receiveIncomingEvents(min_time);
     auto t_stop = rdtsc();
     uint64_t event = t_run - t_start;
     uint64_t barrier = t_stop - t_run;
@@ -176,25 +178,32 @@ clock_cycle_event_map::run()
     if (epoch % epoch_print_interval == 0 && rt_->me() == 0){
       printf("Epoch %13" PRIu64 " ran %13" PRIu64 ", %13" PRIu64 " cumulative %13" PRIu64
              ", %13" PRIu64 " until horizon %13" PRIu64 "\n",
-             epoch, event, barrier, event_cycles, barrier_cycles, horizon.ticks());
+             epoch, event, barrier, event_cycles, barrier_cycles, horizon.time.ticks());
     }
     if (num_loops_left > 0){
       --num_loops_left;
     }
     ++epoch;
   }
-  compute_final_time(now_);
+  computeFinalTime(now_);
   if (rt_->me() == 0) printf("Ran %" PRIu64 " epochs on MPI parallel\n", epoch);
 }
 
 void
-clock_cycle_event_map::compute_final_time(timestamp vote)
+ClockCycleEventMap::computeFinalTime(GlobalTimestamp vote)
 {
   if (nproc_ == 1){
     final_time_ = vote;
   } else {
-    uint64_t final_ticks = vote.ticks();
-    final_time_ = timestamp(rt_->allreduce_max(final_ticks), timestamp::exact);
+    uint64_t final_epochs = vote.epochs;
+    rt_->allreduceMax(final_epochs);
+    uint64_t final_ticks = vote.time.ticks();
+    if (final_epochs != vote.epochs){
+      //don't vote
+      final_ticks = 0;
+    }
+    rt_->allreduceMax(final_ticks);
+    final_time_ = GlobalTimestamp(final_epochs, final_ticks);
   }
 }
 

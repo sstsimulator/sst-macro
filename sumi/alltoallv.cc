@@ -43,7 +43,6 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sumi/alltoallv.h>
-#include <sumi/partner_timeout.h>
 #include <sumi/transport.h>
 #include <sumi/communicator.h>
 #include <sprockit/output.h>
@@ -63,63 +62,65 @@ using namespace sprockit::dbg;
 namespace sumi {
 
 void
-direct_alltoallv_actor::init_buffers(void* dst, void* src)
+DirectAlltoallvActor::initBuffers()
 {
+  void* dst = result_buffer_;
+  void* src = send_buffer_;
   if (src){
     total_send_size_ = 0;
     total_recv_size_ = 0;
-    for (int i=0; i < dense_nproc_; ++i){
+    for (int i=0; i < dom_nproc_; ++i){
       total_send_size_ += send_counts_[i];
       total_recv_size_ += recv_counts_[i];
     }
-    result_buffer_ = my_api_->make_public_buffer(dst, total_recv_size_);
-    send_buffer_ = my_api_->make_public_buffer(src, total_send_size_);
+    result_buffer_ = my_api_->makePublicBuffer(dst, total_recv_size_);
+    send_buffer_ = my_api_->makePublicBuffer(src, total_send_size_);
     recv_buffer_ = result_buffer_;
   }
 }
 
 void
-direct_alltoallv_actor::finalize_buffers()
+DirectAlltoallvActor::finalizeBuffers()
 {
   if (result_buffer_){
-    my_api_->unmake_public_buffer(result_buffer_, total_recv_size_);
-    my_api_->unmake_public_buffer(send_buffer_, total_send_size_);
+    my_api_->unmakePublicBuffer(result_buffer_, total_recv_size_);
+    my_api_->unmakePublicBuffer(send_buffer_, total_send_size_);
   }
 }
 
 void
-direct_alltoallv_actor::add_action(
-  const std::vector<action*>& actions,
+DirectAlltoallvActor::addAction(
+  const std::vector<Action*>& actions,
   int stride_direction,
   int num_initial,
   int stride)
 {
-  int partner = (dense_me_ + dense_nproc_ + stride*stride_direction) % dense_nproc_;
-  action* ac = actions[partner];
+  int partner = (dom_me_ + dom_nproc_ + stride*stride_direction) % dom_nproc_;
+  Action* ac = actions[partner];
   if (stride < num_initial){
-    dag_collective_actor::add_action(ac);
+    DagCollectiveActor::addAction(ac);
   } else {
-    int prev_partner = (partner + dense_nproc_ - num_initial*stride_direction) % dense_nproc_;
-    action* prev = actions[prev_partner];
-    add_dependency(prev, ac);
+    int prev_partner = (partner + dom_nproc_ - num_initial*stride_direction) % dom_nproc_;
+    Action* prev = actions[prev_partner];
+    addDependency(prev, ac);
   }
 }
 
 void
-direct_alltoallv_actor::init_dag()
+DirectAlltoallvActor::initDag()
 {
-  std::vector<action*> recvs(dense_nproc_);
-  std::vector<action*> sends(dense_nproc_);
+  std::vector<Action*> recvs(dom_nproc_);
+  std::vector<Action*> sends(dom_nproc_);
 
-  recv_action::buf_type_t recv_ty = slicer_->contiguous() ?
-        recv_action::in_place : recv_action::unpack_temp_buf;
+  RecvAction::buf_type_t recv_ty = slicer_->contiguous() ?
+        RecvAction::in_place : RecvAction::unpack_temp_buf;
 
   int send_offset = 0;
   int recv_offset = 0;
   int round = 0;
-  for (int i=0; i < dense_nproc_; ++i){
-    action* recv = new recv_action(round, i, recv_ty);
-    action* send = new send_action(round, i, send_action::in_place);
+  for (int i=0; i < dom_nproc_; ++i){
+    Action* recv = new RecvAction(round, i, recv_ty);
+    Action* send = new SendAction(round, i, SendAction::in_place);
     send->offset = send_offset;
     send->nelems = send_counts_[i];
     recv->offset = recv_offset;
@@ -130,23 +131,23 @@ direct_alltoallv_actor::init_dag()
   }
 
   int num_initial = 3;
-  for (int i=0; i < dense_nproc_; ++i){
+  for (int i=0; i < dom_nproc_; ++i){
     //move down for recvs
-    add_action(recvs, -1, num_initial, i);
+    addAction(recvs, -1, num_initial, i);
     //move down for sends
-    add_action(sends, 1, num_initial, i);
+    addAction(sends, 1, num_initial, i);
   }
 
 }
 
 void
-direct_alltoallv_actor::buffer_action(void *dst_buffer, void *msg_buffer, action* ac)
+DirectAlltoallvActor::bufferAction(void *dst_buffer, void *msg_buffer, Action* ac)
 {
   std::memcpy(dst_buffer, msg_buffer, ac->nelems * type_size_);
 }
 
 void
-direct_alltoallv_actor::finalize()
+DirectAlltoallvActor::finalize()
 {
 }
 

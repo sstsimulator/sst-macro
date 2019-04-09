@@ -50,7 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace sw {
 
-class pthread_runner : public thread
+class PthreadRunner : public Thread
 {
 
  protected:
@@ -62,9 +62,9 @@ class pthread_runner : public thread
  public:
   virtual void run() override;
 
-  pthread_runner(software_id id, app* parent,
+  PthreadRunner(SoftwareId id, App* parent,
                  start_fxn start_routine, void* arg,
-                 operating_system* os,
+                 OperatingSystem* os,
                  int detach_state);
 
 };

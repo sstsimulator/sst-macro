@@ -13,10 +13,8 @@
 SUBDIRS = \
 machines \
 blas \
-sumi \
 pthread \
-omp \
-uq
+omp 
 
 
 library_includedir=$(includedir)/sstmac/libraries

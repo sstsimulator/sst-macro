@@ -48,7 +48,9 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/common/event_handler.h>
 #include <sstmac/common/event_scheduler.h>
 #include <sstmac/common/rng.h>
-#include <sstmac/common/messages/sst_message_fwd.h>
+#include <sstmac/sst_core/integrated_component.h>
+#include <sstmac/hardware/common/flow_fwd.h>
+#include <sstmac/hardware/network/network_message_fwd.h>
 #include <sstmac/hardware/node/node_fwd.h>
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
@@ -63,87 +65,91 @@ namespace hw {
  *        using the LogGP model.  See "LogGP in Theory and Practice"
  *        by Hoefler and Schneider.
  */
-class logp_switch : public connectable_component
+class LogPSwitch : public ConnectableComponent
 {
-  DeclareFactory(logp_switch,uint32_t,event_manager*)
 
  public:
-  RegisterComponent("logP | simple | LogP | logp", logp_switch, logp_switch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "A switch that implements a basic delay model with no congestion modeling")
+  SST_ELI_REGISTER_COMPONENT(
+    LogPSwitch,
+    "macro",
+    "logp_switch",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A switch that implements a basic delay model with no congestion modeling",
+    COMPONENT_CATEGORY_NETWORK)
+
+  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS)
+
+  struct ContentionModel {
+    SST_ELI_DECLARE_BASE(ContentionModel)
+    SST_ELI_DECLARE_DEFAULT_INFO()
+    SST_ELI_DECLARE_CTOR(SST::Params&)
+
+    virtual double value() = 0;
+
+    ContentionModel(SST::Params& params){}
+  };
 
  public:
-  logp_switch(sprockit::sim_parameters* params, uint32_t cid, event_manager* mgr);
+  LogPSwitch(uint32_t cid, SST::Params& params);
 
-  virtual ~logp_switch();
+  virtual ~LogPSwitch();
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "LogP switch";
   }
 
-  void connect_output(sprockit::sim_parameters *params,
-                      int src_outport, int dst_inport,
-                      event_link *payload_link) override {
-    nic_links_[src_outport] = payload_link;
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& payload_link) override {
+    nic_links_[src_outport] = std::move(payload_link);
   }
 
-  void connect_input(sprockit::sim_parameters *params,
-                     int src_outport, int dst_inport,
-                     event_link *credit_link) override {
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& credit_link) override {
     //do nothing
   }
 
-  link_handler* payload_handler(int port) override {
-    return new_link_handler(this, &logp_switch::send_event);
+  LinkHandler* payloadHandler(int port) override {
+    return newLinkHandler(this, &LogPSwitch::sendEvent);
   }
 
-  link_handler* credit_handler(int port) override {
-    return new_link_handler(this, &logp_switch::drop_event);
+  LinkHandler* creditHandler(int port) override {
+    return newLinkHandler(this, &LogPSwitch::dropEvent);
   }
 
-  void connect_output(node_id nid, event_link* link){
-    nic_links_[nid] = link;
+  void connectOutput(NodeId nid, EventLink::ptr&& link) {
+    nic_links_[nid] = std::move(link);
   }
 
-  void send_event(event* ev);
+  void sendEvent(Event* ev);
 
-  void drop_event(event* ev){}
+  void dropEvent(Event* ev){}
 
-  void send(message *msg){
+  void send(NetworkMessage* msg){
     send(now(), msg);
   }
 
-  void send(timestamp start, message* msg);
+  void send(GlobalTimestamp start, NetworkMessage* msg);
 
-  timestamp send_latency(sprockit::sim_parameters* params) const override {
-    return out_in_lat_;
-  }
-
-  timestamp credit_latency(sprockit::sim_parameters* params) const override {
+  Timestamp out_in_latency() const {
     return out_in_lat_;
   }
 
  private:
-  double inj_bw_inverse_;
+  Timestamp inj_lat_;
+  Timestamp out_in_lat_;
 
-  timestamp inj_lat_;
+  Timestamp byte_delay_;
 
-  timestamp out_in_lat_;
+  Timestamp hop_latency_;
 
-  double inverse_bw_;
+  Topology* top_;
 
-  double inv_min_bw_;
-
-  timestamp hop_latency_;
-
-  topology* top_;
-
-  std::vector<event_link*> nic_links_;
+  std::vector<EventLink::ptr> nic_links_;
 
   RNG::MWC* rng_;
 
-  timestamp random_max_extra_latency_;
-  double random_max_extra_byte_delay_;
+  ContentionModel* contention_model_;
+
+  Timestamp random_max_extra_latency_;
+  Timestamp random_max_extra_byte_delay_;
   uint32_t random_seed_;
 
 };

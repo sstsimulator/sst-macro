@@ -54,24 +54,28 @@ namespace sw {
 /**
  * A launcher that can be cooperatively scheduled by a very naive scheduler.
  */
-class app_launcher :
-  public service
+class AppLauncher :
+  public Service
 {
 
  public:
-  app_launcher(operating_system* os);
+  AppLauncher(OperatingSystem* os);
 
   /// Hasta la vista.
-  virtual ~app_launcher() throw ();
+  virtual ~AppLauncher() throw ();
 
-  virtual void incoming_event(event* ev) override;
+  virtual void incomingRequest(Request* ev) override;
+
+  void incomingEvent(Event* ev) override {
+    Service::incomingEvent(ev);
+  }
 
   virtual void start() override;
 
  protected:
   bool is_completed_;
 
-  std::unordered_map<app_id, int> num_apps_launched_;
+  std::unordered_map<AppId, int> num_apps_launched_;
 };
 
 }

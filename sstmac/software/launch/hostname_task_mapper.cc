@@ -55,31 +55,29 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/keyword_registration.h>
 
 RegisterKeywords(
- { "launch_hostname_list", "DEPRECATED: a line-by-line list of hostnames to allocate for a job" },
- { "hostname_list", "a line-by-line list of hostnames to allocate for a job" },
+ { "hostmap", "a line-by-line list of hostnames to map each task to" },
 );
 
 namespace sstmac {
 namespace sw {
 
-hostname_task_mapper::hostname_task_mapper(sprockit::sim_parameters *params) :
-  task_mapper(params)
+HostnameTaskMapper::HostnameTaskMapper(SST::Params& params) :
+  TaskMapper(params)
 {
-  listfile_ = params->get_param("hostname_list");
+  listfile_ = params.find<std::string>("hostmap");
 }
 
 void
-hostname_task_mapper::map_ranks(
+HostnameTaskMapper::mapRanks(
   const ordered_node_set& nodes,
   int ppn,
-  std::vector<node_id> &result,
+  std::vector<NodeId> &result,
   int nproc)
 {
   int nrank = nproc;
   result.resize(nrank);
 
-  std::istream* nodelistptr = rt_->bcast_file_stream(listfile_);
-  std::istream& nodelist = *nodelistptr;
+  std::ifstream nodelist(listfile_);
 
   std::stringstream sstr;
   for (int i = 0; i < nrank; i++) {
@@ -88,34 +86,11 @@ hostname_task_mapper::map_ranks(
 
     sstr << hostname << "\n";
 
-
-    auto nid_it = hostname_allocation::hostnamemap_.find(hostname);
-    auto end = hostname_allocation::hostnamemap_.end();
-
-    if (nid_it == end) {
-      std::stringstream sstr;
-      sstr << hostname << " from file " << listfile_ <<
-           " does not exist in node map.";
-
-      auto it = hostname_allocation::hostnamemap_.begin();
-
-      if (it == end) {
-        sstr << " No hostnames are registered with hostname_allocation."
-             << " This is perhaps not surprising then."
-             << " Maybe check that launch_allocation is set to hostname.";
-      } else {
-        sstr << std::endl << "Valid hostnames are: ";
-        for ( ; it != end; ++it) {
-          sstr << std::endl << it->first;
-        }
-        sstr << std::endl << std::endl
-             << "Are you sure the hostname file and node map"
-             " are from the same machine?";
-      }
-      sprockit::abort(sstr.str());
+    NodeId nid;
+    if (!topology_) {
+      spkt_throw_printf(sprockit::ValueError, "hostname_task_mapper: null topology");
     }
-
-    node_id nid = nid_it->second;
+    nid = topology_->nodeNameToId(hostname);
 
     debug_printf(sprockit::dbg::indexing,
         "hostname_task_mapper: rank %d is on hostname %s at nid=%d",
@@ -125,7 +100,7 @@ hostname_task_mapper::map_ranks(
 
   }
 
-  delete nodelistptr;
 }
+
 }
 }

@@ -75,7 +75,7 @@ nodeParams = macroToCoreParams(nodeParams)
 
 class TestEP(EndPoint):
   def build( self, nodeID, extraKeys ):
-    node = sst.Component( "node" + str(nodeID), "macro.simple_node" )
+    node = sst.Component( "node" + str(nodeID), "macro.SimpleNode" )
     node.addParams(extraKeys)
     node.addParams(nodeParams)
     node.addParam("id", nodeID)

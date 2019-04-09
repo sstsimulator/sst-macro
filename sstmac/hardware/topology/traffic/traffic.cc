@@ -58,7 +58,7 @@ traffic_pattern::tostr(type_t ty)
       enumcase(tornado);
       enumcase(bit_complement);
     default:
-      spkt_throw_printf(sprockit::value_error,
+      spkt_throw_printf(sprockit::ValueError,
                        "traffic_pattern::tostr: unknown type_t enum %d",
                        ty);
   }

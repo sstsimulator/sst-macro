@@ -57,54 +57,50 @@ RegisterDebugSlot(pisces_config,
 namespace sstmac {
 namespace hw {
 
-const double pisces_packet::uninitialized_bw = -1;
+const double PiscesPacket::uninitialized_bw = -1;
 
-pisces_packet::pisces_packet(
+PiscesPacket::PiscesPacket(
   serializable* msg,
   uint32_t num_bytes,
   uint64_t flow_id,
   bool is_tail,
-  node_id fromaddr,
-  node_id toaddr) :
-  packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr),
-  bw_(uninitialized_bw),
-  max_in_bw_(1.0)
+  NodeId fromaddr,
+  NodeId toaddr) :
+  Packet(msg, num_bytes, flow_id, is_tail, fromaddr, toaddr)
 {
 }
 
 void
-pisces_packet::serialize_order(serializer& ser)
+PiscesPacket::serialize_order(serializer& ser)
 {
   //routable::serialize_order(ser);
-  packet::serialize_order(ser);
-  ser & bw_;
-  ser & max_in_bw_;
+  Packet::serialize_order(ser);
   ser & arrival_;
   ser & current_vc_;
 }
 
 std::string
-pisces_packet::to_string() const
+PiscesPacket::toString() const
 {
-  return sprockit::printf("flow %16lu%s, %d bytes bw=%8.4e %d->%d %s",
-                   uint64_t(flow_id()),
-                   is_tail() ? " tail" : "",
-                   byte_length(), bw_,
-                   int(fromaddr()), int(toaddr()), bw_,
+  return sprockit::printf("flow %16lu%s, %d bytes delay=%8.4e %d->%d %s",
+                   uint64_t(flowId()),
+                   isTail() ? " tail" : "",
+                   byteLength(), byte_delay_.sec(),
+                   int(fromaddr()), int(toaddr()),
                    orig() ? "with payload" : "no payload");
 }
 
 std::string
-pisces_credit::to_string() const
+PiscesCredit::toString() const
 {
   return sprockit::printf("credits n=%d port=%d vc=%d",
                           num_credits_, port_, vc_);
 }
 
 void
-pisces_credit::serialize_order(serializer& ser)
+PiscesCredit::serialize_order(serializer& ser)
 {
-  event::serialize_order(ser);
+  Event::serialize_order(ser);
   ser & num_credits_;
   ser & port_;
   ser & vc_;

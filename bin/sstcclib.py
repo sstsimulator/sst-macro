@@ -413,12 +413,9 @@ def run(typ, extraLibs="", includeMain=True, makeLibrary=False, redefineSymbols=
   #treat it as a given flag on the command line
 
   if typ == "c++":
-    if sstStdFlag and givenStdFlag:
-      #take whichever is greater
-      if sstStdFlag > givenStdFlag:
-        givenFlags.append(sstStdFlag)
-      else:
-        givenFlags.append(givenStdFlag)
+    if sstStdFlag and givenStdFlag and sstStdFlag != givenStdFlag:
+      sys.stderr.write("WARNING: SST compiled with %s, but app compiled with %s\n" % (sstStdFlag, givenStdFlag))
+      givenFlags.append(givenStdFlag)
     elif sstStdFlag:
       givenFlags.append(sstStdFlag)
     elif givenStdFlag:

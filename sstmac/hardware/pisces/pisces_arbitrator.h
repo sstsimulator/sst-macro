@@ -48,62 +48,57 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/common/timestamp.h>
-#include <sprockit/factories/factory.h>
+#include <sprockit/factory.h>
 #include <sstmac/hardware/noise/noise.h>
-#include <sstmac/hardware/pisces/pisces_stats.h>
 
 namespace sstmac {
 namespace hw {
 
 /**
- * @brief The pisces_bandwidth_arbitrator class  This arbitrates the available bandwidth
+ * @brief The PiscesBandwidthArbitrator class  This arbitrates the available bandwidth
  *        amongst incoming packets. This can either occur on discrete packets or it can
  *        attempt to simulate flits.
  */
-class pisces_bandwidth_arbitrator
+class PiscesBandwidthArbitrator
 {
-  DeclareFactory(pisces_bandwidth_arbitrator)
  public:
+  SST_ELI_DECLARE_BASE(PiscesBandwidthArbitrator)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(double)
+
+  struct IncomingPacket
+  {
+    Timestamp incoming_byte_delay;
+    GlobalTimestamp now;
+    GlobalTimestamp head_leaves;
+    GlobalTimestamp tail_leaves;
+    GlobalTimestamp credit_leaves;
+    PiscesPacket* pkt;
+    int src_outport;
+    int dst_inport;
+  };
+
   /**
       Assign bandwidth to payload.
       @return The time at which the packet can be forwarded to the next switch/node/etc.
   */
-  virtual void arbitrate(pkt_arbitration_t& st) = 0;
+  virtual void arbitrate(IncomingPacket& st) = 0;
 
-  virtual timestamp head_tail_delay(pisces_packet* pkt) = 0;
+  virtual Timestamp headTailDelay(PiscesPacket* pkt) = 0;
 
-  virtual std::string to_string() const = 0;
+  virtual std::string toString() const = 0;
 
-  virtual ~pisces_bandwidth_arbitrator(){}
+  virtual ~PiscesBandwidthArbitrator(){}
 
-  double outgoing_bw() const {
-    return out_bw_;
+  Timestamp byteDelay() const {
+    return byteDelay_;
   }
 
-  static inline timestamp
-  credit_delay(double max_in_bw, double out_bw, long bytes){
-    double credit_delta = 1.0/out_bw - 1.0/max_in_bw;
-    credit_delta = std::max(0., credit_delta);
-    return timestamp(bytes * credit_delta);
-  }
-
-  virtual void init_noise_model(noise_model* noise);
-
-  /**
-   * @brief partition Partition the arbitrator time windows into a series of randomly sized chunks
-   * @param noise  The noise model that randomly selects time values
-   * @param num_intervals
-   */
-  virtual void partition(noise_model* noise, int num_intervals);
-
-  virtual uint32_t bytes_sending(timestamp now) const = 0;
+ protected:
+  PiscesBandwidthArbitrator(double bw);
 
  protected:
-  pisces_bandwidth_arbitrator(sprockit::sim_parameters* params);
-
- protected:
-  double out_bw_;
-  double inv_out_bw_;
+  Timestamp byteDelay_;
 
 };
 
@@ -111,23 +106,27 @@ class pisces_bandwidth_arbitrator
  * @brief The pisces_null_arbitrator class  The performs no congestion modeling.
  *        This assumes packets can always receive full bandwidth regardless of traffic.
  */
-class pisces_null_arbitrator :
-  public pisces_bandwidth_arbitrator
+class PiscesNullArbitrator :
+  public PiscesBandwidthArbitrator
 {
-  FactoryRegister("null", pisces_bandwidth_arbitrator, pisces_null_arbitrator,
-              "Simple bandwidth arbitrator that models zero congestion on a link")
  public:
-  pisces_null_arbitrator(sprockit::sim_parameters* params);
+  SST_ELI_REGISTER_DERIVED(
+    PiscesBandwidthArbitrator,
+    PiscesNullArbitrator,
+    "macro",
+    "null",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Simple bandwidth arbitrator that models zero congestion on a link")
 
-  virtual void arbitrate(pkt_arbitration_t& st) override;
+  PiscesNullArbitrator(double bw);
 
-  std::string to_string() const override {
+  virtual void arbitrate(IncomingPacket& st) override;
+
+  std::string toString() const override {
     return "pisces null arbitrator";
   }
 
-  timestamp head_tail_delay(pisces_packet *pkt) override;
-
-  uint32_t bytes_sending(timestamp now) const override;
+  Timestamp headTailDelay(PiscesPacket *pkt) override;
 
 };
 
@@ -137,30 +136,34 @@ class pisces_null_arbitrator :
  * flits from different packets in this scheme.  For larger packet sizes, this can lead to
  * unrealistic delays since packets cannot pipeline across network stages.
  */
-class pisces_simple_arbitrator :
-  public pisces_bandwidth_arbitrator
+class PiscesSimpleArbitrator :
+  public PiscesBandwidthArbitrator
 {
-  FactoryRegister("simple", pisces_bandwidth_arbitrator, pisces_simple_arbitrator,
-              "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
-              "This corresponds to store-and-forward, which can be inaccurate for large packet sizes")
  public:
-  pisces_simple_arbitrator(sprockit::sim_parameters* params);
+  SST_ELI_REGISTER_DERIVED(
+    PiscesBandwidthArbitrator,
+    PiscesSimpleArbitrator,
+    "macro",
+    "simple",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Simple bandwidth arbitrator that only ever gives exclusive access to a link."
+    "This corresponds to store-and-forward, which can be inaccurate for large packet sizes")
 
-  virtual void arbitrate(pkt_arbitration_t& st) override;
+  PiscesSimpleArbitrator(double bw);
 
-  std::string to_string() const override {
+  virtual void arbitrate(IncomingPacket& st) override;
+
+  std::string toString() const override {
     return "pisces simple arbitrator";
   }
 
-  timestamp head_tail_delay(pisces_packet *pkt) override {
+  Timestamp headTailDelay(PiscesPacket *pkt) override {
     //no delay
-    return timestamp();
+    return Timestamp();
   }
 
-  uint32_t bytes_sending(timestamp now) const override;
-
  protected:
-  timestamp next_free_;
+  GlobalTimestamp next_free_;
 
 };
 
@@ -170,64 +173,46 @@ class pisces_simple_arbitrator :
  * flits from different packets in this scheme.  For larger packet sizes, this can lead to
  * unrealistic delays since packets cannot pipeline across network stages.
  */
-class pisces_cut_through_arbitrator :
-  public pisces_bandwidth_arbitrator
+class PiscesCutThroughArbitrator :
+  public PiscesBandwidthArbitrator
 {
-  FactoryRegister("cut_through", pisces_bandwidth_arbitrator, pisces_cut_through_arbitrator,
-              "Bandwidth arbitrator that forwards packets as soon as they arrive and enough credits are received"
-              "This is a much better approximation to wormhole or virtual cut_through routing")
- private:
-  typedef uint64_t ticks_t;
-  typedef double bw_t;
 
  public:
-  pisces_cut_through_arbitrator(sprockit::sim_parameters* params);
+  SST_ELI_REGISTER_DERIVED(
+    PiscesBandwidthArbitrator,
+    PiscesCutThroughArbitrator,
+    "macro",
+    "cut_through",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Bandwidth arbitrator that forwards packets as soon as they arrive and enough credits are received"
+    "This is a much better approximation to wormhole or virtual cut_through routing")
 
-  ~pisces_cut_through_arbitrator();
+  PiscesCutThroughArbitrator(double bw);
 
-  virtual void arbitrate(pkt_arbitration_t& st) override;
+  ~PiscesCutThroughArbitrator();
 
-  uint32_t bytes_sending(timestamp now) const override;
+  void arbitrate(IncomingPacket& st) override;
 
-  std::string to_string() const override {
+  std::string toString() const override {
     return "cut through arbitrator";
   }
 
-  void partition(noise_model* model,
-    int num_intervals) override;
-
-  void init_noise_model(noise_model* noise) override;
-
-  timestamp head_tail_delay(pisces_packet *pkt) override;
+  Timestamp headTailDelay(PiscesPacket *pkt) override;
 
  private:
-  void clean_up(ticks_t now);
-
-  void do_arbitrate(pkt_arbitration_t& st);
-
-  struct bandwidth_epoch : public sprockit::thread_safe_new<bandwidth_epoch> {
-    bw_t bw_available; //bandwidth is bytes per timestamp tick
-    ticks_t start;
-    ticks_t length;
-    bandwidth_epoch* next;
-
-    bandwidth_epoch() :
-      next(nullptr) {
-    }
-    
-    ~bandwidth_epoch(){
-    }
-
-    void truncate_after(ticks_t delta_t);
-
-    void split(ticks_t delta_t);
+  struct Epoch : public sprockit::thread_safe_new<Epoch> {
+    GlobalTimestamp start;
+    uint32_t numCycles;
+    Epoch* next;
   };
 
-  bandwidth_epoch* head_;
+  Epoch* advance(Epoch* epoch, Epoch* prev);
 
-  /** Convert from bytes/sec to bytes/tick */
-  double bw_tick_to_sec_conversion_;
-  double bw_sec_to_tick_conversion_;
+  void clearOut(GlobalTimestamp now);
+
+  Epoch* head_;
+  Timestamp cycleLength_;
+  GlobalTimestamp lastEpochEnd_;
 
 };
 

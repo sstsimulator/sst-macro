@@ -49,13 +49,13 @@ namespace sstmac {
 namespace sw {
 
 void
-round_robin_task_mapper::map_ranks(
+RoundRobinTaskMapper::mapRanks(
   const ordered_node_set& nodes,
   int ppn,
-  std::vector<node_id> &result,
+  std::vector<NodeId> &result,
   int nproc)
 {
-  nproc = validate_nproc(ppn, nodes.size(), nproc, "blockindexing");
+  nproc = validateNproc(ppn, nodes.size(), nproc, "blockindexing");
 
   ordered_node_set::iterator iter = nodes.begin();
   for (long i = 0; i < nproc / ppn; i++) {

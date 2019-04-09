@@ -50,20 +50,20 @@ Questions? Contact sst-macro-help@sandia.gov
 #define start_probe_call(fxn,comm,src,tag) \
   start_mpi_call(fxn); \
   mpi_api_debug(sprockit::dbg::mpi, "%s(%s,%s,%s)", \
-    #fxn, src_str(source).c_str(), tag_str(tag).c_str(), comm_str(comm).c_str());
+    #fxn, srcStr(source).c_str(), tagStr(tag).c_str(), commStr(comm).c_str());
 
 namespace sumi {
 
 int
-mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
+MpiApi::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 {
   start_probe_call(MPI_Probe,comm,source,tag);
 
-  mpi_comm* commPtr = get_comm(comm);
+  MpiComm* commPtr = getComm(comm);
 
-  mpi_request* req = mpi_request::construct(mpi_request::Probe);
+  MpiRequest* req = MpiRequest::construct(MpiRequest::Probe);
   queue_->probe(req, commPtr, source, tag);
-  queue_->progress_loop(req);
+  queue_->progressLoop(req);
 
   if (status != MPI_STATUS_IGNORE){
     *status = req->status();
@@ -76,19 +76,19 @@ mpi_api::probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 }
 
 int
-mpi_api::iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
+MpiApi::iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
 {
   start_probe_call(MPI_Iprobe,comm,source,tag);
 
-  mpi_comm* commPtr = get_comm(comm);
+  MpiComm* commPtr = getComm(comm);
   bool found = queue_->iprobe(commPtr, source, tag, status);
   if (found){
     *flag = 1;
     mpi_api_debug(sprockit::dbg::mpi, "MPI_Iprobe(%s,%s,%s)",
-      src_str(source).c_str(), tag_str(tag).c_str(), comm_str(comm).c_str());
+      srcStr(source).c_str(), tagStr(tag).c_str(), commStr(comm).c_str());
   } else {
     if (iprobe_delay_us_){
-      queue_->forward_progress(1e-6*iprobe_delay_us_);
+      queue_->forwardProgress(1e-6*iprobe_delay_us_);
       found = queue_->iprobe(commPtr, source, tag, status);
     }
 

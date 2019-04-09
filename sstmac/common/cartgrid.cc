@@ -142,7 +142,7 @@ primefactor_i(int x, int * factors) {
 }
 
 void
-gen_cart_grid(int n, int& x, int& y, int& z) {
+genCartGrid(int n, int& x, int& y, int& z) {
   int i, j, df_cnt;
   int tf1, tf2, tf3;
   int factors[32+1], distinct_factors[32+1], count_factors[32+1];

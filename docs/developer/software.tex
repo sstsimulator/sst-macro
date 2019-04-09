@@ -148,12 +148,12 @@ Sends Events Via &
 \section{Libraries}
 \label{sec:libraries}
 The creating and handling of software events is managed through \inlinecode{library} objects.
-Each \inlinecode{node} has an \inlinecode{operating_system} member variable that will manage software events on a virtual compute node.
+Each \inlinecode{node} has an \inlinecode{OperatingSystem} member variable that will manage software events on a virtual compute node.
 Each library object is stored in a lookup table in the operating system,
 allowing the operating system to access specific libraries at specific times.
 
 \begin{CppCode}
-class operating_system {
+class OperatingSystem {
   ...
   map<string,library*> libs_;
   ...
@@ -198,8 +198,8 @@ os->unblock(k);
 \end{CppCode}
 
 \begin{CppCode}
-void operating_system::handle_event(event* ev) {
-  library* lib = libs_[ev->lib_name()];
+void OperatingSystem::handleEvent(event* ev) {
+  library* lib = libs_[ev->libName()];
   lib->incoming_event(ev);
 }
 \end{CppCode}
@@ -227,7 +227,7 @@ T* get_api();
 for which the implementation is
 
 \begin{CppCode}
-thread* thr = operating_system::current_thread();
+thread* thr = OperatingSystem::currentThread();
 return thr->get_api<T>();
 \end{CppCode}
 which converts the global template function into a thread-specific accessor.
@@ -308,7 +308,7 @@ In many HPC simulations, the only thing being simulated is a single MPI applicat
 The default \inlinecode{send} function in \inlinecode{sumi_transport} assumes messages are being sent \emph{within} a given application.
 
 \begin{CppCode}
-void send_payload(int dst, message* msg, bool needs_ack);
+void sendPayload(int dst, message* msg, bool needs_ack);
 \end{CppCode}
 The only thing that must be specified is a destination \emph{rank}, which is the virtual ID within a given session layer.
 The transport layer itself will map that to the correct physical node address and deliver the message.
@@ -318,7 +318,7 @@ An alternative function exists for sending from client to server:
 \begin{CppCode}
 void client_server_send(
   int dest_rank,
-  node_id dest_node,
+  NodeId dest_node,
   app_id dest_app,
   sumi::message* msg);
 \end{CppCode}
@@ -344,7 +344,7 @@ In this case, the function \inlinecode{shutdown_server} can be called by a clien
 \begin{CppCode}
 void shutdown_server(
   int dest_rank,
-  node_id dest_node,
+  NodeId dest_node,
   app_id dest_app);
 \end{CppCode}
 

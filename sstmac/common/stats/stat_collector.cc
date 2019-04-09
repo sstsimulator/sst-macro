@@ -56,79 +56,34 @@ RegisterKeywords(
 
 namespace sstmac {
 
-int stat_collector::unique_tag_counter_ = 0;
-
-stats_unique_tag::stats_unique_tag() : id(stat_collector::allocate_unique_tag())
-{
-}
-
-stat_collector::~stat_collector()
-{
-  if (params_) delete params_;
-}
-
-stat_collector*
-stat_collector::find_unique_stat(event_scheduler* es, int unique_tag)
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_abort_printf("stats registration not compatible with SST core");
-  return nullptr;
-#else
-  return es->event_mgr()->find_unique_stat(unique_tag);
-#endif
-}
-
-void
-stat_collector::register_unique_stat(event_scheduler* es, stat_collector* sc, stat_descr_t* descr)
-{
-#if SSTMAC_INTEGRATED_SST_CORE
-  spkt_abort_printf("stats registration not compatible with SST core");
-#else
-  es->event_mgr()->register_unique_stat(sc, descr);
-#endif
-}
-
-bool
-stat_collector::check_open(std::fstream& myfile, const std::string& fname, std::ios::openmode ios_flags)
-{
-  if (!myfile.is_open()) {
-    myfile.open(fname.c_str(), ios_flags);
-    if (!myfile.is_open()) {
-      spkt_throw_printf(sprockit::io_error,
-                       "stat_collector: cannot open file %s for writing",
-                       fname.c_str());
-    }
-  }
-  return true;
-}
-
-stat_collector::stat_collector(sprockit::sim_parameters* params) :
+/**
+StatCollector::StatCollector(SST::Params& params) :
   registered_(false),
   id_(-1),
   params_(new sprockit::sim_parameters(params))
 {
-  fileroot_ = params->get_param("fileroot");
+  fileroot_ = params.find<std::string>("fileroot");
   if (params->has_param("suffix")){
-    fileroot_ = fileroot_ + "." + params->get_param("suffix");
+    fileroot_ = fileroot_ + "." + params.find<std::string>("suffix");
   }
-  id_ = params->get_optional_int_param("id", -1);
+  id_ = params.find<int>("id", -1);
 }
 
-stat_collector*
-stat_collector::required_build(sprockit::sim_parameters* params,
+StatCollector*
+StatCollector::requiredBuild(SST::Params& params,
                       const std::string& ns,
                       const std::string& deflt,
                       stat_descr_t* descr)
 {
-  stat_collector* coll = optional_build(params, ns, deflt, descr);
+  StatCollector* coll = optionalBuild(params, ns, deflt, descr);
   if (!coll){
-    stats_error(params, ns, deflt);
+    statsError(params, ns, deflt);
   }
   return coll;
 }
 
 void
-stat_collector::stats_error(sprockit::sim_parameters *params,
+StatCollector::statsError(SST::Params& params,
                             const std::string &ns,
                             const std::string &deflt)
 {
@@ -138,7 +93,7 @@ stat_collector::stats_error(sprockit::sim_parameters *params,
     const char* ns_str = ns.size() ?  " in namespace " : "";
     spkt_abort_printf("Received invalid stats type %s%s%s- "
                       " a valid value would have been %s",
-                      params->get_param("type").c_str(),
+                      params.find<std::string>("type").c_str(),
                       ns_str, ns.c_str());
   } else {
     spkt_abort_printf("Received invalid stats type %s",
@@ -146,8 +101,8 @@ stat_collector::stats_error(sprockit::sim_parameters *params,
   }
 }
 
-stat_collector*
-stat_collector::optional_build(sprockit::sim_parameters* params,
+StatCollector*
+StatCollector::optionalBuild(SST::Params& params,
                       const std::string& ns,
                       const std::string& deflt,
                       stat_descr_t* descr)
@@ -156,7 +111,7 @@ stat_collector::optional_build(sprockit::sim_parameters* params,
 
   if (ns.size()){
     if (params->has_namespace(ns)){
-      params = params->get_namespace(ns);
+      params = params.find_scoped_params(ns);
     } else {
       return nullptr;
     }
@@ -164,33 +119,34 @@ stat_collector::optional_build(sprockit::sim_parameters* params,
 
   if (suffix){
     sprockit::sim_parameters* old_params = params;
-    params = old_params->get_optional_namespace(suffix);
+    params = old_params.find_scoped_params(suffix);
     params->add_param_override("suffix", suffix);
-    old_params->combine_into(params);
+    old_params.combine_into(params);
   }
 
-  stat_collector* stats = stat_collector::factory::get_optional_param(
+  StatCollector* stats = StatCollector::factory::getOptionalParam(
         "type", deflt, params);
 
   return stats;
 }
 
 void
-stat_collector::register_optional_stat(event_scheduler* parent, stat_collector *coll, stat_descr_t* descr)
+StatCollector::registerOptionalStat(EventScheduler* parent, StatCollector *coll, stat_descr_t* descr)
 {
 #if SSTMAC_INTEGRATED_SST_CORE
   sprockit::abort("stat_collector::register_optional_state: should not be called with integrated core");
 #else
-  parent->register_stat(coll, descr);
+  parent->registerStat(coll, descr);
 #endif
 }
 
-stat_value_base::stat_value_base(sprockit::sim_parameters *params) :
-  stat_collector(params)
+StatValueBase::StatValueBase(SST::Params& params) :
+  StatCollector(params)
 {
-  id_ = params->get_int_param("id");
+  id_ = params.find<int>("id");
 }
 
+*/
 
 
 } // end of namespace sstmac

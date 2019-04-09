@@ -1,4 +1,4 @@
-WARNING: using null_memory_model object: this does not support detailed compute modeling
+WARNING: using NullMemoryModel object: this does not support detailed compute modeling
  and is primarily used for debugging purposes or for experiments focused on network traffic
 t=0.000402: passed bcast on rank 0
 t=0.00040225: passed bcast on rank 1

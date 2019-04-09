@@ -1,6 +1,7 @@
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/sst_event.h>
+#include <sprockit/sim_parameters.h>
 
 
 using namespace sstmac;
@@ -10,7 +11,7 @@ using namespace sstmac::hw;
 For creating custom hardware components inside of SST/macro, it follows
 essentially the same steps as a regular SST component. However, SST/macro
 provides an extra wrapper layer and present a slightly different interface
-for connecting objects together in the simulated network. This 'connectable'
+for connecting objects together in the simulated network. This 'Connectable'
 interface is presented below.
 */
 
@@ -52,10 +53,11 @@ class TestModule : public SSTElementPythonModule {
  * in this case, we create a factory type test_component from which all
  * test components will inherit
  */
-class test_component : public connectable_component {
+class TestComponent : public ConnectableComponent {
  public:
-  DeclareFactory(test_component,uint64_t,event_manager*)
-
+  SST_ELI_DECLARE_BASE(TestComponent)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(uint32_t,SST::Params&)
   /**
    * @brief test_component Standard constructor for all components
    *  with 3 basic parameters
@@ -63,27 +65,32 @@ class test_component : public connectable_component {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  test_component(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr) :
-    connectable_component(params,id,mgr)
+  TestComponent(uint32_t id, SST::Params& params) :
+    ConnectableComponent(id, params)
  {
  }
 };
 
-class test_event : public event {
+class TestEvent : public Event {
  public:
   //Make sure to satisfy the serializable interface
-  ImplementSerializable(test_event)
+  ImplementSerializable(TestEvent)
 };
 
 /**
  * @brief The dummy_switch class
  * This is a basic instance of a test component that will generate events
  */
-class dummy_switch : public test_component {
+class DummySwitch : public TestComponent {
  public:
-  RegisterComponent("dummy", test_component, dummy_switch,
-           "test", COMPONENT_CATEGORY_NETWORK,
-           "A dummy switch for teaching")
+  SST_ELI_REGISTER_DERIVED_COMPONENT(
+    TestComponent,
+    DummySwitch,
+    "macro",
+    "dummy",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "A dummy switch",
+    COMPONENT_CATEGORY_NETWORK)
 
   /**
    * @brief dummy_switch Standard constructor for all components
@@ -92,53 +99,45 @@ class dummy_switch : public test_component {
    * @param id      A unique ID for this component
    * @param mgr     The event manager that will schedule events for this component
    */
-  dummy_switch(sprockit::sim_parameters* params, uint32_t id, event_manager* mgr) :
-   test_component(params,id,mgr), id_(id)
+  DummySwitch(uint32_t id, SST::Params& params) :
+   TestComponent(id,params), id_(id)
   {
     //make sure this function gets called
     //unfortunately, due to virtual function initialization order
     //this has to be called in the base child class
-    init_links(params);
+    initLinks(params);
     //init params
-    num_ping_pongs_ = params->get_optional_int_param("num_ping_pongs", 2);
-    latency_ = params->get_time_param("latency");
+    num_ping_pongs_ = params.find<int>("num_ping_pongs", 2);
+    latency_ = Timestamp(params.find<SST::UnitAlgebra>("latency").getValue().toDouble());
   }
 
-  std::string to_string() const override { return "dummy";}
+  std::string toString() const override { return "dummy";}
 
-  void recv_payload(event* ev){
+  void recvPayload(Event* ev){
     std::cout << "Oh, hey, component " << id_ << " got a payload!" << std::endl;
-    test_event* tev = dynamic_cast<test_event*>(ev);
+    TestEvent* tev = dynamic_cast<TestEvent*>(ev);
     if (tev == nullptr){
       std::cerr << "received wrong event type" << std::endl;
       abort();
     }
     if (num_ping_pongs_ > 0){
-      send_ping_message();
+      sendPingMessage();
     }
   }
 
-  void recv_credit(event* ev){
+  void recvCredit(Event* ev){
     //ignore for now, we won't do anything with credits
   }
 
-  void connect_output(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override {
+  void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) override {
     //register handler on port
-    partner_ = link;
+    partner_ = std::move(link);
     std::cout << "Connecting output "
               << src_outport << "-> " << dst_inport
               << " on component " << id_ << std::endl;
   }
 
-  void connect_input(
-    sprockit::sim_parameters* params,
-    int src_outport,
-    int dst_inport,
-    event_link* link) override {
+  void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) override {
     //we won't do anything with credits, but print for tutorial
     std::cout << "Connecting input "
               << src_outport << "-> " << dst_inport
@@ -148,43 +147,35 @@ class dummy_switch : public test_component {
   void setup() override {
     std::cout << "Setting up " << id_ << std::endl;
     //make sure to call parent setup method
-    test_component::setup();
+    TestComponent::setup();
     //send an initial test message
-    send_ping_message();
+    sendPingMessage();
   }
 
   void init(unsigned int phase) override {
     std::cout << "Initializing " << id_
               << " on phase " << phase << std::endl;
     //make sure to call parent init method
-    test_component::init(phase);
+    TestComponent::init(phase);
   }
 
-  link_handler* credit_handler(int port) override {
-    return new_link_handler(this, &dummy_switch::recv_credit);
+  LinkHandler* creditHandler(int port) override {
+    return newLinkHandler(this, &DummySwitch::recvCredit);
   }
 
-  link_handler* payload_handler(int port) override {
-    return new_link_handler(this, &dummy_switch::recv_payload);
-  }
-
-  timestamp send_latency(sprockit::sim_parameters *params) const override {
-    return latency_;
-  }
-
-  timestamp credit_latency(sprockit::sim_parameters *params) const override {
-    return latency_;
+  LinkHandler* payloadHandler(int port) override {
+    return newLinkHandler(this, &DummySwitch::recvPayload);
   }
 
  private:
-  void send_ping_message(){
-    partner_->send(new test_event);
+  void sendPingMessage(){
+    partner_->send(new TestEvent);
     --num_ping_pongs_;
   }
 
  private:
-  event_link* partner_;
-  timestamp latency_;
+  EventLink::ptr partner_;
+  Timestamp latency_;
   int num_ping_pongs_;
   uint32_t id_;
 

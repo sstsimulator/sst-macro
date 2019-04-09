@@ -48,35 +48,35 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/errors.h>
 #include <sprockit/statics.h>
 
-static sprockit::need_delete_statics<sumi::mpi_comm> cleanup_comm;
+static sprockit::NeedDeletestatics<sumi::MpiComm> cleanup_comm;
 
 namespace sumi {
 
-mpi_comm* mpi_comm::comm_null = nullptr;
+MpiComm* MpiComm::comm_null = nullptr;
 
-mpi_comm::mpi_comm() :
+MpiComm::MpiComm() :
   group_(nullptr),
   next_collective_tag_(0),
   id_(MPI_COMM_NULL),
   rank_(-1),
   del_grp_(false),
-  communicator(-1),
+  Communicator(-1),
   topotype_(TOPO_NONE)
 {
 }
 
-mpi_comm::~mpi_comm()
+MpiComm::~MpiComm()
 {
   if (del_grp_) delete group_;
 }
 
-mpi_comm::mpi_comm(
+MpiComm::MpiComm(
   MPI_Comm id, //const appid &aid,
-  int rank, mpi_group* peers,
-  app_id aid,
+  int rank, MpiGroup* peers,
+  AppId aid,
   bool del_grp,
   topotypes ty) :
-  sumi::communicator(rank),
+  sumi::Communicator(rank),
   group_(peers),
   next_collective_tag_(MPI_COMM_WORLD + 100),
   aid_(aid),
@@ -86,30 +86,60 @@ mpi_comm::mpi_comm(
   topotype_(ty)
 {
   if (peers->size() == 0) {
-    spkt_throw_printf(sprockit::value_error,
+    spkt_throw_printf(sprockit::ValueError,
          "trying to build communicator of size 0");
   }
 
   if (!comm_null) {
-    comm_null = new mpi_comm;
+    comm_null = new MpiComm;
   }
 }
 
+std::set<int>
+MpiComm::globalRankSetIntersection(const std::set<int> &neighbors) const
+{
+  if (group_->isCommWorld()){
+    return neighbors;
+  } else {
+    std::set<int> intersc;
+    for (int entry : group_->worldRanks()){
+      if (neighbors.find(entry) != neighbors.end()){
+        intersc.insert(entry);
+      }
+    }
+    return intersc;
+  }
+}
+
+std::set<int>
+MpiComm::commNeighbors(const std::set<int>& commWorldNeighbors) const
+{
+  std::set<int> ret;
+  for (int i=0; i < nproc(); ++i){
+    int glbl = peerTask(i);
+    auto iter = commWorldNeighbors.find(glbl);
+    if (iter != commWorldNeighbors.end()){
+      ret.insert(i);
+    }
+  }
+  return ret;
+}
+
 void
-mpi_comm::delete_statics()
+MpiComm::deleteStatics()
 {
   if (comm_null) delete comm_null;
 }
 
 int
-mpi_comm::global_to_comm_rank(int global_rank) const
+MpiComm::globalToCommRank(int global_rank) const
 {
   sprockit::abort("mpi_comm::global_to_comm_rank");
   return 0;
 }
 
 void
-mpi_comm::dup_keyvals(mpi_comm* m)
+MpiComm::dupKeyvals(MpiComm* m)
 {
   std::unordered_map<int, keyval*>::iterator it, end = m->keyvals_.end();
   for (it = m->keyvals_.begin(); it != end; it++) {
@@ -120,13 +150,13 @@ mpi_comm::dup_keyvals(mpi_comm* m)
 }
 
 std::string
-mpi_comm::to_string() const
+MpiComm::toString() const
 {
   return sprockit::printf("mpicomm(id=%d,size=%d,rank=%d)", id_, size(), rank_);
 }
 
 int
-mpi_comm::size() const
+MpiComm::size() const
 {
   if (id_ == MPI_COMM_NULL) {
     sprockit::abort("mpicomm: trying to call size() on a null mpicomm");
@@ -138,14 +168,14 @@ mpi_comm::size() const
 }
 
 void
-mpi_comm::set_keyval(keyval* k, void* val)
+MpiComm::setKeyval(keyval* k, void* val)
 {
   keyvals_[k->key()] = k;
   k->set_val(val);
 }
 
 void
-mpi_comm::get_keyval(keyval* k, void* val, int* flag)
+MpiComm::getKeyval(keyval* k, void* val, int* flag)
 {
 
   if (keyvals_.find(k->key()) == keyvals_.end()) {
@@ -167,7 +197,7 @@ mpi_comm::get_keyval(keyval* k, void* val, int* flag)
 // Get a unique tag for a collective operation.
 //
 int
-mpi_comm::next_collective_tag()
+MpiComm::nextCollectiveTag()
 {
   uint16_t id = id_;
   int next_tag = (id << 16) | next_collective_tag_;
@@ -175,14 +205,14 @@ mpi_comm::next_collective_tag()
   return next_tag;
 }
 
-task_id
-mpi_comm::my_task() const
+TaskId
+MpiComm::myTask() const
 {
   return group_->at(rank_);
 }
 
-task_id
-mpi_comm::peer_task(int rank) const
+TaskId
+MpiComm::peerTask(int rank) const
 {
   return group_->at(rank);
 }

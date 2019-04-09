@@ -54,32 +54,38 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-class instruction_processor :
-  public simple_processor
+class InstructionProcessor :
+  public SimpleProcessor
 {
-  FactoryRegister("instruction", processor, instruction_processor,
-              "Extension of simpleprocessor that estimates compute time of instruction counters")
  public:
-  instruction_processor(sprockit::sim_parameters* params,
-                        memory_model* mem, node* nd);
+  SST_ELI_REGISTER_DERIVED(
+    Processor,
+    InstructionProcessor,
+    "macro",
+    "instruction",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "Extension of simpleprocessor that estimates compute time of instruction counters")
 
-  virtual ~instruction_processor();
+  InstructionProcessor(SST::Params& params,
+                        MemoryModel* mem, Node* nd);
 
-  virtual void compute(event* ev, callback* cb) override;
+  virtual ~InstructionProcessor();
+
+  virtual void compute(Event* ev, ExecutionEvent* cb) override;
 
  protected:
-  void set_memop_distribution(double stdev);
+  void setMemopDistribution(double stdev);
 
-  void set_flop_distribution(double stdev);
+  void setFlopDistribution(double stdev);
 
-  timestamp instruction_time(sw::basic_compute_event* msg);
+  Timestamp instructionTime(sw::BasicComputeEvent* msg);
 
  protected:
-  timestamp tflop_;
-  timestamp tintop_;
-  timestamp tmemseq_;
-  timestamp tmemrnd_;
-  timestamp max_single_mem_inv_bw_; //in sec/byte
+  Timestamp tflop_;
+  Timestamp tintop_;
+  Timestamp tmemseq_;
+  Timestamp tmemrnd_;
+  Timestamp min_flow_byte_delay_;//in sec/byte
 
   uint64_t negligible_bytes_;
 

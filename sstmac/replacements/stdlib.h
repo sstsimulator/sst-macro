@@ -23,6 +23,7 @@ extern "C" {
 int sstmac_atexit(void (*)());
 int sstmac_on_exit(void (*)(int,void*),void*);
 void sstmac_exit(int code);
+#pragma sst null_variable safe
 extern void sstmac_free(void* ptr);
 
 char* sstmac_getenv(const char* name);

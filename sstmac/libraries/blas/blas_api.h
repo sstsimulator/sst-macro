@@ -50,37 +50,45 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sstmac/software/libraries/compute/compute_event_fwd.h>
 #include <sstmac/software/process/software_id.h>
 #include <sstmac/software/process/operating_system_fwd.h>
+#include <sprockit/debug.h>
 
 DeclareDebugSlot(blas);
 
 namespace sstmac {
 namespace sw {
 
-class blas_kernel
+class BlasKernel
 {
-  DeclareFactory(blas_kernel)
  public:
-  virtual std::string to_string() const = 0;
+  SST_ELI_DECLARE_BASE(BlasKernel)
+  SST_ELI_DECLARE_DEFAULT_INFO()
+  SST_ELI_DECLARE_CTOR(SST::Params&)
 
-  virtual compute_event* op_3d(int m, int k, int n);
+  virtual std::string toString() const = 0;
 
-  virtual compute_event* op_2d(int m, int n);
+  virtual ComputeEvent* op_3d(int m, int k, int n);
 
-  virtual compute_event* op_1d(int n);
+  virtual ComputeEvent* op_2d(int m, int n);
+
+  virtual ComputeEvent* op_1d(int n);
 
 };
 
-class blas_api :
-  public api
+class BlasAPI :
+  public API
 {
-  RegisterAPI("blas", blas_api)
-
  public:
-  blas_api(sprockit::sim_parameters* params,
-           software_id sid,
-           operating_system* os);
+  SST_ELI_REGISTER_DERIVED(
+    API,
+    BlasAPI,
+    "macro",
+    "blas",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "an api for BLAS calls")
 
-  virtual ~blas_api();
+  BlasAPI(SST::Params& params, App* app, SST::Component* comp);
+
+  virtual ~BlasAPI();
 
   /**
    A(m,n) * B(n,k) = C(m,k)
@@ -96,22 +104,18 @@ class blas_api :
 
   void ddot(int n);
 
-  void incoming_event(event *ev){
-    library::incoming_event(ev);
-  }
+ protected:
+  void initKernels(SST::Params& params);
 
  protected:
-  void init_kernels(sprockit::sim_parameters* params);
+  LibComputeInst* lib_compute_;
 
- protected:
-  lib_compute_inst* lib_compute_;
+  SoftwareId id_;
 
-  software_id id_;
-
-  static blas_kernel* ddot_kernel_;
-  static blas_kernel* dgemm_kernel_;
-  static blas_kernel* dgemv_kernel_;
-  static blas_kernel* daxpy_kernel_;
+  static BlasKernel* ddot_kernel_;
+  static BlasKernel* dgemm_kernel_;
+  static BlasKernel* dgemv_kernel_;
+  static BlasKernel* daxpy_kernel_;
 
 };
 
