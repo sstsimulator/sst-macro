@@ -90,6 +90,8 @@ namespace sw {
 
 std::unique_ptr<std::map<std::string, App::main_fxn>> UserAppCxxFullMain::main_fxns_;
 std::unique_ptr<std::map<std::string, App::empty_main_fxn>> UserAppCxxEmptyMain::empty_main_fxns_;
+std::map<std::string, App::main_fxn>* UserAppCxxFullMain::main_fxns_init_ = nullptr;
+std::map<std::string, App::empty_main_fxn>* UserAppCxxEmptyMain::empty_main_fxns_init_ = nullptr;
 std::map<AppId, UserAppCxxFullMain::argv_entry> UserAppCxxFullMain::argv_map_;
 
 std::map<int, App::dlopen_entry> App::dlopens_;
@@ -562,7 +564,9 @@ UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
   App(params, sid, os)
 {
   if (!main_fxns_){
-    main_fxns_ = std::unique_ptr<std::map<std::string, main_fxn>>(new std::map<std::string, main_fxn>);
+    //because of the awful XC8 bug
+    main_fxns_ = std::unique_ptr<std::map<std::string,main_fxn>>(main_fxns_init_);
+    main_fxns_init_ = nullptr;
   }
 
   std::string name = params.find<std::string>("name");
@@ -578,8 +582,11 @@ UserAppCxxFullMain::UserAppCxxFullMain(SST::Params& params, SoftwareId sid,
 void
 UserAppCxxFullMain::aliasMains()
 {
+  if (!main_fxns_){
+    main_fxns_ = std::unique_ptr<std::map<std::string, App::main_fxn>>(main_fxns_init_);
+    main_fxns_init_ = nullptr;
+  }
   auto* lib = App::getBuilderLibrary("macro");
-
   if (main_fxns_){
     for (auto& pair : *main_fxns_){
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -596,17 +603,24 @@ UserAppCxxFullMain::aliasMains()
 void
 UserAppCxxFullMain::registerMainFxn(const char *name, App::main_fxn fxn)
 {
-  if (!main_fxns_){
-    main_fxns_ = std::unique_ptr<std::map<std::string, main_fxn>>(new std::map<std::string, main_fxn>);
+  if (main_fxns_){  //already passed static init
+    (*main_fxns_)[name] = fxn; 
+  } else {
+    if (!main_fxns_init_){
+      main_fxns_init_ = new std::map<std::string, main_fxn>;
+    }
+    (*main_fxns_init_)[name] = fxn;
   }
-  (*main_fxns_)[name] = fxn;
 }
 
 void
 UserAppCxxEmptyMain::aliasMains()
 {
+  if (!empty_main_fxns_){
+    empty_main_fxns_ = std::unique_ptr<std::map<std::string, App::empty_main_fxn>>(empty_main_fxns_init_);
+    empty_main_fxns_init_ = nullptr;
+  }
   auto* lib = App::getBuilderLibrary("macro");
-
   if (empty_main_fxns_){
     for (auto& pair : *empty_main_fxns_){
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -665,7 +679,8 @@ UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
   App(params, sid, os)
 {
   if (!empty_main_fxns_){
-    empty_main_fxns_ = std::unique_ptr<std::map<std::string, empty_main_fxn>>(new std::map<std::string, empty_main_fxn>);
+    empty_main_fxns_ = std::unique_ptr<std::map<std::string, App::empty_main_fxn>>(empty_main_fxns_init_);
+    empty_main_fxns_init_ = nullptr;
   }
 
   std::string name = params.find<std::string>("name");
@@ -681,11 +696,17 @@ UserAppCxxEmptyMain::UserAppCxxEmptyMain(SST::Params& params, SoftwareId sid,
 void
 UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
 {
-  if (!empty_main_fxns_){
-    empty_main_fxns_ = std::unique_ptr<std::map<std::string, empty_main_fxn>>(new std::map<std::string, empty_main_fxn>);
+  if (empty_main_fxns_){ //already cleared static init
+    (*empty_main_fxns_)[name] = fxn;
+  } else { 
+    if (!empty_main_fxns_init_){
+      empty_main_fxns_init_ = new std::map<std::string, empty_main_fxn>;
+    }
+
+    (*empty_main_fxns_init_)[name] = fxn;
   }
 
-  (*empty_main_fxns_)[name] = fxn;
+#if 0
   auto* lib = App::getBuilderLibrary("macro");
 #if SSTMAC_INTEGRATED_SST_CORE
   using builder_t = SST::ELI::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
@@ -693,6 +714,7 @@ UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
 #else
   using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
   lib->addBuilder(name, std::unique_ptr<builder_t>(new builder_t));
+#endif
 #endif
 }
 

@@ -136,6 +136,8 @@ class Debug
  public:
   static std::unique_ptr<std::map<std::string, DebugInt*>> debug_ints_;
   static std::unique_ptr<std::map<std::string, std::string>> docstrings_;
+  static std::map<std::string, DebugInt*>* debug_ints_init_;
+  static std::map<std::string, std::string>* docstrings_init_;
   static std::unique_ptr<DebugPrefixFxn> prefix_fxn;
 
   static void deleteStatics();
@@ -228,6 +230,8 @@ class Debug
    * @param dint  A reference to the integer that must be assigned a value
    */
   static void assignSlot(DebugInt& dint);
+
+  static void checkInit();
 
 };
 

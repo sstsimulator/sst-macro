@@ -312,6 +312,7 @@ class UserAppCxxFullMain : public App
   void initArgv(argv_entry& entry);
 
   static std::unique_ptr<std::map<std::string, App::main_fxn>> main_fxns_;
+  static std::map<std::string, App::main_fxn>* main_fxns_init_;
   static std::map<AppId, argv_entry> argv_map_;
   App::main_fxn fxn_;
 
@@ -337,7 +338,11 @@ class UserAppCxxEmptyMain : public App
   int skeletonMain() override;
 
  private:
+  //to work around static init bugs for older compilers
+  //I have to init with a raw pointer - then transfer ownershipt to a unique_ptr
+  //that cleans up at the end
   static std::unique_ptr<std::map<std::string, App::empty_main_fxn>> empty_main_fxns_;
+  static std::map<std::string, App::empty_main_fxn>* empty_main_fxns_init_;
   App::empty_main_fxn fxn_;
 
 };

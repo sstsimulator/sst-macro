@@ -62,6 +62,8 @@ DebugInt Debug::current_bitmask_;
 DebugInt Debug::start_bitmask_;
 std::unique_ptr<std::map<std::string, DebugInt*>> Debug::debug_ints_;
 std::unique_ptr<std::map<std::string, std::string>> Debug::docstrings_;
+std::map<std::string, DebugInt*>* Debug::debug_ints_init_ = nullptr;
+std::map<std::string, std::string>* Debug::docstrings_init_ = nullptr;
 int Debug::num_bits_assigned = 1; //the zeroth bit is reserved empty
 
 #if SPROCKIT_ENABLE_DEBUG
@@ -144,8 +146,22 @@ Debug::turnOn(DebugInt& dint){
 }
 
 void
+Debug::checkInit()
+{
+  if (!debug_ints_){
+    debug_ints_ = std::unique_ptr<std::map<std::string,DebugInt*>>(debug_ints_init_);
+    debug_ints_init_ = nullptr;
+  }
+  if (!docstrings_){
+    docstrings_ = std::unique_ptr<std::map<std::string,std::string>>(docstrings_init_);
+    docstrings_init_ = nullptr;
+  }
+}
+
+void
 Debug::assignSlot(DebugInt& dint)
 {
+  checkInit();
   //has not been assigned a bitfield
   if (num_bits_assigned > MAX_DEBUG_SLOT){
     spkt_throw_printf(IllformedError,
@@ -157,6 +173,7 @@ Debug::assignSlot(DebugInt& dint)
 
 void
 Debug::turnOn(const std::string& str){
+  checkInit();
   auto it = debug_ints_->find(str);
   if (it == debug_ints_->end()){
     spkt_throw_printf(InputError,
@@ -169,14 +186,12 @@ Debug::turnOn(const std::string& str){
 void
 Debug::registerDebugSlot(const std::string& str, DebugInt* dint,
                          const std::string& docstring){
-  if (!debug_ints_){
-    debug_ints_ = std::unique_ptr<std::map<std::string, DebugInt*>>(
-                      new std::map<std::string, DebugInt*>);
-    docstrings_ = std::unique_ptr<std::map<std::string, std::string>>(
-                      new std::map<std::string, std::string>);
+  if (!debug_ints_init_){
+    debug_ints_init_ = new std::map<std::string, DebugInt*>;
+    docstrings_init_ = new std::map<std::string, std::string>;
   }
-  (*debug_ints_)[str] = dint;
-  (*docstrings_)[str] = docstring;
+  (*debug_ints_init_)[str] = dint;
+  (*docstrings_init_)[str] = docstring;
 }
 
 static void
