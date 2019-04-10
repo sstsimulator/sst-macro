@@ -68,17 +68,17 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sst/core/component.h>
 #include <sst/core/subcomponent.h>
 
-using SST::ComponentId_t;
-using SST::Params;
-using SST::ElementInfoParam;
-using SST::ElementInfoPort2;
-using SST::ElementInfoStatistic;
-using SST::SST_ELI_getMajorNumberFromVersion;
-using SST::SST_ELI_getMinorNumberFromVersion;
-using SST::SST_ELI_getTertiaryNumberFromVersion;
+#define SSTMAC_VALID_PORTS \
+   {"input %(out)d %(in)d",  "Will receive new payloads here",      {}}, \
+   {"output %(out)d %(in)d", "Will receive new acks(credits) here", {}}, \
+   {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
+   {"rtr",                   "Special link to Merlin router",       {}}
+
 
 #define SST_ELI_REGISTER_DERIVED_COMPONENT(ase,cls,lib,name,version,desc,cat) \
   SST_ELI_REGISTER_COMPONENT(cls,lib,name,ELI_FORWARD_AS_ONE(version),desc,cat)
+
+sprockit::SimParameters* make_spkt_params_from_sst_params(SST::Params& map);
 
 namespace sstmac {
 
@@ -98,7 +98,7 @@ class SSTIntegratedComponent
    * @param dst_inport
    * @param mod
    */
-  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) = 0;
+  virtual void connectInput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
 
   /**
    * @brief connectOutput  All of these classes should implement
@@ -107,7 +107,7 @@ class SSTIntegratedComponent
    * @param dst_inport
    * @param mod
    */
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) = 0;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
 
   /**
    * @brief payloadHandler

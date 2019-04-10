@@ -296,20 +296,20 @@ static void* gen_sst_macro_integrated_pymodule(void)
   return module;
 }
 
-extern "C" {
+class MacroPyModule : public SSTElementPythonModule {
+public:
+    MacroPyModule(const std::string& library) :
+        SSTElementPythonModule(library)
+    {
+    }
 
-ElementLibraryInfo macro_eli = {
-    "macro",
-    "SST Macroscale integrated components",
-    NULL,                  // Components
-    NULL,                              // Events
-    NULL,                              // Introspectors
-    NULL,                              // Modules
-    NULL,
-    NULL,                              // Partitioners
-    gen_sst_macro_integrated_pymodule,  // Python Module Generator
-    NULL
+    void* load() override {
+      return gen_sst_macro_integrated_pymodule();
+    }
+
+    SST_ELI_REGISTER_PYTHON_MODULE(
+      MacroPyModule,
+      "macro",
+      SST_ELI_ELEMENT_VERSION(1,0,0)
+    )
 };
-
-
-} // end extern "C"

@@ -66,7 +66,6 @@ Questions? Contact sst-macro-help@sandia.gov
   debug_printf(sprockit::dbg::sculpin, "sculpin NIC %d: %s", \
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
-#define MERLIN_DEBUG_PACKET 0
 
 namespace sstmac {
 namespace hw {
@@ -192,12 +191,6 @@ class MerlinNIC :
     while (req){
       MyRequest* myreq = static_cast<MyRequest*>(req);
       uint64_t size = req->size_in_bits/8;
-      Timestamp delay = size / link_control_->bw
-#if MERLIN_DEBUG_PACKET
-      if (myreq->flow_id == -1){
-        std::cout << "Got packet of size " << (req->size_in_bits/8) << " at t=" << now().sec() << std::endl;
-      }
-#endif
       auto bytes = myreq->size_in_bits/8;
       auto* payload = myreq->takePayload();
       MessageEvent* ev = payload ? static_cast<MessageEvent*>(payload) : nullptr;
