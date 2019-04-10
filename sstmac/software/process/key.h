@@ -52,6 +52,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <cstring>
 #include <string>
 #include <set>
+#include <memory>
 
 namespace sstmac {
 namespace sw {

@@ -50,6 +50,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <string>
 #include <stdint.h>
 #include <iostream>
+#include <memory>
 
 #define MAX_DEBUG_SLOT 63 //64 bit integer
 
