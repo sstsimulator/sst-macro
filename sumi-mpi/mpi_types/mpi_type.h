@@ -54,6 +54,7 @@ Questions? Contact sst-macro-help@sandia.gov
 
 #include <iosfwd>
 #include <map>
+#include <memory>
 
 namespace sumi {
 
