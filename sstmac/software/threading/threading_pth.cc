@@ -53,17 +53,23 @@ namespace sw {
 class ThreadingPth : public ThreadContext
 {
  public:
-  FactoryRegister("pth", thread_context, threading_pth)
+  SST_ELI_REGISTER_DERIVED(
+    ThreadContext,
+    ThreadingPth,
+    "macro",
+    "pth",
+    SST_ELI_ELEMENT_VERSION(1,0,0),
+    "uses GNU Pth for fast context switching")
 
   /** nothing */
-  ThreadingPth(SST::Params& params)
+  ThreadingPth()
   {
   }
 
   virtual ~ThreadingPth() {}
 
   ThreadContext* copy() const override {
-    return new ThreadingPth(nullptr);
+    return new ThreadingPth;
   }
 
   void initContext() override {
