@@ -217,7 +217,7 @@ test_scan_payload(int tag)
   int nelems = 3;
   int* src_buffer = new int[nelems];
   ::memset(src_buffer, 0, nelems * sizeof(int));
-  for (int i=0; i <= nelems; ++i){
+  for (int i=0; i < nelems; ++i){
     src_buffer[i] = 1;
   }
   int* dst_buffer = new int[nelems];
