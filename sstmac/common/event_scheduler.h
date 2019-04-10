@@ -70,7 +70,9 @@ class EventLink {
   {
   }
 
-  virtual ~EventLink()
+  using ptr = std::unique_ptr<EventLink>;
+
+  virtual ~EventLink();
 
   std::string toString() const {
     return "self link: " + name_;
@@ -405,12 +407,12 @@ SST::Event::HandlerBase* newLinkHandler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
 }
 
-static inline EventLink::ptr allocateSubLink(const std::string& name, Timestamp lat, SubComponent* subcomp, LinkHandler* handler){
+static inline EventLinkPtr allocateSubLink(const std::string& name, Timestamp lat, SubComponent* subcomp, LinkHandler* handler){
   SST::Link* self = subcomp->configureSelfLink(name, subcomp->timeConverter(), handler);
   return EventLink::ptr(new EventLink(name, lat, self));
 }
 
-static inline EventLink::ptr allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler){
+static inline EventLinkPtr allocateSubLink(const std::string& name, Timestamp lat, Component* comp, LinkHandler* handler){
   SST::Link* self = comp->configureSelfLink(name, comp->timeConverter(), handler);
   return EventLink::ptr(new EventLink(name, lat, self));
 }

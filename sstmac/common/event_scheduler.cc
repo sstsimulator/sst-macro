@@ -68,6 +68,9 @@ EventLink::~EventLink()
 {
 }
 
+#if SSTMAC_INTEGRATED_SST_CORE
+SST::TimeConverter* EventScheduler::time_converter_ = nullptr;
+#else
 uint32_t
 EventLink::allocateLinkId()
 {
@@ -75,9 +78,6 @@ EventLink::allocateLinkId()
   return ret;
 }
 
-#if SSTMAC_INTEGRATED_SST_CORE
-SST::TimeConverter* EventScheduler::time_converter_ = nullptr;
-#else
 void
 EventScheduler::sendExecutionEvent(GlobalTimestamp arrival, ExecutionEvent *ev)
 {

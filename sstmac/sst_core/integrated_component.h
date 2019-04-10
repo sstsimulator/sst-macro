@@ -74,27 +74,11 @@ Questions? Contact sst-macro-help@sandia.gov
    {"in-out %(out)d %(in)d", "Will send/recv payloads here",        {}}, \
    {"rtr",                   "Special link to Merlin router",       {}}
 
-#define RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
-  FactoryRegister(name,parent,cls,desc) \
-  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS() \
-  SST_ELI_REGISTER_COMPONENT(cls,lib,#cls,SST_ELI_ELEMENT_VERSION(8,0,0),desc,cat) \
-  SST_ELI_DOCUMENT_PARAMS() \
-  SST_ELI_DOCUMENT_PORTS(SSTMAC_VALID_PORTS) \
-  cls(SST::ComponentId_t id, SST::Params& params) : \
-    cls(make_spkt_params_from_sst_params(params), id, nullptr){}
 
-#define RegisterComponent(name,parent,cls,lib,cat,desc) \
-  RegisterSSTComponent(name,parent,cls,lib,cat,desc) \
-  SST_ELI_DOCUMENT_STATISTICS()
+#define SST_ELI_REGISTER_DERIVED_COMPONENT(ase,cls,lib,name,version,desc,cat) \
+  SST_ELI_REGISTER_COMPONENT(cls,lib,name,ELI_FORWARD_AS_ONE(version),desc,cat)
 
-#define RegisterSubcomponent(name,parent,cls,lib,interfaceStr,desc) \
-  FactoryRegister(name,parent,cls,desc) \
-  SST_ELI_REGISTER_SUBCOMPONENT(cls,lib,#cls,desc,interfaceStr) \
-  protected: \
-  cls(SST::ComponentId_t id, SST::Params& params) : \
-    cls(make_spkt_params_from_sst_params(params), id, nullptr){}
-
-sprockit::sim_parameters* make_spkt_params_from_sst_params(SST::Params& map);
+sprockit::SimParameters* make_spkt_params_from_sst_params(SST::Params& map);
 
 namespace sstmac {
 
@@ -114,7 +98,7 @@ class SSTIntegratedComponent
    * @param dst_inport
    * @param mod
    */
-  virtual void connectInput(int src_outport, int dst_inport, EventLink::ptr&& link) = 0;
+  virtual void connectInput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
 
   /**
    * @brief connectOutput  All of these classes should implement
@@ -123,7 +107,7 @@ class SSTIntegratedComponent
    * @param dst_inport
    * @param mod
    */
-  virtual void connectOutput(int src_outport, int dst_inport, EventLink::ptr&& link) = 0;
+  virtual void connectOutput(int src_outport, int dst_inport, EventLinkPtr&& link) = 0;
 
   /**
    * @brief payloadHandler

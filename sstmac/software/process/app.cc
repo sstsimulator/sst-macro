@@ -579,10 +579,16 @@ void
 UserAppCxxFullMain::aliasMains()
 {
   auto* lib = App::getBuilderLibrary("macro");
-  using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+
   if (main_fxns_){
     for (auto& pair : *main_fxns_){
-      lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
+#if SSTMAC_INTEGRATED_SST_CORE
+    using builder_t = SST::ELI::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+    lib->addBuilder(pair.first, new builder_t);
+#else
+    using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+    lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
+#endif
     }
   }
 }
@@ -600,10 +606,16 @@ void
 UserAppCxxEmptyMain::aliasMains()
 {
   auto* lib = App::getBuilderLibrary("macro");
-  using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+
   if (empty_main_fxns_){
     for (auto& pair : *empty_main_fxns_){
+#if SSTMAC_INTEGRATED_SST_CORE
+      using builder_t = SST::ELI::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+      lib->addBuilder(pair.first, new builder_t);
+#else
+      using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
       lib->addBuilder(pair.first, std::unique_ptr<builder_t>(new builder_t));
+#endif
     }
   }
 }
@@ -675,8 +687,13 @@ UserAppCxxEmptyMain::registerMainFxn(const char *name, App::empty_main_fxn fxn)
 
   (*empty_main_fxns_)[name] = fxn;
   auto* lib = App::getBuilderLibrary("macro");
+#if SSTMAC_INTEGRATED_SST_CORE
+  using builder_t = SST::ELI::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
+  lib->addBuilder(name, new builder_t);
+#else
   using builder_t = sprockit::DerivedBuilder<App,UserAppCxxFullMain,SST::Params&,SoftwareId,OperatingSystem*>;
   lib->addBuilder(name, std::unique_ptr<builder_t>(new builder_t));
+#endif
 }
 
 int

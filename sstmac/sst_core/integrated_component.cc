@@ -81,21 +81,21 @@ SSTIntegratedComponent::initLinks(SST::Params& params)
     istr >> port_type;
     istr >> src_outport;
     istr >> dst_inport;
-    EventLink* ev_link = new EventLink(pair.first, Timestamp(), link);
+    EventLink::ptr ev_link{new EventLink(pair.first, Timestamp(), link)};
 
     if (port_type == "input"){
       //setup up the link for sending credits back to source
-      connectInput(src_outport, dst_inport, ev_link);
+      connectInput(src_outport, dst_inport, std::move(ev_link));
       //I will receive incoming payloads on this link
       configureLink(pair.first, EventScheduler::timeConverter(), payloadHandler(dst_inport));
     } else if (port_type == "output"){
       //setup the link for sending output payloads to destination
-      connectOutput(src_outport, dst_inport, ev_link);
+      connectOutput(src_outport, dst_inport, std::move(ev_link));
       //I will receive credits back after sending out payloads
       configureLink(pair.first, EventScheduler::timeConverter(), creditHandler(src_outport));
     } else if (port_type == "in-out"){
       //no credits involved here - just setting up output handlers
-      connectOutput(src_outport, dst_inport, ev_link);
+      connectOutput(src_outport, dst_inport, std::move(ev_link));
       configureLink(pair.first, EventScheduler::timeConverter(), payloadHandler(src_outport));
     } else {
       //other special type of link I don't need to process
